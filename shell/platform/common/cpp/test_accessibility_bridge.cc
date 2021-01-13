@@ -17,10 +17,9 @@ void TestAccessibilityBridgeDelegate::OnAccessibilityEvent(
 }
 
 void TestAccessibilityBridgeDelegate::DispatchAccessibilityAction(
-    ui::AXNode::AXID target,
+    AccessibilityNodeId target,
     FlutterSemanticsAction action,
-    std::unique_ptr<uint8_t[]> data,
-    size_t data_size) {
+    std::vector<uint8_t> data) {
   performed_actions.push_back(action);
 }
 

@@ -57,31 +57,6 @@ TEST(FlutterPlatformNodeDelegateTest, canPerfomActions) {
             FlutterSemanticsAction::kFlutterSemanticsActionShowOnScreen);
 }
 
-TEST(FlutterPlatformNodeDelegateTest, canGetBridge) {
-  // Set up a flutter accessibility node.
-  AccessibilityBridge bridge(
-      std::make_unique<TestAccessibilityBridgeDelegate>());
-  FlutterSemanticsNode root;
-  root.id = 0;
-  root.flags = FlutterSemanticsFlag::kFlutterSemanticsFlagIsTextField;
-  root.actions = static_cast<FlutterSemanticsAction>(0);
-  root.text_selection_base = -1;
-  root.text_selection_extent = -1;
-  root.label = "root";
-  root.hint = "";
-  root.value = "";
-  root.increased_value = "";
-  root.decreased_value = "";
-  root.child_count = 0;
-  root.custom_accessibility_actions_count = 0;
-  bridge.AddFlutterSemanticsNodeUpdate(&root);
-
-  bridge.CommitUpdates();
-
-  auto accessibility = bridge.GetFlutterPlatformNodeDelegateFromID(0).lock();
-  EXPECT_EQ(accessibility->GetBridge(), &bridge);
-}
-
 TEST(FlutterPlatformNodeDelegateTest, canGetAXNode) {
   // Set up a flutter accessibility node.
   AccessibilityBridge bridge(
@@ -104,7 +79,7 @@ TEST(FlutterPlatformNodeDelegateTest, canGetAXNode) {
   bridge.CommitUpdates();
 
   auto accessibility = bridge.GetFlutterPlatformNodeDelegateFromID(0).lock();
-  EXPECT_EQ(accessibility->GetAXNode()->data().id, 0);
+  EXPECT_EQ(accessibility->GetData().id, 0);
 }
 
 TEST(FlutterPlatformNodeDelegateTest, canCalculateBoundsCorrectly) {

@@ -36,7 +36,8 @@ namespace flutter {
 ///
 /// To use this class, you must provide your own implementation of
 /// FlutterPlatformNodeDelegate and AccessibilityBridgeDelegate.
-class AccessibilityBridge : public ui::AXTreeObserver {
+class AccessibilityBridge : private ui::AXTreeObserver,
+                            private FlutterPlatformNodeDelegate::OwnerBridge {
  public:
   //-----------------------------------------------------------------------------
   /// Delegate to handle requests from the accessibility bridge. The requests
@@ -83,11 +84,9 @@ class AccessibilityBridge : public ui::AXTreeObserver {
     /// @param[in]  action              The generated flutter semantics action.
     /// @param[in]  data                Additional data associated with the
     ///                                 action.
-    /// @param[in]  data_size           The length of the additional data.
-    virtual void DispatchAccessibilityAction(ui::AXNode::AXID target,
+    virtual void DispatchAccessibilityAction(AccessibilityNodeId target,
                                              FlutterSemanticsAction action,
-                                             std::unique_ptr<uint8_t[]> data,
-                                             size_t data_size) = 0;
+                                             std::vector<uint8_t> data) = 0;
 
     //---------------------------------------------------------------------------
     /// @brief      Creates a platform specific FlutterPlatformNodeDelegate.
@@ -122,7 +121,7 @@ class AccessibilityBridge : public ui::AXTreeObserver {
   ///             CommitUpdates().
   ///
   /// @param[in]  action           A pointer to the custom semantics action
-  /// update.
+  ///                              update.
   void AddFlutterSemanticsCustomActionUpdate(
       const FlutterSemanticsCustomAction* action);
 
@@ -130,7 +129,7 @@ class AccessibilityBridge : public ui::AXTreeObserver {
   /// @brief      Flushes the pending updates and applies them to this
   ///             accessibility bridge. Calling this with no pending updates
   ///             does nothing, and callers should call this method at the end
-  ///             of an automic batch to avoid leaving the tree in a unstable
+  ///             of an atomic batch to avoid leaving the tree in a unstable
   ///             state. For example if a node reparents from A to B, callers
   ///             should only call this method when both removal from A and
   ///             addition to B are in the pending updates.
@@ -138,42 +137,20 @@ class AccessibilityBridge : public ui::AXTreeObserver {
 
   //------------------------------------------------------------------------------
   /// @brief      Get the flutter platform node delegate with the given id from
-  ///             this accessibility bridge.
+  ///             this accessibility bridge. Returns expired weak_ptr if the
+  ///             delegate associated with the id does not exist or has been
+  ///             removed from the accessibility tree.
   ///
   /// @param[in]  id           The id of the flutter accessibility node you want
   ///                          to retrieve.
   std::weak_ptr<FlutterPlatformNodeDelegate>
-  GetFlutterPlatformNodeDelegateFromID(ui::AXNode::AXID id) const;
+  GetFlutterPlatformNodeDelegateFromID(AccessibilityNodeId id) const;
 
   //------------------------------------------------------------------------------
-  /// @brief      Update the currently focused flutter accessibility node.
-  ///
-  /// @param[in]  id           The id of the currently focused flutter
-  ///                          accessibility node.
-  void SetFocusedNode(ui::AXNode::AXID node_id);
-
-  //------------------------------------------------------------------------------
-  /// @brief      Get the last focused node.
-  ui::AXNode::AXID GetLastFocusedNode();
-
-  //------------------------------------------------------------------------------
-  /// @brief      Get the ax tree data.
+  /// @brief      Get the ax tree data from this accessibility bridge. The tree
+  ///             data contains information such as the id of the node that
+  ///             has the keyboard focus or the text selection range.
   const ui::AXTreeData& GetAXTreeData() const;
-
-  // ui::AXTreeObserver implementation.
-  void OnNodeWillBeDeleted(ui::AXTree* tree, ui::AXNode* node) override;
-  void OnSubtreeWillBeDeleted(ui::AXTree* tree, ui::AXNode* node) override;
-  void OnNodeCreated(ui::AXTree* tree, ui::AXNode* node) override;
-  void OnNodeDeleted(ui::AXTree* tree, ui::AXNode::AXID node_id) override;
-  void OnNodeReparented(ui::AXTree* tree, ui::AXNode* node) override;
-  void OnRoleChanged(ui::AXTree* tree,
-                     ui::AXNode* node,
-                     ax::mojom::Role old_role,
-                     ax::mojom::Role new_role) override;
-  void OnAtomicUpdateFinished(
-      ui::AXTree* tree,
-      bool root_changed,
-      const std::vector<ui::AXTreeObserver::Change>& changes) override;
 
  private:
   // See FlutterSemanticsNode in embedder.h
@@ -210,7 +187,7 @@ class AccessibilityBridge : public ui::AXTreeObserver {
     std::string hint;
   } SemanticsCustomAction;
 
-  std::unordered_map<ui::AXNode::AXID,
+  std::unordered_map<AccessibilityNodeId,
                      std::shared_ptr<FlutterPlatformNodeDelegate>>
       id_wrapper_map_;
   ui::AXTree tree_;
@@ -218,7 +195,7 @@ class AccessibilityBridge : public ui::AXTreeObserver {
   std::unordered_map<int32_t, SemanticsNode> _pending_semantics_node_updates;
   std::unordered_map<int32_t, SemanticsCustomAction>
       _pending_semantics_custom_action_updates;
-  ui::AXNode::AXID last_focused_node_ = ui::AXNode::kInvalidAXID;
+  AccessibilityNodeId last_focused_id_ = ui::AXNode::kInvalidAXID;
   std::unique_ptr<AccessibilityBridgeDelegate> delegate_;
 
   void InitAXTree(const ui::AXTreeUpdate& initial_state);
@@ -248,15 +225,53 @@ class AccessibilityBridge : public ui::AXTreeObserver {
       const FlutterSemanticsNode* flutter_node);
   SemanticsCustomAction FromFlutterSemanticsCustomAction(
       const FlutterSemanticsCustomAction* flutter_custom_action);
-  void DispatchAccessibilityAction(ui::AXNode::AXID target,
-                                   FlutterSemanticsAction action,
-                                   std::unique_ptr<uint8_t[]> data,
-                                   size_t data_size);
-  gfx::RectF RelativeToGlobalBounds(ui::AXNode* node,
-                                    bool* offscreen,
-                                    bool clip_bounds);
 
-  friend class FlutterPlatformNodeDelegate;
+  // |AXTreeObserver|
+  void OnNodeWillBeDeleted(ui::AXTree* tree, ui::AXNode* node) override;
+
+  // |AXTreeObserver|
+  void OnSubtreeWillBeDeleted(ui::AXTree* tree, ui::AXNode* node) override;
+
+  // |AXTreeObserver|
+  void OnNodeCreated(ui::AXTree* tree, ui::AXNode* node) override;
+
+  // |AXTreeObserver|
+  void OnNodeDeleted(ui::AXTree* tree, AccessibilityNodeId node_id) override;
+
+  // |AXTreeObserver|
+  void OnNodeReparented(ui::AXTree* tree, ui::AXNode* node) override;
+
+  // |AXTreeObserver|
+  void OnRoleChanged(ui::AXTree* tree,
+                     ui::AXNode* node,
+                     ax::mojom::Role old_role,
+                     ax::mojom::Role new_role) override;
+
+  // |AXTreeObserver|
+  void OnAtomicUpdateFinished(
+      ui::AXTree* tree,
+      bool root_changed,
+      const std::vector<ui::AXTreeObserver::Change>& changes) override;
+
+  // |FlutterPlatformNodeDelegate::OwnerBridge|
+  void SetLastFocusedId(AccessibilityNodeId node_id) override;
+
+  // |FlutterPlatformNodeDelegate::OwnerBridge|
+  AccessibilityNodeId GetLastFocusedId() override;
+
+  // |FlutterPlatformNodeDelegate::OwnerBridge|
+  gfx::NativeViewAccessible GetNativeAccessibleFromId(
+      AccessibilityNodeId id) override;
+
+  // |FlutterPlatformNodeDelegate::OwnerBridge|
+  void DispatchAccessibilityAction(AccessibilityNodeId target,
+                                   FlutterSemanticsAction action,
+                                   std::vector<uint8_t> data) override;
+
+  // |FlutterPlatformNodeDelegate::OwnerBridge|
+  gfx::RectF RelativeToGlobalBounds(const ui::AXNode* node,
+                                    bool& offscreen,
+                                    bool clip_bounds) override;
 
   BASE_DISALLOW_COPY_AND_ASSIGN(AccessibilityBridge);
 };

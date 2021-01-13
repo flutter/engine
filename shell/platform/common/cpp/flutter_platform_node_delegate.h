@@ -12,10 +12,10 @@
 
 namespace flutter {
 
-class AccessibilityBridge;
+typedef ui::AXNode::AXID AccessibilityNodeId;
 
 //------------------------------------------------------------------------------
-/// The accessibility node delegate to be used in accessibility bridge. This
+/// The platform node delegate to be used in accessibility bridge. This
 /// class is responsible for providing native accessibility object with
 /// appropriate information, such as accessibility label/value/bounds.
 ///
@@ -29,39 +29,111 @@ class AccessibilityBridge;
 /// to apply window-to-screen transform.
 class FlutterPlatformNodeDelegate : public ui::AXPlatformNodeDelegateBase {
  public:
+  //----------------------------------------------------------------------------
+  /// The required interface to be able to own the flutter platform node
+  /// delegate.
+  class OwnerBridge {
+   public:
+    ~OwnerBridge() = default;
+
+   protected:
+    friend class FlutterPlatformNodeDelegate;
+
+    //---------------------------------------------------------------------------
+    /// @brief      Dispatch accessibility action back to the Flutter framework.
+    ///             These actions are generated in the native accessibility
+    ///             system when users interact with the assistive technologies.
+    ///             For example, a
+    ///             FlutterSemanticsAction::kFlutterSemanticsActionTap is
+    ///             fired when user click or touch the screen.
+    ///
+    /// @param[in]  target              The semantics node id of the action
+    ///                                 target.
+    /// @param[in]  action              The generated flutter semantics action.
+    /// @param[in]  data                Additional data associated with the
+    ///                                 action.
+    virtual void DispatchAccessibilityAction(AccessibilityNodeId target,
+                                             FlutterSemanticsAction action,
+                                             std::vector<uint8_t> data) = 0;
+
+    //---------------------------------------------------------------------------
+    /// @brief      Get the native accessibility node with the given id.
+    ///
+    /// @param[in]  id           The id of the native accessibility node you
+    ///                          want to retrieve.
+    virtual gfx::NativeViewAccessible GetNativeAccessibleFromId(
+        AccessibilityNodeId id) = 0;
+
+    //---------------------------------------------------------------------------
+    /// @brief      Get the last id of the node that received accessibility
+    ///             focus.
+    virtual AccessibilityNodeId GetLastFocusedId() = 0;
+
+    //---------------------------------------------------------------------------
+    /// @brief      Update the id of the node that is currently foucsed by the
+    ///             native accessibility system.
+    ///
+    /// @param[in]  node_id     The id of the focused node.
+    virtual void SetLastFocusedId(AccessibilityNodeId node_id) = 0;
+
+    //---------------------------------------------------------------------------
+    /// @brief      Gets the rectangular bounds of the ax node relative to
+    ///             global coordinate
+    ///
+    /// @param[in]  node        The ax node to look up.
+    /// @param[in]  offscreen   the bool reference to hold the result whether
+    ///                         the ax node is outside of its ancestors' bounds.
+    /// @param[in]  clip_bounds whether to clip the result if the ax node cannot
+    ///                         be fully contained in its ancestors' bounds.
+    virtual gfx::RectF RelativeToGlobalBounds(const ui::AXNode* node,
+                                              bool& offscreen,
+                                              bool clip_bounds) = 0;
+  };
+
   FlutterPlatformNodeDelegate();
+
+  // |ui::AXPlatformNodeDelegateBase|
   ~FlutterPlatformNodeDelegate() override;
 
-  //------------------------------------------------------------------------------
-  /// @brief      Gets the accessibility bridge to which this accessibility node
-  ///             belongs.
-  AccessibilityBridge* GetBridge() const;
-
-  //------------------------------------------------------------------------------
-  /// @brief      Gets the underlying ax node for this accessibility node.
-  ui::AXNode* GetAXNode() const;
-
-  // ui::AXPlatformNodeDelegateBase override;
+  // |ui::AXPlatformNodeDelegateBase|
   const ui::AXNodeData& GetData() const override;
+
+  // |ui::AXPlatformNodeDelegateBase|
   bool AccessibilityPerformAction(const ui::AXActionData& data) override;
+
+  // |ui::AXPlatformNodeDelegateBase|
   gfx::NativeViewAccessible GetParent() override;
+
+  // |ui::AXPlatformNodeDelegateBase|
   gfx::NativeViewAccessible GetFocus() override;
+
+  // |ui::AXPlatformNodeDelegateBase|
   int GetChildCount() const override;
+
+  // |ui::AXPlatformNodeDelegateBase|
   gfx::NativeViewAccessible ChildAtIndex(int index) override;
+
+  // |ui::AXPlatformNodeDelegateBase|
   gfx::Rect GetBoundsRect(
       const ui::AXCoordinateSystem coordinate_system,
       const ui::AXClippingBehavior clipping_behavior,
       ui::AXOffscreenResult* offscreen_result) const override;
+
   //------------------------------------------------------------------------------
   /// @brief      Called only once, immediately after construction. The
   ///             constructor doesn't take any arguments because in the Windows
   ///             subclass we use a special function to construct a COM object.
   ///             Subclasses must call super.
-  virtual void Init(AccessibilityBridge* bridge, ui::AXNode* node);
+  virtual void Init(OwnerBridge* bridge, ui::AXNode* node);
+
+ protected:
+  //------------------------------------------------------------------------------
+  /// @brief      Gets the underlying ax node for this accessibility node.
+  ui::AXNode* GetAXNode() const;
 
  private:
   ui::AXNode* ax_node_;
-  AccessibilityBridge* bridge_;
+  OwnerBridge* bridge_;
 };
 
 }  // namespace flutter
