@@ -131,8 +131,7 @@ class Keyboard {
         if (data == null) {
           return;
         }
-        final String response = utf8.decode(data.buffer.asUint8List());
-        final Map<String, dynamic> jsonResponse = json.decode(response);
+        final Map<String, dynamic> jsonResponse = _messageCodec.decodeMessage(data);
         if (jsonResponse['handled'] as bool) {
           // If the framework handled it, then don't propagate it any further.
           event.preventDefault();

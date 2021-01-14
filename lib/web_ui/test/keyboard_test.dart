@@ -6,7 +6,6 @@
 import 'dart:html' as html;
 import 'dart:js_util' as js_util;
 import 'dart:typed_data';
-import 'dart:convert' hide Codec;
 
 import 'package:quiver/testing/async.dart';
 import 'package:test/bootstrap/browser.dart';
@@ -16,14 +15,6 @@ import 'package:ui/ui.dart' as ui;
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
-}
-
-ByteData _toByteData(List<int> bytes) {
-  final ByteData byteData = ByteData(bytes.length);
-  for (int i = 0; i < bytes.length; i++) {
-    byteData.setUint8(i, bytes[i]);
-  }
-  return byteData;
 }
 
 void testMain() {
@@ -236,21 +227,13 @@ void testMain() {
     });
 
     test('prevents default when key is handled by the framework', () {
-      ByteData _toByteData(List<int> bytes) {
-        final ByteData byteData = ByteData(bytes.length);
-        for (int i = 0; i < bytes.length; i++) {
-          byteData.setUint8(i, bytes[i]);
-        }
-        return byteData;
-      }
-
       Keyboard.initialize();
 
       int count = 0;
       ui.window.onPlatformMessage = (String channel, ByteData data,
           ui.PlatformMessageResponseCallback callback) {
         count += 1;
-        ByteData response = _toByteData(utf8.encode(json.encode(<String, dynamic>{'handled': true})));
+        ByteData response = const JSONMessageCodec().encodeMessage(<String, dynamic>{'handled': true});
         callback(response);
       };
 
@@ -273,7 +256,7 @@ void testMain() {
       ui.window.onPlatformMessage = (String channel, ByteData data,
           ui.PlatformMessageResponseCallback callback) {
         count += 1;
-        ByteData response = _toByteData(utf8.encode(json.encode(<String, dynamic>{'handled': false})));
+        ByteData response = const JSONMessageCodec().encodeMessage(<String, dynamic>{'handled': false});
         callback(response);
       };
 
@@ -320,7 +303,7 @@ void testMain() {
       ui.window.onPlatformMessage = (String channel, ByteData data,
           ui.PlatformMessageResponseCallback callback) {
         count += 1;
-        ByteData response = _toByteData(utf8.encode(json.encode(<String, dynamic>{'handled': true})));
+        ByteData response = const JSONMessageCodec().encodeMessage(<String, dynamic>{'handled': true});
         callback(response);
       };
 
