@@ -26,7 +26,7 @@
 /**
  * Initializes a backing store with the specified frame buffer id.
  */
-- (nullable instancetype)initWithFrameBufferID:(uint32_t)fboID;
+- (nonnull instancetype)initWithFrameBufferID:(uint32_t)fboID;
 
 @end
 
@@ -43,6 +43,6 @@
 /**
  * Initializes a backing store with the specified MTLTexture.
  */
-- (nullable instancetype)initWithTexture:(nonnull id<MTLTexture>)texture;
+- (nonnull instancetype)initWithTexture:(nonnull id<MTLTexture>)texture;
 
 @end

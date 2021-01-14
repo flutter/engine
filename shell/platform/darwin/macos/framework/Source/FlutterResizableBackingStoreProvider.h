@@ -36,8 +36,8 @@
 /**
  * Creates a resizable backing store provider for the given CALayer.
  */
-- (nullable instancetype)initWithMainContext:(nonnull NSOpenGLContext*)mainContext
-                                       layer:(nonnull CALayer*)layer;
+- (nonnull instancetype)initWithMainContext:(nonnull NSOpenGLContext*)mainContext
+                                      layer:(nonnull CALayer*)layer;
 
 @end
 
@@ -51,8 +51,8 @@
 /**
  * Creates a resizable backing store provider for the given CAMetalLayer.
  */
-- (nullable instancetype)initWithDevice:(nonnull id<MTLDevice>)device
-                           commandQueue:(nonnull id<MTLCommandQueue>)commandQueue
-                             metalLayer:(nonnull CAMetalLayer*)layer;
+- (nonnull instancetype)initWithDevice:(nonnull id<MTLDevice>)device
+                          commandQueue:(nonnull id<MTLCommandQueue>)commandQueue
+                            metalLayer:(nonnull CAMetalLayer*)layer;
 
 @end

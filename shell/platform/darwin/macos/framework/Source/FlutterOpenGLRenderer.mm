@@ -10,27 +10,27 @@
 #pragma mark - Static methods for openGL callbacks that require the engine.
 
 static bool OnMakeCurrent(FlutterEngine* engine) {
-  FlutterOpenGLRenderer* openGLRenderer = (FlutterOpenGLRenderer*)engine.renderer;
+  FlutterOpenGLRenderer* openGLRenderer = reinterpret_cast<FlutterOpenGLRenderer*>(engine.renderer);
   return [openGLRenderer makeCurrent];
 }
 
 static bool OnClearCurrent(FlutterEngine* engine) {
-  FlutterOpenGLRenderer* openGLRenderer = (FlutterOpenGLRenderer*)engine.renderer;
+  FlutterOpenGLRenderer* openGLRenderer = reinterpret_cast<FlutterOpenGLRenderer*>(engine.renderer);
   return [openGLRenderer clearCurrent];
 }
 
 static bool OnPresent(FlutterEngine* engine) {
-  FlutterOpenGLRenderer* openGLRenderer = (FlutterOpenGLRenderer*)engine.renderer;
+  FlutterOpenGLRenderer* openGLRenderer = reinterpret_cast<FlutterOpenGLRenderer*>(engine.renderer);
   return [openGLRenderer glPresent];
 }
 
 static uint32_t OnFBO(FlutterEngine* engine, const FlutterFrameInfo* info) {
-  FlutterOpenGLRenderer* openGLRenderer = (FlutterOpenGLRenderer*)engine.renderer;
+  FlutterOpenGLRenderer* openGLRenderer = reinterpret_cast<FlutterOpenGLRenderer*>(engine.renderer);
   return [openGLRenderer fboForFrameInfo:info];
 }
 
 static bool OnMakeResourceCurrent(FlutterEngine* engine) {
-  FlutterOpenGLRenderer* openGLRenderer = (FlutterOpenGLRenderer*)engine.renderer;
+  FlutterOpenGLRenderer* openGLRenderer = reinterpret_cast<FlutterOpenGLRenderer*>(engine.renderer);
   return [openGLRenderer makeResourceCurrent];
 }
 
@@ -39,7 +39,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
                                      size_t width,
                                      size_t height,
                                      FlutterOpenGLTexture* openGlTexture) {
-  FlutterOpenGLRenderer* openGLRenderer = (FlutterOpenGLRenderer*)engine.renderer;
+  FlutterOpenGLRenderer* openGLRenderer = reinterpret_cast<FlutterOpenGLRenderer*>(engine.renderer);
   return [openGLRenderer populateTextureWithIdentifier:textureIdentifier
                                          openGLTexture:openGlTexture];
 }
@@ -103,7 +103,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 - (uint32_t)fboForFrameInfo:(const FlutterFrameInfo*)info {
   CGSize size = CGSizeMake(info->size.width, info->size.height);
   FlutterOpenGLRenderBackingStore* backingStore =
-      (FlutterOpenGLRenderBackingStore*)[_flutterView backingStoreForSize:size];
+      reinterpret_cast<FlutterOpenGLRenderBackingStore*>([_flutterView backingStoreForSize:size]);
   return backingStore.frameBufferID;
 }
 

@@ -40,7 +40,7 @@ TEST(FlutterOpenGLRenderer, RegisterExternalTexture) {
         return kSuccess;
       });
 
-  FlutterOpenGLRenderer* openGLRenderer = (FlutterOpenGLRenderer*)engine.renderer;
+  FlutterOpenGLRenderer* openGLRenderer = reinterpret_cast<FlutterOpenGLRenderer*>(engine.renderer);
   [openGLRenderer registerTexture:flutterTexture];
   EXPECT_TRUE(called);
 
@@ -54,7 +54,7 @@ TEST(FlutterOpenGLRenderer, UnregisterExternalTexture) {
   id<FlutterTexture> flutterTexture = OCMProtocolMock(@protocol(FlutterTexture));
   bool called = false;
 
-  FlutterOpenGLRenderer* openGLRenderer = (FlutterOpenGLRenderer*)engine.renderer;
+  FlutterOpenGLRenderer* openGLRenderer = reinterpret_cast<FlutterOpenGLRenderer*>(engine.renderer);
   int64_t registeredTextureId = [openGLRenderer registerTexture:flutterTexture];
   engine.embedderAPI.UnregisterExternalTexture =
       MOCK_ENGINE_PROC(UnregisterExternalTexture, [&](auto engine, int64_t textureIdentifier) {
@@ -76,7 +76,7 @@ TEST(FlutterOpenGLRenderer, MarkExternalTextureFrameAvailable) {
   id<FlutterTexture> flutterTexture = OCMProtocolMock(@protocol(FlutterTexture));
   bool called = false;
 
-  FlutterOpenGLRenderer* openGLRenderer = (FlutterOpenGLRenderer*)engine.renderer;
+  FlutterOpenGLRenderer* openGLRenderer = reinterpret_cast<FlutterOpenGLRenderer*>(engine.renderer);
   int64_t registeredTextureId = [openGLRenderer registerTexture:flutterTexture];
   engine.embedderAPI.MarkExternalTextureFrameAvailable = MOCK_ENGINE_PROC(
       MarkExternalTextureFrameAvailable, [&](auto engine, int64_t textureIdentifier) {

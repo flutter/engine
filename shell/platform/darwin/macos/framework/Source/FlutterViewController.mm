@@ -283,7 +283,7 @@ static void CommonInit(FlutterViewController* controller) {
   enableMetalRendering = YES;
 #endif
   if (enableMetalRendering) {
-    FlutterMetalRenderer* metalRenderer = (FlutterMetalRenderer*)_engine.renderer;
+    FlutterMetalRenderer* metalRenderer = reinterpret_cast<FlutterMetalRenderer*>(_engine.renderer);
     id<MTLDevice> device = metalRenderer.device;
     id<MTLCommandQueue> commandQueue = metalRenderer.commandQueue;
     if (!device || !commandQueue) {
@@ -294,7 +294,8 @@ static void CommonInit(FlutterViewController* controller) {
                                             commandQueue:commandQueue
                                          reshapeListener:self];
   } else {
-    FlutterOpenGLRenderer* openGLRenderer = (FlutterOpenGLRenderer*)_engine.renderer;
+    FlutterOpenGLRenderer* openGLRenderer =
+        reinterpret_cast<FlutterOpenGLRenderer*>(_engine.renderer);
     NSOpenGLContext* mainContext = openGLRenderer.openGLContext;
     if (!mainContext) {
       NSLog(@"Unable to create FlutterView; no GL context available.");

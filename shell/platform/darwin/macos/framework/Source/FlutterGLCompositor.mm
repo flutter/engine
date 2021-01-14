@@ -35,7 +35,8 @@ bool FlutterGLCompositor::CreateBackingStore(const FlutterBackingStoreConfig* co
     // If the backing store is for the first layer, return the fbo for the
     // FlutterView.
     FlutterOpenGLRenderBackingStore* backingStore =
-        (FlutterOpenGLRenderBackingStore*)[view_controller_.flutterView backingStoreForSize:size];
+        reinterpret_cast<FlutterOpenGLRenderBackingStore*>(
+            [view_controller_.flutterView backingStoreForSize:size]);
     backing_store_out->open_gl.framebuffer.name = backingStore.frameBufferID;
   } else {
     FlutterFrameBufferProvider* fb_provider =

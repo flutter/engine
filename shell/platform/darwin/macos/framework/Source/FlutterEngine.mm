@@ -318,7 +318,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     return nil;
   }
 
-  FlutterOpenGLRenderer* openGLRenderer = (FlutterOpenGLRenderer*)_renderer;
+  FlutterOpenGLRenderer* openGLRenderer = reinterpret_cast<FlutterOpenGLRenderer*>(_renderer);
   [openGLRenderer.openGLContext makeCurrentContext];
 
   _macOSGLCompositor =
@@ -353,7 +353,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
   __weak FlutterEngine* weakSelf = self;
   _macOSGLCompositor->SetPresentCallback([weakSelf]() {
-    FlutterOpenGLRenderer* openGLRenderer = (FlutterOpenGLRenderer*)weakSelf.renderer;
+    FlutterOpenGLRenderer* openGLRenderer =
+        reinterpret_cast<FlutterOpenGLRenderer*>(weakSelf.renderer);
     return [openGLRenderer glPresent];
   });
 

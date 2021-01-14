@@ -8,6 +8,9 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 #import "flutter/shell/platform/embedder/embedder.h"
 
+/**
+ * Rendering backend agnostic FlutterRendererConfig provider to be used by the embedder API.
+ */
 @protocol FlutterRenderer <FlutterTextureRegistry>
 
 /**
@@ -21,7 +24,7 @@
 - (void)setFlutterView:(nullable FlutterView*)view;
 
 /**
- * Creates a FlutterRendererConfig that renders using Metal.
+ * Creates a FlutterRendererConfig that renders using the appropriate backend.
  */
 - (FlutterRendererConfig)createRendererConfig;
 

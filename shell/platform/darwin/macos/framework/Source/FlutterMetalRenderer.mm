@@ -14,12 +14,12 @@
 static FlutterMetalTexture OnGetNextDrawable(FlutterEngine* engine,
                                              const FlutterFrameInfo* frameInfo) {
   CGSize size = CGSizeMake(frameInfo->size.width, frameInfo->size.height);
-  FlutterMetalRenderer* metalRenderer = (FlutterMetalRenderer*)engine.renderer;
+  FlutterMetalRenderer* metalRenderer = reinterpret_cast<FlutterMetalRenderer*>(engine.renderer);
   return [metalRenderer createTextureForSize:size];
 }
 
 static bool OnPresentDrawable(FlutterEngine* engine, const FlutterMetalTexture* texture) {
-  FlutterMetalRenderer* metalRenderer = (FlutterMetalRenderer*)engine.renderer;
+  FlutterMetalRenderer* metalRenderer = reinterpret_cast<FlutterMetalRenderer*>(engine.renderer);
   return [metalRenderer present:texture->texture_id];
 }
 
@@ -82,8 +82,8 @@ static bool OnPresentDrawable(FlutterEngine* engine, const FlutterMetalTexture* 
   return embedderTexture;
 }
 
-- (BOOL)present:(int64_t)textureId {
-  if (!_commandQueue || !_flutterView) {
+- (BOOL)present:(int64_t)textureID {
+  if (!_flutterView) {
     return NO;
   }
   [_flutterView present];

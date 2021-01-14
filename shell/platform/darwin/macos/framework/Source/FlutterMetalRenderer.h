@@ -30,8 +30,8 @@
 - (FlutterMetalTexture)createTextureForSize:(CGSize)size;
 
 /**
- * Presents the texture specefied by the texture id.
+ * Presents the texture specified by the texture id.
  */
-- (BOOL)present:(int64_t)textureId;
+- (BOOL)present:(int64_t)textureID;
 
 @end
