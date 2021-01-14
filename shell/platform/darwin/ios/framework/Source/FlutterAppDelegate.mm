@@ -11,10 +11,10 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Internal.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPluginAppLifeCycleDelegate_internal.h"
 
-static NSString* kUIBackgroundMode = @"UIBackgroundModes";
-static NSString* kRemoteNotificationCapabitiliy = @"remote-notification";
-static NSString* kBackgroundFetchCapatibility = @"fetch";
-static NSString* kRestorationStateAppModificationKey = @"mod-date";
+static NSString* const kUIBackgroundMode = @"UIBackgroundModes";
+static NSString* const kRemoteNotificationCapabitiliy = @"remote-notification";
+static NSString* const kBackgroundFetchCapatibility = @"fetch";
+static NSString* const kRestorationStateAppModificationKey = @"mod-date";
 
 @interface FlutterAppDelegate ()
 @property(nonatomic, copy) FlutterViewController* (^rootFlutterViewControllerGetter)(void);
@@ -334,9 +334,11 @@ static BOOL IsDeepLinkingEnabled(NSDictionary* infoDictionary) {
 
 - (int64_t)lastAppModificationTime {
   NSDate* fileDate;
+  NSError* error = nil;
   [[[NSBundle mainBundle] executableURL] getResourceValue:&fileDate
                                                    forKey:NSURLContentModificationDateKey
-                                                    error:nil];
+                                                    error:&error];
+  NSAssert(error == nil, @"Cannot obtain modification date of main bundle: %@", error);
   return [fileDate timeIntervalSince1970];
 }
 

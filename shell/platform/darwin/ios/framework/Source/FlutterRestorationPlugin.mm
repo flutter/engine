@@ -11,10 +11,13 @@
 
 FLUTTER_ASSERT_NOT_ARC
 
+@interface FlutterRestorationPlugin ()
+@property(nonatomic, copy) FlutterResult pendingRequest;
+@end
+
 @implementation FlutterRestorationPlugin {
   BOOL _waitForData;
   BOOL _restorationEnabled;
-  FlutterResult _pendingRequest;
 }
 
 - (instancetype)init {
@@ -40,68 +43,64 @@ FLUTTER_ASSERT_NOT_ARC
 
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
   if ([[call method] isEqualToString:@"put"]) {
+    NSAssert(self.pendingRequest == nil, @"Cannot put data while a get request is pending.");
     FlutterStandardTypedData* data = [call arguments];
-    _restorationData = [data data];
+    self.restorationData = [data data];
     result(nil);
   } else if ([[call method] isEqualToString:@"get"]) {
     if (!_restorationEnabled || !_waitForData) {
       result([self dataForFramework]);
       return;
     }
-    _pendingRequest = [result retain];
+    NSAssert(self.pendingRequest == nil, @"There can only be one pending request.");
+    self.pendingRequest = result;
   } else {
     result(FlutterMethodNotImplemented);
   }
 }
 
 - (void)setRestorationData:(NSData*)data {
-  _restorationData = data;
+  if (data != _restorationData) {
+    [_restorationData release];
+    _restorationData = [data retain];
+  }
   _waitForData = NO;
-  if (_pendingRequest != nil) {
-    _pendingRequest([self dataForFramework]);
-    [_pendingRequest release];
-    _pendingRequest = nil;
+  if (self.pendingRequest != nil) {
+    self.pendingRequest([self dataForFramework]);
+    self.pendingRequest = nil;
   }
 }
 
 - (void)markRestorationComplete {
   _waitForData = NO;
-  if (_pendingRequest != nil) {
+  if (self.pendingRequest != nil) {
     NSAssert(_restorationEnabled, @"No request can be pending when restoration is disabled.");
-    _pendingRequest([self dataForFramework]);
-    [_pendingRequest release];
-    _pendingRequest = nil;
+    self.pendingRequest([self dataForFramework]);
+    self.pendingRequest = nil;
   }
 }
 
 - (void)reset {
-  _restorationData = nil;
-  if (_pendingRequest != nil) {
-    [_pendingRequest release];
-  }
-  _pendingRequest = nil;
+  self.pendingRequest = nil;
+  self.restorationData = nil;
 }
 
 - (NSDictionary*)dataForFramework {
   if (!_restorationEnabled) {
     return @{@"enabled" : @NO};
   }
-  if (_restorationData == nil) {
+  if (self.restorationData == nil) {
     return @{@"enabled" : @YES};
   }
   return @{
     @"enabled" : @YES,
-    @"data" : [FlutterStandardTypedData typedDataWithBytes:_restorationData]
+    @"data" : [FlutterStandardTypedData typedDataWithBytes:self.restorationData]
   };
 }
 
 - (void)dealloc {
-  if (_restorationData != nil) {
-    [_restorationData release];
-  }
-  if (_pendingRequest != nil) {
-    [_pendingRequest release];
-  }
+  [_restorationData release];
+  [_pendingRequest release];
   [super dealloc];
 }
 
