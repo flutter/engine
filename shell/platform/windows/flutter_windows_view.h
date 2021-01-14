@@ -8,6 +8,7 @@
 #include <windowsx.h>
 
 #include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -26,6 +27,9 @@
 #include "flutter/shell/platform/windows/window_state.h"
 
 namespace flutter {
+
+// ID for the window frame buffer.
+static constexpr uint32_t kWindowFrameBufferID = 0;
 
 // An OS-windowing neutral abstration for flutter
 // view that works with win32 hwnds and Windows::UI::Composition visuals.
@@ -66,8 +70,11 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate {
   // Send initial bounds to embedder.  Must occur after engine has initialized.
   void SendInitialBounds();
 
+  // Returns the frame buffer id for the engine to render to.
+  uint32_t GetFrameBufferId(size_t width, size_t height);
+
   // |WindowBindingHandlerDelegate|
-  void OnWindowSizeChanged(size_t width, size_t height) const override;
+  void OnWindowSizeChanged(size_t width, size_t height) override;
 
   // |WindowBindingHandlerDelegate|
   void OnPointerMove(double x, double y) override;
@@ -206,6 +213,36 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate {
 
   // Currently configured WindowBindingHandler for view.
   std::unique_ptr<flutter::WindowBindingHandler> binding_handler_;
+
+  // Resize events are synchronized using this mutex and the corresponding
+  // condition variable.
+  std::mutex resize_mutex_;
+  std::condition_variable resize_cv_;
+
+  // States a resize event can be in.
+  enum class ResizeState {
+    // When a resize event has started but is in progress.
+    kResizeStarted,
+    // After a resize event starts and the framework has been notified to
+    // generate a frame for the right size.
+    kFrameGenerated,
+    // Default state for when no resize is in progress. Also used to indicate
+    // that during a resize event, a frame with the right size has been rendered
+    // and the buffers have been swapped.
+    kDone,
+  };
+
+  // Indicates the state of a window resize event. Platform thread will be
+  // blocked while this is not done. Guarded by resize_mutex_.
+  ResizeState resize_status_;
+
+  // Target for the window width. Valid when resize_pending_ is set. Guarded by
+  // resize_mutex_.
+  size_t resize_target_width_;
+
+  // Target for the window width. Valid when resize_pending_ is set. Guarded by
+  // resize_mutex_.
+  size_t resize_target_height_;
 };
 
 }  // namespace flutter

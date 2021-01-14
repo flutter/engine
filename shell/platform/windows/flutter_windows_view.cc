@@ -10,6 +10,10 @@ namespace flutter {
 
 FlutterWindowsView::FlutterWindowsView(
     std::unique_ptr<WindowBindingHandler> window_binding) {
+  resize_status_ = ResizeState::kDone;
+  resize_target_width_ = 0;
+  resize_target_height_ = 0;
+
   surface_manager_ = std::make_unique<AngleSurfaceManager>();
 
   // Take the binding handler, and give it a pointer back to self.
@@ -49,10 +53,37 @@ void FlutterWindowsView::SetEngine(
                     binding_handler_->GetDpiScale());
 }
 
-void FlutterWindowsView::OnWindowSizeChanged(size_t width,
-                                             size_t height) const {
-  surface_manager_->ResizeSurface(GetRenderTarget(), width, height);
+uint32_t FlutterWindowsView::GetFrameBufferId(size_t width, size_t height) {
+  std::unique_lock<std::mutex> lock(resize_mutex_);
+
+  if (resize_status_ != ResizeState::kResizeStarted) {
+    return kWindowFrameBufferID;
+  }
+
+  if (resize_target_width_ == width && resize_target_height_ == height) {
+    surface_manager_->ResizeSurface(GetRenderTarget(), width, height);
+    surface_manager_->MakeCurrent();
+    resize_status_ = ResizeState::kFrameGenerated;
+  }
+
+  return kWindowFrameBufferID;
+}
+
+void FlutterWindowsView::OnWindowSizeChanged(size_t width, size_t height) {
+  std::unique_lock<std::mutex> lock(resize_mutex_);
+  resize_status_ = ResizeState::kResizeStarted;
+  resize_target_width_ = width;
+  resize_target_height_ = height;
   SendWindowMetrics(width, height, binding_handler_->GetDpiScale());
+
+  if (width > 0 && height > 0) {
+    // Block the platform thread until:
+    //   1. GetFrameBufferId is called with the right frame size.
+    //   2. Any pending SwapBuffers calls have been invoked.
+    resize_cv_.wait(lock, [&resize_status = resize_status_] {
+      return resize_status == ResizeState::kDone;
+    });
+  }
 }
 
 void FlutterWindowsView::OnPointerMove(double x, double y) {
@@ -255,7 +286,26 @@ bool FlutterWindowsView::ClearContext() {
 }
 
 bool FlutterWindowsView::SwapBuffers() {
-  return surface_manager_->SwapBuffers();
+  std::unique_lock<std::mutex> lock(resize_mutex_);
+
+  switch (resize_status_) {
+    // SwapBuffer requests during resize are ignored until the frame with the
+    // right dimensions has been generated. This is marked with
+    // kFrameGenerated resize status.
+    case ResizeState::kResizeStarted:
+      return false;
+    case ResizeState::kFrameGenerated: {
+      bool swap_buffers_result = surface_manager_->SwapBuffers();
+      resize_status_ = ResizeState::kDone;
+      resize_cv_.notify_all();
+      lock.unlock();
+      binding_handler_->OnWindowResized();
+      return swap_buffers_result;
+    }
+    case ResizeState::kDone:
+    default:
+      return surface_manager_->SwapBuffers();
+  }
 }
 
 void FlutterWindowsView::CreateRenderSurface() {
