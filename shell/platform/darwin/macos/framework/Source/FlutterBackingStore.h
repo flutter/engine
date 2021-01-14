@@ -6,7 +6,7 @@
 #import <Metal/Metal.h>
 
 /**
- * A marker interface for backing store handles. Typically contain references to the buffers that
+ * Interface for backing store handles. Typically contain references to the buffers that
  * are handed by the `FlutterView` to the `FlutterRenderer`.
  */
 @interface FlutterRenderBackingStore : NSObject
