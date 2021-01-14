@@ -161,7 +161,32 @@ test_fixtures("flutter_windows_fixtures") {
 }
 
 if (target_os == "winuwp") {
-  # disabled until the uwp implementation is present
+  executable("flutter_windows_unittests") {
+    testonly = true
+
+    libs = [ "windowsapp.lib" ]
+
+    sources = [
+      # "flutter_project_bundle_unittests.cc", //TODO failing due to switches test failing
+      # "flutter_windows_engine_unittests.cc", //TODO failing to send / receive platform message get plugins working first
+      "string_conversion_unittests.cc",
+      "system_utils_unittests.cc",
+      "testing/engine_embedder_api_modifier.h",
+    ]
+
+    public_configs = [ "//flutter:config" ]
+
+    deps = [
+      ":flutter_windows_fixtures",
+      ":flutter_windows_headers",
+      ":flutter_windows_source",
+      "//flutter/shell/platform/common/cpp:common_cpp",
+      "//flutter/shell/platform/embedder:embedder_as_internal_library",
+      "//flutter/shell/platform/embedder:embedder_test_utils",
+      "//flutter/testing",
+      "//third_party/rapidjson",
+    ]
+  }
 } else {
   executable("flutter_windows_unittests") {
     testonly = true
