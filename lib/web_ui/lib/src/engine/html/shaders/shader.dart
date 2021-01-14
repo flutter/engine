@@ -331,11 +331,14 @@ String _writeSharedGradientShader(ShaderBuilder builder,
     case ui.TileMode.decal:
       break;
     case ui.TileMode.repeated:
-      method.addStatement('float tiled_st = fract(st);');
+      // st represents our distance from center. Flutter maps the center to
+      // center of gradient ramp so we need to add 0.5 to make sure repeated
+      // pattern center is at origin.
+      method.addStatement('float tiled_st = fract(st + 0.5);');
       probeName = 'tiled_st';
       break;
     case ui.TileMode.mirror:
-      method.addStatement('float t_1 = (st - 1.0);');
+      method.addStatement('float t_1 = (st - 0.5);');
       method.addStatement(
           'float tiled_st = abs((t_1 - 2.0 * floor(t_1 * 0.5)) - 1.0);');
       probeName = 'tiled_st';
