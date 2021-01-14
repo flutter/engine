@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <cstddef>
+#include <optional>
+#include "shell/common/run_configuration.h"
 #define FML_USED_ON_EMBEDDER
 
 #include "flutter/shell/platform/android/android_shell_holder.h"
@@ -167,15 +170,9 @@ const flutter::Settings& AndroidShellHolder::GetSettings() const {
 std::unique_ptr<AndroidShellHolder> AndroidShellHolder::Spawn(
     std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
     std::string entrypoint,
-    std::string libraryUr) const {
+    std::string libraryUrl) const {
   FML_DCHECK(shell_) << "A new Shell can only be spawned if the current Shell "
                         "is properly constructed";
-
-  // Take the old Settings but overwrite the entrypoint components with the
-  // new parameter's.
-  Settings newSettings = GetSettings();
-  newSettings.advisory_script_entrypoint = entrypoint;
-  newSettings.advisory_script_uri = libraryUr;
 
   fml::WeakPtr<PlatformViewAndroid> weak_platform_view;
   PlatformViewAndroid* android_platform_view = platform_view_.get();
@@ -208,20 +205,33 @@ std::unique_ptr<AndroidShellHolder> AndroidShellHolder::Spawn(
     return std::make_unique<Rasterizer>(shell);
   };
 
-  std::unique_ptr<flutter::Shell> shell = shell_->Spawn(
-      std::move(newSettings), on_create_platform_view, on_create_rasterizer);
+  FML_DLOG(ERROR) << "Spawned run";
+  auto config = BuildRunConfiguration(asset_manager_, entrypoint, libraryUrl);
+  if (!config) {
+    return nullptr;
+  }
 
-  return std::make_unique<AndroidShellHolder>(newSettings, jni_facade,
+  std::unique_ptr<flutter::Shell> shell = shell_->Spawn(
+      std::move(GetSettings()), std::move(config.value()), on_create_platform_view, on_create_rasterizer);
+
+  return std::make_unique<AndroidShellHolder>(GetSettings(), jni_facade,
                                               thread_host_, std::move(shell),
                                               weak_platform_view);
 }
 
-void AndroidShellHolder::Launch(RunConfiguration config) {
+void AndroidShellHolder::Launch(std::shared_ptr<AssetManager> asset_manager,
+      std::string entrypoint,
+      std::string libraryUrl) {
   if (!IsValid()) {
     return;
   }
 
-  shell_->RunEngine(std::move(config));
+  asset_manager_ = asset_manager;
+  auto config = BuildRunConfiguration(asset_manager, entrypoint, libraryUrl);
+  if (!config) {
+    return;
+  }
+  shell_->RunEngine(std::move(config.value()));
 }
 
 Rasterizer::Screenshot AndroidShellHolder::Screenshot(
@@ -241,5 +251,38 @@ fml::WeakPtr<PlatformViewAndroid> AndroidShellHolder::GetPlatformView() {
 void AndroidShellHolder::NotifyLowMemoryWarning() {
   FML_DCHECK(shell_);
   shell_->NotifyLowMemoryWarning();
+}
+
+std::optional<RunConfiguration> AndroidShellHolder::BuildRunConfiguration(
+    std::shared_ptr<flutter::AssetManager> asset_manager,
+    std::string entrypoint,
+    std::string libraryUrl) const {
+  std::unique_ptr<IsolateConfiguration> isolate_configuration;
+  if (flutter::DartVM::IsRunningPrecompiledCode()) {
+    isolate_configuration = IsolateConfiguration::CreateForAppSnapshot();
+  } else {
+    std::unique_ptr<fml::Mapping> kernel_blob =
+        fml::FileMapping::CreateReadOnly(
+            GetSettings().application_kernel_asset);
+    if (!kernel_blob) {
+      FML_DLOG(ERROR) << "Unable to load the kernel blob asset.";
+      return std::nullopt;
+    }
+    isolate_configuration =
+        IsolateConfiguration::CreateForKernel(std::move(kernel_blob));
+  }
+
+  RunConfiguration config(std::move(isolate_configuration),
+                          std::move(asset_manager));
+
+  {
+    if ((entrypoint.size() > 0) && (libraryUrl.size() > 0)) {
+      config.SetEntrypointAndLibrary(std::move(entrypoint),
+                                     std::move(libraryUrl));
+    } else if (entrypoint.size() > 0) {
+      config.SetEntrypoint(std::move(entrypoint));
+    }
+  }
+  return config;
 }
 }  // namespace flutter

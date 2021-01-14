@@ -222,6 +222,7 @@ class Shell final : public PlatformView::Delegate,
   /// @see        http://flutter.dev/go/multiple-engines
   std::unique_ptr<Shell> Spawn(
       Settings settings,
+      RunConfiguration run_configuration,
       const CreateCallback<PlatformView>& on_create_platform_view,
       const CreateCallback<Rasterizer>& on_create_rasterizer) const;
 

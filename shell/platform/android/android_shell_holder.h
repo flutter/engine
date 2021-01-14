@@ -7,6 +7,7 @@
 
 #include <memory>
 
+#include "assets/asset_manager.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/unique_fd.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
@@ -82,9 +83,11 @@ class AndroidShellHolder {
   std::unique_ptr<AndroidShellHolder> Spawn(
       std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
       std::string entrypoint,
-      std::string libraryUr) const;
+      std::string libraryUrl) const;
 
-  void Launch(RunConfiguration configuration);
+  void Launch(std::shared_ptr<AssetManager> asset_manager,
+      std::string entrypoint,
+      std::string libraryUrl);
 
   const flutter::Settings& GetSettings() const;
 
@@ -105,8 +108,13 @@ class AndroidShellHolder {
   std::unique_ptr<Shell> shell_;
   bool is_valid_ = false;
   uint64_t next_pointer_flow_id_ = 0;
+  std::shared_ptr<AssetManager> asset_manager_;
 
   static void ThreadDestructCallback(void* value);
+  std::optional<RunConfiguration> BuildRunConfiguration(
+    std::shared_ptr<flutter::AssetManager> asset_manager,
+    std::string entrypoint,
+    std::string libraryUrl) const;
 
   FML_DISALLOW_COPY_AND_ASSIGN(AndroidShellHolder);
 };

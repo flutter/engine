@@ -226,37 +226,10 @@ static void RunBundleAndSnapshotFromLibrary(JNIEnv* env,
       fml::jni::JavaStringToString(env, jBundlePath))  // apk asset dir
   );
 
-  std::unique_ptr<IsolateConfiguration> isolate_configuration;
-  if (flutter::DartVM::IsRunningPrecompiledCode()) {
-    isolate_configuration = IsolateConfiguration::CreateForAppSnapshot();
-  } else {
-    std::unique_ptr<fml::Mapping> kernel_blob =
-        fml::FileMapping::CreateReadOnly(
-            ANDROID_SHELL_HOLDER->GetSettings().application_kernel_asset);
-    if (!kernel_blob) {
-      FML_DLOG(ERROR) << "Unable to load the kernel blob asset.";
-      return;
-    }
-    isolate_configuration =
-        IsolateConfiguration::CreateForKernel(std::move(kernel_blob));
-  }
+  auto entrypoint = fml::jni::JavaStringToString(env, jEntrypoint);
+  auto libraryUrl = fml::jni::JavaStringToString(env, jLibraryUrl);
 
-  RunConfiguration config(std::move(isolate_configuration),
-                          std::move(asset_manager));
-
-  {
-    auto entrypoint = fml::jni::JavaStringToString(env, jEntrypoint);
-    auto libraryUrl = fml::jni::JavaStringToString(env, jLibraryUrl);
-
-    if ((entrypoint.size() > 0) && (libraryUrl.size() > 0)) {
-      config.SetEntrypointAndLibrary(std::move(entrypoint),
-                                     std::move(libraryUrl));
-    } else if (entrypoint.size() > 0) {
-      config.SetEntrypoint(std::move(entrypoint));
-    }
-  }
-
-  ANDROID_SHELL_HOLDER->Launch(std::move(config));
+  ANDROID_SHELL_HOLDER->Launch(asset_manager, entrypoint, libraryUrl);
 }
 
 static jobject LookupCallbackInformation(JNIEnv* env,
