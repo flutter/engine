@@ -1470,8 +1470,13 @@ class SkParagraphBuilder {
   external void pushPaintStyle(
       SkTextStyle textStyle, SkPaint foreground, SkPaint background);
   external void pop();
-  external void addPlaceholder(double? width, double? height,
-      SkPlaceholderAlignment? alignment, SkTextBaseline? baseline, double? offset);
+  external void addPlaceholder(
+    double width,
+    double height,
+    SkPlaceholderAlignment alignment,
+    SkTextBaseline baseline,
+    double offset,
+  );
   external SkParagraph build();
   external void delete();
 }
@@ -1605,22 +1610,6 @@ class SkStrutStyleProperties {
   external set leading(double? value);
   external set strutEnabled(bool? value);
   external set forceStrutHeight(bool? value);
-}
-
-@JS()
-@anonymous
-class SkPlaceholderStyleProperties {
-  external double? get width;
-  external double? get height;
-  external SkPlaceholderAlignment? get alignment;
-  external double? get offset;
-  external SkTextBaseline? get baseline;
-
-  external set width(double? value);
-  external set height(double? value);
-  external set alignment(SkPlaceholderAlignment? value);
-  external set offset(double? value);
-  external set baseline(SkTextBaseline? value);
 }
 
 @JS()
