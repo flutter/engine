@@ -19,23 +19,23 @@
 
 namespace flutter {
 
-  //----------------------------------------------------------------------------
-  /// @brief      This is the Android owner of the core engine Shell.
-  ///
-  ///             This is the top orchestrator class on the C++ side for the
-  ///             Android embedding. It corresponds to a FlutterEngine on the
-  ///             Java side. This class is in C++ because the core Shell is in
-  ///             C++ and an Android specific orchestrator needs to exist to
-  ///             compose it with other Android specific components such as
-  ///             the PlatformViewAndroid. This composition of many to one
-  ///             C++ components would be difficult to do through JNI whereas
-  ///             a FlutterEngine and AndroidShellHolder has a 1:1 relationship.
-  ///
-  ///             Technically, the FlutterJNI class owns this AndroidShellHolder
-  ///             class instance, but the FlutterJNI class is meant to be mostly
-  ///             static and has minimal state to perform the C++ pointer <->
-  ///             Java class instance translation.
-  ///
+//----------------------------------------------------------------------------
+/// @brief      This is the Android owner of the core engine Shell.
+///
+///             This is the top orchestrator class on the C++ side for the
+///             Android embedding. It corresponds to a FlutterEngine on the
+///             Java side. This class is in C++ because the core Shell is in
+///             C++ and an Android specific orchestrator needs to exist to
+///             compose it with other Android specific components such as
+///             the PlatformViewAndroid. This composition of many to one
+///             C++ components would be difficult to do through JNI whereas
+///             a FlutterEngine and AndroidShellHolder has a 1:1 relationship.
+///
+///             Technically, the FlutterJNI class owns this AndroidShellHolder
+///             class instance, but the FlutterJNI class is meant to be mostly
+///             static and has minimal state to perform the C++ pointer <->
+///             Java class instance translation.
+///
 class AndroidShellHolder {
  public:
   AndroidShellHolder(flutter::Settings settings,
@@ -63,11 +63,11 @@ class AndroidShellHolder {
   ///             existing AndroidShellHolder.
   ///
   ///             The new and existing AndroidShellHolder and underlying
-  ///             Shells Creates one Shell from another Shell where the created Shell
-  ///             takes the opportunity to share any internal components it can.
-  ///             This results is a Shell that has a smaller startup time cost
-  ///             and a smaller memory footprint than an Shell created with a
-  ///             Create function.
+  ///             Shells Creates one Shell from another Shell where the created
+  ///             Shell takes the opportunity to share any internal components
+  ///             it can. This results is a Shell that has a smaller startup
+  ///             time cost and a smaller memory footprint than an Shell created
+  ///             with a Create function.
   ///
   ///             The new Shell's flutter::Settings cannot be changed from that
   ///             of the initial Shell. The RunConfiguration subcomponent can
@@ -79,8 +79,10 @@ class AndroidShellHolder {
   ///             makes, the JNI instance holding this AndroidShellHolder should
   ///             be created first to supply the jni_facade callback.
   ///
-  std::unique_ptr<AndroidShellHolder> Spawn(std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
-      std::string entrypoint, std::string libraryUr) const;
+  std::unique_ptr<AndroidShellHolder> Spawn(
+      std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
+      std::string entrypoint,
+      std::string libraryUr) const;
 
   void Launch(RunConfiguration configuration);
 

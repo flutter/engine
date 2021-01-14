@@ -116,6 +116,7 @@ public class FlutterJNI {
     System.loadLibrary("flutter");
     loadLibraryCalled = true;
   }
+
   private static boolean loadLibraryCalled = false;
 
   /**
@@ -133,6 +134,7 @@ public class FlutterJNI {
     FlutterJNI.nativePrefetchDefaultFontManager();
     prefetchDefaultFontManagerCalled = true;
   }
+
   private static boolean prefetchDefaultFontManagerCalled = false;
 
   /**
@@ -159,9 +161,10 @@ public class FlutterJNI {
     }
 
     FlutterJNI.nativeInit(
-    context, args, bundlePath, appStoragePath, engineCachesPath, initTimeMillis);
+        context, args, bundlePath, appStoragePath, engineCachesPath, initTimeMillis);
     initCalled = true;
   }
+
   private static boolean initCalled = false;
   // END methods related to FlutterLoader
 
@@ -193,7 +196,7 @@ public class FlutterJNI {
   /**
    * Checks launch settings for whether software rendering is requested.
    *
-   * The value is the same per program.
+   * <p>The value is the same per program.
    */
   public boolean getIsSoftwareRenderingEnabled() {
     return nativeGetIsSoftwareRenderingEnabled();
@@ -203,8 +206,8 @@ public class FlutterJNI {
   /**
    * Observatory URI for the VM instance.
    *
-   * Its value is set by the native engine once
-   * {@link #init(Context, String[], String, String, String, long)} is run.
+   * <p>Its value is set by the native engine once {@link #init(Context, String[], String, String,
+   * String, long)} is run.
    */
   public static String getObservatoryUri() {
     return observatoryUri;
@@ -218,6 +221,7 @@ public class FlutterJNI {
     FlutterJNI.refreshRateFPS = refreshRateFPS;
     setRefreshRateFPSCalled = true;
   }
+
   private static boolean setRefreshRateFPSCalled = false;
 
   // TODO(mattcarroll): add javadocs
@@ -316,21 +320,20 @@ public class FlutterJNI {
   /**
    * Spawns a new FlutterJNI instance from the current instance.
    *
-   * This creates another native shell from the current shell. This causes the 2 shells to re-use
-   * some of the shared resources, reducing the total memory consumption versus creating a
-   * new FlutterJNI by calling its standard constructor.
+   * <p>This creates another native shell from the current shell. This causes the 2 shells to re-use
+   * some of the shared resources, reducing the total memory consumption versus creating a new
+   * FlutterJNI by calling its standard constructor.
    *
-   * This can only be called once the current FlutterJNI instance is attached by calling
-   * {@link #attachToNative(boolean)}.
+   * <p>This can only be called once the current FlutterJNI instance is attached by calling {@link
+   * #attachToNative(boolean)}.
    *
-   * Static methods that should be only called once such as
-   * {@link #init(Context, String[], String, String, String, long)} or
-   * {@link #setRefreshRateFPS(float)} shouldn't be called again on the spawned FlutterJNI instance.
+   * <p>Static methods that should be only called once such as {@link #init(Context, String[],
+   * String, String, String, long)} or {@link #setRefreshRateFPS(float)} shouldn't be called again
+   * on the spawned FlutterJNI instance.
    */
   @UiThread
   public FlutterJNI spawn(
-    @Nullable String entrypointFunctionName,
-    @Nullable String pathToEntrypointFunction) {
+      @Nullable String entrypointFunctionName, @Nullable String pathToEntrypointFunction) {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
     FlutterJNI spawnedJNI = new FlutterJNI();
@@ -339,14 +342,15 @@ public class FlutterJNI {
     spawnedJNI.nativeShellId =
         nativeSpawn(spawnedJNI, nativeShellId, entrypointFunctionName, pathToEntrypointFunction);
     Preconditions.checkState(
-        spawnedJNI.nativeShellId != null &&
-        spawnedJNI.nativeShellId > 0,
+        spawnedJNI.nativeShellId != null && spawnedJNI.nativeShellId > 0,
         "Failed to spawn new JNI connected shell from existing shell.");
 
     return spawnedJNI;
   }
 
-  private native long nativeSpawn(@NonNull FlutterJNI flutterJNI, long nativeShellId,
+  private native long nativeSpawn(
+      @NonNull FlutterJNI flutterJNI,
+      long nativeShellId,
       @Nullable String entrypointFunctionName,
       @Nullable String pathToEntrypointFunction);
 
@@ -462,8 +466,7 @@ public class FlutterJNI {
     nativeSurfaceWindowChanged(nativeShellId, surface);
   }
 
-  private native void nativeSurfaceWindowChanged(
-      long nativeShellId, @NonNull Surface surface);
+  private native void nativeSurfaceWindowChanged(long nativeShellId, @NonNull Surface surface);
 
   /**
    * Call this method when the {@link Surface} changes that was previously registered with {@link
@@ -760,11 +763,7 @@ public class FlutterJNI {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
     nativeRunBundleAndSnapshotFromLibrary(
-        nativeShellId,
-        bundlePath,
-        entrypointFunctionName,
-        pathToEntrypointFunction,
-        assetManager);
+        nativeShellId, bundlePath, entrypointFunctionName, pathToEntrypointFunction, assetManager);
   }
 
   private native void nativeRunBundleAndSnapshotFromLibrary(
@@ -903,8 +902,7 @@ public class FlutterJNI {
       int responseId, @Nullable ByteBuffer message, int position) {
     ensureRunningOnMainThread();
     if (isAttached()) {
-      nativeInvokePlatformMessageResponseCallback(
-          nativeShellId, responseId, message, position);
+      nativeInvokePlatformMessageResponseCallback(nativeShellId, responseId, message, position);
     } else {
       Log.w(
           TAG,
@@ -1144,9 +1142,7 @@ public class FlutterJNI {
   }
 
   private native void nativeUpdateJavaAssetManager(
-      long nativeShellId,
-      @NonNull AssetManager assetManager,
-      @NonNull String assetBundlePath);
+      long nativeShellId, @NonNull AssetManager assetManager, @NonNull String assetBundlePath);
 
   /**
    * Indicates that a failure was encountered during the Android portion of downloading a dynamic

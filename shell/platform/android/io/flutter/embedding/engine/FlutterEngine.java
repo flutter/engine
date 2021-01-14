@@ -365,10 +365,9 @@ public class FlutterEngine {
    * Create a second {@link FlutterEngine} based on this current one by sharing as much resources
    * together as possible to minimize startup latency and memory cost.
    *
-   *
    * @param dartEntrypoint specifies the {@link DartEntrypoint} the new engine should run. It
-   *        doesn't need to be the same entrypoint as the current engine but must be built in the
-   *        same AOT or snapshot.
+   *     doesn't need to be the same entrypoint as the current engine but must be built in the same
+   *     AOT or snapshot.
    * @return a new {@link FlutterEngine}.
    */
   // This method is package private because it's non-ideal. The method on FlutterEngine should
@@ -376,11 +375,13 @@ public class FlutterEngine {
   // DartEntrypoint.
   /*package*/ FlutterEngine spawn(@NonNull DartEntrypoint dartEntrypoint) {
     if (!isAttachedToJni()) {
-      throw new IllegalStateException("Spawn can only be called on a fully constructed FlutterEngine");
+      throw new IllegalStateException(
+          "Spawn can only be called on a fully constructed FlutterEngine");
     }
 
-    FlutterJNI newFlutterJNI = flutterJNI.spawn(
-        dartEntrypoint.dartEntrypointFunctionName, dartEntrypoint.dartEntrypointLibrary);
+    FlutterJNI newFlutterJNI =
+        flutterJNI.spawn(
+            dartEntrypoint.dartEntrypointFunctionName, dartEntrypoint.dartEntrypointLibrary);
     return new FlutterEngine(context, null, newFlutterJNI);
   }
 
@@ -613,7 +614,7 @@ public class FlutterEngine {
     /**
      * Lifecycle callback invoked before the Flutter engine is destroyed.
      *
-     * For the duration of the call, the Flutter engine is still valid.
+     * <p>For the duration of the call, the Flutter engine is still valid.
      */
     void onEngineDestroy();
   }

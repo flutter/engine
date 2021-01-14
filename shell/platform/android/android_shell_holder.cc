@@ -6,10 +6,10 @@
 
 #include "flutter/shell/platform/android/android_shell_holder.h"
 
-#include <memory>
 #include <pthread.h>
 #include <sys/resource.h>
 #include <sys/time.h>
+#include <memory>
 
 #include <sstream>
 #include <string>
@@ -21,8 +21,8 @@
 #include "flutter/fml/platform/android/jni_util.h"
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/thread_host.h"
-#include "flutter/shell/platform/android/platform_view_android.h"
 #include "flutter/shell/platform/android/context/android_context.h"
+#include "flutter/shell/platform/android/platform_view_android.h"
 
 namespace flutter {
 
@@ -45,8 +45,8 @@ AndroidShellHolder::AndroidShellHolder(
     *thread_host_ = {thread_label, ThreadHost::Type::UI};
   } else {
     *thread_host_ = {thread_label, ThreadHost::Type::UI |
-                                      ThreadHost::Type::RASTER |
-                                      ThreadHost::Type::IO};
+                                       ThreadHost::Type::RASTER |
+                                       ThreadHost::Type::IO};
   }
 
   fml::WeakPtr<PlatformViewAndroid> weak_platform_view;
@@ -134,16 +134,17 @@ AndroidShellHolder::AndroidShellHolder(
   is_valid_ = shell_ != nullptr;
 }
 
-AndroidShellHolder::AndroidShellHolder(Settings settings,
-                     std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
-                     std::shared_ptr<ThreadHost> thread_host,
-                     std::unique_ptr<Shell> shell,
-                     fml::WeakPtr<PlatformViewAndroid> platform_view)
-                     : settings_(std::move(settings)),
-                       jni_facade_(jni_facade),
-                       platform_view_(platform_view),
-                       thread_host_(thread_host),
-                       shell_(std::move(shell)) {
+AndroidShellHolder::AndroidShellHolder(
+    Settings settings,
+    std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
+    std::shared_ptr<ThreadHost> thread_host,
+    std::unique_ptr<Shell> shell,
+    fml::WeakPtr<PlatformViewAndroid> platform_view)
+    : settings_(std::move(settings)),
+      jni_facade_(jni_facade),
+      platform_view_(platform_view),
+      thread_host_(thread_host),
+      shell_(std::move(shell)) {
   FML_DCHECK(jni_facade);
   FML_DCHECK(shell_);
   FML_DCHECK(platform_view_);
@@ -165,7 +166,8 @@ const flutter::Settings& AndroidShellHolder::GetSettings() const {
 
 std::unique_ptr<AndroidShellHolder> AndroidShellHolder::Spawn(
     std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
-    std::string entrypoint, std::string libraryUr) const {
+    std::string entrypoint,
+    std::string libraryUr) const {
   FML_DCHECK(shell_) << "A new Shell can only be spawned if the current Shell "
                         "is properly constructed";
 
@@ -206,15 +208,12 @@ std::unique_ptr<AndroidShellHolder> AndroidShellHolder::Spawn(
     return std::make_unique<Rasterizer>(shell);
   };
 
-  std::unique_ptr<flutter::Shell> shell =
-      shell_->Spawn(std::move(newSettings), on_create_platform_view, on_create_rasterizer);
+  std::unique_ptr<flutter::Shell> shell = shell_->Spawn(
+      std::move(newSettings), on_create_platform_view, on_create_rasterizer);
 
-  return std::make_unique<AndroidShellHolder>(
-    newSettings,
-    jni_facade,
-    thread_host_,
-    std::move(shell),
-    weak_platform_view);
+  return std::make_unique<AndroidShellHolder>(newSettings, jni_facade,
+                                              thread_host_, std::move(shell),
+                                              weak_platform_view);
 }
 
 void AndroidShellHolder::Launch(RunConfiguration config) {

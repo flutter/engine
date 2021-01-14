@@ -39,7 +39,6 @@ public final class Preconditions {
     }
   }
 
-
   /**
    * Ensures the truth of an expression involving the state of the calling instance.
    *

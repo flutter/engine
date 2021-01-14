@@ -162,7 +162,8 @@ static jlong SpawnJNI(JNIEnv* env,
   auto entrypoint = fml::jni::JavaStringToString(env, jEntrypoint);
   auto libraryUrl = fml::jni::JavaStringToString(env, jLibraryUrl);
 
-  auto spawned_shell_holder = ANDROID_SHELL_HOLDER->Spawn(jni_facade, entrypoint ,libraryUrl);
+  auto spawned_shell_holder =
+      ANDROID_SHELL_HOLDER->Spawn(jni_facade, entrypoint, libraryUrl);
   if (spawned_shell_holder->IsValid()) {
     return reinterpret_cast<jlong>(spawned_shell_holder.release());
   } else {

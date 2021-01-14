@@ -121,8 +121,10 @@ public class DartExecutor implements BinaryMessenger {
     Log.v(TAG, "Executing Dart entrypoint: " + dartEntrypoint);
 
     flutterJNI.runBundleAndSnapshotFromLibrary(
-        dartEntrypoint.pathToBundle, dartEntrypoint.dartEntrypointFunctionName,
-        dartEntrypoint.dartEntrypointLibrary, assetManager);
+        dartEntrypoint.pathToBundle,
+        dartEntrypoint.dartEntrypointFunctionName,
+        dartEntrypoint.dartEntrypointLibrary,
+        assetManager);
 
     isApplicationRunning = true;
   }
@@ -284,7 +286,9 @@ public class DartExecutor implements BinaryMessenger {
     }
 
     public DartEntrypoint(
-      @NonNull String pathToBundle, @NonNull String dartEntrypointLibrary, @NonNull String dartEntrypointFunctionName) {
+        @NonNull String pathToBundle,
+        @NonNull String dartEntrypointLibrary,
+        @NonNull String dartEntrypointFunctionName) {
       this.pathToBundle = pathToBundle;
       this.dartEntrypointLibrary = dartEntrypointLibrary;
       this.dartEntrypointFunctionName = dartEntrypointFunctionName;

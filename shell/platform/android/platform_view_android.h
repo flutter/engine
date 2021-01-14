@@ -108,7 +108,9 @@ class PlatformViewAndroid final : public PlatformView {
       std::unique_ptr<AssetResolver> updated_asset_resolver,
       AssetResolver::AssetResolverType type) override;
 
-  const std::shared_ptr<AndroidContext>& GetAndroidContext() { return android_context_; }
+  const std::shared_ptr<AndroidContext>& GetAndroidContext() {
+    return android_context_;
+  }
 
  private:
   const std::shared_ptr<PlatformViewAndroidJNI> jni_facade_;
