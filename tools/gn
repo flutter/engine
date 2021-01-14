@@ -329,7 +329,7 @@ def to_gn_args(args):
 
     # Overrides whether Boring SSL is compiled with system as. Only meaningful
     # on Android.
-    gn_args['bssl_use_clang_integrated_as'] = true
+    gn_args['bssl_use_clang_integrated_as'] = True
 
     return gn_args
 
