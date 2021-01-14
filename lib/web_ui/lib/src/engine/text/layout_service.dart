@@ -71,6 +71,10 @@ class TextLayoutService {
     didExceedMaxLines = false;
     lines.clear();
 
+    if (spanCount == 0) {
+      return;
+    }
+
     final Spanometer spanometer = Spanometer(paragraph, context);
 
     int spanIndex = 0;
@@ -485,6 +489,13 @@ class SpanBox extends RangeBox {
   /// [endIndex].
   bool overlapsWith(int startIndex, int endIndex) {
     return startIndex < this.end.index && this.start.index < endIndex;
+  }
+
+  /// Returns the substring of the paragraph that's represented by this box.
+  ///
+  /// Trailing newlines are omitted, if any.
+  String toText() {
+    return spanometer.paragraph.toPlainText().substring(start.index, end.indexWithoutTrailingNewlines);
   }
 
   /// Returns a [ui.TextBox] representing this range box in the given [line].
@@ -1071,6 +1082,18 @@ class Spanometer {
 
   static Map<TextHeightStyle, TextHeightRuler> _rulers =
       <TextHeightStyle, TextHeightRuler>{};
+
+  @visibleForTesting
+  static Map<TextHeightStyle, TextHeightRuler> get rulers => _rulers;
+
+  /// Clears the cache of rulers that are used for measuring text height and
+  /// baseline metrics.
+  static void clearRulersCache() {
+    _rulers.forEach((TextHeightStyle style, TextHeightRuler ruler) {
+      ruler.dispose();
+    });
+    _rulers.clear();
+  }
 
   String _cssFontString = '';
 
