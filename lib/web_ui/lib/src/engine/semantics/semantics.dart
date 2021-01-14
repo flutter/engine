@@ -936,9 +936,7 @@ class SemanticsObject {
             ..left = '${translateX}px';
         }
       } else {
-        if (containerElement != null) {
-          _resetElementOffsets(containerElement);
-        }
+        _resetElementOffsets(containerElement);
       }
     }
   }
