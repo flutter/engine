@@ -7,6 +7,7 @@
 #include <android/native_window_jni.h>
 #include <dlfcn.h>
 #include <jni.h>
+#include <memory>
 #include <sstream>
 #include <utility>
 
@@ -143,6 +144,30 @@ static jlong AttachJNI(JNIEnv* env,
 
 static void DestroyJNI(JNIEnv* env, jobject jcaller, jlong shell_holder) {
   delete ANDROID_SHELL_HOLDER;
+}
+
+// Signature is similar to RunBundleAndSnapshotFromLibrary but it can't change
+// the bundle path or asset manager since we can only spawn with the same
+// AOT.
+static jlong SpawnJNI(JNIEnv* env,
+                      jobject jcaller,
+                      jobject flutterJNI,
+                      jlong shell_holder,
+                      jstring jEntrypoint,
+                      jstring jLibraryUrl) {
+  fml::jni::JavaObjectWeakGlobalRef java_jni(env, flutterJNI);
+  std::shared_ptr<PlatformViewAndroidJNI> jni_facade =
+      std::make_shared<PlatformViewAndroidJNIImpl>(java_jni);
+
+  auto entrypoint = fml::jni::JavaStringToString(env, jEntrypoint);
+  auto libraryUrl = fml::jni::JavaStringToString(env, jLibraryUrl);
+
+  auto spawned_shell_holder = ANDROID_SHELL_HOLDER->Spawn(jni_facade, entrypoint ,libraryUrl);
+  if (spawned_shell_holder->IsValid()) {
+    return reinterpret_cast<jlong>(spawned_shell_holder.release());
+  } else {
+    return 0;
+  }
 }
 
 static void SurfaceCreated(JNIEnv* env,
@@ -598,6 +623,12 @@ bool RegisterApi(JNIEnv* env) {
           .name = "nativeDestroy",
           .signature = "(J)V",
           .fnPtr = reinterpret_cast<void*>(&DestroyJNI),
+      },
+      {
+          .name = "nativeSpawn",
+          .signature = "(Lio/flutter/embedding/engine/FlutterJNI;"
+                       "JLjava/lang/String;Ljava/lang/String;)J",
+          .fnPtr = reinterpret_cast<void*>(&SpawnJNI),
       },
       {
           .name = "nativeRunBundleAndSnapshotFromLibrary",

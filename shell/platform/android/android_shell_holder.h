@@ -74,8 +74,13 @@ class AndroidShellHolder {
   ///             be changed however in the spawned Shell to run a different
   ///             entrypoint than the existing shell.
   ///
+  ///             Since the AndroidShellHolder both binds downwards to a Shell
+  ///             and also upwards to JNI callbacks that the PlatformViewAndroid
+  ///             makes, the JNI instance holding this AndroidShellHolder should
+  ///             be created first to supply the jni_facade callback.
+  ///
   std::unique_ptr<AndroidShellHolder> Spawn(std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
-                                            RunConfiguration configuration) const;
+      std::string entrypoint, std::string libraryUr) const;
 
   void Launch(RunConfiguration configuration);
 

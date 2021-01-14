@@ -164,16 +164,16 @@ const flutter::Settings& AndroidShellHolder::GetSettings() const {
 }
 
 std::unique_ptr<AndroidShellHolder> AndroidShellHolder::Spawn(
-  std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
-  RunConfiguration configuration) const {
+    std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
+    std::string entrypoint, std::string libraryUr) const {
   FML_DCHECK(shell_) << "A new Shell can only be spawned if the current Shell "
                         "is properly constructed";
 
   // Take the old Settings but overwrite the entrypoint components with the
   // new parameter's.
   Settings newSettings = GetSettings();
-  newSettings.advisory_script_uri = configuration.GetEntrypointLibrary();
-  newSettings.advisory_script_entrypoint = configuration.GetEntrypoint();
+  newSettings.advisory_script_entrypoint = entrypoint;
+  newSettings.advisory_script_uri = libraryUr;
 
   fml::WeakPtr<PlatformViewAndroid> weak_platform_view;
   PlatformViewAndroid* android_platform_view = platform_view_.get();
@@ -209,11 +209,11 @@ std::unique_ptr<AndroidShellHolder> AndroidShellHolder::Spawn(
   std::unique_ptr<flutter::Shell> shell =
       shell_->Spawn(std::move(newSettings), on_create_platform_view, on_create_rasterizer);
 
-  return AndroidShellHolder(
+  return std::make_unique<AndroidShellHolder>(
     newSettings,
     jni_facade,
     thread_host_,
-    shell,
+    std::move(shell),
     weak_platform_view);
 }
 

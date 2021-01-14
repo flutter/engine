@@ -747,6 +747,7 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/Splas
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/TransparencyMode.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/FlutterEngine.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/FlutterEngineCache.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/FlutterEngineGroup.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/FlutterEngineConnectionRegistry.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/FlutterJNI.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/FlutterOverlaySurface.java

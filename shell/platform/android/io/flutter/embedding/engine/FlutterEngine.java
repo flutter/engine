@@ -12,6 +12,7 @@ import androidx.annotation.Nullable;
 import io.flutter.FlutterInjector;
 import io.flutter.Log;
 import io.flutter.embedding.engine.dart.DartExecutor;
+import io.flutter.embedding.engine.dart.DartExecutor.DartEntrypoint;
 import io.flutter.embedding.engine.deferredcomponents.DeferredComponentManager;
 import io.flutter.embedding.engine.loader.FlutterLoader;
 import io.flutter.embedding.engine.plugins.PluginRegistry;
@@ -75,6 +76,7 @@ import java.util.Set;
 public class FlutterEngine {
   private static final String TAG = "FlutterEngine";
 
+  @NonNull private final Context context;
   @NonNull private final FlutterJNI flutterJNI;
   @NonNull private final FlutterRenderer renderer;
   @NonNull private final DartExecutor dartExecutor;
@@ -275,6 +277,7 @@ public class FlutterEngine {
       @Nullable String[] dartVmArgs,
       boolean automaticallyRegisterPlugins,
       boolean waitForRestorationData) {
+    this.context = context;
     AssetManager assetManager;
     try {
       assetManager = context.createPackageContext(context.getPackageName(), 0).getAssets();
@@ -310,15 +313,23 @@ public class FlutterEngine {
     if (flutterLoader == null) {
       flutterLoader = FlutterInjector.instance().flutterLoader();
     }
-    flutterLoader.startInitialization(context.getApplicationContext());
-    flutterLoader.ensureInitializationComplete(context, dartVmArgs);
+
+    if (!flutterJNI.isAttached()) {
+      flutterLoader.startInitialization(context.getApplicationContext());
+      flutterLoader.ensureInitializationComplete(context, dartVmArgs);
+    }
 
     flutterJNI.addEngineLifecycleListener(engineLifecycleListener);
     flutterJNI.setPlatformViewsController(platformViewsController);
     flutterJNI.setLocalizationPlugin(localizationPlugin);
     flutterJNI.setDeferredComponentManager(FlutterInjector.instance().deferredComponentManager());
 
-    attachToJni();
+    // It should typically be a fresh, unattached JNI. But on a spawned engine, the JNI instance
+    // is already attached to a native shell. In that case, the Java FlutterEngine is created around
+    // an existing shell.
+    if (!flutterJNI.isAttached()) {
+      attachToJni();
+    }
 
     // TODO(mattcarroll): FlutterRenderer is temporally coupled to attach(). Remove that coupling if
     // possible.
@@ -348,6 +359,29 @@ public class FlutterEngine {
   @SuppressWarnings("BooleanMethodIsAlwaysInverted")
   private boolean isAttachedToJni() {
     return flutterJNI.isAttached();
+  }
+
+  /**
+   * Create a second {@link FlutterEngine} based on this current one by sharing as much resources
+   * together as possible to minimize startup latency and memory cost.
+   *
+   *
+   * @param dartEntrypoint specifies the {@link DartEntrypoint} the new engine should run. It
+   *        doesn't need to be the same entrypoint as the current engine but must be built in the
+   *        same AOT or snapshot.
+   * @return a new {@link FlutterEngine}.
+   */
+  // This method is package private because it's non-ideal. The method on FlutterEngine should
+  // ideally just create a second engine and a call to its DartExecutor should then run a
+  // DartEntrypoint.
+  /*package*/ FlutterEngine spawn(@NonNull DartEntrypoint dartEntrypoint) {
+    if (!isAttachedToJni()) {
+      throw new IllegalStateException("Spawn can only be called on a fully constructed FlutterEngine");
+    }
+
+    FlutterJNI newFlutterJNI = flutterJNI.spawn(
+        dartEntrypoint.dartEntrypointFunctionName, dartEntrypoint.dartEntrypointLibrary);
+    return new FlutterEngine(context, null, newFlutterJNI);
   }
 
   /**

@@ -4,7 +4,14 @@
 
 package io.flutter.embedding.engine;
 
+import java.util.ArrayList;
 import java.util.List;
+
+import android.content.Context;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import io.flutter.embedding.engine.FlutterEngine;
+import io.flutter.embedding.engine.dart.DartExecutor.DartEntrypoint;
 
 /**
  * This class is experimental. Please do not ship production code using it.
@@ -25,6 +32,50 @@ import java.util.List;
  */
 public class FlutterEngineGroup {
 
-  private List<FlutterEngine> activeEngines = ArrayList<>();
+  public FlutterEngineGroup(@NonNull Context context) {
+    this.context = context;
+  }
+
+  private final Context context;
+  private final List<FlutterEngine> activeEngines = new ArrayList<>();
+
+  public FlutterEngine createAndRunDefaultEngine() {
+    return createAndRunEngine(null);
+  }
+
+  public FlutterEngine createAndRunEngine(@Nullable DartEntrypoint dartEntrypoint) {
+    FlutterEngine engine = null;
+    if (activeEngines.size() == 0) {
+      engine = new FlutterEngine(context);
+    }
+
+    if (dartEntrypoint == null) {
+      dartEntrypoint = DartEntrypoint.createDefault();
+    }
+
+    if (activeEngines.size() == 0) {
+      engine.getDartExecutor().executeDartEntrypoint(dartEntrypoint);
+    } else {
+      engine = activeEngines.get(0).spawn(dartEntrypoint);
+    }
+
+    activeEngines.add(engine);
+
+    final FlutterEngine engineToCleanUpOnDestroy = engine;
+    engine.addEngineLifecycleListener(new FlutterEngine.EngineLifecycleListener(){
+
+      @Override
+      public void onPreEngineRestart() {
+        // No-op. Not interested.
+      }
+
+      @Override
+      public void onEngineDestroy() {
+        activeEngines.remove(engineToCleanUpOnDestroy);
+      }
+
+    });
+    return engine;
+  }
 
 }
