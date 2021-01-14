@@ -1523,21 +1523,22 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   packet->SetPointerData(/*index=*/0, pointer_data);
 
   [_engine.get() dispatchPointerDataPacket:std::move(packet)];
+}
 
 #pragma mark - State Restoration
 
-  -(void)encodeRestorableStateWithCoder : (NSCoder*)coder {
-    NSData* restorationData = [[_engine.get() restorationPlugin] restorationData];
-    [coder encodeDataObject:restorationData];
-  }
+- (void)encodeRestorableStateWithCoder:(NSCoder*)coder {
+  NSData* restorationData = [[_engine.get() restorationPlugin] restorationData];
+  [coder encodeDataObject:restorationData];
+}
 
-  -(void)decodeRestorableStateWithCoder : (NSCoder*)coder {
-    NSData* restorationData = [coder decodeDataObject];
-    [[_engine.get() restorationPlugin] setRestorationData:restorationData];
-  }
+- (void)decodeRestorableStateWithCoder:(NSCoder*)coder {
+  NSData* restorationData = [coder decodeDataObject];
+  [[_engine.get() restorationPlugin] setRestorationData:restorationData];
+}
 
-  -(FlutterRestorationPlugin*)restorationPlugin {
-    return [_engine.get() restorationPlugin];
-  }
+- (FlutterRestorationPlugin*)restorationPlugin {
+  return [_engine.get() restorationPlugin];
+}
 
-  @end
+@end
