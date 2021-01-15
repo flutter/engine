@@ -2,9 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_TESTING_WIN32_FLUTTER_WINDOW_TEST_H_
+#define FLUTTER_SHELL_PLATFORM_WINDOWS_TESTING_WIN32_FLUTTER_WINDOW_TEST_H_
+
 #include <windowsx.h>
 
 #include "flutter/shell/platform/windows/win32_flutter_window.h"
+#include "gmock/gmock.h"
 
 namespace flutter {
 namespace testing {
@@ -18,10 +22,9 @@ class Win32FlutterWindowTest : public Win32FlutterWindow {
   // Prevent copying.
   Win32FlutterWindowTest(Win32FlutterWindowTest const&) = delete;
   Win32FlutterWindowTest& operator=(Win32FlutterWindowTest const&) = delete;
-
- private:
-  bool on_font_change_called_ = false;
 };
 
 }  // namespace testing
 }  // namespace flutter
+
+#endif // FLUTTER_SHELL_PLATFORM_WINDOWS_TESTING_WIN32_FLUTTER_WINDOW_TEST_H_

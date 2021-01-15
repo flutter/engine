@@ -35,10 +35,7 @@ void FlutterWindowsView::SetEngine(
 
   // Set up the system channel handlers.
   auto internal_plugin_messenger = internal_plugin_registrar_->messenger();
-  keyboard_hook_handlers_.push_back(
-      std::make_unique<flutter::KeyEventHandler>(internal_plugin_messenger));
-  keyboard_hook_handlers_.push_back(std::make_unique<flutter::TextInputPlugin>(
-      internal_plugin_messenger, this));
+  RegisterKeyboardHookHandlers(internal_plugin_messenger, this);
   platform_handler_ = PlatformHandler::Create(internal_plugin_messenger, this);
   cursor_handler_ = std::make_unique<flutter::CursorHandler>(
       internal_plugin_messenger, binding_handler_.get());
@@ -47,6 +44,15 @@ void FlutterWindowsView::SetEngine(
 
   SendWindowMetrics(bounds.width, bounds.height,
                     binding_handler_->GetDpiScale());
+}
+
+void FlutterWindowsView::RegisterKeyboardHookHandlers(flutter::BinaryMessenger* messenger, FlutterWindowsView* view) {
+  AddKeyboardHookHandler(std::make_unique<flutter::KeyEventHandler>(messenger));
+  AddKeyboardHookHandler(std::make_unique<flutter::TextInputPlugin>(messenger, view));
+}
+
+void FlutterWindowsView::AddKeyboardHookHandler(std::unique_ptr<flutter::KeyboardHookHandler> handler) {
+  keyboard_hook_handlers_.push_back(std::move(handler));
 }
 
 uint32_t FlutterWindowsView::GetFrameBufferId(size_t width, size_t height) {
