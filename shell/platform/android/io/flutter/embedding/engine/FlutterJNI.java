@@ -109,12 +109,12 @@ public class FlutterJNI {
    * <p>This method should only be called once across all FlutterJNI instances.
    */
   public void loadLibrary() {
-    if (loadLibraryCalled) {
+    if (FlutterJNI.loadLibraryCalled) {
       Log.w(TAG, "FlutterJNI.loadLibrary called more than once");
     }
 
     System.loadLibrary("flutter");
-    loadLibraryCalled = true;
+    FlutterJNI.loadLibraryCalled = true;
   }
 
   private static boolean loadLibraryCalled = false;
@@ -127,12 +127,12 @@ public class FlutterJNI {
    * <p>This method should only be called once across all FlutterJNI instances.
    */
   public void prefetchDefaultFontManager() {
-    if (prefetchDefaultFontManagerCalled) {
+    if (FlutterJNI.prefetchDefaultFontManagerCalled) {
       Log.w(TAG, "FlutterJNI.prefetchDefaultFontManager called more than once");
     }
 
     FlutterJNI.nativePrefetchDefaultFontManager();
-    prefetchDefaultFontManagerCalled = true;
+    FlutterJNI.prefetchDefaultFontManagerCalled = true;
   }
 
   private static boolean prefetchDefaultFontManagerCalled = false;
@@ -140,7 +140,7 @@ public class FlutterJNI {
   /**
    * Perform one time initialization of the Dart VM and Flutter engine.
    *
-   * <p>This method must be called only once.
+   * <p>This method must be called only once. Calling more than once will cause an exception.
    *
    * @param context The application context.
    * @param args Arguments to the Dart VM/Flutter engine.
@@ -156,13 +156,15 @@ public class FlutterJNI {
       @NonNull String appStoragePath,
       @NonNull String engineCachesPath,
       long initTimeMillis) {
-    if (initCalled) {
+    if (FlutterJNI.initCalled) {
       Log.w(TAG, "FlutterJNI.init called more than once");
+      throw new IllegalStateException(
+          "FlutterJNI.init cannot be called more than once per application across all FlutterJNI instances");
     }
 
     FlutterJNI.nativeInit(
         context, args, bundlePath, appStoragePath, engineCachesPath, initTimeMillis);
-    initCalled = true;
+    FlutterJNI.initCalled = true;
   }
 
   private static boolean initCalled = false;
@@ -214,12 +216,12 @@ public class FlutterJNI {
   }
 
   public static void setRefreshRateFPS(float refreshRateFPS) {
-    if (setRefreshRateFPSCalled) {
+    if (FlutterJNI.setRefreshRateFPSCalled) {
       Log.w(TAG, "FlutterJNI.setRefreshRateFPS called more than once");
     }
 
     FlutterJNI.refreshRateFPS = refreshRateFPS;
-    setRefreshRateFPSCalled = true;
+    FlutterJNI.setRefreshRateFPSCalled = true;
   }
 
   private static boolean setRefreshRateFPSCalled = false;
@@ -265,7 +267,7 @@ public class FlutterJNI {
   // Below represents the stateful part of the FlutterJNI instances that aren't static per program.
   // Conceptually, it represents a native shell instance.
 
-  @Nullable private Long nativeShellId;
+  @Nullable private Long nativeShellHolderId;
   @Nullable private AccessibilityDelegate accessibilityDelegate;
   @Nullable private PlatformMessageHandler platformMessageHandler;
   @Nullable private LocalizationPlugin localizationPlugin;
@@ -294,7 +296,7 @@ public class FlutterJNI {
    * a Java Native Interface (JNI).
    */
   public boolean isAttached() {
-    return nativeShellId != null;
+    return nativeShellHolderId != null;
   }
 
   /**
@@ -307,7 +309,7 @@ public class FlutterJNI {
   public void attachToNative(boolean isBackgroundView) {
     ensureRunningOnMainThread();
     ensureNotAttachedToNative();
-    nativeShellId = performNativeAttach(this, isBackgroundView);
+    nativeShellHolderId = performNativeAttach(this, isBackgroundView);
   }
 
   @VisibleForTesting
@@ -340,10 +342,11 @@ public class FlutterJNI {
     FlutterJNI spawnedJNI = new FlutterJNI();
     // Call the native function with the current Shell ID. It creates a new Shell. Feed the new
     // Shell ID into the new FlutterJNI instance.
-    spawnedJNI.nativeShellId =
-        nativeSpawn(spawnedJNI, nativeShellId, entrypointFunctionName, pathToEntrypointFunction);
+    spawnedJNI.nativeShellHolderId =
+        nativeSpawn(
+            spawnedJNI, nativeShellHolderId, entrypointFunctionName, pathToEntrypointFunction);
     Preconditions.checkState(
-        spawnedJNI.nativeShellId != null && spawnedJNI.nativeShellId > 0,
+        spawnedJNI.nativeShellHolderId != null && spawnedJNI.nativeShellHolderId > 0,
         "Failed to spawn new JNI connected shell from existing shell.");
 
     return spawnedJNI;
@@ -351,7 +354,7 @@ public class FlutterJNI {
 
   private native long nativeSpawn(
       @NonNull FlutterJNI flutterJNI,
-      long nativeShellId,
+      long nativeSpawningShellId,
       @Nullable String entrypointFunctionName,
       @Nullable String pathToEntrypointFunction);
 
@@ -371,21 +374,21 @@ public class FlutterJNI {
   public void detachFromNativeAndReleaseResources() {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
-    nativeDestroy(nativeShellId);
-    nativeShellId = null;
+    nativeDestroy(nativeShellHolderId);
+    nativeShellHolderId = null;
   }
 
-  private native void nativeDestroy(long nativeShellId);
+  private native void nativeDestroy(long nativeShellHolderId);
 
   private void ensureNotAttachedToNative() {
-    if (nativeShellId != null) {
+    if (nativeShellHolderId != null) {
       throw new RuntimeException(
           "Cannot execute operation because FlutterJNI is attached to native.");
     }
   }
 
   private void ensureAttachedToNative() {
-    if (nativeShellId == null) {
+    if (nativeShellHolderId == null) {
       throw new RuntimeException(
           "Cannot execute operation because FlutterJNI is not attached to native.");
     }
@@ -448,10 +451,10 @@ public class FlutterJNI {
   public void onSurfaceCreated(@NonNull Surface surface) {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
-    nativeSurfaceCreated(nativeShellId, surface);
+    nativeSurfaceCreated(nativeShellHolderId, surface);
   }
 
-  private native void nativeSurfaceCreated(long nativeShellId, @NonNull Surface surface);
+  private native void nativeSurfaceCreated(long nativeShellHolderId, @NonNull Surface surface);
 
   /**
    * In hybrid composition, call this method when the {@link Surface} has changed.
@@ -464,10 +467,11 @@ public class FlutterJNI {
   public void onSurfaceWindowChanged(@NonNull Surface surface) {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
-    nativeSurfaceWindowChanged(nativeShellId, surface);
+    nativeSurfaceWindowChanged(nativeShellHolderId, surface);
   }
 
-  private native void nativeSurfaceWindowChanged(long nativeShellId, @NonNull Surface surface);
+  private native void nativeSurfaceWindowChanged(
+      long nativeShellHolderId, @NonNull Surface surface);
 
   /**
    * Call this method when the {@link Surface} changes that was previously registered with {@link
@@ -480,10 +484,10 @@ public class FlutterJNI {
   public void onSurfaceChanged(int width, int height) {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
-    nativeSurfaceChanged(nativeShellId, width, height);
+    nativeSurfaceChanged(nativeShellHolderId, width, height);
   }
 
-  private native void nativeSurfaceChanged(long nativeShellId, int width, int height);
+  private native void nativeSurfaceChanged(long nativeShellHolderId, int width, int height);
 
   /**
    * Call this method when the {@link Surface} is destroyed that was previously registered with
@@ -497,10 +501,10 @@ public class FlutterJNI {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
     onRenderingStopped();
-    nativeSurfaceDestroyed(nativeShellId);
+    nativeSurfaceDestroyed(nativeShellHolderId);
   }
 
-  private native void nativeSurfaceDestroyed(long nativeShellId);
+  private native void nativeSurfaceDestroyed(long nativeShellHolderId);
 
   /**
    * Call this method to notify Flutter of the current device viewport metrics that are applies to
@@ -529,7 +533,7 @@ public class FlutterJNI {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
     nativeSetViewportMetrics(
-        nativeShellId,
+        nativeShellHolderId,
         devicePixelRatio,
         physicalWidth,
         physicalHeight,
@@ -548,7 +552,7 @@ public class FlutterJNI {
   }
 
   private native void nativeSetViewportMetrics(
-      long nativeShellId,
+      long nativeShellHolderId,
       float devicePixelRatio,
       int physicalWidth,
       int physicalHeight,
@@ -572,11 +576,11 @@ public class FlutterJNI {
   public void dispatchPointerDataPacket(@NonNull ByteBuffer buffer, int position) {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
-    nativeDispatchPointerDataPacket(nativeShellId, buffer, position);
+    nativeDispatchPointerDataPacket(nativeShellHolderId, buffer, position);
   }
 
   private native void nativeDispatchPointerDataPacket(
-      long nativeShellId, @NonNull ByteBuffer buffer, int position);
+      long nativeShellHolderId, @NonNull ByteBuffer buffer, int position);
   // ------ End Touch Interaction Support ---
 
   @UiThread
@@ -673,11 +677,11 @@ public class FlutterJNI {
       int id, int action, @Nullable ByteBuffer args, int argsPosition) {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
-    nativeDispatchSemanticsAction(nativeShellId, id, action, args, argsPosition);
+    nativeDispatchSemanticsAction(nativeShellHolderId, id, action, args, argsPosition);
   }
 
   private native void nativeDispatchSemanticsAction(
-      long nativeShellId, int id, int action, @Nullable ByteBuffer args, int argsPosition);
+      long nativeShellHolderId, int id, int action, @Nullable ByteBuffer args, int argsPosition);
 
   /**
    * Instructs Flutter to enable/disable its semantics tree, which is used by Flutter to support
@@ -687,10 +691,10 @@ public class FlutterJNI {
   public void setSemanticsEnabled(boolean enabled) {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
-    nativeSetSemanticsEnabled(nativeShellId, enabled);
+    nativeSetSemanticsEnabled(nativeShellHolderId, enabled);
   }
 
-  private native void nativeSetSemanticsEnabled(long nativeShellId, boolean enabled);
+  private native void nativeSetSemanticsEnabled(long nativeShellHolderId, boolean enabled);
 
   // TODO(mattcarroll): figure out what flags are supported and add javadoc about when/why/where to
   // use this.
@@ -698,10 +702,10 @@ public class FlutterJNI {
   public void setAccessibilityFeatures(int flags) {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
-    nativeSetAccessibilityFeatures(nativeShellId, flags);
+    nativeSetAccessibilityFeatures(nativeShellHolderId, flags);
   }
 
-  private native void nativeSetAccessibilityFeatures(long nativeShellId, int flags);
+  private native void nativeSetAccessibilityFeatures(long nativeShellHolderId, int flags);
   // ------ End Accessibility Support ----
 
   // ------ Start Texture Registration Support -----
@@ -713,11 +717,11 @@ public class FlutterJNI {
   public void registerTexture(long textureId, @NonNull SurfaceTextureWrapper textureWrapper) {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
-    nativeRegisterTexture(nativeShellId, textureId, textureWrapper);
+    nativeRegisterTexture(nativeShellHolderId, textureId, textureWrapper);
   }
 
   private native void nativeRegisterTexture(
-      long nativeShellId, long textureId, @NonNull SurfaceTextureWrapper textureWrapper);
+      long nativeShellHolderId, long textureId, @NonNull SurfaceTextureWrapper textureWrapper);
 
   /**
    * Call this method to inform Flutter that a texture previously registered with {@link
@@ -730,10 +734,10 @@ public class FlutterJNI {
   public void markTextureFrameAvailable(long textureId) {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
-    nativeMarkTextureFrameAvailable(nativeShellId, textureId);
+    nativeMarkTextureFrameAvailable(nativeShellHolderId, textureId);
   }
 
-  private native void nativeMarkTextureFrameAvailable(long nativeShellId, long textureId);
+  private native void nativeMarkTextureFrameAvailable(long nativeShellHolderId, long textureId);
 
   /**
    * Unregisters a texture that was registered with {@link #registerTexture(long, SurfaceTexture)}.
@@ -742,10 +746,10 @@ public class FlutterJNI {
   public void unregisterTexture(long textureId) {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
-    nativeUnregisterTexture(nativeShellId, textureId);
+    nativeUnregisterTexture(nativeShellHolderId, textureId);
   }
 
-  private native void nativeUnregisterTexture(long nativeShellId, long textureId);
+  private native void nativeUnregisterTexture(long nativeShellHolderId, long textureId);
   // ------ Start Texture Registration Support -----
 
   // ------ Start Dart Execution Support -------
@@ -764,11 +768,15 @@ public class FlutterJNI {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
     nativeRunBundleAndSnapshotFromLibrary(
-        nativeShellId, bundlePath, entrypointFunctionName, pathToEntrypointFunction, assetManager);
+        nativeShellHolderId,
+        bundlePath,
+        entrypointFunctionName,
+        pathToEntrypointFunction,
+        assetManager);
   }
 
   private native void nativeRunBundleAndSnapshotFromLibrary(
-      long nativeShellId,
+      long nativeShellHolderId,
       @NonNull String bundlePath,
       @Nullable String entrypointFunctionName,
       @Nullable String pathToEntrypointFunction,
@@ -839,7 +847,7 @@ public class FlutterJNI {
   public void dispatchEmptyPlatformMessage(@NonNull String channel, int responseId) {
     ensureRunningOnMainThread();
     if (isAttached()) {
-      nativeDispatchEmptyPlatformMessage(nativeShellId, channel, responseId);
+      nativeDispatchEmptyPlatformMessage(nativeShellHolderId, channel, responseId);
     } else {
       Log.w(
           TAG,
@@ -852,7 +860,7 @@ public class FlutterJNI {
 
   // Send an empty platform message to Dart.
   private native void nativeDispatchEmptyPlatformMessage(
-      long nativeShellId, @NonNull String channel, int responseId);
+      long nativeShellHolderId, @NonNull String channel, int responseId);
 
   /** Sends a reply {@code message} from Android to Flutter over the given {@code channel}. */
   @UiThread
@@ -860,7 +868,7 @@ public class FlutterJNI {
       @NonNull String channel, @Nullable ByteBuffer message, int position, int responseId) {
     ensureRunningOnMainThread();
     if (isAttached()) {
-      nativeDispatchPlatformMessage(nativeShellId, channel, message, position, responseId);
+      nativeDispatchPlatformMessage(nativeShellHolderId, channel, message, position, responseId);
     } else {
       Log.w(
           TAG,
@@ -873,7 +881,7 @@ public class FlutterJNI {
 
   // Send a data-carrying platform message to Dart.
   private native void nativeDispatchPlatformMessage(
-      long nativeShellId,
+      long nativeShellHolderId,
       @NonNull String channel,
       @Nullable ByteBuffer message,
       int position,
@@ -884,7 +892,7 @@ public class FlutterJNI {
   public void invokePlatformMessageEmptyResponseCallback(int responseId) {
     ensureRunningOnMainThread();
     if (isAttached()) {
-      nativeInvokePlatformMessageEmptyResponseCallback(nativeShellId, responseId);
+      nativeInvokePlatformMessageEmptyResponseCallback(nativeShellHolderId, responseId);
     } else {
       Log.w(
           TAG,
@@ -895,7 +903,7 @@ public class FlutterJNI {
 
   // Send an empty response to a platform message received from Dart.
   private native void nativeInvokePlatformMessageEmptyResponseCallback(
-      long nativeShellId, int responseId);
+      long nativeShellHolderId, int responseId);
 
   // TODO(mattcarroll): differentiate between channel responses and platform responses.
   @UiThread
@@ -903,7 +911,8 @@ public class FlutterJNI {
       int responseId, @Nullable ByteBuffer message, int position) {
     ensureRunningOnMainThread();
     if (isAttached()) {
-      nativeInvokePlatformMessageResponseCallback(nativeShellId, responseId, message, position);
+      nativeInvokePlatformMessageResponseCallback(
+          nativeShellHolderId, responseId, message, position);
     } else {
       Log.w(
           TAG,
@@ -914,7 +923,7 @@ public class FlutterJNI {
 
   // Send a data-carrying response to a platform message received from Dart.
   private native void nativeInvokePlatformMessageResponseCallback(
-      long nativeShellId, int responseId, @Nullable ByteBuffer message, int position);
+      long nativeShellHolderId, int responseId, @Nullable ByteBuffer message, int position);
   // ------- End Platform Message Support ----
 
   // ----- Start Engine Lifecycle Support ----
@@ -1118,11 +1127,11 @@ public class FlutterJNI {
   public void loadDartDeferredLibrary(int loadingUnitId, @NonNull String[] searchPaths) {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
-    nativeLoadDartDeferredLibrary(nativeShellId, loadingUnitId, searchPaths);
+    nativeLoadDartDeferredLibrary(nativeShellHolderId, loadingUnitId, searchPaths);
   }
 
   private native void nativeLoadDartDeferredLibrary(
-      long nativeShellId, int loadingUnitId, @NonNull String[] searchPaths);
+      long nativeShellHolderId, int loadingUnitId, @NonNull String[] searchPaths);
 
   /**
    * Adds the specified AssetManager as an APKAssetResolver in the Flutter Engine's AssetManager.
@@ -1139,11 +1148,13 @@ public class FlutterJNI {
       @NonNull AssetManager assetManager, @NonNull String assetBundlePath) {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
-    nativeUpdateJavaAssetManager(nativeShellId, assetManager, assetBundlePath);
+    nativeUpdateJavaAssetManager(nativeShellHolderId, assetManager, assetBundlePath);
   }
 
   private native void nativeUpdateJavaAssetManager(
-      long nativeShellId, @NonNull AssetManager assetManager, @NonNull String assetBundlePath);
+      long nativeShellHolderId,
+      @NonNull AssetManager assetManager,
+      @NonNull String assetBundlePath);
 
   /**
    * Indicates that a failure was encountered during the Android portion of downloading a dynamic
@@ -1197,11 +1208,11 @@ public class FlutterJNI {
   public Bitmap getBitmap() {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
-    return nativeGetBitmap(nativeShellId);
+    return nativeGetBitmap(nativeShellHolderId);
   }
 
   // TODO(mattcarroll): determine if this is nonull or nullable
-  private native Bitmap nativeGetBitmap(long nativeShellId);
+  private native Bitmap nativeGetBitmap(long nativeShellHolderId);
 
   /**
    * Notifies the Dart VM of a low memory event, or that the application is in a state such that now
@@ -1214,10 +1225,10 @@ public class FlutterJNI {
   public void notifyLowMemoryWarning() {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
-    nativeNotifyLowMemoryWarning(nativeShellId);
+    nativeNotifyLowMemoryWarning(nativeShellHolderId);
   }
 
-  private native void nativeNotifyLowMemoryWarning(long nativeShellId);
+  private native void nativeNotifyLowMemoryWarning(long nativeShellHolderId);
 
   private void ensureRunningOnMainThread() {
     if (Looper.myLooper() != mainLooper) {

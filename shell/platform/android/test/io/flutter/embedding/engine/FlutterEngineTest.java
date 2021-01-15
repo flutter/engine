@@ -211,7 +211,7 @@ public class FlutterEngineTest {
     EngineLifecycleListener listener = mock(EngineLifecycleListener.class);
     engineUnderTest.addEngineLifecycleListener(listener);
     engineUnderTest.destroy();
-    verify(listener, times(1)).onEngineDestroy();
+    verify(listener, times(1)).onEngineWillDestroy();
   }
 
   @Test

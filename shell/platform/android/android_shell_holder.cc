@@ -71,8 +71,8 @@ AndroidShellHolder::AndroidShellHolder(
           );
         }
         weak_platform_view = platform_view_android->GetWeakPtr();
-        shell.OnDisplayUpdates(DisplayUpdateType::kStartup,
-                               {Display(jni_facade->GetDisplayRefreshRate())});
+        auto display = Display(jni_facade->GetDisplayRefreshRate());
+        shell.OnDisplayUpdates(DisplayUpdateType::kStartup, {display});
         return platform_view_android;
       };
 
@@ -170,14 +170,17 @@ const flutter::Settings& AndroidShellHolder::GetSettings() const {
 
 std::unique_ptr<AndroidShellHolder> AndroidShellHolder::Spawn(
     std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
-    std::string entrypoint,
-    std::string libraryUrl) const {
+    const std::string& entrypoint,
+    const std::string& libraryUrl) const {
   FML_DCHECK(shell_ && shell_->IsSetup())
       << "A new Shell can only be spawned "
          "if the current Shell is properly constructed";
 
   // Pull out the new PlatformViewAndroid from the new Shell to feed to it to
   // the new AndroidShellHolder.
+  //
+  // It's a weak pointer because it's owned by the Shell (which we're also)
+  // making below. And the AndroidShellHolder then owns the Shell.
   fml::WeakPtr<PlatformViewAndroid> weak_platform_view;
 
   // Take out the old AndroidContext to reuse inside the PlatformViewAndroid
@@ -202,8 +205,8 @@ std::unique_ptr<AndroidShellHolder> AndroidShellHolder::Spawn(
             android_context          // Android context
         );
         weak_platform_view = platform_view_android->GetWeakPtr();
-        shell.OnDisplayUpdates(DisplayUpdateType::kStartup,
-                               {Display(jni_facade->GetDisplayRefreshRate())});
+        auto display = Display(jni_facade->GetDisplayRefreshRate());
+        shell.OnDisplayUpdates(DisplayUpdateType::kStartup, {display});
         return platform_view_android;
       };
 
@@ -223,14 +226,14 @@ std::unique_ptr<AndroidShellHolder> AndroidShellHolder::Spawn(
   std::unique_ptr<flutter::Shell> shell = shell_->Spawn(
       std::move(config.value()), on_create_platform_view, on_create_rasterizer);
 
-  return std::make_unique<AndroidShellHolder>(GetSettings(), jni_facade,
-                                              thread_host_, std::move(shell),
-                                              weak_platform_view);
+  return std::unique_ptr<AndroidShellHolder>(
+      new AndroidShellHolder(GetSettings(), jni_facade, thread_host_,
+                             std::move(shell), weak_platform_view));
 }
 
 void AndroidShellHolder::Launch(std::shared_ptr<AssetManager> asset_manager,
-                                std::string entrypoint,
-                                std::string libraryUrl) {
+                                const std::string& entrypoint,
+                                const std::string& libraryUrl) {
   if (!IsValid()) {
     return;
   }
@@ -264,8 +267,8 @@ void AndroidShellHolder::NotifyLowMemoryWarning() {
 
 std::optional<RunConfiguration> AndroidShellHolder::BuildRunConfiguration(
     std::shared_ptr<flutter::AssetManager> asset_manager,
-    std::string entrypoint,
-    std::string libraryUrl) const {
+    const std::string& entrypoint,
+    const std::string& libraryUrl) const {
   std::unique_ptr<IsolateConfiguration> isolate_configuration;
   if (flutter::DartVM::IsRunningPrecompiledCode()) {
     isolate_configuration = IsolateConfiguration::CreateForAppSnapshot();

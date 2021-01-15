@@ -16,8 +16,8 @@ import java.util.List;
  * This class is experimental. Please do not ship production code using it.
  *
  * <p>Represents a collection of {@link io.flutter.embedding.engine.FlutterEngine}s who share
- * resources among each other to allow them to be created faster and with less memory than calling
- * the {@link io.flutter.embedding.engine.FlutterEngine}'s constructor multiple times.
+ * resources to allow them to be created faster and with less memory than calling the {@link
+ * io.flutter.embedding.engine.FlutterEngine}'s constructor multiple times.
  *
  * <p>When creating or recreating the first {@link io.flutter.embedding.engine.FlutterEngine} in the
  * FlutterEngineGroup, the behavior is the same as creating a {@link
@@ -31,19 +31,18 @@ import java.util.List;
  */
 public class FlutterEngineGroup {
 
-  public FlutterEngineGroup(@NonNull Context context) {
-    this.context = context;
-  }
-
-  private final Context context;
   /* package */ @VisibleForTesting final List<FlutterEngine> activeEngines = new ArrayList<>();
 
-  public FlutterEngine createAndRunDefaultEngine() {
-    return createAndRunEngine(null);
+  public FlutterEngine createAndRunDefaultEngine(@NonNull Context context) {
+    return createAndRunEngine(context, null);
   }
 
-  public FlutterEngine createAndRunEngine(@Nullable DartEntrypoint dartEntrypoint) {
+  public FlutterEngine createAndRunEngine(
+      @NonNull Context context, @Nullable DartEntrypoint dartEntrypoint) {
     FlutterEngine engine = null;
+    // This is done up here because an engine needs to be created first in order to be able to use
+    // DartEntrypoint.createDefault. The engine creation initializes the FlutterLoader so
+    // DartEntrypoint known where to find the assets for the AOT or kernel code.
     if (activeEngines.size() == 0) {
       engine = createEngine(context);
     }
@@ -55,7 +54,7 @@ public class FlutterEngineGroup {
     if (activeEngines.size() == 0) {
       engine.getDartExecutor().executeDartEntrypoint(dartEntrypoint);
     } else {
-      engine = activeEngines.get(0).spawn(dartEntrypoint);
+      engine = activeEngines.get(0).spawn(context, dartEntrypoint);
     }
 
     activeEngines.add(engine);
@@ -70,7 +69,7 @@ public class FlutterEngineGroup {
           }
 
           @Override
-          public void onEngineDestroy() {
+          public void onEngineWillDestroy() {
             activeEngines.remove(engineToCleanUpOnDestroy);
           }
         });

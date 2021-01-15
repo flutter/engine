@@ -557,6 +557,20 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
           threadHostType};
 }
 
+static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSString* libraryURI) {
+  if (libraryURI) {
+    FML_DCHECK(entrypoint) << "Must specify entrypoint if specifying library";
+    settings->advisory_script_entrypoint = entrypoint.UTF8String;
+    settings->advisory_script_uri = libraryURI.UTF8String;
+  } else if (entrypoint) {
+    settings->advisory_script_entrypoint = entrypoint.UTF8String;
+    settings->advisory_script_uri = std::string("main.dart");
+  } else {
+    settings->advisory_script_entrypoint = std::string("main");
+    settings->advisory_script_uri = std::string("main.dart");
+  }
+}
+
 - (BOOL)createShell:(NSString*)entrypoint
          libraryURI:(NSString*)libraryURI
        initialRoute:(NSString*)initialRoute {
@@ -572,17 +586,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
   auto platformData = [_dartProject.get() defaultPlatformData];
 
-  if (libraryURI) {
-    FML_DCHECK(entrypoint) << "Must specify entrypoint if specifying library";
-    settings.advisory_script_entrypoint = entrypoint.UTF8String;
-    settings.advisory_script_uri = libraryURI.UTF8String;
-  } else if (entrypoint) {
-    settings.advisory_script_entrypoint = entrypoint.UTF8String;
-    settings.advisory_script_uri = std::string("main.dart");
-  } else {
-    settings.advisory_script_entrypoint = std::string("main");
-    settings.advisory_script_uri = std::string("main.dart");
-  }
+  SetEntryPoint(&settings, entrypoint, libraryURI);
 
   NSString* threadLabel = [FlutterEngine generateThreadLabel:_labelPrefix];
   _threadHost = std::make_shared<flutter::ThreadHost>();

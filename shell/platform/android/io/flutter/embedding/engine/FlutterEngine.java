@@ -76,7 +76,6 @@ import java.util.Set;
 public class FlutterEngine {
   private static final String TAG = "FlutterEngine";
 
-  @NonNull private final Context context;
   @NonNull private final FlutterJNI flutterJNI;
   @NonNull private final FlutterRenderer renderer;
   @NonNull private final DartExecutor dartExecutor;
@@ -118,7 +117,7 @@ public class FlutterEngine {
         }
 
         @Override
-        public void onEngineDestroy() {
+        public void onEngineWillDestroy() {
           // This inner implementation doesn't do anything since FlutterEngine sent this
           // notification in the first place. It's meant for external listeners.
         }
@@ -277,7 +276,6 @@ public class FlutterEngine {
       @Nullable String[] dartVmArgs,
       boolean automaticallyRegisterPlugins,
       boolean waitForRestorationData) {
-    this.context = context;
     AssetManager assetManager;
     try {
       assetManager = context.createPackageContext(context.getPackageName(), 0).getAssets();
@@ -365,13 +363,17 @@ public class FlutterEngine {
    * Create a second {@link FlutterEngine} based on this current one by sharing as much resources
    * together as possible to minimize startup latency and memory cost.
    *
+   * @param context is a Context used to create the {@link FlutterEngine}. Could be the same Context
+   *     as the current engine or a different one. Generally, only an application Context is needed
+   *     for the {@link FlutterEngine} and its dependencies.
    * @param dartEntrypoint specifies the {@link DartEntrypoint} the new engine should run. It
    *     doesn't need to be the same entrypoint as the current engine but must be built in the same
    *     AOT or snapshot.
    * @return a new {@link FlutterEngine}.
    */
   @NonNull
-  /*package*/ FlutterEngine spawn(@NonNull DartEntrypoint dartEntrypoint) {
+  /*package*/ FlutterEngine spawn(
+      @NonNull Context context, @NonNull DartEntrypoint dartEntrypoint) {
     if (!isAttachedToJni()) {
       throw new IllegalStateException(
           "Spawn can only be called on a fully constructed FlutterEngine");
@@ -380,7 +382,11 @@ public class FlutterEngine {
     FlutterJNI newFlutterJNI =
         flutterJNI.spawn(
             dartEntrypoint.dartEntrypointFunctionName, dartEntrypoint.dartEntrypointLibrary);
-    return new FlutterEngine(context, null, newFlutterJNI);
+    return new FlutterEngine(
+        context, // Context.
+        null, // FlutterLoader. A null value passed here causes the constructor to get it from the
+        // FlutterInjector.
+        newFlutterJNI); // FlutterJNI.
   }
 
   /**
@@ -422,7 +428,7 @@ public class FlutterEngine {
   public void destroy() {
     Log.v(TAG, "Destroying.");
     for (EngineLifecycleListener listener : engineLifecycleListeners) {
-      listener.onEngineDestroy();
+      listener.onEngineWillDestroy();
     }
     // The order that these things are destroyed is important.
     pluginRegistry.destroy();
@@ -614,6 +620,6 @@ public class FlutterEngine {
      *
      * <p>For the duration of the call, the Flutter engine is still valid.
      */
-    void onEngineDestroy();
+    void onEngineWillDestroy();
   }
 }

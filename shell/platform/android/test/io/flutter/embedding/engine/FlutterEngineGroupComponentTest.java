@@ -23,8 +23,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
@@ -43,16 +41,7 @@ public class FlutterEngineGroupComponentTest {
     MockitoAnnotations.initMocks(this);
     jniAttached = false;
     when(flutterJNI.isAttached()).thenAnswer(invocation -> jniAttached);
-    doAnswer(
-            new Answer() {
-              @Override
-              public Object answer(InvocationOnMock invocation) throws Throwable {
-                jniAttached = true;
-                return null;
-              }
-            })
-        .when(flutterJNI)
-        .attachToNative(false);
+    doAnswer(invocation -> jniAttached = true).when(flutterJNI).attachToNative(false);
     GeneratedPluginRegistrant.clearRegisteredEngines();
 
     firstEngineUnderTest =
@@ -65,7 +54,7 @@ public class FlutterEngineGroupComponentTest {
                 /*automaticallyRegisterPlugins=*/ false));
     when(firstEngineUnderTest.getDartExecutor()).thenReturn(mock(DartExecutor.class));
     engineGroupUnderTest =
-        new FlutterEngineGroup(RuntimeEnvironment.application) {
+        new FlutterEngineGroup() {
           @Override
           FlutterEngine createEngine(Context context) {
             return firstEngineUnderTest;
@@ -82,7 +71,9 @@ public class FlutterEngineGroupComponentTest {
 
   @Test
   public void listensToEngineDestruction() {
-    FlutterEngine firstEngine = engineGroupUnderTest.createAndRunEngine(mock(DartEntrypoint.class));
+    FlutterEngine firstEngine =
+        engineGroupUnderTest.createAndRunEngine(
+            RuntimeEnvironment.application, mock(DartEntrypoint.class));
     assertEquals(1, engineGroupUnderTest.activeEngines.size());
 
     firstEngine.destroy();
@@ -91,14 +82,17 @@ public class FlutterEngineGroupComponentTest {
 
   @Test
   public void canRecreateEngines() {
-    FlutterEngine firstEngine = engineGroupUnderTest.createAndRunEngine(mock(DartEntrypoint.class));
+    FlutterEngine firstEngine =
+        engineGroupUnderTest.createAndRunEngine(
+            RuntimeEnvironment.application, mock(DartEntrypoint.class));
     assertEquals(1, engineGroupUnderTest.activeEngines.size());
 
     firstEngine.destroy();
     assertEquals(0, engineGroupUnderTest.activeEngines.size());
 
     FlutterEngine secondEngine =
-        engineGroupUnderTest.createAndRunEngine(mock(DartEntrypoint.class));
+        engineGroupUnderTest.createAndRunEngine(
+            RuntimeEnvironment.application, mock(DartEntrypoint.class));
     assertEquals(1, engineGroupUnderTest.activeEngines.size());
     // They happen to be equal in our test since we mocked it to be so.
     assertEquals(firstEngine, secondEngine);
@@ -106,13 +100,18 @@ public class FlutterEngineGroupComponentTest {
 
   @Test
   public void canSpawnMoreEngines() {
-    FlutterEngine firstEngine = engineGroupUnderTest.createAndRunEngine(mock(DartEntrypoint.class));
+    FlutterEngine firstEngine =
+        engineGroupUnderTest.createAndRunEngine(
+            RuntimeEnvironment.application, mock(DartEntrypoint.class));
     assertEquals(1, engineGroupUnderTest.activeEngines.size());
 
-    doReturn(mock(FlutterEngine.class)).when(firstEngine).spawn(any(DartEntrypoint.class));
+    doReturn(mock(FlutterEngine.class))
+        .when(firstEngine)
+        .spawn(any(Context.class), any(DartEntrypoint.class));
 
     FlutterEngine secondEngine =
-        engineGroupUnderTest.createAndRunEngine(mock(DartEntrypoint.class));
+        engineGroupUnderTest.createAndRunEngine(
+            RuntimeEnvironment.application, mock(DartEntrypoint.class));
     assertEquals(2, engineGroupUnderTest.activeEngines.size());
 
     firstEngine.destroy();
@@ -120,9 +119,12 @@ public class FlutterEngineGroupComponentTest {
 
     // Now the second spawned engine is the only one left and it will be called to spawn the next
     // engine in the chain.
-    when(secondEngine.spawn(any(DartEntrypoint.class))).thenReturn(mock(FlutterEngine.class));
+    when(secondEngine.spawn(any(Context.class), any(DartEntrypoint.class)))
+        .thenReturn(mock(FlutterEngine.class));
 
-    FlutterEngine thirdEngine = engineGroupUnderTest.createAndRunEngine(mock(DartEntrypoint.class));
+    FlutterEngine thirdEngine =
+        engineGroupUnderTest.createAndRunEngine(
+            RuntimeEnvironment.application, mock(DartEntrypoint.class));
     assertEquals(2, engineGroupUnderTest.activeEngines.size());
   }
 }

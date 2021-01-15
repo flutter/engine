@@ -149,13 +149,20 @@ static void DestroyJNI(JNIEnv* env, jobject jcaller, jlong shell_holder) {
 // Signature is similar to RunBundleAndSnapshotFromLibrary but it can't change
 // the bundle path or asset manager since we can only spawn with the same
 // AOT.
+//
+// The newFlutterJNI instance must be a new FlutterJNI instance that will
+// hold the reference to this new returned AndroidShellHolder (and receive
+// callbacks from this new AndroidShellHolder).
+//
+// The shell_holder instance must be a pointer address to the current
+// AndroidShellHolder whose Shell will be used to spawn a new Shell.
 static jlong SpawnJNI(JNIEnv* env,
                       jobject jcaller,
-                      jobject flutterJNI,
+                      jobject newFlutterJNI,
                       jlong shell_holder,
                       jstring jEntrypoint,
                       jstring jLibraryUrl) {
-  fml::jni::JavaObjectWeakGlobalRef java_jni(env, flutterJNI);
+  fml::jni::JavaObjectWeakGlobalRef java_jni(env, newFlutterJNI);
   std::shared_ptr<PlatformViewAndroidJNI> jni_facade =
       std::make_shared<PlatformViewAndroidJNIImpl>(java_jni);
 
@@ -164,7 +171,7 @@ static jlong SpawnJNI(JNIEnv* env,
 
   auto spawned_shell_holder =
       ANDROID_SHELL_HOLDER->Spawn(jni_facade, entrypoint, libraryUrl);
-  if (spawned_shell_holder->IsValid()) {
+  if (spawned_shell_holder != nullptr && spawned_shell_holder->IsValid()) {
     return reinterpret_cast<jlong>(spawned_shell_holder.release());
   } else {
     return 0;
