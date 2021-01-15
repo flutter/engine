@@ -29,7 +29,7 @@
 namespace flutter {
 
 // ID for the window frame buffer.
-static constexpr uint32_t kWindowFrameBufferID = 0;
+inline constexpr uint32_t kWindowFrameBufferID = 0;
 
 // An OS-windowing neutral abstration for flutter
 // view that works with win32 hwnds and Windows::UI::Composition visuals.
@@ -120,6 +120,19 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate {
 
     // The currently pressed buttons, as represented in FlutterPointerEvent.
     uint64_t buttons = 0;
+  };
+
+  // States a resize event can be in.
+  enum class ResizeState {
+    // When a resize event has started but is in progress.
+    kResizeStarted,
+    // After a resize event starts and the framework has been notified to
+    // generate a frame for the right size.
+    kFrameGenerated,
+    // Default state for when no resize is in progress. Also used to indicate
+    // that during a resize event, a frame with the right size has been rendered
+    // and the buffers have been swapped.
+    kDone,
   };
 
   // Sends a window metrics update to the Flutter engine using current window
@@ -218,19 +231,6 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate {
   // condition variable.
   std::mutex resize_mutex_;
   std::condition_variable resize_cv_;
-
-  // States a resize event can be in.
-  enum class ResizeState {
-    // When a resize event has started but is in progress.
-    kResizeStarted,
-    // After a resize event starts and the framework has been notified to
-    // generate a frame for the right size.
-    kFrameGenerated,
-    // Default state for when no resize is in progress. Also used to indicate
-    // that during a resize event, a frame with the right size has been rendered
-    // and the buffers have been swapped.
-    kDone,
-  };
 
   // Indicates the state of a window resize event. Platform thread will be
   // blocked while this is not done. Guarded by resize_mutex_.

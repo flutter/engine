@@ -98,6 +98,8 @@ source_set("flutter_windows_source") {
       "win32_window_proc_delegate_manager.cc",
       "win32_window_proc_delegate_manager.h",
     ]
+
+    libs = [ "dwmapi.lib" ]
   }
 
   configs += [
@@ -139,10 +141,6 @@ shared_library("flutter_windows") {
   deps = [ ":flutter_windows_source" ]
 
   public_configs = [ "//flutter:config" ]
-
-  if (target_os != "winuwp") {
-    libs = [ "dwmapi.lib" ]
-  }
 }
 
 shared_library("flutter_windows_winuwp") {
@@ -189,8 +187,6 @@ if (target_os == "winuwp") {
       "//flutter/testing",
       "//third_party/rapidjson",
     ]
-
-    libs = [ "dwmapi.lib" ]
   }
 }
 
