@@ -8,12 +8,13 @@ part of engine;
 /// Whether or not "Noto Sans Symbols" and "Noto Color Emoji" fonts have been
 /// downloaded. We download these as fallbacks when no other font covers the
 /// given code units.
-bool _downloadedSymbolsAndEmoji = false;
+bool _registeredSymbolsAndEmoji = false;
 
 final Set<int> codeUnitsWithNoKnownFont = <int>{};
 
 Future<void> _findFontsForMissingCodeunits(List<int> codeunits) async {
   _ensureNotoFontTreeCreated();
+
   // If all of the code units are known to have no Noto Font which covers them,
   // then just give up. We have already logged a warning.
   if (codeunits.every((u) => codeUnitsWithNoKnownFont.contains(u))) {
@@ -31,41 +32,36 @@ Future<void> _findFontsForMissingCodeunits(List<int> codeunits) async {
       missingCodeUnits.add(codeunit);
     }
   }
+
   fonts = _findMinimumFontsForCodeunits(coveredCodeUnits, fonts);
+
   for (_NotoFont font in fonts) {
-    if (_resolvedNotoFonts[font] == null) {
-      String googleFontCss = await html.window
-          .fetch(font.googleFontsCssUrl)
-          .then((dynamic response) =>
-              response.text().then<String>((dynamic x) => x as String));
-      final _ResolvedNotoFont resolvedFont =
-          _makeResolvedNotoFontFromCss(googleFontCss, font.name);
-      _registerResolvedFont(font, resolvedFont);
-    }
+    await font.ensureResolved();
   }
 
   Set<_ResolvedNotoSubset> resolvedFonts = <_ResolvedNotoSubset>{};
   for (int codeunit in coveredCodeUnits) {
-    resolvedFonts.addAll(_lookupResolvedFontsForCodeunit(codeunit));
+    for (_NotoFont font in fonts) {
+      resolvedFonts.addAll(font.resolvedFont!.tree.intersections(codeunit));
+    }
   }
 
   for (_ResolvedNotoSubset resolvedFont in resolvedFonts) {
-    skiaFontCollection.registerFallbackFont(
-        resolvedFont.url, resolvedFont.name);
+    _notoDownloadQueue.add(resolvedFont);
   }
 
-  if (missingCodeUnits.isNotEmpty) {
-    if (!_downloadedSymbolsAndEmoji) {
-      await _registerSymbolsAndEmoji();
+  if (missingCodeUnits.isNotEmpty && !_notoDownloadQueue.isPending) {
+    if (!_registeredSymbolsAndEmoji) {
+      _registerSymbolsAndEmoji();
     } else {
-      html.window.console
-          .log('Could not find a Noto font to display all missing characters. '
-              'Please add a font asset for the missing characters.');
-      codeUnitsWithNoKnownFont.addAll(missingCodeUnits);
+      if (!_notoDownloadQueue.isPending) {
+        html.window.console.log(
+            'Could not find a Noto font to display all missing characters. '
+            'Please add a font asset for the missing characters.');
+        codeUnitsWithNoKnownFont.addAll(missingCodeUnits);
+      }
     }
   }
-  await skiaFontCollection.ensureFontsLoaded();
-  sendFontChangeMessage();
 }
 
 /// Parse the CSS file for a font and make a list of resolved subsets.
@@ -149,29 +145,28 @@ _ResolvedNotoFont _makeResolvedNotoFontFromCss(String css, String name) {
     }
   }
 
-  return _ResolvedNotoFont(name, subsets);
-}
-
-void _registerResolvedFont(_NotoFont font, _ResolvedNotoFont resolvedFont) {
-  _resolvedNotoFonts[font] = resolvedFont;
-
-  for (_ResolvedNotoSubset subset in resolvedFont.subsets) {
+  Map<_ResolvedNotoSubset, List<_UnicodeRange>> rangesMap =
+      <_ResolvedNotoSubset, List<_UnicodeRange>>{};
+  for (_ResolvedNotoSubset subset in subsets) {
     for (_UnicodeRange range in subset.ranges) {
-      _resolvedNotoTreeRoot = _insertNotoFontRange<_ResolvedNotoSubset>(
-          range, subset, _resolvedNotoTreeRoot);
+      rangesMap.putIfAbsent(subset, () => <_UnicodeRange>[]).add(range);
     }
   }
 
-  assert(
-      _verifyNotoTree(_resolvedNotoTreeRoot),
-      'Resolved Noto tree is invalid: '
-      '${_verifyNotoSubtree(_resolvedNotoTreeRoot).reason}');
+  _IntervalTree<_ResolvedNotoSubset> tree =
+      _IntervalTree<_ResolvedNotoSubset>.createFromRanges(rangesMap);
+
+  return _ResolvedNotoFont(name, subsets, tree);
 }
 
 /// In the case where none of the known Noto Fonts cover a set of code units,
 /// try the Symbols and Emoji fonts. We don't know the exact range of code units
 /// that are covered by these fonts, so we download them and hope for the best.
 Future<void> _registerSymbolsAndEmoji() async {
+  if (_registeredSymbolsAndEmoji) {
+    return;
+  }
+  _registeredSymbolsAndEmoji = true;
   const String symbolsUrl =
       'https://fonts.googleapis.com/css2?family=Noto+Sans+Symbols';
   const String emojiUrl =
@@ -200,10 +195,10 @@ Future<void> _registerSymbolsAndEmoji() async {
   String symbolsFontUrl = extractUrlFromCss(symbolsCss);
   String emojiFontUrl = extractUrlFromCss(emojiCss);
 
-  skiaFontCollection.registerFallbackFont(symbolsFontUrl, 'Noto Sans Symbols');
-  skiaFontCollection.registerFallbackFont(
-      emojiFontUrl, 'Noto Color Emoji Compat');
-  _downloadedSymbolsAndEmoji = true;
+  _notoDownloadQueue.add(_ResolvedNotoSubset(
+      symbolsFontUrl, 'Noto Sans Symbols', const <_UnicodeRange>[]));
+  _notoDownloadQueue.add(_ResolvedNotoSubset(
+      emojiFontUrl, 'Noto Color Emoji Compat', const <_UnicodeRange>[]));
 }
 
 /// Finds the minimum set of fonts which covers all of the [codeunits].
@@ -297,7 +292,11 @@ class _NotoFont {
   final String name;
   final List<_UnicodeRange> unicodeRanges;
 
-  const _NotoFont(this.name, this.unicodeRanges);
+  Completer<void>? _decodingCompleter;
+
+  _ResolvedNotoFont? resolvedFont;
+
+  _NotoFont(this.name, this.unicodeRanges);
 
   bool matchesCodeunit(int codeunit) {
     for (_UnicodeRange range in unicodeRanges) {
@@ -310,6 +309,23 @@ class _NotoFont {
 
   String get googleFontsCssUrl =>
       'https://fonts.googleapis.com/css2?family=${name.replaceAll(' ', '+')}';
+
+  Future<void> ensureResolved() async {
+    if (resolvedFont == null) {
+      if (_decodingCompleter == null) {
+        _decodingCompleter = Completer<void>();
+        String googleFontCss = await html.window.fetch(googleFontsCssUrl).then(
+            (dynamic response) =>
+                response.text().then<String>((dynamic x) => x as String));
+        final _ResolvedNotoFont googleFont =
+            _makeResolvedNotoFontFromCss(googleFontCss, name);
+        resolvedFont = googleFont;
+        _decodingCompleter!.complete();
+      } else {
+        await _decodingCompleter!.future;
+      }
+    }
+  }
 }
 
 class _UnicodeRange {
@@ -341,19 +357,20 @@ class _UnicodeRange {
 class _ResolvedNotoFont {
   final String name;
   final List<_ResolvedNotoSubset> subsets;
+  final _IntervalTree<_ResolvedNotoSubset> tree;
 
-  const _ResolvedNotoFont(this.name, this.subsets);
+  const _ResolvedNotoFont(this.name, this.subsets, this.tree);
 }
 
 class _ResolvedNotoSubset {
   final String url;
-  final String name;
+  final String family;
   final List<_UnicodeRange> ranges;
 
-  const _ResolvedNotoSubset(this.url, this.name, this.ranges);
+  _ResolvedNotoSubset(this.url, this.family, this.ranges);
 }
 
-const _NotoFont _notoSansSC = _NotoFont('Noto Sans SC', <_UnicodeRange>[
+_NotoFont _notoSansSC = _NotoFont('Noto Sans SC', <_UnicodeRange>[
   _UnicodeRange(12288, 12591),
   _UnicodeRange(12800, 13311),
   _UnicodeRange(19968, 40959),
@@ -361,32 +378,32 @@ const _NotoFont _notoSansSC = _NotoFont('Noto Sans SC', <_UnicodeRange>[
   _UnicodeRange(65280, 65519),
 ]);
 
-const _NotoFont _notoSansTC = _NotoFont('Noto Sans TC', <_UnicodeRange>[
+_NotoFont _notoSansTC = _NotoFont('Noto Sans TC', <_UnicodeRange>[
   _UnicodeRange(12288, 12351),
   _UnicodeRange(12549, 12585),
   _UnicodeRange(19968, 40959),
 ]);
 
-const _NotoFont _notoSansHK = _NotoFont('Noto Sans HK', <_UnicodeRange>[
+_NotoFont _notoSansHK = _NotoFont('Noto Sans HK', <_UnicodeRange>[
   _UnicodeRange(12288, 12351),
   _UnicodeRange(12549, 12585),
   _UnicodeRange(19968, 40959),
 ]);
 
-const _NotoFont _notoSansJP = _NotoFont('Noto Sans JP', <_UnicodeRange>[
+_NotoFont _notoSansJP = _NotoFont('Noto Sans JP', <_UnicodeRange>[
   _UnicodeRange(12288, 12543),
   _UnicodeRange(19968, 40959),
   _UnicodeRange(65280, 65519),
 ]);
 
-const List<_NotoFont> _cjkFonts = <_NotoFont>[
+List<_NotoFont> _cjkFonts = <_NotoFont>[
   _notoSansSC,
   _notoSansTC,
   _notoSansHK,
   _notoSansJP,
 ];
 
-const List<_NotoFont> _notoFonts = <_NotoFont>[
+List<_NotoFont> _notoFonts = <_NotoFont>[
   _notoSansSC,
   _notoSansTC,
   _notoSansHK,
@@ -570,235 +587,63 @@ const List<_NotoFont> _notoFonts = <_NotoFont>[
   ]),
 ];
 
-/// Associates [range] with [font] in the Noto Font tree.
-///
-/// Returns the root node.
-_NotoTreeNode<T> _insertNotoFontRange<T>(
-    _UnicodeRange range, T font, _NotoTreeNode<T>? root) {
-  _NotoTreeNode<T>? newNode = _insertNotoFontRangeHelper(root, range, font);
-  if (newNode != null) {
-    _repairNotoFontTree(newNode);
+class _FallbackFontDownloadQueue {
+  final Set<_ResolvedNotoSubset> downloadedSubsets = <_ResolvedNotoSubset>{};
+  final Set<_ResolvedNotoSubset> pendingSubsets = <_ResolvedNotoSubset>{};
 
-    // Make sure the root node is correctly set.
-    _NotoTreeNode<T> newRoot = newNode;
-    while (newRoot.parent != null) {
-      newRoot = newRoot.parent!;
+  bool get isPending => pendingSubsets.isNotEmpty;
+
+  void add(_ResolvedNotoSubset subset) {
+    if (downloadedSubsets.contains(subset) || pendingSubsets.contains(subset)) {
+      return;
     }
-
-    return newRoot;
-  }
-  return root!;
-}
-
-/// Recurses the font tree and associates [range] with [font].
-///
-/// If a new node is created, it is returned so we can repair the tree.
-_NotoTreeNode<T>? _insertNotoFontRangeHelper<T>(
-    _NotoTreeNode<T>? root, _UnicodeRange range, T font) {
-  if (root != null) {
-    if (root.range == range) {
-      // The root node range is the same as the range we're inserting.
-      root.fonts.add(font);
-      return null;
-    }
-    if (range.start < root.range.start) {
-      assert(range.end < root.range.start,
-          'Overlapping Unicode range in Noto Tree. Root: ${root.range}, Range: $range');
-      if (root.left != null) {
-        return _insertNotoFontRangeHelper<T>(root.left, range, font);
-      } else {
-        _NotoTreeNode<T> newNode = _NotoTreeNode<T>(range);
-        newNode.fonts.add(font);
-        newNode.parent = root;
-        root.left = newNode;
-        return newNode;
-      }
-    } else {
-      assert(root.range.end < range.start,
-          'Overlapping Unicode range in Noto Tree. Root: ${root.range}, Range: $range');
-      if (root.right != null) {
-        return _insertNotoFontRangeHelper<T>(root.right, range, font);
-      } else {
-        _NotoTreeNode<T> newNode = _NotoTreeNode<T>(range);
-        newNode.fonts.add(font);
-        newNode.parent = root;
-        root.right = newNode;
-        return newNode;
-      }
-    }
-  } else {
-    // If [root] is null, then the tree is empty. Create a new root.
-    _NotoTreeNode<T> newRoot = _NotoTreeNode<T>(range);
-    newRoot.fonts.add(font);
-    return newRoot;
-  }
-}
-
-void _rotateLeft(_NotoTreeNode node) {
-  // We will only ever call this on nodes which have a right child.
-  _NotoTreeNode newNode = node.right!;
-  _NotoTreeNode? parent = node.parent;
-
-  node.right = newNode.left;
-  newNode.left = node;
-  node.parent = newNode;
-  if (node.right != null) {
-    node.right!.parent = node;
-  }
-
-  if (parent != null) {
-    if (node == parent.left) {
-      parent.left = newNode;
-    } else {
-      parent.right = newNode;
+    bool firstInBatch = pendingSubsets.isEmpty;
+    pendingSubsets.add(subset);
+    if (firstInBatch) {
+      Timer.run(startDownloads);
     }
   }
 
-  newNode.parent = parent;
-}
+  Future<void> startDownloads() async {
+    List<Future<void>> downloads = <Future>[];
+    for (_ResolvedNotoSubset subset in pendingSubsets) {
+      downloads.add(Future<void>(() async {
+        ByteBuffer buffer;
+        try {
+          buffer = await html.window.fetch(subset.url).then(
+              (dynamic fetchResult) => fetchResult
+                  .arrayBuffer()
+                  .then<ByteBuffer>((dynamic x) => x as ByteBuffer));
+        } catch (e) {
+          html.window.console
+              .warn('Failed to load font ${subset.family} at ${subset.url}');
+          html.window.console.warn(e);
+          return;
+        }
 
-void _rotateRight(_NotoTreeNode node) {
-  // We will only ever call this on nodes which have a left child.
-  _NotoTreeNode newNode = node.left!;
-  _NotoTreeNode? parent = node.parent;
+        final Uint8List bytes = buffer.asUint8List();
+        skiaFontCollection.registerFallbackFont(subset.family, bytes);
 
-  node.left = newNode.right;
-  newNode.right = node;
-  node.parent = newNode;
+        pendingSubsets.remove(subset);
+        downloadedSubsets.add(subset);
+        if (pendingSubsets.isEmpty) {
+          await skiaFontCollection.ensureFontsLoaded();
+          sendFontChangeMessage();
+        }
+      }));
+    }
 
-  if (node.left != null) {
-    node.left!.parent = node;
-  }
-
-  if (parent != null) {
-    if (node == parent.left) {
-      parent.left = newNode;
-    } else {
-      parent.right = newNode;
+    await Future.wait<void>(downloads);
+    if (pendingSubsets.isNotEmpty) {
+      await startDownloads();
     }
   }
-
-  newNode.parent = parent;
-}
-
-void _repairNotoFontTree(_NotoTreeNode node) {
-  if (node.parent == null) {
-    // This is the root node. The root node must be black.
-    node.isBlack = true;
-    return;
-  } else if (node.parent!.isBlack) {
-    // Do nothing.
-    return;
-  }
-
-  // If we've reached here, then (1) node's parent is non-null and (2) node's
-  // parent is red, which means that node's parent is not the root node and
-  // therefore (3) node's grandparent is not null;
-
-  _NotoTreeNode parent = node.parent!;
-  _NotoTreeNode grandparent = parent.parent!;
-
-  _NotoTreeNode? uncle;
-  if (parent == grandparent.left) {
-    uncle = grandparent.right;
-  } else {
-    uncle = grandparent.left;
-  }
-  if (uncle != null && uncle.isRed) {
-    parent.isBlack = true;
-    uncle.isBlack = true;
-    grandparent.isBlack = false;
-    _repairNotoFontTree(grandparent);
-    return;
-  }
-
-  if (node == parent.right && parent == grandparent.left) {
-    _rotateLeft(parent);
-    node = node.left!;
-  } else if (node == parent.left && parent == grandparent.right) {
-    _rotateRight(parent);
-    node = node.right!;
-  }
-
-  parent = node.parent!;
-  grandparent = parent.parent!;
-
-  if (node == parent.left) {
-    _rotateRight(grandparent);
-  } else {
-    _rotateLeft(grandparent);
-  }
-
-  parent.isBlack = true;
-  grandparent.isBlack = false;
-}
-
-bool _verifyNotoTree(_NotoTreeNode? root) {
-  _VerifyNotoTreeResult result = _verifyNotoSubtree(root);
-  return result.isValid;
-}
-
-_VerifyNotoTreeResult _verifyNotoSubtree(_NotoTreeNode? node) {
-  if (node == null) {
-    // Leaves of the tree are represented as null nodes. Leaf nodes are black.
-    return _VerifyNotoTreeResult(true, 1);
-  }
-  if (node.parent == null) {
-    // This is the root node of the tree. The root node must be black.
-    if (!node.isBlack) {
-      return _VerifyNotoTreeResult(false, 0, 'Root node is red');
-    }
-  }
-
-  int blackNodesOnPath = 0;
-  if (node.isRed) {
-    // Both of a red tree node's children must be black.
-    if ((node.left != null && !node.left!.isBlack) ||
-        (node.right != null && !node.right!.isBlack)) {
-      return _VerifyNotoTreeResult(false, -1, 'Red node has a red child');
-    }
-  } else {
-    blackNodesOnPath = 1;
-  }
-
-  _VerifyNotoTreeResult leftResult = _verifyNotoSubtree(node.left);
-  _VerifyNotoTreeResult rightResult = _verifyNotoSubtree(node.right);
-
-  if (!leftResult.isValid) {
-    return leftResult;
-  } else if (!rightResult.isValid) {
-    return rightResult;
-  } else if (leftResult.blackNodesOnPath != rightResult.blackNodesOnPath) {
-    return _VerifyNotoTreeResult(
-        false,
-        -1,
-        "The number of black nodes on the path from "
-        "root to leaf isn't the same for all leaves");
-  }
-
-  return _VerifyNotoTreeResult(
-      true, blackNodesOnPath + leftResult.blackNodesOnPath);
-}
-
-class _VerifyNotoTreeResult {
-  /// Whether or not the tree conforms to the Red-Black tree invariants.
-  final bool isValid;
-
-  /// The number of black nodes on the path from the node to the root.
-  final int blackNodesOnPath;
-
-  /// A human-readable reason why the tree is invalid.
-  final String? reason;
-
-  const _VerifyNotoTreeResult(this.isValid, this.blackNodesOnPath,
-      [this.reason]);
 }
 
 /// The Noto font interval tree.
 _IntervalTree<_NotoFont>? _notoTree;
 
-/// The root of the resolved Noto font Red-Black Tree.
-_NotoTreeNode<_ResolvedNotoSubset>? _resolvedNotoTreeRoot;
-
 Map<_NotoFont, _ResolvedNotoFont> _resolvedNotoFonts =
     <_NotoFont, _ResolvedNotoFont>{};
+
+_FallbackFontDownloadQueue _notoDownloadQueue = _FallbackFontDownloadQueue();

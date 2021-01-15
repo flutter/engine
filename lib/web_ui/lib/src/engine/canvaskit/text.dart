@@ -680,6 +680,8 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
           missingCodeUnits.add(text.codeUnitAt(i));
         }
       }
+      print("FOUND MISSING CODE UNITS IN STRING: $text");
+      print("FONT FAMILIES: $fontFamilies");
       _findFontsForMissingCodeunits(missingCodeUnits);
     }
   }
@@ -791,11 +793,12 @@ enum _ParagraphCommandType {
 
 List<String> _getEffectiveFontFamilies(String? fontFamily,
     [List<String>? fontFamilyFallback]) {
-  if (fontFamily == null ||
-      !skiaFontCollection.registeredFamilies.contains(fontFamily)) {
-    fontFamily = 'Roboto';
+  List<String> fontFamilies = <String>[];
+  if (fontFamily == null) {
+    fontFamilies.add('Roboto');
+  } else {
+    fontFamilies.add(fontFamily);
   }
-  List<String> fontFamilies = <String>[fontFamily];
   if (fontFamilyFallback != null &&
       !fontFamilyFallback.every((font) => fontFamily == font)) {
     fontFamilies.addAll(fontFamilyFallback);

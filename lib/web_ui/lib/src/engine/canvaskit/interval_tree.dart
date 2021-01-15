@@ -5,6 +5,7 @@
 // @dart = 2.12
 part of engine;
 
+// TODO(hterkelsen): Tests.
 /// Associates a [T] with one or more [_UnicodeRange]s.
 class _IntervalTree<T> {
   final _IntervalTreeNode<T> root;
@@ -34,6 +35,7 @@ class _IntervalTree<T> {
       _IntervalTreeNode<T> root = _IntervalTreeNode<T>(intervals[mid]);
       root.left = _makeBalancedTree(intervals.sublist(0, mid));
       root.right = _makeBalancedTree(intervals.sublist(mid + 1));
+      return root;
     }
 
     void _computeHigh(_IntervalTreeNode<T> root) {
