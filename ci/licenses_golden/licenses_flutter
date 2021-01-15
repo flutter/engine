@@ -179,8 +179,6 @@ FILE: ../../../flutter/fml/memory/weak_ptr.h
 FILE: ../../../flutter/fml/memory/weak_ptr_internal.cc
 FILE: ../../../flutter/fml/memory/weak_ptr_internal.h
 FILE: ../../../flutter/fml/memory/weak_ptr_unittest.cc
-FILE: ../../../flutter/fml/message.cc
-FILE: ../../../flutter/fml/message.h
 FILE: ../../../flutter/fml/message_loop.cc
 FILE: ../../../flutter/fml/message_loop.h
 FILE: ../../../flutter/fml/message_loop_impl.cc
@@ -191,7 +189,6 @@ FILE: ../../../flutter/fml/message_loop_task_queues_benchmark.cc
 FILE: ../../../flutter/fml/message_loop_task_queues_merge_unmerge_unittests.cc
 FILE: ../../../flutter/fml/message_loop_task_queues_unittests.cc
 FILE: ../../../flutter/fml/message_loop_unittests.cc
-FILE: ../../../flutter/fml/message_unittests.cc
 FILE: ../../../flutter/fml/native_library.h
 FILE: ../../../flutter/fml/paths.cc
 FILE: ../../../flutter/fml/paths.h
@@ -923,6 +920,7 @@ FILE: ../../../flutter/shell/platform/common/cpp/path_utils_unittests.cc
 FILE: ../../../flutter/shell/platform/common/cpp/public/flutter_export.h
 FILE: ../../../flutter/shell/platform/common/cpp/public/flutter_messenger.h
 FILE: ../../../flutter/shell/platform/common/cpp/public/flutter_plugin_registrar.h
+FILE: ../../../flutter/shell/platform/common/cpp/public/flutter_texture_registrar.h
 FILE: ../../../flutter/shell/platform/common/cpp/text_input_model.cc
 FILE: ../../../flutter/shell/platform/common/cpp/text_input_model.h
 FILE: ../../../flutter/shell/platform/common/cpp/text_input_model_unittests.cc
@@ -993,6 +991,9 @@ FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatfor
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterPluginAppLifeCycleDelegate.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterPluginAppLifeCycleDelegateTest.m
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterPluginAppLifeCycleDelegate_internal.h
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterRestorationPlugin.h
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterRestorationPlugin.mm
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterRestorationPluginTest.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.mm
@@ -1065,6 +1066,8 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterPlug
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterViewController.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Info.plist
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterAppDelegate.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStore.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStore.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStoreData.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStoreData.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject.mm
@@ -1083,11 +1086,18 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterIOSur
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterIOSurfaceHolder.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterIntermediateKeyResponder.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterIntermediateKeyResponder.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRendererTest.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalSurfaceManagerTest.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterOpenGLRenderer.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterOpenGLRenderer.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterOpenGLRendererTest.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderer.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterResizableBackingStoreProvider.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterResizableBackingStoreProvider.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterResizeSynchronizer.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterResizeSynchronizer.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterSurfaceManager.h
@@ -1324,6 +1334,11 @@ FILE: ../../../flutter/shell/platform/glfw/text_input_plugin.h
 FILE: ../../../flutter/shell/platform/linux/egl_utils.cc
 FILE: ../../../flutter/shell/platform/linux/egl_utils.h
 FILE: ../../../flutter/shell/platform/linux/egl_utils_test.cc
+FILE: ../../../flutter/shell/platform/linux/fl_accessibility_plugin.cc
+FILE: ../../../flutter/shell/platform/linux/fl_accessibility_plugin.h
+FILE: ../../../flutter/shell/platform/linux/fl_accessible_node.cc
+FILE: ../../../flutter/shell/platform/linux/fl_accessible_node.h
+FILE: ../../../flutter/shell/platform/linux/fl_accessible_node_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_basic_message_channel.cc
 FILE: ../../../flutter/shell/platform/linux/fl_basic_message_channel_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_binary_codec.cc
@@ -1388,6 +1403,8 @@ FILE: ../../../flutter/shell/platform/linux/fl_text_input_plugin.h
 FILE: ../../../flutter/shell/platform/linux/fl_value.cc
 FILE: ../../../flutter/shell/platform/linux/fl_value_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_view.cc
+FILE: ../../../flutter/shell/platform/linux/fl_view_accessible.cc
+FILE: ../../../flutter/shell/platform/linux/fl_view_accessible.h
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_basic_message_channel.h
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_binary_codec.h
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_binary_messenger.h
