@@ -370,9 +370,7 @@ public class FlutterEngine {
    *     AOT or snapshot.
    * @return a new {@link FlutterEngine}.
    */
-  // This method is package private because it's non-ideal. The method on FlutterEngine should
-  // ideally just create a second engine and a call to its DartExecutor should then run a
-  // DartEntrypoint.
+  @NonNull
   /*package*/ FlutterEngine spawn(@NonNull DartEntrypoint dartEntrypoint) {
     if (!isAttachedToJni()) {
       throw new IllegalStateException(

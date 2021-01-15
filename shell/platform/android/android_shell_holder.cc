@@ -9,7 +9,6 @@
 #include <pthread.h>
 #include <sys/resource.h>
 #include <sys/time.h>
-#include <cstddef>
 #include <memory>
 #include <optional>
 
@@ -150,7 +149,9 @@ AndroidShellHolder::AndroidShellHolder(
       shell_(std::move(shell)) {
   FML_DCHECK(jni_facade);
   FML_DCHECK(shell_);
+  FML_DCHECK(shell_->IsSetup());
   FML_DCHECK(platform_view_);
+  FML_DCHECK(thread_host_);
   is_valid_ = shell_ != nullptr;
 }
 
@@ -171,10 +172,16 @@ std::unique_ptr<AndroidShellHolder> AndroidShellHolder::Spawn(
     std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
     std::string entrypoint,
     std::string libraryUrl) const {
-  FML_DCHECK(shell_) << "A new Shell can only be spawned if the current Shell "
-                        "is properly constructed";
+  FML_DCHECK(shell_ && shell_->IsSetup())
+      << "A new Shell can only be spawned "
+         "if the current Shell is properly constructed";
 
+  // Pull out the new PlatformViewAndroid from the new Shell to feed to it to
+  // the new AndroidShellHolder.
   fml::WeakPtr<PlatformViewAndroid> weak_platform_view;
+
+  // Take out the old AndroidContext to reuse inside the PlatformViewAndroid
+  // of the new Shell.
   PlatformViewAndroid* android_platform_view = platform_view_.get();
   // There's some indirection with platform_view_ being a weak pointer but
   // we just checked that the shell_ exists above and a valid shell is the
@@ -192,8 +199,7 @@ std::unique_ptr<AndroidShellHolder> AndroidShellHolder::Spawn(
             shell,                   // delegate
             shell.GetTaskRunners(),  // task runners
             jni_facade,              // JNI interop
-            shell.GetSettings()
-                .enable_software_rendering  // use software rendering
+            android_context          // Android context
         );
         weak_platform_view = platform_view_android->GetWeakPtr();
         shell.OnDisplayUpdates(DisplayUpdateType::kStartup,
@@ -205,9 +211,12 @@ std::unique_ptr<AndroidShellHolder> AndroidShellHolder::Spawn(
     return std::make_unique<Rasterizer>(shell);
   };
 
-  FML_DLOG(ERROR) << "Spawned run";
+  // TODO(xster): could be worth tracing this to investigate whether
+  // the IsolateConfiguration could be cached somewhere.
   auto config = BuildRunConfiguration(asset_manager_, entrypoint, libraryUrl);
   if (!config) {
+    // If the RunConfiguration was null, the kernel blob wasn't readable.
+    // Fail the whole thing.
     return nullptr;
   }
 

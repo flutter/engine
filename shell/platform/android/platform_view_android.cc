@@ -74,16 +74,19 @@ PlatformViewAndroid::PlatformViewAndroid(
         fml::MakeRefCounted<AndroidEnvironmentGL>());
 #endif  // SHELL_ENABLE_VULKAN
   }
-  FML_CHECK(android_context_ && android_context_->IsValid())
-      << "Could not create an Android context.";
+  InitSurface();
+}
 
-  surface_factory_ = std::make_shared<AndroidSurfaceFactoryImpl>(
-      *android_context_, jni_facade);
-
-  android_surface_ = surface_factory_->CreateSurface();
-  FML_CHECK(android_surface_ && android_surface_->IsValid())
-      << "Could not create an OpenGL, Vulkan or Software surface to setup "
-         "rendering.";
+PlatformViewAndroid::PlatformViewAndroid(
+    PlatformView::Delegate& delegate,
+    flutter::TaskRunners task_runners,
+    std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
+    std::shared_ptr<flutter::AndroidContext> android_context)
+    : PlatformView(delegate, std::move(task_runners)),
+      jni_facade_(jni_facade),
+      android_context_(android_context),
+      platform_view_android_delegate_(jni_facade) {
+  InitSurface();
 }
 
 PlatformViewAndroid::PlatformViewAndroid(
@@ -95,6 +98,19 @@ PlatformViewAndroid::PlatformViewAndroid(
       platform_view_android_delegate_(jni_facade) {}
 
 PlatformViewAndroid::~PlatformViewAndroid() = default;
+
+void PlatformViewAndroid::InitSurface() {
+  FML_CHECK(android_context_ && android_context_->IsValid())
+      << "Could not create an Android context.";
+
+  surface_factory_ = std::make_shared<AndroidSurfaceFactoryImpl>(
+      *android_context_, jni_facade_);
+
+  android_surface_ = surface_factory_->CreateSurface();
+  FML_CHECK(android_surface_ && android_surface_->IsValid())
+      << "Could not create an OpenGL, Vulkan or Software surface to setup "
+         "rendering.";
+}
 
 void PlatformViewAndroid::NotifyCreated(
     fml::RefPtr<AndroidNativeWindow> native_window) {

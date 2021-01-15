@@ -2444,11 +2444,13 @@ TEST_F(ShellTest, Spawn) {
 
   fml::AutoResetWaitableEvent main_latch;
   std::string last_entry_point;
+  // Fulfill native function for the first Shell's entrypoint.
   AddNativeCallback(
       "SayHiFromFixturesAreFunctionalMain", CREATE_NATIVE_ENTRY([&](auto args) {
         last_entry_point = shell->GetEngine()->GetLastEntrypoint();
         main_latch.Signal();
       }));
+  // Fulfill native function for the second Shell's entrypoint.
   AddNativeCallback(
       // The Dart native function names aren't very consistent but this is just
       // the native function name of the second vm entrypoint in the fixture.
@@ -2457,6 +2459,7 @@ TEST_F(ShellTest, Spawn) {
   RunEngine(shell.get(), std::move(configuration));
   main_latch.Wait();
   ASSERT_TRUE(DartVMRef::IsInstanceRunning());
+  // Check first Shell ran the first entrypoint.
   ASSERT_EQ("fixturesAreFunctionalMain", last_entry_point);
 
   PostSync(
@@ -2478,6 +2481,7 @@ TEST_F(ShellTest, Spawn) {
         ASSERT_TRUE(ValidateShell(spawn.get()));
 
         PostSync(spawner->GetTaskRunners().GetUITaskRunner(), [&spawn] {
+          // Check second shell ran the second entrypoint.
           ASSERT_EQ("testCanLaunchSecondaryIsolate",
                     spawn->GetEngine()->GetLastEntrypoint());
         });

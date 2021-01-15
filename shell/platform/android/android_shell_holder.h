@@ -7,7 +7,7 @@
 
 #include <memory>
 
-#include "assets/asset_manager.h"
+#include "flutter/assets/asset_manager.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/unique_fd.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
@@ -49,11 +49,16 @@ class AndroidShellHolder {
   ///             This is similar to the standard constructor, except its
   ///             members were constructed elsewhere and injected.
   ///
+  ///             All injected components must be non-null and valid.
+  ///
+  ///             Used when constructing the Shell from the inside out when
+  ///             spawning from an existing Shell.
+  ///
   AndroidShellHolder(flutter::Settings settings,
                      std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
                      std::shared_ptr<ThreadHost> thread_host,
                      std::unique_ptr<Shell> shell,
-                     fml::WeakPtr<PlatformViewAndroid>);
+                     fml::WeakPtr<PlatformViewAndroid> platform_view);
 
   ~AndroidShellHolder();
 
@@ -80,6 +85,9 @@ class AndroidShellHolder {
   ///             makes, the JNI instance holding this AndroidShellHolder should
   ///             be created first to supply the jni_facade callback.
   ///
+  /// @param[in]  jni_facade this argument should be the JNI callback facade of
+  ///             a new JNI instance meant to hold this AndroidShellHolder.
+  ///
   std::unique_ptr<AndroidShellHolder> Spawn(
       std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
       std::string entrypoint,
@@ -99,6 +107,7 @@ class AndroidShellHolder {
   void UpdateAssetManager(fml::RefPtr<flutter::AssetManager> asset_manager);
 
   void NotifyLowMemoryWarning();
+  ;
 
  private:
   const flutter::Settings settings_;

@@ -218,6 +218,12 @@ class Shell final : public PlatformView::Delegate,
   ///             This results is a Shell that has a smaller startup time cost
   ///             and a smaller memory footprint than an Shell created with a
   ///             Create function.
+  ///
+  ///             The new Shell is returned in a running state so RunEngine
+  ///             shouldn't be called again on the Shell. Once running, the
+  ///             second Shell is mostly independent from the original Shell
+  ///             and the original Shell doesn't need to keep running for the
+  ///             spawned Shell to keep functioning.
   /// @param[in]  run_configuration  A RunConfiguration used to run the Isolate
   ///             associated with this new Shell. It doesn't have to be the same
   ///             configuration as the current Shell but it needs to be in the

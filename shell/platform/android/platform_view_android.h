@@ -53,6 +53,16 @@ class PlatformViewAndroid final : public PlatformView {
                       std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
                       bool use_software_rendering);
 
+  //----------------------------------------------------------------------------
+  /// @brief      Creates a new PlatformViewAndroid but using an existing
+  ///             Android GPU context to create new surfaces. This maximizes
+  ///             resource sharing between 2 PlatformViewAndroids of 2 Shells.
+  ///
+  PlatformViewAndroid(PlatformView::Delegate& delegate,
+                      flutter::TaskRunners task_runners,
+                      std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
+                      std::shared_ptr<flutter::AndroidContext> android_context);
+
   ~PlatformViewAndroid() override;
 
   void NotifyCreated(fml::RefPtr<AndroidNativeWindow> native_window);
@@ -158,6 +168,8 @@ class PlatformViewAndroid final : public PlatformView {
 
   // |PlatformView|
   void RequestDartDeferredLibrary(intptr_t loading_unit_id) override;
+
+  void InitSurface();
 
   void InstallFirstFrameCallback();
 

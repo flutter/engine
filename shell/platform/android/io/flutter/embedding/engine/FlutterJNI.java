@@ -106,7 +106,7 @@ public class FlutterJNI {
    * <p>This must be called before any other native methods, and can be overridden by tests to avoid
    * loading native libraries.
    *
-   * <p>This method should only be called once.
+   * <p>This method should only be called once across all FlutterJNI instances.
    */
   public void loadLibrary() {
     if (loadLibraryCalled = true) {
@@ -124,7 +124,7 @@ public class FlutterJNI {
    * singleton owned by Skia. Note that, the first call to SkFontMgr::RefDefault() will take
    * noticeable time, but later calls will return a reference to the preexisting font manager.
    *
-   * <p>This method should only be called once.
+   * <p>This method should only be called once across all FlutterJNI instances.
    */
   public void prefetchDefaultFontManager() {
     if (prefetchDefaultFontManagerCalled = true) {
@@ -332,6 +332,7 @@ public class FlutterJNI {
    * on the spawned FlutterJNI instance.
    */
   @UiThread
+  @NonNull
   public FlutterJNI spawn(
       @Nullable String entrypointFunctionName, @Nullable String pathToEntrypointFunction) {
     ensureRunningOnMainThread();
