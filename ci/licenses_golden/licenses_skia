@@ -1,4 +1,4 @@
-Signature: f18191d496c1a6cad1c2f810fc352d35
+Signature: 51448047dcb86100d44b5dc2eb9baebd
 
 UNUSED LICENSES:
 
@@ -7132,6 +7132,8 @@ TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/src/core/SkYUVAInfoLocation.h
 FILE: ../../../third_party/skia/src/gpu/GrYUVATextureProxies.cpp
 FILE: ../../../third_party/skia/src/gpu/GrYUVATextureProxies.h
+FILE: ../../../third_party/skia/src/sksl/SkSLBuiltinTypes.cpp
+FILE: ../../../third_party/skia/src/sksl/SkSLBuiltinTypes.h
 FILE: ../../../third_party/skia/src/sksl/SkSLContext.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLMangler.h
 ----------------------------------------------------------------------------------------------------
