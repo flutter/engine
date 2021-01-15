@@ -33,10 +33,37 @@ public class FlutterEngineGroup {
 
   /* package */ @VisibleForTesting final List<FlutterEngine> activeEngines = new ArrayList<>();
 
+  /**
+   * Creates a {@link io.flutter.embedding.engine.FlutterEngine} in this group and run its {@link
+   * io.flutter.embedding.engine.dart.DartExecutor} with a default entrypoint of the "main" function
+   * in the "lib/main.dart" file.
+   *
+   * <p>If no prior {@link io.flutter.embedding.engine.FlutterEngine} were created in this group,
+   * the initialization cost will be slightly higher than subsequent engines. The very first {@link
+   * io.flutter.embedding.engine.FlutterEngine} created per program, regardless of
+   * FlutterEngineGroup, also incurs the Dart VM creation time.
+   *
+   * <p>Subsequent engine creations will share resources with existing engines. However, if all
+   * existing engines were {@link io.flutter.embedding.engine.FlutterEngine#destroy()}ed, the next
+   * engine created will recreate its dependencies.
+   */
   public FlutterEngine createAndRunDefaultEngine(@NonNull Context context) {
     return createAndRunEngine(context, null);
   }
 
+  /**
+   * Creates a {@link io.flutter.embedding.engine.FlutterEngine} in this group and run its {@link
+   * io.flutter.embedding.engine.dart.DartExecutor} with the specified {@link DartEntrypoint}.
+   *
+   * <p>If no prior {@link io.flutter.embedding.engine.FlutterEngine} were created in this group,
+   * the initialization cost will be slightly higher than subsequent engines. The very first {@link
+   * io.flutter.embedding.engine.FlutterEngine} created per program, regardless of
+   * FlutterEngineGroup, also incurs the Dart VM creation time.
+   *
+   * <p>Subsequent engine creations will share resources with existing engines. However, if all
+   * existing engines were {@link io.flutter.embedding.engine.FlutterEngine#destroy()}ed, the next
+   * engine created will recreate its dependencies.
+   */
   public FlutterEngine createAndRunEngine(
       @NonNull Context context, @Nullable DartEntrypoint dartEntrypoint) {
     FlutterEngine engine = null;
