@@ -7,6 +7,7 @@ package io.flutter.embedding.engine;
 import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import io.flutter.embedding.engine.dart.DartExecutor.DartEntrypoint;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,7 +36,7 @@ public class FlutterEngineGroup {
   }
 
   private final Context context;
-  private final List<FlutterEngine> activeEngines = new ArrayList<>();
+  /* package */ @VisibleForTesting final List<FlutterEngine> activeEngines = new ArrayList<>();
 
   public FlutterEngine createAndRunDefaultEngine() {
     return createAndRunEngine(null);
@@ -44,7 +45,7 @@ public class FlutterEngineGroup {
   public FlutterEngine createAndRunEngine(@Nullable DartEntrypoint dartEntrypoint) {
     FlutterEngine engine = null;
     if (activeEngines.size() == 0) {
-      engine = new FlutterEngine(context);
+      engine = createEngine(context);
     }
 
     if (dartEntrypoint == null) {
@@ -74,5 +75,10 @@ public class FlutterEngineGroup {
           }
         });
     return engine;
+  }
+
+  @VisibleForTesting
+  /* package */ FlutterEngine createEngine(Context context) {
+    return new FlutterEngine(context);
   }
 }

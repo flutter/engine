@@ -109,7 +109,7 @@ public class FlutterJNI {
    * <p>This method should only be called once across all FlutterJNI instances.
    */
   public void loadLibrary() {
-    if (loadLibraryCalled = true) {
+    if (loadLibraryCalled) {
       Log.w(TAG, "FlutterJNI.loadLibrary called more than once");
     }
 
@@ -127,7 +127,7 @@ public class FlutterJNI {
    * <p>This method should only be called once across all FlutterJNI instances.
    */
   public void prefetchDefaultFontManager() {
-    if (prefetchDefaultFontManagerCalled = true) {
+    if (prefetchDefaultFontManagerCalled) {
       Log.w(TAG, "FlutterJNI.prefetchDefaultFontManager called more than once");
     }
 
@@ -156,7 +156,7 @@ public class FlutterJNI {
       @NonNull String appStoragePath,
       @NonNull String engineCachesPath,
       long initTimeMillis) {
-    if (initCalled = true) {
+    if (initCalled) {
       Log.w(TAG, "FlutterJNI.init called more than once");
     }
 
@@ -214,7 +214,7 @@ public class FlutterJNI {
   }
 
   public static void setRefreshRateFPS(float refreshRateFPS) {
-    if (setRefreshRateFPSCalled = true) {
+    if (setRefreshRateFPSCalled) {
       Log.w(TAG, "FlutterJNI.setRefreshRateFPS called more than once");
     }
 
