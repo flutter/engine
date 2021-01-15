@@ -557,20 +557,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
           threadHostType};
 }
 
-static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSString* libraryURI) {
-  if (libraryURI) {
-    FML_DCHECK(entrypoint) << "Must specify entrypoint if specifying library";
-    settings->advisory_script_entrypoint = entrypoint.UTF8String;
-    settings->advisory_script_uri = libraryURI.UTF8String;
-  } else if (entrypoint) {
-    settings->advisory_script_entrypoint = entrypoint.UTF8String;
-    settings->advisory_script_uri = std::string("main.dart");
-  } else {
-    settings->advisory_script_entrypoint = std::string("main");
-    settings->advisory_script_uri = std::string("main.dart");
-  }
-}
-
 - (BOOL)createShell:(NSString*)entrypoint
          libraryURI:(NSString*)libraryURI
        initialRoute:(NSString*)initialRoute {
@@ -586,7 +572,17 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 
   auto platformData = [_dartProject.get() defaultPlatformData];
 
-  SetEntryPoint(&settings, entrypoint, libraryURI);
+  if (libraryURI) {
+    FML_DCHECK(entrypoint) << "Must specify entrypoint if specifying library";
+    settings->advisory_script_entrypoint = entrypoint.UTF8String;
+    settings->advisory_script_uri = libraryURI.UTF8String;
+  } else if (entrypoint) {
+    settings->advisory_script_entrypoint = entrypoint.UTF8String;
+    settings->advisory_script_uri = std::string("main.dart");
+  } else {
+    settings->advisory_script_entrypoint = std::string("main");
+    settings->advisory_script_uri = std::string("main.dart");
+  }
 
   NSString* threadLabel = [FlutterEngine generateThreadLabel:_labelPrefix];
   _threadHost = std::make_shared<flutter::ThreadHost>();
@@ -968,10 +964,11 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
                                                       project:_dartProject.get()
                                        allowHeadlessExecution:_allowHeadlessExecution];
 
-  flutter::Settings settings = _shell->GetSettings();
-  SetEntryPoint(&settings, entrypoint, libraryURI);
+  RunConfiguration configuration =
+      [_dartProject.get() runConfigurationForEntrypoint:entrypoint libraryOrNil:libraryOrNil]
 
-  fml::WeakPtr<flutter::PlatformView> platform_view = _shell->GetPlatformView();
+      fml::WeakPtr<flutter::PlatformView>
+          platform_view = _shell->GetPlatformView();
   FML_DCHECK(platform_view);
   // Static-cast safe since this class always creates PlatformViewIOS instances.
   flutter::PlatformViewIOS* ios_platform_view =
@@ -991,10 +988,8 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   flutter::Shell::CreateCallback<flutter::Rasterizer> on_create_rasterizer =
       [](flutter::Shell& shell) { return std::make_unique<flutter::Rasterizer>(shell); };
 
-  RunConfiguration configuration = RunConfiguration::InferFromSettings(settings);
-
   std::unique_ptr<flutter::Shell> shell =
-      _shell->Spawn(std::move(settings), std::move(configuration), on_create_platform_view, on_create_rasterizer);
+      _shell->Spawn(std::move(configuration), on_create_platform_view, on_create_rasterizer);
 
   result->_threadHost = _threadHost;
   result->_profiler = _profiler;

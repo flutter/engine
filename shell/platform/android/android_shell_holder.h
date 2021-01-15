@@ -86,8 +86,8 @@ class AndroidShellHolder {
       std::string libraryUrl) const;
 
   void Launch(std::shared_ptr<AssetManager> asset_manager,
-      std::string entrypoint,
-      std::string libraryUrl);
+              std::string entrypoint,
+              std::string libraryUrl);
 
   const flutter::Settings& GetSettings() const;
 
@@ -112,9 +112,9 @@ class AndroidShellHolder {
 
   static void ThreadDestructCallback(void* value);
   std::optional<RunConfiguration> BuildRunConfiguration(
-    std::shared_ptr<flutter::AssetManager> asset_manager,
-    std::string entrypoint,
-    std::string libraryUrl) const;
+      std::shared_ptr<flutter::AssetManager> asset_manager,
+      std::string entrypoint,
+      std::string libraryUrl) const;
 
   FML_DISALLOW_COPY_AND_ASSIGN(AndroidShellHolder);
 };

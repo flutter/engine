@@ -218,10 +218,13 @@ class Shell final : public PlatformView::Delegate,
   ///             This results is a Shell that has a smaller startup time cost
   ///             and a smaller memory footprint than an Shell created with a
   ///             Create function.
+  /// @param[in]  run_configuration  A RunConfiguration used to run the Isolate
+  ///             associated with this new Shell. It doesn't have to be the same
+  ///             configuration as the current Shell but it needs to be in the
+  ///             same snapshot or AOT.
   ///
   /// @see        http://flutter.dev/go/multiple-engines
   std::unique_ptr<Shell> Spawn(
-      Settings settings,
       RunConfiguration run_configuration,
       const CreateCallback<PlatformView>& on_create_platform_view,
       const CreateCallback<Rasterizer>& on_create_rasterizer) const;

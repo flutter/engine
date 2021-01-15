@@ -2,9 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <cstddef>
-#include <optional>
-#include "shell/common/run_configuration.h"
 #define FML_USED_ON_EMBEDDER
 
 #include "flutter/shell/platform/android/android_shell_holder.h"
@@ -12,7 +9,9 @@
 #include <pthread.h>
 #include <sys/resource.h>
 #include <sys/time.h>
+#include <cstddef>
 #include <memory>
+#include <optional>
 
 #include <sstream>
 #include <string>
@@ -23,6 +22,7 @@
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/platform/android/jni_util.h"
 #include "flutter/shell/common/rasterizer.h"
+#include "flutter/shell/common/run_configuration.h"
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/shell/platform/android/context/android_context.h"
 #include "flutter/shell/platform/android/platform_view_android.h"
@@ -212,7 +212,7 @@ std::unique_ptr<AndroidShellHolder> AndroidShellHolder::Spawn(
   }
 
   std::unique_ptr<flutter::Shell> shell = shell_->Spawn(
-      std::move(GetSettings()), std::move(config.value()), on_create_platform_view, on_create_rasterizer);
+      std::move(config.value()), on_create_platform_view, on_create_rasterizer);
 
   return std::make_unique<AndroidShellHolder>(GetSettings(), jni_facade,
                                               thread_host_, std::move(shell),
@@ -220,8 +220,8 @@ std::unique_ptr<AndroidShellHolder> AndroidShellHolder::Spawn(
 }
 
 void AndroidShellHolder::Launch(std::shared_ptr<AssetManager> asset_manager,
-      std::string entrypoint,
-      std::string libraryUrl) {
+                                std::string entrypoint,
+                                std::string libraryUrl) {
   if (!IsValid()) {
     return;
   }
