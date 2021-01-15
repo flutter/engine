@@ -5,38 +5,22 @@
 package io.flutter.embedding.engine;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyInt;
-import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
-import android.content.pm.PackageManager.NameNotFoundException;
-import io.flutter.FlutterInjector;
-import io.flutter.embedding.engine.FlutterEngine;
-import io.flutter.embedding.engine.FlutterEngine.EngineLifecycleListener;
 import io.flutter.embedding.engine.dart.DartExecutor;
-import io.flutter.embedding.engine.dart.DartExecutor.DartEntrypoint;;
-import io.flutter.embedding.engine.FlutterEngineGroup;
-import io.flutter.embedding.engine.FlutterJNI;
+import io.flutter.embedding.engine.dart.DartExecutor.DartEntrypoint;
 import io.flutter.embedding.engine.loader.FlutterLoader;
-import io.flutter.plugin.platform.PlatformViewsController;
 import io.flutter.plugins.GeneratedPluginRegistrant;
-import java.util.List;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.invocation.InvocationOnMock;
@@ -71,19 +55,22 @@ public class FlutterEngineGroupComponentTest {
         .attachToNative(false);
     GeneratedPluginRegistrant.clearRegisteredEngines();
 
-    firstEngineUnderTest = spy(new FlutterEngine(
-      RuntimeEnvironment.application,
-      mock(FlutterLoader.class),
-      flutterJNI,
-      /*dartVmArgs=*/ new String[] {},
-      /*automaticallyRegisterPlugins=*/ false));
+    firstEngineUnderTest =
+        spy(
+            new FlutterEngine(
+                RuntimeEnvironment.application,
+                mock(FlutterLoader.class),
+                flutterJNI,
+                /*dartVmArgs=*/ new String[] {},
+                /*automaticallyRegisterPlugins=*/ false));
     when(firstEngineUnderTest.getDartExecutor()).thenReturn(mock(DartExecutor.class));
-    engineGroupUnderTest = new FlutterEngineGroup(RuntimeEnvironment.application) {
-      @Override
-      FlutterEngine createEngine(Context context) {
-        return firstEngineUnderTest;
-      }
-    };
+    engineGroupUnderTest =
+        new FlutterEngineGroup(RuntimeEnvironment.application) {
+          @Override
+          FlutterEngine createEngine(Context context) {
+            return firstEngineUnderTest;
+          }
+        };
   }
 
   @After
@@ -110,7 +97,8 @@ public class FlutterEngineGroupComponentTest {
     firstEngine.destroy();
     assertEquals(0, engineGroupUnderTest.activeEngines.size());
 
-    FlutterEngine secondEngine = engineGroupUnderTest.createAndRunEngine(mock(DartEntrypoint.class));
+    FlutterEngine secondEngine =
+        engineGroupUnderTest.createAndRunEngine(mock(DartEntrypoint.class));
     assertEquals(1, engineGroupUnderTest.activeEngines.size());
     // They happen to be equal in our test since we mocked it to be so.
     assertEquals(firstEngine, secondEngine);
@@ -123,7 +111,8 @@ public class FlutterEngineGroupComponentTest {
 
     doReturn(mock(FlutterEngine.class)).when(firstEngine).spawn(any(DartEntrypoint.class));
 
-    FlutterEngine secondEngine = engineGroupUnderTest.createAndRunEngine(mock(DartEntrypoint.class));
+    FlutterEngine secondEngine =
+        engineGroupUnderTest.createAndRunEngine(mock(DartEntrypoint.class));
     assertEquals(2, engineGroupUnderTest.activeEngines.size());
 
     firstEngine.destroy();
@@ -136,5 +125,4 @@ public class FlutterEngineGroupComponentTest {
     FlutterEngine thirdEngine = engineGroupUnderTest.createAndRunEngine(mock(DartEntrypoint.class));
     assertEquals(2, engineGroupUnderTest.activeEngines.size());
   }
-
 }

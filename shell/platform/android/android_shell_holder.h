@@ -107,7 +107,6 @@ class AndroidShellHolder {
   void UpdateAssetManager(fml::RefPtr<flutter::AssetManager> asset_manager);
 
   void NotifyLowMemoryWarning();
-  ;
 
  private:
   const flutter::Settings settings_;
