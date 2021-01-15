@@ -574,14 +574,14 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
   if (libraryURI) {
     FML_DCHECK(entrypoint) << "Must specify entrypoint if specifying library";
-    settings->advisory_script_entrypoint = entrypoint.UTF8String;
-    settings->advisory_script_uri = libraryURI.UTF8String;
+    settings.advisory_script_entrypoint = entrypoint.UTF8String;
+    settings.advisory_script_uri = libraryURI.UTF8String;
   } else if (entrypoint) {
-    settings->advisory_script_entrypoint = entrypoint.UTF8String;
-    settings->advisory_script_uri = std::string("main.dart");
+    settings.advisory_script_entrypoint = entrypoint.UTF8String;
+    settings.advisory_script_uri = std::string("main.dart");
   } else {
-    settings->advisory_script_entrypoint = std::string("main");
-    settings->advisory_script_uri = std::string("main.dart");
+    settings.advisory_script_entrypoint = std::string("main");
+    settings.advisory_script_uri = std::string("main.dart");
   }
 
   NSString* threadLabel = [FlutterEngine generateThreadLabel:_labelPrefix];
@@ -964,11 +964,10 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
                                                       project:_dartProject.get()
                                        allowHeadlessExecution:_allowHeadlessExecution];
 
-  RunConfiguration configuration =
-      [_dartProject.get() runConfigurationForEntrypoint:entrypoint libraryOrNil:libraryOrNil]
+  flutter::RunConfiguration configuration =
+      [_dartProject.get() runConfigurationForEntrypoint:entrypoint libraryOrNil:libraryURI];
 
-      fml::WeakPtr<flutter::PlatformView>
-          platform_view = _shell->GetPlatformView();
+  fml::WeakPtr<flutter::PlatformView> platform_view = _shell->GetPlatformView();
   FML_DCHECK(platform_view);
   // Static-cast safe since this class always creates PlatformViewIOS instances.
   flutter::PlatformViewIOS* ios_platform_view =
