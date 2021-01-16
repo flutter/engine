@@ -211,7 +211,6 @@ Win32Window::HandleMessage(UINT const message,
     case WM_CHAR:
     case WM_SYSCHAR: {
       static wchar_t s_pending_high_surrogate = 0;
-      std::cerr << "Handling text message " << message << " with wparam: " << wparam << " and lparam:" << lparam << std::endl;
 
       wchar_t character = static_cast<wchar_t>(wparam);
       std::u16string text({character});
@@ -233,7 +232,6 @@ Win32Window::HandleMessage(UINT const message,
       if (keycode_for_char_message_ != 0) {
         const unsigned int scancode = (lparam >> 16) & 0xff;
         const bool extended = ((lparam >> 24) & 0x01) == 0x01;
-        std::cerr << "Sending key message to OnKey from WM_CHAR " << message << " with wparam: " << wparam << " and lparam:" << lparam << std::endl;
 
         bool handled = OnKey(keycode_for_char_message_, scancode, WM_KEYDOWN,
                              code_point, extended);
@@ -265,14 +263,12 @@ Win32Window::HandleMessage(UINT const message,
     case WM_SYSKEYDOWN:
     case WM_KEYUP:
     case WM_SYSKEYUP:
-      std::cerr << "Handling key message " << message << " with wparam: " << wparam << " and lparam:" << lparam << std::endl;
       const bool is_keydown_message =
           (message == WM_KEYDOWN || message == WM_SYSKEYDOWN);
       // Check if this key produces a character. If so, the key press should
       // be sent with the character produced at WM_CHAR. Store the produced
       // keycode (it's not accessible from WM_CHAR) to be used in WM_CHAR.
       const unsigned int character = MapVirtualKey(wparam, MAPVK_VK_TO_CHAR);
-      std::cerr << "char is  " << character << std::endl;
       if (character > 0 && is_keydown_message) {
         keycode_for_char_message_ = wparam;
         break;
@@ -285,7 +281,6 @@ Win32Window::HandleMessage(UINT const message,
         keyCode = MapVirtualKey(scancode, MAPVK_VSC_TO_VK_EX);
       }
       const int action = is_keydown_message ? WM_KEYDOWN : WM_KEYUP;
-      std::cerr << "Sending key message to OnKey " << message << " with wparam: " << wparam << " and lparam:" << lparam << std::endl;
       if (OnKey(keyCode, scancode, action, 0, extended)) {
         return 0;
       }

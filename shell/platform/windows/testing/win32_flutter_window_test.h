@@ -27,4 +27,4 @@ class Win32FlutterWindowTest : public Win32FlutterWindow {
 }  // namespace testing
 }  // namespace flutter
 
-#endif // FLUTTER_SHELL_PLATFORM_WINDOWS_TESTING_WIN32_FLUTTER_WINDOW_TEST_H_
+#endif  // FLUTTER_SHELL_PLATFORM_WINDOWS_TESTING_WIN32_FLUTTER_WINDOW_TEST_H_

@@ -117,12 +117,13 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   void OnCursorRectUpdated(const Rect& rect) override;
 
  protected:
-
   // Called to create the keyboard hook handlers.
-  virtual void RegisterKeyboardHookHandlers(flutter::BinaryMessenger* messenger);
+  virtual void RegisterKeyboardHookHandlers(
+      flutter::BinaryMessenger* messenger);
 
   // Used by RegisterKeyboardHookHandlers to add a new keyboard hook handler.
-  void AddKeyboardHookHandler(std::unique_ptr<flutter::KeyboardHookHandler> handler);
+  void AddKeyboardHookHandler(
+      std::unique_ptr<flutter::KeyboardHookHandler> handler);
 
  private:
   // Struct holding the mouse state. The engine doesn't keep track of which

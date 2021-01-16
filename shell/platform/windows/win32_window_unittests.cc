@@ -39,16 +39,15 @@ TEST(MockWin32Window, HorizontalScroll) {
   window.InjectWindowMessage(WM_MOUSEHWHEEL, MAKEWPARAM(0, scroll_amount), 0);
 }
 
-LPARAM CreateKeyEventLparam(USHORT RepeatCount, USHORT ScanCode, bool extended, bool ContextCode, bool PreviousKeyState,bool TransitionState)
-{
-    return (
-        (LPARAM(TransitionState) << 31) |
-        (LPARAM(PreviousKeyState) << 30) |
-        (LPARAM(ContextCode) << 29) |
-        (LPARAM(extended ? 0x1 : 0x0) << 24) |
-        (LPARAM(ScanCode) << 16) |
-        LPARAM(RepeatCount)
-    );
+static LPARAM CreateKeyEventLparam(USHORT RepeatCount,
+                                   USHORT ScanCode,
+                                   bool extended,
+                                   bool ContextCode,
+                                   bool PreviousKeyState,
+                                   bool TransitionState) {
+  return ((LPARAM(TransitionState) << 31) | (LPARAM(PreviousKeyState) << 30) |
+          (LPARAM(ContextCode) << 29) | (LPARAM(extended ? 0x1 : 0x0) << 24) |
+          (LPARAM(ScanCode) << 16) | LPARAM(RepeatCount));
 }
 
 TEST(MockWin32Window, KeyDown) {

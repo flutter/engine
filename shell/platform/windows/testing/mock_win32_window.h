@@ -46,4 +46,4 @@ class MockWin32Window : public Win32Window {
 }  // namespace testing
 }  // namespace flutter
 
-#endif // FLUTTER_SHELL_PLATFORM_WINDOWS_TESTING_MOCK_WIN32_WINDOW_H_
+#endif  // FLUTTER_SHELL_PLATFORM_WINDOWS_TESTING_MOCK_WIN32_WINDOW_H_

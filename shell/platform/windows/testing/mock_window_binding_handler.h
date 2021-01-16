@@ -26,6 +26,7 @@ class MockWindowBindingHandler : public WindowBindingHandler {
   MOCK_METHOD1(SetView, void(WindowBindingHandlerDelegate* view));
   MOCK_METHOD0(GetRenderTarget, WindowsRenderTarget());
   MOCK_METHOD0(GetDpiScale, float());
+  MOCK_METHOD0(OnWindowResized, void());
   MOCK_METHOD0(GetPhysicalWindowBounds, PhysicalWindowBounds());
   MOCK_METHOD1(UpdateFlutterCursor, void(const std::string& cursor_name));
 };
