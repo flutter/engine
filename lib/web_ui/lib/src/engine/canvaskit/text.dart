@@ -680,8 +680,6 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
           missingCodeUnits.add(text.codeUnitAt(i));
         }
       }
-      print("FOUND MISSING CODE UNITS IN STRING: $text");
-      print("FONT FAMILIES: $fontFamilies");
       _findFontsForMissingCodeunits(missingCodeUnits);
     }
   }
