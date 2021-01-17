@@ -14,10 +14,10 @@ public class SpawnedEngineActivity extends TestActivity {
 
   @Override
   public FlutterEngine provideFlutterEngine(@NonNull Context context) {
-    FlutterEngineGroup engineGroup = new FlutterEngineGroup(context);
-    engineGroup.createAndRunDefaultEngine();
+    FlutterEngineGroup engineGroup = new FlutterEngineGroup();
+    engineGroup.createAndRunDefaultEngine(context);
 
-    FlutterEngine secondEngine = engineGroup.createAndRunDefaultEngine();
+    FlutterEngine secondEngine = engineGroup.createAndRunDefaultEngine(context);
 
     secondEngine
         .getDartExecutor()
