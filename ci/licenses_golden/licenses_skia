@@ -1,4 +1,4 @@
-Signature: 00ad1aa91d2800a5b90f004492e058ca
+Signature: 7c56a775f36bec016353a8c10b308202
 
 UNUSED LICENSES:
 
@@ -4740,7 +4740,6 @@ FILE: ../../../third_party/skia/docs/examples/Matrix_MakeScale.cpp
 FILE: ../../../third_party/skia/docs/examples/Matrix_MakeScale_2.cpp
 FILE: ../../../third_party/skia/docs/examples/Matrix_MakeTrans.cpp
 FILE: ../../../third_party/skia/docs/examples/Matrix_ScaleToFit.cpp
-FILE: ../../../third_party/skia/docs/examples/Matrix_SetAffineIdentity.cpp
 FILE: ../../../third_party/skia/docs/examples/Matrix_TypeMask.cpp
 FILE: ../../../third_party/skia/docs/examples/Matrix_array_operator.cpp
 FILE: ../../../third_party/skia/docs/examples/Matrix_asAffine.cpp
@@ -4773,7 +4772,6 @@ FILE: ../../../third_party/skia/docs/examples/Matrix_mapPoints.cpp
 FILE: ../../../third_party/skia/docs/examples/Matrix_mapPoints_2.cpp
 FILE: ../../../third_party/skia/docs/examples/Matrix_mapRadius.cpp
 FILE: ../../../third_party/skia/docs/examples/Matrix_mapRect.cpp
-FILE: ../../../third_party/skia/docs/examples/Matrix_mapRectScaleTranslate.cpp
 FILE: ../../../third_party/skia/docs/examples/Matrix_mapRectToQuad.cpp
 FILE: ../../../third_party/skia/docs/examples/Matrix_mapRect_2.cpp
 FILE: ../../../third_party/skia/docs/examples/Matrix_mapRect_3.cpp
@@ -4805,7 +4803,6 @@ FILE: ../../../third_party/skia/docs/examples/Matrix_rectStaysRect.cpp
 FILE: ../../../third_party/skia/docs/examples/Matrix_reset.cpp
 FILE: ../../../third_party/skia/docs/examples/Matrix_set.cpp
 FILE: ../../../third_party/skia/docs/examples/Matrix_set9.cpp
-FILE: ../../../third_party/skia/docs/examples/Matrix_setAffine.cpp
 FILE: ../../../third_party/skia/docs/examples/Matrix_setAll.cpp
 FILE: ../../../third_party/skia/docs/examples/Matrix_setConcat.cpp
 FILE: ../../../third_party/skia/docs/examples/Matrix_setIdentity.cpp
