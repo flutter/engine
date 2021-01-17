@@ -17,9 +17,9 @@ using ButtonCallback =
     std::function<void(winrt::Windows::Gaming::Input::GamepadButtons)>;
 using GamepadAddedRemovedCallback = std::function<void()>;
 
-class WinRTGamePad {
+class GamePadWinUWP {
  public:
-  WinRTGamePad(DualAxisCallback,
+  GamePadWinUWP(DualAxisCallback,
                DualAxisCallback,
                SingleAxisCallback,
                SingleAxisCallback,

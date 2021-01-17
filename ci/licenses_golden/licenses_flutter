@@ -1426,6 +1426,8 @@ FILE: ../../../flutter/shell/platform/windows/cursor_handler.h
 FILE: ../../../flutter/shell/platform/windows/flutter_project_bundle.cc
 FILE: ../../../flutter/shell/platform/windows/flutter_project_bundle.h
 FILE: ../../../flutter/shell/platform/windows/flutter_project_bundle_unittests.cc
+FILE: ../../../flutter/shell/platform/windows/flutter_window_winuwp.cc
+FILE: ../../../flutter/shell/platform/windows/flutter_window_winuwp.h
 FILE: ../../../flutter/shell/platform/windows/flutter_windows.cc
 FILE: ../../../flutter/shell/platform/windows/flutter_windows_engine.cc
 FILE: ../../../flutter/shell/platform/windows/flutter_windows_engine.h
@@ -1434,6 +1436,8 @@ FILE: ../../../flutter/shell/platform/windows/flutter_windows_view.cc
 FILE: ../../../flutter/shell/platform/windows/flutter_windows_view.h
 FILE: ../../../flutter/shell/platform/windows/flutter_windows_win32.cc
 FILE: ../../../flutter/shell/platform/windows/flutter_windows_winuwp.cc
+FILE: ../../../flutter/shell/platform/windows/game_pad_winuwp.cc
+FILE: ../../../flutter/shell/platform/windows/game_pad_winuwp.h
 FILE: ../../../flutter/shell/platform/windows/key_event_handler.cc
 FILE: ../../../flutter/shell/platform/windows/key_event_handler.h
 FILE: ../../../flutter/shell/platform/windows/keyboard_hook_handler.h
@@ -1457,10 +1461,6 @@ FILE: ../../../flutter/shell/platform/windows/task_runner_win32.cc
 FILE: ../../../flutter/shell/platform/windows/task_runner_win32.h
 FILE: ../../../flutter/shell/platform/windows/task_runner_winuwp.cc
 FILE: ../../../flutter/shell/platform/windows/task_runner_winuwp.h
-FILE: ../../../flutter/shell/platform/windows/uwp_flutter_window.cc
-FILE: ../../../flutter/shell/platform/windows/uwp_flutter_window.h
-FILE: ../../../flutter/shell/platform/windows/uwp_game_pad.cc
-FILE: ../../../flutter/shell/platform/windows/uwp_game_pad.h
 FILE: ../../../flutter/shell/platform/windows/text_input_plugin.cc
 FILE: ../../../flutter/shell/platform/windows/text_input_plugin.h
 FILE: ../../../flutter/shell/platform/windows/win32_dpi_utils.cc

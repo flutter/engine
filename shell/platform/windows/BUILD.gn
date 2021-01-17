@@ -78,16 +78,16 @@ source_set("flutter_windows_source") {
   # Target-specific sources.
   if (target_os == "winuwp") {
     sources += [
+      "flutter_window_winuwp.cc",
+      "flutter_window_winuwp.h",
       "flutter_windows_winuwp.cc",
+      "game_pad_winuwp.cc",
+      "game_pad_winuwp.h",
       "platform_handler_winuwp.cc",
       "platform_handler_winuwp.h",
       "system_utils_winuwp.cc",
       "task_runner_winuwp.cc",
       "task_runner_winuwp.h",
-      "uwp_flutter_window.cc",
-      "uwp_flutter_window.h",
-      "uwp_game_pad.cc",
-      "uwp_game_pad.h",
     ]
   } else {
     sources += [

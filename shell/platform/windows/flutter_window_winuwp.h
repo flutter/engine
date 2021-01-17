@@ -5,9 +5,9 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_UWP_FLUTTER_WINDOW_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_UWP_FLUTTER_WINDOW_H_
 
+#include "flutter/shell/platform/windows/game_pad_winuwp.h"
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
-#include "flutter/shell/platform/windows/uwp_game_pad.h"
 #include "flutter/shell/platform/windows/window_binding_handler.h"
 
 #include "flutter/shell/platform/embedder/embedder.h"
@@ -27,7 +27,7 @@
 
 namespace flutter {
 
-struct WinRTWindowBounds {
+struct WindowBoundsWinUWP {
   float width;
   float height;
 };
@@ -36,11 +36,11 @@ struct WinRTWindowBounds {
 // by the runner.
 //
 // Specifically handles window events within windows.
-class WinRTFlutterWindow : public WindowBindingHandler {
+class FlutterWindowWinUWP : public WindowBindingHandler {
  public:
-  explicit WinRTFlutterWindow(ABI::Windows::UI::Core::CoreWindow* window);
+  explicit FlutterWindowWinUWP(ABI::Windows::UI::Core::CoreWindow* window);
 
-  virtual ~WinRTFlutterWindow();
+  virtual ~FlutterWindowWinUWP();
 
   // |SetView|
   void SetView(WindowBindingHandlerDelegate* view) override;
@@ -58,25 +58,9 @@ class WinRTFlutterWindow : public WindowBindingHandler {
   void UpdateFlutterCursor(const std::string& cursor_name) override;
 
  private:
-  WinRTWindowBounds GetBounds(
+  WindowBoundsWinUWP GetBounds(
       winrt::Windows::Graphics::Display::DisplayInformation const& disp,
       bool physical);
-
-  // float GetPhysicalWidth();
-
-  // float GetPhysicalHeight();
-
-  // float GetLogicalWidth();
-
-  // float GetLogicalHeight();
-
-  // float GetWidth(
-  //    winrt::Windows::Graphics::Display::DisplayInformation const& disp,
-  //    bool physical);
-
-  // float GetHeight(
-  //    winrt::Windows::Graphics::Display::DisplayInformation const& disp,
-  //    bool physical);
 
   float GetDpiScale(
       winrt::Windows::Graphics::Display::DisplayInformation const&);
@@ -159,7 +143,7 @@ class WinRTFlutterWindow : public WindowBindingHandler {
 
   winrt::Windows::UI::Composition::SpriteVisual sprite_visual_{nullptr};
 
-  std::unique_ptr<WinRTGamePad> game_pad_{nullptr};
+  std::unique_ptr<GamePadWinUWP> game_pad_{nullptr};
 
   bool game_controller_thread_running_;
 

@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/windows/uwp_game_pad.h"
+#include "flutter/shell/platform/windows/game_pad_winuwp.h"
 
 namespace flutter {
 
-WinRTGamePad::WinRTGamePad(DualAxisCallback leftstick,
+GamePadWinUWP::GamePadWinUWP(DualAxisCallback leftstick,
                            DualAxisCallback rightstick,
                            SingleAxisCallback lefttrigger,
                            SingleAxisCallback righttrigger,
@@ -32,23 +32,23 @@ WinRTGamePad::WinRTGamePad(DualAxisCallback leftstick,
   arrival_departure_callback_ = changedcb;
 }
 
-void WinRTGamePad::Initialize() {
+void GamePadWinUWP::Initialize() {
   RefreshCachedGamepads();
 
   winrt::Windows::Gaming::Input::Gamepad::GamepadAdded(
-      {this, &WinRTGamePad::OnGamepadAdded});
+      {this, &GamePadWinUWP::OnGamepadAdded});
   winrt::Windows::Gaming::Input::Gamepad::GamepadRemoved(
-      {this, &WinRTGamePad::OnGamepadRemoved});
+      {this, &GamePadWinUWP::OnGamepadRemoved});
 
   current_game_pad_ = GetLastGamepad();
   current_gamepad_needs_refresh_ = false;
 }
 
-bool WinRTGamePad::HasController() {
+bool GamePadWinUWP::HasController() {
   return current_game_pad_ != nullptr;
 }
 
-void WinRTGamePad::OnGamepadAdded(
+void GamePadWinUWP::OnGamepadAdded(
     winrt::Windows::Foundation::IInspectable const& th,
     winrt::Windows::Gaming::Input::Gamepad const& args) {
   enumerated_game_pads_.push_back(args);
@@ -61,21 +61,21 @@ void WinRTGamePad::OnGamepadAdded(
   }
 }
 
-void WinRTGamePad::OnGamepadRemoved(
+void GamePadWinUWP::OnGamepadRemoved(
     winrt::Windows::Foundation::IInspectable const&,
     winrt::Windows::Gaming::Input::Gamepad const& /*args*/) {
   RefreshCachedGamepads();
 }
 
-void WinRTGamePad::RefreshCachedGamepads() {
-  // enumerated_game_pads_.clear();
-  // auto gamepads = winrt::Windows::Gaming::Input::Gamepad::Gamepads();
-  // for (auto gamepad : gamepads) {
-  //  enumerated_game_pads_.push_back(gamepad);
-  //}
+void GamePadWinUWP::RefreshCachedGamepads() {
+  enumerated_game_pads_.clear();
+  auto gamepads = winrt::Windows::Gaming::Input::Gamepad::Gamepads();
+  for (auto gamepad : gamepads) {
+    enumerated_game_pads_.push_back(gamepad);
+  }
 }
 
-const winrt::Windows::Gaming::Input::Gamepad* WinRTGamePad::GetLastGamepad() {
+const winrt::Windows::Gaming::Input::Gamepad* GamePadWinUWP::GetLastGamepad() {
   winrt::Windows::Gaming::Input::Gamepad* gamepad = nullptr;
 
   if (enumerated_game_pads_.size() > 0) {
@@ -92,7 +92,7 @@ bool isValid(double value) {
   return false;
 }
 
-void WinRTGamePad::Process() {
+void GamePadWinUWP::Process() {
   if (current_gamepad_needs_refresh_) {
     auto mostRecentGamepad = GetLastGamepad();
     if (current_game_pad_ != mostRecentGamepad) {
@@ -150,7 +150,7 @@ void WinRTGamePad::Process() {
   }
 }
 
-void WinRTGamePad::GamePadButtonPressedInternal(
+void GamePadWinUWP::GamePadButtonPressedInternal(
     winrt::Windows::Gaming::Input::GamepadButtons state) {
   namespace wgi = winrt::Windows::Gaming::Input;
 
@@ -190,31 +190,31 @@ void WinRTGamePad::GamePadButtonPressedInternal(
   }
 }
 
-void WinRTGamePad::RaiseGameGamePadButtonPressed(
+void GamePadWinUWP::RaiseGameGamePadButtonPressed(
     winrt::Windows::Gaming::Input::GamepadButtons b) {}
 
-void WinRTGamePad::RaiseGameGamePadButtonReleased(
+void GamePadWinUWP::RaiseGameGamePadButtonReleased(
     winrt::Windows::Gaming::Input::GamepadButtons b) {}
 
-void WinRTGamePad::RaiseLeftStickMoved(double x, double y) {
+void GamePadWinUWP::RaiseLeftStickMoved(double x, double y) {
   if (left_stick_callback_ != nullptr) {
     left_stick_callback_(x, y);
   }
 }
 
-void WinRTGamePad::RaiseRightStickMoved(double x, double y) {
+void GamePadWinUWP::RaiseRightStickMoved(double x, double y) {
   if (right_stick_callback_ != nullptr) {
     right_stick_callback_(x, y);
   }
 }
 
-void WinRTGamePad::RaiseLeftTriggerMoved(double value) {
+void GamePadWinUWP::RaiseLeftTriggerMoved(double value) {
   if (left_trigger_callback_ != nullptr) {
     left_trigger_callback_(value);
   }
 }
 
-void WinRTGamePad::RaiseRightTriggerMoved(double value) {
+void GamePadWinUWP::RaiseRightTriggerMoved(double value) {
   if (right_trigger_callback_ != nullptr) {
     right_trigger_callback_(value);
   }

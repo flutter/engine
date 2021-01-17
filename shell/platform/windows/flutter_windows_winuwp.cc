@@ -15,7 +15,7 @@
 #include <memory>
 #include <vector>
 
-#include "flutter//shell/platform/windows/uwp_flutter_window.h"  // nogncheck
+#include "flutter//shell/platform/windows/flutter_window_winuwp.h"  // nogncheck
 #include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/plugin_registrar.h"
 #include "flutter/shell/platform/common/cpp/incoming_message_dispatcher.h"
 
@@ -30,7 +30,7 @@ FlutterDesktopViewControllerCreateFromCoreWindow(
     ABI::Windows::UI::Core::CoreWindow* window,
     FlutterDesktopEngineRef engine) {
   std::unique_ptr<flutter::WindowBindingHandler> window_wrapper =
-      std::make_unique<flutter::WinRTFlutterWindow>(window);
+      std::make_unique<flutter::FlutterWindowWinUWP>(window);
 
   auto state = std::make_unique<FlutterDesktopViewControllerState>();
   state->view =

@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/windows/uwp_flutter_window.h"
+#include "flutter/shell/platform/windows/flutter_window_winuwp.h"
 
 namespace flutter {
 
-WinRTFlutterWindow::WinRTFlutterWindow(
+FlutterWindowWinUWP::FlutterWindowWinUWP(
     ABI::Windows::UI::Core::CoreWindow* window)
     : game_controller_thread_running_(false),
       running_on_xbox_(false),
@@ -25,7 +25,7 @@ WinRTFlutterWindow::WinRTFlutterWindow(
       DisplayInformation::GetForCurrentView();
 }
 
-WindowsRenderTarget WinRTFlutterWindow::GetRenderTarget() {
+WindowsRenderTarget FlutterWindowWinUWP::GetRenderTarget() {
 #ifdef USECOREWINDOW
   return WindowsRenderTarget(window_);
 #else
@@ -57,31 +57,31 @@ WindowsRenderTarget WinRTFlutterWindow::GetRenderTarget() {
 #endif
 }
 
-void WinRTFlutterWindow::ApplyInverseDpiScalingTransform() {
+void FlutterWindowWinUWP::ApplyInverseDpiScalingTransform() {
   // apply inverse transform to negate built in DPI scaling so we can render at
   // native scale
   auto dpiScale = GetDpiScale();
   sprite_visual_.Scale({1 / dpiScale, 1 / dpiScale, 1 / dpiScale});
 }
 
-PhysicalWindowBounds WinRTFlutterWindow::GetPhysicalWindowBounds() {
+PhysicalWindowBounds FlutterWindowWinUWP::GetPhysicalWindowBounds() {
   auto bounds = GetBounds(current_display_info_, true);
   return {static_cast<size_t>(bounds.width),
           static_cast<size_t>(bounds.height)};
 }
 
-void WinRTFlutterWindow::UpdateFlutterCursor(const std::string& cursor_name) {
+void FlutterWindowWinUWP::UpdateFlutterCursor(const std::string& cursor_name) {
   // TODO
 }
 
-float WinRTFlutterWindow::GetDpiScale() {
+float FlutterWindowWinUWP::GetDpiScale() {
   auto disp = winrt::Windows::Graphics::Display::DisplayInformation::
       GetForCurrentView();
 
   return GetDpiScale(disp);
 }
 
-WinRTWindowBounds WinRTFlutterWindow::GetBounds(
+WindowBoundsWinUWP FlutterWindowWinUWP::GetBounds(
     winrt::Windows::Graphics::Display::DisplayInformation const& disp,
     bool physical) {
   auto appView =
@@ -100,7 +100,7 @@ WinRTWindowBounds WinRTFlutterWindow::GetBounds(
   return {bounds.Width, bounds.Height};
 }
 
-float WinRTFlutterWindow::GetDpiScale(
+float FlutterWindowWinUWP::GetDpiScale(
     winrt::Windows::Graphics::Display::DisplayInformation const& disp) {
   float dpi = disp.LogicalDpi();
   auto rawdpi = disp.RawDpiX();
@@ -119,42 +119,42 @@ float WinRTFlutterWindow::GetDpiScale(
   return static_cast<float>(rawperview);
 }
 
-WinRTFlutterWindow::~WinRTFlutterWindow() {
+FlutterWindowWinUWP::~FlutterWindowWinUWP() {
   OutputDebugString(L"Destoryed UWP FlutterWindow");
 }
 
-void WinRTFlutterWindow::SetView(WindowBindingHandlerDelegate* view) {
+void FlutterWindowWinUWP::SetView(WindowBindingHandlerDelegate* view) {
   binding_handler_delegate_ = view;
 }
 
-void WinRTFlutterWindow::SetEventHandlers() {
+void FlutterWindowWinUWP::SetEventHandlers() {
   auto appView =
       winrt::Windows::UI::ViewManagement::ApplicationView::GetForCurrentView();
 
   appView.SetDesiredBoundsMode(winrt::Windows::UI::ViewManagement::
                                    ApplicationViewBoundsMode::UseCoreWindow);
 
-  appView.VisibleBoundsChanged({this, &WinRTFlutterWindow::OnBoundsChanged});
+  appView.VisibleBoundsChanged({this, &FlutterWindowWinUWP::OnBoundsChanged});
 
-  window_.PointerPressed({this, &WinRTFlutterWindow::OnPointerPressed});
-  window_.PointerReleased({this, &WinRTFlutterWindow::OnPointerReleased});
-  window_.PointerMoved({this, &WinRTFlutterWindow::OnPointerMoved});
+  window_.PointerPressed({this, &FlutterWindowWinUWP::OnPointerPressed});
+  window_.PointerReleased({this, &FlutterWindowWinUWP::OnPointerReleased});
+  window_.PointerMoved({this, &FlutterWindowWinUWP::OnPointerMoved});
   window_.PointerWheelChanged(
-      {this, &WinRTFlutterWindow::OnPointerWheelChanged});
+      {this, &FlutterWindowWinUWP::OnPointerWheelChanged});
 
   // TODO mouse leave
   // TODO fontchanged
 
-  window_.KeyUp({this, &WinRTFlutterWindow::OnKeyUp});
-  window_.KeyDown({this, &WinRTFlutterWindow::OnKeyDown});
-  window_.CharacterReceived({this, &WinRTFlutterWindow::OnCharacterReceived});
+  window_.KeyUp({this, &FlutterWindowWinUWP::OnKeyUp});
+  window_.KeyDown({this, &FlutterWindowWinUWP::OnKeyDown});
+  window_.CharacterReceived({this, &FlutterWindowWinUWP::OnCharacterReceived});
 
   auto disp = winrt::Windows::Graphics::Display::DisplayInformation::
       GetForCurrentView();
-  disp.DpiChanged({this, &WinRTFlutterWindow::OnDpiChanged});
+  disp.DpiChanged({this, &FlutterWindowWinUWP::OnDpiChanged});
 }
 
-void WinRTFlutterWindow::StartGamepadCursorThread() {
+void FlutterWindowWinUWP::StartGamepadCursorThread() {
   if (worker_loop_ != nullptr &&
       worker_loop_.Status() ==
           winrt::Windows::Foundation::AsyncStatus::Started) {
@@ -179,7 +179,7 @@ void WinRTFlutterWindow::StartGamepadCursorThread() {
       winrt::Windows::System::Threading::WorkItemOptions::TimeSliced);
 }
 
-void WinRTFlutterWindow::SetupGamePad() {
+void FlutterWindowWinUWP::SetupGamePad() {
   DualAxisCallback leftStick = [=](double x, double y) {
     OnGamePadLeftStickMoved(x, y);
   };
@@ -201,13 +201,13 @@ void WinRTFlutterWindow::SetupGamePad() {
     OnGamePadControllersChanged();
   };
 
-  game_pad_ = std::make_unique<WinRTGamePad>(leftStick, rightStick, nullptr,
+  game_pad_ = std::make_unique<GamePadWinUWP>(leftStick, rightStick, nullptr,
                                              nullptr, pressedcallback,
                                              releasedcallback, changed);
   game_pad_->Initialize();
 }
 
-void WinRTFlutterWindow::SetupXboxSpecific() {
+void FlutterWindowWinUWP::SetupXboxSpecific() {
   running_on_xbox_ =
       winrt::Windows::System::Profile::AnalyticsInfo::VersionInfo()
           .DeviceFamily() == L"Windows.Xbox";
@@ -232,7 +232,7 @@ void WinRTFlutterWindow::SetupXboxSpecific() {
   }
 }
 
-void WinRTFlutterWindow::OnDpiChanged(
+void FlutterWindowWinUWP::OnDpiChanged(
     winrt::Windows::Graphics::Display::DisplayInformation const& args,
     winrt::Windows::Foundation::IInspectable const&) {
   ApplyInverseDpiScalingTransform();
@@ -243,7 +243,7 @@ void WinRTFlutterWindow::OnDpiChanged(
       static_cast<size_t>(bounds.width), static_cast<size_t>(bounds.height));
 }
 
-void WinRTFlutterWindow::OnPointerPressed(
+void FlutterWindowWinUWP::OnPointerPressed(
     winrt::Windows::Foundation::IInspectable const&,
     winrt::Windows::UI::Core::PointerEventArgs const& args) {
   auto x = GetPosX(args);
@@ -253,7 +253,7 @@ void WinRTFlutterWindow::OnPointerPressed(
       x, y, FlutterPointerMouseButtons::kFlutterPointerButtonMousePrimary);
 }
 
-void WinRTFlutterWindow::OnPointerReleased(
+void FlutterWindowWinUWP::OnPointerReleased(
     winrt::Windows::Foundation::IInspectable const&,
     winrt::Windows::UI::Core::PointerEventArgs const& args) {
   auto x = GetPosX(args);
@@ -263,7 +263,7 @@ void WinRTFlutterWindow::OnPointerReleased(
       x, y, FlutterPointerMouseButtons::kFlutterPointerButtonMousePrimary);
 }
 
-void WinRTFlutterWindow::OnPointerMoved(
+void FlutterWindowWinUWP::OnPointerMoved(
     winrt::Windows::Foundation::IInspectable const&,
     winrt::Windows::UI::Core::PointerEventArgs const& args) {
   auto x = GetPosX(args);
@@ -272,7 +272,7 @@ void WinRTFlutterWindow::OnPointerMoved(
   binding_handler_delegate_->OnPointerMove(x, y);
 }
 
-void WinRTFlutterWindow::OnPointerWheelChanged(
+void FlutterWindowWinUWP::OnPointerWheelChanged(
     winrt::Windows::Foundation::IInspectable const&,
     winrt::Windows::UI::Core::PointerEventArgs const& args) {
   auto x = GetPosX(args);
@@ -281,7 +281,7 @@ void WinRTFlutterWindow::OnPointerWheelChanged(
   binding_handler_delegate_->OnScroll(x, y, 0, -delta, 1);
 }
 
-double WinRTFlutterWindow::GetPosX(
+double FlutterWindowWinUWP::GetPosX(
     winrt::Windows::UI::Core::PointerEventArgs const& args) {
   // TODO cache this
   const double inverseDpiScale = GetDpiScale();
@@ -291,7 +291,7 @@ double WinRTFlutterWindow::GetPosX(
       inverseDpiScale);
 }
 
-double WinRTFlutterWindow::GetPosY(
+double FlutterWindowWinUWP::GetPosY(
     winrt::Windows::UI::Core::PointerEventArgs const& args) {
   // TODO cache this
   const double inverseDpiScale = GetDpiScale();
@@ -300,7 +300,7 @@ double WinRTFlutterWindow::GetPosY(
       inverseDpiScale);
 }
 
-void WinRTFlutterWindow::OnBoundsChanged(
+void FlutterWindowWinUWP::OnBoundsChanged(
     winrt::Windows::UI::ViewManagement::ApplicationView const& appView,
     winrt::Windows::Foundation::IInspectable const&) {
   if (binding_handler_delegate_) {
@@ -314,7 +314,7 @@ void WinRTFlutterWindow::OnBoundsChanged(
   }
 }
 
-void WinRTFlutterWindow::OnKeyUp(
+void FlutterWindowWinUWP::OnKeyUp(
     winrt::Windows::Foundation::IInspectable const&,
     winrt::Windows::UI::Core::KeyEventArgs const& args) {
   // TODO: system key (back) and unicode handling
@@ -326,7 +326,7 @@ void WinRTFlutterWindow::OnKeyUp(
   binding_handler_delegate_->OnKey(key, scancode, action, chararacter);
 }
 
-void WinRTFlutterWindow::OnKeyDown(
+void FlutterWindowWinUWP::OnKeyDown(
     winrt::Windows::Foundation::IInspectable const&,
     winrt::Windows::UI::Core::KeyEventArgs const& args) {
   // TODO: system key (back) and unicode handling
@@ -338,7 +338,7 @@ void WinRTFlutterWindow::OnKeyDown(
   binding_handler_delegate_->OnKey(key, scancode, action, chararacter);
 }
 
-void WinRTFlutterWindow::OnCharacterReceived(
+void FlutterWindowWinUWP::OnCharacterReceived(
     winrt::Windows::Foundation::IInspectable const&,
     winrt::Windows::UI::Core::CharacterReceivedEventArgs const& args) {
   auto key = args.KeyCode();
@@ -349,7 +349,7 @@ void WinRTFlutterWindow::OnCharacterReceived(
   }
 }
 
-void WinRTFlutterWindow::OnGamePadLeftStickMoved(double x, double y) {
+void FlutterWindowWinUWP::OnGamePadLeftStickMoved(double x, double y) {
   static const int CURSORSCALE = 30;
 
   auto newx = cursor_visual_.Offset().x + (CURSORSCALE * static_cast<float>(x));
@@ -374,7 +374,7 @@ void WinRTFlutterWindow::OnGamePadLeftStickMoved(double x, double y) {
   }
 }
 
-void WinRTFlutterWindow::OnGamePadRightStickMoved(double x, double y) {
+void FlutterWindowWinUWP::OnGamePadRightStickMoved(double x, double y) {
   static const double controllerScrollMultiplier = 3;
 
   if (!running_on_xbox_) {
@@ -391,7 +391,7 @@ void WinRTFlutterWindow::OnGamePadRightStickMoved(double x, double y) {
   }
 }
 
-void WinRTFlutterWindow::OnGamePadButtonPressed(
+void FlutterWindowWinUWP::OnGamePadButtonPressed(
     winrt::Windows::Gaming::Input::GamepadButtons buttons) {
   if ((buttons & winrt::Windows::Gaming::Input::GamepadButtons::A) ==
       winrt::Windows::Gaming::Input::GamepadButtons::A) {
@@ -409,7 +409,7 @@ void WinRTFlutterWindow::OnGamePadButtonPressed(
   }
 }
 
-void WinRTFlutterWindow::OnGamePadButtonReleased(
+void FlutterWindowWinUWP::OnGamePadButtonReleased(
     winrt::Windows::Gaming::Input::GamepadButtons buttons) {
   if ((buttons & winrt::Windows::Gaming::Input::GamepadButtons::A) ==
       winrt::Windows::Gaming::Input::GamepadButtons::A) {
@@ -428,7 +428,7 @@ void WinRTFlutterWindow::OnGamePadButtonReleased(
   }
 }
 
-void WinRTFlutterWindow::OnGamePadControllersChanged() {
+void FlutterWindowWinUWP::OnGamePadControllersChanged() {
   // TODO lock here
   if (game_pad_->HasController()) {
     if (!game_controller_thread_running_) {
@@ -448,7 +448,7 @@ void WinRTFlutterWindow::OnGamePadControllersChanged() {
 }
 
 winrt::Windows::UI::Composition::Visual
-WinRTFlutterWindow::CreateCursorVisual() {
+FlutterWindowWinUWP::CreateCursorVisual() {
   auto container = compositor_.CreateContainerVisual();
   container.Offset(
       {window_.Bounds().Width / 2, window_.Bounds().Height / 2, 1.0});
