@@ -23,6 +23,9 @@ std::vector<LanguageInfo> GetPreferredLanguageInfo() {
 
 std::vector<std::wstring> GetPreferredLanguages() {
   std::vector<std::wstring> languages;
+  // TODO(clarkezone) need to implement a complete version of this function in
+  // order to get full list of platform languages
+  // https://github.com/flutter/flutter/issues/74156
   languages.push_back(L"en-US");
   languages.push_back(L"en");
 
