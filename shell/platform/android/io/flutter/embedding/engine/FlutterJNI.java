@@ -158,8 +158,6 @@ public class FlutterJNI {
       long initTimeMillis) {
     if (FlutterJNI.initCalled) {
       Log.w(TAG, "FlutterJNI.init called more than once");
-      throw new IllegalStateException(
-          "FlutterJNI.init cannot be called more than once per application across all FlutterJNI instances");
     }
 
     FlutterJNI.nativeInit(
