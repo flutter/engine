@@ -71,7 +71,8 @@ PhysicalWindowBounds FlutterWindowWinUWP::GetPhysicalWindowBounds() {
 }
 
 void FlutterWindowWinUWP::UpdateFlutterCursor(const std::string& cursor_name) {
-  // TODO
+  // TODO(clarkezone): add support for Flutter cursors:
+  // https://github.com/flutter/flutter/issues/70199
 }
 
 float FlutterWindowWinUWP::GetDpiScale() {
@@ -108,14 +109,15 @@ float FlutterWindowWinUWP::GetDpiScale(
   auto scale = disp.ResolutionScale();
   auto rawperview = disp.RawPixelsPerViewPixel();
 
+  // TODO(clarkezone): ensure DPI handling is correct:
   // because XBOX has display scaling off, logicalDpi retuns 96 which is
-  // incorrect
-  // TODO check if rawperview is more acurate
+  // incorrect check if rawperview is more acurate.
+  // Also confirm if we need this workaround on 10X
+  // https://github.com/flutter/flutter/issues/70198
+
   if (running_on_xbox_) {
     return 1.5;
   }
-  // TODO do we need this on 10X?
-  // return dpi/96.0 * 0.8;
   return static_cast<float>(rawperview);
 }
 
@@ -142,8 +144,11 @@ void FlutterWindowWinUWP::SetEventHandlers() {
   window_.PointerWheelChanged(
       {this, &FlutterWindowWinUWP::OnPointerWheelChanged});
 
-  // TODO mouse leave
-  // TODO fontchanged
+  // TODO(clarkezone) support mouse leave handling
+  // https://github.com/flutter/flutter/issues/70199
+
+  // TODO(clarkezone) support system font changed
+  // https://github.com/flutter/flutter/issues/70198
 
   window_.KeyUp({this, &FlutterWindowWinUWP::OnKeyUp});
   window_.KeyDown({this, &FlutterWindowWinUWP::OnKeyDown});
@@ -202,8 +207,8 @@ void FlutterWindowWinUWP::SetupGamePad() {
   };
 
   game_pad_ = std::make_unique<GamePadWinUWP>(leftStick, rightStick, nullptr,
-                                             nullptr, pressedcallback,
-                                             releasedcallback, changed);
+                                              nullptr, pressedcallback,
+                                              releasedcallback, changed);
   game_pad_->Initialize();
 }
 
@@ -283,7 +288,6 @@ void FlutterWindowWinUWP::OnPointerWheelChanged(
 
 double FlutterWindowWinUWP::GetPosX(
     winrt::Windows::UI::Core::PointerEventArgs const& args) {
-  // TODO cache this
   const double inverseDpiScale = GetDpiScale();
 
   return static_cast<double>(
@@ -293,7 +297,6 @@ double FlutterWindowWinUWP::GetPosX(
 
 double FlutterWindowWinUWP::GetPosY(
     winrt::Windows::UI::Core::PointerEventArgs const& args) {
-  // TODO cache this
   const double inverseDpiScale = GetDpiScale();
   return static_cast<double>(
       (args.CurrentPoint().Position().Y - xbox_overscan_y_offset_) *
@@ -317,7 +320,9 @@ void FlutterWindowWinUWP::OnBoundsChanged(
 void FlutterWindowWinUWP::OnKeyUp(
     winrt::Windows::Foundation::IInspectable const&,
     winrt::Windows::UI::Core::KeyEventArgs const& args) {
-  // TODO: system key (back) and unicode handling
+  // TODO(clarkezone) complete keyboard handling including
+  // system key (back), unicode handling, shortcut support
+  // https://github.com/flutter/flutter/issues/70202
   auto status = args.KeyStatus();
   unsigned int scancode = status.ScanCode;
   int key = static_cast<int>(args.VirtualKey());
@@ -329,7 +334,9 @@ void FlutterWindowWinUWP::OnKeyUp(
 void FlutterWindowWinUWP::OnKeyDown(
     winrt::Windows::Foundation::IInspectable const&,
     winrt::Windows::UI::Core::KeyEventArgs const& args) {
-  // TODO: system key (back) and unicode handling
+  // TODO(clarkezone) complete keyboard handling including
+  // system key (back), unicode handling, shortcut support
+  // https://github.com/flutter/flutter/issues/70202
   auto status = args.KeyStatus();
   unsigned int scancode = status.ScanCode;
   int key = static_cast<int>(args.VirtualKey());

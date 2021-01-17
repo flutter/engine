@@ -20,12 +20,12 @@ using GamepadAddedRemovedCallback = std::function<void()>;
 class GamePadWinUWP {
  public:
   GamePadWinUWP(DualAxisCallback,
-               DualAxisCallback,
-               SingleAxisCallback,
-               SingleAxisCallback,
-               ButtonCallback,
-               ButtonCallback,
-               GamepadAddedRemovedCallback);
+                DualAxisCallback,
+                SingleAxisCallback,
+                SingleAxisCallback,
+                ButtonCallback,
+                ButtonCallback,
+                GamepadAddedRemovedCallback);
 
   void Initialize();
 

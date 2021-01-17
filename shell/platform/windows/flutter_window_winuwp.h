@@ -5,8 +5,8 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_UWP_FLUTTER_WINDOW_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_UWP_FLUTTER_WINDOW_H_
 
-#include "flutter/shell/platform/windows/game_pad_winuwp.h"
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
+#include "flutter/shell/platform/windows/game_pad_winuwp.h"
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
 #include "flutter/shell/platform/windows/window_binding_handler.h"
 

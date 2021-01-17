@@ -7,12 +7,12 @@
 namespace flutter {
 
 GamePadWinUWP::GamePadWinUWP(DualAxisCallback leftstick,
-                           DualAxisCallback rightstick,
-                           SingleAxisCallback lefttrigger,
-                           SingleAxisCallback righttrigger,
-                           ButtonCallback pressedcb,
-                           ButtonCallback releasedcb,
-                           GamepadAddedRemovedCallback changedcb)
+                             DualAxisCallback rightstick,
+                             SingleAxisCallback lefttrigger,
+                             SingleAxisCallback righttrigger,
+                             ButtonCallback pressedcb,
+                             ButtonCallback releasedcb,
+                             GamepadAddedRemovedCallback changedcb)
     : pressed_buttons_(winrt::Windows::Gaming::Input::GamepadButtons::None),
       left_stick_x_value_(0),
       left_stick_y_value_(0),
