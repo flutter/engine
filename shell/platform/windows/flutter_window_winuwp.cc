@@ -8,11 +8,7 @@ namespace flutter {
 
 FlutterWindowWinUWP::FlutterWindowWinUWP(
     ABI::Windows::UI::Core::CoreWindow* window)
-    : game_controller_thread_running_(false),
-      running_on_xbox_(false),
-      xbox_overscan_x_offset_(0),
-      xbox_overscan_y_offset_(0),
-      current_display_info_(nullptr) {
+    : game_controller_thread_running_(false), current_display_info_(nullptr) {
   winrt::Windows::UI::Core::CoreWindow cw{nullptr};
   winrt::copy_from_abi(cw, window);
   window_ = cw;
@@ -40,20 +36,20 @@ WindowsRenderTarget FlutterWindowWinUWP::GetRenderTarget() {
     visual_tree_root_.Children().InsertAtTop(cursor_visual_);
   }
 
-  sprite_visual_ = compositor_.CreateSpriteVisual();
+  render_target_ = compositor_.CreateSpriteVisual();
   if (running_on_xbox_) {
-    sprite_visual_.Offset(
+    render_target_.Offset(
         {xbox_overscan_x_offset_, xbox_overscan_y_offset_, 1.0});
   } else {
-    sprite_visual_.Offset({1.0, 1.0, 1.0});
+    render_target_.Offset({1.0, 1.0, 1.0});
     ApplyInverseDpiScalingTransform();
   }
-  visual_tree_root_.Children().InsertAtBottom(sprite_visual_);
+  visual_tree_root_.Children().InsertAtBottom(render_target_);
 
   auto bounds = GetBounds(current_display_info_, true);
 
-  sprite_visual_.Size({bounds.width, bounds.height});
-  return WindowsRenderTarget(sprite_visual_);
+  render_target_.Size({bounds.width, bounds.height});
+  return WindowsRenderTarget(render_target_);
 #endif
 }
 
@@ -61,7 +57,7 @@ void FlutterWindowWinUWP::ApplyInverseDpiScalingTransform() {
   // apply inverse transform to negate built in DPI scaling so we can render at
   // native scale
   auto dpiScale = GetDpiScale();
-  sprite_visual_.Scale({1 / dpiScale, 1 / dpiScale, 1 / dpiScale});
+  render_target_.Scale({1 / dpiScale, 1 / dpiScale, 1 / dpiScale});
 }
 
 PhysicalWindowBounds FlutterWindowWinUWP::GetPhysicalWindowBounds() {
@@ -312,7 +308,7 @@ void FlutterWindowWinUWP::OnBoundsChanged(
 
     binding_handler_delegate_->OnWindowSizeChanged(
         static_cast<size_t>(bounds.width), static_cast<size_t>(bounds.height));
-    sprite_visual_.Size({bounds.width, bounds.height});
+    render_target_.Size({bounds.width, bounds.height});
 #endif
   }
 }
