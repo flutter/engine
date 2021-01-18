@@ -18,8 +18,8 @@ FlutterWindowWinUWP::FlutterWindowWinUWP(
   window_ = cw;
 
   SetEventHandlers();
-  SetupGamePad();
-  SetupXboxSpecific();
+  ConfigureGamePad();
+  ConfigureXboxSpecific();
 
   current_display_info_ = winrt::Windows::Graphics::Display::
       DisplayInformation::GetForCurrentView();
@@ -184,7 +184,7 @@ void FlutterWindowWinUWP::StartGamepadCursorThread() {
       winrt::Windows::System::Threading::WorkItemOptions::TimeSliced);
 }
 
-void FlutterWindowWinUWP::SetupGamePad() {
+void FlutterWindowWinUWP::ConfigureGamePad() {
   DualAxisCallback leftStick = [=](double x, double y) {
     OnGamePadLeftStickMoved(x, y);
   };
@@ -212,7 +212,7 @@ void FlutterWindowWinUWP::SetupGamePad() {
   game_pad_->Initialize();
 }
 
-void FlutterWindowWinUWP::SetupXboxSpecific() {
+void FlutterWindowWinUWP::ConfigureXboxSpecific() {
   running_on_xbox_ =
       winrt::Windows::System::Profile::AnalyticsInfo::VersionInfo()
           .DeviceFamily() == L"Windows.Xbox";

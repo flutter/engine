@@ -7,15 +7,15 @@
 
 #include <windows.h>
 
-#ifdef WINUWP
-#include <winrt/Windows.UI.Composition.h>
-#endif
-
 #include <string>
 #include <variant>
 
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
 #include "flutter/shell/platform/windows/window_binding_handler_delegate.h"
+
+#ifdef WINUWP
+#include <winrt/Windows.UI.Composition.h>
+#endif
 
 namespace flutter {
 

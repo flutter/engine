@@ -23,7 +23,7 @@ class FlutterView {
 #ifndef WINUWP
   // Returns the backing HWND for the view.
   HWND GetNativeWindow() { return FlutterDesktopViewGetHWND(view_); }
-  #endif
+#endif
 
  private:
   // Handle for interacting with the C API's view.

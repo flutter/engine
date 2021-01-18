@@ -4,6 +4,9 @@
 
 #include "flutter/shell/platform/windows/angle_surface_manager.h"
 
+#include <iostream>
+#include <vector>
+
 #ifdef WINUWP
 #include <windows.ui.core.h>
 #include <winrt/Windows.UI.Composition.h>
@@ -12,9 +15,6 @@
 #ifdef USECOREWINDOW
 #include <winrt/Windows.UI.Core.h>
 #endif
-
-#include <iostream>
-#include <vector>
 
 namespace flutter {
 
@@ -204,14 +204,14 @@ bool AngleSurfaceManager::CreateSurface(WindowsRenderTarget* render_target,
       surfaceAttributes);
 #else
 #ifdef USECOREWINDOW
-  auto thing = std::get<winrt::Windows::UI::Core::CoreWindow>(*render_target);
+  auto target = std::get<winrt::Windows::UI::Core::CoreWindow>(*render_target);
 #else
-  auto thing =
+  auto target =
       std::get<winrt::Windows::UI::Composition::SpriteVisual>(*render_target);
 #endif
   surface = eglCreateWindowSurface(
       egl_display_, egl_config_,
-      static_cast<EGLNativeWindowType>(winrt::get_abi(thing)),
+      static_cast<EGLNativeWindowType>(winrt::get_abi(target)),
       surfaceAttributes);
 #endif
   if (surface == EGL_NO_SURFACE) {

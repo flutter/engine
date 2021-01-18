@@ -117,9 +117,9 @@ class FlutterWindowWinUWP : public WindowBindingHandler {
 
   void StartGamepadCursorThread();
 
-  void SetupGamePad();
+  void ConfigureGamePad();
 
-  void SetupXboxSpecific();
+  void ConfigureXboxSpecific();
 
   double GetPosX(winrt::Windows::UI::Core::PointerEventArgs const& args);
   double GetPosY(winrt::Windows::UI::Core::PointerEventArgs const& args);

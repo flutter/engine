@@ -8,10 +8,6 @@
 #include <flutter_windows.h>
 #include <windows.h>
 
-#ifdef WINUWP
-#include <windows.ui.core.h>
-#endif
-
 #include <memory>
 #include <optional>
 
@@ -20,6 +16,10 @@
 #include "flutter_view.h"
 #include "plugin_registrar.h"
 #include "plugin_registry.h"
+
+#ifdef WINUWP
+#include <windows.ui.core.h>
+#endif
 
 namespace flutter {
 
