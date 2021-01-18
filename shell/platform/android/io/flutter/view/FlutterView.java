@@ -768,7 +768,10 @@ public class FlutterView extends SurfaceView
             mMetrics.systemGestureInsetTop,
             mMetrics.systemGestureInsetRight,
             mMetrics.systemGestureInsetBottom,
-            mMetrics.systemGestureInsetLeft);
+            mMetrics.systemGestureInsetLeft,
+            new int[0],
+            new int[0],
+            new int[0]);
   }
 
   // Called by FlutterNativeView to notify first Flutter frame rendered.

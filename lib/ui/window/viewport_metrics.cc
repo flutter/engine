@@ -31,7 +31,10 @@ ViewportMetrics::ViewportMetrics(double p_device_pixel_ratio,
                                  double p_physical_system_gesture_inset_top,
                                  double p_physical_system_gesture_inset_right,
                                  double p_physical_system_gesture_inset_bottom,
-                                 double p_physical_system_gesture_inset_left)
+                                 double p_physical_system_gesture_inset_left,
+                                 std::vector<double> p_physical_display_features_bounds,
+                                 std::vector<int> p_physical_display_features_type,
+                                 std::vector<int> p_physical_display_features_state)
     : device_pixel_ratio(p_device_pixel_ratio),
       physical_width(p_physical_width),
       physical_height(p_physical_height),
@@ -48,7 +51,10 @@ ViewportMetrics::ViewportMetrics(double p_device_pixel_ratio,
           p_physical_system_gesture_inset_right),
       physical_system_gesture_inset_bottom(
           p_physical_system_gesture_inset_bottom),
-      physical_system_gesture_inset_left(p_physical_system_gesture_inset_left) {
+      physical_system_gesture_inset_left(p_physical_system_gesture_inset_left),
+      physical_display_features_bounds(p_physical_display_features_bounds),
+      physical_display_features_type(p_physical_display_features_type),
+      physical_display_features_state(p_physical_display_features_state) {
 }
 
 bool operator==(const ViewportMetrics& a, const ViewportMetrics& b) {
@@ -70,7 +76,13 @@ bool operator==(const ViewportMetrics& a, const ViewportMetrics& b) {
          a.physical_system_gesture_inset_bottom ==
              b.physical_system_gesture_inset_bottom &&
          a.physical_system_gesture_inset_left ==
-             b.physical_system_gesture_inset_left;
+             b.physical_system_gesture_inset_left &&
+         a.physical_display_features_bounds ==
+             b.physical_display_features_bounds &&
+         a.physical_display_features_type ==
+             b.physical_display_features_type &&
+         a.physical_display_features_state ==
+             b.physical_display_features_state;
 }
 
 std::ostream& operator<<(std::ostream& os, const ViewportMetrics& a) {
@@ -85,7 +97,8 @@ std::ostream& operator<<(std::ostream& os, const ViewportMetrics& a) {
      << "Gesture Insets: [" << a.physical_system_gesture_inset_top << "T "
      << a.physical_system_gesture_inset_right << "R "
      << a.physical_system_gesture_inset_bottom << "B "
-     << a.physical_system_gesture_inset_left << "L]";
+     << a.physical_system_gesture_inset_left << "L] "
+     << "Display Features size: " << a.physical_display_features_type.size();
   return os;
 }
 

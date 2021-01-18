@@ -123,7 +123,10 @@ void ShellTest::SetViewportMetrics(Shell* shell, double width, double height) {
       0,       // gesture inset top
       0,       // gesture inset right
       0,       // gesture inset bottom
-      0        // gesture inset left
+      0,       // gesture inset left
+      std::vector<double>(), // display features bounds
+      std::vector<int>(),    // display features type
+      std::vector<int>()     // display features state
   };
   // Set viewport to nonempty, and call Animator::BeginFrame to make the layer
   // tree pipeline nonempty. Without either of this, the layer tree below

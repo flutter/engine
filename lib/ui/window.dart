@@ -225,6 +225,23 @@ abstract class FlutterView {
   ///   applications.
   WindowPadding get padding => viewConfiguration.padding;
 
+  /// Areas of the display that are obstructed by hardware features.
+  /// When this changes, [onMetricsChanged] is called.
+  ///
+  /// List of rectangle bounds, which the application can use to guide layout.
+  /// These areas may be obscured or not have touch capabilities. Each feature
+  /// has a type, which can be used to determine behaviour.
+  ///
+  /// For example, a hinge feature can be used to separate the layout into 2
+  /// logical areas or panels in the application.
+  ///
+  /// See also:
+  ///
+  ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
+  ///    observe when this value changes.
+  ///  * [MediaQuery.of], a simpler mechanism for the same.
+  List<DisplayFeature> get displayFeatures => viewConfiguration.displayFeatures;
+
   /// Updates the view's rendering on the GPU with the newly provided [Scene].
   ///
   /// This function must be called within the scope of the

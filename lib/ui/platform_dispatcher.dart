@@ -170,6 +170,9 @@ class PlatformDispatcher {
     double systemGestureInsetRight,
     double systemGestureInsetBottom,
     double systemGestureInsetLeft,
+    List<double> displayFeaturesBounds,
+    List<int> displayFeaturesType,
+    List<int> displayFeaturesState,
   ) {
     final ViewConfiguration previousConfiguration =
         _viewConfigurations[id] ?? const ViewConfiguration();
@@ -204,8 +207,37 @@ class PlatformDispatcher {
         bottom: math.max(0.0, systemGestureInsetBottom),
         left: math.max(0.0, systemGestureInsetLeft),
       ),
+      displayFeatures: _decodeDisplayFeatures(
+        bounds: displayFeaturesBounds,
+        type: displayFeaturesType,
+        state: displayFeaturesState,
+      ),
     );
     _invoke(onMetricsChanged, _onMetricsChangedZone);
+  }
+
+  List<DisplayFeature> _decodeDisplayFeatures({
+    required List<double> bounds,
+    required List<int> type,
+    required List<int> state,
+  }) {
+    final List<DisplayFeature> result = <DisplayFeature>[];
+    for(int i =0 ; i < type.length; i++){
+      final int rectOffset = i * 4;
+      result.add(DisplayFeature(
+        rect: Rect.fromLTRB(
+          bounds[rectOffset],
+          bounds[rectOffset+1],
+          bounds[rectOffset+2],
+          bounds[rectOffset+3],
+        ),
+        type: DisplayFeatureType.values[type[i]],
+        state: state[i] < DisplayFeatureState.values.length
+            ? DisplayFeatureState.values[state[i]]
+            : DisplayFeatureState.unknown,
+      ));
+    }
+    return result;
   }
 
   /// A callback invoked when any view begins a frame.
@@ -934,6 +966,7 @@ class ViewConfiguration {
     this.viewPadding = WindowPadding.zero,
     this.systemGestureInsets = WindowPadding.zero,
     this.padding = WindowPadding.zero,
+    this.displayFeatures = const <DisplayFeature>[],
   });
 
   /// Copy this configuration with some fields replaced.
@@ -946,6 +979,7 @@ class ViewConfiguration {
     WindowPadding? viewPadding,
     WindowPadding? systemGestureInsets,
     WindowPadding? padding,
+    List<DisplayFeature>? displayFeatures,
   }) {
     return ViewConfiguration(
       window: window ?? this.window,
@@ -956,6 +990,7 @@ class ViewConfiguration {
       viewPadding: viewPadding ?? this.viewPadding,
       systemGestureInsets: systemGestureInsets ?? this.systemGestureInsets,
       padding: padding ?? this.padding,
+      displayFeatures: displayFeatures ?? this.displayFeatures,
     );
   }
 
@@ -1027,6 +1062,16 @@ class ViewConfiguration {
   /// intrusions in the display (e.g. overscan regions on television screens or
   /// phone sensor housings).
   final WindowPadding padding;
+
+  /// Areas of the display that are obstructed by hardware features.
+  ///
+  /// List of rectangle bounds, which the application can use to guide layout.
+  /// These areas may be obscured or not have touch capabilities. Each feature
+  /// has a type, which can be used to determine behaviour.
+  ///
+  /// For example, a hinge feature can be used to separate the layout into 2
+  /// logical areas or panels in the application.
+  final List<DisplayFeature> displayFeatures;
 
   @override
   String toString() {
@@ -1249,6 +1294,106 @@ class WindowPadding {
   String toString() {
     return 'WindowPadding(left: $left, top: $top, right: $right, bottom: $bottom)';
   }
+}
+
+/// Area of the display that is obstructed by a hardware feature.
+///
+/// The bounds, which the application can use to guide layout, may be obscured
+/// or not have touch capabilities. The type can be used to determine behaviour.
+/// For example, a hinge feature can be used to separate the layout into 2
+/// logical areas or panels in the application.
+class DisplayFeature {
+  const DisplayFeature({
+    required this.rect,
+    required this.type,
+    required this.state,
+  });
+
+  DisplayFeature withDevicePixelRatio(double devicePixelRatio) {
+    return DisplayFeature(
+      rect : Rect.fromLTRB(
+        rect.left / devicePixelRatio,
+        rect.top / devicePixelRatio,
+        rect.right / devicePixelRatio,
+        rect.bottom / devicePixelRatio,
+      ),
+      type: type,
+      state: state,
+    );
+  }
+
+  /// Area of the view occupied by this display feature
+  final Rect rect;
+
+  /// Type of display feature, e.g. hinge, fold, cutout
+  final DisplayFeatureType type;
+
+  /// Posture of display feature, which is populated only for folds and hinges.
+  /// For cutouts, this is [DisplayFeatureState.unknown]
+  final DisplayFeatureState state;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is DisplayFeature &&
+          runtimeType == other.runtimeType &&
+          rect == other.rect &&
+          type == other.type &&
+          state == other.state;
+
+  @override
+  int get hashCode => hashValues(rect, type, state);
+
+  @override
+  String toString() {
+    return 'DisplayFeature(rect: $rect, type: $type, state: $state)';
+  }
+}
+
+/// Type of display feature (screen obstruction). This enum contains both
+/// foldable obstructions and cutout obstructions.
+///
+/// Some, like [DisplayFeatureType.fold], can be reported without actually
+/// impeding drawing on the screen. They are useful for knowing where the
+/// display is bent or has a crease. The [DisplayFeature] bounds can be
+/// 0-width in such cases.
+enum DisplayFeatureType {
+  unknown,
+  /// A fold in the flexible screen without a physical gap.
+  fold,
+  /// A physical separation with a hinge that allows two display panels to fold.
+  hinge,
+  /// A non-functional area of the screen, usually housing cameras or sensors.
+  cutout,
+}
+
+/// Display features for folds and hinges can have a state. Cutouts do not have
+/// a state.
+///
+///   * For cutouts, the state is [DisplayFeatureState.unknown].
+///   * For folds & hinges, the state is the posture.
+///   TODO: Once WM is stable, values should be, in this order: unknown, flat, halfOpened, flipped, with no other values.
+enum DisplayFeatureState {
+  unknown,
+  // TODO: Once WM is stalbe, this is removed.
+  closed,
+  /// The foldable device's hinge is in an intermediate position between opened
+  /// and closed state, there is a non-flat angle between parts of the flexible
+  /// screen or between physical screen panels. See the
+  /// [Posture](https://developer.android.com/guide/topics/ui/foldables#postures)
+  /// section in the official documentation for visual samples and references.
+  /// TODO: Once WM is stable, this comes after flat.
+  halfOpened,
+  /// The foldable device is completely open, the screen space that is presented
+  /// to the user is flat. See the
+  /// [Posture](https://developer.android.com/guide/topics/ui/foldables#postures)
+  /// section in the official documentation for visual samples and references.
+  flat,
+  /// The foldable device is flipped with the flexible screen parts or physical
+  /// screens facing opposite directions. See the
+  /// [Posture](https://developer.android.com/guide/topics/ui/foldables#postures)
+  /// section in the official documentation for visual samples and references.
+  flipped,
 }
 
 /// An identifier used to select a user's language and formatting preferences.

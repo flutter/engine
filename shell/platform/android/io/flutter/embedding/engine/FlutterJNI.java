@@ -22,6 +22,7 @@ import io.flutter.embedding.engine.FlutterEngine.EngineLifecycleListener;
 import io.flutter.embedding.engine.dart.PlatformMessageHandler;
 import io.flutter.embedding.engine.deferredcomponents.DeferredComponentManager;
 import io.flutter.embedding.engine.mutatorsstack.FlutterMutatorsStack;
+import io.flutter.embedding.engine.renderer.FlutterRenderer.DisplayFeature;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.embedding.engine.renderer.RenderSurface;
 import io.flutter.embedding.engine.renderer.SurfaceTextureWrapper;
@@ -442,7 +443,10 @@ public class FlutterJNI {
       int systemGestureInsetTop,
       int systemGestureInsetRight,
       int systemGestureInsetBottom,
-      int systemGestureInsetLeft) {
+      int systemGestureInsetLeft,
+      int[] displayFeaturesBounds,
+      int[] displayFeaturesType,
+      int[] displayFeaturesState) {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
     nativeSetViewportMetrics(
@@ -461,7 +465,10 @@ public class FlutterJNI {
         systemGestureInsetTop,
         systemGestureInsetRight,
         systemGestureInsetBottom,
-        systemGestureInsetLeft);
+        systemGestureInsetLeft,
+        displayFeaturesBounds,
+        displayFeaturesType,
+        displayFeaturesState);
   }
 
   private native void nativeSetViewportMetrics(
@@ -480,7 +487,10 @@ public class FlutterJNI {
       int systemGestureInsetTop,
       int systemGestureInsetRight,
       int systemGestureInsetBottom,
-      int systemGestureInsetLeft);
+      int systemGestureInsetLeft,
+      int[] displayFeaturesBounds,
+      int[] displayFeaturesType,
+      int[] displayFeaturesState);
   // ----- End Render Surface Support -----
 
   // ------ Start Touch Interaction Support ---

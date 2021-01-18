@@ -49,5 +49,16 @@
       "androidx.annotation.UiThread",
       "androidx.annotation.VisibleForTesting"
     ]
+  },
+  {
+    "url": "https://maven.google.com/androidx/window/window/1.0.0-alpha01/window-1.0.0-aplha01.aar",
+    "out_file_name": "androidx_window.aar",
+    "maven_dependency": "androidx.window:window:1.0.0-alpha01",
+    "provides": [
+      "androidx.window.DisplayFeature",
+      "androidx.window.FoldingFeature",
+      "androidx.window.WindowLayoutInfo",
+      "androidx.window.WindowManager"
+    ]
   }
 ]
