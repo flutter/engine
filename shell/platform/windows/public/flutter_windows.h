@@ -61,7 +61,6 @@ typedef struct {
 
 // ========== View Controller ==========
 
-#ifndef WINUWP
 // Creates a view that hosts and displays the given engine instance.
 //
 // This takes ownership of |engine|, so FlutterDesktopEngineDestroy should no
@@ -75,15 +74,19 @@ typedef struct {
 // The caller owns the returned reference, and is responsible for calling
 // FlutterDesktopViewControllerDestroy. Returns a null pointer in the event of
 // an error.
-FLUTTER_EXPORT FlutterDesktopViewControllerRef
-FlutterDesktopViewControllerCreate(int width,
-                                   int height,
-                                   FlutterDesktopEngineRef engine);
-#else
-//TODO
+#ifdef WINUWP
+// The CoreWindow implementation accepts a pointer to the host CoreWindow
+// and view hookup is performed in the construction path.
 FLUTTER_EXPORT FlutterDesktopViewControllerRef
 FlutterDesktopViewControllerCreateFromCoreWindow(
     ABI::Windows::UI::Core::CoreWindow* window,
+                                   FlutterDesktopEngineRef engine);
+#else //!WINUWP
+// The Win32 implementation accepts width, height
+// with view hookup explicitly performed using the caller using HWND parenting.
+FLUTTER_EXPORT FlutterDesktopViewControllerRef
+FlutterDesktopViewControllerCreate(int width,
+                                   int height,
                                    FlutterDesktopEngineRef engine);
 #endif
 

@@ -197,12 +197,7 @@ bool AngleSurfaceManager::CreateSurface(WindowsRenderTarget* render_target,
       EGL_FIXED_SIZE_ANGLE, EGL_TRUE, EGL_WIDTH, width,
       EGL_HEIGHT,           height,   EGL_NONE};
 
-#ifndef WINUWP
-  surface = eglCreateWindowSurface(
-      egl_display_, egl_config_,
-      static_cast<EGLNativeWindowType>(std::get<HWND>(*render_target)),
-      surfaceAttributes);
-#else
+#ifdef WINUWP
 #ifdef USECOREWINDOW
   auto target = std::get<winrt::Windows::UI::Core::CoreWindow>(*render_target);
 #else
@@ -212,6 +207,11 @@ bool AngleSurfaceManager::CreateSurface(WindowsRenderTarget* render_target,
   surface = eglCreateWindowSurface(
       egl_display_, egl_config_,
       static_cast<EGLNativeWindowType>(winrt::get_abi(target)),
+      surfaceAttributes);
+#else
+  surface = eglCreateWindowSurface(
+      egl_display_, egl_config_,
+      static_cast<EGLNativeWindowType>(std::get<HWND>(*render_target)),
       surfaceAttributes);
 #endif
   if (surface == EGL_NO_SURFACE) {

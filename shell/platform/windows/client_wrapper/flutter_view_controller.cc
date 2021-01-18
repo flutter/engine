@@ -9,12 +9,13 @@
 
 namespace flutter {
 
-#ifndef WINUWP
-FlutterViewController::FlutterViewController(int width,
-                                             int height,
+#ifdef WINUWP
+FlutterViewController::FlutterViewController(
+    ABI::Windows::UI::Core::CoreWindow* window,
                                              const DartProject& project) {
   engine_ = std::make_unique<FlutterEngine>(project);
-  controller_ = FlutterDesktopViewControllerCreate(width, height,
+  controller_ = FlutterDesktopViewControllerCreateFromCoreWindow(
+      window,
                                                    engine_->RelinquishEngine());
   if (!controller_) {
     std::cerr << "Failed to create view controller." << std::endl;
@@ -24,12 +25,11 @@ FlutterViewController::FlutterViewController(int width,
       FlutterDesktopViewControllerGetView(controller_));
 }
 #else
-FlutterViewController::FlutterViewController(
-    ABI::Windows::UI::Core::CoreWindow* window,
+FlutterViewController::FlutterViewController(int width,
+                                             int height,
                                              const DartProject& project) {
   engine_ = std::make_unique<FlutterEngine>(project);
-  controller_ = FlutterDesktopViewControllerCreateFromCoreWindow(
-      window,
+  controller_ = FlutterDesktopViewControllerCreate(width, height,
                                                    engine_->RelinquishEngine());
   if (!controller_) {
     std::cerr << "Failed to create view controller." << std::endl;
