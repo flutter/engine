@@ -9,10 +9,7 @@
 namespace flutter {
 
 FlutterWindowsView::FlutterWindowsView(
-    std::unique_ptr<WindowBindingHandler> window_binding)
-    : resize_status_(ResizeState::kDone),
-      resize_target_width_(0),
-      resize_target_height_(0) {
+    std::unique_ptr<WindowBindingHandler> window_binding) {
   surface_manager_ = std::make_unique<AngleSurfaceManager>();
 
   // Take the binding handler, and give it a pointer back to self.
@@ -53,7 +50,7 @@ void FlutterWindowsView::SetEngine(
 }
 
 uint32_t FlutterWindowsView::GetFrameBufferId(size_t width, size_t height) {
-  // raster task runner
+  // Called on an engine-controlled (non-platform) thread.
   std::unique_lock<std::mutex> lock(resize_mutex_);
 
   if (resize_status_ != ResizeState::kResizeStarted) {
@@ -61,6 +58,8 @@ uint32_t FlutterWindowsView::GetFrameBufferId(size_t width, size_t height) {
   }
 
   if (resize_target_width_ == width && resize_target_height_ == height) {
+    // Platform thread is blocked for the entire duration until the
+    // resize_status_ is set to kDone.
     surface_manager_->ResizeSurface(GetRenderTarget(), width, height);
     surface_manager_->MakeCurrent();
     resize_status_ = ResizeState::kFrameGenerated;
@@ -70,7 +69,7 @@ uint32_t FlutterWindowsView::GetFrameBufferId(size_t width, size_t height) {
 }
 
 void FlutterWindowsView::OnWindowSizeChanged(size_t width, size_t height) {
-  // platform task runner
+  // Called on the platform thread.
   std::unique_lock<std::mutex> lock(resize_mutex_);
   resize_status_ = ResizeState::kResizeStarted;
   resize_target_width_ = width;
@@ -287,7 +286,7 @@ bool FlutterWindowsView::ClearContext() {
 }
 
 bool FlutterWindowsView::SwapBuffers() {
-  // raster task runner
+  // Called on an engine-controlled (non-platform) thread.
   std::unique_lock<std::mutex> lock(resize_mutex_);
 
   switch (resize_status_) {

@@ -61,7 +61,8 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate {
   // Returns the engine backing this view.
   FlutterWindowsEngine* GetEngine();
 
-  // Callbacks for clearing context, settings context and swapping buffers.
+  // Callbacks for clearing context, settings context and swapping buffers,
+  // these are typically called on an engine-controlled (non-platform) thread.
   bool ClearContext();
   bool MakeCurrent();
   bool MakeResourceCurrent();
@@ -234,15 +235,15 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate {
 
   // Indicates the state of a window resize event. Platform thread will be
   // blocked while this is not done. Guarded by resize_mutex_.
-  ResizeState resize_status_;
+  ResizeState resize_status_ = ResizeState::kDone;
 
   // Target for the window width. Valid when resize_pending_ is set. Guarded by
   // resize_mutex_.
-  size_t resize_target_width_;
+  size_t resize_target_width_ = 0;
 
   // Target for the window width. Valid when resize_pending_ is set. Guarded by
   // resize_mutex_.
-  size_t resize_target_height_;
+  size_t resize_target_height_ = 0;
 };
 
 }  // namespace flutter
