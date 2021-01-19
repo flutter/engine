@@ -449,6 +449,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     _markedText = [[NSMutableString alloc] init];
     _selectedTextRange = [[FlutterTextRange alloc] initWithNSRange:NSMakeRange(0, 0)];
     _markedRect = kInvalidFirstRect;
+    _hidden = YES;
     _cachedFirstRect = kInvalidFirstRect;
     // Initialize with the zero matrix which is not
     // an affine transform.
