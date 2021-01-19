@@ -117,11 +117,11 @@ class AndroidShellHolder {
   ///             Used when constructing the Shell from the inside out when
   ///             spawning from an existing Shell.
   ///
-  AndroidShellHolder(flutter::Settings settings,
-                     std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
-                     std::shared_ptr<ThreadHost> thread_host,
+  AndroidShellHolder(const flutter::Settings& settings,
+                     const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade,
+                     const std::shared_ptr<ThreadHost>& thread_host,
                      std::unique_ptr<Shell> shell,
-                     fml::WeakPtr<PlatformViewAndroid> platform_view);
+                     const fml::WeakPtr<PlatformViewAndroid>& platform_view);
   static void ThreadDestructCallback(void* value);
   std::optional<RunConfiguration> BuildRunConfiguration(
       std::shared_ptr<flutter::AssetManager> asset_manager,

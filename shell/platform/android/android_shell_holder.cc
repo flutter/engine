@@ -137,11 +137,11 @@ AndroidShellHolder::AndroidShellHolder(
 }
 
 AndroidShellHolder::AndroidShellHolder(
-    Settings settings,
-    std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
-    std::shared_ptr<ThreadHost> thread_host,
+    const Settings& settings,
+    const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade,
+    const std::shared_ptr<ThreadHost>& thread_host,
     std::unique_ptr<Shell> shell,
-    fml::WeakPtr<PlatformViewAndroid> platform_view)
+    const fml::WeakPtr<PlatformViewAndroid>& platform_view)
     : settings_(std::move(settings)),
       jni_facade_(jni_facade),
       platform_view_(platform_view),

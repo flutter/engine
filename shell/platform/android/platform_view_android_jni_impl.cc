@@ -60,6 +60,8 @@ static fml::jni::ScopedJavaGlobalRef<jclass>* g_flutter_jni_class = nullptr;
 
 static fml::jni::ScopedJavaGlobalRef<jclass>* g_texture_wrapper_class = nullptr;
 
+static fml::jni::ScopedJavaGlobalRef<jclass>* g_java_long_class = nullptr;
+
 // Called By Native
 
 static jmethodID g_flutter_callback_info_constructor = nullptr;
@@ -74,6 +76,12 @@ jobject CreateFlutterCallbackInformation(
                         env->NewStringUTF(callbackClassName.c_str()),
                         env->NewStringUTF(callbackLibraryPath.c_str()));
 }
+
+static jfieldID g_jni_shell_holder_field = nullptr;
+
+static jmethodID g_jni_constructor = nullptr;
+
+static jmethodID g_long_constructor = nullptr;
 
 static jmethodID g_handle_platform_message_method = nullptr;
 
@@ -161,18 +169,7 @@ static jobject SpawnJNI(JNIEnv* env,
                         jlong shell_holder,
                         jstring jEntrypoint,
                         jstring jLibraryUrl) {
-  jclass jniClass = env->FindClass("io/flutter/embedding/engine/FlutterJNI");
-  if (jniClass == nullptr) {
-    FML_LOG(ERROR) << "Could not locate FlutterJNI class";
-    return nullptr;
-  }
-  jmethodID jniConstructor = env->GetMethodID(jniClass, "<init>", "()V");
-  if (jniConstructor == nullptr) {
-    FML_LOG(ERROR) << "Could not locate FlutterJNI's constructor";
-    return nullptr;
-  }
-
-  jobject jni = env->NewObject(jniClass, jniConstructor);
+  jobject jni = env->NewObject(g_flutter_jni_class->obj(), g_jni_constructor);
   if (jni == nullptr) {
     FML_LOG(ERROR) << "Could not create a FlutterJNI instance";
     return nullptr;
@@ -193,33 +190,15 @@ static jobject SpawnJNI(JNIEnv* env,
     return nullptr;
   }
 
-  jfieldID shellHolderId =
-      env->GetFieldID(jniClass, "nativeShellHolderId", "Ljava/lang/Long;");
-  if (shellHolderId == nullptr) {
-    FML_LOG(ERROR) << "Could not locate FlutterJNI's nativeShellHolderId field";
-    return nullptr;
-  }
-
-  jclass longClass = env->FindClass("java/lang/Long");
-  if (longClass == nullptr) {
-    FML_LOG(ERROR) << "Could not locate Long class";
-    return nullptr;
-  }
-  jmethodID longConstructor =
-      env->GetStaticMethodID(longClass, "valueOf", "(J)Ljava/lang/Long;");
-  if (longConstructor == nullptr) {
-    FML_LOG(ERROR) << "Could not locate Long's constructor";
-    return nullptr;
-  }
   jobject javaLong = env->CallStaticObjectMethod(
-      longClass, longConstructor,
+      g_java_long_class->obj(), g_long_constructor,
       reinterpret_cast<jlong>(spawned_shell_holder.release()));
   if (javaLong == nullptr) {
     FML_LOG(ERROR) << "Could not create a Long instance";
     return nullptr;
   }
 
-  env->SetObjectField(jni, shellHolderId, javaLong);
+  env->SetObjectField(jni, g_jni_shell_holder_field, javaLong);
 
   return jni;
 }
@@ -824,6 +803,29 @@ bool RegisterApi(JNIEnv* env) {
     return false;
   }
 
+  g_jni_shell_holder_field = env->GetFieldID(
+      g_flutter_jni_class->obj(), "nativeShellHolderId", "Ljava/lang/Long;");
+
+  if (g_jni_shell_holder_field == nullptr) {
+    FML_LOG(ERROR) << "Could not locate FlutterJNI's nativeShellHolderId field";
+    return false;
+  }
+
+  g_jni_constructor =
+      env->GetMethodID(g_flutter_jni_class->obj(), "<init>", "()V");
+
+  if (g_jni_constructor == nullptr) {
+    FML_LOG(ERROR) << "Could not locate FlutterJNI's constructor";
+    return false;
+  }
+
+  g_long_constructor = env->GetStaticMethodID(g_java_long_class->obj(),
+                                              "valueOf", "(J)Ljava/lang/Long;");
+  if (g_long_constructor == nullptr) {
+    FML_LOG(ERROR) << "Could not locate Long's constructor";
+    return false;
+  }
+
   g_handle_platform_message_method =
       env->GetMethodID(g_flutter_jni_class->obj(), "handlePlatformMessage",
                        "(Ljava/lang/String;[BI)V");
@@ -1072,6 +1074,13 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
 
   if (g_request_dart_deferred_library_method == nullptr) {
     FML_LOG(ERROR) << "Could not locate requestDartDeferredLibrary method";
+    return false;
+  }
+
+  g_java_long_class = new fml::jni::ScopedJavaGlobalRef<jclass>(
+      env, env->FindClass("java/lang/Long"));
+  if (g_java_long_class->is_null()) {
+    FML_LOG(ERROR) << "Could not locate java.lang.Long class";
     return false;
   }
 

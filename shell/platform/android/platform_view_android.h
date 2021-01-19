@@ -58,10 +58,11 @@ class PlatformViewAndroid final : public PlatformView {
   ///             Android GPU context to create new surfaces. This maximizes
   ///             resource sharing between 2 PlatformViewAndroids of 2 Shells.
   ///
-  PlatformViewAndroid(PlatformView::Delegate& delegate,
-                      flutter::TaskRunners task_runners,
-                      std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
-                      std::shared_ptr<flutter::AndroidContext> android_context);
+  PlatformViewAndroid(
+      PlatformView::Delegate& delegate,
+      flutter::TaskRunners task_runners,
+      const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade,
+      const std::shared_ptr<flutter::AndroidContext>& android_context);
 
   ~PlatformViewAndroid() override;
 
@@ -169,7 +170,12 @@ class PlatformViewAndroid final : public PlatformView {
   // |PlatformView|
   void RequestDartDeferredLibrary(intptr_t loading_unit_id) override;
 
-  void InitSurface();
+  std::shared_ptr<AndroidSurfaceFactoryImpl> MakeSurfaceFactory(
+      const AndroidContext& android_context,
+      const PlatformViewAndroidJNI& jni_facade);
+
+  std::unique_ptr<AndroidSurface> MakeSurface(
+      const std::shared_ptr<AndroidSurfaceFactoryImpl>& surface_factory);
 
   void InstallFirstFrameCallback();
 
