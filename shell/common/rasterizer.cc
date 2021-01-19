@@ -475,7 +475,7 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
              "This is likely a result of using platform views with enigne "
              "groups.  See "
              "https://github.com/flutter/flutter/issues/73620.";
-      abort();
+      fml::KillProcess();
     }
     if (external_view_embedder_ &&
         (!raster_thread_merger_ || raster_thread_merger_->IsMerged())) {
