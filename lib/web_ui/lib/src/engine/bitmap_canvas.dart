@@ -955,7 +955,12 @@ class BitmapCanvas extends EngineCanvas {
     _drawPointsPaint.maskFilter = paint.maskFilter;
 
     _setUpPaint(_drawPointsPaint, null);
-    _canvasPool.drawPoints(pointMode, points, paint.strokeWidth! / 2.0);
+    final double dpr = ui.window.devicePixelRatio;
+    // Use hairline (device pixel when strokeWidth is not specified).
+    final double strokeWidth = paint.strokeWidth == null ? 1.0 / (2 * dpr)
+        : paint.strokeWidth!;
+      // Draw point using circle with half radius.
+    _canvasPool.drawPoints(pointMode, points, strokeWidth / 2.0);
     _tearDownPaint();
   }
 
