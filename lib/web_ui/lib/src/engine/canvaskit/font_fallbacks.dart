@@ -643,7 +643,4 @@ class _FallbackFontDownloadQueue {
 /// The Noto font interval tree.
 _IntervalTree<_NotoFont>? _notoTree;
 
-Map<_NotoFont, _ResolvedNotoFont> _resolvedNotoFonts =
-    <_NotoFont, _ResolvedNotoFont>{};
-
 _FallbackFontDownloadQueue _notoDownloadQueue = _FallbackFontDownloadQueue();
