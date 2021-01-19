@@ -4,7 +4,6 @@
 
 #include "flutter/shell/platform/windows/win32_flutter_window.h"
 
-#include <dwmapi.h>
 #include <chrono>
 #include <map>
 
@@ -91,12 +90,6 @@ PhysicalWindowBounds Win32FlutterWindow::GetPhysicalWindowBounds() {
 
 void Win32FlutterWindow::UpdateFlutterCursor(const std::string& cursor_name) {
   current_cursor_ = GetCursorByName(cursor_name);
-}
-
-void Win32FlutterWindow::OnWindowResized() {
-  // Blocking the raster thread until DWM flushes alleviates glitches where
-  // previous size surface is stretched over current size view.
-  DwmFlush();
 }
 
 // Translates button codes from Win32 API to FlutterPointerMouseButtons.
