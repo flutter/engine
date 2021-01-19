@@ -226,6 +226,77 @@ public class AndroidKeyProcessorTest {
     verify(fakeRootView, times(1)).dispatchKeyEvent(fakeKeyEvent);
   }
 
+  public void respondsCorrectlyWhenEventsAreReturnedOutOfOrder() {
+    FlutterEngine flutterEngine = mockFlutterEngine();
+    KeyEventChannel fakeKeyEventChannel = flutterEngine.getKeyEventChannel();
+    View fakeView = mock(View.class);
+    View fakeRootView = mock(View.class);
+    when(fakeView.getRootView())
+        .then(
+            new Answer<View>() {
+              @Override
+              public View answer(InvocationOnMock invocation) throws Throwable {
+                return fakeRootView;
+              }
+            });
+
+    ArgumentCaptor<KeyEventChannel.EventResponseHandler> handlerCaptor =
+        ArgumentCaptor.forClass(KeyEventChannel.EventResponseHandler.class);
+    verify(fakeKeyEventChannel).setEventResponseHandler(handlerCaptor.capture());
+    AndroidKeyProcessor processor =
+        new AndroidKeyProcessor(fakeView, fakeKeyEventChannel, mock(TextInputPlugin.class));
+    ArgumentCaptor<KeyEventChannel.FlutterKeyEvent> event1Captor =
+        ArgumentCaptor.forClass(KeyEventChannel.FlutterKeyEvent.class);
+    ArgumentCaptor<KeyEventChannel.FlutterKeyEvent> event2Captor =
+        ArgumentCaptor.forClass(KeyEventChannel.FlutterKeyEvent.class);
+    FakeKeyEvent fakeKeyEvent1 = new FakeKeyEvent(KeyEvent.ACTION_DOWN, 65);
+    FakeKeyEvent fakeKeyEvent2 = new FakeKeyEvent(KeyEvent.ACTION_DOWN, 20);
+
+    boolean result1 = processor.onKeyEvent(fakeKeyEvent1);
+    boolean result2 = processor.onKeyEvent(fakeKeyEvent2);
+    assertEquals(true, processor.isPendingEvent(fakeKeyEvent1));
+    assertEquals(true, processor.isPendingEvent(fakeKeyEvent2));
+    assertEquals(true, result1);
+    assertEquals(true, result2);
+
+    // Capture the FlutterKeyEvent so we can find out its event ID to use when
+    // faking our response.
+    verify(fakeKeyEventChannel, times(1)).keyDown(event1Captor.capture());
+    verify(fakeKeyEventChannel, times(1)).keyDown(event2Captor.capture());
+    boolean[] dispatchResult = {true, true};
+    when(fakeView.dispatchKeyEvent(any(KeyEvent.class)))
+        .then(
+            new Answer<Boolean>() {
+              @Override
+              public Boolean answer(InvocationOnMock invocation) throws Throwable {
+                KeyEvent event = (KeyEvent) invocation.getArguments()[0];
+                assertEquals(true, fakeKeyEvent1 == event || fakeKeyEvent2 == event);
+                if (fakeKeyEvent1 == event) {
+                  dispatchResult[0] = processor.onKeyEvent(fakeKeyEvent1);
+                  return dispatchResult[0];
+                } else {
+                  dispatchResult[1] = processor.onKeyEvent(fakeKeyEvent2);
+                  return dispatchResult[1];
+                }
+              }
+            });
+
+    assertEquals(true, processor.isPendingEvent(fakeKeyEvent1));
+    assertEquals(true, processor.isPendingEvent(fakeKeyEvent2));
+
+    // Fake a "handled" response from the framework, but do it in reverse order.
+    handlerCaptor.getValue().onKeyEventNotHandled(event2Captor.getValue().event);
+    handlerCaptor.getValue().onKeyEventNotHandled(event1Captor.getValue().event);
+
+    verify(fakeView, times(1)).dispatchKeyEvent(fakeKeyEvent1);
+    verify(fakeView, times(1)).dispatchKeyEvent(fakeKeyEvent2);
+    assertEquals(false, dispatchResult[0]);
+    assertEquals(false, dispatchResult[1]);
+    verify(fakeKeyEventChannel, times(0)).keyUp(any(KeyEventChannel.FlutterKeyEvent.class));
+    verify(fakeRootView, times(1)).dispatchKeyEvent(fakeKeyEvent1);
+    verify(fakeRootView, times(1)).dispatchKeyEvent(fakeKeyEvent2);
+  }
+
   @NonNull
   private FlutterEngine mockFlutterEngine() {
     // Mock FlutterEngine and all of its required direct calls.
