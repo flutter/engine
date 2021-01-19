@@ -719,8 +719,8 @@ class Engine final : public RuntimeDelegate,
   ///
   /// @param[in]  packet         The key data packet.
   ///
-  void DispatchKeyDataMessage(std::unique_ptr<KeyDataMessage> message,
-                              KeyDataMessageCallback callback);
+  void DispatchKeyDataPacket(std::unique_ptr<KeyDataPacket> packet,
+                              KeyDataPacketCallback callback);
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the engine that the embedder encountered an

@@ -14,15 +14,15 @@
 
 namespace flutter {
 
-typedef std::function<void (bool)> KeyDataMessageCallback;
+typedef std::function<void (bool)> KeyDataPacketCallback;
 
-class KeyDataMessage {
+class KeyDataPacket {
  public:
-  // Build a KeyDataMessage by incrementally fill in data.
+  // Build a KeyDataPacket by incrementally fill in data.
   //
   // The `character_data_size` is number of bytes to contain the character data.
-  KeyDataMessage(size_t character_data_size);
-  ~KeyDataMessage();
+  KeyDataPacket(size_t character_data_size);
+  ~KeyDataPacket();
 
   const std::vector<uint8_t>& data() const { return data_; }
 
@@ -41,7 +41,7 @@ class KeyDataMessage {
 
   std::vector<uint8_t> data_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(KeyDataMessage);
+  FML_DISALLOW_COPY_AND_ASSIGN(KeyDataPacket);
 };
 
 }  // namespace flutter

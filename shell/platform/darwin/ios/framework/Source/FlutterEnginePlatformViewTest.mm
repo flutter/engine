@@ -25,7 +25,7 @@ class MockDelegate : public PlatformView::Delegate {
   void OnPlatformViewDispatchPlatformMessage(fml::RefPtr<PlatformMessage> message) override {}
   void OnPlatformViewDispatchPointerDataPacket(std::unique_ptr<PointerDataPacket> packet) override {
   }
-  void OnPlatformViewDispatchKeyDataMessage(std::unique_ptr<KeyDataMessage> message) override {}
+  void OnPlatformViewDispatchKeyDataPacket(std::unique_ptr<KeyDataPacket> packet) override {}
   void OnPlatformViewDispatchSemanticsAction(int32_t id,
                                              SemanticsAction action,
                                              std::vector<uint8_t> args) override {}

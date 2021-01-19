@@ -1532,7 +1532,7 @@ FlutterEngineResult FlutterEngineSendKeyEvent(
   size_t character_data_size =
       character == nullptr ? 0 : strnlen(character, kKeyEventCharacterMaxBytes);
 
-  auto message = std::make_unique<flutter::KeyDataMessage>(character_data_size);
+  auto message = std::make_unique<flutter::KeyDataPacket>(character_data_size);
 
   flutter::KeyData key_data;
   key_data.Clear();
@@ -1550,7 +1550,7 @@ FlutterEngineResult FlutterEngineSendKeyEvent(
       };
 
   return reinterpret_cast<flutter::EmbedderEngine*>(engine)
-                 ->DispatchKeyDataMessage(
+                 ->DispatchKeyDataPacket(
                    std::move(message),
                    response)
              ? kSuccess

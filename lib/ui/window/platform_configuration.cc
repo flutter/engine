@@ -360,7 +360,7 @@ void PlatformConfiguration::DispatchSemanticsAction(int32_t id,
 }
 
 uint64_t PlatformConfiguration::RegisterKeyDataResponse(
-    KeyDataMessageCallback callback) {
+    KeyDataPacketCallback callback) {
   uint64_t response_id = next_key_response_id_++;
   pending_key_responses_[response_id] = std::move(callback);
   return response_id;

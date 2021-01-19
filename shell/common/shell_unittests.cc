@@ -62,9 +62,9 @@ class MockPlatformViewDelegate : public PlatformView::Delegate {
   MOCK_METHOD1(OnPlatformViewDispatchPointerDataPacket,
                void(std::unique_ptr<PointerDataPacket> packet));
 
-  MOCK_METHOD2(OnPlatformViewDispatchKeyDataMessage,
-               void(std::unique_ptr<KeyDataMessage> message,
-                    KeyDataMessageCallback callback));
+  MOCK_METHOD2(OnPlatformViewDispatchKeyDataPacket,
+               void(std::unique_ptr<KeyDataPacket> packet,
+                    KeyDataPacketCallback callback));
 
   MOCK_METHOD3(OnPlatformViewDispatchSemanticsAction,
                void(int32_t id,

@@ -331,7 +331,7 @@ class PlatformConfiguration final {
   /// @param[in]  message  The message sent from the embedder to the Dart
   ///                      application.
   ///
-  uint64_t RegisterKeyDataResponse(KeyDataMessageCallback callback);
+  uint64_t RegisterKeyDataResponse(KeyDataPacketCallback callback);
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the framework that it is time to begin working on a
@@ -454,7 +454,7 @@ class PlatformConfiguration final {
 
   // We use id 0 to mean that no response is expected.
   uint64_t next_key_response_id_ = 1;
-  std::unordered_map<uint64_t, KeyDataMessageCallback>
+  std::unordered_map<uint64_t, KeyDataPacketCallback>
       pending_key_responses_;
 };
 
