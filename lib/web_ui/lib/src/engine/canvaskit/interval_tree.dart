@@ -40,17 +40,17 @@ class _IntervalTree<T> {
 
     void _computeHigh(_IntervalTreeNode<T> root) {
       if (root.left == null && root.right == null) {
-        root._cachedHigh = root.interval.end;
+        root.high = root.interval.end;
       } else if (root.left == null) {
         _computeHigh(root.right!);
-        root._cachedHigh = math.max(root.interval.end, root.right!.high);
+        root.high = math.max(root.interval.end, root.right!.high);
       } else if (root.right == null) {
         _computeHigh(root.left!);
-        root._cachedHigh = math.max(root.interval.end, root.left!.high);
+        root.high = math.max(root.interval.end, root.left!.high);
       } else {
         _computeHigh(root.right!);
         _computeHigh(root.left!);
-        root._cachedHigh = math.max(
+        root.high = math.max(
             root.interval.end, math.max(root.left!.high, root.right!.high));
       }
     }
@@ -86,13 +86,12 @@ class _IntervalTreeNode<T> {
   final _Interval<T> interval;
 
   int get low => interval.start;
-  int get high => _cachedHigh ?? interval.end;
-  int? _cachedHigh;
+  int high;
 
   _IntervalTreeNode<T>? left;
   _IntervalTreeNode<T>? right;
 
-  _IntervalTreeNode(this.interval);
+  _IntervalTreeNode(this.interval) : high = interval.end;
 
   // Searches the tree rooted at this node for all T containing [x].
   void searchForPoint(int x, List<T> result) {

@@ -661,7 +661,6 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
         typefaces.addAll(typefacesForFamily);
       }
     }
-    // List<int> codeUnits = text.codeUnits;
     List<bool> codeUnitsSupported = List<bool>.filled(text.length, false);
     for (SkTypeface typeface in typefaces) {
       SkFont font = SkFont(typeface);
