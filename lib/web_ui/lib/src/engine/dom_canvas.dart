@@ -140,8 +140,8 @@ class DomCanvas extends EngineCanvas with SaveElementStackTracking {
 ///
 /// Returns a color for box-shadow based on blur filter at sigma.
 ui.Color blurColor(ui.Color color, double sigma) {
-  final double strength = math.max(math.min(
-      math.sqrt(sigma) / (math.pi * 2.0), 1.0), 0.0);
+  final double strength = math.min(
+      math.sqrt(sigma) / (math.pi * 2.0), 1.0);
   final int reducedAlpha = ((1.0 - strength) * color.alpha).round();
   return ui.Color((reducedAlpha & 0xff) << 24 | (color.value & 0x00ffffff));
 }
