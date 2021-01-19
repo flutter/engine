@@ -191,12 +191,12 @@ html.HtmlElement _buildDrawRectElement(ui.Rect rect, SurfacePaintData paint, Str
 
   if (paint.maskFilter != null) {
     final double sigma = paint.maskFilter!.webOnlySigma;
-    if (browserEngine == BrowserEngine.webkit) {
+    if (browserEngine == BrowserEngine.webkit && !isStroke) {
       // A bug in webkit leaves artifacts when this element is animated
       // with filter: blur, we use boxShadow instead.
       style.boxShadow = '0px 0px ${sigma * 2.0}px $cssColor';
-      cssColor = paint.color == null ? '#A0000000' : colorToCssString(
-          blurColor(paint.color!, sigma))!;
+      cssColor = colorToCssString(
+          blurColor(paint.color ?? const ui.Color(0xFF000000), sigma))!;
     } else {
       style.filter = 'blur(${sigma}px)';
     }
