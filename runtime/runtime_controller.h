@@ -414,7 +414,8 @@ class RuntimeController : public PlatformConfigurationClient {
   ///
   /// @param[in]  packet  The key data message to dispatch to the isolate.
   ///
-  bool DispatchKeyDataPacket(const KeyDataPacket& packet);
+  bool DispatchKeyDataMessage(const KeyDataMessage& message,
+                              KeyDataMessageCallback callback);
 
   //----------------------------------------------------------------------------
   /// @brief      Dispatch the semantics action to the specified accessibility

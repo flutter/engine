@@ -1514,9 +1514,11 @@ inline flutter::KeyChange ToKeyChange(FlutterKeyEventKind key_change) {
 // i.e. 8 bytes.
 constexpr size_t kKeyEventCharacterMaxBytes = 8;
 
-FlutterEngineResult FlutterEngineSendKeyEvent(FLUTTER_API_SYMBOL(FlutterEngine)
-                                                  engine,
-                                              const FlutterKeyEvent* event) {
+FlutterEngineResult FlutterEngineSendKeyEvent(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    const FlutterKeyEvent* event,
+    FlutterKeyEventCallback callback,
+    void* user_data) {
   if (engine == nullptr) {
     return LOG_EMBEDDER_ERROR(kInvalidArguments, "Engine handle was invalid.");
   }
@@ -1530,8 +1532,7 @@ FlutterEngineResult FlutterEngineSendKeyEvent(FLUTTER_API_SYMBOL(FlutterEngine)
   size_t character_data_size =
       character == nullptr ? 0 : strnlen(character, kKeyEventCharacterMaxBytes);
 
-  auto packet =
-      std::make_unique<flutter::KeyDataPacketBuilder>(character_data_size);
+  auto message = std::make_unique<flutter::KeyDataMessage>(character_data_size);
 
   flutter::KeyData key_data;
   key_data.Clear();
@@ -1540,12 +1541,18 @@ FlutterEngineResult FlutterEngineSendKeyEvent(FLUTTER_API_SYMBOL(FlutterEngine)
       SAFE_ACCESS(event, kind, FlutterKeyEventKind::kFlutterKeyEventKindUp));
   key_data.physical = SAFE_ACCESS(event, physical, 0);
   key_data.logical = SAFE_ACCESS(event, logical, 0);
-  key_data.synthesized = !!SAFE_ACCESS(event, synthesized, false);
-  packet->SetKeyData(key_data);
-  packet->SetCharacter(character);
+  key_data.synthesized = SAFE_ACCESS(event, synthesized, false);
+  message->SetKeyData(key_data);
+  message->SetCharacter(character);
+
+  auto response = [callback, user_data](bool handled) {
+        callback(handled, user_data);
+      };
 
   return reinterpret_cast<flutter::EmbedderEngine*>(engine)
-                 ->DispatchKeyDataPacket(std::move(packet))
+                 ->DispatchKeyDataMessage(
+                   std::move(message),
+                   response)
              ? kSuccess
              : LOG_EMBEDDER_ERROR(kInternalInconsistency,
                                   "Could not dispatch the key event to the "

@@ -16,7 +16,7 @@
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/lib/ui/semantics/custom_accessibility_action.h"
 #include "flutter/lib/ui/semantics/semantics_node.h"
-#include "flutter/lib/ui/window/key_data_packet.h"
+#include "flutter/lib/ui/window/key_data_message.h"
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/lib/ui/window/pointer_data_packet.h"
 #include "flutter/lib/ui/window/pointer_data_packet_converter.h"
@@ -136,8 +136,9 @@ class PlatformView {
     /// event
     ///                     and multiple logical key events.
     ///
-    virtual void OnPlatformViewDispatchKeyDataPacket(
-        std::unique_ptr<KeyDataPacket> packet) = 0;
+    virtual void OnPlatformViewDispatchKeyDataMessage(
+        std::unique_ptr<KeyDataMessage> message,
+        KeyDataMessageCallback callback) = 0;
 
     //--------------------------------------------------------------------------
     /// @brief      Notifies the delegate that the platform view has encountered
@@ -597,7 +598,8 @@ class PlatformView {
   ///
   /// @param[in]  packet  The key data packet to dispatch to the framework.
   ///
-  void DispatchKeyDataPacket(std::unique_ptr<KeyDataPacket> packet);
+  void DispatchKeyDataMessage(std::unique_ptr<KeyDataMessage> message,
+      KeyDataMessageCallback callback);
 
   //--------------------------------------------------------------------------
   /// @brief      Used by the embedder to specify a texture that it wants the

@@ -22,10 +22,10 @@ enum class KeyChange : int64_t {
   kRepeat,
 };
 
-// The fixed-length sections of a KeyDataPacket.
+// The fixed-length sections of a KeyDataMessage.
 //
-// KeyData does not contain `character`, for various-length data are stored in a
-// different way in KeyDataPacket.
+// KeyData does not contain `character`, for variable-length data are stored in a
+// different way in KeyDataMessage.
 //
 // This structure is unpacked by hooks.dart.
 struct alignas(8) KeyData {

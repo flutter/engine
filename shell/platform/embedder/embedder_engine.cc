@@ -136,9 +136,10 @@ bool EmbedderEngine::DispatchPointerDataPacket(
   return true;
 }
 
-bool EmbedderEngine::DispatchKeyDataPacket(
-    std::unique_ptr<flutter::KeyDataPacket> packet) {
-  if (!IsValid() || !packet) {
+bool EmbedderEngine::DispatchKeyDataMessage(
+    std::unique_ptr<flutter::KeyDataMessage> message,
+    KeyDataMessageCallback callback) {
+  if (!IsValid() || !message) {
     return false;
   }
 
@@ -147,7 +148,7 @@ bool EmbedderEngine::DispatchKeyDataPacket(
     return false;
   }
 
-  platform_view->DispatchKeyDataPacket(std::move(packet));
+  platform_view->DispatchKeyDataMessage(std::move(message), std::move(callback));
   return true;
 }
 

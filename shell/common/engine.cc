@@ -384,10 +384,12 @@ void Engine::DispatchPointerDataPacket(
   pointer_data_dispatcher_->DispatchPacket(std::move(packet), trace_flow_id);
 }
 
-void Engine::DispatchKeyDataPacket(std::unique_ptr<KeyDataPacket> packet) {
-  TRACE_EVENT0("flutter", "Engine::DispatchKeyDataPacket");
+void Engine::DispatchKeyDataMessage(
+    std::unique_ptr<KeyDataMessage> message,
+    KeyDataMessageCallback callback) {
+  TRACE_EVENT0("flutter", "Engine::DispatchKeyDataMessage");
   if (runtime_controller_) {
-    runtime_controller_->DispatchKeyDataPacket(*packet);
+    runtime_controller_->DispatchKeyDataMessage(*message, std::move(callback));
   }
 }
 

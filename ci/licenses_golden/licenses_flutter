@@ -412,8 +412,8 @@ FILE: ../../../flutter/lib/ui/volatile_path_tracker.h
 FILE: ../../../flutter/lib/ui/window.dart
 FILE: ../../../flutter/lib/ui/window/key_data.cc
 FILE: ../../../flutter/lib/ui/window/key_data.h
-FILE: ../../../flutter/lib/ui/window/key_data_packet.cc
-FILE: ../../../flutter/lib/ui/window/key_data_packet.h
+FILE: ../../../flutter/lib/ui/window/key_data_message.cc
+FILE: ../../../flutter/lib/ui/window/key_data_message.h
 FILE: ../../../flutter/lib/ui/window/platform_configuration.cc
 FILE: ../../../flutter/lib/ui/window/platform_configuration.h
 FILE: ../../../flutter/lib/ui/window/platform_configuration_unittests.cc

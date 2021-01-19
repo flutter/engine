@@ -138,8 +138,6 @@ class KeyboardBinding {
   void _reset() {
     _clearListeners();
     _converter.dispose();
-
-    _setup();
   }
 }
 
@@ -419,7 +417,7 @@ class KeyboardConverter {
       change = ui.KeyChange.up;
     }
 
-    late final int? nextLogicalRecord;
+    final int? nextLogicalRecord;
     switch (change) {
       case ui.KeyChange.down:
         assert(lastLogicalRecord == null);

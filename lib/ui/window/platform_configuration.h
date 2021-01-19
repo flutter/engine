@@ -324,6 +324,16 @@ class PlatformConfiguration final {
                                std::vector<uint8_t> args);
 
   //----------------------------------------------------------------------------
+  /// @brief      Notifies the PlatformConfiguration that the client has sent
+  ///             it a message. This call originates in the platform view and
+  ///             has been forwarded through the engine to here.
+  ///
+  /// @param[in]  message  The message sent from the embedder to the Dart
+  ///                      application.
+  ///
+  uint64_t RegisterKeyDataResponse(KeyDataMessageCallback callback);
+
+  //----------------------------------------------------------------------------
   /// @brief      Notifies the framework that it is time to begin working on a
   ///             new frame previously scheduled via a call to
   ///             `PlatformConfigurationClient::ScheduleFrame`. This call
@@ -411,6 +421,16 @@ class PlatformConfiguration final {
   ///
   void CompletePlatformMessageEmptyResponse(int response_id);
 
+  //----------------------------------------------------------------------------
+  /// @brief      Responds to a previous key data message to the engine from the
+  ///             framework.
+  ///
+  /// @param[in] response_id The unique id that identifies the original platform
+  ///                        message to respond to.
+  /// @param[in] handled     Whether the key is handled.
+  ///
+  void CompleteKeyDataResponse(uint64_t response_id, bool handled);
+
  private:
   PlatformConfigurationClient* client_;
   tonic::DartPersistentValue update_locales_;
@@ -419,6 +439,7 @@ class PlatformConfiguration final {
   tonic::DartPersistentValue update_semantics_enabled_;
   tonic::DartPersistentValue update_accessibility_features_;
   tonic::DartPersistentValue dispatch_platform_message_;
+  tonic::DartPersistentValue dispatch_key_message_;
   tonic::DartPersistentValue dispatch_semantics_action_;
   tonic::DartPersistentValue begin_frame_;
   tonic::DartPersistentValue draw_frame_;
@@ -430,6 +451,11 @@ class PlatformConfiguration final {
   int next_response_id_ = 1;
   std::unordered_map<int, fml::RefPtr<PlatformMessageResponse>>
       pending_responses_;
+
+  // We use id 0 to mean that no response is expected.
+  uint64_t next_key_response_id_ = 1;
+  std::unordered_map<uint64_t, KeyDataMessageCallback>
+      pending_key_responses_;
 };
 
 }  // namespace flutter

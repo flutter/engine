@@ -42,9 +42,10 @@ void PlatformView::DispatchPointerDataPacket(
       pointer_data_packet_converter_.Convert(std::move(packet)));
 }
 
-void PlatformView::DispatchKeyDataPacket(
-    std::unique_ptr<KeyDataPacket> packet) {
-  delegate_.OnPlatformViewDispatchKeyDataPacket(std::move(packet));
+void PlatformView::DispatchKeyDataMessage(
+    std::unique_ptr<KeyDataMessage> message,
+    KeyDataMessageCallback callback) {
+  delegate_.OnPlatformViewDispatchKeyDataMessage(std::move(message), std::move(callback));
 }
 
 void PlatformView::DispatchSemanticsAction(int32_t id,

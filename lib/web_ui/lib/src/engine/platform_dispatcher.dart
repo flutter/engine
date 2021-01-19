@@ -10,6 +10,8 @@ part of engine;
 /// This may be overridden in tests, for example, to pump fake frames.
 ui.VoidCallback? scheduleFrameCallback;
 
+typedef _KeyDataResponseCallback = void Function(bool handled);
+
 /// Platform event dispatcher.
 ///
 /// This is the central entry point for platform messages and configuration
@@ -191,8 +193,11 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
   /// Engine code should use this method instead of the callback directly.
   /// Otherwise zones won't work properly.
-  void invokeOnKeyData(ui.KeyData dataPacket) {
-    invoke1<ui.KeyData>(_onKeyData, _onKeyDataZone, dataPacket);
+  void invokeOnKeyData(ui.KeyData data, _KeyDataResponseCallback callback) {
+    invoke(
+      () { callback(onKeyData == null ? false : onKeyData!(data)); },
+      _onKeyDataZone,
+    );
   }
 
   /// A callback that is invoked to report the [FrameTiming] of recently
