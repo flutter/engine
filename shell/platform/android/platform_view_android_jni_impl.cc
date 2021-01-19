@@ -150,19 +150,35 @@ static void DestroyJNI(JNIEnv* env, jobject jcaller, jlong shell_holder) {
 // the bundle path or asset manager since we can only spawn with the same
 // AOT.
 //
-// The newFlutterJNI instance must be a new FlutterJNI instance that will
-// hold the reference to this new returned AndroidShellHolder (and receive
-// callbacks from this new AndroidShellHolder).
-//
 // The shell_holder instance must be a pointer address to the current
 // AndroidShellHolder whose Shell will be used to spawn a new Shell.
-static jlong SpawnJNI(JNIEnv* env,
-                      jobject jcaller,
-                      jobject newFlutterJNI,
-                      jlong shell_holder,
-                      jstring jEntrypoint,
-                      jstring jLibraryUrl) {
-  fml::jni::JavaObjectWeakGlobalRef java_jni(env, newFlutterJNI);
+//
+// This creates a Java Long that points to the newly created
+// AndroidShellHolder's raw pointer, connects that Long to a newly created
+// FlutterJNI instance, then returns the FlutterJNI instance.
+static jobject SpawnJNI(JNIEnv* env,
+                        jobject jcaller,
+                        jlong shell_holder,
+                        jstring jEntrypoint,
+                        jstring jLibraryUrl) {
+  jclass jniClass = env->FindClass("io/flutter/embedding/engine/FlutterJNI");
+  if (jniClass == nullptr) {
+    FML_LOG(ERROR) << "Could not locate FlutterJNI class";
+    return nullptr;
+  }
+  jmethodID jniConstructor = env->GetMethodID(jniClass, "<init>", "()V");
+  if (jniConstructor == nullptr) {
+    FML_LOG(ERROR) << "Could not locate FlutterJNI's constructor";
+    return nullptr;
+  }
+
+  jobject jni = env->NewObject(jniClass, jniConstructor);
+  if (jni == nullptr) {
+    FML_LOG(ERROR) << "Could not create a FlutterJNI instance";
+    return nullptr;
+  }
+
+  fml::jni::JavaObjectWeakGlobalRef java_jni(env, jni);
   std::shared_ptr<PlatformViewAndroidJNI> jni_facade =
       std::make_shared<PlatformViewAndroidJNIImpl>(java_jni);
 
@@ -171,11 +187,41 @@ static jlong SpawnJNI(JNIEnv* env,
 
   auto spawned_shell_holder =
       ANDROID_SHELL_HOLDER->Spawn(jni_facade, entrypoint, libraryUrl);
-  if (spawned_shell_holder != nullptr && spawned_shell_holder->IsValid()) {
-    return reinterpret_cast<jlong>(spawned_shell_holder.release());
-  } else {
-    return 0;
+
+  if (spawned_shell_holder == nullptr || !spawned_shell_holder->IsValid()) {
+    FML_LOG(ERROR) << "Could not spawn Shell";
+    return nullptr;
   }
+
+  jfieldID shellHolderId =
+      env->GetFieldID(jniClass, "nativeShellHolderId", "Ljava/lang/Long;");
+  if (shellHolderId == nullptr) {
+    FML_LOG(ERROR) << "Could not locate FlutterJNI's nativeShellHolderId field";
+    return nullptr;
+  }
+
+  jclass longClass = env->FindClass("java/lang/Long");
+  if (longClass == nullptr) {
+    FML_LOG(ERROR) << "Could not locate Long class";
+    return nullptr;
+  }
+  jmethodID longConstructor =
+      env->GetStaticMethodID(longClass, "valueOf", "(J)Ljava/lang/Long;");
+  if (longConstructor == nullptr) {
+    FML_LOG(ERROR) << "Could not locate Long's constructor";
+    return nullptr;
+  }
+  jobject javaLong = env->CallStaticObjectMethod(
+      longClass, longConstructor,
+      reinterpret_cast<jlong>(spawned_shell_holder.release()));
+  if (javaLong == nullptr) {
+    FML_LOG(ERROR) << "Could not create a Long instance";
+    return nullptr;
+  }
+
+  env->SetObjectField(jni, shellHolderId, javaLong);
+
+  return jni;
 }
 
 static void SurfaceCreated(JNIEnv* env,
@@ -607,8 +653,8 @@ bool RegisterApi(JNIEnv* env) {
       },
       {
           .name = "nativeSpawn",
-          .signature = "(Lio/flutter/embedding/engine/FlutterJNI;"
-                       "JLjava/lang/String;Ljava/lang/String;)J",
+          .signature = "(JLjava/lang/String;Ljava/lang/String;)Lio/flutter/"
+                       "embedding/engine/FlutterJNI;",
           .fnPtr = reinterpret_cast<void*>(&SpawnJNI),
       },
       {

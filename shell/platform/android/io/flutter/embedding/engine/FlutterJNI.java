@@ -337,12 +337,8 @@ public class FlutterJNI {
       @Nullable String entrypointFunctionName, @Nullable String pathToEntrypointFunction) {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
-    FlutterJNI spawnedJNI = new FlutterJNI();
-    // Call the native function with the current Shell ID. It creates a new Shell. Feed the new
-    // Shell ID into the new FlutterJNI instance.
-    spawnedJNI.nativeShellHolderId =
-        nativeSpawn(
-            spawnedJNI, nativeShellHolderId, entrypointFunctionName, pathToEntrypointFunction);
+    FlutterJNI spawnedJNI =
+        nativeSpawn(nativeShellHolderId, entrypointFunctionName, pathToEntrypointFunction);
     Preconditions.checkState(
         spawnedJNI.nativeShellHolderId != null && spawnedJNI.nativeShellHolderId > 0,
         "Failed to spawn new JNI connected shell from existing shell.");
@@ -350,8 +346,7 @@ public class FlutterJNI {
     return spawnedJNI;
   }
 
-  private native long nativeSpawn(
-      @NonNull FlutterJNI flutterJNI,
+  private native FlutterJNI nativeSpawn(
       long nativeSpawningShellId,
       @Nullable String entrypointFunctionName,
       @Nullable String pathToEntrypointFunction);
