@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 // @dart = 2.6
-import 'dart:math' as math;
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
