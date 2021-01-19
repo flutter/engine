@@ -20,6 +20,13 @@ enum PipelineStatus {
 
 typedef PipelineStep = Future<void> Function();
 
+/// Represents a sequence of asynchronous tasks to be executed.
+///
+/// The pipeline can be executed by calling [start] and stopped by calling
+/// [stop].
+///
+/// When a pipeline is stopped, it switches to the [PipelineStatus.stopping]
+/// state and waits until the current task finishes.
 class Pipeline {
   Pipeline({@required this.steps});
 
@@ -29,6 +36,7 @@ class Pipeline {
 
   PipelineStatus status = PipelineStatus.idle;
 
+  /// Starts executing tasks of the pipeline.
   Future<void> start() async {
     status = PipelineStatus.started;
     try {
@@ -49,6 +57,9 @@ class Pipeline {
     }
   }
 
+  /// Stops executing any more tasks in the pipeline.
+  ///
+  /// If a task is already being executed, it won't be interrupted.
   Future<void> stop() {
     status = PipelineStatus.stopping;
     return (_currentStepFuture ?? Future<void>.value(null)).then((_) {
@@ -57,8 +68,14 @@ class Pipeline {
   }
 }
 
+/// Signature of functions to be called when a [WatchEvent] is received.
 typedef WatchEventPredicate = bool Function(WatchEvent event);
 
+/// Responsible for watching a directory [dir] and executing the given
+/// [pipeline] whenever a change occurs in the directory.
+///
+/// The [ignore] callback can be used to customize the watching behavior to
+/// ignore certain files.
 class PipelineWatcher {
   PipelineWatcher({
     @required this.dir,
@@ -79,6 +96,7 @@ class PipelineWatcher {
   /// given [WatchEvent] instance.
   final WatchEventPredicate ignore;
 
+  /// Activates the watcher.
   void start() {
     watcher.events.listen(_onEvent);
   }
