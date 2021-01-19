@@ -68,7 +68,7 @@ PlatformViewAndroid::PlatformViewAndroid(
 #if SHELL_ENABLE_VULKAN
     android_context_ =
         std::make_shared<AndroidContext>(AndroidRenderingAPI::kVulkan);
-#else   // SHELL_ENABLE_VULKAN
+#else  // SHELL_ENABLE_VULKAN
     android_context_ = std::make_unique<AndroidContextGL>(
         AndroidRenderingAPI::kOpenGLES,
         fml::MakeRefCounted<AndroidEnvironmentGL>());
