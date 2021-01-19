@@ -424,6 +424,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 @property(nonatomic, readonly) CATransform3D editableTransform;
 @property(nonatomic, assign) CGRect markedRect;
 @property(nonatomic) BOOL isVisibleToAutofill;
+@property(nonatomic) BOOL hidden;
 
 - (void)setEditableTransform:(NSArray*)matrix;
 @end
@@ -1116,7 +1117,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   // mimic the semantics tree from Flutter. We want the text field to be represented as a
   // `TextInputSemanticsObject` in that `SemanticsObject` tree rather than in this
   // `FlutterTextInputView` bridge which doesn't appear above a text field from the Flutter side.
-  return YES;
+  return _hidden;
 }
 
 @end
@@ -1207,10 +1208,12 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 - (void)showTextInput {
   _activeView.textInputDelegate = _textInputDelegate;
   [self addToInputParentViewIfNeeded:_activeView];
+  _activeView.hidden = NO;
   [_activeView becomeFirstResponder];
 }
 
 - (void)hideTextInput {
+  _activeView.hidden = YES;
   [_activeView resignFirstResponder];
 }
 
