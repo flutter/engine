@@ -27,6 +27,9 @@ typedef ui::AXNode::AXID AccessibilityNodeId;
 ///
 /// For desktop platforms, subclasses also need to override the GetBoundsRect
 /// to apply window-to-screen transform.
+///
+/// This class transforms bounds assuming the device pixel ratio is 1.0. See
+/// the https://github.com/flutter/flutter/issues/74283 for more information.
 class FlutterPlatformNodeDelegate : public ui::AXPlatformNodeDelegateBase {
  public:
   //----------------------------------------------------------------------------
