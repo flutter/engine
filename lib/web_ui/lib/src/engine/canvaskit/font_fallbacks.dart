@@ -47,14 +47,14 @@ Future<void> _findFontsForMissingCodeunits(List<int> codeunits) async {
   }
 
   for (_ResolvedNotoSubset resolvedFont in resolvedFonts) {
-    _notoDownloadQueue.add(resolvedFont);
+    notoDownloadQueue.add(resolvedFont);
   }
 
-  if (missingCodeUnits.isNotEmpty && !_notoDownloadQueue.isPending) {
+  if (missingCodeUnits.isNotEmpty && !notoDownloadQueue.isPending) {
     if (!_registeredSymbolsAndEmoji) {
       _registerSymbolsAndEmoji();
     } else {
-      if (!_notoDownloadQueue.isPending) {
+      if (!notoDownloadQueue.isPending) {
         html.window.console.log(
             'Could not find a Noto font to display all missing characters. '
             'Please add a font asset for the missing characters.');
@@ -96,7 +96,7 @@ _ResolvedNotoFont _makeResolvedNotoFontFromCss(String css, String name) {
   List<_ResolvedNotoSubset> subsets = <_ResolvedNotoSubset>[];
   bool resolvingFontFace = false;
   String? fontFaceUrl;
-  List<_UnicodeRange>? fontFaceUnicodeRanges;
+  List<CodeunitRange>? fontFaceUnicodeRanges;
   for (final String line in LineSplitter.split(css)) {
     // Search for the beginning of a @font-face.
     if (!resolvingFontFace) {
@@ -115,7 +115,7 @@ _ResolvedNotoFont _makeResolvedNotoFontFromCss(String css, String name) {
         int urlEnd = line.indexOf(')');
         fontFaceUrl = line.substring(urlStart + 4, urlEnd);
       } else if (line.startsWith('  unicode-range:')) {
-        fontFaceUnicodeRanges = <_UnicodeRange>[];
+        fontFaceUnicodeRanges = <CodeunitRange>[];
         String rangeString = line.substring(17, line.length - 1);
         List<String> rawRanges = rangeString.split(', ');
         for (final String rawRange in rawRanges) {
@@ -124,7 +124,7 @@ _ResolvedNotoFont _makeResolvedNotoFontFromCss(String css, String name) {
             String singleRange = startEnd.single;
             assert(singleRange.startsWith('U+'));
             int rangeValue = int.parse(singleRange.substring(2), radix: 16);
-            fontFaceUnicodeRanges.add(_UnicodeRange(rangeValue, rangeValue));
+            fontFaceUnicodeRanges.add(CodeunitRange(rangeValue, rangeValue));
           } else {
             assert(startEnd.length == 2);
             String startRange = startEnd[0];
@@ -132,7 +132,7 @@ _ResolvedNotoFont _makeResolvedNotoFontFromCss(String css, String name) {
             assert(startRange.startsWith('U+'));
             int startValue = int.parse(startRange.substring(2), radix: 16);
             int endValue = int.parse(endRange, radix: 16);
-            fontFaceUnicodeRanges.add(_UnicodeRange(startValue, endValue));
+            fontFaceUnicodeRanges.add(CodeunitRange(startValue, endValue));
           }
         }
       } else if (line == '}') {
@@ -145,16 +145,16 @@ _ResolvedNotoFont _makeResolvedNotoFontFromCss(String css, String name) {
     }
   }
 
-  Map<_ResolvedNotoSubset, List<_UnicodeRange>> rangesMap =
-      <_ResolvedNotoSubset, List<_UnicodeRange>>{};
+  Map<_ResolvedNotoSubset, List<CodeunitRange>> rangesMap =
+      <_ResolvedNotoSubset, List<CodeunitRange>>{};
   for (_ResolvedNotoSubset subset in subsets) {
-    for (_UnicodeRange range in subset.ranges) {
-      rangesMap.putIfAbsent(subset, () => <_UnicodeRange>[]).add(range);
+    for (CodeunitRange range in subset.ranges) {
+      rangesMap.putIfAbsent(subset, () => <CodeunitRange>[]).add(range);
     }
   }
 
-  _IntervalTree<_ResolvedNotoSubset> tree =
-      _IntervalTree<_ResolvedNotoSubset>.createFromRanges(rangesMap);
+  IntervalTree<_ResolvedNotoSubset> tree =
+      IntervalTree<_ResolvedNotoSubset>.createFromRanges(rangesMap);
 
   return _ResolvedNotoFont(name, subsets, tree);
 }
@@ -172,11 +172,10 @@ Future<void> _registerSymbolsAndEmoji() async {
   const String emojiUrl =
       'https://fonts.googleapis.com/css2?family=Noto+Color+Emoji+Compat';
 
-  String symbolsCss = await html.window.fetch(symbolsUrl).then(
-      (dynamic response) =>
-          response.text().then<String>((dynamic x) => x as String));
-  String emojiCss = await html.window.fetch(emojiUrl).then((dynamic response) =>
-      response.text().then<String>((dynamic x) => x as String));
+  String symbolsCss =
+      await notoDownloadQueue.downloader.downloadAsString(symbolsUrl);
+  String emojiCss =
+      await notoDownloadQueue.downloader.downloadAsString(emojiUrl);
 
   String extractUrlFromCss(String css) {
     for (final String line in LineSplitter.split(css)) {
@@ -195,10 +194,10 @@ Future<void> _registerSymbolsAndEmoji() async {
   String symbolsFontUrl = extractUrlFromCss(symbolsCss);
   String emojiFontUrl = extractUrlFromCss(emojiCss);
 
-  _notoDownloadQueue.add(_ResolvedNotoSubset(
-      symbolsFontUrl, 'Noto Sans Symbols', const <_UnicodeRange>[]));
-  _notoDownloadQueue.add(_ResolvedNotoSubset(
-      emojiFontUrl, 'Noto Color Emoji Compat', const <_UnicodeRange>[]));
+  notoDownloadQueue.add(_ResolvedNotoSubset(
+      symbolsFontUrl, 'Noto Sans Symbols', const <CodeunitRange>[]));
+  notoDownloadQueue.add(_ResolvedNotoSubset(
+      emojiFontUrl, 'Noto Color Emoji Compat', const <CodeunitRange>[]));
 }
 
 /// Finds the minimum set of fonts which covers all of the [codeunits].
@@ -276,21 +275,21 @@ void _ensureNotoFontTreeCreated() {
     return;
   }
 
-  Map<_NotoFont, List<_UnicodeRange>> ranges =
-      <_NotoFont, List<_UnicodeRange>>{};
+  Map<_NotoFont, List<CodeunitRange>> ranges =
+      <_NotoFont, List<CodeunitRange>>{};
 
   for (_NotoFont font in _notoFonts) {
-    for (_UnicodeRange range in font.unicodeRanges) {
-      ranges.putIfAbsent(font, () => <_UnicodeRange>[]).add(range);
+    for (CodeunitRange range in font.unicodeRanges) {
+      ranges.putIfAbsent(font, () => <CodeunitRange>[]).add(range);
     }
   }
 
-  _notoTree = _IntervalTree<_NotoFont>.createFromRanges(ranges);
+  _notoTree = IntervalTree<_NotoFont>.createFromRanges(ranges);
 }
 
 class _NotoFont {
   final String name;
-  final List<_UnicodeRange> unicodeRanges;
+  final List<CodeunitRange> unicodeRanges;
 
   Completer<void>? _decodingCompleter;
 
@@ -299,7 +298,7 @@ class _NotoFont {
   _NotoFont(this.name, this.unicodeRanges);
 
   bool matchesCodeunit(int codeunit) {
-    for (_UnicodeRange range in unicodeRanges) {
+    for (CodeunitRange range in unicodeRanges) {
       if (range.contains(codeunit)) {
         return true;
       }
@@ -314,9 +313,8 @@ class _NotoFont {
     if (resolvedFont == null) {
       if (_decodingCompleter == null) {
         _decodingCompleter = Completer<void>();
-        String googleFontCss = await html.window.fetch(googleFontsCssUrl).then(
-            (dynamic response) =>
-                response.text().then<String>((dynamic x) => x as String));
+        String googleFontCss = await notoDownloadQueue.downloader
+            .downloadAsString(googleFontsCssUrl);
         final _ResolvedNotoFont googleFont =
             _makeResolvedNotoFontFromCss(googleFontCss, name);
         resolvedFont = googleFont;
@@ -328,11 +326,11 @@ class _NotoFont {
   }
 }
 
-class _UnicodeRange {
+class CodeunitRange {
   final int start;
   final int end;
 
-  const _UnicodeRange(this.start, this.end);
+  const CodeunitRange(this.start, this.end);
 
   bool contains(int codeUnit) {
     return start <= codeUnit && codeUnit <= end;
@@ -340,10 +338,10 @@ class _UnicodeRange {
 
   @override
   bool operator ==(dynamic other) {
-    if (other is! _UnicodeRange) {
+    if (other is! CodeunitRange) {
       return false;
     }
-    _UnicodeRange range = other;
+    CodeunitRange range = other;
     return range.start == start && range.end == end;
   }
 
@@ -357,7 +355,7 @@ class _UnicodeRange {
 class _ResolvedNotoFont {
   final String name;
   final List<_ResolvedNotoSubset> subsets;
-  final _IntervalTree<_ResolvedNotoSubset> tree;
+  final IntervalTree<_ResolvedNotoSubset> tree;
 
   const _ResolvedNotoFont(this.name, this.subsets, this.tree);
 }
@@ -365,35 +363,35 @@ class _ResolvedNotoFont {
 class _ResolvedNotoSubset {
   final String url;
   final String family;
-  final List<_UnicodeRange> ranges;
+  final List<CodeunitRange> ranges;
 
   _ResolvedNotoSubset(this.url, this.family, this.ranges);
 }
 
-_NotoFont _notoSansSC = _NotoFont('Noto Sans SC', <_UnicodeRange>[
-  _UnicodeRange(12288, 12591),
-  _UnicodeRange(12800, 13311),
-  _UnicodeRange(19968, 40959),
-  _UnicodeRange(65072, 65135),
-  _UnicodeRange(65280, 65519),
+_NotoFont _notoSansSC = _NotoFont('Noto Sans SC', <CodeunitRange>[
+  CodeunitRange(12288, 12591),
+  CodeunitRange(12800, 13311),
+  CodeunitRange(19968, 40959),
+  CodeunitRange(65072, 65135),
+  CodeunitRange(65280, 65519),
 ]);
 
-_NotoFont _notoSansTC = _NotoFont('Noto Sans TC', <_UnicodeRange>[
-  _UnicodeRange(12288, 12351),
-  _UnicodeRange(12549, 12585),
-  _UnicodeRange(19968, 40959),
+_NotoFont _notoSansTC = _NotoFont('Noto Sans TC', <CodeunitRange>[
+  CodeunitRange(12288, 12351),
+  CodeunitRange(12549, 12585),
+  CodeunitRange(19968, 40959),
 ]);
 
-_NotoFont _notoSansHK = _NotoFont('Noto Sans HK', <_UnicodeRange>[
-  _UnicodeRange(12288, 12351),
-  _UnicodeRange(12549, 12585),
-  _UnicodeRange(19968, 40959),
+_NotoFont _notoSansHK = _NotoFont('Noto Sans HK', <CodeunitRange>[
+  CodeunitRange(12288, 12351),
+  CodeunitRange(12549, 12585),
+  CodeunitRange(19968, 40959),
 ]);
 
-_NotoFont _notoSansJP = _NotoFont('Noto Sans JP', <_UnicodeRange>[
-  _UnicodeRange(12288, 12543),
-  _UnicodeRange(19968, 40959),
-  _UnicodeRange(65280, 65519),
+_NotoFont _notoSansJP = _NotoFont('Noto Sans JP', <CodeunitRange>[
+  CodeunitRange(12288, 12543),
+  CodeunitRange(19968, 40959),
+  CodeunitRange(65280, 65519),
 ]);
 
 List<_NotoFont> _cjkFonts = <_NotoFont>[
@@ -408,186 +406,188 @@ List<_NotoFont> _notoFonts = <_NotoFont>[
   _notoSansTC,
   _notoSansHK,
   _notoSansJP,
-  _NotoFont('Noto Naskh Arabic UI', <_UnicodeRange>[
-    _UnicodeRange(1536, 1791),
-    _UnicodeRange(8204, 8206),
-    _UnicodeRange(8208, 8209),
-    _UnicodeRange(8271, 8271),
-    _UnicodeRange(11841, 11841),
-    _UnicodeRange(64336, 65023),
-    _UnicodeRange(65132, 65276),
+  _NotoFont('Noto Naskh Arabic UI', <CodeunitRange>[
+    CodeunitRange(1536, 1791),
+    CodeunitRange(8204, 8206),
+    CodeunitRange(8208, 8209),
+    CodeunitRange(8271, 8271),
+    CodeunitRange(11841, 11841),
+    CodeunitRange(64336, 65023),
+    CodeunitRange(65132, 65276),
   ]),
-  _NotoFont('Noto Sans Armenian', <_UnicodeRange>[
-    _UnicodeRange(1328, 1424),
-    _UnicodeRange(64275, 64279),
+  _NotoFont('Noto Sans Armenian', <CodeunitRange>[
+    CodeunitRange(1328, 1424),
+    CodeunitRange(64275, 64279),
   ]),
-  _NotoFont('Noto Sans Bengali UI', <_UnicodeRange>[
-    _UnicodeRange(2404, 2405),
-    _UnicodeRange(2433, 2555),
-    _UnicodeRange(8204, 8205),
-    _UnicodeRange(8377, 8377),
-    _UnicodeRange(9676, 9676),
+  _NotoFont('Noto Sans Bengali UI', <CodeunitRange>[
+    CodeunitRange(2404, 2405),
+    CodeunitRange(2433, 2555),
+    CodeunitRange(8204, 8205),
+    CodeunitRange(8377, 8377),
+    CodeunitRange(9676, 9676),
   ]),
-  _NotoFont('Noto Sans Myanmar UI', <_UnicodeRange>[
-    _UnicodeRange(4096, 4255),
-    _UnicodeRange(8204, 8205),
-    _UnicodeRange(9676, 9676),
+  _NotoFont('Noto Sans Myanmar UI', <CodeunitRange>[
+    CodeunitRange(4096, 4255),
+    CodeunitRange(8204, 8205),
+    CodeunitRange(9676, 9676),
   ]),
-  _NotoFont('Noto Sans Egyptian Hieroglyphs', <_UnicodeRange>[
-    _UnicodeRange(77824, 78894),
+  _NotoFont('Noto Sans Egyptian Hieroglyphs', <CodeunitRange>[
+    CodeunitRange(77824, 78894),
   ]),
-  _NotoFont('Noto Sans Ethiopic', <_UnicodeRange>[
-    _UnicodeRange(4608, 5017),
-    _UnicodeRange(11648, 11742),
-    _UnicodeRange(43777, 43822),
+  _NotoFont('Noto Sans Ethiopic', <CodeunitRange>[
+    CodeunitRange(4608, 5017),
+    CodeunitRange(11648, 11742),
+    CodeunitRange(43777, 43822),
   ]),
-  _NotoFont('Noto Sans Georgian', <_UnicodeRange>[
-    _UnicodeRange(1417, 1417),
-    _UnicodeRange(4256, 4351),
-    _UnicodeRange(11520, 11567),
+  _NotoFont('Noto Sans Georgian', <CodeunitRange>[
+    CodeunitRange(1417, 1417),
+    CodeunitRange(4256, 4351),
+    CodeunitRange(11520, 11567),
   ]),
-  _NotoFont('Noto Sans Gujarati UI', <_UnicodeRange>[
-    _UnicodeRange(2404, 2405),
-    _UnicodeRange(2688, 2815),
-    _UnicodeRange(8204, 8205),
-    _UnicodeRange(8377, 8377),
-    _UnicodeRange(9676, 9676),
-    _UnicodeRange(43056, 43065),
+  _NotoFont('Noto Sans Gujarati UI', <CodeunitRange>[
+    CodeunitRange(2404, 2405),
+    CodeunitRange(2688, 2815),
+    CodeunitRange(8204, 8205),
+    CodeunitRange(8377, 8377),
+    CodeunitRange(9676, 9676),
+    CodeunitRange(43056, 43065),
   ]),
-  _NotoFont('Noto Sans Gurmukhi UI', <_UnicodeRange>[
-    _UnicodeRange(2404, 2405),
-    _UnicodeRange(2561, 2677),
-    _UnicodeRange(8204, 8205),
-    _UnicodeRange(8377, 8377),
-    _UnicodeRange(9676, 9676),
-    _UnicodeRange(9772, 9772),
-    _UnicodeRange(43056, 43065),
+  _NotoFont('Noto Sans Gurmukhi UI', <CodeunitRange>[
+    CodeunitRange(2404, 2405),
+    CodeunitRange(2561, 2677),
+    CodeunitRange(8204, 8205),
+    CodeunitRange(8377, 8377),
+    CodeunitRange(9676, 9676),
+    CodeunitRange(9772, 9772),
+    CodeunitRange(43056, 43065),
   ]),
-  _NotoFont('Noto Sans Hebrew', <_UnicodeRange>[
-    _UnicodeRange(1424, 1535),
-    _UnicodeRange(8362, 8362),
-    _UnicodeRange(9676, 9676),
-    _UnicodeRange(64285, 64335),
+  _NotoFont('Noto Sans Hebrew', <CodeunitRange>[
+    CodeunitRange(1424, 1535),
+    CodeunitRange(8362, 8362),
+    CodeunitRange(9676, 9676),
+    CodeunitRange(64285, 64335),
   ]),
-  _NotoFont('Noto Sans Devanagari UI', <_UnicodeRange>[
-    _UnicodeRange(2304, 2431),
-    _UnicodeRange(7376, 7414),
-    _UnicodeRange(7416, 7417),
-    _UnicodeRange(8204, 9205),
-    _UnicodeRange(8360, 8360),
-    _UnicodeRange(8377, 8377),
-    _UnicodeRange(9676, 9676),
-    _UnicodeRange(43056, 43065),
-    _UnicodeRange(43232, 43259),
+  _NotoFont('Noto Sans Devanagari UI', <CodeunitRange>[
+    CodeunitRange(2304, 2431),
+    CodeunitRange(7376, 7414),
+    CodeunitRange(7416, 7417),
+    CodeunitRange(8204, 9205),
+    CodeunitRange(8360, 8360),
+    CodeunitRange(8377, 8377),
+    CodeunitRange(9676, 9676),
+    CodeunitRange(43056, 43065),
+    CodeunitRange(43232, 43259),
   ]),
-  _NotoFont('Noto Sans Kannada UI', <_UnicodeRange>[
-    _UnicodeRange(2404, 2405),
-    _UnicodeRange(3202, 3314),
-    _UnicodeRange(8204, 8205),
-    _UnicodeRange(8377, 8377),
-    _UnicodeRange(9676, 9676),
+  _NotoFont('Noto Sans Kannada UI', <CodeunitRange>[
+    CodeunitRange(2404, 2405),
+    CodeunitRange(3202, 3314),
+    CodeunitRange(8204, 8205),
+    CodeunitRange(8377, 8377),
+    CodeunitRange(9676, 9676),
   ]),
-  _NotoFont('Noto Sans Khmer UI', <_UnicodeRange>[
-    _UnicodeRange(6016, 6143),
-    _UnicodeRange(8204, 8204),
-    _UnicodeRange(9676, 9676),
+  _NotoFont('Noto Sans Khmer UI', <CodeunitRange>[
+    CodeunitRange(6016, 6143),
+    CodeunitRange(8204, 8204),
+    CodeunitRange(9676, 9676),
   ]),
-  _NotoFont('Noto Sans KR', <_UnicodeRange>[
-    _UnicodeRange(12593, 12686),
-    _UnicodeRange(12800, 12828),
-    _UnicodeRange(12896, 12923),
-    _UnicodeRange(44032, 55215),
+  _NotoFont('Noto Sans KR', <CodeunitRange>[
+    CodeunitRange(12593, 12686),
+    CodeunitRange(12800, 12828),
+    CodeunitRange(12896, 12923),
+    CodeunitRange(44032, 55215),
   ]),
-  _NotoFont('Noto Sans Lao UI', <_UnicodeRange>[
-    _UnicodeRange(3713, 3807),
-    _UnicodeRange(9676, 9676),
+  _NotoFont('Noto Sans Lao UI', <CodeunitRange>[
+    CodeunitRange(3713, 3807),
+    CodeunitRange(9676, 9676),
   ]),
-  _NotoFont('Noto Sans Malayalam UI', <_UnicodeRange>[
-    _UnicodeRange(775, 775),
-    _UnicodeRange(803, 803),
-    _UnicodeRange(2404, 2405),
-    _UnicodeRange(3330, 3455),
-    _UnicodeRange(8204, 8205),
-    _UnicodeRange(8377, 8377),
-    _UnicodeRange(9676, 9676),
+  _NotoFont('Noto Sans Malayalam UI', <CodeunitRange>[
+    CodeunitRange(775, 775),
+    CodeunitRange(803, 803),
+    CodeunitRange(2404, 2405),
+    CodeunitRange(3330, 3455),
+    CodeunitRange(8204, 8205),
+    CodeunitRange(8377, 8377),
+    CodeunitRange(9676, 9676),
   ]),
-  _NotoFont('Noto Sans Sinhala', <_UnicodeRange>[
-    _UnicodeRange(2404, 2405),
-    _UnicodeRange(3458, 3572),
-    _UnicodeRange(8204, 8205),
-    _UnicodeRange(9676, 9676),
+  _NotoFont('Noto Sans Sinhala', <CodeunitRange>[
+    CodeunitRange(2404, 2405),
+    CodeunitRange(3458, 3572),
+    CodeunitRange(8204, 8205),
+    CodeunitRange(9676, 9676),
   ]),
-  _NotoFont('Noto Sans Tamil UI', <_UnicodeRange>[
-    _UnicodeRange(2404, 2405),
-    _UnicodeRange(2946, 3066),
-    _UnicodeRange(8204, 8205),
-    _UnicodeRange(8377, 8377),
-    _UnicodeRange(9676, 9676),
+  _NotoFont('Noto Sans Tamil UI', <CodeunitRange>[
+    CodeunitRange(2404, 2405),
+    CodeunitRange(2946, 3066),
+    CodeunitRange(8204, 8205),
+    CodeunitRange(8377, 8377),
+    CodeunitRange(9676, 9676),
   ]),
-  _NotoFont('Noto Sans Telugu UI', <_UnicodeRange>[
-    _UnicodeRange(2385, 2386),
-    _UnicodeRange(2404, 2405),
-    _UnicodeRange(3072, 3199),
-    _UnicodeRange(7386, 7386),
-    _UnicodeRange(8204, 8205),
-    _UnicodeRange(9676, 9676),
+  _NotoFont('Noto Sans Telugu UI', <CodeunitRange>[
+    CodeunitRange(2385, 2386),
+    CodeunitRange(2404, 2405),
+    CodeunitRange(3072, 3199),
+    CodeunitRange(7386, 7386),
+    CodeunitRange(8204, 8205),
+    CodeunitRange(9676, 9676),
   ]),
-  _NotoFont('Noto Sans Thai UI', <_UnicodeRange>[
-    _UnicodeRange(3585, 3675),
-    _UnicodeRange(8204, 8205),
-    _UnicodeRange(9676, 9676),
+  _NotoFont('Noto Sans Thai UI', <CodeunitRange>[
+    CodeunitRange(3585, 3675),
+    CodeunitRange(8204, 8205),
+    CodeunitRange(9676, 9676),
   ]),
-  _NotoFont('Noto Sans', <_UnicodeRange>[
-    _UnicodeRange(0, 255),
-    _UnicodeRange(305, 305),
-    _UnicodeRange(338, 339),
-    _UnicodeRange(699, 700),
-    _UnicodeRange(710, 710),
-    _UnicodeRange(730, 730),
-    _UnicodeRange(732, 732),
-    _UnicodeRange(8192, 8303),
-    _UnicodeRange(8308, 8308),
-    _UnicodeRange(8364, 8364),
-    _UnicodeRange(8482, 8482),
-    _UnicodeRange(8593, 8593),
-    _UnicodeRange(8595, 8595),
-    _UnicodeRange(8722, 8722),
-    _UnicodeRange(8725, 8725),
-    _UnicodeRange(65279, 65279),
-    _UnicodeRange(65533, 65533),
-    _UnicodeRange(1024, 1119),
-    _UnicodeRange(1168, 1169),
-    _UnicodeRange(1200, 1201),
-    _UnicodeRange(8470, 8470),
-    _UnicodeRange(1120, 1327),
-    _UnicodeRange(7296, 7304),
-    _UnicodeRange(8372, 8372),
-    _UnicodeRange(11744, 11775),
-    _UnicodeRange(42560, 42655),
-    _UnicodeRange(65070, 65071),
-    _UnicodeRange(880, 1023),
-    _UnicodeRange(7936, 8191),
-    _UnicodeRange(256, 591),
-    _UnicodeRange(601, 601),
-    _UnicodeRange(7680, 7935),
-    _UnicodeRange(8224, 8224),
-    _UnicodeRange(8352, 8363),
-    _UnicodeRange(8365, 8399),
-    _UnicodeRange(8467, 8467),
-    _UnicodeRange(11360, 11391),
-    _UnicodeRange(42784, 43007),
-    _UnicodeRange(258, 259),
-    _UnicodeRange(272, 273),
-    _UnicodeRange(296, 297),
-    _UnicodeRange(360, 361),
-    _UnicodeRange(416, 417),
-    _UnicodeRange(431, 432),
-    _UnicodeRange(7840, 7929),
-    _UnicodeRange(8363, 8363),
+  _NotoFont('Noto Sans', <CodeunitRange>[
+    CodeunitRange(0, 255),
+    CodeunitRange(305, 305),
+    CodeunitRange(338, 339),
+    CodeunitRange(699, 700),
+    CodeunitRange(710, 710),
+    CodeunitRange(730, 730),
+    CodeunitRange(732, 732),
+    CodeunitRange(8192, 8303),
+    CodeunitRange(8308, 8308),
+    CodeunitRange(8364, 8364),
+    CodeunitRange(8482, 8482),
+    CodeunitRange(8593, 8593),
+    CodeunitRange(8595, 8595),
+    CodeunitRange(8722, 8722),
+    CodeunitRange(8725, 8725),
+    CodeunitRange(65279, 65279),
+    CodeunitRange(65533, 65533),
+    CodeunitRange(1024, 1119),
+    CodeunitRange(1168, 1169),
+    CodeunitRange(1200, 1201),
+    CodeunitRange(8470, 8470),
+    CodeunitRange(1120, 1327),
+    CodeunitRange(7296, 7304),
+    CodeunitRange(8372, 8372),
+    CodeunitRange(11744, 11775),
+    CodeunitRange(42560, 42655),
+    CodeunitRange(65070, 65071),
+    CodeunitRange(880, 1023),
+    CodeunitRange(7936, 8191),
+    CodeunitRange(256, 591),
+    CodeunitRange(601, 601),
+    CodeunitRange(7680, 7935),
+    CodeunitRange(8224, 8224),
+    CodeunitRange(8352, 8363),
+    CodeunitRange(8365, 8399),
+    CodeunitRange(8467, 8467),
+    CodeunitRange(11360, 11391),
+    CodeunitRange(42784, 43007),
+    CodeunitRange(258, 259),
+    CodeunitRange(272, 273),
+    CodeunitRange(296, 297),
+    CodeunitRange(360, 361),
+    CodeunitRange(416, 417),
+    CodeunitRange(431, 432),
+    CodeunitRange(7840, 7929),
+    CodeunitRange(8363, 8363),
   ]),
 ];
 
-class _FallbackFontDownloadQueue {
+class FallbackFontDownloadQueue {
+  NotoDownloader downloader = NotoDownloader();
+
   final Set<_ResolvedNotoSubset> downloadedSubsets = <_ResolvedNotoSubset>{};
   final Set<_ResolvedNotoSubset> pendingSubsets = <_ResolvedNotoSubset>{};
 
@@ -610,10 +610,7 @@ class _FallbackFontDownloadQueue {
       downloads.add(Future<void>(() async {
         ByteBuffer buffer;
         try {
-          buffer = await html.window.fetch(subset.url).then(
-              (dynamic fetchResult) => fetchResult
-                  .arrayBuffer()
-                  .then<ByteBuffer>((dynamic x) => x as ByteBuffer));
+          buffer = await downloader.downloadAsBytes(subset.url);
         } catch (e) {
           html.window.console
               .warn('Failed to load font ${subset.family} at ${subset.url}');
@@ -640,7 +637,26 @@ class _FallbackFontDownloadQueue {
   }
 }
 
-/// The Noto font interval tree.
-_IntervalTree<_NotoFont>? _notoTree;
+class NotoDownloader {
+  /// Downloads the [url] and returns it as a [ByteBuffer].
+  ///
+  /// Override this for testing.
+  Future<ByteBuffer> downloadAsBytes(String url) {
+    return html.window.fetch(url).then((dynamic fetchResult) => fetchResult
+        .arrayBuffer()
+        .then<ByteBuffer>((dynamic x) => x as ByteBuffer));
+  }
 
-_FallbackFontDownloadQueue _notoDownloadQueue = _FallbackFontDownloadQueue();
+  /// Downloads the [url] and returns is as a [String].
+  ///
+  /// Override this for testing.
+  Future<String> downloadAsString(String url) {
+    return html.window.fetch(url).then((dynamic response) =>
+        response.text().then<String>((dynamic x) => x as String));
+  }
+}
+
+/// The Noto font interval tree.
+IntervalTree<_NotoFont>? _notoTree;
+
+FallbackFontDownloadQueue notoDownloadQueue = FallbackFontDownloadQueue();

@@ -5,60 +5,63 @@
 // @dart = 2.12
 part of engine;
 
-// TODO(hterkelsen): Tests.
-/// Associates a [T] with one or more [_UnicodeRange]s.
-class _IntervalTree<T> {
-  final _IntervalTreeNode<T> root;
+/// Associates a [T] with one or more [CodeunitRange]s.
+class IntervalTree<T> {
+  final IntervalTreeNode<T> root;
 
-  _IntervalTree._(this.root);
+  IntervalTree._(this.root);
 
-  factory _IntervalTree.createFromRanges(
-      Map<T, List<_UnicodeRange>> rangesMap) {
+  factory IntervalTree.createFromRanges(Map<T, List<CodeunitRange>> rangesMap) {
     // Get a list of all the ranges ordered by start index.
-    List<_Interval<T>> intervals = <_Interval<T>>[];
+    List<IntervalTreeNode<T>> intervals = <IntervalTreeNode<T>>[];
     for (T key in rangesMap.keys) {
-      for (_UnicodeRange range in rangesMap[key]!) {
-        intervals.add(_Interval<T>(key, range.start, range.end));
+      for (CodeunitRange range in rangesMap[key]!) {
+        intervals.add(IntervalTreeNode<T>(key, range.start, range.end));
       }
     }
-    intervals.sort((_Interval<T> a, _Interval<T> b) => a.start - b.start);
+    intervals
+        .sort((IntervalTreeNode<T> a, IntervalTreeNode<T> b) => a.low - b.low);
 
-    // Make a balanced binary search tree from the sorted intervals.
-    _IntervalTreeNode<T>? _makeBalancedTree(List<_Interval<T>> intervals) {
-      if (intervals.length == 0) {
+    // Make a balanced binary search tree from the nodes sorted by low value.
+    IntervalTreeNode<T>? _makeBalancedTree(List<IntervalTreeNode<T>> nodes) {
+      if (nodes.length == 0) {
         return null;
       }
-      if (intervals.length == 1) {
-        return _IntervalTreeNode<T>(intervals.single);
+      if (nodes.length == 1) {
+        return nodes.single;
       }
-      int mid = intervals.length ~/ 2;
-      _IntervalTreeNode<T> root = _IntervalTreeNode<T>(intervals[mid]);
-      root.left = _makeBalancedTree(intervals.sublist(0, mid));
-      root.right = _makeBalancedTree(intervals.sublist(mid + 1));
+      int mid = nodes.length ~/ 2;
+      IntervalTreeNode<T> root = nodes[mid];
+      root.left = _makeBalancedTree(nodes.sublist(0, mid));
+      root.right = _makeBalancedTree(nodes.sublist(mid + 1));
       return root;
     }
 
-    void _computeHigh(_IntervalTreeNode<T> root) {
+    void _computeHigh(IntervalTreeNode<T> root) {
       if (root.left == null && root.right == null) {
-        root.high = root.interval.end;
+        root.computedHigh = root.high;
       } else if (root.left == null) {
         _computeHigh(root.right!);
-        root.high = math.max(root.interval.end, root.right!.high);
+        root.computedHigh = math.max(root.high, root.right!.computedHigh);
       } else if (root.right == null) {
         _computeHigh(root.left!);
-        root.high = math.max(root.interval.end, root.left!.high);
+        root.computedHigh = math.max(root.high, root.left!.computedHigh);
       } else {
         _computeHigh(root.right!);
         _computeHigh(root.left!);
-        root.high = math.max(
-            root.interval.end, math.max(root.left!.high, root.right!.high));
+        root.computedHigh = math.max(
+            root.high,
+            math.max(
+              root.left!.computedHigh,
+              root.right!.computedHigh,
+            ));
       }
     }
 
-    _IntervalTreeNode<T> root = _makeBalancedTree(intervals)!;
+    IntervalTreeNode<T> root = _makeBalancedTree(intervals)!;
     _computeHigh(root);
 
-    return _IntervalTree._(root);
+    return IntervalTree._(root);
   }
 
   /// Returns the list of objects which have been associated with intervals that
@@ -70,37 +73,29 @@ class _IntervalTree<T> {
   }
 }
 
-class _Interval<T> {
+class IntervalTreeNode<T> {
   final T value;
-  final int start;
-  final int end;
+  final int low;
+  final int high;
+  int computedHigh;
+
+  IntervalTreeNode<T>? left;
+  IntervalTreeNode<T>? right;
+
+  IntervalTreeNode(this.value, this.low, this.high) : computedHigh = high;
 
   bool contains(int x) {
-    return start <= x && x <= end;
+    return low <= x && x <= high;
   }
-
-  const _Interval(this.value, this.start, this.end);
-}
-
-class _IntervalTreeNode<T> {
-  final _Interval<T> interval;
-
-  int get low => interval.start;
-  int high;
-
-  _IntervalTreeNode<T>? left;
-  _IntervalTreeNode<T>? right;
-
-  _IntervalTreeNode(this.interval) : high = interval.end;
 
   // Searches the tree rooted at this node for all T containing [x].
   void searchForPoint(int x, List<T> result) {
-    if (x > high) {
+    if (x > computedHigh) {
       return;
     }
     left?.searchForPoint(x, result);
-    if (interval.contains(x)) {
-      result.add(interval.value);
+    if (this.contains(x)) {
+      result.add(value);
     }
     if (x < low) {
       return;
