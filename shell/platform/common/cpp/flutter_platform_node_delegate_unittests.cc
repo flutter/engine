@@ -16,7 +16,8 @@ TEST(FlutterPlatformNodeDelegateTest, canPerfomActions) {
   TestAccessibilityBridgeDelegate* delegate =
       new TestAccessibilityBridgeDelegate();
   std::unique_ptr<TestAccessibilityBridgeDelegate> ptr(delegate);
-  AccessibilityBridge bridge(std::move(ptr));
+  std::shared_ptr<AccessibilityBridge> bridge =
+      std::make_shared<AccessibilityBridge>(std::move(ptr));
   FlutterSemanticsNode root;
   root.id = 0;
   root.flags = FlutterSemanticsFlag::kFlutterSemanticsFlagIsTextField;
@@ -30,11 +31,11 @@ TEST(FlutterPlatformNodeDelegateTest, canPerfomActions) {
   root.decreased_value = "";
   root.child_count = 0;
   root.custom_accessibility_actions_count = 0;
-  bridge.AddFlutterSemanticsNodeUpdate(&root);
+  bridge->AddFlutterSemanticsNodeUpdate(&root);
 
-  bridge.CommitUpdates();
+  bridge->CommitUpdates();
 
-  auto accessibility = bridge.GetFlutterPlatformNodeDelegateFromID(0).lock();
+  auto accessibility = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
   // Performs an AXAction.
   ui::AXActionData action_data;
   action_data.action = ax::mojom::Action::kDoDefault;
@@ -59,8 +60,9 @@ TEST(FlutterPlatformNodeDelegateTest, canPerfomActions) {
 
 TEST(FlutterPlatformNodeDelegateTest, canGetAXNode) {
   // Set up a flutter accessibility node.
-  AccessibilityBridge bridge(
-      std::make_unique<TestAccessibilityBridgeDelegate>());
+  std::shared_ptr<AccessibilityBridge> bridge =
+      std::make_shared<AccessibilityBridge>(
+          std::make_unique<TestAccessibilityBridgeDelegate>());
   FlutterSemanticsNode root;
   root.id = 0;
   root.flags = FlutterSemanticsFlag::kFlutterSemanticsFlagIsTextField;
@@ -74,17 +76,18 @@ TEST(FlutterPlatformNodeDelegateTest, canGetAXNode) {
   root.decreased_value = "";
   root.child_count = 0;
   root.custom_accessibility_actions_count = 0;
-  bridge.AddFlutterSemanticsNodeUpdate(&root);
+  bridge->AddFlutterSemanticsNodeUpdate(&root);
 
-  bridge.CommitUpdates();
+  bridge->CommitUpdates();
 
-  auto accessibility = bridge.GetFlutterPlatformNodeDelegateFromID(0).lock();
+  auto accessibility = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
   EXPECT_EQ(accessibility->GetData().id, 0);
 }
 
 TEST(FlutterPlatformNodeDelegateTest, canCalculateBoundsCorrectly) {
-  AccessibilityBridge bridge(
-      std::make_unique<TestAccessibilityBridgeDelegate>());
+  std::shared_ptr<AccessibilityBridge> bridge =
+      std::make_shared<AccessibilityBridge>(
+          std::make_unique<TestAccessibilityBridgeDelegate>());
   FlutterSemanticsNode root;
   root.id = 0;
   root.label = "root";
@@ -98,7 +101,7 @@ TEST(FlutterPlatformNodeDelegateTest, canCalculateBoundsCorrectly) {
   root.custom_accessibility_actions_count = 0;
   root.rect = {0, 0, 100, 100};  // LTRB
   root.transform = {1, 0, 0, 0, 1, 0, 0, 0, 1};
-  bridge.AddFlutterSemanticsNodeUpdate(&root);
+  bridge->AddFlutterSemanticsNodeUpdate(&root);
 
   FlutterSemanticsNode child1;
   child1.id = 1;
@@ -111,10 +114,10 @@ TEST(FlutterPlatformNodeDelegateTest, canCalculateBoundsCorrectly) {
   child1.custom_accessibility_actions_count = 0;
   child1.rect = {0, 0, 50, 50};  // LTRB
   child1.transform = {0.5, 0, 0, 0, 0.5, 0, 0, 0, 1};
-  bridge.AddFlutterSemanticsNodeUpdate(&child1);
+  bridge->AddFlutterSemanticsNodeUpdate(&child1);
 
-  bridge.CommitUpdates();
-  auto child1_node = bridge.GetFlutterPlatformNodeDelegateFromID(1).lock();
+  bridge->CommitUpdates();
+  auto child1_node = bridge->GetFlutterPlatformNodeDelegateFromID(1).lock();
   ui::AXOffscreenResult result;
   gfx::Rect bounds =
       child1_node->GetBoundsRect(ui::AXCoordinateSystem::kScreenDIPs,
@@ -127,8 +130,9 @@ TEST(FlutterPlatformNodeDelegateTest, canCalculateBoundsCorrectly) {
 }
 
 TEST(FlutterPlatformNodeDelegateTest, canCalculateOffScreenBoundsCorrectly) {
-  AccessibilityBridge bridge(
-      std::make_unique<TestAccessibilityBridgeDelegate>());
+  std::shared_ptr<AccessibilityBridge> bridge =
+      std::make_shared<AccessibilityBridge>(
+          std::make_unique<TestAccessibilityBridgeDelegate>());
   FlutterSemanticsNode root;
   root.id = 0;
   root.label = "root";
@@ -142,7 +146,7 @@ TEST(FlutterPlatformNodeDelegateTest, canCalculateOffScreenBoundsCorrectly) {
   root.custom_accessibility_actions_count = 0;
   root.rect = {0, 0, 100, 100};  // LTRB
   root.transform = {1, 0, 0, 0, 1, 0, 0, 0, 1};
-  bridge.AddFlutterSemanticsNodeUpdate(&root);
+  bridge->AddFlutterSemanticsNodeUpdate(&root);
 
   FlutterSemanticsNode child1;
   child1.id = 1;
@@ -155,10 +159,10 @@ TEST(FlutterPlatformNodeDelegateTest, canCalculateOffScreenBoundsCorrectly) {
   child1.custom_accessibility_actions_count = 0;
   child1.rect = {90, 90, 100, 100};  // LTRB
   child1.transform = {2, 0, 0, 0, 2, 0, 0, 0, 1};
-  bridge.AddFlutterSemanticsNodeUpdate(&child1);
+  bridge->AddFlutterSemanticsNodeUpdate(&child1);
 
-  bridge.CommitUpdates();
-  auto child1_node = bridge.GetFlutterPlatformNodeDelegateFromID(1).lock();
+  bridge->CommitUpdates();
+  auto child1_node = bridge->GetFlutterPlatformNodeDelegateFromID(1).lock();
   ui::AXOffscreenResult result;
   gfx::Rect bounds =
       child1_node->GetBoundsRect(ui::AXCoordinateSystem::kScreenDIPs,

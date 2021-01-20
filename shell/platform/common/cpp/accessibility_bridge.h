@@ -36,8 +36,10 @@ namespace flutter {
 ///
 /// To use this class, you must provide your own implementation of
 /// FlutterPlatformNodeDelegate and AccessibilityBridgeDelegate.
-class AccessibilityBridge : private ui::AXTreeObserver,
-                            private FlutterPlatformNodeDelegate::OwnerBridge {
+class AccessibilityBridge
+    : public std::enable_shared_from_this<AccessibilityBridge>,
+      public FlutterPlatformNodeDelegate::OwnerBridge,
+      private ui::AXTreeObserver {
  public:
   //-----------------------------------------------------------------------------
   /// Delegate to handle requests from the accessibility bridge. The requests
@@ -192,9 +194,9 @@ class AccessibilityBridge : private ui::AXTreeObserver,
       id_wrapper_map_;
   ui::AXTree tree_;
   ui::AXEventGenerator event_generator_;
-  std::unordered_map<int32_t, SemanticsNode> _pending_semantics_node_updates;
+  std::unordered_map<int32_t, SemanticsNode> pending_semantics_node_updates_;
   std::unordered_map<int32_t, SemanticsCustomAction>
-      _pending_semantics_custom_action_updates;
+      pending_semantics_custom_action_updates_;
   AccessibilityNodeId last_focused_id_ = ui::AXNode::kInvalidAXID;
   std::unique_ptr<AccessibilityBridgeDelegate> delegate_;
 

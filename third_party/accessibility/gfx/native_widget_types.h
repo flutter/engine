@@ -191,9 +191,12 @@ typedef ui::WindowAndroid* NativeWindow;
 typedef base::android::ScopedJavaGlobalRef<jobject> NativeEvent;
 constexpr NativeView kNullNativeView = nullptr;
 constexpr NativeWindow kNullNativeWindow = nullptr;
-#else
-// for unknown platform.
+#elif defined(OS_LINUX)
+// TODO(chunhtai): Figures out what is the correct type for Linux
+// https://github.com/flutter/flutter/issues/74270
 typedef void* NativeCursor;
+#else
+#error Unknown build environment.
 #endif
 
 #if defined(OS_WIN)
@@ -246,10 +249,13 @@ constexpr AcceleratedWidget kNullAcceleratedWidget = 0;
 #elif defined(USE_OZONE) || defined(USE_X11)
 typedef uint32_t AcceleratedWidget;
 constexpr AcceleratedWidget kNullAcceleratedWidget = 0;
-#else
-// for unknown platform.
+#elif defined(OS_LINUX)
+// TODO(chunhtai): Figure out what the correct type is for the Linux.
+// https://github.com/flutter/flutter/issues/74270
 typedef void* AcceleratedWidget;
 constexpr AcceleratedWidget kNullAcceleratedWidget = nullptr;
+#else
+#error unknown platform
 #endif
 
 }  // namespace gfx

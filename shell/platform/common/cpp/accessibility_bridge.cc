@@ -33,12 +33,12 @@ AccessibilityBridge::~AccessibilityBridge() {
 
 void AccessibilityBridge::AddFlutterSemanticsNodeUpdate(
     const FlutterSemanticsNode* node) {
-  _pending_semantics_node_updates[node->id] = FromFlutterSemanticsNode(node);
+  pending_semantics_node_updates_[node->id] = FromFlutterSemanticsNode(node);
 }
 
 void AccessibilityBridge::AddFlutterSemanticsCustomActionUpdate(
     const FlutterSemanticsCustomAction* action) {
-  _pending_semantics_custom_action_updates[action->id] =
+  pending_semantics_custom_action_updates_[action->id] =
       FromFlutterSemanticsCustomAction(action);
 }
 
@@ -52,13 +52,13 @@ void AccessibilityBridge::CommitUpdates() {
   // lists in the reversed order, this guarantees parent updates always come
   // before child updates.
   std::vector<std::vector<SemanticsNode>> results;
-  while (!_pending_semantics_node_updates.empty()) {
-    auto begin = _pending_semantics_node_updates.begin();
+  while (!pending_semantics_node_updates_.empty()) {
+    auto begin = pending_semantics_node_updates_.begin();
     SemanticsNode target = begin->second;
     std::vector<SemanticsNode> sub_tree_list;
     GetSubTreeList(target, sub_tree_list);
     results.push_back(sub_tree_list);
-    _pending_semantics_node_updates.erase(begin);
+    pending_semantics_node_updates_.erase(begin);
   }
 
   for (size_t i = results.size(); i > 0; i--) {
@@ -68,8 +68,8 @@ void AccessibilityBridge::CommitUpdates() {
   }
 
   tree_.Unserialize(update);
-  _pending_semantics_node_updates.clear();
-  _pending_semantics_custom_action_updates.clear();
+  pending_semantics_node_updates_.clear();
+  pending_semantics_custom_action_updates_.clear();
 
   std::string error = tree_.error();
   if (!error.empty()) {
@@ -121,7 +121,10 @@ void AccessibilityBridge::OnRoleChanged(ui::AXTree* tree,
 void AccessibilityBridge::OnNodeCreated(ui::AXTree* tree, ui::AXNode* node) {
   BASE_DCHECK(node);
   id_wrapper_map_[node->id()] = delegate_->CreateFlutterPlatformNodeDelegate();
-  id_wrapper_map_[node->id()]->Init(this, node);
+  id_wrapper_map_[node->id()]->Init(
+      std::static_pointer_cast<FlutterPlatformNodeDelegate::OwnerBridge>(
+          shared_from_this()),
+      node);
 }
 
 void AccessibilityBridge::OnNodeDeleted(ui::AXTree* tree,
@@ -156,11 +159,11 @@ void AccessibilityBridge::GetSubTreeList(SemanticsNode target,
                                          std::vector<SemanticsNode>& result) {
   result.push_back(target);
   for (int32_t child : target.children_in_traversal_order) {
-    auto iter = _pending_semantics_node_updates.find(child);
-    if (iter != _pending_semantics_node_updates.end()) {
+    auto iter = pending_semantics_node_updates_.find(child);
+    if (iter != pending_semantics_node_updates_.end()) {
       SemanticsNode node = iter->second;
       GetSubTreeList(node, result);
-      _pending_semantics_node_updates.erase(iter);
+      pending_semantics_node_updates_.erase(iter);
     }
   }
 }
@@ -372,9 +375,9 @@ void AccessibilityBridge::SetStringListAttributesFromFlutterUpdate(
   if (actions & FlutterSemanticsAction::kFlutterSemanticsActionCustomAction) {
     std::vector<std::string> custom_action_description;
     for (size_t i = 0; i < node.custom_accessibility_actions.size(); i++) {
-      auto iter = _pending_semantics_custom_action_updates.find(
+      auto iter = pending_semantics_custom_action_updates_.find(
           node.custom_accessibility_actions[i]);
-      BASE_DCHECK(iter != _pending_semantics_custom_action_updates.end());
+      BASE_DCHECK(iter != pending_semantics_custom_action_updates_.end());
       custom_action_description.push_back(iter->second.label);
     }
     node_data.AddStringListAttribute(

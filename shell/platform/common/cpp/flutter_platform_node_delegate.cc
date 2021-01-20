@@ -13,8 +13,9 @@ FlutterPlatformNodeDelegate::FlutterPlatformNodeDelegate() = default;
 
 FlutterPlatformNodeDelegate::~FlutterPlatformNodeDelegate() = default;
 
-void FlutterPlatformNodeDelegate::Init(OwnerBridge* bridge, ui::AXNode* node) {
-  bridge_ = bridge;
+void FlutterPlatformNodeDelegate::Init(std::shared_ptr<OwnerBridge> bridge,
+                                       ui::AXNode* node) {
+  bridge_ = std::move(bridge);
   ax_node_ = node;
 }
 
@@ -82,7 +83,8 @@ gfx::Rect FlutterPlatformNodeDelegate::GetBoundsRect(
     const ui::AXCoordinateSystem coordinate_system,
     const ui::AXClippingBehavior clipping_behavior,
     ui::AXOffscreenResult* offscreen_result) const {
-  // TODO(chunhtai): consider screen dpr.
+  // TODO(chunhtai): We need to apply screen dpr in here.
+  // https://github.com/flutter/flutter/issues/74283
   const bool clip_bounds =
       clipping_behavior == ui::AXClippingBehavior::kClipped;
   bool offscreen = false;

@@ -124,7 +124,7 @@ class FlutterPlatformNodeDelegate : public ui::AXPlatformNodeDelegateBase {
   ///             constructor doesn't take any arguments because in the Windows
   ///             subclass we use a special function to construct a COM object.
   ///             Subclasses must call super.
-  virtual void Init(OwnerBridge* bridge, ui::AXNode* node);
+  virtual void Init(std::shared_ptr<OwnerBridge> bridge, ui::AXNode* node);
 
  protected:
   //------------------------------------------------------------------------------
@@ -133,7 +133,7 @@ class FlutterPlatformNodeDelegate : public ui::AXPlatformNodeDelegateBase {
 
  private:
   ui::AXNode* ax_node_;
-  OwnerBridge* bridge_;
+  std::shared_ptr<OwnerBridge> bridge_;
 };
 
 }  // namespace flutter

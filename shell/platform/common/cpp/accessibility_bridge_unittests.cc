@@ -12,8 +12,9 @@ namespace flutter {
 namespace testing {
 
 TEST(AccessibilityBridgeTest, basicTest) {
-  AccessibilityBridge bridge(
-      std::make_unique<TestAccessibilityBridgeDelegate>());
+  std::shared_ptr<AccessibilityBridge> bridge =
+      std::make_shared<AccessibilityBridge>(
+          std::make_unique<TestAccessibilityBridgeDelegate>());
   FlutterSemanticsNode root;
   root.id = 0;
   root.label = "root";
@@ -25,7 +26,7 @@ TEST(AccessibilityBridgeTest, basicTest) {
   int32_t children[] = {1, 2};
   root.children_in_traversal_order = children;
   root.custom_accessibility_actions_count = 0;
-  bridge.AddFlutterSemanticsNodeUpdate(&root);
+  bridge->AddFlutterSemanticsNodeUpdate(&root);
 
   FlutterSemanticsNode child1;
   child1.id = 1;
@@ -36,7 +37,7 @@ TEST(AccessibilityBridgeTest, basicTest) {
   child1.decreased_value = "";
   child1.child_count = 0;
   child1.custom_accessibility_actions_count = 0;
-  bridge.AddFlutterSemanticsNodeUpdate(&child1);
+  bridge->AddFlutterSemanticsNodeUpdate(&child1);
 
   FlutterSemanticsNode child2;
   child2.id = 2;
@@ -47,13 +48,13 @@ TEST(AccessibilityBridgeTest, basicTest) {
   child2.decreased_value = "";
   child2.child_count = 0;
   child2.custom_accessibility_actions_count = 0;
-  bridge.AddFlutterSemanticsNodeUpdate(&child2);
+  bridge->AddFlutterSemanticsNodeUpdate(&child2);
 
-  bridge.CommitUpdates();
+  bridge->CommitUpdates();
 
-  auto root_node = bridge.GetFlutterPlatformNodeDelegateFromID(0).lock();
-  auto child1_node = bridge.GetFlutterPlatformNodeDelegateFromID(1).lock();
-  auto child2_node = bridge.GetFlutterPlatformNodeDelegateFromID(2).lock();
+  auto root_node = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
+  auto child1_node = bridge->GetFlutterPlatformNodeDelegateFromID(1).lock();
+  auto child2_node = bridge->GetFlutterPlatformNodeDelegateFromID(2).lock();
   EXPECT_EQ(root_node->GetChildCount(), 2);
   EXPECT_EQ(root_node->GetData().child_ids[0], 1);
   EXPECT_EQ(root_node->GetData().child_ids[1], 2);
@@ -70,7 +71,8 @@ TEST(AccessibilityBridgeTest, canFireChildrenChangedCorrectly) {
   TestAccessibilityBridgeDelegate* delegate =
       new TestAccessibilityBridgeDelegate();
   std::unique_ptr<TestAccessibilityBridgeDelegate> ptr(delegate);
-  AccessibilityBridge bridge(std::move(ptr));
+  std::shared_ptr<AccessibilityBridge> bridge =
+      std::make_shared<AccessibilityBridge>(std::move(ptr));
   FlutterSemanticsNode root;
   root.id = 0;
   root.flags = static_cast<FlutterSemanticsFlag>(0);
@@ -86,7 +88,7 @@ TEST(AccessibilityBridgeTest, canFireChildrenChangedCorrectly) {
   int32_t children[] = {1};
   root.children_in_traversal_order = children;
   root.custom_accessibility_actions_count = 0;
-  bridge.AddFlutterSemanticsNodeUpdate(&root);
+  bridge->AddFlutterSemanticsNodeUpdate(&root);
 
   FlutterSemanticsNode child1;
   child1.id = 1;
@@ -101,12 +103,12 @@ TEST(AccessibilityBridgeTest, canFireChildrenChangedCorrectly) {
   child1.decreased_value = "";
   child1.child_count = 0;
   child1.custom_accessibility_actions_count = 0;
-  bridge.AddFlutterSemanticsNodeUpdate(&child1);
+  bridge->AddFlutterSemanticsNodeUpdate(&child1);
 
-  bridge.CommitUpdates();
+  bridge->CommitUpdates();
 
-  auto root_node = bridge.GetFlutterPlatformNodeDelegateFromID(0).lock();
-  auto child1_node = bridge.GetFlutterPlatformNodeDelegateFromID(1).lock();
+  auto root_node = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
+  auto child1_node = bridge->GetFlutterPlatformNodeDelegateFromID(1).lock();
   EXPECT_EQ(root_node->GetChildCount(), 1);
   EXPECT_EQ(root_node->GetData().child_ids[0], 1);
   EXPECT_EQ(root_node->GetName(), "root");
@@ -119,7 +121,7 @@ TEST(AccessibilityBridgeTest, canFireChildrenChangedCorrectly) {
   root.child_count = 2;
   int32_t new_children[] = {1, 2};
   root.children_in_traversal_order = new_children;
-  bridge.AddFlutterSemanticsNodeUpdate(&root);
+  bridge->AddFlutterSemanticsNodeUpdate(&root);
 
   FlutterSemanticsNode child2;
   child2.id = 2;
@@ -134,11 +136,11 @@ TEST(AccessibilityBridgeTest, canFireChildrenChangedCorrectly) {
   child2.decreased_value = "";
   child2.child_count = 0;
   child2.custom_accessibility_actions_count = 0;
-  bridge.AddFlutterSemanticsNodeUpdate(&child2);
+  bridge->AddFlutterSemanticsNodeUpdate(&child2);
 
-  bridge.CommitUpdates();
+  bridge->CommitUpdates();
 
-  root_node = bridge.GetFlutterPlatformNodeDelegateFromID(0).lock();
+  root_node = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
 
   EXPECT_EQ(root_node->GetChildCount(), 2);
   EXPECT_EQ(root_node->GetData().child_ids[0], 1);
@@ -157,7 +159,8 @@ TEST(AccessibilityBridgeTest, canHandleSelectionChangeCorrectly) {
   TestAccessibilityBridgeDelegate* delegate =
       new TestAccessibilityBridgeDelegate();
   std::unique_ptr<TestAccessibilityBridgeDelegate> ptr(delegate);
-  AccessibilityBridge bridge(std::move(ptr));
+  std::shared_ptr<AccessibilityBridge> bridge =
+      std::make_shared<AccessibilityBridge>(std::move(ptr));
   FlutterSemanticsNode root;
   root.id = 0;
   root.flags = FlutterSemanticsFlag::kFlutterSemanticsFlagIsTextField;
@@ -171,20 +174,20 @@ TEST(AccessibilityBridgeTest, canHandleSelectionChangeCorrectly) {
   root.decreased_value = "";
   root.child_count = 0;
   root.custom_accessibility_actions_count = 0;
-  bridge.AddFlutterSemanticsNodeUpdate(&root);
+  bridge->AddFlutterSemanticsNodeUpdate(&root);
 
-  bridge.CommitUpdates();
+  bridge->CommitUpdates();
 
-  const ui::AXTreeData& tree = bridge.GetAXTreeData();
+  const ui::AXTreeData& tree = bridge->GetAXTreeData();
   EXPECT_EQ(tree.sel_anchor_object_id, ui::AXNode::kInvalidAXID);
   delegate->accessibilitiy_events.clear();
 
   // Update the selection.
   root.text_selection_base = 0;
   root.text_selection_extent = 5;
-  bridge.AddFlutterSemanticsNodeUpdate(&root);
+  bridge->AddFlutterSemanticsNodeUpdate(&root);
 
-  bridge.CommitUpdates();
+  bridge->CommitUpdates();
 
   EXPECT_EQ(tree.sel_anchor_object_id, 0);
   EXPECT_EQ(tree.sel_anchor_offset, 0);
