@@ -43,8 +43,7 @@ class FlutterViewController {
   // either using CoreWindow.
   //
   // |dart_project| will be used to configure the engine backing this view.
-  explicit FlutterViewController(
-      ABI::Windows::UI::Core::CoreWindow* window,
+  explicit FlutterViewController(ABI::Windows::UI::Core::CoreWindow* window,
                                  const DartProject& project);
 #endif
 

@@ -80,8 +80,8 @@ typedef struct {
 FLUTTER_EXPORT FlutterDesktopViewControllerRef
 FlutterDesktopViewControllerCreateFromCoreWindow(
     ABI::Windows::UI::Core::CoreWindow* window,
-                                   FlutterDesktopEngineRef engine);
-#else //!WINUWP
+    FlutterDesktopEngineRef engine);
+#else  //! WINUWP
 // The Win32 implementation accepts width, height
 // with view hookup explicitly performed using the caller using HWND parenting.
 FLUTTER_EXPORT FlutterDesktopViewControllerRef
