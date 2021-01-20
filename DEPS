@@ -498,14 +498,25 @@ deps = {
     'dep_type': 'cipd',
   },
 
-  'src/buildtools/{host_os}-x64/clang': {
+  'src/buildtools/mac-x64/clang': {
     'packages': [
       {
-        'package': 'fuchsia/third_party/clang/${{platform}}',
+        'package': 'fuchsia/third_party/clang/mac-amd64',
         'version': 'git_revision:7d48eff8ba172216fca3649a3c452de4c7c16c00' 
       }
     ],
-    'condition': 'host_os == "mac" or host_os == "linux"',
+    'condition': 'host_os == "mac"',
+    'dep_type': 'cipd',
+  },
+
+  'src/buildtools/linux-x64/clang': {
+    'packages': [
+      {
+        'package': 'fuchsia/third_party/clang/linux-amd64',
+        'version': 'git_revision:7d48eff8ba172216fca3649a3c452de4c7c16c00' 
+      }
+    ],
+    'condition': 'host_os == "linux"',
     'dep_type': 'cipd',
   },
 
