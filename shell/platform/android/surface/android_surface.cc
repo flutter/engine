@@ -6,6 +6,11 @@
 
 namespace flutter {
 
+AndroidSurface::AndroidSurface(
+    const std::shared_ptr<AndroidContext>& android_context) {
+  android_context_ = android_context;
+}
+
 AndroidSurface::~AndroidSurface() = default;
 
 }  // namespace flutter

@@ -13,9 +13,10 @@
 namespace flutter {
 
 AndroidSurfaceVulkan::AndroidSurfaceVulkan(
-    const AndroidContext& android_context,
+    const std::shared_ptr<AndroidContext>& android_context,
     std::shared_ptr<PlatformViewAndroidJNI> jni_facade)
-    : proc_table_(fml::MakeRefCounted<vulkan::VulkanProcTable>()) {}
+    : AndroidSurface(android_context),
+      proc_table_(fml::MakeRefCounted<vulkan::VulkanProcTable>()) {}
 
 AndroidSurfaceVulkan::~AndroidSurfaceVulkan() = default;
 
@@ -29,6 +30,8 @@ void AndroidSurfaceVulkan::TeardownOnScreenContext() {
 
 std::unique_ptr<Surface> AndroidSurfaceVulkan::CreateGPUSurface(
     GrDirectContext* gr_context) {
+  // TODO(https://github.com/flutter/flutter/issues/73597): consume this
+  // Skia context or create a new one for AndroidContext.
   if (!IsValid()) {
     return nullptr;
   }
