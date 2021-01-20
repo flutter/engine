@@ -9,6 +9,22 @@ using testing::_;
 
 namespace flutter {
 namespace testing {
+namespace {
+
+// Creates a valid Windows LPARAM for WM_KEYDOWN and WM_KEYUP from parameters
+// given.
+static LPARAM CreateKeyEventLparam(USHORT ScanCode,
+                                   bool extended = false,
+                                   USHORT RepeatCount = 1,
+                                   bool ContextCode = 0,
+                                   bool PreviousKeyState = 1,
+                                   bool TransitionState = 1) {
+  return ((LPARAM(TransitionState) << 31) | (LPARAM(PreviousKeyState) << 30) |
+          (LPARAM(ContextCode) << 29) | (LPARAM(extended ? 0x1 : 0x0) << 24) |
+          (LPARAM(ScanCode) << 16) | LPARAM(RepeatCount));
+}
+
+}  // namespace
 
 TEST(MockWin32Window, CreateDestroy) {
   MockWin32Window window;
@@ -39,21 +55,10 @@ TEST(MockWin32Window, HorizontalScroll) {
   window.InjectWindowMessage(WM_MOUSEHWHEEL, MAKEWPARAM(0, scroll_amount), 0);
 }
 
-static LPARAM CreateKeyEventLparam(USHORT RepeatCount,
-                                   USHORT ScanCode,
-                                   bool extended,
-                                   bool ContextCode,
-                                   bool PreviousKeyState,
-                                   bool TransitionState) {
-  return ((LPARAM(TransitionState) << 31) | (LPARAM(PreviousKeyState) << 30) |
-          (LPARAM(ContextCode) << 29) | (LPARAM(extended ? 0x1 : 0x0) << 24) |
-          (LPARAM(ScanCode) << 16) | LPARAM(RepeatCount));
-}
-
 TEST(MockWin32Window, KeyDown) {
   MockWin32Window window;
   EXPECT_CALL(window, OnKey(_, _, _, _, _)).Times(1);
-  LPARAM lparam = CreateKeyEventLparam(1, 42, false, 0, 1, 1);
+  LPARAM lparam = CreateKeyEventLparam(42);
   // send a "Shift" key down event.
   window.InjectWindowMessage(WM_KEYDOWN, 16, lparam);
 }
@@ -61,14 +66,14 @@ TEST(MockWin32Window, KeyDown) {
 TEST(MockWin32Window, KeyUp) {
   MockWin32Window window;
   EXPECT_CALL(window, OnKey(_, _, _, _, _)).Times(1);
-  LPARAM lparam = CreateKeyEventLparam(1, 42, false, 0, 1, 1);
+  LPARAM lparam = CreateKeyEventLparam(42);
   // send a "Shift" key up event.
   window.InjectWindowMessage(WM_KEYUP, 16, lparam);
 }
 
 TEST(MockWin32Window, KeyDownPrintable) {
   MockWin32Window window;
-  LPARAM lparam = CreateKeyEventLparam(1, 30, false, 0, 1, 1);
+  LPARAM lparam = CreateKeyEventLparam(30);
   // OnKey shouldn't be called until the WM_CHAR message.
   EXPECT_CALL(window, OnKey(65, 30, WM_KEYDOWN, 65, false)).Times(0);
   // send a "A" key down event.

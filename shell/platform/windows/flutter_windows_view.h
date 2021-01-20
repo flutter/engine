@@ -38,14 +38,14 @@ inline constexpr uint32_t kWindowFrameBufferID = 0;
 class FlutterWindowsView : public WindowBindingHandlerDelegate,
                            public TextInputPluginDelegate {
  public:
-  // Creates a FlutterWindowsView with the given implementator of
+  // Creates a FlutterWindowsView with the given implementor of
   // WindowBindingHandler.
   //
   // In order for object to render Flutter content the SetEngine method must be
   // called with a valid FlutterWindowsEngine instance.
   FlutterWindowsView(std::unique_ptr<WindowBindingHandler> window_binding);
 
-  ~FlutterWindowsView();
+  virtual ~FlutterWindowsView();
 
   // Configures the window instance with an instance of a running Flutter
   // engine.

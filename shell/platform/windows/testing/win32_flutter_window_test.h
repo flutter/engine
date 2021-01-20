@@ -5,10 +5,7 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_TESTING_WIN32_FLUTTER_WINDOW_TEST_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_TESTING_WIN32_FLUTTER_WINDOW_TEST_H_
 
-#include <windowsx.h>
-
 #include "flutter/shell/platform/windows/win32_flutter_window.h"
-#include "gmock/gmock.h"
 
 namespace flutter {
 namespace testing {

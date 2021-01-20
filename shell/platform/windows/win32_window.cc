@@ -5,7 +5,6 @@
 #include "flutter/shell/platform/windows/win32_window.h"
 
 #include <cstring>
-#include <iostream>
 
 #include "win32_dpi_utils.h"
 
