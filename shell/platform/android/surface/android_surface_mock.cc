@@ -8,7 +8,7 @@ namespace flutter {
 
 AndroidSurfaceMock::AndroidSurfaceMock(
     const std::shared_ptr<AndroidContext>& android_context)
-    : AndroidSurface(android_context);
+    : AndroidSurface(android_context) {}
 
 std::unique_ptr<GLContextResult> AndroidSurfaceMock::GLContextMakeCurrent() {
   return std::make_unique<GLContextDefaultResult>(/*static_result=*/true);

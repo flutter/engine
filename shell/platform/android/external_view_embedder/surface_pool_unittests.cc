@@ -129,12 +129,12 @@ TEST(SurfacePool, GetLayer__Recycle) {
         EXPECT_CALL(*android_surface_mock, IsValid()).WillOnce(Return(true));
         return android_surface_mock;
       });
-  auto layer_1 = pool->GetLayer(gr_context_1.get(), &android_context, jni_mock,
+  auto layer_1 = pool->GetLayer(gr_context_1.get(), *android_context, jni_mock,
                                 surface_factory);
 
   pool->RecycleLayers();
 
-  auto layer_2 = pool->GetLayer(gr_context_2.get(), &android_context, jni_mock,
+  auto layer_2 = pool->GetLayer(gr_context_2.get(), *android_context, jni_mock,
                                 surface_factory);
 
   ASSERT_NE(nullptr, layer_1);
