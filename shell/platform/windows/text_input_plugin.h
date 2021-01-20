@@ -19,6 +19,21 @@ namespace flutter {
 
 class FlutterWindowsView;
 
+// A rectangle with a position and extent.
+//
+// Used to store the current composing rectangle when using multi-step (IME)
+// text input.
+struct Rect {
+  Rect() = default;
+  Rect(const Rect& rect) = default;
+  Rect& operator=(const Rect& other) = default;
+
+  double x;
+  double y;
+  double width;
+  double height;
+};
+
 // Implements a text input plugin.
 //
 // Specifically handles window events within windows.
@@ -50,6 +65,10 @@ class TextInputPlugin : public KeyboardHookHandler {
       const flutter::MethodCall<rapidjson::Document>& method_call,
       std::unique_ptr<flutter::MethodResult<rapidjson::Document>> result);
 
+  void SetMarkedTextRect(
+      const flutter::MethodCall<rapidjson::Document>& method_call,
+      std::unique_ptr<flutter::MethodResult<rapidjson::Document>> result);
+
   // The MethodChannel used for communication with the Flutter engine.
   std::unique_ptr<flutter::MethodChannel<rapidjson::Document>> channel_;
 
@@ -66,6 +85,12 @@ class TextInputPlugin : public KeyboardHookHandler {
   // An action requested by the user on the input client. See available options:
   // https://api.flutter.dev/flutter/services/TextInputAction-class.html
   std::string input_action_;
+
+  // The smallest rect, in local coordinates, of the text in the composing
+  // range, or of the caret in the case where there is no current composing
+  // range. This value is updated via `TextInput.setMarkedTextRect` messages
+  // over the text input channel.
+  Rect compose_rect_;
 };
 
 }  // namespace flutter

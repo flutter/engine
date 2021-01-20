@@ -16,6 +16,7 @@ static constexpr char kClearClientMethod[] = "TextInput.clearClient";
 static constexpr char kSetClientMethod[] = "TextInput.setClient";
 static constexpr char kShowMethod[] = "TextInput.show";
 static constexpr char kHideMethod[] = "TextInput.hide";
+static constexpr char kSetMarkedTextRect[] = "TextInput.setMarkedTextRect";
 
 static constexpr char kMultilineInputType[] = "TextInputType.multiline";
 
@@ -34,6 +35,10 @@ static constexpr char kSelectionBaseKey[] = "selectionBase";
 static constexpr char kSelectionExtentKey[] = "selectionExtent";
 static constexpr char kSelectionIsDirectionalKey[] = "selectionIsDirectional";
 static constexpr char kTextKey[] = "text";
+static constexpr char kXKey[] = "x";
+static constexpr char kYKey[] = "y";
+static constexpr char kWidthKey[] = "width";
+static constexpr char kHeightKey[] = "height";
 
 static constexpr char kChannelName[] = "flutter/textinput";
 
@@ -171,6 +176,27 @@ void TextInputPlugin::HandleMethodCall(
     }
     active_model_->SetText(text->value.GetString());
     active_model_->SetSelection(TextRange(base, extent));
+  } else if (method.compare(kSetMarkedTextRect) == 0) {
+    if (!method_call.arguments() || method_call.arguments()->IsNull()) {
+      result->Error(kBadArgumentError, "Method invoked without args");
+      return;
+    }
+    const rapidjson::Document& args = *method_call.arguments();
+    auto x = args.FindMember(kXKey);
+    auto y = args.FindMember(kYKey);
+    auto width = args.FindMember(kWidthKey);
+    auto height = args.FindMember(kHeightKey);
+    if (x == args.MemberEnd() || x->value.IsNull() ||
+        y == args.MemberEnd() || y->value.IsNull() ||
+        width == args.MemberEnd() || width->value.IsNull() ||
+        height == args.MemberEnd() || height->value.IsNull()) {
+      result->Error(kInternalConsistencyError, "Composing rect values invalid.");
+      return;
+    }
+    compose_rect_.x = x->value.GetDouble();
+    compose_rect_.y = y->value.GetDouble();
+    compose_rect_.width = width->value.GetDouble();
+    compose_rect_.height = height->value.GetDouble();
   } else {
     result->NotImplemented();
     return;
