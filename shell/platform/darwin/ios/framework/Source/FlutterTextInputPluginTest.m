@@ -33,7 +33,7 @@ FLUTTER_ASSERT_ARC
     NSMutableDictionary<NSString*, FlutterTextInputView*>* autofillContext;
 
 - (void)collectGarbageInputViews;
-- (UIView*)textInputParentView;
+- (NSArray<UIView*>*)textInputViews;
 @end
 
 @interface FlutterTextInputPluginTest : XCTestCase
@@ -71,19 +71,17 @@ FLUTTER_ASSERT_ARC
                              }];
 }
 
-- (void)setTextInputShow{
-  FlutterMethodCall* setClientCall =
-    [FlutterMethodCall methodCallWithMethodName:@"TextInput.show"
-                                      arguments:@[]];
+- (void)setTextInputShow {
+  FlutterMethodCall* setClientCall = [FlutterMethodCall methodCallWithMethodName:@"TextInput.show"
+                                                                       arguments:@[]];
   [textInputPlugin handleMethodCall:setClientCall
                              result:^(id _Nullable result){
                              }];
 }
 
-- (void)setTextInputHide{
-  FlutterMethodCall* setClientCall =
-    [FlutterMethodCall methodCallWithMethodName:@"TextInput.hide"
-                                      arguments:@[]];
+- (void)setTextInputHide {
+  FlutterMethodCall* setClientCall = [FlutterMethodCall methodCallWithMethodName:@"TextInput.hide"
+                                                                       arguments:@[]];
   [textInputPlugin handleMethodCall:setClientCall
                              result:^(id _Nullable result){
                              }];
@@ -106,7 +104,7 @@ FLUTTER_ASSERT_ARC
 }
 
 - (NSArray<FlutterTextInputView*>*)installedInputViews {
-  return [textInputPlugin.textInputParentView.subviews
+  return (NSArray<FlutterTextInputView*>*)[textInputPlugin.textInputViews
       filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"self isKindOfClass: %@",
                                                                    [FlutterTextInputView class]]];
 }
@@ -768,16 +766,17 @@ FLUTTER_ASSERT_ARC
   [self setTextInputShow];
   // Find all the FlutterTextInputViews we created.
   NSArray<FlutterTextInputView*>* inputFields = self.installedInputViews;
-  FlutterTextInputView* inputView = inputFields[0];
 
   // The input view should not be hidden.
-  XCTAssertEqual(inputView.accessibilityElementsHidden, NO);
+  XCTAssertEqual([inputFields count], 1u);
 
   // Send hide text input method call.
   [self setTextInputHide];
 
+  inputFields = self.installedInputViews;
+
   // The input view should be hidden.
-  XCTAssertEqual(inputView.accessibilityElementsHidden, YES);
+  XCTAssertEqual([inputFields count], 0u);
 }
 
 @end

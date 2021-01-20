@@ -424,7 +424,6 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 @property(nonatomic, readonly) CATransform3D editableTransform;
 @property(nonatomic, assign) CGRect markedRect;
 @property(nonatomic) BOOL isVisibleToAutofill;
-@property(nonatomic) BOOL accessibilityHidden;
 
 - (void)setEditableTransform:(NSArray*)matrix;
 @end
@@ -449,7 +448,6 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     _markedText = [[NSMutableString alloc] init];
     _selectedTextRange = [[FlutterTextRange alloc] initWithNSRange:NSMakeRange(0, 0)];
     _markedRect = kInvalidFirstRect;
-    _accessibilityHidden = YES;
     _cachedFirstRect = kInvalidFirstRect;
     // Initialize with the zero matrix which is not
     // an affine transform.
@@ -1108,7 +1106,23 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     [self replaceRange:_selectedTextRange withText:@""];
 }
 
+@end
+
+/**
+ * Hides `FlutterTextInputView` from iOS accessibility system so it
+ * does not show up twice, once where it is in the `UIView` hierarchy,
+ * and a second time as part of the `SemanticsObject` hierarchy.
+ */
+@interface FlutterTextInputViewAccessibilityHider : UIView {
+}
+
+@end
+
+@implementation FlutterTextInputViewAccessibilityHider {
+}
+
 - (BOOL)accessibilityElementsHidden {
+  // We are hiding this accessibility element.
   // There are 2 accessible elements involved in text entry in 2 different parts of the view
   // hierarchy. This `FlutterTextInputView` is injected at the top of key window. We use this as a
   // `UITextInput` protocol to bridge text edit events between Flutter and iOS.
@@ -1117,11 +1131,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   // mimic the semantics tree from Flutter. We want the text field to be represented as a
   // `TextInputSemanticsObject` in that `SemanticsObject` tree rather than in this
   // `FlutterTextInputView` bridge which doesn't appear above a text field from the Flutter side.
-  //
-  // We want to hide this view to prevent it from interfering with the `SemanticsObject`, but the
-  // Voiceover only responds to text edit events when this `FlutterTextInputView` is not hidden.
-  // We have to unhide this view when the user would like interact with the text field.
-  return _accessibilityHidden;
+  return NO;
 }
 
 @end
@@ -1133,6 +1143,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 @property(nonatomic, readonly)
     NSMutableDictionary<NSString*, FlutterTextInputView*>* autofillContext;
 @property(nonatomic, assign) FlutterTextInputView* activeView;
+@property(nonatomic, retain) FlutterTextInputViewAccessibilityHider* inputHider;
 @end
 
 @implementation FlutterTextInputPlugin
@@ -1147,6 +1158,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     _reusableInputView.secureTextEntry = NO;
     _autofillContext = [[NSMutableDictionary alloc] init];
     _activeView = _reusableInputView;
+    _inputHider = [[FlutterTextInputViewAccessibilityHider alloc] init];
   }
 
   return self;
@@ -1155,6 +1167,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 - (void)dealloc {
   [self hideTextInput];
   [_reusableInputView release];
+  [_inputHider release];
   [_autofillContext release];
 
   [super dealloc];
@@ -1212,13 +1225,13 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 - (void)showTextInput {
   _activeView.textInputDelegate = _textInputDelegate;
   [self addToInputParentViewIfNeeded:_activeView];
-  _activeView.accessibilityHidden = NO;
   [_activeView becomeFirstResponder];
 }
 
 - (void)hideTextInput {
-  _activeView.accessibilityHidden = YES;
   [_activeView resignFirstResponder];
+  [_activeView removeFromSuperview];
+  [_inputHider removeFromSuperview];
 }
 
 - (void)triggerAutofillSave:(BOOL)saveEntries {
@@ -1363,7 +1376,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 }
 
 // The UIView to add FlutterTextInputViews to.
-- (UIView*)textInputParentView {
+- (UIView*)keyWindow {
   UIWindow* keyWindow = [UIApplication sharedApplication].keyWindow;
   NSAssert(keyWindow != nullptr,
            @"The application must have a key window since the keyboard client "
@@ -1371,12 +1384,17 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   return keyWindow;
 }
 
+// The UIView to add FlutterTextInputViews to.
+- (NSArray<UIView*>*)textInputViews {
+  return _inputHider.subviews;
+}
+
 // Removes every installed input field, unless it's in the current autofill
 // context. May remove the active view too if includeActiveView is YES.
 // When clearText is YES, the text on the input fields will be set to empty before
 // they are removed from the view hierarchy, to avoid triggering autofill save.
 - (void)cleanUpViewHierarchy:(BOOL)includeActiveView clearText:(BOOL)clearText {
-  for (UIView* view in self.textInputParentView.subviews) {
+  for (UIView* view in self.textInputViews) {
     if ([view isKindOfClass:[FlutterTextInputView class]] &&
         (includeActiveView || view != _activeView)) {
       FlutterTextInputView* inputView = (FlutterTextInputView*)view;
@@ -1397,7 +1415,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 // Changes the visibility of every FlutterTextInputView currently in the
 // view hierarchy.
 - (void)changeInputViewsAutofillVisibility:(BOOL)newVisibility {
-  for (UIView* view in self.textInputParentView.subviews) {
+  for (UIView* view in self.textInputViews) {
     if ([view isKindOfClass:[FlutterTextInputView class]]) {
       FlutterTextInputView* inputView = (FlutterTextInputView*)view;
       inputView.isVisibleToAutofill = newVisibility;
@@ -1408,7 +1426,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 // Resets the client id of every FlutterTextInputView in the view hierarchy
 // to 0. Called when a new text input connection will be established.
 - (void)resetAllClientIds {
-  for (UIView* view in self.textInputParentView.subviews) {
+  for (UIView* view in self.textInputViews) {
     if ([view isKindOfClass:[FlutterTextInputView class]]) {
       FlutterTextInputView* inputView = (FlutterTextInputView*)view;
       [inputView setTextInputClient:0];
@@ -1417,9 +1435,12 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 }
 
 - (void)addToInputParentViewIfNeeded:(FlutterTextInputView*)inputView {
-  UIView* parentView = self.textInputParentView;
-  if (inputView.superview != parentView) {
-    [parentView addSubview:inputView];
+  if (![inputView isDescendantOfView:_inputHider]) {
+    [_inputHider addSubview:inputView];
+  }
+  UIView* parentView = self.keyWindow;
+  if (_inputHider.superview != parentView) {
+    [parentView addSubview:_inputHider];
   }
 }
 
