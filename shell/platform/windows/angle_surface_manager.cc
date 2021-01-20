@@ -12,7 +12,7 @@
 #include <winrt/Windows.UI.Composition.h>
 #endif
 
-#ifdef USECOREWINDOW
+#ifdef WINUWP && USECOREWINDOW
 #include <winrt/Windows.UI.Core.h>
 #endif
 
