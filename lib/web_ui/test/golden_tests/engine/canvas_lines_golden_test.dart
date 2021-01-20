@@ -34,8 +34,7 @@ void testMain() async {
     paintLines(canvas);
 
     html.document.body.append(canvas.rootElement);
-    await matchGoldenFile('canvas_lines_thickness.png', region: region,
-        write: true);
+    await matchGoldenFile('canvas_lines_thickness.png', region: region);
   });
 }
 
