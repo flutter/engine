@@ -424,7 +424,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 @property(nonatomic, readonly) CATransform3D editableTransform;
 @property(nonatomic, assign) CGRect markedRect;
 @property(nonatomic) BOOL isVisibleToAutofill;
-@property(nonatomic) BOOL hidden;
+@property(nonatomic) BOOL accessibilityHidden;
 
 - (void)setEditableTransform:(NSArray*)matrix;
 @end
@@ -449,7 +449,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     _markedText = [[NSMutableString alloc] init];
     _selectedTextRange = [[FlutterTextRange alloc] initWithNSRange:NSMakeRange(0, 0)];
     _markedRect = kInvalidFirstRect;
-    _hidden = YES;
+    _accessibilityHidden = YES;
     _cachedFirstRect = kInvalidFirstRect;
     // Initialize with the zero matrix which is not
     // an affine transform.
@@ -1109,7 +1109,6 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 }
 
 - (BOOL)accessibilityElementsHidden {
-  // We are hiding this accessibility element.
   // There are 2 accessible elements involved in text entry in 2 different parts of the view
   // hierarchy. This `FlutterTextInputView` is injected at the top of key window. We use this as a
   // `UITextInput` protocol to bridge text edit events between Flutter and iOS.
@@ -1118,7 +1117,11 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   // mimic the semantics tree from Flutter. We want the text field to be represented as a
   // `TextInputSemanticsObject` in that `SemanticsObject` tree rather than in this
   // `FlutterTextInputView` bridge which doesn't appear above a text field from the Flutter side.
-  return _hidden;
+  //
+  // We want to hide this view to prevent it from interfering with the `SemanticsObject`, but the
+  // Voiceover only responds to text edit events when this `FlutterTextInputView` is not hidden.
+  // We have to unhide this view when the user would like interact with the text field.
+  return _accessibilityHidden;
 }
 
 @end
@@ -1209,12 +1212,12 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 - (void)showTextInput {
   _activeView.textInputDelegate = _textInputDelegate;
   [self addToInputParentViewIfNeeded:_activeView];
-  _activeView.hidden = NO;
+  _activeView.accessibilityHidden = NO;
   [_activeView becomeFirstResponder];
 }
 
 - (void)hideTextInput {
-  _activeView.hidden = YES;
+  _activeView.accessibilityHidden = YES;
   [_activeView resignFirstResponder];
 }
 
