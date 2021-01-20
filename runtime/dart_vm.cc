@@ -64,9 +64,8 @@ static const char* kDartLanguageArgs[] = {
     // clang-format on
 };
 
-static const char* kDartPrecompilationArgs[] = {
-    "--precompilation",
-};
+static const char* kDartPrecompilationArgs[] = {"--precompilation",
+                                                "--enable-isolate-groups"};
 
 FML_ALLOW_UNUSED_TYPE
 static const char* kDartWriteProtectCodeArgs[] = {
