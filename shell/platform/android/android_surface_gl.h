@@ -68,6 +68,10 @@ class AndroidSurfaceGL final : public GPUSurfaceGLDelegate,
   std::unique_ptr<AndroidEGLSurface> onscreen_surface_;
   std::unique_ptr<AndroidEGLSurface> offscreen_surface_;
 
+  //----------------------------------------------------------------------------
+  /// @brief      Takes the super class AndroidSurface's AndroidContext and
+  ///             return a raw pointer to an AndroidContextGL.
+  ///
   AndroidContextGL* GLContextPtr() const;
 
   FML_DISALLOW_COPY_AND_ASSIGN(AndroidSurfaceGL);
