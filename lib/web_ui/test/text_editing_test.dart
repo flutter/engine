@@ -473,6 +473,37 @@ void testMain() {
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
         skip: browserEngine == BrowserEngine.edge);
 
+    test('Does not re-acquire focus when forced', () {
+      editingElement =
+          SemanticsTextEditingStrategy(
+              SemanticsObject(5, null), HybridTextEditing(), testInputElement);
+      final InputConfiguration config = InputConfiguration(
+        inputType: EngineInputType.text,
+        forceCloseConnectionOnBlur: true,
+      );
+
+      expect(document.activeElement, document.body);
+
+      document.body.append(testInputElement);
+      editingElement.enable(
+        config,
+        onChange: trackEditingState,
+        onAction: trackInputAction,
+      );
+      expect(document.activeElement, testInputElement);
+
+      // The input should lose focus now..
+      editingElement.domElement.blur();
+      expect(document.activeElement, document.body);
+
+      editingElement.disable();
+    },
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
+        skip: (browserEngine == BrowserEngine.webkit ||
+            browserEngine == BrowserEngine.edge ||
+            browserEngine == BrowserEngine.firefox));
+
     test('Does not dispose and recreate dom elements in persistent mode', () {
       editingElement = SemanticsTextEditingStrategy(
           SemanticsObject(5, null), HybridTextEditing(), testInputElement);
@@ -2274,6 +2305,7 @@ Map<String, dynamic> createFlutterConfig(
   String inputType, {
   bool readOnly = false,
   bool obscureText = false,
+  bool forceCloseConnectionOnBlur = false,
   bool autocorrect = true,
   String textCapitalization = 'TextCapitalization.none',
   String inputAction,
@@ -2288,6 +2320,7 @@ Map<String, dynamic> createFlutterConfig(
     },
     'readOnly': readOnly,
     'obscureText': obscureText,
+    'forceCloseConnectionOnBlur': forceCloseConnectionOnBlur,
     'autocorrect': autocorrect,
     'inputAction': inputAction ?? 'TextInputAction.done',
     'textCapitalization': textCapitalization,

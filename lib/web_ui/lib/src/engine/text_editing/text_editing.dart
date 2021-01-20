@@ -512,6 +512,7 @@ class InputConfiguration {
         const TextCapitalizationConfig.defaultCapitalization(),
     this.autofill,
     this.autofillGroup,
+    this.forceCloseConnectionOnBlur = false,
   });
 
   InputConfiguration.fromFrameworkMessage(
@@ -523,6 +524,7 @@ class InputConfiguration {
         inputAction =
             flutterInputConfiguration['inputAction'] ?? 'TextInputAction.done',
         obscureText = flutterInputConfiguration['obscureText'] ?? false,
+        forceCloseConnectionOnBlur = flutterInputConfiguration['forceCloseConnectionOnBlur'] ?? false,
         readOnly = flutterInputConfiguration['readOnly'] ?? false,
         autocorrect = flutterInputConfiguration['autocorrect'] ?? true,
         textCapitalization = TextCapitalizationConfig.fromInputConfiguration(
@@ -549,6 +551,22 @@ class InputConfiguration {
 
   /// Whether to hide the text being edited.
   final bool obscureText;
+
+  /// Previously, Flutter for Web behaved like a web page. If user clicked on an
+  /// area other than the input field itself, the input field was blurred, thus
+  /// the connection is closed.
+  /// This behavior was changed for Desktop Browsers.
+  /// https://github.com/flutter/engine/pull/18743
+  ///
+  /// Now only, pressing enter or tab changes the focus of the input fields.
+  ///
+  /// The created a regression for applications that relied on the old beharior
+  /// https://github.com/flutter/flutter/issues/64245
+  ///
+  /// This flag provides a workaround to the regression allowing developers to
+  /// optionally force the connection to close on blur, as suggested in the comments
+  /// https://github.com/flutter/flutter/issues/64245#issuecomment-681815149
+  final bool forceCloseConnectionOnBlur;
 
   /// Whether to enable autocorrection.
   ///
@@ -838,10 +856,29 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
 
     _subscriptions.add(html.document.onSelectionChange.listen(_handleChange));
 
-    // Refocus on the domElement after blur, so that user can keep editing the
-    // text field.
+    // The behavior for blur in DOM elements changes depending on the reason of
+    // blur:
+    //
+    // (1) By default we refocus on the domElement after blur, so that user can
+    // keep editing the text field.
+    //
+    // (2) BUT  if the blur is triggered due to interaction with another
+    // element on the page AND we explicitly force the connection to close on
+    // blur, the current text connection is obsolete so connection close request
+    // is send to Flutter.
+    //
+    // See [HybridTextEditing.sendTextConnectionClosedToFlutterIfAny].
+    //
+    // In order to detect between these two cases, after a blur event is
+    // triggered [domRenderer.windowHasFocus] method which checks the window
+    // focus is called.
     _subscriptions.add(domElement.onBlur.listen((_) {
-      domElement.focus();
+      bool windowHasFocus = domRenderer.windowHasFocus ?? false;
+      if (windowHasFocus && _inputConfiguration.forceCloseConnectionOnBlur) {
+        owner.sendTextConnectionClosedToFrameworkIfAny();
+      } else {
+        domElement.focus();
+      }
     }));
 
     preventDefaultForMouseEvents();
@@ -1259,10 +1296,23 @@ class FirefoxTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     // enough for covering "Select All" functionality.
     _subscriptions.add(domElement.onSelect.listen(_handleChange));
 
-    // Refocus on the domElement after blur, so that user can keep editing the
-    // text field.
+
+    // For Firefox, we also use the same approach as the parent class.
+    //
+    // The different part is, in Firefox, we are not able to get correct value
+    // when we check the window focus like [domRendered.windowHasFocus].
+    //
+    // However [document.activeElement] always equals to [domElement] if the
+    // user goes to another tab, minimizes the browser or opens the dev tools.
+    // Hence [document.activeElement] is checked in this listener.
     _subscriptions.add(domElement.onBlur.listen((_) {
-      _postponeFocus();
+      html.Element? activeElement = html.document.activeElement;
+      bool domElementIsActive = activeElement != domElement;
+      if (domElementIsActive && _inputConfiguration.forceCloseConnectionOnBlur) {
+        owner.sendTextConnectionClosedToFrameworkIfAny();
+      } else {
+        _postponeFocus();
+      }
     }));
 
     preventDefaultForMouseEvents();
