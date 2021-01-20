@@ -498,6 +498,8 @@ deps = {
     'dep_type': 'cipd',
   },
 
+  # Clang on mac and linux are expected to typically be the same revision.
+  # They are separated out so that the autoroller can more easily manage them.
   'src/buildtools/mac-x64/clang': {
     'packages': [
       {
