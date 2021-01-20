@@ -13,9 +13,9 @@ FlutterPlatformNodeDelegate::FlutterPlatformNodeDelegate() = default;
 
 FlutterPlatformNodeDelegate::~FlutterPlatformNodeDelegate() = default;
 
-void FlutterPlatformNodeDelegate::Init(std::shared_ptr<OwnerBridge> bridge,
+void FlutterPlatformNodeDelegate::Init(std::weak_ptr<OwnerBridge> bridge,
                                        ui::AXNode* node) {
-  bridge_ = std::move(bridge);
+  bridge_ = bridge;
   ax_node_ = node;
 }
 
@@ -26,21 +26,23 @@ ui::AXNode* FlutterPlatformNodeDelegate::GetAXNode() const {
 bool FlutterPlatformNodeDelegate::AccessibilityPerformAction(
     const ui::AXActionData& data) {
   AccessibilityNodeId target = ax_node_->id();
+  auto bridge_ptr = bridge_.lock();
+  BASE_DCHECK(bridge_ptr);
   switch (data.action) {
     case ax::mojom::Action::kDoDefault:
-      bridge_->DispatchAccessibilityAction(
+      bridge_ptr->DispatchAccessibilityAction(
           target, FlutterSemanticsAction::kFlutterSemanticsActionTap, {});
       return true;
     case ax::mojom::Action::kFocus:
-      bridge_->SetLastFocusedId(target);
-      bridge_->DispatchAccessibilityAction(
+      bridge_ptr->SetLastFocusedId(target);
+      bridge_ptr->DispatchAccessibilityAction(
           target,
           FlutterSemanticsAction::
               kFlutterSemanticsActionDidGainAccessibilityFocus,
           {});
       return true;
     case ax::mojom::Action::kScrollToMakeVisible:
-      bridge_->DispatchAccessibilityAction(
+      bridge_ptr->DispatchAccessibilityAction(
           target, FlutterSemanticsAction::kFlutterSemanticsActionShowOnScreen,
           {});
       return true;
@@ -59,15 +61,19 @@ gfx::NativeViewAccessible FlutterPlatformNodeDelegate::GetParent() {
   if (!ax_node_->parent()) {
     return nullptr;
   }
-  return bridge_->GetNativeAccessibleFromId(ax_node_->parent()->id());
+  auto bridge_ptr = bridge_.lock();
+  BASE_DCHECK(bridge_ptr);
+  return bridge_ptr->GetNativeAccessibleFromId(ax_node_->parent()->id());
 }
 
 gfx::NativeViewAccessible FlutterPlatformNodeDelegate::GetFocus() {
-  AccessibilityNodeId last_focused = bridge_->GetLastFocusedId();
+  auto bridge_ptr = bridge_.lock();
+  BASE_DCHECK(bridge_ptr);
+  AccessibilityNodeId last_focused = bridge_ptr->GetLastFocusedId();
   if (last_focused == ui::AXNode::kInvalidAXID) {
     return nullptr;
   }
-  return bridge_->GetNativeAccessibleFromId(last_focused);
+  return bridge_ptr->GetNativeAccessibleFromId(last_focused);
 }
 
 int FlutterPlatformNodeDelegate::GetChildCount() const {
@@ -75,21 +81,25 @@ int FlutterPlatformNodeDelegate::GetChildCount() const {
 }
 
 gfx::NativeViewAccessible FlutterPlatformNodeDelegate::ChildAtIndex(int index) {
+  auto bridge_ptr = bridge_.lock();
+  BASE_DCHECK(bridge_ptr);
   AccessibilityNodeId child = ax_node_->GetUnignoredChildAtIndex(index)->id();
-  return bridge_->GetNativeAccessibleFromId(child);
+  return bridge_ptr->GetNativeAccessibleFromId(child);
 }
 
 gfx::Rect FlutterPlatformNodeDelegate::GetBoundsRect(
     const ui::AXCoordinateSystem coordinate_system,
     const ui::AXClippingBehavior clipping_behavior,
     ui::AXOffscreenResult* offscreen_result) const {
+  auto bridge_ptr = bridge_.lock();
+  BASE_DCHECK(bridge_ptr);
   // TODO(chunhtai): We need to apply screen dpr in here.
   // https://github.com/flutter/flutter/issues/74283
   const bool clip_bounds =
       clipping_behavior == ui::AXClippingBehavior::kClipped;
   bool offscreen = false;
   gfx::RectF bounds =
-      bridge_->RelativeToGlobalBounds(ax_node_, offscreen, clip_bounds);
+      bridge_ptr->RelativeToGlobalBounds(ax_node_, offscreen, clip_bounds);
   if (offscreen_result != nullptr) {
     *offscreen_result = offscreen ? ui::AXOffscreenResult::kOffscreen
                                   : ui::AXOffscreenResult::kOnscreen;
