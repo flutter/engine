@@ -17,6 +17,8 @@ static constexpr char kSetClientMethod[] = "TextInput.setClient";
 static constexpr char kShowMethod[] = "TextInput.show";
 static constexpr char kHideMethod[] = "TextInput.hide";
 static constexpr char kSetMarkedTextRect[] = "TextInput.setMarkedTextRect";
+static constexpr char kSetEditableSizeAndTransform[] =
+    "TextInput.setEditableSizeAndTransform";
 
 static constexpr char kMultilineInputType[] = "TextInputType.multiline";
 
@@ -39,6 +41,7 @@ static constexpr char kXKey[] = "x";
 static constexpr char kYKey[] = "y";
 static constexpr char kWidthKey[] = "width";
 static constexpr char kHeightKey[] = "height";
+static constexpr char kTransformKey[] = "transform";
 
 static constexpr char kChannelName[] = "flutter/textinput";
 
@@ -197,6 +200,28 @@ void TextInputPlugin::HandleMethodCall(
     compose_rect_.y = y->value.GetDouble();
     compose_rect_.width = width->value.GetDouble();
     compose_rect_.height = height->value.GetDouble();
+  } else if (method.compare(kSetEditableSizeAndTransform) == 0) {
+    if (!method_call.arguments() || method_call.arguments()->IsNull()) {
+      result->Error(kBadArgumentError, "Method invoked without args");
+      return;
+    }
+    const rapidjson::Document& args = *method_call.arguments();
+    auto transform = args.FindMember(kTransformKey);
+    if (transform == args.MemberEnd() || transform->value.IsNull() ||
+        !transform->value.IsArray() || transform->value.Size() != 16) {
+      result->Error(kInternalConsistencyError, "EditableText transform invalid.");
+      return;
+    }
+    size_t i = 0;
+    for (auto& entry : transform->value.GetArray()) {
+      if (entry.IsNull()) {
+        result->Error(kInternalConsistencyError,
+                      "EditableText transform contains null value.");
+        return;
+      }
+      editabletext_transform_[i / 4][i % 4] = entry.GetDouble();
+      ++i;
+    }
   } else {
     result->NotImplemented();
     return;

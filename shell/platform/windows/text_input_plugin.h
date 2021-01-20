@@ -91,6 +91,10 @@ class TextInputPlugin : public KeyboardHookHandler {
   // range. This value is updated via `TextInput.setMarkedTextRect` messages
   // over the text input channel.
   Rect compose_rect_;
+
+  // A 4x4 matrix that maps from `EditableText` local coordinates to the
+  // coordinate system of `PipelineOwner.rootNode`.
+  double editabletext_transform_[4][4];
 };
 
 }  // namespace flutter
