@@ -50,6 +50,11 @@ FlutterRunnerProductConfiguration::FlutterRunnerProductConfiguration(
       use_legacy_renderer_ = val.GetBool();
   }
 #endif
+  if (document.HasMember("chatty_max")) {
+    auto& val = document["chatty_max"];
+    if (val.IsUint())
+      chatty_max_ = val.GetUint();
+  }
 }
 
 }  // namespace flutter_runner

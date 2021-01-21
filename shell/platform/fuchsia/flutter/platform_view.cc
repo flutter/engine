@@ -10,6 +10,8 @@
 #include <fuchsia/ui/gfx/cpp/fidl.h>
 
 #include <cstring>
+#include <ios>
+#include <ostream>
 #include <sstream>
 
 #include "flutter/fml/logging.h"
@@ -71,7 +73,8 @@ PlatformView::PlatformView(
     OnCreateSurface on_create_surface_callback,
     std::shared_ptr<flutter::ExternalViewEmbedder> external_view_embedder,
     fml::TimeDelta vsync_offset,
-    zx_handle_t vsync_event_handle)
+    zx_handle_t vsync_event_handle,
+    uint32_t chatty_max)
     : flutter::PlatformView(delegate, std::move(task_runners)),
       debug_label_(std::move(debug_label)),
       view_ref_(std::move(view_ref)),
@@ -88,7 +91,8 @@ PlatformView::PlatformView(
       ime_client_(this),
       vsync_offset_(std::move(vsync_offset)),
       vsync_event_handle_(vsync_event_handle),
-      keyboard_listener_binding_(this, std::move(keyboard_listener_request)) {
+      keyboard_listener_binding_(this, std::move(keyboard_listener_request)),
+      chatty_max_(chatty_max) {
   // Register all error handlers.
   SetInterfaceErrorHandler(session_listener_binding_, "SessionListener");
   SetInterfaceErrorHandler(ime_, "Input Method Editor");
@@ -297,6 +301,7 @@ void PlatformView::OnScenicEvent(
         }
         break;
       case fuchsia::ui::scenic::Event::Tag::kInput:
+        ChattyLog(event.input());
         switch (event.input().Which()) {
           case fuchsia::ui::input::InputEvent::Tag::kFocus: {
             OnHandleFocusEvent(event.input().focus());
@@ -935,6 +940,107 @@ flutter::PointerDataDispatcherMaker PlatformView::GetDispatcherMaker() {
   return [](flutter::DefaultPointerDataDispatcher::Delegate& delegate) {
     return std::make_unique<flutter::SmoothPointerDataDispatcher>(delegate);
   };
+}
+
+// Ad hoc pretty printer.
+static std::ostream& operator<<(
+    std::ostream& os,
+    const fuchsia::ui::input::PointerEventPhase& phase) {
+  switch (phase) {
+    case fuchsia::ui::input::PointerEventPhase::ADD:
+      return os << "ADD";
+    case fuchsia::ui::input::PointerEventPhase::HOVER:
+      return os << "HOVER";
+    case fuchsia::ui::input::PointerEventPhase::DOWN:
+      return os << "DOWN";
+    case fuchsia::ui::input::PointerEventPhase::MOVE:
+      return os << "MOVE";
+    case fuchsia::ui::input::PointerEventPhase::UP:
+      return os << "UP";
+    case fuchsia::ui::input::PointerEventPhase::REMOVE:
+      return os << "REMOVE";
+    case fuchsia::ui::input::PointerEventPhase::CANCEL:
+      return os << "CANCEL";
+    default:
+      return os << "<unknown>";
+  }
+}
+
+// Ad hoc pretty printer.
+static std::ostream& operator<<(
+    std::ostream& os,
+    const fuchsia::ui::input::PointerEventType& type) {
+  switch (type) {
+    case fuchsia::ui::input::PointerEventType::TOUCH:
+      return os << "TOUCH";
+    case fuchsia::ui::input::PointerEventType::MOUSE:
+      return os << "MOUSE";
+    default:
+      return os << "<unexpected|unknown>";
+  }
+}
+
+// Ad hoc pretty printer.
+static std::ostream& operator<<(
+    std::ostream& os,
+    const fuchsia::ui::input::KeyboardEventPhase& phase) {
+  switch (phase) {
+    case fuchsia::ui::input::KeyboardEventPhase::PRESSED:
+      return os << "PRESSED";
+    case fuchsia::ui::input::KeyboardEventPhase::RELEASED:
+      return os << "RELEASED";
+    case fuchsia::ui::input::KeyboardEventPhase::CANCELLED:
+      return os << "CANCELLED";
+    case fuchsia::ui::input::KeyboardEventPhase::REPEAT:
+      return os << "REPEAT";
+    default:
+      return os << "<unknown>";
+  }
+}
+
+// Ad hoc pretty printer.
+static std::ostream& operator<<(std::ostream& os,
+                                const fuchsia::ui::input::InputEvent& event) {
+  os << "fuchsia.ui.input.InputEvent.";
+  switch (event.Which()) {
+    case fuchsia::ui::input::InputEvent::Tag::kPointer: {
+      const auto& ptr = event.pointer();
+      os << "PointerEvent: time=" << ptr.event_time
+         << ", device_id=" << ptr.device_id << ", pointer_id=" << ptr.pointer_id
+         << ", type=" << ptr.type << ", phase=" << ptr.phase << ", x=" << ptr.x
+         << ", y=" << ptr.y << ", trace_id="
+         << PointerTraceHACK(ptr.radius_major, ptr.radius_minor)
+         << ", buttons=" << ptr.buttons;
+      break;
+    }
+    case fuchsia::ui::input::InputEvent::Tag::kFocus: {
+      const auto& fcs = event.focus();
+      os << "FocusEvent: time=" << fcs.event_time
+         << ", focused=" << std::boolalpha << fcs.focused;
+      break;
+    }
+    case fuchsia::ui::input::InputEvent::Tag::kKeyboard: {
+      const auto& kbd = event.keyboard();
+      os << "KeyboardEvent: time=" << kbd.event_time
+         << ", device_id=" << kbd.device_id << ", phase=" << kbd.phase
+         << ", hid_usage=" << kbd.hid_usage << ", code_point=" << kbd.code_point
+         << ", modifiers=" << kbd.modifiers;
+      break;
+    }
+    default: {
+      os << "<unknown>";
+      break;
+    }
+  }
+  return os;
+}
+
+void PlatformView::ChattyLog(
+    const fuchsia::ui::input::InputEvent& event) const {
+  static uint32_t chatty = 0;
+  if (chatty++ < chatty_max_) {
+    FML_LOG(INFO) << "Embedder[" << chatty << "/" << chatty_max_ << "]: " << event;
+  }
 }
 
 }  // namespace flutter_runner
