@@ -329,34 +329,25 @@ class AXPlatformRelationWin;
 // A simple interface for a class that wants to be notified when Windows
 // accessibility APIs are used by a client, a strong indication that full
 // accessibility support should be enabled.
-class AX_EXPORT WinAccessibilityAPIUsageObserver {
- public:
-  WinAccessibilityAPIUsageObserver();
-  virtual ~WinAccessibilityAPIUsageObserver();
-  virtual void OnIAccessible2Used() = 0;
-  virtual void OnScreenReaderHoneyPotQueried() = 0;
-  virtual void OnAccNameCalled() = 0;
-  virtual void OnUIAutomationUsed() = 0;
-};
+// class AX_EXPORT WinAccessibilityAPIUsageObserver {
+//  public:
+//   WinAccessibilityAPIUsageObserver();
+//   virtual ~WinAccessibilityAPIUsageObserver();
+//   virtual void OnIAccessible2Used() = 0;
+//   virtual void OnScreenReaderHoneyPotQueried() = 0;
+//   virtual void OnAccNameCalled() = 0;
+//   virtual void OnUIAutomationUsed() = 0;
+// };
 
 // Get an observer list that allows modules across the codebase to
 // listen to when usage of Windows accessibility APIs is detected.
-extern AX_EXPORT
-    base::ObserverList<WinAccessibilityAPIUsageObserver>::Unchecked&
-    GetWinAccessibilityAPIUsageObserverList();
+// extern AX_EXPORT
+//     base::ObserverList<WinAccessibilityAPIUsageObserver>::Unchecked&
+//     GetWinAccessibilityAPIUsageObserverList();
 
 // TODO(nektar): Remove multithread superclass since we don't support it.
 class AX_EXPORT __declspec(uuid("26f5641a-246d-457b-a96d-07f3fae6acf2"))
     AXPlatformNodeWin : public CComObjectRootEx<CComMultiThreadModel>,
-                        public IDispatchImpl<IAccessible2_4,
-                                             &IID_IAccessible2_4,
-                                             &LIBID_IAccessible2Lib>,
-                        public IAccessibleEx,
-                        public IAccessibleHypertext,
-                        public IAccessibleTable,
-                        public IAccessibleTable2,
-                        public IAccessibleTableCell,
-                        public IAccessibleValue,
                         public IExpandCollapseProvider,
                         public IGridItemProvider,
                         public IGridProvider,
@@ -374,49 +365,32 @@ class AX_EXPORT __declspec(uuid("26f5641a-246d-457b-a96d-07f3fae6acf2"))
                         public IToggleProvider,
                         public IValueProvider,
                         public IWindowProvider,
-                        public IChromeAccessible,
                         public AXPlatformNodeBase {
-  using IDispatchImpl::Invoke;
+//   using IDispatchImpl::Invoke;
 
  public:
   BEGIN_COM_MAP(AXPlatformNodeWin)
-  // TODO(nektar): Change the following to COM_INTERFACE_ENTRY(IDispatch).
-  COM_INTERFACE_ENTRY2(IDispatch, IAccessible2_2)
-  COM_INTERFACE_ENTRY2(IUnknown, IDispatchImpl)
-  // TODO(nektar): Find a way to remove the following entry because it's not
-  // an interface.
-  COM_INTERFACE_ENTRY(AXPlatformNodeWin)
-  COM_INTERFACE_ENTRY(IAccessible)
-  COM_INTERFACE_ENTRY(IAccessible2)
-  COM_INTERFACE_ENTRY(IAccessible2_2)
-  COM_INTERFACE_ENTRY(IAccessible2_3)
-  COM_INTERFACE_ENTRY(IAccessible2_4)
-  COM_INTERFACE_ENTRY(IAccessibleEx)
-  COM_INTERFACE_ENTRY(IAccessibleText)
-  COM_INTERFACE_ENTRY(IAccessibleHypertext)
-  COM_INTERFACE_ENTRY(IAccessibleTable)
-  COM_INTERFACE_ENTRY(IAccessibleTable2)
-  COM_INTERFACE_ENTRY(IAccessibleTableCell)
-  COM_INTERFACE_ENTRY(IAccessibleValue)
-  COM_INTERFACE_ENTRY(IChromeAccessible)
-  COM_INTERFACE_ENTRY(IExpandCollapseProvider)
-  COM_INTERFACE_ENTRY(IGridItemProvider)
-  COM_INTERFACE_ENTRY(IGridProvider)
-  COM_INTERFACE_ENTRY(IInvokeProvider)
-  COM_INTERFACE_ENTRY(IRangeValueProvider)
-  COM_INTERFACE_ENTRY(IRawElementProviderFragment)
-  COM_INTERFACE_ENTRY(IRawElementProviderSimple)
-  COM_INTERFACE_ENTRY(IRawElementProviderSimple2)
-  COM_INTERFACE_ENTRY(IScrollItemProvider)
-  COM_INTERFACE_ENTRY(IScrollProvider)
-  COM_INTERFACE_ENTRY(ISelectionItemProvider)
-  COM_INTERFACE_ENTRY(ISelectionProvider)
-  COM_INTERFACE_ENTRY(ITableItemProvider)
-  COM_INTERFACE_ENTRY(ITableProvider)
-  COM_INTERFACE_ENTRY(IToggleProvider)
-  COM_INTERFACE_ENTRY(IValueProvider)
-  COM_INTERFACE_ENTRY(IWindowProvider)
-  COM_INTERFACE_ENTRY(IServiceProvider)
+    // TODO(nektar): Find a way to remove the following entry because it's not
+    // an interface.
+    COM_INTERFACE_ENTRY(AXPlatformNodeWin)
+    COM_INTERFACE_ENTRY(IExpandCollapseProvider)
+    COM_INTERFACE_ENTRY(IGridItemProvider)
+    COM_INTERFACE_ENTRY(IGridProvider)
+    COM_INTERFACE_ENTRY(IInvokeProvider)
+    COM_INTERFACE_ENTRY(IRangeValueProvider)
+    COM_INTERFACE_ENTRY(IRawElementProviderFragment)
+    COM_INTERFACE_ENTRY(IRawElementProviderSimple)
+    COM_INTERFACE_ENTRY(IRawElementProviderSimple2)
+    COM_INTERFACE_ENTRY(IScrollItemProvider)
+    COM_INTERFACE_ENTRY(IScrollProvider)
+    COM_INTERFACE_ENTRY(ISelectionItemProvider)
+    COM_INTERFACE_ENTRY(ISelectionProvider)
+    COM_INTERFACE_ENTRY(ITableItemProvider)
+    COM_INTERFACE_ENTRY(ITableProvider)
+    COM_INTERFACE_ENTRY(IToggleProvider)
+    COM_INTERFACE_ENTRY(IValueProvider)
+    COM_INTERFACE_ENTRY(IWindowProvider)
+    COM_INTERFACE_ENTRY(IServiceProvider)
   END_COM_MAP()
 
   ~AXPlatformNodeWin() override;
@@ -434,155 +408,6 @@ class AX_EXPORT __declspec(uuid("26f5641a-246d-457b-a96d-07f3fae6acf2"))
   void Destroy() override;
   base::string16 GetValue() const override;
   bool IsPlatformCheckable() const override;
-
-  //
-  // IAccessible methods.
-  //
-
-  // Retrieves the child element or child object at a given point on the screen.
-  IFACEMETHODIMP accHitTest(LONG screen_physical_pixel_x,
-                            LONG screen_physical_pixel_y,
-                            VARIANT* child) override;
-
-  // Performs the object's default action.
-  IFACEMETHODIMP accDoDefaultAction(VARIANT var_id) override;
-
-  // Retrieves the specified object's current screen location.
-  IFACEMETHODIMP accLocation(LONG* physical_pixel_left,
-                             LONG* physical_pixel_top,
-                             LONG* width,
-                             LONG* height,
-                             VARIANT var_id) override;
-
-  // Traverses to another UI element and retrieves the object.
-  IFACEMETHODIMP accNavigate(LONG nav_dir,
-                             VARIANT start,
-                             VARIANT* end) override;
-
-  // Retrieves an IDispatch interface pointer for the specified child.
-  IFACEMETHODIMP get_accChild(VARIANT var_child,
-                              IDispatch** disp_child) override;
-
-  // Retrieves the number of accessible children.
-  IFACEMETHODIMP get_accChildCount(LONG* child_count) override;
-
-  // Retrieves a string that describes the object's default action.
-  IFACEMETHODIMP get_accDefaultAction(VARIANT var_id,
-                                      BSTR* default_action) override;
-
-  // Retrieves the tooltip description.
-  IFACEMETHODIMP get_accDescription(VARIANT var_id, BSTR* desc) override;
-
-  // Retrieves the object that has the keyboard focus.
-  IFACEMETHODIMP get_accFocus(VARIANT* focus_child) override;
-
-  // Retrieves the specified object's shortcut.
-  IFACEMETHODIMP get_accKeyboardShortcut(VARIANT var_id,
-                                         BSTR* access_key) override;
-
-  // Retrieves the name of the specified object.
-  IFACEMETHODIMP get_accName(VARIANT var_id, BSTR* name) override;
-
-  // Retrieves the IDispatch interface of the object's parent.
-  IFACEMETHODIMP get_accParent(IDispatch** disp_parent) override;
-
-  // Retrieves information describing the role of the specified object.
-  IFACEMETHODIMP get_accRole(VARIANT var_id, VARIANT* role) override;
-
-  // Retrieves the current state of the specified object.
-  IFACEMETHODIMP get_accState(VARIANT var_id, VARIANT* state) override;
-
-  // Gets the help string for the specified object.
-  IFACEMETHODIMP get_accHelp(VARIANT var_id, BSTR* help) override;
-
-  // Retrieve or set the string value associated with the specified object.
-  // Setting the value is not typically used by screen readers, but it's
-  // used frequently by automation software.
-  IFACEMETHODIMP get_accValue(VARIANT var_id, BSTR* value) override;
-  IFACEMETHODIMP put_accValue(VARIANT var_id, BSTR new_value) override;
-
-  // IAccessible methods not implemented.
-  IFACEMETHODIMP get_accSelection(VARIANT* selected) override;
-  IFACEMETHODIMP accSelect(LONG flags_sel, VARIANT var_id) override;
-  IFACEMETHODIMP get_accHelpTopic(BSTR* help_file,
-                                  VARIANT var_id,
-                                  LONG* topic_id) override;
-  IFACEMETHODIMP put_accName(VARIANT var_id, BSTR put_name) override;
-
-  //
-  // IAccessible2 methods.
-  //
-
-  IFACEMETHODIMP role(LONG* role) override;
-
-  IFACEMETHODIMP get_states(AccessibleStates* states) override;
-
-  IFACEMETHODIMP get_uniqueID(LONG* unique_id) override;
-
-  IFACEMETHODIMP get_windowHandle(HWND* window_handle) override;
-
-  IFACEMETHODIMP get_relationTargetsOfType(BSTR type,
-                                           LONG max_targets,
-                                           IUnknown*** targets,
-                                           LONG* n_targets) override;
-
-  IFACEMETHODIMP get_attributes(BSTR* attributes) override;
-
-  IFACEMETHODIMP get_indexInParent(LONG* index_in_parent) override;
-
-  IFACEMETHODIMP get_nRelations(LONG* n_relations) override;
-
-  IFACEMETHODIMP get_relation(LONG relation_index,
-                              IAccessibleRelation** relation) override;
-
-  IFACEMETHODIMP get_relations(LONG max_relations,
-                               IAccessibleRelation** relations,
-                               LONG* n_relations) override;
-
-  IFACEMETHODIMP get_attribute(BSTR name, VARIANT* attribute) override;
-  IFACEMETHODIMP get_extendedRole(BSTR* extended_role) override;
-  IFACEMETHODIMP scrollTo(enum IA2ScrollType scroll_type) override;
-  IFACEMETHODIMP scrollToPoint(enum IA2CoordinateType coordinate_type,
-                               LONG x,
-                               LONG y) override;
-  IFACEMETHODIMP get_groupPosition(LONG* group_level,
-                                   LONG* similar_items_in_group,
-                                   LONG* position_in_group) override;
-  IFACEMETHODIMP get_localizedExtendedRole(
-      BSTR* localized_extended_role) override;
-  IFACEMETHODIMP get_nExtendedStates(LONG* n_extended_states) override;
-  IFACEMETHODIMP get_extendedStates(LONG max_extended_states,
-                                    BSTR** extended_states,
-                                    LONG* n_extended_states) override;
-  IFACEMETHODIMP get_localizedExtendedStates(
-      LONG max_localized_extended_states,
-      BSTR** localized_extended_states,
-      LONG* n_localized_extended_states) override;
-  IFACEMETHODIMP get_locale(IA2Locale* locale) override;
-  IFACEMETHODIMP get_accessibleWithCaret(IUnknown** accessible,
-                                         LONG* caret_offset) override;
-
-  //
-  // IAccessible2_3 methods.
-  //
-
-  IFACEMETHODIMP get_selectionRanges(IA2Range** ranges, LONG* nRanges) override;
-
-  //
-  // IAccessible2_4 methods.
-  //
-
-  IFACEMETHODIMP setSelectionRanges(LONG nRanges, IA2Range* ranges) override;
-
-  //
-  // IAccessibleEx methods.
-  //
-
-  IFACEMETHODIMP GetObjectForChild(LONG child_id,
-                                   IAccessibleEx** result) override;
-
-  IFACEMETHODIMP GetIAccessiblePair(IAccessible** accessible,
-                                    LONG* child_id) override;
 
   //
   // IExpandCollapseProvider methods.
@@ -759,248 +584,6 @@ class AX_EXPORT __declspec(uuid("26f5641a-246d-457b-a96d-07f3fae6acf2"))
 
   IFACEMETHODIMP get_Value(double* result) override;
 
-  // IAccessibleEx methods not implemented.
-  IFACEMETHODIMP
-  ConvertReturnedElement(IRawElementProviderSimple* element,
-                         IAccessibleEx** acc) override;
-
-  //
-  // IAccessibleText methods.
-  //
-
-  IFACEMETHODIMP get_nCharacters(LONG* n_characters) override;
-
-  IFACEMETHODIMP get_caretOffset(LONG* offset) override;
-
-  IFACEMETHODIMP get_nSelections(LONG* n_selections) override;
-
-  IFACEMETHODIMP get_selection(LONG selection_index,
-                               LONG* start_offset,
-                               LONG* end_offset) override;
-
-  IFACEMETHODIMP get_text(LONG start_offset,
-                          LONG end_offset,
-                          BSTR* text) override;
-
-  IFACEMETHODIMP get_textAtOffset(LONG offset,
-                                  enum IA2TextBoundaryType boundary_type,
-                                  LONG* start_offset,
-                                  LONG* end_offset,
-                                  BSTR* text) override;
-
-  IFACEMETHODIMP get_textBeforeOffset(LONG offset,
-                                      enum IA2TextBoundaryType boundary_type,
-                                      LONG* start_offset,
-                                      LONG* end_offset,
-                                      BSTR* text) override;
-
-  IFACEMETHODIMP get_textAfterOffset(LONG offset,
-                                     enum IA2TextBoundaryType boundary_type,
-                                     LONG* start_offset,
-                                     LONG* end_offset,
-                                     BSTR* text) override;
-
-  IFACEMETHODIMP get_offsetAtPoint(LONG x,
-                                   LONG y,
-                                   enum IA2CoordinateType coord_type,
-                                   LONG* offset) override;
-
-  //
-  // IAccessibleTable methods.
-  //
-
-  // get_description - also used by IAccessibleImage
-
-  IFACEMETHODIMP get_accessibleAt(LONG row,
-                                  LONG column,
-                                  IUnknown** accessible) override;
-
-  IFACEMETHODIMP get_caption(IUnknown** accessible) override;
-
-  IFACEMETHODIMP get_childIndex(LONG row_index,
-                                LONG column_index,
-                                LONG* cell_index) override;
-
-  IFACEMETHODIMP get_columnDescription(LONG column, BSTR* description) override;
-
-  IFACEMETHODIMP
-  get_columnExtentAt(LONG row, LONG column, LONG* n_columns_spanned) override;
-
-  IFACEMETHODIMP
-  get_columnHeader(IAccessibleTable** accessible_table,
-                   LONG* starting_row_index) override;
-
-  IFACEMETHODIMP get_columnIndex(LONG cell_index, LONG* column_index) override;
-
-  IFACEMETHODIMP get_nColumns(LONG* column_count) override;
-
-  IFACEMETHODIMP get_nRows(LONG* row_count) override;
-
-  IFACEMETHODIMP get_nSelectedChildren(LONG* cell_count) override;
-
-  IFACEMETHODIMP get_nSelectedColumns(LONG* column_count) override;
-
-  IFACEMETHODIMP get_nSelectedRows(LONG* row_count) override;
-
-  IFACEMETHODIMP get_rowDescription(LONG row, BSTR* description) override;
-
-  IFACEMETHODIMP get_rowExtentAt(LONG row,
-                                 LONG column,
-                                 LONG* n_rows_spanned) override;
-
-  IFACEMETHODIMP
-  get_rowHeader(IAccessibleTable** accessible_table,
-                LONG* starting_column_index) override;
-
-  IFACEMETHODIMP get_rowIndex(LONG cell_index, LONG* row_index) override;
-
-  IFACEMETHODIMP get_selectedChildren(LONG max_children,
-                                      LONG** children,
-                                      LONG* n_children) override;
-
-  IFACEMETHODIMP get_selectedColumns(LONG max_columns,
-                                     LONG** columns,
-                                     LONG* n_columns) override;
-
-  IFACEMETHODIMP get_selectedRows(LONG max_rows,
-                                  LONG** rows,
-                                  LONG* n_rows) override;
-
-  IFACEMETHODIMP get_summary(IUnknown** accessible) override;
-
-  IFACEMETHODIMP
-  get_isColumnSelected(LONG column, boolean* is_selected) override;
-
-  IFACEMETHODIMP get_isRowSelected(LONG row, boolean* is_selected) override;
-
-  IFACEMETHODIMP get_isSelected(LONG row,
-                                LONG column,
-                                boolean* is_selected) override;
-
-  IFACEMETHODIMP
-  get_rowColumnExtentsAtIndex(LONG index,
-                              LONG* row,
-                              LONG* column,
-                              LONG* row_extents,
-                              LONG* column_extents,
-                              boolean* is_selected) override;
-
-  IFACEMETHODIMP selectRow(LONG row) override;
-
-  IFACEMETHODIMP selectColumn(LONG column) override;
-
-  IFACEMETHODIMP unselectRow(LONG row) override;
-
-  IFACEMETHODIMP unselectColumn(LONG column) override;
-
-  IFACEMETHODIMP
-  get_modelChange(IA2TableModelChange* model_change) override;
-
-  //
-  // IAccessibleTable2 methods.
-  //
-  // (Most of these are duplicates of IAccessibleTable methods, only the
-  // unique ones are included here.)
-  //
-
-  IFACEMETHODIMP get_cellAt(LONG row, LONG column, IUnknown** cell) override;
-
-  IFACEMETHODIMP get_nSelectedCells(LONG* cell_count) override;
-
-  IFACEMETHODIMP
-  get_selectedCells(IUnknown*** cells, LONG* n_selected_cells) override;
-
-  IFACEMETHODIMP get_selectedColumns(LONG** columns, LONG* n_columns) override;
-
-  IFACEMETHODIMP get_selectedRows(LONG** rows, LONG* n_rows) override;
-
-  //
-  // IAccessibleTableCell methods.
-  //
-
-  IFACEMETHODIMP
-  get_columnExtent(LONG* n_columns_spanned) override;
-
-  IFACEMETHODIMP
-  get_columnHeaderCells(IUnknown*** cell_accessibles,
-                        LONG* n_column_header_cells) override;
-
-  IFACEMETHODIMP get_columnIndex(LONG* column_index) override;
-
-  IFACEMETHODIMP get_rowExtent(LONG* n_rows_spanned) override;
-
-  IFACEMETHODIMP
-  get_rowHeaderCells(IUnknown*** cell_accessibles,
-                     LONG* n_row_header_cells) override;
-
-  IFACEMETHODIMP get_rowIndex(LONG* row_index) override;
-
-  IFACEMETHODIMP get_isSelected(boolean* is_selected) override;
-
-  IFACEMETHODIMP
-  get_rowColumnExtents(LONG* row,
-                       LONG* column,
-                       LONG* row_extents,
-                       LONG* column_extents,
-                       boolean* is_selected) override;
-
-  IFACEMETHODIMP get_table(IUnknown** table) override;
-
-  //
-  // IAccessibleHypertext methods not implemented.
-  //
-
-  IFACEMETHODIMP get_nHyperlinks(LONG* hyperlink_count) override;
-
-  IFACEMETHODIMP
-  get_hyperlink(LONG index, IAccessibleHyperlink** hyperlink) override;
-
-  IFACEMETHODIMP
-  get_hyperlinkIndex(LONG char_index, LONG* hyperlink_index) override;
-
-  //
-  // IAccessibleText methods not implemented.
-  //
-
-  IFACEMETHODIMP get_newText(IA2TextSegment* new_text) override;
-  IFACEMETHODIMP get_oldText(IA2TextSegment* old_text) override;
-  IFACEMETHODIMP addSelection(LONG start_offset, LONG end_offset) override;
-  IFACEMETHODIMP get_attributes(LONG offset,
-                                LONG* start_offset,
-                                LONG* end_offset,
-                                BSTR* text_attributes) override;
-  IFACEMETHODIMP get_characterExtents(LONG offset,
-                                      enum IA2CoordinateType coord_type,
-                                      LONG* x,
-                                      LONG* y,
-                                      LONG* width,
-                                      LONG* height) override;
-  IFACEMETHODIMP removeSelection(LONG selection_index) override;
-  IFACEMETHODIMP setCaretOffset(LONG offset) override;
-  IFACEMETHODIMP setSelection(LONG selection_index,
-                              LONG start_offset,
-                              LONG end_offset) override;
-  IFACEMETHODIMP scrollSubstringTo(LONG start_index,
-                                   LONG end_index,
-                                   enum IA2ScrollType scroll_type) override;
-  IFACEMETHODIMP scrollSubstringToPoint(LONG start_index,
-                                        LONG end_index,
-                                        enum IA2CoordinateType coordinate_type,
-                                        LONG x,
-                                        LONG y) override;
-
-  //
-  // IAccessibleValue methods.
-  //
-
-  IFACEMETHODIMP get_currentValue(VARIANT* value) override;
-
-  IFACEMETHODIMP get_minimumValue(VARIANT* value) override;
-
-  IFACEMETHODIMP get_maximumValue(VARIANT* value) override;
-
-  IFACEMETHODIMP setCurrentValue(VARIANT new_value) override;
-
   //
   // IRawElementProviderFragment methods.
   //
@@ -1038,19 +621,6 @@ class AX_EXPORT __declspec(uuid("26f5641a-246d-457b-a96d-07f3fae6acf2"))
   //
 
   IFACEMETHODIMP ShowContextMenu() override;
-
-  //
-  // IChromeAccessible methods.
-  //
-
-  IFACEMETHODIMP get_bulkFetch(BSTR input_json,
-                               LONG request_id,
-                               IChromeAccessibleDelegate* delegate) override;
-
-  IFACEMETHODIMP get_hitTest(LONG screen_physical_pixel_x,
-                             LONG screen_physical_pixel_y,
-                             LONG request_id,
-                             IChromeAccessibleDelegate* delegate) override;
 
   //
   // IServiceProvider methods.
@@ -1137,12 +707,6 @@ class AX_EXPORT __declspec(uuid("26f5641a-246d-457b-a96d-07f3fae6acf2"))
 
   int MSAARole();
 
-  int32_t ComputeIA2State();
-
-  int32_t ComputeIA2Role();
-
-  std::vector<base::string16> ComputeIA2Attributes();
-
   base::string16 UIAAriaRole();
 
   base::string16 ComputeUIAProperties();
@@ -1176,37 +740,11 @@ class AX_EXPORT __declspec(uuid("26f5641a-246d-457b-a96d-07f3fae6acf2"))
   // These protected methods are still used by BrowserAccessibilityComWin. At
   // some point post conversion, we can probably move these to be private
   // methods.
-  //
-  // Helper methods for IA2 hyperlinks.
-  //
-  // Hyperlink is an IA2 misnomer. It refers to objects embedded within other
-  // objects, such as a numbered list within a contenteditable div.
-  // Also, in IA2, text that includes embedded objects is called hypertext.
-  // Returns true if the current object is an IA2 hyperlink.
-  bool IsHyperlink();
-  void ComputeHypertextRemovedAndInserted(size_t* start,
-                                          size_t* old_len,
-                                          size_t* new_len);
-
-  // If offset is a member of IA2TextSpecialOffsets this function updates the
-  // value of offset and returns, otherwise offset remains unchanged.
-  void HandleSpecialTextOffset(LONG* offset);
 
   // A helper to add the given string value to |attributes|.
   void AddAttributeToList(const char* name,
                           const char* value,
                           PlatformAttributeList* attributes) override;
-
-  // Escape special characters as specified by the IA2 spec.
-  void SanitizeTextAttributeValue(const std::string& input,
-                                  std::string* output) const override;
-
-  // Escapes characters in string attributes as required by the IA2 Spec.
-  // It's okay for input to be the same as output.
-  static void SanitizeStringAttributeForIA2(const std::string& input,
-                                            std::string* output);
-  FRIEND_TEST_ALL_PREFIXES(AXPlatformNodeWinTest,
-                           SanitizeStringAttributeForIA2);
 
  private:
   bool IsWebAreaForPresentationalIframe();
@@ -1220,9 +758,6 @@ class AX_EXPORT __declspec(uuid("26f5641a-246d-457b-a96d-07f3fae6acf2"))
                                    BSTR* value_bstr) const;
 
   HRESULT GetNameAsBstr(BSTR* value_bstr) const;
-
-  // Sets the selection given a start and end offset in IA2 Hypertext.
-  void SetIA2HypertextSelection(LONG start_offset, LONG end_offset);
 
   // Escapes characters in string attributes as required by the UIA Aria
   // Property Spec. It's okay for input to be the same as output.
@@ -1315,21 +850,6 @@ class AX_EXPORT __declspec(uuid("26f5641a-246d-457b-a96d-07f3fae6acf2"))
   // Enum used to specify whether IAccessibleText is requesting text
   // At, Before, or After a specified offset.
   enum class TextOffsetType { kAtOffset, kBeforeOffset, kAfterOffset };
-
-  // Helper for implementing IAccessibleText::get_text{At|Before|After}Offset.
-  HRESULT IAccessibleTextGetTextForOffsetType(
-      TextOffsetType text_offset_type,
-      LONG offset,
-      enum IA2TextBoundaryType boundary_type,
-      LONG* start_offset,
-      LONG* end_offset,
-      BSTR* text);
-
-  // Search forwards or backwards from the given offset until the given IA2
-  // text boundary is found, and return the offset of that boundary.
-  LONG FindBoundary(IA2TextBoundaryType ia2_boundary,
-                    LONG start_offset,
-                    ax::mojom::MoveDirection direction);
 
   // Many MSAA methods take a var_id parameter indicating that the operation
   // should be performed on a particular child ID, rather than this object.
