@@ -306,7 +306,9 @@ class PersistedPhysicalShape extends PersistedContainerSurface
     /// take clip-path into account.
     ///
     /// Webkit has a bug when applying clip-path on an element that has
-    /// position: absolute and transform. To place clipping rectangle correctly
+    /// position: absolute and transform
+    /// (https://bugs.webkit.org/show_bug.cgi?id=141731).
+    /// To place clipping rectangle correctly
     /// we size the inner container to cover full pathBounds instead of sizing
     /// to clipping rect bounds (which is the case for elevation == 0.0 where
     /// we shift outer/inner clip area instead to position clip-path).
