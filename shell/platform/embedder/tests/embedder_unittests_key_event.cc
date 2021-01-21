@@ -2,10 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/embedder/embedder.h"
-
 #include <set>
 
+#include "flutter/fml/synchronization/waitable_event.h"
+#include "flutter/shell/platform/embedder/embedder.h"
+#include "flutter/shell/platform/embedder/tests/embedder_config_builder.h"
+#include "flutter/shell/platform/embedder/tests/embedder_test.h"
+#include "third_party/dart/runtime/include/dart_api.h"
+#include "third_party/tonic/converter/dart_converter.h"
 #include "flutter/testing/testing.h"
 
 #ifdef _WIN32
@@ -18,11 +22,11 @@ namespace testing {
 
 FlutterKeyEventKind unserializeKind(uint64_t kindInt) {
   switch(kindInt) {
-    case 1: 
+    case 1:
       return kFlutterKeyEventKindUp;
-    case 2: 
+    case 2:
       return kFlutterKeyEventKindDown;
-    case 3: 
+    case 3:
       return kFlutterKeyEventKindRepeat;
     default:
       FML_UNREACHABLE();
@@ -30,14 +34,13 @@ FlutterKeyEventKind unserializeKind(uint64_t kindInt) {
   }
 }
 
-TEST(EmbedderKeyEvent, CorrectlySerializeKeyData) {
+TEST_F(EmbedderTest, CorrectlySerializeKeyData) {
   auto message_latch = std::make_shared<fml::AutoResetWaitableEvent>();
-  char echoed_string[2] = "m\n"; // Dummy string that holds one char.
+  char echoed_string[2] = "m"; // Dummy string that holds one char.
   FlutterKeyEvent echoed_event;
 
-  auto native_echo_event = [&message_latch](Dart_NativeArguments args) {
-    auto handle = Dart_GetNativeArgument(args, 0);
-    echoed_event.type = unserializeKind(
+  auto native_echo_event = [&](Dart_NativeArguments args) {
+    echoed_event.kind = unserializeKind(
         tonic::DartConverter<uint64_t>::FromDart(
             Dart_GetNativeArgument(args, 1)));
     echoed_event.timestamp = tonic::DartConverter<uint64_t>::FromDart(
@@ -54,9 +57,8 @@ TEST(EmbedderKeyEvent, CorrectlySerializeKeyData) {
     message_latch->Signal();
   };
 
-  context.AddNativeCallback("EchoKeyEvent", CREATE_NATIVE_ENTRY(native_echo_event));
-
   auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+  context.AddNativeCallback("EchoKeyEvent", CREATE_NATIVE_ENTRY(native_echo_event));
 
   // fml::AutoResetWaitableEvent latch;
   // context.AddNativeCallback(
@@ -79,11 +81,11 @@ TEST(EmbedderKeyEvent, CorrectlySerializeKeyData) {
     .character = "A",
     .synthesized = false,
   };
-  FlutterEngineSendKeyEvent(engine, &downEventUpperA,
+  FlutterEngineSendKeyEvent(engine.get(), &downEventUpperA,
       [](bool handled, void* user_data){
       },
-      null);
-  message_latch.Wait();
+      nullptr);
+  message_latch->Wait();
 
   EXPECT_EQ(echoed_event.timestamp, downEventUpperA.timestamp);
   EXPECT_EQ(echoed_event.kind, downEventUpperA.kind);

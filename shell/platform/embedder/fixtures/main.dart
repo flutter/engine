@@ -12,8 +12,6 @@ import 'dart:ffi';
 import 'dart:core';
 import 'dart:convert';
 
-import '../../../../lib/ui/ui.dart';
-
 void main() {}
 
 @pragma('vm:entry-point')
@@ -624,7 +622,7 @@ void can_display_platform_view_with_pixel_ratio() {
 @pragma('vm:entry-point')
 void can_receive_locale_updates() {
   PlatformDispatcher.instance.onLocaleChanged = (){
-    signalNativeCount(PlatformDispatcher.instance.locales.length);
+    signalNativeCount(PlatformDispatcher.instance.locales!.length);
   };
   signalNativeTest();
 }
