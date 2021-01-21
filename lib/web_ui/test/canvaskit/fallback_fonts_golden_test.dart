@@ -131,6 +131,7 @@ void testMain() {
       pb.addText('مرحبا');
 
       // Flush microtasks and test that we didn't start any downloads.
+      await Future<void>.delayed(Duration.zero);
 
       expect(notoDownloadQueue.isPending, isFalse);
       expect(skiaFontCollection.globalFontFallbacks, isEmpty);
