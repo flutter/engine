@@ -111,6 +111,65 @@ void testMain() async {
         region: region);
   });
 
+  test('pushPhysicalShape with path and elevation', () async {
+    Path cutCornersButton = Path()
+      ..moveTo(15, 10)
+      ..lineTo(60, 10)
+      ..lineTo(60, 60)
+      ..lineTo(15, 60)
+      ..lineTo(10, 55)
+      ..lineTo(10, 15);
+
+    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
+    builder.pushPhysicalShape(
+      path: cutCornersButton,
+      clipBehavior: Clip.hardEdge,
+      color: const Color(0xFFA0FFFF),
+      elevation: 2,
+    );
+    _drawTestPicture(builder);
+    builder.pop();
+
+    builder.pushOffset(70, 0);
+    builder.pushPhysicalShape(
+      path: cutCornersButton,
+      clipBehavior: Clip.hardEdge,
+      color: const Color(0xFFA0FFFF),
+      elevation: 8,
+    );
+    _drawTestPicture(builder);
+    builder.pop();
+    builder.pop();
+
+    builder.pushOffset(140, 0);
+    builder.pushPhysicalShape(
+      path: Path()..addOval(Rect.fromLTRB(10, 10, 60, 60)),
+      clipBehavior: Clip.hardEdge,
+      color: const Color(0xFFA0FFFF),
+      elevation: 4,
+    );
+    _drawTestPicture(builder);
+    builder.pop();
+    builder.pop();
+
+    builder.pushOffset(210, 0);
+    builder.pushPhysicalShape(
+      path: Path()..addRRect(RRect.fromRectAndRadius(
+          Rect.fromLTRB(10, 10, 60, 60), Radius.circular(10.0))),
+      clipBehavior: Clip.hardEdge,
+      color: const Color(0xFFA0FFFF),
+      elevation: 4,
+    );
+    _drawTestPicture(builder);
+    builder.pop();
+    builder.pop();
+
+    html.document.body.append(builder.build().webOnlyRootElement);
+
+    await matchGoldenFile('compositing_physical_shape_path.png',
+        region: region);
+  });
+
   test('pushImageFilter', () async {
     final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
     builder.pushImageFilter(
