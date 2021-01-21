@@ -1191,5 +1191,205 @@ TEST_F(EmbedderTest, CanLaunchAndShutdownWithAValidElfSource) {
   engine.reset();
 }
 
+//------------------------------------------------------------------------------
+// Key Data
+//------------------------------------------------------------------------------
+
+typedef struct {
+  std::shared_ptr<fml::AutoResetWaitableEvent> latch;
+  bool returned;
+} KeyEventUserData;
+
+FlutterKeyEventKind unserializeKeyEventKind(uint64_t kindInt) {
+  switch(kindInt) {
+    case 1:
+      return kFlutterKeyEventKindUp;
+    case 2:
+      return kFlutterKeyEventKindDown;
+    case 3:
+      return kFlutterKeyEventKindRepeat;
+    default:
+      FML_UNREACHABLE();
+      return kFlutterKeyEventKindUp;
+  }
+}
+
+void expect_key_event_eq(const FlutterKeyEvent& subject, const FlutterKeyEvent& baseline) {
+  EXPECT_EQ(subject.timestamp, baseline.timestamp);
+  EXPECT_EQ(subject.kind, baseline.kind);
+  EXPECT_EQ(subject.physical, baseline.physical);
+  EXPECT_EQ(subject.logical, baseline.logical);
+  EXPECT_EQ(subject.synthesized, baseline.synthesized);
+}
+
+TEST_F(EmbedderTest, KeyDataIsCorrectlySerialized) {
+  auto message_latch = std::make_shared<fml::AutoResetWaitableEvent>();
+  uint64_t echoed_char;
+  FlutterKeyEvent echoed_event;
+
+  auto native_echo_event = [&](Dart_NativeArguments args) {
+    echoed_event.kind = unserializeKeyEventKind(
+        tonic::DartConverter<uint64_t>::FromDart(
+            Dart_GetNativeArgument(args, 0)));
+    echoed_event.timestamp = tonic::DartConverter<uint64_t>::FromDart(
+          Dart_GetNativeArgument(args, 1));
+    echoed_event.physical = tonic::DartConverter<uint64_t>::FromDart(
+          Dart_GetNativeArgument(args, 2));
+    echoed_event.logical = tonic::DartConverter<uint64_t>::FromDart(
+          Dart_GetNativeArgument(args, 3));
+    echoed_char = tonic::DartConverter<uint64_t>::FromDart(
+          Dart_GetNativeArgument(args, 4));
+    echoed_event.synthesized = tonic::DartConverter<bool>::FromDart(
+          Dart_GetNativeArgument(args, 5));
+
+    message_latch->Signal();
+  };
+
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetSoftwareRendererConfig();
+  builder.SetDartEntrypoint("key_data_echo");
+  fml::AutoResetWaitableEvent ready;
+  context.AddNativeCallback(
+      "SignalNativeTest",
+      CREATE_NATIVE_ENTRY(
+          [&ready](Dart_NativeArguments args) { ready.Signal(); }));
+
+  context.AddNativeCallback("EchoKeyEvent", CREATE_NATIVE_ENTRY(native_echo_event));
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+  ready.Wait();
+
+  // A normal down event
+  const FlutterKeyEvent downEventUpperA {
+    .struct_size = sizeof(FlutterKeyEvent),
+    .timestamp = 1,
+    .kind = kFlutterKeyEventKindDown,
+    .physical = 0x00070004,
+    .logical = 0x00000000061,
+    .character = "A",
+    .synthesized = false,
+  };
+  FlutterEngineSendKeyEvent(engine.get(), &downEventUpperA,
+      [](bool handled, void* user_data){}, nullptr);
+  message_latch->Wait();
+
+  expect_key_event_eq(echoed_event, downEventUpperA);
+  EXPECT_EQ(echoed_char, 0x41llu);
+
+  // A repeat event with multi-byte character
+  const FlutterKeyEvent repeatEventWideChar {
+    .struct_size = sizeof(FlutterKeyEvent),
+    .timestamp = 1000,
+    .kind = kFlutterKeyEventKindRepeat,
+    .physical = 0x00070005,
+    .logical = 0x00000000062,
+    .character = "∆",
+    .synthesized = false,
+  };
+  FlutterEngineSendKeyEvent(engine.get(), &repeatEventWideChar,
+      [](bool handled, void* user_data){}, nullptr);
+  message_latch->Wait();
+
+  expect_key_event_eq(echoed_event, repeatEventWideChar);
+  EXPECT_EQ(echoed_char, 0x2206llu);
+
+  // An up event with no character, synthesized
+  const FlutterKeyEvent upEvent {
+    .struct_size = sizeof(FlutterKeyEvent),
+    .timestamp = 1000000,
+    .kind = kFlutterKeyEventKindUp,
+    .physical = 0x00070006,
+    .logical = 0x00000000063,
+    .character = nullptr,
+    .synthesized = true,
+  };
+  FlutterEngineSendKeyEvent(engine.get(), &upEvent,
+      [](bool handled, void* user_data){}, nullptr);
+  message_latch->Wait();
+
+  expect_key_event_eq(echoed_event, upEvent);
+  EXPECT_EQ(echoed_char, 0llu);
+}
+
+TEST_F(EmbedderTest, KeyDataResponseIsCorrectlyInvoked) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetSoftwareRendererConfig();
+  builder.SetDartEntrypoint("key_data_echo");
+  fml::AutoResetWaitableEvent ready;
+  context.AddNativeCallback(
+      "SignalNativeTest",
+      CREATE_NATIVE_ENTRY(
+          [&ready](Dart_NativeArguments args) { ready.Signal(); }));
+
+  context.AddNativeCallback("EchoKeyEvent",
+                            CREATE_NATIVE_ENTRY([](Dart_NativeArguments args) {}));
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+  ready.Wait();
+
+  // Dispatch a single event
+  FlutterKeyEvent event {
+    .struct_size = sizeof(FlutterKeyEvent),
+    .timestamp = 1000,
+    .kind = kFlutterKeyEventKindDown,
+    .physical = 0x00070005,
+    .logical = 0x00000000062,
+    .character = nullptr,
+  };
+
+  KeyEventUserData user_data1 {
+    .latch = std::make_shared<fml::AutoResetWaitableEvent>(),
+  };
+  // Entrypoint `key_data_echo` uses `event.synthesized` as `handled`.
+  event.synthesized = true;
+  FlutterEngineSendKeyEvent(
+      engine.get(),
+      &event,
+      [](bool handled, void* untyped_user_data){
+        KeyEventUserData* user_data = reinterpret_cast<KeyEventUserData*>(untyped_user_data);
+        EXPECT_EQ(handled, true);
+        user_data->latch->Signal();
+      },
+      &user_data1);
+  user_data1.latch->Wait();
+
+  // Dispatch two events back to back, using the same callback on different
+  // user_data
+  KeyEventUserData user_data2 {
+    .latch = std::make_shared<fml::AutoResetWaitableEvent>(),
+    .returned = false,
+  };
+  KeyEventUserData user_data3 {
+    .latch = std::make_shared<fml::AutoResetWaitableEvent>(),
+    .returned = false,
+  };
+  auto callback23 = [](bool handled, void* untyped_user_data){
+    KeyEventUserData* user_data = reinterpret_cast<KeyEventUserData*>(untyped_user_data);
+    EXPECT_EQ(handled, false);
+    user_data->latch->Signal();
+    user_data->returned = true;
+  };
+
+  event.synthesized = false;
+  FlutterEngineSendKeyEvent(
+      engine.get(),
+      &event,
+      callback23,
+      &user_data2);
+  FlutterEngineSendKeyEvent(
+      engine.get(),
+      &event,
+      callback23,
+      &user_data3);
+  user_data2.latch->Wait();
+  user_data3.latch->Wait();
+  EXPECT_TRUE(user_data2.returned);
+  EXPECT_TRUE(user_data3.returned);
+}
+
 }  // namespace testing
 }  // namespace flutter

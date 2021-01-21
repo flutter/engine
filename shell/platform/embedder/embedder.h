@@ -618,7 +618,7 @@ typedef enum {
 } FlutterKeyEventKind;
 
 /// A structure to represent a change of state of a key.
-/// 
+///
 /// Sending `FlutterKeyEvent` via `FlutterEngineSendKeyEvent` results in a
 /// corresponding `FlutterKeyEvent` to be dispatched in the framework. It is
 /// embedder's responsibility to ensure the regularity of sent events, since the
@@ -641,12 +641,12 @@ typedef struct {
   FlutterKeyEventKind kind;
   /// The USB HID code for the physical key of the event.
   ///
-  /// For the full definition and list of pre-defined physical keys, see 
+  /// For the full definition and list of pre-defined physical keys, see
   /// `PhysicalKeyboardKey` from the framework.
   uint64_t physical;
   /// The key ID for the logical key of this event.
   ///
-  /// For the full definition and a list of pre-defined logical keys, see 
+  /// For the full definition and a list of pre-defined logical keys, see
   /// `LogicalKeyboardKey` from the framework.
   uint64_t logical;
   /// Null-terminated character input from the event. Can be null. Ignored for
@@ -1618,13 +1618,13 @@ FlutterEngineResult FlutterEngineSendPointerEvent(
 ///
 /// @param[in]  engine         A running engine instance.
 /// @param[in]  event          The event data to be sent. This function will no
-///                            longer access `event` after returning. 
+///                            longer access `event` after returning.
 /// @param[in]  callback       The callback invoked by the engine when the
 ///                            Flutter application has decided whether it handles
 ///                            this event.
-/// @param[in]  user_data      The context associated with the callback. Should
-///                            not be released until `callback` is invoked. Can
-///                            be null.
+/// @param[in]  user_data      The context associated with the callback. The exact
+///                            same value will used to invoke `callback`. Accepts
+///                            nullptr or a non-pointer value.
 ///
 /// @return     The result of the call.
 ///

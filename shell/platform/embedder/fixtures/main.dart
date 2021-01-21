@@ -515,6 +515,7 @@ int _serializeKeyChange(KeyChange change) {
   }
 }
 
+// Echo the event data with `_echoKeyEvent`, and returns synthesized as handled.
 @pragma('vm:entry-point')
 void key_data_echo() async { // ignore: non_constant_identifier_names
   PlatformDispatcher.instance.onKeyData = (KeyData data) {
@@ -526,7 +527,7 @@ void key_data_echo() async { // ignore: non_constant_identifier_names
       data.character == null ? 0 : data.character!.codeUnitAt(0),
       data.synthesized,
     );
-    return true;
+    return data.synthesized;
   };
   signalNativeTest();
 }
