@@ -34,9 +34,9 @@ Future<void> matchPictureGolden(String goldenFile, CkPicture picture,
 }
 
 void testMain() {
-  setUpCanvasKitTest();
-
   group('Font fallbacks', () {
+    setUpCanvasKitTest();
+
     /// Used to save and restore [ui.window.onPlatformMessage] after each test.
     ui.PlatformMessageCallback? savedCallback;
 
