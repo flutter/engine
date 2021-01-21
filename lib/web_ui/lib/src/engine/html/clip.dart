@@ -304,14 +304,25 @@ class PersistedPhysicalShape extends PersistedContainerSurface
     /// Otherwise we need to paint a svg element for the path and clip
     /// contents against same path for shadow to work since box-shadow doesn't
     /// take clip-path into account.
-
-    final String svgClipPath = _pathToSvgClipPath(path,
-        offsetX: elevation == 0.0 ? -pathBounds.left : 0.0,
-        offsetY: elevation == 0.0 ? -pathBounds.top : 0.0,
-        scaleX: elevation == 0.0 ? 1.0 / pathBounds.width : 1.0 / pathBounds.right,
-        scaleY: elevation == 0.0 ? 1.0 / pathBounds.height : 1.0 / pathBounds.bottom);
-    // If apply is called multiple times (without update) , remove prior
-    // svg clip and render elements.
+    ///
+    /// Webkit has a bug when applying clip-path on an element that has
+    /// position: absolute and transform. To place clipping rectangle correctly
+    /// we size the inner container to cover full pathBounds instead of sizing
+    /// to clipping rect bounds (which is the case for elevation == 0.0 where
+    /// we shift outer/inner clip area instead to position clip-path).
+    final String svgClipPath = elevation == 0.0 ?
+        _pathToSvgClipPath(path,
+            offsetX: -pathBounds.left,
+            offsetY: -pathBounds.top,
+            scaleX: 1.0 / pathBounds.width,
+            scaleY: 1.0 / pathBounds.height)
+        : _pathToSvgClipPath(path,
+            offsetX: 0.0,
+            offsetY: 0.0,
+            scaleX: 1.0 / pathBounds.right,
+            scaleY: 1.0 / pathBounds.bottom);
+    /// If apply is called multiple times (without update) , remove prior
+    /// svg clip and render elements.
     _clipElement?.remove();
     _svgElement?.remove();
     _clipElement =
