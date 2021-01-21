@@ -24,7 +24,7 @@ VulkanWindow::VulkanWindow(fml::RefPtr<VulkanProcTable> proc_table,
     : VulkanWindow(nullptr,
                    proc_table,
                    std::move(native_surface),
-                   render_to_surface);
+                   render_to_surface) {}
 
 VulkanWindow::VulkanWindow(const sk_sp<GrDirectContext>& context,
                            fml::RefPtr<VulkanProcTable> proc_table,

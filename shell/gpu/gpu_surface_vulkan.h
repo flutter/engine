@@ -19,10 +19,18 @@ namespace flutter {
 
 class GPUSurfaceVulkan : public Surface {
  public:
+  //------------------------------------------------------------------------------
+  /// @brief      Create a GPUSurfaceVulkan which implicitly creates its own
+  ///             GrDirectContext for Skia.
+  ///
   GPUSurfaceVulkan(GPUSurfaceVulkanDelegate* delegate,
                    std::unique_ptr<vulkan::VulkanNativeSurface> native_surface,
                    bool render_to_surface);
 
+  //------------------------------------------------------------------------------
+  /// @brief      Create a GPUSurfaceVulkan while letting it reuse an existing
+  ///             GrDirectContext.
+  ///
   GPUSurfaceVulkan(const sk_sp<GrDirectContext>& context,
                    GPUSurfaceVulkanDelegate* delegate,
                    std::unique_ptr<vulkan::VulkanNativeSurface> native_surface,
