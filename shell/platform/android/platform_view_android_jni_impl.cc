@@ -577,9 +577,9 @@ static void LoadDartDeferredLibrary(JNIEnv* env,
   // NativeLibrary.
   void* handle = ::dlopen(sharedLibraryName.c_str(), RTLD_NOW);
   if (handle == nullptr) {
-    LoadLoadingUnitFailure(
-        loading_unit_id, "Shared library not found for the provided name.",
-        true);
+    LoadLoadingUnitFailure(loading_unit_id,
+                           "Shared library not found for the provided name.",
+                           true);
     return;
   }
   fml::RefPtr<fml::NativeLibrary> native_lib =

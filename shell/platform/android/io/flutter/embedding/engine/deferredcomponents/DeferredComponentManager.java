@@ -185,6 +185,8 @@ public interface DeferredComponentManager {
    * <p>When the download of a deferred component module completes, this method should be called to
    * find the .so library file. The filenames, or path if it's not in LD_LIBRARY_PATH, should then
    * be passed to FlutterJNI.loadDartDeferredLibrary to be dlopen-ed and loaded into the Dart VM.
+   * The .so files in the lib/[abi] directory are already in LD_LIBRARY_PATH and in this case you
+   * only need to pass the file name.
    *
    * <p>Upon successful load of the Dart library, the Dart future from the originating loadLibary()
    * call completes and developers are able to use symbols and assets from the feature module.

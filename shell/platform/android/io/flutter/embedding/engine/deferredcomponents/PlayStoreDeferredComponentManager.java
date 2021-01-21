@@ -8,7 +8,6 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.AssetManager;
-import android.os.Build;
 import android.util.SparseArray;
 import android.util.SparseIntArray;
 import androidx.annotation.NonNull;
@@ -26,13 +25,10 @@ import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.loader.ApplicationInfoLoader;
 import io.flutter.embedding.engine.loader.FlutterApplicationInfo;
 import io.flutter.embedding.engine.systemchannels.DeferredComponentChannel;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 
 /**
  * Flutter default implementation of DeferredComponentManager that downloads deferred component
@@ -326,9 +322,7 @@ public class PlayStoreDeferredComponentManager implements DeferredComponentManag
       context = context.createPackageContext(context.getPackageName(), 0);
 
       AssetManager assetManager = context.getAssets();
-      flutterJNI.updateJavaAssetManager(
-          assetManager,
-          flutterApplicationInfo.flutterAssetsDir);
+      flutterJNI.updateJavaAssetManager(assetManager, flutterApplicationInfo.flutterAssetsDir);
     } catch (NameNotFoundException e) {
       throw new RuntimeException(e);
     }
@@ -344,7 +338,8 @@ public class PlayStoreDeferredComponentManager implements DeferredComponentManag
     }
 
     // This matches/depends on dart's loading unit naming convention, which we use unchanged.
-    String aotSharedLibraryName = flutterApplicationInfo.aotSharedLibraryName + "-" + loadingUnitId + ".part.so";
+    String aotSharedLibraryName =
+        flutterApplicationInfo.aotSharedLibraryName + "-" + loadingUnitId + ".part.so";
 
     flutterJNI.loadDartDeferredLibrary(loadingUnitId, aotSharedLibraryName);
   }

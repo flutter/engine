@@ -1111,8 +1111,8 @@ public class FlutterJNI {
    *     automatically retrieved when loadLibrary() is called on a dart deferred library. This is
    *     used to identify which Dart deferred library the resolved correspond to.
    * @param sharedLibraryName File name of the .so file to be loaded, or if the file is not already
-   *     in LD_LIBRARY_PATH, the full path to the file. Note: .so files in the lib/<abi> directory
-   *     is already in LD_LIBRARY_PATH and in this case you only need to pass the file name.
+   *     in LD_LIBRARY_PATH, the full path to the file. The .so files in the lib/[abi] directory
+   *     are already in LD_LIBRARY_PATH and in this case you only need to pass the file name.
    */
   @UiThread
   public void loadDartDeferredLibrary(int loadingUnitId, @NonNull String sharedLibraryName) {
