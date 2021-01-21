@@ -7,8 +7,7 @@
 namespace flutter {
 
 FlutterWindowWinUWP::FlutterWindowWinUWP(
-    ABI::Windows::UI::Core::CoreWindow* window)
-    : game_controller_thread_running_(false), current_display_info_(nullptr) {
+    ABI::Windows::UI::Core::CoreWindow* window) {
   winrt::Windows::UI::Core::CoreWindow cw{nullptr};
   winrt::copy_from_abi(cw, window);
   window_ = cw;
@@ -54,8 +53,8 @@ WindowsRenderTarget FlutterWindowWinUWP::GetRenderTarget() {
 }
 
 void FlutterWindowWinUWP::ApplyInverseDpiScalingTransform() {
-  // apply inverse transform to negate built in DPI scaling so we can render at
-  // native scale
+  // Apply inverse transform to negate built in DPI scaling in order to render
+  // at native scale.
   auto dpiScale = GetDpiScale();
   render_target_.Scale({1 / dpiScale, 1 / dpiScale, 1 / dpiScale});
 }
@@ -81,9 +80,9 @@ float FlutterWindowWinUWP::GetDpiScale() {
 WindowBoundsWinUWP FlutterWindowWinUWP::GetBounds(
     winrt::Windows::Graphics::Display::DisplayInformation const& disp,
     bool physical) {
-  auto appView =
+  winrt::Windows::UI::ViewManagement::ApplicationView app_view =
       winrt::Windows::UI::ViewManagement::ApplicationView::GetForCurrentView();
-  auto bounds = appView.VisibleBounds();
+  winrt::Windows::Foundation::Rect bounds = app_view.VisibleBounds();
   if (running_on_xbox_) {
     return {bounds.Width + (bounds.X), bounds.Height + (bounds.Y)};
   }
@@ -100,39 +99,37 @@ WindowBoundsWinUWP FlutterWindowWinUWP::GetBounds(
 float FlutterWindowWinUWP::GetDpiScale(
     winrt::Windows::Graphics::Display::DisplayInformation const& disp) {
   float dpi = disp.LogicalDpi();
-  auto rawdpi = disp.RawDpiX();
-  auto rawwidth = disp.ScreenHeightInRawPixels();
+  auto raw_dpi = disp.RawDpiX();
+  auto raw_width = disp.ScreenHeightInRawPixels();
   auto scale = disp.ResolutionScale();
-  auto rawperview = disp.RawPixelsPerViewPixel();
+  auto raw_per_view = disp.RawPixelsPerViewPixel();
 
   // TODO(clarkezone): ensure DPI handling is correct:
   // because XBOX has display scaling off, logicalDpi retuns 96 which is
-  // incorrect check if rawperview is more acurate.
-  // Also confirm if we need this workaround on 10X
+  // incorrect check if raw_per_view is more acurate.
+  // Also confirm if it is necessary to use this workaround on 10X
   // https://github.com/flutter/flutter/issues/70198
 
   if (running_on_xbox_) {
     return 1.5;
   }
-  return static_cast<float>(rawperview);
+  return static_cast<float>(raw_per_view);
 }
 
-FlutterWindowWinUWP::~FlutterWindowWinUWP() {
-  OutputDebugString(L"Destoryed UWP FlutterWindow");
-}
+FlutterWindowWinUWP::~FlutterWindowWinUWP() {}
 
 void FlutterWindowWinUWP::SetView(WindowBindingHandlerDelegate* view) {
   binding_handler_delegate_ = view;
 }
 
 void FlutterWindowWinUWP::SetEventHandlers() {
-  auto appView =
+  auto app_view =
       winrt::Windows::UI::ViewManagement::ApplicationView::GetForCurrentView();
 
-  appView.SetDesiredBoundsMode(winrt::Windows::UI::ViewManagement::
-                                   ApplicationViewBoundsMode::UseCoreWindow);
+  app_view.SetDesiredBoundsMode(winrt::Windows::UI::ViewManagement::
+                                    ApplicationViewBoundsMode::UseCoreWindow);
 
-  appView.VisibleBoundsChanged({this, &FlutterWindowWinUWP::OnBoundsChanged});
+  app_view.VisibleBoundsChanged({this, &FlutterWindowWinUWP::OnBoundsChanged});
 
   window_.PointerPressed({this, &FlutterWindowWinUWP::OnPointerPressed});
   window_.PointerReleased({this, &FlutterWindowWinUWP::OnPointerReleased});
@@ -150,9 +147,9 @@ void FlutterWindowWinUWP::SetEventHandlers() {
   window_.KeyDown({this, &FlutterWindowWinUWP::OnKeyDown});
   window_.CharacterReceived({this, &FlutterWindowWinUWP::OnCharacterReceived});
 
-  auto disp = winrt::Windows::Graphics::Display::DisplayInformation::
+  auto display = winrt::Windows::Graphics::Display::DisplayInformation::
       GetForCurrentView();
-  disp.DpiChanged({this, &FlutterWindowWinUWP::OnDpiChanged});
+  display.DpiChanged({this, &FlutterWindowWinUWP::OnDpiChanged});
 }
 
 void FlutterWindowWinUWP::StartGamepadCursorThread() {
@@ -222,9 +219,9 @@ void FlutterWindowWinUWP::ConfigureXboxSpecific() {
       OutputDebugString(L"Couldn't set bounds mode.");
     }
 
-    auto appView = winrt::Windows::UI::ViewManagement::ApplicationView::
-        GetForCurrentView();
-    auto bounds = appView.VisibleBounds();
+    winrt::Windows::UI::ViewManagement::ApplicationView app_view = winrt::
+        Windows::UI::ViewManagement::ApplicationView::GetForCurrentView();
+    winrt::Windows::Foundation::Rect bounds = app_view.VisibleBounds();
 
     // the offset /2 represents how much off-screan the core window is
     // positioned unclear why disabling overscan doesn't correct this
@@ -238,7 +235,7 @@ void FlutterWindowWinUWP::OnDpiChanged(
     winrt::Windows::Foundation::IInspectable const&) {
   ApplyInverseDpiScalingTransform();
 
-  auto bounds = GetBounds(current_display_info_, true);
+  WindowBoundsWinUWP bounds = GetBounds(current_display_info_, true);
 
   binding_handler_delegate_->OnWindowSizeChanged(
       static_cast<size_t>(bounds.width), static_cast<size_t>(bounds.height));
@@ -284,33 +281,32 @@ void FlutterWindowWinUWP::OnPointerWheelChanged(
 
 double FlutterWindowWinUWP::GetPosX(
     winrt::Windows::UI::Core::PointerEventArgs const& args) {
-  const double inverseDpiScale = GetDpiScale();
+  const double inverse_dpi_scale = GetDpiScale();
 
-  return static_cast<double>(
-      (args.CurrentPoint().Position().X - xbox_overscan_x_offset_) *
-      inverseDpiScale);
+  return (args.CurrentPoint().Position().X - xbox_overscan_x_offset_) *
+         inverse_dpi_scale;
 }
 
 double FlutterWindowWinUWP::GetPosY(
     winrt::Windows::UI::Core::PointerEventArgs const& args) {
-  const double inverseDpiScale = GetDpiScale();
+  const double inverse_dpi_scale = GetDpiScale();
   return static_cast<double>(
       (args.CurrentPoint().Position().Y - xbox_overscan_y_offset_) *
-      inverseDpiScale);
+      inverse_dpi_scale);
 }
 
 void FlutterWindowWinUWP::OnBoundsChanged(
-    winrt::Windows::UI::ViewManagement::ApplicationView const& appView,
+    winrt::Windows::UI::ViewManagement::ApplicationView const& app_view,
     winrt::Windows::Foundation::IInspectable const&) {
-  if (binding_handler_delegate_) {
 #ifndef USECOREWINDOW
+  if (binding_handler_delegate_) {
     auto bounds = GetBounds(current_display_info_, true);
 
     binding_handler_delegate_->OnWindowSizeChanged(
         static_cast<size_t>(bounds.width), static_cast<size_t>(bounds.height));
     render_target_.Size({bounds.width, bounds.height});
-#endif
   }
+#endif
 }
 
 void FlutterWindowWinUWP::OnKeyUp(
@@ -353,23 +349,22 @@ void FlutterWindowWinUWP::OnCharacterReceived(
 }
 
 void FlutterWindowWinUWP::OnGamePadLeftStickMoved(double x, double y) {
-  static const int CURSORSCALE = 30;
+  float new_x =
+      cursor_visual_.Offset().x + (kCursorScale * static_cast<float>(x));
 
-  auto newx = cursor_visual_.Offset().x + (CURSORSCALE * static_cast<float>(x));
+  float new_y =
+      cursor_visual_.Offset().y + (kCursorScale * -static_cast<float>(y));
 
-  auto newy =
-      cursor_visual_.Offset().y + (CURSORSCALE * -static_cast<float>(y));
+  WindowBoundsWinUWP logical_bounds = GetBounds(current_display_info_, false);
 
-  auto logicalBounds = GetBounds(current_display_info_, false);
-
-  if (newx > 0 && newy > 0 && newx < logicalBounds.width &&
-      newy < logicalBounds.height) {
-    cursor_visual_.Offset({newx, newy, 0});
+  if (new_x > 0 && new_y > 0 && new_x < logical_bounds.width &&
+      new_y < logical_bounds.height) {
+    cursor_visual_.Offset({new_x, new_y, 0});
     if (!running_on_xbox_) {
-      const double inverseDpiScale = GetDpiScale();
+      const double inverse_dpi_scale = GetDpiScale();
       binding_handler_delegate_->OnPointerMove(
-          cursor_visual_.Offset().x * inverseDpiScale,
-          cursor_visual_.Offset().y * inverseDpiScale);
+          cursor_visual_.Offset().x * inverse_dpi_scale,
+          cursor_visual_.Offset().y * inverse_dpi_scale);
     } else {
       binding_handler_delegate_->OnPointerMove(cursor_visual_.Offset().x,
                                                cursor_visual_.Offset().y);
@@ -378,19 +373,17 @@ void FlutterWindowWinUWP::OnGamePadLeftStickMoved(double x, double y) {
 }
 
 void FlutterWindowWinUWP::OnGamePadRightStickMoved(double x, double y) {
-  static const double controllerScrollMultiplier = 3;
-
   if (!running_on_xbox_) {
-    const double inverseDpiScale = GetDpiScale();
+    const double inverse_dpi_scale = GetDpiScale();
 
     binding_handler_delegate_->OnScroll(
-        cursor_visual_.Offset().x * inverseDpiScale,
-        cursor_visual_.Offset().y * inverseDpiScale,
-        x * controllerScrollMultiplier, y * controllerScrollMultiplier, 1);
+        cursor_visual_.Offset().x * inverse_dpi_scale,
+        cursor_visual_.Offset().y * inverse_dpi_scale,
+        x * kControllerScrollMultiplier, y * kControllerScrollMultiplier, 1);
   } else {
     binding_handler_delegate_->OnScroll(
         cursor_visual_.Offset().x, cursor_visual_.Offset().y,
-        x * controllerScrollMultiplier, y * controllerScrollMultiplier, 1);
+        x * kControllerScrollMultiplier, y * kControllerScrollMultiplier, 1);
   }
 }
 
@@ -399,10 +392,10 @@ void FlutterWindowWinUWP::OnGamePadButtonPressed(
   if ((buttons & winrt::Windows::Gaming::Input::GamepadButtons::A) ==
       winrt::Windows::Gaming::Input::GamepadButtons::A) {
     if (!running_on_xbox_) {
-      const double inverseDpiScale = GetDpiScale();
+      const double inverse_dpi_scale = GetDpiScale();
       binding_handler_delegate_->OnPointerDown(
-          cursor_visual_.Offset().x * inverseDpiScale,
-          cursor_visual_.Offset().y * inverseDpiScale,
+          cursor_visual_.Offset().x * inverse_dpi_scale,
+          cursor_visual_.Offset().y * inverse_dpi_scale,
           FlutterPointerMouseButtons::kFlutterPointerButtonMousePrimary);
     } else {
       binding_handler_delegate_->OnPointerDown(
@@ -417,11 +410,11 @@ void FlutterWindowWinUWP::OnGamePadButtonReleased(
   if ((buttons & winrt::Windows::Gaming::Input::GamepadButtons::A) ==
       winrt::Windows::Gaming::Input::GamepadButtons::A) {
     if (!running_on_xbox_) {
-      const double inverseDpiScale = GetDpiScale();
+      const double inverse_dpi_scale = GetDpiScale();
 
       binding_handler_delegate_->OnPointerUp(
-          cursor_visual_.Offset().x * inverseDpiScale,
-          cursor_visual_.Offset().y * inverseDpiScale,
+          cursor_visual_.Offset().x * inverse_dpi_scale,
+          cursor_visual_.Offset().y * inverse_dpi_scale,
           FlutterPointerMouseButtons::kFlutterPointerButtonMousePrimary);
     } else {
       binding_handler_delegate_->OnPointerUp(

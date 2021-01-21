@@ -70,69 +70,70 @@ class FlutterWindowWinUWP : public WindowBindingHandler {
   float GetDpiScale(
       winrt::Windows::Graphics::Display::DisplayInformation const&);
 
-  // Undo the scale transform applied by the Windows compositor in order to
+  // Undoes the scale transform applied by the Windows compositor in order to
   // render at native scale and produce smooth results on high DPI screens.
   void ApplyInverseDpiScalingTransform();
 
-  // Hook up event handers for keyboard, mouse, size, DPI changed events on the
+  // Hooks up event handers for keyboard, mouse, size, DPI changed events on the
   // underlying CoreWindow.
   void SetEventHandlers();
 
-  // Notify current |WindowBindingHandlerDelegate| of DPI Changed events.
+  // Notifies current |WindowBindingHandlerDelegate| of DPI Changed events.
   void OnDpiChanged(
       winrt::Windows::Graphics::Display::DisplayInformation const& args,
       winrt::Windows::Foundation::IInspectable const&);
 
-  // Notify current |WindowBindingHandlerDelegate| of pointer pressed events.
+  // Notifies current |WindowBindingHandlerDelegate| of pointer pressed events.
   void OnPointerPressed(winrt::Windows::Foundation::IInspectable const&,
                         winrt::Windows::UI::Core::PointerEventArgs const& args);
 
-  // Notify current |WindowBindingHandlerDelegate| of pointer released events.
+  // Notifies current |WindowBindingHandlerDelegate| of pointer released events.
   void OnPointerReleased(
       winrt::Windows::Foundation::IInspectable const&,
       winrt::Windows::UI::Core::PointerEventArgs const& args);
 
-  // Notify current |WindowBindingHandlerDelegate| of pointer pressed events.
+  // Notifies current |WindowBindingHandlerDelegate| of pointer pressed events.
   void OnBoundsChanged(
       winrt::Windows::UI::ViewManagement::ApplicationView const& appView,
       winrt::Windows::Foundation::IInspectable const&);
 
-  // Notify current |WindowBindingHandlerDelegate| of pointer moved events.
+  // Notifies current |WindowBindingHandlerDelegate| of pointer moved events.
   void OnPointerMoved(winrt::Windows::Foundation::IInspectable const&,
                       winrt::Windows::UI::Core::PointerEventArgs const& args);
 
-  // Notify current |WindowBindingHandlerDelegate| of mouse wheel events.
+  // Notifies current |WindowBindingHandlerDelegate| of mouse wheel events.
   void OnPointerWheelChanged(
       winrt::Windows::Foundation::IInspectable const&,
       winrt::Windows::UI::Core::PointerEventArgs const& args);
 
-  // Notify current |WindowBindingHandlerDelegate| of key up events.
+  // Notifies current |WindowBindingHandlerDelegate| of key up events.
   void OnKeyUp(winrt::Windows::Foundation::IInspectable const&,
                winrt::Windows::UI::Core::KeyEventArgs const& args);
 
-  // Notify current |WindowBindingHandlerDelegate| of key down events.
+  // Notifies current |WindowBindingHandlerDelegate| of key down events.
   void OnKeyDown(winrt::Windows::Foundation::IInspectable const&,
                  winrt::Windows::UI::Core::KeyEventArgs const& args);
 
-  // Notify current |WindowBindingHandlerDelegate| of character received events.
+  // Notifies current |WindowBindingHandlerDelegate| of character received
+  // events.
   void OnCharacterReceived(
       winrt::Windows::Foundation::IInspectable const&,
       winrt::Windows::UI::Core::CharacterReceivedEventArgs const& args);
 
-  // Notify current |WindowBindingHandlerDelegate| of gamepad right stick events
-  // as emulated mouse move events.
+  // Notifies current |WindowBindingHandlerDelegate| of gamepad right stick
+  // events as emulated mouse move events.
   void OnGamePadLeftStickMoved(double x, double y);
 
-  // Notify current |WindowBindingHandlerDelegate| of gamepad right stick move
-  // events delivered as emulated mouse move events.
+  // Notifies current |WindowBindingHandlerDelegate| of gamepad right stick
+  // events delivered as scroll events.
   void OnGamePadRightStickMoved(double x, double y);
 
-  // Notify current |WindowBindingHandlerDelegate| of left gamepad move events
+  // Notifies current |WindowBindingHandlerDelegate| of left gamepad move events
   // delivered as emulated mouse button events.
   void OnGamePadButtonPressed(
       winrt::Windows::Gaming::Input::GamepadButtons buttons);
 
-  // Notify current |WindowBindingHandlerDelegate| of left gamepad move events
+  // Notifies current |WindowBindingHandlerDelegate| of left gamepad move events
   // delivered as emulated mouse button events.
   void OnGamePadButtonReleased(
       winrt::Windows::Gaming::Input::GamepadButtons buttons);
@@ -148,40 +149,40 @@ class FlutterWindowWinUWP : public WindowBindingHandler {
   // mouse events.
   void StartGamepadCursorThread();
 
-  // consigure callbacks to notify when gamepad hardware events are received.
+  // consigure callbacks to Notifies when gamepad hardware events are received.
   void ConfigureGamePad();
 
   // Test is current context is running on an xbox device and perform device
   // specific initialization.
   void ConfigureXboxSpecific();
 
-  // Helper to convert from logical point to physical X value.
+  // Converts from logical point to physical X value.
   double GetPosX(winrt::Windows::UI::Core::PointerEventArgs const& args);
 
-  // Helper to convert from logical point to physical Y value.
+  // Converts from logical point to physical Y value.
   double GetPosY(winrt::Windows::UI::Core::PointerEventArgs const& args);
 
-  // Helper to convert from logical point to physical Y value.
+  // Token representing current worker thread.
   winrt::Windows::Foundation::IAsyncAction worker_loop_{nullptr};
 
-  // Member variable holding the backing CoreWindow. nullptr if not set.
+  // Backing CoreWindow. nullptr if not set.
   winrt::Windows::UI::Core::CoreWindow window_{nullptr};
 
-  // Member variable containing a pointer to a FlutterWindowsView that can be
+  // Pointer to a FlutterWindowsView that can be
   // used to update engine windowing and input state.
   WindowBindingHandlerDelegate* binding_handler_delegate_;
 
-  // Member variable holding the current active compositor. nullptr if not set.
+  // Current active compositor. nullptr if not set.
   winrt::Windows::UI::Composition::Compositor compositor_{nullptr};
 
-  // Member variable holding the current CompositionTarget for binding the
+  // Current CompositionTarget for binding the
   // rendering context to the CoreWindow. nullptr if not set.
   winrt::Windows::UI::Composition::CompositionTarget target_{nullptr};
 
-  // Member variable holding the composition tree root object.
+  // Composition tree root object.
   winrt::Windows::UI::Composition::ContainerVisual visual_tree_root_{nullptr};
 
-  // Member variable holding the composition visual representing the emulated
+  // Composition visual representing the emulated
   // cursor visual.
   winrt::Windows::UI::Composition::Visual cursor_visual_{nullptr};
 
@@ -193,21 +194,28 @@ class FlutterWindowWinUWP : public WindowBindingHandler {
   // gamepad.
   std::unique_ptr<GamePadWinUWP> game_pad_{nullptr};
 
-  // Member variable tracking if there is currently a gamepad thread running.
+  // A gamepad thread running is running or not.
   bool game_controller_thread_running_ = false;
 
-  // Member variable tracking if the current context is executing on an XBOX
+  // Is current context is executing on an XBOX
   // device.
   bool running_on_xbox_ = false;
 
-  // Member variable storing the current X overscan compensation factor.
+  // Current X overscan compensation factor.
   float xbox_overscan_x_offset_ = 0.0f;
 
-  // Member variable storing the current Y overscan compensation factor.
+  // Current Y overscan compensation factor.
   float xbox_overscan_y_offset_ = 0.0f;
 
-  // Member variable storing the most recent display information.
-  winrt::Windows::Graphics::Display::DisplayInformation current_display_info_;
+  // Most recent display information.
+  winrt::Windows::Graphics::Display::DisplayInformation current_display_info_{
+      nullptr};
+
+  // Multipler used to map controller velocity to an appropriate scroll input.
+  const double kControllerScrollMultiplier = 3;
+
+  // Multiplier used to scale gamepad input to mouse equivalent response.
+  const int kCursorScale = 30;
 };
 
 }  // namespace flutter

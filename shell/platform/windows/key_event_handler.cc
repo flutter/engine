@@ -45,6 +45,8 @@ const int kNumLock = 1 << 12;
 const int kScrollLock = 1 << 13;
 
 namespace {
+// TODO(clarkezone) need to add support for get keystate
+// https://github.com/flutter/flutter/issues/70202
 #ifndef WINUWP
 /// Calls GetKeyState() an all modifier keys and packs the result in an int,
 /// with the re-defined values declared above for compatibility with the Flutter

@@ -9,13 +9,13 @@
 #include <stdint.h>
 #include <windows.h>
 
-#ifdef WINUWP
-#include <windows.ui.core.h>
-#endif
-
 #include "flutter_export.h"
 #include "flutter_messenger.h"
 #include "flutter_plugin_registrar.h"
+
+#ifdef WINUWP
+#include <windows.ui.core.h>
+#endif
 
 #if defined(__cplusplus)
 extern "C" {
