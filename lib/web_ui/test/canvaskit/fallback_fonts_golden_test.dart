@@ -113,7 +113,9 @@ void testMain() {
 
       await matchPictureGolden(
           'canvaskit_font_fallback_arabic.png', recorder.endRecording());
-    });
+      // TODO: https://github.com/flutter/flutter/issues/60040
+      // TODO: https://github.com/flutter/flutter/issues/71520
+    }, skip: isIosSafari || isFirefox);
 
     test('will gracefully fail if we cannot parse the Google Fonts CSS',
         () async {
