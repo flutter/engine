@@ -447,6 +447,7 @@ void PlatformConfiguration::CompleteKeyDataResponse(uint64_t response_id, bool h
     return;
   }
   auto it = pending_key_responses_.find(response_id);
+  FML_DCHECK(it != pending_key_responses_.end());
   if (it == pending_key_responses_.end()) {
     return;
   }

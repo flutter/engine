@@ -12,6 +12,8 @@ import 'dart:ffi';
 import 'dart:core';
 import 'dart:convert';
 
+import '../../../../lib/ui/ui.dart';
+
 void main() {}
 
 @pragma('vm:entry-point')
@@ -495,6 +497,41 @@ Picture CreateGradientBox(Size size) {
   return baseRecorder.endRecording();
 }
 
+void _echoKeyEvent(
+    int change,
+    int timestamp,
+    int physical,
+    int logical,
+    int charCode,
+    bool synthesized)
+  native 'EchoKeyEvent';
+
+int _serializeKeyChange(KeyChange change) {
+  switch(change) {
+    case KeyChange.up:
+      return 1;
+    case KeyChange.down:
+      return 2;
+    case KeyChange.repeat:
+      return 3;
+  }
+}
+
+@pragma('vm:entry-point')
+void key_data_echo() async { // ignore: non_constant_identifier_names
+  PlatformDispatcher.instance.onKeyData = (KeyData data) {
+    _echoKeyEvent(
+      _serializeKeyChange(data.change),
+      data.timeStamp.inMilliseconds,
+      data.physical,
+      data.logical,
+      data.character == null ? 0 : data.character!.codeUnitAt(0),
+      data.synthesized,
+    );
+    return true;
+  };
+}
+
 @pragma('vm:entry-point')
 void render_gradient() {
   PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
@@ -587,7 +624,7 @@ void can_display_platform_view_with_pixel_ratio() {
 @pragma('vm:entry-point')
 void can_receive_locale_updates() {
   PlatformDispatcher.instance.onLocaleChanged = (){
-    signalNativeCount(PlatformDispatcher.instance.locales!.length);
+    signalNativeCount(PlatformDispatcher.instance.locales.length);
   };
   signalNativeTest();
 }

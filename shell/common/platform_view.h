@@ -128,13 +128,13 @@ class PlatformView {
 
     //--------------------------------------------------------------------------
     /// @brief      Notifies the delegate that the platform view has encountered
-    ///             a key event. This key event needs to be forwarded to
-    ///             the running root isolate hosted by the engine on the UI
-    ///             thread.
+    ///             a key event. This key event and the callback needs to be
+    ///             forwarded to the running root isolate hosted by the engine
+    ///             on the UI thread.
     ///
-    /// @param[in]  packet  The key data packet containing one physical key
-    /// event
-    ///                     and multiple logical key events.
+    /// @param[in]  packet    The key data packet containing one key event.
+    /// @param[in]  callback  Called when the framework has decided whether
+    ///                       to handle this key data.
     ///
     virtual void OnPlatformViewDispatchKeyDataPacket(
         std::unique_ptr<KeyDataPacket> packet,
@@ -599,7 +599,7 @@ class PlatformView {
   /// @param[in]  packet  The key data packet to dispatch to the framework.
   ///
   void DispatchKeyDataPacket(std::unique_ptr<KeyDataPacket> packet,
-      KeyDataPacketCallback callback);
+                             KeyDataPacketCallback callback);
 
   //--------------------------------------------------------------------------
   /// @brief      Used by the embedder to specify a texture that it wants the

@@ -324,12 +324,20 @@ class PlatformConfiguration final {
                                std::vector<uint8_t> args);
 
   //----------------------------------------------------------------------------
-  /// @brief      Notifies the PlatformConfiguration that the client has sent
-  ///             it a message. This call originates in the platform view and
-  ///             has been forwarded through the engine to here.
+  /// @brief      Register a callback to be invoked when the framework has
+  ///             decided whether to handle an event. This callback originates
+  ///             in the platform view and has been forwarded through the engine
+  ///             to here.
   ///
-  /// @param[in]  message  The message sent from the embedder to the Dart
-  ///                      application.
+  ///             This method will move and store the `callback`, associate it
+  ///             with a self-incrementing identifier, the response ID, then
+  ///             return the ID, which is typically used by
+  ///             Window::DispatchKeyDataPacket.
+  ///
+  /// @param[in]  callback  The callback to be registered.
+  ///
+  /// @return     The response ID to be associated with the callback. Using this
+  ///             ID in CompleteKeyDataResponse will invoke the callback.
   ///
   uint64_t RegisterKeyDataResponse(KeyDataPacketCallback callback);
 
@@ -422,12 +430,17 @@ class PlatformConfiguration final {
   void CompletePlatformMessageEmptyResponse(int response_id);
 
   //----------------------------------------------------------------------------
-  /// @brief      Responds to a previous key data message to the engine from the
-  ///             framework.
+  /// @brief      Responds to a previously registered key data message from the
+  ///             framework to the engine.
+  ///
+  ///             For each response_id, this method should be called exactly
+  ///             once. Responding to a response_id that has not been registered
+  ///             or has been invoked will lead to a fatal error.
   ///
   /// @param[in] response_id The unique id that identifies the original platform
-  ///                        message to respond to.
-  /// @param[in] handled     Whether the key is handled.
+  ///                        message to respond to, created by
+  ///                        RegisterKeyDataResponse.
+  /// @param[in] handled     Whether the key data is handled.
   ///
   void CompleteKeyDataResponse(uint64_t response_id, bool handled);
 

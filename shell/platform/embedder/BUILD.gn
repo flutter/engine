@@ -192,6 +192,7 @@ if (enable_unittests) {
       "tests/embedder_test_context_software.cc",
       "tests/embedder_test_context_software.h",
       "tests/embedder_unittests.cc",
+      "tests/embedder_unittests_key_event.cc",
       "tests/embedder_unittests_util.cc",
     ]
 

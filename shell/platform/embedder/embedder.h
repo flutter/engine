@@ -1622,7 +1622,9 @@ FlutterEngineResult FlutterEngineSendPointerEvent(
 /// @param[in]  callback       The callback invoked by the engine when the
 ///                            Flutter application has decided whether it handles
 ///                            this event.
-/// @param[in]  user_data      The context associated with the callback.
+/// @param[in]  user_data      The context associated with the callback. Should
+///                            not be released until `callback` is invoked. Can
+///                            be null.
 ///
 /// @return     The result of the call.
 ///

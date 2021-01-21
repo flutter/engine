@@ -735,10 +735,12 @@ class Engine final : public RuntimeDelegate,
   ///             the platform view and the shell has forwarded the same to the
   ///             engine on the UI task runner here.
   ///
-  /// @param[in]  packet         The key data packet.
+  /// @param[in]  packet    The key data packet.
+  /// @param[in]  callback  Called when the framework has decided whether
+  ///                       to handle this key data.
   ///
   void DispatchKeyDataPacket(std::unique_ptr<KeyDataPacket> packet,
-                              KeyDataPacketCallback callback);
+                             KeyDataPacketCallback callback);
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the engine that the embedder encountered an
