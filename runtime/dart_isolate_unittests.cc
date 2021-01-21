@@ -330,7 +330,8 @@ TEST_F(DartSecondaryIsolateTest, CanLaunchSecondaryIsolates) {
                       LatchCountDown();
                     })));
   AddNativeCallback(
-      "PassMessage", CREATE_NATIVE_ENTRY(([this](Dart_NativeArguments args) {
+      "PassMessageForIsolateTest",
+      CREATE_NATIVE_ENTRY(([this](Dart_NativeArguments args) {
         auto message = tonic::DartConverter<std::string>::FromDart(
             Dart_GetNativeArgument(args, 0));
         ASSERT_EQ("Hello from code is secondary isolate.", message);
@@ -595,6 +596,41 @@ TEST_F(DartIsolateTest, DISABLED_ValidLoadingUnitSucceeds) {
   ASSERT_TRUE(isolate->get()->LoadLoadingUnit(2, std::move(isolate_data),
                                               std::move(isolate_instructions)));
   Wait();
+}
+
+TEST_F(DartIsolateTest, DartPluginRegistrantIsCalled) {
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+
+  std::vector<std::string> messages;
+  fml::CountDownLatch expected_messages(2);
+
+  AddNativeCallback(
+      "PassMessageForDartRegistrantTest",
+      CREATE_NATIVE_ENTRY(
+          ([&expected_messages, &messages](Dart_NativeArguments args) {
+            auto message = tonic::DartConverter<std::string>::FromDart(
+                Dart_GetNativeArgument(args, 0));
+            messages.push_back(message);
+            expected_messages.CountDown();
+          })));
+
+  const auto settings = CreateSettingsForFixture();
+  auto vm_ref = DartVMRef::Create(settings);
+  auto thread = CreateNewThread();
+  TaskRunners task_runners(GetCurrentTestName(),  //
+                           thread,                //
+                           thread,                //
+                           thread,                //
+                           thread                 //
+  );
+  auto isolate = RunDartCodeInIsolate(vm_ref, settings, task_runners, "main",
+                                      {}, GetFixturesPath());
+  ASSERT_TRUE(isolate);
+  ASSERT_EQ(isolate->get()->GetPhase(), DartIsolate::Phase::Running);
+  expected_messages.Wait();
+  ASSERT_EQ(messages.size(), 2u);
+  ASSERT_EQ(messages[0], "_registerPlugins");
+  ASSERT_EQ(messages[1], "main");
 }
 
 }  // namespace testing

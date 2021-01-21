@@ -10,7 +10,17 @@ import 'dart:ui';
 
 import 'split_lib_test.dart' deferred as splitlib;
 
+// ignore: unused_element
+void _registerPlugins() {
+  try {
+    passMessageForDartRegistrantTest('_registerPlugins');
+  } catch(_) {}
+}
+
 void main() {
+ try {
+    passMessageForDartRegistrantTest('main');
+  } catch(_) {}
 }
 
 @pragma('vm:entry-point')
@@ -58,11 +68,12 @@ void testCanSaveCompilationTrace() {
 }
 
 void notifyResult(bool success) native 'NotifyNative';
-void passMessage(String message) native 'PassMessage';
+void passMessageForIsolateTest(String message) native 'PassMessageForIsolateTest';
+void passMessageForDartRegistrantTest(String message) native 'PassMessageForDartRegistrantTest';
 
 void secondaryIsolateMain(String message) {
   print('Secondary isolate got message: ' + message);
-  passMessage('Hello from code is secondary isolate.');
+  passMessageForIsolateTest('Hello from code is secondary isolate.');
   notifyNative();
 }
 
