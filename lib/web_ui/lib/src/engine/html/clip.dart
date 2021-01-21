@@ -222,11 +222,11 @@ class PersistedPhysicalShape extends PersistedContainerSurface
 
   @override
   void apply() {
-    _applyColor();
     _applyShape();
   }
 
   void _applyShape() {
+    _applyColor();
     // Handle special case of round rect physical shape mapping to
     // rounded div.
     final ui.RRect? roundRect = path.toRoundedRect();
@@ -312,8 +312,8 @@ class PersistedPhysicalShape extends PersistedContainerSurface
     /// we size the inner container to cover full pathBounds instead of sizing
     /// to clipping rect bounds (which is the case for elevation == 0.0 where
     /// we shift outer/inner clip area instead to position clip-path).
-    final String svgClipPath = elevation == 0.0 ?
-        _pathToSvgClipPath(path,
+    final String svgClipPath = elevation == 0.0
+        ? _pathToSvgClipPath(path,
             offsetX: -pathBounds.left,
             offsetY: -pathBounds.top,
             scaleX: 1.0 / pathBounds.width,
@@ -323,7 +323,7 @@ class PersistedPhysicalShape extends PersistedContainerSurface
             offsetY: 0.0,
             scaleX: 1.0 / pathBounds.right,
             scaleY: 1.0 / pathBounds.bottom);
-    /// If apply is called multiple times (without update) , remove prior
+    /// If apply is called multiple times (without update), remove prior
     /// svg clip and render elements.
     _clipElement?.remove();
     _svgElement?.remove();
@@ -383,11 +383,8 @@ class PersistedPhysicalShape extends PersistedContainerSurface
   @override
   void update(PersistedPhysicalShape oldSurface) {
     super.update(oldSurface);
-    if (oldSurface.color != color) {
-      _applyColor();
-    }
     if (oldSurface.path != path || oldSurface.elevation != elevation ||
-        oldSurface.shadowColor != shadowColor) {
+        oldSurface.shadowColor != shadowColor || oldSurface.color != color) {
       oldSurface._clipElement?.remove();
       oldSurface._clipElement = null;
       oldSurface._svgElement?.remove();
