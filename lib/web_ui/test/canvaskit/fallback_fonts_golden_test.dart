@@ -138,7 +138,8 @@ void testMain() {
       expect(notoDownloadQueue.isPending, isFalse);
       expect(skiaFontCollection.globalFontFallbacks, isEmpty);
     });
-  });
+    // TODO: https://github.com/flutter/flutter/issues/60040
+  }, skip: isIosSafari);
 }
 
 class TestDownloader extends NotoDownloader {
