@@ -35,7 +35,6 @@ void createVertices() {
   );
   _validateVertices(vertices);
 }
-
 void _validateVertices(Vertices vertices) native 'ValidateVertices';
 
 @pragma('vm:entry-point')
