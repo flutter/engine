@@ -229,7 +229,7 @@ void testMain() async {
     html.Element viewElement3 = builder3.build().webOnlyRootElement;
     html.document.body.append(viewElement3);
     await matchGoldenFile('compositing_physical_update_3.png',
-        region: region);
+        region: region, maxDiffRatePercent: 0.4);
     viewElement3.remove();
 
     /// Update shape from arbitrary path to rect.
@@ -265,7 +265,7 @@ void testMain() async {
     html.Element viewElement5 = builder5.build().webOnlyRootElement;
     html.document.body.append(viewElement5);
     await matchGoldenFile('compositing_physical_update_3.png',
-         region: region);
+         region: region, maxDiffRatePercent: 0.4);
     viewElement5.remove();
 
     /// Update shadow color.
