@@ -270,7 +270,7 @@ void testMain() async {
 
     /// Update shadow color.
     final SurfaceSceneBuilder builder6 = SurfaceSceneBuilder();
-    EngineLayer oldShapeLayer6 = builder6.pushPhysicalShape(
+    builder6.pushPhysicalShape(
       path: cutCornersButton,
       clipBehavior: Clip.hardEdge,
       color: const Color(0xFF00FF00),
