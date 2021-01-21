@@ -690,10 +690,6 @@ bool DartIsolate::MarkIsolateRunnable() {
     return false;
   }
 
-  if (Dart_IsError(plugin_registrant_function)) {
-    plugin_registrant_function = Dart_Null();
-  }
-
   if (tonic::LogIfError(tonic::DartInvokeField(
           Dart_LookupLibrary(tonic::ToDart("dart:ui")), "_runMainZoned",
           {start_main_isolate_function, plugin_registrant_function,
@@ -743,6 +739,10 @@ bool DartIsolate::RunFromLibrary(std::optional<std::string> library_name,
   // This allows embeddings to change the name of the entrypoint function.
   auto plugin_registrant_function =
       ::Dart_GetField(library_handle, tonic::ToDart("_registerPlugins"));
+
+  if (Dart_IsError(plugin_registrant_function)) {
+    plugin_registrant_function = Dart_Null();
+  }
 
   if (!InvokeMainEntrypoint(user_entrypoint_function,
                             plugin_registrant_function, entrypoint_args)) {
