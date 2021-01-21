@@ -733,9 +733,9 @@ bool DartIsolate::RunFromLibrary(std::optional<std::string> library_name,
   // interface based on the configuration of the app's pubpec.yaml, and the
   // plugin's pubspec.yaml.
   //
-  // Since this function may or may not be defined. Check that is
-  // as a top level function, and call it in hooks.dart before the main
-  // entrypoint function.
+  // Since this function may or may not be defined. Check that it is a top
+  // level function, and call it in hooks.dart before the main entrypoint
+  // function.
   //
   // If it's not defined, then just call the main entrypoint function
   // as usual.
