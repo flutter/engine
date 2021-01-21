@@ -10,19 +10,19 @@ namespace flutter {
 KeyDataPacket::KeyDataPacket(size_t character_data_size)
     : data_(sizeof(uint64_t) + sizeof(KeyData) + character_data_size) {
   uint64_t size64 = character_data_size;
-  memcpy(&data()[CharacterSizeStart_()], &size64, sizeof(size64));
+  memcpy(&data_[CharacterSizeStart_()], &size64, sizeof(size64));
 }
 
 KeyDataPacket::~KeyDataPacket() = default;
 
 void KeyDataPacket::SetKeyData(const KeyData& event) {
-  memcpy(&data()[KeyDataStart_()], &event, sizeof(KeyData));
+  memcpy(&data_[KeyDataStart_()], &event, sizeof(KeyData));
 }
 
 void KeyDataPacket::SetCharacter(const char* character) {
   if (character != nullptr) {
-    memcpy(data().data() + CharacterStart_(), character,
-           data().size() - CharacterStart_());
+    memcpy(data_.data() + CharacterStart_(), character,
+           data_.size() - CharacterStart_());
   }
 }
 

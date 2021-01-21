@@ -33,8 +33,6 @@ class KeyDataPacket {
   void SetCharacter(const char* characters);
 
  private:
-  std::vector<uint8_t>& data() { return data_; }
-
   size_t CharacterSizeStart_() { return 0; }
   size_t KeyDataStart_() { return CharacterSizeStart_() + sizeof(uint64_t); }
   size_t CharacterStart_() { return KeyDataStart_() + sizeof(KeyData); }

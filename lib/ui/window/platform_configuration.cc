@@ -486,7 +486,7 @@ void PlatformConfiguration::RegisterNatives(
        true},
       {"PlatformConfiguration_respondToPlatformMessage",
        _RespondToPlatformMessage, 3, true},
-      {"PlatformConfiguration_respondToKeyData", _RespondToKeyData, 2, true},
+      {"PlatformConfiguration_respondToKeyData", _RespondToKeyData, 3, true},
       {"PlatformConfiguration_render", Render, 3, true},
       {"PlatformConfiguration_updateSemantics", UpdateSemantics, 2, true},
       {"PlatformConfiguration_setIsolateDebugName", SetIsolateDebugName, 2,

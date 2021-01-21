@@ -1532,7 +1532,7 @@ FlutterEngineResult FlutterEngineSendKeyEvent(
   size_t character_data_size =
       character == nullptr ? 0 : strnlen(character, kKeyEventCharacterMaxBytes);
 
-  auto message = std::make_unique<flutter::KeyDataPacket>(character_data_size);
+  auto packet = std::make_unique<flutter::KeyDataPacket>(character_data_size);
 
   flutter::KeyData key_data;
   key_data.Clear();
@@ -1542,8 +1542,8 @@ FlutterEngineResult FlutterEngineSendKeyEvent(
   key_data.physical = SAFE_ACCESS(event, physical, 0);
   key_data.logical = SAFE_ACCESS(event, logical, 0);
   key_data.synthesized = SAFE_ACCESS(event, synthesized, false);
-  message->SetKeyData(key_data);
-  message->SetCharacter(character);
+  packet->SetKeyData(key_data);
+  packet->SetCharacter(character);
 
   auto response = [callback, user_data](bool handled) {
         callback(handled, user_data);
@@ -1551,7 +1551,7 @@ FlutterEngineResult FlutterEngineSendKeyEvent(
 
   return reinterpret_cast<flutter::EmbedderEngine*>(engine)
                  ->DispatchKeyDataPacket(
-                   std::move(message),
+                   std::move(packet),
                    response)
              ? kSuccess
              : LOG_EMBEDDER_ERROR(kInternalInconsistency,

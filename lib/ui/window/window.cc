@@ -42,7 +42,7 @@ void Window::DispatchKeyDataPacket(const KeyDataPacket& packet, uint64_t respons
     return;
   tonic::DartState::Scope scope(dart_state);
 
-  const std::vector<uint8_t> buffer(packet.data().size());
+  const std::vector<uint8_t>& buffer = packet.data();
   Dart_Handle data_handle =
       tonic::DartByteData::Create(buffer.data(), buffer.size());
   if (Dart_IsError(data_handle)) {

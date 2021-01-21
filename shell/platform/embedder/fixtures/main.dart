@@ -520,7 +520,7 @@ void key_data_echo() async { // ignore: non_constant_identifier_names
   PlatformDispatcher.instance.onKeyData = (KeyData data) {
     _echoKeyEvent(
       _serializeKeyChange(data.change),
-      data.timeStamp.inMilliseconds,
+      data.timeStamp.inMicroseconds,
       data.physical,
       data.logical,
       data.character == null ? 0 : data.character!.codeUnitAt(0),
@@ -528,6 +528,7 @@ void key_data_echo() async { // ignore: non_constant_identifier_names
     );
     return true;
   };
+  signalNativeTest();
 }
 
 @pragma('vm:entry-point')

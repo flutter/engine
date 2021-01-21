@@ -37,40 +37,44 @@ FlutterKeyEventKind unserializeKind(uint64_t kindInt) {
 TEST_F(EmbedderTest, CorrectlySerializeKeyData) {
   auto message_latch = std::make_shared<fml::AutoResetWaitableEvent>();
   char echoed_string[2] = "m"; // Dummy string that holds one char.
-  FlutterKeyEvent echoed_event;
+  FlutterKeyEvent echoed_event {
+    .character = echoed_string,
+  };
 
   auto native_echo_event = [&](Dart_NativeArguments args) {
     echoed_event.kind = unserializeKind(
         tonic::DartConverter<uint64_t>::FromDart(
-            Dart_GetNativeArgument(args, 1)));
+            Dart_GetNativeArgument(args, 0)));
     echoed_event.timestamp = tonic::DartConverter<uint64_t>::FromDart(
-          Dart_GetNativeArgument(args, 2));
+          Dart_GetNativeArgument(args, 1));
     echoed_event.physical = tonic::DartConverter<uint64_t>::FromDart(
-          Dart_GetNativeArgument(args, 3));
+          Dart_GetNativeArgument(args, 2));
     echoed_event.logical = tonic::DartConverter<uint64_t>::FromDart(
-          Dart_GetNativeArgument(args, 4));
+          Dart_GetNativeArgument(args, 3));
     echoed_string[0] = (char)tonic::DartConverter<uint64_t>::FromDart(
-          Dart_GetNativeArgument(args, 5));
+          Dart_GetNativeArgument(args, 4));
     echoed_event.synthesized = tonic::DartConverter<bool>::FromDart(
-          Dart_GetNativeArgument(args, 6));
+          Dart_GetNativeArgument(args, 5));
 
     message_latch->Signal();
   };
 
-  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
-  context.AddNativeCallback("EchoKeyEvent", CREATE_NATIVE_ENTRY(native_echo_event));
-
-  // fml::AutoResetWaitableEvent latch;
-  // context.AddNativeCallback(
-  //     "SignalNativeTest", CREATE_NATIVE_ENTRY(([&latch](Dart_NativeArguments) {
-  //     })));
-
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
   EmbedderConfigBuilder builder(context);
   builder.SetSoftwareRendererConfig();
   builder.SetDartEntrypoint("key_data_echo");
 
+  context.AddNativeCallback("EchoKeyEvent", CREATE_NATIVE_ENTRY(native_echo_event));
+
+  fml::AutoResetWaitableEvent ready;
+  context.AddNativeCallback(
+      "SignalNativeTest",
+      CREATE_NATIVE_ENTRY(
+          [&ready](Dart_NativeArguments args) { ready.Signal(); }));
+
   auto engine = builder.LaunchEngine();
   ASSERT_TRUE(engine.is_valid());
+  ready.Wait();
 
   const FlutterKeyEvent downEventUpperA {
     .struct_size = sizeof(FlutterKeyEvent),
