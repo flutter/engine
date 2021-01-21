@@ -64,6 +64,8 @@ class CanvasParagraph implements EngineParagraph {
   @override
   bool isLaidOut = false;
 
+  bool get isRtl => paragraphStyle._effectiveTextDirection == ui.TextDirection.rtl;
+
   ui.ParagraphConstraints? _lastUsedConstraints;
 
   late final TextLayoutService _layoutService = TextLayoutService(this);
