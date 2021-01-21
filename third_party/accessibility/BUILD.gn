@@ -80,6 +80,7 @@ if (enable_unittests) {
       "gfx/geometry/rect_unittest.cc",
       "gfx/geometry/size_unittest.cc",
       "gfx/geometry/vector2d_unittest.cc",
+      "gfx/range/range_unittest.cc",
       "gfx/test/gfx_util.cc",
       "gfx/test/gfx_util.h",
     ]
