@@ -42,6 +42,10 @@ Future<void> _findFontsForMissingCodeunits(List<int> codeunits) async {
   Set<_ResolvedNotoSubset> resolvedFonts = <_ResolvedNotoSubset>{};
   for (int codeunit in coveredCodeUnits) {
     for (_NotoFont font in fonts) {
+      if (font.resolvedFont == null) {
+        // We failed to resolve the font earlier.
+        continue;
+      }
       resolvedFonts.addAll(font.resolvedFont!.tree.intersections(codeunit));
     }
   }
@@ -56,8 +60,9 @@ Future<void> _findFontsForMissingCodeunits(List<int> codeunits) async {
     } else {
       if (!notoDownloadQueue.isPending) {
         html.window.console.log(
-            'Could not find a Noto font to display all missing characters. '
-            'Please add a font asset for the missing characters.');
+            'Could not find a set of Noto fonts to display all missing '
+            'characters. Please add a font asset for the missing characters.'
+            ' See: https://flutter.dev/docs/cookbook/design/fonts');
         codeUnitsWithNoKnownFont.addAll(missingCodeUnits);
       }
     }
@@ -92,7 +97,7 @@ Future<void> _findFontsForMissingCodeunits(List<int> codeunits) async {
 ///       src: url(https://fonts.gstatic.com/s/notosanskr/v13/PbykFmXiEBPT4ITbgNA5Cgm20xz64px_1hVWr0wuPNGmlQNMEfD4.2.woff2) format('woff2');
 ///       unicode-range: U+d723-d728, U+d72a-d733, U+d735-d748, U+d74a-d74f, U+d752-d753, U+d755-d757, U+d75a-d75f, U+d762-d764, U+d766-d768, U+d76a-d76b, U+d76d-d76f, U+d771-d787, U+d789-d78b, U+d78d-d78f, U+d791-d797, U+d79a, U+d79c, U+d79e-d7a3, U+f900-f909, U+f90b-f92e;
 ///     }
-_ResolvedNotoFont _makeResolvedNotoFontFromCss(String css, String name) {
+_ResolvedNotoFont? _makeResolvedNotoFontFromCss(String css, String name) {
   List<_ResolvedNotoSubset> subsets = <_ResolvedNotoSubset>[];
   bool resolvingFontFace = false;
   String? fontFaceUrl;
@@ -110,7 +115,8 @@ _ResolvedNotoFont _makeResolvedNotoFontFromCss(String css, String name) {
       if (line.startsWith('  src:')) {
         int urlStart = line.indexOf('url(');
         if (urlStart == -1) {
-          throw new Exception('Unable to resolve Noto font URL: $line');
+          html.window.console.warn('Unable to resolve Noto font URL: $line');
+          return null;
         }
         int urlEnd = line.indexOf(')');
         fontFaceUrl = line.substring(urlStart + 4, urlEnd);
@@ -136,13 +142,22 @@ _ResolvedNotoFont _makeResolvedNotoFontFromCss(String css, String name) {
           }
         }
       } else if (line == '}') {
-        subsets.add(
-            _ResolvedNotoSubset(fontFaceUrl!, name, fontFaceUnicodeRanges!));
+        if (fontFaceUrl == null || fontFaceUnicodeRanges == null) {
+          html.window.console.warn('Unable to parse Google Fonts CSS: $css');
+          return null;
+        }
+        subsets
+            .add(_ResolvedNotoSubset(fontFaceUrl, name, fontFaceUnicodeRanges));
         resolvingFontFace = false;
       } else {
         continue;
       }
     }
+  }
+
+  if (resolvingFontFace) {
+    html.window.console.warn('Unable to parse Google Fonts CSS: $css');
+    return null;
   }
 
   Map<_ResolvedNotoSubset, List<CodeunitRange>> rangesMap =
@@ -177,27 +192,34 @@ Future<void> _registerSymbolsAndEmoji() async {
   String emojiCss =
       await notoDownloadQueue.downloader.downloadAsString(emojiUrl);
 
-  String extractUrlFromCss(String css) {
+  String? extractUrlFromCss(String css) {
     for (final String line in LineSplitter.split(css)) {
       if (line.startsWith('  src:')) {
         int urlStart = line.indexOf('url(');
         if (urlStart == -1) {
-          throw new Exception('Unable to resolve Noto font URL: $line');
+          html.window.console.warn('Unable to resolve Noto font URL: $line');
+          return null;
         }
         int urlEnd = line.indexOf(')');
         return line.substring(urlStart + 4, urlEnd);
       }
     }
-    throw Exception('Unable to determine URL for Noto font');
+    html.window.console.warn('Unable to determine URL for Noto font');
+    return null;
   }
 
-  String symbolsFontUrl = extractUrlFromCss(symbolsCss);
-  String emojiFontUrl = extractUrlFromCss(emojiCss);
+  String? symbolsFontUrl = extractUrlFromCss(symbolsCss);
+  String? emojiFontUrl = extractUrlFromCss(emojiCss);
+
+  if (symbolsFontUrl == null || emojiFontUrl == null) {
+    html.window.console
+        .warn('Error parsing CSS for Noto Emoji and Symbols font.');
+  }
 
   notoDownloadQueue.add(_ResolvedNotoSubset(
-      symbolsFontUrl, 'Noto Sans Symbols', const <CodeunitRange>[]));
+      symbolsFontUrl!, 'Noto Sans Symbols', const <CodeunitRange>[]));
   notoDownloadQueue.add(_ResolvedNotoSubset(
-      emojiFontUrl, 'Noto Color Emoji Compat', const <CodeunitRange>[]));
+      emojiFontUrl!, 'Noto Color Emoji Compat', const <CodeunitRange>[]));
 }
 
 /// Finds the minimum set of fonts which covers all of the [codeunits].
@@ -315,7 +337,7 @@ class _NotoFont {
         _decodingCompleter = Completer<void>();
         String googleFontCss = await notoDownloadQueue.downloader
             .downloadAsString(googleFontsCssUrl);
-        final _ResolvedNotoFont googleFont =
+        final _ResolvedNotoFont? googleFont =
             _makeResolvedNotoFontFromCss(googleFontCss, name);
         resolvedFont = googleFont;
         _decodingCompleter!.complete();

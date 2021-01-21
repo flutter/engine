@@ -42,7 +42,9 @@ void testMain() {
 
     setUp(() {
       notoDownloadQueue.downloader = TestDownloader();
+      TestDownloader.mockDownloads.clear();
       savedCallback = ui.window.onPlatformMessage;
+      skiaFontCollection.debugResetFallbackFonts();
     });
 
     tearDown(() {
@@ -67,6 +69,21 @@ void testMain() {
           savedCallback!(name, data, callback);
         }
       };
+
+      TestDownloader.mockDownloads[
+              'https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic+UI'] =
+          '''
+/* arabic */
+@font-face {
+  font-family: 'Noto Naskh Arabic UI';
+  font-style: normal;
+  font-weight: 400;
+  src: url(packages/ui/assets/NotoNaskhArabic-Regular.ttf) format('ttf');
+  unicode-range: U+0600-06FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE80-FEFC;
+}
+''';
+
+      expect(skiaFontCollection.globalFontFallbacks, isEmpty);
 
       // Creating this paragraph should cause us to start to download the
       // fallback font.
@@ -95,27 +112,34 @@ void testMain() {
       canvas.drawParagraph(paragraph, ui.Offset(200, 120));
 
       await matchPictureGolden(
-        'canvaskit_font_fallback_arabic.png',
-        recorder.endRecording(),
-        write: true,
+          'canvaskit_font_fallback_arabic.png', recorder.endRecording());
+    });
+
+    test('will gracefully fail if we cannot parse the Google Fonts CSS',
+        () async {
+      TestDownloader.mockDownloads[
+              'https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic+UI'] =
+          'invalid CSS... this should cause our parser to fail';
+
+      expect(skiaFontCollection.globalFontFallbacks, isEmpty);
+
+      // Creating this paragraph should cause us to start to download the
+      // fallback font.
+      CkParagraphBuilder pb = CkParagraphBuilder(
+        CkParagraphStyle(),
       );
+      pb.addText('مرحبا');
+
+      // Flush microtasks and test that we didn't start any downloads.
+
+      expect(notoDownloadQueue.isPending, isFalse);
+      expect(skiaFontCollection.globalFontFallbacks, isEmpty);
     });
   });
 }
 
 class TestDownloader extends NotoDownloader {
-  final Map<String, String> mockDownloads = <String, String>{
-    'https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic+UI': '''
-/* arabic */
-@font-face {
-  font-family: 'Noto Naskh Arabic UI';
-  font-style: normal;
-  font-weight: 400;
-  src: url(packages/ui/assets/NotoNaskhArabic-Regular.ttf) format('ttf');
-  unicode-range: U+0600-06FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE80-FEFC;
-}
-''',
-  };
+  static final Map<String, String> mockDownloads = <String, String>{};
   @override
   Future<String> downloadAsString(String url) async {
     if (mockDownloads.containsKey(url)) {

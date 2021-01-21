@@ -22,6 +22,9 @@ class SkiaFontCollection {
   /// Fonts which have been registered and loaded.
   final List<_RegisteredFont> _registeredFonts = <_RegisteredFont>[];
 
+  /// Fallback fonts which have been registered and loaded.
+  final List<_RegisteredFont> _registeredFallbackFonts = <_RegisteredFont>[];
+
   final Map<String, List<SkTypeface>> familyToTypefaceMap =
       <String, List<SkTypeface>>{};
 
@@ -40,6 +43,13 @@ class SkiaFontCollection {
     familyToTypefaceMap.clear();
 
     for (var font in _registeredFonts) {
+      fontProvider!.registerFont(font.bytes, font.family);
+      familyToTypefaceMap
+          .putIfAbsent(font.family, () => <SkTypeface>[])
+          .add(font.typeface);
+    }
+
+    for (var font in _registeredFallbackFonts) {
       fontProvider!.registerFont(font.bytes, font.family);
       familyToTypefaceMap
           .putIfAbsent(font.family, () => <SkTypeface>[])
@@ -146,7 +156,7 @@ class SkiaFontCollection {
     int fontFallbackTag = _fontFallbackCounts[family]!;
     _fontFallbackCounts[family] = _fontFallbackCounts[family]! + 1;
     String countedFamily = '$family $fontFallbackTag';
-    _registeredFonts.add(_RegisteredFont(bytes, countedFamily));
+    _registeredFallbackFonts.add(_RegisteredFont(bytes, countedFamily));
     globalFontFallbacks.add(countedFamily);
   }
 
@@ -162,6 +172,13 @@ class SkiaFontCollection {
     return fetchResult
         .arrayBuffer()
         .then<ByteBuffer>((dynamic x) => x as ByteBuffer);
+  }
+
+  /// Resets the fallback fonts. Used for tests.
+  void debugResetFallbackFonts() {
+    _registeredFallbackFonts.clear();
+    globalFontFallbacks.clear();
+    _fontFallbackCounts.clear();
   }
 
   SkFontMgr? skFontMgr;

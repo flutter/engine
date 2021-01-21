@@ -5,20 +5,26 @@
 // @dart = 2.12
 part of engine;
 
-/// Associates a [T] with one or more [CodeunitRange]s.
+/// A tree which stores a set of intervals that can be queried for intersection.
 class IntervalTree<T> {
+  /// The root node of the interval tree.
   final IntervalTreeNode<T> root;
 
   IntervalTree._(this.root);
 
+  /// Creates an interval tree from a mapping of [T] values to a list of ranges.
+  ///
+  /// When the interval tree is queried, it will return a list of [T]s which
+  /// have a range which contains the point.
   factory IntervalTree.createFromRanges(Map<T, List<CodeunitRange>> rangesMap) {
     // Get a list of all the ranges ordered by start index.
     List<IntervalTreeNode<T>> intervals = <IntervalTreeNode<T>>[];
-    for (T key in rangesMap.keys) {
-      for (CodeunitRange range in rangesMap[key]!) {
+    rangesMap.forEach((T key, List<CodeunitRange> rangeList) {
+      for (CodeunitRange range in rangeList) {
         intervals.add(IntervalTreeNode<T>(key, range.start, range.end));
       }
-    }
+    });
+
     intervals
         .sort((IntervalTreeNode<T> a, IntervalTreeNode<T> b) => a.low - b.low);
 
@@ -37,6 +43,9 @@ class IntervalTree<T> {
       return root;
     }
 
+    // Given a node, computes the highest `high` point of all of the subnodes.
+    //
+    // As a side effect, this also computes the high point of all subnodes.
     void _computeHigh(IntervalTreeNode<T> root) {
       if (root.left == null && root.right == null) {
         root.computedHigh = root.high;
