@@ -10,16 +10,20 @@ import 'dart:ui';
 
 import 'split_lib_test.dart' deferred as splitlib;
 
-// ignore: unused_element
-void _registerPlugins() {
+@pragma('vm:entry-point')
+void _registerPlugins() { // ignore: unused_element
   try {
+    print('_registerPlugins');
     passMessageForDartRegistrantTest('_registerPlugins');
+    print('_registerPlugins 2');
   } catch(_) {}
 }
 
 void main() {
  try {
+    print('main');
     passMessageForDartRegistrantTest('main');
+    print('main 2');
   } catch(_) {}
 }
 
