@@ -35,6 +35,11 @@ class VulkanWindow {
                std::unique_ptr<VulkanNativeSurface> native_surface,
                bool render_to_surface);
 
+  VulkanWindow(const sk_sp<GrDirectContext>& context,
+               fml::RefPtr<VulkanProcTable> proc_table,
+               std::unique_ptr<VulkanNativeSurface> native_surface,
+               bool render_to_surface);
+
   ~VulkanWindow();
 
   bool IsValid() const;
