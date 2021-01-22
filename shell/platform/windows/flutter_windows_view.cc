@@ -46,9 +46,11 @@ void FlutterWindowsView::SetEngine(
                     binding_handler_->GetDpiScale());
 }
 
-void FlutterWindowsView::RegisterKeyboardHookHandlers(flutter::BinaryMessenger* messenger) {
+void FlutterWindowsView::RegisterKeyboardHookHandlers(
+    flutter::BinaryMessenger* messenger) {
   AddKeyboardHookHandler(std::make_unique<flutter::KeyEventHandler>(messenger));
-  AddKeyboardHookHandler(std::make_unique<flutter::TextInputPlugin>(messenger, this));
+  AddKeyboardHookHandler(
+      std::make_unique<flutter::TextInputPlugin>(messenger, this));
 }
 
 void FlutterWindowsView::AddKeyboardHookHandler(

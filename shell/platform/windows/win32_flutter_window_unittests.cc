@@ -9,6 +9,7 @@
 #include "flutter/shell/platform/windows/testing/engine_embedder_api_modifier.h"
 #include "flutter/shell/platform/windows/testing/mock_window_binding_handler.h"
 #include "flutter/shell/platform/windows/testing/win32_flutter_window_test.h"
+#include "flutter/shell/platform/windows/text_input_plugin_delegate.h"
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -75,10 +76,11 @@ class SpyKeyEventHandler : public KeyboardHookHandler {
 
 // A text input plugin that can be spied on while it forwards calls to the real
 // text input plugin.
-class SpyTextInputPlugin : public KeyboardHookHandler {
+class SpyTextInputPlugin : public KeyboardHookHandler,
+                           public TextInputPluginDelegate {
  public:
   SpyTextInputPlugin(flutter::BinaryMessenger* messenger) {
-    real_implementation_ = std::make_unique<TextInputPlugin>(messenger);
+    real_implementation_ = std::make_unique<TextInputPlugin>(messenger, this);
     ON_CALL(*this, KeyboardHook(_, _, _, _, _, _))
         .WillByDefault(
             Invoke(real_implementation_.get(), &TextInputPlugin::KeyboardHook));
@@ -96,6 +98,8 @@ class SpyTextInputPlugin : public KeyboardHookHandler {
                     bool extended));
   MOCK_METHOD2(TextHook,
                void(FlutterWindowsView* window, const std::u16string& text));
+
+  virtual void OnCursorRectUpdated(const Rect& rect) {}
 
  private:
   std::unique_ptr<TextInputPlugin> real_implementation_;

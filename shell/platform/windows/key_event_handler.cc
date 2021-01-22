@@ -88,6 +88,18 @@ int GetModsForKeyState() {
   return mods;
 }
 
+// This uses event data instead of generating a serial number because
+// information can't be attached to the redispatched events, so it has to be
+// possible to compute an ID from the identifying data in the event when it is
+// received again in order to differentiate between events that are new, and
+// events that have been redispatched.
+//
+// Another alternative would be to compute a checksum from all the data in the
+// event (just compute it over the bytes in the struct, probably skipping
+// timestamps), but the fields used below are enough to differentiate them, and
+// since Windows does some processing on the events (coming up with virtual key
+// codes, setting timestamps, etc.), it's not clear that the redispatched
+// events would have the same checksums.
 uint64_t CalculateEventId(int scancode, int action, bool extended) {
   // Calculate a key event ID based on the scan code of the key pressed,
   // and the flags we care about.
@@ -95,6 +107,7 @@ uint64_t CalculateEventId(int scancode, int action, bool extended) {
                       (extended ? KEYEVENTF_EXTENDEDKEY : 0x0))
                      << 16);
 }
+
 }  // namespace
 
 KeyEventHandler::KeyEventHandler(flutter::BinaryMessenger* messenger,
