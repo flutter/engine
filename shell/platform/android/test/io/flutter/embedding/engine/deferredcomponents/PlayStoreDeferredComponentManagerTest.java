@@ -23,6 +23,7 @@ import androidx.annotation.NonNull;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.loader.ApplicationInfoLoader;
 import java.io.File;
+import java.util.HashMap;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -70,6 +71,9 @@ public class PlayStoreDeferredComponentManagerTest {
   private class TestPlayStoreDeferredComponentManager extends PlayStoreDeferredComponentManager {
     public TestPlayStoreDeferredComponentManager(Context context, FlutterJNI jni) {
       super(context, jni);
+      loadingUnitIdToModuleNames = new HashMap<>();
+      loadingUnitIdToModuleNames.put(5, "FakeModuleName5");
+      loadingUnitIdToModuleNames.put(2, "FakeModuleName2");
     }
 
     @Override
@@ -222,5 +226,15 @@ public class PlayStoreDeferredComponentManagerTest {
     TestPlayStoreDeferredComponentManager playStoreManager =
         new TestPlayStoreDeferredComponentManager(spyContext, jni);
     assertEquals(playStoreManager.getDeferredComponentInstallState(-1, "invalidName"), "unknown");
+  }
+
+  @Test
+  public void invalidSearchPathsAreIgnored() throws NameNotFoundException {
+    TestPlayStoreDeferredComponentManager playStoreManager =
+        new TestPlayStoreDeferredComponentManager(spyContext, jni);
+
+    assertTrue(playStoreManager.uninstallDeferredComponent(5, null));
+    assertTrue(playStoreManager.uninstallDeferredComponent(2, null));
+    assertFalse(playStoreManager.uninstallDeferredComponent(3, null));
   }
 }

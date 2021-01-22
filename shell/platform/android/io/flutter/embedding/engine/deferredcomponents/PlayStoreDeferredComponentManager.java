@@ -55,7 +55,7 @@ public class PlayStoreDeferredComponentManager implements DeferredComponentManag
   private @NonNull SparseArray<String> sessionIdToState;
   private @NonNull Map<String, Integer> nameToSessionId;
 
-  private @NonNull Map<Integer, List<String>> loadingUnitIdToModuleNames;
+  protected @NonNull Map<Integer, List<String>> loadingUnitIdToModuleNames;
 
   private FeatureInstallStateUpdatedListener listener;
 
