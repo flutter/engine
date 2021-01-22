@@ -55,7 +55,7 @@ public class PlayStoreDeferredComponentManager implements DeferredComponentManag
   private @NonNull SparseArray<String> sessionIdToState;
   private @NonNull Map<String, Integer> nameToSessionId;
 
-  protected @NonNull Map<Integer, List<String>> loadingUnitIdToModuleNames;
+  protected @NonNull Map<Integer, String> loadingUnitIdToModuleNames;
 
   private FeatureInstallStateUpdatedListener listener;
 
@@ -210,25 +210,22 @@ public class PlayStoreDeferredComponentManager implements DeferredComponentManag
     loadingUnitIdToModuleNames = new HashMap<>();
     // Parse the metadata string. An example encoded string is:
     //
-    //    "2:module1:module2,3:module3,4:module1"
+    //    "2:module2,3:module3,4:module1"
     //
-    // Where loading unit 2 is included in both module1 and module2, loading
-    // unit 3 is included in module3, and loading unit 4 is included in module1.
+    // Where loading unit 2 is included in module2, loading unit 3 is
+    // included in module3, and loading unit 4 is included in module1.
     String mappingKey = DeferredComponentManager.class.getName() + ".loadingUnitMapping";
-    String rawMappingString = getApplicationInfo().metaData
-        .getString(mappingKey, null);
+    String rawMappingString = getApplicationInfo().metaData.getString(mappingKey, null);
     if (rawMappingString == null) {
       Log.e(
           TAG,
-          "No loading unit to dynamic feature module name found. Ensure '" + mappingKey + "' is defined in the base module's AndroidManifest.");
+          "No loading unit to dynamic feature module name found. Ensure '"
+              + mappingKey
+              + "' is defined in the base module's AndroidManifest.");
     } else {
       for (String entry : rawMappingString.split(",")) {
         String[] splitEntry = entry.split(":");
-        List<String> moduleNames = new ArrayList<>();
-        for (int i = 1; i < splitEntry.length; i++) {
-          moduleNames.add(splitEntry[i]);
-        }
-        loadingUnitIdToModuleNames.put(Integer.parseInt(splitEntry[0]), moduleNames);
+        loadingUnitIdToModuleNames.put(Integer.parseInt(splitEntry[0]), splitEntry[1]);
       }
     }
   }
@@ -264,7 +261,7 @@ public class PlayStoreDeferredComponentManager implements DeferredComponentManag
 
   public void installDeferredComponent(int loadingUnitId, String moduleName) {
     String resolvedModuleName =
-        moduleName != null ? moduleName : loadingUnitIdToModuleNames.get(loadingUnitId).get(0);
+        moduleName != null ? moduleName : loadingUnitIdToModuleNames.get(loadingUnitId);
     if (resolvedModuleName == null) {
       Log.e(
           TAG,
@@ -327,7 +324,7 @@ public class PlayStoreDeferredComponentManager implements DeferredComponentManag
 
   public String getDeferredComponentInstallState(int loadingUnitId, String moduleName) {
     String resolvedModuleName =
-        moduleName != null ? moduleName : loadingUnitIdToModuleNames.get(loadingUnitId).get(0);
+        moduleName != null ? moduleName : loadingUnitIdToModuleNames.get(loadingUnitId);
     if (resolvedModuleName == null) {
       Log.e(
           TAG,
@@ -430,7 +427,7 @@ public class PlayStoreDeferredComponentManager implements DeferredComponentManag
 
   public boolean uninstallDeferredComponent(int loadingUnitId, String moduleName) {
     String resolvedModuleName =
-        moduleName != null ? moduleName : loadingUnitIdToModuleNames.get(loadingUnitId).get(0);
+        moduleName != null ? moduleName : loadingUnitIdToModuleNames.get(loadingUnitId);
     if (resolvedModuleName == null) {
       Log.e(
           TAG,
