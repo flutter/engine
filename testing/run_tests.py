@@ -133,17 +133,7 @@ def RunCCTests(build_dir, filter):
   # TODO(44614): Re-enable after https://github.com/flutter/flutter/issues/44614 has been addressed.
   # RunEngineExecutable(build_dir, 'fml_unittests', filter, [ fml_unittests_filter ] + shuffle_flags)
 
-  # TODO(tbd): Remove this explicit testing of release builds after lightweight
-  # isolates are supported in JIT mode.
-  release_runtime_out_dir = os.path.join(out_dir, "host_release")
-  try:
-    EnsureReleaseRuntimeTestsAreBuilt(release_runtime_out_dir)
-  except Exception:
-    print("Warning: Unable to build release runtime_unittests, this may cause execution of those tests to fail if they aren't already built.")
-  RunEngineExecutable(release_runtime_out_dir, 'runtime_unittests', filter, shuffle_flags)
-
-  if release_runtime_out_dir != build_dir:
-    RunEngineExecutable(build_dir, 'runtime_unittests', filter, shuffle_flags)
+  RunEngineExecutable(build_dir, 'runtime_unittests', filter, shuffle_flags)
 
   RunEngineExecutable(build_dir, 'tonic_unittests', filter, shuffle_flags)
 
@@ -313,25 +303,6 @@ def EnsureJavaTestsAreBuilt(android_out_dir):
   ]
   RunCmd(gn_command, cwd=buildroot_dir)
   RunCmd(ninja_command, cwd=buildroot_dir)
-
-def EnsureReleaseRuntimeTestsAreBuilt(runtime_out_dir):
-  """Builds a release build of the runtime tests."""
-  ninja_command = [
-    'autoninja',
-    '-C',
-    runtime_out_dir,
-    'runtime_unittests'
-  ]
-
-  if not os.path.exists(runtime_out_dir):
-    gn_command = [
-      os.path.join(buildroot_dir, 'flutter', 'tools', 'gn'),
-      '--runtime-mode=release',
-      '--no-lto',
-    ]
-    RunCmd(gn_command, cwd=buildroot_dir)
-  RunCmd(ninja_command, cwd=buildroot_dir)
-  return runtime_out_dir
 
 def EnsureIosTestsAreBuilt(ios_out_dir):
   """Builds the engine variant and the test dylib containing the XCTests"""
