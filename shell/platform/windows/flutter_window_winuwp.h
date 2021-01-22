@@ -57,6 +57,9 @@ class FlutterWindowWinUWP : public WindowBindingHandler {
   // |WindowBindingHandler|
   void UpdateFlutterCursor(const std::string& cursor_name) override;
 
+  // |WindowBindingHandler|
+  void OnWindowResized() override;
+
  private:
   // Returns a bounds structure containing width and height information
   // for the backing CoreWindow in either view or physical pixels depending on

@@ -70,6 +70,8 @@ void FlutterWindowWinUWP::UpdateFlutterCursor(const std::string& cursor_name) {
   // https://github.com/flutter/flutter/issues/70199
 }
 
+void FlutterWindowWinUWP::OnWindowResized() {}
+
 float FlutterWindowWinUWP::GetDpiScale() {
   auto disp = winrt::Windows::Graphics::Display::DisplayInformation::
       GetForCurrentView();
