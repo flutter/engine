@@ -137,7 +137,7 @@ TEST_F(DartIsolateTest, SpawnIsolate) {
   ASSERT_TRUE(spawn);
   ASSERT_EQ(spawn->GetPhase(), DartIsolate::Phase::Running);
 
-  // TODO(tbd): Remove conditional once isolate groups are supported by JIT.
+  // TODO(74520): Remove conditional once isolate groups are supported by JIT.
   if (DartVM::IsRunningPrecompiledCode()) {
     Dart_IsolateGroup isolate_group;
     {
