@@ -12,7 +12,7 @@ GPUSurfaceVulkan::GPUSurfaceVulkan(
     GPUSurfaceVulkanDelegate* delegate,
     std::unique_ptr<vulkan::VulkanNativeSurface> native_surface,
     bool render_to_surface)
-    : GPUSurfaceVulkan(nullptr /* GrDirectContext */,
+    : GPUSurfaceVulkan(/*context=*/ nullptr,
                        delegate,
                        std::move(native_surface),
                        render_to_surface) {}
