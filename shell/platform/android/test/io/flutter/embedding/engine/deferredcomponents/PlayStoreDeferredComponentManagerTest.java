@@ -231,6 +231,8 @@ public class PlayStoreDeferredComponentManagerTest {
 
   @Test
   public void loadingUnitMappingFindsMatch() throws NameNotFoundException {
+    TestFlutterJNI jni = new TestFlutterJNI();
+    Context spyContext = spy(RuntimeEnvironment.application);
     TestPlayStoreDeferredComponentManager playStoreManager =
         new TestPlayStoreDeferredComponentManager(spyContext, jni);
 
