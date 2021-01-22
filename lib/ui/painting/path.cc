@@ -88,6 +88,7 @@ void CanvasPath::resetVolatility() {
 void CanvasPath::ReleaseDartWrappableReference() const {
   FML_DCHECK(path_tracker_);
   path_tracker_->Erase(tracked_path_);
+  RefCountedDartWrappable::ReleaseDartWrappableReference();
 }
 
 int CanvasPath::getFillType() {
