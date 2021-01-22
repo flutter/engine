@@ -71,6 +71,38 @@ TEST(FlEngineTest, MousePointer) {
   EXPECT_TRUE(called);
 }
 
+// Checks dispatching a semantics action works.
+TEST(FlEngineTest, DispatchSemanticsAction) {
+  g_autoptr(FlEngine) engine = make_mock_engine();
+  FlutterEngineProcTable* embedder_api = fl_engine_get_embedder_api(engine);
+
+  bool called = false;
+  embedder_api->DispatchSemanticsAction = MOCK_ENGINE_PROC(
+      DispatchSemanticsAction,
+      ([&called](auto engine, uint64_t id, FlutterSemanticsAction action,
+                 const uint8_t* data, size_t data_length) {
+        EXPECT_EQ(id, static_cast<uint64_t>(42));
+        EXPECT_EQ(action, kFlutterSemanticsActionTap);
+        EXPECT_EQ(data_length, static_cast<size_t>(4));
+        EXPECT_EQ(data[0], 't');
+        EXPECT_EQ(data[1], 'e');
+        EXPECT_EQ(data[2], 's');
+        EXPECT_EQ(data[3], 't');
+        called = true;
+
+        return kSuccess;
+      }));
+
+  g_autoptr(GError) error = nullptr;
+  EXPECT_TRUE(fl_engine_start(engine, &error));
+  EXPECT_EQ(error, nullptr);
+  g_autoptr(GBytes) data = g_bytes_new_static("test", 4);
+  fl_engine_dispatch_semantics_action(engine, 42, kFlutterSemanticsActionTap,
+                                      data);
+
+  EXPECT_TRUE(called);
+}
+
 // Checks sending platform messages works.
 TEST(FlEngineTest, PlatformMessage) {
   g_autoptr(FlEngine) engine = make_mock_engine();
@@ -147,9 +179,6 @@ TEST(FlEngineTest, PlatformMessageResponse) {
 
 // Checks settings plugin sends settings on startup.
 TEST(FlEngineTest, SettingsPlugin) {
-  GTEST_SKIP()
-      << "disabled: see https://github.com/flutter/flutter/issues/73517";
-
   g_autoptr(FlEngine) engine = make_mock_engine();
   FlutterEngineProcTable* embedder_api = fl_engine_get_embedder_api(engine);
 
@@ -169,20 +198,19 @@ TEST(FlEngineTest, SettingsPlugin) {
             FL_MESSAGE_CODEC(codec), data, &error);
         EXPECT_NE(settings, nullptr);
         EXPECT_EQ(error, nullptr);
-        g_printerr("%s\n", fl_value_to_string(settings));
 
-        g_autoptr(FlValue) text_scale_factor =
+        FlValue* text_scale_factor =
             fl_value_lookup_string(settings, "textScaleFactor");
         EXPECT_NE(text_scale_factor, nullptr);
         EXPECT_EQ(fl_value_get_type(text_scale_factor), FL_VALUE_TYPE_FLOAT);
 
-        g_autoptr(FlValue) always_use_24hr_format =
+        FlValue* always_use_24hr_format =
             fl_value_lookup_string(settings, "alwaysUse24HourFormat");
         EXPECT_NE(always_use_24hr_format, nullptr);
         EXPECT_EQ(fl_value_get_type(always_use_24hr_format),
                   FL_VALUE_TYPE_BOOL);
 
-        g_autoptr(FlValue) platform_brightness =
+        FlValue* platform_brightness =
             fl_value_lookup_string(settings, "platformBrightness");
         EXPECT_NE(platform_brightness, nullptr);
         EXPECT_EQ(fl_value_get_type(platform_brightness), FL_VALUE_TYPE_STRING);

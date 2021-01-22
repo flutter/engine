@@ -950,12 +950,17 @@ class BitmapCanvas extends EngineCanvas {
     } else {
       _drawPointsPaint.style = ui.PaintingStyle.fill;
     }
-    _drawPointsPaint.color = paint.color;
-    _drawPointsPaint.strokeWidth = paint.strokeWidth;
+    _drawPointsPaint.color = paint.color ?? const ui.Color(0xFF000000);
     _drawPointsPaint.maskFilter = paint.maskFilter;
 
+    final double dpr = ui.window.devicePixelRatio;
+    // Use hairline (device pixel when strokeWidth is not specified).
+    final double strokeWidth = paint.strokeWidth == null ? 1.0 / dpr
+        : paint.strokeWidth!;
+    _drawPointsPaint.strokeWidth = strokeWidth;
     _setUpPaint(_drawPointsPaint, null);
-    _canvasPool.drawPoints(pointMode, points, paint.strokeWidth! / 2.0);
+    // Draw point using circle with half radius.
+    _canvasPool.drawPoints(pointMode, points, strokeWidth / 2.0);
     _tearDownPaint();
   }
 
