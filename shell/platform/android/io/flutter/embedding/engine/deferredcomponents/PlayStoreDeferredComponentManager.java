@@ -207,7 +207,14 @@ public class PlayStoreDeferredComponentManager implements DeferredComponentManag
     sessionIdToState = new SparseArray<>();
     nameToSessionId = new HashMap<>();
 
+
     loadingUnitIdToModuleNames = new HashMap<>();
+    // Parse the metadata string. An example encoded string is:
+    //
+    //    "2:module1:module2,3:module3,4:module1"
+    //
+    // Where loading unit 2 is included in both module1 and module2, loading
+    // unit 3 is included in module3, and loading unit 4 is included in module1.
     String rawMappingString = getApplicationInfo().metaData
         .getString("flutterDeferredComponentsLoadingUnitMapping", null);
     if (rawMappingString == null) {
