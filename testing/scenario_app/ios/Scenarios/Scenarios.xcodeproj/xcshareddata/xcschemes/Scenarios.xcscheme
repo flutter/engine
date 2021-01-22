@@ -59,6 +59,11 @@
                BlueprintName = "ScenariosUITests"
                ReferencedContainer = "container:Scenarios.xcodeproj">
             </BuildableReference>
+            <SkippedTests>
+               <Test
+                  Identifier = "PlatformViewRotation/testPlatformView">
+               </Test>
+            </SkippedTests>
          </TestableReference>
       </Testables>
    </TestAction>
