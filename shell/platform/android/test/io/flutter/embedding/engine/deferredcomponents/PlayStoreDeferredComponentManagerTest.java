@@ -230,7 +230,7 @@ public class PlayStoreDeferredComponentManagerTest {
   }
 
   @Test
-  public void invalidSearchPathsAreIgnored() throws NameNotFoundException {
+  public void loadingUnitMappingFindsMatch() throws NameNotFoundException {
     TestPlayStoreDeferredComponentManager playStoreManager =
         new TestPlayStoreDeferredComponentManager(spyContext, jni);
 

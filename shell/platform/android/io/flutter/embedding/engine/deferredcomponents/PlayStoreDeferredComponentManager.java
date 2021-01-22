@@ -207,7 +207,6 @@ public class PlayStoreDeferredComponentManager implements DeferredComponentManag
     sessionIdToState = new SparseArray<>();
     nameToSessionId = new HashMap<>();
 
-
     loadingUnitIdToModuleNames = new HashMap<>();
     // Parse the metadata string. An example encoded string is:
     //
@@ -215,12 +214,13 @@ public class PlayStoreDeferredComponentManager implements DeferredComponentManag
     //
     // Where loading unit 2 is included in both module1 and module2, loading
     // unit 3 is included in module3, and loading unit 4 is included in module1.
+    String mappingKey = DeferredComponentManager.class.getName() + ".loadingUnitMapping";
     String rawMappingString = getApplicationInfo().metaData
-        .getString("flutterDeferredComponentsLoadingUnitMapping", null);
+        .getString(mappingKey, null);
     if (rawMappingString == null) {
       Log.e(
           TAG,
-          "No loading unit to dynamic feature module name found. Ensure 'flutterDeferredComponentsLoadingUnitMapping' is defined in the base module's AndroidManifest.");
+          "No loading unit to dynamic feature module name found. Ensure '" + mappingKey + "' is defined in the base module's AndroidManifest.");
     } else {
       for (String entry : rawMappingString.split(",")) {
         String[] splitEntry = entry.split(":");
