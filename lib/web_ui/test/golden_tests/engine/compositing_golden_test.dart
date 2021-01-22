@@ -229,7 +229,7 @@ void testMain() async {
     html.Element viewElement3 = builder3.build().webOnlyRootElement;
     html.document.body.append(viewElement3);
     await matchGoldenFile('compositing_physical_update_3.png',
-        region: region, maxDiffRatePercent: 0.4);
+        region: region, maxDiffRatePercent: 0.8);
     viewElement3.remove();
 
     /// Update shape from arbitrary path to rect.
