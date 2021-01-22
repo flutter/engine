@@ -10,22 +10,7 @@ import 'dart:ui';
 
 import 'split_lib_test.dart' deferred as splitlib;
 
-@pragma('vm:entry-point')
-void _registerPlugins() { // ignore: unused_element
-  try {
-    print('_registerPlugins');
-    passMessageForDartRegistrantTest('_registerPlugins');
-    print('_registerPlugins 2');
-  } catch(_) {}
-}
-
-void main() {
- try {
-    print('main');
-    passMessageForDartRegistrantTest('main');
-    print('main 2');
-  } catch(_) {}
-}
+void main() {}
 
 @pragma('vm:entry-point')
 void sayHi() {
@@ -72,12 +57,11 @@ void testCanSaveCompilationTrace() {
 }
 
 void notifyResult(bool success) native 'NotifyNative';
-void passMessageForIsolateTest(String message) native 'PassMessageForIsolateTest';
-void passMessageForDartRegistrantTest(String message) native 'PassMessageForDartRegistrantTest';
+void passMessage(String message) native 'PassMessage';
 
 void secondaryIsolateMain(String message) {
   print('Secondary isolate got message: ' + message);
-  passMessageForIsolateTest('Hello from code is secondary isolate.');
+  passMessage('Hello from code is secondary isolate.');
   notifyNative();
 }
 
@@ -129,4 +113,25 @@ void testCanConvertListOfInts(List<int> args){
                 args[1] == 2 &&
                 args[2] == 3 &&
                 args[3] == 4);
+}
+
+bool didCallRegistrantBeforeEntrypoint = false;
+
+// Test the Dart plugin registrant.
+// _registerPlugins requires the entrypoint annotation, so the compiler doesn't tree shake it.
+@pragma('vm:entry-point')
+void _registerPlugins() { // ignore: unused_element
+  if (didCallRegistrantBeforeEntrypoint) {
+    throw '_registerPlugins is being called twice';
+  }
+  didCallRegistrantBeforeEntrypoint = true;
+}
+
+@pragma('vm:entry-point')
+void mainForPluginRegistrantTest() { // ignore: unused_element
+  if (didCallRegistrantBeforeEntrypoint) {
+    passMessage('_registerPlugins was called');
+  } else {
+    passMessage('_registerPlugins was not called');
+  }
 }

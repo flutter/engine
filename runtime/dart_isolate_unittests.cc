@@ -330,8 +330,7 @@ TEST_F(DartSecondaryIsolateTest, CanLaunchSecondaryIsolates) {
                       LatchCountDown();
                     })));
   AddNativeCallback(
-      "PassMessageForIsolateTest",
-      CREATE_NATIVE_ENTRY(([this](Dart_NativeArguments args) {
+      "PassMessage", CREATE_NATIVE_ENTRY(([this](Dart_NativeArguments args) {
         auto message = tonic::DartConverter<std::string>::FromDart(
             Dart_GetNativeArgument(args, 0));
         ASSERT_EQ("Hello from code is secondary isolate.", message);
@@ -602,17 +601,16 @@ TEST_F(DartIsolateTest, DartPluginRegistrantIsCalled) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 
   std::vector<std::string> messages;
-  fml::CountDownLatch expected_messages(2);
+  fml::AutoResetWaitableEvent latch;
 
   AddNativeCallback(
-      "PassMessageForDartRegistrantTest",
-      CREATE_NATIVE_ENTRY(
-          ([&expected_messages, &messages](Dart_NativeArguments args) {
-            auto message = tonic::DartConverter<std::string>::FromDart(
-                Dart_GetNativeArgument(args, 0));
-            messages.push_back(message);
-            expected_messages.CountDown();
-          })));
+      "PassMessage",
+      CREATE_NATIVE_ENTRY(([&latch, &messages](Dart_NativeArguments args) {
+        auto message = tonic::DartConverter<std::string>::FromDart(
+            Dart_GetNativeArgument(args, 0));
+        messages.push_back(message);
+        latch.Signal();
+      })));
 
   const auto settings = CreateSettingsForFixture();
   auto vm_ref = DartVMRef::Create(settings);
@@ -623,14 +621,14 @@ TEST_F(DartIsolateTest, DartPluginRegistrantIsCalled) {
                            thread,                //
                            thread                 //
   );
-  auto isolate = RunDartCodeInIsolate(vm_ref, settings, task_runners, "main",
-                                      {}, GetFixturesPath());
+  auto isolate = RunDartCodeInIsolate(vm_ref, settings, task_runners,
+                                      "mainForPluginRegistrantTest", {},
+                                      GetFixturesPath());
   ASSERT_TRUE(isolate);
   ASSERT_EQ(isolate->get()->GetPhase(), DartIsolate::Phase::Running);
-  expected_messages.Wait();
-  ASSERT_EQ(messages.size(), 2u);
-  ASSERT_EQ(messages[0], "_registerPlugins");
-  ASSERT_EQ(messages[1], "main");
+  latch.Wait();
+  ASSERT_EQ(messages.size(), 1u);
+  ASSERT_EQ(messages[0], "_registerPlugins was called");
 }
 
 }  // namespace testing

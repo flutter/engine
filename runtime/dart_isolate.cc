@@ -742,9 +742,6 @@ bool DartIsolate::RunFromLibrary(std::optional<std::string> library_name,
 
   if (Dart_IsError(plugin_registrant_function)) {
     plugin_registrant_function = Dart_Null();
-    FML_DLOG(ERROR) << " plugin_registrant_function IS NULL  ";
-  } else {
-    FML_DLOG(ERROR) << " plugin_registrant_function IS NOT NULL  ";
   }
 
   if (!InvokeMainEntrypoint(user_entrypoint_function,
