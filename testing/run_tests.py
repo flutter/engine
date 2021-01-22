@@ -135,7 +135,11 @@ def RunCCTests(build_dir, filter):
 
   # TODO(tbd): Remove this explicit testing of release builds after lightweight
   # isolates are supported in JIT mode.
-  release_runtime_out_dir = EnsureReleaseRuntimeTestsAreBuilt()
+  release_runtime_out_dir = os.path.join(out_dir, "host_release")
+  try:
+    EnsureReleaseRuntimeTestsAreBuilt(release_runtime_out_dir)
+  except Exception:
+    print("Warning: Unable to build release runtime_unittests, this may cause execution of those tests to fail if they aren't already built.")
   RunEngineExecutable(release_runtime_out_dir, 'runtime_unittests', filter, shuffle_flags)
 
   if release_runtime_out_dir != build_dir:
@@ -310,10 +314,8 @@ def EnsureJavaTestsAreBuilt(android_out_dir):
   RunCmd(gn_command, cwd=buildroot_dir)
   RunCmd(ninja_command, cwd=buildroot_dir)
 
-def EnsureReleaseRuntimeTestsAreBuilt(variant="host_release"):
+def EnsureReleaseRuntimeTestsAreBuilt(runtime_out_dir):
   """Builds a release build of the runtime tests."""
-  runtime_out_dir = os.path.join(out_dir, variant)
-
   ninja_command = [
     'autoninja',
     '-C',
