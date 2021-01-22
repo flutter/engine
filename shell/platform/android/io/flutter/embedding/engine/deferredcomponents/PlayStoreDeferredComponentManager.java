@@ -23,6 +23,8 @@ import com.google.android.play.core.splitinstall.model.SplitInstallErrorCode;
 import com.google.android.play.core.splitinstall.model.SplitInstallSessionStatus;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterJNI;
+import io.flutter.embedding.engine.loader.ApplicationInfoLoader;
+import io.flutter.embedding.engine.loader.FlutterApplicationInfo;
 import io.flutter.embedding.engine.systemchannels.DeferredComponentChannel;
 import java.io.File;
 import java.util.ArrayList;
@@ -43,6 +45,7 @@ public class PlayStoreDeferredComponentManager implements DeferredComponentManag
   private @Nullable FlutterJNI flutterJNI;
   private @Nullable DeferredComponentChannel channel;
   private @NonNull Context context;
+  private @NonNull FlutterApplicationInfo flutterApplicationInfo;
   // Each request to install a feature module gets a session ID. These maps associate
   // the session ID with the loading unit and module name that was requested.
   private @NonNull SparseArray<String> sessionIdToName;
@@ -191,6 +194,7 @@ public class PlayStoreDeferredComponentManager implements DeferredComponentManag
       @NonNull Context context, @Nullable FlutterJNI flutterJNI) {
     this.context = context;
     this.flutterJNI = flutterJNI;
+    this.flutterApplicationInfo = ApplicationInfoLoader.load(context);
     splitInstallManager = SplitInstallManagerFactory.create(context);
     listener = new FeatureInstallStateUpdatedListener();
     splitInstallManager.registerListener(listener);
@@ -322,10 +326,7 @@ public class PlayStoreDeferredComponentManager implements DeferredComponentManag
       context = context.createPackageContext(context.getPackageName(), 0);
 
       AssetManager assetManager = context.getAssets();
-      flutterJNI.updateJavaAssetManager(
-          assetManager,
-          // TODO(garyq): Made the "flutter_assets" directory dynamic based off of DartEntryPoint.
-          "flutter_assets");
+      flutterJNI.updateJavaAssetManager(assetManager, flutterApplicationInfo.flutterAssetsDir);
     } catch (NameNotFoundException e) {
       throw new RuntimeException(e);
     }
@@ -341,7 +342,8 @@ public class PlayStoreDeferredComponentManager implements DeferredComponentManag
     }
 
     // This matches/depends on dart's loading unit naming convention, which we use unchanged.
-    String aotSharedLibraryName = "app.so-" + loadingUnitId + ".part.so";
+    String aotSharedLibraryName =
+        flutterApplicationInfo.aotSharedLibraryName + "-" + loadingUnitId + ".part.so";
 
     // Possible values: armeabi, armeabi-v7a, arm64-v8a, x86, x86_64, mips, mips64
     String abi;
@@ -380,6 +382,11 @@ public class PlayStoreDeferredComponentManager implements DeferredComponentManag
     }
 
     List<String> searchPaths = new ArrayList<>();
+
+    // Add the bare filename as the first search path. In some devices, the so
+    // file can be dlopen-ed with just the file name.
+    searchPaths.add(aotSharedLibraryName);
+
     for (String path : apkPaths) {
       searchPaths.add(path + "!lib/" + abi + "/" + aotSharedLibraryName);
     }
