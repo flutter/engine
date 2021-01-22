@@ -21,7 +21,7 @@ namespace vulkan {
 VulkanWindow::VulkanWindow(fml::RefPtr<VulkanProcTable> proc_table,
                            std::unique_ptr<VulkanNativeSurface> native_surface,
                            bool render_to_surface)
-    : VulkanWindow(nullptr,
+    : VulkanWindow(nullptr /* GrDirectContext */,
                    proc_table,
                    std::move(native_surface),
                    render_to_surface) {}
