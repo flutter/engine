@@ -105,7 +105,7 @@ GPUSurfaceGL::GPUSurfaceGL(sk_sp<GrDirectContext> gr_context,
 
   delegate_->GLContextClearCurrent();
 
-  valid_ = true;
+  valid_ = gr_context != nullptr;
 }
 
 GPUSurfaceGL::~GPUSurfaceGL() {
