@@ -20,8 +20,7 @@ class DartProject {
   // - flutter_assets (as built by the Flutter tool)
   // - app.so, for an AOT build (as built by the Flutter tool)
   //
-  // The path can either be absolute, or relative to the directory containing
-  // the running executable.
+  // The path must be absolute.
   explicit DartProject(const std::wstring& assetspath,
                        const std::wstring& icupath,
                        const std::wstring& aotpath) {

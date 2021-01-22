@@ -13,10 +13,6 @@ config("relative_angle_headers") {
   include_dirs = [ "//third_party/angle/include" ]
 }
 
-config("usecorewindow") {
-  defines = [ "USECOREWINDOW" ]
-}
-
 # Any files that are built by clients (client_wrapper code, library headers for
 # implementations using this shared code, etc.) include the public headers
 # assuming they are in the include path. This configuration should be added to
@@ -111,12 +107,14 @@ source_set("flutter_windows_source") {
   configs += [
     "//flutter/shell/platform/common/cpp:desktop_library_implementation",
     "//third_party/angle:gl_prototypes",
-    ":usecorewindow",
   ]
 
   public_configs = [ ":relative_angle_headers" ]
 
-  defines = [ "FLUTTER_ENGINE_NO_PROTOTYPES" ]
+  defines = [
+    "FLUTTER_ENGINE_NO_PROTOTYPES",
+    "USECOREWINDOW",
+  ]
 
   deps = [
     ":flutter_windows_headers",
@@ -160,43 +158,31 @@ test_fixtures("flutter_windows_fixtures") {
   fixtures = []
 }
 
-if (target_os == "winuwp") {
-  executable("flutter_windows_unittests") {
-    testonly = true
+executable("flutter_windows_unittests") {
+  testonly = true
 
+  if (target_os == "winuwp") {
     libs = [ "windowsapp.lib" ]
-
-    sources = [
-      # "flutter_project_bundle_unittests.cc", //TODO failing due to switches test failing.  Blocked on https://github.com/flutter/flutter/issues/74153
-      # "flutter_windows_engine_unittests.cc", //TODO failing to send / receive platform message get plugins working first.  Blocked on https://github.com/flutter/flutter/issues/74155
-      "string_conversion_unittests.cc",
-      "system_utils_unittests.cc",
-      "testing/engine_embedder_api_modifier.h",
-    ]
-
-    public_configs = [ "//flutter:config" ]
-
-    deps = [
-      ":flutter_windows_fixtures",
-      ":flutter_windows_headers",
-      ":flutter_windows_source",
-      "//flutter/shell/platform/common/cpp:common_cpp",
-      "//flutter/shell/platform/embedder:embedder_as_internal_library",
-      "//flutter/shell/platform/embedder:embedder_test_utils",
-      "//flutter/testing",
-      "//third_party/rapidjson",
-    ]
   }
-} else {
-  executable("flutter_windows_unittests") {
-    testonly = true
 
-    sources = [
+  # Common Windows test sources.
+  sources = [
+    # "flutter_project_bundle_unittests.cc", //TODO failing due to switches test failing.  Blocked on https://github.com/flutter/flutter/issues/74153
+    # "flutter_windows_engine_unittests.cc", //TODO failing to send / receive platform message get plugins working first.  Blocked on https://github.com/flutter/flutter/issues/74155
+    "string_conversion_unittests.cc",
+    "system_utils_unittests.cc",
+    "testing/engine_embedder_api_modifier.h",
+  ]
+
+  # Target-specific sources.
+  if (target_os == "winuwp") {
+    # TODO(clarkezone) add UWP tests
+    # https://github.com/flutter/flutter/issues/70197
+  } else {
+    sources += [
+      # TODO move first two tests to common once above TODO's unblocked.
       "flutter_project_bundle_unittests.cc",
       "flutter_windows_engine_unittests.cc",
-      "string_conversion_unittests.cc",
-      "system_utils_unittests.cc",
-      "testing/engine_embedder_api_modifier.h",
       "testing/mock_win32_window.cc",
       "testing/mock_win32_window.h",
       "testing/win32_flutter_window_test.cc",
@@ -206,20 +192,20 @@ if (target_os == "winuwp") {
       "win32_window_proc_delegate_manager_unittests.cc",
       "win32_window_unittests.cc",
     ]
-
-    public_configs = [ "//flutter:config" ]
-
-    deps = [
-      ":flutter_windows_fixtures",
-      ":flutter_windows_headers",
-      ":flutter_windows_source",
-      "//flutter/shell/platform/common/cpp:common_cpp",
-      "//flutter/shell/platform/embedder:embedder_as_internal_library",
-      "//flutter/shell/platform/embedder:embedder_test_utils",
-      "//flutter/testing",
-      "//third_party/rapidjson",
-    ]
   }
+
+  public_configs = [ "//flutter:config" ]
+
+  deps = [
+    ":flutter_windows_fixtures",
+    ":flutter_windows_headers",
+    ":flutter_windows_source",
+    "//flutter/shell/platform/common/cpp:common_cpp",
+    "//flutter/shell/platform/embedder:embedder_as_internal_library",
+    "//flutter/shell/platform/embedder:embedder_test_utils",
+    "//flutter/testing",
+    "//third_party/rapidjson",
+  ]
 }
 
 shared_library("flutter_windows_glfw") {
