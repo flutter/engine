@@ -55,7 +55,7 @@ public class PlayStoreDeferredComponentManager implements DeferredComponentManag
   private @NonNull SparseArray<String> sessionIdToState;
   private @NonNull Map<String, Integer> nameToSessionId;
 
-  protected @NonNull Map<Integer, String> loadingUnitIdToModuleNames;
+  protected @NonNull SparseArray<String> loadingUnitIdToModuleNames;
 
   private FeatureInstallStateUpdatedListener listener;
 
@@ -207,7 +207,7 @@ public class PlayStoreDeferredComponentManager implements DeferredComponentManag
     sessionIdToState = new SparseArray<>();
     nameToSessionId = new HashMap<>();
 
-    loadingUnitIdToModuleNames = new HashMap<>();
+    loadingUnitIdToModuleNames = new SparseArray<>();
     // Parse the metadata string. An example encoded string is:
     //
     //    "2:module2,3:module3,4:module1"
