@@ -13,7 +13,6 @@ FlutterWindowWinUWP::FlutterWindowWinUWP(
   window_ = cw;
 
   SetEventHandlers();
-  ConfigureGamePad();
   ConfigureXboxSpecific();
 
   current_display_info_ = winrt::Windows::Graphics::Display::
@@ -30,10 +29,6 @@ WindowsRenderTarget FlutterWindowWinUWP::GetRenderTarget() {
   target_.Root(visual_tree_root_);
 
   cursor_visual_ = CreateCursorVisual();
-
-  if (game_controller_thread_running_) {
-    visual_tree_root_.Children().InsertAtTop(cursor_visual_);
-  }
 
   render_target_ = compositor_.CreateSpriteVisual();
   if (running_on_xbox_) {
@@ -152,59 +147,6 @@ void FlutterWindowWinUWP::SetEventHandlers() {
   auto display = winrt::Windows::Graphics::Display::DisplayInformation::
       GetForCurrentView();
   display.DpiChanged({this, &FlutterWindowWinUWP::OnDpiChanged});
-}
-
-void FlutterWindowWinUWP::StartGamepadCursorThread() {
-  if (worker_loop_ != nullptr &&
-      worker_loop_.Status() ==
-          winrt::Windows::Foundation::AsyncStatus::Started) {
-    return;
-  }
-
-  winrt::Windows::UI::Core::CoreDispatcher dispatcher = window_.Dispatcher();
-
-  auto workItemHandler = winrt::Windows::System::Threading::WorkItemHandler(
-      [this, dispatcher](winrt::Windows::Foundation::IAsyncAction action) {
-        while (action.Status() ==
-               winrt::Windows::Foundation::AsyncStatus::Started) {
-          dispatcher.RunAsync(
-              winrt::Windows::UI::Core::CoreDispatcherPriority::Normal,
-              [this, dispatcher]() { game_pad_->Process(); });
-          std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        }
-      });
-
-  worker_loop_ = winrt::Windows::System::Threading::ThreadPool::RunAsync(
-      workItemHandler, winrt::Windows::System::Threading::WorkItemPriority::Low,
-      winrt::Windows::System::Threading::WorkItemOptions::TimeSliced);
-}
-
-void FlutterWindowWinUWP::ConfigureGamePad() {
-  DualAxisCallback leftStick = [=](double x, double y) {
-    OnGamePadLeftStickMoved(x, y);
-  };
-
-  DualAxisCallback rightStick = [=](double x, double y) {
-    OnGamePadRightStickMoved(x, y);
-  };
-
-  ButtonCallback pressedcallback =
-      [=](winrt::Windows::Gaming::Input::GamepadButtons buttons) {
-        OnGamePadButtonPressed(buttons);
-      };
-
-  ButtonCallback releasedcallback =
-      [=](winrt::Windows::Gaming::Input::GamepadButtons buttons) {
-        OnGamePadButtonReleased(buttons);
-      };
-  GamepadAddedRemovedCallback changed = [=]() {
-    OnGamePadControllersChanged();
-  };
-
-  game_pad_ = std::make_unique<GamePadWinUWP>(leftStick, rightStick, nullptr,
-                                              nullptr, pressedcallback,
-                                              releasedcallback, changed);
-  game_pad_->Initialize();
 }
 
 void FlutterWindowWinUWP::ConfigureXboxSpecific() {
@@ -347,101 +289,6 @@ void FlutterWindowWinUWP::OnCharacterReceived(
   if (keycode >= u' ') {
     std::u16string text({keycode});
     binding_handler_delegate_->OnText(text);
-  }
-}
-
-void FlutterWindowWinUWP::OnGamePadLeftStickMoved(double x, double y) {
-  float new_x =
-      cursor_visual_.Offset().x + (kCursorScale * static_cast<float>(x));
-
-  float new_y =
-      cursor_visual_.Offset().y + (kCursorScale * -static_cast<float>(y));
-
-  WindowBoundsWinUWP logical_bounds = GetBounds(current_display_info_, false);
-
-  if (new_x > 0 && new_y > 0 && new_x < logical_bounds.width &&
-      new_y < logical_bounds.height) {
-    cursor_visual_.Offset({new_x, new_y, 0});
-    if (!running_on_xbox_) {
-      const double inverse_dpi_scale = GetDpiScale();
-      binding_handler_delegate_->OnPointerMove(
-          cursor_visual_.Offset().x * inverse_dpi_scale,
-          cursor_visual_.Offset().y * inverse_dpi_scale);
-    } else {
-      binding_handler_delegate_->OnPointerMove(cursor_visual_.Offset().x,
-                                               cursor_visual_.Offset().y);
-    }
-  }
-}
-
-void FlutterWindowWinUWP::OnGamePadRightStickMoved(double x, double y) {
-  if (!running_on_xbox_) {
-    const double inverse_dpi_scale = GetDpiScale();
-
-    binding_handler_delegate_->OnScroll(
-        cursor_visual_.Offset().x * inverse_dpi_scale,
-        cursor_visual_.Offset().y * inverse_dpi_scale,
-        x * kControllerScrollMultiplier, y * kControllerScrollMultiplier, 1);
-  } else {
-    binding_handler_delegate_->OnScroll(
-        cursor_visual_.Offset().x, cursor_visual_.Offset().y,
-        x * kControllerScrollMultiplier, y * kControllerScrollMultiplier, 1);
-  }
-}
-
-void FlutterWindowWinUWP::OnGamePadButtonPressed(
-    winrt::Windows::Gaming::Input::GamepadButtons buttons) {
-  if ((buttons & winrt::Windows::Gaming::Input::GamepadButtons::A) ==
-      winrt::Windows::Gaming::Input::GamepadButtons::A) {
-    if (!running_on_xbox_) {
-      const double inverse_dpi_scale = GetDpiScale();
-      binding_handler_delegate_->OnPointerDown(
-          cursor_visual_.Offset().x * inverse_dpi_scale,
-          cursor_visual_.Offset().y * inverse_dpi_scale,
-          FlutterPointerMouseButtons::kFlutterPointerButtonMousePrimary);
-    } else {
-      binding_handler_delegate_->OnPointerDown(
-          cursor_visual_.Offset().x, cursor_visual_.Offset().y,
-          FlutterPointerMouseButtons::kFlutterPointerButtonMousePrimary);
-    }
-  }
-}
-
-void FlutterWindowWinUWP::OnGamePadButtonReleased(
-    winrt::Windows::Gaming::Input::GamepadButtons buttons) {
-  if ((buttons & winrt::Windows::Gaming::Input::GamepadButtons::A) ==
-      winrt::Windows::Gaming::Input::GamepadButtons::A) {
-    if (!running_on_xbox_) {
-      const double inverse_dpi_scale = GetDpiScale();
-
-      binding_handler_delegate_->OnPointerUp(
-          cursor_visual_.Offset().x * inverse_dpi_scale,
-          cursor_visual_.Offset().y * inverse_dpi_scale,
-          FlutterPointerMouseButtons::kFlutterPointerButtonMousePrimary);
-    } else {
-      binding_handler_delegate_->OnPointerUp(
-          cursor_visual_.Offset().x, cursor_visual_.Offset().y,
-          FlutterPointerMouseButtons::kFlutterPointerButtonMousePrimary);
-    }
-  }
-}
-
-void FlutterWindowWinUWP::OnGamePadControllersChanged() {
-  // TODO lock here
-  if (game_pad_->HasController()) {
-    if (!game_controller_thread_running_) {
-      if (cursor_visual_ != nullptr) {
-        visual_tree_root_.Children().InsertAtTop(cursor_visual_);
-      }
-      StartGamepadCursorThread();
-      game_controller_thread_running_ = true;
-    } else {
-      if (cursor_visual_ != nullptr) {
-        visual_tree_root_.Children().Remove(cursor_visual_);
-      }
-      game_controller_thread_running_ = false;
-      // TODO stop game thread
-    }
   }
 }
 
