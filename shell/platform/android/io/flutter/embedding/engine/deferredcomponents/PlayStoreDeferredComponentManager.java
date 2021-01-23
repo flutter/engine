@@ -11,6 +11,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.AssetManager;
 import android.os.Build;
+import android.os.Bundle;
 import android.util.SparseArray;
 import android.util.SparseIntArray;
 import androidx.annotation.NonNull;
@@ -208,26 +209,7 @@ public class PlayStoreDeferredComponentManager implements DeferredComponentManag
     nameToSessionId = new HashMap<>();
 
     loadingUnitIdToModuleNames = new SparseArray<>();
-    // Parse the metadata string. An example encoded string is:
-    //
-    //    "2:module2,3:module3,4:module1"
-    //
-    // Where loading unit 2 is included in module2, loading unit 3 is
-    // included in module3, and loading unit 4 is included in module1.
-    String mappingKey = DeferredComponentManager.class.getName() + ".loadingUnitMapping";
-    String rawMappingString = getApplicationInfo().metaData.getString(mappingKey, null);
-    if (rawMappingString == null) {
-      Log.e(
-          TAG,
-          "No loading unit to dynamic feature module name found. Ensure '"
-              + mappingKey
-              + "' is defined in the base module's AndroidManifest.");
-    } else {
-      for (String entry : rawMappingString.split(",")) {
-        String[] splitEntry = entry.split(":");
-        loadingUnitIdToModuleNames.put(Integer.parseInt(splitEntry[0]), splitEntry[1]);
-      }
-    }
+    initLoadingUnitMappingToModuleNames();
   }
 
   public void setJNI(@NonNull FlutterJNI flutterJNI) {
@@ -256,6 +238,35 @@ public class PlayStoreDeferredComponentManager implements DeferredComponentManag
           .getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
     } catch (NameNotFoundException e) {
       throw new RuntimeException(e);
+    }
+  }
+
+  // Obtain and parses the metadata string. An example encoded string is:
+  //
+  //    "2:module2,3:module3,4:module1"
+  //
+  // Where loading unit 2 is included in module2, loading unit 3 is
+  // included in module3, and loading unit 4 is included in module1.
+  private void initLoadingUnitMappingToModuleNames() {
+    String mappingKey = DeferredComponentManager.class.getName() + ".loadingUnitMapping";
+    ApplicationInfo applicationInfo = getApplicationInfo();
+    if (applicationInfo != null) {
+      Bundle metaData = applicationInfo.metaData;
+      if (metaData != null) {
+        String rawMappingString = metaData.getString(mappingKey, null);
+        if (rawMappingString == null) {
+          Log.e(
+              TAG,
+              "No loading unit to dynamic feature module name found. Ensure '"
+                  + mappingKey
+                  + "' is defined in the base module's AndroidManifest.");
+        } else {
+          for (String entry : rawMappingString.split(",")) {
+            String[] splitEntry = entry.split(":");
+            loadingUnitIdToModuleNames.put(Integer.parseInt(splitEntry[0]), splitEntry[1]);
+          }
+        }
+      }
     }
   }
 
