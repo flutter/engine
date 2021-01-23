@@ -20,11 +20,11 @@ import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.AssetManager;
 import android.os.Bundle;
+import android.util.SparseArray;
 import androidx.annotation.NonNull;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.loader.ApplicationInfoLoader;
 import java.io.File;
-import java.util.HashMap;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -72,7 +72,7 @@ public class PlayStoreDeferredComponentManagerTest {
   private class TestPlayStoreDeferredComponentManager extends PlayStoreDeferredComponentManager {
     public TestPlayStoreDeferredComponentManager(Context context, FlutterJNI jni) {
       super(context, jni);
-      loadingUnitIdToModuleNames = new HashMap<>();
+      loadingUnitIdToModuleNames = new SparseArray<>();
       loadingUnitIdToModuleNames.put(5, "FakeModuleName5");
       loadingUnitIdToModuleNames.put(2, "FakeModuleName2");
     }
