@@ -448,7 +448,9 @@ public class PlayStoreDeferredComponentManager implements DeferredComponentManag
     List<String> modulesToUninstall = new ArrayList<>();
     modulesToUninstall.add(resolvedModuleName);
     splitInstallManager.deferredUninstall(modulesToUninstall);
-    sessionIdToState.delete(nameToSessionId.get(resolvedModuleName));
+    if (nameToSessionId.get(resolvedModuleName) != null) {
+      sessionIdToState.delete(nameToSessionId.get(resolvedModuleName));
+    }
     return true;
   }
 
