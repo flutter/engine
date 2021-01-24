@@ -59,9 +59,7 @@ class TextInputManager {
   // This method should be invoked when handling cursor position/size updates.
   void UpdateCaretRect(const Rect& rect);
 
-  // Returns the cursor position within the composing range.
-  //
-  // The returned value is relative to the start of the composing range.
+  // Returns the cursor position relative to the start of the composing range.
   long GetComposingCursorPosition() const;
 
   // Returns the contents of the composing string.
