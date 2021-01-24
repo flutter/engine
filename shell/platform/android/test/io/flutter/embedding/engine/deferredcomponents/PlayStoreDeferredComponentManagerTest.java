@@ -5,6 +5,8 @@
 package io.flutter.embedding.engine.deferredcomponents;
 
 import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.doReturn;
@@ -18,6 +20,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.AssetManager;
 import android.os.Bundle;
+import android.util.SparseArray;
 import androidx.annotation.NonNull;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.loader.ApplicationInfoLoader;
@@ -35,7 +38,7 @@ public class PlayStoreDeferredComponentManagerTest {
     public int loadDartDeferredLibraryCalled = 0;
     public int updateAssetManagerCalled = 0;
     public int deferredComponentInstallFailureCalled = 0;
-    public String sharedLibraryName;
+    public String[] searchPaths;
     public int loadingUnitId;
     public AssetManager assetManager;
     public String assetBundlePath;
@@ -43,9 +46,9 @@ public class PlayStoreDeferredComponentManagerTest {
     public TestFlutterJNI() {}
 
     @Override
-    public void loadDartDeferredLibrary(int loadingUnitId, @NonNull String sharedLibraryName) {
+    public void loadDartDeferredLibrary(int loadingUnitId, @NonNull String[] searchPaths) {
       loadDartDeferredLibraryCalled++;
-      this.sharedLibraryName = sharedLibraryName;
+      this.searchPaths = searchPaths;
       this.loadingUnitId = loadingUnitId;
     }
 
@@ -69,6 +72,9 @@ public class PlayStoreDeferredComponentManagerTest {
   private class TestPlayStoreDeferredComponentManager extends PlayStoreDeferredComponentManager {
     public TestPlayStoreDeferredComponentManager(Context context, FlutterJNI jni) {
       super(context, jni);
+      loadingUnitIdToModuleNames = new SparseArray<>();
+      loadingUnitIdToModuleNames.put(5, "FakeModuleName5");
+      loadingUnitIdToModuleNames.put(2, "FakeModuleName2");
     }
 
     @Override
@@ -85,7 +91,9 @@ public class PlayStoreDeferredComponentManagerTest {
     Context spyContext = spy(RuntimeEnvironment.application);
     doReturn(spyContext).when(spyContext).createPackageContext(any(), anyInt());
     doReturn(null).when(spyContext).getAssets();
-    String soTestPath = "libapp.so-123.part.so";
+    String soTestFilename = "libapp.so-123.part.so";
+    String soTestPath = "test/path/" + soTestFilename;
+    doReturn(new File(soTestPath)).when(spyContext).getFilesDir();
     TestPlayStoreDeferredComponentManager playStoreManager =
         new TestPlayStoreDeferredComponentManager(spyContext, jni);
     jni.setDeferredComponentManager(playStoreManager);
@@ -96,7 +104,9 @@ public class PlayStoreDeferredComponentManagerTest {
     assertEquals(jni.updateAssetManagerCalled, 1);
     assertEquals(jni.deferredComponentInstallFailureCalled, 0);
 
-    assertEquals(jni.sharedLibraryName, soTestPath);
+    assertEquals(jni.searchPaths[0], soTestFilename);
+    assertTrue(jni.searchPaths[1].endsWith(soTestPath));
+    assertEquals(jni.searchPaths.length, 2);
     assertEquals(jni.loadingUnitId, 123);
     assertEquals(jni.assetBundlePath, "flutter_assets");
   }
@@ -118,7 +128,9 @@ public class PlayStoreDeferredComponentManagerTest {
         .thenReturn(applicationInfo);
     doReturn(packageManager).when(spyContext).getPackageManager();
 
-    String soTestPath = "custom_name.so-123.part.so";
+    String soTestFilename = "custom_name.so-123.part.so";
+    String soTestPath = "test/path/" + soTestFilename;
+    doReturn(new File(soTestPath)).when(spyContext).getFilesDir();
     TestPlayStoreDeferredComponentManager playStoreManager =
         new TestPlayStoreDeferredComponentManager(spyContext, jni);
     jni.setDeferredComponentManager(playStoreManager);
@@ -129,9 +141,60 @@ public class PlayStoreDeferredComponentManagerTest {
     assertEquals(jni.updateAssetManagerCalled, 1);
     assertEquals(jni.deferredComponentInstallFailureCalled, 0);
 
-    assertEquals(jni.sharedLibraryName, soTestPath);
+    assertEquals(jni.searchPaths[0], soTestFilename);
+    assertTrue(jni.searchPaths[1].endsWith(soTestPath));
+    assertEquals(jni.searchPaths.length, 2);
     assertEquals(jni.loadingUnitId, 123);
     assertEquals(jni.assetBundlePath, "custom_assets");
+  }
+
+  @Test
+  public void searchPathsAddsApks() throws NameNotFoundException {
+    TestFlutterJNI jni = new TestFlutterJNI();
+    Context spyContext = spy(RuntimeEnvironment.application);
+    doReturn(spyContext).when(spyContext).createPackageContext(any(), anyInt());
+    doReturn(null).when(spyContext).getAssets();
+    String apkTestPath = "test/path/TestModuleName_armeabi_v7a.apk";
+    doReturn(new File(apkTestPath)).when(spyContext).getFilesDir();
+    TestPlayStoreDeferredComponentManager playStoreManager =
+        new TestPlayStoreDeferredComponentManager(spyContext, jni);
+    jni.setDeferredComponentManager(playStoreManager);
+
+    assertEquals(jni.loadingUnitId, 0);
+
+    playStoreManager.installDeferredComponent(123, "TestModuleName");
+    assertEquals(jni.loadDartDeferredLibraryCalled, 1);
+    assertEquals(jni.updateAssetManagerCalled, 1);
+    assertEquals(jni.deferredComponentInstallFailureCalled, 0);
+
+    assertEquals(jni.searchPaths[0], "libapp.so-123.part.so");
+    assertTrue(jni.searchPaths[1].endsWith(apkTestPath + "!lib/armeabi-v7a/libapp.so-123.part.so"));
+    assertEquals(jni.searchPaths.length, 2);
+    assertEquals(jni.loadingUnitId, 123);
+  }
+
+  @Test
+  public void invalidSearchPathsAreIgnored() throws NameNotFoundException {
+    TestFlutterJNI jni = new TestFlutterJNI();
+    Context spyContext = spy(RuntimeEnvironment.application);
+    doReturn(spyContext).when(spyContext).createPackageContext(any(), anyInt());
+    doReturn(null).when(spyContext).getAssets();
+    String apkTestPath = "test/path/invalidpath.apk";
+    doReturn(new File(apkTestPath)).when(spyContext).getFilesDir();
+    TestPlayStoreDeferredComponentManager playStoreManager =
+        new TestPlayStoreDeferredComponentManager(spyContext, jni);
+    jni.setDeferredComponentManager(playStoreManager);
+
+    assertEquals(jni.loadingUnitId, 0);
+
+    playStoreManager.installDeferredComponent(123, "TestModuleName");
+    assertEquals(jni.loadDartDeferredLibraryCalled, 1);
+    assertEquals(jni.updateAssetManagerCalled, 1);
+    assertEquals(jni.deferredComponentInstallFailureCalled, 0);
+
+    assertEquals(jni.searchPaths[0], "libapp.so-123.part.so");
+    assertEquals(jni.searchPaths.length, 1);
+    assertEquals(jni.loadingUnitId, 123);
   }
 
   @Test
@@ -164,5 +227,17 @@ public class PlayStoreDeferredComponentManagerTest {
     TestPlayStoreDeferredComponentManager playStoreManager =
         new TestPlayStoreDeferredComponentManager(spyContext, jni);
     assertEquals(playStoreManager.getDeferredComponentInstallState(-1, "invalidName"), "unknown");
+  }
+
+  @Test
+  public void loadingUnitMappingFindsMatch() throws NameNotFoundException {
+    TestFlutterJNI jni = new TestFlutterJNI();
+    Context spyContext = spy(RuntimeEnvironment.application);
+    TestPlayStoreDeferredComponentManager playStoreManager =
+        new TestPlayStoreDeferredComponentManager(spyContext, jni);
+
+    assertTrue(playStoreManager.uninstallDeferredComponent(5, null));
+    assertTrue(playStoreManager.uninstallDeferredComponent(2, null));
+    assertFalse(playStoreManager.uninstallDeferredComponent(3, null));
   }
 }

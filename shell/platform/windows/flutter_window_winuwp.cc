@@ -65,6 +65,10 @@ void FlutterWindowWinUWP::UpdateFlutterCursor(const std::string& cursor_name) {
   // https://github.com/flutter/flutter/issues/70199
 }
 
+void FlutterWindowWinUWP::UpdateCursorRect(const Rect& rect) {
+  // TODO(cbracken): Implement IMM candidate window positioning.
+}
+
 void FlutterWindowWinUWP::OnWindowResized() {}
 
 float FlutterWindowWinUWP::GetDpiScale() {
@@ -257,14 +261,15 @@ void FlutterWindowWinUWP::OnKeyUp(
     winrt::Windows::Foundation::IInspectable const&,
     winrt::Windows::UI::Core::KeyEventArgs const& args) {
   // TODO(clarkezone) complete keyboard handling including
-  // system key (back), unicode handling, shortcut support
+  // system key (back), unicode handling, shortcut support,
+  // handling defered delivery
   // https://github.com/flutter/flutter/issues/70202
   auto status = args.KeyStatus();
   unsigned int scancode = status.ScanCode;
   int key = static_cast<int>(args.VirtualKey());
   char32_t chararacter = static_cast<char32_t>(key | 32);
   int action = 0x0101;
-  binding_handler_delegate_->OnKey(key, scancode, action, chararacter);
+  binding_handler_delegate_->OnKey(key, scancode, action, chararacter, false);
 }
 
 void FlutterWindowWinUWP::OnKeyDown(
@@ -272,13 +277,14 @@ void FlutterWindowWinUWP::OnKeyDown(
     winrt::Windows::UI::Core::KeyEventArgs const& args) {
   // TODO(clarkezone) complete keyboard handling including
   // system key (back), unicode handling, shortcut support
+  // handling defered delivery
   // https://github.com/flutter/flutter/issues/70202
   auto status = args.KeyStatus();
   unsigned int scancode = status.ScanCode;
   int key = static_cast<int>(args.VirtualKey());
   char32_t chararacter = static_cast<char32_t>(key | 32);
   int action = 0x0100;
-  binding_handler_delegate_->OnKey(key, scancode, action, chararacter);
+  binding_handler_delegate_->OnKey(key, scancode, action, chararacter, false);
 }
 
 void FlutterWindowWinUWP::OnCharacterReceived(

@@ -56,6 +56,9 @@ class FlutterWindowWinUWP : public WindowBindingHandler {
   void UpdateFlutterCursor(const std::string& cursor_name) override;
 
   // |WindowBindingHandler|
+  void UpdateCursorRect(const Rect& rect) override;
+
+  // |WindowBindingHandler|
   void OnWindowResized() override;
 
  private:
