@@ -1,4 +1,4 @@
-Signature: 31ee48d40623f557e4cd12f283650ed7
+Signature: beed105b1ff05b7299095b25888865bb
 
 UNUSED LICENSES:
 
@@ -1558,7 +1558,6 @@ FILE: ../../../third_party/skia/gm/emptypath.cpp
 FILE: ../../../third_party/skia/gm/encode.cpp
 FILE: ../../../third_party/skia/gm/filltypes.cpp
 FILE: ../../../third_party/skia/gm/filltypespersp.cpp
-FILE: ../../../third_party/skia/gm/filterbitmap.cpp
 FILE: ../../../third_party/skia/gm/filterindiabox.cpp
 FILE: ../../../third_party/skia/gm/fontscaler.cpp
 FILE: ../../../third_party/skia/gm/gammatext.cpp
@@ -2688,7 +2687,6 @@ FILE: ../../../third_party/skia/gm/coloremoji.cpp
 FILE: ../../../third_party/skia/gm/conicpaths.cpp
 FILE: ../../../third_party/skia/gm/copy_to_4444.cpp
 FILE: ../../../third_party/skia/gm/displacement.cpp
-FILE: ../../../third_party/skia/gm/downsamplebitmap.cpp
 FILE: ../../../third_party/skia/gm/dropshadowimagefilter.cpp
 FILE: ../../../third_party/skia/gm/dstreadshuffle.cpp
 FILE: ../../../third_party/skia/gm/fontcache.cpp
