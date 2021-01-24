@@ -249,4 +249,17 @@ bool KeyEventHandler::KeyboardHook(FlutterWindowsView* view,
   return true;
 }
 
+void KeyEventHandler::ComposeBeginHook() {
+  // Ignore.
+}
+
+void KeyEventHandler::ComposeEndHook() {
+  // Ignore.
+}
+
+void KeyEventHandler::ComposeChangeHook(const std::u16string& text,
+                                        int cursor_pos) {
+  // Ignore.
+}
+
 }  // namespace flutter
