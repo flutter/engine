@@ -1,4 +1,4 @@
-Signature: 0d45b4f696d1168dc296daec44b009a3
+Signature: f613d7e96fa01fa2df41fdb2e472464a
 
 UNUSED LICENSES:
 
@@ -4226,8 +4226,6 @@ FILE: ../../../third_party/skia/docs/examples/Canvas_drawArc_a.cpp
 FILE: ../../../third_party/skia/docs/examples/Canvas_drawArc_b.cpp
 FILE: ../../../third_party/skia/docs/examples/Canvas_drawAtlas.cpp
 FILE: ../../../third_party/skia/docs/examples/Canvas_drawAtlas_2.cpp
-FILE: ../../../third_party/skia/docs/examples/Canvas_drawAtlas_3.cpp
-FILE: ../../../third_party/skia/docs/examples/Canvas_drawAtlas_4.cpp
 FILE: ../../../third_party/skia/docs/examples/Canvas_drawBitmap.cpp
 FILE: ../../../third_party/skia/docs/examples/Canvas_drawBitmapRect.cpp
 FILE: ../../../third_party/skia/docs/examples/Canvas_drawBitmapRect_2.cpp
