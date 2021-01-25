@@ -6,7 +6,9 @@
 
 #include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/fml/logging.h"
+#include "flutter/shell/gpu/gpu_binary_archive_metal.h"
 #include "third_party/skia/include/gpu/GrContextOptions.h"
+#include "third_party/skia/include/gpu/mtl/GrMtlBackendContext.h"
 
 static GrContextOptions CreateMetalGrContextOptions() {
   GrContextOptions options = {};
@@ -18,7 +20,10 @@ static GrContextOptions CreateMetalGrContextOptions() {
   return options;
 }
 
-@implementation FlutterDarwinContextMetal
+@implementation FlutterDarwinContextMetal {
+  std::unique_ptr<flutter::GPUBinaryArchiveMetal> _binary_archive
+      FLUTTER_METAL_BINARY_ARCHIVE_AVAILABLE;
+}
 
 - (instancetype)initWithDefaultMTLDevice {
   id<MTLDevice> device = MTLCreateSystemDefaultDevice();
@@ -47,14 +52,32 @@ static GrContextOptions CreateMetalGrContextOptions() {
 
     [_commandQueue setLabel:@"Flutter Main Queue"];
 
+    if (@available(macos 11.0, ios 14.0, *)) {
+      _binary_archive = std::make_unique<flutter::GPUBinaryArchiveMetal>(_device);
+    }
+
     auto contextOptions = CreateMetalGrContextOptions();
 
-    // Skia expect arguments to `MakeMetal` transfer ownership of the reference in for release later
-    // when the GrDirectContext is collected.
-    _mainContext =
-        GrDirectContext::MakeMetal([_device retain], [_commandQueue retain], contextOptions);
-    _resourceContext =
-        GrDirectContext::MakeMetal([_device retain], [_commandQueue retain], contextOptions);
+    {
+      GrMtlBackendContext context;
+      context.fDevice.reset([_device retain]);
+      context.fQueue.reset([_commandQueue retain]);
+      if (@available(macos 11.0, ios 14.0, *)) {
+        if (_binary_archive != nullptr) {
+          context.fBinaryArchive = _binary_archive->GetBinaryArchiveHandle();
+        }
+      }
+
+      _mainContext = GrDirectContext::MakeMetal(context, contextOptions);
+    }
+
+    {
+      GrMtlBackendContext context;
+      context.fDevice.reset([_device retain]);
+      context.fQueue.reset([_commandQueue retain]);
+
+      _resourceContext = GrDirectContext::MakeMetal(context, contextOptions);
+    }
 
     if (!_mainContext || !_resourceContext) {
       FML_DLOG(ERROR) << "Could not create Skia Metal contexts.";
