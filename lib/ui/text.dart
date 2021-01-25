@@ -432,6 +432,11 @@ enum TextDecorationStyle {
   wavy
 }
 
+enum TextBoxVerticalAlignment {
+  proportional,
+  centered,
+}
+
 /// {@template dart.ui.textHeightBehavior}
 /// Defines how the paragraph will apply [TextStyle.height] to the ascent of the
 /// first line and descent of the last line.
@@ -456,14 +461,16 @@ class TextHeightBehavior {
   const TextHeightBehavior({
     this.applyHeightToFirstAscent = true,
     this.applyHeightToLastDescent = true,
+    this.verticalAlignment = TextBoxVerticalAlignment.proportional,
   });
 
   /// Creates a new TextHeightBehavior object from an encoded form.
   ///
   /// See [encode] for the creation of the encoded form.
-  const TextHeightBehavior.fromEncoded(int encoded)
+  TextHeightBehavior.fromEncoded(int encoded)
     : applyHeightToFirstAscent = (encoded & 0x1) == 0,
-      applyHeightToLastDescent = (encoded & 0x2) == 0;
+      applyHeightToLastDescent = (encoded & 0x2) == 0,
+      verticalAlignment = TextBoxVerticalAlignment.values[encoded >> 2];
 
 
   /// Whether to apply the [TextStyle.height] modifier to the ascent of the first
@@ -490,9 +497,13 @@ class TextHeightBehavior {
   /// Defaults to true (height modifications applied as normal).
   final bool applyHeightToLastDescent;
 
+  final TextBoxVerticalAlignment verticalAlignment;
+
   /// Returns an encoded int representation of this object.
   int encode() {
-    return (applyHeightToFirstAscent ? 0 : 1 << 0) | (applyHeightToLastDescent ? 0 : 1 << 1);
+    return (applyHeightToFirstAscent ? 0 : 1 << 0)
+         | (applyHeightToLastDescent ? 0 : 1 << 1)
+         | (verticalAlignment.index << 2);
   }
 
   @override
@@ -501,7 +512,8 @@ class TextHeightBehavior {
       return false;
     return other is TextHeightBehavior
         && other.applyHeightToFirstAscent == applyHeightToFirstAscent
-        && other.applyHeightToLastDescent == applyHeightToLastDescent;
+        && other.applyHeightToLastDescent == applyHeightToLastDescent
+        && other.verticalAlignment == verticalAlignment;
   }
 
   @override
@@ -509,6 +521,7 @@ class TextHeightBehavior {
     return hashValues(
       applyHeightToFirstAscent,
       applyHeightToLastDescent,
+      verticalAlignment.index,
     );
   }
 
@@ -516,7 +529,8 @@ class TextHeightBehavior {
   String toString() {
     return 'TextHeightBehavior('
              'applyHeightToFirstAscent: $applyHeightToFirstAscent, '
-             'applyHeightToLastDescent: $applyHeightToLastDescent'
+             'applyHeightToLastDescent: $applyHeightToLastDescent, '
+             'verticalAlignment: $verticalAlignment'
            ')';
   }
 }
@@ -578,13 +592,14 @@ Int32List _encodeTextStyle(
   double? letterSpacing,
   double? wordSpacing,
   double? height,
+  TextHeightBehavior? textHeightBehavior,
   Locale? locale,
   Paint? background,
   Paint? foreground,
   List<Shadow>? shadows,
   List<FontFeature>? fontFeatures,
 ) {
-  final Int32List result = Int32List(8);
+  final Int32List result = Int32List(9);
   if (color != null) {
     result[0] |= 1 << 1;
     result[1] = color.value;
@@ -613,49 +628,54 @@ Int32List _encodeTextStyle(
     result[0] |= 1 << 7;
     result[7] = textBaseline.index;
   }
-  if (decorationThickness != null) {
+  if (textHeightBehavior != null) {
     result[0] |= 1 << 8;
+    result[8] = textHeightBehavior.encode();
+  }
+  if (decorationThickness != null) {
+    result[0] |= 1 << 9;
   }
   if (fontFamily != null || (fontFamilyFallback != null && fontFamilyFallback.isNotEmpty)) {
-    result[0] |= 1 << 9;
-    // Passed separately to native.
-  }
-  if (fontSize != null) {
     result[0] |= 1 << 10;
     // Passed separately to native.
   }
-  if (letterSpacing != null) {
+  if (fontSize != null) {
     result[0] |= 1 << 11;
     // Passed separately to native.
   }
-  if (wordSpacing != null) {
+  if (letterSpacing != null) {
     result[0] |= 1 << 12;
     // Passed separately to native.
   }
-  if (height != null) {
+  if (wordSpacing != null) {
     result[0] |= 1 << 13;
     // Passed separately to native.
   }
-  if (locale != null) {
+  if (height != null) {
     result[0] |= 1 << 14;
     // Passed separately to native.
   }
-  if (background != null) {
+  if (locale != null) {
     result[0] |= 1 << 15;
     // Passed separately to native.
   }
-  if (foreground != null) {
+  if (background != null) {
     result[0] |= 1 << 16;
     // Passed separately to native.
   }
-  if (shadows != null) {
+  if (foreground != null) {
     result[0] |= 1 << 17;
     // Passed separately to native.
   }
-  if (fontFeatures != null) {
+  if (shadows != null) {
     result[0] |= 1 << 18;
     // Passed separately to native.
   }
+  if (fontFeatures != null) {
+    result[0] |= 1 << 19;
+    // Passed separately to native.
+  }
+
   return result;
 }
 
@@ -709,6 +729,7 @@ class TextStyle {
     double? letterSpacing,
     double? wordSpacing,
     double? height,
+    TextHeightBehavior? textHeightBehavior,
     Locale? locale,
     Paint? background,
     Paint? foreground,
@@ -733,6 +754,7 @@ class TextStyle {
          letterSpacing,
          wordSpacing,
          height,
+         textHeightBehavior,
          locale,
          background,
          foreground,

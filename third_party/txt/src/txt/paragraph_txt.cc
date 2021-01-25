@@ -1186,79 +1186,88 @@ void ParagraphTxt::UpdateLineMetrics(const SkFontMetrics& metrics,
                                      size_t line_number,
                                      size_t line_limit) {
   if (!strut_.force_strut) {
-    double ascent;
-    double descent;
-    if (style.has_height_override) {
-      // Scale the ascent and descent such that the sum of ascent and
-      // descent is `fontsize * style.height * style.font_size`.
-      //
-      // The raw metrics do not add up to fontSize. The state of font
-      // metrics is a mess:
-      //
-      // Each font has 4 sets of vertical metrics:
-      //
-      // * hhea: hheaAscender, hheaDescender, hheaLineGap.
-      //     Used by Apple.
-      // * OS/2 typo: typoAscender, typoDescender, typoLineGap.
-      //     Used sometimes by Windows for layout.
-      // * OS/2 win: winAscent, winDescent.
-      //     Also used by Windows, generally will be cut if extends past
-      //     these metrics.
-      // * EM Square: ascent, descent
-      //     Not actively used, but this defines the 'scale' of the
-      //     units used.
-      //
-      // `Use Typo Metrics` is a boolean that, when enabled, prefers
-      // typo metrics over win metrics. Default is off. Enabled by most
-      // modern fonts.
-      //
-      // In addition to these different sets of metrics, there are also
-      // multiple strategies for using these metrics:
-      //
-      // * Adobe: Set hhea values to typo equivalents.
-      // * Microsoft: Set hhea values to win equivalents.
-      // * Web: Use hhea values for text, regardless of `Use Typo Metrics`
-      //     The hheaLineGap is distributed half across the top and half
-      //     across the bottom of the line.
-      //   Exceptions:
-      //     Windows: All browsers respect `Use Typo Metrics`
-      //     Firefox respects `Use Typo Metrics`.
-      //
-      // This pertains to this code in that it is ambiguous which set of
-      // metrics we are actually using via SkFontMetrics. This in turn
-      // means that if we use the raw metrics, we will see differences
-      // between platforms as well as unpredictable line heights.
-      //
-      // A more thorough explanation is available at
-      // https://glyphsapp.com/tutorials/vertical-metrics
-      //
-      // Doing this ascent/descent normalization to the EM Square allows
-      // a sane, consistent, and reasonable line height to be specified,
-      // though it breaks with what is done by any of the platforms above.
-      double metrics_height = -metrics.fAscent + metrics.fDescent;
-      ascent =
-          (-metrics.fAscent / metrics_height) * style.height * style.font_size;
-      descent =
-          (metrics.fDescent / metrics_height) * style.height * style.font_size;
-    } else {
-      // Use the font-provided ascent, descent, and leading directly.
-      ascent = (-metrics.fAscent + metrics.fLeading / 2);
-      descent = (metrics.fDescent + metrics.fLeading / 2);
-    }
+    const double metrics_font_height = metrics.fDescent - metrics.fAscent;
+    // The overall height of the glyph blob. block_height = ascent + descent,
+    // unless one of kDisable{FirstAscent, LastDescent} is set.
+    const double block_height = style.has_height_override
+      ? style.height * style.font_size
+      : metrics_font_height + metrics.fLeading;
 
-    // Account for text_height_behavior in paragraph_style_.
+    // Scale the ascent and descent such that the sum of ascent and
+    // descent is `style.height * style.font_size`.
     //
-    // Disable first line ascent modifications.
-    if (line_number == 0 && paragraph_style_.text_height_behavior &
-                                TextHeightBehavior::kDisableFirstAscent) {
-      ascent = -metrics.fAscent;
-    }
-    // Disable last line descent modifications.
-    if (line_number == line_limit - 1 &&
-        paragraph_style_.text_height_behavior &
-            TextHeightBehavior::kDisableLastDescent) {
-      descent = metrics.fDescent;
-    }
+    // The raw metrics do not add up to fontSize. The state of font
+    // metrics is a mess:
+    //
+    // Each font has 4 sets of vertical metrics:
+    //
+    // * hhea: hheaAscender, hheaDescender, hheaLineGap.
+    //     Used by Apple.
+    // * OS/2 typo: typoAscender, typoDescender, typoLineGap.
+    //     Used sometimes by Windows for layout.
+    // * OS/2 win: winAscent, winDescent.
+    //     Also used by Windows, generally will be cut if extends past
+    //     these metrics.
+    // * EM Square: ascent, descent
+    //     Not actively used, but this defines the 'scale' of the
+    //     units used.
+    //
+    // `Use Typo Metrics` is a boolean that, when enabled, prefers
+    // typo metrics over win metrics. Default is off. Enabled by most
+    // modern fonts.
+    //
+    // In addition to these different sets of metrics, there are also
+    // multiple strategies for using these metrics:
+    //
+    // * Adobe: Set hhea values to typo equivalents.
+    // * Microsoft: Set hhea values to win equivalents.
+    // * Web: Use hhea values for text, regardless of `Use Typo Metrics`
+    //     The hheaLineGap is distributed half across the top and half
+    //     across the bottom of the line.
+    //   Exceptions:
+    //     Windows: All browsers respect `Use Typo Metrics`
+    //     Firefox respects `Use Typo Metrics`.
+    //
+    // This pertains to this code in that it is ambiguous which set of
+    // metrics we are actually using via SkFontMetrics. This in turn
+    // means that if we use the raw metrics, we will see differences
+    // between platforms as well as unpredictable line heights.
+    //
+    // A more thorough explanation is available at
+    // https://glyphsapp.com/tutorials/vertical-metrics
+    //
+    // Doing this ascent/descent normalization to the EM Square allows
+    // a sane, consistent, and reasonable box height to be specified,
+    // though it breaks with what is done by any of the platforms above.
+    const bool shouldNormalizeFont = style.has_height_override;
+    const double font_height = shouldNormalizeFont
+      ? style.font_size
+      : metrics_font_height;
+
+    const size_t text_height_behavior = style.has_text_height_behavior_override
+      ? style.text_height_behavior
+      : paragraph_style_.text_height_behavior;
+
+    const double leading = text_height_behavior & TextHeightBehavior::kHalfLeading
+      ? std::max(block_height - font_height, 0.0)
+      : style.has_height_override ? 0 : metrics.fLeading;
+
+    const double half_leading = leading / 2;
+    const double available_vspace = block_height - leading;
+    FML_DCHECK(available_vspace >= 0);
+
+    const bool disableFirstAscent = line_number == 0
+      && text_height_behavior & TextHeightBehavior::kDisableFirstAscent;
+    const bool disableLastDescent = line_number == line_limit - 1 &&
+        text_height_behavior & TextHeightBehavior::kDisableLastDescent;
+
+    // Proportionally distribute the remaining vertical space above and below
+    // the glyph blob's baseline, per the font's ascent/discent ratio.
+    const double modifiedAscent = -metrics.fAscent / metrics_font_height * available_vspace + half_leading;
+    double ascent = disableFirstAscent ? -metrics.fAscent : modifiedAscent;
+    double descent = disableLastDescent
+      ? metrics.fDescent
+      : block_height - modifiedAscent;
 
     ComputePlaceholder(placeholder_run, ascent, descent);
 

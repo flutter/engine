@@ -48,6 +48,10 @@ bool TextStyle::equals(const TextStyle& other) const {
     return false;
   if (has_height_override != other.has_height_override)
     return false;
+  if (has_text_height_behavior_override != other.has_text_height_behavior_override)
+    return false;
+  if (has_text_height_behavior_override && text_height_behavior != other.text_height_behavior)
+    return false;
   if (locale != other.locale)
     return false;
   if (foreground != other.foreground)

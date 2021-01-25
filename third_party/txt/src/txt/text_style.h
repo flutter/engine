@@ -31,6 +31,26 @@
 
 namespace txt {
 
+// Allows disabling height adjustments to first line's ascent and the
+// last line's descent. If disabled, the line will use the default font
+// metric provided ascent/descent and ParagraphStyle.height will not take
+// effect.
+//
+// The default behavior is kAll where height adjustments are enabled for all
+// lines.
+//
+// Multiple behaviors can be applied at once with a bitwise | operator. For
+// example, disabling first ascent and last descent can achieved with:
+//
+//   (kDisableFirstAscent | kDisableLastDescent).
+enum TextHeightBehavior {
+  kAll = 0x0,
+  kDisableFirstAscent = 0x1,
+  kDisableLastDescent = 0x2,
+  kDisableAll = 0x1 | 0x2,
+  kHalfLeading = 0x1 << 2,
+};
+
 class TextStyle {
  public:
   SkColor color = SK_ColorWHITE;
@@ -44,6 +64,8 @@ class TextStyle {
   FontWeight font_weight = FontWeight::w400;
   FontStyle font_style = FontStyle::normal;
   TextBaseline text_baseline = TextBaseline::kAlphabetic;
+  size_t text_height_behavior = TextHeightBehavior::kAll;
+  bool has_text_height_behavior_override = false;
   // An ordered list of fonts in order of priority. The first font is more
   // highly preferred than the last font.
   std::vector<std::string> font_families;
