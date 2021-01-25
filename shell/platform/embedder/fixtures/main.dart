@@ -504,13 +504,13 @@ void _echoKeyEvent(
     bool synthesized)
   native 'EchoKeyEvent';
 
-int _serializeKeyChange(KeyChange change) {
+int _serializeKeyEventType(KeyEventType change) {
   switch(change) {
-    case KeyChange.up:
+    case KeyEventType.up:
       return 1;
-    case KeyChange.down:
+    case KeyEventType.down:
       return 2;
-    case KeyChange.repeat:
+    case KeyEventType.repeat:
       return 3;
   }
 }
@@ -520,7 +520,7 @@ int _serializeKeyChange(KeyChange change) {
 void key_data_echo() async { // ignore: non_constant_identifier_names
   PlatformDispatcher.instance.onKeyData = (KeyData data) {
     _echoKeyEvent(
-      _serializeKeyChange(data.change),
+      _serializeKeyEventType(data.type),
       data.timeStamp.inMicroseconds,
       data.physical,
       data.logical,

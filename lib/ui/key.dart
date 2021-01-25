@@ -7,8 +7,8 @@
 part of dart.ui;
 
 /// How the key has changed since the last report.
-// Must match the KeyChange enum in ui/window/key_data.h.
-enum KeyChange {
+// Must match the KeyEventType enum in ui/window/key_data.h.
+enum KeyEventType {
   /// The key is pressed.
   down,
 
@@ -19,12 +19,12 @@ enum KeyChange {
   repeat,
 }
 
-/// Information about the change of a key.
+/// Information about a key event.
 class KeyData {
   /// Creates an object that represents the change of a key.
   const KeyData({
     required this.timeStamp,
-    required this.change,
+    required this.type,
     required this.physical,
     required this.logical,
     required this.character,
@@ -37,8 +37,8 @@ class KeyData {
   /// the key press or release happens.
   final Duration timeStamp;
 
-  /// How the key has changed since the last report.
-  final KeyChange change;
+  /// The type of the event.
+  final KeyEventType type;
 
   /// The key code for the physical key that has changed.
   final int physical;
@@ -64,7 +64,7 @@ class KeyData {
   /// the state returned by the system, Flutter will synthesize a corresponding
   /// event to synchronize the state without breaking the event model.
   ///
-  /// As another example, macOS treats CapsLock in a special way by sending 
+  /// As another example, macOS treats CapsLock in a special way by sending
   /// down and up events at the down of alterate presses to indicate the
   /// direction in which the lock is toggled instead of that the physical key is
   /// going. Flutter normalizes the behavior by converting a native down event
@@ -80,13 +80,13 @@ class KeyData {
   final bool synthesized;
 
   @override
-  String toString() => 'KeyData(change: ${_changeToString(change)}, physical: 0x${physical.toRadixString(16)}, '
+  String toString() => 'KeyData(change: ${_changeToString(type)}, physical: 0x${physical.toRadixString(16)}, '
     'logical: 0x${logical.toRadixString(16)}, character: $character)';
 
   /// Returns a complete textual description of the information in this object.
   String toStringFull() {
     return '$runtimeType('
-            'change: ${_changeToString(change)}, '
+            'change: ${_changeToString(type)}, '
             'timeStamp: $timeStamp, '
             'physical: 0x${physical.toRadixString(16)}, '
             'logical: 0x${logical.toRadixString(16)}, '
@@ -95,13 +95,13 @@ class KeyData {
            ')';
   }
 
-  static String _changeToString(KeyChange change) {
+  static String _changeToString(KeyEventType change) {
     switch (change) {
-      case KeyChange.up:
+      case KeyEventType.up:
         return 'up';
-      case KeyChange.down:
+      case KeyEventType.down:
         return 'down';
-      case KeyChange.repeat:
+      case KeyEventType.repeat:
         return 'repeat';
     }
   }

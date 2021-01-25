@@ -1492,16 +1492,16 @@ FlutterEngineResult FlutterEngineSendPointerEvent(
                                   "running Flutter application.");
 }
 
-inline flutter::KeyChange ToKeyChange(FlutterKeyEventKind key_change) {
+inline flutter::KeyEventType ToKeyEventType(FlutterKeyEventKind key_change) {
   switch (key_change) {
     case kFlutterKeyEventKindUp:
-      return flutter::KeyChange::kUp;
+      return flutter::KeyEventType::kUp;
     case kFlutterKeyEventKindDown:
-      return flutter::KeyChange::kDown;
+      return flutter::KeyEventType::kDown;
     case kFlutterKeyEventKindRepeat:
-      return flutter::KeyChange::kRepeat;
+      return flutter::KeyEventType::kRepeat;
   }
-  return flutter::KeyChange::kUp;
+  return flutter::KeyEventType::kUp;
 }
 
 // The number of bytes that should be able to fully store character data.
@@ -1537,7 +1537,7 @@ FlutterEngineResult FlutterEngineSendKeyEvent(
   flutter::KeyData key_data;
   key_data.Clear();
   key_data.timestamp = (uint64_t)SAFE_ACCESS(event, timestamp, 0);
-  key_data.change = ToKeyChange(
+  key_data.change = ToKeyEventType(
       SAFE_ACCESS(event, kind, FlutterKeyEventKind::kFlutterKeyEventKindUp));
   key_data.physical = SAFE_ACCESS(event, physical, 0);
   key_data.logical = SAFE_ACCESS(event, logical, 0);

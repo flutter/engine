@@ -15,8 +15,8 @@ static constexpr int kBytesPerKeyField = sizeof(int64_t);
 
 // The change of the key event, used by KeyData.
 //
-// Must match the KeyChange enum in ui/key.dart.
-enum class KeyChange : int64_t {
+// Must match the KeyEventType enum in ui/key.dart.
+enum class KeyEventType : int64_t {
   kDown = 0,
   kUp,
   kRepeat,
@@ -31,7 +31,7 @@ enum class KeyChange : int64_t {
 struct alignas(8) KeyData {
   // Timestamp in microseconds from an arbitrary and consistant start point
   uint64_t timestamp;
-  KeyChange change;
+  KeyEventType change;
   uint64_t physical;
   uint64_t logical;
   // True if the event does not correspond to a native event.

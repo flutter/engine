@@ -59,7 +59,7 @@ void testMain() {
     );
     expectKeyData(keyDataList.last,
       timeStamp: Duration(milliseconds: 1),
-      change: ui.KeyChange.down,
+      change: ui.KeyEventType.down,
       physical: kPhysicalKeyA,
       logical: kLogicalKeyA,
       character: 'a',
@@ -72,7 +72,7 @@ void testMain() {
     );
     expectKeyData(keyDataList.last,
       timeStamp: Duration(milliseconds: 1, microseconds: 500),
-      change: ui.KeyChange.repeat,
+      change: ui.KeyEventType.repeat,
       physical: kPhysicalKeyA,
       logical: kLogicalKeyA,
       character: 'a',
@@ -85,7 +85,7 @@ void testMain() {
     );
     expectKeyData(keyDataList.last,
       timeStamp: Duration(seconds: 1, milliseconds: 500),
-      change: ui.KeyChange.repeat,
+      change: ui.KeyEventType.repeat,
       physical: kPhysicalKeyA,
       logical: kLogicalKeyA,
       character: 'a',
@@ -98,7 +98,7 @@ void testMain() {
     );
     expectKeyData(keyDataList.last,
       timeStamp: Duration(seconds: 2, microseconds: 500),
-      change: ui.KeyChange.up,
+      change: ui.KeyEventType.up,
       physical: kPhysicalKeyA,
       logical: kLogicalKeyA,
       character: null,
@@ -114,7 +114,7 @@ void testMain() {
 
     converter.handleEvent(keyDownEvent('ShiftLeft', 'Shift', kShift, kLocationLeft));
     expectKeyData(keyDataList.last,
-      change: ui.KeyChange.down,
+      change: ui.KeyEventType.down,
       physical: kPhysicalShiftLeft,
       logical: kLogicalShiftLeft,
       character: null,
@@ -122,7 +122,7 @@ void testMain() {
 
     converter.handleEvent(keyDownEvent('KeyA', 'A', kShift));
     expectKeyData(keyDataList.last,
-      change: ui.KeyChange.down,
+      change: ui.KeyEventType.down,
       physical: kPhysicalKeyA,
       logical: kLogicalKeyA,
       character: 'A',
@@ -130,7 +130,7 @@ void testMain() {
 
     converter.handleEvent(keyRepeatedDownEvent('KeyA', 'A', kShift));
     expectKeyData(keyDataList.last,
-      change: ui.KeyChange.repeat,
+      change: ui.KeyEventType.repeat,
       physical: kPhysicalKeyA,
       logical: kLogicalKeyA,
       character: 'A',
@@ -138,7 +138,7 @@ void testMain() {
 
     converter.handleEvent(keyUpEvent('ShiftLeft', 'Shift', 0, kLocationLeft));
     expectKeyData(keyDataList.last,
-      change: ui.KeyChange.up,
+      change: ui.KeyEventType.up,
       physical: kPhysicalShiftLeft,
       logical: kLogicalShiftLeft,
       character: null,
@@ -146,7 +146,7 @@ void testMain() {
 
     converter.handleEvent(keyRepeatedDownEvent('KeyA', 'a'));
     expectKeyData(keyDataList.last,
-      change: ui.KeyChange.repeat,
+      change: ui.KeyEventType.repeat,
       physical: kPhysicalKeyA,
       logical: kLogicalKeyA,
       character: 'a',
@@ -154,7 +154,7 @@ void testMain() {
 
     converter.handleEvent(keyRepeatedDownEvent('KeyA', 'a'));
     expectKeyData(keyDataList.last,
-      change: ui.KeyChange.repeat,
+      change: ui.KeyEventType.repeat,
       physical: kPhysicalKeyA,
       logical: kLogicalKeyA,
       character: 'a',
@@ -162,7 +162,7 @@ void testMain() {
 
     converter.handleEvent(keyUpEvent('KeyA', 'a'));
     expectKeyData(keyDataList.last,
-      change: ui.KeyChange.up,
+      change: ui.KeyEventType.up,
       physical: kPhysicalKeyA,
       logical: kLogicalKeyA,
       character: null,
@@ -177,7 +177,7 @@ void testMain() {
 
     converter.handleEvent(keyDownEvent('ShiftLeft', 'Shift', kShift, kLocationLeft));
     expectKeyData(keyDataList.last,
-      change: ui.KeyChange.down,
+      change: ui.KeyEventType.down,
       physical: kPhysicalShiftLeft,
       logical: kLogicalShiftLeft,
       character: null,
@@ -185,7 +185,7 @@ void testMain() {
 
     converter.handleEvent(keyDownEvent('ShiftRight', 'Shift', kShift, kLocationRight));
     expectKeyData(keyDataList.last,
-      change: ui.KeyChange.down,
+      change: ui.KeyEventType.down,
       physical: kPhysicalShiftRight,
       logical: kLogicalShiftRight,
       character: null,
@@ -193,7 +193,7 @@ void testMain() {
 
     converter.handleEvent(keyUpEvent('ShiftLeft', 'Shift', kShift, kLocationLeft));
     expectKeyData(keyDataList.last,
-      change: ui.KeyChange.up,
+      change: ui.KeyEventType.up,
       physical: kPhysicalShiftLeft,
       logical: kLogicalShiftLeft,
       character: null,
@@ -201,7 +201,7 @@ void testMain() {
 
     converter.handleEvent(keyUpEvent('ShiftRight', 'Shift', 0, kLocationRight));
     expectKeyData(keyDataList.last,
-      change: ui.KeyChange.up,
+      change: ui.KeyEventType.up,
       physical: kPhysicalShiftRight,
       logical: kLogicalShiftRight,
       character: null,
@@ -216,7 +216,7 @@ void testMain() {
 
     converter.handleEvent(keyDownEvent('Digit1', '1', 0, 0));
     expectKeyData(keyDataList.last,
-      change: ui.KeyChange.down,
+      change: ui.KeyEventType.down,
       physical: kPhysicalDigit1,
       logical: kLogicalDigit1,
       character: '1',
@@ -224,7 +224,7 @@ void testMain() {
 
     converter.handleEvent(keyDownEvent('Numpad1', '1', 0, kLocationNumpad));
     expectKeyData(keyDataList.last,
-      change: ui.KeyChange.down,
+      change: ui.KeyEventType.down,
       physical: kPhysicalNumpad1,
       logical: kLogicalNumpad1,
       character: '1',
@@ -232,7 +232,7 @@ void testMain() {
 
     converter.handleEvent(keyUpEvent('Digit1', '1', 0, 0));
     expectKeyData(keyDataList.last,
-      change: ui.KeyChange.up,
+      change: ui.KeyEventType.up,
       physical: kPhysicalDigit1,
       logical: kLogicalDigit1,
       character: null,
@@ -240,7 +240,7 @@ void testMain() {
 
     converter.handleEvent(keyUpEvent('Numpad1', '1', 0, kLocationNumpad));
     expectKeyData(keyDataList.last,
-      change: ui.KeyChange.up,
+      change: ui.KeyEventType.up,
       physical: kPhysicalNumpad1,
       logical: kLogicalNumpad1,
       character: null,
@@ -257,7 +257,7 @@ void testMain() {
 
     converter.handleEvent(keyDownEvent('Tab', 'Tab')..onPreventDefault = onPreventDefault);
     expectKeyData(keyDataList.last,
-      change: ui.KeyChange.down,
+      change: ui.KeyEventType.down,
       physical: kPhysicalTab,
       logical: kLogicalTab,
       character: null,
@@ -267,7 +267,7 @@ void testMain() {
 
     converter.handleEvent(keyUpEvent('Tab', 'Tab')..onPreventDefault = onPreventDefault);
     expectKeyData(keyDataList.last,
-      change: ui.KeyChange.up,
+      change: ui.KeyEventType.up,
       physical: kPhysicalTab,
       logical: kLogicalTab,
       character: null,
@@ -294,7 +294,7 @@ void testMain() {
 
     converter.handleEvent(keyDownEvent('KeyE', 'Dead', kAlt));
     expectKeyData(keyDataList.last,
-      change: ui.KeyChange.down,
+      change: ui.KeyEventType.down,
       physical: kPhysicalKeyE,
       logical: kLogicalAltE,
       character: null,
@@ -302,7 +302,7 @@ void testMain() {
 
     converter.handleEvent(keyUpEvent('KeyE', 'Dead', kAlt));
     expectKeyData(keyDataList.last,
-      change: ui.KeyChange.up,
+      change: ui.KeyEventType.up,
       physical: kPhysicalKeyE,
       logical: kLogicalAltE,
       character: null,
@@ -310,7 +310,7 @@ void testMain() {
 
     converter.handleEvent(keyDownEvent('KeyU', 'Dead', kAlt));
     expectKeyData(keyDataList.last,
-      change: ui.KeyChange.down,
+      change: ui.KeyEventType.down,
       physical: kPhysicalKeyU,
       logical: kLogicalAltU,
       character: null,
@@ -318,7 +318,7 @@ void testMain() {
 
     converter.handleEvent(keyUpEvent('KeyU', 'Dead', kAlt));
     expectKeyData(keyDataList.last,
-      change: ui.KeyChange.up,
+      change: ui.KeyEventType.up,
       physical: kPhysicalKeyU,
       logical: kLogicalAltU,
       character: null,
@@ -330,7 +330,7 @@ void testMain() {
     // testing.
     converter.handleEvent(keyDownEvent('KeyE', 'Dead', kAlt | kShift));
     expectKeyData(keyDataList.last,
-      change: ui.KeyChange.down,
+      change: ui.KeyEventType.down,
       physical: kPhysicalKeyE,
       logical: kLogicalAltShiftE,
       character: null,
@@ -340,7 +340,7 @@ void testMain() {
 
     converter.handleEvent(keyUpEvent('KeyE', 'e', kShift));
     expectKeyData(keyDataList.last,
-      change: ui.KeyChange.up,
+      change: ui.KeyEventType.up,
       physical: kPhysicalKeyE,
       logical: kLogicalAltShiftE,
       character: null,
@@ -365,7 +365,7 @@ void testMain() {
     converter.handleEvent(keyUpEvent('ShiftLeft', 'Shift', 0, kLocationLeft));
     expect(keyDataList, hasLength(1));
     expectKeyData(keyDataList.last,
-      change: ui.KeyChange.up,
+      change: ui.KeyEventType.up,
       physical: kPhysicalShiftLeft,
       logical: kLogicalShiftLeft,
       character: null,
@@ -405,7 +405,7 @@ void testMain() {
     keyDataList.clear();
     converter.handleEvent(keyDownEvent('KeyA', 'a'));
     expectKeyData(keyDataList.last,
-      change: ui.KeyChange.down,
+      change: ui.KeyEventType.down,
       physical: kPhysicalKeyA,
       logical: kLogicalKeyA,
       character: 'a',
@@ -413,7 +413,7 @@ void testMain() {
 
     converter.handleEvent(keyDownEvent('KeyU', 'u'));
     expectKeyData(keyDataList.last,
-      change: ui.KeyChange.down,
+      change: ui.KeyEventType.down,
       physical: kPhysicalKeyU,
       logical: kLogicalKeyU,
       character: 'u',
@@ -429,7 +429,7 @@ void testMain() {
     converter.handleEvent(keyDownEvent('CapsLock', 'CapsLock'));
     expect(keyDataList, hasLength(1));
     expectKeyData(keyDataList.last,
-      change: ui.KeyChange.down,
+      change: ui.KeyEventType.down,
       physical: kPhysicalCapsLock,
       logical: kLogicalCapsLock,
       character: null,
@@ -439,7 +439,7 @@ void testMain() {
     async.elapse(Duration(microseconds: 1));
     expect(keyDataList, hasLength(1));
     expectKeyData(keyDataList.last,
-      change: ui.KeyChange.up,
+      change: ui.KeyEventType.up,
       physical: kPhysicalCapsLock,
       logical: kLogicalCapsLock,
       character: null,
@@ -450,7 +450,7 @@ void testMain() {
     converter.handleEvent(keyUpEvent('CapsLock', 'CapsLock'));
     expect(keyDataList, hasLength(1));
     expectKeyData(keyDataList.last,
-      change: ui.KeyChange.down,
+      change: ui.KeyEventType.down,
       physical: kPhysicalCapsLock,
       logical: kLogicalCapsLock,
       character: null,
@@ -460,7 +460,7 @@ void testMain() {
     async.elapse(Duration(microseconds: 1));
     expect(keyDataList, hasLength(1));
     expectKeyData(keyDataList.last,
-      change: ui.KeyChange.up,
+      change: ui.KeyEventType.up,
       physical: kPhysicalCapsLock,
       logical: kLogicalCapsLock,
       character: null,
@@ -472,7 +472,7 @@ void testMain() {
     converter.handleEvent(keyDownEvent('CapsLock', 'CapsLock'));
     expect(keyDataList, hasLength(1));
     expectKeyData(keyDataList.last,
-      change: ui.KeyChange.down,
+      change: ui.KeyEventType.down,
       physical: kPhysicalCapsLock,
       logical: kLogicalCapsLock,
       character: null,
@@ -495,7 +495,7 @@ void testMain() {
     converter.handleEvent(keyDownEvent('CapsLock', 'CapsLock'));
     expect(keyDataList, hasLength(1));
     expectKeyData(keyDataList.last,
-      change: ui.KeyChange.down,
+      change: ui.KeyEventType.down,
       physical: kPhysicalCapsLock,
       logical: kLogicalCapsLock,
       character: null,
@@ -508,7 +508,7 @@ void testMain() {
     converter.handleEvent(keyUpEvent('CapsLock', 'CapsLock'));
     expect(keyDataList, hasLength(1));
     expectKeyData(keyDataList.last,
-      change: ui.KeyChange.up,
+      change: ui.KeyEventType.up,
       physical: kPhysicalCapsLock,
       logical: kLogicalCapsLock,
       character: null,
@@ -520,7 +520,7 @@ void testMain() {
 
     converter.handleEvent(keyDownEvent('CapsLock', 'CapsLock'));
     expectKeyData(keyDataList.last,
-      change: ui.KeyChange.down,
+      change: ui.KeyEventType.down,
       physical: kPhysicalCapsLock,
       logical: kLogicalCapsLock,
       character: null,
@@ -528,7 +528,7 @@ void testMain() {
 
     converter.handleEvent(keyUpEvent('CapsLock', 'CapsLock'));
     expectKeyData(keyDataList.last,
-      change: ui.KeyChange.up,
+      change: ui.KeyEventType.up,
       physical: kPhysicalCapsLock,
       logical: kLogicalCapsLock,
       character: null,
@@ -547,7 +547,7 @@ void testMain() {
     converter.handleEvent(keyDownEvent('KeyA', 'a', kMeta)..timeStamp = 200);
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(milliseconds: 200),
-      change: ui.KeyChange.down,
+      change: ui.KeyEventType.down,
       physical: kPhysicalKeyA,
       logical: kLogicalKeyA,
       character: 'a',
@@ -559,7 +559,7 @@ void testMain() {
     async.elapse(Duration(milliseconds: 2500));
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(milliseconds: 1200),
-      change: ui.KeyChange.up,
+      change: ui.KeyEventType.up,
       physical: kPhysicalKeyA,
       logical: kLogicalKeyA,
       character: null,
@@ -570,7 +570,7 @@ void testMain() {
     converter.handleEvent(keyUpEvent('MetaLeft', 'Meta', 0, kLocationLeft)..timeStamp = 2700);
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(milliseconds: 2700),
-      change: ui.KeyChange.up,
+      change: ui.KeyEventType.up,
       physical: kPhysicalMetaLeft,
       logical: kLogicalMetaLeft,
       character: null,
@@ -581,7 +581,7 @@ void testMain() {
     converter.handleEvent(keyDownEvent('KeyA', 'a')..timeStamp = 2800);
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(milliseconds: 2800),
-      change: ui.KeyChange.down,
+      change: ui.KeyEventType.down,
       physical: kPhysicalKeyA,
       logical: kLogicalKeyA,
       character: 'a',
@@ -591,7 +591,7 @@ void testMain() {
     converter.handleEvent(keyUpEvent('KeyA', 'a')..timeStamp = 2900);
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(milliseconds: 2900),
-      change: ui.KeyChange.up,
+      change: ui.KeyEventType.up,
       physical: kPhysicalKeyA,
       logical: kLogicalKeyA,
       character: null,
@@ -621,7 +621,7 @@ void testMain() {
     async.elapse(Duration(milliseconds: 2500));
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(milliseconds: 1700),
-      change: ui.KeyChange.up,
+      change: ui.KeyEventType.up,
       physical: kPhysicalKeyA,
       logical: kLogicalKeyA,
       character: null,
@@ -632,7 +632,7 @@ void testMain() {
     converter.handleEvent(keyUpEvent('MetaLeft', 'Meta', 0, kLocationLeft)..timeStamp = 3200);
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(milliseconds: 3200),
-      change: ui.KeyChange.up,
+      change: ui.KeyEventType.up,
       physical: kPhysicalMetaLeft,
       logical: kLogicalMetaLeft,
       character: null,
@@ -643,7 +643,7 @@ void testMain() {
     converter.handleEvent(keyDownEvent('KeyA', 'a')..timeStamp = 3300);
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(milliseconds: 3300),
-      change: ui.KeyChange.down,
+      change: ui.KeyEventType.down,
       physical: kPhysicalKeyA,
       logical: kLogicalKeyA,
       character: 'a',
@@ -653,7 +653,7 @@ void testMain() {
     converter.handleEvent(keyUpEvent('KeyA', 'a')..timeStamp = 3400);
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(milliseconds: 3400),
-      change: ui.KeyChange.up,
+      change: ui.KeyEventType.up,
       physical: kPhysicalKeyA,
       logical: kLogicalKeyA,
       character: null,
@@ -672,7 +672,7 @@ void testMain() {
     converter.handleEvent(keyDownEvent('KeyA', 'a', kCtrl)..timeStamp = 200);
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(milliseconds: 200),
-      change: ui.KeyChange.down,
+      change: ui.KeyEventType.down,
       physical: kPhysicalKeyA,
       logical: kLogicalKeyA,
       character: 'a',
@@ -686,7 +686,7 @@ void testMain() {
     converter.handleEvent(keyUpEvent('KeyA', 'a')..timeStamp = 800);
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(milliseconds: 800),
-      change: ui.KeyChange.up,
+      change: ui.KeyEventType.up,
       physical: kPhysicalKeyA,
       logical: kLogicalKeyA,
       character: null,
@@ -699,7 +699,7 @@ void testMain() {
     converter.handleEvent(keyDownEvent('KeyA', 'a')..timeStamp = 2800);
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(milliseconds: 2800),
-      change: ui.KeyChange.down,
+      change: ui.KeyEventType.down,
       physical: kPhysicalKeyA,
       logical: kLogicalKeyA,
       character: 'a',
@@ -709,7 +709,7 @@ void testMain() {
     converter.handleEvent(keyUpEvent('KeyA', 'a')..timeStamp = 2900);
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(milliseconds: 2900),
-      change: ui.KeyChange.up,
+      change: ui.KeyEventType.up,
       physical: kPhysicalKeyA,
       logical: kLogicalKeyA,
       character: null,
@@ -725,7 +725,7 @@ void testMain() {
     converter.handleEvent(keyDownEvent('ScrollLock', 'ScrollLock'));
     expect(keyDataList, hasLength(1));
     expectKeyData(keyDataList.last,
-      change: ui.KeyChange.down,
+      change: ui.KeyEventType.down,
       physical: kPhysicalScrollLock,
       logical: kLogicalScrollLock,
       character: null,
@@ -738,7 +738,7 @@ void testMain() {
     converter.handleEvent(keyUpEvent('ScrollLock', 'ScrollLock'));
     expect(keyDataList, hasLength(1));
     expectKeyData(keyDataList.last,
-      change: ui.KeyChange.up,
+      change: ui.KeyEventType.up,
       physical: kPhysicalScrollLock,
       logical: kLogicalScrollLock,
       character: null,
@@ -747,7 +747,7 @@ void testMain() {
 
     converter.handleEvent(keyDownEvent('ScrollLock', 'ScrollLock'));
     expectKeyData(keyDataList.last,
-      change: ui.KeyChange.down,
+      change: ui.KeyEventType.down,
       physical: kPhysicalScrollLock,
       logical: kLogicalScrollLock,
       character: null,
@@ -755,7 +755,7 @@ void testMain() {
 
     converter.handleEvent(keyUpEvent('ScrollLock', 'ScrollLock'));
     expectKeyData(keyDataList.last,
-      change: ui.KeyChange.up,
+      change: ui.KeyEventType.up,
       physical: kPhysicalScrollLock,
       logical: kLogicalScrollLock,
       character: null,
@@ -770,7 +770,7 @@ void testMain() {
 
     converter.handleEvent(keyDownEvent('ShiftRight', 'Shift', kShift, kLocationRight));
     expectKeyData(keyDataList.last,
-      change: ui.KeyChange.down,
+      change: ui.KeyEventType.down,
       physical: kPhysicalShiftRight,
       logical: kLogicalShiftRight,
       character: null,
@@ -778,7 +778,7 @@ void testMain() {
 
     converter.handleEvent(keyDownEvent('ShiftLeft', 'Shift', kShift, kLocationLeft));
     expectKeyData(keyDataList.last,
-      change: ui.KeyChange.down,
+      change: ui.KeyEventType.down,
       physical: kPhysicalShiftLeft,
       logical: kLogicalShiftLeft,
       character: null,
@@ -790,21 +790,21 @@ void testMain() {
     converter.handleEvent(keyDownEvent('KeyA', 'a'));
     expect(keyDataList, hasLength(3));
     expectKeyData(keyDataList[0],
-      change: ui.KeyChange.up,
+      change: ui.KeyEventType.up,
       physical: kPhysicalShiftLeft,
       logical: kLogicalShiftLeft,
       character: null,
       synthesized: true,
     );
     expectKeyData(keyDataList[1],
-      change: ui.KeyChange.up,
+      change: ui.KeyEventType.up,
       physical: kPhysicalShiftRight,
       logical: kLogicalShiftRight,
       character: null,
       synthesized: true,
     );
     expectKeyData(keyDataList.last,
-      change: ui.KeyChange.down,
+      change: ui.KeyEventType.down,
       physical: kPhysicalKeyA,
       logical: kLogicalKeyA,
       character: 'a',
@@ -901,7 +901,7 @@ const kScrollLock = 0x4;
 
 void expectKeyData(
   ui.KeyData target, {
-  required ui.KeyChange change,
+  required ui.KeyEventType change,
   required int physical,
   required int logical,
   required String? character,

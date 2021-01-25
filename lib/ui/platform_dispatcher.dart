@@ -375,7 +375,6 @@ class PlatformDispatcher {
   static const int _kKeyDataFieldCount = 5;
 
   // KeyData packet structure:
-  // |  ResponseId  |     (1 field)
   // | CharDataSize |     (1 field)
   // |   Key Data   |     (_kKeyDataFieldCount fields)
   // |   CharData   |     (CharDataSize bits)
@@ -389,7 +388,7 @@ class PlatformDispatcher {
 
     final KeyData keyData = KeyData(
       timeStamp: Duration(microseconds: packet.getUint64(kStride * offset++, _kFakeHostEndian)),
-      change: KeyChange.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
+      type: KeyEventType.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
       physical: packet.getUint64(kStride * offset++, _kFakeHostEndian),
       logical: packet.getUint64(kStride * offset++, _kFakeHostEndian),
       character: character,

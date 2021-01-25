@@ -7,8 +7,8 @@
 part of ui;
 
 /// How the key has changed since the last report.
-// Must match the KeyChange enum in ui/window/key_data.h.
-enum KeyChange {
+// Must match the KeyEventType enum in ui/window/key_data.h.
+enum KeyEventType {
   /// The key is pressed.
   down,
 
@@ -33,12 +33,12 @@ class KeyData {
 
   /// Time of event dispatch, relative to an arbitrary timeline.
   ///
-  /// For [KeyChange.synchronize] and [KeyChange.cancel] events, the [timeStamp]
+  /// For [KeyEventType.synchronize] and [KeyEventType.cancel] events, the [timeStamp]
   /// might not be the actual time that the key press or release happens.
   final Duration timeStamp;
 
   /// How the key has changed since the last report.
-  final KeyChange change;
+  final KeyEventType change;
 
   /// The key code for the physical key that has changed.
   final int physical;
@@ -64,7 +64,7 @@ class KeyData {
   /// the state returned by the system, Flutter will synthesize a corresponding
   /// event to synchronize the state without breaking the event model.
   ///
-  /// As another example, macOS treats CapsLock in a special way by sending 
+  /// As another example, macOS treats CapsLock in a special way by sending
   /// down and up events at the down of alterate presses to indicate the
   /// direction in which the lock is toggled instead of that the physical key is
   /// going. Flutter normalizes the behavior by converting a native down event
@@ -95,13 +95,13 @@ class KeyData {
            ')';
   }
 
-  static String _changeToString(KeyChange change) {
+  static String _changeToString(KeyEventType change) {
     switch (change) {
-      case KeyChange.up:
+      case KeyEventType.up:
         return 'up';
-      case KeyChange.down:
+      case KeyEventType.down:
         return 'down';
-      case KeyChange.repeat:
+      case KeyEventType.repeat:
         return 'repeat';
     }
   }
