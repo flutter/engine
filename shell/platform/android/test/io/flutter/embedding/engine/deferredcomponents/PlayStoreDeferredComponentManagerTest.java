@@ -20,7 +20,6 @@ import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.AssetManager;
 import android.os.Bundle;
-import android.util.SparseArray;
 import androidx.annotation.NonNull;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.loader.ApplicationInfoLoader;
@@ -154,7 +153,8 @@ public class PlayStoreDeferredComponentManagerTest {
   }
 
   @Test
-  public void downloadCallsJNIFunctionsWithSharedLibraryNameFromManifest() throws NameNotFoundException {
+  public void downloadCallsJNIFunctionsWithSharedLibraryNameFromManifest()
+      throws NameNotFoundException {
     TestFlutterJNI jni = new TestFlutterJNI();
 
     Bundle bundle = new Bundle();
