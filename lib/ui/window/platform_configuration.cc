@@ -443,7 +443,7 @@ void PlatformConfiguration::CompletePlatformMessageResponse(
 }
 
 void PlatformConfiguration::CompleteKeyDataResponse(uint64_t response_id, bool handled) {
-  if (!response_id) {
+  if (response_id == 0) {
     return;
   }
   auto it = pending_key_responses_.find(response_id);
@@ -451,7 +451,7 @@ void PlatformConfiguration::CompleteKeyDataResponse(uint64_t response_id, bool h
   if (it == pending_key_responses_.end()) {
     return;
   }
-  auto callback = std::move(it->second);
+  KeyDataResponse callback = std::move(it->second);
   pending_key_responses_.erase(it);
   callback(handled);
 }

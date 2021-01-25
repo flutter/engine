@@ -327,7 +327,7 @@ class PlatformConfiguration final {
                                std::vector<uint8_t> args);
 
   //----------------------------------------------------------------------------
-  /// @brief      Register a callback to be invoked when the framework has
+  /// @brief      Registers a callback to be invoked when the framework has
   ///             decided whether to handle an event. This callback originates
   ///             in the platform view and has been forwarded through the engine
   ///             to here.
@@ -463,12 +463,12 @@ class PlatformConfiguration final {
 
   std::unordered_map<int64_t, std::unique_ptr<Window>> windows_;
 
-  // We use id 0 to mean that no response is expected.
+  // ID starts at 1 because an ID of 0 indicates that no response is expected.
   int next_response_id_ = 1;
   std::unordered_map<int, fml::RefPtr<PlatformMessageResponse>>
       pending_responses_;
 
-  // We use id 0 to mean that no response is expected.
+  // ID starts at 1 because an ID of 0 indicates that no response is expected.
   uint64_t next_key_response_id_ = 1;
   std::unordered_map<uint64_t, KeyDataResponse>
       pending_key_responses_;

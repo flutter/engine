@@ -11,13 +11,13 @@
 namespace flutter {
 
 KeyDataPacket::KeyDataPacket(const KeyData& event, const char* character) {
-  uint64_t char_size = character == nullptr ? 0 : strlen(character);
+  size_t char_size = character == nullptr ? 0 : strlen(character);
+  uint64_t char_size_64 = char_size;
   data_.resize(sizeof(uint64_t) + sizeof(KeyData) + char_size);
-  memcpy(&data_[CharacterSizeStart_()], &char_size, sizeof(char_size));
-  memcpy(&data_[KeyDataStart_()], &event, sizeof(KeyData));
+  memcpy(CharacterSizeStart(), &char_size_64, sizeof(char_size));
+  memcpy(KeyDataStart(), &event, sizeof(KeyData));
   if (character != nullptr) {
-    memcpy(data_.data() + CharacterStart_(), character,
-           data_.size() - CharacterStart_());
+    memcpy(CharacterStart(), character, char_size);
   }
 }
 

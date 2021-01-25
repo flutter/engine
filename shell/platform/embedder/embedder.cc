@@ -1512,7 +1512,7 @@ inline flutter::KeyEventType ToKeyEventType(FlutterKeyEventKind event_kind) {
 // Many platforms assert the character to be less than 2 int16's, i.e. 4 bytes,
 // therefore the character data is asserted to be less than double the amount,
 // i.e. 8 bytes.
-constexpr size_t kKeyEventCharacterMaxBytes = 8;
+static constexpr size_t kKeyEventCharacterMaxBytes = 8;
 
 FlutterEngineResult FlutterEngineSendKeyEvent(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
@@ -1542,8 +1542,9 @@ FlutterEngineResult FlutterEngineSendKeyEvent(
       key_data, character);
 
   auto response = [callback, user_data](bool handled) {
-        callback(handled, user_data);
-      };
+    if (callback != nullptr)
+      callback(handled, user_data);
+  };
 
   return reinterpret_cast<flutter::EmbedderEngine*>(engine)
                  ->DispatchKeyDataPacket(

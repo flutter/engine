@@ -172,7 +172,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     invoke1<ui.PointerDataPacket>(_onPointerDataPacket, _onPointerDataPacketZone, dataPacket);
   }
 
-  /// A callback that is invoked when pointer data is available.
+  /// A callback that is invoked when key data is available.
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.

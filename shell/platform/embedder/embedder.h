@@ -617,7 +617,7 @@ typedef enum {
   kFlutterKeyEventKindRepeat,
 } FlutterKeyEventKind;
 
-/// A structure to represent a change of state of a key.
+/// A structure to represent a key event.
 ///
 /// Sending `FlutterKeyEvent` via `FlutterEngineSendKeyEvent` results in a
 /// corresponding `FlutterKeyEvent` to be dispatched in the framework. It is
@@ -1621,7 +1621,7 @@ FlutterEngineResult FlutterEngineSendPointerEvent(
 ///                            longer access `event` after returning.
 /// @param[in]  callback       The callback invoked by the engine when the
 ///                            Flutter application has decided whether it handles
-///                            this event.
+///                            this event. This can be null.
 /// @param[in]  user_data      The context associated with the callback. The exact
 ///                            same value will used to invoke `callback`. Accepts
 ///                            nullptr or a non-pointer value.

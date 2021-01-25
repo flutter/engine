@@ -22,6 +22,10 @@ class KeyDataPacket {
   KeyDataPacket(const KeyData& event, const char* character);
   ~KeyDataPacket();
 
+  // Prevent copying.
+  KeyDataPacket(KeyDataPacket const&) = delete;
+  KeyDataPacket& operator=(KeyDataPacket const&) = delete;
+
   const std::vector<uint8_t>& data() const { return data_; }
 
  private:
@@ -30,13 +34,11 @@ class KeyDataPacket {
   // |   Key Data   |     (kKeyDataFieldCount fields)
   // |   CharData   |     (CharDataSize bits)
 
-  size_t CharacterSizeStart_() { return 0; }
-  size_t KeyDataStart_() { return CharacterSizeStart_() + sizeof(uint64_t); }
-  size_t CharacterStart_() { return KeyDataStart_() + sizeof(KeyData); }
+  uint8_t* CharacterSizeStart() { return data_.data(); }
+  uint8_t* KeyDataStart() { return CharacterSizeStart() + sizeof(uint64_t); }
+  uint8_t* CharacterStart() { return KeyDataStart() + sizeof(KeyData); }
 
   std::vector<uint8_t> data_;
-
-  FML_DISALLOW_COPY_AND_ASSIGN(KeyDataPacket);
 };
 
 }  // namespace flutter
