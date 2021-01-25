@@ -1200,23 +1200,23 @@ typedef struct {
   bool returned;
 } KeyEventUserData;
 
-FlutterKeyEventKind unserializeKeyEventKind(uint64_t kindInt) {
+FlutterKeyEventType unserializeKeyEventKind(uint64_t kindInt) {
   switch(kindInt) {
     case 1:
-      return kFlutterKeyEventKindUp;
+      return kFlutterKeyEventTypeUp;
     case 2:
-      return kFlutterKeyEventKindDown;
+      return kFlutterKeyEventTypeDown;
     case 3:
-      return kFlutterKeyEventKindRepeat;
+      return kFlutterKeyEventTypeRepeat;
     default:
       FML_UNREACHABLE();
-      return kFlutterKeyEventKindUp;
+      return kFlutterKeyEventTypeUp;
   }
 }
 
 void expect_key_event_eq(const FlutterKeyEvent& subject, const FlutterKeyEvent& baseline) {
   EXPECT_EQ(subject.timestamp, baseline.timestamp);
-  EXPECT_EQ(subject.kind, baseline.kind);
+  EXPECT_EQ(subject.type, baseline.type);
   EXPECT_EQ(subject.physical, baseline.physical);
   EXPECT_EQ(subject.logical, baseline.logical);
   EXPECT_EQ(subject.synthesized, baseline.synthesized);
@@ -1228,7 +1228,7 @@ TEST_F(EmbedderTest, KeyDataIsCorrectlySerialized) {
   FlutterKeyEvent echoed_event;
 
   auto native_echo_event = [&](Dart_NativeArguments args) {
-    echoed_event.kind = unserializeKeyEventKind(
+    echoed_event.type = unserializeKeyEventKind(
         tonic::DartConverter<uint64_t>::FromDart(
             Dart_GetNativeArgument(args, 0)));
     echoed_event.timestamp = tonic::DartConverter<uint64_t>::FromDart(
@@ -1265,7 +1265,7 @@ TEST_F(EmbedderTest, KeyDataIsCorrectlySerialized) {
   const FlutterKeyEvent downEventUpperA {
     .struct_size = sizeof(FlutterKeyEvent),
     .timestamp = 1,
-    .kind = kFlutterKeyEventKindDown,
+    .type = kFlutterKeyEventTypeDown,
     .physical = 0x00070004,
     .logical = 0x00000000061,
     .character = "A",
@@ -1282,7 +1282,7 @@ TEST_F(EmbedderTest, KeyDataIsCorrectlySerialized) {
   const FlutterKeyEvent repeatEventWideChar {
     .struct_size = sizeof(FlutterKeyEvent),
     .timestamp = 1000,
-    .kind = kFlutterKeyEventKindRepeat,
+    .type = kFlutterKeyEventTypeRepeat,
     .physical = 0x00070005,
     .logical = 0x00000000062,
     .character = "∆",
@@ -1299,7 +1299,7 @@ TEST_F(EmbedderTest, KeyDataIsCorrectlySerialized) {
   const FlutterKeyEvent upEvent {
     .struct_size = sizeof(FlutterKeyEvent),
     .timestamp = 1000000,
-    .kind = kFlutterKeyEventKindUp,
+    .type = kFlutterKeyEventTypeUp,
     .physical = 0x00070006,
     .logical = 0x00000000063,
     .character = nullptr,
@@ -1335,7 +1335,7 @@ TEST_F(EmbedderTest, KeyDataResponseIsCorrectlyInvoked) {
   FlutterKeyEvent event {
     .struct_size = sizeof(FlutterKeyEvent),
     .timestamp = 1000,
-    .kind = kFlutterKeyEventKindDown,
+    .type = kFlutterKeyEventTypeDown,
     .physical = 0x00070005,
     .logical = 0x00000000062,
     .character = nullptr,

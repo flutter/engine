@@ -612,10 +612,10 @@ typedef struct {
 } FlutterPointerEvent;
 
 typedef enum {
-  kFlutterKeyEventKindUp = 1,
-  kFlutterKeyEventKindDown,
-  kFlutterKeyEventKindRepeat,
-} FlutterKeyEventKind;
+  kFlutterKeyEventTypeUp = 1,
+  kFlutterKeyEventTypeDown,
+  kFlutterKeyEventTypeRepeat,
+} FlutterKeyEventType;
 
 /// A structure to represent a key event.
 ///
@@ -626,7 +626,7 @@ typedef enum {
 /// the following rules:
 ///
 ///  * Each key press sequence shall consist of one key down event (`kind` being
-///    `kFlutterKeyEventKindDown`), zero or more repeat events, and one key up
+///    `kFlutterKeyEventTypeDown`), zero or more repeat events, and one key up
 ///    event, representing a physical key button being pressed, held, and released.
 ///  * All events throughout a key press sequence shall have the same `physical`
 ///    and `logical`. Having different `character`s is allowed.
@@ -638,7 +638,7 @@ typedef struct {
   /// that used by `FlutterEngineGetCurrentTime`.
   double timestamp;
   /// The event kind.
-  FlutterKeyEventKind kind;
+  FlutterKeyEventType type;
   /// The USB HID code for the physical key of the event.
   ///
   /// For the full definition and list of pre-defined physical keys, see
