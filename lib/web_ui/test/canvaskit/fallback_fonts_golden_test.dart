@@ -51,6 +51,10 @@ void testMain() {
       ui.window.onPlatformMessage = savedCallback;
     });
 
+    test('Roboto is always a fallback font', () {
+      expect(skiaFontCollection.globalFontFallbacks, contains('Roboto'));
+    });
+
     test('will download Noto Naskh Arabic if Arabic text is added', () async {
       final Completer<void> fontChangeCompleter = Completer<void>();
       // Intercept the system font change message.
