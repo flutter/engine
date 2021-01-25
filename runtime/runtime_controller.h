@@ -436,7 +436,7 @@ class RuntimeController : public PlatformConfigurationClient {
   ///             an isolate is not running.
   ///
   bool DispatchKeyDataPacket(const KeyDataPacket& packet,
-                             KeyDataPacketCallback callback);
+                             KeyDataResponse callback);
 
   //----------------------------------------------------------------------------
   /// @brief      Dispatch the semantics action to the specified accessibility

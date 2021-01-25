@@ -44,7 +44,7 @@ void PlatformView::DispatchPointerDataPacket(
 
 void PlatformView::DispatchKeyDataPacket(
     std::unique_ptr<KeyDataPacket> packet,
-    KeyDataPacketCallback callback) {
+    KeyDataResponse callback) {
   delegate_.OnPlatformViewDispatchKeyDataPacket(std::move(packet), std::move(callback));
 }
 

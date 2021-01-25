@@ -4,7 +4,7 @@
 
 #include "flutter/lib/ui/window/key_data.h"
 
-#include <string.h>
+#include <cstring>
 
 namespace flutter {
 

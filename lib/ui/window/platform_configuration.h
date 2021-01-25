@@ -5,6 +5,7 @@
 #ifndef FLUTTER_LIB_UI_WINDOW_PLATFORM_CONFIGURATION_H_
 #define FLUTTER_LIB_UI_WINDOW_PLATFORM_CONFIGURATION_H_
 
+#include <functional>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -21,6 +22,8 @@ namespace flutter {
 class FontCollection;
 class PlatformMessage;
 class Scene;
+
+typedef std::function<void (bool /* handled */)> KeyDataResponse;
 
 //--------------------------------------------------------------------------
 /// @brief An enum for defining the different kinds of accessibility features
@@ -339,7 +342,7 @@ class PlatformConfiguration final {
   /// @return     The response ID to be associated with the callback. Using this
   ///             ID in CompleteKeyDataResponse will invoke the callback.
   ///
-  uint64_t RegisterKeyDataResponse(KeyDataPacketCallback callback);
+  uint64_t RegisterKeyDataResponse(KeyDataResponse callback);
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the framework that it is time to begin working on a
@@ -467,7 +470,7 @@ class PlatformConfiguration final {
 
   // We use id 0 to mean that no response is expected.
   uint64_t next_key_response_id_ = 1;
-  std::unordered_map<uint64_t, KeyDataPacketCallback>
+  std::unordered_map<uint64_t, KeyDataResponse>
       pending_key_responses_;
 };
 

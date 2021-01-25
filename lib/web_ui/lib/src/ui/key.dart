@@ -6,7 +6,7 @@
 
 part of ui;
 
-/// How the key has changed since the last report.
+/// The type of a key event.
 // Must match the KeyEventType enum in ui/window/key_data.h.
 enum KeyEventType {
   /// The key is pressed.
@@ -19,12 +19,12 @@ enum KeyEventType {
   repeat,
 }
 
-/// Information about the change of a key.
+/// Information about a key event.
 class KeyData {
-  /// Creates an object that represents the change of a key.
+  /// Creates an object that represents a key event.
   const KeyData({
     required this.timeStamp,
-    required this.change,
+    required this.type,
     required this.physical,
     required this.logical,
     required this.character,
@@ -37,8 +37,8 @@ class KeyData {
   /// might not be the actual time that the key press or release happens.
   final Duration timeStamp;
 
-  /// How the key has changed since the last report.
-  final KeyEventType change;
+  /// The type of the event.
+  final KeyEventType type;
 
   /// The key code for the physical key that has changed.
   final int physical;
@@ -80,13 +80,13 @@ class KeyData {
   final bool synthesized;
 
   @override
-  String toString() => 'KeyData(change: ${_changeToString(change)}, physical: 0x${physical.toRadixString(16)}, '
+  String toString() => 'KeyData(type: ${_typeToString(type)}, physical: 0x${physical.toRadixString(16)}, '
     'logical: 0x${logical.toRadixString(16)}, character: $character)';
 
   /// Returns a complete textual description of the information in this object.
   String toStringFull() {
     return '$runtimeType('
-            'change: ${_changeToString(change)}, '
+            'type: ${_typeToString(type)}, '
             'timeStamp: $timeStamp, '
             'physical: 0x${physical.toRadixString(16)}, '
             'logical: 0x${logical.toRadixString(16)}, '
@@ -95,8 +95,8 @@ class KeyData {
            ')';
   }
 
-  static String _changeToString(KeyEventType change) {
-    switch (change) {
+  static String _typeToString(KeyEventType type) {
+    switch (type) {
       case KeyEventType.up:
         return 'up';
       case KeyEventType.down:

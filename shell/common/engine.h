@@ -740,7 +740,7 @@ class Engine final : public RuntimeDelegate,
   ///                       to handle this key data.
   ///
   void DispatchKeyDataPacket(std::unique_ptr<KeyDataPacket> packet,
-                             KeyDataPacketCallback callback);
+                             KeyDataResponse callback);
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the engine that the embedder encountered an

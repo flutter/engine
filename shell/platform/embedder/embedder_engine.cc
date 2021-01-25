@@ -138,7 +138,7 @@ bool EmbedderEngine::DispatchPointerDataPacket(
 
 bool EmbedderEngine::DispatchKeyDataPacket(
     std::unique_ptr<flutter::KeyDataPacket> packet,
-    KeyDataPacketCallback callback) {
+    KeyDataResponse callback) {
   if (!IsValid() || !packet) {
     return false;
   }

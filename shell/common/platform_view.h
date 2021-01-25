@@ -6,6 +6,7 @@
 #define COMMON_PLATFORM_VIEW_H_
 
 #include <memory>
+#include <functional>
 
 #include "flow/embedded_views.h"
 #include "flutter/common/graphics/texture.h"
@@ -53,6 +54,7 @@ class PlatformView {
   ///
   class Delegate {
    public:
+    using KeyDataResponse = std::function<void (bool)>;
     //--------------------------------------------------------------------------
     /// @brief      Notifies the delegate that the platform view was created
     ///             with the given render surface. This surface is platform
@@ -138,7 +140,7 @@ class PlatformView {
     ///
     virtual void OnPlatformViewDispatchKeyDataPacket(
         std::unique_ptr<KeyDataPacket> packet,
-        KeyDataPacketCallback callback) = 0;
+        std::function<void (bool /* handled */)> callback) = 0;
 
     //--------------------------------------------------------------------------
     /// @brief      Notifies the delegate that the platform view has encountered
@@ -599,7 +601,7 @@ class PlatformView {
   /// @param[in]  packet  The key data packet to dispatch to the framework.
   ///
   void DispatchKeyDataPacket(std::unique_ptr<KeyDataPacket> packet,
-                             KeyDataPacketCallback callback);
+                             Delegate::KeyDataResponse callback);
 
   //--------------------------------------------------------------------------
   /// @brief      Used by the embedder to specify a texture that it wants the

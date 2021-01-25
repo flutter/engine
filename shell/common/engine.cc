@@ -417,7 +417,7 @@ void Engine::DispatchPointerDataPacket(
 
 void Engine::DispatchKeyDataPacket(
     std::unique_ptr<KeyDataPacket> packet,
-    KeyDataPacketCallback callback) {
+    KeyDataResponse callback) {
   TRACE_EVENT0("flutter", "Engine::DispatchKeyDataPacket");
   if (runtime_controller_) {
     runtime_controller_->DispatchKeyDataPacket(*packet, std::move(callback));

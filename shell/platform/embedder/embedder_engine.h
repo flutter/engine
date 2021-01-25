@@ -61,7 +61,7 @@ class EmbedderEngine {
       std::unique_ptr<flutter::PointerDataPacket> packet);
 
   bool DispatchKeyDataPacket(std::unique_ptr<flutter::KeyDataPacket> packet,
-                             KeyDataPacketCallback callback);
+                             KeyDataResponse callback);
 
   bool SendPlatformMessage(fml::RefPtr<flutter::PlatformMessage> message);
 

@@ -264,7 +264,7 @@ bool RuntimeController::DispatchPointerDataPacket(
 
 bool RuntimeController::DispatchKeyDataPacket(
     const KeyDataPacket& packet,
-    KeyDataPacketCallback callback) {
+    KeyDataResponse callback) {
   if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
     TRACE_EVENT1("flutter", "RuntimeController::DispatchKeyDataPacket", "mode",
                  "basic");

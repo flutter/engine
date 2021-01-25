@@ -964,7 +964,7 @@ void Shell::OnPlatformViewDispatchPointerDataPacket(
 // |PlatformView::Delegate|
 void Shell::OnPlatformViewDispatchKeyDataPacket(
     std::unique_ptr<KeyDataPacket> packet,
-    KeyDataPacketCallback callback) {
+    std::function<void (bool /* handled */)> callback) {
   TRACE_EVENT0("flutter", "Shell::OnPlatformViewDispatchKeyDataPacket");
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());

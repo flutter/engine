@@ -5,7 +5,6 @@
 #ifndef FLUTTER_LIB_UI_WINDOW_KEY_DATA_MESSAGE_H_
 #define FLUTTER_LIB_UI_WINDOW_KEY_DATA_MESSAGE_H_
 
-#include <string.h>
 #include <vector>
 #include <functional>
 
@@ -13,8 +12,6 @@
 #include "flutter/lib/ui/window/key_data.h"
 
 namespace flutter {
-
-typedef std::function<void (bool)> KeyDataPacketCallback;
 
 class KeyDataPacket {
  public:

@@ -6,7 +6,7 @@
 
 part of dart.ui;
 
-/// How the key has changed since the last report.
+/// The type of a key event.
 // Must match the KeyEventType enum in ui/window/key_data.h.
 enum KeyEventType {
   /// The key is pressed.
@@ -21,7 +21,7 @@ enum KeyEventType {
 
 /// Information about a key event.
 class KeyData {
-  /// Creates an object that represents the change of a key.
+  /// Creates an object that represents a key event.
   const KeyData({
     required this.timeStamp,
     required this.type,
@@ -60,17 +60,18 @@ class KeyData {
   ///
   /// For example, some key downs or ups might be lost when the window loses
   /// focus. Some platforms provides ways to query whether a key is being held.
-  /// If Flutter detects an inconsistancy between the state Flutter records and
-  /// the state returned by the system, Flutter will synthesize a corresponding
-  /// event to synchronize the state without breaking the event model.
+  /// If the embedder detects an inconsistancy between its internal record and
+  /// the state returned by the system, the embedder will synthesize a
+  /// corresponding event to synchronize the state without breaking the event
+  /// model.
   ///
   /// As another example, macOS treats CapsLock in a special way by sending
   /// down and up events at the down of alterate presses to indicate the
   /// direction in which the lock is toggled instead of that the physical key is
-  /// going. Flutter normalizes the behavior by converting a native down event
-  /// into a down event followed immediately by a synthesized up event, and
-  /// the native up event also into a down event followed immediately by a
-  /// synthesized up event.
+  /// going. A macOS embedder should normalize the behavior by converting a
+  /// native down event into a down event followed immediately by a synthesized
+  /// up event, and the native up event also into a down event followed
+  /// immediately by a synthesized up event.
   ///
   /// Synthesized events do not have a trustworthy [timeStamp], and should not be
   /// processed as if the key actually went down or up at the time of the
@@ -80,13 +81,13 @@ class KeyData {
   final bool synthesized;
 
   @override
-  String toString() => 'KeyData(change: ${_changeToString(type)}, physical: 0x${physical.toRadixString(16)}, '
+  String toString() => 'KeyData(type: ${_typeToString(type)}, physical: 0x${physical.toRadixString(16)}, '
     'logical: 0x${logical.toRadixString(16)}, character: $character)';
 
   /// Returns a complete textual description of the information in this object.
   String toStringFull() {
     return '$runtimeType('
-            'change: ${_changeToString(type)}, '
+            'type: ${_typeToString(type)}, '
             'timeStamp: $timeStamp, '
             'physical: 0x${physical.toRadixString(16)}, '
             'logical: 0x${logical.toRadixString(16)}, '
@@ -95,8 +96,8 @@ class KeyData {
            ')';
   }
 
-  static String _changeToString(KeyEventType change) {
-    switch (change) {
+  static String _typeToString(KeyEventType type) {
+    switch (type) {
       case KeyEventType.up:
         return 'up';
       case KeyEventType.down:

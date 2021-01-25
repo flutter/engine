@@ -40,7 +40,7 @@ void onPointerDataPacketMain() {
   PlatformDispatcher.instance.onPointerDataPacket = (PointerDataPacket packet) {
     List<int> sequence = <int>[];
     for (PointerData data in packet.data) {
-      sequence.add(PointerChange.values.indexOf(data.type));
+      sequence.add(PointerChange.values.indexOf(data.change));
     }
     nativeOnPointerDataPacket(sequence);
   };

@@ -1492,8 +1492,8 @@ FlutterEngineResult FlutterEngineSendPointerEvent(
                                   "running Flutter application.");
 }
 
-inline flutter::KeyEventType ToKeyEventType(FlutterKeyEventKind key_change) {
-  switch (key_change) {
+inline flutter::KeyEventType ToKeyEventType(FlutterKeyEventKind event_kind) {
+  switch (event_kind) {
     case kFlutterKeyEventKindUp:
       return flutter::KeyEventType::kUp;
     case kFlutterKeyEventKindDown:
@@ -1537,7 +1537,7 @@ FlutterEngineResult FlutterEngineSendKeyEvent(
   flutter::KeyData key_data;
   key_data.Clear();
   key_data.timestamp = (uint64_t)SAFE_ACCESS(event, timestamp, 0);
-  key_data.change = ToKeyEventType(
+  key_data.type = ToKeyEventType(
       SAFE_ACCESS(event, kind, FlutterKeyEventKind::kFlutterKeyEventKindUp));
   key_data.physical = SAFE_ACCESS(event, physical, 0);
   key_data.logical = SAFE_ACCESS(event, logical, 0);
