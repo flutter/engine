@@ -1529,11 +1529,6 @@ FlutterEngineResult FlutterEngineSendKeyEvent(
 
   const char* character = SAFE_ACCESS(event, character, nullptr);
 
-  size_t character_data_size =
-      character == nullptr ? 0 : strnlen(character, kKeyEventCharacterMaxBytes);
-
-  auto packet = std::make_unique<flutter::KeyDataPacket>(character_data_size);
-
   flutter::KeyData key_data;
   key_data.Clear();
   key_data.timestamp = (uint64_t)SAFE_ACCESS(event, timestamp, 0);
@@ -1542,8 +1537,9 @@ FlutterEngineResult FlutterEngineSendKeyEvent(
   key_data.physical = SAFE_ACCESS(event, physical, 0);
   key_data.logical = SAFE_ACCESS(event, logical, 0);
   key_data.synthesized = SAFE_ACCESS(event, synthesized, false);
-  packet->SetKeyData(key_data);
-  packet->SetCharacter(character);
+
+  auto packet = std::make_unique<flutter::KeyDataPacket>(
+      key_data, character);
 
   auto response = [callback, user_data](bool handled) {
         callback(handled, user_data);

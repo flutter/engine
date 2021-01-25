@@ -374,10 +374,7 @@ class PlatformDispatcher {
   //  * HardwareKeyboard.java
   static const int _kKeyDataFieldCount = 5;
 
-  // KeyData packet structure:
-  // | CharDataSize |     (1 field)
-  // |   Key Data   |     (_kKeyDataFieldCount fields)
-  // |   CharData   |     (CharDataSize bits)
+  // The packet structure is described in `key_data_packet.h`.
   static KeyData _unpackKeyData(ByteData packet) {
     const int kStride = Int64List.bytesPerElement;
 

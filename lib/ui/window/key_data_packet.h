@@ -13,23 +13,23 @@
 
 namespace flutter {
 
+// A byte stream representing a key event, to be sent to the framework.
 class KeyDataPacket {
  public:
-  // Build a KeyDataPacket by incrementally fill in data.
+  // Build the key data packet by providing information. 
   //
-  // The `character_data_size` is number of bytes to contain the character data.
-  KeyDataPacket(size_t character_data_size);
+  // The `character` is a nullable C-string that ends with a '\0'.
+  KeyDataPacket(const KeyData& event, const char* character);
   ~KeyDataPacket();
 
   const std::vector<uint8_t>& data() const { return data_; }
 
-  void SetKeyData(const KeyData& event);
-
-  // Set character data to the proper position, which should not be terminated
-  // by a null character (length controled by character_data_size).
-  void SetCharacter(const char* characters);
-
  private:
+  // Packet structure:
+  // | CharDataSize |     (1 field)
+  // |   Key Data   |     (kKeyDataFieldCount fields)
+  // |   CharData   |     (CharDataSize bits)
+
   size_t CharacterSizeStart_() { return 0; }
   size_t KeyDataStart_() { return CharacterSizeStart_() + sizeof(uint64_t); }
   size_t CharacterStart_() { return KeyDataStart_() + sizeof(KeyData); }
