@@ -19,22 +19,28 @@ void main() {
 void testMain() async {
   final Rect region = Rect.fromLTWH(8, 8, 600, 800); // Compensate for old scuba tester padding
 
-  Future<void> testPath(Path path, String scubaFileName, {Paint paint, double maxDiffRatePercent = null}) async {
+  Future<void> testPath(Path path, String scubaFileName,
+      {Paint paint, double maxDiffRatePercent = null, bool write = false,
+      bool strokeEnabled = true, bool fillEnabled = true}) async {
     const Rect canvasBounds = Rect.fromLTWH(0, 0, 600, 800);
     final BitmapCanvas bitmapCanvas = BitmapCanvas(canvasBounds,
         RenderStrategy());
     final RecordingCanvas canvas = RecordingCanvas(canvasBounds);
 
-    paint ??= Paint()
-      ..color = const Color(0x807F7F7F)
-      ..style = PaintingStyle.fill;
+    if (fillEnabled) {
+      paint ??= Paint()
+        ..color = const Color(0x807F7F7F)
+        ..style = PaintingStyle.fill;
+      canvas.drawPath(path, paint);
+    }
 
-    canvas.drawPath(path, paint);
-
-    paint = Paint()
-      ..strokeWidth = 2
-      ..color = const Color(0xFFFF0000)
-      ..style = PaintingStyle.stroke;
+    if (strokeEnabled) {
+      paint = Paint()
+        ..strokeWidth = 2
+        ..color = fillEnabled ? const Color(0xFFFF0000) :
+            const Color(0xFF000000)
+        ..style = PaintingStyle.stroke;
+    }
 
     canvas.drawPath(path, paint);
 
@@ -46,7 +52,8 @@ void testMain() async {
     canvas.endRecording();
     canvas.apply(bitmapCanvas, canvasBounds);
 
-    await matchGoldenFile('$scubaFileName.png', region: region, maxDiffRatePercent: maxDiffRatePercent);
+    await matchGoldenFile('$scubaFileName.png', region: region,
+        maxDiffRatePercent: maxDiffRatePercent, write: write);
 
     bitmapCanvas.rootElement.remove();
     svgElement.remove();
@@ -131,6 +138,27 @@ void testMain() async {
     path.lineTo(0, 10);
     await testPath(path, 'svg_notch');
   });
+
+  /// Regression test for https://github.com/flutter/flutter/issues/70980
+  test('render notch', () async {
+    const double w = 0.7;
+    final Path path = Path();
+    path.moveTo(0.5, 4);
+    path.conicTo(0.5, 0.5, 4, 0.5, w);
+    path.moveTo(4, 0.5);
+    path.lineTo(6.5, 0.5);
+    path.moveTo(36.0, 0.5);
+    path.lineTo(158, 0.5);
+    path.conicTo(161.5, 0.5, 161.5, 4, w);
+    path.moveTo(161.5, 4);
+    path.lineTo(161.5, 38);
+    path.conicTo(161.5, 41.5, 158, 41.5, w);
+    path.lineTo(4, 41.5);
+    path.conicTo(0.5, 41.5, 0.5, 38, w);
+    path.lineTo(0.5, 4);
+    await testPath(path, 'svg_editoutline', fillEnabled: false,
+        write: true);
+  });
 }
 
 html.Element pathToSvgElement(Path path, Paint paint) {
@@ -142,6 +170,7 @@ html.Element pathToSvgElement(Path path, Paint paint) {
   if (paint.style == PaintingStyle.stroke) {
     sb.write('stroke="${colorToCssString(paint.color)}" ');
     sb.write('stroke-width="${paint.strokeWidth}" ');
+    sb.write('fill="none" ');
   }
   if (paint.style == PaintingStyle.fill) {
     sb.write('fill="${colorToCssString(paint.color)}" ');
