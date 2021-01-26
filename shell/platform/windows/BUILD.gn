@@ -93,6 +93,8 @@ source_set("flutter_windows_source") {
       "system_utils_win32.cc",
       "task_runner_win32.cc",
       "task_runner_win32.h",
+      "text_input_manager_win32.cc",
+      "text_input_manager_win32.h",
       "win32_dpi_utils.cc",
       "win32_dpi_utils.h",
       "win32_flutter_window.cc",
@@ -103,7 +105,10 @@ source_set("flutter_windows_source") {
       "win32_window_proc_delegate_manager.h",
     ]
 
-    libs = [ "dwmapi.lib" ]
+    libs = [
+      "dwmapi.lib",
+      "imm32.lib",
+    ]
   }
 
   configs += [
@@ -167,11 +172,14 @@ if (target_os == "winuwp") {
       "flutter_project_bundle_unittests.cc",
       "flutter_windows_engine_unittests.cc",
       "flutter_windows_texture_registrar_unittests.cc",
+      "key_event_handler_unittests.cc",
       "string_conversion_unittests.cc",
       "system_utils_unittests.cc",
       "testing/engine_embedder_api_modifier.h",
       "testing/mock_win32_window.cc",
       "testing/mock_win32_window.h",
+      "testing/mock_window_binding_handler.cc",
+      "testing/mock_window_binding_handler.h",
       "testing/win32_flutter_window_test.cc",
       "testing/win32_flutter_window_test.h",
       "win32_dpi_utils_unittests.cc",

@@ -5,6 +5,7 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_WINDOW_BINDING_HANDLER_DELEGATE_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_WINDOW_BINDING_HANDLER_DELEGATE_H_
 
+#include "flutter/shell/platform/common/cpp/geometry.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 
 namespace flutter {
@@ -40,9 +41,32 @@ class WindowBindingHandlerDelegate {
   // Typically called by currently configured WindowBindingHandler
   virtual void OnText(const std::u16string&) = 0;
 
-  // Notifies delegate that backing window size has received key press.
-  // Typically called by currently configured WindowBindingHandler
-  virtual void OnKey(int key, int scancode, int action, char32_t character) = 0;
+  // Notifies delegate that backing window size has received key press. Should
+  // return true if the event was handled and should not be propagated.
+  // Typically called by currently configured WindowBindingHandler.
+  virtual bool OnKey(int key,
+                     int scancode,
+                     int action,
+                     char32_t character,
+                     bool extended) = 0;
+
+  // Notifies the delegate that IME composing mode has begun.
+  //
+  // Triggered when the user begins editing composing text using a multi-step
+  // input method such as in CJK text input.
+  virtual void OnComposeBegin() = 0;
+
+  // Notifies the delegate that IME composing mode has ended.
+  //
+  // Triggered when the user commits the composing text while using a multi-step
+  // input method such as in CJK text input.
+  virtual void OnComposeEnd() = 0;
+
+  // Notifies the delegate that IME composing region contents have changed.
+  //
+  // Triggered when the user edits the composing text while using a multi-step
+  // input method such as in CJK text input.
+  virtual void OnComposeChange(const std::u16string& text, int cursor_pos) = 0;
 
   // Notifies delegate that backing window size has recevied scroll.
   // Typically called by currently configured WindowBindingHandler
