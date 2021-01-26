@@ -67,7 +67,7 @@ const int _kDeadKeyShift = 0x200000000000;
 const int _kDeadKeyAlt = 0x400000000000;
 const int _kDeadKeyMeta = 0x800000000000;
 
-typedef DispatchKeyData = void Function(ui.KeyData data);
+typedef DispatchKeyData = bool Function(ui.KeyData data);
 
 /// Converts a floating number timestamp (in milliseconds) to a [Duration] by
 /// splitting it into two integer components: milliseconds + microseconds.
@@ -106,7 +106,7 @@ class KeyboardBinding {
         print(event.type);
       }
       if (EngineSemanticsOwner.instance.receiveGlobalEvent(event)) {
-        handler(event);
+        return handler(event);
       }
     };
     assert(!_listeners.containsKey(eventName));
@@ -121,8 +121,11 @@ class KeyboardBinding {
     });
     _listeners.clear();
   }
-  void _onKeyData(ui.KeyData data) {
-    EnginePlatformDispatcher.instance.invokeOnKeyData(data);
+  bool _onKeyData(ui.KeyData data) {
+    bool? result;
+    EnginePlatformDispatcher.instance.invokeOnKeyData(data,
+      (bool handled) { result = handled; });
+    return result!;
   }
 
   void _setup() {
@@ -481,7 +484,6 @@ class KeyboardConverter {
       synthesized: false,
     );
 
-    dispatchKeyData(keyData);
-    return true;
+    return dispatchKeyData(keyData);
   }
 }
