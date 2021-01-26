@@ -580,7 +580,7 @@ void testMain() {
         region: ui.Rect.fromLTRB(0, 0, testWidth, 850),
         write: true,
       );
-    }, solo: true);
+    });
     // TODO: https://github.com/flutter/flutter/issues/60040
     // TODO: https://github.com/flutter/flutter/issues/71520
   }, skip: isIosSafari || isFirefox);
