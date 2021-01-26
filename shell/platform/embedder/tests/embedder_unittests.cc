@@ -1270,7 +1270,7 @@ TEST_F(EmbedderTest, KeyDataIsCorrectlySerialized) {
   ready.Wait();
 
   // A normal down event
-  const FlutterKeyEvent down_event_upper_a {
+  const FlutterKeyEvent down_event_upper_a{
       .struct_size = sizeof(FlutterKeyEvent),
       .timestamp = 1,
       .type = kFlutterKeyEventTypeDown,
@@ -1288,7 +1288,7 @@ TEST_F(EmbedderTest, KeyDataIsCorrectlySerialized) {
   EXPECT_EQ(echoed_char, 0x41llu);
 
   // A repeat event with multi-byte character
-  const FlutterKeyEvent repeat_event_wide_char {
+  const FlutterKeyEvent repeat_event_wide_char{
       .struct_size = sizeof(FlutterKeyEvent),
       .timestamp = 1000,
       .type = kFlutterKeyEventTypeRepeat,
@@ -1299,14 +1299,14 @@ TEST_F(EmbedderTest, KeyDataIsCorrectlySerialized) {
   };
   FlutterEngineSendKeyEvent(
       engine.get(), &repeat_event_wide_char,
-      [](bool handled, void* user_data){}, nullptr);
+      [](bool handled, void* user_data) {}, nullptr);
   message_latch->Wait();
 
   ExpectKeyEventEq(echoed_event, repeat_event_wide_char);
   EXPECT_EQ(echoed_char, 0x2206llu);
 
   // An up event with no character, synthesized
-  const FlutterKeyEvent up_event {
+  const FlutterKeyEvent up_event{
       .struct_size = sizeof(FlutterKeyEvent),
       .timestamp = 1000000,
       .type = kFlutterKeyEventTypeUp,
@@ -1316,7 +1316,7 @@ TEST_F(EmbedderTest, KeyDataIsCorrectlySerialized) {
       .synthesized = true,
   };
   FlutterEngineSendKeyEvent(
-      engine.get(), &up_event, [](bool handled, void* user_data){}, nullptr);
+      engine.get(), &up_event, [](bool handled, void* user_data) {}, nullptr);
   message_latch->Wait();
 
   ExpectKeyEventEq(echoed_event, up_event);
@@ -1342,7 +1342,7 @@ TEST_F(EmbedderTest, KeyDataResponseIsCorrectlyInvoked) {
   ready.Wait();
 
   // Dispatch a single event
-  FlutterKeyEvent event {
+  FlutterKeyEvent event{
       .struct_size = sizeof(FlutterKeyEvent),
       .timestamp = 1000,
       .type = kFlutterKeyEventTypeDown,
@@ -1351,14 +1351,14 @@ TEST_F(EmbedderTest, KeyDataResponseIsCorrectlyInvoked) {
       .character = nullptr,
   };
 
-  KeyEventUserData user_data1 {
+  KeyEventUserData user_data1{
       .latch = std::make_shared<fml::AutoResetWaitableEvent>(),
   };
   // Entrypoint `key_data_echo` uses `event.synthesized` as `handled`.
   event.synthesized = true;
   FlutterEngineSendKeyEvent(
       engine.get(), &event,
-      [](bool handled, void* untyped_user_data){
+      [](bool handled, void* untyped_user_data) {
         KeyEventUserData* user_data =
             reinterpret_cast<KeyEventUserData*>(untyped_user_data);
         EXPECT_EQ(handled, true);
@@ -1369,11 +1369,11 @@ TEST_F(EmbedderTest, KeyDataResponseIsCorrectlyInvoked) {
 
   // Dispatch two events back to back, using the same callback on different
   // user_data
-  KeyEventUserData user_data2 {
+  KeyEventUserData user_data2{
       .latch = std::make_shared<fml::AutoResetWaitableEvent>(),
       .returned = false,
   };
-  KeyEventUserData user_data3 {
+  KeyEventUserData user_data3{
       .latch = std::make_shared<fml::AutoResetWaitableEvent>(),
       .returned = false,
   };

@@ -23,7 +23,7 @@ class FontCollection;
 class PlatformMessage;
 class Scene;
 
-typedef std::function<void (bool /* handled */)> KeyDataResponse;
+typedef std::function<void(bool /* handled */)> KeyDataResponse;
 
 //--------------------------------------------------------------------------
 /// @brief An enum for defining the different kinds of accessibility features
