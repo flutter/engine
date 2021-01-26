@@ -507,7 +507,7 @@ class Shell final : public PlatformView::Delegate,
   // |PlatformView::Delegate|
   void OnPlatformViewDispatchKeyDataPacket(
       std::unique_ptr<KeyDataPacket> packet,
-      std::function<void (bool /* handled */)> callback) override;
+      std::function<void(bool /* handled */)> callback) override;
 
   // |PlatformView::Delegate|
   void OnPlatformViewDispatchSemanticsAction(

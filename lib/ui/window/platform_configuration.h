@@ -470,8 +470,7 @@ class PlatformConfiguration final {
 
   // ID starts at 1 because an ID of 0 indicates that no response is expected.
   uint64_t next_key_response_id_ = 1;
-  std::unordered_map<uint64_t, KeyDataResponse>
-      pending_key_responses_;
+  std::unordered_map<uint64_t, KeyDataResponse> pending_key_responses_;
 };
 
 }  // namespace flutter

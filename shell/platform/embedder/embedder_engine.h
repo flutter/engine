@@ -63,10 +63,11 @@ class EmbedderEngine {
   //----------------------------------------------------------------------------
   /// @brief      Notifies the platform view that the embedder has sent it a key
   ///             data packet. A key data packet contains one key event. This
-  ///             call originates in the platform view and the shell has forwarded
-  ///             the same to the engine on the UI task runner here. The platform
-  ///             view will decide whether to handle this event, and send the
-  ///             result using `callback`, which will be called exactly once.
+  ///             call originates in the platform view and the shell has
+  ///             forwarded the same to the engine on the UI task runner here.
+  ///             The platform view will decide whether to handle this event,
+  ///             and send the result using `callback`, which will be called
+  ///             exactly once.
   ///
   /// @param[in]  packet    The key data packet.
   /// @param[in]  callback  Called when the framework has decided whether

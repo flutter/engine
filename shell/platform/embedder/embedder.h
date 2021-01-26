@@ -627,15 +627,16 @@ typedef enum {
 ///
 ///  * Each key press sequence shall consist of one key down event (`kind` being
 ///    `kFlutterKeyEventTypeDown`), zero or more repeat events, and one key up
-///    event, representing a physical key button being pressed, held, and released.
+///    event, representing a physical key button being pressed, held, and
+///    released.
 ///  * All events throughout a key press sequence shall have the same `physical`
 ///    and `logical`. Having different `character`s is allowed.
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterKeyEvent).
   size_t struct_size;
-  /// The timestamp at which the key event was generated. The timestamp should be
-  /// specified in microseconds and the clock should be the same as that used by
-  /// `FlutterEngineGetCurrentTime`.
+  /// The timestamp at which the key event was generated. The timestamp should
+  /// be specified in microseconds and the clock should be the same as that used
+  /// by `FlutterEngineGetCurrentTime`.
   double timestamp;
   /// The event kind.
   FlutterKeyEventType type;
@@ -656,11 +657,11 @@ typedef struct {
   ///
   /// The embedder is likely to skip events and/or construct new events that do
   /// not correspond to any native events in order to conform the regularity
-  /// of events (as documented in `FlutterKeyEvent`). An example is when a key up
-  /// is missed due to loss of window focus, on a platform that provides query to
-  /// key pressing status, the embedder might realize that the key has been
-  /// released at the next key event, and should construct a synthesized up event
-  /// immediately before the actual event.
+  /// of events (as documented in `FlutterKeyEvent`). An example is when a key
+  /// up is missed due to loss of window focus, on a platform that provides
+  /// query to key pressing status, the embedder might realize that the key has
+  /// been released at the next key event, and should construct a synthesized up
+  /// event immediately before the actual event.
   ///
   /// An event being synthesized means that the framework will not trust the
   /// `timestamp` of the event.
@@ -1619,20 +1620,20 @@ FlutterEngineResult FlutterEngineSendPointerEvent(
 /// @param[in]  event          The event data to be sent. This function will no
 ///                            longer access `event` after returning.
 /// @param[in]  callback       The callback invoked by the engine when the
-///                            Flutter application has decided whether it handles
-///                            this event. Accepts nullptr.
-/// @param[in]  user_data      The context associated with the callback. The exact
-///                            same value will used to invoke `callback`. Accepts
-///                            nullptr.
+///                            Flutter application has decided whether it
+///                            handles this event. Accepts nullptr.
+/// @param[in]  user_data      The context associated with the callback. The
+///                            exact same value will used to invoke `callback`.
+///                            Accepts nullptr.
 ///
 /// @return     The result of the call.
 ///
 FLUTTER_EXPORT
-FlutterEngineResult FlutterEngineSendKeyEvent(
-    FLUTTER_API_SYMBOL(FlutterEngine) engine,
-    const FlutterKeyEvent* event,
-    FlutterKeyEventCallback callback,
-    void* user_data);
+FlutterEngineResult FlutterEngineSendKeyEvent(FLUTTER_API_SYMBOL(FlutterEngine)
+                                                  engine,
+                                              const FlutterKeyEvent* event,
+                                              FlutterKeyEventCallback callback,
+                                              void* user_data);
 
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineSendPlatformMessage(

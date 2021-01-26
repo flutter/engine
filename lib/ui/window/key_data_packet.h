@@ -5,8 +5,8 @@
 #ifndef FLUTTER_LIB_UI_WINDOW_KEY_DATA_MESSAGE_H_
 #define FLUTTER_LIB_UI_WINDOW_KEY_DATA_MESSAGE_H_
 
-#include <vector>
 #include <functional>
+#include <vector>
 
 #include "flutter/fml/macros.h"
 #include "flutter/lib/ui/window/key_data.h"
@@ -16,7 +16,7 @@ namespace flutter {
 // A byte stream representing a key event, to be sent to the framework.
 class KeyDataPacket {
  public:
-  // Build the key data packet by providing information. 
+  // Build the key data packet by providing information.
   //
   // The `character` is a nullable C-string that ends with a '\0'.
   KeyDataPacket(const KeyData& event, const char* character);

@@ -182,9 +182,8 @@ void GetPersistentIsolateData(Dart_NativeArguments args) {
 }
 
 void RespondToKeyData(Dart_Handle window, int response_id, bool handled) {
-  UIDartState::Current()
-      ->platform_configuration()
-      ->CompleteKeyDataResponse(response_id, handled);
+  UIDartState::Current()->platform_configuration()->CompleteKeyDataResponse(
+      response_id, handled);
 }
 
 void _RespondToKeyData(Dart_NativeArguments args) {
@@ -366,7 +365,6 @@ uint64_t PlatformConfiguration::RegisterKeyDataResponse(
   return response_id;
 }
 
-
 void PlatformConfiguration::BeginFrame(fml::TimePoint frameTime) {
   std::shared_ptr<tonic::DartState> dart_state =
       begin_frame_.dart_state().lock();
@@ -442,7 +440,8 @@ void PlatformConfiguration::CompletePlatformMessageResponse(
   response->Complete(std::make_unique<fml::DataMapping>(std::move(data)));
 }
 
-void PlatformConfiguration::CompleteKeyDataResponse(uint64_t response_id, bool handled) {
+void PlatformConfiguration::CompleteKeyDataResponse(uint64_t response_id,
+                                                    bool handled) {
   if (response_id == 0) {
     return;
   }

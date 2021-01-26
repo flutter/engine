@@ -24,8 +24,8 @@ enum class KeyEventType : int64_t {
 
 // The fixed-length sections of a KeyDataPacket.
 //
-// KeyData does not contain `character`, for variable-length data are stored in a
-// different way in KeyDataPacket.
+// KeyData does not contain `character`, for variable-length data are stored in
+// a different way in KeyDataPacket.
 //
 // This structure is unpacked by hooks.dart.
 struct alignas(8) KeyData {
