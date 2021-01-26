@@ -353,13 +353,15 @@ void Canvas::drawImageRect(const CanvasImage* image,
 }
 
 static SkFilterMode paint_to_filter(const SkPaint* paint) {
-  return paint && (paint->getFilterQuality() != kNone_SkFilterQuality) ?
-        SkFilterMode::kLinear : SkFilterMode::kNearest;
+  return paint && (paint->getFilterQuality() != kNone_SkFilterQuality)
+             ? SkFilterMode::kLinear
+             : SkFilterMode::kNearest;
 }
 
 static SkSamplingOptions paint_to_sampling(const SkPaint* paint) {
-  return SkSamplingOptions(paint ? paint->getFilterQuality() : kNone_SkFilterQuality,
-                           SkSamplingOptions::kMedium_asMipmapLinear);
+  return SkSamplingOptions(
+      paint ? paint->getFilterQuality() : kNone_SkFilterQuality,
+      SkSamplingOptions::kMedium_asMipmapLinear);
 }
 
 void Canvas::drawImageNine(const CanvasImage* image,
@@ -388,7 +390,8 @@ void Canvas::drawImageNine(const CanvasImage* image,
   SkRect dst = SkRect::MakeLTRB(dst_left, dst_top, dst_right, dst_bottom);
   // TODO: add filtering to public API, since paint's quality is deprecated
   SkFilterMode filter = paint_to_filter(paint.paint());
-  canvas_->drawImageNine(image->image().get(), icenter, dst, filter, paint.paint());
+  canvas_->drawImageNine(image->image().get(), icenter, dst, filter,
+                         paint.paint());
 }
 
 void Canvas::drawPicture(Picture* picture) {
