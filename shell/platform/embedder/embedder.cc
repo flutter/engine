@@ -1505,16 +1505,6 @@ static inline flutter::KeyEventType MapKeyEventType(
   return flutter::KeyEventType::kUp;
 }
 
-// The number of bytes that should be able to fully store character data.
-//
-// This is an arbitrary number that is considered sufficient, used as an
-// upperbound in strnlen.
-//
-// Many platforms assert the character to be less than 2 int16's, i.e. 4 bytes,
-// therefore the character data is asserted to be less than double the amount,
-// i.e. 8 bytes.
-static constexpr size_t kKeyEventCharacterMaxBytes = 8;
-
 FlutterEngineResult FlutterEngineSendKeyEvent(FLUTTER_API_SYMBOL(FlutterEngine)
                                                   engine,
                                               const FlutterKeyEvent* event,
