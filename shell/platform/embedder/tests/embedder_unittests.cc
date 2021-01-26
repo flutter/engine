@@ -1280,7 +1280,7 @@ TEST_F(EmbedderTest, KeyDataIsCorrectlySerialized) {
       .synthesized = false,
   };
   FlutterEngineSendKeyEvent(
-      engine.get(), &down_event_upper_a, [](bool handled, void* user_data){},
+      engine.get(), &down_event_upper_a, [](bool handled, void* user_data) {},
       nullptr);
   message_latch->Wait();
 
@@ -1377,7 +1377,7 @@ TEST_F(EmbedderTest, KeyDataResponseIsCorrectlyInvoked) {
       .latch = std::make_shared<fml::AutoResetWaitableEvent>(),
       .returned = false,
   };
-  auto callback23 = [](bool handled, void* untyped_user_data){
+  auto callback23 = [](bool handled, void* untyped_user_data) {
     KeyEventUserData* user_data =
         reinterpret_cast<KeyEventUserData*>(untyped_user_data);
     EXPECT_EQ(handled, false);
