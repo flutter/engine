@@ -217,6 +217,10 @@ shared_library("flutter_linux_gtk") {
   deps = [ ":flutter_linux" ]
 
   public_configs = [ "//flutter:config" ]
+
+  version_script = rebase_path("//flutter/shell/platform/linux/flutter_linux_gtk.map", root_build_dir)
+
+  ldflags = [ "-Wl,--version-script=$version_script" ]
 }
 
 copy("publish_headers_linux") {

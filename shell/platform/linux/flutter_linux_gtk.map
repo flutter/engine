@@ -1,0 +1,8 @@
+{
+  global:
+    fl*;
+    k*;
+
+  local:
+    *;
+};
