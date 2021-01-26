@@ -518,8 +518,8 @@ bool ParagraphTxt::IsStrutValid() const {
 }
 
 void ParagraphTxt::ComputeStrut(StrutMetrics* strut, SkFont& font) {
-  strut->ascent = 0;
-  strut->descent = 0;
+  strut->ascent = -FLT_MAX;
+  strut->descent = -FLT_MAX;
   strut->leading = 0;
   strut->half_leading = 0;
   strut->line_height = 0;
@@ -553,20 +553,27 @@ void ParagraphTxt::ComputeStrut(StrutMetrics* strut, SkFont& font) {
     SkFontMetrics strut_metrics;
     font.getMetrics(&strut_metrics);
 
+    const double metrics_height =
+        -strut_metrics.fAscent + strut_metrics.fDescent;
+
     if (paragraph_style_.strut_has_height_override) {
-      double metrics_height = -strut_metrics.fAscent + strut_metrics.fDescent;
-      strut->ascent = (-strut_metrics.fAscent / metrics_height) *
-                      paragraph_style_.strut_height *
-                      paragraph_style_.strut_font_size;
-      strut->descent = (strut_metrics.fDescent / metrics_height) *
-                       paragraph_style_.strut_height *
-                       paragraph_style_.strut_font_size;
-      strut->leading =
-          // Zero leading if there is no user specified strut leading.
+      const double strut_height =
+          paragraph_style_.strut_height * paragraph_style_.strut_font_size;
+      const double metrics_leading =
+          // Zero extra leading if there is no user specified strut leading.
           paragraph_style_.strut_leading < 0
               ? 0
               : (paragraph_style_.strut_leading *
                  paragraph_style_.strut_font_size);
+
+      const double available_height = paragraph_style_.strut_text_height_behavior & TextHeightBehavior::kHalfLeading
+        ? strut_height - metrics_height
+        : strut_height;
+
+      strut->ascent = (-strut_metrics.fAscent / metrics_height) * available_height;
+      strut->descent = (strut_metrics.fDescent / metrics_height) * available_height;
+
+      strut->leading = metrics_leading + strut_height - available_height;
     } else {
       strut->ascent = -strut_metrics.fAscent;
       strut->descent = strut_metrics.fDescent;
@@ -671,7 +678,7 @@ void ParagraphTxt::Layout(double width) {
   glyph_lines_.clear();
   code_unit_runs_.clear();
   inline_placeholder_code_unit_runs_.clear();
-  max_right_ = FLT_MIN;
+  max_right_ = -FLT_MAX;
   min_left_ = FLT_MAX;
   final_line_count_ = 0;
 
@@ -1188,10 +1195,10 @@ void ParagraphTxt::UpdateLineMetrics(const SkFontMetrics& metrics,
   if (!strut_.force_strut) {
     const double metrics_font_height = metrics.fDescent - metrics.fAscent;
     // The overall height of the glyph blob. block_height = ascent + descent,
-    // unless one of kDisable{FirstAscent, LastDescent} is set.
-    const double block_height = style.has_height_override
-      ? style.height * style.font_size
-      : metrics_font_height + metrics.fLeading;
+    // unless kDisableFirstAscent or kDisableLastDescent is set.
+    const double blob_height = style.has_height_override
+                                   ? style.height * style.font_size
+                                   : metrics_font_height + metrics.fLeading;
 
     // Scale the ascent and descent such that the sum of ascent and
     // descent is `style.height * style.font_size`.
@@ -1237,37 +1244,41 @@ void ParagraphTxt::UpdateLineMetrics(const SkFontMetrics& metrics,
     // https://glyphsapp.com/tutorials/vertical-metrics
     //
     // Doing this ascent/descent normalization to the EM Square allows
-    // a sane, consistent, and reasonable box height to be specified,
+    // a sane, consistent, and reasonable "blob_height" to be specified,
     // though it breaks with what is done by any of the platforms above.
     const bool shouldNormalizeFont = style.has_height_override;
-    const double font_height = shouldNormalizeFont
-      ? style.font_size
-      : metrics_font_height;
+    const double font_height =
+        shouldNormalizeFont ? style.font_size : metrics_font_height;
 
-    const size_t text_height_behavior = style.has_text_height_behavior_override
-      ? style.text_height_behavior
-      : paragraph_style_.text_height_behavior;
+    const size_t text_height_behavior =
+        style.has_text_height_behavior_override
+            ? style.text_height_behavior
+            : paragraph_style_.text_height_behavior;
 
-    const double leading = text_height_behavior & TextHeightBehavior::kHalfLeading
-      ? std::max(block_height - font_height, 0.0)
-      : style.has_height_override ? 0 : metrics.fLeading;
+    const double leading =
+        text_height_behavior & TextHeightBehavior::kHalfLeading
+            ? blob_height - font_height
+            //? std::max(block_height - font_height, 0.0)
+            : style.has_height_override ? 0 : metrics.fLeading;
 
     const double half_leading = leading / 2;
-    const double available_vspace = block_height - leading;
-    FML_DCHECK(available_vspace >= 0);
+    const double available_vspace = blob_height - leading;
 
-    const bool disableFirstAscent = line_number == 0
-      && text_height_behavior & TextHeightBehavior::kDisableFirstAscent;
-    const bool disableLastDescent = line_number == line_limit - 1 &&
+    const bool disableFirstAscent =
+        line_number == 0 &&
+        text_height_behavior & TextHeightBehavior::kDisableFirstAscent;
+    const bool disableLastDescent =
+        line_number == line_limit - 1 &&
         text_height_behavior & TextHeightBehavior::kDisableLastDescent;
 
     // Proportionally distribute the remaining vertical space above and below
     // the glyph blob's baseline, per the font's ascent/discent ratio.
-    const double modifiedAscent = -metrics.fAscent / metrics_font_height * available_vspace + half_leading;
+    const double modifiedAscent =
+        -metrics.fAscent / metrics_font_height * available_vspace +
+        half_leading;
     double ascent = disableFirstAscent ? -metrics.fAscent : modifiedAscent;
-    double descent = disableLastDescent
-      ? metrics.fDescent
-      : block_height - modifiedAscent;
+    double descent =
+        disableLastDescent ? metrics.fDescent : blob_height - modifiedAscent;
 
     ComputePlaceholder(placeholder_run, ascent, descent);
 

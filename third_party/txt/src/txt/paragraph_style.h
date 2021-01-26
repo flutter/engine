@@ -41,7 +41,6 @@ enum class TextDirection {
   ltr,
 };
 
-
 class ParagraphStyle {
  public:
   // Default TextStyle. Used in GetTextStyle() to obtain the base TextStyle to
@@ -64,6 +63,7 @@ class ParagraphStyle {
   double strut_font_size = 14;
   double strut_height = 1;
   bool strut_has_height_override = false;
+  size_t strut_text_height_behavior = TextHeightBehavior::kAll;
   double strut_leading = -1;  // Negative to use font's default leading. [0,inf)
                               // to use custom leading as a ratio of font size.
   bool force_strut_height = false;

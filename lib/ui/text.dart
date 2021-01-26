@@ -432,19 +432,43 @@ enum TextDecorationStyle {
   wavy
 }
 
-enum TextBoxVerticalAlignment {
+/// {@macro dart.ui.leadingDistribution}
+enum LeadingDistribution {
+  /// Distributes the ["leading"](https://www.w3.org/TR/CSS2/visudet.html#leading)
+  /// space of the text proportionally above and below the text, to the
+  /// font's ascent/discent ratio.
+  ///
+  /// {@template dart.ui.leading}
+  /// The leading space of a text run is defined as
+  /// `TextStyle.height * TextStyle.fontSize - TextStyle.fontSize`. When
+  /// [TextStyle.height] is not set, the text run will always use the leading
+  /// space specified by the font instead.
+  /// {@endtemplate}
   proportional,
-  centered,
+
+  /// Distributes the ["leading"](https://www.w3.org/TR/CSS2/visudet.html#leading)
+  /// space of the text evenly above and below the text (i.e. evenly above the
+  /// font's ascender and below the descender).
+  ///
+  /// {@macro dart.ui.leading}
+  ///
+  /// The leading space can become negative when [TextStyle.height] is set to
+  /// a value smaller than 1.0.
+  ///
+  /// This is the default strategy used by CSS, known as
+  /// ["half-leading"](https://www.w3.org/TR/css-inline-3/#half-leading).
+  even,
 }
 
 /// {@template dart.ui.textHeightBehavior}
-/// Defines how the paragraph will apply [TextStyle.height] to the ascent of the
-/// first line and descent of the last line.
+/// Defines how to apply [TextStyle.height] over and under text.
 ///
-/// Each boolean value represents whether the [TextStyle.height] modifier will
-/// be applied to the corresponding metric. By default, all properties are true,
-/// and [TextStyle.height] is applied as normal. When set to false, the font's
-/// default ascent will be used.
+/// [applyHeightToFirstAscent] and [applyHeightToLastDescent] represent whether
+/// the [TextStyle.height] modifier will be applied to the corresponding metric.
+/// By default, all properties are true, and [TextStyle.height] is applied as
+/// normal. When set to false, the font's default ascent will be used.
+///
+///
 /// {@endtemplate}
 class TextHeightBehavior {
 
@@ -461,7 +485,7 @@ class TextHeightBehavior {
   const TextHeightBehavior({
     this.applyHeightToFirstAscent = true,
     this.applyHeightToLastDescent = true,
-    this.verticalAlignment = TextBoxVerticalAlignment.proportional,
+    this.leadingDistribution = LeadingDistribution.proportional,
   });
 
   /// Creates a new TextHeightBehavior object from an encoded form.
@@ -470,8 +494,7 @@ class TextHeightBehavior {
   TextHeightBehavior.fromEncoded(int encoded)
     : applyHeightToFirstAscent = (encoded & 0x1) == 0,
       applyHeightToLastDescent = (encoded & 0x2) == 0,
-      verticalAlignment = TextBoxVerticalAlignment.values[encoded >> 2];
-
+      leadingDistribution = LeadingDistribution.values[encoded >> 2];
 
   /// Whether to apply the [TextStyle.height] modifier to the ascent of the first
   /// line in the paragraph.
@@ -497,13 +520,24 @@ class TextHeightBehavior {
   /// Defaults to true (height modifications applied as normal).
   final bool applyHeightToLastDescent;
 
-  final TextBoxVerticalAlignment verticalAlignment;
+  /// {@template dart.ui.leadingDistribution}
+  /// How extra ["leading"](https://www.w3.org/TR/CSS2/visudet.html#leading)
+  /// space is distributed over and under the text.
+  ///
+  /// Does not affect layout when [TextStyle.height] is not specified. The
+  /// leading space can become negative, for example, when
+  /// [LeadingDistribution.even] is used with a [TextStyle.height] much
+  /// smaller than 1.0.
+  /// {@endtemplate}
+  ///
+  /// Defaults to [LeadingDistribution.proportional],
+  final LeadingDistribution leadingDistribution;
 
   /// Returns an encoded int representation of this object.
   int encode() {
     return (applyHeightToFirstAscent ? 0 : 1 << 0)
          | (applyHeightToLastDescent ? 0 : 1 << 1)
-         | (verticalAlignment.index << 2);
+         | (leadingDistribution.index << 2);
   }
 
   @override
@@ -513,7 +547,7 @@ class TextHeightBehavior {
     return other is TextHeightBehavior
         && other.applyHeightToFirstAscent == applyHeightToFirstAscent
         && other.applyHeightToLastDescent == applyHeightToLastDescent
-        && other.verticalAlignment == verticalAlignment;
+        && other.leadingDistribution == leadingDistribution;
   }
 
   @override
@@ -521,7 +555,7 @@ class TextHeightBehavior {
     return hashValues(
       applyHeightToFirstAscent,
       applyHeightToLastDescent,
-      verticalAlignment.index,
+      leadingDistribution.index,
     );
   }
 
@@ -530,7 +564,7 @@ class TextHeightBehavior {
     return 'TextHeightBehavior('
              'applyHeightToFirstAscent: $applyHeightToFirstAscent, '
              'applyHeightToLastDescent: $applyHeightToLastDescent, '
-             'verticalAlignment: $verticalAlignment'
+             'leadingDistribution: $leadingDistribution'
            ')';
   }
 }
@@ -576,6 +610,8 @@ bool _listEquals<T>(List<T>? a, List<T>? b) {
 //  - Element 6: The enum index of the |fontStyle|.
 //
 //  - Element 7: The enum index of the |textBaseline|.
+//
+//  - Element 8: The encoded value of the |textHeightBehavior|.
 //
 Int32List _encodeTextStyle(
   Color? color,
@@ -710,6 +746,7 @@ class TextStyle {
   /// * `textBaseline`: The common baseline that should be aligned between this text span and its parent text span, or, for the root text spans, with the line box.
   /// * `height`: The height of this text span, as a multiplier of the font size. Omitting `height` will allow the line height
   ///   to take the height as defined by the font, which may not be exactly the height of the fontSize.
+  /// * `textHeightBehavior`: When `height` is specified, how the extra vertical space should be distributed over and under the text.
   /// * `locale`: The locale used to select region-specific glyphs.
   /// * `background`: The paint drawn as a background for the text.
   /// * `foreground`: The paint used to draw the text. If this is specified, `color` must be null.
@@ -832,6 +869,7 @@ class TextStyle {
              'letterSpacing: ${      _encoded[0] & 0x00800 == 0x00800  ? "${_letterSpacing}x"                    : "unspecified"}, '
              'wordSpacing: ${        _encoded[0] & 0x01000 == 0x01000  ? "${_wordSpacing}x"                      : "unspecified"}, '
              'height: ${             _encoded[0] & 0x02000 == 0x02000  ? "${_height}x"                           : "unspecified"}, '
+             'textHeightBehavior: ${ _encoded[0] & 0x0100 == 0x0100    ? "${TextHeightBehavior.fromEncoded(_encoded[8])}x"  : "unspecified"}, '
              'locale: ${             _encoded[0] & 0x04000 == 0x04000  ? _locale                                 : "unspecified"}, '
              'background: ${         _encoded[0] & 0x08000 == 0x08000  ? _background                             : "unspecified"}, '
              'foreground: ${         _encoded[0] & 0x10000 == 0x10000  ? _foreground                             : "unspecified"}, '
@@ -964,7 +1002,7 @@ class ParagraphStyle {
   ///   be exactly the height of the `fontSize`.
   ///
   /// * `textHeightBehavior`: Specifies how the `height` multiplier is
-  ///   applied to ascent of the first line and the descent of the last line.
+  ///   applied to ascent and the descent of the text.
   ///
   /// * `fontWeight`: The typeface thickness to use when painting the text
   ///   (e.g., bold).
@@ -1081,6 +1119,7 @@ ByteData _encodeStrut(
   List<String>? fontFamilyFallback,
   double? fontSize,
   double? height,
+  TextHeightBehavior? textHeightBehavior,
   double? leading,
   FontWeight? fontWeight,
   FontStyle? fontStyle,
@@ -1088,13 +1127,14 @@ ByteData _encodeStrut(
   if (fontFamily == null &&
     fontSize == null &&
     height == null &&
+    textHeightBehavior == null &&
     leading == null &&
     fontWeight == null &&
     fontStyle == null &&
     forceStrutHeight == null)
     return ByteData(0);
 
-  final ByteData data = ByteData(15); // Max size is 15 bytes
+  final ByteData data = ByteData(16); // Max size is 16 bytes
   int bitmask = 0; // 8 bit mask
   int byteCount = 1;
   if (fontWeight != null) {
@@ -1120,17 +1160,22 @@ ByteData _encodeStrut(
     bitmask |= 1 << 4;
     data.setFloat32(byteCount, height, _kFakeHostEndian);
     byteCount += 4;
+    if (textHeightBehavior != null) {
+      bitmask |= 1 << 5;
+      data.setInt8(byteCount, textHeightBehavior.encode());
+      byteCount += 4;
+    }
   }
   if (leading != null) {
-    bitmask |= 1 << 5;
+    bitmask |= 1 << 6;
     data.setFloat32(byteCount, leading, _kFakeHostEndian);
     byteCount += 4;
   }
   if (forceStrutHeight != null) {
-    bitmask |= 1 << 6;
+    bitmask |= 1 << 7;
     // We store this boolean directly in the bitmask since there is
     // extra space in the 16 bit int.
-    bitmask |= (forceStrutHeight ? 1 : 0) << 7;
+    bitmask |= (forceStrutHeight ? 1 : 0) << 8;
   }
 
   data.setInt8(0, bitmask);
@@ -1185,6 +1230,7 @@ class StrutStyle {
     List<String>? fontFamilyFallback,
     double? fontSize,
     double? height,
+    TextHeightBehavior? textHeightBehavior,
     double? leading,
     FontWeight? fontWeight,
     FontStyle? fontStyle,
@@ -1194,6 +1240,7 @@ class StrutStyle {
          fontFamilyFallback,
          fontSize,
          height,
+         textHeightBehavior,
          leading,
          fontWeight,
          fontStyle,
