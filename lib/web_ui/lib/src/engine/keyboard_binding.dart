@@ -302,7 +302,7 @@ class KeyboardConverter {
       _keydownCancelDuration,
       () => ui.KeyData(
         timeStamp: currentTimeStamp + _keydownCancelDuration,
-        change: ui.KeyEventType.up,
+        type: ui.KeyEventType.up,
         physical: physicalKey,
         logical: logicalKey,
         character: null,
@@ -362,7 +362,7 @@ class KeyboardConverter {
 
     final int? lastLogicalRecord = _pressingRecords[physicalKey];
 
-    ui.KeyEventType change;
+    ui.KeyEventType type;
 
     if (_shouldSynthesizeCapsLockUp() && event.code! == _kPhysicalCapsLock) {
       // Case 1: Handle CapsLock on macOS
@@ -374,7 +374,7 @@ class KeyboardConverter {
         Duration.zero,
         () => ui.KeyData(
           timeStamp: timeStamp,
-          change: ui.KeyEventType.up,
+          type: ui.KeyEventType.up,
           physical: physicalKey,
           logical: logicalKey,
           character: null,
@@ -384,16 +384,16 @@ class KeyboardConverter {
           _pressingRecords.remove(physicalKey);
         }
       );
-      change = ui.KeyEventType.down;
+      type = ui.KeyEventType.down;
 
     } else if (isPhysicalDown) {
       // Case 2: Handle key down of normal keys
-      change = ui.KeyEventType.down;
+      type = ui.KeyEventType.down;
       if (lastLogicalRecord != null) {
         // This physical key is being pressed according to the record.
         if (event.repeat ?? false) {
           // A normal repeated key.
-          change = ui.KeyEventType.repeat;
+          type = ui.KeyEventType.repeat;
         } else {
           // A non-repeated key has been pressed that has the exact physical key as
           // a currently pressed one, usually indicating multiple keyboards are
@@ -414,11 +414,11 @@ class KeyboardConverter {
         return false;
       }
 
-      change = ui.KeyEventType.up;
+      type = ui.KeyEventType.up;
     }
 
     final int? nextLogicalRecord;
-    switch (change) {
+    switch (type) {
       case ui.KeyEventType.down:
         assert(lastLogicalRecord == null);
         nextLogicalRecord = logicalKey;
@@ -451,7 +451,7 @@ class KeyboardConverter {
 
           dispatchKeyData(ui.KeyData(
             timeStamp: timeStamp,
-            change: ui.KeyEventType.up,
+            type: ui.KeyEventType.up,
             physical: physicalKey,
             logical: logicalKey,
             character: null,
@@ -474,10 +474,10 @@ class KeyboardConverter {
 
     final ui.KeyData keyData = ui.KeyData(
       timeStamp: timeStamp,
-      change: change,
+      type: type,
       physical: physicalKey,
       logical: lastLogicalRecord ?? logicalKey,
-      character: change == ui.KeyEventType.up ? null : character,
+      character: type == ui.KeyEventType.up ? null : character,
       synthesized: false,
     );
 
