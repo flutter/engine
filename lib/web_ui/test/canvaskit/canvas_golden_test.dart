@@ -492,10 +492,101 @@ void testMain() {
         fontStyle: ui.FontStyle.normal,
       );
     });
+
+    test('text style - foreground/background/color do not leak across paragraphs', () async {
+      const double testWidth = 440;
+      const double middle = testWidth / 2;
+      CkParagraph createTestParagraph({
+        ui.Color? color,
+        CkPaint? foreground,
+        CkPaint? background
+      }) {
+        final CkParagraphBuilder builder = CkParagraphBuilder(CkParagraphStyle());
+        builder.pushStyle(CkTextStyle(
+          fontSize: 16,
+          color: color,
+          foreground: foreground,
+          background: background,
+        ));
+        final StringBuffer text = StringBuffer();
+        if (color == null && foreground == null && background == null) {
+          text.write('Default');
+        } else {
+          if (color != null) {
+            text.write('Color');
+          }
+          if (foreground != null) {
+            if (text.isNotEmpty) {
+              text.write('+');
+            }
+            text.write('Foreground');
+          }
+          if (background != null) {
+            if (text.isNotEmpty) {
+              text.write('+');
+            }
+            text.write('Background');
+          }
+        }
+        builder.addText(text.toString());
+        final CkParagraph paragraph = builder.build();
+        paragraph.layout(ui.ParagraphConstraints(width: testWidth));
+        return paragraph;
+      }
+
+      final List<ParagraphFactory> variations = <ParagraphFactory>[
+        () => createTestParagraph(),
+        () => createTestParagraph(color: ui.Color(0xFF009900)),
+        () => createTestParagraph(foreground: CkPaint()..color = ui.Color(0xFF990000)),
+        () => createTestParagraph(background: CkPaint()..color = ui.Color(0xFF7777FF)),
+        () => createTestParagraph(
+          color: ui.Color(0xFFFF00FF),
+          background: CkPaint()..color = ui.Color(0xFF0000FF),
+        ),
+        () => createTestParagraph(
+          foreground: CkPaint()..color = ui.Color(0xFF00FFFF),
+          background: CkPaint()..color = ui.Color(0xFF0000FF),
+        ),
+      ];
+
+      final CkPictureRecorder recorder = CkPictureRecorder();
+      final CkCanvas canvas = recorder.beginRecording(ui.Rect.largest);
+      canvas.translate(10, 10);
+
+      for (ParagraphFactory from in variations) {
+        for (ParagraphFactory to in variations) {
+          canvas.save();
+          final CkParagraph fromParagraph = from();
+          canvas.drawParagraph(fromParagraph, ui.Offset.zero);
+
+          final ui.Offset leftEnd = ui.Offset(fromParagraph.maxIntrinsicWidth + 10, fromParagraph.height / 2);
+          final ui.Offset rightEnd = ui.Offset(middle - 10, leftEnd.dy);
+          final ui.Offset tipOffset = ui.Offset(-5, -5);
+          canvas.drawLine(leftEnd, rightEnd, CkPaint());
+          canvas.drawLine(rightEnd, rightEnd + tipOffset, CkPaint());
+          canvas.drawLine(rightEnd, rightEnd + tipOffset.scale(1, -1), CkPaint());
+
+          canvas.translate(middle, 0);
+          canvas.drawParagraph(to(), ui.Offset.zero);
+          canvas.restore();
+          canvas.translate(0, 22);
+        }
+      }
+
+      final CkPicture picture = recorder.endRecording();
+      await matchPictureGolden(
+        'canvaskit_text_styles_do_not_leak.png',
+        picture,
+        region: ui.Rect.fromLTRB(0, 0, testWidth, 850),
+        write: true,
+      );
+    }, solo: true);
     // TODO: https://github.com/flutter/flutter/issues/60040
     // TODO: https://github.com/flutter/flutter/issues/71520
   }, skip: isIosSafari || isFirefox);
 }
+
+typedef ParagraphFactory = CkParagraph Function();
 
 void drawTestPicture(CkCanvas canvas) {
   canvas.clear(ui.Color(0xFFFFFFF));
