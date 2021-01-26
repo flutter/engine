@@ -1,4 +1,4 @@
-Signature: e3f1bc2314feae640582f81db921fb53
+Signature: e6032f20e438b48f403a85b0af7c5b36
 
 UNUSED LICENSES:
 
@@ -5246,6 +5246,8 @@ FILE: ../../../third_party/skia/gm/lazytiling.cpp
 FILE: ../../../third_party/skia/gm/runtimeeffectimage.cpp
 FILE: ../../../third_party/skia/src/core/SkYUVAInfoLocation.h
 FILE: ../../../third_party/skia/src/gpu/GrInnerFanTriangulator.h
+FILE: ../../../third_party/skia/src/gpu/GrWritePixelsRenderTask.cpp
+FILE: ../../../third_party/skia/src/gpu/GrWritePixelsRenderTask.h
 FILE: ../../../third_party/skia/src/gpu/GrYUVATextureProxies.cpp
 FILE: ../../../third_party/skia/src/gpu/GrYUVATextureProxies.h
 FILE: ../../../third_party/skia/src/sksl/SkSLBuiltinTypes.cpp
