@@ -1381,8 +1381,8 @@ TEST_F(EmbedderTest, KeyDataResponseIsCorrectlyInvoked) {
     KeyEventUserData* user_data =
         reinterpret_cast<KeyEventUserData*>(untyped_user_data);
     EXPECT_EQ(handled, false);
-    user_data->latch->Signal();
     user_data->returned = true;
+    user_data->latch->Signal();
   };
 
   event.synthesized = false;
