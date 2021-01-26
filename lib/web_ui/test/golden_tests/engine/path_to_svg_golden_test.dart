@@ -143,21 +143,20 @@ void testMain() async {
   test('render notch', () async {
     const double w = 0.7;
     final Path path = Path();
-    path.moveTo(0.5, 4);
-    path.conicTo(0.5, 0.5, 4, 0.5, w);
-    path.moveTo(4, 0.5);
-    path.lineTo(6.5, 0.5);
-    path.moveTo(36.0, 0.5);
-    path.lineTo(158, 0.5);
-    path.conicTo(161.5, 0.5, 161.5, 4, w);
-    path.moveTo(161.5, 4);
-    path.lineTo(161.5, 38);
-    path.conicTo(161.5, 41.5, 158, 41.5, w);
-    path.lineTo(4, 41.5);
-    path.conicTo(0.5, 41.5, 0.5, 38, w);
-    path.lineTo(0.5, 4);
-    await testPath(path, 'svg_editoutline', fillEnabled: false,
-        write: true);
+    path.moveTo(0.5, 14);
+    path.conicTo(0.5, 10.5, 4, 10.5, w);
+    path.moveTo(4, 10.5);
+    path.lineTo(6.5, 10.5);
+    path.moveTo(36.0, 10.5);
+    path.lineTo(158, 10.5);
+    path.conicTo(161.5, 10.5, 161.5, 14, w);
+    path.moveTo(161.5, 14);
+    path.lineTo(161.5, 48);
+    path.conicTo(161.5, 51.5, 158, 51.5, w);
+    path.lineTo(4, 51.5);
+    path.conicTo(0.5, 51.5, 0.5, 48, w);
+    path.lineTo(0.5, 14);
+    await testPath(path, 'svg_editoutline', fillEnabled: false);
   });
 }
 
