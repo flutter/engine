@@ -730,10 +730,11 @@ class Engine final : public RuntimeDelegate,
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the engine that the embedder has sent it a key data
-  ///             packet. A key data packet contains one physical key event and
-  ///             one or multiple logical key events. This call originates in
-  ///             the platform view and the shell has forwarded the same to the
-  ///             engine on the UI task runner here.
+  ///             packet. A key data packet contains one key event. This call
+  ///             originates in the platform view and the shell has forwarded
+  ///             the same to the engine on the UI task runner here. The engine
+  ///             will decide whether to handle this event, and send the
+  ///             result using `callback`, which will be called exactly once.
   ///
   /// @param[in]  packet    The key data packet.
   /// @param[in]  callback  Called when the framework has decided whether

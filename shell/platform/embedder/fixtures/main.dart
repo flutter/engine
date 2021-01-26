@@ -504,6 +504,10 @@ void _echoKeyEvent(
     bool synthesized)
   native 'EchoKeyEvent';
 
+// Convert `kind` in enum form to its integer form.
+//
+// It performs a revesed mapping from `unserializeKeyEventKind`
+// in shell/platform/embedder/tests/embedder_unittests.cc.
 int _serializeKeyEventType(KeyEventType change) {
   switch(change) {
     case KeyEventType.up:

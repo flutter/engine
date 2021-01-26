@@ -633,9 +633,9 @@ typedef enum {
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterKeyEvent).
   size_t struct_size;
-  /// The timestamp at which the pointer event was generated. The timestamp
-  /// should be specified in microseconds and the clock should be the same as
-  /// that used by `FlutterEngineGetCurrentTime`.
+  /// The timestamp at which the key event was generated. The timestamp should be
+  /// specified in microseconds and the clock should be the same as that used by
+  /// `FlutterEngineGetCurrentTime`.
   double timestamp;
   /// The event kind.
   FlutterKeyEventType type;
@@ -1609,22 +1609,21 @@ FlutterEngineResult FlutterEngineSendPointerEvent(
     size_t events_count);
 
 //------------------------------------------------------------------------------
-/// @brief      Send a key event to the engine, causing the framework to
-///             dispatch a key event that is simply transformed from this one.
-///             The framework will decide whether to handle this event in a
-///             synchronous fashion, although due to technical limitation, the
-///             result is always reported asynchronously. The `callback` is
-///             guaranteed to be called exactly once.
+/// @brief      Sends a key event to the engine. The framework will decide
+///             whether to handle this event in a synchronous fashion, although
+///             due to technical limitation, the result is always reported
+///             asynchronously. The `callback` is guaranteed to be called
+///             exactly once.
 ///
 /// @param[in]  engine         A running engine instance.
 /// @param[in]  event          The event data to be sent. This function will no
 ///                            longer access `event` after returning.
 /// @param[in]  callback       The callback invoked by the engine when the
 ///                            Flutter application has decided whether it handles
-///                            this event. This can be null.
+///                            this event. Accepts nullptr.
 /// @param[in]  user_data      The context associated with the callback. The exact
 ///                            same value will used to invoke `callback`. Accepts
-///                            nullptr or a non-pointer value.
+///                            nullptr.
 ///
 /// @return     The result of the call.
 ///

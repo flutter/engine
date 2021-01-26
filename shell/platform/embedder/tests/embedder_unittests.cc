@@ -1200,8 +1200,12 @@ typedef struct {
   bool returned;
 } KeyEventUserData;
 
-FlutterKeyEventType unserializeKeyEventKind(uint64_t kindInt) {
-  switch(kindInt) {
+// Convert `kind` in integer form to its enum form.
+//
+// It performs a revesed mapping from `_serializeKeyEventType`
+// in shell/platform/embedder/fixtures/main.dart.
+FlutterKeyEventType UnserializeKeyEventKind(uint64_t kind) {
+  switch(kind) {
     case 1:
       return kFlutterKeyEventTypeUp;
     case 2:
@@ -1214,7 +1218,9 @@ FlutterKeyEventType unserializeKeyEventKind(uint64_t kindInt) {
   }
 }
 
-void expect_key_event_eq(const FlutterKeyEvent& subject, const FlutterKeyEvent& baseline) {
+// Checks the equality of two `FlutterKeyEvent` by each of their members except
+// for `character`. The `character` must be checked separately.
+void ExpectKeyEventEq(const FlutterKeyEvent& subject, const FlutterKeyEvent& baseline) {
   EXPECT_EQ(subject.timestamp, baseline.timestamp);
   EXPECT_EQ(subject.type, baseline.type);
   EXPECT_EQ(subject.physical, baseline.physical);
@@ -1228,7 +1234,7 @@ TEST_F(EmbedderTest, KeyDataIsCorrectlySerialized) {
   FlutterKeyEvent echoed_event;
 
   auto native_echo_event = [&](Dart_NativeArguments args) {
-    echoed_event.type = unserializeKeyEventKind(
+    echoed_event.type = UnserializeKeyEventKind(
         tonic::DartConverter<uint64_t>::FromDart(
             Dart_GetNativeArgument(args, 0)));
     echoed_event.timestamp = tonic::DartConverter<uint64_t>::FromDart(
@@ -1262,7 +1268,7 @@ TEST_F(EmbedderTest, KeyDataIsCorrectlySerialized) {
   ready.Wait();
 
   // A normal down event
-  const FlutterKeyEvent downEventUpperA {
+  const FlutterKeyEvent down_event_upper_a {
     .struct_size = sizeof(FlutterKeyEvent),
     .timestamp = 1,
     .type = kFlutterKeyEventTypeDown,
@@ -1271,15 +1277,15 @@ TEST_F(EmbedderTest, KeyDataIsCorrectlySerialized) {
     .character = "A",
     .synthesized = false,
   };
-  FlutterEngineSendKeyEvent(engine.get(), &downEventUpperA,
+  FlutterEngineSendKeyEvent(engine.get(), &down_event_upper_a,
       [](bool handled, void* user_data){}, nullptr);
   message_latch->Wait();
 
-  expect_key_event_eq(echoed_event, downEventUpperA);
+  ExpectKeyEventEq(echoed_event, down_event_upper_a);
   EXPECT_EQ(echoed_char, 0x41llu);
 
   // A repeat event with multi-byte character
-  const FlutterKeyEvent repeatEventWideChar {
+  const FlutterKeyEvent repeat_event_wide_char {
     .struct_size = sizeof(FlutterKeyEvent),
     .timestamp = 1000,
     .type = kFlutterKeyEventTypeRepeat,
@@ -1288,15 +1294,15 @@ TEST_F(EmbedderTest, KeyDataIsCorrectlySerialized) {
     .character = "∆",
     .synthesized = false,
   };
-  FlutterEngineSendKeyEvent(engine.get(), &repeatEventWideChar,
+  FlutterEngineSendKeyEvent(engine.get(), &repeat_event_wide_char,
       [](bool handled, void* user_data){}, nullptr);
   message_latch->Wait();
 
-  expect_key_event_eq(echoed_event, repeatEventWideChar);
+  ExpectKeyEventEq(echoed_event, repeat_event_wide_char);
   EXPECT_EQ(echoed_char, 0x2206llu);
 
   // An up event with no character, synthesized
-  const FlutterKeyEvent upEvent {
+  const FlutterKeyEvent up_event {
     .struct_size = sizeof(FlutterKeyEvent),
     .timestamp = 1000000,
     .type = kFlutterKeyEventTypeUp,
@@ -1305,11 +1311,11 @@ TEST_F(EmbedderTest, KeyDataIsCorrectlySerialized) {
     .character = nullptr,
     .synthesized = true,
   };
-  FlutterEngineSendKeyEvent(engine.get(), &upEvent,
+  FlutterEngineSendKeyEvent(engine.get(), &up_event,
       [](bool handled, void* user_data){}, nullptr);
   message_latch->Wait();
 
-  expect_key_event_eq(echoed_event, upEvent);
+  ExpectKeyEventEq(echoed_event, up_event);
   EXPECT_EQ(echoed_char, 0llu);
 }
 
