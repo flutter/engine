@@ -663,8 +663,8 @@ typedef struct {
   /// been released at the next key event, and should construct a synthesized up
   /// event immediately before the actual event.
   ///
-  /// An event being synthesized means that the `timestamp` might greatly deviate
-  /// from the actual time when the event occurs physically.
+  /// An event being synthesized means that the `timestamp` might greatly
+  /// deviate from the actual time when the event occurs physically.
   bool synthesized;
 } FlutterKeyEvent;
 
