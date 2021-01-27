@@ -15,9 +15,9 @@
 #include <memory>
 #include <vector>
 
-#include "flutter//shell/platform/windows/flutter_window_winuwp.h"  // nogncheck
 #include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/plugin_registrar.h"
 #include "flutter/shell/platform/common/cpp/incoming_message_dispatcher.h"
+#include "flutter/shell/platform/windows/flutter_window_winuwp.h"  // nogncheck
 
 // Returns the engine corresponding to the given opaque API handle.
 static flutter::FlutterWindowsEngine* EngineFromHandle(

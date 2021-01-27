@@ -6,6 +6,9 @@
 
 namespace flutter {
 
+// Multipler used to map controller velocity to an appropriate scroll input.
+static constexpr double kControllerScrollMultiplier = 3;
+
 FlutterWindowWinUWP::FlutterWindowWinUWP(
     ABI::Windows::UI::Core::CoreWindow* window) {
   winrt::Windows::UI::Core::CoreWindow cw{nullptr};
@@ -40,7 +43,7 @@ WindowsRenderTarget FlutterWindowWinUWP::GetRenderTarget() {
   }
   visual_tree_root_.Children().InsertAtBottom(render_target_);
 
-  auto bounds = GetBounds(current_display_info_, true);
+  WindowBoundsWinUWP bounds = GetBounds(current_display_info_, true);
 
   render_target_.Size({bounds.width, bounds.height});
   return WindowsRenderTarget(render_target_);
@@ -55,7 +58,7 @@ void FlutterWindowWinUWP::ApplyInverseDpiScalingTransform() {
 }
 
 PhysicalWindowBounds FlutterWindowWinUWP::GetPhysicalWindowBounds() {
-  auto bounds = GetBounds(current_display_info_, true);
+  WindowBoundsWinUWP bounds = GetBounds(current_display_info_, true);
   return {static_cast<size_t>(bounds.width),
           static_cast<size_t>(bounds.height)};
 }
@@ -99,11 +102,7 @@ WindowBoundsWinUWP FlutterWindowWinUWP::GetBounds(
 
 float FlutterWindowWinUWP::GetDpiScale(
     winrt::Windows::Graphics::Display::DisplayInformation const& disp) {
-  float dpi = disp.LogicalDpi();
-  auto raw_dpi = disp.RawDpiX();
-  auto raw_width = disp.ScreenHeightInRawPixels();
-  auto scale = disp.ResolutionScale();
-  auto raw_per_view = disp.RawPixelsPerViewPixel();
+  double raw_per_view = disp.RawPixelsPerViewPixel();
 
   // TODO(clarkezone): ensure DPI handling is correct:
   // because XBOX has display scaling off, logicalDpi retuns 96 which is
@@ -192,8 +191,8 @@ void FlutterWindowWinUWP::OnDpiChanged(
 void FlutterWindowWinUWP::OnPointerPressed(
     winrt::Windows::Foundation::IInspectable const&,
     winrt::Windows::UI::Core::PointerEventArgs const& args) {
-  auto x = GetPosX(args);
-  auto y = GetPosY(args);
+  double x = GetPosX(args);
+  double y = GetPosY(args);
 
   binding_handler_delegate_->OnPointerDown(
       x, y, FlutterPointerMouseButtons::kFlutterPointerButtonMousePrimary);
@@ -202,8 +201,8 @@ void FlutterWindowWinUWP::OnPointerPressed(
 void FlutterWindowWinUWP::OnPointerReleased(
     winrt::Windows::Foundation::IInspectable const&,
     winrt::Windows::UI::Core::PointerEventArgs const& args) {
-  auto x = GetPosX(args);
-  auto y = GetPosY(args);
+  double x = GetPosX(args);
+  double y = GetPosY(args);
 
   binding_handler_delegate_->OnPointerUp(
       x, y, FlutterPointerMouseButtons::kFlutterPointerButtonMousePrimary);
@@ -212,8 +211,8 @@ void FlutterWindowWinUWP::OnPointerReleased(
 void FlutterWindowWinUWP::OnPointerMoved(
     winrt::Windows::Foundation::IInspectable const&,
     winrt::Windows::UI::Core::PointerEventArgs const& args) {
-  auto x = GetPosX(args);
-  auto y = GetPosY(args);
+  double x = GetPosX(args);
+  double y = GetPosY(args);
 
   binding_handler_delegate_->OnPointerMove(x, y);
 }
@@ -221,9 +220,9 @@ void FlutterWindowWinUWP::OnPointerMoved(
 void FlutterWindowWinUWP::OnPointerWheelChanged(
     winrt::Windows::Foundation::IInspectable const&,
     winrt::Windows::UI::Core::PointerEventArgs const& args) {
-  auto x = GetPosX(args);
-  auto y = GetPosY(args);
-  auto delta = args.CurrentPoint().Properties().MouseWheelDelta();
+  double x = GetPosX(args);
+  double y = GetPosY(args);
+  int delta = args.CurrentPoint().Properties().MouseWheelDelta();
   binding_handler_delegate_->OnScroll(x, y, 0, -delta, 1);
 }
 
@@ -262,7 +261,7 @@ void FlutterWindowWinUWP::OnKeyUp(
     winrt::Windows::UI::Core::KeyEventArgs const& args) {
   // TODO(clarkezone) complete keyboard handling including
   // system key (back), unicode handling, shortcut support,
-  // handling defered delivery
+  // handling defered delivery, remove the need for action value.
   // https://github.com/flutter/flutter/issues/70202
   auto status = args.KeyStatus();
   unsigned int scancode = status.ScanCode;
@@ -277,7 +276,7 @@ void FlutterWindowWinUWP::OnKeyDown(
     winrt::Windows::UI::Core::KeyEventArgs const& args) {
   // TODO(clarkezone) complete keyboard handling including
   // system key (back), unicode handling, shortcut support
-  // handling defered delivery
+  // handling defered delivery, remove the need for action value.
   // https://github.com/flutter/flutter/issues/70202
   auto status = args.KeyStatus();
   unsigned int scancode = status.ScanCode;
@@ -304,21 +303,22 @@ FlutterWindowWinUWP::CreateCursorVisual() {
   container.Offset(
       {window_.Bounds().Width / 2, window_.Bounds().Height / 2, 1.0});
 
-  const float SIZE = 30;
+  // size of the simulated mouse cursor
+  const float size = 30;
   auto cursor_visual = compositor_.CreateShapeVisual();
-  cursor_visual.Size({SIZE, SIZE});
+  cursor_visual.Size({size, size});
 
   // compensate for overscan in cursor visual
   cursor_visual.Offset({xbox_overscan_x_offset_, xbox_overscan_y_offset_, 1.0});
 
   winrt::Windows::UI::Composition::CompositionEllipseGeometry circle =
       compositor_.CreateEllipseGeometry();
-  circle.Radius({SIZE / 2, SIZE / 2});
+  circle.Radius({size / 2, size / 2});
 
   auto circleshape = compositor_.CreateSpriteShape(circle);
   circleshape.FillBrush(
       compositor_.CreateColorBrush(winrt::Windows::UI::Colors::Black()));
-  circleshape.Offset({SIZE / 2, SIZE / 2});
+  circleshape.Offset({size / 2, size / 2});
 
   cursor_visual.Shapes().Append(circleshape);
 

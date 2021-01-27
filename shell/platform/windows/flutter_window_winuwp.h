@@ -5,23 +5,17 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_UWP_FLUTTER_WINDOW_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_UWP_FLUTTER_WINDOW_H_
 
-#include "flutter/shell/platform/windows/flutter_windows_view.h"
-#include "flutter/shell/platform/windows/public/flutter_windows.h"
-#include "flutter/shell/platform/windows/window_binding_handler.h"
-
-#include "flutter/shell/platform/embedder/embedder.h"
-
 #include <winrt/Windows.Graphics.Display.h>
 #include <winrt/Windows.System.Profile.h>
 #include <winrt/Windows.UI.Input.h>
 #include <winrt/Windows.UI.ViewManagement.Core.h>
-#include <winrt/Windows.UI.ViewManagement.h>
-#include "winrt/Windows.System.Threading.h"
-#include "winrt/Windows.UI.Core.h"
 
 #include <windows.ui.core.h>
 #include <winrt/Windows.UI.Composition.h>
 #include <winrt/Windows.UI.Core.h>
+
+#include "flutter/shell/platform/embedder/embedder.h"
+#include "flutter/shell/platform/windows/flutter_windows_view.h"
 
 namespace flutter {
 
@@ -179,9 +173,6 @@ class FlutterWindowWinUWP : public WindowBindingHandler {
   // Most recent display information.
   winrt::Windows::Graphics::Display::DisplayInformation current_display_info_{
       nullptr};
-
-  // Multipler used to map controller velocity to an appropriate scroll input.
-  const double kControllerScrollMultiplier = 3;
 };
 
 }  // namespace flutter
