@@ -201,7 +201,10 @@ static const UIAccessibilityTraits UIAccessibilityTraitUndocumentedEmptyLine = 0
   if ([self node].HasFlag(flutter::SemanticsFlags::kIsFocused)) {
     // The text input view must have a non-trivial size for the accessibility
     // system to send text editing events.
+    FlutterTextInputView.backingTextInputAccessibilityObject = self;
     [self bridge]->textInputView().frame = CGRectMake(0.0, 0.0, 1.0, 1.0);
+  } else if (FlutterTextInputView.backingTextInputAccessibilityObject == self) {
+    FlutterTextInputView.backingTextInputAccessibilityObject = nil;
   }
 }
 
@@ -260,7 +263,7 @@ static const UIAccessibilityTraits UIAccessibilityTraitUndocumentedEmptyLine = 0
   NSString* label = [super accessibilityLabel];
   if (label != nil)
     return label;
-  return [self textInputSurrogate].accessibilityLabel;
+  return _inactive_text_input.accessibilityLabel;
 }
 
 - (NSString*)accessibilityHint {
@@ -288,7 +291,7 @@ static const UIAccessibilityTraits UIAccessibilityTraitUndocumentedEmptyLine = 0
   // a keyboard entry control, thus adding support for text editing features, such as
   // pinch to select text, and up/down fling to move cursor.
   UIAccessibilityTraits results = [super accessibilityTraits] |
-                                  [self textInputSurrogate].accessibilityTraits |
+                                  _inactive_text_input.accessibilityTraits |
                                   UIAccessibilityTraitKeyboardKey;
   // We remove an undocumented flag to get rid of a bug where single-tapping
   // a text input field incorrectly says "empty line".

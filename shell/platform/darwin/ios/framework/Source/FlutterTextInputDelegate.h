@@ -38,6 +38,7 @@ typedef NS_ENUM(NSInteger, FlutterFloatingCursorDragState) {
 - (void)showAutocorrectionPromptRectForStart:(NSUInteger)start
                                          end:(NSUInteger)end
                                   withClient:(int)client;
+- (void)waitForFirstFrame:(NSTimeInterval)timeout callback:(void (^)(BOOL didTimeout))callback;
 @end
 
 #endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTERTEXTINPUTDELEGATE_H_
