@@ -8,6 +8,19 @@
 
 namespace flutter {
 
+/// Returns true if the surface will be updated as part of the resize process.
+static bool SurfaceWillUpdate(size_t cur_width,
+                              size_t cur_height,
+                              size_t target_width,
+                              size_t target_height) {
+  // TODO (https://github.com/flutter/flutter/issues/65061) : Avoid special
+  // handling for zero dimensions.
+  bool non_zero_dims = target_height > 0 && target_width > 0;
+  bool not_same_size =
+      (cur_height != target_height) || (cur_width != target_width);
+  return non_zero_dims && not_same_size;
+}
+
 FlutterWindowsView::FlutterWindowsView(
     std::unique_ptr<WindowBindingHandler> window_binding) {
   surface_manager_ = std::make_unique<AngleSurfaceManager>();
@@ -80,12 +93,18 @@ uint32_t FlutterWindowsView::GetFrameBufferId(size_t width, size_t height) {
 void FlutterWindowsView::OnWindowSizeChanged(size_t width, size_t height) {
   // Called on the platform thread.
   std::unique_lock<std::mutex> lock(resize_mutex_);
-  resize_status_ = ResizeState::kResizeStarted;
-  resize_target_width_ = width;
-  resize_target_height_ = height;
+
+  bool surface_will_update = SurfaceWillUpdate(
+      resize_target_width_, resize_target_height_, width, height);
+  if (surface_will_update) {
+    resize_status_ = ResizeState::kResizeStarted;
+    resize_target_width_ = width;
+    resize_target_height_ = height;
+  }
+
   SendWindowMetrics(width, height, binding_handler_->GetDpiScale());
 
-  if (width > 0 && height > 0) {
+  if (surface_will_update) {
     // Block the platform thread until:
     //   1. GetFrameBufferId is called with the right frame size.
     //   2. Any pending SwapBuffers calls have been invoked.
