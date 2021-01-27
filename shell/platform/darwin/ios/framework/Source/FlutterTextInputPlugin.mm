@@ -1134,8 +1134,8 @@ static UIAccessibilityElement* _backingTextInputAccessibilityObject;
   }
 }
 
-- (BOOL)isAccessibilityElement {
-  return _accessibilityEnabled;
+- (BOOL)accessibilityElementsHidden {
+  return !_accessibilityEnabled;
 }
 
 @end
@@ -1144,6 +1144,17 @@ static UIAccessibilityElement* _backingTextInputAccessibilityObject;
  * Hides `FlutterTextInputView` from iOS accessibility system so it
  * does not show up twice, once where it is in the `UIView` hierarchy,
  * and a second time as part of the `SemanticsObject` hierarchy.
+ *
+ * This prevents the `FlutterTextInputView` from receiving the focus
+ * due to swipping gesture.
+ *
+ * There are other cases the `FlutterTextInputView` may receive
+ * focus. One example is during screen changes, the accessibility
+ * tree will undergo a dramatic structural update. The Voiceover may
+ * decide to focus the `FlutterTextInputView` that is not involved
+ * in the structural update instead. If that happens, the
+ * `FlutterTextInputView` will make a best effort to direct the
+ * focus back to the `SemanticsObject`.
  */
 @interface FlutterTextInputViewAccessibilityHider : UIView {
 }
@@ -1154,15 +1165,6 @@ static UIAccessibilityElement* _backingTextInputAccessibilityObject;
 }
 
 - (BOOL)accessibilityElementsHidden {
-  // We are hiding this accessibility element.
-  // There are 2 accessible elements involved in text entry in 2 different parts of the view
-  // hierarchy. This `FlutterTextInputView` is injected at the top of key window. We use this as a
-  // `UITextInput` protocol to bridge text edit events between Flutter and iOS.
-  //
-  // We also create ur own custom `UIAccessibilityElements` tree with our `SemanticsObject` to
-  // mimic the semantics tree from Flutter. We want the text field to be represented as a
-  // `TextInputSemanticsObject` in that `SemanticsObject` tree rather than in this
-  // `FlutterTextInputView` bridge which doesn't appear above a text field from the Flutter side.
   return YES;
 }
 
@@ -1260,7 +1262,7 @@ static UIAccessibilityElement* _backingTextInputAccessibilityObject;
   // Adds a delay to prevent the text view from receiving accessibility
   // focus in case it is activated during semantics updates.
   //
-  // One comment case is when the app navigating to a page with an auto
+  // One common case is when the app navigates to a page with an auto
   // focused text field. The text field will activate the FlutterTextInputView
   // with a semantics update sent to the engine. The voiceover will focus
   // the newly attached active view while performing accessibility update.

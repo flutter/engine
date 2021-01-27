@@ -263,7 +263,7 @@ static const UIAccessibilityTraits UIAccessibilityTraitUndocumentedEmptyLine = 0
   NSString* label = [super accessibilityLabel];
   if (label != nil)
     return label;
-  return _inactive_text_input.accessibilityLabel;
+  return [self textInputSurrogate].accessibilityLabel;
 }
 
 - (NSString*)accessibilityHint {
@@ -291,7 +291,7 @@ static const UIAccessibilityTraits UIAccessibilityTraitUndocumentedEmptyLine = 0
   // a keyboard entry control, thus adding support for text editing features, such as
   // pinch to select text, and up/down fling to move cursor.
   UIAccessibilityTraits results = [super accessibilityTraits] |
-                                  _inactive_text_input.accessibilityTraits |
+                                  [self textInputSurrogate].accessibilityTraits |
                                   UIAccessibilityTraitKeyboardKey;
   // We remove an undocumented flag to get rid of a bug where single-tapping
   // a text input field incorrectly says "empty line".
