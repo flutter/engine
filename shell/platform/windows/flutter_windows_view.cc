@@ -9,6 +9,11 @@
 namespace flutter {
 
 /// Returns true if the surface will be updated as part of the resize process.
+///
+/// This is called on window resize to determine if the platform thread needs
+/// to be blocked until the frame with the right size has been rendered. It
+/// should be kept in-sync with how the engine deals with a new surface request
+/// as seen in `CreateOrUpdateSurface` in `GPUSurfaceGL`.
 static bool SurfaceWillUpdate(size_t cur_width,
                               size_t cur_height,
                               size_t target_width,
