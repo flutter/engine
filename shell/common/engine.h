@@ -297,6 +297,7 @@ class Engine final : public RuntimeDelegate,
          Settings settings,
          std::unique_ptr<Animator> animator,
          fml::WeakPtr<IOManager> io_manager,
+         const std::shared_ptr<FontCollection>& font_collection,
          std::unique_ptr<RuntimeController> runtime_controller);
 
   //----------------------------------------------------------------------------
@@ -353,6 +354,23 @@ class Engine final : public RuntimeDelegate,
          fml::RefPtr<SkiaUnrefQueue> unref_queue,
          fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
          std::shared_ptr<VolatilePathTracker> volatile_path_tracker);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Create a Engine that shares as many resources as
+  ///             possible with the calling Engine such that together
+  ///             they occupy less memory and be created faster.
+  /// @details    This method ultimately calls DartIsolate::SpawnIsolate to make
+  ///             sure resources are shared.  This should only be called on
+  ///             running Engines.
+  /// @return     A new Engine with a running isolate.
+  /// @see        Engine::Engine
+  /// @see        DartIsolate::SpawnIsolate
+  ///
+  std::unique_ptr<Engine> Spawn(
+      Delegate& delegate,
+      const PointerDataDispatcherMaker& dispatcher_maker,
+      Settings settings,
+      std::unique_ptr<Animator> animator) const;
 
   //----------------------------------------------------------------------------
   /// @brief      Destroys the engine engine. Called by the shell on the UI task
@@ -712,14 +730,18 @@ class Engine final : public RuntimeDelegate,
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the engine that the embedder has sent it a key data
-  ///             packet. A key data packet contains one physical key event and
-  ///             one or multiple logical key events. This call originates in
-  ///             the platform view and the shell has forwarded the same to the
-  ///             engine on the UI task runner here.
+  ///             packet. A key data packet contains one key event. This call
+  ///             originates in the platform view and the shell has forwarded
+  ///             the same to the engine on the UI task runner here. The engine
+  ///             will decide whether to handle this event, and send the
+  ///             result using `callback`, which will be called exactly once.
   ///
-  /// @param[in]  packet         The key data packet.
+  /// @param[in]  packet    The key data packet.
+  /// @param[in]  callback  Called when the framework has decided whether
+  ///                       to handle this key data.
   ///
-  void DispatchKeyDataPacket(std::unique_ptr<KeyDataPacket> packet);
+  void DispatchKeyDataPacket(std::unique_ptr<KeyDataPacket> packet,
+                             KeyDataResponse callback);
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the engine that the embedder encountered an
@@ -882,7 +904,7 @@ class Engine final : public RuntimeDelegate,
   std::shared_ptr<AssetManager> asset_manager_;
   bool activity_running_;
   bool have_surface_;
-  FontCollection font_collection_;
+  std::shared_ptr<FontCollection> font_collection_;
   ImageDecoder image_decoder_;
   TaskRunners task_runners_;
   size_t hint_freed_bytes_since_last_idle_ = 0;

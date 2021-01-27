@@ -2,13 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef UI_GFX_NATIVE_WIDGET_TYPES_H_
-#define UI_GFX_NATIVE_WIDGET_TYPES_H_
+#ifndef ACCESSIBILITY_GFX_NATIVE_WIDGET_TYPES_H_
+#define ACCESSIBILITY_GFX_NATIVE_WIDGET_TYPES_H_
 
 #include <stdint.h>
 
-#include "build/build_config.h"
-#include "ui/gfx/gfx_export.h"
+#include "ax_build/build_config.h"
+#include "gfx/gfx_export.h"
 
 #if defined(OS_ANDROID)
 #include "base/android/scoped_java_ref.h"
@@ -182,8 +182,8 @@ class GFX_EXPORT NativeWindow {
  private:
   NSWindow* ns_window_ = nullptr;
 };
-constexpr NativeView kNullNativeView = NativeView(nullptr);
-constexpr NativeWindow kNullNativeWindow = NativeWindow(nullptr);
+const NativeView kNullNativeView = NativeView(nullptr);
+const NativeWindow kNullNativeWindow = NativeWindow(nullptr);
 #elif defined(OS_ANDROID)
 typedef void* NativeCursor;
 typedef ui::ViewAndroid* NativeView;
@@ -191,6 +191,10 @@ typedef ui::WindowAndroid* NativeWindow;
 typedef base::android::ScopedJavaGlobalRef<jobject> NativeEvent;
 constexpr NativeView kNullNativeView = nullptr;
 constexpr NativeWindow kNullNativeWindow = nullptr;
+#elif defined(OS_LINUX)
+// TODO(chunhtai): Figures out what is the correct type for Linux
+// https://github.com/flutter/flutter/issues/74270
+typedef void* NativeCursor;
 #else
 #error Unknown build environment.
 #endif
@@ -245,10 +249,15 @@ constexpr AcceleratedWidget kNullAcceleratedWidget = 0;
 #elif defined(USE_OZONE) || defined(USE_X11)
 typedef uint32_t AcceleratedWidget;
 constexpr AcceleratedWidget kNullAcceleratedWidget = 0;
+#elif defined(OS_LINUX)
+// TODO(chunhtai): Figure out what the correct type is for the Linux.
+// https://github.com/flutter/flutter/issues/74270
+typedef void* AcceleratedWidget;
+constexpr AcceleratedWidget kNullAcceleratedWidget = nullptr;
 #else
 #error unknown platform
 #endif
 
 }  // namespace gfx
 
-#endif  // UI_GFX_NATIVE_WIDGET_TYPES_H_
+#endif  // ACCESSIBILITY_GFX_NATIVE_WIDGET_TYPES_H_

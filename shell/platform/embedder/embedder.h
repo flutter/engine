@@ -612,34 +612,64 @@ typedef struct {
 } FlutterPointerEvent;
 
 typedef enum {
-  kFlutterKeyEventKindUp = 1,
-  kFlutterKeyEventKindDown,
-  kFlutterKeyEventKindRepeat,
-} FlutterKeyEventKind;
+  kFlutterKeyEventTypeUp = 1,
+  kFlutterKeyEventTypeDown,
+  kFlutterKeyEventTypeRepeat,
+} FlutterKeyEventType;
 
+/// A structure to represent a key event.
+///
+/// Sending `FlutterKeyEvent` via `FlutterEngineSendKeyEvent` results in a
+/// corresponding `FlutterKeyEvent` to be dispatched in the framework. It is
+/// embedder's responsibility to ensure the regularity of sent events, since the
+/// framework only performs simple one-to-one mapping. The events must conform
+/// the following rules:
+///
+///  * Each key press sequence shall consist of one key down event (`kind` being
+///    `kFlutterKeyEventTypeDown`), zero or more repeat events, and one key up
+///    event, representing a physical key button being pressed, held, and
+///    released.
+///  * All events throughout a key press sequence shall have the same `physical`
+///    and `logical`. Having different `character`s is allowed.
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterKeyEvent).
   size_t struct_size;
-  // Timestamp in microseconds.
+  /// The timestamp at which the key event was generated. The timestamp should
+  /// be specified in microseconds and the clock should be the same as that used
+  /// by `FlutterEngineGetCurrentTime`.
   double timestamp;
-  // The event kind.
-  FlutterKeyEventKind kind;
-  // The physical key of the event, distinguished by the HID code.
+  /// The event kind.
+  FlutterKeyEventType type;
+  /// The USB HID code for the physical key of the event.
+  ///
+  /// For the full definition and list of pre-defined physical keys, see
+  /// `PhysicalKeyboardKey` from the framework.
   uint64_t physical;
-  // The logical key of the event, usually the effect of the key without
-  // modifier, but might include modifier if the information is not available.
-  // Can be 0 for empty.
+  /// The key ID for the logical key of this event.
+  ///
+  /// For the full definition and a list of pre-defined logical keys, see
+  /// `LogicalKeyboardKey` from the framework.
   uint64_t logical;
-  // Null-terminated character input from the event. Can be null. Not available
-  // to up events.
+  /// Null-terminated character input from the event. Can be null. Ignored for
+  /// up events.
   const char* character;
-  // Whether the event is synthesized by Flutter.
+  /// True if this event does not correspond to a native event.
+  ///
+  /// The embedder is likely to skip events and/or construct new events that do
+  /// not correspond to any native events in order to conform the regularity
+  /// of events (as documented in `FlutterKeyEvent`). An example is when a key
+  /// up is missed due to loss of window focus, on a platform that provides
+  /// query to key pressing status, the embedder might realize that the key has
+  /// been released at the next key event, and should construct a synthesized up
+  /// event immediately before the actual event.
+  ///
+  /// An event being synthesized means that the `timestamp` might greatly
+  /// deviate from the actual time when the event occurs physically.
   bool synthesized;
 } FlutterKeyEvent;
 
-struct _FlutterPlatformKeyEventResponseHandle;
-typedef struct _FlutterPlatformKeyEventResponseHandle
-    FlutterPlatformKeyEventResponseHandle;
+typedef void (*FlutterKeyEventCallback)(bool /* handled */,
+                                        void* /* user_data */);
 
 struct _FlutterPlatformMessageResponseHandle;
 typedef struct _FlutterPlatformMessageResponseHandle
@@ -1579,6 +1609,32 @@ FlutterEngineResult FlutterEngineSendPointerEvent(
     const FlutterPointerEvent* events,
     size_t events_count);
 
+//------------------------------------------------------------------------------
+/// @brief      Sends a key event to the engine. The framework will decide
+///             whether to handle this event in a synchronous fashion, although
+///             due to technical limitation, the result is always reported
+///             asynchronously. The `callback` is guaranteed to be called
+///             exactly once.
+///
+/// @param[in]  engine         A running engine instance.
+/// @param[in]  event          The event data to be sent. This function will no
+///                            longer access `event` after returning.
+/// @param[in]  callback       The callback invoked by the engine when the
+///                            Flutter application has decided whether it
+///                            handles this event. Accepts nullptr.
+/// @param[in]  user_data      The context associated with the callback. The
+///                            exact same value will used to invoke `callback`.
+///                            Accepts nullptr.
+///
+/// @return     The result of the call.
+///
+FLUTTER_EXPORT
+FlutterEngineResult FlutterEngineSendKeyEvent(FLUTTER_API_SYMBOL(FlutterEngine)
+                                                  engine,
+                                              const FlutterKeyEvent* event,
+                                              FlutterKeyEventCallback callback,
+                                              void* user_data);
+
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineSendKeyEvent(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
@@ -2100,7 +2156,9 @@ typedef FlutterEngineResult (*FlutterEngineSendPointerEventFnPtr)(
     size_t events_count);
 typedef FlutterEngineResult (*FlutterEngineSendKeyEventFnPtr)(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
-    const FlutterKeyEvent* event);
+    const FlutterKeyEvent* event,
+    FlutterKeyEventCallback callback,
+    void* user_data);
 typedef FlutterEngineResult (*FlutterEngineSendPlatformMessageFnPtr)(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
     const FlutterPlatformMessage* message);

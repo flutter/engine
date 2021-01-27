@@ -25,7 +25,7 @@ namespace flutter {
 
 class AndroidSurfaceFactoryImpl : public AndroidSurfaceFactory {
  public:
-  AndroidSurfaceFactoryImpl(const AndroidContext& context,
+  AndroidSurfaceFactoryImpl(const std::shared_ptr<AndroidContext>& context,
                             std::shared_ptr<PlatformViewAndroidJNI> jni_facade);
 
   ~AndroidSurfaceFactoryImpl() override;
@@ -33,7 +33,7 @@ class AndroidSurfaceFactoryImpl : public AndroidSurfaceFactory {
   std::unique_ptr<AndroidSurface> CreateSurface() override;
 
  private:
-  const AndroidContext& android_context_;
+  const std::shared_ptr<AndroidContext>& android_context_;
   std::shared_ptr<PlatformViewAndroidJNI> jni_facade_;
 };
 
@@ -52,6 +52,17 @@ class PlatformViewAndroid final : public PlatformView {
                       flutter::TaskRunners task_runners,
                       std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
                       bool use_software_rendering);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Creates a new PlatformViewAndroid but using an existing
+  ///             Android GPU context to create new surfaces. This maximizes
+  ///             resource sharing between 2 PlatformViewAndroids of 2 Shells.
+  ///
+  PlatformViewAndroid(
+      PlatformView::Delegate& delegate,
+      flutter::TaskRunners task_runners,
+      const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade,
+      const std::shared_ptr<flutter::AndroidContext>& android_context);
 
   ~PlatformViewAndroid() override;
 
@@ -108,9 +119,13 @@ class PlatformViewAndroid final : public PlatformView {
       std::unique_ptr<AssetResolver> updated_asset_resolver,
       AssetResolver::AssetResolverType type) override;
 
+  const std::shared_ptr<AndroidContext>& GetAndroidContext() {
+    return android_context_;
+  }
+
  private:
   const std::shared_ptr<PlatformViewAndroidJNI> jni_facade_;
-  std::unique_ptr<AndroidContext> android_context_;
+  std::shared_ptr<AndroidContext> android_context_;
   std::shared_ptr<AndroidSurfaceFactoryImpl> surface_factory_;
 
   PlatformViewAndroidDelegate platform_view_android_delegate_;
@@ -154,6 +169,13 @@ class PlatformViewAndroid final : public PlatformView {
 
   // |PlatformView|
   void RequestDartDeferredLibrary(intptr_t loading_unit_id) override;
+
+  std::shared_ptr<AndroidSurfaceFactoryImpl> MakeSurfaceFactory(
+      const std::shared_ptr<AndroidContext>& android_context,
+      const PlatformViewAndroidJNI& jni_facade);
+
+  std::unique_ptr<AndroidSurface> MakeSurface(
+      const std::shared_ptr<AndroidSurfaceFactoryImpl>& surface_factory);
 
   void InstallFirstFrameCallback();
 

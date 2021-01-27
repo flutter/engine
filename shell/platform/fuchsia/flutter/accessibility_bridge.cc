@@ -117,6 +117,14 @@ fuchsia::accessibility::semantics::States AccessibilityBridge::GetNodeStates(
     (*additional_size) += node.value.size();
   }
 
+  // Set toggled state.
+  if (node.HasFlag(flutter::SemanticsFlags::kHasToggledState)) {
+    states.set_toggled_state(
+        node.HasFlag(flutter::SemanticsFlags::kIsToggled)
+            ? fuchsia::accessibility::semantics::ToggledState::ON
+            : fuchsia::accessibility::semantics::ToggledState::OFF);
+  }
+
   return states;
 }
 
@@ -195,6 +203,9 @@ fuchsia::accessibility::semantics::Role AccessibilityBridge::GetNodeRole(
     }
   }
 
+  if (node.HasFlag(flutter::SemanticsFlags::kHasToggledState)) {
+    return fuchsia::accessibility::semantics::Role::TOGGLE_SWITCH;
+  }
   return fuchsia::accessibility::semantics::Role::UNKNOWN;
 }
 
@@ -418,6 +429,15 @@ fuchsia::accessibility::semantics::Node AccessibilityBridge::GetRootNodeUpdate(
   node_size += kNodeIdSize *
                root_flutter_semantics_node_.childrenInTraversalOrder.size();
   return root_fuchsia_node;
+}
+
+void AccessibilityBridge::RequestAnnounce(const std::string message) {
+  fuchsia::accessibility::semantics::SemanticEvent semantic_event;
+  fuchsia::accessibility::semantics::AnnounceEvent announce_event;
+  announce_event.set_message(message);
+  semantic_event.set_announce(std::move(announce_event));
+
+  tree_ptr_->SendSemanticEvent(std::move(semantic_event), []() {});
 }
 
 void AccessibilityBridge::UpdateScreenRects() {

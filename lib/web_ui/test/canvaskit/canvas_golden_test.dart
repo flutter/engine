@@ -20,57 +20,200 @@ void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
-const ui.Rect region = const ui.Rect.fromLTRB(0, 0, 500, 250);
+const ui.Rect kDefaultRegion = const ui.Rect.fromLTRB(0, 0, 500, 250);
 
-Future<void> matchPictureGolden(String goldenFile, CkPicture picture, { bool write = false }) async {
+Future<void> matchPictureGolden(String goldenFile, CkPicture picture, { ui.Rect region = kDefaultRegion, bool write = false }) async {
   final EnginePlatformDispatcher dispatcher = ui.window.platformDispatcher as EnginePlatformDispatcher;
   final LayerSceneBuilder sb = LayerSceneBuilder();
   sb.pushOffset(0, 0);
   sb.addPicture(ui.Offset.zero, picture);
   dispatcher.rasterizer!.draw(sb.build().layerTree);
-  await matchGoldenFile(goldenFile, region: region, write: write);
+  await matchGoldenFile(goldenFile, region: region, maxDiffRatePercent: 0.0, write: write);
 }
 
 void testMain() {
   group('CkCanvas', () {
     setUpCanvasKitTest();
 
-    test('renders using non-recording canvas if weak refs are supported', () async {
+    test('renders using non-recording canvas if weak refs are supported',
+        () async {
       expect(browserSupportsFinalizationRegistry, isTrue,
           reason: 'This test specifically tests non-recording canvas, which '
-                  'only works if FinalizationRegistry is available.');
+              'only works if FinalizationRegistry is available.');
       final CkPictureRecorder recorder = CkPictureRecorder();
-      final CkCanvas canvas = recorder.beginRecording(region);
+      final CkCanvas canvas = recorder.beginRecording(kDefaultRegion);
       expect(canvas.runtimeType, CkCanvas);
       drawTestPicture(canvas);
-      await matchPictureGolden('canvaskit_picture_original.png', recorder.endRecording());
+      await matchPictureGolden(
+          'canvaskit_picture.png', recorder.endRecording());
     });
 
-    test('renders using a recording canvas if weak refs are not supported', () async {
+    test('renders using a recording canvas if weak refs are not supported',
+        () async {
       browserSupportsFinalizationRegistry = false;
       final CkPictureRecorder recorder = CkPictureRecorder();
-      final CkCanvas canvas = recorder.beginRecording(region);
+      final CkCanvas canvas = recorder.beginRecording(kDefaultRegion);
       expect(canvas, isA<RecordingCkCanvas>());
       drawTestPicture(canvas);
 
       final CkPicture originalPicture = recorder.endRecording();
-      await matchPictureGolden('canvaskit_picture_original.png', originalPicture);
+      await matchPictureGolden(
+          'canvaskit_picture.png', originalPicture);
 
-      final ByteData originalPixels = await (await originalPicture.toImage(50, 50)).toByteData() as ByteData;
+      final ByteData originalPixels =
+          await (await originalPicture.toImage(50, 50)).toByteData()
+              as ByteData;
 
       // Test that a picture restored from a snapshot looks the same.
       final CkPictureSnapshot? snapshot = canvas.pictureSnapshot;
       expect(snapshot, isNotNull);
       final SkPicture restoredSkPicture = snapshot!.toPicture();
       expect(restoredSkPicture, isNotNull);
-      final CkPicture restoredPicture = CkPicture(restoredSkPicture, ui.Rect.fromLTRB(0, 0, 50, 50), snapshot);
-      final ByteData restoredPixels = await (await restoredPicture.toImage(50, 50)).toByteData() as ByteData;
+      final CkPicture restoredPicture = CkPicture(
+          restoredSkPicture, ui.Rect.fromLTRB(0, 0, 50, 50), snapshot);
+      final ByteData restoredPixels =
+          await (await restoredPicture.toImage(50, 50)).toByteData()
+              as ByteData;
 
-      await matchPictureGolden('canvaskit_picture_restored.png', restoredPicture);
-      expect(restoredPixels.buffer.asUint8List(), originalPixels.buffer.asUint8List());
+      await matchPictureGolden(
+          'canvaskit_picture.png', restoredPicture);
+      expect(restoredPixels.buffer.asUint8List(),
+          originalPixels.buffer.asUint8List());
     });
-  // TODO: https://github.com/flutter/flutter/issues/60040
-  // TODO: https://github.com/flutter/flutter/issues/71520
+
+    // Regression test for https://github.com/flutter/flutter/issues/51237
+    // Draws a grid of shadows at different offsets. Prior to directional
+    // light the shadows would shift depending on the offset. With directional
+    // light the cells in the grid must look identical.
+    test('uses directional shadows', () async {
+      const ui.Rect region = ui.Rect.fromLTRB(0, 0, 820, 420);
+      final CkPicture picture = paintPicture(region, (CkCanvas canvas) {
+        final CkPath shape = CkPath()
+          ..addRect(const ui.Rect.fromLTRB(0, 0, 40, 40));
+        final CkPaint shapePaint = CkPaint()
+          ..style = ui.PaintingStyle.stroke
+          ..strokeWidth = 1
+          ..color = const ui.Color(0xFF009900);
+        final CkPaint shadowBoundsPaint = CkPaint()
+          ..style = ui.PaintingStyle.stroke
+          ..strokeWidth = 1
+          ..color = const ui.Color(0xFF000099);
+        canvas.translate(20, 20);
+
+        for (int row = 0; row < 5; row += 1) {
+          canvas.save();
+          for (int col = 0; col < 10; col += 1) {
+            final double elevation = 2 * (col % 5).toDouble();
+            canvas.drawShadow(shape, ui.Color(0xFFFF0000), elevation, true);
+            canvas.drawPath(shape, shapePaint);
+
+            final PhysicalShapeEngineLayer psl = PhysicalShapeEngineLayer(
+              elevation,
+              const ui.Color(0xFF000000),
+              const ui.Color(0xFF000000),
+              shape,
+              ui.Clip.antiAlias,
+            );
+            psl.preroll(
+              PrerollContext(
+                RasterCache(),
+                HtmlViewEmbedder(),
+              ),
+              Matrix4.identity(),
+            );
+            canvas.drawRect(psl.paintBounds, shadowBoundsPaint);
+
+            final CkParagraphBuilder pb = CkParagraphBuilder(
+              CkParagraphStyle(),
+            );
+            pb.addText('$elevation');
+            final CkParagraph p = pb.build();
+            p.layout(const ui.ParagraphConstraints(width: 1000));
+            canvas.drawParagraph(p, ui.Offset(20 - p.maxIntrinsicWidth / 2, 20 - p.height / 2));
+            canvas.translate(80, 0);
+          }
+          canvas.restore();
+          canvas.translate(0, 80);
+        }
+      });
+      await matchPictureGolden('canvaskit_directional_shadows.png', picture, region: region);
+    });
+
+    test('computes shadow bounds correctly with parent transforms', () async {
+      const double rectSize = 50;
+      const double halfSize = rectSize / 2;
+      const double padding = 110;
+      const ui.Rect region = ui.Rect.fromLTRB(
+        0,
+        0,
+        (rectSize + padding) * 3 + padding,
+        (rectSize + padding) * 2 + padding,
+      );
+      late List<PhysicalShapeEngineLayer> physicalShapeLayers;
+
+      LayerTree buildTestScene({ required bool paintShadowBounds }) {
+        final Iterator<PhysicalShapeEngineLayer>? shadowBounds = paintShadowBounds
+          ? physicalShapeLayers.iterator : null;
+        physicalShapeLayers = <PhysicalShapeEngineLayer>[];
+
+        final LayerSceneBuilder builder = LayerSceneBuilder();
+        builder.pushOffset(padding + halfSize, padding + halfSize);
+
+        final CkPath shape = CkPath()
+          ..addRect(const ui.Rect.fromLTRB(-halfSize, -halfSize, halfSize, halfSize));
+        final CkPaint shadowBoundsPaint = CkPaint()
+          ..style = ui.PaintingStyle.stroke
+          ..strokeWidth = 1
+          ..color = const ui.Color(0xFF000099);
+
+        for (int row = 0; row < 2; row += 1) {
+          for (int col = 0; col < 3; col += 1) {
+            builder.pushOffset(col * (rectSize + padding), row * (rectSize + padding));
+            builder.pushTransform(Float64List.fromList(Matrix4.rotationZ(row * math.pi / 4).storage));
+            final double scale = 1 / (1 + col);
+            builder.pushTransform(Float64List.fromList(Matrix4.diagonal3Values(scale, scale, 1).storage));
+            physicalShapeLayers.add(builder.pushPhysicalShape(
+              path: shape,
+              elevation: 6,
+              color: const ui.Color(0xFF009900),
+              shadowColor: const ui.Color(0xFF000000),
+            ));
+            if (shadowBounds != null) {
+              shadowBounds.moveNext();
+              final ui.Rect bounds = shadowBounds.current.paintBounds;
+              builder.addPicture(ui.Offset.zero, paintPicture(region, (CkCanvas canvas) {
+                canvas.drawRect(bounds, shadowBoundsPaint);
+              }));
+            }
+            builder.pop();
+            builder.pop();
+            builder.pop();
+            builder.pop();
+          }
+        }
+        builder.pop();
+        return builder.build().layerTree;
+      }
+
+      // Render the scene once without painting the shadow bounds just to
+      // preroll the scene to compute the shadow bounds.
+      buildTestScene(paintShadowBounds: false).rootLayer!.preroll(
+        PrerollContext(
+          RasterCache(),
+          HtmlViewEmbedder(),
+        ),
+        Matrix4.identity(),
+      );
+
+      // Render again, this time with the shadow bounds.
+      final LayerTree layerTree = buildTestScene(paintShadowBounds: true);
+
+      final EnginePlatformDispatcher dispatcher = ui.window.platformDispatcher as EnginePlatformDispatcher;
+      dispatcher.rasterizer!.draw(layerTree);
+      await matchGoldenFile('canvaskit_shadow_bounds.png', region: region);
+    });
+    // TODO: https://github.com/flutter/flutter/issues/60040
+    // TODO: https://github.com/flutter/flutter/issues/71520
   }, skip: isIosSafari || isFirefox);
 }
 
@@ -149,7 +292,7 @@ void drawTestPicture(CkCanvas canvas) {
       ..[1] = 0
       ..[2] = 15
       ..[3] = 15,
-    [Float32List(4)],
+    Uint32List.fromList(<int>[0x00000000]),
     ui.BlendMode.srcOver,
   );
 
@@ -242,8 +385,7 @@ void drawTestPicture(CkCanvas canvas) {
 
   canvas.translate(60, 0);
   canvas.drawShadow(
-    CkPath()
-      ..addRect(ui.Rect.fromLTRB(0, 0, 40, 30)),
+    CkPath()..addRect(ui.Rect.fromLTRB(0, 0, 40, 30)),
     ui.Color(0xFF00FF00),
     4,
     true,
@@ -283,7 +425,8 @@ void drawTestPicture(CkCanvas canvas) {
   canvas.save();
   canvas.rotate(-math.pi / 8);
   canvas.drawLine(ui.Offset.zero, ui.Offset(30, 30), CkPaint());
-  canvas.drawCircle(ui.Offset(30, 30), 7, CkPaint()..color = ui.Color(0xFF00AA00));
+  canvas.drawCircle(
+      ui.Offset(30, 30), 7, CkPaint()..color = ui.Color(0xFF00AA00));
   canvas.restore();
 
   canvas.translate(60, 0);
@@ -292,7 +435,7 @@ void drawTestPicture(CkCanvas canvas) {
     ..strokeWidth = 20;
   final CkPaint semitransparent = CkPaint()..color = ui.Color(0x66000000);
 
-  canvas.saveLayer(region, semitransparent);
+  canvas.saveLayer(kDefaultRegion, semitransparent);
   canvas.drawLine(ui.Offset(10, 10), ui.Offset(50, 50), thickStroke);
   canvas.drawLine(ui.Offset(50, 10), ui.Offset(10, 50), thickStroke);
   canvas.restore();
@@ -306,10 +449,11 @@ void drawTestPicture(CkCanvas canvas) {
   // To test saveLayerWithFilter we draw three circles with only the middle one
   // blurred using the layer image filter.
   canvas.translate(60, 0);
-  canvas.saveLayer(region, CkPaint());
+  canvas.saveLayer(kDefaultRegion, CkPaint());
   canvas.drawCircle(ui.Offset(30, 30), 10, CkPaint());
   {
-    canvas.saveLayerWithFilter(region, ui.ImageFilter.blur(sigmaX: 5, sigmaY: 10));
+    canvas.saveLayerWithFilter(
+        kDefaultRegion, ui.ImageFilter.blur(sigmaX: 5, sigmaY: 10));
     canvas.drawCircle(ui.Offset(10, 10), 10, CkPaint());
     canvas.drawCircle(ui.Offset(50, 50), 10, CkPaint());
     canvas.restore();
@@ -389,14 +533,17 @@ CkImage generateTestImage() {
   ctx.fillRect(10, 0, 10, 10);
   ctx.fillStyle = '#FF00FF';
   ctx.fillRect(10, 10, 10, 10);
-  final Uint8List imageData = ctx.getImageData(0, 0, 20, 20).data.buffer.asUint8List();
+  final Uint8List imageData =
+      ctx.getImageData(0, 0, 20, 20).data.buffer.asUint8List();
   final SkImage skImage = canvasKit.MakeImage(
-    imageData,
-    20,
-    20,
-    canvasKit.AlphaType.Premul,
-    canvasKit.ColorType.RGBA_8888,
-    SkColorSpaceSRGB,
-  );
+      SkImageInfo(
+        width: 20,
+        height: 20,
+        alphaType: canvasKit.AlphaType.Premul,
+        colorType: canvasKit.ColorType.RGBA_8888,
+        colorSpace: SkColorSpaceSRGB,
+      ),
+      imageData,
+      4 * 20);
   return CkImage(skImage);
 }

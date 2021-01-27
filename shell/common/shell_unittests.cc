@@ -62,8 +62,9 @@ class MockPlatformViewDelegate : public PlatformView::Delegate {
   MOCK_METHOD1(OnPlatformViewDispatchPointerDataPacket,
                void(std::unique_ptr<PointerDataPacket> packet));
 
-  MOCK_METHOD1(OnPlatformViewDispatchKeyDataPacket,
-               void(std::unique_ptr<KeyDataPacket> packet));
+  MOCK_METHOD2(OnPlatformViewDispatchKeyDataPacket,
+               void(std::unique_ptr<KeyDataPacket> packet,
+                    KeyDataResponse callback));
 
   MOCK_METHOD3(OnPlatformViewDispatchSemanticsAction,
                void(int32_t id,
@@ -219,6 +220,16 @@ static void TestDartVmFlags(std::vector<const char*>& flags) {
   for (size_t i = 0; i < flags.size(); ++i) {
     EXPECT_EQ(settings.dart_flags[i], flags[i]);
   }
+}
+
+static void PostSync(const fml::RefPtr<fml::TaskRunner>& task_runner,
+                     const fml::closure& task) {
+  fml::AutoResetWaitableEvent latch;
+  fml::TaskRunner::RunNowOrPostTask(task_runner, [&latch, &task] {
+    task();
+    latch.Signal();
+  });
+  latch.Wait();
 }
 
 TEST_F(ShellTest, InitializeWithInvalidThreads) {
@@ -2431,39 +2442,61 @@ TEST_F(ShellTest, Spawn) {
   ASSERT_TRUE(configuration.IsValid());
   configuration.SetEntrypoint("fixturesAreFunctionalMain");
 
+  auto second_configuration = RunConfiguration::InferFromSettings(settings);
+  ASSERT_TRUE(second_configuration.IsValid());
+  second_configuration.SetEntrypoint("testCanLaunchSecondaryIsolate");
+
   fml::AutoResetWaitableEvent main_latch;
+  std::string last_entry_point;
+  // Fulfill native function for the first Shell's entrypoint.
   AddNativeCallback(
-      "SayHiFromFixturesAreFunctionalMain",
-      CREATE_NATIVE_ENTRY([&main_latch](auto args) { main_latch.Signal(); }));
+      "SayHiFromFixturesAreFunctionalMain", CREATE_NATIVE_ENTRY([&](auto args) {
+        last_entry_point = shell->GetEngine()->GetLastEntrypoint();
+        main_latch.Signal();
+      }));
+  // Fulfill native function for the second Shell's entrypoint.
+  AddNativeCallback(
+      // The Dart native function names aren't very consistent but this is just
+      // the native function name of the second vm entrypoint in the fixture.
+      "NotifyNative", CREATE_NATIVE_ENTRY([&](auto args) {}));
 
   RunEngine(shell.get(), std::move(configuration));
   main_latch.Wait();
   ASSERT_TRUE(DartVMRef::IsInstanceRunning());
+  // Check first Shell ran the first entrypoint.
+  ASSERT_EQ("fixturesAreFunctionalMain", last_entry_point);
 
-  {
-    fml::AutoResetWaitableEvent latch;
-    fml::TaskRunner::RunNowOrPostTask(
-        shell->GetTaskRunners().GetPlatformTaskRunner(),
-        [this, &spawner = shell, &latch, settings]() {
-          MockPlatformViewDelegate platform_view_delegate;
-          auto spawn = spawner->Spawn(
-              settings,
-              [&platform_view_delegate](Shell& shell) {
-                auto result = std::make_unique<MockPlatformView>(
-                    platform_view_delegate, shell.GetTaskRunners());
-                ON_CALL(*result, CreateRenderingSurface())
-                    .WillByDefault(::testing::Invoke(
-                        [] { return std::make_unique<MockSurface>(); }));
-                return result;
-              },
-              [](Shell& shell) { return std::make_unique<Rasterizer>(shell); });
-          ASSERT_NE(nullptr, spawn.get());
-          ASSERT_TRUE(ValidateShell(spawn.get()));
-          DestroyShell(std::move(spawn));
-          latch.Signal();
+  PostSync(
+      shell->GetTaskRunners().GetPlatformTaskRunner(),
+      [this, &spawner = shell, &second_configuration]() {
+        MockPlatformViewDelegate platform_view_delegate;
+        auto spawn = spawner->Spawn(
+            std::move(second_configuration),
+            [&platform_view_delegate](Shell& shell) {
+              auto result = std::make_unique<MockPlatformView>(
+                  platform_view_delegate, shell.GetTaskRunners());
+              ON_CALL(*result, CreateRenderingSurface())
+                  .WillByDefault(::testing::Invoke(
+                      [] { return std::make_unique<MockSurface>(); }));
+              return result;
+            },
+            [](Shell& shell) { return std::make_unique<Rasterizer>(shell); });
+        ASSERT_NE(nullptr, spawn.get());
+        ASSERT_TRUE(ValidateShell(spawn.get()));
+
+        PostSync(spawner->GetTaskRunners().GetUITaskRunner(), [&spawn] {
+          // Check second shell ran the second entrypoint.
+          ASSERT_EQ("testCanLaunchSecondaryIsolate",
+                    spawn->GetEngine()->GetLastEntrypoint());
         });
-    latch.Wait();
-  }
+
+        PostSync(
+            spawner->GetTaskRunners().GetIOTaskRunner(), [&spawner, &spawn] {
+              ASSERT_EQ(spawner->GetIOManager()->GetResourceContext().get(),
+                        spawn->GetIOManager()->GetResourceContext().get());
+            });
+        DestroyShell(std::move(spawn));
+      });
 
   DestroyShell(std::move(shell));
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());

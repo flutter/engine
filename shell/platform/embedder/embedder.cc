@@ -1492,31 +1492,24 @@ FlutterEngineResult FlutterEngineSendPointerEvent(
                                   "running Flutter application.");
 }
 
-inline flutter::KeyChange ToKeyChange(FlutterKeyEventKind key_change) {
-  switch (key_change) {
-    case kFlutterKeyEventKindUp:
-      return flutter::KeyChange::kUp;
-    case kFlutterKeyEventKindDown:
-      return flutter::KeyChange::kDown;
-    case kFlutterKeyEventKindRepeat:
-      return flutter::KeyChange::kRepeat;
+static inline flutter::KeyEventType MapKeyEventType(
+    FlutterKeyEventType event_kind) {
+  switch (event_kind) {
+    case kFlutterKeyEventTypeUp:
+      return flutter::KeyEventType::kUp;
+    case kFlutterKeyEventTypeDown:
+      return flutter::KeyEventType::kDown;
+    case kFlutterKeyEventTypeRepeat:
+      return flutter::KeyEventType::kRepeat;
   }
-  return flutter::KeyChange::kUp;
+  return flutter::KeyEventType::kUp;
 }
-
-// The number of bytes that should be able to fully store character data.
-//
-// This is an arbitrary number that is considered sufficient, used as an
-// upperbound in strnlen.
-//
-// Many platforms assert the character to be less than 2 int16's, i.e. 4 bytes,
-// therefore the character data is asserted to be less than double the amount,
-// i.e. 8 bytes.
-constexpr size_t kKeyEventCharacterMaxBytes = 8;
 
 FlutterEngineResult FlutterEngineSendKeyEvent(FLUTTER_API_SYMBOL(FlutterEngine)
                                                   engine,
-                                              const FlutterKeyEvent* event) {
+                                              const FlutterKeyEvent* event,
+                                              FlutterKeyEventCallback callback,
+                                              void* user_data) {
   if (engine == nullptr) {
     return LOG_EMBEDDER_ERROR(kInvalidArguments, "Engine handle was invalid.");
   }
@@ -1527,25 +1520,24 @@ FlutterEngineResult FlutterEngineSendKeyEvent(FLUTTER_API_SYMBOL(FlutterEngine)
 
   const char* character = SAFE_ACCESS(event, character, nullptr);
 
-  size_t character_data_size =
-      character == nullptr ? 0 : strnlen(character, kKeyEventCharacterMaxBytes);
-
-  auto packet =
-      std::make_unique<flutter::KeyDataPacketBuilder>(character_data_size);
-
   flutter::KeyData key_data;
   key_data.Clear();
   key_data.timestamp = (uint64_t)SAFE_ACCESS(event, timestamp, 0);
-  key_data.change = ToKeyChange(
-      SAFE_ACCESS(event, kind, FlutterKeyEventKind::kFlutterKeyEventKindUp));
+  key_data.type = MapKeyEventType(
+      SAFE_ACCESS(event, type, FlutterKeyEventType::kFlutterKeyEventTypeUp));
   key_data.physical = SAFE_ACCESS(event, physical, 0);
   key_data.logical = SAFE_ACCESS(event, logical, 0);
-  key_data.synthesized = !!SAFE_ACCESS(event, synthesized, false);
-  packet->SetKeyData(key_data);
-  packet->SetCharacter(character);
+  key_data.synthesized = SAFE_ACCESS(event, synthesized, false);
+
+  auto packet = std::make_unique<flutter::KeyDataPacket>(key_data, character);
+
+  auto response = [callback, user_data](bool handled) {
+    if (callback != nullptr)
+      callback(handled, user_data);
+  };
 
   return reinterpret_cast<flutter::EmbedderEngine*>(engine)
-                 ->DispatchKeyDataPacket(std::move(packet))
+                 ->DispatchKeyDataPacket(std::move(packet), response)
              ? kSuccess
              : LOG_EMBEDDER_ERROR(kInternalInconsistency,
                                   "Could not dispatch the key event to the "

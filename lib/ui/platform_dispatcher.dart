@@ -28,8 +28,11 @@ typedef TimingsCallback = void Function(List<FrameTiming> timings);
 /// Signature for [PlatformDispatcher.onPointerDataPacket].
 typedef PointerDataPacketCallback = void Function(PointerDataPacket packet);
 
+// Signature for the response to KeyDataCallback.
+typedef _KeyDataResponseCallback = void Function(int responseId, bool handled);
+
 /// Signature for [PlatformDispatcher.onKeyData].
-typedef KeyDataCallback = void Function(KeyData data);
+typedef KeyDataCallback = bool Function(KeyData data);
 
 /// Signature for [PlatformDispatcher.onSemanticsAction].
 typedef SemanticsActionCallback = void Function(int id, SemanticsAction action, ByteData? args);
@@ -335,6 +338,10 @@ class PlatformDispatcher {
     return PointerDataPacket(data: data);
   }
 
+  /// Called by [_dispatchKeyData].
+  void _respondToKeyData(int responseId, bool handled)
+      native 'PlatformConfiguration_respondToKeyData';
+
   /// A callback that is invoked when key data is available.
   ///
   /// The framework invokes this callback in the same zone in which the callback
@@ -348,15 +355,15 @@ class PlatformDispatcher {
   }
 
   // Called from the engine, via hooks.dart
-  void _dispatchKeyData(ByteData packet) {
-    print('dispatch: onKeyData $onKeyData');
-    if (onKeyData != null) {
-      _invoke1<KeyData>(
-        onKeyData,
-        _onKeyDataZone,
-        _unpackKeyData(packet),
-      );
-    }
+  void _dispatchKeyData(ByteData packet, int responseId) {
+    _invoke2<KeyData, _KeyDataResponseCallback>(
+      (KeyData data, _KeyDataResponseCallback callback) {
+        callback(responseId, onKeyData == null ? false : onKeyData!(data));
+      },
+      _onKeyDataZone,
+      _unpackKeyData(packet),
+      _respondToKeyData,
+    );
   }
 
   // If this value changes, update the encoding code in the following files:
@@ -367,10 +374,7 @@ class PlatformDispatcher {
   //  * HardwareKeyboard.java
   static const int _kKeyDataFieldCount = 5;
 
-  // KeyData packet structure:
-  // | CharDataSize |     (1 field)
-  // |   Key Data   |     (_kKeyDataFieldCount fields)
-  // |   CharData   |     (CharDataSize bits)
+  // The packet structure is described in `key_data_packet.h`.
   static KeyData _unpackKeyData(ByteData packet) {
     const int kStride = Int64List.bytesPerElement;
 
@@ -381,7 +385,7 @@ class PlatformDispatcher {
 
     final KeyData keyData = KeyData(
       timeStamp: Duration(microseconds: packet.getUint64(kStride * offset++, _kFakeHostEndian)),
-      change: KeyChange.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
+      type: KeyEventType.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
       physical: packet.getUint64(kStride * offset++, _kFakeHostEndian),
       logical: packet.getUint64(kStride * offset++, _kFakeHostEndian),
       character: character,

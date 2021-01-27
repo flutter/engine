@@ -64,9 +64,10 @@ static const char* kDartLanguageArgs[] = {
     // clang-format on
 };
 
-static const char* kDartPrecompilationArgs[] = {
-    "--precompilation",
-};
+// TODO(74520): Remove flag once isolate group work is completed (or add it to
+//              JIT mode).
+static const char* kDartPrecompilationArgs[] = {"--precompilation",
+                                                "--enable-isolate-groups"};
 
 FML_ALLOW_UNUSED_TYPE
 static const char* kDartWriteProtectCodeArgs[] = {
@@ -92,10 +93,6 @@ static const char* kDartDisableServiceAuthCodesArgs[]{
     "--disable-service-auth-codes",
 };
 
-static const char* kDartTraceStartupArgs[]{
-    "--timeline_streams=Compiler,Dart,Debugger,Embedder,GC,Isolate,VM,API",
-};
-
 static const char* kDartEndlessTraceBufferArgs[]{
     "--timeline_recorder=endless",
 };
@@ -108,7 +105,16 @@ static const char* kDartFuchsiaTraceArgs[] FML_ALLOW_UNUSED_TYPE = {
     "--systrace_timeline",
 };
 
-static const char* kDartTraceStreamsArgs[] = {
+FML_ALLOW_UNUSED_TYPE
+static const char* kDartDefaultTraceStreamsArgs[]{
+    "--timeline_streams=Dart,Embedder,GC",
+};
+
+static const char* kDartStartupTraceStreamsArgs[]{
+    "--timeline_streams=Compiler,Dart,Debugger,Embedder,GC,Isolate,VM,API",
+};
+
+static const char* kDartSystraceTraceStreamsArgs[] = {
     "--timeline_streams=Compiler,Dart,Debugger,Embedder,GC,Isolate,VM,API",
 };
 
@@ -370,12 +376,25 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
   if (settings_.trace_systrace) {
     PushBackAll(&args, kDartSystraceTraceBufferArgs,
                 fml::size(kDartSystraceTraceBufferArgs));
-    PushBackAll(&args, kDartTraceStreamsArgs, fml::size(kDartTraceStreamsArgs));
+    PushBackAll(&args, kDartSystraceTraceStreamsArgs,
+                fml::size(kDartSystraceTraceStreamsArgs));
   }
 
   if (settings_.trace_startup) {
-    PushBackAll(&args, kDartTraceStartupArgs, fml::size(kDartTraceStartupArgs));
+    PushBackAll(&args, kDartStartupTraceStreamsArgs,
+                fml::size(kDartStartupTraceStreamsArgs));
   }
+
+#if defined(OS_FUCHSIA)
+  PushBackAll(&args, kDartFuchsiaTraceArgs, fml::size(kDartFuchsiaTraceArgs));
+  PushBackAll(&args, kDartSystraceTraceStreamsArgs,
+              fml::size(kDartSystraceTraceStreamsArgs));
+#else
+  if (!settings_.trace_systrace && !settings_.trace_startup) {
+    PushBackAll(&args, kDartDefaultTraceStreamsArgs,
+                fml::size(kDartDefaultTraceStreamsArgs));
+  }
+#endif  // defined(OS_FUCHSIA)
 
   std::string old_gen_heap_size_args;
   if (settings_.old_gen_heap_size >= 0) {
@@ -383,11 +402,6 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
         DartOldGenHeapSizeArgs(settings_.old_gen_heap_size);
     args.push_back(old_gen_heap_size_args.c_str());
   }
-
-#if defined(OS_FUCHSIA)
-  PushBackAll(&args, kDartFuchsiaTraceArgs, fml::size(kDartFuchsiaTraceArgs));
-  PushBackAll(&args, kDartTraceStreamsArgs, fml::size(kDartTraceStreamsArgs));
-#endif
 
   for (size_t i = 0; i < settings_.dart_flags.size(); i++) {
     args.push_back(settings_.dart_flags[i].c_str());

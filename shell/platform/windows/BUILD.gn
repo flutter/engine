@@ -48,6 +48,8 @@ source_set("flutter_windows_source") {
     "angle_surface_manager.h",
     "cursor_handler.cc",
     "cursor_handler.h",
+    "external_texture_gl.cc",
+    "external_texture_gl.h",
     "flutter_key_map.cc",
     "flutter_keyboard_manager.cc",
     "flutter_keyboard_manager.h",
@@ -56,6 +58,8 @@ source_set("flutter_windows_source") {
     "flutter_windows.cc",
     "flutter_windows_engine.cc",
     "flutter_windows_engine.h",
+    "flutter_windows_texture_registrar.cc",
+    "flutter_windows_texture_registrar.h",
     "flutter_windows_view.cc",
     "flutter_windows_view.h",
     "key_event_handler.cc",
@@ -92,6 +96,8 @@ source_set("flutter_windows_source") {
       "system_utils_win32.cc",
       "task_runner_win32.cc",
       "task_runner_win32.h",
+      "text_input_manager_win32.cc",
+      "text_input_manager_win32.h",
       "win32_dpi_utils.cc",
       "win32_dpi_utils.h",
       "win32_flutter_window.cc",
@@ -100,6 +106,11 @@ source_set("flutter_windows_source") {
       "win32_window.h",
       "win32_window_proc_delegate_manager.cc",
       "win32_window_proc_delegate_manager.h",
+    ]
+
+    libs = [
+      "dwmapi.lib",
+      "imm32.lib",
     ]
   }
 
@@ -164,11 +175,15 @@ if (target_os == "winuwp") {
       "flutter_keyboard_manager_unittests.cc",
       "flutter_project_bundle_unittests.cc",
       "flutter_windows_engine_unittests.cc",
+      "flutter_windows_texture_registrar_unittests.cc",
+      "key_event_handler_unittests.cc",
       "string_conversion_unittests.cc",
       "system_utils_unittests.cc",
       "testing/engine_embedder_api_modifier.h",
       "testing/mock_win32_window.cc",
       "testing/mock_win32_window.h",
+      "testing/mock_window_binding_handler.cc",
+      "testing/mock_window_binding_handler.h",
       "testing/win32_flutter_window_test.cc",
       "testing/win32_flutter_window_test.h",
       "win32_dpi_utils_unittests.cc",

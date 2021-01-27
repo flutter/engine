@@ -3,34 +3,24 @@
 // found in the LICENSE file.
 
 #include "flutter/lib/ui/window/key_data_packet.h"
+
+#include <cstring>
+
 #include "flutter/fml/logging.h"
 
 namespace flutter {
 
-KeyDataPacket::KeyDataPacket(uint8_t* data, size_t num_bytes)
-    : data_(data, data + num_bytes) {}
-
-KeyDataPacket::KeyDataPacket(size_t num_bytes) : data_(num_bytes) {}
-
-KeyDataPacket::~KeyDataPacket() = default;
-
-KeyDataPacketBuilder::KeyDataPacketBuilder(size_t character_data_size)
-    : KeyDataPacket(sizeof(uint64_t) + sizeof(KeyData) + character_data_size) {
-  uint64_t size64 = character_data_size;
-  memcpy(&data()[CharacterSizeStart_()], &size64, sizeof(size64));
-}
-
-KeyDataPacketBuilder::~KeyDataPacketBuilder() = default;
-
-void KeyDataPacketBuilder::SetKeyData(const KeyData& event) {
-  memcpy(&data()[KeyDataStart_()], &event, sizeof(KeyData));
-}
-
-void KeyDataPacketBuilder::SetCharacter(const char* character) {
+KeyDataPacket::KeyDataPacket(const KeyData& event, const char* character) {
+  size_t char_size = character == nullptr ? 0 : strlen(character);
+  uint64_t char_size_64 = char_size;
+  data_.resize(sizeof(uint64_t) + sizeof(KeyData) + char_size);
+  memcpy(CharacterSizeStart(), &char_size_64, sizeof(char_size));
+  memcpy(KeyDataStart(), &event, sizeof(KeyData));
   if (character != nullptr) {
-    memcpy(data().data() + CharacterStart_(), character,
-           data().size() - CharacterStart_());
+    memcpy(CharacterStart(), character, char_size);
   }
 }
+
+KeyDataPacket::~KeyDataPacket() = default;
 
 }  // namespace flutter

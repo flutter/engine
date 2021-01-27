@@ -62,6 +62,11 @@ group("flutter") {
       public_deps += [
         "//flutter/flutter_frontend_server:frontend_server",
         "//third_party/dart:create_sdk",
+
+        # This must be listed explicitly for desktop cross-builds since
+        # //flutter/lib/snapshot:generate_snapshot_bin will only build
+        # gen_snapshot for the host and not the target.
+        "//third_party/dart/runtime/bin:gen_snapshot",
       ]
 
       if (full_dart_sdk) {
@@ -102,6 +107,12 @@ group("flutter") {
       "//flutter/third_party/tonic/tests:tonic_unittests",
       "//flutter/third_party/txt:txt_unittests",
     ]
+
+    # The accessibility library only supports Mac for now.
+    if (is_mac) {
+      public_deps +=
+          [ "//flutter/third_party/accessibility:accessibility_unittests" ]
+    }
 
     if (is_fuchsia) {
       public_deps += [ "//flutter/shell/platform/fuchsia:tests" ]
