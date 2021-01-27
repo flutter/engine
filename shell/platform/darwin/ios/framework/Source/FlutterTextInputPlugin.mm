@@ -541,11 +541,11 @@ static UIAccessibilityElement* _backingTextInputAccessibilityObject;
   [super dealloc];
 }
 
-+(UIAccessibilityElement*)backingTextInputAccessibilityObject {
++ (UIAccessibilityElement*)backingTextInputAccessibilityObject {
   return _backingTextInputAccessibilityObject;
 }
 
-+(void)setBackingTextInputAccessibilityObject:(UIAccessibilityElement*)element {
++ (void)setBackingTextInputAccessibilityObject:(UIAccessibilityElement*)element {
   _backingTextInputAccessibilityObject = element;
 }
 
@@ -1127,16 +1127,16 @@ static UIAccessibilityElement* _backingTextInputAccessibilityObject;
     // For most of the cases, this flutter text input view should never
     // receive the focus. If we do receive the focus, we make the best effort
     // to send the focus back to the real text field.
-    __strong UIAccessibilityElement* textInput = FlutterTextInputView.backingTextInputAccessibilityObject;
+    __strong UIAccessibilityElement* textInput =
+        FlutterTextInputView.backingTextInputAccessibilityObject;
     FML_DCHECK(textInput);
     UIAccessibilityPostNotification(UIAccessibilityScreenChangedNotification, textInput);
   }
 }
 
-- (BOOL)isAccessibilityElement{
+- (BOOL)isAccessibilityElement {
   return _accessibilityEnabled;
 }
-
 
 @end
 
@@ -1266,14 +1266,14 @@ static UIAccessibilityElement* _backingTextInputAccessibilityObject;
   // the newly attached active view while performing accessibility update.
   // This results in accessibility focus stuck at the FlutterTextInputView.
   [NSTimer scheduledTimerWithTimeInterval:_kUITextInputAccessibilityEnablingDelaySeconds
-                                 target:self
-                               selector:@selector(enableActiveViewAccessibility:)
-                               userInfo:nil
-                                repeats:NO];
+                                   target:self
+                                 selector:@selector(enableActiveViewAccessibility:)
+                                 userInfo:nil
+                                  repeats:NO];
   [_activeView becomeFirstResponder];
 }
 
--(void)enableActiveViewAccessibility:(NSTimer*)time {
+- (void)enableActiveViewAccessibility:(NSTimer*)time {
   if (_activeView.isFirstResponder) {
     _activeView.accessibilityEnabled = YES;
   }

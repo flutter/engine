@@ -71,7 +71,8 @@ FLUTTER_DARWIN_EXPORT
 @property(nonatomic, copy) UITextContentType textContentType API_AVAILABLE(ios(10.0));
 
 @property(nonatomic, assign) id<FlutterTextInputDelegate> textInputDelegate;
-@property(class, nonatomic, weak, assign) UIAccessibilityElement* backingTextInputAccessibilityObject;
+@property(class, nonatomic, weak, assign)
+    UIAccessibilityElement* backingTextInputAccessibilityObject;
 
 @end
 #endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTERTEXTINPUTPLUGIN_H_
