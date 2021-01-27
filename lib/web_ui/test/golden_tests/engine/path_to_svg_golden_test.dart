@@ -21,13 +21,13 @@ void testMain() async {
 
   Future<void> testPath(Path path, String scubaFileName,
       {Paint paint, double maxDiffRatePercent = null, bool write = false,
-      bool strokeEnabled = true, bool fillEnabled = true}) async {
+      bool strokeEnabled = true, bool enableFill = true}) async {
     const Rect canvasBounds = Rect.fromLTWH(0, 0, 600, 800);
     final BitmapCanvas bitmapCanvas = BitmapCanvas(canvasBounds,
         RenderStrategy());
     final RecordingCanvas canvas = RecordingCanvas(canvasBounds);
 
-    if (fillEnabled) {
+    if (enableFill) {
       paint ??= Paint()
         ..color = const Color(0x807F7F7F)
         ..style = PaintingStyle.fill;
@@ -37,14 +37,15 @@ void testMain() async {
     if (strokeEnabled) {
       paint = Paint()
         ..strokeWidth = 2
-        ..color = fillEnabled ? const Color(0xFFFF0000) :
+        ..color = enableFill ? const Color(0xFFFF0000) :
             const Color(0xFF000000)
         ..style = PaintingStyle.stroke;
     }
 
     canvas.drawPath(path, paint);
 
-    final html.Element svgElement = pathToSvgElement(path, paint);
+    final html.Element svgElement = pathToSvgElement(path, paint,
+        enableFill);
 
     html.document.body.append(bitmapCanvas.rootElement);
     html.document.body.append(svgElement);
@@ -156,20 +157,24 @@ void testMain() async {
     path.lineTo(4, 51.5);
     path.conicTo(0.5, 51.5, 0.5, 48, w);
     path.lineTo(0.5, 14);
-    await testPath(path, 'svg_editoutline', fillEnabled: false);
+    await testPath(path, 'svg_editoutline', enableFill: false);
   });
 }
 
-html.Element pathToSvgElement(Path path, Paint paint) {
+html.Element pathToSvgElement(Path path, Paint paint,
+    bool enableFill) {
   final Rect bounds = path.getBounds();
   final StringBuffer sb = StringBuffer();
   sb.write(
-      '<svg viewBox="0 0 ${bounds.right} ${bounds.bottom}" width="${bounds.right}" height="${bounds.bottom}">');
+      '<svg viewBox="0 0 ${bounds.right} ${bounds.bottom}" '
+          'width="${bounds.right}" height="${bounds.bottom}">');
   sb.write('<path ');
   if (paint.style == PaintingStyle.stroke) {
     sb.write('stroke="${colorToCssString(paint.color)}" ');
     sb.write('stroke-width="${paint.strokeWidth}" ');
-    sb.write('fill="none" ');
+    if (!enableFill) {
+      sb.write('fill="none" ');
+    }
   }
   if (paint.style == PaintingStyle.fill) {
     sb.write('fill="${colorToCssString(paint.color)}" ');
