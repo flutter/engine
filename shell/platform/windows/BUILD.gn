@@ -194,7 +194,6 @@ executable("flutter_windows_unittests") {
       "flutter_windows_engine_unittests.cc",
       "flutter_windows_texture_registrar_unittests.cc",
       "key_event_handler_unittests.cc",
-      "string_conversion_unittests.cc",
       "testing/mock_win32_window.cc",
       "testing/mock_win32_window.h",
       "testing/mock_window_binding_handler.cc",
