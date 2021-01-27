@@ -752,6 +752,12 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
   void pop() {
     if (_styleStack.length <= 1) {
       // The top-level text style is paragraph-level. We don't pop it off.
+      if (assertionsEnabled) {
+        html.window.console.warn(
+          'Cannot pop text style in ParagraphBuilder. '
+          'Already popped all text styles from the style stack.',
+        );
+      }
       return;
     }
     _commands.add(const _ParagraphCommand.pop());

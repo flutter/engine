@@ -578,7 +578,6 @@ void testMain() {
         'canvaskit_text_styles_do_not_leak.png',
         picture,
         region: ui.Rect.fromLTRB(0, 0, testWidth, 850),
-        write: true,
       );
     });
     // TODO: https://github.com/flutter/flutter/issues/60040
