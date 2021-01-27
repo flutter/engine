@@ -4,6 +4,8 @@
 
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_view.h"
 
+#include "flutter/shell/platform/linux/fl_view_private.h"
+
 #include <gdk/gdkwayland.h>
 #ifdef GDK_WINDOWING_X11
 #include <gdk/gdkx.h>
@@ -12,12 +14,13 @@
 
 #include "flutter/shell/platform/linux/fl_accessibility_plugin.h"
 #include "flutter/shell/platform/linux/fl_engine_private.h"
+#include "flutter/shell/platform/linux/fl_gesture_helper.h"
 #include "flutter/shell/platform/linux/fl_key_event_plugin.h"
 #include "flutter/shell/platform/linux/fl_mouse_cursor_plugin.h"
 #include "flutter/shell/platform/linux/fl_platform_plugin.h"
+#include "flutter/shell/platform/linux/fl_platform_views_plugin.h"
 #include "flutter/shell/platform/linux/fl_plugin_registrar_private.h"
-#include "flutter/shell/platform/linux/fl_renderer_wayland.h"
-#include "flutter/shell/platform/linux/fl_renderer_x11.h"
+#include "flutter/shell/platform/linux/fl_renderer_gl.h"
 #include "flutter/shell/platform/linux/fl_text_input_plugin.h"
 #include "flutter/shell/platform/linux/fl_view_accessible.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_engine.h"
@@ -26,7 +29,7 @@
 static constexpr int kMicrosecondsPerMillisecond = 1000;
 
 struct _FlView {
-  GtkWidget parent_instance;
+  GtkContainer parent_instance;
 
   // Project being run.
   FlDartProject* project;
@@ -46,7 +49,21 @@ struct _FlView {
   FlMouseCursorPlugin* mouse_cursor_plugin;
   FlPlatformPlugin* platform_plugin;
   FlTextInputPlugin* text_input_plugin;
+  FlPlatformViewsPlugin* platform_views_plugin;
+
+  FlGestureHelper* gesture_helper;
+
+  GList* gl_area_list;
+  GList* used_area_list;
+
+  GList* children_list;
+  GList* pending_children_list;
 };
+
+typedef struct _FlViewChild {
+  GtkWidget* widget;
+  GdkRectangle geometry;
+} FlViewChild;
 
 enum { PROP_FLUTTER_PROJECT = 1, PROP_LAST };
 
@@ -56,18 +73,18 @@ static void fl_view_plugin_registry_iface_init(
 G_DEFINE_TYPE_WITH_CODE(
     FlView,
     fl_view,
-    GTK_TYPE_WIDGET,
+    GTK_TYPE_CONTAINER,
     G_IMPLEMENT_INTERFACE(fl_plugin_registry_get_type(),
                           fl_view_plugin_registry_iface_init))
 
-static void fl_view_update_semantics_node_cb(FlEngine* engine,
-                                             const FlutterSemanticsNode* node,
-                                             gpointer user_data) {
-  FlView* self = FL_VIEW(user_data);
+// static void fl_view_update_semantics_node_cb(FlEngine* engine,
+//                                              const FlutterSemanticsNode*
+//                                              node, gpointer user_data) {
+//   FlView* self = FL_VIEW(user_data);
 
-  fl_accessibility_plugin_handle_update_semantics_node(
-      self->accessibility_plugin, node);
-}
+//   fl_accessibility_plugin_handle_update_semantics_node(
+//       self->accessibility_plugin, node);
+// }
 
 // Converts a GDK button event into a Flutter event and sends it to the engine.
 static gboolean fl_view_send_pointer_button_event(FlView* self,
@@ -116,7 +133,7 @@ static gboolean fl_view_send_pointer_button_event(FlView* self,
       event->x * scale_factor, event->y * scale_factor, 0, 0,
       self->button_state);
 
-  return TRUE;
+  return FALSE;
 }
 
 // Updates the engine with the current window metrics.
@@ -127,7 +144,6 @@ static void fl_view_geometry_changed(FlView* self) {
   fl_engine_send_window_metrics_event(
       self->engine, allocation.width * scale_factor,
       allocation.height * scale_factor, scale_factor);
-  fl_renderer_set_geometry(self->renderer, &allocation, scale_factor);
 }
 
 // Implements FlPluginRegistry::get_registrar_for_plugin.
@@ -145,39 +161,25 @@ static void fl_view_plugin_registry_iface_init(
   iface->get_registrar_for_plugin = fl_view_get_registrar_for_plugin;
 }
 
-static FlRenderer* fl_view_get_renderer_for_display(GdkDisplay* display) {
-#ifdef GDK_WINDOWING_X11
-  if (GDK_IS_X11_DISPLAY(display)) {
-    return FL_RENDERER(fl_renderer_x11_new());
-  }
-#endif
-
-  if (GDK_IS_WAYLAND_DISPLAY(display)) {
-    return FL_RENDERER(fl_renderer_wayland_new());
-  }
-
-  g_error("Unsupported GDK backend");
-
-  return nullptr;
-}
-
 static void fl_view_constructed(GObject* object) {
   FlView* self = FL_VIEW(object);
 
-  GdkDisplay* display = gtk_widget_get_display(GTK_WIDGET(self));
-  self->renderer = fl_view_get_renderer_for_display(display);
+  self->renderer = FL_RENDERER(fl_renderer_gl_new());
   self->engine = fl_engine_new(self->project, self->renderer);
-  fl_engine_set_update_semantics_node_handler(
-      self->engine, fl_view_update_semantics_node_cb, self, nullptr);
+  self->gesture_helper = fl_gesture_helper_new();
+  // fl_engine_set_update_semantics_node_handler(
+  //     self->engine, fl_view_update_semantics_node_cb, self, nullptr);
 
   // Create system channel handlers.
   FlBinaryMessenger* messenger = fl_engine_get_binary_messenger(self->engine);
-  self->accessibility_plugin = fl_accessibility_plugin_new(self);
+  // self->accessibility_plugin = fl_accessibility_plugin_new(self);
   self->text_input_plugin = fl_text_input_plugin_new(messenger, self);
   self->key_event_plugin =
       fl_key_event_plugin_new(messenger, self->text_input_plugin);
   self->mouse_cursor_plugin = fl_mouse_cursor_plugin_new(messenger, self);
   self->platform_plugin = fl_platform_plugin_new(messenger);
+  self->platform_views_plugin =
+      fl_platform_views_plugin_new(messenger, self->gesture_helper);
 }
 
 static void fl_view_set_property(GObject* object,
@@ -228,10 +230,11 @@ static void fl_view_notify(GObject* object, GParamSpec* pspec) {
 static void fl_view_dispose(GObject* object) {
   FlView* self = FL_VIEW(object);
 
-  if (self->engine != nullptr) {
-    fl_engine_set_update_semantics_node_handler(self->engine, nullptr, nullptr,
-                                                nullptr);
-  }
+  // if (self->engine != nullptr) {
+  //   fl_engine_set_update_semantics_node_handler(self->engine, nullptr,
+  //   nullptr,
+  //                                               nullptr);
+  // }
 
   g_clear_object(&self->project);
   g_clear_object(&self->renderer);
@@ -241,6 +244,9 @@ static void fl_view_dispose(GObject* object) {
   g_clear_object(&self->mouse_cursor_plugin);
   g_clear_object(&self->platform_plugin);
   g_clear_object(&self->text_input_plugin);
+  g_clear_object(&self->platform_views_plugin);
+  g_list_free_full(self->gl_area_list, g_object_unref);
+  self->gl_area_list = nullptr;
 
   G_OBJECT_CLASS(fl_view_parent_class)->dispose(object);
 }
@@ -250,9 +256,28 @@ static void fl_view_realize(GtkWidget* widget) {
   FlView* self = FL_VIEW(widget);
   g_autoptr(GError) error = nullptr;
 
+  GtkAllocation allocation;
+  gtk_widget_get_allocation(widget, &allocation);
+
   gtk_widget_set_realized(widget, TRUE);
 
-  if (!fl_renderer_start(self->renderer, widget, &error)) {
+  GdkWindowAttr attributes;
+  attributes.window_type = GDK_WINDOW_CHILD;
+  attributes.x = allocation.x;
+  attributes.y = allocation.y;
+  attributes.width = allocation.width;
+  attributes.height = allocation.height;
+  attributes.wclass = GDK_INPUT_OUTPUT;
+  attributes.visual = gtk_widget_get_visual(widget);
+  attributes.event_mask =
+      gtk_widget_get_events(widget) | GDK_KEY_PRESS_MASK | GDK_KEY_RELEASE_MASK;
+  gint attributes_mask = GDK_WA_X | GDK_WA_Y | GDK_WA_VISUAL;
+  GdkWindow* window = gdk_window_new(gtk_widget_get_parent_window(widget),
+                                     &attributes, attributes_mask);
+  gtk_widget_set_window(widget, window);
+  gtk_widget_register_window(widget, window);
+
+  if (!fl_renderer_start(self->renderer, self, &error)) {
     g_warning("Failed to start Flutter renderer: %s", error->message);
     return;
   }
@@ -263,6 +288,52 @@ static void fl_view_realize(GtkWidget* widget) {
   }
 }
 
+static void fl_view_get_preferred_width(GtkWidget* widget,
+                                        gint* minimum,
+                                        gint* natural) {
+  FlView* self = FL_VIEW(widget);
+  gint child_min, child_nat;
+
+  *minimum = 0;
+  *natural = 0;
+
+  for (GList* iterator = self->children_list; iterator;
+       iterator = iterator->next) {
+    FlViewChild* child = reinterpret_cast<FlViewChild*>(iterator->data);
+
+    if (!gtk_widget_get_visible(child->widget))
+      continue;
+
+    gtk_widget_get_preferred_width(child->widget, &child_min, &child_nat);
+
+    *minimum = MAX(*minimum, child->geometry.x + child_min);
+    *natural = MAX(*natural, child->geometry.x + child_nat);
+  }
+}
+
+static void fl_view_get_preferred_height(GtkWidget* widget,
+                                         gint* minimum,
+                                         gint* natural) {
+  FlView* self = FL_VIEW(widget);
+  gint child_min, child_nat;
+
+  *minimum = 0;
+  *natural = 0;
+
+  for (GList* iterator = self->children_list; iterator;
+       iterator = iterator->next) {
+    FlViewChild* child = reinterpret_cast<FlViewChild*>(iterator->data);
+
+    if (!gtk_widget_get_visible(child->widget))
+      continue;
+
+    gtk_widget_get_preferred_height(child->widget, &child_min, &child_nat);
+
+    *minimum = MAX(*minimum, child->geometry.y + child_min);
+    *natural = MAX(*natural, child->geometry.y + child_nat);
+  }
+}
+
 // Implements GtkWidget::size-allocate.
 static void fl_view_size_allocate(GtkWidget* widget,
                                   GtkAllocation* allocation) {
@@ -270,13 +341,53 @@ static void fl_view_size_allocate(GtkWidget* widget,
 
   gtk_widget_set_allocation(widget, allocation);
 
-  if (gtk_widget_get_realized(widget) && gtk_widget_get_has_window(widget)) {
-    gdk_window_move_resize(gtk_widget_get_window(widget), allocation->x,
-                           allocation->y, allocation->width,
-                           allocation->height);
+  if (gtk_widget_get_has_window(widget)) {
+    if (gtk_widget_get_realized(widget))
+      gdk_window_move_resize(gtk_widget_get_window(widget), allocation->x,
+                             allocation->y, allocation->width,
+                             allocation->height);
+  }
+
+  for (GList* iterator = self->children_list; iterator;
+       iterator = iterator->next) {
+    FlViewChild* child = reinterpret_cast<FlViewChild*>(iterator->data);
+    if (!gtk_widget_get_visible(child->widget))
+      continue;
+
+    GtkAllocation child_allocation = child->geometry;
+    GtkRequisition child_requisition;
+    gtk_widget_get_preferred_size(child->widget, &child_requisition, NULL);
+
+    if (!gtk_widget_get_has_window(widget)) {
+      child_allocation.x += allocation->x;
+      child_allocation.y += allocation->y;
+    }
+
+    if (child_allocation.width == 0 && child_allocation.height == 0) {
+      child_allocation.width = allocation->width;
+      child_allocation.height = allocation->height;
+    }
+
+    gtk_widget_size_allocate(child->widget, &child_allocation);
   }
 
   fl_view_geometry_changed(self);
+}
+
+struct _DrawData {
+  GdkWindow* parent_window;
+  GdkWindow* last_window;
+};
+
+static void fl_view_draw_forall(GtkWidget* widget, gpointer user_data) {
+  _DrawData* data = reinterpret_cast<_DrawData*>(user_data);
+  GdkWindow* window = gtk_widget_get_window(widget);
+  if (window && window != data->parent_window) {
+    if (data->last_window) {
+      gdk_window_restack(window, data->last_window, TRUE);
+    }
+    data->last_window = window;
+  }
 }
 
 // Implements GtkWidget::draw.
@@ -286,35 +397,47 @@ static gboolean fl_view_draw(GtkWidget* widget, cairo_t* cr) {
   // sending a window metrics event of the same geometry. Since the geometry
   // didn't change, only a frame will be scheduled.
   fl_view_geometry_changed(self);
-  return TRUE;
+
+  struct _DrawData data = {
+      .parent_window = gtk_widget_get_window(GTK_WIDGET(self)),
+      .last_window = nullptr,
+  };
+
+  gtk_container_forall(GTK_CONTAINER(self), fl_view_draw_forall, &data);
+
+  return GTK_WIDGET_CLASS(fl_view_parent_class)->draw(widget, cr);
 }
 
-// Implements GtkWidget::button_press_event.
-static gboolean fl_view_button_press_event(GtkWidget* widget,
-                                           GdkEventButton* event) {
-  FlView* self = FL_VIEW(widget);
-
+static gboolean gl_area_button_press_event(GtkWidget* widget,
+                                           GdkEventButton* event,
+                                           FlView* view) {
   // Flutter doesn't handle double and triple click events.
   if (event->type == GDK_DOUBLE_BUTTON_PRESS ||
       event->type == GDK_TRIPLE_BUTTON_PRESS) {
     return FALSE;
   }
 
-  return fl_view_send_pointer_button_event(self, event);
+  fl_gesture_helper_button_press(view->gesture_helper,
+                                 reinterpret_cast<GdkEvent*>(event));
+
+  if (!gtk_widget_has_focus(GTK_WIDGET(view))) {
+    gtk_widget_grab_focus(GTK_WIDGET(view));
+  }
+
+  return fl_view_send_pointer_button_event(view, event);
 }
 
-// Implements GtkWidget::button_release_event.
-static gboolean fl_view_button_release_event(GtkWidget* widget,
-                                             GdkEventButton* event) {
-  FlView* self = FL_VIEW(widget);
-
-  return fl_view_send_pointer_button_event(self, event);
+static gboolean gl_area_button_release_event(GtkWidget* widget,
+                                             GdkEventButton* event,
+                                             FlView* view) {
+  fl_gesture_helper_button_release(view->gesture_helper,
+                                   reinterpret_cast<GdkEvent*>(event));
+  return fl_view_send_pointer_button_event(view, event);
 }
 
-// Implements GtkWidget::scroll_event.
-static gboolean fl_view_scroll_event(GtkWidget* widget, GdkEventScroll* event) {
-  FlView* self = FL_VIEW(widget);
-
+static gboolean gl_area_scroll_event(GtkWidget* widget,
+                                     GdkEventScroll* event,
+                                     FlView* view) {
   // TODO(robert-ancell): Update to use GtkEventControllerScroll when we can
   // depend on GTK 3.24.
 
@@ -338,64 +461,136 @@ static gboolean fl_view_scroll_event(GtkWidget* widget, GdkEventScroll* event) {
   scroll_delta_x *= kScrollOffsetMultiplier;
   scroll_delta_y *= kScrollOffsetMultiplier;
 
-  gint scale_factor = gtk_widget_get_scale_factor(GTK_WIDGET(self));
+  gint scale_factor = gtk_widget_get_scale_factor(GTK_WIDGET(view));
   fl_engine_send_mouse_pointer_event(
-      self->engine, self->button_state != 0 ? kMove : kHover,
+      view->engine, view->button_state != 0 ? kMove : kHover,
       event->time * kMicrosecondsPerMillisecond, event->x * scale_factor,
       event->y * scale_factor, scroll_delta_x, scroll_delta_y,
-      self->button_state);
+      view->button_state);
 
   return TRUE;
 }
 
-// Implements GtkWidget::motion_notify_event.
-static gboolean fl_view_motion_notify_event(GtkWidget* widget,
-                                            GdkEventMotion* event) {
-  FlView* self = FL_VIEW(widget);
-
-  if (self->engine == nullptr) {
+static gboolean gl_area_motion_notify_event(GtkWidget* widget,
+                                            GdkEventMotion* event,
+                                            FlView* view) {
+  if (view->engine == nullptr) {
     return FALSE;
   }
 
-  gint scale_factor = gtk_widget_get_scale_factor(GTK_WIDGET(self));
+  fl_gesture_helper_button_motion(view->gesture_helper,
+                                  reinterpret_cast<GdkEvent*>(event));
+
+  gint scale_factor = gtk_widget_get_scale_factor(GTK_WIDGET(view));
   fl_engine_send_mouse_pointer_event(
-      self->engine, self->button_state != 0 ? kMove : kHover,
+      view->engine, view->button_state != 0 ? kMove : kHover,
       event->time * kMicrosecondsPerMillisecond, event->x * scale_factor,
-      event->y * scale_factor, 0, 0, self->button_state);
+      event->y * scale_factor, 0, 0, view->button_state);
 
   return TRUE;
 }
 
-// Implements GtkWidget::key_press_event.
 static gboolean fl_view_key_press_event(GtkWidget* widget, GdkEventKey* event) {
   FlView* self = FL_VIEW(widget);
-
   return fl_key_event_plugin_send_key_event(self->key_event_plugin, event);
 }
 
-// Implements GtkWidget::key_release_event.
 static gboolean fl_view_key_release_event(GtkWidget* widget,
                                           GdkEventKey* event) {
   FlView* self = FL_VIEW(widget);
-
   return fl_key_event_plugin_send_key_event(self->key_event_plugin, event);
 }
 
+static void fl_view_put(FlView* self,
+                        GtkWidget* widget,
+                        GdkRectangle* geometry) {
+  FlViewChild* child = g_new(FlViewChild, 1);
+  child->widget = widget;
+  child->geometry = *geometry;
+
+  gtk_widget_set_parent(widget, GTK_WIDGET(self));
+  self->children_list = g_list_append(self->children_list, child);
+}
+
+static void fl_view_add(GtkContainer* container, GtkWidget* widget) {
+  GdkRectangle geometry = {
+      .x = 0,
+      .y = 0,
+      .width = 0,
+      .height = 0,
+  };
+  fl_view_put(FL_VIEW(container), widget, &geometry);
+}
+
+static void fl_view_remove(GtkContainer* container, GtkWidget* widget) {
+  FlView* self = FL_VIEW(container);
+  for (GList* iterator = self->children_list; iterator;
+       iterator = iterator->next) {
+    FlViewChild* child = reinterpret_cast<FlViewChild*>(iterator->data);
+    if (child->widget == widget) {
+      g_object_ref(widget);
+      gtk_widget_unparent(widget);
+      self->children_list = g_list_remove_link(self->children_list, iterator);
+      g_list_free(iterator);
+      g_free(child);
+
+      break;
+    }
+  }
+}
+
+static void fl_view_forall(GtkContainer* container,
+                           gboolean include_internals,
+                           GtkCallback callback,
+                           gpointer callback_data) {
+  FlView* self = FL_VIEW(container);
+  for (GList* iterator = self->children_list; iterator;
+       iterator = iterator->next) {
+    FlViewChild* child = reinterpret_cast<FlViewChild*>(iterator->data);
+    (*callback)(child->widget, callback_data);
+  }
+}
+
+static GType fl_view_child_type(GtkContainer* container) {
+  return GTK_TYPE_WIDGET;
+}
+
+static void fl_view_set_child_property(GtkContainer* container,
+                                       GtkWidget* child,
+                                       guint property_id,
+                                       const GValue* value,
+                                       GParamSpec* pspec) {}
+
+static void fl_view_get_child_property(GtkContainer* container,
+                                       GtkWidget* child,
+                                       guint property_id,
+                                       GValue* value,
+                                       GParamSpec* pspec) {}
+
 static void fl_view_class_init(FlViewClass* klass) {
-  G_OBJECT_CLASS(klass)->constructed = fl_view_constructed;
-  G_OBJECT_CLASS(klass)->set_property = fl_view_set_property;
-  G_OBJECT_CLASS(klass)->get_property = fl_view_get_property;
-  G_OBJECT_CLASS(klass)->notify = fl_view_notify;
-  G_OBJECT_CLASS(klass)->dispose = fl_view_dispose;
-  GTK_WIDGET_CLASS(klass)->realize = fl_view_realize;
-  GTK_WIDGET_CLASS(klass)->size_allocate = fl_view_size_allocate;
-  GTK_WIDGET_CLASS(klass)->draw = fl_view_draw;
-  GTK_WIDGET_CLASS(klass)->button_press_event = fl_view_button_press_event;
-  GTK_WIDGET_CLASS(klass)->button_release_event = fl_view_button_release_event;
-  GTK_WIDGET_CLASS(klass)->scroll_event = fl_view_scroll_event;
-  GTK_WIDGET_CLASS(klass)->motion_notify_event = fl_view_motion_notify_event;
-  GTK_WIDGET_CLASS(klass)->key_press_event = fl_view_key_press_event;
-  GTK_WIDGET_CLASS(klass)->key_release_event = fl_view_key_release_event;
+  GObjectClass* object_class = G_OBJECT_CLASS(klass);
+  object_class->constructed = fl_view_constructed;
+  object_class->set_property = fl_view_set_property;
+  object_class->get_property = fl_view_get_property;
+  object_class->notify = fl_view_notify;
+  object_class->dispose = fl_view_dispose;
+
+  GtkWidgetClass* widget_class = GTK_WIDGET_CLASS(klass);
+  widget_class->realize = fl_view_realize;
+  widget_class->get_preferred_width = fl_view_get_preferred_width;
+  widget_class->get_preferred_height = fl_view_get_preferred_height;
+  widget_class->size_allocate = fl_view_size_allocate;
+  widget_class->draw = fl_view_draw;
+  widget_class->key_press_event = fl_view_key_press_event;
+  widget_class->key_release_event = fl_view_key_release_event;
+
+  GtkContainerClass* container_class = GTK_CONTAINER_CLASS(klass);
+  container_class->add = fl_view_add;
+  container_class->remove = fl_view_remove;
+  container_class->forall = fl_view_forall;
+  container_class->child_type = fl_view_child_type;
+  container_class->set_child_property = fl_view_set_child_property;
+  container_class->get_child_property = fl_view_get_child_property;
 
   g_object_class_install_property(
       G_OBJECT_CLASS(klass), PROP_FLUTTER_PROJECT,
@@ -421,4 +616,115 @@ G_MODULE_EXPORT FlView* fl_view_new(FlDartProject* project) {
 G_MODULE_EXPORT FlEngine* fl_view_get_engine(FlView* view) {
   g_return_val_if_fail(FL_IS_VIEW(view), nullptr);
   return view->engine;
+}
+
+FlPlatformViewsPlugin* fl_view_get_platform_views_plugin(FlView* self) {
+  g_return_val_if_fail(FL_IS_VIEW(self), FALSE);
+  return self->platform_views_plugin;
+}
+
+void fl_view_begin_frame(FlView* view) {
+  g_return_if_fail(FL_IS_VIEW(view));
+  FlView* self = FL_VIEW(view);
+
+  self->used_area_list = self->gl_area_list;
+  g_list_free_full(self->pending_children_list, g_free);
+  self->pending_children_list = nullptr;
+}
+
+static void fl_view_add_pending_child(FlView* self,
+                                      GtkWidget* widget,
+                                      GdkRectangle* geometry) {
+  FlViewChild* child = g_new(FlViewChild, 1);
+  child->widget = widget;
+  if (geometry)
+    child->geometry = *geometry;
+  else
+    child->geometry = {0, 0, 0, 0};
+
+  self->pending_children_list =
+      g_list_append(self->pending_children_list, child);
+}
+
+void fl_view_add_gl_area(FlView* view,
+                         GdkGLContext* context,
+                         FlGLAreaTexture* texture) {
+  g_return_if_fail(FL_IS_VIEW(view));
+
+  FlGLArea* area;
+  if (view->used_area_list) {
+    area = reinterpret_cast<FlGLArea*>(view->used_area_list->data);
+    view->used_area_list = view->used_area_list->next;
+  } else {
+    GtkWidget* widget = fl_gl_area_new(context);
+    gtk_widget_add_events(widget, GDK_POINTER_MOTION_MASK |
+                                      GDK_BUTTON_PRESS_MASK |
+                                      GDK_BUTTON_RELEASE_MASK |
+                                      GDK_SCROLL_MASK | GDK_SMOOTH_SCROLL_MASK);
+    area = FL_GL_AREA(widget);
+    view->gl_area_list = g_list_append(view->gl_area_list, area);
+
+    g_signal_connect(widget, "button-press-event",
+                     G_CALLBACK(gl_area_button_press_event), view);
+    g_signal_connect(widget, "button-release-event",
+                     G_CALLBACK(gl_area_button_release_event), view);
+    g_signal_connect(widget, "scroll-event", G_CALLBACK(gl_area_scroll_event),
+                     view);
+    g_signal_connect(widget, "motion-notify-event",
+                     G_CALLBACK(gl_area_motion_notify_event), view);
+  }
+
+  gtk_widget_show(GTK_WIDGET(area));
+  fl_view_add_pending_child(view, GTK_WIDGET(area), nullptr);
+  fl_gl_area_queue_render(area, texture);
+}
+
+void fl_view_add_widget(FlView* view,
+                        GtkWidget* widget,
+                        GdkRectangle* geometry) {
+  gtk_widget_show(widget);
+  fl_view_add_pending_child(view, widget, geometry);
+}
+
+GList* find_child(GList* list, GtkWidget* widget) {
+  for (GList* i = list; i; i = i->next) {
+    FlViewChild* child = reinterpret_cast<FlViewChild*>(i->data);
+    if (child && child->widget == widget)
+      return i;
+  }
+  return nullptr;
+}
+
+void fl_view_end_frame(FlView* view) {
+  for (GList* pending_child = view->pending_children_list; pending_child;
+       pending_child = pending_child->next) {
+    FlViewChild* pending_view_child =
+        reinterpret_cast<FlViewChild*>(pending_child->data);
+    GList* child = find_child(view->children_list, pending_view_child->widget);
+
+    if (child) {
+      // existing child
+      g_free(child->data);
+      child->data = nullptr;
+    } else {
+      // newly added child
+      gtk_widget_set_parent(pending_view_child->widget, GTK_WIDGET(view));
+    }
+  }
+
+  for (GList* child = view->children_list; child; child = child->next) {
+    FlViewChild* view_child = reinterpret_cast<FlViewChild*>(child->data);
+    if (view_child) {
+      // removed child
+      g_object_ref(view_child->widget);
+      gtk_widget_unparent(view_child->widget);
+      g_free(view_child);
+      child->data = nullptr;
+    }
+  }
+
+  g_list_free(view->children_list);
+  view->children_list = view->pending_children_list;
+  view->pending_children_list = nullptr;
+  gtk_widget_queue_resize(GTK_WIDGET(view));
 }

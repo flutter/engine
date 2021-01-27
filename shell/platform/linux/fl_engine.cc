@@ -177,6 +177,30 @@ static void flutter_source_finalize(GSource* source) {
   }
 }
 
+static bool compositor_create_backing_store_callback(
+    const FlutterBackingStoreConfig* config,
+    FlutterBackingStore* backing_store_out,
+    void* user_data) {
+  g_return_val_if_fail(FL_IS_RENDERER(user_data), false);
+  return fl_renderer_create_backing_store(FL_RENDERER(user_data), config,
+                                          backing_store_out);
+}
+
+static bool compositor_collect_backing_store_callback(
+    const FlutterBackingStore* renderer,
+    void* user_data) {
+  g_return_val_if_fail(FL_IS_RENDERER(user_data), false);
+  return fl_renderer_collect_backing_store(FL_RENDERER(user_data), renderer);
+}
+
+static bool compositor_present_layers_callback(const FlutterLayer** layers,
+                                               size_t layers_count,
+                                               void* user_data) {
+  g_return_val_if_fail(FL_IS_RENDERER(user_data), false);
+  return fl_renderer_present_layers(FL_RENDERER(user_data), layers,
+                                    layers_count);
+}
+
 // Table of functions for Flutter GLib main loop integration.
 static GSourceFuncs flutter_source_funcs = {
     nullptr,                  // prepare
@@ -376,8 +400,8 @@ FlEngine* fl_engine_new(FlDartProject* project, FlRenderer* renderer) {
 }
 
 G_MODULE_EXPORT FlEngine* fl_engine_new_headless(FlDartProject* project) {
-  g_autoptr(FlRendererHeadless) renderer = fl_renderer_headless_new();
-  return fl_engine_new(project, FL_RENDERER(renderer));
+  g_autoptr(FlRenderer) renderer = fl_renderer_headless_new();
+  return fl_engine_new(project, renderer);
 }
 
 gboolean fl_engine_start(FlEngine* self, GError** error) {
@@ -401,9 +425,18 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
   platform_task_runner.post_task_callback = fl_engine_post_task;
   platform_task_runner.identifier = kPlatformTaskRunnerIdentifier;
 
+  FlutterTaskRunnerDescription render_task_runner = {};
+  render_task_runner.struct_size = sizeof(FlutterTaskRunnerDescription);
+  render_task_runner.user_data = self;
+  render_task_runner.runs_task_on_current_thread_callback =
+      fl_engine_runs_task_on_current_thread;
+  render_task_runner.post_task_callback = fl_engine_post_task;
+  render_task_runner.identifier = 2;
+
   FlutterCustomTaskRunners custom_task_runners = {};
   custom_task_runners.struct_size = sizeof(FlutterCustomTaskRunners);
   custom_task_runners.platform_task_runner = &platform_task_runner;
+  custom_task_runners.render_task_runner = &render_task_runner;
 
   g_autoptr(GPtrArray) command_line_args =
       fl_dart_project_get_switches(self->project);
@@ -430,6 +463,16 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
       dart_entrypoint_args != nullptr ? g_strv_length(dart_entrypoint_args) : 0;
   args.dart_entrypoint_argv =
       reinterpret_cast<const char* const*>(dart_entrypoint_args);
+
+  FlutterCompositor compositor = {};
+  compositor.struct_size = sizeof(FlutterCompositor);
+  compositor.user_data = self->renderer;
+  compositor.create_backing_store_callback =
+      compositor_create_backing_store_callback;
+  compositor.collect_backing_store_callback =
+      compositor_collect_backing_store_callback;
+  compositor.present_layers_callback = compositor_present_layers_callback;
+  args.compositor = &compositor;
 
   if (self->embedder_api.RunsAOTCompiledDartCode()) {
     FlutterEngineAOTDataSource source = {};

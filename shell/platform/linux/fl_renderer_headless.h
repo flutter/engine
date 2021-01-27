@@ -27,9 +27,9 @@ G_DECLARE_FINAL_TYPE(FlRendererHeadless,
  *
  * Creates an object that allows Flutter to operate without a display.
  *
- * Returns: a new #FlRendererHeadless.
+ * Returns: a new #FlRenderer.
  */
-FlRendererHeadless* fl_renderer_headless_new();
+FlRenderer* fl_renderer_headless_new();
 
 G_END_DECLS
 

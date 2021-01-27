@@ -12,6 +12,6 @@ G_DECLARE_FINAL_TYPE(FlMockRenderer,
                      MOCK_RENDERER,
                      FlRenderer)
 
-FlMockRenderer* fl_mock_renderer_new();
+FlRenderer* fl_mock_renderer_new();
 
 G_END_DECLS

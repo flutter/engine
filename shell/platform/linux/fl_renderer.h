@@ -5,11 +5,12 @@
 #ifndef FLUTTER_SHELL_PLATFORM_LINUX_FL_RENDERER_H_
 #define FLUTTER_SHELL_PLATFORM_LINUX_FL_RENDERER_H_
 
-#include <EGL/egl.h>
 #include <gtk/gtk.h>
 
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_dart_project.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_view.h"
+
+#include "flutter/shell/platform/embedder/embedder.h"
 
 G_BEGIN_DECLS
 
@@ -36,66 +37,27 @@ struct _FlRendererClass {
   GObjectClass parent_class;
 
   /**
-   * Virtual method called before creating a GdkWindow for the widget.
-   * Does not need to be implemented.
+   * Virtual method called when Flutter needs #GdkGLContext to render.
    * @renderer: an #FlRenderer.
    * @widget: the widget being rendered on.
-   * @display: display to create surfaces on.
-   * @config: EGL configuration.
-   * @window_attributes: window attributes to modify.
-   * @mask: (out): the window mask to use.
+   * @visible: (out): the GL context for visible surface.
+   * @resource: (out): the GL context for resource loading.
    * @error: (allow-none): #GError location to store the error occurring, or
    * %NULL to ignore.
    *
-   * Returns: %TRUE if the window is successfully set up.
+   * Returns: %TRUE if both contexts were created, %FALSE if there was an error.
    */
-  gboolean (*setup_window_attr)(FlRenderer* renderer,
-                                GtkWidget* widget,
-                                EGLDisplay display,
-                                EGLConfig config,
-                                GdkWindowAttr* window_attributes,
-                                gint* mask,
-                                GError** error);
-
-  /**
-   * Virtual method to create a new EGL display.
-   */
-  EGLDisplay (*create_display)(FlRenderer* renderer);
-
-  /**
-   * Virtual method called when Flutter needs surfaces to render to.
-   * @renderer: an #FlRenderer.
-   * @widget: the widget being rendered on.
-   * @display: display to create surfaces on.
-   * @config: EGL configuration.
-   * @visible: (out): the visible surface that is created.
-   * @resource: (out): the resource surface that is created.
-   * @error: (allow-none): #GError location to store the error occurring, or
-   * %NULL to ignore.
-   *
-   * Returns: %TRUE if both surfaces were created, %FALSE if there was an error.
-   */
-  gboolean (*create_surfaces)(FlRenderer* renderer,
+  gboolean (*create_contexts)(FlRenderer* renderer,
                               GtkWidget* widget,
-                              EGLDisplay display,
-                              EGLConfig config,
-                              EGLSurface* visible,
-                              EGLSurface* resource,
+                              GdkGLContext** visible,
+                              GdkGLContext** resource,
                               GError** error);
-
-  /**
-   * Virtual method called when the EGL window needs to be resized.
-   * Does not need to be implemented.
-   */
-  void (*set_geometry)(FlRenderer* renderer,
-                       GdkRectangle* geometry,
-                       gint scale);
 };
 
 /**
  * fl_renderer_start:
  * @renderer: an #FlRenderer.
- * @widget: the widget Flutter is renderering to.
+ * @view: the view Flutter is renderering to.
  * @error: (allow-none): #GError location to store the error occurring, or %NULL
  * to ignore.
  *
@@ -103,19 +65,7 @@ struct _FlRendererClass {
  *
  * Returns: %TRUE if successfully started.
  */
-gboolean fl_renderer_start(FlRenderer* renderer,
-                           GtkWidget* widget,
-                           GError** error);
-
-/**
- * fl_renderer_set_geometry:
- * @renderer: an #FlRenderer.
- * @geometry: New size and position (unscaled) of the EGL window.
- * @scale: Scale of the window.
- */
-void fl_renderer_set_geometry(FlRenderer* renderer,
-                              GdkRectangle* geometry,
-                              gint scale);
+gboolean fl_renderer_start(FlRenderer* renderer, FlView* view, GError** error);
 
 /**
  * fl_renderer_get_proc_address:
@@ -186,6 +136,31 @@ guint32 fl_renderer_get_fbo(FlRenderer* renderer);
  * Returns %TRUE if successful.
  */
 gboolean fl_renderer_present(FlRenderer* renderer, GError** error);
+
+/**
+ * fl_renderer_create_backing_store:
+ * @renderer: an #FlRenderer
+ * @config: backing store config
+ * @backing_store_out: saves created backing store.
+ *
+ * Obtain a backing store for a specific #FlutterLayer.
+ */
+gboolean fl_renderer_create_backing_store(
+    FlRenderer* renderer,
+    const FlutterBackingStoreConfig* config,
+    FlutterBackingStore* backing_store_out);
+
+/// A callback invoked by the engine to release the backing store. The
+/// embedder may collect any resources associated with the backing store.
+gboolean fl_renderer_collect_backing_store(
+    FlRenderer* renderer,
+    const FlutterBackingStore* backing_store);
+
+/// Callback invoked by the engine to composite the contents of each layer
+/// onto the screen.
+gboolean fl_renderer_present_layers(FlRenderer* renderer,
+                                    const FlutterLayer** layers,
+                                    size_t layers_count);
 
 G_END_DECLS
 

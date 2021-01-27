@@ -253,11 +253,7 @@ static void handle_response(GObject* object,
     }
   }
 
-  if (handled) {
-    // Because the event was handled, we no longer need to track it. Unhandled
-    // events will be removed when the event is re-dispatched to the window.
-    remove_pending_event(self, data->id);
-  }
+  remove_pending_event(self, data->id);
 
   if (self->response_callback != nullptr) {
     self->response_callback(object, message, handled, data->user_data);

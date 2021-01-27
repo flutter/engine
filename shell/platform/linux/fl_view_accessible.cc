@@ -13,7 +13,9 @@ struct _FlViewAccessible {
   GHashTable* semantics_nodes_by_id;
 };
 
-G_DEFINE_TYPE(FlViewAccessible, fl_view_accessible, GTK_TYPE_WIDGET_ACCESSIBLE)
+G_DEFINE_TYPE(FlViewAccessible,
+              fl_view_accessible,
+              GTK_TYPE_CONTAINER_ACCESSIBLE)
 
 // Gets the ATK node for the given id.
 // If the node doesn't exist it will be created.
@@ -57,7 +59,18 @@ static AtkRole fl_view_accessible_get_role(AtkObject* accessible) {
   return ATK_ROLE_FRAME;
 }
 
+static void fl_view_accessible_dispose(GObject* object) {
+  FlViewAccessible* self = FL_VIEW_ACCESSIBLE(object);
+
+  g_hash_table_destroy(self->semantics_nodes_by_id);
+  self->semantics_nodes_by_id = nullptr;
+
+  G_OBJECT_CLASS(fl_view_accessible_parent_class)->dispose(object);
+}
+
 static void fl_view_accessible_class_init(FlViewAccessibleClass* klass) {
+  G_OBJECT_CLASS(klass)->dispose = fl_view_accessible_dispose;
+
   ATK_OBJECT_CLASS(klass)->get_n_children = fl_view_accessible_get_n_children;
   ATK_OBJECT_CLASS(klass)->ref_child = fl_view_accessible_ref_child;
   ATK_OBJECT_CLASS(klass)->get_role = fl_view_accessible_get_role;
@@ -66,6 +79,7 @@ static void fl_view_accessible_class_init(FlViewAccessibleClass* klass) {
 static void fl_view_accessible_init(FlViewAccessible* self) {
   self->semantics_nodes_by_id = g_hash_table_new_full(
       g_direct_hash, g_direct_equal, nullptr, g_object_unref);
+  g_hash_table_lookup(self->semantics_nodes_by_id, nullptr);
 }
 
 void fl_view_accessible_handle_update_semantics_node(

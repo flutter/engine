@@ -10,24 +10,21 @@ struct _FlRendererHeadless {
 
 G_DEFINE_TYPE(FlRendererHeadless, fl_renderer_headless, fl_renderer_get_type())
 
-static gboolean fl_renderer_headless_create_surfaces(FlRenderer* renderer,
+static gboolean fl_renderer_headless_create_contexts(FlRenderer* renderer,
                                                      GtkWidget* widget,
-                                                     EGLDisplay display,
-                                                     EGLConfig config,
-                                                     EGLSurface* visible,
-                                                     EGLSurface* resource,
+                                                     GdkGLContext** visible,
+                                                     GdkGLContext** resource,
                                                      GError** error) {
   return FALSE;
 }
 
 static void fl_renderer_headless_class_init(FlRendererHeadlessClass* klass) {
-  FL_RENDERER_CLASS(klass)->create_surfaces =
-      fl_renderer_headless_create_surfaces;
+  FL_RENDERER_CLASS(klass)->create_contexts =
+      fl_renderer_headless_create_contexts;
 }
 
 static void fl_renderer_headless_init(FlRendererHeadless* self) {}
 
-FlRendererHeadless* fl_renderer_headless_new() {
-  return FL_RENDERER_HEADLESS(
-      g_object_new(fl_renderer_headless_get_type(), nullptr));
+FlRenderer* fl_renderer_headless_new() {
+  return FL_RENDERER(g_object_new(fl_renderer_headless_get_type(), nullptr));
 }

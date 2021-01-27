@@ -20,6 +20,7 @@
 #include <flutter_linux/fl_method_channel.h>
 #include <flutter_linux/fl_method_codec.h>
 #include <flutter_linux/fl_method_response.h>
+#include <flutter_linux/fl_platform_views.h>
 #include <flutter_linux/fl_plugin_registrar.h>
 #include <flutter_linux/fl_plugin_registry.h>
 #include <flutter_linux/fl_standard_message_codec.h>

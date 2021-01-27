@@ -224,6 +224,17 @@ FlValue* fl_value_new_float_list(const double* value, size_t value_length);
 FlValue* fl_value_new_list();
 
 /**
+ * fl_value_new_list_with_elements:
+ * @first_value: (transfer full): the first value, taking ownership
+ * @...: values, followed by %NULL.
+ *
+ * Creates an ordered list containing arguments.
+ *
+ * Returns: a new #FlValue.
+ */
+FlValue* fl_value_new_list_with_elements(FlValue* first_value, ...);
+
+/**
  * fl_value_new_list_from_strv:
  * @value: a %NULL-terminated array of strings.
  *
@@ -268,6 +279,30 @@ FlValue* fl_value_new_list_from_strv(const gchar* const* value);
  * Returns: a new #FlValue.
  */
 FlValue* fl_value_new_map();
+
+/**
+ * fl_value_new_map_with_string_entries:
+ * @first_key: the string key of the first map entry.
+ * @...: the value of the first entry, followed optioanlly by more key/value
+ * pairs, followed by %NULL
+ *
+ * Creates an ordered associaive array. Children are initialized by key/value
+ * pairs.
+ *
+ * The following example shows how to create a map of values keyed by strings:
+ *
+ * |[<!-- language="C" -->
+ *   g_autoptr(FlValue) value = fl_value_new_map_with_string_entries (
+ *     "name", fl_value_new_string ("Gandalf"),
+ *     "occupation", fl_value_new_string ("Wizard"),
+ *     "age", fl_value_new_int (2019),
+ *     nullptr
+ *   );
+ * ]|
+ *
+ * Returns: a new #FlValue
+ */
+FlValue* fl_value_new_map_with_string_entries(const gchar* first_key, ...);
 
 /**
  * fl_value_ref:

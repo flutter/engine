@@ -314,6 +314,25 @@ G_MODULE_EXPORT FlValue* fl_value_new_list() {
   return reinterpret_cast<FlValue*>(self);
 }
 
+static FlValue* fl_value_new_list_with_elements_valist(FlValue* first_value,
+                                                       va_list var_args) {
+  FlValue* list = fl_value_new_list();
+  FlValue* value = first_value;
+  do {
+    fl_value_append_take(list, value);
+  } while ((value = va_arg(var_args, FlValue*)));
+  return list;
+}
+
+G_MODULE_EXPORT FlValue* fl_value_new_list_with_elements(FlValue* first_value,
+                                                         ...) {
+  va_list var_args;
+  va_start(var_args, first_value);
+  FlValue* list = fl_value_new_list_with_elements_valist(first_value, var_args);
+  va_end(var_args);
+  return list;
+}
+
 G_MODULE_EXPORT FlValue* fl_value_new_list_from_strv(
     const gchar* const* str_array) {
   g_return_val_if_fail(str_array != nullptr, nullptr);
@@ -330,6 +349,31 @@ G_MODULE_EXPORT FlValue* fl_value_new_map() {
   self->keys = g_ptr_array_new_with_free_func(fl_value_destroy);
   self->values = g_ptr_array_new_with_free_func(fl_value_destroy);
   return reinterpret_cast<FlValue*>(self);
+}
+
+static FlValue* fl_value_new_map_with_string_entries_valist(
+    const gchar* first_key,
+    va_list var_args) {
+  FlValue* map = fl_value_new_map();
+  const gchar* key = first_key;
+
+  do {
+    FlValue* value = va_arg(var_args, FlValue*);
+    fl_value_set_string_take(map, key, value);
+  } while ((key = va_arg(var_args, const gchar*)));
+  return map;
+}
+
+G_MODULE_EXPORT FlValue* fl_value_new_map_with_string_entries(
+    const gchar* first_key,
+    ...) {
+  va_list var_args;
+  va_start(var_args, first_key);
+  FlValue* map =
+      fl_value_new_map_with_string_entries_valist(first_key, var_args);
+  va_end(var_args);
+
+  return map;
 }
 
 G_MODULE_EXPORT FlValue* fl_value_ref(FlValue* self) {
