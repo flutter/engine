@@ -6,6 +6,7 @@
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
+#include "flutter/shell/platform/windows/keyboard_key_handler.h"
 #include "flutter/shell/platform/windows/testing/engine_embedder_api_modifier.h"
 #include "flutter/shell/platform/windows/testing/mock_window_binding_handler.h"
 #include "flutter/shell/platform/windows/testing/win32_flutter_window_test.h"
@@ -46,12 +47,12 @@ struct SimulatedEvent {
 
 // A key event handler that can be spied on while it forwards calls to the real
 // key event handler.
-class SpyKeyEventHandler : public KeyboardHookHandler {
+class SpyKeyEventHandler : public KeyboardHandlerBase {
  public:
   SpyKeyEventHandler(flutter::BinaryMessenger* messenger,
-                     KeyEventHandler::SendInputDelegate delegate) {
+                     KeyboardKeyHandler::SendInputDelegate delegate) {
     real_implementation_ =
-        std::make_unique<KeyEventHandler>(messenger, delegate);
+        std::make_unique<KeyboardKeyHandler>(messenger, delegate);
     ON_CALL(*this, KeyboardHook(_, _, _, _, _, _))
         .WillByDefault(
             Invoke(real_implementation_.get(), &KeyEventHandler::KeyboardHook));
@@ -79,7 +80,7 @@ class SpyKeyEventHandler : public KeyboardHookHandler {
 
 // A text input plugin that can be spied on while it forwards calls to the real
 // text input plugin.
-class SpyTextInputPlugin : public KeyboardHookHandler,
+class SpyTextInputPlugin : public KeyboardHandlerBase,
                            public TextInputPluginDelegate {
  public:
   SpyTextInputPlugin(flutter::BinaryMessenger* messenger) {
@@ -140,7 +141,7 @@ class MockWin32FlutterWindow : public Win32FlutterWindow {
   MOCK_METHOD2(OnScroll, void(double, double));
 };
 
-// A FlutterWindowsView that overrides the RegisterKeyboardHookHandlers function
+// A FlutterWindowsView that overrides the RegisterKeyboardHandlers function
 // to register the keyboard hook handlers that can be spied upon.
 class TestFlutterWindowsView : public FlutterWindowsView {
  public:
@@ -164,7 +165,7 @@ class TestFlutterWindowsView : public FlutterWindowsView {
   }
 
  protected:
-  void RegisterKeyboardHookHandlers(
+  void RegisterKeyboardHandlers(
       flutter::BinaryMessenger* messenger) override {
     auto spy_key_event_handler = std::make_unique<SpyKeyEventHandler>(
         messenger, [this](UINT cInputs, LPINPUT pInputs, int cbSize) -> UINT {
@@ -174,8 +175,8 @@ class TestFlutterWindowsView : public FlutterWindowsView {
         std::make_unique<SpyTextInputPlugin>(messenger);
     key_event_handler = spy_key_event_handler.get();
     text_input_plugin = spy_text_input_plugin.get();
-    AddKeyboardHookHandler(std::move(spy_key_event_handler));
-    AddKeyboardHookHandler(std::move(spy_text_input_plugin));
+    AddKeyboardHandlerBase(std::move(spy_key_event_handler));
+    AddKeyboardHandlerBase(std::move(spy_text_input_plugin));
   }
 
  private:

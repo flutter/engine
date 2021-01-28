@@ -14,7 +14,7 @@
 #include "flutter/shell/platform/common/cpp/geometry.h"
 #include "flutter/shell/platform/common/cpp/json_method_codec.h"
 #include "flutter/shell/platform/common/cpp/text_input_model.h"
-#include "flutter/shell/platform/windows/keyboard_hook_handler.h"
+#include "flutter/shell/platform/windows/keyboard_handler_base.h"
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
 #include "flutter/shell/platform/windows/text_input_plugin_delegate.h"
 
@@ -25,32 +25,32 @@ class FlutterWindowsView;
 // Implements a text input plugin.
 //
 // Specifically handles window events within windows.
-class TextInputPlugin : public KeyboardHookHandler {
+class TextInputPlugin : public KeyboardHandlerBase {
  public:
   explicit TextInputPlugin(flutter::BinaryMessenger* messenger,
                            TextInputPluginDelegate* delegate);
 
   virtual ~TextInputPlugin();
 
-  // |KeyboardHookHandler|
+  // |KeyboardHandlerBase|
   bool KeyboardHook(FlutterWindowsView* view,
                     int key,
                     int scancode,
                     int action,
                     char32_t character,
                     bool extended,
-                    bool wasDown) override;
+                    bool was_down) override;
 
-  // |KeyboardHookHandler|
+  // |KeyboardHandlerBase|
   void TextHook(FlutterWindowsView* view, const std::u16string& text) override;
 
-  // |KeyboardHookHandler|
+  // |KeyboardHandlerBase|
   void ComposeBeginHook() override;
 
-  // |KeyboardHookHandler|
+  // |KeyboardHandlerBase|
   void ComposeEndHook() override;
 
-  // |KeyboardHookHandler|
+  // |KeyboardHandlerBase|
   void ComposeChangeHook(const std::u16string& text, int cursor_pos) override;
 
  private:

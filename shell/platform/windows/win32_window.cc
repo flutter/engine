@@ -341,9 +341,8 @@ Win32Window::HandleMessage(UINT const message,
       if (keycode_for_char_message_ != 0) {
         const unsigned int scancode = (lparam >> 16) & 0xff;
         const bool extended = ((lparam >> 24) & 0x01) == 0x01;
-
         bool handled = OnKey(keycode_for_char_message_, scancode, WM_KEYDOWN,
-                             code_point, extended);
+                             code_point, extended, false);
         keycode_for_char_message_ = 0;
         if (handled) {
           // If the OnKey handler handles the message, then return so we don't
@@ -396,8 +395,8 @@ Win32Window::HandleMessage(UINT const message,
         keyCode = MapVirtualKey(scancode, MAPVK_VSC_TO_VK_EX);
       }
       const int action = is_keydown_message ? WM_KEYDOWN : WM_KEYUP;
-      const bool wasDown = lparam & 0x40000000;
-      if (OnKey(keyCode, scancode, action, 0, extended, wasDown)) {
+      const bool was_down = lparam & 0x40000000;
+      if (OnKey(keyCode, scancode, action, 0, extended, was_down)) {
         return 0;
       }
       break;

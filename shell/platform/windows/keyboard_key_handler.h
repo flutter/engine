@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_KEY_EVENT_HANDLER_H_
-#define FLUTTER_SHELL_PLATFORM_WINDOWS_KEY_EVENT_HANDLER_H_
+#ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_KEYBOARD_KEY_HANDLER_H_
+#define FLUTTER_SHELL_PLATFORM_WINDOWS_KEYBOARD_KEY_HANDLER_H_
 
 #include <deque>
 #include <memory>
@@ -11,7 +11,7 @@
 
 #include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/basic_message_channel.h"
 #include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/binary_messenger.h"
-#include "flutter/shell/platform/windows/keyboard_hook_handler.h"
+#include "flutter/shell/platform/windows/keyboard_handler_base.h"
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
 #include "rapidjson/document.h"
 
@@ -19,43 +19,65 @@ namespace flutter {
 
 class FlutterWindowsView;
 
-// Implements a KeyboardHookHandler
+// Implements a KeyboardHandlerBase
 //
 // Handles key events and forwards them to the Flutter engine.
-class KeyEventHandler : public KeyboardHookHandler {
+class KeyboardKeyHandler : public KeyboardHandlerBase {
  public:
+  class KeyboardKeyHandlerDelegate {
+   public:
+    virtual void KeyboardHook(int key,
+                              int scancode,
+                              int action,
+                              char32_t character,
+                              bool extended,
+                              bool was_down,
+                              std::function<void(bool)> callback) = 0;
+
+    virtual ~KeyboardKeyHandlerDelegate();
+  };
+
   using SendInputDelegate =
       std::function<UINT(UINT cInputs, LPINPUT pInputs, int cbSize)>;
 
-  explicit KeyEventHandler(flutter::BinaryMessenger* messenger,
-                           SendInputDelegate delegate = SendInput);
+  explicit KeyboardKeyHandler(SendInputDelegate delegate = SendInput);
 
-  virtual ~KeyEventHandler();
+  ~KeyboardKeyHandler();
 
-  // |KeyboardHookHandler|
+  void AddDelegate(std::unique_ptr<KeyboardKeyHandlerDelegate> delegate);
+
+  // |KeyboardHandlerBase|
   bool KeyboardHook(FlutterWindowsView* window,
                     int key,
                     int scancode,
                     int action,
                     char32_t character,
                     bool extended,
-                    bool wasDown) override;
+                    bool was_down) override;
 
-  // |KeyboardHookHandler|
+  // |KeyboardHandlerBase|
   void TextHook(FlutterWindowsView* window,
                 const std::u16string& text) override;
 
-  // |KeyboardHookHandler|
+  // |KeyboardHandlerBase|
   void ComposeBeginHook() override;
 
-  // |KeyboardHookHandler|
+  // |KeyboardHandlerBase|
   void ComposeEndHook() override;
 
-  // |KeyboardHookHandler|
+  // |KeyboardHandlerBase|
   void ComposeChangeHook(const std::u16string& text, int cursor_pos) override;
 
  private:
-  KEYBDINPUT* FindPendingEvent(uint64_t id);
+  struct PendingEvent {
+    uint64_t id;
+    int scancode;
+    char32_t character;
+    DWORD dwFlags;
+    size_t unreplied;
+  };
+
+  const PendingEvent* FindPendingEvent(uint64_t id);
   void RemovePendingEvent(uint64_t id);
   void AddPendingEvent(uint64_t id, int scancode, int action, bool extended);
   void HandleResponse(bool handled,
@@ -64,13 +86,13 @@ class KeyEventHandler : public KeyboardHookHandler {
                       bool extended,
                       int scancode,
                       int character);
+  void RedispatchEvent(const PendingEvent* pending);
 
-  // The Flutter system channel for key event messages.
-  std::unique_ptr<flutter::BasicMessageChannel<rapidjson::Document>> channel_;
+  std::vector<std::unique_ptr<KeyboardKeyHandlerDelegate>> delegates_;
 
   // The queue of key events that have been sent to the framework but have not
   // yet received a response.
-  std::deque<std::pair<uint64_t, KEYBDINPUT>> pending_events_;
+  std::deque<std::unique_ptr<PendingEvent>> pending_events_;
 
   // A function used to dispatch synthesized events. Used in testing to inject a
   // test function to collect events. Defaults to the Windows function
@@ -80,4 +102,4 @@ class KeyEventHandler : public KeyboardHookHandler {
 
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_PLATFORM_WINDOWS_KEY_EVENT_HANDLER_H_
+#endif  // FLUTTER_SHELL_PLATFORM_WINDOWS_KEYBOARD_KEY_HANDLER_H_

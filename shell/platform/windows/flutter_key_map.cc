@@ -5,7 +5,7 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_FLUTTER_KEY_MAP_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_FLUTTER_KEY_MAP_H_
 
-#include "flutter/shell/platform/windows/flutter_keyboard_manager.h"
+#include "flutter/shell/platform/windows/keyboard_key_embedder_handler.h"
 
 #include <map>
 
@@ -19,7 +19,7 @@
 
 namespace flutter {
 
-std::map<uint64_t, uint64_t> FlutterKeyboardManager::windowsToPhysicalMap_ = {
+std::map<uint64_t, uint64_t> FlutterKeyboardKeyEmbedderHandler::windowsToPhysicalMap_ = {
     {0x0000e05f, 0x00010082},  // sleep
     {0x0000e063, 0x00010083},  // wakeUp
     {0x000000ff, 0x00070001},  // usbErrorRollOver
@@ -179,7 +179,7 @@ std::map<uint64_t, uint64_t> FlutterKeyboardManager::windowsToPhysicalMap_ = {
     {0x0000e066, 0x000c022a},  // browserFavorites
 };
 
-std::map<uint64_t, uint64_t> FlutterKeyboardManager::windowsToLogicalMap_ = {
+std::map<uint64_t, uint64_t> FlutterKeyboardKeyEmbedderHandler::windowsToLogicalMap_ = {
     {0x00000008, 0x00000000008},  // BACK
     {0x00000009, 0x00000000009},  // TAB
     {0x0000000d, 0x0000000000d},  // RETURN
@@ -300,7 +300,7 @@ std::map<uint64_t, uint64_t> FlutterKeyboardManager::windowsToLogicalMap_ = {
     {0x000000a1, 0x0040000010d},  // RSHIFT
 };
 
-std::map<uint64_t, uint64_t> FlutterKeyboardManager::scanCodeToLogicalMap_ = {
+std::map<uint64_t, uint64_t> FlutterKeyboardKeyEmbedderHandler::scanCodeToLogicalMap_ = {
     {0x0000e01d, 0x0400000105},  // ControlRight
     {0x0000e038, 0x0400000102},  // AltRight
     {0x0000004f, 0x0200000031},  // Numpad1

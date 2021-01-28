@@ -102,7 +102,7 @@ class Win32Window {
                      int action,
                      char32_t character,
                      bool extended,
-                     bool wasDown) = 0;
+                     bool was_down) = 0;
 
   // Called when IME composing begins.
   virtual void OnComposeBegin() = 0;

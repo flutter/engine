@@ -1636,12 +1636,6 @@ FlutterEngineResult FlutterEngineSendKeyEvent(FLUTTER_API_SYMBOL(FlutterEngine)
                                               void* user_data);
 
 FLUTTER_EXPORT
-FlutterEngineResult FlutterEngineSendKeyEvent(
-    FLUTTER_API_SYMBOL(FlutterEngine) engine,
-    const FlutterKeyEvent* event,
-    FlutterPlatformKeyEventResponseHandle** response_out);
-
-FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineSendPlatformMessage(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
     const FlutterPlatformMessage* message);

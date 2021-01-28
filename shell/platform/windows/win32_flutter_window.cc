@@ -167,9 +167,9 @@ bool Win32FlutterWindow::OnKey(int key,
                                int action,
                                char32_t character,
                                bool extended,
-                               bool wasDown) {
+                               bool was_down) {
   return binding_handler_delegate_->OnKey(key, scancode, action, character,
-                                          extended, wasDown);
+                                          extended, was_down);
 }
 
 void Win32FlutterWindow::OnComposeBegin() {

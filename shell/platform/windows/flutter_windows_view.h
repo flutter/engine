@@ -18,11 +18,9 @@
 #include "flutter/shell/platform/windows/angle_surface_manager.h"
 #include "flutter/shell/platform/windows/cursor_handler.h"
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
-#include "flutter/shell/platform/windows/key_event_handler.h"
-#include "flutter/shell/platform/windows/keyboard_hook_handler.h"
+#include "flutter/shell/platform/windows/keyboard_handler_base.h"
 #include "flutter/shell/platform/windows/platform_handler.h"
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
-#include "flutter/shell/platform/windows/text_input_plugin.h"
 #include "flutter/shell/platform/windows/text_input_plugin_delegate.h"
 #include "flutter/shell/platform/windows/window_binding_handler.h"
 #include "flutter/shell/platform/windows/window_binding_handler_delegate.h"
@@ -105,7 +103,7 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
              int action,
              char32_t character,
              bool extended,
-             bool wasDown) override;
+             bool was_down) override;
 
   // |WindowBindingHandlerDelegate|
   void OnComposeBegin() override;
@@ -128,12 +126,12 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
 
  protected:
   // Called to create the keyboard hook handlers.
-  virtual void RegisterKeyboardHookHandlers(
+  virtual void RegisterKeyboardHandlers(
       flutter::BinaryMessenger* messenger);
 
-  // Used by RegisterKeyboardHookHandlers to add a new keyboard hook handler.
-  void AddKeyboardHookHandler(
-      std::unique_ptr<flutter::KeyboardHookHandler> handler);
+  // Used by RegisterKeyboardHandlers to add a new keyboard hook handler.
+  void AddKeyboardHandlerBase(
+      std::unique_ptr<flutter::KeyboardHandlerBase> handler);
 
  private:
   // Struct holding the mouse state. The engine doesn't keep track of which
@@ -194,7 +192,7 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
                int action,
                char32_t character,
                bool extended,
-               bool wasDown);
+               bool was_down);
 
   // Reports an IME compose begin event.
   //
@@ -268,7 +266,7 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   std::unique_ptr<flutter::PluginRegistrar> internal_plugin_registrar_;
 
   // Handlers for keyboard events from Windows.
-  std::vector<std::unique_ptr<flutter::KeyboardHookHandler>>
+  std::vector<std::unique_ptr<flutter::KeyboardHandlerBase>>
       keyboard_hook_handlers_;
 
   // Handler for the flutter/platform channel.

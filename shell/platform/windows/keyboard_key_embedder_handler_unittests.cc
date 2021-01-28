@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/windows/flutter_keyboard_manager.h"
+#include "flutter/shell/platform/windows/keyboard_key_embedder_handler.h"
 
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
@@ -54,23 +54,24 @@ constexpr uint64_t kLogicalNumpadEnd = 0x23;
 constexpr uint64_t kLogicalNumLock = 0x90;
 }  // namespace
 
-TEST(FlutterKeyboardManager, BasicKeyPressingAndHolding) {
+// Test the most basic key events.
+TEST(FlutterKeyboardKeyEmbedderHandler, BasicKeyPressingAndHolding) {
   std::vector<TestFlutterKeyEvent> results;
   TestFlutterKeyEvent* event;
 
-  std::unique_ptr<FlutterKeyboardManager> manager =
-      std::make_unique<FlutterKeyboardManager>(
+  std::unique_ptr<FlutterKeyboardKeyEmbedderHandler> manager =
+      std::make_unique<FlutterKeyboardKeyEmbedderHandler>(
           [&results](const FlutterKeyEvent& event) {
             results.emplace_back(event);
           });
 
   // On a US keyboard:
-  // Press Numpad1.
+  // Press KeyA.
   manager->KeyboardHook(nullptr, kLogicalKeyA, kPhysicalKeyA, WM_KEYDOWN, 'a',
                         false);
   EXPECT_EQ(results.size(), 1);
   event = &results[0];
-  EXPECT_EQ(event->kind, kFlutterKeyEventKindDown);
+  EXPECT_EQ(event->kind, kFlutterKeyEventTypeDown);
   EXPECT_EQ(event->physical, 0x00070004);
   EXPECT_EQ(event->logical, 0x00000061);
   EXPECT_STREQ(event->character, "a");
@@ -82,7 +83,7 @@ TEST(FlutterKeyboardManager, BasicKeyPressingAndHolding) {
                         true);
   EXPECT_EQ(results.size(), 1);
   event = &results[0];
-  EXPECT_EQ(event->kind, kFlutterKeyEventKindRepeat);
+  EXPECT_EQ(event->kind, kFlutterKeyEventTypeRepeat);
   EXPECT_EQ(event->physical, 0x00070004);
   EXPECT_EQ(event->logical, 0x00000061);
   EXPECT_STREQ(event->character, "a");
@@ -94,19 +95,19 @@ TEST(FlutterKeyboardManager, BasicKeyPressingAndHolding) {
                         true);
   EXPECT_EQ(results.size(), 1);
   event = &results[0];
-  EXPECT_EQ(event->kind, kFlutterKeyEventKindUp);
+  EXPECT_EQ(event->kind, kFlutterKeyEventTypeUp);
   EXPECT_EQ(event->physical, 0x00070004);
   EXPECT_EQ(event->logical, 0x00000061);
   EXPECT_STREQ(event->character, "");
   EXPECT_EQ(event->synthesized, false);
 }
 
-TEST(FlutterKeyboardManager, ToggleNumLockDuringNumpadPress) {
+TEST(FlutterKeyboardKeyEmbedderHandler, ToggleNumLockDuringNumpadPress) {
   std::vector<TestFlutterKeyEvent> results;
   TestFlutterKeyEvent* event;
 
-  std::unique_ptr<FlutterKeyboardManager> manager =
-      std::make_unique<FlutterKeyboardManager>(
+  std::unique_ptr<FlutterKeyboardKeyEmbedderHandler> manager =
+      std::make_unique<FlutterKeyboardKeyEmbedderHandler>(
           [&results](const FlutterKeyEvent& event) {
             results.emplace_back(event);
           });
@@ -117,7 +118,7 @@ TEST(FlutterKeyboardManager, ToggleNumLockDuringNumpadPress) {
                         0, false);
   EXPECT_EQ(results.size(), 1);
   event = &results[0];
-  EXPECT_EQ(event->kind, kFlutterKeyEventKindDown);
+  EXPECT_EQ(event->kind, kFlutterKeyEventTypeDown);
   EXPECT_EQ(event->physical, 0x00070059);
   EXPECT_EQ(event->logical, 0x00200000031);
   // EXPECT_STREQ(event->character, "1"); // TODO
@@ -129,7 +130,7 @@ TEST(FlutterKeyboardManager, ToggleNumLockDuringNumpadPress) {
                         0, false);
   EXPECT_EQ(results.size(), 1);
   event = &results[0];
-  EXPECT_EQ(event->kind, kFlutterKeyEventKindDown);
+  EXPECT_EQ(event->kind, kFlutterKeyEventTypeDown);
   EXPECT_EQ(event->physical, 0x00070053);
   EXPECT_EQ(event->logical, 0x0000010a);
   EXPECT_STREQ(event->character, "");
@@ -141,7 +142,7 @@ TEST(FlutterKeyboardManager, ToggleNumLockDuringNumpadPress) {
                         false);
   EXPECT_EQ(results.size(), 1);
   event = &results[0];
-  EXPECT_EQ(event->kind, kFlutterKeyEventKindUp);
+  EXPECT_EQ(event->kind, kFlutterKeyEventTypeUp);
   EXPECT_EQ(event->physical, 0x00070053);
   EXPECT_EQ(event->logical, 0x0000010a);
   EXPECT_STREQ(event->character, "");
@@ -153,7 +154,7 @@ TEST(FlutterKeyboardManager, ToggleNumLockDuringNumpadPress) {
                         0, false);
   EXPECT_EQ(results.size(), 1);
   event = &results[0];
-  EXPECT_EQ(event->kind, kFlutterKeyEventKindUp);
+  EXPECT_EQ(event->kind, kFlutterKeyEventTypeUp);
   EXPECT_EQ(event->physical, 0x00070059);
   EXPECT_EQ(event->logical, 0x00200000031);
   EXPECT_STREQ(event->character, "");

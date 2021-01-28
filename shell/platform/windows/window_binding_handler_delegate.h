@@ -49,7 +49,7 @@ class WindowBindingHandlerDelegate {
                      int action,
                      char32_t character,
                      bool extended,
-                     bool wasDown) = 0;
+                     bool was_down) = 0;
 
   // Notifies the delegate that IME composing mode has begun.
   //
