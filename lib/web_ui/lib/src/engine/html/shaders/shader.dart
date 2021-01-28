@@ -12,6 +12,10 @@ abstract class EngineGradient implements ui.Gradient {
   /// Creates a fill style to be used in painting.
   Object createPaintStyle(html.CanvasRenderingContext2D? ctx,
       ui.Rect? shaderBounds, double density);
+
+  /// Creates a CanvasImageSource to paint gradient.
+  Object createImageBitmap(ui.Rect? shaderBounds, double density,
+      bool createDataUrl);
 }
 
 class GradientSweep extends EngineGradient {
@@ -28,8 +32,8 @@ class GradientSweep extends EngineGradient {
   }
 
   @override
-  Object createPaintStyle(html.CanvasRenderingContext2D? ctx,
-      ui.Rect? shaderBounds, double density) {
+  Object createImageBitmap(ui.Rect? shaderBounds, double density,
+      bool createDataUrl) {
     assert(shaderBounds != null);
     int widthInPixels = shaderBounds!.width.ceil();
     int heightInPixels = shaderBounds.height.ceil();
@@ -66,10 +70,21 @@ class GradientSweep extends EngineGradient {
           glProgram.program, 'm_gradient');
       gl.setUniformMatrix4fv(gradientMatrix, false, matrix4!);
     }
+    if (createDataUrl) {
+      return _glRenderer!.drawRectToImageUrl(
+          ui.Rect.fromLTWH(0, 0, shaderBounds.width, shaderBounds.height),
+          gl, glProgram, normalizedGradient, widthInPixels, heightInPixels)!;
+    } else {
+      return _glRenderer!.drawRect(
+          ui.Rect.fromLTWH(0, 0, shaderBounds.width, shaderBounds.height),
+          gl, glProgram, normalizedGradient, widthInPixels, heightInPixels)!;
+    }
+  }
 
-    Object? imageBitmap = _glRenderer!.drawRect(ui.Rect.fromLTWH(0, 0, shaderBounds.width, shaderBounds.height),
-        gl, glProgram, normalizedGradient, widthInPixels, heightInPixels);
-
+  @override
+  Object createPaintStyle(html.CanvasRenderingContext2D? ctx,
+      ui.Rect? shaderBounds, double density) {
+    Object? imageBitmap = createImageBitmap(shaderBounds, density, false);
     return ctx!.createPattern(imageBitmap!, 'no-repeat')!;
   }
 
@@ -151,34 +166,9 @@ class GradientLinear extends EngineGradient {
     }
   }
 
-  html.CanvasGradient _createCanvasGradient(html.CanvasRenderingContext2D? ctx,
-      ui.Rect? shaderBounds, double density) {
-    _FastMatrix32? matrix4 = this.matrix4;
-    html.CanvasGradient gradient;
-    final double offsetX = shaderBounds!.left;
-    final double offsetY = shaderBounds.top;
-    if (matrix4 != null) {
-      final centerX = (from.dx + to.dx) / 2.0;
-      final centerY = (from.dy + to.dy) / 2.0;
-      matrix4.transform(from.dx - centerX, from.dy - centerY);
-      final double fromX = matrix4.transformedX + centerX;
-      final double fromY = matrix4.transformedY + centerY;
-      matrix4.transform(to.dx - centerX, to.dy - centerY);
-      gradient = ctx!.createLinearGradient(fromX - offsetX, fromY - offsetY,
-          matrix4.transformedX + centerX - offsetX,
-          matrix4.transformedY - offsetY + centerY);
-    } else {
-      gradient = ctx!.createLinearGradient(
-          from.dx - offsetX, from.dy - offsetY, to.dx - offsetX,
-          to.dy - offsetY);
-    }
-    _addColorStopsToCanvasGradient(gradient, colors, colorStops, tileMode == ui.TileMode.decal);
-    return gradient;
-  }
-
-  /// Creates a linear gradient with tiling repeat or mirror.
-  html.CanvasPattern _createGlGradient(html.CanvasRenderingContext2D? ctx,
-      ui.Rect? shaderBounds, double density) {
+  @override
+  Object createImageBitmap(ui.Rect? shaderBounds, double density,
+      bool createDataUrl) {
     assert(shaderBounds != null);
     int widthInPixels = shaderBounds!.width.ceil();
     int heightInPixels = shaderBounds.height.ceil();
@@ -190,7 +180,7 @@ class GradientLinear extends EngineGradient {
     _GlContext gl = _OffScreenCanvas.supported
         ? _GlContext.fromOffscreenCanvas(offScreenCanvas._canvas!)
         : _GlContext.fromCanvas(offScreenCanvas._glCanvas!,
-            webGLVersion == WebGLVersion.webgl1);
+        webGLVersion == WebGLVersion.webgl1);
     gl.setViewportSize(widthInPixels, heightInPixels);
 
     NormalizedGradient normalizedGradient = NormalizedGradient(
@@ -247,13 +237,51 @@ class GradientLinear extends EngineGradient {
     gl.setUniform2f(
         uRes, widthInPixels.toDouble(), heightInPixels.toDouble());
 
-    // Draw gradient and convert to pattern.
-    Object? imageBitmap = _glRenderer!.drawRect(ui.Rect.fromLTWH(
-        0, 0, shaderBounds.width, shaderBounds.height) /* !! shaderBounds */,
-      gl,
-      glProgram, normalizedGradient, widthInPixels, heightInPixels,
-    );
-    return ctx!.createPattern(imageBitmap!, 'no-repeat')!;
+    if (createDataUrl) {
+      return _glRenderer!.drawRectToImageUrl(ui.Rect.fromLTWH(
+          0, 0, shaderBounds.width, shaderBounds.height) /* !! shaderBounds */,
+        gl,
+        glProgram, normalizedGradient, widthInPixels, heightInPixels,
+      )!;
+    } else {
+      return _glRenderer!.drawRect(ui.Rect.fromLTWH(
+          0, 0, shaderBounds.width, shaderBounds.height) /* !! shaderBounds */,
+        gl,
+        glProgram, normalizedGradient, widthInPixels, heightInPixels,
+      )!;
+    }
+  }
+
+  html.CanvasGradient _createCanvasGradient(html.CanvasRenderingContext2D? ctx,
+      ui.Rect? shaderBounds, double density) {
+    _FastMatrix32? matrix4 = this.matrix4;
+    html.CanvasGradient gradient;
+    final double offsetX = shaderBounds!.left;
+    final double offsetY = shaderBounds.top;
+    if (matrix4 != null) {
+      final centerX = (from.dx + to.dx) / 2.0;
+      final centerY = (from.dy + to.dy) / 2.0;
+      matrix4.transform(from.dx - centerX, from.dy - centerY);
+      final double fromX = matrix4.transformedX + centerX;
+      final double fromY = matrix4.transformedY + centerY;
+      matrix4.transform(to.dx - centerX, to.dy - centerY);
+      gradient = ctx!.createLinearGradient(fromX - offsetX, fromY - offsetY,
+          matrix4.transformedX + centerX - offsetX,
+          matrix4.transformedY - offsetY + centerY);
+    } else {
+      gradient = ctx!.createLinearGradient(
+          from.dx - offsetX, from.dy - offsetY, to.dx - offsetX,
+          to.dy - offsetY);
+    }
+    _addColorStopsToCanvasGradient(gradient, colors, colorStops, tileMode == ui.TileMode.decal);
+    return gradient;
+  }
+
+  /// Creates a linear gradient with tiling repeat or mirror.
+  html.CanvasPattern _createGlGradient(html.CanvasRenderingContext2D? ctx,
+      ui.Rect? shaderBounds, double density) {
+    final Object imageBitmap = createImageBitmap(shaderBounds, density, false);
+    return ctx!.createPattern(imageBitmap, 'no-repeat')!;
   }
 
   String _createLinearFragmentShader(NormalizedGradient gradient,
@@ -388,9 +416,9 @@ class GradientRadial extends EngineGradient {
     return gradient;
   }
 
-  /// Creates a radial gradient with tiling repeat or mirror.
-  html.CanvasPattern _createGlGradient(html.CanvasRenderingContext2D? ctx,
-      ui.Rect? shaderBounds, double density) {
+  @override
+  Object createImageBitmap(ui.Rect? shaderBounds, double density,
+      bool createDataUrl) {
     assert(shaderBounds != null);
     int widthInPixels = shaderBounds!.width.ceil();
     int heightInPixels = shaderBounds.height.ceil();
@@ -403,7 +431,7 @@ class GradientRadial extends EngineGradient {
     _GlContext gl = _OffScreenCanvas.supported
         ? _GlContext.fromOffscreenCanvas(offScreenCanvas._canvas!)
         : _GlContext.fromCanvas(offScreenCanvas._glCanvas!,
-            webGLVersion == WebGLVersion.webgl1);
+        webGLVersion == WebGLVersion.webgl1);
     gl.setViewportSize(widthInPixels, heightInPixels);
 
     NormalizedGradient normalizedGradient = NormalizedGradient(
@@ -426,10 +454,22 @@ class GradientRadial extends EngineGradient {
         glProgram.program, 'm_gradient');
     gl.setUniformMatrix4fv(gradientMatrix, false, matrix4 == null ? Matrix4.identity().storage : matrix4!);
 
-    Object? imageBitmap = _glRenderer!.drawRect(ui.Rect.fromLTWH(0, 0, shaderBounds.width, shaderBounds.height),
-        gl, glProgram, normalizedGradient, widthInPixels, heightInPixels);
+    if (createDataUrl) {
+      return _glRenderer!.drawRectToImageUrl(ui.Rect.fromLTWH(0, 0, shaderBounds.width,
+          shaderBounds.height),
+          gl, glProgram, normalizedGradient, widthInPixels, heightInPixels)!;
+    } else {
+      return _glRenderer!.drawRect(ui.Rect.fromLTWH(0, 0, shaderBounds.width,
+          shaderBounds.height),
+          gl, glProgram, normalizedGradient, widthInPixels, heightInPixels)!;
+    }
+  }
 
-    return ctx!.createPattern(imageBitmap!, 'no-repeat')!;
+  /// Creates a radial gradient with tiling repeat or mirror.
+  html.CanvasPattern _createGlGradient(html.CanvasRenderingContext2D? ctx,
+      ui.Rect? shaderBounds, double density) {
+    final Object imageBitmap = createImageBitmap(shaderBounds, density, false);
+    return ctx!.createPattern(imageBitmap, 'no-repeat')!;
   }
 
   String _createRadialFragmentShader(NormalizedGradient gradient,
@@ -477,6 +517,12 @@ class GradientConical extends EngineGradient {
   @override
   Object createPaintStyle(html.CanvasRenderingContext2D? ctx,
       ui.Rect? shaderBounds, double density) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Object createImageBitmap(ui.Rect? shaderBounds, double density,
+      bool createDataUrl) {
     throw UnimplementedError();
   }
 }
