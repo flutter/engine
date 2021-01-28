@@ -121,6 +121,70 @@ void testMain() {
       // TODO: https://github.com/flutter/flutter/issues/71520
     }, skip: isIosSafari || isFirefox);
 
+    test('will download Noto Emojis and Noto Symbols if no matching Noto Font',
+        () async {
+      final Completer<void> fontChangeCompleter = Completer<void>();
+      // Intercept the system font change message.
+      ui.window.onPlatformMessage = (String name, ByteData? data,
+          ui.PlatformMessageResponseCallback? callback) {
+        if (name == 'flutter/system') {
+          const JSONMessageCodec codec = JSONMessageCodec();
+          final dynamic message = codec.decodeMessage(data);
+          if (message is Map) {
+            if (message['type'] == 'fontsChange') {
+              fontChangeCompleter.complete();
+            }
+          }
+        }
+        if (savedCallback != null) {
+          savedCallback!(name, data, callback);
+        }
+      };
+
+      TestDownloader.mockDownloads[
+              'https://fonts.googleapis.com/css2?family=Noto+Color+Emoji+Compat'] =
+          '''
+/* arabic */
+@font-face {
+  font-family: 'Noto Color Emoji';
+  src: url(packages/ui/assets/NotoColorEmoji.ttf) format('ttf');
+}
+''';
+
+      expect(skiaFontCollection.globalFontFallbacks, ['Roboto']);
+
+      // Creating this paragraph should cause us to start to download the
+      // fallback font.
+      CkParagraphBuilder pb = CkParagraphBuilder(
+        CkParagraphStyle(),
+      );
+      pb.addText('Hello 😊');
+
+      await fontChangeCompleter.future;
+
+      expect(skiaFontCollection.globalFontFallbacks,
+          contains('Noto Color Emoji Compat 0'));
+
+      final CkPictureRecorder recorder = CkPictureRecorder();
+      final CkCanvas canvas = recorder.beginRecording(kDefaultRegion);
+
+      pb = CkParagraphBuilder(
+        CkParagraphStyle(
+          fontSize: 32,
+        ),
+      );
+      pb.addText('Hello 😊');
+      final CkParagraph paragraph = pb.build();
+      paragraph.layout(ui.ParagraphConstraints(width: 1000));
+
+      canvas.drawParagraph(paragraph, ui.Offset(200, 120));
+
+      await matchPictureGolden(
+          'canvaskit_font_fallback_emoji.png', recorder.endRecording());
+      // TODO: https://github.com/flutter/flutter/issues/60040
+      // TODO: https://github.com/flutter/flutter/issues/71520
+    }, skip: isIosSafari || isFirefox);
+
     test('will gracefully fail if we cannot parse the Google Fonts CSS',
         () async {
       TestDownloader.mockDownloads[
