@@ -114,10 +114,9 @@ public class PlatformPlugin {
 
         @Override
         public boolean clipboardHasStrings() {
-          CharSequence data =
-              PlatformPlugin.this.getClipboardData(
-                  PlatformChannel.ClipboardContentFormat.PLAIN_TEXT);
-          return data != null && data.length() > 0;
+          ClipboardManager clipboard =
+              (ClipboardManager) activity.getSystemService(Context.CLIPBOARD_SERVICE);
+          return clipboard.hasPrimaryClip();
         }
       };
 
