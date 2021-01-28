@@ -123,6 +123,7 @@ void PlatformViewIOS::attachView() {
     // its member |delegate_| will be a wild pointer and cause crash.
     // This usually happens when several views are created and attached quickly.
     NotifyDestroyed();
+    ios_surface_.reset();
   }
   ios_surface_ = IOSSurface::Create(ios_context_, ca_layer);
   FML_DCHECK(ios_surface_ != nullptr);
