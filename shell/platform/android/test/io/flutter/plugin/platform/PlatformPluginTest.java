@@ -27,6 +27,7 @@ import io.flutter.embedding.engine.systemchannels.PlatformChannel;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel.ClipboardContentFormat;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel.SystemChromeStyle;
 import io.flutter.plugin.platform.PlatformPlugin.PlatformPluginDelegate;
+import io.flutter.Log;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -116,6 +117,16 @@ public class PlatformPluginTest {
 
     clip = ClipData.newPlainText("", "");
     clipboardManager.setPrimaryClip(clip);
+    assertTrue(platformPlugin.mPlatformMessageHandler.clipboardHasStrings());
+
+    clip = ClipData.newPlainText("label", null);
+    clipboardManager.setPrimaryClip(clip);
+    // TODO(justinmc): This fails.
+    assertFalse(platformPlugin.mPlatformMessageHandler.clipboardHasStrings());
+
+    clipboardManager.clearPrimaryClip();
+    // TODO(justinmc): This fails too. Also, directly running
+    // clipboardManager.hasPrimaryClip() here returns true too!
     assertFalse(platformPlugin.mPlatformMessageHandler.clipboardHasStrings());
   }
 
