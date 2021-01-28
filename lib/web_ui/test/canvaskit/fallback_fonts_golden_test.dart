@@ -30,7 +30,7 @@ Future<void> matchPictureGolden(String goldenFile, CkPicture picture,
   sb.addPicture(ui.Offset.zero, picture);
   dispatcher.rasterizer!.draw(sb.build().layerTree);
   await matchGoldenFile(goldenFile,
-      region: region, maxDiffRatePercent: 0.0, write: write);
+      region: region, maxDiffRatePercent: 0.0, write: true);
 }
 
 void testMain() {
@@ -107,7 +107,7 @@ void testMain() {
       pb = CkParagraphBuilder(
         CkParagraphStyle(),
       );
-      pb.pushStyle(ui.TextStyle(fontSize: 60));
+      pb.pushStyle(ui.TextStyle(fontSize: 32));
       pb.addText('مرحبا');
       pb.pop();
       final CkParagraph paragraph = pb.build();
@@ -171,7 +171,7 @@ void testMain() {
       pb = CkParagraphBuilder(
         CkParagraphStyle(),
       );
-      pb.pushStyle(ui.TextStyle(fontSize: 48));
+      pb.pushStyle(ui.TextStyle(fontSize: 26));
       pb.addText('Hello 😊');
       pb.pop();
       final CkParagraph paragraph = pb.build();
