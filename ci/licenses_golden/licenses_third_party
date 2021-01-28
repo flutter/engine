@@ -1,4 +1,4 @@
-Signature: cf2e11c92e1e4574c5e5ecebce100116
+Signature: eb8d1c29d2897e29c16a0d188141edd9
 
 UNUSED LICENSES:
 
@@ -224,7 +224,6 @@ LIBRARY: boringssl
 LIBRARY: khronos
 LIBRARY: vulkan
 LIBRARY: vulkan-deps
-LIBRARY: vulkan-headers
 LIBRARY: wuffs
 ORIGIN: ../../../flutter/third_party/txt/LICENSE
 TYPE: LicenseType.apache
@@ -982,30 +981,6 @@ FILE: ../../../third_party/angle/third_party/vulkan-deps/vulkan-headers/src/incl
 FILE: ../../../third_party/angle/third_party/vulkan-deps/vulkan-headers/src/include/vulkan/vulkan_xlib_xrandr.h
 FILE: ../../../third_party/angle/third_party/vulkan-deps/vulkan-headers/src/registry/validusage.json
 FILE: ../../../third_party/angle/third_party/vulkan-deps/vulkan-headers/src/registry/vk.xml
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/cmake/cmake_uninstall.cmake.in
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/include/vulkan/vk_icd.h
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/include/vulkan/vk_layer.h
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/include/vulkan/vk_platform.h
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/include/vulkan/vk_sdk_platform.h
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/include/vulkan/vulkan.h
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/include/vulkan/vulkan.hpp
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/include/vulkan/vulkan_android.h
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/include/vulkan/vulkan_beta.h
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/include/vulkan/vulkan_core.h
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/include/vulkan/vulkan_directfb.h
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/include/vulkan/vulkan_fuchsia.h
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/include/vulkan/vulkan_ggp.h
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/include/vulkan/vulkan_ios.h
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/include/vulkan/vulkan_macos.h
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/include/vulkan/vulkan_metal.h
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/include/vulkan/vulkan_vi.h
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/include/vulkan/vulkan_wayland.h
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/include/vulkan/vulkan_win32.h
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/include/vulkan/vulkan_xcb.h
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/include/vulkan/vulkan_xlib.h
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/include/vulkan/vulkan_xlib_xrandr.h
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/registry/validusage.json
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/registry/vk.xml
 FILE: ../../../third_party/angle/util/android/third_party/android_native_app_glue.c
 FILE: ../../../third_party/angle/util/android/third_party/android_native_app_glue.h
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/METADATA
