@@ -30,7 +30,7 @@ Future<void> matchPictureGolden(String goldenFile, CkPicture picture,
   sb.addPicture(ui.Offset.zero, picture);
   dispatcher.rasterizer!.draw(sb.build().layerTree);
   await matchGoldenFile(goldenFile,
-      region: region, maxDiffRatePercent: 0.0, write: true);
+      region: region, maxDiffRatePercent: 0.0, write: write);
 }
 
 void testMain() {
