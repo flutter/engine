@@ -1,4 +1,4 @@
-Signature: a0f02e7c6126d410ff0a5c4ca03a502b
+Signature: 6998a0bcb3e656f911ac4dc8bf058a6c
 
 UNUSED LICENSES:
 
@@ -1296,7 +1296,6 @@ FILE: ../../../third_party/skia/infra/wasm-common/docker/gold-karma-chrome-tests
 FILE: ../../../third_party/skia/infra/wasm-common/docker/karma-chrome-tests/Dockerfile
 FILE: ../../../third_party/skia/infra/wasm-common/docker/perf-karma-chrome-tests/Dockerfile
 FILE: ../../../third_party/skia/modules/canvaskit/catchExceptionNop.js
-FILE: ../../../third_party/skia/modules/canvaskit/color.js
 FILE: ../../../third_party/skia/modules/canvaskit/cpu.js
 FILE: ../../../third_party/skia/modules/canvaskit/debug.js
 FILE: ../../../third_party/skia/modules/canvaskit/externs.js
@@ -1322,7 +1321,6 @@ FILE: ../../../third_party/skia/modules/canvaskit/interface.js
 FILE: ../../../third_party/skia/modules/canvaskit/karma.bench.conf.js
 FILE: ../../../third_party/skia/modules/canvaskit/karma.conf.js
 FILE: ../../../third_party/skia/modules/canvaskit/karma.google3.conf.js
-FILE: ../../../third_party/skia/modules/canvaskit/memory.js
 FILE: ../../../third_party/skia/modules/canvaskit/package-lock.json
 FILE: ../../../third_party/skia/modules/canvaskit/package.json
 FILE: ../../../third_party/skia/modules/canvaskit/paragraph.js
@@ -1345,7 +1343,6 @@ FILE: ../../../third_party/skia/modules/canvaskit/release.js
 FILE: ../../../third_party/skia/modules/canvaskit/rt_shader.js
 FILE: ../../../third_party/skia/modules/canvaskit/skottie.js
 FILE: ../../../third_party/skia/modules/canvaskit/skp.js
-FILE: ../../../third_party/skia/modules/canvaskit/util.js
 FILE: ../../../third_party/skia/modules/canvaskit/wasm_tools/viewer.html
 FILE: ../../../third_party/skia/modules/pathkit/chaining.js
 FILE: ../../../third_party/skia/modules/pathkit/externs.js
@@ -3795,7 +3792,6 @@ FILE: ../../../third_party/skia/src/sksl/dsl/DSLCore.cpp
 FILE: ../../../third_party/skia/src/sksl/dsl/DSLCore.h
 FILE: ../../../third_party/skia/src/sksl/dsl/DSLExpression.cpp
 FILE: ../../../third_party/skia/src/sksl/dsl/DSLExpression.h
-FILE: ../../../third_party/skia/src/sksl/dsl/DSLModifiers.h
 FILE: ../../../third_party/skia/src/sksl/dsl/DSLType.cpp
 FILE: ../../../third_party/skia/src/sksl/dsl/DSLType.h
 FILE: ../../../third_party/skia/src/sksl/dsl/DSLVar.cpp
@@ -3939,7 +3935,6 @@ FILE: ../../../third_party/skia/modules/svg/include/SkSVGFeComposite.h
 FILE: ../../../third_party/skia/modules/svg/include/SkSVGFeDisplacementMap.h
 FILE: ../../../third_party/skia/modules/svg/include/SkSVGFeFlood.h
 FILE: ../../../third_party/skia/modules/svg/include/SkSVGFeGaussianBlur.h
-FILE: ../../../third_party/skia/modules/svg/include/SkSVGFeLighting.h
 FILE: ../../../third_party/skia/modules/svg/include/SkSVGFeMorphology.h
 FILE: ../../../third_party/skia/modules/svg/include/SkSVGFeOffset.h
 FILE: ../../../third_party/skia/modules/svg/include/SkSVGFeTurbulence.h
@@ -3952,7 +3947,6 @@ FILE: ../../../third_party/skia/modules/svg/src/SkSVGFeComposite.cpp
 FILE: ../../../third_party/skia/modules/svg/src/SkSVGFeDisplacementMap.cpp
 FILE: ../../../third_party/skia/modules/svg/src/SkSVGFeFlood.cpp
 FILE: ../../../third_party/skia/modules/svg/src/SkSVGFeGaussianBlur.cpp
-FILE: ../../../third_party/skia/modules/svg/src/SkSVGFeLighting.cpp
 FILE: ../../../third_party/skia/modules/svg/src/SkSVGFeMorphology.cpp
 FILE: ../../../third_party/skia/modules/svg/src/SkSVGFeOffset.cpp
 FILE: ../../../third_party/skia/modules/svg/src/SkSVGFeTurbulence.cpp
@@ -4019,8 +4013,8 @@ FILE: ../../../third_party/skia/src/ports/SkScalerContext_mac_ct.h
 FILE: ../../../third_party/skia/src/ports/SkTypeface_mac_ct.h
 FILE: ../../../third_party/skia/src/utils/mac/SkCGBase.h
 FILE: ../../../third_party/skia/src/utils/mac/SkCGGeometry.h
-FILE: ../../../third_party/skia/src/utils/mac/SkCTFont.cpp
-FILE: ../../../third_party/skia/src/utils/mac/SkCTFont.h
+FILE: ../../../third_party/skia/src/utils/mac/SkCTFontSmoothBehavior.cpp
+FILE: ../../../third_party/skia/src/utils/mac/SkCTFontSmoothBehavior.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2020 Google Inc.
 
