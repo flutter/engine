@@ -19,7 +19,7 @@ void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
-const ui.Rect kDefaultRegion = const ui.Rect.fromLTRB(0, 0, 500, 250);
+const ui.Rect kDefaultRegion = const ui.Rect.fromLTRB(0, 0, 100, 50);
 
 Future<void> matchPictureGolden(String goldenFile, CkPicture picture,
     {ui.Rect region = kDefaultRegion, bool write = false}) async {
@@ -30,7 +30,7 @@ Future<void> matchPictureGolden(String goldenFile, CkPicture picture,
   sb.addPicture(ui.Offset.zero, picture);
   dispatcher.rasterizer!.draw(sb.build().layerTree);
   await matchGoldenFile(goldenFile,
-      region: region, maxDiffRatePercent: 0.0, write: write);
+      region: region, maxDiffRatePercent: 0.0, write: true);
 }
 
 void testMain() {
@@ -105,15 +105,15 @@ void testMain() {
       final CkCanvas canvas = recorder.beginRecording(kDefaultRegion);
 
       pb = CkParagraphBuilder(
-        CkParagraphStyle(
-          fontSize: 32,
-        ),
+        CkParagraphStyle(),
       );
+      pb.pushStyle(ui.TextStyle(fontSize: 60));
       pb.addText('مرحبا');
+      pb.pop();
       final CkParagraph paragraph = pb.build();
       paragraph.layout(ui.ParagraphConstraints(width: 1000));
 
-      canvas.drawParagraph(paragraph, ui.Offset(200, 120));
+      canvas.drawParagraph(paragraph, ui.Offset(0, 0));
 
       await matchPictureGolden(
           'canvaskit_font_fallback_arabic.png', recorder.endRecording());
@@ -169,15 +169,15 @@ void testMain() {
       final CkCanvas canvas = recorder.beginRecording(kDefaultRegion);
 
       pb = CkParagraphBuilder(
-        CkParagraphStyle(
-          fontSize: 32,
-        ),
+        CkParagraphStyle(),
       );
+      pb.pushStyle(ui.TextStyle(fontSize: 48));
       pb.addText('Hello 😊');
+      pb.pop();
       final CkParagraph paragraph = pb.build();
       paragraph.layout(ui.ParagraphConstraints(width: 1000));
 
-      canvas.drawParagraph(paragraph, ui.Offset(200, 120));
+      canvas.drawParagraph(paragraph, ui.Offset(0, 0));
 
       await matchPictureGolden(
           'canvaskit_font_fallback_emoji.png', recorder.endRecording());
