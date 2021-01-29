@@ -217,10 +217,10 @@ void testMain() async {
     );
 
     // Should break "Hello world" into "Hello" and " world".
-    paragraph.layout(ParagraphConstraints(width: 70.0));
+    paragraph.layout(ParagraphConstraints(width: 75.0));
     expect(
       paragraph.toDomElement().outerHtml,
-      '<p style="font-size: 13px; $paragraphStyle width: 70px;">'
+      '<p style="font-size: 13px; $paragraphStyle width: 75px;">'
       '<span style="$defaultColor font-size: 13px; font-weight: bold; $defaultFontFamily">'
       'Hello'
       '</span>'
