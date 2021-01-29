@@ -668,14 +668,14 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
         typefaces.addAll(typefacesForFamily);
       }
     }
-    List<bool> codeUnitsSupported = List<bool>.filled(text.length, false);
+    List<int> codeUnits = text.runes.toList();
+    List<bool> codeUnitsSupported = List<bool>.filled(codeUnits.length, false);
     for (SkTypeface typeface in typefaces) {
       SkFont font = SkFont(typeface);
       Uint8List glyphs = font.getGlyphIDs(text);
       assert(glyphs.length == codeUnitsSupported.length);
       for (int i = 0; i < glyphs.length; i++) {
-        codeUnitsSupported[i] |=
-            glyphs[i] != 0 || _isControlCode(text.codeUnitAt(i));
+        codeUnitsSupported[i] |= glyphs[i] != 0 || _isControlCode(codeUnits[i]);
       }
     }
 
@@ -683,7 +683,7 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
       List<int> missingCodeUnits = <int>[];
       for (int i = 0; i < codeUnitsSupported.length; i++) {
         if (!codeUnitsSupported[i]) {
-          missingCodeUnits.add(text.codeUnitAt(i));
+          missingCodeUnits.add(codeUnits[i]);
         }
       }
       _findFontsForMissingCodeunits(missingCodeUnits);

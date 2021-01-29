@@ -211,15 +211,19 @@ Future<void> _registerSymbolsAndEmoji() async {
   String? symbolsFontUrl = extractUrlFromCss(symbolsCss);
   String? emojiFontUrl = extractUrlFromCss(emojiCss);
 
-  if (symbolsFontUrl == null || emojiFontUrl == null) {
-    html.window.console
-        .warn('Error parsing CSS for Noto Emoji and Symbols font.');
+  if (symbolsFontUrl != null) {
+    notoDownloadQueue.add(_ResolvedNotoSubset(
+        symbolsFontUrl, 'Noto Sans Symbols', const <CodeunitRange>[]));
+  } else {
+    html.window.console.warn('Error parsing CSS for Noto Symbols font.');
   }
 
-  notoDownloadQueue.add(_ResolvedNotoSubset(
-      symbolsFontUrl!, 'Noto Sans Symbols', const <CodeunitRange>[]));
-  notoDownloadQueue.add(_ResolvedNotoSubset(
-      emojiFontUrl!, 'Noto Color Emoji Compat', const <CodeunitRange>[]));
+  if (emojiFontUrl != null) {
+    notoDownloadQueue.add(_ResolvedNotoSubset(
+        emojiFontUrl, 'Noto Color Emoji Compat', const <CodeunitRange>[]));
+  } else {
+    html.window.console.warn('Error parsing CSS for Noto Emoji font.');
+  }
 }
 
 /// Finds the minimum set of fonts which covers all of the [codeunits].
