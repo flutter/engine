@@ -27,7 +27,7 @@ std::unique_ptr<std::vector<uint8_t>> CreateResponse(bool handled) {
   return JsonMessageCodec::GetInstance().EncodeMessage(*response_doc);
 }
 
-TEST(KeyEventHandlerTest, KeyboardHookHandling) {
+TEST(KeyboardKeyHandlerTest, KeyboardHookHandling) {
   auto handled_message = CreateResponse(true);
   auto unhandled_message = CreateResponse(false);
   int received_scancode = 0;
@@ -49,7 +49,7 @@ TEST(KeyEventHandlerTest, KeyboardHookHandling) {
       });
 
   int redispatch_scancode = 0;
-  KeyEventHandler handler(&messenger,
+  KeyboardKeyHandler handler(&messenger,
                           [&redispatch_scancode](UINT cInputs, LPINPUT pInputs,
                                                  int cbSize) -> UINT {
                             EXPECT_TRUE(cbSize > 0);
@@ -67,7 +67,7 @@ TEST(KeyEventHandlerTest, KeyboardHookHandling) {
   EXPECT_EQ(redispatch_scancode, kUnhandledScanCode);
 }
 
-TEST(KeyEventHandlerTest, ExtendedKeysAreSentToRedispatch) {
+TEST(KeyboardKeyHandlerTest, ExtendedKeysAreSentToRedispatch) {
   auto handled_message = CreateResponse(true);
   auto unhandled_message = CreateResponse(false);
   int received_scancode = 0;
@@ -90,7 +90,7 @@ TEST(KeyEventHandlerTest, ExtendedKeysAreSentToRedispatch) {
       });
 
   int redispatch_scancode = 0;
-  KeyEventHandler handler(
+  KeyboardKeyHandler handler(
       &messenger,
       [&redispatch_scancode, &is_extended_key](UINT cInputs, LPINPUT pInputs,
                                                int cbSize) -> UINT {

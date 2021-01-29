@@ -141,16 +141,26 @@ bool KeyboardKeyHandler::KeyboardHook(FlutterWindowsView* view,
                                   (extended ? KEYEVENTF_EXTENDEDKEY : 0x0) |
                                   (action == WM_KEYUP ? KEYEVENTF_KEYUP : 0x0)),
     .unreplied = delegates_.size(),
+    .any_handled = false,
   };
   pending_events_.push_back(std::make_unique<PendingEvent>(std::move(pending)));
 
   PendingEvent& pending_event = *pending_events_.back();
+  // If delegates_ is empty, we need to respond immediately. But this would
+  // never happen in real life since all delegates are added by hardcode,
+  // therefore we simply assert.
+  assert(delegates_.size() != 0);
   for (const auto& delegate : delegates_) {
     delegate->KeyboardHook(key, scancode, action, character, extended,
         was_down, [pending_event = &pending_event, this](bool handled) {
           pending_event->unreplied -= 1;
+          pending_event->any_handled = pending_event->any_handled || handled;
           if (pending_event->unreplied == 0) {
-            RedispatchEvent(pending_event);
+            if (!pending_event->any_handled) {
+              RedispatchEvent(pending_event);
+            } else {
+              RemovePendingEvent(pending_event->id);
+            }
           }
         });
   }

@@ -75,6 +75,7 @@ class KeyboardKeyHandler : public KeyboardHandlerBase {
     char32_t character;
     DWORD dwFlags;
     size_t unreplied;
+    bool any_handled;
   };
 
   const PendingEvent* FindPendingEvent(uint64_t id);
