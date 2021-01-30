@@ -28,20 +28,20 @@ constexpr size_t kCharacterCacheSize = 8;
 //
 // This class converts received keyboard events to Flutter events,
 // sends them to the engine, waits for response.
-class FlutterKeyboardKeyEmbedderHandler
+class KeyboardKeyEmbedderHandler
     : public KeyboardKeyHandler::KeyboardKeyHandlerDelegate {
  public:
-  // Build a FlutterKeyboardKeyEmbedderHandler.
+  // Build a KeyboardKeyEmbedderHandler.
   //
   // Use `send_event` to define how the manager should dispatch converted
   // flutter events, as well as how to receive the resopnse, to the engine. It's
   // typically FlutterWindowsEngine::SendKeyEvent.
-  explicit FlutterKeyboardKeyEmbedderHandler(
+  explicit KeyboardKeyEmbedderHandler(
       std::function<void(const FlutterKeyEvent& /* event */,
                          FlutterKeyEventCallback /* callback */,
                          void* /* user_data */)> send_event);
 
-  virtual ~FlutterKeyboardKeyEmbedderHandler();
+  virtual ~KeyboardKeyEmbedderHandler();
 
   // |KeyboardHandlerBase|
   void KeyboardHook(int key,
