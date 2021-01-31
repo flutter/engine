@@ -10,6 +10,8 @@
 #ifdef WINUWP
 #include <windows.ui.core.h>
 #include <winrt/Windows.UI.Composition.h>
+#else
+#include <d3d11.h>
 #endif
 
 #if defined(WINUWP) && defined(USECOREWINDOW)
@@ -29,6 +31,23 @@ AngleSurfaceManager::~AngleSurfaceManager() {
   CleanUp();
 }
 
+#ifndef WINUWP
+bool AngleSurfaceManager::CreateDevice() {
+  D3D_FEATURE_LEVEL featureLevelSupported;
+  HRESULT hr = D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, NULL,
+                                 D3D11_CREATE_DEVICE_BGRA_SUPPORT, NULL, 0,
+                                 D3D11_SDK_VERSION, &d3d11_device_,
+                                 &featureLevelSupported, nullptr);
+  if (hr != S_OK) {
+    d3d11_device_ = nullptr;
+    return false;
+  }
+  egl_device_ =
+      eglCreateDeviceANGLE(EGL_D3D11_DEVICE_ANGLE, d3d11_device_, nullptr);
+  return egl_device_ != EGL_NO_DEVICE_EXT;
+}
+#endif
+
 bool AngleSurfaceManager::InitializeEGL(const EGLint* attributes) {
   PFNEGLGETPLATFORMDISPLAYEXTPROC eglGetPlatformDisplayEXT =
       reinterpret_cast<PFNEGLGETPLATFORMDISPLAYEXTPROC>(
@@ -38,8 +57,21 @@ bool AngleSurfaceManager::InitializeEGL(const EGLint* attributes) {
     return false;
   }
 
-  egl_display_ = eglGetPlatformDisplayEXT(EGL_PLATFORM_ANGLE_ANGLE,
-                                          EGL_DEFAULT_DISPLAY, attributes);
+#ifndef WINUWP
+  // Create display from device instead of using EGL_PLATFORM_ANGLE_ANGLE.
+  // This results in every surface manager having separate display instance.
+  // Otherwise one display is shared between all surface managers, which
+  // doesn't work because the underlying state is not thread safe.
+  if (CreateDevice()) {
+    egl_display_ = eglGetPlatformDisplayEXT(EGL_PLATFORM_DEVICE_EXT,
+                                            egl_device_, attributes);
+  }
+#endif
+
+  if (egl_display_ == EGL_NO_DISPLAY) {
+    egl_display_ = eglGetPlatformDisplayEXT(EGL_PLATFORM_ANGLE_ANGLE,
+                                            EGL_DEFAULT_DISPLAY, attributes);
+  }
 
   if (egl_display_ == EGL_NO_DISPLAY) {
     std::cerr << "EGL: Failed to get a compatible EGLdisplay" << std::endl;
@@ -178,6 +210,17 @@ void AngleSurfaceManager::CleanUp() {
     eglTerminate(egl_display_);
     egl_display_ = EGL_NO_DISPLAY;
   }
+
+#ifndef WINUWP
+  if (egl_device_ != EGL_NO_DEVICE_EXT) {
+    eglReleaseDeviceANGLE(egl_device_);
+    egl_device_ = EGL_NO_DEVICE_EXT;
+  }
+  if (d3d11_device_) {
+    d3d11_device_->Release();
+    d3d11_device_ = nullptr;
+  }
+#endif
 }
 
 bool AngleSurfaceManager::CreateSurface(WindowsRenderTarget* render_target,

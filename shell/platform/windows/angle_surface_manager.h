@@ -17,6 +17,8 @@
 
 #include "window_binding_handler.h"
 
+struct ID3D11Device;
+
 namespace flutter {
 
 // A manager for inializing ANGLE correctly and using it to create and
@@ -97,6 +99,12 @@ class AngleSurfaceManager {
 
   // Current render_surface that engine will draw into.
   EGLSurface render_surface_ = EGL_NO_SURFACE;
+
+#ifndef WINUWP
+  bool CreateDevice();
+  ID3D11Device* d3d11_device_ = nullptr;
+  EGLDeviceEXT egl_device_ = EGL_NO_DEVICE_EXT;
+#endif
 };
 
 }  // namespace flutter

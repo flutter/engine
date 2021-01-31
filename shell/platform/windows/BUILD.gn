@@ -108,6 +108,7 @@ source_set("flutter_windows_source") {
     ]
 
     libs = [
+      "d3d11.lib",
       "dwmapi.lib",
       "imm32.lib",
     ]
