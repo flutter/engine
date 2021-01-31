@@ -122,7 +122,9 @@ KeyEventHandler::KeyEventHandler(flutter::BinaryMessenger* messenger,
               kChannelName,
               &flutter::JsonMessageCodec::GetInstance())),
       send_input_(send_input) {
+#ifndef WINUWP
   assert(send_input != nullptr);
+#endif
 }
 
 KeyEventHandler::~KeyEventHandler() = default;
@@ -190,6 +192,7 @@ void KeyEventHandler::HandleResponse(bool handled,
       std::cerr << "Unable to find event " << id << " in pending events queue.";
       return;
     }
+#ifndef WINUWP
     INPUT input_event;
     input_event.type = INPUT_KEYBOARD;
     input_event.ki = *key_event;
@@ -199,6 +202,7 @@ void KeyEventHandler::HandleResponse(bool handled,
                    "with scancode "
                 << scancode << " (character " << character << ")" << std::endl;
     }
+#endif
   }
 }
 
@@ -225,6 +229,10 @@ bool KeyEventHandler::KeyboardHook(FlutterWindowsView* view,
   event.AddMember(kKeyMapKey, kWindowsKeyMap, allocator);
 #ifndef WINUWP
   event.AddMember(kModifiersKey, GetModsForKeyState(), allocator);
+#else
+  // TODO: Implement modifiers in UWP codepath
+  // TODO: https://github.com/flutter/flutter/issues/70202
+  event.AddMember(kModifiersKey, 0, allocator);
 #endif
 
   switch (action) {

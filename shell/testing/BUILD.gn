@@ -14,6 +14,8 @@ executable("testing") {
 
   sources = [ "tester_main.cc" ]
 
+  libs = [ "psapi.lib", "user32.lib", "FontSub.lib", "shlwapi.lib"]
+
   deps = [
     "//flutter/assets",
     "//flutter/common",

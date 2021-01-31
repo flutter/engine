@@ -246,6 +246,8 @@ if (enable_unittests) {
 
     defines = [ "FLUTTER_ENGINE_NO_PROTOTYPES" ]
 
+    libs = [ "psapi.lib" ]
+
     deps = [
       ":embedder",
       ":embedder_gpu_configuration",

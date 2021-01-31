@@ -27,8 +27,13 @@ class KeyEventHandler : public KeyboardHookHandler {
   using SendInputDelegate =
       std::function<UINT(UINT cInputs, LPINPUT pInputs, int cbSize)>;
 
+#ifdef WINUWP
+  explicit KeyEventHandler(flutter::BinaryMessenger* messenger,
+                           SendInputDelegate delegate = nullptr);
+#else
   explicit KeyEventHandler(flutter::BinaryMessenger* messenger,
                            SendInputDelegate delegate = SendInput);
+#endif
 
   virtual ~KeyEventHandler();
 
