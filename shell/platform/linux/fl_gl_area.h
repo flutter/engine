@@ -31,8 +31,8 @@ GtkWidget* fl_gl_area_new(GdkGLContext* context);
 
 /**
  * fl_gl_area_queue_render:
- * @area: an #FlGLArea
- * @texture: queued OpenGL texture
+ * @area: an #FlGLArea.
+ * @texture: queued OpenGL texture.
  *
  * Queues a texture to be drawn later.
  */

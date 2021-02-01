@@ -26,13 +26,13 @@ G_DECLARE_FINAL_TYPE(FlBackingStoreProvider,
 
 /**
  * fl_backing_store_provider_new:
- * @width: width of texture
- * @height: height of texture
+ * @width: width of texture.
+ * @height: height of texture.
  *
  * Creates a new frame buffer. fl_renderer_make_current() must be called
  * first.
  *
- * Returns: a new #FlBackingStoreProvider
+ * Returns: a new #FlBackingStoreProvider.
  */
 FlBackingStoreProvider* fl_backing_store_provider_new(int width, int height);
 
@@ -93,4 +93,4 @@ GdkRectangle fl_backing_store_provider_get_geometry(
 
 G_END_DECLS
 
-#endif  // FLUTTER_SHELL_PLATFORM_LINUX_FL_backing_store_PROVIDER_H_
+#endif  // FLUTTER_SHELL_PLATFORM_LINUX_FL_BACKING_STORE_PROVIDER_H_
