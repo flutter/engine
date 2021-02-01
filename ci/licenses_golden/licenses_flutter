@@ -1509,6 +1509,8 @@ FILE: ../../../flutter/shell/platform/windows/dpi_utils_win32.h
 FILE: ../../../flutter/shell/platform/windows/dpi_utils_win32_unittests.cc
 FILE: ../../../flutter/shell/platform/windows/external_texture_gl.cc
 FILE: ../../../flutter/shell/platform/windows/external_texture_gl.h
+FILE: ../../../flutter/shell/platform/windows/display_helper_winuwp.cc
+FILE: ../../../flutter/shell/platform/windows/display_helper_winuwp.h
 FILE: ../../../flutter/shell/platform/windows/flutter_key_map.cc
 FILE: ../../../flutter/shell/platform/windows/flutter_project_bundle.cc
 FILE: ../../../flutter/shell/platform/windows/flutter_project_bundle.h
@@ -1529,6 +1531,10 @@ FILE: ../../../flutter/shell/platform/windows/flutter_windows_view.cc
 FILE: ../../../flutter/shell/platform/windows/flutter_windows_view.h
 FILE: ../../../flutter/shell/platform/windows/flutter_windows_win32.cc
 FILE: ../../../flutter/shell/platform/windows/flutter_windows_winuwp.cc
+FILE: ../../../flutter/shell/platform/windows/game_pad_cursor_winuwp.cc
+FILE: ../../../flutter/shell/platform/windows/game_pad_cursor_winuwp.h
+FILE: ../../../flutter/shell/platform/windows/game_pad_winuwp.cc
+FILE: ../../../flutter/shell/platform/windows/game_pad_winuwp.h
 FILE: ../../../flutter/shell/platform/windows/keyboard_handler_base.h
 FILE: ../../../flutter/shell/platform/windows/keyboard_key_channel_handler.cc
 FILE: ../../../flutter/shell/platform/windows/keyboard_key_channel_handler.h
