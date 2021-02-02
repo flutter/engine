@@ -566,12 +566,16 @@ void ParagraphTxt::ComputeStrut(StrutMetrics* strut, SkFont& font) {
               : (paragraph_style_.strut_leading *
                  paragraph_style_.strut_font_size);
 
-      const double available_height = paragraph_style_.strut_text_height_behavior & TextHeightBehavior::kHalfLeading
-        ? strut_height - metrics_height
-        : strut_height;
+      const double available_height =
+          paragraph_style_.strut_text_height_behavior &
+                  TextHeightBehavior::kHalfLeading
+              ? strut_height - metrics_height
+              : strut_height;
 
-      strut->ascent = (-strut_metrics.fAscent / metrics_height) * available_height;
-      strut->descent = (strut_metrics.fDescent / metrics_height) * available_height;
+      strut->ascent =
+          (-strut_metrics.fAscent / metrics_height) * available_height;
+      strut->descent =
+          (strut_metrics.fDescent / metrics_height) * available_height;
 
       strut->leading = metrics_leading + strut_height - available_height;
     } else {

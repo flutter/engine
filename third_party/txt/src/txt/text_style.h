@@ -31,10 +31,18 @@
 
 namespace txt {
 
-// Allows disabling height adjustments to first line's ascent and the
-// last line's descent. If disabled, the line will use the default font
-// metric provided ascent/descent and ParagraphStyle.height will not take
-// effect.
+// Adjusts the leading over and under text.
+//
+// kDisableFirstAscent and kDisableLastDescent allow disabling height
+// adjustments to first line's ascent and the last line's descent. If disabled,
+// the line will use the default font metric provided ascent/descent and
+// ParagraphStyle.height or TextStyle.height will not take effect.
+//
+// kHalfLeading determines how the leading is distributed over and under the
+// text. When true, half of the leading is added to the top of the text and the
+// other half is added to the bottom of the text. Otherwise, instead of
+// distributing the space evenly, it's distributed proportionally to the font's
+// ascent/descent ratio.
 //
 // The default behavior is kAll where height adjustments are enabled for all
 // lines.

@@ -434,26 +434,26 @@ enum TextDecorationStyle {
 
 /// {@macro dart.ui.leadingDistribution}
 enum LeadingDistribution {
-  /// Distributes the ["leading"](https://www.w3.org/TR/CSS2/visudet.html#leading)
-  /// space of the text proportionally above and below the text, to the
-  /// font's ascent/discent ratio.
+  /// Distributes the [leading](https://en.wikipedia.org/wiki/Leading)
+  /// of the text proportionally above and below the text, to the font's
+  /// ascent/discent ratio.
   ///
   /// {@template dart.ui.leading}
-  /// The leading space of a text run is defined as
+  /// The leading of a text run is defined as
   /// `TextStyle.height * TextStyle.fontSize - TextStyle.fontSize`. When
-  /// [TextStyle.height] is not set, the text run will always use the leading
-  /// space specified by the font instead.
+  /// [TextStyle.height] is not set, the text run uses the leading specified by
+  /// the font instead.
   /// {@endtemplate}
   proportional,
 
-  /// Distributes the ["leading"](https://www.w3.org/TR/CSS2/visudet.html#leading)
-  /// space of the text evenly above and below the text (i.e. evenly above the
+  /// Distributes the ["leading"](https://en.wikipedia.org/wiki/Leading)
+  /// of the text evenly above and below the text (i.e. evenly above the
   /// font's ascender and below the descender).
   ///
   /// {@macro dart.ui.leading}
   ///
-  /// The leading space can become negative when [TextStyle.height] is set to
-  /// a value smaller than 1.0.
+  /// The leading can become negative when [TextStyle.height] is smaller than
+  /// 1.0.
   ///
   /// This is the default strategy used by CSS, known as
   /// ["half-leading"](https://www.w3.org/TR/css-inline-3/#half-leading).
@@ -465,9 +465,12 @@ enum LeadingDistribution {
 ///
 /// [applyHeightToFirstAscent] and [applyHeightToLastDescent] represent whether
 /// the [TextStyle.height] modifier will be applied to the corresponding metric.
-/// By default, all properties are true, and [TextStyle.height] is applied as
+/// By default both properties are true, and [TextStyle.height] is applied as
 /// normal. When set to false, the font's default ascent will be used.
 ///
+/// [leadingDistribution] determines how the [leading] is distributed over and
+/// under text. This property applies before [applyHeightToFirstAscent] and
+/// [applyHeightToLastDescent].
 ///
 /// {@endtemplate}
 class TextHeightBehavior {
@@ -480,6 +483,8 @@ class TextHeightBehavior {
   ///  * applyHeightToLastDescent: When true, the [TextStyle.height] modifier
   ///    will be applied to the descent of the last line. When false, the font's
   ///    default descent will be used.
+  ///  * leadingDistribution: How the [leading] is distributed over and under
+  ///    text.
   ///
   /// All properties default to true (height modifications applied as normal).
   const TextHeightBehavior({
@@ -521,13 +526,12 @@ class TextHeightBehavior {
   final bool applyHeightToLastDescent;
 
   /// {@template dart.ui.leadingDistribution}
-  /// How extra ["leading"](https://www.w3.org/TR/CSS2/visudet.html#leading)
-  /// space is distributed over and under the text.
+  /// How the ["leading"](https://en.wikipedia.org/wiki/Leading) is distributed
+  /// over and under the text.
   ///
   /// Does not affect layout when [TextStyle.height] is not specified. The
-  /// leading space can become negative, for example, when
-  /// [LeadingDistribution.even] is used with a [TextStyle.height] much
-  /// smaller than 1.0.
+  /// leading can become negative, for example, when [LeadingDistribution.even]
+  /// is used with a [TextStyle.height] much smaller than 1.0.
   /// {@endtemplate}
   ///
   /// Defaults to [LeadingDistribution.proportional],
@@ -864,12 +868,12 @@ class TextStyle {
                                      && _fontFamily != ''              ? _fontFamily                             : "unspecified"}, '
              'fontFamilyFallback: ${ _encoded[0] & 0x00200 == 0x00200
                                      && _fontFamilyFallback != null
-                                     && _fontFamilyFallback!.isNotEmpty ? _fontFamilyFallback                     : "unspecified"}, '
+                                     && _fontFamilyFallback!.isNotEmpty ? _fontFamilyFallback                    : "unspecified"}, '
              'fontSize: ${           _encoded[0] & 0x00400 == 0x00400  ? _fontSize                               : "unspecified"}, '
              'letterSpacing: ${      _encoded[0] & 0x00800 == 0x00800  ? "${_letterSpacing}x"                    : "unspecified"}, '
              'wordSpacing: ${        _encoded[0] & 0x01000 == 0x01000  ? "${_wordSpacing}x"                      : "unspecified"}, '
              'height: ${             _encoded[0] & 0x02000 == 0x02000  ? "${_height}x"                           : "unspecified"}, '
-             'textHeightBehavior: ${ _encoded[0] & 0x0100 == 0x0100    ? "${TextHeightBehavior.fromEncoded(_encoded[8])}x"  : "unspecified"}, '
+             'textHeightBehavior: ${ _encoded[0] & 0x0100 == 0x0100    ? "${TextHeightBehavior.fromEncoded(_encoded[8])}"  : "unspecified"}, '
              'locale: ${             _encoded[0] & 0x04000 == 0x04000  ? _locale                                 : "unspecified"}, '
              'background: ${         _encoded[0] & 0x08000 == 0x08000  ? _background                             : "unspecified"}, '
              'foreground: ${         _encoded[0] & 0x10000 == 0x10000  ? _foreground                             : "unspecified"}, '

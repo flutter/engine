@@ -248,6 +248,7 @@ abstract class TextStyle {
     double? letterSpacing,
     double? wordSpacing,
     double? height,
+    TextHeightBehavior? textHeightBehavior,
     Locale? locale,
     Paint? background,
     Paint? foreground,
