@@ -392,7 +392,16 @@ static void fl_view_size_allocate(GtkWidget* widget,
     gtk_widget_size_allocate(child->widget, &child_allocation);
   }
 
-  GtkAllocation event_box_allocation = *allocation;
+  GtkAllocation event_box_allocation = {
+      .x = 0,
+      .y = 0,
+      .width = allocation->width,
+      .height = allocation->height,
+  };
+  if (!gtk_widget_get_has_window(self->event_box)) {
+    event_box_allocation.x += allocation->x;
+    event_box_allocation.y += allocation->y;
+  }
   gtk_widget_size_allocate(self->event_box, &event_box_allocation);
 
   fl_view_geometry_changed(self);
