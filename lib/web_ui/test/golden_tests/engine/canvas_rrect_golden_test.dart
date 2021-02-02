@@ -63,7 +63,7 @@ void testMain() async {
     canvas.drawPath(Path()..moveTo(0, 0)..lineTo(20, 0), niceRRectPaint);
     html.document.body.append(canvas.rootElement);
     await matchGoldenFile('canvas_rrect_flipped.png',
-        region: Rect.fromLTWH(0, 0, 100, 200), write: true);
+        region: Rect.fromLTWH(0, 0, 100, 200));
   });
 
   test('round rect with big radius scale down smaller radius', () async {
