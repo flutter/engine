@@ -529,7 +529,7 @@ public class FlutterActivityAndFragmentDelegateTest {
   }
 
     @Test
-  public void itSendsPushRouteMessageWhenOnNewIntentNoQuery() {
+  public void itSendsPushRouteMessageWhenOnNewIntentNoQueryParameter() {
     when(mockHost.shouldHandleDeeplinking()).thenReturn(true);
     // Create the real object that we're testing.
     FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
