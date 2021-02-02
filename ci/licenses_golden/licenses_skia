@@ -1,4 +1,4 @@
-Signature: 4adf1ff9a764aa44446ebadcbf569e10
+Signature: e6b7613a257e4a6e562460d52e7d1ca1
 
 UNUSED LICENSES:
 
@@ -5980,6 +5980,7 @@ ORIGIN: ../../../third_party/skia/gm/colorspace.cpp + ../../../third_party/skia/
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/gm/colorspace.cpp
 FILE: ../../../third_party/skia/gm/largeclippedpath.cpp
+FILE: ../../../third_party/skia/modules/skottie/src/effects/SphereEffect.cpp
 FILE: ../../../third_party/skia/modules/svg/include/SkSVGFeLightSource.h
 FILE: ../../../third_party/skia/modules/svg/include/SkSVGMask.h
 FILE: ../../../third_party/skia/modules/svg/src/SkSVGFeLightSource.cpp
