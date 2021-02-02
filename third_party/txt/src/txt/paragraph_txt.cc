@@ -1198,11 +1198,17 @@ void ParagraphTxt::UpdateLineMetrics(const SkFontMetrics& metrics,
                                      size_t line_limit) {
   if (!strut_.force_strut) {
     const double metrics_font_height = metrics.fDescent - metrics.fAscent;
-    // The overall height of the glyph blob. block_height = ascent + descent,
-    // unless kDisableFirstAscent or kDisableLastDescent is set.
+    // The overall height of the glyph blob. If neither the ascent and the
+    // descent is disabled, we have block_height = ascent + descent, where
+    // "ascent" is the extent from the top of the blob to its baseline, and
+    // "descent" is the extent from the text blob's baseline to its bottom.
     const double blob_height = style.has_height_override
                                    ? style.height * style.font_size
                                    : metrics_font_height + metrics.fLeading;
+    const size_t text_height_behavior =
+        style.has_text_height_behavior_override
+            ? style.text_height_behavior
+            : paragraph_style_.text_height_behavior;
 
     // Scale the ascent and descent such that the sum of ascent and
     // descent is `style.height * style.font_size`.
@@ -1250,28 +1256,24 @@ void ParagraphTxt::UpdateLineMetrics(const SkFontMetrics& metrics,
     // Doing this ascent/descent normalization to the EM Square allows
     // a sane, consistent, and reasonable "blob_height" to be specified,
     // though it breaks with what is done by any of the platforms above.
-    const bool shouldNormalizeFont = style.has_height_override;
+    const bool shouldNormalizeFont =
+        style.has_height_override &&
+        (text_height_behavior & TextHeightBehavior::kHalfLeading);
     const double font_height =
         shouldNormalizeFont ? style.font_size : metrics_font_height;
-
-    const size_t text_height_behavior =
-        style.has_text_height_behavior_override
-            ? style.text_height_behavior
-            : paragraph_style_.text_height_behavior;
 
     const double leading =
         text_height_behavior & TextHeightBehavior::kHalfLeading
             ? blob_height - font_height
-            //? std::max(block_height - font_height, 0.0)
-            : style.has_height_override ? 0 : metrics.fLeading;
+            : style.has_height_override ? 0.0 : metrics.fLeading;
 
     const double half_leading = leading / 2;
     const double available_vspace = blob_height - leading;
 
-    const bool disableFirstAscent =
+    const bool disableAscent =
         line_number == 0 &&
         text_height_behavior & TextHeightBehavior::kDisableFirstAscent;
-    const bool disableLastDescent =
+    const bool disableDescent =
         line_number == line_limit - 1 &&
         text_height_behavior & TextHeightBehavior::kDisableLastDescent;
 
@@ -1280,9 +1282,12 @@ void ParagraphTxt::UpdateLineMetrics(const SkFontMetrics& metrics,
     const double modifiedAscent =
         -metrics.fAscent / metrics_font_height * available_vspace +
         half_leading;
-    double ascent = disableFirstAscent ? -metrics.fAscent : modifiedAscent;
-    double descent =
-        disableLastDescent ? metrics.fDescent : blob_height - modifiedAscent;
+    double ascent = disableAscent ? -metrics.fAscent : modifiedAscent;
+    double descent = disableDescent ? metrics.fDescent
+                                    //: blob_height - leading - modifiedAscent;
+                                    : metrics.fDescent / metrics_font_height *
+                                              available_vspace +
+                                          half_leading;
 
     ComputePlaceholder(placeholder_run, ascent, descent);
 
@@ -1666,7 +1671,7 @@ std::vector<Paragraph::TextBox> ParagraphTxt::GetRectsForRange(
     // Per-line metrics for max and min coordinates for left and right boxes.
     // These metrics cannot be calculated in layout generically because of
     // selections that do not cover the whole line.
-    SkScalar max_right = FLT_MIN;
+    SkScalar max_right = -FLT_MAX;
     SkScalar min_left = FLT_MAX;
   };
 
@@ -1944,7 +1949,7 @@ std::vector<Paragraph::TextBox> ParagraphTxt::GetRectsForPlaceholders() {
     // Per-line metrics for max and min coordinates for left and right boxes.
     // These metrics cannot be calculated in layout generically because of
     // selections that do not cover the whole line.
-    SkScalar max_right = FLT_MIN;
+    SkScalar max_right = -FLT_MAX;
     SkScalar min_left = FLT_MAX;
   };
 

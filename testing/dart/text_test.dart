@@ -77,17 +77,17 @@ void main() {
     });
 
     test('decode works', () {
-      expect(const TextHeightBehavior.fromEncoded(0), equals(behavior0));
-      expect(const TextHeightBehavior.fromEncoded(3), equals(behavior1));
-      expect(const TextHeightBehavior.fromEncoded(1), equals(behavior2));
-      expect(const TextHeightBehavior.fromEncoded(2), equals(behavior3));
+      expect(TextHeightBehavior.fromEncoded(0), equals(behavior0));
+      expect(TextHeightBehavior.fromEncoded(3), equals(behavior1));
+      expect(TextHeightBehavior.fromEncoded(1), equals(behavior2));
+      expect(TextHeightBehavior.fromEncoded(2), equals(behavior3));
     });
 
     test('toString works', () {
-      expect(behavior0.toString(), equals('TextHeightBehavior(applyHeightToFirstAscent: true, applyHeightToLastDescent: true)'));
-      expect(behavior1.toString(), equals('TextHeightBehavior(applyHeightToFirstAscent: false, applyHeightToLastDescent: false)'));
-      expect(behavior2.toString(), equals('TextHeightBehavior(applyHeightToFirstAscent: false, applyHeightToLastDescent: true)'));
-      expect(behavior3.toString(), equals('TextHeightBehavior(applyHeightToFirstAscent: true, applyHeightToLastDescent: false)'));
+      expect(behavior0.toString(), equals('TextHeightBehavior(applyHeightToFirstAscent: true, applyHeightToLastDescent: true, leadingDistribution: LeadingDistribution.proportional)'));
+      expect(behavior1.toString(), equals('TextHeightBehavior(applyHeightToFirstAscent: false, applyHeightToLastDescent: false, leadingDistribution: LeadingDistribution.proportional)'));
+      expect(behavior2.toString(), equals('TextHeightBehavior(applyHeightToFirstAscent: false, applyHeightToLastDescent: true, leadingDistribution: LeadingDistribution.proportional)'));
+      expect(behavior3.toString(), equals('TextHeightBehavior(applyHeightToFirstAscent: true, applyHeightToLastDescent: false, leadingDistribution: LeadingDistribution.proportional)'));
     });
   });
 
