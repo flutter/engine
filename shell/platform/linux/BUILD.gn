@@ -138,7 +138,6 @@ source_set("flutter_linux") {
   configs += [
     "//flutter/shell/platform/linux/config:gtk",
     "//flutter/shell/platform/linux/config:epoxy",
-    "//third_party/khronos:khronos_headers",
   ]
 
   defines = [ "FLUTTER_ENGINE_NO_PROTOTYPES" ]

@@ -61,12 +61,6 @@ static gboolean fl_renderer_gl_create_backing_store(
   backing_store_out->open_gl.framebuffer.user_data = provider;
   backing_store_out->open_gl.framebuffer.name = name;
   backing_store_out->open_gl.framebuffer.target = format;
-  backing_store_out->open_gl.framebuffer.destruction_callback =
-      [](void* user_data) {
-        if (G_IS_OBJECT(user_data)) {
-          g_object_unref(G_OBJECT(user_data));
-        }
-      };
 
   return TRUE;
 }
@@ -75,7 +69,17 @@ static gboolean fl_renderer_gl_create_backing_store(
 static gboolean fl_renderer_gl_collect_backing_store(
     FlRenderer* renderer,
     const FlutterBackingStore* backing_store) {
-  // Backing stores are collected in destruction callback.
+  g_autoptr(GError) error = nullptr;
+  gboolean result = fl_renderer_make_current(renderer, &error);
+  if (!result) {
+    g_warning(
+        "Failed to make renderer current when collecting backing store: %s",
+        error->message);
+    return FALSE;
+  }
+
+  // OpenGL context is required when destroying #FlBackingStoreProvider.
+  g_object_unref(backing_store->open_gl.framebuffer.user_data);
   return TRUE;
 }
 
