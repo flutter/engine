@@ -456,7 +456,7 @@ public class FlutterActivityAndFragmentDelegateTest {
         .setInitialRoute("/custom/route?query=test");
   }
 
-    @Test
+  @Test
   public void
       itSendsInitialRouteFromIntentOnStartIfNoInitialRouteFromActivityAndShouldHandleDeeplinkingNoQueryParameter() {
     Intent intent = FlutterActivity.createDefaultIntent(RuntimeEnvironment.application);
@@ -479,8 +479,7 @@ public class FlutterActivityAndFragmentDelegateTest {
     delegate.onStart();
 
     // Verify that the navigation channel was given the initial route message.
-    verify(mockFlutterEngine.getNavigationChannel(), times(1))
-        .setInitialRoute("/custom/route");
+    verify(mockFlutterEngine.getNavigationChannel(), times(1)).setInitialRoute("/custom/route");
   }
 
   @Test
@@ -528,7 +527,7 @@ public class FlutterActivityAndFragmentDelegateTest {
         .pushRoute("/custom/route?query=test");
   }
 
-    @Test
+  @Test
   public void itSendsPushRouteMessageWhenOnNewIntentNoQueryParameter() {
     when(mockHost.shouldHandleDeeplinking()).thenReturn(true);
     // Create the real object that we're testing.
@@ -544,8 +543,7 @@ public class FlutterActivityAndFragmentDelegateTest {
     delegate.onNewIntent(mockIntent);
 
     // Verify that the navigation channel was given the push route message.
-    verify(mockFlutterEngine.getNavigationChannel(), times(1))
-        .pushRoute("/custom/route");
+    verify(mockFlutterEngine.getNavigationChannel(), times(1)).pushRoute("/custom/route");
   }
 
   @Test
