@@ -1198,7 +1198,6 @@ NSTimer* _enableFlutterTextInputViewAccessibilityTimer;
   [_reusableInputView release];
   [_inputHider release];
   [_autofillContext release];
-  [self removeEnableFlutterTextInputViewAccessibilityTimer];
   [super dealloc];
 }
 
