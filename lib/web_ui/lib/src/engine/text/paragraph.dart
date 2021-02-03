@@ -1209,6 +1209,8 @@ class EngineStrutStyle implements ui.StrutStyle {
     List<String>? fontFamilyFallback,
     double? fontSize,
     double? height,
+    //TODO(LongCatIsLooong): implement textHeightBehavir.
+    ui.TextHeightBehavior? textHeightBehavior,
     double? leading,
     ui.FontWeight? fontWeight,
     ui.FontStyle? fontStyle,
@@ -1217,6 +1219,7 @@ class EngineStrutStyle implements ui.StrutStyle {
         _fontFamilyFallback = fontFamilyFallback,
         _fontSize = fontSize,
         _height = height,
+        _textHeightBehavior = textHeightBehavior,
         _leading = leading,
         _fontWeight = fontWeight,
         _fontStyle = fontStyle,
@@ -1230,6 +1233,7 @@ class EngineStrutStyle implements ui.StrutStyle {
   final ui.FontWeight? _fontWeight;
   final ui.FontStyle? _fontStyle;
   final bool? _forceStrutHeight;
+  final ui.TextHeightBehavior? _textHeightBehavior;
 
   @override
   bool operator ==(Object other) {
@@ -1243,6 +1247,7 @@ class EngineStrutStyle implements ui.StrutStyle {
         && other._fontFamily == _fontFamily
         && other._fontSize == _fontSize
         && other._height == _height
+        && other._textHeightBehavior == _textHeightBehavior
         && other._leading == _leading
         && other._fontWeight == _fontWeight
         && other._fontStyle == _fontStyle
@@ -1256,6 +1261,7 @@ class EngineStrutStyle implements ui.StrutStyle {
         _fontFamilyFallback,
         _fontSize,
         _height,
+        _textHeightBehavior,
         _leading,
         _fontWeight,
         _fontStyle,

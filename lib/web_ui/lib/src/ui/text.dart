@@ -192,16 +192,24 @@ enum TextDecorationStyle {
   wavy
 }
 
+enum LeadingDistribution {
+  proportional,
+  even,
+}
+
 class TextHeightBehavior {
   const TextHeightBehavior({
     this.applyHeightToFirstAscent = true,
     this.applyHeightToLastDescent = true,
+    this.leadingDistribution = LeadingDistribution.proportional,
   });
-  const TextHeightBehavior.fromEncoded(int encoded)
+  TextHeightBehavior.fromEncoded(int encoded)
       : applyHeightToFirstAscent = (encoded & 0x1) == 0,
-        applyHeightToLastDescent = (encoded & 0x2) == 0;
+        applyHeightToLastDescent = (encoded & 0x2) == 0,
+        leadingDistribution = LeadingDistribution.values[encoded >> 2];
   final bool applyHeightToFirstAscent;
   final bool applyHeightToLastDescent;
+  final LeadingDistribution leadingDistribution;
   int encode() {
     return (applyHeightToFirstAscent ? 0 : 1 << 0) | (applyHeightToLastDescent ? 0 : 1 << 1);
   }
@@ -227,7 +235,8 @@ class TextHeightBehavior {
   String toString() {
     return 'TextHeightBehavior('
              'applyHeightToFirstAscent: $applyHeightToFirstAscent, '
-             'applyHeightToLastDescent: $applyHeightToLastDescent'
+             'applyHeightToLastDescent: $applyHeightToLastDescent, '
+             'leadingDistribution: $leadingDistribution'
            ')';
   }
 }
@@ -359,6 +368,7 @@ abstract class StrutStyle {
     List<String>? fontFamilyFallback,
     double? fontSize,
     double? height,
+    TextHeightBehavior? textHeightBehavior,
     double? leading,
     FontWeight? fontWeight,
     FontStyle? fontStyle,
