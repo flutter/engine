@@ -8,6 +8,17 @@
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_view.h"
 
 #include "flutter/shell/platform/linux/fl_gl_area.h"
+#include "flutter/shell/platform/linux/fl_platform_views_plugin.h"
+
+/**
+ * fl_view_get_platform_views_plugin(FlView* view);
+ * @view: an #FlView.
+ *
+ * Get #FlPlatformViewsPlugin related to @view.
+ *
+ * Returns: an #FlPlatformViewsPlugin.
+ */
+FlPlatformViewsPlugin* fl_view_get_platform_views_plugin(FlView* view);
 
 /**
  * fl_view_begin_frame:
@@ -37,12 +48,14 @@ void fl_view_add_gl_area(FlView* view,
  * @view: an #FlView.
  * @widget: a #GtkWidget.
  * @geometry: geometry of the widget.
+ * @mutations: (transfer-full): the mutations applied to the widget.
  *
  * Append a #GtkWidget at top of stacked children of #FlView.
  */
 void fl_view_add_widget(FlView* view,
                         GtkWidget* widget,
-                        GdkRectangle* geometry);
+                        GdkRectangle* geometry,
+                        GPtrArray* mutations);
 
 /**
  * fl_view_end_frame:

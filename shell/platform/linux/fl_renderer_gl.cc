@@ -5,6 +5,7 @@
 #include "flutter/shell/platform/linux/fl_renderer_gl.h"
 
 #include "flutter/shell/platform/linux/fl_backing_store_provider.h"
+#include "flutter/shell/platform/linux/fl_platform_views_plugin.h"
 #include "flutter/shell/platform/linux/fl_view_private.h"
 
 struct _FlRendererGL {
@@ -105,7 +106,27 @@ static gboolean fl_renderer_gl_present_layers(FlRenderer* renderer,
             reinterpret_cast<FlBackingStoreProvider*>(framebuffer->user_data));
       } break;
       case kFlutterLayerContentTypePlatformView: {
-        // Currently unsupported.
+        FlPlatformViewsPlugin* plugin = fl_view_get_platform_views_plugin(view);
+        FlPlatformView* platform_view =
+            fl_platform_views_plugin_get_platform_view(
+                plugin, layer->platform_view->identifier);
+        GtkWidget* widget = fl_platform_view_get_view(platform_view);
+        if (!widget)
+          continue;
+        GdkRectangle geometry = {
+            .x = static_cast<int>(layer->offset.x),
+            .y = static_cast<int>(layer->offset.y),
+            .width = static_cast<int>(layer->size.width),
+            .height = static_cast<int>(layer->size.height),
+        };
+        GPtrArray* mutations =
+            g_ptr_array_new_full(layer->platform_view->mutations_count, g_free);
+        for (size_t i = 0; i < layer->platform_view->mutations_count; i++) {
+          FlutterPlatformViewMutation* mutation =
+              g_new(FlutterPlatformViewMutation, 1);
+          g_ptr_array_add(mutations, mutation);
+        }
+        fl_view_add_widget(view, widget, &geometry, mutations);
       } break;
     }
   }
