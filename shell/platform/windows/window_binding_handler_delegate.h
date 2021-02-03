@@ -18,7 +18,7 @@ class WindowBindingHandlerDelegate {
   virtual void OnWindowSizeChanged(size_t width, size_t height) = 0;
 
   // Notifies delegate that the window going from hidden to visible
-  virtual void OnShow();
+  virtual void OnShow() = 0;
 
   // Notifies delegate that backing window mouse has moved.
   // Typically called by currently configured WindowBindingHandler
