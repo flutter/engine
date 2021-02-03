@@ -54,6 +54,10 @@ void main() {
     const TextHeightBehavior behavior3 = TextHeightBehavior(
       applyHeightToLastDescent: false
     );
+    const TextHeightBehavior behavior4 = TextHeightBehavior(
+      applyHeightToLastDescent: false,
+      leadingDistribution: LeadingDistribution.even,
+    );
 
     test('default constructor works', () {
       expect(behavior0.applyHeightToFirstAscent, equals(true));
@@ -67,6 +71,9 @@ void main() {
 
       expect(behavior3.applyHeightToFirstAscent, equals(true));
       expect(behavior3.applyHeightToLastDescent, equals(false));
+
+      expect(behavior4.applyHeightToLastDescent, equals(false));
+      expect(behavior4.leadingDistribution, equals(LeadingDistribution.even));
     });
 
     test('encode works', () {
@@ -74,6 +81,7 @@ void main() {
       expect(behavior1.encode(), equals(3));
       expect(behavior2.encode(), equals(1));
       expect(behavior3.encode(), equals(2));
+      expect(behavior4.encode(), equals(6));
     });
 
     test('decode works', () {
@@ -81,6 +89,7 @@ void main() {
       expect(TextHeightBehavior.fromEncoded(3), equals(behavior1));
       expect(TextHeightBehavior.fromEncoded(1), equals(behavior2));
       expect(TextHeightBehavior.fromEncoded(2), equals(behavior3));
+      expect(TextHeightBehavior.fromEncoded(6), equals(behavior4));
     });
 
     test('toString works', () {
@@ -88,6 +97,7 @@ void main() {
       expect(behavior1.toString(), equals('TextHeightBehavior(applyHeightToFirstAscent: false, applyHeightToLastDescent: false, leadingDistribution: LeadingDistribution.proportional)'));
       expect(behavior2.toString(), equals('TextHeightBehavior(applyHeightToFirstAscent: false, applyHeightToLastDescent: true, leadingDistribution: LeadingDistribution.proportional)'));
       expect(behavior3.toString(), equals('TextHeightBehavior(applyHeightToFirstAscent: true, applyHeightToLastDescent: false, leadingDistribution: LeadingDistribution.proportional)'));
+      expect(behavior4.toString(), equals('TextHeightBehavior(applyHeightToFirstAscent: true, applyHeightToLastDescent: false, leadingDistribution: LeadingDistribution.even)'));
     });
   });
 
