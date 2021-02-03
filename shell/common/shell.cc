@@ -475,12 +475,12 @@ Shell::~Shell() {
 }
 
 std::unique_ptr<Shell> Shell::Spawn(
-    Settings settings,
+    RunConfiguration run_configuration,
     const CreateCallback<PlatformView>& on_create_platform_view,
     const CreateCallback<Rasterizer>& on_create_rasterizer) const {
   FML_DCHECK(task_runners_.IsValid());
   std::unique_ptr<Shell> result(Shell::Create(
-      task_runners_, PlatformData{}, settings,
+      task_runners_, PlatformData{}, GetSettings(),
       vm_->GetVMData()->GetIsolateSnapshot(), on_create_platform_view,
       on_create_rasterizer, vm_,
       [engine = this->engine_.get()](
@@ -498,10 +498,20 @@ std::unique_ptr<Shell> Shell::Spawn(
                              /*settings=*/settings,
                              /*animator=*/std::move(animator));
       }));
-  RunConfiguration configuration =
-      RunConfiguration::InferFromSettings(settings);
   result->shared_resource_context_ = io_manager_->GetSharedResourceContext();
-  result->RunEngine(std::move(configuration));
+  result->RunEngine(std::move(run_configuration));
+
+  task_runners_.GetRasterTaskRunner()->PostTask(
+      [rasterizer = rasterizer_->GetWeakPtr(),
+       spawn_rasterizer = result->rasterizer_->GetWeakPtr()]() {
+        if (rasterizer) {
+          rasterizer->BlockThreadMerging();
+        }
+        if (spawn_rasterizer) {
+          spawn_rasterizer->BlockThreadMerging();
+        }
+      });
+
   return result;
 }
 
@@ -949,6 +959,23 @@ void Shell::OnPlatformViewDispatchPointerDataPacket(
         }
       }));
   next_pointer_flow_id_++;
+}
+
+// |PlatformView::Delegate|
+void Shell::OnPlatformViewDispatchKeyDataPacket(
+    std::unique_ptr<KeyDataPacket> packet,
+    std::function<void(bool /* handled */)> callback) {
+  TRACE_EVENT0("flutter", "Shell::OnPlatformViewDispatchKeyDataPacket");
+  FML_DCHECK(is_setup_);
+  FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+
+  task_runners_.GetUITaskRunner()->PostTask(
+      fml::MakeCopyable([engine = weak_engine_, packet = std::move(packet),
+                         callback = std::move(callback)]() mutable {
+        if (engine) {
+          engine->DispatchKeyDataPacket(std::move(packet), std::move(callback));
+        }
+      }));
 }
 
 // |PlatformView::Delegate|

@@ -71,8 +71,10 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   // Channels
   fml::scoped_nsobject<FlutterPlatformPlugin> _platformPlugin;
   fml::scoped_nsobject<FlutterTextInputPlugin> _textInputPlugin;
+  fml::scoped_nsobject<FlutterRestorationPlugin> _restorationPlugin;
   fml::scoped_nsobject<FlutterMethodChannel> _localizationChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _navigationChannel;
+  fml::scoped_nsobject<FlutterMethodChannel> _restorationChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _platformChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _platformViewsChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _textInputChannel;
@@ -84,6 +86,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   int64_t _nextTextureId;
 
   BOOL _allowHeadlessExecution;
+  BOOL _restorationEnabled;
   FlutterBinaryMessengerRelay* _binaryMessenger;
   std::unique_ptr<flutter::ConnectionCollection> _connections;
 }
@@ -103,10 +106,21 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (instancetype)initWithName:(NSString*)labelPrefix
                      project:(FlutterDartProject*)project
       allowHeadlessExecution:(BOOL)allowHeadlessExecution {
+  return [self initWithName:labelPrefix
+                     project:project
+      allowHeadlessExecution:allowHeadlessExecution
+          restorationEnabled:NO];
+}
+
+- (instancetype)initWithName:(NSString*)labelPrefix
+                     project:(FlutterDartProject*)project
+      allowHeadlessExecution:(BOOL)allowHeadlessExecution
+          restorationEnabled:(BOOL)restorationEnabled {
   self = [super init];
   NSAssert(self, @"Super init cannot be nil");
   NSAssert(labelPrefix, @"labelPrefix is required");
 
+  _restorationEnabled = restorationEnabled;
   _allowHeadlessExecution = allowHeadlessExecution;
   _labelPrefix = [labelPrefix copy];
 
@@ -331,11 +345,17 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (FlutterTextInputPlugin*)textInputPlugin {
   return _textInputPlugin.get();
 }
+- (FlutterRestorationPlugin*)restorationPlugin {
+  return _restorationPlugin.get();
+}
 - (FlutterMethodChannel*)localizationChannel {
   return _localizationChannel.get();
 }
 - (FlutterMethodChannel*)navigationChannel {
   return _navigationChannel.get();
+}
+- (FlutterMethodChannel*)restorationChannel {
+  return _restorationChannel.get();
 }
 - (FlutterMethodChannel*)platformChannel {
   return _platformChannel.get();
@@ -363,6 +383,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (void)resetChannels {
   _localizationChannel.reset();
   _navigationChannel.reset();
+  _restorationChannel.reset();
   _platformChannel.reset();
   _platformViewsChannel.reset();
   _textInputChannel.reset();
@@ -413,6 +434,11 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
     _initialRoute = nil;
   }
 
+  _restorationChannel.reset([[FlutterMethodChannel alloc]
+         initWithName:@"flutter/restoration"
+      binaryMessenger:self.binaryMessenger
+                codec:[FlutterStandardMethodCodec sharedInstance]]);
+
   _platformChannel.reset([[FlutterMethodChannel alloc]
          initWithName:@"flutter/platform"
       binaryMessenger:self.binaryMessenger
@@ -452,6 +478,10 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   _textInputPlugin.get().textInputDelegate = self;
 
   _platformPlugin.reset([[FlutterPlatformPlugin alloc] initWithEngine:[self getWeakPtr]]);
+
+  _restorationPlugin.reset([[FlutterRestorationPlugin alloc]
+         initWithChannel:_restorationChannel.get()
+      restorationEnabled:_restorationEnabled]);
 }
 
 - (void)maybeSetupPlatformViewChannels {
@@ -605,7 +635,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 }
 
 - (void)initializeDisplays {
-  double refresh_rate = [[[DisplayLinkManager alloc] init] displayRefreshRate];
+  double refresh_rate = [DisplayLinkManager displayRefreshRate];
   auto display = flutter::Display(refresh_rate);
   _shell->OnDisplayUpdates(flutter::DisplayUpdateType::kStartup, {display});
 }
@@ -938,8 +968,8 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
                                                       project:_dartProject.get()
                                        allowHeadlessExecution:_allowHeadlessExecution];
 
-  flutter::Settings settings = _shell->GetSettings();
-  SetEntryPoint(&settings, entrypoint, libraryURI);
+  flutter::RunConfiguration configuration =
+      [_dartProject.get() runConfigurationForEntrypoint:entrypoint libraryOrNil:libraryURI];
 
   fml::WeakPtr<flutter::PlatformView> platform_view = _shell->GetPlatformView();
   FML_DCHECK(platform_view);
@@ -962,7 +992,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
       [](flutter::Shell& shell) { return std::make_unique<flutter::Rasterizer>(shell); };
 
   std::unique_ptr<flutter::Shell> shell =
-      _shell->Spawn(std::move(settings), on_create_platform_view, on_create_rasterizer);
+      _shell->Spawn(std::move(configuration), on_create_platform_view, on_create_rasterizer);
 
   result->_threadHost = _threadHost;
   result->_profiler = _profiler;

@@ -182,6 +182,21 @@ class DomRenderer {
     }
   }
 
+  static void setClipPath(html.Element element, String? value) {
+    if (browserEngine == BrowserEngine.webkit) {
+      if (value == null) {
+        element.style.removeProperty('-webkit-clip-path');
+      } else {
+        element.style.setProperty('-webkit-clip-path', value);
+      }
+    }
+    if (value == null) {
+      element.style.removeProperty('clip-path');
+    } else {
+      element.style.setProperty('clip-path', value);
+    }
+  }
+
   static void setElementTransform(html.Element element, String transformValue) {
     js_util.setProperty(
         js_util.getProperty(element, 'style'), 'transform', transformValue);
@@ -429,6 +444,7 @@ flt-glass-pane * {
     glassPaneElement.insertBefore(_accesibilityPlaceholder, _sceneHostElement);
 
     PointerBinding.initInstance(glassPaneElement);
+    KeyboardBinding.initInstance(glassPaneElement);
 
     // Hide the DOM nodes used to render the scene from accessibility, because
     // the accessibility tree is built from the SemanticsNode tree as a parallel

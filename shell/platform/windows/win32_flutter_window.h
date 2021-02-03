@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 
+#include "flutter/shell/platform/common/cpp/geometry.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
 #include "flutter/shell/platform/windows/win32_window.h"
@@ -54,7 +55,20 @@ class Win32FlutterWindow : public Win32Window, public WindowBindingHandler {
   void OnText(const std::u16string& text) override;
 
   // |Win32Window|
-  void OnKey(int key, int scancode, int action, char32_t character) override;
+  bool OnKey(int key,
+             int scancode,
+             int action,
+             char32_t character,
+             bool extended) override;
+
+  // |Win32Window|
+  void OnComposeBegin() override;
+
+  // |Win32Window|
+  void OnComposeEnd() override;
+
+  // |Win32Window|
+  void OnComposeChange(const std::u16string& text, int cursor_pos) override;
 
   // |Win32Window|
   void OnScroll(double delta_x, double delta_y) override;
@@ -74,6 +88,12 @@ class Win32FlutterWindow : public Win32Window, public WindowBindingHandler {
   // |FlutterWindowBindingHandler|
   void UpdateFlutterCursor(const std::string& cursor_name) override;
 
+  // |FlutterWindowBindingHandler|
+  void UpdateCursorRect(const Rect& rect) override;
+
+  // |FlutterWindowBindingHandler|
+  void OnWindowResized() override;
+
  private:
   // A pointer to a FlutterWindowsView that can be used to update engine
   // windowing and input state.
@@ -81,6 +101,9 @@ class Win32FlutterWindow : public Win32Window, public WindowBindingHandler {
 
   // The last cursor set by Flutter. Defaults to the arrow cursor.
   HCURSOR current_cursor_;
+
+  // The cursor rect set by Flutter.
+  RECT cursor_rect_;
 };
 
 }  // namespace flutter

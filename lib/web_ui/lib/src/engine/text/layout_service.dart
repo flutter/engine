@@ -23,7 +23,7 @@ class TextLayoutService {
 
   double height = 0.0;
 
-  double longestLine = 0.0;
+  EngineLineMetrics? longestLine;
 
   double minIntrinsicWidth = 0.0;
 
@@ -65,7 +65,7 @@ class TextLayoutService {
     // Reset results from previous layout.
     width = constraints.width;
     height = 0.0;
-    longestLine = 0.0;
+    longestLine = null;
     minIntrinsicWidth = 0.0;
     maxIntrinsicWidth = 0.0;
     didExceedMaxLines = false;
@@ -187,8 +187,9 @@ class TextLayoutService {
         alphabeticBaseline = line.baseline;
         ideographicBaseline = alphabeticBaseline * _baselineRatioHack;
       }
-      if (longestLine < line.width) {
-        longestLine = line.width;
+      final double longestLineWidth = longestLine?.width ?? 0.0;
+      if (longestLineWidth < line.width) {
+        longestLine = line;
       }
     }
 
@@ -489,6 +490,13 @@ class SpanBox extends RangeBox {
   /// [endIndex].
   bool overlapsWith(int startIndex, int endIndex) {
     return startIndex < this.end.index && this.start.index < endIndex;
+  }
+
+  /// Returns the substring of the paragraph that's represented by this box.
+  ///
+  /// Trailing newlines are omitted, if any.
+  String toText() {
+    return spanometer.paragraph.toPlainText().substring(start.index, end.indexWithoutTrailingNewlines);
   }
 
   /// Returns a [ui.TextBox] representing this range box in the given [line].

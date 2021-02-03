@@ -11,6 +11,8 @@
 #include <memory>
 #include <string>
 
+#include "flutter/shell/platform/windows/text_input_manager_win32.h"
+
 namespace flutter {
 
 // A class abstraction for a high DPI aware Win32 Window.  Intended to be
@@ -92,7 +94,51 @@ class Win32Window {
   virtual void OnText(const std::u16string& text) = 0;
 
   // Called when raw keyboard input occurs.
-  virtual void OnKey(int key, int scancode, int action, char32_t character) = 0;
+  //
+  // Returns true if the event was handled, indicating that DefWindowProc should
+  // not be called on the event by the main message loop.
+  virtual bool OnKey(int key,
+                     int scancode,
+                     int action,
+                     char32_t character,
+                     bool extended) = 0;
+
+  // Called when IME composing begins.
+  virtual void OnComposeBegin() = 0;
+
+  // Called when IME composing ends.
+  virtual void OnComposeEnd() = 0;
+
+  // Called when IME composing text or cursor position changes.
+  virtual void OnComposeChange(const std::u16string& text, int cursor_pos) = 0;
+
+  // Called when a window is activated in order to configure IME support for
+  // multi-step text input.
+  void OnImeSetContext(UINT const message,
+                       WPARAM const wparam,
+                       LPARAM const lparam);
+
+  // Called when multi-step text input begins when using an IME.
+  void OnImeStartComposition(UINT const message,
+                             WPARAM const wparam,
+                             LPARAM const lparam);
+
+  // Called when edits/commit of multi-step text input occurs when using an IME.
+  void OnImeComposition(UINT const message,
+                        WPARAM const wparam,
+                        LPARAM const lparam);
+
+  // Called when multi-step text input ends when using an IME.
+  void OnImeEndComposition(UINT const message,
+                           WPARAM const wparam,
+                           LPARAM const lparam);
+
+  // Called when the user triggers an IME-specific request such as input
+  // reconversion, where an existing input sequence is returned to composing
+  // mode to select an alternative candidate conversion.
+  void OnImeRequest(UINT const message,
+                    WPARAM const wparam,
+                    LPARAM const lparam);
 
   // Called when mouse scrollwheel input occurs.
   virtual void OnScroll(double delta_x, double delta_y) = 0;
@@ -135,6 +181,9 @@ class Win32Window {
   // Keeps track of the last key code produced by a WM_KEYDOWN or WM_SYSKEYDOWN
   // message.
   int keycode_for_char_message_ = 0;
+
+ protected:
+  TextInputManagerWin32 text_input_manager_;
 };
 
 }  // namespace flutter

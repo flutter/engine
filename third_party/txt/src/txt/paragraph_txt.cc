@@ -1265,7 +1265,8 @@ void ParagraphTxt::UpdateLineMetrics(const SkFontMetrics& metrics,
     const double leading =
         text_height_behavior & TextHeightBehavior::kHalfLeading
             ? blob_height - font_height
-            : style.has_height_override ? 0.0 : metrics.fLeading;
+        : style.has_height_override ? 0.0
+                                    : metrics.fLeading;
 
     const double half_leading = leading / 2;
     const double available_vspace = blob_height - leading;

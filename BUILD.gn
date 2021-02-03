@@ -62,6 +62,11 @@ group("flutter") {
       public_deps += [
         "//flutter/flutter_frontend_server:frontend_server",
         "//third_party/dart:create_sdk",
+
+        # This must be listed explicitly for desktop cross-builds since
+        # //flutter/lib/snapshot:generate_snapshot_bin will only build
+        # gen_snapshot for the host and not the target.
+        "//third_party/dart/runtime/bin:gen_snapshot",
       ]
 
       if (full_dart_sdk) {
@@ -159,8 +164,10 @@ group("flutter") {
 
       if (is_win) {
         if (target_os == "winuwp") {
-          # TODO: Add winnup variant of the unit tests here; see
+          # TODO: Add winnup variant of client_wrapper_windows_unittests here; see
           # https://github.com/flutter/flutter/issues/70197
+          public_deps +=
+              [ "//flutter/shell/platform/windows:flutter_windows_unittests" ]
         } else {
           public_deps += [
             "//flutter/shell/platform/windows:flutter_windows_unittests",

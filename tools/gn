@@ -107,6 +107,7 @@ def to_gn_args(args):
     gn_args['flutter_enable_skshaper'] = args.enable_skshaper
     if args.enable_skshaper:
       gn_args['skia_use_icu'] = True
+      gn_args['skia_enable_icu_ubrk_safeclone'] = True
       gn_args['flutter_always_use_skshaper'] = args.always_use_skshaper
     gn_args['is_official_build'] = True    # Disable Skia test utilities.
     gn_args['dart_component_kind'] = 'static_library' # Always link Dart in statically.
@@ -242,7 +243,7 @@ def to_gn_args(args):
       gn_args['goma_dir'] = None
 
     if gn_args['use_goma']:
-      if args.xcode_symlinks:
+      if args.xcode_symlinks or os.getenv('FLUTTER_GOMA_CREATE_XCODE_SYMLINKS', '0') == '1':
         gn_args['create_xcode_symlinks'] = True
 
     # Enable Metal on iOS builds.
@@ -264,7 +265,6 @@ def to_gn_args(args):
       # Skia has Metal support on macOS version >= 10.14.
       MACOS_SKIA_METAL_SUPPORTED_MIN_VERSION = '10.14'
       gn_args['mac_sdk_min'] = MACOS_SKIA_METAL_SUPPORTED_MIN_VERSION
-      gn_args['mac_deployment_target'] = MACOS_SKIA_METAL_SUPPORTED_MIN_VERSION
 
     if args.enable_vulkan:
       # Enable vulkan in the Flutter shell.
@@ -327,6 +327,10 @@ def to_gn_args(args):
 
     gn_args['dart_version_git_info'] = not args.no_dart_version_git_info
 
+    # Overrides whether Boring SSL is compiled with system as. Only meaningful
+    # on Android.
+    gn_args['bssl_use_clang_integrated_as'] = True
+
     return gn_args
 
 def parse_args(args):
@@ -344,12 +348,13 @@ def parse_args(args):
   parser.add_argument('--full-dart-debug', default=False, action='store_true', help='Implies --dart-debug ' +
       'and also disables optimizations in the Dart VM making it easier to step through VM code in the debugger.')
 
-  parser.add_argument('--target-os', type=str, choices=['android', 'ios', 'linux', 'fuchsia', 'win'])
+  parser.add_argument('--target-os', type=str, choices=['android', 'ios', 'linux', 'fuchsia', 'win', 'winuwp'])
   parser.add_argument('--android', dest='target_os', action='store_const', const='android')
   parser.add_argument('--android-cpu', type=str, choices=['arm', 'x64', 'x86', 'arm64'], default='arm')
   parser.add_argument('--ios', dest='target_os', action='store_const', const='ios')
   parser.add_argument('--ios-cpu', type=str, choices=['arm', 'arm64'], default='arm64')
   parser.add_argument('--simulator', action='store_true', default=False)
+  parser.add_argument('--linux', dest='target_os', action='store_const', const='linux')
   parser.add_argument('--fuchsia', dest='target_os', action='store_const', const='fuchsia')
   parser.add_argument('--fuchsia-legacy', default=True, action='store_true')
   parser.add_argument('--no-fuchsia-legacy', dest='fuchsia_legacy', action='store_false')
@@ -365,7 +370,8 @@ def parse_args(args):
   parser.add_argument('--no-goma', dest='goma', action='store_false')
   parser.add_argument('--xcode-symlinks', action='store_true', help='Set to true for builds targetting macOS or iOS ' +
       'when using goma. If set, symlinks to the Xcode provided sysroot and SDKs will be created in a generated ' +
-      'folder, which will avoid potential backend errors in Fuchsia RBE.')
+      'folder, which will avoid potential backend errors in Fuchsia RBE. Instead of specifying the flag on each invocation ' +
+      'the FLUTTER_GOMA_CREATE_XCODE_SYMLINKS environment variable may be set to 1 to achieve the same effect.')
   parser.add_argument('--no-xcode-symlinks', dest='xcode_symlinks', default=False, action='store_false')
   parser.add_argument('--depot-tools', default='~/depot_tools', type=str,
                       help='Depot tools provides an alternative location for gomacc in ' +

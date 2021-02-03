@@ -11,16 +11,50 @@
 #import <OpenGL/gl.h>
 #import <QuartzCore/QuartzCore.h>
 
-@interface FlutterView () <FlutterResizeSynchronizerDelegate> {
+@interface FlutterView () {
   __weak id<FlutterViewReshapeListener> _reshapeListener;
   FlutterResizeSynchronizer* _resizeSynchronizer;
-  FlutterSurfaceManager* _surfaceManager;
-  NSOpenGLContext* _openGLContext;
+  id<FlutterResizableBackingStoreProvider> _resizableBackingStoreProvider;
 }
 
 @end
 
 @implementation FlutterView
+
+- (instancetype)initWithMTLDevice:(id<MTLDevice>)device
+                     commandQueue:(id<MTLCommandQueue>)commandQueue
+                  reshapeListener:(id<FlutterViewReshapeListener>)reshapeListener {
+  self = [super initWithFrame:NSZeroRect];
+  if (self) {
+    [self setWantsLayer:YES];
+    [self setLayerContentsRedrawPolicy:NSViewLayerContentsRedrawDuringViewResize];
+    _reshapeListener = reshapeListener;
+    _resizableBackingStoreProvider = [[FlutterMetalResizableBackingStoreProvider alloc]
+        initWithDevice:device
+          commandQueue:commandQueue
+            metalLayer:reinterpret_cast<CAMetalLayer*>(self.layer)];
+    _resizeSynchronizer =
+        [[FlutterResizeSynchronizer alloc] initWithDelegate:_resizableBackingStoreProvider];
+  }
+  return self;
+}
+
+#ifdef SHELL_ENABLE_METAL
++ (Class)layerClass {
+  return [CAMetalLayer class];
+}
+
+- (CALayer*)makeBackingLayer {
+  CAMetalLayer* metalLayer = [CAMetalLayer layer];
+  // This is set to true to synchronize the presentation of the layer and its contents with Core
+  // Animation. When presenting the texture see `[FlutterMetalResizableBackingStoreProvider
+  // resizeSynchronizerCommit:]` we start a CATransaction and wait for the command buffer to be
+  // scheduled. This ensures that the resizing process is smooth.
+  metalLayer.presentsWithTransaction = YES;
+  metalLayer.autoresizingMask = kCALayerHeightSizable | kCALayerWidthSizable;
+  return metalLayer;
+}
+#endif
 
 - (instancetype)initWithMainContext:(NSOpenGLContext*)mainContext
                     reshapeListener:(id<FlutterViewReshapeListener>)reshapeListener {
@@ -32,37 +66,22 @@
               reshapeListener:(id<FlutterViewReshapeListener>)reshapeListener {
   self = [super initWithFrame:frame];
   if (self) {
-    _openGLContext = mainContext;
     [self setWantsLayer:YES];
-
-    _resizeSynchronizer = [[FlutterResizeSynchronizer alloc] initWithDelegate:self];
-    _surfaceManager = [[FlutterSurfaceManager alloc] initWithLayer:self.layer
-                                                     openGLContext:_openGLContext];
-
     _reshapeListener = reshapeListener;
+    _resizableBackingStoreProvider =
+        [[FlutterOpenGLResizableBackingStoreProvider alloc] initWithMainContext:mainContext
+                                                                          layer:self.layer];
+    _resizeSynchronizer =
+        [[FlutterResizeSynchronizer alloc] initWithDelegate:_resizableBackingStoreProvider];
   }
   return self;
 }
 
-- (void)resizeSynchronizerFlush:(FlutterResizeSynchronizer*)synchronizer {
-  MacOSGLContextSwitch context_switch(_openGLContext);
-  glFlush();
-}
-
-- (void)resizeSynchronizerCommit:(FlutterResizeSynchronizer*)synchronizer {
-  [CATransaction begin];
-  [CATransaction setDisableActions:YES];
-
-  [_surfaceManager swapBuffers];
-
-  [CATransaction commit];
-}
-
-- (int)frameBufferIDForSize:(CGSize)size {
+- (FlutterRenderBackingStore*)backingStoreForSize:(CGSize)size {
   if ([_resizeSynchronizer shouldEnsureSurfaceForSize:size]) {
-    [_surfaceManager ensureSurfaceSize:size];
+    [_resizableBackingStoreProvider onBackingStoreResized:size];
   }
-  return [_surfaceManager glFrameBufferId];
+  return [_resizableBackingStoreProvider backingStore];
 }
 
 - (void)present {

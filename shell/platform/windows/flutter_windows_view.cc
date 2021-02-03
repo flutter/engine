@@ -8,6 +8,24 @@
 
 namespace flutter {
 
+/// Returns true if the surface will be updated as part of the resize process.
+///
+/// This is called on window resize to determine if the platform thread needs
+/// to be blocked until the frame with the right size has been rendered. It
+/// should be kept in-sync with how the engine deals with a new surface request
+/// as seen in `CreateOrUpdateSurface` in `GPUSurfaceGL`.
+static bool SurfaceWillUpdate(size_t cur_width,
+                              size_t cur_height,
+                              size_t target_width,
+                              size_t target_height) {
+  // TODO (https://github.com/flutter/flutter/issues/65061) : Avoid special
+  // handling for zero dimensions.
+  bool non_zero_dims = target_height > 0 && target_width > 0;
+  bool not_same_size =
+      (cur_height != target_height) || (cur_width != target_width);
+  return non_zero_dims && not_same_size;
+}
+
 FlutterWindowsView::FlutterWindowsView(
     std::unique_ptr<WindowBindingHandler> window_binding) {
   surface_manager_ = std::make_unique<AngleSurfaceManager>();
@@ -35,10 +53,7 @@ void FlutterWindowsView::SetEngine(
 
   // Set up the system channel handlers.
   auto internal_plugin_messenger = internal_plugin_registrar_->messenger();
-  keyboard_hook_handlers_.push_back(
-      std::make_unique<flutter::KeyEventHandler>(internal_plugin_messenger));
-  keyboard_hook_handlers_.push_back(
-      std::make_unique<flutter::TextInputPlugin>(internal_plugin_messenger));
+  RegisterKeyboardHookHandlers(internal_plugin_messenger);
   platform_handler_ = PlatformHandler::Create(internal_plugin_messenger, this);
   cursor_handler_ = std::make_unique<flutter::CursorHandler>(
       internal_plugin_messenger, binding_handler_.get());
@@ -49,10 +64,59 @@ void FlutterWindowsView::SetEngine(
                     binding_handler_->GetDpiScale());
 }
 
-void FlutterWindowsView::OnWindowSizeChanged(size_t width,
-                                             size_t height) const {
-  surface_manager_->ResizeSurface(GetRenderTarget(), width, height);
+void FlutterWindowsView::RegisterKeyboardHookHandlers(
+    flutter::BinaryMessenger* messenger) {
+  AddKeyboardHookHandler(std::make_unique<flutter::KeyEventHandler>(messenger));
+  AddKeyboardHookHandler(
+      std::make_unique<flutter::TextInputPlugin>(messenger, this));
+}
+
+void FlutterWindowsView::AddKeyboardHookHandler(
+    std::unique_ptr<flutter::KeyboardHookHandler> handler) {
+  keyboard_hook_handlers_.push_back(std::move(handler));
+}
+
+uint32_t FlutterWindowsView::GetFrameBufferId(size_t width, size_t height) {
+  // Called on an engine-controlled (non-platform) thread.
+  std::unique_lock<std::mutex> lock(resize_mutex_);
+
+  if (resize_status_ != ResizeState::kResizeStarted) {
+    return kWindowFrameBufferID;
+  }
+
+  if (resize_target_width_ == width && resize_target_height_ == height) {
+    // Platform thread is blocked for the entire duration until the
+    // resize_status_ is set to kDone.
+    surface_manager_->ResizeSurface(GetRenderTarget(), width, height);
+    surface_manager_->MakeCurrent();
+    resize_status_ = ResizeState::kFrameGenerated;
+  }
+
+  return kWindowFrameBufferID;
+}
+
+void FlutterWindowsView::OnWindowSizeChanged(size_t width, size_t height) {
+  // Called on the platform thread.
+  std::unique_lock<std::mutex> lock(resize_mutex_);
+
+  bool surface_will_update = SurfaceWillUpdate(
+      resize_target_width_, resize_target_height_, width, height);
+  if (surface_will_update) {
+    resize_status_ = ResizeState::kResizeStarted;
+    resize_target_width_ = width;
+    resize_target_height_ = height;
+  }
+
   SendWindowMetrics(width, height, binding_handler_->GetDpiScale());
+
+  if (surface_will_update) {
+    // Block the platform thread until:
+    //   1. GetFrameBufferId is called with the right frame size.
+    //   2. Any pending SwapBuffers calls have been invoked.
+    resize_cv_.wait(lock, [&resize_status = resize_status_] {
+      return resize_status == ResizeState::kDone;
+    });
+  }
 }
 
 void FlutterWindowsView::OnPointerMove(double x, double y) {
@@ -89,11 +153,25 @@ void FlutterWindowsView::OnText(const std::u16string& text) {
   SendText(text);
 }
 
-void FlutterWindowsView::OnKey(int key,
+bool FlutterWindowsView::OnKey(int key,
                                int scancode,
                                int action,
-                               char32_t character) {
-  SendKey(key, scancode, action, character);
+                               char32_t character,
+                               bool extended) {
+  return SendKey(key, scancode, action, character, extended);
+}
+
+void FlutterWindowsView::OnComposeBegin() {
+  SendComposeBegin();
+}
+
+void FlutterWindowsView::OnComposeEnd() {
+  SendComposeEnd();
+}
+
+void FlutterWindowsView::OnComposeChange(const std::u16string& text,
+                                         int cursor_pos) {
+  SendComposeChange(text, cursor_pos);
 }
 
 void FlutterWindowsView::OnScroll(double x,
@@ -102,6 +180,10 @@ void FlutterWindowsView::OnScroll(double x,
                                   double delta_y,
                                   int scroll_offset_multiplier) {
   SendScroll(x, y, delta_x, delta_y, scroll_offset_multiplier);
+}
+
+void FlutterWindowsView::OnCursorRectUpdated(const Rect& rect) {
+  binding_handler_->UpdateCursorRect(rect);
 }
 
 // Sends new size  information to FlutterEngine.
@@ -129,12 +211,15 @@ void FlutterWindowsView::SetEventPhaseFromCursorButtonState(
     FlutterPointerEvent* event_data) const {
   // For details about this logic, see FlutterPointerPhase in the embedder.h
   // file.
-  event_data->phase =
-      mouse_state_.buttons == 0
-          ? mouse_state_.flutter_state_is_down ? FlutterPointerPhase::kUp
-                                               : FlutterPointerPhase::kHover
-          : mouse_state_.flutter_state_is_down ? FlutterPointerPhase::kMove
-                                               : FlutterPointerPhase::kDown;
+  if (mouse_state_.buttons == 0) {
+    event_data->phase = mouse_state_.flutter_state_is_down
+                            ? FlutterPointerPhase::kUp
+                            : FlutterPointerPhase::kHover;
+  } else {
+    event_data->phase = mouse_state_.flutter_state_is_down
+                            ? FlutterPointerPhase::kMove
+                            : FlutterPointerPhase::kDown;
+  }
 }
 
 void FlutterWindowsView::SendPointerMove(double x, double y) {
@@ -177,12 +262,37 @@ void FlutterWindowsView::SendText(const std::u16string& text) {
   }
 }
 
-void FlutterWindowsView::SendKey(int key,
+bool FlutterWindowsView::SendKey(int key,
                                  int scancode,
                                  int action,
-                                 char32_t character) {
+                                 char32_t character,
+                                 bool extended) {
   for (const auto& handler : keyboard_hook_handlers_) {
-    handler->KeyboardHook(this, key, scancode, action, character);
+    if (handler->KeyboardHook(this, key, scancode, action, character,
+                              extended)) {
+      // key event was handled, so don't send to other handlers.
+      return true;
+    }
+  }
+  return false;
+}
+
+void FlutterWindowsView::SendComposeBegin() {
+  for (const auto& handler : keyboard_hook_handlers_) {
+    handler->ComposeBeginHook();
+  }
+}
+
+void FlutterWindowsView::SendComposeEnd() {
+  for (const auto& handler : keyboard_hook_handlers_) {
+    handler->ComposeEndHook();
+  }
+}
+
+void FlutterWindowsView::SendComposeChange(const std::u16string& text,
+                                           int cursor_pos) {
+  for (const auto& handler : keyboard_hook_handlers_) {
+    handler->ComposeChangeHook(text, cursor_pos);
   }
 }
 
@@ -255,7 +365,27 @@ bool FlutterWindowsView::ClearContext() {
 }
 
 bool FlutterWindowsView::SwapBuffers() {
-  return surface_manager_->SwapBuffers();
+  // Called on an engine-controlled (non-platform) thread.
+  std::unique_lock<std::mutex> lock(resize_mutex_);
+
+  switch (resize_status_) {
+    // SwapBuffer requests during resize are ignored until the frame with the
+    // right dimensions has been generated. This is marked with
+    // kFrameGenerated resize status.
+    case ResizeState::kResizeStarted:
+      return false;
+    case ResizeState::kFrameGenerated: {
+      bool swap_buffers_result = surface_manager_->SwapBuffers();
+      resize_status_ = ResizeState::kDone;
+      lock.unlock();
+      resize_cv_.notify_all();
+      binding_handler_->OnWindowResized();
+      return swap_buffers_result;
+    }
+    case ResizeState::kDone:
+    default:
+      return surface_manager_->SwapBuffers();
+  }
 }
 
 void FlutterWindowsView::CreateRenderSurface() {

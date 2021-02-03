@@ -5,6 +5,7 @@
 // @dart = 2.12
 part of engine;
 
+@immutable
 class CkParagraphStyle implements ui.ParagraphStyle {
   CkParagraphStyle({
     ui.TextAlign? textAlign,
@@ -19,7 +20,7 @@ class CkParagraphStyle implements ui.ParagraphStyle {
     ui.StrutStyle? strutStyle,
     String? ellipsis,
     ui.Locale? locale,
-  }) : skParagraphStyle = toSkParagraphStyle(
+  })  : skParagraphStyle = toSkParagraphStyle(
           textAlign,
           textDirection,
           maxLines,
@@ -32,20 +33,19 @@ class CkParagraphStyle implements ui.ParagraphStyle {
           strutStyle,
           ellipsis,
           locale,
-        ) {
-    _textDirection = textDirection ?? ui.TextDirection.ltr;
-    _fontFamily = fontFamily;
-    _fontSize = fontSize;
-    _fontWeight = fontWeight;
-    _fontStyle = fontStyle;
-  }
+        ),
+        _textDirection = textDirection ?? ui.TextDirection.ltr,
+        _fontFamily = fontFamily,
+        _fontSize = fontSize,
+        _fontWeight = fontWeight,
+        _fontStyle = fontStyle;
 
-  SkParagraphStyle skParagraphStyle;
-  ui.TextDirection? _textDirection;
-  String? _fontFamily;
-  double? _fontSize;
-  ui.FontWeight? _fontWeight;
-  ui.FontStyle? _fontStyle;
+  final SkParagraphStyle skParagraphStyle;
+  final ui.TextDirection? _textDirection;
+  final String? _fontFamily;
+  final double? _fontSize;
+  final ui.FontWeight? _fontWeight;
+  final ui.FontStyle? _fontStyle;
 
   static SkTextStyleProperties toSkTextStyleProperties(
     String? fontFamily,
@@ -62,11 +62,7 @@ class CkParagraphStyle implements ui.ParagraphStyle {
       skTextStyle.fontSize = fontSize;
     }
 
-    if (fontFamily == null ||
-        !skiaFontCollection.registeredFamilies.contains(fontFamily)) {
-      fontFamily = 'Roboto';
-    }
-    skTextStyle.fontFamilies = [fontFamily];
+    skTextStyle.fontFamilies = _getEffectiveFontFamilies(fontFamily);
 
     return skTextStyle;
   }
@@ -74,20 +70,8 @@ class CkParagraphStyle implements ui.ParagraphStyle {
   static SkStrutStyleProperties toSkStrutStyleProperties(ui.StrutStyle value) {
     EngineStrutStyle style = value as EngineStrutStyle;
     final SkStrutStyleProperties skStrutStyle = SkStrutStyleProperties();
-    if (style._fontFamily != null) {
-      String fontFamily = style._fontFamily!;
-      if (!skiaFontCollection.registeredFamilies.contains(fontFamily)) {
-        fontFamily = 'Roboto';
-      }
-      final List<String> fontFamilies = <String>[fontFamily];
-      if (style._fontFamilyFallback != null) {
-        fontFamilies.addAll(style._fontFamilyFallback!);
-      }
-      skStrutStyle.fontFamilies = fontFamilies;
-    } else {
-      // If no strut font family is given, default to Roboto.
-      skStrutStyle.fontFamilies = ['Roboto'];
-    }
+    skStrutStyle.fontFamilies =
+        _getEffectiveFontFamilies(style._fontFamily, style._fontFamilyFallback);
 
     if (style._fontSize != null) {
       skStrutStyle.fontSize = style._fontSize;
@@ -175,29 +159,8 @@ class CkParagraphStyle implements ui.ParagraphStyle {
   }
 }
 
+@immutable
 class CkTextStyle implements ui.TextStyle {
-  SkTextStyle skTextStyle;
-
-  ui.Color? color;
-  ui.TextDecoration? decoration;
-  ui.Color? decorationColor;
-  ui.TextDecorationStyle? decorationStyle;
-  double? decorationThickness;
-  ui.FontWeight? fontWeight;
-  ui.FontStyle? fontStyle;
-  ui.TextBaseline? textBaseline;
-  String? fontFamily;
-  List<String>? fontFamilyFallback;
-  double? fontSize;
-  double? letterSpacing;
-  double? wordSpacing;
-  double? height;
-  ui.Locale? locale;
-  CkPaint? background;
-  CkPaint? foreground;
-  List<ui.Shadow>? shadows;
-  List<ui.FontFeature>? fontFeatures;
-
   factory CkTextStyle({
     ui.Color? color,
     ui.TextDecoration? decoration,
@@ -219,6 +182,127 @@ class CkTextStyle implements ui.TextStyle {
     List<ui.Shadow>? shadows,
     List<ui.FontFeature>? fontFeatures,
   }) {
+    return CkTextStyle._(
+      color,
+      decoration,
+      decorationColor,
+      decorationStyle,
+      decorationThickness,
+      fontWeight,
+      fontStyle,
+      textBaseline,
+      fontFamily,
+      fontFamilyFallback,
+      fontSize,
+      letterSpacing,
+      wordSpacing,
+      height,
+      locale,
+      background,
+      foreground,
+      shadows,
+      fontFeatures,
+    );
+  }
+
+  CkTextStyle._(
+    this.color,
+    this.decoration,
+    this.decorationColor,
+    this.decorationStyle,
+    this.decorationThickness,
+    this.fontWeight,
+    this.fontStyle,
+    this.textBaseline,
+    this.fontFamily,
+    this.fontFamilyFallback,
+    this.fontSize,
+    this.letterSpacing,
+    this.wordSpacing,
+    this.height,
+    this.locale,
+    this.background,
+    this.foreground,
+    this.shadows,
+    this.fontFeatures,
+  );
+
+  final ui.Color? color;
+  final ui.TextDecoration? decoration;
+  final ui.Color? decorationColor;
+  final ui.TextDecorationStyle? decorationStyle;
+  final double? decorationThickness;
+  final ui.FontWeight? fontWeight;
+  final ui.FontStyle? fontStyle;
+  final ui.TextBaseline? textBaseline;
+  final String? fontFamily;
+  final List<String>? fontFamilyFallback;
+  final double? fontSize;
+  final double? letterSpacing;
+  final double? wordSpacing;
+  final double? height;
+  final ui.Locale? locale;
+  final CkPaint? background;
+  final CkPaint? foreground;
+  final List<ui.Shadow>? shadows;
+  final List<ui.FontFeature>? fontFeatures;
+
+  /// Merges this text style with [other] and returns the new text style.
+  ///
+  /// The values in this text style are used unless [other] specifically
+  /// overrides it.
+  CkTextStyle mergeWith(CkTextStyle other) {
+    return CkTextStyle(
+      color: other.color ?? color,
+      decoration: other.decoration ?? decoration,
+      decorationColor: other.decorationColor ?? decorationColor,
+      decorationStyle: other.decorationStyle ?? decorationStyle,
+      decorationThickness: other.decorationThickness ?? decorationThickness,
+      fontWeight: other.fontWeight ?? fontWeight,
+      fontStyle: other.fontStyle ?? fontStyle,
+      textBaseline: other.textBaseline ?? textBaseline,
+      fontFamily: other.fontFamily ?? fontFamily,
+      fontFamilyFallback: other.fontFamilyFallback ?? fontFamilyFallback,
+      fontSize: other.fontSize ?? fontSize,
+      letterSpacing: other.letterSpacing ?? letterSpacing,
+      wordSpacing: other.wordSpacing ?? wordSpacing,
+      height: other.height ?? height,
+      locale: other.locale ?? locale,
+      background: other.background ?? background,
+      foreground: other.foreground ?? foreground,
+      shadows: other.shadows ?? shadows,
+      fontFeatures: other.fontFeatures ?? fontFeatures,
+    );
+  }
+
+  /// Lazy-initialized list of font families sent to Skia.
+  late final List<String> effectiveFontFamilies =
+      _getEffectiveFontFamilies(fontFamily, fontFamilyFallback);
+
+  /// Lazy-initialized Skia style used to pass the style to Skia.
+  ///
+  /// This is lazy because not every style ends up being passed to Skia, so the
+  /// conversion would be wasteful.
+  late final SkTextStyle skTextStyle = () {
+    // Write field values to locals so null checks promote types to non-null.
+    final ui.Color? color = this.color;
+    final ui.TextDecoration? decoration = this.decoration;
+    final ui.Color? decorationColor = this.decorationColor;
+    final ui.TextDecorationStyle? decorationStyle = this.decorationStyle;
+    final double? decorationThickness = this.decorationThickness;
+    final ui.FontWeight? fontWeight = this.fontWeight;
+    final ui.FontStyle? fontStyle = this.fontStyle;
+    final ui.TextBaseline? textBaseline = this.textBaseline;
+    final double? fontSize = this.fontSize;
+    final double? letterSpacing = this.letterSpacing;
+    final double? wordSpacing = this.wordSpacing;
+    final double? height = this.height;
+    final ui.Locale? locale = this.locale;
+    final CkPaint? background = this.background;
+    final CkPaint? foreground = this.foreground;
+    final List<ui.Shadow>? shadows = this.shadows;
+    final List<ui.FontFeature>? fontFeatures = this.fontFeatures;
+
     final SkTextStyleProperties properties = SkTextStyleProperties();
 
     if (background != null) {
@@ -279,18 +363,7 @@ class CkTextStyle implements ui.TextStyle {
       properties.locale = locale.toLanguageTag();
     }
 
-    if (fontFamily == null ||
-        !skiaFontCollection.registeredFamilies.contains(fontFamily)) {
-      fontFamily = 'Roboto';
-    }
-
-    List<String> fontFamilies = <String>[fontFamily];
-    if (fontFamilyFallback != null &&
-        !fontFamilyFallback.every((font) => fontFamily == font)) {
-      fontFamilies.addAll(fontFamilyFallback);
-    }
-
-    properties.fontFamilies = fontFamilies;
+    properties.fontFamilies = effectiveFontFamilies;
 
     if (fontWeight != null || fontStyle != null) {
       properties.fontStyle = toSkFontStyle(fontWeight, fontStyle);
@@ -313,90 +386,18 @@ class CkTextStyle implements ui.TextStyle {
     }
 
     if (fontFeatures != null) {
-      List<SkFontFeature> ckFontFeatures = <SkFontFeature>[];
+      List<SkFontFeature> skFontFeatures = <SkFontFeature>[];
       for (ui.FontFeature fontFeature in fontFeatures) {
-        SkFontFeature ckFontFeature = SkFontFeature();
-        ckFontFeature.name = fontFeature.feature;
-        ckFontFeature.value = fontFeature.value;
-        ckFontFeatures.add(ckFontFeature);
+        SkFontFeature skFontFeature = SkFontFeature();
+        skFontFeature.name = fontFeature.feature;
+        skFontFeature.value = fontFeature.value;
+        skFontFeatures.add(skFontFeature);
       }
-      properties.fontFeatures = ckFontFeatures;
+      properties.fontFeatures = skFontFeatures;
     }
 
-    return CkTextStyle._(
-      canvasKit.TextStyle(properties),
-      color,
-      decoration,
-      decorationColor,
-      decorationStyle,
-      decorationThickness,
-      fontWeight,
-      fontStyle,
-      textBaseline,
-      fontFamily,
-      fontFamilyFallback,
-      fontSize,
-      letterSpacing,
-      wordSpacing,
-      height,
-      locale,
-      background,
-      foreground,
-      shadows,
-      fontFeatures,
-    );
-  }
-
-  /// Merges this text style with [other] and returns the new text style.
-  ///
-  /// The values in this text style are used unless [other] specifically
-  /// overrides it.
-  CkTextStyle mergeWith(CkTextStyle other) {
-    return CkTextStyle(
-      color: other.color ?? color,
-      decoration: other.decoration ?? decoration,
-      decorationColor: other.decorationColor ?? decorationColor,
-      decorationStyle: other.decorationStyle ?? decorationStyle,
-      decorationThickness: other.decorationThickness ?? decorationThickness,
-      fontWeight: other.fontWeight ?? fontWeight,
-      fontStyle: other.fontStyle ?? fontStyle,
-      textBaseline: other.textBaseline ?? textBaseline,
-      fontFamily: other.fontFamily ?? fontFamily,
-      fontFamilyFallback: other.fontFamilyFallback ?? fontFamilyFallback,
-      fontSize: other.fontSize ?? fontSize,
-      letterSpacing: other.letterSpacing ?? letterSpacing,
-      wordSpacing: other.wordSpacing ?? wordSpacing,
-      height: other.height ?? height,
-      locale: other.locale ?? locale,
-      background: other.background ?? background,
-      foreground: other.foreground ?? foreground,
-      shadows: other.shadows ?? shadows,
-      fontFeatures: other.fontFeatures ?? fontFeatures,
-    );
-  }
-
-  CkTextStyle._(
-    this.skTextStyle,
-    this.color,
-    this.decoration,
-    this.decorationColor,
-    this.decorationStyle,
-    this.decorationThickness,
-    this.fontWeight,
-    this.fontStyle,
-    this.textBaseline,
-    this.fontFamily,
-    this.fontFamilyFallback,
-    this.fontSize,
-    this.letterSpacing,
-    this.wordSpacing,
-    this.height,
-    this.locale,
-    this.background,
-    this.foreground,
-    this.shadows,
-    this.fontFeatures,
-  );
+    return canvasKit.TextStyle(properties);
+  }();
 }
 
 SkFontStyle toSkFontStyle(ui.FontWeight? fontWeight, ui.FontStyle? fontStyle) {
@@ -564,7 +565,6 @@ class CkParagraph extends ManagedSkiaObject<SkParagraph>
 
   @override
   void layout(ui.ParagraphConstraints constraints) {
-    assert(constraints.width != null); // ignore: unnecessary_null_comparison
     _lastLayoutConstraints = constraints;
 
     // TODO(het): CanvasKit throws an exception when laid out with
@@ -609,7 +609,9 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
         _paragraphBuilder = canvasKit.ParagraphBuilder.MakeFromFontProvider(
           style.skParagraphStyle,
           skiaFontCollection.fontProvider,
-        );
+        ) {
+    _styleStack.add(_style.getTextStyle());
+  }
 
   @override
   void addPlaceholder(
@@ -629,7 +631,7 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
 
     _placeholderCount++;
     _placeholderScales.add(scale);
-    SkPlaceholderStyleProperties placeholderStyle = toSkPlaceholderStyle(
+    final _CkParagraphPlaceholder placeholderStyle = toSkPlaceholderStyle(
       width * scale,
       height * scale,
       alignment,
@@ -639,29 +641,91 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
     _addPlaceholder(placeholderStyle);
   }
 
-  void _addPlaceholder(SkPlaceholderStyleProperties placeholderStyle) {
+  void _addPlaceholder(_CkParagraphPlaceholder placeholderStyle) {
     _commands.add(_ParagraphCommand.addPlaceholder(placeholderStyle));
-    _paragraphBuilder.addPlaceholder(placeholderStyle);
+    _paragraphBuilder.addPlaceholder(
+      placeholderStyle.width,
+      placeholderStyle.height,
+      placeholderStyle.alignment,
+      placeholderStyle.baseline,
+      placeholderStyle.offset,
+    );
   }
 
-  static SkPlaceholderStyleProperties toSkPlaceholderStyle(
+  static _CkParagraphPlaceholder toSkPlaceholderStyle(
     double width,
     double height,
     ui.PlaceholderAlignment alignment,
     double baselineOffset,
     ui.TextBaseline baseline,
   ) {
-    final properties = SkPlaceholderStyleProperties();
-    properties.width = width;
-    properties.height = height;
-    properties.alignment = toSkPlaceholderAlignment(alignment);
-    properties.offset = baselineOffset;
-    properties.baseline = toSkTextBaseline(baseline);
+    final properties = _CkParagraphPlaceholder(
+      width: width,
+      height: height,
+      alignment: toSkPlaceholderAlignment(alignment),
+      offset: baselineOffset,
+      baseline: toSkTextBaseline(baseline),
+    );
     return properties;
+  }
+
+  /// Determines if the given [text] contains any code points which are not
+  /// supported by the current set of fonts.
+  void _ensureFontsSupportText(String text) {
+    // TODO(hterkelsen): Make this faster for the common case where the text
+    // is supported by the given fonts.
+
+    // If the text is ASCII, then skip this check.
+    bool isAscii = true;
+    for (int i = 0; i < text.length; i++) {
+      if (text.codeUnitAt(i) >= 160) {
+        isAscii = false;
+        break;
+      }
+    }
+    if (isAscii) {
+      return;
+    }
+    CkTextStyle style = _peekStyle();
+    List<String> fontFamilies = style.effectiveFontFamilies;
+    List<SkTypeface> typefaces = <SkTypeface>[];
+    for (var font in fontFamilies) {
+      List<SkTypeface>? typefacesForFamily =
+          skiaFontCollection.familyToTypefaceMap[font];
+      if (typefacesForFamily != null) {
+        typefaces.addAll(typefacesForFamily);
+      }
+    }
+    List<int> codeUnits = text.runes.toList();
+    List<bool> codeUnitsSupported = List<bool>.filled(codeUnits.length, false);
+    for (SkTypeface typeface in typefaces) {
+      SkFont font = SkFont(typeface);
+      Uint8List glyphs = font.getGlyphIDs(text);
+      assert(glyphs.length == codeUnitsSupported.length);
+      for (int i = 0; i < glyphs.length; i++) {
+        codeUnitsSupported[i] |= glyphs[i] != 0 || _isControlCode(codeUnits[i]);
+      }
+    }
+
+    if (codeUnitsSupported.any((x) => !x)) {
+      List<int> missingCodeUnits = <int>[];
+      for (int i = 0; i < codeUnitsSupported.length; i++) {
+        if (!codeUnitsSupported[i]) {
+          missingCodeUnits.add(codeUnits[i]);
+        }
+      }
+      _findFontsForMissingCodeunits(missingCodeUnits);
+    }
+  }
+
+  /// Returns [true] if [codepoint] is a Unicode control code.
+  bool _isControlCode(int codepoint) {
+    return codepoint < 32 || (codepoint > 127 && codepoint < 160);
   }
 
   @override
   void addText(String text) {
+    _ensureFontsSupportText(text);
     _commands.add(_ParagraphCommand.addText(text));
     _paragraphBuilder.addText(text);
   }
@@ -687,13 +751,25 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
 
   @override
   void pop() {
+    if (_styleStack.length <= 1) {
+      // The top-level text style is paragraph-level. We don't pop it off.
+      if (assertionsEnabled) {
+        html.window.console.warn(
+          'Cannot pop text style in ParagraphBuilder. '
+          'Already popped all text styles from the style stack.',
+        );
+      }
+      return;
+    }
     _commands.add(const _ParagraphCommand.pop());
     _styleStack.removeLast();
     _paragraphBuilder.pop();
   }
 
-  CkTextStyle _peekStyle() =>
-      _styleStack.isEmpty ? _style.getTextStyle() : _styleStack.last;
+  CkTextStyle _peekStyle() {
+    assert(_styleStack.isNotEmpty);
+    return _styleStack.last;
+  }
 
   // Used as the paint for background or foreground in the text style when
   // the other one is not specified. CanvasKit either both background and
@@ -702,7 +778,9 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
   //
   // This object is never deleted. It is effectively a static global constant.
   // Therefore it doesn't need to be wrapped in CkPaint.
-  static final SkPaint _defaultTextStylePaint = SkPaint();
+  static final SkPaint _defaultTextForeground = SkPaint();
+  static final SkPaint _defaultTextBackground = SkPaint()
+    ..setColorInt(0x00000000);
 
   @override
   void pushStyle(ui.TextStyle style) {
@@ -712,8 +790,16 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
     _styleStack.add(skStyle);
     _commands.add(_ParagraphCommand.pushStyle(ckStyle));
     if (skStyle.foreground != null || skStyle.background != null) {
-      final SkPaint foreground = skStyle.foreground?.skiaObject ?? _defaultTextStylePaint;
-      final SkPaint background = skStyle.background?.skiaObject ?? _defaultTextStylePaint;
+      SkPaint? foreground = skStyle.foreground?.skiaObject;
+      if (foreground == null) {
+        _defaultTextForeground.setColorInt(
+          skStyle.color?.value ?? 0xFF000000,
+        );
+        foreground = _defaultTextForeground;
+      }
+
+      final SkPaint background =
+          skStyle.background?.skiaObject ?? _defaultTextBackground;
       _paragraphBuilder.pushPaintStyle(
           skStyle.skTextStyle, foreground, background);
     } else {
@@ -722,11 +808,27 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
   }
 }
 
+class _CkParagraphPlaceholder {
+  _CkParagraphPlaceholder({
+    required this.width,
+    required this.height,
+    required this.alignment,
+    required this.baseline,
+    required this.offset,
+  });
+
+  final double width;
+  final double height;
+  final SkPlaceholderAlignment alignment;
+  final SkTextBaseline baseline;
+  final double offset;
+}
+
 class _ParagraphCommand {
   final _ParagraphCommandType type;
   final String? text;
   final CkTextStyle? style;
-  final SkPlaceholderStyleProperties? placeholderStyle;
+  final _CkParagraphPlaceholder? placeholderStyle;
 
   const _ParagraphCommand._(
     this.type,
@@ -745,7 +847,7 @@ class _ParagraphCommand {
       : this._(_ParagraphCommandType.pushStyle, null, style, null);
 
   const _ParagraphCommand.addPlaceholder(
-      SkPlaceholderStyleProperties placeholderStyle)
+      _CkParagraphPlaceholder placeholderStyle)
       : this._(
             _ParagraphCommandType.addPlaceholder, null, null, placeholderStyle);
 }
@@ -755,4 +857,18 @@ enum _ParagraphCommandType {
   pop,
   pushStyle,
   addPlaceholder,
+}
+
+List<String> _getEffectiveFontFamilies(String? fontFamily,
+    [List<String>? fontFamilyFallback]) {
+  List<String> fontFamilies = <String>[];
+  if (fontFamily != null) {
+    fontFamilies.add(fontFamily);
+  }
+  if (fontFamilyFallback != null &&
+      !fontFamilyFallback.every((font) => fontFamily == font)) {
+    fontFamilies.addAll(fontFamilyFallback);
+  }
+  fontFamilies.addAll(skiaFontCollection.globalFontFallbacks);
+  return fontFamilies;
 }
