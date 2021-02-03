@@ -547,7 +547,11 @@ class BitmapCanvas extends EngineCanvas {
       _drawElement(svgElm, ui.Offset(0, 0), paint);
     } else {
       _setUpPaint(paint, paint.shader != null ? path.getBounds() : null);
-      _canvasPool.drawPath(path, paint.style);
+      if (paint.style == null && paint.strokeWidth != null) {
+        _canvasPool.drawPath(path, ui.PaintingStyle.stroke);
+      } else {
+        _canvasPool.drawPath(path, paint.style);
+      }
       _tearDownPaint();
     }
   }

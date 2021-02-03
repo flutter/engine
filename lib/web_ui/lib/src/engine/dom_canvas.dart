@@ -253,7 +253,9 @@ html.Element _pathToSvgElement(SurfacePath path, SurfacePaintData paint,
       '<svg viewBox="0 0 $width $height" width="${width}px" height="${height}px">');
   sb.write('<path ');
   final ui.Color color = paint.color ?? const ui.Color(0xFF000000);
-  if (paint.style == ui.PaintingStyle.stroke) {
+  if (paint.style == ui.PaintingStyle.stroke ||
+      (paint.style != ui.PaintingStyle.fill &&
+      paint.strokeWidth != 0)) {
     sb.write('stroke="${colorToCssString(color)}" ');
     sb.write('stroke-width="${paint.strokeWidth}" ');
     sb.write('fill="none" ');
