@@ -569,7 +569,7 @@ void ParagraphTxt::ComputeStrut(StrutMetrics* strut, SkFont& font) {
       const double available_height =
           paragraph_style_.strut_text_height_behavior &
                   TextHeightBehavior::kHalfLeading
-              ? strut_height - metrics_height
+              ? metrics_height
               : strut_height;
 
       strut->ascent =
@@ -1258,7 +1258,7 @@ void ParagraphTxt::UpdateLineMetrics(const SkFontMetrics& metrics,
     // though it breaks with what is done by any of the platforms above.
     const bool shouldNormalizeFont =
         style.has_height_override &&
-        (text_height_behavior & TextHeightBehavior::kHalfLeading);
+        !(text_height_behavior & TextHeightBehavior::kHalfLeading);
     const double font_height =
         shouldNormalizeFont ? style.font_size : metrics_font_height;
 
