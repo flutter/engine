@@ -37,6 +37,9 @@ class Win32FlutterWindow : public Win32Window, public WindowBindingHandler {
   void OnResize(unsigned int width, unsigned int height) override;
 
   // |Win32Window|
+  void OnShow() override;
+
+  // |Win32Window|
   void OnPointerMove(double x, double y) override;
 
   // |Win32Window|

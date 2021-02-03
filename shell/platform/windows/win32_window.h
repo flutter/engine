@@ -73,6 +73,9 @@ class Win32Window {
   // Called when a resize occurs.
   virtual void OnResize(UINT width, UINT height) = 0;
 
+  // Called when window goes from hidden to shown
+  virtual void OnShow() = 0;
+
   // Called when the pointer moves within the
   // window bounds.
   virtual void OnPointerMove(double x, double y) = 0;

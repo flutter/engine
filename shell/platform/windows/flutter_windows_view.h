@@ -81,6 +81,9 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   void OnWindowSizeChanged(size_t width, size_t height) override;
 
   // |WindowBindingHandlerDelegate|
+  void OnShow() override;
+
+  // |WindowBindingHandlerDelegate|
   void OnPointerMove(double x, double y) override;
 
   // |WindowBindingHandlerDelegate|

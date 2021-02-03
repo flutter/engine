@@ -33,6 +33,7 @@ class MockWin32Window : public Win32Window {
 
   MOCK_METHOD1(OnDpiScale, void(unsigned int));
   MOCK_METHOD2(OnResize, void(unsigned int, unsigned int));
+  MOCK_METHOD0(OnShow, void());
   MOCK_METHOD2(OnPointerMove, void(double, double));
   MOCK_METHOD3(OnPointerDown, void(double, double, UINT));
   MOCK_METHOD3(OnPointerUp, void(double, double, UINT));

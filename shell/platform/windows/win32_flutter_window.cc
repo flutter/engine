@@ -130,6 +130,12 @@ void Win32FlutterWindow::OnResize(unsigned int width, unsigned int height) {
   }
 }
 
+void Win32FlutterWindow::OnShow() {
+  if (binding_handler_delegate_ != nullptr) {
+    binding_handler_delegate_->OnShow();
+  }
+}
+
 void Win32FlutterWindow::OnPointerMove(double x, double y) {
   binding_handler_delegate_->OnPointerMove(x, y);
 }

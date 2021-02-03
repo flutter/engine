@@ -119,6 +119,14 @@ void FlutterWindowsView::OnWindowSizeChanged(size_t width, size_t height) {
   }
 }
 
+void FlutterWindowsView::OnShow() {
+  if (resize_status_ == ResizeState::kDone) {
+    // Request new frame
+    SendWindowMetrics(resize_target_width_, resize_target_height_,
+                      binding_handler_->GetDpiScale());
+  }
+}
+
 void FlutterWindowsView::OnPointerMove(double x, double y) {
   SendPointerMove(x, y);
 }
