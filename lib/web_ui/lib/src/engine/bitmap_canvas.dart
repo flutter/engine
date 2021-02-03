@@ -544,6 +544,7 @@ class BitmapCanvas extends EngineCanvas {
             ..transformOrigin = '0 0 0';
         }
       }
+      _applyFilter(svgElm, paint);
       _drawElement(svgElm, ui.Offset(0, 0), paint);
     } else {
       _setUpPaint(paint, paint.shader != null ? path.getBounds() : null);
@@ -553,6 +554,22 @@ class BitmapCanvas extends EngineCanvas {
         _canvasPool.drawPath(path, paint.style);
       }
       _tearDownPaint();
+    }
+  }
+
+  void _applyFilter(html.Element element, SurfacePaintData paint) {
+    if (paint.maskFilter != null) {
+      final bool isStroke = paint.style == ui.PaintingStyle.stroke;
+      String cssColor =
+          paint.color == null ? '#000000' : colorToCssString(paint.color)!;// ignore: unnecessary_null_comparison
+      final double sigma = paint.maskFilter!.webOnlySigma;
+      if (browserEngine == BrowserEngine.webkit && !isStroke) {
+        // A bug in webkit leaves artifacts when this element is animated
+        // with filter: blur, we use boxShadow instead.
+        element.style.boxShadow = '0px 0px ${sigma * 2.0}px $cssColor';
+      } else {
+        element.style.filter = 'blur(${sigma}px)';
+      }
     }
   }
 

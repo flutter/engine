@@ -177,7 +177,6 @@ void testMain() async {
 
   /// Regression test for https://github.com/flutter/flutter/issues/74416
   test('render stroke', () async {
-    const double w = 0.7;
     final Path path = Path();
     path.moveTo(20, 20);
     path.lineTo(200, 200);
