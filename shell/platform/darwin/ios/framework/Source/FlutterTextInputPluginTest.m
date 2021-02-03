@@ -20,6 +20,30 @@ FLUTTER_ASSERT_ARC
 - (void)setMarkedRect:(CGRect)markedRect;
 - (void)updateEditingState;
 - (BOOL)isVisibleToAutofill;
+
+@end
+
+@interface FlutterTextInputViewSpy : FlutterTextInputView
+@property(nonatomic, assign) UIAccessibilityNotifications receivedNotification;
+@property(nonatomic, assign) id receivedNotificationTarget;
+@property(nonatomic, assign) BOOL isAccessibilityFocused;
+
+- (void)postAccessibilityNotification:(UIAccessibilityNotifications)notification target:(id)target;
+
+@end
+
+@implementation FlutterTextInputViewSpy {
+}
+
+- (void)postAccessibilityNotification:(UIAccessibilityNotifications)notification target:(id)target {
+  self.receivedNotification = notification;
+  self.receivedNotificationTarget = target;
+}
+
+- (BOOL)accessibilityElementIsFocused {
+  return _isAccessibilityFocused;
+}
+
 @end
 
 @interface FlutterSecureTextInputView : FlutterTextInputView
@@ -777,6 +801,21 @@ FLUTTER_ASSERT_ARC
 
   // The input view should be hidden.
   XCTAssertEqual([inputFields count], 0u);
+}
+
+- (void)testFlutterTextInputViewDirectFocusToBackingTextInput {
+  FlutterTextInputViewSpy* inputView = [[FlutterTextInputViewSpy alloc] init];
+  inputView.textInputDelegate = engine;
+  UIView* container = [[UIView alloc] init];
+  UIAccessibilityElement* backing =
+      [[UIAccessibilityElement alloc] initWithAccessibilityContainer:container];
+  inputView.backingTextInputAccessibilityObject = backing;
+  // Simulate accessibility focus.
+  inputView.isAccessibilityFocused = YES;
+  [inputView accessibilityElementDidBecomeFocused];
+
+  XCTAssertEqual(inputView.receivedNotification, UIAccessibilityScreenChangedNotification);
+  XCTAssertEqual(inputView.receivedNotificationTarget, backing);
 }
 
 @end

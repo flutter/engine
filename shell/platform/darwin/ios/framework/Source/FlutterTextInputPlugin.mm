@@ -14,7 +14,7 @@ static const char _kTextAffinityDownstream[] = "TextAffinity.downstream";
 static const char _kTextAffinityUpstream[] = "TextAffinity.upstream";
 // A delay before enabling the accessibility of FlutterTextInputView after
 // it is activated.
-static constexpr double _kUITextInputAccessibilityEnablingDelaySeconds = 0.5;
+static constexpr double kUITextInputAccessibilityEnablingDelaySeconds = 0.5;
 
 // The "canonical" invalid CGRect, similar to CGRectNull, used to
 // indicate a CGRect involved in firstRectForRange calculation is
@@ -440,8 +440,6 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   CGRect _cachedFirstRect;
 }
 
-static UIAccessibilityElement* _backingTextInputAccessibilityObject;
-
 @synthesize tokenizer = _tokenizer;
 
 - (instancetype)init {
@@ -539,14 +537,6 @@ static UIAccessibilityElement* _backingTextInputAccessibilityObject;
   [_tokenizer release];
   [_autofillId release];
   [super dealloc];
-}
-
-+ (UIAccessibilityElement*)backingTextInputAccessibilityObject {
-  return _backingTextInputAccessibilityObject;
-}
-
-+ (void)setBackingTextInputAccessibilityObject:(UIAccessibilityElement*)element {
-  _backingTextInputAccessibilityObject = element;
 }
 
 - (void)setTextInputClient:(int)client {
@@ -1122,15 +1112,18 @@ static UIAccessibilityElement* _backingTextInputAccessibilityObject;
     [self replaceRange:_selectedTextRange withText:@""];
 }
 
+- (void)postAccessibilityNotification:(UIAccessibilityNotifications)notification target:(id)target {
+  UIAccessibilityPostNotification(notification, target);
+}
+
 - (void)accessibilityElementDidBecomeFocused {
   if ([self accessibilityElementIsFocused]) {
     // For most of the cases, this flutter text input view should never
     // receive the focus. If we do receive the focus, we make the best effort
     // to send the focus back to the real text field.
-    __strong UIAccessibilityElement* textInput =
-        FlutterTextInputView.backingTextInputAccessibilityObject;
-    FML_DCHECK(textInput);
-    UIAccessibilityPostNotification(UIAccessibilityScreenChangedNotification, textInput);
+    FML_DCHECK(_backingTextInputAccessibilityObject);
+    [self postAccessibilityNotification:UIAccessibilityScreenChangedNotification
+                                 target:_backingTextInputAccessibilityObject];
   }
 }
 
@@ -1182,6 +1175,8 @@ static UIAccessibilityElement* _backingTextInputAccessibilityObject;
 
 @implementation FlutterTextInputPlugin
 
+NSTimer* _enableFlutterTextInputViewAccessibilityTimer;
+
 @synthesize textInputDelegate = _textInputDelegate;
 
 - (instancetype)init {
@@ -1203,8 +1198,15 @@ static UIAccessibilityElement* _backingTextInputAccessibilityObject;
   [_reusableInputView release];
   [_inputHider release];
   [_autofillContext release];
-
+  [self removeEnableFlutterTextInputViewAccessibilityTimer];
   [super dealloc];
+}
+
+- (void)removeEnableFlutterTextInputViewAccessibilityTimer {
+  if (_enableFlutterTextInputViewAccessibilityTimer) {
+    [_enableFlutterTextInputViewAccessibilityTimer invalidate];
+    _enableFlutterTextInputViewAccessibilityTimer = nil;
+  }
 }
 
 - (UIView<UITextInput>*)textInputView {
@@ -1267,11 +1269,14 @@ static UIAccessibilityElement* _backingTextInputAccessibilityObject;
   // with a semantics update sent to the engine. The voiceover will focus
   // the newly attached active view while performing accessibility update.
   // This results in accessibility focus stuck at the FlutterTextInputView.
-  [NSTimer scheduledTimerWithTimeInterval:_kUITextInputAccessibilityEnablingDelaySeconds
-                                   target:self
-                                 selector:@selector(enableActiveViewAccessibility:)
-                                 userInfo:nil
-                                  repeats:NO];
+  if (!_enableFlutterTextInputViewAccessibilityTimer) {
+    _enableFlutterTextInputViewAccessibilityTimer =
+        [NSTimer scheduledTimerWithTimeInterval:kUITextInputAccessibilityEnablingDelaySeconds
+                                         target:self
+                                       selector:@selector(enableActiveViewAccessibility:)
+                                       userInfo:nil
+                                        repeats:NO];
+  }
   [_activeView becomeFirstResponder];
 }
 
@@ -1279,9 +1284,11 @@ static UIAccessibilityElement* _backingTextInputAccessibilityObject;
   if (_activeView.isFirstResponder) {
     _activeView.accessibilityEnabled = YES;
   }
+  _enableFlutterTextInputViewAccessibilityTimer = nil;
 }
 
 - (void)hideTextInput {
+  [self removeEnableFlutterTextInputViewAccessibilityTimer];
   _activeView.accessibilityEnabled = NO;
   [_activeView resignFirstResponder];
   [_activeView removeFromSuperview];
