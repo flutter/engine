@@ -19,8 +19,7 @@ config("relative_flutter_glfw_headers") {
 source_set("flutter_glfw_headers") {
   public = _public_headers
 
-  public_deps =
-      [ "//flutter/shell/platform/common:common_cpp_library_headers" ]
+  public_deps = [ "//flutter/shell/platform/common:common_cpp_library_headers" ]
 
   configs +=
       [ "//flutter/shell/platform/common:desktop_library_implementation" ]
