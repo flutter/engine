@@ -71,6 +71,21 @@ static void send_motion_event(FlGestureHelper* self,
   gdk_event_free(new_event);
 }
 
+static void send_scroll_event(FlGestureHelper* self,
+                              GdkEvent* event,
+                              GtkWidget* widget) {
+  GdkWindow* window = gtk_widget_get_window(widget);
+  gint origin_x, origin_y;
+  gdk_window_get_origin(window, &origin_x, &origin_y);
+
+  GdkEvent* new_event = gdk_event_copy(event);
+  GdkEventScroll* scroll = &new_event->scroll;
+  scroll->x = event->scroll.x_root - origin_x;
+  scroll->y = event->scroll.y_root - origin_y;
+  gtk_widget_event(widget, new_event);
+  gdk_event_free(new_event);
+}
+
 static void clear_state(FlGestureHelper* self) {
   g_clear_object(&self->grabbed_widget);
   g_list_free_full(self->event_list, free_event);
@@ -109,6 +124,13 @@ void fl_gesture_helper_button_motion(FlGestureHelper* self, GdkEvent* event) {
       // Or mouse is hovering.
       send_motion_event(self, event, self->hover_widget);
     }
+  }
+}
+
+void fl_gesture_helper_scroll(FlGestureHelper* self, GdkEvent* event) {
+  if (self->hover_widget) {
+    // If mouse is hovering.
+    send_scroll_event(self, event, self->hover_widget);
   }
 }
 

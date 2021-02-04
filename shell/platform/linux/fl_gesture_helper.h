@@ -64,6 +64,15 @@ void fl_gesture_helper_button_motion(FlGestureHelper* gesture_helper,
                                      GdkEvent* event);
 
 /**
+ * fl_gesture_helper_scroll:
+ * @gesture_helper: an #FlGestureHelper.
+ * @event: a #GdkEventScroll event.
+ *
+ * Redistributes a #GdkEventScroll event to embedded platform views.
+ */
+void fl_gesture_helper_scroll(FlGestureHelper* gesture_helper, GdkEvent* event);
+
+/**
  * fl_gesture_helper_accept_gesture:
  * @gesture_helper: an #FlGestureHelper.
  * @widget: the widget to distribute current gesture to.

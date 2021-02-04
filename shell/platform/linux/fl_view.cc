@@ -500,6 +500,9 @@ static gboolean event_box_scroll_event(GtkWidget* widget,
     return FALSE;
   }
 
+  fl_gesture_helper_scroll(view->gesture_helper,
+                           reinterpret_cast<GdkEvent*>(event));
+
   // The multiplier is taken from the Chromium source
   // (ui/events/x/events_x_utils.cc).
   const int kScrollOffsetMultiplier = 53;
