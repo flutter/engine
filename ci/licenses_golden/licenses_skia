@@ -1,4 +1,4 @@
-Signature: b6a446e8f8e1119206d05636be76660a
+Signature: eecc32190c617a54572f7a993f53c19c
 
 UNUSED LICENSES:
 
@@ -2709,14 +2709,12 @@ FILE: ../../../third_party/skia/gm/pathopsinverse.cpp
 FILE: ../../../third_party/skia/gm/perlinnoise.cpp
 FILE: ../../../third_party/skia/gm/pictureimagefilter.cpp
 FILE: ../../../third_party/skia/gm/polygons.cpp
-FILE: ../../../third_party/skia/gm/rects.cpp
 FILE: ../../../third_party/skia/gm/resizeimagefilter.cpp
 FILE: ../../../third_party/skia/gm/roundrects.cpp
 FILE: ../../../third_party/skia/gm/shallowgradient.cpp
 FILE: ../../../third_party/skia/gm/skbug1719.cpp
 FILE: ../../../third_party/skia/gm/spritebitmap.cpp
 FILE: ../../../third_party/skia/gm/stringart.cpp
-FILE: ../../../third_party/skia/gm/textbloblooper.cpp
 FILE: ../../../third_party/skia/gm/thinrects.cpp
 FILE: ../../../third_party/skia/gm/thinstrokedrects.cpp
 FILE: ../../../third_party/skia/gm/tileimagefilter.cpp
@@ -5940,11 +5938,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: skia
-ORIGIN: ../../../third_party/skia/gm/circles.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/fuzz/oss_fuzz/FuzzSkParagraph.cpp + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/skia/gm/circles.cpp
+FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzSkParagraph.cpp
 ----------------------------------------------------------------------------------------------------
-Copyright 2012 Intel Inc.
+Copyright 2021 Google, LLC
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
