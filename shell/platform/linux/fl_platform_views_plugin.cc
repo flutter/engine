@@ -25,6 +25,7 @@ struct _FlPlatformViewsPlugin {
 
   FlMethodChannel* channel;
 
+  // gesture_helper is not owned here.
   FlGestureHelper* gesture_helper;
 
   GHashTable* factories;  // string -> FlPlatformViewFactory*
@@ -40,16 +41,6 @@ static void send_response(FlMethodCall* method_call,
   g_autoptr(GError) error = nullptr;
   if (!fl_method_call_respond(method_call, response, &error)) {
     g_warning("Failed to send method call response: %s", error->message);
-  }
-}
-
-static FlPlatformView* get_platform_view(FlPlatformViewsPlugin* self,
-                                         int64_t id) {
-  gpointer p = g_hash_table_lookup(self->platform_views, GINT_TO_POINTER(id));
-  if (p && FL_IS_PLATFORM_VIEW(p)) {
-    return FL_PLATFORM_VIEW(p);
-  } else {
-    return nullptr;
   }
 }
 
@@ -78,18 +69,19 @@ static FlMethodResponse* platform_views_create(FlPlatformViewsPlugin* self,
 
   FlValue* params_value = fl_value_lookup_string(args, "params");
 
-  FlPlatformView* platform_view = get_platform_view(self, id);
+  FlPlatformView* platform_view =
+      fl_platform_views_plugin_get_platform_view(self, id);
   if (platform_view) {
     return FL_METHOD_RESPONSE(fl_method_error_response_new(
         kBadArgumentsError, "Platform view id already exists", nullptr));
   }
 
-  gpointer factory_pointer = g_hash_table_lookup(self->factories, view_type);
-  if (!factory_pointer) {
+  FlPlatformViewFactory* factory =
+      FL_PLATFORM_VIEW_FACTORY(g_hash_table_lookup(self->factories, view_type));
+  if (!factory) {
     return FL_METHOD_RESPONSE(fl_method_error_response_new(
         kBadArgumentsError, "View type does not exist", nullptr));
   }
-  FlPlatformViewFactory* factory = FL_PLATFORM_VIEW_FACTORY(factory_pointer);
 
   g_autoptr(FlMessageCodec) codec =
       fl_platform_view_factory_get_create_arguments_codec(factory);
@@ -121,9 +113,10 @@ static FlMethodResponse* platform_views_create(FlPlatformViewsPlugin* self,
 static FlMethodResponse* platform_views_accept_gesture(
     FlPlatformViewsPlugin* self,
     FlValue* args) {
-  if (fl_value_get_type(args) != FL_VALUE_TYPE_LIST) {
+  if (fl_value_get_type(args) != FL_VALUE_TYPE_LIST ||
+      fl_value_get_length(args) != 2) {
     return FL_METHOD_RESPONSE(fl_method_error_response_new(
-        kBadArgumentsError, "Argument map missing or malformed", nullptr));
+        kBadArgumentsError, "Argument list missing or malformed", nullptr));
   }
 
   int64_t view_id = fl_value_get_int(fl_value_get_list_value(args, 0));
@@ -145,7 +138,8 @@ static FlMethodResponse* platform_views_accept_gesture(
 static FlMethodResponse* platform_views_reject_gesture(
     FlPlatformViewsPlugin* self,
     FlValue* args) {
-  if (fl_value_get_type(args) != FL_VALUE_TYPE_LIST) {
+  if (fl_value_get_type(args) != FL_VALUE_TYPE_LIST ||
+      fl_value_get_length(args) != 1) {
     return FL_METHOD_RESPONSE(fl_method_error_response_new(
         kBadArgumentsError, "Argument map missing or malformed", nullptr));
   }
@@ -164,9 +158,10 @@ static FlMethodResponse* platform_views_reject_gesture(
 // Mark that a mouse pointer has entered into the platform view.
 static FlMethodResponse* platform_views_enter(FlPlatformViewsPlugin* self,
                                               FlValue* args) {
-  if (fl_value_get_type(args) != FL_VALUE_TYPE_LIST) {
+  if (fl_value_get_type(args) != FL_VALUE_TYPE_LIST ||
+      fl_value_get_length(args) != 1) {
     return FL_METHOD_RESPONSE(fl_method_error_response_new(
-        kBadArgumentsError, "Argument map missing or malformed", nullptr));
+        kBadArgumentsError, "Argument list missing or malformed", nullptr));
   }
 
   int64_t view_id = fl_value_get_int(fl_value_get_list_value(args, 0));
@@ -187,9 +182,10 @@ static FlMethodResponse* platform_views_enter(FlPlatformViewsPlugin* self,
 // Mark that a mouse pointer has exited from the platform view.
 static FlMethodResponse* platform_views_exit(FlPlatformViewsPlugin* self,
                                              FlValue* args) {
-  if (fl_value_get_type(args) != FL_VALUE_TYPE_LIST) {
+  if (fl_value_get_type(args) != FL_VALUE_TYPE_LIST ||
+      fl_value_get_length(args) != 1) {
     return FL_METHOD_RESPONSE(fl_method_error_response_new(
-        kBadArgumentsError, "Argument map missing or malformed", nullptr));
+        kBadArgumentsError, "Argument list missing or malformed", nullptr));
   }
 
   int64_t view_id = fl_value_get_int(fl_value_get_list_value(args, 0));
@@ -304,7 +300,7 @@ gboolean fl_platform_views_plugin_register_view_factory(
 
 FlPlatformView* fl_platform_views_plugin_get_platform_view(
     FlPlatformViewsPlugin* self,
-    int view_identifier) {
-  return (FlPlatformView*)g_hash_table_lookup(self->platform_views,
-                                              GINT_TO_POINTER(view_identifier));
+    int64_t view_identifier) {
+  return reinterpret_cast<FlPlatformView*>(g_hash_table_lookup(
+      self->platform_views, GINT_TO_POINTER(view_identifier)));
 }

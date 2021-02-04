@@ -277,6 +277,7 @@ static void fl_view_dispose(GObject* object) {
   g_clear_object(&self->platform_plugin);
   g_clear_object(&self->text_input_plugin);
   g_clear_object(&self->platform_views_plugin);
+  g_clear_object(&self->gesture_helper);
   g_list_free_full(self->gl_area_list, g_object_unref);
   self->gl_area_list = nullptr;
 

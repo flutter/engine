@@ -83,5 +83,8 @@ G_MODULE_EXPORT void fl_plugin_registrar_register_view_factory(
     FlPlatformViewsPlugin* plugin =
         fl_view_get_platform_views_plugin(self->view);
     fl_platform_views_plugin_register_view_factory(plugin, factory, view_type);
+  } else {
+    g_warning("Cannot register view factory before FlView is initialized");
+    g_object_unref(factory);
   }
 }

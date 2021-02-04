@@ -30,38 +30,31 @@ static void free_event(gpointer data) {
 }
 
 static void send_button_event(FlGestureHelper* self,
-                              GdkEventButton* event,
+                              GdkEvent* event,
                               GtkWidget* widget) {
   if (event->type == GDK_BUTTON_PRESS) {
     self->end = false;
-    self->pressed_buttons |= 1 << event->button;
+    self->pressed_buttons |= 1 << event->button.button;
   } else if (event->type == GDK_BUTTON_RELEASE) {
     self->end = true;
-    self->pressed_buttons &= ~(1 << event->button);
+    self->pressed_buttons &= ~(1 << event->button.button);
+  } else {
+    return;
   }
 
   GdkWindow* window = gtk_widget_get_window(widget);
   gint origin_x, origin_y;
   gdk_window_get_origin(window, &origin_x, &origin_y);
-  GdkEvent button;
-  button.button.type = event->type;
-  g_object_ref(window);
-  button.button.window = window;
-  button.button.send_event = event->send_event;
-  button.button.time = event->time;
-  button.button.x = event->x_root - origin_x;
-  button.button.y = event->y_root - origin_y;
-  button.button.axes = event->axes;
-  button.button.state = event->state;
-  button.button.button = event->button;
-  button.button.device = event->device;
-  button.button.x_root = event->x_root;
-  button.button.y_root = event->y_root;
-  gtk_widget_event(widget, &button);
+  GdkEvent* new_event = gdk_event_copy(event);
+  GdkEventButton* button = &new_event->button;
+  button->x = event->button.x_root - origin_x;
+  button->y = event->button.y_root - origin_y;
+  gtk_widget_event(widget, new_event);
+  gdk_event_free(new_event);
 }
 
 static void send_motion_event(FlGestureHelper* self,
-                              GdkEventMotion* event,
+                              GdkEvent* event,
                               GtkWidget* widget) {
   if (self->end)
     return;
@@ -70,21 +63,12 @@ static void send_motion_event(FlGestureHelper* self,
   gint origin_x, origin_y;
   gdk_window_get_origin(window, &origin_x, &origin_y);
 
-  GdkEvent motion;
-  motion.motion.type = event->type;
-  g_object_ref(window);
-  motion.motion.window = window;
-  motion.motion.send_event = event->send_event;
-  motion.motion.time = event->time;
-  motion.motion.x = event->x_root - origin_x;
-  motion.motion.y = event->y_root - origin_y;
-  motion.motion.axes = event->axes;
-  motion.motion.state = event->state;
-  motion.motion.is_hint = event->is_hint;
-  motion.motion.device = event->device;
-  motion.motion.x_root = event->x_root;
-  motion.motion.y_root = event->y_root;
-  gtk_widget_event(widget, &motion);
+  GdkEvent* new_event = gdk_event_copy(event);
+  GdkEventMotion* motion = &new_event->motion;
+  motion->x = event->motion.x_root - origin_x;
+  motion->y = event->motion.y_root - origin_y;
+  gtk_widget_event(widget, new_event);
+  gdk_event_free(new_event);
 }
 
 static void clear_state(FlGestureHelper* self) {
@@ -102,7 +86,7 @@ void fl_gesture_helper_button_press(FlGestureHelper* self, GdkEvent* event) {
 
 void fl_gesture_helper_button_release(FlGestureHelper* self, GdkEvent* event) {
   if (self->grabbed_widget) {
-    send_button_event(self, &event->button, self->grabbed_widget);
+    send_button_event(self, event, self->grabbed_widget);
 
     clear_state(self);
   } else {
@@ -115,7 +99,7 @@ void fl_gesture_helper_button_motion(FlGestureHelper* self, GdkEvent* event) {
     // We have grabbed the widget, we directly distribute the event to the
     // widget.
     if (!self->end) {
-      send_motion_event(self, &event->motion, self->grabbed_widget);
+      send_motion_event(self, event, self->grabbed_widget);
     }
   } else {
     if (self->pressed_buttons) {
@@ -123,7 +107,7 @@ void fl_gesture_helper_button_motion(FlGestureHelper* self, GdkEvent* event) {
       self->event_list = g_list_append(self->event_list, gdk_event_copy(event));
     } else if (self->hover_widget) {
       // Or mouse is hovering.
-      send_motion_event(self, &event->motion, self->hover_widget);
+      send_motion_event(self, event, self->hover_widget);
     }
   }
 }
@@ -138,10 +122,10 @@ void fl_gesture_helper_accept_gesture(FlGestureHelper* self,
     GdkEvent* gdk_event = reinterpret_cast<GdkEvent*>(event->data);
     if (gdk_event->type == GDK_BUTTON_PRESS ||
         gdk_event->type == GDK_BUTTON_RELEASE) {
-      send_button_event(self, &gdk_event->button, self->grabbed_widget);
+      send_button_event(self, gdk_event, self->grabbed_widget);
     } else if (gdk_event->type == GDK_MOTION_NOTIFY) {
       if (self->pressed_buttons && !self->end) {
-        send_motion_event(self, &gdk_event->motion, self->grabbed_widget);
+        send_motion_event(self, gdk_event, self->grabbed_widget);
       }
     }
   }

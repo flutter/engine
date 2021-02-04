@@ -26,8 +26,9 @@ G_DECLARE_FINAL_TYPE(FlPlatformViewsPlugin,
 
 /**
  * fl_platform_views_plugin_new:
- * @messenger: an #FlBinaryMessenger.
- * @gesture_helper: an #FlGestureHelper for accepting gestures by Dart side.
+ * @messenger: (transfer-none): an #FlBinaryMessenger.
+ * @gesture_helper: (transfer-none): an #FlGestureHelper for accepting gestures
+ *                                   by Dart side.
  *
  * Creates a new plugin that implements SystemChannels.platform_views from the
  * Flutter services library.
@@ -41,7 +42,7 @@ FlPlatformViewsPlugin* fl_platform_views_plugin_new(
 /**
  * fl_platform_views_plugin_register_view_factory:
  * @plugin: an #FlPlatformViewsPlugin.
- * @factory: the view factory that will be registered.
+ * @factory: (transfer-full): the view factory that will be registered.
  * @view_type: A unique identifier for the factory. The Dart code of the Flutter
  *             app can use this identifier to request creation of a #GtkWidget
  *             by the registered factory.
@@ -65,7 +66,7 @@ gboolean fl_platform_views_plugin_register_view_factory(
  */
 FlPlatformView* fl_platform_views_plugin_get_platform_view(
     FlPlatformViewsPlugin* plugin,
-    int view_identifier);
+    int64_t view_identifier);
 
 G_END_DECLS
 
