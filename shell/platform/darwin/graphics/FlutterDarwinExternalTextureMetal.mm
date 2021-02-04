@@ -5,11 +5,14 @@
 #import "flutter/shell/platform/darwin/graphics/FlutterDarwinExternalTextureMetal.h"
 
 #include "flutter/fml/logging.h"
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
 #include "third_party/skia/include/core/SkYUVAInfo.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 #include "third_party/skia/include/gpu/GrYUVABackendTextures.h"
 #include "third_party/skia/include/gpu/mtl/GrMtlTypes.h"
+
+FLUTTER_ASSERT_ARC
 
 @implementation FlutterDarwinExternalTextureMetal {
   CVMetalTextureCacheRef _textureCache;
@@ -25,11 +28,19 @@
                              texture:(NSObject<FlutterTexture>*)texture {
   if (self = [super init]) {
     _textureCache = textureCache;
+    CFRetain(_textureCache);
     _textureID = textureID;
     _externalTexture = texture;
     return self;
   }
   return nil;
+}
+
+- (void)dealloc {
+  CVPixelBufferRelease(_lastPixelBuffer);
+  if (_textureCache) {
+    CFRelease(_textureCache);
+  }
 }
 
 - (void)paint:(SkCanvas&)canvas
@@ -42,8 +53,9 @@
   if (needsUpdatedTexture) {
     CVPixelBufferRef pixelBuffer = [_externalTexture copyPixelBuffer];
     if (!pixelBuffer) {
-      pixelBuffer = std::move(_lastPixelBuffer);
+      pixelBuffer = _lastPixelBuffer;
     } else {
+      CVPixelBufferRetain(pixelBuffer);
       _pixelFormat = CVPixelBufferGetPixelFormatType(pixelBuffer);
     }
 
@@ -53,7 +65,8 @@
     if (image) {
       _externalImage = image;
       _textureFrameAvailable = false;
-      _lastPixelBuffer = std::move(pixelBuffer);
+      CVPixelBufferRelease(_lastPixelBuffer);
+      _lastPixelBuffer = pixelBuffer;
     }
   }
 

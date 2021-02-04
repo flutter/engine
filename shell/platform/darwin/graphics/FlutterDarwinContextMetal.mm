@@ -6,7 +6,10 @@
 
 #include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/fml/logging.h"
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
 #include "third_party/skia/include/gpu/GrContextOptions.h"
+
+FLUTTER_ASSERT_ARC
 
 static GrContextOptions CreateMetalGrContextOptions() {
   GrContextOptions options = {};
@@ -74,8 +77,15 @@ static GrContextOptions CreateMetalGrContextOptions() {
   return self;
 }
 
-- (FlutterDarwinExternalTextureMetal*)externalTextureWithID:(int64_t)textureID
-                                                    texture:(NSObject<FlutterTexture>*)texture {
+- (void)dealloc {
+  if (_textureCache) {
+    CFRelease(_textureCache);
+  }
+}
+
+- (FlutterDarwinExternalTextureMetal*)
+    createExternalTextureWithIdentifier:(int64_t)textureID
+                                texture:(NSObject<FlutterTexture>*)texture {
   return [[FlutterDarwinExternalTextureMetal alloc] initWithTextureCache:_textureCache
                                                                textureID:textureID
                                                                  texture:texture];

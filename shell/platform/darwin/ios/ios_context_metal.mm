@@ -67,7 +67,8 @@ std::unique_ptr<Texture> IOSContextMetal::CreateExternalTexture(
     fml::scoped_nsobject<NSObject<FlutterTexture>> texture) {
   return std::make_unique<IOSExternalTextureMetal>(
       fml::scoped_nsobject<FlutterDarwinExternalTextureMetal>{
-          [[darwin_context_metal_ externalTextureWithID:texture_id texture:texture] retain]});
+          [[darwin_context_metal_ createExternalTextureWithIdentifier:texture_id
+                                                              texture:texture] retain]});
 }
 
 }  // namespace flutter

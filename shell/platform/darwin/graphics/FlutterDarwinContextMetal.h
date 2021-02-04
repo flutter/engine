@@ -35,8 +35,9 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  * Creates an external texture with the specified ID and contents.
  */
-- (FlutterDarwinExternalTextureMetal*)externalTextureWithID:(int64_t)textureID
-                                                    texture:(NSObject<FlutterTexture>*)texture;
+- (FlutterDarwinExternalTextureMetal*)
+    createExternalTextureWithIdentifier:(int64_t)textureID
+                                texture:(NSObject<FlutterTexture>*)texture;
 
 /**
  * MTLDevice that is backing this context.s
