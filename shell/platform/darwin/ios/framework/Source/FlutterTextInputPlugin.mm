@@ -1173,9 +1173,9 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 @property(nonatomic, retain) FlutterTextInputViewAccessibilityHider* inputHider;
 @end
 
-@implementation FlutterTextInputPlugin
-
-NSTimer* _enableFlutterTextInputViewAccessibilityTimer;
+@implementation FlutterTextInputPlugin {
+  NSTimer* _enableFlutterTextInputViewAccessibilityTimer;
+}
 
 @synthesize textInputDelegate = _textInputDelegate;
 
