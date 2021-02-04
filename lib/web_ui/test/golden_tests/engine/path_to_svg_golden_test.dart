@@ -181,7 +181,7 @@ void testMain() async {
     path.moveTo(20, 20);
     path.lineTo(200, 200);
     await testPath(path, 'svg_stroke_width',
-        mode: PaintMode.kStrokeWidthOnly, write: true);
+        mode: PaintMode.kStrokeWidthOnly);
   });
 }
 
