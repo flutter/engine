@@ -59,13 +59,8 @@ static GrContextOptions CreateMetalGrContextOptions() {
       return nil;
     }
 
-    auto contextOptions = CreateMetalGrContextOptions();
-
-    // Skia expect arguments to `MakeMetal` transfer ownership of the reference in for release later
-    // when the GrDirectContext is collected.
-    _mainContext = GrDirectContext::MakeMetal(
-        (__bridge_retained void*)_device, (__bridge_retained void*)_commandQueue, contextOptions);
-    _resourceContext = _mainContext;
+    _mainContext = [self createGrContext];
+    _resourceContext = [self createGrContext];
 
     if (!_mainContext || !_resourceContext) {
       FML_DLOG(ERROR) << "Could not create Skia Metal contexts.";
@@ -75,6 +70,16 @@ static GrContextOptions CreateMetalGrContextOptions() {
     _resourceContext->setResourceCacheLimits(0u, 0u);
   }
   return self;
+}
+
+- (sk_sp<GrDirectContext>)createGrContext {
+  auto contextOptions = CreateMetalGrContextOptions();
+  id<MTLDevice> device = _device;
+  id<MTLCommandQueue> commandQueue = _commandQueue;
+  // Skia expect arguments to `MakeMetal` transfer ownership of the reference in for release later
+  // when the GrDirectContext is collected.
+  return GrDirectContext::MakeMetal((__bridge_retained void*)device,
+                                    (__bridge_retained void*)commandQueue, contextOptions);
 }
 
 - (void)dealloc {
