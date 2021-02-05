@@ -13,21 +13,21 @@ void MockTexture::Paint(SkCanvas& canvas,
                         const SkRect& bounds,
                         bool freeze,
                         GrDirectContext* context,
-                        const SkSamplingOptions& sampling) {
+                        SkFilterQuality filter_quality) {
   paint_calls_.emplace_back(
-      PaintCall{canvas, bounds, freeze, context, sampling});
+      PaintCall{canvas, bounds, freeze, context, filter_quality});
 }
 
 bool operator==(const MockTexture::PaintCall& a,
                 const MockTexture::PaintCall& b) {
   return &a.canvas == &b.canvas && a.bounds == b.bounds &&
          a.context == b.context && a.freeze == b.freeze &&
-         a.sampling == b.sampling;
+         a.filter_quality == b.filter_quality;
 }
 
 std::ostream& operator<<(std::ostream& os, const MockTexture::PaintCall& data) {
   return os << &data.canvas << " " << data.bounds << " " << data.context << " "
-            << data.freeze << " " << data.sampling;
+            << data.freeze << " " << data.filter_quality;
 }
 
 }  // namespace testing

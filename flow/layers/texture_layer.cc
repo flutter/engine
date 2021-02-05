@@ -12,12 +12,12 @@ TextureLayer::TextureLayer(const SkPoint& offset,
                            const SkSize& size,
                            int64_t texture_id,
                            bool freeze,
-                           const SkSamplingOptions& sampling)
+                           SkFilterQuality filter_quality)
     : offset_(offset),
       size_(size),
       texture_id_(texture_id),
       freeze_(freeze),
-      sampling_(sampling) {}
+      filter_quality_(filter_quality) {}
 
 void TextureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "TextureLayer::Preroll");
@@ -42,7 +42,7 @@ void TextureLayer::Paint(PaintContext& context) const {
     return;
   }
   texture->Paint(*context.leaf_nodes_canvas, paint_bounds(), freeze_,
-                 context.gr_context, sampling_);
+                 context.gr_context, filter_quality_);
 }
 
 }  // namespace flutter

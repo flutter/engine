@@ -1650,7 +1650,7 @@ class MockTexture : public Texture {
              const SkRect& bounds,
              bool freeze,
              GrDirectContext* context,
-             const SkSamplingOptions&) override {}
+             SkFilterQuality filter_quality) override {}
 
   void OnGrContextCreated() override {}
 

@@ -32,8 +32,7 @@ void RasterCacheResult::draw(SkCanvas& canvas, const SkPaint* paint) const {
       std::abs(bounds.size().width() - image_->dimensions().width()) <= 1 &&
       std::abs(bounds.size().height() - image_->dimensions().height()) <= 1);
   canvas.resetMatrix();
-  canvas.drawImage(image_, bounds.fLeft, bounds.fTop, SkSamplingOptions(),
-                   paint);
+  canvas.drawImage(image_, bounds.fLeft, bounds.fTop, paint);
 }
 
 RasterCache::RasterCache(size_t access_threshold,

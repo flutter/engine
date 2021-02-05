@@ -19,7 +19,7 @@ TEST_F(TextureLayerTest, InvalidTexture) {
   const SkPoint layer_offset = SkPoint::Make(0.0f, 0.0f);
   const SkSize layer_size = SkSize::Make(8.0f, 8.0f);
   auto layer = std::make_shared<TextureLayer>(layer_offset, layer_size, 0,
-                                              false, SkSamplingOptions());
+                                              false, kNone_SkFilterQuality);
 
   layer->Preroll(preroll_context(), SkMatrix());
   EXPECT_EQ(layer->paint_bounds(),
@@ -38,7 +38,7 @@ TEST_F(TextureLayerTest, PaintingEmptyLayerDies) {
   const int64_t texture_id = 0;
   auto mock_texture = std::make_shared<MockTexture>(texture_id);
   auto layer = std::make_shared<TextureLayer>(
-      layer_offset, layer_size, texture_id, false, SkSamplingOptions());
+      layer_offset, layer_size, texture_id, false, kNone_SkFilterQuality);
 
   // Ensure the texture is located by the Layer.
   preroll_context()->texture_registry.RegisterTexture(mock_texture);
@@ -57,8 +57,7 @@ TEST_F(TextureLayerTest, PaintBeforePreollDies) {
   const int64_t texture_id = 0;
   auto mock_texture = std::make_shared<MockTexture>(texture_id);
   auto layer = std::make_shared<TextureLayer>(
-      layer_offset, layer_size, texture_id, false,
-      SkSamplingOptions(SkFilterMode::kLinear));
+      layer_offset, layer_size, texture_id, false, kLow_SkFilterQuality);
 
   // Ensure the texture is located by the Layer.
   preroll_context()->texture_registry.RegisterTexture(mock_texture);
@@ -74,8 +73,7 @@ TEST_F(TextureLayerTest, PaintingWithLowFilterQuality) {
   const int64_t texture_id = 0;
   auto mock_texture = std::make_shared<MockTexture>(texture_id);
   auto layer = std::make_shared<TextureLayer>(
-      layer_offset, layer_size, texture_id, false,
-      SkSamplingOptions(SkFilterMode::kLinear));
+      layer_offset, layer_size, texture_id, false, kLow_SkFilterQuality);
 
   // Ensure the texture is located by the Layer.
   preroll_context()->texture_registry.RegisterTexture(mock_texture);
@@ -90,7 +88,7 @@ TEST_F(TextureLayerTest, PaintingWithLowFilterQuality) {
   EXPECT_EQ(mock_texture->paint_calls(),
             std::vector({MockTexture::PaintCall{
                 mock_canvas(), layer->paint_bounds(), false, nullptr,
-                SkSamplingOptions(SkFilterMode::kLinear)}}));
+                kLow_SkFilterQuality}}));
   EXPECT_EQ(mock_canvas().draw_calls(), std::vector<MockCanvas::DrawCall>());
 }
 

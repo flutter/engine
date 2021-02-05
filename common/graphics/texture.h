@@ -10,7 +10,6 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "third_party/skia/include/core/SkCanvas.h"
-#include "third_party/skia/include/core/SkSamplingOptions.h"
 
 class GrDirectContext;
 
@@ -26,7 +25,7 @@ class Texture {
                      const SkRect& bounds,
                      bool freeze,
                      GrDirectContext* context,
-                     const SkSamplingOptions& sampling) = 0;
+                     SkFilterQuality quality) = 0;
 
   // Called from raster thread.
   virtual void OnGrContextCreated() = 0;

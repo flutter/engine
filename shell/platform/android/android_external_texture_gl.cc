@@ -38,7 +38,7 @@ void AndroidExternalTextureGL::Paint(SkCanvas& canvas,
                                      const SkRect& bounds,
                                      bool freeze,
                                      GrDirectContext* context,
-                                     const SkSamplingOptions& sampling) {
+                                     SkFilterQuality filter_quality) {
   if (state_ == AttachmentState::detached) {
     return;
   }
@@ -69,7 +69,9 @@ void AndroidExternalTextureGL::Paint(SkCanvas& canvas,
       transformAroundCenter.postTranslate(0.5, 0.5);
       canvas.concat(transformAroundCenter);
     }
-    canvas.drawImage(image, 0, 0, sampling, nullptr);
+    SkPaint paint;
+    paint.setFilterQuality(filter_quality);
+    canvas.drawImage(image, 0, 0, &paint);
   }
 }
 
