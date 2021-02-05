@@ -32,7 +32,7 @@ task:
     mv $CIRRUS_WORKING_DIR flutter
     gclient sync
   matrix:
-    # The following test depends on Flutter framework repo. It may fail if the
+    # The following test depends on Flutter framework repo. It will fail if the
     # framework repo is currently broken.
     - name: build_and_test_linux_unopt_debug
       compile_host_script: |
