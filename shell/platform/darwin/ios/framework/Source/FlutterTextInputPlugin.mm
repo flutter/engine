@@ -1204,6 +1204,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 - (void)removeEnableFlutterTextInputViewAccessibilityTimer {
   if (_enableFlutterTextInputViewAccessibilityTimer) {
     [_enableFlutterTextInputViewAccessibilityTimer invalidate];
+    [_enableFlutterTextInputViewAccessibilityTimer release];
     _enableFlutterTextInputViewAccessibilityTimer = nil;
   }
 }
@@ -1270,11 +1271,11 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   // This results in accessibility focus stuck at the FlutterTextInputView.
   if (!_enableFlutterTextInputViewAccessibilityTimer) {
     _enableFlutterTextInputViewAccessibilityTimer =
-        [NSTimer scheduledTimerWithTimeInterval:kUITextInputAccessibilityEnablingDelaySeconds
-                                         target:self
-                                       selector:@selector(enableActiveViewAccessibility:)
-                                       userInfo:nil
-                                        repeats:NO];
+        [[NSTimer scheduledTimerWithTimeInterval:kUITextInputAccessibilityEnablingDelaySeconds
+                                          target:self
+                                        selector:@selector(enableActiveViewAccessibility:)
+                                        userInfo:nil
+                                         repeats:NO] retain];
   }
   [_activeView becomeFirstResponder];
 }
