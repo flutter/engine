@@ -78,7 +78,7 @@ FlutterDesktopViewRef FlutterDesktopViewControllerGetView(
 
 void FlutterDesktopViewControllerForceRedraw(
     FlutterDesktopViewControllerRef controller) {
-    controller->view->ForceRedraw();
+  controller->view->ForceRedraw();
 }
 
 FlutterDesktopEngineRef FlutterDesktopEngineCreate(
