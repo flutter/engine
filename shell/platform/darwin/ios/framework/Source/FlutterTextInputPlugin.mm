@@ -1284,7 +1284,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   if (_activeView.isFirstResponder) {
     _activeView.accessibilityEnabled = YES;
   }
-  _enableFlutterTextInputViewAccessibilityTimer = nil;
+  [self removeEnableFlutterTextInputViewAccessibilityTimer];
 }
 
 - (void)hideTextInput {
