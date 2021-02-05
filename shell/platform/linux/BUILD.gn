@@ -173,6 +173,7 @@ executable("flutter_linux_unittests") {
     "fl_method_channel_test.cc",
     "fl_method_codec_test.cc",
     "fl_method_response_test.cc",
+    "fl_platform_views_plugin_test.cc",
     "fl_standard_message_codec_test.cc",
     "fl_standard_method_codec_test.cc",
     "fl_string_codec_test.cc",
@@ -180,6 +181,7 @@ executable("flutter_linux_unittests") {
     "testing/fl_test.cc",
     "testing/mock_engine.cc",
     "testing/mock_epoxy.cc",
+    "testing/mock_platform_views.cc",
     "testing/mock_renderer.cc",
     "testing/mock_text_input_plugin.cc",
   ]

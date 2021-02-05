@@ -53,7 +53,7 @@ FlView* fl_plugin_registrar_get_view(FlPluginRegistrar* registrar);
 /**
  * fl_plugin_registrar_register_view_factory:
  * @registrar: an #FlPluginRegistrar.
- * @factory: (transfer-full): the view factory that will be registered.
+ * @factory: (transfer-none): the view factory that will be registered.
  * @view_type: A unique identifier for the factory. The Dart code of the Flutter
  *             app can use this identifier to request creation of a #GtkWidget
  *             by the registered factory.

@@ -285,8 +285,10 @@ FlPlatformViewsPlugin* fl_platform_views_plugin_new(
                                             nullptr);
 
   self->gesture_helper = gesture_helper;
-  self->factories = g_hash_table_new(g_str_hash, g_str_equal);
-  self->platform_views = g_hash_table_new(g_direct_hash, g_direct_equal);
+  self->factories =
+      g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_object_unref);
+  self->platform_views = g_hash_table_new_full(g_direct_hash, g_direct_equal,
+                                               nullptr, g_object_unref);
 
   return self;
 }
@@ -295,6 +297,7 @@ gboolean fl_platform_views_plugin_register_view_factory(
     FlPlatformViewsPlugin* self,
     FlPlatformViewFactory* factory,
     const gchar* view_type) {
+  g_object_ref(factory);
   return g_hash_table_insert(self->factories, g_strdup(view_type), factory);
 }
 
