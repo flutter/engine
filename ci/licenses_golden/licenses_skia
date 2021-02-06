@@ -1,4 +1,4 @@
-Signature: eebbe431c9ae40fcb37e4c592bd30223
+Signature: 63eaeab728fbd4e829fa67d8ba301b24
 
 UNUSED LICENSES:
 
@@ -2563,6 +2563,8 @@ FILE: ../../../third_party/skia/src/gpu/vk/GrVkTexture.cpp
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkTexture.h
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkTextureRenderTarget.cpp
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkTextureRenderTarget.h
+FILE: ../../../third_party/skia/src/gpu/vk/GrVkTransferBuffer.cpp
+FILE: ../../../third_party/skia/src/gpu/vk/GrVkTransferBuffer.h
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkUtil.cpp
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkUtil.h
 FILE: ../../../third_party/skia/src/image/SkImage_Gpu.h
@@ -3160,7 +3162,6 @@ FILE: ../../../third_party/skia/src/gpu/effects/GrAlphaThresholdFragmentProcesso
 FILE: ../../../third_party/skia/src/gpu/effects/GrCircleBlurFragmentProcessor.fp
 FILE: ../../../third_party/skia/src/gpu/effects/GrConfigConversionEffect.fp
 FILE: ../../../third_party/skia/src/gpu/effects/GrConstColorProcessor.fp
-FILE: ../../../third_party/skia/src/gpu/effects/GrLumaColorFilterEffect.fp
 FILE: ../../../third_party/skia/src/gpu/effects/GrMagnifierEffect.fp
 FILE: ../../../third_party/skia/src/gpu/effects/GrRRectBlurEffect.fp
 FILE: ../../../third_party/skia/src/gpu/effects/GrRectBlurEffect.fp
@@ -3178,8 +3179,6 @@ FILE: ../../../third_party/skia/src/gpu/effects/generated/GrConfigConversionEffe
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrConfigConversionEffect.h
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrConstColorProcessor.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrConstColorProcessor.h
-FILE: ../../../third_party/skia/src/gpu/effects/generated/GrLumaColorFilterEffect.cpp
-FILE: ../../../third_party/skia/src/gpu/effects/generated/GrLumaColorFilterEffect.h
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrMagnifierEffect.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrMagnifierEffect.h
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrRRectBlurEffect.cpp
@@ -5256,6 +5255,8 @@ FILE: ../../../third_party/skia/src/sksl/SkSLBuiltinTypes.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLBuiltinTypes.h
 FILE: ../../../third_party/skia/src/sksl/SkSLContext.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLMangler.h
+FILE: ../../../third_party/skia/src/sksl/SkSLOperators.cpp
+FILE: ../../../third_party/skia/src/sksl/SkSLOperators.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2021 Google LLC
 
