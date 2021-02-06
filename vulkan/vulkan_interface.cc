@@ -1,8 +1,8 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/vulkan/vulkan_interface.h"
+#include "vulkan_interface.h"
 
 namespace vulkan {
 
@@ -62,8 +62,14 @@ std::string VulkanResultToString(VkResult result) {
       return "VK_RESULT_RANGE_SIZE";
     case VK_RESULT_MAX_ENUM:
       return "VK_RESULT_MAX_ENUM";
+    case VK_ERROR_INVALID_EXTERNAL_HANDLE:
+      return "VK_ERROR_INVALID_EXTERNAL_HANDLE";
+    case VK_ERROR_OUT_OF_POOL_MEMORY:
+      return "VK_ERROR_OUT_OF_POOL_MEMORY";
+    default:
+      return "Unknown Error";
   }
-  return "Unknown Error";
+  return "";
 }
 
 }  // namespace vulkan

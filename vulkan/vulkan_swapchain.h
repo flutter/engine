@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -9,11 +9,11 @@
 #include <utility>
 #include <vector>
 
-#include "flutter/vulkan/vulkan_handle.h"
-#include "lib/ftl/compiler_specific.h"
-#include "lib/ftl/macros.h"
+#include "flutter/fml/compiler_specific.h"
+#include "flutter/fml/macros.h"
 #include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/core/SkSurface.h"
+#include "vulkan_handle.h"
 
 namespace vulkan {
 
@@ -28,7 +28,7 @@ class VulkanSwapchain {
   VulkanSwapchain(const VulkanProcTable& vk,
                   const VulkanDevice& device,
                   const VulkanSurface& surface,
-                  GrContext* skia_context,
+                  GrDirectContext* skia_context,
                   std::unique_ptr<VulkanSwapchain> old_swapchain,
                   uint32_t queue_family_index);
 
@@ -56,11 +56,11 @@ class VulkanSwapchain {
 
   /// Submit a previously acquired. There must not be consecutive calls to
   /// |Submit| without and interleaving |AcquireFrame|.
-  FTL_WARN_UNUSED_RESULT
-  bool Submit();
+  [[nodiscard]] bool Submit();
 
   SkISize GetSize() const;
 
+#if OS_ANDROID
  private:
   const VulkanProcTable& vk;
   const VulkanDevice& device_;
@@ -77,15 +77,22 @@ class VulkanSwapchain {
 
   std::vector<VkImage> GetImages() const;
 
-  bool CreateSwapchainImages(GrContext* skia_context);
+  bool CreateSwapchainImages(GrDirectContext* skia_context,
+                             SkColorType color_type,
+                             sk_sp<SkColorSpace> color_space,
+                             VkImageUsageFlags usage_flags);
 
-  sk_sp<SkSurface> CreateSkiaSurface(GrContext* skia_context,
+  sk_sp<SkSurface> CreateSkiaSurface(GrDirectContext* skia_context,
                                      VkImage image,
-                                     const SkISize& size) const;
+                                     VkImageUsageFlags usage_flags,
+                                     const SkISize& size,
+                                     SkColorType color_type,
+                                     sk_sp<SkColorSpace> color_space) const;
 
   VulkanBackbuffer* GetNextBackbuffer();
+#endif  // OS_ANDROID
 
-  FTL_DISALLOW_COPY_AND_ASSIGN(VulkanSwapchain);
+  FML_DISALLOW_COPY_AND_ASSIGN(VulkanSwapchain);
 };
 
 }  // namespace vulkan

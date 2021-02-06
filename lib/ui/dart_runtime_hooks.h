@@ -1,30 +1,25 @@
-// Copyright 2014 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #ifndef FLUTTER_LIB_UI_DART_RUNTIME_HOOKS_H_
 #define FLUTTER_LIB_UI_DART_RUNTIME_HOOKS_H_
 
-#include "dart/runtime/include/dart_api.h"
-#include "lib/tonic/dart_library_natives.h"
-#include "lib/ftl/macros.h"
+#include "flutter/fml/macros.h"
+#include "third_party/dart/runtime/include/dart_api.h"
+#include "third_party/tonic/dart_library_natives.h"
 
-namespace blink {
+namespace flutter {
 
 class DartRuntimeHooks {
  public:
-  enum IsolateType {
-    MainIsolate,
-    SecondaryIsolate,
-  };
-
-  static void Install(IsolateType isolate_type, const std::string& script_uri);
+  static void Install(bool is_ui_isolate, const std::string& script_uri);
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
  private:
-  FTL_DISALLOW_IMPLICIT_CONSTRUCTORS(DartRuntimeHooks);
+  FML_DISALLOW_IMPLICIT_CONSTRUCTORS(DartRuntimeHooks);
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_DART_RUNTIME_HOOKS_H_

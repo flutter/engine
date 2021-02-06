@@ -1,63 +1,33 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #include "flutter/flow/layers/child_scene_layer.h"
 
-#include "apps/mozart/lib/skia/type_converters.h"
-#include "apps/mozart/services/composition/nodes.fidl.h"
+namespace flutter {
 
-namespace flow {
-
-ChildSceneLayer::ChildSceneLayer() = default;
-
-ChildSceneLayer::~ChildSceneLayer() = default;
+ChildSceneLayer::ChildSceneLayer(zx_koid_t layer_id,
+                                 const SkPoint& offset,
+                                 const SkSize& size,
+                                 bool hit_testable)
+    : layer_id_(layer_id),
+      offset_(offset),
+      size_(size),
+      hit_testable_(hit_testable) {}
 
 void ChildSceneLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
-  set_needs_system_composite(true);
-  transform_.setIdentity();
-  transform_.preTranslate(offset_.x(), offset_.y());
-  float inverse_device_pixel_ratio = 1.f / device_pixel_ratio_;
-  transform_.preScale(inverse_device_pixel_ratio, inverse_device_pixel_ratio);
+  TRACE_EVENT0("flutter", "ChildSceneLayer::Preroll");
 
-  SkRect bounds =
-      SkRect::MakeXYWH(offset_.x(), offset_.y(),
-                       physical_size_.width() * inverse_device_pixel_ratio,
-                       physical_size_.height() * inverse_device_pixel_ratio);
-  set_paint_bounds(bounds);
-  context->child_paint_bounds = bounds;
+  context->child_scene_layer_exists_below = true;
+  CheckForChildLayerBelow(context);
 }
 
-void ChildSceneLayer::Paint(PaintContext& context) {
-  FTL_DCHECK(false) << "Failed to composite child scene.";
+void ChildSceneLayer::Paint(PaintContext& context) const {}
+
+void ChildSceneLayer::UpdateScene(std::shared_ptr<SceneUpdateContext> context) {
+  TRACE_EVENT0("flutter", "ChildSceneLayer::UpdateScene");
+  FML_DCHECK(needs_system_composite());
+  context->UpdateView(layer_id_, offset_, size_, hit_testable_);
 }
 
-void ChildSceneLayer::UpdateScene(SceneUpdateContext& context,
-                                  mozart::Node* container) {
-  FTL_DCHECK(needs_system_composite());
-
-  auto resource = mozart::Resource::New();
-  resource->set_scene(mozart::SceneResource::New());
-  resource->get_scene()->scene_token = mozart::SceneToken::New();
-  resource->get_scene()->scene_token->value = scene_token_;
-
-  auto node = mozart::Node::New();
-  if (!hit_testable_) {
-    node->hit_test_behavior = mozart::HitTestBehavior::New();
-    node->hit_test_behavior->visibility =
-        mozart::HitTestBehavior::Visibility::INVISIBLE;
-    node->hit_test_behavior->prune = true;
-  }
-  node->op = mozart::NodeOp::New();
-  node->op->set_scene(mozart::SceneNodeOp::New());
-  node->op->get_scene()->scene_resource_id =
-      context.AddResource(std::move(resource));
-  node->content_clip = mozart::RectF::New();
-  node->content_clip->width = physical_size_.width();
-  node->content_clip->height = physical_size_.height();
-  node->content_transform = mozart::Transform::From(transform_);
-
-  context.AddChildNode(container, std::move(node));
-}
-
-}  // namespace flow
+}  // namespace flutter

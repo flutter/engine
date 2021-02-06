@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -7,7 +7,7 @@
 
 #include <CoreFoundation/CoreFoundation.h>
 
-#include "lib/ftl/macros.h"
+#include "flutter/fml/macros.h"
 
 namespace fml {
 
@@ -18,6 +18,21 @@ class CFRef {
 
   CFRef(T instance) : instance_(instance) {}
 
+  CFRef(const CFRef& other) : instance_(other.instance_) {
+    if (instance_) {
+      CFRetain(instance_);
+    }
+  }
+
+  CFRef(CFRef&& other) : instance_(other.instance_) {
+    other.instance_ = nullptr;
+  }
+
+  CFRef& operator=(CFRef&& other) {
+    Reset(other.Release());
+    return *this;
+  }
+
   ~CFRef() {
     if (instance_ != nullptr) {
       CFRelease(instance_);
@@ -25,12 +40,21 @@ class CFRef {
     instance_ = nullptr;
   }
 
-  void Reset(T instance) {
+  void Reset(T instance = nullptr) {
+    if (instance_ == instance) {
+      return;
+    }
     if (instance_ != nullptr) {
       CFRelease(instance_);
     }
 
     instance_ = instance;
+  }
+
+  [[nodiscard]] T Release() {
+    auto instance = instance_;
+    instance_ = nullptr;
+    return instance;
   }
 
   operator T() const { return instance_; }
@@ -40,7 +64,7 @@ class CFRef {
  private:
   T instance_;
 
-  FTL_DISALLOW_COPY_AND_ASSIGN(CFRef);
+  CFRef& operator=(const CFRef&) = delete;
 };
 
 }  // namespace fml

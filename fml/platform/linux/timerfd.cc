@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -7,7 +7,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "lib/ftl/files/eintr_wrapper.h"
+#include "flutter/fml/eintr_wrapper.h"
 
 #if FML_TIMERFD_AVAILABLE == 0
 
@@ -33,8 +33,14 @@ namespace fml {
 #define NSEC_PER_SEC 1000000000
 #endif
 
-bool TimerRearm(int fd, ftl::TimePoint time_point) {
-  const uint64_t nano_secs = time_point.ToEpochDelta().ToNanoseconds();
+bool TimerRearm(int fd, fml::TimePoint time_point) {
+  uint64_t nano_secs = time_point.ToEpochDelta().ToNanoseconds();
+
+  // "0" will disarm the timer, desired behavior is to immediately
+  // trigger the timer.
+  if (nano_secs < 1) {
+    nano_secs = 1;
+  }
 
   struct itimerspec spec = {};
   spec.it_value.tv_sec = (time_t)(nano_secs / NSEC_PER_SEC);
@@ -46,9 +52,9 @@ bool TimerRearm(int fd, ftl::TimePoint time_point) {
 }
 
 bool TimerDrain(int fd) {
-  // 8 bytes must be read from a signalled timer file descriptor when signalled.
+  // 8 bytes must be read from a signaled timer file descriptor when signaled.
   uint64_t fire_count = 0;
-  ssize_t size = HANDLE_EINTR(::read(fd, &fire_count, sizeof(uint64_t)));
+  ssize_t size = FML_HANDLE_EINTR(::read(fd, &fire_count, sizeof(uint64_t)));
   if (size != sizeof(uint64_t)) {
     return false;
   }

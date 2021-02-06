@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -7,30 +7,28 @@
 
 #include "flutter/flow/layers/container_layer.h"
 
-namespace flow {
+namespace flutter {
 
+// Be careful that SkMatrix's default constructor doesn't initialize the matrix
+// at all. Hence |set_transform| must be called with an initialized SkMatrix.
 class TransformLayer : public ContainerLayer {
  public:
-  TransformLayer();
-  ~TransformLayer() override;
+  TransformLayer(const SkMatrix& transform);
 
-  void set_transform(const SkMatrix& transform) { transform_ = transform; }
-
- protected:
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
-  void Paint(PaintContext& context) override;
 
-#if defined(OS_FUCHSIA)
-  void UpdateScene(SceneUpdateContext& context,
-                   mozart::Node* container) override;
-#endif  // defined(OS_FUCHSIA)
+  void Paint(PaintContext& context) const override;
+
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
+  void UpdateScene(std::shared_ptr<SceneUpdateContext> context) override;
+#endif
 
  private:
   SkMatrix transform_;
 
-  FTL_DISALLOW_COPY_AND_ASSIGN(TransformLayer);
+  FML_DISALLOW_COPY_AND_ASSIGN(TransformLayer);
 };
 
-}  // namespace flow
+}  // namespace flutter
 
 #endif  // FLUTTER_FLOW_LAYERS_TRANSFORM_LAYER_H_

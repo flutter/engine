@@ -1,36 +1,34 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #ifndef FLUTTER_LIB_UI_PAINTING_PICTURE_RECORDER_H_
 #define FLUTTER_LIB_UI_PAINTING_PICTURE_RECORDER_H_
 
-#include "lib/tonic/dart_wrappable.h"
+#include "flutter/lib/ui/dart_wrapper.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
 
 namespace tonic {
 class DartLibraryNatives;
 }  // namespace tonic
 
-namespace blink {
+namespace flutter {
 class Canvas;
 class Picture;
 
-class PictureRecorder : public ftl::RefCountedThreadSafe<PictureRecorder>,
-                        public tonic::DartWrappable {
+class PictureRecorder : public RefCountedDartWrappable<PictureRecorder> {
   DEFINE_WRAPPERTYPEINFO();
-  FRIEND_MAKE_REF_COUNTED(PictureRecorder);
+  FML_FRIEND_MAKE_REF_COUNTED(PictureRecorder);
 
  public:
-  static ftl::RefPtr<PictureRecorder> Create();
+  static fml::RefPtr<PictureRecorder> Create();
 
-  ~PictureRecorder();
+  ~PictureRecorder() override;
 
   SkCanvas* BeginRecording(SkRect bounds);
-  ftl::RefPtr<Picture> endRecording();
-  bool isRecording();
+  fml::RefPtr<Picture> endRecording(Dart_Handle dart_picture);
 
-  void set_canvas(ftl::RefPtr<Canvas> canvas) { canvas_ = std::move(canvas); }
+  void set_canvas(fml::RefPtr<Canvas> canvas) { canvas_ = std::move(canvas); }
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
@@ -39,9 +37,9 @@ class PictureRecorder : public ftl::RefCountedThreadSafe<PictureRecorder>,
 
   SkRTreeFactory rtree_factory_;
   SkPictureRecorder picture_recorder_;
-  ftl::RefPtr<Canvas> canvas_;
+  fml::RefPtr<Canvas> canvas_;
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_PAINTING_PICTURE_RECORDER_H_

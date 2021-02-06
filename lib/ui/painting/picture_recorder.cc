@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -6,22 +6,21 @@
 
 #include "flutter/lib/ui/painting/canvas.h"
 #include "flutter/lib/ui/painting/picture.h"
-#include "lib/tonic/dart_args.h"
-#include "lib/tonic/dart_binding_macros.h"
-#include "lib/tonic/converter/dart_converter.h"
-#include "lib/tonic/dart_library_natives.h"
+#include "third_party/tonic/converter/dart_converter.h"
+#include "third_party/tonic/dart_args.h"
+#include "third_party/tonic/dart_binding_macros.h"
+#include "third_party/tonic/dart_library_natives.h"
 
-namespace blink {
+namespace flutter {
 
 static void PictureRecorder_constructor(Dart_NativeArguments args) {
+  UIDartState::ThrowIfUIOperationsProhibited();
   DartCallConstructor(&PictureRecorder::Create, args);
 }
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, PictureRecorder);
 
-#define FOR_EACH_BINDING(V)       \
-  V(PictureRecorder, isRecording) \
-  V(PictureRecorder, endRecording)
+#define FOR_EACH_BINDING(V) V(PictureRecorder, endRecording)
 
 FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
 
@@ -31,32 +30,31 @@ void PictureRecorder::RegisterNatives(tonic::DartLibraryNatives* natives) {
        FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
 }
 
-ftl::RefPtr<PictureRecorder> PictureRecorder::Create() {
-  return ftl::MakeRefCounted<PictureRecorder>();
+fml::RefPtr<PictureRecorder> PictureRecorder::Create() {
+  return fml::MakeRefCounted<PictureRecorder>();
 }
 
 PictureRecorder::PictureRecorder() {}
 
 PictureRecorder::~PictureRecorder() {}
 
-bool PictureRecorder::isRecording() {
-  return canvas_ && canvas_->IsRecording();
-}
-
 SkCanvas* PictureRecorder::BeginRecording(SkRect bounds) {
   return picture_recorder_.beginRecording(bounds, &rtree_factory_);
 }
 
-ftl::RefPtr<Picture> PictureRecorder::endRecording() {
-  if (!isRecording())
+fml::RefPtr<Picture> PictureRecorder::endRecording(Dart_Handle dart_picture) {
+  if (!canvas_) {
     return nullptr;
-  ftl::RefPtr<Picture> picture =
-      Picture::Create(picture_recorder_.finishRecordingAsPicture());
-  canvas_->Clear();
-  canvas_->ClearDartWrapper();
+  }
+
+  fml::RefPtr<Picture> picture = Picture::Create(
+      dart_picture, UIDartState::CreateGPUObject(
+                        picture_recorder_.finishRecordingAsPicture()));
+
+  canvas_->Invalidate();
   canvas_ = nullptr;
   ClearDartWrapper();
   return picture;
 }
 
-}  // namespace blink
+}  // namespace flutter

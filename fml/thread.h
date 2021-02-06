@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -9,8 +9,8 @@
 #include <memory>
 #include <thread>
 
-#include "lib/ftl/macros.h"
-#include "lib/ftl/tasks/task_runner.h"
+#include "flutter/fml/macros.h"
+#include "flutter/fml/task_runner.h"
 
 namespace fml {
 
@@ -20,18 +20,18 @@ class Thread {
 
   ~Thread();
 
-  ftl::RefPtr<ftl::TaskRunner> GetTaskRunner() const;
+  fml::RefPtr<fml::TaskRunner> GetTaskRunner() const;
 
   void Join();
 
- private:
-  std::unique_ptr<std::thread> thread_;
-  ftl::RefPtr<ftl::TaskRunner> task_runner_;
-  std::atomic_bool joined_;
-
   static void SetCurrentThreadName(const std::string& name);
 
-  FTL_DISALLOW_COPY_AND_ASSIGN(Thread);
+ private:
+  std::unique_ptr<std::thread> thread_;
+  fml::RefPtr<fml::TaskRunner> task_runner_;
+  std::atomic_bool joined_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(Thread);
 };
 
 }  // namespace fml

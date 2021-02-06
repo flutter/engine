@@ -1,23 +1,29 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #include "flutter/flow/layers/backdrop_filter_layer.h"
 
-#include "third_party/skia/include/core/SkImageFilter.h"
+namespace flutter {
 
-namespace flow {
+BackdropFilterLayer::BackdropFilterLayer(sk_sp<SkImageFilter> filter)
+    : filter_(std::move(filter)) {}
 
-BackdropFilterLayer::BackdropFilterLayer() {}
+void BackdropFilterLayer::Preroll(PrerollContext* context,
+                                  const SkMatrix& matrix) {
+  Layer::AutoPrerollSaveLayerState save =
+      Layer::AutoPrerollSaveLayerState::Create(context, true, bool(filter_));
+  ContainerLayer::Preroll(context, matrix);
+}
 
-BackdropFilterLayer::~BackdropFilterLayer() {}
-
-void BackdropFilterLayer::Paint(PaintContext& context) {
+void BackdropFilterLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "BackdropFilterLayer::Paint");
-  SkAutoCanvasRestore save(&context.canvas, false);
-  context.canvas.saveLayer(
+  FML_DCHECK(needs_painting(context));
+
+  Layer::AutoSaveLayer save = Layer::AutoSaveLayer::Create(
+      context,
       SkCanvas::SaveLayerRec{&paint_bounds(), nullptr, filter_.get(), 0});
   PaintChildren(context);
 }
 
-}  // namespace flow
+}  // namespace flutter

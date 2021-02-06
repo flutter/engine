@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -7,10 +7,37 @@
 
 #import <Foundation/Foundation.h>
 
-@protocol FlutterTextInputDelegate<NSObject>
+typedef NS_ENUM(NSInteger, FlutterTextInputAction) {
+  FlutterTextInputActionUnspecified,
+  FlutterTextInputActionDone,
+  FlutterTextInputActionGo,
+  FlutterTextInputActionSend,
+  FlutterTextInputActionSearch,
+  FlutterTextInputActionNext,
+  FlutterTextInputActionContinue,
+  FlutterTextInputActionJoin,
+  FlutterTextInputActionRoute,
+  FlutterTextInputActionEmergencyCall,
+  FlutterTextInputActionNewline,
+};
+
+typedef NS_ENUM(NSInteger, FlutterFloatingCursorDragState) {
+  FlutterFloatingCursorDragStateStart,
+  FlutterFloatingCursorDragStateUpdate,
+  FlutterFloatingCursorDragStateEnd,
+};
+
+@protocol FlutterTextInputDelegate <NSObject>
 
 - (void)updateEditingClient:(int)client withState:(NSDictionary*)state;
-
+- (void)updateEditingClient:(int)client withState:(NSDictionary*)state withTag:(NSString*)tag;
+- (void)performAction:(FlutterTextInputAction)action withClient:(int)client;
+- (void)updateFloatingCursor:(FlutterFloatingCursorDragState)state
+                  withClient:(int)client
+                withPosition:(NSDictionary*)point;
+- (void)showAutocorrectionPromptRectForStart:(NSUInteger)start
+                                         end:(NSUInteger)end
+                                  withClient:(int)client;
 @end
 
 #endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTERTEXTINPUTDELEGATE_H_

@@ -1,0 +1,256 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+assert(is_win)
+
+import("//flutter/shell/platform/glfw/config.gni")
+import("//flutter/testing/testing.gni")
+
+_public_headers = [ "public/flutter_windows.h" ]
+
+config("relative_angle_headers") {
+  include_dirs = [ "//third_party/angle/include" ]
+}
+
+# Any files that are built by clients (client_wrapper code, library headers for
+# implementations using this shared code, etc.) include the public headers
+# assuming they are in the include path. This configuration should be added to
+# any such code that is also built by GN to make the includes work.
+config("relative_flutter_windows_headers") {
+  include_dirs = [ "public" ]
+}
+
+# The headers are a separate source set since the client wrapper is allowed
+# to depend on the public headers, but none of the rest of the code.
+source_set("flutter_windows_headers") {
+  public = _public_headers
+
+  public_deps = [ "//flutter/shell/platform/common:common_cpp_library_headers" ]
+
+  if (target_os == "winuwp") {
+    configs +=
+        [ "//flutter/shell/platform/common:desktop_library_implementation" ]
+  } else {
+    configs +=
+        [ "//flutter/shell/platform/common:desktop_library_implementation" ]
+  }
+
+  public_configs =
+      [ "//flutter/shell/platform/common:relative_flutter_library_headers" ]
+}
+
+source_set("flutter_windows_source") {
+  # Common Windows sources.
+  sources = [
+    "angle_surface_manager.cc",
+    "angle_surface_manager.h",
+    "cursor_handler.cc",
+    "cursor_handler.h",
+    "external_texture_gl.cc",
+    "external_texture_gl.h",
+    "flutter_project_bundle.cc",
+    "flutter_project_bundle.h",
+    "flutter_windows.cc",
+    "flutter_windows_engine.cc",
+    "flutter_windows_engine.h",
+    "flutter_windows_texture_registrar.cc",
+    "flutter_windows_texture_registrar.h",
+    "flutter_windows_view.cc",
+    "flutter_windows_view.h",
+    "key_event_handler.cc",
+    "key_event_handler.h",
+    "keyboard_hook_handler.h",
+    "platform_handler.cc",
+    "platform_handler.h",
+    "string_conversion.cc",
+    "string_conversion.h",
+    "system_utils.h",
+    "task_runner.h",
+    "text_input_plugin.cc",
+    "text_input_plugin.h",
+    "window_binding_handler.h",
+    "window_binding_handler_delegate.h",
+    "window_state.h",
+  ]
+
+  # Target-specific sources.
+  if (target_os == "winuwp") {
+    sources += [
+      "flutter_window_winuwp.cc",
+      "flutter_window_winuwp.h",
+      "flutter_windows_winuwp.cc",
+      "platform_handler_winuwp.cc",
+      "platform_handler_winuwp.h",
+      "system_utils_winuwp.cc",
+      "task_runner_winuwp.cc",
+      "task_runner_winuwp.h",
+    ]
+  } else {
+    sources += [
+      "flutter_windows_win32.cc",
+      "platform_handler_win32.cc",
+      "platform_handler_win32.h",
+      "system_utils_win32.cc",
+      "task_runner_win32.cc",
+      "task_runner_win32.h",
+      "text_input_manager_win32.cc",
+      "text_input_manager_win32.h",
+      "win32_dpi_utils.cc",
+      "win32_dpi_utils.h",
+      "win32_flutter_window.cc",
+      "win32_flutter_window.h",
+      "win32_window.cc",
+      "win32_window.h",
+      "win32_window_proc_delegate_manager.cc",
+      "win32_window_proc_delegate_manager.h",
+    ]
+
+    libs = [
+      "dwmapi.lib",
+      "imm32.lib",
+    ]
+  }
+
+  configs += [
+    "//flutter/shell/platform/common:desktop_library_implementation",
+    "//third_party/angle:gl_prototypes",
+  ]
+
+  public_configs = [ ":relative_angle_headers" ]
+
+  defines = [
+    "FLUTTER_ENGINE_NO_PROTOTYPES",
+    "USECOREWINDOW",
+  ]
+
+  deps = [
+    ":flutter_windows_headers",
+    "//flutter/shell/platform/common:common_cpp",
+    "//flutter/shell/platform/common:common_cpp_input",
+    "//flutter/shell/platform/common:common_cpp_switches",
+    "//flutter/shell/platform/common/client_wrapper:client_wrapper",
+    "//flutter/shell/platform/embedder:embedder_as_internal_library",
+    "//flutter/shell/platform/windows/client_wrapper:client_wrapper_windows",
+    "//third_party/angle:libEGL_static",  # the order of libEGL_static and
+                                          # libGLESv2_static is important.. if
+                                          # reversed, will cause a linker error
+                                          # DllMain already defined in
+                                          # LIBCMTD.lib
+    "//third_party/angle:libGLESv2_static",
+    "//third_party/rapidjson",
+  ]
+}
+
+copy("publish_headers_windows") {
+  sources = _public_headers
+  outputs = [ "$root_out_dir/{{source_file_part}}" ]
+
+  # The Windows header assumes the presence of the common headers.
+  deps = [ "//flutter/shell/platform/common:publish_headers" ]
+}
+
+shared_library("flutter_windows") {
+  deps = [ ":flutter_windows_source" ]
+
+  public_configs = [ "//flutter:config" ]
+}
+
+shared_library("flutter_windows_winuwp") {
+  deps = [ ":flutter_windows_source" ]
+  libs = [ "windowsapp.lib" ]
+  public_configs = [ "//flutter:config" ]
+}
+
+test_fixtures("flutter_windows_fixtures") {
+  fixtures = []
+}
+
+executable("flutter_windows_unittests") {
+  testonly = true
+
+  if (target_os == "winuwp") {
+    libs = [ "windowsapp.lib" ]
+  }
+
+  # Common Windows test sources.
+  sources = [
+    # "flutter_project_bundle_unittests.cc", //TODO failing due to switches test failing.  Blocked on https://github.com/flutter/flutter/issues/74153
+    # "flutter_windows_engine_unittests.cc", //TODO failing to send / receive platform message get plugins working first.  Blocked on https://github.com/flutter/flutter/issues/74155
+    "string_conversion_unittests.cc",
+    "system_utils_unittests.cc",
+    "testing/engine_embedder_api_modifier.h",
+  ]
+
+  # Target-specific sources.
+  if (target_os == "winuwp") {
+    # TODO(clarkezone) add UWP tests
+    # https://github.com/flutter/flutter/issues/70197
+  } else {
+    sources += [
+      # TODO move first two tests to common once above TODO's unblocked.
+      "flutter_project_bundle_unittests.cc",
+      "flutter_windows_engine_unittests.cc",
+      "flutter_windows_texture_registrar_unittests.cc",
+      "key_event_handler_unittests.cc",
+      "testing/mock_win32_window.cc",
+      "testing/mock_win32_window.h",
+      "testing/mock_window_binding_handler.cc",
+      "testing/mock_window_binding_handler.h",
+      "testing/win32_flutter_window_test.cc",
+      "testing/win32_flutter_window_test.h",
+      "win32_dpi_utils_unittests.cc",
+      "win32_flutter_window_unittests.cc",
+      "win32_window_proc_delegate_manager_unittests.cc",
+      "win32_window_unittests.cc",
+    ]
+  }
+
+  public_configs = [ "//flutter:config" ]
+
+  deps = [
+    ":flutter_windows_fixtures",
+    ":flutter_windows_headers",
+    ":flutter_windows_source",
+    "//flutter/shell/platform/common:common_cpp",
+    "//flutter/shell/platform/embedder:embedder_as_internal_library",
+    "//flutter/shell/platform/embedder:embedder_test_utils",
+    "//flutter/testing",
+    "//third_party/rapidjson",
+  ]
+}
+
+shared_library("flutter_windows_glfw") {
+  deps = [ "//flutter/shell/platform/glfw:flutter_glfw" ]
+
+  public_configs = [ "//flutter:config" ]
+}
+
+group("windows_glfw") {
+  deps = [
+    ":flutter_windows",
+    ":flutter_windows_glfw",
+    "//flutter/shell/platform/glfw:publish_headers_glfw",
+    "//flutter/shell/platform/glfw/client_wrapper:publish_wrapper_glfw",
+  ]
+}
+
+group("windows") {
+  if (target_os == "winuwp") {
+    deps = [
+      ":flutter_windows_winuwp",
+      ":publish_headers_windows",
+      "//flutter/shell/platform/windows/client_wrapper:publish_wrapper_windows",
+    ]
+  } else {
+    deps = [
+      ":flutter_windows",
+      ":publish_headers_windows",
+      "//flutter/shell/platform/windows/client_wrapper:publish_wrapper_windows",
+    ]
+  }
+
+  if (build_glfw_shell) {
+    deps += [ ":windows_glfw" ]
+  }
+}

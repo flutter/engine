@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -6,9 +6,10 @@
 #define FLUTTER_FML_PLATFORM_ANDROID_SCOPED_JAVA_REF_H_
 
 #include <jni.h>
-#include <stddef.h>
 
-#include "lib/ftl/macros.h"
+#include <cstddef>
+
+#include "flutter/fml/macros.h"
 
 namespace fml {
 namespace jni {
@@ -27,7 +28,7 @@ class ScopedJavaLocalFrame {
   // it's safe to cache the non-threadsafe JNIEnv* inside this object.
   JNIEnv* env_;
 
-  FTL_DISALLOW_COPY_AND_ASSIGN(ScopedJavaLocalFrame);
+  FML_DISALLOW_COPY_AND_ASSIGN(ScopedJavaLocalFrame);
 };
 
 // Forward declare the generic java reference template class.
@@ -65,7 +66,7 @@ class JavaRef<jobject> {
  private:
   jobject obj_;
 
-  FTL_DISALLOW_COPY_AND_ASSIGN(JavaRef);
+  FML_DISALLOW_COPY_AND_ASSIGN(JavaRef);
 };
 
 // Generic base class for ScopedJavaLocalRef and ScopedJavaGlobalRef. Useful
@@ -83,7 +84,7 @@ class JavaRef : public JavaRef<jobject> {
   JavaRef(JNIEnv* env, T obj) : JavaRef<jobject>(env, obj) {}
 
  private:
-  FTL_DISALLOW_COPY_AND_ASSIGN(JavaRef);
+  FML_DISALLOW_COPY_AND_ASSIGN(JavaRef);
 };
 
 // Holds a local reference to a Java object. The local reference is scoped

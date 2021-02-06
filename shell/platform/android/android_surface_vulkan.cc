@@ -1,19 +1,24 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/android/android_surface_vulkan.h"
 
+#include <memory>
 #include <utility>
 
+#include "flutter/fml/logging.h"
 #include "flutter/shell/gpu/gpu_surface_vulkan.h"
 #include "flutter/vulkan/vulkan_native_surface_android.h"
-#include "lib/ftl/logging.h"
+#include "include/core/SkRefCnt.h"
 
-namespace shell {
+namespace flutter {
 
-AndroidSurfaceVulkan::AndroidSurfaceVulkan()
-    : proc_table_(ftl::MakeRefCounted<vulkan::VulkanProcTable>()) {}
+AndroidSurfaceVulkan::AndroidSurfaceVulkan(
+    const std::shared_ptr<AndroidContext>& android_context,
+    std::shared_ptr<PlatformViewAndroidJNI> jni_facade)
+    : AndroidSurface(android_context),
+      proc_table_(fml::MakeRefCounted<vulkan::VulkanProcTable>()) {}
 
 AndroidSurfaceVulkan::~AndroidSurfaceVulkan() = default;
 
@@ -22,10 +27,11 @@ bool AndroidSurfaceVulkan::IsValid() const {
 }
 
 void AndroidSurfaceVulkan::TeardownOnScreenContext() {
-  //
+  // Nothing to do.
 }
 
-std::unique_ptr<Surface> AndroidSurfaceVulkan::CreateGPUSurface() {
+std::unique_ptr<Surface> AndroidSurfaceVulkan::CreateGPUSurface(
+    GrDirectContext* gr_context) {
   if (!IsValid()) {
     return nullptr;
   }
@@ -42,37 +48,52 @@ std::unique_ptr<Surface> AndroidSurfaceVulkan::CreateGPUSurface() {
     return nullptr;
   }
 
-  auto gpu_surface = std::make_unique<GPUSurfaceVulkan>(
-      proc_table_, std::move(vulkan_surface_android));
-
-  if (!gpu_surface->IsValid()) {
-    return nullptr;
+  sk_sp<GrDirectContext> provided_gr_context;
+  if (gr_context) {
+    provided_gr_context = sk_ref_sp(gr_context);
+  } else if (android_context_->GetMainSkiaContext()) {
+    provided_gr_context = android_context_->GetMainSkiaContext();
   }
 
-  if (!gpu_surface->Setup()) {
+  std::unique_ptr<GPUSurfaceVulkan> gpu_surface;
+  if (provided_gr_context) {
+    gpu_surface = std::make_unique<GPUSurfaceVulkan>(
+        provided_gr_context, this, std::move(vulkan_surface_android), true);
+  } else {
+    gpu_surface = std::make_unique<GPUSurfaceVulkan>(
+        this, std::move(vulkan_surface_android), true);
+    android_context_->SetMainSkiaContext(sk_ref_sp(gpu_surface->GetContext()));
+  }
+
+  if (!gpu_surface->IsValid()) {
     return nullptr;
   }
 
   return gpu_surface;
 }
 
-SkISize AndroidSurfaceVulkan::OnScreenSurfaceSize() const {
-  return native_window_ ? native_window_->GetSize() : SkISize::Make(0, 0);
-}
-
-bool AndroidSurfaceVulkan::OnScreenSurfaceResize(const SkISize& size) const {
+bool AndroidSurfaceVulkan::OnScreenSurfaceResize(const SkISize& size) {
   return true;
 }
 
 bool AndroidSurfaceVulkan::ResourceContextMakeCurrent() {
+  FML_DLOG(ERROR) << "The vulkan backend does not support resource contexts.";
+  return false;
+}
+
+bool AndroidSurfaceVulkan::ResourceContextClearCurrent() {
+  FML_DLOG(ERROR) << "The vulkan backend does not support resource contexts.";
   return false;
 }
 
 bool AndroidSurfaceVulkan::SetNativeWindow(
-    ftl::RefPtr<AndroidNativeWindow> window,
-    PlatformView::SurfaceConfig config) {
+    fml::RefPtr<AndroidNativeWindow> window) {
   native_window_ = std::move(window);
   return native_window_ && native_window_->IsValid();
 }
 
-}  // namespace shell
+fml::RefPtr<vulkan::VulkanProcTable> AndroidSurfaceVulkan::vk() {
+  return proc_table_;
+}
+
+}  // namespace flutter

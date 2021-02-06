@@ -1,36 +1,34 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #ifndef FLUTTER_LIB_UI_PAINTING_CANVAS_H_
 #define FLUTTER_LIB_UI_PAINTING_CANVAS_H_
 
+#include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/painting/paint.h"
 #include "flutter/lib/ui/painting/path.h"
 #include "flutter/lib/ui/painting/picture.h"
 #include "flutter/lib/ui/painting/picture_recorder.h"
 #include "flutter/lib/ui/painting/rrect.h"
-#include "lib/tonic/dart_wrappable.h"
-#include "lib/tonic/typed_data/float32_list.h"
-#include "lib/tonic/typed_data/float64_list.h"
-#include "lib/tonic/typed_data/int32_list.h"
+#include "flutter/lib/ui/painting/vertices.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/utils/SkShadowUtils.h"
+#include "third_party/tonic/typed_data/typed_list.h"
 
 namespace tonic {
 class DartLibraryNatives;
 }  // namespace tonic
 
-namespace blink {
+namespace flutter {
 class CanvasImage;
 
-class Canvas : public ftl::RefCountedThreadSafe<Canvas>,
-               public tonic::DartWrappable {
+class Canvas : public RefCountedDartWrappable<Canvas> {
   DEFINE_WRAPPERTYPEINFO();
-  FRIEND_MAKE_REF_COUNTED(Canvas);
+  FML_FRIEND_MAKE_REF_COUNTED(Canvas);
 
  public:
-  static ftl::RefPtr<Canvas> Create(PictureRecorder* recorder,
+  static fml::RefPtr<Canvas> Create(PictureRecorder* recorder,
                                     double left,
                                     double top,
                                     double right,
@@ -55,9 +53,14 @@ class Canvas : public ftl::RefCountedThreadSafe<Canvas>,
   void skew(double sx, double sy);
   void transform(const tonic::Float64List& matrix4);
 
-  void clipRect(double left, double top, double right, double bottom);
-  void clipRRect(const RRect& rrect);
-  void clipPath(const CanvasPath* path);
+  void clipRect(double left,
+                double top,
+                double right,
+                double bottom,
+                SkClipOp clipOp,
+                bool doAntiAlias = true);
+  void clipRRect(const RRect& rrect, bool doAntiAlias = true);
+  void clipPath(const CanvasPath* path, bool doAntiAlias = true);
 
   void drawColor(SkColor color, SkBlendMode blend_mode);
   void drawLine(double x1,
@@ -142,14 +145,10 @@ class Canvas : public ftl::RefCountedThreadSafe<Canvas>,
                   SkCanvas::PointMode point_mode,
                   const tonic::Float32List& points);
 
-  void drawVertices(const Paint& paint,
-                    const PaintData& paint_data,
-                    SkCanvas::VertexMode vertex_mode,
-                    const tonic::Float32List& vertices,
-                    const tonic::Float32List& texture_coordinates,
-                    const tonic::Int32List& colors,
+  void drawVertices(const Vertices* vertices,
                     SkBlendMode blend_mode,
-                    const tonic::Int32List& indices);
+                    const Paint& paint,
+                    const PaintData& paint_data);
 
   void drawAtlas(const Paint& paint,
                  const PaintData& paint_data,
@@ -162,12 +161,11 @@ class Canvas : public ftl::RefCountedThreadSafe<Canvas>,
 
   void drawShadow(const CanvasPath* path,
                   SkColor color,
-                  int elevation,
+                  double elevation,
                   bool transparentOccluder);
 
   SkCanvas* canvas() const { return canvas_; }
-  void Clear();
-  bool IsRecording() const;
+  void Invalidate();
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
@@ -180,6 +178,6 @@ class Canvas : public ftl::RefCountedThreadSafe<Canvas>,
   SkCanvas* canvas_;
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_PAINTING_CANVAS_H_

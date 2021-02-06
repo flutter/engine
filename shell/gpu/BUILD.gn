@@ -1,38 +1,59 @@
-# Copyright 2016 The Chromium Authors. All rights reserved.
+# Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//flutter/common/config.gni")
 import("//flutter/shell/config.gni")
 
-source_set("gpu") {
+gpu_common_deps = [
+  "//flutter/common",
+  "//flutter/common/graphics",
+  "//flutter/flow",
+  "//flutter/fml",
+  "//flutter/shell/common",
+  "//third_party/skia",
+]
+
+source_set("gpu_surface_software") {
   sources = [
-    "gpu_rasterizer.cc",
-    "gpu_rasterizer.h",
-    "gpu_surface_gl.cc",
-    "gpu_surface_gl.h",
     "gpu_surface_software.cc",
     "gpu_surface_software.h",
+    "gpu_surface_software_delegate.cc",
+    "gpu_surface_software_delegate.h",
   ]
 
-  if (shell_enable_vulkan) {
-    sources += [
-      "gpu_surface_vulkan.cc",
-      "gpu_surface_vulkan.h",
-    ]
-  }
+  deps = gpu_common_deps
+}
 
-  deps = [
-    "//flutter/common",
-    "//flutter/flow",
-    "//flutter/glue",
-    "//flutter/shell/common",
-    "//flutter/synchronization",
-    "//lib/ftl",
-    "//third_party/skia",
-    "//third_party/skia:gpu",
+source_set("gpu_surface_gl") {
+  sources = [
+    "gpu_surface_gl.cc",
+    "gpu_surface_gl.h",
+    "gpu_surface_gl_delegate.cc",
+    "gpu_surface_gl_delegate.h",
   ]
 
-  if (shell_enable_vulkan) {
-    deps += [ "//flutter/vulkan" ]
-  }
+  deps = gpu_common_deps
+}
+
+source_set("gpu_surface_vulkan") {
+  sources = [
+    "gpu_surface_vulkan.cc",
+    "gpu_surface_vulkan.h",
+    "gpu_surface_vulkan_delegate.cc",
+    "gpu_surface_vulkan_delegate.h",
+  ]
+
+  deps = gpu_common_deps + [ "//flutter/vulkan" ]
+}
+
+source_set("gpu_surface_metal") {
+  sources = [
+    "gpu_surface_metal.h",
+    "gpu_surface_metal.mm",
+    "gpu_surface_metal_delegate.cc",
+    "gpu_surface_metal_delegate.h",
+  ]
+
+  deps = gpu_common_deps
 }

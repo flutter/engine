@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -7,26 +7,26 @@
 #include <sys/epoll.h>
 #include <unistd.h>
 
+#include "flutter/fml/eintr_wrapper.h"
 #include "flutter/fml/platform/linux/timerfd.h"
-#include "lib/ftl/files/eintr_wrapper.h"
 
 namespace fml {
 
 static constexpr int kClockType = CLOCK_MONOTONIC;
 
 MessageLoopLinux::MessageLoopLinux()
-    : epoll_fd_(HANDLE_EINTR(::epoll_create(1 /* unused */))),
+    : epoll_fd_(FML_HANDLE_EINTR(::epoll_create(1 /* unused */))),
       timer_fd_(::timerfd_create(kClockType, TFD_NONBLOCK | TFD_CLOEXEC)),
       running_(false) {
-  FTL_CHECK(epoll_fd_.is_valid());
-  FTL_CHECK(timer_fd_.is_valid());
+  FML_CHECK(epoll_fd_.is_valid());
+  FML_CHECK(timer_fd_.is_valid());
   bool added_source = AddOrRemoveTimerSource(true);
-  FTL_CHECK(added_source);
+  FML_CHECK(added_source);
 }
 
 MessageLoopLinux::~MessageLoopLinux() {
   bool removed_source = AddOrRemoveTimerSource(false);
-  FTL_CHECK(removed_source);
+  FML_CHECK(removed_source);
 }
 
 bool MessageLoopLinux::AddOrRemoveTimerSource(bool add) {
@@ -43,13 +43,14 @@ bool MessageLoopLinux::AddOrRemoveTimerSource(bool add) {
   return ctl_result == 0;
 }
 
+// |fml::MessageLoopImpl|
 void MessageLoopLinux::Run() {
   running_ = true;
 
   while (running_) {
     struct epoll_event event = {};
 
-    int epoll_result = HANDLE_EINTR(
+    int epoll_result = FML_HANDLE_EINTR(
         ::epoll_wait(epoll_fd_.get(), &event, 1, -1 /* timeout */));
 
     // Errors are fatal.
@@ -71,14 +72,16 @@ void MessageLoopLinux::Run() {
   }
 }
 
+// |fml::MessageLoopImpl|
 void MessageLoopLinux::Terminate() {
   running_ = false;
-  WakeUp(ftl::TimePoint::Now());
+  WakeUp(fml::TimePoint::Now());
 }
 
-void MessageLoopLinux::WakeUp(ftl::TimePoint time_point) {
+// |fml::MessageLoopImpl|
+void MessageLoopLinux::WakeUp(fml::TimePoint time_point) {
   bool result = TimerRearm(timer_fd_.get(), time_point);
-  FTL_DCHECK(result);
+  FML_DCHECK(result);
 }
 
 void MessageLoopLinux::OnEventFired() {

@@ -1,24 +1,24 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/vulkan/vulkan_surface.h"
+#include "vulkan_surface.h"
 
-#include "flutter/vulkan/vulkan_application.h"
-#include "flutter/vulkan/vulkan_native_surface.h"
+#include "vulkan_application.h"
+#include "vulkan_native_surface.h"
 
 namespace vulkan {
 
 VulkanSurface::VulkanSurface(
-    VulkanProcTable& p_vk,
-    VulkanApplication& application,
+    VulkanProcTable& p_vk,           // NOLINT
+    VulkanApplication& application,  // NOLINT
     std::unique_ptr<VulkanNativeSurface> native_surface)
     : vk(p_vk),
       application_(application),
       native_surface_(std::move(native_surface)),
       valid_(false) {
   if (native_surface_ == nullptr || !native_surface_->IsValid()) {
-    FTL_DLOG(INFO) << "Native surface was invalid.";
+    FML_DLOG(INFO) << "Native surface was invalid.";
     return;
   }
 
@@ -26,7 +26,7 @@ VulkanSurface::VulkanSurface(
       native_surface_->CreateSurfaceHandle(vk, application.GetInstance());
 
   if (surface == VK_NULL_HANDLE) {
-    FTL_DLOG(INFO) << "Could not create the surface handle.";
+    FML_DLOG(INFO) << "Could not create the surface handle.";
     return;
   }
 

@@ -1,14 +1,12 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:collection';
-
-Map<Key, dynamic> _cache = new LinkedHashMap<Key, dynamic>();
+Map<Key, dynamic> _cache = <Key, dynamic>{};
 const int _maxSize = 10;
 
-dynamic/*=T*/ cache/*<T>*/(Key key, dynamic/*=T*/ getter()) {
-  dynamic/*=T*/ result = _cache[key];
+T cache<T>(Key key, T getter()) {
+  T result = _cache[key];
   if (result != null) {
     _cache.remove(key);
   } else {
@@ -27,13 +25,13 @@ abstract class Key {
   final dynamic _value;
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     if (identical(this, other))
       return true;
     if (runtimeType != other.runtimeType)
       return false;
-    final Key typedOther = other;
-    return _value == typedOther._value;
+    return other is Key
+        && other._value == _value;
   }
 
   @override

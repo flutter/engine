@@ -1,69 +1,71 @@
-# Copyright 2016 The Chromium Authors. All rights reserved.
+# Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
 assert(is_mac || is_ios)
 
+import("//flutter/shell/platform/config.gni")
+import("//flutter/testing/testing.gni")
+
 group("darwin") {
+  if (is_ios) {
+    deps = [ "ios:flutter_framework" ]
+  }
   if (is_mac) {
-    deps = [
-      "desktop:shell_application_bundle",
-      "desktop:shell_standalone",
-    ]
-  } else if (is_ios) {
-    deps = [
-      "ios:flutter_framework",
-    ]
-  } else {
-    assert(false, "Unknown darwin platform type.")
+    deps = []
+    if (enable_desktop_embeddings) {
+      deps += [ "macos" ]
+    }
   }
 }
 
 source_set("flutter_channels") {
-  set_sources_assignment_filter([])
+  cflags_objc = flutter_cflags_objc
+  cflags_objcc = flutter_cflags_objcc
+
   sources = [
-    "ios/framework/Headers/FlutterBinaryMessenger.h",
-    "ios/framework/Headers/FlutterChannels.h",
-    "ios/framework/Headers/FlutterCodecs.h",
-    "ios/framework/Source/FlutterChannels.mm",
-    "ios/framework/Source/FlutterCodecs.mm",
-    "ios/framework/Source/FlutterStandardCodec_Internal.h",
-    "ios/framework/Source/FlutterStandardCodec.mm",
     "common/buffer_conversions.h",
     "common/buffer_conversions.mm",
+    "common/framework/Headers/FlutterBinaryMessenger.h",
+    "common/framework/Headers/FlutterChannels.h",
+    "common/framework/Headers/FlutterCodecs.h",
+    "common/framework/Headers/FlutterMacros.h",
+    "common/framework/Source/FlutterChannels.mm",
+    "common/framework/Source/FlutterCodecs.mm",
+    "common/framework/Source/FlutterStandardCodec.mm",
+    "common/framework/Source/FlutterStandardCodec_Internal.h",
   ]
-  set_sources_assignment_filter(sources_assignment_filter)
 
   deps = [
-    "//base",
-    "//base:i18n",
-    "//dart/runtime:libdart",
     "//flutter/common",
     "//flutter/flow",
     "//flutter/fml",
     "//flutter/runtime",
     "//flutter/shell/common",
-    "//flutter/shell/gpu",
-    "//flutter/shell/testing",
-    "//flutter/sky/engine/wtf",
-    "//lib/ftl",
     "//third_party/skia",
   ]
+
+  public_configs = [ "//flutter:config" ]
 }
 
+test_fixtures("flutter_channels_fixtures") {
+  fixtures = []
+}
 
 executable("flutter_channels_unittests") {
   testonly = true
 
-  set_sources_assignment_filter([])
   sources = [
-    "ios/framework/Source/flutter_codecs_unittest.mm",
-    "ios/framework/Source/flutter_standard_codec_unittest.mm",
+    "common/framework/Source/flutter_codecs_unittest.mm",
+    "common/framework/Source/flutter_standard_codec_unittest.mm",
   ]
-  set_sources_assignment_filter(sources_assignment_filter)
 
   deps = [
     ":flutter_channels",
+    ":flutter_channels_fixtures",
     "//flutter/testing",
+    "//third_party/dart/runtime:libdart_jit",
   ]
+
+  public_configs = [ "//flutter:config" ]
 }

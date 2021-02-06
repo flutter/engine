@@ -1,133 +1,133 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
 
 #include "flutter/common/settings.h"
-#include "flutter/common/threads.h"
+#include "flutter/common/task_runners.h"
 #include "flutter/flow/layers/layer_tree.h"
+#include "flutter/fml/platform/darwin/cf_utils.h"
+#include "flutter/fml/synchronization/waitable_event.h"
+#include "flutter/fml/trace_event.h"
+#include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/rasterizer.h"
-#include "flutter/shell/common/shell.h"
-#include "lib/ftl/synchronization/waitable_event.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
+#import "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
+#import "flutter/shell/platform/darwin/ios/ios_surface_software.h"
 #include "third_party/skia/include/utils/mac/SkCGUtils.h"
 
-@interface FlutterView ()<UIInputViewAudioFeedback>
+@implementation FlutterView {
+  id<FlutterViewEngineDelegate> _delegate;
+}
 
-@end
+- (instancetype)init {
+  @throw([NSException exceptionWithName:@"FlutterView must initWithDelegate"
+                                 reason:nil
+                               userInfo:nil]);
+}
 
-@implementation FlutterView
+- (instancetype)initWithFrame:(CGRect)frame {
+  @throw([NSException exceptionWithName:@"FlutterView must initWithDelegate"
+                                 reason:nil
+                               userInfo:nil]);
+}
+
+- (instancetype)initWithCoder:(NSCoder*)aDecoder {
+  @throw([NSException exceptionWithName:@"FlutterView must initWithDelegate"
+                                 reason:nil
+                               userInfo:nil]);
+}
+
+- (instancetype)initWithDelegate:(id<FlutterViewEngineDelegate>)delegate opaque:(BOOL)opaque {
+  if (delegate == nil) {
+    NSLog(@"FlutterView delegate was nil.");
+    [self release];
+    return nil;
+  }
+
+  self = [super initWithFrame:CGRectNull];
+
+  if (self) {
+    _delegate = delegate;
+    self.layer.opaque = opaque;
+  }
+
+  return self;
+}
 
 - (void)layoutSubviews {
-  if ([self.layer isKindOfClass:[CAEAGLLayer class]]) {
-    CAEAGLLayer* layer = reinterpret_cast<CAEAGLLayer*>(self.layer);
-    layer.allowsGroupOpacity = YES;
-    layer.opaque = YES;
+  if ([self.layer isKindOfClass:NSClassFromString(@"CAEAGLLayer")] ||
+      [self.layer isKindOfClass:NSClassFromString(@"CAMetalLayer")]) {
     CGFloat screenScale = [UIScreen mainScreen].scale;
-    layer.contentsScale = screenScale;
-    layer.rasterizationScale = screenScale;
+    self.layer.allowsGroupOpacity = YES;
+    self.layer.contentsScale = screenScale;
+    self.layer.rasterizationScale = screenScale;
   }
 
   [super layoutSubviews];
 }
 
+static BOOL _forceSoftwareRendering;
+
++ (BOOL)forceSoftwareRendering {
+  return _forceSoftwareRendering;
+}
+
++ (void)setForceSoftwareRendering:(BOOL)forceSoftwareRendering {
+  _forceSoftwareRendering = forceSoftwareRendering;
+}
+
 + (Class)layerClass {
-#if TARGET_IPHONE_SIMULATOR
-  return [CALayer class];
-#else   // TARGET_IPHONE_SIMULATOR
-  return [CAEAGLLayer class];
-#endif  // TARGET_IPHONE_SIMULATOR
+  return flutter::GetCoreAnimationLayerClassForRenderingAPI(
+      flutter::GetRenderingAPIForProcess(FlutterView.forceSoftwareRendering));
 }
 
-- (BOOL)enableInputClicksWhenVisible {
-  return YES;
-}
-
-void SnapshotRasterizer(ftl::WeakPtr<shell::Rasterizer> rasterizer,
-                        CGContextRef context,
-                        bool is_opaque) {
-  if (!rasterizer) {
-    return;
-  }
-
-  // Access the layer tree and assess the description of the backing store to
-  // create for this snapshot.
-  flow::LayerTree* layer_tree = rasterizer->GetLastLayerTree();
-  if (layer_tree == nullptr) {
-    return;
-  }
-  auto size = layer_tree->frame_size();
-  if (size.isEmpty()) {
-    return;
-  }
-  auto info =
-      SkImageInfo::MakeN32(size.width(), size.height(),
-                           is_opaque ? SkAlphaType::kOpaque_SkAlphaType
-                                     : SkAlphaType::kPremul_SkAlphaType);
-
-  // Create the backing store and prepare for use.
-  SkBitmap bitmap;
-  bitmap.setInfo(info);
-  if (!bitmap.tryAllocPixels()) {
-    return;
-  }
-
-  // Create a canvas from the backing store and a single use compositor context
-  // to draw into the canvas.
-  SkAutoLockPixels pixel_lock(bitmap, true);
-
-  SkCanvas canvas(bitmap);
-
-  {
-    flow::CompositorContext compositor_context(nullptr);
-    auto frame = compositor_context.AcquireFrame(nullptr, &canvas,
-                                                 false /* instrumentation */);
-    layer_tree->Raster(frame, false /* ignore raster cache. */);
-  }
-
-  canvas.flush();
-
-  // Draw the bitmap to the system provided snapshotting context.
-  SkCGDrawBitmap(context, bitmap, 0, 0);
-}
-
-void SnapshotContents(CGContextRef context, bool is_opaque) {
-  // TODO(chinmaygarde): Currently, there is no way to get the rasterizer for
-  // a particular platform view from the shell. But, for now, we only have one
-  // platform view. So use that. Once we support multiple platform views, the
-  // shell will need to provide a way to get the rasterizer for a specific
-  // platform view.
-  std::vector<ftl::WeakPtr<shell::Rasterizer>> registered_rasterizers;
-  shell::Shell::Shared().GetRasterizers(&registered_rasterizers);
-  for (auto& rasterizer : registered_rasterizers) {
-    SnapshotRasterizer(rasterizer, context, is_opaque);
-  }
-}
-
-void SnapshotContentsSync(CGContextRef context, UIView* view) {
-  auto gpu_thread = blink::Threads::Gpu();
-
-  if (!gpu_thread) {
-    return;
-  }
-
-  ftl::AutoResetWaitableEvent latch;
-  gpu_thread->PostTask([&latch, context, view]() {
-    SnapshotContents(context, [view isOpaque]);
-    latch.Signal();
-  });
-  latch.Wait();
-}
-
-// Override the default CALayerDelegate method so that APIs that attempt to
-// screenshot the view display contents correctly. We cannot depend on
-// reading
-// GPU pixels directly because:
-// 1: We dont use retained backing on the CAEAGLLayer.
-// 2: The call is made of the platform thread and not the GPU thread.
-// 3: There may be a software rasterizer.
 - (void)drawLayer:(CALayer*)layer inContext:(CGContextRef)context {
-  SnapshotContentsSync(context, self);
+  TRACE_EVENT0("flutter", "SnapshotFlutterView");
+
+  if (layer != self.layer || context == nullptr) {
+    return;
+  }
+
+  auto screenshot = [_delegate takeScreenshot:flutter::Rasterizer::ScreenshotType::UncompressedImage
+                              asBase64Encoded:NO];
+
+  if (!screenshot.data || screenshot.data->isEmpty() || screenshot.frame_size.isEmpty()) {
+    return;
+  }
+
+  NSData* data = [NSData dataWithBytes:const_cast<void*>(screenshot.data->data())
+                                length:screenshot.data->size()];
+
+  fml::CFRef<CGDataProviderRef> image_data_provider(
+      CGDataProviderCreateWithCFData(reinterpret_cast<CFDataRef>(data)));
+
+  fml::CFRef<CGColorSpaceRef> colorspace(CGColorSpaceCreateDeviceRGB());
+
+  fml::CFRef<CGImageRef> image(CGImageCreate(
+      screenshot.frame_size.width(),      // size_t width
+      screenshot.frame_size.height(),     // size_t height
+      8,                                  // size_t bitsPerComponent
+      32,                                 // size_t bitsPerPixel,
+      4 * screenshot.frame_size.width(),  // size_t bytesPerRow
+      colorspace,                         // CGColorSpaceRef space
+      static_cast<CGBitmapInfo>(kCGImageAlphaPremultipliedLast |
+                                kCGBitmapByteOrder32Big),  // CGBitmapInfo bitmapInfo
+      image_data_provider,                                 // CGDataProviderRef provider
+      nullptr,                                             // const CGFloat* decode
+      false,                                               // bool shouldInterpolate
+      kCGRenderingIntentDefault                            // CGColorRenderingIntent intent
+      ));
+
+  const CGRect frame_rect =
+      CGRectMake(0.0, 0.0, screenshot.frame_size.width(), screenshot.frame_size.height());
+
+  CGContextSaveGState(context);
+  CGContextTranslateCTM(context, 0.0, CGBitmapContextGetHeight(context));
+  CGContextScaleCTM(context, 1.0, -1.0);
+  CGContextDrawImage(context, frame_rect, image);
+  CGContextRestoreGState(context);
 }
 
 @end

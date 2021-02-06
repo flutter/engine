@@ -1,0 +1,13 @@
+name: flutter_engine_benchmark
+
+dependencies:
+  git: any
+
+  metrics_center: 0.0.9
+
+dev_dependencies:
+  test: any
+  pedantic: ^1.8.0
+
+environment:
+  sdk: ">=2.2.2 <3.0.0"

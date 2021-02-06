@@ -1,11 +1,11 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #include "flutter/fml/platform/android/scoped_java_ref.h"
 
+#include "flutter/fml/logging.h"
 #include "flutter/fml/platform/android/jni_util.h"
-#include "lib/ftl/logging.h"
 
 namespace fml {
 namespace jni {
@@ -14,13 +14,13 @@ static const int kDefaultLocalFrameCapacity = 16;
 
 ScopedJavaLocalFrame::ScopedJavaLocalFrame(JNIEnv* env) : env_(env) {
   int failed = env_->PushLocalFrame(kDefaultLocalFrameCapacity);
-  FTL_DCHECK(!failed);
+  FML_DCHECK(!failed);
 }
 
 ScopedJavaLocalFrame::ScopedJavaLocalFrame(JNIEnv* env, int capacity)
     : env_(env) {
   int failed = env_->PushLocalFrame(capacity);
-  FTL_DCHECK(!failed);
+  FML_DCHECK(!failed);
 }
 
 ScopedJavaLocalFrame::~ScopedJavaLocalFrame() {
@@ -31,7 +31,7 @@ JavaRef<jobject>::JavaRef() : obj_(NULL) {}
 
 JavaRef<jobject>::JavaRef(JNIEnv* env, jobject obj) : obj_(obj) {
   if (obj) {
-    FTL_DCHECK(env && env->GetObjectRefType(obj) == JNILocalRefType);
+    FML_DCHECK(env && env->GetObjectRefType(obj) == JNILocalRefType);
   }
 }
 
@@ -41,7 +41,7 @@ JNIEnv* JavaRef<jobject>::SetNewLocalRef(JNIEnv* env, jobject obj) {
   if (!env) {
     env = AttachCurrentThread();
   } else {
-    FTL_DCHECK(env == AttachCurrentThread());  // Is |env| on correct thread.
+    FML_DCHECK(env == AttachCurrentThread());  // Is |env| on correct thread.
   }
   if (obj)
     obj = env->NewLocalRef(obj);
@@ -55,7 +55,7 @@ void JavaRef<jobject>::SetNewGlobalRef(JNIEnv* env, jobject obj) {
   if (!env) {
     env = AttachCurrentThread();
   } else {
-    FTL_DCHECK(env == AttachCurrentThread());  // Is |env| on correct thread.
+    FML_DCHECK(env == AttachCurrentThread());  // Is |env| on correct thread.
   }
   if (obj)
     obj = env->NewGlobalRef(obj);
@@ -66,7 +66,7 @@ void JavaRef<jobject>::SetNewGlobalRef(JNIEnv* env, jobject obj) {
 
 void JavaRef<jobject>::ResetLocalRef(JNIEnv* env) {
   if (obj_) {
-    FTL_DCHECK(env == AttachCurrentThread());  // Is |env| on correct thread.
+    FML_DCHECK(env == AttachCurrentThread());  // Is |env| on correct thread.
     env->DeleteLocalRef(obj_);
     obj_ = NULL;
   }

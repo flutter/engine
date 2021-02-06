@@ -1,31 +1,34 @@
 Flutter Engine
 ==============
-[![Build Status](https://travis-ci.org/flutter/engine.svg)](https://travis-ci.org/flutter/engine)
 
-Flutter is a new way to build high-performance, cross-platform mobile apps.
-Flutter is optimized for today's, and tomorrow's, mobile devices. We are
-focused on low-latency input and high frame rates on Android and iOS.
+[![Build Status - Cirrus][]][Build status]
 
-The Flutter Engine is the runtime environment for hosting Flutter applications.
-Most developers will interact with Flutter via the Flutter Framework and APIs,
-which run inside the engine.
+Flutter is Google's mobile app SDK for crafting high-quality native interfaces
+in record time. Flutter works with existing code, is used by developers and
+organizations around the world, and is free and open source.
 
-_Flutter is an early-stage open-source project._ We are still adding
-features. However,
-you can build demos and examples today. We hope you try it out and send
-us [feedback](mailto:flutter-dev@googlegroups.com).
+The Flutter Engine is a portable runtime for hosting
+[Flutter](https://flutter.dev) applications.  It implements Flutter's core
+libraries, including animation and graphics, file and network I/O,
+accessibility support, plugin architecture, and a Dart runtime and compile
+toolchain. Most developers will interact with Flutter via the [Flutter
+Framework](https://github.com/flutter/flutter), which provides a modern,
+reactive framework, and a rich set of platform, layout and foundation widgets.
 
- - For information about using Flutter to build apps, please see
-   the [getting started guide](https://flutter.io/getting-started/).
+If you want to run/contribute to Flutter Web engine, more tooling can be
+found at [felt](https://github.com/flutter/engine/tree/master/lib/web_ui/dev#whats-felt).
+This is a tool written to make web engine development experience easy.
 
- - For information about contributing to the Flutter framework, please see
-   [the main Flutter repository](https://github.com/flutter/flutter/blob/master/CONTRIBUTING.md).
+If you are new to Flutter, then you will find more general information
+on the Flutter project, including tutorials and samples, on our Web
+site at [Flutter.dev](https://flutter.dev). For specific information
+about Flutter's APIs, consider our API reference which can be found at
+the [docs.flutter.dev](https://docs.flutter.dev/).
 
- - For information about contributing code to the engine itself, please see
-   [CONTRIBUTING.md](CONTRIBUTING.md).
+Flutter is a fully open source project, and we welcome contributions.
+Information on how to get started can be found at our
+[contributor guide](CONTRIBUTING.md).
 
-Community
----------
+[Build Status - Cirrus]: https://api.cirrus-ci.com/github/flutter/engine.svg?branch=master
+[Build status]: https://cirrus-ci.com/github/flutter/engine
 
-Join us in our [Gitter chat room](https://gitter.im/flutter/flutter) or join our mailing list,
-[flutter-dev@googlegroups.com](https://groups.google.com/forum/#!forum/flutter-dev).

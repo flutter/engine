@@ -1,15 +1,16 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:convert';
 import 'dart:collection';
+import 'dart:convert';
 import 'dart:io' as io;
 
 import 'package:path/path.dart' as path;
 import 'package:archive/archive.dart' as a;
 
 import 'cache.dart';
+import 'limits.dart';
 
 enum FileType {
   binary, // won't have its own license block
@@ -22,7 +23,7 @@ enum FileType {
   metadata, // can be skipped entirely (e.g. Mac OS X ._foo files)
 }
 
-typedef List<int> Reader();
+typedef Reader = List<int> Function();
 
 class BytesOf extends Key { BytesOf(dynamic value) : super(value); }
 class UTF8Of extends Key { UTF8Of(dynamic value) : super(value); }
@@ -38,11 +39,27 @@ bool matchesSignature(List<int> bytes, List<int> signature) {
   return true;
 }
 
+bool hasSubsequence(List<int> bytes, List<int> signature, int limit) {
+  if (bytes.length < limit)
+    limit = bytes.length;
+  for (int index = 0; index < limit; index += 1) {
+    if (bytes.length - index < signature.length)
+      return false;
+    for (int offset = 0; offset < signature.length; offset += 1) {
+      if (signature[offset] != -1 && bytes[index + offset] != signature[offset])
+        break;
+      if (offset + 1 == signature.length)
+        return true;
+    }
+  }
+  return false;
+}
+
 const String kMultiLicenseFileHeader = 'Notices for files contained in';
 
 bool isMultiLicenseNotice(Reader reader) {
-  List<int> bytes = reader();
-  return (ASCII.decode(bytes.take(kMultiLicenseFileHeader.length).toList(), allowInvalid: true) == kMultiLicenseFileHeader);
+  final List<int> bytes = reader();
+  return ascii.decode(bytes.take(kMultiLicenseFileHeader.length).toList(), allowInvalid: true) == kMultiLicenseFileHeader;
 }
 
 FileType identifyFile(String name, Reader reader) {
@@ -50,7 +67,7 @@ FileType identifyFile(String name, Reader reader) {
   if ((path.split(name).reversed.take(6).toList().reversed.join('/') == 'third_party/icu/source/extra/uconv/README') || // This specific ICU README isn't in UTF-8.
       (path.split(name).reversed.take(6).toList().reversed.join('/') == 'third_party/icu/source/samples/uresb/sr.txt') || // This specific sample contains non-UTF-8 data (unlike other sr.txt files).
       (path.split(name).reversed.take(2).toList().reversed.join('/') == 'builds/detect.mk') || // This specific freetype sample contains non-UTF-8 data (unlike other .mk files).
-      (path.split(name).reversed.take(4).toList().reversed.join('/') == 'third_party/freetype2/docs/FTL.TXT')) // This file has a copyright symbol in Latin1 in it
+      (path.split(name).reversed.take(3).toList().reversed.join('/') == 'third_party/cares/cares.rc')) // This file has a copyright symbol in Latin1 in it
     return FileType.latin1Text;
   if (path.split(name).reversed.take(6).toList().reversed.join('/') == 'dart/runtime/tests/vm/dart/bad_snapshot' || // Not any particular format
       path.split(name).reversed.take(8).toList().reversed.join('/') == 'third_party/android_tools/ndk/sources/cxx-stl/stlport/src/stlport.rc') // uses the word "copyright" but doesn't have a copyright header
@@ -60,6 +77,12 @@ FileType identifyFile(String name, Reader reader) {
     bytes ??= reader();
     if (matchesSignature(bytes, <int>[0x00, 0x05, 0x16, 0x07, 0x00, 0x02, 0x00, 0x00, 0x4d, 0x61, 0x63, 0x20, 0x4f, 0x53, 0x20, 0x58]))
       return FileType.metadata; // The ._* files in Mac OS X archives that gives icons and stuff
+  }
+  if (path.split(name).contains('cairo')) {
+    bytes ??= reader();
+    // "Copyright <latin1 copyright symbol> "
+    if (hasSubsequence(bytes, <int>[0x43, 0x6f, 0x70, 0x79, 0x72, 0x69, 0x67, 0x68, 0x74, 0x20, 0xA9, 0x20], kMaxSize))
+      return FileType.latin1Text;
   }
   switch (base) {
     // Build files
@@ -74,6 +97,7 @@ FileType identifyFile(String name, Reader reader) {
     case 'Changes': return FileType.text;
     case 'change.log': return FileType.text;
     case 'ChangeLog': return FileType.text;
+    case 'CHANGES.0': return FileType.latin1Text;
     case 'README': return FileType.text;
     case 'TODO': return FileType.text;
     case 'NEWS': return FileType.text;
@@ -87,6 +111,7 @@ FileType identifyFile(String name, Reader reader) {
     case 'ECLIPSE_.RSA': return FileType.binary;
     // Binary data files
     case 'tzdata': return FileType.binary;
+    case 'compressed_atrace_data.txt': return FileType.binary;
     // Source files that don't use UTF-8
     case 'Messages_de_DE.properties': // has a few non-ASCII characters they forgot to escape (from gnu-libstdc++)
     case 'mmx_blendtmp.h': // author name in comment contains latin1 (mesa)
@@ -136,10 +161,18 @@ FileType identifyFile(String name, Reader reader) {
     case '.dex': return FileType.binary; // Dalvik Executable (usually found inside .jar archives)
     // Dart code
     case '.dart': return FileType.text;
+    case '.dill': return FileType.binary; // Compiled Dart code
     // LLVM bitcode
     case '.bc': return FileType.binary;
     // Python code
-    case '.py': return FileType.text;
+    case '.py':
+      bytes ??= reader();
+      // # -*- coding: Latin-1 -*-
+      if (matchesSignature(bytes, <int>[0x23, 0x20, 0x2d, 0x2a, 0x2d, 0x20, 0x63, 0x6f, 0x64,
+                                        0x69, 0x6e, 0x67, 0x3a, 0x20, 0x4c, 0x61, 0x74, 0x69,
+                                        0x6e, 0x2d, 0x31, 0x20, 0x2d, 0x2a, 0x2d]))
+        return FileType.latin1Text;
+      return FileType.text;
     case '.pyc': return FileType.binary; // compiled Python bytecode
     // Machine code
     case '.so': return FileType.binary; // ELF shared object
@@ -147,12 +180,12 @@ FileType identifyFile(String name, Reader reader) {
     // Documentation
     case '.md': return FileType.text;
     case '.txt': return FileType.text;
-    case '.diff': return FileType.text;
     case '.html': return FileType.text;
     // Fonts
     case '.ttf': return FileType.binary; // TrueType Font
     case '.ttcf': // (mac)
     case '.ttc': return FileType.binary; // TrueType Collection (windows)
+    case '.woff': return FileType.binary; // Web Open Font Format
     case '.otf': return FileType.binary; // OpenType Font
     // Graphics formats
     case '.gif': return FileType.binary; // GIF
@@ -162,10 +195,14 @@ FileType identifyFile(String name, Reader reader) {
     case '.jpg':
     case '.jpeg': return FileType.binary; // JPEG
     case '.ico': return FileType.binary; // Windows icon format
+    case '.icns': return FileType.binary; // macOS icon format
     case '.bmp': return FileType.binary; // Windows bitmap format
     case '.wbmp': return FileType.binary; // Wireless bitmap format
     case '.webp': return FileType.binary; // WEBP
     case '.pdf': return FileType.binary; // PDF
+    case '.emf': return FileType.binary; // Windows enhanced metafile format
+    case '.skp': return FileType.binary; // Skia picture format
+    case '.mskp': return FileType.binary; // Skia picture format
     // Videos
     case '.ogg': return FileType.binary; // Ogg media
     case '.mp4': return FileType.binary; // MPEG media
@@ -178,12 +215,19 @@ FileType identifyFile(String name, Reader reader) {
     case '.apk': return FileType.zip; // Android Package
     case '.crx': return FileType.binary; // Chrome extension
     case '.keystore': return FileType.binary;
-    case '.icc': return FileType.binary;
+    case '.icc': return FileType.binary; // Color profile
+    case '.swp': return FileType.binary; // Vim swap file
     // Archives
     case '.zip': return FileType.zip; // ZIP
     case '.tar': return FileType.tar; // Tar
     case '.gz': return FileType.gz; // GZip
     case '.bzip2': return FileType.bzip2; // BZip2
+    // Image file types from the Fuchsia SDK.
+    case '.blk':
+    case '.vboot':
+    case '.snapshot':
+    case '.zbi':
+      return FileType.binary;
     // Special cases
     case '.patch':
     case '.diff':
@@ -195,7 +239,7 @@ FileType identifyFile(String name, Reader reader) {
       return FileType.binary;
   }
   bytes ??= reader();
-  assert(bytes.length > 0);
+  assert(bytes.isNotEmpty);
   if (matchesSignature(bytes, <int>[0x1F, 0x8B]))
     return FileType.gz; // GZip archive
   if (matchesSignature(bytes, <int>[0x42, 0x5A]))
@@ -240,8 +284,10 @@ FileType identifyFile(String name, Reader reader) {
     return FileType.binary; // GIF89a
   if (matchesSignature(bytes, <int>[0x64, 0x65, 0x78, 0x0A, 0x30, 0x33, 0x35, 0x00]))
     return FileType.binary; // Dalvik Executable
-  if (matchesSignature(bytes, <int>[0x21, 0x3C, 0x61, 0x72, 0x63, 0x68, 0x3E, 0x0A]))
-    return FileType.binary; // Unix archiver (ar) // TODO(ianh): implement .ar parser
+  if (matchesSignature(bytes, <int>[0x21, 0x3C, 0x61, 0x72, 0x63, 0x68, 0x3E, 0x0A])) {
+    // TODO(ianh): implement .ar parser, https://github.com/flutter/flutter/issues/25633
+    return FileType.binary; // Unix archiver (ar)
+  }
   if (matchesSignature(bytes, <int>[0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0a]))
     return FileType.binary; // PNG
   if (matchesSignature(bytes, <int>[0x58, 0x50, 0x43, 0x4f, 0x4d, 0x0a, 0x54, 0x79, 0x70, 0x65, 0x4c, 0x69, 0x62, 0x0d, 0x0a, 0x1a]))
@@ -273,12 +319,11 @@ abstract class TextFile extends File {
   String readString();
 }
 
-// mixin
-abstract class UTF8TextFile extends TextFile {
+mixin UTF8TextFile implements TextFile {
   @override
   String readString() {
     try {
-      return cache(new UTF8Of(this), () => UTF8.decode(readBytes()));
+      return cache(UTF8Of(this), () => utf8.decode(readBytes()));
     } on FormatException {
       print(fullName);
       rethrow;
@@ -286,23 +331,24 @@ abstract class UTF8TextFile extends TextFile {
   }
 }
 
-// mixin
-abstract class Latin1TextFile extends TextFile {
+mixin Latin1TextFile implements TextFile {
   @override
   String readString() {
-    return cache(new Latin1Of(this), () {
+    return cache(Latin1Of(this), () {
       final List<int> bytes = readBytes();
       if (bytes.any((int byte) => byte == 0x00))
         throw '$fullName contains a U+0000 NULL and is probably not actually encoded as Win1252';
       bool isUTF8 = false;
       try {
-        cache(new UTF8Of(this), () => UTF8.decode(readBytes()));
+        cache(UTF8Of(this), () => utf8.decode(readBytes()));
         isUTF8 = true;
       } on FormatException {
+        // Exceptions are fine/expected for non-UTF8 text, which we test for
+        // immediately below.
       }
       if (isUTF8)
         throw '$fullName contains valid UTF-8 and is probably not actually encoded as Win1252';
-      return LATIN1.decode(bytes);
+      return latin1.decode(bytes);
     });
   }
 }
@@ -315,14 +361,13 @@ abstract class Directory extends IoNode {
 // interface
 abstract class Link extends IoNode { }
 
-// mixin
-abstract class ZipFile extends File implements Directory {
+mixin ZipFile on File implements Directory {
   ArchiveDirectory _root;
 
   @override
   Iterable<IoNode> get walk {
     try {
-      _root ??= ArchiveDirectory.parseArchive(new a.ZipDecoder().decodeBytes(readBytes()), fullName);
+      _root ??= ArchiveDirectory.parseArchive(a.ZipDecoder().decodeBytes(readBytes()), fullName);
       return _root.walk;
     } catch (exception) {
       print('failed to parse archive:\n$fullName');
@@ -331,14 +376,13 @@ abstract class ZipFile extends File implements Directory {
   }
 }
 
-// mixin
-abstract class TarFile extends File implements Directory {
+mixin TarFile on File implements Directory {
   ArchiveDirectory _root;
 
   @override
   Iterable<IoNode> get walk {
     try {
-      _root ??= ArchiveDirectory.parseArchive(new a.TarDecoder().decodeBytes(readBytes()), fullName);
+      _root ??= ArchiveDirectory.parseArchive(a.TarDecoder().decodeBytes(readBytes()), fullName);
       return _root.walk;
     } catch (exception) {
       print('failed to parse archive:\n$fullName');
@@ -347,15 +391,14 @@ abstract class TarFile extends File implements Directory {
   }
 }
 
-// mixin
-abstract class GZipFile extends File implements Directory {
+mixin GZipFile on File implements Directory {
   InMemoryFile _data;
 
   @override
   Iterable<IoNode> get walk sync* {
     try {
-      String innerName = path.basenameWithoutExtension(fullName);
-      _data ??= InMemoryFile.parse(fullName + '!' + innerName, new a.GZipDecoder().decodeBytes(readBytes()));
+      final String innerName = path.basenameWithoutExtension(fullName);
+      _data ??= InMemoryFile.parse(fullName + '!' + innerName, a.GZipDecoder().decodeBytes(readBytes()));
       if (_data != null)
         yield _data;
     } catch (exception) {
@@ -365,15 +408,14 @@ abstract class GZipFile extends File implements Directory {
   }
 }
 
-// mixin
-abstract class BZip2File extends File implements Directory {
+mixin BZip2File on File implements Directory {
   InMemoryFile _data;
 
   @override
   Iterable<IoNode> get walk sync* {
     try {
-      String innerName = path.basenameWithoutExtension(fullName);
-      _data ??= InMemoryFile.parse(fullName + '!' + innerName, new a.BZip2Decoder().decodeBytes(readBytes()));
+      final String innerName = path.basenameWithoutExtension(fullName);
+      _data ??= InMemoryFile.parse(fullName + '!' + innerName, a.BZip2Decoder().decodeBytes(readBytes()));
       if (_data != null)
         yield _data;
     } catch (exception) {
@@ -390,7 +432,7 @@ class FileSystemDirectory extends IoNode implements Directory {
   FileSystemDirectory(this._directory);
 
   factory FileSystemDirectory.fromPath(String name) {
-    return new FileSystemDirectory(new io.Directory(name));
+    return FileSystemDirectory(io.Directory(name));
   }
 
   final io.Directory _directory;
@@ -402,30 +444,30 @@ class FileSystemDirectory extends IoNode implements Directory {
   String get fullName => _directory.path;
 
   List<int> _readBytes(io.File file) {
-    return cache/*List<int>*/(new BytesOf(file), () => file.readAsBytesSync());
+    return cache/*List<int>*/(BytesOf(file), () => file.readAsBytesSync());
   }
 
   @override
   Iterable<IoNode> get walk sync* {
-    List<io.FileSystemEntity> list = _directory.listSync().toList();
+    final List<io.FileSystemEntity> list = _directory.listSync().toList();
     list.sort((io.FileSystemEntity a, io.FileSystemEntity b) => a.path.compareTo(b.path));
     for (io.FileSystemEntity entity in list) {
       if (entity is io.Directory) {
-        yield new FileSystemDirectory(entity);
+        yield FileSystemDirectory(entity);
       } else if (entity is io.Link) {
-        yield new FileSystemLink(entity);
+        yield FileSystemLink(entity);
       } else {
         assert(entity is io.File);
-        io.File fileEntity = entity;
+        final io.File fileEntity = entity;
         if (fileEntity.lengthSync() > 0) {
           switch (identifyFile(fileEntity.path, () => _readBytes(fileEntity))) {
-            case FileType.binary: yield new FileSystemFile(fileEntity); break;
-            case FileType.zip: yield new FileSystemZipFile(fileEntity); break;
-            case FileType.tar: yield new FileSystemTarFile(fileEntity); break;
-            case FileType.gz: yield new FileSystemGZipFile(fileEntity); break;
-            case FileType.bzip2: yield new FileSystemBZip2File(fileEntity); break;
-            case FileType.text: yield new FileSystemUTF8TextFile(fileEntity); break;
-            case FileType.latin1Text: yield new FileSystemLatin1TextFile(fileEntity); break;
+            case FileType.binary: yield FileSystemFile(fileEntity); break;
+            case FileType.zip: yield FileSystemZipFile(fileEntity); break;
+            case FileType.tar: yield FileSystemTarFile(fileEntity); break;
+            case FileType.gz: yield FileSystemGZipFile(fileEntity); break;
+            case FileType.bzip2: yield FileSystemBZip2File(fileEntity); break;
+            case FileType.text: yield FileSystemUTF8TextFile(fileEntity); break;
+            case FileType.latin1Text: yield FileSystemLatin1TextFile(fileEntity); break;
             case FileType.metadata: break; // ignore this file
           }
         }
@@ -459,7 +501,7 @@ class FileSystemFile extends IoNode implements File {
 
   @override
   List<int> readBytes() {
-    return cache(new BytesOf(_file), () => _file.readAsBytesSync());
+    return cache(BytesOf(_file), () => _file.readAsBytesSync());
   }
 }
 
@@ -499,27 +541,27 @@ class ArchiveDirectory extends IoNode implements Directory {
   @override
   final String name;
 
-  Map<String, ArchiveDirectory> _subdirectories = new SplayTreeMap<String, ArchiveDirectory>();
-  List<ArchiveFile> _files = <ArchiveFile>[];
+  final Map<String, ArchiveDirectory> _subdirectories = SplayTreeMap<String, ArchiveDirectory>();
+  final List<ArchiveFile> _files = <ArchiveFile>[];
 
   void _add(a.ArchiveFile entry, List<String> remainingPath) {
     if (remainingPath.length > 1) {
       final String subdirectoryName = remainingPath.removeAt(0);
       _subdirectories.putIfAbsent(
         subdirectoryName,
-        () => new ArchiveDirectory('$fullName/$subdirectoryName', subdirectoryName)
+        () => ArchiveDirectory('$fullName/$subdirectoryName', subdirectoryName)
       )._add(entry, remainingPath);
     } else {
       if (entry.size > 0) {
         final String entryFullName = fullName + '/' + path.basename(entry.name);
         switch (identifyFile(entry.name, () => entry.content)) {
-          case FileType.binary: _files.add(new ArchiveFile(entryFullName, entry)); break;
-          case FileType.zip: _files.add(new ArchiveZipFile(entryFullName, entry)); break;
-          case FileType.tar: _files.add(new ArchiveTarFile(entryFullName, entry)); break;
-          case FileType.gz: _files.add(new ArchiveGZipFile(entryFullName, entry)); break;
-          case FileType.bzip2: _files.add(new ArchiveBZip2File(entryFullName, entry)); break;
-          case FileType.text: _files.add(new ArchiveUTF8TextFile(entryFullName, entry)); break;
-          case FileType.latin1Text: _files.add(new ArchiveLatin1TextFile(entryFullName, entry)); break;
+          case FileType.binary: _files.add(ArchiveFile(entryFullName, entry)); break;
+          case FileType.zip: _files.add(ArchiveZipFile(entryFullName, entry)); break;
+          case FileType.tar: _files.add(ArchiveTarFile(entryFullName, entry)); break;
+          case FileType.gz: _files.add(ArchiveGZipFile(entryFullName, entry)); break;
+          case FileType.bzip2: _files.add(ArchiveBZip2File(entryFullName, entry)); break;
+          case FileType.text: _files.add(ArchiveUTF8TextFile(entryFullName, entry)); break;
+          case FileType.latin1Text: _files.add(ArchiveLatin1TextFile(entryFullName, entry)); break;
           case FileType.metadata: break; // ignore this file
         }
       }
@@ -527,7 +569,7 @@ class ArchiveDirectory extends IoNode implements Directory {
   }
 
   static ArchiveDirectory parseArchive(a.Archive archive, String ownerPath) {
-    final ArchiveDirectory root = new ArchiveDirectory('$ownerPath!', '');
+    final ArchiveDirectory root = ArchiveDirectory('$ownerPath!', '');
     for (a.ArchiveFile file in archive.files) {
       if (file.size > 0)
         root._add(file, file.name.split('/'));
@@ -593,13 +635,13 @@ class InMemoryFile extends IoNode implements File {
     if (bytes.isEmpty)
       return null;
     switch (identifyFile(fullName, () => bytes)) {
-      case FileType.binary: return new InMemoryFile(fullName, bytes); break;
-      case FileType.zip: return new InMemoryZipFile(fullName, bytes); break;
-      case FileType.tar: return new InMemoryTarFile(fullName, bytes); break;
-      case FileType.gz: return new InMemoryGZipFile(fullName, bytes); break;
-      case FileType.bzip2: return new InMemoryBZip2File(fullName, bytes); break;
-      case FileType.text: return new InMemoryUTF8TextFile(fullName, bytes); break;
-      case FileType.latin1Text: return new InMemoryLatin1TextFile(fullName, bytes); break;
+      case FileType.binary: return InMemoryFile(fullName, bytes); break;
+      case FileType.zip: return InMemoryZipFile(fullName, bytes); break;
+      case FileType.tar: return InMemoryTarFile(fullName, bytes); break;
+      case FileType.gz: return InMemoryGZipFile(fullName, bytes); break;
+      case FileType.bzip2: return InMemoryBZip2File(fullName, bytes); break;
+      case FileType.text: return InMemoryUTF8TextFile(fullName, bytes); break;
+      case FileType.latin1Text: return InMemoryLatin1TextFile(fullName, bytes); break;
       case FileType.metadata: break; // ignore this file
     }
     assert(false);

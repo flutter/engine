@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -6,28 +6,24 @@
 #define FLUTTER_FLOW_LAYERS_COLOR_FILTER_LAYER_H_
 
 #include "flutter/flow/layers/container_layer.h"
+#include "third_party/skia/include/core/SkColorFilter.h"
 
-namespace flow {
+namespace flutter {
 
 class ColorFilterLayer : public ContainerLayer {
  public:
-  ColorFilterLayer();
-  ~ColorFilterLayer() override;
+  ColorFilterLayer(sk_sp<SkColorFilter> filter);
 
-  void set_color(SkColor color) { color_ = color; }
+  void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
 
-  void set_blend_mode(SkBlendMode blend_mode) { blend_mode_ = blend_mode; }
-
- protected:
-  void Paint(PaintContext& context) override;
+  void Paint(PaintContext& context) const override;
 
  private:
-  SkColor color_;
-  SkBlendMode blend_mode_;
+  sk_sp<SkColorFilter> filter_;
 
-  FTL_DISALLOW_COPY_AND_ASSIGN(ColorFilterLayer);
+  FML_DISALLOW_COPY_AND_ASSIGN(ColorFilterLayer);
 };
 
-}  // namespace flow
+}  // namespace flutter
 
 #endif  // FLUTTER_FLOW_LAYERS_COLOR_FILTER_LAYER_H_

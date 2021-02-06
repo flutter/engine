@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -6,35 +6,28 @@
 #define FLUTTER_FLOW_LAYERS_SHADER_MASK_LAYER_H_
 
 #include "flutter/flow/layers/container_layer.h"
-
 #include "third_party/skia/include/core/SkShader.h"
 
-namespace flow {
+namespace flutter {
 
 class ShaderMaskLayer : public ContainerLayer {
  public:
-  ShaderMaskLayer();
-  ~ShaderMaskLayer() override;
+  ShaderMaskLayer(sk_sp<SkShader> shader,
+                  const SkRect& mask_rect,
+                  SkBlendMode blend_mode);
 
-  void set_shader(sk_sp<SkShader> shader) { shader_ = shader; }
+  void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
 
-  void set_mask_rect(const SkRect& mask_rect) { mask_rect_ = mask_rect; }
-
-  void set_blend_mode(SkBlendMode blend_mode) {
-    blend_mode_ = blend_mode;
-  }
-
- protected:
-  void Paint(PaintContext& context) override;
+  void Paint(PaintContext& context) const override;
 
  private:
   sk_sp<SkShader> shader_;
   SkRect mask_rect_;
   SkBlendMode blend_mode_;
 
-  FTL_DISALLOW_COPY_AND_ASSIGN(ShaderMaskLayer);
+  FML_DISALLOW_COPY_AND_ASSIGN(ShaderMaskLayer);
 };
 
-}  // namespace flow
+}  // namespace flutter
 
 #endif  // FLUTTER_FLOW_LAYERS_SHADER_MASK_LAYER_H_

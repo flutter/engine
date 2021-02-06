@@ -1,0 +1,50 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//third_party/dart/build/dart/dart_action.gni")
+import("//third_party/dart/utils/application_snapshot.gni")
+import("//third_party/dart/utils/compile_platform.gni")
+
+application_snapshot("kernel_compiler") {
+  main_dart = "compiler.dart"
+
+  deps = [ "../flutter/kernel:kernel_platform_files($host_toolchain)" ]
+
+  dot_packages =
+      rebase_path("//third_party/dart/.dart_tool/package_config.json")
+
+  training_args = [
+    "--train",
+    rebase_path(main_dart),
+  ]
+
+  kernel_compiler_files =
+      exec_script("//third_party/dart/tools/list_dart_files.py",
+                  [
+                    "absolute",
+                    rebase_path("."),
+                  ],
+                  "list lines")
+
+  kernel_compiler_files +=
+      exec_script("//third_party/dart/tools/list_dart_files.py",
+                  [
+                    "absolute",
+                    rebase_path("//third_party/dart/pkg"),
+                  ],
+                  "list lines")
+
+  inputs = kernel_compiler_files
+}
+
+application_snapshot("list_libraries") {
+  main_dart = "//third_party/dart/pkg/vm/bin/list_libraries.dart"
+  training_args = [
+    # train against the dill file which is generated for this snapshot. If this build file
+    # changes location this path will need to be updated.
+    rebase_path(
+        root_gen_dir +
+        "/flutter/shell/platform/fuchsia/dart/list_libraries.dart.dill"),
+  ]
+}

@@ -1,42 +1,46 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #ifndef FLUTTER_LIB_UI_SEMANTICS_SEMANTICS_UPDATE_H_
 #define FLUTTER_LIB_UI_SEMANTICS_SEMANTICS_UPDATE_H_
 
-#include <vector>
-
+#include "flutter/lib/ui/dart_wrapper.h"
+#include "flutter/lib/ui/semantics/custom_accessibility_action.h"
 #include "flutter/lib/ui/semantics/semantics_node.h"
-#include "lib/tonic/dart_wrappable.h"
 
 namespace tonic {
 class DartLibraryNatives;
 }  // namespace tonic
 
-namespace blink {
+namespace flutter {
 
-class SemanticsUpdate : public ftl::RefCountedThreadSafe<SemanticsUpdate>,
-                        public tonic::DartWrappable {
+class SemanticsUpdate : public RefCountedDartWrappable<SemanticsUpdate> {
   DEFINE_WRAPPERTYPEINFO();
-  FRIEND_MAKE_REF_COUNTED(SemanticsUpdate);
+  FML_FRIEND_MAKE_REF_COUNTED(SemanticsUpdate);
 
  public:
   ~SemanticsUpdate() override;
-  static ftl::RefPtr<SemanticsUpdate> create(std::vector<SemanticsNode> nodes);
+  static void create(Dart_Handle semantics_update_handle,
+                     SemanticsNodeUpdates nodes,
+                     CustomAccessibilityActionUpdates actions);
 
-  std::vector<SemanticsNode> takeNodes();
+  SemanticsNodeUpdates takeNodes();
+
+  CustomAccessibilityActionUpdates takeActions();
 
   void dispose();
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
  private:
-  explicit SemanticsUpdate(std::vector<SemanticsNode> nodes);
+  explicit SemanticsUpdate(SemanticsNodeUpdates nodes,
+                           CustomAccessibilityActionUpdates updates);
 
-  std::vector<SemanticsNode> nodes_;
+  SemanticsNodeUpdates nodes_;
+  CustomAccessibilityActionUpdates actions_;
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_SEMANTICS_SEMANTICS_UPDATE_H_

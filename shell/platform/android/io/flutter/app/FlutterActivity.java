@@ -1,162 +1,175 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 package io.flutter.app;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
-import android.os.Build;
+import android.content.res.Configuration;
 import android.os.Bundle;
-import android.view.Window;
-import android.view.WindowManager;
-import io.flutter.plugin.platform.PlatformPlugin;
-import io.flutter.view.FlutterMain;
+import androidx.annotation.NonNull;
+import io.flutter.app.FlutterActivityDelegate.ViewFactory;
+import io.flutter.plugin.common.PluginRegistry;
+import io.flutter.view.FlutterNativeView;
 import io.flutter.view.FlutterView;
-import java.util.ArrayList;
-import org.chromium.base.TraceEvent;
-
 
 /**
- * Base class for activities that use Flutter.
+ * Deprecated base class for activities that use Flutter.
+ *
+ * @deprecated {@link io.flutter.embedding.android.FlutterActivity} is the new API that now replaces
+ *     this class. See https://flutter.dev/go/android-project-migration for more migration details.
  */
-public class FlutterActivity extends Activity {
-    private FlutterView flutterView;
+@Deprecated
+public class FlutterActivity extends Activity
+    implements FlutterView.Provider, PluginRegistry, ViewFactory {
+  private static final String TAG = "FlutterActivity";
 
-    private String[] getArgsFromIntent(Intent intent) {
-        // Before adding more entries to this list, consider that arbitrary
-        // Android applications can generate intents with extra data and that
-        // there are many security-sensitive args in the binary.
-        ArrayList<String> args = new ArrayList<String>();
-        if (intent.getBooleanExtra("trace-startup", false)) {
-            args.add("--trace-startup");
-        }
-        if (intent.getBooleanExtra("start-paused", false)) {
-            args.add("--start-paused");
-        }
-        if (intent.getBooleanExtra("enable-dart-profiling", false)) {
-            args.add("--enable-dart-profiling");
-        }
-        if (!args.isEmpty()) {
-            String[] argsArray = new String[args.size()];
-            return args.toArray(argsArray);
-        }
-        return null;
+  private final FlutterActivityDelegate delegate = new FlutterActivityDelegate(this, this);
+
+  // These aliases ensure that the methods we forward to the delegate adhere
+  // to relevant interfaces versus just existing in FlutterActivityDelegate.
+  private final FlutterActivityEvents eventDelegate = delegate;
+  private final FlutterView.Provider viewProvider = delegate;
+  private final PluginRegistry pluginRegistry = delegate;
+
+  /**
+   * Returns the Flutter view used by this activity; will be null before {@link #onCreate(Bundle)}
+   * is called.
+   */
+  @Override
+  public FlutterView getFlutterView() {
+    return viewProvider.getFlutterView();
+  }
+
+  /**
+   * Hook for subclasses to customize the creation of the {@code FlutterView}.
+   *
+   * <p>The default implementation returns {@code null}, which will cause the activity to use a
+   * newly instantiated full-screen view.
+   */
+  @Override
+  public FlutterView createFlutterView(Context context) {
+    return null;
+  }
+
+  /**
+   * Hook for subclasses to customize the creation of the {@code FlutterNativeView}.
+   *
+   * <p>The default implementation returns {@code null}, which will cause the activity to use a
+   * newly instantiated native view object.
+   */
+  @Override
+  public FlutterNativeView createFlutterNativeView() {
+    return null;
+  }
+
+  @Override
+  public boolean retainFlutterNativeView() {
+    return false;
+  }
+
+  @Override
+  public final boolean hasPlugin(String key) {
+    return pluginRegistry.hasPlugin(key);
+  }
+
+  @Override
+  public final <T> T valuePublishedByPlugin(String pluginKey) {
+    return pluginRegistry.valuePublishedByPlugin(pluginKey);
+  }
+
+  @Override
+  public final Registrar registrarFor(String pluginKey) {
+    return pluginRegistry.registrarFor(pluginKey);
+  }
+
+  @Override
+  protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    eventDelegate.onCreate(savedInstanceState);
+  }
+
+  @Override
+  protected void onStart() {
+    super.onStart();
+    eventDelegate.onStart();
+  }
+
+  @Override
+  protected void onResume() {
+    super.onResume();
+    eventDelegate.onResume();
+  }
+
+  @Override
+  protected void onDestroy() {
+    eventDelegate.onDestroy();
+    super.onDestroy();
+  }
+
+  @Override
+  public void onBackPressed() {
+    if (!eventDelegate.onBackPressed()) {
+      super.onBackPressed();
     }
+  }
 
-    /**
-     * @see android.app.Activity#onCreate(android.os.Bundle)
-     */
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+  @Override
+  protected void onStop() {
+    eventDelegate.onStop();
+    super.onStop();
+  }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            Window window = getWindow();
-            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-            window.setStatusBarColor(0x40000000);
-            window.getDecorView().setSystemUiVisibility(PlatformPlugin.DEFAULT_SYSTEM_UI);
-        }
+  @Override
+  protected void onPause() {
+    super.onPause();
+    eventDelegate.onPause();
+  }
 
-        String[] args = getArgsFromIntent(getIntent());
-        FlutterMain.ensureInitializationComplete(getApplicationContext(), args);
-        flutterView = new FlutterView(this);
-        setContentView(flutterView);
+  @Override
+  protected void onPostResume() {
+    super.onPostResume();
+    eventDelegate.onPostResume();
+  }
 
-        onFlutterReady();
+  // @Override - added in API level 23
+  public void onRequestPermissionsResult(
+      int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+    eventDelegate.onRequestPermissionsResult(requestCode, permissions, grantResults);
+  }
+
+  @Override
+  protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    if (!eventDelegate.onActivityResult(requestCode, resultCode, data)) {
+      super.onActivityResult(requestCode, resultCode, data);
     }
+  }
 
-    /**
-     * @see android.app.Activity#onDestroy()
-     */
-    @Override
-    protected void onDestroy() {
-        if (flutterView != null) {
-            flutterView.destroy();
-        }
-        super.onDestroy();
-    }
+  @Override
+  protected void onNewIntent(Intent intent) {
+    eventDelegate.onNewIntent(intent);
+  }
 
-    @Override
-    public void onBackPressed() {
-        if (flutterView != null) {
-            flutterView.popRoute();
-            return;
-        }
-        super.onBackPressed();
-    }
+  @Override
+  public void onUserLeaveHint() {
+    eventDelegate.onUserLeaveHint();
+  }
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-        if (flutterView != null) {
-            flutterView.onPause();
-        }
-    }
+  @Override
+  public void onTrimMemory(int level) {
+    eventDelegate.onTrimMemory(level);
+  }
 
-    @Override
-    protected void onPostResume() {
-        super.onPostResume();
-        if (flutterView != null) {
-            flutterView.onPostResume();
-        }
-    }
+  @Override
+  public void onLowMemory() {
+    eventDelegate.onLowMemory();
+  }
 
-    /**
-      * Override this function to customize startup behavior.
-      */
-    protected void onFlutterReady() {
-        TraceEvent.instant("FlutterActivity.onFlutterReady");
-
-        if (loadIntent(getIntent())) {
-            return;
-        }
-        String appBundlePath = FlutterMain.findAppBundlePath(getApplicationContext());
-        if (appBundlePath != null) {
-            flutterView.runFromBundle(appBundlePath, null);
-            return;
-        }
-    }
-
-    protected void onNewIntent(Intent intent) {
-        loadIntent(intent);
-    }
-
-    public boolean loadIntent(Intent intent) {
-        String action = intent.getAction();
-        if (Intent.ACTION_RUN.equals(action)) {
-            String route = intent.getStringExtra("route");
-            String appBundlePath = intent.getDataString();
-            if (appBundlePath == null) {
-              // Fall back to the installation path if no bundle path
-              // was specified.
-              appBundlePath =
-                  FlutterMain.findAppBundlePath(getApplicationContext());
-            }
-            flutterView.runFromBundle(appBundlePath,
-                                intent.getStringExtra("snapshot"));
-            if (route != null)
-                flutterView.pushRoute(route);
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * Returns the Flutter view used by this activity, may be null before
-     * onCreate was called.
-     * @return The FlutterView.
-     */
-    public FlutterView getFlutterView() {
-      return flutterView;
-    }
-
-    @Override
-    public void onTrimMemory(int level) {
-        // Use a trim level delivered while the application is running so the
-        // framework has a chance to react to the notification.
-        if (level == TRIM_MEMORY_RUNNING_LOW)
-            flutterView.onMemoryPressure();
-    }
+  @Override
+  public void onConfigurationChanged(Configuration newConfig) {
+    super.onConfigurationChanged(newConfig);
+    eventDelegate.onConfigurationChanged(newConfig);
+  }
 }

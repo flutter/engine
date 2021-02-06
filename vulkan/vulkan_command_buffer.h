@@ -1,13 +1,13 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #ifndef FLUTTER_VULKAN_VULKAN_COMMAND_BUFFER_H_
 #define FLUTTER_VULKAN_VULKAN_COMMAND_BUFFER_H_
 
-#include "flutter/vulkan/vulkan_handle.h"
-#include "lib/ftl/compiler_specific.h"
-#include "lib/ftl/macros.h"
+#include "flutter/fml/compiler_specific.h"
+#include "flutter/fml/macros.h"
+#include "vulkan_handle.h"
 
 namespace vulkan {
 
@@ -25,14 +25,11 @@ class VulkanCommandBuffer {
 
   VkCommandBuffer Handle() const;
 
-  FTL_WARN_UNUSED_RESULT
-  bool Begin() const;
+  [[nodiscard]] bool Begin() const;
 
-  FTL_WARN_UNUSED_RESULT
-  bool End() const;
+  [[nodiscard]] bool End() const;
 
-  FTL_WARN_UNUSED_RESULT
-  bool InsertPipelineBarrier(
+  [[nodiscard]] bool InsertPipelineBarrier(
       VkPipelineStageFlagBits src_stage_flags,
       VkPipelineStageFlagBits dest_stage_flags,
       uint32_t /* mask of VkDependencyFlagBits */ dependency_flags,
@@ -50,7 +47,7 @@ class VulkanCommandBuffer {
   VulkanHandle<VkCommandBuffer> handle_;
   bool valid_;
 
-  FTL_DISALLOW_COPY_AND_ASSIGN(VulkanCommandBuffer);
+  FML_DISALLOW_COPY_AND_ASSIGN(VulkanCommandBuffer);
 };
 
 }  // namespace vulkan

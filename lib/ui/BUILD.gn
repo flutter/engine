@@ -1,6 +1,10 @@
-# Copyright 2016 The Chromium Authors. All rights reserved.
+# Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+
+import("//build/fuchsia/sdk.gni")
+import("//flutter/common/config.gni")
+import("//flutter/testing/testing.gni")
 
 source_set("ui") {
   sources = [
@@ -12,51 +16,89 @@ source_set("ui") {
     "dart_runtime_hooks.h",
     "dart_ui.cc",
     "dart_ui.h",
+    "dart_wrapper.h",
+    "io_manager.h",
+    "isolate_name_server/isolate_name_server.cc",
+    "isolate_name_server/isolate_name_server.h",
+    "isolate_name_server/isolate_name_server_natives.cc",
+    "isolate_name_server/isolate_name_server_natives.h",
     "painting/canvas.cc",
     "painting/canvas.h",
+    "painting/codec.cc",
+    "painting/codec.h",
+    "painting/color_filter.cc",
+    "painting/color_filter.h",
+    "painting/engine_layer.cc",
+    "painting/engine_layer.h",
     "painting/gradient.cc",
     "painting/gradient.h",
     "painting/image.cc",
     "painting/image.h",
-    "painting/image_decoding.cc",
-    "painting/image_decoding.h",
+    "painting/image_decoder.cc",
+    "painting/image_decoder.h",
+    "painting/image_descriptor.cc",
+    "painting/image_descriptor.h",
+    "painting/image_encoding.cc",
+    "painting/image_encoding.h",
     "painting/image_filter.cc",
     "painting/image_filter.h",
     "painting/image_shader.cc",
     "painting/image_shader.h",
-    "painting/mask_filter.cc",
-    "painting/mask_filter.h",
+    "painting/immutable_buffer.cc",
+    "painting/immutable_buffer.h",
     "painting/matrix.cc",
     "painting/matrix.h",
+    "painting/multi_frame_codec.cc",
+    "painting/multi_frame_codec.h",
     "painting/paint.cc",
     "painting/paint.h",
     "painting/path.cc",
     "painting/path.h",
+    "painting/path_measure.cc",
+    "painting/path_measure.h",
     "painting/picture.cc",
     "painting/picture.h",
     "painting/picture_recorder.cc",
     "painting/picture_recorder.h",
-    "painting/resource_context.cc",
-    "painting/resource_context.h",
     "painting/rrect.cc",
     "painting/rrect.h",
     "painting/shader.cc",
     "painting/shader.h",
-    "painting/utils.h",
+    "painting/single_frame_codec.cc",
+    "painting/single_frame_codec.h",
+    "painting/vertices.cc",
+    "painting/vertices.h",
+    "plugins/callback_cache.cc",
+    "plugins/callback_cache.h",
+    "semantics/custom_accessibility_action.cc",
+    "semantics/custom_accessibility_action.h",
     "semantics/semantics_node.cc",
     "semantics/semantics_node.h",
     "semantics/semantics_update.cc",
     "semantics/semantics_update.h",
     "semantics/semantics_update_builder.cc",
     "semantics/semantics_update_builder.h",
+    "snapshot_delegate.h",
+    "text/asset_manager_font_provider.cc",
+    "text/asset_manager_font_provider.h",
+    "text/font_collection.cc",
+    "text/font_collection.h",
+    "text/line_metrics.h",
     "text/paragraph.cc",
     "text/paragraph.h",
     "text/paragraph_builder.cc",
     "text/paragraph_builder.h",
-    "text/text_box.cc",
     "text/text_box.h",
     "ui_dart_state.cc",
     "ui_dart_state.h",
+    "volatile_path_tracker.cc",
+    "volatile_path_tracker.h",
+    "window/key_data.cc",
+    "window/key_data.h",
+    "window/key_data_packet.cc",
+    "window/key_data_packet.h",
+    "window/platform_configuration.cc",
+    "window/platform_configuration.h",
     "window/platform_message.cc",
     "window/platform_message.h",
     "window/platform_message_response.cc",
@@ -67,26 +109,117 @@ source_set("ui") {
     "window/pointer_data.h",
     "window/pointer_data_packet.cc",
     "window/pointer_data_packet.h",
+    "window/pointer_data_packet_converter.cc",
+    "window/pointer_data_packet_converter.h",
+    "window/viewport_metrics.cc",
     "window/viewport_metrics.h",
     "window/window.cc",
     "window/window.h",
   ]
 
+  public_configs = [ "//flutter:config" ]
+
+  public_deps = [ "//flutter/third_party/txt" ]
+
   deps = [
-    "//dart/runtime/bin:embedded_dart_io",
+    "//flutter/assets",
     "//flutter/common",
     "//flutter/flow",
-    "//flutter/glue",
-    "//flutter/sky/engine",
-    "//lib/tonic",
+    "//flutter/fml",
+    "//flutter/runtime:test_font",
+    "//flutter/third_party/tonic",
+    "//third_party/dart/runtime/bin:dart_io_api",
+    "//third_party/rapidjson",
     "//third_party/skia",
-    "//third_party/skia:gpu",
   ]
 
-  if (is_android) {
-    deps += [
-      # TODO(abarth): In principle, these libraries should be fully independent.
-      "//flutter/lib/jni",
+  if (!defined(defines)) {
+    defines = []
+  }
+  if (flutter_enable_skshaper) {
+    defines += [ "FLUTTER_ENABLE_SKSHAPER" ]
+  }
+  if (flutter_always_use_skshaper) {
+    defines += [ "FLUTTER_ALWAYS_USE_SKSHAPER" ]
+  }
+  if (is_win) {
+    # Required for M_PI and others.
+    defines += [ "_USE_MATH_DEFINES" ]
+  }
+
+  if (is_fuchsia && flutter_enable_legacy_fuchsia_embedder) {
+    sources += [
+      "compositing/scene_host.cc",
+      "compositing/scene_host.h",
     ]
+
+    deps += [
+      "$fuchsia_sdk_root/pkg:async-cpp",
+      "//flutter/shell/platform/fuchsia/dart-pkg/fuchsia",
+      "//flutter/shell/platform/fuchsia/dart-pkg/zircon",
+    ]
+  }
+}
+
+if (enable_unittests) {
+  test_fixtures("ui_unittests_fixtures") {
+    dart_main = "fixtures/ui_test.dart"
+    fixtures = [
+      "fixtures/DashInNooglerHat.jpg",
+      "fixtures/Horizontal.jpg",
+      "fixtures/Horizontal.png",
+      "fixtures/hello_loop_2.gif",
+      "fixtures/hello_loop_2.webp",
+    ]
+  }
+
+  executable("ui_benchmarks") {
+    testonly = true
+
+    public_configs = [ "//flutter:export_dynamic_symbols" ]
+
+    sources = [ "ui_benchmarks.cc" ]
+
+    deps = [
+      ":ui",
+      ":ui_unittests_fixtures",
+      "//flutter/benchmarking",
+      "//flutter/shell/common",
+      "//flutter/testing:fixture_test",
+    ]
+  }
+
+  executable("ui_unittests") {
+    testonly = true
+
+    public_configs = [ "//flutter:export_dynamic_symbols" ]
+
+    sources = [
+      "painting/image_dispose_unittests.cc",
+      "painting/image_encoding_unittests.cc",
+      "painting/path_unittests.cc",
+      "painting/vertices_unittests.cc",
+      "window/platform_configuration_unittests.cc",
+      "window/pointer_data_packet_converter_unittests.cc",
+    ]
+
+    deps = [
+      ":ui",
+      ":ui_unittests_fixtures",
+      "//flutter/common",
+      "//flutter/shell/common:shell_test_fixture_sources",
+      "//flutter/testing",
+      "//flutter/testing:dart",
+      "//flutter/testing:fixture_test",
+      "//flutter/third_party/tonic",
+      "//third_party/dart/runtime/bin:elf_loader",
+    ]
+
+    # TODO(https://github.com/flutter/flutter/issues/63837): This test is hard-coded to use a TestGLSurface so it cannot run on fuchsia.
+    if (!is_fuchsia) {
+      sources += [ "painting/image_decoder_unittests.cc" ]
+
+      deps += [ "//flutter/testing:opengl" ]
+    }
   }
 }

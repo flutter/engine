@@ -20,11 +20,11 @@
   <string>????</string>
   <key>CFBundleVersion</key>
   <string>1.0</string>
-  <key>UIRequiredDeviceCapabilities</key>
-  <array>
-    <string>arm64</string>
-  </array>
   <key>MinimumOSVersion</key>
   <string>8.0</string>
+  <key>FlutterEngine</key>
+  <string>{0}</string>
+  <key>ClangVersion</key>
+  <string>{1}</string>
 </dict>
 </plist>

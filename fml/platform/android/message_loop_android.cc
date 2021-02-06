@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -8,7 +8,6 @@
 #include <unistd.h>
 
 #include "flutter/fml/platform/linux/timerfd.h"
-#include "lib/ftl/files/eintr_wrapper.h"
 
 namespace fml {
 
@@ -33,8 +32,8 @@ MessageLoopAndroid::MessageLoopAndroid()
     : looper_(AcquireLooperForThread()),
       timer_fd_(::timerfd_create(kClockType, TFD_NONBLOCK | TFD_CLOEXEC)),
       running_(false) {
-  FTL_CHECK(looper_.is_valid());
-  FTL_CHECK(timer_fd_.is_valid());
+  FML_CHECK(looper_.is_valid());
+  FML_CHECK(timer_fd_.is_valid());
 
   static const int kWakeEvents = ALOOPER_EVENT_INPUT;
 
@@ -51,17 +50,17 @@ MessageLoopAndroid::MessageLoopAndroid()
                                    kWakeEvents,            // events
                                    read_event_fd,          // callback
                                    this                    // baton
-                                   );
-  FTL_CHECK(add_result == 1);
+  );
+  FML_CHECK(add_result == 1);
 }
 
 MessageLoopAndroid::~MessageLoopAndroid() {
   int remove_result = ::ALooper_removeFd(looper_.get(), timer_fd_.get());
-  FTL_CHECK(remove_result == 1);
+  FML_CHECK(remove_result == 1);
 }
 
 void MessageLoopAndroid::Run() {
-  FTL_DCHECK(looper_.get() == ALooper_forThread());
+  FML_DCHECK(looper_.get() == ALooper_forThread());
 
   running_ = true;
 
@@ -70,7 +69,7 @@ void MessageLoopAndroid::Run() {
                                     nullptr,  // out fd,
                                     nullptr,  // out events,
                                     nullptr   // out data
-                                    );
+    );
     if (result == ALOOPER_POLL_TIMEOUT || result == ALOOPER_POLL_ERROR) {
       // This handles the case where the loop is terminated using ALooper APIs.
       running_ = false;
@@ -83,9 +82,9 @@ void MessageLoopAndroid::Terminate() {
   ALooper_wake(looper_.get());
 }
 
-void MessageLoopAndroid::WakeUp(ftl::TimePoint time_point) {
+void MessageLoopAndroid::WakeUp(fml::TimePoint time_point) {
   bool result = TimerRearm(timer_fd_.get(), time_point);
-  FTL_DCHECK(result);
+  FML_DCHECK(result);
 }
 
 void MessageLoopAndroid::OnEventFired() {

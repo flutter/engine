@@ -1,12 +1,16 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/android/android_context_gl.h"
 
+#include <EGL/eglext.h>
+
 #include <utility>
 
-namespace shell {
+#include "flutter/fml/trace_event.h"
+
+namespace flutter {
 
 template <class T>
 using EGLResult = std::pair<bool, T>;
@@ -46,16 +50,16 @@ static void LogLastEGLError() {
 
   for (size_t i = 0; i < count; i++) {
     if (last_error == pairs[i].code) {
-      FTL_LOG(ERROR) << "EGL Error: " << pairs[i].name << " (" << pairs[i].code
+      FML_LOG(ERROR) << "EGL Error: " << pairs[i].name << " (" << pairs[i].code
                      << ")";
       return;
     }
   }
 
-  FTL_LOG(ERROR) << "Unknown EGL Error";
+  FML_LOG(ERROR) << "Unknown EGL Error";
 }
 
-static EGLResult<EGLSurface> CreateContext(EGLDisplay display,
+static EGLResult<EGLContext> CreateContext(EGLDisplay display,
                                            EGLConfig config,
                                            EGLContext share = EGL_NO_CONTEXT) {
   EGLint attributes[] = {EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE};
@@ -65,19 +69,17 @@ static EGLResult<EGLSurface> CreateContext(EGLDisplay display,
   return {context != EGL_NO_CONTEXT, context};
 }
 
-static EGLResult<EGLConfig> ChooseEGLConfiguration(
-    EGLDisplay display,
-    PlatformView::SurfaceConfig config) {
+static EGLResult<EGLConfig> ChooseEGLConfiguration(EGLDisplay display) {
   EGLint attributes[] = {
       // clang-format off
       EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
       EGL_SURFACE_TYPE,    EGL_WINDOW_BIT,
-      EGL_RED_SIZE,        config.red_bits,
-      EGL_GREEN_SIZE,      config.green_bits,
-      EGL_BLUE_SIZE,       config.blue_bits,
-      EGL_ALPHA_SIZE,      config.alpha_bits,
-      EGL_DEPTH_SIZE,      config.depth_bits,
-      EGL_STENCIL_SIZE,    config.stencil_bits,
+      EGL_RED_SIZE,        8,
+      EGL_GREEN_SIZE,      8,
+      EGL_BLUE_SIZE,       8,
+      EGL_ALPHA_SIZE,      8,
+      EGL_DEPTH_SIZE,      0,
+      EGL_STENCIL_SIZE,    0,
       EGL_NONE,            // termination sentinel
       // clang-format on
   };
@@ -103,92 +105,81 @@ static bool TeardownContext(EGLDisplay display, EGLContext context) {
   return true;
 }
 
-static bool TeardownSurface(EGLDisplay display, EGLSurface surface) {
-  if (surface != EGL_NO_SURFACE) {
-    return eglDestroySurface(display, surface) == EGL_TRUE;
-  }
+AndroidEGLSurface::AndroidEGLSurface(EGLSurface surface,
+                                     EGLDisplay display,
+                                     EGLContext context)
+    : surface_(surface), display_(display), context_(context) {}
 
+AndroidEGLSurface::~AndroidEGLSurface() {
+  auto result = eglDestroySurface(display_, surface_);
+  FML_DCHECK(result == EGL_TRUE);
+}
+
+bool AndroidEGLSurface::IsValid() const {
+  return surface_ != EGL_NO_SURFACE;
+}
+
+bool AndroidEGLSurface::MakeCurrent() const {
+  if (eglMakeCurrent(display_, surface_, surface_, context_) != EGL_TRUE) {
+    FML_LOG(ERROR) << "Could not make the context current";
+    LogLastEGLError();
+    return false;
+  }
   return true;
 }
 
-// For onscreen rendering.
-static EGLResult<EGLSurface> CreateWindowSurface(
-    EGLDisplay display,
-    EGLConfig config,
-    AndroidNativeWindow::Handle window_handle) {
-  // The configurations are only required when dealing with extensions or VG.
-  // We do neither.
-  EGLSurface surface = eglCreateWindowSurface(
-      display, config, reinterpret_cast<EGLNativeWindowType>(window_handle),
-      nullptr);
-  return {surface != EGL_NO_SURFACE, surface};
+bool AndroidEGLSurface::SwapBuffers() {
+  TRACE_EVENT0("flutter", "AndroidContextGL::SwapBuffers");
+  return eglSwapBuffers(display_, surface_);
 }
 
-// For offscreen rendering.
-static EGLResult<EGLSurface> CreatePBufferSurface(EGLDisplay display,
-                                                  EGLConfig config) {
-  // We only ever create pbuffer surfaces for background resource loading
-  // contexts. We never bind the pbuffer to anything.
-  const EGLint attribs[] = {EGL_WIDTH, 1, EGL_HEIGHT, 1, EGL_NONE};
-  EGLSurface surface = eglCreatePbufferSurface(display, config, attribs);
-  return {surface != EGL_NO_SURFACE, surface};
+SkISize AndroidEGLSurface::GetSize() const {
+  EGLint width = 0;
+  EGLint height = 0;
+
+  if (!eglQuerySurface(display_, surface_, EGL_WIDTH, &width) ||
+      !eglQuerySurface(display_, surface_, EGL_HEIGHT, &height)) {
+    FML_LOG(ERROR) << "Unable to query EGL surface size";
+    LogLastEGLError();
+    return SkISize::Make(0, 0);
+  }
+  return SkISize::Make(width, height);
 }
 
-static EGLResult<EGLSurface> CreateSurface(
-    EGLDisplay display,
-    EGLConfig config,
-    ftl::RefPtr<AndroidNativeWindow> window) {
-  return window && window->IsValid()
-             ? CreateWindowSurface(display, config, window->handle())
-             : CreatePBufferSurface(display, config);
-}
-
-AndroidContextGL::AndroidContextGL(ftl::RefPtr<AndroidEnvironmentGL> env,
-                                   ftl::RefPtr<AndroidNativeWindow> window,
-                                   PlatformView::SurfaceConfig config,
-                                   const AndroidContextGL* share_context)
-    : environment_(env),
-      window_(window),
-      config_(nullptr),
-      surface_(EGL_NO_SURFACE),
-      context_(EGL_NO_CONTEXT),
-      valid_(false) {
+AndroidContextGL::AndroidContextGL(
+    AndroidRenderingAPI rendering_api,
+    fml::RefPtr<AndroidEnvironmentGL> environment)
+    : AndroidContext(AndroidRenderingAPI::kOpenGLES),
+      environment_(environment),
+      config_(nullptr) {
   if (!environment_->IsValid()) {
+    FML_LOG(ERROR) << "Could not create an Android GL environment.";
     return;
   }
 
   bool success = false;
 
   // Choose a valid configuration.
-
-  std::tie(success, config_) =
-      ChooseEGLConfiguration(environment_->Display(), config);
-
+  std::tie(success, config_) = ChooseEGLConfiguration(environment_->Display());
   if (!success) {
-    FTL_LOG(ERROR) << "Could not choose an EGL configuration.";
-    LogLastEGLError();
-    return;
-  }
-
-  // Create a surface for the configuration.
-
-  std::tie(success, surface_) =
-      CreateSurface(environment_->Display(), config_, window_);
-
-  if (!success) {
-    FTL_LOG(ERROR) << "Could not create the EGL surface.";
+    FML_LOG(ERROR) << "Could not choose an EGL configuration.";
     LogLastEGLError();
     return;
   }
 
   // Create a context for the configuration.
-
-  std::tie(success, context_) = CreateContext(
-      environment_->Display(), config_,
-      share_context != nullptr ? share_context->context_ : EGL_NO_CONTEXT);
-
+  std::tie(success, context_) =
+      CreateContext(environment_->Display(), config_, EGL_NO_CONTEXT);
   if (!success) {
-    FTL_LOG(ERROR) << "Could not create an EGL context";
+    FML_LOG(ERROR) << "Could not create an EGL context";
+    LogLastEGLError();
+    return;
+  }
+
+  std::tie(success, resource_context_) =
+      CreateContext(environment_->Display(), config_, context_);
+  if (!success) {
+    FML_LOG(ERROR) << "Could not create an EGL resource context";
     LogLastEGLError();
     return;
   }
@@ -197,24 +188,46 @@ AndroidContextGL::AndroidContextGL(ftl::RefPtr<AndroidEnvironmentGL> env,
   valid_ = true;
 }
 
-AndroidContextGL::AndroidContextGL(ftl::RefPtr<AndroidEnvironmentGL> env,
-                                   PlatformView::SurfaceConfig config,
-                                   const AndroidContextGL* share_context)
-    : AndroidContextGL(env, nullptr, config, share_context) {}
-
 AndroidContextGL::~AndroidContextGL() {
   if (!TeardownContext(environment_->Display(), context_)) {
-    FTL_LOG(ERROR) << "Could not tear down the EGL context. Possible resource leak.";
+    FML_LOG(ERROR)
+        << "Could not tear down the EGL context. Possible resource leak.";
     LogLastEGLError();
   }
 
-  if (!TeardownSurface(environment_->Display(), surface_)) {
-    FTL_LOG(ERROR) << "Could not tear down the EGL surface. Possible resource leak.";
+  if (!TeardownContext(environment_->Display(), resource_context_)) {
+    FML_LOG(ERROR) << "Could not tear down the EGL resource context. Possible "
+                      "resource leak.";
     LogLastEGLError();
   }
 }
 
-ftl::RefPtr<AndroidEnvironmentGL> AndroidContextGL::Environment() const {
+std::unique_ptr<AndroidEGLSurface> AndroidContextGL::CreateOnscreenSurface(
+    fml::RefPtr<AndroidNativeWindow> window) const {
+  EGLDisplay display = environment_->Display();
+
+  const EGLint attribs[] = {EGL_NONE};
+
+  EGLSurface surface = eglCreateWindowSurface(
+      display, config_, reinterpret_cast<EGLNativeWindowType>(window->handle()),
+      attribs);
+  return std::make_unique<AndroidEGLSurface>(surface, display, context_);
+}
+
+std::unique_ptr<AndroidEGLSurface> AndroidContextGL::CreateOffscreenSurface()
+    const {
+  // We only ever create pbuffer surfaces for background resource loading
+  // contexts. We never bind the pbuffer to anything.
+  EGLDisplay display = environment_->Display();
+
+  const EGLint attribs[] = {EGL_WIDTH, 1, EGL_HEIGHT, 1, EGL_NONE};
+
+  EGLSurface surface = eglCreatePbufferSurface(display, config_, attribs);
+  return std::make_unique<AndroidEGLSurface>(surface, display,
+                                             resource_context_);
+}
+
+fml::RefPtr<AndroidEnvironmentGL> AndroidContextGL::Environment() const {
   return environment_;
 }
 
@@ -222,66 +235,25 @@ bool AndroidContextGL::IsValid() const {
   return valid_;
 }
 
-bool AndroidContextGL::MakeCurrent() {
-  if (eglMakeCurrent(environment_->Display(), surface_, surface_, context_) !=
-      EGL_TRUE) {
-    FTL_LOG(ERROR) << "Could not make the context current";
-    LogLastEGLError();
-    return false;
-  }
-  return true;
-}
-
-bool AndroidContextGL::ClearCurrent() {
-  if (eglMakeCurrent(environment_->Display(), EGL_NO_SURFACE, EGL_NO_SURFACE,
-                     EGL_NO_CONTEXT) != EGL_TRUE) {
-    FTL_LOG(ERROR) << "Could not clear the current context";
-    LogLastEGLError();
-    return false;
-  }
-  return true;
-}
-
-bool AndroidContextGL::SwapBuffers() {
-  TRACE_EVENT0("flutter", "AndroidContextGL::SwapBuffers");
-  return eglSwapBuffers(environment_->Display(), surface_);
-}
-
-SkISize AndroidContextGL::GetSize() {
-  EGLint width = 0;
-  EGLint height = 0;
-
-  if (!eglQuerySurface(environment_->Display(), surface_, EGL_WIDTH, &width) ||
-      !eglQuerySurface(environment_->Display(), surface_, EGL_HEIGHT,
-                       &height)) {
-    FTL_LOG(ERROR) << "Unable to query EGL surface size";
-    LogLastEGLError();
-    return SkISize::Make(0, 0);
-  }
-  return SkISize::Make(width, height);
-}
-
-bool AndroidContextGL::Resize(const SkISize& size) {
-  if (size == GetSize()) {
+bool AndroidContextGL::ClearCurrent() const {
+  if (eglGetCurrentContext() != context_) {
     return true;
   }
-
-  ClearCurrent();
-
-  TeardownSurface(environment_->Display(), surface_);
-
-  bool success = false;
-  std::tie(success, surface_) =
-      CreateSurface(environment_->Display(), config_, window_);
-
-  MakeCurrent();
-
-  if (!success) {
-    FTL_LOG(ERROR) << "Unable to create EGL window surface on resize.";
+  if (eglMakeCurrent(environment_->Display(), EGL_NO_SURFACE, EGL_NO_SURFACE,
+                     EGL_NO_CONTEXT) != EGL_TRUE) {
+    FML_LOG(ERROR) << "Could not clear the current context";
+    LogLastEGLError();
     return false;
   }
-
   return true;
 }
 
-}  // namespace shell
+EGLContext AndroidContextGL::CreateNewContext() const {
+  bool success;
+  EGLContext context;
+  std::tie(success, context) =
+      CreateContext(environment_->Display(), config_, EGL_NO_CONTEXT);
+  return success ? context : EGL_NO_CONTEXT;
+}
+
+}  // namespace flutter

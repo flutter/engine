@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -7,8 +7,8 @@
 
 #include <functional>
 
-#include "lib/ftl/logging.h"
-#include "lib/ftl/macros.h"
+#include "flutter/fml/logging.h"
+#include "flutter/fml/macros.h"
 #include "vulkan_interface.h"
 
 namespace vulkan {
@@ -21,7 +21,7 @@ class VulkanHandle {
 
   VulkanHandle() : handle_(VK_NULL_HANDLE) {}
 
-  VulkanHandle(Handle handle, Disposer disposer = nullptr)
+  VulkanHandle(Handle handle, const Disposer& disposer = nullptr)
       : handle_(handle), disposer_(disposer) {}
 
   VulkanHandle(VulkanHandle&& other)
@@ -50,6 +50,13 @@ class VulkanHandle {
 
   operator Handle() const { return handle_; }
 
+  /// Relinquish responsibility of collecting the underlying handle when this
+  /// object is collected. It is the responsibility of the caller to ensure that
+  /// the lifetime of the handle extends past the lifetime of this object.
+  void ReleaseOwnership() { disposer_ = nullptr; }
+
+  void Reset() { DisposeIfNecessary(); }
+
  private:
   Handle handle_;
   Disposer disposer_;
@@ -65,7 +72,7 @@ class VulkanHandle {
     disposer_ = nullptr;
   }
 
-  FTL_DISALLOW_COPY_AND_ASSIGN(VulkanHandle);
+  FML_DISALLOW_COPY_AND_ASSIGN(VulkanHandle);
 };
 
 }  // namespace vulkan

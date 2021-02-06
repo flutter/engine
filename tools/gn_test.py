@@ -1,4 +1,4 @@
-# Copyright 2015 The Chromium Authors. All rights reserved.
+# Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 import unittest
@@ -27,7 +27,7 @@ class GNTestCase(unittest.TestCase):
         return gn.to_gn_args(args)
 
     def test_to_gn_args(self):
-        # This would not necesarily be true on a 32-bit machine?
+        # This would not necessarily be true on a 32-bit machine?
         self.assertEquals(self._gn_args(['--ios', '--simulator'])['target_cpu'], 'x64')
         self.assertEquals(self._gn_args(['--ios'])['target_cpu'], 'arm')
 

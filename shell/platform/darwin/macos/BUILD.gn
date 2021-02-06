@@ -1,0 +1,279 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+assert(is_mac)
+
+import("//build/config/mac/mac_sdk.gni")
+import("//flutter/shell/gpu/gpu.gni")
+import("//flutter/shell/platform/darwin/common/framework_shared.gni")
+import("//flutter/shell/platform/glfw/config.gni")
+import("//flutter/testing/testing.gni")
+
+shell_gpu_configuration("macos_gpu_configuration") {
+  enable_software = true
+  enable_gl = true
+  enable_vulkan = false
+  enable_metal = shell_enable_metal
+}
+
+group("macos") {
+  deps = [ ":flutter_framework" ]
+  if (build_glfw_shell) {
+    deps += [
+      ":flutter_macos_glfw",
+      "//flutter/shell/platform/glfw:publish_headers_glfw",
+      "//flutter/shell/platform/glfw/client_wrapper:publish_wrapper_glfw",
+    ]
+  }
+}
+
+_flutter_framework_name = "FlutterMacOS"
+_flutter_framework_filename = "$_flutter_framework_name.framework"
+_flutter_framework_dir = "$root_out_dir/$_flutter_framework_filename"
+_framework_binary_subpath = "Versions/A/$_flutter_framework_name"
+
+# The headers that will be copied to the framework and be accessed from outside
+# the Flutter engine source root.
+_flutter_framework_headers = [
+  "framework/Headers/FlutterAppDelegate.h",
+  "framework/Headers/FlutterDartProject.h",
+  "framework/Headers/FlutterEngine.h",
+  "framework/Headers/FlutterMacOS.h",
+  "framework/Headers/FlutterPluginMacOS.h",
+  "framework/Headers/FlutterPluginRegistrarMacOS.h",
+  "framework/Headers/FlutterViewController.h",
+]
+
+_flutter_framework_headers_copy_dir =
+    "$_flutter_framework_dir/Versions/A/Headers"
+
+source_set("flutter_framework_source") {
+  visibility = [ ":*" ]
+
+  sources = [
+    "framework/Source/FlutterAppDelegate.mm",
+    "framework/Source/FlutterBackingStore.h",
+    "framework/Source/FlutterBackingStore.mm",
+    "framework/Source/FlutterBackingStoreData.h",
+    "framework/Source/FlutterBackingStoreData.mm",
+    "framework/Source/FlutterDartProject.mm",
+    "framework/Source/FlutterDartProject_Internal.h",
+    "framework/Source/FlutterEngine.mm",
+    "framework/Source/FlutterEngine_Internal.h",
+    "framework/Source/FlutterExternalTextureGL.h",
+    "framework/Source/FlutterExternalTextureGL.mm",
+    "framework/Source/FlutterFrameBufferProvider.h",
+    "framework/Source/FlutterFrameBufferProvider.mm",
+    "framework/Source/FlutterGLCompositor.h",
+    "framework/Source/FlutterGLCompositor.mm",
+    "framework/Source/FlutterIOSurfaceHolder.h",
+    "framework/Source/FlutterIOSurfaceHolder.mm",
+    "framework/Source/FlutterIntermediateKeyResponder.h",
+    "framework/Source/FlutterIntermediateKeyResponder.mm",
+    "framework/Source/FlutterMetalRenderer.h",
+    "framework/Source/FlutterMetalRenderer.mm",
+    "framework/Source/FlutterMouseCursorPlugin.h",
+    "framework/Source/FlutterMouseCursorPlugin.mm",
+    "framework/Source/FlutterOpenGLRenderer.h",
+    "framework/Source/FlutterOpenGLRenderer.mm",
+    "framework/Source/FlutterRenderer.h",
+    "framework/Source/FlutterResizableBackingStoreProvider.h",
+    "framework/Source/FlutterResizableBackingStoreProvider.mm",
+    "framework/Source/FlutterResizeSynchronizer.h",
+    "framework/Source/FlutterResizeSynchronizer.mm",
+    "framework/Source/FlutterSurfaceManager.h",
+    "framework/Source/FlutterSurfaceManager.mm",
+    "framework/Source/FlutterTextInputModel.h",
+    "framework/Source/FlutterTextInputModel.mm",
+    "framework/Source/FlutterTextInputPlugin.h",
+    "framework/Source/FlutterTextInputPlugin.mm",
+    "framework/Source/FlutterView.h",
+    "framework/Source/FlutterView.mm",
+    "framework/Source/FlutterViewController.mm",
+    "framework/Source/FlutterViewController_Internal.h",
+    "framework/Source/MacOSGLContextSwitch.h",
+    "framework/Source/MacOSGLContextSwitch.mm",
+  ]
+
+  sources += _flutter_framework_headers
+
+  deps = [
+    ":macos_gpu_configuration",
+    "//flutter/flow:flow",
+    "//flutter/fml",
+    "//flutter/shell/platform/common:common_cpp_switches",
+    "//flutter/shell/platform/darwin/common:framework_shared",
+    "//flutter/shell/platform/embedder:embedder_as_internal_library",
+    "//third_party/skia",
+  ]
+
+  public_configs = [ "//flutter:config" ]
+
+  defines = [
+    "FLUTTER_FRAMEWORK",
+    "FLUTTER_ENGINE_NO_PROTOTYPES",
+  ]
+
+  cflags_objcc = [ "-fobjc-arc" ]
+
+  libs = [
+    "Cocoa.framework",
+    "CoreVideo.framework",
+    "IOSurface.framework",
+    "Metal.framework",
+    "QuartzCore.framework",
+  ]
+}
+
+shared_library("flutter_framework_dylib") {
+  visibility = [ ":*" ]
+  output_name = "$_flutter_framework_name"
+
+  ldflags = [ "-Wl,-install_name,@rpath/$_flutter_framework_filename/$_framework_binary_subpath" ]
+
+  deps = [ ":flutter_framework_source" ]
+}
+
+test_fixtures("flutter_desktop_darwin_fixtures") {
+  dart_main = "framework/Source/fixtures/flutter_desktop_test.dart"
+
+  fixtures = [ "//third_party/icu/common/icudtl.dat" ]
+}
+
+executable("flutter_desktop_darwin_unittests") {
+  testonly = true
+
+  sources = [
+    "framework/Source/FlutterEngineTest.mm",
+    "framework/Source/FlutterGLCompositorUnittests.mm",
+    "framework/Source/FlutterViewControllerTest.mm",
+    "framework/Source/FlutterViewControllerTestUtils.h",
+    "framework/Source/FlutterViewControllerTestUtils.mm",
+  ]
+
+  if (shell_enable_metal) {
+    sources += [
+      "framework/Source/FlutterMetalRendererTest.mm",
+      "framework/Source/FlutterMetalSurfaceManagerTest.mm",
+    ]
+  } else {
+    sources += [ "framework/Source/FlutterOpenGLRendererTest.mm" ]
+  }
+
+  cflags_objcc = [ "-fobjc-arc" ]
+
+  ldflags = [ "-ObjC" ]
+
+  deps = [
+    ":flutter_desktop_darwin_fixtures",
+    ":flutter_framework_source",
+    "//flutter/shell/platform/darwin/common:framework_shared",
+    "//flutter/shell/platform/embedder:embedder_as_internal_library",
+    "//flutter/shell/platform/embedder:embedder_test_utils",
+    "//flutter/testing",
+    "//flutter/testing:dart",
+    "//flutter/testing:skia",
+    "//flutter/testing:testing_lib",
+    "//third_party/ocmock:ocmock",
+  ]
+}
+
+copy("copy_dylib") {
+  visibility = [ ":*" ]
+
+  sources = [ "$root_out_dir/lib$_flutter_framework_name.dylib" ]
+  outputs = [ "$_flutter_framework_dir/$_framework_binary_subpath" ]
+
+  deps = [ ":flutter_framework_dylib" ]
+}
+
+copy("copy_framework_info_plist") {
+  visibility = [ ":*" ]
+  sources = [ "framework/Info.plist" ]
+  outputs = [ "$_flutter_framework_dir/Versions/A/Resources/Info.plist" ]
+}
+
+copy("copy_framework_module_map") {
+  visibility = [ ":*" ]
+  sources = [ "framework/module.modulemap" ]
+  outputs = [ "$_flutter_framework_dir/Versions/A/Modules/module.modulemap" ]
+}
+
+action("copy_framework_headers") {
+  script = "//flutter/sky/tools/install_framework_headers.py"
+  visibility = [ ":*" ]
+  sources = get_path_info(_flutter_framework_headers, "abspath") +
+            framework_shared_headers
+  outputs = []
+  foreach(header, sources) {
+    header_basename = get_path_info(header, "file")
+    outputs += [ "$_flutter_framework_headers_copy_dir/$header_basename" ]
+  }
+  args = [
+           "--location",
+           rebase_path("$_flutter_framework_headers_copy_dir"),
+           "--headers",
+         ] + rebase_path(sources, "", "//")
+}
+
+copy("copy_framework_icu") {
+  visibility = [ ":*" ]
+  sources = [ "//third_party/icu/flutter/icudtl.dat" ]
+  outputs =
+      [ "$_flutter_framework_dir/Versions/A/Resources/{{source_file_part}}" ]
+}
+
+copy("copy_license") {
+  visibility = [ ":*" ]
+  sources = [ "//LICENSE" ]
+  outputs = [ "$root_out_dir/LICENSE" ]
+}
+
+action("_generate_symlinks") {
+  visibility = [ ":*" ]
+  script = "//build/config/mac/package_framework.py"
+  outputs = [ "$root_build_dir/$_flutter_framework_name.stamp" ]
+  args = [
+    "--framework",
+    "$_flutter_framework_filename",
+    "--version",
+    "A",
+    "--contents",
+    "$_flutter_framework_name",
+    "Resources",
+    "Headers",
+    "Modules",
+    "--stamp",
+    "$_flutter_framework_name.stamp",
+  ]
+  deps = [
+    ":copy_dylib",
+    ":copy_framework_headers",
+    ":copy_framework_icu",
+    ":copy_framework_info_plist",
+    ":copy_framework_module_map",
+    ":copy_license",
+  ]
+}
+
+copy("copy_framework_podspec") {
+  visibility = [ ":*" ]
+  sources = [ "framework/FlutterMacOS.podspec" ]
+  outputs = [ "$root_out_dir/FlutterMacOS.podspec" ]
+}
+
+group("flutter_framework") {
+  deps = [
+    ":_generate_symlinks",
+    ":copy_framework_podspec",
+  ]
+}
+
+if (build_glfw_shell) {
+  shared_library("flutter_macos_glfw") {
+    deps = [ "//flutter/shell/platform/glfw:flutter_glfw" ]
+
+    public_configs = [ "//flutter:config" ]
+  }
+}

@@ -1,37 +1,44 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #ifndef SHELL_PLATFORM_ANDROID_VSYNC_WAITER_ANDROID_H_
 #define SHELL_PLATFORM_ANDROID_VSYNC_WAITER_ANDROID_H_
 
-#include "base/android/jni_android.h"
+#include <jni.h>
+
+#include <memory>
+
+#include "flutter/fml/macros.h"
 #include "flutter/shell/common/vsync_waiter.h"
-#include "lib/ftl/macros.h"
-#include "lib/ftl/memory/weak_ptr.h"
 
-namespace shell {
+namespace flutter {
 
-class VsyncWaiterAndroid : public VsyncWaiter {
+class VsyncWaiterAndroid final : public VsyncWaiter {
  public:
-  VsyncWaiterAndroid();
-  ~VsyncWaiterAndroid() override;
-
   static bool Register(JNIEnv* env);
 
-  void AsyncWaitForVsync(Callback callback) override;
+  VsyncWaiterAndroid(flutter::TaskRunners task_runners);
 
-  void OnVsync(long frameTimeNanos);
+  ~VsyncWaiterAndroid() override;
 
  private:
-  Callback callback_;
-  ftl::WeakPtr<VsyncWaiterAndroid> self_;
+  // |VsyncWaiter|
+  void AwaitVSync() override;
 
-  ftl::WeakPtrFactory<VsyncWaiterAndroid> weak_factory_;
+  static void OnNativeVsync(JNIEnv* env,
+                            jclass jcaller,
+                            jlong frameTimeNanos,
+                            jlong frameTargetTimeNanos,
+                            jlong java_baton);
 
-  FTL_DISALLOW_COPY_AND_ASSIGN(VsyncWaiterAndroid);
+  static void ConsumePendingCallback(jlong java_baton,
+                                     fml::TimePoint frame_start_time,
+                                     fml::TimePoint frame_target_time);
+
+  FML_DISALLOW_COPY_AND_ASSIGN(VsyncWaiterAndroid);
 };
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // SHELL_PLATFORM_ANDROID_ASYNC_WAITER_ANDROID_H_

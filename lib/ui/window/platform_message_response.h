@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -7,20 +7,20 @@
 
 #include <vector>
 
-#include "lib/ftl/memory/ref_counted.h"
-#include "lib/ftl/memory/ref_ptr.h"
+#include "flutter/fml/mapping.h"
+#include "flutter/fml/memory/ref_counted.h"
+#include "flutter/fml/memory/ref_ptr.h"
 
-namespace blink {
+namespace flutter {
 
 class PlatformMessageResponse
-    : public ftl::RefCountedThreadSafe<PlatformMessageResponse> {
-  FRIEND_REF_COUNTED_THREAD_SAFE(PlatformMessageResponse);
+    : public fml::RefCountedThreadSafe<PlatformMessageResponse> {
+  FML_FRIEND_REF_COUNTED_THREAD_SAFE(PlatformMessageResponse);
 
  public:
   // Callable on any thread.
-  virtual void Complete(std::vector<uint8_t> data) = 0;
-  // TODO(abarth): You should be able to pass data with the error.
-  virtual void CompleteWithError() = 0;
+  virtual void Complete(std::unique_ptr<fml::Mapping> data) = 0;
+  virtual void CompleteEmpty() = 0;
 
   bool is_complete() const { return is_complete_; }
 
@@ -31,6 +31,6 @@ class PlatformMessageResponse
   bool is_complete_ = false;
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_PLATFORM_PLATFORM_MESSAGE_RESPONSE_H_

@@ -1,34 +1,28 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/darwin/ios/ios_surface_software.h"
+#import "flutter/shell/platform/darwin/ios/ios_surface_software.h"
 
 #include <QuartzCore/CALayer.h>
 
 #include <memory>
 
+#include "flutter/fml/logging.h"
 #include "flutter/fml/platform/darwin/cf_utils.h"
-#include "lib/ftl/logging.h"
+#include "flutter/fml/trace_event.h"
 #include "third_party/skia/include/utils/mac/SkCGUtils.h"
 
-namespace shell {
+namespace flutter {
 
-IOSSurfaceSoftware::IOSSurfaceSoftware(
-    PlatformView::SurfaceConfig surface_config,
-    CALayer* layer)
-    : IOSSurface(surface_config, layer) {
-  UpdateStorageSizeIfNecessary();
-}
+IOSSurfaceSoftware::IOSSurfaceSoftware(fml::scoped_nsobject<CALayer> layer,
+                                       std::shared_ptr<IOSContext> context)
+    : IOSSurface(std::move(context)), layer_(std::move(layer)) {}
 
 IOSSurfaceSoftware::~IOSSurfaceSoftware() = default;
 
 bool IOSSurfaceSoftware::IsValid() const {
-  return GetLayer() != nullptr;
-}
-
-bool IOSSurfaceSoftware::ResourceContextMakeCurrent() {
-  return false;
+  return layer_;
 }
 
 void IOSSurfaceSoftware::UpdateStorageSizeIfNecessary() {
@@ -38,12 +32,12 @@ void IOSSurfaceSoftware::UpdateStorageSizeIfNecessary() {
   // Android oddities.
 }
 
-std::unique_ptr<Surface> IOSSurfaceSoftware::CreateGPUSurface() {
+std::unique_ptr<Surface> IOSSurfaceSoftware::CreateGPUSurface(GrDirectContext* gr_context) {
   if (!IsValid()) {
     return nullptr;
   }
 
-  auto surface = std::make_unique<GPUSurfaceSoftware>(this);
+  auto surface = std::make_unique<GPUSurfaceSoftware>(this, true /* render to surface */);
 
   if (!surface->IsValid()) {
     return nullptr;
@@ -53,6 +47,7 @@ std::unique_ptr<Surface> IOSSurfaceSoftware::CreateGPUSurface() {
 }
 
 sk_sp<SkSurface> IOSSurfaceSoftware::AcquireBackingStore(const SkISize& size) {
+  TRACE_EVENT0("flutter", "IOSSurfaceSoftware::AcquireBackingStore");
   if (!IsValid()) {
     return nullptr;
   }
@@ -63,12 +58,14 @@ sk_sp<SkSurface> IOSSurfaceSoftware::AcquireBackingStore(const SkISize& size) {
     return sk_surface_;
   }
 
-  sk_surface_ = SkSurface::MakeRasterN32Premul(
-      size.fWidth, size.fHeight, nullptr /* SkSurfaceProps as out */);
+  SkImageInfo info = SkImageInfo::MakeN32(size.fWidth, size.fHeight, kPremul_SkAlphaType,
+                                          SkColorSpace::MakeSRGB());
+  sk_surface_ = SkSurface::MakeRaster(info, nullptr);
   return sk_surface_;
 }
 
 bool IOSSurfaceSoftware::PresentBackingStore(sk_sp<SkSurface> backing_store) {
+  TRACE_EVENT0("flutter", "IOSSurfaceSoftware::PresentBackingStore");
   if (!IsValid() || backing_store == nullptr) {
     return false;
   }
@@ -78,37 +75,50 @@ bool IOSSurfaceSoftware::PresentBackingStore(sk_sp<SkSurface> backing_store) {
     return false;
   }
 
+  // Some basic sanity checking.
   uint64_t expected_pixmap_data_size = pixmap.width() * pixmap.height() * 4;
 
-  if (expected_pixmap_data_size != pixmap.getSize64()) {
+  const size_t pixmap_size = pixmap.computeByteSize();
+
+  if (expected_pixmap_data_size != pixmap_size) {
     return false;
   }
 
   fml::CFRef<CGColorSpaceRef> colorspace(CGColorSpaceCreateDeviceRGB());
 
-  fml::CFRef<CGContextRef> bitmap(CGBitmapContextCreate(
-      const_cast<uint32_t*>(pixmap.addr32()),  // data managed pixmap
-      pixmap.width(),                          // width
-      pixmap.height(),                         // height
-      8,                                       // bits per component
-      4 * pixmap.width(),                      // bytes per row
-      colorspace,                              // colorspace
-      kCGImageAlphaPremultipliedLast           // bitmap info
+  // Setup the data provider that gives CG a view into the pixmap.
+  fml::CFRef<CGDataProviderRef> pixmap_data_provider(CGDataProviderCreateWithData(
+      nullptr,          // info
+      pixmap.addr32(),  // data
+      pixmap_size,      // size
+      nullptr           // release callback
       ));
 
-  if (!bitmap) {
+  if (!pixmap_data_provider) {
     return false;
   }
 
-  fml::CFRef<CGImageRef> image(CGBitmapContextCreateImage(bitmap));
+  // Create the CGImageRef representation on the pixmap.
+  fml::CFRef<CGImageRef> pixmap_image(CGImageCreate(pixmap.width(),     // width
+                                                    pixmap.height(),    // height
+                                                    8,                  // bits per component
+                                                    32,                 // bits per pixel
+                                                    pixmap.rowBytes(),  // bytes per row
+                                                    colorspace,         // colorspace
+                                                    kCGImageAlphaPremultipliedLast,  // bitmap info
+                                                    pixmap_data_provider,      // data provider
+                                                    nullptr,                   // decode array
+                                                    false,                     // should interpolate
+                                                    kCGRenderingIntentDefault  // rendering intent
+                                                    ));
 
-  if (!image) {
+  if (!pixmap_image) {
     return false;
   }
 
-  [GetLayer() setContents:reinterpret_cast<id>(static_cast<CGImageRef>(image))];
+  layer_.get().contents = reinterpret_cast<id>(static_cast<CGImageRef>(pixmap_image));
 
   return true;
 }
 
-}  // namespace shell
+}  // namespace flutter

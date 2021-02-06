@@ -1,22 +1,26 @@
-// Copyright 2014 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #ifndef FLUTTER_LIB_IO_DART_IO_H_
 #define FLUTTER_LIB_IO_DART_IO_H_
 
-#include "lib/ftl/macros.h"
+#include <cstdint>
+#include <string>
 
-namespace blink {
+#include "flutter/fml/macros.h"
+
+namespace flutter {
 
 class DartIO {
  public:
-  static void InitForIsolate();
+  static void InitForIsolate(bool may_insecurely_connect_to_all_domains,
+                             std::string domain_network_policy);
 
  private:
-  FTL_DISALLOW_IMPLICIT_CONSTRUCTORS(DartIO);
+  FML_DISALLOW_IMPLICIT_CONSTRUCTORS(DartIO);
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_LIB_IO_DART_IO_H_

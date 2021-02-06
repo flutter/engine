@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -6,45 +6,37 @@
 #define FLUTTER_FLOW_LAYERS_CHILD_SCENE_LAYER_H_
 
 #include "flutter/flow/layers/layer.h"
-#include "apps/mozart/services/composition/scenes.fidl.h"
+#include "flutter/flow/scene_update_context.h"
+#include "third_party/skia/include/core/SkMatrix.h"
+#include "third_party/skia/include/core/SkPoint.h"
+#include "third_party/skia/include/core/SkSize.h"
 
-namespace flow {
+namespace flutter {
 
+// Layer that represents an embedded child.
 class ChildSceneLayer : public Layer {
  public:
-  ChildSceneLayer();
-  ~ChildSceneLayer() override;
-
-  void set_offset(const SkPoint& offset) { offset_ = offset; }
-
-  void set_device_pixel_ratio(float device_pixel_ratio) {
-    device_pixel_ratio_ = device_pixel_ratio;
-  }
-
-  void set_physical_size(const SkISize& physical_size) {
-    physical_size_ = physical_size;
-  }
-
-  void set_scene_token(uint32_t scene_token) { scene_token_ = scene_token; }
-
-  void set_hit_testable(bool hit_testable) { hit_testable_ = hit_testable; }
+  ChildSceneLayer(zx_koid_t layer_id,
+                  const SkPoint& offset,
+                  const SkSize& size,
+                  bool hit_testable);
+  ~ChildSceneLayer() override = default;
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
-  void Paint(PaintContext& context) override;
-  void UpdateScene(SceneUpdateContext& context,
-                   mozart::Node* container) override;
+
+  void Paint(PaintContext& context) const override;
+
+  void UpdateScene(std::shared_ptr<SceneUpdateContext> context) override;
 
  private:
+  zx_koid_t layer_id_ = ZX_KOID_INVALID;
   SkPoint offset_;
-  float device_pixel_ratio_ = 1.0;
-  SkISize physical_size_;
-  uint32_t scene_token_ = 0;
+  SkSize size_;
   bool hit_testable_ = true;
-  SkMatrix transform_;
 
-  FTL_DISALLOW_COPY_AND_ASSIGN(ChildSceneLayer);
+  FML_DISALLOW_COPY_AND_ASSIGN(ChildSceneLayer);
 };
 
-}  // namespace flow
+}  // namespace flutter
 
 #endif  // FLUTTER_FLOW_LAYERS_CHILD_SCENE_LAYER_H_

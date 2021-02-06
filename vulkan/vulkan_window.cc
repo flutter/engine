@@ -1,32 +1,43 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/vulkan/vulkan_window.h"
+// FLUTTER_NOLINT: https://github.com/flutter/flutter/issues/68331
+
+#include "vulkan_window.h"
 
 #include <memory>
 #include <string>
 
-#include "flutter/vulkan/vulkan_application.h"
-#include "flutter/vulkan/vulkan_device.h"
-#include "flutter/vulkan/vulkan_native_surface.h"
-#include "flutter/vulkan/vulkan_surface.h"
-#include "flutter/vulkan/vulkan_swapchain.h"
-#include "third_party/skia/include/gpu/GrContext.h"
-#include "third_party/skia/include/gpu/vk/GrVkInterface.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "vulkan_application.h"
+#include "vulkan_device.h"
+#include "vulkan_native_surface.h"
+#include "vulkan_surface.h"
+#include "vulkan_swapchain.h"
 
 namespace vulkan {
 
-VulkanWindow::VulkanWindow(ftl::RefPtr<VulkanProcTable> proc_table,
-                           std::unique_ptr<VulkanNativeSurface> native_surface)
-    : valid_(false), vk(std::move(proc_table)) {
+VulkanWindow::VulkanWindow(fml::RefPtr<VulkanProcTable> proc_table,
+                           std::unique_ptr<VulkanNativeSurface> native_surface,
+                           bool render_to_surface)
+    : VulkanWindow(/*context/*/ nullptr,
+                   proc_table,
+                   std::move(native_surface),
+                   render_to_surface) {}
+
+VulkanWindow::VulkanWindow(const sk_sp<GrDirectContext>& context,
+                           fml::RefPtr<VulkanProcTable> proc_table,
+                           std::unique_ptr<VulkanNativeSurface> native_surface,
+                           bool render_to_surface)
+    : valid_(false), vk(std::move(proc_table)), skia_gr_context_(context) {
   if (!vk || !vk->HasAcquiredMandatoryProcAddresses()) {
-    FTL_DLOG(INFO) << "Proc table has not acquired mandatory proc addresses.";
+    FML_DLOG(INFO) << "Proc table has not acquired mandatory proc addresses.";
     return;
   }
 
   if (native_surface == nullptr || !native_surface->IsValid()) {
-    FTL_DLOG(INFO) << "Native surface is invalid.";
+    FML_DLOG(INFO) << "Native surface is invalid.";
     return;
   }
 
@@ -43,7 +54,7 @@ VulkanWindow::VulkanWindow(ftl::RefPtr<VulkanProcTable> proc_table,
   if (!application_->IsValid() || !vk->AreInstanceProcsSetup()) {
     // Make certain the application instance was created and it setup the
     // instance proc table entries.
-    FTL_DLOG(INFO) << "Instance proc addresses have not been setup.";
+    FML_DLOG(INFO) << "Instance proc addresses have not been setup.";
     return;
   }
 
@@ -55,31 +66,36 @@ VulkanWindow::VulkanWindow(ftl::RefPtr<VulkanProcTable> proc_table,
       !vk->AreDeviceProcsSetup()) {
     // Make certain the device was created and it setup the device proc table
     // entries.
-    FTL_DLOG(INFO) << "Device proc addresses have not been setup.";
+    FML_DLOG(INFO) << "Device proc addresses have not been setup.";
+    return;
+  }
+
+  // TODO(38466): Refactor GPU surface APIs take into account the fact that an
+  // external view embedder may want to render to the root surface.
+  if (!render_to_surface) {
     return;
   }
 
   // Create the logical surface from the native platform surface.
-
   surface_ = std::make_unique<VulkanSurface>(*vk, *application_,
                                              std::move(native_surface));
 
   if (!surface_->IsValid()) {
-    FTL_DLOG(INFO) << "Vulkan surface is invalid.";
+    FML_DLOG(INFO) << "Vulkan surface is invalid.";
     return;
   }
 
-  // Create the Skia GrContext.
+  // Create the Skia GrDirectContext.
 
-  if (!CreateSkiaGrContext()) {
-    FTL_DLOG(INFO) << "Could not create Skia context.";
+  if (!skia_gr_context_ && !CreateSkiaGrContext()) {
+    FML_DLOG(INFO) << "Could not create Skia context.";
     return;
   }
 
   // Create the swapchain.
 
   if (!RecreateSwapchain()) {
-    FTL_DLOG(INFO) << "Could not setup the swapchain initially.";
+    FML_DLOG(INFO) << "Could not setup the swapchain initially.";
     return;
   }
 
@@ -92,44 +108,42 @@ bool VulkanWindow::IsValid() const {
   return valid_;
 }
 
-GrContext* VulkanWindow::GetSkiaGrContext() {
+GrDirectContext* VulkanWindow::GetSkiaGrContext() {
   return skia_gr_context_.get();
 }
 
 bool VulkanWindow::CreateSkiaGrContext() {
-  auto backend_context = CreateSkiaBackendContext();
+  GrVkBackendContext backend_context;
 
-  if (backend_context == nullptr) {
+  if (!CreateSkiaBackendContext(&backend_context)) {
     return false;
   }
 
-  sk_sp<GrContext> context(GrContext::Create(
-      kVulkan_GrBackend,
-      reinterpret_cast<GrBackendContext>(backend_context.get())));
+  sk_sp<GrDirectContext> context = GrDirectContext::MakeVulkan(backend_context);
 
   if (context == nullptr) {
     return false;
   }
 
-  skia_vk_backend_context_ = backend_context;
+  context->setResourceCacheLimits(kGrCacheMaxCount, kGrCacheMaxByteSize);
+
   skia_gr_context_ = context;
 
   return true;
 }
 
-sk_sp<GrVkBackendContext> VulkanWindow::CreateSkiaBackendContext() {
-  auto interface = vk->CreateSkiaInterface();
+bool VulkanWindow::CreateSkiaBackendContext(GrVkBackendContext* context) {
+  auto getProc = vk->CreateSkiaGetProc();
 
-  if (interface == nullptr || !interface->validate(0)) {
-    return nullptr;
+  if (getProc == nullptr) {
+    return false;
   }
 
   uint32_t skia_features = 0;
   if (!logical_device_->GetPhysicalDeviceFeaturesSkia(&skia_features)) {
-    return nullptr;
+    return false;
   }
 
-  auto context = sk_make_sp<GrVkBackendContext>();
   context->fInstance = application_->GetInstance();
   context->fPhysicalDevice = logical_device_->GetPhysicalDeviceHandle();
   context->fDevice = logical_device_->GetHandle();
@@ -140,13 +154,14 @@ sk_sp<GrVkBackendContext> VulkanWindow::CreateSkiaBackendContext() {
                          kKHR_swapchain_GrVkExtensionFlag |
                          surface_->GetNativeSurface().GetSkiaExtensionName();
   context->fFeatures = skia_features;
-  context->fInterface.reset(interface.release());
-  return context;
+  context->fGetProc = std::move(getProc);
+  context->fOwnsInstanceAndDevice = false;
+  return true;
 }
 
 sk_sp<SkSurface> VulkanWindow::AcquireSurface() {
   if (!IsValid()) {
-    FTL_DLOG(INFO) << "Surface is invalid.";
+    FML_DLOG(INFO) << "Surface is invalid.";
     return nullptr;
   }
 
@@ -160,10 +175,10 @@ sk_sp<SkSurface> VulkanWindow::AcquireSurface() {
   // size.
   if (surface_size != SkISize::Make(0, 0) &&
       surface_size != swapchain_->GetSize()) {
-    FTL_DLOG(INFO) << "Swapchain and surface sizes are out of sync. Recreating "
+    FML_DLOG(INFO) << "Swapchain and surface sizes are out of sync. Recreating "
                       "swapchain.";
     if (!RecreateSwapchain()) {
-      FTL_DLOG(INFO) << "Could not recreate swapchain.";
+      FML_DLOG(INFO) << "Could not recreate swapchain.";
       valid_ = false;
       return nullptr;
     }
@@ -182,7 +197,7 @@ sk_sp<SkSurface> VulkanWindow::AcquireSurface() {
 
     if (acquire_result == VulkanSwapchain::AcquireStatus::ErrorSurfaceLost) {
       // Surface is lost. This is an unrecoverable error.
-      FTL_DLOG(INFO) << "Swapchain reported surface was lost.";
+      FML_DLOG(INFO) << "Swapchain reported surface was lost.";
       return nullptr;
     }
 
@@ -194,7 +209,7 @@ sk_sp<SkSurface> VulkanWindow::AcquireSurface() {
         continue;
       } else {
         // Could not recreate the swapchain at the new configuration.
-        FTL_DLOG(INFO) << "Swapchain reported surface was out of date but "
+        FML_DLOG(INFO) << "Swapchain reported surface was out of date but "
                           "could not recreate the swapchain at the new "
                           "configuration.";
         valid_ = false;
@@ -205,13 +220,13 @@ sk_sp<SkSurface> VulkanWindow::AcquireSurface() {
     break;
   }
 
-  FTL_DCHECK(false) << "Unhandled VulkanSwapchain::AcquireResult";
+  FML_DCHECK(false) << "Unhandled VulkanSwapchain::AcquireResult";
   return nullptr;
 }
 
 bool VulkanWindow::SwapBuffers() {
   if (!IsValid()) {
-    FTL_DLOG(INFO) << "Window was invalid.";
+    FML_DLOG(INFO) << "Window was invalid.";
     return false;
   }
 

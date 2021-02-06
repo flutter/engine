@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -8,19 +8,22 @@
 #include <string>
 #include <vector>
 
-#include "flutter/vulkan/vulkan_handle.h"
-#include "flutter/vulkan/vulkan_proc_table.h"
-#include "lib/ftl/macros.h"
+#include "flutter/fml/macros.h"
+#include "vulkan_handle.h"
+#include "vulkan_proc_table.h"
 
 namespace vulkan {
 
-bool IsDebuggingEnabled();
+bool ValidationLayerInfoMessagesEnabled();
+bool ValidationErrorsFatal();
 
-std::vector<std::string> InstanceLayersToEnable(const VulkanProcTable& vk);
+std::vector<std::string> InstanceLayersToEnable(const VulkanProcTable& vk,
+                                                bool enable_validation_layers);
 
 std::vector<std::string> DeviceLayersToEnable(
     const VulkanProcTable& vk,
-    const VulkanHandle<VkPhysicalDevice>& physical_device);
+    const VulkanHandle<VkPhysicalDevice>& physical_device,
+    bool enable_validation_layers);
 
 }  // namespace vulkan
 

@@ -1,26 +1,24 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #ifndef FLUTTER_LIB_UI_SEMANTICS_SEMANTICS_UPDATE_BUILDER_H_
 #define FLUTTER_LIB_UI_SEMANTICS_SEMANTICS_UPDATE_BUILDER_H_
 
+#include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/semantics/semantics_update.h"
-#include "lib/tonic/dart_wrappable.h"
-#include "lib/tonic/typed_data/float64_list.h"
-#include "lib/tonic/typed_data/int32_list.h"
+#include "third_party/tonic/typed_data/typed_list.h"
 
-namespace blink {
+namespace flutter {
 
 class SemanticsUpdateBuilder
-    : public ftl::RefCountedThreadSafe<SemanticsUpdateBuilder>,
-      public tonic::DartWrappable {
+    : public RefCountedDartWrappable<SemanticsUpdateBuilder> {
   DEFINE_WRAPPERTYPEINFO();
-  FRIEND_MAKE_REF_COUNTED(SemanticsUpdateBuilder);
+  FML_FRIEND_MAKE_REF_COUNTED(SemanticsUpdateBuilder);
 
  public:
-  static ftl::RefPtr<SemanticsUpdateBuilder> create() {
-    return ftl::MakeRefCounted<SemanticsUpdateBuilder>();
+  static fml::RefPtr<SemanticsUpdateBuilder> create() {
+    return fml::MakeRefCounted<SemanticsUpdateBuilder>();
   }
 
   ~SemanticsUpdateBuilder() override;
@@ -28,24 +26,49 @@ class SemanticsUpdateBuilder
   void updateNode(int id,
                   int flags,
                   int actions,
+                  int maxValueLength,
+                  int currentValueLength,
+                  int textSelectionBase,
+                  int textSelectionExtent,
+                  int platformViewId,
+                  int scrollChildren,
+                  int scrollIndex,
+                  double scrollPosition,
+                  double scrollExtentMax,
+                  double scrollExtentMin,
                   double left,
                   double top,
                   double right,
                   double bottom,
+                  double elevation,
+                  double thickness,
                   std::string label,
+                  std::string hint,
+                  std::string value,
+                  std::string increasedValue,
+                  std::string decreasedValue,
+                  int textDirection,
                   const tonic::Float64List& transform,
-                  const tonic::Int32List& children);
+                  const tonic::Int32List& childrenInTraversalOrder,
+                  const tonic::Int32List& childrenInHitTestOrder,
+                  const tonic::Int32List& customAccessibilityActions);
 
-  ftl::RefPtr<SemanticsUpdate> build();
+  void updateCustomAction(int id,
+                          std::string label,
+                          std::string hint,
+                          int overrideId);
+
+  void build(Dart_Handle semantics_update_handle);
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
  private:
   explicit SemanticsUpdateBuilder();
 
-  std::vector<SemanticsNode> nodes_;
+  SemanticsNodeUpdates nodes_;
+  CustomAccessibilityActionUpdates actions_;
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_SEMANTICS_SEMANTICS_UPDATE_BUILDER_H_

@@ -1,45 +1,48 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #ifndef FLUTTER_SHELL_GPU_GPU_SURFACE_SOFTWARE_H_
 #define FLUTTER_SHELL_GPU_GPU_SURFACE_SOFTWARE_H_
 
-#include "flutter/shell/common/surface.h"
-#include "lib/ftl/macros.h"
-#include "lib/ftl/memory/weak_ptr.h"
-#include "third_party/skia/include/core/SkSurface.h"
+#include "flutter/flow/surface.h"
+#include "flutter/fml/macros.h"
+#include "flutter/fml/memory/weak_ptr.h"
+#include "flutter/shell/gpu/gpu_surface_software_delegate.h"
 
-namespace shell {
-
-class GPUSurfaceSoftwareDelegate {
- public:
-  virtual sk_sp<SkSurface> AcquireBackingStore(const SkISize& size) = 0;
-  virtual bool PresentBackingStore(sk_sp<SkSurface> backing_store) = 0;
-};
+namespace flutter {
 
 class GPUSurfaceSoftware : public Surface {
  public:
-  GPUSurfaceSoftware(GPUSurfaceSoftwareDelegate* delegate);
+  GPUSurfaceSoftware(GPUSurfaceSoftwareDelegate* delegate,
+                     bool render_to_surface);
 
   ~GPUSurfaceSoftware() override;
 
-  bool Setup() override;
-
+  // |Surface|
   bool IsValid() override;
 
+  // |Surface|
   std::unique_ptr<SurfaceFrame> AcquireFrame(const SkISize& size) override;
 
-  GrContext* GetContext() override;
+  // |Surface|
+  SkMatrix GetRootTransformation() const override;
+
+  // |Surface|
+  GrDirectContext* GetContext() override;
 
  private:
   GPUSurfaceSoftwareDelegate* delegate_;
+  // TODO(38466): Refactor GPU surface APIs take into account the fact that an
+  // external view embedder may want to render to the root surface. This is a
+  // hack to make avoid allocating resources for the root surface when an
+  // external view embedder is present.
+  const bool render_to_surface_;
+  fml::TaskRunnerAffineWeakPtrFactory<GPUSurfaceSoftware> weak_factory_;
 
-  ftl::WeakPtrFactory<GPUSurfaceSoftware> weak_factory_;
-
-  FTL_DISALLOW_COPY_AND_ASSIGN(GPUSurfaceSoftware);
+  FML_DISALLOW_COPY_AND_ASSIGN(GPUSurfaceSoftware);
 };
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // FLUTTER_SHELL_GPU_GPU_SURFACE_SOFTWARE_H_

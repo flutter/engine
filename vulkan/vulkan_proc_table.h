@@ -1,23 +1,23 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #ifndef FLUTTER_VULKAN_VULKAN_PROC_TABLE_H_
 #define FLUTTER_VULKAN_VULKAN_PROC_TABLE_H_
 
-#include "flutter/vulkan/vulkan_handle.h"
-#include "flutter/vulkan/vulkan_interface.h"
-#include "lib/ftl/macros.h"
-#include "lib/ftl/memory/ref_counted.h"
-#include "lib/ftl/memory/ref_ptr.h"
+#include "flutter/fml/macros.h"
+#include "flutter/fml/memory/ref_counted.h"
+#include "flutter/fml/memory/ref_ptr.h"
 #include "third_party/skia/include/core/SkRefCnt.h"
-#include "third_party/skia/include/gpu/vk/GrVkInterface.h"
+#include "third_party/skia/include/gpu/vk/GrVkBackendContext.h"
+#include "vulkan_handle.h"
+#include "vulkan_interface.h"
 
 namespace vulkan {
 
-class VulkanProcTable : public ftl::RefCountedThreadSafe<VulkanProcTable> {
-  FRIEND_REF_COUNTED_THREAD_SAFE(VulkanProcTable);
-  FRIEND_MAKE_REF_COUNTED(VulkanProcTable);
+class VulkanProcTable : public fml::RefCountedThreadSafe<VulkanProcTable> {
+  FML_FRIEND_REF_COUNTED_THREAD_SAFE(VulkanProcTable);
+  FML_FRIEND_MAKE_REF_COUNTED(VulkanProcTable);
 
  public:
   template <class T>
@@ -59,18 +59,21 @@ class VulkanProcTable : public ftl::RefCountedThreadSafe<VulkanProcTable> {
 
   bool SetupDeviceProcAddresses(const VulkanHandle<VkDevice>& device);
 
-  sk_sp<GrVkInterface> CreateSkiaInterface() const;
+  GrVkGetProc CreateSkiaGetProc() const;
 
 #define DEFINE_PROC(name) Proc<PFN_vk##name> name;
 
   DEFINE_PROC(AcquireNextImageKHR);
   DEFINE_PROC(AllocateCommandBuffers);
+  DEFINE_PROC(AllocateMemory);
   DEFINE_PROC(BeginCommandBuffer);
+  DEFINE_PROC(BindImageMemory);
   DEFINE_PROC(CmdPipelineBarrier);
   DEFINE_PROC(CreateCommandPool);
   DEFINE_PROC(CreateDebugReportCallbackEXT);
   DEFINE_PROC(CreateDevice);
   DEFINE_PROC(CreateFence);
+  DEFINE_PROC(CreateImage);
   DEFINE_PROC(CreateInstance);
   DEFINE_PROC(CreateSemaphore);
   DEFINE_PROC(CreateSwapchainKHR);
@@ -78,6 +81,7 @@ class VulkanProcTable : public ftl::RefCountedThreadSafe<VulkanProcTable> {
   DEFINE_PROC(DestroyDebugReportCallbackEXT);
   DEFINE_PROC(DestroyDevice);
   DEFINE_PROC(DestroyFence);
+  DEFINE_PROC(DestroyImage);
   DEFINE_PROC(DestroyInstance);
   DEFINE_PROC(DestroySemaphore);
   DEFINE_PROC(DestroySurfaceKHR);
@@ -89,27 +93,32 @@ class VulkanProcTable : public ftl::RefCountedThreadSafe<VulkanProcTable> {
   DEFINE_PROC(EnumerateInstanceLayerProperties);
   DEFINE_PROC(EnumeratePhysicalDevices);
   DEFINE_PROC(FreeCommandBuffers);
+  DEFINE_PROC(FreeMemory);
   DEFINE_PROC(GetDeviceProcAddr);
   DEFINE_PROC(GetDeviceQueue);
+  DEFINE_PROC(GetImageMemoryRequirements);
   DEFINE_PROC(GetInstanceProcAddr);
   DEFINE_PROC(GetPhysicalDeviceFeatures);
   DEFINE_PROC(GetPhysicalDeviceQueueFamilyProperties);
-  DEFINE_PROC(GetPhysicalDeviceSurfaceCapabilitiesKHR);
-  DEFINE_PROC(GetPhysicalDeviceSurfaceFormatsKHR);
-  DEFINE_PROC(GetPhysicalDeviceSurfacePresentModesKHR);
-  DEFINE_PROC(GetSwapchainImagesKHR);
-  DEFINE_PROC(QueuePresentKHR);
   DEFINE_PROC(QueueSubmit);
+  DEFINE_PROC(QueueWaitIdle);
   DEFINE_PROC(ResetCommandBuffer);
   DEFINE_PROC(ResetFences);
   DEFINE_PROC(WaitForFences);
-  DEFINE_PROC(GetPhysicalDeviceSurfaceSupportKHR);
 #if OS_ANDROID
+  DEFINE_PROC(GetPhysicalDeviceSurfaceCapabilitiesKHR);
+  DEFINE_PROC(GetPhysicalDeviceSurfaceFormatsKHR);
+  DEFINE_PROC(GetPhysicalDeviceSurfacePresentModesKHR);
+  DEFINE_PROC(GetPhysicalDeviceSurfaceSupportKHR);
+  DEFINE_PROC(GetSwapchainImagesKHR);
+  DEFINE_PROC(QueuePresentKHR);
   DEFINE_PROC(CreateAndroidSurfaceKHR);
 #endif  // OS_ANDROID
 #if OS_FUCHSIA
-  DEFINE_PROC(CreateMagmaSurfaceKHR);
-  DEFINE_PROC(GetPhysicalDeviceMagmaPresentationSupportKHR);
+  DEFINE_PROC(CreateBufferCollectionFUCHSIA);
+  DEFINE_PROC(GetMemoryZirconHandleFUCHSIA);
+  DEFINE_PROC(ImportSemaphoreZirconHandleFUCHSIA);
+  DEFINE_PROC(SetBufferCollectionConstraintsFUCHSIA);
 #endif  // OS_FUCHSIA
 
 #undef DEFINE_PROC
@@ -131,7 +140,7 @@ class VulkanProcTable : public ftl::RefCountedThreadSafe<VulkanProcTable> {
   PFN_vkVoidFunction AcquireProc(const char* proc_name,
                                  const VulkanHandle<VkDevice>& device) const;
 
-  FTL_DISALLOW_COPY_AND_ASSIGN(VulkanProcTable);
+  FML_DISALLOW_COPY_AND_ASSIGN(VulkanProcTable);
 };
 
 }  // namespace vulkan

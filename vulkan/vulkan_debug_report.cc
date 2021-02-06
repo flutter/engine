@@ -1,63 +1,26 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/vulkan/vulkan_debug_report.h"
+#include "vulkan_debug_report.h"
 
 #include <iomanip>
 #include <vector>
 
-#include "flutter/vulkan/vulkan_utilities.h"
+#include "flutter/fml/compiler_specific.h"
+#include "vulkan_utilities.h"
 
 namespace vulkan {
 
-static const VkDebugReportFlagsEXT kVulkanErrorFlags FTL_ALLOW_UNUSED_TYPE =
+static const VkDebugReportFlagsEXT kVulkanErrorFlags FML_ALLOW_UNUSED_TYPE =
     VK_DEBUG_REPORT_WARNING_BIT_EXT |
     VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT | VK_DEBUG_REPORT_ERROR_BIT_EXT;
 
-static const VkDebugReportFlagsEXT kVulkanInfoFlags FTL_ALLOW_UNUSED_TYPE =
+static const VkDebugReportFlagsEXT kVulkanInfoFlags FML_ALLOW_UNUSED_TYPE =
     VK_DEBUG_REPORT_INFORMATION_BIT_EXT | VK_DEBUG_REPORT_DEBUG_BIT_EXT;
 
 std::string VulkanDebugReport::DebugExtensionName() {
   return VK_EXT_DEBUG_REPORT_EXTENSION_NAME;
-}
-
-bool VulkanDebugReport::DebugExtensionSupported(const VulkanProcTable& vk) {
-  if (!IsDebuggingEnabled()) {
-    return false;
-  }
-
-  if (!vk.EnumerateInstanceExtensionProperties) {
-    return false;
-  }
-
-  uint32_t count = 0;
-  if (VK_CALL_LOG_ERROR(vk.EnumerateInstanceExtensionProperties(
-          nullptr, &count, nullptr)) != VK_SUCCESS) {
-    return false;
-  }
-
-  if (count == 0) {
-    return false;
-  }
-
-  std::vector<VkExtensionProperties> properties;
-  properties.resize(count);
-  if (VK_CALL_LOG_ERROR(vk.EnumerateInstanceExtensionProperties(
-          nullptr, &count, properties.data())) != VK_SUCCESS) {
-    return false;
-  }
-
-  auto debug_extension_name = DebugExtensionName();
-
-  for (size_t i = 0; i < count; i++) {
-    if (strncmp(properties[i].extensionName, debug_extension_name.c_str(),
-                debug_extension_name.size()) == 0) {
-      return true;
-    }
-  }
-
-  return false;
 }
 
 static const char* VkDebugReportFlagsEXTToString(VkDebugReportFlagsEXT flags) {
@@ -201,9 +164,13 @@ OnVulkanDebugReportCallback(VkDebugReportFlagsEXT flags,
   stream << "-----------------------------------------------------------------";
 
   if (flags & kVulkanErrorFlags) {
-    FTL_DCHECK(false) << stream.str();
+    if (ValidationErrorsFatal()) {
+      FML_DCHECK(false) << stream.str();
+    } else {
+      FML_LOG(ERROR) << stream.str();
+    }
   } else {
-    FTL_LOG(INFO) << stream.str();
+    FML_LOG(INFO) << stream.str();
   }
 
   // Returning false tells the layer not to stop when the event occurs, so
@@ -215,8 +182,7 @@ VulkanDebugReport::VulkanDebugReport(
     const VulkanProcTable& p_vk,
     const VulkanHandle<VkInstance>& application)
     : vk(p_vk), application_(application), valid_(false) {
-  if (!IsDebuggingEnabled() || !vk.CreateDebugReportCallbackEXT ||
-      !vk.DestroyDebugReportCallbackEXT) {
+  if (!vk.CreateDebugReportCallbackEXT || !vk.DestroyDebugReportCallbackEXT) {
     return;
   }
 
@@ -224,10 +190,14 @@ VulkanDebugReport::VulkanDebugReport(
     return;
   }
 
+  VkDebugReportFlagsEXT flags = kVulkanErrorFlags;
+  if (ValidationLayerInfoMessagesEnabled()) {
+    flags |= kVulkanInfoFlags;
+  }
   const VkDebugReportCallbackCreateInfoEXT create_info = {
       .sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT,
       .pNext = nullptr,
-      .flags = kVulkanErrorFlags | kVulkanInfoFlags,
+      .flags = flags,
       .pfnCallback = &vulkan::OnVulkanDebugReportCallback,
       .pUserData = nullptr,
   };

@@ -1,291 +1,358 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge.h"
 
-#include <vector>
-#include <utility>
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/accessibility_text_entry.h"
+#import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
-#import <UIKit/UIKit.h>
+#pragma GCC diagnostic error "-Wundeclared-selector"
 
-#include "lib/ftl/logging.h"
-#include "flutter/shell/platform/darwin/ios/platform_view_ios.h"
+FLUTTER_ASSERT_NOT_ARC
 
+namespace flutter {
 namespace {
 
-constexpr int32_t kRootNodeId = 0;
+constexpr int32_t kSemanticObjectIdInvalid = -1;
 
-blink::SemanticsAction GetSemanticsActionForScrollDirection(
-    UIAccessibilityScrollDirection direction) {
-  switch (direction) {
-    case UIAccessibilityScrollDirectionRight:
-    case UIAccessibilityScrollDirectionPrevious: // TODO(abarth): Support RTL.
-      return blink::SemanticsAction::kScrollRight;
-    case UIAccessibilityScrollDirectionLeft:
-    case UIAccessibilityScrollDirectionNext: // TODO(abarth): Support RTL.
-      return blink::SemanticsAction::kScrollLeft;
-    case UIAccessibilityScrollDirectionUp:
-      return blink::SemanticsAction::kScrollUp;
-    case UIAccessibilityScrollDirectionDown:
-      return blink::SemanticsAction::kScrollDown;
+class DefaultIosDelegate : public AccessibilityBridge::IosDelegate {
+ public:
+  bool IsFlutterViewControllerPresentingModalViewController(
+      FlutterViewController* view_controller) override {
+    if (view_controller) {
+      return view_controller.isPresentingViewController;
+    } else {
+      return false;
+    }
   }
-  FTL_DCHECK(false); // Unreachable
-  return blink::SemanticsAction::kScrollDown;
-}
 
+  void PostAccessibilityNotification(UIAccessibilityNotifications notification,
+                                     id argument) override {
+    UIAccessibilityPostNotification(notification, argument);
+  }
+};
 }  // namespace
 
-@implementation SemanticsObject {
-  shell::AccessibilityBridge* _bridge;
-  blink::SemanticsNode _node;
-  std::vector<SemanticsObject*> _children;
+AccessibilityBridge::AccessibilityBridge(
+    FlutterViewController* view_controller,
+    PlatformViewIOS* platform_view,
+    std::shared_ptr<FlutterPlatformViewsController> platform_views_controller,
+    std::unique_ptr<IosDelegate> ios_delegate)
+    : view_controller_(view_controller),
+      platform_view_(platform_view),
+      platform_views_controller_(platform_views_controller),
+      last_focused_semantics_object_id_(kSemanticObjectIdInvalid),
+      objects_([[NSMutableDictionary alloc] init]),
+      weak_factory_(this),
+      previous_route_id_(0),
+      previous_routes_({}),
+      ios_delegate_(ios_delegate ? std::move(ios_delegate)
+                                 : std::make_unique<DefaultIosDelegate>()) {
+  accessibility_channel_.reset([[FlutterBasicMessageChannel alloc]
+         initWithName:@"flutter/accessibility"
+      binaryMessenger:platform_view->GetOwnerViewController().get().engine.binaryMessenger
+                codec:[FlutterStandardMessageCodec sharedInstance]]);
+  [accessibility_channel_.get() setMessageHandler:^(id message, FlutterReply reply) {
+    HandleEvent((NSDictionary*)message);
+  }];
 }
-
-#pragma mark - Override base class designated initializers
-
-// Method declared as unavailable in the interface
-- (instancetype)init {
-  [self release];
-  [super doesNotRecognizeSelector:_cmd];
-  return nil;
-}
-
-#pragma mark - Designated initializers
-
-- (instancetype)initWithBridge:(shell::AccessibilityBridge*)bridge
-                           uid:(int32_t)uid {
-  FTL_DCHECK(bridge != nil) << "bridge must be set";
-  FTL_DCHECK(uid >= kRootNodeId);
-  self = [super init];
-
-  if (self) {
-    _bridge = bridge;
-    _uid = uid;
-  }
-
-  return self;
-}
-
-#pragma mark - Semantic object methods
-
-- (void)setSemanticsNode:(const blink::SemanticsNode*)node {
-  _node = *node;
-}
-
-- (std::vector<SemanticsObject*>*)children {
-  return &_children;
-}
-
-- (void)neuter {
-  _bridge = nullptr;
-  _children.clear();
-  self.parent = nil;
-}
-
-#pragma mark - UIAccessibility overrides
-
-- (BOOL)isAccessibilityElement {
-  // Note: hit detection will only apply to elements that report
-  // -isAccessibilityElement of YES. The framework will continue scanning the
-  // entire element tree looking for such a hit.
-  return _node.HasAction(blink::SemanticsAction::kTap) || _children.empty();
-}
-
-- (NSString*)accessibilityLabel {
-  if (_node.label.empty()) {
-    return nil;
-  }
-  return @(_node.label.data());
-}
-
-- (UIAccessibilityTraits)accessibilityTraits {
-  UIAccessibilityTraits traits = UIAccessibilityTraitNone;
-  if (_node.HasAction(blink::SemanticsAction::kTap)) {
-    traits |= UIAccessibilityTraitButton;
-  }
-  if (_node.HasAction(blink::SemanticsAction::kIncrease)
-      || _node.HasAction(blink::SemanticsAction::kDecrease)) {
-    traits |= UIAccessibilityTraitAdjustable;
-  }
-  return traits;
-}
-
-- (CGRect)accessibilityFrame {
-  SkMatrix44 globalTransform = _node.transform;
-  for (SemanticsObject* parent = _parent; parent; parent = parent.parent) {
-    globalTransform = globalTransform * parent->_node.transform;
-  }
-
-  SkPoint quad[4];
-  _node.rect.toQuad(quad);
-  for (auto& point : quad) {
-    SkScalar vector[4] = {point.x(), point.y(), 0, 1};
-    globalTransform.mapScalars(vector);
-    point.set(vector[0] / vector[3], vector[1] / vector[3]);
-  }
-  SkRect rect;
-  rect.set(quad, 4);
-
-  auto result = CGRectMake(rect.x(), rect.y(), rect.width(), rect.height());
-  return UIAccessibilityConvertFrameToScreenCoordinates(result,
-                                                        _bridge->view());
-}
-
-#pragma mark - UIAccessibilityElement protocol
-
-- (id)accessibilityContainer {
-  return (_uid == kRootNodeId) ? _bridge->view() : _parent;
-}
-
-#pragma mark - UIAccessibilityContainer overrides
-
-- (NSInteger)accessibilityElementCount {
-  return (NSInteger)_children.size();
-}
-
-- (nullable id)accessibilityElementAtIndex:(NSInteger)index {
-  if (index < 0 || index >= (NSInteger)_children.size()) {
-    return nil;
-  }
-  return _children[index];
-}
-
-- (NSInteger)indexOfAccessibilityElement:(id)element {
-  auto it = std::find(_children.begin(), _children.end(), element);
-  if (it == _children.end()) {
-    return NSNotFound;
-  }
-  return it - _children.begin();
-}
-
-#pragma mark - UIAccessibilityAction overrides
-
-- (BOOL)accessibilityActivate {
-  // TODO(tvolkert): Implement
-  return NO;
-}
-
-- (void)accessibilityIncrement {
-  if (_node.HasAction(blink::SemanticsAction::kIncrease)) {
-    _bridge->DispatchSemanticsAction(_uid, blink::SemanticsAction::kIncrease);
-  }
-}
-
-- (void)accessibilityDecrement {
-  if (_node.HasAction(blink::SemanticsAction::kDecrease)) {
-    _bridge->DispatchSemanticsAction(_uid, blink::SemanticsAction::kDecrease);
-  }
-}
-
-- (BOOL)accessibilityScroll:(UIAccessibilityScrollDirection)direction {
-  blink::SemanticsAction action = GetSemanticsActionForScrollDirection(direction);
-  if (_node.HasAction(action))
-    return NO;
-  _bridge->DispatchSemanticsAction(_uid, action);
-  // TODO(tvolkert): provide meaningful string (e.g. "page 2 of 5")
-  UIAccessibilityPostNotification(UIAccessibilityPageScrolledNotification, nil);
-  return YES;
-}
-
-- (BOOL)accessibilityPerformEscape {
-  // TODO(tvolkert): Implement
-  return NO;
-}
-
-- (BOOL)accessibilityPerformMagicTap {
-  // TODO(tvolkert): Implement
-  return NO;
-}
-
-@end
-
-#pragma mark - AccessibilityBridge impl
-
-namespace shell {
-
-AccessibilityBridge::AccessibilityBridge(UIView* view,
-                                         PlatformViewIOS* platform_view)
-    : view_(view), platform_view_(platform_view) {}
 
 AccessibilityBridge::~AccessibilityBridge() {
-  ReleaseObjects(objects_);
-  objects_.clear();
+  [accessibility_channel_.get() setMessageHandler:nil];
+  clearState();
+  view_controller_.view.accessibilityElements = nil;
 }
 
-void AccessibilityBridge::UpdateSemantics(std::vector<blink::SemanticsNode> nodes) {
-  for (const blink::SemanticsNode& node : nodes) {
-    SemanticsObject* object = GetOrCreateObject(node.id);
+UIView<UITextInput>* AccessibilityBridge::textInputView() {
+  return [[platform_view_->GetOwnerViewController().get().engine textInputPlugin] textInputView];
+}
+
+void AccessibilityBridge::AccessibilityObjectDidBecomeFocused(int32_t id) {
+  last_focused_semantics_object_id_ = id;
+}
+
+void AccessibilityBridge::AccessibilityObjectDidLoseFocus(int32_t id) {
+  if (last_focused_semantics_object_id_ == id) {
+    last_focused_semantics_object_id_ = kSemanticObjectIdInvalid;
+  }
+}
+
+void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
+                                          flutter::CustomAccessibilityActionUpdates actions) {
+  BOOL layoutChanged = NO;
+  BOOL scrollOccured = NO;
+  BOOL needsAnnouncement = NO;
+  for (const auto& entry : actions) {
+    const flutter::CustomAccessibilityAction& action = entry.second;
+    actions_[action.id] = action;
+  }
+  for (const auto& entry : nodes) {
+    const flutter::SemanticsNode& node = entry.second;
+    SemanticsObject* object = GetOrCreateObject(node.id, nodes);
+    layoutChanged = layoutChanged || [object nodeWillCauseLayoutChange:&node];
+    scrollOccured = scrollOccured || [object nodeWillCauseScroll:&node];
+    needsAnnouncement = [object nodeShouldTriggerAnnouncement:&node];
     [object setSemanticsNode:&node];
-    const size_t childrenCount = node.children.size();
-    auto& children = *[object children];
-    children.resize(childrenCount);
-    for (size_t i = 0; i < childrenCount; ++i) {
-      SemanticsObject* child = GetOrCreateObject(node.children[i]);
-      child.parent = object;
-      children[i] = child;
+    NSUInteger newChildCount = node.childrenInTraversalOrder.size();
+    NSMutableArray* newChildren =
+        [[[NSMutableArray alloc] initWithCapacity:newChildCount] autorelease];
+    for (NSUInteger i = 0; i < newChildCount; ++i) {
+      SemanticsObject* child = GetOrCreateObject(node.childrenInTraversalOrder[i], nodes);
+      [newChildren addObject:child];
+    }
+    object.children = newChildren;
+    if (node.customAccessibilityActions.size() > 0) {
+      NSMutableArray<FlutterCustomAccessibilityAction*>* accessibilityCustomActions =
+          [[[NSMutableArray alloc] init] autorelease];
+      for (int32_t action_id : node.customAccessibilityActions) {
+        flutter::CustomAccessibilityAction& action = actions_[action_id];
+        if (action.overrideId != -1) {
+          // iOS does not support overriding standard actions, so we ignore any
+          // custom actions that have an override id provided.
+          continue;
+        }
+        NSString* label = @(action.label.data());
+        SEL selector = @selector(onCustomAccessibilityAction:);
+        FlutterCustomAccessibilityAction* customAction =
+            [[[FlutterCustomAccessibilityAction alloc] initWithName:label
+                                                             target:object
+                                                           selector:selector] autorelease];
+        customAction.uid = action_id;
+        [accessibilityCustomActions addObject:customAction];
+      }
+      object.accessibilityCustomActions = accessibilityCustomActions;
+    }
+
+    if (object.node.IsPlatformViewNode()) {
+      auto controller = GetPlatformViewsController();
+      if (controller) {
+        object.platformViewSemanticsContainer = [[[FlutterPlatformViewSemanticsContainer alloc]
+            initWithSemanticsObject:object] autorelease];
+      }
+    } else if (object.platformViewSemanticsContainer) {
+      object.platformViewSemanticsContainer = nil;
+    }
+    if (needsAnnouncement) {
+      // Try to be more polite - iOS 11+ supports
+      // UIAccessibilitySpeechAttributeQueueAnnouncement which should avoid
+      // interrupting system notifications or other elements.
+      // Expectation: roughly match the behavior of polite announcements on
+      // Android.
+      NSString* announcement =
+          [[[NSString alloc] initWithUTF8String:object.node.label.c_str()] autorelease];
+      if (@available(iOS 11.0, *)) {
+        UIAccessibilityPostNotification(
+            UIAccessibilityAnnouncementNotification,
+            [[[NSAttributedString alloc]
+                initWithString:announcement
+                    attributes:@{
+                      UIAccessibilitySpeechAttributeQueueAnnouncement : @YES
+                    }] autorelease]);
+      } else {
+        UIAccessibilityPostNotification(UIAccessibilityAnnouncementNotification, announcement);
+      }
     }
   }
 
-  SemanticsObject* root = objects_[kRootNodeId];
+  SemanticsObject* root = objects_.get()[@(kRootNodeId)];
 
-  std::unordered_set<int> visited_objects;
-  if (root)
-    VisitObjectsRecursively(root, &visited_objects);
-
-  std::unordered_map<int, SemanticsObject*> doomed_objects;
-  doomed_objects.swap(objects_);
-  for (int uid : visited_objects) {
-    auto it = doomed_objects.find(uid);
-    objects_.insert(*it);
-    doomed_objects.erase(it);
-    // TODO(abarth): Use extract once we're at C++17.
-  }
-
-  ReleaseObjects(doomed_objects);
-  doomed_objects.clear();
+  bool routeChanged = false;
+  SemanticsObject* lastAdded = nil;
 
   if (root) {
-    if (!view_.accessibilityElements) {
-      view_.accessibilityElements = @[ root ];
+    if (!view_controller_.view.accessibilityElements) {
+      view_controller_.view.accessibilityElements = @[ [root accessibilityContainer] ];
+    }
+    NSMutableArray<SemanticsObject*>* newRoutes = [[[NSMutableArray alloc] init] autorelease];
+    [root collectRoutes:newRoutes];
+    // Finds the last route that is not in the previous routes.
+    for (SemanticsObject* route in newRoutes) {
+      if (std::find(previous_routes_.begin(), previous_routes_.end(), [route uid]) ==
+          previous_routes_.end()) {
+        lastAdded = route;
+      }
+    }
+    // If all the routes are in the previous route, get the last route.
+    if (lastAdded == nil && [newRoutes count] > 0) {
+      int index = [newRoutes count] - 1;
+      lastAdded = [newRoutes objectAtIndex:index];
+    }
+    // There are two cases if lastAdded != nil
+    // 1. lastAdded is not in previous routes. In this case,
+    //    [lastAdded uid] != previous_route_id_
+    // 2. All new routes are in previous routes and
+    //    lastAdded = newRoutes.last.
+    // In the first case, we need to announce new route. In the second case,
+    // we need to announce if one list is shorter than the other.
+    if (lastAdded != nil &&
+        ([lastAdded uid] != previous_route_id_ || [newRoutes count] != previous_routes_.size())) {
+      previous_route_id_ = [lastAdded uid];
+      routeChanged = true;
+    }
+    previous_routes_.clear();
+    for (SemanticsObject* route in newRoutes) {
+      previous_routes_.push_back([route uid]);
     }
   } else {
-    view_.accessibilityElements = nil;
+    view_controller_.view.accessibilityElements = nil;
   }
-  UIAccessibilityPostNotification(UIAccessibilityLayoutChangedNotification,
-                                  nil);
+
+  NSMutableArray<NSNumber*>* doomed_uids = [NSMutableArray arrayWithArray:[objects_.get() allKeys]];
+  if (root)
+    VisitObjectsRecursivelyAndRemove(root, doomed_uids);
+  [objects_ removeObjectsForKeys:doomed_uids];
+
+  layoutChanged = layoutChanged || [doomed_uids count] > 0;
+  // We should send out only one notification per semantics update.
+  if (routeChanged) {
+    if (!ios_delegate_->IsFlutterViewControllerPresentingModalViewController(view_controller_)) {
+      NSString* routeName = [lastAdded routeName];
+      ios_delegate_->PostAccessibilityNotification(UIAccessibilityScreenChangedNotification,
+                                                   routeName);
+    }
+  } else if (layoutChanged) {
+    SemanticsObject* nextToFocus = nil;
+    // This property will be -1 if the focus is outside of the flutter
+    // application. In this case, we should not refocus anything.
+    if (last_focused_semantics_object_id_ != kSemanticObjectIdInvalid) {
+      // Tries to refocus the previous focused semantics object to avoid random jumps.
+      nextToFocus = [objects_.get() objectForKey:@(last_focused_semantics_object_id_)];
+      if (!nextToFocus && root) {
+        nextToFocus = FindFirstFocusable(root);
+      }
+    }
+    ios_delegate_->PostAccessibilityNotification(UIAccessibilityLayoutChangedNotification,
+                                                 nextToFocus);
+  } else if (scrollOccured) {
+    // TODO(chunhtai): figure out what string to use for notification. At this
+    // point, it is guarantee the previous focused object is still in the tree
+    // so that we don't need to worry about focus lost. (e.g. "Screen 0 of 3")
+    SemanticsObject* nextToFocus = nil;
+    if (last_focused_semantics_object_id_ != kSemanticObjectIdInvalid) {
+      nextToFocus = [objects_.get() objectForKey:@(last_focused_semantics_object_id_)];
+      if (!nextToFocus && root) {
+        nextToFocus = FindFirstFocusable(root);
+      }
+    }
+    ios_delegate_->PostAccessibilityNotification(UIAccessibilityPageScrolledNotification,
+                                                 nextToFocus);
+  }
 }
 
-void AccessibilityBridge::DispatchSemanticsAction(
-    int32_t uid,
-    blink::SemanticsAction action) {
-  platform_view_->DispatchSemanticsAction(uid, action);
+void AccessibilityBridge::DispatchSemanticsAction(int32_t uid, flutter::SemanticsAction action) {
+  platform_view_->DispatchSemanticsAction(uid, action, {});
 }
 
-SemanticsObject* AccessibilityBridge::GetOrCreateObject(int32_t uid) {
-  SemanticsObject* object = objects_[uid];
+void AccessibilityBridge::DispatchSemanticsAction(int32_t uid,
+                                                  flutter::SemanticsAction action,
+                                                  std::vector<uint8_t> args) {
+  platform_view_->DispatchSemanticsAction(uid, action, std::move(args));
+}
+
+static void ReplaceSemanticsObject(SemanticsObject* oldObject,
+                                   SemanticsObject* newObject,
+                                   NSMutableDictionary<NSNumber*, SemanticsObject*>* objects) {
+  // `newObject` should represent the same id as `oldObject`.
+  assert(oldObject.node.id == newObject.node.id);
+  NSNumber* nodeId = @(oldObject.node.id);
+  NSUInteger positionInChildlist = [oldObject.parent.children indexOfObject:oldObject];
+  [objects removeObjectForKey:nodeId];
+  [oldObject.parent replaceChildAtIndex:positionInChildlist withChild:newObject];
+  objects[nodeId] = newObject;
+}
+
+static SemanticsObject* CreateObject(const flutter::SemanticsNode& node,
+                                     fml::WeakPtr<AccessibilityBridge> weak_ptr) {
+  if (node.HasFlag(flutter::SemanticsFlags::kIsTextField) &&
+      !node.HasFlag(flutter::SemanticsFlags::kIsReadOnly)) {
+    // Text fields are backed by objects that implement UITextInput.
+    return [[[TextInputSemanticsObject alloc] initWithBridge:weak_ptr uid:node.id] autorelease];
+  } else if (node.HasFlag(flutter::SemanticsFlags::kHasToggledState) ||
+             node.HasFlag(flutter::SemanticsFlags::kHasCheckedState)) {
+    SemanticsObject* delegateObject =
+        [[[FlutterSemanticsObject alloc] initWithBridge:weak_ptr uid:node.id] autorelease];
+    return (SemanticsObject*)[[[FlutterSwitchSemanticsObject alloc]
+        initWithSemanticsObject:delegateObject] autorelease];
+  } else {
+    return [[[FlutterSemanticsObject alloc] initWithBridge:weak_ptr uid:node.id] autorelease];
+  }
+}
+
+static bool DidFlagChange(const flutter::SemanticsNode& oldNode,
+                          const flutter::SemanticsNode& newNode,
+                          SemanticsFlags flag) {
+  return oldNode.HasFlag(flag) != newNode.HasFlag(flag);
+}
+
+SemanticsObject* AccessibilityBridge::GetOrCreateObject(int32_t uid,
+                                                        flutter::SemanticsNodeUpdates& updates) {
+  SemanticsObject* object = objects_.get()[@(uid)];
   if (!object) {
-    object = [[SemanticsObject alloc] initWithBridge:this uid:uid];
-    objects_[uid] = object;
+    object = CreateObject(updates[uid], GetWeakPtr());
+    objects_.get()[@(uid)] = object;
+  } else {
+    // Existing node case
+    auto nodeEntry = updates.find(object.node.id);
+    if (nodeEntry != updates.end()) {
+      // There's an update for this node
+      flutter::SemanticsNode node = nodeEntry->second;
+      if (DidFlagChange(object.node, node, flutter::SemanticsFlags::kIsTextField) ||
+          DidFlagChange(object.node, node, flutter::SemanticsFlags::kIsReadOnly) ||
+          DidFlagChange(object.node, node, flutter::SemanticsFlags::kHasCheckedState) ||
+          DidFlagChange(object.node, node, flutter::SemanticsFlags::kHasToggledState)) {
+        // The node changed its type. In this case, we cannot reuse the existing
+        // SemanticsObject implementation. Instead, we replace it with a new
+        // instance.
+        SemanticsObject* newSemanticsObject = CreateObject(node, GetWeakPtr());
+        ReplaceSemanticsObject(object, newSemanticsObject, objects_.get());
+        object = newSemanticsObject;
+      }
+    }
   }
   return object;
 }
 
-void AccessibilityBridge::VisitObjectsRecursively(
-    SemanticsObject* object,
-    std::unordered_set<int>* visited_objects) {
-  visited_objects->insert(object.uid);
-  for (SemanticsObject* child : *[object children])
-    VisitObjectsRecursively(child, visited_objects);
+void AccessibilityBridge::VisitObjectsRecursivelyAndRemove(SemanticsObject* object,
+                                                           NSMutableArray<NSNumber*>* doomed_uids) {
+  [doomed_uids removeObject:@(object.uid)];
+  for (SemanticsObject* child in [object children])
+    VisitObjectsRecursivelyAndRemove(child, doomed_uids);
 }
 
-void AccessibilityBridge::ReleaseObjects(
-    const std::unordered_map<int, SemanticsObject*>& objects) {
-  for (const auto& entry : objects) {
-    SemanticsObject* object = entry.second;
-    [object neuter];
-    [object release];
+SemanticsObject* AccessibilityBridge::FindFirstFocusable(SemanticsObject* object) {
+  if (object.isAccessibilityElement) {
+    return object;
+  }
+
+  SemanticsObject* candidate = nil;
+  for (SemanticsObject* child in [object children]) {
+    if (candidate) {
+      break;
+    }
+    candidate = FindFirstFocusable(child);
+  }
+  return candidate;
+}
+
+void AccessibilityBridge::HandleEvent(NSDictionary<NSString*, id>* annotatedEvent) {
+  NSString* type = annotatedEvent[@"type"];
+  if ([type isEqualToString:@"announce"]) {
+    NSString* message = annotatedEvent[@"data"][@"message"];
+    ios_delegate_->PostAccessibilityNotification(UIAccessibilityAnnouncementNotification, message);
   }
 }
 
-}  // namespace shell
+fml::WeakPtr<AccessibilityBridge> AccessibilityBridge::GetWeakPtr() {
+  return weak_factory_.GetWeakPtr();
+}
+
+void AccessibilityBridge::clearState() {
+  [objects_ removeAllObjects];
+  previous_route_id_ = 0;
+  previous_routes_.clear();
+}
+
+}  // namespace flutter

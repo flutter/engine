@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -7,35 +7,38 @@
 
 #include <atomic>
 
+#include "flutter/fml/macros.h"
 #include "flutter/fml/message_loop_impl.h"
-#include "lib/ftl/files/unique_fd.h"
-#include "lib/ftl/macros.h"
+#include "flutter/fml/unique_fd.h"
 
 namespace fml {
 
 class MessageLoopLinux : public MessageLoopImpl {
  private:
-  ftl::UniqueFD epoll_fd_;
-  ftl::UniqueFD timer_fd_;
+  fml::UniqueFD epoll_fd_;
+  fml::UniqueFD timer_fd_;
   bool running_;
 
   MessageLoopLinux();
 
   ~MessageLoopLinux() override;
 
+  // |fml::MessageLoopImpl|
   void Run() override;
 
+  // |fml::MessageLoopImpl|
   void Terminate() override;
 
-  void WakeUp(ftl::TimePoint time_point) override;
+  // |fml::MessageLoopImpl|
+  void WakeUp(fml::TimePoint time_point) override;
 
   void OnEventFired();
 
   bool AddOrRemoveTimerSource(bool add);
 
-  FRIEND_MAKE_REF_COUNTED(MessageLoopLinux);
-  FRIEND_REF_COUNTED_THREAD_SAFE(MessageLoopLinux);
-  FTL_DISALLOW_COPY_AND_ASSIGN(MessageLoopLinux);
+  FML_FRIEND_MAKE_REF_COUNTED(MessageLoopLinux);
+  FML_FRIEND_REF_COUNTED_THREAD_SAFE(MessageLoopLinux);
+  FML_DISALLOW_COPY_AND_ASSIGN(MessageLoopLinux);
 };
 
 }  // namespace fml

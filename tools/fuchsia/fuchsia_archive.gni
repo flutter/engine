@@ -1,0 +1,149 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//flutter/tools/fuchsia/fuchsia_debug_symbols.gni")
+import("//flutter/tools/fuchsia/fuchsia_libs.gni")
+
+# Creates a Fuchsia archive (.far) file using PM from the Fuchsia SDK.
+template("fuchsia_archive") {
+  assert(defined(invoker.binary), "package must define binary")
+  assert(defined(invoker.meta_dir), "package must define meta_dir")
+
+  pkg_testonly = defined(invoker.testonly) && invoker.testonly
+  pkg_target_name = target_name
+  pkg = {
+    package_version = "0"  # placeholder
+    forward_variables_from(invoker,
+                           [
+                             "binary",
+                             "deps",
+                             "meta",
+                             "resources",
+                             "libraries",
+                             "meta_dir",
+                           ])
+    if (!defined(package_name)) {
+      package_name = pkg_target_name
+    }
+    if (!defined(meta)) {
+      meta = []
+    }
+    if (!defined(deps)) {
+      deps = []
+    }
+    if (!defined(resources)) {
+      resources = []
+    }
+    if (!defined(libraries)) {
+      libraries = []
+    }
+  }
+
+  far_base_dir = "$root_out_dir/${pkg_target_name}_far"
+
+  copy_sources = [ "$root_out_dir/${invoker.binary}" ]
+  copy_outputs = [ "$far_base_dir/bin/app" ]
+
+  foreach(res, pkg.resources) {
+    copy_sources += [ res.path ]
+    copy_outputs += [ "$far_base_dir/data/${res.dest}" ]
+  }
+
+  foreach(lib, pkg.libraries) {
+    copy_sources += [ "${lib.path}/${lib.name}" ]
+    copy_outputs += [ "$far_base_dir/lib/${lib.name}" ]
+  }
+
+  cmx_target = "$pkg_target_name.copy_cmx"
+
+  if (defined(invoker.cmx_file)) {
+    cmx_file = invoker.cmx_file
+  } else {
+    cmx_file = "${pkg.meta_dir}/${pkg_target_name}.cmx"
+  }
+
+  copy("$cmx_target") {
+    sources = [ "$cmx_file" ]
+    outputs = [ "$far_base_dir/meta/${pkg_target_name}.cmx" ]
+  }
+
+  write_file("${far_base_dir}/meta/package",
+             {
+               name = pkg.package_name
+               version = pkg.package_version
+             },
+             "json")
+
+  _dbg_symbols_target = "${target_name}_dbg_symbols"
+  fuchsia_debug_symbols(_dbg_symbols_target) {
+    deps = pkg.deps
+    testonly = pkg_testonly
+    binary = invoker.binary
+  }
+
+  pkg_dir_deps = pkg.deps + [ ":$cmx_target" ]
+
+  action("${target_name}_dir") {
+    script = "//flutter/tools/fuchsia/copy_path.py"
+    sources = copy_sources
+    response_file_contents = rebase_path(copy_sources + copy_outputs)
+    deps = pkg_dir_deps
+    args = [ "--file-list={{response_file_name}}" ]
+    outputs = copy_outputs
+    testonly = pkg_testonly
+  }
+
+  action(target_name) {
+    script = "//flutter/tools/fuchsia/gen_package.py"
+    deps = pkg_dir_deps + [
+             ":${target_name}_dir",
+             ":${_dbg_symbols_target}",
+           ]
+    sources = copy_outputs
+
+    inputs = []
+    if (defined(invoker.inputs)) {
+      inputs += invoker.inputs
+    }
+
+    args = [
+      "--pm-bin",
+      rebase_path("//fuchsia/sdk/$host_os/tools/pm"),
+      "--package-dir",
+      rebase_path(far_base_dir),
+      "--signing-key",
+      rebase_path("//flutter/tools/fuchsia/development.key"),
+      "--far-name",
+      target_name,
+    ]
+    outputs = [
+      "${far_base_dir}.manifest",
+      "$root_out_dir/${target_name}-0.far",
+    ]
+    testonly = pkg_testonly
+  }
+}
+
+template("fuchsia_test_archive") {
+  fuchsia_archive(target_name) {
+    testonly = true
+    libraries = common_libs
+
+    assert(defined(invoker.deps), "package must define deps")
+
+    deps = invoker.deps
+    binary = invoker.binary
+
+    if (defined(invoker.resources)) {
+      resources = invoker.resources
+    }
+
+    if (defined(invoker.libraries)) {
+      libraries += invoker.libraries
+    }
+
+    meta_dir = "//flutter/testing/fuchsia/meta"
+    cmx_file = "$meta_dir/fuchsia_test.cmx"
+  }
+}

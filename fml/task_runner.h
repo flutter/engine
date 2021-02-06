@@ -1,38 +1,54 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #ifndef FLUTTER_FML_TASK_RUNNER_H_
 #define FLUTTER_FML_TASK_RUNNER_H_
 
-#include "lib/ftl/macros.h"
-#include "lib/ftl/memory/ref_counted.h"
-#include "lib/ftl/tasks/task_runner.h"
+#include "flutter/fml/closure.h"
+#include "flutter/fml/macros.h"
+#include "flutter/fml/memory/ref_counted.h"
+#include "flutter/fml/memory/ref_ptr.h"
+#include "flutter/fml/message_loop_task_queues.h"
+#include "flutter/fml/time/time_point.h"
 
 namespace fml {
 
 class MessageLoopImpl;
 
-class TaskRunner : public ftl::TaskRunner {
+class BasicTaskRunner {
  public:
-  void PostTask(ftl::Closure task) override;
+  virtual void PostTask(const fml::closure& task) = 0;
+};
 
-  void PostTaskForTime(ftl::Closure task, ftl::TimePoint target_time) override;
+class TaskRunner : public fml::RefCountedThreadSafe<TaskRunner>,
+                   public BasicTaskRunner {
+ public:
+  virtual ~TaskRunner();
 
-  void PostDelayedTask(ftl::Closure task, ftl::TimeDelta delay) override;
+  virtual void PostTask(const fml::closure& task) override;
 
-  bool RunsTasksOnCurrentThread() override;
+  virtual void PostTaskForTime(const fml::closure& task,
+                               fml::TimePoint target_time);
+
+  virtual void PostDelayedTask(const fml::closure& task, fml::TimeDelta delay);
+
+  virtual bool RunsTasksOnCurrentThread();
+
+  virtual TaskQueueId GetTaskQueueId();
+
+  static void RunNowOrPostTask(fml::RefPtr<fml::TaskRunner> runner,
+                               const fml::closure& task);
+
+ protected:
+  TaskRunner(fml::RefPtr<MessageLoopImpl> loop);
 
  private:
-  ftl::RefPtr<MessageLoopImpl> loop_;
+  fml::RefPtr<MessageLoopImpl> loop_;
 
-  TaskRunner(ftl::RefPtr<MessageLoopImpl> loop);
-
-  ~TaskRunner();
-
-  FRIEND_MAKE_REF_COUNTED(TaskRunner);
-  FRIEND_REF_COUNTED_THREAD_SAFE(TaskRunner);
-  FTL_DISALLOW_COPY_AND_ASSIGN(TaskRunner);
+  FML_FRIEND_MAKE_REF_COUNTED(TaskRunner);
+  FML_FRIEND_REF_COUNTED_THREAD_SAFE(TaskRunner);
+  FML_DISALLOW_COPY_AND_ASSIGN(TaskRunner);
 };
 
 }  // namespace fml

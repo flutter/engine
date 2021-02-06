@@ -1,0 +1,866 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+assert(is_fuchsia)
+
+import("//build/fuchsia/sdk.gni")
+import("//flutter/common/config.gni")
+import("//flutter/shell/gpu/gpu.gni")
+import("//flutter/testing/testing.gni")
+import("//flutter/tools/fuchsia/dart.gni")
+import("//flutter/tools/fuchsia/fuchsia_archive.gni")
+import("//flutter/tools/fuchsia/fuchsia_libs.gni")
+import("//flutter/vulkan/config.gni")
+
+# Fuchsia uses its own custom Surface implementation.
+shell_gpu_configuration("fuchsia_gpu_configuration") {
+  enable_software = false
+  enable_gl = false
+  enable_vulkan = false
+  enable_metal = false
+}
+
+config("runner_debug_config") {
+  defines = [ "DEBUG" ]  # Needed due to direct dart dependencies.
+}
+
+config("runner_flutter_profile_config") {
+  defines = [ "FLUTTER_PROFILE" ]
+}
+
+config("runner_product_config") {
+  defines = [ "DART_PRODUCT" ]
+}
+
+template("runner_sources") {
+  assert(defined(invoker.product), "runner_sources must define product")
+
+  runner_configs = []
+  if (is_debug) {
+    runner_configs += [ ":runner_debug_config" ]
+  }
+  if (flutter_runtime_mode == "profile") {
+    runner_configs += [ ":runner_flutter_profile_config" ]
+  }
+  if (invoker.product) {
+    runner_configs += [ ":runner_product_config" ]
+  }
+
+  source_set(target_name) {
+    sources = [
+      "accessibility_bridge.cc",
+      "accessibility_bridge.h",
+      "component.cc",
+      "component.h",
+      "engine.cc",
+      "engine.h",
+      "flutter_runner_product_configuration.cc",
+      "flutter_runner_product_configuration.h",
+      "fuchsia_external_view_embedder.cc",
+      "fuchsia_external_view_embedder.h",
+      "fuchsia_intl.cc",
+      "fuchsia_intl.h",
+      "isolate_configurator.cc",
+      "isolate_configurator.h",
+      "keyboard.cc",
+      "keyboard.h",
+      "logging.h",
+      "loop.cc",
+      "loop.h",
+      "platform_view.cc",
+      "platform_view.h",
+      "runner.cc",
+      "runner.h",
+      "session_connection.cc",
+      "session_connection.h",
+      "surface.cc",
+      "surface.h",
+      "task_observers.cc",
+      "task_observers.h",
+      "task_runner_adapter.cc",
+      "task_runner_adapter.h",
+      "thread.cc",
+      "thread.h",
+      "unique_fdio_ns.h",
+      "vsync_recorder.cc",
+      "vsync_recorder.h",
+      "vsync_waiter.cc",
+      "vsync_waiter.h",
+      "vulkan_surface.cc",
+      "vulkan_surface.h",
+      "vulkan_surface_pool.cc",
+      "vulkan_surface_pool.h",
+      "vulkan_surface_producer.cc",
+      "vulkan_surface_producer.h",
+    ]
+    if (flutter_enable_legacy_fuchsia_embedder) {
+      sources += [
+        "compositor_context.cc",
+        "compositor_context.h",
+      ]
+    }
+
+    public_configs = runner_configs
+
+    # The use of these dependencies is temporary and will be moved behind the
+    # embedder API.
+    flutter_public_deps = [
+      "//flutter/common/graphics",
+      "//flutter/flow",
+      "//flutter/lib/ui",
+      "//flutter/runtime",
+      "//flutter/shell/common",
+      "//flutter/shell/platform/common/client_wrapper:client_wrapper",
+    ]
+    flutter_deps = [
+      ":fuchsia_gpu_configuration",
+      "//flutter/assets",
+      "//flutter/common",
+      "//flutter/fml",
+      "//flutter/vulkan",
+    ]
+
+    public_deps = [
+                    "$fuchsia_sdk_root/pkg:scenic_cpp",
+                    "$fuchsia_sdk_root/pkg:sys_cpp",
+                    "//flutter/shell/platform/fuchsia/runtime/dart/utils",
+                  ] + flutter_public_deps
+
+    deps = [
+             "$fuchsia_sdk_root/fidl:fuchsia.accessibility.semantics",
+             "$fuchsia_sdk_root/fidl:fuchsia.fonts",
+             "$fuchsia_sdk_root/fidl:fuchsia.images",
+             "$fuchsia_sdk_root/fidl:fuchsia.intl",
+             "$fuchsia_sdk_root/fidl:fuchsia.io",
+             "$fuchsia_sdk_root/fidl:fuchsia.sys",
+             "$fuchsia_sdk_root/fidl:fuchsia.ui.app",
+             "$fuchsia_sdk_root/fidl:fuchsia.ui.scenic",
+             "$fuchsia_sdk_root/pkg:async-cpp",
+             "$fuchsia_sdk_root/pkg:async-default",
+             "$fuchsia_sdk_root/pkg:async-loop",
+             "$fuchsia_sdk_root/pkg:async-loop-cpp",
+             "$fuchsia_sdk_root/pkg:fdio",
+             "$fuchsia_sdk_root/pkg:fidl_cpp",
+             "$fuchsia_sdk_root/pkg:syslog",
+             "$fuchsia_sdk_root/pkg:trace",
+             "$fuchsia_sdk_root/pkg:trace-engine",
+             "$fuchsia_sdk_root/pkg:trace-provider-so",
+             "$fuchsia_sdk_root/pkg:vfs_cpp",
+             "$fuchsia_sdk_root/pkg:zx",
+             "//flutter/shell/platform/fuchsia/dart-pkg/fuchsia",
+             "//flutter/shell/platform/fuchsia/dart-pkg/zircon",
+           ] + flutter_deps
+  }
+}
+
+runner_sources("flutter_runner_sources") {
+  product = false
+}
+
+runner_sources("flutter_runner_sources_product") {
+  product = true
+}
+
+# Things that explicitly being excluded:
+# 1. Kernel snapshot framework mode.
+# 2. Profiler symbols.
+
+# Builds a flutter_runner
+#
+# Parameters:
+#
+#  output_name (required):
+#    The name of the resulting binary.
+#
+#  extra_deps (required):
+#    Any additional dependencies.
+#
+#  product (required):
+#    Whether to link against a Product mode Dart VM.
+#
+#  extra_defines (optional):
+#    Any additional preprocessor defines.
+template("flutter_runner") {
+  assert(defined(invoker.output_name), "flutter_runner must define output_name")
+  assert(defined(invoker.extra_deps), "flutter_runner must define extra_deps")
+  assert(defined(invoker.product), "flutter_runner must define product")
+
+  invoker_output_name = invoker.output_name
+  extra_deps = invoker.extra_deps
+
+  product_suffix = ""
+  if (invoker.product) {
+    product_suffix = "_product"
+  }
+
+  executable(target_name) {
+    output_name = invoker_output_name
+
+    sources = [ "main.cc" ]
+
+    deps = [
+             ":flutter_runner_sources${product_suffix}",
+             "$fuchsia_sdk_root/pkg:async-loop-cpp",
+             "$fuchsia_sdk_root/pkg:trace",
+             "$fuchsia_sdk_root/pkg:trace-provider-so",
+           ] + extra_deps
+
+    # The flags below are needed so that Dart's CPU profiler can walk the
+    # C++ stack.
+    cflags = [ "-fno-omit-frame-pointer" ]
+
+    if (!invoker.product) {
+      # This flag is needed so that the call to dladdr() in Dart's native symbol
+      # resolver can report good symbol information for the CPU profiler.
+      ldflags = [ "-rdynamic" ]
+    }
+  }
+}
+
+flutter_runner("jit") {
+  output_name = "flutter_jit_runner"
+  product = false
+
+  extra_deps = [
+    "//third_party/dart/runtime:libdart_jit",
+    "//third_party/dart/runtime/platform:libdart_platform_jit",
+  ]
+}
+
+flutter_runner("jit_product") {
+  output_name = "flutter_jit_product_runner"
+  product = true
+
+  extra_deps = [
+    "//third_party/dart/runtime:libdart_jit",
+    "//third_party/dart/runtime/platform:libdart_platform_jit",
+  ]
+}
+
+flutter_runner("aot") {
+  output_name = "flutter_aot_runner"
+  product = false
+
+  extra_deps = [
+    "//third_party/dart/runtime:libdart_precompiled_runtime",
+    "//third_party/dart/runtime/platform:libdart_platform_precompiled_runtime",
+  ]
+}
+
+flutter_runner("aot_product") {
+  output_name = "flutter_aot_product_runner"
+  product = true
+
+  extra_deps = [
+    "//third_party/dart/runtime:libdart_precompiled_runtime",
+    "//third_party/dart/runtime/platform:libdart_platform_precompiled_runtime",
+  ]
+}
+
+template("jit_runner") {
+  product = defined(invoker.product) && invoker.product
+
+  product_suffix = ""
+
+  if (product) {
+    product_suffix = "_product"
+  }
+
+  fuchsia_archive(target_name) {
+    snapshot_label = "kernel:kernel_core_snapshot${product_suffix}"
+    snapshot_gen_dir = get_label_info(snapshot_label, "target_gen_dir")
+
+    deps = [
+      ":jit${product_suffix}",
+      snapshot_label,
+    ]
+
+    if (!product) {
+      deps += [
+        "//flutter/shell/platform/fuchsia/runtime/dart/profiler_symbols:flutter_jit_runner",
+        observatory_target,
+      ]
+    }
+
+    binary = "flutter_jit${product_suffix}_runner"
+
+    meta_dir = "//flutter/shell/platform/fuchsia/flutter/meta"
+
+    resources = [
+      {
+        path = rebase_path("//third_party/icu/common/icudtl.dat")
+        dest = "icudtl.dat"
+      },
+    ]
+
+    if (!product) {
+      resources += [
+        {
+          path = rebase_path(observatory_archive_file)
+          dest = "observatory.tar"
+        },
+        {
+          path = rebase_path(
+                  get_label_info(
+                      "//flutter/shell/platform/fuchsia/runtime/dart/profiler_symbols:flutter_jit_runner",
+                      "target_gen_dir") +
+                  "/flutter_jit_runner.dartprofilersymbols")
+          dest = "flutter_jit_runner.dartprofilersymbols"
+        },
+      ]
+    }
+
+    resources += [
+      {
+        path = rebase_path(
+                "$snapshot_gen_dir/vm_isolate_snapshot${product_suffix}.bin")
+        dest = "vm_snapshot_data.bin"
+      },
+      {
+        path = rebase_path(
+                "$snapshot_gen_dir/vm_snapshot_instructions${product_suffix}.bin")
+        dest = "vm_snapshot_instructions.bin"
+      },
+      {
+        path = rebase_path(
+                "$snapshot_gen_dir/isolate_snapshot${product_suffix}.bin")
+        dest = "isolate_core_snapshot_data.bin"
+      },
+      {
+        path = rebase_path(
+                "$snapshot_gen_dir/isolate_snapshot_instructions${product_suffix}.bin")
+        dest = "isolate_core_snapshot_instructions.bin"
+      },
+    ]
+
+    _vulkan_icds = []
+    _libs = common_libs
+    if (enable_vulkan_validation_layers) {
+      _libs += vulkan_validation_libs
+      _vulkan_icds += vulkan_icds
+    }
+
+    resources += _vulkan_icds
+
+    libraries = _libs
+
+    meta = [
+      {
+        path = rebase_path("meta/flutter_jit${product_suffix}_runner.cmx")
+        dest = "flutter_jit${product_suffix}_runner.cmx"
+      },
+    ]
+  }
+}
+
+template("aot_runner") {
+  product = defined(invoker.product) && invoker.product
+  product_suffix = ""
+  if (product) {
+    product_suffix = "_product"
+  }
+
+  fuchsia_archive(target_name) {
+    deps = [ ":aot${product_suffix}" ]
+
+    if (!product) {
+      deps += [
+        "//flutter/shell/platform/fuchsia/runtime/dart/profiler_symbols:flutter_aot_runner",
+        observatory_target,
+      ]
+    }
+
+    meta_dir = "//flutter/shell/platform/fuchsia/flutter/meta"
+
+    binary = "flutter_aot${product_suffix}_runner"
+
+    resources = [
+      {
+        path = rebase_path("//third_party/icu/common/icudtl.dat")
+        dest = "icudtl.dat"
+      },
+    ]
+
+    if (!product) {
+      resources += [
+        {
+          path = rebase_path(observatory_archive_file)
+          dest = "observatory.tar"
+        },
+        {
+          path = rebase_path(
+                  get_label_info(
+                      "//flutter/shell/platform/fuchsia/runtime/dart/profiler_symbols:flutter_aot_runner",
+                      "target_gen_dir") +
+                  "/flutter_aot_runner.dartprofilersymbols")
+          dest = "flutter_aot_runner.dartprofilersymbols"
+        },
+      ]
+    }
+
+    _vulkan_icds = []
+    _libs = common_libs
+    if (enable_vulkan_validation_layers) {
+      _libs += vulkan_validation_libs
+      _vulkan_icds += vulkan_icds
+    }
+
+    resources += _vulkan_icds
+
+    libraries = _libs
+
+    meta = [
+      {
+        path = rebase_path("meta/flutter_aot${product_suffix}_runner.cmx")
+        dest = "flutter_aot${product_suffix}_runner.cmx"
+      },
+    ]
+  }
+}
+
+aot_runner("flutter_aot_runner") {
+  product = false
+}
+
+aot_runner("flutter_aot_product_runner") {
+  product = true
+}
+
+jit_runner("flutter_jit_runner") {
+  product = false
+}
+
+jit_runner("flutter_jit_product_runner") {
+  product = true
+}
+
+test_fixtures("flutter_runner_fixtures") {
+  fixtures = []
+}
+
+executable("flutter_runner_unittests") {
+  testonly = true
+
+  output_name = "flutter_runner_tests"
+
+  sources = [
+    "accessibility_bridge_unittest.cc",
+    "component_unittest.cc",
+    "flutter_runner_fakes.h",
+    "fuchsia_intl_unittest.cc",
+    "keyboard_unittest.cc",
+    "platform_view_unittest.cc",
+    "runner_unittest.cc",
+    "tests/engine_unittests.cc",
+    "tests/flutter_runner_product_configuration_unittests.cc",
+    "tests/vsync_recorder_unittests.cc",
+    "vsync_waiter_unittests.cc",
+  ]
+
+  # This is needed for //third_party/googletest for linking zircon symbols.
+  libs = [ "//fuchsia/sdk/$host_os/arch/$target_cpu/sysroot/lib/libzircon.so" ]
+
+  # The use of these dependencies is temporary and will be moved behind the
+  # embedder API.
+  flutter_deps = [
+    "//flutter/assets:assets",
+    "//flutter/common/graphics",
+    "//flutter/flow",
+    "//flutter/lib/ui",
+    "//flutter/shell/common",
+    "//third_party/dart/runtime:libdart_jit",
+    "//third_party/dart/runtime/platform:libdart_platform_jit",
+  ]
+
+  deps = [
+           ":flutter_runner_fixtures",
+           ":flutter_runner_sources",
+           "//build/fuchsia/pkg:sys_cpp_testing",
+           "//flutter/testing",
+         ] + flutter_deps
+}
+
+executable("flutter_runner_tzdata_unittests") {
+  testonly = true
+
+  output_name = "flutter_runner_tzdata_tests"
+
+  sources = [ "runner_tzdata_unittest.cc" ]
+
+  # This is needed for //third_party/googletest for linking zircon symbols.
+  libs = [ "//fuchsia/sdk/$host_os/arch/$target_cpu/sysroot/lib/libzircon.so" ]
+
+  # The use of these dependencies is temporary and will be moved behind the
+  # embedder API.
+  flutter_deps = [
+    "//flutter/lib/ui",
+    "//third_party/dart/runtime:libdart_jit",
+    "//third_party/dart/runtime/platform:libdart_platform_jit",
+  ]
+
+  deps = [
+           ":flutter_runner_fixtures",
+           ":flutter_runner_sources",
+           "//flutter/testing",
+         ] + flutter_deps
+}
+
+executable("flutter_runner_scenic_unittests") {
+  testonly = true
+
+  output_name = "flutter_runner_scenic_tests"
+
+  sources = [ "tests/session_connection_unittests.cc" ]
+
+  # This is needed for //third_party/googletest for linking zircon symbols.
+  libs = [ "//fuchsia/sdk/$host_os/arch/$target_cpu/sysroot/lib/libzircon.so" ]
+
+  # The use of these dependencies is temporary and will be moved behind the
+  # embedder API.
+  flutter_deps = [
+    "//flutter/lib/ui",
+    "//third_party/dart/runtime:libdart_jit",
+    "//third_party/dart/runtime/platform:libdart_platform_jit",
+  ]
+
+  deps = [
+           ":flutter_runner_fixtures",
+           ":flutter_runner_sources",
+           "$fuchsia_sdk_root/fidl:fuchsia.ui.policy",
+           "//flutter/testing",
+         ] + flutter_deps
+}
+
+fuchsia_archive("flutter_runner_tests") {
+  testonly = true
+
+  deps = [ ":flutter_runner_unittests" ]
+
+  binary = "$target_name"
+
+  resources = [
+    {
+      path = rebase_path("//third_party/icu/common/icudtl.dat")
+      dest = "icudtl.dat"
+    },
+    {
+      path = rebase_path(
+              "//flutter/shell/platform/fuchsia/flutter/tests/tzdata/2019a/44/le/metaZones.res")
+      dest = "tzdata/metaZones.res"
+    },
+    {
+      path = rebase_path(
+              "//flutter/shell/platform/fuchsia/flutter/tests/tzdata/2019a/44/le/timezoneTypes.res")
+      dest = "tzdata/timezoneTypes.res"
+    },
+    {
+      path = rebase_path(
+              "//flutter/shell/platform/fuchsia/flutter/tests/tzdata/2019a/44/le/zoneinfo64.res")
+      dest = "tzdata/zoneinfo64.res"
+    },
+  ]
+
+  meta_dir = "//flutter/shell/platform/fuchsia/flutter/meta"
+
+  libraries = common_libs
+
+  meta = [
+    {
+      path = rebase_path("meta/$target_name.cmx")
+      dest = "$target_name.cmx"
+    },
+  ]
+}
+
+fuchsia_archive("flutter_runner_tzdata_tests") {
+  testonly = true
+
+  deps = [ ":flutter_runner_tzdata_unittests" ]
+
+  binary = "$target_name"
+
+  resources = [
+    {
+      path = rebase_path("//third_party/icu/common/icudtl.dat")
+      dest = "icudtl.dat"
+    },
+  ]
+
+  meta_dir = "//flutter/shell/platform/fuchsia/flutter/meta"
+
+  libraries = common_libs
+
+  meta = [
+    {
+      path = rebase_path("meta/$target_name.cmx")
+      dest = "$target_name.cmx"
+    },
+  ]
+}
+
+fuchsia_archive("flutter_runner_scenic_tests") {
+  testonly = true
+
+  deps = [ ":flutter_runner_scenic_unittests" ]
+
+  binary = "$target_name"
+
+  resources = [
+    {
+      path = rebase_path("//third_party/icu/common/icudtl.dat")
+      dest = "icudtl.dat"
+    },
+  ]
+
+  meta_dir = "//flutter/shell/platform/fuchsia/flutter/meta"
+
+  libraries = common_libs
+
+  meta = [
+    {
+      path = rebase_path("meta/$target_name.cmx")
+      dest = "$target_name.cmx"
+    },
+  ]
+}
+
+fuchsia_test_archive("fml_tests") {
+  deps = [ "//flutter/fml:fml_unittests" ]
+
+  binary = "fml_unittests"
+}
+
+fuchsia_test_archive("flow_tests") {
+  deps = [ "//flutter/flow:flow_unittests" ]
+
+  binary = "flow_unittests"
+
+  resources = [
+    {
+      path = rebase_path(
+              "//flutter/testing/resources/performance_overlay_gold_60fps.png")
+      dest = "flutter/testing/resources/performance_overlay_gold_60fps.png"
+    },
+    {
+      path = rebase_path(
+              "//flutter/testing/resources/performance_overlay_gold_90fps.png")
+      dest = "flutter/testing/resources/performance_overlay_gold_90fps.png"
+    },
+    {
+      path = rebase_path(
+              "//flutter/testing/resources/performance_overlay_gold_120fps.png")
+      dest = "flutter/testing/resources/performance_overlay_gold_120fps.png"
+    },
+  ]
+}
+
+fuchsia_test_archive("runtime_tests") {
+  deps = [
+    "//flutter/runtime:runtime_fixtures",
+    "//flutter/runtime:runtime_unittests",
+  ]
+
+  binary = "runtime_unittests"
+
+  # TODO(gw280): https://github.com/flutter/flutter/issues/50294
+  # Right now we need to manually specify all the fixtures that are
+  # declared in the test_fixtures() call above.
+  resources = [
+    {
+      path = "$root_gen_dir/flutter/runtime/assets/kernel_blob.bin"
+      dest = "assets/kernel_blob.bin"
+    },
+  ]
+}
+
+fuchsia_test_archive("shell_tests") {
+  deps = [
+    "//flutter/shell/common:shell_unittests",
+    "//flutter/shell/common:shell_unittests_fixtures",
+  ]
+
+  binary = "shell_unittests"
+
+  # TODO(gw280): https://github.com/flutter/flutter/issues/50294
+  # Right now we need to manually specify all the fixtures that are
+  # declared in the test_fixtures() call above.
+  resources = [
+    {
+      path = "$root_gen_dir/flutter/shell/common/assets/kernel_blob.bin"
+      dest = "assets/kernel_blob.bin"
+    },
+    {
+      path =
+          "$root_gen_dir/flutter/shell/common/assets/shelltest_screenshot.png"
+      dest = "assets/shelltest_screenshot.png"
+    },
+  ]
+
+  libraries = vulkan_validation_libs
+  resources += vulkan_icds
+}
+
+fuchsia_test_archive("testing_tests") {
+  deps = [ "//flutter/testing:testing_unittests" ]
+
+  binary = "testing_unittests"
+}
+
+fuchsia_test_archive("txt_tests") {
+  deps = [ "//flutter/third_party/txt:txt_unittests" ]
+
+  binary = "txt_unittests"
+
+  resources = [
+    {
+      path = rebase_path("//third_party/icu/common/icudtl.dat")
+      dest = "icudtl.dat"
+    },
+    {
+      path = rebase_path("//third_party/icu/common/icudtl.dat")
+      dest = "icudtl2.dat"
+    },
+  ]
+}
+
+fuchsia_test_archive("ui_tests") {
+  deps = [
+    "//flutter/lib/ui:ui_unittests",
+    "//flutter/lib/ui:ui_unittests_fixtures",
+  ]
+
+  binary = "ui_unittests"
+
+  # TODO(gw280): https://github.com/flutter/flutter/issues/50294
+  # Right now we need to manually specify all the fixtures that are
+  # declared in the test_fixtures() call above.
+  resources = [
+    {
+      path = "$root_gen_dir/flutter/lib/ui/assets/kernel_blob.bin"
+      dest = "assets/kernel_blob.bin"
+    },
+    {
+      path = "$root_gen_dir/flutter/lib/ui/assets/DashInNooglerHat.jpg"
+      dest = "assets/DashInNooglerHat.jpg"
+    },
+    {
+      path = "$root_gen_dir/flutter/lib/ui/assets/Horizontal.jpg"
+      dest = "assets/Horizontal.jpg"
+    },
+    {
+      path = "$root_gen_dir/flutter/lib/ui/assets/Horizontal.png"
+      dest = "assets/Horizontal.png"
+    },
+    {
+      path = "$root_gen_dir/flutter/lib/ui/assets/hello_loop_2.gif"
+      dest = "assets/hello_loop_2.gif"
+    },
+    {
+      path = "$root_gen_dir/flutter/lib/ui/assets/hello_loop_2.webp"
+      dest = "assets/hello_loop_2.webp"
+    },
+  ]
+
+  libraries = vulkan_validation_libs
+  resources += vulkan_icds
+}
+
+fuchsia_test_archive("embedder_tests") {
+  deps = [
+    "//flutter/shell/platform/embedder:embedder_unittests",
+    "//flutter/shell/platform/embedder:fixtures",
+  ]
+
+  binary = "embedder_unittests"
+
+  # TODO(gw280): https://github.com/flutter/flutter/issues/50294
+  # Right now we need to manually specify all the fixtures that are
+  # declared in the test_fixtures() call above.
+  resources = [
+    {
+      path =
+          "$root_gen_dir/flutter/shell/platform/embedder/assets/kernel_blob.bin"
+      dest = "assets/kernel_blob.bin"
+    },
+    {
+      path = "$root_gen_dir/flutter/shell/platform/embedder/assets/arc_end_caps.png"
+      dest = "assets/arc_end_caps.png"
+    },
+    {
+      path =
+          "$root_gen_dir/flutter/shell/platform/embedder/assets/compositor.png"
+      dest = "assets/compositor.png"
+    },
+    {
+      path = "$root_gen_dir/flutter/shell/platform/embedder/assets/compositor_root_surface_xformation.png"
+      dest = "assets/compositor_root_surface_xformation.png"
+    },
+    {
+      path = "$root_gen_dir/flutter/shell/platform/embedder/assets/compositor_software.png"
+      dest = "assets/compositor_software.png"
+    },
+    {
+      path = "$root_gen_dir/flutter/shell/platform/embedder/assets/compositor_with_platform_layer_on_bottom.png"
+      dest = "assets/compositor_with_platform_layer_on_bottom.png"
+    },
+    {
+      path = "$root_gen_dir/flutter/shell/platform/embedder/assets/compositor_with_root_layer_only.png"
+      dest = "assets/compositor_with_root_layer_only.png"
+    },
+    {
+      path =
+          "$root_gen_dir/flutter/shell/platform/embedder/assets/dpr_noxform.png"
+      dest = "assets/dpr_noxform.png"
+    },
+    {
+      path =
+          "$root_gen_dir/flutter/shell/platform/embedder/assets/dpr_xform.png"
+      dest = "assets/dpr_xform.png"
+    },
+    {
+      path = "$root_gen_dir/flutter/shell/platform/embedder/assets/gradient.png"
+      dest = "assets/gradient.png"
+    },
+    {
+      path = "$root_gen_dir/flutter/shell/platform/embedder/assets/gradient_xform.png"
+      dest = "assets/gradient_xform.png"
+    },
+    {
+      path = "$root_gen_dir/flutter/shell/platform/embedder/assets/scene_without_custom_compositor.png"
+      dest = "assets/scene_without_custom_compositor.png"
+    },
+    {
+      path = "$root_gen_dir/flutter/shell/platform/embedder/assets/scene_without_custom_compositor_with_xform.png"
+      dest = "assets/scene_without_custom_compositor_with_xform.png"
+    },
+    {
+      path = "$root_gen_dir/flutter/shell/platform/embedder/assets/verifyb143464703.png"
+      dest = "assets/verifyb143464703.png"
+    },
+    {
+      path = "$root_gen_dir/flutter/shell/platform/embedder/assets/verifyb143464703_soft_noxform.png"
+      dest = "assets/verifyb143464703_soft_noxform.png"
+    },
+  ]
+}
+
+# When adding a new dep here, please also ensure the dep is added to
+# testing/fuchsia/run_tests.sh and testing/fuchsia/test_fars
+group("tests") {
+  testonly = true
+
+  deps = [
+    ":embedder_tests",
+    ":flow_tests",
+    ":flutter_runner_scenic_tests",
+    ":flutter_runner_tests",
+    ":flutter_runner_tzdata_tests",
+    ":fml_tests",
+    ":runtime_tests",
+    ":shell_tests",
+    ":testing_tests",
+    ":txt_tests",
+    ":ui_tests",
+  ]
+}

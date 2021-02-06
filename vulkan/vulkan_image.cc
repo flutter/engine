@@ -1,11 +1,11 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/vulkan/vulkan_image.h"
+#include "vulkan_image.h"
 
-#include "flutter/vulkan/vulkan_command_buffer.h"
-#include "flutter/vulkan/vulkan_proc_table.h"
+#include "vulkan_command_buffer.h"
+#include "vulkan_proc_table.h"
 
 namespace vulkan {
 
@@ -56,7 +56,7 @@ bool VulkanImage::InsertImageMemoryBarrier(
       nullptr,               // buffer_memory_barriers
       1,                     // image_memory_barrier_count
       &image_memory_barrier  // image_memory_barriers
-      );
+  );
 
   if (success) {
     access_flags_ = dest_access_flags;

@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -10,265 +10,311 @@
 #include "flutter/flow/layers/clip_rrect_layer.h"
 #include "flutter/flow/layers/color_filter_layer.h"
 #include "flutter/flow/layers/container_layer.h"
+#include "flutter/flow/layers/image_filter_layer.h"
+#include "flutter/flow/layers/layer.h"
+#include "flutter/flow/layers/layer_tree.h"
 #include "flutter/flow/layers/opacity_layer.h"
 #include "flutter/flow/layers/performance_overlay_layer.h"
-#include "flutter/flow/layers/physical_model_layer.h"
+#include "flutter/flow/layers/physical_shape_layer.h"
 #include "flutter/flow/layers/picture_layer.h"
+#include "flutter/flow/layers/platform_view_layer.h"
 #include "flutter/flow/layers/shader_mask_layer.h"
+#include "flutter/flow/layers/texture_layer.h"
 #include "flutter/flow/layers/transform_layer.h"
+#include "flutter/fml/build_config.h"
 #include "flutter/lib/ui/painting/matrix.h"
 #include "flutter/lib/ui/painting/shader.h"
-#include "lib/ftl/build_config.h"
-#include "lib/tonic/converter/dart_converter.h"
-#include "lib/tonic/dart_args.h"
-#include "lib/tonic/dart_binding_macros.h"
-#include "lib/tonic/dart_library_natives.h"
 #include "third_party/skia/include/core/SkColorFilter.h"
+#include "third_party/tonic/converter/dart_converter.h"
+#include "third_party/tonic/dart_args.h"
+#include "third_party/tonic/dart_binding_macros.h"
+#include "third_party/tonic/dart_library_natives.h"
 
-#if defined(OS_FUCHSIA)
-#include "flutter/flow/layers/child_scene_layer.h"
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
+#include "flutter/flow/layers/child_scene_layer.h"  // nogncheck
 #endif
 
-namespace blink {
+namespace flutter {
 
 static void SceneBuilder_constructor(Dart_NativeArguments args) {
+  UIDartState::ThrowIfUIOperationsProhibited();
   DartCallConstructor(&SceneBuilder::create, args);
 }
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, SceneBuilder);
 
 #define FOR_EACH_BINDING(V)                         \
+  V(SceneBuilder, pushOffset)                       \
   V(SceneBuilder, pushTransform)                    \
   V(SceneBuilder, pushClipRect)                     \
   V(SceneBuilder, pushClipRRect)                    \
   V(SceneBuilder, pushClipPath)                     \
   V(SceneBuilder, pushOpacity)                      \
   V(SceneBuilder, pushColorFilter)                  \
+  V(SceneBuilder, pushImageFilter)                  \
   V(SceneBuilder, pushBackdropFilter)               \
   V(SceneBuilder, pushShaderMask)                   \
-  V(SceneBuilder, pushPhysicalModel)                \
+  V(SceneBuilder, pushPhysicalShape)                \
   V(SceneBuilder, pop)                              \
+  V(SceneBuilder, addPlatformView)                  \
+  V(SceneBuilder, addRetained)                      \
   V(SceneBuilder, addPicture)                       \
-  V(SceneBuilder, addChildScene)                    \
+  V(SceneBuilder, addTexture)                       \
   V(SceneBuilder, addPerformanceOverlay)            \
   V(SceneBuilder, setRasterizerTracingThreshold)    \
+  V(SceneBuilder, setCheckerboardOffscreenLayers)   \
   V(SceneBuilder, setCheckerboardRasterCacheImages) \
   V(SceneBuilder, build)
 
 FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
+DART_NATIVE_CALLBACK(SceneBuilder, addChildScene)
+#endif
 
 void SceneBuilder::RegisterNatives(tonic::DartLibraryNatives* natives) {
-  natives->Register(
-      {{"SceneBuilder_constructor", SceneBuilder_constructor, 1, true},
-       FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
+  natives->Register({
+    {"SceneBuilder_constructor", SceneBuilder_constructor, 1, true},
+        FOR_EACH_BINDING(DART_REGISTER_NATIVE)
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
+            DART_REGISTER_NATIVE(SceneBuilder, addChildScene)
+#endif
+  });
 }
 
-SceneBuilder::SceneBuilder()
-    : m_currentLayer(nullptr),
-      m_currentRasterizerTracingThreshold(0),
-      m_checkerboardRasterCacheImages(false) {
-  m_cullRects.push(SkRect::MakeLargest());
+SceneBuilder::SceneBuilder() {
+  // Add a ContainerLayer as the root layer, so that AddLayer operations are
+  // always valid.
+  PushLayer(std::make_shared<flutter::ContainerLayer>());
 }
 
-SceneBuilder::~SceneBuilder() {}
+SceneBuilder::~SceneBuilder() = default;
 
-void SceneBuilder::pushTransform(const tonic::Float64List& matrix4) {
+void SceneBuilder::pushTransform(Dart_Handle layer_handle,
+                                 tonic::Float64List& matrix4) {
   SkMatrix sk_matrix = ToSkMatrix(matrix4);
-  SkMatrix inverse_sk_matrix;
-  SkRect cullRect;
-  if (sk_matrix.invert(&inverse_sk_matrix))
-    inverse_sk_matrix.mapRect(&cullRect, m_cullRects.top());
-  else
-    cullRect = SkRect::MakeLargest();
-
-  std::unique_ptr<flow::TransformLayer> layer(new flow::TransformLayer());
-  layer->set_transform(sk_matrix);
-  addLayer(std::move(layer), cullRect);
+  auto layer = std::make_shared<flutter::TransformLayer>(sk_matrix);
+  PushLayer(layer);
+  // matrix4 has to be released before we can return another Dart object
+  matrix4.Release();
+  EngineLayer::MakeRetained(layer_handle, layer);
 }
 
-void SceneBuilder::pushClipRect(double left,
+void SceneBuilder::pushOffset(Dart_Handle layer_handle, double dx, double dy) {
+  SkMatrix sk_matrix = SkMatrix::Translate(dx, dy);
+  auto layer = std::make_shared<flutter::TransformLayer>(sk_matrix);
+  PushLayer(layer);
+  EngineLayer::MakeRetained(layer_handle, layer);
+}
+
+void SceneBuilder::pushClipRect(Dart_Handle layer_handle,
+                                double left,
                                 double right,
                                 double top,
-                                double bottom) {
-  const SkRect clipRect = SkRect::MakeLTRB(left, top, right, bottom);
-  SkRect cullRect;
-  if (!cullRect.intersect(clipRect, m_cullRects.top()))
-    cullRect = SkRect::MakeEmpty();
-
-  std::unique_ptr<flow::ClipRectLayer> layer(new flow::ClipRectLayer());
-  layer->set_clip_rect(clipRect);
-  addLayer(std::move(layer), cullRect);
+                                double bottom,
+                                int clipBehavior) {
+  SkRect clipRect = SkRect::MakeLTRB(left, top, right, bottom);
+  flutter::Clip clip_behavior = static_cast<flutter::Clip>(clipBehavior);
+  auto layer =
+      std::make_shared<flutter::ClipRectLayer>(clipRect, clip_behavior);
+  PushLayer(layer);
+  EngineLayer::MakeRetained(layer_handle, layer);
 }
 
-void SceneBuilder::pushClipRRect(const RRect& rrect) {
-  SkRect cullRect;
-  if (!cullRect.intersect(rrect.sk_rrect.rect(), m_cullRects.top()))
-    cullRect = SkRect::MakeEmpty();
-
-  std::unique_ptr<flow::ClipRRectLayer> layer(new flow::ClipRRectLayer());
-  layer->set_clip_rrect(rrect.sk_rrect);
-  addLayer(std::move(layer), cullRect);
+void SceneBuilder::pushClipRRect(Dart_Handle layer_handle,
+                                 const RRect& rrect,
+                                 int clipBehavior) {
+  flutter::Clip clip_behavior = static_cast<flutter::Clip>(clipBehavior);
+  auto layer =
+      std::make_shared<flutter::ClipRRectLayer>(rrect.sk_rrect, clip_behavior);
+  PushLayer(layer);
+  EngineLayer::MakeRetained(layer_handle, layer);
 }
 
-void SceneBuilder::pushClipPath(const CanvasPath* path) {
-  SkRect cullRect;
-  if (!cullRect.intersect(path->path().getBounds(), m_cullRects.top()))
-    cullRect = SkRect::MakeEmpty();
-
-  std::unique_ptr<flow::ClipPathLayer> layer(new flow::ClipPathLayer());
-  layer->set_clip_path(path->path());
-  addLayer(std::move(layer), cullRect);
+void SceneBuilder::pushClipPath(Dart_Handle layer_handle,
+                                const CanvasPath* path,
+                                int clipBehavior) {
+  flutter::Clip clip_behavior = static_cast<flutter::Clip>(clipBehavior);
+  FML_DCHECK(clip_behavior != flutter::Clip::none);
+  auto layer =
+      std::make_shared<flutter::ClipPathLayer>(path->path(), clip_behavior);
+  PushLayer(layer);
+  EngineLayer::MakeRetained(layer_handle, layer);
 }
 
-void SceneBuilder::pushOpacity(int alpha) {
-  std::unique_ptr<flow::OpacityLayer> layer(new flow::OpacityLayer());
-  layer->set_alpha(alpha);
-  addLayer(std::move(layer), m_cullRects.top());
+void SceneBuilder::pushOpacity(Dart_Handle layer_handle,
+                               int alpha,
+                               double dx,
+                               double dy) {
+  auto layer =
+      std::make_shared<flutter::OpacityLayer>(alpha, SkPoint::Make(dx, dy));
+  PushLayer(layer);
+  EngineLayer::MakeRetained(layer_handle, layer);
 }
 
-void SceneBuilder::pushColorFilter(int color, int blendMode) {
-  std::unique_ptr<flow::ColorFilterLayer> layer(new flow::ColorFilterLayer());
-  layer->set_color(static_cast<SkColor>(color));
-  layer->set_blend_mode(static_cast<SkBlendMode>(blendMode));
-  addLayer(std::move(layer), m_cullRects.top());
+void SceneBuilder::pushColorFilter(Dart_Handle layer_handle,
+                                   const ColorFilter* color_filter) {
+  auto layer =
+      std::make_shared<flutter::ColorFilterLayer>(color_filter->filter());
+  PushLayer(layer);
+  EngineLayer::MakeRetained(layer_handle, layer);
 }
 
-void SceneBuilder::pushBackdropFilter(ImageFilter* filter) {
-  std::unique_ptr<flow::BackdropFilterLayer> layer(
-      new flow::BackdropFilterLayer());
-  layer->set_filter(filter->filter());
-  addLayer(std::move(layer), m_cullRects.top());
+void SceneBuilder::pushImageFilter(Dart_Handle layer_handle,
+                                   const ImageFilter* image_filter) {
+  auto layer =
+      std::make_shared<flutter::ImageFilterLayer>(image_filter->filter());
+  PushLayer(layer);
+  EngineLayer::MakeRetained(layer_handle, layer);
 }
 
-void SceneBuilder::pushShaderMask(Shader* shader,
+void SceneBuilder::pushBackdropFilter(Dart_Handle layer_handle,
+                                      ImageFilter* filter) {
+  auto layer = std::make_shared<flutter::BackdropFilterLayer>(filter->filter());
+  PushLayer(layer);
+  EngineLayer::MakeRetained(layer_handle, layer);
+}
+
+void SceneBuilder::pushShaderMask(Dart_Handle layer_handle,
+                                  Shader* shader,
                                   double maskRectLeft,
                                   double maskRectRight,
                                   double maskRectTop,
                                   double maskRectBottom,
                                   int blendMode) {
-  std::unique_ptr<flow::ShaderMaskLayer> layer(new flow::ShaderMaskLayer());
-  layer->set_shader(shader->shader());
-  layer->set_mask_rect(SkRect::MakeLTRB(maskRectLeft, maskRectTop,
-                                        maskRectRight, maskRectBottom));
-  layer->set_blend_mode(static_cast<SkBlendMode>(blendMode));
-  addLayer(std::move(layer), m_cullRects.top());
+  SkRect rect = SkRect::MakeLTRB(maskRectLeft, maskRectTop, maskRectRight,
+                                 maskRectBottom);
+  auto layer = std::make_shared<flutter::ShaderMaskLayer>(
+      shader->shader(), rect, static_cast<SkBlendMode>(blendMode));
+  PushLayer(layer);
+  EngineLayer::MakeRetained(layer_handle, layer);
 }
 
-void SceneBuilder::pushPhysicalModel(const RRect& rrect,
-                                     int elevation,
-                                     int color) {
-  SkRect cullRect;
-  if (!cullRect.intersect(rrect.sk_rrect.rect(), m_cullRects.top()))
-    cullRect = SkRect::MakeEmpty();
-
-  std::unique_ptr<flow::PhysicalModelLayer> layer(new flow::PhysicalModelLayer());
-  layer->set_rrect(rrect.sk_rrect);
-  layer->set_elevation(elevation);
-  layer->set_color(color);
-  addLayer(std::move(layer), cullRect);
+void SceneBuilder::pushPhysicalShape(Dart_Handle layer_handle,
+                                     const CanvasPath* path,
+                                     double elevation,
+                                     int color,
+                                     int shadow_color,
+                                     int clipBehavior) {
+  auto layer = std::make_shared<flutter::PhysicalShapeLayer>(
+      static_cast<SkColor>(color), static_cast<SkColor>(shadow_color),
+      static_cast<float>(elevation), path->path(),
+      static_cast<flutter::Clip>(clipBehavior));
+  PushLayer(layer);
+  EngineLayer::MakeRetained(layer_handle, layer);
 }
 
-void SceneBuilder::addLayer(std::unique_ptr<flow::ContainerLayer> layer,
-                            const SkRect& cullRect) {
-  FTL_DCHECK(layer);
-
-  m_cullRects.push(cullRect);
-
-  if (!m_rootLayer) {
-    FTL_DCHECK(!m_currentLayer);
-    m_rootLayer = std::move(layer);
-    m_currentLayer = m_rootLayer.get();
-    return;
-  }
-  if (!m_currentLayer)
-    return;
-  flow::ContainerLayer* newLayer = layer.get();
-  m_currentLayer->Add(std::move(layer));
-  m_currentLayer = newLayer;
+void SceneBuilder::addRetained(fml::RefPtr<EngineLayer> retainedLayer) {
+  AddLayer(retainedLayer->Layer());
 }
 
 void SceneBuilder::pop() {
-  if (!m_currentLayer)
-    return;
-  m_cullRects.pop();
-  m_currentLayer = m_currentLayer->parent();
+  PopLayer();
 }
 
 void SceneBuilder::addPicture(double dx,
                               double dy,
                               Picture* picture,
                               int hints) {
-  if (!m_currentLayer)
-    return;
-
+  SkPoint offset = SkPoint::Make(dx, dy);
   SkRect pictureRect = picture->picture()->cullRect();
-  pictureRect.offset(dx, dy);
-  if (!SkRect::Intersects(pictureRect, m_cullRects.top()))
-    return;
-
-  std::unique_ptr<flow::PictureLayer> layer(new flow::PictureLayer());
-  layer->set_offset(SkPoint::Make(dx, dy));
-  layer->set_picture(picture->picture());
-  layer->set_is_complex(!!(hints & 1));
-  layer->set_will_change(!!(hints & 2));
-  m_currentLayer->Add(std::move(layer));
+  pictureRect.offset(offset.x(), offset.y());
+  auto layer = std::make_unique<flutter::PictureLayer>(
+      offset, UIDartState::CreateGPUObject(picture->picture()), !!(hints & 1),
+      !!(hints & 2));
+  AddLayer(std::move(layer));
 }
 
+void SceneBuilder::addTexture(double dx,
+                              double dy,
+                              double width,
+                              double height,
+                              int64_t textureId,
+                              bool freeze,
+                              int filterQuality) {
+  // TODO: take sampling directly from caller: filter-quality is deprecated
+  auto sampling = SkSamplingOptions(static_cast<SkFilterQuality>(filterQuality),
+                                    SkSamplingOptions::kMedium_asMipmapLinear);
+  auto layer = std::make_unique<flutter::TextureLayer>(
+      SkPoint::Make(dx, dy), SkSize::Make(width, height), textureId, freeze,
+      sampling);
+  AddLayer(std::move(layer));
+}
+
+void SceneBuilder::addPlatformView(double dx,
+                                   double dy,
+                                   double width,
+                                   double height,
+                                   int64_t viewId) {
+  auto layer = std::make_unique<flutter::PlatformViewLayer>(
+      SkPoint::Make(dx, dy), SkSize::Make(width, height), viewId);
+  AddLayer(std::move(layer));
+}
+
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
 void SceneBuilder::addChildScene(double dx,
                                  double dy,
-                                 double devicePixelRatio,
-                                 int physicalWidth,
-                                 int physicalHeight,
-                                 uint32_t sceneToken,
+                                 double width,
+                                 double height,
+                                 SceneHost* sceneHost,
                                  bool hitTestable) {
-#if defined(OS_FUCHSIA)
-  if (!m_currentLayer)
-    return;
-
-  SkRect sceneRect = SkRect::MakeXYWH(dx, dy, physicalWidth / devicePixelRatio,
-                                      physicalHeight / devicePixelRatio);
-  if (!SkRect::Intersects(sceneRect, m_cullRects.top()))
-    return;
-
-  std::unique_ptr<flow::ChildSceneLayer> layer(new flow::ChildSceneLayer());
-  layer->set_offset(SkPoint::Make(dx, dy));
-  layer->set_device_pixel_ratio(devicePixelRatio);
-  layer->set_physical_size(SkISize::Make(physicalWidth, physicalHeight));
-  layer->set_scene_token(sceneToken);
-  layer->set_hit_testable(hitTestable);
-  m_currentLayer->Add(std::move(layer));
-#endif
+  auto layer = std::make_unique<flutter::ChildSceneLayer>(
+      sceneHost->id(), SkPoint::Make(dx, dy), SkSize::Make(width, height),
+      hitTestable);
+  AddLayer(std::move(layer));
 }
+#endif
 
 void SceneBuilder::addPerformanceOverlay(uint64_t enabledOptions,
                                          double left,
                                          double right,
                                          double top,
                                          double bottom) {
-  if (!m_currentLayer)
-    return;
-  std::unique_ptr<flow::PerformanceOverlayLayer> layer(
-      new flow::PerformanceOverlayLayer(enabledOptions));
-  layer->set_paint_bounds(SkRect::MakeLTRB(left, top, right, bottom));
-  m_currentLayer->Add(std::move(layer));
+  SkRect rect = SkRect::MakeLTRB(left, top, right, bottom);
+  auto layer =
+      std::make_unique<flutter::PerformanceOverlayLayer>(enabledOptions);
+  layer->set_paint_bounds(rect);
+  AddLayer(std::move(layer));
 }
 
 void SceneBuilder::setRasterizerTracingThreshold(uint32_t frameInterval) {
-  m_currentRasterizerTracingThreshold = frameInterval;
+  rasterizer_tracing_threshold_ = frameInterval;
 }
 
 void SceneBuilder::setCheckerboardRasterCacheImages(bool checkerboard) {
-  m_checkerboardRasterCacheImages = checkerboard;
+  checkerboard_raster_cache_images_ = checkerboard;
 }
 
-ftl::RefPtr<Scene> SceneBuilder::build() {
-  m_currentLayer = nullptr;
-  int32_t threshold = m_currentRasterizerTracingThreshold;
-  m_currentRasterizerTracingThreshold = 0;
-  ftl::RefPtr<Scene> scene = Scene::create(std::move(m_rootLayer), threshold,
-                                           m_checkerboardRasterCacheImages);
-  ClearDartWrapper();
-  return scene;
+void SceneBuilder::setCheckerboardOffscreenLayers(bool checkerboard) {
+  checkerboard_offscreen_layers_ = checkerboard;
 }
 
-}  // namespace blink
+void SceneBuilder::build(Dart_Handle scene_handle) {
+  FML_DCHECK(layer_stack_.size() >= 1);
+
+  Scene::create(scene_handle, layer_stack_[0], rasterizer_tracing_threshold_,
+                checkerboard_raster_cache_images_,
+                checkerboard_offscreen_layers_);
+  ClearDartWrapper();  // may delete this object.
+}
+
+void SceneBuilder::AddLayer(std::shared_ptr<Layer> layer) {
+  FML_DCHECK(layer);
+
+  if (!layer_stack_.empty()) {
+    layer_stack_.back()->Add(std::move(layer));
+  }
+}
+
+void SceneBuilder::PushLayer(std::shared_ptr<ContainerLayer> layer) {
+  AddLayer(layer);
+  layer_stack_.push_back(std::move(layer));
+}
+
+void SceneBuilder::PopLayer() {
+  // We never pop the root layer, so that AddLayer operations are always valid.
+  if (layer_stack_.size() > 1) {
+    layer_stack_.pop_back();
+  }
+}
+
+}  // namespace flutter

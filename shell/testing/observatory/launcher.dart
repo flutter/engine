@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -9,27 +9,25 @@ import 'dart:convert';
 import 'dart:io';
 
 class ShellProcess {
-  final Completer _observatoryUriCompleter = new Completer();
+  final Completer<Uri> _observatoryUriCompleter = Completer<Uri>();
   final Process _process;
 
   ShellProcess(this._process) {
-    assert(_process != null);
     // Scan stdout and scrape the Observatory Uri.
-    _process.stdout.transform(UTF8.decoder)
-                   .transform(new LineSplitter()).listen((line) {
+    _process.stdout
+        .transform(utf8.decoder)
+        .transform(const LineSplitter())
+        .listen((String line) {
       const String observatoryUriPrefix = 'Observatory listening on ';
       if (line.startsWith(observatoryUriPrefix)) {
         print(line);
-        Uri uri = Uri.parse(line.substring(observatoryUriPrefix.length));
+        final Uri uri = Uri.parse(line.substring(observatoryUriPrefix.length));
         _observatoryUriCompleter.complete(uri);
       }
     });
   }
 
-  Future kill() async {
-    if (_process == null) {
-      return false;
-    }
+  Future<bool> kill() async {
     return _process.kill();
   }
 
@@ -39,38 +37,38 @@ class ShellProcess {
 }
 
 class ShellLauncher {
-  final List<String> args = [
+  final List<String> args = <String>[
     '--observatory-port=0',
     '--non-interactive',
     '--run-forever',
+    '--disable-service-auth-codes',
   ];
   final String shellExecutablePath;
   final String mainDartPath;
   final bool startPaused;
 
-  ShellLauncher(this.shellExecutablePath,
-                this.mainDartPath,
-                this.startPaused,
-                List<String> extraArgs) {
+  ShellLauncher(this.shellExecutablePath, this.mainDartPath, this.startPaused,
+      List<String> extraArgs) {
     if (extraArgs is List) {
       args.addAll(extraArgs);
     }
     args.add(mainDartPath);
   }
 
-  Future<ShellProcess> launch() async {
+  Future<ShellProcess?> launch() async {
     try {
-      List<String> shellArguments = [];
+      final List<String> shellArguments = <String>[];
       if (startPaused) {
         shellArguments.add('--start-paused');
       }
       shellArguments.addAll(args);
       print('Launching $shellExecutablePath $shellArguments');
-      var process = await Process.start(shellExecutablePath, shellArguments);
-      return new ShellProcess(process);
+      final Process process =
+          await Process.start(shellExecutablePath, shellArguments);
+      return ShellProcess(process);
     } catch (e) {
       print('Error launching shell: $e');
+      return null;
     }
-    return null;
   }
 }

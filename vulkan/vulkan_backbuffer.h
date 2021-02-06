@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -7,12 +7,12 @@
 
 #include <array>
 
-#include "flutter/vulkan/vulkan_command_buffer.h"
-#include "flutter/vulkan/vulkan_handle.h"
-#include "lib/ftl/compiler_specific.h"
-#include "lib/ftl/macros.h"
+#include "flutter/fml/compiler_specific.h"
+#include "flutter/fml/macros.h"
 #include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/core/SkSurface.h"
+#include "vulkan_command_buffer.h"
+#include "vulkan_handle.h"
 
 namespace vulkan {
 
@@ -26,11 +26,9 @@ class VulkanBackbuffer {
 
   bool IsValid() const;
 
-  FTL_WARN_UNUSED_RESULT
-  bool WaitFences();
+  [[nodiscard]] bool WaitFences();
 
-  FTL_WARN_UNUSED_RESULT
-  bool ResetFences();
+  [[nodiscard]] bool ResetFences();
 
   const VulkanHandle<VkFence>& GetUsageFence() const;
 
@@ -57,7 +55,7 @@ class VulkanBackbuffer {
 
   bool CreateFences();
 
-  FTL_DISALLOW_COPY_AND_ASSIGN(VulkanBackbuffer);
+  FML_DISALLOW_COPY_AND_ASSIGN(VulkanBackbuffer);
 };
 
 }  // namespace vulkan

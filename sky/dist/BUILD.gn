@@ -1,6 +1,8 @@
-# Copyright 2015 The Chromium Authors. All rights reserved.
+# Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+
+import("//flutter/build/zip_bundle.gni")
 
 if (is_android) {
   action("flutter_services") {
@@ -9,12 +11,8 @@ if (is_android) {
     source = "//flutter/sky/packages/flutter_services"
     dest = "$root_build_dir/dist/packages/flutter_services"
 
-    inputs = [
-      source,
-    ]
-    outputs = [
-      dest,
-    ]
+    inputs = [ source ]
+    outputs = [ dest ]
 
     args = [
       "--source",
@@ -23,9 +21,7 @@ if (is_android) {
       rebase_path(dest),
     ]
 
-    deps = [
-      "//flutter/sky/packages/flutter_services",
-    ]
+    deps = [ "//flutter/sky/packages/flutter_services" ]
   }
   action("sky_engine") {
     script = "//flutter/sky/tools/dist_dart_pkg.py"
@@ -33,12 +29,8 @@ if (is_android) {
     source = "$root_gen_dir/dart-pkg/sky_engine"
     dest = "$root_build_dir/dist/packages/sky_engine"
 
-    inputs = [
-      source,
-    ]
-    outputs = [
-      dest,
-    ]
+    inputs = [ source ]
+    outputs = [ dest ]
 
     args = [
       "--source",
@@ -59,12 +51,8 @@ if (is_android) {
     source = "$root_gen_dir/dart-pkg/sky_services"
     dest = "$root_build_dir/dist/packages/sky_services"
 
-    inputs = [
-      source,
-    ]
-    outputs = [
-      dest,
-    ]
+    inputs = [ source ]
+    outputs = [ dest ]
 
     args = [
       "--source",
@@ -78,14 +66,33 @@ if (is_android) {
       "//flutter/sky/packages/sky_services:sky_services_pkg_helper",
     ]
   }
-}
 
-group("dist") {
-  if (is_android) {
+  zip_bundle("zip") {
+    output = "$android_zip_archive_dir/sky_engine.zip"
+    files = [
+      {
+        source = "$root_build_dir/dist/packages/flutter_services"
+        destination = "flutter_services"
+      },
+      {
+        source = "$root_build_dir/dist/packages/sky_engine"
+        destination = "sky_engine"
+      },
+      {
+        source = "$root_build_dir/dist/packages/sky_services"
+        destination = "sky_services"
+      },
+    ]
     deps = [
       ":flutter_services",
       ":sky_engine",
       ":sky_services",
     ]
+  }
+}
+
+group("dist") {
+  if (is_android) {
+    deps = [ ":zip" ]
   }
 }

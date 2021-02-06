@@ -1,32 +1,49 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #ifndef FLUTTER_ASSETS_DIRECTORY_ASSET_BUNDLE_H_
 #define FLUTTER_ASSETS_DIRECTORY_ASSET_BUNDLE_H_
 
-#include <string>
-#include <vector>
+#include "flutter/assets/asset_resolver.h"
+#include "flutter/fml/macros.h"
+#include "flutter/fml/memory/ref_counted.h"
+#include "flutter/fml/unique_fd.h"
 
-#include "lib/ftl/macros.h"
+namespace flutter {
 
-namespace blink {
-
-class DirectoryAssetBundle {
+class DirectoryAssetBundle : public AssetResolver {
  public:
-  explicit DirectoryAssetBundle(std::string directory);
-  ~DirectoryAssetBundle();
+  DirectoryAssetBundle(fml::UniqueFD descriptor,
+                       bool is_valid_after_asset_manager_change);
 
-  bool GetAsBuffer(const std::string& asset_name, std::vector<uint8_t>* data);
+  ~DirectoryAssetBundle() override;
 
  private:
-  std::string GetPathForAsset(const std::string& asset_name);
+  const fml::UniqueFD descriptor_;
+  bool is_valid_ = false;
+  bool is_valid_after_asset_manager_change_ = false;
 
-  const std::string directory_;
+  // |AssetResolver|
+  bool IsValid() const override;
 
-  FTL_DISALLOW_COPY_AND_ASSIGN(DirectoryAssetBundle);
+  // |AssetResolver|
+  bool IsValidAfterAssetManagerChange() const override;
+
+  // |AssetResolver|
+  AssetResolver::AssetResolverType GetType() const override;
+
+  // |AssetResolver|
+  std::unique_ptr<fml::Mapping> GetAsMapping(
+      const std::string& asset_name) const override;
+
+  // |AssetResolver|
+  std::vector<std::unique_ptr<fml::Mapping>> GetAsMappings(
+      const std::string& asset_pattern) const override;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(DirectoryAssetBundle);
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_ASSETS_DIRECTORY_ASSET_BUNDLE_H_

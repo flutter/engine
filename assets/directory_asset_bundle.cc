@@ -1,43 +1,90 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #include "flutter/assets/directory_asset_bundle.h"
 
-#include <fcntl.h>
-#include <unistd.h>
-
+#include <regex>
 #include <utility>
 
-#include "lib/ftl/files/eintr_wrapper.h"
-#include "lib/ftl/files/file.h"
-#include "lib/ftl/files/path.h"
-#include "lib/ftl/files/unique_fd.h"
+#include "flutter/fml/eintr_wrapper.h"
+#include "flutter/fml/file.h"
+#include "flutter/fml/mapping.h"
 
-namespace blink {
+namespace flutter {
 
-bool DirectoryAssetBundle::GetAsBuffer(const std::string& asset_name,
-                                       std::vector<uint8_t>* data) {
-  std::string asset_path = GetPathForAsset(asset_name);
-  if (asset_path.empty())
-    return false;
-  return files::ReadFileToVector(asset_path, data);
-}
-
-DirectoryAssetBundle::~DirectoryAssetBundle() {}
-
-DirectoryAssetBundle::DirectoryAssetBundle(std::string directory)
-    : directory_(std::move(directory)) {}
-
-std::string DirectoryAssetBundle::GetPathForAsset(
-    const std::string& asset_name) {
-  std::string asset_path = files::SimplifyPath(directory_ + "/" + asset_name);
-  if (asset_path.find(directory_) != 0u) {
-    FTL_LOG(ERROR) << "Asset name '" << asset_name
-                   << "' attempted to traverse outside asset bundle.";
-    return std::string();
+DirectoryAssetBundle::DirectoryAssetBundle(
+    fml::UniqueFD descriptor,
+    bool is_valid_after_asset_manager_change)
+    : descriptor_(std::move(descriptor)) {
+  if (!fml::IsDirectory(descriptor_)) {
+    return;
   }
-  return asset_path;
+  is_valid_after_asset_manager_change_ = is_valid_after_asset_manager_change;
+  is_valid_ = true;
 }
 
-}  // namespace blink
+DirectoryAssetBundle::~DirectoryAssetBundle() = default;
+
+// |AssetResolver|
+bool DirectoryAssetBundle::IsValid() const {
+  return is_valid_;
+}
+
+// |AssetResolver|
+bool DirectoryAssetBundle::IsValidAfterAssetManagerChange() const {
+  return is_valid_after_asset_manager_change_;
+}
+
+// |AssetResolver|
+AssetResolver::AssetResolverType DirectoryAssetBundle::GetType() const {
+  return AssetResolver::AssetResolverType::kDirectoryAssetBundle;
+}
+
+// |AssetResolver|
+std::unique_ptr<fml::Mapping> DirectoryAssetBundle::GetAsMapping(
+    const std::string& asset_name) const {
+  if (!is_valid_) {
+    FML_DLOG(WARNING) << "Asset bundle was not valid.";
+    return nullptr;
+  }
+
+  auto mapping = std::make_unique<fml::FileMapping>(fml::OpenFile(
+      descriptor_, asset_name.c_str(), false, fml::FilePermission::kRead));
+
+  if (!mapping->IsValid()) {
+    return nullptr;
+  }
+
+  return mapping;
+}
+
+std::vector<std::unique_ptr<fml::Mapping>> DirectoryAssetBundle::GetAsMappings(
+    const std::string& asset_pattern) const {
+  std::vector<std::unique_ptr<fml::Mapping>> mappings;
+  if (!is_valid_) {
+    FML_DLOG(WARNING) << "Asset bundle was not valid.";
+    return mappings;
+  }
+
+  std::regex asset_regex(asset_pattern);
+  fml::FileVisitor visitor = [&](const fml::UniqueFD& directory,
+                                 const std::string& filename) {
+    if (std::regex_match(filename, asset_regex)) {
+      auto mapping = std::make_unique<fml::FileMapping>(fml::OpenFile(
+          directory, filename.c_str(), false, fml::FilePermission::kRead));
+
+      if (mapping && mapping->IsValid()) {
+        mappings.push_back(std::move(mapping));
+      } else {
+        FML_LOG(ERROR) << "Mapping " << filename << " failed";
+      }
+    }
+    return true;
+  };
+  fml::VisitFilesRecursively(descriptor_, visitor);
+
+  return mappings;
+}
+
+}  // namespace flutter

@@ -1,86 +1,137 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #include "flutter/fml/mapping.h"
 
-#include <fcntl.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <unistd.h>
-
-#include <type_traits>
-
-#include "lib/ftl/build_config.h"
-#include "lib/ftl/files/eintr_wrapper.h"
-
-#if OS_MACOSX
-
-#include "flutter/fml/platform/darwin/resource_mapping_darwin.h"
-using PlatformResourceMapping = fml::ResourceMappingDarwin;
-
-#else
-
-using PlatformResourceMapping = fml::FileMapping;
-
-#endif
+#include <algorithm>
+#include <sstream>
 
 namespace fml {
 
-Mapping::Mapping() = default;
+// FileMapping
 
-Mapping::~Mapping() = default;
-
-bool PlatformHasResourcesBundle() {
-  return !std::is_same<PlatformResourceMapping, FileMapping>::value;
+uint8_t* FileMapping::GetMutableMapping() {
+  return mutable_mapping_;
 }
 
-std::unique_ptr<Mapping> GetResourceMapping(const std::string& resource_name) {
-  return std::make_unique<PlatformResourceMapping>(resource_name);
+std::unique_ptr<FileMapping> FileMapping::CreateReadOnly(
+    const std::string& path) {
+  return CreateReadOnly(OpenFile(path.c_str(), false, FilePermission::kRead),
+                        "");
 }
 
-FileMapping::FileMapping(const std::string& path)
-    : FileMapping(ftl::UniqueFD{HANDLE_EINTR(::open(path.c_str(), O_RDONLY))}) {
+std::unique_ptr<FileMapping> FileMapping::CreateReadOnly(
+    const fml::UniqueFD& base_fd,
+    const std::string& sub_path) {
+  if (sub_path.size() != 0) {
+    return CreateReadOnly(
+        OpenFile(base_fd, sub_path.c_str(), false, FilePermission::kRead), "");
+  }
+
+  auto mapping = std::make_unique<FileMapping>(
+      base_fd, std::initializer_list<Protection>{Protection::kRead});
+
+  if (!mapping->IsValid()) {
+    return nullptr;
+  }
+
+  return mapping;
 }
 
-FileMapping::FileMapping(const ftl::UniqueFD& handle)
-    : size_(0), mapping_(nullptr) {
-  if (!handle.is_valid()) {
-    return;
-  }
-
-  struct stat stat_buffer = {};
-
-  if (::fstat(handle.get(), &stat_buffer) != 0) {
-    return;
-  }
-
-  if (stat_buffer.st_size <= 0) {
-    return;
-  }
-
-  auto mapping = ::mmap(nullptr, stat_buffer.st_size, PROT_READ, MAP_PRIVATE,
-                        handle.get(), 0);
-
-  if (mapping == MAP_FAILED) {
-    return;
-  }
-
-  mapping_ = static_cast<uint8_t*>(mapping);
-  size_ = stat_buffer.st_size;
+std::unique_ptr<FileMapping> FileMapping::CreateReadExecute(
+    const std::string& path) {
+  return CreateReadExecute(
+      OpenFile(path.c_str(), false, FilePermission::kRead));
 }
 
-FileMapping::~FileMapping() {
-  if (mapping_ != nullptr) {
-    ::munmap(mapping_, size_);
+std::unique_ptr<FileMapping> FileMapping::CreateReadExecute(
+    const fml::UniqueFD& base_fd,
+    const std::string& sub_path) {
+  if (sub_path.size() != 0) {
+    return CreateReadExecute(
+        OpenFile(base_fd, sub_path.c_str(), false, FilePermission::kRead), "");
+  }
+
+  auto mapping = std::make_unique<FileMapping>(
+      base_fd, std::initializer_list<Protection>{Protection::kRead,
+                                                 Protection::kExecute});
+
+  if (!mapping->IsValid()) {
+    return nullptr;
+  }
+
+  return mapping;
+}
+
+// Data Mapping
+
+DataMapping::DataMapping(std::vector<uint8_t> data) : data_(std::move(data)) {}
+
+DataMapping::DataMapping(const std::string& string)
+    : data_(string.begin(), string.end()) {}
+
+DataMapping::~DataMapping() = default;
+
+size_t DataMapping::GetSize() const {
+  return data_.size();
+}
+
+const uint8_t* DataMapping::GetMapping() const {
+  return data_.data();
+}
+
+// NonOwnedMapping
+
+NonOwnedMapping::NonOwnedMapping(const uint8_t* data,
+                                 size_t size,
+                                 const ReleaseProc& release_proc)
+    : data_(data), size_(size), release_proc_(release_proc) {}
+
+NonOwnedMapping::~NonOwnedMapping() {
+  if (release_proc_) {
+    release_proc_(data_, size_);
   }
 }
 
-size_t FileMapping::GetSize() const {
+size_t NonOwnedMapping::GetSize() const {
   return size_;
 }
 
-const uint8_t* FileMapping::GetMapping() const {
+const uint8_t* NonOwnedMapping::GetMapping() const {
+  return data_;
+}
+
+// Symbol Mapping
+
+SymbolMapping::SymbolMapping(fml::RefPtr<fml::NativeLibrary> native_library,
+                             const char* symbol_name)
+    : native_library_(std::move(native_library)) {
+  if (native_library_ && symbol_name != nullptr) {
+    mapping_ = native_library_->ResolveSymbol(symbol_name);
+
+    if (mapping_ == nullptr) {
+      // Apparently, dart_bootstrap seems to account for the Mac behavior of
+      // requiring the underscore prefixed symbol name on non-Mac platforms as
+      // well. As a fallback, check the underscore prefixed variant of the
+      // symbol name and allow callers to not have handle this on a per platform
+      // toolchain quirk basis.
+
+      std::stringstream underscore_symbol_name;
+      underscore_symbol_name << "_" << symbol_name;
+      mapping_ =
+          native_library_->ResolveSymbol(underscore_symbol_name.str().c_str());
+    }
+  }
+}
+
+SymbolMapping::~SymbolMapping() = default;
+
+size_t SymbolMapping::GetSize() const {
+  return 0;
+}
+
+const uint8_t* SymbolMapping::GetMapping() const {
   return mapping_;
 }
 

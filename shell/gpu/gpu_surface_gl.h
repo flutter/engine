@@ -1,59 +1,81 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #ifndef SHELL_GPU_GPU_SURFACE_GL_H_
 #define SHELL_GPU_GPU_SURFACE_GL_H_
 
-#include "flutter/shell/common/surface.h"
-#include "flutter/synchronization/debug_thread_checker.h"
-#include "lib/ftl/macros.h"
-#include "lib/ftl/memory/weak_ptr.h"
+#include <functional>
+#include <memory>
 
-namespace shell {
+#include "flutter/common/graphics/gl_context_switch.h"
+#include "flutter/flow/embedded_views.h"
+#include "flutter/flow/surface.h"
+#include "flutter/fml/macros.h"
+#include "flutter/fml/memory/weak_ptr.h"
+#include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
 
-class GPUSurfaceGLDelegate {
- public:
-  virtual bool GLContextMakeCurrent() = 0;
-
-  virtual bool GLContextClearCurrent() = 0;
-
-  virtual bool GLContextPresent() = 0;
-
-  virtual intptr_t GLContextFBO() const = 0;
-};
+namespace flutter {
 
 class GPUSurfaceGL : public Surface {
  public:
-  GPUSurfaceGL(GPUSurfaceGLDelegate* delegate);
+  static sk_sp<GrDirectContext> MakeGLContext(GPUSurfaceGLDelegate* delegate);
 
+  GPUSurfaceGL(GPUSurfaceGLDelegate* delegate, bool render_to_surface);
+
+  // Creates a new GL surface reusing an existing GrDirectContext.
+  GPUSurfaceGL(sk_sp<GrDirectContext> gr_context,
+               GPUSurfaceGLDelegate* delegate,
+               bool render_to_surface);
+
+  // |Surface|
   ~GPUSurfaceGL() override;
 
-  bool Setup() override;
-
+  // |Surface|
   bool IsValid() override;
 
+  // |Surface|
   std::unique_ptr<SurfaceFrame> AcquireFrame(const SkISize& size) override;
 
-  GrContext* GetContext() override;
+  // |Surface|
+  SkMatrix GetRootTransformation() const override;
+
+  // |Surface|
+  GrDirectContext* GetContext() override;
+
+  // |Surface|
+  std::unique_ptr<GLContextResult> MakeRenderContextCurrent() override;
+
+  // |Surface|
+  bool ClearRenderContext() override;
 
  private:
   GPUSurfaceGLDelegate* delegate_;
-  sk_sp<GrContext> context_;
-  sk_sp<SkSurface> cached_surface_;
-  ftl::WeakPtrFactory<GPUSurfaceGL> weak_factory_;
+  sk_sp<GrDirectContext> context_;
+  sk_sp<SkSurface> onscreen_surface_;
+  /// FBO backing the current `onscreen_surface_`.
+  uint32_t fbo_id_ = 0;
+  bool context_owner_ = false;
+  // TODO(38466): Refactor GPU surface APIs take into account the fact that an
+  // external view embedder may want to render to the root surface. This is a
+  // hack to make avoid allocating resources for the root surface when an
+  // external view embedder is present.
+  const bool render_to_surface_ = true;
+  bool valid_ = false;
+  fml::TaskRunnerAffineWeakPtrFactory<GPUSurfaceGL> weak_factory_;
 
-  sk_sp<SkSurface> CreateSurface(const SkISize& size);
+  bool CreateOrUpdateSurfaces(const SkISize& size);
 
-  sk_sp<SkSurface> AcquireSurface(const SkISize& size);
+  sk_sp<SkSurface> AcquireRenderSurface(
+      const SkISize& untransformed_size,
+      const SkMatrix& root_surface_transformation);
 
   bool PresentSurface(SkCanvas* canvas);
 
-  bool SelectPixelConfig(GrPixelConfig* config);
-
-  FTL_DISALLOW_COPY_AND_ASSIGN(GPUSurfaceGL);
+  FML_DISALLOW_COPY_AND_ASSIGN(GPUSurfaceGL);
 };
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // SHELL_GPU_GPU_SURFACE_GL_H_
