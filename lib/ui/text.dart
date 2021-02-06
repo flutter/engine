@@ -1993,25 +1993,25 @@ class TextStyle {
              'decorationColor: ${    _encoded[0] & 0x00008 == 0x00008  ? Color(_encoded[3])                  : "unspecified"}, '
              'decorationStyle: ${    _encoded[0] & 0x00010 == 0x00010  ? TextDecorationStyle.values[_encoded[4]] : "unspecified"}, '
              // The decorationThickness is not in encoded order in order to keep it near the other decoration properties.
-             'decorationThickness: ${_encoded[0] & 0x00100 == 0x00100  ? _decorationThickness                    : "unspecified"}, '
+             'decorationThickness: ${_encoded[0] & 0x00200 == 0x00200  ? _decorationThickness                    : "unspecified"}, '
              'fontWeight: ${         _encoded[0] & 0x00020 == 0x00020  ? FontWeight.values[_encoded[5]]          : "unspecified"}, '
              'fontStyle: ${          _encoded[0] & 0x00040 == 0x00040  ? FontStyle.values[_encoded[6]]           : "unspecified"}, '
              'textBaseline: ${       _encoded[0] & 0x00080 == 0x00080  ? TextBaseline.values[_encoded[7]]        : "unspecified"}, '
-             'fontFamily: ${         _encoded[0] & 0x00200 == 0x00200
+             'fontFamily: ${         _encoded[0] & 0x00400 == 0x00400
                                      && _fontFamily != ''              ? _fontFamily                             : "unspecified"}, '
-             'fontFamilyFallback: ${ _encoded[0] & 0x00200 == 0x00200
+             'fontFamilyFallback: ${ _encoded[0] & 0x00400 == 0x00400
                                      && _fontFamilyFallback != null
                                      && _fontFamilyFallback!.isNotEmpty ? _fontFamilyFallback                    : "unspecified"}, '
-             'fontSize: ${           _encoded[0] & 0x00400 == 0x00400  ? _fontSize                               : "unspecified"}, '
-             'letterSpacing: ${      _encoded[0] & 0x00800 == 0x00800  ? "${_letterSpacing}x"                    : "unspecified"}, '
-             'wordSpacing: ${        _encoded[0] & 0x01000 == 0x01000  ? "${_wordSpacing}x"                      : "unspecified"}, '
-             'height: ${             _encoded[0] & 0x02000 == 0x02000  ? "${_height}x"                           : "unspecified"}, '
+             'fontSize: ${           _encoded[0] & 0x00800 == 0x00800  ? _fontSize                               : "unspecified"}, '
+             'letterSpacing: ${      _encoded[0] & 0x01000 == 0x01000  ? "${_letterSpacing}x"                    : "unspecified"}, '
+             'wordSpacing: ${        _encoded[0] & 0x02000 == 0x02000  ? "${_wordSpacing}x"                      : "unspecified"}, '
+             'height: ${             _encoded[0] & 0x04000 == 0x04000  ? "${_height}x"                           : "unspecified"}, '
              'textHeightBehavior: ${ _encoded[0] & 0x0100 == 0x0100    ? "${TextHeightBehavior.fromEncoded(_encoded[8])}"  : "unspecified"}, '
-             'locale: ${             _encoded[0] & 0x04000 == 0x04000  ? _locale                                 : "unspecified"}, '
-             'background: ${         _encoded[0] & 0x08000 == 0x08000  ? _background                             : "unspecified"}, '
-             'foreground: ${         _encoded[0] & 0x10000 == 0x10000  ? _foreground                             : "unspecified"}, '
-             'shadows: ${            _encoded[0] & 0x20000 == 0x20000  ? _shadows                                : "unspecified"}, '
-             'fontFeatures: ${       _encoded[0] & 0x40000 == 0x40000  ? _fontFeatures                           : "unspecified"}'
+             'locale: ${             _encoded[0] & 0x08000 == 0x08000  ? _locale                                 : "unspecified"}, '
+             'background: ${         _encoded[0] & 0x10000 == 0x10000  ? _background                             : "unspecified"}, '
+             'foreground: ${         _encoded[0] & 0x20000 == 0x20000  ? _foreground                             : "unspecified"}, '
+             'shadows: ${            _encoded[0] & 0x40000 == 0x40000  ? _shadows                                : "unspecified"}, '
+             'fontFeatures: ${       _encoded[0] & 0x80000 == 0x80000  ? _fontFeatures                           : "unspecified"}'
            ')';
   }
 }

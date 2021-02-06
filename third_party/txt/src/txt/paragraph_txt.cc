@@ -1198,10 +1198,11 @@ void ParagraphTxt::UpdateLineMetrics(const SkFontMetrics& metrics,
                                      size_t line_limit) {
   if (!strut_.force_strut) {
     const double metrics_font_height = metrics.fDescent - metrics.fAscent;
-    // The overall height of the glyph blob. If neither the ascent and the
+    // The overall height of the glyph blob. If neither the ascent or the
     // descent is disabled, we have block_height = ascent + descent, where
     // "ascent" is the extent from the top of the blob to its baseline, and
-    // "descent" is the extent from the text blob's baseline to its bottom.
+    // "descent" is the extent from the text blob's baseline to its bottom. Not
+    // to be mistaken with the font's ascent and descent.
     const double blob_height = style.has_height_override
                                    ? style.height * style.font_size
                                    : metrics_font_height + metrics.fLeading;
@@ -1262,14 +1263,25 @@ void ParagraphTxt::UpdateLineMetrics(const SkFontMetrics& metrics,
     const double font_height =
         shouldNormalizeFont ? style.font_size : metrics_font_height;
 
-    const double leading =
-        text_height_behavior & TextHeightBehavior::kHalfLeading
-            ? blob_height - font_height
-        : style.has_height_override ? 0.0
-                                    : metrics.fLeading;
-
+    // Reserve the outermost vertical space we want to distribute evenly over
+    // and under the text ("half-leading").
+    double leading;
+    if (text_height_behavior & TextHeightBehavior::kHalfLeading) {
+      leading = blob_height - font_height;
+    } else {
+      leading = style.has_height_override ? 0.0 : metrics.fLeading;
+    }
     const double half_leading = leading / 2;
+
+    // Proportionally distribute the remaining vertical space above and below
+    // the glyph blob's baseline, per the font's ascent/discent ratio.
     const double available_vspace = blob_height - leading;
+    const double modifiedAscent =
+        -metrics.fAscent / metrics_font_height * available_vspace +
+        half_leading;
+    const double modifiedDescent =
+        metrics.fDescent / metrics_font_height * available_vspace +
+        half_leading;
 
     const bool disableAscent =
         line_number == 0 &&
@@ -1278,17 +1290,8 @@ void ParagraphTxt::UpdateLineMetrics(const SkFontMetrics& metrics,
         line_number == line_limit - 1 &&
         text_height_behavior & TextHeightBehavior::kDisableLastDescent;
 
-    // Proportionally distribute the remaining vertical space above and below
-    // the glyph blob's baseline, per the font's ascent/discent ratio.
-    const double modifiedAscent =
-        -metrics.fAscent / metrics_font_height * available_vspace +
-        half_leading;
     double ascent = disableAscent ? -metrics.fAscent : modifiedAscent;
-    double descent = disableDescent ? metrics.fDescent
-                                    //: blob_height - leading - modifiedAscent;
-                                    : metrics.fDescent / metrics_font_height *
-                                              available_vspace +
-                                          half_leading;
+    double descent = disableDescent ? metrics.fDescent : modifiedDescent;
 
     ComputePlaceholder(placeholder_run, ascent, descent);
 
