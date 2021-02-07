@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/common/cpp/json_message_codec.h"
+#include "flutter/shell/platform/common/json_message_codec.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
@@ -71,7 +71,8 @@ class SpyKeyEventHandler : public KeyboardHookHandler {
                void(FlutterWindowsView* window, const std::u16string& text));
   MOCK_METHOD0(ComposeBeginHook, void());
   MOCK_METHOD0(ComposeEndHook, void());
-  MOCK_METHOD2(ComposeChangeHook, void(const std::u16string& text, int cursor_pos));
+  MOCK_METHOD2(ComposeChangeHook,
+               void(const std::u16string& text, int cursor_pos));
 
  private:
   std::unique_ptr<KeyEventHandler> real_implementation_;
@@ -103,7 +104,8 @@ class SpyTextInputPlugin : public KeyboardHookHandler,
                void(FlutterWindowsView* window, const std::u16string& text));
   MOCK_METHOD0(ComposeBeginHook, void());
   MOCK_METHOD0(ComposeEndHook, void());
-  MOCK_METHOD2(ComposeChangeHook, void(const std::u16string& text, int cursor_pos));
+  MOCK_METHOD2(ComposeChangeHook,
+               void(const std::u16string& text, int cursor_pos));
 
   virtual void OnCursorRectUpdated(const Rect& rect) {}
 

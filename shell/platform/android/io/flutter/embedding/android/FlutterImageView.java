@@ -247,7 +247,9 @@ public class FlutterImageView extends View implements RenderSurface {
             Bitmap.createBitmap(
                 desiredWidth, desiredHeight, android.graphics.Bitmap.Config.ARGB_8888);
       }
-      currentBitmap.copyPixelsFromBuffer(imagePlane.getBuffer());
+      ByteBuffer buffer = imagePlane.getBuffer();
+      buffer.rewind();
+      currentBitmap.copyPixelsFromBuffer(buffer);
     }
   }
 

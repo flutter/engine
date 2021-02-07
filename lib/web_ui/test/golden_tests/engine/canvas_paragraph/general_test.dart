@@ -4,6 +4,7 @@
 
 // @dart = 2.6
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
@@ -112,6 +113,91 @@ void testMain() async {
     return takeScreenshot(canvas, bounds, 'canvas_paragraph_align');
   });
 
+  test('respects alignment in DOM mode', () {
+    final canvas = DomCanvas(domRenderer.createElement('flt-picture'));
+
+    Offset offset = Offset.zero;
+    CanvasParagraph paragraph;
+
+    void build(CanvasParagraphBuilder builder) {
+      builder.pushStyle(EngineTextStyle.only(color: black));
+      builder.addText('Lorem ');
+      builder.pushStyle(EngineTextStyle.only(color: blue));
+      builder.addText('ipsum ');
+      builder.pushStyle(EngineTextStyle.only(color: green));
+      builder.addText('dolor ');
+      builder.pushStyle(EngineTextStyle.only(color: red));
+      builder.addText('sit');
+    }
+
+    paragraph = rich(
+      ParagraphStyle(fontFamily: 'Roboto', textAlign: TextAlign.left),
+      build,
+    )..layout(constrain(100.0));
+    canvas.drawParagraph(paragraph, offset);
+    offset = offset.translate(0, paragraph.height + 10);
+
+    paragraph = rich(
+      ParagraphStyle(fontFamily: 'Roboto', textAlign: TextAlign.center),
+      build,
+    )..layout(constrain(100.0));
+    canvas.drawParagraph(paragraph, offset);
+    offset = offset.translate(0, paragraph.height + 10);
+
+    paragraph = rich(
+      ParagraphStyle(fontFamily: 'Roboto', textAlign: TextAlign.right),
+      build,
+    )..layout(constrain(100.0));
+    canvas.drawParagraph(paragraph, offset);
+    offset = offset.translate(0, paragraph.height + 10);
+
+    return takeScreenshot(canvas, bounds, 'canvas_paragraph_align_dom');
+  });
+
+  void testAlignAndTransform(EngineCanvas canvas) {
+    CanvasParagraph paragraph;
+
+    void build(CanvasParagraphBuilder builder) {
+      builder.pushStyle(EngineTextStyle.only(color: white));
+      builder.addText('Lorem ');
+      builder.pushStyle(EngineTextStyle.only(color: red));
+      builder.addText('ipsum\n');
+      builder.pushStyle(EngineTextStyle.only(color: yellow));
+      builder.addText('dolor');
+    }
+
+    void drawParagraphAt(Offset offset, TextAlign align) {
+      paragraph = rich(
+        ParagraphStyle(fontFamily: 'Roboto', fontSize: 20.0, textAlign: align),
+        build,
+      )..layout(constrain(150.0));
+      canvas.save();
+      canvas.translate(offset.dx, offset.dy);
+      canvas.rotate(math.pi / 4);
+      final Rect rect =
+          Rect.fromLTRB(0.0, 0.0, 150.0, paragraph.height);
+      canvas.drawRect(rect, SurfacePaintData()..color = black);
+      canvas.drawParagraph(paragraph, Offset.zero);
+      canvas.restore();
+    }
+
+    drawParagraphAt(Offset(50.0, 0.0), TextAlign.left);
+    drawParagraphAt(Offset(150.0, 0.0), TextAlign.center);
+    drawParagraphAt(Offset(250.0, 0.0), TextAlign.right);
+  }
+
+  test('alignment and transform', () {
+    final canvas = BitmapCanvas(bounds, RenderStrategy());
+    testAlignAndTransform(canvas);
+    return takeScreenshot(canvas, bounds, 'canvas_paragraph_align_transform');
+  });
+
+  test('alignment and transform (DOM)', () {
+    final canvas = DomCanvas(domRenderer.createElement('flt-picture'));
+    testAlignAndTransform(canvas);
+    return takeScreenshot(canvas, bounds, 'canvas_paragraph_align_transform_dom');
+  });
+
   test('paints spans with varying heights/baselines', () {
     final canvas = BitmapCanvas(bounds, RenderStrategy());
 
@@ -164,5 +250,38 @@ void testMain() async {
     canvas.drawParagraph(paragraph, Offset.zero);
 
     return takeScreenshot(canvas, bounds, 'canvas_paragraph_letter_spacing');
+  });
+
+  test('draws text decorations', () {
+    final canvas = BitmapCanvas(bounds, RenderStrategy());
+    final List<TextDecorationStyle> decorationStyles = <TextDecorationStyle>[
+      TextDecorationStyle.solid,
+      TextDecorationStyle.double,
+      TextDecorationStyle.dotted,
+      TextDecorationStyle.dashed,
+      TextDecorationStyle.wavy,
+    ];
+
+    final CanvasParagraph paragraph = rich(
+      ParagraphStyle(fontFamily: 'Roboto'),
+      (builder) {
+        for (TextDecorationStyle decorationStyle in decorationStyles) {
+          builder.pushStyle(EngineTextStyle.only(
+            color: const Color.fromRGBO(50, 50, 255, 1.0),
+            decoration: TextDecoration.underline,
+            decorationStyle: decorationStyle,
+            decorationColor: red,
+            fontFamily: 'Roboto',
+            fontSize: 30,
+          ));
+          builder.addText('Hello World');
+          builder.pop();
+          builder.addText(' ');
+        }
+      },
+    )..layout(constrain(double.infinity));
+
+    canvas.drawParagraph(paragraph, Offset.zero);
+    return takeScreenshot(canvas, bounds, 'canvas_paragraph_decoration');
   });
 }
