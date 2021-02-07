@@ -124,6 +124,7 @@ static gboolean fl_renderer_gl_present_layers(FlRenderer* renderer,
         for (size_t i = 0; i < layer->platform_view->mutations_count; i++) {
           FlutterPlatformViewMutation* mutation =
               g_new(FlutterPlatformViewMutation, 1);
+          *mutation = *layer->platform_view->mutations[i];
           g_ptr_array_add(mutations, mutation);
         }
         fl_view_add_widget(view, widget, &geometry, mutations);

@@ -92,6 +92,7 @@ source_set("flutter_linux_sources") {
     "fl_basic_message_channel.cc",
     "fl_binary_codec.cc",
     "fl_binary_messenger.cc",
+    "fl_clipping_view.cc",
     "fl_dart_project.cc",
     "fl_engine.cc",
     "fl_event_channel.cc",
