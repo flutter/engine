@@ -123,6 +123,8 @@ class KeyboardBinding {
   }
   bool _onKeyData(ui.KeyData data) {
     bool? result;
+    // This callback is designed to be invoked synchronously. This is enforced
+    // by `result`, which starts null and is asserted non-null when returned.
     EnginePlatformDispatcher.instance.invokeOnKeyData(data,
       (bool handled) { result = handled; });
     return result!;

@@ -347,7 +347,7 @@ class Engine final : public RuntimeDelegate,
          DartVM& vm,
          fml::RefPtr<const DartSnapshot> isolate_snapshot,
          TaskRunners task_runners,
-         const PlatformData platform_data,
+         const PlatformData& platform_data,
          Settings settings,
          std::unique_ptr<Animator> animator,
          fml::WeakPtr<IOManager> io_manager,
@@ -885,6 +885,13 @@ class Engine final : public RuntimeDelegate,
   void LoadDartDeferredLibraryError(intptr_t loading_unit_id,
                                     const std::string error_message,
                                     bool transient);
+
+  //--------------------------------------------------------------------------
+  /// @brief      Accessor for the RuntimeController.
+  ///
+  const RuntimeController* GetRuntimeController() const {
+    return runtime_controller_.get();
+  }
 
  private:
   Engine::Delegate& delegate_;

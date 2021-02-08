@@ -12,8 +12,8 @@
 #include <string>
 #include <vector>
 
-#include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/plugin_registrar.h"
-#include "flutter/shell/platform/common/cpp/geometry.h"
+#include "flutter/shell/platform/common/client_wrapper/include/flutter/plugin_registrar.h"
+#include "flutter/shell/platform/common/geometry.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/windows/angle_surface_manager.h"
 #include "flutter/shell/platform/windows/cursor_handler.h"
@@ -61,6 +61,9 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
 
   // Returns the engine backing this view.
   FlutterWindowsEngine* GetEngine();
+
+  // Tells the engine to generate a new frame
+  void ForceRedraw();
 
   // Callbacks for clearing context, settings context and swapping buffers,
   // these are typically called on an engine-controlled (non-platform) thread.

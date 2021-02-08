@@ -11,6 +11,7 @@
 #include "flutter/lib/ui/isolate_name_server/isolate_name_server.h"
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/runtime/service_protocol.h"
+#include "third_party/dart/runtime/include/dart_tools_api.h"
 
 namespace flutter {
 
@@ -28,8 +29,8 @@ class DartVMRef {
  public:
   [[nodiscard]] static DartVMRef Create(
       Settings settings,
-      fml::RefPtr<DartSnapshot> vm_snapshot = nullptr,
-      fml::RefPtr<DartSnapshot> isolate_snapshot = nullptr);
+      fml::RefPtr<const DartSnapshot> vm_snapshot = nullptr,
+      fml::RefPtr<const DartSnapshot> isolate_snapshot = nullptr);
 
   DartVMRef(const DartVMRef&) = default;
 

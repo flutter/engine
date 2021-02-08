@@ -5,7 +5,7 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_WINDOW_BINDING_HANDLER_DELEGATE_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_WINDOW_BINDING_HANDLER_DELEGATE_H_
 
-#include "flutter/shell/platform/common/cpp/geometry.h"
+#include "flutter/shell/platform/common/geometry.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 
 namespace flutter {
@@ -41,9 +41,11 @@ class WindowBindingHandlerDelegate {
   // Typically called by currently configured WindowBindingHandler
   virtual void OnText(const std::u16string&) = 0;
 
-  // Notifies delegate that backing window size has received key press. Should
-  // return true if the event was handled and should not be propagated.
-  // Typically called by currently configured WindowBindingHandler.
+  // TODO(clarkezone) refactor delegate to avoid needing win32 magic values in
+  // UWP implementation https://github.com/flutter/flutter/issues/70202 Notifies
+  // delegate that backing window size has received key press. Should return
+  // true if the event was handled and should not be propagated. Typically
+  // called by currently configured WindowBindingHandler.
   virtual bool OnKey(int key,
                      int scancode,
                      int action,

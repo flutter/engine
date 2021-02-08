@@ -211,15 +211,19 @@ Future<void> _registerSymbolsAndEmoji() async {
   String? symbolsFontUrl = extractUrlFromCss(symbolsCss);
   String? emojiFontUrl = extractUrlFromCss(emojiCss);
 
-  if (symbolsFontUrl == null || emojiFontUrl == null) {
-    html.window.console
-        .warn('Error parsing CSS for Noto Emoji and Symbols font.');
+  if (symbolsFontUrl != null) {
+    notoDownloadQueue.add(_ResolvedNotoSubset(
+        symbolsFontUrl, 'Noto Sans Symbols', const <CodeunitRange>[]));
+  } else {
+    html.window.console.warn('Error parsing CSS for Noto Symbols font.');
   }
 
-  notoDownloadQueue.add(_ResolvedNotoSubset(
-      symbolsFontUrl!, 'Noto Sans Symbols', const <CodeunitRange>[]));
-  notoDownloadQueue.add(_ResolvedNotoSubset(
-      emojiFontUrl!, 'Noto Color Emoji Compat', const <CodeunitRange>[]));
+  if (emojiFontUrl != null) {
+    notoDownloadQueue.add(_ResolvedNotoSubset(
+        emojiFontUrl, 'Noto Color Emoji Compat', const <CodeunitRange>[]));
+  } else {
+    html.window.console.warn('Error parsing CSS for Noto Emoji font.');
+  }
 }
 
 /// Finds the minimum set of fonts which covers all of the [codeunits].
@@ -388,6 +392,9 @@ class _ResolvedNotoSubset {
   final List<CodeunitRange> ranges;
 
   _ResolvedNotoSubset(this.url, this.family, this.ranges);
+
+  @override
+  String toString() => '_ResolvedNotoSubset($family, $url)';
 }
 
 _NotoFont _notoSansSC = _NotoFont('Noto Sans SC', <CodeunitRange>[
@@ -660,21 +667,66 @@ class FallbackFontDownloadQueue {
 }
 
 class NotoDownloader {
+  int _debugActiveDownloadCount = 0;
+
+  /// Returns a future that resolves when there are no pending downloads.
+  ///
+  /// Useful in tests to make sure that fonts are loaded before working with
+  /// text.
+  Future<void> debugWhenIdle() async {
+    if (assertionsEnabled) {
+      // Some downloads begin asynchronously in a microtask or in a Timer.run.
+      // Let those run before waiting for downloads to finish.
+      await Future<void>.delayed(Duration.zero);
+      while (_debugActiveDownloadCount > 0) {
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+        // If we started with a non-zero count and hit zero while waiting, wait a
+        // little more to make sure another download doesn't get chained after
+        // the last one (e.g. font file download after font CSS download).
+        if (_debugActiveDownloadCount == 0) {
+          await Future<void>.delayed(const Duration(milliseconds: 100));
+        }
+      }
+    } else {
+      throw UnimplementedError();
+    }
+  }
+
   /// Downloads the [url] and returns it as a [ByteBuffer].
   ///
   /// Override this for testing.
   Future<ByteBuffer> downloadAsBytes(String url) {
-    return html.window.fetch(url).then((dynamic fetchResult) => fetchResult
-        .arrayBuffer()
-        .then<ByteBuffer>((dynamic x) => x as ByteBuffer));
+    if (assertionsEnabled) {
+      _debugActiveDownloadCount += 1;
+    }
+    final Future<ByteBuffer> result = html.window.fetch(url).then(
+        (dynamic fetchResult) => fetchResult
+            .arrayBuffer()
+            .then<ByteBuffer>((dynamic x) => x as ByteBuffer));
+    if (assertionsEnabled) {
+      result.whenComplete(() {
+        _debugActiveDownloadCount -= 1;
+      });
+    }
+    return result;
   }
 
   /// Downloads the [url] and returns is as a [String].
   ///
   /// Override this for testing.
   Future<String> downloadAsString(String url) {
-    return html.window.fetch(url).then((dynamic response) =>
-        response.text().then<String>((dynamic x) => x as String));
+    if (assertionsEnabled) {
+      _debugActiveDownloadCount += 1;
+    }
+    final Future<String> result = html.window.fetch(url).then(
+        (dynamic response) =>
+            response.text().then<String>((dynamic x) => x as String));
+    if (assertionsEnabled) {
+      result.whenComplete(() {
+        _debugActiveDownloadCount -= 1;
+      });
+    }
+    return result;
   }
 }
 
