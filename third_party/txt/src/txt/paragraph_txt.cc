@@ -518,8 +518,8 @@ bool ParagraphTxt::IsStrutValid() const {
 }
 
 void ParagraphTxt::ComputeStrut(StrutMetrics* strut, SkFont& font) {
-  strut->ascent = -FLT_MAX;
-  strut->descent = -FLT_MAX;
+  strut->ascent = std::numeric_limits<SkScalar>::lowest();
+  strut->descent = std::numeric_limits<SkScalar>::lowest();
   strut->leading = 0;
   strut->half_leading = 0;
   strut->line_height = 0;
@@ -682,8 +682,8 @@ void ParagraphTxt::Layout(double width) {
   glyph_lines_.clear();
   code_unit_runs_.clear();
   inline_placeholder_code_unit_runs_.clear();
-  max_right_ = -FLT_MAX;
-  min_left_ = FLT_MAX;
+  max_right_ = std::numeric_limits<double>::lowest();
+  min_left_ = std::numeric_limits<double>::max();
   final_line_count_ = 0;
 
   if (!ComputeLineBreaks())
@@ -1675,8 +1675,8 @@ std::vector<Paragraph::TextBox> ParagraphTxt::GetRectsForRange(
     // Per-line metrics for max and min coordinates for left and right boxes.
     // These metrics cannot be calculated in layout generically because of
     // selections that do not cover the whole line.
-    SkScalar max_right = -FLT_MAX;
-    SkScalar min_left = FLT_MAX;
+    SkScalar max_right = std::numeric_limits<SkScalar>::lowest();
+    SkScalar min_left = std::numeric_limits<SkScalar>::max();
   };
 
   std::map<size_t, LineBoxMetrics> line_box_metrics;
@@ -1953,8 +1953,8 @@ std::vector<Paragraph::TextBox> ParagraphTxt::GetRectsForPlaceholders() {
     // Per-line metrics for max and min coordinates for left and right boxes.
     // These metrics cannot be calculated in layout generically because of
     // selections that do not cover the whole line.
-    SkScalar max_right = -FLT_MAX;
-    SkScalar min_left = FLT_MAX;
+    SkScalar max_right = std::numeric_limits<SkScalar>::lowest();
+    SkScalar min_left = std::numeric_limits<SkScalar>::max();
   };
 
   std::vector<Paragraph::TextBox> boxes;
