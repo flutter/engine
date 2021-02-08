@@ -43,8 +43,7 @@ TEST(TextInputPluginTest, TextMethodsWorksWithEmptyModel) {
   TestBinaryMessenger messenger(
       [&received_scancode, &handled_message, &unhandled_message](
           const std::string& channel, const uint8_t* message,
-          size_t message_size, BinaryReply reply) {
-      });
+          size_t message_size, BinaryReply reply) {});
   EmptyTextInputPluginDelegate delegate;
 
   int redispatch_scancode = 0;
@@ -62,4 +61,3 @@ TEST(TextInputPluginTest, TextMethodsWorksWithEmptyModel) {
 
 }  // namespace testing
 }  // namespace flutter
-
