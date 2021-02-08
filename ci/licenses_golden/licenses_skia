@@ -1,4 +1,4 @@
-Signature: cf5da21eafb2232bacb1d82e3c8aca33
+Signature: 152dba8219ad4e1fa610419c6eca4c13
 
 UNUSED LICENSES:
 
@@ -2563,8 +2563,6 @@ FILE: ../../../third_party/skia/src/gpu/vk/GrVkTexture.cpp
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkTexture.h
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkTextureRenderTarget.cpp
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkTextureRenderTarget.h
-FILE: ../../../third_party/skia/src/gpu/vk/GrVkTransferBuffer.cpp
-FILE: ../../../third_party/skia/src/gpu/vk/GrVkTransferBuffer.h
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkUtil.cpp
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkUtil.h
 FILE: ../../../third_party/skia/src/image/SkImage_Gpu.h
@@ -2709,14 +2707,12 @@ FILE: ../../../third_party/skia/gm/pathopsinverse.cpp
 FILE: ../../../third_party/skia/gm/perlinnoise.cpp
 FILE: ../../../third_party/skia/gm/pictureimagefilter.cpp
 FILE: ../../../third_party/skia/gm/polygons.cpp
-FILE: ../../../third_party/skia/gm/rects.cpp
 FILE: ../../../third_party/skia/gm/resizeimagefilter.cpp
 FILE: ../../../third_party/skia/gm/roundrects.cpp
 FILE: ../../../third_party/skia/gm/shallowgradient.cpp
 FILE: ../../../third_party/skia/gm/skbug1719.cpp
 FILE: ../../../third_party/skia/gm/spritebitmap.cpp
 FILE: ../../../third_party/skia/gm/stringart.cpp
-FILE: ../../../third_party/skia/gm/textbloblooper.cpp
 FILE: ../../../third_party/skia/gm/thinrects.cpp
 FILE: ../../../third_party/skia/gm/thinstrokedrects.cpp
 FILE: ../../../third_party/skia/gm/tileimagefilter.cpp
@@ -3484,7 +3480,6 @@ FILE: ../../../third_party/skia/src/gpu/GrBackendTextureImageGenerator.cpp
 FILE: ../../../third_party/skia/src/gpu/GrBackendTextureImageGenerator.h
 FILE: ../../../third_party/skia/src/gpu/GrColorInfo.cpp
 FILE: ../../../third_party/skia/src/gpu/GrColorInfo.h
-FILE: ../../../third_party/skia/src/gpu/GrDeferredProxyUploader.h
 FILE: ../../../third_party/skia/src/gpu/GrDeferredUpload.h
 FILE: ../../../third_party/skia/src/gpu/GrOnFlushResourceProvider.cpp
 FILE: ../../../third_party/skia/src/gpu/GrOnFlushResourceProvider.h
@@ -3496,7 +3491,6 @@ FILE: ../../../third_party/skia/src/gpu/GrSemaphore.h
 FILE: ../../../third_party/skia/src/gpu/GrStencilClip.h
 FILE: ../../../third_party/skia/src/gpu/GrSurfaceProxyPriv.h
 FILE: ../../../third_party/skia/src/gpu/GrTextureProxyCacheAccess.h
-FILE: ../../../third_party/skia/src/gpu/GrTextureProxyPriv.h
 FILE: ../../../third_party/skia/src/gpu/SkGr.h
 FILE: ../../../third_party/skia/src/gpu/ccpr/GrCCAtlas.cpp
 FILE: ../../../third_party/skia/src/gpu/ccpr/GrCCAtlas.h
@@ -5258,6 +5252,8 @@ FILE: ../../../third_party/skia/src/sksl/SkSLBuiltinTypes.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLBuiltinTypes.h
 FILE: ../../../third_party/skia/src/sksl/SkSLContext.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLMangler.h
+FILE: ../../../third_party/skia/src/sksl/SkSLOperators.cpp
+FILE: ../../../third_party/skia/src/sksl/SkSLOperators.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2021 Google LLC
 
@@ -5977,43 +5973,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: skia
-ORIGIN: ../../../third_party/skia/gm/circles.cpp + ../../../third_party/skia/LICENSE
-TYPE: LicenseType.bsd
-FILE: ../../../third_party/skia/gm/circles.cpp
-----------------------------------------------------------------------------------------------------
-Copyright 2012 Intel Inc.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-  * Redistributions of source code must retain the above copyright
-    notice, this list of conditions and the following disclaimer.
-
-  * Redistributions in binary form must reproduce the above copyright
-    notice, this list of conditions and the following disclaimer in
-    the documentation and/or other materials provided with the
-    distribution.
-
-  * Neither the name of the copyright holder nor the names of its
-    contributors may be used to endorse or promote products derived
-    from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: skia
 ORIGIN: ../../../third_party/skia/gm/colorspace.cpp + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/gm/colorspace.cpp
@@ -6025,6 +5984,7 @@ FILE: ../../../third_party/skia/modules/svg/include/SkSVGMask.h
 FILE: ../../../third_party/skia/modules/svg/src/SkSVGFeLightSource.cpp
 FILE: ../../../third_party/skia/modules/svg/src/SkSVGImage.cpp
 FILE: ../../../third_party/skia/modules/svg/src/SkSVGMask.cpp
+FILE: ../../../third_party/skia/src/gpu/GrDrawIndirectCommand.h
 FILE: ../../../third_party/skia/src/gpu/GrRenderTaskCluster.cpp
 FILE: ../../../third_party/skia/src/gpu/GrRenderTaskCluster.h
 FILE: ../../../third_party/skia/src/gpu/mock/GrMockRenderTask.h
@@ -7498,4 +7458,4 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ====================================================================================================
-Total license count: 63
+Total license count: 62
