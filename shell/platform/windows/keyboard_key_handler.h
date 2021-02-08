@@ -26,7 +26,9 @@ class KeyboardKeyHandler : public KeyboardHandlerBase {
  public:
   class KeyboardKeyHandlerDelegate {
    public:
-    virtual void KeyboardHook(int key,
+    // Returns true if the delegate is waiting for an async response,
+    // in which case the `callback` should not be called.
+    virtual bool KeyboardHook(int key,
                               int scancode,
                               int action,
                               char32_t character,
@@ -88,6 +90,7 @@ class KeyboardKeyHandler : public KeyboardHandlerBase {
                       int scancode,
                       int character);
   void RedispatchEvent(const PendingEvent* pending);
+  void ResolvePendingEvent(PendingEvent* pending, bool handled);
 
   std::vector<std::unique_ptr<KeyboardKeyHandlerDelegate>> delegates_;
 

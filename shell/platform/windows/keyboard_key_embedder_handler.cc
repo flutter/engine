@@ -121,7 +121,7 @@ void KeyboardKeyEmbedderHandler::cacheUtf8String(char32_t character) {
   strcpy_s(character_cache_, kCharacterCacheSize, Utf8FromUtf16(text).c_str());
 }
 
-void KeyboardKeyEmbedderHandler::KeyboardHook(
+bool KeyboardKeyEmbedderHandler::KeyboardHook(
     int key,
     int scancode,
     int action,
@@ -161,7 +161,7 @@ void KeyboardKeyEmbedderHandler::KeyboardHook(
         // as a currently pressed one, usually indicating multiple keyboards are
         // pressing keys with the same physical key, or the up event was lost
         // during a loss of focus. The down event is ignored.
-        return;
+        return false;
       }
     } else {
       // A normal down event (whether the system event is a repeat or not).
@@ -175,7 +175,7 @@ void KeyboardKeyEmbedderHandler::KeyboardHook(
     if (last_logical_record == 0) {
       // The physical key has been released before. It indicates multiple
       // keyboards pressed keys with the same physical key. Ignore the up event.
-      return;
+      return false;
     } else {
       // A normal up event.
       type = kFlutterKeyEventTypeUp;
@@ -198,7 +198,7 @@ void KeyboardKeyEmbedderHandler::KeyboardHook(
     // presses are considered handled and not sent to Flutter. These events must
     // be filtered by result_logical_key because the key up event of such
     // presses uses the "original" logical key.
-    return;
+    return false;
   }
 
   FlutterKeyEvent key_data = {};
@@ -231,6 +231,7 @@ void KeyboardKeyEmbedderHandler::KeyboardHook(
   sendEvent_(key_data,
              KeyboardKeyEmbedderHandler::HandleResponse,
              reinterpret_cast<void*>(pending_responses_[response_id].get()));
+  return true;
 }
 
 void KeyboardKeyEmbedderHandler::HandleResponse(

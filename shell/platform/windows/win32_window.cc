@@ -382,12 +382,6 @@ Win32Window::HandleMessage(UINT const message,
         break;
       }
       unsigned int keyCode(wparam);
-      if (keyCode == kImeComposingKeyCode) {
-        // This is an IME composing mode keypress that will be handled via
-        // WM_IME_* messages, which update the framework via updates to the text
-        // and composing range in text editing update messages.
-        break;
-      }
       const unsigned int scancode = (lparam >> 16) & 0xff;
       const bool extended = ((lparam >> 24) & 0x01) == 0x01;
       // If the key is a modifier, get its side.

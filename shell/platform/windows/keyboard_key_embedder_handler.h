@@ -44,7 +44,7 @@ class KeyboardKeyEmbedderHandler
   virtual ~KeyboardKeyEmbedderHandler();
 
   // |KeyboardHandlerBase|
-  void KeyboardHook(int key,
+  bool KeyboardHook(int key,
                     int scancode,
                     int action,
                     char32_t character,

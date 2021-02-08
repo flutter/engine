@@ -38,7 +38,7 @@ class MockKeyHandlerDelegate
       : delegate_id(delegate_id), hook_history(hook_history) {}
   virtual ~MockKeyHandlerDelegate() = default;
 
-  virtual void KeyboardHook(int key,
+  virtual bool KeyboardHook(int key,
                             int scancode,
                             int action,
                             char32_t character,
@@ -54,6 +54,7 @@ class MockKeyHandlerDelegate
       .was_down = was_down,
       .callback = std::move(callback),
     });
+    return true;
   }
 
   int delegate_id;

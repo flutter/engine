@@ -27,7 +27,7 @@ class KeyboardKeyChannelHandler
   ~KeyboardKeyChannelHandler();
 
   // |KeyboardKeyHandler::KeyboardKeyHandlerDelegate|
-  void KeyboardHook(int key,
+  bool KeyboardHook(int key,
                     int scancode,
                     int action,
                     char32_t character,
