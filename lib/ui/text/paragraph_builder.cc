@@ -129,7 +129,7 @@ const int sFontStyleMask = 1 << sFontStyleIndex;
 const int sFontFamilyMask = 1 << sFontFamilyIndex;
 const int sFontSizeMask = 1 << sFontSizeIndex;
 const int sHeightMask = 1 << sHeightIndex;
-const int stextHeightBehaviorMask = 1 << sTextHeightBehaviorIndex;
+const int sTextHeightBehaviorMask = 1 << sTextHeightBehaviorIndex;
 const int sLeadingMask = 1 << sLeadingIndex;
 const int sForceStrutHeightMask = 1 << sForceStrutHeightIndex;
 
@@ -216,7 +216,7 @@ void decodeStrut(Dart_Handle strut_data,
     paragraph_style.strut_has_height_override = true;
 
     // TextHeightBehavior does not affect layout if height is not set.
-    if (mask & stextHeightBehaviorMask) {
+    if (mask & sTextHeightBehaviorMask) {
       paragraph_style.strut_text_height_behavior = uint8_data[byte_count];
     }
   }

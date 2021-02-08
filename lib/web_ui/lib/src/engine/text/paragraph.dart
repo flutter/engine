@@ -1211,7 +1211,7 @@ class EngineStrutStyle implements ui.StrutStyle {
     List<String>? fontFamilyFallback,
     double? fontSize,
     double? height,
-    //TODO(LongCatIsLooong): implement textHeightBehavir.
+    //TODO(LongCatIsLooong): implement textHeightBehavior.
     ui.TextHeightBehavior? textHeightBehavior,
     double? leading,
     ui.FontWeight? fontWeight,
