@@ -339,13 +339,15 @@ public class TextInputPluginTest {
     assertTrue(textInputPlugin.getEditable().toString().equals("Shibuyawoo"));
   }
 
-  // See https://github.com/flutter/flutter/issues/29341 and
-  // https://github.com/flutter/flutter/issues/31512
-  // All modern Samsung keybords are affected including non-korean languages and thus
-  // need the restart.
+  // Regression test for https://github.com/flutter/flutter/issues/73433.
+  // See also: https://github.com/flutter/flutter/issues/29341 and
+  // https://github.com/flutter/flutter/issues/31512.
+  // All modern Samsung keybords were affected including non-korean languages
+  // and thus needed the restart. The restart workaround seems to have caused
+  // #73433 and it's no longer needed.
   @Test
-  public void setTextInputEditingState_alwaysRestartsOnAffectedDevices2() {
-    // Initialize a TextInputPlugin that needs to be always restarted.
+  public void setTextInputEditingState_DontForceRestartOnPreviouslyAffectedSamsungDevices() {
+    // Initialize a TextInputPlugin with a Samsung keypad.
     ShadowBuild.setManufacturer("samsung");
     InputMethodSubtype inputMethodSubtype =
         new InputMethodSubtype(0, 0, /*locale=*/ "en", "", "", false, false);
@@ -382,8 +384,8 @@ public class TextInputPluginTest {
     textInputPlugin.setTextInputEditingState(
         testView, new TextInputChannel.TextEditState("", 0, 0, -1, -1));
 
-    // Verify that we've restarted the input.
-    assertEquals(2, testImm.getRestartCount(testView));
+    // Verify that we've NOT restarted the input.
+    assertEquals(1, testImm.getRestartCount(testView));
   }
 
   @Test
