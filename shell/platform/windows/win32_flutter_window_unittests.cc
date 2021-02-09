@@ -52,7 +52,7 @@ struct SimulatedEvent {
 class SpyKeyboardKeyHandler : public KeyboardHandlerBase {
  public:
   SpyKeyboardKeyHandler(flutter::BinaryMessenger* messenger,
-                     KeyboardKeyHandler::SendInputDelegate delegate) {
+                     KeyboardKeyHandler::RedispatchEvent delegate) {
     real_implementation_ =
         std::make_unique<KeyboardKeyHandler>(delegate);
     real_implementation_->AddDelegate(
@@ -183,8 +183,8 @@ class TestFlutterWindowsView : public FlutterWindowsView {
         std::make_unique<SpyTextInputPlugin>(messenger);
     key_event_handler = spy_key_event_handler.get();
     text_input_plugin = spy_text_input_plugin.get();
-    AddKeyboardHandlerBase(std::move(spy_key_event_handler));
-    AddKeyboardHandlerBase(std::move(spy_text_input_plugin));
+    AddKeyboardHandler(std::move(spy_key_event_handler));
+    AddKeyboardHandler(std::move(spy_text_input_plugin));
   }
 
  private:

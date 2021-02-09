@@ -56,9 +56,9 @@ uint64_t CalculateEventId(int scancode, int action, bool extended) {
 
 KeyboardKeyHandler::KeyboardKeyHandlerDelegate::~KeyboardKeyHandlerDelegate() = default;
 
-KeyboardKeyHandler::KeyboardKeyHandler(SendInputDelegate send_input)
-    : send_input_(send_input) {
-  assert(send_input != nullptr);
+KeyboardKeyHandler::KeyboardKeyHandler(RedispatchEvent redispatch_event)
+    : redispatch_event_(redispatch_event) {
+  assert(redispatch_event_ != nullptr);
 }
 
 KeyboardKeyHandler::~KeyboardKeyHandler() = default;
@@ -96,7 +96,7 @@ void KeyboardKeyHandler::RemovePendingEvent(uint64_t id) {
             << ", but the event was not found." << std::endl;
 }
 
-void KeyboardKeyHandler::RedispatchEvent(const PendingEvent* pending) {
+void KeyboardKeyHandler::DoRedispatchEvent(const PendingEvent* pending) {
   KEYBDINPUT ki{
     .wVk = 0,
     .wScan = static_cast<WORD>(pending->scancode),
@@ -105,7 +105,7 @@ void KeyboardKeyHandler::RedispatchEvent(const PendingEvent* pending) {
   INPUT input_event;
   input_event.type = INPUT_KEYBOARD;
   input_event.ki = std::move(ki);
-  UINT accepted = send_input_(1, &input_event, sizeof(input_event));
+  UINT accepted = redispatch_event_(1, &input_event, sizeof(input_event));
   if (accepted != 1) {
     std::cerr << "Unable to synthesize event for unhandled keyboard event "
                   "with scancode "
@@ -167,7 +167,7 @@ void KeyboardKeyHandler::ResolvePendingEvent(PendingEvent* pending_event, bool h
   pending_event->any_handled = pending_event->any_handled || handled;
   if (pending_event->unreplied == 0) {
     if (!pending_event->any_handled) {
-      RedispatchEvent(pending_event);
+      DoRedispatchEvent(pending_event);
     } else {
       RemovePendingEvent(pending_event->id);
     }

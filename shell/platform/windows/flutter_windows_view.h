@@ -133,7 +133,7 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
       flutter::BinaryMessenger* messenger);
 
   // Used by RegisterKeyboardHandlers to add a new keyboard hook handler.
-  void AddKeyboardHandlerBase(
+  void AddKeyboardHandler(
       std::unique_ptr<flutter::KeyboardHandlerBase> handler);
 
  private:
@@ -270,7 +270,7 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
 
   // Handlers for keyboard events from Windows.
   std::vector<std::unique_ptr<flutter::KeyboardHandlerBase>>
-      keyboard_hook_handlers_;
+      keyboard_handlers_;
 
   // Handler for the flutter/platform channel.
   std::unique_ptr<flutter::PlatformHandler> platform_handler_;

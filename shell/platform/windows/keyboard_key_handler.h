@@ -19,15 +19,29 @@ namespace flutter {
 
 class FlutterWindowsView;
 
-// Implements a KeyboardHandlerBase
+// Handles key events.
 //
-// Handles key events and forwards them to the Flutter engine.
+// This class detects whether an incoming event is a redispatched one,
+// dispatches native events to delegates and collect their responses,
+// and redispatches events unhandled by Flutter back to the system.
+// See |KeyboardHook| for more information.
+//
+// The exact behavior to handle events are further divided into delegates.
+// See |KeyboardKeyHandlerDelegate| and its subclasses.
 class KeyboardKeyHandler : public KeyboardHandlerBase {
  public:
+  // An interface for concrete definition of how to asynchronously handle key
+  // events.
   class KeyboardKeyHandlerDelegate {
    public:
-    // Returns true if the delegate is waiting for an async response,
-    // in which case the `callback` should not be called.
+    // Defines how to how to asynchronously handle key events.
+    //
+    // If the delegate will wait for an asynchronous response for this event,
+    // |KeyboardHook| should return true, and invoke |callback| with the
+    // response (whether the event is handled) later for exactly once.
+    //
+    // Otherwise, the delegate should return false and *never* invoke
+    // |callback|. This is considered not handling the event.
     virtual bool KeyboardHook(int key,
                               int scancode,
                               int action,
@@ -39,16 +53,38 @@ class KeyboardKeyHandler : public KeyboardHandlerBase {
     virtual ~KeyboardKeyHandlerDelegate();
   };
 
-  using SendInputDelegate =
+  using RedispatchEvent =
       std::function<UINT(UINT cInputs, LPINPUT pInputs, int cbSize)>;
 
-  explicit KeyboardKeyHandler(SendInputDelegate delegate = SendInput);
+  // Create a KeyboardKeyHandler and specify where to redispatch events.
+  //
+  // The |redispatch_event| is typically |SendInput|.
+  explicit KeyboardKeyHandler(RedispatchEvent redispatch_event);
 
   ~KeyboardKeyHandler();
 
+  // Add a delegate that handles events received by |KeyboardHook|.
   void AddDelegate(std::unique_ptr<KeyboardKeyHandlerDelegate> delegate);
 
-  // |KeyboardHandlerBase|
+  // Handles a key event.
+  //
+  // Returns whether this handler claims to handle the event, which is true if
+  // the event is a native event, or false if the event is a redispatched one.
+  //
+  // Windows requires a synchronous response of whether a key event should be
+  // handled, while the query to Flutter is always asynchronous. This is resolved
+  // by "redispatching": the response to the native event is always true. If
+  // Flutter later decides not to handle the event, an event is then synthesized,
+  // dispatched to system, received again, detected, at which time |KeyboardHook|
+  // returns false, then falls back to other keyboard handlers.
+  //
+  // Received events are further dispatched to all added delegates. If any
+  // delegate returns true (handled), the event is considered handled. When
+  // all delegates responded, any unhandled events are redispatched via
+  // |redispatch_event| and recorded. The next (one) time this exact event is
+  // received, |KeyboardHook| will skip it and immediately return false.
+  //
+  // Inherited from |KeyboardHandlerBase|.
   bool KeyboardHook(FlutterWindowsView* window,
                     int key,
                     int scancode,
@@ -89,7 +125,7 @@ class KeyboardKeyHandler : public KeyboardHandlerBase {
                       bool extended,
                       int scancode,
                       int character);
-  void RedispatchEvent(const PendingEvent* pending);
+  void DoRedispatchEvent(const PendingEvent* pending);
   void ResolvePendingEvent(PendingEvent* pending, bool handled);
 
   std::vector<std::unique_ptr<KeyboardKeyHandlerDelegate>> delegates_;
@@ -98,10 +134,8 @@ class KeyboardKeyHandler : public KeyboardHandlerBase {
   // yet received a response.
   std::deque<std::unique_ptr<PendingEvent>> pending_events_;
 
-  // A function used to dispatch synthesized events. Used in testing to inject a
-  // test function to collect events. Defaults to the Windows function
-  // SendInput.
-  SendInputDelegate send_input_;
+  // A function used to redispatch synthesized events.
+  RedispatchEvent redispatch_event_;
 };
 
 }  // namespace flutter

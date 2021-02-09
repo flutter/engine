@@ -12,13 +12,11 @@
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/basic_message_channel.h"
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/binary_messenger.h"
 #include "flutter/shell/platform/windows/keyboard_key_handler.h"
-#include "flutter/shell/platform/windows/public/flutter_windows.h"
 #include "rapidjson/document.h"
 
 namespace flutter {
 
-class FlutterWindowsView;
-
+// Handled
 class KeyboardKeyChannelHandler
     : public KeyboardKeyHandler::KeyboardKeyHandlerDelegate {
  public:

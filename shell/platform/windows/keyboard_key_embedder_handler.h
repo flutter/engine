@@ -12,7 +12,6 @@
 
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/windows/keyboard_key_handler.h"
-#include "flutter/shell/platform/windows/public/flutter_windows.h"
 
 namespace flutter {
 

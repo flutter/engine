@@ -13,7 +13,12 @@ namespace flutter {
 
 class FlutterWindowsView;
 
-// Abstract class for handling keyboard input events.
+// Interface for classes that handles keyboard input events.
+//
+// Keyboard handlers are added to |FlutterWindowsView| in a chain.
+// When a key event arrives, |KeyboardHook| is called on each handler
+// until the first one that returns true. Then the proper text hooks
+// are called on each handler.
 class KeyboardHandlerBase {
  public:
   virtual ~KeyboardHandlerBase() = default;
