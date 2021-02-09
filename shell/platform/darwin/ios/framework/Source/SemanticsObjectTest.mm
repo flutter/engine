@@ -222,8 +222,8 @@ class MockAccessibilityBridge : public AccessibilityBridgeIos {
       new flutter::MockAccessibilityBridge());
   fml::WeakPtr<flutter::MockAccessibilityBridge> bridge = factory.GetWeakPtr();
   SemanticsObject* object = [[SemanticsObject alloc] initWithBridge:bridge uid:1];
-  object.platformViewSemanticsContainer = [[FlutterPlatformViewSemanticsContainer alloc]
-    initWithSemanticsObject:object];
+  object.platformViewSemanticsContainer =
+      [[FlutterPlatformViewSemanticsContainer alloc] initWithSemanticsObject:object];
   __weak SemanticsObject* weakObject = object;
   object = nil;
   XCTAssertNil(weakObject);
