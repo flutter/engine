@@ -23,22 +23,23 @@ namespace {
 constexpr size_t kCharacterCacheSize = 8;
 }  // namespace
 
-// Processes native keyboard events.
+// A delegate of |KeyboardKeyHandler| that handles events by sending
+// converted |FlutterKeyEvent|s through the embedder API.
 //
-// This class converts received keyboard events to Flutter events,
-// sends them to the engine, waits for response.
+// This class corresponds to the HardwareKeyboard API in the framework.
 class KeyboardKeyEmbedderHandler
     : public KeyboardKeyHandler::KeyboardKeyHandlerDelegate {
  public:
+  using SendEvent = std::function<void(const FlutterKeyEvent& /* event */,
+                                       FlutterKeyEventCallback /* callback */,
+                                       void* /* user_data */)>;
+
   // Build a KeyboardKeyEmbedderHandler.
   //
   // Use `send_event` to define how the manager should dispatch converted
   // flutter events, as well as how to receive the resopnse, to the engine. It's
   // typically FlutterWindowsEngine::SendKeyEvent.
-  explicit KeyboardKeyEmbedderHandler(
-      std::function<void(const FlutterKeyEvent& /* event */,
-                         FlutterKeyEventCallback /* callback */,
-                         void* /* user_data */)> send_event);
+  explicit KeyboardKeyEmbedderHandler(SendEvent send_event);
 
   virtual ~KeyboardKeyEmbedderHandler();
 
