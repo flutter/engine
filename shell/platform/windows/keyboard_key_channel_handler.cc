@@ -100,13 +100,14 @@ KeyboardKeyChannelHandler::KeyboardKeyChannelHandler(
 
 KeyboardKeyChannelHandler::~KeyboardKeyChannelHandler() = default;
 
-bool KeyboardKeyChannelHandler::KeyboardHook(int key,
-                                             int scancode,
-                                             int action,
-                                             char32_t character,
-                                             bool extended,
-                                             bool was_down,
-                                             std::function<void(bool)> callback) {
+bool KeyboardKeyChannelHandler::KeyboardHook(
+    int key,
+    int scancode,
+    int action,
+    char32_t character,
+    bool extended,
+    bool was_down,
+    std::function<void(bool)> callback) {
   // TODO: Translate to a cross-platform key code system rather than passing
   // the native key code.
   rapidjson::Document event(rapidjson::kObjectType);
@@ -128,8 +129,8 @@ bool KeyboardKeyChannelHandler::KeyboardHook(int key,
       std::cerr << "Unknown key event action: " << action << std::endl;
       return false;
   }
-  channel_->Send(event, [callback = std::move(callback)](
-                            const uint8_t* reply, size_t reply_size) {
+  channel_->Send(event, [callback = std::move(callback)](const uint8_t* reply,
+                                                         size_t reply_size) {
     auto decoded = flutter::JsonMessageCodec::GetInstance().DecodeMessage(
         reply, reply_size);
     bool handled = (*decoded)[kHandledKey].GetBool();

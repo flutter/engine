@@ -54,7 +54,8 @@ uint64_t CalculateEventId(int scancode, int action, bool extended) {
 
 }  // namespace
 
-KeyboardKeyHandler::KeyboardKeyHandlerDelegate::~KeyboardKeyHandlerDelegate() = default;
+KeyboardKeyHandler::KeyboardKeyHandlerDelegate::~KeyboardKeyHandlerDelegate() =
+    default;
 
 KeyboardKeyHandler::KeyboardKeyHandler(RedispatchEvent redispatch_event)
     : redispatch_event_(redispatch_event) {
@@ -64,14 +65,15 @@ KeyboardKeyHandler::KeyboardKeyHandler(RedispatchEvent redispatch_event)
 KeyboardKeyHandler::~KeyboardKeyHandler() = default;
 
 void KeyboardKeyHandler::TextHook(FlutterWindowsView* view,
-                               const std::u16string& code_point) {}
+                                  const std::u16string& code_point) {}
 
 void KeyboardKeyHandler::AddDelegate(
-      std::unique_ptr<KeyboardKeyHandlerDelegate> delegate) {
+    std::unique_ptr<KeyboardKeyHandlerDelegate> delegate) {
   delegates_.push_back(std::move(delegate));
 }
 
-const KeyboardKeyHandler::PendingEvent* KeyboardKeyHandler::FindPendingEvent(uint64_t id) {
+const KeyboardKeyHandler::PendingEvent* KeyboardKeyHandler::FindPendingEvent(
+    uint64_t id) {
   if (pending_events_.empty()) {
     return nullptr;
   }
@@ -98,9 +100,9 @@ void KeyboardKeyHandler::RemovePendingEvent(uint64_t id) {
 
 void KeyboardKeyHandler::DoRedispatchEvent(const PendingEvent* pending) {
   KEYBDINPUT ki{
-    .wVk = 0,
-    .wScan = static_cast<WORD>(pending->scancode),
-    .dwFlags = pending->dwFlags,
+      .wVk = 0,
+      .wScan = static_cast<WORD>(pending->scancode),
+      .dwFlags = pending->dwFlags,
   };
   INPUT input_event;
   input_event.type = INPUT_KEYBOARD;
@@ -108,18 +110,19 @@ void KeyboardKeyHandler::DoRedispatchEvent(const PendingEvent* pending) {
   UINT accepted = redispatch_event_(1, &input_event, sizeof(input_event));
   if (accepted != 1) {
     std::cerr << "Unable to synthesize event for unhandled keyboard event "
-                  "with scancode "
-              << pending->scancode << " (character " << pending->character << ")" << std::endl;
+                 "with scancode "
+              << pending->scancode << " (character " << pending->character
+              << ")" << std::endl;
   }
 }
 
 bool KeyboardKeyHandler::KeyboardHook(FlutterWindowsView* view,
-                                   int key,
-                                   int scancode,
-                                   int action,
-                                   char32_t character,
-                                   bool extended,
-                                   bool was_down) {
+                                      int key,
+                                      int scancode,
+                                      int action,
+                                      char32_t character,
+                                      bool extended,
+                                      bool was_down) {
   const uint64_t id = CalculateEventId(scancode, action, extended);
   if (FindPendingEvent(id) != nullptr) {
     // Don't pass messages that we synthesized to the framework again.
@@ -134,14 +137,14 @@ bool KeyboardKeyHandler::KeyboardHook(FlutterWindowsView* view,
         << "framework. Are responses being sent?" << std::endl;
   }
   PendingEvent pending{
-    .id = id,
-    .scancode = scancode,
-    .character = character,
-    .dwFlags = static_cast<DWORD>(KEYEVENTF_SCANCODE |
-                                  (extended ? KEYEVENTF_EXTENDEDKEY : 0x0) |
-                                  (action == WM_KEYUP ? KEYEVENTF_KEYUP : 0x0)),
-    .unreplied = delegates_.size(),
-    .any_handled = false,
+      .id = id,
+      .scancode = scancode,
+      .character = character,
+      .dwFlags = static_cast<DWORD>(
+          KEYEVENTF_SCANCODE | (extended ? KEYEVENTF_EXTENDEDKEY : 0x0) |
+          (action == WM_KEYUP ? KEYEVENTF_KEYUP : 0x0)),
+      .unreplied = delegates_.size(),
+      .any_handled = false,
   };
   pending_events_.push_back(std::make_unique<PendingEvent>(std::move(pending)));
 
@@ -151,8 +154,9 @@ bool KeyboardKeyHandler::KeyboardHook(FlutterWindowsView* view,
   // therefore we simply assert.
   assert(delegates_.size() != 0);
   for (const auto& delegate : delegates_) {
-    bool isAsync = delegate->KeyboardHook(key, scancode, action, character, extended,
-        was_down, [pending_event = &pending_event, this](bool handled) {
+    bool isAsync = delegate->KeyboardHook(
+        key, scancode, action, character, extended, was_down,
+        [pending_event = &pending_event, this](bool handled) {
           ResolvePendingEvent(pending_event, handled);
         });
     if (!isAsync) {
@@ -162,7 +166,8 @@ bool KeyboardKeyHandler::KeyboardHook(FlutterWindowsView* view,
   return true;
 }
 
-void KeyboardKeyHandler::ResolvePendingEvent(PendingEvent* pending_event, bool handled) {
+void KeyboardKeyHandler::ResolvePendingEvent(PendingEvent* pending_event,
+                                             bool handled) {
   pending_event->unreplied -= 1;
   pending_event->any_handled = pending_event->any_handled || handled;
   if (pending_event->unreplied == 0) {
@@ -183,7 +188,7 @@ void KeyboardKeyHandler::ComposeEndHook() {
 }
 
 void KeyboardKeyHandler::ComposeChangeHook(const std::u16string& text,
-                                        int cursor_pos) {
+                                           int cursor_pos) {
   // Ignore.
 }
 

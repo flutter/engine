@@ -129,8 +129,7 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
 
  protected:
   // Called to create the keyboard hook handlers.
-  virtual void RegisterKeyboardHandlers(
-      flutter::BinaryMessenger* messenger);
+  virtual void RegisterKeyboardHandlers(flutter::BinaryMessenger* messenger);
 
   // Used by RegisterKeyboardHandlers to add a new keyboard hook handler.
   void AddKeyboardHandler(
@@ -269,8 +268,7 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   std::unique_ptr<flutter::PluginRegistrar> internal_plugin_registrar_;
 
   // Handlers for keyboard events from Windows.
-  std::vector<std::unique_ptr<flutter::KeyboardHandlerBase>>
-      keyboard_handlers_;
+  std::vector<std::unique_ptr<flutter::KeyboardHandlerBase>> keyboard_handlers_;
 
   // Handler for the flutter/platform channel.
   std::unique_ptr<flutter::PlatformHandler> platform_handler_;

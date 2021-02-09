@@ -60,9 +60,8 @@ class KeyboardKeyEmbedderHandler
 
   void cacheUtf8String(char32_t ch);
 
-  std::function<void(const FlutterKeyEvent&,
-                     FlutterKeyEventCallback,
-                     void*)> sendEvent_;
+  std::function<void(const FlutterKeyEvent&, FlutterKeyEventCallback, void*)>
+      sendEvent_;
   std::map<uint64_t, uint64_t> pressingRecords_;
   char character_cache_[kCharacterCacheSize];
   std::map<uint64_t, std::unique_ptr<PendingResponse>> pending_responses_;

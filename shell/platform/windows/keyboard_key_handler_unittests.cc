@@ -46,13 +46,13 @@ class MockKeyHandlerDelegate
                             bool was_down,
                             std::function<void(bool)> callback) {
     hook_history->push_back(KeyboardHookCall{
-      .delegate_id = delegate_id,
-      .key = key,
-      .scancode = scancode,
-      .character = character,
-      .extended = extended,
-      .was_down = was_down,
-      .callback = std::move(callback),
+        .delegate_id = delegate_id,
+        .key = key,
+        .scancode = scancode,
+        .character = character,
+        .extended = extended,
+        .was_down = was_down,
+        .callback = std::move(callback),
     });
     return true;
   }
@@ -69,12 +69,13 @@ TEST(KeyboardKeyHandlerTest, BehavesCorrectlyWithSingleDelegate) {
   // Capture the scancode of the last redispatched event
   int redispatch_scancode = 0;
   bool delegate_handled = false;
-  KeyboardKeyHandler handler([&redispatch_scancode](UINT cInputs, LPINPUT pInputs,
-                                                   int cbSize) -> UINT {
-                              EXPECT_TRUE(cbSize > 0);
-                              redispatch_scancode = pInputs->ki.wScan;
-                              return 1;
-                            });
+  KeyboardKeyHandler handler([&redispatch_scancode](UINT cInputs,
+                                                    LPINPUT pInputs,
+                                                    int cbSize) -> UINT {
+    EXPECT_TRUE(cbSize > 0);
+    redispatch_scancode = pInputs->ki.wScan;
+    return 1;
+  });
   // Add one delegate
   handler.AddDelegate(
       std::make_unique<MockKeyHandlerDelegate>(1, &hook_history));
@@ -82,8 +83,8 @@ TEST(KeyboardKeyHandlerTest, BehavesCorrectlyWithSingleDelegate) {
   /// Test 1: One event that is handled by the framework
 
   // Dispatch a key event
-  delegate_handled = handler.KeyboardHook(nullptr, 64, kHandledScanCode, WM_KEYDOWN,
-      L'a', false, false);
+  delegate_handled = handler.KeyboardHook(nullptr, 64, kHandledScanCode,
+                                          WM_KEYDOWN, L'a', false, false);
   EXPECT_EQ(delegate_handled, true);
   EXPECT_EQ(redispatch_scancode, 0);
   EXPECT_EQ(hook_history.size(), 1);
@@ -101,8 +102,8 @@ TEST(KeyboardKeyHandlerTest, BehavesCorrectlyWithSingleDelegate) {
   // Dispatch a key event.
   // Also this is the same event as the previous one, to test that handled
   // events are cleared from the pending list.
-  delegate_handled = handler.KeyboardHook(nullptr, 64, kHandledScanCode, WM_KEYDOWN,
-      L'a', false, false);
+  delegate_handled = handler.KeyboardHook(nullptr, 64, kHandledScanCode,
+                                          WM_KEYDOWN, L'a', false, false);
   EXPECT_EQ(delegate_handled, true);
   EXPECT_EQ(redispatch_scancode, 0);
   EXPECT_EQ(hook_history.size(), 1);
@@ -111,8 +112,8 @@ TEST(KeyboardKeyHandlerTest, BehavesCorrectlyWithSingleDelegate) {
   EXPECT_EQ(hook_history.back().was_down, false);
 
   // Dispatch another key event
-  delegate_handled = handler.KeyboardHook(nullptr, 65, kHandledScanCode2, WM_KEYUP,
-      L'b', false, true);
+  delegate_handled = handler.KeyboardHook(nullptr, 65, kHandledScanCode2,
+                                          WM_KEYUP, L'b', false, true);
   EXPECT_EQ(delegate_handled, true);
   EXPECT_EQ(redispatch_scancode, 0);
   EXPECT_EQ(hook_history.size(), 2);
@@ -129,9 +130,11 @@ TEST(KeyboardKeyHandlerTest, BehavesCorrectlyWithSingleDelegate) {
   EXPECT_EQ(redispatch_scancode, kHandledScanCode);
 
   EXPECT_EQ(handler.KeyboardHook(nullptr, 64, kHandledScanCode, WM_KEYDOWN,
-      L'a', false, false), false);
-  EXPECT_EQ(handler.KeyboardHook(nullptr, 65, kHandledScanCode2, WM_KEYUP,
-      L'b', false, false), false);
+                                 L'a', false, false),
+            false);
+  EXPECT_EQ(handler.KeyboardHook(nullptr, 65, kHandledScanCode2, WM_KEYUP, L'b',
+                                 false, false),
+            false);
 
   hook_history.clear();
   redispatch_scancode = 0;
@@ -143,20 +146,21 @@ TEST(KeyboardKeyHandlerTest, BehavesCorrectlyWithTwoDelegates) {
   // Capture the scancode of the last redispatched event
   int redispatch_scancode = 0;
   bool delegate_handled = false;
-  KeyboardKeyHandler handler([&redispatch_scancode](UINT cInputs, LPINPUT pInputs,
-                                                   int cbSize) -> UINT {
-                              EXPECT_TRUE(cbSize > 0);
-                              redispatch_scancode = pInputs->ki.wScan;
-                              return 1;
-                            });
+  KeyboardKeyHandler handler([&redispatch_scancode](UINT cInputs,
+                                                    LPINPUT pInputs,
+                                                    int cbSize) -> UINT {
+    EXPECT_TRUE(cbSize > 0);
+    redispatch_scancode = pInputs->ki.wScan;
+    return 1;
+  });
   // Only add one delegate for now.
   handler.AddDelegate(
       std::make_unique<MockKeyHandlerDelegate>(1, &hook_history));
 
   /// Test 1: Add a delegate before an event is responded
 
-  delegate_handled = handler.KeyboardHook(nullptr, 64, kHandledScanCode, WM_KEYDOWN,
-      L'a', false, false);
+  delegate_handled = handler.KeyboardHook(nullptr, 64, kHandledScanCode,
+                                          WM_KEYDOWN, L'a', false, false);
   EXPECT_EQ(delegate_handled, true);
   EXPECT_EQ(redispatch_scancode, 0);
   EXPECT_EQ(hook_history.size(), 1);
@@ -172,15 +176,16 @@ TEST(KeyboardKeyHandlerTest, BehavesCorrectlyWithTwoDelegates) {
   EXPECT_EQ(redispatch_scancode, kHandledScanCode);
 
   EXPECT_EQ(handler.KeyboardHook(nullptr, 64, kHandledScanCode, WM_KEYDOWN,
-      L'a', false, false), false);
+                                 L'a', false, false),
+            false);
 
   redispatch_scancode = 0;
   hook_history.clear();
 
   /// Test 2: A delegate responds true
 
-  delegate_handled = handler.KeyboardHook(nullptr, 64, kHandledScanCode, WM_KEYDOWN,
-      L'a', false, false);
+  delegate_handled = handler.KeyboardHook(nullptr, 64, kHandledScanCode,
+                                          WM_KEYDOWN, L'a', false, false);
   EXPECT_EQ(delegate_handled, true);
   EXPECT_EQ(redispatch_scancode, 0);
   EXPECT_EQ(hook_history.size(), 2);
@@ -204,8 +209,8 @@ TEST(KeyboardKeyHandlerTest, BehavesCorrectlyWithTwoDelegates) {
 
   // Also this is the same event as the previous one, to test that handled
   // events are cleared from the pending list.
-  delegate_handled = handler.KeyboardHook(nullptr, 64, kHandledScanCode, WM_KEYDOWN,
-      L'a', false, false);
+  delegate_handled = handler.KeyboardHook(nullptr, 64, kHandledScanCode,
+                                          WM_KEYDOWN, L'a', false, false);
   EXPECT_EQ(delegate_handled, true);
   EXPECT_EQ(redispatch_scancode, 0);
   EXPECT_EQ(hook_history.size(), 2);
@@ -223,7 +228,8 @@ TEST(KeyboardKeyHandlerTest, BehavesCorrectlyWithTwoDelegates) {
   EXPECT_EQ(redispatch_scancode, kHandledScanCode);
 
   EXPECT_EQ(handler.KeyboardHook(nullptr, 64, kHandledScanCode, WM_KEYDOWN,
-      L'a', false, false), false);
+                                 L'a', false, false),
+            false);
 }
 
 }  // namespace testing

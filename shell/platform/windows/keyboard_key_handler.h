@@ -72,11 +72,11 @@ class KeyboardKeyHandler : public KeyboardHandlerBase {
   // the event is a native event, or false if the event is a redispatched one.
   //
   // Windows requires a synchronous response of whether a key event should be
-  // handled, while the query to Flutter is always asynchronous. This is resolved
-  // by "redispatching": the response to the native event is always true. If
-  // Flutter later decides not to handle the event, an event is then synthesized,
-  // dispatched to system, received again, detected, at which time |KeyboardHook|
-  // returns false, then falls back to other keyboard handlers.
+  // handled, while the query to Flutter is always asynchronous. This is
+  // resolved by "redispatching": the response to the native event is always
+  // true. If Flutter later decides not to handle the event, an event is then
+  // synthesized, dispatched to system, received again, detected, at which time
+  // |KeyboardHook| returns false, then falls back to other keyboard handlers.
   //
   // Received events are further dispatched to all added delegates. If any
   // delegate returns true (handled), the event is considered handled. When

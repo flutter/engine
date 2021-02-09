@@ -50,17 +50,17 @@ TEST(KeyboardKeyChannelHandlerTest, KeyboardHookHandling) {
   KeyboardKeyChannelHandler handler(&messenger);
   bool last_handled = false;
 
-  handler.KeyboardHook(64, kHandledScanCode, WM_KEYDOWN, L'a',
-                       false, false,
-                       [&last_handled](bool handled) { last_handled = handled; });
+  handler.KeyboardHook(
+      64, kHandledScanCode, WM_KEYDOWN, L'a', false, false,
+      [&last_handled](bool handled) { last_handled = handled; });
   EXPECT_EQ(received_scancode, kHandledScanCode);
   EXPECT_EQ(last_handled, true);
 
   received_scancode = 0;
 
-  handler.KeyboardHook(64, kUnhandledScanCode, WM_KEYDOWN, L'b',
-                       false, false,
-                       [&last_handled](bool handled) { last_handled = handled; });
+  handler.KeyboardHook(
+      64, kUnhandledScanCode, WM_KEYDOWN, L'b', false, false,
+      [&last_handled](bool handled) { last_handled = handled; });
   EXPECT_EQ(received_scancode, kUnhandledScanCode);
   EXPECT_EQ(last_handled, false);
 }
@@ -90,17 +90,17 @@ TEST(KeyboardKeyChannelHandlerTest, ExtendedKeysAreSentToRedispatch) {
   bool last_handled = true;
 
   // Extended key flag is passed to redispatched events if set.
-  handler.KeyboardHook(64, kUnhandledScanCode, WM_KEYDOWN, L'b',
-                       true, false,
-                       [&last_handled](bool handled) { last_handled = handled; });
+  handler.KeyboardHook(
+      64, kUnhandledScanCode, WM_KEYDOWN, L'b', true, false,
+      [&last_handled](bool handled) { last_handled = handled; });
   EXPECT_EQ(last_handled, false);
   EXPECT_EQ(received_scancode, kUnhandledScanCode);
 
   last_handled = true;
   // Extended key flag is not passed to redispatched events if not set.
-  handler.KeyboardHook(64, kUnhandledScanCode, WM_KEYDOWN, L'b',
-                       false, false,
-                       [&last_handled](bool handled) { last_handled = handled; });
+  handler.KeyboardHook(
+      64, kUnhandledScanCode, WM_KEYDOWN, L'b', false, false,
+      [&last_handled](bool handled) { last_handled = handled; });
   EXPECT_EQ(last_handled, false);
   EXPECT_EQ(received_scancode, kUnhandledScanCode);
 }

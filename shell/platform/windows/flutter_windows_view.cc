@@ -6,9 +6,9 @@
 
 #include <chrono>
 
-#include "flutter/shell/platform/windows/text_input_plugin.h"
 #include "flutter/shell/platform/windows/keyboard_key_channel_handler.h"
 #include "flutter/shell/platform/windows/keyboard_key_embedder_handler.h"
+#include "flutter/shell/platform/windows/text_input_plugin.h"
 
 namespace flutter {
 
@@ -79,12 +79,11 @@ void FlutterWindowsView::RegisterKeyboardHandlers(
   // the handler is "toggled" when events pass through, which means this logic
   // does not apply when there are more than 1 handler.
   auto key_handler = std::make_unique<flutter::KeyboardKeyHandler>(SendInput);
-  key_handler->AddDelegate(std::make_unique<KeyboardKeyChannelHandler>(
-      messenger));
+  key_handler->AddDelegate(
+      std::make_unique<KeyboardKeyChannelHandler>(messenger));
   key_handler->AddDelegate(std::make_unique<KeyboardKeyEmbedderHandler>(
-      [this](const FlutterKeyEvent& event,
-            FlutterKeyEventCallback callback,
-            void* user_data) {
+      [this](const FlutterKeyEvent& event, FlutterKeyEventCallback callback,
+             void* user_data) {
         return engine_->SendKeyEvent(event, callback, user_data);
       }));
   AddKeyboardHandler(std::move(key_handler));
@@ -304,8 +303,8 @@ bool FlutterWindowsView::SendKey(int key,
                                  bool extended,
                                  bool was_down) {
   for (const auto& handler : keyboard_handlers_) {
-    if (handler->KeyboardHook(this, key, scancode, action, character,
-                              extended, was_down)) {
+    if (handler->KeyboardHook(this, key, scancode, action, character, extended,
+                              was_down)) {
       // key event was handled, so don't send to other handlers.
       return true;
     }

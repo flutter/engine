@@ -6,13 +6,13 @@
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
-#include "flutter/shell/platform/windows/keyboard_key_handler.h"
 #include "flutter/shell/platform/windows/keyboard_key_channel_handler.h"
+#include "flutter/shell/platform/windows/keyboard_key_handler.h"
 #include "flutter/shell/platform/windows/testing/engine_embedder_api_modifier.h"
 #include "flutter/shell/platform/windows/testing/mock_window_binding_handler.h"
 #include "flutter/shell/platform/windows/testing/win32_flutter_window_test.h"
-#include "flutter/shell/platform/windows/text_input_plugin_delegate.h"
 #include "flutter/shell/platform/windows/text_input_plugin.h"
+#include "flutter/shell/platform/windows/text_input_plugin_delegate.h"
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -52,14 +52,13 @@ struct SimulatedEvent {
 class SpyKeyboardKeyHandler : public KeyboardHandlerBase {
  public:
   SpyKeyboardKeyHandler(flutter::BinaryMessenger* messenger,
-                     KeyboardKeyHandler::RedispatchEvent delegate) {
-    real_implementation_ =
-        std::make_unique<KeyboardKeyHandler>(delegate);
+                        KeyboardKeyHandler::RedispatchEvent delegate) {
+    real_implementation_ = std::make_unique<KeyboardKeyHandler>(delegate);
     real_implementation_->AddDelegate(
         std::make_unique<KeyboardKeyChannelHandler>(messenger));
     ON_CALL(*this, KeyboardHook(_, _, _, _, _, _, _))
-        .WillByDefault(
-            Invoke(real_implementation_.get(), &KeyboardKeyHandler::KeyboardHook));
+        .WillByDefault(Invoke(real_implementation_.get(),
+                              &KeyboardKeyHandler::KeyboardHook));
     ON_CALL(*this, TextHook(_, _))
         .WillByDefault(
             Invoke(real_implementation_.get(), &KeyboardKeyHandler::TextHook));
@@ -173,8 +172,7 @@ class TestFlutterWindowsView : public FlutterWindowsView {
   }
 
  protected:
-  void RegisterKeyboardHandlers(
-      flutter::BinaryMessenger* messenger) override {
+  void RegisterKeyboardHandlers(flutter::BinaryMessenger* messenger) override {
     auto spy_key_event_handler = std::make_unique<SpyKeyboardKeyHandler>(
         messenger, [this](UINT cInputs, LPINPUT pInputs, int cbSize) -> UINT {
           return this->SendInput(cInputs, pInputs, cbSize);
@@ -362,9 +360,9 @@ TEST(Win32FlutterWindowTest, CharKeyDownPropagation) {
   {
     test_response = false;
     flutter_windows_view.SetEngine(std::move(GetTestEngine()));
-    EXPECT_CALL(
-        *flutter_windows_view.key_event_handler,
-        KeyboardHook(_, virtual_key, scan_code, WM_KEYDOWN, character, false, false))
+    EXPECT_CALL(*flutter_windows_view.key_event_handler,
+                KeyboardHook(_, virtual_key, scan_code, WM_KEYDOWN, character,
+                             false, false))
         .Times(2)
         .RetiresOnSaturation();
     EXPECT_CALL(*flutter_windows_view.text_input_plugin,
