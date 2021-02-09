@@ -571,8 +571,6 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 }
 
 - (void)dealloc {
-  [_semanticsObject release];
-  _semanticsObject = nil;
   [_platformView release];
   _platformView = nil;
   [super dealloc];
