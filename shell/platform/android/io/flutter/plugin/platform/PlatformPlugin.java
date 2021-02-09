@@ -116,7 +116,7 @@ public class PlatformPlugin {
         public boolean clipboardHasStrings() {
           ClipboardManager clipboard =
               (ClipboardManager) activity.getSystemService(Context.CLIPBOARD_SERVICE);
-          return clipboard.hasPrimaryClip();
+          return clipboard.hasText();
         }
       };
 

@@ -117,16 +117,18 @@ public class PlatformPluginTest {
 
     clip = ClipData.newPlainText("", "");
     clipboardManager.setPrimaryClip(clip);
-    assertTrue(platformPlugin.mPlatformMessageHandler.clipboardHasStrings());
+    assertFalse(platformPlugin.mPlatformMessageHandler.clipboardHasStrings());
 
-    clip = ClipData.newPlainText("label", null);
+    clip = ClipData.newPlainText("", null);
     clipboardManager.setPrimaryClip(clip);
-    // TODO(justinmc): This fails.
+    clipboardManager.clearPrimaryClip();
+    assertFalse(platformPlugin.mPlatformMessageHandler.clipboardHasStrings());
+
+    clipboardManager.setPrimaryClip(null);
+    clipboardManager.clearPrimaryClip();
     assertFalse(platformPlugin.mPlatformMessageHandler.clipboardHasStrings());
 
     clipboardManager.clearPrimaryClip();
-    // TODO(justinmc): This fails too. Also, directly running
-    // clipboardManager.hasPrimaryClip() here returns true too!
     assertFalse(platformPlugin.mPlatformMessageHandler.clipboardHasStrings());
   }
 
