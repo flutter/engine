@@ -737,11 +737,13 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 - (void)scribbleInteractionWillBeginWriting:(UIScribbleInteraction *)interaction {
   NSLog(@"[scribble] scribbleInteractionWillBeginWriting");
   _scribbleInProgress = true;
+  [_textInputDelegate scribbleInteractionBegan];
 }
 
 - (void)scribbleInteractionDidFinishWriting:(UIScribbleInteraction *)interaction {
   NSLog(@"[scribble] scribbleInteractionDidFinishWriting");
   _scribbleInProgress = false;
+  [_textInputDelegate scribbleInteractionFinished];
 }
 
 - (BOOL)scribbleInteraction:(UIScribbleInteraction *)interaction
@@ -1295,7 +1297,6 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     @"composingBase" : @(composingBase),
     @"composingExtent" : @(composingExtent),
     @"text" : [NSString stringWithString:self.text],
-    @"scribbleInProgress" : @(_scribbleInProgress),
   };
 
   if (_textInputClient == 0 && _autofillId != nil) {
