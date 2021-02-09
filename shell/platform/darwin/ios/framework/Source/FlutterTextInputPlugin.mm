@@ -1170,7 +1170,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 @property(nonatomic, readonly)
     NSMutableDictionary<NSString*, FlutterTextInputView*>* autofillContext;
 @property(nonatomic, assign) FlutterTextInputView* activeView;
-@property(nonatomic, retain) FlutterTextInputViewAccessibilityHider* inputHider;
+@property(nonatomic, strong) FlutterTextInputViewAccessibilityHider* inputHider;
 @end
 
 @implementation FlutterTextInputPlugin {
