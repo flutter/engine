@@ -57,7 +57,7 @@ uint64_t CalculateEventId(int scancode, int action, bool extended) {
 KeyboardKeyHandler::KeyboardKeyHandlerDelegate::~KeyboardKeyHandlerDelegate() =
     default;
 
-KeyboardKeyHandler::KeyboardKeyHandler(RedispatchEvent redispatch_event)
+KeyboardKeyHandler::KeyboardKeyHandler(EventRedispatcher redispatch_event)
     : redispatch_event_(redispatch_event) {
   assert(redispatch_event_ != nullptr);
 }
@@ -98,7 +98,7 @@ void KeyboardKeyHandler::RemovePendingEvent(uint64_t id) {
             << ", but the event was not found." << std::endl;
 }
 
-void KeyboardKeyHandler::DoRedispatchEvent(const PendingEvent* pending) {
+void KeyboardKeyHandler::RedispatchEvent(const PendingEvent* pending) {
   KEYBDINPUT ki{
       .wVk = 0,
       .wScan = static_cast<WORD>(pending->scancode),
@@ -171,7 +171,7 @@ void KeyboardKeyHandler::ResolvePendingEvent(PendingEvent* pending_event,
   pending_event->any_handled = pending_event->any_handled || handled;
   if (pending_event->unreplied == 0) {
     if (!pending_event->any_handled) {
-      DoRedispatchEvent(pending_event);
+      RedispatchEvent(pending_event);
     } else {
       RemovePendingEvent(pending_event->id);
     }

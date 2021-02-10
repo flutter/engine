@@ -52,7 +52,7 @@ struct SimulatedEvent {
 class SpyKeyboardKeyHandler : public KeyboardHandlerBase {
  public:
   SpyKeyboardKeyHandler(flutter::BinaryMessenger* messenger,
-                        KeyboardKeyHandler::RedispatchEvent delegate) {
+                        KeyboardKeyHandler::EventRedispatcher delegate) {
     real_implementation_ = std::make_unique<KeyboardKeyHandler>(delegate);
     real_implementation_->AddDelegate(
         std::make_unique<KeyboardKeyChannelHandler>(messenger));

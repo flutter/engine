@@ -53,13 +53,13 @@ class KeyboardKeyHandler : public KeyboardHandlerBase {
     virtual ~KeyboardKeyHandlerDelegate();
   };
 
-  using RedispatchEvent =
+  using EventRedispatcher =
       std::function<UINT(UINT cInputs, LPINPUT pInputs, int cbSize)>;
 
   // Create a KeyboardKeyHandler and specify where to redispatch events.
   //
   // The |redispatch_event| is typically |SendInput|.
-  explicit KeyboardKeyHandler(RedispatchEvent redispatch_event);
+  explicit KeyboardKeyHandler(EventRedispatcher redispatch_event);
 
   ~KeyboardKeyHandler();
 
@@ -125,7 +125,7 @@ class KeyboardKeyHandler : public KeyboardHandlerBase {
                       bool extended,
                       int scancode,
                       int character);
-  void DoRedispatchEvent(const PendingEvent* pending);
+  void RedispatchEvent(const PendingEvent* pending);
   void ResolvePendingEvent(PendingEvent* pending, bool handled);
 
   std::vector<std::unique_ptr<KeyboardKeyHandlerDelegate>> delegates_;
@@ -135,7 +135,7 @@ class KeyboardKeyHandler : public KeyboardHandlerBase {
   std::deque<std::unique_ptr<PendingEvent>> pending_events_;
 
   // A function used to redispatch synthesized events.
-  RedispatchEvent redispatch_event_;
+  EventRedispatcher redispatch_event_;
 };
 
 }  // namespace flutter
