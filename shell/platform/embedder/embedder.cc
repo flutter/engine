@@ -1146,51 +1146,13 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
                     nullptr) != nullptr) {
       external_texture_callback =
           [ptr = open_gl_config->gl_external_texture_frame_callback, user_data](
-              int64_t texture_identifier, GrDirectContext* context,
-              const SkISize& size) -> sk_sp<SkImage> {
-        FlutterOpenGLTexture texture = {};
-
-        if (!ptr(user_data, texture_identifier, size.width(), size.height(),
-                 &texture)) {
+              int64_t texture_identifier, size_t width,
+              size_t height) -> std::unique_ptr<FlutterOpenGLTexture> {
+        FlutterOpenGLTexture* texture = new FlutterOpenGLTexture();
+        if (!ptr(user_data, texture_identifier, width, height, texture)) {
           return nullptr;
         }
-
-        GrGLTextureInfo gr_texture_info = {texture.target, texture.name,
-                                           texture.format};
-
-        size_t width = size.width();
-        size_t height = size.height();
-
-        if (texture.width != 0 && texture.height != 0) {
-          width = texture.width;
-          height = texture.height;
-        }
-
-        GrBackendTexture gr_backend_texture(width, height, GrMipMapped::kNo,
-                                            gr_texture_info);
-        SkImage::TextureReleaseProc release_proc = texture.destruction_callback;
-        auto image = SkImage::MakeFromTexture(
-            context,                   // context
-            gr_backend_texture,        // texture handle
-            kTopLeft_GrSurfaceOrigin,  // origin
-            kRGBA_8888_SkColorType,    // color type
-            kPremul_SkAlphaType,       // alpha type
-            nullptr,                   // colorspace
-            release_proc,              // texture release proc
-            texture.user_data          // texture release context
-        );
-
-        if (!image) {
-          // In case Skia rejects the image, call the release proc so that
-          // embedders can perform collection of intermediates.
-          if (release_proc) {
-            release_proc(texture.user_data);
-          }
-          FML_LOG(ERROR) << "Could not create external texture.";
-          return nullptr;
-        }
-
-        return image;
+        return std::unique_ptr<FlutterOpenGLTexture>(texture);
       };
     }
   }
