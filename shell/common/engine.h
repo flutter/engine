@@ -283,6 +283,14 @@ class Engine final : public RuntimeDelegate,
     ///                              library to load.
     ///
     virtual void RequestDartDeferredLibrary(intptr_t loading_unit_id) = 0;
+
+    /// Accessor for the shell's GPU sync switch, which determines whether GPU
+    /// operations are allowed on the current thread.
+    ///
+    /// For example, on some platforms when the application is backgrounded it
+    /// is critical that GPU operations are not processed.
+    virtual std::shared_ptr<fml::SyncSwitch> GetIsGpuDisabledSyncSwitch()
+        const = 0;
   };
 
   //----------------------------------------------------------------------------

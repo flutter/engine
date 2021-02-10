@@ -318,6 +318,14 @@ class PlatformView {
     virtual void UpdateAssetResolverByType(
         std::unique_ptr<AssetResolver> updated_asset_resolver,
         AssetResolver::AssetResolverType type) = 0;
+
+    /// Accessor for the shell's GPU sync switch, which determines whether GPU
+    /// operations are allowed on the current thread.
+    ///
+    /// For example, on some platforms when the application is backgrounded it
+    /// is critical that GPU operations are not processed.
+    virtual std::shared_ptr<fml::SyncSwitch> GetIsGpuDisabledSyncSwitch()
+        const = 0;
   };
 
   //----------------------------------------------------------------------------

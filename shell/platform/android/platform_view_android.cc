@@ -414,6 +414,7 @@ void PlatformViewAndroid::InstallFirstFrameCallback() {
 
 void PlatformViewAndroid::FireFirstFrameCallback() {
   jni_facade_->FlutterViewOnFirstFrame();
+  delegate_.GetIsGpuDisabledSyncSwitch()->SetSwitch(true);
 }
 
 }  // namespace flutter

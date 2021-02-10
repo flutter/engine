@@ -322,8 +322,11 @@ bool Engine::HandleLifecyclePlatformMessage(PlatformMessage* message) {
     StopAnimator();
   } else if (state == "AppLifecycleState.resumed" ||
              state == "AppLifecycleState.inactive") {
+    delegate_.GetIsGpuDisabledSyncSwitch()->SetSwitch(true);
     activity_running_ = true;
     StartAnimatorIfPossible();
+  } else {
+    delegate_.GetIsGpuDisabledSyncSwitch()->SetSwitch(false);
   }
 
   // Always schedule a frame when the app does become active as per API
