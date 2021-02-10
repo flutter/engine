@@ -199,7 +199,7 @@ void testMain() async {
 
   void testGiantParagraphStyles(EngineCanvas canvas) {
     final CanvasParagraph paragraph = rich(
-      ParagraphStyle(fontFamily: 'monospace', fontSize: 80.0),
+      ParagraphStyle(fontFamily: 'Roboto', fontSize: 80.0),
       (CanvasParagraphBuilder builder) {
         builder.pushStyle(EngineTextStyle.only(color: yellow, fontSize: 24.0));
         builder.addText('Lorem ');
