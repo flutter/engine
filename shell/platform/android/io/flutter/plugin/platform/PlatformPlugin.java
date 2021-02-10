@@ -114,9 +114,7 @@ public class PlatformPlugin {
 
         @Override
         public boolean clipboardHasStrings() {
-          ClipboardManager clipboard =
-              (ClipboardManager) activity.getSystemService(Context.CLIPBOARD_SERVICE);
-          return clipboard.hasText();
+          return PlatformPlugin.this.clipboardHasText();
         }
       };
 
@@ -319,6 +317,12 @@ public class PlatformPlugin {
     } else {
       activity.finish();
     }
+  }
+
+  private boolean clipboardHasText() {
+    ClipboardManager clipboard =
+        (ClipboardManager) activity.getSystemService(Context.CLIPBOARD_SERVICE);
+    return clipboard.hasText();
   }
 
   private CharSequence getClipboardData(PlatformChannel.ClipboardContentFormat format) {
