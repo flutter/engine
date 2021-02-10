@@ -58,9 +58,9 @@ bool EmbedderEngine::LaunchShell() {
     FML_DLOG(ERROR) << "Shell already initialized";
   }
 
-  shell_ = Shell::Create(task_runners_, shell_args_->settings,
-                         shell_args_->on_create_platform_view,
-                         shell_args_->on_create_rasterizer);
+  shell_ = Shell::Create(
+      flutter::PlatformData(), task_runners_, shell_args_->settings,
+      shell_args_->on_create_platform_view, shell_args_->on_create_rasterizer);
 
   // Reset the args no matter what. They will never be used to initialize a
   // shell again.
@@ -133,6 +133,22 @@ bool EmbedderEngine::DispatchPointerDataPacket(
   }
 
   platform_view->DispatchPointerDataPacket(std::move(packet));
+  return true;
+}
+
+bool EmbedderEngine::DispatchKeyDataPacket(
+    std::unique_ptr<flutter::KeyDataPacket> packet,
+    KeyDataResponse callback) {
+  if (!IsValid() || !packet) {
+    return false;
+  }
+
+  auto platform_view = shell_->GetPlatformView();
+  if (!platform_view) {
+    return false;
+  }
+
+  platform_view->DispatchKeyDataPacket(std::move(packet), std::move(callback));
   return true;
 }
 

@@ -347,7 +347,7 @@ class Engine final : public RuntimeDelegate,
          DartVM& vm,
          fml::RefPtr<const DartSnapshot> isolate_snapshot,
          TaskRunners task_runners,
-         const PlatformData platform_data,
+         const PlatformData& platform_data,
          Settings settings,
          std::unique_ptr<Animator> animator,
          fml::WeakPtr<IOManager> io_manager,
@@ -729,6 +729,21 @@ class Engine final : public RuntimeDelegate,
                                  uint64_t trace_flow_id);
 
   //----------------------------------------------------------------------------
+  /// @brief      Notifies the engine that the embedder has sent it a key data
+  ///             packet. A key data packet contains one key event. This call
+  ///             originates in the platform view and the shell has forwarded
+  ///             the same to the engine on the UI task runner here. The engine
+  ///             will decide whether to handle this event, and send the
+  ///             result using `callback`, which will be called exactly once.
+  ///
+  /// @param[in]  packet    The key data packet.
+  /// @param[in]  callback  Called when the framework has decided whether
+  ///                       to handle this key data.
+  ///
+  void DispatchKeyDataPacket(std::unique_ptr<KeyDataPacket> packet,
+                             KeyDataResponse callback);
+
+  //----------------------------------------------------------------------------
   /// @brief      Notifies the engine that the embedder encountered an
   ///             accessibility related action on the specified node. This call
   ///             originates on the platform view and has been forwarded to the
@@ -870,6 +885,13 @@ class Engine final : public RuntimeDelegate,
   void LoadDartDeferredLibraryError(intptr_t loading_unit_id,
                                     const std::string error_message,
                                     bool transient);
+
+  //--------------------------------------------------------------------------
+  /// @brief      Accessor for the RuntimeController.
+  ///
+  const RuntimeController* GetRuntimeController() const {
+    return runtime_controller_.get();
+  }
 
  private:
   Engine::Delegate& delegate_;
