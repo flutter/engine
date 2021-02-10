@@ -1,4 +1,4 @@
-Signature: 292e35c3669d408526dbb5cce06168c2
+Signature: 4fe1f80cddd0639d39f21836af583d61
 
 UNUSED LICENSES:
 
@@ -2588,6 +2588,8 @@ FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp_base/include/lib/fidl/cpp/types.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fit/include/lib/fit/source_location.h
 FILE: ../../../fuchsia/sdk/linux/pkg/scenic_cpp/commands_sizing.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/scenic_cpp/include/lib/ui/scenic/cpp/commands_sizing.h
+FILE: ../../../fuchsia/sdk/linux/pkg/stdcompat/include/lib/stdcompat/bit.h
+FILE: ../../../fuchsia/sdk/linux/pkg/stdcompat/include/lib/stdcompat/internal/bit.h
 FILE: ../../../fuchsia/sdk/linux/pkg/stdcompat/include/lib/stdcompat/memory.h
 FILE: ../../../fuchsia/sdk/linux/pkg/stdcompat/include/lib/stdcompat/source_location.h
 FILE: ../../../fuchsia/sdk/linux/pkg/stdcompat/include/lib/stdcompat/version.h
@@ -3420,6 +3422,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.feedback/data_provider_controller.
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.goldfish/goldfish_sync.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io2/inotify.fidl
 FILE: ../../../fuchsia/sdk/linux/pkg/stdcompat/include/lib/stdcompat/internal/exception.h
+FILE: ../../../fuchsia/sdk/linux/pkg/stdcompat/include/lib/stdcompat/iterator.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2021 The Fuchsia Authors. All rights reserved.
 
