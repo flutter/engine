@@ -53,7 +53,7 @@ class MockKeyHandlerDelegate
                          std::list<KeyboardHookCall>* hook_history,
                          GetIsAsync is_async = [] { return true; })
       : delegate_id(delegate_id), hook_history(hook_history),
-        get_is_async(get_is_async) {}
+        is_async(is_async) {}
   virtual ~MockKeyHandlerDelegate() = default;
 
   virtual bool KeyboardHook(int key,

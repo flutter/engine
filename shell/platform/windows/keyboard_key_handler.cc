@@ -136,7 +136,7 @@ bool KeyboardKeyHandler::KeyboardHook(FlutterWindowsView* view,
         << " keyboard events that have not yet received a response from the "
         << "framework. Are responses being sent?" << std::endl;
   }
-  PendingEvent pending{
+  auto pending_event = std::make_unique<PendingEvent>(PendingEvent{
       .id = id,
       .scancode = scancode,
       .character = character,
@@ -145,37 +145,32 @@ bool KeyboardKeyHandler::KeyboardHook(FlutterWindowsView* view,
           (action == WM_KEYUP ? KEYEVENTF_KEYUP : 0x0)),
       .unreplied = delegates_.size(),
       .any_handled = false,
-  };
-  pending_events_.push_back(std::make_unique<PendingEvent>(std::move(pending)));
+  });
 
-  PendingEvent& pending_event = *pending_events_.back();
-  // If delegates_ is empty, we need to respond immediately. But this would
-  // never happen in real life since all delegates are added by hardcode,
-  // therefore we simply assert.
-  assert(delegates_.size() != 0);
-  bool any_async = false;
+  int unreplied = 0;
   for (const auto& delegate : delegates_) {
     bool is_async = delegate->KeyboardHook(
         key, scancode, action, character, extended, was_down,
-        [pending_event = &pending_event, this](bool handled) {
-          ResolvePendingEvent(pending_event, handled, true);
+        [pending_event = pending_event.get(), this](bool handled) {
+          ResolvePendingEvent(pending_event, handled);
         });
-    if (!is_async) {
-      ResolvePendingEvent(&pending_event, false, false);
-    } else {
-      any_async = true;
+    if (is_async) {
+      unreplied += 1;
     }
   }
-  return any_async;
+  pending_event->unreplied = unreplied;
+  if (unreplied > 0) {
+    pending_events_.push_back(std::move(pending_event));
+  }
+  return unreplied > 0;
 }
 
 void KeyboardKeyHandler::ResolvePendingEvent(PendingEvent* pending_event,
-                                             bool handled,
-                                             bool may_redispatch) {
+                                             bool handled) {
   pending_event->unreplied -= 1;
   pending_event->any_handled = pending_event->any_handled || handled;
   if (pending_event->unreplied == 0) {
-    if (!pending_event->any_handled && may_redispatch) {
+    if (!pending_event->any_handled) {
       DoRedispatchEvent(pending_event);
     } else {
       RemovePendingEvent(pending_event->id);

@@ -126,7 +126,7 @@ class KeyboardKeyHandler : public KeyboardHandlerBase {
                       int scancode,
                       int character);
   void DoRedispatchEvent(const PendingEvent* pending);
-  void ResolvePendingEvent(PendingEvent* pending, bool handled, bool may_redispatch);
+  void ResolvePendingEvent(PendingEvent* pending, bool handled);
 
   std::vector<std::unique_ptr<KeyboardKeyHandlerDelegate>> delegates_;
 
