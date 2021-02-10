@@ -552,8 +552,7 @@ class TestCommand extends Command<bool> with ArgUtils {
 
     if (isUnitTestsScreenshotsAvailable) {
       // This test returns a non-zero exit code on purpose. Run it separately.
-      if (io.Platform.environment['CIRRUS_CI'] != 'true' ||
-          io.Platform.environment['LUCI_CONTEXT'] != null) {
+      if (io.Platform.environment['CIRRUS_CI'] != 'true') {
         await _runTestBatch(
           <FilePath>[failureSmokeTestPath],
           concurrency: 1,
