@@ -1152,6 +1152,10 @@ FILE: ../../../flutter/shell/platform/embedder/embedder_engine.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_engine.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_external_texture_gl.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_external_texture_gl.h
+FILE: ../../../flutter/shell/platform/embedder/embedder_external_texture_metal.h
+FILE: ../../../flutter/shell/platform/embedder/embedder_external_texture_metal.mm
+FILE: ../../../flutter/shell/platform/embedder/embedder_external_texture_resolver.cc
+FILE: ../../../flutter/shell/platform/embedder/embedder_external_texture_resolver.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_external_view.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_external_view.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_external_view_embedder.cc

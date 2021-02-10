@@ -34,6 +34,8 @@ template("embedder_source_set") {
       "embedder.cc",
       "embedder_engine.cc",
       "embedder_engine.h",
+      "embedder_external_texture_resolver.cc",
+      "embedder_external_texture_resolver.h",
       "embedder_external_view.cc",
       "embedder_external_view.h",
       "embedder_external_view_embedder.cc",
@@ -90,6 +92,8 @@ template("embedder_source_set") {
 
     if (embedder_enable_metal) {
       sources += [
+        "embedder_external_texture_metal.h",
+        "embedder_external_texture_metal.mm",
         "embedder_surface_metal.h",
         "embedder_surface_metal.mm",
       ]
