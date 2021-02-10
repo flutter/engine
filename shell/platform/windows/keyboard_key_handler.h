@@ -24,10 +24,10 @@ class FlutterWindowsView;
 // This class detects whether an incoming event is a redispatched one,
 // dispatches native events to delegates and collect their responses,
 // and redispatches events unhandled by Flutter back to the system.
-// See |KeyboardHook| for more information.
+// See |KeyboardHook| for more information about dispatching.
 //
-// The exact behavior to handle events are further divided into delegates.
-// See |KeyboardKeyHandlerDelegate| and its subclasses.
+// The exact behavior to handle events are further forwarded into
+// delegates. See |KeyboardKeyHandlerDelegate| and its subclasses.
 class KeyboardKeyHandler : public KeyboardHandlerBase {
  public:
   // An interface for concrete definition of how to asynchronously handle key
@@ -126,7 +126,7 @@ class KeyboardKeyHandler : public KeyboardHandlerBase {
                       int scancode,
                       int character);
   void DoRedispatchEvent(const PendingEvent* pending);
-  void ResolvePendingEvent(PendingEvent* pending, bool handled);
+  void ResolvePendingEvent(PendingEvent* pending, bool handled, bool may_redispatch);
 
   std::vector<std::unique_ptr<KeyboardKeyHandlerDelegate>> delegates_;
 

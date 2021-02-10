@@ -153,25 +153,29 @@ bool KeyboardKeyHandler::KeyboardHook(FlutterWindowsView* view,
   // never happen in real life since all delegates are added by hardcode,
   // therefore we simply assert.
   assert(delegates_.size() != 0);
+  bool any_async = false;
   for (const auto& delegate : delegates_) {
-    bool isAsync = delegate->KeyboardHook(
+    bool is_async = delegate->KeyboardHook(
         key, scancode, action, character, extended, was_down,
         [pending_event = &pending_event, this](bool handled) {
-          ResolvePendingEvent(pending_event, handled);
+          ResolvePendingEvent(pending_event, handled, true);
         });
-    if (!isAsync) {
-      ResolvePendingEvent(&pending_event, false);
+    if (!is_async) {
+      ResolvePendingEvent(&pending_event, false, false);
+    } else {
+      any_async = true;
     }
   }
-  return true;
+  return any_async;
 }
 
 void KeyboardKeyHandler::ResolvePendingEvent(PendingEvent* pending_event,
-                                             bool handled) {
+                                             bool handled,
+                                             bool may_redispatch) {
   pending_event->unreplied -= 1;
   pending_event->any_handled = pending_event->any_handled || handled;
   if (pending_event->unreplied == 0) {
-    if (!pending_event->any_handled) {
+    if (!pending_event->any_handled && may_redispatch) {
       DoRedispatchEvent(pending_event);
     } else {
       RemovePendingEvent(pending_event->id);
