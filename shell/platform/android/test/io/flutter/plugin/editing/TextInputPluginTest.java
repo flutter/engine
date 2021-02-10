@@ -18,6 +18,7 @@ import static org.mockito.Mockito.when;
 
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.content.pm.PackageInfo;
 import android.content.res.AssetManager;
 import android.graphics.Insets;
 import android.graphics.Rect;
@@ -64,6 +65,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
+import org.robolectric.Shadows;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
@@ -71,6 +73,7 @@ import org.robolectric.shadow.api.Shadow;
 import org.robolectric.shadows.ShadowAutofillManager;
 import org.robolectric.shadows.ShadowBuild;
 import org.robolectric.shadows.ShadowInputMethodManager;
+import org.robolectric.shadows.ShadowPackageManager;
 
 @Config(
     manifest = Config.NONE,
@@ -339,16 +342,75 @@ public class TextInputPluginTest {
     assertTrue(textInputPlugin.getEditable().toString().equals("Shibuyawoo"));
   }
 
-  // Regression test for https://github.com/flutter/flutter/issues/73433.
   // See also: https://github.com/flutter/flutter/issues/29341 and
   // https://github.com/flutter/flutter/issues/31512.
-  // All modern Samsung keybords were affected including non-korean languages
-  // and thus needed the restart. The restart workaround seems to have caused
-  // #73433 and it's no longer needed.
+  // Some recent versions of Samsung keybords were affected including non-korean
+  // languages and thus needed the restart.
   @Test
-  public void setTextInputEditingState_DontForceRestartOnPreviouslyAffectedSamsungDevices() {
+  public void setTextInputEditingState_alwaysRestartsOnAffectedDevices() {
     // Initialize a TextInputPlugin with a Samsung keypad.
     ShadowBuild.setManufacturer("samsung");
+    // final ShadowPackageManager packageManager = RuntimeEnvironment.getPackageManager();
+    final ShadowPackageManager packageManager =
+        Shadows.shadowOf(
+            RuntimeEnvironment.application.getApplicationContext().getPackageManager());
+    final PackageInfo info = new PackageInfo();
+    info.packageName = "com.sec.android.inputmethod";
+    info.versionCode = 200000000;
+    packageManager.addPackage(info);
+    InputMethodSubtype inputMethodSubtype =
+        new InputMethodSubtype(0, 0, /*locale=*/ "en", "", "", false, false);
+    Settings.Secure.putString(
+        RuntimeEnvironment.application.getContentResolver(),
+        Settings.Secure.DEFAULT_INPUT_METHOD,
+        "com.sec.android.inputmethod/.SamsungKeypad");
+    TestImm testImm =
+        Shadow.extract(
+            RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
+    testImm.setCurrentInputMethodSubtype(inputMethodSubtype);
+    View testView = new View(RuntimeEnvironment.application);
+    TextInputChannel textInputChannel = new TextInputChannel(mock(DartExecutor.class));
+    TextInputPlugin textInputPlugin =
+        new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
+    textInputPlugin.setTextInputClient(
+        0,
+        new TextInputChannel.Configuration(
+            false,
+            false,
+            true,
+            TextInputChannel.TextCapitalization.NONE,
+            null,
+            null,
+            null,
+            null,
+            null));
+    // There's a pending restart since we initialized the text input client. Flush that now.
+    textInputPlugin.setTextInputEditingState(
+        testView, new TextInputChannel.TextEditState("", 0, 0, -1, -1));
+
+    // Move the cursor.
+    assertEquals(1, testImm.getRestartCount(testView));
+    textInputPlugin.setTextInputEditingState(
+        testView, new TextInputChannel.TextEditState("", 0, 0, -1, -1));
+
+    // Verify that we've NOT restarted the input.
+    assertEquals(2, testImm.getRestartCount(testView));
+  }
+
+  // Regression test for https://github.com/flutter/flutter/issues/73433.
+  // The restart workaround seems to have caused #73433 and it's no longer
+  // needed.
+  @Test
+  public void setTextInputEditingState_DontForceRestartOnNewSamsungKeyboard() {
+    // Initialize a TextInputPlugin with a Samsung keypad.
+    ShadowBuild.setManufacturer("samsung");
+    final ShadowPackageManager packageManager =
+        Shadows.shadowOf(
+            RuntimeEnvironment.application.getApplicationContext().getPackageManager());
+    final PackageInfo info = new PackageInfo();
+    info.packageName = "com.sec.android.inputmethod";
+    info.versionCode = 333183070;
+    packageManager.addPackage(info);
     InputMethodSubtype inputMethodSubtype =
         new InputMethodSubtype(0, 0, /*locale=*/ "en", "", "", false, false);
     Settings.Secure.putString(

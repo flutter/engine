@@ -6,9 +6,11 @@ package io.flutter.plugin.editing;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.graphics.Rect;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.text.Editable;
 import android.text.InputType;
 import android.util.SparseArray;
@@ -21,6 +23,7 @@ import android.view.autofill.AutofillValue;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
+import android.view.inputmethod.InputMethodSubtype;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -47,6 +50,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
   @Nullable private InputConnection lastInputConnection;
   @NonNull private PlatformViewsController platformViewsController;
   @Nullable private Rect lastClientRect;
+  private final boolean restartAlwaysRequired;
   private ImeSyncDeferringInsetsCallback imeSyncCallback;
   private AndroidKeyProcessor keyProcessor;
 
@@ -158,6 +162,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
 
     this.platformViewsController = platformViewsController;
     this.platformViewsController.attachTextInputPlugin(this);
+    restartAlwaysRequired = isRestartAlwaysRequired();
   }
 
   @NonNull
@@ -418,9 +423,9 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     mLastKnownFrameworkTextEditingState = state;
     mEditable.setEditingState(state);
 
-    // Restart if there is a pending restart. Restarting will also update the
-    // selection.
-    if (mRestartInputPending) {
+    // Restart if there is a pending restart or the device requires a force restart
+    // (see isRestartAlwaysRequired). Restarting will also update the selection.
+    if (restartAlwaysRequired || mRestartInputPending) {
       mImm.restartInput(view);
       mRestartInputPending = false;
     }
@@ -468,6 +473,51 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
             (int) (minMax[2] * density),
             (int) Math.ceil(minMax[1] * density),
             (int) Math.ceil(minMax[3] * density));
+  }
+
+  // Samsung's Korean keyboard has a bug where it always attempts to combine characters based on
+  // its internal state, ignoring if and when the cursor is moved programmatically. The same bug
+  // also causes non-korean keyboards to occasionally duplicate text when tapping in the middle
+  // of existing text to edit it.
+  //
+  // Fully restarting the IMM works around this because it flushes the keyboard's internal state
+  // and stops it from trying to incorrectly combine characters. However this also has some
+  // negative performance implications, so we don't want to apply this workaround in every case.
+  @SuppressLint("NewApi") // New API guard is inline, the linter can't see it.
+  @SuppressWarnings("deprecation")
+  private boolean isRestartAlwaysRequired() {
+    InputMethodSubtype subtype = mImm.getCurrentInputMethodSubtype();
+    // Impacted devices all shipped with Android Lollipop or newer.
+    if (subtype == null
+        || Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP
+        || !Build.MANUFACTURER.equals("samsung")) {
+      return false;
+    }
+    String keyboardName =
+        Settings.Secure.getString(
+            mView.getContext().getContentResolver(), Settings.Secure.DEFAULT_INPUT_METHOD);
+    // The Samsung keyboard is called "com.sec.android.inputmethod/.SamsungKeypad" but look
+    // for "Samsung" just in case Samsung changes the name of the keyboard.
+    if (!keyboardName.contains("Samsung")) {
+      return false;
+    }
+
+    final long versionCode;
+    try {
+      versionCode =
+          mView
+              .getContext()
+              .getPackageManager()
+              .getPackageInfo("com.sec.android.inputmethod", 0)
+              .getLongVersionCode();
+    } catch (PackageManager.NameNotFoundException e) {
+      Log.w(TAG, "com.sec.android.inputmethod is not installed.");
+      return false;
+    }
+
+    // 3.3.31.83 is a known version that's free of the aforementioned bug.
+    // TODO(LongCatIsLooong): Find the minimum version that has the fix.
+    return versionCode < 333183070;
   }
 
   @VisibleForTesting
