@@ -364,7 +364,7 @@ Shell::Shell(DartVMRef vm,
     : task_runners_(std::move(task_runners)),
       settings_(std::move(settings)),
       vm_(std::move(vm)),
-      is_gpu_disabled_sync_switch_(new fml::SyncSwitch(false)),
+      is_gpu_disabled_sync_switch_(new fml::SyncSwitch()),
       volatile_path_tracker_(std::move(volatile_path_tracker)),
       weak_factory_gpu_(nullptr),
       weak_factory_(this) {
@@ -699,6 +699,8 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
+  GetIsGpuDisabledSyncSwitch()->SetSwitch(false);
+
   // Prevent any request to change the thread configuration for raster and
   // platform queues while the platform view is being created.
   //
@@ -784,6 +786,7 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
       } else {
         resource_context = platform_view->CreateResourceContext();
       }
+      io_manager->GetIsGpuDisabledSyncSwitch()->SetSwitch(false);
       io_manager->NotifyResourceContextAvailable(resource_context);
     }
     // Step 1: Next, post a task on the UI thread to tell the engine that it has
@@ -847,6 +850,7 @@ void Shell::OnPlatformViewDestroyed() {
             [&] { io_manager->GetSkiaUnrefQueue()->Drain(); }));
     // Step 3: All done. Signal the latch that the platform thread is waiting
     // on.
+    io_manager->GetIsGpuDisabledSyncSwitch()->SetSwitch(true);
     latch.Signal();
   };
 
@@ -891,6 +895,7 @@ void Shell::OnPlatformViewDestroyed() {
     raster_task();
     latch.Wait();
   }
+  GetIsGpuDisabledSyncSwitch()->SetSwitch(true);
 }
 
 // |PlatformView::Delegate|

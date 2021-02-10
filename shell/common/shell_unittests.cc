@@ -2678,5 +2678,61 @@ TEST_F(ShellTest, UpdateAssetResolverByTypeDoesNotReplaceMismatchType) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
+TEST_F(ShellTest,
+       PlatformViewCreateDestroySetsGpuIsDisabledForIoAndGraphicsContexts) {
+  auto settings = CreateSettingsForFixture();
+  std::unique_ptr<Shell> shell = CreateShell(settings);
+  fml::AutoResetWaitableEvent latch;
+
+  auto enabled_handler = fml::SyncSwitch::Handlers()
+                             .SetIfTrue([] { ASSERT_TRUE(false); })
+                             .SetIfFalse([] { ASSERT_TRUE(true); });
+  auto disabled_handler = fml::SyncSwitch::Handlers()
+                              .SetIfTrue([] { ASSERT_TRUE(true); })
+                              .SetIfFalse([] { ASSERT_TRUE(false); });
+
+  shell->GetIsGpuDisabledSyncSwitch()->Execute(enabled_handler);
+
+  shell->GetTaskRunners().GetIOTaskRunner()->PostTask(
+      [io_manager = shell->GetIOManager(), &enabled_handler, &latch] {
+        io_manager->GetIsGpuDisabledSyncSwitch()->Execute(enabled_handler);
+        latch.Signal();
+      });
+  latch.Wait();
+  latch.Reset();
+
+  PlatformViewNotifyCreated(shell.get());
+  shell->GetIsGpuDisabledSyncSwitch()->Execute(enabled_handler);
+  shell->GetTaskRunners().GetIOTaskRunner()->PostTask(
+      [io_manager = shell->GetIOManager(), &enabled_handler, &latch] {
+        io_manager->GetIsGpuDisabledSyncSwitch()->Execute(enabled_handler);
+        latch.Signal();
+      });
+  latch.Wait();
+  latch.Reset();
+
+  PlatformViewNotifyDestroyed(shell.get());
+  shell->GetIsGpuDisabledSyncSwitch()->Execute(disabled_handler);
+  shell->GetTaskRunners().GetIOTaskRunner()->PostTask(
+      [io_manager = shell->GetIOManager(), &disabled_handler, &latch] {
+        io_manager->GetIsGpuDisabledSyncSwitch()->Execute(disabled_handler);
+        latch.Signal();
+      });
+  latch.Wait();
+  latch.Reset();
+
+  PlatformViewNotifyCreated(shell.get());
+  shell->GetIsGpuDisabledSyncSwitch()->Execute(enabled_handler);
+  shell->GetTaskRunners().GetIOTaskRunner()->PostTask(
+      [io_manager = shell->GetIOManager(), &enabled_handler, &latch] {
+        io_manager->GetIsGpuDisabledSyncSwitch()->Execute(enabled_handler);
+        latch.Signal();
+      });
+  latch.Wait();
+  latch.Reset();
+
+  DestroyShell(std::move(shell));
+}
+
 }  // namespace testing
 }  // namespace flutter
