@@ -866,8 +866,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   flutterPlatformViewsController->Reset();
 }
 
-- (void)
-    testFlutterPlatformViewTouchesCancelledEventAreForcedToBeCancelled {
+- (void)testFlutterPlatformViewTouchesCancelledEventAreForcedToBeCancelled {
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
   auto thread_task_runner = CreateNewThread("FlutterPlatformViewsTest");
   flutter::TaskRunners runners(/*label=*/self.name.UTF8String,

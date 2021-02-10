@@ -31,7 +31,7 @@ extern NSNotificationName const FlutterViewControllerShowHomeIndicator;
 - (FlutterRestorationPlugin*)restorationPlugin;
 // Send touches to the Flutter Engine while forcing the change type to be cancelled.
 // The `phase`s in `touches` are ignored.
-- (void)forceTouchesCancelled:(NSSet* )touches;
+- (void)forceTouchesCancelled:(NSSet*)touches;
 
 @end
 

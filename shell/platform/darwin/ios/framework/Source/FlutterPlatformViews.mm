@@ -944,7 +944,7 @@ void FlutterPlatformViewsController::ResetFrameState() {
   // Flutter needs all the cancelled touches to be "cancelled" change types in order to correctly
   // handle gesture sequence.
   // We always override the change type to "cancelled".
-  [((FlutterViewController *)_flutterViewController.get()) forceTouchesCancelled:touches];
+  [((FlutterViewController*)_flutterViewController.get()) forceTouchesCancelled:touches];
   _currentTouchPointersCount -= touches.count;
   if (_currentTouchPointersCount == 0) {
     self.state = UIGestureRecognizerStateFailed;
