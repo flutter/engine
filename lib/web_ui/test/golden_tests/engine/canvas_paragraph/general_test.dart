@@ -151,7 +151,7 @@ void testMain() async {
     canvas.drawParagraph(paragraph, offset);
     offset = offset.translate(0, paragraph.height + 10);
 
-    return takeScreenshot(canvas, bounds, 'canvas_paragraph_align_dom');
+    return takeScreenshot(canvas, bounds, 'canvas_paragraph_align_dom', maxDiffRatePercent: 0.3);
   });
 
   void testAlignAndTransform(EngineCanvas canvas) {
