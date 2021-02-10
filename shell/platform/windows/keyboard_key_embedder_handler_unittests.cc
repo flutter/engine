@@ -53,6 +53,8 @@ constexpr uint64_t kLogicalNumLock = 0x90;
 }  // namespace
 
 // Test the most basic key events.
+//
+// Press, hold, and release key A on an US keyboard.
 TEST(KeyboardKeyEmbedderHandlerTest, BasicKeyPressingAndHolding) {
   std::vector<TestFlutterKeyEvent> results;
   TestFlutterKeyEvent* event;
@@ -65,7 +67,6 @@ TEST(KeyboardKeyEmbedderHandlerTest, BasicKeyPressingAndHolding) {
             results.emplace_back(event, callback, user_data);
           });
 
-  // On a US keyboard:
   // Press KeyA.
   handler->KeyboardHook(
       kLogicalKeyA, kPhysicalKeyA, WM_KEYDOWN, 'a', false, false,
@@ -116,6 +117,11 @@ TEST(KeyboardKeyEmbedderHandlerTest, BasicKeyPressingAndHolding) {
   event->callback(false, event->user_data);
 }
 
+// Press numpad 1, toggle NumLock, and release numpad 1 on an US
+// keyboard.
+//
+// This is special because the virtual key for numpad 1 will
+// change in this process.
 TEST(KeyboardKeyEmbedderHandlerTest, ToggleNumLockDuringNumpadPress) {
   std::vector<TestFlutterKeyEvent> results;
   TestFlutterKeyEvent* event;
@@ -128,7 +134,6 @@ TEST(KeyboardKeyEmbedderHandlerTest, ToggleNumLockDuringNumpadPress) {
             results.emplace_back(event, callback, user_data);
           });
 
-  // On a US keyboard:
   // Press NumPad1.
   handler->KeyboardHook(
       kLogicalNumpad1, kPhysicalNumpad1, WM_KEYDOWN, 0, false, false,
@@ -180,6 +185,9 @@ TEST(KeyboardKeyEmbedderHandlerTest, ToggleNumLockDuringNumpadPress) {
   EXPECT_STREQ(event->character, "");
   EXPECT_EQ(event->synthesized, false);
   results.clear();
+}
+
+TEST(KeyboardKeyEmbedderHandlerTest, ImeEventsAreIgnored) {
 }
 
 }  // namespace testing
