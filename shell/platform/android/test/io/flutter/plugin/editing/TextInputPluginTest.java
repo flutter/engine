@@ -344,13 +344,12 @@ public class TextInputPluginTest {
 
   // See also: https://github.com/flutter/flutter/issues/29341 and
   // https://github.com/flutter/flutter/issues/31512.
-  // Some recent versions of Samsung keybords were affected including non-korean
+  // Some recent versions of Samsung keybords are affected including non-korean
   // languages and thus needed the restart.
   @Test
   public void setTextInputEditingState_alwaysRestartsOnAffectedDevices() {
     // Initialize a TextInputPlugin with a Samsung keypad.
     ShadowBuild.setManufacturer("samsung");
-    // final ShadowPackageManager packageManager = RuntimeEnvironment.getPackageManager();
     final ShadowPackageManager packageManager =
         Shadows.shadowOf(
             RuntimeEnvironment.application.getApplicationContext().getPackageManager());
@@ -393,13 +392,13 @@ public class TextInputPluginTest {
     textInputPlugin.setTextInputEditingState(
         testView, new TextInputChannel.TextEditState("", 0, 0, -1, -1));
 
-    // Verify that we've NOT restarted the input.
+    // Verify that we've restarted the input.
     assertEquals(2, testImm.getRestartCount(testView));
   }
 
   // Regression test for https://github.com/flutter/flutter/issues/73433.
   // The restart workaround seems to have caused #73433 and it's no longer
-  // needed.
+  // needed on newer versions of Samsung keyboard.
   @Test
   public void setTextInputEditingState_DontForceRestartOnNewSamsungKeyboard() {
     // Initialize a TextInputPlugin with a Samsung keypad.
@@ -489,7 +488,7 @@ public class TextInputPluginTest {
     textInputPlugin.setTextInputEditingState(
         testView, new TextInputChannel.TextEditState("", 0, 0, -1, -1));
 
-    // Verify that we've restarted the input.
+    // Verify that we've NOT restarted the input.
     assertEquals(1, testImm.getRestartCount(testView));
   }
 
