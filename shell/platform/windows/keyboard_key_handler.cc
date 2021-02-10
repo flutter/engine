@@ -67,11 +67,6 @@ KeyboardKeyHandler::~KeyboardKeyHandler() = default;
 void KeyboardKeyHandler::TextHook(FlutterWindowsView* view,
                                   const std::u16string& code_point) {}
 
-void KeyboardKeyHandler::AddDelegate(
-    std::unique_ptr<KeyboardKeyHandlerDelegate> delegate) {
-  delegates_.push_back(std::move(delegate));
-}
-
 const KeyboardKeyHandler::PendingEvent* KeyboardKeyHandler::FindPendingEvent(
     uint64_t id) {
   if (pending_events_.empty()) {
@@ -168,6 +163,7 @@ bool KeyboardKeyHandler::KeyboardHook(FlutterWindowsView* view,
 void KeyboardKeyHandler::ResolvePendingEvent(PendingEvent* pending_event,
                                              bool handled) {
   pending_event->unreplied -= 1;
+  assert(pending_event->unreplied >= 0);
   pending_event->any_handled = pending_event->any_handled || handled;
   if (pending_event->unreplied == 0) {
     if (!pending_event->any_handled) {

@@ -117,8 +117,6 @@ class KeyboardKeyHandler : public KeyboardHandlerBase {
   };
 
   const PendingEvent* FindPendingEvent(uint64_t id);
-  void RemovePendingEvent(uint64_t id);
-  void AddPendingEvent(uint64_t id, int scancode, int action, bool extended);
   void HandleResponse(bool handled,
                       uint64_t id,
                       int action,
@@ -126,6 +124,7 @@ class KeyboardKeyHandler : public KeyboardHandlerBase {
                       int scancode,
                       int character);
   void RedispatchEvent(const PendingEvent* pending);
+  void RemovePendingEvent(uint64_t id);
   void ResolvePendingEvent(PendingEvent* pending, bool handled);
 
   std::vector<std::unique_ptr<KeyboardKeyHandlerDelegate>> delegates_;
