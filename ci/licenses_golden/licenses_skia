@@ -1,4 +1,4 @@
-Signature: afee23802fa3c7b0e0abfade7a28b0ff
+Signature: 9cee1943d1ea67da970f178bffeafe4e
 
 UNUSED LICENSES:
 
@@ -2760,8 +2760,7 @@ FILE: ../../../third_party/skia/src/core/SkTDynamicHash.h
 FILE: ../../../third_party/skia/src/core/SkTMultiMap.h
 FILE: ../../../third_party/skia/src/core/SkValidationUtils.h
 FILE: ../../../third_party/skia/src/effects/SkLumaColorFilter.cpp
-FILE: ../../../third_party/skia/src/effects/imagefilters/SkAlphaThresholdFilter.cpp
-FILE: ../../../third_party/skia/src/effects/imagefilters/SkAlphaThresholdFilter.h
+FILE: ../../../third_party/skia/src/effects/imagefilters/SkAlphaThresholdImageFilter.cpp
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkComposeImageFilter.cpp
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkComposeImageFilter.h
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkDisplacementMapEffect.cpp
