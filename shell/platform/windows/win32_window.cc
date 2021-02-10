@@ -10,11 +10,6 @@
 
 #include "win32_dpi_utils.h"
 
-// KeyCode used to indicate key events to be handled by the IME. These include
-// the kana key, fullwidth/halfwidth (zenkaku/hankaku) key, and keypresses when
-// the IME is in composing mode.
-static constexpr int kImeComposingKeyCode = 229;
-
 namespace flutter {
 
 namespace {
