@@ -170,7 +170,6 @@ executable("flutter_desktop_darwin_unittests") {
     ":flutter_desktop_darwin_fixtures",
     ":flutter_framework_source",
     "//flutter/shell/platform/darwin/common:framework_shared",
-    "//flutter/shell/platform/darwin/graphics",
     "//flutter/shell/platform/embedder:embedder_as_internal_library",
     "//flutter/shell/platform/embedder:embedder_test_utils",
     "//flutter/testing",
@@ -179,6 +178,10 @@ executable("flutter_desktop_darwin_unittests") {
     "//flutter/testing:testing_lib",
     "//third_party/ocmock:ocmock",
   ]
+
+  if (shell_enable_metal) {
+    deps += [ "//flutter/shell/platform/darwin/graphics" ]
+  }
 }
 
 copy("copy_dylib") {
