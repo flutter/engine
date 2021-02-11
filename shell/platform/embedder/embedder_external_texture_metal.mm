@@ -13,6 +13,15 @@
 
 namespace flutter {
 
+static bool ValidNumTextures(int expected, int actual) {
+  if (expected == actual) {
+    return true;
+  } else {
+    FML_LOG(ERROR) << "Invalid number of textures, expected: " << expected << ", got: " << actual;
+    return false;
+  }
+}
+
 EmbedderExternalTextureMetal::EmbedderExternalTextureMetal(int64_t texture_identifier,
                                                            const ExternalTextureCallback& callback)
     : Texture(texture_identifier), external_texture_callback_(callback) {
@@ -47,6 +56,8 @@ sk_sp<SkImage> EmbedderExternalTextureMetal::ResolveTexture(int64_t texture_id,
       external_texture_callback_(texture_id, size.width(), size.height());
 
   if (!texture) {
+    FML_LOG(ERROR) << "External texture callback for ID " << texture_id
+                   << " did not return a valid texture.";
     return nullptr;
   }
 
@@ -54,23 +65,25 @@ sk_sp<SkImage> EmbedderExternalTextureMetal::ResolveTexture(int64_t texture_id,
 
   switch (texture->pixel_format) {
     case FlutterMetalExternalTexturePixelFormat::kRGBA: {
-      FML_CHECK(texture->num_textures == 1);
-      id<MTLTexture> rgbaTex = reinterpret_cast<id<MTLTexture>>(texture->textures[0]);
-      image = [FlutterDarwinExternalTextureSkImageWrapper wrapRGBATexture:rgbaTex
-                                                                grContext:context
-                                                                    width:size.width()
-                                                                   height:size.height()];
+      if (ValidNumTextures(1, texture->num_textures)) {
+        id<MTLTexture> rgbaTex = reinterpret_cast<id<MTLTexture>>(texture->textures[0]);
+        image = [FlutterDarwinExternalTextureSkImageWrapper wrapRGBATexture:rgbaTex
+                                                                  grContext:context
+                                                                      width:size.width()
+                                                                     height:size.height()];
+      }
       break;
     }
     case FlutterMetalExternalTexturePixelFormat::kYUVA: {
-      FML_CHECK(texture->num_textures == 2);
-      id<MTLTexture> yTex = reinterpret_cast<id<MTLTexture>>(texture->textures[0]);
-      id<MTLTexture> uvTex = reinterpret_cast<id<MTLTexture>>(texture->textures[1]);
-      image = [FlutterDarwinExternalTextureSkImageWrapper wrapYUVATexture:yTex
-                                                                    UVTex:uvTex
-                                                                grContext:context
-                                                                    width:size.width()
-                                                                   height:size.height()];
+      if (ValidNumTextures(2, texture->num_textures)) {
+        id<MTLTexture> yTex = reinterpret_cast<id<MTLTexture>>(texture->textures[0]);
+        id<MTLTexture> uvTex = reinterpret_cast<id<MTLTexture>>(texture->textures[1]);
+        image = [FlutterDarwinExternalTextureSkImageWrapper wrapYUVATexture:yTex
+                                                                      UVTex:uvTex
+                                                                  grContext:context
+                                                                      width:size.width()
+                                                                     height:size.height()];
+      }
       break;
     }
   }

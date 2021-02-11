@@ -467,9 +467,12 @@ typedef struct {
   /// Supported textures are YUVA and RGBA, in case of YUVA we expect 2 texture
   /// handles to be provided by the embedder, Y first and UV next. In case of
   /// RGBA only one should be passed.
-  /// These are individually aliases for id<MTLTexture> which will be released
-  /// once they have been composited: `external_texture_frame_callback`.
-  FlutterMetalTextureHandle* textures;
+  /// These are individually aliases for id<MTLTexture>. These textures are
+  /// retained by the engine for the period of the composition. Once these
+  /// textures have been unregistered via the
+  /// `FlutterEngineUnregisterExternalTexture`, the embedder has to release
+  /// these textures.
+  const FlutterMetalTextureHandle* textures;
 } FlutterMetalExternalTexture;
 
 /// Callback to provide an external texture for a given texture_id.
