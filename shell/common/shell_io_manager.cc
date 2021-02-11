@@ -79,8 +79,7 @@ ShellIOManager::ShellIOManager(
 ShellIOManager::~ShellIOManager() {
   // Last chance to drain the IO queue as the platform side reference to the
   // underlying OpenGL context may be going away.
-  is_gpu_disabled_sync_switch_->Execute(
-      fml::SyncSwitch::Handlers().SetIfFalse([&] { unref_queue_->Drain(); }));
+  unref_queue_->Drain();
 }
 
 void ShellIOManager::NotifyResourceContextAvailable(

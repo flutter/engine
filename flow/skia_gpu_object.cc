@@ -18,7 +18,7 @@ SkiaUnrefQueue::SkiaUnrefQueue(fml::RefPtr<fml::TaskRunner> task_runner,
       context_(context) {}
 
 SkiaUnrefQueue::~SkiaUnrefQueue() {
-  FML_DCHECK(objects_.empty());
+  FML_DCHECK(objects_.empty()) << "Expected empty, have " << objects_.size();
 }
 
 void SkiaUnrefQueue::Unref(SkRefCnt* object) {

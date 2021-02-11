@@ -779,6 +779,11 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   auto io_task = [io_manager = io_manager_->GetWeakPtr(), platform_view,
                   ui_task_runner = task_runners_.GetUITaskRunner(), ui_task,
                   shared_resource_context = shared_resource_context_] {
+    if (io_manager) {
+      io_manager->GetIsGpuDisabledSyncSwitch()->Execute(
+          fml::SyncSwitch::Handlers().SetIfFalse(
+              [&] { io_manager->GetSkiaUnrefQueue()->Drain(); }));
+    }
     if (io_manager && !io_manager->GetResourceContext()) {
       sk_sp<GrDirectContext> resource_context;
       if (shared_resource_context) {
@@ -786,7 +791,6 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
       } else {
         resource_context = platform_view->CreateResourceContext();
       }
-      io_manager->GetIsGpuDisabledSyncSwitch()->SetSwitch(false);
       io_manager->NotifyResourceContextAvailable(resource_context);
     }
     // Step 1: Next, post a task on the UI thread to tell the engine that it has
@@ -848,9 +852,9 @@ void Shell::OnPlatformViewDestroyed() {
     io_manager->GetIsGpuDisabledSyncSwitch()->Execute(
         fml::SyncSwitch::Handlers().SetIfFalse(
             [&] { io_manager->GetSkiaUnrefQueue()->Drain(); }));
+    io_manager->GetIsGpuDisabledSyncSwitch()->SetSwitch(true);
     // Step 3: All done. Signal the latch that the platform thread is waiting
     // on.
-    io_manager->GetIsGpuDisabledSyncSwitch()->SetSwitch(true);
     latch.Signal();
   };
 
@@ -895,7 +899,6 @@ void Shell::OnPlatformViewDestroyed() {
     raster_task();
     latch.Wait();
   }
-  GetIsGpuDisabledSyncSwitch()->SetSwitch(true);
 }
 
 // |PlatformView::Delegate|
