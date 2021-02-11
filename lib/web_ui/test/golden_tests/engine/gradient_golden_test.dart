@@ -297,6 +297,7 @@ void testMain() async {
     await _checkScreenshot(canvas, 'sweep_gradient_path');
   });
 
+  /// Regression test for https://github.com/flutter/flutter/issues/74137.
   test('Paints rotated and shifted linear gradient', () async {
     final RecordingCanvas canvas =
     RecordingCanvas(const Rect.fromLTRB(0, 0, 400, 300));
