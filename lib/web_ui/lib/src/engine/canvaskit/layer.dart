@@ -152,8 +152,9 @@ class RootLayer extends ContainerLayer {
 
 class BackdropFilterEngineLayer extends ContainerLayer implements ui.BackdropFilterEngineLayer {
   final ui.ImageFilter _filter;
+  final BlendMode _blendMode;
 
-  BackdropFilterEngineLayer(this._filter);
+  BackdropFilterEngineLayer(this._filter, this._blendMode);
 
   @override
   void preroll(PrerollContext preRollContext, Matrix4 matrix) {
