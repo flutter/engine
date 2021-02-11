@@ -1223,6 +1223,24 @@ public class FlutterJNI {
 
   private native void nativeNotifyLowMemoryWarning(long nativeShellHolderId);
 
+  /** Disables GPU operations. Call this when an activityor fragment pauses. */
+  public void disableGpu() {
+    ensureRunningOnMainThread();
+    ensureAttachedToNative();
+    nativeDisableGpu(nativeShellHolderId);
+  }
+
+  private native void nativeDisableGpu(long nativeShellHolderId);
+
+  /** Enables GPU operations. Call this when an activity or fragment resumes. */
+  public void enableGpu() {
+    ensureRunningOnMainThread();
+    ensureAttachedToNative();
+    nativeEnableGpu(nativeShellHolderId);
+  }
+
+  private native void nativeEnableGpu(long nativeShellHolderId);
+
   private void ensureRunningOnMainThread() {
     if (Looper.myLooper() != mainLooper) {
       throw new RuntimeException(

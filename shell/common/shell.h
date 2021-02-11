@@ -53,6 +53,18 @@ enum class DartErrorCode {
   UnknownError = 255
 };
 
+/// Values for |Shell::SetGpuAvailability|.
+enum class GpuAvailability {
+  /// Indicates that GPU operations should be permitted.
+  kAvailable = 0,
+  /// Indicates that the GPU is about to become unavailable, and to attempt to
+  /// flush any GPU related resources now.
+  kFlushAndMakeUnavailable = 1,
+  /// Indicates that the GPU is unavailable, and that no attempt should be made
+  /// to even flush GPU objects until it is available again.
+  kUnavailable = 2
+};
+
 //------------------------------------------------------------------------------
 /// Perhaps the single most important class in the Flutter engine repository.
 /// When embedders create a Flutter application, they are referring to the
@@ -321,8 +333,12 @@ class Shell final : public PlatformView::Delegate,
   bool EngineHasLivePorts() const;
 
   //----------------------------------------------------------------------------
-  /// @brief     Accessor for the disable GPU SyncSwitch
+  /// @brief     Accessor for the disable GPU SyncSwitch.
   std::shared_ptr<fml::SyncSwitch> GetIsGpuDisabledSyncSwitch() const override;
+
+  //----------------------------------------------------------------------------
+  /// @brief     Marks the GPU as available or unavailable.
+  void SetGpuAvailability(GpuAvailability availability);
 
   //----------------------------------------------------------------------------
   /// @brief      Get a pointer to the Dart VM used by this running shell
@@ -358,6 +374,7 @@ class Shell final : public PlatformView::Delegate,
   std::unique_ptr<Rasterizer> rasterizer_;       // on raster task runner
   std::unique_ptr<ShellIOManager> io_manager_;   // on IO task runner
   std::shared_ptr<fml::SyncSwitch> is_gpu_disabled_sync_switch_;
+  fml::SyncSwitch::Controller is_gpu_disabled_controller_;
   std::shared_ptr<VolatilePathTracker> volatile_path_tracker_;
 
   fml::WeakPtr<Engine> weak_engine_;  // to be shared across threads

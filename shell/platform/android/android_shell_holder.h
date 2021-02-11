@@ -96,6 +96,10 @@ class AndroidShellHolder {
 
   void NotifyLowMemoryWarning();
 
+  void DisableGpu();
+
+  void EnableGpu();
+
  private:
   const flutter::Settings settings_;
   const std::shared_ptr<PlatformViewAndroidJNI> jni_facade_;

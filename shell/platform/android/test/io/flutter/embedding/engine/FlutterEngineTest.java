@@ -232,4 +232,31 @@ public class FlutterEngineTest {
 
     verify(flutterJNI, never()).attachToNative(false);
   }
+
+  @Test
+  public void itCallsNativeDisableEnableGpu() {
+    // Setup test.
+    FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
+    when(mockFlutterJNI.isAttached()).thenReturn(true);
+
+    PlatformViewsController platformViewsController = mock(PlatformViewsController.class);
+
+    // Execute behavior under test.
+    FlutterEngine engine =
+        new FlutterEngine(
+            RuntimeEnvironment.application,
+            mock(FlutterLoader.class),
+            mockFlutterJNI,
+            /*dartVmArgs=*/ new String[] {},
+            /*automaticallyRegisterPlugins=*/ false);
+
+    verify(mockFlutterJNI, never()).disableGpu();
+    verify(mockFlutterJNI, never()).enableGpu();
+
+    engine.disableGpu();
+    verify(mockFlutterJNI, times(1)).disableGpu();
+
+    engine.enableGpu();
+    verify(mockFlutterJNI, times(1)).enableGpu();
+  }
 }

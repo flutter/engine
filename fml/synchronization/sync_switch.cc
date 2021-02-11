@@ -18,8 +18,6 @@ SyncSwitch::Handlers& SyncSwitch::Handlers::SetIfFalse(
   return *this;
 }
 
-SyncSwitch::SyncSwitch() : SyncSwitch(false) {}
-
 SyncSwitch::SyncSwitch(bool value) : value_(value) {}
 
 void SyncSwitch::Execute(const SyncSwitch::Handlers& handlers) {
@@ -31,9 +29,12 @@ void SyncSwitch::Execute(const SyncSwitch::Handlers& handlers) {
   }
 }
 
-void SyncSwitch::SetSwitch(bool value) {
-  std::scoped_lock guard(mutex_);
-  value_ = value;
+SyncSwitch::Controller::Controller(std::shared_ptr<SyncSwitch> sync_switch)
+    : sync_switch_(std::move(sync_switch)) {}
+
+void SyncSwitch::Controller::SetSwitch(bool value) {
+  std::scoped_lock guard(sync_switch_->mutex_);
+  sync_switch_->value_ = value;
 }
 
 }  // namespace fml

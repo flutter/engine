@@ -365,6 +365,7 @@ Shell::Shell(DartVMRef vm,
       settings_(std::move(settings)),
       vm_(std::move(vm)),
       is_gpu_disabled_sync_switch_(new fml::SyncSwitch()),
+      is_gpu_disabled_controller_(is_gpu_disabled_sync_switch_),
       volatile_path_tracker_(std::move(volatile_path_tracker)),
       weak_factory_gpu_(nullptr),
       weak_factory_(this) {
@@ -1788,6 +1789,30 @@ bool Shell::ReloadSystemFonts() {
 
 std::shared_ptr<fml::SyncSwitch> Shell::GetIsGpuDisabledSyncSwitch() const {
   return is_gpu_disabled_sync_switch_;
+}
+
+void Shell::SetGpuAvailability(GpuAvailability availability) {
+  switch (availability) {
+    case GpuAvailability::kAvailable:
+      is_gpu_disabled_controller_.SetSwitch(false);
+      return;
+    case GpuAvailability::kFlushAndMakeUnavailable: {
+      fml::AutoResetWaitableEvent latch;
+      fml::TaskRunner::RunNowOrPostTask(
+          task_runners_.GetIOTaskRunner(),
+          [io_manager = io_manager_.get(), &latch]() {
+            io_manager->GetSkiaUnrefQueue()->Drain();
+            latch.Signal();
+          });
+      latch.Wait();
+    }
+      // FALLTHROUGH
+    case GpuAvailability::kUnavailable:
+      is_gpu_disabled_controller_.SetSwitch(true);
+      return;
+    default:
+      FML_DCHECK(false);
+  }
 }
 
 void Shell::OnDisplayUpdates(DisplayUpdateType update_type,

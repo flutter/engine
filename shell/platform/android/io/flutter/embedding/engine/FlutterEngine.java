@@ -622,4 +622,14 @@ public class FlutterEngine {
      */
     void onEngineWillDestroy();
   }
+
+  /** Disables GPU operations. Call this when an activityor fragment pauses. */
+  public void disableGpu() {
+    flutterJNI.disableGpu();
+  }
+
+  /** Enables GPU operations. Call this when an activity or fragment resumes. */
+  public void enableGpu() {
+    flutterJNI.enableGpu();
+  }
 }

@@ -418,6 +418,7 @@ import java.util.Arrays;
   void onResume() {
     Log.v(TAG, "onResume()");
     ensureAlive();
+    flutterEngine.enableGpu();
     flutterEngine.getLifecycleChannel().appIsResumed();
   }
 
@@ -458,6 +459,7 @@ import java.util.Arrays;
   void onPause() {
     Log.v(TAG, "onPause()");
     ensureAlive();
+    flutterEngine.disableGpu();
     flutterEngine.getLifecycleChannel().appIsInactive();
   }
 

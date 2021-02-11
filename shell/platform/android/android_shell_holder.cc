@@ -265,6 +265,16 @@ void AndroidShellHolder::NotifyLowMemoryWarning() {
   shell_->NotifyLowMemoryWarning();
 }
 
+void AndroidShellHolder::DisableGpu() {
+  FML_DCHECK(shell_);
+  shell_->SetGpuAvailability(GpuAvailability::kFlushAndMakeUnavailable);
+}
+
+void AndroidShellHolder::EnableGpu() {
+  FML_DCHECK(shell_);
+  shell_->SetGpuAvailability(GpuAvailability::kAvailable);
+}
+
 std::optional<RunConfiguration> AndroidShellHolder::BuildRunConfiguration(
     std::shared_ptr<flutter::AssetManager> asset_manager,
     const std::string& entrypoint,

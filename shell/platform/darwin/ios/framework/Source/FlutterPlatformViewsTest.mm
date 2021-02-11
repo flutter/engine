@@ -969,7 +969,8 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       nullptr, true,
       [](const flutter::SurfaceFrame& surface_frame, SkCanvas* canvas) { return false; });
   auto is_gpu_disabled = std::make_shared<fml::SyncSwitch>();
-  is_gpu_disabled->SetSwitch(false);
+  auto is_gpu_disabled_controller = fml::SyncSwitch::Controller(is_gpu_disabled);
+  is_gpu_disabled_controller.SetSwitch(false);
   XCTAssertFalse(flutterPlatformViewsController->SubmitFrame(
       nullptr, nullptr, std::move(mock_surface), is_gpu_disabled));
 
@@ -981,7 +982,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       nullptr, true,
       [](const flutter::SurfaceFrame& surface_frame, SkCanvas* canvas) { return true; });
   auto gpu_is_disabled = std::make_shared<fml::SyncSwitch>();
-  gpu_is_disabled->SetSwitch(false);
+  is_gpu_disabled_controller.SetSwitch(false);
   XCTAssertTrue(flutterPlatformViewsController->SubmitFrame(
       nullptr, nullptr, std::move(mock_surface_submit_false), gpu_is_disabled));
 }
