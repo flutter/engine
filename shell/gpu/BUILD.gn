@@ -49,6 +49,8 @@ source_set("gpu_surface_vulkan") {
 
 source_set("gpu_surface_metal") {
   sources = [
+    "gpu_binary_archive_metal.h",
+    "gpu_binary_archive_metal.mm",
     "gpu_surface_metal.h",
     "gpu_surface_metal.mm",
     "gpu_surface_metal_delegate.cc",
