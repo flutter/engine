@@ -1223,7 +1223,7 @@ public class FlutterJNI {
 
   private native void nativeNotifyLowMemoryWarning(long nativeShellHolderId);
 
-  /** Disables GPU operations. Call this when an activityor fragment pauses. */
+  /** Disables GPU operations. Call this when an activity or fragment pauses. */
   public void disableGpu() {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
