@@ -27,8 +27,6 @@ namespace flutter_runner {
 namespace {
 
 constexpr SkColorType kSkiaColorType = kRGBA_8888_SkColorType;
-constexpr fuchsia::sysmem::PixelFormatType kSysmemPixelFormat =
-    fuchsia::sysmem::PixelFormatType::R8G8B8A8;
 constexpr VkFormat kVulkanFormat = VK_FORMAT_R8G8B8A8_UNORM;
 constexpr VkImageCreateFlags kVulkanImageCreateFlags = 0;
 // TODO: We should only keep usages that are actually required by Skia.
@@ -261,19 +259,6 @@ bool VulkanSurface::AllocateDeviceMemory(
   constraints.min_buffer_count = 1;
   constraints.usage.vulkan = kSysmemImageUsage;
 
-  constraints.image_format_constraints_count = 1;
-  fuchsia::sysmem::ImageFormatConstraints& image_constraints =
-      constraints.image_format_constraints[0];
-  image_constraints = fuchsia::sysmem::ImageFormatConstraints();
-  image_constraints.min_coded_width = size.width();
-  image_constraints.min_coded_height = size.height();
-  image_constraints.max_coded_width = size.width();
-  image_constraints.max_coded_height = size.height();
-  image_constraints.min_bytes_per_row = 0;
-  image_constraints.pixel_format.type = kSysmemPixelFormat;
-  image_constraints.color_spaces_count = 1;
-  image_constraints.color_space[0].type = fuchsia::sysmem::ColorSpaceType::SRGB;
-
   status = buffer_collection->SetConstraints(true, constraints);
   LOG_AND_RETURN(status != ZX_OK, "Failed to set constraints");
 
@@ -297,13 +282,22 @@ bool VulkanSurface::AllocateDeviceMemory(
       vulkan_image_.vk_memory_requirements;
   VkImageCreateInfo& image_create_info = vulkan_image_.vk_image_create_info;
 
+  VkBufferCollectionPropertiesFUCHSIA properties = {
+      .sType = VK_STRUCTURE_TYPE_BUFFER_COLLECTION_PROPERTIES_FUCHSIA};
+  if (VK_CALL_LOG_ERROR(
+          vulkan_provider_.vk().GetBufferCollectionPropertiesFUCHSIA(
+              vulkan_provider_.vk_device(), collection_, &properties)) !=
+      VK_SUCCESS) {
+    return false;
+  }
+
   VkImportMemoryBufferCollectionFUCHSIA import_memory_info = {
       .sType = VK_STRUCTURE_TYPE_IMPORT_MEMORY_BUFFER_COLLECTION_FUCHSIA,
       .pNext = nullptr,
       .collection = collection_,
       .index = 0,
   };
-  auto bits = memory_requirements.memoryTypeBits;
+  auto bits = memory_requirements.memoryTypeBits & properties.memoryTypeBits;
   FML_DCHECK(bits != 0);
   VkMemoryAllocateInfo allocation_info = {
       .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
