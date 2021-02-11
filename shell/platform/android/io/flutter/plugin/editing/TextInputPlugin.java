@@ -515,9 +515,10 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
       return false;
     }
 
-    // 3.3.31.83 is a known version that's free of the aforementioned bug.
+    // 3.3.23.33 is a known version that's free of the aforementioned bug.
+    // 3.0.24.96 still has this bug.
     // TODO(LongCatIsLooong): Find the minimum version that has the fix.
-    return versionCode < 333183070;
+    return versionCode < 332333999;
   }
 
   @VisibleForTesting
