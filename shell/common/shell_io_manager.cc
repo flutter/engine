@@ -125,7 +125,8 @@ fml::WeakPtr<IOManager> ShellIOManager::GetWeakIOManager() const {
 }
 
 // |IOManager|
-std::shared_ptr<fml::SyncSwitch> ShellIOManager::GetIsGpuDisabledSyncSwitch() {
+const std::shared_ptr<fml::SyncSwitch>
+ShellIOManager::GetIsGpuDisabledSyncSwitch() {
   return is_gpu_disabled_sync_switch_;
 }
 

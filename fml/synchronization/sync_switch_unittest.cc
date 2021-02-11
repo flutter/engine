@@ -9,24 +9,22 @@
 using fml::SyncSwitch;
 
 TEST(SyncSwitchTest, Basic) {
-  auto sync_switch = std::make_shared<SyncSwitch>();
-  SyncSwitch::Controller controller(sync_switch);
-  bool switch_value = false;
-  sync_switch->Execute(SyncSwitch::Handlers()
-                           .SetIfTrue([&] { switch_value = true; })
-                           .SetIfFalse([&] { switch_value = false; }));
-  EXPECT_FALSE(switch_value);
-  controller.SetSwitch(true);
-  sync_switch->Execute(SyncSwitch::Handlers()
-                           .SetIfTrue([&] { switch_value = true; })
-                           .SetIfFalse([&] { switch_value = false; }));
-  EXPECT_TRUE(switch_value);
+  SyncSwitch syncSwitch;
+  bool switchValue = false;
+  syncSwitch.Execute(SyncSwitch::Handlers()
+                         .SetIfTrue([&] { switchValue = true; })
+                         .SetIfFalse([&] { switchValue = false; }));
+  EXPECT_FALSE(switchValue);
+  syncSwitch.SetSwitch(true);
+  syncSwitch.Execute(SyncSwitch::Handlers()
+                         .SetIfTrue([&] { switchValue = true; })
+                         .SetIfFalse([&] { switchValue = false; }));
+  EXPECT_TRUE(switchValue);
 }
 
 TEST(SyncSwitchTest, NoopIfUndefined) {
-  auto sync_switch = std::make_shared<SyncSwitch>();
-  SyncSwitch::Controller controller(sync_switch);
-  bool switch_value = false;
-  sync_switch->Execute(SyncSwitch::Handlers());
-  EXPECT_FALSE(switch_value);
+  SyncSwitch syncSwitch;
+  bool switchValue = false;
+  syncSwitch.Execute(SyncSwitch::Handlers());
+  EXPECT_FALSE(switchValue);
 }

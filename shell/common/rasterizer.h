@@ -87,7 +87,7 @@ class Rasterizer final : public SnapshotDelegate {
     ///
     /// For example, on some platforms when the application is backgrounded it
     /// is critical that GPU operations are not processed.
-    virtual std::shared_ptr<fml::SyncSwitch> GetIsGpuDisabledSyncSwitch()
+    virtual const std::shared_ptr<fml::SyncSwitch> GetIsGpuDisabledSyncSwitch()
         const = 0;
   };
 

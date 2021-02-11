@@ -20,24 +20,6 @@ namespace fml {
 /// at a time.
 class SyncSwitch {
  public:
-  /// A controller that sets the value of a |SyncSwitch|.
-  class Controller {
-   public:
-    explicit Controller(std::shared_ptr<SyncSwitch> sync_switch);
-
-    /// Set the value of the |SyncSwitch|.
-    ///
-    /// This can be called on any thread.
-    ///
-    /// @param[in]  value  New value for the |SyncSwitch|.
-    void SetSwitch(bool value);
-
-   private:
-    std::shared_ptr<SyncSwitch> sync_switch_;
-
-    FML_DISALLOW_COPY_AND_ASSIGN(Controller);
-  };
-
   /// Represents the 2 code paths available when calling |SyncSwitch::Execute|.
   struct Handlers {
     /// Sets the handler that will be executed if the |SyncSwitch| is true.
@@ -52,9 +34,7 @@ class SyncSwitch {
 
   /// Create a |SyncSwitch| with the specified value.
   ///
-  /// If value is not specified, it is defaulted to false.
-  ///
-  /// @param[in]  value      The initial value for this switch.
+  /// @param[in]  value  Default value for the |SyncSwitch|.
   explicit SyncSwitch(bool value = false);
 
   /// Diverge execution between true and false values of the SyncSwitch.
@@ -63,10 +43,17 @@ class SyncSwitch {
   /// |SetSwitch| inside of the handlers will result in a self deadlock.
   ///
   /// @param[in]  handlers  Called for the correct value of the |SyncSwitch|.
-  void Execute(const Handlers& handlers);
+  void Execute(const Handlers& handlers) const;
+
+  /// Set the value of the SyncSwitch.
+  ///
+  /// This can be called on any thread.
+  ///
+  /// @param[in]  value  New value for the |SyncSwitch|.
+  void SetSwitch(bool value);
 
  private:
-  std::mutex mutex_;
+  mutable std::mutex mutex_;
   bool value_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(SyncSwitch);

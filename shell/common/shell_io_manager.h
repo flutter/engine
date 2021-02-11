@@ -53,7 +53,7 @@ class ShellIOManager final : public IOManager {
   fml::RefPtr<flutter::SkiaUnrefQueue> GetSkiaUnrefQueue() const override;
 
   // |IOManager|
-  std::shared_ptr<fml::SyncSwitch> GetIsGpuDisabledSyncSwitch() override;
+  const std::shared_ptr<fml::SyncSwitch> GetIsGpuDisabledSyncSwitch() override;
 
   sk_sp<GrDirectContext> GetSharedResourceContext() const {
     return resource_context_;
