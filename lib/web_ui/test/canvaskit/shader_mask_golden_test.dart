@@ -91,7 +91,7 @@ void testMain() {
       builder.addPicture(ui.Offset.zero, sweepCircle);
 
       await matchSceneGolden('canvaskit_shadermask_linear.png',
-          builder.build(), write: true);
+          builder.build());
     });
     // TODO: https://github.com/flutter/flutter/issues/60040
     // TODO: https://github.com/flutter/flutter/issues/71520
