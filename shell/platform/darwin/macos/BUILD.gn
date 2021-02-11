@@ -154,6 +154,7 @@ executable("flutter_desktop_darwin_unittests") {
 
   if (shell_enable_metal) {
     sources += [
+      "framework/Source/FlutterEmbedderExternalTextureUnittests.mm",
       "framework/Source/FlutterMetalRendererTest.mm",
       "framework/Source/FlutterMetalSurfaceManagerTest.mm",
     ]
@@ -169,6 +170,7 @@ executable("flutter_desktop_darwin_unittests") {
     ":flutter_desktop_darwin_fixtures",
     ":flutter_framework_source",
     "//flutter/shell/platform/darwin/common:framework_shared",
+    "//flutter/shell/platform/darwin/graphics",
     "//flutter/shell/platform/embedder:embedder_as_internal_library",
     "//flutter/shell/platform/embedder:embedder_test_utils",
     "//flutter/testing",
