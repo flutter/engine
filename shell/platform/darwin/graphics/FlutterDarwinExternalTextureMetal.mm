@@ -14,6 +14,17 @@
 
 FLUTTER_ASSERT_ARC
 
+namespace {
+
+static sk_cf_obj<const void*> SkiaTextureFromCVMetalTexture(CVMetalTextureRef cvMetalTexture) {
+  id<MTLTexture> texture = CVMetalTextureGetTexture(cvMetalTexture);
+  // CVMetal texture can be released as soon as we can the MTLTexture from it.
+  CVPixelBufferRelease(cvMetalTexture);
+  return sk_cf_obj<const void*>{(__bridge_retained const void*)texture};
+}
+
+}
+
 @implementation FlutterDarwinExternalTextureMetal {
   CVMetalTextureCacheRef _textureCache;
   NSObject<FlutterTexture>* _externalTexture;
@@ -51,23 +62,7 @@ FLUTTER_ASSERT_ARC
   const bool needsUpdatedTexture = (!freeze && _textureFrameAvailable) || !_externalImage;
 
   if (needsUpdatedTexture) {
-    CVPixelBufferRef pixelBuffer = [_externalTexture copyPixelBuffer];
-    if (!pixelBuffer) {
-      pixelBuffer = _lastPixelBuffer;
-    } else {
-      CVPixelBufferRetain(pixelBuffer);
-      _pixelFormat = CVPixelBufferGetPixelFormatType(pixelBuffer);
-    }
-
-    // If the application told us there was a texture frame available but did not provide one when
-    // asked for it, reuse the previous texture but make sure to ask again the next time around.
-    sk_sp<SkImage> image = [self wrapExternalPixelBuffer:pixelBuffer grContext:grContext];
-    if (image) {
-      _externalImage = image;
-      _textureFrameAvailable = false;
-      CVPixelBufferRelease(_lastPixelBuffer);
-      _lastPixelBuffer = pixelBuffer;
-    }
+    [self onNeedsUpdatedTexture:grContext];
   }
 
   if (_externalImage) {
@@ -78,6 +73,23 @@ FLUTTER_ASSERT_ARC
                          nullptr,                                              // paint
                          SkCanvas::SrcRectConstraint::kFast_SrcRectConstraint  // constraint
     );
+  }
+}
+
+- (void)onNeedsUpdatedTexture:(nonnull GrDirectContext*)grContext {
+  CVPixelBufferRef pixelBuffer = [_externalTexture copyPixelBuffer];
+  if (pixelBuffer) {
+    CVPixelBufferRelease(_lastPixelBuffer);
+    _lastPixelBuffer = pixelBuffer;
+    _pixelFormat = CVPixelBufferGetPixelFormatType(_lastPixelBuffer);
+  }
+
+  // If the application told us there was a texture frame available but did not provide one when
+  // asked for it, reuse the previous texture but make sure to ask again the next time around.
+  sk_sp<SkImage> image = [self wrapExternalPixelBuffer:_lastPixelBuffer grContext:grContext];
+  if (image) {
+    _externalImage = image;
+    _textureFrameAvailable = false;
   }
 }
 
@@ -174,8 +186,7 @@ FLUTTER_ASSERT_ARC
   }
 
   GrMtlTextureInfo ySkiaTextureInfo;
-  ySkiaTextureInfo.fTexture = sk_cf_obj<const void*>{
-      (__bridge_retained const void*)CVMetalTextureGetTexture(yMetalTexture)};
+  ySkiaTextureInfo.fTexture = SkiaTextureFromCVMetalTexture(yMetalTexture);
 
   GrBackendTexture skiaBackendTextures[2];
   skiaBackendTextures[0] = GrBackendTexture(/*width=*/textureSize.width(),
@@ -184,8 +195,7 @@ FLUTTER_ASSERT_ARC
                                             /*textureInfo=*/ySkiaTextureInfo);
 
   GrMtlTextureInfo uvSkiaTextureInfo;
-  uvSkiaTextureInfo.fTexture = sk_cf_obj<const void*>{
-      (__bridge_retained const void*)CVMetalTextureGetTexture(uvMetalTexture)};
+  uvSkiaTextureInfo.fTexture = SkiaTextureFromCVMetalTexture(uvMetalTexture);
 
   skiaBackendTextures[1] = GrBackendTexture(/*width=*/textureSize.width(),
                                             /*height=*/textureSize.height(),
@@ -224,8 +234,7 @@ FLUTTER_ASSERT_ARC
   }
 
   GrMtlTextureInfo skiaTextureInfo;
-  skiaTextureInfo.fTexture =
-      sk_cf_obj<const void*>{(__bridge_retained const void*)CVMetalTextureGetTexture(metalTexture)};
+  skiaTextureInfo.fTexture = SkiaTextureFromCVMetalTexture(metalTexture);
 
   GrBackendTexture skiaBackendTexture(/*width=*/textureSize.width(),
                                       /*height=*/textureSize.height(),
