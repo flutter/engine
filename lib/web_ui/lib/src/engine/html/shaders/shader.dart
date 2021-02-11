@@ -73,7 +73,7 @@ class GradientSweep extends EngineGradient {
     if (createDataUrl) {
       return _glRenderer!.drawRectToImageUrl(
           ui.Rect.fromLTWH(0, 0, shaderBounds.width, shaderBounds.height),
-          gl, glProgram, normalizedGradient, widthInPixels, heightInPixels)!;
+          gl, glProgram, normalizedGradient, widthInPixels, heightInPixels);
     } else {
       return _glRenderer!.drawRect(
           ui.Rect.fromLTWH(0, 0, shaderBounds.width, shaderBounds.height),
@@ -85,7 +85,7 @@ class GradientSweep extends EngineGradient {
   Object createPaintStyle(html.CanvasRenderingContext2D? ctx,
       ui.Rect? shaderBounds, double density) {
     Object? imageBitmap = createImageBitmap(shaderBounds, density, false);
-    return ctx!.createPattern(imageBitmap!, 'no-repeat')!;
+    return ctx!.createPattern(imageBitmap, 'no-repeat')!;
   }
 
   String _createSweepFragmentShader(NormalizedGradient gradient,
@@ -242,7 +242,7 @@ class GradientLinear extends EngineGradient {
           0, 0, shaderBounds.width, shaderBounds.height) /* !! shaderBounds */,
         gl,
         glProgram, normalizedGradient, widthInPixels, heightInPixels,
-      )!;
+      );
     } else {
       return _glRenderer!.drawRect(ui.Rect.fromLTWH(
           0, 0, shaderBounds.width, shaderBounds.height) /* !! shaderBounds */,
@@ -457,7 +457,7 @@ class GradientRadial extends EngineGradient {
     if (createDataUrl) {
       return _glRenderer!.drawRectToImageUrl(ui.Rect.fromLTWH(0, 0, shaderBounds.width,
           shaderBounds.height),
-          gl, glProgram, normalizedGradient, widthInPixels, heightInPixels)!;
+          gl, glProgram, normalizedGradient, widthInPixels, heightInPixels);
     } else {
       return _glRenderer!.drawRect(ui.Rect.fromLTWH(0, 0, shaderBounds.width,
           shaderBounds.height),
