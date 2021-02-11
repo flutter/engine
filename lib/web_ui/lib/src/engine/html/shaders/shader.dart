@@ -99,7 +99,7 @@ class GradientSweep extends EngineGradient {
         'float st = angle;');
 
     final String probeName =
-    _writeSharedGradientShader(builder, method, gradient, tileMode, false);
+    _writeSharedGradientShader(builder, method, gradient, tileMode);
     method.addStatement('${fragColor.name} = ${probeName} * scale + bias;');
 
     String shader = builder.build();
@@ -172,7 +172,8 @@ class GradientLinear extends EngineGradient {
           from.dx - offsetX, from.dy - offsetY, to.dx - offsetX,
           to.dy - offsetY);
     }
-    _addColorStopsToCanvasGradient(gradient, colors, colorStops, tileMode == ui.TileMode.decal);
+    _addColorStopsToCanvasGradient(gradient, colors, colorStops,
+        tileMode == ui.TileMode.decal);
     return gradient;
   }
 
@@ -218,18 +219,35 @@ class GradientLinear extends EngineGradient {
     // Flip dy for gl flip.
     double sinVal = length < kFltEpsilon ? 0 : -dy / length;
     double cosVal = length < kFltEpsilon ? 1 : dx / length;
+    // If tile mode is repeated we need to shift the center of from->to
+    // vector to the center of shader bounds.
+    final bool isRepeated = tileMode != ui.TileMode.clamp;
+    final double originX = isRepeated
+        ? shaderBounds.width / 2
+        : from.dx;
+    final double originY = isRepeated
+        ? shaderBounds.height / 2
+        : from.dy;
     final Matrix4 translateToOrigin = matrix4 == null
-        ? Matrix4.translationValues(-from.dx, -from.dy, 0)
-        : Matrix4.fromFloat32List(matrix4!.matrix)
-      ..translate(-from.dx, -from.dy);
+        ? Matrix4.translationValues(-originX, -originY, 0)
+        : (Matrix4.fromFloat32List(matrix4!.matrix)
+            ..translate(-originX, -originY));
     // Rotate around Z axis.
     final Matrix4 rotationZ = Matrix4.identity();
     final Float32List storage = rotationZ.storage;
     storage[0] = cosVal;
-    storage[1] = -sinVal;
-    storage[4] = sinVal;
+    // Sign is flipped since gl coordinate system is flipped around y axis.
+    storage[1] = sinVal;
+    storage[4] = -sinVal;
     storage[5] = cosVal;
     Matrix4 gradientTransform = Matrix4.identity();
+    if (isRepeated) {
+      // When the gradient is repeated we compute location based on gl_FragCoord
+      // to center distance which returns 0.0 at center. To make sure we
+      // align center of gradient to this point, we subtract 0.5 to get
+      // st value for center of gradient.
+      gradientTransform.translate(0.5, 0);
+    }
     if (length > kFltEpsilon) {
       gradientTransform.scale(1.0 / length);
     }
@@ -269,11 +287,11 @@ class GradientLinear extends EngineGradient {
     // Multiply with m_gradient transform to convert from fragment coordinate to
     // distance on the from-to line.
     method.addStatement(
-        'vec4 localCoord = vec4(gl_FragCoord.x, '
-            'u_resolution.y - gl_FragCoord.y, 0, 1) * m_gradient;');
+        'vec4 localCoord = m_gradient * vec4(gl_FragCoord.x, '
+            'u_resolution.y - gl_FragCoord.y, 0, 1);');
     method.addStatement('float st = localCoord.x;');
     final String probeName =
-        _writeSharedGradientShader(builder, method, gradient, tileMode, true);
+        _writeSharedGradientShader(builder, method, gradient, tileMode);
     method.addStatement('${fragColor.name} = ${probeName} * scale + bias;');
     String shader = builder.build();
     return shader;
@@ -311,7 +329,7 @@ void _addColorStopsToCanvasGradient(html.CanvasGradient gradient,
 String _writeSharedGradientShader(ShaderBuilder builder,
     ShaderMethod method,
     NormalizedGradient gradient,
-    ui.TileMode tileMode, bool shiftOrigin) {
+    ui.TileMode tileMode) {
   method.addStatement('vec4 bias;');
   method.addStatement('vec4 scale;');
   // Write uniforms for each threshold, bias and scale.
@@ -334,15 +352,11 @@ String _writeSharedGradientShader(ShaderBuilder builder,
       // st represents our distance from center. Flutter maps the center to
       // center of gradient ramp so we need to add 0.5 to make sure repeated
       // pattern center is at origin.
-      method.addStatement(shiftOrigin ?
-          'float tiled_st = fract(st + 0.5);'
-          : 'float tiled_st = fract(st);');
+      method.addStatement('float tiled_st = fract(st);');
       probeName = 'tiled_st';
       break;
     case ui.TileMode.mirror:
-      method.addStatement(shiftOrigin ?
-          'float t_1 = (st - 0.5);'
-          : 'float t_1 = (st - 1.0);');
+      method.addStatement('float t_1 = (st - 1.0);');
       method.addStatement(
           'float tiled_st = abs((t_1 - 2.0 * floor(t_1 * 0.5)) - 1.0);');
       probeName = 'tiled_st';
@@ -453,7 +467,7 @@ class GradientRadial extends EngineGradient {
     method.addStatement(''
         'float st = abs(dist / u_radius);');
     final String probeName =
-      _writeSharedGradientShader(builder, method, gradient, tileMode, false);
+      _writeSharedGradientShader(builder, method, gradient, tileMode);
     method.addStatement('${fragColor.name} = ${probeName} * scale + bias;');
     String shader = builder.build();
     return shader;
