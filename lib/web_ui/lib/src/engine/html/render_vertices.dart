@@ -198,7 +198,7 @@ class _WebGlRenderer implements _GlRenderer {
   /// Browsers that support OffscreenCanvas and the transferToImageBitmap api
   /// will return ImageBitmap, otherwise will return CanvasElement.
   Object? drawRect(ui.Rect targetRect, _GlContext gl, _GlProgram glProgram,
-      NormalizedGradient gradient, int widthInPixels, int heightInPixels, ) {
+      NormalizedGradient gradient, int widthInPixels, int heightInPixels) {
     drawRectToGl(targetRect, gl, glProgram, gradient, widthInPixels, heightInPixels);
     Object? image = gl.readPatternData();
     gl.bindArrayBuffer(null);
@@ -206,22 +206,21 @@ class _WebGlRenderer implements _GlRenderer {
     return image;
   }
 
-  /// Renders a rectangle using given program into an image resource.
-  ///
-  /// Browsers that support OffscreenCanvas and the transferToImageBitmap api
-  /// will return ImageBitmap, otherwise will return CanvasElement.
+  /// Renders a rectangle using given program into an image resource and returns
+  /// url.
   String drawRectToImageUrl(ui.Rect targetRect, _GlContext gl, _GlProgram glProgram,
-      NormalizedGradient gradient, int widthInPixels, int heightInPixels, ) {
+      NormalizedGradient gradient, int widthInPixels, int heightInPixels) {
     drawRectToGl(targetRect, gl, glProgram, gradient, widthInPixels, heightInPixels);
     final String imageUrl = gl.toImageUrl();
+    // Cleanup buffers.
     gl.bindArrayBuffer(null);
     gl.bindElementArrayBuffer(null);
     return imageUrl;
   }
 
-  /// Renders a rectangle using given program into an image resource.
+  /// Renders a rectangle using given program into [_GlContext].
   ///
-  /// Caller has to cleanup array and element array buffers.
+  /// Caller has to cleanup gl array and element array buffers.
   void drawRectToGl(ui.Rect targetRect, _GlContext gl, _GlProgram glProgram,
       NormalizedGradient gradient, int widthInPixels, int heightInPixels) {
     // Setup rectangle coordinates.
@@ -806,7 +805,10 @@ class _GlContext {
     html.CanvasElement canvas = html.CanvasElement(width: _widthInPixels, height: _heightInPixels);
     final html.CanvasRenderingContext2D ctx = canvas.context2D;
     drawImage(ctx, 0, 0);
-    return canvas.toDataUrl();
+    final String dataUrl = canvas.toDataUrl();
+    canvas.width = 0;
+    canvas.height = 0;
+    return dataUrl;
   }
 }
 

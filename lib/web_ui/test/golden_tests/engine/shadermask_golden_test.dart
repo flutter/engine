@@ -29,7 +29,7 @@ void testMain() async {
     await webOnlyFontCollection.ensureFontsLoaded();
   });
 
-  test('Renders shader mask with linear gradient', () async {
+  void _renderScene(BlendMode blendMode) {
     final Rect region = Rect.fromLTWH(0, 0, 400, 400);
 
     final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
@@ -50,7 +50,7 @@ void testMain() async {
         Matrix4.identity().storage);
 
     builder.pushShaderMask(shader, Rect.fromLTRB(100, 0, 500, 400),
-        BlendMode.src, oldLayer: null);
+        blendMode, oldLayer: null);
     final Picture circles2 = _drawTestPictureWithCircles(region, 200, 30);
     builder.addPicture(Offset.zero, circles2);
     builder.pop();
@@ -58,9 +58,42 @@ void testMain() async {
     html.document.body.append(builder
         .build()
         .webOnlyRootElement);
+  }
 
-    await matchGoldenFile('shadermask_liner.png',
-        region: Rect.fromLTWH(0, 0, 360, 200), write: true);
+  test('Renders shader mask with linear gradient BlendMode color', () async {
+    _renderScene(BlendMode.color);
+    await matchGoldenFile('shadermask_linear_color.png',
+        region: Rect.fromLTWH(0, 0, 360, 200));
+  });
+
+  test('Renders shader mask with linear gradient BlendMode xor', () async {
+    _renderScene(BlendMode.xor);
+    await matchGoldenFile('shadermask_linear_xor.png',
+        region: Rect.fromLTWH(0, 0, 360, 200));
+  });
+
+  test('Renders shader mask with linear gradient BlendMode plus', () async {
+    _renderScene(BlendMode.plus);
+    await matchGoldenFile('shadermask_linear_plus.png',
+        region: Rect.fromLTWH(0, 0, 360, 200));
+  });
+
+  test('Renders shader mask with linear gradient BlendMode modulate', () async {
+    _renderScene(BlendMode.modulate);
+    await matchGoldenFile('shadermask_linear_modulate.png',
+        region: Rect.fromLTWH(0, 0, 360, 200));
+  });
+
+  test('Renders shader mask with linear gradient BlendMode overlay', () async {
+    _renderScene(BlendMode.overlay);
+    await matchGoldenFile('shadermask_linear_overlay.png',
+        region: Rect.fromLTWH(0, 0, 360, 200));
+  });
+
+  test('Renders shader mask with linear gradient BlendMode src', () async {
+    _renderScene(BlendMode.src);
+    await matchGoldenFile('shadermask_linear.png',
+        region: Rect.fromLTWH(0, 0, 360, 200));
   });
 }
 

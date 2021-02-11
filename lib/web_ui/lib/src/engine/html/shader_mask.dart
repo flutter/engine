@@ -19,19 +19,17 @@ part of engine;
 class PersistedShaderMask extends PersistedContainerSurface
     implements ui.ShaderMaskEngineLayer {
   PersistedShaderMask(
-      PersistedShaderMask? oldLayer,
-      this.shader,
-      this.maskRect,
-      this.blendMode,
-      ) : super(oldLayer);
+    PersistedShaderMask? oldLayer,
+    this.shader,
+    this.maskRect,
+    this.blendMode,
+  ) : super(oldLayer);
 
   html.Element? _childContainer;
   final ui.Shader shader;
   final ui.Rect maskRect;
   final ui.BlendMode blendMode;
   html.Element? _shaderElement;
-  html.Element? _imageElement;
-  bool containerVisible = true;
 
   @override
   void adoptElements(PersistedShaderMask oldSurface) {
@@ -64,9 +62,7 @@ class PersistedShaderMask extends PersistedContainerSurface
   @override
   void apply() {
     _shaderElement?.remove();
-    _imageElement?.remove();
     _shaderElement = null;
-    _imageElement = null;
     if (shader is ui.Gradient) {
       _applyGradientShader();
       return;
@@ -78,8 +74,8 @@ class PersistedShaderMask extends PersistedContainerSurface
   void _applyGradientShader() {
     if (shader is EngineGradient) {
       EngineGradient gradientShader = shader as EngineGradient;
-      final String imageUrl = gradientShader.createImageBitmap(
-          maskRect, 1, true) as String;
+      final String imageUrl =
+          gradientShader.createImageBitmap(maskRect, 1, true) as String;
       ui.BlendMode blendModeTemp = blendMode;
       switch (blendModeTemp) {
         case ui.BlendMode.clear:
@@ -123,8 +119,8 @@ class PersistedShaderMask extends PersistedContainerSurface
           break;
       }
 
-      String code = svgMaskFilterFromImageAndBlendMode(
-          imageUrl, blendModeTemp)!;
+      String code =
+          svgMaskFilterFromImageAndBlendMode(imageUrl, blendModeTemp)!;
 
       _shaderElement =
           html.Element.html(code, treeSanitizer: _NullTreeSanitizer());
@@ -136,7 +132,8 @@ class PersistedShaderMask extends PersistedContainerSurface
   @override
   void update(PersistedShaderMask oldSurface) {
     super.update(oldSurface);
-    if (shader != oldSurface.shader || maskRect != oldSurface.maskRect ||
+    if (shader != oldSurface.shader ||
+        maskRect != oldSurface.maskRect ||
         blendMode != oldSurface.blendMode) {
       apply();
     }
@@ -158,16 +155,16 @@ String? svgMaskFilterFromImageAndBlendMode(
       svgFilter = _xorImageToSvg(imageUrl);
       break;
     case ui.BlendMode.plus:
-    // Porter duff source + destination.
+      // Porter duff source + destination.
       svgFilter = _compositeImageToSvg(imageUrl, 0, 1, 1, 0);
       break;
     case ui.BlendMode.modulate:
-    // Porter duff source * destination but preserves alpha.
+      // Porter duff source * destination but preserves alpha.
       svgFilter = _modulateImageToSvg(imageUrl);
       break;
     case ui.BlendMode.overlay:
-    // Since overlay is the same as hard-light by swapping layers,
-    // pass hard-light blend function.
+      // Since overlay is the same as hard-light by swapping layers,
+      // pass hard-light blend function.
       svgFilter = _blendImageToSvg(imageUrl, 'hard-light', swapLayers: true);
       break;
     // Several of the filters below (although supported) do not render the
@@ -219,8 +216,8 @@ int _maskFilterIdCounter = 0;
 String _svgFilterWrapper(String content) {
   _maskFilterIdCounter++;
   return '<svg width="0" height="0" xmlns:xlink="http://www.w3.org/1999/xlink">'
-      '<filter id="_fmf$_maskFilterIdCounter" '
-      'filterUnits="objectBoundingBox">' +
+          '<filter id="_fmf$_maskFilterIdCounter" '
+          'filterUnits="objectBoundingBox">' +
       content +
       '</filter></svg>';
 }
@@ -241,14 +238,14 @@ String _svgFilterWrapper(String content) {
 String _srcInImageToSvg(String imageUrl) {
   return _svgFilterWrapper(
     '<feColorMatrix values="0 0 0 0 1 ' // Ignore input, set it to absolute.
-        '0 0 0 0 1 '
-        '0 0 0 0 1 '
-        '0 0 0 1 0" result="destalpha"/>' // Just take alpha channel of destination
-        '<feImage href="$imageUrl" result="image">'
-        '</feImage>'
-        '<feComposite in="image" in2="destalpha" '
-        'operator="arithmetic" k1="1" k2="0" k3="0" k4="0" result="comp">'
-        '</feComposite>',
+    '0 0 0 0 1 '
+    '0 0 0 0 1 '
+    '0 0 0 1 0" result="destalpha"/>' // Just take alpha channel of destination
+    '<feImage href="$imageUrl" result="image">'
+    '</feImage>'
+    '<feComposite in="image" in2="destalpha" '
+    'operator="arithmetic" k1="1" k2="0" k3="0" k4="0" result="comp">'
+    '</feComposite>',
   );
 }
 
@@ -272,10 +269,10 @@ String _compositeImageToSvg(
     String imageUrl, double k1, double k2, double k3, double k4) {
   return _svgFilterWrapper(
     '<feImage href="$imageUrl" result="image">'
-        '</feImage>'
-        '<feComposite in="image" in2="SourceGraphic" '
-        'operator="arithmetic" k1="$k1" k2="$k2" k3="$k3" k4="$k4" result="comp">'
-        '</feComposite>',
+    '</feImage>'
+    '<feComposite in="image" in2="SourceGraphic" '
+    'operator="arithmetic" k1="$k1" k2="$k2" k3="$k3" k4="$k4" result="comp">'
+    '</feComposite>',
   );
 }
 
@@ -285,10 +282,10 @@ String _compositeImageToSvg(
 String _modulateImageToSvg(String imageUrl) {
   return _svgFilterWrapper(
     '<feImage href="$imageUrl" result="image">'
-        '</feImage>'
-        '<feComposite in="image" in2="SourceGraphic" '
-        'operator="arithmetic" k1="1" k2="0" k3="0" k4="0" result="comp">'
-        '</feComposite>',
+    '</feImage>'
+    '<feComposite in="image" in2="SourceGraphic" '
+    'operator="arithmetic" k1="1" k2="0" k3="0" k4="0" result="comp">'
+    '</feComposite>',
   );
 }
 

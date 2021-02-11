@@ -180,7 +180,7 @@ class GradientLinear extends EngineGradient {
     _GlContext gl = _OffScreenCanvas.supported
         ? _GlContext.fromOffscreenCanvas(offScreenCanvas._canvas!)
         : _GlContext.fromCanvas(offScreenCanvas._glCanvas!,
-        webGLVersion == WebGLVersion.webgl1);
+            webGLVersion == WebGLVersion.webgl1);
     gl.setViewportSize(widthInPixels, heightInPixels);
 
     NormalizedGradient normalizedGradient = NormalizedGradient(
