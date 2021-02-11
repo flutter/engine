@@ -33,11 +33,6 @@ constexpr VkImageCreateFlags kVulkanImageCreateFlags = 0;
 constexpr VkImageUsageFlags kVkImageUsage =
     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
     VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-constexpr uint32_t kSysmemImageUsage =
-    fuchsia::sysmem::VULKAN_IMAGE_USAGE_COLOR_ATTACHMENT |
-    fuchsia::sysmem::VULKAN_IMAGE_USAGE_TRANSFER_DST |
-    fuchsia::sysmem::VULKAN_IMAGE_USAGE_TRANSFER_SRC |
-    fuchsia::sysmem::VULKAN_IMAGE_USAGE_SAMPLED;
 
 }  // namespace
 
@@ -231,36 +226,18 @@ bool VulkanSurface::AllocateDeviceMemory(
     return false;
   }
 
-  fuchsia::sysmem::BufferCollectionTokenSyncPtr local_token;
+  fuchsia::sysmem::BufferCollectionTokenSyncPtr vulkan_token;
   zx_status_t status =
-      sysmem_allocator->AllocateSharedCollection(local_token.NewRequest());
+      sysmem_allocator->AllocateSharedCollection(vulkan_token.NewRequest());
   LOG_AND_RETURN(status != ZX_OK, "Failed to allocate collection");
   fuchsia::sysmem::BufferCollectionTokenSyncPtr scenic_token;
-  status = local_token->Duplicate(std::numeric_limits<uint32_t>::max(),
-                                  scenic_token.NewRequest());
+  status = vulkan_token->Duplicate(std::numeric_limits<uint32_t>::max(),
+                                   scenic_token.NewRequest());
   LOG_AND_RETURN(status != ZX_OK, "Failed to duplicate token");
-  status = local_token->Sync();
-  LOG_AND_RETURN(status != ZX_OK, "Failed to sync token");
-  fuchsia::sysmem::BufferCollectionTokenSyncPtr vulkan_token;
-  status = local_token->Duplicate(std::numeric_limits<uint32_t>::max(),
-                                  vulkan_token.NewRequest());
-  LOG_AND_RETURN(status != ZX_OK, "Failed to duplicate token");
-  status = local_token->Sync();
+  status = vulkan_token->Sync();
   LOG_AND_RETURN(status != ZX_OK, "Failed to sync token");
 
   session_->RegisterBufferCollection(buffer_id_, std::move(scenic_token));
-
-  fuchsia::sysmem::BufferCollectionSyncPtr buffer_collection;
-  status = sysmem_allocator->BindSharedCollection(
-      std::move(local_token), buffer_collection.NewRequest());
-  LOG_AND_RETURN(status != ZX_OK, "Failed to bind collection");
-
-  fuchsia::sysmem::BufferCollectionConstraints constraints;
-  constraints.min_buffer_count = 1;
-  constraints.usage.vulkan = kSysmemImageUsage;
-
-  status = buffer_collection->SetConstraints(true, constraints);
-  LOG_AND_RETURN(status != ZX_OK, "Failed to set constraints");
 
   VkBufferCollectionCreateInfoFUCHSIA import_info;
   import_info.collectionToken = vulkan_token.Unbind().TakeChannel().release();
@@ -273,9 +250,6 @@ bool VulkanSurface::AllocateDeviceMemory(
   VulkanImage vulkan_image;
   LOG_AND_RETURN(!CreateVulkanImage(vulkan_provider_, size, &vulkan_image),
                  "Failed to create VkImage");
-
-  status = buffer_collection->Close();
-  LOG_AND_RETURN(status != ZX_OK, "Failed to close collection");
 
   vulkan_image_ = std::move(vulkan_image);
   const VkMemoryRequirements& memory_requirements =
