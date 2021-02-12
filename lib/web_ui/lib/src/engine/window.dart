@@ -86,12 +86,11 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
     }
   }
 
-  @visibleForTesting
-  Future<void> debugResetHistory() async {
+  Future<void> resetHistory() async {
     await _browserHistory?.tearDown();
     _browserHistory = null;
-
     // Reset the globals too.
+    _usingRouter = false;
     _isUrlStrategySet = false;
     _customUrlStrategy = null;
   }
