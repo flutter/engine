@@ -45,11 +45,11 @@ void testMain() async {
       Color(0xFF656D78),];
     List<double> stops = <double>[0.0, 0.05, 0.4, 0.6, 0.9, 1.0];
 
-    EngineGradient shader = GradientLinear(Offset(200, 0), Offset(400, 300),
+    EngineGradient shader = GradientLinear(Offset(0, 0), Offset(120, 120),
         colors, stops, TileMode.clamp,
         Matrix4.identity().storage);
 
-    builder.pushShaderMask(shader, Rect.fromLTRB(100, 0, 500, 400),
+    builder.pushShaderMask(shader, Rect.fromLTWH(200, 30, 120, 120),
         blendMode, oldLayer: null);
     final Picture circles2 = _drawTestPictureWithCircles(region, 200, 30);
     builder.addPicture(Offset.zero, circles2);
@@ -64,7 +64,8 @@ void testMain() async {
     _renderScene(BlendMode.color);
     await matchGoldenFile('shadermask_linear_color.png',
         region: Rect.fromLTWH(0, 0, 360, 200));
-  });
+    // TODO: Implement workaround for webkit bug not applying svg color filter.
+  }, skip: browserEngine == BrowserEngine.webkit);
 
   test('Renders shader mask with linear gradient BlendMode xor', () async {
     _renderScene(BlendMode.xor);
