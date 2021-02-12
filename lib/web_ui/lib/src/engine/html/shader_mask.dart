@@ -64,6 +64,9 @@ class PersistedShaderMask extends PersistedContainerSurface
     _shaderElement?.remove();
     _shaderElement = null;
     if (shader is ui.Gradient) {
+      element.style
+        ..width = '${maskRect.width}px'
+        ..height = '${maskRect.height}px';
       _applyGradientShader();
       return;
     }

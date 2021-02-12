@@ -161,7 +161,6 @@ class GradientLinear extends EngineGradient {
     if (tileMode == ui.TileMode.clamp || tileMode == ui.TileMode.decal) {
       return _createCanvasGradient(ctx, shaderBounds, density);
     } else {
-      initWebGl();
       return _createGlGradient(ctx, shaderBounds, density);
     }
   }
@@ -173,7 +172,7 @@ class GradientLinear extends EngineGradient {
     int widthInPixels = shaderBounds!.width.ceil();
     int heightInPixels = shaderBounds.height.ceil();
     assert(widthInPixels > 0 && heightInPixels > 0);
-
+    initWebGl();
     // Render gradient into a bitmap and create a canvas pattern.
     _OffScreenCanvas offScreenCanvas =
     _OffScreenCanvas(widthInPixels, heightInPixels);
@@ -385,7 +384,8 @@ String _writeSharedGradientShader(ShaderBuilder builder,
 class GradientRadial extends EngineGradient {
   GradientRadial(this.center, this.radius, this.colors, this.colorStops,
       this.tileMode, this.matrix4)
-      : super._();
+      : super._() {
+  }
 
   final ui.Offset center;
   final double radius;
@@ -400,7 +400,6 @@ class GradientRadial extends EngineGradient {
     if (tileMode == ui.TileMode.clamp || tileMode == ui.TileMode.decal) {
       return _createCanvasGradient(ctx, shaderBounds, density);
     } else {
-      initWebGl();
       return _createGlGradient(ctx, shaderBounds, density);
     }
   }
