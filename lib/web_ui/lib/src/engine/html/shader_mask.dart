@@ -75,6 +75,7 @@ class PersistedShaderMask extends PersistedContainerSurface
       _childContainer!.style
         ..left = '${-maskRect.left}px'
         ..top = '${-maskRect.top}px';
+
       // Prevent ShaderMask from failing inside animations that size
       // area to empty.
       if (maskRect.width > 0 && maskRect.height > 0) {
@@ -230,9 +231,8 @@ int _maskFilterIdCounter = 0;
 
 String _svgFilterWrapper(String content) {
   _maskFilterIdCounter++;
-  return '<svg width="0" height="0" xmlns:xlink="http://www.w3.org/1999/xlink">'
-          '<filter id="_fmf$_maskFilterIdCounter" '
-          'filterUnits="objectBoundingBox>' +
+  return '$kSvgResourceHeader<filter id="_fmf$_maskFilterIdCounter" '
+          'filterUnits="objectBoundingBox">' +
       content +
       '</filter></svg>';
 }
