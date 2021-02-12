@@ -103,7 +103,7 @@ class KeyboardKeyHandler : public KeyboardHandlerBase {
   void ComposeChangeHook(const std::u16string& text, int cursor_pos) override;
 
  protected:
-  size_t PendingAmount();
+  size_t RedispatchedAmount();
 
  private:
   struct PendingEvent {

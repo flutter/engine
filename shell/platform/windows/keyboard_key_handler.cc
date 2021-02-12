@@ -52,12 +52,11 @@ void KeyboardKeyHandler::AddDelegate(
   delegates_.push_back(std::move(delegate));
 }
 
-size_t KeyboardKeyHandler::PendingAmount() {
-  return pending_events_.size();
+size_t KeyboardKeyHandler::RedispatchedAmount() {
+  return redispatched_events_.size();
 }
 
 void KeyboardKeyHandler::RedispatchEvent(std::unique_ptr<PendingEvent> event) {
-  // printf("# Redispatch dwFlags %08lx\n", pending->dwFlags);
   uint8_t scancode = event->scancode;
   char32_t character = event->character;
 
@@ -108,9 +107,6 @@ bool KeyboardKeyHandler::KeyboardHook(FlutterWindowsView* view,
   incoming->unreplied = delegates_.size();
   incoming->any_handled = false;
 
-  printf("#### EVENT[%lld] key %x scancode %x action %x char %x ext %d wasDown %d\n",
-    incoming->sequence_id, key, scancode, action, character, extended, was_down);fflush(stdout);
-
   if (pending_events_.size() > kMaxPendingEvents) {
     std::cerr
         << "There are " << pending_events_.size()
@@ -123,7 +119,6 @@ bool KeyboardKeyHandler::KeyboardHook(FlutterWindowsView* view,
     delegate->KeyboardHook(
         key, scancode, action, character, extended, was_down,
         [sequence_id, this](bool handled) {
-          printf("#### RET[%lld] handled %d\n", sequence_id, handled);fflush(stdout);
           ResolvePendingEvent(sequence_id, handled);
         });
   }
@@ -142,7 +137,6 @@ bool KeyboardKeyHandler::RemoveRedispatchedEvent(const PendingEvent& incoming) {
        ++iter) {
     if ((*iter)->hash == incoming.hash) {
       redispatched_events_.erase(iter);
-      printf("#### Redispatched[#%lld] remain %llu\n", incoming.hash, redispatched_events_.size());fflush(stdout);
       return true;
     }
   }
@@ -154,15 +148,16 @@ void KeyboardKeyHandler::ResolvePendingEvent(uint64_t sequence_id, bool handled)
   for (auto iter = pending_events_.begin(); iter != pending_events_.end();
        ++iter) {
     if ((*iter)->sequence_id == sequence_id) {
-      std::unique_ptr<PendingEvent> event = std::move(*iter);
-      event->any_handled = event->any_handled || handled;
-      event->unreplied -= 1;
-      assert(event->unreplied >= 0);
+      PendingEvent& event = **iter;
+      event.any_handled = event.any_handled || handled;
+      event.unreplied -= 1;
+      assert(event.unreplied >= 0);
       // If all delegates have replied, redispatch if no one handled.
-      if (event->unreplied == 0) {
+      if (event.unreplied == 0) {
+        auto event_ptr = std::move(*iter);
         pending_events_.erase(iter);
-        if (!event->any_handled) {
-          RedispatchEvent(std::move(event));
+        if (!event_ptr->any_handled) {
+          RedispatchEvent(std::move(event_ptr));
         }
       }
       // Return here; |iter| can't do ++ after erase.

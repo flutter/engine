@@ -89,8 +89,8 @@ class TestKeyboardKeyHandler : public KeyboardKeyHandler {
   explicit TestKeyboardKeyHandler(EventRedispatcher redispatch_event)
       : KeyboardKeyHandler(redispatch_event) {}
 
-  bool HasPending() {
-    return PendingAmount() > 0;
+  bool HasRedispatched() {
+    return RedispatchedAmount() > 0;
   }
 };
 
@@ -125,11 +125,11 @@ TEST(KeyboardKeyHandlerTest, SingleDelegateWithAsyncResponds) {
   EXPECT_EQ(hook_history.back().scancode, kHandledScanCode);
   EXPECT_EQ(hook_history.back().was_down, true);
 
-  EXPECT_EQ(handler.HasPending(), true);
+  EXPECT_EQ(handler.HasRedispatched(), false);
   hook_history.back().callback(true);
   EXPECT_EQ(redispatch_scancode, 0);
 
-  EXPECT_EQ(handler.HasPending(), false);
+  EXPECT_EQ(handler.HasRedispatched(), false);
   hook_history.clear();
 
   /// Test 2: Two events that are unhandled by the framework
@@ -168,7 +168,7 @@ TEST(KeyboardKeyHandlerTest, SingleDelegateWithAsyncResponds) {
                                  false, false),
             false);
 
-  EXPECT_EQ(handler.HasPending(), false);
+  EXPECT_EQ(handler.HasRedispatched(), false);
   hook_history.clear();
   redispatch_scancode = 0;
 }
@@ -204,7 +204,7 @@ TEST(KeyboardKeyHandlerTest, SingleDelegateWithSyncResponds) {
   EXPECT_EQ(hook_history.back().scancode, kHandledScanCode);
   EXPECT_EQ(hook_history.back().was_down, false);
 
-  EXPECT_EQ(handler.HasPending(), false);
+  EXPECT_EQ(handler.HasRedispatched(), false);
   hook_history.clear();
 
   /// Test 2: An event unhandled by the framework
@@ -219,14 +219,14 @@ TEST(KeyboardKeyHandlerTest, SingleDelegateWithSyncResponds) {
   EXPECT_EQ(hook_history.back().scancode, kHandledScanCode);
   EXPECT_EQ(hook_history.back().was_down, false);
 
-  EXPECT_EQ(handler.HasPending(), true);
+  EXPECT_EQ(handler.HasRedispatched(), true);
 
   // Resolve the event
   EXPECT_EQ(handler.KeyboardHook(nullptr, 64, kHandledScanCode, WM_KEYDOWN,
                                  L'a', false, false),
             false);
 
-  EXPECT_EQ(handler.HasPending(), false);
+  EXPECT_EQ(handler.HasRedispatched(), false);
   hook_history.clear();
   redispatch_scancode = 0;
 }
@@ -267,7 +267,7 @@ TEST(KeyboardKeyHandlerTest, BehavesCorrectlyWithTwoAsyncDelegates) {
   EXPECT_EQ(hook_history.back().scancode, kHandledScanCode);
   EXPECT_EQ(hook_history.back().was_down, false);
 
-  EXPECT_EQ(handler.HasPending(), true);
+  EXPECT_EQ(handler.HasRedispatched(), false);
 
   hook_history.back().callback(true);
   EXPECT_EQ(redispatch_scancode, 0);
@@ -275,7 +275,7 @@ TEST(KeyboardKeyHandlerTest, BehavesCorrectlyWithTwoAsyncDelegates) {
   hook_history.front().callback(false);
   EXPECT_EQ(redispatch_scancode, 0);
 
-  EXPECT_EQ(handler.HasPending(), false);
+  EXPECT_EQ(handler.HasRedispatched(), false);
   redispatch_scancode = 0;
   hook_history.clear();
 
@@ -293,7 +293,7 @@ TEST(KeyboardKeyHandlerTest, BehavesCorrectlyWithTwoAsyncDelegates) {
   EXPECT_EQ(hook_history.back().scancode, kHandledScanCode);
   EXPECT_EQ(hook_history.back().was_down, false);
 
-  EXPECT_EQ(handler.HasPending(), true);
+  EXPECT_EQ(handler.HasRedispatched(), false);
 
   hook_history.front().callback(false);
   EXPECT_EQ(redispatch_scancode, 0);
@@ -301,12 +301,12 @@ TEST(KeyboardKeyHandlerTest, BehavesCorrectlyWithTwoAsyncDelegates) {
   hook_history.back().callback(false);
   EXPECT_EQ(redispatch_scancode, kHandledScanCode);
 
-  EXPECT_EQ(handler.HasPending(), true);
+  EXPECT_EQ(handler.HasRedispatched(), true);
   EXPECT_EQ(handler.KeyboardHook(nullptr, 64, kHandledScanCode, WM_KEYDOWN,
                                  L'a', false, false),
             false);
 
-  EXPECT_EQ(handler.HasPending(), false);
+  EXPECT_EQ(handler.HasRedispatched(), false);
   hook_history.clear();
   redispatch_scancode = 0;
 
@@ -324,17 +324,17 @@ TEST(KeyboardKeyHandlerTest, BehavesCorrectlyWithTwoAsyncDelegates) {
   EXPECT_EQ(hook_history.back().scancode, kHandledScanCode);
   EXPECT_EQ(hook_history.back().was_down, false);
 
-  EXPECT_EQ(handler.HasPending(), true);
+  EXPECT_EQ(handler.HasRedispatched(), false);
 
   hook_history.back().callback(true);
   EXPECT_EQ(redispatch_scancode, 0);
   // Only resolve after everyone has responded
-  EXPECT_EQ(handler.HasPending(), true);
+  EXPECT_EQ(handler.HasRedispatched(), false);
 
   hook_history.front().callback(true);
   EXPECT_EQ(redispatch_scancode, 0);
 
-  EXPECT_EQ(handler.HasPending(), false);
+  EXPECT_EQ(handler.HasRedispatched(), false);
   redispatch_scancode = 0;
   hook_history.clear();
 }
