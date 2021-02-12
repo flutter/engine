@@ -32,33 +32,13 @@ static constexpr char kKeyDown[] = "keydown";
 // emitting a warning on the console about unhandled events.
 static constexpr int kMaxPendingEvents = 1000;
 
-// This uses event data instead of generating a serial number because
-// information can't be attached to the redispatched events, so it has to be
-// possible to compute an ID from the identifying data in the event when it is
-// received again in order to differentiate between events that are new, and
-// events that have been redispatched.
-//
-// Another alternative would be to compute a checksum from all the data in the
-// event (just compute it over the bytes in the struct, probably skipping
-// timestamps), but the fields used below are enough to differentiate them, and
-// since Windows does some processing on the events (coming up with virtual key
-// codes, setting timestamps, etc.), it's not clear that the redispatched
-// events would have the same checksums.
-uint64_t CalculateEventId(int scancode, int action, bool extended) {
-  // Calculate a key event ID based on the scan code of the key pressed,
-  // and the flags we care about.
-  return scancode | (((action == WM_KEYUP ? KEYEVENTF_KEYUP : 0x0) |
-                      (extended ? KEYEVENTF_EXTENDEDKEY : 0x0))
-                     << 16);
-}
-
 }  // namespace
 
 KeyboardKeyHandler::KeyboardKeyHandlerDelegate::~KeyboardKeyHandlerDelegate() =
     default;
 
 KeyboardKeyHandler::KeyboardKeyHandler(EventRedispatcher redispatch_event)
-    : redispatch_event_(redispatch_event) {
+    : redispatch_event_(redispatch_event), last_sequence_id_(1) {
   assert(redispatch_event_ != nullptr);
 }
 
@@ -76,46 +56,28 @@ size_t KeyboardKeyHandler::PendingAmount() {
   return pending_events_.size();
 }
 
-const KeyboardKeyHandler::PendingEvent* KeyboardKeyHandler::FindPendingEvent(
-    uint64_t id) {
-  if (pending_events_.empty()) {
-    return nullptr;
-  }
-  for (auto iter = pending_events_.begin(); iter != pending_events_.end();
-       ++iter) {
-    if ((*iter)->id == id) {
-      return iter->get();
-    }
-  }
-  return nullptr;
-}
+void KeyboardKeyHandler::RedispatchEvent(std::unique_ptr<PendingEvent> event) {
+  // printf("# Redispatch dwFlags %08lx\n", pending->dwFlags);
+  uint8_t scancode = event->scancode;
+  char32_t character = event->character;
 
-void KeyboardKeyHandler::RemovePendingEvent(uint64_t id) {
-  for (auto iter = pending_events_.begin(); iter != pending_events_.end();
-       ++iter) {
-    if ((*iter)->id == id) {
-      pending_events_.erase(iter);
-      return;
-    }
-  }
-  std::cerr << "Tried to remove pending event with id " << id
-            << ", but the event was not found." << std::endl;
-}
-
-void KeyboardKeyHandler::RedispatchEvent(const PendingEvent* pending) {
-  KEYBDINPUT ki{
-      .wVk = 0,
-      .wScan = static_cast<WORD>(pending->scancode),
-      .dwFlags = pending->dwFlags,
+  INPUT input_event{
+    .type = INPUT_KEYBOARD,
+    .ki = KEYBDINPUT{
+        .wVk = 0,
+        .wScan = static_cast<WORD>(event->scancode),
+        .dwFlags = static_cast<WORD>(KEYEVENTF_SCANCODE | (event->extended ? KEYEVENTF_EXTENDEDKEY : 0x0) |
+            (event->action == WM_KEYUP ? KEYEVENTF_KEYUP : 0x0)),
+    },
   };
-  INPUT input_event;
-  input_event.type = INPUT_KEYBOARD;
-  input_event.ki = std::move(ki);
+
+  redispatched_events_.push_back(std::move(event));
+
   UINT accepted = redispatch_event_(1, &input_event, sizeof(input_event));
   if (accepted != 1) {
     std::cerr << "Unable to synthesize event for unhandled keyboard event "
                  "with scancode "
-              << pending->scancode << " (character " << pending->character
+              << scancode << " (character " << character
               << ")" << std::endl;
   }
 }
@@ -127,12 +89,27 @@ bool KeyboardKeyHandler::KeyboardHook(FlutterWindowsView* view,
                                       char32_t character,
                                       bool extended,
                                       bool was_down) {
-  const uint64_t id = CalculateEventId(scancode, action, extended);
-  if (FindPendingEvent(id) != nullptr) {
-    // Don't pass messages that we synthesized to the framework again.
-    RemovePendingEvent(id);
+  std::unique_ptr<PendingEvent> incoming = std::make_unique<PendingEvent>(PendingEvent{
+    .key = static_cast<uint32_t>(key),
+    .scancode = static_cast<uint8_t>(scancode),
+    .action = static_cast<uint32_t>(action),
+    .character = character,
+    .extended = extended,
+    .was_down = was_down,
+  });
+  incoming->hash = ComputeEventHash(*incoming);
+
+  if (RemoveRedispatchedEvent(*incoming)) {
     return false;
   }
+
+  uint64_t sequence_id = ++last_sequence_id_;
+  incoming->sequence_id = sequence_id;
+  incoming->unreplied = delegates_.size();
+  incoming->any_handled = false;
+
+  printf("#### EVENT[%lld] key %x scancode %x action %x char %x ext %d wasDown %d\n",
+    incoming->sequence_id, key, scancode, action, character, extended, was_down);fflush(stdout);
 
   if (pending_events_.size() > kMaxPendingEvents) {
     std::cerr
@@ -140,23 +117,14 @@ bool KeyboardKeyHandler::KeyboardHook(FlutterWindowsView* view,
         << " keyboard events that have not yet received a response from the "
         << "framework. Are responses being sent?" << std::endl;
   }
-  pending_events_.push_back(std::make_unique<PendingEvent>(PendingEvent{
-      .id = id,
-      .scancode = scancode,
-      .character = character,
-      .dwFlags = static_cast<DWORD>(
-          KEYEVENTF_SCANCODE | (extended ? KEYEVENTF_EXTENDEDKEY : 0x0) |
-          (action == WM_KEYUP ? KEYEVENTF_KEYUP : 0x0)),
-      .unreplied = delegates_.size(),
-      .any_handled = false,
-  }));
-  PendingEvent& pending_event = *pending_events_.back();
+  pending_events_.push_back(std::move(incoming));
 
   for (const auto& delegate : delegates_) {
     delegate->KeyboardHook(
         key, scancode, action, character, extended, was_down,
-        [pending_event = &pending_event, this](bool handled) {
-          ResolvePendingEvent(pending_event, handled);
+        [sequence_id, this](bool handled) {
+          printf("#### RET[%lld] handled %d\n", sequence_id, handled);fflush(stdout);
+          ResolvePendingEvent(sequence_id, handled);
         });
   }
 
@@ -169,18 +137,40 @@ bool KeyboardKeyHandler::KeyboardHook(FlutterWindowsView* view,
   return true;
 }
 
-void KeyboardKeyHandler::ResolvePendingEvent(PendingEvent* pending_event,
-                                             bool handled) {
-  pending_event->unreplied -= 1;
-  assert(pending_event->unreplied >= 0);
-  pending_event->any_handled = pending_event->any_handled || handled;
-  if (pending_event->unreplied == 0) {
-    if (!pending_event->any_handled) {
-      RedispatchEvent(pending_event);
-    } else {
-      RemovePendingEvent(pending_event->id);
+bool KeyboardKeyHandler::RemoveRedispatchedEvent(const PendingEvent& incoming) {
+  for (auto iter = redispatched_events_.begin(); iter != redispatched_events_.end();
+       ++iter) {
+    if ((*iter)->hash == incoming.hash) {
+      redispatched_events_.erase(iter);
+      printf("#### Redispatched[#%lld] remain %llu\n", incoming.hash, redispatched_events_.size());fflush(stdout);
+      return true;
     }
   }
+  return false;;
+}
+
+void KeyboardKeyHandler::ResolvePendingEvent(uint64_t sequence_id, bool handled) {
+  // Find the pending event
+  for (auto iter = pending_events_.begin(); iter != pending_events_.end();
+       ++iter) {
+    if ((*iter)->sequence_id == sequence_id) {
+      std::unique_ptr<PendingEvent> event = std::move(*iter);
+      event->any_handled = event->any_handled || handled;
+      event->unreplied -= 1;
+      assert(event->unreplied >= 0);
+      // If all delegates have replied, redispatch if no one handled.
+      if (event->unreplied == 0) {
+        pending_events_.erase(iter);
+        if (!event->any_handled) {
+          RedispatchEvent(std::move(event));
+        }
+      }
+      // Return here; |iter| can't do ++ after erase.
+      return;
+    }
+  }
+  // The pending event should always be found.
+  assert(false);
 }
 
 void KeyboardKeyHandler::ComposeBeginHook() {
@@ -194,6 +184,14 @@ void KeyboardKeyHandler::ComposeEndHook() {
 void KeyboardKeyHandler::ComposeChangeHook(const std::u16string& text,
                                            int cursor_pos) {
   // Ignore.
+}
+
+uint64_t KeyboardKeyHandler::ComputeEventHash(const PendingEvent& event) {
+  // Calculate a key event ID based on the scan code of the key pressed,
+  // and the flags we care about.
+  return event.scancode | (((event.action == WM_KEYUP ? KEYEVENTF_KEYUP : 0x0) |
+                      (event.extended ? KEYEVENTF_EXTENDEDKEY : 0x0))
+                     << 16);
 }
 
 }  // namespace flutter

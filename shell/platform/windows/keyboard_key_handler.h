@@ -107,28 +107,32 @@ class KeyboardKeyHandler : public KeyboardHandlerBase {
 
  private:
   struct PendingEvent {
-    uint64_t id;
-    int scancode;
+    uint32_t key;
+    uint8_t scancode;
+    uint32_t action;
     char32_t character;
-    DWORD dwFlags;
-    DWORD lParam;
+    bool extended;
+    bool was_down;
 
+    // Self-incrementing ID attached to an event sent to the framework.
+    uint64_t sequence_id;
     // The number of delegates that haven't replied.
     size_t unreplied;
     // Whether any replied delegates reported true (handled).
     bool any_handled;
+
+    // A value calculated out of critical event information that can be used
+    // to identify redispatched events.
+    uint64_t hash;
   };
 
-  const PendingEvent* FindPendingEvent(uint64_t id);
-  void HandleResponse(bool handled,
-                      uint64_t id,
-                      int action,
-                      bool extended,
-                      int scancode,
-                      int character);
-  void RedispatchEvent(const PendingEvent* pending);
-  void RemovePendingEvent(uint64_t id);
-  void ResolvePendingEvent(PendingEvent* pending, bool handled);
+  // Find an event in the redispatch list that matches the given one.
+  //
+  // If an matching event is found, removes the matching event from the
+  // redispatch list, and returns true. Otherwise, returns false;
+  bool RemoveRedispatchedEvent(const PendingEvent& incoming);
+  void RedispatchEvent(std::unique_ptr<PendingEvent> event);
+  void ResolvePendingEvent(uint64_t sequence_id, bool handled);
 
   std::vector<std::unique_ptr<KeyboardKeyHandlerDelegate>> delegates_;
 
@@ -136,8 +140,32 @@ class KeyboardKeyHandler : public KeyboardHandlerBase {
   // yet received a response.
   std::deque<std::unique_ptr<PendingEvent>> pending_events_;
 
+  // The queue of key events that have been redispatcehd to the system but have
+  // not yet been received for a second time.
+  std::deque<std::unique_ptr<PendingEvent>> redispatched_events_;
+
+  // The last sequence_id attached to the event sent to the framework.
+  uint64_t last_sequence_id_;
+
   // A function used to redispatch synthesized events.
   EventRedispatcher redispatch_event_;
+
+  // Calculate a hash based on event data for fast comparison for a redispatched
+  // event.
+  //
+  // This uses event data instead of generating a serial number because
+  // information can't be attached to the redispatched events, so it has to be
+  // possible to compute an ID from the identifying data in the event when it is
+  // received again in order to differentiate between events that are new, and
+  // events that have been redispatched.
+  //
+  // Another alternative would be to compute a checksum from all the data in the
+  // event (just compute it over the bytes in the struct, probably skipping
+  // timestamps), but the fields used below are enough to differentiate them, and
+  // since Windows does some processing on the events (coming up with virtual key
+  // codes, setting timestamps, etc.), it's not clear that the redispatched
+  // events would have the same checksums.
+  static uint64_t ComputeEventHash(const PendingEvent& event);
 };
 
 }  // namespace flutter
