@@ -41,6 +41,9 @@ class PersistedShaderMask extends PersistedContainerSurface
   }
 
   @override
+  html.Element? get childContainer => _childContainer;
+
+  @override
   void discard() {
     super.discard();
     // Do not detach the child container from the root. It is permanently
@@ -64,6 +67,14 @@ class PersistedShaderMask extends PersistedContainerSurface
     _shaderElement?.remove();
     _shaderElement = null;
     if (shader is ui.Gradient) {
+      rootElement!.style
+        ..left = '${maskRect.left}px'
+        ..top = '${maskRect.top}px'
+        ..width = '${maskRect.width}px'
+        ..height = '${maskRect.height}px';
+      _childContainer!.style
+        ..left = '${-maskRect.left}px'
+        ..top = '${-maskRect.top}px';
       // Prevent ShaderMask from failing inside animations that size
       // area to empty.
       if (maskRect.width > 0 && maskRect.height > 0) {
