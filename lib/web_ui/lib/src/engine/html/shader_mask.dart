@@ -230,10 +230,9 @@ int _maskFilterIdCounter = 0;
 
 String _svgFilterWrapper(String content) {
   _maskFilterIdCounter++;
-  return '<svg xmlns:xlink="http://www.w3.org/1999/xlink">'
+  return '<svg width="0" height="0" xmlns:xlink="http://www.w3.org/1999/xlink">'
           '<filter id="_fmf$_maskFilterIdCounter" '
-          'filterUnits="objectBoundingBox" '
-          'x="0%" y="0%" width="100%" height="100%">' +
+          'filterUnits="objectBoundingBox>' +
       content +
       '</filter></svg>';
 }
