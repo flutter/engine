@@ -64,10 +64,14 @@ class PersistedShaderMask extends PersistedContainerSurface
     _shaderElement?.remove();
     _shaderElement = null;
     if (shader is ui.Gradient) {
-      element.style
+      rootElement!.style
         ..width = '${maskRect.width}px'
         ..height = '${maskRect.height}px';
-      _applyGradientShader();
+      // Prevent ShaderMask from failing inside animations that size
+      // area to empty.
+      if (maskRect.width > 0 && maskRect.height > 0) {
+        _applyGradientShader();
+      }
       return;
     }
     // TODO: Implement _applyImageShader();
