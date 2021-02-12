@@ -18,13 +18,18 @@ static constexpr int kHandledScanCode = 20;
 static constexpr int kHandledScanCode2 = 22;
 static constexpr int kUnhandledScanCode = 21;
 
+typedef std::function<void (bool)> Callback;
+typedef std::function<void (Callback&)> CallbackHandler;
+void dont_respond(Callback& callback) {}
+void respond_true(Callback& callback) { callback(true); }
+void respond_false(Callback& callback) { callback(false); }
+
 // A testing |KeyHandlerDelegate| that records all calls
 // to |KeyboardHook| and can be customized with whether
 // the hook is handled in async.
 class MockKeyHandlerDelegate
     : public KeyboardKeyHandler::KeyboardKeyHandlerDelegate {
  public:
-  using GetIsAsync = std::function<bool (void)>;
 
   class KeyboardHookCall {
    public:
@@ -50,22 +55,18 @@ class MockKeyHandlerDelegate
   // |KeyboardHookCall| to decide whether the call is handled asynchronously.
   // Defaults to always returning true (async).
   MockKeyHandlerDelegate(int delegate_id,
-                         std::list<KeyboardHookCall>* hook_history,
-                         GetIsAsync is_async = [] { return true; })
+                         std::list<KeyboardHookCall>* hook_history)
       : delegate_id(delegate_id), hook_history(hook_history),
-        is_async(is_async) {}
+        callback_handler(dont_respond) {}
   virtual ~MockKeyHandlerDelegate() = default;
 
-  virtual bool KeyboardHook(int key,
+  virtual void KeyboardHook(int key,
                             int scancode,
                             int action,
                             char32_t character,
                             bool extended,
                             bool was_down,
                             std::function<void(bool)> callback) {
-    if (!is_async()) {
-      return false;
-    }
     hook_history->push_back(KeyboardHookCall{
         .delegate_id = delegate_id,
         .key = key,
@@ -75,55 +76,64 @@ class MockKeyHandlerDelegate
         .was_down = was_down,
         .callback = std::move(callback),
     });
-    return true;
+    callback_handler(hook_history->back().callback);
   }
 
-  GetIsAsync is_async;
+  CallbackHandler callback_handler;
   int delegate_id;
   std::list<KeyboardHookCall>* hook_history;
 };
 
+class TestKeyboardKeyHandler : public KeyboardKeyHandler {
+ public:
+  explicit TestKeyboardKeyHandler(EventRedispatcher redispatch_event)
+      : KeyboardKeyHandler(redispatch_event) {}
+
+  bool HasPending() {
+    return PendingAmount() > 0;
+  }
+};
+
 }  // namespace
 
-TEST(KeyboardKeyHandlerTest, BehavesCorrectlyWithSingleDelegate) {
+TEST(KeyboardKeyHandlerTest, SingleDelegateWithAsyncResponds) {
   std::list<MockKeyHandlerDelegate::KeyboardHookCall> hook_history;
 
   // Capture the scancode of the last redispatched event
   int redispatch_scancode = 0;
   bool delegate_handled = false;
-  KeyboardKeyHandler handler([&redispatch_scancode](UINT cInputs,
-                                                    LPINPUT pInputs,
-                                                    int cbSize) -> UINT {
+  TestKeyboardKeyHandler handler([&redispatch_scancode](UINT cInputs,
+                                                        LPINPUT pInputs,
+                                                        int cbSize) -> UINT {
     EXPECT_TRUE(cbSize > 0);
     redispatch_scancode = pInputs->ki.wScan;
     return 1;
   });
   // Add one delegate
-  handler.AddDelegate(
-      std::make_unique<MockKeyHandlerDelegate>(1, &hook_history));
+  auto delegate = std::make_unique<MockKeyHandlerDelegate>(1, &hook_history);
+  handler.AddDelegate(std::move(delegate));
 
   /// Test 1: One event that is handled by the framework
 
   // Dispatch a key event
   delegate_handled = handler.KeyboardHook(nullptr, 64, kHandledScanCode,
-                                          WM_KEYDOWN, L'a', false, false);
+                                          WM_KEYDOWN, L'a', false, true);
   EXPECT_EQ(delegate_handled, true);
   EXPECT_EQ(redispatch_scancode, 0);
   EXPECT_EQ(hook_history.size(), 1);
   EXPECT_EQ(hook_history.back().delegate_id, 1);
   EXPECT_EQ(hook_history.back().scancode, kHandledScanCode);
-  EXPECT_EQ(hook_history.back().was_down, false);
+  EXPECT_EQ(hook_history.back().was_down, true);
 
+  EXPECT_EQ(handler.HasPending(), true);
   hook_history.back().callback(true);
   EXPECT_EQ(redispatch_scancode, 0);
 
+  EXPECT_EQ(handler.HasPending(), false);
   hook_history.clear();
 
   /// Test 2: Two events that are unhandled by the framework
 
-  // Dispatch a key event.
-  // Also this is the same event as the previous one, to test that handled
-  // events are cleared from the pending list.
   delegate_handled = handler.KeyboardHook(nullptr, 64, kHandledScanCode,
                                           WM_KEYDOWN, L'a', false, false);
   EXPECT_EQ(delegate_handled, true);
@@ -158,6 +168,65 @@ TEST(KeyboardKeyHandlerTest, BehavesCorrectlyWithSingleDelegate) {
                                  false, false),
             false);
 
+  EXPECT_EQ(handler.HasPending(), false);
+  hook_history.clear();
+  redispatch_scancode = 0;
+}
+
+TEST(KeyboardKeyHandlerTest, SingleDelegateWithSyncResponds) {
+  std::list<MockKeyHandlerDelegate::KeyboardHookCall> hook_history;
+
+  // Capture the scancode of the last redispatched event
+  int redispatch_scancode = 0;
+  bool delegate_handled = false;
+  TestKeyboardKeyHandler handler([&redispatch_scancode](UINT cInputs,
+                                                        LPINPUT pInputs,
+                                                        int cbSize) -> UINT {
+    EXPECT_TRUE(cbSize > 0);
+    redispatch_scancode = pInputs->ki.wScan;
+    return 1;
+  });
+  // Add one delegate
+  auto delegate = std::make_unique<MockKeyHandlerDelegate>(1, &hook_history);
+  CallbackHandler& delegate_handler = delegate->callback_handler;
+  handler.AddDelegate(std::move(delegate));
+
+  /// Test 1: One event that is handled by the framework
+
+  // Dispatch a key event
+  delegate_handler = respond_true;
+  delegate_handled = handler.KeyboardHook(nullptr, 64, kHandledScanCode,
+                                          WM_KEYDOWN, L'a', false, false);
+  EXPECT_EQ(delegate_handled, true);
+  EXPECT_EQ(redispatch_scancode, 0);
+  EXPECT_EQ(hook_history.size(), 1);
+  EXPECT_EQ(hook_history.back().delegate_id, 1);
+  EXPECT_EQ(hook_history.back().scancode, kHandledScanCode);
+  EXPECT_EQ(hook_history.back().was_down, false);
+
+  EXPECT_EQ(handler.HasPending(), false);
+  hook_history.clear();
+
+  /// Test 2: An event unhandled by the framework
+
+  delegate_handler = respond_false;
+  delegate_handled = handler.KeyboardHook(nullptr, 64, kHandledScanCode,
+                                          WM_KEYDOWN, L'a', false, false);
+  EXPECT_EQ(delegate_handled, true);
+  EXPECT_EQ(redispatch_scancode, kHandledScanCode);
+  EXPECT_EQ(hook_history.size(), 1);
+  EXPECT_EQ(hook_history.back().delegate_id, 1);
+  EXPECT_EQ(hook_history.back().scancode, kHandledScanCode);
+  EXPECT_EQ(hook_history.back().was_down, false);
+
+  EXPECT_EQ(handler.HasPending(), true);
+
+  // Resolve the event
+  EXPECT_EQ(handler.KeyboardHook(nullptr, 64, kHandledScanCode, WM_KEYDOWN,
+                                 L'a', false, false),
+            false);
+
+  EXPECT_EQ(handler.HasPending(), false);
   hook_history.clear();
   redispatch_scancode = 0;
 }
@@ -168,43 +237,23 @@ TEST(KeyboardKeyHandlerTest, BehavesCorrectlyWithTwoAsyncDelegates) {
   // Capture the scancode of the last redispatched event
   int redispatch_scancode = 0;
   bool delegate_handled = false;
-  KeyboardKeyHandler handler([&redispatch_scancode](UINT cInputs,
-                                                    LPINPUT pInputs,
-                                                    int cbSize) -> UINT {
+  TestKeyboardKeyHandler handler([&redispatch_scancode](UINT cInputs,
+                                                        LPINPUT pInputs,
+                                                        int cbSize) -> UINT {
     EXPECT_TRUE(cbSize > 0);
     redispatch_scancode = pInputs->ki.wScan;
     return 1;
   });
-  // Only add one delegate for now.
-  handler.AddDelegate(
-      std::make_unique<MockKeyHandlerDelegate>(1, &hook_history));
 
-  /// Test 1: Add a delegate before an event is responded
+  auto delegate1 = std::make_unique<MockKeyHandlerDelegate>(1, &hook_history);
+  CallbackHandler& delegate1_handler = delegate1->callback_handler;
+  handler.AddDelegate(std::move(delegate1));
 
-  delegate_handled = handler.KeyboardHook(nullptr, 64, kHandledScanCode,
-                                          WM_KEYDOWN, L'a', false, false);
-  EXPECT_EQ(delegate_handled, true);
-  EXPECT_EQ(redispatch_scancode, 0);
-  EXPECT_EQ(hook_history.size(), 1);
-  EXPECT_EQ(hook_history.back().delegate_id, 1);
-  EXPECT_EQ(hook_history.back().scancode, kHandledScanCode);
-  EXPECT_EQ(hook_history.back().was_down, false);
+  auto delegate2 = std::make_unique<MockKeyHandlerDelegate>(2, &hook_history);
+  CallbackHandler& delegate2_handler = delegate2->callback_handler;
+  handler.AddDelegate(std::move(delegate2));
 
-  handler.AddDelegate(
-      std::make_unique<MockKeyHandlerDelegate>(2, &hook_history));
-
-  // Only one reply is needed because the 2nd delegate is added late.
-  hook_history.back().callback(false);
-  EXPECT_EQ(redispatch_scancode, kHandledScanCode);
-
-  EXPECT_EQ(handler.KeyboardHook(nullptr, 64, kHandledScanCode, WM_KEYDOWN,
-                                 L'a', false, false),
-            false);
-
-  redispatch_scancode = 0;
-  hook_history.clear();
-
-  /// Test 2: A delegate responds true
+  /// Test 1: One delegate responds true, the other false
 
   delegate_handled = handler.KeyboardHook(nullptr, 64, kHandledScanCode,
                                           WM_KEYDOWN, L'a', false, false);
@@ -217,6 +266,8 @@ TEST(KeyboardKeyHandlerTest, BehavesCorrectlyWithTwoAsyncDelegates) {
   EXPECT_EQ(hook_history.back().delegate_id, 2);
   EXPECT_EQ(hook_history.back().scancode, kHandledScanCode);
   EXPECT_EQ(hook_history.back().was_down, false);
+
+  EXPECT_EQ(handler.HasPending(), true);
 
   hook_history.back().callback(true);
   EXPECT_EQ(redispatch_scancode, 0);
@@ -224,13 +275,12 @@ TEST(KeyboardKeyHandlerTest, BehavesCorrectlyWithTwoAsyncDelegates) {
   hook_history.front().callback(false);
   EXPECT_EQ(redispatch_scancode, 0);
 
+  EXPECT_EQ(handler.HasPending(), false);
   redispatch_scancode = 0;
   hook_history.clear();
 
-  /// Test 3: All delegates respond false
+  /// Test 2: All delegates respond false
 
-  // Also this is the same event as the previous one, to test that handled
-  // events are cleared from the pending list.
   delegate_handled = handler.KeyboardHook(nullptr, 64, kHandledScanCode,
                                           WM_KEYDOWN, L'a', false, false);
   EXPECT_EQ(delegate_handled, true);
@@ -243,111 +293,50 @@ TEST(KeyboardKeyHandlerTest, BehavesCorrectlyWithTwoAsyncDelegates) {
   EXPECT_EQ(hook_history.back().scancode, kHandledScanCode);
   EXPECT_EQ(hook_history.back().was_down, false);
 
+  EXPECT_EQ(handler.HasPending(), true);
+
   hook_history.front().callback(false);
   EXPECT_EQ(redispatch_scancode, 0);
 
   hook_history.back().callback(false);
   EXPECT_EQ(redispatch_scancode, kHandledScanCode);
 
+  EXPECT_EQ(handler.HasPending(), true);
   EXPECT_EQ(handler.KeyboardHook(nullptr, 64, kHandledScanCode, WM_KEYDOWN,
                                  L'a', false, false),
             false);
-}
 
-TEST(KeyboardKeyHandlerTest, BehavesCorrectlyWithAsyncAndSyncDelegates) {
-  std::list<MockKeyHandlerDelegate::KeyboardHookCall> hook_history;
-
-  // Capture the scancode of the last redispatched event
-  int redispatch_scancode = 0;
-  bool delegate_handled = false;
-  KeyboardKeyHandler handler([&redispatch_scancode](UINT cInputs,
-                                                    LPINPUT pInputs,
-                                                    int cbSize) -> UINT {
-    EXPECT_TRUE(cbSize > 0);
-    redispatch_scancode = pInputs->ki.wScan;
-    return 1;
-  });
-  // Add one delegate
-  bool delegate1_is_async = true;
-  auto delegate1 = std::make_unique<MockKeyHandlerDelegate>(1, &hook_history,
-      [&delegate1_is_async]() { return delegate1_is_async; });
-  handler.AddDelegate(std::move(delegate1));
-
-  /// Test 1: The only delegate is sync.
-
-  delegate1_is_async = false;
-  delegate_handled = handler.KeyboardHook(nullptr, 64, kHandledScanCode,
-                                          WM_KEYDOWN, L'a', false, false);
-  EXPECT_EQ(delegate_handled, false);
-  EXPECT_EQ(redispatch_scancode, 0);
-  EXPECT_EQ(hook_history.size(), 0);
-
-  // Add another delegate
-  bool delegate2_is_async = true;
-  auto delegate2 = std::make_unique<MockKeyHandlerDelegate>(2, &hook_history,
-      [&delegate2_is_async]() { return delegate2_is_async; });
-  handler.AddDelegate(std::move(delegate2));
-
-  redispatch_scancode = 0;
+  EXPECT_EQ(handler.HasPending(), false);
   hook_history.clear();
-
-  /// Test 2: Both delegates are sync
-
-  // Also this is the same event as the previous one, to test that handled
-  // events are cleared from the pending list.
-
-  delegate1_is_async = false;
-  delegate2_is_async = false;
-  delegate_handled = handler.KeyboardHook(nullptr, 64, kHandledScanCode,
-                                          WM_KEYDOWN, L'a', false, false);
-  EXPECT_EQ(delegate_handled, false);
-  EXPECT_EQ(redispatch_scancode, 0);
-  EXPECT_EQ(hook_history.size(), 0);
-
   redispatch_scancode = 0;
-  hook_history.clear();
 
-  /// Test 3: Only one delegate is sync, the other responds false
+  /// Test 3: All delegates responds true
 
-  // Also this is the same event as the previous one, to test that handled
-  // events are cleared from the pending list.
-  delegate1_is_async = true;
-  delegate2_is_async = false;
   delegate_handled = handler.KeyboardHook(nullptr, 64, kHandledScanCode,
                                           WM_KEYDOWN, L'a', false, false);
   EXPECT_EQ(delegate_handled, true);
   EXPECT_EQ(redispatch_scancode, 0);
-  EXPECT_EQ(hook_history.size(), 1);
+  EXPECT_EQ(hook_history.size(), 2);
   EXPECT_EQ(hook_history.front().delegate_id, 1);
   EXPECT_EQ(hook_history.front().scancode, kHandledScanCode);
   EXPECT_EQ(hook_history.front().was_down, false);
+  EXPECT_EQ(hook_history.back().delegate_id, 2);
+  EXPECT_EQ(hook_history.back().scancode, kHandledScanCode);
+  EXPECT_EQ(hook_history.back().was_down, false);
 
-  hook_history.front().callback(false);
-  EXPECT_EQ(redispatch_scancode, kHandledScanCode);
+  EXPECT_EQ(handler.HasPending(), true);
 
-  EXPECT_EQ(handler.KeyboardHook(nullptr, 64, kHandledScanCode, WM_KEYDOWN,
-                                 L'a', false, false),
-            false);
-  redispatch_scancode = 0;
-  hook_history.clear();
-
-  /// Test 4: Only one delegate is sync, the other responds true
-
-  // Also this is the same event as the previous one, to test that handled
-  // events are cleared from the pending list.
-  delegate1_is_async = true;
-  delegate2_is_async = false;
-  delegate_handled = handler.KeyboardHook(nullptr, 64, kHandledScanCode,
-                                          WM_KEYDOWN, L'a', false, false);
-  EXPECT_EQ(delegate_handled, true);
+  hook_history.back().callback(true);
   EXPECT_EQ(redispatch_scancode, 0);
-  EXPECT_EQ(hook_history.size(), 1);
-  EXPECT_EQ(hook_history.front().delegate_id, 1);
-  EXPECT_EQ(hook_history.front().scancode, kHandledScanCode);
-  EXPECT_EQ(hook_history.front().was_down, false);
+  // Only resolve after everyone has responded
+  EXPECT_EQ(handler.HasPending(), true);
 
   hook_history.front().callback(true);
   EXPECT_EQ(redispatch_scancode, 0);
+
+  EXPECT_EQ(handler.HasPending(), false);
+  redispatch_scancode = 0;
+  hook_history.clear();
 }
 
 }  // namespace testing

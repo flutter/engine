@@ -150,6 +150,9 @@ class Win32Window {
 
   UINT GetCurrentHeight();
 
+ protected:
+  LRESULT DefaultWindowProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
+
  private:
   // Release OS resources asociated with window.
   void Destroy();

@@ -44,6 +44,7 @@ class MockWin32Window : public Win32Window {
   MOCK_METHOD0(OnComposeBegin, void());
   MOCK_METHOD0(OnComposeEnd, void());
   MOCK_METHOD2(OnComposeChange, void(const std::u16string&, int));
+  MOCK_METHOD4(DefaultWindowProc, LRESULT(HWND, UINT, WPARAM, LPARAM));
 };
 
 }  // namespace testing

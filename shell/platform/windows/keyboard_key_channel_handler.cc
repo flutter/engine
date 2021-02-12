@@ -100,7 +100,7 @@ KeyboardKeyChannelHandler::KeyboardKeyChannelHandler(
 
 KeyboardKeyChannelHandler::~KeyboardKeyChannelHandler() = default;
 
-bool KeyboardKeyChannelHandler::KeyboardHook(
+void KeyboardKeyChannelHandler::KeyboardHook(
     int key,
     int scancode,
     int action,
@@ -127,7 +127,8 @@ bool KeyboardKeyChannelHandler::KeyboardHook(
       break;
     default:
       std::cerr << "Unknown key event action: " << action << std::endl;
-      return false;
+      callback(false);
+      return;
   }
   channel_->Send(event, [callback = std::move(callback)](const uint8_t* reply,
                                                          size_t reply_size) {
@@ -136,7 +137,6 @@ bool KeyboardKeyChannelHandler::KeyboardHook(
     bool handled = (*decoded)[kHandledKey].GetBool();
     callback(handled);
   });
-  return true;
 }
 
 }  // namespace flutter

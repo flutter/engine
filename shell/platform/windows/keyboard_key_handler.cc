@@ -72,6 +72,10 @@ void KeyboardKeyHandler::AddDelegate(
   delegates_.push_back(std::move(delegate));
 }
 
+size_t KeyboardKeyHandler::PendingAmount() {
+  return pending_events_.size();
+}
+
 const KeyboardKeyHandler::PendingEvent* KeyboardKeyHandler::FindPendingEvent(
     uint64_t id) {
   if (pending_events_.empty()) {
@@ -136,7 +140,7 @@ bool KeyboardKeyHandler::KeyboardHook(FlutterWindowsView* view,
         << " keyboard events that have not yet received a response from the "
         << "framework. Are responses being sent?" << std::endl;
   }
-  auto pending_event = std::make_unique<PendingEvent>(PendingEvent{
+  pending_events_.push_back(std::make_unique<PendingEvent>(PendingEvent{
       .id = id,
       .scancode = scancode,
       .character = character,
@@ -145,24 +149,24 @@ bool KeyboardKeyHandler::KeyboardHook(FlutterWindowsView* view,
           (action == WM_KEYUP ? KEYEVENTF_KEYUP : 0x0)),
       .unreplied = delegates_.size(),
       .any_handled = false,
-  });
+  }));
+  PendingEvent& pending_event = *pending_events_.back();
 
-  int unreplied = 0;
   for (const auto& delegate : delegates_) {
-    bool is_async = delegate->KeyboardHook(
+    delegate->KeyboardHook(
         key, scancode, action, character, extended, was_down,
-        [pending_event = pending_event.get(), this](bool handled) {
+        [pending_event = &pending_event, this](bool handled) {
           ResolvePendingEvent(pending_event, handled);
         });
-    if (is_async) {
-      unreplied += 1;
-    }
   }
-  pending_event->unreplied = unreplied;
-  if (unreplied > 0) {
-    pending_events_.push_back(std::move(pending_event));
-  }
-  return unreplied > 0;
+
+  // |ResolvePendingEvent| might trigger redispatching synchronously,
+  // which might occur before |KeyboardHook| is returned. This won't
+  // make events out of order though, because |KeyboardHook| will always
+  // return true at this time, preventing this event from affecting
+  // others.
+
+  return true;
 }
 
 void KeyboardKeyHandler::ResolvePendingEvent(PendingEvent* pending_event,

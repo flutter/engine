@@ -36,13 +36,9 @@ class KeyboardKeyHandler : public KeyboardHandlerBase {
    public:
     // Defines how to how to asynchronously handle key events.
     //
-    // If the delegate will wait for an asynchronous response for this event,
-    // |KeyboardHook| should return true, and invoke |callback| with the
-    // response (whether the event is handled) later for exactly once.
-    //
-    // Otherwise, the delegate should return false and *never* invoke
-    // |callback|. This is considered not handling the event.
-    virtual bool KeyboardHook(int key,
+    // |KeyboardHook| should invoke |callback| with the response (whether the
+    // event is handled) later for exactly once.
+    virtual void KeyboardHook(int key,
                               int scancode,
                               int action,
                               char32_t character,
@@ -106,13 +102,20 @@ class KeyboardKeyHandler : public KeyboardHandlerBase {
   // |KeyboardHandlerBase|
   void ComposeChangeHook(const std::u16string& text, int cursor_pos) override;
 
+ protected:
+  size_t PendingAmount();
+
  private:
   struct PendingEvent {
     uint64_t id;
     int scancode;
     char32_t character;
     DWORD dwFlags;
+    DWORD lParam;
+
+    // The number of delegates that haven't replied.
     size_t unreplied;
+    // Whether any replied delegates reported true (handled).
     bool any_handled;
   };
 

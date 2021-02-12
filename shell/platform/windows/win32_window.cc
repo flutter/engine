@@ -336,8 +336,9 @@ Win32Window::HandleMessage(UINT const message,
       if (keycode_for_char_message_ != 0) {
         const unsigned int scancode = (lparam >> 16) & 0xff;
         const bool extended = ((lparam >> 24) & 0x01) == 0x01;
+        const bool was_down = lparam & 0x40000000;
         bool handled = OnKey(keycode_for_char_message_, scancode, WM_KEYDOWN,
-                             code_point, extended, false);
+                             code_point, extended, was_down);
         keycode_for_char_message_ = 0;
         if (handled) {
           // If the OnKey handler handles the message, then return so we don't
@@ -428,6 +429,10 @@ void Win32Window::HandleResize(UINT width, UINT height) {
 Win32Window* Win32Window::GetThisFromHandle(HWND const window) noexcept {
   return reinterpret_cast<Win32Window*>(
       GetWindowLongPtr(window, GWLP_USERDATA));
+}
+
+LRESULT Win32Window::DefaultWindowProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam) {
+  return DefWindowProc(hWnd, Msg, wParam, lParam);
 }
 
 }  // namespace flutter

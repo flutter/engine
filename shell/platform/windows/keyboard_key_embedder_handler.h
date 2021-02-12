@@ -44,7 +44,7 @@ class KeyboardKeyEmbedderHandler
   virtual ~KeyboardKeyEmbedderHandler();
 
   // |KeyboardHandlerBase|
-  bool KeyboardHook(int key,
+  void KeyboardHook(int key,
                     int scancode,
                     int action,
                     char32_t character,
@@ -58,7 +58,7 @@ class KeyboardKeyEmbedderHandler
     uint64_t response_id;
   };
 
-  void cacheUtf8String(char32_t ch);
+  void CacheUtf8String(char32_t ch);
 
   std::function<void(const FlutterKeyEvent&, FlutterKeyEventCallback, void*)>
       sendEvent_;

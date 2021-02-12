@@ -115,7 +115,7 @@ uint64_t KeyboardKeyEmbedderHandler::getLogicalKey(int key,
   }
 }
 
-void KeyboardKeyEmbedderHandler::cacheUtf8String(char32_t character) {
+void KeyboardKeyEmbedderHandler::CacheUtf8String(char32_t character) {
   if (character == 0) {
     character_cache_[0] = '\0';
     return;
@@ -125,7 +125,7 @@ void KeyboardKeyEmbedderHandler::cacheUtf8String(char32_t character) {
   strcpy_s(character_cache_, kCharacterCacheSize, Utf8FromUtf16(text).c_str());
 }
 
-bool KeyboardKeyEmbedderHandler::KeyboardHook(
+void KeyboardKeyEmbedderHandler::KeyboardHook(
     int key,
     int scancode,
     int action,
@@ -157,7 +157,7 @@ bool KeyboardKeyEmbedderHandler::KeyboardHook(
         // A normal repeated key.
         type = kFlutterKeyEventTypeRepeat;
         assert(had_record);
-        cacheUtf8String(character);
+        CacheUtf8String(character);
         next_logical_record = last_logical_record;
         result_logical_key = last_logical_record;
       } else {
@@ -165,13 +165,14 @@ bool KeyboardKeyEmbedderHandler::KeyboardHook(
         // as a currently pressed one, usually indicating multiple keyboards are
         // pressing keys with the same physical key, or the up event was lost
         // during a loss of focus. The down event is ignored.
-        return false;
+        callback(true);
+        return;
       }
     } else {
       // A normal down event (whether the system event is a repeat or not).
       type = kFlutterKeyEventTypeDown;
       assert(!had_record);
-      cacheUtf8String(character);
+      CacheUtf8String(character);
       next_logical_record = logical_key;
       result_logical_key = logical_key;
     }
@@ -179,7 +180,8 @@ bool KeyboardKeyEmbedderHandler::KeyboardHook(
     if (last_logical_record == 0) {
       // The physical key has been released before. It indicates multiple
       // keyboards pressed keys with the same physical key. Ignore the up event.
-      return false;
+      callback(true);
+      return;
     } else {
       // A normal up event.
       type = kFlutterKeyEventTypeUp;
@@ -202,7 +204,8 @@ bool KeyboardKeyEmbedderHandler::KeyboardHook(
     // presses are considered handled and not sent to Flutter. These events must
     // be filtered by result_logical_key because the key up event of such
     // presses uses the "original" logical key.
-    return false;
+    callback(true);
+    return;
   }
 
   FlutterKeyEvent key_data = {};
@@ -235,7 +238,6 @@ bool KeyboardKeyEmbedderHandler::KeyboardHook(
   pending_responses_[response_id] = std::move(pending_ptr);
   sendEvent_(key_data, KeyboardKeyEmbedderHandler::HandleResponse,
              reinterpret_cast<void*>(pending_responses_[response_id].get()));
-  return true;
 }
 
 void KeyboardKeyEmbedderHandler::HandleResponse(bool handled, void* user_data) {

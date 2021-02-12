@@ -30,7 +30,7 @@ class KeyboardKeyChannelHandler
   ~KeyboardKeyChannelHandler();
 
   // |KeyboardKeyHandler::KeyboardKeyHandlerDelegate|
-  bool KeyboardHook(int key,
+  void KeyboardHook(int key,
                     int scancode,
                     int action,
                     char32_t character,
