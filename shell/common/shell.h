@@ -334,7 +334,7 @@ class Shell final : public PlatformView::Delegate,
 
   //----------------------------------------------------------------------------
   /// @brief     Accessor for the disable GPU SyncSwitch.
-  const std::shared_ptr<fml::SyncSwitch> GetIsGpuDisabledSyncSwitch()
+  std::shared_ptr<const fml::SyncSwitch> GetIsGpuDisabledSyncSwitch()
       const override;
 
   //----------------------------------------------------------------------------

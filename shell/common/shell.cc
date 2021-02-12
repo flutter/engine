@@ -1786,7 +1786,7 @@ bool Shell::ReloadSystemFonts() {
   return true;
 }
 
-const std::shared_ptr<fml::SyncSwitch> Shell::GetIsGpuDisabledSyncSwitch()
+std::shared_ptr<const fml::SyncSwitch> Shell::GetIsGpuDisabledSyncSwitch()
     const {
   return is_gpu_disabled_sync_switch_;
 }
