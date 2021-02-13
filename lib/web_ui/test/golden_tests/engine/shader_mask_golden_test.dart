@@ -71,7 +71,8 @@ void testMain() async {
     _renderScene(BlendMode.xor);
     await matchGoldenFile('shadermask_linear_xor.png',
         region: Rect.fromLTWH(0, 0, 360, 200));
-  });
+    // TODO: Implement workaround for webkit bug not applying svg xor filter.
+  }, skip: browserEngine == BrowserEngine.webkit);
 
   test('Renders shader mask with linear gradient BlendMode plus', () async {
     _renderScene(BlendMode.plus);
