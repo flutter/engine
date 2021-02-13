@@ -231,7 +231,7 @@ TEST(KeyboardKeyHandlerTest, SingleDelegateWithSyncResponds) {
   redispatch_scancode = 0;
 }
 
-TEST(KeyboardKeyHandlerTest, BehavesCorrectlyWithTwoAsyncDelegates) {
+TEST(KeyboardKeyHandlerTest, WithTwoAsyncDelegates) {
   std::list<MockKeyHandlerDelegate::KeyboardHookCall> hook_history;
 
   // Capture the scancode of the last redispatched event
@@ -345,7 +345,7 @@ TEST(KeyboardKeyHandlerTest, BehavesCorrectlyWithTwoAsyncDelegates) {
 // earlier than the framework response, and if the 2nd event is identical to the
 // one waiting for response, an earlier implementation will crash upon the
 // response.
-TEST(KeyboardKeyHandlerTest, BehavesCorrectlyWithSlowFrameworkResponse) {
+TEST(KeyboardKeyHandlerTest, WithSlowFrameworkResponse) {
   std::list<MockKeyHandlerDelegate::KeyboardHookCall> hook_history;
 
   // Capture the scancode of the last redispatched event

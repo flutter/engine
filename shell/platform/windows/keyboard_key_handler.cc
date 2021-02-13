@@ -53,7 +53,7 @@ void KeyboardKeyHandler::AddDelegate(
 }
 
 size_t KeyboardKeyHandler::RedispatchedAmount() {
-  return redispatched_events_.size();
+  return pending_redispatches_.size();
 }
 
 void KeyboardKeyHandler::RedispatchEvent(std::unique_ptr<PendingEvent> event) {
@@ -70,7 +70,7 @@ void KeyboardKeyHandler::RedispatchEvent(std::unique_ptr<PendingEvent> event) {
     },
   };
 
-  redispatched_events_.push_back(std::move(event));
+  pending_redispatches_.push_back(std::move(event));
 
   UINT accepted = redispatch_event_(1, &input_event, sizeof(input_event));
   if (accepted != 1) {
@@ -107,13 +107,13 @@ bool KeyboardKeyHandler::KeyboardHook(FlutterWindowsView* view,
   incoming->unreplied = delegates_.size();
   incoming->any_handled = false;
 
-  if (pending_events_.size() > kMaxPendingEvents) {
+  if (pending_responds_.size() > kMaxPendingEvents) {
     std::cerr
-        << "There are " << pending_events_.size()
+        << "There are " << pending_responds_.size()
         << " keyboard events that have not yet received a response from the "
         << "framework. Are responses being sent?" << std::endl;
   }
-  pending_events_.push_back(std::move(incoming));
+  pending_responds_.push_back(std::move(incoming));
 
   for (const auto& delegate : delegates_) {
     delegate->KeyboardHook(
@@ -133,10 +133,10 @@ bool KeyboardKeyHandler::KeyboardHook(FlutterWindowsView* view,
 }
 
 bool KeyboardKeyHandler::RemoveRedispatchedEvent(const PendingEvent& incoming) {
-  for (auto iter = redispatched_events_.begin(); iter != redispatched_events_.end();
+  for (auto iter = pending_redispatches_.begin(); iter != pending_redispatches_.end();
        ++iter) {
     if ((*iter)->hash == incoming.hash) {
-      redispatched_events_.erase(iter);
+      pending_redispatches_.erase(iter);
       return true;
     }
   }
@@ -145,7 +145,7 @@ bool KeyboardKeyHandler::RemoveRedispatchedEvent(const PendingEvent& incoming) {
 
 void KeyboardKeyHandler::ResolvePendingEvent(uint64_t sequence_id, bool handled) {
   // Find the pending event
-  for (auto iter = pending_events_.begin(); iter != pending_events_.end();
+  for (auto iter = pending_responds_.begin(); iter != pending_responds_.end();
        ++iter) {
     if ((*iter)->sequence_id == sequence_id) {
       PendingEvent& event = **iter;
@@ -155,7 +155,7 @@ void KeyboardKeyHandler::ResolvePendingEvent(uint64_t sequence_id, bool handled)
       // If all delegates have replied, redispatch if no one handled.
       if (event.unreplied == 0) {
         auto event_ptr = std::move(*iter);
-        pending_events_.erase(iter);
+        pending_responds_.erase(iter);
         if (!event_ptr->any_handled) {
           RedispatchEvent(std::move(event_ptr));
         }

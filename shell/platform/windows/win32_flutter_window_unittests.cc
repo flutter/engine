@@ -164,11 +164,11 @@ class TestFlutterWindowsView : public FlutterWindowsView {
   SpyTextInputPlugin* text_input_plugin;
 
   void InjectPendingEvents(MockWin32FlutterWindow* win32window) {
-    while (pending_events_.size() > 0) {
-      SimulatedEvent event = pending_events_.front();
+    while (pending_responds_.size() > 0) {
+      SimulatedEvent event = pending_responds_.front();
       win32window->InjectWindowMessage(event.message, event.wparam,
                                        event.lparam);
-      pending_events_.pop_front();
+      pending_responds_.pop_front();
     }
   }
 
@@ -199,14 +199,14 @@ class TestFlutterWindowsView : public FlutterWindowsView {
     // simulate it for the test with the key we know is in the test. The
     // KBDINPUT we're passed doesn't have it filled in (on purpose, so that
     // Windows will fill it in).
-    pending_events_.push_back(SimulatedEvent{message, virtual_key_, lparam});
+    pending_responds_.push_back(SimulatedEvent{message, virtual_key_, lparam});
     if (is_printable_ && (kbdinput.dwFlags & KEYEVENTF_KEYUP) == 0) {
-      pending_events_.push_back(SimulatedEvent{WM_CHAR, virtual_key_, lparam});
+      pending_responds_.push_back(SimulatedEvent{WM_CHAR, virtual_key_, lparam});
     }
     return 1;
   }
 
-  std::deque<SimulatedEvent> pending_events_;
+  std::deque<SimulatedEvent> pending_responds_;
   WPARAM virtual_key_;
   bool is_printable_;
 };

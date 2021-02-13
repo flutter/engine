@@ -138,16 +138,16 @@ class KeyboardKeyHandler : public KeyboardHandlerBase {
 
   // The queue of key events that have been sent to the framework but have not
   // yet received a response.
-  std::deque<std::unique_ptr<PendingEvent>> pending_events_;
+  std::deque<std::unique_ptr<PendingEvent>> pending_responds_;
 
-  // The queue of key events that have been redispatcehd to the system but have
+  // The queue of key events that have been redispatched to the system but have
   // not yet been received for a second time.
-  std::deque<std::unique_ptr<PendingEvent>> redispatched_events_;
+  std::deque<std::unique_ptr<PendingEvent>> pending_redispatches_;
 
-  // The last sequence_id attached to the event sent to the framework.
+  // The sequence_id attached to the last event sent to the framework.
   uint64_t last_sequence_id_;
 
-  // A function used to redispatch synthesized events.
+  // The callback used to redispatch synthesized events.
   EventRedispatcher redispatch_event_;
 
   // Calculate a hash based on event data for fast comparison for a redispatched
