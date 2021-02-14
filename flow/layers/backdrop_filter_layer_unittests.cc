@@ -12,7 +12,6 @@
 #include "flutter/fml/macros.h"
 #include "flutter/testing/mock_canvas.h"
 #include "third_party/skia/include/core/SkImageFilter.h"
-#include "third_party/skia/include/effects/SkBlurImageFilter.h"
 #include "third_party/skia/include/effects/SkImageFilters.h"
 
 namespace flutter {
@@ -222,8 +221,7 @@ TEST_F(BackdropFilterLayerTest, Readback) {
 using BackdropLayerDiffTest = DiffContextTest;
 
 TEST_F(BackdropLayerDiffTest, BackdropLayer) {
-  auto filter = SkBlurImageFilter::Make(10, 10, nullptr, nullptr,
-                                        SkBlurImageFilter::kClamp_TileMode);
+  auto filter = SkImageFilters::Blur(10, 10, SkTileMode::kClamp, nullptr);
 
   {
     // tests later assume 30px readback area, fail early if that's not the case
