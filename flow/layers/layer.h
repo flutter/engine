@@ -91,10 +91,14 @@ class Layer {
 
 #ifdef FLUTTER_ENABLE_DIFF_CONTEXT
 
-  virtual bool CanDiff(DiffContext* context, const Layer* layer) const {
-    return original_layer_id_ == layer->original_layer_id_;
+  // Used to establish link between old layer and new layer that replaces it.
+  // If this method returns true, it is assumed that this layer replaces the old
+  // layer in tree and is able to diff with it.
+  virtual bool CanDiff(DiffContext* context, const Layer* old_layer) const {
+    return original_layer_id_ == old_layer->original_layer_id_;
   }
 
+  // Performs diff with given layer
   virtual void Diff(DiffContext* context, const Layer* old_layer) {}
 
   // Used when diffing retained layer; In case the layer is identical, it

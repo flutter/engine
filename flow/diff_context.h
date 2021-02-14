@@ -15,6 +15,8 @@ namespace flutter {
 
 class Layer;
 
+// Represents area that needs to be updated in front buffer (frame_damage) and
+// area that is going to be painted to in back buffer (buffer_damage).
 struct Damage {
   // This is the damage between current and previous frame;
   // If embedder supports partial update, this is the region that needs to be
@@ -30,6 +32,7 @@ struct Damage {
   SkIRect buffer_damage;
 };
 
+// Layer Unique Id to PaintRegion
 using PaintRegionMap = std::map<uint64_t, PaintRegion>;
 
 // Tracks state during tree diffing process and computes resulting damage
@@ -68,25 +71,25 @@ class DiffContext {
   bool PushCullRect(const SkRect& clip);
 
   // Returns transform matrix for current subtree
-  SkMatrix GetTransform() const { return state_.transform; }
+  const SkMatrix& GetTransform() const { return state_.transform; }
 
   // Return cull rect for current subtree (in local coordinates)
-  SkRect GetCullRect() const { return state_.cull_rect; }
+  const SkRect& GetCullRect() const { return state_.cull_rect; }
 
   // Sets the dirty flag on current subtree;
   //
   // previous_paint_region, which should represent region of previous subtree
-  // at this level will be added to damage area
+  // at this level will be added to damage area.
   //
   // Each paint region added to dirty subtree (through AddPaintRegion) is also
-  // added to damage
+  // added to damage.
   void MarkSubtreeDirty(
       const PaintRegion& previous_paint_region = PaintRegion());
 
   bool IsSubtreeDirty() const { return state_.dirty; }
 
   // Add layer bounds to current paint region; rect is in "local" (layer)
-  // coordinates
+  // coordinates.
   void AddLayerBounds(const SkRect& rect);
 
   // Add entire paint region of retained layer for current subtree. This can
