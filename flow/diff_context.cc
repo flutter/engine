@@ -48,11 +48,12 @@ Damage DiffContext::ComputeDamage(
   SkRect frame_damage(damage_);
 
   for (const auto& r : readbacks_) {
-    if (r.rect.intersects(frame_damage)) {
-      frame_damage.join(r.rect);
+    SkRect rect = SkRect::Make(r.rect);
+    if (rect.intersects(frame_damage)) {
+      frame_damage.join(rect);
     }
-    if (r.rect.intersects(buffer_damage)) {
-      buffer_damage.join(r.rect);
+    if (rect.intersects(buffer_damage)) {
+      buffer_damage.join(rect);
     }
   }
 
@@ -100,11 +101,9 @@ void DiffContext::AddExistingPaintRegion(const PaintRegion& region) {
   }
 }
 
-void DiffContext::AddReadbackRegion(const SkRect& rect) {
-  SkRect r(rect);
-  state_.transform.mapRect(&r);
+void DiffContext::AddReadbackRegion(const SkIRect& rect) {
   Readback readback;
-  readback.rect = r;
+  readback.rect = rect;
   readback.position = rects_->size();
   // Push empty rect as a placeholder for position in current subtree
   rects_->push_back(SkRect::MakeEmpty());

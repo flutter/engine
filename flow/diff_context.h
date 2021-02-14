@@ -99,7 +99,9 @@ class DiffContext {
 
   // The idea of readback region is that if any part of the readback region
   // needs to be repainted, then the whole readback region must be repainted;
-  void AddReadbackRegion(const SkRect& rect);
+  //
+  // Readback rect is in screen coordinates.
+  void AddReadbackRegion(const SkIRect& rect);
 
   // Returns the paint region for current subtree; Each rect in paint region is
   // in screen coordinates; Once a layer accumulates the paint regions of its
@@ -187,8 +189,12 @@ class DiffContext {
   void AddDamage(const SkRect& rect);
 
   struct Readback {
+    // Index of rects_ entry that this readback belongs to. Used to
+    // determine if subtree has any readback
     size_t position;
-    SkRect rect;
+
+    // readback area, in screen coordinates
+    SkIRect rect;
   };
 
   std::vector<Readback> readbacks_;
