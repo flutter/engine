@@ -48,7 +48,7 @@ void ContainerLayer::DiffChildren(DiffContext* context,
 
   while ((old_children_top <= old_children_bottom) &&
          (new_children_top <= new_children_bottom)) {
-    if (!layers_[new_children_top]->CanDiff(
+    if (!layers_[new_children_top]->IsReplacing(
             context, prev_layers[old_children_top].get())) {
       break;
     }
@@ -58,7 +58,7 @@ void ContainerLayer::DiffChildren(DiffContext* context,
 
   while ((old_children_top <= old_children_bottom) &&
          (new_children_top <= new_children_bottom)) {
-    if (!layers_[new_children_bottom]->CanDiff(
+    if (!layers_[new_children_bottom]->IsReplacing(
             context, prev_layers[old_children_bottom].get())) {
       break;
     }

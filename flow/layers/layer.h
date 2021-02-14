@@ -94,7 +94,7 @@ class Layer {
   // Used to establish link between old layer and new layer that replaces it.
   // If this method returns true, it is assumed that this layer replaces the old
   // layer in tree and is able to diff with it.
-  virtual bool CanDiff(DiffContext* context, const Layer* old_layer) const {
+  virtual bool IsReplacing(DiffContext* context, const Layer* old_layer) const {
     return original_layer_id_ == old_layer->original_layer_id_;
   }
 

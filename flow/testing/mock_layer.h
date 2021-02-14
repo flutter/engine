@@ -32,7 +32,7 @@ class MockLayer : public Layer {
 
 #ifdef FLUTTER_ENABLE_DIFF_CONTEXT
 
-  bool CanDiff(DiffContext* context, const Layer* layer) const override;
+  bool IsReplacing(DiffContext* context, const Layer* layer) const override;
   void Diff(DiffContext* context, const Layer* old_layer) override;
   const MockLayer* as_mock_layer() const override { return this; }
 

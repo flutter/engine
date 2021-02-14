@@ -20,7 +20,7 @@ PictureLayer::PictureLayer(const SkPoint& offset,
 
 #ifdef FLUTTER_ENABLE_DIFF_CONTEXT
 
-bool PictureLayer::CanDiff(DiffContext* context, const Layer* layer) const {
+bool PictureLayer::IsReplacing(DiffContext* context, const Layer* layer) const {
   // Only return true for identical pictures; This way
   // ContainerLayer::DiffChildren can detect when a picture layer got inserted
   // between other picture layers
@@ -36,7 +36,7 @@ void PictureLayer::Diff(DiffContext* context, const Layer* old_layer) {
     FML_DCHECK(old_layer);
     auto prev = old_layer->as_picture_layer();
     DiffContext::Statistics dummy_statistics;
-    // CanDiff has already determined that the picture is same
+    // IsReplacing has already determined that the picture is same
     FML_DCHECK(prev->offset_ == offset_ &&
                Compare(dummy_statistics, this, prev));
 #endif

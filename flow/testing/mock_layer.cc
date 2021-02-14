@@ -20,7 +20,7 @@ MockLayer::MockLayer(SkPath path,
 
 #ifdef FLUTTER_ENABLE_DIFF_CONTEXT
 
-bool MockLayer::CanDiff(DiffContext* context, const Layer* layer) const {
+bool MockLayer::IsReplacing(DiffContext* context, const Layer* layer) const {
   // Similar to PictureLayer, only return true for identical mock layers;
   // That way ContainerLayer::DiffChildren can properly detect mock layer
   // insertion
