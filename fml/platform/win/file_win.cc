@@ -7,6 +7,10 @@
 #include <Fileapi.h>
 #include <Shlwapi.h>
 #include <fcntl.h>
+#include <limits.h>
+#include <sys/stat.h>
+#include <map>
+#include <string>
 
 #include <algorithm>
 #include <climits>
@@ -20,7 +24,24 @@
 
 namespace fml {
 
+#ifdef WINUWP
+static std::map<HANDLE, std::wstring> file_map;
+#endif
+
 static std::string GetFullHandlePath(const fml::UniqueFD& handle) {
+  // Although the documentation claims that GetFinalPathNameByHandle is
+  // supported for UWP apps, turns out it does not work correctly hence the need
+  // to workaround it by maintaining a map of file handles to absolute paths
+  // populated by fml::OpenDirectory.
+#ifdef WINUWP
+  if (file_map.count(handle.get()) > 0) {
+    auto found = file_map[handle.get()];
+    return WideStringToString(found);
+  } else {
+    return std::string();
+  }
+
+#else
   wchar_t buffer[MAX_PATH] = {0};
   const DWORD buffer_size = ::GetFinalPathNameByHandle(
       handle.get(), buffer, MAX_PATH, FILE_NAME_NORMALIZED);
@@ -30,6 +51,7 @@ static std::string GetFullHandlePath(const fml::UniqueFD& handle) {
     return {};
   }
   return WideStringToString({buffer, buffer_size});
+#endif
 }
 
 static std::string GetAbsolutePath(const fml::UniqueFD& base_directory,
@@ -222,6 +244,10 @@ fml::UniqueFD OpenDirectory(const char* path,
     FML_DLOG(ERROR) << "Could not open file. " << GetLastErrorMessage();
     return {};
   }
+
+#ifdef WINUWP
+  file_map[handle] = file_name;
+#endif
 
   return fml::UniqueFD{handle};
 }
