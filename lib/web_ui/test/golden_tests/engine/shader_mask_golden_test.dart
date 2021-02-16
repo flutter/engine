@@ -78,7 +78,8 @@ void testMain() async {
     _renderScene(BlendMode.plus);
     await matchGoldenFile('shadermask_linear_plus.png',
         region: Rect.fromLTWH(0, 0, 360, 200));
-  });
+    // TODO: Implement workaround for webkit bug not applying svg plus filter.
+  }, skip: browserEngine == BrowserEngine.webkit);
 
   test('Renders shader mask with linear gradient BlendMode modulate', () async {
     _renderScene(BlendMode.modulate);
