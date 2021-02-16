@@ -713,7 +713,7 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
           missingCodeUnits.add(codeUnits[i]);
         }
       }
-      _findFontsForMissingCodeunits(missingCodeUnits);
+      findFontsForMissingCodeunits(missingCodeUnits);
     }
   }
 
