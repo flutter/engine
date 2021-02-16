@@ -203,7 +203,6 @@ void initializeEngine() {
   // This extension does not need to clean-up Dart statics. Those are cleaned
   // up by the compiler.
   developer.registerExtension('ext.flutter.disassemble', (_, __) {
-    window.resetHistory();
     for (ui.VoidCallback listener in _hotRestartListeners) {
       listener();
     }

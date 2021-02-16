@@ -32,6 +32,9 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
       _browserHistory =
           MultiEntriesBrowserHistory(urlStrategy: _customUrlStrategy);
     }
+    registerHotRestartListener(() {
+      window.resetHistory();
+    });
   }
 
   final Object _windowId;
