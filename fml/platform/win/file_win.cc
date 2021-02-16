@@ -10,6 +10,7 @@
 #include <limits.h>
 #include <sys/stat.h>
 #include <map>
+#include <mutex>
 #include <string>
 
 #include <algorithm>
@@ -25,7 +26,12 @@
 namespace fml {
 
 #ifdef WINUWP
-static std::map<HANDLE, std::wstring> file_map;
+struct DirCacheEntry {
+  std::wstring filename;
+  FILE_ID_128 id;
+};
+std::mutex file_map_mutex;
+static std::map<HANDLE, DirCacheEntry> file_map;
 #endif
 
 static std::string GetFullHandlePath(const fml::UniqueFD& handle) {
@@ -34,9 +40,26 @@ static std::string GetFullHandlePath(const fml::UniqueFD& handle) {
   // to workaround it by maintaining a map of file handles to absolute paths
   // populated by fml::OpenDirectory.
 #ifdef WINUWP
+  const std::lock_guard<std::mutex> lock(file_map_mutex);
+
   if (file_map.count(handle.get()) > 0) {
+    FILE_ID_INFO info;
+
+    auto result = GetFileInformationByHandleEx(
+        handle.get(), FILE_INFO_BY_HANDLE_CLASS::FileIdInfo, &info,
+        sizeof(FILE_ID_INFO));
+
     auto found = file_map[handle.get()];
-    return WideStringToString(found);
+
+    // The handle hasn't been reused if the file identifier is the same as when
+    // it was cached
+    if (memcmp(found.id.Identifier, info.FileId.Identifier,
+               sizeof(FILE_ID_INFO))) {
+      return WideStringToString(found.filename);
+    } else {
+      // The file handle was reused and cache entry is invalid.
+      return std::string();
+    }
   } else {
     return std::string();
   }
@@ -246,7 +269,18 @@ fml::UniqueFD OpenDirectory(const char* path,
   }
 
 #ifdef WINUWP
-  file_map[handle] = file_name;
+  const std::lock_guard<std::mutex> lock(file_map_mutex);
+
+  FILE_ID_INFO info;
+
+  auto result = GetFileInformationByHandleEx(
+      handle, FILE_INFO_BY_HANDLE_CLASS::FileIdInfo, &info,
+      sizeof(FILE_ID_INFO));
+
+  auto fc = DirCacheEntry{};
+  fc.filename = file_name;
+  fc.id = info.FileId;
+  file_map[handle] = fc;
 #endif
 
   return fml::UniqueFD{handle};
