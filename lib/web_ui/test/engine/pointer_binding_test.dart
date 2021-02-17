@@ -598,7 +598,6 @@ void testMain() {
       };
 
       glassPane.dispatchEvent(context.wheel(
-        button: 0,
         buttons: 0,
         clientX: 10,
         clientY: 10,
@@ -607,7 +606,6 @@ void testMain() {
       ));
 
       glassPane.dispatchEvent(context.wheel(
-        button: 0,
         buttons: 0,
         clientX: 20,
         clientY: 50,
@@ -623,7 +621,6 @@ void testMain() {
       ));
 
       glassPane.dispatchEvent(context.wheel(
-        button: 0,
         buttons: 1,
         clientX: 30,
         clientY: 60,
@@ -2269,7 +2266,6 @@ mixin _ButtonedEventMixin on _BasicEventContext {
   }
 
   html.Event wheel({
-    @required int button,
     @required int buttons,
     @required double clientX,
     @required double clientY,
@@ -2280,7 +2276,6 @@ mixin _ButtonedEventMixin on _BasicEventContext {
     final List<dynamic> eventArgs = <dynamic>[
       'wheel',
       <String, dynamic>{
-        'button': button,
         'buttons': buttons,
         'clientX': clientX,
         'clientY': clientY,
