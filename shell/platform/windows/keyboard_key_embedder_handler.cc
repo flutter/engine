@@ -55,21 +55,13 @@ constexpr SHORT kStateMaskPressed = 0x80;
 
 }  // namespace
 
-KeyboardKeyEmbedderHandler::CheckedKey::CheckedKey(UINT virtual_key, bool extended, bool check_pressed, bool check_toggled) :
-    check_pressed(check_pressed), check_toggled(check_toggled) {
-  UINT scan_code = MapVirtualKey(virtual_key, MAPVK_VK_TO_VSC);
-  physical_key = getPhysicalKey(scan_code, extended);
-  logical_key = getLogicalKey(virtual_key, extended, scan_code);
-  if (check_toggled) {
-    toggled_on = GetKeyState(virtual_key) & kStateMaskToggled;
-  }
-}
-
 KeyboardKeyEmbedderHandler::KeyboardKeyEmbedderHandler(
     std::function<void(const FlutterKeyEvent&,
                        FlutterKeyEventCallback,
-                       void* user_data)> send_event)
-    : sendEvent_(send_event), response_id_(1) {
+                       void* user_data)> send_event,
+    GetKeyStateHandler get_key_state
+                       )
+    : sendEvent_(send_event), get_key_state_(get_key_state), response_id_(1) {
   InitCheckedKeys();
 }
 
@@ -276,7 +268,7 @@ void KeyboardKeyEmbedderHandler::SynchroizeCritialKeys(int toggle_virtual_key) {
       continue;
     }
     assert(key_info.logical_key != 0);
-    SHORT state = GetKeyState(virtual_key);
+    SHORT state = get_key_state_(virtual_key);
 
     // Check toggling state first, because it might alter pressing state.
     if (key_info.check_toggled) {
@@ -338,14 +330,25 @@ void KeyboardKeyEmbedderHandler::HandleResponse(bool handled, void* user_data) {
 }
 
 void KeyboardKeyEmbedderHandler::InitCheckedKeys() {
-  critical_keys_.emplace(VK_LSHIFT, CheckedKey(VK_LSHIFT, false, true, false));
-  critical_keys_.emplace(VK_RSHIFT, CheckedKey(VK_RSHIFT, false, true, false));
-  critical_keys_.emplace(VK_LCONTROL, CheckedKey(VK_LCONTROL, false, true, false));
-  critical_keys_.emplace(VK_RCONTROL, CheckedKey(VK_RCONTROL, true, true, false));
+  auto createCheckedKey = [this](UINT virtual_key, bool extended, bool check_pressed, bool check_toggled) -> CheckedKey {
+    UINT scan_code = MapVirtualKey(virtual_key, MAPVK_VK_TO_VSC);
+    return CheckedKey{
+      .physical_key = getPhysicalKey(scan_code, extended),
+      .logical_key = getLogicalKey(virtual_key, extended, scan_code),
+      .check_pressed = check_pressed,
+      .check_toggled = check_toggled,
+      .toggled_on = check_toggled ? !!(get_key_state_(virtual_key) & kStateMaskToggled) : false,
+    };
+  };
 
-  critical_keys_.emplace(VK_CAPITAL, CheckedKey(VK_CAPITAL, false, true, true));
-  critical_keys_.emplace(VK_SCROLL, CheckedKey(VK_SCROLL, false, true, true));
-  critical_keys_.emplace(VK_NUMLOCK, CheckedKey(VK_NUMLOCK, true, true, true));
+  critical_keys_.emplace(VK_LSHIFT, createCheckedKey(VK_LSHIFT, false, true, false));
+  critical_keys_.emplace(VK_RSHIFT, createCheckedKey(VK_RSHIFT, false, true, false));
+  critical_keys_.emplace(VK_LCONTROL, createCheckedKey(VK_LCONTROL, false, true, false));
+  critical_keys_.emplace(VK_RCONTROL, createCheckedKey(VK_RCONTROL, true, true, false));
+
+  critical_keys_.emplace(VK_CAPITAL, createCheckedKey(VK_CAPITAL, false, true, true));
+  critical_keys_.emplace(VK_SCROLL, createCheckedKey(VK_SCROLL, false, true, true));
+  critical_keys_.emplace(VK_NUMLOCK, createCheckedKey(VK_NUMLOCK, true, true, true));
 }
 
 void KeyboardKeyEmbedderHandler::ConvertUtf32ToUtf8_(char* out, char32_t ch) {

@@ -85,7 +85,8 @@ void FlutterWindowsView::RegisterKeyboardHandlers(
       [this](const FlutterKeyEvent& event, FlutterKeyEventCallback callback,
              void* user_data) {
         return engine_->SendKeyEvent(event, callback, user_data);
-      }));
+      },
+      GetKeyState));
   AddKeyboardHandler(std::move(key_handler));
   AddKeyboardHandler(
       std::make_unique<flutter::TextInputPlugin>(messenger, this));

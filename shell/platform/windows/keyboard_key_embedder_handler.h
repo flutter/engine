@@ -28,13 +28,14 @@ class KeyboardKeyEmbedderHandler
   using SendEvent = std::function<void(const FlutterKeyEvent& /* event */,
                                        FlutterKeyEventCallback /* callback */,
                                        void* /* user_data */)>;
+  using GetKeyStateHandler = std::function<SHORT(int /* nVirtKey */)>;
 
   // Build a KeyboardKeyEmbedderHandler.
   //
   // Use `send_event` to define how the manager should dispatch converted
   // flutter events, as well as how to receive the resopnse, to the engine. It's
   // typically FlutterWindowsEngine::SendKeyEvent.
-  explicit KeyboardKeyEmbedderHandler(SendEvent send_event);
+  explicit KeyboardKeyEmbedderHandler(SendEvent send_event, GetKeyStateHandler get_key_state);
 
   virtual ~KeyboardKeyEmbedderHandler();
 
@@ -55,8 +56,6 @@ class KeyboardKeyEmbedderHandler
 
   // Record the last seen physical and logical key for a virtual key.
   struct CheckedKey {
-    CheckedKey(UINT virtual_key, bool extended, bool check_pressed, bool check_toggled);
-
     // Last seen value of physical key and logical key for the virtual key.
     uint64_t physical_key;
     uint64_t logical_key;
@@ -73,10 +72,12 @@ class KeyboardKeyEmbedderHandler
   void UpdateLastSeenCritialKey(int virtual_key, uint64_t physical_key, uint64_t logical_key);
   void SynchroizeCritialKeys(int this_virtual_key);
 
-  // A map from physical keys to logical keys, each entry indicating a pressed key.
-  std::map<uint64_t, uint64_t> pressingRecords_;
   std::function<void(const FlutterKeyEvent&, FlutterKeyEventCallback, void*)>
       sendEvent_;
+  GetKeyStateHandler get_key_state_;
+
+  // A map from physical keys to logical keys, each entry indicating a pressed key.
+  std::map<uint64_t, uint64_t> pressingRecords_;
   std::map<uint64_t, std::unique_ptr<PendingResponse>> pending_responses_;
   uint64_t response_id_;
 
