@@ -42,14 +42,16 @@ class TestFlutterKeyEvent : public FlutterKeyEvent {
 namespace testing {
 
 namespace {
-constexpr uint64_t kPhysicalKeyA = 0x1e;
-constexpr uint64_t kPhysicalNumpad1 = 0x4f;
-constexpr uint64_t kPhysicalNumLock = 0x45;
+constexpr uint64_t kScanCodeKeyA = 0x1e;
+constexpr uint64_t kScanCodeNumpad1 = 0x4f;
+constexpr uint64_t kScanCodeNumLock = 0x45;
 
-constexpr uint64_t kLogicalKeyA = 0x41;
-constexpr uint64_t kLogicalNumpad1 = 0x61;
-constexpr uint64_t kLogicalNumpadEnd = 0x23;
-constexpr uint64_t kLogicalNumLock = 0x90;
+constexpr uint64_t kVirtualKeyA = 0x41;
+constexpr uint64_t kVirtualNumpad1 = 0x61;
+constexpr uint64_t kVirtualNumpadEnd = 0x23;
+constexpr uint64_t kVirtualNumLock = 0x90;
+
+constexpr uint64_t kVirtualProcessKey = 0xe5;
 }  // namespace
 
 // Test the most basic key events.
@@ -69,7 +71,7 @@ TEST(KeyboardKeyEmbedderHandlerTest, BasicKeyPressingAndHolding) {
 
   // Press KeyA.
   handler->KeyboardHook(
-      kLogicalKeyA, kPhysicalKeyA, WM_KEYDOWN, 'a', false, false,
+      kVirtualKeyA, kScanCodeKeyA, WM_KEYDOWN, 'a', false, false,
       [&last_handled](bool handled) { last_handled = handled; });
   EXPECT_EQ(last_handled, false);
   EXPECT_EQ(results.size(), 1);
@@ -87,7 +89,7 @@ TEST(KeyboardKeyEmbedderHandlerTest, BasicKeyPressingAndHolding) {
 
   // Hold KeyA.
   handler->KeyboardHook(
-      kLogicalKeyA, kPhysicalKeyA, WM_KEYDOWN, 'a', false, true,
+      kVirtualKeyA, kScanCodeKeyA, WM_KEYDOWN, 'a', false, true,
       [&last_handled](bool handled) { last_handled = handled; });
   EXPECT_EQ(last_handled, true);
   EXPECT_EQ(results.size(), 1);
@@ -105,7 +107,7 @@ TEST(KeyboardKeyEmbedderHandlerTest, BasicKeyPressingAndHolding) {
 
   // Release KeyA.
   handler->KeyboardHook(
-      kLogicalKeyA, kPhysicalKeyA, WM_KEYUP, 0, false, true,
+      kVirtualKeyA, kScanCodeKeyA, WM_KEYUP, 0, false, true,
       [&last_handled](bool handled) { last_handled = handled; });
   EXPECT_EQ(results.size(), 1);
   event = &results[0];
@@ -136,7 +138,7 @@ TEST(KeyboardKeyEmbedderHandlerTest, ToggleNumLockDuringNumpadPress) {
 
   // Press NumPad1.
   handler->KeyboardHook(
-      kLogicalNumpad1, kPhysicalNumpad1, WM_KEYDOWN, 0, false, false,
+      kVirtualNumpad1, kScanCodeNumpad1, WM_KEYDOWN, 0, false, false,
       [&last_handled](bool handled) { last_handled = handled; });
   EXPECT_EQ(results.size(), 1);
   event = &results[0];
@@ -149,7 +151,7 @@ TEST(KeyboardKeyEmbedderHandlerTest, ToggleNumLockDuringNumpadPress) {
 
   // Press NumLock.
   handler->KeyboardHook(
-      kLogicalNumLock, kPhysicalNumLock, WM_KEYDOWN, 0, true, false,
+      kVirtualNumLock, kScanCodeNumLock, WM_KEYDOWN, 0, true, false,
       [&last_handled](bool handled) { last_handled = handled; });
   EXPECT_EQ(results.size(), 1);
   event = &results[0];
@@ -162,7 +164,7 @@ TEST(KeyboardKeyEmbedderHandlerTest, ToggleNumLockDuringNumpadPress) {
 
   // Release NumLock.
   handler->KeyboardHook(
-      kLogicalNumLock, kPhysicalNumLock, WM_KEYUP, 0, true, true,
+      kVirtualNumLock, kScanCodeNumLock, WM_KEYUP, 0, true, true,
       [&last_handled](bool handled) { last_handled = handled; });
   EXPECT_EQ(results.size(), 1);
   event = &results[0];
@@ -175,7 +177,7 @@ TEST(KeyboardKeyEmbedderHandlerTest, ToggleNumLockDuringNumpadPress) {
 
   // Release NumPad1. (The logical key is now NumpadEnd)
   handler->KeyboardHook(
-      kLogicalNumpadEnd, kPhysicalNumpad1, WM_KEYUP, 0, false, true,
+      kVirtualNumpadEnd, kScanCodeNumpad1, WM_KEYUP, 0, false, true,
       [&last_handled](bool handled) { last_handled = handled; });
   EXPECT_EQ(results.size(), 1);
   event = &results[0];
@@ -188,6 +190,56 @@ TEST(KeyboardKeyEmbedderHandlerTest, ToggleNumLockDuringNumpadPress) {
 }
 
 TEST(KeyboardKeyEmbedderHandlerTest, ImeEventsAreIgnored) {
+  std::vector<TestFlutterKeyEvent> results;
+  TestFlutterKeyEvent* event;
+  bool last_handled = false;
+
+  std::unique_ptr<KeyboardKeyEmbedderHandler> handler =
+      std::make_unique<KeyboardKeyEmbedderHandler>(
+          [&results](const FlutterKeyEvent& event,
+                     FlutterKeyEventCallback callback, void* user_data) {
+            results.emplace_back(event, callback, user_data);
+          });
+
+  // Press A in an IME
+  last_handled = false;
+  handler->KeyboardHook(
+      kVirtualProcessKey, kScanCodeKeyA, WM_KEYDOWN, 0, true, false,
+      [&last_handled](bool handled) { last_handled = handled; });
+  EXPECT_EQ(last_handled, true);
+
+  last_handled = false;
+  handler->KeyboardHook(
+      // The up event for an IME press has a normal virtual key.
+      kVirtualKeyA, kScanCodeKeyA, WM_KEYUP, 0, true, true,
+      [&last_handled](bool handled) { last_handled = handled; });
+  EXPECT_EQ(last_handled, true);
+
+  // The entire A press does not yield events.
+  EXPECT_EQ(results.size(), 0);
+
+  // Press A out of an IME
+  last_handled = false;
+  handler->KeyboardHook(
+      kVirtualKeyA, kScanCodeKeyA, WM_KEYDOWN, 0, true, false,
+      [&last_handled](bool handled) { last_handled = handled; });
+  // Not decided yet
+  EXPECT_EQ(last_handled, false);
+  EXPECT_EQ(results.size(), 1);
+  event = &results[0];
+  event->callback(true, event->user_data);
+  EXPECT_EQ(last_handled, true);
+  results.clear();
+
+  last_handled = false;
+  handler->KeyboardHook(
+      kVirtualKeyA, kScanCodeKeyA, WM_KEYUP, 0, true, false,
+      [&last_handled](bool handled) { last_handled = handled; });
+  EXPECT_EQ(last_handled, false);
+  EXPECT_EQ(results.size(), 1);
+  event = &results[0];
+  event->callback(true, event->user_data);
+  EXPECT_EQ(last_handled, true);
 }
 
 }  // namespace testing
