@@ -52,7 +52,7 @@ void KeyboardKeyHandler::AddDelegate(
   delegates_.push_back(std::move(delegate));
 }
 
-size_t KeyboardKeyHandler::RedispatchedAmount() {
+size_t KeyboardKeyHandler::RedispatchedCount() {
   return pending_redispatches_.size();
 }
 

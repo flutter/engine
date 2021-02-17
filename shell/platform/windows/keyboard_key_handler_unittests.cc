@@ -90,7 +90,7 @@ class TestKeyboardKeyHandler : public KeyboardKeyHandler {
       : KeyboardKeyHandler(redispatch_event) {}
 
   bool HasRedispatched() {
-    return RedispatchedAmount() > 0;
+    return RedispatchedCount() > 0;
   }
 };
 
