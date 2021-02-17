@@ -205,6 +205,9 @@ void KeyboardKeyEmbedderHandler::KeyboardHook(
     pressingRecords_.erase(last_logical_record_iter);
   }
 
+  UpdateLastSeenCritialKey(key, physical_key, result_logical_key);
+  SynchroizeCritialKeys(type == kFlutterKeyEventTypeDown ? key : 0);
+
   if (result_logical_key == VK_PROCESSKEY) {
     // VK_PROCESSKEY means that the key press is used by an IME. These key
     // presses are considered handled and not sent to Flutter. These events must
@@ -213,9 +216,6 @@ void KeyboardKeyEmbedderHandler::KeyboardHook(
     callback(true);
     return;
   }
-
-  UpdateLastSeenCritialKey(key, physical_key, result_logical_key);
-  SynchroizeCritialKeys(type == kFlutterKeyEventTypeDown ? key : 0);
 
   FlutterKeyEvent key_data {
     .struct_size = sizeof(FlutterKeyEvent),
