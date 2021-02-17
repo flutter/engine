@@ -16,11 +16,6 @@
 namespace flutter {
 
 namespace {
-// An arbitrary size for the character cache in bytes.
-//
-// It should hold a UTF-32 character encoded in UTF-8 as well as the trailing
-// '\0'.
-constexpr size_t kCharacterCacheSize = 8;
 }  // namespace
 
 // A delegate of |KeyboardKeyHandler| that handles events by sending
@@ -60,15 +55,17 @@ class KeyboardKeyEmbedderHandler
 
   void CacheUtf8String(char32_t ch);
 
+  // A map from physical keys to logical keys, each entry indicating a pressed key.
+  std::map<uint64_t, uint64_t> pressingRecords_;
   std::function<void(const FlutterKeyEvent&, FlutterKeyEventCallback, void*)>
       sendEvent_;
-  std::map<uint64_t, uint64_t> pressingRecords_;
-  char character_cache_[kCharacterCacheSize];
   std::map<uint64_t, std::unique_ptr<PendingResponse>> pending_responses_;
   uint64_t response_id_;
 
   static uint64_t getPhysicalKey(int scancode, bool extended);
   static uint64_t getLogicalKey(int key, bool extended, int scancode);
+  static void HandleResponse(bool handled, void* user_data);
+  static void ConvertUtf32ToUtf8_(char* out, char32_t ch);
 
   static std::map<uint64_t, uint64_t> windowsToPhysicalMap_;
   static std::map<uint64_t, uint64_t> windowsToLogicalMap_;
