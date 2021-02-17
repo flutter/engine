@@ -2,14 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/lib/ui/painting/shader.h"
-
-#include "flutter/lib/ui/ui_dart_state.h"
+#include "flutter/shell/common/pipeline.h"
 
 namespace flutter {
 
-IMPLEMENT_WRAPPERTYPEINFO(ui, Shader);
-
-Shader::~Shader() = default;
+size_t GetNextPipelineTraceID() {
+  static std::atomic_size_t PipelineLastTraceID = {0};
+  return ++PipelineLastTraceID;
+}
 
 }  // namespace flutter
