@@ -744,17 +744,25 @@ TEST(KeyboardKeyEmbedderHandlerTest, SynthesizeForDesyncToggledStateByItself) {
           },
       key_state.Getter());
 
-  // NumLock is on and released
-  key_state.Set(VK_NUMLOCK, false, true);
+  // When NumLock is down
+  key_state.Set(VK_NUMLOCK, true, true);
+  handler->KeyboardHook(
+      VK_NUMLOCK, kScanCodeNumLock, WM_KEYDOWN, 0, true, false,
+      [&last_handled](bool handled) { last_handled = handled; });
+  event = &results.back();
+  event->callback(false, event->user_data);
+  results.clear();
 
+  // Numlock is desynchronized by being off and released
+  key_state.Set(VK_NUMLOCK, false, false);
   // Send a NumLock key up
   handler->KeyboardHook(
       VK_NUMLOCK, kScanCodeNumLock, WM_KEYUP, 0, true, true,
       [&last_handled](bool handled) { last_handled = handled; });
   EXPECT_EQ(last_handled, false);
-  EXPECT_EQ(results.size(), 2);
+  EXPECT_EQ(results.size(), 3);
   event = &results[0];
-  EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
   EXPECT_EQ(event->physical, kPhysicalKeyNumLock);
   EXPECT_EQ(event->logical, kLogicalKeyNumLock);
   // EXPECT_STREQ(event->character, "");
@@ -762,11 +770,19 @@ TEST(KeyboardKeyEmbedderHandlerTest, SynthesizeForDesyncToggledStateByItself) {
   EXPECT_EQ(event->callback, nullptr);
 
   event = &results[1];
-  EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
   EXPECT_EQ(event->physical, kPhysicalKeyNumLock);
   EXPECT_EQ(event->logical, kLogicalKeyNumLock);
   // EXPECT_STREQ(event->character, "");
   EXPECT_EQ(event->synthesized, true);
+  EXPECT_EQ(event->callback, nullptr);
+
+  event = &results[2];
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
+  EXPECT_EQ(event->physical, kPhysicalKeyNumLock);
+  EXPECT_EQ(event->logical, kLogicalKeyNumLock);
+  // EXPECT_STREQ(event->character, "");
+  EXPECT_EQ(event->synthesized, false);
 
   last_handled = false;
   event->callback(true, event->user_data);

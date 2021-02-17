@@ -199,14 +199,16 @@ void KeyboardKeyEmbedderHandler::KeyboardHook(
     }
   }
 
+  UpdateLastSeenCritialKey(key, physical_key, result_logical_key);
+  SynchroizeCritialToggledStates(type == kFlutterKeyEventTypeDown ? key : 0);
+
   if (next_has_record) {
     pressingRecords_[physical_key] = next_logical_record;
   } else {
     pressingRecords_.erase(last_logical_record_iter);
   }
 
-  UpdateLastSeenCritialKey(key, physical_key, result_logical_key);
-  SynchroizeCritialKeys(type == kFlutterKeyEventTypeDown ? key : 0);
+  SynchroizeCritialPressedStates();
 
   if (result_logical_key == VK_PROCESSKEY) {
     // VK_PROCESSKEY means that the key press is used by an IME. These key
@@ -259,7 +261,7 @@ void KeyboardKeyEmbedderHandler::UpdateLastSeenCritialKey(int virtual_key, uint6
   }
 }
 
-void KeyboardKeyEmbedderHandler::SynchroizeCritialKeys(int toggle_virtual_key) {
+void KeyboardKeyEmbedderHandler::SynchroizeCritialToggledStates(int toggle_virtual_key) {
   for (auto& kv : critical_keys_) {
     UINT virtual_key = kv.first;
     CheckedKey& key_info = kv.second;
@@ -274,7 +276,6 @@ void KeyboardKeyEmbedderHandler::SynchroizeCritialKeys(int toggle_virtual_key) {
     if (key_info.check_toggled) {
       bool should_toggled = state & kStateMaskToggled;
       if (virtual_key == toggle_virtual_key) {
-        printf("State %04x\n", state);
         key_info.toggled_on = !key_info.toggled_on;
       }
       if (key_info.toggled_on != should_toggled) {
@@ -288,7 +289,7 @@ void KeyboardKeyEmbedderHandler::SynchroizeCritialKeys(int toggle_virtual_key) {
             empty_character),
           nullptr, nullptr);
         } else {
-          // This key will be pressed in the following synthesized event.
+          // This key will always be pressed in the following synthesized event.
           pressingRecords_[key_info.physical_key] = key_info.logical_key;
         }
         sendEvent_(SynthesizeSimpleEvent(
@@ -300,7 +301,19 @@ void KeyboardKeyEmbedderHandler::SynchroizeCritialKeys(int toggle_virtual_key) {
       }
       key_info.toggled_on = should_toggled;
     }
+  }
+}
 
+void KeyboardKeyEmbedderHandler::SynchroizeCritialPressedStates() {
+  for (auto& kv : critical_keys_) {
+    UINT virtual_key = kv.first;
+    CheckedKey& key_info = kv.second;
+    if (key_info.physical_key == 0) {
+      // Never seen this key.
+      continue;
+    }
+    assert(key_info.logical_key != 0);
+    SHORT state = get_key_state_(virtual_key);
     if (key_info.check_pressed) {
       auto recorded_pressed_iter = pressingRecords_.find(key_info.physical_key);
       bool recorded_pressed = recorded_pressed_iter != pressingRecords_.end();

@@ -70,7 +70,8 @@ class KeyboardKeyEmbedderHandler
 
   void InitCheckedKeys();
   void UpdateLastSeenCritialKey(int virtual_key, uint64_t physical_key, uint64_t logical_key);
-  void SynchroizeCritialKeys(int this_virtual_key);
+  void SynchroizeCritialToggledStates(int this_virtual_key);
+  void SynchroizeCritialPressedStates();
 
   std::function<void(const FlutterKeyEvent&, FlutterKeyEventCallback, void*)>
       sendEvent_;
