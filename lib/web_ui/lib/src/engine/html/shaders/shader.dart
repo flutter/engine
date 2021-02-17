@@ -211,27 +211,30 @@ class GradientLinear extends EngineGradient {
     // 1- Shift from,to vector to origin.
     // 2- Rotate the vector to align with x axis.
     // 3- Scale it to unit vector.
-    double dx = to.dx - from.dx;
-    double dy = to.dy - from.dy;
-    double length = math.sqrt(dx * dx + dy * dy);
+    final double fromX = from.dx;
+    final double fromY = from.dy;
+    final double toX = to.dx;
+    final double toY = to.dy;
+
+    final double dx = toX - fromX;
+    final double dy = toY - fromY;
+    final double length = math.sqrt(dx * dx + dy * dy);
     // sin(theta) = dy / length.
     // cos(theta) = dx / length.
     // Flip dy for gl flip.
-    double sinVal = length < kFltEpsilon ? 0 : -dy / length;
-    double cosVal = length < kFltEpsilon ? 1 : dx / length;
+    final double sinVal = length < kFltEpsilon ? 0 : -dy / length;
+    final double cosVal = length < kFltEpsilon ? 1 : dx / length;
     // If tile mode is repeated we need to shift the center of from->to
     // vector to the center of shader bounds.
     final bool isRepeated = tileMode != ui.TileMode.clamp;
-    final double originX = isRepeated
-        ? shaderBounds.width / 2
-        : from.dx;
-    final double originY = isRepeated
-        ? shaderBounds.height / 2
-        : from.dy;
-    final Matrix4 translateToOrigin = matrix4 == null
-        ? Matrix4.translationValues(-originX, -originY, 0)
-        : (Matrix4.fromFloat32List(matrix4!.matrix)
-            ..translate(-originX, -originY));
+    double originX = isRepeated
+        ? (shaderBounds.width / 2)
+        : (fromX + toX) / 2.0 - shaderBounds.left;
+    double originY = isRepeated
+        ? (shaderBounds.height / 2)
+        : (fromY + toY) / 2.0 - shaderBounds.top;
+
+    final Matrix4 translateToOrigin = Matrix4.translationValues(-originX, -originY, 0);
     // Rotate around Z axis.
     final Matrix4 rotationZ = Matrix4.identity();
     final Float32List storage = rotationZ.storage;
@@ -241,19 +244,30 @@ class GradientLinear extends EngineGradient {
     storage[4] = -sinVal;
     storage[5] = cosVal;
     Matrix4 gradientTransform = Matrix4.identity();
-    if (isRepeated) {
-      // When the gradient is repeated we compute location based on gl_FragCoord
-      // to center distance which returns 0.0 at center. To make sure we
-      // align center of gradient to this point, we subtract 0.5 to get
-      // st value for center of gradient.
+    // We compute location based on gl_FragCoord to center distance which
+    // returns 0.0 at center. To make sure we align center of gradient to this
+    // point, we shift by 0.5 to get st value for center of gradient.
+    if (tileMode != ui.TileMode.repeated) {
       gradientTransform.translate(0.5, 0);
     }
     if (length > kFltEpsilon) {
       gradientTransform.scale(1.0 / length);
     }
+    if (matrix4 != null) {
+      // Flutter GradientTransform is defined in shaderBounds coordinate system
+      // with flipped y axis.
+      // We flip y axis, translate to center, multiply matrix and translate
+      // and flip back so it is applied correctly.
+      final Matrix4 m4 = Matrix4.fromFloat32List(matrix4!.matrix);
+      gradientTransform.scale(1, -1);
+      gradientTransform.translate(-shaderBounds.center.dx, -shaderBounds.center.dy);
+      gradientTransform.multiply(m4);
+      gradientTransform.translate(shaderBounds.center.dx, shaderBounds.center.dy);
+      gradientTransform.scale(1, -1);
+    }
+
     gradientTransform.multiply(rotationZ);
     gradientTransform.multiply(translateToOrigin);
-
     // Setup gradient uniforms for t search.
     normalizedGradient.setupUniforms(gl, glProgram);
     // Setup matrix transform uniform.
@@ -346,6 +360,9 @@ String _writeSharedGradientShader(ShaderBuilder builder,
   String probeName = 'st';
   switch (tileMode) {
     case ui.TileMode.clamp:
+      method.addStatement('float tiled_st = clamp(st, 0.0, 1.0);');
+      probeName = 'tiled_st';
+      break;
     case ui.TileMode.decal:
       break;
     case ui.TileMode.repeated:
