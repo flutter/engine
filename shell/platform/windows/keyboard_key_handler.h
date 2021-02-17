@@ -162,8 +162,8 @@ class KeyboardKeyHandler : public KeyboardHandlerBase {
   // Another alternative would be to compute a checksum from all the data in the
   // event (just compute it over the bytes in the struct, probably skipping
   // timestamps), but the fields used are enough to differentiate them, and
-  // since Windows does some processing on the events (coming up with virtual key
-  // codes, setting timestamps, etc.), it's not clear that the redispatched
+  // since Windows does some processing on the events (coming up with virtual
+  // key codes, setting timestamps, etc.), it's not clear that the redispatched
   // events would have the same checksums.
   static uint64_t ComputeEventHash(const PendingEvent& event);
 };

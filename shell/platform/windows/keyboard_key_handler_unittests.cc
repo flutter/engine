@@ -18,11 +18,15 @@ static constexpr int kHandledScanCode = 20;
 static constexpr int kHandledScanCode2 = 22;
 static constexpr int kUnhandledScanCode = 21;
 
-typedef std::function<void (bool)> Callback;
-typedef std::function<void (Callback&)> CallbackHandler;
+typedef std::function<void(bool)> Callback;
+typedef std::function<void(Callback&)> CallbackHandler;
 void dont_respond(Callback& callback) {}
-void respond_true(Callback& callback) { callback(true); }
-void respond_false(Callback& callback) { callback(false); }
+void respond_true(Callback& callback) {
+  callback(true);
+}
+void respond_false(Callback& callback) {
+  callback(false);
+}
 
 // A testing |KeyHandlerDelegate| that records all calls
 // to |KeyboardHook| and can be customized with whether
@@ -30,7 +34,6 @@ void respond_false(Callback& callback) { callback(false); }
 class MockKeyHandlerDelegate
     : public KeyboardKeyHandler::KeyboardKeyHandlerDelegate {
  public:
-
   class KeyboardHookCall {
    public:
     int delegate_id;
@@ -56,7 +59,8 @@ class MockKeyHandlerDelegate
   // Defaults to always returning true (async).
   MockKeyHandlerDelegate(int delegate_id,
                          std::list<KeyboardHookCall>* hook_history)
-      : delegate_id(delegate_id), hook_history(hook_history),
+      : delegate_id(delegate_id),
+        hook_history(hook_history),
         callback_handler(dont_respond) {}
   virtual ~MockKeyHandlerDelegate() = default;
 
@@ -89,9 +93,7 @@ class TestKeyboardKeyHandler : public KeyboardKeyHandler {
   explicit TestKeyboardKeyHandler(EventRedispatcher redispatch_event)
       : KeyboardKeyHandler(redispatch_event) {}
 
-  bool HasRedispatched() {
-    return RedispatchedCount() > 0;
-  }
+  bool HasRedispatched() { return RedispatchedCount() > 0; }
 };
 
 }  // namespace
@@ -341,10 +343,10 @@ TEST(KeyboardKeyHandlerTest, WithTwoAsyncDelegates) {
 
 // Regression test for a crash in an earlier implementation.
 //
-// In real life, the framework responses slowly. The next real event might arrive
-// earlier than the framework response, and if the 2nd event is identical to the
-// one waiting for response, an earlier implementation will crash upon the
-// response.
+// In real life, the framework responses slowly. The next real event might
+// arrive earlier than the framework response, and if the 2nd event is identical
+// to the one waiting for response, an earlier implementation will crash upon
+// the response.
 TEST(KeyboardKeyHandlerTest, WithSlowFrameworkResponse) {
   std::list<MockKeyHandlerDelegate::KeyboardHookCall> hook_history;
 
@@ -364,13 +366,15 @@ TEST(KeyboardKeyHandlerTest, WithSlowFrameworkResponse) {
   handler.AddDelegate(std::move(delegate1));
 
   // The first native event.
-  EXPECT_EQ(handler.KeyboardHook(nullptr, 64, kHandledScanCode,
-                                          WM_KEYDOWN, L'a', false, true), true);
+  EXPECT_EQ(handler.KeyboardHook(nullptr, 64, kHandledScanCode, WM_KEYDOWN,
+                                 L'a', false, true),
+            true);
 
   // The second identical native event, received between the first and its
   // framework response.
-  EXPECT_EQ(handler.KeyboardHook(nullptr, 64, kHandledScanCode,
-                                          WM_KEYDOWN, L'a', false, true), true);
+  EXPECT_EQ(handler.KeyboardHook(nullptr, 64, kHandledScanCode, WM_KEYDOWN,
+                                 L'a', false, true),
+            true);
   EXPECT_EQ(redispatch_scancode, 0);
   EXPECT_EQ(hook_history.size(), 2);
 

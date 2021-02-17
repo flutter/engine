@@ -15,8 +15,7 @@
 
 namespace flutter {
 
-namespace {
-}  // namespace
+namespace {}  // namespace
 
 // A delegate of |KeyboardKeyHandler| that handles events by sending
 // converted |FlutterKeyEvent|s through the embedder API.
@@ -35,7 +34,8 @@ class KeyboardKeyEmbedderHandler
   // Use `send_event` to define how the manager should dispatch converted
   // flutter events, as well as how to receive the resopnse, to the engine. It's
   // typically FlutterWindowsEngine::SendKeyEvent.
-  explicit KeyboardKeyEmbedderHandler(SendEvent send_event, GetKeyStateHandler get_key_state);
+  explicit KeyboardKeyEmbedderHandler(SendEvent send_event,
+                                      GetKeyStateHandler get_key_state);
 
   virtual ~KeyboardKeyEmbedderHandler();
 
@@ -60,7 +60,8 @@ class KeyboardKeyEmbedderHandler
     uint64_t physical_key;
     uint64_t logical_key;
 
-    // Whether to ensure the pressing state of the key (usually for modifier keys).
+    // Whether to ensure the pressing state of the key (usually for modifier
+    // keys).
     bool check_pressed;
     // Whether to ensure the toggled state of the key (usually for lock keys).
     bool check_toggled;
@@ -69,7 +70,9 @@ class KeyboardKeyEmbedderHandler
   };
 
   void InitCheckedKeys();
-  void UpdateLastSeenCritialKey(int virtual_key, uint64_t physical_key, uint64_t logical_key);
+  void UpdateLastSeenCritialKey(int virtual_key,
+                                uint64_t physical_key,
+                                uint64_t logical_key);
   void SynchroizeCritialToggledStates(int this_virtual_key);
   void SynchroizeCritialPressedStates();
 
@@ -77,7 +80,8 @@ class KeyboardKeyEmbedderHandler
       sendEvent_;
   GetKeyStateHandler get_key_state_;
 
-  // A map from physical keys to logical keys, each entry indicating a pressed key.
+  // A map from physical keys to logical keys, each entry indicating a pressed
+  // key.
   std::map<uint64_t, uint64_t> pressingRecords_;
   std::map<uint64_t, std::unique_ptr<PendingResponse>> pending_responses_;
   uint64_t response_id_;
@@ -93,7 +97,10 @@ class KeyboardKeyEmbedderHandler
   static uint64_t getLogicalKey(int key, bool extended, int scancode);
   static void HandleResponse(bool handled, void* user_data);
   static void ConvertUtf32ToUtf8_(char* out, char32_t ch);
-  static FlutterKeyEvent SynthesizeSimpleEvent(FlutterKeyEventType type, uint64_t physical, uint64_t logical, const char* character);
+  static FlutterKeyEvent SynthesizeSimpleEvent(FlutterKeyEventType type,
+                                               uint64_t physical,
+                                               uint64_t logical,
+                                               const char* character);
 
   static std::map<uint64_t, uint64_t> windowsToPhysicalMap_;
   static std::map<uint64_t, uint64_t> windowsToLogicalMap_;

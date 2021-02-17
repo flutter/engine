@@ -59,8 +59,7 @@ KeyboardKeyEmbedderHandler::KeyboardKeyEmbedderHandler(
     std::function<void(const FlutterKeyEvent&,
                        FlutterKeyEventCallback,
                        void* user_data)> send_event,
-    GetKeyStateHandler get_key_state
-                       )
+    GetKeyStateHandler get_key_state)
     : sendEvent_(send_event), get_key_state_(get_key_state), response_id_(1) {
   InitCheckedKeys();
 }
@@ -219,18 +218,17 @@ void KeyboardKeyEmbedderHandler::KeyboardHook(
     return;
   }
 
-  FlutterKeyEvent key_data {
-    .struct_size = sizeof(FlutterKeyEvent),
-    .timestamp =
-      static_cast<double>(
-      std::chrono::duration_cast<std::chrono::microseconds>(
-          std::chrono::high_resolution_clock::now().time_since_epoch())
-          .count()),
-    .type = type,
-    .physical = physical_key,
-    .logical = result_logical_key,
-    .character = character_bytes,
-    .synthesized = false,
+  FlutterKeyEvent key_data{
+      .struct_size = sizeof(FlutterKeyEvent),
+      .timestamp = static_cast<double>(
+          std::chrono::duration_cast<std::chrono::microseconds>(
+              std::chrono::high_resolution_clock::now().time_since_epoch())
+              .count()),
+      .type = type,
+      .physical = physical_key,
+      .logical = result_logical_key,
+      .character = character_bytes,
+      .synthesized = false,
   };
 
   response_id_ += 1;
@@ -253,7 +251,10 @@ void KeyboardKeyEmbedderHandler::KeyboardHook(
              reinterpret_cast<void*>(pending_responses_[response_id].get()));
 }
 
-void KeyboardKeyEmbedderHandler::UpdateLastSeenCritialKey(int virtual_key, uint64_t physical_key, uint64_t logical_key) {
+void KeyboardKeyEmbedderHandler::UpdateLastSeenCritialKey(
+    int virtual_key,
+    uint64_t physical_key,
+    uint64_t logical_key) {
   auto found = critical_keys_.find(virtual_key);
   if (found != critical_keys_.end()) {
     found->second.physical_key = physical_key;
@@ -261,7 +262,8 @@ void KeyboardKeyEmbedderHandler::UpdateLastSeenCritialKey(int virtual_key, uint6
   }
 }
 
-void KeyboardKeyEmbedderHandler::SynchroizeCritialToggledStates(int toggle_virtual_key) {
+void KeyboardKeyEmbedderHandler::SynchroizeCritialToggledStates(
+    int toggle_virtual_key) {
   for (auto& kv : critical_keys_) {
     UINT virtual_key = kv.first;
     CheckedKey& key_info = kv.second;
@@ -281,23 +283,20 @@ void KeyboardKeyEmbedderHandler::SynchroizeCritialToggledStates(int toggle_virtu
       if (key_info.toggled_on != should_toggled) {
         const char* empty_character = "";
         // If the key is pressed, release it first.
-        if (pressingRecords_.find(key_info.physical_key) != pressingRecords_.end()) {
+        if (pressingRecords_.find(key_info.physical_key) !=
+            pressingRecords_.end()) {
           sendEvent_(SynthesizeSimpleEvent(
-            kFlutterKeyEventTypeUp,
-            key_info.physical_key,
-            key_info.logical_key,
-            empty_character),
-          nullptr, nullptr);
+                         kFlutterKeyEventTypeUp, key_info.physical_key,
+                         key_info.logical_key, empty_character),
+                     nullptr, nullptr);
         } else {
           // This key will always be pressed in the following synthesized event.
           pressingRecords_[key_info.physical_key] = key_info.logical_key;
         }
-        sendEvent_(SynthesizeSimpleEvent(
-          kFlutterKeyEventTypeDown,
-          key_info.physical_key,
-          key_info.logical_key,
-          empty_character),
-        nullptr, nullptr);
+        sendEvent_(SynthesizeSimpleEvent(kFlutterKeyEventTypeDown,
+                                         key_info.physical_key,
+                                         key_info.logical_key, empty_character),
+                   nullptr, nullptr);
       }
       key_info.toggled_on = should_toggled;
     }
@@ -325,12 +324,12 @@ void KeyboardKeyEmbedderHandler::SynchroizeCritialPressedStates() {
           pressingRecords_.erase(recorded_pressed_iter);
         }
         const char* empty_character = "";
-        sendEvent_(SynthesizeSimpleEvent(
-          should_pressed ? kFlutterKeyEventTypeDown : kFlutterKeyEventTypeUp,
-          key_info.physical_key,
-          key_info.logical_key,
-          empty_character),
-        nullptr, nullptr);
+        sendEvent_(
+            SynthesizeSimpleEvent(should_pressed ? kFlutterKeyEventTypeDown
+                                                 : kFlutterKeyEventTypeUp,
+                                  key_info.physical_key, key_info.logical_key,
+                                  empty_character),
+            nullptr, nullptr);
       }
     }
   }
@@ -343,25 +342,36 @@ void KeyboardKeyEmbedderHandler::HandleResponse(bool handled, void* user_data) {
 }
 
 void KeyboardKeyEmbedderHandler::InitCheckedKeys() {
-  auto createCheckedKey = [this](UINT virtual_key, bool extended, bool check_pressed, bool check_toggled) -> CheckedKey {
+  auto createCheckedKey = [this](UINT virtual_key, bool extended,
+                                 bool check_pressed,
+                                 bool check_toggled) -> CheckedKey {
     UINT scan_code = MapVirtualKey(virtual_key, MAPVK_VK_TO_VSC);
     return CheckedKey{
-      .physical_key = getPhysicalKey(scan_code, extended),
-      .logical_key = getLogicalKey(virtual_key, extended, scan_code),
-      .check_pressed = check_pressed,
-      .check_toggled = check_toggled,
-      .toggled_on = check_toggled ? !!(get_key_state_(virtual_key) & kStateMaskToggled) : false,
+        .physical_key = getPhysicalKey(scan_code, extended),
+        .logical_key = getLogicalKey(virtual_key, extended, scan_code),
+        .check_pressed = check_pressed,
+        .check_toggled = check_toggled,
+        .toggled_on = check_toggled
+                          ? !!(get_key_state_(virtual_key) & kStateMaskToggled)
+                          : false,
     };
   };
 
-  critical_keys_.emplace(VK_LSHIFT, createCheckedKey(VK_LSHIFT, false, true, false));
-  critical_keys_.emplace(VK_RSHIFT, createCheckedKey(VK_RSHIFT, false, true, false));
-  critical_keys_.emplace(VK_LCONTROL, createCheckedKey(VK_LCONTROL, false, true, false));
-  critical_keys_.emplace(VK_RCONTROL, createCheckedKey(VK_RCONTROL, true, true, false));
+  critical_keys_.emplace(VK_LSHIFT,
+                         createCheckedKey(VK_LSHIFT, false, true, false));
+  critical_keys_.emplace(VK_RSHIFT,
+                         createCheckedKey(VK_RSHIFT, false, true, false));
+  critical_keys_.emplace(VK_LCONTROL,
+                         createCheckedKey(VK_LCONTROL, false, true, false));
+  critical_keys_.emplace(VK_RCONTROL,
+                         createCheckedKey(VK_RCONTROL, true, true, false));
 
-  critical_keys_.emplace(VK_CAPITAL, createCheckedKey(VK_CAPITAL, false, true, true));
-  critical_keys_.emplace(VK_SCROLL, createCheckedKey(VK_SCROLL, false, true, true));
-  critical_keys_.emplace(VK_NUMLOCK, createCheckedKey(VK_NUMLOCK, true, true, true));
+  critical_keys_.emplace(VK_CAPITAL,
+                         createCheckedKey(VK_CAPITAL, false, true, true));
+  critical_keys_.emplace(VK_SCROLL,
+                         createCheckedKey(VK_SCROLL, false, true, true));
+  critical_keys_.emplace(VK_NUMLOCK,
+                         createCheckedKey(VK_NUMLOCK, true, true, true));
 }
 
 void KeyboardKeyEmbedderHandler::ConvertUtf32ToUtf8_(char* out, char32_t ch) {
@@ -374,21 +384,23 @@ void KeyboardKeyEmbedderHandler::ConvertUtf32ToUtf8_(char* out, char32_t ch) {
   strcpy_s(out, kCharacterCacheSize, Utf8FromUtf16(text).c_str());
 }
 
-FlutterKeyEvent KeyboardKeyEmbedderHandler::SynthesizeSimpleEvent(FlutterKeyEventType type, uint64_t physical, uint64_t logical, const char* character) {
-  return FlutterKeyEvent {
-    .struct_size = sizeof(FlutterKeyEvent),
-    .timestamp =
-          static_cast<double>(
-      std::chrono::duration_cast<std::chrono::microseconds>(
-          std::chrono::high_resolution_clock::now().time_since_epoch())
-          .count()),
-    .type = type,
-    .physical = physical,
-    .logical = logical,
-    .character = character,
-    .synthesized = true,
+FlutterKeyEvent KeyboardKeyEmbedderHandler::SynthesizeSimpleEvent(
+    FlutterKeyEventType type,
+    uint64_t physical,
+    uint64_t logical,
+    const char* character) {
+  return FlutterKeyEvent{
+      .struct_size = sizeof(FlutterKeyEvent),
+      .timestamp = static_cast<double>(
+          std::chrono::duration_cast<std::chrono::microseconds>(
+              std::chrono::high_resolution_clock::now().time_since_epoch())
+              .count()),
+      .type = type,
+      .physical = physical,
+      .logical = logical,
+      .character = character,
+      .synthesized = true,
   };
 }
-
 
 }  // namespace flutter

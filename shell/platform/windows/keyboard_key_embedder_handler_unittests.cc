@@ -43,15 +43,14 @@ class TestFlutterKeyEvent : public FlutterKeyEvent {
 class TestKeystate {
  public:
   void Set(int virtual_key, bool pressed, bool toggled_on = false) {
-    state_[virtual_key] = (pressed ? kStateMaskPressed : 0) | (toggled_on ? kStateMaskToggled : 0);
+    state_[virtual_key] = (pressed ? kStateMaskPressed : 0) |
+                          (toggled_on ? kStateMaskToggled : 0);
   }
 
-  SHORT Get(int virtual_key) {
-    return state_[virtual_key];
-  }
+  SHORT Get(int virtual_key) { return state_[virtual_key]; }
 
   KeyboardKeyEmbedderHandler::GetKeyStateHandler Getter() {
-    return [this](int virtual_key) {return Get(virtual_key);};
+    return [this](int virtual_key) { return Get(virtual_key); };
   }
 
  private:
@@ -102,7 +101,7 @@ TEST(KeyboardKeyEmbedderHandlerTest, BasicKeyPressingAndHolding) {
                      FlutterKeyEventCallback callback, void* user_data) {
             results.emplace_back(event, callback, user_data);
           },
-      key_state.Getter());
+          key_state.Getter());
 
   // Press KeyA.
   handler->KeyboardHook(
@@ -169,7 +168,8 @@ TEST(KeyboardKeyEmbedderHandlerTest, ToggleNumLockDuringNumpadPress) {
           [&results](const FlutterKeyEvent& event,
                      FlutterKeyEventCallback callback, void* user_data) {
             results.emplace_back(event, callback, user_data);
-          }, key_state.Getter());
+          },
+          key_state.Getter());
 
   // Press NumPad1.
   key_state.Set(VK_NUMPAD1, true);
@@ -240,7 +240,8 @@ TEST(KeyboardKeyEmbedderHandlerTest, ImeEventsAreIgnored) {
           [&results](const FlutterKeyEvent& event,
                      FlutterKeyEventCallback callback, void* user_data) {
             results.emplace_back(event, callback, user_data);
-          }, key_state.Getter());
+          },
+          key_state.Getter());
 
   // Press A in an IME
   last_handled = false;
@@ -298,7 +299,8 @@ TEST(KeyboardKeyEmbedderHandlerTest, ModifierKeysByExtendedBit) {
           [&results](const FlutterKeyEvent& event,
                      FlutterKeyEventCallback callback, void* user_data) {
             results.emplace_back(event, callback, user_data);
-          }, key_state.Getter());
+          },
+          key_state.Getter());
 
   // Press Ctrl left.
   last_handled = false;
@@ -390,7 +392,8 @@ TEST(KeyboardKeyEmbedderHandlerTest, ModifierKeysByVirtualKey) {
           [&results](const FlutterKeyEvent& event,
                      FlutterKeyEventCallback callback, void* user_data) {
             results.emplace_back(event, callback, user_data);
-          }, key_state.Getter());
+          },
+          key_state.Getter());
 
   // Press Shift left.
   last_handled = false;
@@ -480,7 +483,8 @@ TEST(KeyboardKeyEmbedderHandlerTest, AbruptRepeatIsConvertedtoDown) {
           [&results](const FlutterKeyEvent& event,
                      FlutterKeyEventCallback callback, void* user_data) {
             results.emplace_back(event, callback, user_data);
-          }, key_state.Getter());
+          },
+          key_state.Getter());
   last_handled = false;
 
   key_state.Set(kVirtualKeyA, true);
@@ -534,7 +538,7 @@ TEST(KeyboardKeyEmbedderHandlerTest, SynthesizeForDesyncPressingState) {
                      FlutterKeyEventCallback callback, void* user_data) {
             results.emplace_back(event, callback, user_data);
           },
-      key_state.Getter());
+          key_state.Getter());
 
   // A key down of control left is missed.
   key_state.Set(VK_LCONTROL, true);
@@ -622,7 +626,7 @@ TEST(KeyboardKeyEmbedderHandlerTest, SynthesizeForDesyncToggledState) {
                      FlutterKeyEventCallback callback, void* user_data) {
             results.emplace_back(event, callback, user_data);
           },
-      key_state.Getter());
+          key_state.Getter());
 
   // Test if the app starts with NumLock on
   key_state.Set(VK_NUMLOCK, false, true);
@@ -742,7 +746,7 @@ TEST(KeyboardKeyEmbedderHandlerTest, SynthesizeForDesyncToggledStateByItself) {
                      FlutterKeyEventCallback callback, void* user_data) {
             results.emplace_back(event, callback, user_data);
           },
-      key_state.Getter());
+          key_state.Getter());
 
   // When NumLock is down
   key_state.Set(VK_NUMLOCK, true, true);

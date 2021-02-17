@@ -61,13 +61,16 @@ void KeyboardKeyHandler::RedispatchEvent(std::unique_ptr<PendingEvent> event) {
   char32_t character = event->character;
 
   INPUT input_event{
-    .type = INPUT_KEYBOARD,
-    .ki = KEYBDINPUT{
-        .wVk = 0,
-        .wScan = static_cast<WORD>(event->scancode),
-        .dwFlags = static_cast<WORD>(KEYEVENTF_SCANCODE | (event->extended ? KEYEVENTF_EXTENDEDKEY : 0x0) |
-            (event->action == WM_KEYUP ? KEYEVENTF_KEYUP : 0x0)),
-    },
+      .type = INPUT_KEYBOARD,
+      .ki =
+          KEYBDINPUT{
+              .wVk = 0,
+              .wScan = static_cast<WORD>(event->scancode),
+              .dwFlags = static_cast<WORD>(
+                  KEYEVENTF_SCANCODE |
+                  (event->extended ? KEYEVENTF_EXTENDEDKEY : 0x0) |
+                  (event->action == WM_KEYUP ? KEYEVENTF_KEYUP : 0x0)),
+          },
   };
 
   pending_redispatches_.push_back(std::move(event));
@@ -76,8 +79,7 @@ void KeyboardKeyHandler::RedispatchEvent(std::unique_ptr<PendingEvent> event) {
   if (accepted != 1) {
     std::cerr << "Unable to synthesize event for unhandled keyboard event "
                  "with scancode "
-              << scancode << " (character " << character
-              << ")" << std::endl;
+              << scancode << " (character " << character << ")" << std::endl;
   }
 }
 
@@ -88,14 +90,15 @@ bool KeyboardKeyHandler::KeyboardHook(FlutterWindowsView* view,
                                       char32_t character,
                                       bool extended,
                                       bool was_down) {
-  std::unique_ptr<PendingEvent> incoming = std::make_unique<PendingEvent>(PendingEvent{
-    .key = static_cast<uint32_t>(key),
-    .scancode = static_cast<uint8_t>(scancode),
-    .action = static_cast<uint32_t>(action),
-    .character = character,
-    .extended = extended,
-    .was_down = was_down,
-  });
+  std::unique_ptr<PendingEvent> incoming =
+      std::make_unique<PendingEvent>(PendingEvent{
+          .key = static_cast<uint32_t>(key),
+          .scancode = static_cast<uint8_t>(scancode),
+          .action = static_cast<uint32_t>(action),
+          .character = character,
+          .extended = extended,
+          .was_down = was_down,
+      });
   incoming->hash = ComputeEventHash(*incoming);
 
   if (RemoveRedispatchedEvent(*incoming)) {
@@ -116,11 +119,10 @@ bool KeyboardKeyHandler::KeyboardHook(FlutterWindowsView* view,
   pending_responds_.push_back(std::move(incoming));
 
   for (const auto& delegate : delegates_) {
-    delegate->KeyboardHook(
-        key, scancode, action, character, extended, was_down,
-        [sequence_id, this](bool handled) {
-          ResolvePendingEvent(sequence_id, handled);
-        });
+    delegate->KeyboardHook(key, scancode, action, character, extended, was_down,
+                           [sequence_id, this](bool handled) {
+                             ResolvePendingEvent(sequence_id, handled);
+                           });
   }
 
   // |ResolvePendingEvent| might trigger redispatching synchronously,
@@ -133,17 +135,19 @@ bool KeyboardKeyHandler::KeyboardHook(FlutterWindowsView* view,
 }
 
 bool KeyboardKeyHandler::RemoveRedispatchedEvent(const PendingEvent& incoming) {
-  for (auto iter = pending_redispatches_.begin(); iter != pending_redispatches_.end();
-       ++iter) {
+  for (auto iter = pending_redispatches_.begin();
+       iter != pending_redispatches_.end(); ++iter) {
     if ((*iter)->hash == incoming.hash) {
       pending_redispatches_.erase(iter);
       return true;
     }
   }
-  return false;;
+  return false;
+  ;
 }
 
-void KeyboardKeyHandler::ResolvePendingEvent(uint64_t sequence_id, bool handled) {
+void KeyboardKeyHandler::ResolvePendingEvent(uint64_t sequence_id,
+                                             bool handled) {
   // Find the pending event
   for (auto iter = pending_responds_.begin(); iter != pending_responds_.end();
        ++iter) {
@@ -185,8 +189,8 @@ uint64_t KeyboardKeyHandler::ComputeEventHash(const PendingEvent& event) {
   // Calculate a key event ID based on the scan code of the key pressed,
   // and the flags we care about.
   return event.scancode | (((event.action == WM_KEYUP ? KEYEVENTF_KEYUP : 0x0) |
-                      (event.extended ? KEYEVENTF_EXTENDEDKEY : 0x0))
-                     << 16);
+                            (event.extended ? KEYEVENTF_EXTENDEDKEY : 0x0))
+                           << 16);
 }
 
 }  // namespace flutter

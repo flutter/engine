@@ -431,7 +431,10 @@ Win32Window* Win32Window::GetThisFromHandle(HWND const window) noexcept {
       GetWindowLongPtr(window, GWLP_USERDATA));
 }
 
-LRESULT Win32Window::DefaultWindowProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam) {
+LRESULT Win32Window::DefaultWindowProc(HWND hWnd,
+                                       UINT Msg,
+                                       WPARAM wParam,
+                                       LPARAM lParam) {
   return DefWindowProc(hWnd, Msg, wParam, lParam);
 }
 
