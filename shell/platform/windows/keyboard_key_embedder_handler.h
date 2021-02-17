@@ -53,7 +53,25 @@ class KeyboardKeyEmbedderHandler
     uint64_t response_id;
   };
 
-  void CacheUtf8String(char32_t ch);
+  // Record the last seen physical and logical key for a virtual key.
+  struct CheckedKey {
+    CheckedKey(UINT virtual_key, bool extended, bool check_pressed, bool check_toggled);
+
+    // Last seen value of physical key and logical key for the virtual key.
+    uint64_t physical_key;
+    uint64_t logical_key;
+
+    // Whether to ensure the pressing state of the key (usually for modifier keys).
+    bool check_pressed;
+    // Whether to ensure the toggled state of the key (usually for lock keys).
+    bool check_toggled;
+    // Whether the lock key is currently toggled on.
+    bool toggled_on;
+  };
+
+  void InitCheckedKeys();
+  void UpdateLastSeenCritialKey(int virtual_key, uint64_t physical_key, uint64_t logical_key);
+  void SynchroizeCritialKeys(int this_virtual_key);
 
   // A map from physical keys to logical keys, each entry indicating a pressed key.
   std::map<uint64_t, uint64_t> pressingRecords_;
@@ -62,16 +80,22 @@ class KeyboardKeyEmbedderHandler
   std::map<uint64_t, std::unique_ptr<PendingResponse>> pending_responses_;
   uint64_t response_id_;
 
+  // Important keys whose states are checked and guaranteed synchronized
+  // on every key event.
+  //
+  // The following maps map Win32 virtual key to the physical key and logical
+  // key they're last seen.
+  std::map<UINT, CheckedKey> critical_keys_;
+
   static uint64_t getPhysicalKey(int scancode, bool extended);
   static uint64_t getLogicalKey(int key, bool extended, int scancode);
   static void HandleResponse(bool handled, void* user_data);
   static void ConvertUtf32ToUtf8_(char* out, char32_t ch);
+  static FlutterKeyEvent SynthesizeSimpleEvent(FlutterKeyEventType type, uint64_t physical, uint64_t logical, const char* character);
 
   static std::map<uint64_t, uint64_t> windowsToPhysicalMap_;
   static std::map<uint64_t, uint64_t> windowsToLogicalMap_;
   static std::map<uint64_t, uint64_t> scanCodeToLogicalMap_;
-
-  static void HandleResponse(bool handled, void* user_data);
 };
 
 }  // namespace flutter
