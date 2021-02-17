@@ -418,6 +418,8 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     mRestartInputPending = false;
   }
 
+  // Called by the text input channel to update the text input plugin with the
+  // latest TextEditState from the framework.
   @VisibleForTesting
   void setTextInputEditingState(View view, TextInputChannel.TextEditState state) {
     mLastKnownFrameworkTextEditingState = state;
