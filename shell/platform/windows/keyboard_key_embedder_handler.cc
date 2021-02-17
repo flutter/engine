@@ -178,8 +178,9 @@ void KeyboardKeyEmbedderHandler::KeyboardHook(
     }
   } else {  // isPhysicalDown is false
     if (last_logical_record == 0) {
-      // The physical key has been released before. It indicates multiple
-      // keyboards pressed keys with the same physical key. Ignore the up event.
+      // The physical key has been released before. It might indicate a missed
+      // event due to loss of focus, or multiple keyboards pressed keys with the
+      // same physical key. Ignore the up event.
       callback(true);
       return;
     } else {
