@@ -317,11 +317,7 @@ class CkImage implements ui.Image, StackTraceDebugger {
       bytes = skImage.encodeToBytes(); //defaults to PNG 100%
     }
 
-    if (bytes != null) {
-      return bytes.buffer.asByteData(0, bytes.length);
-    } else {
-      return null;
-    }
+    return bytes?.buffer.asByteData(0, bytes.length);
   }
 
   @override
