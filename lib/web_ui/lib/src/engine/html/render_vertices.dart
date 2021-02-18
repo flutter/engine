@@ -157,14 +157,25 @@ class _WebGlRenderer implements _GlRenderer {
     // Setup color buffer.
     Object? colorsBuffer = gl.createBuffer();
     gl.bindArrayBuffer(colorsBuffer);
+
+    final int vertexCount = positions.length ~/ 2;
+
     // Buffer kBGRA_8888.
-    gl.bufferData(vertices._colors, gl.kStaticDraw);
+    if (vertices._colors == null) {
+      final ui.Color color = paint.color ?? ui.Color(0xFF000000);
+      Uint32List vertexColors = Uint32List(vertexCount);
+      for (int i = 0; i < vertexCount; i++) {
+        vertexColors[i] = color.value;
+      }
+      gl.bufferData(vertexColors, gl.kStaticDraw);
+    } else {
+      gl.bufferData(vertices._colors, gl.kStaticDraw);
+    }
     Object colorLoc = gl.getAttributeLocation(glProgram.program, 'color');
     js_util.callMethod(gl.glContext, 'vertexAttribPointer',
         <dynamic>[colorLoc, 4, gl.kUnsignedByte, true, 0, 0]);
     gl.enableVertexAttribArray(1);
     gl.clear();
-    final int vertexCount = positions.length ~/ 2;
     gl.drawTriangles(vertexCount, vertices._mode);
 
     context!.save();
@@ -240,8 +251,11 @@ class _WebGlRenderer implements _GlRenderer {
     gl.bindElementArrayBuffer(indexBuffer);
     gl.bufferElementData(_vertexIndicesForRect, gl.kStaticDraw);
 
-    Object uRes = gl.getUniformLocation(glProgram.program, 'u_resolution');
-    gl.setUniform2f(uRes, widthInPixels.toDouble(), heightInPixels.toDouble());
+    if (gl.containsUniform(glProgram.program, 'u_resolution')) {
+      Object uRes = gl.getUniformLocation(glProgram.program, 'u_resolution');
+      gl.setUniform2f(
+          uRes, widthInPixels.toDouble(), heightInPixels.toDouble());
+    }
 
     gl.clear();
     gl.viewport(0, 0, widthInPixels.toDouble(), heightInPixels.toDouble());
@@ -671,6 +685,13 @@ class _GlContext {
     } else {
       return res;
     }
+  }
+
+  /// Returns true if uniform exists.
+  bool containsUniform(Object program, String uniformName) {
+    Object? res = js_util
+        .callMethod(glContext, 'getUniformLocation', <dynamic>[program, uniformName]);
+    return res != null;
   }
 
   /// Returns reference to uniform in program.

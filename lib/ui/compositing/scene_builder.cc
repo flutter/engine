@@ -183,8 +183,10 @@ void SceneBuilder::pushShaderMask(Dart_Handle layer_handle,
                                   int blendMode) {
   SkRect rect = SkRect::MakeLTRB(maskRectLeft, maskRectTop, maskRectRight,
                                  maskRectBottom);
+  // TODO: should this come from the caller?
+  SkFilterQuality quality = kNone_SkFilterQuality;
   auto layer = std::make_shared<flutter::ShaderMaskLayer>(
-      shader->shader(), rect, static_cast<SkBlendMode>(blendMode));
+      shader->shader(quality), rect, static_cast<SkBlendMode>(blendMode));
   PushLayer(layer);
   EngineLayer::MakeRetained(layer_handle, layer);
 }
@@ -231,9 +233,12 @@ void SceneBuilder::addTexture(double dx,
                               int64_t textureId,
                               bool freeze,
                               int filterQuality) {
+  // TODO: take sampling directly from caller: filter-quality is deprecated
+  auto sampling = SkSamplingOptions(static_cast<SkFilterQuality>(filterQuality),
+                                    SkSamplingOptions::kMedium_asMipmapLinear);
   auto layer = std::make_unique<flutter::TextureLayer>(
       SkPoint::Make(dx, dy), SkSize::Make(width, height), textureId, freeze,
-      static_cast<SkFilterQuality>(filterQuality));
+      sampling);
   AddLayer(std::move(layer));
 }
 

@@ -5,9 +5,12 @@
 #ifndef SHELL_PLATFORM_DARWIN_GRAPHICS_DARWIN_CONTEXT_METAL_H_
 #define SHELL_PLATFORM_DARWIN_GRAPHICS_DARWIN_CONTEXT_METAL_H_
 
+#import <CoreVideo/CVMetalTextureCache.h>
 #import <Foundation/Foundation.h>
 #import <Metal/Metal.h>
 
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterTexture.h"
+#import "flutter/shell/platform/darwin/graphics/FlutterDarwinExternalTextureMetal.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 
 NS_ASSUME_NONNULL_BEGIN
@@ -26,19 +29,26 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  * Initializes a FlutterDarwinContextMetal with provided MTLDevice and MTLCommandQueue.
  */
-- (instancetype)initWithMTLDevice:(id<MTLDevice>)mtlDevice
+- (instancetype)initWithMTLDevice:(id<MTLDevice>)device
                      commandQueue:(id<MTLCommandQueue>)commandQueue;
+
+/**
+ * Creates an external texture with the specified ID and contents.
+ */
+- (FlutterDarwinExternalTextureMetal*)
+    createExternalTextureWithIdentifier:(int64_t)textureID
+                                texture:(NSObject<FlutterTexture>*)texture;
 
 /**
  * MTLDevice that is backing this context.s
  */
-@property(nonatomic, readonly) id<MTLDevice> mtlDevice;
+@property(nonatomic, readonly) id<MTLDevice> device;
 
 /**
- * MTLCommandQueue that is acquired from the `mtlDevice`. This queue is used both for rendering and
+ * MTLCommandQueue that is acquired from the `device`. This queue is used both for rendering and
  * resource related commands.
  */
-@property(nonatomic, readonly) id<MTLCommandQueue> mtlCommandQueue;
+@property(nonatomic, readonly) id<MTLCommandQueue> commandQueue;
 
 /**
  * Skia GrContext that is used for rendering.
@@ -49,6 +59,11 @@ NS_ASSUME_NONNULL_BEGIN
  * Skia GrContext that is used for resources (uploading textures etc).
  */
 @property(nonatomic, readonly) sk_sp<GrDirectContext> resourceContext;
+
+/*
+ * Texture cache for external textures.
+ */
+@property(nonatomic, readonly) CVMetalTextureCacheRef textureCache;
 
 @end
 

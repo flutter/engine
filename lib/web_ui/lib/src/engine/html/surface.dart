@@ -1092,7 +1092,7 @@ abstract class PersistedContainerSurface extends PersistedSurface {
       for (int indexInOld = 0; indexInOld < oldChildCount; indexInOld += 1) {
         final PersistedSurface? oldChild = oldChildren[indexInOld];
         final bool childAlreadyClaimed = oldChild == null;
-        if (childAlreadyClaimed || !newChild.canUpdateAsMatch(oldChild!)) {
+        if (childAlreadyClaimed || !newChild.canUpdateAsMatch(oldChild)) {
           continue;
         }
         allMatches.add(_PersistedSurfaceMatch(

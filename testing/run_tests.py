@@ -150,6 +150,10 @@ def RunCCTests(build_dir, filter):
 
   RunEngineExecutable(build_dir, 'testing_unittests', filter, shuffle_flags)
 
+  # The accessibility library only supports Mac for now.
+  if IsMac():
+    RunEngineExecutable(build_dir, 'accessibility_unittests', filter, shuffle_flags)
+
   # These unit-tests are Objective-C and can only run on Darwin.
   if IsMac():
     RunEngineExecutable(build_dir, 'flutter_channels_unittests', filter, shuffle_flags)
@@ -210,7 +214,14 @@ def SnapshotTest(build_dir, dart_file, kernel_file_output, verbose_dart_snapshot
   if verbose_dart_snapshot:
     RunCmd(snapshot_command, cwd=buildroot_dir)
   else:
-    subprocess.check_output(snapshot_command, cwd=buildroot_dir)
+    try:
+      subprocess.check_output(snapshot_command, cwd=buildroot_dir)
+    except subprocess.CalledProcessError as error:
+      # CalledProcessError's string doesn't print the output. Print it before
+      # the crash for easier inspection.
+      print('Error occurred from the subprocess, with the output:')
+      print(error.output)
+      raise
   assert os.path.exists(kernel_file_output)
 
 

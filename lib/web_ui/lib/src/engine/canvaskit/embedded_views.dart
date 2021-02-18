@@ -30,14 +30,16 @@ class HtmlViewEmbedder {
   /// The root view in the stack of mutator elements for the view id.
   final Map<int?, html.Element?> _rootViews = <int?, html.Element?>{};
 
-  /// The overlay for the view id.
-  final Map<int, Overlay> _overlays = <int, Overlay>{};
+  /// Surfaces used to draw on top of platform views, keyed by platform view ID.
+  ///
+  /// These surfaces are cached in the [OverlayCache] and reused.
+  final Map<int, Surface> _overlays = <int, Surface>{};
 
   /// The views that need to be recomposited into the scene on the next frame.
   final Set<int> _viewsToRecomposite = <int>{};
 
   /// The views that need to be disposed of on the next frame.
-  final Set<int?> _viewsToDispose = <int?>{};
+  final Set<int> _viewsToDispose = <int>{};
 
   /// The list of view ids that should be composited, in order.
   List<int> _compositionOrder = <int>[];
@@ -115,14 +117,15 @@ class HtmlViewEmbedder {
 
   void _dispose(
       MethodCall methodCall, ui.PlatformMessageResponseCallback callback) {
-    int? viewId = methodCall.arguments;
+    final int? viewId = methodCall.arguments;
     const MethodCodec codec = StandardMethodCodec();
-    if (!_views.containsKey(viewId)) {
+    if (viewId == null || !_views.containsKey(viewId)) {
       callback(codec.encodeErrorEnvelope(
         code: 'unknown_view',
         message: 'trying to dispose an unknown view',
         details: 'view id: $viewId',
       ));
+      return;
     }
     _viewsToDispose.add(viewId);
     callback(codec.encodeSuccessEnvelope(null));
@@ -262,10 +265,12 @@ class HtmlViewEmbedder {
             html.Element pathDefs =
                 _svgPathDefs!.querySelector('#sk_path_defs')!;
             _clipPathCount += 1;
-            html.Element newClipPath =
-                html.Element.html('<clipPath id="svgClip$_clipPathCount">'
-                    '<path d="${path.toSvgString()}">'
-                    '</path></clipPath>');
+            html.Node newClipPath = html.DocumentFragment.svg(
+              '<clipPath id="svgClip$_clipPathCount">'
+              '<path d="${path.toSvgString()}">'
+              '</path></clipPath>',
+              treeSanitizer: _NullTreeSanitizer(),
+            );
             pathDefs.append(newClipPath);
             clipView.style.clipPath = 'url(#svgClip$_clipPathCount)';
           } else if (mutator.path != null) {
@@ -274,10 +279,12 @@ class HtmlViewEmbedder {
             html.Element pathDefs =
                 _svgPathDefs!.querySelector('#sk_path_defs')!;
             _clipPathCount += 1;
-            html.Element newClipPath =
-                html.Element.html('<clipPath id="svgClip$_clipPathCount">'
-                    '<path d="${path.toSvgString()}">'
-                    '</path></clipPath>');
+            html.Node newClipPath = html.DocumentFragment.svg(
+              '<clipPath id="svgClip$_clipPathCount">'
+              '<path d="${path.toSvgString()}">'
+              '</path></clipPath>',
+              treeSanitizer: _NullTreeSanitizer(),
+            );
             pathDefs.append(newClipPath);
             clipView.style.clipPath = 'url(#svgClip$_clipPathCount)';
           }
@@ -296,11 +303,10 @@ class HtmlViewEmbedder {
     //
     // HTML elements use logical (CSS) pixels, but we have been using physical
     // pixels, so scale down the head element to match the logical resolution.
-    final double scale = EnginePlatformDispatcher.browserDevicePixelRatio;
+    final double scale = window.devicePixelRatio;
     final double inverseScale = 1 / scale;
-    final Matrix4 scaleMatrix =
-        Matrix4.diagonal3Values(inverseScale, inverseScale, 1);
-    headTransform.multiply(scaleMatrix);
+    final Matrix4 scaleMatrix = Matrix4.diagonal3Values(inverseScale, inverseScale, 1);
+    headTransform = scaleMatrix.multiplied(headTransform);
     head.style.transform = float64ListToCssTransform(headTransform.storage);
   }
 
@@ -324,7 +330,7 @@ class HtmlViewEmbedder {
       return;
     }
     _svgPathDefs = html.Element.html(
-      '$kSvgResourceHeader><defs id="sk_path_defs"></defs></svg>',
+      '$kSvgResourceHeader<defs id="sk_path_defs"></defs></svg>',
       treeSanitizer: _NullTreeSanitizer(),
     );
     skiaSceneHost!.append(_svgPathDefs!);
@@ -335,9 +341,9 @@ class HtmlViewEmbedder {
 
     for (int i = 0; i < _compositionOrder.length; i++) {
       int viewId = _compositionOrder[i];
-      ensureOverlayInitialized(viewId);
+      _ensureOverlayInitialized(viewId);
       final SurfaceFrame frame =
-          _overlays[viewId]!.surface.acquireFrame(_frameSize);
+          _overlays[viewId]!.acquireFrame(_frameSize);
       final CkCanvas canvas = frame.skiaCanvas;
       canvas.drawPicture(
         _pictureRecorders[viewId]!.endRecording(),
@@ -349,12 +355,25 @@ class HtmlViewEmbedder {
       _compositionOrder.clear();
       return;
     }
+
+    final Set<int> unusedViews = Set<int>.from(_activeCompositionOrder);
     _activeCompositionOrder.clear();
 
+    List<int>? debugInvalidViewIds;
     for (int i = 0; i < _compositionOrder.length; i++) {
       int viewId = _compositionOrder[i];
+
+      if (assertionsEnabled) {
+        if (!_views.containsKey(viewId)) {
+          debugInvalidViewIds ??= <int>[];
+          debugInvalidViewIds.add(viewId);
+          continue;
+        }
+      }
+
+      unusedViews.remove(viewId);
       html.Element platformViewRoot = _rootViews[viewId]!;
-      html.Element overlay = _overlays[viewId]!.surface.htmlElement!;
+      html.Element overlay = _overlays[viewId]!.htmlElement;
       platformViewRoot.remove();
       skiaSceneHost!.append(platformViewRoot);
       overlay.remove();
@@ -362,6 +381,20 @@ class HtmlViewEmbedder {
       _activeCompositionOrder.add(viewId);
     }
     _compositionOrder.clear();
+
+    for (final int unusedViewId in unusedViews) {
+      _releaseOverlay(unusedViewId);
+      _rootViews[unusedViewId]?.remove();
+    }
+
+    if (assertionsEnabled) {
+      if (debugInvalidViewIds != null && debugInvalidViewIds.isNotEmpty) {
+        throw AssertionError(
+          'Cannot render platform views: ${debugInvalidViewIds.join(', ')}. '
+          'These views have not been created, or they have been deleted.',
+        );
+      }
+    }
   }
 
   void disposeViews() {
@@ -369,18 +402,12 @@ class HtmlViewEmbedder {
       return;
     }
 
-    for (int? viewId in _viewsToDispose) {
+    for (final int viewId in _viewsToDispose) {
       final html.Element rootView = _rootViews[viewId]!;
       rootView.remove();
       _views.remove(viewId);
       _rootViews.remove(viewId);
-      if (_overlays[viewId] != null) {
-        final Overlay overlay = _overlays[viewId]!;
-        overlay.surface.htmlElement?.remove();
-        overlay.surface.htmlElement = null;
-        overlay.skSurface?.dispose();
-      }
-      _overlays.remove(viewId);
+      _releaseOverlay(viewId);
       _currentCompositionParams.remove(viewId);
       _clipCount.remove(viewId);
       _viewsToRecomposite.remove(viewId);
@@ -388,14 +415,81 @@ class HtmlViewEmbedder {
     _viewsToDispose.clear();
   }
 
-  void ensureOverlayInitialized(int viewId) {
-    Overlay? overlay = _overlays[viewId];
+  void _releaseOverlay(int viewId) {
+    if (_overlays[viewId] != null) {
+      OverlayCache.instance.releaseOverlay(_overlays[viewId]!);
+      _overlays.remove(viewId);
+    }
+  }
+
+  void _ensureOverlayInitialized(int viewId) {
+    // If there's an active overlay for the view ID, continue using it.
+    Surface? overlay = _overlays[viewId];
     if (overlay != null) {
       return;
     }
-    Surface surface = Surface(this);
-    CkSurface? skSurface = surface.acquireRenderSurface(_frameSize);
-    _overlays[viewId] = Overlay(surface, skSurface);
+
+    // Try reusing a cached overlay created for another platform view.
+    overlay = OverlayCache.instance.reserveOverlay();
+
+    // If nothing to reuse, create a new overlay.
+    if (overlay == null) {
+      overlay = Surface(this);
+    }
+
+    _overlays[viewId] = overlay;
+  }
+}
+
+/// Caches surfaces used to overlay platform views.
+class OverlayCache {
+  static const int kDefaultCacheSize = 5;
+
+  /// The cache singleton.
+  static final OverlayCache instance = OverlayCache(kDefaultCacheSize);
+
+  OverlayCache(this.maximumSize);
+
+  /// The cache will not grow beyond this size.
+  final int maximumSize;
+
+  /// Cached surfaces, available for reuse.
+  final List<Surface> _cache = <Surface>[];
+
+  /// Returns the list of cached surfaces.
+  ///
+  /// Useful in tests.
+  List<Surface> get debugCachedSurfaces => _cache;
+
+  /// Reserves an overlay from the cache, if available.
+  ///
+  /// Returns null if the cache is empty.
+  Surface? reserveOverlay() {
+    if (_cache.isEmpty) {
+      return null;
+    }
+    return _cache.removeLast();
+  }
+
+  /// Returns an overlay back to the cache.
+  ///
+  /// If the cache is full, the overlay is deleted.
+  void releaseOverlay(Surface overlay) {
+    overlay.htmlElement.remove();
+    if (_cache.length < maximumSize) {
+      _cache.add(overlay);
+    } else {
+      overlay.dispose();
+    }
+  }
+
+  int get debugLength => _cache.length;
+
+  void debugClear() {
+    for (final Surface overlay in _cache) {
+      overlay.dispose();
+    }
+    _cache.clear();
   }
 }
 
@@ -542,12 +636,4 @@ class MutatorsStack extends Iterable<Mutator> {
 
   @override
   Iterator<Mutator> get iterator => _mutators.reversed.iterator;
-}
-
-/// Represents a surface overlaying a platform view.
-class Overlay {
-  final Surface surface;
-  final CkSurface? skSurface;
-
-  Overlay(this.surface, this.skSurface);
 }

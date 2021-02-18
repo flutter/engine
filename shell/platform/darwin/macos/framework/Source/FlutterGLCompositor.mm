@@ -6,20 +6,22 @@
 
 #import <OpenGL/gl.h>
 
-#import "flutter/fml/logging.h"
-#import "flutter/fml/platform/darwin/cf_utils.h"
+#include "flutter/fml/logging.h"
+#include "flutter/fml/platform/darwin/cf_utils.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStore.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStoreData.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterFrameBufferProvider.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterIOSurfaceHolder.h"
-#import "third_party/skia/include/core/SkCanvas.h"
-#import "third_party/skia/include/core/SkSurface.h"
-#import "third_party/skia/include/gpu/gl/GrGLAssembleInterface.h"
-#import "third_party/skia/include/utils/mac/SkCGUtils.h"
+#include "third_party/skia/include/core/SkCanvas.h"
+#include "third_party/skia/include/core/SkSurface.h"
+#include "third_party/skia/include/gpu/gl/GrGLAssembleInterface.h"
+#include "third_party/skia/include/utils/mac/SkCGUtils.h"
 
 namespace flutter {
 
-FlutterGLCompositor::FlutterGLCompositor(FlutterViewController* view_controller)
-    : open_gl_context_(view_controller.flutterView.openGLContext) {
+FlutterGLCompositor::FlutterGLCompositor(FlutterViewController* view_controller,
+                                         NSOpenGLContext* opengl_context)
+    : open_gl_context_(opengl_context) {
   FML_CHECK(view_controller != nullptr) << "FlutterViewController* cannot be nullptr";
   view_controller_ = view_controller;
 }
@@ -32,8 +34,10 @@ bool FlutterGLCompositor::CreateBackingStore(const FlutterBackingStoreConfig* co
     StartFrame();
     // If the backing store is for the first layer, return the fbo for the
     // FlutterView.
-    auto fbo = [view_controller_.flutterView frameBufferIDForSize:size];
-    backing_store_out->open_gl.framebuffer.name = fbo;
+    FlutterOpenGLRenderBackingStore* backingStore =
+        reinterpret_cast<FlutterOpenGLRenderBackingStore*>(
+            [view_controller_.flutterView backingStoreForSize:size]);
+    backing_store_out->open_gl.framebuffer.name = backingStore.frameBufferID;
   } else {
     FlutterFrameBufferProvider* fb_provider =
         [[FlutterFrameBufferProvider alloc] initWithOpenGLContext:open_gl_context_];

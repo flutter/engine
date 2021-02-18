@@ -8,7 +8,7 @@
 #include "flutter/flow/testing/mock_layer.h"
 #include "flutter/fml/macros.h"
 #include "flutter/testing/mock_canvas.h"
-#include "third_party/skia/include/core/SkImageFilter.h"
+#include "third_party/skia/include/effects/SkImageFilters.h"
 
 namespace flutter {
 namespace testing {
@@ -74,8 +74,9 @@ TEST_F(ImageFilterLayerTest, SimpleFilter) {
   const SkRect child_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
   const SkPath child_path = SkPath().addRect(child_bounds);
   const SkPaint child_paint = SkPaint(SkColors::kYellow);
-  auto layer_filter = SkImageFilter::MakeMatrixFilter(
-      SkMatrix(), SkFilterQuality::kMedium_SkFilterQuality, nullptr);
+  auto layer_filter = SkImageFilters::MatrixTransform(
+      SkMatrix(),
+      SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear), nullptr);
   auto mock_layer = std::make_shared<MockLayer>(child_path, child_paint);
   auto layer = std::make_shared<ImageFilterLayer>(layer_filter);
   layer->Add(mock_layer);
@@ -108,8 +109,9 @@ TEST_F(ImageFilterLayerTest, SimpleFilterBounds) {
   const SkPath child_path = SkPath().addRect(child_bounds);
   const SkPaint child_paint = SkPaint(SkColors::kYellow);
   const SkMatrix filter_transform = SkMatrix::Scale(2.0, 2.0);
-  auto layer_filter = SkImageFilter::MakeMatrixFilter(
-      filter_transform, SkFilterQuality::kMedium_SkFilterQuality, nullptr);
+  auto layer_filter = SkImageFilters::MatrixTransform(
+      filter_transform,
+      SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear), nullptr);
   auto mock_layer = std::make_shared<MockLayer>(child_path, child_paint);
   auto layer = std::make_shared<ImageFilterLayer>(layer_filter);
   layer->Add(mock_layer);
@@ -143,8 +145,9 @@ TEST_F(ImageFilterLayerTest, MultipleChildren) {
       SkPath().addRect(child_bounds.makeOffset(3.0f, 0.0f));
   const SkPaint child_paint1 = SkPaint(SkColors::kYellow);
   const SkPaint child_paint2 = SkPaint(SkColors::kCyan);
-  auto layer_filter = SkImageFilter::MakeMatrixFilter(
-      SkMatrix(), SkFilterQuality::kMedium_SkFilterQuality, nullptr);
+  auto layer_filter = SkImageFilters::MatrixTransform(
+      SkMatrix(),
+      SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear), nullptr);
   auto mock_layer1 = std::make_shared<MockLayer>(child_path1, child_paint1);
   auto mock_layer2 = std::make_shared<MockLayer>(child_path2, child_paint2);
   auto layer = std::make_shared<ImageFilterLayer>(layer_filter);
@@ -188,10 +191,12 @@ TEST_F(ImageFilterLayerTest, Nested) {
       SkPath().addRect(child_bounds.makeOffset(3.0f, 0.0f));
   const SkPaint child_paint1 = SkPaint(SkColors::kYellow);
   const SkPaint child_paint2 = SkPaint(SkColors::kCyan);
-  auto layer_filter1 = SkImageFilter::MakeMatrixFilter(
-      SkMatrix(), SkFilterQuality::kMedium_SkFilterQuality, nullptr);
-  auto layer_filter2 = SkImageFilter::MakeMatrixFilter(
-      SkMatrix(), SkFilterQuality::kMedium_SkFilterQuality, nullptr);
+  auto layer_filter1 = SkImageFilters::MatrixTransform(
+      SkMatrix(),
+      SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear), nullptr);
+  auto layer_filter2 = SkImageFilters::MatrixTransform(
+      SkMatrix(),
+      SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear), nullptr);
   auto mock_layer1 = std::make_shared<MockLayer>(child_path1, child_paint1);
   auto mock_layer2 = std::make_shared<MockLayer>(child_path2, child_paint2);
   auto layer1 = std::make_shared<ImageFilterLayer>(layer_filter1);
@@ -241,8 +246,9 @@ TEST_F(ImageFilterLayerTest, Nested) {
 }
 
 TEST_F(ImageFilterLayerTest, Readback) {
-  auto layer_filter = SkImageFilter::MakeMatrixFilter(
-      SkMatrix(), SkFilterQuality::kMedium_SkFilterQuality, nullptr);
+  auto layer_filter = SkImageFilters::MatrixTransform(
+      SkMatrix(),
+      SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear), nullptr);
   auto initial_transform = SkMatrix();
 
   // ImageFilterLayer does not read from surface
@@ -261,8 +267,9 @@ TEST_F(ImageFilterLayerTest, Readback) {
 }
 
 TEST_F(ImageFilterLayerTest, ChildIsCached) {
-  auto layer_filter = SkImageFilter::MakeMatrixFilter(
-      SkMatrix(), SkFilterQuality::kMedium_SkFilterQuality, nullptr);
+  auto layer_filter = SkImageFilters::MatrixTransform(
+      SkMatrix(),
+      SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear), nullptr);
   auto initial_transform = SkMatrix::Translate(50.0, 25.5);
   auto other_transform = SkMatrix::Scale(1.0, 2.0);
   const SkPath child_path = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
@@ -290,8 +297,9 @@ TEST_F(ImageFilterLayerTest, ChildIsCached) {
 }
 
 TEST_F(ImageFilterLayerTest, ChildrenNotCached) {
-  auto layer_filter = SkImageFilter::MakeMatrixFilter(
-      SkMatrix(), SkFilterQuality::kMedium_SkFilterQuality, nullptr);
+  auto layer_filter = SkImageFilters::MatrixTransform(
+      SkMatrix(),
+      SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear), nullptr);
   auto initial_transform = SkMatrix::Translate(50.0, 25.5);
   auto other_transform = SkMatrix::Scale(1.0, 2.0);
   const SkPath child_path1 = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));

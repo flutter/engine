@@ -7,7 +7,7 @@
 
 #include <vector>
 
-#include "flutter/shell/platform/common/cpp/engine_switches.h"
+#include "flutter/shell/platform/common/engine_switches.h"
 
 static NSString* const kICUBundlePath = @"icudtl.dat";
 static NSString* const kAppBundleIdentifier = @"io.flutter.flutter.app";
@@ -31,6 +31,9 @@ static NSString* const kAppBundleIdentifier = @"io.flutter.flutter.app";
     // The bundle isn't loaded and can't be found by bundle ID. Find it by path.
     _dartBundle = [NSBundle bundleWithURL:[NSBundle.mainBundle.privateFrameworksURL
                                               URLByAppendingPathComponent:@"App.framework"]];
+  }
+  if (!_dartBundle.isLoaded) {
+    [_dartBundle load];
   }
   _dartEntrypointArguments = [[NSProcessInfo processInfo] arguments];
   // Remove the first element as it's the binary name

@@ -64,6 +64,9 @@ FlutterDesktopViewRef FlutterDesktopViewControllerGetView(
   return reinterpret_cast<FlutterDesktopViewRef>(1);
 }
 
+void FlutterDesktopViewControllerForceRedraw(
+    FlutterDesktopViewControllerRef controller) {}
+
 bool FlutterDesktopViewControllerHandleTopLevelWindowProc(
     FlutterDesktopViewControllerRef controller,
     HWND hwnd,
@@ -125,6 +128,12 @@ FlutterDesktopMessengerRef FlutterDesktopEngineGetMessenger(
     FlutterDesktopEngineRef engine) {
   // The stub ignores this, so just return an arbitrary non-zero value.
   return reinterpret_cast<FlutterDesktopMessengerRef>(2);
+}
+
+FlutterDesktopTextureRegistrarRef FlutterDesktopEngineGetTextureRegistrar(
+    FlutterDesktopEngineRef engine) {
+  // The stub ignores this, so just return an arbitrary non-zero value.
+  return reinterpret_cast<FlutterDesktopTextureRegistrarRef>(3);
 }
 
 HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef controller) {

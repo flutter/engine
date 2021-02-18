@@ -37,7 +37,8 @@ RuntimeController::RuntimeController(
     const PlatformData& p_platform_data,
     const fml::closure& p_isolate_create_callback,
     const fml::closure& p_isolate_shutdown_callback,
-    std::shared_ptr<const fml::Mapping> p_persistent_isolate_data)
+    std::shared_ptr<const fml::Mapping> p_persistent_isolate_data,
+    std::shared_ptr<VolatilePathTracker> p_volatile_path_tracker)
     : client_(p_client),
       vm_(p_vm),
       isolate_snapshot_(std::move(p_isolate_snapshot)),
@@ -53,7 +54,27 @@ RuntimeController::RuntimeController(
       platform_data_(std::move(p_platform_data)),
       isolate_create_callback_(p_isolate_create_callback),
       isolate_shutdown_callback_(p_isolate_shutdown_callback),
-      persistent_isolate_data_(std::move(p_persistent_isolate_data)) {}
+      persistent_isolate_data_(std::move(p_persistent_isolate_data)),
+      volatile_path_tracker_(std::move(p_volatile_path_tracker)) {}
+
+std::unique_ptr<RuntimeController> RuntimeController::Spawn(
+    RuntimeDelegate& client,
+    std::string advisory_script_uri,
+    std::string advisory_script_entrypoint,
+    const std::function<void(int64_t)>& idle_notification_callback,
+    const fml::closure& isolate_create_callback,
+    const fml::closure& isolate_shutdown_callback,
+    std::shared_ptr<const fml::Mapping> persistent_isolate_data) const {
+  auto result = std::make_unique<RuntimeController>(
+      client, vm_, isolate_snapshot_, task_runners_, snapshot_delegate_,
+      hint_freed_delegate_, io_manager_, unref_queue_, image_decoder_,
+      advisory_script_uri, advisory_script_entrypoint,
+      idle_notification_callback, platform_data_, isolate_create_callback,
+      isolate_shutdown_callback, persistent_isolate_data,
+      volatile_path_tracker_);
+  result->spawning_isolate_ = root_isolate_;
+  return result;
+}
 
 RuntimeController::~RuntimeController() {
   FML_DCHECK(Dart_CurrentIsolate() == nullptr);
@@ -93,7 +114,8 @@ std::unique_ptr<RuntimeController> RuntimeController::Clone() const {
       platform_data_,               //
       isolate_create_callback_,     //
       isolate_shutdown_callback_,   //
-      persistent_isolate_data_      //
+      persistent_isolate_data_,     //
+      volatile_path_tracker_        //
       ));
 }
 
@@ -240,6 +262,20 @@ bool RuntimeController::DispatchPointerDataPacket(
   return false;
 }
 
+bool RuntimeController::DispatchKeyDataPacket(const KeyDataPacket& packet,
+                                              KeyDataResponse callback) {
+  if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
+    TRACE_EVENT1("flutter", "RuntimeController::DispatchKeyDataPacket", "mode",
+                 "basic");
+    uint64_t response_id =
+        platform_configuration->RegisterKeyDataResponse(std::move(callback));
+    platform_configuration->get_window(0)->DispatchKeyDataPacket(packet,
+                                                                 response_id);
+    return true;
+  }
+  return false;
+}
+
 bool RuntimeController::DispatchSemanticsAction(int32_t id,
                                                 SemanticsAction action,
                                                 std::vector<uint8_t> args) {
@@ -369,7 +405,9 @@ bool RuntimeController::LaunchRootIsolate(
           isolate_shutdown_callback_,                     //
           dart_entrypoint,                                //
           dart_entrypoint_library,                        //
-          std::move(isolate_configuration)                //
+          std::move(isolate_configuration),               //
+          volatile_path_tracker_,                         //
+          spawning_isolate_.lock().get()                  //
           )
           .lock();
 
@@ -413,6 +451,17 @@ std::optional<std::string> RuntimeController::GetRootIsolateServiceID() const {
 
 std::optional<uint32_t> RuntimeController::GetRootIsolateReturnCode() {
   return root_isolate_return_code_;
+}
+
+uint64_t RuntimeController::GetRootIsolateGroup() const {
+  auto isolate = root_isolate_.lock();
+  if (isolate) {
+    auto isolate_scope = tonic::DartIsolateScope(isolate->isolate());
+    Dart_IsolateGroup isolate_group = Dart_CurrentIsolateGroup();
+    return reinterpret_cast<uint64_t>(isolate_group);
+  } else {
+    return 0;
+  }
 }
 
 void RuntimeController::LoadDartDeferredLibrary(

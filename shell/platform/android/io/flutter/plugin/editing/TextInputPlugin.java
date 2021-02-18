@@ -6,6 +6,7 @@ package io.flutter.plugin.editing;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.graphics.Rect;
 import android.os.Build;
 import android.os.Bundle;
@@ -417,6 +418,8 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     mRestartInputPending = false;
   }
 
+  // Called by the text input channel to update the text input plugin with the
+  // latest TextEditState from the framework.
   @VisibleForTesting
   void setTextInputEditingState(View view, TextInputChannel.TextEditState state) {
     mLastKnownFrameworkTextEditingState = state;
@@ -497,7 +500,27 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
             mView.getContext().getContentResolver(), Settings.Secure.DEFAULT_INPUT_METHOD);
     // The Samsung keyboard is called "com.sec.android.inputmethod/.SamsungKeypad" but look
     // for "Samsung" just in case Samsung changes the name of the keyboard.
-    return keyboardName.contains("Samsung");
+    if (!keyboardName.contains("Samsung")) {
+      return false;
+    }
+
+    final long versionCode;
+    try {
+      versionCode =
+          mView
+              .getContext()
+              .getPackageManager()
+              .getPackageInfo("com.sec.android.inputmethod", 0)
+              .getLongVersionCode();
+    } catch (PackageManager.NameNotFoundException e) {
+      Log.w(TAG, "com.sec.android.inputmethod is not installed.");
+      return false;
+    }
+
+    // 3.3.23.33 is a known version that's free of the aforementioned bug.
+    // 3.0.24.96 still has this bug.
+    // TODO(LongCatIsLooong): Find the minimum version that has the fix.
+    return versionCode < 332333999;
   }
 
   @VisibleForTesting
@@ -570,7 +593,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     final int selectionEnd = mEditable.getSelectionEnd();
     final int composingStart = mEditable.getComposingStart();
     final int composingEnd = mEditable.getComposingEnd();
-    // Framework needs to sent value first.
+    // The framework needs to send value first.
     final boolean skipFrameworkUpdate =
         mLastKnownFrameworkTextEditingState == null
             || (mEditable.toString().equals(mLastKnownFrameworkTextEditingState.text)
@@ -752,11 +775,14 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
       final TextInputChannel.TextEditState newState =
           new TextInputChannel.TextEditState(value, value.length(), value.length(), -1, -1);
 
-      // The value of the currently focused text field needs to be updated.
       if (autofill.uniqueIdentifier.equals(currentAutofill.uniqueIdentifier)) {
-        setTextInputEditingState(mView, newState);
+        // Autofilling the current client is the same as handling user input
+        // from the virtual keyboard. Setting the editable to newState and an
+        // update will be sent to the framework.
+        mEditable.setEditingState(newState);
+      } else {
+        editingValues.put(autofill.uniqueIdentifier, newState);
       }
-      editingValues.put(autofill.uniqueIdentifier, newState);
     }
 
     textInputChannel.updateEditingStateWithTag(inputTarget.id, editingValues);

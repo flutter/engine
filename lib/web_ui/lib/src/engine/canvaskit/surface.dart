@@ -38,9 +38,31 @@ class Surface {
   Surface(this.viewEmbedder);
 
   CkSurface? _surface;
-  html.Element? htmlElement;
+
+  /// If true, forces a new WebGL context to be created, even if the window
+  /// size is the same. This is used to restore the UI after the browser tab
+  /// goes dormant and loses the GL context.
+  bool _forceNewContext = true;
+  bool get debugForceNewContext => _forceNewContext;
+
   SkGrContext? _grContext;
   int? _skiaCacheBytes;
+
+  /// The root HTML element for this surface.
+  ///
+  /// This element contains the canvas used to draw the UI. Unlike the canvas,
+  /// this element is permanent. It is never replaced or deleted, until this
+  /// surface is disposed of via [dispose].
+  ///
+  /// Conversely, the canvas that lives inside this element can be swapped, for
+  /// example, when the screen size changes, or when the WebGL context is lost
+  /// due to the browser tab becoming dormant.
+  final html.Element htmlElement = html.Element.tag('flt-canvas-container');
+
+  /// The underlying `<canvas>` element used for this surface.
+  html.CanvasElement? htmlCanvas;
+  int _pixelWidth = -1;
+  int _pixelHeight = -1;
 
   /// Specify the GPU resource cache limits.
   void setSkiaResourceCacheMaxBytes(int bytes) {
@@ -64,7 +86,7 @@ class Surface {
   ///
   /// The given [size] is in physical pixels.
   SurfaceFrame acquireFrame(ui.Size size) {
-    final CkSurface surface = acquireRenderSurface(size);
+    final CkSurface surface = _createOrUpdateSurfaces(size);
 
     if (surface.context != null) {
       canvasKit.setCurrentContext(surface.context!);
@@ -77,21 +99,17 @@ class Surface {
     return SurfaceFrame(surface, submitCallback);
   }
 
-  CkSurface acquireRenderSurface(ui.Size size) {
-    _createOrUpdateSurfaces(size);
-    return _surface!;
-  }
-
   void addToScene() {
     if (!_addedToScene) {
-      skiaSceneHost!.children.insert(0, htmlElement!);
+      skiaSceneHost!.children.insert(0, htmlElement);
     }
     _addedToScene = true;
   }
 
   ui.Size? _currentSize;
+  double _currentDevicePixelRatio = -1;
 
-  void _createOrUpdateSurfaces(ui.Size size) {
+  CkSurface _createOrUpdateSurfaces(ui.Size size) {
     if (size.isEmpty) {
       throw CanvasKitError('Cannot create surfaces of empty size.');
     }
@@ -99,13 +117,18 @@ class Surface {
     // Check if the window is shrinking in size, and if so, don't allocate a
     // new canvas as the previous canvas is big enough to fit everything.
     final ui.Size? previousSize = _currentSize;
-    if (previousSize != null &&
+    if (!_forceNewContext &&
+        previousSize != null &&
         size.width <= previousSize.width &&
         size.height <= previousSize.height) {
       // The existing surface is still reusable.
-      return;
+      if (window.devicePixelRatio != _currentDevicePixelRatio) {
+        _updateLogicalHtmlCanvasSize();
+      }
+      return _surface!;
     }
 
+    _currentDevicePixelRatio = window.devicePixelRatio;
     _currentSize = _currentSize == null
       // First frame. Allocate a canvas of the exact size as the window. The
       // window is frequently never resized, particularly on mobile, so using
@@ -116,39 +139,69 @@ class Surface {
 
     _surface?.dispose();
     _surface = null;
-    htmlElement?.remove();
-    htmlElement = null;
     _addedToScene = false;
 
-    _surface = _wrapHtmlCanvas(_currentSize!);
+    return _surface = _createNewSurface(_currentSize!);
   }
 
-  CkSurface _wrapHtmlCanvas(ui.Size physicalSize) {
-    // If `physicalSize` is not precise, use a slightly bigger canvas. This way
-    // we ensure that the rendred picture covers the entire browser window.
-    final int pixelWidth = physicalSize.width.ceil();
-    final int pixelHeight = physicalSize.height.ceil();
-    final html.CanvasElement htmlCanvas = html.CanvasElement(
-      width: pixelWidth,
-      height: pixelHeight,
-    );
-
-    // The logical size of the canvas is not based on the size of the window
-    // but on the size of the canvas, which, due to `ceil()` above, may not be
-    // the same as the window. We do not round/floor/ceil the logical size as
-    // CSS pixels can contain more than one physical pixel and therefore to
-    // match the size of the window precisely we use the most precise floating
-    // point value we can get.
-    final double logicalWidth = pixelWidth / ui.window.devicePixelRatio;
-    final double logicalHeight = pixelHeight / ui.window.devicePixelRatio;
-    htmlCanvas.style
-      ..position = 'absolute'
+  /// Sets the CSS size of the canvas so that canvas pixels are 1:1 with device
+  /// pixels.
+  ///
+  /// The logical size of the canvas is not based on the size of the window
+  /// but on the size of the canvas, which, due to `ceil()` above, may not be
+  /// the same as the window. We do not round/floor/ceil the logical size as
+  /// CSS pixels can contain more than one physical pixel and therefore to
+  /// match the size of the window precisely we use the most precise floating
+  /// point value we can get.
+  void _updateLogicalHtmlCanvasSize() {
+    final double logicalWidth = _pixelWidth / ui.window.devicePixelRatio;
+    final double logicalHeight = _pixelHeight / ui.window.devicePixelRatio;
+    htmlCanvas!.style
       ..width = '${logicalWidth}px'
       ..height = '${logicalHeight}px';
+  }
 
-    htmlElement = htmlCanvas;
-    if (webGLVersion == -1 || canvasKitForceCpuOnly) {
-      return _makeSoftwareCanvasSurface(htmlCanvas);
+  /// This function is expensive.
+  ///
+  /// It's better to reuse surface if possible.
+  CkSurface _createNewSurface(ui.Size physicalSize) {
+    // Clear the container, if it's not empty. We're going to create a new <canvas>.
+    this.htmlCanvas?.remove();
+
+    // If `physicalSize` is not precise, use a slightly bigger canvas. This way
+    // we ensure that the rendred picture covers the entire browser window.
+    _pixelWidth = physicalSize.width.ceil();
+    _pixelHeight = physicalSize.height.ceil();
+    final html.CanvasElement htmlCanvas = html.CanvasElement(
+      width: _pixelWidth,
+      height: _pixelHeight,
+    );
+    this.htmlCanvas = htmlCanvas;
+    htmlCanvas.style.position = 'absolute';
+    _updateLogicalHtmlCanvasSize();
+
+    // When the browser tab using WebGL goes dormant the browser and/or OS may
+    // decide to clear GPU resources to let other tabs/programs use the GPU.
+    // When this happens, the browser sends the "webglcontextlost" event as a
+    // notification. When we receive this notification we force a new context.
+    //
+    // See also: https://www.khronos.org/webgl/wiki/HandlingContextLost
+    htmlCanvas.addEventListener('webglcontextlost', (event) {
+      print('Flutter: restoring WebGL context.');
+      _forceNewContext = true;
+      // Force the framework to rerender the frame.
+      EnginePlatformDispatcher.instance.invokeOnMetricsChanged();
+      event.stopPropagation();
+      event.preventDefault();
+    }, false);
+    _forceNewContext = false;
+
+    htmlElement.append(htmlCanvas);
+
+    if (webGLVersion == -1) {
+      return _makeSoftwareCanvasSurface(htmlCanvas, 'WebGL support not detected');
+    } else if (canvasKitForceCpuOnly) {
+      return _makeSoftwareCanvasSurface(htmlCanvas, 'CPU rendering forced by application');
     } else {
       // Try WebGL first.
       final int glContext = canvasKit.GetWebGLContext(
@@ -162,7 +215,7 @@ class Surface {
       );
 
       if (glContext == 0) {
-        return _makeSoftwareCanvasSurface(htmlCanvas);
+        return _makeSoftwareCanvasSurface(htmlCanvas, 'Failed to initialize WebGL context');
       }
 
       _grContext = canvasKit.MakeGrContext(glContext);
@@ -177,13 +230,13 @@ class Surface {
 
       SkSurface? skSurface = canvasKit.MakeOnScreenGLSurface(
         _grContext!,
-        pixelWidth,
-        pixelHeight,
+        _pixelWidth,
+        _pixelHeight,
         SkColorSpaceSRGB,
       );
 
       if (skSurface == null) {
-        return _makeSoftwareCanvasSurface(htmlCanvas);
+        return _makeSoftwareCanvasSurface(htmlCanvas, 'Failed to initialize WebGL surface');
       }
 
       return CkSurface(skSurface, _grContext, glContext);
@@ -192,9 +245,11 @@ class Surface {
 
   static bool _didWarnAboutWebGlInitializationFailure = false;
 
-  CkSurface _makeSoftwareCanvasSurface(html.CanvasElement htmlCanvas) {
+  CkSurface _makeSoftwareCanvasSurface(html.CanvasElement htmlCanvas, String reason) {
     if (!_didWarnAboutWebGlInitializationFailure) {
-      html.window.console.warn('WARNING: failed to initialize WebGL. Falling back to CPU-only rendering.');
+      html.window.console.warn(
+        'WARNING: Falling back to CPU-only rendering. $reason.'
+      );
       _didWarnAboutWebGlInitializationFailure = true;
     }
     return CkSurface(
@@ -210,6 +265,11 @@ class Surface {
     }
     _surface!.flush();
     return true;
+  }
+
+  void dispose() {
+    htmlElement.remove();
+    _surface?.dispose();
   }
 }
 

@@ -20,12 +20,12 @@ IOSContextMetal::IOSContextMetal() {
     return;
   }
 
-  main_command_queue_.reset([darwin_context_metal_.get().mtlCommandQueue retain]);
+  main_command_queue_.reset([darwin_context_metal_.get().commandQueue retain]);
 
   CVMetalTextureCacheRef texture_cache_raw = NULL;
   auto cv_return = CVMetalTextureCacheCreate(kCFAllocatorDefault,  // allocator
                                              NULL,  // cache attributes (NULL default)
-                                             darwin_context_metal_.get().mtlDevice,  // metal device
+                                             darwin_context_metal_.get().device,  // metal device
                                              NULL,  // texture attributes (NULL default)
                                              &texture_cache_raw  // [out] cache
   );
@@ -65,7 +65,10 @@ std::unique_ptr<GLContextResult> IOSContextMetal::MakeCurrent() {
 std::unique_ptr<Texture> IOSContextMetal::CreateExternalTexture(
     int64_t texture_id,
     fml::scoped_nsobject<NSObject<FlutterTexture>> texture) {
-  return std::make_unique<IOSExternalTextureMetal>(texture_id, texture_cache_, std::move(texture));
+  return std::make_unique<IOSExternalTextureMetal>(
+      fml::scoped_nsobject<FlutterDarwinExternalTextureMetal>{
+          [[darwin_context_metal_ createExternalTextureWithIdentifier:texture_id
+                                                              texture:texture] retain]});
 }
 
 }  // namespace flutter

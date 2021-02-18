@@ -544,11 +544,32 @@ class BitmapCanvas extends EngineCanvas {
             ..transformOrigin = '0 0 0';
         }
       }
+      _applyFilter(svgElm, paint);
       _drawElement(svgElm, ui.Offset(0, 0), paint);
     } else {
       _setUpPaint(paint, paint.shader != null ? path.getBounds() : null);
-      _canvasPool.drawPath(path, paint.style);
+      if (paint.style == null && paint.strokeWidth != null) {
+        _canvasPool.drawPath(path, ui.PaintingStyle.stroke);
+      } else {
+        _canvasPool.drawPath(path, paint.style);
+      }
       _tearDownPaint();
+    }
+  }
+
+  void _applyFilter(html.Element element, SurfacePaintData paint) {
+    if (paint.maskFilter != null) {
+      final bool isStroke = paint.style == ui.PaintingStyle.stroke;
+      String cssColor =
+          paint.color == null ? '#000000' : colorToCssString(paint.color)!;// ignore: unnecessary_null_comparison
+      final double sigma = paint.maskFilter!.webOnlySigma;
+      if (browserEngine == BrowserEngine.webkit && !isStroke) {
+        // A bug in webkit leaves artifacts when this element is animated
+        // with filter: blur, we use boxShadow instead.
+        element.style.boxShadow = '0px 0px ${sigma * 2.0}px $cssColor';
+      } else {
+        element.style.filter = 'blur(${sigma}px)';
+      }
     }
   }
 
@@ -833,8 +854,21 @@ class BitmapCanvas extends EngineCanvas {
   ///
   /// The text is drawn starting at coordinates ([x], [y]). It uses the current
   /// font set by the most recent call to [setCssFont].
-  void fillText(String text, double x, double y) {
-    _canvasPool.context.fillText(text, x, y);
+  void fillText(String text, double x, double y, {List<ui.Shadow>? shadows}) {
+    final html.CanvasRenderingContext2D ctx = _canvasPool.context;
+    if (shadows != null) {
+      ctx.save();
+      for (final ui.Shadow shadow in shadows) {
+        ctx.shadowColor = colorToCssString(shadow.color)!;
+        ctx.shadowBlur = shadow.blurRadius;
+        ctx.shadowOffsetX = shadow.offset.dx;
+        ctx.shadowOffsetY = shadow.offset.dy;
+
+        ctx.fillText(text, x, y);
+      }
+      ctx.restore();
+    }
+    ctx.fillText(text, x, y);
   }
 
   @override
@@ -903,7 +937,7 @@ class BitmapCanvas extends EngineCanvas {
     final Int32List? colors = vertices._colors;
     final ui.VertexMode mode = vertices._mode;
     html.CanvasRenderingContext2D? ctx = _canvasPool.context;
-    if (colors == null) {
+    if (colors == null && paint.style != ui.PaintingStyle.fill) {
       final Float32List positions = mode == ui.VertexMode.triangles
           ? vertices._positions
           : _convertVertexPositions(mode, vertices._positions);
@@ -937,12 +971,17 @@ class BitmapCanvas extends EngineCanvas {
     } else {
       _drawPointsPaint.style = ui.PaintingStyle.fill;
     }
-    _drawPointsPaint.color = paint.color;
-    _drawPointsPaint.strokeWidth = paint.strokeWidth;
+    _drawPointsPaint.color = paint.color ?? const ui.Color(0xFF000000);
     _drawPointsPaint.maskFilter = paint.maskFilter;
 
+    final double dpr = ui.window.devicePixelRatio;
+    // Use hairline (device pixel when strokeWidth is not specified).
+    final double strokeWidth = paint.strokeWidth == null ? 1.0 / dpr
+        : paint.strokeWidth!;
+    _drawPointsPaint.strokeWidth = strokeWidth;
     _setUpPaint(_drawPointsPaint, null);
-    _canvasPool.drawPoints(pointMode, points, paint.strokeWidth! / 2.0);
+    // Draw point using circle with half radius.
+    _canvasPool.drawPoints(pointMode, points, strokeWidth / 2.0);
     _tearDownPaint();
   }
 

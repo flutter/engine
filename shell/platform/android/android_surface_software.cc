@@ -13,6 +13,7 @@
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/platform/android/android_shell_holder.h"
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
+#include "third_party/skia/include/core/SkImage.h"
 
 namespace flutter {
 
@@ -38,8 +39,9 @@ bool GetSkColorType(int32_t buffer_format,
 }  // anonymous namespace
 
 AndroidSurfaceSoftware::AndroidSurfaceSoftware(
-    const AndroidContext& android_context,
-    std::shared_ptr<PlatformViewAndroidJNI> jni_facade) {
+    const std::shared_ptr<AndroidContext>& android_context,
+    std::shared_ptr<PlatformViewAndroidJNI> jni_facade)
+    : AndroidSurface(android_context) {
   GetSkColorType(WINDOW_FORMAT_RGBA_8888, &target_color_type_,
                  &target_alpha_type_);
 }
@@ -60,6 +62,8 @@ bool AndroidSurfaceSoftware::ResourceContextClearCurrent() {
 }
 
 std::unique_ptr<Surface> AndroidSurfaceSoftware::CreateGPUSurface(
+    // The software AndroidSurface neither uses any passed in Skia context
+    // nor does it interact with the AndroidContext's raster Skia context.
     GrDirectContext* gr_context) {
   if (!IsValid()) {
     return nullptr;
@@ -127,9 +131,10 @@ bool AndroidSurfaceSoftware::PresentBackingStore(
     if (canvas) {
       SkBitmap bitmap;
       if (bitmap.installPixels(pixmap)) {
-        canvas->drawBitmapRect(
-            bitmap, SkRect::MakeIWH(native_buffer.width, native_buffer.height),
-            nullptr);
+        canvas->drawImageRect(
+            bitmap.asImage(),
+            SkRect::MakeIWH(native_buffer.width, native_buffer.height),
+            SkSamplingOptions());
       }
     }
   }

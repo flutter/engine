@@ -44,11 +44,6 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle) {
     bundle = [NSBundle bundleWithIdentifier:[FlutterDartProject defaultBundleIdentifier]];
   }
   if (bundle == nil) {
-    // The bundle isn't loaded and can't be found by bundle ID. Find it by path.
-    bundle = [NSBundle bundleWithURL:[NSBundle.mainBundle.privateFrameworksURL
-                                         URLByAppendingPathComponent:@"App.framework"]];
-  }
-  if (bundle == nil) {
     bundle = mainBundle;
   }
 
@@ -145,6 +140,10 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle) {
       [FlutterDartProject allowsArbitraryLoads:appTransportSecurity];
   settings.domain_network_policy =
       [FlutterDartProject domainNetworkPolicy:appTransportSecurity].UTF8String;
+
+  // SkParagraph text layout library
+  NSNumber* enableSkParagraph = [mainBundle objectForInfoDictionaryKey:@"FLTEnableSkParagraph"];
+  settings.enable_skparagraph = (enableSkParagraph != nil) ? enableSkParagraph.boolValue : false;
 
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
   // There are no ownership concerns here as all mappings are owned by the
@@ -244,16 +243,11 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle) {
     bundle = [NSBundle bundleWithIdentifier:[FlutterDartProject defaultBundleIdentifier]];
   }
   if (bundle == nil) {
-    // The bundle isn't loaded and can't be found by bundle ID. Find it by path.
-    bundle = [NSBundle bundleWithURL:[NSBundle.mainBundle.privateFrameworksURL
-                                         URLByAppendingPathComponent:@"App.framework"]];
+    bundle = [NSBundle mainBundle];
   }
   NSString* flutterAssetsName = [bundle objectForInfoDictionaryKey:@"FLTAssetsPath"];
-  if (bundle == nil) {
-    bundle = [NSBundle mainBundle];
+  if (flutterAssetsName == nil) {
     flutterAssetsName = @"Frameworks/App.framework/flutter_assets";
-  } else if (flutterAssetsName == nil) {
-    flutterAssetsName = @"flutter_assets";
   }
   return flutterAssetsName;
 }

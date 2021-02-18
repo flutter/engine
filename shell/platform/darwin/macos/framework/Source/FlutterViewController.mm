@@ -9,7 +9,9 @@
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterCodecs.h"
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterOpenGLRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputPlugin.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 #import "flutter/shell/platform/embedder/embedder.h"
@@ -275,13 +277,32 @@ static void CommonInit(FlutterViewController* controller) {
 }
 
 - (void)loadView {
-  NSOpenGLContext* resourceContext = _engine.resourceContext;
-  if (!resourceContext) {
-    NSLog(@"Unable to create FlutterView; no resource context available.");
-    return;
+  FlutterView* flutterView;
+  BOOL enableMetalRendering = NO;
+#ifdef SHELL_ENABLE_METAL
+  enableMetalRendering = YES;
+#endif
+  if (enableMetalRendering) {
+    FlutterMetalRenderer* metalRenderer = reinterpret_cast<FlutterMetalRenderer*>(_engine.renderer);
+    id<MTLDevice> device = metalRenderer.device;
+    id<MTLCommandQueue> commandQueue = metalRenderer.commandQueue;
+    if (!device || !commandQueue) {
+      NSLog(@"Unable to create FlutterView; no MTLDevice or MTLCommandQueue available.");
+      return;
+    }
+    flutterView = [[FlutterView alloc] initWithMTLDevice:device
+                                            commandQueue:commandQueue
+                                         reshapeListener:self];
+  } else {
+    FlutterOpenGLRenderer* openGLRenderer =
+        reinterpret_cast<FlutterOpenGLRenderer*>(_engine.renderer);
+    NSOpenGLContext* mainContext = openGLRenderer.openGLContext;
+    if (!mainContext) {
+      NSLog(@"Unable to create FlutterView; no GL context available.");
+      return;
+    }
+    flutterView = [[FlutterView alloc] initWithMainContext:mainContext reshapeListener:self];
   }
-  FlutterView* flutterView = [[FlutterView alloc] initWithShareContext:resourceContext
-                                                       reshapeListener:self];
   self.view = flutterView;
 }
 
@@ -504,7 +525,8 @@ static void CommonInit(FlutterViewController* controller) {
         return;
       }
     }
-    if ([self.nextResponder respondsToSelector:@selector(keyDown:)]) {
+    if ([self.nextResponder respondsToSelector:@selector(keyDown:)] &&
+        event.type == NSEventTypeKeyDown) {
       [self.nextResponder keyDown:event];
     }
   } else if ([type isEqual:@"keyup"]) {
@@ -513,13 +535,20 @@ static void CommonInit(FlutterViewController* controller) {
         return;
       }
     }
-    if ([self.nextResponder respondsToSelector:@selector(keyUp:)]) {
+    if ([self.nextResponder respondsToSelector:@selector(keyUp:)] &&
+        event.type == NSEventTypeKeyUp) {
       [self.nextResponder keyUp:event];
     }
+  }
+  if ([self.nextResponder respondsToSelector:@selector(flagsChanged:)] &&
+      event.type == NSEventTypeFlagsChanged) {
+    [self.nextResponder flagsChanged:event];
   }
 }
 
 - (void)dispatchKeyEvent:(NSEvent*)event ofType:(NSString*)type {
+  // Be sure to add a handler in propagateKeyEvent if you allow more event
+  // types here.
   if (event.type != NSEventTypeKeyDown && event.type != NSEventTypeKeyUp &&
       event.type != NSEventTypeFlagsChanged) {
     return;

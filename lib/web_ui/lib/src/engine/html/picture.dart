@@ -51,7 +51,11 @@ class _PaintRequest {
 List<_PaintRequest> _paintQueue = <_PaintRequest>[];
 
 void _recycleCanvas(EngineCanvas? canvas) {
-  assert(canvas == null || !_recycledCanvases.contains(canvas));
+  // If a canvas is in the paint queue it maybe be recycled. To
+  // prevent subsequent dispose recycling again check.
+  if (canvas != null && _recycledCanvases.contains(canvas)) {
+    return;
+  }
   if (canvas is BitmapCanvas) {
     canvas.setElementCache(null);
     if (canvas.isReusable()) {
@@ -314,6 +318,10 @@ class PersistedPicture extends PersistedLeafSurface {
       // painting. This removes all the setup work and scaffolding objects
       // that won't be useful for anything anyway.
       _recycleCanvas(oldCanvas);
+      if (oldSurface != null) {
+        // Make sure it doesn't get reused/recycled again.
+        oldSurface._canvas = null;
+      }
       if (rootElement != null) {
         domRenderer.clearDom(rootElement!);
       }

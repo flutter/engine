@@ -117,10 +117,21 @@ abstract class ContainerLayer extends Layer {
   }
 }
 
-class BackdropFilterLayer extends ContainerLayer {
+/// The top-most layer in the layer tree.
+///
+/// This layer does not draw anything. It's only used so we can add leaf layers
+/// to [LayerSceneBuilder] without requiring a [ContainerLayer].
+class RootLayer extends ContainerLayer {
+  @override
+  void paint(PaintContext context) {
+    paintChildren(context);
+  }
+}
+
+class BackdropFilterEngineLayer extends ContainerLayer implements ui.BackdropFilterEngineLayer {
   final ui.ImageFilter _filter;
 
-  BackdropFilterLayer(this._filter);
+  BackdropFilterEngineLayer(this._filter);
 
   @override
   void paint(PaintContext context) {
@@ -131,12 +142,12 @@ class BackdropFilterLayer extends ContainerLayer {
 }
 
 /// A layer that clips its child layers by a given [Path].
-class ClipPathLayer extends ContainerLayer {
+class ClipPathEngineLayer extends ContainerLayer implements ui.ClipPathEngineLayer {
   /// The path used to clip child layers.
   final CkPath _clipPath;
   final ui.Clip _clipBehavior;
 
-  ClipPathLayer(this._clipPath, this._clipBehavior)
+  ClipPathEngineLayer(this._clipPath, this._clipBehavior)
       : assert(_clipBehavior != ui.Clip.none);
 
   @override
@@ -170,12 +181,12 @@ class ClipPathLayer extends ContainerLayer {
 }
 
 /// A layer that clips its child layers by a given [Rect].
-class ClipRectLayer extends ContainerLayer {
+class ClipRectEngineLayer extends ContainerLayer implements ui.ClipRectEngineLayer {
   /// The rectangle used to clip child layers.
   final ui.Rect _clipRect;
   final ui.Clip _clipBehavior;
 
-  ClipRectLayer(this._clipRect, this._clipBehavior)
+  ClipRectEngineLayer(this._clipRect, this._clipBehavior)
       : assert(_clipBehavior != ui.Clip.none);
 
   @override
@@ -210,12 +221,12 @@ class ClipRectLayer extends ContainerLayer {
 }
 
 /// A layer that clips its child layers by a given [RRect].
-class ClipRRectLayer extends ContainerLayer {
+class ClipRRectEngineLayer extends ContainerLayer implements ui.ClipRRectEngineLayer {
   /// The rounded rectangle used to clip child layers.
   final ui.RRect _clipRRect;
   final ui.Clip? _clipBehavior;
 
-  ClipRRectLayer(this._clipRRect, this._clipBehavior)
+  ClipRRectEngineLayer(this._clipRRect, this._clipBehavior)
       : assert(_clipBehavior != ui.Clip.none);
 
   @override
@@ -247,11 +258,11 @@ class ClipRRectLayer extends ContainerLayer {
 }
 
 /// A layer that paints its children with the given opacity.
-class OpacityLayer extends ContainerLayer implements ui.OpacityEngineLayer {
+class OpacityEngineLayer extends ContainerLayer implements ui.OpacityEngineLayer {
   final int _alpha;
   final ui.Offset _offset;
 
-  OpacityLayer(this._alpha, this._offset);
+  OpacityEngineLayer(this._alpha, this._offset);
 
   @override
   void preroll(PrerollContext context, Matrix4 matrix) {
@@ -287,12 +298,11 @@ class OpacityLayer extends ContainerLayer implements ui.OpacityEngineLayer {
 }
 
 /// A layer that transforms its child layers by the given transform matrix.
-class TransformLayer extends ContainerLayer
-    implements ui.OffsetEngineLayer, ui.TransformEngineLayer {
+class TransformEngineLayer extends ContainerLayer implements ui.TransformEngineLayer {
   /// The matrix with which to transform the child layers.
   final Matrix4 _transform;
 
-  TransformLayer(this._transform);
+  TransformEngineLayer(this._transform);
 
   @override
   void preroll(PrerollContext context, Matrix4 matrix) {
@@ -314,9 +324,18 @@ class TransformLayer extends ContainerLayer
   }
 }
 
+/// Translates its children along x and y coordinates.
+///
+/// This is a thin wrapper over [TransformEngineLayer] just so the framework
+/// gets the "OffsetEngineLayer" when calling `runtimeType.toString()`. This is
+/// better for debugging.
+class OffsetEngineLayer extends TransformEngineLayer implements ui.OffsetEngineLayer {
+  OffsetEngineLayer(double dx, double dy) : super(Matrix4.translationValues(dx, dy, 0.0));
+}
+
 /// A layer that applies an [ui.ImageFilter] to its children.
-class ImageFilterLayer extends ContainerLayer implements ui.OpacityEngineLayer {
-  ImageFilterLayer(this._filter);
+class ImageFilterEngineLayer extends ContainerLayer implements ui.ImageFilterEngineLayer {
+  ImageFilterEngineLayer(this._filter);
 
   final ui.ImageFilter _filter;
 
@@ -328,6 +347,13 @@ class ImageFilterLayer extends ContainerLayer implements ui.OpacityEngineLayer {
     paintContext.internalNodesCanvas.saveLayer(paintBounds, paint);
     paintChildren(paintContext);
     paintContext.internalNodesCanvas.restore();
+  }
+}
+
+class ShaderMaskEngineLayer extends ContainerLayer implements ui.ShaderMaskEngineLayer {
+  @override
+  void paint(PaintContext paintContext) {
+    // TODO(yjbanov): this needs to be implemented
   }
 }
 
@@ -369,7 +395,7 @@ class PictureLayer extends Layer {
 ///
 /// The shape clips its children to a given [Path], and casts a shadow based
 /// on the given elevation.
-class PhysicalShapeLayer extends ContainerLayer
+class PhysicalShapeEngineLayer extends ContainerLayer
     implements ui.PhysicalShapeEngineLayer {
   final double _elevation;
   final ui.Color _color;
@@ -377,7 +403,7 @@ class PhysicalShapeLayer extends ContainerLayer
   final CkPath _path;
   final ui.Clip _clipBehavior;
 
-  PhysicalShapeLayer(
+  PhysicalShapeEngineLayer(
     this._elevation,
     this._color,
     this._shadowColor,
@@ -388,60 +414,7 @@ class PhysicalShapeLayer extends ContainerLayer
   @override
   void preroll(PrerollContext prerollContext, Matrix4 matrix) {
     prerollChildren(prerollContext, matrix);
-
-    paintBounds = _path.getBounds();
-    if (_elevation == 0.0) {
-      // No need to extend the paint bounds if there is no shadow.
-      return;
-    } else {
-      // Add some margin to the paint bounds to leave space for the shadow.
-      // We fill this whole region and clip children to it so we don't need to
-      // join the child paint bounds.
-      // The offset is calculated as follows:
-
-      //                   .---                           (kLightRadius)
-      //                -------/                          (light)
-      //                   |  /
-      //                   | /
-      //                   |/
-      //                   |O
-      //                  /|                              (kLightHeight)
-      //                 / |
-      //                /  |
-      //               /   |
-      //              /    |
-      //             -------------                        (layer)
-      //            /|     |
-      //           / |     |                              (elevation)
-      //        A /  |     |B
-      // ------------------------------------------------ (canvas)
-      //          ---                                     (extent of shadow)
-      //
-      // E = lt        }           t = (r + w/2)/h
-      //                } =>
-      // r + w/2 = ht  }           E = (l/h)(r + w/2)
-      //
-      // Where: E = extent of shadow
-      //        l = elevation of layer
-      //        r = radius of the light source
-      //        w = width of the layer
-      //        h = light height
-      //        t = tangent of AOB, i.e., multiplier for elevation to extent
-      final double devicePixelRatio = ui.window.devicePixelRatio;
-
-      final double radius = kLightRadius * devicePixelRatio;
-      // tangent for x
-      double tx = (radius + paintBounds.width * 0.5) / kLightHeight;
-      // tangent for y
-      double ty = (radius + paintBounds.height * 0.5) / kLightHeight;
-
-      paintBounds = ui.Rect.fromLTRB(
-        paintBounds.left - tx,
-        paintBounds.top - ty,
-        paintBounds.right + tx,
-        paintBounds.bottom + ty,
-      );
-    }
+    paintBounds = computeSkShadowBounds(_path, _elevation, ui.window.devicePixelRatio, matrix);
   }
 
   @override
@@ -498,8 +471,8 @@ class PhysicalShapeLayer extends ContainerLayer
 }
 
 /// A layer which contains a [ui.ColorFilter].
-class ColorFilterLayer extends ContainerLayer {
-  ColorFilterLayer(this.filter);
+class ColorFilterEngineLayer extends ContainerLayer implements ui.ColorFilterEngineLayer {
+  ColorFilterEngineLayer(this.filter);
 
   final ui.ColorFilter filter;
 

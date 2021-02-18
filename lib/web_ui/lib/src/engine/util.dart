@@ -446,9 +446,9 @@ const Set<String> _genericFontFamilies = <String>{
 /// For iOS, default to -apple-system, where it should be available, otherwise
 /// default to Arial. BlinkMacSystemFont is used for Chrome on iOS.
 final String _fallbackFontFamily =
-    _isMacOrIOS ? '-apple-system, BlinkMacSystemFont' : 'Arial';
+    isMacOrIOS ? '-apple-system, BlinkMacSystemFont' : 'Arial';
 
-bool get _isMacOrIOS =>
+bool get isMacOrIOS =>
     operatingSystem == OperatingSystem.iOs ||
     operatingSystem == OperatingSystem.macOs;
 
@@ -460,7 +460,7 @@ String? canonicalizeFontFamily(String? fontFamily) {
   if (_genericFontFamilies.contains(fontFamily)) {
     return fontFamily;
   }
-  if (_isMacOrIOS) {
+  if (isMacOrIOS) {
     // Unlike Safari, Chrome on iOS does not correctly fallback to cupertino
     // on sans-serif.
     // Map to San Francisco Text/Display fonts, use -apple-system,
@@ -597,45 +597,45 @@ int clampInt(int value, int min, int max) {
 }
 
 ui.Rect computeBoundingRectangleFromMatrix(Matrix4 transform, ui.Rect rect) {
-    final Float32List m = transform.storage;
-    // Apply perspective transform to all 4 corners. Can't use left,top, bottom,
-    // right since for example rotating 45 degrees would yield inaccurate size.
-    double x = rect.left;
-    double y = rect.top;
-    double wp = 1.0 / ((m[3] * x) + (m[7] * y) + m[15]);
-    double xp = ((m[0] * x) + (m[4] * y) + m[12]) * wp;
-    double yp = ((m[1] * x) + (m[5] * y) + m[13]) * wp;
-    double minX = xp, maxX = xp;
-    double minY =yp, maxY = yp;
-    x = rect.right;
-    y = rect.bottom;
-    wp = 1.0 / ((m[3] * x) + (m[7] * y) + m[15]);
-    xp = ((m[0] * x) + (m[4] * y) + m[12]) * wp;
-    yp = ((m[1] * x) + (m[5] * y) + m[13]) * wp;
+  final Float32List m = transform.storage;
+  // Apply perspective transform to all 4 corners. Can't use left,top, bottom,
+  // right since for example rotating 45 degrees would yield inaccurate size.
+  double x = rect.left;
+  double y = rect.top;
+  double wp = 1.0 / ((m[3] * x) + (m[7] * y) + m[15]);
+  double xp = ((m[0] * x) + (m[4] * y) + m[12]) * wp;
+  double yp = ((m[1] * x) + (m[5] * y) + m[13]) * wp;
+  double minX = xp, maxX = xp;
+  double minY = yp, maxY = yp;
+  x = rect.right;
+  y = rect.bottom;
+  wp = 1.0 / ((m[3] * x) + (m[7] * y) + m[15]);
+  xp = ((m[0] * x) + (m[4] * y) + m[12]) * wp;
+  yp = ((m[1] * x) + (m[5] * y) + m[13]) * wp;
 
-    minX = math.min(minX, xp);
-    maxX = math.max(maxX, xp);
-    minY = math.min(minY, yp);
-    maxY = math.max(maxY, yp);
+  minX = math.min(minX, xp);
+  maxX = math.max(maxX, xp);
+  minY = math.min(minY, yp);
+  maxY = math.max(maxY, yp);
 
-    x = rect.left;
-    y = rect.bottom;
-    wp = 1.0 / ((m[3] * x) + (m[7] * y) + m[15]);
-    xp = ((m[0] * x) + (m[4] * y) + m[12]) * wp;
-    yp = ((m[1] * x) + (m[5] * y) + m[13]) * wp;
-    minX = math.min(minX, xp);
-    maxX = math.max(maxX, xp);
-    minY = math.min(minY, yp);
-    maxY = math.max(maxY, yp);
+  x = rect.left;
+  y = rect.bottom;
+  wp = 1.0 / ((m[3] * x) + (m[7] * y) + m[15]);
+  xp = ((m[0] * x) + (m[4] * y) + m[12]) * wp;
+  yp = ((m[1] * x) + (m[5] * y) + m[13]) * wp;
+  minX = math.min(minX, xp);
+  maxX = math.max(maxX, xp);
+  minY = math.min(minY, yp);
+  maxY = math.max(maxY, yp);
 
-    x = rect.right;
-    y = rect.top;
-    wp = 1.0 / ((m[3] * x) + (m[7] * y) + m[15]);
-    xp = ((m[0] * x) + (m[4] * y) + m[12]) * wp;
-    yp = ((m[1] * x) + (m[5] * y) + m[13]) * wp;
-    minX = math.min(minX, xp);
-    maxX = math.max(maxX, xp);
-    minY = math.min(minY, yp);
-    maxY = math.max(maxY, yp);
-    return ui.Rect.fromLTWH(minX, minY, maxX-minX, maxY-minY);
-  }
+  x = rect.right;
+  y = rect.top;
+  wp = 1.0 / ((m[3] * x) + (m[7] * y) + m[15]);
+  xp = ((m[0] * x) + (m[4] * y) + m[12]) * wp;
+  yp = ((m[1] * x) + (m[5] * y) + m[13]) * wp;
+  minX = math.min(minX, xp);
+  maxX = math.max(maxX, xp);
+  minY = math.min(minY, yp);
+  maxY = math.max(maxY, yp);
+  return ui.Rect.fromLTWH(minX, minY, maxX - minX, maxY - minY);
+}

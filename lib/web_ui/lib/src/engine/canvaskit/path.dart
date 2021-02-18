@@ -13,7 +13,7 @@ class CkPath extends ManagedSkiaObject<SkPath> implements ui.Path {
 
   CkPath.from(CkPath other)
       : _fillType = other.fillType,
-        super(SkPath(other.skiaObject)) {
+        super(other.skiaObject.copy()) {
     skiaObject.setFillType(toSkFillType(_fillType));
   }
 
@@ -265,7 +265,7 @@ class CkPath extends ManagedSkiaObject<SkPath> implements ui.Path {
   ) {
     final CkPath path1 = uiPath1 as CkPath;
     final CkPath path2 = uiPath2 as CkPath;
-    final SkPath newPath = canvasKit.MakePathFromOp(
+    final SkPath newPath = canvasKit.Path.MakeFromOp(
       path1.skiaObject,
       path2.skiaObject,
       toSkPathOp(operation),
@@ -320,7 +320,7 @@ class CkPath extends ManagedSkiaObject<SkPath> implements ui.Path {
 
   @override
   SkPath resurrect() {
-    final SkPath path = canvasKit.MakePathFromCmds(_cachedCommands!);
+    final SkPath path = canvasKit.Path.MakeFromCmds(_cachedCommands!);
     path.setFillType(toSkFillType(_fillType));
     return path;
   }
