@@ -1,4 +1,4 @@
-Signature: b53d94a39495ceadf07756f730fd3db1
+Signature: 4e83bcd8599ee84e38183521d376c793
 
 UNUSED LICENSES:
 
@@ -5653,10 +5653,7 @@ FILE: ../../../third_party/skia/src/gpu/dawn/GrDawnTextureRenderTarget.cpp
 FILE: ../../../third_party/skia/src/gpu/dawn/GrDawnTextureRenderTarget.h
 FILE: ../../../third_party/skia/src/gpu/dawn/GrDawnUtil.cpp
 FILE: ../../../third_party/skia/src/gpu/dawn/GrDawnUtil.h
-FILE: ../../../third_party/skia/src/gpu/effects/GrMixerEffect.fp
 FILE: ../../../third_party/skia/src/gpu/effects/GrOverrideInputFragmentProcessor.fp
-FILE: ../../../third_party/skia/src/gpu/effects/generated/GrMixerEffect.cpp
-FILE: ../../../third_party/skia/src/gpu/effects/generated/GrMixerEffect.h
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrOverrideInputFragmentProcessor.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrOverrideInputFragmentProcessor.h
 FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlCommandBuffer.h
