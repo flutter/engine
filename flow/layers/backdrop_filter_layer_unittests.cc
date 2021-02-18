@@ -119,7 +119,8 @@ TEST_F(BackdropFilterLayerTest, MultipleChildren) {
   auto layer = std::make_shared<BackdropFilterLayer>(layer_filter);
   layer->Add(mock_layer1);
   layer->Add(mock_layer2);
-  auto parent = std::make_shared<ClipRectLayer>(children_bounds, Clip::hardEdge);
+  auto parent =
+      std::make_shared<ClipRectLayer>(children_bounds, Clip::hardEdge);
   parent->Add(layer);
 
   parent->Preroll(preroll_context(), initial_transform);
@@ -164,7 +165,8 @@ TEST_F(BackdropFilterLayerTest, Nested) {
   layer2->Add(mock_layer2);
   layer1->Add(mock_layer1);
   layer1->Add(layer2);
-  auto parent = std::make_shared<ClipRectLayer>(children_bounds, Clip::hardEdge);
+  auto parent =
+      std::make_shared<ClipRectLayer>(children_bounds, Clip::hardEdge);
   parent->Add(layer1);
 
   parent->Preroll(preroll_context(), initial_transform);
@@ -180,20 +182,20 @@ TEST_F(BackdropFilterLayerTest, Nested) {
   EXPECT_EQ(mock_layer2->parent_matrix(), initial_transform);
 
   layer1->Paint(paint_context());
-  EXPECT_EQ(mock_canvas().draw_calls(),
-            std::vector(
-                {MockCanvas::DrawCall{
-                     0, MockCanvas::SaveLayerData{children_bounds, SkPaint(),
-                                                  layer_filter1, 1}},
-                 MockCanvas::DrawCall{
-                     1, MockCanvas::DrawPathData{child_path1, child_paint1}},
-                 MockCanvas::DrawCall{
-                     1, MockCanvas::SaveLayerData{children_bounds,
-                                                  SkPaint(), layer_filter2, 2}},
-                 MockCanvas::DrawCall{
-                     2, MockCanvas::DrawPathData{child_path2, child_paint2}},
-                 MockCanvas::DrawCall{2, MockCanvas::RestoreData{1}},
-                 MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
+  EXPECT_EQ(
+      mock_canvas().draw_calls(),
+      std::vector({MockCanvas::DrawCall{
+                       0, MockCanvas::SaveLayerData{children_bounds, SkPaint(),
+                                                    layer_filter1, 1}},
+                   MockCanvas::DrawCall{
+                       1, MockCanvas::DrawPathData{child_path1, child_paint1}},
+                   MockCanvas::DrawCall{
+                       1, MockCanvas::SaveLayerData{children_bounds, SkPaint(),
+                                                    layer_filter2, 2}},
+                   MockCanvas::DrawCall{
+                       2, MockCanvas::DrawPathData{child_path2, child_paint2}},
+                   MockCanvas::DrawCall{2, MockCanvas::RestoreData{1}},
+                   MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
 }
 
 TEST_F(BackdropFilterLayerTest, Readback) {
