@@ -869,6 +869,6 @@ List<String> _getEffectiveFontFamilies(String? fontFamily,
       !fontFamilyFallback.every((font) => fontFamily == font)) {
     fontFamilies.addAll(fontFamilyFallback);
   }
-  fontFamilies.addAll(skiaFontCollection.globalFontFallbacks);
+  fontFamilies.addAll(FontFallbackData.instance.globalFontFallbacks);
   return fontFamilies;
 }
