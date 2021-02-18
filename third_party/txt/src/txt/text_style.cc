@@ -48,10 +48,10 @@ bool TextStyle::equals(const TextStyle& other) const {
     return false;
   if (has_height_override != other.has_height_override)
     return false;
-  if (has_text_height_behavior_override !=
-      other.has_text_height_behavior_override)
+  if (has_leading_distribution_override !=
+      other.has_leading_distribution_override)
     return false;
-  if (text_height_behavior != other.text_height_behavior)
+  if (half_leading != other.half_leading)
     return false;
   if (locale != other.locale)
     return false;

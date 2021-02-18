@@ -213,15 +213,13 @@ class TextHeightBehavior {
   const TextHeightBehavior({
     this.applyHeightToFirstAscent = true,
     this.applyHeightToLastDescent = true,
-    this.leadingDistribution = LeadingDistribution.proportional,
   });
-  TextHeightBehavior.fromEncoded(int encoded)
+  const TextHeightBehavior.fromEncoded(int encoded)
       : applyHeightToFirstAscent = (encoded & 0x1) == 0,
-        applyHeightToLastDescent = (encoded & 0x2) == 0,
-        leadingDistribution = LeadingDistribution.values[encoded >> 2];
+        applyHeightToLastDescent = (encoded & 0x2) == 0;
   final bool applyHeightToFirstAscent;
   final bool applyHeightToLastDescent;
-  final LeadingDistribution leadingDistribution;
+
   int encode() {
     return (applyHeightToFirstAscent ? 0 : 1 << 0) | (applyHeightToLastDescent ? 0 : 1 << 1);
   }
@@ -247,8 +245,7 @@ class TextHeightBehavior {
   String toString() {
     return 'TextHeightBehavior('
              'applyHeightToFirstAscent: $applyHeightToFirstAscent, '
-             'applyHeightToLastDescent: $applyHeightToLastDescent, '
-             'leadingDistribution: $leadingDistribution'
+             'applyHeightToLastDescent: $applyHeightToLastDescent'
            ')';
   }
 }
@@ -269,7 +266,7 @@ abstract class TextStyle {
     double? letterSpacing,
     double? wordSpacing,
     double? height,
-    TextHeightBehavior? textHeightBehavior,
+    LeadingDistribution? leadingDistribution,
     Locale? locale,
     Paint? background,
     Paint? foreground,
@@ -380,7 +377,7 @@ abstract class StrutStyle {
     List<String>? fontFamilyFallback,
     double? fontSize,
     double? height,
-    TextHeightBehavior? textHeightBehavior,
+    LeadingDistribution? leadingDistribution,
     double? leading,
     FontWeight? fontWeight,
     FontStyle? fontStyle,

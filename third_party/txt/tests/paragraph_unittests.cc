@@ -1903,10 +1903,9 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(HeightOverrideHalfLeadingParagraph)) {
   text_style.color = SK_ColorBLACK;
   text_style.height = 3.6345;
   text_style.has_height_override = true;
-  // Disables text height behavior override so it should defaults to the
-  // paragraph style.
-  text_style.has_text_height_behavior_override = false;
-  text_style.text_height_behavior = TextHeightBehavior::kAll;
+  // Disables text style leading distribution behavior override so it defaults
+  // to the paragraph style.
+  text_style.has_leading_distribution_override = false;
   builder.PushStyle(text_style);
 
   builder.AddText(u16_text);
@@ -1979,8 +1978,8 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(HeightOverrideHalfLeadingTextStyle)) {
   text_style.height = 3.6345;
   text_style.has_height_override = true;
   // Override paragraph_style.text_height_behavior:
-  text_style.has_text_height_behavior_override = true;
-  text_style.text_height_behavior = TextHeightBehavior::kHalfLeading;
+  text_style.has_leading_distribution_override = true;
+  text_style.half_leading = true;
   builder.PushStyle(text_style);
 
   builder.AddText(u16_text);
@@ -2061,14 +2060,14 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(MixedTextHeightBehaviorSameLine)) {
   text_style.height = 3.6345;
   text_style.has_height_override = true;
   // First run, with half-leading.
-  text_style.has_text_height_behavior_override = true;
-  text_style.text_height_behavior = TextHeightBehavior::kHalfLeading;
+  text_style.has_leading_distribution_override = true;
+  text_style.half_leading = true;
   builder.PushStyle(text_style);
   builder.AddText(u16_text);
 
   // Second run with AD-scaling.
-  text_style.has_text_height_behavior_override = true;
-  text_style.text_height_behavior = TextHeightBehavior::kAll;
+  text_style.has_leading_distribution_override = true;
+  text_style.half_leading = false;
 
   builder.PushStyle(text_style);
   builder.AddText(u16_text2);
@@ -2145,14 +2144,14 @@ TEST_F(ParagraphTest,
   text_style.height = 0;
   text_style.has_height_override = true;
   // First run, with half-leading.
-  text_style.has_text_height_behavior_override = true;
-  text_style.text_height_behavior = TextHeightBehavior::kHalfLeading;
+  text_style.has_leading_distribution_override = true;
+  text_style.half_leading = true;
   builder.PushStyle(text_style);
   builder.AddText(u16_text);
 
   // Second run with AD-scaling.
-  text_style.has_text_height_behavior_override = true;
-  text_style.text_height_behavior = TextHeightBehavior::kAll;
+  text_style.has_leading_distribution_override = true;
+  text_style.half_leading = false;
 
   builder.PushStyle(text_style);
   builder.AddText(u16_text);
@@ -2215,7 +2214,8 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(HeightOverrideHalfLeadingStrut)) {
   paragraph_style.strut_height = 3.6345;
   paragraph_style.strut_font_size = 20;
   paragraph_style.strut_font_families.push_back("Roboto");
-  paragraph_style.strut_text_height_behavior = TextHeightBehavior::kHalfLeading;
+  paragraph_style.strut_has_leading_distribution_override = true;
+  paragraph_style.strut_half_leading = true;
   txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
@@ -2227,8 +2227,8 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(HeightOverrideHalfLeadingStrut)) {
   text_style.height = 3.6345;
   text_style.has_height_override = true;
   // Override paragraph_style.text_height_behavior:
-  text_style.has_text_height_behavior_override = true;
-  text_style.text_height_behavior = TextHeightBehavior::kHalfLeading;
+  text_style.has_leading_distribution_override = true;
+  text_style.half_leading = true;
   builder.PushStyle(text_style);
 
   builder.AddText(u16_text);
@@ -2301,7 +2301,7 @@ TEST_F(ParagraphTest,
   paragraph_style.force_strut_height = true;
   paragraph_style.strut_font_size = 20;
   paragraph_style.strut_font_families.push_back("Roboto");
-  paragraph_style.strut_text_height_behavior = TextHeightBehavior::kHalfLeading;
+  paragraph_style.strut_half_leading = true;
   txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
@@ -2314,14 +2314,14 @@ TEST_F(ParagraphTest,
   text_style.has_height_override = true;
 
   // First run, with half-leading.
-  text_style.has_text_height_behavior_override = true;
-  text_style.text_height_behavior = TextHeightBehavior::kHalfLeading;
+  text_style.has_leading_distribution_override = true;
+  text_style.half_leading = true;
   builder.PushStyle(text_style);
   builder.AddText(u16_text);
 
   // Second run with AD-scaling.
-  text_style.has_text_height_behavior_override = true;
-  text_style.text_height_behavior = TextHeightBehavior::kAll;
+  text_style.has_leading_distribution_override = true;
+  text_style.half_leading = false;
 
   builder.PushStyle(text_style);
   builder.AddText(u16_text);
@@ -7101,7 +7101,7 @@ TEST_F(ParagraphTest, MixedTextHeightBehaviorRectsParagraph) {
                           icu_text.getBuffer() + icu_text.length());
 
   txt::ParagraphStyle paragraph_style;
-  // paragraph_style.text_height_behavior will be overridden later.
+  // The paragraph's first line and the last line use the font's ascent/descent.
   paragraph_style.text_height_behavior =
       txt::TextHeightBehavior::kDisableFirstAscent |
       txt::TextHeightBehavior::kDisableLastDescent;
@@ -7114,16 +7114,17 @@ TEST_F(ParagraphTest, MixedTextHeightBehaviorRectsParagraph) {
   text_style.font_size = 30;
   text_style.height = 5;
   text_style.has_height_override = true;
-  text_style.has_text_height_behavior_override = true;
-  text_style.text_height_behavior = txt::TextHeightBehavior::kDisableAll |
-                                    txt::TextHeightBehavior::kHalfLeading;
+  text_style.has_leading_distribution_override = true;
+  text_style.half_leading = true;
+
   builder.PushStyle(text_style);
   builder.AddText(u16_text);
 
-  text_style.text_height_behavior = txt::TextHeightBehavior::kHalfLeading;
+  text_style.half_leading = false;
   builder.PushStyle(text_style);
   builder.AddText(u16_text);
 
+  // 2 identical runs except the first run has half-leading enabled.
   builder.Pop();
 
   auto paragraph = BuildParagraph(builder);
@@ -7148,9 +7149,12 @@ TEST_F(ParagraphTest, MixedTextHeightBehaviorRectsParagraph) {
   for (size_t i = 0; i < boxes.size(); ++i) {
     GetCanvas()->drawRect(boxes[i].rect, paint);
   }
-  // The line-height is the same as not having the kDisableAll flag.
+  // The kDisableAll flag is applied.
   EXPECT_GT(boxes.size(), 1ull);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom() - boxes[0].rect.top(), 150.0);
+  // The height of the line equals to the metrics height of the font
+  // (ascent + descent).
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom() - boxes[0].rect.top(),
+                  27.8320312 + 7.32421875);
 
   ASSERT_TRUE(Snapshot());
 }

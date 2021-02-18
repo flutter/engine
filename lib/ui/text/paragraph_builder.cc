@@ -39,7 +39,7 @@ const int tsTextDecorationStyleIndex = 4;
 const int tsFontWeightIndex = 5;
 const int tsFontStyleIndex = 6;
 const int tsTextBaselineIndex = 7;
-const int tsTextHeightBehaviorIndex = 8;
+const int tsLeadingDistributionIndex = 8;
 const int tsTextDecorationThicknessIndex = 9;
 const int tsFontFamilyIndex = 10;
 const int tsFontSizeIndex = 11;
@@ -60,7 +60,7 @@ const int tsTextDecorationThicknessMask = 1 << tsTextDecorationThicknessIndex;
 const int tsFontWeightMask = 1 << tsFontWeightIndex;
 const int tsFontStyleMask = 1 << tsFontStyleIndex;
 const int tsTextBaselineMask = 1 << tsTextBaselineIndex;
-const int tsTextHeightBehaviorMask = 1 << tsTextHeightBehaviorIndex;
+const int tsLeadingDistributionMask = 1 << tsLeadingDistributionIndex;
 const int tsFontFamilyMask = 1 << tsFontFamilyIndex;
 const int tsFontSizeMask = 1 << tsFontSizeIndex;
 const int tsLetterSpacingMask = 1 << tsLetterSpacingIndex;
@@ -120,7 +120,7 @@ const int sFontStyleIndex = 1;
 const int sFontFamilyIndex = 2;
 const int sFontSizeIndex = 3;
 const int sHeightIndex = 4;
-const int sTextHeightBehaviorIndex = 5;
+const int sLeadingDistributionIndex = 5;
 const int sLeadingIndex = 6;
 const int sForceStrutHeightIndex = 7;
 
@@ -129,7 +129,7 @@ const int sFontStyleMask = 1 << sFontStyleIndex;
 const int sFontFamilyMask = 1 << sFontFamilyIndex;
 const int sFontSizeMask = 1 << sFontSizeIndex;
 const int sHeightMask = 1 << sHeightIndex;
-const int sTextHeightBehaviorMask = 1 << sTextHeightBehaviorIndex;
+const int sLeadingDistributionMask = 1 << sLeadingDistributionIndex;
 const int sLeadingMask = 1 << sLeadingIndex;
 const int sForceStrutHeightMask = 1 << sForceStrutHeightIndex;
 
@@ -215,9 +215,10 @@ void decodeStrut(Dart_Handle strut_data,
     paragraph_style.strut_height = float_data[float_count++];
     paragraph_style.strut_has_height_override = true;
 
-    // TextHeightBehavior does not affect layout if height is not set.
-    if (mask & sTextHeightBehaviorMask) {
-      paragraph_style.strut_text_height_behavior = uint8_data[byte_count];
+    // LeadingDistribution does not affect layout if height is not set.
+    if (mask & sLeadingDistributionMask) {
+      paragraph_style.strut_half_leading = uint8_data[byte_count];
+      paragraph_style.strut_has_leading_distribution_override = true;
     }
   }
   if (mask & sLeadingMask) {
@@ -419,9 +420,9 @@ void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
     // property wasn't wired up either.
   }
 
-  style.has_text_height_behavior_override = mask & tsTextHeightBehaviorMask;
-  if (mask & tsTextHeightBehaviorMask) {
-    style.text_height_behavior = encoded[tsTextHeightBehaviorIndex];
+  style.has_leading_distribution_override = mask & tsLeadingDistributionMask;
+  if (mask & tsLeadingDistributionMask) {
+    style.half_leading = encoded[tsLeadingDistributionIndex];
   }
 
   if (mask & (tsFontWeightMask | tsFontStyleMask | tsFontSizeMask |

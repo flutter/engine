@@ -41,6 +41,34 @@ enum class TextDirection {
   ltr,
 };
 
+// Adjusts the leading over and under text.
+//
+// kDisableFirstAscent and kDisableLastDescent allow disabling height
+// adjustments to first line's ascent and the last line's descent. If disabled,
+// the line will use the default font metric provided ascent/descent and
+// ParagraphStyle.height or TextStyle.height will not take effect.
+//
+// kHalfLeading determines how the leading is distributed over and under the
+// text. When true, half of the leading is added to the top of the text and the
+// other half is added to the bottom of the text. Otherwise, instead of
+// distributing the space evenly, it's distributed proportionally to the font's
+// ascent/descent ratio.
+//
+// The default behavior is kAll where height adjustments are enabled for all
+// lines.
+//
+// Multiple behaviors can be applied at once with a bitwise | operator. For
+// example, disabling first ascent and last descent can achieved with:
+//
+//   (kDisableFirstAscent | kDisableLastDescent).
+enum TextHeightBehavior {
+  kAll = 0x0,
+  kDisableFirstAscent = 0x1,
+  kDisableLastDescent = 0x2,
+  kDisableAll = 0x1 | 0x2,
+  kHalfLeading = 0x1 << 2,
+};
+
 class ParagraphStyle {
  public:
   // Default TextStyle. Used in GetTextStyle() to obtain the base TextStyle to
@@ -50,8 +78,8 @@ class ParagraphStyle {
   std::string font_family = "";
   double font_size = 14;
   double height = 1;
-  size_t text_height_behavior = TextHeightBehavior::kAll;
   bool has_height_override = false;
+  size_t text_height_behavior = TextHeightBehavior::kAll;
 
   // Strut properties. strut_enabled must be set to true for the rest of the
   // properties to take effect.
@@ -63,7 +91,8 @@ class ParagraphStyle {
   double strut_font_size = 14;
   double strut_height = 1;
   bool strut_has_height_override = false;
-  size_t strut_text_height_behavior = TextHeightBehavior::kAll;
+  bool strut_half_leading = false;
+  bool strut_has_leading_distribution_override = false;
   double strut_leading = -1;  // Negative to use font's default leading. [0,inf)
                               // to use custom leading as a ratio of font size.
   bool force_strut_height = false;
