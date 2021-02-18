@@ -1,4 +1,4 @@
-Signature: 84a26e58873baf4644a43c840c3c7245
+Signature: 375b51676cfe73a0106e2c07e6bb639e
 
 UNUSED LICENSES:
 
@@ -739,6 +739,7 @@ FILE: ../../../third_party/skia/src/sksl/SkSLMetalCodeGenerator.h
 FILE: ../../../third_party/skia/src/sksl/SkSLParser.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLParser.h
 FILE: ../../../third_party/skia/src/sksl/SkSLPosition.h
+FILE: ../../../third_party/skia/src/sksl/SkSLProgramSettings.h
 FILE: ../../../third_party/skia/src/sksl/SkSLSPIRVCodeGenerator.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLSPIRVCodeGenerator.h
 FILE: ../../../third_party/skia/src/sksl/SkSLUtil.cpp
@@ -2761,7 +2762,6 @@ FILE: ../../../third_party/skia/src/core/SkValidationUtils.h
 FILE: ../../../third_party/skia/src/effects/SkLumaColorFilter.cpp
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkAlphaThresholdImageFilter.cpp
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkComposeImageFilter.cpp
-FILE: ../../../third_party/skia/src/effects/imagefilters/SkComposeImageFilter.h
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkDisplacementMapEffect.cpp
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkDisplacementMapEffect.h
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkDropShadowImageFilter.cpp
@@ -4048,7 +4048,6 @@ FILE: ../../../third_party/skia/bench/WriterBench.cpp
 FILE: ../../../third_party/skia/src/core/SkImageFilter.cpp
 FILE: ../../../third_party/skia/src/core/SkUtilsArm.cpp
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkColorFilterImageFilter.cpp
-FILE: ../../../third_party/skia/src/effects/imagefilters/SkColorFilterImageFilter.h
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkLightingImageFilter.cpp
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkLightingImageFilter.h
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkMagnifierImageFilter.cpp
@@ -5470,6 +5469,7 @@ FILE: ../../../third_party/skia/src/sksl/SkSLAnalysis.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLModifiersPool.h
 FILE: ../../../third_party/skia/src/sksl/SkSLRehydrator.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLRehydrator.h
+FILE: ../../../third_party/skia/src/sksl/ir/SkSLCodeStringExpression.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLConstructor.cpp
 ----------------------------------------------------------------------------------------------------
 Copyright 2020 Google LLC.
