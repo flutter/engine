@@ -393,10 +393,7 @@ public class FlutterLoader {
     return getLookupKeyForAsset("packages" + File.separator + packageName + File.separator + asset);
   }
 
-  /**
-   * Returns the configuration on whether flutter engine should automatically
-   * register plugins.
-   */
+  /** Returns the configuration on whether flutter engine should automatically register plugins. */
   @NonNull
   public boolean automaticallyRegisterPlugins() {
     return flutterApplicationInfo.automaticallyRegisterPlugins;
