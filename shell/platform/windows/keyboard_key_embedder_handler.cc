@@ -61,7 +61,7 @@ KeyboardKeyEmbedderHandler::KeyboardKeyEmbedderHandler(
                        void* user_data)> send_event,
     GetKeyStateHandler get_key_state)
     : sendEvent_(send_event), get_key_state_(get_key_state), response_id_(1) {
-  InitCheckedKeys();
+  InitCriticalKeys();
 }
 
 KeyboardKeyEmbedderHandler::~KeyboardKeyEmbedderHandler() = default;
@@ -266,7 +266,7 @@ void KeyboardKeyEmbedderHandler::SynchroizeCritialToggledStates(
     int toggle_virtual_key) {
   for (auto& kv : critical_keys_) {
     UINT virtual_key = kv.first;
-    CheckedKey& key_info = kv.second;
+    CriticalKey& key_info = kv.second;
     if (key_info.physical_key == 0) {
       // Never seen this key.
       continue;
@@ -306,7 +306,7 @@ void KeyboardKeyEmbedderHandler::SynchroizeCritialToggledStates(
 void KeyboardKeyEmbedderHandler::SynchroizeCritialPressedStates() {
   for (auto& kv : critical_keys_) {
     UINT virtual_key = kv.first;
-    CheckedKey& key_info = kv.second;
+    CriticalKey& key_info = kv.second;
     if (key_info.physical_key == 0) {
       // Never seen this key.
       continue;
@@ -341,15 +341,15 @@ void KeyboardKeyEmbedderHandler::HandleResponse(bool handled, void* user_data) {
   callback(handled, pending->response_id);
 }
 
-void KeyboardKeyEmbedderHandler::InitCheckedKeys() {
+void KeyboardKeyEmbedderHandler::InitCriticalKeys() {
   auto createCheckedKey = [this](UINT virtual_key, bool extended,
                                  bool check_pressed,
-                                 bool check_toggled) -> CheckedKey {
+                                 bool check_toggled) -> CriticalKey {
     UINT scan_code = MapVirtualKey(virtual_key, MAPVK_VK_TO_VSC);
-    return CheckedKey{
+    return CriticalKey{
         .physical_key = getPhysicalKey(scan_code, extended),
         .logical_key = getLogicalKey(virtual_key, extended, scan_code),
-        .check_pressed = check_pressed,
+        .check_pressed = check_pressed || check_toggled,
         .check_toggled = check_toggled,
         .toggled_on = check_toggled
                           ? !!(get_key_state_(virtual_key) & kStateMaskToggled)

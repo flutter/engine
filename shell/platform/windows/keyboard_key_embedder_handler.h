@@ -31,9 +31,13 @@ class KeyboardKeyEmbedderHandler
 
   // Build a KeyboardKeyEmbedderHandler.
   //
-  // Use `send_event` to define how the manager should dispatch converted
-  // flutter events, as well as how to receive the resopnse, to the engine. It's
-  // typically FlutterWindowsEngine::SendKeyEvent.
+  // Use `send_event` to define how the class should dispatch converted
+  // flutter events, as well as how to receive the response, to the engine. It's
+  // typically FlutterWindowsEngine::SendKeyEvent. The 2nd and 3rd parameter
+  // of the call might be nullptr.
+  //
+  // Use `get_key_state` to define how the class should get a reliable result of
+  // the state for a virtual key. It's typically Win32's GetKeyState.
   explicit KeyboardKeyEmbedderHandler(SendEvent send_event,
                                       GetKeyStateHandler get_key_state);
 
@@ -54,9 +58,12 @@ class KeyboardKeyEmbedderHandler
     uint64_t response_id;
   };
 
-  // Record the last seen physical and logical key for a virtual key.
-  struct CheckedKey {
+  // The information for a virtual key that's important enough that its
+  // state is checked after every event.
+  struct CriticalKey {
     // Last seen value of physical key and logical key for the virtual key.
+    //
+    // Used to synthesize down events.
     uint64_t physical_key;
     uint64_t logical_key;
 
@@ -64,16 +71,24 @@ class KeyboardKeyEmbedderHandler
     // keys).
     bool check_pressed;
     // Whether to ensure the toggled state of the key (usually for lock keys).
+    //
+    // If this is true, `check_pressed` must be true.
     bool check_toggled;
     // Whether the lock key is currently toggled on.
     bool toggled_on;
   };
 
-  void InitCheckedKeys();
+  // Assign |critical_keys_| with basic information.
+  void InitCriticalKeys();
+  // Update |critical_keys_| with last seen logical and physical key.
   void UpdateLastSeenCritialKey(int virtual_key,
                                 uint64_t physical_key,
                                 uint64_t logical_key);
+  // Check each key's state from |get_key_state_| and synthesize events
+  // if their toggling states have been desynchronized.
   void SynchroizeCritialToggledStates(int this_virtual_key);
+  // Check each key's state from |get_key_state_| and synthesize events
+  // if their pressing states have been desynchronized.
   void SynchroizeCritialPressedStates();
 
   std::function<void(const FlutterKeyEvent&, FlutterKeyEventCallback, void*)>
@@ -91,7 +106,7 @@ class KeyboardKeyEmbedderHandler
   //
   // The following maps map Win32 virtual key to the physical key and logical
   // key they're last seen.
-  std::map<UINT, CheckedKey> critical_keys_;
+  std::map<UINT, CriticalKey> critical_keys_;
 
   static uint64_t getPhysicalKey(int scancode, bool extended);
   static uint64_t getLogicalKey(int key, bool extended, int scancode);
