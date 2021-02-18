@@ -34,13 +34,12 @@ class TestFlutterKeyEvent : public FlutterKeyEvent {
     synthesized = src.synthesized;
   }
 
-  TestFlutterKeyEvent(TestFlutterKeyEvent&& source) :
-      FlutterKeyEvent(source),
-      callback(std::move(source.callback)),
-      user_data(source.user_data)
-       {
-               character = character_str.c_str();
-       }
+  TestFlutterKeyEvent(TestFlutterKeyEvent&& source)
+      : FlutterKeyEvent(source),
+        callback(std::move(source.callback)),
+        user_data(source.user_data) {
+    character = character_str.c_str();
+  }
 
   FlutterKeyEventCallback callback;
   void* user_data;
