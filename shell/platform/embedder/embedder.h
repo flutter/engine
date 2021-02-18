@@ -472,7 +472,7 @@ typedef struct {
   /// textures have been unregistered via the
   /// `FlutterEngineUnregisterExternalTexture`, the embedder has to release
   /// these textures.
-  const FlutterMetalTextureHandle* textures;
+  FlutterMetalTextureHandle* textures;
 } FlutterMetalExternalTexture;
 
 /// Callback to provide an external texture for a given texture_id.

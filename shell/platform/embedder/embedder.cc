@@ -1151,11 +1151,12 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
           [ptr = open_gl_config->gl_external_texture_frame_callback, user_data](
               int64_t texture_identifier, size_t width,
               size_t height) -> std::unique_ptr<FlutterOpenGLTexture> {
-        FlutterOpenGLTexture* texture = new FlutterOpenGLTexture();
-        if (!ptr(user_data, texture_identifier, width, height, texture)) {
+        std::unique_ptr<FlutterOpenGLTexture> texture =
+            std::make_unique<FlutterOpenGLTexture>();
+        if (!ptr(user_data, texture_identifier, width, height, texture.get())) {
           return nullptr;
         }
-        return std::unique_ptr<FlutterOpenGLTexture>(texture);
+        return texture;
       };
     }
   }
@@ -1172,17 +1173,18 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
           [ptr = metal_config->external_texture_frame_callback, user_data](
               int64_t texture_identifier, size_t width,
               size_t height) -> std::unique_ptr<FlutterMetalExternalTexture> {
-        FlutterMetalExternalTexture* texture =
-            new FlutterMetalExternalTexture();
-        if (!ptr(user_data, texture_identifier, width, height, texture)) {
+        std::unique_ptr<FlutterMetalExternalTexture> texture =
+            std::make_unique<FlutterMetalExternalTexture>();
+        texture->struct_size = sizeof(FlutterMetalExternalTexture);
+        if (!ptr(user_data, texture_identifier, width, height, texture.get())) {
           return nullptr;
         }
-        return std::unique_ptr<FlutterMetalExternalTexture>(texture);
+        return texture;
       };
     }
   }
-  external_texture_resolver =
-      std::make_unique<ExternalTextureResolver>(external_texture_callback);
+  external_texture_resolver = std::make_unique<ExternalTextureResolver>(
+      external_texture_metal_callback);
 #endif
 
   auto thread_host =
