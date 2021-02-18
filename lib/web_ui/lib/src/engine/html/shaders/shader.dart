@@ -165,11 +165,6 @@ class GradientLinear extends EngineGradient {
     }
   }
 
-<<<<<<< HEAD
-  @override
-  Object createImageBitmap(ui.Rect? shaderBounds, double density,
-      bool createDataUrl) {
-=======
   html.CanvasGradient _createCanvasGradient(html.CanvasRenderingContext2D? ctx,
       ui.Rect? shaderBounds, double density) {
     _FastMatrix32? matrix4 = this.matrix4;
@@ -196,10 +191,9 @@ class GradientLinear extends EngineGradient {
     return gradient;
   }
 
-  /// Creates a linear gradient with tiling repeat or mirror.
-  html.CanvasPattern _createGlGradient(html.CanvasRenderingContext2D? ctx,
-      ui.Rect? shaderBounds, double density) {
->>>>>>> upstream/master
+  @override
+  Object createImageBitmap(ui.Rect? shaderBounds, double density,
+      bool createDataUrl) {
     assert(shaderBounds != null);
     int widthInPixels = shaderBounds!.width.ceil();
     int heightInPixels = shaderBounds.height.ceil();
@@ -312,31 +306,6 @@ class GradientLinear extends EngineGradient {
         glProgram, normalizedGradient, widthInPixels, heightInPixels,
       )!;
     }
-  }
-
-  html.CanvasGradient _createCanvasGradient(html.CanvasRenderingContext2D? ctx,
-      ui.Rect? shaderBounds, double density) {
-    _FastMatrix32? matrix4 = this.matrix4;
-    html.CanvasGradient gradient;
-    final double offsetX = shaderBounds!.left;
-    final double offsetY = shaderBounds.top;
-    if (matrix4 != null) {
-      final centerX = (from.dx + to.dx) / 2.0;
-      final centerY = (from.dy + to.dy) / 2.0;
-      matrix4.transform(from.dx - centerX, from.dy - centerY);
-      final double fromX = matrix4.transformedX + centerX;
-      final double fromY = matrix4.transformedY + centerY;
-      matrix4.transform(to.dx - centerX, to.dy - centerY);
-      gradient = ctx!.createLinearGradient(fromX - offsetX, fromY - offsetY,
-          matrix4.transformedX + centerX - offsetX,
-          matrix4.transformedY - offsetY + centerY);
-    } else {
-      gradient = ctx!.createLinearGradient(
-          from.dx - offsetX, from.dy - offsetY, to.dx - offsetX,
-          to.dy - offsetY);
-    }
-    _addColorStopsToCanvasGradient(gradient, colors, colorStops, tileMode == ui.TileMode.decal);
-    return gradient;
   }
 
   /// Creates a linear gradient with tiling repeat or mirror.
