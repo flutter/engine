@@ -636,7 +636,7 @@ TEST(KeyboardKeyEmbedderHandlerTest, SynthesizeForDesyncToggledState) {
           },
           key_state.Getter());
 
-  // Test if the app starts with NumLock on
+  // The NumLock is desynchronized by toggled on
   key_state.Set(VK_NUMLOCK, false, true);
 
   // Send a normal event
@@ -799,6 +799,42 @@ TEST(KeyboardKeyEmbedderHandlerTest, SynthesizeForDesyncToggledStateByItself) {
   last_handled = false;
   event->callback(true, event->user_data);
   EXPECT_EQ(last_handled, true);
+}
+
+TEST(KeyboardKeyEmbedderHandlerTest, SynthesizeWithInitialTogglingState) {
+  TestKeystate key_state;
+  std::vector<TestFlutterKeyEvent> results;
+  TestFlutterKeyEvent* event;
+  bool last_handled = false;
+
+  // The app starts with NumLock toggled on
+  key_state.Set(VK_NUMLOCK, false, true);
+
+  std::unique_ptr<KeyboardKeyEmbedderHandler> handler =
+      std::make_unique<KeyboardKeyEmbedderHandler>(
+          [&results](const FlutterKeyEvent& event,
+                     FlutterKeyEventCallback callback, void* user_data) {
+            results.emplace_back(event, callback, user_data);
+          },
+          key_state.Getter());
+
+  // NumLock key down
+  key_state.Set(VK_NUMLOCK, true, false);
+  handler->KeyboardHook(
+      VK_NUMLOCK, kScanCodeNumLock, WM_KEYDOWN, 0, true, false,
+      [&last_handled](bool handled) { last_handled = handled; });
+  EXPECT_EQ(last_handled, false);
+  EXPECT_EQ(results.size(), 1);
+  event = &results[0];
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
+  EXPECT_EQ(event->physical, kPhysicalKeyNumLock);
+  EXPECT_EQ(event->logical, kLogicalKeyNumLock);
+  EXPECT_STREQ(event->character, "");
+  EXPECT_EQ(event->synthesized, false);
+
+  event->callback(true, event->user_data);
+  EXPECT_EQ(last_handled, true);
+  results.clear();
 }
 
 }  // namespace testing
