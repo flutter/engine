@@ -27,6 +27,9 @@ class FontFallbackData {
   /// Code units that no known font has a glyph for.
   final Set<int> codeUnitsWithNoKnownFont = <int>{};
 
+  /// Code units which are known to be covered by at least one fallback font.
+  final Set<int> knownCoveredCodeUnits = <int>{};
+
   /// Index of all font families by code unit range.
   final IntervalTree<NotoFont> notoTree = createNotoFontTree();
 
@@ -48,7 +51,6 @@ class FontFallbackData {
 
     return IntervalTree<NotoFont>.createFromRanges(ranges);
   }
-
 
   /// Fallback fonts which have been registered and loaded.
   final List<_RegisteredFont> registeredFallbackFonts = <_RegisteredFont>[];
@@ -672,7 +674,8 @@ class FallbackFontDownloadQueue {
   NotoDownloader downloader = NotoDownloader();
 
   final Set<_ResolvedNotoSubset> downloadedSubsets = <_ResolvedNotoSubset>{};
-  final Map<String, _ResolvedNotoSubset> pendingSubsets = <String, _ResolvedNotoSubset>{};
+  final Map<String, _ResolvedNotoSubset> pendingSubsets =
+      <String, _ResolvedNotoSubset>{};
 
   bool get isPending => pendingSubsets.isNotEmpty || _fontsLoading != null;
 
@@ -699,7 +702,8 @@ class FallbackFontDownloadQueue {
   }
 
   void add(_ResolvedNotoSubset subset) {
-    if (downloadedSubsets.contains(subset) || pendingSubsets.containsKey(subset.url)) {
+    if (downloadedSubsets.contains(subset) ||
+        pendingSubsets.containsKey(subset.url)) {
       return;
     }
     bool firstInBatch = pendingSubsets.isEmpty;
@@ -716,7 +720,8 @@ class FallbackFontDownloadQueue {
       downloads[subset.url] = Future<void>(() async {
         ByteBuffer buffer;
         try {
-          buffer = await downloader.downloadAsBytes(subset.url, debugDescription: subset.family);
+          buffer = await downloader.downloadAsBytes(subset.url,
+              debugDescription: subset.family);
         } catch (e) {
           pendingSubsets.remove(subset.url);
           html.window.console
@@ -734,7 +739,8 @@ class FallbackFontDownloadQueue {
     // Register fallback fonts in a predictable order. Otherwise, the fonts
     // change their precedence depending on the download order causing
     // visual differences between app reloads.
-    final List<String> downloadOrder = (downloadedData.keys.toList()..sort()).reversed.toList();
+    final List<String> downloadOrder =
+        (downloadedData.keys.toList()..sort()).reversed.toList();
     for (String url in downloadOrder) {
       final _ResolvedNotoSubset subset = pendingSubsets.remove(url)!;
       final Uint8List bytes = downloadedData[url]!;

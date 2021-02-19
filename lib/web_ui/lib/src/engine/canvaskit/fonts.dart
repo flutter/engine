@@ -177,5 +177,9 @@ class _RegisteredFont {
 
   _RegisteredFont(this.bytes, this.family)
       : this.typeface =
-            canvasKit.FontMgr.RefDefault().MakeTypefaceFromData(bytes);
+            canvasKit.FontMgr.RefDefault().MakeTypefaceFromData(bytes) {
+    // This is a hack which causes Skia to cache the decoded font.
+    SkFont skFont = SkFont(typeface);
+    skFont.getGlyphBounds([0], null, null);
+  }
 }
