@@ -13,7 +13,7 @@ namespace internal {
 
 namespace os_win {
 
-void UniqueFDTraits::Free(HANDLE fd) {
+void UniqueFDTraits::Free_Handle(HANDLE fd) {
   CloseHandle(fd);
 }
 

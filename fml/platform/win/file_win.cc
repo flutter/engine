@@ -9,13 +9,12 @@
 #include <fcntl.h>
 #include <limits.h>
 #include <sys/stat.h>
-#include <map>
-#include <mutex>
 #include <string>
 
 #include <algorithm>
 #include <climits>
 #include <cstring>
+#include <optional>
 #include <sstream>
 
 #include "flutter/fml/build_config.h"
@@ -25,45 +24,33 @@
 
 namespace fml {
 
-#ifdef WINUWP
-struct DirCacheEntry {
-  std::wstring filename;
-  FILE_ID_128 id;
-};
-std::mutex file_map_mutex;
-static std::map<HANDLE, DirCacheEntry> file_map;
-#endif
-
 static std::string GetFullHandlePath(const fml::UniqueFD& handle) {
   // Although the documentation claims that GetFinalPathNameByHandle is
-  // supported for UWP apps, turns out it does not work correctly hence the need
+  // supported for UWP apps, turns out it returns ACCESS_DENIED in this case hence the need
   // to workaround it by maintaining a map of file handles to absolute paths
   // populated by fml::OpenDirectory.
 #ifdef WINUWP
-  const std::lock_guard<std::mutex> lock(file_map_mutex);
-
-  if (file_map.count(handle.get()) > 0) {
+  std::optional<fml::internal::os_win::DirCacheEntry> found =
+      fml::internal::os_win::UniqueFDTraits::GetCacheEntry(handle.get());
+  
+  if (found) {
     FILE_ID_INFO info;
 
-    auto result = GetFileInformationByHandleEx(
+    BOOL result = GetFileInformationByHandleEx(
         handle.get(), FILE_INFO_BY_HANDLE_CLASS::FileIdInfo, &info,
         sizeof(FILE_ID_INFO));
 
-    auto found = file_map[handle.get()];
-
-    // The handle hasn't been reused if the file identifier is the same as when
+    // Assuming it was possible to retrieve fileinfo, compare the id field.  The handle hasn't been reused if the file identifier is the same as when
     // it was cached
-    if (memcmp(found.id.Identifier, info.FileId.Identifier,
+    if (result && memcmp(found.value().id.Identifier, info.FileId.Identifier,
                sizeof(FILE_ID_INFO))) {
-      return WideStringToString(found.filename);
+      return WideStringToString(found.value().filename);
     } else {
-      // The file handle was reused and cache entry is invalid.
-      return std::string();
+      fml::internal::os_win::UniqueFDTraits::RemoveCacheEntry(handle.get());
     }
-  } else {
-    return std::string();
   }
 
+    return std::string();
 #else
   wchar_t buffer[MAX_PATH] = {0};
   const DWORD buffer_size = ::GetFinalPathNameByHandle(
@@ -269,18 +256,21 @@ fml::UniqueFD OpenDirectory(const char* path,
   }
 
 #ifdef WINUWP
-  const std::lock_guard<std::mutex> lock(file_map_mutex);
-
   FILE_ID_INFO info;
 
-  auto result = GetFileInformationByHandleEx(
+  BOOL result = GetFileInformationByHandleEx(
       handle, FILE_INFO_BY_HANDLE_CLASS::FileIdInfo, &info,
       sizeof(FILE_ID_INFO));
 
-  auto fc = DirCacheEntry{};
-  fc.filename = file_name;
-  fc.id = info.FileId;
-  file_map[handle] = fc;
+  // Only cache if it is possible to get valid a fileinformation to extract the fileid to ensure correct handle versioning.
+  if (result) {
+    fml::internal::os_win::DirCacheEntry fc {
+      file_name,
+      info.FileId
+    };
+
+    fml::internal::os_win::UniqueFDTraits::StoreCacheEntry(handle, fc);
+  }
 #endif
 
   return fml::UniqueFD{handle};
