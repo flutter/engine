@@ -257,7 +257,7 @@ def to_gn_args(args):
       # attributes in release modes till the toolchain is updated.
       gn_args['skia_enable_api_available_macro'] = args.runtime_mode != "release"
 
-    if sys.platform == 'darwin':
+    if sys.platform == 'darwin' and args.target_os not in ['android', 'fuchsia']:
       # OpenGL is deprecated on macOS > 10.11.
       # This is not neccessarily needed but enabling this until we have a way to
       # build a macOS metal only shell and a gl only shell.
