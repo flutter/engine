@@ -26,13 +26,13 @@ namespace fml {
 
 static std::string GetFullHandlePath(const fml::UniqueFD& handle) {
   // Although the documentation claims that GetFinalPathNameByHandle is
-  // supported for UWP apps, turns out it returns ACCESS_DENIED in this case hence the need
-  // to workaround it by maintaining a map of file handles to absolute paths
-  // populated by fml::OpenDirectory.
+  // supported for UWP apps, turns out it returns ACCESS_DENIED in this case
+  // hence the need to workaround it by maintaining a map of file handles to
+  // absolute paths populated by fml::OpenDirectory.
 #ifdef WINUWP
   std::optional<fml::internal::os_win::DirCacheEntry> found =
       fml::internal::os_win::UniqueFDTraits::GetCacheEntry(handle.get());
-  
+
   if (found) {
     FILE_ID_INFO info;
 
@@ -40,17 +40,18 @@ static std::string GetFullHandlePath(const fml::UniqueFD& handle) {
         handle.get(), FILE_INFO_BY_HANDLE_CLASS::FileIdInfo, &info,
         sizeof(FILE_ID_INFO));
 
-    // Assuming it was possible to retrieve fileinfo, compare the id field.  The handle hasn't been reused if the file identifier is the same as when
-    // it was cached
+    // Assuming it was possible to retrieve fileinfo, compare the id field.  The
+    // handle hasn't been reused if the file identifier is the same as when it
+    // was cached
     if (result && memcmp(found.value().id.Identifier, info.FileId.Identifier,
-               sizeof(FILE_ID_INFO))) {
+                         sizeof(FILE_ID_INFO))) {
       return WideStringToString(found.value().filename);
     } else {
       fml::internal::os_win::UniqueFDTraits::RemoveCacheEntry(handle.get());
     }
   }
 
-    return std::string();
+  return std::string();
 #else
   wchar_t buffer[MAX_PATH] = {0};
   const DWORD buffer_size = ::GetFinalPathNameByHandle(
@@ -262,12 +263,10 @@ fml::UniqueFD OpenDirectory(const char* path,
       handle, FILE_INFO_BY_HANDLE_CLASS::FileIdInfo, &info,
       sizeof(FILE_ID_INFO));
 
-  // Only cache if it is possible to get valid a fileinformation to extract the fileid to ensure correct handle versioning.
+  // Only cache if it is possible to get valid a fileinformation to extract the
+  // fileid to ensure correct handle versioning.
   if (result) {
-    fml::internal::os_win::DirCacheEntry fc {
-      file_name,
-      info.FileId
-    };
+    fml::internal::os_win::DirCacheEntry fc{file_name, info.FileId};
 
     fml::internal::os_win::UniqueFDTraits::StoreCacheEntry(handle, fc);
   }
