@@ -1250,6 +1250,7 @@ class EngineStrutStyle implements ui.StrutStyle {
         && other._fontSize == _fontSize
         && other._height == _height
         && other._leading == _leading
+        && other._leadingDistribution == _leadingDistribution
         && other._fontWeight == _fontWeight
         && other._fontStyle == _fontStyle
         && other._forceStrutHeight == _forceStrutHeight
@@ -1263,6 +1264,7 @@ class EngineStrutStyle implements ui.StrutStyle {
         _fontSize,
         _height,
         _leading,
+        _leadingDistribution,
         _fontWeight,
         _fontStyle,
         _forceStrutHeight,

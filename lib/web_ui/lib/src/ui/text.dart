@@ -213,15 +213,20 @@ class TextHeightBehavior {
   const TextHeightBehavior({
     this.applyHeightToFirstAscent = true,
     this.applyHeightToLastDescent = true,
+    this.leadingDistribution = LeadingDistribution.proportional,
   });
-  const TextHeightBehavior.fromEncoded(int encoded)
-      : applyHeightToFirstAscent = (encoded & 0x1) == 0,
-        applyHeightToLastDescent = (encoded & 0x2) == 0;
+  TextHeightBehavior.fromEncoded(int encoded)
+    : applyHeightToFirstAscent = (encoded & 0x1) == 0,
+      applyHeightToLastDescent = (encoded & 0x2) == 0,
+      leadingDistribution = LeadingDistribution.values[encoded >> 2];
   final bool applyHeightToFirstAscent;
   final bool applyHeightToLastDescent;
+  final LeadingDistribution leadingDistribution;
 
   int encode() {
-    return (applyHeightToFirstAscent ? 0 : 1 << 0) | (applyHeightToLastDescent ? 0 : 1 << 1);
+    return (applyHeightToFirstAscent ? 0 : 1 << 0)
+         | (applyHeightToLastDescent ? 0 : 1 << 1)
+         | (leadingDistribution.index << 2);
   }
 
   @override
@@ -230,7 +235,8 @@ class TextHeightBehavior {
      return false;
     return other is TextHeightBehavior
         && other.applyHeightToFirstAscent == applyHeightToFirstAscent
-        && other.applyHeightToLastDescent == applyHeightToLastDescent;
+        && other.applyHeightToLastDescent == applyHeightToLastDescent
+        && other.leadingDistribution == leadingDistribution;
   }
 
   @override
@@ -245,7 +251,8 @@ class TextHeightBehavior {
   String toString() {
     return 'TextHeightBehavior('
              'applyHeightToFirstAscent: $applyHeightToFirstAscent, '
-             'applyHeightToLastDescent: $applyHeightToLastDescent'
+             'applyHeightToLastDescent: $applyHeightToLastDescent, '
+             'leadingDistribution: $leadingDistribution'
            ')';
   }
 }
