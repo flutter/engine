@@ -6,6 +6,8 @@ package io.flutter.plugin.editing;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.graphics.Rect;
 import android.os.Build;
 import android.os.Bundle;
@@ -499,7 +501,27 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
             mView.getContext().getContentResolver(), Settings.Secure.DEFAULT_INPUT_METHOD);
     // The Samsung keyboard is called "com.sec.android.inputmethod/.SamsungKeypad" but look
     // for "Samsung" just in case Samsung changes the name of the keyboard.
-    return keyboardName.contains("Samsung");
+    if (!keyboardName.contains("Samsung")) {
+      return false;
+    }
+
+    final long versionCode;
+    try {
+      final PackageInfo packageInfo =
+          mView.getContext().getPackageManager().getPackageInfo("com.sec.android.inputmethod", 0);
+      versionCode =
+          Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
+              ? packageInfo.getLongVersionCode()
+              : packageInfo.versionCode;
+    } catch (PackageManager.NameNotFoundException e) {
+      Log.w(TAG, "com.sec.android.inputmethod is not installed.");
+      return false;
+    }
+
+    // 3.3.23.33 is a known version that's free of the aforementioned bug.
+    // 3.0.24.96 still has this bug.
+    // TODO(LongCatIsLooong): Find the minimum version that has the fix.
+    return versionCode < 332333999;
   }
 
   @VisibleForTesting
