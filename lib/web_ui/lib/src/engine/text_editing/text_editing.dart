@@ -512,7 +512,7 @@ class InputConfiguration {
         const TextCapitalizationConfig.defaultCapitalization(),
     this.autofill,
     this.autofillGroup,
-    this.forceCloseConnectionOnBlur = false,
+    this.forceSubmitOnFocusLost = false,
   });
 
   InputConfiguration.fromFrameworkMessage(
@@ -524,7 +524,7 @@ class InputConfiguration {
         inputAction =
             flutterInputConfiguration['inputAction'] ?? 'TextInputAction.done',
         obscureText = flutterInputConfiguration['obscureText'] ?? false,
-        forceCloseConnectionOnBlur = flutterInputConfiguration['forceCloseConnectionOnBlur'] ?? false,
+        forceSubmitOnFocusLost = flutterInputConfiguration['forceSubmitOnFocusLost'] ?? false,
         readOnly = flutterInputConfiguration['readOnly'] ?? false,
         autocorrect = flutterInputConfiguration['autocorrect'] ?? true,
         textCapitalization = TextCapitalizationConfig.fromInputConfiguration(
@@ -566,7 +566,7 @@ class InputConfiguration {
   /// This flag provides a workaround to the regression allowing developers to
   /// optionally force the connection to close on blur, as suggested in the comments
   /// https://github.com/flutter/flutter/issues/64245#issuecomment-681815149
-  final bool forceCloseConnectionOnBlur;
+  final bool forceSubmitOnFocusLost;
 
   /// Whether to enable autocorrection.
   ///
@@ -874,7 +874,7 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
     // focus is called.
     _subscriptions.add(domElement.onBlur.listen((_) {
       bool windowHasFocus = domRenderer.windowHasFocus ?? false;
-      if (windowHasFocus && _inputConfiguration.forceCloseConnectionOnBlur) {
+      if (windowHasFocus && _inputConfiguration.forceSubmitOnFocusLost) {
         owner.sendTextConnectionClosedToFrameworkIfAny();
       } else {
         domElement.focus();
@@ -1308,7 +1308,7 @@ class FirefoxTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     _subscriptions.add(domElement.onBlur.listen((_) {
       html.Element? activeElement = html.document.activeElement;
       bool domElementIsActive = activeElement != domElement;
-      if (domElementIsActive && _inputConfiguration.forceCloseConnectionOnBlur) {
+      if (domElementIsActive && _inputConfiguration.forceSubmitOnFocusLost) {
         owner.sendTextConnectionClosedToFrameworkIfAny();
       } else {
         _postponeFocus();

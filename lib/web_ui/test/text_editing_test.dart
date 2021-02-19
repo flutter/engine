@@ -479,7 +479,7 @@ void testMain() {
               SemanticsObject(5, null), HybridTextEditing(), testInputElement);
       final InputConfiguration config = InputConfiguration(
         inputType: EngineInputType.text,
-        forceCloseConnectionOnBlur: true,
+        forceSubmitOnFocusLost: true,
       );
 
       expect(document.activeElement, document.body);
@@ -2305,7 +2305,7 @@ Map<String, dynamic> createFlutterConfig(
   String inputType, {
   bool readOnly = false,
   bool obscureText = false,
-  bool forceCloseConnectionOnBlur = false,
+  bool forceSubmitOnFocusLost = false,
   bool autocorrect = true,
   String textCapitalization = 'TextCapitalization.none',
   String inputAction,
@@ -2320,7 +2320,7 @@ Map<String, dynamic> createFlutterConfig(
     },
     'readOnly': readOnly,
     'obscureText': obscureText,
-    'forceCloseConnectionOnBlur': forceCloseConnectionOnBlur,
+    'forceSubmitOnFocusLost': forceSubmitOnFocusLost,
     'autocorrect': autocorrect,
     'inputAction': inputAction ?? 'TextInputAction.done',
     'textCapitalization': textCapitalization,
