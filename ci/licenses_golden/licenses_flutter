@@ -34,6 +34,8 @@ FILE: ../../../flutter/common/task_runners.cc
 FILE: ../../../flutter/common/task_runners.h
 FILE: ../../../flutter/flow/compositor_context.cc
 FILE: ../../../flutter/flow/compositor_context.h
+FILE: ../../../flutter/flow/diff_context.cc
+FILE: ../../../flutter/flow/diff_context.h
 FILE: ../../../flutter/flow/embedded_view_params_unittests.cc
 FILE: ../../../flutter/flow/embedded_views.cc
 FILE: ../../../flutter/flow/embedded_views.h
@@ -101,6 +103,8 @@ FILE: ../../../flutter/flow/matrix_decomposition.cc
 FILE: ../../../flutter/flow/matrix_decomposition.h
 FILE: ../../../flutter/flow/matrix_decomposition_unittests.cc
 FILE: ../../../flutter/flow/mutators_stack_unittests.cc
+FILE: ../../../flutter/flow/paint_region.cc
+FILE: ../../../flutter/flow/paint_region.h
 FILE: ../../../flutter/flow/paint_utils.cc
 FILE: ../../../flutter/flow/paint_utils.h
 FILE: ../../../flutter/flow/raster_cache.cc
@@ -1100,11 +1104,14 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterBacki
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStoreData.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEmbedderExternalTextureUnittests.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEngineTest.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureGL.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureGL.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureMetal.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureMetal.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterFrameBufferProvider.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterFrameBufferProvider.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterGLCompositor.h
@@ -1114,6 +1121,7 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterIOSur
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterIOSurfaceHolder.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterIntermediateKeyResponder.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterIntermediateKeyResponder.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMacOSExternalTexture.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRendererTest.mm
@@ -1134,6 +1142,8 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextI
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputModel.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputPlugin.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputPlugin.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextureRegistrar.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextureRegistrar.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterView.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController.mm
@@ -1153,6 +1163,10 @@ FILE: ../../../flutter/shell/platform/embedder/embedder_engine.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_engine.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_external_texture_gl.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_external_texture_gl.h
+FILE: ../../../flutter/shell/platform/embedder/embedder_external_texture_metal.h
+FILE: ../../../flutter/shell/platform/embedder/embedder_external_texture_metal.mm
+FILE: ../../../flutter/shell/platform/embedder/embedder_external_texture_resolver.cc
+FILE: ../../../flutter/shell/platform/embedder/embedder_external_texture_resolver.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_external_view.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_external_view.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_external_view_embedder.cc
@@ -1188,6 +1202,7 @@ FILE: ../../../flutter/shell/platform/embedder/fixtures/compositor_with_platform
 FILE: ../../../flutter/shell/platform/embedder/fixtures/compositor_with_root_layer_only.png
 FILE: ../../../flutter/shell/platform/embedder/fixtures/dpr_noxform.png
 FILE: ../../../flutter/shell/platform/embedder/fixtures/dpr_xform.png
+FILE: ../../../flutter/shell/platform/embedder/fixtures/external_texture_metal.png
 FILE: ../../../flutter/shell/platform/embedder/fixtures/gradient.png
 FILE: ../../../flutter/shell/platform/embedder/fixtures/gradient_metal.png
 FILE: ../../../flutter/shell/platform/embedder/fixtures/gradient_xform.png
