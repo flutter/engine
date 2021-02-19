@@ -491,25 +491,18 @@ class GradientRadial extends EngineGradient {
   }
 }
 
-class GradientConical extends EngineGradient {
-  GradientConical(this.focal, this.focalRadius, this.center, this.radius,
-      this.colors, this.colorStops, this.tileMode, this.matrix4)
-      : super._();
+/// TODO: Implerment focal, focalRadius.
+class GradientConical extends GradientRadial {
+  GradientConical(this.focal, this.focalRadius, ui.Offset center,
+  double radius,
+  List<ui.Color> colors,
+  List<double>? colorStops,
+  ui.TileMode tileMode,
+  Float32List? matrix4)
+      : super(center, radius, colors, colorStops, tileMode, matrix4);
 
   final ui.Offset focal;
   final double focalRadius;
-  final ui.Offset center;
-  final double radius;
-  final List<ui.Color> colors;
-  final List<double>? colorStops;
-  final ui.TileMode tileMode;
-  final Float32List? matrix4;
-
-  @override
-  Object createPaintStyle(html.CanvasRenderingContext2D? ctx,
-      ui.Rect? shaderBounds, double density) {
-    throw UnimplementedError();
-  }
 }
 
 /// Backend implementation of [ui.ImageFilter].

@@ -408,7 +408,7 @@ class PersistedPicture extends PersistedLeafSurface {
     _recycleCanvas(_canvas);
     _canvas = DomCanvas(rootElement!);
     domRenderer.clearDom(rootElement!);
-    picture.recordingCanvas!.apply(_canvas!, _optimalLocalCullRect);
+    picture.recordingCanvas!.apply(_canvas!, _optimalLocalCullRect!);
   }
 
   void _applyBitmapPaint(EngineCanvas? oldCanvas) {
@@ -423,7 +423,7 @@ class PersistedPicture extends PersistedLeafSurface {
       _canvas = oldCanvas;
       oldCanvas.setElementCache(_elementCache);
       _canvas!.clear();
-      picture.recordingCanvas!.apply(_canvas!, _optimalLocalCullRect);
+      picture.recordingCanvas!.apply(_canvas!, _optimalLocalCullRect!);
     } else {
       // We can't use the old canvas because the size has changed, so we put
       // it in a cache for later reuse.
@@ -451,7 +451,7 @@ class PersistedPicture extends PersistedLeafSurface {
           domRenderer.clearDom(rootElement!);
           rootElement!.append(_canvas!.rootElement);
           _canvas!.clear();
-          picture.recordingCanvas!.apply(_canvas!, _optimalLocalCullRect);
+          picture.recordingCanvas!.apply(_canvas!, _optimalLocalCullRect!);
         },
       ));
     }

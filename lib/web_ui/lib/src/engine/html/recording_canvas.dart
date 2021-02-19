@@ -120,21 +120,33 @@ class RecordingCanvas {
     _recordingEnded = true;
   }
 
+  /// Applies the recorded commands onto an [engineCanvas] and signals to
+  /// canvas that all painting is completed for garbage collection/reuse.
+  ///
+  /// The [clipRect] specifies the clip applied to the picture (screen clip at
+  /// a minimum). The commands that fall outside the clip are skipped and are
+  /// not applied to the [engineCanvas]. A command must have a non-zero
+  /// intersection with the clip in order to be applied.
+  void apply(EngineCanvas engineCanvas, ui.Rect clipRect) {
+    applyCommands(engineCanvas, clipRect);
+    engineCanvas.endOfPaint();
+  }
+
   /// Applies the recorded commands onto an [engineCanvas].
   ///
   /// The [clipRect] specifies the clip applied to the picture (screen clip at
   /// a minimum). The commands that fall outside the clip are skipped and are
   /// not applied to the [engineCanvas]. A command must have a non-zero
   /// intersection with the clip in order to be applied.
-  void apply(EngineCanvas engineCanvas, ui.Rect? clipRect) {
+  void applyCommands(EngineCanvas engineCanvas, ui.Rect clipRect) {
     assert(_recordingEnded);
     if (_debugDumpPaintCommands) {
       final StringBuffer debugBuf = StringBuffer();
       int skips = 0;
       debugBuf.writeln(
           '--- Applying RecordingCanvas to ${engineCanvas.runtimeType} '
-          'with bounds $_paintBounds and clip $clipRect (w = ${clipRect!.width},'
-          ' h = ${clipRect.height})');
+              'with bounds $_paintBounds and clip $clipRect (w = ${clipRect.width},'
+              ' h = ${clipRect.height})');
       for (int i = 0; i < _commands.length; i++) {
         final PaintCommand command = _commands[i];
         if (command is DrawCommand) {
@@ -155,7 +167,7 @@ class RecordingCanvas {
       print(debugBuf);
     } else {
       try {
-        if (rectContainsOther(clipRect!, _pictureBounds!)) {
+        if (rectContainsOther(clipRect, _pictureBounds!)) {
           // No need to check if commands fit in the clip rect if we already
           // know that the entire picture fits it.
           for (int i = 0, len = _commands.length; i < len; i++) {
@@ -183,7 +195,6 @@ class RecordingCanvas {
         }
       }
     }
-    engineCanvas.endOfPaint();
   }
 
   /// Prints recorded commands.
@@ -511,6 +522,25 @@ class RecordingCanvas {
     _commands.add(command);
   }
 
+  void drawPicture(ui.Picture picture) {
+    assert(!_recordingEnded);
+    final EnginePicture enginePicture = picture as EnginePicture;
+    // TODO apply renderStrategy of picture recording to this recording.
+    if (enginePicture.recordingCanvas == null) {
+      // No contents / nothing to draw.
+      return;
+    }
+    final RecordingCanvas pictureRecording = enginePicture.recordingCanvas!;
+    if (pictureRecording._didDraw == true) {
+      _didDraw = true;
+    }
+    final command = PaintDrawPicture(enginePicture);
+    if (pictureRecording._pictureBounds != null) {
+      _paintBounds.grow(pictureRecording._pictureBounds!, command);
+    }
+    _commands.add(command);
+  }
+
   void drawImageRect(
       ui.Image image, ui.Rect src, ui.Rect dst, SurfacePaint paint) {
     assert(!_recordingEnded);
@@ -654,14 +684,14 @@ abstract class DrawCommand extends PaintCommand {
   double bottomBound = double.infinity;
 
   /// Whether this command intersects with the [clipRect].
-  bool isInvisible(ui.Rect? clipRect) {
+  bool isInvisible(ui.Rect clipRect) {
     if (isClippedOut) {
       return true;
     }
 
     // Check top and bottom first because vertical scrolling is more common
     // than horizontal scrolling.
-    return bottomBound < clipRect!.top ||
+    return bottomBound < clipRect.top ||
         topBound > clipRect.bottom ||
         rightBound < clipRect.left ||
         leftBound > clipRect.right;
@@ -1128,6 +1158,29 @@ class PaintDrawShadow extends DrawCommand {
   String toString() {
     if (assertionsEnabled) {
       return 'drawShadow($path, $color, $elevation, $transparentOccluder)';
+    } else {
+      return super.toString();
+    }
+  }
+}
+
+class PaintDrawPicture extends DrawCommand {
+  final EnginePicture picture;
+
+  PaintDrawPicture(this.picture);
+
+  @override
+  void apply(EngineCanvas canvas) {
+    final ui.Size windowSize = window.physicalSize;
+    final ui.Rect bounds = ui.Rect.fromLTWH(0, 0, windowSize.width,
+        windowSize.height);
+    picture.recordingCanvas!.applyCommands(canvas, bounds);
+  }
+
+  @override
+  String toString() {
+    if (assertionsEnabled) {
+      return 'drawPicture($picture)';
     } else {
       return super.toString();
     }
