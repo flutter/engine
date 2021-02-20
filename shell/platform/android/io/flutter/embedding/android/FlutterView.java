@@ -34,6 +34,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import io.flutter.Log;
+import io.flutter.embedding.android.HardwareKeyboard;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
@@ -44,8 +45,10 @@ import io.flutter.plugin.localization.LocalizationPlugin;
 import io.flutter.plugin.mouse.MouseCursorPlugin;
 import io.flutter.plugin.platform.PlatformViewsController;
 import io.flutter.view.AccessibilityBridge;
+import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.List;
 
 /**
  * Displays a Flutter UI on an Android device.
@@ -104,6 +107,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   @Nullable private AndroidKeyProcessor androidKeyProcessor;
   @Nullable private AndroidTouchProcessor androidTouchProcessor;
   @Nullable private AccessibilityBridge accessibilityBridge;
+  @Nullable private HardwareKeyboard hardwareKeyboard;
 
   // Directly implemented View behavior that communicates with Flutter.
   private final FlutterRenderer.ViewportMetrics viewportMetrics =
@@ -720,6 +724,18 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
         : super.checkInputConnectionProxy(view);
   }
 
+  private boolean onHardwareKeyEvent(@NonNull KeyEvent event) {
+    final List<HardwareKeyboard.KeyDatum> keyData = hardwareKeyboard.convertEvent(event);
+    if (keyData != null) {
+      final FlutterRenderer renderer = flutterEngine.getRenderer();
+      for (HardwareKeyboard.KeyDatum keyDatum : keyData) {
+        final ByteBuffer packet = hardwareKeyboard.packDatum(keyDatum);
+        renderer.dispatchKeyDataPacket(packet, packet.position());
+      }
+    }
+    return true;
+  }
+
   /**
    * Invoked when a hardware key is pressed or released.
    *
@@ -744,7 +760,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     // superclass. The key processor will typically handle all events except
     // those where it has re-dispatched the event after receiving a reply from
     // the framework that the framework did not handle it.
-    return (isAttachedToFlutterEngine() && androidKeyProcessor.onKeyEvent(event))
+    return (isAttachedToFlutterEngine() && (onHardwareKeyEvent(event) || androidKeyProcessor.onKeyEvent(event)))
         || super.dispatchKeyEvent(event);
   }
 
@@ -896,6 +912,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     localizationPlugin = this.flutterEngine.getLocalizationPlugin();
     androidKeyProcessor =
         new AndroidKeyProcessor(this, this.flutterEngine.getKeyEventChannel(), textInputPlugin);
+    hardwareKeyboard = new HardwareKeyboard();
     androidTouchProcessor =
         new AndroidTouchProcessor(this.flutterEngine.getRenderer(), /*trackMotionEvents=*/ false);
     accessibilityBridge =
