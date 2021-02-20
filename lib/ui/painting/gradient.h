@@ -62,13 +62,10 @@ class CanvasGradient : public Shader {
                            SkTileMode tile_mode,
                            const tonic::Float64List& matrix4);
 
-  sk_sp<SkShader> shader(SkFilterQuality) override { return sk_shader_.get(); }
-
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
  private:
   CanvasGradient();
-  flutter::SkiaGPUObject<SkShader> sk_shader_;
 };
 
 }  // namespace flutter
