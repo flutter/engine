@@ -50,9 +50,7 @@ struct UniqueFDTraits {
   static void RemoveCacheEntry(HANDLE fd) {
     const std::lock_guard<std::mutex> lock(file_map_mutex);
 
-    if (file_map.count(fd) > 0) {
-      file_map.erase(fd);
-    }
+    file_map.erase(fd);
   }
 
   static void StoreCacheEntry(HANDLE fd, DirCacheEntry state) {
@@ -62,10 +60,10 @@ struct UniqueFDTraits {
 
   static std::optional<DirCacheEntry> GetCacheEntry(HANDLE fd) {
     const std::lock_guard<std::mutex> lock(file_map_mutex);
-    if (file_map.count(fd) > 0) {
-      return file_map[fd];
-    }
-    return {};
+    auto found = file_map.find(fd);
+    return found == file_map.end()
+               ? std::nullopt
+               : std::optional<DirCacheEntry>{found->second};
   }
 };
 
