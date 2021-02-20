@@ -249,8 +249,9 @@ Engine::Engine(Delegate& delegate,
            external_view_embedder = GetExternalViewEmbedder(),
            vsync_offset = product_config.get_vsync_offset(),
            vsync_handle = vsync_event_.get(),
-           keyboard_listener_request = std::move(keyboard_listener_request)](
-              flutter::Shell& shell) mutable {
+           keyboard_listener_request = std::move(keyboard_listener_request),
+           chatty_max =
+               product_config.get_chatty_max()](flutter::Shell& shell) mutable {
             return std::make_unique<flutter_runner::PlatformView>(
                 shell,                   // delegate
                 debug_label,             // debug label
@@ -271,7 +272,7 @@ Engine::Engine(Delegate& delegate,
                 std::move(on_create_surface_callback),
                 external_view_embedder,   // external view embedder
                 std::move(vsync_offset),  // vsync offset
-                vsync_handle);
+                vsync_handle, chatty_max);
           });
 
   // Setup the callback that will instantiate the rasterizer.

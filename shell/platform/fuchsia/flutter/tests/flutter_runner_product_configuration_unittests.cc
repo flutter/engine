@@ -110,4 +110,22 @@ TEST_F(FlutterRunnerProductConfigurationTest, MissingInterceptAllInput) {
             product_config.get_intercept_all_input());
 }
 
+TEST_F(FlutterRunnerProductConfigurationTest, ValidChattyMax) {
+  const std::string json_string = "{ \"chatty_max\" : 5 } ";
+  const uint32_t expected_chatty_max = 5;
+
+  FlutterRunnerProductConfiguration product_config =
+      FlutterRunnerProductConfiguration(json_string);
+  EXPECT_EQ(product_config.get_chatty_max(), expected_chatty_max);
+}
+
+TEST_F(FlutterRunnerProductConfigurationTest, MissingChattyMax) {
+  const std::string json_string = "{ \"chatty_max\" :  } ";
+  const uint32_t expected_chatty_max = 0;
+
+  FlutterRunnerProductConfiguration product_config =
+      FlutterRunnerProductConfiguration(json_string);
+  EXPECT_EQ(product_config.get_chatty_max(), expected_chatty_max);
+}
+
 }  // namespace flutter_runner_test

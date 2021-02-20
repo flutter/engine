@@ -70,7 +70,8 @@ class PlatformView final : public flutter::PlatformView,
                OnCreateSurface on_create_surface_callback,
                std::shared_ptr<flutter::ExternalViewEmbedder> view_embedder,
                fml::TimeDelta vsync_offset,
-               zx_handle_t vsync_event_handle);
+               zx_handle_t vsync_event_handle,
+               uint32_t chatty_max);
 
   ~PlatformView();
 
@@ -161,6 +162,8 @@ class PlatformView final : public flutter::PlatformView,
   void HandleFlutterPlatformViewsChannelPlatformMessage(
       fml::RefPtr<flutter::PlatformMessage> message);
 
+  void ChattyLog(const fuchsia::ui::input::InputEvent& event) const;
+
   const std::string debug_label_;
   // TODO(MI4-2490): remove once ViewRefControl is passed to Scenic and kept
   // alive there
@@ -219,6 +222,8 @@ class PlatformView final : public flutter::PlatformView,
 
   // The keyboard translation for fuchsia.ui.input3.KeyEvent.
   Keyboard keyboard_;
+
+  const uint32_t chatty_max_ = 0;
 
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformView);
 };
