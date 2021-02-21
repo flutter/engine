@@ -77,7 +77,8 @@ Paint::Paint(Dart_Handle paint_objects, Dart_Handle paint_data) {
   const uint32_t* uint_data = static_cast<const uint32_t*>(byte_data.data());
   const float* float_data = static_cast<const float*>(byte_data.data());
 
-  auto filter_quality = static_cast<SkFilterQuality>(uint_data[kFilterQualityIndex]);
+  auto filter_quality =
+      static_cast<SkFilterQuality>(uint_data[kFilterQualityIndex]);
 
   Dart_Handle values[kObjectCount];
   if (!Dart_IsNull(paint_objects)) {
