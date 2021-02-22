@@ -98,6 +98,12 @@ void _dispatchPointerDataPacket(ByteData packet) {
 
 @pragma('vm:entry-point')
 // ignore: unused_element
+void _dispatchKeyData(ByteData packet, int responseId) {
+  PlatformDispatcher.instance._dispatchKeyData(packet, responseId);
+}
+
+@pragma('vm:entry-point')
+// ignore: unused_element
 void _dispatchSemanticsAction(int id, int action, ByteData? args) {
   PlatformDispatcher.instance._dispatchSemanticsAction(id, action, args);
 }
@@ -126,10 +132,14 @@ typedef _ListStringArgFunction(List<String> args);
 @pragma('vm:entry-point')
 // ignore: unused_element
 void _runMainZoned(Function startMainIsolateFunction,
+                   Function? dartPluginRegistrant,
                    Function userMainFunction,
                    List<String> args) {
   startMainIsolateFunction(() {
     runZonedGuarded<void>(() {
+      if (dartPluginRegistrant != null) {
+        dartPluginRegistrant();
+      }
       if (userMainFunction is _ListStringArgFunction) {
         (userMainFunction as dynamic)(args);
       } else {

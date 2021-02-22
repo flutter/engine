@@ -4,9 +4,16 @@
 
 #include "flutter/shell/platform/windows/win32_window.h"
 
+#include <imm.h>
+
 #include <cstring>
 
 #include "win32_dpi_utils.h"
+
+// KeyCode used to indicate key events to be handled by the IME. These include
+// the kana key, fullwidth/halfwidth (zenkaku/hankaku) key, and keypresses when
+// the IME is in composing mode.
+static constexpr int kImeComposingKeyCode = 229;
 
 namespace flutter {
 
@@ -91,6 +98,7 @@ LRESULT CALLBACK Win32Window::WndProc(HWND const window,
 
     auto that = static_cast<Win32Window*>(cs->lpCreateParams);
     that->window_handle_ = window;
+    that->text_input_manager_.SetWindowHandle(window);
   } else if (Win32Window* that = GetThisFromHandle(window)) {
     return that->HandleMessage(message, wparam, lparam);
   }
@@ -109,10 +117,72 @@ void Win32Window::TrackMouseLeaveEvent(HWND hwnd) {
   }
 }
 
+void Win32Window::OnImeSetContext(UINT const message,
+                                  WPARAM const wparam,
+                                  LPARAM const lparam) {
+  if (wparam != 0) {
+    text_input_manager_.CreateImeWindow();
+  }
+}
+
+void Win32Window::OnImeStartComposition(UINT const message,
+                                        WPARAM const wparam,
+                                        LPARAM const lparam) {
+  text_input_manager_.CreateImeWindow();
+  OnComposeBegin();
+}
+
+void Win32Window::OnImeComposition(UINT const message,
+                                   WPARAM const wparam,
+                                   LPARAM const lparam) {
+  // Update the IME window position.
+  text_input_manager_.UpdateImeWindow();
+
+  if (lparam & GCS_COMPSTR) {
+    // Read the in-progress composing string.
+    long pos = text_input_manager_.GetComposingCursorPosition();
+    std::optional<std::u16string> text =
+        text_input_manager_.GetComposingString();
+    if (text) {
+      OnComposeChange(text.value(), pos);
+    }
+  } else if (lparam & GCS_RESULTSTR) {
+    // Read the committed composing string.
+    long pos = text_input_manager_.GetComposingCursorPosition();
+    std::optional<std::u16string> text = text_input_manager_.GetResultString();
+    if (text) {
+      OnComposeChange(text.value(), pos);
+    }
+    // Next, try reading the composing string. Some Japanese IMEs send a message
+    // containing both a GCS_RESULTSTR and a GCS_COMPSTR when one composition is
+    // committed and another immediately started.
+    text = text_input_manager_.GetResultString();
+    if (text) {
+      OnComposeChange(text.value(), pos);
+    }
+  }
+}
+
+void Win32Window::OnImeEndComposition(UINT const message,
+                                      WPARAM const wparam,
+                                      LPARAM const lparam) {
+  text_input_manager_.DestroyImeWindow();
+  OnComposeEnd();
+}
+
+void Win32Window::OnImeRequest(UINT const message,
+                               WPARAM const wparam,
+                               LPARAM const lparam) {
+  // TODO(cbracken): Handle IMR_RECONVERTSTRING, IMR_DOCUMENTFEED,
+  // and IMR_QUERYCHARPOSITION messages.
+  // https://github.com/flutter/flutter/issues/74547
+}
+
 LRESULT
 Win32Window::HandleMessage(UINT const message,
                            WPARAM const wparam,
                            LPARAM const lparam) noexcept {
+  LPARAM result_lparam = lparam;
   int xPos = 0, yPos = 0;
   UINT width = 0, height = 0;
   UINT button_pressed = 0;
@@ -152,6 +222,12 @@ Win32Window::HandleMessage(UINT const message,
       }
       break;
     }
+    case WM_SETFOCUS:
+      ::CreateCaret(window_handle_, nullptr, 1, 1);
+      break;
+    case WM_KILLFOCUS:
+      ::DestroyCaret();
+      break;
     case WM_LBUTTONDOWN:
     case WM_RBUTTONDOWN:
     case WM_MBUTTONDOWN:
@@ -198,6 +274,40 @@ Win32Window::HandleMessage(UINT const message,
                 static_cast<double>(WHEEL_DELTA)),
                0.0);
       break;
+    case WM_INPUTLANGCHANGE:
+      // TODO(cbracken): pass this to TextInputManager to aid with
+      // language-specific issues.
+      break;
+    case WM_IME_SETCONTEXT:
+      OnImeSetContext(message, wparam, lparam);
+      // Strip the ISC_SHOWUICOMPOSITIONWINDOW bit from lparam before passing it
+      // to DefWindowProc() so that the composition window is hidden since
+      // Flutter renders the composing string itself.
+      result_lparam &= ~ISC_SHOWUICOMPOSITIONWINDOW;
+      break;
+    case WM_IME_STARTCOMPOSITION:
+      OnImeStartComposition(message, wparam, lparam);
+      // Suppress further processing by DefWindowProc() so that the default
+      // system IME style isn't used, but rather the one set in the
+      // WM_IME_SETCONTEXT handler.
+      return TRUE;
+    case WM_IME_COMPOSITION:
+      OnImeComposition(message, wparam, lparam);
+      if (lparam & GCS_RESULTSTR || lparam & GCS_COMPSTR) {
+        // Suppress further processing by DefWindowProc() since otherwise it
+        // will emit the result string as WM_CHAR messages on commit. Instead,
+        // committing the composing text to the EditableText string is handled
+        // in TextInputModel::CommitComposing, triggered by
+        // OnImeEndComposition().
+        return TRUE;
+      }
+      break;
+    case WM_IME_ENDCOMPOSITION:
+      OnImeEndComposition(message, wparam, lparam);
+      return TRUE;
+    case WM_IME_REQUEST:
+      OnImeRequest(message, wparam, lparam);
+      break;
     case WM_UNICHAR: {
       // Tell third-pary app, we can support Unicode.
       if (wparam == UNICODE_NOCHAR)
@@ -225,6 +335,26 @@ Win32Window::HandleMessage(UINT const message,
         s_pending_high_surrogate = 0;
       }
 
+      // All key presses that generate a character should be sent from
+      // WM_CHAR. In order to send the full key press information, the keycode
+      // is persisted in keycode_for_char_message_ obtained from WM_KEYDOWN.
+      if (keycode_for_char_message_ != 0) {
+        const unsigned int scancode = (lparam >> 16) & 0xff;
+        const bool extended = ((lparam >> 24) & 0x01) == 0x01;
+
+        bool handled = OnKey(keycode_for_char_message_, scancode, WM_KEYDOWN,
+                             code_point, extended);
+        keycode_for_char_message_ = 0;
+        if (handled) {
+          // If the OnKey handler handles the message, then return so we don't
+          // pass it to OnText, because handling the message indicates that
+          // OnKey either just sent it to the framework to be processed, or the
+          // framework handled the key in its response, so it shouldn't also be
+          // added as text.
+          return 0;
+        }
+      }
+
       // Of the messages handled here, only WM_CHAR should be treated as
       // characters. WM_SYS*CHAR are not part of text input, and WM_DEADCHAR
       // will be incorporated into a later WM_CHAR with the full character.
@@ -235,15 +365,6 @@ Win32Window::HandleMessage(UINT const message,
       if (message == WM_CHAR && s_pending_high_surrogate == 0 &&
           character >= u' ') {
         OnText(text);
-      }
-
-      // All key presses that generate a character should be sent from
-      // WM_CHAR. In order to send the full key press information, the keycode
-      // is persisted in keycode_for_char_message_ obtained from WM_KEYDOWN.
-      if (keycode_for_char_message_ != 0) {
-        const unsigned int scancode = (lparam >> 16) & 0xff;
-        OnKey(keycode_for_char_message_, scancode, WM_KEYDOWN, code_point);
-        keycode_for_char_message_ = 0;
       }
       break;
     }
@@ -262,17 +383,26 @@ Win32Window::HandleMessage(UINT const message,
         break;
       }
       unsigned int keyCode(wparam);
+      if (keyCode == kImeComposingKeyCode) {
+        // This is an IME composing mode keypress that will be handled via
+        // WM_IME_* messages, which update the framework via updates to the text
+        // and composing range in text editing update messages.
+        break;
+      }
       const unsigned int scancode = (lparam >> 16) & 0xff;
+      const bool extended = ((lparam >> 24) & 0x01) == 0x01;
       // If the key is a modifier, get its side.
       if (keyCode == VK_SHIFT || keyCode == VK_MENU || keyCode == VK_CONTROL) {
         keyCode = MapVirtualKey(scancode, MAPVK_VSC_TO_VK_EX);
       }
       const int action = is_keydown_message ? WM_KEYDOWN : WM_KEYUP;
-      OnKey(keyCode, scancode, action, 0);
+      if (OnKey(keyCode, scancode, action, 0, extended)) {
+        return 0;
+      }
       break;
   }
 
-  return DefWindowProc(window_handle_, message, wparam, lparam);
+  return DefWindowProc(window_handle_, message, wparam, result_lparam);
 }
 
 UINT Win32Window::GetCurrentDPI() {

@@ -32,9 +32,11 @@ part 'engine/canvaskit/canvaskit_api.dart';
 part 'engine/canvaskit/color_filter.dart';
 part 'engine/canvaskit/embedded_views.dart';
 part 'engine/canvaskit/fonts.dart';
+part 'engine/canvaskit/font_fallbacks.dart';
 part 'engine/canvaskit/image.dart';
 part 'engine/canvaskit/image_filter.dart';
 part 'engine/canvaskit/initialization.dart';
+part 'engine/canvaskit/interval_tree.dart';
 part 'engine/canvaskit/layer.dart';
 part 'engine/canvaskit/layer_scene_builder.dart';
 part 'engine/canvaskit/layer_tree.dart';
@@ -89,6 +91,7 @@ part 'engine/html/recording_canvas.dart';
 part 'engine/html/render_vertices.dart';
 part 'engine/html/scene.dart';
 part 'engine/html/scene_builder.dart';
+part 'engine/html/shader_mask.dart';
 part 'engine/html/shaders/normalized_gradient.dart';
 part 'engine/html/shaders/shader.dart';
 part 'engine/html/shaders/shader_builder.dart';
@@ -96,7 +99,9 @@ part 'engine/html/surface.dart';
 part 'engine/html/surface_stats.dart';
 part 'engine/html/transform.dart';
 part 'engine/html_image_codec.dart';
+part 'engine/keyboard_binding.dart';
 part 'engine/keyboard.dart';
+part 'engine/key_map.dart';
 part 'engine/mouse_cursor.dart';
 part 'engine/onscreen_logging.dart';
 part 'engine/picture.dart';
@@ -146,6 +151,17 @@ part 'engine/validators.dart';
 part 'engine/vector_math.dart';
 part 'engine/web_experiments.dart';
 part 'engine/window.dart';
+
+// The mode the app is running in.
+// Keep these in sync with the same constants on the framework-side under foundation/constants.dart.
+const bool kReleaseMode = bool.fromEnvironment('dart.vm.product', defaultValue: false);
+const bool kProfileMode = bool.fromEnvironment('dart.vm.profile', defaultValue: false);
+const bool kDebugMode = !kReleaseMode && !kProfileMode;
+String get buildMode => kReleaseMode
+  ? 'release'
+  : kProfileMode
+    ? 'profile'
+    : 'debug';
 
 /// A benchmark metric that includes frame-related computations prior to
 /// submitting layer and picture operations to the underlying renderer, such as

@@ -4,6 +4,7 @@
 
 #include "flutter/shell/platform/windows/win32_flutter_window.h"
 
+#include <dwmapi.h>
 #include <chrono>
 #include <map>
 
@@ -92,6 +93,12 @@ void Win32FlutterWindow::UpdateFlutterCursor(const std::string& cursor_name) {
   current_cursor_ = GetCursorByName(cursor_name);
 }
 
+void Win32FlutterWindow::OnWindowResized() {
+  // Blocking the raster thread until DWM flushes alleviates glitches where
+  // previous size surface is stretched over current size view.
+  DwmFlush();
+}
+
 // Translates button codes from Win32 API to FlutterPointerMouseButtons.
 static uint64_t ConvertWinButtonToFlutterButton(UINT button) {
   switch (button) {
@@ -155,11 +162,26 @@ void Win32FlutterWindow::OnText(const std::u16string& text) {
   binding_handler_delegate_->OnText(text);
 }
 
-void Win32FlutterWindow::OnKey(int key,
+bool Win32FlutterWindow::OnKey(int key,
                                int scancode,
                                int action,
-                               char32_t character) {
-  binding_handler_delegate_->OnKey(key, scancode, action, character);
+                               char32_t character,
+                               bool extended) {
+  return binding_handler_delegate_->OnKey(key, scancode, action, character,
+                                          extended);
+}
+
+void Win32FlutterWindow::OnComposeBegin() {
+  binding_handler_delegate_->OnComposeBegin();
+}
+
+void Win32FlutterWindow::OnComposeEnd() {
+  binding_handler_delegate_->OnComposeEnd();
+}
+
+void Win32FlutterWindow::OnComposeChange(const std::u16string& text,
+                                         int cursor_pos) {
+  binding_handler_delegate_->OnComposeChange(text, cursor_pos);
 }
 
 void Win32FlutterWindow::OnScroll(double delta_x, double delta_y) {
@@ -169,6 +191,10 @@ void Win32FlutterWindow::OnScroll(double delta_x, double delta_y) {
   ScreenToClient(GetWindowHandle(), &point);
   binding_handler_delegate_->OnScroll(point.x, point.y, delta_x, delta_y,
                                       kScrollOffsetMultiplier);
+}
+
+void Win32FlutterWindow::UpdateCursorRect(const Rect& rect) {
+  text_input_manager_.UpdateCaretRect(rect);
 }
 
 }  // namespace flutter

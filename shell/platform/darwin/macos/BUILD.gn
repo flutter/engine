@@ -5,10 +5,17 @@
 assert(is_mac)
 
 import("//build/config/mac/mac_sdk.gni")
-import("//flutter/common/config.gni")
+import("//flutter/shell/gpu/gpu.gni")
 import("//flutter/shell/platform/darwin/common/framework_shared.gni")
 import("//flutter/shell/platform/glfw/config.gni")
 import("//flutter/testing/testing.gni")
+
+shell_gpu_configuration("macos_gpu_configuration") {
+  enable_software = true
+  enable_gl = true
+  enable_vulkan = false
+  enable_metal = shell_enable_metal
+}
 
 group("macos") {
   deps = [ ":flutter_framework" ]
@@ -46,6 +53,8 @@ source_set("flutter_framework_source") {
 
   sources = [
     "framework/Source/FlutterAppDelegate.mm",
+    "framework/Source/FlutterBackingStore.h",
+    "framework/Source/FlutterBackingStore.mm",
     "framework/Source/FlutterBackingStoreData.h",
     "framework/Source/FlutterBackingStoreData.mm",
     "framework/Source/FlutterDartProject.mm",
@@ -54,6 +63,8 @@ source_set("flutter_framework_source") {
     "framework/Source/FlutterEngine_Internal.h",
     "framework/Source/FlutterExternalTextureGL.h",
     "framework/Source/FlutterExternalTextureGL.mm",
+    "framework/Source/FlutterExternalTextureMetal.h",
+    "framework/Source/FlutterExternalTextureMetal.mm",
     "framework/Source/FlutterFrameBufferProvider.h",
     "framework/Source/FlutterFrameBufferProvider.mm",
     "framework/Source/FlutterGLCompositor.h",
@@ -64,8 +75,19 @@ source_set("flutter_framework_source") {
     "framework/Source/FlutterIOSurfaceHolder.mm",
     "framework/Source/FlutterIntermediateKeyResponder.h",
     "framework/Source/FlutterIntermediateKeyResponder.mm",
+    "framework/Source/FlutterMacOSExternalTexture.h",
+    "framework/Source/FlutterMacOSExternalTexture.h",
+    "framework/Source/FlutterMetalRenderer.h",
+    "framework/Source/FlutterMetalRenderer.mm",
     "framework/Source/FlutterMouseCursorPlugin.h",
     "framework/Source/FlutterMouseCursorPlugin.mm",
+    "framework/Source/FlutterOpenGLRenderer.h",
+    "framework/Source/FlutterOpenGLRenderer.mm",
+    "framework/Source/FlutterRenderer.h",
+    "framework/Source/FlutterRenderingBackend.h",
+    "framework/Source/FlutterRenderingBackend.mm",
+    "framework/Source/FlutterResizableBackingStoreProvider.h",
+    "framework/Source/FlutterResizableBackingStoreProvider.mm",
     "framework/Source/FlutterResizeSynchronizer.h",
     "framework/Source/FlutterResizeSynchronizer.mm",
     "framework/Source/FlutterSurfaceManager.h",
@@ -74,6 +96,8 @@ source_set("flutter_framework_source") {
     "framework/Source/FlutterTextInputModel.mm",
     "framework/Source/FlutterTextInputPlugin.h",
     "framework/Source/FlutterTextInputPlugin.mm",
+    "framework/Source/FlutterTextureRegistrar.h",
+    "framework/Source/FlutterTextureRegistrar.mm",
     "framework/Source/FlutterView.h",
     "framework/Source/FlutterView.mm",
     "framework/Source/FlutterViewController.mm",
@@ -86,10 +110,12 @@ source_set("flutter_framework_source") {
   sources += _flutter_framework_headers
 
   deps = [
+    ":macos_gpu_configuration",
     "//flutter/flow:flow",
     "//flutter/fml",
-    "//flutter/shell/platform/common/cpp:common_cpp_switches",
+    "//flutter/shell/platform/common:common_cpp_switches",
     "//flutter/shell/platform/darwin/common:framework_shared",
+    "//flutter/shell/platform/darwin/graphics:graphics",
     "//flutter/shell/platform/embedder:embedder_as_internal_library",
     "//third_party/skia",
   ]
@@ -101,12 +127,13 @@ source_set("flutter_framework_source") {
     "FLUTTER_ENGINE_NO_PROTOTYPES",
   ]
 
-  cflags_objcc = [ "-fobjc-arc" ]
+  cflags_objcc = flutter_cflags_objcc_arc
 
   libs = [
     "Cocoa.framework",
     "CoreVideo.framework",
     "IOSurface.framework",
+    "Metal.framework",
     "QuartzCore.framework",
   ]
 }
@@ -130,14 +157,18 @@ executable("flutter_desktop_darwin_unittests") {
   testonly = true
 
   sources = [
+    "framework/Source/FlutterEmbedderExternalTextureUnittests.mm",
     "framework/Source/FlutterEngineTest.mm",
     "framework/Source/FlutterGLCompositorUnittests.mm",
+    "framework/Source/FlutterMetalRendererTest.mm",
+    "framework/Source/FlutterMetalSurfaceManagerTest.mm",
+    "framework/Source/FlutterOpenGLRendererTest.mm",
     "framework/Source/FlutterViewControllerTest.mm",
     "framework/Source/FlutterViewControllerTestUtils.h",
     "framework/Source/FlutterViewControllerTestUtils.mm",
   ]
 
-  cflags_objcc = [ "-fobjc-arc" ]
+  cflags_objcc = flutter_cflags_objcc_arc
 
   ldflags = [ "-ObjC" ]
 
@@ -145,6 +176,7 @@ executable("flutter_desktop_darwin_unittests") {
     ":flutter_desktop_darwin_fixtures",
     ":flutter_framework_source",
     "//flutter/shell/platform/darwin/common:framework_shared",
+    "//flutter/shell/platform/darwin/graphics",
     "//flutter/shell/platform/embedder:embedder_as_internal_library",
     "//flutter/shell/platform/embedder:embedder_test_utils",
     "//flutter/testing",

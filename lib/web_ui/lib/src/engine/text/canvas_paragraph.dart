@@ -20,6 +20,7 @@ class CanvasParagraph implements EngineParagraph {
     required this.paragraphStyle,
     required this.plainText,
     required this.placeholderCount,
+    required this.drawOnCanvas,
   });
 
   /// The flat list of spans that make up this paragraph.
@@ -35,13 +36,16 @@ class CanvasParagraph implements EngineParagraph {
   final int placeholderCount;
 
   @override
+  final bool drawOnCanvas;
+
+  @override
   double get width => _layoutService.width;
 
   @override
   double get height => _layoutService.height;
 
   @override
-  double get longestLine => _layoutService.longestLine;
+  double get longestLine => _layoutService.longestLine?.width ?? 0.0;
 
   @override
   double get minIntrinsicWidth => _layoutService.minIntrinsicWidth;
@@ -96,6 +100,7 @@ class CanvasParagraph implements EngineParagraph {
 
     isLaidOut = true;
     _lastUsedConstraints = constraints;
+    _cachedDomElement = null;
   }
 
   // TODO(mdebbar): Returning true means we always require a bitmap canvas. Revisit
@@ -115,6 +120,7 @@ class CanvasParagraph implements EngineParagraph {
 
   @override
   html.HtmlElement toDomElement() {
+    assert(isLaidOut);
     final html.HtmlElement? domElement = _cachedDomElement;
     if (domElement == null) {
       return _cachedDomElement ??= _createDomElement();
@@ -123,66 +129,88 @@ class CanvasParagraph implements EngineParagraph {
   }
 
   html.HtmlElement _createDomElement() {
-    final html.HtmlElement element =
+    final html.HtmlElement rootElement =
         domRenderer.createElement('p') as html.HtmlElement;
 
     // 1. Set paragraph-level styles.
-    final html.CssStyleDeclaration cssStyle = element.style;
-    final ui.TextDirection direction =
-        paragraphStyle._textDirection ?? ui.TextDirection.ltr;
-    final ui.TextAlign align = paragraphStyle._textAlign ?? ui.TextAlign.start;
+    _applyNecessaryParagraphStyles(element: rootElement, style: paragraphStyle);
+    final html.CssStyleDeclaration cssStyle = rootElement.style;
     cssStyle
-      ..direction = _textDirectionToCss(direction)
-      ..textAlign = textAlignToCssValue(align, direction)
       ..position = 'absolute'
-      ..whiteSpace = 'pre-wrap'
-      ..overflowWrap = 'break-word'
-      ..overflow = 'hidden';
+      // Prevent the browser from doing any line breaks in the paragraph. We want
+      // to insert our own <BR> breaks based on layout results.
+      ..whiteSpace = 'pre';
+
+    if (width > longestLine) {
+      // In this case, we set the width so that the CSS text-align property
+      // works correctly.
+      // When `longestLine` is >= `paragraph.width` that means the DOM element
+      // will automatically size itself to fit the longest line, so there's no
+      // need to set an explicit width.
+      cssStyle.width = '${width}px';
+    }
+
+    if (paragraphStyle._maxLines != null || paragraphStyle._ellipsis != null) {
+      cssStyle
+        ..overflowY = 'hidden'
+        ..height = '${height}px';
+    }
 
     if (paragraphStyle._ellipsis != null &&
         (paragraphStyle._maxLines == null || paragraphStyle._maxLines == 1)) {
       cssStyle
-        ..whiteSpace = 'pre'
+        ..width = '${width}px'
+        ..overflowX = 'hidden'
         ..textOverflow = 'ellipsis';
     }
 
     // 2. Append all spans to the paragraph.
-    for (final ParagraphSpan span in spans) {
-      if (span is FlatTextSpan) {
-        final html.HtmlElement spanElement =
-            domRenderer.createElement('span') as html.HtmlElement;
-        _applyTextStyleToElement(
-          element: spanElement,
-          style: span.style,
-          isSpan: true,
-        );
-        domRenderer.appendText(spanElement, span.textOf(this));
-        domRenderer.append(element, spanElement);
-      } else if (span is PlaceholderSpan) {
-        domRenderer.append(
-          element,
-          _createPlaceholderElement(placeholder: span),
-        );
+
+    ParagraphSpan? span;
+    late html.HtmlElement element;
+    final List<EngineLineMetrics> lines = computeLineMetrics();
+
+    for (int i = 0; i < lines.length; i++) {
+      // Insert a <BR> element before each line except the first line.
+      if (i > 0) {
+        domRenderer.append(element, domRenderer.createElement('br'));
+      }
+
+      for (final RangeBox box in lines[i].boxes!) {
+        if (box is SpanBox) {
+          if (box.span != span) {
+            span = box.span;
+            element = domRenderer.createElement('span') as html.HtmlElement;
+            _applyTextStyleToElement(
+              element: element,
+              style: box.span.style,
+              isSpan: true
+            );
+            domRenderer.append(rootElement, element);
+          }
+          domRenderer.appendText(element, box.toText());
+        } else if (box is PlaceholderBox) {
+          span = box.placeholder;
+          // If there's a line-end after this placeholder, we want the <BR> to
+          // be inserted in the root paragraph element.
+          element = rootElement;
+          domRenderer.append(
+            rootElement,
+            _createPlaceholderElement(placeholder: box.placeholder),
+          );
+        } else {
+          throw UnimplementedError('Unknown box type: ${box.runtimeType}');
+        }
       }
     }
-    return element;
+
+    return rootElement;
   }
 
   @override
   List<ui.TextBox> getBoxesForPlaceholders() {
-    // TODO(mdebbar): After layout, placeholders positions should've been
-    // determined and can be used to compute their boxes.
-    return <ui.TextBox>[];
+    return _layoutService.getBoxesForPlaceholders();
   }
-
-  // TODO(mdebbar): Check for child spans if any has styles that can't be drawn
-  // on a canvas. e.g:
-  // - decoration
-  // - word-spacing
-  // - shadows (may be possible? https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/shadowBlur)
-  // - font features
-  @override
-  final bool drawOnCanvas = true;
 
   @override
   List<ui.TextBox> getBoxesForRange(
@@ -210,14 +238,49 @@ class CanvasParagraph implements EngineParagraph {
 
   @override
   ui.TextRange getLineBoundary(ui.TextPosition position) {
-    // TODO(mdebbar): After layout, line metrics should be available and can be
-    // used to determine the line boundary of the given `position`.
-    return ui.TextRange.empty;
+    final int index = position.offset;
+    final List<EngineLineMetrics> lines = computeLineMetrics();
+
+    int i;
+    for (i = 0; i < lines.length - 1; i++) {
+      final EngineLineMetrics line = lines[i];
+      if (index >= line.startIndex && index < line.endIndex) {
+        break;
+      }
+    }
+
+    final EngineLineMetrics line = lines[i];
+    return ui.TextRange(start: line.startIndex, end: line.endIndex);
   }
 
   @override
   List<EngineLineMetrics> computeLineMetrics() {
     return _layoutService.lines;
+  }
+}
+
+/// Applies a paragraph [style] to an [element], translating the properties to
+/// their corresponding CSS equivalents.
+///
+/// As opposed to [_applyParagraphStyleToElement], this method only applies
+/// styles that are necessary at the paragraph level. Other styles (e.g. font
+/// size) are always applied at the span level so they aren't needed at the
+/// paragraph level.
+void _applyNecessaryParagraphStyles({
+  required html.HtmlElement element,
+  required EngineParagraphStyle style,
+}) {
+  final html.CssStyleDeclaration cssStyle = element.style;
+
+  if (style._textAlign != null) {
+    cssStyle.textAlign = textAlignToCssValue(
+        style._textAlign, style._textDirection ?? ui.TextDirection.ltr);
+  }
+  if (style._lineHeight != null) {
+    cssStyle.lineHeight = '${style._lineHeight}';
+  }
+  if (style._textDirection != null) {
+    cssStyle.direction = _textDirectionToCss(style._textDirection);
   }
 }
 
@@ -575,12 +638,28 @@ class CanvasParagraphBuilder implements ui.ParagraphBuilder {
     }
   }
 
+  bool _drawOnCanvas = true;
+
   @override
   void addText(String text) {
     final EngineTextStyle style = _currentStyleNode.resolveStyle();
     final int start = _plainTextBuffer.length;
     _plainTextBuffer.write(text);
     final int end = _plainTextBuffer.length;
+
+    if (_drawOnCanvas) {
+      final ui.TextDecoration? decoration = style._decoration;
+      if (decoration != null && decoration != ui.TextDecoration.none) {
+        _drawOnCanvas = false;
+      }
+    }
+
+    if (_drawOnCanvas) {
+      final List<ui.FontFeature>? fontFeatures = style._fontFeatures;
+      if (fontFeatures != null && fontFeatures.isNotEmpty) {
+        _drawOnCanvas = false;
+      }
+    }
 
     _spans.add(FlatTextSpan(style: style, start: start, end: end));
   }
@@ -592,6 +671,7 @@ class CanvasParagraphBuilder implements ui.ParagraphBuilder {
       paragraphStyle: _paragraphStyle,
       plainText: _plainTextBuffer.toString(),
       placeholderCount: _placeholderCount,
+      drawOnCanvas: _drawOnCanvas,
     );
   }
 }

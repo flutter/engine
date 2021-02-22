@@ -5,11 +5,12 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_KEY_EVENT_HANDLER_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_KEY_EVENT_HANDLER_H_
 
+#include <deque>
 #include <memory>
 #include <string>
 
-#include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/basic_message_channel.h"
-#include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/binary_messenger.h"
+#include "flutter/shell/platform/common/client_wrapper/include/flutter/basic_message_channel.h"
+#include "flutter/shell/platform/common/client_wrapper/include/flutter/binary_messenger.h"
 #include "flutter/shell/platform/windows/keyboard_hook_handler.h"
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
 #include "rapidjson/document.h"
@@ -23,24 +24,68 @@ class FlutterWindowsView;
 // Handles key events and forwards them to the Flutter engine.
 class KeyEventHandler : public KeyboardHookHandler {
  public:
-  explicit KeyEventHandler(flutter::BinaryMessenger* messenger);
+  using SendInputDelegate =
+      std::function<UINT(UINT cInputs, LPINPUT pInputs, int cbSize)>;
+
+// the user32 SendInput function is not supported in UWP appcontainer and there
+// is no WinRT equivalent hence we pass null for SendInputDelegate param.  Since
+// this handler is one of last resort, it is only applicable for platformview
+// scenarios where the host view can handle input events in the event the
+// Flutter view does not choose to handle them. Since platformview is currently
+// not support for desktop, there is no functional gap caused by this currently.
+#ifdef WINUWP
+  explicit KeyEventHandler(flutter::BinaryMessenger* messenger,
+                           SendInputDelegate delegate = nullptr);
+#else
+  explicit KeyEventHandler(flutter::BinaryMessenger* messenger,
+                           SendInputDelegate delegate = SendInput);
+#endif
 
   virtual ~KeyEventHandler();
 
   // |KeyboardHookHandler|
-  void KeyboardHook(FlutterWindowsView* window,
+  bool KeyboardHook(FlutterWindowsView* window,
                     int key,
                     int scancode,
                     int action,
-                    char32_t character) override;
+                    char32_t character,
+                    bool extended) override;
 
   // |KeyboardHookHandler|
   void TextHook(FlutterWindowsView* window,
                 const std::u16string& text) override;
 
+  // |KeyboardHookHandler|
+  void ComposeBeginHook() override;
+
+  // |KeyboardHookHandler|
+  void ComposeEndHook() override;
+
+  // |KeyboardHookHandler|
+  void ComposeChangeHook(const std::u16string& text, int cursor_pos) override;
+
  private:
+  KEYBDINPUT* FindPendingEvent(uint64_t id);
+  void RemovePendingEvent(uint64_t id);
+  void AddPendingEvent(uint64_t id, int scancode, int action, bool extended);
+  void HandleResponse(bool handled,
+                      uint64_t id,
+                      int action,
+                      bool extended,
+                      int scancode,
+                      int character);
+
   // The Flutter system channel for key event messages.
   std::unique_ptr<flutter::BasicMessageChannel<rapidjson::Document>> channel_;
+
+  // The queue of key events that have been sent to the framework but have not
+  // yet received a response.
+  std::deque<std::pair<uint64_t, KEYBDINPUT>> pending_events_;
+
+  // A function used to dispatch synthesized events. Used in testing to inject a
+  // test function to collect events. Defaults to the Windows function
+  // SendInput.
+  SendInputDelegate send_input_;
 };
 
 }  // namespace flutter

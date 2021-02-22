@@ -12,12 +12,30 @@ TextureLayer::TextureLayer(const SkPoint& offset,
                            const SkSize& size,
                            int64_t texture_id,
                            bool freeze,
-                           SkFilterQuality filter_quality)
+                           const SkSamplingOptions& sampling)
     : offset_(offset),
       size_(size),
       texture_id_(texture_id),
       freeze_(freeze),
-      filter_quality_(filter_quality) {}
+      sampling_(sampling) {}
+
+#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
+
+void TextureLayer::Diff(DiffContext* context, const Layer* old_layer) {
+  DiffContext::AutoSubtreeRestore subtree(context);
+  if (!context->IsSubtreeDirty()) {
+    FML_DCHECK(old_layer);
+    auto prev = old_layer->as_texture_layer();
+    // TODO(knopp) It would be nice to be able to determine that a texture is
+    // dirty
+    context->MarkSubtreeDirty(context->GetOldLayerPaintRegion(prev));
+  }
+  context->AddLayerBounds(SkRect::MakeXYWH(offset_.x(), offset_.y(),
+                                           size_.width(), size_.height()));
+  context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
+}
+
+#endif  // FLUTTER_ENABLE_DIFF_CONTEXT
 
 void TextureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "TextureLayer::Preroll");
@@ -28,6 +46,7 @@ void TextureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 
   set_paint_bounds(SkRect::MakeXYWH(offset_.x(), offset_.y(), size_.width(),
                                     size_.height()));
+  context->has_texture_layer = true;
 }
 
 void TextureLayer::Paint(PaintContext& context) const {
@@ -41,7 +60,7 @@ void TextureLayer::Paint(PaintContext& context) const {
     return;
   }
   texture->Paint(*context.leaf_nodes_canvas, paint_bounds(), freeze_,
-                 context.gr_context, filter_quality_);
+                 context.gr_context, sampling_);
 }
 
 }  // namespace flutter

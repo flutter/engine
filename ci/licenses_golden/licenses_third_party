@@ -1,4 +1,4 @@
-Signature: d3b14917ea726cd3cf6eca85b735025e
+Signature: 593ae7bcd7102bf82aad099b9c00170d
 
 UNUSED LICENSES:
 
@@ -223,7 +223,7 @@ LIBRARY: angle
 LIBRARY: boringssl
 LIBRARY: khronos
 LIBRARY: vulkan
-LIBRARY: vulkan-headers
+LIBRARY: vulkan-deps
 LIBRARY: wuffs
 ORIGIN: ../../../flutter/third_party/txt/LICENSE
 TYPE: LicenseType.apache
@@ -847,8 +847,14 @@ FILE: ../../../third_party/abseil-cpp/absl/utility/BUILD.bazel
 FILE: ../../../third_party/abseil-cpp/absl/utility/utility.h
 FILE: ../../../third_party/abseil-cpp/absl/utility/utility_test.cc
 FILE: ../../../third_party/abseil-cpp/ci/absl_alternate_options.h
+FILE: ../../../third_party/angle/include/EGL/egl.h
+FILE: ../../../third_party/angle/include/EGL/eglext.h
+FILE: ../../../third_party/angle/include/EGL/eglplatform.h
 FILE: ../../../third_party/angle/include/GLES/egl.h
 FILE: ../../../third_party/angle/include/GLES/glplatform.h
+FILE: ../../../third_party/angle/include/GLES2/gl2platform.h
+FILE: ../../../third_party/angle/include/GLES3/gl3platform.h
+FILE: ../../../third_party/angle/scripts/egl.xml
 FILE: ../../../third_party/angle/scripts/gl.xml
 FILE: ../../../third_party/angle/scripts/wgl.xml
 FILE: ../../../third_party/angle/src/android_system_settings/res/layout/fragment.xml
@@ -951,33 +957,37 @@ FILE: ../../../third_party/angle/src/android_system_settings/src/com/android/ang
 FILE: ../../../third_party/angle/src/android_system_settings/src/com/android/angle/common/SearchProvider.java
 FILE: ../../../third_party/angle/src/common/vulkan/vk_ext_provoking_vertex.h
 FILE: ../../../third_party/angle/src/common/vulkan/vk_google_filtering_precision.h
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/cmake/cmake_uninstall.cmake.in
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/include/vulkan/vk_icd.h
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/include/vulkan/vk_layer.h
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/include/vulkan/vk_platform.h
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/include/vulkan/vk_sdk_platform.h
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/include/vulkan/vulkan.h
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/include/vulkan/vulkan.hpp
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/include/vulkan/vulkan_android.h
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/include/vulkan/vulkan_beta.h
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/include/vulkan/vulkan_core.h
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/include/vulkan/vulkan_directfb.h
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/include/vulkan/vulkan_fuchsia.h
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/include/vulkan/vulkan_ggp.h
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/include/vulkan/vulkan_ios.h
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/include/vulkan/vulkan_macos.h
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/include/vulkan/vulkan_metal.h
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/include/vulkan/vulkan_vi.h
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/include/vulkan/vulkan_wayland.h
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/include/vulkan/vulkan_win32.h
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/include/vulkan/vulkan_xcb.h
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/include/vulkan/vulkan_xlib.h
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/include/vulkan/vulkan_xlib_xrandr.h
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/registry/validusage.json
-FILE: ../../../third_party/angle/third_party/vulkan-headers/src/registry/vk.xml
+FILE: ../../../third_party/angle/third_party/vulkan-deps/vulkan-headers/src/cmake/cmake_uninstall.cmake.in
+FILE: ../../../third_party/angle/third_party/vulkan-deps/vulkan-headers/src/include/vulkan/vk_icd.h
+FILE: ../../../third_party/angle/third_party/vulkan-deps/vulkan-headers/src/include/vulkan/vk_layer.h
+FILE: ../../../third_party/angle/third_party/vulkan-deps/vulkan-headers/src/include/vulkan/vk_platform.h
+FILE: ../../../third_party/angle/third_party/vulkan-deps/vulkan-headers/src/include/vulkan/vk_sdk_platform.h
+FILE: ../../../third_party/angle/third_party/vulkan-deps/vulkan-headers/src/include/vulkan/vulkan.h
+FILE: ../../../third_party/angle/third_party/vulkan-deps/vulkan-headers/src/include/vulkan/vulkan.hpp
+FILE: ../../../third_party/angle/third_party/vulkan-deps/vulkan-headers/src/include/vulkan/vulkan_android.h
+FILE: ../../../third_party/angle/third_party/vulkan-deps/vulkan-headers/src/include/vulkan/vulkan_beta.h
+FILE: ../../../third_party/angle/third_party/vulkan-deps/vulkan-headers/src/include/vulkan/vulkan_core.h
+FILE: ../../../third_party/angle/third_party/vulkan-deps/vulkan-headers/src/include/vulkan/vulkan_directfb.h
+FILE: ../../../third_party/angle/third_party/vulkan-deps/vulkan-headers/src/include/vulkan/vulkan_fuchsia.h
+FILE: ../../../third_party/angle/third_party/vulkan-deps/vulkan-headers/src/include/vulkan/vulkan_ggp.h
+FILE: ../../../third_party/angle/third_party/vulkan-deps/vulkan-headers/src/include/vulkan/vulkan_ios.h
+FILE: ../../../third_party/angle/third_party/vulkan-deps/vulkan-headers/src/include/vulkan/vulkan_macos.h
+FILE: ../../../third_party/angle/third_party/vulkan-deps/vulkan-headers/src/include/vulkan/vulkan_metal.h
+FILE: ../../../third_party/angle/third_party/vulkan-deps/vulkan-headers/src/include/vulkan/vulkan_vi.h
+FILE: ../../../third_party/angle/third_party/vulkan-deps/vulkan-headers/src/include/vulkan/vulkan_wayland.h
+FILE: ../../../third_party/angle/third_party/vulkan-deps/vulkan-headers/src/include/vulkan/vulkan_win32.h
+FILE: ../../../third_party/angle/third_party/vulkan-deps/vulkan-headers/src/include/vulkan/vulkan_xcb.h
+FILE: ../../../third_party/angle/third_party/vulkan-deps/vulkan-headers/src/include/vulkan/vulkan_xlib.h
+FILE: ../../../third_party/angle/third_party/vulkan-deps/vulkan-headers/src/include/vulkan/vulkan_xlib_xrandr.h
+FILE: ../../../third_party/angle/third_party/vulkan-deps/vulkan-headers/src/registry/validusage.json
+FILE: ../../../third_party/angle/third_party/vulkan-deps/vulkan-headers/src/registry/vk.xml
 FILE: ../../../third_party/angle/util/android/third_party/android_native_app_glue.c
 FILE: ../../../third_party/angle/util/android/third_party/android_native_app_glue.h
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/METADATA
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/aead_aes_siv_cmac_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/aegis128L_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/aegis128_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/aegis256_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/aes_cbc_pkcs5_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/aes_ccm_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/aes_cmac_test.json
@@ -986,6 +996,14 @@ FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/aes_
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/aes_gcm_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/aes_siv_cmac_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/chacha20_poly1305_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/dsa_2048_224_sha224_p1363_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/dsa_2048_224_sha224_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/dsa_2048_224_sha256_p1363_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/dsa_2048_224_sha256_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/dsa_2048_256_sha256_p1363_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/dsa_2048_256_sha256_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/dsa_3072_256_sha256_p1363_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/dsa_3072_256_sha256_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/dsa_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdh_brainpoolP224r1_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdh_brainpoolP256r1_test.json
@@ -1003,43 +1021,130 @@ FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdh
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdh_secp521r1_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdh_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdh_webcrypto_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdsa_brainpoolP224r1_sha224_p1363_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdsa_brainpoolP224r1_sha224_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdsa_brainpoolP256r1_sha256_p1363_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdsa_brainpoolP256r1_sha256_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdsa_brainpoolP320r1_sha384_p1363_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdsa_brainpoolP320r1_sha384_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdsa_brainpoolP384r1_sha384_p1363_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdsa_brainpoolP384r1_sha384_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdsa_brainpoolP512r1_sha512_p1363_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdsa_brainpoolP512r1_sha512_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdsa_secp224r1_sha224_p1363_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdsa_secp224r1_sha224_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdsa_secp224r1_sha256_p1363_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdsa_secp224r1_sha256_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdsa_secp224r1_sha3_224_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdsa_secp224r1_sha3_256_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdsa_secp224r1_sha3_512_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdsa_secp224r1_sha512_p1363_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdsa_secp224r1_sha512_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdsa_secp256k1_sha256_p1363_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdsa_secp256k1_sha256_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdsa_secp256k1_sha3_256_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdsa_secp256k1_sha3_512_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdsa_secp256k1_sha512_p1363_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdsa_secp256k1_sha512_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdsa_secp256r1_sha256_p1363_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdsa_secp256r1_sha256_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdsa_secp256r1_sha3_256_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdsa_secp256r1_sha3_512_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdsa_secp256r1_sha512_p1363_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdsa_secp256r1_sha512_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdsa_secp384r1_sha384_p1363_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdsa_secp384r1_sha384_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdsa_secp384r1_sha3_384_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdsa_secp384r1_sha3_512_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdsa_secp384r1_sha512_p1363_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdsa_secp384r1_sha512_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdsa_secp521r1_sha3_512_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdsa_secp521r1_sha512_p1363_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdsa_secp521r1_sha512_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdsa_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ecdsa_webcrypto_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/ed448_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/eddsa_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/gmac_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/hkdf_sha1_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/hkdf_sha256_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/hkdf_sha384_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/hkdf_sha512_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/hmac_sha1_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/hmac_sha224_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/hmac_sha256_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/hmac_sha384_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/hmac_sha3_224_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/hmac_sha3_256_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/hmac_sha3_384_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/hmac_sha3_512_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/hmac_sha512_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/kw_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/kwp_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/primality_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_oaep_2048_sha1_mgf1sha1_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_oaep_2048_sha224_mgf1sha1_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_oaep_2048_sha224_mgf1sha224_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_oaep_2048_sha256_mgf1sha1_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_oaep_2048_sha256_mgf1sha256_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_oaep_2048_sha384_mgf1sha1_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_oaep_2048_sha384_mgf1sha384_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_oaep_2048_sha512_mgf1sha1_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_oaep_2048_sha512_mgf1sha512_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_oaep_3072_sha256_mgf1sha1_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_oaep_3072_sha256_mgf1sha256_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_oaep_3072_sha512_mgf1sha1_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_oaep_3072_sha512_mgf1sha512_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_oaep_4096_sha256_mgf1sha1_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_oaep_4096_sha256_mgf1sha256_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_oaep_4096_sha512_mgf1sha1_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_oaep_4096_sha512_mgf1sha512_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_oaep_misc_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_pkcs1_2048_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_pkcs1_3072_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_pkcs1_4096_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_pss_2048_sha1_mgf1_20_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_pss_2048_sha256_mgf1_0_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_pss_2048_sha256_mgf1_32_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_pss_2048_sha512_256_mgf1_28_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_pss_2048_sha512_256_mgf1_32_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_pss_3072_sha256_mgf1_32_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_pss_4096_sha256_mgf1_32_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_pss_4096_sha512_mgf1_32_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_pss_misc_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_sig_gen_misc_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_signature_2048_sha224_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_signature_2048_sha256_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_signature_2048_sha384_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_signature_2048_sha3_224_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_signature_2048_sha3_256_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_signature_2048_sha3_384_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_signature_2048_sha3_512_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_signature_2048_sha512_224_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_signature_2048_sha512_256_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_signature_2048_sha512_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_signature_3072_sha256_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_signature_3072_sha384_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_signature_3072_sha3_256_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_signature_3072_sha3_384_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_signature_3072_sha3_512_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_signature_3072_sha512_256_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_signature_3072_sha512_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_signature_4096_sha384_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_signature_4096_sha512_256_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_signature_4096_sha512_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_signature_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/vmac_128_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/vmac_64_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/x25519_asn_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/x25519_jwk_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/x25519_pem_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/x25519_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/x448_asn_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/x448_jwk_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/x448_pem_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/x448_test.json
+FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/xchacha20_poly1305_test.json
 FILE: ../../../third_party/khronos/GLES2/gl2platform.h
 FILE: ../../../third_party/khronos/GLES3/gl3platform.h
 FILE: ../../../third_party/vulkan/include/vulkan/vk_platform.h
@@ -1069,27 +1174,41 @@ FILE: ../../../third_party/wuffs/cmd/wuffs/main.go
 FILE: ../../../third_party/wuffs/cmd/wuffs/release.go
 FILE: ../../../third_party/wuffs/cmd/wuffs/test.go
 FILE: ../../../third_party/wuffs/cmd/wuffsfmt/main.go
+FILE: ../../../third_party/wuffs/example/cbor-to-json/cbor-to-json.cc
 FILE: ../../../third_party/wuffs/example/convert-to-nia/convert-to-nia.c
 FILE: ../../../third_party/wuffs/example/crc32/crc32.cc
 FILE: ../../../third_party/wuffs/example/gifplayer/gifplayer.c
 FILE: ../../../third_party/wuffs/example/imageviewer/imageviewer.c
+FILE: ../../../third_party/wuffs/example/json-to-cbor/json-to-cbor.cc
 FILE: ../../../third_party/wuffs/example/jsonfindptrs/jsonfindptrs.cc
 FILE: ../../../third_party/wuffs/example/jsonptr/jsonptr.cc
-FILE: ../../../third_party/wuffs/example/library/library.c
+FILE: ../../../third_party/wuffs/example/toy-genlib/toy-genlib.c
 FILE: ../../../third_party/wuffs/example/zcat/zcat.c
 FILE: ../../../third_party/wuffs/fuzz/c/fuzzlib/fuzzlib.c
+FILE: ../../../third_party/wuffs/fuzz/c/fuzzlib/fuzzlib_image_decoder.c
+FILE: ../../../third_party/wuffs/fuzz/c/std/bmp_fuzzer.c
+FILE: ../../../third_party/wuffs/fuzz/c/std/cbor_fuzzer.c
 FILE: ../../../third_party/wuffs/fuzz/c/std/gif_fuzzer.c
 FILE: ../../../third_party/wuffs/fuzz/c/std/json_fuzzer.c
+FILE: ../../../third_party/wuffs/fuzz/c/std/png_fuzzer.c
 FILE: ../../../third_party/wuffs/fuzz/c/std/zlib_fuzzer.c
 FILE: ../../../third_party/wuffs/hello-wuffs-c/main.c
 FILE: ../../../third_party/wuffs/hello-wuffs-c/parse.wuffs
 FILE: ../../../third_party/wuffs/hello-wuffs-c/wuffs-base.c
+FILE: ../../../third_party/wuffs/internal/cgen/auxiliary/base.cc
+FILE: ../../../third_party/wuffs/internal/cgen/auxiliary/base.hh
+FILE: ../../../third_party/wuffs/internal/cgen/auxiliary/cbor.cc
+FILE: ../../../third_party/wuffs/internal/cgen/auxiliary/cbor.hh
+FILE: ../../../third_party/wuffs/internal/cgen/auxiliary/json.cc
+FILE: ../../../third_party/wuffs/internal/cgen/auxiliary/json.hh
 FILE: ../../../third_party/wuffs/internal/cgen/base/all-impl.c
-FILE: ../../../third_party/wuffs/internal/cgen/base/f64conv-submodule.c
+FILE: ../../../third_party/wuffs/internal/cgen/base/floatconv-submodule-code.c
+FILE: ../../../third_party/wuffs/internal/cgen/base/floatconv-submodule-data.c
 FILE: ../../../third_party/wuffs/internal/cgen/base/fundamental-private.h
 FILE: ../../../third_party/wuffs/internal/cgen/base/fundamental-public.h
 FILE: ../../../third_party/wuffs/internal/cgen/base/image-private.h
 FILE: ../../../third_party/wuffs/internal/cgen/base/image-public.h
+FILE: ../../../third_party/wuffs/internal/cgen/base/intconv-submodule.c
 FILE: ../../../third_party/wuffs/internal/cgen/base/io-private.h
 FILE: ../../../third_party/wuffs/internal/cgen/base/io-public.h
 FILE: ../../../third_party/wuffs/internal/cgen/base/memory-private.h
@@ -1097,11 +1216,11 @@ FILE: ../../../third_party/wuffs/internal/cgen/base/memory-public.h
 FILE: ../../../third_party/wuffs/internal/cgen/base/pixconv-submodule.c
 FILE: ../../../third_party/wuffs/internal/cgen/base/range-private.h
 FILE: ../../../third_party/wuffs/internal/cgen/base/range-public.h
-FILE: ../../../third_party/wuffs/internal/cgen/base/strconv-impl.c
 FILE: ../../../third_party/wuffs/internal/cgen/base/strconv-private.h
 FILE: ../../../third_party/wuffs/internal/cgen/base/strconv-public.h
 FILE: ../../../third_party/wuffs/internal/cgen/base/token-private.h
 FILE: ../../../third_party/wuffs/internal/cgen/base/token-public.h
+FILE: ../../../third_party/wuffs/internal/cgen/base/utf8-submodule.c
 FILE: ../../../third_party/wuffs/internal/cgen/builtin.go
 FILE: ../../../third_party/wuffs/internal/cgen/cgen.go
 FILE: ../../../third_party/wuffs/internal/cgen/data/data.go
@@ -1192,11 +1311,13 @@ FILE: ../../../third_party/wuffs/script/compress-giflzw.go
 FILE: ../../../third_party/wuffs/script/convert-png-to-wbmp.go
 FILE: ../../../third_party/wuffs/script/crawl.go
 FILE: ../../../third_party/wuffs/script/draw-with-mask.go
+FILE: ../../../third_party/wuffs/script/extract-cbor-rfc-7049-examples.go
 FILE: ../../../third_party/wuffs/script/extract-deflate-offsets.go
 FILE: ../../../third_party/wuffs/script/extract-giflzw.go
 FILE: ../../../third_party/wuffs/script/extract-palette-indexes.go
 FILE: ../../../third_party/wuffs/script/inline-c-relative-includes.go
 FILE: ../../../third_party/wuffs/script/make-artificial.go
+FILE: ../../../third_party/wuffs/script/manual-test-parse-number-f64.cc
 FILE: ../../../third_party/wuffs/script/mmap-ring-buffer.c
 FILE: ../../../third_party/wuffs/script/preprocess-wuffs.go
 FILE: ../../../third_party/wuffs/script/print-bits.go
@@ -1207,21 +1328,24 @@ FILE: ../../../third_party/wuffs/script/print-deflate-huff-table-size.go
 FILE: ../../../third_party/wuffs/script/print-deflate-magic-numbers.go
 FILE: ../../../third_party/wuffs/script/print-file-sizes-json.go
 FILE: ../../../third_party/wuffs/script/print-hpd-left-shift.go
+FILE: ../../../third_party/wuffs/script/print-json-ascii-escapes.go
 FILE: ../../../third_party/wuffs/script/print-json-token-debug-format.c
 FILE: ../../../third_party/wuffs/script/print-lzw-example.go
 FILE: ../../../third_party/wuffs/script/print-markdown-links.go
 FILE: ../../../third_party/wuffs/script/print-mpb-powers-of-10.go
+FILE: ../../../third_party/wuffs/script/print-render-number-f64-tests.go
+FILE: ../../../third_party/wuffs/script/process-json-numbers.c
 FILE: ../../../third_party/wuffs/script/rac-random-seek-test.go
 FILE: ../../../third_party/wuffs/script/wuffs-deflate-decoder-decode-huffman.c
 FILE: ../../../third_party/wuffs/std/adler32/common_adler32.wuffs
 FILE: ../../../third_party/wuffs/std/bmp/decode_bmp.wuffs
+FILE: ../../../third_party/wuffs/std/cbor/decode_cbor.wuffs
 FILE: ../../../third_party/wuffs/std/crc32/common_crc32.wuffs
 FILE: ../../../third_party/wuffs/std/deflate/common_consts.wuffs
 FILE: ../../../third_party/wuffs/std/deflate/decode_deflate.wuffs
 FILE: ../../../third_party/wuffs/std/deflate/decode_huffman_fast.wuffs
 FILE: ../../../third_party/wuffs/std/deflate/decode_huffman_slow.wuffs
 FILE: ../../../third_party/wuffs/std/gif/common_consts.wuffs
-FILE: ../../../third_party/wuffs/std/gif/decode_config.wuffs
 FILE: ../../../third_party/wuffs/std/gif/decode_gif.wuffs
 FILE: ../../../third_party/wuffs/std/gif/decode_quirks.wuffs
 FILE: ../../../third_party/wuffs/std/gzip/decode_gzip.wuffs
@@ -1229,6 +1353,9 @@ FILE: ../../../third_party/wuffs/std/json/common_consts.wuffs
 FILE: ../../../third_party/wuffs/std/json/decode_json.wuffs
 FILE: ../../../third_party/wuffs/std/json/decode_quirks.wuffs
 FILE: ../../../third_party/wuffs/std/lzw/decode_lzw.wuffs
+FILE: ../../../third_party/wuffs/std/nie/decode_nie.wuffs
+FILE: ../../../third_party/wuffs/std/png/decode_filter_fallback.wuffs
+FILE: ../../../third_party/wuffs/std/png/decode_png.wuffs
 FILE: ../../../third_party/wuffs/std/wbmp/decode_wbmp.wuffs
 FILE: ../../../third_party/wuffs/std/zlib/decode_zlib.wuffs
 ----------------------------------------------------------------------------------------------------
@@ -1728,8 +1855,6 @@ FILE: ../../../third_party/angle/src/compiler/translator/Symbol.cpp
 FILE: ../../../third_party/angle/src/compiler/translator/Symbol.h
 FILE: ../../../third_party/angle/src/compiler/translator/SymbolUniqueId.cpp
 FILE: ../../../third_party/angle/src/compiler/translator/SymbolUniqueId.h
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/ClampFragDepth.cpp
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/ClampFragDepth.h
 FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/ClampPointSize.cpp
 FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/ClampPointSize.h
 FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/DeclareAndInitBuiltinsForInstancedMultiview.cpp
@@ -1738,10 +1863,12 @@ FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RemoveArrayLen
 FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RemoveArrayLengthMethod.h
 FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RemoveUnreferencedVariables.cpp
 FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RemoveUnreferencedVariables.h
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/VectorizeVectorScalarArithmetic.cpp
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/VectorizeVectorScalarArithmetic.h
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/WrapSwitchStatementsInBlocks.cpp
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/WrapSwitchStatementsInBlocks.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/d3d/WrapSwitchStatementsInBlocks.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/d3d/WrapSwitchStatementsInBlocks.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/gl/ClampFragDepth.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/gl/ClampFragDepth.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/gl/VectorizeVectorScalarArithmetic.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/gl/VectorizeVectorScalarArithmetic.h
 FILE: ../../../third_party/angle/src/compiler/translator/tree_util/FindMain.cpp
 FILE: ../../../third_party/angle/src/compiler/translator/tree_util/FindMain.h
 FILE: ../../../third_party/angle/src/compiler/translator/tree_util/IntermNode_util.cpp
@@ -1843,30 +1970,30 @@ FILE: ../../../third_party/angle/src/compiler/translator/TranslatorVulkan.cpp
 FILE: ../../../third_party/angle/src/compiler/translator/TranslatorVulkan.h
 FILE: ../../../third_party/angle/src/compiler/translator/ValidateMaxParameters.cpp
 FILE: ../../../third_party/angle/src/compiler/translator/ValidateMaxParameters.h
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/AddAndTrueToLoopCondition.cpp
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/AddAndTrueToLoopCondition.h
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/AddDefaultReturnStatements.cpp
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/AddDefaultReturnStatements.h
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/BreakVariableAliasingInInnerLoops.cpp
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/BreakVariableAliasingInInnerLoops.h
 FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/DeferGlobalInitializers.cpp
 FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/DeferGlobalInitializers.h
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/ExpandIntegerPowExpressions.cpp
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/ExpandIntegerPowExpressions.h
 FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RemoveInvariantDeclaration.cpp
 FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RemoveInvariantDeclaration.h
 FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RewriteTexelFetchOffset.cpp
 FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RewriteTexelFetchOffset.h
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RewriteUnaryMinusOperatorFloat.cpp
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RewriteUnaryMinusOperatorFloat.h
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RewriteUnaryMinusOperatorInt.cpp
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RewriteUnaryMinusOperatorInt.h
 FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/SimplifyLoopConditions.cpp
 FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/SimplifyLoopConditions.h
 FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/SplitSequenceOperator.cpp
 FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/SplitSequenceOperator.h
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/UseInterfaceBlockFields.cpp
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/UseInterfaceBlockFields.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/d3d/AddDefaultReturnStatements.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/d3d/AddDefaultReturnStatements.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/d3d/BreakVariableAliasingInInnerLoops.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/d3d/BreakVariableAliasingInInnerLoops.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/d3d/ExpandIntegerPowExpressions.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/d3d/ExpandIntegerPowExpressions.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/d3d/RewriteUnaryMinusOperatorInt.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/d3d/RewriteUnaryMinusOperatorInt.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/gl/UseInterfaceBlockFields.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/gl/UseInterfaceBlockFields.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/gl/mac/AddAndTrueToLoopCondition.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/gl/mac/AddAndTrueToLoopCondition.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/gl/mac/RewriteUnaryMinusOperatorFloat.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/gl/mac/RewriteUnaryMinusOperatorFloat.h
 FILE: ../../../third_party/angle/src/compiler/translator/tree_util/IntermNodePatternMatcher.cpp
 FILE: ../../../third_party/angle/src/compiler/translator/tree_util/IntermNodePatternMatcher.h
 FILE: ../../../third_party/angle/src/image_util/imageformats.cpp
@@ -2070,76 +2197,9 @@ POSSIBILITY OF SUCH DAMAGE.
 ====================================================================================================
 LIBRARY: angle
 LIBRARY: khronos
-ORIGIN: ../../../third_party/angle/include/EGL/egl.h
-TYPE: LicenseType.unknown
-FILE: ../../../third_party/angle/include/EGL/egl.h
-FILE: ../../../third_party/angle/include/EGL/eglext.h
-FILE: ../../../third_party/angle/include/GLES/glext.h
-FILE: ../../../third_party/angle/include/GLES2/gl2.h
-FILE: ../../../third_party/angle/scripts/egl.xml
-FILE: ../../../third_party/khronos/EGL/egl.h
-FILE: ../../../third_party/khronos/EGL/eglext.h
-----------------------------------------------------------------------------------------------------
-Copyright (c) 2013-2017 The Khronos Group Inc.
-
-Permission is hereby granted, free of charge, to any person obtaining a
-copy of this software and/or associated documentation files (the
-"Materials"), to deal in the Materials without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Materials, and to
-permit persons to whom the Materials are furnished to do so, subject to
-the following conditions:
-
-The above copyright notice and this permission notice shall be included
-in all copies or substantial portions of the Materials.
-
-THE MATERIALS ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: angle
-LIBRARY: khronos
-ORIGIN: ../../../third_party/angle/include/EGL/eglplatform.h
-TYPE: LicenseType.unknown
-FILE: ../../../third_party/angle/include/EGL/eglplatform.h
-FILE: ../../../third_party/khronos/EGL/eglplatform.h
-----------------------------------------------------------------------------------------------------
-Copyright (c) 2007-2016 The Khronos Group Inc.
-
-Permission is hereby granted, free of charge, to any person obtaining a
-copy of this software and/or associated documentation files (the
-"Materials"), to deal in the Materials without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Materials, and to
-permit persons to whom the Materials are furnished to do so, subject to
-the following conditions:
-
-The above copyright notice and this permission notice shall be included
-in all copies or substantial portions of the Materials.
-
-THE MATERIALS ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: angle
-LIBRARY: khronos
 ORIGIN: ../../../third_party/angle/include/GLES/gl.h
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/angle/include/GLES/gl.h
-FILE: ../../../third_party/angle/include/GLES2/gl2ext.h
-FILE: ../../../third_party/angle/include/GLES3/gl3.h
 FILE: ../../../third_party/angle/include/WGL/wgl.h
 FILE: ../../../third_party/khronos/GLES2/gl2.h
 FILE: ../../../third_party/khronos/GLES2/gl2ext.h
@@ -2170,14 +2230,13 @@ MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.
 ====================================================================================================
 LIBRARY: angle
 LIBRARY: khronos
-ORIGIN: ../../../third_party/angle/include/GLES3/gl31.h
+ORIGIN: ../../../third_party/angle/include/GLES/glext.h
 TYPE: LicenseType.unknown
-FILE: ../../../third_party/angle/include/GLES3/gl31.h
-FILE: ../../../third_party/angle/include/GLES3/gl32.h
-FILE: ../../../third_party/khronos/GLES3/gl31.h
-FILE: ../../../third_party/khronos/GLES3/gl32.h
+FILE: ../../../third_party/angle/include/GLES/glext.h
+FILE: ../../../third_party/khronos/EGL/egl.h
+FILE: ../../../third_party/khronos/EGL/eglext.h
 ----------------------------------------------------------------------------------------------------
-Copyright (c) 2013-2016 The Khronos Group Inc.
+Copyright (c) 2013-2017 The Khronos Group Inc.
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and/or associated documentation files (the
@@ -2232,6 +2291,58 @@ MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.
 
 ====================================================================================================
 LIBRARY: angle
+LIBRARY: rapidjson
+ORIGIN: ../../../third_party/angle/include/GLES2/gl2.h
+TYPE: LicenseType.mit
+FILE: ../../../third_party/angle/include/GLES2/gl2.h
+FILE: ../../../third_party/angle/include/GLES2/gl2ext.h
+FILE: ../../../third_party/angle/include/GLES3/gl3.h
+FILE: ../../../third_party/angle/include/GLES3/gl31.h
+FILE: ../../../third_party/angle/include/GLES3/gl32.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/allocators.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/cursorstreamwrapper.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/document.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/encodedstream.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/encodings.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/error/en.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/error/error.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/filereadstream.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/filewritestream.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/fwd.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/internal/biginteger.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/internal/diyfp.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/internal/dtoa.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/internal/ieee754.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/internal/itoa.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/internal/meta.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/internal/pow10.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/internal/regex.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/internal/stack.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/internal/strfunc.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/internal/strtod.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/internal/swap.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/istreamwrapper.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/memorybuffer.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/memorystream.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/ostreamwrapper.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/pointer.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/prettywriter.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/rapidjson.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/reader.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/schema.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/stream.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/stringbuffer.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/writer.h
+----------------------------------------------------------------------------------------------------
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: angle
 LIBRARY: xxhash
 ORIGIN: ../../../third_party/angle/include/platform/Feature.h + ../../../third_party/angle/LICENSE
 TYPE: LicenseType.bsd
@@ -2266,16 +2377,17 @@ FILE: ../../../third_party/angle/src/compiler/translator/glslang_tab_autogen.cpp
 FILE: ../../../third_party/angle/src/compiler/translator/span_unittest.cpp
 FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/EmulateMultiDrawShaderBuiltins.cpp
 FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/EmulateMultiDrawShaderBuiltins.h
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RemoveInactiveInterfaceVariables.cpp
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RemoveInactiveInterfaceVariables.h
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RewriteAtomicCounters.cpp
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RewriteAtomicCounters.h
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RewriteCubeMapSamplersAs2DArray.cpp
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RewriteCubeMapSamplersAs2DArray.h
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RewriteDfdy.cpp
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RewriteDfdy.h
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RewriteRowMajorMatrices.cpp
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RewriteRowMajorMatrices.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/gl/mac/RewriteRowMajorMatrices.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/gl/mac/RewriteRowMajorMatrices.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/vulkan/RemoveInactiveInterfaceVariables.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/vulkan/RemoveInactiveInterfaceVariables.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/vulkan/RewriteArrayOfArrayOfOpaqueUniforms.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/vulkan/RewriteAtomicCounters.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/vulkan/RewriteAtomicCounters.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/vulkan/RewriteCubeMapSamplersAs2DArray.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/vulkan/RewriteCubeMapSamplersAs2DArray.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/vulkan/RewriteDfdy.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/vulkan/RewriteDfdy.h
 FILE: ../../../third_party/angle/src/compiler/translator/tree_util/BuiltIn.h
 FILE: ../../../third_party/angle/src/compiler/translator/tree_util/FindFunction.cpp
 FILE: ../../../third_party/angle/src/compiler/translator/tree_util/FindFunction.h
@@ -2426,24 +2538,9 @@ FILE: ../../../third_party/angle/src/libANGLE/validationES32.cpp
 FILE: ../../../third_party/angle/src/libANGLE/validationES32.h
 FILE: ../../../third_party/angle/src/libANGLE/validationESEXT.cpp
 FILE: ../../../third_party/angle/src/libANGLE/validationGL1.cpp
-FILE: ../../../third_party/angle/src/libANGLE/validationGL11.cpp
-FILE: ../../../third_party/angle/src/libANGLE/validationGL12.cpp
-FILE: ../../../third_party/angle/src/libANGLE/validationGL13.cpp
-FILE: ../../../third_party/angle/src/libANGLE/validationGL14.cpp
-FILE: ../../../third_party/angle/src/libANGLE/validationGL15.cpp
 FILE: ../../../third_party/angle/src/libANGLE/validationGL2.cpp
-FILE: ../../../third_party/angle/src/libANGLE/validationGL21.cpp
 FILE: ../../../third_party/angle/src/libANGLE/validationGL3.cpp
-FILE: ../../../third_party/angle/src/libANGLE/validationGL31.cpp
-FILE: ../../../third_party/angle/src/libANGLE/validationGL32.cpp
-FILE: ../../../third_party/angle/src/libANGLE/validationGL33.cpp
 FILE: ../../../third_party/angle/src/libANGLE/validationGL4.cpp
-FILE: ../../../third_party/angle/src/libANGLE/validationGL41.cpp
-FILE: ../../../third_party/angle/src/libANGLE/validationGL42.cpp
-FILE: ../../../third_party/angle/src/libANGLE/validationGL43.cpp
-FILE: ../../../third_party/angle/src/libANGLE/validationGL44.cpp
-FILE: ../../../third_party/angle/src/libANGLE/validationGL45.cpp
-FILE: ../../../third_party/angle/src/libANGLE/validationGL46.cpp
 FILE: ../../../third_party/angle/src/libGL/entry_points_wgl.cpp
 FILE: ../../../third_party/angle/src/libGL/entry_points_wgl.h
 FILE: ../../../third_party/angle/util/Timer.cpp
@@ -2505,15 +2602,12 @@ FILE: ../../../third_party/angle/doc/img/JobUnit.png
 FILE: ../../../third_party/angle/doc/img/RegressionTestingArchitecture.png
 FILE: ../../../third_party/angle/doc/img/StateChangeNotificationFlow.svg
 FILE: ../../../third_party/angle/doc/img/StateNotificationExample.svg
-FILE: ../../../third_party/angle/include/GLES2/gl2platform.h
-FILE: ../../../third_party/angle/include/GLES3/gl3platform.h
 FILE: ../../../third_party/angle/infra/config/global/commit-queue.cfg
 FILE: ../../../third_party/angle/infra/config/global/cr-buildbucket.cfg
 FILE: ../../../third_party/angle/infra/config/global/luci-logdog.cfg
 FILE: ../../../third_party/angle/infra/config/global/luci-milo.cfg
 FILE: ../../../third_party/angle/infra/config/global/luci-scheduler.cfg
 FILE: ../../../third_party/angle/infra/config/global/project.cfg
-FILE: ../../../third_party/angle/infra/config/global/refs.cfg
 FILE: ../../../third_party/angle/samples/multi_texture/basemap.tga
 FILE: ../../../third_party/angle/samples/multi_texture/lightmap.tga
 FILE: ../../../third_party/angle/samples/multiple_draw_buffers/multiple_draw_buffers_copy_fs.glsl
@@ -2538,6 +2632,7 @@ FILE: ../../../third_party/angle/scripts/code_generation_hashes/GLenum_value_to_
 FILE: ../../../third_party/angle/scripts/code_generation_hashes/Metal_default_shaders.json
 FILE: ../../../third_party/angle/scripts/code_generation_hashes/Metal_format_table.json
 FILE: ../../../third_party/angle/scripts/code_generation_hashes/OpenGL_dispatch_table.json
+FILE: ../../../third_party/angle/scripts/code_generation_hashes/SPIR-V_helpers.json
 FILE: ../../../third_party/angle/scripts/code_generation_hashes/Static_builtins.json
 FILE: ../../../third_party/angle/scripts/code_generation_hashes/Vulkan_format.json
 FILE: ../../../third_party/angle/scripts/code_generation_hashes/Vulkan_internal_shader_programs.json
@@ -2764,7 +2859,6 @@ FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/doc/img/LineRaster
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/doc/img/LineRasterPixelExample.png
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/doc/img/VulkanShaderTranslation.svg
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/vk_mandatory_format_support_data.json
-FILE: ../../../third_party/angle/src/libEGL/libEGL.def
 FILE: ../../../third_party/angle/src/libEGL/libEGL.rc
 FILE: ../../../third_party/angle/src/libEGL/resource.h
 FILE: ../../../third_party/angle/src/libGL/libGL.rc
@@ -2774,6 +2868,7 @@ FILE: ../../../third_party/angle/src/libGLESv1_CM/libGLESv1_CM.rc
 FILE: ../../../third_party/angle/src/libGLESv1_CM/resource.h
 FILE: ../../../third_party/angle/src/libGLESv2/libGLESv2.rc
 FILE: ../../../third_party/angle/src/libGLESv2/resource.h
+FILE: ../../../third_party/angle/util/ios/Info.plist
 ----------------------------------------------------------------------------------------------------
 Copyright 2018 The ANGLE Project Authors.
 All rights reserved.
@@ -2851,21 +2946,20 @@ FILE: ../../../third_party/angle/src/compiler/translator/ShaderStorageBlockOutpu
 FILE: ../../../third_party/angle/src/compiler/translator/builtin_variables.json
 FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/FoldExpressions.cpp
 FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/FoldExpressions.h
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/NameEmbeddedUniformStructs.cpp
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/NameEmbeddedUniformStructs.h
 FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/PruneEmptyCases.cpp
 FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/PruneEmptyCases.h
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RewriteAtomicFunctionExpressions.cpp
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RewriteAtomicFunctionExpressions.h
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RewriteExpressionsWithShaderStorageBlock.cpp
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RewriteExpressionsWithShaderStorageBlock.h
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RewriteRepeatedAssignToSwizzled.cpp
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RewriteRepeatedAssignToSwizzled.h
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RewriteStructSamplers.cpp
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RewriteStructSamplers.h
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RewriteStructSamplersOld.cpp
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/SeparateArrayConstructorStatements.cpp
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/SeparateArrayConstructorStatements.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/d3d/RewriteAtomicFunctionExpressions.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/d3d/RewriteAtomicFunctionExpressions.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/d3d/RewriteExpressionsWithShaderStorageBlock.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/d3d/RewriteExpressionsWithShaderStorageBlock.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/d3d/SeparateArrayConstructorStatements.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/d3d/SeparateArrayConstructorStatements.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/gl/RewriteRepeatedAssignToSwizzled.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/gl/RewriteRepeatedAssignToSwizzled.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/vulkan/NameEmbeddedUniformStructs.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/vulkan/NameEmbeddedUniformStructs.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/vulkan/RewriteStructSamplers.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/vulkan/RewriteStructSamplers.h
 FILE: ../../../third_party/angle/src/compiler/translator/tree_util/ReplaceVariable.cpp
 FILE: ../../../third_party/angle/src/compiler/translator/tree_util/ReplaceVariable.h
 FILE: ../../../third_party/angle/src/compiler/translator/tree_util/Visit.h
@@ -2987,12 +3081,17 @@ FILE: ../../../third_party/angle/include/GLES3/gl3ext_explicit_context_autogen.i
 FILE: ../../../third_party/angle/include/platform/Platform.h
 FILE: ../../../third_party/angle/infra/gn_isolate_map.pyl
 FILE: ../../../third_party/angle/samples/capture_replay/angle_trace_gl.h
+FILE: ../../../third_party/angle/scripts/entry_point_packed_egl_enums.json
 FILE: ../../../third_party/angle/src/common/PackedEGLEnums_autogen.cpp
 FILE: ../../../third_party/angle/src/common/PackedEGLEnums_autogen.h
 FILE: ../../../third_party/angle/src/common/PackedGLEnums_autogen.cpp
 FILE: ../../../third_party/angle/src/common/PackedGLEnums_autogen.h
+FILE: ../../../third_party/angle/src/common/apple/SoftLinking.h
 FILE: ../../../third_party/angle/src/common/entry_points_enum_autogen.cpp
 FILE: ../../../third_party/angle/src/common/entry_points_enum_autogen.h
+FILE: ../../../third_party/angle/src/common/gl/cgl/FunctionsCGL.cpp
+FILE: ../../../third_party/angle/src/common/gl/cgl/FunctionsCGL.h
+FILE: ../../../third_party/angle/src/common/system_utils_apple.cpp
 FILE: ../../../third_party/angle/src/common/uniform_type_info_autogen.cpp
 FILE: ../../../third_party/angle/src/common/vulkan/vulkan_icd.cpp
 FILE: ../../../third_party/angle/src/common/vulkan/vulkan_icd.h
@@ -3003,41 +3102,45 @@ FILE: ../../../third_party/angle/src/compiler/translator/ParseContext_complete_a
 FILE: ../../../third_party/angle/src/compiler/translator/SymbolTable_ESSL_autogen.cpp
 FILE: ../../../third_party/angle/src/compiler/translator/SymbolTable_autogen.cpp
 FILE: ../../../third_party/angle/src/compiler/translator/SymbolTable_autogen.h
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/EarlyFragmentTestsOptimization.cpp
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/EarlyFragmentTestsOptimization.h
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/FlagSamplersWithTexelFetch.cpp
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/FlagSamplersWithTexelFetch.h
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RemoveAtomicCounterBuiltins.cpp
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RemoveAtomicCounterBuiltins.h
+FILE: ../../../third_party/angle/src/compiler/translator/ValidateBarrierFunctionCall.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/ValidateBarrierFunctionCall.h
+FILE: ../../../third_party/angle/src/compiler/translator/ValidateClipCullDistance.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/ValidateClipCullDistance.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/ForcePrecisionQualifier.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/ForcePrecisionQualifier.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/d3d/RecordUniformBlocksWithLargeArrayMember.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/d3d/RecordUniformBlocksWithLargeArrayMember.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/vulkan/EarlyFragmentTestsOptimization.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/vulkan/EarlyFragmentTestsOptimization.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/vulkan/FlagSamplersWithTexelFetch.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/vulkan/FlagSamplersWithTexelFetch.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/vulkan/RemoveAtomicCounterBuiltins.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/vulkan/RemoveAtomicCounterBuiltins.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/vulkan/RewriteInterpolateAtOffset.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/vulkan/RewriteInterpolateAtOffset.h
 FILE: ../../../third_party/angle/src/compiler/translator/tree_util/BuiltIn_ESSL_autogen.h
 FILE: ../../../third_party/angle/src/compiler/translator/tree_util/BuiltIn_complete_autogen.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_util/DriverUniform.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/tree_util/DriverUniform.h
 FILE: ../../../third_party/angle/src/compiler/translator/tree_util/ReplaceArrayOfMatrixVarying.cpp
 FILE: ../../../third_party/angle/src/compiler/translator/tree_util/ReplaceArrayOfMatrixVarying.h
-FILE: ../../../third_party/angle/src/compiler/translator/tree_util/ReplaceClipDistanceVariable.cpp
-FILE: ../../../third_party/angle/src/compiler/translator/tree_util/ReplaceClipDistanceVariable.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_util/ReplaceClipCullDistanceVariable.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/tree_util/ReplaceClipCullDistanceVariable.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_util/RewriteSampleMaskVariable.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/tree_util/RewriteSampleMaskVariable.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_util/RunAtTheBeginningOfShader.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/tree_util/RunAtTheBeginningOfShader.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_util/SpecializationConstant.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/tree_util/SpecializationConstant.h
+FILE: ../../../third_party/angle/src/gpu_info_util/SystemInfo_apple.mm
 FILE: ../../../third_party/angle/src/gpu_info_util/SystemInfo_fuchsia.cpp
 FILE: ../../../third_party/angle/src/gpu_info_util/SystemInfo_ios.cpp
 FILE: ../../../third_party/angle/src/gpu_info_util/SystemInfo_vulkan.cpp
 FILE: ../../../third_party/angle/src/gpu_info_util/SystemInfo_vulkan.h
-FILE: ../../../third_party/angle/src/libANGLE/Context_gl_1_0_autogen.h
-FILE: ../../../third_party/angle/src/libANGLE/Context_gl_1_1_autogen.h
-FILE: ../../../third_party/angle/src/libANGLE/Context_gl_1_2_autogen.h
-FILE: ../../../third_party/angle/src/libANGLE/Context_gl_1_3_autogen.h
-FILE: ../../../third_party/angle/src/libANGLE/Context_gl_1_4_autogen.h
-FILE: ../../../third_party/angle/src/libANGLE/Context_gl_1_5_autogen.h
-FILE: ../../../third_party/angle/src/libANGLE/Context_gl_2_0_autogen.h
-FILE: ../../../third_party/angle/src/libANGLE/Context_gl_2_1_autogen.h
-FILE: ../../../third_party/angle/src/libANGLE/Context_gl_3_0_autogen.h
-FILE: ../../../third_party/angle/src/libANGLE/Context_gl_3_1_autogen.h
-FILE: ../../../third_party/angle/src/libANGLE/Context_gl_3_2_autogen.h
-FILE: ../../../third_party/angle/src/libANGLE/Context_gl_3_3_autogen.h
-FILE: ../../../third_party/angle/src/libANGLE/Context_gl_4_0_autogen.h
-FILE: ../../../third_party/angle/src/libANGLE/Context_gl_4_1_autogen.h
-FILE: ../../../third_party/angle/src/libANGLE/Context_gl_4_2_autogen.h
-FILE: ../../../third_party/angle/src/libANGLE/Context_gl_4_3_autogen.h
-FILE: ../../../third_party/angle/src/libANGLE/Context_gl_4_4_autogen.h
-FILE: ../../../third_party/angle/src/libANGLE/Context_gl_4_5_autogen.h
-FILE: ../../../third_party/angle/src/libANGLE/Context_gl_4_6_autogen.h
+FILE: ../../../third_party/angle/src/libANGLE/Context_gl_1_autogen.h
+FILE: ../../../third_party/angle/src/libANGLE/Context_gl_2_autogen.h
+FILE: ../../../third_party/angle/src/libANGLE/Context_gl_3_autogen.h
+FILE: ../../../third_party/angle/src/libANGLE/Context_gl_4_autogen.h
 FILE: ../../../third_party/angle/src/libANGLE/Context_gles_1_0_autogen.h
 FILE: ../../../third_party/angle/src/libANGLE/Context_gles_2_0_autogen.h
 FILE: ../../../third_party/angle/src/libANGLE/Context_gles_3_0_autogen.h
@@ -3069,8 +3172,6 @@ FILE: ../../../third_party/angle/src/libANGLE/frame_capture_utils.cpp
 FILE: ../../../third_party/angle/src/libANGLE/frame_capture_utils.h
 FILE: ../../../third_party/angle/src/libANGLE/frame_capture_utils_autogen.cpp
 FILE: ../../../third_party/angle/src/libANGLE/frame_capture_utils_autogen.h
-FILE: ../../../third_party/angle/src/libANGLE/gl_enum_utils_autogen.cpp
-FILE: ../../../third_party/angle/src/libANGLE/gl_enum_utils_autogen.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/BufferImpl.cpp
 FILE: ../../../third_party/angle/src/libANGLE/renderer/EGLReusableSync.cpp
 FILE: ../../../third_party/angle/src/libANGLE/renderer/EGLReusableSync.h
@@ -3086,12 +3187,16 @@ FILE: ../../../third_party/angle/src/libANGLE/renderer/dxgi_format_map.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/dxgi_format_map_autogen.cpp
 FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/DispatchTableGL_autogen.cpp
 FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/DispatchTableGL_autogen.h
+FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/apple/DisplayApple_api.cpp
+FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/apple/DisplayApple_api.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/eagl/ContextEAGL.cpp
 FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/eagl/ContextEAGL.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/eagl/DeviceEAGL.cpp
 FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/eagl/DeviceEAGL.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/eagl/DisplayEAGL.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/eagl/DisplayEAGL.mm
+FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/eagl/FunctionsEAGL.h
+FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/eagl/FunctionsEAGL.mm
 FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/eagl/IOSurfaceSurfaceEAGL.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/eagl/IOSurfaceSurfaceEAGL.mm
 FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/eagl/PbufferSurfaceEAGL.cpp
@@ -3115,6 +3220,7 @@ FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/SyncMtl.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/SyncMtl.mm
 FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/TransformFeedbackMtl.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/TransformFeedbackMtl.mm
+FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/file_hooking/shader_cache_file_hooking.cpp
 FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/mtl_format_table_autogen.mm
 FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/mtl_occlusion_query_pool.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/mtl_occlusion_query_pool.mm
@@ -3126,10 +3232,16 @@ FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/DebugAnnotatorVk.c
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/DebugAnnotatorVk.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/ProgramExecutableVk.cpp
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/ProgramExecutableVk.h
+FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/android/vk_android_utils.cpp
+FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/android/vk_android_utils.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/display/DisplayVkSimple.cpp
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/display/DisplayVkSimple.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/display/WindowSurfaceVkSimple.cpp
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/display/WindowSurfaceVkSimple.h
+FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/headless/DisplayVkHeadless.cpp
+FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/headless/DisplayVkHeadless.h
+FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/headless/WindowSurfaceVkHeadless.cpp
+FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/headless/WindowSurfaceVkHeadless.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/mac/IOSurfaceSurfaceVkMac.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/mac/IOSurfaceSurfaceVkMac.mm
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/gen/BlitResolve.frag.00000000.inc
@@ -3280,6 +3392,7 @@ FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/vk_internal_shader
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/vk_mandatory_format_support_table_autogen.cpp
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/vk_mem_alloc_wrapper.cpp
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/vk_mem_alloc_wrapper.h
+FILE: ../../../third_party/angle/src/libANGLE/validationEGL_autogen.h
 FILE: ../../../third_party/angle/src/libANGLE/validationES1_autogen.h
 FILE: ../../../third_party/angle/src/libANGLE/validationES2_autogen.h
 FILE: ../../../third_party/angle/src/libANGLE/validationES31_autogen.h
@@ -3305,49 +3418,27 @@ FILE: ../../../third_party/angle/src/libANGLE/validationGL44_autogen.h
 FILE: ../../../third_party/angle/src/libANGLE/validationGL45_autogen.h
 FILE: ../../../third_party/angle/src/libANGLE/validationGL46_autogen.h
 FILE: ../../../third_party/angle/src/libANGLE/validationGL4_autogen.h
-FILE: ../../../third_party/angle/src/libEGL/egl_loader_autogen.cpp
-FILE: ../../../third_party/angle/src/libEGL/egl_loader_autogen.h
-FILE: ../../../third_party/angle/src/libGL/entry_points_gl_1_0_autogen.cpp
-FILE: ../../../third_party/angle/src/libGL/entry_points_gl_1_0_autogen.h
-FILE: ../../../third_party/angle/src/libGL/entry_points_gl_1_1_autogen.cpp
-FILE: ../../../third_party/angle/src/libGL/entry_points_gl_1_1_autogen.h
-FILE: ../../../third_party/angle/src/libGL/entry_points_gl_1_2_autogen.cpp
-FILE: ../../../third_party/angle/src/libGL/entry_points_gl_1_2_autogen.h
-FILE: ../../../third_party/angle/src/libGL/entry_points_gl_1_3_autogen.cpp
-FILE: ../../../third_party/angle/src/libGL/entry_points_gl_1_3_autogen.h
-FILE: ../../../third_party/angle/src/libGL/entry_points_gl_1_4_autogen.cpp
-FILE: ../../../third_party/angle/src/libGL/entry_points_gl_1_4_autogen.h
-FILE: ../../../third_party/angle/src/libGL/entry_points_gl_1_5_autogen.cpp
-FILE: ../../../third_party/angle/src/libGL/entry_points_gl_1_5_autogen.h
-FILE: ../../../third_party/angle/src/libGL/entry_points_gl_2_0_autogen.cpp
-FILE: ../../../third_party/angle/src/libGL/entry_points_gl_2_0_autogen.h
-FILE: ../../../third_party/angle/src/libGL/entry_points_gl_2_1_autogen.cpp
-FILE: ../../../third_party/angle/src/libGL/entry_points_gl_2_1_autogen.h
-FILE: ../../../third_party/angle/src/libGL/entry_points_gl_3_0_autogen.cpp
-FILE: ../../../third_party/angle/src/libGL/entry_points_gl_3_0_autogen.h
-FILE: ../../../third_party/angle/src/libGL/entry_points_gl_3_1_autogen.cpp
-FILE: ../../../third_party/angle/src/libGL/entry_points_gl_3_1_autogen.h
-FILE: ../../../third_party/angle/src/libGL/entry_points_gl_3_2_autogen.cpp
-FILE: ../../../third_party/angle/src/libGL/entry_points_gl_3_2_autogen.h
-FILE: ../../../third_party/angle/src/libGL/entry_points_gl_3_3_autogen.cpp
-FILE: ../../../third_party/angle/src/libGL/entry_points_gl_3_3_autogen.h
-FILE: ../../../third_party/angle/src/libGL/entry_points_gl_4_0_autogen.cpp
-FILE: ../../../third_party/angle/src/libGL/entry_points_gl_4_0_autogen.h
-FILE: ../../../third_party/angle/src/libGL/entry_points_gl_4_1_autogen.cpp
-FILE: ../../../third_party/angle/src/libGL/entry_points_gl_4_1_autogen.h
-FILE: ../../../third_party/angle/src/libGL/entry_points_gl_4_2_autogen.cpp
-FILE: ../../../third_party/angle/src/libGL/entry_points_gl_4_2_autogen.h
-FILE: ../../../third_party/angle/src/libGL/entry_points_gl_4_3_autogen.cpp
-FILE: ../../../third_party/angle/src/libGL/entry_points_gl_4_3_autogen.h
-FILE: ../../../third_party/angle/src/libGL/entry_points_gl_4_4_autogen.cpp
-FILE: ../../../third_party/angle/src/libGL/entry_points_gl_4_4_autogen.h
-FILE: ../../../third_party/angle/src/libGL/entry_points_gl_4_5_autogen.cpp
-FILE: ../../../third_party/angle/src/libGL/entry_points_gl_4_5_autogen.h
-FILE: ../../../third_party/angle/src/libGL/entry_points_gl_4_6_autogen.cpp
-FILE: ../../../third_party/angle/src/libGL/entry_points_gl_4_6_autogen.h
+FILE: ../../../third_party/angle/src/libEGL/libEGL_autogen.cpp
+FILE: ../../../third_party/angle/src/libEGL/libEGL_autogen.def
+FILE: ../../../third_party/angle/src/libGL/entry_points_gl_1_autogen.cpp
+FILE: ../../../third_party/angle/src/libGL/entry_points_gl_1_autogen.h
+FILE: ../../../third_party/angle/src/libGL/entry_points_gl_2_autogen.cpp
+FILE: ../../../third_party/angle/src/libGL/entry_points_gl_2_autogen.h
+FILE: ../../../third_party/angle/src/libGL/entry_points_gl_3_autogen.cpp
+FILE: ../../../third_party/angle/src/libGL/entry_points_gl_3_autogen.h
+FILE: ../../../third_party/angle/src/libGL/entry_points_gl_4_autogen.cpp
+FILE: ../../../third_party/angle/src/libGL/entry_points_gl_4_autogen.h
 FILE: ../../../third_party/angle/src/libGL/libGL_autogen.cpp
 FILE: ../../../third_party/angle/src/libGL/libGL_autogen.def
-FILE: ../../../third_party/angle/src/libGL/proc_table_wgl_autogen.cpp
+FILE: ../../../third_party/angle/src/libGLESv2/egl_ext_stubs.cpp
+FILE: ../../../third_party/angle/src/libGLESv2/egl_ext_stubs_autogen.h
+FILE: ../../../third_party/angle/src/libGLESv2/egl_get_labeled_object_data.json
+FILE: ../../../third_party/angle/src/libGLESv2/egl_stubs.cpp
+FILE: ../../../third_party/angle/src/libGLESv2/egl_stubs_autogen.h
+FILE: ../../../third_party/angle/src/libGLESv2/entry_points_egl_autogen.cpp
+FILE: ../../../third_party/angle/src/libGLESv2/entry_points_egl_autogen.h
+FILE: ../../../third_party/angle/src/libGLESv2/entry_points_egl_ext_autogen.cpp
+FILE: ../../../third_party/angle/src/libGLESv2/entry_points_egl_ext_autogen.h
 FILE: ../../../third_party/angle/src/libGLESv2/entry_points_gles_1_0_autogen.cpp
 FILE: ../../../third_party/angle/src/libGLESv2/entry_points_gles_1_0_autogen.h
 FILE: ../../../third_party/angle/src/libGLESv2/entry_points_gles_2_0_autogen.cpp
@@ -3364,19 +3455,17 @@ FILE: ../../../third_party/angle/src/libGLESv2/libGLESv2_autogen.cpp
 FILE: ../../../third_party/angle/src/libGLESv2/libGLESv2_autogen.def
 FILE: ../../../third_party/angle/src/libGLESv2/libGLESv2_no_capture_autogen.def
 FILE: ../../../third_party/angle/src/libGLESv2/libGLESv2_with_capture_autogen.def
-FILE: ../../../third_party/angle/src/libGLESv2/proc_table_egl_autogen.cpp
 FILE: ../../../third_party/angle/util/display/DisplayPixmap.cpp
 FILE: ../../../third_party/angle/util/display/DisplayWindow.cpp
 FILE: ../../../third_party/angle/util/display/DisplayWindow.h
-FILE: ../../../third_party/angle/util/egl_loader_autogen.cpp
-FILE: ../../../third_party/angle/util/egl_loader_autogen.h
 FILE: ../../../third_party/angle/util/frame_capture_test_utils.h
-FILE: ../../../third_party/angle/util/gles_loader_autogen.cpp
-FILE: ../../../third_party/angle/util/gles_loader_autogen.h
+FILE: ../../../third_party/angle/util/ios/IOSPixmap.h
+FILE: ../../../third_party/angle/util/ios/IOSPixmap.mm
+FILE: ../../../third_party/angle/util/ios/IOSWindow.h
+FILE: ../../../third_party/angle/util/ios/IOSWindow.mm
+FILE: ../../../third_party/angle/util/ios/ios_main.mm
 FILE: ../../../third_party/angle/util/png_utils.cpp
 FILE: ../../../third_party/angle/util/png_utils.h
-FILE: ../../../third_party/angle/util/windows/wgl_loader_autogen.cpp
-FILE: ../../../third_party/angle/util/windows/wgl_loader_autogen.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2020 The ANGLE Project Authors. All rights reserved.
 
@@ -3489,8 +3578,6 @@ FILE: ../../../third_party/angle/src/compiler/translator/VersionGLSL.cpp
 FILE: ../../../third_party/angle/src/compiler/translator/VersionGLSL.h
 FILE: ../../../third_party/angle/src/compiler/translator/glslang.l
 FILE: ../../../third_party/angle/src/compiler/translator/glslang.y
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/ArrayReturnValueToOutParameter.cpp
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/ArrayReturnValueToOutParameter.h
 FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/EmulateGLFragColorBroadcast.cpp
 FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/EmulateGLFragColorBroadcast.h
 FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/EmulatePrecision.cpp
@@ -3499,28 +3586,30 @@ FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/InitializeVari
 FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/InitializeVariables.h
 FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/PruneNoOps.cpp
 FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/PruneNoOps.h
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RecordConstantPrecision.cpp
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RecordConstantPrecision.h
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RegenerateStructNames.cpp
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RegenerateStructNames.h
 FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RemoveDynamicIndexing.cpp
 FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RemoveDynamicIndexing.h
 FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RemovePow.cpp
 FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RemovePow.h
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RemoveSwitchFallThrough.cpp
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RemoveSwitchFallThrough.h
 FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/ScalarizeVecAndMatConstructorArgs.cpp
 FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/ScalarizeVecAndMatConstructorArgs.h
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/SeparateArrayInitialization.cpp
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/SeparateArrayInitialization.h
 FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/SeparateDeclarations.cpp
 FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/SeparateDeclarations.h
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/SeparateExpressionsReturningArrays.cpp
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/SeparateExpressionsReturningArrays.h
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/UnfoldShortCircuitAST.cpp
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/UnfoldShortCircuitAST.h
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/UnfoldShortCircuitToIf.cpp
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/UnfoldShortCircuitToIf.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/d3d/ArrayReturnValueToOutParameter.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/d3d/ArrayReturnValueToOutParameter.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/d3d/RemoveSwitchFallThrough.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/d3d/RemoveSwitchFallThrough.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/d3d/SeparateArrayInitialization.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/d3d/SeparateArrayInitialization.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/d3d/SeparateExpressionsReturningArrays.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/d3d/SeparateExpressionsReturningArrays.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/d3d/UnfoldShortCircuitToIf.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/d3d/UnfoldShortCircuitToIf.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/gl/RecordConstantPrecision.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/gl/RecordConstantPrecision.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/gl/RegenerateStructNames.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/gl/RegenerateStructNames.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/gl/mac/UnfoldShortCircuitAST.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/gl/mac/UnfoldShortCircuitAST.h
 FILE: ../../../third_party/angle/src/compiler/translator/tree_util/IntermTraverse.cpp
 FILE: ../../../third_party/angle/src/compiler/translator/tree_util/NodeSearch.h
 FILE: ../../../third_party/angle/src/compiler/translator/util.h
@@ -3576,7 +3665,6 @@ FILE: ../../../third_party/angle/src/libANGLE/renderer/d3d/d3d9/VertexBuffer9.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/d3d/d3d9/renderer9_utils.cpp
 FILE: ../../../third_party/angle/src/libANGLE/renderer/d3d/d3d9/renderer9_utils.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/d3d/d3d9/vertexconversion.h
-FILE: ../../../third_party/angle/src/libEGL/libEGL.cpp
 ----------------------------------------------------------------------------------------------------
 Copyright 2002 The ANGLE Project Authors. All rights reserved.
 
@@ -3784,8 +3872,8 @@ FILE: ../../../third_party/angle/src/compiler/translator/StructureHLSL.cpp
 FILE: ../../../third_party/angle/src/compiler/translator/StructureHLSL.h
 FILE: ../../../third_party/angle/src/compiler/translator/UtilsHLSL.cpp
 FILE: ../../../third_party/angle/src/compiler/translator/UtilsHLSL.h
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RewriteElseBlocks.cpp
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RewriteElseBlocks.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/d3d/RewriteElseBlocks.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/d3d/RewriteElseBlocks.h
 FILE: ../../../third_party/angle/src/image_util/copyimage.inc
 FILE: ../../../third_party/angle/src/image_util/loadimage.inc
 FILE: ../../../third_party/angle/src/libANGLE/AttributeMap.cpp
@@ -3875,10 +3963,6 @@ FILE: ../../../third_party/angle/src/libANGLE/renderer/d3d/d3d9/Framebuffer9.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/d3d/d3d9/VertexArray9.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/SamplerGL.cpp
 FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/SamplerGL.h
-FILE: ../../../third_party/angle/src/libGLESv2/entry_points_egl.cpp
-FILE: ../../../third_party/angle/src/libGLESv2/entry_points_egl.h
-FILE: ../../../third_party/angle/src/libGLESv2/entry_points_egl_ext.cpp
-FILE: ../../../third_party/angle/src/libGLESv2/entry_points_egl_ext.h
 FILE: ../../../third_party/angle/src/libGLESv2/global_state.cpp
 FILE: ../../../third_party/angle/src/libGLESv2/global_state.h
 FILE: ../../../third_party/angle/util/EGLWindow.h
@@ -3954,13 +4038,14 @@ FILE: ../../../third_party/angle/src/common/matrix_utils_unittest.cpp
 FILE: ../../../third_party/angle/src/common/string_utils.cpp
 FILE: ../../../third_party/angle/src/common/string_utils.h
 FILE: ../../../third_party/angle/src/common/string_utils_unittest.cpp
+FILE: ../../../third_party/angle/src/common/system_utils_ios.cpp
 FILE: ../../../third_party/angle/src/common/system_utils_linux.cpp
 FILE: ../../../third_party/angle/src/common/system_utils_mac.cpp
 FILE: ../../../third_party/angle/src/common/utilities_unittest.cpp
 FILE: ../../../third_party/angle/src/compiler/translator/ExtensionGLSL.cpp
 FILE: ../../../third_party/angle/src/compiler/translator/ExtensionGLSL.h
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RewriteDoWhile.cpp
-FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RewriteDoWhile.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/gl/mac/RewriteDoWhile.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/gl/mac/RewriteDoWhile.h
 FILE: ../../../third_party/angle/src/compiler/translator/tree_util/FindSymbolNode.cpp
 FILE: ../../../third_party/angle/src/compiler/translator/tree_util/FindSymbolNode.h
 FILE: ../../../third_party/angle/src/image_util/generatemip.inc
@@ -4272,6 +4357,66 @@ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: angle
+ORIGIN: ../../../third_party/angle/src/common/spirv/spirv_instruction_builder_autogen.cpp + ../../../third_party/angle/LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/angle/src/common/spirv/spirv_instruction_builder_autogen.cpp
+FILE: ../../../third_party/angle/src/common/spirv/spirv_instruction_builder_autogen.h
+FILE: ../../../third_party/angle/src/common/spirv/spirv_instruction_parser_autogen.cpp
+FILE: ../../../third_party/angle/src/common/spirv/spirv_instruction_parser_autogen.h
+FILE: ../../../third_party/angle/src/common/spirv/spirv_types.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/vulkan/MonomorphizeUnsupportedFunctionsInVulkanGLSL.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/vulkan/MonomorphizeUnsupportedFunctionsInVulkanGLSL.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/vulkan/RewriteArrayOfArrayOfOpaqueUniforms.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/vulkan/RewriteR32fImages.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/vulkan/RewriteR32fImages.h
+FILE: ../../../third_party/angle/src/libANGLE/gl_enum_utils_autogen.cpp
+FILE: ../../../third_party/angle/src/libANGLE/gl_enum_utils_autogen.h
+FILE: ../../../third_party/angle/src/libEGL/egl_loader_autogen.cpp
+FILE: ../../../third_party/angle/src/libEGL/egl_loader_autogen.h
+FILE: ../../../third_party/angle/src/libGL/proc_table_wgl_autogen.cpp
+FILE: ../../../third_party/angle/src/libGLESv2/proc_table_egl_autogen.cpp
+FILE: ../../../third_party/angle/util/egl_loader_autogen.cpp
+FILE: ../../../third_party/angle/util/egl_loader_autogen.h
+FILE: ../../../third_party/angle/util/gles_loader_autogen.cpp
+FILE: ../../../third_party/angle/util/gles_loader_autogen.h
+FILE: ../../../third_party/angle/util/windows/wgl_loader_autogen.cpp
+FILE: ../../../third_party/angle/util/windows/wgl_loader_autogen.h
+----------------------------------------------------------------------------------------------------
+Copyright 2021 The ANGLE Project Authors. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+
+    Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+
+    Redistributions in binary form must reproduce the above
+    copyright notice, this list of conditions and the following
+    disclaimer in the documentation and/or other materials provided
+    with the distribution.
+
+    Neither the name of TransGaming Inc., Google Inc., 3DLabs Inc.
+    Ltd., nor the names of their contributors may be used to endorse
+    or promote products derived from this software without specific
+    prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
 ====================================================================================================
 
 ====================================================================================================
@@ -4871,13 +5016,11 @@ ORIGIN: ../../../third_party/boringssl/src/LICENSE
 TYPE: LicenseType.openssl
 FILE: ../../../third_party/boringssl/ios-aarch64/crypto/fipsmodule/sha256-armv8.S
 FILE: ../../../third_party/boringssl/ios-aarch64/crypto/fipsmodule/sha512-armv8.S
-FILE: ../../../third_party/boringssl/ios-arm/crypto/fipsmodule/aes-armv4.S
 FILE: ../../../third_party/boringssl/ios-arm/crypto/fipsmodule/bsaes-armv7.S
 FILE: ../../../third_party/boringssl/ios-arm/crypto/fipsmodule/sha256-armv4.S
 FILE: ../../../third_party/boringssl/ios-arm/crypto/fipsmodule/sha512-armv4.S
 FILE: ../../../third_party/boringssl/linux-aarch64/crypto/fipsmodule/sha256-armv8.S
 FILE: ../../../third_party/boringssl/linux-aarch64/crypto/fipsmodule/sha512-armv8.S
-FILE: ../../../third_party/boringssl/linux-arm/crypto/fipsmodule/aes-armv4.S
 FILE: ../../../third_party/boringssl/linux-arm/crypto/fipsmodule/bsaes-armv7.S
 FILE: ../../../third_party/boringssl/linux-arm/crypto/fipsmodule/sha256-armv4.S
 FILE: ../../../third_party/boringssl/linux-arm/crypto/fipsmodule/sha512-armv4.S
@@ -4901,12 +5044,15 @@ FILE: ../../../third_party/boringssl/src/crypto/err/pkcs7.errordata
 FILE: ../../../third_party/boringssl/src/crypto/err/pkcs8.errordata
 FILE: ../../../third_party/boringssl/src/crypto/err/rsa.errordata
 FILE: ../../../third_party/boringssl/src/crypto/err/ssl.errordata
+FILE: ../../../third_party/boringssl/src/crypto/err/trust_token.errordata
 FILE: ../../../third_party/boringssl/src/crypto/err/x509.errordata
 FILE: ../../../third_party/boringssl/src/crypto/err/x509v3.errordata
 FILE: ../../../third_party/boringssl/src/crypto/evp/scrypt.c
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/bn/asm/x86_64-gcc.c
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/bn/rsaz_exp.c
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/bn/rsaz_exp.h
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/ec/make_tables.go
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/ec/p256-x86_64-table.h
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/ec/p256-x86_64.c
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/ec/p256-x86_64.h
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/fips_shared.lds
@@ -4960,20 +5106,35 @@ FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCryp
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20180730.docx!/word/styles.xml
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20180730.docx!/word/theme/theme1.xml
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20180730.docx!/word/webSettings.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20190808.docx!/[Content_Types].xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20190808.docx!/_rels/.rels
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20190808.docx!/customXml/_rels/item1.xml.rels
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20190808.docx!/customXml/item1.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20190808.docx!/customXml/itemProps1.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20190808.docx!/docProps/app.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20190808.docx!/docProps/core.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20190808.docx!/word/_rels/document.xml.rels
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20190808.docx!/word/document.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20190808.docx!/word/endnotes.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20190808.docx!/word/fontTable.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20190808.docx!/word/footer1.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20190808.docx!/word/footnotes.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20190808.docx!/word/media/image1.png
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20190808.docx!/word/media/image2.png
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20190808.docx!/word/numbering.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20190808.docx!/word/settings.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20190808.docx!/word/styles.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20190808.docx!/word/theme/theme1.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20190808.docx!/word/webSettings.xml
+FILE: ../../../third_party/boringssl/src/crypto/hpke/test-vectors.json
 FILE: ../../../third_party/boringssl/src/crypto/obj/obj_mac.num
 FILE: ../../../third_party/boringssl/src/crypto/poly1305/poly1305_arm_asm.S
 FILE: ../../../third_party/boringssl/src/crypto/rsa_extra/rsa_print.c
 FILE: ../../../third_party/boringssl/src/crypto/x509/charmap.h
-FILE: ../../../third_party/boringssl/src/crypto/x509/many_constraints.pem
-FILE: ../../../third_party/boringssl/src/crypto/x509/many_names1.pem
-FILE: ../../../third_party/boringssl/src/crypto/x509/many_names2.pem
-FILE: ../../../third_party/boringssl/src/crypto/x509/many_names3.pem
-FILE: ../../../third_party/boringssl/src/crypto/x509/some_names1.pem
-FILE: ../../../third_party/boringssl/src/crypto/x509/some_names2.pem
-FILE: ../../../third_party/boringssl/src/crypto/x509/some_names3.pem
 FILE: ../../../third_party/boringssl/src/crypto/x509/x509_time_test.cc
 FILE: ../../../third_party/boringssl/src/crypto/x509v3/v3_ocsp.c
 FILE: ../../../third_party/boringssl/src/go.mod
+FILE: ../../../third_party/boringssl/src/go.sum
 FILE: ../../../third_party/boringssl/src/ssl/bio_ssl.cc
 FILE: ../../../third_party/boringssl/src/ssl/ssl_c_test.c
 FILE: ../../../third_party/boringssl/src/util/all_tests.json
@@ -4988,13 +5149,8 @@ FILE: ../../../third_party/boringssl/src/util/bot/sde-win32.tar.bz2.sha1
 FILE: ../../../third_party/boringssl/src/util/bot/yasm-win32.exe.sha1
 FILE: ../../../third_party/boringssl/src/util/doc.config
 FILE: ../../../third_party/boringssl/src/util/doc.go
-FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/acvp.go
-FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/acvp/acvp.go
-FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/interactive.go
-FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/parser.peg
 FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/parser.peg.go
-FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/subprocess/hash.go
-FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/subprocess/subprocess.go
+FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/testmodulewrapper/testmodulewrapper.go
 FILE: ../../../third_party/boringssl/src/util/fipstools/cavp/run_cavp.go
 FILE: ../../../third_party/boringssl/src/util/fipstools/delocate/delocate.peg.go
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/bigint_patch.dart
@@ -5150,28 +5306,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-The code in third_party/sike also carries the MIT license:
-
-Copyright (c) Microsoft Corporation. All rights reserved.
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE
-
 Licenses for support code
 
 Parts of the TLS test suite are under the Go license. This code is not included
@@ -5226,16 +5360,12 @@ https://www.openssl.org/source/license.html
 
 ====================================================================================================
 LIBRARY: boringssl
-ORIGIN: ../../../third_party/boringssl/ios-arm/crypto/fipsmodule/aes-armv4.S + ../../../third_party/boringssl/src/LICENSE
+ORIGIN: ../../../third_party/boringssl/ios-arm/crypto/fipsmodule/bsaes-armv7.S + ../../../third_party/boringssl/src/LICENSE
 TYPE: LicenseType.unknown
-FILE: ../../../third_party/boringssl/ios-arm/crypto/fipsmodule/aes-armv4.S
-FILE: ../../../third_party/boringssl/ios-arm/crypto/fipsmodule/sha256-armv4.S
-FILE: ../../../third_party/boringssl/ios-arm/crypto/fipsmodule/sha512-armv4.S
-FILE: ../../../third_party/boringssl/linux-arm/crypto/fipsmodule/aes-armv4.S
-FILE: ../../../third_party/boringssl/linux-arm/crypto/fipsmodule/sha256-armv4.S
-FILE: ../../../third_party/boringssl/linux-arm/crypto/fipsmodule/sha512-armv4.S
+FILE: ../../../third_party/boringssl/ios-arm/crypto/fipsmodule/bsaes-armv7.S
+FILE: ../../../third_party/boringssl/linux-arm/crypto/fipsmodule/bsaes-armv7.S
 ----------------------------------------------------------------------------------------------------
-Copyright 2007-2016 The OpenSSL Project Authors. All Rights Reserved.
+Copyright 2012-2016 The OpenSSL Project Authors. All Rights Reserved.
 
 Licensed under the OpenSSL license (the "License").  You may not use
 this file except in compliance with the License.  You can obtain a copy
@@ -5245,12 +5375,14 @@ https://www.openssl.org/source/license.html
 
 ====================================================================================================
 LIBRARY: boringssl
-ORIGIN: ../../../third_party/boringssl/ios-arm/crypto/fipsmodule/bsaes-armv7.S + ../../../third_party/boringssl/src/LICENSE
+ORIGIN: ../../../third_party/boringssl/ios-arm/crypto/fipsmodule/sha256-armv4.S + ../../../third_party/boringssl/src/LICENSE
 TYPE: LicenseType.unknown
-FILE: ../../../third_party/boringssl/ios-arm/crypto/fipsmodule/bsaes-armv7.S
-FILE: ../../../third_party/boringssl/linux-arm/crypto/fipsmodule/bsaes-armv7.S
+FILE: ../../../third_party/boringssl/ios-arm/crypto/fipsmodule/sha256-armv4.S
+FILE: ../../../third_party/boringssl/ios-arm/crypto/fipsmodule/sha512-armv4.S
+FILE: ../../../third_party/boringssl/linux-arm/crypto/fipsmodule/sha256-armv4.S
+FILE: ../../../third_party/boringssl/linux-arm/crypto/fipsmodule/sha512-armv4.S
 ----------------------------------------------------------------------------------------------------
-Copyright 2012-2016 The OpenSSL Project Authors. All Rights Reserved.
+Copyright 2007-2016 The OpenSSL Project Authors. All Rights Reserved.
 
 Licensed under the OpenSSL license (the "License").  You may not use
 this file except in compliance with the License.  You can obtain a copy
@@ -5932,7 +6064,6 @@ FILE: ../../../third_party/boringssl/src/crypto/pkcs7/pkcs7_x509.c
 FILE: ../../../third_party/boringssl/src/crypto/rand_extra/forkunsafe.c
 FILE: ../../../third_party/boringssl/src/crypto/rand_extra/fuchsia.c
 FILE: ../../../third_party/boringssl/src/crypto/rand_extra/rand_extra.c
-FILE: ../../../third_party/boringssl/src/crypto/x509/make_many_constraints.go
 FILE: ../../../third_party/boringssl/src/decrepit/cfb/cfb.c
 FILE: ../../../third_party/boringssl/src/decrepit/cfb/cfb_test.cc
 FILE: ../../../third_party/boringssl/src/include/openssl/is_boringssl.h
@@ -5993,7 +6124,6 @@ TYPE: LicenseType.unknown
 FILE: ../../../third_party/boringssl/src/crypto/abi_self_test.cc
 FILE: ../../../third_party/boringssl/src/crypto/bytestring/unicode.c
 FILE: ../../../third_party/boringssl/src/crypto/chacha/internal.h
-FILE: ../../../third_party/boringssl/src/crypto/cipher_extra/e_aesccm.c
 FILE: ../../../third_party/boringssl/src/crypto/cpu-aarch64-fuchsia.c
 FILE: ../../../third_party/boringssl/src/crypto/cpu-arm-linux.h
 FILE: ../../../third_party/boringssl/src/crypto/cpu-arm-linux_test.cc
@@ -6001,7 +6131,6 @@ FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/bn/div_extra.c
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/bn/gcd_extra.c
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/ec/felem.c
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/ec/make_ec_scalar_base_mult_tests.go
-FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/ec/make_p256-x86_64-table.go
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/ec/make_p256-x86_64-tests.go
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/ec/scalar.c
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/ec/simple_mul.c
@@ -6022,7 +6151,6 @@ FILE: ../../../third_party/boringssl/src/crypto/x509v3/internal.h
 FILE: ../../../third_party/boringssl/src/include/openssl/e_os2.h
 FILE: ../../../third_party/boringssl/src/include/openssl/hrss.h
 FILE: ../../../third_party/boringssl/src/ssl/handoff.cc
-FILE: ../../../third_party/boringssl/src/third_party/sike/sike_test.cc
 FILE: ../../../third_party/boringssl/src/util/ar/ar_test.go
 FILE: ../../../third_party/boringssl/src/util/check_filenames.go
 FILE: ../../../third_party/boringssl/src/util/convert_wycheproof.go
@@ -6087,6 +6215,66 @@ are met:
    acknowledgment:
    "This product includes software developed by the OpenSSL Project
    for use in the OpenSSL Toolkit (http://www.OpenSSL.org/)"
+
+THIS SOFTWARE IS PROVIDED BY THE OpenSSL PROJECT ``AS IS'' AND ANY
+EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE OpenSSL PROJECT OR
+ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: boringssl
+ORIGIN: ../../../third_party/boringssl/src/crypto/cipher_extra/e_aesccm.c
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/boringssl/src/crypto/cipher_extra/e_aesccm.c
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/modes/cbc.c
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/modes/cfb.c
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/modes/ctr.c
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/modes/gcm.c
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/modes/gcm_test.cc
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/modes/internal.h
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/modes/ofb.c
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2008 The OpenSSL Project.  All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+
+1. Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in
+   the documentation and/or other materials provided with the
+   distribution.
+
+3. All advertising materials mentioning features or use of this
+   software must display the following acknowledgment:
+   "This product includes software developed by the OpenSSL Project
+   for use in the OpenSSL Toolkit. (http://www.openssl.org/)"
+
+4. The names "OpenSSL Toolkit" and "OpenSSL Project" must not be used to
+   endorse or promote products derived from this software without
+   prior written permission. For written permission, please contact
+   openssl-core@openssl.org.
+
+5. Products derived from this software may not be called "OpenSSL"
+   nor may "OpenSSL" appear in their names without prior written
+   permission of the OpenSSL Project.
+
+6. Redistributions of any form whatsoever must retain the following
+   acknowledgment:
+   "This product includes software developed by the OpenSSL Project
+   for use in the OpenSSL Toolkit (http://www.openssl.org/)"
 
 THIS SOFTWARE IS PROVIDED BY THE OpenSSL PROJECT ``AS IS'' AND ANY
 EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -6254,6 +6442,56 @@ copied and put under another distribution licence
 
 ====================================================================================================
 LIBRARY: boringssl
+ORIGIN: ../../../third_party/boringssl/src/crypto/curve25519/curve25519.c
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/boringssl/src/crypto/crypto_test.cc
+FILE: ../../../third_party/boringssl/src/crypto/curve25519/curve25519.c
+FILE: ../../../third_party/boringssl/src/crypto/curve25519/curve25519_tables.h
+FILE: ../../../third_party/boringssl/src/crypto/curve25519/internal.h
+FILE: ../../../third_party/boringssl/src/crypto/dsa/internal.h
+FILE: ../../../third_party/boringssl/src/crypto/ec_extra/hash_to_curve.c
+FILE: ../../../third_party/boringssl/src/crypto/ec_extra/internal.h
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/ec/make_tables.go
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/ec/p256.c
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/ec/p256_table.h
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/rand/fork_detect.c
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/rand/fork_detect.h
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/rand/fork_detect_test.cc
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/rand/getrandom_fillin.h
+FILE: ../../../third_party/boringssl/src/crypto/hpke/hpke.c
+FILE: ../../../third_party/boringssl/src/crypto/hpke/hpke_test.cc
+FILE: ../../../third_party/boringssl/src/crypto/hpke/internal.h
+FILE: ../../../third_party/boringssl/src/crypto/trust_token/pmbtoken.c
+FILE: ../../../third_party/boringssl/src/crypto/trust_token/trust_token_test.cc
+FILE: ../../../third_party/boringssl/src/crypto/trust_token/voprf.c
+FILE: ../../../third_party/boringssl/src/decrepit/xts/xts_test.cc
+FILE: ../../../third_party/boringssl/src/include/openssl/trust_token.h
+FILE: ../../../third_party/boringssl/src/tool/fd.cc
+FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/nointeractive.go
+FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/subprocess/aead.go
+FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/subprocess/kdf.go
+FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/subprocess/keyedMac.go
+FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/subprocess/rsa.go
+FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/subprocess/subprocess_test.go
+FILE: ../../../third_party/boringssl/src/util/testconfig/testconfig.go
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2020, Google Inc.
+
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted, provided that the above
+copyright notice and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: boringssl
 ORIGIN: ../../../third_party/boringssl/src/crypto/dh/dh_asn1.c
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/boringssl/src/crypto/dh/dh_asn1.c
@@ -6412,6 +6650,51 @@ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
 STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: boringssl
+ORIGIN: ../../../third_party/boringssl/src/crypto/ec_extra/ec_derive.c
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/boringssl/src/crypto/ec_extra/ec_derive.c
+FILE: ../../../third_party/boringssl/src/crypto/evp/p_x25519.c
+FILE: ../../../third_party/boringssl/src/crypto/evp/p_x25519_asn1.c
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/aes/aes_nohw.c
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/fips_shared_support.c
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/modes/gcm_nohw.c
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/rand/urandom_test.cc
+FILE: ../../../third_party/boringssl/src/crypto/siphash/siphash.c
+FILE: ../../../third_party/boringssl/src/crypto/siphash/siphash_test.cc
+FILE: ../../../third_party/boringssl/src/crypto/trust_token/internal.h
+FILE: ../../../third_party/boringssl/src/crypto/trust_token/trust_token.c
+FILE: ../../../third_party/boringssl/src/decrepit/blowfish/blowfish_test.cc
+FILE: ../../../third_party/boringssl/src/decrepit/cast/cast_test.cc
+FILE: ../../../third_party/boringssl/src/include/openssl/siphash.h
+FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/acvp.go
+FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/acvp/acvp.go
+FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/interactive.go
+FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/parser.peg
+FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/subprocess/block.go
+FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/subprocess/drbg.go
+FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/subprocess/ecdsa.go
+FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/subprocess/hash.go
+FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/subprocess/hmac.go
+FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/subprocess/subprocess.go
+FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/modulewrapper/modulewrapper.cc
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2019, Google Inc.
+
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted, provided that the above
+copyright notice and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ====================================================================================================
 
 ====================================================================================================
@@ -6716,10 +6999,8 @@ FILE: ../../../third_party/boringssl/src/crypto/x509v3/v3_extku.c
 FILE: ../../../third_party/boringssl/src/crypto/x509v3/v3_ia5.c
 FILE: ../../../third_party/boringssl/src/crypto/x509v3/v3_info.c
 FILE: ../../../third_party/boringssl/src/crypto/x509v3/v3_lib.c
-FILE: ../../../third_party/boringssl/src/crypto/x509v3/v3_pku.c
 FILE: ../../../third_party/boringssl/src/crypto/x509v3/v3_prn.c
 FILE: ../../../third_party/boringssl/src/crypto/x509v3/v3_skey.c
-FILE: ../../../third_party/boringssl/src/crypto/x509v3/v3_sxnet.c
 FILE: ../../../third_party/boringssl/src/include/openssl/pkcs8.h
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 1999 The OpenSSL Project.  All rights reserved.
@@ -7343,23 +7624,18 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: boringssl
-ORIGIN: ../../../third_party/boringssl/src/crypto/fipsmodule/ec/p256-x86_64-table.h
+ORIGIN: ../../../third_party/boringssl/src/crypto/fipsmodule/ec/make_tables.go + ../../../third_party/boringssl/src/LICENSE
 TYPE: LicenseType.unknown
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/ec/make_tables.go
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/ec/p256-x86_64-table.h
 ----------------------------------------------------------------------------------------------------
+Copyright 2014-2016 The OpenSSL Project Authors. All Rights Reserved.
 Copyright (c) 2015, Intel Inc.
 
-Permission to use, copy, modify, and/or distribute this software for any
-purpose with or without fee is hereby granted, provided that the above
-copyright notice and this permission notice appear in all copies.
-
-THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
-WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
-MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
-SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
-WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
-OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
-CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+Licensed under the OpenSSL license (the "License").  You may not use
+this file except in compliance with the License.  You can obtain a copy
+in the file LICENSE in the source distribution or at
+https://www.openssl.org/source/license.html
 ====================================================================================================
 
 ====================================================================================================
@@ -7376,146 +7652,6 @@ Licensed under the OpenSSL license (the "License").  You may not use
 this file except in compliance with the License.  You can obtain a copy
 in the file LICENSE in the source distribution or at
 https://www.openssl.org/source/license.html
-====================================================================================================
-
-====================================================================================================
-LIBRARY: boringssl
-ORIGIN: ../../../third_party/boringssl/src/crypto/fipsmodule/fips_shared_support.c
-TYPE: LicenseType.unknown
-FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/fips_shared_support.c
-FILE: ../../../third_party/boringssl/src/crypto/siphash/siphash.c
-FILE: ../../../third_party/boringssl/src/crypto/siphash/siphash_test.cc
-FILE: ../../../third_party/boringssl/src/decrepit/blowfish/blowfish_test.cc
-FILE: ../../../third_party/boringssl/src/decrepit/cast/cast_test.cc
-FILE: ../../../third_party/boringssl/src/include/openssl/siphash.h
-FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/modulewrapper/modulewrapper.cc
-----------------------------------------------------------------------------------------------------
-Copyright (c) 2019, Google Inc.
-
-Permission to use, copy, modify, and/or distribute this software for any
-purpose with or without fee is hereby granted, provided that the above
-copyright notice and this permission notice appear in all copies.
-
-THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
-WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
-MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
-SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
-WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
-OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
-CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: boringssl
-ORIGIN: ../../../third_party/boringssl/src/crypto/fipsmodule/modes/cbc.c
-TYPE: LicenseType.bsd
-FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/modes/cbc.c
-FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/modes/cfb.c
-FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/modes/ctr.c
-FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/modes/gcm.c
-FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/modes/gcm_test.cc
-FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/modes/internal.h
-FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/modes/ofb.c
-----------------------------------------------------------------------------------------------------
-Copyright (c) 2008 The OpenSSL Project.  All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions
-are met:
-
-1. Redistributions of source code must retain the above copyright
-   notice, this list of conditions and the following disclaimer.
-
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in
-   the documentation and/or other materials provided with the
-   distribution.
-
-3. All advertising materials mentioning features or use of this
-   software must display the following acknowledgment:
-   "This product includes software developed by the OpenSSL Project
-   for use in the OpenSSL Toolkit. (http://www.openssl.org/)"
-
-4. The names "OpenSSL Toolkit" and "OpenSSL Project" must not be used to
-   endorse or promote products derived from this software without
-   prior written permission. For written permission, please contact
-   openssl-core@openssl.org.
-
-5. Products derived from this software may not be called "OpenSSL"
-   nor may "OpenSSL" appear in their names without prior written
-   permission of the OpenSSL Project.
-
-6. Redistributions of any form whatsoever must retain the following
-   acknowledgment:
-   "This product includes software developed by the OpenSSL Project
-   for use in the OpenSSL Toolkit (http://www.openssl.org/)"
-
-THIS SOFTWARE IS PROVIDED BY THE OpenSSL PROJECT ``AS IS'' AND ANY
-EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE OpenSSL PROJECT OR
-ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
-OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: boringssl
-ORIGIN: ../../../third_party/boringssl/src/crypto/fipsmodule/modes/ccm.c
-TYPE: LicenseType.bsd
-FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/modes/ccm.c
-FILE: ../../../third_party/boringssl/src/decrepit/xts/xts.c
-----------------------------------------------------------------------------------------------------
-Copyright (c) 2011 The OpenSSL Project.  All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions
-are met:
-
-1. Redistributions of source code must retain the above copyright
-   notice, this list of conditions and the following disclaimer.
-
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in
-   the documentation and/or other materials provided with the
-   distribution.
-
-3. All advertising materials mentioning features or use of this
-   software must display the following acknowledgment:
-   "This product includes software developed by the OpenSSL Project
-   for use in the OpenSSL Toolkit. (http://www.openssl.org/)"
-
-4. The names "OpenSSL Toolkit" and "OpenSSL Project" must not be used to
-   endorse or promote products derived from this software without
-   prior written permission. For written permission, please contact
-   openssl-core@openssl.org.
-
-5. Products derived from this software may not be called "OpenSSL"
-   nor may "OpenSSL" appear in their names without prior written
-   permission of the OpenSSL Project.
-
-6. Redistributions of any form whatsoever must retain the following
-   acknowledgment:
-   "This product includes software developed by the OpenSSL Project
-   for use in the OpenSSL Toolkit (http://www.openssl.org/)"
-
-THIS SOFTWARE IS PROVIDED BY THE OpenSSL PROJECT ``AS IS'' AND ANY
-EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE OpenSSL PROJECT OR
-ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
-OF THE POSSIBILITY OF SUCH DAMAGE.
 ====================================================================================================
 
 ====================================================================================================
@@ -8242,6 +8378,59 @@ SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: boringssl
+ORIGIN: ../../../third_party/boringssl/src/decrepit/xts/xts.c
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/boringssl/src/decrepit/xts/xts.c
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2011 The OpenSSL Project.  All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+
+1. Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in
+   the documentation and/or other materials provided with the
+   distribution.
+
+3. All advertising materials mentioning features or use of this
+   software must display the following acknowledgment:
+   "This product includes software developed by the OpenSSL Project
+   for use in the OpenSSL Toolkit. (http://www.openssl.org/)"
+
+4. The names "OpenSSL Toolkit" and "OpenSSL Project" must not be used to
+   endorse or promote products derived from this software without
+   prior written permission. For written permission, please contact
+   openssl-core@openssl.org.
+
+5. Products derived from this software may not be called "OpenSSL"
+   nor may "OpenSSL" appear in their names without prior written
+   permission of the OpenSSL Project.
+
+6. Redistributions of any form whatsoever must retain the following
+   acknowledgment:
+   "This product includes software developed by the OpenSSL Project
+   for use in the OpenSSL Toolkit (http://www.openssl.org/)"
+
+THIS SOFTWARE IS PROVIDED BY THE OpenSSL PROJECT ``AS IS'' AND ANY
+EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE OpenSSL PROJECT OR
+ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: boringssl
 ORIGIN: ../../../third_party/boringssl/src/include/openssl/arm_arch.h
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/boringssl/src/include/openssl/arm_arch.h
@@ -8418,62 +8607,6 @@ furnished to do so, subject to the following conditions:
 
 The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: boringssl
-ORIGIN: ../../../third_party/boringssl/src/third_party/fiat/curve25519.c
-TYPE: LicenseType.mit
-FILE: ../../../third_party/boringssl/src/third_party/fiat/curve25519.c
-FILE: ../../../third_party/boringssl/src/third_party/fiat/internal.h
-FILE: ../../../third_party/boringssl/src/third_party/fiat/p256.c
-----------------------------------------------------------------------------------------------------
-Copyright (c) 2015-2016 the fiat-crypto authors (see the AUTHORS file).
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: boringssl
-ORIGIN: ../../../third_party/boringssl/src/third_party/fiat/curve25519_tables.h
-TYPE: LicenseType.mit
-FILE: ../../../third_party/boringssl/src/third_party/fiat/curve25519_tables.h
-----------------------------------------------------------------------------------------------------
-Copyright (c) 2015-2016 the fiat-crypto authors (see the AUTHORS file).
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -8860,39 +8993,23 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: boringssl
-ORIGIN: ../../../third_party/boringssl/src/third_party/sike/LICENSE
-TYPE: LicenseType.mit
-FILE: ../../../third_party/boringssl/src/third_party/sike/asm/fp_generic.c
-FILE: ../../../third_party/boringssl/src/third_party/sike/curve_params.c
-FILE: ../../../third_party/boringssl/src/third_party/sike/fpx.c
-FILE: ../../../third_party/boringssl/src/third_party/sike/fpx.h
-FILE: ../../../third_party/boringssl/src/third_party/sike/isogeny.c
-FILE: ../../../third_party/boringssl/src/third_party/sike/isogeny.h
-FILE: ../../../third_party/boringssl/src/third_party/sike/sike.c
-FILE: ../../../third_party/boringssl/src/third_party/sike/sike.h
-FILE: ../../../third_party/boringssl/src/third_party/sike/utils.h
+ORIGIN: ../../../third_party/boringssl/src/util/compare_benchmarks.go
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/boringssl/src/util/compare_benchmarks.go
 ----------------------------------------------------------------------------------------------------
-MIT License
+Copyright (c) 2020 Google Inc.
 
-Copyright (c) Microsoft Corporation. All rights reserved.
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted, provided that the above
+copyright notice and this permission notice appear in all copies.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ====================================================================================================
 
 ====================================================================================================
@@ -8906,13 +9023,13 @@ FILE: ../../../third_party/boringssl/ios-aarch64/crypto/fipsmodule/ghash-neon-ar
 FILE: ../../../third_party/boringssl/ios-aarch64/crypto/fipsmodule/ghashv8-armx64.S
 FILE: ../../../third_party/boringssl/ios-aarch64/crypto/fipsmodule/sha1-armv8.S
 FILE: ../../../third_party/boringssl/ios-aarch64/crypto/fipsmodule/vpaes-armv8.S
-FILE: ../../../third_party/boringssl/ios-aarch64/crypto/third_party/sike/asm/fp-armv8.S
 FILE: ../../../third_party/boringssl/ios-arm/crypto/chacha/chacha-armv4.S
 FILE: ../../../third_party/boringssl/ios-arm/crypto/fipsmodule/aesv8-armx32.S
 FILE: ../../../third_party/boringssl/ios-arm/crypto/fipsmodule/armv4-mont.S
 FILE: ../../../third_party/boringssl/ios-arm/crypto/fipsmodule/ghash-armv4.S
 FILE: ../../../third_party/boringssl/ios-arm/crypto/fipsmodule/ghashv8-armx32.S
 FILE: ../../../third_party/boringssl/ios-arm/crypto/fipsmodule/sha1-armv4-large.S
+FILE: ../../../third_party/boringssl/ios-arm/crypto/fipsmodule/vpaes-armv7.S
 FILE: ../../../third_party/boringssl/linux-aarch64/crypto/chacha/chacha-armv8.S
 FILE: ../../../third_party/boringssl/linux-aarch64/crypto/fipsmodule/aesv8-armx64.S
 FILE: ../../../third_party/boringssl/linux-aarch64/crypto/fipsmodule/armv8-mont.S
@@ -8920,17 +9037,16 @@ FILE: ../../../third_party/boringssl/linux-aarch64/crypto/fipsmodule/ghash-neon-
 FILE: ../../../third_party/boringssl/linux-aarch64/crypto/fipsmodule/ghashv8-armx64.S
 FILE: ../../../third_party/boringssl/linux-aarch64/crypto/fipsmodule/sha1-armv8.S
 FILE: ../../../third_party/boringssl/linux-aarch64/crypto/fipsmodule/vpaes-armv8.S
-FILE: ../../../third_party/boringssl/linux-aarch64/crypto/third_party/sike/asm/fp-armv8.S
 FILE: ../../../third_party/boringssl/linux-arm/crypto/chacha/chacha-armv4.S
 FILE: ../../../third_party/boringssl/linux-arm/crypto/fipsmodule/aesv8-armx32.S
 FILE: ../../../third_party/boringssl/linux-arm/crypto/fipsmodule/armv4-mont.S
 FILE: ../../../third_party/boringssl/linux-arm/crypto/fipsmodule/ghash-armv4.S
 FILE: ../../../third_party/boringssl/linux-arm/crypto/fipsmodule/ghashv8-armx32.S
 FILE: ../../../third_party/boringssl/linux-arm/crypto/fipsmodule/sha1-armv4-large.S
+FILE: ../../../third_party/boringssl/linux-arm/crypto/fipsmodule/vpaes-armv7.S
 FILE: ../../../third_party/boringssl/linux-ppc64le/crypto/fipsmodule/aesp8-ppc.S
 FILE: ../../../third_party/boringssl/linux-ppc64le/crypto/fipsmodule/ghashp8-ppc.S
 FILE: ../../../third_party/boringssl/linux-x86/crypto/chacha/chacha-x86.S
-FILE: ../../../third_party/boringssl/linux-x86/crypto/fipsmodule/aes-586.S
 FILE: ../../../third_party/boringssl/linux-x86/crypto/fipsmodule/aesni-x86.S
 FILE: ../../../third_party/boringssl/linux-x86/crypto/fipsmodule/bn-586.S
 FILE: ../../../third_party/boringssl/linux-x86/crypto/fipsmodule/co-586.S
@@ -8945,7 +9061,6 @@ FILE: ../../../third_party/boringssl/linux-x86/crypto/fipsmodule/x86-mont.S
 FILE: ../../../third_party/boringssl/linux-x86_64/crypto/chacha/chacha-x86_64.S
 FILE: ../../../third_party/boringssl/linux-x86_64/crypto/cipher_extra/aes128gcmsiv-x86_64.S
 FILE: ../../../third_party/boringssl/linux-x86_64/crypto/cipher_extra/chacha20_poly1305_x86_64.S
-FILE: ../../../third_party/boringssl/linux-x86_64/crypto/fipsmodule/aes-x86_64.S
 FILE: ../../../third_party/boringssl/linux-x86_64/crypto/fipsmodule/aesni-gcm-x86_64.S
 FILE: ../../../third_party/boringssl/linux-x86_64/crypto/fipsmodule/aesni-x86_64.S
 FILE: ../../../third_party/boringssl/linux-x86_64/crypto/fipsmodule/ghash-ssse3-x86_64.S
@@ -8961,9 +9076,7 @@ FILE: ../../../third_party/boringssl/linux-x86_64/crypto/fipsmodule/sha512-x86_6
 FILE: ../../../third_party/boringssl/linux-x86_64/crypto/fipsmodule/vpaes-x86_64.S
 FILE: ../../../third_party/boringssl/linux-x86_64/crypto/fipsmodule/x86_64-mont.S
 FILE: ../../../third_party/boringssl/linux-x86_64/crypto/fipsmodule/x86_64-mont5.S
-FILE: ../../../third_party/boringssl/linux-x86_64/crypto/third_party/sike/asm/fp-x86_64.S
 FILE: ../../../third_party/boringssl/mac-x86/crypto/chacha/chacha-x86.S
-FILE: ../../../third_party/boringssl/mac-x86/crypto/fipsmodule/aes-586.S
 FILE: ../../../third_party/boringssl/mac-x86/crypto/fipsmodule/aesni-x86.S
 FILE: ../../../third_party/boringssl/mac-x86/crypto/fipsmodule/bn-586.S
 FILE: ../../../third_party/boringssl/mac-x86/crypto/fipsmodule/co-586.S
@@ -8978,7 +9091,6 @@ FILE: ../../../third_party/boringssl/mac-x86/crypto/fipsmodule/x86-mont.S
 FILE: ../../../third_party/boringssl/mac-x86_64/crypto/chacha/chacha-x86_64.S
 FILE: ../../../third_party/boringssl/mac-x86_64/crypto/cipher_extra/aes128gcmsiv-x86_64.S
 FILE: ../../../third_party/boringssl/mac-x86_64/crypto/cipher_extra/chacha20_poly1305_x86_64.S
-FILE: ../../../third_party/boringssl/mac-x86_64/crypto/fipsmodule/aes-x86_64.S
 FILE: ../../../third_party/boringssl/mac-x86_64/crypto/fipsmodule/aesni-gcm-x86_64.S
 FILE: ../../../third_party/boringssl/mac-x86_64/crypto/fipsmodule/aesni-x86_64.S
 FILE: ../../../third_party/boringssl/mac-x86_64/crypto/fipsmodule/ghash-ssse3-x86_64.S
@@ -8994,9 +9106,7 @@ FILE: ../../../third_party/boringssl/mac-x86_64/crypto/fipsmodule/sha512-x86_64.
 FILE: ../../../third_party/boringssl/mac-x86_64/crypto/fipsmodule/vpaes-x86_64.S
 FILE: ../../../third_party/boringssl/mac-x86_64/crypto/fipsmodule/x86_64-mont.S
 FILE: ../../../third_party/boringssl/mac-x86_64/crypto/fipsmodule/x86_64-mont5.S
-FILE: ../../../third_party/boringssl/mac-x86_64/crypto/third_party/sike/asm/fp-x86_64.S
 FILE: ../../../third_party/boringssl/win-x86/crypto/chacha/chacha-x86.asm
-FILE: ../../../third_party/boringssl/win-x86/crypto/fipsmodule/aes-586.asm
 FILE: ../../../third_party/boringssl/win-x86/crypto/fipsmodule/aesni-x86.asm
 FILE: ../../../third_party/boringssl/win-x86/crypto/fipsmodule/bn-586.asm
 FILE: ../../../third_party/boringssl/win-x86/crypto/fipsmodule/co-586.asm
@@ -9011,7 +9121,6 @@ FILE: ../../../third_party/boringssl/win-x86/crypto/fipsmodule/x86-mont.asm
 FILE: ../../../third_party/boringssl/win-x86_64/crypto/chacha/chacha-x86_64.asm
 FILE: ../../../third_party/boringssl/win-x86_64/crypto/cipher_extra/aes128gcmsiv-x86_64.asm
 FILE: ../../../third_party/boringssl/win-x86_64/crypto/cipher_extra/chacha20_poly1305_x86_64.asm
-FILE: ../../../third_party/boringssl/win-x86_64/crypto/fipsmodule/aes-x86_64.asm
 FILE: ../../../third_party/boringssl/win-x86_64/crypto/fipsmodule/aesni-gcm-x86_64.asm
 FILE: ../../../third_party/boringssl/win-x86_64/crypto/fipsmodule/aesni-x86_64.asm
 FILE: ../../../third_party/boringssl/win-x86_64/crypto/fipsmodule/ghash-ssse3-x86_64.asm
@@ -9027,7 +9136,6 @@ FILE: ../../../third_party/boringssl/win-x86_64/crypto/fipsmodule/sha512-x86_64.
 FILE: ../../../third_party/boringssl/win-x86_64/crypto/fipsmodule/vpaes-x86_64.asm
 FILE: ../../../third_party/boringssl/win-x86_64/crypto/fipsmodule/x86_64-mont.asm
 FILE: ../../../third_party/boringssl/win-x86_64/crypto/fipsmodule/x86_64-mont5.asm
-FILE: ../../../third_party/boringssl/win-x86_64/crypto/third_party/sike/asm/fp-x86_64.asm
 ----------------------------------------------------------------------------------------------------
 <THIS BLOCK INTENTIONALLY LEFT BLANK>
 ====================================================================================================
@@ -9139,6 +9247,8 @@ FILE: ../../../third_party/dart/runtime/tools/wiki/xref_extractor/bin/main.dart
 FILE: ../../../third_party/dart/runtime/tools/wiki/xref_extractor/lib/cquery_driver.dart
 FILE: ../../../third_party/dart/runtime/tools/wiki/xref_extractor/lib/xref_extractor.dart
 FILE: ../../../third_party/dart/runtime/vm/canonical_tables.cc
+FILE: ../../../third_party/dart/runtime/vm/closure_functions_cache.cc
+FILE: ../../../third_party/dart/runtime/vm/closure_functions_cache.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/aot/dispatch_table_generator.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/aot/dispatch_table_generator.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/aot/precompiler_tracer.cc
@@ -9400,6 +9510,10 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct16bytes
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct16bytesMixedx10_2/x64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct16bytesMixedx10_2/x64_macos.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct16bytesMixedx10_2/x64_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct16bytesMixedx10_3/x64_ios.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct16bytesMixedx10_3/x64_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct16bytesMixedx10_3/x64_macos.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct16bytesMixedx10_3/x64_win.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct3bytesx10/arm64_android.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct3bytesx10/arm64_ios.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct3bytesx10/arm64_linux.expect
@@ -9414,6 +9528,20 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct3bytesx
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct3bytesx10/x64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct3bytesx10/x64_macos.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct3bytesx10/x64_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesPackedx10/arm64_android.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesPackedx10/arm64_ios.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesPackedx10/arm64_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesPackedx10/arm64_macos.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesPackedx10/arm_android.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesPackedx10/arm_ios.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesPackedx10/arm_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesPackedx10/ia32_android.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesPackedx10/ia32_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesPackedx10/ia32_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesPackedx10/x64_ios.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesPackedx10/x64_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesPackedx10/x64_macos.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesPackedx10/x64_win.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesx1/arm64_android.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesx1/arm64_ios.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesx1/arm64_linux.expect
@@ -9428,6 +9556,20 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesx
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesx1/x64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesx1/x64_macos.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct8bytesx1/x64_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/structPacked/arm64_android.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/structPacked/arm64_ios.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/structPacked/arm64_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/structPacked/arm64_macos.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/structPacked/arm_android.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/structPacked/arm_ios.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/structPacked/arm_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/structPacked/ia32_android.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/structPacked/ia32_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/structPacked/ia32_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/structPacked/x64_ios.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/structPacked/x64_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/structPacked/x64_macos.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/structPacked/x64_win.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_VeryLargeStruct/arm64_android.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_VeryLargeStruct/arm64_ios.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_VeryLargeStruct/arm64_linux.expect
@@ -9442,6 +9584,20 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_VeryLa
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_VeryLargeStruct/x64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_VeryLargeStruct/x64_macos.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_VeryLargeStruct/x64_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatarray/arm64_android.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatarray/arm64_ios.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatarray/arm64_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatarray/arm64_macos.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatarray/arm_android.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatarray/arm_ios.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatarray/arm_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatarray/ia32_android.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatarray/ia32_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatarray/ia32_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatarray/x64_ios.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatarray/x64_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatarray/x64_macos.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatarray/x64_win.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatx4/arm64_android.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatx4/arm64_ios.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatx4/arm64_linux.expect
@@ -9456,6 +9612,20 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatx
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatx4/x64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatx4/x64_macos.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_floatx4/x64_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8array/arm64_android.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8array/arm64_ios.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8array/arm64_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8array/arm64_macos.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8array/arm_android.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8array/arm_ios.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8array/arm_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8array/ia32_android.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8array/ia32_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8array/ia32_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8array/x64_ios.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8array/x64_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8array/x64_macos.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8array/x64_win.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8x10/arm64_android.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8x10/arm64_ios.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct_int8x10/arm64_linux.expect
@@ -11818,6 +11988,44 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: dart
+ORIGIN: ../../../third_party/dart/runtime/vm/compiler/ffi/range.h + ../../../third_party/dart/LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/range.h
+FILE: ../../../third_party/dart/samples/ffi/resource_management/utf8_helpers.dart
+FILE: ../../../third_party/dart/samples_2/ffi/resource_management/utf8_helpers.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/ffi_allocation_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/ffi/allocation.dart
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2021, the Dart project authors.  Please see the AUTHORS file
+for details. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+    * Neither the name of Google Inc. nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: dart
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/vm/lib/bigint_patch.dart
 TYPE: LicenseType.mit
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/bigint_patch.dart
@@ -12225,17 +12433,18 @@ LIBRARY: freetype2
 ORIGIN: ../../../third_party/freetype2/docs/FTL.TXT
 TYPE: LicenseType.freetype
 FILE: ../../../third_party/freetype2/.mailmap
-FILE: ../../../third_party/freetype2/Jamfile
-FILE: ../../../third_party/freetype2/Jamrules
 FILE: ../../../third_party/freetype2/devel/ft2build.h
 FILE: ../../../third_party/freetype2/devel/ftoption.h
-FILE: ../../../third_party/freetype2/include/freetype-fuchsia-config/ftmodule.h
-FILE: ../../../third_party/freetype2/include/freetype-fuchsia-config/ftoption.h
+FILE: ../../../third_party/freetype2/include/freetype-flutter-config/ftmodule.h
+FILE: ../../../third_party/freetype2/include/freetype-flutter-config/ftoption.h
 FILE: ../../../third_party/freetype2/include/freetype/config/ftconfig.h
 FILE: ../../../third_party/freetype2/include/freetype/config/ftheader.h
 FILE: ../../../third_party/freetype2/include/freetype/config/ftmodule.h
 FILE: ../../../third_party/freetype2/include/freetype/config/ftoption.h
 FILE: ../../../third_party/freetype2/include/freetype/config/ftstdlib.h
+FILE: ../../../third_party/freetype2/include/freetype/config/integer-types.h
+FILE: ../../../third_party/freetype2/include/freetype/config/mac-support.h
+FILE: ../../../third_party/freetype2/include/freetype/config/public-macros.h
 FILE: ../../../third_party/freetype2/include/freetype/freetype.h
 FILE: ../../../third_party/freetype2/include/freetype/ftadvanc.h
 FILE: ../../../third_party/freetype2/include/freetype/ftbbox.h
@@ -12245,6 +12454,7 @@ FILE: ../../../third_party/freetype2/include/freetype/ftbzip2.h
 FILE: ../../../third_party/freetype2/include/freetype/ftcache.h
 FILE: ../../../third_party/freetype2/include/freetype/ftchapters.h
 FILE: ../../../third_party/freetype2/include/freetype/ftcid.h
+FILE: ../../../third_party/freetype2/include/freetype/ftcolor.h
 FILE: ../../../third_party/freetype2/include/freetype/ftdriver.h
 FILE: ../../../third_party/freetype2/include/freetype/fterrdef.h
 FILE: ../../../third_party/freetype2/include/freetype/fterrors.h
@@ -12278,20 +12488,19 @@ FILE: ../../../third_party/freetype2/include/freetype/ftwinfnt.h
 FILE: ../../../third_party/freetype2/include/freetype/internal/autohint.h
 FILE: ../../../third_party/freetype2/include/freetype/internal/cffotypes.h
 FILE: ../../../third_party/freetype2/include/freetype/internal/cfftypes.h
+FILE: ../../../third_party/freetype2/include/freetype/internal/compiler-macros.h
 FILE: ../../../third_party/freetype2/include/freetype/internal/ftcalc.h
 FILE: ../../../third_party/freetype2/include/freetype/internal/ftdebug.h
 FILE: ../../../third_party/freetype2/include/freetype/internal/ftdrv.h
 FILE: ../../../third_party/freetype2/include/freetype/internal/ftgloadr.h
 FILE: ../../../third_party/freetype2/include/freetype/internal/ftmemory.h
 FILE: ../../../third_party/freetype2/include/freetype/internal/ftobjs.h
-FILE: ../../../third_party/freetype2/include/freetype/internal/ftpic.h
 FILE: ../../../third_party/freetype2/include/freetype/internal/ftpsprop.h
 FILE: ../../../third_party/freetype2/include/freetype/internal/ftrfork.h
 FILE: ../../../third_party/freetype2/include/freetype/internal/ftserv.h
 FILE: ../../../third_party/freetype2/include/freetype/internal/ftstream.h
 FILE: ../../../third_party/freetype2/include/freetype/internal/fttrace.h
 FILE: ../../../third_party/freetype2/include/freetype/internal/ftvalid.h
-FILE: ../../../third_party/freetype2/include/freetype/internal/internal.h
 FILE: ../../../third_party/freetype2/include/freetype/internal/psaux.h
 FILE: ../../../third_party/freetype2/include/freetype/internal/pshints.h
 FILE: ../../../third_party/freetype2/include/freetype/internal/services/svbdf.h
@@ -12317,14 +12526,14 @@ FILE: ../../../third_party/freetype2/include/freetype/internal/services/svwinfnt
 FILE: ../../../third_party/freetype2/include/freetype/internal/sfnt.h
 FILE: ../../../third_party/freetype2/include/freetype/internal/t1types.h
 FILE: ../../../third_party/freetype2/include/freetype/internal/tttypes.h
+FILE: ../../../third_party/freetype2/include/freetype/internal/wofftypes.h
 FILE: ../../../third_party/freetype2/include/freetype/t1tables.h
 FILE: ../../../third_party/freetype2/include/freetype/ttnameid.h
 FILE: ../../../third_party/freetype2/include/freetype/tttables.h
 FILE: ../../../third_party/freetype2/include/freetype/tttags.h
 FILE: ../../../third_party/freetype2/include/ft2build.h
+FILE: ../../../third_party/freetype2/meson.build
 FILE: ../../../third_party/freetype2/modules.cfg
-FILE: ../../../third_party/freetype2/src/Jamfile
-FILE: ../../../third_party/freetype2/src/autofit/Jamfile
 FILE: ../../../third_party/freetype2/src/autofit/afangles.c
 FILE: ../../../third_party/freetype2/src/autofit/afangles.h
 FILE: ../../../third_party/freetype2/src/autofit/afblue.c
@@ -12352,8 +12561,6 @@ FILE: ../../../third_party/freetype2/src/autofit/afloader.c
 FILE: ../../../third_party/freetype2/src/autofit/afloader.h
 FILE: ../../../third_party/freetype2/src/autofit/afmodule.c
 FILE: ../../../third_party/freetype2/src/autofit/afmodule.h
-FILE: ../../../third_party/freetype2/src/autofit/afpic.c
-FILE: ../../../third_party/freetype2/src/autofit/afpic.h
 FILE: ../../../third_party/freetype2/src/autofit/afranges.c
 FILE: ../../../third_party/freetype2/src/autofit/afranges.h
 FILE: ../../../third_party/freetype2/src/autofit/afscript.h
@@ -12365,11 +12572,7 @@ FILE: ../../../third_party/freetype2/src/autofit/afwarp.c
 FILE: ../../../third_party/freetype2/src/autofit/afwarp.h
 FILE: ../../../third_party/freetype2/src/autofit/afwrtsys.h
 FILE: ../../../third_party/freetype2/src/autofit/autofit.c
-FILE: ../../../third_party/freetype2/src/base/Jamfile
-FILE: ../../../third_party/freetype2/src/base/basepic.c
-FILE: ../../../third_party/freetype2/src/base/basepic.h
 FILE: ../../../third_party/freetype2/src/base/ftadvanc.c
-FILE: ../../../third_party/freetype2/src/base/ftapi.c
 FILE: ../../../third_party/freetype2/src/base/ftbase.c
 FILE: ../../../third_party/freetype2/src/base/ftbase.h
 FILE: ../../../third_party/freetype2/src/base/ftbbox.c
@@ -12377,8 +12580,10 @@ FILE: ../../../third_party/freetype2/src/base/ftbdf.c
 FILE: ../../../third_party/freetype2/src/base/ftbitmap.c
 FILE: ../../../third_party/freetype2/src/base/ftcalc.c
 FILE: ../../../third_party/freetype2/src/base/ftcid.c
+FILE: ../../../third_party/freetype2/src/base/ftcolor.c
 FILE: ../../../third_party/freetype2/src/base/ftdbgmem.c
 FILE: ../../../third_party/freetype2/src/base/ftdebug.c
+FILE: ../../../third_party/freetype2/src/base/fterrors.c
 FILE: ../../../third_party/freetype2/src/base/ftfntfmt.c
 FILE: ../../../third_party/freetype2/src/base/ftfstype.c
 FILE: ../../../third_party/freetype2/src/base/ftgasp.c
@@ -12394,7 +12599,6 @@ FILE: ../../../third_party/freetype2/src/base/ftotval.c
 FILE: ../../../third_party/freetype2/src/base/ftoutln.c
 FILE: ../../../third_party/freetype2/src/base/ftpatent.c
 FILE: ../../../third_party/freetype2/src/base/ftpfr.c
-FILE: ../../../third_party/freetype2/src/base/ftpic.c
 FILE: ../../../third_party/freetype2/src/base/ftpsprop.c
 FILE: ../../../third_party/freetype2/src/base/ftrfork.c
 FILE: ../../../third_party/freetype2/src/base/ftsnames.c
@@ -12409,10 +12613,7 @@ FILE: ../../../third_party/freetype2/src/base/ftver.rc
 FILE: ../../../third_party/freetype2/src/base/ftwinfnt.c
 FILE: ../../../third_party/freetype2/src/base/md5.c
 FILE: ../../../third_party/freetype2/src/base/md5.h
-FILE: ../../../third_party/freetype2/src/bdf/Jamfile
-FILE: ../../../third_party/freetype2/src/bzip2/Jamfile
 FILE: ../../../third_party/freetype2/src/bzip2/ftbzip2.c
-FILE: ../../../third_party/freetype2/src/cache/Jamfile
 FILE: ../../../third_party/freetype2/src/cache/ftcache.c
 FILE: ../../../third_party/freetype2/src/cache/ftcbasic.c
 FILE: ../../../third_party/freetype2/src/cache/ftccache.c
@@ -12430,7 +12631,6 @@ FILE: ../../../third_party/freetype2/src/cache/ftcmru.c
 FILE: ../../../third_party/freetype2/src/cache/ftcmru.h
 FILE: ../../../third_party/freetype2/src/cache/ftcsbits.c
 FILE: ../../../third_party/freetype2/src/cache/ftcsbits.h
-FILE: ../../../third_party/freetype2/src/cff/Jamfile
 FILE: ../../../third_party/freetype2/src/cff/cff.c
 FILE: ../../../third_party/freetype2/src/cff/cffcmap.c
 FILE: ../../../third_party/freetype2/src/cff/cffcmap.h
@@ -12445,10 +12645,7 @@ FILE: ../../../third_party/freetype2/src/cff/cffobjs.c
 FILE: ../../../third_party/freetype2/src/cff/cffobjs.h
 FILE: ../../../third_party/freetype2/src/cff/cffparse.c
 FILE: ../../../third_party/freetype2/src/cff/cffparse.h
-FILE: ../../../third_party/freetype2/src/cff/cffpic.c
-FILE: ../../../third_party/freetype2/src/cff/cffpic.h
 FILE: ../../../third_party/freetype2/src/cff/cfftoken.h
-FILE: ../../../third_party/freetype2/src/cid/Jamfile
 FILE: ../../../third_party/freetype2/src/cid/ciderrs.h
 FILE: ../../../third_party/freetype2/src/cid/cidgload.c
 FILE: ../../../third_party/freetype2/src/cid/cidgload.h
@@ -12462,7 +12659,6 @@ FILE: ../../../third_party/freetype2/src/cid/cidriver.c
 FILE: ../../../third_party/freetype2/src/cid/cidriver.h
 FILE: ../../../third_party/freetype2/src/cid/cidtoken.h
 FILE: ../../../third_party/freetype2/src/cid/type1cid.c
-FILE: ../../../third_party/freetype2/src/gxvalid/Jamfile
 FILE: ../../../third_party/freetype2/src/gxvalid/gxvalid.c
 FILE: ../../../third_party/freetype2/src/gxvalid/gxvalid.h
 FILE: ../../../third_party/freetype2/src/gxvalid/gxvbsln.c
@@ -12494,13 +12690,10 @@ FILE: ../../../third_party/freetype2/src/gxvalid/gxvmorx5.c
 FILE: ../../../third_party/freetype2/src/gxvalid/gxvopbd.c
 FILE: ../../../third_party/freetype2/src/gxvalid/gxvprop.c
 FILE: ../../../third_party/freetype2/src/gxvalid/gxvtrak.c
-FILE: ../../../third_party/freetype2/src/gzip/Jamfile
 FILE: ../../../third_party/freetype2/src/gzip/ftgzip.c
-FILE: ../../../third_party/freetype2/src/lzw/Jamfile
 FILE: ../../../third_party/freetype2/src/lzw/ftlzw.c
 FILE: ../../../third_party/freetype2/src/lzw/ftzopen.c
 FILE: ../../../third_party/freetype2/src/lzw/ftzopen.h
-FILE: ../../../third_party/freetype2/src/otvalid/Jamfile
 FILE: ../../../third_party/freetype2/src/otvalid/otvalid.c
 FILE: ../../../third_party/freetype2/src/otvalid/otvalid.h
 FILE: ../../../third_party/freetype2/src/otvalid/otvbase.c
@@ -12515,9 +12708,7 @@ FILE: ../../../third_party/freetype2/src/otvalid/otvjstf.c
 FILE: ../../../third_party/freetype2/src/otvalid/otvmath.c
 FILE: ../../../third_party/freetype2/src/otvalid/otvmod.c
 FILE: ../../../third_party/freetype2/src/otvalid/otvmod.h
-FILE: ../../../third_party/freetype2/src/pcf/Jamfile
 FILE: ../../../third_party/freetype2/src/pcf/pcferror.h
-FILE: ../../../third_party/freetype2/src/pfr/Jamfile
 FILE: ../../../third_party/freetype2/src/pfr/pfr.c
 FILE: ../../../third_party/freetype2/src/pfr/pfrcmap.c
 FILE: ../../../third_party/freetype2/src/pfr/pfrcmap.h
@@ -12533,7 +12724,6 @@ FILE: ../../../third_party/freetype2/src/pfr/pfrobjs.h
 FILE: ../../../third_party/freetype2/src/pfr/pfrsbit.c
 FILE: ../../../third_party/freetype2/src/pfr/pfrsbit.h
 FILE: ../../../third_party/freetype2/src/pfr/pfrtypes.h
-FILE: ../../../third_party/freetype2/src/psaux/Jamfile
 FILE: ../../../third_party/freetype2/src/psaux/afmparse.c
 FILE: ../../../third_party/freetype2/src/psaux/afmparse.h
 FILE: ../../../third_party/freetype2/src/psaux/cffdecode.c
@@ -12571,7 +12761,6 @@ FILE: ../../../third_party/freetype2/src/psaux/t1cmap.c
 FILE: ../../../third_party/freetype2/src/psaux/t1cmap.h
 FILE: ../../../third_party/freetype2/src/psaux/t1decode.c
 FILE: ../../../third_party/freetype2/src/psaux/t1decode.h
-FILE: ../../../third_party/freetype2/src/pshinter/Jamfile
 FILE: ../../../third_party/freetype2/src/pshinter/pshalgo.c
 FILE: ../../../third_party/freetype2/src/pshinter/pshalgo.h
 FILE: ../../../third_party/freetype2/src/pshinter/pshglob.c
@@ -12580,19 +12769,13 @@ FILE: ../../../third_party/freetype2/src/pshinter/pshinter.c
 FILE: ../../../third_party/freetype2/src/pshinter/pshmod.c
 FILE: ../../../third_party/freetype2/src/pshinter/pshmod.h
 FILE: ../../../third_party/freetype2/src/pshinter/pshnterr.h
-FILE: ../../../third_party/freetype2/src/pshinter/pshpic.c
-FILE: ../../../third_party/freetype2/src/pshinter/pshpic.h
 FILE: ../../../third_party/freetype2/src/pshinter/pshrec.c
 FILE: ../../../third_party/freetype2/src/pshinter/pshrec.h
-FILE: ../../../third_party/freetype2/src/psnames/Jamfile
 FILE: ../../../third_party/freetype2/src/psnames/psmodule.c
 FILE: ../../../third_party/freetype2/src/psnames/psmodule.h
 FILE: ../../../third_party/freetype2/src/psnames/psnamerr.h
 FILE: ../../../third_party/freetype2/src/psnames/psnames.c
-FILE: ../../../third_party/freetype2/src/psnames/pspic.c
-FILE: ../../../third_party/freetype2/src/psnames/pspic.h
 FILE: ../../../third_party/freetype2/src/psnames/pstables.h
-FILE: ../../../third_party/freetype2/src/raster/Jamfile
 FILE: ../../../third_party/freetype2/src/raster/ftmisc.h
 FILE: ../../../third_party/freetype2/src/raster/ftraster.c
 FILE: ../../../third_party/freetype2/src/raster/ftraster.h
@@ -12600,24 +12783,27 @@ FILE: ../../../third_party/freetype2/src/raster/ftrend1.c
 FILE: ../../../third_party/freetype2/src/raster/ftrend1.h
 FILE: ../../../third_party/freetype2/src/raster/raster.c
 FILE: ../../../third_party/freetype2/src/raster/rasterrs.h
-FILE: ../../../third_party/freetype2/src/raster/rastpic.c
-FILE: ../../../third_party/freetype2/src/raster/rastpic.h
-FILE: ../../../third_party/freetype2/src/sfnt/Jamfile
 FILE: ../../../third_party/freetype2/src/sfnt/pngshim.c
 FILE: ../../../third_party/freetype2/src/sfnt/pngshim.h
 FILE: ../../../third_party/freetype2/src/sfnt/sfdriver.c
 FILE: ../../../third_party/freetype2/src/sfnt/sfdriver.h
 FILE: ../../../third_party/freetype2/src/sfnt/sferrors.h
 FILE: ../../../third_party/freetype2/src/sfnt/sfnt.c
-FILE: ../../../third_party/freetype2/src/sfnt/sfntpic.c
-FILE: ../../../third_party/freetype2/src/sfnt/sfntpic.h
 FILE: ../../../third_party/freetype2/src/sfnt/sfobjs.c
 FILE: ../../../third_party/freetype2/src/sfnt/sfobjs.h
+FILE: ../../../third_party/freetype2/src/sfnt/sfwoff.c
+FILE: ../../../third_party/freetype2/src/sfnt/sfwoff.h
+FILE: ../../../third_party/freetype2/src/sfnt/sfwoff2.c
+FILE: ../../../third_party/freetype2/src/sfnt/sfwoff2.h
 FILE: ../../../third_party/freetype2/src/sfnt/ttbdf.c
 FILE: ../../../third_party/freetype2/src/sfnt/ttbdf.h
 FILE: ../../../third_party/freetype2/src/sfnt/ttcmap.c
 FILE: ../../../third_party/freetype2/src/sfnt/ttcmap.h
 FILE: ../../../third_party/freetype2/src/sfnt/ttcmapc.h
+FILE: ../../../third_party/freetype2/src/sfnt/ttcolr.c
+FILE: ../../../third_party/freetype2/src/sfnt/ttcolr.h
+FILE: ../../../third_party/freetype2/src/sfnt/ttcpal.c
+FILE: ../../../third_party/freetype2/src/sfnt/ttcpal.h
 FILE: ../../../third_party/freetype2/src/sfnt/ttkern.c
 FILE: ../../../third_party/freetype2/src/sfnt/ttkern.h
 FILE: ../../../third_party/freetype2/src/sfnt/ttload.c
@@ -12628,16 +12814,14 @@ FILE: ../../../third_party/freetype2/src/sfnt/ttpost.c
 FILE: ../../../third_party/freetype2/src/sfnt/ttpost.h
 FILE: ../../../third_party/freetype2/src/sfnt/ttsbit.c
 FILE: ../../../third_party/freetype2/src/sfnt/ttsbit.h
-FILE: ../../../third_party/freetype2/src/smooth/Jamfile
+FILE: ../../../third_party/freetype2/src/sfnt/woff2tags.c
+FILE: ../../../third_party/freetype2/src/sfnt/woff2tags.h
 FILE: ../../../third_party/freetype2/src/smooth/ftgrays.c
 FILE: ../../../third_party/freetype2/src/smooth/ftgrays.h
 FILE: ../../../third_party/freetype2/src/smooth/ftsmerrs.h
 FILE: ../../../third_party/freetype2/src/smooth/ftsmooth.c
 FILE: ../../../third_party/freetype2/src/smooth/ftsmooth.h
-FILE: ../../../third_party/freetype2/src/smooth/ftspic.c
-FILE: ../../../third_party/freetype2/src/smooth/ftspic.h
 FILE: ../../../third_party/freetype2/src/smooth/smooth.c
-FILE: ../../../third_party/freetype2/src/truetype/Jamfile
 FILE: ../../../third_party/freetype2/src/truetype/truetype.c
 FILE: ../../../third_party/freetype2/src/truetype/ttdriver.c
 FILE: ../../../third_party/freetype2/src/truetype/ttdriver.h
@@ -12650,13 +12834,10 @@ FILE: ../../../third_party/freetype2/src/truetype/ttinterp.c
 FILE: ../../../third_party/freetype2/src/truetype/ttinterp.h
 FILE: ../../../third_party/freetype2/src/truetype/ttobjs.c
 FILE: ../../../third_party/freetype2/src/truetype/ttobjs.h
-FILE: ../../../third_party/freetype2/src/truetype/ttpic.c
-FILE: ../../../third_party/freetype2/src/truetype/ttpic.h
 FILE: ../../../third_party/freetype2/src/truetype/ttpload.c
 FILE: ../../../third_party/freetype2/src/truetype/ttpload.h
 FILE: ../../../third_party/freetype2/src/truetype/ttsubpix.c
 FILE: ../../../third_party/freetype2/src/truetype/ttsubpix.h
-FILE: ../../../third_party/freetype2/src/type1/Jamfile
 FILE: ../../../third_party/freetype2/src/type1/t1afm.c
 FILE: ../../../third_party/freetype2/src/type1/t1afm.h
 FILE: ../../../third_party/freetype2/src/type1/t1driver.c
@@ -12672,7 +12853,6 @@ FILE: ../../../third_party/freetype2/src/type1/t1parse.c
 FILE: ../../../third_party/freetype2/src/type1/t1parse.h
 FILE: ../../../third_party/freetype2/src/type1/t1tokens.h
 FILE: ../../../third_party/freetype2/src/type1/type1.c
-FILE: ../../../third_party/freetype2/src/type42/Jamfile
 FILE: ../../../third_party/freetype2/src/type42/t42drivr.c
 FILE: ../../../third_party/freetype2/src/type42/t42drivr.h
 FILE: ../../../third_party/freetype2/src/type42/t42error.h
@@ -12682,7 +12862,6 @@ FILE: ../../../third_party/freetype2/src/type42/t42parse.c
 FILE: ../../../third_party/freetype2/src/type42/t42parse.h
 FILE: ../../../third_party/freetype2/src/type42/t42types.h
 FILE: ../../../third_party/freetype2/src/type42/type42.c
-FILE: ../../../third_party/freetype2/src/winfonts/Jamfile
 FILE: ../../../third_party/freetype2/src/winfonts/fnterrs.h
 FILE: ../../../third_party/freetype2/src/winfonts/winfnt.c
 FILE: ../../../third_party/freetype2/src/winfonts/winfnt.h
@@ -19539,6 +19718,63 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: khronos
+ORIGIN: ../../../third_party/khronos/EGL/eglplatform.h
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/khronos/EGL/eglplatform.h
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2007-2016 The Khronos Group Inc.
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and/or associated documentation files (the
+"Materials"), to deal in the Materials without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Materials, and to
+permit persons to whom the Materials are furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Materials.
+
+THE MATERIALS ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: khronos
+ORIGIN: ../../../third_party/khronos/GLES3/gl31.h
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/khronos/GLES3/gl31.h
+FILE: ../../../third_party/khronos/GLES3/gl32.h
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2013-2016 The Khronos Group Inc.
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and/or associated documentation files (the
+"Materials"), to deal in the Materials without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Materials, and to
+permit persons to whom the Materials are furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Materials.
+
+THE MATERIALS ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: khronos
 ORIGIN: ../../../third_party/khronos/KHR/khrplatform.h
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/khronos/KHR/khrplatform.h
@@ -22564,52 +22800,6 @@ SOFTWARE.
 
 ====================================================================================================
 LIBRARY: rapidjson
-ORIGIN: ../../../third_party/rapidjson/include/rapidjson/error/en.h
-TYPE: LicenseType.mit
-FILE: ../../../third_party/rapidjson/include/rapidjson/allocators.h
-FILE: ../../../third_party/rapidjson/include/rapidjson/cursorstreamwrapper.h
-FILE: ../../../third_party/rapidjson/include/rapidjson/document.h
-FILE: ../../../third_party/rapidjson/include/rapidjson/encodedstream.h
-FILE: ../../../third_party/rapidjson/include/rapidjson/encodings.h
-FILE: ../../../third_party/rapidjson/include/rapidjson/error/en.h
-FILE: ../../../third_party/rapidjson/include/rapidjson/error/error.h
-FILE: ../../../third_party/rapidjson/include/rapidjson/filereadstream.h
-FILE: ../../../third_party/rapidjson/include/rapidjson/filewritestream.h
-FILE: ../../../third_party/rapidjson/include/rapidjson/fwd.h
-FILE: ../../../third_party/rapidjson/include/rapidjson/internal/biginteger.h
-FILE: ../../../third_party/rapidjson/include/rapidjson/internal/diyfp.h
-FILE: ../../../third_party/rapidjson/include/rapidjson/internal/dtoa.h
-FILE: ../../../third_party/rapidjson/include/rapidjson/internal/ieee754.h
-FILE: ../../../third_party/rapidjson/include/rapidjson/internal/itoa.h
-FILE: ../../../third_party/rapidjson/include/rapidjson/internal/meta.h
-FILE: ../../../third_party/rapidjson/include/rapidjson/internal/pow10.h
-FILE: ../../../third_party/rapidjson/include/rapidjson/internal/regex.h
-FILE: ../../../third_party/rapidjson/include/rapidjson/internal/stack.h
-FILE: ../../../third_party/rapidjson/include/rapidjson/internal/strfunc.h
-FILE: ../../../third_party/rapidjson/include/rapidjson/internal/strtod.h
-FILE: ../../../third_party/rapidjson/include/rapidjson/internal/swap.h
-FILE: ../../../third_party/rapidjson/include/rapidjson/istreamwrapper.h
-FILE: ../../../third_party/rapidjson/include/rapidjson/memorybuffer.h
-FILE: ../../../third_party/rapidjson/include/rapidjson/memorystream.h
-FILE: ../../../third_party/rapidjson/include/rapidjson/ostreamwrapper.h
-FILE: ../../../third_party/rapidjson/include/rapidjson/pointer.h
-FILE: ../../../third_party/rapidjson/include/rapidjson/prettywriter.h
-FILE: ../../../third_party/rapidjson/include/rapidjson/rapidjson.h
-FILE: ../../../third_party/rapidjson/include/rapidjson/reader.h
-FILE: ../../../third_party/rapidjson/include/rapidjson/schema.h
-FILE: ../../../third_party/rapidjson/include/rapidjson/stream.h
-FILE: ../../../third_party/rapidjson/include/rapidjson/stringbuffer.h
-FILE: ../../../third_party/rapidjson/include/rapidjson/writer.h
-----------------------------------------------------------------------------------------------------
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: rapidjson
 ORIGIN: ../../../third_party/rapidjson/include/rapidjson/msinttypes/inttypes.h
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/rapidjson/include/rapidjson/msinttypes/inttypes.h
@@ -23460,6 +23650,11 @@ SOFTWARE.
 LIBRARY: wuffs
 ORIGIN: ../../../third_party/wuffs/LICENSE
 TYPE: LicenseType.apache
+FILE: ../../../third_party/wuffs/doc/logo/wuffs-acronym-logo-1536x1024.png
+FILE: ../../../third_party/wuffs/doc/logo/wuffs-logo-1024x724.png
+FILE: ../../../third_party/wuffs/doc/logo/wuffs-logo-2048x1448.png
+FILE: ../../../third_party/wuffs/doc/logo/wuffs-logo-256x181.png
+FILE: ../../../third_party/wuffs/doc/logo/wuffs-logo.svg
 FILE: ../../../third_party/wuffs/go.mod
 FILE: ../../../third_party/wuffs/go.sum
 FILE: ../../../third_party/wuffs/script/bench-rust-deflate/Cargo.toml
@@ -23738,6 +23933,8 @@ FILE: ../../../third_party/zlib/patches/0002-uninitializedcheck.patch
 FILE: ../../../third_party/zlib/patches/0003-uninitializedjump.patch
 FILE: ../../../third_party/zlib/patches/0004-fix-uwp.patch
 FILE: ../../../third_party/zlib/patches/0005-infcover-gtest.patch
+FILE: ../../../third_party/zlib/patches/0006-fix-check_match.patch
+FILE: ../../../third_party/zlib/patches/0007-zero-init-deflate-window.patch
 FILE: ../../../third_party/zlib/trees.h
 ----------------------------------------------------------------------------------------------------
 version 1.2.11, January 15th, 2017
@@ -24472,4 +24669,4 @@ freely, subject to the following restrictions:
    misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
 ====================================================================================================
-Total license count: 374
+Total license count: 375

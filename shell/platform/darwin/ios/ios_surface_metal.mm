@@ -22,8 +22,8 @@ IOSSurfaceMetal::IOSSurfaceMetal(fml::scoped_nsobject<CAMetalLayer> layer,
   is_valid_ = layer_;
   auto metal_context = CastToMetalContext(GetContext());
   auto darwin_context = metal_context->GetDarwinContext().get();
-  command_queue_ = darwin_context.mtlCommandQueue;
-  device_ = darwin_context.mtlDevice;
+  command_queue_ = darwin_context.commandQueue;
+  device_ = darwin_context.device;
 }
 
 // |IOSSurface|
@@ -40,10 +40,10 @@ void IOSSurfaceMetal::UpdateStorageSizeIfNecessary() {
 }
 
 // |IOSSurface|
-std::unique_ptr<Surface> IOSSurfaceMetal::CreateGPUSurface(GrDirectContext* /* unused */) {
-  auto metal_context = CastToMetalContext(GetContext());
-  return std::make_unique<GPUSurfaceMetal>(this,                            // layer
-                                           metal_context->GetMainContext()  // context
+std::unique_ptr<Surface> IOSSurfaceMetal::CreateGPUSurface(GrDirectContext* context) {
+  FML_DCHECK(context);
+  return std::make_unique<GPUSurfaceMetal>(this,               // layer
+                                           sk_ref_sp(context)  // context
   );
 }
 

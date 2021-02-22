@@ -8,11 +8,10 @@
 
 #include "flutter/fml/logging.h"
 #include "flutter/fml/platform/darwin/cf_utils.h"
-
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStore.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStoreData.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterFrameBufferProvider.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterIOSurfaceHolder.h"
-
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/gl/GrGLAssembleInterface.h"
@@ -20,22 +19,29 @@
 
 namespace flutter {
 
-FlutterGLCompositor::FlutterGLCompositor(FlutterViewController* view_controller)
-    : open_gl_context_(view_controller.flutterView.openGLContext) {
+FlutterGLCompositor::FlutterGLCompositor(FlutterViewController* view_controller,
+                                         NSOpenGLContext* opengl_context)
+    : open_gl_context_(opengl_context) {
   FML_CHECK(view_controller != nullptr) << "FlutterViewController* cannot be nullptr";
   view_controller_ = view_controller;
 }
 
 bool FlutterGLCompositor::CreateBackingStore(const FlutterBackingStoreConfig* config,
                                              FlutterBackingStore* backing_store_out) {
+  if (!view_controller_) {
+    return false;
+  }
+
   CGSize size = CGSizeMake(config->size.width, config->size.height);
 
   if (!frame_started_) {
     StartFrame();
     // If the backing store is for the first layer, return the fbo for the
     // FlutterView.
-    auto fbo = [view_controller_.flutterView frameBufferIDForSize:size];
-    backing_store_out->open_gl.framebuffer.name = fbo;
+    FlutterOpenGLRenderBackingStore* backingStore =
+        reinterpret_cast<FlutterOpenGLRenderBackingStore*>(
+            [view_controller_.flutterView backingStoreForSize:size]);
+    backing_store_out->open_gl.framebuffer.name = backingStore.frameBufferID;
   } else {
     FlutterFrameBufferProvider* fb_provider =
         [[FlutterFrameBufferProvider alloc] initWithOpenGLContext:open_gl_context_];
@@ -132,6 +138,10 @@ void FlutterGLCompositor::StartFrame() {
 }
 
 size_t FlutterGLCompositor::CreateCALayer() {
+  if (!view_controller_) {
+    return 0;
+  }
+
   // FlutterGLCompositor manages the lifecycle of content layers.
   // The id for a CALayer starts at 0 and increments by 1 for
   // any given frame.

@@ -8,7 +8,7 @@ part of engine;
 const String _ahemFontFamily = 'Ahem';
 const String _ahemFontUrl = 'packages/ui/assets/ahem.ttf';
 const String _robotoFontFamily = 'Roboto';
-const String _robotoFontUrl = 'packages/ui/assets/Roboto-Regular.ttf';
+const String _robotoTestFontUrl = 'packages/ui/assets/Roboto-Regular.ttf';
 
 /// This class is responsible for registering and loading fonts.
 ///
@@ -79,7 +79,7 @@ class FontCollection {
     _testFontManager!.registerAsset(
         _ahemFontFamily, 'url($_ahemFontUrl)', const <String, String>{});
     _testFontManager!.registerAsset(
-        _robotoFontFamily, 'url($_robotoFontUrl)', const <String, String>{});
+        _robotoFontFamily, 'url($_robotoTestFontUrl)', const <String, String>{});
   }
 
   /// Returns a [Future] that completes when the registered fonts are loaded
@@ -200,6 +200,7 @@ class FontManager {
       // loaded. They were measured using fallback font, so we should clear the
       // cache.
       TextMeasurementService.clearCache();
+      Spanometer.clearRulersCache();
     }, onError: (dynamic exception) {
       // Failures here will throw an html.DomException which confusingly
       // does not implement Exception or Error. Rethrow an Exception so it can

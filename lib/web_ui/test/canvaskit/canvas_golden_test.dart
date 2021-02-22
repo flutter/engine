@@ -20,59 +20,731 @@ void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
-const ui.Rect region = const ui.Rect.fromLTRB(0, 0, 500, 250);
+const ui.Rect kDefaultRegion = const ui.Rect.fromLTRB(0, 0, 500, 250);
 
-Future<void> matchPictureGolden(String goldenFile, CkPicture picture, { bool write = false }) async {
+Future<void> matchPictureGolden(String goldenFile, CkPicture picture, { ui.Rect region = kDefaultRegion, bool write = false }) async {
   final EnginePlatformDispatcher dispatcher = ui.window.platformDispatcher as EnginePlatformDispatcher;
   final LayerSceneBuilder sb = LayerSceneBuilder();
   sb.pushOffset(0, 0);
   sb.addPicture(ui.Offset.zero, picture);
   dispatcher.rasterizer!.draw(sb.build().layerTree);
-  await matchGoldenFile(goldenFile, region: region, write: write);
+  await matchGoldenFile(goldenFile, region: region, maxDiffRatePercent: 0.0, write: write);
 }
 
 void testMain() {
   group('CkCanvas', () {
     setUpCanvasKitTest();
 
-    test('renders using non-recording canvas if weak refs are supported', () async {
-      expect(browserSupportsFinalizationRegistry, isTrue,
-          reason: 'This test specifically tests non-recording canvas, which '
-                  'only works if FinalizationRegistry is available.');
-      final CkPictureRecorder recorder = CkPictureRecorder();
-      final CkCanvas canvas = recorder.beginRecording(region);
-      expect(canvas.runtimeType, CkCanvas);
-      drawTestPicture(canvas);
-      await matchPictureGolden('canvaskit_picture_original.png', recorder.endRecording());
+    setUp(() {
+      expect(notoDownloadQueue.downloader.debugActiveDownloadCount, 0);
+      expect(notoDownloadQueue.isPending, false);
     });
 
-    test('renders using a recording canvas if weak refs are not supported', () async {
+    tearDown(() {
+      expect(notoDownloadQueue.downloader.debugActiveDownloadCount, 0);
+      expect(notoDownloadQueue.isPending, false);
+    });
+
+    test('renders using non-recording canvas if weak refs are supported',
+        () async {
+      expect(browserSupportsFinalizationRegistry, isTrue,
+          reason: 'This test specifically tests non-recording canvas, which '
+              'only works if FinalizationRegistry is available.');
+      final CkPictureRecorder recorder = CkPictureRecorder();
+      final CkCanvas canvas = recorder.beginRecording(kDefaultRegion);
+      expect(canvas.runtimeType, CkCanvas);
+      drawTestPicture(canvas);
+      await matchPictureGolden(
+          'canvaskit_picture.png', recorder.endRecording());
+    });
+
+    test('renders using a recording canvas if weak refs are not supported',
+        () async {
       browserSupportsFinalizationRegistry = false;
       final CkPictureRecorder recorder = CkPictureRecorder();
-      final CkCanvas canvas = recorder.beginRecording(region);
+      final CkCanvas canvas = recorder.beginRecording(kDefaultRegion);
       expect(canvas, isA<RecordingCkCanvas>());
       drawTestPicture(canvas);
 
       final CkPicture originalPicture = recorder.endRecording();
-      await matchPictureGolden('canvaskit_picture_original.png', originalPicture);
+      await matchPictureGolden(
+          'canvaskit_picture.png', originalPicture);
 
-      final ByteData originalPixels = await (await originalPicture.toImage(50, 50)).toByteData() as ByteData;
+      final ByteData originalPixels =
+          await (await originalPicture.toImage(50, 50)).toByteData()
+              as ByteData;
 
       // Test that a picture restored from a snapshot looks the same.
       final CkPictureSnapshot? snapshot = canvas.pictureSnapshot;
       expect(snapshot, isNotNull);
       final SkPicture restoredSkPicture = snapshot!.toPicture();
       expect(restoredSkPicture, isNotNull);
-      final CkPicture restoredPicture = CkPicture(restoredSkPicture, ui.Rect.fromLTRB(0, 0, 50, 50), snapshot);
-      final ByteData restoredPixels = await (await restoredPicture.toImage(50, 50)).toByteData() as ByteData;
+      final CkPicture restoredPicture = CkPicture(
+          restoredSkPicture, ui.Rect.fromLTRB(0, 0, 50, 50), snapshot);
+      final ByteData restoredPixels =
+          await (await restoredPicture.toImage(50, 50)).toByteData()
+              as ByteData;
 
-      await matchPictureGolden('canvaskit_picture_restored.png', restoredPicture);
-      expect(restoredPixels.buffer.asUint8List(), originalPixels.buffer.asUint8List());
+      await matchPictureGolden(
+          'canvaskit_picture.png', restoredPicture);
+      expect(restoredPixels.buffer.asUint8List(),
+          originalPixels.buffer.asUint8List());
     });
-  // TODO: https://github.com/flutter/flutter/issues/60040
-  // TODO: https://github.com/flutter/flutter/issues/71520
+
+    // Regression test for https://github.com/flutter/flutter/issues/51237
+    // Draws a grid of shadows at different offsets. Prior to directional
+    // light the shadows would shift depending on the offset. With directional
+    // light the cells in the grid must look identical.
+    test('uses directional shadows', () async {
+      const ui.Rect region = ui.Rect.fromLTRB(0, 0, 820, 420);
+      final CkPicture picture = paintPicture(region, (CkCanvas canvas) {
+        final CkPath shape = CkPath()
+          ..addRect(const ui.Rect.fromLTRB(0, 0, 40, 40));
+        final CkPaint shapePaint = CkPaint()
+          ..style = ui.PaintingStyle.stroke
+          ..strokeWidth = 1
+          ..color = const ui.Color(0xFF009900);
+        final CkPaint shadowBoundsPaint = CkPaint()
+          ..style = ui.PaintingStyle.stroke
+          ..strokeWidth = 1
+          ..color = const ui.Color(0xFF000099);
+        canvas.translate(20, 20);
+
+        for (int row = 0; row < 5; row += 1) {
+          canvas.save();
+          for (int col = 0; col < 10; col += 1) {
+            final double elevation = 2 * (col % 5).toDouble();
+            canvas.drawShadow(shape, ui.Color(0xFFFF0000), elevation, true);
+            canvas.drawPath(shape, shapePaint);
+
+            final PhysicalShapeEngineLayer psl = PhysicalShapeEngineLayer(
+              elevation,
+              const ui.Color(0xFF000000),
+              const ui.Color(0xFF000000),
+              shape,
+              ui.Clip.antiAlias,
+            );
+            psl.preroll(
+              PrerollContext(
+                RasterCache(),
+                HtmlViewEmbedder(),
+              ),
+              Matrix4.identity(),
+            );
+            canvas.drawRect(psl.paintBounds, shadowBoundsPaint);
+
+            final CkParagraphBuilder pb = CkParagraphBuilder(
+              CkParagraphStyle(),
+            );
+            pb.addText('$elevation');
+            final CkParagraph p = pb.build();
+            p.layout(const ui.ParagraphConstraints(width: 1000));
+            canvas.drawParagraph(p, ui.Offset(20 - p.maxIntrinsicWidth / 2, 20 - p.height / 2));
+            canvas.translate(80, 0);
+          }
+          canvas.restore();
+          canvas.translate(0, 80);
+        }
+      });
+      await matchPictureGolden('canvaskit_directional_shadows.png', picture, region: region);
+    });
+
+    test('computes shadow bounds correctly with parent transforms', () async {
+      const double rectSize = 50;
+      const double halfSize = rectSize / 2;
+      const double padding = 110;
+      const ui.Rect region = ui.Rect.fromLTRB(
+        0,
+        0,
+        (rectSize + padding) * 3 + padding,
+        (rectSize + padding) * 2 + padding,
+      );
+      late List<PhysicalShapeEngineLayer> physicalShapeLayers;
+
+      LayerTree buildTestScene({ required bool paintShadowBounds }) {
+        final Iterator<PhysicalShapeEngineLayer>? shadowBounds = paintShadowBounds
+          ? physicalShapeLayers.iterator : null;
+        physicalShapeLayers = <PhysicalShapeEngineLayer>[];
+
+        final LayerSceneBuilder builder = LayerSceneBuilder();
+        builder.pushOffset(padding + halfSize, padding + halfSize);
+
+        final CkPath shape = CkPath()
+          ..addRect(const ui.Rect.fromLTRB(-halfSize, -halfSize, halfSize, halfSize));
+        final CkPaint shadowBoundsPaint = CkPaint()
+          ..style = ui.PaintingStyle.stroke
+          ..strokeWidth = 1
+          ..color = const ui.Color(0xFF000099);
+
+        for (int row = 0; row < 2; row += 1) {
+          for (int col = 0; col < 3; col += 1) {
+            builder.pushOffset(col * (rectSize + padding), row * (rectSize + padding));
+            builder.pushTransform(Float64List.fromList(Matrix4.rotationZ(row * math.pi / 4).storage));
+            final double scale = 1 / (1 + col);
+            builder.pushTransform(Float64List.fromList(Matrix4.diagonal3Values(scale, scale, 1).storage));
+            physicalShapeLayers.add(builder.pushPhysicalShape(
+              path: shape,
+              elevation: 6,
+              color: const ui.Color(0xFF009900),
+              shadowColor: const ui.Color(0xFF000000),
+            ));
+            if (shadowBounds != null) {
+              shadowBounds.moveNext();
+              final ui.Rect bounds = shadowBounds.current.paintBounds;
+              builder.addPicture(ui.Offset.zero, paintPicture(region, (CkCanvas canvas) {
+                canvas.drawRect(bounds, shadowBoundsPaint);
+              }));
+            }
+            builder.pop();
+            builder.pop();
+            builder.pop();
+            builder.pop();
+          }
+        }
+        builder.pop();
+        return builder.build().layerTree;
+      }
+
+      // Render the scene once without painting the shadow bounds just to
+      // preroll the scene to compute the shadow bounds.
+      buildTestScene(paintShadowBounds: false).rootLayer.preroll(
+        PrerollContext(
+          RasterCache(),
+          HtmlViewEmbedder(),
+        ),
+        Matrix4.identity(),
+      );
+
+      // Render again, this time with the shadow bounds.
+      final LayerTree layerTree = buildTestScene(paintShadowBounds: true);
+
+      final EnginePlatformDispatcher dispatcher = ui.window.platformDispatcher as EnginePlatformDispatcher;
+      dispatcher.rasterizer!.draw(layerTree);
+      await matchGoldenFile('canvaskit_shadow_bounds.png', region: region);
+    });
+
+    test('text styles - default', () async {
+      await testTextStyle('default');
+    });
+
+    test('text styles - center aligned', () async {
+      await testTextStyle('center aligned', paragraphTextAlign: ui.TextAlign.center);
+    });
+
+    test('text styles - right aligned', () async {
+      await testTextStyle('right aligned', paragraphTextAlign: ui.TextAlign.right);
+    });
+
+    test('text styles - rtl', () async {
+      await testTextStyle('rtl', paragraphTextDirection: ui.TextDirection.rtl);
+    });
+
+    test('text styles - multiline', () async {
+      await testTextStyle('multiline', layoutWidth: 50);
+    });
+
+    test('text styles - max lines', () async {
+      await testTextStyle('max lines', paragraphMaxLines: 1, layoutWidth: 50);
+    });
+
+    test('text styles - ellipsis', () async {
+      await testTextStyle('ellipsis', paragraphMaxLines: 1, paragraphEllipsis: '...', layoutWidth: 60);
+    });
+
+    test('text styles - paragraph font family', () async {
+      await testTextStyle('paragraph font family', paragraphFontFamily: 'Ahem');
+    });
+
+    test('text styles - paragraph font size', () async {
+      await testTextStyle('paragraph font size', paragraphFontSize: 22);
+    });
+
+    // TODO(yjbanov): paragraphHeight seems to have no effect, but maybe I'm using it wrong.
+    //                https://github.com/flutter/flutter/issues/74337
+    test('text styles - paragraph height', () async {
+      await testTextStyle('paragraph height', layoutWidth: 50, paragraphHeight: 1.5);
+    });
+
+    // TODO(yjbanov): paragraphTextHeightBehavior seems to have no effect. Unsure how to use it.
+    //                https://github.com/flutter/flutter/issues/74337
+    test('text styles - paragraph text height behavior', () async {
+      await testTextStyle('paragraph text height behavior', layoutWidth: 50, paragraphHeight: 1.5, paragraphTextHeightBehavior: ui.TextHeightBehavior(
+        applyHeightToFirstAscent: false,
+        applyHeightToLastDescent: false,
+      ));
+    });
+
+    // TODO(yjbanov): paragraph fontWeight doesn't seem to work.
+    //                https://github.com/flutter/flutter/issues/74338
+    test('text styles - paragraph weight', () async {
+      await testTextStyle('paragraph weight', paragraphFontWeight: ui.FontWeight.w900);
+    });
+
+    // TODO(yjbanov): paragraph fontStyle doesn't seem to work.
+    //                https://github.com/flutter/flutter/issues/74338
+    test('text style - paragraph font style', () async {
+      await testTextStyle(
+        'paragraph font style',
+        paragraphFontStyle: ui.FontStyle.italic,
+      );
+    });
+
+    // TODO(yjbanov): locales specified in paragraph styles don't work:
+    //                https://github.com/flutter/flutter/issues/74687
+    // TODO(yjbanov): spaces are not rendered correctly:
+    //                https://github.com/flutter/flutter/issues/74742
+    test('text styles - paragraph locale zh_CN', () async {
+      await testTextStyle('paragraph locale zh_CN', outerText: '次 化 刃 直 入 令', innerText: '', paragraphLocale: const ui.Locale('zh', 'CN'));
+    });
+
+    test('text styles - paragraph locale zh_TW', () async {
+      await testTextStyle('paragraph locale zh_TW', outerText: '次 化 刃 直 入 令', innerText: '', paragraphLocale: const ui.Locale('zh', 'TW'));
+    });
+
+    test('text styles - paragraph locale ja', () async {
+      await testTextStyle('paragraph locale ja', outerText: '次 化 刃 直 入 令', innerText: '', paragraphLocale: const ui.Locale('ja'));
+    });
+
+    test('text styles - paragraph locale ko', () async {
+      await testTextStyle('paragraph locale ko', outerText: '次 化 刃 直 入 令', innerText: '', paragraphLocale: const ui.Locale('ko'));
+    });
+
+    test('text styles - color', () async {
+      await testTextStyle('color', color: const ui.Color(0xFF009900));
+    });
+
+    test('text styles - decoration', () async {
+      await testTextStyle('decoration', decoration: ui.TextDecoration.underline);
+    });
+
+    test('text styles - decoration style', () async {
+      await testTextStyle('decoration style', decoration: ui.TextDecoration.underline, decorationStyle: ui.TextDecorationStyle.dashed);
+    });
+
+    test('text styles - decoration thickness', () async {
+      await testTextStyle('decoration thickness', decoration: ui.TextDecoration.underline, decorationThickness: 5.0);
+    });
+
+    test('text styles - font weight', () async {
+      await testTextStyle('font weight', fontWeight: ui.FontWeight.w900);
+    });
+
+    test('text styles - font style', () async {
+      await testTextStyle('font style', fontStyle: ui.FontStyle.italic);
+    });
+
+    // TODO(yjbanov): not sure how to test this.
+    test('text styles - baseline', () async {
+      await testTextStyle('baseline', textBaseline: ui.TextBaseline.ideographic);
+    });
+
+    test('text styles - font family', () async {
+      await testTextStyle('font family', fontFamily: 'Ahem');
+    });
+
+    test('text styles - non-existent font family', () async {
+      await testTextStyle('non-existent font family', fontFamily: 'DoesNotExist');
+    });
+
+    test('text styles - family fallback', () async {
+      await testTextStyle('family fallback', fontFamily: 'DoesNotExist', fontFamilyFallback: <String>['Ahem']);
+    });
+
+    test('text styles - font size', () async {
+      await testTextStyle('font size', fontSize: 24);
+    });
+
+    test('text styles - letter spacing', () async {
+      await testTextStyle('letter spacing', letterSpacing: 5);
+    });
+
+    test('text styles - word spacing', () async {
+      await testTextStyle('word spacing', innerText: 'Beautiful World!', wordSpacing: 25);
+    });
+
+    test('text styles - height', () async {
+      await testTextStyle('height', height: 2);
+    });
+
+    // TODO(yjbanov): locales specified in text styles don't work:
+    //                https://github.com/flutter/flutter/issues/74687
+    // TODO(yjbanov): spaces are not rendered correctly:
+    //                https://github.com/flutter/flutter/issues/74742
+    test('text styles - locale zh_CN', () async {
+      await testTextStyle('locale zh_CN', innerText: '次 化 刃 直 入 令', outerText: '', locale: const ui.Locale('zh', 'CN'));
+    });
+
+    test('text styles - locale zh_TW', () async {
+      await testTextStyle('locale zh_TW', innerText: '次 化 刃 直 入 令', outerText: '', locale: const ui.Locale('zh', 'TW'));
+    });
+
+    test('text styles - locale ja', () async {
+      await testTextStyle('locale ja', innerText: '次 化 刃 直 入 令', outerText: '', locale: const ui.Locale('ja'));
+    });
+
+    test('text styles - locale ko', () async {
+      await testTextStyle('locale ko', innerText: '次 化 刃 直 入 令', outerText: '', locale: const ui.Locale('ko'));
+    });
+
+    test('text styles - background', () async {
+      await testTextStyle('background', background: CkPaint()..color = const ui.Color(0xFF00FF00));
+    });
+
+    test('text styles - foreground', () async {
+      await testTextStyle('foreground', foreground: CkPaint()..color = const ui.Color(0xFF0000FF));
+    });
+
+    test('text styles - foreground and background', () async {
+      await testTextStyle(
+        'foreground and background',
+        foreground: CkPaint()..color = const ui.Color(0xFFFF5555),
+        background: CkPaint()..color = const ui.Color(0xFF007700),
+      );
+    });
+
+    test('text styles - background and color', () async {
+      await testTextStyle(
+        'background and color',
+        color: const ui.Color(0xFFFFFF00),
+        background: CkPaint()..color = const ui.Color(0xFF007700),
+      );
+    });
+
+    test('text styles - shadows', () async {
+      await testTextStyle('shadows', shadows: <ui.Shadow>[
+        ui.Shadow(
+          color: const ui.Color(0xFF999900),
+          offset: const ui.Offset(10, 10),
+          blurRadius: 5,
+        ),
+        ui.Shadow(
+          color: const ui.Color(0xFF009999),
+          offset: const ui.Offset(-10, -10),
+          blurRadius: 10,
+        ),
+      ]);
+    });
+
+    test('text styles - old style figures', () async {
+      await testTextStyle(
+        'old style figures',
+        paragraphFontFamily: 'Roboto',
+        paragraphFontSize: 24,
+        outerText: '0 1 2 3 4 5 ',
+        innerText: '0 1 2 3 4 5',
+        fontFeatures: <ui.FontFeature>[const ui.FontFeature.oldstyleFigures()],
+      );
+    });
+
+    test('text styles - stylistic set 1', () async {
+      await testTextStyle(
+        'stylistic set 1',
+        paragraphFontFamily: 'Roboto',
+        paragraphFontSize: 24,
+        outerText: 'g',
+        innerText: 'g',
+        fontFeatures: <ui.FontFeature>[ui.FontFeature.stylisticSet(1)],
+      );
+    });
+
+    test('text styles - stylistic set 2', () async {
+      await testTextStyle(
+        'stylistic set 2',
+        paragraphFontFamily: 'Roboto',
+        paragraphFontSize: 24,
+        outerText: 'α',
+        innerText: 'α',
+        fontFeatures: <ui.FontFeature>[ui.FontFeature.stylisticSet(2)],
+      );
+    });
+
+    test('text styles - override font family', () async {
+      await testTextStyle(
+        'override font family',
+        paragraphFontFamily: 'Ahem',
+        fontFamily: 'Roboto',
+      );
+    });
+
+    test('text styles - override font size', () async {
+      await testTextStyle(
+        'override font size',
+        paragraphFontSize: 36,
+        fontSize: 18,
+      );
+    });
+
+    // TODO(yjbanov): paragraph fontWeight doesn't seem to work.
+    //                https://github.com/flutter/flutter/issues/74338
+    test('text style - override font weight', () async {
+      await testTextStyle(
+        'override font weight',
+        paragraphFontWeight: ui.FontWeight.w900,
+        fontWeight: ui.FontWeight.normal,
+      );
+    });
+
+    // TODO(yjbanov): paragraph fontStyle doesn't seem to work.
+    //                https://github.com/flutter/flutter/issues/74338
+    test('text style - override font style', () async {
+      await testTextStyle(
+        'override font style',
+        paragraphFontStyle: ui.FontStyle.italic,
+        fontStyle: ui.FontStyle.normal,
+      );
+    });
+
+    test('text style - characters from multiple fallback fonts', () async {
+      await testTextStyle(
+        'multi-font characters',
+        // This character is claimed by multiple fonts. This test makes sure
+        // we can find a font supporting it.
+        outerText: '欢',
+        innerText: '',
+      );
+    });
+
+    test('text style - symbols', () async {
+      // One of the CJK fonts loaded in one of the tests above also contains
+      // some of these symbols. To make sure the test produces predictable
+      // results we reset the fallback data forcing the engine to reload
+      // fallbacks, which for this test will only load Noto Symbols.
+      FontFallbackData.debugReset();
+      await testTextStyle(
+        'symbols',
+        outerText: '← ↑ → ↓ ',
+        innerText: '',
+      );
+    });
+
+    test('text style - foreground/background/color do not leak across paragraphs', () async {
+      const double testWidth = 440;
+      const double middle = testWidth / 2;
+      CkParagraph createTestParagraph({
+        ui.Color? color,
+        CkPaint? foreground,
+        CkPaint? background
+      }) {
+        final CkParagraphBuilder builder = CkParagraphBuilder(CkParagraphStyle());
+        builder.pushStyle(CkTextStyle(
+          fontSize: 16,
+          color: color,
+          foreground: foreground,
+          background: background,
+        ));
+        final StringBuffer text = StringBuffer();
+        if (color == null && foreground == null && background == null) {
+          text.write('Default');
+        } else {
+          if (color != null) {
+            text.write('Color');
+          }
+          if (foreground != null) {
+            if (text.isNotEmpty) {
+              text.write('+');
+            }
+            text.write('Foreground');
+          }
+          if (background != null) {
+            if (text.isNotEmpty) {
+              text.write('+');
+            }
+            text.write('Background');
+          }
+        }
+        builder.addText(text.toString());
+        final CkParagraph paragraph = builder.build();
+        paragraph.layout(ui.ParagraphConstraints(width: testWidth));
+        return paragraph;
+      }
+
+      final List<ParagraphFactory> variations = <ParagraphFactory>[
+        () => createTestParagraph(),
+        () => createTestParagraph(color: ui.Color(0xFF009900)),
+        () => createTestParagraph(foreground: CkPaint()..color = ui.Color(0xFF990000)),
+        () => createTestParagraph(background: CkPaint()..color = ui.Color(0xFF7777FF)),
+        () => createTestParagraph(
+          color: ui.Color(0xFFFF00FF),
+          background: CkPaint()..color = ui.Color(0xFF0000FF),
+        ),
+        () => createTestParagraph(
+          foreground: CkPaint()..color = ui.Color(0xFF00FFFF),
+          background: CkPaint()..color = ui.Color(0xFF0000FF),
+        ),
+      ];
+
+      final CkPictureRecorder recorder = CkPictureRecorder();
+      final CkCanvas canvas = recorder.beginRecording(ui.Rect.largest);
+      canvas.translate(10, 10);
+
+      for (ParagraphFactory from in variations) {
+        for (ParagraphFactory to in variations) {
+          canvas.save();
+          final CkParagraph fromParagraph = from();
+          canvas.drawParagraph(fromParagraph, ui.Offset.zero);
+
+          final ui.Offset leftEnd = ui.Offset(fromParagraph.maxIntrinsicWidth + 10, fromParagraph.height / 2);
+          final ui.Offset rightEnd = ui.Offset(middle - 10, leftEnd.dy);
+          final ui.Offset tipOffset = ui.Offset(-5, -5);
+          canvas.drawLine(leftEnd, rightEnd, CkPaint());
+          canvas.drawLine(rightEnd, rightEnd + tipOffset, CkPaint());
+          canvas.drawLine(rightEnd, rightEnd + tipOffset.scale(1, -1), CkPaint());
+
+          canvas.translate(middle, 0);
+          canvas.drawParagraph(to(), ui.Offset.zero);
+          canvas.restore();
+          canvas.translate(0, 22);
+        }
+      }
+
+      final CkPicture picture = recorder.endRecording();
+      await matchPictureGolden(
+        'canvaskit_text_styles_do_not_leak.png',
+        picture,
+        region: ui.Rect.fromLTRB(0, 0, testWidth, 850),
+      );
+    });
+
+    test('sample Chinese text', () async {
+      await testSampleText(
+        'chinese',
+        '也称乱数假文或者哑元文本， '
+        '是印刷及排版领域所常用的虚拟文字。'
+        '由于曾经一台匿名的打印机刻意打乱了'
+        '一盒印刷字体从而造出一本字体样品书',
+      );
+    });
+
+    test('sample Armenian text', () async {
+      await testSampleText(
+        'armenian',
+        'տպագրության և տպագրական արդյունաբերության համար նախատեսված մոդելային տեքստ է',
+      );
+    });
+
+    test('sample Albanian text', () async {
+      await testSampleText(
+        'albanian',
+        'është një tekst shabllon i industrisë së printimit dhe shtypshkronjave Lorem Ipsum ka qenë teksti shabllon',
+      );
+    });
+
+    test('sample Arabic text', () async {
+      await testSampleText(
+        'arabic',
+        'هناك حقيقة مثبتة منذ زمن طويل وهي أن المحتوى المقروء لصفحة ما سيلهي',
+        textDirection: ui.TextDirection.rtl,
+      );
+    });
+
+    test('sample Bulgarian text', () async {
+      await testSampleText(
+        'bulgarian',
+        'е елементарен примерен текст използван в печатарската и типографската индустрия',
+      );
+    });
+
+    test('sample Catalan text', () async {
+      await testSampleText(
+        'catalan',
+        'és un text de farciment usat per la indústria de la tipografia i la impremta',
+      );
+    });
+
+    test('sample English text', () async {
+      await testSampleText(
+        'english',
+        'Lorem Ipsum is simply dummy text of the printing and typesetting industry',
+      );
+    });
+
+    test('sample Greek text', () async {
+      await testSampleText(
+        'greek',
+        'είναι απλά ένα κείμενο χωρίς νόημα για τους επαγγελματίες της τυπογραφίας και στοιχειοθεσίας',
+      );
+    });
+
+    test('sample Hebrew text', () async {
+      await testSampleText(
+        'hebrew',
+        'זוהי עובדה מבוססת שדעתו של הקורא תהיה מוסחת על ידי טקטס קריא כאשר הוא יביט בפריסתו',
+        textDirection: ui.TextDirection.rtl,
+      );
+    });
+
+    test('sample Hindi text', () async {
+      await testSampleText(
+        'hindi',
+        'छपाई और अक्षर योजन उद्योग का एक साधारण डमी पाठ है सन १५०० के बाद से अभी तक इस उद्योग का मानक डमी पाठ मन गया जब एक अज्ञात मुद्रक ने नमूना लेकर एक नमूना किताब बनाई',
+      );
+    });
+
+    test('sample Thai text', () async {
+      await testSampleText(
+        'thai',
+        'คือ เนื้อหาจำลองแบบเรียบๆ ที่ใช้กันในธุรกิจงานพิมพ์หรืองานเรียงพิมพ์ มันได้กลายมาเป็นเนื้อหาจำลองมาตรฐานของธุรกิจดังกล่าวมาตั้งแต่ศตวรรษที่',
+      );
+    });
+
+    test('sample Georgian text', () async {
+      await testSampleText(
+        'georgian',
+        'საბეჭდი და ტიპოგრაფიული ინდუსტრიის უშინაარსო ტექსტია. იგი სტანდარტად',
+      );
+    });
+
+    // We've seen text break when we load many fonts simultaneously. This test
+    // combines text in multiple languages into one long paragraph to make sure
+    // we can handle it.
+    test('sample multilingual text', () async {
+      await testSampleText(
+        'multilingual',
+        '也称乱数假文或者哑元文本， 是印刷及排版领域所常用的虚拟文字。 '
+        'տպագրության և տպագրական արդյունաբերության համար '
+        'është një tekst shabllon i industrisë së printimit '
+        ' زمن طويل وهي أن المحتوى المقروء لصفحة ما سيلهي '
+        'е елементарен примерен текст използван в печатарската '
+        'és un text de farciment usat per la indústria de la '
+        'Lorem Ipsum is simply dummy text of the printing '
+        'είναι απλά ένα κείμενο χωρίς νόημα για τους επαγγελματίες '
+        ' זוהי עובדה מבוססת שדעתו של הקורא תהיה מוסחת על ידי טקטס קריא '
+        'छपाई और अक्षर योजन उद्योग का एक साधारण डमी पाठ है सन '
+        'คือ เนื้อหาจำลองแบบเรียบๆ ที่ใช้กันในธุรกิจงานพิมพ์หรืองานเรียงพิมพ์ '
+        'საბეჭდი და ტიპოგრაფიული ინდუსტრიის უშინაარსო ტექსტია ',
+      );
+    });
+    // TODO: https://github.com/flutter/flutter/issues/60040
+    // TODO: https://github.com/flutter/flutter/issues/71520
   }, skip: isIosSafari || isFirefox);
 }
+
+Future<void> testSampleText(String language, String text, { ui.TextDirection textDirection = ui.TextDirection.ltr, bool write = false }) async {
+  FontFallbackData.debugReset();
+  const double testWidth = 300;
+  double paragraphHeight = 0;
+  final CkPicture picture = await generatePictureWhenFontsStable(() {
+    final CkPictureRecorder recorder = CkPictureRecorder();
+    final CkCanvas canvas = recorder.beginRecording(ui.Rect.largest);
+    final CkParagraphBuilder paragraphBuilder = CkParagraphBuilder(CkParagraphStyle(
+      textDirection: textDirection,
+    ));
+    paragraphBuilder.addText(text);
+    final CkParagraph paragraph = paragraphBuilder.build();
+    paragraph.layout(ui.ParagraphConstraints(width: testWidth - 20));
+    canvas.drawParagraph(paragraph, const ui.Offset(10, 10));
+    paragraphHeight = paragraph.height;
+    return recorder.endRecording();
+  });
+  await matchPictureGolden(
+    'canvaskit_sample_text_$language.png',
+    picture,
+    region: ui.Rect.fromLTRB(0, 0, testWidth, paragraphHeight + 20),
+    write: write,
+  );
+}
+
+typedef ParagraphFactory = CkParagraph Function();
 
 void drawTestPicture(CkCanvas canvas) {
   canvas.clear(ui.Color(0xFFFFFFF));
@@ -149,7 +821,7 @@ void drawTestPicture(CkCanvas canvas) {
       ..[1] = 0
       ..[2] = 15
       ..[3] = 15,
-    [Float32List(4)],
+    Uint32List.fromList(<int>[0x00000000]),
     ui.BlendMode.srcOver,
   );
 
@@ -242,8 +914,7 @@ void drawTestPicture(CkCanvas canvas) {
 
   canvas.translate(60, 0);
   canvas.drawShadow(
-    CkPath()
-      ..addRect(ui.Rect.fromLTRB(0, 0, 40, 30)),
+    CkPath()..addRect(ui.Rect.fromLTRB(0, 0, 40, 30)),
     ui.Color(0xFF00FF00),
     4,
     true,
@@ -283,7 +954,8 @@ void drawTestPicture(CkCanvas canvas) {
   canvas.save();
   canvas.rotate(-math.pi / 8);
   canvas.drawLine(ui.Offset.zero, ui.Offset(30, 30), CkPaint());
-  canvas.drawCircle(ui.Offset(30, 30), 7, CkPaint()..color = ui.Color(0xFF00AA00));
+  canvas.drawCircle(
+      ui.Offset(30, 30), 7, CkPaint()..color = ui.Color(0xFF00AA00));
   canvas.restore();
 
   canvas.translate(60, 0);
@@ -292,7 +964,7 @@ void drawTestPicture(CkCanvas canvas) {
     ..strokeWidth = 20;
   final CkPaint semitransparent = CkPaint()..color = ui.Color(0x66000000);
 
-  canvas.saveLayer(region, semitransparent);
+  canvas.saveLayer(kDefaultRegion, semitransparent);
   canvas.drawLine(ui.Offset(10, 10), ui.Offset(50, 50), thickStroke);
   canvas.drawLine(ui.Offset(50, 10), ui.Offset(10, 50), thickStroke);
   canvas.restore();
@@ -306,10 +978,11 @@ void drawTestPicture(CkCanvas canvas) {
   // To test saveLayerWithFilter we draw three circles with only the middle one
   // blurred using the layer image filter.
   canvas.translate(60, 0);
-  canvas.saveLayer(region, CkPaint());
+  canvas.saveLayer(kDefaultRegion, CkPaint());
   canvas.drawCircle(ui.Offset(30, 30), 10, CkPaint());
   {
-    canvas.saveLayerWithFilter(region, ui.ImageFilter.blur(sigmaX: 5, sigmaY: 10));
+    canvas.saveLayerWithFilter(
+        kDefaultRegion, ui.ImageFilter.blur(sigmaX: 5, sigmaY: 10));
     canvas.drawCircle(ui.Offset(10, 10), 10, CkPaint());
     canvas.drawCircle(ui.Offset(50, 50), 10, CkPaint());
     canvas.restore();
@@ -389,14 +1062,194 @@ CkImage generateTestImage() {
   ctx.fillRect(10, 0, 10, 10);
   ctx.fillStyle = '#FF00FF';
   ctx.fillRect(10, 10, 10, 10);
-  final Uint8List imageData = ctx.getImageData(0, 0, 20, 20).data.buffer.asUint8List();
+  final Uint8List imageData =
+      ctx.getImageData(0, 0, 20, 20).data.buffer.asUint8List();
   final SkImage skImage = canvasKit.MakeImage(
-    imageData,
-    20,
-    20,
-    canvasKit.AlphaType.Premul,
-    canvasKit.ColorType.RGBA_8888,
-    SkColorSpaceSRGB,
-  );
+      SkImageInfo(
+        width: 20,
+        height: 20,
+        alphaType: canvasKit.AlphaType.Premul,
+        colorType: canvasKit.ColorType.RGBA_8888,
+        colorSpace: SkColorSpaceSRGB,
+      ),
+      imageData,
+      4 * 20);
   return CkImage(skImage);
+}
+
+/// A convenience function for testing paragraph and text styles.
+///
+/// Renders a paragraph with two pieces of text, [outerText] and [innerText].
+/// [outerText] is added to the root of the paragraph where only paragraph
+/// style applies. [innerText] is added under a text style with properties
+/// set from the arguments to this method. Parameters with prefix "paragraph"
+/// are applied to the paragraph style. Others are applied to the text style.
+///
+/// [name] is the name of the test used as the description on the golden as
+/// well as in the golden file name. Avoid special characters. Spaces are OK;
+/// they are replaced by "_" in the file name.
+///
+/// Set [write] to true to overwrite the golden file.
+///
+/// Use [layoutWidth] to customize the width of the paragraph constraints.
+Future<void> testTextStyle(
+  // Test properties
+  String name, {
+  bool write = false,
+  double? layoutWidth,
+  // Top-level text where only paragraph style applies
+  String outerText = 'Hello ',
+  // Second-level text where paragraph and text styles both apply.
+  String innerText = 'World!',
+
+  // ParagraphStyle properties
+  ui.TextAlign? paragraphTextAlign,
+  ui.TextDirection? paragraphTextDirection,
+  int? paragraphMaxLines,
+  String? paragraphFontFamily,
+  double? paragraphFontSize,
+  double? paragraphHeight,
+  ui.TextHeightBehavior? paragraphTextHeightBehavior,
+  ui.FontWeight? paragraphFontWeight,
+  ui.FontStyle? paragraphFontStyle,
+  ui.StrutStyle? paragraphStrutStyle,
+  String? paragraphEllipsis,
+  ui.Locale? paragraphLocale,
+
+  // TextStyle properties
+  ui.Color? color,
+  ui.TextDecoration? decoration,
+  ui.Color? decorationColor,
+  ui.TextDecorationStyle? decorationStyle,
+  double? decorationThickness,
+  ui.FontWeight? fontWeight,
+  ui.FontStyle? fontStyle,
+  ui.TextBaseline? textBaseline,
+  String? fontFamily,
+  List<String>? fontFamilyFallback,
+  double? fontSize,
+  double? letterSpacing,
+  double? wordSpacing,
+  double? height,
+  ui.Locale? locale,
+  CkPaint? background,
+  CkPaint? foreground,
+  List<ui.Shadow>? shadows,
+  List<ui.FontFeature>? fontFeatures,
+}) async {
+  late ui.Rect region;
+  CkPicture renderPicture() {
+    const double testWidth = 512;
+    final CkPictureRecorder recorder = CkPictureRecorder();
+    final CkCanvas canvas = recorder.beginRecording(ui.Rect.largest);
+    canvas.translate(30, 10);
+    final CkParagraphBuilder descriptionBuilder = CkParagraphBuilder(CkParagraphStyle());
+    descriptionBuilder.addText(name);
+    final CkParagraph descriptionParagraph = descriptionBuilder.build();
+    descriptionParagraph.layout(ui.ParagraphConstraints(width: testWidth / 2 - 70));
+    final ui.Offset descriptionOffset = ui.Offset(testWidth / 2 + 30, 0);
+    canvas.drawParagraph(descriptionParagraph, descriptionOffset);
+
+    final CkParagraphBuilder pb = CkParagraphBuilder(CkParagraphStyle(
+      textAlign: paragraphTextAlign,
+      textDirection: paragraphTextDirection,
+      maxLines: paragraphMaxLines,
+      fontFamily: paragraphFontFamily,
+      fontSize: paragraphFontSize,
+      height: paragraphHeight,
+      textHeightBehavior: paragraphTextHeightBehavior,
+      fontWeight: ui.FontWeight.normal,
+      fontStyle: ui.FontStyle.normal,
+      strutStyle: paragraphStrutStyle,
+      ellipsis: paragraphEllipsis,
+      locale: paragraphLocale,
+    ));
+
+    pb.addText(outerText);
+
+    pb.pushStyle(CkTextStyle(
+      color: color,
+      decoration: decoration,
+      decorationColor: decorationColor,
+      decorationStyle: decorationStyle,
+      decorationThickness: decorationThickness,
+      fontWeight: fontWeight,
+      fontStyle: fontStyle,
+      textBaseline: textBaseline,
+      fontFamily: fontFamily,
+      fontFamilyFallback: fontFamilyFallback,
+      fontSize: fontSize,
+      letterSpacing: letterSpacing,
+      wordSpacing: wordSpacing,
+      height: height,
+      locale: locale,
+      background: background,
+      foreground: foreground,
+      shadows: shadows,
+      fontFeatures: fontFeatures,
+    ));
+    pb.addText(innerText);
+    pb.pop();
+    final CkParagraph p = pb.build();
+    p.layout(ui.ParagraphConstraints(width: layoutWidth ?? testWidth / 2));
+    canvas.drawParagraph(p, ui.Offset.zero);
+
+    canvas.drawPath(
+      CkPath()
+        ..moveTo(-10, 0)
+        ..lineTo(-20, 0)
+        ..lineTo(-20, p.height)
+        ..lineTo(-10, p.height),
+      CkPaint()
+        ..style = ui.PaintingStyle.stroke
+        ..strokeWidth = 1.0,
+    );
+    canvas.drawPath(
+      CkPath()
+        ..moveTo(testWidth / 2 + 10, 0)
+        ..lineTo(testWidth / 2 + 20, 0)
+        ..lineTo(testWidth / 2 + 20, p.height)
+        ..lineTo(testWidth / 2 + 10, p.height),
+      CkPaint()
+        ..style = ui.PaintingStyle.stroke
+        ..strokeWidth = 1.0,
+    );
+    const double padding = 20;
+    region = ui.Rect.fromLTRB(
+      0, 0, testWidth,
+      math.max(
+        descriptionOffset.dy + descriptionParagraph.height + padding,
+        p.height + padding,
+      ),
+    );
+    return recorder.endRecording();
+  }
+
+  // Render once to trigger font downloads.
+  CkPicture picture = await generatePictureWhenFontsStable(renderPicture);
+  await matchPictureGolden(
+    'canvaskit_text_styles_${name.replaceAll(' ', '_')}.png',
+    picture,
+    region: region,
+    write: write,
+  );
+  expect(notoDownloadQueue.debugIsLoadingFonts, isFalse);
+  expect(notoDownloadQueue.pendingSubsets, isEmpty);
+  expect(notoDownloadQueue.downloader.debugActiveDownloadCount, 0);
+}
+
+typedef PictureGenerator = CkPicture Function();
+
+Future<CkPicture> generatePictureWhenFontsStable(PictureGenerator generator) async {
+  CkPicture picture = generator();
+  // Font downloading begins asynchronously so we inject a timer before checking the download queue.
+  await Future<void>.delayed(Duration.zero);
+  while (notoDownloadQueue.isPending || notoDownloadQueue.downloader.debugActiveDownloadCount > 0) {
+    await notoDownloadQueue.debugWhenIdle();
+    await notoDownloadQueue.downloader.debugWhenIdle();
+    picture = generator();
+    // Dummy timer for the same reason as above.
+    await Future<void>.delayed(Duration.zero);
+  }
+  return picture;
 }

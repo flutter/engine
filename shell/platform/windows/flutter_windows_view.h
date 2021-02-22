@@ -8,10 +8,12 @@
 #include <windowsx.h>
 
 #include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
 
-#include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/plugin_registrar.h"
+#include "flutter/shell/platform/common/client_wrapper/include/flutter/plugin_registrar.h"
+#include "flutter/shell/platform/common/geometry.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/windows/angle_surface_manager.h"
 #include "flutter/shell/platform/windows/cursor_handler.h"
@@ -21,24 +23,29 @@
 #include "flutter/shell/platform/windows/platform_handler.h"
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
 #include "flutter/shell/platform/windows/text_input_plugin.h"
+#include "flutter/shell/platform/windows/text_input_plugin_delegate.h"
 #include "flutter/shell/platform/windows/window_binding_handler.h"
 #include "flutter/shell/platform/windows/window_binding_handler_delegate.h"
 #include "flutter/shell/platform/windows/window_state.h"
 
 namespace flutter {
 
+// ID for the window frame buffer.
+inline constexpr uint32_t kWindowFrameBufferID = 0;
+
 // An OS-windowing neutral abstration for flutter
 // view that works with win32 hwnds and Windows::UI::Composition visuals.
-class FlutterWindowsView : public WindowBindingHandlerDelegate {
+class FlutterWindowsView : public WindowBindingHandlerDelegate,
+                           public TextInputPluginDelegate {
  public:
-  // Creates a FlutterWindowsView with the given implementator of
+  // Creates a FlutterWindowsView with the given implementor of
   // WindowBindingHandler.
   //
   // In order for object to render Flutter content the SetEngine method must be
   // called with a valid FlutterWindowsEngine instance.
   FlutterWindowsView(std::unique_ptr<WindowBindingHandler> window_binding);
 
-  ~FlutterWindowsView();
+  virtual ~FlutterWindowsView();
 
   // Configures the window instance with an instance of a running Flutter
   // engine.
@@ -57,7 +64,11 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate {
   // Returns the engine backing this view.
   FlutterWindowsEngine* GetEngine();
 
-  // Callbacks for clearing context, settings context and swapping buffers.
+  // Tells the engine to generate a new frame
+  void ForceRedraw();
+
+  // Callbacks for clearing context, settings context and swapping buffers,
+  // these are typically called on an engine-controlled (non-platform) thread.
   bool ClearContext();
   bool MakeCurrent();
   bool MakeResourceCurrent();
@@ -66,8 +77,11 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate {
   // Send initial bounds to embedder.  Must occur after engine has initialized.
   void SendInitialBounds();
 
+  // Returns the frame buffer id for the engine to render to.
+  uint32_t GetFrameBufferId(size_t width, size_t height);
+
   // |WindowBindingHandlerDelegate|
-  void OnWindowSizeChanged(size_t width, size_t height) const override;
+  void OnWindowSizeChanged(size_t width, size_t height) override;
 
   // |WindowBindingHandlerDelegate|
   void OnPointerMove(double x, double y) override;
@@ -89,7 +103,20 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate {
   void OnText(const std::u16string&) override;
 
   // |WindowBindingHandlerDelegate|
-  void OnKey(int key, int scancode, int action, char32_t character) override;
+  bool OnKey(int key,
+             int scancode,
+             int action,
+             char32_t character,
+             bool extended) override;
+
+  // |WindowBindingHandlerDelegate|
+  void OnComposeBegin() override;
+
+  // |WindowBindingHandlerDelegate|
+  void OnComposeEnd() override;
+
+  // |WindowBindingHandlerDelegate|
+  void OnComposeChange(const std::u16string& text, int cursor_pos) override;
 
   // |WindowBindingHandlerDelegate|
   void OnScroll(double x,
@@ -97,6 +124,18 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate {
                 double delta_x,
                 double delta_y,
                 int scroll_offset_multiplier) override;
+
+  // |TextInputPluginDelegate|
+  void OnCursorRectUpdated(const Rect& rect) override;
+
+ protected:
+  // Called to create the keyboard hook handlers.
+  virtual void RegisterKeyboardHookHandlers(
+      flutter::BinaryMessenger* messenger);
+
+  // Used by RegisterKeyboardHookHandlers to add a new keyboard hook handler.
+  void AddKeyboardHookHandler(
+      std::unique_ptr<flutter::KeyboardHookHandler> handler);
 
  private:
   // Struct holding the mouse state. The engine doesn't keep track of which
@@ -113,6 +152,19 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate {
 
     // The currently pressed buttons, as represented in FlutterPointerEvent.
     uint64_t buttons = 0;
+  };
+
+  // States a resize event can be in.
+  enum class ResizeState {
+    // When a resize event has started but is in progress.
+    kResizeStarted,
+    // After a resize event starts and the framework has been notified to
+    // generate a frame for the right size.
+    kFrameGenerated,
+    // Default state for when no resize is in progress. Also used to indicate
+    // that during a resize event, a frame with the right size has been rendered
+    // and the buffers have been swapped.
+    kDone,
   };
 
   // Sends a window metrics update to the Flutter engine using current window
@@ -139,7 +191,29 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate {
   void SendText(const std::u16string&);
 
   // Reports a raw keyboard message to Flutter engine.
-  void SendKey(int key, int scancode, int action, char32_t character);
+  bool SendKey(int key,
+               int scancode,
+               int action,
+               char32_t character,
+               bool extended);
+
+  // Reports an IME compose begin event.
+  //
+  // Triggered when the user begins editing composing text using a multi-step
+  // input method such as in CJK text input.
+  void SendComposeBegin();
+
+  // Reports an IME compose end event.
+  //
+  // Triggered when the user commits the composing text while using a multi-step
+  // input method such as in CJK text input.
+  void SendComposeEnd();
+
+  // Reports an IME composing region change event.
+  //
+  // Triggered when the user edits the composing text while using a multi-step
+  // input method such as in CJK text input.
+  void SendComposeChange(const std::u16string& text, int cursor_pos);
 
   // Reports scroll wheel events to Flutter engine.
   void SendScroll(double x,
@@ -206,6 +280,23 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate {
 
   // Currently configured WindowBindingHandler for view.
   std::unique_ptr<flutter::WindowBindingHandler> binding_handler_;
+
+  // Resize events are synchronized using this mutex and the corresponding
+  // condition variable.
+  std::mutex resize_mutex_;
+  std::condition_variable resize_cv_;
+
+  // Indicates the state of a window resize event. Platform thread will be
+  // blocked while this is not done. Guarded by resize_mutex_.
+  ResizeState resize_status_ = ResizeState::kDone;
+
+  // Target for the window width. Valid when resize_pending_ is set. Guarded by
+  // resize_mutex_.
+  size_t resize_target_width_ = 0;
+
+  // Target for the window width. Valid when resize_pending_ is set. Guarded by
+  // resize_mutex_.
+  size_t resize_target_height_ = 0;
 };
 
 }  // namespace flutter

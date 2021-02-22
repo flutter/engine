@@ -303,11 +303,10 @@ class HtmlViewEmbedder {
     //
     // HTML elements use logical (CSS) pixels, but we have been using physical
     // pixels, so scale down the head element to match the logical resolution.
-    final double scale = EnginePlatformDispatcher.browserDevicePixelRatio;
+    final double scale = window.devicePixelRatio;
     final double inverseScale = 1 / scale;
-    final Matrix4 scaleMatrix =
-        Matrix4.diagonal3Values(inverseScale, inverseScale, 1);
-    headTransform.multiply(scaleMatrix);
+    final Matrix4 scaleMatrix = Matrix4.diagonal3Values(inverseScale, inverseScale, 1);
+    headTransform = scaleMatrix.multiplied(headTransform);
     head.style.transform = float64ListToCssTransform(headTransform.storage);
   }
 
@@ -360,14 +359,17 @@ class HtmlViewEmbedder {
     final Set<int> unusedViews = Set<int>.from(_activeCompositionOrder);
     _activeCompositionOrder.clear();
 
+    List<int>? debugInvalidViewIds;
     for (int i = 0; i < _compositionOrder.length; i++) {
       int viewId = _compositionOrder[i];
 
-      assert(
-        _views.containsKey(viewId),
-        'Cannot render platform view $viewId. '
-        'It has not been created, or it has been deleted.',
-      );
+      if (assertionsEnabled) {
+        if (!_views.containsKey(viewId)) {
+          debugInvalidViewIds ??= <int>[];
+          debugInvalidViewIds.add(viewId);
+          continue;
+        }
+      }
 
       unusedViews.remove(viewId);
       html.Element platformViewRoot = _rootViews[viewId]!;
@@ -382,6 +384,16 @@ class HtmlViewEmbedder {
 
     for (final int unusedViewId in unusedViews) {
       _releaseOverlay(unusedViewId);
+      _rootViews[unusedViewId]?.remove();
+    }
+
+    if (assertionsEnabled) {
+      if (debugInvalidViewIds != null && debugInvalidViewIds.isNotEmpty) {
+        throw AssertionError(
+          'Cannot render platform views: ${debugInvalidViewIds.join(', ')}. '
+          'These views have not been created, or they have been deleted.',
+        );
+      }
     }
   }
 
@@ -477,6 +489,7 @@ class OverlayCache {
     for (final Surface overlay in _cache) {
       overlay.dispose();
     }
+    _cache.clear();
   }
 }
 

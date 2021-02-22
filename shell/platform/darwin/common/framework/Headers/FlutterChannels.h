@@ -32,7 +32,7 @@ typedef void (^FlutterMessageHandler)(id _Nullable message, FlutterReply callbac
  * A channel for communicating with the Flutter side using basic, asynchronous
  * message passing.
  */
-FLUTTER_EXPORT
+FLUTTER_DARWIN_EXPORT
 @interface FlutterBasicMessageChannel : NSObject
 /**
  * Creates a `FlutterBasicMessageChannel` with the specified name and binary
@@ -150,14 +150,14 @@ typedef void (^FlutterMethodCallHandler)(FlutterMethodCall* call, FlutterResult 
  * A constant used with `FlutterMethodCallHandler` to respond to the call of an
  * unknown method.
  */
-FLUTTER_EXPORT
+FLUTTER_DARWIN_EXPORT
 extern NSObject const* FlutterMethodNotImplemented;
 
 /**
  * A channel for communicating with the Flutter side using invocation of
  * asynchronous methods.
  */
-FLUTTER_EXPORT
+FLUTTER_DARWIN_EXPORT
 @interface FlutterMethodChannel : NSObject
 /**
  * Creates a `FlutterMethodChannel` with the specified name and binary messenger.
@@ -218,7 +218,7 @@ FLUTTER_EXPORT
  * Invokes the specified Flutter method with the specified arguments, expecting
  * no results.
  *
- * @see [MethodChannel.setMethodCallHandler](https://docs.flutter.io/flutter/services/MethodChannel/setMethodCallHandler.html)
+ * @see [MethodChannel.setMethodCallHandler](https://api.flutter.dev/flutter/services/MethodChannel/setMethodCallHandler.html)
  *
  * @param method The name of the method to invoke.
  * @param arguments The arguments. Must be a value supported by the codec of this
@@ -272,7 +272,7 @@ typedef void (^FlutterEventSink)(id _Nullable event);
 /**
  * A strategy for exposing an event stream to the Flutter side.
  */
-FLUTTER_EXPORT
+FLUTTER_DARWIN_EXPORT
 @protocol FlutterStreamHandler
 /**
  * Sets up an event stream and begin emitting events.
@@ -310,13 +310,13 @@ FLUTTER_EXPORT
 /**
  * A constant used with `FlutterEventChannel` to indicate end of stream.
  */
-FLUTTER_EXPORT
+FLUTTER_DARWIN_EXPORT
 extern NSObject const* FlutterEndOfEventStream;
 
 /**
  * A channel for communicating with the Flutter side using event streams.
  */
-FLUTTER_EXPORT
+FLUTTER_DARWIN_EXPORT
 @interface FlutterEventChannel : NSObject
 /**
  * Creates a `FlutterEventChannel` with the specified name and binary messenger.

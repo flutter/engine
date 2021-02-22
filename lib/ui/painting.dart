@@ -98,7 +98,7 @@ Color _scaleAlpha(Color a, double factor) {
 ///
 /// See also:
 ///
-///  * [Colors](https://docs.flutter.io/flutter/material/Colors-class.html), which
+///  * [Colors](https://api.flutter.dev/flutter/material/Colors-class.html), which
 ///    defines the colors found in the Material Design specification.
 class Color {
   /// Construct a color from the lower 32 bits of an [int].
@@ -1939,12 +1939,13 @@ class Codec extends NativeFieldWrapperClass2 {
     final Completer<FrameInfo> completer = Completer<FrameInfo>.sync();
     final String? error = _getNextFrame((_Image? image, int durationMilliseconds) {
       if (image == null) {
-        throw Exception('Codec failed to produce an image, possibly due to invalid image data.');
+        completer.completeError(Exception('Codec failed to produce an image, possibly due to invalid image data.'));
+      } else {
+        completer.complete(FrameInfo._(
+          image: Image._(image),
+          duration: Duration(milliseconds: durationMilliseconds),
+        ));
       }
-      completer.complete(FrameInfo._(
-        image: Image._(image),
-        duration: Duration(milliseconds: durationMilliseconds),
-      ));
     });
     if (error != null) {
       throw Exception(error);

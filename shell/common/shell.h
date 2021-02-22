@@ -30,6 +30,7 @@
 #include "flutter/lib/ui/volatile_path_tracker.h"
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/runtime/dart_vm_lifecycle.h"
+#include "flutter/runtime/platform_data.h"
 #include "flutter/runtime/service_protocol.h"
 #include "flutter/shell/common/animator.h"
 #include "flutter/shell/common/display_manager.h"
@@ -98,6 +99,20 @@ class Shell final : public PlatformView::Delegate,
  public:
   template <class T>
   using CreateCallback = std::function<std::unique_ptr<T>(Shell&)>;
+  typedef std::function<std::unique_ptr<Engine>(
+      Engine::Delegate& delegate,
+      const PointerDataDispatcherMaker& dispatcher_maker,
+      DartVM& vm,
+      fml::RefPtr<const DartSnapshot> isolate_snapshot,
+      TaskRunners task_runners,
+      const PlatformData& platform_data,
+      Settings settings,
+      std::unique_ptr<Animator> animator,
+      fml::WeakPtr<IOManager> io_manager,
+      fml::RefPtr<SkiaUnrefQueue> unref_queue,
+      fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
+      std::shared_ptr<VolatilePathTracker> volatile_path_tracker)>
+      EngineCreateCallback;
 
   //----------------------------------------------------------------------------
   /// @brief      Creates a shell instance using the provided settings. The
@@ -105,6 +120,9 @@ class Shell final : public PlatformView::Delegate,
   ///             called on the appropriate threads before this method returns.
   ///             If this is the first instance of a shell in the process, this
   ///             call also bootstraps the Dart VM.
+  /// @note       The root isolate which will run this Shell's Dart code takes
+  ///             its instructions from the passed in settings.  This allows
+  ///             embedders to host multiple Shells with different Dart code.
   ///
   /// @param[in]  task_runners             The task runners
   /// @param[in]  settings                 The settings
@@ -126,48 +144,11 @@ class Shell final : public PlatformView::Delegate,
   ///             immediately after getting a pointer to it.
   ///
   static std::unique_ptr<Shell> Create(
+      const PlatformData& platform_data,
       TaskRunners task_runners,
       Settings settings,
       const CreateCallback<PlatformView>& on_create_platform_view,
       const CreateCallback<Rasterizer>& on_create_rasterizer);
-
-  //----------------------------------------------------------------------------
-  /// @brief      Creates a shell instance using the provided settings. The
-  ///             callbacks to create the various shell subcomponents will be
-  ///             called on the appropriate threads before this method returns.
-  ///             Unlike the simpler variant of this factory method, this method
-  ///             allows for specification of window data. If this is the first
-  ///             instance of a shell in the process, this call also bootstraps
-  ///             the Dart VM.
-  ///
-  /// @param[in]  task_runners             The task runners
-  /// @param[in]  platform_data            The default data for setting up
-  ///                                      ui.Window that attached to this
-  ///                                      intance.
-  /// @param[in]  settings                 The settings
-  /// @param[in]  on_create_platform_view  The callback that must return a
-  ///                                      platform view. This will be called on
-  ///                                      the platform task runner before this
-  ///                                      method returns.
-  /// @param[in]  on_create_rasterizer     That callback that must provide a
-  ///                                      valid rasterizer. This will be called
-  ///                                      on the render task runner before this
-  ///                                      method returns.
-  ///
-  /// @return     A full initialized shell if the settings and callbacks are
-  ///             valid. The root isolate has been created but not yet launched.
-  ///             It may be launched by obtaining the engine weak pointer and
-  ///             posting a task onto the UI task runner with a valid run
-  ///             configuration to run the isolate. The embedder must always
-  ///             check the validity of the shell (using the IsSetup call)
-  ///             immediately after getting a pointer to it.
-  ///
-  static std::unique_ptr<Shell> Create(
-      TaskRunners task_runners,
-      const PlatformData platform_data,
-      Settings settings,
-      CreateCallback<PlatformView> on_create_platform_view,
-      CreateCallback<Rasterizer> on_create_rasterizer);
 
   //----------------------------------------------------------------------------
   /// @brief      Destroys the shell. This is a synchronous operation and
@@ -181,14 +162,24 @@ class Shell final : public PlatformView::Delegate,
   /// @brief      Creates one Shell from another Shell where the created Shell
   ///             takes the opportunity to share any internal components it can.
   ///             This results is a Shell that has a smaller startup time cost
-  ///             and a smaller memory footprint than an Shell created with a
+  ///             and a smaller memory footprint than an Shell created with the
   ///             Create function.
+  ///
+  ///             The new Shell is returned in a running state so RunEngine
+  ///             shouldn't be called again on the Shell. Once running, the
+  ///             second Shell is mostly independent from the original Shell
+  ///             and the original Shell doesn't need to keep running for the
+  ///             spawned Shell to keep functioning.
+  /// @param[in]  run_configuration  A RunConfiguration used to run the Isolate
+  ///             associated with this new Shell. It doesn't have to be the same
+  ///             configuration as the current Shell but it needs to be in the
+  ///             same snapshot or AOT.
   ///
   /// @see        http://flutter.dev/go/multiple-engines
   std::unique_ptr<Shell> Spawn(
-      Settings settings,
+      RunConfiguration run_configuration,
       const CreateCallback<PlatformView>& on_create_platform_view,
-      const CreateCallback<Rasterizer>& on_create_rasterizer);
+      const CreateCallback<Rasterizer>& on_create_rasterizer) const;
 
   //----------------------------------------------------------------------------
   /// @brief      Starts an isolate for the given RunConfiguration.
@@ -417,6 +408,8 @@ class Shell final : public PlatformView::Delegate,
   // How many frames have been timed since last report.
   size_t UnreportedFramesCount() const;
 
+  sk_sp<GrDirectContext> shared_resource_context_;
+
   Shell(DartVMRef vm,
         TaskRunners task_runners,
         Settings settings,
@@ -425,11 +418,21 @@ class Shell final : public PlatformView::Delegate,
   static std::unique_ptr<Shell> CreateShellOnPlatformThread(
       DartVMRef vm,
       TaskRunners task_runners,
-      const PlatformData platform_data,
+      const PlatformData& platform_data,
       Settings settings,
       fml::RefPtr<const DartSnapshot> isolate_snapshot,
       const Shell::CreateCallback<PlatformView>& on_create_platform_view,
-      const Shell::CreateCallback<Rasterizer>& on_create_rasterizer);
+      const Shell::CreateCallback<Rasterizer>& on_create_rasterizer,
+      const EngineCreateCallback& on_create_engine);
+  static std::unique_ptr<Shell> CreateWithSnapshot(
+      const PlatformData& platform_data,
+      TaskRunners task_runners,
+      Settings settings,
+      DartVMRef vm,
+      fml::RefPtr<const DartSnapshot> isolate_snapshot,
+      const CreateCallback<PlatformView>& on_create_platform_view,
+      const CreateCallback<Rasterizer>& on_create_rasterizer,
+      const EngineCreateCallback& on_create_engine);
 
   bool Setup(std::unique_ptr<PlatformView> platform_view,
              std::unique_ptr<Engine> engine,
@@ -455,6 +458,11 @@ class Shell final : public PlatformView::Delegate,
   // |PlatformView::Delegate|
   void OnPlatformViewDispatchPointerDataPacket(
       std::unique_ptr<PointerDataPacket> packet) override;
+
+  // |PlatformView::Delegate|
+  void OnPlatformViewDispatchKeyDataPacket(
+      std::unique_ptr<KeyDataPacket> packet,
+      std::function<void(bool /* handled */)> callback) override;
 
   // |PlatformView::Delegate|
   void OnPlatformViewDispatchSemanticsAction(
