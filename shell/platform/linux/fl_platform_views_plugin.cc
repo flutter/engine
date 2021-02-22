@@ -8,6 +8,7 @@
 #include <cstring>
 
 #include "flutter/shell/platform/linux/fl_gesture_helper.h"
+#include "flutter/shell/platform/linux/fl_platform_views_private.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_method_channel.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_standard_method_codec.h"
 
@@ -17,6 +18,7 @@ static constexpr char kCreateMethod[] = "create";
 static constexpr char kDisposeMethod[] = "dispose";
 static constexpr char kAcceptGestureMethod[] = "acceptGesture";
 static constexpr char kRejectGestureMethod[] = "rejectGesture";
+static constexpr char kSetDirectionMethod[] = "setDirection";
 static constexpr char kEnterMethod[] = "enter";
 static constexpr char kExitMethod[] = "exit";
 
@@ -67,6 +69,15 @@ static FlMethodResponse* platform_views_create(FlPlatformViewsPlugin* self,
   }
   const gchar* view_type = fl_value_get_string(view_type_value);
 
+  FlValue* direction_value = fl_value_lookup_string(args, "direction");
+  if (direction_value == nullptr ||
+      fl_value_get_type(direction_value) != FL_VALUE_TYPE_INT) {
+    return FL_METHOD_RESPONSE(fl_method_error_response_new(
+        kBadArgumentsError, "Missing platform view direction", nullptr));
+  }
+  GtkTextDirection direction =
+      static_cast<GtkTextDirection>(fl_value_get_int(direction_value));
+
   FlValue* params_value = fl_value_lookup_string(args, "params");
 
   FlPlatformView* platform_view =
@@ -103,6 +114,7 @@ static FlMethodResponse* platform_views_create(FlPlatformViewsPlugin* self,
     return FL_METHOD_RESPONSE(fl_method_error_response_new(
         kBadArgumentsError, "Invalid platform view", nullptr));
   }
+  fl_platform_view_set_direction(platform_view, direction);
 
   g_hash_table_insert(self->platform_views, GINT_TO_POINTER(id), platform_view);
 
@@ -141,7 +153,7 @@ static FlMethodResponse* platform_views_reject_gesture(
   if (fl_value_get_type(args) != FL_VALUE_TYPE_LIST ||
       fl_value_get_length(args) != 1) {
     return FL_METHOD_RESPONSE(fl_method_error_response_new(
-        kBadArgumentsError, "Argument map missing or malformed", nullptr));
+        kBadArgumentsError, "Argument list missing or malformed", nullptr));
   }
 
   int64_t view_id = fl_value_get_int(fl_value_get_list_value(args, 0));
@@ -151,6 +163,32 @@ static FlMethodResponse* platform_views_reject_gesture(
     return FL_METHOD_RESPONSE(fl_method_error_response_new(
         kBadArgumentsError, "Platform view not found", nullptr));
   }
+
+  return FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
+}
+
+// Set GtkTextDirection of platform view.
+static FlMethodResponse* platform_views_set_direction(
+    FlPlatformViewsPlugin* self,
+    FlValue* args) {
+  if (fl_value_get_type(args) != FL_VALUE_TYPE_LIST ||
+      fl_value_get_length(args) != 2) {
+    return FL_METHOD_RESPONSE(fl_method_error_response_new(
+        kBadArgumentsError, "Argument list missing or malformed", nullptr));
+  }
+
+  int64_t view_id = fl_value_get_int(fl_value_get_list_value(args, 0));
+  GtkTextDirection direction = static_cast<GtkTextDirection>(
+      fl_value_get_int(fl_value_get_list_value(args, 1)));
+
+  FlPlatformView* platform_view =
+      fl_platform_views_plugin_get_platform_view(self, view_id);
+  if (!platform_view) {
+    return FL_METHOD_RESPONSE(fl_method_error_response_new(
+        kBadArgumentsError, "Platform view not found", nullptr));
+  }
+
+  fl_platform_view_set_direction(platform_view, direction);
 
   return FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
 }
@@ -239,6 +277,8 @@ static void method_call_cb(FlMethodChannel* channel,
     response = platform_views_accept_gesture(self, args);
   } else if (strcmp(method, kRejectGestureMethod) == 0) {
     response = platform_views_reject_gesture(self, args);
+  } else if (strcmp(method, kSetDirectionMethod) == 0) {
+    response = platform_views_set_direction(self, args);
   } else if (strcmp(method, kEnterMethod) == 0) {
     response = platform_views_enter(self, args);
   } else if (strcmp(method, kExitMethod) == 0) {

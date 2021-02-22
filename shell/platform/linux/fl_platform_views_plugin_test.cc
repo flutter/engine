@@ -20,6 +20,18 @@ static void invoke_response_cb(GObject* source_object,
   g_main_loop_quit(reinterpret_cast<GMainLoop*>(user_data));
 }
 
+// Called when a the test engine notifies us that a response a sent.
+static void response_cb(FlBinaryMessenger* messenger,
+                        const gchar* channel,
+                        GBytes* message,
+                        FlBinaryMessengerResponseHandle* response_handle,
+                        gpointer user_data) {
+  fl_binary_messenger_send_response(messenger, response_handle, nullptr,
+                                    nullptr);
+
+  g_main_loop_quit(static_cast<GMainLoop*>(user_data));
+}
+
 static void invoke_method(GMainLoop* loop,
                           FlBinaryMessenger* messenger,
                           const gchar* channel_name,
@@ -47,6 +59,8 @@ static void create_platform_view(GMainLoop* loop,
   fl_value_set_string_take(create_args, "id", fl_value_new_int(view_id));
   fl_value_set_string_take(create_args, "viewType",
                            fl_value_new_string(view_type));
+  fl_value_set_string_take(create_args, "direction",
+                           fl_value_new_int(GTK_TEXT_DIR_LTR));
   if (args)
     fl_value_set_string_take(create_args, "params", args);
   invoke_method(loop, messenger, "flutter/platform_views", "create",
@@ -59,6 +73,10 @@ static void dispose_platform_view(GMainLoop* loop,
                                   GAsyncReadyCallback cb) {
   invoke_method(loop, messenger, "flutter/platform_views", "dispose",
                 fl_value_new_int(view_id), cb);
+}
+
+GtkWidget* get_view(FlPlatformView* self) {
+  return nullptr;
 }
 
 static FlPlatformView* expected_platform_view;
@@ -91,7 +109,7 @@ static FlPlatformView* create_platform_view_with_no_codec(
   EXPECT_EQ(args, nullptr);
 
   return expected_platform_view =
-             FL_PLATFORM_VIEW(fl_mock_platform_view_new(nullptr));
+             FL_PLATFORM_VIEW(fl_mock_platform_view_new(get_view));
 }
 
 TEST(FlPlatformViewsPluginTest, CreatePlatformViewWithNoCodec) {
@@ -99,6 +117,10 @@ TEST(FlPlatformViewsPluginTest, CreatePlatformViewWithNoCodec) {
 
   g_autoptr(FlEngine) engine = make_mock_engine();
   g_autoptr(FlBinaryMessenger) messenger = fl_binary_messenger_new(engine);
+
+  fl_binary_messenger_set_message_handler_on_channel(
+      messenger, "test/responses", response_cb, loop, nullptr);
+
   g_autoptr(FlGestureHelper) gesture_helper = fl_gesture_helper_new();
   g_autoptr(FlPlatformViewsPlugin) plugin =
       fl_platform_views_plugin_new(messenger, gesture_helper);
@@ -109,7 +131,7 @@ TEST(FlPlatformViewsPluginTest, CreatePlatformViewWithNoCodec) {
 
   expected_platform_view = nullptr;
   create_platform_view(loop, messenger, expected_view_identifier,
-                       "some_view_type", nullptr, invoke_response_cb);
+                       "some_view_type", nullptr, nullptr);
 
   // Blocks here until flutter/platform_views::create is called.
   g_main_loop_run(loop);
@@ -133,7 +155,7 @@ static FlPlatformView* create_platform_view_with_codec(
   EXPECT_STREQ(fl_value_get_string(args), "Hello World!");
 
   return expected_platform_view =
-             FL_PLATFORM_VIEW(fl_mock_platform_view_new(nullptr));
+             FL_PLATFORM_VIEW(fl_mock_platform_view_new(get_view));
 }
 
 static FlMessageCodec* get_create_arguments_codec(
@@ -147,6 +169,10 @@ TEST(FlPlatformViewsPluginTest, CreatePlatformViewWithCodec) {
   g_autoptr(GError) error = nullptr;
   g_autoptr(FlEngine) engine = make_mock_engine();
   g_autoptr(FlBinaryMessenger) messenger = fl_binary_messenger_new(engine);
+
+  fl_binary_messenger_set_message_handler_on_channel(
+      messenger, "test/responses", response_cb, loop, nullptr);
+
   g_autoptr(FlGestureHelper) gesture_helper = fl_gesture_helper_new();
   g_autoptr(FlPlatformViewsPlugin) plugin =
       fl_platform_views_plugin_new(messenger, gesture_helper);
@@ -162,9 +188,9 @@ TEST(FlPlatformViewsPluginTest, CreatePlatformViewWithCodec) {
   g_autoptr(GBytes) bytes =
       fl_message_codec_encode_message(codec, args, &error);
   EXPECT_EQ(error, nullptr);
-  create_platform_view(
-      loop, messenger, expected_view_identifier, "some_view_type",
-      fl_value_new_uint8_list_from_bytes(bytes), invoke_response_cb);
+  create_platform_view(loop, messenger, expected_view_identifier,
+                       "some_view_type",
+                       fl_value_new_uint8_list_from_bytes(bytes), nullptr);
 
   // Blocks here until invoke_method_response is called.
   g_main_loop_run(loop);

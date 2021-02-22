@@ -4,12 +4,18 @@
 
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_platform_views.h"
 
+#include "flutter/shell/platform/linux/fl_platform_views_private.h"
+
 #include <gmodule.h>
 
 // Added here to stop the compiler from optimizing this function away.
 G_MODULE_EXPORT GType fl_platform_view_get_type();
 
-G_DEFINE_TYPE(FlPlatformView, fl_platform_view, G_TYPE_OBJECT)
+typedef struct {
+  GtkTextDirection direction;
+} FlPlatformViewPrivate;
+
+G_DEFINE_TYPE_WITH_PRIVATE(FlPlatformView, fl_platform_view, G_TYPE_OBJECT)
 
 static void fl_platform_view_class_init(FlPlatformViewClass* klass) {}
 
@@ -22,7 +28,22 @@ G_MODULE_EXPORT GtkWidget* fl_platform_view_get_view(FlPlatformView* self) {
   if (widget && !GTK_IS_WIDGET(widget)) {
     g_critical("fl_platform_view::get_view should return GtkWidget");
   }
+
+  if (widget) {
+    FlPlatformViewPrivate* priv = reinterpret_cast<FlPlatformViewPrivate*>(
+        fl_platform_view_get_instance_private(self));
+    gtk_widget_set_direction(widget, priv->direction);
+  }
   return widget;
+}
+
+void fl_platform_view_set_direction(FlPlatformView* self,
+                                    GtkTextDirection direction) {
+  FlPlatformViewPrivate* priv = reinterpret_cast<FlPlatformViewPrivate*>(
+      fl_platform_view_get_instance_private(self));
+  priv->direction = direction;
+  // apply GtkTextDirection to widget.
+  fl_platform_view_get_view(self);
 }
 
 // Added here to stop the compiler from optimizing this function away.
