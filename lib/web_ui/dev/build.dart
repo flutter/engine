@@ -63,6 +63,7 @@ Future<void> gn() {
     path.join(environment.flutterDirectory.path, 'tools', 'gn'),
     <String>[
       '--unopt',
+      '--xcode-symlinks',
       '--full-dart-sdk',
     ],
   );
