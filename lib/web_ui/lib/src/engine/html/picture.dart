@@ -96,6 +96,7 @@ class PersistedPicture extends PersistedLeafSurface {
   final ui.Rect? localPaintBounds;
   final int hints;
   double _density = 1.0;
+
   /// Cull rect changes and density changes due to transforms should
   /// call applyPaint for picture when retain() or update() is called after
   /// preroll is complete.
@@ -111,6 +112,14 @@ class PersistedPicture extends PersistedLeafSurface {
   }
 
   @override
+  void preroll() {
+    if (PersistedShaderMask.activeShaderMaskCount != 0) {
+      picture.recordingCanvas?.renderStrategy.isInsideShaderMask = true;
+    }
+    super.preroll();
+  }
+
+  @override
   void recomputeTransformAndClip() {
     _transform = parent!._transform;
     if (dx != 0.0 || dy != 0.0) {
@@ -119,8 +128,10 @@ class PersistedPicture extends PersistedLeafSurface {
     }
     final double paintWidth = localPaintBounds!.width;
     final double paintHeight = localPaintBounds!.height;
-    final double newDensity = localPaintBounds == null || paintWidth == 0 || paintHeight == 0
-        ? 1.0 : _computePixelDensity(_transform, paintWidth, paintHeight);
+    final double newDensity =
+        localPaintBounds == null || paintWidth == 0 || paintHeight == 0
+            ? 1.0
+            : _computePixelDensity(_transform, paintWidth, paintHeight);
     if (newDensity != _density) {
       _density = newDensity;
       _requiresRepaint = true;
@@ -353,8 +364,8 @@ class PersistedPicture extends PersistedLeafSurface {
       return 1.0;
     }
 
-    final bool didRequireBitmap =
-        existingSurface.picture.recordingCanvas!.renderStrategy.hasArbitraryPaint;
+    final bool didRequireBitmap = existingSurface
+        .picture.recordingCanvas!.renderStrategy.hasArbitraryPaint;
     final bool requiresBitmap =
         picture.recordingCanvas!.renderStrategy.hasArbitraryPaint;
     if (didRequireBitmap != requiresBitmap) {
@@ -406,24 +417,26 @@ class PersistedPicture extends PersistedLeafSurface {
 
   void _applyDomPaint(EngineCanvas? oldCanvas) {
     _recycleCanvas(_canvas);
-    _canvas = DomCanvas(rootElement!);
+    final DomCanvas domCanvas = DomCanvas(rootElement!);
+    _canvas = domCanvas;
     domRenderer.clearDom(rootElement!);
-    picture.recordingCanvas!.apply(_canvas!, _optimalLocalCullRect);
+    picture.recordingCanvas!.apply(domCanvas, _optimalLocalCullRect!);
   }
 
   void _applyBitmapPaint(EngineCanvas? oldCanvas) {
     if (oldCanvas is BitmapCanvas &&
         oldCanvas.doesFitBounds(_optimalLocalCullRect!, _density) &&
         oldCanvas.isReusable()) {
+      final BitmapCanvas reusedCanvas = oldCanvas;
       if (_debugShowCanvasReuseStats) {
         DebugCanvasReuseOverlay.instance.keptCount++;
       }
       // Re-use old bitmap canvas.
-      oldCanvas.bounds = _optimalLocalCullRect!;
-      _canvas = oldCanvas;
-      oldCanvas.setElementCache(_elementCache);
-      _canvas!.clear();
-      picture.recordingCanvas!.apply(_canvas!, _optimalLocalCullRect);
+      reusedCanvas.bounds = _optimalLocalCullRect!;
+      _canvas = reusedCanvas;
+      reusedCanvas.setElementCache(_elementCache);
+      reusedCanvas.clear();
+      picture.recordingCanvas!.apply(reusedCanvas, _optimalLocalCullRect!);
     } else {
       // We can't use the old canvas because the size has changed, so we put
       // it in a cache for later reuse.
@@ -439,19 +452,18 @@ class PersistedPicture extends PersistedLeafSurface {
       _paintQueue.add(_PaintRequest(
         canvasSize: _optimalLocalCullRect!.size,
         paintCallback: () {
-          _canvas = _findOrCreateCanvas(_optimalLocalCullRect!);
-          if (_canvas is BitmapCanvas) {
-            (_canvas as BitmapCanvas).setElementCache(_elementCache);
-          }
+          final BitmapCanvas bitmapCanvas =
+              _findOrCreateCanvas(_optimalLocalCullRect!);
+          _canvas = bitmapCanvas;
+          bitmapCanvas.setElementCache(_elementCache);
           if (_debugExplainSurfaceStats) {
-            final BitmapCanvas bitmapCanvas = _canvas as BitmapCanvas;
             _surfaceStatsFor(this).paintPixelCount +=
                 bitmapCanvas.bitmapPixelCount;
           }
           domRenderer.clearDom(rootElement!);
-          rootElement!.append(_canvas!.rootElement);
-          _canvas!.clear();
-          picture.recordingCanvas!.apply(_canvas!, _optimalLocalCullRect);
+          rootElement!.append(bitmapCanvas.rootElement);
+          bitmapCanvas.clear();
+          picture.recordingCanvas!.apply(bitmapCanvas, _optimalLocalCullRect!);
         },
       ));
     }
@@ -524,8 +536,9 @@ class PersistedPicture extends PersistedLeafSurface {
     if (_debugShowCanvasReuseStats) {
       DebugCanvasReuseOverlay.instance.createdCount++;
     }
-    final BitmapCanvas canvas = BitmapCanvas(bounds,
-      picture.recordingCanvas!.renderStrategy, density: _density);
+    final BitmapCanvas canvas = BitmapCanvas(
+        bounds, picture.recordingCanvas!.renderStrategy,
+        density: _density);
     canvas.setElementCache(_elementCache);
     if (_debugExplainSurfaceStats) {
       _surfaceStatsFor(this)
@@ -568,9 +581,8 @@ class PersistedPicture extends PersistedLeafSurface {
 
     _computeOptimalCullRect(oldSurface);
     if (identical(picture, oldSurface.picture)) {
-      bool densityChanged =
-          (_canvas is BitmapCanvas &&
-              _density != (_canvas as BitmapCanvas)._density);
+      bool densityChanged = (_canvas is BitmapCanvas &&
+          _density != (_canvas as BitmapCanvas)._density);
 
       // The picture is the same. Attempt to avoid repaint.
       if (_requiresRepaint || densityChanged) {

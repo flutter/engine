@@ -20,8 +20,8 @@ double _measureBorderRadius(double x, double y) {
 }
 
 class RawRecordingCanvas extends BitmapCanvas implements ui.PictureRecorder {
-  RawRecordingCanvas(ui.Size size) : super(ui.Offset.zero & size,
-      RenderStrategy());
+  RawRecordingCanvas(ui.Size size)
+      : super(ui.Offset.zero & size, RenderStrategy());
 
   @override
   void dispose() {
@@ -126,14 +126,14 @@ class RecordingCanvas {
   /// a minimum). The commands that fall outside the clip are skipped and are
   /// not applied to the [engineCanvas]. A command must have a non-zero
   /// intersection with the clip in order to be applied.
-  void apply(EngineCanvas engineCanvas, ui.Rect? clipRect) {
+  void apply(EngineCanvas engineCanvas, ui.Rect clipRect) {
     assert(_recordingEnded);
     if (_debugDumpPaintCommands) {
       final StringBuffer debugBuf = StringBuffer();
       int skips = 0;
       debugBuf.writeln(
           '--- Applying RecordingCanvas to ${engineCanvas.runtimeType} '
-          'with bounds $_paintBounds and clip $clipRect (w = ${clipRect!.width},'
+          'with bounds $_paintBounds and clip $clipRect (w = ${clipRect.width},'
           ' h = ${clipRect.height})');
       for (int i = 0; i < _commands.length; i++) {
         final PaintCommand command = _commands[i];
@@ -155,7 +155,7 @@ class RecordingCanvas {
       print(debugBuf);
     } else {
       try {
-        if (rectContainsOther(clipRect!, _pictureBounds!)) {
+        if (rectContainsOther(clipRect, _pictureBounds!)) {
           // No need to check if commands fit in the clip rect if we already
           // know that the entire picture fits it.
           for (int i = 0, len = _commands.length; i < len; i++) {
@@ -286,10 +286,10 @@ class RecordingCanvas {
     _commands.add(command);
   }
 
-  void clipRRect(ui.RRect rrect) {
+  void clipRRect(ui.RRect roundedRect) {
     assert(!_recordingEnded);
-    final PaintClipRRect command = PaintClipRRect(rrect);
-    _paintBounds.clipRect(rrect.outerRect, command);
+    final PaintClipRRect command = PaintClipRRect(roundedRect);
+    _paintBounds.clipRect(roundedRect.outerRect, command);
     renderStrategy.hasArbitraryPaint = true;
     _commands.add(command);
   }
@@ -654,14 +654,14 @@ abstract class DrawCommand extends PaintCommand {
   double bottomBound = double.infinity;
 
   /// Whether this command intersects with the [clipRect].
-  bool isInvisible(ui.Rect? clipRect) {
+  bool isInvisible(ui.Rect clipRect) {
     if (isClippedOut) {
       return true;
     }
 
     // Check top and bottom first because vertical scrolling is more common
     // than horizontal scrolling.
-    return bottomBound < clipRect!.top ||
+    return bottomBound < clipRect.top ||
         topBound > clipRect.bottom ||
         rightBound < clipRect.left ||
         leftBound > clipRect.right;
@@ -1933,6 +1933,13 @@ class RenderStrategy {
   ///
   /// This is used to decide whether to use simplified DomCanvas.
   bool hasArbitraryPaint = false;
+
+  /// Whether commands are executed within a shadermask.
+  ///
+  /// Webkit doesn't apply filters to canvas elements in its child
+  /// element tree. When this is set to true, we prevent canvas usage in
+  /// bitmap canvas and instead render using dom primitives and svg only.
+  bool isInsideShaderMask = false;
 
   RenderStrategy();
 }

@@ -18,7 +18,6 @@ import static org.mockito.Mockito.when;
 
 import android.annotation.TargetApi;
 import android.content.Context;
-import android.content.pm.PackageInfo;
 import android.content.res.AssetManager;
 import android.graphics.Insets;
 import android.graphics.Rect;
@@ -27,6 +26,7 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.text.InputType;
 import android.text.Selection;
+import android.util.SparseArray;
 import android.util.SparseIntArray;
 import android.view.KeyEvent;
 import android.view.View;
@@ -55,6 +55,7 @@ import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.platform.PlatformViewsController;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -65,7 +66,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
-import org.robolectric.Shadows;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
@@ -73,7 +73,6 @@ import org.robolectric.shadow.api.Shadow;
 import org.robolectric.shadows.ShadowAutofillManager;
 import org.robolectric.shadows.ShadowBuild;
 import org.robolectric.shadows.ShadowInputMethodManager;
-import org.robolectric.shadows.ShadowPackageManager;
 
 @Config(
     manifest = Config.NONE,
@@ -342,21 +341,14 @@ public class TextInputPluginTest {
     assertTrue(textInputPlugin.getEditable().toString().equals("Shibuyawoo"));
   }
 
-  // See also: https://github.com/flutter/flutter/issues/29341 and
-  // https://github.com/flutter/flutter/issues/31512.
-  // Some recent versions of Samsung keybords are affected including non-korean
-  // languages and thus needed the restart.
+  // See https://github.com/flutter/flutter/issues/29341 and
+  // https://github.com/flutter/flutter/issues/31512
+  // All modern Samsung keybords are affected including non-korean languages and thus
+  // need the restart.
   @Test
-  public void setTextInputEditingState_alwaysRestartsOnAffectedDevices() {
-    // Initialize a TextInputPlugin with a Samsung keypad.
+  public void setTextInputEditingState_alwaysRestartsOnAffectedDevices2() {
+    // Initialize a TextInputPlugin that needs to be always restarted.
     ShadowBuild.setManufacturer("samsung");
-    final ShadowPackageManager packageManager =
-        Shadows.shadowOf(
-            RuntimeEnvironment.application.getApplicationContext().getPackageManager());
-    final PackageInfo info = new PackageInfo();
-    info.packageName = "com.sec.android.inputmethod";
-    info.versionCode = 200000000;
-    packageManager.addPackage(info);
     InputMethodSubtype inputMethodSubtype =
         new InputMethodSubtype(0, 0, /*locale=*/ "en", "", "", false, false);
     Settings.Secure.putString(
@@ -394,59 +386,6 @@ public class TextInputPluginTest {
 
     // Verify that we've restarted the input.
     assertEquals(2, testImm.getRestartCount(testView));
-  }
-
-  // Regression test for https://github.com/flutter/flutter/issues/73433.
-  // The restart workaround seems to have caused #73433 and it's no longer
-  // needed on newer versions of Samsung keyboard.
-  @Test
-  public void setTextInputEditingState_DontForceRestartOnNewSamsungKeyboard() {
-    // Initialize a TextInputPlugin with a Samsung keypad.
-    ShadowBuild.setManufacturer("samsung");
-    final ShadowPackageManager packageManager =
-        Shadows.shadowOf(
-            RuntimeEnvironment.application.getApplicationContext().getPackageManager());
-    final PackageInfo info = new PackageInfo();
-    info.packageName = "com.sec.android.inputmethod";
-    info.versionCode = 333183070;
-    packageManager.addPackage(info);
-    InputMethodSubtype inputMethodSubtype =
-        new InputMethodSubtype(0, 0, /*locale=*/ "en", "", "", false, false);
-    Settings.Secure.putString(
-        RuntimeEnvironment.application.getContentResolver(),
-        Settings.Secure.DEFAULT_INPUT_METHOD,
-        "com.sec.android.inputmethod/.SamsungKeypad");
-    TestImm testImm =
-        Shadow.extract(
-            RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
-    testImm.setCurrentInputMethodSubtype(inputMethodSubtype);
-    View testView = new View(RuntimeEnvironment.application);
-    TextInputChannel textInputChannel = new TextInputChannel(mock(DartExecutor.class));
-    TextInputPlugin textInputPlugin =
-        new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
-    textInputPlugin.setTextInputClient(
-        0,
-        new TextInputChannel.Configuration(
-            false,
-            false,
-            true,
-            TextInputChannel.TextCapitalization.NONE,
-            null,
-            null,
-            null,
-            null,
-            null));
-    // There's a pending restart since we initialized the text input client. Flush that now.
-    textInputPlugin.setTextInputEditingState(
-        testView, new TextInputChannel.TextEditState("", 0, 0, -1, -1));
-
-    // Move the cursor.
-    assertEquals(1, testImm.getRestartCount(testView));
-    textInputPlugin.setTextInputEditingState(
-        testView, new TextInputChannel.TextEditState("", 0, 0, -1, -1));
-
-    // Verify that we've NOT restarted the input.
-    assertEquals(1, testImm.getRestartCount(testView));
   }
 
   @Test
@@ -488,7 +427,7 @@ public class TextInputPluginTest {
     textInputPlugin.setTextInputEditingState(
         testView, new TextInputChannel.TextEditState("", 0, 0, -1, -1));
 
-    // Verify that we've NOT restarted the input.
+    // Verify that we've restarted the input.
     assertEquals(1, testImm.getRestartCount(testView));
   }
 
@@ -925,6 +864,92 @@ public class TextInputPluginTest {
     assertEquals(testAfm.empty, testAfm.exitId);
     textInputPlugin.destroy();
     assertEquals("1".hashCode(), testAfm.exitId);
+  }
+
+  @Test
+  public void autofill_testAutofillUpdatesTheFramework() {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+      return;
+    }
+
+    TestAfm testAfm =
+        Shadow.extract(RuntimeEnvironment.application.getSystemService(AutofillManager.class));
+    FlutterView testView = new FlutterView(RuntimeEnvironment.application);
+    TextInputChannel textInputChannel = spy(new TextInputChannel(mock(DartExecutor.class)));
+    TextInputPlugin textInputPlugin =
+        new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
+
+    // Set up an autofill scenario with 2 fields.
+    final TextInputChannel.Configuration.Autofill autofill1 =
+        new TextInputChannel.Configuration.Autofill(
+            "1",
+            new String[] {"HINT1"},
+            new TextInputChannel.TextEditState("field 1", 0, 0, -1, -1));
+    final TextInputChannel.Configuration.Autofill autofill2 =
+        new TextInputChannel.Configuration.Autofill(
+            "2",
+            new String[] {"HINT2", "EXTRA"},
+            new TextInputChannel.TextEditState("field 2", 0, 0, -1, -1));
+
+    final TextInputChannel.Configuration config1 =
+        new TextInputChannel.Configuration(
+            false,
+            false,
+            true,
+            TextInputChannel.TextCapitalization.NONE,
+            null,
+            null,
+            null,
+            autofill1,
+            null);
+    final TextInputChannel.Configuration config2 =
+        new TextInputChannel.Configuration(
+            false,
+            false,
+            true,
+            TextInputChannel.TextCapitalization.NONE,
+            null,
+            null,
+            null,
+            autofill2,
+            null);
+
+    final TextInputChannel.Configuration autofillConfiguration =
+        new TextInputChannel.Configuration(
+            false,
+            false,
+            true,
+            TextInputChannel.TextCapitalization.NONE,
+            null,
+            null,
+            null,
+            autofill1,
+            new TextInputChannel.Configuration[] {config1, config2});
+
+    textInputPlugin.setTextInputClient(0, autofillConfiguration);
+    textInputPlugin.setTextInputEditingState(
+        testView, new TextInputChannel.TextEditState("", 0, 0, -1, -1));
+
+    final SparseArray<AutofillValue> autofillValues = new SparseArray();
+    autofillValues.append("1".hashCode(), AutofillValue.forText("focused field"));
+    autofillValues.append("2".hashCode(), AutofillValue.forText("unfocused field"));
+
+    // Autofill both fields.
+    textInputPlugin.autofill(autofillValues);
+
+    // Verify the Editable has been updated.
+    assertTrue(textInputPlugin.getEditable().toString().equals("focused field"));
+
+    // The autofill value of the focused field is sent via updateEditingState.
+    verify(textInputChannel, times(1))
+        .updateEditingState(anyInt(), eq("focused field"), eq(13), eq(13), eq(-1), eq(-1));
+
+    final ArgumentCaptor<HashMap> mapCaptor = ArgumentCaptor.forClass(HashMap.class);
+
+    verify(textInputChannel, times(1)).updateEditingStateWithTag(anyInt(), mapCaptor.capture());
+    final TextInputChannel.TextEditState editState =
+        (TextInputChannel.TextEditState) mapCaptor.getValue().get("2");
+    assertEquals(editState.text, "unfocused field");
   }
 
   @Test
