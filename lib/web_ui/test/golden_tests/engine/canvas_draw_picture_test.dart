@@ -113,7 +113,7 @@ void testMain() async {
       html.document.body.append(elm1);
 
       await matchGoldenFile('canvas_draw_picture_in_picture_rect.png',
-          region: region, write: true);
+          region: region);
     });
   });
 }
