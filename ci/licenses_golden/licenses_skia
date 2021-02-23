@@ -1,4 +1,4 @@
-Signature: 39d2ef12e7dc9cf8fee4e99835741ad7
+Signature: 7084024b5f586dcf7c68e311e3507075
 
 UNUSED LICENSES:
 
@@ -1020,6 +1020,7 @@ FILE: ../../../third_party/skia/experimental/wasm-skp-debugger/karma.conf.js
 FILE: ../../../third_party/skia/experimental/wasm-skp-debugger/package.json
 FILE: ../../../third_party/skia/go.mod
 FILE: ../../../third_party/skia/go.sum
+FILE: ../../../third_party/skia/infra/bots/assets.isolate
 FILE: ../../../third_party/skia/infra/bots/assets/android_ndk_darwin/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/android_ndk_linux/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/android_ndk_windows/VERSION
@@ -1068,8 +1069,20 @@ FILE: ../../../third_party/skia/infra/bots/assets/valgrind/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/win_ninja/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/win_toolchain/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/xcode-11.4.1/VERSION
+FILE: ../../../third_party/skia/infra/bots/canvaskit.isolate
 FILE: ../../../third_party/skia/infra/bots/cfg.json
+FILE: ../../../third_party/skia/infra/bots/compile.isolate
+FILE: ../../../third_party/skia/infra/bots/compile_android_framework.isolate
+FILE: ../../../third_party/skia/infra/bots/empty.isolate
+FILE: ../../../third_party/skia/infra/bots/infra_tests.isolate
+FILE: ../../../third_party/skia/infra/bots/infrabots.isolate
+FILE: ../../../third_party/skia/infra/bots/ios_bin.isolate
 FILE: ../../../third_party/skia/infra/bots/jobs.json
+FILE: ../../../third_party/skia/infra/bots/lottie_ci.isolate
+FILE: ../../../third_party/skia/infra/bots/lottie_web.isolate
+FILE: ../../../third_party/skia/infra/bots/pathkit.isolate
+FILE: ../../../third_party/skia/infra/bots/perf_puppeteer.isolate
+FILE: ../../../third_party/skia/infra/bots/perf_skia_bundled.isolate
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian10-Clang-arm-Release-Android_API26.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian10-Clang-arm-Release-Android_ASAN.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian10-Clang-arm-Release-Chromebook_GLES.json
@@ -1187,6 +1200,7 @@ FILE: ../../../third_party/skia/infra/bots/recipe_modules/vars/examples/full.exp
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/vars/examples/full.expected/Housekeeper-Weekly-RecreateSKPs.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/vars/examples/full.expected/integer_issue.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/vars/examples/full.expected/win_test.json
+FILE: ../../../third_party/skia/infra/bots/recipes.isolate
 FILE: ../../../third_party/skia/infra/bots/recipes/check_generated_files.expected/Housekeeper-PerCommit-CheckGeneratedFiles.json
 FILE: ../../../third_party/skia/infra/bots/recipes/compile.expected/Build-Win-Clang-x86-Debug.json
 FILE: ../../../third_party/skia/infra/bots/recipes/compute_buildstats.expected/normal_bot.json
@@ -1254,10 +1268,20 @@ FILE: ../../../third_party/skia/infra/bots/recipes/upload_dm_results.expected/no
 FILE: ../../../third_party/skia/infra/bots/recipes/upload_dm_results.expected/trybot.json
 FILE: ../../../third_party/skia/infra/bots/recipes/upload_nano_results.expected/normal_bot.json
 FILE: ../../../third_party/skia/infra/bots/recipes/upload_nano_results.expected/trybot.json
+FILE: ../../../third_party/skia/infra/bots/resources.isolate
+FILE: ../../../third_party/skia/infra/bots/run_recipe.isolate
+FILE: ../../../third_party/skia/infra/bots/skottie_wasm.isolate
+FILE: ../../../third_party/skia/infra/bots/skpbench_skia_bundled.isolate
+FILE: ../../../third_party/skia/infra/bots/skqp.isolate
+FILE: ../../../third_party/skia/infra/bots/swarm_recipe.isolate
+FILE: ../../../third_party/skia/infra/bots/task_drivers.isolate
 FILE: ../../../third_party/skia/infra/bots/tasks.json
+FILE: ../../../third_party/skia/infra/bots/test_skia_bundled.isolate
 FILE: ../../../third_party/skia/infra/bots/tools/luci-go/linux64/isolate.sha1
 FILE: ../../../third_party/skia/infra/bots/tools/luci-go/mac64/isolate.sha1
 FILE: ../../../third_party/skia/infra/bots/tools/luci-go/win64/isolate.exe.sha1
+FILE: ../../../third_party/skia/infra/bots/wasm_gm_tests.isolate
+FILE: ../../../third_party/skia/infra/bots/whole_repo.isolate
 FILE: ../../../third_party/skia/infra/canvaskit/docker/canvaskit-emsdk/Dockerfile
 FILE: ../../../third_party/skia/infra/config/recipes.cfg
 FILE: ../../../third_party/skia/infra/cross-compile/docker/cross-linux-arm64/Dockerfile
@@ -3946,6 +3970,7 @@ FILE: ../../../third_party/skia/src/gpu/GrDynamicAtlas.h
 FILE: ../../../third_party/skia/src/gpu/GrEagerVertexAllocator.h
 FILE: ../../../third_party/skia/src/gpu/GrHashMapWithCache.h
 FILE: ../../../third_party/skia/src/gpu/GrRecordingContextPriv.cpp
+FILE: ../../../third_party/skia/src/gpu/GrSTArenaList.h
 FILE: ../../../third_party/skia/src/gpu/GrThreadSafeCache.cpp
 FILE: ../../../third_party/skia/src/gpu/GrThreadSafeCache.h
 FILE: ../../../third_party/skia/src/gpu/ccpr/GrAutoMapVertexBuffer.h
@@ -4023,9 +4048,13 @@ FILE: ../../../third_party/skia/src/core/SkUtilsArm.cpp
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkColorFilterImageFilter.cpp
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkLightingImageFilter.cpp
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkMagnifierImageFilter.cpp
+FILE: ../../../third_party/skia/src/effects/imagefilters/SkMagnifierImageFilter.h
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkMatrixConvolutionImageFilter.cpp
+FILE: ../../../third_party/skia/src/effects/imagefilters/SkMatrixConvolutionImageFilter.h
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkMergeImageFilter.cpp
+FILE: ../../../third_party/skia/src/effects/imagefilters/SkMergeImageFilter.h
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkMorphologyImageFilter.cpp
+FILE: ../../../third_party/skia/src/effects/imagefilters/SkMorphologyImageFilter.h
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkOffsetImageFilter.cpp
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkOffsetImageFilter.h
 FILE: ../../../third_party/skia/src/images/SkImageEncoderFns.h
@@ -5196,7 +5225,6 @@ TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/bench/TriangulatorBench.cpp
 FILE: ../../../third_party/skia/gm/crbug_1167277.cpp
 FILE: ../../../third_party/skia/gm/crbug_1174186.cpp
-FILE: ../../../third_party/skia/gm/crbug_1177833.cpp
 FILE: ../../../third_party/skia/gm/lazytiling.cpp
 FILE: ../../../third_party/skia/gm/particles.cpp
 FILE: ../../../third_party/skia/gm/runtimeeffectimage.cpp
@@ -5216,7 +5244,6 @@ FILE: ../../../third_party/skia/src/sksl/SkSLDefinitionMap.h
 FILE: ../../../third_party/skia/src/sksl/SkSLMangler.h
 FILE: ../../../third_party/skia/src/sksl/SkSLOperators.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLOperators.h
-FILE: ../../../third_party/skia/src/sksl/ir/SkSLSwizzle.cpp
 ----------------------------------------------------------------------------------------------------
 Copyright 2021 Google LLC
 
@@ -6577,9 +6604,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: skia
-ORIGIN: ../../../third_party/skia/infra/bots/gen_tasks_logic/compile_cas.go + ../../../LICENSE
+ORIGIN: ../../../third_party/skia/infra/bots/gen_tasks_logic/dm_flags.go + ../../../LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/skia/infra/bots/gen_tasks_logic/compile_cas.go
 FILE: ../../../third_party/skia/infra/bots/gen_tasks_logic/dm_flags.go
 FILE: ../../../third_party/skia/infra/bots/gen_tasks_logic/job_builder.go
 FILE: ../../../third_party/skia/infra/bots/gen_tasks_logic/nano_flags.go
