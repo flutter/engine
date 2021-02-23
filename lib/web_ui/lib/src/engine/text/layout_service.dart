@@ -107,6 +107,8 @@ class TextLayoutService {
       // *** THE MAIN MEASUREMENT PART *** //
       // ********************************* //
 
+      final isLastSpan = spanIndex == spanCount - 1;
+
       if (span is PlaceholderSpan) {
         if (currentLine.widthIncludingSpace + span.width <= constraints.width) {
           // The placeholder fits on the current line.
@@ -118,6 +120,11 @@ class TextLayoutService {
             currentLine = currentLine.nextLine();
           }
           currentLine.addPlaceholder(span);
+        }
+
+        if (isLastSpan) {
+          lines.add(currentLine.build());
+          break;
         }
       } else if (span is FlatTextSpan) {
         spanometer.currentSpan = span;
@@ -171,15 +178,9 @@ class TextLayoutService {
       // ********************************************* //
 
       // Only go to the next span if we've reached the end of this span.
-      if (currentLine.end.index >= span.end) {
+      if (currentLine.end.index >= span.end && spanIndex < spanCount - 1) {
         currentLine.createBox();
-        if (spanIndex < spanCount - 1) {
-          span = paragraph.spans[++spanIndex];
-        } else {
-          // We reached the end of the last span in the paragraph.
-          lines.add(currentLine.build());
-          break;
-        }
+        span = paragraph.spans[++spanIndex];
       }
     }
 
