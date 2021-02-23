@@ -9,6 +9,8 @@ import android.content.res.Configuration;
 import android.os.Build;
 import android.os.LocaleList;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import io.flutter.embedding.engine.systemchannels.LocalizationChannel;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,11 +21,37 @@ public class LocalizationPlugin {
   @NonNull private final LocalizationChannel localizationChannel;
   @NonNull private final Context context;
 
+  @VisibleForTesting
+  final LocalizationChannel.LocalizationMessageHandler localizationMessageHandler =
+      new LocalizationChannel.LocalizationMessageHandler() {
+        @Override
+        public String getStringResource(@NonNull String key, @Nullable String localeString) {
+          Context localContext = context;
+
+          if (localeString != null) {
+            Locale locale = localeFromString(localeString);
+
+            Configuration conf = new Configuration(context.getResources().getConfiguration());
+            conf.setLocale(locale);
+            localContext = context.createConfigurationContext(conf);
+          }
+          String packageName = context.getPackageName();
+          int resId = localContext.getResources().getIdentifier(key, "string", packageName);
+          if (resId == 0) {
+            // 0 means the resource is not found.
+            return null;
+          } else {
+            return localContext.getResources().getString(resId);
+          }
+        }
+      };
+
   public LocalizationPlugin(
       @NonNull Context context, @NonNull LocalizationChannel localizationChannel) {
 
     this.context = context;
     this.localizationChannel = localizationChannel;
+    this.localizationChannel.setLocalizationMessageHandler(localizationMessageHandler);
   }
 
   /**
@@ -135,5 +163,25 @@ public class LocalizationPlugin {
     }
 
     localizationChannel.sendLocales(locales);
+  }
+
+  private static Locale localeFromString(String localeString) {
+    // Use Locale.forLanguageTag if available (API 21+).
+    if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+      return Locale.forLanguageTag(localeString);
+    } else {
+      // Pre-API 21, we fall back to manually parsing the locale tag.
+      String parts[] = localeString.split("-", -1);
+      String languageCode = parts[0];
+      String countryCode = parts.length > 1 ? parts[1] : null;
+      String scriptCode = parts.length > 2 ? parts[2] : null;
+      if (countryCode == null) {
+        return new Locale(languageCode);
+      } else if (scriptCode == null) {
+        return new Locale(languageCode, countryCode);
+      } else {
+        return new Locale(languageCode, countryCode, scriptCode);
+      }
+    }
   }
 }
