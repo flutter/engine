@@ -525,7 +525,6 @@ class RecordingCanvas {
   void drawPicture(ui.Picture picture) {
     assert(!_recordingEnded);
     final EnginePicture enginePicture = picture as EnginePicture;
-    // TODO apply renderStrategy of picture recording to this recording.
     if (enginePicture.recordingCanvas == null) {
       // No contents / nothing to draw.
       return;
@@ -534,6 +533,7 @@ class RecordingCanvas {
     if (pictureRecording._didDraw == true) {
       _didDraw = true;
     }
+    renderStrategy.merge(pictureRecording.renderStrategy);
     final command = PaintDrawPicture(enginePicture);
     if (pictureRecording._pictureBounds != null) {
       _paintBounds.grow(pictureRecording._pictureBounds!, command);
@@ -1995,4 +1995,11 @@ class RenderStrategy {
   bool isInsideShaderMask = false;
 
   RenderStrategy();
+
+  /// Merges render strategy settings from a child recording.
+  void merge(RenderStrategy childStrategy) {
+    hasImageElements |= childStrategy.hasImageElements;
+    hasParagraphs |= childStrategy.hasParagraphs;
+    hasArbitraryPaint |= childStrategy.hasArbitraryPaint;
+  }
 }
