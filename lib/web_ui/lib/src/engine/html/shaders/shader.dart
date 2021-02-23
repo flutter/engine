@@ -607,14 +607,12 @@ class GradientConical extends GradientRadial {
     double r1 = radius / centerDistance;
     double fFocalX = r0 / (r0 - r1);
 
-    bool isSwapped = false;
     if ((fFocalX - 1).abs() < SPath.scalarNearlyZero) {
       // swap r0, r1
       double temp = r0;
       r0 = r1;
       r1 = temp;
       fFocalX = 0.0; // because r0 is now 0
-      isSwapped = true;
     }
 
     ShaderBuilder builder = ShaderBuilder.fragment(webGLVersion);
@@ -644,12 +642,6 @@ class GradientConical extends GradientRadial {
         _writeSharedGradientShader(builder, method, gradient, tileMode);
     method.addStatement('${fragColor.name} = ${probeName} * scale + bias;');
     return builder.build();
-  }
-
-  @override
-  Object createImageBitmap(
-      ui.Rect? shaderBounds, double density, bool createDataUrl) {
-    throw UnimplementedError();
   }
 }
 
