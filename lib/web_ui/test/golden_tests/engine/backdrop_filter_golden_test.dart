@@ -144,7 +144,7 @@ void testMain() async {
         .webOnlyRootElement);
 
     await matchGoldenFile('backdrop_filter_no_child_rendering.png', region: region,
-        maxDiffRatePercent: 0.8, write: true);
+        maxDiffRatePercent: 0.8);
   });
 }
 
