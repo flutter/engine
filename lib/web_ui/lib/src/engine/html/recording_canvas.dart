@@ -145,8 +145,8 @@ class RecordingCanvas {
       int skips = 0;
       debugBuf.writeln(
           '--- Applying RecordingCanvas to ${engineCanvas.runtimeType} '
-              'with bounds $_paintBounds and clip $clipRect (w = ${clipRect.width},'
-              ' h = ${clipRect.height})');
+          'with bounds $_paintBounds and clip $clipRect (w = ${clipRect.width},'
+          ' h = ${clipRect.height})');
       for (int i = 0; i < _commands.length; i++) {
         final PaintCommand command = _commands[i];
         if (command is DrawCommand) {
@@ -1172,8 +1172,8 @@ class PaintDrawPicture extends DrawCommand {
   @override
   void apply(EngineCanvas canvas) {
     final ui.Size windowSize = window.physicalSize;
-    final ui.Rect bounds = ui.Rect.fromLTWH(0, 0, windowSize.width,
-        windowSize.height);
+    final ui.Rect bounds =
+        ui.Rect.fromLTWH(0, 0, windowSize.width, windowSize.height);
     picture.recordingCanvas!.applyCommands(canvas, bounds);
   }
 
