@@ -525,6 +525,7 @@ class RecordingCanvas {
   void drawPicture(ui.Picture picture) {
     assert(!_recordingEnded);
     final EnginePicture enginePicture = picture as EnginePicture;
+    // TODO apply renderStrategy of picture recording to this recording.
     if (enginePicture.recordingCanvas == null) {
       // No contents / nothing to draw.
       return;
@@ -534,11 +535,14 @@ class RecordingCanvas {
       _didDraw = true;
     }
     renderStrategy.merge(pictureRecording.renderStrategy);
-    final command = PaintDrawPicture(enginePicture);
+    // Need to save to make sure we don't pick up leftover clips and
+    // transforms from running commands in picture.
+    save();
+    _commands.addAll(pictureRecording.commands);
+    restore();
     if (pictureRecording._pictureBounds != null) {
-      _paintBounds.grow(pictureRecording._pictureBounds!, command);
+      _paintBounds.growBounds(pictureRecording._pictureBounds!);
     }
-    _commands.add(command);
   }
 
   void drawImageRect(
@@ -1799,7 +1803,8 @@ class _PaintBounds {
     growLTRB(r.left, r.top, r.right, r.bottom, command);
   }
 
-  /// Grow painted area to include given rectangle.
+  /// Grow painted area to include given rectangle and precompute
+  /// clipped out state for command.
   void growLTRB(double left, double top, double right, double bottom,
       DrawCommand command) {
     if (left == right || top == bottom) {
@@ -1860,6 +1865,48 @@ class _PaintBounds {
     command.topBound = transformedPointTop;
     command.rightBound = transformedPointRight;
     command.bottomBound = transformedPointBottom;
+
+    if (_didPaintInsideClipArea) {
+      _left = math.min(
+          math.min(_left, transformedPointLeft), transformedPointRight);
+      _right = math.max(
+          math.max(_right, transformedPointLeft), transformedPointRight);
+      _top =
+          math.min(math.min(_top, transformedPointTop), transformedPointBottom);
+      _bottom = math.max(
+          math.max(_bottom, transformedPointTop), transformedPointBottom);
+    } else {
+      _left = math.min(transformedPointLeft, transformedPointRight);
+      _right = math.max(transformedPointLeft, transformedPointRight);
+      _top = math.min(transformedPointTop, transformedPointBottom);
+      _bottom = math.max(transformedPointTop, transformedPointBottom);
+    }
+    _didPaintInsideClipArea = true;
+  }
+
+  /// Grow painted area to include given rectangle.
+  void growBounds(double left, double top, double right, double bottom) {
+    if (left == right || top == bottom) {
+      return;
+    }
+
+    double transformedPointLeft = left;
+    double transformedPointTop = top;
+    double transformedPointRight = right;
+    double transformedPointBottom = bottom;
+
+    if (!_currentMatrixIsIdentity) {
+      _tempRectData[0] = left;
+      _tempRectData[1] = top;
+      _tempRectData[2] = right;
+      _tempRectData[3] = bottom;
+
+      transformLTRB(_currentMatrix, _tempRectData);
+      transformedPointLeft = _tempRectData[0];
+      transformedPointTop = _tempRectData[1];
+      transformedPointRight = _tempRectData[2];
+      transformedPointBottom = _tempRectData[3];
+    }
 
     if (_didPaintInsideClipArea) {
       _left = math.min(
@@ -1998,7 +2045,7 @@ class RenderStrategy {
 
   /// Merges render strategy settings from a child recording.
   void merge(RenderStrategy childStrategy) {
-    hasImageElements |= childStrategy.hasImageElements;
+    hasImageElements |= childStrategy.hasImageElement;
     hasParagraphs |= childStrategy.hasParagraphs;
     hasArbitraryPaint |= childStrategy.hasArbitraryPaint;
   }
