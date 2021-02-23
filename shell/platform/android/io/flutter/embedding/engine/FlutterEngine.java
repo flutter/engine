@@ -339,8 +339,8 @@ public class FlutterEngine {
     this.pluginRegistry =
         new FlutterEngineConnectionRegistry(context.getApplicationContext(), this, flutterLoader);
 
-    // Only automatically reigster plugins if both constructor parameter and
-    // loaded AnroidManifest config turn this feature on.
+    // Only automatically register plugins if both constructor parameter and
+    // loaded AndroidManifest config turn this feature on.
     if (automaticallyRegisterPlugins && flutterLoader.automaticallyRegisterPlugins()) {
       registerPlugins();
     }
