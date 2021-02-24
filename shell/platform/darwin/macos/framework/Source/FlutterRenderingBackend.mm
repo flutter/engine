@@ -11,9 +11,7 @@
 
 + (BOOL)renderUsingMetal {
   if (@available(macOS 10.14, *)) {
-    // Do not use MTLCreateSystemDefaultDevice() to check if not-null
-    // as that can force a mux switch to the discrete GPU.
-    BOOL systemSupportsMetal = [MTLCopyAllDevices() count] > 0;
+    BOOL systemSupportsMetal = MTLCreateSystemDefaultDevice() != nil;
     return systemSupportsMetal;
   } else {
     return NO;
