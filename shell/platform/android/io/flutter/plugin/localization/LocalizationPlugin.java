@@ -34,17 +34,18 @@ public class LocalizationPlugin {
           if (localeString != null) {
             Locale locale = localeFromString(localeString);
 
+            // setLocale and createConfigurationContext is only available on API >= 17
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-              Configuration conf = new Configuration(context.getResources().getConfiguration());
-              conf.setLocale(locale);
-              localContext = context.createConfigurationContext(conf);
+              Configuration config = new Configuration(context.getResources().getConfiguration());
+              config.setLocale(locale);
+              localContext = context.createConfigurationContext(config);
             } else {
-              // setLocale and createConfigurationContext is only available on API >= 17
+              // In API < 17, we have to update the locale in Configuration.
               Resources resources = context.getResources();
-              Configuration conf = resources.getConfiguration();
-              savedLocale = conf.locale;
-              conf.locale = locale;
-              resources.updateConfiguration(conf, null);
+              Configuration config = resources.getConfiguration();
+              savedLocale = config.locale;
+              config.locale = locale;
+              resources.updateConfiguration(config, null);
             }
           }
 
@@ -55,11 +56,12 @@ public class LocalizationPlugin {
             stringToReturn = localContext.getResources().getString(resId);
           }
 
+          // In API < 17, we had to restore the original locale after using.
           if (localeString != null && Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1) {
             Resources resources = context.getResources();
-            Configuration conf = resources.getConfiguration();
-            conf.locale = savedLocale;
-            resources.updateConfiguration(conf, null);
+            Configuration config = resources.getConfiguration();
+            config.locale = savedLocale;
+            resources.updateConfiguration(config, null);
           }
 
           return stringToReturn;
