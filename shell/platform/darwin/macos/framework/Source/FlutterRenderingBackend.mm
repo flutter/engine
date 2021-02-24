@@ -4,13 +4,17 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderingBackend.h"
 
+#import <Metal/Metal.h>
 #import <QuartzCore/QuartzCore.h>
 
 @implementation FlutterRenderingBackend
 
 + (BOOL)renderUsingMetal {
   if (@available(macOS 10.14, *)) {
-    return YES;
+    // Do not use MTLCreateSystemDefaultDevice() to check if not-null
+    // as that can force a mux switch to the discrete GPU.
+    BOOL systemSupportsMetal = [MTLCopyAllDevices() count] > 0;
+    return systemSupportsMetal;
   } else {
     return NO;
   }
