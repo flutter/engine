@@ -6,6 +6,7 @@ package io.flutter.plugin.localization;
 
 import android.content.Context;
 import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.os.Build;
 import android.os.LocaleList;
 import androidx.annotation.NonNull;
@@ -27,22 +28,41 @@ public class LocalizationPlugin {
         @Override
         public String getStringResource(@NonNull String key, @Nullable String localeString) {
           Context localContext = context;
+          String stringToReturn = null;
+          Locale savedLocale = null;
 
           if (localeString != null) {
             Locale locale = localeFromString(localeString);
 
-            Configuration conf = new Configuration(context.getResources().getConfiguration());
-            conf.setLocale(locale);
-            localContext = context.createConfigurationContext(conf);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+              Configuration conf = new Configuration(context.getResources().getConfiguration());
+              conf.setLocale(locale);
+              localContext = context.createConfigurationContext(conf);
+            } else {
+              // setLocale and createConfigurationContext is only available on API >= 17
+              Resources resources = context.getResources();
+              Configuration conf = resources.getConfiguration();
+              savedLocale = conf.locale;
+              conf.locale = locale;
+              resources.updateConfiguration(conf, null);
+            }
           }
+
           String packageName = context.getPackageName();
           int resId = localContext.getResources().getIdentifier(key, "string", packageName);
-          if (resId == 0) {
+          if (resId != 0) {
             // 0 means the resource is not found.
-            return null;
-          } else {
-            return localContext.getResources().getString(resId);
+            stringToReturn = localContext.getResources().getString(resId);
           }
+
+          if (localeString != null && Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            Resources resources = context.getResources();
+            Configuration conf = resources.getConfiguration();
+            conf.locale = savedLocale;
+            resources.updateConfiguration(conf, null);
+          }
+
+          return stringToReturn;
         }
       };
 
