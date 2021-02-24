@@ -830,14 +830,16 @@ enum BlendMode {
 ///
 /// When scaling down, the higher the scale factor the less effective the [high]
 /// level is. Beyond certain scale level [medium] may provide better visual
-/// result than [high] (see example below).
+/// result than [high].
 ///
-/// When building for the web using the `--web-renderer=html` option, filter quality has
-/// no effect. All images are rendered using the respective browser's default setting.
-///
-/// Example:
+/// To get high quality when scaling images up and down, or when the scale is
+/// unknown, [medium] is typically a good enough choice.
 ///
 /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/filter_quality.png)
+///
+/// When building for the web using the `--web-renderer=html` option, filter
+/// quality has no effect. All images are rendered using the respective
+/// browser's default setting.
 ///
 /// See also:
 ///
