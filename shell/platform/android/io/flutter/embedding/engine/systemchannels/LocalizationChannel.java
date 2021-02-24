@@ -7,6 +7,7 @@ package io.flutter.embedding.engine.systemchannels;
 import android.os.Build;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import io.flutter.Log;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.plugin.common.JSONMethodCodec;
@@ -25,7 +26,8 @@ public class LocalizationChannel {
   @NonNull public final MethodChannel channel;
   @Nullable private LocalizationMessageHandler localizationMessageHandler;
 
-  private final MethodChannel.MethodCallHandler handler =
+  @NonNull @VisibleForTesting
+  public final MethodChannel.MethodCallHandler handler =
       new MethodChannel.MethodCallHandler() {
         @Override
         public void onMethodCall(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
