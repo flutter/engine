@@ -538,7 +538,7 @@ class RecordingCanvas {
     // Need to save to make sure we don't pick up leftover clips and
     // transforms from running commands in picture.
     save();
-    _commands.addAll(pictureRecording.commands);
+    _commands.addAll(pictureRecording._commands);
     restore();
     if (pictureRecording._pictureBounds != null) {
       _paintBounds.growBounds(pictureRecording._pictureBounds!);
@@ -1162,29 +1162,6 @@ class PaintDrawShadow extends DrawCommand {
   String toString() {
     if (assertionsEnabled) {
       return 'drawShadow($path, $color, $elevation, $transparentOccluder)';
-    } else {
-      return super.toString();
-    }
-  }
-}
-
-class PaintDrawPicture extends DrawCommand {
-  final EnginePicture picture;
-
-  PaintDrawPicture(this.picture);
-
-  @override
-  void apply(EngineCanvas canvas) {
-    final ui.Size windowSize = window.physicalSize;
-    final ui.Rect bounds =
-        ui.Rect.fromLTWH(0, 0, windowSize.width, windowSize.height);
-    picture.recordingCanvas!.applyCommands(canvas, bounds);
-  }
-
-  @override
-  String toString() {
-    if (assertionsEnabled) {
-      return 'drawPicture($picture)';
     } else {
       return super.toString();
     }
@@ -1885,7 +1862,11 @@ class _PaintBounds {
   }
 
   /// Grow painted area to include given rectangle.
-  void growBounds(double left, double top, double right, double bottom) {
+  void growBounds(Rect bounds) {
+    final double left = bounds.left;
+    final double top = bounds.top;
+    final double right = bounds.right;
+    final double bottom = bounds.bottom;
     if (left == right || top == bottom) {
       return;
     }
@@ -2045,7 +2026,7 @@ class RenderStrategy {
 
   /// Merges render strategy settings from a child recording.
   void merge(RenderStrategy childStrategy) {
-    hasImageElements |= childStrategy.hasImageElement;
+    hasImageElements |= childStrategy.hasImageElements;
     hasParagraphs |= childStrategy.hasParagraphs;
     hasArbitraryPaint |= childStrategy.hasArbitraryPaint;
   }
