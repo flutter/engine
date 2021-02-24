@@ -1862,7 +1862,7 @@ class _PaintBounds {
   }
 
   /// Grow painted area to include given rectangle.
-  void growBounds(Rect bounds) {
+  void growBounds(ui.Rect bounds) {
     final double left = bounds.left;
     final double top = bounds.top;
     final double right = bounds.right;
