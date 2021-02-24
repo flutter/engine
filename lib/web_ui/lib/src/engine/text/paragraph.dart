@@ -1212,7 +1212,7 @@ class EngineStrutStyle implements ui.StrutStyle {
     double? fontSize,
     double? height,
     //TODO(LongCatIsLooong): implement leadingDistribution.
-    ui.LeadingDistribution? leadingDistribution,
+    ui.TextLeadingDistribution? leadingDistribution,
     double? leading,
     ui.FontWeight? fontWeight,
     ui.FontStyle? fontStyle,
@@ -1235,7 +1235,7 @@ class EngineStrutStyle implements ui.StrutStyle {
   final ui.FontWeight? _fontWeight;
   final ui.FontStyle? _fontStyle;
   final bool? _forceStrutHeight;
-  final ui.LeadingDistribution? _leadingDistribution;
+  final ui.TextLeadingDistribution? _leadingDistribution;
 
   @override
   bool operator ==(Object other) {

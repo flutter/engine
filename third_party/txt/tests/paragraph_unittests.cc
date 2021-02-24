@@ -1892,7 +1892,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(HeightOverrideHalfLeadingParagraph)) {
 
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 10;
-  paragraph_style.text_height_behavior = TextHeightBehavior::kHalfLeading;
+  paragraph_style.text_height_behavior = TextHeightBehavior::kEvenLeading;
   txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;

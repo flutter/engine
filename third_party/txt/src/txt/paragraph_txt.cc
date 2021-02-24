@@ -570,7 +570,7 @@ void ParagraphTxt::ComputeStrut(StrutMetrics* strut, SkFont& font) {
           paragraph_style_.strut_has_leading_distribution_override
               ? paragraph_style_.strut_half_leading
               : paragraph_style_.text_height_behavior &
-                    TextHeightBehavior::kHalfLeading;
+                    TextHeightBehavior::kEvenLeading;
 
       const double available_height =
           half_leading_enabled ? metrics_height : strut_height;
@@ -1215,7 +1215,7 @@ void ParagraphTxt::UpdateLineMetrics(const SkFontMetrics& metrics,
         style.has_leading_distribution_override
             ? style.half_leading
             : paragraph_style_.text_height_behavior &
-                  TextHeightBehavior::kHalfLeading;
+                  TextHeightBehavior::kEvenLeading;
 
     // Scale the ascent and descent such that the sum of ascent and
     // descent is `style.height * style.font_size`.

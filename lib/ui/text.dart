@@ -1565,8 +1565,8 @@ enum TextDecorationStyle {
   wavy
 }
 
-/// {@macro dart.ui.leadingDistribution}
-enum LeadingDistribution {
+/// {@macro dart.ui.textLeadingDistribution}
+enum TextLeadingDistribution {
   /// Distributes the [leading](https://en.wikipedia.org/wiki/Leading)
   /// of the text proportionally above and below the text, to the font's
   /// ascent/discent ratio.
@@ -1623,7 +1623,7 @@ class TextHeightBehavior {
   const TextHeightBehavior({
     this.applyHeightToFirstAscent = true,
     this.applyHeightToLastDescent = true,
-    this.leadingDistribution = LeadingDistribution.proportional,
+    this.leadingDistribution = TextLeadingDistribution.proportional,
   });
 
   /// Creates a new TextHeightBehavior object from an encoded form.
@@ -1632,7 +1632,7 @@ class TextHeightBehavior {
   TextHeightBehavior.fromEncoded(int encoded)
     : applyHeightToFirstAscent = (encoded & 0x1) == 0,
       applyHeightToLastDescent = (encoded & 0x2) == 0,
-      leadingDistribution = LeadingDistribution.values[encoded >> 2];
+      leadingDistribution = TextLeadingDistribution.values[encoded >> 2];
 
   /// Whether to apply the [TextStyle.height] modifier to the ascent of the first
   /// line in the paragraph.
@@ -1658,17 +1658,17 @@ class TextHeightBehavior {
   /// Defaults to true (height modifications applied as normal).
   final bool applyHeightToLastDescent;
 
-  /// {@template dart.ui.leadingDistribution}
+  /// {@template dart.ui.textLeadingDistribution}
   /// How the ["leading"](https://en.wikipedia.org/wiki/Leading) is distributed
   /// over and under the text.
   ///
   /// Does not affect layout when [TextStyle.height] is not specified. The
-  /// leading can become negative, for example, when [LeadingDistribution.even]
+  /// leading can become negative, for example, when [TextLeadingDistribution.even]
   /// is used with a [TextStyle.height] much smaller than 1.0.
   /// {@endtemplate}
   ///
-  /// Defaults to [LeadingDistribution.proportional],
-  final LeadingDistribution leadingDistribution;
+  /// Defaults to [TextLeadingDistribution.proportional],
+  final TextLeadingDistribution leadingDistribution;
 
   /// Returns an encoded int representation of this object.
   int encode() {
@@ -1765,7 +1765,7 @@ Int32List _encodeTextStyle(
   double? letterSpacing,
   double? wordSpacing,
   double? height,
-  LeadingDistribution? leadingDistribution,
+  TextLeadingDistribution? leadingDistribution,
   Locale? locale,
   Paint? background,
   Paint? foreground,
@@ -1903,7 +1903,7 @@ class TextStyle {
     double? letterSpacing,
     double? wordSpacing,
     double? height,
-    LeadingDistribution? leadingDistribution,
+    TextLeadingDistribution? leadingDistribution,
     Locale? locale,
     Paint? background,
     Paint? foreground,
@@ -2006,7 +2006,7 @@ class TextStyle {
              'letterSpacing: ${      _encoded[0] & 0x01000 == 0x01000  ? "${_letterSpacing}x"                         : "unspecified"}, '
              'wordSpacing: ${        _encoded[0] & 0x02000 == 0x02000  ? "${_wordSpacing}x"                           : "unspecified"}, '
              'height: ${             _encoded[0] & 0x04000 == 0x04000  ? "${_height}x"                                : "unspecified"}, '
-             'leadingDistribution: ${_encoded[0] & 0x0100 == 0x0100    ? "${LeadingDistribution.values[_encoded[8]]}" : "unspecified"}, '
+             'leadingDistribution: ${_encoded[0] & 0x0100 == 0x0100    ? "${TextLeadingDistribution.values[_encoded[8]]}" : "unspecified"}, '
              'locale: ${             _encoded[0] & 0x08000 == 0x08000  ? _locale                                      : "unspecified"}, '
              'background: ${         _encoded[0] & 0x10000 == 0x10000  ? _background                                  : "unspecified"}, '
              'foreground: ${         _encoded[0] & 0x20000 == 0x20000  ? _foreground                                  : "unspecified"}, '
@@ -2259,7 +2259,7 @@ ByteData _encodeStrut(
   List<String>? fontFamilyFallback,
   double? fontSize,
   double? height,
-  LeadingDistribution? leadingDistribution,
+  TextLeadingDistribution? leadingDistribution,
   double? leading,
   FontWeight? fontWeight,
   FontStyle? fontStyle,
@@ -2350,10 +2350,12 @@ class StrutStyle {
   ///   be provided for this property to take effect.
   ///
   /// * `leading`: The minimum amount of leading between lines as a multiple of
-  ///   the font size. `fontSize` must be provided for this property to take effect.
+  ///   the font size. `fontSize` must be provided for this property to take
+  ///   effect. The leading added by this property is distributed evenly over
+  ///   and under the text, regardless of `leadingDistribution`.
   ///
-  /// * `leadingDistribution`: Specifies how the extra vertical space added by
-  ///   the `height` multiplier should be distributed over and under the text,
+  /// * `leadingDistribution`: how the extra vertical space added by the
+  ///   `height` multiplier should be distributed over and under the text,
   ///   independent of `leading` (which is always distributed evenly over and
   ///   under text).
   ///
@@ -2375,7 +2377,7 @@ class StrutStyle {
     List<String>? fontFamilyFallback,
     double? fontSize,
     double? height,
-    LeadingDistribution? leadingDistribution,
+    TextLeadingDistribution? leadingDistribution,
     double? leading,
     FontWeight? fontWeight,
     FontStyle? fontStyle,

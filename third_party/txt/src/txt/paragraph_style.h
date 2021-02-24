@@ -48,7 +48,7 @@ enum class TextDirection {
 // the line will use the default font metric provided ascent/descent and
 // ParagraphStyle.height or TextStyle.height will not take effect.
 //
-// kHalfLeading determines how the leading is distributed over and under the
+// kEvenLeading determines how the leading is distributed over and under the
 // text. When true, half of the leading is added to the top of the text and the
 // other half is added to the bottom of the text. Otherwise, instead of
 // distributing the space evenly, it's distributed proportionally to the font's
@@ -66,7 +66,7 @@ enum TextHeightBehavior {
   kDisableFirstAscent = 0x1,
   kDisableLastDescent = 0x2,
   kDisableAll = 0x1 | 0x2,
-  kHalfLeading = 0x1 << 2,
+  kEvenLeading = 0x1 << 2,
 };
 
 class ParagraphStyle {
