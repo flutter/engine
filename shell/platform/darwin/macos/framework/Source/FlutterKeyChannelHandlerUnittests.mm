@@ -8,20 +8,18 @@
 #include <memory>
 #include <vector>
 
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyEmbedderHandler.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyChannelHandler.h"
 #import "flutter/testing/testing.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
 namespace flutter::testing {
 
-TEST(FlutterKeyEmbedderHandlerUnittests, BasicKeyEvent) {
+TEST(FlutterKeyChannelHandlerUnittests, BasicKeyEvent) {
   __block std::vector<uint64_t> calls;
 
-  FlutterKeyEmbedderHandler* handler = [[FlutterKeyEmbedderHandler alloc]
-      initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
-                          _Nullable _VoidPtr user_data) {
-        calls.push_back(event.physical);
-      }];
+  id keyEventChannel = OCMClassMock([FlutterBasicMessageChannel class]);
+  FlutterKeyChannelHandler* handler = [[FlutterKeyChannelHandler alloc]
+      initWithChannel: keyEventChannel];
   [handler handleEvent:[NSEvent keyEventWithType:NSKeyDown
                                               location:NSZeroPoint
                                          modifierFlags:0

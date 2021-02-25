@@ -29,10 +29,6 @@
  */
 - (void)removeKeyResponder:(nonnull FlutterIntermediateKeyResponder*)responder;
 
-- (void)handleNSKeyEvent:(nonnull NSEvent*)event
-                  ofType:(nonnull NSString*)type
-                   reply:(_Nullable FlutterReply)callback;
-
 /**
  * Initializes this FlutterViewController with the specified `FlutterEngine`.
  *

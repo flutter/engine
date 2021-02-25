@@ -5,6 +5,7 @@
 #import <Cocoa/Cocoa.h>
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyHandlerBase.h"
+#include "flutter/shell/platform/embedder/embedder.h"
 
 namespace {
 typedef void* _VoidPtr;
