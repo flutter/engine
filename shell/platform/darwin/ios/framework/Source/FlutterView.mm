@@ -130,4 +130,19 @@ static BOOL _forceSoftwareRendering;
   CGContextRestoreGState(context);
 }
 
+- (BOOL)isAccessibilityElement {
+  // iOS does not provide an API to query whether the voice control
+  // is turned on or off. It is likely at least one of the assitive
+  // technologies is turned on if this method is called. If we do
+  // not catch it in notification center, we will catch it here.
+  //
+  // TODO(chunhtai): Remove this workaround once iOS provides an
+  // API to query whether voice control is enabled.
+  // https://github.com/flutter/flutter/issues/76808.
+  if (self.accessibilityElements == nil) {
+    [_delegate ensureSemanticsEnabled];
+  }
+  return NO;
+}
+
 @end

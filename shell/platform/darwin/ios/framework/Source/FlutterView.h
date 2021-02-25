@@ -21,6 +21,7 @@
                                   asBase64Encoded:(BOOL)base64Encode;
 
 - (std::shared_ptr<flutter::FlutterPlatformViewsController>&)platformViewsController;
+- (void)ensureSemanticsEnabled;
 @end
 
 @interface FlutterView : UIView
