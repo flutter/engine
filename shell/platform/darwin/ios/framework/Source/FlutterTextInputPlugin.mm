@@ -445,11 +445,11 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 
 @implementation FlutterTextSelectionRect
 
-@synthesize rect;
-@synthesize writingDirection;
-@synthesize containsStart;
-@synthesize containsEnd;
-@synthesize isVertical;
+@synthesize rect = _rect;
+@synthesize writingDirection = _writingDirection;
+@synthesize containsStart = _containsStart;
+@synthesize containsEnd = _containsEnd;
+@synthesize isVertical = _isVertical;
 
 + (instancetype)selectionRectWithRectAndInfo:(CGRect)rect
                             writingDirection:(NSWritingDirection)writingDirection
@@ -465,6 +465,13 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
                         containsEnd:(BOOL)containsEnd
                          isVertical:(BOOL)isVertical {
   self = [super init];
+  if (self) {
+    _rect = rect;
+    _writingDirection = writingDirection;
+    _containsStart = containsStart;
+    _containsEnd = containsEnd;
+    _isVertical = isVertical;
+  }
   return self;
 }
 
@@ -1191,11 +1198,42 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   // TODO(cbracken) Implement.
   NSLog(@"[scribble] closestPositionToPoint (%@, %@)", @(point.x), @(point.y));
 
-  NSUInteger _closestIndex = 0;
+  if ([_selectionRects count] == 0) {
+    NSUInteger currentIndex = ((FlutterTextPosition*)_selectedTextRange.start).index;
+    return [FlutterTextPosition positionWithIndex:currentIndex];
+  }
+
+  FlutterTextRange* range = [[FlutterTextRange rangeWithNSRange:NSMakeRange(0, [_selectionRects count])] copy];
+  return [self closestPositionToPoint:point withinRange:range];
+}
+
+- (NSArray*)selectionRectsForRange:(UITextRange*)range {
+  // TODO(cbracken) Implement.
+  NSUInteger start = ((FlutterTextPosition*)range.start).index;
+  NSUInteger end = ((FlutterTextPosition*)range.end).index;
+  NSLog(@"[scribble] selectionRectsForRange %@ -> %@", @(start), @(end));
+  NSMutableArray* rects = [[NSMutableArray alloc] init];
+  for (NSUInteger i = start; i <= end && i < [_selectionRects count]; i++) {
+      float width = [_selectionRects[i][2] floatValue];
+      if (start == end) { width = 0; }
+    CGRect rect = CGRectMake([_selectionRects[i][0] floatValue], [_selectionRects[i][1] floatValue], width, [_selectionRects[i][3] floatValue]);
+    FlutterTextSelectionRect* selectionRect = [[FlutterTextSelectionRect alloc] initWithRectAndInfo:rect writingDirection:UITextWritingDirectionNatural containsStart:(i == 0) containsEnd:(i == self.text.length) isVertical:FALSE];
+    [rects addObject:selectionRect];
+  }
+  return rects;
+}
+
+- (UITextPosition*)closestPositionToPoint:(CGPoint)point withinRange:(UITextRange*)range {
+  // TODO(cbracken) Implement.
+  NSUInteger start = ((FlutterTextPosition*)range.start).index;
+  NSUInteger end = ((FlutterTextPosition*)range.end).index;
+  NSLog(@"[scribble] closestPositionToPoint (%@, %@) withinRange %@, %@", @(point.x), @(point.y), @(start), @(end));
+
+  NSUInteger _closestIndex = start;
   CGRect _closestRect = CGRectZero;
   float _closestY = 0;
   float _closestX = 0;
-  for (NSUInteger i = 0; i < [_selectionRects count]; i++) {
+  for (NSUInteger i = start; i < [_selectionRects count] && i < end; i++) {
     CGRect rect = CGRectMake([_selectionRects[i][0] floatValue], [_selectionRects[i][1] floatValue], [_selectionRects[i][2] floatValue], [_selectionRects[i][3] floatValue]);
     CGPoint pointForComparison = CGPointMake(rect.origin.x, rect.origin.y + rect.size.height * 0.5);
     float yDist = abs(pointForComparison.y - point.y);
@@ -1213,8 +1251,8 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     }
   }
 
-  if ([_selectionRects count] > 0) {
-    NSUInteger i = [_selectionRects count] - 1;
+  if ([_selectionRects count] > 0 && [_selectionRects count] >= end) {
+    NSUInteger i = end - 1;
     CGRect rect = CGRectMake([_selectionRects[i][0] floatValue], [_selectionRects[i][1] floatValue], [_selectionRects[i][2] floatValue], [_selectionRects[i][3] floatValue]);
     CGPoint pointForComparison = CGPointMake(rect.origin.x + rect.size.width, rect.origin.y + rect.size.height * 0.5);
     float yDist = abs(pointForComparison.y - point.y);
@@ -1226,51 +1264,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
             ))) {
       _closestY = yDist;
       _closestX = xDist;
-      _closestIndex = [_selectionRects count];
-    }
-  }
-
-  if (_closestIndex >= 0) {
-    NSLog(@"[scribble] closestPositionToPoint (%@, %@) -> (%@)", @(point.x), @(point.y), @(_closestIndex));
-    return [FlutterTextPosition positionWithIndex:_closestIndex];
-  }
-
-  NSUInteger currentIndex = ((FlutterTextPosition*)_selectedTextRange.start).index;
-  return [FlutterTextPosition positionWithIndex:currentIndex];
-}
-
-- (NSArray*)selectionRectsForRange:(UITextRange*)range {
-  // TODO(cbracken) Implement.
-  NSUInteger start = ((FlutterTextPosition*)range.start).index;
-  NSUInteger end = ((FlutterTextPosition*)range.end).index;
-  NSLog(@"[scribble] selectionRectsForRange %@ -> %@", @(start), @(end));
-  NSMutableArray* rects = [[NSMutableArray alloc] init];
-  for (NSUInteger i = start; i <= end && i < [_selectionRects count]; i++) {
-      float width = [_selectionRects[start][2] floatValue];
-      if (start == end) { width = 0; }
-    CGRect rect = CGRectMake([_selectionRects[start][0] floatValue], [_selectionRects[start][1] floatValue], width, [_selectionRects[start][3] floatValue]);
-    FlutterTextSelectionRect* selectionRect = [[FlutterTextSelectionRect alloc] initWithRectAndInfo:rect writingDirection:UITextWritingDirectionNatural containsStart:(start == 0) containsEnd:(end == self.text.length) isVertical:FALSE];
-
-    [rects addObject:selectionRect];
-  }
-  return rects;
-}
-
-- (UITextPosition*)closestPositionToPoint:(CGPoint)point withinRange:(UITextRange*)range {
-  // TODO(cbracken) Implement.
-  NSUInteger start = ((FlutterTextPosition*)range.start).index;
-  NSUInteger end = ((FlutterTextPosition*)range.end).index;
-  NSLog(@"[scribble] closestPositionToPoint (%@, %@) withinRange %@, %@", @(point.x), @(point.y), @(start), @(end));
-
-  NSUInteger _closestIndex = start;
-  float _closestDistSq = 0;
-  for (NSUInteger i = start; i <= end && i < [_selectionRects count]; i++) {
-    CGRect rect = CGRectMake([_selectionRects[i][0] floatValue], [_selectionRects[i][1] floatValue], [_selectionRects[i][2] floatValue], [_selectionRects[i][3] floatValue]);
-    CGPoint pointForComparison = CGPointMake(rect.origin.x, rect.origin.y + rect.size.height * 0.5);
-    float distSq = pow(pointForComparison.x - point.x, 2) + pow(pointForComparison.y - point.y, 2);
-    if (_closestIndex == i || distSq < _closestDistSq) {
-      _closestDistSq = distSq;
-      _closestIndex = i;
+      _closestIndex = end;
     }
   }
 

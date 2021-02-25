@@ -8,8 +8,8 @@
 #import <UIKit/UIKit.h>
 
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
+#import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
-#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 
 @interface FlutterTextInputPlugin : NSObject
 
@@ -84,11 +84,11 @@
 
 @interface FlutterTextSelectionRect : UITextSelectionRect
 
-@property(nonatomic, readonly) CGRect rect;
-@property(nonatomic, readonly) NSWritingDirection writingDirection;
-@property(nonatomic, readonly) BOOL containsStart;
-@property(nonatomic, readonly) BOOL containsEnd;
-@property(nonatomic, readonly) BOOL isVertical;
+@property(nonatomic, assign) CGRect rect;
+@property(nonatomic, assign) NSWritingDirection writingDirection;
+@property(nonatomic, assign) BOOL containsStart;
+@property(nonatomic, assign) BOOL containsEnd;
+@property(nonatomic, assign) BOOL isVertical;
 
 + (instancetype)selectionRectWithRectAndInfo:(CGRect)rect
                             writingDirection:(NSWritingDirection)writingDirection

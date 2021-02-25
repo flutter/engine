@@ -271,8 +271,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
       viewController ? [viewController getWeakPtr] : fml::WeakPtr<FlutterViewController>();
   self.iosPlatformView->SetOwnerViewController(_viewController);
   [self maybeSetupPlatformViewChannels];
-  _textInputPlugin.get().viewController = [self viewController];
-  [_textInputPlugin.get() setupIndirectScribbleInteraction];
 
   if (viewController) {
     __block FlutterEngine* blockSelf = self;
@@ -291,6 +289,8 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
 - (void)attachView {
   self.iosPlatformView->attachView();
+  _textInputPlugin.get().viewController = [self viewController];
+  [_textInputPlugin.get() setupIndirectScribbleInteraction];
 }
 
 - (void)setFlutterViewControllerWillDeallocObserver:(id<NSObject>)observer {
