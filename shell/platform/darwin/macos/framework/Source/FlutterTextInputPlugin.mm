@@ -53,20 +53,16 @@ typedef NS_ENUM(NSUInteger, FlutterTextAffinity) {
 /*
  * Updates a range given base and extent fields.
  */
-static flutter::TextRange UpdateRangeFromBaseExtent(NSNumber* base,
-                                                    NSNumber* extent,
-                                                    flutter::TextRange range) {
+static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
+                                              NSNumber* extent,
+                                              const flutter::TextRange& range) {
   if (base == nil || extent == nil) {
     return range;
   }
   if (base.intValue == -1 && extent.intValue == -1) {
-    range.set_base(0);
-    range.set_extent(0);
-  } else {
-    range.set_base([base unsignedLongValue]);
-    range.set_extent([extent unsignedLongValue]);
+    return flutter::TextRange(0, 0);
   }
-  return range;
+  return flutter::TextRange([base unsignedLongValue], [extent unsignedLongValue]);
 }
 
 /**
@@ -97,24 +93,30 @@ static flutter::TextRange UpdateRangeFromBaseExtent(NSNumber* base,
 /**
  * ID of the text input client.
  */
-@property(nonatomic, readonly, nonnull) NSNumber* clientID;
+@property(nonatomic, nonnull) NSNumber* clientID;
 
 /**
  * Keyboard type of the client. See available options:
  * https://api.flutter.dev/flutter/services/TextInputType-class.html
  */
-@property(nonatomic, readonly, nonnull) NSString* inputType;
+@property(nonatomic, nonnull) NSString* inputType;
 
 /**
  * An action requested by the user on the input client. See available options:
  * https://api.flutter.dev/flutter/services/TextInputAction-class.html
  */
-@property(nonatomic, readonly, nonnull) NSString* inputAction;
+@property(nonatomic, nonnull) NSString* inputAction;
 
 /**
  * Handles a Flutter system message on the text input channel.
  */
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
+
+/**
+ * Updates the text input model with state received from the framework via the
+ * TextInput.setEditingState message.
+ */
+- (void)setEditingState:(NSDictionary*)state;
 
 @end
 
@@ -122,7 +124,7 @@ static flutter::TextRange UpdateRangeFromBaseExtent(NSNumber* base,
   /**
    * The currently active text input model.
    */
-  std::unique_ptr<flutter::TextInputModel> _active_model;
+  std::unique_ptr<flutter::TextInputModel> _activeModel;
 }
 
 - (instancetype)initWithViewController:(FlutterViewController*)viewController {
@@ -164,7 +166,7 @@ static flutter::TextRange UpdateRangeFromBaseExtent(NSNumber* base,
       _inputType = inputTypeInfo[kTextInputTypeName];
       self.textAffinity = FlutterTextAffinityUpstream;
 
-      _active_model = std::make_unique<flutter::TextInputModel>();
+      _activeModel = std::make_unique<flutter::TextInputModel>();
     }
   } else if ([method isEqualToString:kShowMethod]) {
     [self.flutterViewController addKeyResponder:self];
@@ -176,7 +178,7 @@ static flutter::TextRange UpdateRangeFromBaseExtent(NSNumber* base,
     _clientID = nil;
     _inputAction = nil;
     _inputType = nil;
-    _active_model = nullptr;
+    _activeModel = nullptr;
   } else if ([method isEqualToString:kSetEditingStateMethod]) {
     NSDictionary* state = call.arguments;
     [self setEditingState:state];
@@ -191,10 +193,6 @@ static flutter::TextRange UpdateRangeFromBaseExtent(NSNumber* base,
   result(handled ? nil : FlutterMethodNotImplemented);
 }
 
-/**
- * Updates the text input model with state received from the framework via the
- * TextInput.setEditingState message.
- */
 - (void)setEditingState:(NSDictionary*)state {
   NSString* selectionAffinity = state[kSelectionAffinityKey];
   if (selectionAffinity != nil) {
@@ -205,24 +203,24 @@ static flutter::TextRange UpdateRangeFromBaseExtent(NSNumber* base,
 
   NSString* text = state[kTextKey];
   if (text != nil) {
-    _active_model->SetText([text cStringUsingEncoding:NSUTF8StringEncoding]);
+    _activeModel->SetText([text UTF8String]);
   }
 
-  flutter::TextRange selected_range = UpdateRangeFromBaseExtent(
-      state[kSelectionBaseKey], state[kSelectionExtentKey], _active_model->selection());
-  _active_model->SetSelection(selected_range);
+  flutter::TextRange selected_range = RangeFromBaseExtent(
+      state[kSelectionBaseKey], state[kSelectionExtentKey], _activeModel->selection());
+  _activeModel->SetSelection(selected_range);
 
-  flutter::TextRange composing_range = UpdateRangeFromBaseExtent(
-      state[kComposingBaseKey], state[kComposingExtentKey], _active_model->composing_range());
+  flutter::TextRange composing_range = RangeFromBaseExtent(
+      state[kComposingBaseKey], state[kComposingExtentKey], _activeModel->composing_range());
   size_t cursor_offset = selected_range.base() - composing_range.start();
-  _active_model->SetComposingRange(composing_range, cursor_offset);
+  _activeModel->SetComposingRange(composing_range, cursor_offset);
 }
 
 /**
  * Informs the Flutter framework of changes to the text input model's state.
  */
 - (void)updateEditState {
-  if (_active_model == nullptr) {
+  if (_activeModel == nullptr) {
     return;
   }
 
@@ -230,14 +228,13 @@ static flutter::TextRange UpdateRangeFromBaseExtent(NSNumber* base,
                                      ? kTextAffinityUpstream
                                      : kTextAffinityDownstream;
   NSDictionary* state = @{
-    kSelectionBaseKey : @(_active_model->selection().base()),
-    kSelectionExtentKey : @(_active_model->selection().extent()),
+    kSelectionBaseKey : @(_activeModel->selection().base()),
+    kSelectionExtentKey : @(_activeModel->selection().extent()),
     kSelectionAffinityKey : textAffinity,
     kSelectionIsDirectionalKey : @NO,
-    kComposingBaseKey : @(_active_model->composing_range().base()),
-    kComposingExtentKey : @(_active_model->composing_range().extent()),
-    kTextKey : [NSString stringWithCString:_active_model->GetText().c_str()
-                                  encoding:NSUTF8StringEncoding]
+    kComposingBaseKey : @(_activeModel->composing_range().base()),
+    kComposingExtentKey : @(_activeModel->composing_range().extent()),
+    kTextKey : [NSString stringWithUTF8String:_activeModel->GetText().c_str()]
   };
 
   [_channel invokeMethod:kUpdateEditStateResponseMethod arguments:@[ self.clientID, state ]];
@@ -264,7 +261,7 @@ static flutter::TextRange UpdateRangeFromBaseExtent(NSNumber* base,
 #pragma mark NSTextInputClient
 
 - (void)insertText:(id)string replacementRange:(NSRange)range {
-  if (_active_model == nullptr) {
+  if (_activeModel == nullptr) {
     return;
   }
 
@@ -275,16 +272,16 @@ static flutter::TextRange UpdateRangeFromBaseExtent(NSNumber* base,
     // selection is reversed or not.
     long signedLength = static_cast<long>(range.length);
     long location = range.location;
-    long textLength = _active_model->text_range().end();
+    long textLength = _activeModel->text_range().end();
 
     size_t base = std::clamp(location, 0L, textLength);
     size_t extent = std::clamp(location + signedLength, 0L, textLength);
-    _active_model->SetSelection(flutter::TextRange(base, extent));
+    _activeModel->SetSelection(flutter::TextRange(base, extent));
   }
 
-  _active_model->AddText([string cStringUsingEncoding:NSUTF8StringEncoding]);
-  if (_active_model->composing()) {
-    _active_model->CommitComposing();
+  _activeModel->AddText([string UTF8String]);
+  if (_activeModel->composing()) {
+    _activeModel->CommitComposing();
   }
   [self updateEditState];
 }
@@ -301,12 +298,12 @@ static flutter::TextRange UpdateRangeFromBaseExtent(NSNumber* base,
 }
 
 - (void)insertNewline:(id)sender {
-  if (_active_model == nullptr) {
+  if (_activeModel == nullptr) {
     return;
   }
-  if (_active_model->composing()) {
-    _active_model->CommitComposing();
-    _active_model->EndComposing();
+  if (_activeModel->composing()) {
+    _activeModel->CommitComposing();
+    _activeModel->EndComposing();
   }
   if ([self.inputType isEqualToString:kMultilineInputType]) {
     [self insertText:@"\n" replacementRange:self.selectedRange];
@@ -317,61 +314,60 @@ static flutter::TextRange UpdateRangeFromBaseExtent(NSNumber* base,
 - (void)setMarkedText:(id)string
         selectedRange:(NSRange)selectedRange
      replacementRange:(NSRange)replacementRange {
-  if (_active_model == nullptr) {
+  if (_activeModel == nullptr) {
     return;
   }
-  if (!_active_model->composing()) {
-    _active_model->BeginComposing();
+  if (!_activeModel->composing()) {
+    _activeModel->BeginComposing();
   }
 
-  // Input string may be NSString or NSAttributredString.
+  // Input string may be NSString or NSAttributedString.
   BOOL isAttributedString = [string isKindOfClass:[NSAttributedString class]];
   NSString* marked_text = isAttributedString ? [string string] : string;
-  _active_model->UpdateComposingText([marked_text cStringUsingEncoding:NSUTF8StringEncoding]);
+  _activeModel->UpdateComposingText([marked_text UTF8String]);
 
   [self updateEditState];
 }
 
 - (void)unmarkText {
-  if (_active_model != nullptr) {
+  if (_activeModel != nullptr) {
     return;
   }
-  _active_model->CommitComposing();
-  _active_model->EndComposing();
+  _activeModel->CommitComposing();
+  _activeModel->EndComposing();
   [self updateEditState];
 }
 
 - (NSRange)selectedRange {
-  if (_active_model == nullptr) {
+  if (_activeModel == nullptr) {
     return NSMakeRange(NSNotFound, 0);
   }
-  return NSMakeRange(_active_model->selection().base(),
-                     _active_model->selection().extent() - _active_model->selection().base());
+  return NSMakeRange(_activeModel->selection().base(),
+                     _activeModel->selection().extent() - _activeModel->selection().base());
 }
 
 - (NSRange)markedRange {
-  if (_active_model == nullptr) {
+  if (_activeModel == nullptr) {
     return NSMakeRange(NSNotFound, 0);
   }
   return NSMakeRange(
-      _active_model->composing_range().base(),
-      _active_model->composing_range().extent() - _active_model->composing_range().base());
+      _activeModel->composing_range().base(),
+      _activeModel->composing_range().extent() - _activeModel->composing_range().base());
 }
 
 - (BOOL)hasMarkedText {
-  return _active_model != nullptr && _active_model->composing_range().length() > 0;
+  return _activeModel != nullptr && _activeModel->composing_range().length() > 0;
 }
 
 - (NSAttributedString*)attributedSubstringForProposedRange:(NSRange)range
                                                actualRange:(NSRangePointer)actualRange {
-  if (_active_model == nullptr) {
+  if (_activeModel == nullptr) {
     return nil;
   }
   if (actualRange != nil) {
     *actualRange = range;
   }
-  NSString* text = [NSString stringWithCString:_active_model->GetText().c_str()
-                                      encoding:NSUTF8StringEncoding];
+  NSString* text = [NSString stringWithUTF8String:_activeModel->GetText().c_str()];
   NSString* substring = [text substringWithRange:range];
   return [[NSAttributedString alloc] initWithString:substring attributes:nil];
 }
