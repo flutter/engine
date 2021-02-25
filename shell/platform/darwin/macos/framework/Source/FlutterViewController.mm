@@ -9,7 +9,7 @@
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterCodecs.h"
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyboardPlugin.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyEmbedderHandler.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterOpenGLRenderer.h"
@@ -208,7 +208,7 @@ struct KeyboardState {
 
   // The plugin used to handle key input. This is not an FlutterPlugin, so must be owned
   // separately.
-  FlutterKeyboardPlugin* _keyboardPlugin;
+  FlutterKeyEmbedderHandler* _keyboardPlugin;
 
   // A message channel for passing key events to the Flutter engine. This should be replaced with
   // an embedding API; see Issue #47.
@@ -423,8 +423,13 @@ static void CommonInit(FlutterViewController* controller) {
 }
 
 - (void)addInternalPlugins {
+  __weak FlutterViewController* weakSelf = self;
   [FlutterMouseCursorPlugin registerWithRegistrar:[self registrarForPlugin:@"mousecursor"]];
-  _keyboardPlugin = [[FlutterKeyboardPlugin alloc] initWithViewController:self];
+  _keyboardPlugin = [[FlutterKeyEmbedderHandler alloc]
+      initWithSendEvent:^(const FlutterKeyEvent& event, FlutterKeyEventCallback callback,
+                          void* userData) {
+        [weakSelf.engine sendKeyEvent:event callback:callback userData:userData];
+      }];
   _textInputPlugin = [[FlutterTextInputPlugin alloc] initWithViewController:self];
   _keyEventChannel =
       [FlutterBasicMessageChannel messageChannelWithName:@"flutter/keyevent"
@@ -438,7 +443,6 @@ static void CommonInit(FlutterViewController* controller) {
       [FlutterMethodChannel methodChannelWithName:@"flutter/platform"
                                   binaryMessenger:_engine.binaryMessenger
                                             codec:[FlutterJSONMethodCodec sharedInstance]];
-  __weak FlutterViewController* weakSelf = self;
   [_platformChannel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
     [weakSelf handleMethodCall:call result:result];
   }];
@@ -521,10 +525,6 @@ static void CommonInit(FlutterViewController* controller) {
   }
 }
 
-- (void)dispatchFlutterKeyEvent:(const FlutterKeyEvent&)event {
-  [_engine sendKeyEvent:event];
-}
-
 - (void)propagateKeyEvent:(NSEvent*)event ofType:(NSString*)type {
   if ([type isEqual:@"keydown"]) {
     for (FlutterIntermediateKeyResponder* responder in self.additionalKeyResponders) {
@@ -555,8 +555,10 @@ static void CommonInit(FlutterViewController* controller) {
 
 - (void)handleNSKeyEvent:(NSEvent*)event ofType:(NSString*)type reply:(FlutterReply)callback {
   // Dispatch using new method
-  bool handled = [_keyboardPlugin dispatchEvent:event];
-  // TODO: Handle `handled`.
+  [_keyboardPlugin handleEvent:event
+                        ofType:type
+                      callback:^(BOOL handled){
+                      }];
 
   // Dispatch using legacy method
   NSMutableDictionary* keyMessage = [@{
@@ -571,7 +573,7 @@ static void CommonInit(FlutterViewController* controller) {
     keyMessage[@"characters"] = event.characters;
     keyMessage[@"charactersIgnoringModifiers"] = event.charactersIgnoringModifiers;
   }
-  [_keyEventChannel sendMessage:keyMessage reply:replyHandler];
+  [_keyEventChannel sendMessage:keyMessage reply:callback];
 }
 
 - (void)dispatchKeyEvent:(NSEvent*)event ofType:(NSString*)type {
@@ -592,7 +594,7 @@ static void CommonInit(FlutterViewController* controller) {
       [weakSelf propagateKeyEvent:event ofType:type];
     }
   };
-  [self handleNSKeyEvent:event ofType:type reply:replyHandler]
+  [self handleNSKeyEvent:event ofType:type reply:replyHandler];
 }
 
 - (void)onSettingsChanged:(NSNotification*)notification {

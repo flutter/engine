@@ -4,11 +4,11 @@
 
 #import <objc/message.h>
 
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
-#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterCodecs.h"
-#import "flutter/shell/platform/embedder/embedder.h"
-#import "FlutterKeyboardPlugin.h"
+#import "FlutterKeyEmbedderHandler.h"
 #import "KeyCodeMap_internal.h"
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterCodecs.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
+#import "flutter/shell/platform/embedder/embedder.h"
 
 // Values of `characterIgnoringModifiers` that must not be directly converted to
 // a logical key value, but should look up `keyCodeToLogical` by `keyCode`.
@@ -18,7 +18,7 @@
 // }
 
 // Whether a string represents a control character.
-static bool IsControlCharacter(NSUInteger length, NSString *label) {
+static bool IsControlCharacter(NSUInteger length, NSString* label) {
   if (length > 1) {
     return false;
   }
@@ -27,7 +27,7 @@ static bool IsControlCharacter(NSUInteger length, NSString *label) {
 }
 
 // Whether a string represents an unprintable key.
-static bool IsUnprintableKey(NSUInteger length, NSString *label) {
+static bool IsUnprintableKey(NSUInteger length, NSString* label) {
   if (length > 1) {
     return false;
   }
@@ -91,15 +91,14 @@ static uint64_t GetLogicalKeyForEvent(NSEvent* event, uint64_t physicalKey) {
   // value. Control keys such as ESC, CRTL, and SHIFT are not printable. HOME,
   // DEL, arrow keys, and function keys are considered modifier function keys,
   // which generate invalid Unicode scalar values.
-  if (keyLabelLength != 0 &&
-      !IsControlCharacter(keyLabelLength, keyLabel) &&
+  if (keyLabelLength != 0 && !IsControlCharacter(keyLabelLength, keyLabel) &&
       !IsUnprintableKey(keyLabelLength, keyLabel)) {
     // Given that charactersIgnoringModifiers can contain a string of arbitrary
     // length, limit to a maximum of two Unicode scalar values. It is unlikely
     // that a keyboard would produce a code point bigger than 32 bits, but it is
     // still worth defending against this case.
     NSCAssert((keyLabelLength < 2),
-        @"Unexpected long key label: |%@|. Please report this to Flutter.", keyLabel);
+              @"Unexpected long key label: |%@|. Please report this to Flutter.", keyLabel);
 
     uint64_t codeUnit = (uint64_t)[keyLabel characterAtIndex:0];
     if (keyLabelLength == 2) {
@@ -136,12 +135,12 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
   return event.timestamp * 1000000.0;
 }
 
-@interface FlutterKeyboardPlugin ()
+@interface FlutterKeyEmbedderHandler ()
 
 /**
- * The FlutterViewController to manage input for.
+ *
  */
-@property(nonatomic, weak) FlutterViewController* flutterViewController;
+@property(nonatomic, copy) FlutterSendEmbedderKeyEvent sendEvent;
 
 /**
  * A map of presessd keys.
@@ -162,31 +161,30 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
 /**
  * Processes a down event.
  */
-- (void)dispatchDownEvent:(NSEvent*)event;
+- (void)dispatchDownEvent:(NSEvent*)event callback:(FlutterKeyHandlerCallback)callback;
 
 /**
  * Processes an up event.
  */
-- (void)dispatchUpEvent:(NSEvent*)event;
+- (void)dispatchUpEvent:(NSEvent*)event callback:(FlutterKeyHandlerCallback)callback;
 
 /**
  * Processes a flags changed event, where modifier keys are pressed or released.
  */
-- (void)dispatchFlagEvent:(NSEvent*)event;
+- (void)dispatchFlagEvent:(NSEvent*)event callback:(FlutterKeyHandlerCallback)callback;
 
-/**
- * Processes all kinds of events.
- */
-- (bool)dispatchEvent:(NSEvent*)event;
+- (void)handleEvent:(NSEvent*)event
+             ofType:(NSString*)type
+           callback:(FlutterKeyHandlerCallback)callback;
 
 @end
 
-@implementation FlutterKeyboardPlugin
+@implementation FlutterKeyEmbedderHandler
 
-- (instancetype)initWithViewController:(FlutterViewController*)viewController {
+- (nonnull instancetype)initWithSendEvent:(FlutterSendEmbedderKeyEvent)sendEvent {
   self = [super init];
   if (self != nil) {
-    _flutterViewController = viewController;
+    _sendEvent = sendEvent;
     _pressingRecords = [NSMutableDictionary dictionary];
   }
   return self;
@@ -200,8 +198,9 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
   }
 }
 
-- (void)dispatchDownEvent:(NSEvent*)event {
-  printf("Down event keyCode %d cIM %s c %s\n", [event keyCode], [[event charactersIgnoringModifiers] UTF8String], [[event characters] UTF8String]);
+- (void)dispatchDownEvent:(NSEvent*)event callback:(FlutterKeyHandlerCallback)callback {
+  printf("Down event keyCode %d cIM %s c %s\n", [event keyCode],
+         [[event charactersIgnoringModifiers] UTF8String], [[event characters] UTF8String]);
   uint64_t physicalKey = GetPhysicalKeyForKeyCode(event.keyCode);
   uint64_t logicalKey = GetLogicalKeyForEvent(event, physicalKey);
 
@@ -232,18 +231,18 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
   FlutterKeyEvent flutterEvent = {
       .struct_size = sizeof(FlutterKeyEvent),
       .timestamp = GetFlutterTimestampFrom(event),
-      .kind = isARepeat ? kFlutterKeyEventKindRepeat : kFlutterKeyEventKindDown,
+      .type = isARepeat ? kFlutterKeyEventTypeRepeat : kFlutterKeyEventTypeDown,
       .physical = physicalKey,
       .logical = pressedLogicalKey == nil ? logicalKey : [pressedLogicalKey unsignedLongLongValue],
       .character = event.characters.UTF8String,
       .synthesized = isSynthesized,
   };
-  [_flutterViewController dispatchFlutterKeyEvent:flutterEvent];
+  _sendEvent(flutterEvent, nullptr, nullptr);
 }
 
-- (void)dispatchUpEvent:(NSEvent*)event {
-  NSAssert(!event.isARepeat,
-      @"Unexpected repeated Up event. Please report this to Flutter.", event.characters);
+- (void)dispatchUpEvent:(NSEvent*)event callback:(FlutterKeyHandlerCallback)callback {
+  NSAssert(!event.isARepeat, @"Unexpected repeated Up event. Please report this to Flutter.",
+           event.characters);
 
   uint64_t physicalKey = GetPhysicalKeyForKeyCode(event.keyCode);
   NSNumber* pressedLogicalKey = _pressingRecords[@(physicalKey)];
@@ -257,16 +256,16 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
   FlutterKeyEvent flutterEvent = {
       .struct_size = sizeof(FlutterKeyEvent),
       .timestamp = GetFlutterTimestampFrom(event),
-      .kind = kFlutterKeyEventKindUp,
+      .type = kFlutterKeyEventTypeUp,
       .physical = physicalKey,
       .logical = [pressedLogicalKey unsignedLongLongValue],
       .character = nil,
       .synthesized = false,
   };
-  [_flutterViewController dispatchFlutterKeyEvent:flutterEvent];
+  _sendEvent(flutterEvent, nullptr, nullptr);
 }
 
-- (void)dispatchCapsLockEvent:(NSEvent*)event {
+- (void)dispatchCapsLockEvent:(NSEvent*)event callback:(FlutterKeyHandlerCallback)callback {
   NSNumber* logicalKey = [keyCodeToLogicalKey objectForKey:@(event.keyCode)];
   if (logicalKey == nil)
     return;
@@ -275,23 +274,23 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
   FlutterKeyEvent flutterEvent = {
       .struct_size = sizeof(FlutterKeyEvent),
       .timestamp = GetFlutterTimestampFrom(event),
-      .kind = kFlutterKeyEventKindDown,
+      .type = kFlutterKeyEventTypeDown,
       .physical = kCapsLockPhysicalKey,
       .logical = logical,
       .character = nil,
       .synthesized = false,
   };
-  [_flutterViewController dispatchFlutterKeyEvent:flutterEvent];
+  _sendEvent(flutterEvent, nullptr, nullptr);
 
   // MacOS sends a Down or an Up when CapsLock is pressed, depending on whether
   // the lock is enabled or disabled. This event should always be converted to
   // a Down and a cancel, since we don't know how long it will be pressed.
-  flutterEvent.kind = kFlutterKeyEventKindUp;
+  flutterEvent.type = kFlutterKeyEventTypeUp;
   flutterEvent.synthesized = true;
-  [_flutterViewController dispatchFlutterKeyEvent:flutterEvent];
+  _sendEvent(flutterEvent, nullptr, nullptr);
 }
 
-- (void)dispatchFlagEvent:(NSEvent*)event {
+- (void)dispatchFlagEvent:(NSEvent*)event callback:(FlutterKeyHandlerCallback)callback {
   // NSEvent only tells us the key that triggered the event and the resulting
   // flag, but not whether the change is a down or up. For keys such as
   // CapsLock, the change type can be inferred from the key and the flag.
@@ -322,7 +321,7 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
 
   uint64_t targetKey = GetPhysicalKeyForKeyCode(event.keyCode);
   if (targetKey == kCapsLockPhysicalKey) {
-    return [self dispatchCapsLockEvent:event];
+    return [self dispatchCapsLockEvent:event callback:callback];
   }
   uint64_t modifierFlag = GetModifierFlagForKey(targetKey);
   if (targetKey == 0 || modifierFlag == 0) {
@@ -332,10 +331,12 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
   // The `siblingKeyCode` may be 0, which means it doesn't have a sibling key.
   uint64_t siblingKeyCode = GetSiblingKeyCodeForKey(event.keyCode);
   uint64_t siblingKeyPhysical = siblingKeyCode == 0 ? 0 : GetPhysicalKeyForKeyCode(siblingKeyCode);
-  uint64_t siblingKeyLogical = siblingKeyCode == 0 ? 0 : GetLogicalKeyForModifier(siblingKeyCode, siblingKeyPhysical);
+  uint64_t siblingKeyLogical =
+      siblingKeyCode == 0 ? 0 : GetLogicalKeyForModifier(siblingKeyCode, siblingKeyPhysical);
 
   bool lastTargetPressed = [_pressingRecords objectForKey:@(targetKey)] != nil;
-  bool lastSiblingPressed = siblingKeyCode == 0 ? false : [_pressingRecords objectForKey:@(siblingKeyPhysical)] != nil;
+  bool lastSiblingPressed =
+      siblingKeyCode == 0 ? false : [_pressingRecords objectForKey:@(siblingKeyPhysical)] != nil;
   bool nowEitherPressed = (event.modifierFlags & modifierFlag) != 0;
 
   bool targetKeyShouldDown = !lastTargetPressed && nowEitherPressed;
@@ -348,44 +349,43 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
       .character = nil,
   };
   if (siblingKeyShouldUp) {
-    flutterEvent.kind = kFlutterKeyEventKindUp;
+    flutterEvent.type = kFlutterKeyEventTypeUp;
     flutterEvent.physical = siblingKeyPhysical;
     flutterEvent.logical = siblingKeyLogical;
     flutterEvent.synthesized = true;
     [self updateKey:siblingKeyPhysical asPressed:0];
-    [_flutterViewController dispatchFlutterKeyEvent:flutterEvent];
+    _sendEvent(flutterEvent, nullptr, nullptr);
   }
 
   if (targetKeyShouldDown || targetKeyShouldUp) {
     uint64_t logicalKey = GetLogicalKeyForModifier(event.keyCode, targetKey);
-    flutterEvent.kind = targetKeyShouldDown ? kFlutterKeyEventKindDown : kFlutterKeyEventKindUp;
+    flutterEvent.type = targetKeyShouldDown ? kFlutterKeyEventTypeDown : kFlutterKeyEventTypeUp;
     flutterEvent.physical = targetKey;
     flutterEvent.logical = logicalKey;
     flutterEvent.synthesized = false;
     [self updateKey:targetKey asPressed:(targetKeyShouldDown ? logicalKey : 0)];
-    [_flutterViewController dispatchFlutterKeyEvent:flutterEvent];
+    _sendEvent(flutterEvent, nullptr, nullptr);
   }
 }
 
-- (bool)dispatchEvent:(NSEvent*)event {
+- (void)handleEvent:(NSEvent*)event
+             ofType:(NSString*)type
+           callback:(FlutterKeyHandlerCallback)callback {
   switch (event.type) {
     case NSEventTypeKeyDown:
-      [self dispatchDownEvent:event];
+      [self dispatchDownEvent:event callback:callback];
       break;
     case NSEventTypeKeyUp:
-      [self dispatchUpEvent:event];
+      [self dispatchUpEvent:event callback:callback];
       break;
     case NSEventTypeFlagsChanged:
-      [self dispatchFlagEvent:event];
+      [self dispatchFlagEvent:event callback:callback];
       break;
     default:
       NSAssert(false, @"Unexpected key event type: |%@|.", @(event.type));
   }
-
-  return true; // TODO
 }
 
 #pragma mark - Private
-
 
 @end

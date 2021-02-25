@@ -4,9 +4,9 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterViewController.h"
 
-#import "flutter/shell/platform/embedder/embedder.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterIntermediateKeyResponder.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
+#import "flutter/shell/platform/embedder/embedder.h"
 
 @interface FlutterViewController ()
 
@@ -29,14 +29,9 @@
  */
 - (void)removeKeyResponder:(nonnull FlutterIntermediateKeyResponder*)responder;
 
-- (void)handleNSKeyEvent:(NSEvent*)event reply:(FlutterReply)callback;
-
-/**
- * Send a FlutterKeyEvent to the framework using embedder API.
- *
- * Called by FlutterKeyboardPlugin.
- */
-- (void)dispatchFlutterKeyEvent:(const FlutterKeyEvent&)event;
+- (void)handleNSKeyEvent:(nonnull NSEvent*)event
+                  ofType:(nonnull NSString*)type
+                   reply:(_Nullable FlutterReply)callback;
 
 /**
  * Initializes this FlutterViewController with the specified `FlutterEngine`.

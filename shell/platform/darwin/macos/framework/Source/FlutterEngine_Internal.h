@@ -40,8 +40,11 @@
 /**
  * Dispatches the given pointer event data to engine.
  */
-- (void)sendKeyEvent:(const FlutterKeyEvent&)event;
+- (void)sendKeyEvent:(const FlutterKeyEvent&)event
+            callback:(nullable FlutterKeyEventCallback)callback
+            userData:(nullable void*)userData;
 
+/**
  * Registers an external texture with the given id. Returns YES on success.
  */
 - (BOOL)registerTextureWithID:(int64_t)textureId;

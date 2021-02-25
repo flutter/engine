@@ -421,8 +421,10 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   _embedderAPI.SendPointerEvent(_engine, &event, 1);
 }
 
-- (void)sendKeyEvent:(const FlutterKeyEvent&)event {
-  _embedderAPI.SendKeyEvent(_engine, &event);
+- (void)sendKeyEvent:(const FlutterKeyEvent&)event
+            callback:(FlutterKeyEventCallback)callback
+            userData:(void*)userData {
+  _embedderAPI.SendKeyEvent(_engine, &event, callback, userData);
 }
 
 #pragma mark - Private methods
