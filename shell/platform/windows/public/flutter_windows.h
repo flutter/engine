@@ -112,6 +112,13 @@ FLUTTER_EXPORT void FlutterDesktopViewControllerForceRedraw(
     FlutterDesktopViewControllerRef controller);
 
 #ifndef WINUWP
+
+// Enables or disables the use of Direct Composition API when presenting
+// flutter view surface to screen.
+FLUTTER_EXPORT void FlutterDesktopViewControllerEnableDirectComposition(
+    FlutterDesktopViewControllerRef controller,
+    bool enable_direct_composition);
+
 // Allows the Flutter engine and any interested plugins an opportunity to
 // handle the given message.
 //

@@ -197,6 +197,9 @@ void AngleSurfaceManager::CleanUp() {
 }
 
 bool AngleSurfaceManager::CreateSurface(WindowsRenderTarget* render_target,
+#ifndef WINUWP
+                                        bool enable_direct_composition,
+#endif
                                         EGLint width,
                                         EGLint height) {
   if (!render_target || !initialize_succeeded_) {
@@ -205,7 +208,12 @@ bool AngleSurfaceManager::CreateSurface(WindowsRenderTarget* render_target,
 
   EGLSurface surface = EGL_NO_SURFACE;
 
-  const EGLint surfaceAttributes[] = {EGL_NONE};
+  const EGLint surfaceAttributes[] = {
+#ifndef WINUWP
+      EGL_DIRECT_COMPOSITION_ANGLE,
+      enable_direct_composition ? EGL_TRUE : EGL_FALSE,
+#endif
+      EGL_NONE};
 
 #ifdef WINUWP
 #ifdef USECOREWINDOW

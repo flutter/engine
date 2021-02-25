@@ -81,6 +81,16 @@ void FlutterDesktopViewControllerForceRedraw(
   controller->view->ForceRedraw();
 }
 
+#ifndef WINUWP
+
+FLUTTER_EXPORT void FlutterDesktopViewControllerEnableDirectComposition(
+    FlutterDesktopViewControllerRef controller,
+    bool enable_direct_composition) {
+  controller->view->EnableDirectComposition(enable_direct_composition);
+}
+
+#endif
+
 FlutterDesktopEngineRef FlutterDesktopEngineCreate(
     const FlutterDesktopEngineProperties& engine_properties) {
   flutter::FlutterProjectBundle project(engine_properties);

@@ -67,6 +67,12 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   // Tells the engine to generate a new frame
   void ForceRedraw();
 
+#ifndef WINUWP
+  // Determines whether view surface is posted to screen using the direct
+  // composition API
+  void EnableDirectComposition(bool enable);
+#endif
+
   // Callbacks for clearing context, settings context and swapping buffers,
   // these are typically called on an engine-controlled (non-platform) thread.
   bool ClearContext();
@@ -297,6 +303,10 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   // Target for the window width. Valid when resize_pending_ is set. Guarded by
   // resize_mutex_.
   size_t resize_target_height_ = 0;
+
+#ifndef WINUWP
+  bool enable_direct_composition_ = false;
+#endif
 };
 
 }  // namespace flutter

@@ -37,6 +37,9 @@ class AngleSurfaceManager {
   // Target represents the visual entity to bind to.  Width and
   // height represent dimensions surface is created at.
   bool CreateSurface(WindowsRenderTarget* render_target,
+#ifndef WINUWP
+                     bool enable_direct_composition,
+#endif
                      EGLint width,
                      EGLint height);
 

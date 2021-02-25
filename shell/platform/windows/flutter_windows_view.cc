@@ -105,6 +105,16 @@ void FlutterWindowsView::ForceRedraw() {
   }
 }
 
+#ifndef WINUWP
+void FlutterWindowsView::EnableDirectComposition(bool enable) {
+  if (enable != enable_direct_composition_) {
+    enable_direct_composition_ = enable;
+    DestroyRenderSurface();
+    CreateRenderSurface();
+  }
+}
+#endif
+
 void FlutterWindowsView::OnWindowSizeChanged(size_t width, size_t height) {
   // Called on the platform thread.
   std::unique_lock<std::mutex> lock(resize_mutex_);
@@ -403,8 +413,13 @@ bool FlutterWindowsView::SwapBuffers() {
 
 void FlutterWindowsView::CreateRenderSurface() {
   PhysicalWindowBounds bounds = binding_handler_->GetPhysicalWindowBounds();
+#ifndef WINUWP
+  surface_manager_->CreateSurface(GetRenderTarget(), enable_direct_composition_,
+                                  bounds.width, bounds.height);
+#else
   surface_manager_->CreateSurface(GetRenderTarget(), bounds.width,
                                   bounds.height);
+#endif
 }
 
 void FlutterWindowsView::DestroyRenderSurface() {

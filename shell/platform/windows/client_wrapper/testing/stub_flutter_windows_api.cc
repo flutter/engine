@@ -67,6 +67,12 @@ FlutterDesktopViewRef FlutterDesktopViewControllerGetView(
 void FlutterDesktopViewControllerForceRedraw(
     FlutterDesktopViewControllerRef controller) {}
 
+#ifndef WINUWP
+void FlutterDesktopViewControllerEnableDirectComposition(
+    FlutterDesktopViewControllerRef controller,
+    bool enable_direct_composition) {}
+#endif
+
 bool FlutterDesktopViewControllerHandleTopLevelWindowProc(
     FlutterDesktopViewControllerRef controller,
     HWND hwnd,
