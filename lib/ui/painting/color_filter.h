@@ -31,9 +31,11 @@ class ColorFilter : public RefCountedDartWrappable<ColorFilter> {
   // (translate). skia is normalized, treating the last column as 0...1, so we
   // post-scale here before calling the skia factory.
   static sk_sp<SkColorFilter> MakeColorMatrixFilter255(const float array[20]);
+  static sk_sp<SkColorFilter> MakeHSLAMatrixFilter255(const float array[20]);
 
   void initMode(int color, int blend_mode);
   void initMatrix(const tonic::Float32List& color_matrix);
+  void initHSLAMatrix(const tonic::Float32List& color_matrix);
   void initSrgbToLinearGamma();
   void initLinearToSrgbGamma();
 

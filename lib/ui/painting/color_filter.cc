@@ -24,6 +24,7 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, ColorFilter);
 #define FOR_EACH_BINDING(V)             \
   V(ColorFilter, initMode)              \
   V(ColorFilter, initMatrix)            \
+  V(ColorFilter, initHSLAMatrix)        \
   V(ColorFilter, initSrgbToLinearGamma) \
   V(ColorFilter, initLinearToSrgbGamma)
 
@@ -55,10 +56,27 @@ sk_sp<SkColorFilter> ColorFilter::MakeColorMatrixFilter255(
   return SkColorFilters::Matrix(tmp);
 }
 
+sk_sp<SkColorFilter> ColorFilter::MakeHSLAMatrixFilter255(
+    const float array[20]) {
+  float tmp[20];
+  memcpy(tmp, array, sizeof(tmp));
+  tmp[4] *= 1.0f / 255;
+  tmp[9] *= 1.0f / 255;
+  tmp[14] *= 1.0f / 255;
+  tmp[19] *= 1.0f / 255;
+  return SkColorFilters::HSLAMatrix(tmp);
+}
+
 void ColorFilter::initMatrix(const tonic::Float32List& color_matrix) {
   FML_CHECK(color_matrix.num_elements() == 20);
 
   filter_ = MakeColorMatrixFilter255(color_matrix.data());
+}
+
+void ColorFilter::initHSLAMatrix(const tonic::Float32List& color_matrix) {
+  FML_CHECK(color_matrix.num_elements() == 20);
+
+  filter_ = MakeHSLAMatrixFilter255(color_matrix.data());
 }
 
 void ColorFilter::initLinearToSrgbGamma() {
