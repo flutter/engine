@@ -4,13 +4,15 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderingBackend.h"
 
+#import <Metal/Metal.h>
 #import <QuartzCore/QuartzCore.h>
 
 @implementation FlutterRenderingBackend
 
 + (BOOL)renderUsingMetal {
   if (@available(macOS 10.14, *)) {
-    return YES;
+    BOOL systemSupportsMetal = MTLCreateSystemDefaultDevice() != nil;
+    return systemSupportsMetal;
   } else {
     return NO;
   }
