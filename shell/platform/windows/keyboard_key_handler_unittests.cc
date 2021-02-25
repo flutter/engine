@@ -343,7 +343,7 @@ TEST(KeyboardKeyHandlerTest, WithTwoAsyncDelegates) {
 
 // Regression test for a crash in an earlier implementation.
 //
-// In real life, the framework responses slowly. The next real event might
+// In real life, the framework responds slowly. The next real event might
 // arrive earlier than the framework response, and if the 2nd event is identical
 // to the one waiting for response, an earlier implementation will crash upon
 // the response.

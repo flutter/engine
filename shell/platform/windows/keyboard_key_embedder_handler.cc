@@ -78,7 +78,7 @@ static bool isControlCharacter(int codeUnit) {
 // Transform scancodes sent by windows to scancodes written in Chromium spec.
 static uint16_t normalizeScancode(int windowsScanCode, bool extended) {
   // In Chromium spec the extended bit is shown as 0xe000 bit,
-  // i.e. PageUp is represented as 0xe049.
+  // e.g. PageUp is represented as 0xe049.
   return (windowsScanCode & 0xff) | (extended ? 0xe000 : 0);
 }
 
@@ -97,10 +97,10 @@ uint64_t KeyboardKeyEmbedderHandler::getLogicalKey(int key,
   // Normally logical keys should only be derived from key codes, but since some
   // key codes are either 0 or ambiguous (multiple keys using the same key
   // code), these keys are resolved by scan codes.
-  auto numpadIt =
+  auto numpadIter =
       scanCodeToLogicalMap_.find(normalizeScancode(scancode, extended));
-  if (numpadIt != scanCodeToLogicalMap_.cend())
-    return numpadIt->second;
+  if (numpadIter != scanCodeToLogicalMap_.cend())
+    return numpadIter->second;
 
   // Check if the keyCode is one we know about and have a mapping for.
   auto logicalIt = windowsToLogicalMap_.find(key);
@@ -199,7 +199,7 @@ void KeyboardKeyEmbedderHandler::KeyboardHook(
   }
 
   UpdateLastSeenCritialKey(key, physical_key, result_logical_key);
-  SynchroizeCritialToggledStates(type == kFlutterKeyEventTypeDown ? key : 0);
+  SynchronizeCritialToggledStates(type == kFlutterKeyEventTypeDown ? key : 0);
 
   if (next_has_record) {
     pressingRecords_[physical_key] = next_logical_record;
@@ -207,7 +207,7 @@ void KeyboardKeyEmbedderHandler::KeyboardHook(
     pressingRecords_.erase(last_logical_record_iter);
   }
 
-  SynchroizeCritialPressedStates();
+  SynchronizeCritialPressedStates();
 
   if (result_logical_key == VK_PROCESSKEY) {
     // VK_PROCESSKEY means that the key press is used by an IME. These key
@@ -262,7 +262,7 @@ void KeyboardKeyEmbedderHandler::UpdateLastSeenCritialKey(
   }
 }
 
-void KeyboardKeyEmbedderHandler::SynchroizeCritialToggledStates(
+void KeyboardKeyEmbedderHandler::SynchronizeCritialToggledStates(
     int toggle_virtual_key) {
   for (auto& kv : critical_keys_) {
     UINT virtual_key = kv.first;
@@ -303,7 +303,7 @@ void KeyboardKeyEmbedderHandler::SynchroizeCritialToggledStates(
   }
 }
 
-void KeyboardKeyEmbedderHandler::SynchroizeCritialPressedStates() {
+void KeyboardKeyEmbedderHandler::SynchronizeCritialPressedStates() {
   for (auto& kv : critical_keys_) {
     UINT virtual_key = kv.first;
     CriticalKey& key_info = kv.second;
@@ -357,6 +357,8 @@ void KeyboardKeyEmbedderHandler::InitCriticalKeys() {
     };
   };
 
+  // TODO(dkwingsmt): Consider adding more critical keys here.
+  // https://github.com/flutter/flutter/issues/76736
   critical_keys_.emplace(VK_LSHIFT,
                          createCheckedKey(VK_LSHIFT, false, true, false));
   critical_keys_.emplace(VK_RSHIFT,

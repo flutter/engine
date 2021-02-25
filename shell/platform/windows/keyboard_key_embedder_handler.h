@@ -34,7 +34,7 @@ class KeyboardKeyEmbedderHandler
   // Use `send_event` to define how the class should dispatch converted
   // flutter events, as well as how to receive the response, to the engine. It's
   // typically FlutterWindowsEngine::SendKeyEvent. The 2nd and 3rd parameter
-  // of the call might be nullptr.
+  // of the SendEvent call might be nullptr.
   //
   // Use `get_key_state` to define how the class should get a reliable result of
   // the state for a virtual key. It's typically Win32's GetKeyState.
@@ -86,10 +86,10 @@ class KeyboardKeyEmbedderHandler
                                 uint64_t logical_key);
   // Check each key's state from |get_key_state_| and synthesize events
   // if their toggling states have been desynchronized.
-  void SynchroizeCritialToggledStates(int this_virtual_key);
+  void SynchronizeCritialToggledStates(int this_virtual_key);
   // Check each key's state from |get_key_state_| and synthesize events
   // if their pressing states have been desynchronized.
-  void SynchroizeCritialPressedStates();
+  void SynchronizeCritialPressedStates();
 
   std::function<void(const FlutterKeyEvent&, FlutterKeyEventCallback, void*)>
       sendEvent_;
@@ -98,7 +98,11 @@ class KeyboardKeyEmbedderHandler
   // A map from physical keys to logical keys, each entry indicating a pressed
   // key.
   std::map<uint64_t, uint64_t> pressingRecords_;
+  // Information for key events that have been sent to the framework but yet
+  // to receive the response. Indexed by response IDs.
   std::map<uint64_t, std::unique_ptr<PendingResponse>> pending_responses_;
+  // A self-incrementing integer, used as the ID for the next entry for
+  // |pending_responses_|.
   uint64_t response_id_;
 
   // Important keys whose states are checked and guaranteed synchronized

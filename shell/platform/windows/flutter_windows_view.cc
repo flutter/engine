@@ -76,8 +76,8 @@ void FlutterWindowsView::RegisterKeyboardHandlers(
   //
   // Whether an event is a redispatched event is decided by calculating the hash
   // of the event. In order to allow the same real event in the future, the
-  // handler is "toggled" when events pass through, which means this logic does
-  // not apply when there is more than 1 handler.
+  // handler is "toggled" when events pass through, therefore the redispatching
+  // algorithm does not allow more than 1 handler that takes |SendInput|.
   auto key_handler = std::make_unique<flutter::KeyboardKeyHandler>(SendInput);
   key_handler->AddDelegate(
       std::make_unique<KeyboardKeyChannelHandler>(messenger));

@@ -26,8 +26,12 @@ class FlutterWindowsView;
 // and redispatches events unhandled by Flutter back to the system.
 // See |KeyboardHook| for more information about dispatching.
 //
-// The exact behavior to handle events are further forwarded into
-// delegates. See |KeyboardKeyHandlerDelegate| and its subclasses.
+// This class owns multiple |KeyboardKeyHandlerDelegate|s, which
+// implements the exact behavior to asynchronously handle events. In
+// reality, this design is only to support sending events through
+// "channel" (RawKeyEvent) and "embedder" (KeyEvent) simultaneously,
+// the former of which shall be removed after the deprecation window
+// of the RawKeyEvent system.
 class KeyboardKeyHandler : public KeyboardHandlerBase {
  public:
   // An interface for concrete definition of how to asynchronously handle key
@@ -65,20 +69,26 @@ class KeyboardKeyHandler : public KeyboardHandlerBase {
   // Handles a key event.
   //
   // Returns whether this handler claims to handle the event, which is true if
-  // the event is a native event, or false if the event is a redispatched one.
+  // and only if the event is a non-synthesized event.
   //
   // Windows requires a synchronous response of whether a key event should be
   // handled, while the query to Flutter is always asynchronous. This is
-  // resolved by "redispatching": the response to the native event is always
-  // true. If Flutter later decides not to handle the event, an event is then
-  // synthesized, dispatched to system, received again, detected, at which time
-  // |KeyboardHook| returns false, then falls back to other keyboard handlers.
+  // resolved by the "redispatching" algorithm: by default, the response to a
+  // fresh event is always always true. The event is then sent to the framework.
+  // If the framework later decides not to handle the event, this class will
+  // create an identical event and dispatch it to the system, and remember all
+  // synthesized events. The fist time an exact event (by |ComputeEventHash|) is
+  // received in the future, the new event is considered a synthesized one,
+  // causing |KeyboardHook| to return false to fall back to other keyboard
+  // handlers.
   //
-  // Received events are further dispatched to all added delegates. If any
-  // delegate returns true (handled), the event is considered handled. When
-  // all delegates responded, any unhandled events are redispatched via
-  // |redispatch_event| and recorded. The next (one) time this exact event is
-  // received, |KeyboardHook| will skip it and immediately return false.
+  // Whether a non-synthesized event is considered handled by the framework is
+  // decided by dispatching the event to all delegates, simultaneously,
+  // unconditionally, in insertion order, and collecting their responses later.
+  // It's not supported to prevent any delegates to process the events, because
+  // in reality this will only support 2 hardcoded delegates, and only to
+  // continut supporting the legacy API (channel) during the deprecation window,
+  // after which the channel delegate should be removed.
   //
   // Inherited from |KeyboardHandlerBase|.
   bool KeyboardHook(FlutterWindowsView* window,
