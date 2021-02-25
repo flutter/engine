@@ -39,7 +39,7 @@ struct ThreadHost {
 
   ~ThreadHost();
 
-  void Reset();
+  void ResetThreads();
 };
 
 }  // namespace flutter
