@@ -155,6 +155,22 @@ class TextInputModel {
   // Returns true if the cursor could be moved.
   bool MoveCursorToEnd();
 
+  // Attempts to select text from the cursor position to the beginning.
+  //
+  // If composing is active, the selection is applied to the beginning of the
+  // composing range; otherwise, it is applied to the beginning of the text.
+  //
+  // Returns true if the selection could be applied.
+  bool SelectToBeginning();
+
+  // Attempts to select text from the cursor position to the end.
+  //
+  // If composing is active, the selection is applied to the end of the
+  // composing range; otherwise, it is moved to the end of the text.
+  //
+  // Returns true if the selection could be applied.
+  bool SelectToEnd();
+
   // Gets the current text as UTF-8.
   std::string GetText() const;
 
@@ -177,6 +193,14 @@ class TextInputModel {
   bool composing() const { return composing_; }
 
  private:
+  enum MoveOrSelect { Move, Select };
+
+  // Attempts to move or select to the beginning.
+  bool MoveOrSelectToBeginning(MoveOrSelect select);
+
+  // Attempts to move or select to the end.
+  bool MoveOrSelectToEnd(MoveOrSelect select);
+
   // Deletes the current selection, if any.
   //
   // Returns true if any text is deleted. The selection base and extent are

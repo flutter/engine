@@ -222,20 +222,44 @@ bool TextInputModel::DeleteSurrounding(int offset_from_cursor, int count) {
 }
 
 bool TextInputModel::MoveCursorToBeginning() {
+  return MoveOrSelectToBeginning(Move);
+}
+
+bool TextInputModel::MoveCursorToEnd() {
+  return MoveOrSelectToEnd(Move);
+}
+
+bool TextInputModel::SelectToBeginning() {
+  return MoveOrSelectToBeginning(Select);
+}
+
+bool TextInputModel::SelectToEnd() {
+  return MoveOrSelectToEnd(Select);
+}
+
+bool TextInputModel::MoveOrSelectToBeginning(MoveOrSelect select) {
   size_t min_pos = editable_range().start();
   if (selection_.collapsed() && selection_.position() == min_pos) {
     return false;
   }
-  selection_ = TextRange(min_pos);
+  if (select == Select) {
+    selection_ = TextRange(selection_.base(), min_pos);
+  } else {
+    selection_ = TextRange(min_pos);
+  }
   return true;
 }
 
-bool TextInputModel::MoveCursorToEnd() {
+bool TextInputModel::MoveOrSelectToEnd(MoveOrSelect select) {
   size_t max_pos = editable_range().end();
   if (selection_.collapsed() && selection_.position() == max_pos) {
     return false;
   }
-  selection_ = TextRange(max_pos);
+  if (select == Select) {
+    selection_ = TextRange(selection_.base(), max_pos);
+  } else {
+    selection_ = TextRange(max_pos);
+  }
   return true;
 }
 
