@@ -765,15 +765,23 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 #pragma mark - FlutterViewEngineDelegate
 
 - (void)showToolbar:(int)client {
-  [_textInputChannel.get() invokeMethod:@"TextInputClient.showToolbar" arguments:@[@(client)]];
+  [_textInputChannel.get() invokeMethod:@"TextInputClient.showToolbar" arguments:@[ @(client) ]];
 }
 
-- (void)focusElement:(UIScribbleElementIdentifier)elementIdentifier atPoint:(CGPoint)referencePoint result:(id)callback {
-  [_textInputChannel.get() invokeMethod:@"TextInputClient.focusElement" arguments:@[elementIdentifier, @(referencePoint.x), @(referencePoint.y)] result:callback];
+- (void)focusElement:(UIScribbleElementIdentifier)elementIdentifier
+             atPoint:(CGPoint)referencePoint
+              result:(id)callback {
+  [_textInputChannel.get()
+      invokeMethod:@"TextInputClient.focusElement"
+         arguments:@[ elementIdentifier, @(referencePoint.x), @(referencePoint.y) ]
+            result:callback];
 }
 
 - (void)requestElementsInRect:(CGRect)rect result:(id)callback {
-  [_textInputChannel.get() invokeMethod:@"TextInputClient.requestElementsInRect" arguments:@[@(rect.origin.x), @(rect.origin.y), @(rect.size.width), @(rect.size.height)] result:callback];
+  [_textInputChannel.get()
+      invokeMethod:@"TextInputClient.requestElementsInRect"
+         arguments:@[ @(rect.origin.x), @(rect.origin.y), @(rect.size.width), @(rect.size.height) ]
+            result:callback];
 }
 
 - (void)scribbleInteractionBegan {
@@ -781,7 +789,8 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 }
 
 - (void)scribbleInteractionFinished {
-  [_textInputChannel.get() invokeMethod:@"TextInputClient.scribbleInteractionFinished" arguments:nil];
+  [_textInputChannel.get() invokeMethod:@"TextInputClient.scribbleInteractionFinished"
+                              arguments:nil];
 }
 
 #pragma mark - Screenshot Delegate
