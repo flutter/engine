@@ -63,7 +63,7 @@ class WindowBindingHandler {
   // content. See mouse_cursor.dart for the values and meanings of cursor_name.
   virtual void UpdateFlutterCursor(const std::string& cursor_name) = 0;
 
-  // Sets the cursor rect in root view coordinates.
+  // Sets the cursor rect in Flutter root view coordinates.
   virtual void UpdateCursorRect(const Rect& rect) = 0;
 };
 
