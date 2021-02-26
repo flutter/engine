@@ -21,7 +21,7 @@ static LPARAM CreateKeyEventLparam(USHORT scancode,
                                    bool transition_state = 1) {
   return ((LPARAM(transition_state) << 31) | (LPARAM(was_down) << 30) |
           (LPARAM(context_code) << 29) | (LPARAM(extended ? 0x1 : 0x0) << 24) |
-          (LPARAM(ScanCode) << 16) | LPARAM(repeat_count));
+          (LPARAM(scancode) << 16) | LPARAM(repeat_count));
 }
 
 }  // namespace
