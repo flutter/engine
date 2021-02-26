@@ -42,13 +42,15 @@
     keyMessage[@"characters"] = event.characters;
     keyMessage[@"charactersIgnoringModifiers"] = event.charactersIgnoringModifiers;
   }
-  [_channel sendMessage:keyMessage reply:^(id reply){
-    if (!reply) {
-      return callback(true);
-    }
-    // Only propagate the event to other responders if the framework didn't handle it.
-    callback([[reply valueForKey:@"handled"] boolValue]);
-  }];
+  [_channel sendMessage:keyMessage
+                  reply:^(id reply) {
+                    if (!reply) {
+                      return callback(true);
+                    }
+                    // Only propagate the event to other responders if the framework didn't handle
+                    // it.
+                    callback([[reply valueForKey:@"handled"] boolValue]);
+                  }];
 }
 
 #pragma mark - Private

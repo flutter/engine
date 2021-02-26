@@ -16,9 +16,9 @@
 
 @interface FlutterViewControllerTestObjC : NSObject
 - (bool)testKeyEventsAreSentToFramework;
-- (bool)testKeyEventsArePropagatedIfNotHandled;
-- (bool)testKeyEventsAreNotPropagatedIfHandled;
-- (bool)testFlagsChangedEventsArePropagatedIfNotHandled;
+// - (bool)testKeyEventsArePropagatedIfNotHandled;
+// - (bool)testKeyEventsAreNotPropagatedIfHandled;
+// - (bool)testFlagsChangedEventsArePropagatedIfNotHandled;
 @end
 
 namespace flutter::testing {
@@ -91,18 +91,18 @@ TEST(FlutterViewControllerTest, TestKeyEventsAreSentToFramework) {
   ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testKeyEventsAreSentToFramework]);
 }
 
-TEST(FlutterViewControllerTest, TestKeyEventsArePropagatedIfNotHandled) {
-  ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testKeyEventsArePropagatedIfNotHandled]);
-}
+// TEST(FlutterViewControllerTest, TestKeyEventsArePropagatedIfNotHandled) {
+//   ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testKeyEventsArePropagatedIfNotHandled]);
+// }
 
-TEST(FlutterViewControllerTest, TestKeyEventsAreNotPropagatedIfHandled) {
-  ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testKeyEventsAreNotPropagatedIfHandled]);
-}
+// TEST(FlutterViewControllerTest, TestKeyEventsAreNotPropagatedIfHandled) {
+//   ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testKeyEventsAreNotPropagatedIfHandled]);
+// }
 
-TEST(FlutterViewControllerTest, TestFlagsChangedEventsArePropagatedIfNotHandled) {
-  ASSERT_TRUE(
-      [[FlutterViewControllerTestObjC alloc] testFlagsChangedEventsArePropagatedIfNotHandled]);
-}
+// TEST(FlutterViewControllerTest, TestFlagsChangedEventsArePropagatedIfNotHandled) {
+//   ASSERT_TRUE(
+//       [[FlutterViewControllerTestObjC alloc] testFlagsChangedEventsArePropagatedIfNotHandled]);
+// }
 
 }  // namespace flutter::testing
 
@@ -141,151 +141,154 @@ TEST(FlutterViewControllerTest, TestFlagsChangedEventsArePropagatedIfNotHandled)
   return true;
 }
 
-- (bool)testKeyEventsArePropagatedIfNotHandled {
-  id engineMock = OCMClassMock([FlutterEngine class]);
-  id binaryMessengerMock = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
-  OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
-      [engineMock binaryMessenger])
-      .andReturn(binaryMessengerMock);
-  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engineMock
-                                                                                nibName:@""
-                                                                                 bundle:nil];
-  id responderMock = OCMClassMock([FlutterIntermediateKeyResponder class]);
-  [viewController addKeyResponder:responderMock];
-  NSDictionary* expectedEvent = @{
-    @"keymap" : @"macos",
-    @"type" : @"keydown",
-    @"keyCode" : @(65),
-    @"modifiers" : @(538968064),
-    @"characters" : @".",
-    @"charactersIgnoringModifiers" : @".",
-  };
-  NSData* encodedKeyEvent = [[FlutterJSONMessageCodec sharedInstance] encode:expectedEvent];
-  CGEventRef cgEvent = CGEventCreateKeyboardEvent(NULL, 65, TRUE);
-  NSEvent* event = [NSEvent eventWithCGEvent:cgEvent];
-  OCMExpect(  // NOLINT(google-objc-avoid-throwing-exception)
-      [binaryMessengerMock sendOnChannel:@"flutter/keyevent"
-                                 message:encodedKeyEvent
-                             binaryReply:[OCMArg any]])
-      .andDo((^(NSInvocation* invocation) {
-        FlutterBinaryReply handler;
-        [invocation getArgument:&handler atIndex:4];
-        NSDictionary* reply = @{
-          @"handled" : @(false),
-        };
-        NSData* encodedReply = [[FlutterJSONMessageCodec sharedInstance] encode:reply];
-        handler(encodedReply);
-      }));
-  [viewController viewWillAppear];  // Initializes the event channel.
-  [viewController keyDown:event];
-  @try {
-    OCMVerify(  // NOLINT(google-objc-avoid-throwing-exception)
-        [responderMock handleKeyDown:[OCMArg any]]);
-    OCMVerify(  // NOLINT(google-objc-avoid-throwing-exception)
-        [binaryMessengerMock sendOnChannel:@"flutter/keyevent"
-                                   message:encodedKeyEvent
-                               binaryReply:[OCMArg any]]);
-  } @catch (...) {
-    return false;
-  }
-  return true;
-}
+// - (bool)testKeyEventsArePropagatedIfNotHandled {
+//   id engineMock = OCMClassMock([FlutterEngine class]);
+//   id binaryMessengerMock = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
+//   OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
+//       [engineMock binaryMessenger])
+//       .andReturn(binaryMessengerMock);
+//   FlutterViewController* viewController = [[FlutterViewController alloc]
+//   initWithEngine:engineMock
+//                                                                                 nibName:@""
+//                                                                                  bundle:nil];
+//   id responderMock = OCMClassMock([FlutterIntermediateKeyResponder class]);
+//   [viewController addKeyResponder:responderMock];
+//   NSDictionary* expectedEvent = @{
+//     @"keymap" : @"macos",
+//     @"type" : @"keydown",
+//     @"keyCode" : @(65),
+//     @"modifiers" : @(538968064),
+//     @"characters" : @".",
+//     @"charactersIgnoringModifiers" : @".",
+//   };
+//   NSData* encodedKeyEvent = [[FlutterJSONMessageCodec sharedInstance] encode:expectedEvent];
+//   CGEventRef cgEvent = CGEventCreateKeyboardEvent(NULL, 65, TRUE);
+//   NSEvent* event = [NSEvent eventWithCGEvent:cgEvent];
+//   OCMExpect(  // NOLINT(google-objc-avoid-throwing-exception)
+//       [binaryMessengerMock sendOnChannel:@"flutter/keyevent"
+//                                  message:encodedKeyEvent
+//                              binaryReply:[OCMArg any]])
+//       .andDo((^(NSInvocation* invocation) {
+//         FlutterBinaryReply handler;
+//         [invocation getArgument:&handler atIndex:4];
+//         NSDictionary* reply = @{
+//           @"handled" : @(false),
+//         };
+//         NSData* encodedReply = [[FlutterJSONMessageCodec sharedInstance] encode:reply];
+//         handler(encodedReply);
+//       }));
+//   [viewController viewWillAppear];  // Initializes the event channel.
+//   [viewController keyDown:event];
+//   @try {
+//     OCMVerify(  // NOLINT(google-objc-avoid-throwing-exception)
+//         [responderMock handleKeyDown:[OCMArg any]]);
+//     OCMVerify(  // NOLINT(google-objc-avoid-throwing-exception)
+//         [binaryMessengerMock sendOnChannel:@"flutter/keyevent"
+//                                    message:encodedKeyEvent
+//                                binaryReply:[OCMArg any]]);
+//   } @catch (...) {
+//     return false;
+//   }
+//   return true;
+// }
 
-- (bool)testFlagsChangedEventsArePropagatedIfNotHandled {
-  id engineMock = OCMClassMock([FlutterEngine class]);
-  id binaryMessengerMock = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
-  OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
-      [engineMock binaryMessenger])
-      .andReturn(binaryMessengerMock);
-  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engineMock
-                                                                                nibName:@""
-                                                                                 bundle:nil];
-  id responderMock = OCMClassMock([FlutterIntermediateKeyResponder class]);
-  [viewController addKeyResponder:responderMock];
-  NSDictionary* expectedEvent = @{
-    @"keymap" : @"macos",
-    @"type" : @"keydown",
-    @"keyCode" : @(56),  // SHIFT key
-    @"modifiers" : @(537001986),
-  };
-  NSData* encodedKeyEvent = [[FlutterJSONMessageCodec sharedInstance] encode:expectedEvent];
-  CGEventRef cgEvent = CGEventCreateKeyboardEvent(NULL, 56, TRUE);  // SHIFT key
-  CGEventSetType(cgEvent, kCGEventFlagsChanged);
-  NSEvent* event = [NSEvent eventWithCGEvent:cgEvent];
-  OCMExpect(  // NOLINT(google-objc-avoid-throwing-exception)
-      [binaryMessengerMock sendOnChannel:@"flutter/keyevent"
-                                 message:encodedKeyEvent
-                             binaryReply:[OCMArg any]])
-      .andDo((^(NSInvocation* invocation) {
-        FlutterBinaryReply handler;
-        [invocation getArgument:&handler atIndex:4];
-        NSDictionary* reply = @{
-          @"handled" : @(false),
-        };
-        NSData* encodedReply = [[FlutterJSONMessageCodec sharedInstance] encode:reply];
-        handler(encodedReply);
-      }));
-  [viewController viewWillAppear];  // Initializes the event channel.
-  [viewController flagsChanged:event];
-  @try {
-    OCMVerify(  // NOLINT(google-objc-avoid-throwing-exception)
-        [binaryMessengerMock sendOnChannel:@"flutter/keyevent"
-                                   message:encodedKeyEvent
-                               binaryReply:[OCMArg any]]);
-  } @catch (...) {
-    return false;
-  }
-  return true;
-}
+// - (bool)testFlagsChangedEventsArePropagatedIfNotHandled {
+//   id engineMock = OCMClassMock([FlutterEngine class]);
+//   id binaryMessengerMock = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
+//   OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
+//       [engineMock binaryMessenger])
+//       .andReturn(binaryMessengerMock);
+//   FlutterViewController* viewController = [[FlutterViewController alloc]
+//   initWithEngine:engineMock
+//                                                                                 nibName:@""
+//                                                                                  bundle:nil];
+//   id responderMock = OCMClassMock([FlutterIntermediateKeyResponder class]);
+//   [viewController addKeyResponder:responderMock];
+//   NSDictionary* expectedEvent = @{
+//     @"keymap" : @"macos",
+//     @"type" : @"keydown",
+//     @"keyCode" : @(56),  // SHIFT key
+//     @"modifiers" : @(537001986),
+//   };
+//   NSData* encodedKeyEvent = [[FlutterJSONMessageCodec sharedInstance] encode:expectedEvent];
+//   CGEventRef cgEvent = CGEventCreateKeyboardEvent(NULL, 56, TRUE);  // SHIFT key
+//   CGEventSetType(cgEvent, kCGEventFlagsChanged);
+//   NSEvent* event = [NSEvent eventWithCGEvent:cgEvent];
+//   OCMExpect(  // NOLINT(google-objc-avoid-throwing-exception)
+//       [binaryMessengerMock sendOnChannel:@"flutter/keyevent"
+//                                  message:encodedKeyEvent
+//                              binaryReply:[OCMArg any]])
+//       .andDo((^(NSInvocation* invocation) {
+//         FlutterBinaryReply handler;
+//         [invocation getArgument:&handler atIndex:4];
+//         NSDictionary* reply = @{
+//           @"handled" : @(false),
+//         };
+//         NSData* encodedReply = [[FlutterJSONMessageCodec sharedInstance] encode:reply];
+//         handler(encodedReply);
+//       }));
+//   [viewController viewWillAppear];  // Initializes the event channel.
+//   [viewController flagsChanged:event];
+//   @try {
+//     OCMVerify(  // NOLINT(google-objc-avoid-throwing-exception)
+//         [binaryMessengerMock sendOnChannel:@"flutter/keyevent"
+//                                    message:encodedKeyEvent
+//                                binaryReply:[OCMArg any]]);
+//   } @catch (...) {
+//     return false;
+//   }
+//   return true;
+// }
 
-- (bool)testKeyEventsAreNotPropagatedIfHandled {
-  id engineMock = OCMClassMock([FlutterEngine class]);
-  id binaryMessengerMock = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
-  OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
-      [engineMock binaryMessenger])
-      .andReturn(binaryMessengerMock);
-  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engineMock
-                                                                                nibName:@""
-                                                                                 bundle:nil];
-  id responderMock = OCMClassMock([FlutterIntermediateKeyResponder class]);
-  [viewController addKeyResponder:responderMock];
-  NSDictionary* expectedEvent = @{
-    @"keymap" : @"macos",
-    @"type" : @"keydown",
-    @"keyCode" : @(65),
-    @"modifiers" : @(538968064),
-    @"characters" : @".",
-    @"charactersIgnoringModifiers" : @".",
-  };
-  NSData* encodedKeyEvent = [[FlutterJSONMessageCodec sharedInstance] encode:expectedEvent];
-  CGEventRef cgEvent = CGEventCreateKeyboardEvent(NULL, 65, TRUE);
-  NSEvent* event = [NSEvent eventWithCGEvent:cgEvent];
-  OCMExpect(  // NOLINT(google-objc-avoid-throwing-exception)
-      [binaryMessengerMock sendOnChannel:@"flutter/keyevent"
-                                 message:encodedKeyEvent
-                             binaryReply:[OCMArg any]])
-      .andDo((^(NSInvocation* invocation) {
-        FlutterBinaryReply handler;
-        [invocation getArgument:&handler atIndex:4];
-        NSDictionary* reply = @{
-          @"handled" : @(true),
-        };
-        NSData* encodedReply = [[FlutterJSONMessageCodec sharedInstance] encode:reply];
-        handler(encodedReply);
-      }));
-  [viewController viewWillAppear];  // Initializes the event channel.
-  [viewController keyDown:event];
-  @try {
-    OCMVerify(  // NOLINT(google-objc-avoid-throwing-exception)
-        never(), [responderMock handleKeyDown:[OCMArg any]]);
-    OCMVerify(  // NOLINT(google-objc-avoid-throwing-exception)
-        [binaryMessengerMock sendOnChannel:@"flutter/keyevent"
-                                   message:encodedKeyEvent
-                               binaryReply:[OCMArg any]]);
-  } @catch (...) {
-    return false;
-  }
-  return true;
-}
+// - (bool)testKeyEventsAreNotPropagatedIfHandled {
+//   id engineMock = OCMClassMock([FlutterEngine class]);
+//   id binaryMessengerMock = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
+//   OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
+//       [engineMock binaryMessenger])
+//       .andReturn(binaryMessengerMock);
+//   FlutterViewController* viewController = [[FlutterViewController alloc]
+//   initWithEngine:engineMock
+//                                                                                 nibName:@""
+//                                                                                  bundle:nil];
+//   id responderMock = OCMClassMock([FlutterIntermediateKeyResponder class]);
+//   [viewController addKeyResponder:responderMock];
+//   NSDictionary* expectedEvent = @{
+//     @"keymap" : @"macos",
+//     @"type" : @"keydown",
+//     @"keyCode" : @(65),
+//     @"modifiers" : @(538968064),
+//     @"characters" : @".",
+//     @"charactersIgnoringModifiers" : @".",
+//   };
+//   NSData* encodedKeyEvent = [[FlutterJSONMessageCodec sharedInstance] encode:expectedEvent];
+//   CGEventRef cgEvent = CGEventCreateKeyboardEvent(NULL, 65, TRUE);
+//   NSEvent* event = [NSEvent eventWithCGEvent:cgEvent];
+//   OCMExpect(  // NOLINT(google-objc-avoid-throwing-exception)
+//       [binaryMessengerMock sendOnChannel:@"flutter/keyevent"
+//                                  message:encodedKeyEvent
+//                              binaryReply:[OCMArg any]])
+//       .andDo((^(NSInvocation* invocation) {
+//         FlutterBinaryReply handler;
+//         [invocation getArgument:&handler atIndex:4];
+//         NSDictionary* reply = @{
+//           @"handled" : @(true),
+//         };
+//         NSData* encodedReply = [[FlutterJSONMessageCodec sharedInstance] encode:reply];
+//         handler(encodedReply);
+//       }));
+//   [viewController viewWillAppear];  // Initializes the event channel.
+//   [viewController keyDown:event];
+//   @try {
+//     OCMVerify(  // NOLINT(google-objc-avoid-throwing-exception)
+//         never(), [responderMock handleKeyDown:[OCMArg any]]);
+//     OCMVerify(  // NOLINT(google-objc-avoid-throwing-exception)
+//         [binaryMessengerMock sendOnChannel:@"flutter/keyevent"
+//                                    message:encodedKeyEvent
+//                                binaryReply:[OCMArg any]]);
+//   } @catch (...) {
+//     return false;
+//   }
+//   return true;
+// }
 
 @end

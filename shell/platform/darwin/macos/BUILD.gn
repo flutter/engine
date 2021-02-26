@@ -78,6 +78,8 @@ source_set("flutter_framework_source") {
     "framework/Source/FlutterKeyEmbedderHandler.h",
     "framework/Source/FlutterKeyEmbedderHandler.mm",
     "framework/Source/FlutterKeyHandlerBase.h",
+    "framework/Source/FlutterKeyboardManager.h",
+    "framework/Source/FlutterKeyboardManager.mm",
     "framework/Source/FlutterMacOSExternalTexture.h",
     "framework/Source/FlutterMacOSExternalTexture.h",
     "framework/Source/FlutterMetalRenderer.h",

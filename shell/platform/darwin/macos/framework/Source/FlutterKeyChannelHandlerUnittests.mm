@@ -18,8 +18,8 @@ TEST(FlutterKeyChannelHandlerUnittests, BasicKeyEvent) {
   __block std::vector<uint64_t> calls;
 
   id keyEventChannel = OCMClassMock([FlutterBasicMessageChannel class]);
-  FlutterKeyChannelHandler* handler = [[FlutterKeyChannelHandler alloc]
-      initWithChannel: keyEventChannel];
+  FlutterKeyChannelHandler* handler =
+      [[FlutterKeyChannelHandler alloc] initWithChannel:keyEventChannel];
   [handler handleEvent:[NSEvent keyEventWithType:NSKeyDown
                                               location:NSZeroPoint
                                          modifierFlags:0

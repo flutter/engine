@@ -48,6 +48,13 @@ static NSString* const kMultilineInputType = @"TextInputType.multiline";
 @property(nonatomic, weak) FlutterViewController* flutterViewController;
 
 /**
+ * Whether the text input is shown in the view.
+ *
+ * Defaults to TRUE on startup.
+ */
+@property(nonatomic) BOOL shown;
+
+/**
  * Handles a Flutter system message on the text input channel.
  */
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
@@ -59,10 +66,10 @@ static NSString* const kMultilineInputType = @"TextInputType.multiline";
 - (instancetype)initWithViewController:(FlutterViewController*)viewController {
   self = [super init];
   if (self != nil) {
-    _flutterViewController = viewController;
     _channel = [FlutterMethodChannel methodChannelWithName:kTextInputChannel
                                            binaryMessenger:viewController.engine.binaryMessenger
                                                      codec:[FlutterJSONMethodCodec sharedInstance]];
+    _shown = TRUE;
     __weak FlutterTextInputPlugin* weakSelf = self;
     [_channel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
       [weakSelf handleMethodCall:call result:result];
@@ -97,10 +104,10 @@ static NSString* const kMultilineInputType = @"TextInputType.multiline";
       }
     }
   } else if ([method isEqualToString:kShowMethod]) {
-    [self.flutterViewController addKeyResponder:self];
+    _shown = TRUE;
     [_textInputContext activate];
   } else if ([method isEqualToString:kHideMethod]) {
-    [self.flutterViewController removeKeyResponder:self];
+    _shown = FALSE;
     [_textInputContext deactivate];
   } else if ([method isEqualToString:kClearClientMethod]) {
     self.activeModel = nil;
@@ -142,6 +149,9 @@ static NSString* const kMultilineInputType = @"TextInputType.multiline";
  * processing of the same keys. So for now, limit processing to just handleKeyDown.
  */
 - (BOOL)handleKeyDown:(NSEvent*)event {
+  if (!_shown) {
+    return false;
+  }
   return [_textInputContext handleEvent:event];
 }
 

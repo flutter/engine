@@ -8,7 +8,6 @@
 
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 
-
 @interface FlutterKeyChannelHandler : NSObject <FlutterKeyHandlerBase>
 
 - (nonnull instancetype)initWithChannel:(nonnull FlutterBasicMessageChannel*)channel;
