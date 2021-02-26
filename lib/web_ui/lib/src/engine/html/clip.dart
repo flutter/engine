@@ -76,8 +76,12 @@ class PersistedClipRect extends PersistedContainerSurface
   @override
   void recomputeTransformAndClip() {
     _transform = parent!._transform;
-    _localClipBounds = rect;
-    _localTransformInverse = null;
+    if (clipBehavior != ui.Clip.none) {
+      _localClipBounds = rect;
+    } else {
+      _localClipBounds = null;
+    }
+    _localTransform = null;
     _projectedClip = null;
   }
 
@@ -107,6 +111,7 @@ class PersistedClipRect extends PersistedContainerSurface
   void update(PersistedClipRect oldSurface) {
     super.update(oldSurface);
     if (rect != oldSurface.rect || clipBehavior != oldSurface.clipBehavior) {
+      _localClipBounds = null;
       apply();
     }
   }
@@ -129,8 +134,12 @@ class PersistedClipRRect extends PersistedContainerSurface
   @override
   void recomputeTransformAndClip() {
     _transform = parent!._transform;
-    _localClipBounds = rrect.outerRect;
-    _localTransformInverse = null;
+    if (clipBehavior != ui.Clip.none) {
+      _localClipBounds = rrect.outerRect;
+    } else {
+      _localClipBounds = null;
+    }
+    _localTransform = null;
     _projectedClip = null;
   }
 
@@ -165,6 +174,7 @@ class PersistedClipRRect extends PersistedContainerSurface
   void update(PersistedClipRRect oldSurface) {
     super.update(oldSurface);
     if (rrect != oldSurface.rrect || clipBehavior != oldSurface.clipBehavior) {
+      _localClipBounds = null;
       apply();
     }
   }
@@ -196,18 +206,22 @@ class PersistedPhysicalShape extends PersistedContainerSurface
   void recomputeTransformAndClip() {
     _transform = parent!._transform;
 
-    final ui.RRect? roundRect = path.toRoundedRect();
-    if (roundRect != null) {
-      _localClipBounds = roundRect.outerRect;
-    } else {
-      final ui.Rect? rect = path.toRect();
-      if (rect != null) {
-        _localClipBounds = rect;
+    if (clipBehavior != ui.Clip.none) {
+      final ui.RRect? roundRect = path.toRoundedRect();
+      if (roundRect != null) {
+        _localClipBounds = roundRect.outerRect;
       } else {
-        _localClipBounds = null;
+        final ui.Rect? rect = path.toRect();
+        if (rect != null) {
+          _localClipBounds = rect;
+        } else {
+          _localClipBounds = null;
+        }
       }
+    } else {
+      _localClipBounds = null;
     }
-    _localTransformInverse = null;
+    _localTransform = null;
     _projectedClip = null;
   }
 
@@ -385,7 +399,11 @@ class PersistedPhysicalShape extends PersistedContainerSurface
   @override
   void update(PersistedPhysicalShape oldSurface) {
     super.update(oldSurface);
-    if (oldSurface.path != path || oldSurface.elevation != elevation ||
+    bool pathChanged = oldSurface.path != path;
+    if (pathChanged) {
+      _localClipBounds = null;
+    }
+    if (pathChanged || oldSurface.elevation != elevation ||
         oldSurface.shadowColor != shadowColor || oldSurface.color != color) {
       oldSurface._clipElement?.remove();
       oldSurface._clipElement = null;
@@ -433,7 +451,11 @@ class PersistedClipPath extends PersistedContainerSurface
   @override
   void recomputeTransformAndClip() {
     super.recomputeTransformAndClip();
-    _localClipBounds ??= clipPath.getBounds();
+    if (clipBehavior != ui.Clip.none) {
+      _localClipBounds ??= clipPath.getBounds();
+    } else {
+      _localClipBounds = null;
+    }
   }
 
   @override

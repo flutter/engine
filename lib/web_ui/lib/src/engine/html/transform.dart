@@ -16,15 +16,14 @@ class PersistedTransform extends PersistedContainerSurface
   @override
   void recomputeTransformAndClip() {
     _transform = parent!._transform!.multiplied(Matrix4.fromFloat32List(matrix4));
-    _localTransformInverse = null;
+    _localTransform = null;
     _projectedClip = null;
   }
 
   @override
-  Matrix4? get localTransformInverse {
-    _localTransformInverse ??=
-        Matrix4.tryInvert(Matrix4.fromFloat32List(matrix4));
-    return _localTransformInverse;
+  Matrix4? get localTransform {
+    _localTransform ??= Matrix4.fromFloat32List(matrix4);
+    return _localTransform;
   }
 
   @override
