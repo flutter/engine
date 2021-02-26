@@ -1,4 +1,4 @@
-Signature: 02bc09dfad421d6bce0609fa77598785
+Signature: 36b165d84222a1e3e5e8a76969a2ef67
 
 UNUSED LICENSES:
 
@@ -1658,7 +1658,6 @@ FILE: ../../../third_party/skia/src/core/SkWriter32.cpp
 FILE: ../../../third_party/skia/src/effects/SkColorMatrix.cpp
 FILE: ../../../third_party/skia/src/effects/SkColorMatrixFilter.cpp
 FILE: ../../../third_party/skia/src/effects/SkLayerDrawLooper.cpp
-FILE: ../../../third_party/skia/src/effects/SkPackBits.cpp
 FILE: ../../../third_party/skia/src/effects/SkTableMaskFilter.cpp
 FILE: ../../../third_party/skia/src/gpu/GrAttachment.cpp
 FILE: ../../../third_party/skia/src/gpu/GrAttachment.h
@@ -2741,7 +2740,6 @@ FILE: ../../../third_party/skia/src/effects/imagefilters/SkComposeImageFilter.cp
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkDisplacementMapImageFilter.cpp
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkDropShadowImageFilter.cpp
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkTileImageFilter.cpp
-FILE: ../../../third_party/skia/src/effects/imagefilters/SkTileImageFilter.h
 FILE: ../../../third_party/skia/src/gpu/GrBlend.h
 FILE: ../../../third_party/skia/src/gpu/GrCaps.h
 FILE: ../../../third_party/skia/src/gpu/GrGeometryProcessor.h
@@ -2866,7 +2864,6 @@ FILE: ../../../third_party/skia/src/core/SkImageFilter_Base.h
 FILE: ../../../third_party/skia/src/core/SkRuntimeEffect.cpp
 FILE: ../../../third_party/skia/src/core/SkVM.cpp
 FILE: ../../../third_party/skia/src/core/SkVM.h
-FILE: ../../../third_party/skia/src/effects/imagefilters/SkImageFilters.cpp
 FILE: ../../../third_party/skia/src/gpu/GrClientMappedBufferManager.cpp
 FILE: ../../../third_party/skia/src/gpu/GrClientMappedBufferManager.h
 FILE: ../../../third_party/skia/src/gpu/GrCopyRenderTask.cpp
@@ -5195,6 +5192,7 @@ TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/bench/TriangulatorBench.cpp
 FILE: ../../../third_party/skia/gm/crbug_1167277.cpp
 FILE: ../../../third_party/skia/gm/crbug_1174186.cpp
+FILE: ../../../third_party/skia/gm/crbug_1177833.cpp
 FILE: ../../../third_party/skia/gm/lazytiling.cpp
 FILE: ../../../third_party/skia/gm/particles.cpp
 FILE: ../../../third_party/skia/gm/runtimeeffectimage.cpp
@@ -5218,6 +5216,10 @@ FILE: ../../../third_party/skia/src/sksl/SkSLDefinitionMap.h
 FILE: ../../../third_party/skia/src/sksl/SkSLMangler.h
 FILE: ../../../third_party/skia/src/sksl/SkSLOperators.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLOperators.h
+FILE: ../../../third_party/skia/src/sksl/ir/SkSLDoStatement.cpp
+FILE: ../../../third_party/skia/src/sksl/ir/SkSLExpressionStatement.cpp
+FILE: ../../../third_party/skia/src/sksl/ir/SkSLForStatement.cpp
+FILE: ../../../third_party/skia/src/sksl/ir/SkSLIfStatement.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLSwitchStatement.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLSwizzle.cpp
 ----------------------------------------------------------------------------------------------------
@@ -5490,6 +5492,7 @@ FILE: ../../../third_party/skia/src/sksl/SkSLMangler.cpp
 FILE: ../../../third_party/skia/src/sksl/dsl/DSLBlock.cpp
 FILE: ../../../third_party/skia/src/sksl/dsl/DSLBlock.h
 FILE: ../../../third_party/skia/src/sksl/dsl/DSLCase.h
+FILE: ../../../third_party/skia/src/sksl/dsl/DSLErrorHandling.h
 FILE: ../../../third_party/skia/src/sksl/dsl/DSLFunction.cpp
 FILE: ../../../third_party/skia/src/sksl/dsl/DSLFunction.h
 FILE: ../../../third_party/skia/src/sksl/dsl/DSLStatement.cpp
@@ -5965,15 +5968,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: skia
-ORIGIN: ../../../third_party/skia/fuzz/oss_fuzz/FuzzSKSL2GLSL.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/fuzz/oss_fuzz/FuzzDDLThreading.cpp + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzSKSL2GLSL.cpp
-FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzSKSL2Metal.cpp
-FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzSKSL2Pipeline.cpp
-FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzSKSL2SPIRV.cpp
-FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzSkDescriptorDeserialize.cpp
+FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzDDLThreading.cpp
+FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzSkParagraph.cpp
 ----------------------------------------------------------------------------------------------------
-Copyright 2019 Google, LLC
+Copyright 2021 Google, LLC
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -6006,11 +6006,15 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: skia
-ORIGIN: ../../../third_party/skia/fuzz/oss_fuzz/FuzzSkParagraph.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/fuzz/oss_fuzz/FuzzSKSL2GLSL.cpp + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzSkParagraph.cpp
+FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzSKSL2GLSL.cpp
+FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzSKSL2Metal.cpp
+FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzSKSL2Pipeline.cpp
+FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzSKSL2SPIRV.cpp
+FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzSkDescriptorDeserialize.cpp
 ----------------------------------------------------------------------------------------------------
-Copyright 2021 Google, LLC
+Copyright 2019 Google, LLC
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -6286,7 +6290,6 @@ FILE: ../../../third_party/skia/src/core/SkPoint.cpp
 FILE: ../../../third_party/skia/src/core/SkPtrRecorder.h
 FILE: ../../../third_party/skia/src/core/SkStroke.cpp
 FILE: ../../../third_party/skia/src/core/SkWriter32.h
-FILE: ../../../third_party/skia/src/effects/SkPackBits.h
 FILE: ../../../third_party/skia/src/ports/SkFontMgr_empty_factory.cpp
 FILE: ../../../third_party/skia/src/ports/SkImageEncoder_CG.cpp
 FILE: ../../../third_party/skia/src/utils/SkInterpolator.cpp
@@ -7156,7 +7159,6 @@ ORIGIN: ../../../third_party/skia/src/effects/imagefilters/SkBlendImageFilter.cp
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkBlendImageFilter.cpp
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkPictureImageFilter.cpp
-FILE: ../../../third_party/skia/src/effects/imagefilters/SkPictureImageFilter.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2013 The Android Open Source Project
 
