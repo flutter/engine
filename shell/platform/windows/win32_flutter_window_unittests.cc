@@ -28,15 +28,15 @@ namespace testing {
 namespace {
 // Creates a valid Windows LPARAM for WM_KEYDOWN and WM_CHAR from parameters
 // given.
-static LPARAM CreateKeyEventLparam(USHORT ScanCode,
+static LPARAM CreateKeyEventLparam(USHORT scancode,
                                    bool extended = false,
-                                   bool PreviousKeyState = 1,
-                                   USHORT RepeatCount = 1,
-                                   bool ContextCode = 0,
-                                   bool TransitionState = 1) {
-  return ((LPARAM(TransitionState) << 31) | (LPARAM(PreviousKeyState) << 30) |
-          (LPARAM(ContextCode) << 29) | (LPARAM(extended ? 0x1 : 0x0) << 24) |
-          (LPARAM(ScanCode) << 16) | LPARAM(RepeatCount));
+                                   bool was_down = 1,
+                                   USHORT repeat_count = 1,
+                                   bool context_code = 0,
+                                   bool transition_state = 1) {
+  return ((LPARAM(transition_state) << 31) | (LPARAM(was_down) << 30) |
+          (LPARAM(context_code) << 29) | (LPARAM(extended ? 0x1 : 0x0) << 24) |
+          (LPARAM(scancode) << 16) | LPARAM(repeat_count));
 }
 
 // A struc to hold simulated events that will be delivered after the framework
