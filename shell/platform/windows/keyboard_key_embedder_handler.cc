@@ -352,6 +352,8 @@ void KeyboardKeyEmbedderHandler::HandleResponse(bool handled, void* user_data) {
 }
 
 void KeyboardKeyEmbedderHandler::InitCriticalKeys() {
+  // TODO(dkwingsmt) consider adding support for synchronizing key state for UWP
+  // https://github.com/flutter/flutter/issues/70202
 #ifdef WINUWP
   return;
 #else
