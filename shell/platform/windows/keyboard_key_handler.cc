@@ -39,7 +39,6 @@ KeyboardKeyHandler::KeyboardKeyHandlerDelegate::~KeyboardKeyHandlerDelegate() =
 
 KeyboardKeyHandler::KeyboardKeyHandler(EventRedispatcher redispatch_event)
     : redispatch_event_(redispatch_event), last_sequence_id_(1) {
-  assert(redispatch_event_ != nullptr);
 }
 
 KeyboardKeyHandler::~KeyboardKeyHandler() = default;
@@ -57,6 +56,12 @@ size_t KeyboardKeyHandler::RedispatchedCount() {
 }
 
 void KeyboardKeyHandler::RedispatchEvent(std::unique_ptr<PendingEvent> event) {
+  // TODO(dkwingsmt) consider adding support for redispatching events for UWP
+  // in order to support add-to-app.
+  // https://github.com/flutter/flutter/issues/70202
+#ifdef WINUWP
+  return;
+#else
   uint8_t scancode = event->scancode;
   char32_t character = event->character;
 
@@ -81,6 +86,7 @@ void KeyboardKeyHandler::RedispatchEvent(std::unique_ptr<PendingEvent> event) {
                  "with scancode "
               << scancode << " (character " << character << ")" << std::endl;
   }
+#endif
 }
 
 bool KeyboardKeyHandler::KeyboardHook(FlutterWindowsView* view,
