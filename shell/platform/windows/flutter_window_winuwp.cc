@@ -284,7 +284,6 @@ void FlutterWindowWinUWP::OnKeyDown(
   auto status = args.KeyStatus();
   unsigned int scancode = status.ScanCode;
   int key = static_cast<int>(args.VirtualKey());
-  char32_t chararacter = static_cast<char32_t>(key | 32);
   int action = 0x0100;
   binding_handler_delegate_->OnKey(key, scancode, action, 0,
                                    status.IsExtendedKey /* extended */,
