@@ -96,7 +96,8 @@ int GetModsForKeyState() {
 
 }  // namespace
 
-KeyboardKeyChannelHandler::KeyboardKeyChannelHandler(flutter::BinaryMessenger* messenger)
+KeyboardKeyChannelHandler::KeyboardKeyChannelHandler(
+    flutter::BinaryMessenger* messenger)
     : channel_(
           std::make_unique<flutter::BasicMessageChannel<rapidjson::Document>>(
               messenger,

@@ -38,8 +38,7 @@ KeyboardKeyHandler::KeyboardKeyHandlerDelegate::~KeyboardKeyHandlerDelegate() =
     default;
 
 KeyboardKeyHandler::KeyboardKeyHandler(EventRedispatcher redispatch_event)
-    : redispatch_event_(redispatch_event), last_sequence_id_(1) {
-}
+    : redispatch_event_(redispatch_event), last_sequence_id_(1) {}
 
 KeyboardKeyHandler::~KeyboardKeyHandler() = default;
 
