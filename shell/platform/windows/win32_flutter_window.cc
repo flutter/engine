@@ -194,12 +194,12 @@ void Win32FlutterWindow::OnScroll(double delta_x, double delta_y) {
                                       kScrollOffsetMultiplier);
 }
 
-void Win32FlutterWindow::UpdateCursorRect(const Rect& rect) {
+void Win32FlutterWindow::OnCursorRectUpdated(const Rect& rect) {
   // Convert the rect from Flutter logical coordinates to device coordinates.
   auto scale = GetDpiScale();
   Point origin(rect.left() * scale, rect.top() * scale);
   Size size(rect.width() * scale, rect.height() * scale);
-  text_input_manager_.UpdateCaretRect(Rect(origin, size));
+  UpdateCursorRect(Rect(origin, size));
 }
 
 }  // namespace flutter
