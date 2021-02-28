@@ -166,9 +166,10 @@ bool Win32FlutterWindow::OnKey(int key,
                                int scancode,
                                int action,
                                char32_t character,
-                               bool extended) {
+                               bool extended,
+                               bool was_down) {
   return binding_handler_delegate_->OnKey(key, scancode, action, character,
-                                          extended);
+                                          extended, was_down);
 }
 
 void Win32FlutterWindow::OnComposeBegin() {
@@ -193,8 +194,12 @@ void Win32FlutterWindow::OnScroll(double delta_x, double delta_y) {
                                       kScrollOffsetMultiplier);
 }
 
-void Win32FlutterWindow::UpdateCursorRect(const Rect& rect) {
-  text_input_manager_.UpdateCaretRect(rect);
+void Win32FlutterWindow::OnCursorRectUpdated(const Rect& rect) {
+  // Convert the rect from Flutter logical coordinates to device coordinates.
+  auto scale = GetDpiScale();
+  Point origin(rect.left() * scale, rect.top() * scale);
+  Size size(rect.width() * scale, rect.height() * scale);
+  UpdateCursorRect(Rect(origin, size));
 }
 
 }  // namespace flutter

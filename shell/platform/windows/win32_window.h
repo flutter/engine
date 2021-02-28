@@ -101,7 +101,8 @@ class Win32Window {
                      int scancode,
                      int action,
                      char32_t character,
-                     bool extended) = 0;
+                     bool extended,
+                     bool was_down) = 0;
 
   // Called when IME composing begins.
   virtual void OnComposeBegin() = 0;
@@ -140,6 +141,11 @@ class Win32Window {
                     WPARAM const wparam,
                     LPARAM const lparam);
 
+  // Called when the cursor rect has been updated.
+  //
+  // |rect| is in Win32 window coordinates.
+  virtual void UpdateCursorRect(const Rect& rect);
+
   // Called when mouse scrollwheel input occurs.
   virtual void OnScroll(double delta_x, double delta_y) = 0;
 
@@ -148,6 +154,9 @@ class Win32Window {
   UINT GetCurrentWidth();
 
   UINT GetCurrentHeight();
+
+ protected:
+  LRESULT DefaultWindowProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
 
  private:
   // Release OS resources asociated with window.
@@ -182,7 +191,7 @@ class Win32Window {
   // message.
   int keycode_for_char_message_ = 0;
 
- protected:
+  // Manages IME state.
   TextInputManagerWin32 text_input_manager_;
 };
 

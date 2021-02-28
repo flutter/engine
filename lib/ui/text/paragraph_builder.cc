@@ -223,7 +223,8 @@ void decodeStrut(Dart_Handle strut_data,
     paragraph_style.strut_leading = float_data[float_count++];
   }
 
-  // The boolean is stored as the last bit in the bitmask.
+  // The boolean is stored as the last bit in the bitmask, as null
+  // and false have the same behavior.
   paragraph_style.force_strut_height = mask & sForceStrutHeightMask;
 
   if (mask & sFontFamilyMask) {

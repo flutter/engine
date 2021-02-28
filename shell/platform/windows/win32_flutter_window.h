@@ -59,7 +59,8 @@ class Win32FlutterWindow : public Win32Window, public WindowBindingHandler {
              int scancode,
              int action,
              char32_t character,
-             bool extended) override;
+             bool extended,
+             bool was_down) override;
 
   // |Win32Window|
   void OnComposeBegin() override;
@@ -69,6 +70,9 @@ class Win32FlutterWindow : public Win32Window, public WindowBindingHandler {
 
   // |Win32Window|
   void OnComposeChange(const std::u16string& text, int cursor_pos) override;
+
+  // |FlutterWindowBindingHandler|
+  void OnCursorRectUpdated(const Rect& rect) override;
 
   // |Win32Window|
   void OnScroll(double delta_x, double delta_y) override;
@@ -87,9 +91,6 @@ class Win32FlutterWindow : public Win32Window, public WindowBindingHandler {
 
   // |FlutterWindowBindingHandler|
   void UpdateFlutterCursor(const std::string& cursor_name) override;
-
-  // |FlutterWindowBindingHandler|
-  void UpdateCursorRect(const Rect& rect) override;
 
   // |FlutterWindowBindingHandler|
   void OnWindowResized() override;
