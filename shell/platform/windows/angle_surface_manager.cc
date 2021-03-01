@@ -5,6 +5,7 @@
 #include "flutter/shell/platform/windows/angle_surface_manager.h"
 
 #include <iostream>
+#include <mutex>
 #include <vector>
 
 #ifdef WINUWP
@@ -104,6 +105,8 @@ bool AngleSurfaceManager::Initialize() {
   const EGLint d3d11_warp_display_attributes[] = {
       EGL_PLATFORM_ANGLE_TYPE_ANGLE,
       EGL_PLATFORM_ANGLE_TYPE_D3D11_ANGLE,
+      EGL_PLATFORM_ANGLE_DEVICE_TYPE_ANGLE,
+      EGL_PLATFORM_ANGLE_DEVICE_TYPE_D3D_WARP_ANGLE,
       EGL_PLATFORM_ANGLE_ENABLE_AUTOMATIC_TRIM_ANGLE,
       EGL_TRUE,
       EGL_NONE,
@@ -205,7 +208,27 @@ bool AngleSurfaceManager::CreateSurface(WindowsRenderTarget* render_target,
 
   EGLSurface surface = EGL_NO_SURFACE;
 
-  const EGLint surfaceAttributes[] = {EGL_NONE};
+  std::vector<EGLint> surface_attributes;
+
+  if (!DirectCompositionSupported()) {
+    // eglPostSubBufferNV during resizing causes significant artifacts on
+    // Windows 7, so use fixed size surface instead
+    // TODO(knopp): This will not be necessary after
+    // https://github.com/flutter/flutter/issues/76465 is addressed.
+    surface_attributes.push_back(EGL_FIXED_SIZE_ANGLE);
+    surface_attributes.push_back(EGL_TRUE);
+    surface_attributes.push_back(EGL_WIDTH);
+    surface_attributes.push_back(width);
+    surface_attributes.push_back(EGL_HEIGHT);
+    surface_attributes.push_back(height);
+  } else {
+#ifndef WINUWP
+    surface_attributes.push_back(EGL_DIRECT_COMPOSITION_ANGLE);
+    surface_attributes.push_back(EGL_TRUE);
+#endif
+  }
+
+  surface_attributes.push_back(EGL_NONE);
 
 #ifdef WINUWP
 #ifdef USECOREWINDOW
@@ -217,12 +240,12 @@ bool AngleSurfaceManager::CreateSurface(WindowsRenderTarget* render_target,
   surface = eglCreateWindowSurface(
       egl_display_, egl_config_,
       static_cast<EGLNativeWindowType>(winrt::get_abi(target)),
-      surfaceAttributes);
+      surface_attributes.data());
 #else
   surface = eglCreateWindowSurface(
       egl_display_, egl_config_,
       static_cast<EGLNativeWindowType>(std::get<HWND>(*render_target)),
-      surfaceAttributes);
+      surface_attributes.data());
 #endif
   if (surface == EGL_NO_SURFACE) {
     LogEglError("Surface creation failed.");
@@ -244,7 +267,13 @@ void AngleSurfaceManager::ResizeSurface(WindowsRenderTarget* render_target,
     // avoiding the need to destory and recreate the underlying SwapChain.
     surface_width_ = width;
     surface_height_ = height;
-    eglPostSubBufferNV(egl_display_, render_surface_, 1, 1, width, height);
+    if (!DirectCompositionSupported()) {
+      ClearContext();
+      DestroySurface();
+      CreateSurface(render_target, width, height);
+    } else {
+      eglPostSubBufferNV(egl_display_, render_surface_, 1, 1, width, height);
+    }
   }
 }
 
@@ -286,6 +315,26 @@ bool AngleSurfaceManager::MakeResourceCurrent() {
 
 EGLBoolean AngleSurfaceManager::SwapBuffers() {
   return (eglSwapBuffers(egl_display_, render_surface_));
+}
+
+bool AngleSurfaceManager::DirectCompositionSupported() {
+#ifdef WINUWP
+  return true;
+#else
+  static bool supported;
+  static std::once_flag flag;
+  std::call_once(flag, [] {
+    supported = false;
+    auto dcomp = ::GetModuleHandle(TEXT("dcomp.dll"));
+    if (dcomp) {
+      auto address = GetProcAddress(dcomp, "DCompositionCreateDevice");
+      if (address) {
+        supported = true;
+      }
+    }
+  });
+  return supported;
+#endif
 }
 
 }  // namespace flutter

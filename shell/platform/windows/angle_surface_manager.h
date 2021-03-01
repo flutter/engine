@@ -81,6 +81,10 @@ class AngleSurfaceManager {
       const EGLint* config,
       bool should_log);
 
+  // Returns whether current system supports presenting surface through
+  // direct composition
+  static bool DirectCompositionSupported();
+
   // EGL representation of native display.
   EGLDisplay egl_display_;
 
