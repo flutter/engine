@@ -49,6 +49,7 @@ source_set("flutter_windows_source") {
     "cursor_handler.h",
     "external_texture_gl.cc",
     "external_texture_gl.h",
+    "flutter_key_map.cc",
     "flutter_project_bundle.cc",
     "flutter_project_bundle.h",
     "flutter_windows.cc",
@@ -58,9 +59,13 @@ source_set("flutter_windows_source") {
     "flutter_windows_texture_registrar.h",
     "flutter_windows_view.cc",
     "flutter_windows_view.h",
-    "key_event_handler.cc",
-    "key_event_handler.h",
-    "keyboard_hook_handler.h",
+    "keyboard_handler_base.h",
+    "keyboard_key_channel_handler.cc",
+    "keyboard_key_channel_handler.h",
+    "keyboard_key_embedder_handler.cc",
+    "keyboard_key_embedder_handler.h",
+    "keyboard_key_handler.cc",
+    "keyboard_key_handler.h",
     "platform_handler.cc",
     "platform_handler.h",
     "string_conversion.cc",
@@ -88,6 +93,10 @@ source_set("flutter_windows_source") {
     ]
   } else {
     sources += [
+      "dpi_utils_win32.cc",
+      "dpi_utils_win32.h",
+      "flutter_window_win32.cc",
+      "flutter_window_win32.h",
       "flutter_windows_win32.cc",
       "platform_handler_win32.cc",
       "platform_handler_win32.h",
@@ -96,14 +105,10 @@ source_set("flutter_windows_source") {
       "task_runner_win32.h",
       "text_input_manager_win32.cc",
       "text_input_manager_win32.h",
-      "win32_dpi_utils.cc",
-      "win32_dpi_utils.h",
-      "win32_flutter_window.cc",
-      "win32_flutter_window.h",
-      "win32_window.cc",
-      "win32_window.h",
-      "win32_window_proc_delegate_manager.cc",
-      "win32_window_proc_delegate_manager.h",
+      "window_proc_delegate_manager_win32.cc",
+      "window_proc_delegate_manager_win32.h",
+      "window_win32.cc",
+      "window_win32.h",
     ]
 
     libs = [
@@ -192,21 +197,23 @@ executable("flutter_windows_unittests") {
   } else {
     sources += [
       # TODO move first two tests to common once above TODO's unblocked.
+      "dpi_utils_win32_unittests.cc",
       "flutter_project_bundle_unittests.cc",
+      "flutter_window_win32_unittests.cc",
       "flutter_windows_engine_unittests.cc",
       "flutter_windows_texture_registrar_unittests.cc",
-      "key_event_handler_unittests.cc",
-      "testing/mock_win32_window.cc",
-      "testing/mock_win32_window.h",
+      "keyboard_key_channel_handler_unittests.cc",
+      "keyboard_key_embedder_handler_unittests.cc",
+      "keyboard_key_handler_unittests.cc",
+      "testing/flutter_window_win32_test.cc",
+      "testing/flutter_window_win32_test.h",
       "testing/mock_window_binding_handler.cc",
       "testing/mock_window_binding_handler.h",
-      "testing/win32_flutter_window_test.cc",
-      "testing/win32_flutter_window_test.h",
+      "testing/mock_window_win32.cc",
+      "testing/mock_window_win32.h",
       "text_input_plugin_unittest.cc",
-      "win32_dpi_utils_unittests.cc",
-      "win32_flutter_window_unittests.cc",
-      "win32_window_proc_delegate_manager_unittests.cc",
-      "win32_window_unittests.cc",
+      "window_proc_delegate_manager_win32_unittests.cc",
+      "window_win32_unittests.cc",
     ]
   }
 

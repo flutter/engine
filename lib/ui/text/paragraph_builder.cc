@@ -118,18 +118,18 @@ constexpr uint32_t kFontFeatureTagLength = 4;
 const int sFontWeightIndex = 0;
 const int sFontStyleIndex = 1;
 const int sFontFamilyIndex = 2;
-const int sFontSizeIndex = 3;
-const int sHeightIndex = 4;
-const int sLeadingDistributionIndex = 5;
+const int sLeadingDistributionIndex = 3;
+const int sFontSizeIndex = 4;
+const int sHeightIndex = 5;
 const int sLeadingIndex = 6;
 const int sForceStrutHeightIndex = 7;
 
 const int sFontWeightMask = 1 << sFontWeightIndex;
 const int sFontStyleMask = 1 << sFontStyleIndex;
 const int sFontFamilyMask = 1 << sFontFamilyIndex;
+const int sLeadingDistributionMask = 1 << sLeadingDistributionIndex;
 const int sFontSizeMask = 1 << sFontSizeIndex;
 const int sHeightMask = 1 << sHeightIndex;
-const int sLeadingDistributionMask = 1 << sLeadingDistributionIndex;
 const int sLeadingMask = 1 << sLeadingIndex;
 const int sForceStrutHeightMask = 1 << sForceStrutHeightIndex;
 
@@ -201,6 +201,10 @@ void decodeStrut(Dart_Handle strut_data,
     paragraph_style.strut_font_style =
         static_cast<txt::FontStyle>(uint8_data[byte_count++]);
   }
+  if (mask & sLeadingDistributionMask) {
+    paragraph_style.strut_has_leading_distribution_override = true;
+    paragraph_style.strut_half_leading = uint8_data[byte_count++];
+  }
 
   std::vector<float> float_data;
   float_data.resize((byte_data.length_in_bytes() - byte_count) / 4);
@@ -214,20 +218,14 @@ void decodeStrut(Dart_Handle strut_data,
   if (mask & sHeightMask) {
     paragraph_style.strut_height = float_data[float_count++];
     paragraph_style.strut_has_height_override = true;
-
-    // LeadingDistribution does not affect layout if height is not set.
-    if (mask & sLeadingDistributionMask) {
-      paragraph_style.strut_half_leading = uint8_data[byte_count];
-      paragraph_style.strut_has_leading_distribution_override = true;
-    }
   }
   if (mask & sLeadingMask) {
     paragraph_style.strut_leading = float_data[float_count++];
   }
-  if (mask & sForceStrutHeightMask) {
-    // The boolean is stored as the last bit in the bitmask.
-    paragraph_style.force_strut_height = (mask & 1 << 7) != 0;
-  }
+
+  // The boolean is stored as the last bit in the bitmask, as null
+  // and false have the same behavior.
+  paragraph_style.force_strut_height = mask & sForceStrutHeightMask;
 
   if (mask & sFontFamilyMask) {
     paragraph_style.strut_font_families = strut_font_families;
