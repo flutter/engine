@@ -1,4 +1,4 @@
-Signature: 593ae7bcd7102bf82aad099b9c00170d
+Signature: 07700e3029bb6045bbd7fa46c769ee97
 
 UNUSED LICENSES:
 
@@ -11991,6 +11991,8 @@ LIBRARY: dart
 ORIGIN: ../../../third_party/dart/runtime/vm/compiler/ffi/range.h + ../../../third_party/dart/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/range.h
+FILE: ../../../third_party/dart/runtime/vm/virtual_memory_compressed.cc
+FILE: ../../../third_party/dart/runtime/vm/virtual_memory_compressed.h
 FILE: ../../../third_party/dart/samples/ffi/resource_management/utf8_helpers.dart
 FILE: ../../../third_party/dart/samples_2/ffi/resource_management/utf8_helpers.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/ffi_allocation_patch.dart
@@ -22054,7 +22056,6 @@ POSSIBILITY OF SUCH DAMAGE.
 LIBRARY: libpng
 ORIGIN: ../../../third_party/libpng/LICENSE
 TYPE: LicenseType.libpng
-FILE: ../../../third_party/libpng/contrib/intel/intel_sse.patch
 FILE: ../../../third_party/libpng/pngprefix.h
 ----------------------------------------------------------------------------------------------------
 <THIS BLOCK INTENTIONALLY LEFT BLANK>
@@ -22067,9 +22068,9 @@ TYPE: LicenseType.libpng
 FILE: ../../../third_party/libpng/arm/arm_init.c
 FILE: ../../../third_party/libpng/arm/filter_neon.S
 FILE: ../../../third_party/libpng/arm/filter_neon_intrinsics.c
-FILE: ../../../third_party/libpng/contrib/intel/filter_sse2_intrinsics.c
-FILE: ../../../third_party/libpng/contrib/intel/intel_init.c
-FILE: ../../../third_party/libpng/contrib/intel/intel_sse.patch
+FILE: ../../../third_party/libpng/arm/palette_neon_intrinsics.c
+FILE: ../../../third_party/libpng/intel/filter_sse2_intrinsics.c
+FILE: ../../../third_party/libpng/intel/intel_init.c
 FILE: ../../../third_party/libpng/png.c
 FILE: ../../../third_party/libpng/pngconf.h
 FILE: ../../../third_party/libpng/pngdebug.h
