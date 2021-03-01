@@ -167,7 +167,7 @@ class PersistedPicture extends PersistedLeafSurface {
     assert(transform != null);
     assert(localPaintBounds != null);
 
-    if (parent!._projectedClip == null) {
+    if (parent!._globalProjectedClip == null) {
       // Compute and cache chain of clipping bounds on parent of picture since
       // parent may include multiple pictures so it can be reused by all
       // child pictures.
@@ -199,17 +199,21 @@ class PersistedPicture extends PersistedLeafSurface {
         bounds = ui.Rect.zero;
       }
       // Cache projected clip on parent.
-      parent!._projectedClip = bounds;
+      parent!._globalProjectedClip = bounds;
     }
     // Intersect localPaintBounds with parent projected clip to calculate
     // and cache [_exactLocalCullRect].
-    if (parent!._projectedClip == null) {
+    if (parent!._globalProjectedClip == null) {
       _exactLocalCullRect = localPaintBounds;
     } else {
       Matrix4? invertedTransform = Matrix4.tryInvert(parent!.transform!);
-      _exactLocalCullRect =
-           localPaintBounds!.intersect(transformRect(invertedTransform!, parent!._projectedClip!));
-      _exactLocalCullRect = localPaintBounds;
+      if (invertedTransform == null) {
+        _exactLocalCullRect = localPaintBounds;
+      } else {
+        _exactLocalCullRect =
+            localPaintBounds!.translate(dx, dy).intersect(transformRect(
+                invertedTransform, parent!._globalProjectedClip!));
+      }
     }
     if (_exactLocalCullRect!.width <= 0 || _exactLocalCullRect!.height <= 0) {
       _exactLocalCullRect = ui.Rect.zero;

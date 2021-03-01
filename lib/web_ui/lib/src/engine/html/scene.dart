@@ -42,7 +42,7 @@ class PersistedScene extends PersistedContainerSurface {
     final double screenHeight = html.window.innerHeight!.toDouble();
     _localClipBounds = ui.Rect.fromLTRB(0, 0, screenWidth, screenHeight);
     _localTransform = Matrix4.identity();
-    _projectedClip = null;
+    _globalProjectedClip = null;
   }
 
   @override

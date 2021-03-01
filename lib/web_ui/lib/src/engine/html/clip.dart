@@ -82,7 +82,7 @@ class PersistedClipRect extends PersistedContainerSurface
       _localClipBounds = null;
     }
     _localTransform = null;
-    _projectedClip = null;
+    _globalProjectedClip = null;
   }
 
   @override
@@ -140,7 +140,7 @@ class PersistedClipRRect extends PersistedContainerSurface
       _localClipBounds = null;
     }
     _localTransform = null;
-    _projectedClip = null;
+    _globalProjectedClip = null;
   }
 
   @override
@@ -222,7 +222,7 @@ class PersistedPhysicalShape extends PersistedContainerSurface
       _localClipBounds = null;
     }
     _localTransform = null;
-    _projectedClip = null;
+    _globalProjectedClip = null;
   }
 
   void _applyColor() {

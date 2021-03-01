@@ -17,7 +17,7 @@ class PersistedTransform extends PersistedContainerSurface
   void recomputeTransformAndClip() {
     _transform = parent!._transform!.multiplied(Matrix4.fromFloat32List(matrix4));
     _localTransform = null;
-    _projectedClip = null;
+    _globalProjectedClip = null;
   }
 
   @override

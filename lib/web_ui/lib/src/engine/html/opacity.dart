@@ -26,7 +26,7 @@ class PersistedOpacity extends PersistedContainerSurface
       _transform!.translate(dx, dy);
     }
     _localTransform = null;
-    _projectedClip = null;
+    _globalProjectedClip = null;
   }
 
   @override

@@ -516,8 +516,11 @@ abstract class PersistedSurface implements ui.EngineLayer {
   /// This value is the intersection of clips in the ancestor chain, including
   /// the clip added by this layer (if any).
   ///
+  /// This rectangle is in global coordinates obtained by transforming
+  /// stack of clip rects to obtain optimal cull rectangle.
+  ///
   /// The value is update by [recomputeTransformAndClip].
-  ui.Rect? _projectedClip;
+  ui.Rect? _globalProjectedClip;
 
   /// Bounds of clipping performed by this layer.
   ui.Rect? _localClipBounds;
@@ -543,7 +546,7 @@ abstract class PersistedSurface implements ui.EngineLayer {
     _transform = parent!._transform;
     _localClipBounds = null;
     _localTransform = null;
-    _projectedClip = null;
+    _globalProjectedClip = null;
   }
 
   /// Performs computations before [build], [update], or [retain] are called.
@@ -649,7 +652,7 @@ abstract class PersistedContainerSurface extends PersistedSurface {
     _transform = parent!._transform;
     _localClipBounds = null;
     _localTransform = null;
-    _projectedClip = null;
+    _globalProjectedClip = null;
   }
 
   @override
