@@ -601,8 +601,8 @@ public class PlatformViewsControllerTest {
     final FlutterImageView overlayImageView = mock(FlutterImageView.class);
     when(overlayImageView.acquireLatestImage()).thenReturn(true);
 
-    platformViewsController.createOverlaySurface(overlayImageView);
-
+    final FlutterOverlaySurface overlaySurface =
+        platformViewsController.createOverlaySurface(overlayImageView);
     // This is OK.
     platformViewsController.onDisplayOverlaySurface(
         overlaySurface.getId(), /* x=*/ 0, /* y=*/ 0, /* width=*/ 10, /* height=*/ 10);

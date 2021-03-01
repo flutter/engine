@@ -17,7 +17,6 @@ import org.junit.runner.RunWith;
 @RunWith(AndroidJUnit4.class)
 @LargeTest
 public class MemoryLeakTests {
-
   @Rule
   public ActivityTestRule<TextPlatformViewActivity> activityRule =
       new ActivityTestRule<>(
@@ -30,6 +29,6 @@ public class MemoryLeakTests {
     intent.putExtra("scenario", "platform_view");
     intent.putExtra("use_android_view", true);
 
-    TextPlatformViewActivity activity = activityRule.launchActivity(intent);
+    activityRule.launchActivity(intent);
   }
 }
