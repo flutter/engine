@@ -23,7 +23,9 @@ struct WindowBoundsWinUWP {
   float height;
 };
 
-// Helper that enables consumers to determine window bounds, DPI and some XBOX specific characteristics in the case when the current application is running on those devices.
+// Helper that enables consumers to determine window bounds, DPI and some XBOX
+// specific characteristics in the case when the current application is running
+// on those devices.
 class DisplayHelperWinUWP {
  public:
   DisplayHelperWinUWP();
@@ -42,7 +44,7 @@ class DisplayHelperWinUWP {
   // backing CoreWindow.
   float GetDpiScale();
 
-  // Returns a value indicating 
+  // Returns a value indicating
   bool IsRunningOnXbox();
 
   // Returns a value representing the overscan to correct for X.

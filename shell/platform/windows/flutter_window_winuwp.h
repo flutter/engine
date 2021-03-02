@@ -132,7 +132,8 @@ class FlutterWindowWinUWP : public WindowBindingHandler {
   // SwapChain to the CoreWindow.
   winrt::Windows::UI::Composition::SpriteVisual render_target_{nullptr};
 
-  // GamepadCursorWinUWP object used to manage an emulated cursor visual driven by gamepad.
+  // GamepadCursorWinUWP object used to manage an emulated cursor visual driven
+  // by gamepad.
   std::unique_ptr<GamepadCursorWinUWP> game_pad_cursor_{nullptr};
 
   // DisplayHelper object used to determine window bounds, DPI etc.
