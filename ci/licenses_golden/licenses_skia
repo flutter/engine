@@ -1,4 +1,4 @@
-Signature: 17195ccccce9e5f592da1b1fa1472154
+Signature: 248763eb8b50db8fc046a55a4f7505d7
 
 UNUSED LICENSES:
 
@@ -970,6 +970,7 @@ FILE: ../../../third_party/skia/demos.skia.org/demos/hello_world/index.html
 FILE: ../../../third_party/skia/demos.skia.org/demos/image_decode_web_worker/index.html
 FILE: ../../../third_party/skia/demos.skia.org/demos/image_decode_web_worker/main.js
 FILE: ../../../third_party/skia/demos.skia.org/demos/image_decode_web_worker/worker.js
+FILE: ../../../third_party/skia/demos.skia.org/demos/image_sampling/index.html
 FILE: ../../../third_party/skia/demos.skia.org/demos/path_performance/garbage.svg
 FILE: ../../../third_party/skia/demos.skia.org/demos/path_performance/index.html
 FILE: ../../../third_party/skia/demos.skia.org/demos/path_performance/main.js
@@ -5216,6 +5217,7 @@ FILE: ../../../third_party/skia/src/sksl/SkSLDefinitionMap.h
 FILE: ../../../third_party/skia/src/sksl/SkSLMangler.h
 FILE: ../../../third_party/skia/src/sksl/SkSLOperators.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLOperators.h
+FILE: ../../../third_party/skia/src/sksl/ir/SkSLBinaryExpression.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLDoStatement.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLExpressionStatement.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLForStatement.cpp
