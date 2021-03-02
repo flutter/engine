@@ -1056,6 +1056,18 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
           accessibilityChannel.dispatchSemanticsAction(virtualViewId, Action.DISMISS);
           return true;
         }
+      case AccessibilityNodeInfo.ACTION_SET_TEXT:
+        {
+          String newText = "";
+          if (arguments != null
+              && arguments.containsKey(
+                  AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE)) {
+            newText =
+                arguments.getString(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE);
+          }
+          accessibilityChannel.dispatchSemanticsAction(virtualViewId, Action.SET_TEXT, newText);
+          return true;
+        }
       default:
         // might be a custom accessibility accessibilityAction.
         final int flutterId = accessibilityAction - FIRST_RESOURCE_ID;
@@ -1755,7 +1767,8 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     CUSTOM_ACTION(1 << 17),
     DISMISS(1 << 18),
     MOVE_CURSOR_FORWARD_BY_WORD(1 << 19),
-    MOVE_CURSOR_BACKWARD_BY_WORD(1 << 20);
+    MOVE_CURSOR_BACKWARD_BY_WORD(1 << 20),
+    SET_TEXT(1 << 21);
 
     public final int value;
 
