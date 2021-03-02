@@ -334,7 +334,7 @@ void testMain() {
     // Picture should not be clipped out since transform will offset it to 500,500
     final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
     builder.pushOffset(0, 0);
-    final PersistedContainerSurface clip = builder.pushClipRect(const Rect.fromLTRB(0, 0, 1000, 1000)) as PersistedContainerSurface;
+    builder.pushClipRect(const Rect.fromLTRB(0, 0, 1000, 1000)) as PersistedContainerSurface;
     builder.pushTransform((Matrix4.identity()..scale(0.5, 0.5)).toFloat64());
     builder.addPicture(Offset(1000, 1000), picture);
     builder.pop();
@@ -350,7 +350,7 @@ void testMain() {
     // Picture should not be clipped out since transform will offset it to 500,500
     final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
     builder.pushOffset(50, 50);
-    final PersistedContainerSurface clip = builder.pushClipRect(
+    builder.pushClipRect(
         const Rect.fromLTRB(0, 0, 1000, 1000)) as PersistedContainerSurface;
     builder.pushTransform((Matrix4.identity()
       ..scale(2, 2)).toFloat64());

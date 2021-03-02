@@ -30,8 +30,8 @@ class PersistedOpacity extends PersistedContainerSurface
   }
 
   @override
-  Matrix4 get localTransformInverse => _localTransform ??=
-      Matrix4.translationValues(-offset.dx, -offset.dy, 0);
+  Matrix4 get localTransform => _localTransform ??=
+      Matrix4.translationValues(offset.dx, offset.dy, 0);
 
   @override
   html.Element createElement() {

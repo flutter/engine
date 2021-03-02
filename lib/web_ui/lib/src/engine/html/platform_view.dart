@@ -58,7 +58,7 @@ class PersistedPlatformView extends PersistedLeafSurface {
   }
 
   @override
-  Matrix4? get localTransformInverse => null;
+  Matrix4? get localTransform => null;
 
   @override
   void apply() {

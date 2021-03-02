@@ -416,7 +416,7 @@ class PersistedPicture extends PersistedLeafSurface {
   }
 
   @override
-  Matrix4? get localTransformInverse => null;
+  Matrix4? get localTransform => null;
 
   void applyPaint(EngineCanvas? oldCanvas) {
     if (picture.recordingCanvas!.renderStrategy.hasArbitraryPaint) {
