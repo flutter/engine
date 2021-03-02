@@ -769,7 +769,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   return _shell->Screenshot(type, base64Encode);
 }
 
-- (void)futterViewAccessibilityDidCall {
+- (void)flutterViewAccessibilityDidCall {
   if (self.viewController.view.accessibilityElements == nil) {
     [self ensureSemanticsEnabled];
   }
