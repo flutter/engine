@@ -139,9 +139,10 @@ static BOOL _forceSoftwareRendering;
   // TODO(chunhtai): Remove this workaround once iOS provides an
   // API to query whether voice control is enabled.
   // https://github.com/flutter/flutter/issues/76808.
-  if (self.accessibilityElements == nil) {
-    [_delegate ensureSemanticsEnabled];
-  }
+  [_delegate futterViewAccessibilityDidCall];
+  // if (self.accessibilityElements == nil) {
+  //   [_delegate futterViewAccessibilityDidCall];
+  // }
   return NO;
 }
 
