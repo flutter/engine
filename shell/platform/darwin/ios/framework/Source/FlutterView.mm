@@ -140,9 +140,6 @@ static BOOL _forceSoftwareRendering;
   // API to query whether voice control is enabled.
   // https://github.com/flutter/flutter/issues/76808.
   [_delegate flutterViewAccessibilityDidCall];
-  // if (self.accessibilityElements == nil) {
-  //   [_delegate flutterViewAccessibilityDidCall];
-  // }
   return NO;
 }
 
