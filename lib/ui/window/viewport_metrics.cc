@@ -32,9 +32,9 @@ ViewportMetrics::ViewportMetrics(double p_device_pixel_ratio,
                                  double p_physical_system_gesture_inset_right,
                                  double p_physical_system_gesture_inset_bottom,
                                  double p_physical_system_gesture_inset_left,
-                                 std::vector<double> p_physical_display_features_bounds,
-                                 std::vector<int> p_physical_display_features_type,
-                                 std::vector<int> p_physical_display_features_state)
+                                 const std::vector<double> p_physical_display_features_bounds,
+                                 const std::vector<int> p_physical_display_features_type,
+                                 const std::vector<int> p_physical_display_features_state)
     : device_pixel_ratio(p_device_pixel_ratio),
       physical_width(p_physical_width),
       physical_height(p_physical_height),

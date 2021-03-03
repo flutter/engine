@@ -30,9 +30,9 @@ struct ViewportMetrics {
                   double p_physical_system_gesture_inset_right,
                   double p_physical_system_gesture_inset_bottom,
                   double p_physical_system_gesture_inset_left,
-                  std::vector<double> p_physical_display_features_bounds,
-                  std::vector<int> p_physical_display_features_type,
-                  std::vector<int> p_physical_display_features_state);
+                  const std::vector<double> p_physical_display_features_bounds,
+                  const std::vector<int> p_physical_display_features_type,
+                  const std::vector<int> p_physical_display_features_state);
 
   double device_pixel_ratio = 1.0;
   double physical_width = 0;

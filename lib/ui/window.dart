@@ -225,21 +225,30 @@ abstract class FlutterView {
   ///   applications.
   WindowPadding get padding => viewConfiguration.padding;
 
-  /// Areas of the display that are obstructed by hardware features.
+  /// Areas of the display that are obstructed by hardware features. This list is
+  /// populated only on Android. If the device has no display features, this list
+  /// is empty.
+  ///
+  /// The space in which the [DisplayFeature.bounds] are defined includes all screens
+  /// and the space between them. For a dual-screen device, this means that the space
+  /// between the screens is virtually part of the Flutter view space, with the
+  /// [DisplayFeature.bounds] of the display feature as an obstructed area. The
+  /// [DisplayFeature.type] can be used to determine if this display feature
+  /// obstructs the screen or not. For example, [DisplayFeatureType.hinge] and
+  /// [DisplayFeatureType.cutout] both obstruct the display, while
+  /// [DisplayFeatureType.fold] is more like a crease in the display.
+  ///
+  /// Folding [DisplayFeature]s like the [DisplayFeatureType.hinge] and
+  /// [DisplayFeatureType.fold] also have a [DisplayFeature.state] which can be
+  /// used to determine the posture the device is in.
+  ///
   /// When this changes, [onMetricsChanged] is called.
-  ///
-  /// List of rectangle bounds, which the application can use to guide layout.
-  /// These areas may be obscured or not have touch capabilities. Each feature
-  /// has a type, which can be used to determine behaviour.
-  ///
-  /// For example, a hinge feature can be used to separate the layout into 2
-  /// logical areas or panels in the application.
   ///
   /// See also:
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this value changes.
-  ///  * [MediaQuery.of], a simpler mechanism for the same.
+  ///  * [MediaQuery.of], a simpler mechanism to access this data.
   List<DisplayFeature> get displayFeatures => viewConfiguration.displayFeatures;
 
   /// Updates the view's rendering on the GPU with the newly provided [Scene].

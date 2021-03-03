@@ -211,6 +211,7 @@ class PlatformDispatcher {
         bounds: displayFeaturesBounds,
         type: displayFeaturesType,
         state: displayFeaturesState,
+        devicePixelRatio: devicePixelRatio,
       ),
     );
     _invoke(onMetricsChanged, _onMetricsChangedZone);
@@ -220,16 +221,19 @@ class PlatformDispatcher {
     required List<double> bounds,
     required List<int> type,
     required List<int> state,
+    required double devicePixelRatio,
   }) {
+    assert(bounds.length / 4 == type.length);
+    assert(type.length == state.length);
     final List<DisplayFeature> result = <DisplayFeature>[];
-    for(int i =0 ; i < type.length; i++){
+    for(int i = 0 ; i < type.length; i++){
       final int rectOffset = i * 4;
       result.add(DisplayFeature(
-        rect: Rect.fromLTRB(
-          bounds[rectOffset],
-          bounds[rectOffset+1],
-          bounds[rectOffset+2],
-          bounds[rectOffset+3],
+        bounds: Rect.fromLTRB(
+          bounds[rectOffset] / devicePixelRatio,
+          bounds[rectOffset + 1] / devicePixelRatio,
+          bounds[rectOffset + 2] / devicePixelRatio,
+          bounds[rectOffset + 3] / devicePixelRatio,
         ),
         type: DisplayFeatureType.values[type[i]],
         state: state[i] < DisplayFeatureState.values.length
@@ -1063,14 +1067,22 @@ class ViewConfiguration {
   /// phone sensor housings).
   final WindowPadding padding;
 
-  /// Areas of the display that are obstructed by hardware features.
+  /// Areas of the display that are obstructed by hardware features. This list is
+  /// populated only on Android. If the device has no display features, this list
+  /// is empty.
   ///
-  /// List of rectangle bounds, which the application can use to guide layout.
-  /// These areas may be obscured or not have touch capabilities. Each feature
-  /// has a type, which can be used to determine behaviour.
+  /// The space in which the [DisplayFeature.bounds] are defined includes all screens
+  /// and the space between them. For a dual-screen device, this means that the space
+  /// between the screens is virtually part of the Flutter view space, with the
+  /// [DisplayFeature.bounds] of the display feature as an obstructed area. The
+  /// [DisplayFeature.type] can be used to determine if this display feature
+  /// obstructs the screen or not. For example, [DisplayFeatureType.hinge] and
+  /// [DisplayFeatureType.cutout] both obstruct the display, while
+  /// [DisplayFeatureType.fold] is more like a crease in the display.
   ///
-  /// For example, a hinge feature can be used to separate the layout into 2
-  /// logical areas or panels in the application.
+  /// Folding [DisplayFeature]s like the [DisplayFeatureType.hinge] and
+  /// [DisplayFeatureType.fold] also have a [DisplayFeature.state] which can be
+  /// used to determine the posture the device is in.
   final List<DisplayFeature> displayFeatures;
 
   @override
@@ -1296,36 +1308,36 @@ class WindowPadding {
   }
 }
 
-/// Area of the display that is obstructed by a hardware feature.
+/// Area of the display that may be obstructed by a hardware feature.This is
+/// populated only on Android.
 ///
-/// The bounds, which the application can use to guide layout, may be obscured
-/// or not have touch capabilities. The type can be used to determine behaviour.
-/// For example, a hinge feature can be used to separate the layout into 2
-/// logical areas or panels in the application.
+/// The [bounds] are measured in logical pixels. On devices with two screens the
+/// coordinate system starts with [0,0] in the top-left corner of the left screen
+/// and expands to include the visual space between the screens and the right screen.
+/// The [type] can be used to determine if this display feature obstructs the screen or not.
+/// For example, [DisplayFeatureType.hinge] and [DisplayFeatureType.cutout] both obstruct the display,
+/// while [DisplayFeatureType.fold] does not.
 class DisplayFeature {
   const DisplayFeature({
-    required this.rect,
+    required this.bounds,
     required this.type,
     required this.state,
   });
 
-  DisplayFeature withDevicePixelRatio(double devicePixelRatio) {
-    return DisplayFeature(
-      rect : Rect.fromLTRB(
-        rect.left / devicePixelRatio,
-        rect.top / devicePixelRatio,
-        rect.right / devicePixelRatio,
-        rect.bottom / devicePixelRatio,
-      ),
-      type: type,
-      state: state,
-    );
-  }
+  /// Area of the view occupied by this display feature, measured in logical pixels.
+  ///
+  /// On devices with two screens, the Flutter view spans from the top-right corner
+  /// of the left screen to the bottom-right corner of the right screen, including
+  /// the area occupied by any display feature. Bounds of display features are
+  /// reported in this coordinate system.
+  ///
+  /// For example, on a dual screen device in portrait mode:
+  ///
+  /// - [bounds.left] gives you the size of left screen, in logical pixels.
+  /// - [bounds.right] gives you the size of the left screen + the hinge width.
+  final Rect bounds;
 
-  /// Area of the view occupied by this display feature
-  final Rect rect;
-
-  /// Type of display feature, e.g. hinge, fold, cutout
+  /// Type of display feature, e.g. hinge, fold, cutout.
   final DisplayFeatureType type;
 
   /// Posture of display feature, which is populated only for folds and hinges.
@@ -1333,20 +1345,20 @@ class DisplayFeature {
   final DisplayFeatureState state;
 
   @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is DisplayFeature &&
-          runtimeType == other.runtimeType &&
-          rect == other.rect &&
-          type == other.type &&
-          state == other.state;
+  bool operator ==(Object other) {
+    return identical(this, other) || other is DisplayFeature &&
+            runtimeType == other.runtimeType &&
+            bounds == other.bounds &&
+            type == other.type &&
+            state == other.state;
+  }
 
   @override
-  int get hashCode => hashValues(rect, type, state);
+  int get hashCode => hashValues(bounds, type, state);
 
   @override
   String toString() {
-    return 'DisplayFeature(rect: $rect, type: $type, state: $state)';
+    return 'DisplayFeature(rect: $bounds, type: $type, state: $state)';
   }
 }
 
@@ -1359,7 +1371,8 @@ class DisplayFeature {
 /// 0-width in such cases.
 enum DisplayFeatureType {
   unknown,
-  /// A fold in the flexible screen without a physical gap.
+  /// A fold in the flexible screen without a physical gap. The bounds for this
+  /// display feature type indicate where the display makes a crease.
   fold,
   /// A physical separation with a hinge that allows two display panels to fold.
   hinge,
@@ -1367,33 +1380,26 @@ enum DisplayFeatureType {
   cutout,
 }
 
-/// Display features for folds and hinges can have a state. Cutouts do not have
-/// a state.
+/// State of the display feature.
 ///
-///   * For cutouts, the state is [DisplayFeatureState.unknown].
-///   * For folds & hinges, the state is the posture.
-///   TODO: Once WM is stable, values should be, in this order: unknown, flat, halfOpened, flipped, with no other values.
+///   * For [DisplayFeatureType.fold]s & [DisplayFeatureType.hinge]s, the state is
+///   the posture, corresponding to values found in
+///   [Android Postures](https://developer.android.com/guide/topics/ui/foldables#postures).
+///   * For [DisplayFeatureType.cutout]s, the state is [DisplayFeatureState.unknown].
 enum DisplayFeatureState {
+  /// The display feature is a [DisplayFeatureType.cutout] or this state is new
+  /// and not yet known to Flutter.
   unknown,
-  // TODO: Once WM is stalbe, this is removed.
-  closed,
+  /// The foldable device is completely open. The screen space that is presented
+  /// to the user is flat.
+  postureFlat,
   /// The foldable device's hinge is in an intermediate position between opened
-  /// and closed state, there is a non-flat angle between parts of the flexible
-  /// screen or between physical screen panels. See the
-  /// [Posture](https://developer.android.com/guide/topics/ui/foldables#postures)
-  /// section in the official documentation for visual samples and references.
-  /// TODO: Once WM is stable, this comes after flat.
-  halfOpened,
-  /// The foldable device is completely open, the screen space that is presented
-  /// to the user is flat. See the
-  /// [Posture](https://developer.android.com/guide/topics/ui/foldables#postures)
-  /// section in the official documentation for visual samples and references.
-  flat,
+  /// and closed state. There is a non-flat angle between parts of the flexible
+  /// screen or between physical screen panels.
+  postureHalfOpened,
   /// The foldable device is flipped with the flexible screen parts or physical
-  /// screens facing opposite directions. See the
-  /// [Posture](https://developer.android.com/guide/topics/ui/foldables#postures)
-  /// section in the official documentation for visual samples and references.
-  flipped,
+  /// screens facing opposite directions.
+  postureFlipped,
 }
 
 /// An identifier used to select a user's language and formatting preferences.

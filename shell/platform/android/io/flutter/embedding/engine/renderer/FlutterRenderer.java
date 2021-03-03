@@ -17,6 +17,7 @@ import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.view.TextureRegistry;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -281,14 +282,14 @@ public class FlutterRenderer implements TextureRegistry {
     int[] displayFeaturesBounds = new int[viewportMetrics.displayFeatures.size() * 4];
     int[] displayFeaturesType = new int[viewportMetrics.displayFeatures.size()];
     int[] displayFeaturesState = new int[viewportMetrics.displayFeatures.size()];
-    for(int i=0; i<viewportMetrics.displayFeatures.size(); i++) {
+    for (int i = 0; i < viewportMetrics.displayFeatures.size(); i++) {
       DisplayFeature displayFeature = viewportMetrics.displayFeatures.get(i);
-      displayFeaturesBounds[4*i] = displayFeature.bounds.left;
-      displayFeaturesBounds[4*i+1] = displayFeature.bounds.top;
-      displayFeaturesBounds[4*i+2] = displayFeature.bounds.right;
-      displayFeaturesBounds[4*i+3] = displayFeature.bounds.bottom;
+      displayFeaturesBounds[4 * i] = displayFeature.bounds.left;
+      displayFeaturesBounds[4 * i + 1] = displayFeature.bounds.top;
+      displayFeaturesBounds[4 * i + 2] = displayFeature.bounds.right;
+      displayFeaturesBounds[4 * i + 3] = displayFeature.bounds.bottom;
       displayFeaturesType[i] = displayFeature.type.encodedValue;
-      displayFeaturesState[i] = displayFeature.state;
+      displayFeaturesState[i] = displayFeature.state.encodedValue;
     }
 
     flutterJNI.setViewportMetrics(
@@ -381,7 +382,7 @@ public class FlutterRenderer implements TextureRegistry {
     public int systemGestureInsetRight = 0;
     public int systemGestureInsetBottom = 0;
     public int systemGestureInsetLeft = 0;
-    public List<DisplayFeature> displayFeatures = List.of();
+    public List<DisplayFeature> displayFeatures = new ArrayList<DisplayFeature>();
   }
 
   /**
@@ -393,9 +394,9 @@ public class FlutterRenderer implements TextureRegistry {
   public static final class DisplayFeature {
     public final Rect bounds;
     public final DisplayFeatureType type;
-    public final int state;
+    public final DisplayFeatureState state;
 
-    public DisplayFeature(Rect bounds, DisplayFeatureType type, int state) {
+    public DisplayFeature(Rect bounds, DisplayFeatureType type, DisplayFeatureState state) {
       this.bounds = bounds;
       this.type = type;
       this.state = state;
@@ -404,7 +405,7 @@ public class FlutterRenderer implements TextureRegistry {
     public DisplayFeature(Rect bounds, DisplayFeatureType type) {
       this.bounds = bounds;
       this.type = type;
-      this.state = 0; // UNKNOWN
+      this.state = DisplayFeatureState.UNKNOWN;
     }
   }
 
@@ -443,6 +444,43 @@ public class FlutterRenderer implements TextureRegistry {
     public final int encodedValue;
 
     DisplayFeatureType(int encodedValue) {
+      this.encodedValue = encodedValue;
+    }
+  }
+
+  /**
+   * State of the display feature.
+   *
+   * <p> For foldables, the state is the posture. For cutouts, this is {@link UNKNOWN}
+   */
+  public enum DisplayFeatureState {
+    /**
+     * The display feature is a cutout or this state is new and not yet known to Flutter.
+     */
+    UNKNOWN(0),
+
+    /**
+     * The foldable device is completely open. The screen space that is presented to the user is flat.
+     * Corresponds to {@link androidx.window.FoldingFeature.STATE_FLAT}
+     */
+    POSTURE_FLAT(1),
+
+    /**
+     * The foldable device's hinge is in an intermediate position between opened and closed state.
+     * There is a non-flat angle between parts of the flexible screen or between physical screen panels.
+     * Corresponds to {@link androidx.window.FoldingFeature.STATE_HALF_OPENED}
+     */
+    POSTURE_HALF_OPENED(2),
+
+    /**
+     * The foldable device is flipped with the flexible screen parts or physical screens facing opposite directions.
+     * Corresponds to {@link androidx.window.FoldingFeature.STATE_FLIPPED}
+     */
+    POSTURE_FLIPPED(3);
+
+    public final int encodedValue;
+
+    DisplayFeatureState(int encodedValue) {
       this.encodedValue = encodedValue;
     }
   }

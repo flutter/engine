@@ -35,12 +35,13 @@ import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.content.ContextCompat;
 import androidx.core.util.Consumer;
-import androidx.window.DeviceState;
 import androidx.window.DisplayFeature;
+import androidx.window.FoldingFeature;
 import androidx.window.WindowLayoutInfo;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
+import io.flutter.embedding.engine.renderer.FlutterRenderer.DisplayFeatureState;
 import io.flutter.embedding.engine.renderer.FlutterRenderer.DisplayFeatureType;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.embedding.engine.renderer.RenderSurface;
@@ -149,18 +150,11 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
         }
       };
 
-  private final Consumer<DeviceState> windowManagerDeviceStateListener =
-      new Consumer<DeviceState>() {
-        @Override
-        public void accept(DeviceState deviceState) {
-          setWindowManagerDisplayFeatures();
-        }
-      };
   private final Consumer<WindowLayoutInfo> windowManagerListener =
       new Consumer<WindowLayoutInfo>() {
         @Override
         public void accept(WindowLayoutInfo layoutInfo) {
-          setWindowManagerDisplayFeatures();
+          setWindowManagerDisplayFeatures(layoutInfo);
         }
       };
 
@@ -448,25 +442,24 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     sendViewportMetricsToFlutter();
   }
 
-  @Override
-  protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
-    super.onLayout(changed, left, top, right, bottom);
-    setWindowManagerDisplayFeatures();
-  }
-
+  /**
+   * Invoked when this is attached to the window.
+   *
+   * AndroidX WindowManager alpha01 accepts callback registration only after the view is attached to
+   * the window. This is why we override this method.
+   *
+   * TODO: Refactor this once WindowManager goes to alpha02, as there is only 1 callback and it can be attached at any time.
+   */
   @Override
   protected void onAttachedToWindow() {
     super.onAttachedToWindow();
     windowManager.registerLayoutChangeCallback(ContextCompat.getMainExecutor(getContext()),
         windowManagerListener);
-    windowManager.registerDeviceStateChangeCallback(ContextCompat.getMainExecutor(getContext()),
-        windowManagerDeviceStateListener);
   }
 
   @Override
   protected void onDetachedFromWindow() {
     windowManager.unregisterLayoutChangeCallback(windowManagerListener);
-    windowManager.unregisterDeviceStateChangeCallback(windowManagerDeviceStateListener);
     super.onDetachedFromWindow();
   }
 
@@ -474,8 +467,8 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
    * Refresh {@link androidx.window.WindowManager} and {@link android.view.DisplayCutout}
    * display features. Fold, hinge and cutout areas are populated here.
    */
-  private void setWindowManagerDisplayFeatures() {
-    List<DisplayFeature> displayFeatures = windowManager.getWindowLayoutInfo().getDisplayFeatures();
+  private void setWindowManagerDisplayFeatures(WindowLayoutInfo layoutInfo) {
+    List<DisplayFeature> displayFeatures = layoutInfo.getDisplayFeatures();
     List<FlutterRenderer.DisplayFeature> result = new ArrayList<>();
 
     // Data from androidx.window.WindowManager display features. Fold and hinge areas are
@@ -486,29 +479,47 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
           "WindowManager Display Feature reported with bounds = "
               + displayFeature.getBounds().toString()
               + " and type = "
-              + displayFeature.getType());
-      DisplayFeatureType type = DisplayFeatureType.UNKNOWN;
-      if (displayFeature.getType() == DisplayFeature.TYPE_FOLD) {
-        type = DisplayFeatureType.FOLD;
-      } else if (displayFeature.getType() == DisplayFeature.TYPE_HINGE) {
-        type = DisplayFeatureType.HINGE;
+              + displayFeature.getClass().getSimpleName());
+      if (displayFeature instanceof FoldingFeature) {
+        DisplayFeatureType type = DisplayFeatureType.UNKNOWN;
+        DisplayFeatureState state = DisplayFeatureState.UNKNOWN;
+        final FoldingFeature feature = (FoldingFeature) displayFeature;
+        switch (feature.getType()) {
+          case FoldingFeature.TYPE_FOLD:
+            type = DisplayFeatureType.FOLD;
+            break;
+          case FoldingFeature.TYPE_HINGE:
+            type = DisplayFeatureType.HINGE;
+            break;
+        }
+        switch (feature.getState()) {
+          case FoldingFeature.STATE_FLAT:
+            state = DisplayFeatureState.POSTURE_FLAT;
+            break;
+          case FoldingFeature.STATE_HALF_OPENED:
+            state = DisplayFeatureState.POSTURE_HALF_OPENED;
+            break;
+          case FoldingFeature.STATE_FLIPPED:
+            state = DisplayFeatureState.POSTURE_FLIPPED;
+            break;
+        }
+        result.add(new FlutterRenderer.DisplayFeature(displayFeature.getBounds(), type, state));
+      } else {
+        result.add(new FlutterRenderer.DisplayFeature(displayFeature.getBounds(), DisplayFeatureType.UNKNOWN,
+            DisplayFeatureState.UNKNOWN));
       }
-      // In next versions of WindowManager, each DisplayFeature has its own posture.
-      // We're making the engine changes as close as possible to that for now.
-      final int posture = windowManager.getDeviceState().getPosture();
-      result.add(new FlutterRenderer.DisplayFeature(displayFeature.getBounds(), type, posture));
     }
 
     // Data from the DisplayCutout bounds. Cutouts for cameras and other sensors are
     // populated here.
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
       WindowInsets insets = getRootWindowInsets();
-      if (insets!=null) {
+      if (insets != null) {
         DisplayCutout cutout = insets.getDisplayCutout();
-        if (cutout!=null) {
-          for (Rect bounds: cutout.getBoundingRects()){
+        if (cutout != null) {
+          for (Rect bounds : cutout.getBoundingRects()) {
             Log.v(TAG, "DisplayCutout area reported with bounds = " + bounds.toString());
-            result.add(new FlutterRenderer.DisplayFeature(bounds,  DisplayFeatureType.CUTOUT));
+            result.add(new FlutterRenderer.DisplayFeature(bounds, DisplayFeatureType.CUTOUT));
           }
         }
       }
