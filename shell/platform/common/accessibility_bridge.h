@@ -161,7 +161,7 @@ class AccessibilityBridge
   ///             events in AccessibilityBridgeDelegate::OnAccessibilityEvent in
   ///             case one may decide to handle an event differently based on
   ///             all pending events.
-  const std::vector<ui::AXEventGenerator::TargetedEvent> GetCurrentEvents();
+  const std::vector<ui::AXEventGenerator::TargetedEvent> GetPendingEvents();
 
  private:
   // See FlutterSemanticsNode in embedder.h

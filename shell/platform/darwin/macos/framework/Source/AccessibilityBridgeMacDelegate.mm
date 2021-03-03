@@ -28,19 +28,19 @@ void AccessibilityBridgeMacDelegate::OnAccessibilityEvent(
     ui::AXEventGenerator::TargetedEvent targeted_event) {
   ui::AXNode* ax_node = targeted_event.node;
   std::vector<AccessibilityBridgeMacDelegate::NSAccessibilityEvent> events =
-      ConvertEvent(targeted_event.event_params.event, *ax_node);
+      MacOSEventFromAXEvent(targeted_event.event_params.event, *ax_node);
   for (AccessibilityBridgeMacDelegate::NSAccessibilityEvent event : events) {
     if (event.user_info != nil) {
-      FireNativeMacNotificationWithUserInfo(event.target, event.name, event.user_info);
+      DispatchMacOSNotificationWithUserInfo(event.target, event.name, event.user_info);
     } else {
-      FireNativeMacNotification(event.target, event.name);
+      DispatchMacOSNotification(event.target, event.name);
     }
   }
 }
 
 std::vector<AccessibilityBridgeMacDelegate::NSAccessibilityEvent>
-AccessibilityBridgeMacDelegate::ConvertEvent(ui::AXEventGenerator::Event event_type,
-                                             const ui::AXNode& ax_node) const {
+AccessibilityBridgeMacDelegate::MacOSEventFromAXEvent(ui::AXEventGenerator::Event event_type,
+                                                      const ui::AXNode& ax_node) const {
   // Gets the native_node with the node_id.
   NSCAssert(flutter_engine_, @"Flutter engine should not be deallocated");
   auto bridge = flutter_engine_.accessibilityBridge.lock();
@@ -102,8 +102,8 @@ AccessibilityBridgeMacDelegate::ConvertEvent(ui::AXEventGenerator::Event event_t
         NSAccessibilityElement* native_accessibility_node = (NSAccessibilityElement*)native_node;
         if (native_accessibility_node.accessibilityFocusedUIElement &&
             ax_node.data().HasState(ax::mojom::State::kMultiselectable) &&
-            !IsInGeneratedEventBatch(ui::AXEventGenerator::Event::ACTIVE_DESCENDANT_CHANGED) &&
-            !IsInGeneratedEventBatch(ui::AXEventGenerator::Event::FOCUS_CHANGED)) {
+            !HasPendingEvent(ui::AXEventGenerator::Event::ACTIVE_DESCENDANT_CHANGED) &&
+            !HasPendingEvent(ui::AXEventGenerator::Event::FOCUS_CHANGED)) {
           // Don't fire selected children change, it will sometimes override
           // announcement of current focus.
           break;
@@ -153,16 +153,16 @@ AccessibilityBridgeMacDelegate::ConvertEvent(ui::AXEventGenerator::Event event_t
           .target = native_node,
           .user_info = nil,
       });
-      if ([[NSProcessInfo processInfo]
-              isOperatingSystemAtLeastVersion:{.majorVersion = 10, .minorVersion = 11}] &&
-          ax_node.data().HasState(ax::mojom::State::kEditable)) {
-        events.push_back({
-            .name = NSAccessibilityValueChangedNotification,
-            .target = bridge->GetFlutterPlatformNodeDelegateFromID(kRootNode)
-                          .lock()
-                          ->GetNativeViewAccessible(),
-            .user_info = nil,
-        });
+      if (@available(macOS 10.11, *)) {
+        if (ax_node.data().HasState(ax::mojom::State::kEditable)) {
+          events.push_back({
+              .name = NSAccessibilityValueChangedNotification,
+              .target = bridge->GetFlutterPlatformNodeDelegateFromID(kRootNode)
+                            .lock()
+                            ->GetNativeViewAccessible(),
+              .user_info = nil,
+          });
+        }
       }
       break;
     case ui::AXEventGenerator::Event::LIVE_REGION_CREATED:
@@ -181,13 +181,13 @@ AccessibilityBridgeMacDelegate::ConvertEvent(ui::AXEventGenerator::Event event_t
       // Voiceover requires a live region changed notification to actually
       // announce the live region.
       auto live_region_events =
-          ConvertEvent(ui::AXEventGenerator::Event::LIVE_REGION_CHANGED, ax_node);
+          MacOSEventFromAXEvent(ui::AXEventGenerator::Event::LIVE_REGION_CHANGED, ax_node);
       events.insert(events.end(), live_region_events.begin(), live_region_events.end());
       break;
     }
     case ui::AXEventGenerator::Event::LIVE_REGION_CHANGED: {
-      if (![[NSProcessInfo processInfo]
-              isOperatingSystemAtLeastVersion:{.majorVersion = 10, .minorVersion = 14}]) {
+      if (@available(macOS 10.14, *)) {
+      } else {
         // Uses the announcement API to get around OS <= 10.13 VoiceOver bug
         // where it stops announcing live regions after the first time focus
         // leaves any content area.
@@ -343,7 +343,7 @@ AccessibilityBridgeMacDelegate::CreateFlutterPlatformNodeDelegate() {
 }
 
 // Private method
-void AccessibilityBridgeMacDelegate::FireNativeMacNotification(
+void AccessibilityBridgeMacDelegate::DispatchMacOSNotification(
     gfx::NativeViewAccessible native_node,
     NSAccessibilityNotificationName mac_notification) {
   NSCAssert(mac_notification, @"The notification must not be null.");
@@ -351,7 +351,7 @@ void AccessibilityBridgeMacDelegate::FireNativeMacNotification(
   NSAccessibilityPostNotification(native_node, mac_notification);
 }
 
-void AccessibilityBridgeMacDelegate::FireNativeMacNotificationWithUserInfo(
+void AccessibilityBridgeMacDelegate::DispatchMacOSNotificationWithUserInfo(
     gfx::NativeViewAccessible native_node,
     NSAccessibilityNotificationName mac_notification,
     NSDictionary* user_info) {
@@ -361,14 +361,13 @@ void AccessibilityBridgeMacDelegate::FireNativeMacNotificationWithUserInfo(
   NSAccessibilityPostNotificationWithUserInfo(native_node, mac_notification, user_info);
 }
 
-bool AccessibilityBridgeMacDelegate::IsInGeneratedEventBatch(
-    ui::AXEventGenerator::Event event_type) const {
+bool AccessibilityBridgeMacDelegate::HasPendingEvent(ui::AXEventGenerator::Event event) const {
   NSCAssert(flutter_engine_, @"Flutter engine should not be deallocated");
   auto bridge = flutter_engine_.accessibilityBridge.lock();
   NSCAssert(bridge, @"Accessibility bridge in flutter engine must not be null.");
-  std::vector<ui::AXEventGenerator::TargetedEvent> events = bridge->GetCurrentEvents();
-  for (const auto& event : events) {
-    if (event.event_params.event == event_type) {
+  std::vector<ui::AXEventGenerator::TargetedEvent> pending_events = bridge->GetPendingEvents();
+  for (const auto& pending_event : bridge->GetPendingEvents()) {
+    if (pending_event.event_params.event == event) {
       return true;
     }
   }

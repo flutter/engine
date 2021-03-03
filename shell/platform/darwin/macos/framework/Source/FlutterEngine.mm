@@ -446,7 +446,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   }
   _semanticsEnabled = enabled;
   if (!_semanticsEnabled && _bridge) {
-    _bridge = std::shared_ptr<flutter::AccessibilityBridge>(nullptr);
+    _bridge.reset();
   } else if (_semanticsEnabled && !_bridge) {
     _bridge = std::make_shared<flutter::AccessibilityBridge>(
         std::make_unique<flutter::AccessibilityBridgeMacDelegate>(self));

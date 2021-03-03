@@ -16,16 +16,16 @@ namespace flutter {
 
 //------------------------------------------------------------------------------
 /// The macOS implementation of FlutterPlatformNodeDelegate. This class uses
-/// AXPlaformNodeMac to create native accessibility object.
+/// AXPlatformNodeMac to manage the macOS-specific accessibility objects.
 class FlutterPlatformNodeDelegateMac : public FlutterPlatformNodeDelegate {
  public:
   explicit FlutterPlatformNodeDelegateMac(__weak FlutterEngine* engine);
   virtual ~FlutterPlatformNodeDelegateMac();
 
   //---------------------------------------------------------------------------
-  /// @brief      Gets the live region text of this node. This is useful to
-  ///             determine the changes in between semantics updates when
-  ///             generating accessibility events.
+  /// @brief      Gets the live region text of this node in UTF8 format. This is
+  ///             useful to determine the changes in between semantics updates
+  ///             when generating accessibility events.
   std::string GetLiveRegionText() const;
 
   // |ui::AXPlatformNodeDelegate|
@@ -46,6 +46,11 @@ class FlutterPlatformNodeDelegateMac : public FlutterPlatformNodeDelegate {
  private:
   ui::AXPlatformNode* ax_platform_node_;
   __weak FlutterEngine* engine_;
+
+  gfx::RectF ConvertBoundsFromLocalToScreen(
+      const gfx::RectF& local_bounds) const;
+  gfx::RectF ConvertBoundsFromScreenToGlobal(
+      const gfx::RectF& window_bounds) const;
 };
 
 }  // namespace flutter

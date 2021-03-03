@@ -46,32 +46,11 @@ gfx::Rect FlutterPlatformNodeDelegateMac::GetBoundsRect(
     const ui::AXCoordinateSystem coordinate_system,
     const ui::AXClippingBehavior clipping_behavior,
     ui::AXOffscreenResult* offscreen_result) const {
-  gfx::Rect bounds = FlutterPlatformNodeDelegate::GetBoundsRect(
+  gfx::Rect local_bounds = FlutterPlatformNodeDelegate::GetBoundsRect(
       coordinate_system, clipping_behavior, offscreen_result);
-  // Applies window transform.
-  NSRect local_bounds;
-  local_bounds.origin.x = bounds.x();
-  local_bounds.origin.y = bounds.y();
-  local_bounds.size.width = bounds.width();
-  local_bounds.size.height = bounds.height();
-  // local_bounds is flipped against y axis.
-  local_bounds.origin.y = -local_bounds.origin.y - local_bounds.size.height;
-  __strong FlutterEngine* strong_engine = engine_;
-  NSCAssert(strong_engine, @"Flutter engine should not be deallocated");
-  NSRect view_bounds = [strong_engine.viewController.view convertRectFromBacking:local_bounds];
-  NSRect window_bounds = [strong_engine.viewController.view convertRect:view_bounds toView:nil];
-  NSRect global_bounds =
-      [[strong_engine.viewController.view window] convertRectToScreen:window_bounds];
-  // The voiceover seems to only accept bounds that are relative to primary screen.
-  // Thus, we use [[NSScreen screens] firstObject] instead of [NSScreen mainScreen].
-  NSScreen* screen = [[NSScreen screens] firstObject];
-  NSRect screen_bounds = [screen frame];
-  // The screen is flipped against y axis.
-  global_bounds.origin.y =
-      screen_bounds.size.height - global_bounds.origin.y - global_bounds.size.height;
-  gfx::RectF result(global_bounds.origin.x, global_bounds.origin.y, global_bounds.size.width,
-                    global_bounds.size.height);
-  return gfx::ToEnclosingRect(result);
+  gfx::RectF local_bounds_f(local_bounds);
+  gfx::RectF screen_bounds = ConvertBoundsFromLocalToScreen(local_bounds_f);
+  return gfx::ToEnclosingRect(ConvertBoundsFromScreenToGlobal(screen_bounds));
 }
 
 gfx::NativeViewAccessible FlutterPlatformNodeDelegateMac::GetNSWindow() {
@@ -100,6 +79,40 @@ std::string FlutterPlatformNodeDelegateMac::GetLiveRegionText() const {
                 ->GetLiveRegionText();
   }
   return text;
+}
+
+gfx::RectF FlutterPlatformNodeDelegateMac::ConvertBoundsFromLocalToScreen(
+    const gfx::RectF& local_bounds) const {
+  // Converts to NSRect to use NSView rect conversion.
+  NSRect ns_local_bounds =
+      NSMakeRect(local_bounds.x(), local_bounds.y(), local_bounds.width(), local_bounds.height());
+  // The macOS XY coordinates start at bottom-left and increase toward top-right,
+  // which is different from the Flutter's XY coordinates that start at top-left
+  // increasing to bottom-right. Therefore, We need to flip the y coordinate when
+  // we convert from flutter coordinates to macOS coordinates.
+  ns_local_bounds.origin.y = -ns_local_bounds.origin.y - ns_local_bounds.size.height;
+  __strong FlutterEngine* strong_engine = engine_;
+  NSCAssert(strong_engine, @"Flutter engine should not be deallocated");
+  NSRect ns_view_bounds =
+      [strong_engine.viewController.view convertRectFromBacking:ns_local_bounds];
+  NSRect ns_window_bounds = [strong_engine.viewController.view convertRect:ns_view_bounds
+                                                                    toView:nil];
+  NSRect ns_screen_bounds =
+      [[strong_engine.viewController.view window] convertRectToScreen:ns_window_bounds];
+  gfx::RectF screen_bounds(ns_screen_bounds.origin.x, ns_screen_bounds.origin.y,
+                           ns_screen_bounds.size.width, ns_screen_bounds.size.height);
+  return screen_bounds;
+}
+
+gfx::RectF FlutterPlatformNodeDelegateMac::ConvertBoundsFromScreenToGlobal(
+    const gfx::RectF& screen_bounds) const {
+  // The voiceover seems to only accept bounds that are relative to primary screen.
+  // Thus, we use [[NSScreen screens] firstObject] instead of [NSScreen mainScreen].
+  NSScreen* screen = [[NSScreen screens] firstObject];
+  NSRect primary_screen_bounds = [screen frame];
+  // The screen is flipped against y axis.
+  float flipped_y = primary_screen_bounds.size.height - screen_bounds.y() - screen_bounds.height();
+  return {screen_bounds.x(), flipped_y, screen_bounds.width(), screen_bounds.height()};
 }
 
 }  // namespace flutter

@@ -48,7 +48,7 @@ class AccessibilityBridgeMacDelegate : public AccessibilityBridge::Accessibility
   ///             accessibility notification system.
   /// @param[in]  native_node       The event target, must not be nil.
   /// @param[in]  mac_notification  The event name, must not be nil.
-  void FireNativeMacNotification(gfx::NativeViewAccessible native_node,
+  void DispatchMacOSNotification(gfx::NativeViewAccessible native_node,
                                  NSAccessibilityNotificationName mac_notification);
 
   //---------------------------------------------------------------------------
@@ -58,22 +58,22 @@ class AccessibilityBridgeMacDelegate : public AccessibilityBridge::Accessibility
   /// @param[in]  native_node       The event target, must not be nil.
   /// @param[in]  mac_notification  The event name, must not be nil.
   /// @param[in]  user_info         The additional attributes, must not be nil.
-  void FireNativeMacNotificationWithUserInfo(gfx::NativeViewAccessible native_node,
+  void DispatchMacOSNotificationWithUserInfo(gfx::NativeViewAccessible native_node,
                                              NSAccessibilityNotificationName mac_notification,
                                              NSDictionary* user_info);
 
   //---------------------------------------------------------------------------
   /// @brief      Whether the given event is in current pending events.
   /// @param[in]  event_type        The event you would like to look up.
-  bool IsInGeneratedEventBatch(ui::AXEventGenerator::Event event_type) const;
+  bool HasPendingEvent(ui::AXEventGenerator::Event event) const;
 
   //---------------------------------------------------------------------------
   /// @brief      Converts the give ui::AXEventGenerator::Event into
   ///             macOS native accessibility event[s]
   /// @param[in]  event_type        The original event type.
   /// @param[in]  ax_node           The original event target.
-  std::vector<NSAccessibilityEvent> ConvertEvent(ui::AXEventGenerator::Event event_type,
-                                                 const ui::AXNode& ax_node) const;
+  std::vector<NSAccessibilityEvent> MacOSEventFromAXEvent(ui::AXEventGenerator::Event event_type,
+                                                          const ui::AXNode& ax_node) const;
 
   __weak FlutterEngine* flutter_engine_;
 };
