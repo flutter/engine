@@ -1058,15 +1058,14 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         }
       case AccessibilityNodeInfo.ACTION_SET_TEXT:
         {
-          String newText = "";
-          if (arguments != null
-              && arguments.containsKey(
-                  AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE)) {
-            newText =
-                arguments.getString(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE);
+          // Set text APIs aren't available until API 21. We can't handle the case here so
+          // return false
+          // instead. It's extremely unlikely that this case would ever be triggered in the first
+          // place in API < 21.
+          if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+            return false;
           }
-          accessibilityChannel.dispatchSemanticsAction(virtualViewId, Action.SET_TEXT, newText);
-          return true;
+          return performSetText(virtualViewId, arguments);
         }
       default:
         // might be a custom accessibility accessibilityAction.
@@ -1125,6 +1124,22 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         break;
     }
     return false;
+  }
+
+  /**
+   * Handles the responsibilities of {@link #performAction(int, int, Bundle)} for the specific
+   * scenario of cursor movement.
+   */
+  @TargetApi(21)
+  @RequiresApi(21)
+  private boolean performSetText(int virtualViewId, @NonNull Bundle arguments) {
+    String newText = "";
+    if (arguments != null
+        && arguments.containsKey(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE)) {
+      newText = arguments.getString(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE);
+    }
+    accessibilityChannel.dispatchSemanticsAction(virtualViewId, Action.SET_TEXT, newText);
+    return true;
   }
 
   // TODO(ianh): implement findAccessibilityNodeInfosByText()
