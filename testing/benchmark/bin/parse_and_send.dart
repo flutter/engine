@@ -7,8 +7,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:git/git.dart';
-import 'package:metrics_center/flutter.dart';
-import 'package:metrics_center/google_benchmark.dart';
+import 'package:metrics_center/metrics_center.dart';
 
 Future<String> _getGitRevision() async {
   final GitDir gitDir = await GitDir.fromExisting('../../');
@@ -42,15 +41,18 @@ Future<FlutterDestination> connectFlutterDestination() async {
   const String kTokenPath = 'TOKEN_PATH';
   const String kGcpProject = 'GCP_PROJECT';
   final Map<String, String> env = Platform.environment;
+  final bool isTesting = env['IS_TESTING'] == 'true';
   if (env.containsKey(kTokenPath) && env.containsKey(kGcpProject)) {
     return FlutterDestination.makeFromAccessToken(
       File(env[kTokenPath]).readAsStringSync(),
       env[kGcpProject],
+      isTesting: isTesting,
     );
   }
   return await FlutterDestination.makeFromCredentialsJson(
     jsonDecode(Platform.environment['BENCHMARK_GCP_CREDENTIALS'])
         as Map<String, dynamic>,
+    isTesting: isTesting,
   );
 }
 

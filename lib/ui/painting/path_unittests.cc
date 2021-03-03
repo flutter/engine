@@ -77,6 +77,7 @@ TEST_F(ShellTest, PathVolatilityGCRemovesPathFromTracker) {
     EXPECT_FALSE(Dart_IsError(result));
     CanvasPath* path = reinterpret_cast<CanvasPath*>(peer);
     EXPECT_TRUE(path);
+    path->AddRef();
     EXPECT_TRUE(path->path().isVolatile());
     std::shared_ptr<VolatilePathTracker> tracker =
         UIDartState::Current()->GetVolatilePathTracker();
@@ -94,6 +95,8 @@ TEST_F(ShellTest, PathVolatilityGCRemovesPathFromTracker) {
     // Because the path got GC'd, it was removed from the cache and we're the
     // only one holding it.
     EXPECT_TRUE(path->path().isVolatile());
+
+    path->Release();
 
     message_latch->Signal();
   };

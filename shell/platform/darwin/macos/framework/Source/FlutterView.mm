@@ -4,6 +4,7 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderingBackend.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterResizeSynchronizer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterSurfaceManager.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/MacOSGLContextSwitch.h"
@@ -27,6 +28,7 @@
   self = [super initWithFrame:NSZeroRect];
   if (self) {
     [self setWantsLayer:YES];
+    [self setLayerContentsRedrawPolicy:NSViewLayerContentsRedrawDuringViewResize];
     _reshapeListener = reshapeListener;
     _resizableBackingStoreProvider = [[FlutterMetalResizableBackingStoreProvider alloc]
         initWithDevice:device
@@ -38,15 +40,13 @@
   return self;
 }
 
-#ifdef SHELL_ENABLE_METAL
 + (Class)layerClass {
-  return [CAMetalLayer class];
+  return [FlutterRenderingBackend layerClass];
 }
 
 - (CALayer*)makeBackingLayer {
-  return [CAMetalLayer layer];
+  return [FlutterRenderingBackend createBackingLayer];
 }
-#endif
 
 - (instancetype)initWithMainContext:(NSOpenGLContext*)mainContext
                     reshapeListener:(id<FlutterViewReshapeListener>)reshapeListener {
@@ -114,6 +114,10 @@
   [super viewDidChangeBackingProperties];
   // Force redraw
   [_reshapeListener viewDidReshape:self];
+}
+
+- (void)shutdown {
+  [_resizeSynchronizer shutdown];
 }
 
 @end

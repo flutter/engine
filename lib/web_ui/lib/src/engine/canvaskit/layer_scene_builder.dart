@@ -8,9 +8,7 @@ part of engine;
 class LayerScene implements ui.Scene {
   final LayerTree layerTree;
 
-  LayerScene(Layer? rootLayer) : layerTree = LayerTree() {
-    layerTree.rootLayer = rootLayer;
-  }
+  LayerScene(RootLayer rootLayer) : layerTree = LayerTree(rootLayer);
 
   @override
   void dispose() {}
@@ -23,8 +21,12 @@ class LayerScene implements ui.Scene {
 }
 
 class LayerSceneBuilder implements ui.SceneBuilder {
-  Layer? rootLayer;
-  ContainerLayer? currentLayer;
+  LayerSceneBuilder() : rootLayer = RootLayer() {
+    currentLayer = rootLayer;
+  }
+
+  final RootLayer rootLayer;
+  late ContainerLayer currentLayer;
 
   @override
   void addChildScene({
@@ -50,16 +52,13 @@ class LayerSceneBuilder implements ui.SceneBuilder {
     bool isComplexHint = false,
     bool willChangeHint = false,
   }) {
-    currentLayer!.add(PictureLayer(
+    currentLayer.add(PictureLayer(
         picture as CkPicture, offset, isComplexHint, willChangeHint));
   }
 
   @override
   void addRetained(ui.EngineLayer retainedLayer) {
-    if (currentLayer == null) {
-      return;
-    }
-    currentLayer!.add(retainedLayer as Layer);
+    currentLayer.add(retainedLayer as Layer);
   }
 
   @override
@@ -82,7 +81,7 @@ class LayerSceneBuilder implements ui.SceneBuilder {
     double height = 0.0,
     Object? webOnlyPaintedBy,
   }) {
-    currentLayer!.add(PlatformViewLayer(viewId, offset, width, height));
+    currentLayer.add(PlatformViewLayer(viewId, offset, width, height));
   }
 
   @override
@@ -92,95 +91,85 @@ class LayerSceneBuilder implements ui.SceneBuilder {
 
   @override
   void pop() {
-    if (currentLayer == null) {
+    if (currentLayer == rootLayer) {
+      // Don't pop the root layer. It must always be there.
       return;
     }
-    currentLayer = currentLayer!.parent;
+    currentLayer = currentLayer.parent!;
   }
 
   @override
-  ui.BackdropFilterEngineLayer? pushBackdropFilter(
+  BackdropFilterEngineLayer? pushBackdropFilter(
     ui.ImageFilter filter, {
     ui.EngineLayer? oldLayer,
   }) {
-    pushLayer(BackdropFilterLayer(filter));
-    return null;
+    return pushLayer<BackdropFilterEngineLayer>(BackdropFilterEngineLayer(filter));
   }
 
   @override
-  ui.ClipPathEngineLayer? pushClipPath(
+  ClipPathEngineLayer? pushClipPath(
     ui.Path path, {
     ui.Clip clipBehavior = ui.Clip.antiAlias,
     ui.EngineLayer? oldLayer,
   }) {
-    pushLayer(ClipPathLayer(path as CkPath, clipBehavior));
-    return null;
+    return pushLayer<ClipPathEngineLayer>(ClipPathEngineLayer(path as CkPath, clipBehavior));
   }
 
   @override
-  ui.ClipRRectEngineLayer? pushClipRRect(
+  ClipRRectEngineLayer? pushClipRRect(
     ui.RRect rrect, {
     ui.Clip? clipBehavior,
     ui.EngineLayer? oldLayer,
   }) {
-    pushLayer(ClipRRectLayer(rrect, clipBehavior));
-    return null;
+    return pushLayer<ClipRRectEngineLayer>(ClipRRectEngineLayer(rrect, clipBehavior));
   }
 
   @override
-  ui.ClipRectEngineLayer? pushClipRect(
+  ClipRectEngineLayer? pushClipRect(
     ui.Rect rect, {
     ui.Clip clipBehavior = ui.Clip.antiAlias,
     ui.EngineLayer? oldLayer,
   }) {
-    pushLayer(ClipRectLayer(rect, clipBehavior));
-    return null;
+    return pushLayer<ClipRectEngineLayer>(ClipRectEngineLayer(rect, clipBehavior));
   }
 
   @override
-  ui.ColorFilterEngineLayer? pushColorFilter(
+  ColorFilterEngineLayer? pushColorFilter(
     ui.ColorFilter filter, {
     ui.ColorFilterEngineLayer? oldLayer,
   }) {
     assert(filter != null); // ignore: unnecessary_null_comparison
-    pushLayer(ColorFilterLayer(filter));
-    return null;
+    return pushLayer<ColorFilterEngineLayer>(ColorFilterEngineLayer(filter));
   }
 
-  ui.ImageFilterEngineLayer? pushImageFilter(
+  ImageFilterEngineLayer? pushImageFilter(
     ui.ImageFilter filter, {
     ui.ImageFilterEngineLayer? oldLayer,
   }) {
     assert(filter != null); // ignore: unnecessary_null_comparison
-    pushLayer(ImageFilterLayer(filter));
-    return null;
+    return pushLayer<ImageFilterEngineLayer>(ImageFilterEngineLayer(filter));
   }
 
   @override
-  ui.OffsetEngineLayer pushOffset(
+  OffsetEngineLayer pushOffset(
     double dx,
     double dy, {
     ui.EngineLayer? oldLayer,
   }) {
-    final Matrix4 matrix = Matrix4.translationValues(dx, dy, 0.0);
-    final TransformLayer layer = TransformLayer(matrix);
-    pushLayer(layer);
-    return layer;
+    return pushLayer<OffsetEngineLayer>(OffsetEngineLayer(dx, dy));
   }
 
   @override
-  ui.OpacityEngineLayer pushOpacity(
+  OpacityEngineLayer pushOpacity(
     int alpha, {
     ui.EngineLayer? oldLayer,
     ui.Offset offset = ui.Offset.zero,
   }) {
-    final OpacityLayer layer = OpacityLayer(alpha, offset);
-    pushLayer(layer);
-    return layer;
+    return pushLayer<OpacityEngineLayer>(OpacityEngineLayer(alpha, offset));
   }
 
   @override
-  ui.PhysicalShapeEngineLayer pushPhysicalShape({
+  PhysicalShapeEngineLayer pushPhysicalShape({
     required ui.Path path,
     required double elevation,
     required ui.Color color,
@@ -188,35 +177,33 @@ class LayerSceneBuilder implements ui.SceneBuilder {
     ui.Clip clipBehavior = ui.Clip.none,
     ui.EngineLayer? oldLayer,
   }) {
-    final PhysicalShapeLayer layer = PhysicalShapeLayer(
+    return pushLayer<PhysicalShapeEngineLayer>(PhysicalShapeEngineLayer(
       elevation,
       color,
       shadowColor,
       path as CkPath,
       clipBehavior,
-    );
-    pushLayer(layer);
-    return layer;
+    ));
   }
 
   @override
-  ui.ShaderMaskEngineLayer pushShaderMask(
+  ShaderMaskEngineLayer pushShaderMask(
     ui.Shader shader,
     ui.Rect maskRect,
     ui.BlendMode blendMode, {
     ui.EngineLayer? oldLayer,
   }) {
-    throw UnimplementedError();
+    return pushLayer<ShaderMaskEngineLayer>(ShaderMaskEngineLayer(
+        shader, maskRect, blendMode));
   }
 
   @override
-  ui.TransformEngineLayer? pushTransform(
+  TransformEngineLayer? pushTransform(
     Float64List matrix4, {
     ui.EngineLayer? oldLayer,
   }) {
     final Matrix4 matrix = Matrix4.fromFloat32List(toMatrix32(matrix4));
-    pushLayer(TransformLayer(matrix));
-    return null;
+    return pushLayer<TransformEngineLayer>(TransformEngineLayer(matrix));
   }
 
   @override
@@ -234,18 +221,10 @@ class LayerSceneBuilder implements ui.SceneBuilder {
     // TODO: implement setRasterizerTracingThreshold
   }
 
-  void pushLayer(ContainerLayer layer) {
-    if (rootLayer == null) {
-      rootLayer = currentLayer = layer;
-      return;
-    }
-
-    if (currentLayer == null) {
-      return;
-    }
-
-    currentLayer!.add(layer);
+  T pushLayer<T extends ContainerLayer>(T layer) {
+    currentLayer.add(layer);
     currentLayer = layer;
+    return layer;
   }
 
   @override

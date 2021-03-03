@@ -63,7 +63,7 @@ Engine::Engine(Delegate& delegate,
                DartVM& vm,
                fml::RefPtr<const DartSnapshot> isolate_snapshot,
                TaskRunners task_runners,
-               const PlatformData platform_data,
+               const PlatformData& platform_data,
                Settings settings,
                std::unique_ptr<Animator> animator,
                fml::WeakPtr<IOManager> io_manager,
@@ -415,6 +415,14 @@ void Engine::DispatchPointerDataPacket(
   pointer_data_dispatcher_->DispatchPacket(std::move(packet), trace_flow_id);
 }
 
+void Engine::DispatchKeyDataPacket(std::unique_ptr<KeyDataPacket> packet,
+                                   KeyDataResponse callback) {
+  TRACE_EVENT0("flutter", "Engine::DispatchKeyDataPacket");
+  if (runtime_controller_) {
+    runtime_controller_->DispatchKeyDataPacket(*packet, std::move(callback));
+  }
+}
+
 void Engine::DispatchSemanticsAction(int id,
                                      SemanticsAction action,
                                      std::vector<uint8_t> args) {
@@ -507,8 +515,9 @@ void Engine::DoDispatchPacket(std::unique_ptr<PointerDataPacket> packet,
   }
 }
 
-void Engine::ScheduleSecondaryVsyncCallback(const fml::closure& callback) {
-  animator_->ScheduleSecondaryVsyncCallback(callback);
+void Engine::ScheduleSecondaryVsyncCallback(uintptr_t id,
+                                            const fml::closure& callback) {
+  animator_->ScheduleSecondaryVsyncCallback(id, callback);
 }
 
 void Engine::HandleAssetPlatformMessage(fml::RefPtr<PlatformMessage> message) {

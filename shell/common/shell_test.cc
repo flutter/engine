@@ -317,7 +317,8 @@ std::unique_ptr<Shell> ShellTest::CreateShell(
     TaskRunners task_runners,
     bool simulate_vsync,
     std::shared_ptr<ShellTestExternalViewEmbedder>
-        shell_test_external_view_embedder) {
+        shell_test_external_view_embedder,
+    bool is_gpu_disabled) {
   const auto vsync_clock = std::make_shared<ShellTestVsyncClock>();
   CreateVsyncWaiter create_vsync_waiter = [&]() {
     if (simulate_vsync) {
@@ -329,7 +330,7 @@ std::unique_ptr<Shell> ShellTest::CreateShell(
     }
   };
   return Shell::Create(
-      task_runners, settings,
+      flutter::PlatformData(), task_runners, settings,
       [vsync_clock, &create_vsync_waiter,
        shell_test_external_view_embedder](Shell& shell) {
         return ShellTestPlatformView::Create(
@@ -338,7 +339,8 @@ std::unique_ptr<Shell> ShellTest::CreateShell(
             ShellTestPlatformView::BackendType::kDefaultBackend,
             shell_test_external_view_embedder);
       },
-      [](Shell& shell) { return std::make_unique<Rasterizer>(shell); });
+      [](Shell& shell) { return std::make_unique<Rasterizer>(shell); },
+      is_gpu_disabled);
 }
 void ShellTest::DestroyShell(std::unique_ptr<Shell> shell) {
   DestroyShell(std::move(shell), GetTaskRunnersForFixture());

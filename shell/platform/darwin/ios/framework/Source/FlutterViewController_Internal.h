@@ -14,13 +14,13 @@ namespace flutter {
 class FlutterPlatformViewsController;
 }
 
-FLUTTER_EXPORT
+FLUTTER_DARWIN_EXPORT
 extern NSNotificationName const FlutterViewControllerWillDealloc;
 
-FLUTTER_EXPORT
+FLUTTER_DARWIN_EXPORT
 extern NSNotificationName const FlutterViewControllerHideHomeIndicator;
 
-FLUTTER_EXPORT
+FLUTTER_DARWIN_EXPORT
 extern NSNotificationName const FlutterViewControllerShowHomeIndicator;
 
 @interface FlutterViewController ()
@@ -29,6 +29,9 @@ extern NSNotificationName const FlutterViewControllerShowHomeIndicator;
 - (fml::WeakPtr<FlutterViewController>)getWeakPtr;
 - (std::shared_ptr<flutter::FlutterPlatformViewsController>&)platformViewsController;
 - (FlutterRestorationPlugin*)restorationPlugin;
+// Send touches to the Flutter Engine while forcing the change type to be cancelled.
+// The `phase`s in `touches` are ignored.
+- (void)forceTouchesCancelled:(NSSet*)touches;
 
 @end
 

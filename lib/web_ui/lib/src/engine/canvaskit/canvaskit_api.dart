@@ -742,7 +742,7 @@ class SkImage {
     Float32List? matrix, // 3x3 matrix
   );
   external Uint8List readPixels(int srcX, int srcY, SkImageInfo imageInfo);
-  external SkData encodeToData();
+  external Uint8List? encodeToBytes();
   external bool isAliasOf(SkImage other);
   external bool isDeleted();
 }
@@ -1177,7 +1177,8 @@ class SkPath {
 
   /// Serializes the path into a list of commands.
   ///
-  /// The list can be used to create a new [SkPath] using [CanvasKit.Path.MakeFromCmds].
+  /// The list can be used to create a new [SkPath] using
+  /// [CanvasKit.Path.MakeFromCmds].
   external List<dynamic> toCmds();
 
   external void delete();
@@ -1470,7 +1471,13 @@ class SkParagraphBuilder {
   external void pushPaintStyle(
       SkTextStyle textStyle, SkPaint foreground, SkPaint background);
   external void pop();
-  external void addPlaceholder(SkPlaceholderStyleProperties placeholderStyle);
+  external void addPlaceholder(
+    double width,
+    double height,
+    SkPlaceholderAlignment alignment,
+    SkTextBaseline baseline,
+    double offset,
+  );
   external SkParagraph build();
   external void delete();
 }
@@ -1608,16 +1615,6 @@ class SkStrutStyleProperties {
 
 @JS()
 @anonymous
-class SkPlaceholderStyleProperties {
-  external set width(double? value);
-  external set height(double? value);
-  external set alignment(SkPlaceholderAlignment? value);
-  external set offset(double? value);
-  external set baseline(SkTextBaseline? value);
-}
-
-@JS()
-@anonymous
 class SkFontStyle {
   external set weight(SkFontWeight? value);
   external set slant(SkFontSlant? value);
@@ -1646,6 +1643,8 @@ class SkTypeface {}
 class SkFont {
   external SkFont(SkTypeface typeface);
   external Uint8List getGlyphIDs(String text);
+  external void getGlyphBounds(
+      List<int> glyphs, SkPaint? paint, Uint8List? output);
 }
 
 @JS()

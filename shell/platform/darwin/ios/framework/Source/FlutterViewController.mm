@@ -664,8 +664,9 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
   TRACE_EVENT0("flutter", "viewDidAppear");
   [self onUserSettingsChanged:nil];
   [self onAccessibilityStatusChanged:nil];
-  [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.resumed"];
-
+  if (UIApplication.sharedApplication.applicationState == UIApplicationStateActive) {
+    [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.resumed"];
+  }
   [super viewDidAppear:animated];
 }
 
@@ -944,6 +945,11 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
 - (void)touchesCancelled:(NSSet*)touches withEvent:(UIEvent*)event {
   [self dispatchTouches:touches pointerDataChangeOverride:nullptr];
+}
+
+- (void)forceTouchesCancelled:(NSSet*)touches {
+  flutter::PointerData::Change cancel = flutter::PointerData::Change::kCancel;
+  [self dispatchTouches:touches pointerDataChangeOverride:&cancel];
 }
 
 #pragma mark - Handle view resizing

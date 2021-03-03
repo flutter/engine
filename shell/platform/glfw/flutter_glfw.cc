@@ -13,9 +13,9 @@
 #include <filesystem>
 #include <iostream>
 
-#include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/plugin_registrar.h"
-#include "flutter/shell/platform/common/cpp/incoming_message_dispatcher.h"
-#include "flutter/shell/platform/common/cpp/path_utils.h"
+#include "flutter/shell/platform/common/client_wrapper/include/flutter/plugin_registrar.h"
+#include "flutter/shell/platform/common/incoming_message_dispatcher.h"
+#include "flutter/shell/platform/common/path_utils.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/glfw/glfw_event_loop.h"
 #include "flutter/shell/platform/glfw/headless_event_loop.h"
@@ -1071,4 +1071,31 @@ void FlutterDesktopMessengerSetCallback(FlutterDesktopMessengerRef messenger,
                                         void* user_data) {
   messenger->engine->message_dispatcher->SetMessageCallback(channel, callback,
                                                             user_data);
+}
+
+FlutterDesktopTextureRegistrarRef FlutterDesktopRegistrarGetTextureRegistrar(
+    FlutterDesktopPluginRegistrarRef registrar) {
+  std::cerr << "GLFW Texture support is not implemented yet." << std::endl;
+  return nullptr;
+}
+
+int64_t FlutterDesktopTextureRegistrarRegisterExternalTexture(
+    FlutterDesktopTextureRegistrarRef texture_registrar,
+    const FlutterDesktopTextureInfo* texture_info) {
+  std::cerr << "GLFW Texture support is not implemented yet." << std::endl;
+  return -1;
+}
+
+bool FlutterDesktopTextureRegistrarUnregisterExternalTexture(
+    FlutterDesktopTextureRegistrarRef texture_registrar,
+    int64_t texture_id) {
+  std::cerr << "GLFW Texture support is not implemented yet." << std::endl;
+  return false;
+}
+
+bool FlutterDesktopTextureRegistrarMarkExternalTextureFrameAvailable(
+    FlutterDesktopTextureRegistrarRef texture_registrar,
+    int64_t texture_id) {
+  std::cerr << "GLFW Texture support is not implemented yet." << std::endl;
+  return false;
 }

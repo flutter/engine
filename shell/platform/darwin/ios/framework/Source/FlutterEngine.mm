@@ -612,13 +612,14 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   );
 
   // Create the shell. This is a blocking operation.
-  std::unique_ptr<flutter::Shell> shell =
-      flutter::Shell::Create(std::move(task_runners),  // task runners
-                             std::move(platformData),  // window data
-                             std::move(settings),      // settings
-                             on_create_platform_view,  // platform view creation
-                             on_create_rasterizer      // rasterzier creation
-      );
+  std::unique_ptr<flutter::Shell> shell = flutter::Shell::Create(
+      std::move(platformData),  // window data
+      std::move(task_runners),  // task runners
+      std::move(settings),      // settings
+      on_create_platform_view,  // platform view creation
+      on_create_rasterizer,     // rasterzier creation
+      /*is_gpu_disabled=*/[UIApplication sharedApplication].applicationState !=
+          UIApplicationStateActive);
 
   if (shell == nullptr) {
     FML_LOG(ERROR) << "Could not start a shell FlutterEngine with entrypoint: "
@@ -635,7 +636,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 }
 
 - (void)initializeDisplays {
-  double refresh_rate = [[[DisplayLinkManager alloc] init] displayRefreshRate];
+  double refresh_rate = [DisplayLinkManager displayRefreshRate];
   auto display = flutter::Display(refresh_rate);
   _shell->OnDisplayUpdates(flutter::DisplayUpdateType::kStartup, {display});
 }
@@ -968,8 +969,8 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
                                                       project:_dartProject.get()
                                        allowHeadlessExecution:_allowHeadlessExecution];
 
-  flutter::Settings settings = _shell->GetSettings();
-  SetEntryPoint(&settings, entrypoint, libraryURI);
+  flutter::RunConfiguration configuration =
+      [_dartProject.get() runConfigurationForEntrypoint:entrypoint libraryOrNil:libraryURI];
 
   fml::WeakPtr<flutter::PlatformView> platform_view = _shell->GetPlatformView();
   FML_DCHECK(platform_view);
@@ -992,7 +993,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
       [](flutter::Shell& shell) { return std::make_unique<flutter::Rasterizer>(shell); };
 
   std::unique_ptr<flutter::Shell> shell =
-      _shell->Spawn(std::move(settings), on_create_platform_view, on_create_rasterizer);
+      _shell->Spawn(std::move(configuration), on_create_platform_view, on_create_rasterizer);
 
   result->_threadHost = _threadHost;
   result->_profiler = _profiler;

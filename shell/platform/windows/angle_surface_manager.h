@@ -75,8 +75,11 @@ class AngleSurfaceManager {
   void CleanUp();
 
  private:
-  // Attempts to initialize EGL with a particular ANGLE configuration.
-  bool InitializeEGL(const EGLint* attributes);
+  // Attempts to initialize EGL using ANGLE.
+  bool InitializeEGL(
+      PFNEGLGETPLATFORMDISPLAYEXTPROC egl_get_platform_display_EXT,
+      const EGLint* config,
+      bool should_log);
 
   // EGL representation of native display.
   EGLDisplay egl_display_;
@@ -97,6 +100,10 @@ class AngleSurfaceManager {
 
   // Current render_surface that engine will draw into.
   EGLSurface render_surface_ = EGL_NO_SURFACE;
+
+  // Requested dimensions for current surface
+  EGLint surface_width_ = 0;
+  EGLint surface_height_ = 0;
 };
 
 }  // namespace flutter

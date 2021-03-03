@@ -23,7 +23,7 @@ class TextLayoutService {
 
   double height = 0.0;
 
-  double longestLine = 0.0;
+  EngineLineMetrics? longestLine;
 
   double minIntrinsicWidth = 0.0;
 
@@ -65,7 +65,7 @@ class TextLayoutService {
     // Reset results from previous layout.
     width = constraints.width;
     height = 0.0;
-    longestLine = 0.0;
+    longestLine = null;
     minIntrinsicWidth = 0.0;
     maxIntrinsicWidth = 0.0;
     didExceedMaxLines = false;
@@ -78,7 +78,6 @@ class TextLayoutService {
     final Spanometer spanometer = Spanometer(paragraph, context);
 
     int spanIndex = 0;
-    ParagraphSpan span = paragraph.spans[0];
     LineBuilder currentLine =
         LineBuilder.first(paragraph, spanometer, maxWidth: constraints.width);
 
@@ -86,26 +85,33 @@ class TextLayoutService {
     // statements (e.g. when we reach `endOfText`, when ellipsis has been
     // appended).
     while (true) {
-      // *********************************************** //
-      // *** HANDLE HARD LINE BREAKS AND END OF TEXT *** //
-      // *********************************************** //
+      // ************************** //
+      // *** HANDLE END OF TEXT *** //
+      // ************************** //
 
-      if (currentLine.end.isHard) {
-        if (currentLine.isNotEmpty) {
+      // All spans have been consumed.
+      final bool reachedEnd = spanIndex == spanCount;
+      if (reachedEnd) {
+        // In some cases, we need to extend the line to the end of text and
+        // build it:
+        //
+        // 1. Line is not empty. This could happen when the last span is a
+        //    placeholder.
+        //
+        // 2. We haven't reached `LineBreakType.endOfText` yet. This could
+        //    happen when the last character is a new line.
+        if (currentLine.isNotEmpty || currentLine.end.type != LineBreakType.endOfText) {
+          currentLine.extendToEndOfText();
           lines.add(currentLine.build());
-          if (currentLine.end.type != LineBreakType.endOfText) {
-            currentLine = currentLine.nextLine();
-          }
         }
-
-        if (currentLine.end.type == LineBreakType.endOfText) {
-          break;
-        }
+        break;
       }
 
       // ********************************* //
       // *** THE MAIN MEASUREMENT PART *** //
       // ********************************* //
+
+      final ParagraphSpan span = paragraph.spans[spanIndex];
 
       if (span is PlaceholderSpan) {
         if (currentLine.widthIncludingSpace + span.width <= constraints.width) {
@@ -119,6 +125,7 @@ class TextLayoutService {
           }
           currentLine.addPlaceholder(span);
         }
+        spanIndex++;
       } else if (span is FlatTextSpan) {
         spanometer.currentSpan = span;
         final LineBreakResult nextBreak = currentLine.findNextBreak(span.end);
@@ -131,6 +138,10 @@ class TextLayoutService {
 
           // The line can extend to `nextBreak` without overflowing.
           currentLine.extendTo(nextBreak);
+          if (nextBreak.type == LineBreakType.mandatory) {
+            lines.add(currentLine.build());
+            currentLine = currentLine.nextLine();
+          }
         } else {
           // The chunk of text can't fit into the current line.
           final bool isLastLine =
@@ -158,22 +169,18 @@ class TextLayoutService {
             currentLine = currentLine.nextLine();
           }
         }
+
+        // Only go to the next span if we've reached the end of this span.
+        if (currentLine.end.index >= span.end) {
+          currentLine.createBox();
+          ++spanIndex;
+        }
       } else {
         throw UnimplementedError('Unknown span type: ${span.runtimeType}');
       }
 
       if (lines.length == maxLines) {
         break;
-      }
-
-      // ********************************************* //
-      // *** ADVANCE TO THE NEXT SPAN IF NECESSARY *** //
-      // ********************************************* //
-
-      // Only go to the next span if we've reached the end of this span.
-      if (currentLine.end.index >= span.end && spanIndex < spanCount - 1) {
-        currentLine.createBox();
-        span = paragraph.spans[++spanIndex];
       }
     }
 
@@ -187,8 +194,9 @@ class TextLayoutService {
         alphabeticBaseline = line.baseline;
         ideographicBaseline = alphabeticBaseline * _baselineRatioHack;
       }
-      if (longestLine < line.width) {
-        longestLine = line.width;
+      final double longestLineWidth = longestLine?.width ?? 0.0;
+      if (longestLineWidth < line.width) {
+        longestLine = line;
       }
     }
 
@@ -197,13 +205,15 @@ class TextLayoutService {
     // ******************************** //
 
     spanIndex = 0;
-    span = paragraph.spans[0];
     currentLine =
         LineBuilder.first(paragraph, spanometer, maxWidth: constraints.width);
 
-    while (currentLine.end.type != LineBreakType.endOfText) {
+    while (spanIndex < spanCount) {
+      final ParagraphSpan span = paragraph.spans[spanIndex];
+
       if (span is PlaceholderSpan) {
         currentLine.addPlaceholder(span);
+        spanIndex++;
       } else if (span is FlatTextSpan) {
         spanometer.currentSpan = span;
         final LineBreakResult nextBreak = currentLine.findNextBreak(span.end);
@@ -211,6 +221,11 @@ class TextLayoutService {
         // For the purpose of max intrinsic width, we don't care if the line
         // fits within the constraints or not. So we always extend it.
         currentLine.extendTo(nextBreak);
+
+        // Only go to the next span if we've reached the end of this span.
+        if (currentLine.end.index >= span.end) {
+          spanIndex++;
+        }
       }
 
       final double widthOfLastSegment = currentLine.lastSegment.width;
@@ -218,17 +233,13 @@ class TextLayoutService {
         minIntrinsicWidth = widthOfLastSegment;
       }
 
-      if (currentLine.end.isHard) {
-        // Max intrinsic width includes the width of trailing spaces.
-        if (maxIntrinsicWidth < currentLine.widthIncludingSpace) {
-          maxIntrinsicWidth = currentLine.widthIncludingSpace;
-        }
-        currentLine = currentLine.nextLine();
+      // Max intrinsic width includes the width of trailing spaces.
+      if (maxIntrinsicWidth < currentLine.widthIncludingSpace) {
+        maxIntrinsicWidth = currentLine.widthIncludingSpace;
       }
 
-      // Only go to the next span if we've reached the end of this span.
-      if (currentLine.end.index >= span.end && spanIndex < spanCount - 1) {
-        span = paragraph.spans[++spanIndex];
+      if (currentLine.end.type == LineBreakType.mandatory) {
+        currentLine = currentLine.nextLine();
       }
     }
   }
@@ -631,7 +642,10 @@ class LineSegment {
   double get widthOfTrailingSpace => widthIncludingSpace - width;
 
   /// Whether this segment is made of only white space.
-  bool get isSpaceOnly => start.index == end.indexWithoutTrailingSpaces;
+  ///
+  /// We rely on the [width] to determine this because relying on incides
+  /// doesn't work well for placeholders (they are zero-length strings).
+  bool get isSpaceOnly => width == 0;
 }
 
 /// Builds instances of [EngineLineMetrics] for the given [paragraph].
@@ -757,6 +771,23 @@ class LineBuilder {
     descent = math.max(descent, spanometer.descent);
 
     _addSegment(_createSegment(newEnd));
+  }
+
+  void extendToEndOfText() {
+    final LineBreakResult endOfText = LineBreakResult.sameIndex(
+      paragraph.toPlainText().length,
+      LineBreakType.endOfText,
+    );
+
+    // The spanometer may not be ready in some cases. E.g. when the paragraph
+    // is made up of only placeholders and no text.
+    if (spanometer.isReady) {
+      ascent = math.max(ascent, spanometer.ascent);
+      descent = math.max(descent, spanometer.descent);
+      _addSegment(_createSegment(endOfText));
+    } else {
+      end = endOfText;
+    }
   }
 
   void addPlaceholder(PlaceholderSpan placeholder) {
@@ -1007,7 +1038,7 @@ class LineBuilder {
     final LineBreakResult boxEnd = end;
     // Avoid creating empty boxes. This could happen when the end of a span
     // coincides with the end of a line. In this case, `createBox` is called twice.
-    if (boxStart == boxEnd) {
+    if (boxStart.index == boxEnd.index) {
       return;
     }
 
@@ -1132,6 +1163,9 @@ class Spanometer {
       context.font = cssFontString;
     }
   }
+
+  /// Whether the spanometer is ready to take measurements.
+  bool get isReady => _currentSpan != null;
 
   /// The distance from the top of the current span to the alphabetic baseline.
   double get ascent => _currentRuler!.alphabeticBaseline;

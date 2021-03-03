@@ -1108,6 +1108,12 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
 
   @VisibleForTesting
   @NonNull
+  public RenderSurface getRenderSurface() {
+    return renderSurface;
+  }
+
+  @VisibleForTesting
+  @NonNull
   public FlutterImageView createImageView() {
     return new FlutterImageView(
         getContext(), getWidth(), getHeight(), FlutterImageView.SurfaceKind.background);

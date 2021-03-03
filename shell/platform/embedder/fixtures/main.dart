@@ -495,6 +495,47 @@ Picture CreateGradientBox(Size size) {
   return baseRecorder.endRecording();
 }
 
+void _echoKeyEvent(
+    int change,
+    int timestamp,
+    int physical,
+    int logical,
+    int charCode,
+    bool synthesized)
+  native 'EchoKeyEvent';
+
+// Convert `kind` in enum form to its integer form.
+//
+// It performs a revesed mapping from `unserializeKeyEventKind`
+// in shell/platform/embedder/tests/embedder_unittests.cc.
+int _serializeKeyEventType(KeyEventType change) {
+  switch(change) {
+    case KeyEventType.up:
+      return 1;
+    case KeyEventType.down:
+      return 2;
+    case KeyEventType.repeat:
+      return 3;
+  }
+}
+
+// Echo the event data with `_echoKeyEvent`, and returns synthesized as handled.
+@pragma('vm:entry-point')
+void key_data_echo() async { // ignore: non_constant_identifier_names
+  PlatformDispatcher.instance.onKeyData = (KeyData data) {
+    _echoKeyEvent(
+      _serializeKeyEventType(data.type),
+      data.timeStamp.inMicroseconds,
+      data.physical,
+      data.logical,
+      data.character == null ? 0 : data.character!.codeUnitAt(0),
+      data.synthesized,
+    );
+    return data.synthesized;
+  };
+  signalNativeTest();
+}
+
 @pragma('vm:entry-point')
 void render_gradient() {
   PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
@@ -505,6 +546,24 @@ void render_gradient() {
     builder.pushOffset(0.0, 0.0);
 
     builder.addPicture(Offset(0.0, 0.0), CreateGradientBox(size)); // gradient - flutter
+
+    builder.pop();
+
+    PlatformDispatcher.instance.views.first.render(builder.build());
+  };
+  PlatformDispatcher.instance.scheduleFrame();
+}
+
+@pragma('vm:entry-point')
+void render_texture() {
+  PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
+    Size size = Size(800.0, 600.0);
+
+    SceneBuilder builder = SceneBuilder();
+
+    builder.pushOffset(0.0, 0.0);
+
+    builder.addTexture(/*textureId*/1, width: size.width, height: size.height);
 
     builder.pop();
 

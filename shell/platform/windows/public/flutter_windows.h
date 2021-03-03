@@ -13,6 +13,10 @@
 #include "flutter_messenger.h"
 #include "flutter_plugin_registrar.h"
 
+#ifdef WINUWP
+#include <windows.ui.core.h>
+#endif
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
@@ -70,10 +74,21 @@ typedef struct {
 // The caller owns the returned reference, and is responsible for calling
 // FlutterDesktopViewControllerDestroy. Returns a null pointer in the event of
 // an error.
+#ifdef WINUWP
+// The CoreWindow implementation accepts a pointer to the host CoreWindow
+// and view hookup is performed in the construction path.
+FLUTTER_EXPORT FlutterDesktopViewControllerRef
+FlutterDesktopViewControllerCreateFromCoreWindow(
+    ABI::Windows::UI::Core::CoreWindow* window,
+    FlutterDesktopEngineRef engine);
+#else  //! WINUWP
+// The Win32 implementation accepts width, height
+// with view hookup explicitly performed using the caller using HWND parenting.
 FLUTTER_EXPORT FlutterDesktopViewControllerRef
 FlutterDesktopViewControllerCreate(int width,
                                    int height,
                                    FlutterDesktopEngineRef engine);
+#endif
 
 // Shuts down the engine instance associated with |controller|, and cleans up
 // associated state.
@@ -91,6 +106,10 @@ FLUTTER_EXPORT FlutterDesktopEngineRef FlutterDesktopViewControllerGetEngine(
 
 FLUTTER_EXPORT FlutterDesktopViewRef
 FlutterDesktopViewControllerGetView(FlutterDesktopViewControllerRef controller);
+
+// Requests new frame from engine and repaints the view
+FLUTTER_EXPORT void FlutterDesktopViewControllerForceRedraw(
+    FlutterDesktopViewControllerRef controller);
 
 #ifndef WINUWP
 // Allows the Flutter engine and any interested plugins an opportunity to
@@ -159,10 +178,17 @@ FlutterDesktopEngineGetPluginRegistrar(FlutterDesktopEngineRef engine,
 FLUTTER_EXPORT FlutterDesktopMessengerRef
 FlutterDesktopEngineGetMessenger(FlutterDesktopEngineRef engine);
 
+// Returns the texture registrar associated with the engine.
+FLUTTER_EXPORT FlutterDesktopTextureRegistrarRef
+FlutterDesktopEngineGetTextureRegistrar(
+    FlutterDesktopTextureRegistrarRef texture_registrar);
+
 // ========== View ==========
 
+#ifndef WINUWP
 // Return backing HWND for manipulation in host application.
 FLUTTER_EXPORT HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef view);
+#endif
 
 // ========== Plugin Registrar (extensions) ==========
 // These are Windows-specific extensions to flutter_plugin_registrar.h
@@ -186,6 +212,7 @@ typedef bool (*FlutterDesktopWindowProcCallback)(HWND /* hwnd */,
 FLUTTER_EXPORT FlutterDesktopViewRef FlutterDesktopPluginRegistrarGetView(
     FlutterDesktopPluginRegistrarRef registrar);
 
+#ifndef WINUWP
 FLUTTER_EXPORT void
 FlutterDesktopPluginRegistrarRegisterTopLevelWindowProcDelegate(
     FlutterDesktopPluginRegistrarRef registrar,
@@ -196,6 +223,7 @@ FLUTTER_EXPORT void
 FlutterDesktopPluginRegistrarUnregisterTopLevelWindowProcDelegate(
     FlutterDesktopPluginRegistrarRef registrar,
     FlutterDesktopWindowProcCallback delegate);
+#endif
 
 // ========== Freestanding Utilities ==========
 
