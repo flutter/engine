@@ -199,8 +199,6 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
 }
 
 - (void)dispatchDownEvent:(NSEvent*)event callback:(FlutterKeyHandlerCallback)callback {
-  printf("Down event keyCode %d cIM %s c %s\n", [event keyCode],
-         [[event charactersIgnoringModifiers] UTF8String], [[event characters] UTF8String]);
   uint64_t physicalKey = GetPhysicalKeyForKeyCode(event.keyCode);
   uint64_t logicalKey = GetLogicalKeyForEvent(event, physicalKey);
 
@@ -371,6 +369,13 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
 - (void)handleEvent:(NSEvent*)event
              ofType:(NSString*)type
            callback:(FlutterKeyHandlerCallback)callback {
+  printf("#### Event %d keyCode %d rep %d ", (int)event.type, (int)event.keyCode, event.isARepeat);
+  if (event.type != NSEventTypeFlagsChanged) {
+    printf("cIM %s c %s\n", [[event charactersIgnoringModifiers] UTF8String],
+           [[event characters] UTF8String]);
+  } else {
+    printf("\n");
+  }
   switch (event.type) {
     case NSEventTypeKeyDown:
       [self dispatchDownEvent:event callback:callback];

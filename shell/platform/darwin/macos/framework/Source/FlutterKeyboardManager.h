@@ -6,8 +6,8 @@
 
 #import <Cocoa/Cocoa.h>
 
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyHandlerBase.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterIntermediateKeyResponder.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyHandlerBase.h"
 
 @interface FlutterKeyboardManager : NSObject
 

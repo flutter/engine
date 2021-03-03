@@ -17,20 +17,20 @@ TEST(FlutterKeyChannelHandlerUnittests, BasicKeyEvent) {
   __block NSMutableArray<NSNumber*>* responses = [[NSMutableArray<NSNumber*> alloc] init];
 
   id mockKeyEventChannel = OCMStrictClassMock([FlutterBasicMessageChannel class]);
-  OCMStub([mockKeyEventChannel sendMessage:[OCMArg any] reply:[OCMArg any]]).andDo((
-    ^(NSInvocation *invocation) {
-      [invocation retainArguments];
-      NSDictionary* message;
-      [invocation getArgument:&message atIndex:2];
-      [messages addObject:message];
+  OCMStub([mockKeyEventChannel sendMessage:[OCMArg any] reply:[OCMArg any]])
+      .andDo((^(NSInvocation* invocation) {
+        [invocation retainArguments];
+        NSDictionary* message;
+        [invocation getArgument:&message atIndex:2];
+        [messages addObject:message];
 
-      FlutterReply callback;
-      [invocation getArgument:&callback atIndex:3];
-      NSDictionary* keyMessage = @{
-        @"handled" : @(next_response),
-      };
-      callback(keyMessage);
-    }));
+        FlutterReply callback;
+        [invocation getArgument:&callback atIndex:3];
+        NSDictionary* keyMessage = @{
+          @"handled" : @(next_response),
+        };
+        callback(keyMessage);
+      }));
 
   // Key down
   FlutterKeyChannelHandler* handler =
@@ -46,7 +46,7 @@ TEST(FlutterKeyChannelHandlerUnittests, BasicKeyEvent) {
                                              isARepeat:TRUE
                                                keyCode:0x60]
                 ofType:@"keydown"
-              callback:^(BOOL handled){
+              callback:^(BOOL handled) {
                 [responses addObject:@(handled)];
               }];
 
@@ -77,7 +77,7 @@ TEST(FlutterKeyChannelHandlerUnittests, BasicKeyEvent) {
                                              isARepeat:TRUE
                                                keyCode:0x61]
                 ofType:@"keyup"
-              callback:^(BOOL handled){
+              callback:^(BOOL handled) {
                 [responses addObject:@(handled)];
               }];
 
@@ -98,17 +98,17 @@ TEST(FlutterKeyChannelHandlerUnittests, EmptyResponseIsTakenAsHandled) {
   __block NSMutableArray<NSNumber*>* responses = [[NSMutableArray<NSNumber*> alloc] init];
 
   id mockKeyEventChannel = OCMStrictClassMock([FlutterBasicMessageChannel class]);
-  OCMStub([mockKeyEventChannel sendMessage:[OCMArg any] reply:[OCMArg any]]).andDo((
-    ^(NSInvocation *invocation) {
-      [invocation retainArguments];
-      NSDictionary* message;
-      [invocation getArgument:&message atIndex:2];
-      [messages addObject:message];
+  OCMStub([mockKeyEventChannel sendMessage:[OCMArg any] reply:[OCMArg any]])
+      .andDo((^(NSInvocation* invocation) {
+        [invocation retainArguments];
+        NSDictionary* message;
+        [invocation getArgument:&message atIndex:2];
+        [messages addObject:message];
 
-      FlutterReply callback;
-      [invocation getArgument:&callback atIndex:3];
-      callback(nullptr);
-    }));
+        FlutterReply callback;
+        [invocation getArgument:&callback atIndex:3];
+        callback(nullptr);
+      }));
 
   FlutterKeyChannelHandler* handler =
       [[FlutterKeyChannelHandler alloc] initWithChannel:mockKeyEventChannel];
@@ -123,7 +123,7 @@ TEST(FlutterKeyChannelHandlerUnittests, EmptyResponseIsTakenAsHandled) {
                                              isARepeat:TRUE
                                                keyCode:0x60]
                 ofType:@"keydown"
-              callback:^(BOOL handled){
+              callback:^(BOOL handled) {
                 [responses addObject:@(handled)];
               }];
 

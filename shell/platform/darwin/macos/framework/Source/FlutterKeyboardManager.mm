@@ -4,9 +4,6 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyboardManager.h"
 
-namespace {
-}
-
 @interface FlutterKeyboardManager ()
 
 /**
