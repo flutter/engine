@@ -30,7 +30,7 @@
  * this callback to enable semantics in order to catch the case that voice control is
  * on.
  */
-- (void)futterViewAccessibilityDidCall;
+- (void)flutterViewAccessibilityDidCall;
 @end
 
 @interface FlutterView : UIView
