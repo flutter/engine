@@ -17,6 +17,8 @@
 // static const NSSet* kAmbiguousCharacters = @{
 // }
 
+namespace {
+
 // Whether a string represents a control character.
 static bool IsControlCharacter(NSUInteger length, NSString* label) {
   if (length > 1) {
@@ -135,6 +137,36 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
   return event.timestamp * 1000000.0;
 }
 
+void HandleResponse(bool handled, void* user_data);
+}  // namespace
+
+/* An entry of FlutterKeyEmbedderHandler.pendingResponse.
+ *
+ * FlutterEngineSendKeyEvent only supports a global function and a pointer.
+ * This class is used for the global function, HandleResponse, to convert a
+ * pointer into a method call, FlutterKeyEmbedderHandler.handleResponse.
+ */
+@interface FlutterKeyPendingResponse : NSObject
+
+@property(nonatomic) FlutterKeyEmbedderHandler* handler;
+
+@property(nonatomic) uint64_t responseId;
+
+- (nonnull instancetype)initWithHandler:(nonnull FlutterKeyEmbedderHandler*)handler
+                             responseId:(uint64_t)responseId;
+
+@end
+
+@implementation FlutterKeyPendingResponse
+- (instancetype)initWithHandler:(FlutterKeyEmbedderHandler*)handler
+                     responseId:(uint64_t)responseId {
+  self = [super init];
+  _handler = handler;
+  _responseId = responseId;
+  return self;
+}
+@end
+
 @interface FlutterKeyEmbedderHandler ()
 
 /**
@@ -148,7 +180,11 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
  * The keys of the dictionary are physical keys, while the values are the logical keys
  * on pressing.
  */
-@property(nonatomic) NSMutableDictionary* pressingRecords;
+@property(nonatomic) NSMutableDictionary<NSNumber*, NSNumber*>* pressingRecords;
+
+@property(nonatomic) uint64_t responseId;
+
+@property(nonatomic) NSMutableDictionary<NSNumber*, FlutterKeyHandlerCallback>* pendingResponses;
 
 /**
  * Update the pressing state.
@@ -157,6 +193,9 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
  * Otherwise, `physicalKey` is released.
  */
 - (void)updateKey:(uint64_t)physicalKey asPressed:(uint64_t)logicalKey;
+
+- (void)sendPrimaryFlutterEvent:(const FlutterKeyEvent&)event
+                       callback:(FlutterKeyHandlerCallback)callback;
 
 /**
  * Processes a down event.
@@ -177,6 +216,8 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
              ofType:(NSString*)type
            callback:(FlutterKeyHandlerCallback)callback;
 
+- (void)handleResponse:(BOOL)handled forId:(uint64_t)responseId;
+
 @end
 
 @implementation FlutterKeyEmbedderHandler
@@ -186,9 +227,13 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
   if (self != nil) {
     _sendEvent = sendEvent;
     _pressingRecords = [NSMutableDictionary dictionary];
+    _pendingResponses = [NSMutableDictionary dictionary];
+    _responseId = 1;
   }
   return self;
 }
+
+#pragma mark - Private
 
 - (void)updateKey:(uint64_t)physicalKey asPressed:(uint64_t)logicalKey {
   if (logicalKey == 0) {
@@ -196,6 +241,16 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
   } else {
     _pressingRecords[@(physicalKey)] = @(logicalKey);
   }
+}
+
+- (void)sendPrimaryFlutterEvent:(const FlutterKeyEvent&)event
+                       callback:(FlutterKeyHandlerCallback)callback {
+  _responseId += 1;
+  uint64_t responseId = _responseId;
+  FlutterKeyPendingResponse* pending =
+      [[FlutterKeyPendingResponse alloc] initWithHandler:self responseId:responseId];
+  _pendingResponses[@(responseId)] = callback;
+  _sendEvent(event, HandleResponse, (__bridge void*)pending);
 }
 
 - (void)dispatchDownEvent:(NSEvent*)event callback:(FlutterKeyHandlerCallback)callback {
@@ -235,7 +290,7 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
       .character = event.characters.UTF8String,
       .synthesized = isSynthesized,
   };
-  _sendEvent(flutterEvent, nullptr, nullptr);
+  [self sendPrimaryFlutterEvent:flutterEvent callback:callback];
 }
 
 - (void)dispatchUpEvent:(NSEvent*)event callback:(FlutterKeyHandlerCallback)callback {
@@ -260,7 +315,7 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
       .character = nil,
       .synthesized = false,
   };
-  _sendEvent(flutterEvent, nullptr, nullptr);
+  [self sendPrimaryFlutterEvent:flutterEvent callback:callback];
 }
 
 - (void)dispatchCapsLockEvent:(NSEvent*)event callback:(FlutterKeyHandlerCallback)callback {
@@ -278,7 +333,7 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
       .character = nil,
       .synthesized = false,
   };
-  _sendEvent(flutterEvent, nullptr, nullptr);
+  [self sendPrimaryFlutterEvent:flutterEvent callback:callback];
 
   // MacOS sends a Down or an Up when CapsLock is pressed, depending on whether
   // the lock is enabled or disabled. This event should always be converted to
@@ -362,7 +417,7 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
     flutterEvent.logical = logicalKey;
     flutterEvent.synthesized = false;
     [self updateKey:targetKey asPressed:(targetKeyShouldDown ? logicalKey : 0)];
-    _sendEvent(flutterEvent, nullptr, nullptr);
+    [self sendPrimaryFlutterEvent:flutterEvent callback:callback];
   }
 }
 
@@ -391,6 +446,17 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
   }
 }
 
-#pragma mark - Private
+- (void)handleResponse:(BOOL)handled forId:(uint64_t)responseId {
+  FlutterKeyHandlerCallback callback = _pendingResponses[@(responseId)];
+  [_pendingResponses removeObjectForKey:@(responseId)];
+  callback(handled);
+}
 
 @end
+
+namespace {
+void HandleResponse(bool handled, void* user_data) {
+  FlutterKeyPendingResponse* pending = (__bridge FlutterKeyPendingResponse*)user_data;
+  [pending.handler handleResponse:handled forId:pending.responseId];
+}
+}  // namespace

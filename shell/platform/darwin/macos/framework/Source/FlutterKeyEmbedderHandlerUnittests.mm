@@ -106,7 +106,7 @@ TEST(FlutterKeyEmbedderHandlerUnittests, BasicKeyEvent) {
 
   next_handled = TRUE;
   [handler handleEvent:[Utils keyEventWithType:NSKeyDown
-                                          modifierFlags:0
+                                         modifierFlags:0
                                             characters:@"a"
                            charactersIgnoringModifiers:@"a"
                                              isARepeat:FALSE
