@@ -7,14 +7,31 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Internal.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
 
-@interface FakeDelegate : FlutterEngine
-@property(nonatomic) BOOL ensureSemanticsEnabledCalled;
+@interface FakeDelegate : NSObject <FlutterViewEngineDelegate>
+@property(nonatomic) BOOL callbackCalled;
 @end
 
-@implementation FakeDelegate
+@implementation FakeDelegate {
+  std::shared_ptr<flutter::FlutterPlatformViewsController> _platformViewsController;
+}
 
-- (void)ensureSemanticsEnabled {
-  _ensureSemanticsEnabledCalled = YES;
+- (instancetype)init {
+  _callbackCalled = NO;
+  _platformViewsController = std::shared_ptr<flutter::FlutterPlatformViewsController>(nullptr);
+  return self;
+}
+
+- (flutter::Rasterizer::Screenshot)takeScreenshot:(flutter::Rasterizer::ScreenshotType)type
+                                  asBase64Encoded:(BOOL)base64Encode {
+  return {};
+}
+
+- (std::shared_ptr<flutter::FlutterPlatformViewsController>&)platformViewsController {
+  return _platformViewsController;
+}
+
+- (void)flutterViewAccessibilityDidCall {
+  _callbackCalled = YES;
 }
 
 @end
@@ -25,11 +42,11 @@
 @implementation FlutterViewTest
 
 - (void)testFlutterViewEnableSemanticsWhenIsAccessibilityElementIsCalled {
-  FakeDelegate* delegate = [[FakeDelegate alloc] initWithName:@"foobar"];
+  FakeDelegate* delegate = [[FakeDelegate alloc] init];
   FlutterView* view = [[FlutterView alloc] initWithDelegate:delegate opaque:NO];
-  delegate.ensureSemanticsEnabledCalled = NO;
+  delegate.callbackCalled = NO;
   XCTAssertFalse(view.isAccessibilityElement);
-  XCTAssertTrue(delegate.ensureSemanticsEnabledCalled);
+  XCTAssertTrue(delegate.callbackCalled);
 }
 
 @end
