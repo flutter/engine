@@ -333,6 +333,7 @@ public class AccessibilityBridgeTest {
     assertEquals(sentences.get(0).toString(), "new_node2");
   }
 
+  @TargetApi(21)
   @Test
   public void itCanPerformSetText() {
     AccessibilityChannel mockChannel = mock(AccessibilityChannel.class);
