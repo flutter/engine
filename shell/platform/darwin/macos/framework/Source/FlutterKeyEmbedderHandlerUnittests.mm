@@ -37,35 +37,6 @@
 }
 @end
 
-@interface Utils : NSObject
-+ (nonnull NSEvent*)keyEventWithType:(NSEventType)type
-                       modifierFlags:(NSEventModifierFlags)flags
-                          characters:(NSString*)keys
-         charactersIgnoringModifiers:(NSString*)ukeys
-                           isARepeat:(BOOL)flag
-                             keyCode:(unsigned short)code;
-@end
-
-@implementation Utils
-+ (nonnull NSEvent*)keyEventWithType:(NSEventType)type
-                       modifierFlags:(NSEventModifierFlags)flags
-                          characters:(NSString*)keys
-         charactersIgnoringModifiers:(NSString*)ukeys
-                           isARepeat:(BOOL)flag
-                             keyCode:(unsigned short)code {
-  return [NSEvent keyEventWithType:type
-                          location:NSZeroPoint
-                     modifierFlags:flags
-                         timestamp:0
-                      windowNumber:0
-                           context:nil
-                        characters:keys
-       charactersIgnoringModifiers:ukeys
-                         isARepeat:flag
-                           keyCode:code];
-}
-@end
-
 namespace flutter::testing {
 
 namespace {
@@ -83,9 +54,27 @@ constexpr uint64_t kLogicalKeyA = 0x00000061;
 // constexpr uint64_t kLogicalShiftRight = 0x0040000010d;
 // constexpr uint64_t kLogicalKeyNumLock = 0x0000000010a;
 
+typedef void (^ResponseCallback)(bool handled);
+
+NSEvent* keyEvent(NSEventType type,
+                  NSEventModifierFlags modifierFlags,
+                  NSString* characters,
+                  NSString* charactersIgnoringModifiers,
+                  BOOL isARepeat,
+                  unsigned short keyCode) {
+  return [NSEvent keyEventWithType:type
+                          location:NSZeroPoint
+                     modifierFlags:modifierFlags
+                         timestamp:0
+                      windowNumber:0
+                           context:nil
+                        characters:characters
+       charactersIgnoringModifiers:charactersIgnoringModifiers
+                         isARepeat:isARepeat
+                           keyCode:keyCode];
 }
 
-typedef void (^ResponseCallback)(bool handled);
+}  // namespace
 
 // Test the most basic key events.
 //
@@ -109,12 +98,7 @@ TEST(FlutterKeyEmbedderHandlerUnittests, BasicKeyEvent) {
       }];
 
   last_handled = FALSE;
-  [handler handleEvent:[Utils keyEventWithType:NSKeyDown
-                                         modifierFlags:0
-                                            characters:@"a"
-                           charactersIgnoringModifiers:@"a"
-                                             isARepeat:FALSE
-                                               keyCode:0]
+  [handler handleEvent:keyEvent(NSEventTypeKeyDown, 0x100, @"a", @"a", FALSE, 0)
                 ofType:@"keydown"
               callback:^(BOOL handled) {
                 last_handled = handled;
@@ -132,6 +116,55 @@ TEST(FlutterKeyEmbedderHandlerUnittests, BasicKeyEvent) {
   EXPECT_EQ([callbacks count], 1u);
   [callbacks lastObject](TRUE);
   EXPECT_EQ(last_handled, TRUE);
+
+  [callbacks removeAllObjects];
+  [events removeAllObjects];
+
+  last_handled = FALSE;
+  [handler handleEvent:keyEvent(NSEventTypeKeyDown, 0x100, @"a", @"a", TRUE, 0)
+                ofType:@"keydown"
+              callback:^(BOOL handled) {
+                last_handled = handled;
+              }];
+
+  EXPECT_EQ([events count], 1u);
+  event = [events lastObject]->data;
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeRepeat);
+  EXPECT_EQ(event->physical, kPhysicalKeyA);
+  EXPECT_EQ(event->logical, kLogicalKeyA);
+  EXPECT_STREQ(event->character, "a");
+  EXPECT_EQ(event->synthesized, false);
+
+  EXPECT_EQ(last_handled, FALSE);
+  EXPECT_EQ([callbacks count], 1u);
+  [callbacks lastObject](TRUE);
+  EXPECT_EQ(last_handled, TRUE);
+
+  [callbacks removeAllObjects];
+  [events removeAllObjects];
+
+  last_handled = TRUE;
+  [handler handleEvent:keyEvent(NSEventTypeKeyUp, 0x100, @"a", @"a", FALSE, 0)
+                ofType:@"keyup"
+              callback:^(BOOL handled) {
+                last_handled = handled;
+              }];
+
+  EXPECT_EQ([events count], 1u);
+  event = [events lastObject]->data;
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
+  EXPECT_EQ(event->physical, kPhysicalKeyA);
+  EXPECT_EQ(event->logical, kLogicalKeyA);
+  EXPECT_EQ(event->character, nullptr);
+  EXPECT_EQ(event->synthesized, false);
+
+  EXPECT_EQ(last_handled, TRUE);
+  EXPECT_EQ([callbacks count], 1u);
+  [callbacks lastObject](FALSE);
+  EXPECT_EQ(last_handled, FALSE);
+
+  [callbacks removeAllObjects];
+  [events removeAllObjects];
 }
 
 }  // namespace flutter::testing
