@@ -186,4 +186,27 @@ void testMain() async {
       l('abcd', 0, 4, hardBreak: true, width: 340.0, left: 30.0),
     ]);
   });
+
+  test('handles new line followed by a placeholder', () {
+    final EngineParagraphStyle paragraphStyle = EngineParagraphStyle(
+      fontFamily: 'ahem',
+      fontSize: 10,
+      textAlign: ui.TextAlign.center,
+    );
+    final CanvasParagraph paragraph = rich(paragraphStyle, (builder) {
+      builder.addText('Lorem\n');
+      builder.addPlaceholder(300.0, 40.0, ui.PlaceholderAlignment.bottom);
+      builder.addText('ipsum');
+    })..layout(constrain(300.0));
+
+    // The placeholder's width + "ipsum"
+    expect(paragraph.maxIntrinsicWidth, 300.0 + 50.0);
+    expect(paragraph.minIntrinsicWidth, 300.0);
+    expect(paragraph.height, 10.0 + 40.0 + 10.0);
+    expectLines(paragraph, [
+      l('Lorem', 0, 6, hardBreak: true, width: 50.0, height: 10.0, left: 125.0),
+      l('', 6, 6, hardBreak: false, width: 300.0, height: 40.0, left: 0.0),
+      l('ipsum', 6, 11, hardBreak: true, width: 50.0, height: 10.0, left: 125.0),
+    ]);
+  });
 }

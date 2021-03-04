@@ -210,6 +210,7 @@ class TextLayoutService {
 
     while (spanIndex < spanCount) {
       final ParagraphSpan span = paragraph.spans[spanIndex];
+      bool breakToNextLine = false;
 
       if (span is PlaceholderSpan) {
         currentLine.addPlaceholder(span);
@@ -221,6 +222,11 @@ class TextLayoutService {
         // For the purpose of max intrinsic width, we don't care if the line
         // fits within the constraints or not. So we always extend it.
         currentLine.extendTo(nextBreak);
+        if (nextBreak.type == LineBreakType.mandatory) {
+          // We don't want to break the line now because we want to update
+          // min/max intrinsic widths below first.
+          breakToNextLine = true;
+        }
 
         // Only go to the next span if we've reached the end of this span.
         if (currentLine.end.index >= span.end) {
@@ -238,7 +244,7 @@ class TextLayoutService {
         maxIntrinsicWidth = currentLine.widthIncludingSpace;
       }
 
-      if (currentLine.end.type == LineBreakType.mandatory) {
+      if (breakToNextLine) {
         currentLine = currentLine.nextLine();
       }
     }
@@ -758,12 +764,19 @@ class LineBuilder {
     return widthOfTrailingSpace + spanometer.measure(end, newEnd);
   }
 
+  bool get _isLastBoxAPlaceholder {
+    if (_boxes.isEmpty) {
+      return false;
+    }
+    return (_boxes.last is PlaceholderBox);
+  }
+
   /// Extends the line by setting a [newEnd].
   void extendTo(LineBreakResult newEnd) {
     // If the current end of the line is a hard break, the line shouldn't be
     // extended any further.
     assert(
-      isEmpty || !end.isHard,
+      isEmpty || !end.isHard || _isLastBoxAPlaceholder,
       'Cannot extend a line that ends with a hard break.',
     );
 
@@ -773,7 +786,12 @@ class LineBuilder {
     _addSegment(_createSegment(newEnd));
   }
 
+  /// Extends the line to the end of the paragraph.
   void extendToEndOfText() {
+    if (end.type == LineBreakType.endOfText) {
+      return;
+    }
+
     final LineBreakResult endOfText = LineBreakResult.sameIndex(
       paragraph.toPlainText().length,
       LineBreakType.endOfText,
@@ -1059,13 +1077,20 @@ class LineBuilder {
     final double ellipsisWidth =
         ellipsis == null ? 0.0 : spanometer.measureText(ellipsis);
 
+    final int endIndexWithoutNewlines = math.max(start.index, end.indexWithoutTrailingNewlines);
+    final bool hardBreak;
+    if (end.type != LineBreakType.endOfText && _isLastBoxAPlaceholder) {
+      hardBreak = false;
+    } else {
+      hardBreak = end.isHard;
+    }
     return EngineLineMetrics.rich(
       lineNumber,
       ellipsis: ellipsis,
       startIndex: start.index,
       endIndex: end.index,
-      endIndexWithoutNewlines: end.indexWithoutTrailingNewlines,
-      hardBreak: end.isHard,
+      endIndexWithoutNewlines: endIndexWithoutNewlines,
+      hardBreak: hardBreak,
       width: width + ellipsisWidth,
       widthWithTrailingSpaces: widthIncludingSpace + ellipsisWidth,
       left: alignOffset,
