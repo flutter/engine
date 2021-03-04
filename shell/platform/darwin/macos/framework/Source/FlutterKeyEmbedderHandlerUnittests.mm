@@ -40,17 +40,21 @@
 namespace flutter::testing {
 
 namespace {
+constexpr uint64_t kKeyCodeKeyA = 0;
+constexpr uint64_t kKeyCodeShiftLeft = 56;
+constexpr uint64_t kKeyCodeShiftRight = 60;
+
 constexpr uint64_t kPhysicalKeyA = 0x00070004;
 // constexpr uint64_t kPhysicalControlLeft = 0x000700e0;
 // constexpr uint64_t kPhysicalControlRight = 0x000700e4;
-// constexpr uint64_t kPhysicalShiftLeft = 0x000700e1;
+constexpr uint64_t kPhysicalShiftLeft = 0x000700e1;
 constexpr uint64_t kPhysicalShiftRight = 0x000700e5;
 // constexpr uint64_t kPhysicalKeyNumLock = 0x00070053;
 
 constexpr uint64_t kLogicalKeyA = 0x00000061;
 // constexpr uint64_t kLogicalControlLeft = 0x00300000105;
 // constexpr uint64_t kLogicalControlRight = 0x00400000105;
-// constexpr uint64_t kLogicalShiftLeft = 0x0030000010d;
+constexpr uint64_t kLogicalShiftLeft = 0x0030000010d;
 constexpr uint64_t kLogicalShiftRight = 0x0040000010d;
 // constexpr uint64_t kLogicalKeyNumLock = 0x0000000010a;
 
@@ -120,7 +124,7 @@ TEST(FlutterKeyEmbedderHandlerUnittests, BasicKeyEvent) {
   [events removeAllObjects];
 
   last_handled = FALSE;
-  [handler handleEvent:keyEvent(NSEventTypeKeyDown, 0x100, @"a", @"a", TRUE, 0)
+  [handler handleEvent:keyEvent(NSEventTypeKeyDown, 0x100, @"a", @"a", TRUE, kKeyCodeKeyA)
               callback:^(BOOL handled) {
                 last_handled = handled;
               }];
@@ -142,7 +146,7 @@ TEST(FlutterKeyEmbedderHandlerUnittests, BasicKeyEvent) {
   [events removeAllObjects];
 
   last_handled = TRUE;
-  [handler handleEvent:keyEvent(NSEventTypeKeyUp, 0x100, @"a", @"a", FALSE, 0)
+  [handler handleEvent:keyEvent(NSEventTypeKeyUp, 0x100, @"a", @"a", FALSE, kKeyCodeKeyA)
               callback:^(BOOL handled) {
                 last_handled = handled;
               }];
@@ -181,7 +185,7 @@ TEST(FlutterKeyEmbedderHandlerUnittests, ToggleModifiersDuringKeyTap) {
         }
       }];
 
-  [handler handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x20104, @"", @"", FALSE, 60)
+  [handler handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x20104, @"", @"", FALSE, kKeyCodeShiftRight)
               callback:^(BOOL handled) {}];
 
   EXPECT_EQ([events count], 1u);
@@ -194,7 +198,7 @@ TEST(FlutterKeyEmbedderHandlerUnittests, ToggleModifiersDuringKeyTap) {
 
   [events removeAllObjects];
 
-  [handler handleEvent:keyEvent(NSEventTypeKeyDown, 0x20104, @"A", @"A", FALSE, 0)
+  [handler handleEvent:keyEvent(NSEventTypeKeyDown, 0x20104, @"A", @"A", FALSE, kKeyCodeKeyA)
               callback:^(BOOL handled) {}];
 
   EXPECT_EQ([events count], 1u);
@@ -207,7 +211,7 @@ TEST(FlutterKeyEmbedderHandlerUnittests, ToggleModifiersDuringKeyTap) {
 
   [events removeAllObjects];
 
-  [handler handleEvent:keyEvent(NSEventTypeKeyDown, 0x20104, @"A", @"A", TRUE, 0)
+  [handler handleEvent:keyEvent(NSEventTypeKeyDown, 0x20104, @"A", @"A", TRUE, kKeyCodeKeyA)
               callback:^(BOOL handled) {}];
 
   EXPECT_EQ([events count], 1u);
@@ -220,7 +224,7 @@ TEST(FlutterKeyEmbedderHandlerUnittests, ToggleModifiersDuringKeyTap) {
 
   [events removeAllObjects];
 
-  [handler handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, 60)
+  [handler handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeShiftRight)
               callback:^(BOOL handled) {}];
 
   EXPECT_EQ([events count], 1u);
@@ -233,7 +237,7 @@ TEST(FlutterKeyEmbedderHandlerUnittests, ToggleModifiersDuringKeyTap) {
 
   [events removeAllObjects];
 
-  [handler handleEvent:keyEvent(NSEventTypeKeyDown, 0x100, @"a", @"a", TRUE, 0)
+  [handler handleEvent:keyEvent(NSEventTypeKeyDown, 0x100, @"a", @"a", TRUE, kKeyCodeKeyA)
               callback:^(BOOL handled) {}];
 
   EXPECT_EQ([events count], 1u);
@@ -246,7 +250,7 @@ TEST(FlutterKeyEmbedderHandlerUnittests, ToggleModifiersDuringKeyTap) {
 
   [events removeAllObjects];
 
-  [handler handleEvent:keyEvent(NSEventTypeKeyUp, 0x20104, @"a", @"a", FALSE, 0)
+  [handler handleEvent:keyEvent(NSEventTypeKeyUp, 0x20104, @"a", @"a", FALSE, kKeyCodeKeyA)
               callback:^(BOOL handled) {}];
 
   EXPECT_EQ([events count], 1u);
@@ -254,6 +258,72 @@ TEST(FlutterKeyEmbedderHandlerUnittests, ToggleModifiersDuringKeyTap) {
   EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
   EXPECT_EQ(event->physical, kPhysicalKeyA);
   EXPECT_EQ(event->logical, kLogicalKeyA);
+  EXPECT_STREQ(event->character, nullptr);
+  EXPECT_EQ(event->synthesized, false);
+
+  [events removeAllObjects];
+}
+
+TEST(FlutterKeyEmbedderHandlerUnittests, IdentifyLeftAndRightModifiers) {
+  __block NSMutableArray<TestKeyEvent*>* events = [[NSMutableArray<TestKeyEvent*> alloc] init];
+  FlutterKeyEvent* event;
+
+  FlutterKeyEmbedderHandler* handler = [[FlutterKeyEmbedderHandler alloc]
+      initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
+                          _Nullable _VoidPtr user_data) {
+        [events addObject:[[TestKeyEvent alloc] initWithEvent:&event]];
+        if (callback != nullptr) {
+          callback(true, user_data);
+        }
+      }];
+
+  [handler handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x20102, @"", @"", FALSE, kKeyCodeShiftLeft)
+              callback:^(BOOL handled) {}];
+
+  EXPECT_EQ([events count], 1u);
+  event = [events lastObject]->data;
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
+  EXPECT_EQ(event->physical, kPhysicalShiftLeft);
+  EXPECT_EQ(event->logical, kLogicalShiftLeft);
+  EXPECT_STREQ(event->character, nullptr);
+  EXPECT_EQ(event->synthesized, false);
+
+  [events removeAllObjects];
+
+  [handler handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x20106, @"", @"", FALSE, kKeyCodeShiftRight)
+              callback:^(BOOL handled) {}];
+
+  EXPECT_EQ([events count], 1u);
+  event = [events lastObject]->data;
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
+  EXPECT_EQ(event->physical, kPhysicalShiftRight);
+  EXPECT_EQ(event->logical, kLogicalShiftRight);
+  EXPECT_STREQ(event->character, nullptr);
+  EXPECT_EQ(event->synthesized, false);
+
+  [events removeAllObjects];
+
+  [handler handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x20104, @"", @"", FALSE, kKeyCodeShiftLeft)
+              callback:^(BOOL handled) {}];
+
+  EXPECT_EQ([events count], 1u);
+  event = [events lastObject]->data;
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
+  EXPECT_EQ(event->physical, kPhysicalShiftLeft);
+  EXPECT_EQ(event->logical, kLogicalShiftLeft);
+  EXPECT_STREQ(event->character, nullptr);
+  EXPECT_EQ(event->synthesized, false);
+
+  [events removeAllObjects];
+
+  [handler handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeShiftRight)
+              callback:^(BOOL handled) {}];
+
+  EXPECT_EQ([events count], 1u);
+  event = [events lastObject]->data;
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
+  EXPECT_EQ(event->physical, kPhysicalShiftRight);
+  EXPECT_EQ(event->logical, kLogicalShiftRight);
   EXPECT_STREQ(event->character, nullptr);
   EXPECT_EQ(event->synthesized, false);
 

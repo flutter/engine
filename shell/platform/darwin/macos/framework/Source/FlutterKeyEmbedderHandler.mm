@@ -345,7 +345,7 @@ void HandleResponse(bool handled, void* user_data);
   // flag, but not whether the change is a down or up. For keys such as
   // CapsLock, the change type can be inferred from the key and the flag.
   //
-  // But some other modifier keys come in paris, such as shift or control, and
+  // But some other modifier keys come in pairs, such as shift or control, and
   // both of the pair share one flag, which indicates either key is pressed.
   // If the pressing states of paired keys are desynchronized due to loss of
   // focus, the change might have to be guessed and synchronized.
