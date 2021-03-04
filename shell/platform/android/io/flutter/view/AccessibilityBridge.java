@@ -1059,9 +1059,8 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       case AccessibilityNodeInfo.ACTION_SET_TEXT:
         {
           // Set text APIs aren't available until API 21. We can't handle the case here so
-          // return false
-          // instead. It's extremely unlikely that this case would ever be triggered in the first
-          // place in API < 21.
+          // return false instead. It's extremely unlikely that this case would ever be
+          // triggered in the first place in API < 21.
           if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
             return false;
           }
