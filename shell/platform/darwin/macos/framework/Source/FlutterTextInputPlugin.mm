@@ -268,7 +268,7 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
  */
 - (BOOL)handleKeyEvent:(NSEvent*)event {
   if (event.type == NSEventTypeKeyUp ||
-    (event.type == NSEventTypeFlagsChanged && event.modifierFlags < _previouslyPressedFlags)) {
+      (event.type == NSEventTypeFlagsChanged && event.modifierFlags < _previouslyPressedFlags)) {
     return NO;
   }
   _previouslyPressedFlags = event.modifierFlags;

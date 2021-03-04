@@ -9,7 +9,6 @@ typedef void (^FlutterKeyHandlerCallback)(BOOL handled);
 @protocol FlutterKeyHandlerBase
 
 @required
-- (void)handleEvent:(NSEvent*)event
-           callback:(FlutterKeyHandlerCallback)callback;
+- (void)handleEvent:(NSEvent*)event callback:(FlutterKeyHandlerCallback)callback;
 
 @end
