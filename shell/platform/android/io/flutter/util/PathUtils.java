@@ -8,16 +8,16 @@ import android.content.Context;
 import android.os.Build;
 
 public final class PathUtils {
-  public static String getFilesDir(Context applicationContext) {
+  public static String getFilesDir(@NonNull Context applicationContext) {
     return applicationContext.getFilesDir().getPath();
   }
 
-  public static String getDataDirectory(Context applicationContext) {
+  public static String getDataDirectory(@NonNull Context applicationContext) {
     return applicationContext.getDir("flutter", Context.MODE_PRIVATE).getPath();
   }
 
-  public static String getCacheDirectory(Context applicationContext) {
-    if (Build.VERSION.SDK_INT >= 21) {
+  public static String getCacheDirectory(@NonNull Context applicationContext) {
+    if (Build.VERSION.SDK_INT >= 21 && applicationContext.getCodeCacheDir() != null) {
       return applicationContext.getCodeCacheDir().getPath();
     } else {
       return applicationContext.getCacheDir().getPath();
