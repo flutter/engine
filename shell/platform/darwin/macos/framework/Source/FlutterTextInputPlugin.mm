@@ -93,6 +93,11 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
 @property(nonatomic) BOOL shown;
 
 /**
+ * The current state of the keyboard and pressed keys.
+ */
+@property(nonatomic) uint64_t previouslyPressedFlags;
+
+/**
  * The affinity for the current cursor position.
  */
 @property FlutterTextAffinity textAffinity;
@@ -146,6 +151,7 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
       [weakSelf handleMethodCall:call result:result];
     }];
     _textInputContext = [[NSTextInputContext alloc] initWithClient:self];
+    _previouslyPressedFlags = 0;
   }
   return self;
 }
@@ -260,9 +266,14 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
  * mouse events. Additionally, processing both keyUp and keyDown results in duplicate
  * processing of the same keys. So for now, limit processing to just handleKeyDown.
  */
-- (BOOL)handleKeyDown:(NSEvent*)event {
+- (BOOL)handleKeyEvent:(NSEvent*)event {
+  if (event.type == NSEventTypeKeyUp ||
+    (event.type == NSEventTypeFlagsChanged && event.modifierFlags < _previouslyPressedFlags)) {
+    return NO;
+  }
+  _previouslyPressedFlags = event.modifierFlags;
   if (!_shown) {
-    return false;
+    return NO;
   }
   return [_textInputContext handleEvent:event];
 }

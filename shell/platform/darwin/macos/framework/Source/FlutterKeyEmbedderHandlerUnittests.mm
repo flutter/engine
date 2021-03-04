@@ -99,7 +99,6 @@ TEST(FlutterKeyEmbedderHandlerUnittests, BasicKeyEvent) {
 
   last_handled = FALSE;
   [handler handleEvent:keyEvent(NSEventTypeKeyDown, 0x100, @"a", @"a", FALSE, 0)
-                ofType:@"keydown"
               callback:^(BOOL handled) {
                 last_handled = handled;
               }];
@@ -122,7 +121,6 @@ TEST(FlutterKeyEmbedderHandlerUnittests, BasicKeyEvent) {
 
   last_handled = FALSE;
   [handler handleEvent:keyEvent(NSEventTypeKeyDown, 0x100, @"a", @"a", TRUE, 0)
-                ofType:@"keydown"
               callback:^(BOOL handled) {
                 last_handled = handled;
               }];
@@ -145,7 +143,6 @@ TEST(FlutterKeyEmbedderHandlerUnittests, BasicKeyEvent) {
 
   last_handled = TRUE;
   [handler handleEvent:keyEvent(NSEventTypeKeyUp, 0x100, @"a", @"a", FALSE, 0)
-                ofType:@"keyup"
               callback:^(BOOL handled) {
                 last_handled = handled;
               }];

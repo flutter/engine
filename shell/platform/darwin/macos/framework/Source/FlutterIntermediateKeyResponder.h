@@ -14,15 +14,9 @@
  */
 @interface FlutterIntermediateKeyResponder : NSObject
 /*
- * Informs the receiver that the user has released a key.
+ * Informs the receiver that the user has interacted with a key.
  *
  * Default implementation returns NO.
  */
-- (BOOL)handleKeyUp:(nonnull NSEvent*)event;
-/*
- * Informs the receiver that the user has pressed a key.
- *
- * Default implementation returns NO.
- */
-- (BOOL)handleKeyDown:(nonnull NSEvent*)event;
+- (BOOL)handleKeyEvent:(NSEvent*)event;
 @end

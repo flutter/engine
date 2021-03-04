@@ -9,11 +9,7 @@
 
 #pragma mark - Default key handling methods
 
-- (BOOL)handleKeyUp:(NSEvent*)event {
-  return NO;
-}
-
-- (BOOL)handleKeyDown:(NSEvent*)event {
+- (BOOL)handleKeyEvent:(NSEvent*)event {
   return NO;
 }
 @end

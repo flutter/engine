@@ -26,12 +26,7 @@
  */
 @property(nonatomic) NSMutableArray<FlutterIntermediateKeyResponder*>* additionalKeyHandlers;
 
-/**
- * The current state of the keyboard and pressed keys.
- */
-@property(nonatomic) uint64_t previouslyPressedFlags;
-
-- (void)dispatchKeyEvent:(NSEvent*)event ofType:(NSString*)type;
+- (void)dispatchKeyEvent:(NSEvent*)event;
 
 @end
 
@@ -42,7 +37,6 @@
   _owner = weakOwner;
   _keyHandlers = [[NSMutableArray alloc] init];
   _additionalKeyHandlers = [[NSMutableArray alloc] init];
-  _previouslyPressedFlags = 0;
   return self;
 }
 
@@ -54,35 +48,34 @@
   [_additionalKeyHandlers addObject:handler];
 }
 
-- (void)dispatchToAdditionalHandlers:(NSEvent*)event ofType:(NSString*)type {
-  if ([type isEqual:@"keydown"]) {
-    for (FlutterIntermediateKeyResponder* responder in _additionalKeyHandlers) {
-      if ([responder handleKeyDown:event]) {
-        return;
-      }
-    }
-    if ([_owner.nextResponder respondsToSelector:@selector(keyDown:)] &&
-        event.type == NSEventTypeKeyDown) {
-      [_owner.nextResponder keyDown:event];
-    }
-  } else if ([type isEqual:@"keyup"]) {
-    for (FlutterIntermediateKeyResponder* responder in _additionalKeyHandlers) {
-      if ([responder handleKeyUp:event]) {
-        return;
-      }
-    }
-    if ([_owner.nextResponder respondsToSelector:@selector(keyUp:)] &&
-        event.type == NSEventTypeKeyUp) {
-      [_owner.nextResponder keyUp:event];
+- (void)dispatchToAdditionalHandlers:(NSEvent*)event {
+  for (FlutterIntermediateKeyResponder* responder in _additionalKeyHandlers) {
+    if ([responder handleKeyEvent:event]) {
+      return;
     }
   }
-  if ([_owner.nextResponder respondsToSelector:@selector(flagsChanged:)] &&
-      event.type == NSEventTypeFlagsChanged) {
-    [_owner.nextResponder flagsChanged:event];
+  switch (event.type) {
+    case NSEventTypeKeyDown:
+      if ([_owner.nextResponder respondsToSelector:@selector(keyDown:)]) {
+        [_owner.nextResponder keyDown:event];
+      }
+      break;
+    case NSEventTypeKeyUp:
+      if ([_owner.nextResponder respondsToSelector:@selector(keyUp:)]) {
+        [_owner.nextResponder keyUp:event];
+      }
+      break;
+    case NSEventTypeFlagsChanged:
+      if ([_owner.nextResponder respondsToSelector:@selector(flagsChanged:)]) {
+        [_owner.nextResponder flagsChanged:event];
+      }
+      break;
+    default:
+      NSAssert(false, @"Unexpected key event type (got %lu).", event.type);
   }
 }
 
-- (void)dispatchKeyEvent:(NSEvent*)event ofType:(NSString*)type {
+- (void)dispatchKeyEvent:(NSEvent*)event {
   // Be sure to add a handler in propagateKeyEvent if you allow more event
   // types here.
   if (event.type != NSEventTypeKeyDown && event.type != NSEventTypeKeyUp &&
@@ -98,30 +91,25 @@
     NSAssert(unreplied >= 0, @"More key handlers replied than intended.");
     anyHandled = anyHandled || handled;
     if (unreplied == 0 && !anyHandled) {
-      [weakSelf dispatchToAdditionalHandlers:event ofType:type];
+      [weakSelf dispatchToAdditionalHandlers:event];
     }
   };
 
   for (id<FlutterKeyHandlerBase> handler in _keyHandlers) {
-    [handler handleEvent:event ofType:type callback:replyCallback];
+    [handler handleEvent:event callback:replyCallback];
   }
 }
 
 - (void)keyDown:(nonnull NSEvent*)event {
-  [self dispatchKeyEvent:event ofType:@"keydown"];
+  [self dispatchKeyEvent:event];
 }
 
 - (void)keyUp:(nonnull NSEvent*)event {
-  [self dispatchKeyEvent:event ofType:@"keyup"];
+  [self dispatchKeyEvent:event];
 }
 
 - (void)flagsChanged:(NSEvent*)event {
-  if (event.modifierFlags < _previouslyPressedFlags) {
-    [self keyUp:event];
-  } else {
-    [self keyDown:event];
-  }
-  _previouslyPressedFlags = event.modifierFlags;
+  [self dispatchKeyEvent:event];
 }
 
 @end

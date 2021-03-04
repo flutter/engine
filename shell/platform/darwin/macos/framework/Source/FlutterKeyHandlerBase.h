@@ -10,7 +10,6 @@ typedef void (^FlutterKeyHandlerCallback)(BOOL handled);
 
 @required
 - (void)handleEvent:(NSEvent*)event
-             ofType:(NSString*)type
            callback:(FlutterKeyHandlerCallback)callback;
 
 @end

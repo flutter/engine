@@ -212,10 +212,6 @@ void HandleResponse(bool handled, void* user_data);
  */
 - (void)dispatchFlagEvent:(NSEvent*)event callback:(FlutterKeyHandlerCallback)callback;
 
-- (void)handleEvent:(NSEvent*)event
-             ofType:(NSString*)type
-           callback:(FlutterKeyHandlerCallback)callback;
-
 - (void)handleResponse:(BOOL)handled forId:(uint64_t)responseId;
 
 @end

@@ -17,6 +17,11 @@
  */
 @property(nonatomic) FlutterBasicMessageChannel* channel;
 
+/**
+ * The current state of the keyboard and pressed keys.
+ */
+@property(nonatomic) uint64_t previouslyPressedFlags;
+
 @end
 
 @implementation FlutterKeyChannelHandler
@@ -24,12 +29,30 @@
 - (nonnull instancetype)initWithChannel:(nonnull FlutterBasicMessageChannel*)channel {
   self = [super init];
   _channel = channel;
+  _previouslyPressedFlags = 0;
   return self;
 }
 
-- (void)handleEvent:(NSEvent*)event
-             ofType:(NSString*)type
-           callback:(FlutterKeyHandlerCallback)callback {
+- (void)handleEvent:(NSEvent*)event callback:(FlutterKeyHandlerCallback)callback {
+  NSString* type;
+  switch (event.type) {
+    case NSEventTypeKeyDown:
+      type = @"keydown";
+      break;
+    case NSEventTypeKeyUp:
+      type = @"keyup";
+      break;
+    case NSEventTypeFlagsChanged:
+      if (event.modifierFlags < _previouslyPressedFlags) {
+        type = @"keyup";
+      } else {
+        type = @"keydown";
+      }
+      break;
+    default:
+      NSAssert(false, @"Unexpected key event type (got %lu).", event.type);
+  }
+  _previouslyPressedFlags = event.modifierFlags;
   NSMutableDictionary* keyMessage = [@{
     @"keymap" : @"macos",
     @"type" : type,

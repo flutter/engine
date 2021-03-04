@@ -56,7 +56,6 @@ TEST(FlutterKeyChannelHandlerUnittests, BasicKeyEvent) {
   FlutterKeyChannelHandler* handler =
       [[FlutterKeyChannelHandler alloc] initWithChannel:mockKeyEventChannel];
   [handler handleEvent:keyEvent(NSEventTypeKeyDown, 0x100, @"a", @"a", FALSE, 0)
-                ofType:@"keydown"
               callback:^(BOOL handled) {
                 [responses addObject:@(handled)];
               }];
@@ -78,7 +77,6 @@ TEST(FlutterKeyChannelHandlerUnittests, BasicKeyEvent) {
   // Key up
   next_response = FALSE;
   [handler handleEvent:keyEvent(NSEventTypeKeyUp, 0x100, @"a", @"a", FALSE, 0)
-                ofType:@"keyup"
               callback:^(BOOL handled) {
                 [responses addObject:@(handled)];
               }];
@@ -100,7 +98,6 @@ TEST(FlutterKeyChannelHandlerUnittests, BasicKeyEvent) {
   // LShift down
   next_response = TRUE;
   [handler handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x20102, @"", @"", FALSE, 56)
-                ofType:@"keydown"
               callback:^(BOOL handled) {
                 [responses addObject:@(handled)];
               }];
@@ -120,7 +117,6 @@ TEST(FlutterKeyChannelHandlerUnittests, BasicKeyEvent) {
   // RShift down
   next_response = false;
   [handler handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x20106, @"", @"", FALSE, 60)
-                ofType:@"keydown"
               callback:^(BOOL handled) {
                 [responses addObject:@(handled)];
               }];
@@ -140,7 +136,6 @@ TEST(FlutterKeyChannelHandlerUnittests, BasicKeyEvent) {
   // LShift up
   next_response = false;
   [handler handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x20104, @"", @"", FALSE, 56)
-                ofType:@"keyup"
               callback:^(BOOL handled) {
                 [responses addObject:@(handled)];
               }];
@@ -160,7 +155,6 @@ TEST(FlutterKeyChannelHandlerUnittests, BasicKeyEvent) {
   // RShift up
   next_response = false;
   [handler handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, 60)
-                ofType:@"keyup"
               callback:^(BOOL handled) {
                 [responses addObject:@(handled)];
               }];
@@ -197,8 +191,7 @@ TEST(FlutterKeyChannelHandlerUnittests, EmptyResponseIsTakenAsHandled) {
 
   FlutterKeyChannelHandler* handler =
       [[FlutterKeyChannelHandler alloc] initWithChannel:mockKeyEventChannel];
-  [handler handleEvent:keyEvent(NSEventTypeKeyUp, 0x100, @"a", @"a", FALSE, 0)
-                ofType:@"keydown"
+  [handler handleEvent:keyEvent(NSEventTypeKeyDown, 0x100, @"a", @"a", FALSE, 0)
               callback:^(BOOL handled) {
                 [responses addObject:@(handled)];
               }];
