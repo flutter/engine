@@ -65,6 +65,7 @@ class CkCanvas {
     );
   }
 
+  // TODO(flar): CanvasKit does not expose sampling options available on SkCanvas.drawAtlas
   void drawAtlasRaw(
     CkPaint paint,
     CkImage atlas,
@@ -108,30 +109,57 @@ class CkCanvas {
   }
 
   void drawImage(CkImage image, ui.Offset offset, CkPaint paint) {
-    skCanvas.drawImage(
-      image.skImage,
-      offset.dx,
-      offset.dy,
-      paint.skiaObject,
-    );
+    ui.FilterQuality filterQuality = paint.filterQuality;
+    if (filterQuality == ui.FilterQuality.high) {
+      skCanvas.drawImageCubic(
+        image.skImage,
+        offset.dx,
+        offset.dy,
+        1.0 / 3.0,
+        1.0 / 3.0,
+        paint.skiaObject,
+      );
+    } else {
+      skCanvas.drawImageOptions(
+        image.skImage,
+        offset.dx,
+        offset.dy,
+        toSkFilterMode(filterQuality),
+        toSkMipmapMode(filterQuality),
+        paint.skiaObject,
+      );
+    }
   }
 
   void drawImageRect(CkImage image, ui.Rect src, ui.Rect dst, CkPaint paint) {
-    skCanvas.drawImageRect(
-      image.skImage,
-      toSkRect(src),
-      toSkRect(dst),
-      paint.skiaObject,
-      false,
-    );
+    ui.FilterQuality filterQuality = paint.filterQuality;
+    if (filterQuality == ui.FilterQuality.high) {
+      skCanvas.drawImageRectCubic(
+        image.skImage,
+        toSkRect(src),
+        toSkRect(dst),
+        1.0 / 3.0,
+        1.0 / 3.0,
+        paint.skiaObject,
+      );
+    } else {
+      skCanvas.drawImageRectOptions(
+        image.skImage,
+        toSkRect(src),
+        toSkRect(dst),
+        toSkFilterMode(filterQuality),
+        toSkMipmapMode(filterQuality),
+        paint.skiaObject,
+      );
+    }
   }
 
-  void drawImageNine(
-      CkImage image, ui.Rect center, ui.Rect dst, CkPaint paint) {
+  void drawImageNine(CkImage image, ui.Rect center, ui.Rect dst, CkPaint paint) {
     skCanvas.drawImageNine(
       image.skImage,
       toSkRect(center),
       toSkRect(dst),
+      toSkFilterMode(paint.filterQuality),
       paint.skiaObject,
     );
   }
@@ -934,12 +962,26 @@ class CkDrawImageCommand extends CkPaintCommand {
 
   @override
   void apply(SkCanvas canvas) {
-    canvas.drawImage(
-      image.skImage,
-      offset.dx,
-      offset.dy,
-      paint.skiaObject,
-    );
+    ui.FilterQuality filterQuality = paint.filterQuality;
+    if (filterQuality == ui.FilterQuality.high) {
+      canvas.drawImageCubic(
+        image.skImage,
+        offset.dx,
+        offset.dy,
+        1.0 / 3.0,
+        1.0 / 3.0,
+        paint.skiaObject,
+      );
+    } else {
+      canvas.drawImageOptions(
+        image.skImage,
+        offset.dx,
+        offset.dy,
+        toSkFilterMode(filterQuality),
+        toSkMipmapMode(filterQuality),
+        paint.skiaObject,
+      );
+    }
   }
 
   @override
@@ -959,13 +1001,26 @@ class CkDrawImageRectCommand extends CkPaintCommand {
 
   @override
   void apply(SkCanvas canvas) {
-    canvas.drawImageRect(
-      image.skImage,
-      toSkRect(src),
-      toSkRect(dst),
-      paint.skiaObject,
-      false,
-    );
+    ui.FilterQuality filterQuality = paint.filterQuality;
+    if (filterQuality == ui.FilterQuality.high) {
+      canvas.drawImageRectCubic(
+        image.skImage,
+        toSkRect(src),
+        toSkRect(dst),
+        1.0 / 3.0,
+        1.0 / 3.0,
+        paint.skiaObject,
+      );
+    } else {
+      canvas.drawImageRectOptions(
+        image.skImage,
+        toSkRect(src),
+        toSkRect(dst),
+        toSkFilterMode(filterQuality),
+        toSkMipmapMode(filterQuality),
+        paint.skiaObject,
+      );
+    }
   }
 
   @override
@@ -989,6 +1044,7 @@ class CkDrawImageNineCommand extends CkPaintCommand {
       image.skImage,
       toSkRect(center),
       toSkRect(dst),
+      toSkFilterMode(paint.filterQuality),
       paint.skiaObject,
     );
   }
