@@ -140,7 +140,7 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
     _channel = [FlutterMethodChannel methodChannelWithName:kTextInputChannel
                                            binaryMessenger:viewController.engine.binaryMessenger
                                                      codec:[FlutterJSONMethodCodec sharedInstance]];
-    _shown = TRUE;
+    _shown = FALSE;
     __weak FlutterTextInputPlugin* weakSelf = self;
     [_channel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
       [weakSelf handleMethodCall:call result:result];

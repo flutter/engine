@@ -85,26 +85,30 @@ constexpr uint64_t kLogicalKeyA = 0x00000061;
 
 }
 
+typedef void (^ResponseCallback)(bool handled);
+
 // Test the most basic key events.
 //
 // Press, hold, and release key A on an US keyboard.
 TEST(FlutterKeyEmbedderHandlerUnittests, BasicKeyEvent) {
-  __block BOOL next_handled = TRUE;
   __block NSMutableArray<TestKeyEvent*>* events = [[NSMutableArray<TestKeyEvent*> alloc] init];
-  __block NSMutableArray<NSNumber*>* responses = [[NSMutableArray<NSNumber*> alloc] init];
+  __block NSMutableArray<ResponseCallback>* callbacks =
+      [[NSMutableArray<ResponseCallback> alloc] init];
+  __block BOOL last_handled = TRUE;
   FlutterKeyEvent* event;
 
   FlutterKeyEmbedderHandler* handler = [[FlutterKeyEmbedderHandler alloc]
       initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
                           _Nullable _VoidPtr user_data) {
         [events addObject:[[TestKeyEvent alloc] initWithEvent:&event]];
-        printf("callback %d handled %d\n", !!callback, next_handled);
         if (callback != nullptr) {
-          callback(next_handled, user_data);
+          [callbacks addObject:^(bool handled) {
+            callback(handled, user_data);
+          }];
         }
       }];
 
-  next_handled = TRUE;
+  last_handled = FALSE;
   [handler handleEvent:[Utils keyEventWithType:NSKeyDown
                                          modifierFlags:0
                                             characters:@"a"
@@ -113,7 +117,7 @@ TEST(FlutterKeyEmbedderHandlerUnittests, BasicKeyEvent) {
                                                keyCode:0]
                 ofType:@"keydown"
               callback:^(BOOL handled) {
-                [responses addObject:@(handled)];
+                last_handled = handled;
               }];
 
   EXPECT_EQ([events count], 1u);
@@ -124,8 +128,10 @@ TEST(FlutterKeyEmbedderHandlerUnittests, BasicKeyEvent) {
   EXPECT_STREQ(event->character, "a");
   EXPECT_EQ(event->synthesized, false);
 
-  EXPECT_EQ([responses count], 1u);
-  EXPECT_EQ([[responses lastObject] boolValue], TRUE);
+  EXPECT_EQ(last_handled, FALSE);
+  EXPECT_EQ([callbacks count], 1u);
+  [callbacks lastObject](TRUE);
+  EXPECT_EQ(last_handled, TRUE);
 }
 
 }  // namespace flutter::testing

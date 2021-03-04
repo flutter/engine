@@ -250,7 +250,8 @@ void HandleResponse(bool handled, void* user_data);
   FlutterKeyPendingResponse* pending =
       [[FlutterKeyPendingResponse alloc] initWithHandler:self responseId:responseId];
   _pendingResponses[@(responseId)] = callback;
-  _sendEvent(event, HandleResponse, (__bridge void*)pending);
+  // The `__bridge_retained` here is matched by `__bridge_transfer` in HandleResponse.
+  _sendEvent(event, HandleResponse, (__bridge_retained void*)pending);
 }
 
 - (void)dispatchDownEvent:(NSEvent*)event callback:(FlutterKeyHandlerCallback)callback {
@@ -424,10 +425,11 @@ void HandleResponse(bool handled, void* user_data);
 - (void)handleEvent:(NSEvent*)event
              ofType:(NSString*)type
            callback:(FlutterKeyHandlerCallback)callback {
-  printf("#### Event %d keyCode %d rep %d ", (int)event.type, (int)event.keyCode, event.isARepeat);
+  printf("#### Event %d keyCode %d mod %lx", (int)event.type, (int)event.keyCode,
+         event.modifierFlags);
   if (event.type != NSEventTypeFlagsChanged) {
-    printf("cIM %s c %s\n", [[event charactersIgnoringModifiers] UTF8String],
-           [[event characters] UTF8String]);
+    printf("rep %d cIM %s c %s\n", event.isARepeat,
+           [[event charactersIgnoringModifiers] UTF8String], [[event characters] UTF8String]);
   } else {
     printf("\n");
   }
@@ -447,16 +449,20 @@ void HandleResponse(bool handled, void* user_data);
 }
 
 - (void)handleResponse:(BOOL)handled forId:(uint64_t)responseId {
+  printf("HR %d %llu\n", handled, responseId);
   FlutterKeyHandlerCallback callback = _pendingResponses[@(responseId)];
-  [_pendingResponses removeObjectForKey:@(responseId)];
   callback(handled);
+  printf("after\n");
+  [_pendingResponses removeObjectForKey:@(responseId)];
 }
 
 @end
 
 namespace {
 void HandleResponse(bool handled, void* user_data) {
-  FlutterKeyPendingResponse* pending = (__bridge FlutterKeyPendingResponse*)user_data;
+  printf("Resp %d %0llx\n", handled, (uint64_t)user_data);
+  // The `__bridge_transfer` here is matched by `__bridge_retained` in sendPrimaryFlutterEvent.
+  FlutterKeyPendingResponse* pending = (__bridge_transfer FlutterKeyPendingResponse*)user_data;
   [pending.handler handleResponse:handled forId:pending.responseId];
 }
 }  // namespace
