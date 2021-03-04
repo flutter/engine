@@ -268,6 +268,7 @@ void HandleResponse(bool handled, void* user_data);
       // a currently pressed one, usually indicating multiple keyboards are
       // pressing keys with the same physical key, or the up event was lost
       // during a loss of focus. The down event is ignored.
+      callback(TRUE);
       return;
     }
   } else {
@@ -299,6 +300,7 @@ void HandleResponse(bool handled, void* user_data);
   if (!pressedLogicalKey) {
     // The physical key has been released before. It indicates multiple
     // keyboards pressed keys with the same physical key. Ignore the up event.
+    callback(TRUE);
     return;
   }
   [self updateKey:physicalKey asPressed:0];
@@ -317,8 +319,10 @@ void HandleResponse(bool handled, void* user_data);
 
 - (void)dispatchCapsLockEvent:(NSEvent*)event callback:(FlutterKeyHandlerCallback)callback {
   NSNumber* logicalKey = [keyCodeToLogicalKey objectForKey:@(event.keyCode)];
-  if (logicalKey == nil)
+  if (logicalKey == nil) {
+    callback(TRUE);
     return;
+  }
   uint64_t logical = logicalKey.unsignedLongLongValue;
 
   FlutterKeyEvent flutterEvent = {
@@ -376,6 +380,7 @@ void HandleResponse(bool handled, void* user_data);
   uint64_t modifierFlag = GetModifierFlagForKey(targetKey);
   if (targetKey == 0 || modifierFlag == 0) {
     // Unrecognized modifier.
+    callback(TRUE);
     return;
   }
   // The `siblingKeyCode` may be 0, which means it doesn't have a sibling key.
@@ -415,6 +420,8 @@ void HandleResponse(bool handled, void* user_data);
     flutterEvent.synthesized = false;
     [self updateKey:targetKey asPressed:(targetKeyShouldDown ? logicalKey : 0)];
     [self sendPrimaryFlutterEvent:flutterEvent callback:callback];
+  } else {
+    callback(TRUE);
   }
 }
 

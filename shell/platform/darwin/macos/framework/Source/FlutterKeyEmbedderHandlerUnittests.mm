@@ -330,5 +330,209 @@ TEST(FlutterKeyEmbedderHandlerUnittests, IdentifyLeftAndRightModifiers) {
   [events removeAllObjects];
 }
 
+// Process various cases where pair modifier key events are missed, and the
+// handler has to "guess" how to synchronize states.
+//
+// In the following comments, parentheses indicate missed events, while
+// asterisks indicate synthesized events.
+TEST(FlutterKeyEmbedderHandlerUnittests, SynthesizeMissedModifierEvents) {
+  __block NSMutableArray<TestKeyEvent*>* events = [[NSMutableArray<TestKeyEvent*> alloc] init];
+  __block NSMutableArray<ResponseCallback>* callbacks =
+      [[NSMutableArray<ResponseCallback> alloc] init];
+  __block BOOL last_handled = TRUE;
+  id keyEventCallback = ^(BOOL handled) {
+    last_handled = handled;
+  };
+  FlutterKeyEvent* event;
+
+  FlutterKeyEmbedderHandler* handler = [[FlutterKeyEmbedderHandler alloc]
+      initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
+                          _Nullable _VoidPtr user_data) {
+        [events addObject:[[TestKeyEvent alloc] initWithEvent:&event]];
+        if (callback != nullptr) {
+          [callbacks addObject:^(bool handled) {
+            callback(handled, user_data);
+          }];
+        }
+      }];
+
+  // Case 1:
+  // In:  L down, (L up), L down, L up
+  // Out: L down,                 L up
+  last_handled = FALSE;
+  [handler handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x20102, @"", @"", FALSE, kKeyCodeShiftLeft)
+              callback:keyEventCallback];
+
+  EXPECT_EQ([events count], 1u);
+  event = [events lastObject]->data;
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
+  EXPECT_EQ(event->physical, kPhysicalShiftLeft);
+  EXPECT_EQ(event->logical, kLogicalShiftLeft);
+  EXPECT_STREQ(event->character, nullptr);
+  EXPECT_EQ(event->synthesized, false);
+
+  EXPECT_EQ(last_handled, FALSE);
+  EXPECT_EQ([callbacks count], 1u);
+  [callbacks lastObject](TRUE);
+  EXPECT_EQ(last_handled, TRUE);
+
+  [events removeAllObjects];
+  [callbacks removeAllObjects];
+
+  last_handled = FALSE;
+  [handler handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x20102, @"", @"", FALSE, kKeyCodeShiftLeft)
+              callback:keyEventCallback];
+
+  EXPECT_EQ([events count], 0u);
+  EXPECT_EQ([callbacks count], 0u);
+  EXPECT_EQ(last_handled, TRUE);
+
+  last_handled = FALSE;
+  [handler handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeShiftLeft)
+              callback:keyEventCallback];
+
+  EXPECT_EQ([events count], 1u);
+  event = [events lastObject]->data;
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
+  EXPECT_EQ(event->physical, kPhysicalShiftLeft);
+  EXPECT_EQ(event->logical, kLogicalShiftLeft);
+  EXPECT_STREQ(event->character, nullptr);
+  EXPECT_EQ(event->synthesized, false);
+
+  EXPECT_EQ(last_handled, FALSE);
+  EXPECT_EQ([callbacks count], 1u);
+  [callbacks lastObject](TRUE);
+  EXPECT_EQ(last_handled, TRUE);
+
+  [events removeAllObjects];
+  [callbacks removeAllObjects];
+
+  // Case 2:
+  // In:  (L down), L up
+  // Out:
+
+  last_handled = FALSE;
+  [handler handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeShiftLeft)
+              callback:keyEventCallback];
+
+  EXPECT_EQ([events count], 0u);
+  EXPECT_EQ([callbacks count], 0u);
+  EXPECT_EQ(last_handled, TRUE);
+
+  // Case 3:
+  // In:  L down, (L up), (R down), R up
+  // Out: L down,                   *L up
+
+  last_handled = FALSE;
+  [handler handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x20102, @"", @"", FALSE, kKeyCodeShiftLeft)
+              callback:keyEventCallback];
+
+  EXPECT_EQ([events count], 1u);
+  event = [events lastObject]->data;
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
+  EXPECT_EQ(event->physical, kPhysicalShiftLeft);
+  EXPECT_EQ(event->logical, kLogicalShiftLeft);
+  EXPECT_STREQ(event->character, nullptr);
+  EXPECT_EQ(event->synthesized, false);
+
+  EXPECT_EQ(last_handled, FALSE);
+  EXPECT_EQ([callbacks count], 1u);
+  [callbacks lastObject](TRUE);
+  EXPECT_EQ(last_handled, TRUE);
+
+  [events removeAllObjects];
+  [callbacks removeAllObjects];
+
+  last_handled = FALSE;
+  [handler handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeShiftRight)
+              callback:keyEventCallback];
+
+  EXPECT_EQ([events count], 1u);
+  event = [events lastObject]->data;
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
+  EXPECT_EQ(event->physical, kPhysicalShiftLeft);
+  EXPECT_EQ(event->logical, kLogicalShiftLeft);
+  EXPECT_STREQ(event->character, nullptr);
+  EXPECT_EQ(event->synthesized, true);
+
+  EXPECT_EQ([callbacks count], 0u);
+  EXPECT_EQ(last_handled, TRUE);
+
+  [events removeAllObjects];
+  [callbacks removeAllObjects];
+
+  // Case 4:
+  // In:  L down, R down, (L up), R up
+  // Out: L down, R down          *L up & R up
+
+  last_handled = FALSE;
+  [handler handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x20102, @"", @"", FALSE, kKeyCodeShiftLeft)
+              callback:keyEventCallback];
+
+  EXPECT_EQ([events count], 1u);
+  event = [events lastObject]->data;
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
+  EXPECT_EQ(event->physical, kPhysicalShiftLeft);
+  EXPECT_EQ(event->logical, kLogicalShiftLeft);
+  EXPECT_STREQ(event->character, nullptr);
+  EXPECT_EQ(event->synthesized, false);
+
+  EXPECT_EQ(last_handled, FALSE);
+  EXPECT_EQ([callbacks count], 1u);
+  [callbacks lastObject](TRUE);
+  EXPECT_EQ(last_handled, TRUE);
+
+  [events removeAllObjects];
+  [callbacks removeAllObjects];
+
+  last_handled = FALSE;
+  [handler handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x20106, @"", @"", FALSE, kKeyCodeShiftRight)
+              callback:keyEventCallback];
+
+  EXPECT_EQ([events count], 1u);
+  event = [events lastObject]->data;
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
+  EXPECT_EQ(event->physical, kPhysicalShiftRight);
+  EXPECT_EQ(event->logical, kLogicalShiftRight);
+  EXPECT_STREQ(event->character, nullptr);
+  EXPECT_EQ(event->synthesized, false);
+
+  EXPECT_EQ(last_handled, FALSE);
+  EXPECT_EQ([callbacks count], 1u);
+  [callbacks lastObject](TRUE);
+  EXPECT_EQ(last_handled, TRUE);
+
+  [events removeAllObjects];
+  [callbacks removeAllObjects];
+
+  last_handled = FALSE;
+  [handler handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeShiftRight)
+              callback:keyEventCallback];
+
+  EXPECT_EQ([events count], 2u);
+  event = [events firstObject]->data;
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
+  EXPECT_EQ(event->physical, kPhysicalShiftLeft);
+  EXPECT_EQ(event->logical, kLogicalShiftLeft);
+  EXPECT_STREQ(event->character, nullptr);
+  EXPECT_EQ(event->synthesized, true);
+
+  event = [events lastObject]->data;
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
+  EXPECT_EQ(event->physical, kPhysicalShiftRight);
+  EXPECT_EQ(event->logical, kLogicalShiftRight);
+  EXPECT_STREQ(event->character, nullptr);
+  EXPECT_EQ(event->synthesized, false);
+
+  EXPECT_EQ(last_handled, FALSE);
+  EXPECT_EQ([callbacks count], 1u);
+  [callbacks lastObject](TRUE);
+  EXPECT_EQ(last_handled, TRUE);
+
+  [events removeAllObjects];
+  [callbacks removeAllObjects];
+}
+
+
 
 }  // namespace flutter::testing
