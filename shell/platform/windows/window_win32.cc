@@ -2,18 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/windows/win32_window.h"
+#include "flutter/shell/platform/windows/window_win32.h"
 
 #include <imm.h>
 
 #include <cstring>
 
-#include "win32_dpi_utils.h"
-
-// KeyCode used to indicate key events to be handled by the IME. These include
-// the kana key, fullwidth/halfwidth (zenkaku/hankaku) key, and keypresses when
-// the IME is in composing mode.
-static constexpr int kImeComposingKeyCode = 229;
+#include "dpi_utils_win32.h"
 
 namespace flutter {
 
@@ -24,18 +19,18 @@ char32_t CodePointFromSurrogatePair(wchar_t high, wchar_t low) {
 }
 }  // namespace
 
-Win32Window::Win32Window() {
+WindowWin32::WindowWin32() {
   // Get the DPI of the primary monitor as the initial DPI. If Per-Monitor V2 is
   // supported, |current_dpi_| should be updated in the
   // kWmDpiChangedBeforeParent message.
   current_dpi_ = GetDpiForHWND(nullptr);
 }
 
-Win32Window::~Win32Window() {
+WindowWin32::~WindowWin32() {
   Destroy();
 }
 
-void Win32Window::InitializeChild(const char* title,
+void WindowWin32::InitializeChild(const char* title,
                                   unsigned int width,
                                   unsigned int height) {
   Destroy();
@@ -61,7 +56,7 @@ void Win32Window::InitializeChild(const char* title,
   }
 }
 
-std::wstring Win32Window::NarrowToWide(const char* source) {
+std::wstring WindowWin32::NarrowToWide(const char* source) {
   size_t length = strlen(source);
   size_t outlen = 0;
   std::wstring wideTitle(length, L'#');
@@ -69,7 +64,7 @@ std::wstring Win32Window::NarrowToWide(const char* source) {
   return wideTitle;
 }
 
-WNDCLASS Win32Window::RegisterWindowClass(std::wstring& title) {
+WNDCLASS WindowWin32::RegisterWindowClass(std::wstring& title) {
   window_class_name_ = title;
 
   WNDCLASS window_class{};
@@ -87,7 +82,7 @@ WNDCLASS Win32Window::RegisterWindowClass(std::wstring& title) {
   return window_class;
 }
 
-LRESULT CALLBACK Win32Window::WndProc(HWND const window,
+LRESULT CALLBACK WindowWin32::WndProc(HWND const window,
                                       UINT const message,
                                       WPARAM const wparam,
                                       LPARAM const lparam) noexcept {
@@ -96,17 +91,17 @@ LRESULT CALLBACK Win32Window::WndProc(HWND const window,
     SetWindowLongPtr(window, GWLP_USERDATA,
                      reinterpret_cast<LONG_PTR>(cs->lpCreateParams));
 
-    auto that = static_cast<Win32Window*>(cs->lpCreateParams);
+    auto that = static_cast<WindowWin32*>(cs->lpCreateParams);
     that->window_handle_ = window;
     that->text_input_manager_.SetWindowHandle(window);
-  } else if (Win32Window* that = GetThisFromHandle(window)) {
+  } else if (WindowWin32* that = GetThisFromHandle(window)) {
     return that->HandleMessage(message, wparam, lparam);
   }
 
   return DefWindowProc(window, message, wparam, lparam);
 }
 
-void Win32Window::TrackMouseLeaveEvent(HWND hwnd) {
+void WindowWin32::TrackMouseLeaveEvent(HWND hwnd) {
   if (!tracking_mouse_leave_) {
     TRACKMOUSEEVENT tme;
     tme.cbSize = sizeof(tme);
@@ -117,7 +112,7 @@ void Win32Window::TrackMouseLeaveEvent(HWND hwnd) {
   }
 }
 
-void Win32Window::OnImeSetContext(UINT const message,
+void WindowWin32::OnImeSetContext(UINT const message,
                                   WPARAM const wparam,
                                   LPARAM const lparam) {
   if (wparam != 0) {
@@ -125,14 +120,14 @@ void Win32Window::OnImeSetContext(UINT const message,
   }
 }
 
-void Win32Window::OnImeStartComposition(UINT const message,
+void WindowWin32::OnImeStartComposition(UINT const message,
                                         WPARAM const wparam,
                                         LPARAM const lparam) {
   text_input_manager_.CreateImeWindow();
   OnComposeBegin();
 }
 
-void Win32Window::OnImeComposition(UINT const message,
+void WindowWin32::OnImeComposition(UINT const message,
                                    WPARAM const wparam,
                                    LPARAM const lparam) {
   // Update the IME window position.
@@ -147,30 +142,25 @@ void Win32Window::OnImeComposition(UINT const message,
       OnComposeChange(text.value(), pos);
     }
   } else if (lparam & GCS_RESULTSTR) {
+    // Commit but don't end composing.
     // Read the committed composing string.
     long pos = text_input_manager_.GetComposingCursorPosition();
     std::optional<std::u16string> text = text_input_manager_.GetResultString();
     if (text) {
       OnComposeChange(text.value(), pos);
-    }
-    // Next, try reading the composing string. Some Japanese IMEs send a message
-    // containing both a GCS_RESULTSTR and a GCS_COMPSTR when one composition is
-    // committed and another immediately started.
-    text = text_input_manager_.GetResultString();
-    if (text) {
-      OnComposeChange(text.value(), pos);
+      OnComposeCommit();
     }
   }
 }
 
-void Win32Window::OnImeEndComposition(UINT const message,
+void WindowWin32::OnImeEndComposition(UINT const message,
                                       WPARAM const wparam,
                                       LPARAM const lparam) {
   text_input_manager_.DestroyImeWindow();
   OnComposeEnd();
 }
 
-void Win32Window::OnImeRequest(UINT const message,
+void WindowWin32::OnImeRequest(UINT const message,
                                WPARAM const wparam,
                                LPARAM const lparam) {
   // TODO(cbracken): Handle IMR_RECONVERTSTRING, IMR_DOCUMENTFEED,
@@ -178,8 +168,12 @@ void Win32Window::OnImeRequest(UINT const message,
   // https://github.com/flutter/flutter/issues/74547
 }
 
+void WindowWin32::UpdateCursorRect(const Rect& rect) {
+  text_input_manager_.UpdateCaretRect(rect);
+}
+
 LRESULT
-Win32Window::HandleMessage(UINT const message,
+WindowWin32::HandleMessage(UINT const message,
                            WPARAM const wparam,
                            LPARAM const lparam) noexcept {
   LPARAM result_lparam = lparam;
@@ -341,9 +335,9 @@ Win32Window::HandleMessage(UINT const message,
       if (keycode_for_char_message_ != 0) {
         const unsigned int scancode = (lparam >> 16) & 0xff;
         const bool extended = ((lparam >> 24) & 0x01) == 0x01;
-
+        const bool was_down = lparam & 0x40000000;
         bool handled = OnKey(keycode_for_char_message_, scancode, WM_KEYDOWN,
-                             code_point, extended);
+                             code_point, extended, was_down);
         keycode_for_char_message_ = 0;
         if (handled) {
           // If the OnKey handler handles the message, then return so we don't
@@ -383,12 +377,6 @@ Win32Window::HandleMessage(UINT const message,
         break;
       }
       unsigned int keyCode(wparam);
-      if (keyCode == kImeComposingKeyCode) {
-        // This is an IME composing mode keypress that will be handled via
-        // WM_IME_* messages, which update the framework via updates to the text
-        // and composing range in text editing update messages.
-        break;
-      }
       const unsigned int scancode = (lparam >> 16) & 0xff;
       const bool extended = ((lparam >> 24) & 0x01) == 0x01;
       // If the key is a modifier, get its side.
@@ -396,7 +384,8 @@ Win32Window::HandleMessage(UINT const message,
         keyCode = MapVirtualKey(scancode, MAPVK_VSC_TO_VK_EX);
       }
       const int action = is_keydown_message ? WM_KEYDOWN : WM_KEYUP;
-      if (OnKey(keyCode, scancode, action, 0, extended)) {
+      const bool was_down = lparam & 0x40000000;
+      if (OnKey(keyCode, scancode, action, 0, extended, was_down)) {
         return 0;
       }
       break;
@@ -405,23 +394,23 @@ Win32Window::HandleMessage(UINT const message,
   return DefWindowProc(window_handle_, message, wparam, result_lparam);
 }
 
-UINT Win32Window::GetCurrentDPI() {
+UINT WindowWin32::GetCurrentDPI() {
   return current_dpi_;
 }
 
-UINT Win32Window::GetCurrentWidth() {
+UINT WindowWin32::GetCurrentWidth() {
   return current_width_;
 }
 
-UINT Win32Window::GetCurrentHeight() {
+UINT WindowWin32::GetCurrentHeight() {
   return current_height_;
 }
 
-HWND Win32Window::GetWindowHandle() {
+HWND WindowWin32::GetWindowHandle() {
   return window_handle_;
 }
 
-void Win32Window::Destroy() {
+void WindowWin32::Destroy() {
   if (window_handle_) {
     DestroyWindow(window_handle_);
     window_handle_ = nullptr;
@@ -430,15 +419,22 @@ void Win32Window::Destroy() {
   UnregisterClass(window_class_name_.c_str(), nullptr);
 }
 
-void Win32Window::HandleResize(UINT width, UINT height) {
+void WindowWin32::HandleResize(UINT width, UINT height) {
   current_width_ = width;
   current_height_ = height;
   OnResize(width, height);
 }
 
-Win32Window* Win32Window::GetThisFromHandle(HWND const window) noexcept {
-  return reinterpret_cast<Win32Window*>(
+WindowWin32* WindowWin32::GetThisFromHandle(HWND const window) noexcept {
+  return reinterpret_cast<WindowWin32*>(
       GetWindowLongPtr(window, GWLP_USERDATA));
+}
+
+LRESULT WindowWin32::DefaultWindowProc(HWND hWnd,
+                                       UINT Msg,
+                                       WPARAM wParam,
+                                       LPARAM lParam) {
+  return DefWindowProc(hWnd, Msg, wParam, lParam);
 }
 
 }  // namespace flutter

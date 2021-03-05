@@ -13,10 +13,15 @@ namespace flutter {
 
 class FlutterWindowsView;
 
-// Abstract class for handling keyboard input events.
-class KeyboardHookHandler {
+// Interface for classes that handles keyboard input events.
+//
+// Keyboard handlers are added to |FlutterWindowsView| in a chain.
+// When a key event arrives, |KeyboardHook| is called on each handler
+// until the first one that returns true. Then the proper text hooks
+// are called on each handler.
+class KeyboardHandlerBase {
  public:
-  virtual ~KeyboardHookHandler() = default;
+  virtual ~KeyboardHandlerBase() = default;
 
   // A function for hooking into keyboard input.
   //
@@ -27,7 +32,8 @@ class KeyboardHookHandler {
                             int scancode,
                             int action,
                             char32_t character,
-                            bool extended) = 0;
+                            bool extended,
+                            bool was_down) = 0;
 
   // A function for hooking into Unicode text input.
   virtual void TextHook(FlutterWindowsView* view,
@@ -39,10 +45,17 @@ class KeyboardHookHandler {
   // input method such as in CJK text input.
   virtual void ComposeBeginHook() = 0;
 
+  // Handler for IME compose commit events.
+  //
+  // Triggered when the user commits the current composing text while using a
+  // multi-step input method such as in CJK text input. Composing continues with
+  // the next keypress.
+  virtual void ComposeCommitHook() = 0;
+
   // Handler for IME compose end events.
   //
-  // Triggered when the user commits the composing text while using a multi-step
-  // input method such as in CJK text input.
+  // Triggered when the user ends editing composing text while using a
+  // multi-step input method such as in CJK text input.
   virtual void ComposeEndHook() = 0;
 
   // Handler for IME compose change events.

@@ -18,10 +18,10 @@ namespace flutter {
 // A class abstraction for a high DPI aware Win32 Window.  Intended to be
 // inherited from by classes that wish to specialize with custom
 // rendering and input handling.
-class Win32Window {
+class WindowWin32 {
  public:
-  Win32Window();
-  virtual ~Win32Window();
+  WindowWin32();
+  virtual ~WindowWin32();
 
   // Initializes as a child window with size using |width| and |height| and
   // |title| to identify the windowclass.  Does not show window, window must be
@@ -101,10 +101,14 @@ class Win32Window {
                      int scancode,
                      int action,
                      char32_t character,
-                     bool extended) = 0;
+                     bool extended,
+                     bool was_down) = 0;
 
   // Called when IME composing begins.
   virtual void OnComposeBegin() = 0;
+
+  // Called when IME composing text is committed.
+  virtual void OnComposeCommit() = 0;
 
   // Called when IME composing ends.
   virtual void OnComposeEnd() = 0;
@@ -140,6 +144,11 @@ class Win32Window {
                     WPARAM const wparam,
                     LPARAM const lparam);
 
+  // Called when the cursor rect has been updated.
+  //
+  // |rect| is in Win32 window coordinates.
+  virtual void UpdateCursorRect(const Rect& rect);
+
   // Called when mouse scrollwheel input occurs.
   virtual void OnScroll(double delta_x, double delta_y) = 0;
 
@@ -148,6 +157,9 @@ class Win32Window {
   UINT GetCurrentWidth();
 
   UINT GetCurrentHeight();
+
+ protected:
+  LRESULT DefaultWindowProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
 
  private:
   // Release OS resources asociated with window.
@@ -160,7 +172,7 @@ class Win32Window {
   void HandleResize(UINT width, UINT height);
 
   // Retrieves a class instance pointer for |window|
-  static Win32Window* GetThisFromHandle(HWND const window) noexcept;
+  static WindowWin32* GetThisFromHandle(HWND const window) noexcept;
   int current_dpi_ = 0;
   int current_width_ = 0;
   int current_height_ = 0;
@@ -182,7 +194,7 @@ class Win32Window {
   // message.
   int keycode_for_char_message_ = 0;
 
- protected:
+  // Manages IME state.
   TextInputManagerWin32 text_input_manager_;
 };
 

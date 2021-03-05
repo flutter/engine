@@ -68,7 +68,7 @@ void FlutterWindowWinUWP::UpdateFlutterCursor(const std::string& cursor_name) {
   // https://github.com/flutter/flutter/issues/70199
 }
 
-void FlutterWindowWinUWP::UpdateCursorRect(const Rect& rect) {
+void FlutterWindowWinUWP::OnCursorRectUpdated(const Rect& rect) {
   // TODO(cbracken): Implement IMM candidate window positioning.
 }
 
@@ -268,9 +268,10 @@ void FlutterWindowWinUWP::OnKeyUp(
   auto status = args.KeyStatus();
   unsigned int scancode = status.ScanCode;
   int key = static_cast<int>(args.VirtualKey());
-  char32_t chararacter = static_cast<char32_t>(key | 32);
   int action = 0x0101;
-  binding_handler_delegate_->OnKey(key, scancode, action, chararacter, false);
+  binding_handler_delegate_->OnKey(key, scancode, action, 0,
+                                   status.IsExtendedKey /* extended */,
+                                   status.WasKeyDown /* was_down */);
 }
 
 void FlutterWindowWinUWP::OnKeyDown(
@@ -283,9 +284,10 @@ void FlutterWindowWinUWP::OnKeyDown(
   auto status = args.KeyStatus();
   unsigned int scancode = status.ScanCode;
   int key = static_cast<int>(args.VirtualKey());
-  char32_t chararacter = static_cast<char32_t>(key | 32);
   int action = 0x0100;
-  binding_handler_delegate_->OnKey(key, scancode, action, chararacter, false);
+  binding_handler_delegate_->OnKey(key, scancode, action, 0,
+                                   status.IsExtendedKey /* extended */,
+                                   status.WasKeyDown /* was_down */);
 }
 
 void FlutterWindowWinUWP::OnCharacterReceived(
