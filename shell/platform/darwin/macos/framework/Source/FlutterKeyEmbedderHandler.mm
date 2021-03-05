@@ -10,7 +10,7 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/embedder/embedder.h"
 
-// Values of `characterIgnoringModifiers` that must not be directly converted to
+// Values of `charactersIgnoringModifiers` that must not be directly converted to
 // a logical key value, but should look up `keyCodeToLogical` by `keyCode`.
 // This is because each of these of character codes is mapped from multiple
 // logical keys, usually because of numpads.
@@ -276,26 +276,9 @@ const char* getEventString(NSString* characters) {
   uint64_t logicalKey = GetLogicalKeyForEvent(event, physicalKey);
 
   NSNumber* pressedLogicalKey = _pressingRecords[@(physicalKey)];
-  bool isARepeat = false;
+  bool isARepeat = (pressedLogicalKey != nil) || event.isARepeat;
   bool isSynthesized = false;
 
-  if (pressedLogicalKey) {
-    // This physical key is being pressed according to the record.
-    if (event.isARepeat) {
-      // A normal repeated key.
-      isARepeat = true;
-    } else {
-      // A non-repeated key has been pressed that has the exact physical key as
-      // a currently pressed one, usually indicating multiple keyboards are
-      // pressing keys with the same physical key, or the up event was lost
-      // during a loss of focus. The down event is ignored.
-      callback(TRUE);
-      return;
-    }
-  } else {
-    // This physical key is not being pressed according to the record. It's a
-    // normal down event, whether the system event is a repeat or not.
-  }
   if (pressedLogicalKey == nil) {
     [self updateKey:physicalKey asPressed:logicalKey];
   }
@@ -313,14 +296,17 @@ const char* getEventString(NSString* characters) {
 }
 
 - (void)dispatchUpEvent:(NSEvent*)event callback:(FlutterKeyHandlerCallback)callback {
-  NSAssert(!event.isARepeat, @"Unexpected repeated Up event. Please report this to Flutter.",
-           event.characters);
+  NSAssert(!event.isARepeat, @"Unexpected repeated Up event: keyCode %d, char %@, charIM %@",
+           event.keyCode, event.characters, event.charactersIgnoringModifiers);
 
   uint64_t physicalKey = GetPhysicalKeyForKeyCode(event.keyCode);
   NSNumber* pressedLogicalKey = _pressingRecords[@(physicalKey)];
-  if (!pressedLogicalKey) {
-    // The physical key has been released before. It indicates multiple
-    // keyboards pressed keys with the same physical key. Ignore the up event.
+  if (pressedLogicalKey == nil) {
+    NSAssert(FALSE,
+      @"Received key up event that has not been pressed: "
+      @"keyCode %d, char %@, charIM %@, previously pressed logical 0x%llx",
+      event.keyCode, event.characters, event.charactersIgnoringModifiers,
+      [pressedLogicalKey unsignedLongLongValue]);
     callback(TRUE);
     return;
   }
@@ -341,6 +327,8 @@ const char* getEventString(NSString* characters) {
 - (void)dispatchCapsLockEvent:(NSEvent*)event callback:(FlutterKeyHandlerCallback)callback {
   NSNumber* logicalKey = [keyCodeToLogicalKey objectForKey:@(event.keyCode)];
   if (logicalKey == nil) {
+    NSAssert(FALSE,
+      @"Invalid keyCode is considered CapsLock event: keyCode %d", event.keyCode);
     callback(TRUE);
     return;
   }
@@ -400,7 +388,7 @@ const char* getEventString(NSString* characters) {
   }
   uint64_t modifierFlag = GetModifierFlagForKey(targetKey);
   if (targetKey == 0 || modifierFlag == 0) {
-    // Unrecognized modifier.
+    NSLog(@"Unrecognized modifier key: keyCode %d", event.keyCode);
     callback(TRUE);
     return;
   }
