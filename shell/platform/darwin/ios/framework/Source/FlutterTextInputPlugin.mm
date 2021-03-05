@@ -456,11 +456,11 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
                                containsStart:(BOOL)containsStart
                                  containsEnd:(BOOL)containsEnd
                                   isVertical:(BOOL)isVertical {
-  return [[[FlutterTextSelectionRect alloc] initWithRectAndInfo:rect
-                                               writingDirection:writingDirection
-                                                  containsStart:containsStart
-                                                    containsEnd:containsEnd
-                                                     isVertical:isVertical] autorelease];
+  return [[FlutterTextSelectionRect alloc] initWithRectAndInfo:rect
+                                              writingDirection:writingDirection
+                                                 containsStart:containsStart
+                                                   containsEnd:containsEnd
+                                                    isVertical:isVertical];
 }
 
 - (instancetype)initWithRectAndInfo:(CGRect)rect
@@ -477,6 +477,20 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     _isVertical = isVertical;
   }
   return self;
+}
+
+@end
+
+#pragma mark - FlutterTextPlaceholder
+
+@implementation FlutterTextPlaceholder {
+  NSArray<UITextSelectionRect*>* _notRects;
+}
+
+- (NSArray<UITextSelectionRect*>*)rects {
+  // Returning anything other than an empty array here seems to cause PencilKit to enter an infinite
+  // loop of allocating placeholders until the app crashes
+  return @[];
 }
 
 @end
@@ -1183,20 +1197,15 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
                                                   withClient:_textInputClient];
   }
 
-  NSLog(@"[scribble] firstRectForRange %@ - %@", @(start), @(end));
   NSUInteger first = start;
   if (end < start) {
     first = end;
   }
   if ([_selectionRects count] > first) {
-    NSLog(@"[scribble] firstRectForRange -> %f, %f, %f, %f", [_selectionRects[first][0] floatValue],
-          [_selectionRects[first][1] floatValue], [_selectionRects[first][2] floatValue],
-          [_selectionRects[first][3] floatValue]);
     return CGRectMake(
         [_selectionRects[first][0] floatValue], [_selectionRects[first][1] floatValue],
         [_selectionRects[first][2] floatValue], [_selectionRects[first][3] floatValue]);
   }
-  NSLog(@"[scribble] firstRectForRange -> CGRectZero");
   // TODO(cbracken) Implement.
   return CGRectZero;
 }
@@ -1364,6 +1373,17 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   NSLog(@"[scribble] insertText: %@", text);
   _selectionAffinity = _kTextAffinityDownstream;
   [self replaceRange:_selectedTextRange withText:text];
+}
+
+- (UITextPlaceholder*)insertTextPlaceholderWithSize:(CGSize)size {
+  NSLog(@"[scribble] insertTextPlaceholderWithSize");
+  [_textInputDelegate insertTextPlaceholderWithSize:size withClient:_textInputClient];
+  return [[FlutterTextPlaceholder alloc] init];
+}
+
+- (void)removeTextPlaceholder:(UITextPlaceholder*)textPlaceholder {
+  NSLog(@"[scribble] removeTextPlaceholder");
+  [_textInputDelegate removeTextPlaceholder:_textInputClient];
 }
 
 - (void)deleteBackward {
