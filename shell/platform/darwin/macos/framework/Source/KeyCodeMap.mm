@@ -190,6 +190,7 @@ const NSDictionary* keyCodeToPhysicalKey = @{
 const NSDictionary* keyCodeToLogicalKey = @{
   @0x00000033 : @0x0000000008,  // Backspace
   @0x00000035 : @0x000000001b,  // Escape
+  @0x00000075 : @0x000000007f,  // Delete
   @0x00000039 : @0x0000000104,  // CapsLock
   @0x0000003f : @0x0000000106,  // Fn
   @0x00000047 : @0x000000010a,  // NumLock
@@ -223,6 +224,13 @@ const NSDictionary* keyCodeToLogicalKey = @{
   @0x0000004f : @0x0000000812,  // F18
   @0x00000050 : @0x0000000813,  // F19
   @0x0000005a : @0x0000000814,  // F20
+  @0x00000049 : @0x0000000a0f,  // AudioVolumeDown
+  @0x00000048 : @0x0000000a10,  // AudioVolumeUp
+  @0x0000004a : @0x0000000a11,  // AudioVolumeMute
+  @0x0000005e : @0x0100070087,  // IntlRo
+  @0x0000005d : @0x0100070089,  // IntlYen
+  @0x00000068 : @0x0100070090,  // Lang1
+  @0x00000066 : @0x0100070091,  // Lang2
   @0x0000004c : @0x020000000d,  // NumpadEnter
   @0x00000043 : @0x020000002a,  // NumpadMultiply
   @0x00000045 : @0x020000002b,  // NumpadAdd
@@ -251,26 +259,27 @@ const NSDictionary* keyCodeToLogicalKey = @{
   @0x0000003c : @0x040000010d,  // ShiftRight
 };
 
-const NSDictionary* siblingKeyCodes = @{
-  @0x00000038 : @0x0000003c,  // shift
-  @0x0000003c : @0x00000038,  // shift
-  @0x00000037 : @0x00000036,  // meta
-  @0x00000036 : @0x00000037,  // meta
-  @0x0000003a : @0x0000003d,  // alt
-  @0x0000003d : @0x0000003a,  // alt
-  @0x0000003b : @0x0000003e,  // control
-  @0x0000003e : @0x0000003b,  // control
+const NSDictionary* keyCodeToModifierFlag = @{
+  @0x00000038 : @(kModifierFlagShiftLeft),
+  @0x0000003c : @(kModifierFlagShiftRight),
+  @0x0000003b : @(kModifierFlagControlLeft),
+  @0x0000003e : @(kModifierFlagControlRight),
+  @0x0000003a : @(kModifierFlagAltLeft),
+  @0x0000003d : @(kModifierFlagAltRight),
+  @0x00000037 : @(kModifierFlagMetaLeft),
+  @0x00000036 : @(kModifierFlagMetaRight),
 };
 
-const NSDictionary* modiferFlags = @{
-  @0x000700e1 : @(NSEventModifierFlagShift),
-  @0x000700e5 : @(NSEventModifierFlagShift),
-  @0x000700e0 : @(NSEventModifierFlagControl),
-  @0x000700e4 : @(NSEventModifierFlagControl),
-  @0x000700e2 : @(NSEventModifierFlagOption),
-  @0x000700e6 : @(NSEventModifierFlagOption),
-  @0x000700e3 : @(NSEventModifierFlagCommand),
-  @0x000700e7 : @(NSEventModifierFlagCommand),
+const NSDictionary* modifierFlagToKeyCode = @{
+  @(kModifierFlagShiftLeft) : @0x00000038,
+  @(kModifierFlagShiftRight) : @0x0000003c,
+  @(kModifierFlagControlLeft) : @0x0000003b,
+  @(kModifierFlagControlRight) : @0x0000003e,
+  @(kModifierFlagAltLeft) : @0x0000003a,
+  @(kModifierFlagAltRight) : @0x0000003d,
+  @(kModifierFlagMetaLeft) : @0x00000037,
+  @(kModifierFlagMetaRight) : @0x00000036,
 };
 
 const uint64_t kCapsLockPhysicalKey = 0x00070039;
+const uint64_t kCapsLockLogicalKey = 0x00000104;

@@ -33,25 +33,36 @@ extern const uint64_t kSynonymMask;
 static const uint64_t kMacosPlane = 0x00500000000;
 
 /**
- * Map the key code of a key to that of its sibling key.
- *
- * A sibling key is the other key of a pair of keys that share the same modifier
- * flag, such as left and right shift keys.
- */
-extern const NSDictionary* siblingKeyCodes;
-
-/**
  * Map the physical key code of a key to its corresponding bitmask of
  * NSEventModifierFlags.
  *
- * This does not include CapsLock, for it is handled specially. Other modifier
- * keys do not seem to be needed either.
+ * This does not include CapsLock, for it is handled specially.
  */
-extern const NSDictionary* modiferFlags;
+extern const NSDictionary* keyCodeToModifierFlag;
+
+/**
+ */
+extern const NSDictionary* modifierFlagToKeyCode;
 
 /**
  * The physical key for CapsLock, which needs special handling.
- *
- * This should be kept up to date with KeyCodeMap.mm
  */
 extern const uint64_t kCapsLockPhysicalKey;
+
+/**
+ * The logical key for CapsLock, which needs special handling.
+ */
+extern const uint64_t kCapsLockLogicalKey;
+
+// The following constants, excluded from
+// NSEventModifierFlagDeviceIndependentFlagsMask, are derived from experiments.
+typedef enum {
+  kModifierFlagControlLeft = 0x1,
+  kModifierFlagShiftLeft = 0x2,
+  kModifierFlagShiftRight = 0x4,
+  kModifierFlagMetaLeft = 0x8,
+  kModifierFlagMetaRight = 0x10,
+  kModifierFlagAltLeft = 0x20,
+  kModifierFlagAltRight = 0x40,
+  kModifierFlagControlRight = 0x200,
+} ModifierFlag;

@@ -59,11 +59,11 @@ namespace flutter::testing {
 
 namespace {
 constexpr uint64_t kKeyCodeKeyA = 0;
-constexpr uint64_t kKeyCodeShiftLeft = 56;
-constexpr uint64_t kKeyCodeShiftRight = 60;
-constexpr uint64_t kKeyCodeCapsLock = 57;
-constexpr uint64_t kKeyCodeNumpad1 = 83;
-constexpr uint64_t kKeyCodeF1 = 122;
+constexpr uint64_t kKeyCodeShiftLeft = 0x38;
+constexpr uint64_t kKeyCodeShiftRight = 0x3c;
+constexpr uint64_t kKeyCodeCapsLock = 0x39;
+constexpr uint64_t kKeyCodeNumpad1 = 0x53;
+constexpr uint64_t kKeyCodeF1 = 0x7a;
 
 constexpr uint64_t kPhysicalKeyA = 0x00070004;
 // constexpr uint64_t kPhysicalControlLeft = 0x000700e0;
@@ -274,7 +274,7 @@ TEST(FlutterKeyEmbedderHandlerUnittests, ToggleModifiersDuringKeyTap) {
 
   [events removeAllObjects];
 
-  [handler handleEvent:keyEvent(NSEventTypeKeyUp, 0x20104, @"a", @"a", FALSE, kKeyCodeKeyA)
+  [handler handleEvent:keyEvent(NSEventTypeKeyUp, 0x100, @"a", @"a", FALSE, kKeyCodeKeyA)
               callback:^(BOOL handled){
               }];
 
