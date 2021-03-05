@@ -102,8 +102,10 @@ TEST_F(EngineTest, SkpWarmup) {
   fml::ScopedTemporaryDirectory asset_dir;
   fml::UniqueFD asset_dir_fd = fml::OpenDirectory(
       asset_dir.path().c_str(), false, fml::FilePermission::kRead);
+  fml::UniqueFD subdir_fd = fml::OpenDirectory(asset_dir_fd, "shaders", true,
+                                               fml::FilePermission::kReadWrite);
 
-  bool success = fml::WriteAtomically(asset_dir_fd, "test.skp", mapping);
+  bool success = fml::WriteAtomically(subdir_fd, "test.skp", mapping);
   ASSERT_TRUE(success);
 
   auto asset_manager = std::make_shared<AssetManager>();
