@@ -147,7 +147,7 @@ void testMain() {
     // should've been correctly set to "/bar".
     expect(window.browserHistory.urlStrategy, isNot(isNull));
     expect(window.browserHistory.urlStrategy.getPath(), '/bar');
-  });
+  }, skip: browserEngine == BrowserEngine.webkit); // https://github.com/flutter/flutter/issues/50836
 
   test('initialize browser history with default url strategy (multiple)', () async {
     // On purpose, we don't initialize history on the window. We want to let the
@@ -171,7 +171,7 @@ void testMain() {
     // should've been correctly set to "/baz".
     expect(window.browserHistory.urlStrategy, isNot(isNull));
     expect(window.browserHistory.urlStrategy.getPath(), '/baz');
-  });
+  }, skip: browserEngine == BrowserEngine.webkit); // https://github.com/flutter/flutter/issues/50836
 
   test('can disable location strategy', () async {
     // Disable URL strategy.
