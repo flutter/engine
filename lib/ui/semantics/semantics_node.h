@@ -39,7 +39,6 @@ enum class SemanticsAction : int32_t {
   kDismiss = 1 << 18,
   kMoveCursorForwardByWordIndex = 1 << 19,
   kMoveCursorBackwardByWordIndex = 1 << 20,
-  kSetText = 1 << 21,
 };
 
 const int kScrollableSemanticsActions =
