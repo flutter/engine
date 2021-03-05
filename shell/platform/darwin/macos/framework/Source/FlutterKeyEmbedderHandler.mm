@@ -19,16 +19,6 @@
 
 namespace {
 
-// The portion of NSEvent.modifierFlags that Flutter tries to keep synchronized
-// on.
-//
-// This must be equal to the sum of all keys in keyCodeToModifierFlag plus
-// keyCodeToModifierFlag.
-static const uint64_t kModifierFlagOfInterestMask =
-    kModifierFlagControlLeft | kModifierFlagShiftLeft | kModifierFlagShiftRight |
-    kModifierFlagMetaLeft | kModifierFlagMetaRight | kModifierFlagAltLeft | kModifierFlagAltRight |
-    kModifierFlagControlRight | NSEventModifierFlagCapsLock;
-
 // Isolate the least significant 1-bit.
 //
 // For example,
@@ -147,6 +137,14 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
   return event.timestamp * 1000000.0;
 }
 
+static uint64_t computeModifierFlagOfInterestMask() {
+  __block uint64_t modifierFlagOfInterestMask = NSEventModifierFlagCapsLock;
+  [keyCodeToModifierFlag enumerateKeysAndObjectsUsingBlock:^(NSNumber* keyCode, NSNumber* flag, BOOL *stop) {
+    modifierFlagOfInterestMask = modifierFlagOfInterestMask | [flag unsignedLongValue];
+  }];
+  return modifierFlagOfInterestMask;
+}
+
 void HandleResponse(bool handled, void* user_data);
 
 // Converts NSEvent.characters to a C-string for FlutterKeyEvent.
@@ -215,6 +213,15 @@ const char* getEventString(NSString* characters) {
 
 @property(nonatomic) NSUInteger lastModifierFlags;
 
+/**
+ * A constant mask for NSEvent.modifierFlags that Flutter tries to keep
+ * synchronized on.
+ *
+ * It equals to the sum of all values of keyCodeToModifierFlag as well as
+ * NSEventModifierFlagCapsLock.
+ */
+@property(nonatomic) NSUInteger modifierFlagOfInterestMask;
+
 @property(nonatomic) uint64_t responseId;
 
 @property(nonatomic) NSMutableDictionary<NSNumber*, FlutterKeyHandlerCallback>* pendingResponses;
@@ -279,6 +286,7 @@ const char* getEventString(NSString* characters) {
     _pressingRecords = [NSMutableDictionary dictionary];
     _pendingResponses = [NSMutableDictionary dictionary];
     _responseId = 1;
+    _modifierFlagOfInterestMask = computeModifierFlagOfInterestMask();
   }
   return self;
 }
@@ -286,8 +294,8 @@ const char* getEventString(NSString* characters) {
 #pragma mark - Private
 
 - (void)synchronizeModifiers:(uint64_t)currentFlags ignoringFlags:(uint64_t)ignoringFlags {
-  NSUInteger currentInterestedFlags = currentFlags & kModifierFlagOfInterestMask;
-  NSUInteger lastInterestedFlags = _lastModifierFlags & kModifierFlagOfInterestMask;
+  NSUInteger currentInterestedFlags = currentFlags & _modifierFlagOfInterestMask;
+  NSUInteger lastInterestedFlags = _lastModifierFlags & _modifierFlagOfInterestMask;
   NSUInteger flagDifference = (currentInterestedFlags ^ lastInterestedFlags) & ~ignoringFlags;
   if (flagDifference & NSEventModifierFlagCapsLock) {
     [self sendCapsLockTapWithCallback:nil];
