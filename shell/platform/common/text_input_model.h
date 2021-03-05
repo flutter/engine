@@ -193,14 +193,6 @@ class TextInputModel {
   bool composing() const { return composing_; }
 
  private:
-  enum MoveOrSelect { Move, Select };
-
-  // Attempts to move or select to the beginning.
-  bool MoveOrSelectToBeginning(MoveOrSelect select);
-
-  // Attempts to move or select to the end.
-  bool MoveOrSelectToEnd(MoveOrSelect select);
-
   // Deletes the current selection, if any.
   //
   // Returns true if any text is deleted. The selection base and extent are
