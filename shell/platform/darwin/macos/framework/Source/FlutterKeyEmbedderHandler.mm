@@ -138,6 +138,27 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
 }
 
 void HandleResponse(bool handled, void* user_data);
+
+// Converts NSEvent.characters to a C-string for FlutterKeyEvent.
+const char* getEventString(NSString* characters) {
+  if ([characters length] == 0) {
+    return nullptr;
+  }
+  unichar utf16Code = [characters characterAtIndex:0];
+  if (utf16Code >= 0xf700 && utf16Code <= 0xf7ff) {
+    // Some function keys are assigned characters with codepoints from the
+    // private use area (see
+    // https://developer.apple.com/documentation/appkit/1535851-function-key_unicodes?language=objc).
+    // These characters are filtered out since they're unprintable.
+    //
+    // Although the documentation claims to reserve 0xF700-0xF8FF, only up to 0xF747
+    // is actually used. Here we choose to filter out 0xF700-0xF7FF section.
+    // The reason for keeping the 0xF800-0xF8FF section is because 0xF8FF is
+    // used for the "Apple logo" character (Option-Shift-K on US keyboard.)
+    return nullptr;
+  }
+  return [characters UTF8String];
+}
 }  // namespace
 
 /* An entry of FlutterKeyEmbedderHandler.pendingResponse.
@@ -285,7 +306,7 @@ void HandleResponse(bool handled, void* user_data);
       .type = isARepeat ? kFlutterKeyEventTypeRepeat : kFlutterKeyEventTypeDown,
       .physical = physicalKey,
       .logical = pressedLogicalKey == nil ? logicalKey : [pressedLogicalKey unsignedLongLongValue],
-      .character = event.characters.UTF8String,
+      .character = getEventString(event.characters),
       .synthesized = isSynthesized,
   };
   [self sendPrimaryFlutterEvent:flutterEvent callback:callback];

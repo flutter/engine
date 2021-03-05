@@ -310,10 +310,9 @@ TEST(FlutterKeyEmbedderHandlerUnittests, SpecialModiferFlags) {
   // Then KeyUp: Numpad1, F1, KeyA, ShiftLeft
 
   // Numpad 1
-  [handler
-      handleEvent:keyEvent(NSEventTypeKeyDown, 0x200100, @"1", @"1", FALSE, kKeyCodeNumpad1)
-         callback:^(BOOL handled){
-         }];
+  [handler handleEvent:keyEvent(NSEventTypeKeyDown, 0x200100, @"1", @"1", FALSE, kKeyCodeNumpad1)
+              callback:^(BOOL handled){
+              }];
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
@@ -327,7 +326,7 @@ TEST(FlutterKeyEmbedderHandlerUnittests, SpecialModiferFlags) {
 
   // F1
   [handler
-      handleEvent:keyEvent(NSEventTypeKeyDown, 0x800100, @"1", @"1", FALSE, kKeyCodeF1)
+      handleEvent:keyEvent(NSEventTypeKeyDown, 0x800100, @"\uf704", @"\uf704", FALSE, kKeyCodeF1)
          callback:^(BOOL handled){
          }];
 
@@ -336,16 +335,15 @@ TEST(FlutterKeyEmbedderHandlerUnittests, SpecialModiferFlags) {
   EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
   EXPECT_EQ(event->physical, kPhysicalF1);
   EXPECT_EQ(event->logical, kLogicalF1);
-  EXPECT_STREQ(event->character, "1");
+  EXPECT_STREQ(event->character, nullptr);
   EXPECT_EQ(event->synthesized, false);
 
   [events removeAllObjects];
 
   // KeyA
-  [handler
-      handleEvent:keyEvent(NSEventTypeKeyDown, 0x100, @"a", @"a", FALSE, kKeyCodeKeyA)
-         callback:^(BOOL handled){
-         }];
+  [handler handleEvent:keyEvent(NSEventTypeKeyDown, 0x100, @"a", @"a", FALSE, kKeyCodeKeyA)
+              callback:^(BOOL handled){
+              }];
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
@@ -374,10 +372,9 @@ TEST(FlutterKeyEmbedderHandlerUnittests, SpecialModiferFlags) {
   [events removeAllObjects];
 
   // Numpad 1
-  [handler
-      handleEvent:keyEvent(NSEventTypeKeyUp, 0x220102, @"1", @"1", FALSE, kKeyCodeNumpad1)
-         callback:^(BOOL handled){
-         }];
+  [handler handleEvent:keyEvent(NSEventTypeKeyUp, 0x220102, @"1", @"1", FALSE, kKeyCodeNumpad1)
+              callback:^(BOOL handled){
+              }];
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
@@ -390,10 +387,9 @@ TEST(FlutterKeyEmbedderHandlerUnittests, SpecialModiferFlags) {
   [events removeAllObjects];
 
   // F1
-  [handler
-      handleEvent:keyEvent(NSEventTypeKeyUp, 0x820102, @"1", @"1", FALSE, kKeyCodeF1)
-         callback:^(BOOL handled){
-         }];
+  [handler handleEvent:keyEvent(NSEventTypeKeyUp, 0x820102, @"\uF704", @"\uF704", FALSE, kKeyCodeF1)
+              callback:^(BOOL handled){
+              }];
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
@@ -406,10 +402,9 @@ TEST(FlutterKeyEmbedderHandlerUnittests, SpecialModiferFlags) {
   [events removeAllObjects];
 
   // KeyA
-  [handler
-      handleEvent:keyEvent(NSEventTypeKeyUp, 0x20102, @"a", @"a", FALSE, kKeyCodeKeyA)
-         callback:^(BOOL handled){
-         }];
+  [handler handleEvent:keyEvent(NSEventTypeKeyUp, 0x20102, @"a", @"a", FALSE, kKeyCodeKeyA)
+              callback:^(BOOL handled){
+              }];
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
@@ -422,10 +417,9 @@ TEST(FlutterKeyEmbedderHandlerUnittests, SpecialModiferFlags) {
   [events removeAllObjects];
 
   // ShiftLeft
-  [handler
-      handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeShiftLeft)
-         callback:^(BOOL handled){
-         }];
+  [handler handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeShiftLeft)
+              callback:^(BOOL handled){
+              }];
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
@@ -437,7 +431,6 @@ TEST(FlutterKeyEmbedderHandlerUnittests, SpecialModiferFlags) {
 
   [events removeAllObjects];
 }
-
 
 TEST(FlutterKeyEmbedderHandlerUnittests, IdentifyLeftAndRightModifiers) {
   __block NSMutableArray<TestKeyEvent*>* events = [[NSMutableArray<TestKeyEvent*> alloc] init];
@@ -727,9 +720,8 @@ TEST(FlutterKeyEmbedderHandlerUnittests, ConvertCapsLockEvents) {
   // In:  CapsLock down
   // Out: CapsLock down & *CapsLock Up
   last_handled = FALSE;
-  [handler
-      handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x10100, @"", @"", FALSE, kKeyCodeCapsLock)
-         callback:keyEventCallback];
+  [handler handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x10100, @"", @"", FALSE, kKeyCodeCapsLock)
+              callback:keyEventCallback];
 
   EXPECT_EQ([events count], 2u);
 
@@ -758,9 +750,8 @@ TEST(FlutterKeyEmbedderHandlerUnittests, ConvertCapsLockEvents) {
   // In:  CapsLock up
   // Out: CapsLock down & *CapsLock Up
   last_handled = FALSE;
-  [handler
-      handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeCapsLock)
-         callback:keyEventCallback];
+  [handler handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeCapsLock)
+              callback:keyEventCallback];
 
   EXPECT_EQ([events count], 2u);
 
