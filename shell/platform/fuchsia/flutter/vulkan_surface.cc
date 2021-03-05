@@ -26,9 +26,19 @@ namespace flutter_runner {
 
 namespace {
 
-constexpr SkColorType kSkiaColorType = kRGBA_8888_SkColorType;
-constexpr VkFormat kVulkanFormat = VK_FORMAT_R8G8B8A8_UNORM;
-constexpr VkImageCreateFlags kVulkanImageCreateFlags = 0;
+// 
+// 
+// 
+// 
+// #if defined(__aarch64__)
+// constexpr SkColorType kSkiaColorType = kRGBA_8888_SkColorType;
+// constexpr VkFormat kVulkanFormat = VK_FORMAT_R8G8B8A8_UNORM;
+// constexpr VkImageCreateFlags kVulkanImageCreateFlags = 0;
+// #else
+// constexpr VkImageCreateFlags kVulkanImageCreateFlags =
+//     VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+// #endif
+
 // TODO: We should only keep usages that are actually required by Skia.
 constexpr VkImageUsageFlags kVkImageUsage =
     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
@@ -50,32 +60,86 @@ bool VulkanSurface::CreateVulkanImage(vulkan::VulkanProvider& vulkan_provider,
       .collection = collection_,
       .index = 0,
   };
+  
+  const VkSysmemColorSpaceFUCHSIA kDefaultColorSpace = {
+    .sType = VK_STRUCTURE_TYPE_SYSMEM_COLOR_SPACE_FUCHSIA,
+    .pNext = nullptr,
+    .colorSpace = static_cast<uint32_t>(fuchsia::sysmem::ColorSpaceType::SRGB),
+  };
 
-  out_vulkan_image->vk_image_create_info = {
-      .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-      .pNext = &out_vulkan_image->vk_collection_image_create_info,
-      .flags = kVulkanImageCreateFlags,
-      .imageType = VK_IMAGE_TYPE_2D,
-      .format = kVulkanFormat,
-      .extent = VkExtent3D{static_cast<uint32_t>(size.width()),
-                           static_cast<uint32_t>(size.height()), 1},
-      .mipLevels = 1,
-      .arrayLayers = 1,
-      .samples = VK_SAMPLE_COUNT_1_BIT,
-      .tiling = VK_IMAGE_TILING_OPTIMAL,
-      .usage = kVkImageUsage,
-      .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-      .queueFamilyIndexCount = 0,
-      .pQueueFamilyIndices = nullptr,
-      .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+  const VkImageFormatConstraintsInfoFUCHSIA kDefaultFormatInfo = {
+    .sType = VK_STRUCTURE_TYPE_IMAGE_FORMAT_CONSTRAINTS_INFO_FUCHSIA,
+    .pNext = nullptr,
+    .requiredFormatFeatures = 0u,
+    .flags = 0u,
+    .sysmemFormat = static_cast<uint64_t>(fuchsia::sysmem::ColorSpaceType::INVALID),
+    .colorSpaceCount = 1,
+    .pColorSpaces = &kDefaultColorSpace,
+  };
+
+  const VkImageCreateInfo kDefaultImageCreateInfo = {
+    .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+    .pNext = &out_vulkan_image->vk_collection_image_create_info,
+    .flags = 0u,
+    .imageType = VK_IMAGE_TYPE_2D,
+    .format = VK_FORMAT_UNDEFINED,
+    .extent = VkExtent3D{static_cast<uint32_t>(size.width()),
+                          static_cast<uint32_t>(size.height()), 1},
+    .mipLevels = 1,
+    .arrayLayers = 1,
+    .samples = VK_SAMPLE_COUNT_1_BIT,
+    .tiling = VK_IMAGE_TILING_OPTIMAL,
+    .usage = kVkImageUsage,
+    .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+    .queueFamilyIndexCount = 0,
+    .pQueueFamilyIndices = nullptr,
+    .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+  };
+
+  constexpr size_t kNumFormats = 2u;
+  std::vector<VkImageFormatConstraintsInfoFUCHSIA> format_constraints(kNumFormats, kDefaultFormatInfo);
+  std::vector<VkImageCreateInfo> create_infos(kNumFormats, kDefaultImageCreateInfo);
+  // Immutable format is technically limited to R8G8B8A8_SRGB but
+  // R8G8B8A8_UNORM works with existing ARM drivers so we allow that
+  // until we have a more reliable API for creating external Vulkan
+  // images using sysmem. TODO(fxb/52835)
+  format_constraints[0].sysmemFormat = static_cast<uint64_t>(fuchsia::sysmem::PixelFormatType::R8G8B8A8);
+  create_infos[0].format = VK_FORMAT_R8G8B8A8_UNORM;
+  format_constraints[1].sysmemFormat = static_cast<uint64_t>(fuchsia::sysmem::PixelFormatType::BGRA32);
+  create_infos[1].format = VK_FORMAT_B8G8R8A8_UNORM;
+  create_infos[1].flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+
+  const VkImageConstraintsInfoFUCHSIA constraints_info = {
+    .sType = VK_STRUCTURE_TYPE_IMAGE_CONSTRAINTS_INFO_FUCHSIA,
+    .pNext = nullptr,
+    .createInfoCount = kNumFormats,
+    .pCreateInfos = create_infos.data(),
+    .pFormatConstraints = format_constraints.data(),
+    .minBufferCount = 1u,
+    .maxBufferCount = 0u,
+    .minBufferCountForCamping = 0u,
+    .minBufferCountForDedicatedSlack = 0u,
+    .minBufferCountForSharedSlack = 0u,
+    .flags = 0u,
   };
 
   if (VK_CALL_LOG_ERROR(
-          vulkan_provider.vk().SetBufferCollectionConstraintsFUCHSIA(
-              vulkan_provider.vk_device(), collection_,
-              &out_vulkan_image->vk_image_create_info)) != VK_SUCCESS) {
+          vulkan_provider.vk().SetBufferCollectionImageConstraintsFUCHSIA(
+              vulkan_provider.vk_device(), collection_, &constraints_info)) != VK_SUCCESS) {
     return false;
   }
+
+  VkBufferCollectionProperties2FUCHSIA buffer_collection_properties = {
+    .sType = VK_STRUCTURE_TYPE_BUFFER_COLLECTION_PROPERTIES2_FUCHSIA,
+    .pNext = nullptr,
+  };
+  if (VK_CALL_LOG_ERROR(
+          vulkan_provider.vk().GetBufferCollectionProperties2FUCHSIA(
+              vulkan_provider.vk_device(), collection_, &buffer_collection_properties)) != VK_SUCCESS) {
+    return false;
+  }
+
+  out_vulkan_image->vk_image_create_info = create_infos[buffer_collection_properties.createInfoIndex];
 
   {
     VkImage vk_image = VK_NULL_HANDLE;
@@ -269,10 +333,10 @@ bool VulkanSurface::AllocateDeviceMemory(
       vulkan_image_.vk_memory_requirements;
   VkImageCreateInfo& image_create_info = vulkan_image_.vk_image_create_info;
 
-  VkBufferCollectionPropertiesFUCHSIA properties = {
-      .sType = VK_STRUCTURE_TYPE_BUFFER_COLLECTION_PROPERTIES_FUCHSIA};
+  VkBufferCollectionProperties2FUCHSIA properties = {
+      .sType = VK_STRUCTURE_TYPE_BUFFER_COLLECTION_PROPERTIES2_FUCHSIA};
   if (VK_CALL_LOG_ERROR(
-          vulkan_provider_.vk().GetBufferCollectionPropertiesFUCHSIA(
+          vulkan_provider_.vk().GetBufferCollectionProperties2FUCHSIA(
               vulkan_provider_.vk_device(), collection_, &properties)) !=
       VK_SUCCESS) {
     return false;
@@ -319,7 +383,18 @@ bool VulkanSurface::AllocateDeviceMemory(
     return false;
   }
 
-  return SetupSkiaSurface(std::move(context), size, kSkiaColorType,
+  SkColorType skia_color_type;
+  switch(static_cast<fuchsia::sysmem::PixelFormatType>(properties.sysmemFormat)) {
+    case fuchsia::sysmem::PixelFormatType::BGRA32:
+      skia_color_type = kBGRA_8888_SkColorType;
+    case fuchsia::sysmem::PixelFormatType::R8G8B8A8:
+      skia_color_type = kRGBA_8888_SkColorType;
+    default:
+      FML_LOG(ERROR) << "sysmem format type " << properties.sysmemFormat << " not supported!";
+      return false;
+  }
+
+  return SetupSkiaSurface(std::move(context), size, skia_color_type,
                           image_create_info, memory_requirements);
 }
 
