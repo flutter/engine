@@ -61,12 +61,14 @@ namespace {
 constexpr uint64_t kKeyCodeKeyA = 0;
 constexpr uint64_t kKeyCodeShiftLeft = 56;
 constexpr uint64_t kKeyCodeShiftRight = 60;
+constexpr uint64_t kKeyCodeCapsLock = 57;
 
 constexpr uint64_t kPhysicalKeyA = 0x00070004;
 // constexpr uint64_t kPhysicalControlLeft = 0x000700e0;
 // constexpr uint64_t kPhysicalControlRight = 0x000700e4;
 constexpr uint64_t kPhysicalShiftLeft = 0x000700e1;
 constexpr uint64_t kPhysicalShiftRight = 0x000700e5;
+constexpr uint64_t kPhysicalCapsLock = 0x00070039;
 // constexpr uint64_t kPhysicalKeyNumLock = 0x00070053;
 
 constexpr uint64_t kLogicalKeyA = 0x00000061;
@@ -74,6 +76,7 @@ constexpr uint64_t kLogicalKeyA = 0x00000061;
 // constexpr uint64_t kLogicalControlRight = 0x00400000105;
 constexpr uint64_t kLogicalShiftLeft = 0x0030000010d;
 constexpr uint64_t kLogicalShiftRight = 0x0040000010d;
+constexpr uint64_t kLogicalCapsLock = 0x00000000104;
 // constexpr uint64_t kLogicalKeyNumLock = 0x0000000010a;
 
 typedef void (^ResponseCallback)(bool handled);
@@ -544,6 +547,85 @@ TEST(FlutterKeyEmbedderHandlerUnittests, SynthesizeMissedModifierEvents) {
   EXPECT_EQ(last_handled, FALSE);
   EXPECT_TRUE([[events lastObject] hasCallback]);
   [[events lastObject] respond:TRUE];
+  EXPECT_EQ(last_handled, TRUE);
+
+  [events removeAllObjects];
+}
+
+TEST(FlutterKeyEmbedderHandlerUnittests, ConvertCapsLockEvents) {
+  __block NSMutableArray<TestKeyEvent*>* events = [[NSMutableArray<TestKeyEvent*> alloc] init];
+  __block BOOL last_handled = TRUE;
+  id keyEventCallback = ^(BOOL handled) {
+    last_handled = handled;
+  };
+  FlutterKeyEvent* event;
+
+  FlutterKeyEmbedderHandler* handler = [[FlutterKeyEmbedderHandler alloc]
+      initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
+                          _Nullable _VoidPtr user_data) {
+        [events addObject:[[TestKeyEvent alloc] initWithEvent:&event
+                                                     callback:callback
+                                                     userData:user_data]];
+      }];
+
+  // In:  CapsLock down
+  // Out: CapsLock down & *CapsLock Up
+  last_handled = FALSE;
+  [handler
+      handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x10100, @"", @"", FALSE, kKeyCodeCapsLock)
+         callback:keyEventCallback];
+
+  EXPECT_EQ([events count], 2u);
+
+  event = [events firstObject].data;
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
+  EXPECT_EQ(event->physical, kPhysicalCapsLock);
+  EXPECT_EQ(event->logical, kLogicalCapsLock);
+  EXPECT_STREQ(event->character, nullptr);
+  EXPECT_EQ(event->synthesized, false);
+  EXPECT_TRUE([[events firstObject] hasCallback]);
+
+  event = [events lastObject].data;
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
+  EXPECT_EQ(event->physical, kPhysicalCapsLock);
+  EXPECT_EQ(event->logical, kLogicalCapsLock);
+  EXPECT_STREQ(event->character, nullptr);
+  EXPECT_EQ(event->synthesized, true);
+  EXPECT_FALSE([[events lastObject] hasCallback]);
+
+  EXPECT_EQ(last_handled, FALSE);
+  [[events firstObject] respond:TRUE];
+  EXPECT_EQ(last_handled, TRUE);
+
+  [events removeAllObjects];
+
+  // In:  CapsLock up
+  // Out: CapsLock down & *CapsLock Up
+  last_handled = FALSE;
+  [handler
+      handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeCapsLock)
+         callback:keyEventCallback];
+
+  EXPECT_EQ([events count], 2u);
+
+  event = [events firstObject].data;
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
+  EXPECT_EQ(event->physical, kPhysicalCapsLock);
+  EXPECT_EQ(event->logical, kLogicalCapsLock);
+  EXPECT_STREQ(event->character, nullptr);
+  EXPECT_EQ(event->synthesized, false);
+  EXPECT_TRUE([[events firstObject] hasCallback]);
+
+  event = [events lastObject].data;
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
+  EXPECT_EQ(event->physical, kPhysicalCapsLock);
+  EXPECT_EQ(event->logical, kLogicalCapsLock);
+  EXPECT_STREQ(event->character, nullptr);
+  EXPECT_EQ(event->synthesized, true);
+  EXPECT_FALSE([[events lastObject] hasCallback]);
+
+  EXPECT_EQ(last_handled, FALSE);
+  [[events firstObject] respond:TRUE];
   EXPECT_EQ(last_handled, TRUE);
 
   [events removeAllObjects];
