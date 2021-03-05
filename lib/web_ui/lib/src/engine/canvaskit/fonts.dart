@@ -76,8 +76,15 @@ class SkiaFontCollection {
       }
     }
 
-    _registeredFonts.add(_RegisteredFont(list, fontFamily));
-    await ensureFontsLoaded();
+    final SkTypeface? typeface =
+        canvasKit.FontMgr.RefDefault().MakeTypefaceFromData(list);
+    if (typeface != null) {
+      _registeredFonts.add(_RegisteredFont(list, fontFamily, typeface));
+      await ensureFontsLoaded();
+    } else {
+      html.window.console.warn('Failed to parse font family "$fontFamily"');
+      return;
+    }
   }
 
   Future<void> registerFonts(AssetManager assetManager) async {
@@ -141,7 +148,15 @@ class SkiaFontCollection {
     }
 
     final Uint8List bytes = buffer.asUint8List();
-    return _RegisteredFont(bytes, family);
+    SkTypeface? typeface =
+        canvasKit.FontMgr.RefDefault().MakeTypefaceFromData(bytes);
+    if (typeface != null) {
+      return _RegisteredFont(bytes, family, typeface);
+    } else {
+      html.window.console.warn('Failed to load font $family at $url');
+      html.window.console.warn('Verify that $url contains a valid font.');
+      return null;
+    }
   }
 
   String? _readActualFamilyName(Uint8List bytes) {
@@ -175,9 +190,7 @@ class _RegisteredFont {
   /// This is used to determine which code points are supported by this font.
   final SkTypeface typeface;
 
-  _RegisteredFont(this.bytes, this.family)
-      : this.typeface =
-            canvasKit.FontMgr.RefDefault().MakeTypefaceFromData(bytes) {
+  _RegisteredFont(this.bytes, this.family, this.typeface) {
     // This is a hack which causes Skia to cache the decoded font.
     SkFont skFont = SkFont(typeface);
     skFont.getGlyphBounds([0], null, null);

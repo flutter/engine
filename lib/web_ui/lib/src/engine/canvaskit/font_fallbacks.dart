@@ -60,11 +60,19 @@ class FontFallbackData {
   final Map<String, int> fontFallbackCounts = <String, int>{};
 
   void registerFallbackFont(String family, Uint8List bytes) {
+    final SkTypeface? typeface =
+        canvasKit.FontMgr.RefDefault().MakeTypefaceFromData(bytes);
+    if (typeface == null) {
+      html.window.console
+          .warn('Failed to parse fallback font $family as a font.');
+      return;
+    }
     fontFallbackCounts.putIfAbsent(family, () => 0);
     int fontFallbackTag = fontFallbackCounts[family]!;
     fontFallbackCounts[family] = fontFallbackCounts[family]! + 1;
     String countedFamily = '$family $fontFallbackTag';
-    registeredFallbackFonts.add(_RegisteredFont(bytes, countedFamily));
+    registeredFallbackFonts
+        .add(_RegisteredFont(bytes, countedFamily, typeface));
     globalFontFallbacks.add(countedFamily);
   }
 }
