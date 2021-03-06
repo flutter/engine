@@ -286,7 +286,7 @@ const char* getEventString(NSString* characters) {
     _pendingResponses = [NSMutableDictionary dictionary];
     _responseId = 1;
     _lastModifierFlags = 0;
-    _modifierFlagOfInterestMask = 0; // Being 0 means _lastModifierFlags hasn't been updated at all
+    _modifierFlagOfInterestMask = computeModifierFlagOfInterestMask();
   }
   return self;
 }
@@ -294,10 +294,6 @@ const char* getEventString(NSString* characters) {
 #pragma mark - Private
 
 - (void)synchronizeModifiers:(NSUInteger)currentFlags ignoringFlags:(NSUInteger)ignoringFlags {
-  BOOL firstTime = _modifierFlagOfInterestMask == 0;
-  if (firstTime) {
-    _modifierFlagOfInterestMask = computeModifierFlagOfInterestMask();
-  }
   const NSUInteger updatingMask = _modifierFlagOfInterestMask & ~ignoringFlags;
   const NSUInteger currentInterestedFlags = currentFlags & updatingMask;
   const NSUInteger lastInterestedFlags = _lastModifierFlags & updatingMask;
@@ -320,12 +316,7 @@ const char* getEventString(NSString* characters) {
     BOOL shouldDown = (currentInterestedFlags & currentFlag) != 0;
     [self sendModifierEventForDown:shouldDown keyCode:[keyCode unsignedShortValue] callback:nil];
   }
-  printf("last %lx updating %lx current %lx\n", _lastModifierFlags, updatingMask, currentFlags);
-  // if (firstTime) {
-  //   _lastModifierFlags = currentFlags & updatingMask;
-  // } else {
   _lastModifierFlags = (_lastModifierFlags & ~updatingMask) | currentInterestedFlags;
-  // }
 }
 
 - (void)updateKey:(uint64_t)physicalKey asPressed:(uint64_t)logicalKey {
@@ -457,7 +448,7 @@ const char* getEventString(NSString* characters) {
 - (void)handleCapsLockEvent:(NSEvent*)event callback:(FlutterKeyHandlerCallback)callback {
   [self synchronizeModifiers:event.modifierFlags ignoringFlags:NSEventModifierFlagCapsLock];
   [self sendCapsLockTapWithCallback:callback];
-  _lastModifierFlags = event.modifierFlags & _modifierFlagOfInterestMask;
+  _lastModifierFlags = _lastModifierFlags ^ NSEventModifierFlagCapsLock;
 }
 
 - (void)handleFlagEvent:(NSEvent*)event callback:(FlutterKeyHandlerCallback)callback {
@@ -484,12 +475,11 @@ const char* getEventString(NSString* characters) {
   BOOL shouldBePressed = (event.modifierFlags & targetModifierFlag) != 0;
   printf("Key %hx lastP %d shouldP %d\n", event.keyCode, lastTargetPressed, shouldBePressed);
 
-  _lastModifierFlags = event.modifierFlags & _modifierFlagOfInterestMask;
   if (lastTargetPressed == shouldBePressed) {
     callback(TRUE);
     return;
   }
-
+  _lastModifierFlags = _lastModifierFlags ^ targetModifierFlag;
   [self sendModifierEventForDown:shouldBePressed keyCode:event.keyCode callback:callback];
 }
 
