@@ -401,7 +401,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   switch (granularity) {
     case UITextGranularityLine:
       // The default UITextInputStringTokenizer does not handle line granularity
-      // Correctly. We need to implement our own line tokenizer.
+      // correctly. We need to implement our own line tokenizer.
       result = [self lineEnclosingPosition:position];
       break;
     case UITextGranularityCharacter:
