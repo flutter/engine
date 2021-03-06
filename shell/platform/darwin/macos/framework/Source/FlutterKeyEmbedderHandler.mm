@@ -137,8 +137,8 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
   return event.timestamp * 1000000.0;
 }
 
-static uint64_t computeModifierFlagOfInterestMask() {
-  __block uint64_t modifierFlagOfInterestMask = NSEventModifierFlagCapsLock;
+static NSUInteger computeModifierFlagOfInterestMask() {
+  __block NSUInteger modifierFlagOfInterestMask = NSEventModifierFlagCapsLock;
   [keyCodeToModifierFlag enumerateKeysAndObjectsUsingBlock:^(NSNumber* keyCode, NSNumber* flag, BOOL *stop) {
     modifierFlagOfInterestMask = modifierFlagOfInterestMask | [flag unsignedLongValue];
   }];
@@ -226,7 +226,7 @@ const char* getEventString(NSString* characters) {
 
 @property(nonatomic) NSMutableDictionary<NSNumber*, FlutterKeyHandlerCallback>* pendingResponses;
 
-- (void)synchronizeModifiers:(uint64_t)currentFlags ignoringFlags:(uint64_t)ignoringFlags;
+- (void)synchronizeModifiers:(NSUInteger)currentFlags ignoringFlags:(NSUInteger)ignoringFlags;
 
 /**
  * Update the pressing state.
@@ -282,27 +282,32 @@ const char* getEventString(NSString* characters) {
   self = [super init];
   if (self != nil) {
     _sendEvent = sendEvent;
-    _lastModifierFlags = 0;
     _pressingRecords = [NSMutableDictionary dictionary];
     _pendingResponses = [NSMutableDictionary dictionary];
     _responseId = 1;
-    _modifierFlagOfInterestMask = computeModifierFlagOfInterestMask();
+    _lastModifierFlags = 0;
+    _modifierFlagOfInterestMask = 0; // Being 0 means _lastModifierFlags hasn't been updated at all
   }
   return self;
 }
 
 #pragma mark - Private
 
-- (void)synchronizeModifiers:(uint64_t)currentFlags ignoringFlags:(uint64_t)ignoringFlags {
-  NSUInteger currentInterestedFlags = currentFlags & _modifierFlagOfInterestMask;
-  NSUInteger lastInterestedFlags = _lastModifierFlags & _modifierFlagOfInterestMask;
-  NSUInteger flagDifference = (currentInterestedFlags ^ lastInterestedFlags) & ~ignoringFlags;
+- (void)synchronizeModifiers:(NSUInteger)currentFlags ignoringFlags:(NSUInteger)ignoringFlags {
+  BOOL firstTime = _modifierFlagOfInterestMask == 0;
+  if (firstTime) {
+    _modifierFlagOfInterestMask = computeModifierFlagOfInterestMask();
+  }
+  const NSUInteger updatingMask = _modifierFlagOfInterestMask & ~ignoringFlags;
+  const NSUInteger currentInterestedFlags = currentFlags & updatingMask;
+  const NSUInteger lastInterestedFlags = _lastModifierFlags & updatingMask;
+  NSUInteger flagDifference = currentInterestedFlags ^ lastInterestedFlags;
   if (flagDifference & NSEventModifierFlagCapsLock) {
     [self sendCapsLockTapWithCallback:nil];
     flagDifference = flagDifference & ~NSEventModifierFlagCapsLock;
   }
   while (true) {
-    NSUInteger currentFlag = lowestSetBit(flagDifference);
+    const NSUInteger currentFlag = lowestSetBit(flagDifference);
     if (currentFlag == 0) {
       break;
     }
@@ -315,6 +320,12 @@ const char* getEventString(NSString* characters) {
     BOOL shouldDown = (currentInterestedFlags & currentFlag) != 0;
     [self sendModifierEventForDown:shouldDown keyCode:[keyCode unsignedShortValue] callback:nil];
   }
+  printf("last %lx updating %lx current %lx\n", _lastModifierFlags, updatingMask, currentFlags);
+  // if (firstTime) {
+  //   _lastModifierFlags = currentFlags & updatingMask;
+  // } else {
+  _lastModifierFlags = (_lastModifierFlags & ~updatingMask) | currentInterestedFlags;
+  // }
 }
 
 - (void)updateKey:(uint64_t)physicalKey asPressed:(uint64_t)logicalKey {
@@ -444,7 +455,9 @@ const char* getEventString(NSString* characters) {
 }
 
 - (void)handleCapsLockEvent:(NSEvent*)event callback:(FlutterKeyHandlerCallback)callback {
+  [self synchronizeModifiers:event.modifierFlags ignoringFlags:NSEventModifierFlagCapsLock];
   [self sendCapsLockTapWithCallback:callback];
+  _lastModifierFlags = event.modifierFlags & _modifierFlagOfInterestMask;
 }
 
 - (void)handleFlagEvent:(NSEvent*)event callback:(FlutterKeyHandlerCallback)callback {
@@ -471,7 +484,7 @@ const char* getEventString(NSString* characters) {
   BOOL shouldBePressed = (event.modifierFlags & targetModifierFlag) != 0;
   printf("Key %hx lastP %d shouldP %d\n", event.keyCode, lastTargetPressed, shouldBePressed);
 
-  _lastModifierFlags = event.modifierFlags;
+  _lastModifierFlags = event.modifierFlags & _modifierFlagOfInterestMask;
   if (lastTargetPressed == shouldBePressed) {
     callback(TRUE);
     return;
@@ -518,6 +531,9 @@ void ps(const char* s) {
     default:
       NSAssert(false, @"Unexpected key event type: |%@|.", @(event.type));
   }
+  NSAssert(_lastModifierFlags == (event.modifierFlags & _modifierFlagOfInterestMask),
+    @"The modifier flags are not properly updated: recorded 0x%lx, event 0x%lx",
+    _lastModifierFlags, (event.modifierFlags & _modifierFlagOfInterestMask));
 }
 
 - (void)handleResponse:(BOOL)handled forId:(uint64_t)responseId {

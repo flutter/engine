@@ -701,6 +701,83 @@ TEST(FlutterKeyEmbedderHandlerUnittests, SynthesizeMissedModifierEvents) {
   [events removeAllObjects];
 }
 
+TEST(FlutterKeyEmbedderHandlerUnittests, SynthesizeMissedModifierEventsInNormalEvents) {
+  __block NSMutableArray<TestKeyEvent*>* events = [[NSMutableArray<TestKeyEvent*> alloc] init];
+  __block BOOL last_handled = TRUE;
+  id keyEventCallback = ^(BOOL handled) {
+    last_handled = handled;
+  };
+  FlutterKeyEvent* event;
+
+  FlutterKeyEmbedderHandler* handler = [[FlutterKeyEmbedderHandler alloc]
+      initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
+                          _Nullable _VoidPtr user_data) {
+        [events addObject:[[TestKeyEvent alloc] initWithEvent:&event
+                                                     callback:callback
+                                                     userData:user_data]];
+      }];
+
+  // In:  (LShift down), A down,           (LShift up), A up
+  // Out:               *LS down & A down,              *LS up & A up
+
+  last_handled = FALSE;
+  [handler
+      handleEvent:keyEvent(NSEventTypeKeyDown, 0x20102, @"A", @"A", FALSE, kKeyCodeKeyA)
+         callback:keyEventCallback];
+
+  EXPECT_EQ([events count], 2u);
+  event = [events firstObject].data;
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
+  EXPECT_EQ(event->physical, kPhysicalShiftLeft);
+  EXPECT_EQ(event->logical, kLogicalShiftLeft);
+  EXPECT_STREQ(event->character, nullptr);
+  EXPECT_EQ(event->synthesized, true);
+  EXPECT_FALSE([[events firstObject] hasCallback]);
+
+  event = [events lastObject].data;
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
+  EXPECT_EQ(event->physical, kPhysicalKeyA);
+  EXPECT_EQ(event->logical, kLogicalKeyA);
+  EXPECT_STREQ(event->character, "A");
+  EXPECT_EQ(event->synthesized, false);
+  EXPECT_TRUE([[events lastObject] hasCallback]);
+
+  EXPECT_EQ(last_handled, FALSE);
+  [[events lastObject] respond:TRUE];
+  EXPECT_EQ(last_handled, TRUE);
+
+  [events removeAllObjects];
+
+  last_handled = FALSE;
+  [handler
+      handleEvent:keyEvent(NSEventTypeKeyUp, 0x100, @"a", @"a", FALSE, kKeyCodeKeyA)
+         callback:keyEventCallback];
+
+  EXPECT_EQ([events count], 2u);
+  event = [events firstObject].data;
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
+  EXPECT_EQ(event->physical, kPhysicalShiftLeft);
+  EXPECT_EQ(event->logical, kLogicalShiftLeft);
+  EXPECT_STREQ(event->character, nullptr);
+  EXPECT_EQ(event->synthesized, true);
+  EXPECT_FALSE([[events firstObject] hasCallback]);
+
+  event = [events lastObject].data;
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
+  EXPECT_EQ(event->physical, kPhysicalKeyA);
+  EXPECT_EQ(event->logical, kLogicalKeyA);
+  EXPECT_STREQ(event->character, nullptr);
+  EXPECT_EQ(event->synthesized, false);
+  EXPECT_TRUE([[events lastObject] hasCallback]);
+
+  EXPECT_EQ(last_handled, FALSE);
+  [[events lastObject] respond:TRUE];
+  EXPECT_EQ(last_handled, TRUE);
+
+  [events removeAllObjects];
+
+}
+
 TEST(FlutterKeyEmbedderHandlerUnittests, ConvertCapsLockEvents) {
   __block NSMutableArray<TestKeyEvent*>* events = [[NSMutableArray<TestKeyEvent*> alloc] init];
   __block BOOL last_handled = TRUE;
