@@ -25,16 +25,19 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
   /// The [EnginePlatformDispatcher] singleton.
   static EnginePlatformDispatcher get instance => _instance;
-  static final EnginePlatformDispatcher _instance = EnginePlatformDispatcher._();
+  static final EnginePlatformDispatcher _instance =
+      EnginePlatformDispatcher._();
 
   /// The current platform configuration.
   @override
   ui.PlatformConfiguration get configuration => _configuration;
-  ui.PlatformConfiguration _configuration = ui.PlatformConfiguration(locales: parseBrowserLanguages());
+  ui.PlatformConfiguration _configuration =
+      ui.PlatformConfiguration(locales: parseBrowserLanguages());
 
   /// Receives all events related to platform configuration changes.
   @override
-  ui.VoidCallback? get onPlatformConfigurationChanged => _onPlatformConfigurationChanged;
+  ui.VoidCallback? get onPlatformConfigurationChanged =>
+      _onPlatformConfigurationChanged;
   ui.VoidCallback? _onPlatformConfigurationChanged;
   Zone? _onPlatformConfigurationChangedZone;
   @override
@@ -46,7 +49,8 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// Engine code should use this method instead of the callback directly.
   /// Otherwise zones won't work properly.
   void invokeOnPlatformConfigurationChanged() {
-    invoke(_onPlatformConfigurationChanged, _onPlatformConfigurationChangedZone);
+    invoke(
+        _onPlatformConfigurationChanged, _onPlatformConfigurationChangedZone);
   }
 
   /// The current list of windows,
@@ -57,7 +61,8 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ///
   /// This should be considered a protected member, only to be used by
   /// [PlatformDispatcher] subclasses.
-  Map<Object, ui.ViewConfiguration> _windowConfigurations = <Object, ui.ViewConfiguration>{};
+  Map<Object, ui.ViewConfiguration> _windowConfigurations =
+      <Object, ui.ViewConfiguration>{};
 
   /// A callback that is invoked whenever the platform's [devicePixelRatio],
   /// [physicalSize], [padding], [viewInsets], or [systemGestureInsets]
@@ -169,7 +174,8 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// Engine code should use this method instead of the callback directly.
   /// Otherwise zones won't work properly.
   void invokeOnPointerDataPacket(ui.PointerDataPacket dataPacket) {
-    invoke1<ui.PointerDataPacket>(_onPointerDataPacket, _onPointerDataPacketZone, dataPacket);
+    invoke1<ui.PointerDataPacket>(
+        _onPointerDataPacket, _onPointerDataPacketZone, dataPacket);
   }
 
   /// A callback that is invoked when key data is available.
@@ -239,7 +245,8 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// Engine code should use this method instead of the callback directly.
   /// Otherwise zones won't work properly.
   void invokeOnReportTimings(List<ui.FrameTiming> timings) {
-    invoke1<List<ui.FrameTiming>>(_onReportTimings, _onReportTimingsZone, timings);
+    invoke1<List<ui.FrameTiming>>(
+        _onReportTimings, _onReportTimingsZone, timings);
   }
 
   @override
@@ -248,7 +255,8 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     ByteData? data,
     ui.PlatformMessageResponseCallback? callback,
   ) {
-    _sendPlatformMessage(name, data, _zonedPlatformMessageResponseCallback(callback));
+    _sendPlatformMessage(
+        name, data, _zonedPlatformMessageResponseCallback(callback));
   }
 
   // TODO(ianh): Deprecate onPlatformMessage once the framework is moved over
@@ -293,10 +301,9 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// Wraps the given [callback] in another callback that ensures that the
   /// original callback is called in the zone it was registered in.
   static ui.PlatformMessageResponseCallback?
-   _zonedPlatformMessageResponseCallback(
-       ui.PlatformMessageResponseCallback? callback) {
-    if (callback == null)
-      return null;
+      _zonedPlatformMessageResponseCallback(
+          ui.PlatformMessageResponseCallback? callback) {
+    if (callback == null) return null;
 
     // Store the zone in which the callback is being registered.
     final Zone registrationZone = Zone.current;
@@ -327,6 +334,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     }
 
     switch (name) {
+
       /// This should be in sync with shell/common/shell.cc
       case 'flutter/skia':
         const MethodCodec codec = JSONMethodCodec();
@@ -341,13 +349,13 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         return;
 
       case 'flutter/assets':
-        assert(ui.webOnlyAssetManager != null); // ignore: unnecessary_null_comparison
+        assert(ui.webOnlyAssetManager !=
+            null); // ignore: unnecessary_null_comparison
         final String url = utf8.decode(data!.buffer.asUint8List());
         ui.webOnlyAssetManager.load(url).then((ByteData assetData) {
           _replyToPlatformMessage(callback, assetData);
         }, onError: (dynamic error) {
-          html.window.console
-              .warn('Error while trying to load an asset: $error');
+          printWarning('Error while trying to load an asset: $error');
           _replyToPlatformMessage(callback, null);
         });
         return;
@@ -360,7 +368,10 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
             // TODO(gspencergoog): As multi-window support expands, the pop call
             // will need to include the window ID. Right now only one window is
             // supported.
-            (_windows[0] as EngineFlutterWindow).browserHistory.exit().then((_) {
+            (_windows[0] as EngineFlutterWindow)
+                .browserHistory
+                .exit()
+                .then((_) {
               _replyToPlatformMessage(
                   callback, codec.encodeSuccessEnvelope(true));
             });
@@ -368,13 +379,15 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
           case 'HapticFeedback.vibrate':
             final String type = decoded.arguments;
             domRenderer.vibrate(_getHapticFeedbackDuration(type));
-            _replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
+            _replyToPlatformMessage(
+                callback, codec.encodeSuccessEnvelope(true));
             return;
           case 'SystemChrome.setApplicationSwitcherDescription':
             final Map<String, dynamic> arguments = decoded.arguments;
             domRenderer.setTitle(arguments['label']);
             domRenderer.setThemeColor(ui.Color(arguments['primaryColor']));
-            _replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
+            _replyToPlatformMessage(
+                callback, codec.encodeSuccessEnvelope(true));
             return;
           case 'SystemChrome.setPreferredOrientations':
             final List<dynamic> arguments = decoded.arguments;
@@ -385,7 +398,8 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
             return;
           case 'SystemSound.play':
             // There are no default system sounds on web.
-            _replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
+            _replyToPlatformMessage(
+                callback, codec.encodeSuccessEnvelope(true));
             return;
           case 'Clipboard.setData':
             ClipboardMessageHandler().setDataMethodCall(decoded, callback);
@@ -443,10 +457,13 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         // TODO(gspencergoog): As multi-window support expands, the navigation call
         // will need to include the window ID. Right now only one window is
         // supported.
-        (_windows[0] as EngineFlutterWindow).handleNavigationMessage(data).then((bool handled) {
+        (_windows[0] as EngineFlutterWindow)
+            .handleNavigationMessage(data)
+            .then((bool handled) {
           if (handled) {
             const MethodCodec codec = JSONMethodCodec();
-            _replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
+            _replyToPlatformMessage(
+                callback, codec.encodeSuccessEnvelope(true));
           } else {
             callback?.call(null);
           }
@@ -469,8 +486,6 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     // handled.
     _replyToPlatformMessage(callback, null);
   }
-
-
 
   int _getHapticFeedbackDuration(String type) {
     switch (type) {
@@ -497,8 +512,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   @override
   void scheduleFrame() {
     if (scheduleFrameCallback == null) {
-      throw new Exception(
-          'scheduleFrameCallback must be initialized first.');
+      throw new Exception('scheduleFrameCallback must be initialized first.');
     }
     scheduleFrameCallback!();
   }
@@ -550,13 +564,15 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   }
 
   /// Additional accessibility features that may be enabled by the platform.
-  ui.AccessibilityFeatures get accessibilityFeatures => configuration.accessibilityFeatures;
+  ui.AccessibilityFeatures get accessibilityFeatures =>
+      configuration.accessibilityFeatures;
 
   /// A callback that is invoked when the value of [accessibilityFeatures] changes.
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
-  ui.VoidCallback? get onAccessibilityFeaturesChanged => _onAccessibilityFeaturesChanged;
+  ui.VoidCallback? get onAccessibilityFeaturesChanged =>
+      _onAccessibilityFeaturesChanged;
   ui.VoidCallback? _onAccessibilityFeaturesChanged;
   Zone? _onAccessibilityFeaturesChangedZone;
   set onAccessibilityFeaturesChanged(ui.VoidCallback? callback) {
@@ -567,7 +583,8 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// Engine code should use this method instead of the callback directly.
   /// Otherwise zones won't work properly.
   void invokeOnAccessibilityFeaturesChanged() {
-    invoke(_onAccessibilityFeaturesChanged, _onAccessibilityFeaturesChangedZone);
+    invoke(
+        _onAccessibilityFeaturesChanged, _onAccessibilityFeaturesChangedZone);
   }
 
   /// Change the retained semantics data about this window.
@@ -593,7 +610,8 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ///
   /// * https://developer.mozilla.org/en-US/docs/Web/API/NavigatorLanguage/languages,
   ///   which explains browser quirks in the implementation notes.
-  ui.Locale get locale => locales.isEmpty ? const ui.Locale.fromSubtags() : locales.first;
+  ui.Locale get locale =>
+      locales.isEmpty ? const ui.Locale.fromSubtags() : locales.first;
 
   /// The full system-reported supported locales of the device.
   ///
@@ -785,7 +803,8 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this callback is invoked.
-  ui.VoidCallback? get onPlatformBrightnessChanged => _onPlatformBrightnessChanged;
+  ui.VoidCallback? get onPlatformBrightnessChanged =>
+      _onPlatformBrightnessChanged;
   ui.VoidCallback? _onPlatformBrightnessChanged;
   Zone? _onPlatformBrightnessChangedZone;
   set onPlatformBrightnessChanged(ui.VoidCallback? callback) {
@@ -879,7 +898,8 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ///  * [SystemChannels.navigation], which handles subsequent navigation
   ///    requests from the embedder.
   String get defaultRouteName {
-    return _defaultRouteName ??= (_windows[0]! as EngineFlutterWindow).browserHistory.currentPath;
+    return _defaultRouteName ??=
+        (_windows[0]! as EngineFlutterWindow).browserHistory.currentPath;
   }
 
   /// Lazily initialized when the `defaultRouteName` getter is invoked.
@@ -896,9 +916,9 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// messages and responses have to be exchanged asynchronously. We simulate
   /// that by adding a zero-length delay to the reply.
   void _replyToPlatformMessage(
-      ui.PlatformMessageResponseCallback? callback,
-      ByteData? data,
-      ) {
+    ui.PlatformMessageResponseCallback? callback,
+    ByteData? data,
+  ) {
     Future<void>.delayed(Duration.zero).then((_) {
       if (callback != null) {
         callback(data);
@@ -950,7 +970,8 @@ void invoke1<A>(void callback(A a)?, Zone? zone, A arg) {
 }
 
 /// Invokes [callback] inside the given [zone] passing it [arg1] and [arg2].
-void invoke2<A1, A2>(void Function(A1 a1, A2 a2)? callback, Zone? zone, A1 arg1, A2 arg2) {
+void invoke2<A1, A2>(
+    void Function(A1 a1, A2 a2)? callback, Zone? zone, A1 arg1, A2 arg2) {
   if (callback == null) {
     return;
   }
@@ -967,7 +988,8 @@ void invoke2<A1, A2>(void Function(A1 a1, A2 a2)? callback, Zone? zone, A1 arg1,
 }
 
 /// Invokes [callback] inside the given [zone] passing it [arg1], [arg2], and [arg3].
-void invoke3<A1, A2, A3>(void Function(A1 a1, A2 a2, A3 a3)? callback, Zone? zone, A1 arg1, A2 arg2, A3 arg3) {
+void invoke3<A1, A2, A3>(void Function(A1 a1, A2 a2, A3 a3)? callback,
+    Zone? zone, A1 arg1, A2 arg2, A3 arg3) {
   if (callback == null) {
     return;
   }

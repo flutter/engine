@@ -70,8 +70,7 @@ class SkiaFontCollection {
     if (fontFamily == null) {
       fontFamily = _readActualFamilyName(list);
       if (fontFamily == null) {
-        html.window.console
-            .warn('Failed to read font family name. Aborting font load.');
+        printWarning('Failed to read font family name. Aborting font load.');
         return;
       }
     }
@@ -82,7 +81,7 @@ class SkiaFontCollection {
       _registeredFonts.add(_RegisteredFont(list, fontFamily, typeface));
       await ensureFontsLoaded();
     } else {
-      html.window.console.warn('Failed to parse font family "$fontFamily"');
+      printWarning('Failed to parse font family "$fontFamily"');
       return;
     }
   }
@@ -94,8 +93,7 @@ class SkiaFontCollection {
       byteData = await assetManager.load('FontManifest.json');
     } on AssetManagerException catch (e) {
       if (e.httpStatus == 404) {
-        html.window.console
-            .warn('Font manifest does not exist at `${e.url}` – ignoring.');
+        printWarning('Font manifest does not exist at `${e.url}` – ignoring.');
         return;
       } else {
         rethrow;
@@ -142,8 +140,8 @@ class SkiaFontCollection {
     try {
       buffer = await html.window.fetch(url).then(_getArrayBuffer);
     } catch (e) {
-      html.window.console.warn('Failed to load font $family at $url');
-      html.window.console.warn(e);
+      printWarning('Failed to load font $family at $url');
+      printWarning(e.toString());
       return null;
     }
 
@@ -153,8 +151,8 @@ class SkiaFontCollection {
     if (typeface != null) {
       return _RegisteredFont(bytes, family, typeface);
     } else {
-      html.window.console.warn('Failed to load font $family at $url');
-      html.window.console.warn('Verify that $url contains a valid font.');
+      printWarning('Failed to load font $family at $url');
+      printWarning('Verify that $url contains a valid font.');
       return null;
     }
   }

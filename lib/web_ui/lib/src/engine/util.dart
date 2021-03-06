@@ -639,3 +639,9 @@ ui.Rect computeBoundingRectangleFromMatrix(Matrix4 transform, ui.Rect rect) {
   maxY = math.max(maxY, yp);
   return ui.Rect.fromLTWH(minX, minY, maxX - minX, maxY - minY);
 }
+
+/// Prints a warning message to the console.
+///
+/// This function can be overridden in tests. This could be useful, for example,
+/// to verify that warnings are printed under certain circumstances.
+void Function(String) printWarning = html.window.console.warn;
