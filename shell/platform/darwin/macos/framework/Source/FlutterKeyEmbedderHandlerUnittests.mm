@@ -721,9 +721,8 @@ TEST(FlutterKeyEmbedderHandlerUnittests, SynthesizeMissedModifierEventsInNormalE
   // Out:               *LS down & A down,              *LS up & A up
 
   last_handled = FALSE;
-  [handler
-      handleEvent:keyEvent(NSEventTypeKeyDown, 0x20102, @"A", @"A", FALSE, kKeyCodeKeyA)
-         callback:keyEventCallback];
+  [handler handleEvent:keyEvent(NSEventTypeKeyDown, 0x20102, @"A", @"A", FALSE, kKeyCodeKeyA)
+              callback:keyEventCallback];
 
   EXPECT_EQ([events count], 2u);
   event = [events firstObject].data;
@@ -749,9 +748,8 @@ TEST(FlutterKeyEmbedderHandlerUnittests, SynthesizeMissedModifierEventsInNormalE
   [events removeAllObjects];
 
   last_handled = FALSE;
-  [handler
-      handleEvent:keyEvent(NSEventTypeKeyUp, 0x100, @"a", @"a", FALSE, kKeyCodeKeyA)
-         callback:keyEventCallback];
+  [handler handleEvent:keyEvent(NSEventTypeKeyUp, 0x100, @"a", @"a", FALSE, kKeyCodeKeyA)
+              callback:keyEventCallback];
 
   EXPECT_EQ([events count], 2u);
   event = [events firstObject].data;
@@ -775,7 +773,6 @@ TEST(FlutterKeyEmbedderHandlerUnittests, SynthesizeMissedModifierEventsInNormalE
   EXPECT_EQ(last_handled, TRUE);
 
   [events removeAllObjects];
-
 }
 
 TEST(FlutterKeyEmbedderHandlerUnittests, ConvertCapsLockEvents) {
@@ -850,6 +847,86 @@ TEST(FlutterKeyEmbedderHandlerUnittests, ConvertCapsLockEvents) {
 
   EXPECT_EQ(last_handled, FALSE);
   [[events firstObject] respond:TRUE];
+  EXPECT_EQ(last_handled, TRUE);
+
+  [events removeAllObjects];
+}
+
+// Press the CapsLock key when CapsLock state is desynchronized
+TEST(FlutterKeyEmbedderHandlerUnittests, SynchronizeCapsLockStateOnCapsLock) {
+  __block NSMutableArray<TestKeyEvent*>* events = [[NSMutableArray<TestKeyEvent*> alloc] init];
+  __block BOOL last_handled = TRUE;
+  id keyEventCallback = ^(BOOL handled) {
+    last_handled = handled;
+  };
+
+  FlutterKeyEmbedderHandler* handler = [[FlutterKeyEmbedderHandler alloc]
+      initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
+                          _Nullable _VoidPtr user_data) {
+        [events addObject:[[TestKeyEvent alloc] initWithEvent:&event
+                                                     callback:callback
+                                                     userData:user_data]];
+      }];
+
+  // In:  CapsLock down
+  // Out:
+  last_handled = FALSE;
+  [handler handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeCapsLock)
+              callback:keyEventCallback];
+
+  EXPECT_EQ([events count], 0u);
+  EXPECT_EQ(last_handled, TRUE);
+}
+
+// Press the CapsLock key when CapsLock state is desynchronized
+TEST(FlutterKeyEmbedderHandlerUnittests, SynchronizeCapsLockStateOnNormalKey) {
+  __block NSMutableArray<TestKeyEvent*>* events = [[NSMutableArray<TestKeyEvent*> alloc] init];
+  __block BOOL last_handled = TRUE;
+  id keyEventCallback = ^(BOOL handled) {
+    last_handled = handled;
+  };
+  FlutterKeyEvent* event;
+
+  FlutterKeyEmbedderHandler* handler = [[FlutterKeyEmbedderHandler alloc]
+      initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
+                          _Nullable _VoidPtr user_data) {
+        [events addObject:[[TestKeyEvent alloc] initWithEvent:&event
+                                                     callback:callback
+                                                     userData:user_data]];
+      }];
+
+  last_handled = FALSE;
+  [handler handleEvent:keyEvent(NSEventTypeKeyDown, 0x10100, @"A", @"a", FALSE, kKeyCodeKeyA)
+              callback:keyEventCallback];
+
+  EXPECT_EQ([events count], 3u);
+
+  event = events[0].data;
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
+  EXPECT_EQ(event->physical, kPhysicalCapsLock);
+  EXPECT_EQ(event->logical, kLogicalCapsLock);
+  EXPECT_STREQ(event->character, nullptr);
+  EXPECT_EQ(event->synthesized, true);
+  EXPECT_FALSE([events[0] hasCallback]);
+
+  event = events[1].data;
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
+  EXPECT_EQ(event->physical, kPhysicalCapsLock);
+  EXPECT_EQ(event->logical, kLogicalCapsLock);
+  EXPECT_STREQ(event->character, nullptr);
+  EXPECT_EQ(event->synthesized, true);
+  EXPECT_FALSE([events[1] hasCallback]);
+
+  event = events[2].data;
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
+  EXPECT_EQ(event->physical, kPhysicalKeyA);
+  EXPECT_EQ(event->logical, kLogicalKeyA);
+  EXPECT_STREQ(event->character, "A");
+  EXPECT_EQ(event->synthesized, false);
+  EXPECT_TRUE([events[2] hasCallback]);
+
+  EXPECT_EQ(last_handled, FALSE);
+  [[events lastObject] respond:TRUE];
   EXPECT_EQ(last_handled, TRUE);
 
   [events removeAllObjects];

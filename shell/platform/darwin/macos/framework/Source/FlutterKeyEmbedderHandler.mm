@@ -139,9 +139,10 @@ static double GetFlutterTimestampFrom(NSEvent* event) {
 
 static NSUInteger computeModifierFlagOfInterestMask() {
   __block NSUInteger modifierFlagOfInterestMask = NSEventModifierFlagCapsLock;
-  [keyCodeToModifierFlag enumerateKeysAndObjectsUsingBlock:^(NSNumber* keyCode, NSNumber* flag, BOOL *stop) {
-    modifierFlagOfInterestMask = modifierFlagOfInterestMask | [flag unsignedLongValue];
-  }];
+  [keyCodeToModifierFlag
+      enumerateKeysAndObjectsUsingBlock:^(NSNumber* keyCode, NSNumber* flag, BOOL* stop) {
+        modifierFlagOfInterestMask = modifierFlagOfInterestMask | [flag unsignedLongValue];
+      }];
   return modifierFlagOfInterestMask;
 }
 
@@ -255,7 +256,8 @@ const char* getEventString(NSString* characters) {
 /**
  * Processes a down event.
  */
-- (void)handleDownEvent:(nonnull NSEvent*)event callback:(nonnull FlutterKeyHandlerCallback)callback;
+- (void)handleDownEvent:(nonnull NSEvent*)event
+               callback:(nonnull FlutterKeyHandlerCallback)callback;
 
 /**
  * Processes an up event.
@@ -265,12 +267,14 @@ const char* getEventString(NSString* characters) {
 /**
  * Processes an up event.
  */
-- (void)handleCapsLockEvent:(nonnull NSEvent*)event callback:(nonnull FlutterKeyHandlerCallback)callback;
+- (void)handleCapsLockEvent:(nonnull NSEvent*)event
+                   callback:(nonnull FlutterKeyHandlerCallback)callback;
 
 /**
  * Processes a flags changed event, where modifier keys are pressed or released.
  */
-- (void)handleFlagEvent:(nonnull NSEvent*)event callback:(nonnull FlutterKeyHandlerCallback)callback;
+- (void)handleFlagEvent:(nonnull NSEvent*)event
+               callback:(nonnull FlutterKeyHandlerCallback)callback;
 
 - (void)handleResponse:(BOOL)handled forId:(uint64_t)responseId;
 
@@ -447,8 +451,13 @@ const char* getEventString(NSString* characters) {
 
 - (void)handleCapsLockEvent:(NSEvent*)event callback:(FlutterKeyHandlerCallback)callback {
   [self synchronizeModifiers:event.modifierFlags ignoringFlags:NSEventModifierFlagCapsLock];
-  [self sendCapsLockTapWithCallback:callback];
-  _lastModifierFlags = _lastModifierFlags ^ NSEventModifierFlagCapsLock;
+  if ((_lastModifierFlags & NSEventModifierFlagCapsLock) !=
+      (event.modifierFlags & NSEventModifierFlagCapsLock)) {
+    [self sendCapsLockTapWithCallback:callback];
+    _lastModifierFlags = _lastModifierFlags ^ NSEventModifierFlagCapsLock;
+  } else {
+    callback(TRUE);
+  }
 }
 
 - (void)handleFlagEvent:(NSEvent*)event callback:(FlutterKeyHandlerCallback)callback {
@@ -522,8 +531,8 @@ void ps(const char* s) {
       NSAssert(false, @"Unexpected key event type: |%@|.", @(event.type));
   }
   NSAssert(_lastModifierFlags == (event.modifierFlags & _modifierFlagOfInterestMask),
-    @"The modifier flags are not properly updated: recorded 0x%lx, event 0x%lx",
-    _lastModifierFlags, (event.modifierFlags & _modifierFlagOfInterestMask));
+           @"The modifier flags are not properly updated: recorded 0x%lx, event 0x%lx",
+           _lastModifierFlags, (event.modifierFlags & _modifierFlagOfInterestMask));
 }
 
 - (void)handleResponse:(BOOL)handled forId:(uint64_t)responseId {
