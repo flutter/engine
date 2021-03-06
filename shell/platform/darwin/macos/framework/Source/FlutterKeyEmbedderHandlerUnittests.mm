@@ -111,6 +111,25 @@ NSEvent* keyEvent(NSEventType type,
                            keyCode:keyCode];
 }
 
+NSEvent* keyEvent(NSEventType type,
+                  NSTimeInterval timestamp,
+                  NSEventModifierFlags modifierFlags,
+                  NSString* characters,
+                  NSString* charactersIgnoringModifiers,
+                  BOOL isARepeat,
+                  unsigned short keyCode) {
+  return [NSEvent keyEventWithType:type
+                          location:NSZeroPoint
+                     modifierFlags:modifierFlags
+                         timestamp:timestamp
+                      windowNumber:0
+                           context:nil
+                        characters:characters
+       charactersIgnoringModifiers:charactersIgnoringModifiers
+                         isARepeat:isARepeat
+                           keyCode:keyCode];
+}
+
 }  // namespace
 
 // Test the most basic key events.
@@ -130,7 +149,7 @@ TEST(FlutterKeyEmbedderHandlerUnittests, BasicKeyEvent) {
       }];
 
   last_handled = FALSE;
-  [handler handleEvent:keyEvent(NSEventTypeKeyDown, 0x100, @"a", @"a", FALSE, 0)
+  [handler handleEvent:keyEvent(NSEventTypeKeyDown, 123.0f, 0x100, @"a", @"a", FALSE, 0)
               callback:^(BOOL handled) {
                 last_handled = handled;
               }];
@@ -138,6 +157,7 @@ TEST(FlutterKeyEmbedderHandlerUnittests, BasicKeyEvent) {
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
   EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
+  EXPECT_EQ(event->timestamp, 123000000.0f);
   EXPECT_EQ(event->physical, kPhysicalKeyA);
   EXPECT_EQ(event->logical, kLogicalKeyA);
   EXPECT_STREQ(event->character, "a");
@@ -172,7 +192,7 @@ TEST(FlutterKeyEmbedderHandlerUnittests, BasicKeyEvent) {
   [events removeAllObjects];
 
   last_handled = TRUE;
-  [handler handleEvent:keyEvent(NSEventTypeKeyUp, 0x100, @"a", @"a", FALSE, kKeyCodeKeyA)
+  [handler handleEvent:keyEvent(NSEventTypeKeyUp, 124.0f, 0x100, @"a", @"a", FALSE, kKeyCodeKeyA)
               callback:^(BOOL handled) {
                 last_handled = handled;
               }];
@@ -180,6 +200,7 @@ TEST(FlutterKeyEmbedderHandlerUnittests, BasicKeyEvent) {
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
   EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
+  EXPECT_EQ(event->timestamp, 124000000.0f);
   EXPECT_EQ(event->physical, kPhysicalKeyA);
   EXPECT_EQ(event->logical, kLogicalKeyA);
   EXPECT_EQ(event->character, nullptr);
@@ -279,13 +300,14 @@ TEST(FlutterKeyEmbedderHandlerUnittests, ToggleModifiersDuringKeyTap) {
       }];
 
   [handler
-      handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x20104, @"", @"", FALSE, kKeyCodeShiftRight)
+      handleEvent:keyEvent(NSEventTypeFlagsChanged, 123.0f, 0x20104, @"", @"", FALSE, kKeyCodeShiftRight)
          callback:^(BOOL handled){
          }];
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
   EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
+  EXPECT_EQ(event->timestamp, 123000000.0f);
   EXPECT_EQ(event->physical, kPhysicalShiftRight);
   EXPECT_EQ(event->logical, kLogicalShiftRight);
   EXPECT_STREQ(event->character, nullptr);

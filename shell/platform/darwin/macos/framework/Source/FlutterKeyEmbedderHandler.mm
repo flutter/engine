@@ -132,9 +132,9 @@ static uint64_t GetLogicalKeyForEvent(NSEvent* event, uint64_t physicalKey) {
 }
 
 // Returns the timestamp for an event.
-static double GetFlutterTimestampFrom(NSEvent* event) {
+static double GetFlutterTimestampFrom(NSTimeInterval timestamp) {
   // Timestamp in microseconds. The event.timestamp is in seconds with sub-ms precision.
-  return event.timestamp * 1000000.0;
+  return timestamp * 1000000.0;
 }
 
 static NSUInteger computeModifierFlagOfInterestMask() {
@@ -227,7 +227,7 @@ const char* getEventString(NSString* characters) {
 
 @property(nonatomic) NSMutableDictionary<NSNumber*, FlutterKeyHandlerCallback>* pendingResponses;
 
-- (void)synchronizeModifiers:(NSUInteger)currentFlags ignoringFlags:(NSUInteger)ignoringFlags;
+- (void)synchronizeModifiers:(NSUInteger)currentFlags ignoringFlags:(NSUInteger)ignoringFlags timestamp:(NSTimeInterval)timestamp;
 
 /**
  * Update the pressing state.
@@ -247,9 +247,11 @@ const char* getEventString(NSString* characters) {
  * downCallback will be used as the callback for the down event, which is not
  * synthesized.
  */
-- (void)sendCapsLockTapWithCallback:(nullable FlutterKeyHandlerCallback)downCallback;
+- (void)sendCapsLockTapWithTimestamp:(NSTimeInterval)timestamp
+                            callback:(FlutterKeyHandlerCallback)downCallback;
 
 - (void)sendModifierEventForDown:(BOOL)shouldDown
+                       timestamp:(NSTimeInterval)timestamp
                          keyCode:(unsigned short)keyCode
                         callback:(nullable FlutterKeyHandlerCallback)downCallback;
 
@@ -297,13 +299,13 @@ const char* getEventString(NSString* characters) {
 
 #pragma mark - Private
 
-- (void)synchronizeModifiers:(NSUInteger)currentFlags ignoringFlags:(NSUInteger)ignoringFlags {
+- (void)synchronizeModifiers:(NSUInteger)currentFlags ignoringFlags:(NSUInteger)ignoringFlags timestamp:(NSTimeInterval)timestamp {
   const NSUInteger updatingMask = _modifierFlagOfInterestMask & ~ignoringFlags;
   const NSUInteger currentInterestedFlags = currentFlags & updatingMask;
   const NSUInteger lastInterestedFlags = _lastModifierFlags & updatingMask;
   NSUInteger flagDifference = currentInterestedFlags ^ lastInterestedFlags;
   if (flagDifference & NSEventModifierFlagCapsLock) {
-    [self sendCapsLockTapWithCallback:nil];
+    [self sendCapsLockTapWithTimestamp:timestamp callback:nil];
     flagDifference = flagDifference & ~NSEventModifierFlagCapsLock;
   }
   while (true) {
@@ -318,7 +320,7 @@ const char* getEventString(NSString* characters) {
       continue;
     }
     BOOL shouldDown = (currentInterestedFlags & currentFlag) != 0;
-    [self sendModifierEventForDown:shouldDown keyCode:[keyCode unsignedShortValue] callback:nil];
+    [self sendModifierEventForDown:shouldDown timestamp:timestamp keyCode:[keyCode unsignedShortValue] callback:nil];
   }
   _lastModifierFlags = (_lastModifierFlags & ~updatingMask) | currentInterestedFlags;
 }
@@ -342,14 +344,15 @@ const char* getEventString(NSString* characters) {
   _sendEvent(event, HandleResponse, (__bridge_retained void*)pending);
 }
 
-- (void)sendCapsLockTapWithCallback:(FlutterKeyHandlerCallback)downCallback {
+- (void)sendCapsLockTapWithTimestamp:(NSTimeInterval)timestamp
+                            callback:(FlutterKeyHandlerCallback)downCallback {
   // MacOS sends a down *or* an up when CapsLock is tapped, alternatively on
   // even taps and odd taps. A CapsLock down or CapsLock up should always be
   // converted to a down *and* an up, and the up should always be a synthesized
   // event, since we will never know when the button is released.
   FlutterKeyEvent flutterEvent = {
       .struct_size = sizeof(FlutterKeyEvent),
-      .timestamp = 0,  // TODO
+      .timestamp = GetFlutterTimestampFrom(timestamp),
       .type = kFlutterKeyEventTypeDown,
       .physical = kCapsLockPhysicalKey,
       .logical = kCapsLockLogicalKey,
@@ -368,6 +371,7 @@ const char* getEventString(NSString* characters) {
 }
 
 - (void)sendModifierEventForDown:(BOOL)shouldDown
+                       timestamp:(NSTimeInterval)timestamp
                          keyCode:(unsigned short)keyCode
                         callback:(FlutterKeyHandlerCallback)callback {
   uint64_t physicalKey = GetPhysicalKeyForKeyCode(keyCode);
@@ -379,7 +383,7 @@ const char* getEventString(NSString* characters) {
   }
   FlutterKeyEvent flutterEvent = {
       .struct_size = sizeof(FlutterKeyEvent),
-      .timestamp = 0,  // TODO
+      .timestamp = GetFlutterTimestampFrom(timestamp),
       .type = shouldDown ? kFlutterKeyEventTypeDown : kFlutterKeyEventTypeUp,
       .physical = physicalKey,
       .logical = logicalKey,
@@ -397,7 +401,7 @@ const char* getEventString(NSString* characters) {
 - (void)handleDownEvent:(NSEvent*)event callback:(FlutterKeyHandlerCallback)callback {
   uint64_t physicalKey = GetPhysicalKeyForKeyCode(event.keyCode);
   uint64_t logicalKey = GetLogicalKeyForEvent(event, physicalKey);
-  [self synchronizeModifiers:event.modifierFlags ignoringFlags:0];
+  [self synchronizeModifiers:event.modifierFlags ignoringFlags:0 timestamp:event.timestamp];
 
   NSNumber* pressedLogicalKey = _pressingRecords[@(physicalKey)];
   bool isARepeat = (pressedLogicalKey != nil) || event.isARepeat;
@@ -409,7 +413,7 @@ const char* getEventString(NSString* characters) {
 
   FlutterKeyEvent flutterEvent = {
       .struct_size = sizeof(FlutterKeyEvent),
-      .timestamp = GetFlutterTimestampFrom(event),
+      .timestamp = GetFlutterTimestampFrom(event.timestamp),
       .type = isARepeat ? kFlutterKeyEventTypeRepeat : kFlutterKeyEventTypeDown,
       .physical = physicalKey,
       .logical = pressedLogicalKey == nil ? logicalKey : [pressedLogicalKey unsignedLongLongValue],
@@ -422,7 +426,7 @@ const char* getEventString(NSString* characters) {
 - (void)handleUpEvent:(NSEvent*)event callback:(FlutterKeyHandlerCallback)callback {
   NSAssert(!event.isARepeat, @"Unexpected repeated Up event: keyCode %d, char %@, charIM %@",
            event.keyCode, event.characters, event.charactersIgnoringModifiers);
-  [self synchronizeModifiers:event.modifierFlags ignoringFlags:0];
+  [self synchronizeModifiers:event.modifierFlags ignoringFlags:0 timestamp:event.timestamp];
 
   uint64_t physicalKey = GetPhysicalKeyForKeyCode(event.keyCode);
   NSNumber* pressedLogicalKey = _pressingRecords[@(physicalKey)];
@@ -439,7 +443,7 @@ const char* getEventString(NSString* characters) {
 
   FlutterKeyEvent flutterEvent = {
       .struct_size = sizeof(FlutterKeyEvent),
-      .timestamp = GetFlutterTimestampFrom(event),
+      .timestamp = GetFlutterTimestampFrom(event.timestamp),
       .type = kFlutterKeyEventTypeUp,
       .physical = physicalKey,
       .logical = [pressedLogicalKey unsignedLongLongValue],
@@ -450,10 +454,10 @@ const char* getEventString(NSString* characters) {
 }
 
 - (void)handleCapsLockEvent:(NSEvent*)event callback:(FlutterKeyHandlerCallback)callback {
-  [self synchronizeModifiers:event.modifierFlags ignoringFlags:NSEventModifierFlagCapsLock];
+  [self synchronizeModifiers:event.modifierFlags ignoringFlags:NSEventModifierFlagCapsLock timestamp:event.timestamp];
   if ((_lastModifierFlags & NSEventModifierFlagCapsLock) !=
       (event.modifierFlags & NSEventModifierFlagCapsLock)) {
-    [self sendCapsLockTapWithCallback:callback];
+    [self sendCapsLockTapWithTimestamp:event.timestamp callback:callback];
     _lastModifierFlags = _lastModifierFlags ^ NSEventModifierFlagCapsLock;
   } else {
     callback(TRUE);
@@ -469,7 +473,7 @@ const char* getEventString(NSString* characters) {
     return [self handleCapsLockEvent:event callback:callback];
   }
 
-  [self synchronizeModifiers:event.modifierFlags ignoringFlags:targetModifierFlag];
+  [self synchronizeModifiers:event.modifierFlags ignoringFlags:targetModifierFlag timestamp:event.timestamp];
 
   NSNumber* pressedLogicalKey = [_pressingRecords objectForKey:@(targetKey)];
   BOOL lastTargetPressed = pressedLogicalKey != nil;
@@ -489,7 +493,7 @@ const char* getEventString(NSString* characters) {
     return;
   }
   _lastModifierFlags = _lastModifierFlags ^ targetModifierFlag;
-  [self sendModifierEventForDown:shouldBePressed keyCode:event.keyCode callback:callback];
+  [self sendModifierEventForDown:shouldBePressed timestamp:event.timestamp keyCode:event.keyCode callback:callback];
 }
 
 void ps(const char* s) {
