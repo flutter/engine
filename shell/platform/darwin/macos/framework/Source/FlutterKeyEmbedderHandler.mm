@@ -227,7 +227,9 @@ const char* getEventString(NSString* characters) {
 
 @property(nonatomic) NSMutableDictionary<NSNumber*, FlutterKeyHandlerCallback>* pendingResponses;
 
-- (void)synchronizeModifiers:(NSUInteger)currentFlags ignoringFlags:(NSUInteger)ignoringFlags timestamp:(NSTimeInterval)timestamp;
+- (void)synchronizeModifiers:(NSUInteger)currentFlags
+               ignoringFlags:(NSUInteger)ignoringFlags
+                   timestamp:(NSTimeInterval)timestamp;
 
 /**
  * Update the pressing state.
@@ -299,7 +301,9 @@ const char* getEventString(NSString* characters) {
 
 #pragma mark - Private
 
-- (void)synchronizeModifiers:(NSUInteger)currentFlags ignoringFlags:(NSUInteger)ignoringFlags timestamp:(NSTimeInterval)timestamp {
+- (void)synchronizeModifiers:(NSUInteger)currentFlags
+               ignoringFlags:(NSUInteger)ignoringFlags
+                   timestamp:(NSTimeInterval)timestamp {
   const NSUInteger updatingMask = _modifierFlagOfInterestMask & ~ignoringFlags;
   const NSUInteger currentInterestedFlags = currentFlags & updatingMask;
   const NSUInteger lastInterestedFlags = _lastModifierFlags & updatingMask;
@@ -320,7 +324,10 @@ const char* getEventString(NSString* characters) {
       continue;
     }
     BOOL shouldDown = (currentInterestedFlags & currentFlag) != 0;
-    [self sendModifierEventForDown:shouldDown timestamp:timestamp keyCode:[keyCode unsignedShortValue] callback:nil];
+    [self sendModifierEventForDown:shouldDown
+                         timestamp:timestamp
+                           keyCode:[keyCode unsignedShortValue]
+                          callback:nil];
   }
   _lastModifierFlags = (_lastModifierFlags & ~updatingMask) | currentInterestedFlags;
 }
@@ -403,8 +410,12 @@ const char* getEventString(NSString* characters) {
   uint64_t logicalKey = GetLogicalKeyForEvent(event, physicalKey);
   [self synchronizeModifiers:event.modifierFlags ignoringFlags:0 timestamp:event.timestamp];
 
+  bool isARepeat = event.isARepeat;
   NSNumber* pressedLogicalKey = _pressingRecords[@(physicalKey)];
-  bool isARepeat = (pressedLogicalKey != nil) || event.isARepeat;
+  if (pressedLogicalKey != nil && !isARepeat) {
+    callback(TRUE);
+    return;
+  }
   bool isSynthesized = false;
 
   if (pressedLogicalKey == nil) {
@@ -454,7 +465,9 @@ const char* getEventString(NSString* characters) {
 }
 
 - (void)handleCapsLockEvent:(NSEvent*)event callback:(FlutterKeyHandlerCallback)callback {
-  [self synchronizeModifiers:event.modifierFlags ignoringFlags:NSEventModifierFlagCapsLock timestamp:event.timestamp];
+  [self synchronizeModifiers:event.modifierFlags
+               ignoringFlags:NSEventModifierFlagCapsLock
+                   timestamp:event.timestamp];
   if ((_lastModifierFlags & NSEventModifierFlagCapsLock) !=
       (event.modifierFlags & NSEventModifierFlagCapsLock)) {
     [self sendCapsLockTapWithTimestamp:event.timestamp callback:callback];
@@ -473,7 +486,9 @@ const char* getEventString(NSString* characters) {
     return [self handleCapsLockEvent:event callback:callback];
   }
 
-  [self synchronizeModifiers:event.modifierFlags ignoringFlags:targetModifierFlag timestamp:event.timestamp];
+  [self synchronizeModifiers:event.modifierFlags
+               ignoringFlags:targetModifierFlag
+                   timestamp:event.timestamp];
 
   NSNumber* pressedLogicalKey = [_pressingRecords objectForKey:@(targetKey)];
   BOOL lastTargetPressed = pressedLogicalKey != nil;
@@ -493,7 +508,10 @@ const char* getEventString(NSString* characters) {
     return;
   }
   _lastModifierFlags = _lastModifierFlags ^ targetModifierFlag;
-  [self sendModifierEventForDown:shouldBePressed timestamp:event.timestamp keyCode:event.keyCode callback:callback];
+  [self sendModifierEventForDown:shouldBePressed
+                       timestamp:event.timestamp
+                         keyCode:event.keyCode
+                        callback:callback];
 }
 
 void ps(const char* s) {

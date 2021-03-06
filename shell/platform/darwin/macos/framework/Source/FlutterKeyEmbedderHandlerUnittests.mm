@@ -283,6 +283,73 @@ TEST(FlutterKeyEmbedderHandlerUnittests, NonAsciiCharacters) {
   [events removeAllObjects];
 }
 
+// In very rare occasions, the up event can be missed. Test that duplicate down events
+// in these situations are ignored.
+//
+// MacOS usually matches down and up events perfectly since it tracks key taps to a window.
+// Unmatched events can occur when you hold a key, then Ctrl-clicks desktop to trigger a
+// menu, and release key.
+TEST(FlutterKeyEmbedderHandlerUnittests, IgnoreDuplicateDownEvent) {
+  __block NSMutableArray<TestKeyEvent*>* events = [[NSMutableArray<TestKeyEvent*> alloc] init];
+  __block BOOL last_handled = TRUE;
+  FlutterKeyEvent* event;
+
+  FlutterKeyEmbedderHandler* handler = [[FlutterKeyEmbedderHandler alloc]
+      initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
+                          _Nullable _VoidPtr user_data) {
+        [events addObject:[[TestKeyEvent alloc] initWithEvent:&event
+                                                     callback:callback
+                                                     userData:user_data]];
+      }];
+
+  last_handled = FALSE;
+  [handler handleEvent:keyEvent(NSEventTypeKeyDown, 0x100, @"a", @"a", FALSE, kKeyCodeKeyA)
+              callback:^(BOOL handled) {
+                last_handled = handled;
+              }];
+
+  EXPECT_EQ([events count], 1u);
+  event = [events lastObject].data;
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
+  EXPECT_EQ(event->physical, kPhysicalKeyA);
+  EXPECT_EQ(event->logical, kLogicalKeyA);
+  EXPECT_STREQ(event->character, "a");
+  EXPECT_EQ(event->synthesized, false);
+  EXPECT_EQ(last_handled, FALSE);
+  [[events lastObject] respond:TRUE];
+  EXPECT_EQ(last_handled, TRUE);
+
+  [events removeAllObjects];
+
+  last_handled = FALSE;
+  [handler handleEvent:keyEvent(NSEventTypeKeyDown, 0x100, @"a", @"a", FALSE, kKeyCodeKeyA)
+              callback:^(BOOL handled) {
+                last_handled = handled;
+              }];
+
+  EXPECT_EQ([events count], 0u);
+  EXPECT_EQ(last_handled, TRUE);
+
+  last_handled = FALSE;
+  [handler handleEvent:keyEvent(NSEventTypeKeyUp, 0x100, @"a", @"a", FALSE, kKeyCodeKeyA)
+              callback:^(BOOL handled) {
+                last_handled = handled;
+              }];
+
+  EXPECT_EQ([events count], 1u);
+  event = [events lastObject].data;
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
+  EXPECT_EQ(event->physical, kPhysicalKeyA);
+  EXPECT_EQ(event->logical, kLogicalKeyA);
+  EXPECT_STREQ(event->character, nullptr);
+  EXPECT_EQ(event->synthesized, false);
+  EXPECT_EQ(last_handled, FALSE);
+  [[events lastObject] respond:TRUE];
+  EXPECT_EQ(last_handled, TRUE);
+
+  [events removeAllObjects];
+}
+
 // Press L shift, A, then release L shift then A, on an US keyboard.
 //
 // This is special because the characters for the A key will change in this
@@ -299,10 +366,10 @@ TEST(FlutterKeyEmbedderHandlerUnittests, ToggleModifiersDuringKeyTap) {
                                                      userData:user_data]];
       }];
 
-  [handler
-      handleEvent:keyEvent(NSEventTypeFlagsChanged, 123.0f, 0x20104, @"", @"", FALSE, kKeyCodeShiftRight)
-         callback:^(BOOL handled){
-         }];
+  [handler handleEvent:keyEvent(NSEventTypeFlagsChanged, 123.0f, 0x20104, @"", @"", FALSE,
+                                kKeyCodeShiftRight)
+              callback:^(BOOL handled){
+              }];
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
