@@ -58,14 +58,17 @@
 namespace flutter::testing {
 
 namespace {
-constexpr uint64_t kKeyCodeKeyA = 0;
+constexpr uint64_t kKeyCodeKeyA = 0x00;
+constexpr uint64_t kKeyCodeKeyW = 0x0d;
 constexpr uint64_t kKeyCodeShiftLeft = 0x38;
 constexpr uint64_t kKeyCodeShiftRight = 0x3c;
 constexpr uint64_t kKeyCodeCapsLock = 0x39;
 constexpr uint64_t kKeyCodeNumpad1 = 0x53;
 constexpr uint64_t kKeyCodeF1 = 0x7a;
+constexpr uint64_t kKeyCodeAltRight = 0x3d;
 
 constexpr uint64_t kPhysicalKeyA = 0x00070004;
+constexpr uint64_t kPhysicalKeyW = 0x0007001a;
 // constexpr uint64_t kPhysicalControlLeft = 0x000700e0;
 // constexpr uint64_t kPhysicalControlRight = 0x000700e4;
 constexpr uint64_t kPhysicalShiftLeft = 0x000700e1;
@@ -73,9 +76,11 @@ constexpr uint64_t kPhysicalShiftRight = 0x000700e5;
 constexpr uint64_t kPhysicalCapsLock = 0x00070039;
 constexpr uint64_t kPhysicalNumpad1 = 0x00070059;
 constexpr uint64_t kPhysicalF1 = 0x0007003a;
+constexpr uint64_t kPhysicalAltRight = 0x000700e6;
 // constexpr uint64_t kPhysicalKeyNumLock = 0x00070053;
 
 constexpr uint64_t kLogicalKeyA = 0x00000061;
+constexpr uint64_t kLogicalKeyW = 0x00000077;
 // constexpr uint64_t kLogicalControlLeft = 0x00300000105;
 // constexpr uint64_t kLogicalControlRight = 0x00400000105;
 constexpr uint64_t kLogicalShiftLeft = 0x0030000010d;
@@ -84,6 +89,7 @@ constexpr uint64_t kLogicalCapsLock = 0x00000000104;
 constexpr uint64_t kLogicalNumpad1 = 0x00200000031;
 constexpr uint64_t kLogicalF1 = 0x00000000801;
 // constexpr uint64_t kLogicalKeyNumLock = 0x0000000010a;
+constexpr uint64_t kLogicalAltRight = 0x00400000102;
 
 typedef void (^ResponseCallback)(bool handled);
 
@@ -187,6 +193,75 @@ TEST(FlutterKeyEmbedderHandlerUnittests, BasicKeyEvent) {
   [events removeAllObjects];
 }
 
+TEST(FlutterKeyEmbedderHandlerUnittests, NonAsciiCharacters) {
+  __block NSMutableArray<TestKeyEvent*>* events = [[NSMutableArray<TestKeyEvent*> alloc] init];
+  FlutterKeyEvent* event;
+
+  FlutterKeyEmbedderHandler* handler = [[FlutterKeyEmbedderHandler alloc]
+      initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
+                          _Nullable _VoidPtr user_data) {
+        [events addObject:[[TestKeyEvent alloc] initWithEvent:&event
+                                                     callback:callback
+                                                     userData:user_data]];
+      }];
+
+  [handler handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x80140, @"", @"", FALSE, kKeyCodeAltRight)
+              callback:^(BOOL handled){
+              }];
+
+  EXPECT_EQ([events count], 1u);
+  event = [events lastObject].data;
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
+  EXPECT_EQ(event->physical, kPhysicalAltRight);
+  EXPECT_EQ(event->logical, kLogicalAltRight);
+  EXPECT_STREQ(event->character, nullptr);
+  EXPECT_EQ(event->synthesized, false);
+
+  [events removeAllObjects];
+
+  [handler handleEvent:keyEvent(NSEventTypeKeyDown, 0x80140, @"∑", @"w", FALSE, kKeyCodeKeyW)
+              callback:^(BOOL handled){
+              }];
+
+  EXPECT_EQ([events count], 1u);
+  event = [events lastObject].data;
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
+  EXPECT_EQ(event->physical, kPhysicalKeyW);
+  EXPECT_EQ(event->logical, kLogicalKeyW);
+  EXPECT_STREQ(event->character, "∑");
+  EXPECT_EQ(event->synthesized, false);
+
+  [events removeAllObjects];
+
+  [handler handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeAltRight)
+              callback:^(BOOL handled){
+              }];
+
+  EXPECT_EQ([events count], 1u);
+  event = [events lastObject].data;
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
+  EXPECT_EQ(event->physical, kPhysicalAltRight);
+  EXPECT_EQ(event->logical, kLogicalAltRight);
+  EXPECT_STREQ(event->character, nullptr);
+  EXPECT_EQ(event->synthesized, false);
+
+  [events removeAllObjects];
+
+  [handler handleEvent:keyEvent(NSEventTypeKeyUp, 0x100, @"w", @"w", FALSE, kKeyCodeKeyW)
+              callback:^(BOOL handled){
+              }];
+
+  EXPECT_EQ([events count], 1u);
+  event = [events lastObject].data;
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
+  EXPECT_EQ(event->physical, kPhysicalKeyW);
+  EXPECT_EQ(event->logical, kLogicalKeyW);
+  EXPECT_STREQ(event->character, nullptr);
+  EXPECT_EQ(event->synthesized, false);
+
+  [events removeAllObjects];
+}
+
 // Press L shift, A, then release L shift then A, on an US keyboard.
 //
 // This is special because the characters for the A key will change in this
@@ -215,6 +290,7 @@ TEST(FlutterKeyEmbedderHandlerUnittests, ToggleModifiersDuringKeyTap) {
   EXPECT_EQ(event->logical, kLogicalShiftRight);
   EXPECT_STREQ(event->character, nullptr);
   EXPECT_EQ(event->synthesized, false);
+  [[events lastObject] respond:TRUE];
 
   [events removeAllObjects];
 
@@ -229,6 +305,7 @@ TEST(FlutterKeyEmbedderHandlerUnittests, ToggleModifiersDuringKeyTap) {
   EXPECT_EQ(event->logical, kLogicalKeyA);
   EXPECT_STREQ(event->character, "A");
   EXPECT_EQ(event->synthesized, false);
+  [[events lastObject] respond:TRUE];
 
   [events removeAllObjects];
 
@@ -243,6 +320,7 @@ TEST(FlutterKeyEmbedderHandlerUnittests, ToggleModifiersDuringKeyTap) {
   EXPECT_EQ(event->logical, kLogicalKeyA);
   EXPECT_STREQ(event->character, "A");
   EXPECT_EQ(event->synthesized, false);
+  [[events lastObject] respond:TRUE];
 
   [events removeAllObjects];
 
@@ -257,6 +335,7 @@ TEST(FlutterKeyEmbedderHandlerUnittests, ToggleModifiersDuringKeyTap) {
   EXPECT_EQ(event->logical, kLogicalShiftRight);
   EXPECT_STREQ(event->character, nullptr);
   EXPECT_EQ(event->synthesized, false);
+  [[events lastObject] respond:TRUE];
 
   [events removeAllObjects];
 
@@ -285,6 +364,7 @@ TEST(FlutterKeyEmbedderHandlerUnittests, ToggleModifiersDuringKeyTap) {
   EXPECT_EQ(event->logical, kLogicalKeyA);
   EXPECT_STREQ(event->character, nullptr);
   EXPECT_EQ(event->synthesized, false);
+  [[events lastObject] respond:TRUE];
 
   [events removeAllObjects];
 }
@@ -321,6 +401,7 @@ TEST(FlutterKeyEmbedderHandlerUnittests, SpecialModiferFlags) {
   EXPECT_EQ(event->logical, kLogicalNumpad1);
   EXPECT_STREQ(event->character, "1");
   EXPECT_EQ(event->synthesized, false);
+  [[events lastObject] respond:TRUE];
 
   [events removeAllObjects];
 
@@ -337,6 +418,7 @@ TEST(FlutterKeyEmbedderHandlerUnittests, SpecialModiferFlags) {
   EXPECT_EQ(event->logical, kLogicalF1);
   EXPECT_STREQ(event->character, nullptr);
   EXPECT_EQ(event->synthesized, false);
+  [[events lastObject] respond:TRUE];
 
   [events removeAllObjects];
 
@@ -352,6 +434,7 @@ TEST(FlutterKeyEmbedderHandlerUnittests, SpecialModiferFlags) {
   EXPECT_EQ(event->logical, kLogicalKeyA);
   EXPECT_STREQ(event->character, "a");
   EXPECT_EQ(event->synthesized, false);
+  [[events lastObject] respond:TRUE];
 
   [events removeAllObjects];
 
@@ -368,6 +451,7 @@ TEST(FlutterKeyEmbedderHandlerUnittests, SpecialModiferFlags) {
   EXPECT_EQ(event->logical, kLogicalShiftLeft);
   EXPECT_STREQ(event->character, nullptr);
   EXPECT_EQ(event->synthesized, false);
+  [[events lastObject] respond:TRUE];
 
   [events removeAllObjects];
 
@@ -383,6 +467,7 @@ TEST(FlutterKeyEmbedderHandlerUnittests, SpecialModiferFlags) {
   EXPECT_EQ(event->logical, kLogicalNumpad1);
   EXPECT_STREQ(event->character, nullptr);
   EXPECT_EQ(event->synthesized, false);
+  [[events lastObject] respond:TRUE];
 
   [events removeAllObjects];
 
@@ -398,6 +483,7 @@ TEST(FlutterKeyEmbedderHandlerUnittests, SpecialModiferFlags) {
   EXPECT_EQ(event->logical, kLogicalF1);
   EXPECT_STREQ(event->character, nullptr);
   EXPECT_EQ(event->synthesized, false);
+  [[events lastObject] respond:TRUE];
 
   [events removeAllObjects];
 
@@ -413,6 +499,7 @@ TEST(FlutterKeyEmbedderHandlerUnittests, SpecialModiferFlags) {
   EXPECT_EQ(event->logical, kLogicalKeyA);
   EXPECT_STREQ(event->character, nullptr);
   EXPECT_EQ(event->synthesized, false);
+  [[events lastObject] respond:TRUE];
 
   [events removeAllObjects];
 
@@ -428,6 +515,7 @@ TEST(FlutterKeyEmbedderHandlerUnittests, SpecialModiferFlags) {
   EXPECT_EQ(event->logical, kLogicalShiftLeft);
   EXPECT_STREQ(event->character, nullptr);
   EXPECT_EQ(event->synthesized, false);
+  [[events lastObject] respond:TRUE];
 
   [events removeAllObjects];
 }
@@ -456,6 +544,7 @@ TEST(FlutterKeyEmbedderHandlerUnittests, IdentifyLeftAndRightModifiers) {
   EXPECT_EQ(event->logical, kLogicalShiftLeft);
   EXPECT_STREQ(event->character, nullptr);
   EXPECT_EQ(event->synthesized, false);
+  [[events lastObject] respond:TRUE];
 
   [events removeAllObjects];
 
@@ -471,6 +560,7 @@ TEST(FlutterKeyEmbedderHandlerUnittests, IdentifyLeftAndRightModifiers) {
   EXPECT_EQ(event->logical, kLogicalShiftRight);
   EXPECT_STREQ(event->character, nullptr);
   EXPECT_EQ(event->synthesized, false);
+  [[events lastObject] respond:TRUE];
 
   [events removeAllObjects];
 
@@ -486,6 +576,7 @@ TEST(FlutterKeyEmbedderHandlerUnittests, IdentifyLeftAndRightModifiers) {
   EXPECT_EQ(event->logical, kLogicalShiftLeft);
   EXPECT_STREQ(event->character, nullptr);
   EXPECT_EQ(event->synthesized, false);
+  [[events lastObject] respond:TRUE];
 
   [events removeAllObjects];
 
@@ -500,6 +591,7 @@ TEST(FlutterKeyEmbedderHandlerUnittests, IdentifyLeftAndRightModifiers) {
   EXPECT_EQ(event->logical, kLogicalShiftRight);
   EXPECT_STREQ(event->character, nullptr);
   EXPECT_EQ(event->synthesized, false);
+  [[events lastObject] respond:TRUE];
 
   [events removeAllObjects];
 }

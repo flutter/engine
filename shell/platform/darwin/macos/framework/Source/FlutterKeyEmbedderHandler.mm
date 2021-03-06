@@ -503,7 +503,8 @@ void ps(const char* s) {
 }
 
 - (void)handleEvent:(NSEvent*)event callback:(FlutterKeyHandlerCallback)callback {
-  printf("#### Event %d keyCode %hx mod %lx ", (int)event.type, event.keyCode, event.modifierFlags);
+  printf("#### Event %d keyCode 0x%hx mod 0x%lx ", (int)event.type, event.keyCode,
+         event.modifierFlags);
   if (event.type != NSEventTypeFlagsChanged) {
     printf("rep %d cIM %s(", event.isARepeat, [[event charactersIgnoringModifiers] UTF8String]);
     ps([[event charactersIgnoringModifiers] UTF8String]);
