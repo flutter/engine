@@ -302,9 +302,9 @@ const char* getEventString(NSString* characters) {
  * If callback is nil, then the event is synthesized.
  */
 - (void)sendModifierEventOfType:(BOOL)shouldDown
-                       timestamp:(NSTimeInterval)timestamp
-                         keyCode:(unsigned short)keyCode
-                        callback:(nullable FlutterKeyHandlerCallback)cCallback;
+                      timestamp:(NSTimeInterval)timestamp
+                        keyCode:(unsigned short)keyCode
+                       callback:(nullable FlutterKeyHandlerCallback)cCallback;
 
 /**
  * Processes a down event.
@@ -377,9 +377,9 @@ const char* getEventString(NSString* characters) {
     }
     BOOL shouldDown = (currentFlagsOfInterest & currentFlag) != 0;
     [self sendModifierEventOfType:shouldDown
-                         timestamp:timestamp
-                           keyCode:[keyCode unsignedShortValue]
-                          callback:nil];
+                        timestamp:timestamp
+                          keyCode:[keyCode unsignedShortValue]
+                         callback:nil];
   }
   _lastModifierFlags = (_lastModifierFlags & ~updatingMask) | currentFlagsOfInterest;
 }
@@ -430,9 +430,9 @@ const char* getEventString(NSString* characters) {
 }
 
 - (void)sendModifierEventOfType:(BOOL)shouldDown
-                       timestamp:(NSTimeInterval)timestamp
-                         keyCode:(unsigned short)keyCode
-                        callback:(FlutterKeyHandlerCallback)callback {
+                      timestamp:(NSTimeInterval)timestamp
+                        keyCode:(unsigned short)keyCode
+                       callback:(FlutterKeyHandlerCallback)callback {
   uint64_t physicalKey = GetPhysicalKeyForKeyCode(keyCode);
   uint64_t logicalKey = GetLogicalKeyForModifier(keyCode, physicalKey);
   if (physicalKey == 0 || logicalKey == 0) {
@@ -560,9 +560,9 @@ const char* getEventString(NSString* characters) {
   }
   _lastModifierFlags = _lastModifierFlags ^ targetModifierFlag;
   [self sendModifierEventOfType:shouldBePressed
-                       timestamp:event.timestamp
-                         keyCode:event.keyCode
-                        callback:callback];
+                      timestamp:event.timestamp
+                        keyCode:event.keyCode
+                       callback:callback];
 }
 
 - (void)handleEvent:(NSEvent*)event callback:(FlutterKeyHandlerCallback)callback {

@@ -84,11 +84,10 @@ id<FlutterKeyHandler> mockAsyncKeyHandler(KeyCallbackHandler handler) {
 
 id<FlutterKeyFinalResponder> mockFinalResponder(BoolGetter resultGetter) {
   id<FlutterKeyFinalResponder> mock = OCMStrictProtocolMock(@protocol(FlutterKeyFinalResponder));
-  OCMStub([mock handleKeyEvent:[OCMArg any]])
-      .andDo((^(NSInvocation* invocation) {
-        BOOL result = resultGetter();
-        [invocation setReturnValue:&result];
-      }));
+  OCMStub([mock handleKeyEvent:[OCMArg any]]).andDo((^(NSInvocation* invocation) {
+    BOOL result = resultGetter();
+    [invocation setReturnValue:&result];
+  }));
   return mock;
 }
 
@@ -261,11 +260,10 @@ TEST(FlutterKeyboardManagerUnittests, EmptyNextResponder) {
   FlutterKeyboardManager* manager = [[FlutterKeyboardManager alloc] initWithOwner:owner];
 
   [manager addHandler:flutter::testing::mockAsyncKeyHandler(^(FlutterKeyHandlerCallback callback) {
-    callback(FALSE);
-  })];
+             callback(FALSE);
+           })];
   // Passes if no error is thrown.
   return true;
 }
-
 
 @end
