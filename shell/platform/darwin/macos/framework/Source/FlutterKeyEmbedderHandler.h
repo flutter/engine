@@ -4,7 +4,7 @@
 
 #import <Cocoa/Cocoa.h>
 
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyHandlerBase.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyHandler.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 
 namespace {
@@ -15,7 +15,7 @@ typedef void (^FlutterSendEmbedderKeyEvent)(const FlutterKeyEvent& /* event */,
                                             _Nullable FlutterKeyEventCallback /* callback */,
                                             _Nullable _VoidPtr /* user_data */);
 
-@interface FlutterKeyEmbedderHandler : NSObject <FlutterKeyHandlerBase>
+@interface FlutterKeyEmbedderHandler : NSObject <FlutterKeyHandler>
 
 - (nonnull instancetype)initWithSendEvent:(_Nonnull FlutterSendEmbedderKeyEvent)sendEvent;
 

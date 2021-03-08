@@ -14,7 +14,7 @@
 /**
  * TODO
  */
-@property(nonatomic) NSMutableArray<id<FlutterKeyHandlerBase>>* keyHandlers;
+@property(nonatomic) NSMutableArray<id<FlutterKeyHandler>>* keyHandlers;
 
 /**
  * A list of additional responders to keyboard events.
@@ -24,9 +24,7 @@
  * returning true), the event is not dispatched to later additional responders
  * or to the nextResponder.
  */
-@property(nonatomic) NSMutableArray<FlutterIntermediateKeyResponder*>* additionalKeyHandlers;
-
-- (void)dispatchKeyEvent:(NSEvent*)event;
+@property(nonatomic) NSMutableArray<id<FlutterKeyFinalResponder>>* additionalKeyHandlers;
 
 @end
 
@@ -40,16 +38,16 @@
   return self;
 }
 
-- (void)addHandler:(nonnull id<FlutterKeyHandlerBase>)handler {
+- (void)addHandler:(nonnull id<FlutterKeyHandler>)handler {
   [_keyHandlers addObject:handler];
 }
 
-- (void)addAdditionalHandler:(nonnull FlutterIntermediateKeyResponder*)handler {
+- (void)addAdditionalHandler:(nonnull id<FlutterKeyFinalResponder>)handler {
   [_additionalKeyHandlers addObject:handler];
 }
 
 - (void)dispatchToAdditionalHandlers:(NSEvent*)event {
-  for (FlutterIntermediateKeyResponder* responder in _additionalKeyHandlers) {
+  for (id<FlutterKeyFinalResponder> responder in _additionalKeyHandlers) {
     if ([responder handleKeyEvent:event]) {
       return;
     }
@@ -75,7 +73,7 @@
   }
 }
 
-- (void)dispatchKeyEvent:(NSEvent*)event {
+- (void)handleEvent:(nonnull NSEvent*)event {
   // Be sure to add a handler in propagateKeyEvent if you allow more event
   // types here.
   if (event.type != NSEventTypeKeyDown && event.type != NSEventTypeKeyUp &&
@@ -95,21 +93,9 @@
     }
   };
 
-  for (id<FlutterKeyHandlerBase> handler in _keyHandlers) {
+  for (id<FlutterKeyHandler> handler in _keyHandlers) {
     [handler handleEvent:event callback:replyCallback];
   }
-}
-
-- (void)keyDown:(nonnull NSEvent*)event {
-  [self dispatchKeyEvent:event];
-}
-
-- (void)keyUp:(nonnull NSEvent*)event {
-  [self dispatchKeyEvent:event];
-}
-
-- (void)flagsChanged:(NSEvent*)event {
-  [self dispatchKeyEvent:event];
 }
 
 @end

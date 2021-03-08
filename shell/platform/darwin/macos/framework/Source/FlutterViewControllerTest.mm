@@ -27,38 +27,16 @@
 
 namespace flutter::testing {
 
-// Returns a mock FlutterViewController that is able to work in environments
-// without a real pasteboard.
-id mockViewController(NSString* pasteboardString) {
-  NSString* fixtures = @(testing::GetFixturesPath());
-  FlutterDartProject* project = [[FlutterDartProject alloc]
-      initWithAssetsPath:fixtures
-             ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
-  FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:project];
-
-  // Mock pasteboard so that this test will work in environments without a
-  // real pasteboard.
-  id pasteboardMock = OCMClassMock([NSPasteboard class]);
-  OCMExpect(  // NOLINT(google-objc-avoid-throwing-exception)
-      [pasteboardMock stringForType:[OCMArg any]])
-      .andDo(^(NSInvocation* invocation) {
-        NSString* returnValue = pasteboardString.length > 0 ? pasteboardString : nil;
-        [invocation setReturnValue:&returnValue];
-      });
-  id viewControllerMock = OCMPartialMock(viewController);
-  OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
-      [viewControllerMock pasteboard])
-      .andReturn(pasteboardMock);
-  return viewControllerMock;
-}
+namespace {
 
 NSResponder* mockResponder() {
-  NSResponder* mock = OCMClassMock([NSResponder class]);
+  NSResponder* mock = OCMStrictClassMock([NSResponder class]);
   OCMStub([mock keyDown:[OCMArg any]]).andDo(nil);
   OCMStub([mock keyUp:[OCMArg any]]).andDo(nil);
   OCMStub([mock flagsChanged:[OCMArg any]]).andDo(nil);
   return mock;
 }
+}  // namespace
 
 TEST(FlutterViewController, HasStringsWhenPasteboardEmpty) {
   // Mock FlutterViewController so that it behaves like the pasteboard is empty.

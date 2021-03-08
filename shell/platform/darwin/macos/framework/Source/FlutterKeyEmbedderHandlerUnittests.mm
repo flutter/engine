@@ -43,8 +43,9 @@
 }
 
 - (void)respond:(BOOL)handled {
-  NSAssert(_callback != nil,
-           @"Only call `respond` after checking `hasCallback`.");  // Caller's responsibility
+  NSAssert(
+      _callback != nil,
+      @"Improper call to `respond` that does not have a callback.");  // Caller's responsibility
   _callback(handled, _userData);
 }
 
@@ -69,26 +70,20 @@ constexpr uint64_t kKeyCodeAltRight = 0x3d;
 
 constexpr uint64_t kPhysicalKeyA = 0x00070004;
 constexpr uint64_t kPhysicalKeyW = 0x0007001a;
-// constexpr uint64_t kPhysicalControlLeft = 0x000700e0;
-// constexpr uint64_t kPhysicalControlRight = 0x000700e4;
 constexpr uint64_t kPhysicalShiftLeft = 0x000700e1;
 constexpr uint64_t kPhysicalShiftRight = 0x000700e5;
 constexpr uint64_t kPhysicalCapsLock = 0x00070039;
 constexpr uint64_t kPhysicalNumpad1 = 0x00070059;
 constexpr uint64_t kPhysicalF1 = 0x0007003a;
 constexpr uint64_t kPhysicalAltRight = 0x000700e6;
-// constexpr uint64_t kPhysicalKeyNumLock = 0x00070053;
 
 constexpr uint64_t kLogicalKeyA = 0x00000061;
 constexpr uint64_t kLogicalKeyW = 0x00000077;
-// constexpr uint64_t kLogicalControlLeft = 0x00300000105;
-// constexpr uint64_t kLogicalControlRight = 0x00400000105;
 constexpr uint64_t kLogicalShiftLeft = 0x0030000010d;
 constexpr uint64_t kLogicalShiftRight = 0x0040000010d;
 constexpr uint64_t kLogicalCapsLock = 0x00000000104;
 constexpr uint64_t kLogicalNumpad1 = 0x00200000031;
 constexpr uint64_t kLogicalF1 = 0x00000000801;
-// constexpr uint64_t kLogicalKeyNumLock = 0x0000000010a;
 constexpr uint64_t kLogicalAltRight = 0x00400000102;
 
 typedef void (^ResponseCallback)(bool handled);

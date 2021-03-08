@@ -7,16 +7,15 @@
 /*
  * An interface for a key responder that can declare itself as the final
  * responder of the event, terminating the event propagation.
- *
- * It differs from an NSResponder in that it returns a boolean from the
- * handleKeyUp and handleKeyDown calls, where true means it has handled the
- * given event.
  */
-@interface FlutterIntermediateKeyResponder : NSObject
+@protocol FlutterKeyFinalResponder
 /*
  * Informs the receiver that the user has interacted with a key.
  *
+ * The return value indicates whether it has handled the given event.
+ *
  * Default implementation returns NO.
  */
+@required
 - (BOOL)handleKeyEvent:(NSEvent*)event;
 @end

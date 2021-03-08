@@ -11,7 +11,7 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyChannelHandler.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyEmbedderHandler.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyHandlerBase.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyHandler.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyboardManager.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.h"
@@ -574,15 +574,15 @@ static void CommonInit(FlutterViewController* controller) {
 }
 
 - (void)keyDown:(NSEvent*)event {
-  [_keyboardManager keyDown:event];
+  [_keyboardManager handleEvent:event];
 }
 
 - (void)keyUp:(NSEvent*)event {
-  [_keyboardManager keyUp:event];
+  [_keyboardManager handleEvent:event];
 }
 
 - (void)flagsChanged:(NSEvent*)event {
-  [_keyboardManager flagsChanged:event];
+  [_keyboardManager handleEvent:event];
 }
 
 - (void)mouseEntered:(NSEvent*)event {

@@ -2,13 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyHandlerBase.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyHandler.h"
 
 #import <Cocoa/Cocoa.h>
 
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 
-@interface FlutterKeyChannelHandler : NSObject <FlutterKeyHandlerBase>
+@interface FlutterKeyChannelHandler : NSObject <FlutterKeyHandler>
 
 - (nonnull instancetype)initWithChannel:(nonnull FlutterBasicMessageChannel*)channel;
 
