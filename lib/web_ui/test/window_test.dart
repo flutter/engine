@@ -132,6 +132,10 @@ void testMain() {
     // On purpose, we don't initialize history on the window. We want to let the
     // window to self-initialize when it receives a navigation message.
 
+    // Without initializing history, the default route name should be
+    // initialized to "/" in tests.
+    expect(window.defaultRouteName, '/');
+
     Completer<void> callback = Completer<void>();
     window.sendPlatformMessage(
       'flutter/navigation',
@@ -152,6 +156,10 @@ void testMain() {
   test('initialize browser history with default url strategy (multiple)', () async {
     // On purpose, we don't initialize history on the window. We want to let the
     // window to self-initialize when it receives a navigation message.
+
+    // Without initializing history, the default route name should be
+    // initialized to "/" in tests.
+    expect(window.defaultRouteName, '/');
 
     Completer<void> callback = Completer<void>();
     window.sendPlatformMessage(
