@@ -80,13 +80,16 @@
       event.type != NSEventTypeFlagsChanged) {
     return;
   }
+  // Having no key handlers require extra logic, but since Flutter adds all
+  // handlers in hard-code, this is a situation that Flutter will never meet.
+  NSAssert([_keyHandlers count] >= 0, @"At least one key handler must be added.");
 
   __weak __typeof__(self) weakSelf = self;
   __block int unreplied = [_keyHandlers count];
   __block BOOL anyHandled = false;
   FlutterKeyHandlerCallback replyCallback = ^(BOOL handled) {
     unreplied -= 1;
-    NSAssert(unreplied >= 0, @"More key handlers replied than intended.");
+    NSAssert(unreplied >= 0, @"More key handlers replied than possible.");
     anyHandled = anyHandled || handled;
     if (unreplied == 0 && !anyHandled) {
       [weakSelf dispatchToAdditionalHandlers:event];

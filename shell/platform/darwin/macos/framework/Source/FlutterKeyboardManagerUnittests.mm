@@ -13,6 +13,8 @@
 - (bool)nextResponderShouldThrowOnKeyUp;
 - (bool)singleAsyncHandler;
 - (bool)doubleAsyncHandlers;
+- (bool)singleFinalResponder;
+- (bool)emptyNextResponder;
 @end
 
 namespace flutter::testing {
@@ -92,10 +94,24 @@ id<FlutterKeyFinalResponder> mockFinalResponder(BoolGetter resultGetter) {
 
 }  // namespace
 
-TEST(FlutterKeyboardManagerUnittests, SingleAsyncHandler) {
+TEST(FlutterKeyboardManagerUnittests, NextResponderShouldThrowOnKeyUp) {
   ASSERT_TRUE([[FlutterKeyboardManagerUnittestsObjC alloc] nextResponderShouldThrowOnKeyUp]);
+}
+
+TEST(FlutterKeyboardManagerUnittests, SingleAsyncHandler) {
   ASSERT_TRUE([[FlutterKeyboardManagerUnittestsObjC alloc] singleAsyncHandler]);
+}
+
+TEST(FlutterKeyboardManagerUnittests, DoubleAsyncHandlers) {
   ASSERT_TRUE([[FlutterKeyboardManagerUnittestsObjC alloc] doubleAsyncHandlers]);
+}
+
+TEST(FlutterKeyboardManagerUnittests, SingleFinalResponder) {
+  ASSERT_TRUE([[FlutterKeyboardManagerUnittestsObjC alloc] singleFinalResponder]);
+}
+
+TEST(FlutterKeyboardManagerUnittests, EmptyNextResponder) {
+  ASSERT_TRUE([[FlutterKeyboardManagerUnittestsObjC alloc] emptyNextResponder]);
 }
 
 }  // namespace flutter::testing
@@ -235,6 +251,19 @@ TEST(FlutterKeyboardManagerUnittests, SingleAsyncHandler) {
   OCMVerify([owner.nextResponder keyDown:flutter::testing::checkKeyDownEvent(0x50)]);
   [callbacks removeAllObjects];
 
+  return true;
+}
+
+- (bool)emptyNextResponder {
+  NSResponder* owner = OCMStrictClassMock([NSResponder class]);
+  OCMStub([owner nextResponder]).andReturn(nil);
+
+  FlutterKeyboardManager* manager = [[FlutterKeyboardManager alloc] initWithOwner:owner];
+
+  [manager addHandler:flutter::testing::mockAsyncKeyHandler(^(FlutterKeyHandlerCallback callback) {
+    callback(FALSE);
+  })];
+  // Passes if no error is thrown.
   return true;
 }
 
