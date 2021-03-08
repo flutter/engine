@@ -68,7 +68,7 @@ void FlutterWindowWinUWP::UpdateFlutterCursor(const std::string& cursor_name) {
   // https://github.com/flutter/flutter/issues/70199
 }
 
-void FlutterWindowWinUWP::UpdateCursorRect(const Rect& rect) {
+void FlutterWindowWinUWP::OnCursorRectUpdated(const Rect& rect) {
   // TODO(cbracken): Implement IMM candidate window positioning.
 }
 
@@ -245,15 +245,17 @@ double FlutterWindowWinUWP::GetPosY(
 void FlutterWindowWinUWP::OnBoundsChanged(
     winrt::Windows::UI::ViewManagement::ApplicationView const& app_view,
     winrt::Windows::Foundation::IInspectable const&) {
-#ifndef USECOREWINDOW
   if (binding_handler_delegate_) {
     auto bounds = GetBounds(current_display_info_, true);
 
     binding_handler_delegate_->OnWindowSizeChanged(
         static_cast<size_t>(bounds.width), static_cast<size_t>(bounds.height));
+#ifndef USECOREWINDOW
+
     render_target_.Size({bounds.width, bounds.height});
-  }
+
 #endif
+  }
 }
 
 void FlutterWindowWinUWP::OnKeyUp(
@@ -266,9 +268,10 @@ void FlutterWindowWinUWP::OnKeyUp(
   auto status = args.KeyStatus();
   unsigned int scancode = status.ScanCode;
   int key = static_cast<int>(args.VirtualKey());
-  char32_t chararacter = static_cast<char32_t>(key | 32);
   int action = 0x0101;
-  binding_handler_delegate_->OnKey(key, scancode, action, chararacter, false);
+  binding_handler_delegate_->OnKey(key, scancode, action, 0,
+                                   status.IsExtendedKey /* extended */,
+                                   status.WasKeyDown /* was_down */);
 }
 
 void FlutterWindowWinUWP::OnKeyDown(
@@ -281,9 +284,10 @@ void FlutterWindowWinUWP::OnKeyDown(
   auto status = args.KeyStatus();
   unsigned int scancode = status.ScanCode;
   int key = static_cast<int>(args.VirtualKey());
-  char32_t chararacter = static_cast<char32_t>(key | 32);
   int action = 0x0100;
-  binding_handler_delegate_->OnKey(key, scancode, action, chararacter, false);
+  binding_handler_delegate_->OnKey(key, scancode, action, 0,
+                                   status.IsExtendedKey /* extended */,
+                                   status.WasKeyDown /* was_down */);
 }
 
 void FlutterWindowWinUWP::OnCharacterReceived(

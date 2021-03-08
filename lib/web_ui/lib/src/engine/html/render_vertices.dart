@@ -72,6 +72,9 @@ abstract class _GlRenderer {
   Object? drawRect(ui.Rect targetRect, _GlContext gl, _GlProgram glProgram,
       NormalizedGradient gradient, int widthInPixels, int heightInPixels);
 
+  String drawRectToImageUrl(ui.Rect targetRect, _GlContext gl, _GlProgram glProgram,
+      NormalizedGradient gradient, int widthInPixels, int heightInPixels);
+
   void drawHairline(html.CanvasRenderingContext2D? _ctx, Float32List positions);
 }
 
@@ -196,6 +199,30 @@ class _WebGlRenderer implements _GlRenderer {
   /// will return ImageBitmap, otherwise will return CanvasElement.
   Object? drawRect(ui.Rect targetRect, _GlContext gl, _GlProgram glProgram,
       NormalizedGradient gradient, int widthInPixels, int heightInPixels) {
+    drawRectToGl(targetRect, gl, glProgram, gradient, widthInPixels, heightInPixels);
+    Object? image = gl.readPatternData();
+    gl.bindArrayBuffer(null);
+    gl.bindElementArrayBuffer(null);
+    return image;
+  }
+
+  /// Renders a rectangle using given program into an image resource and returns
+  /// url.
+  String drawRectToImageUrl(ui.Rect targetRect, _GlContext gl, _GlProgram glProgram,
+      NormalizedGradient gradient, int widthInPixels, int heightInPixels) {
+    drawRectToGl(targetRect, gl, glProgram, gradient, widthInPixels, heightInPixels);
+    final String imageUrl = gl.toImageUrl();
+    // Cleanup buffers.
+    gl.bindArrayBuffer(null);
+    gl.bindElementArrayBuffer(null);
+    return imageUrl;
+  }
+
+  /// Renders a rectangle using given program into [_GlContext].
+  ///
+  /// Caller has to cleanup gl array and element array buffers.
+  void drawRectToGl(ui.Rect targetRect, _GlContext gl, _GlProgram glProgram,
+      NormalizedGradient gradient, int widthInPixels, int heightInPixels) {
     // Setup rectangle coordinates.
     final double left = targetRect.left;
     final double top = targetRect.top;
@@ -251,20 +278,16 @@ class _WebGlRenderer implements _GlRenderer {
     gl.bindElementArrayBuffer(indexBuffer);
     gl.bufferElementData(_vertexIndicesForRect, gl.kStaticDraw);
 
-    Object uRes = gl.getUniformLocation(glProgram.program, 'u_resolution');
-    gl.setUniform2f(uRes, widthInPixels.toDouble(), heightInPixels.toDouble());
+    if (gl.containsUniform(glProgram.program, 'u_resolution')) {
+      Object uRes = gl.getUniformLocation(glProgram.program, 'u_resolution');
+      gl.setUniform2f(
+          uRes, widthInPixels.toDouble(), heightInPixels.toDouble());
+    }
 
     gl.clear();
     gl.viewport(0, 0, widthInPixels.toDouble(), heightInPixels.toDouble());
 
     gl.drawElements(gl.kTriangles, _vertexIndicesForRect.length, gl.kUnsignedShort);
-
-    Object? image = gl.readPatternData();
-
-    gl.bindArrayBuffer(null);
-    gl.bindElementArrayBuffer(null);
-
-    return image;
   }
 
   /// Creates a vertex shader transforms pixel space [Vertices.positions] to
@@ -684,6 +707,13 @@ class _GlContext {
     }
   }
 
+  /// Returns true if uniform exists.
+  bool containsUniform(Object program, String uniformName) {
+    Object? res = js_util
+        .callMethod(glContext, 'getUniformLocation', <dynamic>[program, uniformName]);
+    return res != null;
+  }
+
   /// Returns reference to uniform in program.
   Object getAttributeLocation(Object program, String attribName) {
     Object? res = js_util
@@ -778,6 +808,17 @@ class _GlContext {
       drawImage(ctx, 0, 0);
       return canvas;
     }
+  }
+
+  /// Returns image data in data url format.
+  String toImageUrl() {
+    html.CanvasElement canvas = html.CanvasElement(width: _widthInPixels, height: _heightInPixels);
+    final html.CanvasRenderingContext2D ctx = canvas.context2D;
+    drawImage(ctx, 0, 0);
+    final String dataUrl = canvas.toDataUrl();
+    canvas.width = 0;
+    canvas.height = 0;
+    return dataUrl;
   }
 }
 

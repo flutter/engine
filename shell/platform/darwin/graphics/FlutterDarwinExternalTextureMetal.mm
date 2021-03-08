@@ -51,23 +51,7 @@ FLUTTER_ASSERT_ARC
   const bool needsUpdatedTexture = (!freeze && _textureFrameAvailable) || !_externalImage;
 
   if (needsUpdatedTexture) {
-    CVPixelBufferRef pixelBuffer = [_externalTexture copyPixelBuffer];
-    if (!pixelBuffer) {
-      pixelBuffer = _lastPixelBuffer;
-    } else {
-      CVPixelBufferRetain(pixelBuffer);
-      _pixelFormat = CVPixelBufferGetPixelFormatType(pixelBuffer);
-    }
-
-    // If the application told us there was a texture frame available but did not provide one when
-    // asked for it, reuse the previous texture but make sure to ask again the next time around.
-    sk_sp<SkImage> image = [self wrapExternalPixelBuffer:pixelBuffer grContext:grContext];
-    if (image) {
-      _externalImage = image;
-      _textureFrameAvailable = false;
-      CVPixelBufferRelease(_lastPixelBuffer);
-      _lastPixelBuffer = pixelBuffer;
-    }
+    [self onNeedsUpdatedTexture:grContext];
   }
 
   if (_externalImage) {
@@ -78,6 +62,23 @@ FLUTTER_ASSERT_ARC
                          nullptr,                                              // paint
                          SkCanvas::SrcRectConstraint::kFast_SrcRectConstraint  // constraint
     );
+  }
+}
+
+- (void)onNeedsUpdatedTexture:(nonnull GrDirectContext*)grContext {
+  CVPixelBufferRef pixelBuffer = [_externalTexture copyPixelBuffer];
+  if (pixelBuffer) {
+    CVPixelBufferRelease(_lastPixelBuffer);
+    _lastPixelBuffer = pixelBuffer;
+    _pixelFormat = CVPixelBufferGetPixelFormatType(_lastPixelBuffer);
+  }
+
+  // If the application told us there was a texture frame available but did not provide one when
+  // asked for it, reuse the previous texture but make sure to ask again the next time around.
+  sk_sp<SkImage> image = [self wrapExternalPixelBuffer:_lastPixelBuffer grContext:grContext];
+  if (image) {
+    _externalImage = image;
+    _textureFrameAvailable = false;
   }
 }
 
@@ -173,33 +174,17 @@ FLUTTER_ASSERT_ARC
     }
   }
 
-  GrMtlTextureInfo ySkiaTextureInfo;
-  ySkiaTextureInfo.fTexture = sk_cf_obj<const void*>{
-      (__bridge_retained const void*)CVMetalTextureGetTexture(yMetalTexture)};
+  id<MTLTexture> yTex = CVMetalTextureGetTexture(yMetalTexture);
+  CVBufferRelease(yMetalTexture);
 
-  GrBackendTexture skiaBackendTextures[2];
-  skiaBackendTextures[0] = GrBackendTexture(/*width=*/textureSize.width(),
-                                            /*height=*/textureSize.height(),
-                                            /*mipMapped=*/GrMipMapped ::kNo,
-                                            /*textureInfo=*/ySkiaTextureInfo);
+  id<MTLTexture> uvTex = CVMetalTextureGetTexture(uvMetalTexture);
+  CVBufferRelease(uvMetalTexture);
 
-  GrMtlTextureInfo uvSkiaTextureInfo;
-  uvSkiaTextureInfo.fTexture = sk_cf_obj<const void*>{
-      (__bridge_retained const void*)CVMetalTextureGetTexture(uvMetalTexture)};
-
-  skiaBackendTextures[1] = GrBackendTexture(/*width=*/textureSize.width(),
-                                            /*height=*/textureSize.height(),
-                                            /*mipMapped=*/GrMipMapped ::kNo,
-                                            /*textureInfo=*/uvSkiaTextureInfo);
-  SkYUVAInfo yuvaInfo(skiaBackendTextures[0].dimensions(), SkYUVAInfo::PlaneConfig::kY_UV,
-                      SkYUVAInfo::Subsampling::k444, kRec601_SkYUVColorSpace);
-  GrYUVABackendTextures yuvaBackendTextures(yuvaInfo, skiaBackendTextures,
-                                            kTopLeft_GrSurfaceOrigin);
-
-  sk_sp<SkImage> image =
-      SkImage::MakeFromYUVATextures(grContext, yuvaBackendTextures, /*imageColorSpace=*/nullptr,
-                                    /*releaseProc*/ nullptr, /*releaseContext*/ nullptr);
-  return image;
+  return [FlutterDarwinExternalTextureSkImageWrapper wrapYUVATexture:yTex
+                                                               UVTex:uvTex
+                                                           grContext:grContext
+                                                               width:textureSize.width()
+                                                              height:textureSize.height()];
 }
 
 - (sk_sp<SkImage>)wrapRGBAExternalPixelBuffer:(CVPixelBufferRef)pixelBuffer
@@ -223,23 +208,64 @@ FLUTTER_ASSERT_ARC
     return nullptr;
   }
 
-  GrMtlTextureInfo skiaTextureInfo;
-  skiaTextureInfo.fTexture =
-      sk_cf_obj<const void*>{(__bridge_retained const void*)CVMetalTextureGetTexture(metalTexture)};
+  id<MTLTexture> rgbaTex = CVMetalTextureGetTexture(metalTexture);
+  CVBufferRelease(metalTexture);
 
-  GrBackendTexture skiaBackendTexture(/*width=*/textureSize.width(),
-                                      /*height=*/textureSize.height(),
+  return [FlutterDarwinExternalTextureSkImageWrapper wrapRGBATexture:rgbaTex
+                                                           grContext:grContext
+                                                               width:textureSize.width()
+                                                              height:textureSize.height()];
+}
+
+@end
+
+@implementation FlutterDarwinExternalTextureSkImageWrapper
+
++ (sk_sp<SkImage>)wrapYUVATexture:(id<MTLTexture>)yTex
+                            UVTex:(id<MTLTexture>)uvTex
+                        grContext:(nonnull GrDirectContext*)grContext
+                            width:(size_t)width
+                           height:(size_t)height {
+  GrMtlTextureInfo ySkiaTextureInfo;
+  ySkiaTextureInfo.fTexture = sk_cf_obj<const void*>{(__bridge_retained const void*)yTex};
+
+  GrBackendTexture skiaBackendTextures[2];
+  skiaBackendTextures[0] = GrBackendTexture(/*width=*/width,
+                                            /*height=*/height,
+                                            /*mipMapped=*/GrMipMapped::kNo,
+                                            /*textureInfo=*/ySkiaTextureInfo);
+
+  GrMtlTextureInfo uvSkiaTextureInfo;
+  uvSkiaTextureInfo.fTexture = sk_cf_obj<const void*>{(__bridge_retained const void*)uvTex};
+
+  skiaBackendTextures[1] = GrBackendTexture(/*width=*/width,
+                                            /*height=*/height,
+                                            /*mipMapped=*/GrMipMapped::kNo,
+                                            /*textureInfo=*/uvSkiaTextureInfo);
+  SkYUVAInfo yuvaInfo(skiaBackendTextures[0].dimensions(), SkYUVAInfo::PlaneConfig::kY_UV,
+                      SkYUVAInfo::Subsampling::k444, kRec601_SkYUVColorSpace);
+  GrYUVABackendTextures yuvaBackendTextures(yuvaInfo, skiaBackendTextures,
+                                            kTopLeft_GrSurfaceOrigin);
+
+  return SkImage::MakeFromYUVATextures(grContext, yuvaBackendTextures, /*imageColorSpace=*/nullptr,
+                                       /*releaseProc*/ nullptr, /*releaseContext*/ nullptr);
+}
+
++ (sk_sp<SkImage>)wrapRGBATexture:(id<MTLTexture>)rgbaTex
+                        grContext:(nonnull GrDirectContext*)grContext
+                            width:(size_t)width
+                           height:(size_t)height {
+  GrMtlTextureInfo skiaTextureInfo;
+  skiaTextureInfo.fTexture = sk_cf_obj<const void*>{(__bridge_retained const void*)rgbaTex};
+
+  GrBackendTexture skiaBackendTexture(/*width=*/width,
+                                      /*height=*/height,
                                       /*mipMapped=*/GrMipMapped ::kNo,
                                       /*textureInfo=*/skiaTextureInfo);
 
-  sk_sp<SkImage> image =
-      SkImage::MakeFromTexture(grContext, skiaBackendTexture, kTopLeft_GrSurfaceOrigin,
-                               kBGRA_8888_SkColorType, kPremul_SkAlphaType,
-                               /*imageColorSpace=*/nullptr, /*releaseProc*/ nullptr,
-                               /*releaseContext*/ nullptr
-
-      );
-  return image;
+  return SkImage::MakeFromTexture(grContext, skiaBackendTexture, kTopLeft_GrSurfaceOrigin,
+                                  kBGRA_8888_SkColorType, kPremul_SkAlphaType,
+                                  /*imageColorSpace=*/nullptr, /*releaseProc*/ nullptr,
+                                  /*releaseContext*/ nullptr);
 }
-
 @end
