@@ -125,7 +125,7 @@ static gboolean fl_clipping_view_draw(GtkWidget* widget, cairo_t* cr) {
       }
     }
   }
-  cairo_translate(cr, self->geometry.x, -self->geometry.y);
+  cairo_translate(cr, -self->geometry.x, -self->geometry.y);
   gboolean result =
       GTK_WIDGET_CLASS(fl_clipping_view_parent_class)->draw(widget, cr);
   cairo_restore(cr);
