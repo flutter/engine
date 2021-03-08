@@ -415,7 +415,6 @@ public class PlatformViewsControllerTest {
 
     // Produce a frame that doesn't display platform views.
     platformViewsController.onBeginFrame();
-    disposePlatformView(jni, platformViewsController, platformViewId);
     platformViewsController.onEndFrame();
 
     verify(overlayImageView, never()).detachFromRenderer();
@@ -486,33 +485,22 @@ public class PlatformViewsControllerTest {
 
     // Simulate create call from the framework.
     createPlatformView(jni, platformViewsController, platformViewId, "testType");
-    assertEquals(flutterView.getChildCount(), 1);
-    assertEquals(flutterView.getChildAt(0).getClass().getSimpleName(), "FlutterSurfaceView");
+    platformViewsController.initializePlatformViewIfNeeded(platformViewId);
+    assertEquals(flutterView.getChildCount(), 2);
 
     // Simulate first frame from the framework.
     jni.onFirstFrame();
     platformViewsController.onBeginFrame();
-    platformViewsController.onDisplayPlatformView(
-        platformViewId, 0, 0, 100, 100, 200, 200, new FlutterMutatorsStack());
-    assertEquals(flutterView.getChildCount(), 3);
-    assertEquals(flutterView.getChildAt(0).getClass().getSimpleName(), "FlutterSurfaceView");
-    assertTrue(flutterView.getChildAt(1).getClass().getSimpleName().startsWith("FlutterImageView"));
-
     platformViewsController.onEndFrame();
-    assertEquals(flutterView.getChildCount(), 3);
-    assertEquals(flutterView.getChildAt(0).getClass().getSimpleName(), "FlutterSurfaceView");
-    assertTrue(flutterView.getChildAt(1).getClass().getSimpleName().startsWith("FlutterImageView"));
 
     // Simulate dispose call from the framework.
     disposePlatformView(jni, platformViewsController, platformViewId);
-    assertEquals(flutterView.getChildCount(), 2);
-    assertEquals(flutterView.getChildAt(0).getClass().getSimpleName(), "FlutterSurfaceView");
-    assertTrue(flutterView.getChildAt(1).getClass().getSimpleName().startsWith("FlutterImageView"));
+    assertEquals(flutterView.getChildCount(), 1);
   }
 
   @Test
   @Config(shadows = {ShadowFlutterSurfaceView.class, ShadowFlutterJNI.class})
-  public void onEndFrame__revertsFlutterSurface() {
+  public void detach__destroysOverlaySurfaces() {
     final PlatformViewsController platformViewsController = new PlatformViewsController();
 
     final int platformViewId = 0;
@@ -520,46 +508,49 @@ public class PlatformViewsControllerTest {
 
     final PlatformViewFactory viewFactory = mock(PlatformViewFactory.class);
     final PlatformView platformView = mock(PlatformView.class);
-    final View androidView = mock(View.class);
-    when(platformView.getView()).thenReturn(androidView);
+    when(platformView.getView()).thenReturn(mock(View.class));
     when(viewFactory.create(any(), eq(platformViewId), any())).thenReturn(platformView);
 
     platformViewsController.getRegistry().registerViewFactory("testType", viewFactory);
 
     final FlutterJNI jni = new FlutterJNI();
     jni.attachToNative(false);
-
-    final FlutterView flutterView = attach(jni, platformViewsController);
+    attach(jni, platformViewsController);
 
     jni.onFirstFrame();
 
     // Simulate create call from the framework.
     createPlatformView(jni, platformViewsController, platformViewId, "testType");
-    assertEquals(flutterView.getChildCount(), 1);
-    assertEquals(flutterView.getChildAt(0).getClass().getSimpleName(), "FlutterSurfaceView");
 
-    // Simulate first frame from the framework.
-    jni.onFirstFrame();
+    // Produce a frame that displays a platform view and an overlay surface.
     platformViewsController.onBeginFrame();
     platformViewsController.onDisplayPlatformView(
-        platformViewId, 0, 0, 100, 100, 200, 200, new FlutterMutatorsStack());
-    assertTrue(
-        flutterView.getRenderSurface().getClass().getSimpleName().contains("FlutterImageView"));
+        platformViewId,
+        /* x=*/ 0,
+        /* y=*/ 0,
+        /* width=*/ 10,
+        /* height=*/ 10,
+        /* viewWidth=*/ 10,
+        /* viewHeight=*/ 10,
+        /* mutatorsStack=*/ new FlutterMutatorsStack());
 
-    platformViewsController.onEndFrame();
-    assertTrue(
-        flutterView.getRenderSurface().getClass().getSimpleName().contains("FlutterImageView"));
+    final FlutterImageView overlayImageView = mock(FlutterImageView.class);
+    when(overlayImageView.acquireLatestImage()).thenReturn(true);
 
-    platformViewsController.onBeginFrame();
-    platformViewsController.onEndFrame();
-    assertTrue(
-        flutterView.getRenderSurface().getClass().getSimpleName().contains("FlutterImageView"));
+    final FlutterOverlaySurface overlaySurface =
+        platformViewsController.createOverlaySurface(overlayImageView);
+    // This is OK.
+    platformViewsController.onDisplayOverlaySurface(
+        overlaySurface.getId(), /* x=*/ 0, /* y=*/ 0, /* width=*/ 10, /* height=*/ 10);
 
-    platformViewsController.onBeginFrame();
-    // Dispose the platform view is sufficient to flip the Flutter surface.
-    disposePlatformView(jni, platformViewsController, platformViewId);
-    platformViewsController.onEndFrame();
-    assertEquals(flutterView.getRenderSurface().getClass().getSimpleName(), "FlutterSurfaceView");
+    platformViewsController.detach();
+
+    assertThrows(
+        IllegalStateException.class,
+        () -> {
+          platformViewsController.onDisplayOverlaySurface(
+              overlaySurface.getId(), /* x=*/ 0, /* y=*/ 0, /* width=*/ 10, /* height=*/ 10);
+        });
   }
 
   @Test
@@ -620,6 +611,8 @@ public class PlatformViewsControllerTest {
         new FlutterView(context, FlutterView.RenderMode.surface) {
           @Override
           public FlutterImageView createImageView() {
+            final FlutterImageView view = mock(FlutterImageView.class);
+            when(view.acquireLatestImage()).thenReturn(true);
             return mock(FlutterImageView.class);
           }
         };

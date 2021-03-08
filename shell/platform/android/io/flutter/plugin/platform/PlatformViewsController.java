@@ -458,6 +458,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     if (platformViewsChannel != null) {
       platformViewsChannel.setPlatformViewsHandler(null);
     }
+    destroyOverlaySurfaces();
     platformViewsChannel = null;
     context = null;
     textureRegistry = null;
@@ -761,6 +762,9 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   }
 
   public void onDisplayOverlaySurface(int id, int x, int y, int width, int height) {
+    if (overlayLayerViews.get(id) == null) {
+      throw new IllegalStateException("The overlay surface (id:" + id + ") doesn't exist");
+    }
     initializeRootImageViewIfNeeded();
 
     final FlutterImageView overlayView = overlayLayerViews.get(id);
@@ -784,11 +788,11 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
   public void onEndFrame() {
     final FlutterView view = (FlutterView) flutterView;
-    // If there are no platform views, then revert the image view surface,
-    // and use the previous surface.
+    // If there are no platform views in the current frame,
+    // then revert the image view surface and use the previous surface.
     //
     // Otherwise, acquire the latest image.
-    if (flutterViewConvertedToImageView && platformViews.size() == 0) {
+    if (flutterViewConvertedToImageView && currentFrameUsedPlatformViewIds.isEmpty()) {
       flutterViewConvertedToImageView = false;
       view.revertImageView(
           () -> {
