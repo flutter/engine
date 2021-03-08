@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 /**
- * Maps macOS-specific key code values representing [PhysicalKeyboardKey].
+ * Maps macOS-specific key code values representing |PhysicalKeyboardKey|.
  *
  * MacOS doesn't provide a scan code, but a virtual keycode to represent a physical key.
  */
@@ -13,7 +13,7 @@ extern const NSDictionary* keyCodeToPhysicalKey;
  * A map from macOS key codes to Flutter's logical key values.
  *
  * This is used to derive logical keys that can't or shouldn't be derived from
- * `charactersIgnoringModifiers`.
+ * |charactersIgnoringModifiers|.
  */
 extern const NSDictionary* keyCodeToLogicalKey;
 
@@ -33,14 +33,17 @@ extern const uint64_t kSynonymMask;
 static const uint64_t kMacosPlane = 0x00500000000;
 
 /**
- * Map the physical key code of a key to its corresponding bitmask of
- * NSEventModifierFlags.
+ * Map |NSEvent.keyCode| to its corresponding bitmask of NSEventModifierFlags.
  *
  * This does not include CapsLock, for it is handled specially.
  */
 extern const NSDictionary* keyCodeToModifierFlag;
 
 /**
+ * Map a bit of bitmask of NSEventModifierFlags to its corresponding
+ * |NSEvent.keyCode|.
+ *
+ * This does not include CapsLock, for it is handled specially.
  */
 extern const NSDictionary* modifierFlagToKeyCode;
 
@@ -54,8 +57,14 @@ extern const uint64_t kCapsLockPhysicalKey;
  */
 extern const uint64_t kCapsLockLogicalKey;
 
-// The following constants, excluded from
-// NSEventModifierFlagDeviceIndependentFlagsMask, are derived from experiments.
+/**
+ * Bits in |NSEvent.modifierFlags| indicating whether a modifier key is pressed.
+ *
+ * These constants are not written in the official documentation, but derived
+ * from experiments. This is currently the only way to know whether a one-side
+ * modifier key (such as ShiftLeft) is pressed, instead of the general combined
+ * modifier state (such as Shift).
+ */
 typedef enum {
   kModifierFlagControlLeft = 0x1,
   kModifierFlagShiftLeft = 0x2,

@@ -18,7 +18,10 @@
 @property(nonatomic) FlutterBasicMessageChannel* channel;
 
 /**
- * The current state of the keyboard and pressed keys.
+ * The |NSEvent.modifierFlags| of the last event received.
+ *
+ * Used to determine whether a FlagsChanged event should count as a keydown or
+ * a keyup event.
  */
 @property(nonatomic) uint64_t previouslyPressedFlags;
 

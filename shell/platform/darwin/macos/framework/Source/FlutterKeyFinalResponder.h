@@ -4,12 +4,15 @@
 
 #import <Cocoa/Cocoa.h>
 
-/*
- * An interface for a key responder that can declare itself as the final
- * responder of the event, terminating the event propagation.
+/**
+ * An interface for a responder that can process a key event and decides whether
+ * to handle an event synchronously.
+ *
+ * To use this class, add it to a |FlutterKeyboardManager| with
+ * |addAdditionalHandler|.
  */
 @protocol FlutterKeyFinalResponder
-/*
+/**
  * Informs the receiver that the user has interacted with a key.
  *
  * The return value indicates whether it has handled the given event.
@@ -17,5 +20,5 @@
  * Default implementation returns NO.
  */
 @required
-- (BOOL)handleKeyEvent:(NSEvent*)event;
+- (BOOL)handleKeyEvent:(nonnull NSEvent*)event;
 @end

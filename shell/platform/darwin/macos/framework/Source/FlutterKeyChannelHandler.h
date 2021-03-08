@@ -8,8 +8,17 @@
 
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 
+/**
+ * A handler of |FlutterKeyboardManager| that handles events by sending the
+ * raw information through the method channel.
+ *
+ * This class corresponds to the RawKeyboard API in the framework.
+ */
 @interface FlutterKeyChannelHandler : NSObject <FlutterKeyHandler>
 
+/**
+ * Create a handler by specifying the method channel to use.
+ */
 - (nonnull instancetype)initWithChannel:(nonnull FlutterBasicMessageChannel*)channel;
 
 @end

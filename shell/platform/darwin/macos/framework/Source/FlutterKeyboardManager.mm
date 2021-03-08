@@ -7,22 +7,17 @@
 @interface FlutterKeyboardManager ()
 
 /**
- * TODO
+ * The owner set by initWithOwner.
  */
 @property(nonatomic, weak) NSResponder* owner;
 
 /**
- * TODO
+ * The handlers added by addHandler.
  */
 @property(nonatomic) NSMutableArray<id<FlutterKeyHandler>>* keyHandlers;
 
 /**
- * A list of additional responders to keyboard events.
- *
- * Keyboard events received by FlutterViewController are first dispatched to
- * each additional responder in order. If any of them handle the event (by
- * returning true), the event is not dispatched to later additional responders
- * or to the nextResponder.
+ * The additional handlers added by addAdditionalHandler.
  */
 @property(nonatomic) NSMutableArray<id<FlutterKeyFinalResponder>>* additionalKeyHandlers;
 
