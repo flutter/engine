@@ -67,20 +67,30 @@ void AndroidExternalTextureGL::Paint(SkCanvas& canvas,
     canvas.translate(bounds.x(), bounds.y());
     canvas.scale(bounds.width(), bounds.height());
     if (!transform.isIdentity()) {
-      SkMatrix transformAroundCenter(transform);
+      sk_sp<SkShader> shader = image->makeShader(
+          SkTileMode::kRepeat, SkTileMode::kRepeat, sampling, transform);
 
-      transformAroundCenter.preTranslate(-0.5, -0.5);
-      transformAroundCenter.postScale(1, -1);
-      transformAroundCenter.postTranslate(0.5, 0.5);
-      canvas.concat(transformAroundCenter);
+      SkPaint paintWithShader = *paint;
+      paintWithShader.setShader(shader);
+      canvas.drawRect(SkRect::MakeWH(1, 1), paintWithShader);
+    } else {
+      canvas.drawImage(image, 0, 0, sampling, paint);
     }
-    canvas.drawImage(image, 0, 0, sampling, paint);
   }
 }
 
 void AndroidExternalTextureGL::UpdateTransform() {
   jni_facade_->SurfaceTextureGetTransformMatrix(
       fml::jni::ScopedJavaLocalRef<jobject>(surface_texture_), transform);
+
+  SkMatrix inverted;
+  if (!transform.invert(&inverted)) {
+    FML_LOG(FATAL) << "Invalid SurfaceTexture transformation matrix";
+  }
+  transform = inverted;
+
+  transform.preScale(1.0, -1.0);
+  transform.postTranslate(0.0, -1.0);
 }
 
 void AndroidExternalTextureGL::OnGrContextDestroyed() {
