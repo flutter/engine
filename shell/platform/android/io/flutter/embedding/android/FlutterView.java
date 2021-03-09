@@ -1001,12 +1001,6 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
 
   @VisibleForTesting
   @NonNull
-  public RenderSurface getRenderSurface() {
-    return renderSurface;
-  }
-
-  @VisibleForTesting
-  @NonNull
   public FlutterImageView createImageView() {
     return new FlutterImageView(
         getContext(), getWidth(), getHeight(), FlutterImageView.SurfaceKind.background);
@@ -1074,7 +1068,9 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
           public void onFlutterUiDisplayed() {
             renderer.removeIsDisplayingFlutterUiListener(this);
             onDone.run();
-            flutterImageView.detachFromRenderer();
+            if (!(renderSurface instanceof FlutterImageView)) {
+              flutterImageView.detachFromRenderer();
+            }
           }
 
           @Override

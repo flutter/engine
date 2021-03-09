@@ -761,12 +761,18 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
                               arguments:@[ @(client), @(start), @(end) ]];
 }
 
-#pragma mark - Screenshot Delegate
+#pragma mark - FlutterViewEngineDelegate
 
 - (flutter::Rasterizer::Screenshot)takeScreenshot:(flutter::Rasterizer::ScreenshotType)type
                                   asBase64Encoded:(BOOL)base64Encode {
   FML_DCHECK(_shell) << "Cannot takeScreenshot without a shell";
   return _shell->Screenshot(type, base64Encode);
+}
+
+- (void)flutterViewAccessibilityDidCall {
+  if (self.viewController.view.accessibilityElements == nil) {
+    [self ensureSemanticsEnabled];
+  }
 }
 
 - (NSObject<FlutterBinaryMessenger>*)binaryMessenger {
@@ -818,7 +824,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
     return _connections->AquireConnection(channel.UTF8String);
   } else {
     NSAssert(!handler, @"Setting a message handler before the FlutterEngine has been run.");
-    // Setting a handler to nil for a not setup channel is a noop.
+    // Setting a handler to nil for a channel that has not yet been set up is a no-op.
     return flutter::ConnectionCollection::MakeErrorConnection(-1);
   }
 }
