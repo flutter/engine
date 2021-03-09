@@ -356,14 +356,11 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
   // resolution. So we need to scale down to match UIKit's logical resolution.
   CGFloat screenScale = [UIScreen mainScreen].scale;
   CATransform3D finalTransform = CATransform3DMakeScale(1 / screenScale, 1 / screenScale, 1);
-
-  // Mask view needs to be full screen because we might draw platform view pixels outside of the
-  // `ChildClippingView`. Since the mask view's frame will be based on the `clipView`'s coordinate
-  // system, we need to convert the flutter_view's frame to the clipView's coordinate system. The
-  // mask view is not displayed on the screen.
-  CGRect maskViewFrame = [flutter_view_ convertRect:flutter_view_.get().frame toView:clipView];
+  
+  UIView* flutter_view = flutter_view_.get();
   FlutterClippingMaskView* maskView =
-      [[[FlutterClippingMaskView alloc] initWithFrame:maskViewFrame] autorelease];
+      [[[FlutterClippingMaskView alloc] initWithFrame:CGRectMake(0, 0, CGRectGetWidth(flutter_view.bounds), CGRectGetHeight(flutter_view.bounds))] autorelease];
+  
   auto iter = mutators_stack.Begin();
   while (iter != mutators_stack.End()) {
     switch ((*iter)->GetType()) {
