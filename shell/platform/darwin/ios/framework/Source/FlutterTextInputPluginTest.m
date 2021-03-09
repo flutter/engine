@@ -135,10 +135,12 @@ FLUTTER_ASSERT_ARC
 
 - (FlutterTextRange*)getLineRangeFromTokenizer:(id<UITextInputTokenizer>)tokenizer
                                        atIndex:(NSInteger)index {
-  return (FlutterTextRange*)[tokenizer
-      rangeEnclosingPosition:[FlutterTextPosition positionWithIndex:index]
-             withGranularity:UITextGranularityLine
-                 inDirection:UITextLayoutDirectionRight];
+  UITextRange* range =
+      [tokenizer rangeEnclosingPosition:[FlutterTextPosition positionWithIndex:index]
+                        withGranularity:UITextGranularityLine
+                            inDirection:UITextLayoutDirectionRight];
+  XCTAssertTrue([range isKindOfClass:[FlutterTextRange class]]);
+  return (FlutterTextRange*)range;
 }
 
 #pragma mark - Tests
