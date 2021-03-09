@@ -72,8 +72,8 @@ class AccessibilityBridgeMacDelegate : public AccessibilityBridge::Accessibility
   ///             macOS native accessibility event[s]
   /// @param[in]  event_type        The original event type.
   /// @param[in]  ax_node           The original event target.
-  std::vector<NSAccessibilityEvent> MacOSEventFromAXEvent(ui::AXEventGenerator::Event event_type,
-                                                          const ui::AXNode& ax_node) const;
+  std::vector<NSAccessibilityEvent> MacOSEventsFromAXEvent(ui::AXEventGenerator::Event event_type,
+                                                           const ui::AXNode& ax_node) const;
 
   __weak FlutterEngine* flutter_engine_;
 };

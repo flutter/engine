@@ -23,9 +23,9 @@ class FlutterPlatformNodeDelegateMac : public FlutterPlatformNodeDelegate {
   virtual ~FlutterPlatformNodeDelegateMac();
 
   //---------------------------------------------------------------------------
-  /// @brief      Gets the live region text of this node in UTF8 format. This is
-  ///             useful to determine the changes in between semantics updates
-  ///             when generating accessibility events.
+  /// @brief      Gets the live region text of this node in UTF-8 format. This
+  ///             is useful to determine the changes in between semantics
+  ///             updates when generating accessibility events.
   std::string GetLiveRegionText() const;
 
   // |ui::AXPlatformNodeDelegate|

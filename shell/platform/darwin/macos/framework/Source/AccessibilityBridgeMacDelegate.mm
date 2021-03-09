@@ -28,7 +28,7 @@ void AccessibilityBridgeMacDelegate::OnAccessibilityEvent(
     ui::AXEventGenerator::TargetedEvent targeted_event) {
   ui::AXNode* ax_node = targeted_event.node;
   std::vector<AccessibilityBridgeMacDelegate::NSAccessibilityEvent> events =
-      MacOSEventFromAXEvent(targeted_event.event_params.event, *ax_node);
+      MacOSEventsFromAXEvent(targeted_event.event_params.event, *ax_node);
   for (AccessibilityBridgeMacDelegate::NSAccessibilityEvent event : events) {
     if (event.user_info != nil) {
       DispatchMacOSNotificationWithUserInfo(event.target, event.name, event.user_info);
@@ -39,8 +39,8 @@ void AccessibilityBridgeMacDelegate::OnAccessibilityEvent(
 }
 
 std::vector<AccessibilityBridgeMacDelegate::NSAccessibilityEvent>
-AccessibilityBridgeMacDelegate::MacOSEventFromAXEvent(ui::AXEventGenerator::Event event_type,
-                                                      const ui::AXNode& ax_node) const {
+AccessibilityBridgeMacDelegate::MacOSEventsFromAXEvent(ui::AXEventGenerator::Event event_type,
+                                                       const ui::AXNode& ax_node) const {
   // Gets the native_node with the node_id.
   NSCAssert(flutter_engine_, @"Flutter engine should not be deallocated");
   auto bridge = flutter_engine_.accessibilityBridge.lock();
@@ -181,12 +181,13 @@ AccessibilityBridgeMacDelegate::MacOSEventFromAXEvent(ui::AXEventGenerator::Even
       // Voiceover requires a live region changed notification to actually
       // announce the live region.
       auto live_region_events =
-          MacOSEventFromAXEvent(ui::AXEventGenerator::Event::LIVE_REGION_CHANGED, ax_node);
+          MacOSEventsFromAXEvent(ui::AXEventGenerator::Event::LIVE_REGION_CHANGED, ax_node);
       events.insert(events.end(), live_region_events.begin(), live_region_events.end());
       break;
     }
     case ui::AXEventGenerator::Event::LIVE_REGION_CHANGED: {
       if (@available(macOS 10.14, *)) {
+        // Do nothing on macOS >=10.14.
       } else {
         // Uses the announcement API to get around OS <= 10.13 VoiceOver bug
         // where it stops announcing live regions after the first time focus

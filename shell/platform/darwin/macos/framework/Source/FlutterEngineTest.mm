@@ -55,7 +55,7 @@ TEST(FlutterEngine, MessengerSend) {
   [engine shutDownEngine];
 }
 
-TEST(FlutterEngine, CanCreateAccessibility) {
+TEST(FlutterEngine, CanToggleAccessibility) {
   FlutterEngine* engine = CreateTestEngine();
   // Capture the update callbacks before the embedder API initializes.
   auto original_init = engine.embedderAPI.Initialize;
@@ -139,6 +139,19 @@ TEST(FlutterEngine, CanCreateAccessibility) {
   EXPECT_TRUE(child1_value == "child 1");
   EXPECT_EQ(native_child1.accessibilityRole, NSAccessibilityStaticTextRole);
   EXPECT_EQ([native_child1.accessibilityChildren count], 0u);
+
+  // Disable the semantics.
+  bool semanticsEnabled = true;
+  engine.embedderAPI.UpdateSemanticsEnabled =
+      MOCK_ENGINE_PROC(UpdateSemanticsEnabled, ([&semanticsEnabled](auto engine, bool enabled) {
+                         semanticsEnabled = enabled;
+                         return kSuccess;
+                       }));
+  engine.semanticsEnabled = NO;
+  EXPECT_FALSE(semanticsEnabled);
+  // Verify the accessibility tree is removed from the view.
+  EXPECT_EQ([engine.viewController.view.accessibilityChildren count], 0u);
+
   [engine setViewController:nil];
   [engine shutDownEngine];
 }
