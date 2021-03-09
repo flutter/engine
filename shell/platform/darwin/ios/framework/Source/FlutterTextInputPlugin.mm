@@ -380,9 +380,13 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 
 #pragma mark - FlutterTokenizer
 
-@implementation FlutterTokenizer {
-  FlutterTextInputView* _textInputView;
-}
+@interface FlutterTokenizer ()
+
+@property(nonatomic, assign) FlutterTextInputView* textInputView;
+
+@end
+
+@implementation FlutterTokenizer
 
 - (instancetype)initWithTextInput:(UIResponder<UITextInput>*)textInput {
   NSAssert([textInput isKindOfClass:[FlutterTextInputView class]],
@@ -409,6 +413,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     case UITextGranularitySentence:
     case UITextGranularityParagraph:
     case UITextGranularityDocument:
+      // The UITextInputStringTokenizer can handle all these cases correctly.
       result = [super rangeEnclosingPosition:position
                              withGranularity:granularity
                                  inDirection:direction];
