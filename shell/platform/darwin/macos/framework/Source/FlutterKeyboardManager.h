@@ -31,9 +31,9 @@
  * type. If the |nextResponder| is nil, then the event will be propagated no
  * further.
  *
- * It's not supported to prevent any handlers from receiving the events, because
+ * Preventing handlers from receiving events is not supported, because
  * in reality this class will only support 2 hardcoded delegates (channel and
- * embedder), with the only purpose to support the legacy API (channel) during
+ * embedder), where the only purpose of supporting two is to support the legacy API (channel) during
  * the deprecation window, after which the channel handler should be removed.
  */
 @interface FlutterKeyboardManager : NSObject
@@ -43,7 +43,7 @@
  *
  * The owner should be an object that handles the lifecycle of this instance.
  * The |owner.nextResponder| can be nil, but if it isn't, it will be where the
- * key events are propagated to, if no handlers or additional handlers handles
+ * key events are propagated to, if no handlers or additional handlers handle
  * the event. The owner is typically a |FlutterViewController|.
  */
 - (nonnull instancetype)initWithOwner:(nonnull NSResponder*)weakOwner;
