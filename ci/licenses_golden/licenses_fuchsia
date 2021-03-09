@@ -1,4 +1,4 @@
-Signature: aa176fdf80a96d9b164aadd9c35d03d9
+Signature: 58c42713a42b43ec0b985994aff99992
 
 UNUSED LICENSES:
 
@@ -3389,6 +3389,7 @@ FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_inspect/lib/reader.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_inspect/lib/src/reader/diagnostic_config.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_inspect/lib/src/reader/diagnostic_data.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_inspect/lib/src/reader/reader.dart
+FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_scenic/lib/src/scenic_context.dart
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.feedback/data_provider_controller.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.goldfish/goldfish_sync.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io2/inotify.fidl
