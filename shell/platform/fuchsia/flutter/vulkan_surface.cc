@@ -27,7 +27,7 @@ namespace flutter_runner {
 namespace {
 
 constexpr SkColorType kSkiaColorType = kRGBA_8888_SkColorType;
-constexpr VkFormat kVulkanFormat = VK_FORMAT_R8G8B8A8_UNORM;
+constexpr VkFormat kVulkanFormat = VK_FORMAT_R8G8B8A8_SRGB;
 constexpr VkImageCreateFlags kVulkanImageCreateFlags = 0;
 // TODO: We should only keep usages that are actually required by Skia.
 constexpr VkImageUsageFlags kVkImageUsage =
@@ -354,12 +354,12 @@ bool VulkanSurface::SetupSkiaSurface(sk_sp<GrDirectContext> context,
   SkSurfaceProps sk_surface_props(0, kUnknown_SkPixelGeometry);
 
   auto sk_surface =
-      SkSurface::MakeFromBackendRenderTarget(context.get(),             //
-                                             sk_render_target,          //
-                                             kTopLeft_GrSurfaceOrigin,  //
-                                             color_type,                //
-                                             SkColorSpace::MakeSRGB(),  //
-                                             &sk_surface_props          //
+      SkSurface::MakeFromBackendRenderTarget(context.get(),                   //
+                                             sk_render_target,                //
+                                             kTopLeft_GrSurfaceOrigin,        //
+                                             color_type,                      //
+                                             SkColorSpace::MakeSRGBLinear(),  //
+                                             &sk_surface_props                //
       );
 
   if (!sk_surface || sk_surface->getCanvas() == nullptr) {
