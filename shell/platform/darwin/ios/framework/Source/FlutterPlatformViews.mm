@@ -356,11 +356,12 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
   // resolution. So we need to scale down to match UIKit's logical resolution.
   CGFloat screenScale = [UIScreen mainScreen].scale;
   CATransform3D finalTransform = CATransform3DMakeScale(1 / screenScale, 1 / screenScale, 1);
-  
+
   UIView* flutter_view = flutter_view_.get();
-  FlutterClippingMaskView* maskView =
-      [[[FlutterClippingMaskView alloc] initWithFrame:CGRectMake(0, 0, CGRectGetWidth(flutter_view.bounds), CGRectGetHeight(flutter_view.bounds))] autorelease];
-  
+  FlutterClippingMaskView* maskView = [[[FlutterClippingMaskView alloc]
+      initWithFrame:CGRectMake(0, 0, CGRectGetWidth(flutter_view.bounds),
+                               CGRectGetHeight(flutter_view.bounds))] autorelease];
+
   auto iter = mutators_stack.Begin();
   while (iter != mutators_stack.End()) {
     switch ((*iter)->GetType()) {
