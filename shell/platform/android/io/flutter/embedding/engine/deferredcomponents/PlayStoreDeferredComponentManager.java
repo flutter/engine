@@ -264,7 +264,7 @@ public class PlayStoreDeferredComponentManager implements DeferredComponentManag
         if (rawMappingString == null) {
           Log.e(
               TAG,
-              "No loading unit to dynamic feature component name found. Ensure '"
+              "No loading unit to dynamic feature module name found. Ensure '"
                   + MAPPING_KEY
                   + "' is defined in the base module's AndroidManifest.");
         } else {

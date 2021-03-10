@@ -21,7 +21,7 @@ import java.util.Map;
 
 /**
  * Method channel that handles manual installation requests and queries for installation state for
- * deferred component modules.
+ * deferred components.
  *
  * <p>This channel is able to handle multiple simultaneous installation requests
  */
@@ -31,7 +31,7 @@ public class DeferredComponentChannel {
   @NonNull private final MethodChannel channel;
   @Nullable private DeferredComponentManager deferredComponentManager;
   // Track the Result objects to be able to handle multiple install requests of
-  // the same module at a time. When installation enters a terminal state, either
+  // the same components at a time. When installation enters a terminal state, either
   // completeInstallSuccess or completeInstallError can be called.
   @NonNull private Map<String, List<MethodChannel.Result>> componentNameToResults;
 
@@ -104,7 +104,7 @@ public class DeferredComponentChannel {
    * Finishes the `installDeferredComponent` method channel call for the specified componentName
    * with a success.
    *
-   * @param componentName The name of the android deferred component module install request to
+   * @param componentName The name of the android deferred component install request to
    *     complete.
    */
   public void completeInstallSuccess(String componentName) {
@@ -121,7 +121,7 @@ public class DeferredComponentChannel {
    * Finishes the `installDeferredComponent` method channel call for the specified componentName
    * with an error/failure.
    *
-   * @param componentName The name of the android deferred component module install request to
+   * @param componentName The name of the android deferred component install request to
    *     complete.
    * @param errorMessage The error message to display to complete the future with.
    */

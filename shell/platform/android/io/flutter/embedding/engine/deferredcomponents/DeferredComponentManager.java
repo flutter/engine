@@ -21,7 +21,7 @@ import io.flutter.embedding.engine.systemchannels.DeferredComponentChannel;
  * on deferred imported library. See https://dart.dev/guides/language/language-tour#deferred-loading
  * This call retrieves a unique identifier called the loading unit id, which is assigned by
  * gen_snapshot during compilation. The loading unit id is passed down through the engine and
- * invokes installDeferredComponent. Once the feature module is downloaded, loadAssets and
+ * invokes installDeferredComponent. Once the component is downloaded, loadAssets and
  * loadDartLibrary should be invoked. loadDartLibrary should find shared library .so files for the
  * engine to open and pass the .so path to FlutterJNI.loadDartDeferredLibrary. loadAssets should
  * typically ensure the new assets are available to the engine's asset manager by passing an updated
@@ -31,9 +31,9 @@ import io.flutter.embedding.engine.systemchannels.DeferredComponentChannel;
  * manually via platform channel messages. A full installDeferredComponent implementation should
  * call these two methods as needed.
  *
- * <p>A deferred component module is uniquely identified by a component name as defined in
- * bundle_config.yaml. Each feature module may contain one or more loading units, uniquely
- * identified by the loading unit ID and assets.
+ * <p>A deferred component is uniquely identified by a component name as defined in
+ * bundle_config.yaml. Each component may contain one or more loading units, uniquely identified by
+ * the loading unit ID and assets.
  */
 public interface DeferredComponentManager {
   /**
@@ -69,32 +69,33 @@ public interface DeferredComponentManager {
   public abstract void setDeferredComponentChannel(DeferredComponentChannel channel);
 
   /**
-   * Request that the feature module be downloaded and installed.
+   * Request that the deferred component be downloaded and installed.
    *
-   * <p>This method begins the download and installation of the specified feature module. For
+   * <p>This method begins the download and installation of the specified deferred component. For
    * example, the Play Store dynamic delivery implementation uses SplitInstallManager to request the
-   * download of the module. Download is not complete when this method returns. The download process
-   * should be listened for and upon completion of download, listeners should invoke loadAssets
-   * first and then loadDartLibrary to complete the deferred component load process. Assets-only
-   * deferred components should also call {@link DeferredComponentChannel.completeInstallSuccess} or
+   * download of the component. Download is not complete when this method returns. The download
+   * process should be listened for and upon completion of download, listeners should invoke
+   * loadAssets first and then loadDartLibrary to complete the deferred component load process.
+   * Assets-only deferred components should also call
+   * {@link DeferredComponentChannel.completeInstallSuccess} or
    * {@link DeferredComponentChannel.completeInstallError} to complete the method channel
    * invocation's dart Future.
    *
-   * <p>Both parameters are not always necessary to identify which module to install. Asset-only
-   * modules do not have an associated loadingUnitId. Instead, an invalid ID like -1 may be passed
-   * to download only with componentName. On the other hand, it can be possible to resolve the
-   * componentName based on the loadingUnitId. This resolution is done if componentName is null. At
-   * least one of loadingUnitId or componentName must be valid or non-null.
+   * <p>Both parameters are not always necessary to identify which component to install. Asset-only
+   * components do not have an associated loadingUnitId. Instead, an invalid ID like -1 may be
+   * passed to download only with componentName. On the other hand, it can be possible to resolve
+   * the componentName based on the loadingUnitId. This resolution is done if componentName is null.
+   * At least one of loadingUnitId or componentName must be valid or non-null.
    *
    * <p>Flutter will typically call this method in two ways. When invoked as part of a dart
    * `loadLibrary()` call, a valid loadingUnitId is passed in while the componentName is null. In
-   * this case, this method is responsible for figuring out what module the loadingUnitId
+   * this case, this method is responsible for figuring out what component the loadingUnitId
    * corresponds to.
    *
-   * <p>When invoked manually as part of loading an assets-only module, loadingUnitId is -1
+   * <p>When invoked manually as part of loading an assets-only component, loadingUnitId is -1
    * (invalid) and componentName is supplied. Without a loadingUnitId, this method just downloads
-   * the module by name and attempts to load assets via loadAssets while loadDartLibrary is skipped,
-   * even if the deferred component module includes valid dart libs. To load dart libs, call
+   * the component by name and attempts to load assets via loadAssets while loadDartLibrary is
+   * skipped, even if the deferred component includes valid dart libs. To load dart libs, call
    * `loadLibrary()` using the first way described in the previous paragraph as the method channel
    * invocation will not load dart shared libraries.
    *
@@ -109,7 +110,7 @@ public interface DeferredComponentManager {
    *     primarily used in loadDartLibrary to indicate to Dart which Dart library is being loaded.
    *     Loading unit ids range from 0 to the number existing loading units. Passing a negative
    *     loading unit id indicates that no Dart deferred library should be loaded after download
-   *     completes. This is the case when the deferred component module is an assets-only module. If
+   *     completes. This is the case when the deferred component is an assets-only component. If
    *     a negative loadingUnitId is passed, then componentName must not be null. Passing a
    *     loadingUnitId larger than the highest valid loading unit's id will cause the Dart
    *     loadLibrary() to complete with a failure.
@@ -141,14 +142,14 @@ public interface DeferredComponentManager {
    * implementation begins in the "requested" state before transitioning to the "downloading" and
    * "installed" states.
    *
-   * <p>Only sucessfully requested modules have state. Modules that are invalid or have not been
+   * <p>Only sucessfully requested components have state. Modules that are invalid or have not been
    * requested with {@link installDeferredComponent} will not have a state. Due to the asynchronous
-   * nature of the download process, modules may not immediately have a valid state upon return of
-   * {@link installDeferredComponent}, though valid modules will eventually obtain a state.
+   * nature of the download process, components may not immediately have a valid state upon return
+   * of {@link installDeferredComponent}, though valid components will eventually obtain a state.
    *
-   * <p>Both parameters are not always necessary to identify which module to install. Asset-only
-   * modules do not have an associated loadingUnitId. Instead, an invalid ID like -1 may be passed
-   * to query only with componentName. On the other hand, it can be possible to resolve the
+   * <p>Both parameters are not always necessary to identify which component to install. Asset-only
+   * components do not have an associated loadingUnitId. Instead, an invalid ID like -1 may be
+   * passed to query only with componentName. On the other hand, it can be possible to resolve the
    * componentName based on the loadingUnitId. This resolution is done if componentName is null. At
    * least one of loadingUnitId or componentName must be valid or non-null.
    *
@@ -158,7 +159,7 @@ public interface DeferredComponentManager {
   public abstract String getDeferredComponentInstallState(int loadingUnitId, String componentName);
 
   /**
-   * Extract and load any assets and resources from the module for use by Flutter.
+   * Extract and load any assets and resources from the deferred component for use by Flutter.
    *
    * <p>This method should provide a refreshed AssetManager to FlutterJNI.updateAssetManager that
    * can access the new assets. If no assets are included as part of the deferred component, then
@@ -182,7 +183,7 @@ public interface DeferredComponentManager {
   /**
    * Load the .so shared library file into the Dart VM.
    *
-   * <p>When the download of a deferred component module completes, this method should be called to
+   * <p>When the download of a deferred component completes, this method should be called to
    * find the path .so library file. The path(s) should then be passed to
    * FlutterJNI.loadDartDeferredLibrary to be dlopen-ed and loaded into the Dart VM.
    *
@@ -193,7 +194,7 @@ public interface DeferredComponentManager {
    * until a shared library is found. This allows for the developer to avoid unpacking the apk zip.
    *
    * <p>Upon successful load of the Dart library, the Dart future from the originating loadLibary()
-   * call completes and developers are able to use symbols and assets from the feature module.
+   * call completes and developers are able to use symbols and assets from the deferred component.
    *
    * @param loadingUnitId The unique identifier associated with a Dart deferred library. This id is
    *     assigned by the compiler and can be seen for reference in bundle_config.yaml. This ID is
@@ -207,7 +208,7 @@ public interface DeferredComponentManager {
   public abstract void loadDartLibrary(int loadingUnitId, String componentName);
 
   /**
-   * Request that the specified feature module be uninstalled.
+   * Request that the specified component be uninstalled.
    *
    * <p>Since uninstallation requires significant disk i/o, this method only signals the intent to
    * uninstall. Actual uninstallation (eg, removal of assets and files) may occur at a later time.
@@ -217,11 +218,11 @@ public interface DeferredComponentManager {
    * <p>Uninstallation, once complete, removes downloaded files and will require redownloading to
    * install again.
    *
-   * <p>Both parameters are not always necessary to identify which module to uninstall. Asset-only
-   * modules do not have an associated loadingUnitId. Instead, an invalid ID like -1 may be passed
-   * to download only with componentName. On the other hand, it can be possible to resolve the
-   * componentName based on the loadingUnitId. This resolution is done if componentName is null. At
-   * least one of loadingUnitId or componentName must be valid or non-null.
+   * <p>Both parameters are not always necessary to identify which component to uninstall.
+   * Asset-only components do not have an associated loadingUnitId. Instead, an invalid ID like -1
+   * may be passed to download only with componentName. On the other hand, it can be possible to
+   * resolve the componentName based on the loadingUnitId. This resolution is done if componentName
+   * is null. At least one of loadingUnitId or componentName must be valid or non-null.
    *
    * @return false if no deferred component was found matching the input, true if an uninstall was
    *     successfully requested.
