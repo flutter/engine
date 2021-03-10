@@ -24,6 +24,8 @@ source_set("base") {
   ]
   if (is_win) {
     sources += [
+      "win/enum_variant.cc",
+      "win/enum_variant.h",
       "win/string_conversion.cc",
       "win/string_conversion.h",
     ]
