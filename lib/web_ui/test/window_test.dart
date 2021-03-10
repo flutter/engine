@@ -18,8 +18,6 @@ import 'matchers.dart';
 
 const MethodCodec codec = JSONMethodCodec();
 
-void emptyCallback(ByteData data) {}
-
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
@@ -57,13 +55,15 @@ void testMain() {
     // Reading it multiple times should return the same value.
     expect(window.defaultRouteName, '/initial');
     expect(window.defaultRouteName, '/initial');
+
+    Completer<void> callback = Completer<void>();
     window.sendPlatformMessage(
       'flutter/navigation',
       JSONMethodCodec().encodeMethodCall(MethodCall(
         'routeUpdated',
         <String, dynamic>{'routeName': '/bar'},
       )),
-      emptyCallback,
+      (_) { callback.complete(); },
     );
     // After a navigation platform message, [window.defaultRouteName] should
     // reset to "/".
@@ -192,7 +192,7 @@ void testMain() {
     expect(window.browserHistory.currentPath, '/');
 
     // Perform some navigation operations.
-    routeInformationUpdated('/foo/bar', null);
+    await routeInformationUpdated('/foo/bar', null);
     // Path should not be updated because URL strategy is disabled.
     expect(window.browserHistory.currentPath, '/');
   });
