@@ -39,7 +39,7 @@ import java.util.Queue;
 
 /**
  * Flutter default implementation of DeferredComponentManager that downloads deferred component
- * modules from the Google Play store.
+ * from the Google Play store as a dynamic feature module.
  */
 public class PlayStoreDeferredComponentManager implements DeferredComponentManager {
   private static final String TAG = "PlayStoreDeferredComponentManager";
@@ -100,7 +100,7 @@ public class PlayStoreDeferredComponentManager implements DeferredComponentManag
                       sessionIdToName.get(sessionId), sessionId));
               loadAssets(sessionIdToLoadingUnitId.get(sessionId), sessionIdToName.get(sessionId));
               // We only load Dart shared lib for the loading unit id requested. Other loading units
-              // (if present) in the deferred component module are not loaded, but can be loaded by
+              // (if present) in the deferred component are not loaded, but can be loaded by
               // calling again with their loading unit id. If no valid loadingUnitId was included in
               // the installation request such as for an asset only feature, then we can skip this.
               if (sessionIdToLoadingUnitId.get(sessionId) > 0) {
@@ -248,10 +248,10 @@ public class PlayStoreDeferredComponentManager implements DeferredComponentManag
 
   // Obtain and parses the metadata string. An example encoded string is:
   //
-  //    "2:module2,3:module3,4:module1:libmodule4.so"
+  //    "2:component2,3:component3,4:component1:libcomponent4.so"
   //
-  // Where loading unit 2 is included in module2, loading unit 3 is
-  // included in module3, and loading unit 4 is included in module1.
+  // Where loading unit 2 is included in component2, loading unit 3 is
+  // included in component3, and loading unit 4 is included in component1.
   // An optional third parameter can be added to indicate the name of
   // the shared library of the loading unit.
   private void initLoadingUnitMappingToComponentNames() {
@@ -286,8 +286,7 @@ public class PlayStoreDeferredComponentManager implements DeferredComponentManag
         componentName != null ? componentName : loadingUnitIdToComponentNames.get(loadingUnitId);
     if (resolvedComponentName == null) {
       Log.e(
-          TAG,
-          "Deferred component name was null and could not be resolved from loading unit id.");
+          TAG, "Deferred component name was null and could not be resolved from loading unit id.");
       return;
     }
 
@@ -350,7 +349,7 @@ public class PlayStoreDeferredComponentManager implements DeferredComponentManag
     if (resolvedComponentName == null) {
       Log.e(
           TAG, "Deferred component name was null and could not be resolved from loading unit id.");
-       return "unknown";
+      return "unknown";
     }
     if (!nameToSessionId.containsKey(resolvedComponentName)) {
       if (splitInstallManager.getInstalledModules().contains(resolvedComponentName)) {
@@ -454,8 +453,7 @@ public class PlayStoreDeferredComponentManager implements DeferredComponentManag
         componentName != null ? componentName : loadingUnitIdToComponentNames.get(loadingUnitId);
     if (resolvedComponentName == null) {
       Log.e(
-          TAG,
-          "Deferred component name was null and could not be resolved from loading unit id.");
+          TAG, "Deferred component name was null and could not be resolved from loading unit id.");
       return false;
     }
     List<String> modulesToUninstall = new ArrayList<>();
