@@ -104,8 +104,7 @@ public class DeferredComponentChannel {
    * Finishes the `installDeferredComponent` method channel call for the specified componentName
    * with a success.
    *
-   * @param componentName The name of the android deferred component install request to
-   *     complete.
+   * @param componentName The name of the android deferred component install request to complete.
    */
   public void completeInstallSuccess(String componentName) {
     if (componentNameToResults.containsKey(componentName)) {
@@ -121,8 +120,7 @@ public class DeferredComponentChannel {
    * Finishes the `installDeferredComponent` method channel call for the specified componentName
    * with an error/failure.
    *
-   * @param componentName The name of the android deferred component install request to
-   *     complete.
+   * @param componentName The name of the android deferred component install request to complete.
    * @param errorMessage The error message to display to complete the future with.
    */
   public void completeInstallError(String componentName, String errorMessage) {

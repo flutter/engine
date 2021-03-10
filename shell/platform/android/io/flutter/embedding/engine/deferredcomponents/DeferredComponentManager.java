@@ -76,10 +76,10 @@ public interface DeferredComponentManager {
    * download of the component. Download is not complete when this method returns. The download
    * process should be listened for and upon completion of download, listeners should invoke
    * loadAssets first and then loadDartLibrary to complete the deferred component load process.
-   * Assets-only deferred components should also call
-   * {@link DeferredComponentChannel.completeInstallSuccess} or
-   * {@link DeferredComponentChannel.completeInstallError} to complete the method channel
-   * invocation's dart Future.
+   * Assets-only deferred components should also call {@link
+   * DeferredComponentChannel.completeInstallSuccess} or {@link
+   * DeferredComponentChannel.completeInstallError} to complete the method channel invocation's dart
+   * Future.
    *
    * <p>Both parameters are not always necessary to identify which component to install. Asset-only
    * components do not have an associated loadingUnitId. Instead, an invalid ID like -1 may be
@@ -110,8 +110,8 @@ public interface DeferredComponentManager {
    *     primarily used in loadDartLibrary to indicate to Dart which Dart library is being loaded.
    *     Loading unit ids range from 0 to the number existing loading units. Passing a negative
    *     loading unit id indicates that no Dart deferred library should be loaded after download
-   *     completes. This is the case when the deferred component is an assets-only component. If
-   *     a negative loadingUnitId is passed, then componentName must not be null. Passing a
+   *     completes. This is the case when the deferred component is an assets-only component. If a
+   *     negative loadingUnitId is passed, then componentName must not be null. Passing a
    *     loadingUnitId larger than the highest valid loading unit's id will cause the Dart
    *     loadLibrary() to complete with a failure.
    * @param componentName The deferred component component name as defined in bundle_config.yaml.
@@ -183,8 +183,8 @@ public interface DeferredComponentManager {
   /**
    * Load the .so shared library file into the Dart VM.
    *
-   * <p>When the download of a deferred component completes, this method should be called to
-   * find the path .so library file. The path(s) should then be passed to
+   * <p>When the download of a deferred component completes, this method should be called to find
+   * the path .so library file. The path(s) should then be passed to
    * FlutterJNI.loadDartDeferredLibrary to be dlopen-ed and loaded into the Dart VM.
    *
    * <p>Specifically, APKs distributed by Android's app bundle format may vary by device and API
