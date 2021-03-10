@@ -157,7 +157,7 @@ AndroidShellHolder::AndroidShellHolder(
 
 AndroidShellHolder::~AndroidShellHolder() {
   shell_.reset();
-  thread_host_->Reset();
+  thread_host_.reset();
 }
 
 bool AndroidShellHolder::IsValid() const {
