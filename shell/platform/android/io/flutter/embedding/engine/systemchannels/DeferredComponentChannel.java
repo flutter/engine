@@ -101,8 +101,8 @@ public class DeferredComponentChannel {
   }
 
   /**
-   * Finishes the `installDeferredComponent` method channel call for the specified componentName with a
-   * success.
+   * Finishes the `installDeferredComponent` method channel call for the specified componentName
+   * with a success.
    *
    * @param componentName The name of the android deferred component module install request to
    *     complete.
@@ -118,8 +118,8 @@ public class DeferredComponentChannel {
   }
 
   /**
-   * Finishes the `installDeferredComponent` method channel call for the specified componentName with
-   * an error/failure.
+   * Finishes the `installDeferredComponent` method channel call for the specified componentName
+   * with an error/failure.
    *
    * @param componentName The name of the android deferred component module install request to
    *     complete.

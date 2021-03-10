@@ -287,7 +287,7 @@ public class PlayStoreDeferredComponentManager implements DeferredComponentManag
     if (resolvedComponentName == null) {
       Log.e(
           TAG,
-          "Deferred component component name was null and could not be resolved from loading unit id.");
+          "Deferred component name was null and could not be resolved from loading unit id.");
       return;
     }
 
@@ -349,9 +349,8 @@ public class PlayStoreDeferredComponentManager implements DeferredComponentManag
         componentName != null ? componentName : loadingUnitIdToComponentNames.get(loadingUnitId);
     if (resolvedComponentName == null) {
       Log.e(
-          TAG,
-          "Deferred component name was null and could not be resolved from loading unit id.");
-      return "unknown";
+          TAG, "Deferred component name was null and could not be resolved from loading unit id.");
+       return "unknown";
     }
     if (!nameToSessionId.containsKey(resolvedComponentName)) {
       if (splitInstallManager.getInstalledModules().contains(resolvedComponentName)) {
@@ -456,7 +455,7 @@ public class PlayStoreDeferredComponentManager implements DeferredComponentManag
     if (resolvedComponentName == null) {
       Log.e(
           TAG,
-          "Deferred component component name was null and could not be resolved from loading unit id.");
+          "Deferred component name was null and could not be resolved from loading unit id.");
       return false;
     }
     List<String> modulesToUninstall = new ArrayList<>();
