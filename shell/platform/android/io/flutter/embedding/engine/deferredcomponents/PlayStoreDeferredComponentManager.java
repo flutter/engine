@@ -38,8 +38,8 @@ import java.util.Map;
 import java.util.Queue;
 
 /**
- * Flutter default implementation of DeferredComponentManager that downloads deferred component
- * from the Google Play store as a dynamic feature module.
+ * Flutter default implementation of DeferredComponentManager that downloads deferred component from
+ * the Google Play store as a dynamic feature module.
  */
 public class PlayStoreDeferredComponentManager implements DeferredComponentManager {
   private static final String TAG = "PlayStoreDeferredComponentManager";
