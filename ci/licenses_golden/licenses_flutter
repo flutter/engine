@@ -1448,6 +1448,12 @@ FILE: ../../../flutter/shell/platform/linux/fl_string_codec.cc
 FILE: ../../../flutter/shell/platform/linux/fl_string_codec_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_text_input_plugin.cc
 FILE: ../../../flutter/shell/platform/linux/fl_text_input_plugin.h
+FILE: ../../../flutter/shell/platform/linux/fl_texture.cc
+FILE: ../../../flutter/shell/platform/linux/fl_texture_private.h
+FILE: ../../../flutter/shell/platform/linux/fl_texture_registrar.cc
+FILE: ../../../flutter/shell/platform/linux/fl_texture_registrar_private.h
+FILE: ../../../flutter/shell/platform/linux/fl_texture_registrar_test.cc
+FILE: ../../../flutter/shell/platform/linux/fl_texture_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_value.cc
 FILE: ../../../flutter/shell/platform/linux/fl_value_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_view.cc
@@ -1472,6 +1478,8 @@ FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_plugin_regis
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_standard_message_codec.h
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_standard_method_codec.h
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_string_codec.h
+FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_texture.h
+FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_texture_registrar.h
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_value.h
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_view.h
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/flutter_linux.h

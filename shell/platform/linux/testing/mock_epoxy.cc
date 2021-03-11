@@ -374,6 +374,10 @@ static void _glTexImage2D(GLenum target,
                           GLenum type,
                           const void* pixels) {}
 
+static GLenum _glGetError() {
+  return GL_NO_ERROR;
+}
+
 #ifdef __GNUC__
 #define CONSTRUCT(_func) static void _func(void) __attribute__((constructor));
 #define DESTRUCT(_func) static void _func(void) __attribute__((destructor));
@@ -446,6 +450,7 @@ void (*epoxy_glTexImage2D)(GLenum target,
                            GLenum format,
                            GLenum type,
                            const void* pixels);
+GLenum (*epoxy_glGetError)();
 
 static void library_init() {
   epoxy_eglBindAPI = _eglBindAPI;
@@ -471,4 +476,5 @@ static void library_init() {
   epoxy_glTexParameterf = _glTexParameterf;
   epoxy_glTexParameteri = _glTexParameteri;
   epoxy_glTexImage2D = _glTexImage2D;
+  epoxy_glGetError = _glGetError;
 }
