@@ -75,7 +75,6 @@
   @try {
     OCMVerify(  // NOLINT(google-objc-avoid-throwing-exception)
         [binaryMessengerMock sendOnChannel:@"flutter/textinput" message:updateCall]);
-
   } @catch (...) {
     return false;
   }
