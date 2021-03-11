@@ -189,6 +189,12 @@ void Rasterizer::Draw(std::shared_ptr<LayerTreeHolder> layer_tree_holder,
     FML_DCHECK(external_view_embedder_ != nullptr)
         << "kResubmit is an invalid raster status without external view "
            "embedder.";
+    delegate_.GetTaskRunners().GetRasterTaskRunner()->PostTask(
+        [weak_this = weak_factory_.GetWeakPtr(), layer_tree_holder]() {
+          if (weak_this) {
+            weak_this->Draw(layer_tree_holder);
+          }
+        });
   }
 
   if (surface_ && external_view_embedder_) {

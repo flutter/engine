@@ -200,6 +200,12 @@ void ShellTest::PumpOneFrame(Shell* shell,
         latch.Signal();
       });
   latch.Wait();
+
+  // Wait for render to finish.
+  latch.Reset();
+  shell->GetTaskRunners().GetRasterTaskRunner()->PostTask(
+      [&latch]() { latch.Signal(); });
+  latch.Wait();
 }
 
 void ShellTest::DispatchFakePointerData(Shell* shell) {
