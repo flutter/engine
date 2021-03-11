@@ -29,6 +29,8 @@ source_set("ax") {
     "ax_action_handler.h",
     "ax_action_handler_base.cc",
     "ax_action_handler_base.h",
+    "ax_active_popup.cc",
+    "ax_active_popup.h",
     "ax_base_export.h",
     "ax_clipping_behavior.h",
     "ax_constants.h",
