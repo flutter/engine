@@ -600,8 +600,18 @@ bool AlsoUseShowMenuActionForDefaultAction(const ui::AXNodeData& data) {
   if (role == ax::mojom::Role::kTab)
     return [self AXSelectedInternal];
 
-  if (ui::IsNameExposedInAXValueForRole(role))
+  if (ui::IsNameExposedInAXValueForRole(role)) {
+    if (role == ax::mojom::Role::kStaticText) {
+      // static text may store its text in the value attribute. for
+      // example, the selectable text does this.
+      NSString* value = [self getName];
+      if (value.length == 0) {
+        value = [self getStringAttribute:ax::mojom::StringAttribute::kValue];
+      }
+      return value;
+    }
     return [self getName];
+  }
 
   if (_node->IsPlatformCheckable()) {
     // Mixed checkbox state not currently supported in views, but could be.
@@ -699,6 +709,10 @@ bool AlsoUseShowMenuActionForDefaultAction(const ui::AXNodeData& data) {
     start = _node->GetIntAttribute(ax::mojom::IntAttribute::kTextSelStart);
     end = _node->GetIntAttribute(ax::mojom::IntAttribute::kTextSelEnd);
   }
+  if (start == -1 && end == -1) {
+    return [NSValue valueWithRange:{0, 0}];
+  }
+  NSAssert(start >= 0 && end >= 0, @"selection is invalid");
 
   // NSRange cannot represent the direction the text was selected in.
   return [NSValue valueWithRange:{static_cast<NSUInteger>(std::min(start, end)),
