@@ -385,6 +385,9 @@ class Shell final : public PlatformView::Delegate,
   std::mutex waiting_for_first_frame_mutex_;
   std::condition_variable waiting_for_first_frame_condition_;
 
+  // Signalled when draw task on the raster thread is complete.
+  fml::Semaphore pending_draw_semaphore_;
+
   // Written in the UI thread and read from the raster thread. Hence make it
   // atomic.
   std::atomic<bool> needs_report_timings_{false};

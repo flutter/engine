@@ -195,17 +195,6 @@ void Rasterizer::Draw(std::shared_ptr<LayerTreeHolder> layer_tree_holder,
     external_view_embedder_->EndFrame(should_resubmit_frame,
                                       raster_thread_merger_);
   }
-
-  // Note: This behaviour is left as-is to be inline with the pipeline
-  // semantics. TODO(kaushikiska): explore removing this block.
-  if (!layer_tree_holder->IsEmpty()) {
-    delegate_.GetTaskRunners().GetRasterTaskRunner()->PostTask(
-        [weak_this = weak_factory_.GetWeakPtr(), layer_tree_holder]() {
-          if (weak_this) {
-            weak_this->Draw(layer_tree_holder);
-          }
-        });
-  }
 }
 
 namespace {

@@ -372,6 +372,7 @@ Shell::Shell(DartVMRef vm,
       vm_(std::move(vm)),
       is_gpu_disabled_sync_switch_(new fml::SyncSwitch(is_gpu_disabled)),
       volatile_path_tracker_(std::move(volatile_path_tracker)),
+      pending_draw_semaphore_(1),
       weak_factory_gpu_(nullptr),
       weak_factory_(this) {
   FML_CHECK(vm_) << "Must have access to VM to create a shell.";
@@ -1158,8 +1159,15 @@ void Shell::OnAnimatorDraw(std::shared_ptr<LayerTreeHolder> layer_tree_holder,
            tree.frame_size() != expected_frame_size_;
   };
 
+  if (!pending_draw_semaphore_.TryWait()) {
+    // Multiple calls to OnAnimatorDraw will still result in a
+    // single request to the Rasterizer::Draw.
+    return;
+  }
+
   task_runners_.GetRasterTaskRunner()->PostTask(
-      [&waiting_for_first_frame = waiting_for_first_frame_,
+      [&pending_draw_semaphore = pending_draw_semaphore_,
+       &waiting_for_first_frame = waiting_for_first_frame_,
        &waiting_for_first_frame_condition = waiting_for_first_frame_condition_,
        rasterizer = rasterizer_->GetWeakPtr(),
        discard_callback = std::move(discard_callback),
@@ -1172,6 +1180,7 @@ void Shell::OnAnimatorDraw(std::shared_ptr<LayerTreeHolder> layer_tree_holder,
             waiting_for_first_frame_condition.notify_all();
           }
         }
+        pending_draw_semaphore.Signal();
       });
 }
 
