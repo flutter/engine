@@ -126,7 +126,7 @@ void testMain() {
     expect(window.browserHistory.urlStrategy!.getPath(), '/baz');
   });
 
-  test('initialize browser history with default url strategy (single)', () async {
+  verbose('initialize browser history with default url strategy (single)', () async {
     // On purpose, we don't initialize history on the window. We want to let the
     // window to self-initialize when it receives a navigation message.
 
@@ -151,7 +151,7 @@ void testMain() {
     expect(window.browserHistory.urlStrategy!.getPath(), '/bar');
   }, skip: browserEngine == BrowserEngine.webkit); // https://github.com/flutter/flutter/issues/50836
 
-  test('initialize browser history with default url strategy (multiple)', () async {
+  verbose('initialize browser history with default url strategy (multiple)', () async {
     // On purpose, we don't initialize history on the window. We want to let the
     // window to self-initialize when it receives a navigation message.
 
@@ -179,23 +179,9 @@ void testMain() {
     expect(window.browserHistory.urlStrategy!.getPath(), '/baz');
   }, skip: browserEngine == BrowserEngine.webkit); // https://github.com/flutter/flutter/issues/50836
 
-  test('can disable location strategy', () async {
+  verbose('can disable location strategy', () async {
     // Disable URL strategy.
-    void disableUrlStrategy() {
-      try {
-        jsSetUrlStrategy(null);
-      } on AssertionError catch (e) {
-        if (e.message == 'Cannot set URL strategy more than once.') {
-          print('=' * 20);
-          // Print something easy to search for.
-          print('HISTORY_TEST_FLAKY_ASSERTION_FAILURE');
-          print('=' * 20);
-        } else {
-          rethrow;
-        }
-      }
-    }
-    expect(disableUrlStrategy, returnsNormally);
+    expect(() => jsSetUrlStrategy(null), returnsNormally);
     // History should be initialized.
     expect(window.browserHistory, isNotNull);
     // But without a URL strategy.
@@ -237,6 +223,19 @@ void testMain() {
     ui.window.locale.countryCode;
     ui.window.locales.first.countryCode;
   });
+}
+
+void verbose(String name, dynamic body, {bool? skip}) {
+
+  test(
+    name,
+    () async {
+      print('>> STARTED: "$name"');
+      await body();
+      print('>> COMPLETED: "$name"');
+    },
+    skip: skip,
+  );
 }
 
 void jsSetUrlStrategy(dynamic strategy) {

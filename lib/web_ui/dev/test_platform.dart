@@ -669,11 +669,17 @@ class BrowserManager {
         final String mapPath = p.join(env.environment.webUiRootDir.path,
             'build', pathToTest, sourceMapFileName);
 
+
         PackageConfig packageConfig =
             await loadPackageConfigUri(await Isolate.packageConfig);
         Map<String, Uri> packageMap = {
           for (var p in packageConfig.packages) p.name: p.packageUriRoot
         };
+        // print('=' * 10);
+        // print('mapPath: $mapPath (${File(mapPath).existsSync()})');
+        // print('sdkDir: $sdkDir');
+        // print('packageMap: $packageMap');
+        // print('=' * 10);
         final JSStackTraceMapper mapper = JSStackTraceMapper(
           await File(mapPath).readAsString(),
           mapUrl: p.toUri(mapPath),
