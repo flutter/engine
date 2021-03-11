@@ -35,6 +35,7 @@
 #include "flutter/shell/common/animator.h"
 #include "flutter/shell/common/display_manager.h"
 #include "flutter/shell/common/engine.h"
+#include "flutter/shell/common/layer_tree_holder.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/shell_io_manager.h"
@@ -263,10 +264,10 @@ class Shell final : public PlatformView::Delegate,
   /// @brief      Used by embedders to check if all shell subcomponents are
   ///             initialized. It is the embedder's responsibility to make this
   ///             call before accessing any other shell method. A shell that is
-  ///             not setup must be discarded and another one created with
+  ///             not set up must be discarded and another one created with
   ///             updated settings.
   ///
-  /// @return     Returns if the shell has been setup. Once set up, this does
+  /// @return     Returns if the shell has been set up. Once set up, this does
   ///             not change for the life-cycle of the shell.
   ///
   bool IsSetup() const;
@@ -383,6 +384,9 @@ class Shell final : public PlatformView::Delegate,
   std::atomic<bool> waiting_for_first_frame_ = true;
   std::mutex waiting_for_first_frame_mutex_;
   std::condition_variable waiting_for_first_frame_condition_;
+
+  // Signalled when draw task on the raster thread is complete.
+  fml::Semaphore pending_draw_semaphore_;
 
   // Written in the UI thread and read from the raster thread. Hence make it
   // atomic.
@@ -517,7 +521,7 @@ class Shell final : public PlatformView::Delegate,
   void OnAnimatorNotifyIdle(int64_t deadline) override;
 
   // |Animator::Delegate|
-  void OnAnimatorDraw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline,
+  void OnAnimatorDraw(std::shared_ptr<LayerTreeHolder> layer_tree_holder,
                       fml::TimePoint frame_target_time) override;
 
   // |Animator::Delegate|

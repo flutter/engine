@@ -240,13 +240,17 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   NSString* const textAffinity = (self.textAffinity == FlutterTextAffinityUpstream)
                                      ? kTextAffinityUpstream
                                      : kTextAffinityDownstream;
+
+  int composingBase = _activeModel->composing() ? _activeModel->composing_range().base() : -1;
+  int composingExtent = _activeModel->composing() ? _activeModel->composing_range().extent() : -1;
+
   NSDictionary* state = @{
     kSelectionBaseKey : @(_activeModel->selection().base()),
     kSelectionExtentKey : @(_activeModel->selection().extent()),
     kSelectionAffinityKey : textAffinity,
     kSelectionIsDirectionalKey : @NO,
-    kComposingBaseKey : @(_activeModel->composing_range().base()),
-    kComposingExtentKey : @(_activeModel->composing_range().extent()),
+    kComposingBaseKey : @(composingBase),
+    kComposingExtentKey : @(composingExtent),
     kTextKey : [NSString stringWithUTF8String:_activeModel->GetText().c_str()]
   };
 
@@ -303,6 +307,7 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   _activeModel->AddText([string UTF8String]);
   if (_activeModel->composing()) {
     _activeModel->CommitComposing();
+    _activeModel->EndComposing();
   }
   [self updateEditState];
 }
