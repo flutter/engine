@@ -602,8 +602,9 @@ bool AlsoUseShowMenuActionForDefaultAction(const ui::AXNodeData& data) {
 
   if (ui::IsNameExposedInAXValueForRole(role)) {
     if (role == ax::mojom::Role::kStaticText) {
-      // static text may store its text in the value attribute. for
-      // example, the selectable text does this.
+      // Static texts may store their texts in the value attributes. For
+      // example, the selectable text stores its text in value instead of
+      // name.
       NSString* value = [self getName];
       if (value.length == 0) {
         value = [self getStringAttribute:ax::mojom::StringAttribute::kValue];
