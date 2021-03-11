@@ -9,7 +9,7 @@ import 'dart:js_util' as js_util;
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
-import 'package:ui/src/engine.dart' hide window;
+import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
 import 'engine/history_test.dart';
@@ -22,16 +22,12 @@ void main() {
 }
 
 void testMain() {
-  EngineSingletonFlutterWindow window;
-
   setUp(() {
     ui.webOnlyInitializeEngine();
-    window = EngineSingletonFlutterWindow(0, EnginePlatformDispatcher.instance);
   });
 
   tearDown(() async {
     await window.resetHistory();
-    window = null;
   });
 
   test('window.defaultRouteName should not change', () async {
@@ -182,21 +178,7 @@ void testMain() {
 
   test('can disable location strategy', () async {
     // Disable URL strategy.
-    void disableUrlStrategy() {
-      try {
-        jsSetUrlStrategy(null);
-      } on AssertionError catch (e) {
-        if (e.message == 'Cannot set URL strategy more than once.') {
-          print('=' * 20);
-          // Print something easy to search for.
-          print('HISTORY_TEST_FLAKY_ASSERTION_FAILURE');
-          print('=' * 20);
-        } else {
-          rethrow;
-        }
-      }
-    }
-    expect(disableUrlStrategy, returnsNormally);
+    expect(() => jsSetUrlStrategy(null), returnsNormally);
     // History should be initialized.
     expect(window.browserHistory, isNotNull);
     // But without a URL strategy.
