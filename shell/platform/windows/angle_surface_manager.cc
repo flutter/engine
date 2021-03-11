@@ -210,7 +210,7 @@ bool AngleSurfaceManager::CreateSurface(WindowsRenderTarget* render_target,
 
   std::vector<EGLint> surface_attributes;
 
-  if (!DirectCompositionSupported()) {
+  if (!CompositionSupported()) {
     // eglPostSubBufferNV during resizing causes significant artifacts on
     // Windows 7, so use fixed size surface instead
     // TODO(knopp): This will not be necessary after
@@ -267,7 +267,9 @@ void AngleSurfaceManager::ResizeSurface(WindowsRenderTarget* render_target,
     // avoiding the need to destory and recreate the underlying SwapChain.
     surface_width_ = width;
     surface_height_ = height;
-    if (!DirectCompositionSupported()) {
+    if (!CompositionSupported()) {
+      // Withoutcomposition the surface is created with fixed size.
+      // See AngleSurfaceManager::CreateSurface for details.
       ClearContext();
       DestroySurface();
       CreateSurface(render_target, width, height);
@@ -317,7 +319,7 @@ EGLBoolean AngleSurfaceManager::SwapBuffers() {
   return (eglSwapBuffers(egl_display_, render_surface_));
 }
 
-bool AngleSurfaceManager::DirectCompositionSupported() {
+bool AngleSurfaceManager::CompositionSupported() {
 #ifdef WINUWP
   return true;
 #else
