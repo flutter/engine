@@ -14,12 +14,14 @@
 /**
  * The primary responders added by addPrimaryResponder.
  */
-@property(nonatomic) NSMutableArray<id<FlutterKeyPrimaryResponder>>* keyHandlers;
+@property(nonatomic) NSMutableArray<id<FlutterKeyPrimaryResponder>>* primaryResponders;
 
 /**
  * The secondary responders added by addSecondaryResponder.
  */
-@property(nonatomic) NSMutableArray<id<FlutterKeySecondaryResponder>>* additionalKeyHandlers;
+@property(nonatomic) NSMutableArray<id<FlutterKeySecondaryResponder>>* secondaryResponders;
+
+- (void)dispatchToSecondaryResponders:(NSEvent*)event;
 
 @end
 
@@ -28,21 +30,52 @@
 - (nonnull instancetype)initWithOwner:(NSResponder*)weakOwner {
   self = [super init];
   _owner = weakOwner;
-  _keyHandlers = [[NSMutableArray alloc] init];
-  _additionalKeyHandlers = [[NSMutableArray alloc] init];
+  _primaryResponders = [[NSMutableArray alloc] init];
+  _secondaryResponders = [[NSMutableArray alloc] init];
   return self;
 }
 
-- (void)addPrimaryResponder:(nonnull id<FlutterKeyPrimaryResponder>)handler {
-  [_keyHandlers addObject:handler];
+- (void)addPrimaryResponder:(nonnull id<FlutterKeyPrimaryResponder>)responder {
+  [_primaryResponders addObject:responder];
 }
 
-- (void)addSecondaryResponder:(nonnull id<FlutterKeySecondaryResponder>)handler {
-  [_additionalKeyHandlers addObject:handler];
+- (void)addSecondaryResponder:(nonnull id<FlutterKeySecondaryResponder>)responder {
+  [_secondaryResponders addObject:responder];
 }
 
-- (void)dispatchToAdditionalHandlers:(NSEvent*)event {
-  for (id<FlutterKeySecondaryResponder> responder in _additionalKeyHandlers) {
+- (void)handleEvent:(nonnull NSEvent*)event {
+  // Be sure to add a handling method in propagateKeyEvent if you allow more
+  // event types here.
+  if (event.type != NSEventTypeKeyDown && event.type != NSEventTypeKeyUp &&
+      event.type != NSEventTypeFlagsChanged) {
+    return;
+  }
+  // Having no primary responders require extra logic, but since Flutter adds
+  // all primary responders in hard-code, this is a situation that Flutter will
+  // never meet.
+  NSAssert([_primaryResponders count] >= 0, @"At least one primary responder must be added.");
+
+  __weak __typeof__(self) weakSelf = self;
+  __block int unreplied = [_primaryResponders count];
+  __block BOOL anyHandled = false;
+  FlutterAsyncKeyCallback replyCallback = ^(BOOL handled) {
+    unreplied -= 1;
+    NSAssert(unreplied >= 0, @"More primary responders replied than possible.");
+    anyHandled = anyHandled || handled;
+    if (unreplied == 0 && !anyHandled) {
+      [weakSelf dispatchToSecondaryResponders:event];
+    }
+  };
+
+  for (id<FlutterKeyPrimaryResponder> responder in _primaryResponders) {
+    [responder handleEvent:event callback:replyCallback];
+  }
+}
+
+#pragma mark - Private
+
+- (void)dispatchToSecondaryResponders:(NSEvent*)event {
+  for (id<FlutterKeySecondaryResponder> responder in _secondaryResponders) {
     if ([responder handleKeyEvent:event]) {
       return;
     }
@@ -65,35 +98,6 @@
       break;
     default:
       NSAssert(false, @"Unexpected key event type (got %lu).", event.type);
-  }
-}
-
-- (void)handleEvent:(nonnull NSEvent*)event {
-  // Be sure to add a handling method in propagateKeyEvent if you allow more
-  // event types here.
-  if (event.type != NSEventTypeKeyDown && event.type != NSEventTypeKeyUp &&
-      event.type != NSEventTypeFlagsChanged) {
-    return;
-  }
-  // Having no primary responders require extra logic, but since Flutter adds
-  // all primary responders in hard-code, this is a situation that Flutter will
-  // never meet.
-  NSAssert([_keyHandlers count] >= 0, @"At least one primary responder must be added.");
-
-  __weak __typeof__(self) weakSelf = self;
-  __block int unreplied = [_keyHandlers count];
-  __block BOOL anyHandled = false;
-  FlutterAsyncKeyCallback replyCallback = ^(BOOL handled) {
-    unreplied -= 1;
-    NSAssert(unreplied >= 0, @"More primary responders replied than possible.");
-    anyHandled = anyHandled || handled;
-    if (unreplied == 0 && !anyHandled) {
-      [weakSelf dispatchToAdditionalHandlers:event];
-    }
-  };
-
-  for (id<FlutterKeyPrimaryResponder> handler in _keyHandlers) {
-    [handler handleEvent:event callback:replyCallback];
   }
 }
 

@@ -200,20 +200,20 @@ const char* getEventString(NSString* characters) {
  */
 @interface FlutterKeyPendingResponse : NSObject
 
-@property(nonatomic) FlutterEmbedderKeyResponder* handler;
+@property(nonatomic) FlutterEmbedderKeyResponder* responder;
 
 @property(nonatomic) uint64_t responseId;
 
-- (nonnull instancetype)initWithHandler:(nonnull FlutterEmbedderKeyResponder*)handler
+- (nonnull instancetype)initWithHandler:(nonnull FlutterEmbedderKeyResponder*)responder
                              responseId:(uint64_t)responseId;
 
 @end
 
 @implementation FlutterKeyPendingResponse
-- (instancetype)initWithHandler:(FlutterEmbedderKeyResponder*)handler
+- (instancetype)initWithHandler:(FlutterEmbedderKeyResponder*)responder
                      responseId:(uint64_t)responseId {
   self = [super init];
-  _handler = handler;
+  _responder = responder;
   _responseId = responseId;
   return self;
 }
@@ -310,7 +310,7 @@ const char* getEventString(NSString* characters) {
 - (void)sendModifierEventOfType:(BOOL)shouldDown
                       timestamp:(NSTimeInterval)timestamp
                         keyCode:(unsigned short)keyCode
-                       callback:(nullable FlutterKeyHandlerCallback)cCallback;
+                       callback:(nullable FlutterKeyHandlerCallback)callback;
 
 /**
  * Processes a down event.
@@ -606,6 +606,6 @@ namespace {
 void HandleResponse(bool handled, void* user_data) {
   // The `__bridge_transfer` here is matched by `__bridge_retained` in sendPrimaryFlutterEvent.
   FlutterKeyPendingResponse* pending = (__bridge_transfer FlutterKeyPendingResponse*)user_data;
-  [pending.handler handleResponse:handled forId:pending.responseId];
+  [pending.responder handleResponse:handled forId:pending.responseId];
 }
 }  // namespace

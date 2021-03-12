@@ -135,7 +135,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, BasicKeyEvent) {
   __block BOOL last_handled = TRUE;
   FlutterKeyEvent* event;
 
-  FlutterEmbedderKeyResponder* handler = [[FlutterEmbedderKeyResponder alloc]
+  FlutterEmbedderKeyResponder* responder = [[FlutterEmbedderKeyResponder alloc]
       initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
                           _Nullable _VoidPtr user_data) {
         [events addObject:[[TestKeyEvent alloc] initWithEvent:&event
@@ -144,7 +144,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, BasicKeyEvent) {
       }];
 
   last_handled = FALSE;
-  [handler handleEvent:keyEvent(NSEventTypeKeyDown, 123.0f, 0x100, @"a", @"a", FALSE, 0)
+  [responder handleEvent:keyEvent(NSEventTypeKeyDown, 123.0f, 0x100, @"a", @"a", FALSE, 0)
               callback:^(BOOL handled) {
                 last_handled = handled;
               }];
@@ -166,7 +166,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, BasicKeyEvent) {
   [events removeAllObjects];
 
   last_handled = FALSE;
-  [handler handleEvent:keyEvent(NSEventTypeKeyDown, 0x100, @"a", @"a", TRUE, kKeyCodeKeyA)
+  [responder handleEvent:keyEvent(NSEventTypeKeyDown, 0x100, @"a", @"a", TRUE, kKeyCodeKeyA)
               callback:^(BOOL handled) {
                 last_handled = handled;
               }];
@@ -187,7 +187,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, BasicKeyEvent) {
   [events removeAllObjects];
 
   last_handled = TRUE;
-  [handler handleEvent:keyEvent(NSEventTypeKeyUp, 124.0f, 0x100, @"a", @"a", FALSE, kKeyCodeKeyA)
+  [responder handleEvent:keyEvent(NSEventTypeKeyUp, 124.0f, 0x100, @"a", @"a", FALSE, kKeyCodeKeyA)
               callback:^(BOOL handled) {
                 last_handled = handled;
               }];
@@ -213,7 +213,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, NonAsciiCharacters) {
   __block NSMutableArray<TestKeyEvent*>* events = [[NSMutableArray<TestKeyEvent*> alloc] init];
   FlutterKeyEvent* event;
 
-  FlutterEmbedderKeyResponder* handler = [[FlutterEmbedderKeyResponder alloc]
+  FlutterEmbedderKeyResponder* responder = [[FlutterEmbedderKeyResponder alloc]
       initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
                           _Nullable _VoidPtr user_data) {
         [events addObject:[[TestKeyEvent alloc] initWithEvent:&event
@@ -221,7 +221,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, NonAsciiCharacters) {
                                                      userData:user_data]];
       }];
 
-  [handler handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x80140, @"", @"", FALSE, kKeyCodeAltRight)
+  [responder handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x80140, @"", @"", FALSE, kKeyCodeAltRight)
               callback:^(BOOL handled){
               }];
 
@@ -235,7 +235,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, NonAsciiCharacters) {
 
   [events removeAllObjects];
 
-  [handler handleEvent:keyEvent(NSEventTypeKeyDown, 0x80140, @"∑", @"w", FALSE, kKeyCodeKeyW)
+  [responder handleEvent:keyEvent(NSEventTypeKeyDown, 0x80140, @"∑", @"w", FALSE, kKeyCodeKeyW)
               callback:^(BOOL handled){
               }];
 
@@ -249,7 +249,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, NonAsciiCharacters) {
 
   [events removeAllObjects];
 
-  [handler handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeAltRight)
+  [responder handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeAltRight)
               callback:^(BOOL handled){
               }];
 
@@ -263,7 +263,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, NonAsciiCharacters) {
 
   [events removeAllObjects];
 
-  [handler handleEvent:keyEvent(NSEventTypeKeyUp, 0x100, @"w", @"w", FALSE, kKeyCodeKeyW)
+  [responder handleEvent:keyEvent(NSEventTypeKeyUp, 0x100, @"w", @"w", FALSE, kKeyCodeKeyW)
               callback:^(BOOL handled){
               }];
 
@@ -289,7 +289,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, IgnoreDuplicateDownEvent) {
   __block BOOL last_handled = TRUE;
   FlutterKeyEvent* event;
 
-  FlutterEmbedderKeyResponder* handler = [[FlutterEmbedderKeyResponder alloc]
+  FlutterEmbedderKeyResponder* responder = [[FlutterEmbedderKeyResponder alloc]
       initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
                           _Nullable _VoidPtr user_data) {
         [events addObject:[[TestKeyEvent alloc] initWithEvent:&event
@@ -298,7 +298,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, IgnoreDuplicateDownEvent) {
       }];
 
   last_handled = FALSE;
-  [handler handleEvent:keyEvent(NSEventTypeKeyDown, 0x100, @"a", @"a", FALSE, kKeyCodeKeyA)
+  [responder handleEvent:keyEvent(NSEventTypeKeyDown, 0x100, @"a", @"a", FALSE, kKeyCodeKeyA)
               callback:^(BOOL handled) {
                 last_handled = handled;
               }];
@@ -317,7 +317,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, IgnoreDuplicateDownEvent) {
   [events removeAllObjects];
 
   last_handled = FALSE;
-  [handler handleEvent:keyEvent(NSEventTypeKeyDown, 0x100, @"a", @"a", FALSE, kKeyCodeKeyA)
+  [responder handleEvent:keyEvent(NSEventTypeKeyDown, 0x100, @"a", @"a", FALSE, kKeyCodeKeyA)
               callback:^(BOOL handled) {
                 last_handled = handled;
               }];
@@ -326,7 +326,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, IgnoreDuplicateDownEvent) {
   EXPECT_EQ(last_handled, TRUE);
 
   last_handled = FALSE;
-  [handler handleEvent:keyEvent(NSEventTypeKeyUp, 0x100, @"a", @"a", FALSE, kKeyCodeKeyA)
+  [responder handleEvent:keyEvent(NSEventTypeKeyUp, 0x100, @"a", @"a", FALSE, kKeyCodeKeyA)
               callback:^(BOOL handled) {
                 last_handled = handled;
               }];
@@ -353,7 +353,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, ToggleModifiersDuringKeyTap) {
   __block NSMutableArray<TestKeyEvent*>* events = [[NSMutableArray<TestKeyEvent*> alloc] init];
   FlutterKeyEvent* event;
 
-  FlutterEmbedderKeyResponder* handler = [[FlutterEmbedderKeyResponder alloc]
+  FlutterEmbedderKeyResponder* responder = [[FlutterEmbedderKeyResponder alloc]
       initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
                           _Nullable _VoidPtr user_data) {
         [events addObject:[[TestKeyEvent alloc] initWithEvent:&event
@@ -361,7 +361,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, ToggleModifiersDuringKeyTap) {
                                                      userData:user_data]];
       }];
 
-  [handler handleEvent:keyEvent(NSEventTypeFlagsChanged, 123.0f, 0x20104, @"", @"", FALSE,
+  [responder handleEvent:keyEvent(NSEventTypeFlagsChanged, 123.0f, 0x20104, @"", @"", FALSE,
                                 kKeyCodeShiftRight)
               callback:^(BOOL handled){
               }];
@@ -378,7 +378,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, ToggleModifiersDuringKeyTap) {
 
   [events removeAllObjects];
 
-  [handler handleEvent:keyEvent(NSEventTypeKeyDown, 0x20104, @"A", @"A", FALSE, kKeyCodeKeyA)
+  [responder handleEvent:keyEvent(NSEventTypeKeyDown, 0x20104, @"A", @"A", FALSE, kKeyCodeKeyA)
               callback:^(BOOL handled){
               }];
 
@@ -393,7 +393,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, ToggleModifiersDuringKeyTap) {
 
   [events removeAllObjects];
 
-  [handler handleEvent:keyEvent(NSEventTypeKeyDown, 0x20104, @"A", @"A", TRUE, kKeyCodeKeyA)
+  [responder handleEvent:keyEvent(NSEventTypeKeyDown, 0x20104, @"A", @"A", TRUE, kKeyCodeKeyA)
               callback:^(BOOL handled){
               }];
 
@@ -408,7 +408,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, ToggleModifiersDuringKeyTap) {
 
   [events removeAllObjects];
 
-  [handler handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeShiftRight)
+  [responder handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeShiftRight)
               callback:^(BOOL handled){
               }];
 
@@ -423,7 +423,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, ToggleModifiersDuringKeyTap) {
 
   [events removeAllObjects];
 
-  [handler handleEvent:keyEvent(NSEventTypeKeyDown, 0x100, @"a", @"a", TRUE, kKeyCodeKeyA)
+  [responder handleEvent:keyEvent(NSEventTypeKeyDown, 0x100, @"a", @"a", TRUE, kKeyCodeKeyA)
               callback:^(BOOL handled){
               }];
 
@@ -437,7 +437,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, ToggleModifiersDuringKeyTap) {
 
   [events removeAllObjects];
 
-  [handler handleEvent:keyEvent(NSEventTypeKeyUp, 0x100, @"a", @"a", FALSE, kKeyCodeKeyA)
+  [responder handleEvent:keyEvent(NSEventTypeKeyUp, 0x100, @"a", @"a", FALSE, kKeyCodeKeyA)
               callback:^(BOOL handled){
               }];
 
@@ -462,7 +462,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SpecialModiferFlags) {
   __block NSMutableArray<TestKeyEvent*>* events = [[NSMutableArray<TestKeyEvent*> alloc] init];
   FlutterKeyEvent* event;
 
-  FlutterEmbedderKeyResponder* handler = [[FlutterEmbedderKeyResponder alloc]
+  FlutterEmbedderKeyResponder* responder = [[FlutterEmbedderKeyResponder alloc]
       initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
                           _Nullable _VoidPtr user_data) {
         [events addObject:[[TestKeyEvent alloc] initWithEvent:&event
@@ -474,7 +474,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SpecialModiferFlags) {
   // Then KeyUp: Numpad1, F1, KeyA, ShiftLeft
 
   // Numpad 1
-  [handler handleEvent:keyEvent(NSEventTypeKeyDown, 0x200100, @"1", @"1", FALSE, kKeyCodeNumpad1)
+  [responder handleEvent:keyEvent(NSEventTypeKeyDown, 0x200100, @"1", @"1", FALSE, kKeyCodeNumpad1)
               callback:^(BOOL handled){
               }];
 
@@ -490,7 +490,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SpecialModiferFlags) {
   [events removeAllObjects];
 
   // F1
-  [handler
+  [responder
       handleEvent:keyEvent(NSEventTypeKeyDown, 0x800100, @"\uf704", @"\uf704", FALSE, kKeyCodeF1)
          callback:^(BOOL handled){
          }];
@@ -507,7 +507,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SpecialModiferFlags) {
   [events removeAllObjects];
 
   // KeyA
-  [handler handleEvent:keyEvent(NSEventTypeKeyDown, 0x100, @"a", @"a", FALSE, kKeyCodeKeyA)
+  [responder handleEvent:keyEvent(NSEventTypeKeyDown, 0x100, @"a", @"a", FALSE, kKeyCodeKeyA)
               callback:^(BOOL handled){
               }];
 
@@ -523,7 +523,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SpecialModiferFlags) {
   [events removeAllObjects];
 
   // ShiftLeft
-  [handler
+  [responder
       handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x20102, @"", @"", FALSE, kKeyCodeShiftLeft)
          callback:^(BOOL handled){
          }];
@@ -540,7 +540,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SpecialModiferFlags) {
   [events removeAllObjects];
 
   // Numpad 1
-  [handler handleEvent:keyEvent(NSEventTypeKeyUp, 0x220102, @"1", @"1", FALSE, kKeyCodeNumpad1)
+  [responder handleEvent:keyEvent(NSEventTypeKeyUp, 0x220102, @"1", @"1", FALSE, kKeyCodeNumpad1)
               callback:^(BOOL handled){
               }];
 
@@ -556,7 +556,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SpecialModiferFlags) {
   [events removeAllObjects];
 
   // F1
-  [handler handleEvent:keyEvent(NSEventTypeKeyUp, 0x820102, @"\uF704", @"\uF704", FALSE, kKeyCodeF1)
+  [responder handleEvent:keyEvent(NSEventTypeKeyUp, 0x820102, @"\uF704", @"\uF704", FALSE, kKeyCodeF1)
               callback:^(BOOL handled){
               }];
 
@@ -572,7 +572,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SpecialModiferFlags) {
   [events removeAllObjects];
 
   // KeyA
-  [handler handleEvent:keyEvent(NSEventTypeKeyUp, 0x20102, @"a", @"a", FALSE, kKeyCodeKeyA)
+  [responder handleEvent:keyEvent(NSEventTypeKeyUp, 0x20102, @"a", @"a", FALSE, kKeyCodeKeyA)
               callback:^(BOOL handled){
               }];
 
@@ -588,7 +588,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SpecialModiferFlags) {
   [events removeAllObjects];
 
   // ShiftLeft
-  [handler handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeShiftLeft)
+  [responder handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeShiftLeft)
               callback:^(BOOL handled){
               }];
 
@@ -608,7 +608,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, IdentifyLeftAndRightModifiers) {
   __block NSMutableArray<TestKeyEvent*>* events = [[NSMutableArray<TestKeyEvent*> alloc] init];
   FlutterKeyEvent* event;
 
-  FlutterEmbedderKeyResponder* handler = [[FlutterEmbedderKeyResponder alloc]
+  FlutterEmbedderKeyResponder* responder = [[FlutterEmbedderKeyResponder alloc]
       initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
                           _Nullable _VoidPtr user_data) {
         [events addObject:[[TestKeyEvent alloc] initWithEvent:&event
@@ -616,7 +616,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, IdentifyLeftAndRightModifiers) {
                                                      userData:user_data]];
       }];
 
-  [handler
+  [responder
       handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x20102, @"", @"", FALSE, kKeyCodeShiftLeft)
          callback:^(BOOL handled){
          }];
@@ -632,7 +632,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, IdentifyLeftAndRightModifiers) {
 
   [events removeAllObjects];
 
-  [handler
+  [responder
       handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x20106, @"", @"", FALSE, kKeyCodeShiftRight)
          callback:^(BOOL handled){
          }];
@@ -648,7 +648,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, IdentifyLeftAndRightModifiers) {
 
   [events removeAllObjects];
 
-  [handler
+  [responder
       handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x20104, @"", @"", FALSE, kKeyCodeShiftLeft)
          callback:^(BOOL handled){
          }];
@@ -664,7 +664,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, IdentifyLeftAndRightModifiers) {
 
   [events removeAllObjects];
 
-  [handler handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeShiftRight)
+  [responder handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeShiftRight)
               callback:^(BOOL handled){
               }];
 
@@ -681,7 +681,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, IdentifyLeftAndRightModifiers) {
 }
 
 // Process various cases where pair modifier key events are missed, and the
-// handler has to "guess" how to synchronize states.
+// responder has to "guess" how to synchronize states.
 //
 // In the following comments, parentheses indicate missed events, while
 // asterisks indicate synthesized events.
@@ -693,7 +693,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynthesizeMissedModifierEvents) {
   };
   FlutterKeyEvent* event;
 
-  FlutterEmbedderKeyResponder* handler = [[FlutterEmbedderKeyResponder alloc]
+  FlutterEmbedderKeyResponder* responder = [[FlutterEmbedderKeyResponder alloc]
       initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
                           _Nullable _VoidPtr user_data) {
         [events addObject:[[TestKeyEvent alloc] initWithEvent:&event
@@ -705,7 +705,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynthesizeMissedModifierEvents) {
   // In:  L down, (L up), L down, L up
   // Out: L down,                 L up
   last_handled = FALSE;
-  [handler
+  [responder
       handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x20102, @"", @"", FALSE, kKeyCodeShiftLeft)
          callback:keyEventCallback];
 
@@ -725,7 +725,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynthesizeMissedModifierEvents) {
   [events removeAllObjects];
 
   last_handled = FALSE;
-  [handler
+  [responder
       handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x20102, @"", @"", FALSE, kKeyCodeShiftLeft)
          callback:keyEventCallback];
 
@@ -733,7 +733,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynthesizeMissedModifierEvents) {
   EXPECT_EQ(last_handled, TRUE);
 
   last_handled = FALSE;
-  [handler handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeShiftLeft)
+  [responder handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeShiftLeft)
               callback:keyEventCallback];
 
   EXPECT_EQ([events count], 1u);
@@ -756,7 +756,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynthesizeMissedModifierEvents) {
   // Out:
 
   last_handled = FALSE;
-  [handler handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeShiftLeft)
+  [responder handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeShiftLeft)
               callback:keyEventCallback];
 
   EXPECT_EQ([events count], 0u);
@@ -767,7 +767,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynthesizeMissedModifierEvents) {
   // Out: L down,                   *L up
 
   last_handled = FALSE;
-  [handler
+  [responder
       handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x20102, @"", @"", FALSE, kKeyCodeShiftLeft)
          callback:keyEventCallback];
 
@@ -787,7 +787,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynthesizeMissedModifierEvents) {
   [events removeAllObjects];
 
   last_handled = FALSE;
-  [handler handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeShiftRight)
+  [responder handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeShiftRight)
               callback:keyEventCallback];
 
   EXPECT_EQ([events count], 1u);
@@ -809,7 +809,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynthesizeMissedModifierEvents) {
   // Out: L down, R down          *L up & R up
 
   last_handled = FALSE;
-  [handler
+  [responder
       handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x20102, @"", @"", FALSE, kKeyCodeShiftLeft)
          callback:keyEventCallback];
 
@@ -829,7 +829,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynthesizeMissedModifierEvents) {
   [events removeAllObjects];
 
   last_handled = FALSE;
-  [handler
+  [responder
       handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x20106, @"", @"", FALSE, kKeyCodeShiftRight)
          callback:keyEventCallback];
 
@@ -849,7 +849,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynthesizeMissedModifierEvents) {
   [events removeAllObjects];
 
   last_handled = FALSE;
-  [handler handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeShiftRight)
+  [responder handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeShiftRight)
               callback:keyEventCallback];
 
   EXPECT_EQ([events count], 2u);
@@ -885,7 +885,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynthesizeMissedModifierEventsInNorma
   };
   FlutterKeyEvent* event;
 
-  FlutterEmbedderKeyResponder* handler = [[FlutterEmbedderKeyResponder alloc]
+  FlutterEmbedderKeyResponder* responder = [[FlutterEmbedderKeyResponder alloc]
       initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
                           _Nullable _VoidPtr user_data) {
         [events addObject:[[TestKeyEvent alloc] initWithEvent:&event
@@ -897,7 +897,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynthesizeMissedModifierEventsInNorma
   // Out:               *LS down & A down,              *LS up & A up
 
   last_handled = FALSE;
-  [handler handleEvent:keyEvent(NSEventTypeKeyDown, 0x20102, @"A", @"A", FALSE, kKeyCodeKeyA)
+  [responder handleEvent:keyEvent(NSEventTypeKeyDown, 0x20102, @"A", @"A", FALSE, kKeyCodeKeyA)
               callback:keyEventCallback];
 
   EXPECT_EQ([events count], 2u);
@@ -924,7 +924,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynthesizeMissedModifierEventsInNorma
   [events removeAllObjects];
 
   last_handled = FALSE;
-  [handler handleEvent:keyEvent(NSEventTypeKeyUp, 0x100, @"a", @"a", FALSE, kKeyCodeKeyA)
+  [responder handleEvent:keyEvent(NSEventTypeKeyUp, 0x100, @"a", @"a", FALSE, kKeyCodeKeyA)
               callback:keyEventCallback];
 
   EXPECT_EQ([events count], 2u);
@@ -959,7 +959,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, ConvertCapsLockEvents) {
   };
   FlutterKeyEvent* event;
 
-  FlutterEmbedderKeyResponder* handler = [[FlutterEmbedderKeyResponder alloc]
+  FlutterEmbedderKeyResponder* responder = [[FlutterEmbedderKeyResponder alloc]
       initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
                           _Nullable _VoidPtr user_data) {
         [events addObject:[[TestKeyEvent alloc] initWithEvent:&event
@@ -970,7 +970,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, ConvertCapsLockEvents) {
   // In:  CapsLock down
   // Out: CapsLock down & *CapsLock Up
   last_handled = FALSE;
-  [handler handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x10100, @"", @"", FALSE, kKeyCodeCapsLock)
+  [responder handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x10100, @"", @"", FALSE, kKeyCodeCapsLock)
               callback:keyEventCallback];
 
   EXPECT_EQ([events count], 2u);
@@ -1000,7 +1000,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, ConvertCapsLockEvents) {
   // In:  CapsLock up
   // Out: CapsLock down & *CapsLock Up
   last_handled = FALSE;
-  [handler handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeCapsLock)
+  [responder handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeCapsLock)
               callback:keyEventCallback];
 
   EXPECT_EQ([events count], 2u);
@@ -1036,7 +1036,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynchronizeCapsLockStateOnCapsLock) {
     last_handled = handled;
   };
 
-  FlutterEmbedderKeyResponder* handler = [[FlutterEmbedderKeyResponder alloc]
+  FlutterEmbedderKeyResponder* responder = [[FlutterEmbedderKeyResponder alloc]
       initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
                           _Nullable _VoidPtr user_data) {
         [events addObject:[[TestKeyEvent alloc] initWithEvent:&event
@@ -1047,7 +1047,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynchronizeCapsLockStateOnCapsLock) {
   // In:  CapsLock down
   // Out:
   last_handled = FALSE;
-  [handler handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeCapsLock)
+  [responder handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeCapsLock)
               callback:keyEventCallback];
 
   EXPECT_EQ([events count], 0u);
@@ -1063,7 +1063,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynchronizeCapsLockStateOnNormalKey) 
   };
   FlutterKeyEvent* event;
 
-  FlutterEmbedderKeyResponder* handler = [[FlutterEmbedderKeyResponder alloc]
+  FlutterEmbedderKeyResponder* responder = [[FlutterEmbedderKeyResponder alloc]
       initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
                           _Nullable _VoidPtr user_data) {
         [events addObject:[[TestKeyEvent alloc] initWithEvent:&event
@@ -1072,7 +1072,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynchronizeCapsLockStateOnNormalKey) 
       }];
 
   last_handled = FALSE;
-  [handler handleEvent:keyEvent(NSEventTypeKeyDown, 0x10100, @"A", @"a", FALSE, kKeyCodeKeyA)
+  [responder handleEvent:keyEvent(NSEventTypeKeyDown, 0x10100, @"A", @"a", FALSE, kKeyCodeKeyA)
               callback:keyEventCallback];
 
   EXPECT_EQ([events count], 3u);

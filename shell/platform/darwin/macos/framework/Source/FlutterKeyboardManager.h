@@ -44,8 +44,8 @@
  *
  * The owner should be an object that handles the lifecycle of this instance.
  * The |owner.nextResponder| can be nil, but if it isn't, it will be where the
- * key events are propagated to, if no handlers or additional handlers handle
- * the event. The owner is typically a |FlutterViewController|.
+ * key events are propagated to if no responders handle the event. The owner
+ * is typically a |FlutterViewController|.
  */
 - (nonnull instancetype)initWithOwner:(nonnull NSResponder*)weakOwner;
 
@@ -53,13 +53,13 @@
  * Add a primary resopnder, which asynchronously decides whether to handle an
  * event.
  */
-- (void)addPrimaryResponder:(nonnull id<FlutterKeyPrimaryResponder>)handler;
+- (void)addPrimaryResponder:(nonnull id<FlutterKeyPrimaryResponder>)responder;
 
 /**
- * Add a secondary handler, which synchronously decides whether to handle an
+ * Add a secondary responder, which synchronously decides whether to handle an
  * event in order if no earlier responders handle.
  */
-- (void)addSecondaryResponder:(nonnull id<FlutterKeySecondaryResponder>)handler;
+- (void)addSecondaryResponder:(nonnull id<FlutterKeySecondaryResponder>)responder;
 
 /**
  * Dispatch a key event to all responders, and possibly the next |NSResponder|

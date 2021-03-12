@@ -99,11 +99,11 @@ TEST(FlutterKeyboardManagerUnittests, NextResponderShouldThrowOnKeyUp) {
   ASSERT_TRUE([[FlutterKeyboardManagerUnittestsObjC alloc] nextResponderShouldThrowOnKeyUp]);
 }
 
-TEST(FlutterKeyboardManagerUnittests, SingleAsyncHandler) {
+TEST(FlutterKeyboardManagerUnittests, SinglePrimaryResponder) {
   ASSERT_TRUE([[FlutterKeyboardManagerUnittestsObjC alloc] singlePrimaryResponder]);
 }
 
-TEST(FlutterKeyboardManagerUnittests, DoubleAsyncHandlers) {
+TEST(FlutterKeyboardManagerUnittests, DoublePrimaryResponder) {
   ASSERT_TRUE([[FlutterKeyboardManagerUnittestsObjC alloc] doublePrimaryResponder]);
 }
 
@@ -200,7 +200,7 @@ TEST(FlutterKeyboardManagerUnittests, EmptyNextResponder) {
   [callbacks1 removeAllObjects];
   [callbacks2 removeAllObjects];
 
-  // Case: Both handlers report FALSE.
+  // Case: Both responders report FALSE.
   [manager handleEvent:flutter::testing::keyDownEvent(0x50)];
   EXPECT_EQ([callbacks1 count], 1u);
   EXPECT_EQ([callbacks2 count], 1u);
