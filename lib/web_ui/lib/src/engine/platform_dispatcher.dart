@@ -363,8 +363,6 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         return;
 
       case 'flutter/assets':
-        assert(ui.webOnlyAssetManager !=
-            null); // ignore: unnecessary_null_comparison
         final String url = utf8.decode(data!.buffer.asUint8List());
         ui.webOnlyAssetManager.load(url).then((ByteData assetData) {
           _replyToPlatformMessage(callback, assetData);
