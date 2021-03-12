@@ -214,8 +214,10 @@ const char* getEventString(NSString* characters) {
 - (instancetype)initWithHandler:(FlutterEmbedderKeyResponder*)responder
                      responseId:(uint64_t)responseId {
   self = [super init];
-  _responder = responder;
-  _responseId = responseId;
+  if (self != nil) {
+    _responder = responder;
+    _responseId = responseId;
+  }
   return self;
 }
 @end
@@ -425,6 +427,32 @@ const char* getEventString(NSString* characters) {
     _modifierFlagOfInterestMask = computeModifierFlagOfInterestMask();
   }
   return self;
+}
+
+- (void)handleEvent:(NSEvent*)event callback:(FlutterAsyncKeyCallback)callback {
+  // The conversion algorithm relies on a non-nil callback to properly compute
+  // `synthesized`. If someday callback is allowed to be nil, make a dummy empty
+  // callback instead.
+  NSAssert(callback != nil, @"The callback must not be nil.");
+  FlutterKeyCallbackGuard* guardedCallback =
+      [[FlutterKeyCallbackGuard alloc] initWithCallback:callback];
+  switch (event.type) {
+    case NSEventTypeKeyDown:
+      [self handleDownEvent:event callback:guardedCallback];
+      break;
+    case NSEventTypeKeyUp:
+      [self handleUpEvent:event callback:guardedCallback];
+      break;
+    case NSEventTypeFlagsChanged:
+      [self handleFlagEvent:event callback:guardedCallback];
+      break;
+    default:
+      NSAssert(false, @"Unexpected key event type: |%@|.", @(event.type));
+  }
+  NSAssert(guardedCallback.handled, @"The callback is returned without being handled.");
+  NSAssert(_lastModifierFlags == (event.modifierFlags & _modifierFlagOfInterestMask),
+           @"The modifier flags are not properly updated: recorded 0x%lx, event 0x%lx",
+           _lastModifierFlags, (event.modifierFlags & _modifierFlagOfInterestMask));
 }
 
 #pragma mark - Private
@@ -639,32 +667,6 @@ const char* getEventString(NSString* characters) {
                       timestamp:event.timestamp
                         keyCode:event.keyCode
                        callback:callback];
-}
-
-- (void)handleEvent:(NSEvent*)event callback:(FlutterAsyncKeyCallback)callback {
-  // The conversion algorithm relies on a non-nil callback to properly compute
-  // `synthesized`. If someday callback is allowed to be nil, make a dummy empty
-  // callback instead.
-  NSAssert(callback != nil, @"The callback must not be nil.");
-  FlutterKeyCallbackGuard* guardedCallback =
-      [[FlutterKeyCallbackGuard alloc] initWithCallback:callback];
-  switch (event.type) {
-    case NSEventTypeKeyDown:
-      [self handleDownEvent:event callback:guardedCallback];
-      break;
-    case NSEventTypeKeyUp:
-      [self handleUpEvent:event callback:guardedCallback];
-      break;
-    case NSEventTypeFlagsChanged:
-      [self handleFlagEvent:event callback:guardedCallback];
-      break;
-    default:
-      NSAssert(false, @"Unexpected key event type: |%@|.", @(event.type));
-  }
-  NSAssert(guardedCallback.handled, @"The callback is returned without being handled.");
-  NSAssert(_lastModifierFlags == (event.modifierFlags & _modifierFlagOfInterestMask),
-           @"The modifier flags are not properly updated: recorded 0x%lx, event 0x%lx",
-           _lastModifierFlags, (event.modifierFlags & _modifierFlagOfInterestMask));
 }
 
 - (void)handleResponse:(BOOL)handled forId:(uint64_t)responseId {

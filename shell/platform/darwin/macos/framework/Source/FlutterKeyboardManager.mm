@@ -29,9 +29,11 @@
 
 - (nonnull instancetype)initWithOwner:(NSResponder*)weakOwner {
   self = [super init];
-  _owner = weakOwner;
-  _primaryResponders = [[NSMutableArray alloc] init];
-  _secondaryResponders = [[NSMutableArray alloc] init];
+  if (self != nil) {
+    _owner = weakOwner;
+    _primaryResponders = [[NSMutableArray alloc] init];
+    _secondaryResponders = [[NSMutableArray alloc] init];
+  }
   return self;
 }
 

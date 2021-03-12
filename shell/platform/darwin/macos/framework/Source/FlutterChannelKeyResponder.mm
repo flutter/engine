@@ -31,8 +31,10 @@
 
 - (nonnull instancetype)initWithChannel:(nonnull FlutterBasicMessageChannel*)channel {
   self = [super init];
-  _channel = channel;
-  _previouslyPressedFlags = 0;
+  if (self != nil) {
+    _channel = channel;
+    _previouslyPressedFlags = 0;
+  }
   return self;
 }
 
