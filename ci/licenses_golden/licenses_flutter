@@ -643,10 +643,10 @@ FILE: ../../../flutter/shell/common/engine_unittests.cc
 FILE: ../../../flutter/shell/common/fixtures/shell_test.dart
 FILE: ../../../flutter/shell/common/fixtures/shelltest_screenshot.png
 FILE: ../../../flutter/shell/common/input_events_unittests.cc
+FILE: ../../../flutter/shell/common/layer_tree_holder.cc
+FILE: ../../../flutter/shell/common/layer_tree_holder.h
+FILE: ../../../flutter/shell/common/layer_tree_holder_unittests.cc
 FILE: ../../../flutter/shell/common/persistent_cache_unittests.cc
-FILE: ../../../flutter/shell/common/pipeline.cc
-FILE: ../../../flutter/shell/common/pipeline.h
-FILE: ../../../flutter/shell/common/pipeline_unittests.cc
 FILE: ../../../flutter/shell/common/platform_view.cc
 FILE: ../../../flutter/shell/common/platform_view.h
 FILE: ../../../flutter/shell/common/pointer_data_dispatcher.cc
@@ -1098,6 +1098,8 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterPlug
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterPluginRegistrarMacOS.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterViewController.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Info.plist
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/AccessibilityBridgeMacDelegate.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/AccessibilityBridgeMacDelegate.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterAppDelegate.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStore.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStore.mm
@@ -1132,6 +1134,9 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMouse
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterOpenGLRenderer.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterOpenGLRenderer.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterOpenGLRendererTest.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformNodeDelegateMac.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformNodeDelegateMac.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformNodeDelegateMacTest.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderer.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderingBackend.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderingBackend.mm
@@ -1143,6 +1148,7 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterSurfa
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterSurfaceManager.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputPlugin.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputPlugin.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputPluginTest.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextureRegistrar.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextureRegistrar.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h

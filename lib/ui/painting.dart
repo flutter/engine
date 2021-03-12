@@ -825,7 +825,26 @@ enum BlendMode {
 
 /// Quality levels for image filters.
 ///
-/// See [Paint.filterQuality].
+/// When scaling up typically the quality is lowest at [none], higher at [low],
+/// even higher at [medium], and the highest at [high].
+///
+/// When scaling down, the higher the scale factor the less effective the [high]
+/// level is. Beyond certain scale level [medium] may provide better visual
+/// result than [high].
+///
+/// To get high quality when scaling images up and down, or when the scale is
+/// unknown, [medium] is typically a good enough choice.
+///
+/// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/filter_quality.png)
+///
+/// When building for the web using the `--web-renderer=html` option, filter
+/// quality has no effect. All images are rendered using the respective
+/// browser's default setting.
+///
+/// See also:
+///
+///  * [Paint.filterQuality], which is used to pass [FilterQuality] to the
+///    engine while painting.
 enum FilterQuality {
   // This list comes from Skia's SkFilterQuality.h and the values (order) should
   // be kept in sync.
@@ -842,13 +861,28 @@ enum FilterQuality {
 
   /// Better quality than [low], faster than [high].
   ///
+  /// When scaling down images, this is frequently better than [high].
+  ///
   /// Typically this implies a combination of bilinear interpolation and
   /// pyramidal parametric pre-filtering (mipmaps).
+  ///
+  /// {@template dart.ui.filterQuality.seeAlso}
+  /// See also:
+  ///
+  ///  * [FilterQuality] class-level documentation that goes into detail about
+  ///    relative qualities of the enum values.
+  /// {@endtemplate}
   medium,
 
-  /// Best possible quality filtering, albeit also the slowest.
+  /// Best possible quality when scaling up images.
+  ///
+  /// When images are scaled down, this is frequently worse than [medium].
+  ///
+  /// This option is the slowest.
   ///
   /// Typically this implies bicubic interpolation or better.
+  ///
+  /// {@macro dart.ui.filterQuality.seeAlso}
   high,
 }
 
@@ -5239,7 +5273,7 @@ typedef _Callback<T> = void Function(T result);
 ///
 /// Return value should be null on success, and a string error message on
 /// failure.
-typedef _Callbacker<T> = String? Function(_Callback<T> callback);
+typedef _Callbacker<T> = String? Function(_Callback<T?> callback);
 
 /// Converts a method that receives a value-returning callback to a method that
 /// returns a Future.
@@ -5264,7 +5298,7 @@ typedef _Callbacker<T> = String? Function(_Callback<T> callback);
 /// ```
 Future<T> _futurize<T>(_Callbacker<T> callbacker) {
   final Completer<T> completer = Completer<T>.sync();
-  final String? error = callbacker((T t) {
+  final String? error = callbacker((T? t) {
     if (t == null) {
       completer.completeError(Exception('operation failed'));
     } else {
