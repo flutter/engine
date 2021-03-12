@@ -378,6 +378,18 @@ static GLenum _glGetError() {
   return GL_NO_ERROR;
 }
 
+bool epoxy_has_gl_extension(const char* extension) {
+  return false;
+}
+
+bool epoxy_is_desktop_gl(void) {
+  return false;
+}
+
+int epoxy_gl_version(void) {
+  return 0;
+}
+
 #ifdef __GNUC__
 #define CONSTRUCT(_func) static void _func(void) __attribute__((constructor));
 #define DESTRUCT(_func) static void _func(void) __attribute__((destructor));
