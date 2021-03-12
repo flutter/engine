@@ -277,7 +277,7 @@ external set _jsSetUrlStrategy(_JsSetUrlStrategy? newJsSetUrlStrategy);
 
 UrlStrategy? _createDefaultUrlStrategy() {
   return ui.debugEmulateFlutterTesterEnvironment
-      ? TestUrlStrategy.fromEntry(TestHistoryEntry('default', null, '/default'))
+      ? TestUrlStrategy.fromEntry(TestHistoryEntry('default', null, '/'))
       : const HashUrlStrategy();
 }
 

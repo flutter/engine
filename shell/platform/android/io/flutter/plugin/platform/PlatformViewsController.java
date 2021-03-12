@@ -430,7 +430,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    *     controller. This should be the context of the Activity hosting the Flutter application.
    * @param textureRegistry The texture registry which provides the output textures into which the
    *     embedded views will be rendered.
-   * @param dartExecutor The dart execution context, which is used to setup a system channel.
+   * @param dartExecutor The dart execution context, which is used to set up a system channel.
    */
   public void attach(
       Context context, TextureRegistry textureRegistry, @NonNull DartExecutor dartExecutor) {
@@ -458,7 +458,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     if (platformViewsChannel != null) {
       platformViewsChannel.setPlatformViewsHandler(null);
     }
-    destroyOverlaySurfaces();
     platformViewsChannel = null;
     context = null;
     textureRegistry = null;
@@ -762,9 +761,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   }
 
   public void onDisplayOverlaySurface(int id, int x, int y, int width, int height) {
-    if (overlayLayerViews.get(id) == null) {
-      throw new IllegalStateException("The overlay surface (id:" + id + ") doesn't exist");
-    }
     initializeRootImageViewIfNeeded();
 
     final FlutterImageView overlayView = overlayLayerViews.get(id);
