@@ -97,9 +97,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  #remove once https://github.com/flutter/buildroot/pull/442 lands
-  #'src': 'https://github.com/flutter/buildroot.git' + '@' + 'd05290fdfb0b8d2aad3c60bf0b4a76f368616452',
-  'src': 'https://github.com/clarkezone/buildroot.git' + '@' + 'e7d24e56a77178a9fe0a13ee32e2a2ed785628b1',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + '33358ba597f875f6646522fd4ea86c1b31404d77',
 
    # Fuchsia compatibility
    #
