@@ -8,6 +8,8 @@ import 'package:test/test.dart';
 
 import 'package:ui/src/engine.dart';
 
+import 'common.dart';
+
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
@@ -71,5 +73,6 @@ void testMain() {
         ),
       );
     });
-  });
+    // TODO: https://github.com/flutter/flutter/issues/60040
+  }, skip: isIosSafari);
 }
