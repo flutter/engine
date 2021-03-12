@@ -237,9 +237,7 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     ui.BlendMode blendMode, {
     ui.ShaderMaskEngineLayer? oldLayer,
   }) {
-    assert(shader != null &&
-        maskRect != null &&
-        blendMode != null); // ignore: unnecessary_null_comparison
+    assert(blendMode != null); // ignore: unnecessary_null_comparison
     return _pushSurface<PersistedShaderMask>(PersistedShaderMask(
         oldLayer as PersistedShaderMask?, shader, maskRect, blendMode));
   }
@@ -265,8 +263,6 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     ui.Clip clipBehavior = ui.Clip.none,
     ui.PhysicalShapeEngineLayer? oldLayer,
   }) {
-    assert(color != null,
-        'color must not be null'); // ignore: unnecessary_null_comparison
     return _pushSurface<PersistedPhysicalShape>(PersistedPhysicalShape(
       oldLayer as PersistedPhysicalShape?,
       path as SurfacePath,
@@ -390,8 +386,6 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     bool freeze = false,
     ui.FilterQuality filterQuality = ui.FilterQuality.low,
   }) {
-    assert(offset != null,
-        'Offset argument was null'); // ignore: unnecessary_null_comparison
     _addTexture(
         offset.dx, offset.dy, width, height, textureId, filterQuality.index);
   }
@@ -427,8 +421,6 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     double width = 0.0,
     double height = 0.0,
   }) {
-    assert(offset != null,
-        'Offset argument was null'); // ignore: unnecessary_null_comparison
     _addPlatformView(offset.dx, offset.dy, width, height, viewId);
   }
 

@@ -303,7 +303,9 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   static ui.PlatformMessageResponseCallback?
       _zonedPlatformMessageResponseCallback(
           ui.PlatformMessageResponseCallback? callback) {
-    if (callback == null) return null;
+    if (callback == null) {
+      return null;
+    }
 
     // Store the zone in which the callback is being registered.
     final Zone registrationZone = Zone.current;
@@ -354,7 +356,8 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
             // Also respond in HTML mode. Otherwise, apps would have to detect
             // CanvasKit vs HTML before invoking this method.
-            _replyToPlatformMessage(callback, codec.encodeSuccessEnvelope([true]));
+            _replyToPlatformMessage(
+                callback, codec.encodeSuccessEnvelope([true]));
             break;
         }
         return;
