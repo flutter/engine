@@ -83,8 +83,7 @@ public class FlutterEngineTest {
     assertTrue(GeneratedPluginRegistrant.getRegisteredEngines().isEmpty());
     FlutterLoader mockFlutterLoader = mock(FlutterLoader.class);
     when(mockFlutterLoader.automaticallyRegisterPlugins()).thenReturn(false);
-    FlutterEngine flutterEngine =
-        new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, flutterJNI);
+    new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, flutterJNI);
 
     List<FlutterEngine> registeredEngines = GeneratedPluginRegistrant.getRegisteredEngines();
     assertTrue(registeredEngines.isEmpty());
@@ -95,8 +94,12 @@ public class FlutterEngineTest {
     assertTrue(GeneratedPluginRegistrant.getRegisteredEngines().isEmpty());
     FlutterLoader mockFlutterLoader = mock(FlutterLoader.class);
     when(mockFlutterLoader.automaticallyRegisterPlugins()).thenReturn(true);
-    FlutterEngine flutterEngine =
-        new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, flutterJNI, false);
+    new FlutterEngine(
+      RuntimeEnvironment.application,
+      mockFlutterLoader,
+      flutterJNI,
+      /*dartVmArgs=*/ new String[] {},
+      /*automaticallyRegisterPlugins=*/ false);
 
     List<FlutterEngine> registeredEngines = GeneratedPluginRegistrant.getRegisteredEngines();
     assertTrue(registeredEngines.isEmpty());
