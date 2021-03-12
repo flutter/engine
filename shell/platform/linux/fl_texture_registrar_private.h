@@ -33,11 +33,11 @@ FlTextureRegistrar* fl_texture_registrar_new(FlEngine* engine);
  *
  * Returns: %TRUE on success.
  */
-bool fl_texture_registrar_populate_texture(
+gboolean fl_texture_registrar_populate_texture(
     FlTextureRegistrar* registrar,
     int64_t texture_id,
-    size_t width,
-    size_t height,
+    uint32_t width,
+    uint32_t height,
     FlutterOpenGLTexture* opengl_texture);
 
 /**
