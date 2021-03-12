@@ -645,6 +645,8 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 
 - (void)viewWillAppear:(BOOL)animated {
   TRACE_EVENT0("flutter", "viewWillAppear");
+    
+  [_engine.get() viewController] = self;
 
   // Send platform settings to Flutter, e.g., platform brightness.
   [self onUserSettingsChanged:nil];
@@ -673,6 +675,8 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 - (void)viewWillDisappear:(BOOL)animated {
   TRACE_EVENT0("flutter", "viewWillDisappear");
   [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.inactive"];
+    
+  [_engine.get() viewController] = nil;
 
   [super viewWillDisappear:animated];
 }
