@@ -21,6 +21,8 @@ namespace {
  *  * lowestSetBit(0) returns 0.
  */
 static NSUInteger lowestSetBit(NSUInteger bitmask) {
+  // This utilizes property of two's complement (negation), which propagates a
+  // carry bit from LSB to the lowest set bit.
   return bitmask & -bitmask;
 }
 
@@ -47,7 +49,14 @@ static bool IsUnprintableKey(NSUInteger length, NSString* label) {
 }
 
 /**
- * Returns a key code composited by a base key and a plane.
+ * Returns a key code composed with a base key and a plane.
+ *
+ * Examples of unprintable keys are "NSUpArrowFunctionKey = 0xF700" or
+ * "NSHomeFunctionKey = 0xF729".
+ *
+ * See
+ * https://developer.apple.com/documentation/appkit/1535851-function-key_unicodes?language=objc
+ * for more information.
  */
 static uint64_t KeyOfPlane(uint64_t baseKey, uint64_t plane) {
   return plane | (baseKey & kValueMask);
@@ -57,10 +66,10 @@ static uint64_t KeyOfPlane(uint64_t baseKey, uint64_t plane) {
  * Returns the physical key for a key code.
  */
 static uint64_t GetPhysicalKeyForKeyCode(unsigned short keyCode) {
-  NSNumber* physicalKeyKey = [keyCodeToPhysicalKey objectForKey:@(keyCode)];
-  if (physicalKeyKey == nil)
+  NSNumber* physicalKey = [keyCodeToPhysicalKey objectForKey:@(keyCode)];
+  if (physicalKey == nil)
     return 0;
-  return physicalKeyKey.unsignedLongLongValue;
+  return physicalKey.unsignedLongLongValue;
 }
 
 /**
@@ -71,6 +80,21 @@ static uint64_t GetLogicalKeyForModifier(unsigned short keyCode, uint64_t hidCod
   if (fromKeyCode != nil)
     return fromKeyCode.unsignedLongLongValue;
   return KeyOfPlane(hidCode, kHidPlane);
+}
+
+/**
+ * Converts upper letters to lower letters in ASCII, and returns as-is
+ * otherwise.
+ *
+ * Independent of locale.
+ */
+static uint64_t toLower(uint64_t ch) {
+  const uint64_t lowerA = 0x61;
+  const uint64_t upperA = 0x41;
+  const uint64_t upperZ = 0x5a;
+  if (ch >= upperA && ch <= upperZ)
+    return ch + (lowerA - upperA);
+  return ch;
 }
 
 /**
@@ -87,7 +111,7 @@ static uint64_t GetLogicalKeyForEvent(NSEvent* event, uint64_t physicalKey) {
   NSString* keyLabel = event.charactersIgnoringModifiers;
   NSUInteger keyLabelLength = [keyLabel length];
   // If this key is printable, generate the logical key from its Unicode
-  // value. Control keys such as ESC, CRTL, and SHIFT are not printable. HOME,
+  // value. Control keys such as ESC, CTRL, and SHIFT are not printable. HOME,
   // DEL, arrow keys, and function keys are considered modifier function keys,
   // which generate invalid Unicode scalar values.
   if (keyLabelLength != 0 && !IsControlCharacter(keyLabelLength, keyLabel) &&
@@ -96,8 +120,7 @@ static uint64_t GetLogicalKeyForEvent(NSEvent* event, uint64_t physicalKey) {
     // length, limit to a maximum of two Unicode scalar values. It is unlikely
     // that a keyboard would produce a code point bigger than 32 bits, but it is
     // still worth defending against this case.
-    NSCAssert((keyLabelLength < 2),
-              @"Unexpected long key label: |%@|. Please report this to Flutter.", keyLabel);
+    NSCAssert((keyLabelLength < 2), @"Unexpected long key label: |%@|.", keyLabel);
 
     uint64_t codeUnit = (uint64_t)[keyLabel characterAtIndex:0];
     if (keyLabelLength == 2) {
@@ -105,10 +128,7 @@ static uint64_t GetLogicalKeyForEvent(NSEvent* event, uint64_t physicalKey) {
       codeUnit = (codeUnit << 16) | secondCode;
     }
     if (codeUnit < 256) {
-      if (isupper(codeUnit)) {
-        return tolower(codeUnit);
-      }
-      return codeUnit;
+      return toLower(codeUnit);
     }
     return KeyOfPlane(codeUnit, kUnicodePlane);
   }
@@ -139,8 +159,8 @@ static double GetFlutterTimestampFrom(NSTimeInterval timestamp) {
 /**
  * Compute |modifierFlagOfInterestMask| out of |keyCodeToModifierFlag|.
  *
- * This equals to the bitwise-or of all values of |keyCodeToModifierFlag| as well as
- * NSEventModifierFlagCapsLock.
+ * This is equal to the bitwise-or of all values of |keyCodeToModifierFlag| as
+ * well as NSEventModifierFlagCapsLock.
  */
 static NSUInteger computeModifierFlagOfInterestMask() {
   __block NSUInteger modifierFlagOfInterestMask = NSEventModifierFlagCapsLock;
@@ -311,8 +331,14 @@ const char* getEventString(NSString* characters) {
 @property(nonatomic) NSMutableDictionary<NSNumber*, NSNumber*>* pressingRecords;
 
 /**
- * A constant mask for NSEvent.modifierFlags that Flutter tries to keep
- * synchronized on.
+ * A constant mask for NSEvent.modifierFlags that Flutter keep synchronized
+ * with.
+ *
+ * Flutter keeps track of the last |modifierFlags| and compare it with the
+ * incoming one. Any bit within |modifierFlagOfInterestMask| that is different
+ * (except for the one that corresponds to the event key) indicates that an
+ * event for this modifier was missed, and Flutter synthesizes an event to make
+ * up for the state difference.
  *
  * It is computed by computeModifierFlagOfInterestMask.
  */
@@ -381,7 +407,7 @@ const char* getEventString(NSString* characters) {
  *
  * If callback is nil, then the event is synthesized.
  */
-- (void)sendModifierEventOfType:(BOOL)shouldDown
+- (void)sendModifierEventOfType:(BOOL)isDownEvent
                       timestamp:(NSTimeInterval)timestamp
                         keyCode:(unsigned short)keyCode
                        callback:(nullable FlutterKeyCallbackGuard*)callback;
@@ -408,7 +434,7 @@ const char* getEventString(NSString* characters) {
 - (void)handleFlagEvent:(nonnull NSEvent*)event callback:(nonnull FlutterKeyCallbackGuard*)callback;
 
 /**
- * Processes the response from a framework.
+ * Processes the response from the framework.
  */
 - (void)handleResponse:(BOOL)handled forId:(uint64_t)responseId;
 
@@ -479,8 +505,8 @@ const char* getEventString(NSString* characters) {
     if (keyCode == nil) {
       continue;
     }
-    BOOL shouldDown = (currentFlagsOfInterest & currentFlag) != 0;
-    [self sendModifierEventOfType:shouldDown
+    BOOL isDownEvent = (currentFlagsOfInterest & currentFlag) != 0;
+    [self sendModifierEventOfType:isDownEvent
                         timestamp:timestamp
                           keyCode:[keyCode unsignedShortValue]
                          callback:nil];
@@ -533,7 +559,7 @@ const char* getEventString(NSString* characters) {
   _sendEvent(flutterEvent, nullptr, nullptr);
 }
 
-- (void)sendModifierEventOfType:(BOOL)shouldDown
+- (void)sendModifierEventOfType:(BOOL)isDownEvent
                       timestamp:(NSTimeInterval)timestamp
                         keyCode:(unsigned short)keyCode
                        callback:(FlutterKeyCallbackGuard*)callback {
@@ -547,13 +573,13 @@ const char* getEventString(NSString* characters) {
   FlutterKeyEvent flutterEvent = {
       .struct_size = sizeof(FlutterKeyEvent),
       .timestamp = GetFlutterTimestampFrom(timestamp),
-      .type = shouldDown ? kFlutterKeyEventTypeDown : kFlutterKeyEventTypeUp,
+      .type = isDownEvent ? kFlutterKeyEventTypeDown : kFlutterKeyEventTypeUp,
       .physical = physicalKey,
       .logical = logicalKey,
       .character = nil,
       .synthesized = callback == nil,
   };
-  [self updateKey:physicalKey asPressed:shouldDown ? logicalKey : 0];
+  [self updateKey:physicalKey asPressed:isDownEvent ? logicalKey : 0];
   if (callback != nil) {
     [self sendPrimaryFlutterEvent:flutterEvent callback:callback];
   } else {
@@ -569,6 +595,10 @@ const char* getEventString(NSString* characters) {
   bool isARepeat = event.isARepeat;
   NSNumber* pressedLogicalKey = _pressingRecords[@(physicalKey)];
   if (pressedLogicalKey != nil && !isARepeat) {
+    // Normally the key up events won't be missed since macOS always send the
+    // key up event to the window where the corresponding key down occurred.
+    // However this might happen in add-to-app scenarios if the focus is changed
+    // from the native view to the Flutter view amid the key tap.
     [callback resolveTo:TRUE];
     return;
   }
@@ -598,11 +628,10 @@ const char* getEventString(NSString* characters) {
   uint64_t physicalKey = GetPhysicalKeyForKeyCode(event.keyCode);
   NSNumber* pressedLogicalKey = _pressingRecords[@(physicalKey)];
   if (pressedLogicalKey == nil) {
-    NSAssert(FALSE,
-             @"Received key up event that has not been pressed: "
-             @"keyCode %d, char %@, charIM %@, previously pressed logical 0x%llx",
-             event.keyCode, event.characters, event.charactersIgnoringModifiers,
-             [pressedLogicalKey unsignedLongLongValue]);
+    // Normally the key up events won't be missed since macOS always send the
+    // key up event to the window where the corresponding key down occurred.
+    // However this might happen in add-to-app scenarios if the focus is changed
+    // from the native view to the Flutter view amid the key tap.
     [callback resolveTo:TRUE];
     return;
   }

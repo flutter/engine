@@ -279,12 +279,6 @@ TEST(FlutterEmbedderKeyResponderUnittests, NonAsciiCharacters) {
   [events removeAllObjects];
 }
 
-// In very rare occasions, the up event can be missed. Test that duplicate down events
-// in these situations are ignored.
-//
-// MacOS usually matches down and up events perfectly since it tracks key taps to a window.
-// Unmatched events can occur when you hold a key, then Ctrl-clicks desktop to trigger a
-// menu, and release key.
 TEST(FlutterEmbedderKeyResponderUnittests, IgnoreDuplicateDownEvent) {
   __block NSMutableArray<TestKeyEvent*>* events = [[NSMutableArray<TestKeyEvent*> alloc] init];
   __block BOOL last_handled = TRUE;
@@ -344,6 +338,28 @@ TEST(FlutterEmbedderKeyResponderUnittests, IgnoreDuplicateDownEvent) {
   EXPECT_EQ(last_handled, TRUE);
 
   [events removeAllObjects];
+}
+
+TEST(FlutterEmbedderKeyResponderUnittests, IgnoreDuplicateUpEvent) {
+  __block NSMutableArray<TestKeyEvent*>* events = [[NSMutableArray<TestKeyEvent*> alloc] init];
+  __block BOOL last_handled = TRUE;
+
+  FlutterEmbedderKeyResponder* responder = [[FlutterEmbedderKeyResponder alloc]
+      initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
+                          _Nullable _VoidPtr user_data) {
+        [events addObject:[[TestKeyEvent alloc] initWithEvent:&event
+                                                     callback:callback
+                                                     userData:user_data]];
+      }];
+
+  last_handled = FALSE;
+  [responder handleEvent:keyEvent(NSEventTypeKeyUp, 0x100, @"a", @"a", FALSE, kKeyCodeKeyA)
+                callback:^(BOOL handled) {
+                  last_handled = handled;
+                }];
+
+  EXPECT_EQ([events count], 0u);
+  EXPECT_EQ(last_handled, TRUE);
 }
 
 // Press L shift, A, then release L shift then A, on an US keyboard.
