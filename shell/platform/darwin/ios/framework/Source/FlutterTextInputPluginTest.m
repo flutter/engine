@@ -888,7 +888,7 @@ FLUTTER_ASSERT_ARC
                              }];
     XCTAssertNotNil(activeView);
   }
-  // This assert proves we released the old active view.
+  // This assert proves the myInputPlugin.textInputView is not gc'd.
   XCTAssertNotNil(activeView);
 }
 
