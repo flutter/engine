@@ -664,6 +664,7 @@ hooks = [
     # to regenerate winrt headers
     'name': 'Generate winrt headers',
     'pattern': '.',
+    'condition': 'download_windows_deps',
     'action': [
       'python',
       'src/build/win/generate_winrt_headers.py',
