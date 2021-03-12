@@ -61,7 +61,7 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
         ? _customUrlStrategy
         : _createDefaultUrlStrategy();
     // Prevent any further customization of URL strategy.
-    _debugLogStackTrace('get _urlStrategyForInitialization');
+    _debugLogStackTrace('get _urlStrategyForInitialization\n$urlStrategy\n');
     _isUrlStrategySet = true;
     return urlStrategy;
   }
@@ -116,7 +116,9 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
   }
 
   Future<void> resetHistory() async {
+    print('>> BEFORE browserHistory.tearDown');
     await _browserHistory?.tearDown();
+    print('>> AFTER browserHistory.tearDown');
     _browserHistory = null;
     // Reset the globals too.
     _usingRouter = false;

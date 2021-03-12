@@ -25,11 +25,13 @@ void testMain() {
   late EngineSingletonFlutterWindow window;
 
   setUp(() {
+    print('>> SETUP');
     ui.webOnlyInitializeEngine();
     window = EngineSingletonFlutterWindow(0, EnginePlatformDispatcher.instance);
   });
 
   tearDown(() async {
+    print('>> TEARDOWN');
     await window.resetHistory();
   });
 

@@ -164,16 +164,20 @@ class MultiEntriesBrowserHistory extends BrowserHistory {
 
   @override
   Future<void> tearDown() async {
+    print('>> AFTER browserHistory.tearDown');
     if (_isDisposed || urlStrategy == null) {
+      print('>> return;');
       return;
     }
     _isDisposed = true;
+    print('>> unsubscribe();');
     _unsubscribe();
 
     // Restores the html browser history.
     assert(_hasSerialCount(currentState));
     int backCount = _currentSerialCount;
     if (backCount > 0) {
+      print('>> await urlStrategy!.go(-backCount);');
       await urlStrategy!.go(-backCount);
     }
     // Unwrap state.
