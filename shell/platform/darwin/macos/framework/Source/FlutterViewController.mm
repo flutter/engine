@@ -8,10 +8,10 @@
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterCodecs.h"
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterChannelKeyResponder.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEmbedderKeyResponder.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyChannelHandler.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyEmbedderHandler.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyHandler.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyPrimaryResponder.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyboardManager.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.h"
@@ -391,21 +391,23 @@ static void CommonInit(FlutterViewController* controller) {
   __weak FlutterViewController* weakSelf = self;
   [FlutterMouseCursorPlugin registerWithRegistrar:[self registrarForPlugin:@"mousecursor"]];
   _keyboardManager = [[FlutterKeyboardManager alloc] initWithOwner:weakSelf];
+  [_keyboardManager addPrimaryResponder:[[FlutterEmbedderKeyResponder alloc]
+                                            initWithSendEvent:^(const FlutterKeyEvent& event,
+                                                                FlutterKeyEventCallback callback,
+                                                                void* userData) {
+                                              [weakSelf.engine sendKeyEvent:event
+                                                                   callback:callback
+                                                                   userData:userData];
+                                            }]];
   [_keyboardManager
-      addHandler:[[FlutterKeyEmbedderHandler alloc]
-                     initWithSendEvent:^(const FlutterKeyEvent& event,
-                                         FlutterKeyEventCallback callback, void* userData) {
-                       [weakSelf.engine sendKeyEvent:event callback:callback userData:userData];
-                     }]];
+      addPrimaryResponder:[[FlutterChannelKeyResponder alloc]
+                              initWithChannel:[FlutterBasicMessageChannel
+                                                  messageChannelWithName:@"flutter/keyevent"
+                                                         binaryMessenger:_engine.binaryMessenger
+                                                                   codec:[FlutterJSONMessageCodec
+                                                                             sharedInstance]]]];
   [_keyboardManager
-      addHandler:[[FlutterKeyChannelHandler alloc]
-                     initWithChannel:[FlutterBasicMessageChannel
-                                         messageChannelWithName:@"flutter/keyevent"
-                                                binaryMessenger:_engine.binaryMessenger
-                                                          codec:[FlutterJSONMessageCodec
-                                                                    sharedInstance]]]];
-  [_keyboardManager
-      addAdditionalHandler:[[FlutterTextInputPlugin alloc] initWithViewController:self]];
+      addSecondaryResponder:[[FlutterTextInputPlugin alloc] initWithViewController:self]];
   _settingsChannel =
       [FlutterBasicMessageChannel messageChannelWithName:@"flutter/settings"
                                          binaryMessenger:_engine.binaryMessenger

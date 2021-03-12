@@ -5,7 +5,7 @@
 #import <Foundation/Foundation.h>
 #import <OCMock/OCMock.h>
 
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyEmbedderHandler.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEmbedderKeyResponder.h"
 #import "flutter/testing/testing.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
@@ -130,12 +130,12 @@ NSEvent* keyEvent(NSEventType type,
 // Test the most basic key events.
 //
 // Press, hold, and release key A on an US keyboard.
-TEST(FlutterKeyEmbedderHandlerUnittests, BasicKeyEvent) {
+TEST(FlutterEmbedderKeyResponderUnittests, BasicKeyEvent) {
   __block NSMutableArray<TestKeyEvent*>* events = [[NSMutableArray<TestKeyEvent*> alloc] init];
   __block BOOL last_handled = TRUE;
   FlutterKeyEvent* event;
 
-  FlutterKeyEmbedderHandler* handler = [[FlutterKeyEmbedderHandler alloc]
+  FlutterEmbedderKeyResponder* handler = [[FlutterEmbedderKeyResponder alloc]
       initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
                           _Nullable _VoidPtr user_data) {
         [events addObject:[[TestKeyEvent alloc] initWithEvent:&event
@@ -209,11 +209,11 @@ TEST(FlutterKeyEmbedderHandlerUnittests, BasicKeyEvent) {
   [events removeAllObjects];
 }
 
-TEST(FlutterKeyEmbedderHandlerUnittests, NonAsciiCharacters) {
+TEST(FlutterEmbedderKeyResponderUnittests, NonAsciiCharacters) {
   __block NSMutableArray<TestKeyEvent*>* events = [[NSMutableArray<TestKeyEvent*> alloc] init];
   FlutterKeyEvent* event;
 
-  FlutterKeyEmbedderHandler* handler = [[FlutterKeyEmbedderHandler alloc]
+  FlutterEmbedderKeyResponder* handler = [[FlutterEmbedderKeyResponder alloc]
       initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
                           _Nullable _VoidPtr user_data) {
         [events addObject:[[TestKeyEvent alloc] initWithEvent:&event
@@ -284,12 +284,12 @@ TEST(FlutterKeyEmbedderHandlerUnittests, NonAsciiCharacters) {
 // MacOS usually matches down and up events perfectly since it tracks key taps to a window.
 // Unmatched events can occur when you hold a key, then Ctrl-clicks desktop to trigger a
 // menu, and release key.
-TEST(FlutterKeyEmbedderHandlerUnittests, IgnoreDuplicateDownEvent) {
+TEST(FlutterEmbedderKeyResponderUnittests, IgnoreDuplicateDownEvent) {
   __block NSMutableArray<TestKeyEvent*>* events = [[NSMutableArray<TestKeyEvent*> alloc] init];
   __block BOOL last_handled = TRUE;
   FlutterKeyEvent* event;
 
-  FlutterKeyEmbedderHandler* handler = [[FlutterKeyEmbedderHandler alloc]
+  FlutterEmbedderKeyResponder* handler = [[FlutterEmbedderKeyResponder alloc]
       initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
                           _Nullable _VoidPtr user_data) {
         [events addObject:[[TestKeyEvent alloc] initWithEvent:&event
@@ -349,11 +349,11 @@ TEST(FlutterKeyEmbedderHandlerUnittests, IgnoreDuplicateDownEvent) {
 //
 // This is special because the characters for the A key will change in this
 // process.
-TEST(FlutterKeyEmbedderHandlerUnittests, ToggleModifiersDuringKeyTap) {
+TEST(FlutterEmbedderKeyResponderUnittests, ToggleModifiersDuringKeyTap) {
   __block NSMutableArray<TestKeyEvent*>* events = [[NSMutableArray<TestKeyEvent*> alloc] init];
   FlutterKeyEvent* event;
 
-  FlutterKeyEmbedderHandler* handler = [[FlutterKeyEmbedderHandler alloc]
+  FlutterEmbedderKeyResponder* handler = [[FlutterEmbedderKeyResponder alloc]
       initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
                           _Nullable _VoidPtr user_data) {
         [events addObject:[[TestKeyEvent alloc] initWithEvent:&event
@@ -458,11 +458,11 @@ TEST(FlutterKeyEmbedderHandlerUnittests, ToggleModifiersDuringKeyTap) {
 // Some keys in modifierFlags are not to indicate modifier state, but to mark
 // the key area that the key belongs to, such as numpad keys or function keys.
 // Ensure these flags do not obstruct other keys.
-TEST(FlutterKeyEmbedderHandlerUnittests, SpecialModiferFlags) {
+TEST(FlutterEmbedderKeyResponderUnittests, SpecialModiferFlags) {
   __block NSMutableArray<TestKeyEvent*>* events = [[NSMutableArray<TestKeyEvent*> alloc] init];
   FlutterKeyEvent* event;
 
-  FlutterKeyEmbedderHandler* handler = [[FlutterKeyEmbedderHandler alloc]
+  FlutterEmbedderKeyResponder* handler = [[FlutterEmbedderKeyResponder alloc]
       initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
                           _Nullable _VoidPtr user_data) {
         [events addObject:[[TestKeyEvent alloc] initWithEvent:&event
@@ -604,11 +604,11 @@ TEST(FlutterKeyEmbedderHandlerUnittests, SpecialModiferFlags) {
   [events removeAllObjects];
 }
 
-TEST(FlutterKeyEmbedderHandlerUnittests, IdentifyLeftAndRightModifiers) {
+TEST(FlutterEmbedderKeyResponderUnittests, IdentifyLeftAndRightModifiers) {
   __block NSMutableArray<TestKeyEvent*>* events = [[NSMutableArray<TestKeyEvent*> alloc] init];
   FlutterKeyEvent* event;
 
-  FlutterKeyEmbedderHandler* handler = [[FlutterKeyEmbedderHandler alloc]
+  FlutterEmbedderKeyResponder* handler = [[FlutterEmbedderKeyResponder alloc]
       initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
                           _Nullable _VoidPtr user_data) {
         [events addObject:[[TestKeyEvent alloc] initWithEvent:&event
@@ -685,7 +685,7 @@ TEST(FlutterKeyEmbedderHandlerUnittests, IdentifyLeftAndRightModifiers) {
 //
 // In the following comments, parentheses indicate missed events, while
 // asterisks indicate synthesized events.
-TEST(FlutterKeyEmbedderHandlerUnittests, SynthesizeMissedModifierEvents) {
+TEST(FlutterEmbedderKeyResponderUnittests, SynthesizeMissedModifierEvents) {
   __block NSMutableArray<TestKeyEvent*>* events = [[NSMutableArray<TestKeyEvent*> alloc] init];
   __block BOOL last_handled = TRUE;
   id keyEventCallback = ^(BOOL handled) {
@@ -693,7 +693,7 @@ TEST(FlutterKeyEmbedderHandlerUnittests, SynthesizeMissedModifierEvents) {
   };
   FlutterKeyEvent* event;
 
-  FlutterKeyEmbedderHandler* handler = [[FlutterKeyEmbedderHandler alloc]
+  FlutterEmbedderKeyResponder* handler = [[FlutterEmbedderKeyResponder alloc]
       initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
                           _Nullable _VoidPtr user_data) {
         [events addObject:[[TestKeyEvent alloc] initWithEvent:&event
@@ -877,7 +877,7 @@ TEST(FlutterKeyEmbedderHandlerUnittests, SynthesizeMissedModifierEvents) {
   [events removeAllObjects];
 }
 
-TEST(FlutterKeyEmbedderHandlerUnittests, SynthesizeMissedModifierEventsInNormalEvents) {
+TEST(FlutterEmbedderKeyResponderUnittests, SynthesizeMissedModifierEventsInNormalEvents) {
   __block NSMutableArray<TestKeyEvent*>* events = [[NSMutableArray<TestKeyEvent*> alloc] init];
   __block BOOL last_handled = TRUE;
   id keyEventCallback = ^(BOOL handled) {
@@ -885,7 +885,7 @@ TEST(FlutterKeyEmbedderHandlerUnittests, SynthesizeMissedModifierEventsInNormalE
   };
   FlutterKeyEvent* event;
 
-  FlutterKeyEmbedderHandler* handler = [[FlutterKeyEmbedderHandler alloc]
+  FlutterEmbedderKeyResponder* handler = [[FlutterEmbedderKeyResponder alloc]
       initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
                           _Nullable _VoidPtr user_data) {
         [events addObject:[[TestKeyEvent alloc] initWithEvent:&event
@@ -951,7 +951,7 @@ TEST(FlutterKeyEmbedderHandlerUnittests, SynthesizeMissedModifierEventsInNormalE
   [events removeAllObjects];
 }
 
-TEST(FlutterKeyEmbedderHandlerUnittests, ConvertCapsLockEvents) {
+TEST(FlutterEmbedderKeyResponderUnittests, ConvertCapsLockEvents) {
   __block NSMutableArray<TestKeyEvent*>* events = [[NSMutableArray<TestKeyEvent*> alloc] init];
   __block BOOL last_handled = TRUE;
   id keyEventCallback = ^(BOOL handled) {
@@ -959,7 +959,7 @@ TEST(FlutterKeyEmbedderHandlerUnittests, ConvertCapsLockEvents) {
   };
   FlutterKeyEvent* event;
 
-  FlutterKeyEmbedderHandler* handler = [[FlutterKeyEmbedderHandler alloc]
+  FlutterEmbedderKeyResponder* handler = [[FlutterEmbedderKeyResponder alloc]
       initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
                           _Nullable _VoidPtr user_data) {
         [events addObject:[[TestKeyEvent alloc] initWithEvent:&event
@@ -1029,14 +1029,14 @@ TEST(FlutterKeyEmbedderHandlerUnittests, ConvertCapsLockEvents) {
 }
 
 // Press the CapsLock key when CapsLock state is desynchronized
-TEST(FlutterKeyEmbedderHandlerUnittests, SynchronizeCapsLockStateOnCapsLock) {
+TEST(FlutterEmbedderKeyResponderUnittests, SynchronizeCapsLockStateOnCapsLock) {
   __block NSMutableArray<TestKeyEvent*>* events = [[NSMutableArray<TestKeyEvent*> alloc] init];
   __block BOOL last_handled = TRUE;
   id keyEventCallback = ^(BOOL handled) {
     last_handled = handled;
   };
 
-  FlutterKeyEmbedderHandler* handler = [[FlutterKeyEmbedderHandler alloc]
+  FlutterEmbedderKeyResponder* handler = [[FlutterEmbedderKeyResponder alloc]
       initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
                           _Nullable _VoidPtr user_data) {
         [events addObject:[[TestKeyEvent alloc] initWithEvent:&event
@@ -1055,7 +1055,7 @@ TEST(FlutterKeyEmbedderHandlerUnittests, SynchronizeCapsLockStateOnCapsLock) {
 }
 
 // Press the CapsLock key when CapsLock state is desynchronized
-TEST(FlutterKeyEmbedderHandlerUnittests, SynchronizeCapsLockStateOnNormalKey) {
+TEST(FlutterEmbedderKeyResponderUnittests, SynchronizeCapsLockStateOnNormalKey) {
   __block NSMutableArray<TestKeyEvent*>* events = [[NSMutableArray<TestKeyEvent*> alloc] init];
   __block BOOL last_handled = TRUE;
   id keyEventCallback = ^(BOOL handled) {
@@ -1063,7 +1063,7 @@ TEST(FlutterKeyEmbedderHandlerUnittests, SynchronizeCapsLockStateOnNormalKey) {
   };
   FlutterKeyEvent* event;
 
-  FlutterKeyEmbedderHandler* handler = [[FlutterKeyEmbedderHandler alloc]
+  FlutterEmbedderKeyResponder* handler = [[FlutterEmbedderKeyResponder alloc]
       initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
                           _Nullable _VoidPtr user_data) {
         [events addObject:[[TestKeyEvent alloc] initWithEvent:&event

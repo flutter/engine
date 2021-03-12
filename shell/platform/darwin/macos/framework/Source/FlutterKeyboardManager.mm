@@ -12,14 +12,14 @@
 @property(nonatomic, weak) NSResponder* owner;
 
 /**
- * The handlers added by addHandler.
+ * The primary responders added by addPrimaryResponder.
  */
-@property(nonatomic) NSMutableArray<id<FlutterKeyHandler>>* keyHandlers;
+@property(nonatomic) NSMutableArray<id<FlutterKeyPrimaryResponder>>* keyHandlers;
 
 /**
- * The additional handlers added by addAdditionalHandler.
+ * The secondary responders added by addSecondaryResponder.
  */
-@property(nonatomic) NSMutableArray<id<FlutterKeyFinalResponder>>* additionalKeyHandlers;
+@property(nonatomic) NSMutableArray<id<FlutterKeySecondaryResponder>>* additionalKeyHandlers;
 
 @end
 
@@ -33,16 +33,16 @@
   return self;
 }
 
-- (void)addHandler:(nonnull id<FlutterKeyHandler>)handler {
+- (void)addPrimaryResponder:(nonnull id<FlutterKeyPrimaryResponder>)handler {
   [_keyHandlers addObject:handler];
 }
 
-- (void)addAdditionalHandler:(nonnull id<FlutterKeyFinalResponder>)handler {
+- (void)addSecondaryResponder:(nonnull id<FlutterKeySecondaryResponder>)handler {
   [_additionalKeyHandlers addObject:handler];
 }
 
 - (void)dispatchToAdditionalHandlers:(NSEvent*)event {
-  for (id<FlutterKeyFinalResponder> responder in _additionalKeyHandlers) {
+  for (id<FlutterKeySecondaryResponder> responder in _additionalKeyHandlers) {
     if ([responder handleKeyEvent:event]) {
       return;
     }
@@ -69,29 +69,30 @@
 }
 
 - (void)handleEvent:(nonnull NSEvent*)event {
-  // Be sure to add a handler in propagateKeyEvent if you allow more event
-  // types here.
+  // Be sure to add a handling method in propagateKeyEvent if you allow more
+  // event types here.
   if (event.type != NSEventTypeKeyDown && event.type != NSEventTypeKeyUp &&
       event.type != NSEventTypeFlagsChanged) {
     return;
   }
-  // Having no key handlers require extra logic, but since Flutter adds all
-  // handlers in hard-code, this is a situation that Flutter will never meet.
-  NSAssert([_keyHandlers count] >= 0, @"At least one key handler must be added.");
+  // Having no primary responders require extra logic, but since Flutter adds
+  // all primary responders in hard-code, this is a situation that Flutter will
+  // never meet.
+  NSAssert([_keyHandlers count] >= 0, @"At least one primary responder must be added.");
 
   __weak __typeof__(self) weakSelf = self;
   __block int unreplied = [_keyHandlers count];
   __block BOOL anyHandled = false;
-  FlutterKeyHandlerCallback replyCallback = ^(BOOL handled) {
+  FlutterAsyncKeyCallback replyCallback = ^(BOOL handled) {
     unreplied -= 1;
-    NSAssert(unreplied >= 0, @"More key handlers replied than possible.");
+    NSAssert(unreplied >= 0, @"More primary responders replied than possible.");
     anyHandled = anyHandled || handled;
     if (unreplied == 0 && !anyHandled) {
       [weakSelf dispatchToAdditionalHandlers:event];
     }
   };
 
-  for (id<FlutterKeyHandler> handler in _keyHandlers) {
+  for (id<FlutterKeyPrimaryResponder> handler in _keyHandlers) {
     [handler handleEvent:event callback:replyCallback];
   }
 }

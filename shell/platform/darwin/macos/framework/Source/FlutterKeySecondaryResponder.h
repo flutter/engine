@@ -9,9 +9,9 @@
  * to handle an event synchronously.
  *
  * To use this class, add it to a |FlutterKeyboardManager| with
- * |addAdditionalHandler|.
+ * |addSecondaryResponder|.
  */
-@protocol FlutterKeyFinalResponder
+@protocol FlutterKeySecondaryResponder
 /**
  * Informs the receiver that the user has interacted with a key.
  *

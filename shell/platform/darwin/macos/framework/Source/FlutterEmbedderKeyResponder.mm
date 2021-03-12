@@ -4,7 +4,7 @@
 
 #import <objc/message.h>
 
-#import "FlutterKeyEmbedderHandler.h"
+#import "FlutterEmbedderKeyResponder.h"
 #import "KeyCodeMap_internal.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterCodecs.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
@@ -152,11 +152,10 @@ static NSUInteger computeModifierFlagOfInterestMask() {
 }
 
 /**
- * The handler sent to the embedder's SendKeyEvent.
+ * The C-function sent to the embedder's |SendKeyEvent|, wrapping
+ * |FlutterEmbedderKeyResponder.handleResponse|.
  *
- * The |user_data| should actually be a |FlutterKeyPendingResponse| that has
- * been retained once with |__bridge_retained|. This function calls
- * |FlutterKeyPendingResponse.handler|'s |handleResponse| using |handled|.
+ * For the reason of this wrap, see |FlutterKeyPendingResponse|.
  */
 void HandleResponse(bool handled, void* user_data);
 
@@ -174,37 +173,44 @@ const char* getEventString(NSString* characters) {
     // https://developer.apple.com/documentation/appkit/1535851-function-key_unicodes?language=objc).
     // These characters are filtered out since they're unprintable.
     //
-    // Although the documentation claims to reserve 0xF700-0xF8FF, only up to 0xF747
-    // is actually used. Here we choose to filter out 0xF700-0xF7FF section.
-    // The reason for keeping the 0xF800-0xF8FF section is because 0xF8FF is
-    // used for the "Apple logo" character (Option-Shift-K on US keyboard.)
+    // Although the documentation claims to reserve 0xF700-0xF8FF, only up to
+    // 0xF747 is actually used. Here we choose to filter out 0xF700-0xF7FF
+    // section. The reason for keeping the 0xF800-0xF8FF section is because
+    // 0xF8FF is used for the "Apple logo" character (Option-Shift-K on US
+    // keyboard.)
     return nullptr;
   }
   return [characters UTF8String];
 }
 }  // namespace
 
-/* An entry of FlutterKeyEmbedderHandler.pendingResponse.
+/* The invocation context for |HandleResponse|, wrapping
+ * |FlutterEmbedderKeyResponder.handleResponse|.
  *
- * FlutterEngineSendKeyEvent only supports a global function and a pointer.
- * This class is used for the global function, HandleResponse, to convert a
- * pointer into a method call, FlutterKeyEmbedderHandler.handleResponse,
- * essentially binding |FlutterKeyPendingResponse.handleResponse| with a
- * |FlutterKeyPendingResponse| instance.
+ * The embedder functions only accept C-functions as callbacks, as well as an
+ * arbitray user_data. In order to send an instance method of
+ * |FlutterEmbedderKeyResponder.handleResponse| to the engine's |SendKeyEvent|,
+ * we wrap the invocation into a C-function |HandleResponse| and invocation
+ * context |FlutterKeyPendingResponse|.
+ *
+ * When this object is sent to the engine's |SendKeyEvent| as |user_data|, it
+ * must be attached with |__bridge_retained|. When this object is parsed
+ * in |HandleResponse| from |user_data|, it will be attached with
+ * |__bridge_transfer|.
  */
 @interface FlutterKeyPendingResponse : NSObject
 
-@property(nonatomic) FlutterKeyEmbedderHandler* handler;
+@property(nonatomic) FlutterEmbedderKeyResponder* handler;
 
 @property(nonatomic) uint64_t responseId;
 
-- (nonnull instancetype)initWithHandler:(nonnull FlutterKeyEmbedderHandler*)handler
+- (nonnull instancetype)initWithHandler:(nonnull FlutterEmbedderKeyResponder*)handler
                              responseId:(uint64_t)responseId;
 
 @end
 
 @implementation FlutterKeyPendingResponse
-- (instancetype)initWithHandler:(FlutterKeyEmbedderHandler*)handler
+- (instancetype)initWithHandler:(FlutterEmbedderKeyResponder*)handler
                      responseId:(uint64_t)responseId {
   self = [super init];
   _handler = handler;
@@ -213,7 +219,7 @@ const char* getEventString(NSString* characters) {
 }
 @end
 
-@interface FlutterKeyEmbedderHandler ()
+@interface FlutterEmbedderKeyResponder ()
 
 /**
  * The function to send converted events to.
@@ -336,7 +342,7 @@ const char* getEventString(NSString* characters) {
 
 @end
 
-@implementation FlutterKeyEmbedderHandler
+@implementation FlutterEmbedderKeyResponder
 
 - (nonnull instancetype)initWithSendEvent:(FlutterSendEmbedderKeyEvent)sendEvent {
   self = [super init];

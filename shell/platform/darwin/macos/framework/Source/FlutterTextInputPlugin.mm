@@ -258,7 +258,7 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
 }
 
 #pragma mark -
-#pragma mark FlutterKeyFinalResponder
+#pragma mark FlutterKeySecondaryResponder
 
 /**
  * Handles key down events received from the view controller, responding TRUE if

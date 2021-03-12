@@ -5,7 +5,7 @@
 #import <Foundation/Foundation.h>
 #import <OCMock/OCMock.h>
 
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyChannelHandler.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterChannelKeyResponder.h"
 #import "flutter/testing/testing.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
@@ -31,7 +31,7 @@ NSEvent* keyEvent(NSEventType type,
 }
 }  // namespace
 
-TEST(FlutterKeyChannelHandlerUnittests, BasicKeyEvent) {
+TEST(FlutterChannelKeyResponderUnittests, BasicKeyEvent) {
   __block NSMutableArray<id>* messages = [[NSMutableArray<id> alloc] init];
   __block BOOL next_response = TRUE;
   __block NSMutableArray<NSNumber*>* responses = [[NSMutableArray<NSNumber*> alloc] init];
@@ -53,12 +53,12 @@ TEST(FlutterKeyChannelHandlerUnittests, BasicKeyEvent) {
       }));
 
   // Key down
-  FlutterKeyChannelHandler* handler =
-      [[FlutterKeyChannelHandler alloc] initWithChannel:mockKeyEventChannel];
-  [handler handleEvent:keyEvent(NSEventTypeKeyDown, 0x100, @"a", @"a", FALSE, 0)
-              callback:^(BOOL handled) {
-                [responses addObject:@(handled)];
-              }];
+  FlutterChannelKeyResponder* responder =
+      [[FlutterChannelKeyResponder alloc] initWithChannel:mockKeyEventChannel];
+  [responder handleEvent:keyEvent(NSEventTypeKeyDown, 0x100, @"a", @"a", FALSE, 0)
+                callback:^(BOOL handled) {
+                  [responses addObject:@(handled)];
+                }];
 
   EXPECT_EQ([messages count], 1u);
   EXPECT_STREQ([[messages lastObject][@"keymap"] UTF8String], "macos");
@@ -76,10 +76,10 @@ TEST(FlutterKeyChannelHandlerUnittests, BasicKeyEvent) {
 
   // Key up
   next_response = FALSE;
-  [handler handleEvent:keyEvent(NSEventTypeKeyUp, 0x100, @"a", @"a", FALSE, 0)
-              callback:^(BOOL handled) {
-                [responses addObject:@(handled)];
-              }];
+  [responder handleEvent:keyEvent(NSEventTypeKeyUp, 0x100, @"a", @"a", FALSE, 0)
+                callback:^(BOOL handled) {
+                  [responses addObject:@(handled)];
+                }];
 
   EXPECT_EQ([messages count], 1u);
   EXPECT_STREQ([[messages lastObject][@"keymap"] UTF8String], "macos");
@@ -97,10 +97,10 @@ TEST(FlutterKeyChannelHandlerUnittests, BasicKeyEvent) {
 
   // LShift down
   next_response = TRUE;
-  [handler handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x20102, @"", @"", FALSE, 56)
-              callback:^(BOOL handled) {
-                [responses addObject:@(handled)];
-              }];
+  [responder handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x20102, @"", @"", FALSE, 56)
+                callback:^(BOOL handled) {
+                  [responses addObject:@(handled)];
+                }];
 
   EXPECT_EQ([messages count], 1u);
   EXPECT_STREQ([[messages lastObject][@"keymap"] UTF8String], "macos");
@@ -116,10 +116,10 @@ TEST(FlutterKeyChannelHandlerUnittests, BasicKeyEvent) {
 
   // RShift down
   next_response = false;
-  [handler handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x20106, @"", @"", FALSE, 60)
-              callback:^(BOOL handled) {
-                [responses addObject:@(handled)];
-              }];
+  [responder handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x20106, @"", @"", FALSE, 60)
+                callback:^(BOOL handled) {
+                  [responses addObject:@(handled)];
+                }];
 
   EXPECT_EQ([messages count], 1u);
   EXPECT_STREQ([[messages lastObject][@"keymap"] UTF8String], "macos");
@@ -135,10 +135,10 @@ TEST(FlutterKeyChannelHandlerUnittests, BasicKeyEvent) {
 
   // LShift up
   next_response = false;
-  [handler handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x20104, @"", @"", FALSE, 56)
-              callback:^(BOOL handled) {
-                [responses addObject:@(handled)];
-              }];
+  [responder handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x20104, @"", @"", FALSE, 56)
+                callback:^(BOOL handled) {
+                  [responses addObject:@(handled)];
+                }];
 
   EXPECT_EQ([messages count], 1u);
   EXPECT_STREQ([[messages lastObject][@"keymap"] UTF8String], "macos");
@@ -154,10 +154,10 @@ TEST(FlutterKeyChannelHandlerUnittests, BasicKeyEvent) {
 
   // RShift up
   next_response = false;
-  [handler handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, 60)
-              callback:^(BOOL handled) {
-                [responses addObject:@(handled)];
-              }];
+  [responder handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, 60)
+                callback:^(BOOL handled) {
+                  [responses addObject:@(handled)];
+                }];
 
   EXPECT_EQ([messages count], 1u);
   EXPECT_STREQ([[messages lastObject][@"keymap"] UTF8String], "macos");
@@ -172,7 +172,7 @@ TEST(FlutterKeyChannelHandlerUnittests, BasicKeyEvent) {
   [responses removeAllObjects];
 }
 
-TEST(FlutterKeyChannelHandlerUnittests, EmptyResponseIsTakenAsHandled) {
+TEST(FlutterChannelKeyResponderUnittests, EmptyResponseIsTakenAsHandled) {
   __block NSMutableArray<id>* messages = [[NSMutableArray<id> alloc] init];
   __block NSMutableArray<NSNumber*>* responses = [[NSMutableArray<NSNumber*> alloc] init];
 
@@ -189,12 +189,12 @@ TEST(FlutterKeyChannelHandlerUnittests, EmptyResponseIsTakenAsHandled) {
         callback(nullptr);
       }));
 
-  FlutterKeyChannelHandler* handler =
-      [[FlutterKeyChannelHandler alloc] initWithChannel:mockKeyEventChannel];
-  [handler handleEvent:keyEvent(NSEventTypeKeyDown, 0x100, @"a", @"a", FALSE, 0)
-              callback:^(BOOL handled) {
-                [responses addObject:@(handled)];
-              }];
+  FlutterChannelKeyResponder* responder =
+      [[FlutterChannelKeyResponder alloc] initWithChannel:mockKeyEventChannel];
+  [responder handleEvent:keyEvent(NSEventTypeKeyDown, 0x100, @"a", @"a", FALSE, 0)
+                callback:^(BOOL handled) {
+                  [responses addObject:@(handled)];
+                }];
 
   EXPECT_EQ([messages count], 1u);
   EXPECT_STREQ([[messages lastObject][@"keymap"] UTF8String], "macos");

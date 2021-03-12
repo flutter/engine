@@ -4,13 +4,13 @@
 
 #import <objc/message.h>
 
-#import "FlutterKeyChannelHandler.h"
+#import "FlutterChannelKeyResponder.h"
 #import "KeyCodeMap_internal.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterCodecs.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/embedder/embedder.h"
 
-@interface FlutterKeyChannelHandler ()
+@interface FlutterChannelKeyResponder ()
 
 /**
  * The channel used to communicate with Flutter.
@@ -27,7 +27,7 @@
 
 @end
 
-@implementation FlutterKeyChannelHandler
+@implementation FlutterChannelKeyResponder
 
 - (nonnull instancetype)initWithChannel:(nonnull FlutterBasicMessageChannel*)channel {
   self = [super init];
@@ -36,7 +36,7 @@
   return self;
 }
 
-- (void)handleEvent:(NSEvent*)event callback:(FlutterKeyHandlerCallback)callback {
+- (void)handleEvent:(NSEvent*)event callback:(FlutterAsyncKeyCallback)callback {
   NSString* type;
   switch (event.type) {
     case NSEventTypeKeyDown:

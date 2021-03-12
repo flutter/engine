@@ -4,7 +4,7 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterViewController.h"
 
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyFinalResponder.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeySecondaryResponder.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 
 @interface FlutterViewController ()
