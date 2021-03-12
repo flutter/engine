@@ -359,8 +359,9 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
 
   UIView* flutter_view = flutter_view_.get();
   FlutterClippingMaskView* maskView = [[[FlutterClippingMaskView alloc]
-                                        initWithFrame:CGRectMake(-clipView.frame.origin.x, -clipView.frame.origin.y, CGRectGetWidth(flutter_view.bounds),
-                                                                 CGRectGetHeight(flutter_view.bounds))] autorelease];
+      initWithFrame:CGRectMake(-clipView.frame.origin.x, -clipView.frame.origin.y,
+                               CGRectGetWidth(flutter_view.bounds),
+                               CGRectGetHeight(flutter_view.bounds))] autorelease];
 
   auto iter = mutators_stack.Begin();
   while (iter != mutators_stack.End()) {
