@@ -145,9 +145,9 @@ TEST(FlutterEmbedderKeyResponderUnittests, BasicKeyEvent) {
 
   last_handled = FALSE;
   [responder handleEvent:keyEvent(NSEventTypeKeyDown, 123.0f, 0x100, @"a", @"a", FALSE, 0)
-              callback:^(BOOL handled) {
-                last_handled = handled;
-              }];
+                callback:^(BOOL handled) {
+                  last_handled = handled;
+                }];
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
@@ -167,9 +167,9 @@ TEST(FlutterEmbedderKeyResponderUnittests, BasicKeyEvent) {
 
   last_handled = FALSE;
   [responder handleEvent:keyEvent(NSEventTypeKeyDown, 0x100, @"a", @"a", TRUE, kKeyCodeKeyA)
-              callback:^(BOOL handled) {
-                last_handled = handled;
-              }];
+                callback:^(BOOL handled) {
+                  last_handled = handled;
+                }];
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
@@ -188,9 +188,9 @@ TEST(FlutterEmbedderKeyResponderUnittests, BasicKeyEvent) {
 
   last_handled = TRUE;
   [responder handleEvent:keyEvent(NSEventTypeKeyUp, 124.0f, 0x100, @"a", @"a", FALSE, kKeyCodeKeyA)
-              callback:^(BOOL handled) {
-                last_handled = handled;
-              }];
+                callback:^(BOOL handled) {
+                  last_handled = handled;
+                }];
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
@@ -221,9 +221,10 @@ TEST(FlutterEmbedderKeyResponderUnittests, NonAsciiCharacters) {
                                                      userData:user_data]];
       }];
 
-  [responder handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x80140, @"", @"", FALSE, kKeyCodeAltRight)
-              callback:^(BOOL handled){
-              }];
+  [responder
+      handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x80140, @"", @"", FALSE, kKeyCodeAltRight)
+         callback:^(BOOL handled){
+         }];
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
@@ -236,8 +237,8 @@ TEST(FlutterEmbedderKeyResponderUnittests, NonAsciiCharacters) {
   [events removeAllObjects];
 
   [responder handleEvent:keyEvent(NSEventTypeKeyDown, 0x80140, @"∑", @"w", FALSE, kKeyCodeKeyW)
-              callback:^(BOOL handled){
-              }];
+                callback:^(BOOL handled){
+                }];
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
@@ -250,8 +251,8 @@ TEST(FlutterEmbedderKeyResponderUnittests, NonAsciiCharacters) {
   [events removeAllObjects];
 
   [responder handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeAltRight)
-              callback:^(BOOL handled){
-              }];
+                callback:^(BOOL handled){
+                }];
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
@@ -264,8 +265,8 @@ TEST(FlutterEmbedderKeyResponderUnittests, NonAsciiCharacters) {
   [events removeAllObjects];
 
   [responder handleEvent:keyEvent(NSEventTypeKeyUp, 0x100, @"w", @"w", FALSE, kKeyCodeKeyW)
-              callback:^(BOOL handled){
-              }];
+                callback:^(BOOL handled){
+                }];
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
@@ -299,9 +300,9 @@ TEST(FlutterEmbedderKeyResponderUnittests, IgnoreDuplicateDownEvent) {
 
   last_handled = FALSE;
   [responder handleEvent:keyEvent(NSEventTypeKeyDown, 0x100, @"a", @"a", FALSE, kKeyCodeKeyA)
-              callback:^(BOOL handled) {
-                last_handled = handled;
-              }];
+                callback:^(BOOL handled) {
+                  last_handled = handled;
+                }];
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
@@ -318,18 +319,18 @@ TEST(FlutterEmbedderKeyResponderUnittests, IgnoreDuplicateDownEvent) {
 
   last_handled = FALSE;
   [responder handleEvent:keyEvent(NSEventTypeKeyDown, 0x100, @"a", @"a", FALSE, kKeyCodeKeyA)
-              callback:^(BOOL handled) {
-                last_handled = handled;
-              }];
+                callback:^(BOOL handled) {
+                  last_handled = handled;
+                }];
 
   EXPECT_EQ([events count], 0u);
   EXPECT_EQ(last_handled, TRUE);
 
   last_handled = FALSE;
   [responder handleEvent:keyEvent(NSEventTypeKeyUp, 0x100, @"a", @"a", FALSE, kKeyCodeKeyA)
-              callback:^(BOOL handled) {
-                last_handled = handled;
-              }];
+                callback:^(BOOL handled) {
+                  last_handled = handled;
+                }];
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
@@ -362,9 +363,9 @@ TEST(FlutterEmbedderKeyResponderUnittests, ToggleModifiersDuringKeyTap) {
       }];
 
   [responder handleEvent:keyEvent(NSEventTypeFlagsChanged, 123.0f, 0x20104, @"", @"", FALSE,
-                                kKeyCodeShiftRight)
-              callback:^(BOOL handled){
-              }];
+                                  kKeyCodeShiftRight)
+                callback:^(BOOL handled){
+                }];
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
@@ -379,8 +380,8 @@ TEST(FlutterEmbedderKeyResponderUnittests, ToggleModifiersDuringKeyTap) {
   [events removeAllObjects];
 
   [responder handleEvent:keyEvent(NSEventTypeKeyDown, 0x20104, @"A", @"A", FALSE, kKeyCodeKeyA)
-              callback:^(BOOL handled){
-              }];
+                callback:^(BOOL handled){
+                }];
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
@@ -394,8 +395,8 @@ TEST(FlutterEmbedderKeyResponderUnittests, ToggleModifiersDuringKeyTap) {
   [events removeAllObjects];
 
   [responder handleEvent:keyEvent(NSEventTypeKeyDown, 0x20104, @"A", @"A", TRUE, kKeyCodeKeyA)
-              callback:^(BOOL handled){
-              }];
+                callback:^(BOOL handled){
+                }];
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
@@ -408,9 +409,10 @@ TEST(FlutterEmbedderKeyResponderUnittests, ToggleModifiersDuringKeyTap) {
 
   [events removeAllObjects];
 
-  [responder handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeShiftRight)
-              callback:^(BOOL handled){
-              }];
+  [responder
+      handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeShiftRight)
+         callback:^(BOOL handled){
+         }];
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
@@ -424,8 +426,8 @@ TEST(FlutterEmbedderKeyResponderUnittests, ToggleModifiersDuringKeyTap) {
   [events removeAllObjects];
 
   [responder handleEvent:keyEvent(NSEventTypeKeyDown, 0x100, @"a", @"a", TRUE, kKeyCodeKeyA)
-              callback:^(BOOL handled){
-              }];
+                callback:^(BOOL handled){
+                }];
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
@@ -438,8 +440,8 @@ TEST(FlutterEmbedderKeyResponderUnittests, ToggleModifiersDuringKeyTap) {
   [events removeAllObjects];
 
   [responder handleEvent:keyEvent(NSEventTypeKeyUp, 0x100, @"a", @"a", FALSE, kKeyCodeKeyA)
-              callback:^(BOOL handled){
-              }];
+                callback:^(BOOL handled){
+                }];
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
@@ -475,8 +477,8 @@ TEST(FlutterEmbedderKeyResponderUnittests, SpecialModiferFlags) {
 
   // Numpad 1
   [responder handleEvent:keyEvent(NSEventTypeKeyDown, 0x200100, @"1", @"1", FALSE, kKeyCodeNumpad1)
-              callback:^(BOOL handled){
-              }];
+                callback:^(BOOL handled){
+                }];
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
@@ -508,8 +510,8 @@ TEST(FlutterEmbedderKeyResponderUnittests, SpecialModiferFlags) {
 
   // KeyA
   [responder handleEvent:keyEvent(NSEventTypeKeyDown, 0x100, @"a", @"a", FALSE, kKeyCodeKeyA)
-              callback:^(BOOL handled){
-              }];
+                callback:^(BOOL handled){
+                }];
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
@@ -541,8 +543,8 @@ TEST(FlutterEmbedderKeyResponderUnittests, SpecialModiferFlags) {
 
   // Numpad 1
   [responder handleEvent:keyEvent(NSEventTypeKeyUp, 0x220102, @"1", @"1", FALSE, kKeyCodeNumpad1)
-              callback:^(BOOL handled){
-              }];
+                callback:^(BOOL handled){
+                }];
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
@@ -556,9 +558,10 @@ TEST(FlutterEmbedderKeyResponderUnittests, SpecialModiferFlags) {
   [events removeAllObjects];
 
   // F1
-  [responder handleEvent:keyEvent(NSEventTypeKeyUp, 0x820102, @"\uF704", @"\uF704", FALSE, kKeyCodeF1)
-              callback:^(BOOL handled){
-              }];
+  [responder
+      handleEvent:keyEvent(NSEventTypeKeyUp, 0x820102, @"\uF704", @"\uF704", FALSE, kKeyCodeF1)
+         callback:^(BOOL handled){
+         }];
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
@@ -573,8 +576,8 @@ TEST(FlutterEmbedderKeyResponderUnittests, SpecialModiferFlags) {
 
   // KeyA
   [responder handleEvent:keyEvent(NSEventTypeKeyUp, 0x20102, @"a", @"a", FALSE, kKeyCodeKeyA)
-              callback:^(BOOL handled){
-              }];
+                callback:^(BOOL handled){
+                }];
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
@@ -588,9 +591,10 @@ TEST(FlutterEmbedderKeyResponderUnittests, SpecialModiferFlags) {
   [events removeAllObjects];
 
   // ShiftLeft
-  [responder handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeShiftLeft)
-              callback:^(BOOL handled){
-              }];
+  [responder
+      handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeShiftLeft)
+         callback:^(BOOL handled){
+         }];
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
@@ -664,9 +668,10 @@ TEST(FlutterEmbedderKeyResponderUnittests, IdentifyLeftAndRightModifiers) {
 
   [events removeAllObjects];
 
-  [responder handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeShiftRight)
-              callback:^(BOOL handled){
-              }];
+  [responder
+      handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeShiftRight)
+         callback:^(BOOL handled){
+         }];
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
@@ -733,8 +738,9 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynthesizeMissedModifierEvents) {
   EXPECT_EQ(last_handled, TRUE);
 
   last_handled = FALSE;
-  [responder handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeShiftLeft)
-              callback:keyEventCallback];
+  [responder
+      handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeShiftLeft)
+         callback:keyEventCallback];
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
@@ -756,8 +762,9 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynthesizeMissedModifierEvents) {
   // Out:
 
   last_handled = FALSE;
-  [responder handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeShiftLeft)
-              callback:keyEventCallback];
+  [responder
+      handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeShiftLeft)
+         callback:keyEventCallback];
 
   EXPECT_EQ([events count], 0u);
   EXPECT_EQ(last_handled, TRUE);
@@ -787,8 +794,9 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynthesizeMissedModifierEvents) {
   [events removeAllObjects];
 
   last_handled = FALSE;
-  [responder handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeShiftRight)
-              callback:keyEventCallback];
+  [responder
+      handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeShiftRight)
+         callback:keyEventCallback];
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
@@ -849,8 +857,9 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynthesizeMissedModifierEvents) {
   [events removeAllObjects];
 
   last_handled = FALSE;
-  [responder handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeShiftRight)
-              callback:keyEventCallback];
+  [responder
+      handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeShiftRight)
+         callback:keyEventCallback];
 
   EXPECT_EQ([events count], 2u);
   event = [events firstObject].data;
@@ -898,7 +907,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynthesizeMissedModifierEventsInNorma
 
   last_handled = FALSE;
   [responder handleEvent:keyEvent(NSEventTypeKeyDown, 0x20102, @"A", @"A", FALSE, kKeyCodeKeyA)
-              callback:keyEventCallback];
+                callback:keyEventCallback];
 
   EXPECT_EQ([events count], 2u);
   event = [events firstObject].data;
@@ -925,7 +934,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynthesizeMissedModifierEventsInNorma
 
   last_handled = FALSE;
   [responder handleEvent:keyEvent(NSEventTypeKeyUp, 0x100, @"a", @"a", FALSE, kKeyCodeKeyA)
-              callback:keyEventCallback];
+                callback:keyEventCallback];
 
   EXPECT_EQ([events count], 2u);
   event = [events firstObject].data;
@@ -970,8 +979,9 @@ TEST(FlutterEmbedderKeyResponderUnittests, ConvertCapsLockEvents) {
   // In:  CapsLock down
   // Out: CapsLock down & *CapsLock Up
   last_handled = FALSE;
-  [responder handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x10100, @"", @"", FALSE, kKeyCodeCapsLock)
-              callback:keyEventCallback];
+  [responder
+      handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x10100, @"", @"", FALSE, kKeyCodeCapsLock)
+         callback:keyEventCallback];
 
   EXPECT_EQ([events count], 2u);
 
@@ -1001,7 +1011,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, ConvertCapsLockEvents) {
   // Out: CapsLock down & *CapsLock Up
   last_handled = FALSE;
   [responder handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeCapsLock)
-              callback:keyEventCallback];
+                callback:keyEventCallback];
 
   EXPECT_EQ([events count], 2u);
 
@@ -1048,7 +1058,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynchronizeCapsLockStateOnCapsLock) {
   // Out:
   last_handled = FALSE;
   [responder handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeCapsLock)
-              callback:keyEventCallback];
+                callback:keyEventCallback];
 
   EXPECT_EQ([events count], 0u);
   EXPECT_EQ(last_handled, TRUE);
@@ -1073,7 +1083,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynchronizeCapsLockStateOnNormalKey) 
 
   last_handled = FALSE;
   [responder handleEvent:keyEvent(NSEventTypeKeyDown, 0x10100, @"A", @"a", FALSE, kKeyCodeKeyA)
-              callback:keyEventCallback];
+                callback:keyEventCallback];
 
   EXPECT_EQ([events count], 3u);
 
