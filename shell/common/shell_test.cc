@@ -166,7 +166,7 @@ void ShellTest::PumpOneFrame(Shell* shell,
                              flutter::ViewportMetrics viewport_metrics,
                              LayerTreeBuilder builder) {
   // Set viewport to nonempty, and call Animator::BeginFrame to make the layer
-  // tree pipeline nonempty. Without either of this, the layer tree below
+  // tree holder nonempty. Without either of this, the layer tree below
   // won't be rasterized.
   fml::AutoResetWaitableEvent latch;
   shell->GetTaskRunners().GetUITaskRunner()->PostTask(
@@ -199,6 +199,12 @@ void ShellTest::PumpOneFrame(Shell* shell,
         runtime_delegate->Render(std::move(layer_tree));
         latch.Signal();
       });
+  latch.Wait();
+
+  // Wait for render to finish.
+  latch.Reset();
+  shell->GetTaskRunners().GetRasterTaskRunner()->PostTask(
+      [&latch]() { latch.Signal(); });
   latch.Wait();
 }
 
@@ -314,7 +320,8 @@ std::unique_ptr<Shell> ShellTest::CreateShell(
     TaskRunners task_runners,
     bool simulate_vsync,
     std::shared_ptr<ShellTestExternalViewEmbedder>
-        shell_test_external_view_embedder) {
+        shell_test_external_view_embedder,
+    bool is_gpu_disabled) {
   const auto vsync_clock = std::make_shared<ShellTestVsyncClock>();
   CreateVsyncWaiter create_vsync_waiter = [&]() {
     if (simulate_vsync) {
@@ -335,7 +342,8 @@ std::unique_ptr<Shell> ShellTest::CreateShell(
             ShellTestPlatformView::BackendType::kDefaultBackend,
             shell_test_external_view_embedder);
       },
-      [](Shell& shell) { return std::make_unique<Rasterizer>(shell); });
+      [](Shell& shell) { return std::make_unique<Rasterizer>(shell); },
+      is_gpu_disabled);
 }
 void ShellTest::DestroyShell(std::unique_ptr<Shell> shell) {
   DestroyShell(std::move(shell), GetTaskRunnersForFixture());

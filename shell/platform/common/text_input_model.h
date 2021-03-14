@@ -155,12 +155,31 @@ class TextInputModel {
   // Returns true if the cursor could be moved.
   bool MoveCursorToEnd();
 
+  // Attempts to select text from the cursor position to the beginning.
+  //
+  // If composing is active, the selection is applied to the beginning of the
+  // composing range; otherwise, it is applied to the beginning of the text.
+  //
+  // Returns true if the selection could be applied.
+  bool SelectToBeginning();
+
+  // Attempts to select text from the cursor position to the end.
+  //
+  // If composing is active, the selection is applied to the end of the
+  // composing range; otherwise, it is moved to the end of the text.
+  //
+  // Returns true if the selection could be applied.
+  bool SelectToEnd();
+
   // Gets the current text as UTF-8.
   std::string GetText() const;
 
   // Gets the cursor position as a byte offset in UTF-8 string returned from
   // GetText().
   int GetCursorOffset() const;
+
+  // Returns a range covering the entire text.
+  TextRange text_range() const { return TextRange(0, text_.length()); }
 
   // The current selection.
   TextRange selection() const { return selection_; }
@@ -187,9 +206,6 @@ class TextInputModel {
   TextRange editable_range() const {
     return composing_ ? composing_range_ : text_range();
   }
-
-  // Returns a range covering the entire text.
-  TextRange text_range() const { return TextRange(0, text_.length()); }
 
   std::u16string text_;
   TextRange selection_ = TextRange(0);
