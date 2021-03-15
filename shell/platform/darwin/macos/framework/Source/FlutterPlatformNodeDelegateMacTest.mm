@@ -129,7 +129,7 @@ TEST(FlutterPlatformNodeDelegateMac, SelectableTextWithoutSelectionReturnZeroRan
   NSAccessibilityElement* native_accessibility =
       root_platform_node_delegate->GetNativeViewAccessible();
   NSRange selection = native_accessibility.accessibilitySelectedTextRange;
-  EXPECT_EQ(selection.location, 0u);
+  EXPECT_TRUE(selection.location == NSNotFound);
   EXPECT_EQ(selection.length, 0u);
 }
 
