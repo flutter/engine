@@ -271,6 +271,7 @@ public class PlayStoreDeferredComponentManager implements DeferredComponentManag
                   + "' is defined in the base module's AndroidManifest.");
         } else {
           for (String entry : rawMappingString.split(",")) {
+            // Split with -1 param to include empty string following trailing ":"
             String[] splitEntry = entry.split(":", -1);
             int loadingUnitId = Integer.parseInt(splitEntry[0]);
             loadingUnitIdToComponentNames.put(loadingUnitId, splitEntry[1]);

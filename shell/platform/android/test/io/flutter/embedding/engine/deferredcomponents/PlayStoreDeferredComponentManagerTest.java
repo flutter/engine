@@ -185,12 +185,12 @@ public class PlayStoreDeferredComponentManagerTest {
   }
 
   @Test
-  public void manifestMappingHandlesBaseModuleEmptyString()
-      throws NameNotFoundException {
+  public void manifestMappingHandlesBaseModuleEmptyString() throws NameNotFoundException {
     TestFlutterJNI jni = new TestFlutterJNI();
 
     Bundle bundle = new Bundle();
-    bundle.putString(PlayStoreDeferredComponentManager.MAPPING_KEY, "123:module:custom_name.so,3:,4:");
+    bundle.putString(
+        PlayStoreDeferredComponentManager.MAPPING_KEY, "123:module:custom_name.so,3:,4:");
     bundle.putString(ApplicationInfoLoader.PUBLIC_FLUTTER_ASSETS_DIR_KEY, "custom_assets");
 
     Context spyContext = createSpyContext(bundle);
