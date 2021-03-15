@@ -199,8 +199,8 @@ public class PlayStoreDeferredComponentManagerTest {
     String soTestFilename = "libapp.so-3.part.so";
     String soTestPath = "test/path/" + soTestFilename;
     doReturn(new File(soTestPath)).when(spyContext).getFilesDir();
-    TestPlayStoreDeferredComponentManager playStoreManager =
-        new TestPlayStoreDeferredComponentManager(spyContext, jni);
+    PlayStoreDeferredComponentManager playStoreManager =
+        new PlayStoreDeferredComponentManager(spyContext, jni);
     jni.setDeferredComponentManager(playStoreManager);
     assertEquals(jni.loadingUnitId, 0);
 
