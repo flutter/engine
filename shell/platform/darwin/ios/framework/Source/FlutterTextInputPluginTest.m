@@ -888,7 +888,7 @@ FLUTTER_ASSERT_ARC
                              }];
     XCTAssertNotNil(activeView);
   }
-  // This assert proves the myInputPlugin.textInputView is not gc'd.
+  // This assert proves the myInputPlugin.textInputView is not deallocated.
   XCTAssertNotNil(activeView);
 }
 
