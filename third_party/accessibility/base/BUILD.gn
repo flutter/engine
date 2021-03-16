@@ -24,6 +24,8 @@ source_set("base") {
   ]
   if (is_win) {
     sources += [
+      "win/atl.h",
+      "win/atl_module.h",
       "win/enum_variant.cc",
       "win/enum_variant.h",
       "win/scoped_bstr.cc",
