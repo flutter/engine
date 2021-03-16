@@ -445,18 +445,20 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   /**
    * Invoked when this is attached to the window.
    *
-   * AndroidX WindowManager alpha01 accepts callback registration only after the view is attached to
-   * the window. This is why we override this method.
-   *
-   * TODO: Refactor this once WindowManager goes to alpha02, as there is only 1 callback and it can be attached at any time.
+   * <p>We register for {@link androidx.window.WindowManager} updates.
    */
   @Override
   protected void onAttachedToWindow() {
     super.onAttachedToWindow();
-    windowManager.registerLayoutChangeCallback(ContextCompat.getMainExecutor(getContext()),
-        windowManagerListener);
+    windowManager.registerLayoutChangeCallback(
+        ContextCompat.getMainExecutor(getContext()), windowManagerListener);
   }
 
+  /**
+   * Invoked when this is detached from the window.
+   *
+   * <p>We unregister from {@link androidx.window.WindowManager} updates.
+   */
   @Override
   protected void onDetachedFromWindow() {
     windowManager.unregisterLayoutChangeCallback(windowManagerListener);
@@ -464,8 +466,8 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   }
 
   /**
-   * Refresh {@link androidx.window.WindowManager} and {@link android.view.DisplayCutout}
-   * display features. Fold, hinge and cutout areas are populated here.
+   * Refresh {@link androidx.window.WindowManager} and {@link android.view.DisplayCutout} display
+   * features. Fold, hinge and cutout areas are populated here.
    */
   private void setWindowManagerDisplayFeatures(WindowLayoutInfo layoutInfo) {
     List<DisplayFeature> displayFeatures = layoutInfo.getDisplayFeatures();
@@ -473,7 +475,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
 
     // Data from androidx.window.WindowManager display features. Fold and hinge areas are
     // populated here.
-    for (DisplayFeature displayFeature: displayFeatures){
+    for (DisplayFeature displayFeature : displayFeatures) {
       Log.v(
           TAG,
           "WindowManager Display Feature reported with bounds = "
@@ -505,8 +507,11 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
         }
         result.add(new FlutterRenderer.DisplayFeature(displayFeature.getBounds(), type, state));
       } else {
-        result.add(new FlutterRenderer.DisplayFeature(displayFeature.getBounds(), DisplayFeatureType.UNKNOWN,
-            DisplayFeatureState.UNKNOWN));
+        result.add(
+            new FlutterRenderer.DisplayFeature(
+                displayFeature.getBounds(),
+                DisplayFeatureType.UNKNOWN,
+                DisplayFeatureState.UNKNOWN));
       }
     }
 

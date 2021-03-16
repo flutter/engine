@@ -424,20 +424,20 @@ public class FlutterRenderer implements TextureRegistry {
     UNKNOWN(0),
 
     /**
-     * A fold in the flexible screen without a physical gap.
-     * Corresponds to {@link androidx.window.DisplayFeature.TYPE_FOLD}
+     * A fold in the flexible screen without a physical gap. Corresponds to {@link
+     * androidx.window.DisplayFeature.TYPE_FOLD}
      */
     FOLD(1),
 
     /**
-     * A physical separation with a hinge that allows two display panels to fold.
-     * Corresponds to {@link androidx.window.DisplayFeature.TYPE_HINGE}
+     * A physical separation with a hinge that allows two display panels to fold. Corresponds to
+     * {@link androidx.window.DisplayFeature.TYPE_HINGE}
      */
     HINGE(2),
 
     /**
-     * A non-functional area of the screen, usually housing cameras or sensors.
-     * Corresponds to {@link android.view.DisplayCutout}
+     * A non-functional area of the screen, usually housing cameras or sensors. Corresponds to
+     * {@link android.view.DisplayCutout}
      */
     CUTOUT(3);
 
@@ -451,30 +451,28 @@ public class FlutterRenderer implements TextureRegistry {
   /**
    * State of the display feature.
    *
-   * <p> For foldables, the state is the posture. For cutouts, this is {@link UNKNOWN}
+   * <p>For foldables, the state is the posture. For cutouts, this is {@link UNKNOWN}
    */
   public enum DisplayFeatureState {
-    /**
-     * The display feature is a cutout or this state is new and not yet known to Flutter.
-     */
+    /** The display feature is a cutout or this state is new and not yet known to Flutter. */
     UNKNOWN(0),
 
     /**
-     * The foldable device is completely open. The screen space that is presented to the user is flat.
-     * Corresponds to {@link androidx.window.FoldingFeature.STATE_FLAT}
+     * The foldable device is completely open. The screen space that is presented to the user is
+     * flat. Corresponds to {@link androidx.window.FoldingFeature.STATE_FLAT}
      */
     POSTURE_FLAT(1),
 
     /**
      * The foldable device's hinge is in an intermediate position between opened and closed state.
-     * There is a non-flat angle between parts of the flexible screen or between physical screen panels.
-     * Corresponds to {@link androidx.window.FoldingFeature.STATE_HALF_OPENED}
+     * There is a non-flat angle between parts of the flexible screen or between physical screen
+     * panels. Corresponds to {@link androidx.window.FoldingFeature.STATE_HALF_OPENED}
      */
     POSTURE_HALF_OPENED(2),
 
     /**
-     * The foldable device is flipped with the flexible screen parts or physical screens facing opposite directions.
-     * Corresponds to {@link androidx.window.FoldingFeature.STATE_FLIPPED}
+     * The foldable device is flipped with the flexible screen parts or physical screens facing
+     * opposite directions. Corresponds to {@link androidx.window.FoldingFeature.STATE_FLIPPED}
      */
     POSTURE_FLIPPED(3);
 
