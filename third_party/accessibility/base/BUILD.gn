@@ -36,6 +36,8 @@ source_set("base") {
       "win/string_conversion.cc",
       "win/string_conversion.h",
       "win/variant_util.h",
+      "win/variant_vector.cc",
+      "win/variant_vector.h",
     ]
     libs = [ "propsys.lib" ]
   }
