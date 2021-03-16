@@ -85,6 +85,11 @@ if (enable_unittests) {
       "gfx/test/gfx_util.h",
     ]
 
+    if (is_win) {
+      sources += [
+        "base/win/scoped_bstr_unittest.cc",
+      ]
+    }
     deps = [
       ":accessibility",
       ":accessibility_fixtures",

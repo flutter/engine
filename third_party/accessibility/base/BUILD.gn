@@ -26,6 +26,8 @@ source_set("base") {
     sources += [
       "win/enum_variant.cc",
       "win/enum_variant.h",
+      "win/scoped_bstr.cc",
+      "win/scoped_bstr.h",
       "win/string_conversion.cc",
       "win/string_conversion.h",
     ]
