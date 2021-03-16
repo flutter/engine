@@ -90,6 +90,7 @@ if (enable_unittests) {
         "base/win/dispatch_stub.cc",
         "base/win/dispatch_stub.h",
         "base/win/scoped_bstr_unittest.cc",
+        "base/win/scoped_safearray_unittest.cc",
         "base/win/scoped_variant_unittest.cc",
       ]
     }
