@@ -358,7 +358,7 @@ const char* getEventString(NSString* characters) {
  * This is used by |synchronizeModifiers| to quickly find
  * out modifier keys that are desynchronized.
  */
-@property(nonatomic) NSUInteger lastModifierFlags;
+@property(nonatomic) NSUInteger lastModifierFlagsOfInterest;
 
 /**
  * A self-incrementing ID used to label key events sent to the framework.
@@ -455,7 +455,7 @@ const char* getEventString(NSString* characters) {
     _pressingRecords = [NSMutableDictionary dictionary];
     _pendingResponses = [NSMutableDictionary dictionary];
     _responseId = 1;
-    _lastModifierFlags = 0;
+    _lastModifierFlagsOfInterest = 0;
     _modifierFlagOfInterestMask = computeModifierFlagOfInterestMask();
   }
   return self;
@@ -481,9 +481,9 @@ const char* getEventString(NSString* characters) {
       NSAssert(false, @"Unexpected key event type: |%@|.", @(event.type));
   }
   NSAssert(guardedCallback.handled, @"The callback is returned without being handled.");
-  NSAssert(_lastModifierFlags == event.modifierFlags,
-           @"The modifier flags are not properly updated: recorded 0x%lx, event 0x%lx",
-           _lastModifierFlags, event.modifierFlags);
+  NSAssert(_lastModifierFlagsOfInterest == (event.modifierFlags & _modifierFlagOfInterestMask),
+           @"The modifier flags are not properly updated: recorded 0x%lx, event with mask 0x%lx",
+           _lastModifierFlagsOfInterest, event.modifierFlags & _modifierFlagOfInterestMask);
 }
 
 #pragma mark - Private
@@ -493,7 +493,7 @@ const char* getEventString(NSString* characters) {
                    timestamp:(NSTimeInterval)timestamp {
   const NSUInteger updatingMask = _modifierFlagOfInterestMask & ~ignoringFlags;
   const NSUInteger currentFlagsOfInterest = currentFlags & updatingMask;
-  const NSUInteger lastFlagsOfInterest = _lastModifierFlags;
+  const NSUInteger lastFlagsOfInterest = _lastModifierFlagsOfInterest & updatingMask;
   NSUInteger flagDifference = currentFlagsOfInterest ^ lastFlagsOfInterest;
   if (flagDifference & NSEventModifierFlagCapsLock) {
     [self sendCapsLockTapWithTimestamp:timestamp callback:nil];
@@ -516,7 +516,8 @@ const char* getEventString(NSString* characters) {
                           keyCode:[keyCode unsignedShortValue]
                          callback:nil];
   }
-  _lastModifierFlags = (_lastModifierFlags & ~updatingMask) | currentFlagsOfInterest;
+  _lastModifierFlagsOfInterest =
+      (_lastModifierFlagsOfInterest & ~updatingMask) | currentFlagsOfInterest;
 }
 
 - (void)updateKey:(uint64_t)physicalKey asPressed:(uint64_t)logicalKey {
@@ -658,10 +659,10 @@ const char* getEventString(NSString* characters) {
   [self synchronizeModifiers:event.modifierFlags
                ignoringFlags:NSEventModifierFlagCapsLock
                    timestamp:event.timestamp];
-  if ((_lastModifierFlags & NSEventModifierFlagCapsLock) !=
+  if ((_lastModifierFlagsOfInterest & NSEventModifierFlagCapsLock) !=
       (event.modifierFlags & NSEventModifierFlagCapsLock)) {
     [self sendCapsLockTapWithTimestamp:event.timestamp callback:callback];
-    _lastModifierFlags = _lastModifierFlags ^ NSEventModifierFlagCapsLock;
+    _lastModifierFlagsOfInterest = _lastModifierFlagsOfInterest ^ NSEventModifierFlagCapsLock;
   } else {
     [callback resolveTo:TRUE];
   }
@@ -683,10 +684,10 @@ const char* getEventString(NSString* characters) {
   NSNumber* pressedLogicalKey = [_pressingRecords objectForKey:@(targetKey)];
   BOOL lastTargetPressed = pressedLogicalKey != nil;
   NSAssert(targetModifierFlagObj == nil ||
-               (_lastModifierFlags & targetModifierFlag) != 0 == lastTargetPressed,
-           @"Desynchronized state between lastModifierFlags (0x%lx) on bit 0x%lx "
+               (_lastModifierFlagsOfInterest & targetModifierFlag) != 0 == lastTargetPressed,
+           @"Desynchronized state between lastModifierFlagsOfInterest (0x%lx) on bit 0x%lx "
            @"for keyCode 0x%hx, whose pressing state is %@.",
-           _lastModifierFlags, targetModifierFlag, event.keyCode,
+           _lastModifierFlagsOfInterest, targetModifierFlag, event.keyCode,
            lastTargetPressed
                ? [NSString stringWithFormat:@"0x%llx", [pressedLogicalKey unsignedLongLongValue]]
                : @"empty");
@@ -696,7 +697,7 @@ const char* getEventString(NSString* characters) {
     [callback resolveTo:TRUE];
     return;
   }
-  _lastModifierFlags = _lastModifierFlags ^ targetModifierFlag;
+  _lastModifierFlagsOfInterest = _lastModifierFlagsOfInterest ^ targetModifierFlag;
   [self sendModifierEventOfType:shouldBePressed
                       timestamp:event.timestamp
                         keyCode:event.keyCode
