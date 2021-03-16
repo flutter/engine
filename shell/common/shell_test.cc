@@ -169,7 +169,7 @@ void ShellTest::PumpOneFrame(Shell* shell,
                              flutter::ViewportMetrics viewport_metrics,
                              LayerTreeBuilder builder) {
   // Set viewport to nonempty, and call Animator::BeginFrame to make the layer
-  // tree pipeline nonempty. Without either of this, the layer tree below
+  // tree holder nonempty. Without either of this, the layer tree below
   // won't be rasterized.
   fml::AutoResetWaitableEvent latch;
   shell->GetTaskRunners().GetUITaskRunner()->PostTask(
@@ -202,6 +202,12 @@ void ShellTest::PumpOneFrame(Shell* shell,
         runtime_delegate->Render(std::move(layer_tree));
         latch.Signal();
       });
+  latch.Wait();
+
+  // Wait for render to finish.
+  latch.Reset();
+  shell->GetTaskRunners().GetRasterTaskRunner()->PostTask(
+      [&latch]() { latch.Signal(); });
   latch.Wait();
 }
 
