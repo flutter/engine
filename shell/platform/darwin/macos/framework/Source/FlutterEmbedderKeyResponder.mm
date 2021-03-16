@@ -348,11 +348,14 @@ const char* getEventString(NSString* characters) {
 @property(nonatomic) NSUInteger modifierFlagOfInterestMask;
 
 /**
- * The |NSEvent.modifierFlags| of the last received key event after masking
- * with |modifierFlagOfInterestMask|.
+ * The modifier flags of the last received key event, excluding uninterested
+ * bits.
  *
- * This should be kept synchronized with the corresponding keys of
- * |pressingRecords|. This is used by |synchronizeModifiers| to quickly find
+ * This should be kept synchronized with the last |NSEvent.modifierFlags|
+ * after masking with |modifierFlagOfInterestMask|. This should also be kept
+ * synchronized with the corresponding keys of |pressingRecords|.
+ *
+ * This is used by |synchronizeModifiers| to quickly find
  * out modifier keys that are desynchronized.
  */
 @property(nonatomic) NSUInteger lastModifierFlags;
@@ -478,9 +481,9 @@ const char* getEventString(NSString* characters) {
       NSAssert(false, @"Unexpected key event type: |%@|.", @(event.type));
   }
   NSAssert(guardedCallback.handled, @"The callback is returned without being handled.");
-  NSAssert(_lastModifierFlags == (event.modifierFlags & _modifierFlagOfInterestMask),
+  NSAssert(_lastModifierFlags == event.modifierFlags,
            @"The modifier flags are not properly updated: recorded 0x%lx, event 0x%lx",
-           _lastModifierFlags, (event.modifierFlags & _modifierFlagOfInterestMask));
+           _lastModifierFlags, event.modifierFlags);
 }
 
 #pragma mark - Private
@@ -490,7 +493,7 @@ const char* getEventString(NSString* characters) {
                    timestamp:(NSTimeInterval)timestamp {
   const NSUInteger updatingMask = _modifierFlagOfInterestMask & ~ignoringFlags;
   const NSUInteger currentFlagsOfInterest = currentFlags & updatingMask;
-  const NSUInteger lastFlagsOfInterest = _lastModifierFlags & updatingMask;
+  const NSUInteger lastFlagsOfInterest = _lastModifierFlags;
   NSUInteger flagDifference = currentFlagsOfInterest ^ lastFlagsOfInterest;
   if (flagDifference & NSEventModifierFlagCapsLock) {
     [self sendCapsLockTapWithTimestamp:timestamp callback:nil];
