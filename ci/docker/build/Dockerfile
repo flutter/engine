@@ -15,11 +15,11 @@ RUN apt-get update && \
     mkdir --parents $ENGINE_PATH && \
     git clone https://github.com/flutter/buildroot.git $BUILDROOT_PATH && \
     cd $BUILDROOT_PATH && \
-    apt-get install -y autoconf automake bison flex gettext gperf groff libtool pkg-config wget acpica-tools build-essential curl dejagnu \
+    apt-get install -y autoconf automake bison flex gettext gperf groff libtool pkg-config acpica-tools build-essential dejagnu \
       dosfstools ifupdown libedit-dev libglib2.0-dev liblz4-tool libncurses5-dev libssl-dev lsof mtools nasm net-tools python2.7-dev \
-      python-m2crypto tcpdump texinfo unzip uuid-dev vim xz-utils zlib1g-dev firefox-esr g++-multilib libblkid-dev libc6-dev-i386 \
+      python-m2crypto tcpdump texinfo uuid-dev vim xz-utils zlib1g-dev firefox-esr g++-multilib libblkid-dev libc6-dev-i386 \
       libfreetype6-dev libegl1-mesa libgles2-mesa-dev libglu1-mesa-dev libgtk-3-dev libx11-dev libxcursor-dev libxinerama-dev libxrandr-dev \
-      libxxf86vm-dev mesa-common-dev openjdk-8-jdk zip xvfb
+      libxxf86vm-dev mesa-common-dev openjdk-8-jdk zip xvfb ca-certificates gnupg
 
 # Add repo for chrome stable
 RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
