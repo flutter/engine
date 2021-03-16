@@ -34,6 +34,7 @@ source_set("base") {
       "win/scoped_variant.h",
       "win/string_conversion.cc",
       "win/string_conversion.h",
+      "win/variant_util.h",
     ]
     libs = [ "propsys.lib" ]
   }
