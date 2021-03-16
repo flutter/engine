@@ -11,6 +11,7 @@ import android.content.res.Configuration;
 import android.graphics.Insets;
 import android.graphics.Rect;
 import android.os.Build;
+import android.os.Build.VERSION_CODES;
 import android.text.format.DateFormat;
 import android.util.AttributeSet;
 import android.util.SparseArray;
@@ -469,7 +470,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
    * Refresh {@link androidx.window.WindowManager} and {@link android.view.DisplayCutout} display
    * features. Fold, hinge and cutout areas are populated here.
    */
-  @TargetApi(Build.VERSION_CODES.P)
+  @TargetApi(28)
   private void setWindowManagerDisplayFeatures(WindowLayoutInfo layoutInfo) {
     List<DisplayFeature> displayFeatures = layoutInfo.getDisplayFeatures();
     List<FlutterRenderer.DisplayFeature> result = new ArrayList<>();
@@ -517,8 +518,8 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     }
 
     // Data from the DisplayCutout bounds. Cutouts for cameras and other sensors are
-    // populated here.
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+    // populated here. DisplayCutout was introduced in API 28.
+    if (Build.VERSION.SDK_INT >= 28) {
       WindowInsets insets = getRootWindowInsets();
       if (insets != null) {
         DisplayCutout cutout = insets.getDisplayCutout();
