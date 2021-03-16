@@ -87,7 +87,10 @@ if (enable_unittests) {
 
     if (is_win) {
       sources += [
+        "base/win/dispatch_stub.cc",
+        "base/win/dispatch_stub.h",
         "base/win/scoped_bstr_unittest.cc",
+        "base/win/scoped_variant_unittest.cc",
       ]
     }
     deps = [

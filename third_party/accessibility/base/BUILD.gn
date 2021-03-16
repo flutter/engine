@@ -30,9 +30,12 @@ source_set("base") {
       "win/enum_variant.h",
       "win/scoped_bstr.cc",
       "win/scoped_bstr.h",
+      "win/scoped_variant.cc",
+      "win/scoped_variant.h",
       "win/string_conversion.cc",
       "win/string_conversion.h",
     ]
+    libs = [ "propsys.lib" ]
   }
   if (is_mac) {
     sources += [
