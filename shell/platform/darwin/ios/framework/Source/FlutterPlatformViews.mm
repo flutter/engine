@@ -391,7 +391,7 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
   // So we need to revese this translate so the platform view can layout at the correct offset.
   //
   // Note that we don't apply this transform matrix the clippings because clippings happen on the
-  // mask view, whose origin is alwasy (0,0) to the flutter_view.
+  // mask view, whose origin is always (0,0) to the flutter_view.
   CATransform3D reverseTranslate =
       CATransform3DMakeTranslation(-clipView.frame.origin.x, -clipView.frame.origin.y, 0);
   embedded_view.layer.transform = CATransform3DConcat(finalTransform, reverseTranslate);
