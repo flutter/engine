@@ -127,10 +127,7 @@ static uint64_t GetLogicalKeyForEvent(NSEvent* event, uint64_t physicalKey) {
       uint64_t secondCode = (uint64_t)[keyLabel characterAtIndex:1];
       codeUnit = (codeUnit << 16) | secondCode;
     }
-    if (codeUnit < 256) {
-      return toLower(codeUnit);
-    }
-    return KeyOfPlane(codeUnit, kUnicodePlane);
+    return KeyOfPlane(toLower(codeUnit), kUnicodePlane);
   }
 
   // Control keys like "backspace" and movement keys like arrow keys don't have
@@ -189,15 +186,22 @@ const char* getEventString(NSString* characters) {
   unichar utf16Code = [characters characterAtIndex:0];
   if (utf16Code >= 0xf700 && utf16Code <= 0xf7ff) {
     // Some function keys are assigned characters with codepoints from the
-    // private use area (see
-    // https://developer.apple.com/documentation/appkit/1535851-function-key_unicodes?language=objc).
-    // These characters are filtered out since they're unprintable.
+    // private use area. These characters are filtered out since they're
+    // unprintable.
     //
-    // Although the documentation claims to reserve 0xF700-0xF8FF, only up to
-    // 0xF747 is actually used. Here we choose to filter out 0xF700-0xF7FF
-    // section. The reason for keeping the 0xF800-0xF8FF section is because
-    // 0xF8FF is used for the "Apple logo" character (Option-Shift-K on US
+    // The official documentation reserves 0xF700-0xF8FF as private use area
+    // (https://developer.apple.com/documentation/appkit/1535851-function-key_unicodes?language=objc).
+    // But macOS seems to only use a reduced range of it. The official doc
+    // defines a few constants, all of which are within 0xF700-0xF747.
+    // (https://developer.apple.com/documentation/appkit/1535851-function-key_unicodes?language=objc).
+    // This mostly aligns with the experimentation result, except for 0xF8FF,
+    // which is used for the "Apple logo" character (Option-Shift-K on a US
     // keyboard.)
+    //
+    // We hereby assume that non-printable function keys are defined from
+    // 0xF700 upwards, and printable private keys are defined from 0xF8FF
+    // downwards. We want to keep the printable private keys, therefore we only
+    // filter out 0xF700-0xF7FF.
     return nullptr;
   }
   return [characters UTF8String];
@@ -331,10 +335,9 @@ const char* getEventString(NSString* characters) {
 @property(nonatomic) NSMutableDictionary<NSNumber*, NSNumber*>* pressingRecords;
 
 /**
- * A constant mask for NSEvent.modifierFlags that Flutter keep synchronized
- * with.
+ * A constant mask for NSEvent.modifierFlags that Flutter synchronizes with.
  *
- * Flutter keeps track of the last |modifierFlags| and compare it with the
+ * Flutter keeps track of the last |modifierFlags| and compares it with the
  * incoming one. Any bit within |modifierFlagOfInterestMask| that is different
  * (except for the one that corresponds to the event key) indicates that an
  * event for this modifier was missed, and Flutter synthesizes an event to make
@@ -413,23 +416,23 @@ const char* getEventString(NSString* characters) {
                        callback:(nullable FlutterKeyCallbackGuard*)callback;
 
 /**
- * Processes a down event.
+ * Processes a down event from the system.
  */
 - (void)handleDownEvent:(nonnull NSEvent*)event callback:(nonnull FlutterKeyCallbackGuard*)callback;
 
 /**
- * Processes an up event.
+ * Processes an up event from the system.
  */
 - (void)handleUpEvent:(nonnull NSEvent*)event callback:(nonnull FlutterKeyCallbackGuard*)callback;
 
 /**
- * Processes an up event.
+ * Processes an event from the system for the CapsLock key.
  */
 - (void)handleCapsLockEvent:(nonnull NSEvent*)event
                    callback:(nonnull FlutterKeyCallbackGuard*)callback;
 
 /**
- * Processes a flags changed event, where modifier keys are pressed or released.
+ * Processes a flags changed event from the system, where modifier keys are pressed or released.
  */
 - (void)handleFlagEvent:(nonnull NSEvent*)event callback:(nonnull FlutterKeyCallbackGuard*)callback;
 
@@ -457,8 +460,7 @@ const char* getEventString(NSString* characters) {
 
 - (void)handleEvent:(NSEvent*)event callback:(FlutterAsyncKeyCallback)callback {
   // The conversion algorithm relies on a non-nil callback to properly compute
-  // `synthesized`. If someday callback is allowed to be nil, make a dummy empty
-  // callback instead.
+  // `synthesized`.
   NSAssert(callback != nil, @"The callback must not be nil.");
   FlutterKeyCallbackGuard* guardedCallback =
       [[FlutterKeyCallbackGuard alloc] initWithCallback:callback];
@@ -595,7 +597,7 @@ const char* getEventString(NSString* characters) {
   bool isARepeat = event.isARepeat;
   NSNumber* pressedLogicalKey = _pressingRecords[@(physicalKey)];
   if (pressedLogicalKey != nil && !isARepeat) {
-    // Normally the key up events won't be missed since macOS always send the
+    // Normally the key up events won't be missed since macOS always sends the
     // key up event to the window where the corresponding key down occurred.
     // However this might happen in add-to-app scenarios if the focus is changed
     // from the native view to the Flutter view amid the key tap.
@@ -628,7 +630,7 @@ const char* getEventString(NSString* characters) {
   uint64_t physicalKey = GetPhysicalKeyForKeyCode(event.keyCode);
   NSNumber* pressedLogicalKey = _pressingRecords[@(physicalKey)];
   if (pressedLogicalKey == nil) {
-    // Normally the key up events won't be missed since macOS always send the
+    // Normally the key up events won't be missed since macOS always sends the
     // key up event to the window where the corresponding key down occurred.
     // However this might happen in add-to-app scenarios if the focus is changed
     // from the native view to the Flutter view amid the key tap.

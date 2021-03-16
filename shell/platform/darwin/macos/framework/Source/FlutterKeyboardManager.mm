@@ -52,6 +52,9 @@
       event.type != NSEventTypeFlagsChanged) {
     return;
   }
+  NSLog(@"Type %lu moF %lu winN %ld c %@ cIM %@ rep %d keyC %x",
+    (unsigned long)event.type, (unsigned long)event.modifierFlags, (long)event.windowNumber, event.characters, event.charactersIgnoringModifiers,
+    event.isARepeat, event.keyCode);
   // Having no primary responders require extra logic, but since Flutter adds
   // all primary responders in hard-code, this is a situation that Flutter will
   // never meet.
