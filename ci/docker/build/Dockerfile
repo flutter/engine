@@ -1,5 +1,4 @@
-FROM ubuntu:16.04
-
+FROM debian:stretch
 
 ENV DEPOT_TOOLS_PATH $HOME/depot_tools
 ENV BUILDROOT_PATH $HOME/buildroot
