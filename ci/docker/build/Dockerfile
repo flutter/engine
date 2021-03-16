@@ -14,7 +14,11 @@ RUN apt-get update && \
     mkdir --parents $ENGINE_PATH && \
     git clone https://github.com/flutter/buildroot.git $BUILDROOT_PATH && \
     cd $BUILDROOT_PATH && \
-    ./build/install-build-deps.sh --no-prompt && \
+    apt-get install -y autoconf automake bison flex gettext gperf groff libtool pkg-config wget acpica-tools build-essential curl dejagnu \
+      dosfstools ifupdown libedit-dev libglib2.0-dev liblz4-tool libncurses5-dev libssl-dev lsof mtools nasm net-tools python2.7-dev \
+      python-m2crypto tcpdump texinfo unzip uuid-dev vim xz-utils zlib1g-dev firefox-esr g++-multilib libblkid-dev libc6-dev-i386 \
+      libfreetype6-dev libegl1-mesa libgles2-mesa-dev libglu1-mesa-dev libgtk-3-dev libx11-dev libxcursor-dev libxinerama-dev libxrandr-dev \
+      libxxf86vm-dev mesa-common-dev openjdk-8-jdk zip xvfb && \
     ./build/install-build-deps-android.sh --no-prompt && \
     (echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list) && \
     (curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key --keyring /usr/share/keyrings/cloud.google.gpg add -) && \
