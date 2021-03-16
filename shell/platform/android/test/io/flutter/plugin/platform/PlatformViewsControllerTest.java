@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.*;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.res.AssetManager;
 import android.util.SparseArray;
@@ -39,6 +40,7 @@ import java.util.Map;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
@@ -229,6 +231,7 @@ public class PlatformViewsControllerTest {
     platformViewsController.getRegistry().registerViewFactory("testType", viewFactory);
 
     FlutterJNI jni = new FlutterJNI();
+    jni.attachToNative(false);
     attach(jni, platformViewsController);
 
     // Simulate create call from the framework.
@@ -256,6 +259,7 @@ public class PlatformViewsControllerTest {
     platformViewsController.getRegistry().registerViewFactory("testType", viewFactory);
 
     FlutterJNI jni = new FlutterJNI();
+    jni.attachToNative(false);
     attach(jni, platformViewsController);
 
     // Simulate create call from the framework.
@@ -278,6 +282,7 @@ public class PlatformViewsControllerTest {
     platformViewsController.getRegistry().registerViewFactory("testType", viewFactory);
 
     FlutterJNI jni = new FlutterJNI();
+    jni.attachToNative(false);
     attach(jni, platformViewsController);
 
     // Simulate create call from the framework.
@@ -308,6 +313,7 @@ public class PlatformViewsControllerTest {
     platformViewsController.getRegistry().registerViewFactory("testType", viewFactory);
 
     FlutterJNI jni = new FlutterJNI();
+    jni.attachToNative(false);
     attach(jni, platformViewsController);
 
     // Simulate create call from the framework.
@@ -340,6 +346,7 @@ public class PlatformViewsControllerTest {
     platformViewsController.getRegistry().registerViewFactory("testType", viewFactory);
 
     FlutterJNI jni = new FlutterJNI();
+    jni.attachToNative(false);
     attach(jni, platformViewsController);
 
     // Simulate create call from the framework.
@@ -549,7 +556,7 @@ public class PlatformViewsControllerTest {
     final DartExecutor executor = new DartExecutor(jni, mock(AssetManager.class));
     executor.onAttachedToJNI();
 
-    final Context context = RuntimeEnvironment.application.getApplicationContext();
+    final Context context = Robolectric.setupActivity(Activity.class);
     platformViewsController.attach(context, null, executor);
 
     final FlutterView view =

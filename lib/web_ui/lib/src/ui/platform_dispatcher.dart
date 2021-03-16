@@ -151,6 +151,7 @@ class ViewConfiguration {
     this.viewPadding = WindowPadding.zero,
     this.systemGestureInsets = WindowPadding.zero,
     this.padding = WindowPadding.zero,
+    this.displayFeatures = const <DisplayFeature>[],
   });
 
   ViewConfiguration copyWith({
@@ -162,6 +163,7 @@ class ViewConfiguration {
     WindowPadding? viewPadding,
     WindowPadding? systemGestureInsets,
     WindowPadding? padding,
+    List<DisplayFeature>? displayFeatures,
   }) {
     return ViewConfiguration(
       window: window ?? this.window,
@@ -172,6 +174,7 @@ class ViewConfiguration {
       viewPadding: viewPadding ?? this.viewPadding,
       systemGestureInsets: systemGestureInsets ?? this.systemGestureInsets,
       padding: padding ?? this.padding,
+      displayFeatures: displayFeatures ?? this.displayFeatures,
     );
   }
 
@@ -183,6 +186,7 @@ class ViewConfiguration {
   final WindowPadding viewPadding;
   final WindowPadding systemGestureInsets;
   final WindowPadding padding;
+  final List<DisplayFeature> displayFeatures;
 
   @override
   String toString() {
@@ -268,6 +272,49 @@ abstract class WindowPadding {
   String toString() {
     return 'WindowPadding(left: $left, top: $top, right: $right, bottom: $bottom)';
   }
+}
+
+class DisplayFeature {
+  const DisplayFeature({
+    required this.bounds,
+    required this.type,
+    required this.state,
+  });
+
+  final Rect bounds;
+  final DisplayFeatureType type;
+  final DisplayFeatureState state;
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) || other is DisplayFeature &&
+            runtimeType == other.runtimeType &&
+            bounds == other.bounds &&
+            type == other.type &&
+            state == other.state;
+  }
+
+  @override
+  int get hashCode => hashValues(bounds, type, state);
+
+  @override
+  String toString() {
+    return 'DisplayFeature(rect: $bounds, type: $type, state: $state)';
+  }
+}
+
+enum DisplayFeatureType {
+  unknown,
+  fold,
+  hinge,
+  cutout,
+}
+
+enum DisplayFeatureState {
+  unknown,
+  postureFlat,
+  postureHalfOpened,
+  postureFlipped,
 }
 
 class Locale {

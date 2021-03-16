@@ -53,6 +53,7 @@ void main() {
     WindowPadding? oldPadding;
     WindowPadding? oldInsets;
     WindowPadding? oldSystemGestureInsets;
+    List<DisplayFeature>? oldDisplayFeatures;
 
   void setUp() {
     PlatformDispatcher.instance._viewConfigurations.clear();
@@ -65,6 +66,7 @@ void main() {
     oldPadding = window.viewPadding;
     oldInsets = window.viewInsets;
     oldSystemGestureInsets = window.systemGestureInsets;
+    oldDisplayFeatures = window.displayFeatures;
 
     originalOnMetricsChanged = window.onMetricsChanged;
     originalOnLocaleChanged = window.onLocaleChanged;
@@ -96,6 +98,15 @@ void main() {
         oldSystemGestureInsets!.right,   // system gesture inset right
         oldSystemGestureInsets!.bottom,  // system gesture inset bottom
         oldSystemGestureInsets!.left,    // system gesture inset left
+        oldDisplayFeatures!.expand((feature) => [
+          feature.bounds.left,
+          feature.bounds.top,
+          feature.bounds.right,
+          feature.bounds.bottom,
+          ]).map(
+          (e) => e * oldDevicePixelRatio!).toList(),            // display features bounds
+        oldDisplayFeatures!.map((e) => e.type.index).toList(),  // display features types
+        oldDisplayFeatures!.map((e) => e.state.index).toList(), // display features states
       );
       window.onMetricsChanged = originalOnMetricsChanged;
       window.onLocaleChanged = originalOnLocaleChanged;
@@ -181,6 +192,9 @@ void main() {
       0.0,    // system gesture inset right
       0.0,    // system gesture inset bottom
       0.0,    // system gesture inset left
+      [],     // display features bounds
+      [],     // display features types
+      [],     // display features states
     );
     expectNotEquals(runZone, null);
     expectIdentical(runZone, innerZone);
@@ -396,6 +410,9 @@ void main() {
       0.0,   // system gesture inset right
       0.0,   // system gesture inset bottom
       0.0,   // system gesture inset left
+      [],    // display features bounds
+      [],    // display features types
+      [],    // display features states
     );
 
     expectEquals(window.viewInsets.bottom, 0.0);
@@ -420,6 +437,9 @@ void main() {
       0.0,   // system gesture inset right
       44.0,  // system gesture inset bottom
       0.0,   // system gesture inset left
+      [],    // display features bounds
+      [],    // display features types
+      [],    // display features states
     );
 
     expectEquals(window.viewInsets.bottom, 400.0);

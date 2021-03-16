@@ -350,7 +350,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
       setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_YES_EXCLUDE_DESCENDANTS);
     }
 
-    windowManager = new androidx.window.WindowManager(getContext(), null);
+    windowManager = new androidx.window.WindowManager(getContext());
   }
 
   /**
@@ -469,6 +469,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
    * Refresh {@link androidx.window.WindowManager} and {@link android.view.DisplayCutout} display
    * features. Fold, hinge and cutout areas are populated here.
    */
+  @TargetApi(Build.VERSION_CODES.P)
   private void setWindowManagerDisplayFeatures(WindowLayoutInfo layoutInfo) {
     List<DisplayFeature> displayFeatures = layoutInfo.getDisplayFeatures();
     List<FlutterRenderer.DisplayFeature> result = new ArrayList<>();
@@ -517,7 +518,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
 
     // Data from the DisplayCutout bounds. Cutouts for cameras and other sensors are
     // populated here.
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
       WindowInsets insets = getRootWindowInsets();
       if (insets != null) {
         DisplayCutout cutout = insets.getDisplayCutout();
