@@ -343,10 +343,13 @@ void PlatformView::OnScenicEvent(
         0.0f,                               // physical_view_inset_right
         0.0f,                               // physical_view_inset_bottom
         0.0f,                               // physical_view_inset_left
-        0.0f,  // p_physical_system_gesture_inset_top
-        0.0f,  // p_physical_system_gesture_inset_right
-        0.0f,  // p_physical_system_gesture_inset_bottom
-        0.0f,  // p_physical_system_gesture_inset_left
+        0.0f,                   // p_physical_system_gesture_inset_top
+        0.0f,                   // p_physical_system_gesture_inset_right
+        0.0f,                   // p_physical_system_gesture_inset_bottom
+        0.0f,                   // p_physical_system_gesture_inset_left
+        std::vector<double>(),  // display features bounds
+        std::vector<int>(),     // display features type
+        std::vector<int>()      // display features state
     });
   }
 }

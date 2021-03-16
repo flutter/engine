@@ -231,7 +231,6 @@ public class PlatformViewsControllerTest {
     platformViewsController.getRegistry().registerViewFactory("testType", viewFactory);
 
     FlutterJNI jni = new FlutterJNI();
-    jni.attachToNative(false);
     attach(jni, platformViewsController);
 
     // Simulate create call from the framework.
@@ -259,7 +258,6 @@ public class PlatformViewsControllerTest {
     platformViewsController.getRegistry().registerViewFactory("testType", viewFactory);
 
     FlutterJNI jni = new FlutterJNI();
-    jni.attachToNative(false);
     attach(jni, platformViewsController);
 
     // Simulate create call from the framework.
@@ -282,7 +280,6 @@ public class PlatformViewsControllerTest {
     platformViewsController.getRegistry().registerViewFactory("testType", viewFactory);
 
     FlutterJNI jni = new FlutterJNI();
-    jni.attachToNative(false);
     attach(jni, platformViewsController);
 
     // Simulate create call from the framework.
@@ -313,7 +310,6 @@ public class PlatformViewsControllerTest {
     platformViewsController.getRegistry().registerViewFactory("testType", viewFactory);
 
     FlutterJNI jni = new FlutterJNI();
-    jni.attachToNative(false);
     attach(jni, platformViewsController);
 
     // Simulate create call from the framework.
@@ -346,7 +342,6 @@ public class PlatformViewsControllerTest {
     platformViewsController.getRegistry().registerViewFactory("testType", viewFactory);
 
     FlutterJNI jni = new FlutterJNI();
-    jni.attachToNative(false);
     attach(jni, platformViewsController);
 
     // Simulate create call from the framework.
@@ -631,7 +626,10 @@ public class PlatformViewsControllerTest {
         int systemGestureInsetTop,
         int systemGestureInsetRight,
         int systemGestureInsetBottom,
-        int systemGestureInsetLeft) {}
+        int systemGestureInsetLeft,
+        int[] displayFeaturesBounds,
+        int[] displayFeaturesType,
+        int[] displayFeaturesState) {}
 
     @Implementation
     public void invokePlatformMessageResponseCallback(
