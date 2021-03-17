@@ -186,7 +186,16 @@ void PointerDataPacketConverter::ConvertPointerData(
         auto iter = states_.find(pointer_data.device);
         FML_DCHECK(iter != states_.end());
         PointerState state = iter->second;
-        FML_DCHECK(state.is_down);
+        if (!state.is_down) {
+          // Synthesizes a down event if we got an up without a down.
+          PointerData synthesized_down_event = pointer_data;
+          synthesized_down_event.change = PointerData::Change::kDown;
+          synthesized_down_event.synthesized = 1;
+          state.is_down = true;
+          state.buttons = 1;
+          states_[synthesized_down_event.device] = state;
+          converted_pointers.push_back(synthesized_down_event);
+        }
 
         UpdatePointerIdentifier(pointer_data, state, false);
 

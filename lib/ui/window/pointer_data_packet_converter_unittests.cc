@@ -434,6 +434,52 @@ TEST(PointerDataPacketConverterTest, CanSynthesizeAdd) {
   ASSERT_EQ(result[3].buttons, 0);
 }
 
+TEST(PointerDataPacketConverterTest, CanSynthesizeDown) {
+  PointerDataPacketConverter converter;
+  auto packet = std::make_unique<PointerDataPacket>(3);
+  PointerData data;
+  CreateSimulatedPointerData(data, PointerData::Change::kAdd, 0, 330.0, 450.0,
+                             1);
+  packet->SetPointerData(0, data);
+  CreateSimulatedPointerData(data, PointerData::Change::kHover, 0, 300.0, 450.0,
+                             0);
+  packet->SetPointerData(1, data);
+  CreateSimulatedPointerData(data, PointerData::Change::kUp, 0, 0.0, 0.0, 0);
+  packet->SetPointerData(2, data);
+  auto converted_packet = converter.Convert(std::move(packet));
+
+  std::vector<PointerData> result;
+  UnpackPointerPacket(result, std::move(converted_packet));
+
+  ASSERT_EQ(result.size(), (size_t)5);
+  ASSERT_EQ(result[0].change, PointerData::Change::kAdd);
+  ASSERT_EQ(result[0].physical_x, 330.0);
+  ASSERT_EQ(result[0].physical_y, 450.0);
+  ASSERT_EQ(result[0].synthesized, 0);
+  ASSERT_EQ(result[0].buttons, 0);
+
+  ASSERT_EQ(result[1].change, PointerData::Change::kHover);
+  ASSERT_EQ(result[1].physical_delta_x, -30.0);
+  ASSERT_EQ(result[1].physical_delta_y, 0.0);
+  ASSERT_EQ(result[1].physical_x, 300.0);
+  ASSERT_EQ(result[1].physical_y, 450.0);
+  ASSERT_EQ(result[1].synthesized, 0);
+  ASSERT_EQ(result[1].buttons, 0);
+
+  // A down should be synthesized.
+  ASSERT_EQ(result[2].change, PointerData::Change::kDown);
+  ASSERT_EQ(result[2].physical_x, 0.0);
+  ASSERT_EQ(result[2].physical_y, 0.0);
+  ASSERT_EQ(result[2].synthesized, 1);
+  ASSERT_EQ(result[2].buttons, 1);
+
+  ASSERT_EQ(result[4].change, PointerData::Change::kUp);
+  ASSERT_EQ(result[4].physical_x, 0.0);
+  ASSERT_EQ(result[4].physical_y, 0.0);
+  ASSERT_EQ(result[4].synthesized, 0);
+  ASSERT_EQ(result[4].buttons, 0);
+}
+
 TEST(PointerDataPacketConverterTest, CanHandleThreeFingerGesture) {
   // Regression test https://github.com/flutter/flutter/issues/20517.
   PointerDataPacketConverter converter;
