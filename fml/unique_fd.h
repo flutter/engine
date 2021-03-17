@@ -34,8 +34,8 @@ struct DirCacheEntry {
 // else linker error.  Embedding in struct also causes linker error.
 
 struct UniqueFDTraits {
-  inline static std::mutex file_map_mutex;
-  inline static std::map<HANDLE, DirCacheEntry> file_map;
+  static std::mutex file_map_mutex;
+  static std::map<HANDLE, DirCacheEntry> file_map;
 
   static HANDLE InvalidValue() { return INVALID_HANDLE_VALUE; }
   static bool IsValid(HANDLE value) { return value != InvalidValue(); }
