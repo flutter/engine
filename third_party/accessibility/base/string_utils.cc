@@ -73,10 +73,14 @@ std::string NumberToString(unsigned int number) {
 }
 
 std::string NumberToString(float number) {
+  // TODO(gw280): Format decimals to the shortest reasonable representation.
+  // See: https://github.com/flutter/flutter/issues/78460
   return std::to_string(number);
 }
 
 std::string NumberToString(double number) {
+  // TODO(gw280): Format decimals to the shortest reasonable representation.
+  // See: https://github.com/flutter/flutter/issues/78460
   return std::to_string(number);
 }
 
@@ -123,7 +127,7 @@ void ReplaceChars(std::u16string in,
                   std::u16string to,
                   std::u16string* out) {
   size_t pos = in.find(from);
-  while (pos != std::string::npos) {
+  while (pos != std::u16string::npos) {
     in.replace(pos, from.size(), to);
     pos = in.find(from, pos + to.size());
   }
