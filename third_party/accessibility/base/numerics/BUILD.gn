@@ -25,4 +25,8 @@ source_set("numerics") {
     "safe_conversions.h",
     "safe_math.h",
   ]
+
+  deps = [
+    "//flutter/third_party/accessibility/ax_build",
+  ]
 }
