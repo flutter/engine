@@ -347,14 +347,16 @@ void testMain() {
   test(
       'skips painting picture when picture fully clipped out with transform and offset', () async {
     final Picture picture = _drawPicture();
-    // Picture should not be clipped out since transform will offset it to 500,500
+    // Picture should be clipped out since transform will offset it to 500,500
     final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
     builder.pushOffset(50, 50);
     builder.pushClipRect(
         const Rect.fromLTRB(0, 0, 1000, 1000)) as PersistedContainerSurface;
     builder.pushTransform((Matrix4.identity()
       ..scale(2, 2)).toFloat64());
-    builder.addPicture(Offset(500, 500), picture);
+    builder.pushOffset(500, 500);
+    builder.addPicture(Offset.zero, picture);
+    builder.pop();
     builder.pop();
     builder.pop();
     builder.pop();
@@ -768,7 +770,7 @@ class MockPersistedPicture extends PersistedPicture {
   }
 
   @override
-  Matrix4 get localTransform => null;
+  Matrix4 get localTransformInverse => null;
 
   @override
   void build() {
