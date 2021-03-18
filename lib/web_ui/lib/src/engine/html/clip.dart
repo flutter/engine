@@ -81,8 +81,8 @@ class PersistedClipRect extends PersistedContainerSurface
     } else {
       _localClipBounds = null;
     }
-    _localTransform = null;
-    _globalProjectedClip = null;
+    _localTransformInverse = null;
+    _projectedClip = null;
   }
 
   @override
@@ -139,8 +139,8 @@ class PersistedClipRRect extends PersistedContainerSurface
     } else {
       _localClipBounds = null;
     }
-    _localTransform = null;
-    _globalProjectedClip = null;
+    _localTransformInverse = null;
+    _projectedClip = null;
   }
 
   @override
@@ -221,8 +221,8 @@ class PersistedPhysicalShape extends PersistedContainerSurface
     } else {
       _localClipBounds = null;
     }
-    _localTransform = null;
-    _globalProjectedClip = null;
+    _localTransformInverse = null;
+    _projectedClip = null;
   }
 
   void _applyColor() {
@@ -337,6 +337,7 @@ class PersistedPhysicalShape extends PersistedContainerSurface
             offsetY: 0.0,
             scaleX: 1.0 / pathBounds.right,
             scaleY: 1.0 / pathBounds.bottom);
+
     /// If apply is called multiple times (without update), remove prior
     /// svg clip and render elements.
     _clipElement?.remove();
@@ -377,20 +378,23 @@ class PersistedPhysicalShape extends PersistedContainerSurface
 
     final ui.Rect pathBounds2 = path.getBounds();
     _svgElement = _pathToSvgElement(
-        path, SurfacePaintData()
+        path,
+        SurfacePaintData()
           ..style = ui.PaintingStyle.fill
-          ..color = color, '${pathBounds2.right}', '${pathBounds2.bottom}');
+          ..color = color,
+        '${pathBounds2.right}',
+        '${pathBounds2.bottom}');
+
     /// Render element behind the clipped content.
     rootElement!.insertBefore(_svgElement!, childContainer);
 
     final SurfaceShadowData shadow = computeShadow(pathBounds, elevation)!;
     final ui.Color boxShadowColor = toShadowColor(shadowColor);
     _svgElement!.style
-        ..filter =
-        'drop-shadow(${shadow.offset.dx}px ${shadow.offset.dy}px '
-        '${shadow.blurWidth}px '
-        'rgba(${boxShadowColor.red}, ${boxShadowColor.green}, '
-        '${boxShadowColor.blue}, ${boxShadowColor.alpha / 255}))'
+      ..filter = 'drop-shadow(${shadow.offset.dx}px ${shadow.offset.dy}px '
+          '${shadow.blurWidth}px '
+          'rgba(${boxShadowColor.red}, ${boxShadowColor.green}, '
+          '${boxShadowColor.blue}, ${boxShadowColor.alpha / 255}))'
       ..transform = 'translate(-${pathBounds2.left}px, -${pathBounds2.top}px)';
 
     rootElement!.style.backgroundColor = '';
@@ -403,8 +407,10 @@ class PersistedPhysicalShape extends PersistedContainerSurface
     if (pathChanged) {
       _localClipBounds = null;
     }
-    if (pathChanged || oldSurface.elevation != elevation ||
-        oldSurface.shadowColor != shadowColor || oldSurface.color != color) {
+    if (pathChanged ||
+        oldSurface.elevation != elevation ||
+        oldSurface.shadowColor != shadowColor ||
+        oldSurface.color != color) {
       oldSurface._clipElement?.remove();
       oldSurface._clipElement = null;
       oldSurface._svgElement?.remove();

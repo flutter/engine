@@ -516,24 +516,21 @@ abstract class PersistedSurface implements ui.EngineLayer {
   /// This value is the intersection of clips in the ancestor chain, including
   /// the clip added by this layer (if any).
   ///
-  /// This rectangle is in global coordinates obtained by transforming
-  /// stack of clip rects to obtain optimal cull rectangle.
-  ///
   /// The value is update by [recomputeTransformAndClip].
-  ui.Rect? _globalProjectedClip;
+  ui.Rect? _projectedClip;
 
   /// Bounds of clipping performed by this layer.
   ui.Rect? _localClipBounds;
-  // Cached transform on this node. Unlike transform, this
+  // Cached inverse of transform on this node. Unlike transform, this
   // Matrix only contains local transform (not chain multiplied since root).
-  Matrix4? _localTransform;
+  Matrix4? _localTransformInverse;
 
-  /// The local transform that this surface applies to its children.
+  /// The inverse of the local transform that this surface applies to its children.
   ///
   /// The default implementation is identity transform. Concrete
   /// implementations may override this getter to supply a different transform.
-  Matrix4? get localTransform =>
-      _localTransform ??= Matrix4.identity();
+  Matrix4? get localTransformInverse =>
+      _localTransformInverse ??= Matrix4.identity();
 
   /// Recomputes [transform] and [globalClip] fields.
   ///
@@ -545,8 +542,8 @@ abstract class PersistedSurface implements ui.EngineLayer {
   void recomputeTransformAndClip() {
     _transform = parent!._transform;
     _localClipBounds = null;
-    _localTransform = null;
-    _globalProjectedClip = null;
+    _localTransformInverse = null;
+    _projectedClip = null;
   }
 
   /// Performs computations before [build], [update], or [retain] are called.
@@ -651,8 +648,8 @@ abstract class PersistedContainerSurface extends PersistedSurface {
   void recomputeTransformAndClip() {
     _transform = parent!._transform;
     _localClipBounds = null;
-    _localTransform = null;
-    _globalProjectedClip = null;
+    _localTransformInverse = null;
+    _projectedClip = null;
   }
 
   @override

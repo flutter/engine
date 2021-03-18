@@ -25,13 +25,13 @@ class PersistedOpacity extends PersistedContainerSurface
       _transform = _transform!.clone();
       _transform!.translate(dx, dy);
     }
-    _localTransform = null;
-    _globalProjectedClip = null;
+    _localTransformInverse = null;
+    _projectedClip = null;
   }
 
   @override
-  Matrix4 get localTransform => _localTransform ??=
-      Matrix4.translationValues(offset.dx, offset.dy, 0);
+  Matrix4 get localTransformInverse => _localTransformInverse ??=
+      Matrix4.translationValues(-offset.dx, -offset.dy, 0);
 
   @override
   html.Element createElement() {
