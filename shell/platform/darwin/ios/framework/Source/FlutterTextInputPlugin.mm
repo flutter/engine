@@ -740,7 +740,8 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
            @"Expected a FlutterTextRange for range (got %@).", [range class]);
   NSRange textRange = ((FlutterTextRange*)range).range;
   NSAssert(textRange.location != NSNotFound, @"Expected a valid text range.");
-  int location = MIN(textRange.location, self.text.length - 1);
+  // Sanitize the range to prevent going out of bounds.
+  int location = MIN(textRange.location, self.text.length);
   int length = MIN(self.text.length - location, textRange.length);
   NSRange safeRange = NSMakeRange(location, length);
   return [self.text substringWithRange:safeRange];
