@@ -1195,6 +1195,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 
 - (void)dealloc {
   [self hideTextInput];
+  _activeView.textInputDelegate = nil;
   [_reusableInputView release];
   [_inputHider release];
   [_autofillContext release];
