@@ -457,7 +457,7 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
 
 - (NSRect)firstRectForCharacterRange:(NSRange)range actualRange:(NSRangePointer)actualRange {
   // This only determines position of caret instead of any arbitrary range, but it's enough
-  // to properly position accenet selection popup
+  // to properly position accent selection popup
   if (CATransform3DIsAffine(_editableTransform) && !CGRectEqualToRect(_caretRect, CGRectNull)) {
     CGRect rect =
         CGRectApplyAffineTransform(_caretRect, CATransform3DGetAffineTransform(_editableTransform));
