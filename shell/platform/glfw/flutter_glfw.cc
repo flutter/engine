@@ -65,6 +65,10 @@ struct FlutterDesktopWindowControllerState {
   // has been added since it was last removed).
   bool pointer_currently_added = false;
 
+  // Whether or not the pointer is down. This is needed because GLFW can send an
+  // up event with no down event in some cases which the does not accept.
+  bool pointer_currently_down = false;
+
   // The screen coordinates per inch on the primary monitor. Defaults to a sane
   // value based on pixel_ratio 1.0.
   double monitor_screen_coordinates_per_inch = kDpPerInch;
@@ -294,6 +298,19 @@ static void SendPointerEventWithData(GLFWwindow* window,
     return;
   }
 
+  // If sending an up when the pointer is not down then we need to synthesize a
+  // down to satisfy the engine's expectations. This occurs when the window
+  // loses focuses and then gets clicked on. The down event is sent to the
+  // window that is losing focus rather than to the Flutter window.
+  if (!controller->pointer_currently_down &&
+      event_data.phase == FlutterPointerPhase::kUp) {
+    FlutterPointerEvent event = {};
+    event.phase = FlutterPointerPhase::kDown;
+    event.x = event_data.x;
+    event.y = event_data.y;
+    SendPointerEventWithData(window, event);
+  }
+
   FlutterPointerEvent event = event_data;
   // Set metadata that's always the same regardless of the event.
   event.struct_size = sizeof(event);
@@ -315,6 +332,10 @@ static void SendPointerEventWithData(GLFWwindow* window,
     controller->pointer_currently_added = true;
   } else if (event_data.phase == FlutterPointerPhase::kRemove) {
     controller->pointer_currently_added = false;
+  } else if (event_data.phase == FlutterPointerPhase::kDown) {
+    controller->pointer_currently_down = true;
+  } else if (event_data.phase == FlutterPointerPhase::kUp) {
+    controller->pointer_currently_down = false;
   }
 }
 
