@@ -112,7 +112,6 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     ui.ClipRectEngineLayer? oldLayer,
   }) {
     assert(clipBehavior != null); // ignore: unnecessary_null_comparison
-    assert(clipBehavior != ui.Clip.none);
     return _pushSurface<PersistedClipRect>(PersistedClipRect(oldLayer as PersistedClipRect?, rect, clipBehavior));
   }
 
@@ -142,7 +141,6 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     ui.ClipPathEngineLayer? oldLayer,
   }) {
     assert(clipBehavior != null); // ignore: unnecessary_null_comparison
-    assert(clipBehavior != ui.Clip.none);
     return _pushSurface<PersistedClipPath>(PersistedClipPath(oldLayer as PersistedClipPath?, path, clipBehavior));
   }
 
