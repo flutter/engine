@@ -133,6 +133,16 @@ FLUTTER_ASSERT_ARC
                                                                    [FlutterTextInputView class]]];
 }
 
+- (FlutterTextRange*)getLineRangeFromTokenizer:(id<UITextInputTokenizer>)tokenizer
+                                       atIndex:(NSInteger)index {
+  UITextRange* range =
+      [tokenizer rangeEnclosingPosition:[FlutterTextPosition positionWithIndex:index]
+                        withGranularity:UITextGranularityLine
+                            inDirection:UITextLayoutDirectionRight];
+  XCTAssertTrue([range isKindOfClass:[FlutterTextRange class]]);
+  return (FlutterTextRange*)range;
+}
+
 #pragma mark - Tests
 
 - (void)testSecureInput {
@@ -199,6 +209,24 @@ FLUTTER_ASSERT_ARC
 
   XCTAssertEqual(range.location, 0);
   XCTAssertEqual(range.length, 2);
+}
+
+- (void)testTextInRange {
+  NSDictionary* config = self.mutableTemplateCopy;
+  [config setValue:@{@"name" : @"TextInputType.url"} forKey:@"inputType"];
+  [self setClientId:123 configuration:config];
+  NSArray<FlutterTextInputView*>* inputFields = self.installedInputViews;
+  FlutterTextInputView* inputView = inputFields[0];
+
+  [inputView insertText:@"test"];
+
+  UITextRange* range = [FlutterTextRange rangeWithNSRange:NSMakeRange(0, 20)];
+  NSString* substring = [inputView textInRange:range];
+  XCTAssertEqual(substring.length, 4);
+
+  range = [FlutterTextRange rangeWithNSRange:NSMakeRange(10, 20)];
+  substring = [inputView textInRange:range];
+  XCTAssertEqual(substring.length, 0);
 }
 
 - (void)testNoZombies {
@@ -816,6 +844,70 @@ FLUTTER_ASSERT_ARC
 
   XCTAssertEqual(inputView.receivedNotification, UIAccessibilityScreenChangedNotification);
   XCTAssertEqual(inputView.receivedNotificationTarget, backing);
+}
+
+- (void)testFlutterTokenizerCanParseLines {
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
+  inputView.textInputDelegate = engine;
+  id<UITextInputTokenizer> tokenizer = [inputView tokenizer];
+
+  // The tokenizer returns zero range When text is empty.
+  FlutterTextRange* range = [self getLineRangeFromTokenizer:tokenizer atIndex:0];
+  XCTAssertEqual(range.range.location, 0u);
+  XCTAssertEqual(range.range.length, 0u);
+
+  [inputView insertText:@"how are you\nI am fine, Thank you"];
+
+  range = [self getLineRangeFromTokenizer:tokenizer atIndex:0];
+  XCTAssertEqual(range.range.location, 0u);
+  XCTAssertEqual(range.range.length, 11u);
+
+  range = [self getLineRangeFromTokenizer:tokenizer atIndex:2];
+  XCTAssertEqual(range.range.location, 0u);
+  XCTAssertEqual(range.range.length, 11u);
+
+  range = [self getLineRangeFromTokenizer:tokenizer atIndex:11];
+  XCTAssertEqual(range.range.location, 0u);
+  XCTAssertEqual(range.range.length, 11u);
+
+  range = [self getLineRangeFromTokenizer:tokenizer atIndex:12];
+  XCTAssertEqual(range.range.location, 12u);
+  XCTAssertEqual(range.range.length, 20u);
+
+  range = [self getLineRangeFromTokenizer:tokenizer atIndex:15];
+  XCTAssertEqual(range.range.location, 12u);
+  XCTAssertEqual(range.range.length, 20u);
+
+  range = [self getLineRangeFromTokenizer:tokenizer atIndex:32];
+  XCTAssertEqual(range.range.location, 12u);
+  XCTAssertEqual(range.range.length, 20u);
+}
+
+- (void)testFlutterTextInputPluginRetainsFlutterTextInputView {
+  FlutterTextInputPlugin* myInputPlugin;
+  id myEngine = OCMClassMock([FlutterEngine class]);
+  myInputPlugin = [[FlutterTextInputPlugin alloc] init];
+  myInputPlugin.textInputDelegate = myEngine;
+  __weak UIView* activeView;
+  @autoreleasepool {
+    FlutterMethodCall* setClientCall = [FlutterMethodCall
+        methodCallWithMethodName:@"TextInput.setClient"
+                       arguments:@[
+                         [NSNumber numberWithInt:123], self.mutablePasswordTemplateCopy
+                       ]];
+    [myInputPlugin handleMethodCall:setClientCall
+                             result:^(id _Nullable result){
+                             }];
+    activeView = myInputPlugin.textInputView;
+    FlutterMethodCall* hideCall = [FlutterMethodCall methodCallWithMethodName:@"TextInput.hide"
+                                                                    arguments:@[]];
+    [myInputPlugin handleMethodCall:hideCall
+                             result:^(id _Nullable result){
+                             }];
+    XCTAssertNotNil(activeView);
+  }
+  // This assert proves the myInputPlugin.textInputView is not deallocated.
+  XCTAssertNotNil(activeView);
 }
 
 @end

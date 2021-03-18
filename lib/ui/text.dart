@@ -2249,7 +2249,8 @@ class ParagraphStyle {
 // compactness. The first 8 bits is a bitmask that records which properties
 // are null. The rest of the values are encoded in the same order encountered
 // in the bitmask. The final returned value truncates any unused bytes
-// at the end.
+// at the end. For ease of decoding, all 8 bit ints are stored before any 32 bit
+// ints.
 //
 // We serialize this more thoroughly than ParagraphStyle because it is
 // much more likely that the strut is empty/null and we wish to add
@@ -2291,35 +2292,35 @@ ByteData _encodeStrut(
     bitmask |= 1 << 2;
     // passed separately to native
   }
-  if (fontSize != null) {
+  if (leadingDistribution != null) {
     bitmask |= 1 << 3;
+    data.setInt8(byteCount, leadingDistribution.index);
+    byteCount += 1;
+  }
+  if (fontSize != null) {
+    bitmask |= 1 << 4;
     data.setFloat32(byteCount, fontSize, _kFakeHostEndian);
     byteCount += 4;
   }
   if (height != null) {
-    bitmask |= 1 << 4;
+    bitmask |= 1 << 5;
     data.setFloat32(byteCount, height, _kFakeHostEndian);
     byteCount += 4;
-    if (leadingDistribution != null) {
-      bitmask |= 1 << 5;
-      data.setInt8(byteCount, leadingDistribution.index);
-      byteCount += 4;
-    }
+
   }
   if (leading != null) {
     bitmask |= 1 << 6;
     data.setFloat32(byteCount, leading, _kFakeHostEndian);
     byteCount += 4;
   }
-  if (forceStrutHeight != null) {
+  if (forceStrutHeight ?? false) {
     bitmask |= 1 << 7;
-    // We store this boolean directly in the bitmask since there is
-    // extra space in the 16 bit int.
-    bitmask |= (forceStrutHeight ? 1 : 0) << 8;
   }
 
   data.setInt8(0, bitmask);
 
+  assert(byteCount <= 16);
+  assert(bitmask >> 8 == 0, 'strut bitmask overflow: $bitmask');
   return ByteData.view(data.buffer, 0,  byteCount);
 }
 

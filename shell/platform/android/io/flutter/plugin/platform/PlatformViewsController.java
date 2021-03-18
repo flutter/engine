@@ -430,7 +430,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    *     controller. This should be the context of the Activity hosting the Flutter application.
    * @param textureRegistry The texture registry which provides the output textures into which the
    *     embedded views will be rendered.
-   * @param dartExecutor The dart execution context, which is used to setup a system channel.
+   * @param dartExecutor The dart execution context, which is used to set up a system channel.
    */
   public void attach(
       Context context, TextureRegistry textureRegistry, @NonNull DartExecutor dartExecutor) {
@@ -784,11 +784,11 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
   public void onEndFrame() {
     final FlutterView view = (FlutterView) flutterView;
-    // If there are no platform views, then revert the image view surface,
-    // and use the previous surface.
+    // If there are no platform views in the current frame,
+    // then revert the image view surface and use the previous surface.
     //
     // Otherwise, acquire the latest image.
-    if (flutterViewConvertedToImageView && platformViews.size() == 0) {
+    if (flutterViewConvertedToImageView && currentFrameUsedPlatformViewIds.isEmpty()) {
       flutterViewConvertedToImageView = false;
       view.revertImageView(
           () -> {
