@@ -341,12 +341,11 @@ static void SetEventLocationFromCursorPosition(
 
 // Set's |event_data|'s phase depending on the current mouse state.
 // If a kUp or kDown event is triggered while the current state is already
-// up/down, a hover/move will be called instead to avoid a crash in the Flutter 
+// up/down, a hover/move will be called instead to avoid a crash in the Flutter
 // engine.
-static void SetEventPhaseFromCursorButtonState(
-    GLFWwindow* window,
-    FlutterPointerEvent* event_data,
-    int64_t buttons) {
+static void SetEventPhaseFromCursorButtonState(GLFWwindow* window,
+                                               FlutterPointerEvent* event_data,
+                                               int64_t buttons) {
   auto* controller = GetWindowController(window);
   event_data->phase =
       (buttons == 0)
