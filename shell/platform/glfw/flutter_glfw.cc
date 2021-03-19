@@ -65,8 +65,10 @@ struct FlutterDesktopWindowControllerState {
   // has been added since it was last removed).
   bool pointer_currently_added = false;
 
+  // Whether or not the pointer is down.
   bool pointer_currently_down = false;
 
+  // The currently pressed buttons, as represented in FlutterPointerEvent.
   int64_t buttons = 0;
 
   // The screen coordinates per inch on the primary monitor. Defaults to a sane
@@ -337,8 +339,10 @@ static void SetEventLocationFromCursorPosition(
   glfwGetCursorPos(window, &event_data->x, &event_data->y);
 }
 
-// Set's |event_data|'s phase to either kMove or kHover depending on the current
-// primary mouse button state.
+// Set's |event_data|'s phase depending on the current mouse state.
+// If a kUp or kDown event is triggered while the current state is already
+// up/down, a hover/move will be called instead to avoid a crash in the Flutter 
+// engine.
 static void SetEventPhaseFromCursorButtonState(
     GLFWwindow* window,
     FlutterPointerEvent* event_data) {
@@ -374,7 +378,6 @@ static void GLFWMouseButtonCallback(GLFWwindow* window,
                                     int key,
                                     int action,
                                     int mods) {
-  FlutterPointerEvent event = {};
   int64_t button;
   if (key == GLFW_MOUSE_BUTTON_LEFT) {
     button = FlutterPointerMouseButtons::kFlutterPointerButtonMousePrimary;
@@ -388,6 +391,7 @@ static void GLFWMouseButtonCallback(GLFWwindow* window,
   controller->buttons = (action == GLFW_PRESS) ? controller->buttons | button
                                                : controller->buttons & ~button;
 
+  FlutterPointerEvent event = {};
   SetEventPhaseFromCursorButtonState(window, &event);
   SetEventLocationFromCursorPosition(window, &event);
   SendPointerEventWithData(window, event);
