@@ -1472,7 +1472,11 @@ class EngineSemanticsOwner {
   /// Updates the semantics tree from data in the [uiUpdate].
   void updateSemantics(ui.SemanticsUpdate uiUpdate) {
     if (!_semanticsEnabled) {
-      return;
+      // If we're receiving a semantics update from the framework, it means the
+      // developer enabled it programmatically, so we enable it in the engine
+      // too.
+      print('>>> semanticsEnabled = true <<<');
+      semanticsEnabled = true;
     }
 
     final SemanticsUpdate update = uiUpdate as SemanticsUpdate;
