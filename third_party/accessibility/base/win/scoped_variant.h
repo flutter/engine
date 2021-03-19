@@ -8,7 +8,8 @@
 #include <windows.h>
 
 #include <oleauto.h>
-#include <stdint.h>
+
+#include <cstdint>
 
 #include "base/base_export.h"
 #include "base/macros.h"
@@ -179,7 +180,7 @@ class BASE_EXPORT ScopedVariant {
   // Use the Compare method instead.
   bool operator==(const ScopedVariant& var) const;
   bool operator!=(const ScopedVariant& var) const;
-  DISALLOW_COPY_AND_ASSIGN(ScopedVariant);
+  BASE_DISALLOW_COPY_AND_ASSIGN(ScopedVariant);
 };
 
 }  // namespace win

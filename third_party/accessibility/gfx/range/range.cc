@@ -2,13 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "ui/gfx/range/range.h"
-
-#include <inttypes.h>
+#include "range.h"
 
 #include <algorithm>
+#include <cinttypes>
 
-#include "base/strings/stringprintf.h"
+#include "base/string_utils.h"
 
 namespace gfx {
 

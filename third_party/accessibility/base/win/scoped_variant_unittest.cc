@@ -2,15 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <stdint.h>
 #include <wrl/client.h>
 #include <wrl/implements.h>
 
+#include <cstdint>
 #include <utility>
 
 #include "base/win/dispatch_stub.h"
 #include "base/win/scoped_variant.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 
 using base::win::test::DispatchStub;
 
