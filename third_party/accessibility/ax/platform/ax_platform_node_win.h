@@ -19,9 +19,9 @@
 #include <string>
 #include <vector>
 
-#include "base/compiler_specific.h"
 #include "ax/ax_export.h"
 #include "ax/platform/ax_platform_node_base.h"
+#include "base/compiler_specific.h"
 #include "gfx/range/range.h"
 
 //
@@ -75,29 +75,29 @@ class AX_EXPORT __declspec(uuid("26f5641a-246d-457b-a96d-07f3fae6acf2"))
 
  public:
   BEGIN_COM_MAP(AXPlatformNodeWin)
-    // TODO(nektar): Find a way to remove the following entry because it's not
-    // an interface.
-    COM_INTERFACE_ENTRY(AXPlatformNodeWin)
-    COM_INTERFACE_ENTRY(IAccessible)
-    COM_INTERFACE_ENTRY(IDispatch)
-    COM_INTERFACE_ENTRY(IExpandCollapseProvider)
-    COM_INTERFACE_ENTRY(IGridItemProvider)
-    COM_INTERFACE_ENTRY(IGridProvider)
-    COM_INTERFACE_ENTRY(IInvokeProvider)
-    COM_INTERFACE_ENTRY(IRangeValueProvider)
-    COM_INTERFACE_ENTRY(IRawElementProviderFragment)
-    COM_INTERFACE_ENTRY(IRawElementProviderSimple)
-    COM_INTERFACE_ENTRY(IRawElementProviderSimple2)
-    COM_INTERFACE_ENTRY(IScrollItemProvider)
-    COM_INTERFACE_ENTRY(IScrollProvider)
-    COM_INTERFACE_ENTRY(ISelectionItemProvider)
-    COM_INTERFACE_ENTRY(ISelectionProvider)
-    COM_INTERFACE_ENTRY(ITableItemProvider)
-    COM_INTERFACE_ENTRY(ITableProvider)
-    COM_INTERFACE_ENTRY(IToggleProvider)
-    COM_INTERFACE_ENTRY(IValueProvider)
-    COM_INTERFACE_ENTRY(IWindowProvider)
-    COM_INTERFACE_ENTRY(IServiceProvider)
+  // TODO(nektar): Find a way to remove the following entry because it's not
+  // an interface.
+  COM_INTERFACE_ENTRY(AXPlatformNodeWin)
+  COM_INTERFACE_ENTRY(IAccessible)
+  COM_INTERFACE_ENTRY(IDispatch)
+  COM_INTERFACE_ENTRY(IExpandCollapseProvider)
+  COM_INTERFACE_ENTRY(IGridItemProvider)
+  COM_INTERFACE_ENTRY(IGridProvider)
+  COM_INTERFACE_ENTRY(IInvokeProvider)
+  COM_INTERFACE_ENTRY(IRangeValueProvider)
+  COM_INTERFACE_ENTRY(IRawElementProviderFragment)
+  COM_INTERFACE_ENTRY(IRawElementProviderSimple)
+  COM_INTERFACE_ENTRY(IRawElementProviderSimple2)
+  COM_INTERFACE_ENTRY(IScrollItemProvider)
+  COM_INTERFACE_ENTRY(IScrollProvider)
+  COM_INTERFACE_ENTRY(ISelectionItemProvider)
+  COM_INTERFACE_ENTRY(ISelectionProvider)
+  COM_INTERFACE_ENTRY(ITableItemProvider)
+  COM_INTERFACE_ENTRY(ITableProvider)
+  COM_INTERFACE_ENTRY(IToggleProvider)
+  COM_INTERFACE_ENTRY(IValueProvider)
+  COM_INTERFACE_ENTRY(IWindowProvider)
+  COM_INTERFACE_ENTRY(IServiceProvider)
   END_COM_MAP()
 
   ~AXPlatformNodeWin() override;
@@ -511,7 +511,7 @@ class AX_EXPORT __declspec(uuid("26f5641a-246d-457b-a96d-07f3fae6acf2"))
   void Dispose() override;
 
   // Relationships between this node and other nodes.
-//   std::vector<Microsoft::WRL::ComPtr<AXPlatformRelationWin>> relations_;
+  //   std::vector<Microsoft::WRL::ComPtr<AXPlatformRelationWin>> relations_;
 
   AXHypertext old_hypertext_;
 

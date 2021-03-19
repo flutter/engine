@@ -10,18 +10,18 @@
 
 #include <memory>
 
+#include "ax_fragment_root_win.h"
+#include "ax_platform_node_win.h"
 #include "base/auto_reset.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "test_ax_node_wrapper.h"
+#include "third_party/accessibility/ax/ax_enums.h"
+#include "third_party/accessibility/ax/ax_node_data.h"
+#include "third_party/accessibility/base/win/atl_module.h"
 #include "third_party/accessibility/base/win/scoped_bstr.h"
 #include "third_party/accessibility/base/win/scoped_safearray.h"
 #include "third_party/accessibility/base/win/scoped_variant.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
-#include "third_party/accessibility/ax/ax_enums.h"
-#include "third_party/accessibility/ax/ax_node_data.h"
-#include "ax_fragment_root_win.h"
-#include "ax_platform_node_win.h"
-#include "test_ax_node_wrapper.h"
-#include "third_party/accessibility/base/win/atl_module.h"
 
 using base::win::ScopedBstr;
 using base::win::ScopedVariant;
@@ -257,7 +257,7 @@ IFACEMETHODIMP MockIRawElementProviderSimple::get_HostRawElementProvider(
 }
 
 AXPlatformNodeWinTest::AXPlatformNodeWinTest() {
-//  scoped_feature_list_.InitAndEnableFeature(features::kIChromeAccessible);
+  //  scoped_feature_list_.InitAndEnableFeature(features::kIChromeAccessible);
 }
 
 AXPlatformNodeWinTest::~AXPlatformNodeWinTest() {}
@@ -306,7 +306,8 @@ ComPtr<IRawElementProviderSimple>
 AXPlatformNodeWinTest::GetIRawElementProviderSimpleFromChildIndex(
     int child_index) {
   if (!GetRootAsAXNode() || child_index < 0 ||
-      static_cast<size_t>(child_index) >= GetRootAsAXNode()->children().size()) {
+      static_cast<size_t>(child_index) >=
+          GetRootAsAXNode()->children().size()) {
     return ComPtr<IRawElementProviderSimple>();
   }
 
@@ -3561,11 +3562,13 @@ TEST_F(AXPlatformNodeWinTest, GetPatternProviderSupportedPatterns) {
             GetSupportedPatternsFromNodeId(grid_with_header_id));
 
   EXPECT_EQ(PatternSet({UIA_ScrollItemPatternId, UIA_ValuePatternId,
-                        UIA_GridItemPatternId, UIA_TableItemPatternId, UIA_SelectionItemPatternId}),
+                        UIA_GridItemPatternId, UIA_TableItemPatternId,
+                        UIA_SelectionItemPatternId}),
             GetSupportedPatternsFromNodeId(grid_with_header_column_header_id));
 
   EXPECT_EQ(PatternSet({UIA_ScrollItemPatternId, UIA_ValuePatternId,
-                        UIA_GridItemPatternId, UIA_TableItemPatternId, UIA_SelectionItemPatternId}),
+                        UIA_GridItemPatternId, UIA_TableItemPatternId,
+                        UIA_SelectionItemPatternId}),
             GetSupportedPatternsFromNodeId(grid_with_header_cell_id));
 }
 

@@ -8,8 +8,8 @@
 
 #include "ax_fragment_root_delegate_win.h"
 #include "ax_platform_node_win.h"
-#include "uia_registrar_win.h"
 #include "base/win/atl_module.h"
+#include "uia_registrar_win.h"
 
 namespace ui {
 
@@ -56,10 +56,10 @@ class AXFragmentRootPlatformNodeWin : public AXPlatformNodeWin,
         value.vt == VT_BSTR) {
       int32_t ax_unique_id;
 
-      //TODO(gw280): detect and handle errors
+      // TODO(gw280): detect and handle errors
       ax_unique_id = std::stoi(value.bstrVal);
-      //if (!base::StringToInt(value.bstrVal, &ax_unique_id))
-      //  return S_OK;
+      // if (!base::StringToInt(value.bstrVal, &ax_unique_id))
+      //   return S_OK;
 
       // In the Windows accessibility platform implementation, id 0 represents
       // self; a positive id represents the immediate descendants; and a

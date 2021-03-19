@@ -14,11 +14,6 @@
 #include <unordered_set>
 #include <utility>
 
-#include "base/win/enum_variant.h"
-#include "base/win/scoped_bstr.h"
-#include "base/win/scoped_safearray.h"
-#include "base/win/scoped_variant.h"
-#include "base/win/variant_vector.h"
 #include "ax/ax_action_data.h"
 #include "ax/ax_active_popup.h"
 #include "ax/ax_enum_util.h"
@@ -27,14 +22,19 @@
 #include "ax/ax_node_position.h"
 #include "ax/ax_role_properties.h"
 #include "ax/ax_tree_data.h"
+#include "base/win/enum_variant.h"
+#include "base/win/scoped_bstr.h"
+#include "base/win/scoped_safearray.h"
+#include "base/win/scoped_variant.h"
+#include "base/win/variant_vector.h"
 
 #include "ax_fragment_root_win.h"
 #include "ax_platform_node_delegate.h"
 #include "ax_platform_node_delegate_utils_win.h"
 #include "uia_registrar_win.h"
 
-#include "base/win/atl_module.h"
 #include "base/logging.h"
+#include "base/win/atl_module.h"
 #include "gfx/geometry/rect_conversions.h"
 
 // From ax.constants.mojom
@@ -42,7 +42,7 @@ namespace ax {
 namespace mojom {
 const int32_t kUnknownAriaColumnOrRowCount = -1;
 }
-}
+}  // namespace ax
 
 //
 // Macros to use at the top of any AXPlatformNodeWin function that implements
@@ -646,7 +646,6 @@ void AXPlatformNodeWin::FireUiaTextEditTextChangedEvent(
     const gfx::Range& range,
     const std::u16string& active_composition_text,
     bool is_composition_committed) {
-
   // This API is only supported from Win8.1 onwards
   // Check if the function pointer is valid or not
   using UiaRaiseTextEditTextChangedEventFunction = HRESULT(WINAPI*)(
@@ -664,10 +663,11 @@ void AXPlatformNodeWin::FireUiaTextEditTextChangedEvent(
                                : TextEditChangeType_Composition;
 
   // Composition has been finalized by TSF
-  base::win::ScopedBstr composition_text((wchar_t*)active_composition_text.data());
+  base::win::ScopedBstr composition_text(
+      (wchar_t*)active_composition_text.data());
   base::win::ScopedSafearray changed_data(
       ::SafeArrayCreateVector(VT_BSTR /* element type */, 0 /* lower bound */,
-                            1 /* number of elements */));
+                              1 /* number of elements */));
   if (!changed_data.Get()) {
     return;
   }
@@ -923,7 +923,6 @@ IFACEMETHODIMP AXPlatformNodeWin::accNavigate(LONG nav_dir,
 
 IFACEMETHODIMP AXPlatformNodeWin::get_accChild(VARIANT var_child,
                                                IDispatch** disp_child) {
-
   *disp_child = nullptr;
   AXPlatformNodeWin* target;
   COM_OBJECT_VALIDATE_VAR_ID_AND_GET_TARGET(var_child, target);
@@ -2111,18 +2110,20 @@ HRESULT AXPlatformNodeWin::GetPropertyValueImpl(PROPERTYID property_id,
   switch (property_id) {
     case UIA_AriaPropertiesPropertyId:
       result->vt = VT_BSTR;
-      result->bstrVal = ::SysAllocString(base::UTF16ToWide(ComputeUIAProperties()).c_str());
+      result->bstrVal =
+          ::SysAllocString(base::UTF16ToWide(ComputeUIAProperties()).c_str());
       break;
 
     case UIA_AriaRolePropertyId:
       result->vt = VT_BSTR;
-      result->bstrVal = ::SysAllocString(base::UTF16ToWide(UIAAriaRole()).c_str());
+      result->bstrVal =
+          ::SysAllocString(base::UTF16ToWide(UIAAriaRole()).c_str());
       break;
 
     case UIA_AutomationIdPropertyId:
       V_VT(result) = VT_BSTR;
-      V_BSTR(result) =
-          ::SysAllocString(base::UTF16ToWide(GetDelegate()->GetAuthorUniqueId()).c_str());
+      V_BSTR(result) = ::SysAllocString(
+          base::UTF16ToWide(GetDelegate()->GetAuthorUniqueId()).c_str());
       break;
 
     case UIA_ClassNamePropertyId:
@@ -2291,7 +2292,8 @@ HRESULT AXPlatformNodeWin::GetPropertyValueImpl(PROPERTYID property_id,
       std::u16string localized_control_type = GetRoleDescription();
       if (!localized_control_type.empty()) {
         result->vt = VT_BSTR;
-        result->bstrVal = ::SysAllocString(base::UTF16ToWide(localized_control_type).c_str());
+        result->bstrVal =
+            ::SysAllocString(base::UTF16ToWide(localized_control_type).c_str());
       }
       // If a role description has not been provided, leave as VT_EMPTY.
       // UIA core handles Localized Control type for some built-in types and
@@ -2310,8 +2312,9 @@ HRESULT AXPlatformNodeWin::GetPropertyValueImpl(PROPERTYID property_id,
       if (SupportsOrientation(data.role)) {
         if (data.HasState(ax::mojom::State::kHorizontal) &&
             data.HasState(ax::mojom::State::kVertical)) {
-          BASE_UNREACHABLE();// << "An accessibility object cannot have a horizontal "
-                          //"and a vertical orientation at the same time.";
+          BASE_UNREACHABLE();  // << "An accessibility object cannot have a
+                               // horizontal "
+                               //"and a vertical orientation at the same time.";
         }
         if (data.HasState(ax::mojom::State::kHorizontal)) {
           result->vt = VT_I4;
@@ -2440,7 +2443,8 @@ HRESULT AXPlatformNodeWin::GetPropertyValueImpl(PROPERTYID property_id,
           GetDelegate()->GetLocalizedStringForLandmarkType();
       if (!localized_landmark_type.empty()) {
         result->vt = VT_BSTR;
-        result->bstrVal = ::SysAllocString(base::UTF16ToWide(localized_landmark_type).c_str());
+        result->bstrVal = ::SysAllocString(
+            base::UTF16ToWide(localized_landmark_type).c_str());
       }
       break;
     }
@@ -2485,8 +2489,8 @@ HRESULT AXPlatformNodeWin::GetPropertyValueImpl(PROPERTYID property_id,
     // of using a negative unique id. We follow the same negative unique id
     // convention here and when we fire events via ::NotifyWinEvent().
     result->vt = VT_BSTR;
-    result->bstrVal =
-        ::SysAllocString(base::UTF16ToWide(base::NumberToString16(-GetUniqueId())).c_str());
+    result->bstrVal = ::SysAllocString(
+        base::UTF16ToWide(base::NumberToString16(-GetUniqueId())).c_str());
   }
 
   return S_OK;
@@ -5265,8 +5269,8 @@ BSTR AXPlatformNodeWin::GetValueAttributeAsBstr(AXPlatformNodeWin* target) {
 
     // This is just ARGB
     unsigned int red = (((color) >> 16) & 0xFF);
-    unsigned int green = (((color) >>  8) & 0xFF);
-    unsigned int blue = (((color) >>  0) & 0xFF);
+    unsigned int green = (((color) >> 8) & 0xFF);
+    unsigned int blue = (((color) >> 0) & 0xFF);
     std::u16string value_text;
     value_text = base::NumberToString16(red * 100 / 255) + u"% red " +
                  base::NumberToString16(green * 100 / 255) + u"% green " +
@@ -5343,11 +5347,9 @@ HRESULT AXPlatformNodeWin::GetNameAsBstr(BSTR* value_bstr) const {
 }
 
 // TODO(gw280): Alert targets
-void AXPlatformNodeWin::AddAlertTarget() {
-}
+void AXPlatformNodeWin::AddAlertTarget() {}
 
-void AXPlatformNodeWin::RemoveAlertTarget() {
-}
+void AXPlatformNodeWin::RemoveAlertTarget() {}
 
 AXPlatformNodeWin* AXPlatformNodeWin::GetTargetFromChildID(
     const VARIANT& var_id) {
