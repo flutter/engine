@@ -4,8 +4,7 @@
 
 #include "flutter/lib/ui/painting/path_measure.h"
 
-#define _USE_MATH_DEFINES
-#include <math.h>
+#include <cmath>
 
 #include "flutter/lib/ui/painting/matrix.h"
 #include "flutter/lib/ui/ui_dart_state.h"

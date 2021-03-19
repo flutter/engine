@@ -1,7 +1,6 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-// FLUTTER_NOLINT
 
 #include "flutter/shell/common/skia_event_tracer_impl.h"
 
@@ -52,7 +51,7 @@ inline T BitCast(const U& u) {
   memcpy(&t, &u, sizeof(t));
   return t;
 }
-#endif
+#endif  // defined(OS_FUCHSIA)
 
 }  // namespace
 

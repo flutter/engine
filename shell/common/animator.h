@@ -47,8 +47,6 @@ class Animator final {
 
   ~Animator();
 
-  float GetDisplayRefreshRate() const;
-
   void RequestFrame(bool regenerate_layer_tree = true);
 
   void Render(std::unique_ptr<flutter::LayerTree> layer_tree);
@@ -110,7 +108,7 @@ class Animator final {
   bool frame_scheduled_;
   int notify_idle_task_id_;
   bool dimension_change_pending_;
-  SkISize last_layer_tree_size_;
+  SkISize last_layer_tree_size_ = {0, 0};
   std::deque<uint64_t> trace_flow_ids_;
 
   fml::WeakPtrFactory<Animator> weak_factory_;

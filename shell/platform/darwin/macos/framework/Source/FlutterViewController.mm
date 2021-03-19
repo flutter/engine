@@ -1,7 +1,6 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-// FLUTTER_NOLINT
 
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterViewController.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
@@ -10,7 +9,9 @@
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterCodecs.h"
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterOpenGLRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputPlugin.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 #import "flutter/shell/platform/embedder/embedder.h"
@@ -83,9 +84,14 @@ struct KeyboardState {
 @interface FlutterViewController () <FlutterViewReshapeListener>
 
 /**
- * A list of additional responders to keyboard events. Keybord events are forwarded to all of them.
+ * A list of additional responders to keyboard events.
+ *
+ * Keyboard events received by FlutterViewController are first dispatched to
+ * each additional responder in order. If any of them handle the event (by
+ * returning true), the event is not dispatched to later additional responders
+ * or to the nextResponder.
  */
-@property(nonatomic) NSMutableOrderedSet<NSResponder*>* additionalKeyResponders;
+@property(nonatomic) NSMutableOrderedSet<FlutterIntermediateKeyResponder*>* additionalKeyResponders;
 
 /**
  * The tracking area used to generate hover events, if enabled.
@@ -136,7 +142,15 @@ struct KeyboardState {
 - (void)dispatchMouseEvent:(nonnull NSEvent*)event phase:(FlutterPointerPhase)phase;
 
 /**
- * Converts |event| to a key event channel message, and sends it to the engine.
+ * Sends |event| to all responders in additionalKeyResponders and then to the
+ * nextResponder if none of the additional responders handled the event.
+ */
+- (void)propagateKeyEvent:(NSEvent*)event ofType:(NSString*)type;
+
+/**
+ * Converts |event| to a key event channel message, and sends it to the engine to
+ * hand to the framework. Once the framework responds, if the event was not handled,
+ * propagates the event to any additional key responders.
  */
 - (void)dispatchKeyEvent:(NSEvent*)event ofType:(NSString*)type;
 
@@ -173,6 +187,11 @@ struct KeyboardState {
  */
 - (void)setClipboardData:(NSDictionary*)data;
 
+/**
+ * Returns true iff the clipboard contains nonempty string data.
+ */
+- (BOOL)clipboardHasStrings;
+
 @end
 
 #pragma mark - FlutterViewController implementation.
@@ -202,9 +221,11 @@ struct KeyboardState {
  * Performs initialization that's common between the different init paths.
  */
 static void CommonInit(FlutterViewController* controller) {
-  controller->_engine = [[FlutterEngine alloc] initWithName:@"io.flutter"
-                                                    project:controller->_project
-                                     allowHeadlessExecution:NO];
+  if (!controller->_engine) {
+    controller->_engine = [[FlutterEngine alloc] initWithName:@"io.flutter"
+                                                      project:controller->_project
+                                       allowHeadlessExecution:NO];
+  }
   controller->_additionalKeyResponders = [[NSMutableOrderedSet alloc] init];
   controller->_mouseTrackingMode = FlutterMouseTrackingModeInKeyWindow;
 }
@@ -234,14 +255,54 @@ static void CommonInit(FlutterViewController* controller) {
   return self;
 }
 
-- (void)loadView {
-  NSOpenGLContext* resourceContext = _engine.resourceContext;
-  if (!resourceContext) {
-    NSLog(@"Unable to create FlutterView; no resource context available.");
-    return;
+- (instancetype)initWithEngine:(nonnull FlutterEngine*)engine
+                       nibName:(nullable NSString*)nibName
+                        bundle:(nullable NSBundle*)nibBundle {
+  NSAssert(engine != nil, @"Engine is required");
+  self = [super initWithNibName:nibName bundle:nibBundle];
+  if (self) {
+    if (engine.viewController) {
+      NSLog(@"The supplied FlutterEngine %@ is already used with FlutterViewController "
+             "instance %@. One instance of the FlutterEngine can only be attached to one "
+             "FlutterViewController at a time. Set FlutterEngine.viewController "
+             "to nil before attaching it to another FlutterViewController.",
+            [engine description], [engine.viewController description]);
+    }
+    _engine = engine;
+    CommonInit(self);
+    [engine setViewController:self];
   }
-  FlutterView* flutterView = [[FlutterView alloc] initWithShareContext:resourceContext
-                                                       reshapeListener:self];
+
+  return self;
+}
+
+- (void)loadView {
+  FlutterView* flutterView;
+  BOOL enableMetalRendering = NO;
+#ifdef SHELL_ENABLE_METAL
+  enableMetalRendering = YES;
+#endif
+  if (enableMetalRendering) {
+    FlutterMetalRenderer* metalRenderer = reinterpret_cast<FlutterMetalRenderer*>(_engine.renderer);
+    id<MTLDevice> device = metalRenderer.device;
+    id<MTLCommandQueue> commandQueue = metalRenderer.commandQueue;
+    if (!device || !commandQueue) {
+      NSLog(@"Unable to create FlutterView; no MTLDevice or MTLCommandQueue available.");
+      return;
+    }
+    flutterView = [[FlutterView alloc] initWithMTLDevice:device
+                                            commandQueue:commandQueue
+                                         reshapeListener:self];
+  } else {
+    FlutterOpenGLRenderer* openGLRenderer =
+        reinterpret_cast<FlutterOpenGLRenderer*>(_engine.renderer);
+    NSOpenGLContext* mainContext = openGLRenderer.openGLContext;
+    if (!mainContext) {
+      NSLog(@"Unable to create FlutterView; no GL context available.");
+      return;
+    }
+    flutterView = [[FlutterView alloc] initWithMainContext:mainContext reshapeListener:self];
+  }
   self.view = flutterView;
 }
 
@@ -284,11 +345,12 @@ static void CommonInit(FlutterViewController* controller) {
   return static_cast<FlutterView*>(self.view);
 }
 
-- (void)addKeyResponder:(NSResponder*)responder {
+- (void)addKeyResponder:(FlutterIntermediateKeyResponder*)responder {
   [self.additionalKeyResponders addObject:responder];
 }
 
-- (void)removeKeyResponder:(NSResponder*)responder {
+- (void)removeKeyResponder:(FlutterIntermediateKeyResponder*)responder {
+  [self.additionalKeyResponders removeObject:responder];
 }
 
 #pragma mark - Private methods
@@ -456,19 +518,64 @@ static void CommonInit(FlutterViewController* controller) {
   }
 }
 
+- (void)propagateKeyEvent:(NSEvent*)event ofType:(NSString*)type {
+  if ([type isEqual:@"keydown"]) {
+    for (FlutterIntermediateKeyResponder* responder in self.additionalKeyResponders) {
+      if ([responder handleKeyDown:event]) {
+        return;
+      }
+    }
+    if ([self.nextResponder respondsToSelector:@selector(keyDown:)] &&
+        event.type == NSEventTypeKeyDown) {
+      [self.nextResponder keyDown:event];
+    }
+  } else if ([type isEqual:@"keyup"]) {
+    for (FlutterIntermediateKeyResponder* responder in self.additionalKeyResponders) {
+      if ([responder handleKeyUp:event]) {
+        return;
+      }
+    }
+    if ([self.nextResponder respondsToSelector:@selector(keyUp:)] &&
+        event.type == NSEventTypeKeyUp) {
+      [self.nextResponder keyUp:event];
+    }
+  }
+  if ([self.nextResponder respondsToSelector:@selector(flagsChanged:)] &&
+      event.type == NSEventTypeFlagsChanged) {
+    [self.nextResponder flagsChanged:event];
+  }
+}
+
 - (void)dispatchKeyEvent:(NSEvent*)event ofType:(NSString*)type {
+  // Be sure to add a handler in propagateKeyEvent if you allow more event
+  // types here.
+  if (event.type != NSEventTypeKeyDown && event.type != NSEventTypeKeyUp &&
+      event.type != NSEventTypeFlagsChanged) {
+    return;
+  }
   NSMutableDictionary* keyMessage = [@{
     @"keymap" : @"macos",
     @"type" : type,
     @"keyCode" : @(event.keyCode),
     @"modifiers" : @(event.modifierFlags),
   } mutableCopy];
-  // Calling these methods on any other type of event will raise an exception.
+  // Calling these methods on any other type of event
+  // (e.g NSEventTypeFlagsChanged) will raise an exception.
   if (event.type == NSEventTypeKeyDown || event.type == NSEventTypeKeyUp) {
     keyMessage[@"characters"] = event.characters;
     keyMessage[@"charactersIgnoringModifiers"] = event.charactersIgnoringModifiers;
   }
-  [_keyEventChannel sendMessage:keyMessage];
+  __weak __typeof__(self) weakSelf = self;
+  FlutterReply replyHandler = ^(id _Nullable reply) {
+    if (!reply) {
+      return;
+    }
+    // Only re-dispatch the event to other responders if the framework didn't handle it.
+    if (![[reply valueForKey:@"handled"] boolValue]) {
+      [weakSelf propagateKeyEvent:event ofType:type];
+    }
+  };
+  [_keyEventChannel sendMessage:keyMessage reply:replyHandler];
 }
 
 - (void)onSettingsChanged:(NSNotification*)notification {
@@ -505,6 +612,8 @@ static void CommonInit(FlutterViewController* controller) {
   } else if ([call.method isEqualToString:@"Clipboard.setData"]) {
     [self setClipboardData:call.arguments];
     result(nil);
+  } else if ([call.method isEqualToString:@"Clipboard.hasStrings"]) {
+    result(@{@"value" : @([self clipboardHasStrings])});
   } else {
     result(FlutterMethodNotImplemented);
   }
@@ -517,7 +626,7 @@ static void CommonInit(FlutterViewController* controller) {
 }
 
 - (NSDictionary*)getClipboardData:(NSString*)format {
-  NSPasteboard* pasteboard = [NSPasteboard generalPasteboard];
+  NSPasteboard* pasteboard = self.pasteboard;
   if ([format isEqualToString:@(kTextPlainFormat)]) {
     NSString* stringInPasteboard = [pasteboard stringForType:NSPasteboardTypeString];
     return stringInPasteboard == nil ? nil : @{@"text" : stringInPasteboard};
@@ -526,12 +635,20 @@ static void CommonInit(FlutterViewController* controller) {
 }
 
 - (void)setClipboardData:(NSDictionary*)data {
-  NSPasteboard* pasteboard = [NSPasteboard generalPasteboard];
+  NSPasteboard* pasteboard = self.pasteboard;
   NSString* text = data[@"text"];
+  [pasteboard clearContents];
   if (text && ![text isEqual:[NSNull null]]) {
-    [pasteboard clearContents];
     [pasteboard setString:text forType:NSPasteboardTypeString];
   }
+}
+
+- (BOOL)clipboardHasStrings {
+  return [self.pasteboard stringForType:NSPasteboardTypeString].length > 0;
+}
+
+- (NSPasteboard*)pasteboard {
+  return [NSPasteboard generalPasteboard];
 }
 
 #pragma mark - FlutterViewReshapeListener
@@ -557,20 +674,10 @@ static void CommonInit(FlutterViewController* controller) {
 
 - (void)keyDown:(NSEvent*)event {
   [self dispatchKeyEvent:event ofType:@"keydown"];
-  for (NSResponder* responder in self.additionalKeyResponders) {
-    if ([responder respondsToSelector:@selector(keyDown:)]) {
-      [responder keyDown:event];
-    }
-  }
 }
 
 - (void)keyUp:(NSEvent*)event {
   [self dispatchKeyEvent:event ofType:@"keyup"];
-  for (NSResponder* responder in self.additionalKeyResponders) {
-    if ([responder respondsToSelector:@selector(keyUp:)]) {
-      [responder keyUp:event];
-    }
-  }
 }
 
 - (void)flagsChanged:(NSEvent*)event {

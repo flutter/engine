@@ -8,7 +8,7 @@ import 'dart:html' as html;
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/ui.dart';
-import 'package:ui/src/engine.dart';
+import 'package:ui/src/engine.dart' hide ClipRectEngineLayer, BackdropFilterEngineLayer;
 
 import 'package:web_engine_tester/golden_tester.dart';
 
@@ -60,7 +60,8 @@ void testMain() async {
         .build()
         .webOnlyRootElement);
 
-    await matchGoldenFile('backdrop_filter_clip.png', region: region);
+    await matchGoldenFile('backdrop_filter_clip.png', region: region,
+        maxDiffRatePercent: 0.8);
   });
 
   test('Background should only blur at ancestor clip boundary after move', () async {
@@ -110,7 +111,8 @@ void testMain() async {
         .build()
         .webOnlyRootElement);
 
-    await matchGoldenFile('backdrop_filter_clip_moved.png', region: region);
+    await matchGoldenFile('backdrop_filter_clip_moved.png', region: region,
+      maxDiffRatePercent: 0.8);
   });
 }
 

@@ -29,6 +29,7 @@ FlutterViewController::~FlutterViewController() {
   }
 }
 
+#ifndef WINUWP
 std::optional<LRESULT> FlutterViewController::HandleTopLevelWindowProc(
     HWND hwnd,
     UINT message,
@@ -39,14 +40,6 @@ std::optional<LRESULT> FlutterViewController::HandleTopLevelWindowProc(
       controller_, hwnd, message, wparam, lparam, &result);
   return handled ? result : std::optional<LRESULT>(std::nullopt);
 }
-
-std::chrono::nanoseconds FlutterViewController::ProcessMessages() {
-  return engine_->ProcessMessages();
-}
-
-FlutterDesktopPluginRegistrarRef FlutterViewController::GetRegistrarForPlugin(
-    const std::string& plugin_name) {
-  return engine_->GetRegistrarForPlugin(plugin_name);
-}
+#endif
 
 }  // namespace flutter

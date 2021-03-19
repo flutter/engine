@@ -18,9 +18,10 @@
 #include <zircon/dlfcn.h>
 #include <zircon/status.h>
 
+#include "third_party/dart/runtime/include/dart_api.h"
+
 #include "inlines.h"
 #include "logging.h"
-#include "third_party/dart/runtime/include/dart_api.h"
 #include "vmo.h"
 
 namespace dart_utils {
@@ -81,8 +82,8 @@ bool MappedResource::LoadFromVmo(const std::string& path,
     flags |= ZX_VM_PERM_EXECUTE;
   }
   uintptr_t addr;
-  zx_status_t status = zx::vmar::root_self()->map(
-      0, resource_vmo.vmo, 0, resource_vmo.size, flags, &addr);
+  zx_status_t status = zx::vmar::root_self()->map(flags, 0, resource_vmo.vmo, 0,
+                                                  resource_vmo.size, &addr);
   if (status != ZX_OK) {
     FX_LOGF(ERROR, LOG_TAG, "Failed to map: %s", zx_status_get_string(status));
     return false;

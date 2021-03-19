@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// A surface that applies an [ColorFilter] to its children.
@@ -60,74 +60,71 @@ class PersistedColorFilter extends PersistedContainerSurface
       childContainer?.style.visibility = 'visible';
       return;
     }
-    if (engineValue._blendMode == null) {
-      rootElement!.style.backgroundColor =
-          colorToCssString(engineValue._color!);
+
+    if (engineValue is! _CkBlendModeColorFilter) {
       childContainer?.style.visibility = 'visible';
       return;
     }
 
-    ui.Color filterColor = engineValue._color!;
-    ui.BlendMode? colorFilterBlendMode = engineValue._blendMode;
+    ui.Color filterColor = engineValue.color;
+    ui.BlendMode colorFilterBlendMode = engineValue.blendMode;
     html.CssStyleDeclaration style = rootElement!.style;
-    if (colorFilterBlendMode != null) {
-      switch (colorFilterBlendMode) {
-        case ui.BlendMode.clear:
-        case ui.BlendMode.dstOut:
-        case ui.BlendMode.srcOut:
-          childContainer?.style.visibility = 'hidden';
-          return;
-        case ui.BlendMode.dst:
-        case ui.BlendMode.dstIn:
-          // Noop.
-          return;
-        case ui.BlendMode.src:
-        case ui.BlendMode.srcOver:
-          // Uses source filter color.
-          // Since we don't have a size, we can't use background color.
-          // Use svg filter srcIn instead.
-          colorFilterBlendMode = ui.BlendMode.srcIn;
-          break;
-        case ui.BlendMode.dstOver:
-        case ui.BlendMode.srcIn:
-        case ui.BlendMode.srcATop:
-        case ui.BlendMode.dstATop:
-        case ui.BlendMode.xor:
-        case ui.BlendMode.plus:
-        case ui.BlendMode.modulate:
-        case ui.BlendMode.screen:
-        case ui.BlendMode.overlay:
-        case ui.BlendMode.darken:
-        case ui.BlendMode.lighten:
-        case ui.BlendMode.colorDodge:
-        case ui.BlendMode.colorBurn:
-        case ui.BlendMode.hardLight:
-        case ui.BlendMode.softLight:
-        case ui.BlendMode.difference:
-        case ui.BlendMode.exclusion:
-        case ui.BlendMode.multiply:
-        case ui.BlendMode.hue:
-        case ui.BlendMode.saturation:
-        case ui.BlendMode.color:
-        case ui.BlendMode.luminosity:
-          break;
-      }
-
-      // Use SVG filter for blend mode.
-      String? svgFilter =
-          svgFilterFromBlendMode(filterColor, colorFilterBlendMode);
-      if (svgFilter != null) {
-        _filterElement =
-            html.Element.html(svgFilter, treeSanitizer: _NullTreeSanitizer());
-        rootElement!.append(_filterElement!);
-        rootElement!.style.filter = 'url(#_fcf${_filterIdCounter})';
-        if (colorFilterBlendMode == ui.BlendMode.saturation ||
-            colorFilterBlendMode == ui.BlendMode.multiply ||
-            colorFilterBlendMode == ui.BlendMode.modulate) {
-          style.backgroundColor = colorToCssString(filterColor);
-        }
+    switch (colorFilterBlendMode) {
+      case ui.BlendMode.clear:
+      case ui.BlendMode.dstOut:
+      case ui.BlendMode.srcOut:
+        childContainer?.style.visibility = 'hidden';
         return;
+      case ui.BlendMode.dst:
+      case ui.BlendMode.dstIn:
+        // Noop.
+        return;
+      case ui.BlendMode.src:
+      case ui.BlendMode.srcOver:
+        // Uses source filter color.
+        // Since we don't have a size, we can't use background color.
+        // Use svg filter srcIn instead.
+        colorFilterBlendMode = ui.BlendMode.srcIn;
+        break;
+      case ui.BlendMode.dstOver:
+      case ui.BlendMode.srcIn:
+      case ui.BlendMode.srcATop:
+      case ui.BlendMode.dstATop:
+      case ui.BlendMode.xor:
+      case ui.BlendMode.plus:
+      case ui.BlendMode.modulate:
+      case ui.BlendMode.screen:
+      case ui.BlendMode.overlay:
+      case ui.BlendMode.darken:
+      case ui.BlendMode.lighten:
+      case ui.BlendMode.colorDodge:
+      case ui.BlendMode.colorBurn:
+      case ui.BlendMode.hardLight:
+      case ui.BlendMode.softLight:
+      case ui.BlendMode.difference:
+      case ui.BlendMode.exclusion:
+      case ui.BlendMode.multiply:
+      case ui.BlendMode.hue:
+      case ui.BlendMode.saturation:
+      case ui.BlendMode.color:
+      case ui.BlendMode.luminosity:
+        break;
+    }
+
+    // Use SVG filter for blend mode.
+    String? svgFilter =
+        svgFilterFromBlendMode(filterColor, colorFilterBlendMode);
+    if (svgFilter != null) {
+      _filterElement =
+          html.Element.html(svgFilter, treeSanitizer: _NullTreeSanitizer());
+      rootElement!.append(_filterElement!);
+      rootElement!.style.filter = 'url(#_fcf${_filterIdCounter})';
+      if (colorFilterBlendMode == ui.BlendMode.saturation ||
+          colorFilterBlendMode == ui.BlendMode.multiply ||
+          colorFilterBlendMode == ui.BlendMode.modulate) {
+        style.backgroundColor = colorToCssString(filterColor);
       }
+      return;
     }
   }
 
@@ -208,7 +205,9 @@ String? svgFilterFromBlendMode(
     case ui.BlendMode.dstOver:
     case ui.BlendMode.clear:
     case ui.BlendMode.srcOver:
-      assert(false, 'Invalid svg filter request for blend-mode '
+      assert(
+          false,
+          'Invalid svg filter request for blend-mode '
           '$colorFilterBlendMode');
       break;
   }
@@ -232,7 +231,7 @@ int _filterIdCounter = 0;
 // A' = a1*R + a2*G + a3*B + a4*A + a5
 String _srcInColorFilterToSvg(ui.Color? color) {
   _filterIdCounter += 1;
-  return '<svg width="0" height="0">'
+  return '$kSvgResourceHeader'
       '<filter id="_fcf$_filterIdCounter" '
       'filterUnits="objectBoundingBox" x="0%" y="0%" width="100%" height="100%">'
       '<feColorMatrix values="0 0 0 0 1 ' // Ignore input, set it to absolute.
@@ -249,7 +248,7 @@ String _srcInColorFilterToSvg(ui.Color? color) {
 
 String _srcOutColorFilterToSvg(ui.Color? color) {
   _filterIdCounter += 1;
-  return '<svg width="0" height="0">'
+  return '$kSvgResourceHeader'
       '<filter id="_fcf$_filterIdCounter" '
       'filterUnits="objectBoundingBox" x="0%" y="0%" width="100%" height="100%">'
       '<feFlood flood-color="${colorToCssString(color)}" flood-opacity="1" result="flood">'
@@ -261,7 +260,7 @@ String _srcOutColorFilterToSvg(ui.Color? color) {
 
 String _xorColorFilterToSvg(ui.Color? color) {
   _filterIdCounter += 1;
-  return '<svg width="0" height="0">'
+  return '$kSvgResourceHeader'
       '<filter id="_fcf$_filterIdCounter" '
       'filterUnits="objectBoundingBox" x="0%" y="0%" width="100%" height="100%">'
       '<feFlood flood-color="${colorToCssString(color)}" flood-opacity="1" result="flood">'
@@ -276,7 +275,7 @@ String _xorColorFilterToSvg(ui.Color? color) {
 String _compositeColorFilterToSvg(
     ui.Color? color, double k1, double k2, double k3, double k4) {
   _filterIdCounter += 1;
-  return '<svg width="0" height="0">'
+  return '$kSvgResourceHeader'
       '<filter id="_fcf$_filterIdCounter" '
       'filterUnits="objectBoundingBox" x="0%" y="0%" width="100%" height="100%">'
       '<feFlood flood-color="${colorToCssString(color)}" flood-opacity="1" result="flood">'
@@ -295,7 +294,7 @@ String _modulateColorFilterToSvg(ui.Color color) {
   final double r = color.red / 255.0;
   final double b = color.blue / 255.0;
   final double g = color.green / 255.0;
-  return '<svg width="0" height="0">'
+  return '$kSvgResourceHeader'
       '<filter id="_fcf$_filterIdCounter" '
       'filterUnits="objectBoundingBox" x="0%" y="0%" width="100%" height="100%">'
       '<feColorMatrix values="0 0 0 0 $r ' // Ignore input, set it to absolute.
@@ -312,7 +311,7 @@ String _modulateColorFilterToSvg(ui.Color color) {
 String _blendColorFilterToSvg(ui.Color? color, String? feBlend,
     {bool swapLayers = false}) {
   _filterIdCounter += 1;
-  return '<svg width="0" height="0">'
+  return '$kSvgResourceHeader'
           '<filter id="_fcf$_filterIdCounter" filterUnits="objectBoundingBox" '
           'x="0%" y="0%" width="100%" height="100%">'
           '<feFlood flood-color="${colorToCssString(color)}" flood-opacity="1" result="flood">'

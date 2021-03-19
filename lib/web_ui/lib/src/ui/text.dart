@@ -1,9 +1,8 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-// Synced 2019-05-30T14:20:57.833907.
 
-// @dart = 2.10
+// @dart = 2.12
 part of ui;
 
 enum FontStyle {
@@ -255,7 +254,7 @@ abstract class TextStyle {
     List<Shadow>? shadows,
     List<FontFeature>? fontFeatures,
   }) {
-    if (engine.experimentalUseSkia) {
+    if (engine.useCanvasKit) {
       return engine.CkTextStyle(
         color: color,
         decoration: decoration,
@@ -319,7 +318,7 @@ abstract class ParagraphStyle {
     String? ellipsis,
     Locale? locale,
   }) {
-    if (engine.experimentalUseSkia) {
+    if (engine.useCanvasKit) {
       return engine.CkParagraphStyle(
         textAlign: textAlign,
         textDirection: textDirection,
@@ -586,10 +585,12 @@ abstract class Paragraph {
 
 abstract class ParagraphBuilder {
   factory ParagraphBuilder(ParagraphStyle style) {
-    if (engine.experimentalUseSkia) {
+    if (engine.useCanvasKit) {
       return engine.CkParagraphBuilder(style);
+    } else if (engine.WebExperiments.instance!.useCanvasRichText) {
+      return engine.CanvasParagraphBuilder(style as engine.EngineParagraphStyle);
     } else {
-      return engine.EngineParagraphBuilder(style as engine.EngineParagraphStyle);
+      return engine.DomParagraphBuilder(style as engine.EngineParagraphStyle);
     }
   }
   void pushStyle(TextStyle style);
@@ -609,7 +610,7 @@ abstract class ParagraphBuilder {
 }
 
 Future<void> loadFontFromList(Uint8List list, {String? fontFamily}) {
-  if (engine.experimentalUseSkia) {
+  if (engine.useCanvasKit) {
     return engine.skiaFontCollection.loadFontFromList(list, fontFamily: fontFamily).then(
       (_) => engine.sendFontChangeMessage()
     );

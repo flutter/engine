@@ -14,19 +14,22 @@ ImageFilterLayer::ImageFilterLayer(sk_sp<SkImageFilter> filter)
 void ImageFilterLayer::Preroll(PrerollContext* context,
                                const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "ImageFilterLayer::Preroll");
-
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
 
   SkRect child_bounds = SkRect::MakeEmpty();
   PrerollChildren(context, matrix, &child_bounds);
-  if (filter_) {
-    const SkIRect filter_input_bounds = child_bounds.roundOut();
-    SkIRect filter_output_bounds =
-        filter_->filterBounds(filter_input_bounds, SkMatrix::I(),
-                              SkImageFilter::kForward_MapDirection);
-    child_bounds = SkRect::Make(filter_output_bounds);
+
+  if (!filter_) {
+    set_paint_bounds(child_bounds);
+    return;
   }
+
+  const SkIRect filter_input_bounds = child_bounds.roundOut();
+  SkIRect filter_output_bounds = filter_->filterBounds(
+      filter_input_bounds, SkMatrix::I(), SkImageFilter::kForward_MapDirection);
+  child_bounds = SkRect::Make(filter_output_bounds);
+
   set_paint_bounds(child_bounds);
 
   transformed_filter_ = nullptr;
@@ -63,7 +66,7 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
 
 void ImageFilterLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "ImageFilterLayer::Paint");
-  FML_DCHECK(needs_painting());
+  FML_DCHECK(needs_painting(context));
 
   if (context.raster_cache) {
     if (context.raster_cache->Draw(this, *context.leaf_nodes_canvas)) {

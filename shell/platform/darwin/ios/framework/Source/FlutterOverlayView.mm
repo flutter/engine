@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterOverlayView.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterOverlayView.h"
 
 #include "flutter/common/settings.h"
 #include "flutter/common/task_runners.h"
@@ -12,9 +12,9 @@
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/rasterizer.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
-#include "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
-#include "flutter/shell/platform/darwin/ios/ios_surface_software.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
+#import "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
+#import "flutter/shell/platform/darwin/ios/ios_surface_software.h"
 #include "third_party/skia/include/utils/mac/SkCGUtils.h"
 
 // This is mostly a duplication of FlutterView.
@@ -60,14 +60,6 @@
 
 + (Class)layerClass {
   return [FlutterView layerClass];
-}
-
-- (std::unique_ptr<flutter::IOSSurface>)createSurface:
-    (std::shared_ptr<flutter::IOSContext>)ios_context {
-  return flutter::IOSSurface::Create(std::move(ios_context),                              // context
-                                     fml::scoped_nsobject<CALayer>{[self.layer retain]},  // layer
-                                     nullptr  // platform views controller
-  );
 }
 
 // TODO(amirh): implement drawLayer to support snapshotting.

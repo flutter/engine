@@ -38,13 +38,9 @@ bool GetSkColorType(int32_t buffer_format,
 }  // anonymous namespace
 
 AndroidSurfaceSoftware::AndroidSurfaceSoftware(
-    std::shared_ptr<AndroidContext> android_context,
-    std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
-    AndroidSurface::Factory surface_factory)
-    : external_view_embedder_(
-          std::make_unique<AndroidExternalViewEmbedder>(android_context,
-                                                        jni_facade,
-                                                        surface_factory)) {
+    const std::shared_ptr<AndroidContext>& android_context,
+    std::shared_ptr<PlatformViewAndroidJNI> jni_facade)
+    : AndroidSurface(android_context) {
   GetSkColorType(WINDOW_FORMAT_RGBA_8888, &target_color_type_,
                  &target_alpha_type_);
 }
@@ -65,6 +61,8 @@ bool AndroidSurfaceSoftware::ResourceContextClearCurrent() {
 }
 
 std::unique_ptr<Surface> AndroidSurfaceSoftware::CreateGPUSurface(
+    // The software AndroidSurface neither uses any passed in Skia context
+    // nor does it interact with the AndroidContext's raster Skia context.
     GrDirectContext* gr_context) {
   if (!IsValid()) {
     return nullptr;
@@ -142,11 +140,6 @@ bool AndroidSurfaceSoftware::PresentBackingStore(
   ANativeWindow_unlockAndPost(native_window_->handle());
 
   return true;
-}
-
-// |GPUSurfaceSoftwareDelegate|
-ExternalViewEmbedder* AndroidSurfaceSoftware::GetExternalViewEmbedder() {
-  return external_view_embedder_.get();
 }
 
 void AndroidSurfaceSoftware::TeardownOnScreenContext() {}

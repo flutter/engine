@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// Surfaces that were retained this frame.
@@ -125,9 +125,9 @@ void _debugRepaintSurfaceStatsOverlay(PersistedScene scene) {
     ..fill();
 
   final double physicalScreenWidth =
-      html.window.innerWidth! * EngineWindow.browserDevicePixelRatio;
+      html.window.innerWidth! * EnginePlatformDispatcher.browserDevicePixelRatio;
   final double physicalScreenHeight =
-      html.window.innerHeight! * EngineWindow.browserDevicePixelRatio;
+      html.window.innerHeight! * EnginePlatformDispatcher.browserDevicePixelRatio;
   final double physicsScreenPixelCount =
       physicalScreenWidth * physicalScreenHeight;
 
@@ -296,9 +296,9 @@ void _debugPrintSurfaceStats(PersistedScene scene, int frameNumber) {
       return pixels;
     }).fold(0, (int total, int pixels) => total + pixels);
     final double physicalScreenWidth =
-        html.window.innerWidth! * EngineWindow.browserDevicePixelRatio;
+        html.window.innerWidth! * EnginePlatformDispatcher.browserDevicePixelRatio;
     final double physicalScreenHeight =
-        html.window.innerHeight! * EngineWindow.browserDevicePixelRatio;
+        html.window.innerHeight! * EnginePlatformDispatcher.browserDevicePixelRatio;
     final double physicsScreenPixelCount =
         physicalScreenWidth * physicalScreenHeight;
     final double screenPixelRatio = pixelCount / physicsScreenPixelCount;

@@ -8,9 +8,9 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/gpu/gpu_surface_gl.h"
-#include "flutter/shell/platform/darwin/ios/ios_context.h"
-#include "flutter/shell/platform/darwin/ios/ios_render_target_gl.h"
-#include "flutter/shell/platform/darwin/ios/ios_surface.h"
+#import "flutter/shell/platform/darwin/ios/ios_context.h"
+#import "flutter/shell/platform/darwin/ios/ios_render_target_gl.h"
+#import "flutter/shell/platform/darwin/ios/ios_surface.h"
 
 @class CAEAGLLayer;
 
@@ -18,9 +18,7 @@ namespace flutter {
 
 class IOSSurfaceGL final : public IOSSurface, public GPUSurfaceGLDelegate {
  public:
-  IOSSurfaceGL(fml::scoped_nsobject<CAEAGLLayer> layer,
-               std::shared_ptr<IOSContext> context,
-               FlutterPlatformViewsController* platform_views_controller = nullptr);
+  IOSSurfaceGL(fml::scoped_nsobject<CAEAGLLayer> layer, std::shared_ptr<IOSContext> context);
 
   ~IOSSurfaceGL() override;
 
@@ -47,9 +45,6 @@ class IOSSurfaceGL final : public IOSSurface, public GPUSurfaceGLDelegate {
 
   // |GPUSurfaceGLDelegate|
   bool SurfaceSupportsReadback() const override;
-
-  // |GPUSurfaceGLDelegate|
-  ExternalViewEmbedder* GetExternalViewEmbedder() override;
 
  private:
   std::unique_ptr<IOSRenderTargetGL> render_target_;

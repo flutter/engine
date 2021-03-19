@@ -1,7 +1,6 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-// FLUTTER_NOLINT
 
 // Allow access to fml::MessageLoop::GetCurrent() in order to flush platform
 // thread tasks.
@@ -24,7 +23,7 @@ using Embedder11yTest = testing::EmbedderTest;
 
 // TODO(52372): De-flake and re-enable.
 TEST_F(Embedder11yTest, DISABLED_A11yTreeIsConsistent) {
-  auto& context = GetEmbedderContext();
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   fml::AutoResetWaitableEvent latch;
 

@@ -8,10 +8,10 @@
 #include <memory>
 #include <string>
 
+#include "flutter/common/graphics/texture.h"
 #include "flutter/flow/embedded_views.h"
 #include "flutter/flow/instrumentation.h"
 #include "flutter/flow/raster_cache.h"
-#include "flutter/flow/texture.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/raster_thread_merger.h"
 #include "third_party/skia/include/core/SkCanvas.h"
@@ -45,7 +45,9 @@ enum class RasterStatus {
   // only used when thread configuration change occurs.
   kEnqueuePipeline,
   // Failed to rasterize the frame.
-  kFailed
+  kFailed,
+  // Layer tree was discarded due to LayerTreeDiscardCallback
+  kDiscarded
 };
 
 class CompositorContext {

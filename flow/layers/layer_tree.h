@@ -5,8 +5,7 @@
 #ifndef FLUTTER_FLOW_LAYERS_LAYER_TREE_H_
 #define FLUTTER_FLOW_LAYERS_LAYER_TREE_H_
 
-#include <stdint.h>
-
+#include <cstdint>
 #include <memory>
 
 #include "flutter/flow/compositor_context.h"
@@ -33,7 +32,7 @@ class LayerTree {
                bool ignore_raster_cache = false);
 
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
-  void UpdateScene(SceneUpdateContext& context);
+  void UpdateScene(std::shared_ptr<SceneUpdateContext> context);
 #endif
 
   void Paint(CompositorContext::ScopedFrame& frame,

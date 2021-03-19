@@ -24,9 +24,10 @@ else
   cd $FLUTTER_CLONE_REPO_PATH
 fi
 
-# For release branch, hard code corresponding framework branch
-COMMIT_NO=$(git rev-parse flutter-1.22-candidate.12)
-
+# Get the time of the youngest commit older than engine commit.
+# Git log uses commit date not the author date.
+# Before makes the comparison considering the timezone as well.
+COMMIT_NO=`git log --before="$LATEST_COMMIT_TIME_ENGINE" -n 1 | grep commit | cut -d ' ' -f2`
 echo "Using the flutter/flutter commit $COMMIT_NO";
 git reset --hard $COMMIT_NO
 

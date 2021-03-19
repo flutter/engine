@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// A function that receives a benchmark [value] labeleb by [name].
@@ -105,5 +105,179 @@ class Profiler {
     if (onBenchmark != null) {
       onBenchmark(name, value);
     }
+  }
+}
+
+/// Whether we are collecting [ui.FrameTiming]s.
+bool get _frameTimingsEnabled {
+  return EnginePlatformDispatcher.instance._onReportTimings != null;
+}
+
+/// Collects frame timings from frames.
+///
+/// This list is periodically reported to the framework (see
+/// [_kFrameTimingsSubmitInterval]).
+List<ui.FrameTiming> _frameTimings = <ui.FrameTiming>[];
+
+/// The amount of time in microseconds we wait between submitting
+/// frame timings.
+const int _kFrameTimingsSubmitInterval = 100000; // 100 milliseconds
+
+/// The last time (in microseconds) we submitted frame timings.
+int _frameTimingsLastSubmitTime = _nowMicros();
+
+// These variables store individual [ui.FrameTiming] properties.
+int _vsyncStartMicros = -1;
+int _buildStartMicros = -1;
+int _buildFinishMicros = -1;
+int _rasterStartMicros = -1;
+int _rasterFinishMicros = -1;
+
+/// Records the vsync timestamp for this frame.
+void _frameTimingsOnVsync() {
+  if (!_frameTimingsEnabled) {
+    return;
+  }
+  _vsyncStartMicros = _nowMicros();
+}
+
+/// Records the time when the framework started building the frame.
+void _frameTimingsOnBuildStart() {
+  if (!_frameTimingsEnabled) {
+    return;
+  }
+  _buildStartMicros = _nowMicros();
+}
+
+/// Records the time when the framework finished building the frame.
+void _frameTimingsOnBuildFinish() {
+  if (!_frameTimingsEnabled) {
+    return;
+  }
+  _buildFinishMicros = _nowMicros();
+}
+
+/// Records the time when the framework started rasterizing the frame.
+///
+/// On the web, this value is almost always the same as [_buildFinishMicros]
+/// because it's single-threaded so there's no delay between building
+/// and rasterization.
+///
+/// This also means different things between HTML and CanvasKit renderers.
+///
+/// In HTML "rasterization" only captures DOM updates, but not the work that
+/// the browser performs after the DOM updates are committed. The browser
+/// does not report that information.
+///
+/// CanvasKit captures everything because we control the rasterization
+/// process, so we know exactly when rasterization starts and ends.
+void _frameTimingsOnRasterStart() {
+  if (!_frameTimingsEnabled) {
+    return;
+  }
+  _rasterStartMicros = _nowMicros();
+}
+
+/// Records the time when the framework started rasterizing the frame.
+///
+/// See [_frameTimingsOnRasterStart] for more details on what rasterization
+/// timings mean on the web.
+void _frameTimingsOnRasterFinish() {
+  if (!_frameTimingsEnabled) {
+    return;
+  }
+  final int now = _nowMicros();
+  _rasterFinishMicros = now;
+  _frameTimings.add(ui.FrameTiming(
+    vsyncStart: _vsyncStartMicros,
+    buildStart: _buildStartMicros,
+    buildFinish: _buildFinishMicros,
+    rasterStart: _rasterStartMicros,
+    rasterFinish: _rasterFinishMicros,
+  ));
+  _vsyncStartMicros = -1;
+  _buildStartMicros = -1;
+  _buildFinishMicros = -1;
+  _rasterStartMicros = -1;
+  _rasterFinishMicros = -1;
+  if (now - _frameTimingsLastSubmitTime > _kFrameTimingsSubmitInterval) {
+    _frameTimingsLastSubmitTime = now;
+    EnginePlatformDispatcher.instance.invokeOnReportTimings(_frameTimings);
+    _frameTimings = <ui.FrameTiming>[];
+  }
+}
+
+/// Current timestamp in microseconds taken from the high-precision
+/// monotonically increasing timer.
+///
+/// See also:
+///
+/// * https://developer.mozilla.org/en-US/docs/Web/API/Performance/now,
+///   particularly notes about Firefox rounding to 1ms for security reasons,
+///   which can be bypassed in tests by setting certain browser options.
+int _nowMicros() {
+  return (html.window.performance.now() * 1000).toInt();
+}
+
+/// Counts various events that take place while the app is running.
+///
+/// This class will slow down the app, and therefore should be disabled while
+/// benchmarking. For example, avoid using it in conjunction with [Profiler].
+class Instrumentation {
+  Instrumentation._() {
+    _checkInstrumentationEnabled();
+  }
+
+  /// Whether instrumentation is enabled.
+  ///
+  /// Check this value before calling any other methods in this class.
+  static const bool enabled = const bool.fromEnvironment(
+    'FLUTTER_WEB_ENABLE_INSTRUMENTATION',
+    defaultValue: false,
+  );
+
+  /// Returns the singleton that provides instrumentation API.
+  static Instrumentation get instance {
+    _checkInstrumentationEnabled();
+    return _instance;
+  }
+
+  static late final Instrumentation _instance = Instrumentation._();
+
+  static void _checkInstrumentationEnabled() {
+    if (!enabled) {
+      throw Exception(
+        'Cannot use Instrumentation unless it is enabled. '
+        'You can enable it by setting the `FLUTTER_WEB_ENABLE_INSTRUMENTATION` '
+        'environment variable to true, or by passing '
+        '--dart-define=FLUTTER_WEB_ENABLE_INSTRUMENTATION=true to the flutter '
+        'tool.',
+      );
+    }
+  }
+
+  final Map<String, int> _counters = <String, int>{};
+  Timer? _printTimer;
+
+  /// Increments the count of a particular event by one.
+  void incrementCounter(String event) {
+    _checkInstrumentationEnabled();
+    final int currentCount = _counters[event] ?? 0;
+    _counters[event] = currentCount + 1;
+    _printTimer ??= Timer(
+      const Duration(seconds: 2),
+      () {
+        final StringBuffer message = StringBuffer('Engine counters:\n');
+        final List<MapEntry<String, int>> entries = _counters.entries.toList()
+          ..sort((MapEntry<String, int> a, MapEntry<String, int> b) {
+            return a.key.compareTo(b.key);
+          });
+        for (MapEntry<String, int> entry in entries) {
+          message.writeln('  ${entry.key}: ${entry.value}');
+        }
+        print(message);
+        _printTimer = null;
+      },
+    );
   }
 }

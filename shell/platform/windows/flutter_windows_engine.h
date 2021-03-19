@@ -10,12 +10,20 @@
 #include <optional>
 #include <vector>
 
+#include "flutter/shell/platform/common/cpp/client_wrapper/binary_messenger_impl.h"
+#include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/basic_message_channel.h"
 #include "flutter/shell/platform/common/cpp/incoming_message_dispatcher.h"
+#include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/windows/flutter_project_bundle.h"
+#include "flutter/shell/platform/windows/flutter_windows_texture_registrar.h"
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
-#include "flutter/shell/platform/windows/win32_task_runner.h"
-#include "flutter/shell/platform/windows/win32_window_proc_delegate_manager.h"
+#include "flutter/shell/platform/windows/task_runner.h"
 #include "flutter/shell/platform/windows/window_state.h"
+#include "third_party/rapidjson/include/rapidjson/document.h"
+
+#ifndef WINUWP
+#include "flutter/shell/platform/windows/win32_window_proc_delegate_manager.h"  // nogncheck
+#endif
 
 namespace flutter {
 
@@ -65,25 +73,65 @@ class FlutterWindowsEngine {
   void SetPluginRegistrarDestructionCallback(
       FlutterDesktopOnPluginRegistrarDestroyed callback);
 
-  FLUTTER_API_SYMBOL(FlutterEngine) engine() { return engine_; }
-
   FlutterDesktopMessengerRef messenger() { return messenger_.get(); }
 
   IncomingMessageDispatcher* message_dispatcher() {
     return message_dispatcher_.get();
   }
 
-  Win32TaskRunner* task_runner() { return task_runner_.get(); }
+  TaskRunner* task_runner() { return task_runner_.get(); }
 
+  FlutterWindowsTextureRegistrar* texture_registrar() {
+    return texture_registrar_.get();
+  }
+
+#ifndef WINUWP
   Win32WindowProcDelegateManager* window_proc_delegate_manager() {
     return window_proc_delegate_manager_.get();
   }
+#endif
+
+  // Informs the engine that the window metrics have changed.
+  void SendWindowMetricsEvent(const FlutterWindowMetricsEvent& event);
+
+  // Informs the engine of an incoming pointer event.
+  void SendPointerEvent(const FlutterPointerEvent& event);
+
+  // Sends the given message to the engine, calling |reply| with |user_data|
+  // when a reponse is received from the engine if they are non-null.
+  bool SendPlatformMessage(const char* channel,
+                           const uint8_t* message,
+                           const size_t message_size,
+                           const FlutterDesktopBinaryReply reply,
+                           void* user_data);
+
+  // Sends the given data as the response to an earlier platform message.
+  void SendPlatformMessageResponse(
+      const FlutterDesktopMessageResponseHandle* handle,
+      const uint8_t* data,
+      size_t data_length);
 
   // Callback passed to Flutter engine for notifying window of platform
   // messages.
   void HandlePlatformMessage(const FlutterPlatformMessage*);
 
+  // Informs the engine that the system font list has changed.
+  void ReloadSystemFonts();
+
+  // Attempts to register the texture with the given |texture_id|.
+  bool RegisterExternalTexture(int64_t texture_id);
+
+  // Attempts to unregister the texture with the given |texture_id|.
+  bool UnregisterExternalTexture(int64_t texture_id);
+
+  // Notifies the engine about a new frame being available for the
+  // given |texture_id|.
+  bool MarkExternalTextureFrameAvailable(int64_t texture_id);
+
  private:
+  // Allows swapping out embedder_api_ calls in tests.
+  friend class EngineEmbedderApiModifier;
+
   // Sends system settings (e.g., locale) to the engine.
   //
   // Should be called just after the engine is run, and after any relevant
@@ -92,6 +140,8 @@ class FlutterWindowsEngine {
 
   // The handle to the embedder.h engine instance.
   FLUTTER_API_SYMBOL(FlutterEngine) engine_ = nullptr;
+
+  FlutterEngineProcTable embedder_api_ = {};
 
   std::unique_ptr<FlutterProjectBundle> project_;
 
@@ -102,10 +152,13 @@ class FlutterWindowsEngine {
   FlutterWindowsView* view_ = nullptr;
 
   // Task runner for tasks posted from the engine.
-  std::unique_ptr<Win32TaskRunner> task_runner_;
+  std::unique_ptr<TaskRunner> task_runner_;
 
   // The plugin messenger handle given to API clients.
   std::unique_ptr<FlutterDesktopMessenger> messenger_;
+
+  // A wrapper around messenger_ for interacting with client_wrapper-level APIs.
+  std::unique_ptr<BinaryMessengerImpl> messenger_wrapper_;
 
   // Message dispatch manager for messages from engine_.
   std::unique_ptr<IncomingMessageDispatcher> message_dispatcher_;
@@ -113,13 +166,21 @@ class FlutterWindowsEngine {
   // The plugin registrar handle given to API clients.
   std::unique_ptr<FlutterDesktopPluginRegistrar> plugin_registrar_;
 
+  // The texture registrar.
+  std::unique_ptr<FlutterWindowsTextureRegistrar> texture_registrar_;
+
+  // The MethodChannel used for communication with the Flutter engine.
+  std::unique_ptr<BasicMessageChannel<rapidjson::Document>> settings_channel_;
+
   // A callback to be called when the engine (and thus the plugin registrar)
   // is being destroyed.
   FlutterDesktopOnPluginRegistrarDestroyed
-      plugin_registrar_destruction_callback_;
+      plugin_registrar_destruction_callback_ = nullptr;
 
+#ifndef WINUWP
   // The manager for WindowProc delegate registration and callbacks.
   std::unique_ptr<Win32WindowProcDelegateManager> window_proc_delegate_manager_;
+#endif
 };
 
 }  // namespace flutter

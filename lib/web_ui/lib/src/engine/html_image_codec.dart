@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 final bool _supportsDecode = js_util.getProperty(
@@ -39,10 +39,20 @@ class HtmlCodec implements ui.Codec {
       js_util.setProperty(imgElement, 'decoding', 'async');
       imgElement.decode().then((dynamic _) {
         chunkCallback?.call(100, 100);
+        int naturalWidth = imgElement.naturalWidth;
+        int naturalHeight = imgElement.naturalHeight;
+        // Workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=700533.
+        if (naturalWidth == 0 && naturalHeight == 0 && (
+            browserEngine == BrowserEngine.firefox ||
+                browserEngine == BrowserEngine.ie11)) {
+          const int kDefaultImageSizeFallback = 300;
+          naturalWidth = kDefaultImageSizeFallback;
+          naturalHeight = kDefaultImageSizeFallback;
+        }
         final HtmlImage image = HtmlImage(
           imgElement,
-          imgElement.naturalWidth,
-          imgElement.naturalHeight,
+          naturalWidth,
+          naturalHeight,
         );
         completer.complete(SingleFrameInfo(image));
       }).catchError((dynamic e) {
@@ -116,11 +126,33 @@ class HtmlImage implements ui.Image {
   bool _requiresClone = false;
   HtmlImage(this.imgElement, this.width, this.height);
 
+  bool _disposed = false;
   @override
   void dispose() {
     // Do nothing. The codec that owns this image should take care of
     // releasing the object url.
+    if (assertionsEnabled) {
+      _disposed = true;
+    }
   }
+
+  @override
+  bool get debugDisposed {
+    if (assertionsEnabled) {
+      return _disposed;
+    }
+    return throw StateError('Image.debugDisposed is only available when asserts are enabled.');
+  }
+
+
+  @override
+  ui.Image clone() => this;
+
+  @override
+  bool isCloneOf(ui.Image other) => other == this;
+
+  @override
+  List<StackTrace>? debugGetOpenHandleStackTraces() => null;
 
   @override
   final int width;
@@ -130,6 +162,15 @@ class HtmlImage implements ui.Image {
 
   @override
   Future<ByteData?> toByteData({ui.ImageByteFormat format = ui.ImageByteFormat.rawRgba}) {
+    if (format == ui.ImageByteFormat.rawRgba) {
+      final html.CanvasElement canvas = html.CanvasElement()
+        ..width = width
+        ..height = height;
+      final html.CanvasRenderingContext2D ctx = canvas.context2D;
+      ctx.drawImage(imgElement, 0, 0);
+      final html.ImageData imageData = ctx.getImageData(0, 0, width, height);
+      return Future.value(imageData.data.buffer.asByteData());
+    }
     if (imgElement.src?.startsWith('data:') == true) {
       final data = UriData.fromUri(Uri.parse(imgElement.src!));
       return Future.value(data.contentAsBytes().buffer.asByteData());
@@ -149,4 +190,7 @@ class HtmlImage implements ui.Image {
       return imgElement;
     }
   }
+
+  @override
+  String toString() => '[$width\u00D7$height]';
 }

@@ -2,15 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/darwin/ios/ios_context.h"
+#import "flutter/shell/platform/darwin/ios/ios_context.h"
 
 #include "flutter/fml/logging.h"
-#include "flutter/shell/platform/darwin/ios/ios_context_gl.h"
-#include "flutter/shell/platform/darwin/ios/ios_context_software.h"
+#import "flutter/shell/platform/darwin/ios/ios_context_gl.h"
+#import "flutter/shell/platform/darwin/ios/ios_context_software.h"
 
-#if FLUTTER_SHELL_ENABLE_METAL
-#include "flutter/shell/platform/darwin/ios/ios_context_metal.h"
-#endif  // FLUTTER_SHELL_ENABLE_METAL
+#if SHELL_ENABLE_METAL
+#import "flutter/shell/platform/darwin/ios/ios_context_metal.h"
+#endif  // SHELL_ENABLE_METAL
 
 namespace flutter {
 
@@ -24,10 +24,10 @@ std::unique_ptr<IOSContext> IOSContext::Create(IOSRenderingAPI rendering_api) {
       return std::make_unique<IOSContextGL>();
     case IOSRenderingAPI::kSoftware:
       return std::make_unique<IOSContextSoftware>();
-#if FLUTTER_SHELL_ENABLE_METAL
+#if SHELL_ENABLE_METAL
     case IOSRenderingAPI::kMetal:
       return std::make_unique<IOSContextMetal>();
-#endif  // FLUTTER_SHELL_ENABLE_METAL
+#endif  // SHELL_ENABLE_METAL
     default:
       break;
   }

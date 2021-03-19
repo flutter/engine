@@ -33,6 +33,14 @@ SRC_DIR="$(cd "$SCRIPT_DIR/../.."; pwd -P)"
 DART_BIN="$SRC_DIR/third_party/dart/tools/sdks/dart-sdk/bin"
 PATH="$DART_BIN:$PATH"
 
+# Use:
+#   env VERBOSE=1 ./ci/licenses.sh
+# to turn on verbose progress report printing.
+QUIET="--quiet"
+if [[ "${VERBOSE}" == "1" ]]; then
+  QUIET=""
+fi
+
 echo "Verifying license script is still happy..."
 echo "Using pub from $(command -v pub), dart from $(command -v dart)"
 
@@ -58,7 +66,8 @@ function collect_licenses() (
   dart --enable-asserts lib/main.dart         \
     --src ../../..                            \
     --out ../../../out/license_script_output  \
-    --golden ../../ci/licenses_golden
+    --golden ../../ci/licenses_golden \
+    "${QUIET}"
 )
 
 # Verifies the licenses in the repo.
@@ -113,7 +122,7 @@ function verify_licenses() (
 
   local actualLicenseCount
   actualLicenseCount="$(tail -n 1 flutter/ci/licenses_golden/licenses_flutter | tr -dc '0-9')"
-  local expectedLicenseCount=2 # When changing this number: Update the error message below as well describing all expected license types.
+  local expectedLicenseCount=14 # When changing this number: Update the error message below as well describing all expected license types.
 
   if [[ $actualLicenseCount -ne $expectedLicenseCount ]]; then
       echo "=============================== ERROR ==============================="

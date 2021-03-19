@@ -2,10 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// Copyright 2013 The Flutter Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
 #include "flutter/shell/platform/common/cpp/client_wrapper/testing/stub_flutter_api.h"
 
 static flutter::testing::StubFlutterApi* s_stub_implementation;
@@ -95,4 +91,42 @@ void FlutterDesktopMessengerSetCallback(FlutterDesktopMessengerRef messenger,
   if (s_stub_implementation) {
     s_stub_implementation->MessengerSetCallback(channel, callback, user_data);
   }
+}
+
+FlutterDesktopTextureRegistrarRef FlutterDesktopRegistrarGetTextureRegistrar(
+    FlutterDesktopPluginRegistrarRef registrar) {
+  return reinterpret_cast<FlutterDesktopTextureRegistrarRef>(1);
+}
+
+int64_t FlutterDesktopTextureRegistrarRegisterExternalTexture(
+    FlutterDesktopTextureRegistrarRef texture_registrar,
+    const FlutterDesktopTextureInfo* info) {
+  uint64_t result = -1;
+  if (s_stub_implementation) {
+    result =
+        s_stub_implementation->TextureRegistrarRegisterExternalTexture(info);
+  }
+  return result;
+}
+
+bool FlutterDesktopTextureRegistrarUnregisterExternalTexture(
+    FlutterDesktopTextureRegistrarRef texture_registrar,
+    int64_t texture_id) {
+  bool result = false;
+  if (s_stub_implementation) {
+    result = s_stub_implementation->TextureRegistrarUnregisterExternalTexture(
+        texture_id);
+  }
+  return result;
+}
+
+bool FlutterDesktopTextureRegistrarMarkExternalTextureFrameAvailable(
+    FlutterDesktopTextureRegistrarRef texture_registrar,
+    int64_t texture_id) {
+  bool result = false;
+  if (s_stub_implementation) {
+    result = s_stub_implementation->TextureRegistrarMarkTextureFrameAvailable(
+        texture_id);
+  }
+  return result;
 }

@@ -1,7 +1,11 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
-#include <assert.h>
 #include <embedder.h>
 #include <glfw3.h>
+
+#include <cassert>
 #include <chrono>
 #include <iostream>
 
@@ -125,6 +129,10 @@ void printUsage() {
             << std::endl;
 }
 
+void GLFW_ErrorCallback(int error, const char* description) {
+  std::cout << "GLFW Error: (" << error << ") " << description << std::endl;
+}
+
 int main(int argc, const char* argv[]) {
   if (argc != 3) {
     printUsage();
@@ -133,6 +141,8 @@ int main(int argc, const char* argv[]) {
 
   std::string project_path = argv[1];
   std::string icudtl_path = argv[2];
+
+  glfwSetErrorCallback(GLFW_ErrorCallback);
 
   int result = glfwInit();
   assert(result == GLFW_TRUE);

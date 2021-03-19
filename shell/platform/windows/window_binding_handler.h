@@ -10,6 +10,7 @@
 #include <string>
 #include <variant>
 
+#include "flutter/shell/platform/common/cpp/geometry.h"
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
 #include "flutter/shell/platform/windows/window_binding_handler_delegate.h"
 
@@ -45,9 +46,15 @@ class WindowBindingHandler {
   // Returns the bounds of the backing window in physical pixels.
   virtual PhysicalWindowBounds GetPhysicalWindowBounds() = 0;
 
+  // Invoked after the window has been resized.
+  virtual void OnWindowResized() = 0;
+
   // Sets the cursor that should be used when the mouse is over the Flutter
   // content. See mouse_cursor.dart for the values and meanings of cursor_name.
   virtual void UpdateFlutterCursor(const std::string& cursor_name) = 0;
+
+  // Sets the cursor rect in root view coordinates.
+  virtual void UpdateCursorRect(const Rect& rect) = 0;
 };
 
 }  // namespace flutter

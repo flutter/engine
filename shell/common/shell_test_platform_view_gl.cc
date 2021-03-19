@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/common/shell_test_platform_view_gl.h"
+
 #include "flutter/shell/gpu/gpu_surface_gl.h"
 
 namespace flutter {
@@ -34,6 +35,12 @@ void ShellTestPlatformViewGL::SimulateVSync() {
 // |PlatformView|
 std::unique_ptr<Surface> ShellTestPlatformViewGL::CreateRenderingSurface() {
   return std::make_unique<GPUSurfaceGL>(this, true);
+}
+
+// |PlatformView|
+std::shared_ptr<ExternalViewEmbedder>
+ShellTestPlatformViewGL::CreateExternalViewEmbedder() {
+  return shell_test_external_view_embedder_;
 }
 
 // |PlatformView|
@@ -70,11 +77,6 @@ ShellTestPlatformViewGL::GetGLProcResolver() const {
   return [surface = &gl_surface_](const char* name) -> void* {
     return surface->GetProcAddress(name);
   };
-}
-
-// |GPUSurfaceGLDelegate|
-ExternalViewEmbedder* ShellTestPlatformViewGL::GetExternalViewEmbedder() {
-  return shell_test_external_view_embedder_.get();
 }
 
 }  // namespace testing

@@ -29,8 +29,8 @@ void testMain() {
         {ui.Rect canvasSize, ui.VoidCallback whenDone}) {
       canvasSize ??= const ui.Rect.fromLTWH(0, 0, 100, 100);
       test(description, () {
-        testFn(BitmapCanvas(canvasSize));
-        testFn(DomCanvas());
+        testFn(BitmapCanvas(canvasSize, RenderStrategy()));
+        testFn(DomCanvas(domRenderer.createElement('flt-picture')));
         testFn(mockCanvas = MockEngineCanvas());
         if (whenDone != null) {
           whenDone();

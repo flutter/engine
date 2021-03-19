@@ -5,10 +5,9 @@
 #ifndef FLUTTER_SHELL_GPU_GPU_SURFACE_GL_DELEGATE_H_
 #define FLUTTER_SHELL_GPU_GPU_SURFACE_GL_DELEGATE_H_
 
+#include "flutter/common/graphics/gl_context_switch.h"
 #include "flutter/flow/embedded_views.h"
-#include "flutter/flow/gl_context_switch.h"
 #include "flutter/fml/macros.h"
-#include "flutter/shell/gpu/gpu_surface_delegate.h"
 #include "third_party/skia/include/core/SkMatrix.h"
 #include "third_party/skia/include/gpu/gl/GrGLInterface.h"
 
@@ -21,12 +20,9 @@ struct GLFrameInfo {
   uint32_t height;
 };
 
-class GPUSurfaceGLDelegate : public GPUSurfaceDelegate {
+class GPUSurfaceGLDelegate {
  public:
-  ~GPUSurfaceGLDelegate() override;
-
-  // |GPUSurfaceDelegate|
-  ExternalViewEmbedder* GetExternalViewEmbedder() override;
+  ~GPUSurfaceGLDelegate();
 
   // Called to make the main GL context current on the current thread.
   virtual std::unique_ptr<GLContextResult> GLContextMakeCurrent() = 0;
@@ -57,7 +53,7 @@ class GPUSurfaceGLDelegate : public GPUSurfaceDelegate {
   // flushed.
   virtual SkMatrix GLContextSurfaceTransformation() const;
 
-  sk_sp<const GrGLInterface> GetGLInterface() const;
+  virtual sk_sp<const GrGLInterface> GetGLInterface() const;
 
   // TODO(chinmaygarde): The presence of this method is to work around the fact
   // that not all platforms can accept a custom GL proc table. Migrate all

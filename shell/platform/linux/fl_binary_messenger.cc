@@ -100,12 +100,17 @@ static void platform_message_handler_free(gpointer data) {
   g_free(self);
 }
 
-static void engine_weak_notify_cb(gpointer user_data, GObject* object) {
+static void engine_weak_notify_cb(gpointer user_data,
+                                  GObject* where_the_object_was) {
   FlBinaryMessenger* self = FL_BINARY_MESSENGER(user_data);
   self->engine = nullptr;
 
   // Disconnect any handlers.
-  g_hash_table_remove_all(self->platform_message_handlers);
+  // Take the reference in case a handler tries to modify this table.
+  g_autoptr(GHashTable) handlers = self->platform_message_handlers;
+  self->platform_message_handlers = g_hash_table_new_full(
+      g_str_hash, g_str_equal, g_free, platform_message_handler_free);
+  g_hash_table_remove_all(handlers);
 }
 
 static gboolean fl_binary_messenger_platform_message_cb(

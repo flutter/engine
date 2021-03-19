@@ -5,24 +5,24 @@
 #ifndef SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_ACCESSIBILITY_BRIDGE_H_
 #define SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_ACCESSIBILITY_BRIDGE_H_
 
+#import <UIKit/UIKit.h>
+
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-
-#import <UIKit/UIKit.h>
 
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/lib/ui/semantics/custom_accessibility_action.h"
 #include "flutter/lib/ui/semantics/semantics_node.h"
-#include "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
-#include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/SemanticsObject.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge_ios.h"
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
+#import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/SemanticsObject.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge_ios.h"
 #include "third_party/skia/include/core/SkRect.h"
 
 namespace flutter {
@@ -51,7 +51,7 @@ class AccessibilityBridge final : public AccessibilityBridgeIos {
 
   AccessibilityBridge(FlutterViewController* view_controller,
                       PlatformViewIOS* platform_view,
-                      FlutterPlatformViewsController* platform_views_controller,
+                      std::shared_ptr<FlutterPlatformViewsController> platform_views_controller,
                       std::unique_ptr<IosDelegate> ios_delegate = nullptr);
   ~AccessibilityBridge();
 
@@ -70,7 +70,7 @@ class AccessibilityBridge final : public AccessibilityBridgeIos {
 
   fml::WeakPtr<AccessibilityBridge> GetWeakPtr();
 
-  FlutterPlatformViewsController* GetPlatformViewsController() const override {
+  std::shared_ptr<FlutterPlatformViewsController> GetPlatformViewsController() const override {
     return platform_views_controller_;
   };
 
@@ -85,7 +85,7 @@ class AccessibilityBridge final : public AccessibilityBridgeIos {
 
   FlutterViewController* view_controller_;
   PlatformViewIOS* platform_view_;
-  FlutterPlatformViewsController* platform_views_controller_;
+  const std::shared_ptr<FlutterPlatformViewsController> platform_views_controller_;
   // If the this id is kSemanticObjectIdInvalid, it means either nothing has
   // been focused or the focus is currently outside of the flutter application
   // (i.e. the status bar or keyboard)

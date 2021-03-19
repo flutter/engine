@@ -5,7 +5,6 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_CLIENT_WRAPPER_INCLUDE_FLUTTER_FLUTTER_ENGINE_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_CLIENT_WRAPPER_INCLUDE_FLUTTER_FLUTTER_ENGINE_H_
 
-#define NOMINMAX
 #include <flutter_windows.h>
 
 #include <chrono>
@@ -53,6 +52,11 @@ class FlutterEngine : public PluginRegistry {
   // a wait for native events in the runloop should never be longer than the
   // last return value from this function.
   std::chrono::nanoseconds ProcessMessages();
+
+  // Tells the engine that the system font list has changed. Should be called
+  // by clients when OS-level font changes happen (e.g., WM_FONTCHANGE in a
+  // Win32 application).
+  void ReloadSystemFonts();
 
   // flutter::PluginRegistry:
   FlutterDesktopPluginRegistrarRef GetRegistrarForPlugin(

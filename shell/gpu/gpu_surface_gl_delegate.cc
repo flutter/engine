@@ -4,6 +4,8 @@
 
 #include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
 
+#include <cstring>
+
 #include "third_party/skia/include/gpu/gl/GrGLAssembleInterface.h"
 
 namespace flutter {
@@ -95,10 +97,6 @@ sk_sp<const GrGLInterface> GPUSurfaceGLDelegate::GetGLInterface() const {
 sk_sp<const GrGLInterface>
 GPUSurfaceGLDelegate::GetDefaultPlatformGLInterface() {
   return CreateGLInterface(nullptr);
-}
-
-ExternalViewEmbedder* GPUSurfaceGLDelegate::GetExternalViewEmbedder() {
-  return nullptr;
 }
 
 }  // namespace flutter

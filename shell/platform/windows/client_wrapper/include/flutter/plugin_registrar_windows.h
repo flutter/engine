@@ -5,8 +5,8 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_CLIENT_WRAPPER_INCLUDE_FLUTTER_PLUGIN_REGISTRAR_WINDOWS_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_CLIENT_WRAPPER_INCLUDE_FLUTTER_PLUGIN_REGISTRAR_WINDOWS_H_
 
-#include <Windows.h>
 #include <flutter_windows.h>
+#include <windows.h>
 
 #include <memory>
 #include <optional>
@@ -36,7 +36,12 @@ class PluginRegistrarWindows : public PluginRegistrar {
         FlutterDesktopPluginRegistrarGetView(core_registrar));
   }
 
-  virtual ~PluginRegistrarWindows() = default;
+  virtual ~PluginRegistrarWindows() {
+    // Must be the first call.
+    ClearPlugins();
+    // Explicitly cleared to facilitate destruction order testing.
+    view_.reset();
+  }
 
   // Prevent copying.
   PluginRegistrarWindows(PluginRegistrarWindows const&) = delete;

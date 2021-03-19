@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//flutter/common/config.gni")
 import("//flutter/testing/testing.gni")
 
 config("desktop_library_implementation") {
@@ -12,6 +13,7 @@ _public_headers = [
   "public/flutter_export.h",
   "public/flutter_messenger.h",
   "public/flutter_plugin_registrar.h",
+  "public/flutter_texture_registrar.h",
 ]
 
 # Any files that are built by clients (client_wrapper code, library headers for
@@ -36,16 +38,54 @@ copy("publish_headers") {
 }
 
 source_set("common_cpp_input") {
-  public = [ "text_input_model.h" ]
+  public = [
+    "text_input_model.h",
+    "text_range.h",
+  ]
 
   sources = [ "text_input_model.cc" ]
 
   configs += [ ":desktop_library_implementation" ]
 
+  public_configs = [ "//flutter:config" ]
+
+  deps = [ "//flutter/fml:fml" ]
+
   if (is_win) {
     # For wstring_conversion. See issue #50053.
     defines = [ "_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING" ]
   }
+}
+
+source_set("common_cpp_switches") {
+  public = [ "engine_switches.h" ]
+
+  sources = [ "engine_switches.cc" ]
+
+  public_configs = [
+    "//flutter:config",
+    "//flutter/common:flutter_config",
+  ]
+}
+
+source_set("common_cpp_accessibility") {
+  public = [
+    "accessibility_bridge.h",
+    "flutter_platform_node_delegate.h",
+  ]
+
+  sources = [
+    "accessibility_bridge.cc",
+    "flutter_platform_node_delegate.cc",
+  ]
+
+  public_configs =
+      [ "//flutter/third_party/accessibility:accessibility_config" ]
+
+  public_deps = [
+    "//flutter/shell/platform/embedder:embedder_as_internal_library",
+    "//flutter/third_party/accessibility",
+  ]
 }
 
 source_set("common_cpp") {
@@ -65,6 +105,8 @@ source_set("common_cpp") {
 
   configs += [ ":desktop_library_implementation" ]
 
+  public_configs = [ "//flutter:config" ]
+
   deps = [
     ":common_cpp_library_headers",
     "//flutter/shell/platform/common/cpp/client_wrapper:client_wrapper",
@@ -82,9 +124,14 @@ source_set("common_cpp") {
 # embedding is futher along and it's clearer how much, if any, shared
 # API surface there will be.
 source_set("common_cpp_core") {
-  public = [ "path_utils.h" ]
+  public = [
+    "geometry.h",
+    "path_utils.h",
+  ]
 
   sources = [ "path_utils.cc" ]
+
+  public_configs = [ "//flutter:config" ]
 }
 
 if (enable_unittests) {
@@ -115,19 +162,35 @@ if (enable_unittests) {
     testonly = true
 
     sources = [
+      "engine_switches_unittests.cc",
+      "geometry_unittests.cc",
       "json_message_codec_unittests.cc",
       "json_method_codec_unittests.cc",
       "text_input_model_unittests.cc",
+      "text_range_unittests.cc",
     ]
 
     deps = [
       ":common_cpp",
       ":common_cpp_fixtures",
       ":common_cpp_input",
+      ":common_cpp_switches",
       "//flutter/shell/platform/common/cpp/client_wrapper:client_wrapper",
       "//flutter/shell/platform/common/cpp/client_wrapper:client_wrapper_library_stubs",
       "//flutter/testing",
     ]
+
+    # The accessibility bridge only supports MacOS for now.
+    if (is_mac) {
+      sources += [
+        "accessibility_bridge_unittests.cc",
+        "flutter_platform_node_delegate_unittests.cc",
+        "test_accessibility_bridge.cc",
+        "test_accessibility_bridge.h",
+      ]
+
+      deps += [ ":common_cpp_accessibility" ]
+    }
 
     public_configs = [ "//flutter:config" ]
   }

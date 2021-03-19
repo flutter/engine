@@ -55,8 +55,10 @@ abstract class _RepositoryLicensedFile extends _RepositoryFile {
   static final RegExp _readmeNamePattern = RegExp(r'\b_*(?:readme|contributing|patents)_*\b', caseSensitive: false);
   static final RegExp _buildTimePattern = RegExp(r'^(?!.*gen$)(?:CMakeLists\.txt|(?:pkgdata)?Makefile(?:\.inc)?(?:\.am|\.in|)|configure(?:\.ac|\.in)?|config\.(?:sub|guess)|.+\.m4|install-sh|.+\.sh|.+\.bat|.+\.pyc?|.+\.pl|icu-configure|.+\.gypi?|.*\.gni?|.+\.mk|.+\.cmake|.+\.gradle|.+\.yaml|pubspec\.lock|\.packages|vms_make\.com|pom\.xml|\.project|source\.properties|.+\.obj|.+\.autopkg)$', caseSensitive: false);
   static final RegExp _docsPattern = RegExp(r'^(?:INSTALL|NEWS|OWNERS|AUTHORS|ChangeLog(?:\.rst|\.[0-9]+)?|.+\.txt|.+\.md|.+\.log|.+\.css|.+\.1|doxygen\.config|Doxyfile|.+\.spec(?:\.in)?)$', caseSensitive: false);
-  static final RegExp _devPattern = RegExp(r'^(?:codereview\.settings|.+\.~|.+\.~[0-9]+~|\.clang-format|\.gitattributes|\.landmines|\.DS_Store|\.travis\.yml|\.cirrus\.yml)$', caseSensitive: false);
+  static final RegExp _devPattern = RegExp(r'^(?:codereview\.settings|.+\.~|.+\.~[0-9]+~|\.clang-format|\.gitattributes|\.landmines|\.DS_Store|\.travis\.yml|\.cirrus\.yml|\.cache)$', caseSensitive: false);
   static final RegExp _testsPattern = RegExp(r'^(?:tj(?:bench|example)test\.(?:java\.)?in|example\.c)$', caseSensitive: false);
+  // The ICU library has sample code that will never get linked.
+  static final RegExp _icuSamplesPattern = RegExp(r'.*(?:icu\/source\/samples).*$', caseSensitive: false);
 
   bool get isIncludedInBuildProducts {
     return !io.name.contains(_readmeNamePattern)
@@ -64,6 +66,7 @@ abstract class _RepositoryLicensedFile extends _RepositoryFile {
         && !io.name.contains(_docsPattern)
         && !io.name.contains(_devPattern)
         && !io.name.contains(_testsPattern)
+        && !io.toString().contains(_icuSamplesPattern)
         && !isShellScript;
   }
 
@@ -2316,7 +2319,7 @@ class _RepositoryRoot extends _RepositoryDirectory {
 
 
 class _Progress {
-  _Progress(this.max) {
+  _Progress(this.max, {bool quiet = false}) : _quiet = quiet {
     // This may happen when a git client contains left-over empty component
     // directories after DEPS file changes.
     if (max <= 0)
@@ -2324,6 +2327,7 @@ class _Progress {
   }
 
   final int max;
+  final bool _quiet;
   int get withLicense => _withLicense;
   int _withLicense = 0;
   int get withoutLicense => _withoutLicense;
@@ -2351,11 +2355,15 @@ class _Progress {
   void update({bool flush = false}) {
     if (_lastUpdate == null || _lastUpdate.elapsedMilliseconds > 90 || flush) {
       _lastUpdate ??= Stopwatch();
-      final String line = toString();
-      system.stderr.write('\r$line');
-      if (_lastLength > line.length)
-        system.stderr.write(' ' * (_lastLength - line.length));
-      _lastLength = line.length;
+      if (_quiet) {
+        system.stderr.write('.');
+      } else {
+        final String line = toString();
+        system.stderr.write('\r$line');
+        if (_lastLength > line.length)
+          system.stderr.write(' ' * (_lastLength - line.length));
+        _lastLength = line.length;
+      }
       _lastUpdate.reset();
       _lastUpdate.start();
     }
@@ -2420,6 +2428,7 @@ Future<void> _collectLicensesForComponent(_RepositoryDirectory componentRoot, {
   String outputGoldenPath,
   bool writeSignature,
   bool force,
+  bool quiet,
 }) async {
   // Check whether the golden file matches the signature of the current contents of this directory.
   final String goldenSignature = await _readSignature(inputGoldenPath);
@@ -2429,7 +2438,7 @@ Future<void> _collectLicensesForComponent(_RepositoryDirectory componentRoot, {
     return;
   }
 
-  final _Progress progress = _Progress(componentRoot.fileCount);
+  final _Progress progress = _Progress(componentRoot.fileCount, quiet: quiet);
 
   final system.File outFile = system.File(outputGoldenPath);
   final system.IOSink sink = outFile.openWrite();
@@ -2503,9 +2512,11 @@ Future<void> main(List<String> arguments) async {
     ..addOption('src', help: 'The root of the engine source')
     ..addOption('out', help: 'The directory where output is written')
     ..addOption('golden', help: 'The directory containing golden results')
+    ..addFlag('quiet', help: 'If set, the diagnostic output is much less verbose')
     ..addFlag('release', help: 'Print output in the format used for product releases');
 
   final ArgResults argResults = parser.parse(arguments);
+  final bool quiet = argResults['quiet'];
   final bool releaseMode = argResults['release'];
   if (argResults['src'] == null) {
     print('Flutter license script: Must provide --src directory');
@@ -2535,7 +2546,8 @@ Future<void> main(List<String> arguments) async {
 
     if (releaseMode) {
       system.stderr.writeln('Collecting licenses...');
-      final _Progress progress = _Progress(root.fileCount);
+      system.stderr.writeln('quiet: $quiet');
+      final _Progress progress = _Progress(root.fileCount, quiet: quiet);
       final List<License> licenses = Set<License>.from(root.getLicenses(progress).toList()).toList();
       if (progress.hadErrors)
         throw 'Had failures while collecting licenses.';
@@ -2593,6 +2605,7 @@ Future<void> main(List<String> arguments) async {
             outputGoldenPath: path.join(argResults['out'], goldenFileName),
             writeSignature: component.io.name != 'flutter',
             force: forceRunAll || component.io.name == 'flutter',
+            quiet: quiet,
         );
         usedGoldens.add(goldenFileName);
       }

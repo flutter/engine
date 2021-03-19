@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// Set this flag to true to see all the fired events in the console.
@@ -125,9 +125,7 @@ class PointerBinding {
 
   void _onPointerData(Iterable<ui.PointerData> data) {
     final ui.PointerDataPacket packet = ui.PointerDataPacket(data: data.toList());
-    if (window._onPointerDataPacket != null) {
-      window.invokeOnPointerDataPacket(packet);
-    }
+    EnginePlatformDispatcher.instance.invokeOnPointerDataPacket(packet);
   }
 }
 
@@ -201,7 +199,13 @@ abstract class _BaseAdapter {
       }
 
       if (_debugLogPointerEvents) {
-        print(event.type);
+        if (event is html.PointerEvent) {
+          print('${event.type}    '
+              '${event.client.x.toStringAsFixed(1)},'
+              '${event.client.y.toStringAsFixed(1)}');
+        } else {
+          print(event.type);
+        }
       }
       // Report the event to semantics. This information is used to debounce
       // browser gestures. Semantics tells us whether it is safe to forward
@@ -229,6 +233,8 @@ abstract class _BaseAdapter {
 }
 
 mixin _WheelEventListenerMixin on _BaseAdapter {
+  static double? _defaultScrollLineHeight;
+
   List<ui.PointerData> _convertWheelEventToPointerData(
     html.WheelEvent event
   ) {
@@ -242,8 +248,9 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
     double deltaY = event.deltaY as double;
     switch (event.deltaMode) {
       case domDeltaLine:
-        deltaX *= 32.0;
-        deltaY *= 32.0;
+        _defaultScrollLineHeight ??= _computeDefaultScrollLineHeight();
+        deltaX *= _defaultScrollLineHeight!;
+        deltaY *= _defaultScrollLineHeight!;
         break;
       case domDeltaPage:
         deltaX *= ui.window.physicalSize.width;
@@ -253,6 +260,7 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
       default:
         break;
     }
+
     final List<ui.PointerData> data = <ui.PointerData>[];
     _pointerDataConverter.convert(
       data,
@@ -286,6 +294,48 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
         eventOptions
       ]
     );
+  }
+
+  void _handleWheelEvent(html.Event e) {
+    assert(e is html.WheelEvent);
+    final html.WheelEvent event = e as html.WheelEvent;
+    if (_debugLogPointerEvents) {
+      print(event.type);
+    }
+    _callback(_convertWheelEventToPointerData(event));
+    if (event.getModifierState('Control') &&
+        operatingSystem != OperatingSystem.macOs &&
+        operatingSystem != OperatingSystem.iOs) {
+      // Ignore Control+wheel events since the default handler
+      // will change browser zoom level instead of scrolling.
+      // The exception is MacOs where Control+wheel will still scroll and zoom.
+      return;
+    }
+    // Prevent default so mouse wheel event doesn't get converted to
+    // a scroll event that semantic nodes would process.
+    //
+    event.preventDefault();
+  }
+
+  /// For browsers that report delta line instead of pixels such as FireFox
+  /// compute line height using the default font size.
+  ///
+  /// Use Firefox to test this code path.
+  double _computeDefaultScrollLineHeight() {
+    const double kFallbackFontHeight = 16.0;
+    final html.DivElement probe = html.DivElement();
+    probe.style
+        ..fontSize = 'initial'
+        ..display = 'none';
+    html.document.body!.append(probe);
+    String fontSize = probe.getComputedStyle().fontSize;
+    double? res;
+    if (fontSize.contains('px')) {
+       fontSize = fontSize.replaceAll('px', '');
+       res = double.tryParse(fontSize);
+    }
+    probe.remove();
+    return res == null ? kFallbackFontHeight : res / 4.0;
   }
 }
 
@@ -336,6 +386,7 @@ class _ButtonSanitizer {
     }
 
     _pressedButtons = _inferDownFlutterButtons(button, buttons);
+
     return _SanitizedDetails(
       change: ui.PointerChange.down,
       buttons: _pressedButtons,
@@ -344,18 +395,6 @@ class _ButtonSanitizer {
 
   _SanitizedDetails sanitizeMoveEvent({required int buttons}) {
     final int newPressedButtons = _htmlButtonsToFlutterButtons(buttons);
-    // This could happen when the context menu is active and the user clicks
-    // RMB somewhere else. The browser sends a down event with `buttons:0`.
-    //
-    // In this case, we keep the old `buttons` value so we don't confuse the
-    // framework.
-    if (_pressedButtons != 0 && newPressedButtons == 0) {
-      return _SanitizedDetails(
-        change: ui.PointerChange.move,
-        buttons: _pressedButtons,
-      );
-    }
-
     // This could happen when the user clicks RMB then moves the mouse quickly.
     // The brower sends a move event with `buttons:2` even though there's no
     // buttons down yet.
@@ -367,6 +406,7 @@ class _ButtonSanitizer {
     }
 
     _pressedButtons = newPressedButtons;
+
     return _SanitizedDetails(
       change: _pressedButtons == 0
           ? ui.PointerChange.hover
@@ -388,6 +428,30 @@ class _ButtonSanitizer {
     );
   }
 
+  _SanitizedDetails? sanitizeUpEventWithButtons({required int buttons}) {
+    final int newPressedButtons = _htmlButtonsToFlutterButtons(buttons);
+    // This could happen when the context menu is active and the user clicks
+    // RMB somewhere else. The browser sends a down event with `buttons:0`.
+    //
+    // In this case, we keep the old `buttons` value so we don't confuse the
+    // framework.
+    if (_pressedButtons != 0 && newPressedButtons == 0) {
+      return _SanitizedDetails(
+        change: ui.PointerChange.move,
+        buttons: _pressedButtons,
+      );
+    }
+
+    _pressedButtons = newPressedButtons;
+
+    return _SanitizedDetails(
+      change: _pressedButtons == 0
+          ? ui.PointerChange.hover
+          : ui.PointerChange.move,
+      buttons: _pressedButtons,
+     );
+  }
+
   _SanitizedDetails sanitizeCancelEvent() {
     _pressedButtons = 0;
     return _SanitizedDetails(
@@ -398,6 +462,7 @@ class _ButtonSanitizer {
 }
 
 typedef _PointerEventListener = dynamic Function(html.PointerEvent event);
+const int kContextMenuButton = 2;
 
 /// Adapter class to be used with browsers that support native pointer events.
 ///
@@ -446,8 +511,16 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     _addPointerEventListener('pointerdown', (html.PointerEvent event) {
       final int device = event.pointerId!;
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
+      final _ButtonSanitizer sanitizer = _ensureSanitizer(device);
+      if (event.button == kContextMenuButton) {
+        _handleMissingRightMouseUpEvent(sanitizer,
+            sanitizer._pressedButtons,
+            sanitizer._pressedButtons & ~kContextMenuButton,
+            event,
+            pointerData);
+      }
       final _SanitizedDetails details =
-        _ensureSanitizer(device).sanitizeDownEvent(
+        sanitizer.sanitizeDownEvent(
           button: event.button,
           buttons: event.buttons!,
         );
@@ -459,9 +532,19 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
       final int device = event.pointerId!;
       final _ButtonSanitizer sanitizer = _ensureSanitizer(device);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
+      final int buttonsBeforeEvent = sanitizer._pressedButtons;
       final Iterable<_SanitizedDetails> detailsList = _expandEvents(event).map(
-        (html.PointerEvent expandedEvent) => sanitizer.sanitizeMoveEvent(buttons: expandedEvent.buttons!),
+        (html.PointerEvent expandedEvent) {
+          return sanitizer.sanitizeMoveEvent(buttons: expandedEvent.buttons!);
+        },
       );
+      _handleMissingRightMouseUpEvent(
+          sanitizer,
+          buttonsBeforeEvent,
+          (sanitizer._inferDownFlutterButtons(event.button, event.buttons!)
+              & kContextMenuButton),
+          event,
+          pointerData);
       for (_SanitizedDetails details in detailsList) {
         _convertEventsToPointerData(data: pointerData, event: event, details: details);
       }
@@ -491,15 +574,41 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     });
 
     _addWheelEventListener((html.Event event) {
-      assert(event is html.WheelEvent);
-      if (_debugLogPointerEvents) {
-        print(event.type);
-      }
-      _callback(_convertWheelEventToPointerData(event as html.WheelEvent));
-      // Prevent default so mouse wheel event doesn't get converted to
-      // a scroll event that semantic nodes would process.
-      event.preventDefault();
+      _handleWheelEvent(event);
     });
+  }
+
+  // Handle special case where right mouse button no longer is pressed.
+  // We need to synthesize right mouse up, otherwise drag gesture will fail
+  // to complete or multiple RMB down events will lead to wrong state.
+  void _handleMissingRightMouseUpEvent(_ButtonSanitizer sanitizer,
+      int buttonsBeforeEvent, int buttonsAfterEvent, html.PointerEvent event,
+      List<ui.PointerData> pointerData) {
+    if ((buttonsBeforeEvent & kContextMenuButton) != 0 &&
+        buttonsAfterEvent == 0) {
+      final ui.PointerDeviceKind kind =
+          _pointerTypeToDeviceKind(event.pointerType!);
+      final int device = kind == ui.PointerDeviceKind.mouse
+          ? _mouseDeviceId : event.pointerId!;
+      final double tilt = _computeHighestTilt(event);
+      final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
+      sanitizer._pressedButtons &= ~kContextMenuButton;
+      _pointerDataConverter.convert(
+        pointerData,
+        change: ui.PointerChange.up,
+        timeStamp: timeStamp,
+        kind: kind,
+        signalKind: ui.PointerSignalKind.none,
+        device: device,
+        physicalX: event.client.x.toDouble() * ui.window.devicePixelRatio,
+        physicalY: event.client.y.toDouble() * ui.window.devicePixelRatio,
+        buttons: sanitizer._pressedButtons,
+        pressure: event.pressure as double,
+        pressureMin: 0.0,
+        pressureMax: 1.0,
+        tilt: tilt,
+      );
+    }
   }
 
   // For each event that is de-coalesced from `event` and described in
@@ -743,6 +852,13 @@ class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
   void setup() {
     _addMouseEventListener('mousedown', (html.MouseEvent event) {
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
+      if (event.button == kContextMenuButton) {
+        _handleMissingRightMouseUpEvent(_sanitizer,
+            _sanitizer._pressedButtons,
+            _sanitizer._pressedButtons & ~kContextMenuButton,
+            event,
+            pointerData);
+      }
       final _SanitizedDetails sanitizedDetails =
         _sanitizer.sanitizeDownEvent(
           button: event.button,
@@ -754,6 +870,14 @@ class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
 
     _addMouseEventListener('mousemove', (html.MouseEvent event) {
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
+      final int buttonsBeforeEvent = _sanitizer._pressedButtons;
+      _handleMissingRightMouseUpEvent(
+          _sanitizer,
+          buttonsBeforeEvent,
+          (_sanitizer._inferDownFlutterButtons(event.button, event.buttons!)
+          & kContextMenuButton),
+          event,
+          pointerData);
       final _SanitizedDetails sanitizedDetails = _sanitizer.sanitizeMoveEvent(buttons: event.buttons!);
       _convertEventsToPointerData(data: pointerData, event: event, details: sanitizedDetails);
       _callback(pointerData);
@@ -764,21 +888,40 @@ class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
       final bool isEndOfDrag = event.buttons == 0;
       final _SanitizedDetails sanitizedDetails = isEndOfDrag ?
         _sanitizer.sanitizeUpEvent()! :
-        _sanitizer.sanitizeMoveEvent(buttons: event.buttons!);
+        _sanitizer.sanitizeUpEventWithButtons(buttons: event.buttons!)!;
       _convertEventsToPointerData(data: pointerData, event: event, details: sanitizedDetails);
       _callback(pointerData);
     }, acceptOutsideGlasspane: true);
 
     _addWheelEventListener((html.Event event) {
-      assert(event is html.WheelEvent);
-      if (_debugLogPointerEvents) {
-        print(event.type);
-      }
-      _callback(_convertWheelEventToPointerData(event as html.WheelEvent));
-      // Prevent default so mouse wheel event doesn't get converted to
-      // a scroll event that semantic nodes would process.
-      event.preventDefault();
+      _handleWheelEvent(event);
     });
+  }
+
+  // Handle special case where right mouse button no longer is pressed.
+  // We need to synthesize right mouse up, otherwise drag gesture will fail
+  // to complete or multiple RMB down events will lead to wrong state.
+  void _handleMissingRightMouseUpEvent(_ButtonSanitizer sanitizer,
+      int buttonsBeforeEvent, int buttonsAfterEvent, html.MouseEvent event,
+      List<ui.PointerData> pointerData) {
+    if ((buttonsBeforeEvent & kContextMenuButton) != 0 &&
+        buttonsAfterEvent == 0) {
+      sanitizer._pressedButtons &= ~2;
+      _pointerDataConverter.convert(
+        pointerData,
+        change: ui.PointerChange.up,
+        timeStamp: _BaseAdapter._eventTimeStampToDuration(event.timeStamp!),
+        kind: ui.PointerDeviceKind.mouse,
+        signalKind: ui.PointerSignalKind.none,
+        device: _mouseDeviceId,
+        physicalX: event.client.x.toDouble() * ui.window.devicePixelRatio,
+        physicalY: event.client.y.toDouble() * ui.window.devicePixelRatio,
+        buttons: _sanitizer._pressedButtons,
+        pressure: 1.0,
+        pressureMin: 0.0,
+        pressureMax: 1.0,
+      );
+    }
   }
 
   // For each event that is de-coalesced from `event` and described in

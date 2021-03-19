@@ -10,7 +10,8 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/platform/darwin/cf_utils.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
-#include "flutter/shell/platform/darwin/ios/ios_context.h"
+#import "flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetal.h"
+#import "flutter/shell/platform/darwin/ios/ios_context.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 
 namespace flutter {
@@ -21,23 +22,17 @@ class IOSContextMetal final : public IOSContext {
 
   ~IOSContextMetal();
 
-  fml::scoped_nsprotocol<id<MTLDevice>> GetDevice() const;
+  fml::scoped_nsobject<FlutterDarwinContextMetal> GetDarwinContext() const;
 
-  fml::scoped_nsprotocol<id<MTLCommandQueue>> GetMainCommandQueue() const;
-
-  fml::scoped_nsprotocol<id<MTLCommandQueue>> GetResourceCommandQueue() const;
-
-  sk_sp<GrDirectContext> GetMainContext() const;
+  // |IOSContext|
+  sk_sp<GrDirectContext> GetMainContext() const override;
 
   sk_sp<GrDirectContext> GetResourceContext() const;
 
  private:
-  fml::scoped_nsprotocol<id<MTLDevice>> device_;
-  fml::scoped_nsprotocol<id<MTLCommandQueue>> main_queue_;
-  sk_sp<GrDirectContext> main_context_;
-  sk_sp<GrDirectContext> resource_context_;
+  fml::scoped_nsobject<FlutterDarwinContextMetal> darwin_context_metal_;
+  fml::scoped_nsprotocol<id<MTLCommandQueue>> main_command_queue_;
   fml::CFRef<CVMetalTextureCacheRef> texture_cache_;
-  bool is_valid_ = false;
 
   // |IOSContext|
   sk_sp<GrDirectContext> CreateResourceContext() override;

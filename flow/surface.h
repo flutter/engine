@@ -7,8 +7,8 @@
 
 #include <memory>
 
+#include "flutter/common/graphics/gl_context_switch.h"
 #include "flutter/flow/embedded_views.h"
-#include "flutter/flow/gl_context_switch.h"
 #include "flutter/flow/surface_frame.h"
 #include "flutter/fml/macros.h"
 
@@ -28,8 +28,6 @@ class Surface {
   virtual SkMatrix GetRootTransformation() const = 0;
 
   virtual GrDirectContext* GetContext() = 0;
-
-  virtual flutter::ExternalViewEmbedder* GetExternalViewEmbedder();
 
   virtual std::unique_ptr<GLContextResult> MakeRenderContextCurrent();
 

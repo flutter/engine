@@ -2,10 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/plugin_registrar.h"
+
 #include <memory>
 #include <vector>
 
-#include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/plugin_registrar.h"
 #include "flutter/shell/platform/common/cpp/client_wrapper/testing/stub_flutter_api.h"
 #include "gtest/gtest.h"
 
@@ -79,7 +80,40 @@ class TestPluginRegistrar : public PluginRegistrar {
   std::function<void()> destruction_callback_;
 };
 
+// A test plugin that tries to access registrar state during destruction and
+// reports it out via a flag provided at construction.
+class TestPlugin : public Plugin {
+ public:
+  // registrar_valid_at_destruction will be set at destruction to indicate
+  // whether or not |registrar->messenger()| was non-null.
+  TestPlugin(PluginRegistrar* registrar, bool* registrar_valid_at_destruction)
+      : registrar_(registrar),
+        registrar_valid_at_destruction_(registrar_valid_at_destruction) {}
+  virtual ~TestPlugin() {
+    *registrar_valid_at_destruction_ = registrar_->messenger() != nullptr;
+  }
+
+ private:
+  PluginRegistrar* registrar_;
+  bool* registrar_valid_at_destruction_;
+};
+
 }  // namespace
+
+// Tests that the registrar runs plugin destructors before its own teardown.
+TEST(PluginRegistrarTest, PluginDestroyedBeforeRegistrar) {
+  auto dummy_registrar_handle =
+      reinterpret_cast<FlutterDesktopPluginRegistrarRef>(1);
+  bool registrar_valid_at_destruction = false;
+  {
+    PluginRegistrar registrar(dummy_registrar_handle);
+
+    auto plugin = std::make_unique<TestPlugin>(&registrar,
+                                               &registrar_valid_at_destruction);
+    registrar.AddPlugin(std::move(plugin));
+  }
+  EXPECT_TRUE(registrar_valid_at_destruction);
+}
 
 // Tests that the registrar returns a messenger that passes Send through to the
 // C API.
@@ -178,6 +212,17 @@ TEST(PluginRegistrarTest, ManagerRemovesOnDestruction) {
   // Requesting the wrapper should now create a new object.
   EXPECT_NE(manager->GetRegistrar<TestPluginRegistrar>(dummy_registrar_handle),
             nullptr);
+}
+
+// Tests that the texture registrar getter returns a non-null TextureRegistrar
+TEST(PluginRegistrarTest, TextureRegistrarNotNull) {
+  auto dummy_registrar_handle =
+      reinterpret_cast<FlutterDesktopPluginRegistrarRef>(1);
+  PluginRegistrar registrar(dummy_registrar_handle);
+
+  TextureRegistrar* texture_registrar = registrar.texture_registrar();
+
+  ASSERT_NE(texture_registrar, nullptr);
 }
 
 }  // namespace flutter

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of ui;
 
 // ignore: unused_element, Used in Shader assert.
@@ -230,7 +230,7 @@ enum Clip {
 }
 
 abstract class Paint {
-  factory Paint() => engine.experimentalUseSkia ? engine.CkPaint() : engine.SurfacePaint();
+  factory Paint() => engine.useCanvasKit ? engine.CkPaint() : engine.SurfacePaint();
   static bool enableDithering = false;
   BlendMode get blendMode;
   set blendMode(BlendMode value);
@@ -278,9 +278,10 @@ abstract class Gradient extends Shader {
     List<double>? colorStops,
     TileMode tileMode = TileMode.clamp,
     Float64List? matrix4,
-  ]) => engine.experimentalUseSkia
+  ]) => engine.useCanvasKit
     ? engine.CkGradientLinear(from, to, colors, colorStops, tileMode, matrix4)
-    : engine.GradientLinear(from, to, colors, colorStops, tileMode, matrix4);
+    : engine.GradientLinear(from, to, colors, colorStops, tileMode,
+        matrix4 == null ? null : engine.toMatrix32(matrix4));
   factory Gradient.radial(
     Offset center,
     double radius,
@@ -296,13 +297,13 @@ abstract class Gradient extends Shader {
     // If focal == center and the focal radius is 0.0, it's still a regular radial gradient
     final Float32List? matrix32 = matrix4 != null ? engine.toMatrix32(matrix4) : null;
     if (focal == null || (focal == center && focalRadius == 0.0)) {
-      return engine.experimentalUseSkia
+      return engine.useCanvasKit
           ? engine.CkGradientRadial(center, radius, colors, colorStops, tileMode, matrix32)
           : engine.GradientRadial(center, radius, colors, colorStops, tileMode, matrix32);
     } else {
       assert(center != Offset.zero ||
           focal != Offset.zero); // will result in exception(s) in Skia side
-      return engine.experimentalUseSkia
+      return engine.useCanvasKit
           ? engine.CkGradientConical(
               focal, focalRadius, center, radius, colors, colorStops, tileMode, matrix32)
           : engine.GradientConical(
@@ -317,7 +318,7 @@ abstract class Gradient extends Shader {
     double startAngle = 0.0,
     double endAngle = math.pi * 2,
     Float64List? matrix4,
-  ]) => engine.experimentalUseSkia
+  ]) => engine.useCanvasKit
     ? engine.CkGradientSweep(center, colors, colorStops, tileMode, startAngle,
           endAngle, matrix4 != null ? engine.toMatrix32(matrix4) : null)
     : engine.GradientSweep(center, colors, colorStops, tileMode, startAngle,
@@ -329,6 +330,13 @@ abstract class Image {
   int get height;
   Future<ByteData?> toByteData({ImageByteFormat format = ImageByteFormat.rawRgba});
   void dispose();
+  bool get debugDisposed;
+
+  Image clone() => this;
+
+  bool isCloneOf(Image other) => other == this;
+
+  List<StackTrace>? debugGetOpenHandleStackTraces() => null;
 
   @override
   String toString() => '[$width\u00D7$height]';
@@ -386,9 +394,9 @@ enum FilterQuality {
 }
 
 class ImageFilter {
-  factory ImageFilter.blur({double sigmaX = 0.0, double sigmaY = 0.0}) {
-    if (engine.experimentalUseSkia) {
-      return engine.CkImageFilter.blur(sigmaX: sigmaX, sigmaY: sigmaY);
+  factory ImageFilter.blur({double sigmaX = 0.0, double sigmaY = 0.0, TileMode tileMode = TileMode.clamp}) {
+    if (engine.useCanvasKit) {
+      return engine.CkImageFilter.blur(sigmaX: sigmaX, sigmaY: sigmaY, tileMode: tileMode);
     }
     return engine.EngineImageFilter.blur(sigmaX: sigmaX, sigmaY: sigmaY);
   }
@@ -398,6 +406,12 @@ class ImageFilter {
     throw UnimplementedError('ImageFilter.matrix not implemented for web platform.');
     //    if (matrix4.length != 16)
     //      throw ArgumentError('"matrix4" must have 16 entries.');
+  }
+
+  ImageFilter.compose({required ImageFilter outer, required ImageFilter inner}) {
+     // TODO(flutter_web): add implementation.
+    throw UnimplementedError(
+        'ImageFilter.compose not implemented for web platform.');
   }
 }
 
@@ -438,39 +452,25 @@ Future<Codec> instantiateImageCodec(
   int? targetWidth,
   int? targetHeight,
   bool allowUpscaling = true,
-}) {
-  return _futurize<Codec>((engine.Callback<Codec> callback) =>
-      // TODO: Implement targetWidth and targetHeight support.
-      _instantiateImageCodec(list, callback));
-}
-
-String? _instantiateImageCodec(
-  Uint8List list,
-  engine.Callback<Codec> callback, {
-  int? width,
-  int? height,
-  int? rowBytes,
-  PixelFormat? format,
-}) {
-  if (engine.experimentalUseSkia) {
-    if (width == null) {
-      engine.skiaInstantiateImageCodec(list, callback);
-    } else {
-      assert(height != null);
-      assert(format != null);
-      engine.skiaInstantiateImageCodec(list, callback, width, height, format!.index, rowBytes);
-    }
-    return null;
+}) async {
+  if (engine.useCanvasKit) {
+    // TODO: Implement targetWidth and targetHeight support.
+    return engine.skiaInstantiateImageCodec(list);
+  } else {
+    final html.Blob blob = html.Blob(<dynamic>[list.buffer]);
+    return engine.HtmlBlobCodec(blob);
   }
-  final html.Blob blob = html.Blob(<dynamic>[list.buffer]);
-  callback(engine.HtmlBlobCodec(blob));
-  return null;
 }
 
-Future<Codec?> webOnlyInstantiateImageCodecFromUrl(Uri uri,
-    {engine.WebOnlyImageCodecChunkCallback? chunkCallback}) {
-  return _futurize<Codec?>((engine.Callback<Codec> callback) =>
+Future<Codec> webOnlyInstantiateImageCodecFromUrl(Uri uri,
+  {engine.WebOnlyImageCodecChunkCallback? chunkCallback}) {
+  if (engine.useCanvasKit) {
+    return engine.skiaInstantiateWebImageCodec(
+      uri.toString(), chunkCallback);
+  } else {
+    return _futurize<Codec>((engine.Callback<Codec> callback) =>
       _instantiateImageCodecFromUrl(uri, chunkCallback, callback));
+  }
 }
 
 String? _instantiateImageCodecFromUrl(
@@ -478,13 +478,8 @@ String? _instantiateImageCodecFromUrl(
   engine.WebOnlyImageCodecChunkCallback? chunkCallback,
   engine.Callback<Codec> callback,
 ) {
-  if (engine.experimentalUseSkia) {
-    engine.skiaInstantiateWebImageCodec(uri.toString(), callback, chunkCallback);
-    return null;
-  } else {
-    callback(engine.HtmlCodec(uri.toString(), chunkCallback: chunkCallback));
-    return null;
-  }
+  callback(engine.HtmlCodec(uri.toString(), chunkCallback: chunkCallback));
+  return null;
 }
 
 void decodeImageFromList(Uint8List list, ImageDecoderCallback callback) {
@@ -495,6 +490,78 @@ Future<void> _decodeImageFromListAsync(Uint8List list, ImageDecoderCallback call
   final Codec codec = await instantiateImageCodec(list);
   final FrameInfo frameInfo = await codec.getNextFrame();
   callback(frameInfo.image);
+}
+Future<Codec> _createBmp(
+  Uint8List pixels,
+  int width,
+  int height,
+  int rowBytes,
+  PixelFormat format,
+) {
+  // See https://en.wikipedia.org/wiki/BMP_file_format for format examples.
+  final int bufferSize = 0x36 + (width * height * 4);
+  final ByteData bmpData = ByteData(bufferSize);
+  // 'BM' header
+  bmpData.setUint8(0x00, 0x42);
+  bmpData.setUint8(0x01, 0x4D);
+  // Size of data
+  bmpData.setUint32(0x02, bufferSize, Endian.little);
+  // Offset where pixel array begins
+  bmpData.setUint32(0x0A, 0x36, Endian.little);
+  // Bytes in DIB header
+  bmpData.setUint32(0x0E, 0x28, Endian.little);
+  // width
+  bmpData.setUint32(0x12, width, Endian.little);
+  // height
+  bmpData.setUint32(0x16, height, Endian.little);
+  // Color panes
+  bmpData.setUint16(0x1A, 0x01, Endian.little);
+  // 32 bpp
+  bmpData.setUint16(0x1C, 0x20, Endian.little);
+  // no compression
+  bmpData.setUint32(0x1E, 0x00, Endian.little);
+  // raw bitmap data size
+  bmpData.setUint32(0x22, width * height, Endian.little);
+  // print DPI width
+  bmpData.setUint32(0x26, width, Endian.little);
+  // print DPI height
+  bmpData.setUint32(0x2A, height, Endian.little);
+  // colors in the palette
+  bmpData.setUint32(0x2E, 0x00, Endian.little);
+  // important colors
+  bmpData.setUint32(0x32, 0x00, Endian.little);
+
+
+  int pixelDestinationIndex = 0;
+  late bool swapRedBlue;
+  switch (format) {
+    case PixelFormat.bgra8888:
+      swapRedBlue = true;
+      break;
+    case PixelFormat.rgba8888:
+      swapRedBlue = false;
+      break;
+  }
+  for (int pixelSourceIndex = 0; pixelSourceIndex < pixels.length; pixelSourceIndex += 4) {
+    final int r = swapRedBlue ? pixels[pixelSourceIndex + 2] : pixels[pixelSourceIndex];
+    final int b = swapRedBlue ? pixels[pixelSourceIndex]     : pixels[pixelSourceIndex + 2];
+    final int g = pixels[pixelSourceIndex + 1];
+    final int a = pixels[pixelSourceIndex + 3];
+
+    // Set the pixel past the header data.
+    bmpData.setUint8(pixelDestinationIndex + 0x36, r);
+    bmpData.setUint8(pixelDestinationIndex + 0x37, g);
+    bmpData.setUint8(pixelDestinationIndex + 0x38, b);
+    bmpData.setUint8(pixelDestinationIndex + 0x39, a);
+    pixelDestinationIndex += 4;
+    if (rowBytes != width && pixelSourceIndex % width == 0) {
+      pixelSourceIndex += rowBytes - width;
+    }
+  }
+
+  return instantiateImageCodec(
+    bmpData.buffer.asUint8List(),
+  );
 }
 
 void decodeImageFromPixels(
@@ -508,19 +575,26 @@ void decodeImageFromPixels(
   int? targetHeight,
   bool allowUpscaling = true,
 }) {
-  final Future<Codec> codecFuture = _futurize((engine.Callback<Codec> callback) {
-    return _instantiateImageCodec(
+  if (engine.useCanvasKit) {
+    engine.skiaInstantiateImageCodec(
       pixels,
-      callback,
-      width: width,
-      height: height,
-      format: format,
-      rowBytes: rowBytes,
-    );
-  });
-  codecFuture
-      .then((Codec codec) => codec.getNextFrame())
-      .then((FrameInfo frameInfo) => callback(frameInfo.image));
+      width,
+      height,
+      format.index,
+      rowBytes,
+    ).getNextFrame().then((FrameInfo info) {
+      callback(info.image);
+    });
+    return;
+  }
+
+  void Function(Codec) callbacker = (Codec codec) {
+    codec.getNextFrame().then((FrameInfo frameInfo) {
+      callback(frameInfo.image);
+    });
+  };
+  _createBmp(pixels, width, height, rowBytes ?? width, format).then(callbacker);
+
 }
 
 class Shadow {
@@ -528,12 +602,9 @@ class Shadow {
     this.color = const Color(_kColorDefault),
     this.offset = Offset.zero,
     this.blurRadius = 0.0,
-  })  : assert(color != null,
-            'Text shadow color was null.'), // ignore: unnecessary_null_comparison
-        assert(offset != null,
-            'Text shadow offset was null.'), // ignore: unnecessary_null_comparison
-        assert(blurRadius >= 0.0,
-            'Text shadow blur radius should be non-negative.');
+  })  : assert(color != null, 'Text shadow color was null.'), // ignore: unnecessary_null_comparison
+        assert(offset != null, 'Text shadow offset was null.'), // ignore: unnecessary_null_comparison
+        assert(blurRadius >= 0.0, 'Text shadow blur radius should be non-negative.');
 
   static const int _kColorDefault = 0xFF000000;
   final Color color;
@@ -620,7 +691,7 @@ class Shadow {
 
 class ImageShader extends Shader {
   factory ImageShader(Image image, TileMode tmx, TileMode tmy, Float64List matrix4) {
-    if (engine.experimentalUseSkia) {
+    if (engine.useCanvasKit) {
       return engine.CkImageShader(image, tmx, tmy, matrix4);
     }
     throw UnsupportedError('ImageShader not implemented for web platform.');
@@ -681,27 +752,19 @@ class ImageDescriptor {
   int get bytesPerPixel =>
       throw UnsupportedError('ImageDescriptor.bytesPerPixel is not supported on web.');
   void dispose() => _data = null;
-  Future<Codec> instantiateCodec({int? targetWidth, int? targetHeight}) {
+  Future<Codec> instantiateCodec({int? targetWidth, int? targetHeight}) async {
     if (_data == null) {
       throw StateError('Object is disposed');
     }
     if (_width == null) {
-      return instantiateImageCodec(
+      return await instantiateImageCodec(
         _data!,
         targetWidth: targetWidth,
         targetHeight: targetHeight,
         allowUpscaling: false,
       );
     }
-    return _futurize((engine.Callback<Codec> callback) {
-      return _instantiateImageCodec(
-        _data!,
-        callback,
-        width: _width,
-        height: _height,
-        format: _format,
-        rowBytes: _rowBytes,
-      );
-    });
+
+    return await _createBmp(_data!, width, height, _rowBytes ?? width, _format!);
   }
 }

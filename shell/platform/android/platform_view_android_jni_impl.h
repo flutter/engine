@@ -78,6 +78,10 @@ class PlatformViewAndroidJNIImpl final : public PlatformViewAndroidJNI {
   FlutterViewComputePlatformResolvedLocale(
       std::vector<std::string> supported_locales_data) override;
 
+  double GetDisplayRefreshRate() override;
+
+  bool RequestDartDeferredLibrary(int loading_unit_id) override;
+
  private:
   // Reference to FlutterJNI object.
   const fml::jni::JavaObjectWeakGlobalRef java_object_;

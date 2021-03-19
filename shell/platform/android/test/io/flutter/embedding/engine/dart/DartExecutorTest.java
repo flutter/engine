@@ -1,4 +1,4 @@
-package test.io.flutter.embedding.engine.dart;
+package io.flutter.embedding.engine.dart;
 
 import static junit.framework.TestCase.assertNotNull;
 import static org.junit.Assert.assertEquals;
@@ -13,7 +13,6 @@ import static org.mockito.Mockito.when;
 import android.content.res.AssetManager;
 import io.flutter.FlutterInjector;
 import io.flutter.embedding.engine.FlutterJNI;
-import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.dart.DartExecutor.DartEntrypoint;
 import io.flutter.embedding.engine.loader.FlutterLoader;
 import java.nio.ByteBuffer;

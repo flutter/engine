@@ -2,10 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
-abstract class CkShader extends ManagedSkiaObject<SkShader> implements ui.Shader {
+abstract class CkShader extends ManagedSkiaObject<SkShader>
+    implements ui.Shader {
   @override
   void delete() {
     rawSkiaObject?.delete();
@@ -35,16 +36,17 @@ class CkGradientSweep extends CkShader implements ui.Gradient {
 
   @override
   SkShader createDefault() {
-    return canvasKit.SkShader.MakeSweepGradient(
+    const double toDegrees = 180.0 / math.pi;
+    return canvasKit.Shader.MakeSweepGradient(
       center.dx,
       center.dy,
-      toSkFloatColorList(colors),
+      toFlatColors(colors),
       toSkColorStops(colorStops),
       toSkTileMode(tileMode),
       matrix4 != null ? toSkMatrixFromFloat32(matrix4!) : null,
       0,
-      startAngle,
-      endAngle,
+      toDegrees * startAngle,
+      toDegrees * endAngle,
     );
   }
 
@@ -66,7 +68,7 @@ class CkGradientLinear extends CkShader implements ui.Gradient {
         assert(_offsetIsValid(to)),
         assert(colors != null), // ignore: unnecessary_null_comparison
         assert(tileMode != null), // ignore: unnecessary_null_comparison
-        this.matrix4 = matrix == null ? null : _FastMatrix64(matrix) {
+        this.matrix4 = matrix {
     if (assertionsEnabled) {
       _validateColorStops(colors, colorStops);
     }
@@ -77,16 +79,16 @@ class CkGradientLinear extends CkShader implements ui.Gradient {
   final List<ui.Color> colors;
   final List<double>? colorStops;
   final ui.TileMode tileMode;
-  final _FastMatrix64? matrix4;
+  final Float64List? matrix4;
 
   @override
   SkShader createDefault() {
-    assert(experimentalUseSkia);
+    assert(useCanvasKit);
 
-    return canvasKit.SkShader.MakeLinearGradient(
+    return canvasKit.Shader.MakeLinearGradient(
       toSkPoint(from),
       toSkPoint(to),
-      toSkFloatColorList(colors),
+      toFlatColors(colors),
       toSkColorStops(colorStops),
       toSkTileMode(tileMode),
     );
@@ -109,12 +111,12 @@ class CkGradientRadial extends CkShader implements ui.Gradient {
 
   @override
   SkShader createDefault() {
-    assert(experimentalUseSkia);
+    assert(useCanvasKit);
 
-    return canvasKit.SkShader.MakeRadialGradient(
+    return canvasKit.Shader.MakeRadialGradient(
       toSkPoint(center),
       radius,
-      toSkFloatColorList(colors),
+      toFlatColors(colors),
       toSkColorStops(colorStops),
       toSkTileMode(tileMode),
       matrix4 != null ? toSkMatrixFromFloat32(matrix4!) : null,
@@ -141,13 +143,13 @@ class CkGradientConical extends CkShader implements ui.Gradient {
 
   @override
   SkShader createDefault() {
-    assert(experimentalUseSkia);
-    return canvasKit.SkShader.MakeTwoPointConicalGradient(
+    assert(useCanvasKit);
+    return canvasKit.Shader.MakeTwoPointConicalGradient(
       toSkPoint(focal),
       focalRadius,
       toSkPoint(center),
       radius,
-      toSkFloatColorList(colors),
+      toFlatColors(colors),
       toSkColorStops(colorStops),
       toSkTileMode(tileMode),
       matrix4 != null ? toSkMatrixFromFloat32(matrix4!) : null,
@@ -160,21 +162,22 @@ class CkGradientConical extends CkShader implements ui.Gradient {
 }
 
 class CkImageShader extends CkShader implements ui.ImageShader {
-  CkImageShader(
-      ui.Image image, this.tileModeX, this.tileModeY, this.matrix4)
-      : _skImage = image as CkImage;
+  CkImageShader(ui.Image image, this.tileModeX, this.tileModeY, this.matrix4)
+      : _image = image as CkImage;
 
   final ui.TileMode tileModeX;
   final ui.TileMode tileModeY;
   final Float64List matrix4;
-  final CkImage _skImage;
+  final CkImage _image;
 
   @override
-  SkShader createDefault() => _skImage.skImage.makeShader(
-    toSkTileMode(tileModeX),
-    toSkTileMode(tileModeY),
-    toSkMatrixFromFloat64(matrix4),
-  );
+  SkShader createDefault() => _image.skImage.makeShaderOptions(
+        toSkTileMode(tileModeX),
+        toSkTileMode(tileModeY),
+        canvasKit.FilterMode.Nearest,
+        canvasKit.MipmapMode.None,
+        toSkMatrixFromFloat64(matrix4),
+      );
 
   @override
   SkShader resurrect() => createDefault();

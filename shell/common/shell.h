@@ -10,10 +10,11 @@
 #include <string_view>
 #include <unordered_map>
 
+#include "flutter/assets/directory_asset_bundle.h"
+#include "flutter/common/graphics/texture.h"
 #include "flutter/common/settings.h"
 #include "flutter/common/task_runners.h"
 #include "flutter/flow/surface.h"
-#include "flutter/flow/texture.h"
 #include "flutter/fml/closure.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/ref_ptr.h"
@@ -26,10 +27,12 @@
 #include "flutter/fml/time/time_point.h"
 #include "flutter/lib/ui/semantics/custom_accessibility_action.h"
 #include "flutter/lib/ui/semantics/semantics_node.h"
+#include "flutter/lib/ui/volatile_path_tracker.h"
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/runtime/dart_vm_lifecycle.h"
 #include "flutter/runtime/service_protocol.h"
 #include "flutter/shell/common/animator.h"
+#include "flutter/shell/common/display_manager.h"
 #include "flutter/shell/common/engine.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/rasterizer.h"
@@ -95,6 +98,20 @@ class Shell final : public PlatformView::Delegate,
  public:
   template <class T>
   using CreateCallback = std::function<std::unique_ptr<T>(Shell&)>;
+  typedef std::function<std::unique_ptr<Engine>(
+      Engine::Delegate& delegate,
+      const PointerDataDispatcherMaker& dispatcher_maker,
+      DartVM& vm,
+      fml::RefPtr<const DartSnapshot> isolate_snapshot,
+      TaskRunners task_runners,
+      const PlatformData platform_data,
+      Settings settings,
+      std::unique_ptr<Animator> animator,
+      fml::WeakPtr<IOManager> io_manager,
+      fml::RefPtr<SkiaUnrefQueue> unref_queue,
+      fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
+      std::shared_ptr<VolatilePathTracker> volatile_path_tracker)>
+      EngineCreateCallback;
 
   //----------------------------------------------------------------------------
   /// @brief      Creates a shell instance using the provided settings. The
@@ -167,39 +184,15 @@ class Shell final : public PlatformView::Delegate,
       CreateCallback<Rasterizer> on_create_rasterizer);
 
   //----------------------------------------------------------------------------
-  /// @brief      Creates a shell instance using the provided settings. The
-  ///             callbacks to create the various shell subcomponents will be
-  ///             called on the appropriate threads before this method returns.
-  ///             Unlike the simpler variant of this factory method, this method
-  ///             allows for the specification of an isolate snapshot that
-  ///             cannot be adequately described in the settings. This call also
-  ///             requires the specification of a running VM instance.
-  ///
-  /// @param[in]  task_runners             The task runners
-  /// @param[in]  platform_data            The default data for setting up
-  ///                                      ui.Window that attached to this
-  ///                                      intance.
-  /// @param[in]  settings                 The settings
-  /// @param[in]  isolate_snapshot         A custom isolate snapshot. Takes
-  ///                                      precedence over any snapshots
-  ///                                      specified in the settings.
-  /// @param[in]  on_create_platform_view  The callback that must return a
-  ///                                      platform view. This will be called on
-  ///                                      the platform task runner before this
-  ///                                      method returns.
-  /// @param[in]  on_create_rasterizer     That callback that must provide a
-  ///                                      valid rasterizer. This will be called
-  ///                                      on the render task runner before this
-  ///                                      method returns.
-  /// @param[in]  vm                       A running VM instance.
-  ///
-  /// @return     A full initialized shell if the settings and callbacks are
-  ///             valid. The root isolate has been created but not yet launched.
-  ///             It may be launched by obtaining the engine weak pointer and
-  ///             posting a task onto the UI task runner with a valid run
-  ///             configuration to run the isolate. The embedder must always
-  ///             check the validity of the shell (using the IsSetup call)
-  ///             immediately after getting a pointer to it.
+  /// @brief      Creates a shell instance using the provided settings.
+  /// @details    This version of Create can take in a running DartVMRef and a
+  ///             function that defines how the Shell's Engine should be
+  ///             created.
+  /// @param[in]  vm             A running DartVMRef where this Shell's Dart
+  ///                            code will be executed.
+  /// @param[in]  on_create_engine   A function that creates an Engine during
+  ///                            initialization.
+  /// @see        Shell::Create
   ///
   static std::unique_ptr<Shell> Create(
       TaskRunners task_runners,
@@ -208,7 +201,8 @@ class Shell final : public PlatformView::Delegate,
       fml::RefPtr<const DartSnapshot> isolate_snapshot,
       const CreateCallback<PlatformView>& on_create_platform_view,
       const CreateCallback<Rasterizer>& on_create_rasterizer,
-      DartVMRef vm);
+      DartVMRef vm,
+      const EngineCreateCallback& on_create_engine);
 
   //----------------------------------------------------------------------------
   /// @brief      Destroys the shell. This is a synchronous operation and
@@ -217,6 +211,29 @@ class Shell final : public PlatformView::Delegate,
   ///             this method returns.
   ///
   ~Shell();
+
+  //----------------------------------------------------------------------------
+  /// @brief      Creates one Shell from another Shell where the created Shell
+  ///             takes the opportunity to share any internal components it can.
+  ///             This results is a Shell that has a smaller startup time cost
+  ///             and a smaller memory footprint than an Shell created with a
+  ///             Create function.
+  ///
+  ///             The new Shell is returned in a running state so RunEngine
+  ///             shouldn't be called again on the Shell. Once running, the
+  ///             second Shell is mostly independent from the original Shell
+  ///             and the original Shell doesn't need to keep running for the
+  ///             spawned Shell to keep functioning.
+  /// @param[in]  run_configuration  A RunConfiguration used to run the Isolate
+  ///             associated with this new Shell. It doesn't have to be the same
+  ///             configuration as the current Shell but it needs to be in the
+  ///             same snapshot or AOT.
+  ///
+  /// @see        http://flutter.dev/go/multiple-engines
+  std::unique_ptr<Shell> Spawn(
+      RunConfiguration run_configuration,
+      const CreateCallback<PlatformView>& on_create_platform_view,
+      const CreateCallback<Rasterizer>& on_create_rasterizer) const;
 
   //----------------------------------------------------------------------------
   /// @brief      Starts an isolate for the given RunConfiguration.
@@ -251,7 +268,7 @@ class Shell final : public PlatformView::Delegate,
   const TaskRunners& GetTaskRunners() const override;
 
   //----------------------------------------------------------------------------
-  /// @brief      Rasterizers may only be accessed on the GPU task runner.
+  /// @brief      Rasterizers may only be accessed on the raster task runner.
   ///
   /// @return     A weak pointer to the rasterizer.
   ///
@@ -369,6 +386,17 @@ class Shell final : public PlatformView::Delegate,
   ///
   DartVM* GetDartVM();
 
+  //----------------------------------------------------------------------------
+  /// @brief      Notifies the display manager of the updates.
+  ///
+  void OnDisplayUpdates(DisplayUpdateType update_type,
+                        std::vector<Display> displays);
+
+  //----------------------------------------------------------------------------
+  /// @brief Queries the `DisplayManager` for the main display refresh rate.
+  ///
+  double GetMainDisplayRefreshRate();
+
  private:
   using ServiceProtocolHandler =
       std::function<bool(const ServiceProtocol::Handler::ServiceProtocolMap&,
@@ -381,9 +409,10 @@ class Shell final : public PlatformView::Delegate,
   std::optional<fml::TimePoint> latest_frame_target_time_;
   std::unique_ptr<PlatformView> platform_view_;  // on platform task runner
   std::unique_ptr<Engine> engine_;               // on UI task runner
-  std::unique_ptr<Rasterizer> rasterizer_;       // on GPU task runner
+  std::unique_ptr<Rasterizer> rasterizer_;       // on raster task runner
   std::unique_ptr<ShellIOManager> io_manager_;   // on IO task runner
   std::shared_ptr<fml::SyncSwitch> is_gpu_disabled_sync_switch_;
+  std::shared_ptr<VolatilePathTracker> volatile_path_tracker_;
 
   fml::WeakPtr<Engine> weak_engine_;  // to be shared across threads
   fml::TaskRunnerAffineWeakPtr<Rasterizer>
@@ -398,6 +427,7 @@ class Shell final : public PlatformView::Delegate,
                      >
       service_protocol_handlers_;
   bool is_setup_ = false;
+  bool is_added_to_service_protocol_ = false;
   uint64_t next_pointer_flow_id_ = 0;
 
   bool first_frame_rasterized_ = false;
@@ -418,17 +448,26 @@ class Shell final : public PlatformView::Delegate,
   // here for easier conversions to Dart objects.
   std::vector<int64_t> unreported_timings_;
 
-  // A cache of `Engine::GetDisplayRefreshRate` (only callable in the UI thread)
-  // so we can access it from `Rasterizer` (in the raster thread).
-  //
-  // The atomic is for extra thread safety as this is written in the UI thread
-  // and read from the raster thread.
-  std::atomic<float> display_refresh_rate_ = 0.0f;
+  /// Manages the displays. This class is thread safe, can be accessed from any
+  /// of the threads.
+  std::unique_ptr<DisplayManager> display_manager_;
+
+  // protects expected_frame_size_ which is set on platform thread and read on
+  // raster thread
+  std::mutex resize_mutex_;
+
+  // used to discard wrong size layer tree produced during interactive resizing
+  SkISize expected_frame_size_ = SkISize::MakeEmpty();
 
   // How many frames have been timed since last report.
   size_t UnreportedFramesCount() const;
 
-  Shell(DartVMRef vm, TaskRunners task_runners, Settings settings);
+  sk_sp<GrDirectContext> shared_resource_context_;
+
+  Shell(DartVMRef vm,
+        TaskRunners task_runners,
+        Settings settings,
+        std::shared_ptr<VolatilePathTracker> volatile_path_tracker);
 
   static std::unique_ptr<Shell> CreateShellOnPlatformThread(
       DartVMRef vm,
@@ -437,7 +476,8 @@ class Shell final : public PlatformView::Delegate,
       Settings settings,
       fml::RefPtr<const DartSnapshot> isolate_snapshot,
       const Shell::CreateCallback<PlatformView>& on_create_platform_view,
-      const Shell::CreateCallback<Rasterizer>& on_create_rasterizer);
+      const Shell::CreateCallback<Rasterizer>& on_create_rasterizer,
+      const EngineCreateCallback& on_create_engine);
 
   bool Setup(std::unique_ptr<PlatformView> platform_view,
              std::unique_ptr<Engine> engine,
@@ -490,8 +530,19 @@ class Shell final : public PlatformView::Delegate,
   void OnPlatformViewSetNextFrameCallback(const fml::closure& closure) override;
 
   // |PlatformView::Delegate|
-  std::unique_ptr<std::vector<std::string>> ComputePlatformViewResolvedLocale(
-      const std::vector<std::string>& supported_locale_data) override;
+  void LoadDartDeferredLibrary(
+      intptr_t loading_unit_id,
+      std::unique_ptr<const fml::Mapping> snapshot_data,
+      std::unique_ptr<const fml::Mapping> snapshot_instructions) override;
+
+  void LoadDartDeferredLibraryError(intptr_t loading_unit_id,
+                                    const std::string error_message,
+                                    bool transient) override;
+
+  // |PlatformView::Delegate|
+  void UpdateAssetResolverByType(
+      std::unique_ptr<AssetResolver> updated_asset_resolver,
+      AssetResolver::AssetResolverType type) override;
 
   // |Animator::Delegate|
   void OnAnimatorBeginFrame(fml::TimePoint frame_target_time) override;
@@ -521,6 +572,9 @@ class Shell final : public PlatformView::Delegate,
   void OnPreEngineRestart() override;
 
   // |Engine::Delegate|
+  void OnRootIsolateCreated() override;
+
+  // |Engine::Delegate|
   void UpdateIsolateDescription(const std::string isolate_name,
                                 int64_t isolate_port) override;
 
@@ -530,6 +584,9 @@ class Shell final : public PlatformView::Delegate,
   // |Engine::Delegate|
   std::unique_ptr<std::vector<std::string>> ComputePlatformResolvedLocale(
       const std::vector<std::string>& supported_locale_data) override;
+
+  // |Engine::Delegate|
+  void RequestDartDeferredLibrary(intptr_t loading_unit_id) override;
 
   // |Rasterizer::Delegate|
   void OnFrameRasterized(const FrameTiming&) override;
@@ -595,6 +652,10 @@ class Shell final : public PlatformView::Delegate,
   bool OnServiceProtocolEstimateRasterCacheMemory(
       const ServiceProtocol::Handler::ServiceProtocolMap& params,
       rapidjson::Document* response);
+
+  // Creates an asset bundle from the original settings asset path or
+  // directory.
+  std::unique_ptr<DirectoryAssetBundle> RestoreOriginalAssetResolver();
 
   // For accessing the Shell via the raster thread, necessary for various
   // rasterizer callbacks.

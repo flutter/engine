@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <wchar.h>
+#include <cwchar>
 
 #include "flutter/shell/platform/windows/system_utils.h"
 #include "gtest/gtest.h"
@@ -69,6 +69,23 @@ TEST(SystemUtils, ParseLanguageNameWithThreeCharacterLanguage) {
   EXPECT_EQ(info.language, "ale");
   EXPECT_EQ(info.region, "ZZ");
   EXPECT_TRUE(info.script.empty());
+}
+
+TEST(SystemUtils, GetUserTimeFormat) {
+  // The value varies based on machine; just ensure that something is returned.
+  EXPECT_FALSE(GetUserTimeFormat().empty());
+}
+
+TEST(SystemUtils, Prefer24HourTimeHandlesEmptyFormat) {
+  EXPECT_FALSE(Prefer24HourTime(L""));
+}
+
+TEST(SystemUtils, Prefer24HourTimeHandles12Hour) {
+  EXPECT_FALSE(Prefer24HourTime(L"h:mm:ss tt"));
+}
+
+TEST(SystemUtils, Prefer24HourTimeHandles24Hour) {
+  EXPECT_TRUE(Prefer24HourTime(L"HH:mm:ss"));
 }
 
 }  // namespace testing

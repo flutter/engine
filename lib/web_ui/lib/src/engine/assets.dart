@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// This class downloads assets over the network.
@@ -88,7 +88,16 @@ class AssetManagerException implements Exception {
 class WebOnlyMockAssetManager implements AssetManager {
   String defaultAssetsDir = '';
   String defaultAssetManifest = '{}';
-  String defaultFontManifest = '[]';
+  String defaultFontManifest = '''[
+   {
+      "family":"$_robotoFontFamily",
+      "fonts":[{"asset":"$_robotoTestFontUrl"}]
+   },
+   {
+      "family":"$_ahemFontFamily",
+      "fonts":[{"asset":"$_ahemFontUrl"}]
+   }
+  ]''';
 
   @override
   String get assetsDir => defaultAssetsDir;

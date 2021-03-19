@@ -21,6 +21,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <zircon/status.h>
+
 #include <regex>
 #include <utility>
 
@@ -439,7 +440,11 @@ bool DartComponentController::Main() {
 
 void DartComponentController::Kill() {
   if (Dart_CurrentIsolate()) {
-    tonic::DartMicrotaskQueue::GetForCurrentThread()->Destroy();
+    tonic::DartMicrotaskQueue* queue =
+        tonic::DartMicrotaskQueue::GetForCurrentThread();
+    if (queue) {
+      queue->Destroy();
+    }
 
     loop_->Quit();
 

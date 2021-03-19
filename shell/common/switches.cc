@@ -1,7 +1,6 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-// FLUTTER_NOLINT
 
 #include <algorithm>
 #include <iomanip>
@@ -42,6 +41,8 @@ struct SwitchDesc {
 
 // clang-format off
 static const std::string gAllowedDartFlags[] = {
+    "--enable-isolate-groups",
+    "--no-enable-isolate-groups",
     "--no-causal_async_stacks",
     "--lazy_async_stacks",
 };
@@ -51,6 +52,8 @@ static const std::string gAllowedDartFlags[] = {
 
 // clang-format off
 static const std::string gAllowedDartFlags[] = {
+    "--enable-isolate-groups",
+    "--no-enable-isolate-groups",
     "--enable_mirrors",
     "--enable-service-port-fallback",
     "--lazy_async_stacks",
@@ -59,10 +62,12 @@ static const std::string gAllowedDartFlags[] = {
     "--profile_period",
     "--random_seed",
     "--sample-buffer-duration",
+    "--trace-kernel",
     "--trace-reload",
     "--trace-reload-verbose",
     "--write-service-info",
     "--null_assertions",
+    "--strict_null_safety_checks",
 };
 // clang-format on
 
@@ -217,6 +222,10 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   settings.enable_observatory =
       !command_line.HasOption(FlagForSwitch(Switch::DisableObservatory));
 
+  // Enable mDNS Observatory Publication
+  settings.enable_observatory_publication = !command_line.HasOption(
+      FlagForSwitch(Switch::DisableObservatoryPublication));
+
   // Set Observatory Host
   if (command_line.HasOption(FlagForSwitch(Switch::DeviceObservatoryHost))) {
     command_line.GetOptionValue(FlagForSwitch(Switch::DeviceObservatoryHost),
@@ -369,6 +378,9 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   settings.use_test_fonts =
       command_line.HasOption(FlagForSwitch(Switch::UseTestFonts));
 
+  settings.enable_skparagraph =
+      command_line.HasOption(FlagForSwitch(Switch::EnableSkParagraph));
+
   std::string all_dart_flags;
   if (command_line.GetOptionValue(FlagForSwitch(Switch::DartFlags),
                                   &all_dart_flags)) {
@@ -397,6 +409,12 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   settings.purge_persistent_cache =
       command_line.HasOption(FlagForSwitch(Switch::PurgePersistentCache));
 
+  if (command_line.HasOption(FlagForSwitch(Switch::OldGenHeapSize))) {
+    std::string old_gen_heap_size;
+    command_line.GetOptionValue(FlagForSwitch(Switch::OldGenHeapSize),
+                                &old_gen_heap_size);
+    settings.old_gen_heap_size = std::stoi(old_gen_heap_size);
+  }
   return settings;
 }
 

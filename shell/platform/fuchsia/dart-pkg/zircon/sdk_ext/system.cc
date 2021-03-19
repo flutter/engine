@@ -98,7 +98,8 @@ Dart_Handle MakeHandleList(const std::vector<zx_handle_t>& in_handles) {
   tonic::DartClassLibrary& class_library =
       tonic::DartState::Current()->class_library();
   Dart_Handle handle_type = class_library.GetClass("zircon", "Handle");
-  Dart_Handle list = Dart_NewListOfType(handle_type, in_handles.size());
+  Dart_Handle list = Dart_NewListOfTypeFilled(
+      handle_type, Handle::CreateInvalid(), in_handles.size());
   if (Dart_IsError(list))
     return list;
   for (size_t i = 0; i < in_handles.size(); i++) {
@@ -458,6 +459,10 @@ Dart_Handle System::VmoMap(fml::RefPtr<Handle> vmo) {
   return ConstructDartObject(kMapResult, ToDart(ZX_OK), object);
 }
 
+uint64_t System::ClockGetMonotonic() {
+  return zx_clock_get_monotonic();
+}
+
 uint64_t System::ClockGet(uint32_t clock_id) {
   zx_time_t result = 0;
   zx_clock_get(clock_id, &result);
@@ -483,6 +488,7 @@ uint64_t System::ClockGet(uint32_t clock_id) {
   V(System, VmoRead)               \
   V(System, VmoWrite)              \
   V(System, VmoMap)                \
+  V(System, ClockGetMonotonic)     \
   V(System, ClockGet)
 
 // clang-format: on

@@ -12,14 +12,15 @@
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/common/platform_view.h"
-#include "flutter/shell/platform/darwin/common/framework/Headers/FlutterTexture.h"
-#include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/platform_message_router.h"
-#include "flutter/shell/platform/darwin/ios/ios_context.h"
-#include "flutter/shell/platform/darwin/ios/ios_surface.h"
-#include "flutter/shell/platform/darwin/ios/rendering_api_selection.h"
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterTexture.h"
+#import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/platform_message_router.h"
+#import "flutter/shell/platform/darwin/ios/ios_context.h"
+#import "flutter/shell/platform/darwin/ios/ios_external_view_embedder.h"
+#import "flutter/shell/platform/darwin/ios/ios_surface.h"
+#import "flutter/shell/platform/darwin/ios/rendering_api_selection.h"
 
 @class FlutterViewController;
 
@@ -39,9 +40,16 @@ namespace flutter {
  */
 class PlatformViewIOS final : public PlatformView {
  public:
-  explicit PlatformViewIOS(PlatformView::Delegate& delegate,
-                           IOSRenderingAPI rendering_api,
-                           flutter::TaskRunners task_runners);
+  PlatformViewIOS(PlatformView::Delegate& delegate,
+                  const std::shared_ptr<IOSContext>& context,
+                  const std::shared_ptr<FlutterPlatformViewsController>& platform_views_controller,
+                  flutter::TaskRunners task_runners);
+
+  explicit PlatformViewIOS(
+      PlatformView::Delegate& delegate,
+      IOSRenderingAPI rendering_api,
+      const std::shared_ptr<FlutterPlatformViewsController>& platform_views_controller,
+      flutter::TaskRunners task_runners);
 
   ~PlatformViewIOS() override;
 
@@ -85,6 +93,9 @@ class PlatformViewIOS final : public PlatformView {
   // |PlatformView|
   void SetSemanticsEnabled(bool enabled) override;
 
+  /** Accessor for the `IOSContext` associated with the platform view. */
+  const std::shared_ptr<IOSContext>& GetIosContext() { return ios_context_; }
+
  private:
   /// Smart pointer for use with objective-c observers.
   /// This guarentees we remove the observer.
@@ -104,7 +115,7 @@ class PlatformViewIOS final : public PlatformView {
   /// information to Dart.
   class AccessibilityBridgePtr {
    public:
-    AccessibilityBridgePtr(const std::function<void(bool)>& set_semantics_enabled);
+    explicit AccessibilityBridgePtr(const std::function<void(bool)>& set_semantics_enabled);
     AccessibilityBridgePtr(const std::function<void(bool)>& set_semantics_enabled,
                            AccessibilityBridge* bridge);
     ~AccessibilityBridgePtr();
@@ -124,6 +135,7 @@ class PlatformViewIOS final : public PlatformView {
   std::mutex ios_surface_mutex_;
   std::unique_ptr<IOSSurface> ios_surface_;
   std::shared_ptr<IOSContext> ios_context_;
+  const std::shared_ptr<FlutterPlatformViewsController>& platform_views_controller_;
   PlatformMessageRouter platform_message_router_;
   AccessibilityBridgePtr accessibility_bridge_;
   fml::scoped_nsprotocol<FlutterTextInputPlugin*> text_input_plugin_;
@@ -136,6 +148,9 @@ class PlatformViewIOS final : public PlatformView {
 
   // |PlatformView|
   std::unique_ptr<Surface> CreateRenderingSurface() override;
+
+  // |PlatformView|
+  std::shared_ptr<ExternalViewEmbedder> CreateExternalViewEmbedder() override;
 
   // |PlatformView|
   sk_sp<GrDirectContext> CreateResourceContext() const override;

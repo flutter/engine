@@ -11,6 +11,7 @@
 #include "flutter/fml/trace_event.h"
 #include "flutter/lib/snapshot/snapshot.h"
 #include "flutter/runtime/dart_vm.h"
+#include "third_party/dart/runtime/include/dart_api.h"
 
 namespace flutter {
 
@@ -180,6 +181,17 @@ fml::RefPtr<DartSnapshot> DartSnapshot::IsolateSnapshotFromSettings(
   return nullptr;
 }
 
+fml::RefPtr<DartSnapshot> DartSnapshot::IsolateSnapshotFromMappings(
+    std::shared_ptr<const fml::Mapping> snapshot_data,
+    std::shared_ptr<const fml::Mapping> snapshot_instructions) {
+  auto snapshot =
+      fml::MakeRefCounted<DartSnapshot>(snapshot_data, snapshot_instructions);
+  if (snapshot->IsValid()) {
+    return snapshot;
+  }
+  return nullptr;
+}
+
 DartSnapshot::DartSnapshot(std::shared_ptr<const fml::Mapping> data,
                            std::shared_ptr<const fml::Mapping> instructions)
     : data_(std::move(data)), instructions_(std::move(instructions)) {}
@@ -200,6 +212,18 @@ const uint8_t* DartSnapshot::GetDataMapping() const {
 
 const uint8_t* DartSnapshot::GetInstructionsMapping() const {
   return instructions_ ? instructions_->GetMapping() : nullptr;
+}
+
+bool DartSnapshot::IsNullSafetyEnabled(const fml::Mapping* kernel) const {
+  return ::Dart_DetectNullSafety(
+      nullptr,           // script_uri (unsupported by Flutter)
+      nullptr,           // package_config (package resolution of parent used)
+      nullptr,           // original_working_directory (no package config)
+      GetDataMapping(),  // snapshot_data
+      GetInstructionsMapping(),                 // snapshot_instructions
+      kernel ? kernel->GetMapping() : nullptr,  // kernel_buffer
+      kernel ? kernel->GetSize() : 0u           // kernel_buffer_size
+  );
 }
 
 }  // namespace flutter

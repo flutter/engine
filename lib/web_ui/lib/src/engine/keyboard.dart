@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// After a keydown is received, this is the duration we wait for a repeat event
@@ -80,15 +80,6 @@ class Keyboard {
     }
 
     final html.KeyboardEvent keyboardEvent = event;
-
-    if (window._onPlatformMessage == null) {
-      return;
-    }
-
-    if (_shouldPreventDefault(event)) {
-      event.preventDefault();
-    }
-
     final String timerKey = keyboardEvent.code!;
 
     // Don't handle synthesizing a keyup event for modifier keys
@@ -116,6 +107,17 @@ class Keyboard {
     }
 
     _lastMetaState = _getMetaState(event);
+    if (event.type == 'keydown') {
+      // For lock modifiers _getMetaState won't report a metaState at keydown.
+      // See https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/getModifierState.
+      if (event.key == 'CapsLock') {
+        _lastMetaState |= modifierCapsLock;
+      } else if (event.code == 'NumLock') {
+        _lastMetaState |= modifierNumLock;
+      } else if (event.key == 'ScrollLock') {
+        _lastMetaState |= modifierScrollLock;
+      }
+    }
     final Map<String, dynamic> eventData = <String, dynamic>{
       'type': event.type,
       'keymap': 'web',
@@ -124,18 +126,18 @@ class Keyboard {
       'metaState': _lastMetaState,
     };
 
-    window.invokeOnPlatformMessage('flutter/keyevent',
-        _messageCodec.encodeMessage(eventData), _noopCallback);
-  }
-
-  bool _shouldPreventDefault(html.KeyboardEvent event) {
-    switch (event.key) {
-      case 'Tab':
-        return true;
-
-      default:
-        return false;
-    }
+    EnginePlatformDispatcher.instance.invokeOnPlatformMessage('flutter/keyevent',
+      _messageCodec.encodeMessage(eventData), (ByteData? data) {
+        if (data == null) {
+          return;
+        }
+        final Map<String, dynamic> jsonResponse = _messageCodec.decodeMessage(data);
+        if (jsonResponse['handled'] as bool) {
+          // If the framework handled it, then don't propagate it any further.
+          event.preventDefault();
+        }
+      },
+    );
   }
 
   void _synthesizeKeyup(html.KeyboardEvent event) {
@@ -147,7 +149,7 @@ class Keyboard {
       'metaState': _lastMetaState,
     };
 
-    window.invokeOnPlatformMessage('flutter/keyevent',
+    EnginePlatformDispatcher.instance.invokeOnPlatformMessage('flutter/keyevent',
         _messageCodec.encodeMessage(eventData), _noopCallback);
   }
 }
@@ -157,6 +159,9 @@ const int _modifierShift = 0x01;
 const int _modifierAlt = 0x02;
 const int _modifierControl = 0x04;
 const int _modifierMeta = 0x08;
+const int modifierNumLock = 0x10;
+const int modifierCapsLock = 0x20;
+const int modifierScrollLock = 0x40;
 
 /// Creates a bitmask representing the meta state of the [event].
 int _getMetaState(html.KeyboardEvent event) {
@@ -164,7 +169,7 @@ int _getMetaState(html.KeyboardEvent event) {
   if (event.getModifierState('Shift')) {
     metaState |= _modifierShift;
   }
-  if (event.getModifierState('Alt')) {
+  if (event.getModifierState('Alt') || event.getModifierState('AltGraph')) {
     metaState |= _modifierAlt;
   }
   if (event.getModifierState('Control')) {
@@ -173,8 +178,17 @@ int _getMetaState(html.KeyboardEvent event) {
   if (event.getModifierState('Meta')) {
     metaState |= _modifierMeta;
   }
-  // TODO: Re-enable lock key modifiers once there is support on Flutter
-  // Framework. https://github.com/flutter/flutter/issues/46718
+  // See https://github.com/flutter/flutter/issues/66601 for why we don't
+  // set the ones below based on persistent state.
+  // if (event.getModifierState("CapsLock")) {
+  //   metaState |= modifierCapsLock;
+  // }
+  // if (event.getModifierState("NumLock")) {
+  //   metaState |= modifierNumLock;
+  // }
+  // if (event.getModifierState("ScrollLock")) {
+  //   metaState |= modifierScrollLock;
+  // }
   return metaState;
 }
 

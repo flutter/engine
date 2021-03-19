@@ -7,7 +7,7 @@
 
 #import <Cocoa/Cocoa.h>
 
-#include "FlutterMacros.h"
+#import "FlutterMacros.h"
 
 /**
  * `NSApplicationDelegate` subclass for simple apps that want default behavior.
@@ -24,7 +24,7 @@
  * this class. Developers of custom app delegate classes should copy and paste
  * code as necessary from FlutterAppDelegate.mm.
  */
-FLUTTER_EXPORT
+FLUTTER_DARWIN_EXPORT
 @interface FlutterAppDelegate : NSObject <NSApplicationDelegate>
 
 /**

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/darwin/ios/framework/Source/vsync_waiter_ios.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/vsync_waiter_ios.h"
 
 #include <utility>
 
@@ -14,28 +14,6 @@
 #include "flutter/common/task_runners.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
-
-@interface VSyncClient : NSObject
-
-- (instancetype)initWithTaskRunner:(fml::RefPtr<fml::TaskRunner>)task_runner
-                          callback:(flutter::VsyncWaiter::Callback)callback;
-
-- (void)await;
-
-- (void)invalidate;
-
-//------------------------------------------------------------------------------
-/// @brief      The display refresh rate used for reporting purposes. The engine does not care
-///             about this for frame scheduling. It is only used by tools for instrumentation. The
-///             engine uses the duration field of the link per frame for frame scheduling.
-///
-/// @attention  Do not use the this call in frame scheduling. It is only meant for reporting.
-///
-/// @return     The refresh rate in frames per second.
-///
-- (float)displayRefreshRate;
-
-@end
 
 namespace flutter {
 
@@ -55,11 +33,6 @@ VsyncWaiterIOS::~VsyncWaiterIOS() {
 
 void VsyncWaiterIOS::AwaitVSync() {
   [client_.get() await];
-}
-
-// |VsyncWaiter|
-float VsyncWaiterIOS::GetDisplayRefreshRate() const {
-  return [client_.get() displayRefreshRate];
 }
 
 }  // namespace flutter
@@ -90,25 +63,6 @@ float VsyncWaiterIOS::GetDisplayRefreshRate() const {
   return self;
 }
 
-- (float)displayRefreshRate {
-  if (@available(iOS 10.3, *)) {
-    auto preferredFPS = display_link_.get().preferredFramesPerSecond;  // iOS 10.0
-
-    // From Docs:
-    // The default value for preferredFramesPerSecond is 0. When this value is 0, the preferred
-    // frame rate is equal to the maximum refresh rate of the display, as indicated by the
-    // maximumFramesPerSecond property.
-
-    if (preferredFPS != 0) {
-      return preferredFPS;
-    }
-
-    return [UIScreen mainScreen].maximumFramesPerSecond;  // iOS 10.3
-  } else {
-    return 60.0;
-  }
-}
-
 - (void)await {
   display_link_.get().paused = NO;
 }
@@ -126,7 +80,6 @@ float VsyncWaiterIOS::GetDisplayRefreshRate() const {
 }
 
 - (void)invalidate {
-  // [CADisplayLink invalidate] is thread-safe.
   [display_link_.get() invalidate];
 }
 
@@ -134,6 +87,38 @@ float VsyncWaiterIOS::GetDisplayRefreshRate() const {
   [self invalidate];
 
   [super dealloc];
+}
+
+@end
+
+@implementation DisplayLinkManager
+
++ (double)displayRefreshRate {
+  if (@available(iOS 10.3, *)) {
+    fml::scoped_nsobject<CADisplayLink> display_link = fml::scoped_nsobject<CADisplayLink> {
+      [[CADisplayLink displayLinkWithTarget:[[DisplayLinkManager new] autorelease]
+                                   selector:@selector(onDisplayLink:)] retain]
+    };
+    display_link.get().paused = YES;
+    auto preferredFPS = display_link.get().preferredFramesPerSecond;  // iOS 10.0
+
+    // From Docs:
+    // The default value for preferredFramesPerSecond is 0. When this value is 0, the preferred
+    // frame rate is equal to the maximum refresh rate of the display, as indicated by the
+    // maximumFramesPerSecond property.
+
+    if (preferredFPS != 0) {
+      return preferredFPS;
+    }
+
+    return [UIScreen mainScreen].maximumFramesPerSecond;  // iOS 10.3
+  } else {
+    return 60.0;
+  }
+}
+
+- (void)onDisplayLink:(CADisplayLink*)link {
+  // no-op.
 }
 
 @end

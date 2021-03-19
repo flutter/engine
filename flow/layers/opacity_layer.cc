@@ -14,19 +14,15 @@ OpacityLayer::OpacityLayer(SkAlpha alpha, const SkPoint& offset)
 
 void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "OpacityLayer::Preroll");
+  FML_DCHECK(!GetChildContainer()->layers().empty());  // We can't be a leaf.
 
-  ContainerLayer* container = GetChildContainer();
-  FML_DCHECK(!container->layers().empty());  // OpacityLayer can't be a leaf.
-
-  const bool parent_is_opaque = context->is_opaque;
   SkMatrix child_matrix = matrix;
-  child_matrix.postTranslate(offset_.fX, offset_.fY);
+  child_matrix.preTranslate(offset_.fX, offset_.fY);
 
   // Similar to what's done in TransformLayer::Preroll, we have to apply the
   // reverse transformation to the cull rect to properly cull child layers.
   context->cull_rect = context->cull_rect.makeOffset(-offset_.fX, -offset_.fY);
 
-  context->is_opaque = parent_is_opaque && (alpha_ == SK_AlphaOPAQUE);
   context->mutators_stack.PushTransform(
       SkMatrix::Translate(offset_.fX, offset_.fY));
   context->mutators_stack.PushOpacity(alpha_);
@@ -35,7 +31,6 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   ContainerLayer::Preroll(context, child_matrix);
   context->mutators_stack.Pop();
   context->mutators_stack.Pop();
-  context->is_opaque = parent_is_opaque;
 
   {
     set_paint_bounds(paint_bounds().makeOffset(offset_.fX, offset_.fY));
@@ -51,7 +46,7 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 
 void OpacityLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "OpacityLayer::Paint");
-  FML_DCHECK(needs_painting());
+  FML_DCHECK(needs_painting(context));
 
   SkPaint paint;
   paint.setAlpha(alpha_);
@@ -90,11 +85,11 @@ void OpacityLayer::Paint(PaintContext& context) const {
 
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
 
-void OpacityLayer::UpdateScene(SceneUpdateContext& context) {
-  float saved_alpha = context.alphaf();
-  context.set_alphaf(context.alphaf() * (alpha_ / 255.f));
+void OpacityLayer::UpdateScene(std::shared_ptr<SceneUpdateContext> context) {
+  float saved_alpha = context->alphaf();
+  context->set_alphaf(context->alphaf() * (alpha_ / 255.f));
   ContainerLayer::UpdateScene(context);
-  context.set_alphaf(saved_alpha);
+  context->set_alphaf(saved_alpha);
 }
 
 #endif

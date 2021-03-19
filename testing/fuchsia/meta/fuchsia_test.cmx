@@ -11,14 +11,16 @@
     ],
     "services": [
       "fuchsia.accessibility.semantics.SemanticsManager",
-      "fuchsia.process.Launcher",
       "fuchsia.deprecatedtimezone.Timezone",
-      "fuchsia.netstack.Netstack",
-      "fuchsia.sysmem.Allocator",
-      "fuchsia.vulkan.loader.Loader",
+      "fuchsia.fonts.Provider",
+      "fuchsia.intl.PropertyProvider",
       "fuchsia.logger.LogSink",
+      "fuchsia.process.Launcher",
+      "fuchsia.settings.Intl",
+      "fuchsia.sysmem.Allocator",
       "fuchsia.tracing.provider.Registry",
-      "fuchsia.intl.PropertyProvider"
+      "fuchsia.ui.input3.Keyboard",
+      "fuchsia.vulkan.loader.Loader"
     ]
   }
 }

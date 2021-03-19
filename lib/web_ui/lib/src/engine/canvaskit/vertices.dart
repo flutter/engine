@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 class CkVertices extends ManagedSkiaObject<SkVertices> implements ui.Vertices {
@@ -28,9 +28,9 @@ class CkVertices extends ManagedSkiaObject<SkVertices> implements ui.Vertices {
 
     return CkVertices._(
       toSkVertexMode(mode),
-      toSkPoints2d(positions),
-      textureCoordinates != null ? toSkPoints2d(textureCoordinates) : null,
-      colors != null ? toSkFloatColorList(colors) : null,
+      toFlatSkPoints(positions),
+      textureCoordinates != null ? toFlatSkPoints(textureCoordinates) : null,
+      colors != null ? toFlatColors(colors) : null,
       indices != null ? toUint16List(indices) : null,
     );
   }
@@ -57,9 +57,9 @@ class CkVertices extends ManagedSkiaObject<SkVertices> implements ui.Vertices {
 
     return CkVertices._(
       toSkVertexMode(mode),
-      rawPointsToSkPoints2d(positions),
-      textureCoordinates != null ? rawPointsToSkPoints2d(textureCoordinates) : null,
-      colors != null ? encodeRawColorList(colors) : null,
+      positions,
+      textureCoordinates,
+      colors?.buffer.asUint32List(),
       indices,
     );
   }
@@ -73,14 +73,14 @@ class CkVertices extends ManagedSkiaObject<SkVertices> implements ui.Vertices {
   );
 
   final SkVertexMode _mode;
-  final List<Float32List> _positions;
-  final List<Float32List>? _textureCoordinates;
-  final List<Float32List>? _colors;
+  final Float32List _positions;
+  final Float32List? _textureCoordinates;
+  final Uint32List? _colors;
   final Uint16List? _indices;
 
   @override
   SkVertices createDefault() {
-    return canvasKit.MakeSkVertices(
+    return canvasKit.MakeVertices(
       _mode,
       _positions,
       _textureCoordinates,

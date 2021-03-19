@@ -4,11 +4,11 @@
 
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_method_channel.h"
 
+#include <gmodule.h>
+
 #include "flutter/shell/platform/linux/fl_method_call_private.h"
 #include "flutter/shell/platform/linux/fl_method_channel_private.h"
 #include "flutter/shell/platform/linux/fl_method_codec_private.h"
-
-#include <gmodule.h>
 
 struct _FlMethodChannel {
   GObject parent_instance;
@@ -31,7 +31,7 @@ struct _FlMethodChannel {
   GDestroyNotify method_call_handler_destroy_notify;
 };
 
-// Added here to stop the compiler from optimising this function away.
+// Added here to stop the compiler from optimizing this function away.
 G_MODULE_EXPORT GType fl_method_channel_get_type();
 
 G_DEFINE_TYPE(FlMethodChannel, fl_method_channel, G_TYPE_OBJECT)
@@ -230,12 +230,18 @@ gboolean fl_method_channel_respond(
     FlMethodSuccessResponse* r = FL_METHOD_SUCCESS_RESPONSE(response);
     message = fl_method_codec_encode_success_envelope(
         self->codec, fl_method_success_response_get_result(r), error);
+    if (message == nullptr) {
+      return FALSE;
+    }
   } else if (FL_IS_METHOD_ERROR_RESPONSE(response)) {
     FlMethodErrorResponse* r = FL_METHOD_ERROR_RESPONSE(response);
     message = fl_method_codec_encode_error_envelope(
         self->codec, fl_method_error_response_get_code(r),
         fl_method_error_response_get_message(r),
         fl_method_error_response_get_details(r), error);
+    if (message == nullptr) {
+      return FALSE;
+    }
   } else if (FL_IS_METHOD_NOT_IMPLEMENTED_RESPONSE(response)) {
     message = nullptr;
   } else {

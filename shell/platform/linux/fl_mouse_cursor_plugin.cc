@@ -4,10 +4,11 @@
 
 #include "flutter/shell/platform/linux/fl_mouse_cursor_plugin.h"
 
+#include <gtk/gtk.h>
+#include <cstring>
+
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_method_channel.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_standard_method_codec.h"
-
-#include <gtk/gtk.h>
 
 static constexpr char kChannelName[] = "flutter/mousecursor";
 static constexpr char kBadArgumentsError[] = "Bad Arguments";
@@ -93,8 +94,9 @@ FlMethodResponse* activate_system_cursor(FlMouseCursorPlugin* self,
 
   FlValue* kind_value = fl_value_lookup_string(args, kKindKey);
   const gchar* kind = nullptr;
-  if (fl_value_get_type(kind_value) == FL_VALUE_TYPE_STRING)
+  if (fl_value_get_type(kind_value) == FL_VALUE_TYPE_STRING) {
     kind = fl_value_get_string(kind_value);
+  }
 
   if (self->system_cursor_table == nullptr) {
     self->system_cursor_table = g_hash_table_new(g_str_hash, g_str_equal);
@@ -103,8 +105,9 @@ FlMethodResponse* activate_system_cursor(FlMouseCursorPlugin* self,
 
   const gchar* cursor_name = reinterpret_cast<const gchar*>(
       g_hash_table_lookup(self->system_cursor_table, kind));
-  if (cursor_name == nullptr)
+  if (cursor_name == nullptr) {
     cursor_name = kFallbackCursor;
+  }
 
   GdkWindow* window =
       gtk_widget_get_window(gtk_widget_get_toplevel(GTK_WIDGET(self->view)));
@@ -125,19 +128,16 @@ static void method_call_cb(FlMethodChannel* channel,
   FlValue* args = fl_method_call_get_args(method_call);
 
   g_autoptr(FlMethodResponse) response = nullptr;
-  if (strcmp(method, kActivateSystemCursorMethod) == 0)
+  if (strcmp(method, kActivateSystemCursorMethod) == 0) {
     response = activate_system_cursor(self, args);
-  else
+  } else {
     response = FL_METHOD_RESPONSE(fl_method_not_implemented_response_new());
+  }
 
   g_autoptr(GError) error = nullptr;
-  if (!fl_method_call_respond(method_call, response, &error))
+  if (!fl_method_call_respond(method_call, response, &error)) {
     g_warning("Failed to send method call response: %s", error->message);
-}
-
-static void view_weak_notify_cb(gpointer user_data, GObject* object) {
-  FlMouseCursorPlugin* self = FL_MOUSE_CURSOR_PLUGIN(object);
-  self->view = nullptr;
+  }
 }
 
 static void fl_mouse_cursor_plugin_dispose(GObject* object) {
@@ -145,10 +145,10 @@ static void fl_mouse_cursor_plugin_dispose(GObject* object) {
 
   g_clear_object(&self->channel);
   if (self->view != nullptr) {
-    g_object_weak_unref(G_OBJECT(self->view), view_weak_notify_cb, self);
+    g_object_remove_weak_pointer(G_OBJECT(self->view),
+                                 reinterpret_cast<gpointer*>(&(self->view)));
     self->view = nullptr;
   }
-
   g_clear_pointer(&self->system_cursor_table, g_hash_table_unref);
 
   G_OBJECT_CLASS(fl_mouse_cursor_plugin_parent_class)->dispose(object);
@@ -173,7 +173,10 @@ FlMouseCursorPlugin* fl_mouse_cursor_plugin_new(FlBinaryMessenger* messenger,
   fl_method_channel_set_method_call_handler(self->channel, method_call_cb, self,
                                             nullptr);
   self->view = view;
-  g_object_weak_ref(G_OBJECT(view), view_weak_notify_cb, self);
+  if (view != nullptr) {
+    g_object_add_weak_pointer(G_OBJECT(view),
+                              reinterpret_cast<gpointer*>(&(self->view)));
+  }
 
   return self;
 }

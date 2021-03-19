@@ -30,8 +30,6 @@ source_set("ui") {
     "painting/color_filter.h",
     "painting/engine_layer.cc",
     "painting/engine_layer.h",
-    "painting/frame_info.cc",
-    "painting/frame_info.h",
     "painting/gradient.cc",
     "painting/gradient.h",
     "painting/image.cc",
@@ -93,6 +91,8 @@ source_set("ui") {
     "text/text_box.h",
     "ui_dart_state.cc",
     "ui_dart_state.h",
+    "volatile_path_tracker.cc",
+    "volatile_path_tracker.h",
     "window/platform_configuration.cc",
     "window/platform_configuration.h",
     "window/platform_message.cc",
@@ -129,8 +129,18 @@ source_set("ui") {
     "//third_party/skia",
   ]
 
+  if (!defined(defines)) {
+    defines = []
+  }
   if (flutter_enable_skshaper) {
-    defines = [ "FLUTTER_ENABLE_SKSHAPER" ]
+    defines += [ "FLUTTER_ENABLE_SKSHAPER" ]
+  }
+  if (flutter_always_use_skshaper) {
+    defines += [ "FLUTTER_ALWAYS_USE_SKSHAPER" ]
+  }
+  if (is_win) {
+    # Required for M_PI and others.
+    defines += [ "_USE_MATH_DEFINES" ]
   }
 
   if (is_fuchsia && flutter_enable_legacy_fuchsia_embedder) {
@@ -183,6 +193,7 @@ if (enable_unittests) {
     sources = [
       "painting/image_dispose_unittests.cc",
       "painting/image_encoding_unittests.cc",
+      "painting/path_unittests.cc",
       "painting/vertices_unittests.cc",
       "window/platform_configuration_unittests.cc",
       "window/pointer_data_packet_converter_unittests.cc",

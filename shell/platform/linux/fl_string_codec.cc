@@ -6,6 +6,8 @@
 
 #include <gmodule.h>
 
+#include <cstring>
+
 G_DEFINE_QUARK(fl_string_codec_error_quark, fl_string_codec_error)
 
 struct _FlStringCodec {

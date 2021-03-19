@@ -8,14 +8,14 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
 
-#if OS_ANDROID
-#include "flutter/fml/platform/android/jni_weak_ref.h"
-#endif
-
 #include "flutter/flow/embedded_views.h"
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/shell/platform/android/surface/android_native_window.h"
 #include "third_party/skia/include/core/SkMatrix.h"
+
+#if OS_ANDROID
+#include "flutter/fml/platform/android/jni_weak_ref.h"
+#endif
 
 namespace flutter {
 
@@ -193,6 +193,10 @@ class PlatformViewAndroidJNI {
   virtual std::unique_ptr<std::vector<std::string>>
   FlutterViewComputePlatformResolvedLocale(
       std::vector<std::string> supported_locales_data) = 0;
+
+  virtual double GetDisplayRefreshRate() = 0;
+
+  virtual bool RequestDartDeferredLibrary(int loading_unit_id) = 0;
 };
 
 }  // namespace flutter

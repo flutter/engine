@@ -7,11 +7,11 @@
 
 #import <Foundation/Foundation.h>
 
-#include "FlutterBinaryMessenger.h"
-#include "FlutterDartProject.h"
-#include "FlutterMacros.h"
-#include "FlutterPluginRegistrarMacOS.h"
-#include "FlutterTexture.h"
+#import "FlutterBinaryMessenger.h"
+#import "FlutterDartProject.h"
+#import "FlutterMacros.h"
+#import "FlutterPluginRegistrarMacOS.h"
+#import "FlutterTexture.h"
 
 // TODO: Merge this file with the iOS FlutterEngine.h.
 
@@ -20,7 +20,7 @@
 /**
  * Coordinates a single instance of execution of a Flutter engine.
  */
-FLUTTER_EXPORT
+FLUTTER_DARWIN_EXPORT
 @interface FlutterEngine : NSObject <FlutterTextureRegistry, FlutterPluginRegistry>
 
 /**

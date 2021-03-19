@@ -16,15 +16,19 @@ FlutterEngine::FlutterEngine(const DartProject& project) {
   c_engine_properties.assets_path = project.assets_path().c_str();
   c_engine_properties.icu_data_path = project.icu_data_path().c_str();
   c_engine_properties.aot_library_path = project.aot_library_path().c_str();
-  std::vector<const char*> engine_switches;
+
+  const std::vector<std::string>& entrypoint_args =
+      project.dart_entrypoint_arguments();
+  std::vector<const char*> entrypoint_argv;
   std::transform(
-      project.engine_switches().begin(), project.engine_switches().end(),
-      std::back_inserter(engine_switches),
+      entrypoint_args.begin(), entrypoint_args.end(),
+      std::back_inserter(entrypoint_argv),
       [](const std::string& arg) -> const char* { return arg.c_str(); });
-  if (engine_switches.size() > 0) {
-    c_engine_properties.switches = &engine_switches[0];
-    c_engine_properties.switches_count = engine_switches.size();
-  }
+
+  c_engine_properties.dart_entrypoint_argc =
+      static_cast<int>(entrypoint_argv.size());
+  c_engine_properties.dart_entrypoint_argv =
+      entrypoint_argv.size() > 0 ? entrypoint_argv.data() : nullptr;
 
   engine_ = FlutterDesktopEngineCreate(c_engine_properties);
 
@@ -60,8 +64,14 @@ void FlutterEngine::ShutDown() {
   engine_ = nullptr;
 }
 
+#ifndef WINUWP
 std::chrono::nanoseconds FlutterEngine::ProcessMessages() {
   return std::chrono::nanoseconds(FlutterDesktopEngineProcessMessages(engine_));
+}
+#endif
+
+void FlutterEngine::ReloadSystemFonts() {
+  FlutterDesktopEngineReloadSystemFonts(engine_);
 }
 
 FlutterDesktopPluginRegistrarRef FlutterEngine::GetRegistrarForPlugin(

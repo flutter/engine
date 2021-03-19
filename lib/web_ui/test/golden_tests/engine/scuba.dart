@@ -47,11 +47,13 @@ class EngineScubaTester {
     String fileName, {
     ui.Rect region,
     double maxDiffRatePercent,
+    bool write = false,
   }) async {
     await matchGoldenFile(
       '$fileName.png',
       region: region ?? viewportRegion,
       maxDiffRatePercent: maxDiffRatePercent,
+      write: write,
     );
   }
 
@@ -64,6 +66,7 @@ class EngineScubaTester {
     String fileName, {
     ui.Rect region,
     double maxDiffRatePercent,
+    bool write = false,
   }) async {
     // Wrap in <flt-scene> so that our CSS selectors kick in.
     final html.Element sceneElement = html.Element.tag('flt-scene');
@@ -78,6 +81,7 @@ class EngineScubaTester {
         screenshotName,
         region: region,
         maxDiffRatePercent: maxDiffRatePercent,
+        write: write,
       );
     } finally {
       // The page is reused across tests, so remove the element after taking the
@@ -97,9 +101,11 @@ void testEachCanvas(String description, CanvasTest body,
     try {
       TextMeasurementService.initialize(rulerCacheCapacity: 2);
       WebExperiments.instance.useCanvasText = false;
-      return body(BitmapCanvas(bounds));
+      WebExperiments.instance.useCanvasRichText = false;
+      return body(BitmapCanvas(bounds, RenderStrategy()));
     } finally {
       WebExperiments.instance.useCanvasText = null;
+      WebExperiments.instance.useCanvasRichText = null;
       TextMeasurementService.clearCache();
     }
   });
@@ -107,9 +113,11 @@ void testEachCanvas(String description, CanvasTest body,
     try {
       TextMeasurementService.initialize(rulerCacheCapacity: 2);
       WebExperiments.instance.useCanvasText = true;
-      await body(BitmapCanvas(bounds));
+      WebExperiments.instance.useCanvasRichText = false;
+      await body(BitmapCanvas(bounds, RenderStrategy()));
     } finally {
       WebExperiments.instance.useCanvasText = null;
+      WebExperiments.instance.useCanvasRichText = null;
       TextMeasurementService.clearCache();
     }
   });
@@ -117,9 +125,11 @@ void testEachCanvas(String description, CanvasTest body,
     try {
       TextMeasurementService.initialize(rulerCacheCapacity: 2);
       WebExperiments.instance.useCanvasText = false;
-      return body(DomCanvas());
+      WebExperiments.instance.useCanvasRichText = false;
+      return body(DomCanvas(domRenderer.createElement('flt-picture')));
     } finally {
       WebExperiments.instance.useCanvasText = null;
+      WebExperiments.instance.useCanvasRichText = null;
       TextMeasurementService.clearCache();
     }
   });

@@ -4,13 +4,14 @@
 
 #include "dart_runner.h"
 
-#include <errno.h>
 #include <lib/async-loop/loop.h>
 #include <lib/async/default.h>
 #include <lib/syslog/global.h>
 #include <sys/stat.h>
 #include <zircon/status.h>
 #include <zircon/syscalls.h>
+
+#include <cerrno>
 #include <memory>
 #include <thread>
 #include <utility>
@@ -35,9 +36,8 @@ namespace {
 
 const char* kDartVMArgs[] = {
     // clang-format off
-    // TODO(FL-117): Re-enable causal async stack traces when this issue is
-    // addressed.
     "--no_causal_async_stacks",
+    "--lazy_async_stacks",
 
     "--systrace_timeline",
     "--timeline_streams=Compiler,Dart,Debugger,Embedder,GC,Isolate,VM",
@@ -46,10 +46,6 @@ const char* kDartVMArgs[] = {
     "--precompilation",
 #else
     "--enable_mirrors=false",
-
-    // The interpreter is enabled unconditionally. If an app is built for
-    // debugging (that is, with no bytecode), the VM will fall back on ASTs.
-    "--enable_interpreter",
 #endif
 
     // No asserts in debug or release product.
@@ -87,9 +83,18 @@ void IsolateShutdownCallback(void* isolate_group_data, void* isolate_data) {
   auto dispatcher = async_get_default_dispatcher();
   auto loop = async_loop_from_dispatcher(dispatcher);
   if (loop) {
-    tonic::DartMicrotaskQueue::GetForCurrentThread()->Destroy();
+    tonic::DartMicrotaskQueue* queue =
+        tonic::DartMicrotaskQueue::GetForCurrentThread();
+    if (queue) {
+      queue->Destroy();
+    }
+
     async_loop_quit(loop);
   }
+
+  auto state =
+      static_cast<std::shared_ptr<tonic::DartState>*>(isolate_group_data);
+  state->get()->SetIsShuttingDown();
 }
 
 void IsolateGroupCleanupCallback(void* isolate_group_data) {

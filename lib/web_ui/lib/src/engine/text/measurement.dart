@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 // TODO(yjbanov): this is a hack we use to compute ideographic baseline; this
@@ -23,12 +23,9 @@ bool _newlinePredicate(int char) {
       prop == LineCharProperty.CR;
 }
 
-/// Manages [ParagraphRuler] instances and caches them per unique
-/// [ParagraphGeometricStyle].
-///
-/// All instances of [ParagraphRuler] should be created through this class.
-class RulerManager {
-  RulerManager({required this.rulerCacheCapacity}) {
+/// Hosts ruler DOM elements in a hidden container.
+class RulerHost {
+  RulerHost() {
     _rulerHost.style
       ..position = 'fixed'
       ..visibility = 'hidden'
@@ -41,8 +38,6 @@ class RulerManager {
     registerHotRestartListener(dispose);
   }
 
-  final int rulerCacheCapacity;
-
   /// Hosts a cache of rulers that measure text.
   ///
   /// This element exists purely for organizational purposes. Otherwise the
@@ -50,6 +45,28 @@ class RulerManager {
   /// tree and making it hard to navigate. It does not serve any functional
   /// purpose.
   final html.Element _rulerHost = html.Element.tag('flt-ruler-host');
+
+  /// Releases the resources used by this [RulerHost].
+  ///
+  /// After this is called, this object is no longer usable.
+  void dispose() {
+    _rulerHost.remove();
+  }
+
+  /// Adds an element used for measuring text as a child of [_rulerHost].
+  void addElement(html.HtmlElement element) {
+    _rulerHost.append(element);
+  }
+}
+
+/// Manages [ParagraphRuler] instances and caches them per unique
+/// [ParagraphGeometricStyle].
+///
+/// All instances of [ParagraphRuler] should be created through this class.
+class RulerManager extends RulerHost {
+  RulerManager({required this.rulerCacheCapacity}): super();
+
+  final int rulerCacheCapacity;
 
   /// The cache of rulers used to measure text.
   ///
@@ -76,13 +93,6 @@ class RulerManager {
         cleanUpRulerCache();
       });
     }
-  }
-
-  /// Releases the resources used by this [RulerManager].
-  ///
-  /// After this is called, this object is no longer usable.
-  void dispose() {
-    _rulerHost.remove();
   }
 
   // Evicts all rulers from the cache.
@@ -127,11 +137,6 @@ class RulerManager {
         }
       }
     }
-  }
-
-  /// Adds an element used for measuring text as a child of [_rulerHost].
-  void addHostElement(html.DivElement element) {
-    _rulerHost.append(element);
   }
 
   /// Performs a cache lookup to find an existing [ParagraphRuler] for the given
@@ -202,7 +207,7 @@ abstract class TextMeasurementService {
     // see: https://github.com/flutter/flutter/issues/36341
     if (!window.physicalSize.isEmpty &&
         WebExperiments.instance!.useCanvasText &&
-        _canUseCanvasMeasurement(paragraph as EngineParagraph)) {
+        _canUseCanvasMeasurement(paragraph as DomParagraph)) {
       return canvasInstance;
     }
     return domInstance;
@@ -214,7 +219,7 @@ abstract class TextMeasurementService {
     rulerManager?._evictAllRulers();
   }
 
-  static bool _canUseCanvasMeasurement(EngineParagraph paragraph) {
+  static bool _canUseCanvasMeasurement(DomParagraph paragraph) {
     // Currently, the canvas-based approach only works on plain text that
     // doesn't have any of the following styles:
     // - decoration
@@ -227,7 +232,7 @@ abstract class TextMeasurementService {
 
   /// Measures the paragraph and returns a [MeasurementResult] object.
   MeasurementResult? measure(
-    EngineParagraph paragraph,
+    DomParagraph paragraph,
     ui.ParagraphConstraints constraints,
   ) {
     assert(rulerManager != null);
@@ -255,16 +260,16 @@ abstract class TextMeasurementService {
 
   /// Measures the width of a substring of the given [paragraph] with no
   /// constraints.
-  double measureSubstringWidth(EngineParagraph paragraph, int start, int end);
+  double measureSubstringWidth(DomParagraph paragraph, int start, int end);
 
   /// Returns text position given a paragraph, constraints and offset.
-  ui.TextPosition getTextPositionForOffset(EngineParagraph paragraph,
+  ui.TextPosition getTextPositionForOffset(DomParagraph paragraph,
       ui.ParagraphConstraints? constraints, ui.Offset offset);
 
   /// Delegates to a [ParagraphRuler] to measure a list of text boxes that
   /// enclose the given range of text.
   List<ui.TextBox> measureBoxesForRange(
-    EngineParagraph paragraph,
+    DomParagraph paragraph,
     ui.ParagraphConstraints constraints, {
     required int start,
     required int end,
@@ -302,7 +307,7 @@ abstract class TextMeasurementService {
   /// paragraph. When that's available, it can be used by a canvas to render
   /// the text line.
   MeasurementResult _doMeasure(
-    EngineParagraph paragraph,
+    DomParagraph paragraph,
     ui.ParagraphConstraints constraints,
     ParagraphRuler ruler,
   );
@@ -325,7 +330,7 @@ class DomTextMeasurementService extends TextMeasurementService {
 
   @override
   MeasurementResult _doMeasure(
-    EngineParagraph paragraph,
+    DomParagraph paragraph,
     ui.ParagraphConstraints constraints,
     ParagraphRuler ruler,
   ) {
@@ -350,7 +355,7 @@ class DomTextMeasurementService extends TextMeasurementService {
   }
 
   @override
-  double measureSubstringWidth(EngineParagraph paragraph, int start, int end) {
+  double measureSubstringWidth(DomParagraph paragraph, int start, int end) {
     assert(paragraph._plainText != null);
     final ParagraphGeometricStyle style = paragraph._geometricStyle;
     final ParagraphRuler ruler =
@@ -359,7 +364,7 @@ class DomTextMeasurementService extends TextMeasurementService {
     final String text = paragraph._plainText!.substring(start, end);
     final ui.Paragraph substringParagraph = paragraph._cloneWithText(text);
 
-    ruler.willMeasure(substringParagraph as EngineParagraph);
+    ruler.willMeasure(substringParagraph as DomParagraph);
     ruler.measureAsSingleLine();
     final TextDimensions dimensions = ruler.singleLineDimensions;
     ruler.didMeasure();
@@ -367,7 +372,7 @@ class DomTextMeasurementService extends TextMeasurementService {
   }
 
   @override
-  ui.TextPosition getTextPositionForOffset(EngineParagraph paragraph,
+  ui.TextPosition getTextPositionForOffset(DomParagraph paragraph,
       ui.ParagraphConstraints? constraints, ui.Offset offset) {
     assert(
       paragraph._measurementResult!.lines == null,
@@ -398,7 +403,7 @@ class DomTextMeasurementService extends TextMeasurementService {
   /// This method still needs to measure `minIntrinsicWidth`.
   MeasurementResult _measureSingleLineParagraph(
     ParagraphRuler ruler,
-    EngineParagraph paragraph,
+    DomParagraph paragraph,
     ui.ParagraphConstraints constraints,
   ) {
     final double width = constraints.width;
@@ -463,7 +468,7 @@ class DomTextMeasurementService extends TextMeasurementService {
   /// and get new values for width, height and alphabetic baseline. We also need
   /// to measure `minIntrinsicWidth`.
   MeasurementResult _measureMultiLineParagraph(ParagraphRuler ruler,
-      EngineParagraph paragraph, ui.ParagraphConstraints constraints) {
+      DomParagraph paragraph, ui.ParagraphConstraints constraints) {
     // If constraint is infinite, we must use _measureSingleLineParagraph
     final double width = constraints.width;
     final double minIntrinsicWidth = ruler.minIntrinsicDimensions.width;
@@ -479,7 +484,7 @@ class DomTextMeasurementService extends TextMeasurementService {
       height = naturalHeight;
     } else {
       // Lazily compute [lineHeight] when [maxLines] is not null.
-      lineHeight = ruler.lineHeightDimensions!.height;
+      lineHeight = ruler.lineHeight;
       height = math.min(naturalHeight, maxLines * lineHeight);
     }
 
@@ -549,7 +554,7 @@ class CanvasTextMeasurementService extends TextMeasurementService {
 
   @override
   MeasurementResult _doMeasure(
-    EngineParagraph paragraph,
+    DomParagraph paragraph,
     ui.ParagraphConstraints constraints,
     ParagraphRuler ruler,
   ) {
@@ -587,8 +592,9 @@ class CanvasTextMeasurementService extends TextMeasurementService {
       }
     }
 
+    final double alphabeticBaseline = ruler.alphabeticBaseline;
     final int lineCount = linesCalculator.lines.length;
-    final double lineHeight = ruler.lineHeightDimensions!.height;
+    final double lineHeight = ruler.lineHeight;
     final double naturalHeight = lineCount * lineHeight;
     final int? maxLines = style.maxLines;
     final double height = maxLines == null
@@ -598,8 +604,8 @@ class CanvasTextMeasurementService extends TextMeasurementService {
     final MeasurementResult result = MeasurementResult(
       constraints.width,
       isSingleLine: lineCount == 1,
-      alphabeticBaseline: ruler.alphabeticBaseline,
-      ideographicBaseline: ruler.alphabeticBaseline * _baselineRatioHack,
+      alphabeticBaseline: alphabeticBaseline,
+      ideographicBaseline: alphabeticBaseline * _baselineRatioHack,
       height: height,
       naturalHeight: naturalHeight,
       lineHeight: lineHeight,
@@ -619,17 +625,17 @@ class CanvasTextMeasurementService extends TextMeasurementService {
   }
 
   @override
-  double measureSubstringWidth(EngineParagraph paragraph, int start, int end) {
+  double measureSubstringWidth(DomParagraph paragraph, int start, int end) {
     assert(paragraph._plainText != null);
     final String text = paragraph._plainText!;
     final ParagraphGeometricStyle style = paragraph._geometricStyle;
     _canvasContext.font = style.cssFontString;
     return _measureSubstring(
       _canvasContext,
-      paragraph._geometricStyle,
       text,
       start,
       end,
+      letterSpacing: paragraph._geometricStyle.letterSpacing,
     );
   }
 
@@ -648,7 +654,7 @@ class CanvasTextMeasurementService extends TextMeasurementService {
 int _lastStart = -1;
 int _lastEnd = -1;
 String _lastText = '';
-ParagraphGeometricStyle? _lastStyle;
+String _lastCssFont = '';
 double _lastWidth = -1;
 
 /// Measures the width of the substring of [text] starting from the index
@@ -658,11 +664,11 @@ double _lastWidth = -1;
 /// [_canvasContext].
 double _measureSubstring(
   html.CanvasRenderingContext2D _canvasContext,
-  ParagraphGeometricStyle style,
   String text,
   int start,
-  int end,
-) {
+  int end, {
+  double? letterSpacing,
+}) {
   assert(0 <= start);
   assert(start <= end);
   assert(end <= text.length);
@@ -671,29 +677,41 @@ double _measureSubstring(
     return 0;
   }
 
+  final String cssFont = _canvasContext.font;
+  double width;
+
+  // TODO(mdebbar): Explore caching all widths in a map, not only the last one.
   if (start == _lastStart &&
       end == _lastEnd &&
       text == _lastText &&
-      _lastStyle == style) {
-    // TODO(mdebbar): Explore caching all widths in a map, not only the last one.
-    return _lastWidth;
+      cssFont == _lastCssFont) {
+    // Reuse the previously calculated width if all factors that affect width
+    // are unchanged. The only exception is letter-spacing. We always add
+    // letter-spacing to the width later below.
+    width = _lastWidth;
+  } else {
+    final String sub =
+      start == 0 && end == text.length ? text : text.substring(start, end);
+    width = _canvasContext.measureText(sub).width!.toDouble();
   }
+
   _lastStart = start;
   _lastEnd = end;
   _lastText = text;
-  _lastStyle = style;
+  _lastCssFont = cssFont;
+  _lastWidth = width;
 
-  final double letterSpacing = style.letterSpacing ?? 0.0;
-  final String sub =
-      start == 0 && end == text.length ? text : text.substring(start, end);
-  final double width = _canvasContext.measureText(sub).width!.toDouble() +
-      letterSpacing * sub.length;
+  // Now add letter spacing to the width.
+  letterSpacing ??= 0.0;
+  if (letterSpacing != 0.0) {
+    width += letterSpacing * (end - start);
+  }
 
   // What we are doing here is we are rounding to the nearest 2nd decimal
   // point. So 39.999423 becomes 40, and 11.243982 becomes 11.24.
   // The reason we are doing this is because we noticed that canvas API has a
   // ±0.001 error margin.
-  return _lastWidth = _roundWidth(width);
+  return _roundWidth(width);
 }
 
 double _roundWidth(double width) {
@@ -725,7 +743,7 @@ class LinesCalculator {
   LinesCalculator(this._canvasContext, this._paragraph, this._maxWidth);
 
   final html.CanvasRenderingContext2D _canvasContext;
-  final EngineParagraph _paragraph;
+  final DomParagraph _paragraph;
   final double _maxWidth;
 
   String? get _text => _paragraph._plainText;
@@ -759,8 +777,6 @@ class LinesCalculator {
   /// This method should be called for every line break. As soon as it reaches
   /// the maximum number of lines required
   void update(LineBreakResult brk) {
-    final bool isHardBreak = brk.type == LineBreakType.mandatory ||
-        brk.type == LineBreakType.endOfText;
     final int chunkEnd = brk.index;
     final int chunkEndWithoutNewlines = brk.indexWithoutTrailingNewlines;
     final int chunkEndWithoutSpace = brk.indexWithoutTrailingSpaces;
@@ -843,7 +859,7 @@ class LinesCalculator {
       return;
     }
 
-    if (isHardBreak) {
+    if (brk.isHard) {
       _addLineBreak(brk);
     }
     _lastBreak = brk;
@@ -860,15 +876,13 @@ class LinesCalculator {
       lineWidth: lineWidth,
       maxWidth: _maxWidth,
     );
-    final bool isHardBreak = brk.type == LineBreakType.mandatory ||
-        brk.type == LineBreakType.endOfText;
 
     final EngineLineMetrics metrics = EngineLineMetrics.withText(
       _text!.substring(_lineStart, brk.indexWithoutTrailingNewlines),
       startIndex: _lineStart,
       endIndex: brk.index,
       endIndexWithoutNewlines: brk.indexWithoutTrailingNewlines,
-      hardBreak: isHardBreak,
+      hardBreak: brk.isHard,
       width: lineWidth,
       widthWithTrailingSpaces: lineWidthWithTrailingSpaces,
       left: alignOffset,
@@ -887,7 +901,13 @@ class LinesCalculator {
   /// This method uses [_text], [_style] and [_canvasContext] to perform the
   /// measurement.
   double measureSubstring(int start, int end) {
-    return _measureSubstring(_canvasContext, _style, _text!, start, end);
+    return _measureSubstring(
+      _canvasContext,
+      _text!,
+      start,
+      end,
+      letterSpacing: _style.letterSpacing,
+    );
   }
 
   /// In a continuous block of text, finds the point where text can be broken to
@@ -946,10 +966,10 @@ class MinIntrinsicCalculator {
     final int chunkEnd = brk.index;
     final double width = _measureSubstring(
       _canvasContext,
-      _style,
       _text,
       _lastChunkEnd,
       brk.indexWithoutTrailingSpaces,
+      letterSpacing: _style.letterSpacing,
     );
     if (width > value) {
       value = width;
@@ -977,16 +997,16 @@ class MaxIntrinsicCalculator {
   /// intrinsic width calculated so far. When the whole text is consumed,
   /// [value] will contain the final maximum intrinsic width.
   void update(LineBreakResult brk) {
-    if (brk.type == LineBreakType.opportunity) {
+    if (!brk.isHard) {
       return;
     }
 
     final double lineWidth = _measureSubstring(
       _canvasContext,
-      _style,
       _text,
       _lastHardLineEnd,
       brk.indexWithoutTrailingNewlines,
+      letterSpacing: _style.letterSpacing,
     );
     if (lineWidth > value) {
       value = lineWidth;
@@ -997,7 +1017,7 @@ class MaxIntrinsicCalculator {
 
 /// Calculates the offset necessary for the given line to be correctly aligned.
 double _calculateAlignOffsetForLine({
-  required EngineParagraph paragraph,
+  required DomParagraph paragraph,
   required double lineWidth,
   required double maxWidth,
 }) {

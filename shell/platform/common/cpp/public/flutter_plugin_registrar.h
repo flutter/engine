@@ -10,10 +10,11 @@
 
 #include "flutter_export.h"
 #include "flutter_messenger.h"
+#include "flutter_texture_registrar.h"
 
 #if defined(__cplusplus)
 extern "C" {
-#endif
+#endif  // defined(__cplusplus)
 
 // Opaque reference to a plugin registrar.
 typedef struct FlutterDesktopPluginRegistrar* FlutterDesktopPluginRegistrarRef;
@@ -25,6 +26,11 @@ typedef void (*FlutterDesktopOnPluginRegistrarDestroyed)(
 // Returns the engine messenger associated with this registrar.
 FLUTTER_EXPORT FlutterDesktopMessengerRef
 FlutterDesktopPluginRegistrarGetMessenger(
+    FlutterDesktopPluginRegistrarRef registrar);
+
+// Returns the texture registrar associated with this registrar.
+FLUTTER_EXPORT FlutterDesktopTextureRegistrarRef
+FlutterDesktopRegistrarGetTextureRegistrar(
     FlutterDesktopPluginRegistrarRef registrar);
 
 // Registers a callback to be called when the plugin registrar is destroyed.

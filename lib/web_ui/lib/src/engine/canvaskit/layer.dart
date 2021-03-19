@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// A layer to be composed into a scene.
@@ -71,6 +71,11 @@ class PaintContext {
 abstract class ContainerLayer extends Layer {
   final List<Layer> _layers = <Layer>[];
 
+  /// The list of child layers.
+  ///
+  /// Useful in tests.
+  List<Layer> get debugLayers => _layers;
+
   /// Register [child] as a child of this layer.
   void add(Layer child) {
     child.parent = this;
@@ -112,10 +117,10 @@ abstract class ContainerLayer extends Layer {
   }
 }
 
-class BackdropFilterLayer extends ContainerLayer {
+class BackdropFilterEngineLayer extends ContainerLayer implements ui.BackdropFilterEngineLayer {
   final ui.ImageFilter _filter;
 
-  BackdropFilterLayer(this._filter);
+  BackdropFilterEngineLayer(this._filter);
 
   @override
   void paint(PaintContext context) {
@@ -126,12 +131,12 @@ class BackdropFilterLayer extends ContainerLayer {
 }
 
 /// A layer that clips its child layers by a given [Path].
-class ClipPathLayer extends ContainerLayer {
+class ClipPathEngineLayer extends ContainerLayer implements ui.ClipPathEngineLayer {
   /// The path used to clip child layers.
-  final ui.Path _clipPath;
+  final CkPath _clipPath;
   final ui.Clip _clipBehavior;
 
-  ClipPathLayer(this._clipPath, this._clipBehavior)
+  ClipPathEngineLayer(this._clipPath, this._clipBehavior)
       : assert(_clipBehavior != ui.Clip.none);
 
   @override
@@ -165,12 +170,12 @@ class ClipPathLayer extends ContainerLayer {
 }
 
 /// A layer that clips its child layers by a given [Rect].
-class ClipRectLayer extends ContainerLayer {
+class ClipRectEngineLayer extends ContainerLayer implements ui.ClipRectEngineLayer {
   /// The rectangle used to clip child layers.
   final ui.Rect _clipRect;
   final ui.Clip _clipBehavior;
 
-  ClipRectLayer(this._clipRect, this._clipBehavior)
+  ClipRectEngineLayer(this._clipRect, this._clipBehavior)
       : assert(_clipBehavior != ui.Clip.none);
 
   @override
@@ -205,12 +210,12 @@ class ClipRectLayer extends ContainerLayer {
 }
 
 /// A layer that clips its child layers by a given [RRect].
-class ClipRRectLayer extends ContainerLayer {
+class ClipRRectEngineLayer extends ContainerLayer implements ui.ClipRRectEngineLayer {
   /// The rounded rectangle used to clip child layers.
   final ui.RRect _clipRRect;
   final ui.Clip? _clipBehavior;
 
-  ClipRRectLayer(this._clipRRect, this._clipBehavior)
+  ClipRRectEngineLayer(this._clipRRect, this._clipBehavior)
       : assert(_clipBehavior != ui.Clip.none);
 
   @override
@@ -242,11 +247,11 @@ class ClipRRectLayer extends ContainerLayer {
 }
 
 /// A layer that paints its children with the given opacity.
-class OpacityLayer extends ContainerLayer implements ui.OpacityEngineLayer {
+class OpacityEngineLayer extends ContainerLayer implements ui.OpacityEngineLayer {
   final int _alpha;
   final ui.Offset _offset;
 
-  OpacityLayer(this._alpha, this._offset);
+  OpacityEngineLayer(this._alpha, this._offset);
 
   @override
   void preroll(PrerollContext context, Matrix4 matrix) {
@@ -265,7 +270,7 @@ class OpacityLayer extends ContainerLayer implements ui.OpacityEngineLayer {
   void paint(PaintContext paintContext) {
     assert(needsPainting);
 
-    final ui.Paint paint = ui.Paint();
+    final CkPaint paint = CkPaint();
     paint.color = ui.Color.fromARGB(_alpha, 0, 0, 0);
 
     paintContext.internalNodesCanvas.save();
@@ -282,56 +287,19 @@ class OpacityLayer extends ContainerLayer implements ui.OpacityEngineLayer {
 }
 
 /// A layer that transforms its child layers by the given transform matrix.
-class TransformLayer extends ContainerLayer
-    implements ui.OffsetEngineLayer, ui.TransformEngineLayer {
+class TransformEngineLayer extends ContainerLayer implements ui.TransformEngineLayer {
   /// The matrix with which to transform the child layers.
   final Matrix4 _transform;
 
-  TransformLayer(this._transform);
+  TransformEngineLayer(this._transform);
 
   @override
   void preroll(PrerollContext context, Matrix4 matrix) {
     final Matrix4 childMatrix = matrix * _transform;
     context.mutatorsStack.pushTransform(_transform);
     final ui.Rect childPaintBounds = prerollChildren(context, childMatrix);
-    paintBounds = _transformRect(_transform, childPaintBounds);
+    paintBounds = transformRect(_transform, childPaintBounds);
     context.mutatorsStack.pop();
-  }
-
-  /// Applies the given matrix as a perspective transform to the given point.
-  ///
-  /// This function assumes the given point has a z-coordinate of 0.0. The
-  /// z-coordinate of the result is ignored.
-  static ui.Offset _transformPoint(Matrix4 transform, ui.Offset point) {
-    final Vector3 position3 = Vector3(point.dx, point.dy, 0.0);
-    final Vector3 transformed3 = transform.perspectiveTransform(position3);
-    return ui.Offset(transformed3.x, transformed3.y);
-  }
-
-  /// Returns a rect that bounds the result of applying the given matrix as a
-  /// perspective transform to the given rect.
-  ///
-  /// This function assumes the given rect is in the plane with z equals 0.0.
-  /// The transformed rect is then projected back into the plane with z equals
-  /// 0.0 before computing its bounding rect.
-  static ui.Rect _transformRect(Matrix4 transform, ui.Rect rect) {
-    final ui.Offset point1 = _transformPoint(transform, rect.topLeft);
-    final ui.Offset point2 = _transformPoint(transform, rect.topRight);
-    final ui.Offset point3 = _transformPoint(transform, rect.bottomLeft);
-    final ui.Offset point4 = _transformPoint(transform, rect.bottomRight);
-    return ui.Rect.fromLTRB(
-        _min4(point1.dx, point2.dx, point3.dx, point4.dx),
-        _min4(point1.dy, point2.dy, point3.dy, point4.dy),
-        _max4(point1.dx, point2.dx, point3.dx, point4.dx),
-        _max4(point1.dy, point2.dy, point3.dy, point4.dy));
-  }
-
-  static double _min4(double a, double b, double c, double d) {
-    return math.min(a, math.min(b, math.min(c, d)));
-  }
-
-  static double _max4(double a, double b, double c, double d) {
-    return math.max(a, math.max(b, math.max(c, d)));
   }
 
   @override
@@ -345,20 +313,36 @@ class TransformLayer extends ContainerLayer
   }
 }
 
+/// Translates its children along x and y coordinates.
+///
+/// This is a thin wrapper over [TransformEngineLayer] just so the framework
+/// gets the "OffsetEngineLayer" when calling `runtimeType.toString()`. This is
+/// better for debugging.
+class OffsetEngineLayer extends TransformEngineLayer implements ui.OffsetEngineLayer {
+  OffsetEngineLayer(double dx, double dy) : super(Matrix4.translationValues(dx, dy, 0.0));
+}
+
 /// A layer that applies an [ui.ImageFilter] to its children.
-class ImageFilterLayer extends ContainerLayer implements ui.OpacityEngineLayer {
-  ImageFilterLayer(this._filter);
+class ImageFilterEngineLayer extends ContainerLayer implements ui.ImageFilterEngineLayer {
+  ImageFilterEngineLayer(this._filter);
 
   final ui.ImageFilter _filter;
 
   @override
   void paint(PaintContext paintContext) {
     assert(needsPainting);
-    final ui.Paint paint = ui.Paint();
+    final CkPaint paint = CkPaint();
     paint.imageFilter = _filter;
     paintContext.internalNodesCanvas.saveLayer(paintBounds, paint);
     paintChildren(paintContext);
     paintContext.internalNodesCanvas.restore();
+  }
+}
+
+class ShaderMaskEngineLayer extends ContainerLayer implements ui.ShaderMaskEngineLayer {
+  @override
+  void paint(PaintContext paintContext) {
+    // TODO(yjbanov): this needs to be implemented
   }
 }
 
@@ -400,7 +384,7 @@ class PictureLayer extends Layer {
 ///
 /// The shape clips its children to a given [Path], and casts a shadow based
 /// on the given elevation.
-class PhysicalShapeLayer extends ContainerLayer
+class PhysicalShapeEngineLayer extends ContainerLayer
     implements ui.PhysicalShapeEngineLayer {
   final double _elevation;
   final ui.Color _color;
@@ -408,7 +392,7 @@ class PhysicalShapeLayer extends ContainerLayer
   final CkPath _path;
   final ui.Clip _clipBehavior;
 
-  PhysicalShapeLayer(
+  PhysicalShapeEngineLayer(
     this._elevation,
     this._color,
     this._shadowColor,
@@ -419,60 +403,7 @@ class PhysicalShapeLayer extends ContainerLayer
   @override
   void preroll(PrerollContext prerollContext, Matrix4 matrix) {
     prerollChildren(prerollContext, matrix);
-
-    paintBounds = _path.getBounds();
-    if (_elevation == 0.0) {
-      // No need to extend the paint bounds if there is no shadow.
-      return;
-    } else {
-      // Add some margin to the paint bounds to leave space for the shadow.
-      // We fill this whole region and clip children to it so we don't need to
-      // join the child paint bounds.
-      // The offset is calculated as follows:
-
-      //                   .---                           (kLightRadius)
-      //                -------/                          (light)
-      //                   |  /
-      //                   | /
-      //                   |/
-      //                   |O
-      //                  /|                              (kLightHeight)
-      //                 / |
-      //                /  |
-      //               /   |
-      //              /    |
-      //             -------------                        (layer)
-      //            /|     |
-      //           / |     |                              (elevation)
-      //        A /  |     |B
-      // ------------------------------------------------ (canvas)
-      //          ---                                     (extent of shadow)
-      //
-      // E = lt        }           t = (r + w/2)/h
-      //                } =>
-      // r + w/2 = ht  }           E = (l/h)(r + w/2)
-      //
-      // Where: E = extent of shadow
-      //        l = elevation of layer
-      //        r = radius of the light source
-      //        w = width of the layer
-      //        h = light height
-      //        t = tangent of AOB, i.e., multiplier for elevation to extent
-      final double devicePixelRatio = ui.window.devicePixelRatio;
-
-      final double radius = kLightRadius * devicePixelRatio;
-      // tangent for x
-      double tx = (radius + paintBounds.width * 0.5) / kLightHeight;
-      // tangent for y
-      double ty = (radius + paintBounds.height * 0.5) / kLightHeight;
-
-      paintBounds = ui.Rect.fromLTRB(
-        paintBounds.left - tx,
-        paintBounds.top - ty,
-        paintBounds.right + tx,
-        paintBounds.bottom + ty,
-      );
-    }
+    paintBounds = computeSkShadowBounds(_path, _elevation, ui.window.devicePixelRatio, matrix);
   }
 
   @override
@@ -480,13 +411,13 @@ class PhysicalShapeLayer extends ContainerLayer
     assert(needsPainting);
 
     if (_elevation != 0) {
-      drawShadow(paintContext.leafNodesCanvas!, _path, _shadowColor!, _elevation,
-          _color.alpha != 0xff);
+      drawShadow(paintContext.leafNodesCanvas!, _path, _shadowColor!,
+          _elevation, _color.alpha != 0xff);
     }
 
-    final ui.Paint paint = ui.Paint()..color = _color;
+    final CkPaint paint = CkPaint()..color = _color;
     if (_clipBehavior != ui.Clip.antiAliasWithSaveLayer) {
-      paintContext.leafNodesCanvas!.drawPath(_path, paint as CkPaint);
+      paintContext.leafNodesCanvas!.drawPath(_path, paint);
     }
 
     final int saveCount = paintContext.internalNodesCanvas.save();
@@ -510,7 +441,7 @@ class PhysicalShapeLayer extends ContainerLayer
       // (https://github.com/flutter/flutter/issues/18057#issue-328003931)
       // using saveLayer, we have to call drawPaint instead of drawPath as
       // anti-aliased drawPath will always have such artifacts.
-      paintContext.leafNodesCanvas!.drawPaint(paint as CkPaint);
+      paintContext.leafNodesCanvas!.drawPaint(paint);
     }
 
     paintChildren(paintContext);
@@ -522,9 +453,28 @@ class PhysicalShapeLayer extends ContainerLayer
   ///
   /// The blur of the shadow is decided by the [elevation], and the
   /// shadow is painted with the given [color].
-  static void drawShadow(CkCanvas canvas, ui.Path path, ui.Color color,
+  static void drawShadow(CkCanvas canvas, CkPath path, ui.Color color,
       double elevation, bool transparentOccluder) {
     canvas.drawShadow(path, color, elevation, transparentOccluder);
+  }
+}
+
+/// A layer which contains a [ui.ColorFilter].
+class ColorFilterEngineLayer extends ContainerLayer implements ui.ColorFilterEngineLayer {
+  ColorFilterEngineLayer(this.filter);
+
+  final ui.ColorFilter filter;
+
+  @override
+  void paint(PaintContext paintContext) {
+    assert(needsPainting);
+
+    CkPaint paint = CkPaint();
+    paint.colorFilter = filter;
+
+    paintContext.internalNodesCanvas.saveLayer(paintBounds, paint);
+    paintChildren(paintContext);
+    paintContext.internalNodesCanvas.restore();
   }
 }
 

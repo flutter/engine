@@ -39,7 +39,8 @@ class FuchsiaExternalViewEmbedder final : public flutter::ExternalViewEmbedder {
                               fuchsia::ui::views::ViewToken view_token,
                               scenic::ViewRefPair view_ref_pair,
                               SessionConnection& session,
-                              VulkanSurfaceProducer& surface_producer);
+                              VulkanSurfaceProducer& surface_producer,
+                              bool intercept_all_input = false);
   ~FuchsiaExternalViewEmbedder();
 
   // |ExternalViewEmbedder|
@@ -73,8 +74,10 @@ class FuchsiaExternalViewEmbedder final : public flutter::ExternalViewEmbedder {
       fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
 
   // |ExternalViewEmbedder|
-  void SubmitFrame(GrDirectContext* context,
-                   std::unique_ptr<flutter::SurfaceFrame> frame) override;
+  void SubmitFrame(
+      GrDirectContext* context,
+      std::unique_ptr<flutter::SurfaceFrame> frame,
+      const std::shared_ptr<fml::SyncSwitch>& gpu_disable_sync_switch) override;
 
   // |ExternalViewEmbedder|
   void CancelFrame() override { Reset(); }
@@ -139,8 +142,10 @@ class FuchsiaExternalViewEmbedder final : public flutter::ExternalViewEmbedder {
 
   scenic::View root_view_;
   scenic::EntityNode metrics_node_;
-  scenic::EntityNode root_node_;
+  scenic::EntityNode layer_tree_node_;
+  std::optional<scenic::ShapeNode> input_interceptor_node_;
 
+  std::unordered_map<uint64_t, scenic::Rectangle> scenic_interceptor_rects_;
   std::unordered_map<uint64_t, std::vector<scenic::Rectangle>> scenic_rects_;
   std::unordered_map<int64_t, ScenicView> scenic_views_;
   std::vector<ScenicLayer> scenic_layers_;

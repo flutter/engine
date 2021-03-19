@@ -7,7 +7,7 @@
 
 #import <Foundation/Foundation.h>
 
-#include "FlutterMacros.h"
+#import "FlutterMacros.h"
 
 NS_ASSUME_NONNULL_BEGIN
 /**
@@ -42,7 +42,7 @@ typedef int64_t FlutterBinaryMessengerConnection;
  * method calls.
  * - `FlutterEventChannel`, which supports commuication using event streams.
  */
-FLUTTER_EXPORT
+FLUTTER_DARWIN_EXPORT
 @protocol FlutterBinaryMessenger <NSObject>
 /**
  * Sends a binary message to the Flutter side on the specified channel, expecting

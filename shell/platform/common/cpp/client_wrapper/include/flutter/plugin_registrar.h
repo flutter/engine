@@ -13,6 +13,7 @@
 #include <string>
 
 #include "binary_messenger.h"
+#include "texture_registrar.h"
 
 namespace flutter {
 
@@ -41,6 +42,10 @@ class PluginRegistrar {
   // This pointer will remain valid for the lifetime of this instance.
   BinaryMessenger* messenger() { return messenger_.get(); }
 
+  // Returns the texture registrar to use for the plugin to render a pixel
+  // buffer.
+  TextureRegistrar* texture_registrar() { return texture_registrar_.get(); }
+
   // Takes ownership of |plugin|.
   //
   // Plugins are not required to call this method if they have other lifetime
@@ -51,11 +56,18 @@ class PluginRegistrar {
  protected:
   FlutterDesktopPluginRegistrarRef registrar() { return registrar_; }
 
+  // Destroys all owned plugins. Subclasses should call this at the beginning of
+  // their destructors to prevent the possibility of an owned plugin trying to
+  // access destroyed state during its own destruction.
+  void ClearPlugins();
+
  private:
   // Handle for interacting with the C API's registrar.
   FlutterDesktopPluginRegistrarRef registrar_;
 
   std::unique_ptr<BinaryMessenger> messenger_;
+
+  std::unique_ptr<TextureRegistrar> texture_registrar_;
 
   // Plugins registered for ownership.
   std::set<std::unique_ptr<Plugin>> plugins_;

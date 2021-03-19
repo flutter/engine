@@ -9,8 +9,8 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/gpu/gpu_surface_software.h"
-#include "flutter/shell/platform/darwin/ios/ios_context.h"
-#include "flutter/shell/platform/darwin/ios/ios_surface.h"
+#import "flutter/shell/platform/darwin/ios/ios_context.h"
+#import "flutter/shell/platform/darwin/ios/ios_surface.h"
 
 @class CALayer;
 
@@ -18,9 +18,7 @@ namespace flutter {
 
 class IOSSurfaceSoftware final : public IOSSurface, public GPUSurfaceSoftwareDelegate {
  public:
-  IOSSurfaceSoftware(fml::scoped_nsobject<CALayer> layer,
-                     std::shared_ptr<IOSContext> context,
-                     FlutterPlatformViewsController* platform_views_controller);
+  IOSSurfaceSoftware(fml::scoped_nsobject<CALayer> layer, std::shared_ptr<IOSContext> context);
 
   ~IOSSurfaceSoftware() override;
 
@@ -38,9 +36,6 @@ class IOSSurfaceSoftware final : public IOSSurface, public GPUSurfaceSoftwareDel
 
   // |GPUSurfaceSoftwareDelegate|
   bool PresentBackingStore(sk_sp<SkSurface> backing_store) override;
-
-  // |GPUSurfaceSoftwareDelegate|
-  ExternalViewEmbedder* GetExternalViewEmbedder() override;
 
  private:
   fml::scoped_nsobject<CALayer> layer_;

@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/layers/platform_view_layer.h"
+
 #include "flutter/flow/testing/layer_test.h"
 #include "flutter/flow/testing/mock_layer.h"
 #include "flutter/fml/macros.h"
@@ -25,7 +26,7 @@ TEST_F(PlatformViewLayerTest, NullViewEmbedderDoesntPrerollCompositeOrPaint) {
   EXPECT_EQ(layer->paint_bounds(),
             SkRect::MakeSize(layer_size)
                 .makeOffset(layer_offset.fX, layer_offset.fY));
-  EXPECT_TRUE(layer->needs_painting());
+  EXPECT_TRUE(layer->needs_painting(paint_context()));
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
   EXPECT_TRUE(layer->needs_system_composite());
 #else

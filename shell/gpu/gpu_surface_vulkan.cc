@@ -1,9 +1,9 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-// FLUTTER_NOLINT
 
 #include "flutter/shell/gpu/gpu_surface_vulkan.h"
+
 #include "flutter/fml/logging.h"
 
 namespace flutter {
@@ -12,8 +12,20 @@ GPUSurfaceVulkan::GPUSurfaceVulkan(
     GPUSurfaceVulkanDelegate* delegate,
     std::unique_ptr<vulkan::VulkanNativeSurface> native_surface,
     bool render_to_surface)
-    : window_(delegate->vk(), std::move(native_surface), render_to_surface),
-      delegate_(delegate),
+    : GPUSurfaceVulkan(/*context=*/nullptr,
+                       delegate,
+                       std::move(native_surface),
+                       render_to_surface) {}
+
+GPUSurfaceVulkan::GPUSurfaceVulkan(
+    const sk_sp<GrDirectContext>& context,
+    GPUSurfaceVulkanDelegate* delegate,
+    std::unique_ptr<vulkan::VulkanNativeSurface> native_surface,
+    bool render_to_surface)
+    : window_(context,
+              delegate->vk(),
+              std::move(native_surface),
+              render_to_surface),
       render_to_surface_(render_to_surface),
       weak_factory_(this) {}
 
@@ -65,10 +77,6 @@ SkMatrix GPUSurfaceVulkan::GetRootTransformation() const {
 
 GrDirectContext* GPUSurfaceVulkan::GetContext() {
   return window_.GetSkiaGrContext();
-}
-
-flutter::ExternalViewEmbedder* GPUSurfaceVulkan::GetExternalViewEmbedder() {
-  return delegate_->GetExternalViewEmbedder();
 }
 
 }  // namespace flutter

@@ -1,0 +1,287 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+// @dart = 2.6
+import 'dart:async';
+import 'dart:math' as math;
+
+import 'package:test/bootstrap/browser.dart';
+import 'package:test/test.dart';
+import 'package:ui/ui.dart' hide window;
+import 'package:ui/src/engine.dart';
+
+import '../scuba.dart';
+import 'helper.dart';
+
+typedef CanvasTest = FutureOr<void> Function(EngineCanvas canvas);
+
+const Rect bounds = Rect.fromLTWH(0, 0, 800, 600);
+
+void main() {
+  internalBootstrapBrowserTest(() => testMain);
+}
+
+void testMain() async {
+  setUpStableTestFonts();
+
+  test('paints spans and lines correctly', () {
+    final canvas = BitmapCanvas(bounds, RenderStrategy());
+
+    Offset offset = Offset.zero;
+    CanvasParagraph paragraph;
+
+    // Single-line multi-span.
+    paragraph = rich(ParagraphStyle(fontFamily: 'Roboto'), (builder) {
+      builder.pushStyle(EngineTextStyle.only(color: blue));
+      builder.addText('Lorem ');
+      builder.pushStyle(EngineTextStyle.only(
+        color: green,
+        background: Paint()..color = red,
+      ));
+      builder.addText('ipsum ');
+      builder.pop();
+      builder.addText('.');
+    })
+      ..layout(constrain(double.infinity));
+    canvas.drawParagraph(paragraph, offset);
+    offset = offset.translate(0, paragraph.height + 10);
+
+    // Multi-line single-span.
+    paragraph = rich(ParagraphStyle(fontFamily: 'Roboto'), (builder) {
+      builder.addText('Lorem ipsum dolor sit');
+    })
+      ..layout(constrain(90.0));
+    canvas.drawParagraph(paragraph, offset);
+    offset = offset.translate(0, paragraph.height + 10);
+
+    // Multi-line multi-span.
+    paragraph = rich(ParagraphStyle(fontFamily: 'Roboto'), (builder) {
+      builder.pushStyle(EngineTextStyle.only(color: blue));
+      builder.addText('Lorem ipsum ');
+      builder.pushStyle(EngineTextStyle.only(background: Paint()..color = red));
+      builder.pushStyle(EngineTextStyle.only(color: green));
+      builder.addText('dolor ');
+      builder.pop();
+      builder.addText('sit');
+    })
+      ..layout(constrain(90.0));
+    canvas.drawParagraph(paragraph, offset);
+    offset = offset.translate(0, paragraph.height + 10);
+
+    return takeScreenshot(canvas, bounds, 'canvas_paragraph_general');
+  });
+
+  test('respects alignment', () {
+    final canvas = BitmapCanvas(bounds, RenderStrategy());
+
+    Offset offset = Offset.zero;
+    CanvasParagraph paragraph;
+
+    void build(CanvasParagraphBuilder builder) {
+      builder.pushStyle(EngineTextStyle.only(color: black));
+      builder.addText('Lorem ');
+      builder.pushStyle(EngineTextStyle.only(color: blue));
+      builder.addText('ipsum ');
+      builder.pushStyle(EngineTextStyle.only(color: green));
+      builder.addText('dolor ');
+      builder.pushStyle(EngineTextStyle.only(color: red));
+      builder.addText('sit');
+    }
+
+    paragraph = rich(
+      ParagraphStyle(fontFamily: 'Roboto', textAlign: TextAlign.left),
+      build,
+    )..layout(constrain(100.0));
+    canvas.drawParagraph(paragraph, offset);
+    offset = offset.translate(0, paragraph.height + 10);
+
+    paragraph = rich(
+      ParagraphStyle(fontFamily: 'Roboto', textAlign: TextAlign.center),
+      build,
+    )..layout(constrain(100.0));
+    canvas.drawParagraph(paragraph, offset);
+    offset = offset.translate(0, paragraph.height + 10);
+
+    paragraph = rich(
+      ParagraphStyle(fontFamily: 'Roboto', textAlign: TextAlign.right),
+      build,
+    )..layout(constrain(100.0));
+    canvas.drawParagraph(paragraph, offset);
+    offset = offset.translate(0, paragraph.height + 10);
+
+    return takeScreenshot(canvas, bounds, 'canvas_paragraph_align');
+  });
+
+  test('respects alignment in DOM mode', () {
+    final canvas = DomCanvas(domRenderer.createElement('flt-picture'));
+
+    Offset offset = Offset.zero;
+    CanvasParagraph paragraph;
+
+    void build(CanvasParagraphBuilder builder) {
+      builder.pushStyle(EngineTextStyle.only(color: black));
+      builder.addText('Lorem ');
+      builder.pushStyle(EngineTextStyle.only(color: blue));
+      builder.addText('ipsum ');
+      builder.pushStyle(EngineTextStyle.only(color: green));
+      builder.addText('dolor ');
+      builder.pushStyle(EngineTextStyle.only(color: red));
+      builder.addText('sit');
+    }
+
+    paragraph = rich(
+      ParagraphStyle(fontFamily: 'Roboto', textAlign: TextAlign.left),
+      build,
+    )..layout(constrain(100.0));
+    canvas.drawParagraph(paragraph, offset);
+    offset = offset.translate(0, paragraph.height + 10);
+
+    paragraph = rich(
+      ParagraphStyle(fontFamily: 'Roboto', textAlign: TextAlign.center),
+      build,
+    )..layout(constrain(100.0));
+    canvas.drawParagraph(paragraph, offset);
+    offset = offset.translate(0, paragraph.height + 10);
+
+    paragraph = rich(
+      ParagraphStyle(fontFamily: 'Roboto', textAlign: TextAlign.right),
+      build,
+    )..layout(constrain(100.0));
+    canvas.drawParagraph(paragraph, offset);
+    offset = offset.translate(0, paragraph.height + 10);
+
+    return takeScreenshot(canvas, bounds, 'canvas_paragraph_align_dom');
+  });
+
+  void testAlignAndTransform(EngineCanvas canvas) {
+    CanvasParagraph paragraph;
+
+    void build(CanvasParagraphBuilder builder) {
+      builder.pushStyle(EngineTextStyle.only(color: white));
+      builder.addText('Lorem ');
+      builder.pushStyle(EngineTextStyle.only(color: red));
+      builder.addText('ipsum\n');
+      builder.pushStyle(EngineTextStyle.only(color: yellow));
+      builder.addText('dolor');
+    }
+
+    void drawParagraphAt(Offset offset, TextAlign align) {
+      paragraph = rich(
+        ParagraphStyle(fontFamily: 'Roboto', fontSize: 20.0, textAlign: align),
+        build,
+      )..layout(constrain(150.0));
+      canvas.save();
+      canvas.translate(offset.dx, offset.dy);
+      canvas.rotate(math.pi / 4);
+      final Rect rect =
+          Rect.fromLTRB(0.0, 0.0, 150.0, paragraph.height);
+      canvas.drawRect(rect, SurfacePaintData()..color = black);
+      canvas.drawParagraph(paragraph, Offset.zero);
+      canvas.restore();
+    }
+
+    drawParagraphAt(Offset(50.0, 0.0), TextAlign.left);
+    drawParagraphAt(Offset(150.0, 0.0), TextAlign.center);
+    drawParagraphAt(Offset(250.0, 0.0), TextAlign.right);
+  }
+
+  test('alignment and transform', () {
+    final canvas = BitmapCanvas(bounds, RenderStrategy());
+    testAlignAndTransform(canvas);
+    return takeScreenshot(canvas, bounds, 'canvas_paragraph_align_transform');
+  });
+
+  test('alignment and transform (DOM)', () {
+    final canvas = DomCanvas(domRenderer.createElement('flt-picture'));
+    testAlignAndTransform(canvas);
+    return takeScreenshot(canvas, bounds, 'canvas_paragraph_align_transform_dom');
+  });
+
+  test('paints spans with varying heights/baselines', () {
+    final canvas = BitmapCanvas(bounds, RenderStrategy());
+
+    final CanvasParagraph paragraph = rich(
+      ParagraphStyle(fontFamily: 'Roboto'),
+      (builder) {
+        builder.pushStyle(EngineTextStyle.only(fontSize: 20.0));
+        builder.addText('Lorem ');
+        builder.pushStyle(EngineTextStyle.only(
+          fontSize: 40.0,
+          background: Paint()..color = green,
+        ));
+        builder.addText('ipsum ');
+        builder.pushStyle(EngineTextStyle.only(
+          fontSize: 10.0,
+          color: white,
+          background: Paint()..color = black,
+        ));
+        builder.addText('dolor ');
+        builder.pushStyle(EngineTextStyle.only(fontSize: 30.0));
+        builder.addText('sit ');
+        builder.pop();
+        builder.pop();
+        builder.pushStyle(EngineTextStyle.only(
+          fontSize: 20.0,
+          background: Paint()..color = blue,
+        ));
+        builder.addText('amet');
+      },
+    )..layout(constrain(220.0));
+    canvas.drawParagraph(paragraph, Offset.zero);
+
+    return takeScreenshot(canvas, bounds, 'canvas_paragraph_varying_heights');
+  });
+
+  test('respects letter-spacing', () {
+    final canvas = BitmapCanvas(bounds, RenderStrategy());
+
+    final CanvasParagraph paragraph = rich(
+      ParagraphStyle(fontFamily: 'Roboto'),
+      (builder) {
+        builder.pushStyle(EngineTextStyle.only(color: blue));
+        builder.addText('Lorem ');
+        builder.pushStyle(EngineTextStyle.only(color: green, letterSpacing: 1));
+        builder.addText('Lorem ');
+        builder.pushStyle(EngineTextStyle.only(color: red, letterSpacing: 3));
+        builder.addText('Lorem');
+      },
+    )..layout(constrain(double.infinity));
+    canvas.drawParagraph(paragraph, Offset.zero);
+
+    return takeScreenshot(canvas, bounds, 'canvas_paragraph_letter_spacing');
+  });
+
+  test('draws text decorations', () {
+    final canvas = BitmapCanvas(bounds, RenderStrategy());
+    final List<TextDecorationStyle> decorationStyles = <TextDecorationStyle>[
+      TextDecorationStyle.solid,
+      TextDecorationStyle.double,
+      TextDecorationStyle.dotted,
+      TextDecorationStyle.dashed,
+      TextDecorationStyle.wavy,
+    ];
+
+    final CanvasParagraph paragraph = rich(
+      ParagraphStyle(fontFamily: 'Roboto'),
+      (builder) {
+        for (TextDecorationStyle decorationStyle in decorationStyles) {
+          builder.pushStyle(EngineTextStyle.only(
+            color: const Color.fromRGBO(50, 50, 255, 1.0),
+            decoration: TextDecoration.underline,
+            decorationStyle: decorationStyle,
+            decorationColor: red,
+            fontFamily: 'Roboto',
+            fontSize: 30,
+          ));
+          builder.addText('Hello World');
+          builder.pop();
+          builder.addText(' ');
+        }
+      },
+    )..layout(constrain(double.infinity));
+
+    canvas.drawParagraph(paragraph, Offset.zero);
+    return takeScreenshot(canvas, bounds, 'canvas_paragraph_decoration');
+  });
+}

@@ -11,7 +11,6 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.os.Build;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.util.SparseArray;
 import android.view.MotionEvent;
 import android.view.View;
@@ -21,6 +20,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import androidx.annotation.VisibleForTesting;
+import io.flutter.Log;
 import io.flutter.embedding.android.AndroidTouchProcessor;
 import io.flutter.embedding.android.FlutterImageView;
 import io.flutter.embedding.android.FlutterView;
@@ -455,7 +455,9 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    */
   @UiThread
   public void detach() {
-    platformViewsChannel.setPlatformViewsHandler(null);
+    if (platformViewsChannel != null) {
+      platformViewsChannel.setPlatformViewsHandler(null);
+    }
     platformViewsChannel = null;
     context = null;
     textureRegistry = null;
@@ -580,6 +582,11 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       return null;
     }
     return controller.getView();
+  }
+
+  @Override
+  public boolean usesVirtualDisplay(Integer id) {
+    return vdControllers.containsKey(id);
   }
 
   private void lockInputConnection(@NonNull VirtualDisplayController controller) {

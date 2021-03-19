@@ -10,6 +10,7 @@
 #include "binary_messenger_impl.h"
 #include "include/flutter/engine_method_result.h"
 #include "include/flutter/method_channel.h"
+#include "texture_registrar_impl.h"
 
 namespace flutter {
 
@@ -19,12 +20,27 @@ PluginRegistrar::PluginRegistrar(FlutterDesktopPluginRegistrarRef registrar)
     : registrar_(registrar) {
   auto core_messenger = FlutterDesktopPluginRegistrarGetMessenger(registrar_);
   messenger_ = std::make_unique<BinaryMessengerImpl>(core_messenger);
+
+  auto texture_registrar =
+      FlutterDesktopRegistrarGetTextureRegistrar(registrar_);
+  texture_registrar_ =
+      std::make_unique<TextureRegistrarImpl>(texture_registrar);
 }
 
-PluginRegistrar::~PluginRegistrar() {}
+PluginRegistrar::~PluginRegistrar() {
+  // This must always be the first call.
+  ClearPlugins();
+
+  // Explicitly cleared to facilitate testing of destruction order.
+  messenger_.reset();
+}
 
 void PluginRegistrar::AddPlugin(std::unique_ptr<Plugin> plugin) {
   plugins_.insert(std::move(plugin));
+}
+
+void PluginRegistrar::ClearPlugins() {
+  plugins_.clear();
 }
 
 // ===== PluginRegistrarManager =====

@@ -1,14 +1,15 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-// FLUTTER_NOLINT
 
 #define FML_USED_ON_EMBEDDER
 
 #include <cstdlib>
+#include <cstring>
 
 #include "flutter/assets/asset_manager.h"
 #include "flutter/assets/directory_asset_bundle.h"
+#include "flutter/fml/build_config.h"
 #include "flutter/fml/file.h"
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/message_loop.h"
@@ -117,7 +118,7 @@ int RunTester(const flutter::Settings& settings,
   if (multithreaded) {
     threadhost = std::make_unique<ThreadHost>(
         thread_label, ThreadHost::Type::Platform | ThreadHost::Type::IO |
-                          ThreadHost::Type::UI | ThreadHost::Type::GPU);
+                          ThreadHost::Type::UI | ThreadHost::Type::RASTER);
     platform_task_runner = current_task_runner;
     raster_task_runner = threadhost->raster_thread->GetTaskRunner();
     ui_task_runner = threadhost->ui_thread->GetTaskRunner();
@@ -190,10 +191,11 @@ int RunTester(const flutter::Settings& settings,
 
   auto asset_manager = std::make_shared<flutter::AssetManager>();
   asset_manager->PushBack(std::make_unique<flutter::DirectoryAssetBundle>(
-      fml::Duplicate(settings.assets_dir)));
-  asset_manager->PushBack(
-      std::make_unique<flutter::DirectoryAssetBundle>(fml::OpenDirectory(
-          settings.assets_path.c_str(), false, fml::FilePermission::kRead)));
+      fml::Duplicate(settings.assets_dir), true));
+  asset_manager->PushBack(std::make_unique<flutter::DirectoryAssetBundle>(
+      fml::OpenDirectory(settings.assets_path.c_str(), false,
+                         fml::FilePermission::kRead),
+      true));
 
   RunConfiguration run_configuration(std::move(isolate_configuration),
                                      std::move(asset_manager));

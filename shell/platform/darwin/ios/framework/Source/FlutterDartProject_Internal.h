@@ -8,12 +8,18 @@
 #include "flutter/common/settings.h"
 #include "flutter/runtime/platform_data.h"
 #include "flutter/shell/common/engine.h"
-#include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterDartProject.h"
+#import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterDartProject.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
+flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle = nil);
+
 @interface FlutterDartProject ()
 
+/**
+ * This is currently used for *only for tests* to override settings.
+ */
+- (instancetype)initWithSettings:(const flutter::Settings&)settings;
 - (const flutter::Settings&)settings;
 - (const flutter::PlatformData)defaultPlatformData;
 

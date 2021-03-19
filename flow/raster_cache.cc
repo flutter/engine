@@ -6,6 +6,7 @@
 
 #include <vector>
 
+#include "flutter/common/constants.h"
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/paint_utils.h"
 #include "flutter/fml/logging.h"
@@ -157,6 +158,7 @@ std::unique_ptr<RasterCacheResult> RasterCache::RasterizeLayer(
         SkISize canvas_size = canvas->getBaseLayerSize();
         SkNWayCanvas internal_nodes_canvas(canvas_size.width(),
                                            canvas_size.height());
+        internal_nodes_canvas.setMatrix(canvas->getTotalMatrix());
         internal_nodes_canvas.addCanvas(canvas);
         Layer::PaintContext paintContext = {
             /* internal_nodes_canvas= */ static_cast<SkCanvas*>(
@@ -170,7 +172,7 @@ std::unique_ptr<RasterCacheResult> RasterCache::RasterizeLayer(
             context->has_platform_view ? nullptr : context->raster_cache,
             context->checkerboard_offscreen_layers,
             context->frame_device_pixel_ratio};
-        if (layer->needs_painting()) {
+        if (layer->needs_painting(paintContext)) {
           layer->Paint(paintContext);
         }
       });
@@ -298,12 +300,11 @@ void RasterCache::SetCheckboardCacheImages(bool checkerboard) {
 
 void RasterCache::TraceStatsToTimeline() const {
 #if !FLUTTER_RELEASE
-  constexpr double kMegaBytes = (1 << 20);
   FML_TRACE_COUNTER("flutter", "RasterCache", reinterpret_cast<int64_t>(this),
                     "LayerCount", layer_cache_.size(), "LayerMBytes",
-                    EstimateLayerCacheByteSize() / kMegaBytes, "PictureCount",
-                    picture_cache_.size(), "PictureMBytes",
-                    EstimatePictureCacheByteSize() / kMegaBytes);
+                    EstimateLayerCacheByteSize() / kMegaByteSizeInBytes,
+                    "PictureCount", picture_cache_.size(), "PictureMBytes",
+                    EstimatePictureCacheByteSize() / kMegaByteSizeInBytes);
 
 #endif  // !FLUTTER_RELEASE
 }

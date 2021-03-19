@@ -10,37 +10,58 @@ import 'dart:typed_data';
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
-import 'package:ui/src/engine.dart';
+import 'package:ui/src/engine.dart' hide window;
+import 'package:ui/ui.dart' as ui;
+
+import 'engine/history_test.dart';
+import 'matchers.dart';
 
 const MethodCodec codec = JSONMethodCodec();
 
-void emptyCallback(ByteData date) {}
+void emptyCallback(ByteData data) {}
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
 void testMain() {
-  test('window.defaultRouteName should not change', () {
-    window.locationStrategy = TestLocationStrategy.fromEntry(TestHistoryEntry('initial state', null, '/initial'));
+  EngineSingletonFlutterWindow window;
+
+  setUp(() {
+    ui.webOnlyInitializeEngine();
+    window = EngineSingletonFlutterWindow(0, EnginePlatformDispatcher.instance);
+  });
+
+  tearDown(() async {
+    await window.debugResetHistory();
+    window = null;
+  });
+
+  test('window.defaultRouteName should not change', () async {
+    final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
+      TestHistoryEntry('initial state', null, '/initial'),
+    );
+    await window.debugInitializeHistory(strategy, useSingle: true);
     expect(window.defaultRouteName, '/initial');
 
     // Changing the URL in the address bar later shouldn't affect [window.defaultRouteName].
-    window.locationStrategy.replaceState(null, null, '/newpath');
+    strategy.replaceState(null, null, '/newpath');
     expect(window.defaultRouteName, '/initial');
   });
 
-  test('window.defaultRouteName should reset after navigation platform message', () {
-    window.locationStrategy = TestLocationStrategy.fromEntry(TestHistoryEntry('initial state', null, '/initial'));
+  test('window.defaultRouteName should reset after navigation platform message',
+      () async {
+    await window.debugInitializeHistory(TestUrlStrategy.fromEntry(
+      TestHistoryEntry('initial state', null, '/initial'),
+    ), useSingle: true);
     // Reading it multiple times should return the same value.
     expect(window.defaultRouteName, '/initial');
     expect(window.defaultRouteName, '/initial');
-
     window.sendPlatformMessage(
       'flutter/navigation',
       JSONMethodCodec().encodeMethodCall(MethodCall(
-        'routePushed',
-        <String, dynamic>{'previousRouteName': '/foo', 'routeName': '/bar'},
+        'routeUpdated',
+        <String, dynamic>{'routeName': '/bar'},
       )),
       emptyCallback,
     );
@@ -49,43 +70,104 @@ void testMain() {
     expect(window.defaultRouteName, '/');
   });
 
-  test('can disable location strategy', () async {
-    final testStrategy = TestLocationStrategy.fromEntry(
-      TestHistoryEntry(null, null, '/'),
+  test('should throw when using nav1 and nav2 together',
+      () async {
+    await window.debugInitializeHistory(TestUrlStrategy.fromEntry(
+      TestHistoryEntry('initial state', null, '/initial'),
+    ), useSingle: false);
+    // Receive nav1 update first.
+    Completer<void> callback = Completer<void>();
+    window.sendPlatformMessage(
+      'flutter/navigation',
+      JSONMethodCodec().encodeMethodCall(MethodCall(
+        'routeUpdated',
+        <String, dynamic>{'routeName': '/bar'},
+      )),
+      (_) { callback.complete(); },
     );
-    window.locationStrategy = testStrategy;
+    await callback.future;
+    expect(window.browserHistory is SingleEntryBrowserHistory, true);
+    expect(window.browserHistory.urlStrategy.getPath(), '/bar');
 
-    expect(window.locationStrategy, testStrategy);
-    // A single listener should've been setup.
-    expect(testStrategy.listeners, hasLength(1));
-    // The initial entry should be there, plus another "flutter" entry.
-    expect(testStrategy.history, hasLength(2));
-    expect(testStrategy.history[0].state, <String, bool>{'origin': true});
-    expect(testStrategy.history[1].state, <String, bool>{'flutter': true});
-    expect(testStrategy.currentEntry, testStrategy.history[1]);
+    // We can still receive nav2 update.
+    callback = Completer<void>();
+    window.sendPlatformMessage(
+      'flutter/navigation',
+      JSONMethodCodec().encodeMethodCall(MethodCall(
+        'routeInformationUpdated',
+        <String, dynamic>{
+          'location': '/baz',
+          'state': null,
+        },
+      )),
+      (_) { callback.complete(); },
+    );
+    await callback.future;
+    expect(window.browserHistory is MultiEntriesBrowserHistory, true);
+    expect(window.browserHistory.urlStrategy.getPath(), '/baz');
 
-    // Now, let's disable location strategy and make sure things get cleaned up.
-    expect(() => jsSetLocationStrategy(null), returnsNormally);
-    expect(window.locationStrategy, isNull);
+    // Throws assertion error if it receives nav1 update after nav2 update.
+    AssertionError caughtAssertion;
+    await window.handleNavigationMessage(
+      JSONMethodCodec().encodeMethodCall(MethodCall(
+        'routeUpdated',
+        <String, dynamic>{'routeName': '/foo'},
+      ))
+    ).catchError((Object e) {
+      caughtAssertion = e as AssertionError;
+    });
 
-    // The listener is removed asynchronously.
-    await Future<void>.delayed(const Duration(milliseconds: 10));
+    expect(
+      caughtAssertion.message,
+      'Receives old navigator update in a router application. This can '
+      'happen if you use non-router versions of '
+      'MaterialApp/CupertinoApp/WidgetsApp together with the router versions of them.'
+    );
+    // The history does not change.
+    expect(window.browserHistory is MultiEntriesBrowserHistory, true);
+    expect(window.browserHistory.urlStrategy.getPath(), '/baz');
+  });
 
-    // No more listeners.
-    expect(testStrategy.listeners, isEmpty);
-    // History should've moved back to the initial entry.
-    expect(testStrategy.history[0].state, <String, bool>{'origin': true});
-    expect(testStrategy.currentEntry, testStrategy.history[0]);
+  test('can disable location strategy', () async {
+    // Disable URL strategy.
+    expect(() => jsSetUrlStrategy(null), returnsNormally);
+    // History should be initialized.
+    expect(window.browserHistory, isNotNull);
+    // But without a URL strategy.
+    expect(window.browserHistory.urlStrategy, isNull);
+    // Current path is always "/" in this case.
+    expect(window.browserHistory.currentPath, '/');
+
+    // Perform some navigation operations.
+    routeInformationUpdated('/foo/bar', null);
+    // Path should not be updated because URL strategy is disabled.
+    expect(window.browserHistory.currentPath, '/');
   });
 
   test('js interop throws on wrong type', () {
-    expect(() => jsSetLocationStrategy(123), throwsA(anything));
-    expect(() => jsSetLocationStrategy('foo'), throwsA(anything));
-    expect(() => jsSetLocationStrategy(false), throwsA(anything));
+    expect(() => jsSetUrlStrategy(123), throwsA(anything));
+    expect(() => jsSetUrlStrategy('foo'), throwsA(anything));
+    expect(() => jsSetUrlStrategy(false), throwsA(anything));
+  });
+
+  test('cannot set url strategy after it is initialized', () async {
+    final testStrategy = TestUrlStrategy.fromEntry(
+      TestHistoryEntry('initial state', null, '/'),
+    );
+    await window.debugInitializeHistory(testStrategy, useSingle: true);
+
+    expect(() => jsSetUrlStrategy(null), throwsA(isAssertionError));
+  });
+
+  test('cannot set url strategy more than once', () async {
+    // First time is okay.
+    expect(() => jsSetUrlStrategy(null), returnsNormally);
+    // Second time is not allowed.
+    expect(() => jsSetUrlStrategy(null), throwsA(isAssertionError));
   });
 }
 
-void jsSetLocationStrategy(dynamic strategy) {
+void jsSetUrlStrategy(dynamic strategy) {
   js_util.callMethod(
     html.window,
     '_flutter_web_set_location_strategy',

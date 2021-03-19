@@ -7,6 +7,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
+import 'dart:math';
 
 import 'package:async/async.dart';
 import 'package:http_multi_server/http_multi_server.dart';
@@ -21,6 +22,8 @@ import 'package:shelf_web_socket/shelf_web_socket.dart';
 import 'package:shelf_packages_handler/shelf_packages_handler.dart';
 import 'package:stream_channel/stream_channel.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:web_test_utils/goldens.dart';
+import 'package:web_test_utils/image_compare.dart';
 
 import 'package:test_api/src/backend/runtime.dart'; // ignore: implementation_imports
 import 'package:test_api/src/backend/suite_platform.dart'; // ignore: implementation_imports
@@ -34,13 +37,11 @@ import 'package:test_core/src/runner/environment.dart'; // ignore: implementatio
 
 import 'package:test_core/src/util/io.dart'; // ignore: implementation_imports
 import 'package:test_core/src/runner/configuration.dart'; // ignore: implementation_imports
-import 'package:webkit_inspection_protocol/webkit_inspection_protocol.dart'
-    as wip;
 
 import 'browser.dart';
 import 'common.dart';
 import 'environment.dart' as env;
-import 'goldens.dart';
+import 'screenshot_manager.dart';
 import 'supported_browsers.dart';
 
 class BrowserPlatform extends PlatformPlugin {
@@ -97,6 +98,11 @@ class BrowserPlatform extends PlatformPlugin {
   /// The HTTP client to use when caching JS files in `pub serve`.
   final HttpClient _http;
 
+  /// Handles taking screenshots during tests.
+  ///
+  /// Implementation will differ depending on the browser.
+  ScreenshotManager _screenshotManager;
+
   /// Whether [close] has been called.
   bool get _closed => _closeMemo.hasRun;
 
@@ -124,9 +130,10 @@ class BrowserPlatform extends PlatformPlugin {
               serveFilesOutsidePath:
                   config.suiteDefaults.precompiledPath != null))
           .add(_wrapperHandler);
-      // Screenshot tests are only enabled in chrome for now.
-      if (name == 'chrome') {
+      // Screenshot tests are only enabled in Chrome and Safari iOS for now.
+      if (browserName == 'chrome' || browserName == 'ios-safari') {
         cascade = cascade.add(_screeshotHandler);
+        _screenshotManager = ScreenshotManager.choose(browserName);
       }
     }
 
@@ -141,8 +148,9 @@ class BrowserPlatform extends PlatformPlugin {
   }
 
   Future<shelf.Response> _screeshotHandler(shelf.Request request) async {
-    if (browserName != 'chrome') {
-      throw Exception('Screenshots tests are only available in Chrome.');
+    if (browserName != 'chrome' && browserName != 'ios-safari') {
+      throw Exception('Screenshots tests are only available in Chrome '
+          'and in Safari-iOS.');
     }
 
     if (!request.requestedUri.path.endsWith('/screenshot')) {
@@ -178,6 +186,9 @@ class BrowserPlatform extends PlatformPlugin {
       write = true;
     }
 
+    filename =
+        filename.replaceAll('.png', '${_screenshotManager.filenameSuffix}.png');
+
     String goldensDirectory;
     if (filename.startsWith('__local__')) {
       filename = filename.substring('__local__/'.length);
@@ -187,7 +198,6 @@ class BrowserPlatform extends PlatformPlugin {
         'golden_files',
       );
     } else {
-      await fetchGoldens();
       goldensDirectory = p.join(
         env.environment.webUiGoldensRepositoryDirectory.path,
         'engine',
@@ -195,173 +205,24 @@ class BrowserPlatform extends PlatformPlugin {
       );
     }
 
-    // Bail out fast if golden doesn't exist, and user doesn't want to create it.
-    final File file = File(p.join(
-      goldensDirectory,
-      filename,
-    ));
-    if (!file.existsSync() && !write) {
-      return '''
-Golden file $filename does not exist.
-
-To automatically create this file call matchGoldenFile('$filename', write: true).
-''';
-    }
-
-    final wip.ChromeConnection chromeConnection =
-        wip.ChromeConnection('localhost', kDevtoolsPort);
-    final wip.ChromeTab chromeTab = await chromeConnection.getTab(
-        (wip.ChromeTab chromeTab) => chromeTab.url.contains('localhost'));
-    final wip.WipConnection wipConnection = await chromeTab.connect();
-
-    Map<String, dynamic> captureScreenshotParameters = null;
-    if (region != null) {
-      captureScreenshotParameters = <String, dynamic>{
-        'format': 'png',
-        'clip': <String, dynamic>{
-          'x': region['x'],
-          'y': region['y'],
-          'width': region['width'],
-          'height': region['height'],
-          'scale':
-              1, // This is NOT the DPI of the page, instead it's the "zoom level".
-        },
-      };
-    }
-
-    // Setting hardware-independent screen parameters:
-    // https://chromedevtools.github.io/devtools-protocol/tot/Emulation
-    await wipConnection
-        .sendCommand('Emulation.setDeviceMetricsOverride', <String, dynamic>{
-      'width': kMaxScreenshotWidth,
-      'height': kMaxScreenshotHeight,
-      'deviceScaleFactor': 1,
-      'mobile': false,
-    });
-    final wip.WipResponse response = await wipConnection.sendCommand(
-        'Page.captureScreenshot', captureScreenshotParameters);
-
-    // Compare screenshots
-    final Image screenshot =
-        decodePng(base64.decode(response.result['data'] as String));
-
-    if (write) {
-      // Don't even bother with the comparison, just write and return
-      print('Updating screenshot golden: $file');
-      file.writeAsBytesSync(encodePng(screenshot), flush: true);
-      if (doUpdateScreenshotGoldens) {
-        // Do not fail tests when bulk-updating screenshot goldens.
-        return 'OK';
-      } else {
-        return 'Golden file $filename was updated. You can remove "write: true" in the call to matchGoldenFile.';
-      }
-    }
-
-    ImageDiff diff = ImageDiff(
-      golden: decodeNamedImage(file.readAsBytesSync(), filename),
-      other: screenshot,
-      pixelComparison: pixelComparison,
+    final Rectangle regionAsRectange = Rectangle(
+      region['x'] as num,
+      region['y'] as num,
+      region['width'] as num,
+      region['height'] as num,
     );
 
-    if (diff.rate > 0) {
-      // Images are different, so produce some debug info
-      final String testResultsPath = isCirrus
-          ? p.join(
-              Platform.environment['CIRRUS_WORKING_DIR'],
-              'test_results',
-            )
-          : p.join(
-              env.environment.webUiDartToolDir.path,
-              'test_results',
-            );
-      Directory(testResultsPath).createSync(recursive: true);
-      final String basename = p.basenameWithoutExtension(file.path);
+    // Take screenshot.
+    final Image screenshot = await _screenshotManager.capture(regionAsRectange);
 
-      final File actualFile =
-          File(p.join(testResultsPath, '$basename.actual.png'));
-      actualFile.writeAsBytesSync(encodePng(screenshot), flush: true);
-
-      final File diffFile = File(p.join(testResultsPath, '$basename.diff.png'));
-      diffFile.writeAsBytesSync(encodePng(diff.diff), flush: true);
-
-      final File expectedFile =
-          File(p.join(testResultsPath, '$basename.expected.png'));
-      file.copySync(expectedFile.path);
-
-      final File reportFile =
-          File(p.join(testResultsPath, '$basename.report.html'));
-      reportFile.writeAsStringSync('''
-Golden file $filename did not match the image generated by the test.
-
-<table>
-  <tr>
-    <th>Expected</th>
-    <th>Diff</th>
-    <th>Actual</th>
-  </tr>
-  <tr>
-    <td>
-      <img src="$basename.expected.png">
-    </td>
-    <td>
-      <img src="$basename.diff.png">
-    </td>
-    <td>
-      <img src="$basename.actual.png">
-    </td>
-  </tr>
-</table>
-''');
-
-      final StringBuffer message = StringBuffer();
-      message.writeln(
-          'Golden file $filename did not match the image generated by the test.');
-      message.writeln(getPrintableDiffFilesInfo(diff.rate, maxDiffRateFailure));
-      message
-          .writeln('You can view the test report in your browser by opening:');
-
-      // Cirrus cannot serve HTML pages generated by build jobs, so we
-      // archive all the files so that they can be downloaded and inspected
-      // locally.
-      if (isCirrus) {
-        final String taskId = Platform.environment['CIRRUS_TASK_ID'];
-        final String baseArtifactsUrl =
-            'https://api.cirrus-ci.com/v1/artifact/task/$taskId/web_engine_test/test_results';
-        final String cirrusReportUrl = '$baseArtifactsUrl/$basename.report.zip';
-        message.writeln(cirrusReportUrl);
-
-        await Process.run(
-          'zip',
-          <String>[
-            '$basename.report.zip',
-            '$basename.report.html',
-            '$basename.expected.png',
-            '$basename.diff.png',
-            '$basename.actual.png',
-          ],
-          workingDirectory: testResultsPath,
-        );
-      } else {
-        final String localReportPath = '$testResultsPath/$basename.report.html';
-        message.writeln(localReportPath);
-      }
-
-      message.writeln(
-          'To update the golden file call matchGoldenFile(\'$filename\', write: true).');
-      message.writeln('Golden file: ${expectedFile.path}');
-      message.writeln('Actual file: ${actualFile.path}');
-
-      if (diff.rate < maxDiffRateFailure) {
-        // Issue a warning but do not fail the test.
-        print('WARNING:');
-        print(message);
-        return 'OK';
-      } else {
-        // Fail test
-        return '$message';
-      }
-    }
-    return 'OK';
+    return compareImage(
+        screenshot,
+        doUpdateScreenshotGoldens,
+        filename,
+        pixelComparison,
+        maxDiffRateFailure,
+        goldensDirectory: goldensDirectory,
+        write: write);
   }
 
   /// A handler that serves wrapper files used to bootstrap tests.
@@ -698,7 +559,7 @@ class BrowserManager {
     }).catchError((dynamic error, StackTrace stackTrace) {
       browser.close();
       if (completer.isCompleted) {
-        return;
+        return null;
       }
       completer.completeError(error, stackTrace);
     });

@@ -32,6 +32,9 @@ class ShellTestExternalViewEmbedder final : public ExternalViewEmbedder {
   // the external view embedder.
   int GetSubmittedFrameCount();
 
+  // Returns the size of last submitted frame surface
+  SkISize GetLastSubmittedFrameSize();
+
  private:
   // |ExternalViewEmbedder|
   void CancelFrame() override;
@@ -59,8 +62,10 @@ class ShellTestExternalViewEmbedder final : public ExternalViewEmbedder {
   SkCanvas* CompositeEmbeddedView(int view_id) override;
 
   // |ExternalViewEmbedder|
-  void SubmitFrame(GrDirectContext* context,
-                   std::unique_ptr<SurfaceFrame> frame) override;
+  void SubmitFrame(
+      GrDirectContext* context,
+      std::unique_ptr<SurfaceFrame> frame,
+      const std::shared_ptr<fml::SyncSwitch>& gpu_disable_sync_switch) override;
 
   // |ExternalViewEmbedder|
   void EndFrame(
@@ -80,6 +85,7 @@ class ShellTestExternalViewEmbedder final : public ExternalViewEmbedder {
   bool support_thread_merging_;
 
   std::atomic<int> submitted_frame_count_;
+  std::atomic<SkISize> last_submitted_frame_size_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ShellTestExternalViewEmbedder);
 };

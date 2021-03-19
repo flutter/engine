@@ -25,7 +25,8 @@ void testMain() async {
   Future<void> _checkScreenshot(RecordingCanvas rc, String fileName,
       {Rect region = const Rect.fromLTWH(0, 0, 500, 500),
         double maxDiffRatePercent = 0.0}) async {
-    final EngineCanvas engineCanvas = BitmapCanvas(screenRect);
+    final EngineCanvas engineCanvas = BitmapCanvas(screenRect,
+        RenderStrategy());
 
     rc.endRecording();
     rc.apply(engineCanvas, screenRect);
@@ -108,7 +109,9 @@ void testMain() async {
       rc.restore();
       await _checkScreenshot(rc, 'canvas_image_blend_group$blendGroup',
           maxDiffRatePercent: 8.0);
-    });
+    },
+        skip: browserEngine == BrowserEngine.webkit &&
+            operatingSystem == OperatingSystem.iOs);
   }
 
   // Regression test for https://github.com/flutter/flutter/issues/56971

@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
+#import "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
 
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/gpu/gpu_surface_gl.h"
-#include "flutter/shell/platform/darwin/ios/ios_context_gl.h"
+#import "flutter/shell/platform/darwin/ios/ios_context_gl.h"
 
 namespace flutter {
 
@@ -15,9 +15,8 @@ static IOSContextGL* CastToGLContext(const std::shared_ptr<IOSContext>& context)
 }
 
 IOSSurfaceGL::IOSSurfaceGL(fml::scoped_nsobject<CAEAGLLayer> layer,
-                           std::shared_ptr<IOSContext> context,
-                           FlutterPlatformViewsController* platform_views_controller)
-    : IOSSurface(context, platform_views_controller) {
+                           std::shared_ptr<IOSContext> context)
+    : IOSSurface(context) {
   render_target_ = CastToGLContext(context)->CreateRenderTarget(std::move(layer));
 }
 
@@ -39,8 +38,16 @@ void IOSSurfaceGL::UpdateStorageSizeIfNecessary() {
 std::unique_ptr<Surface> IOSSurfaceGL::CreateGPUSurface(GrDirectContext* gr_context) {
   if (gr_context) {
     return std::make_unique<GPUSurfaceGL>(sk_ref_sp(gr_context), this, true);
+  } else {
+    IOSContextGL* gl_context = CastToGLContext(GetContext());
+    sk_sp<GrDirectContext> context = gl_context->GetMainContext();
+    if (!context) {
+      context = GPUSurfaceGL::MakeGLContext(this);
+      gl_context->SetMainContext(context);
+    }
+
+    return std::make_unique<GPUSurfaceGL>(context, this, true);
   }
-  return std::make_unique<GPUSurfaceGL>(this, true);
 }
 
 // |GPUSurfaceGLDelegate|
@@ -80,11 +87,6 @@ bool IOSSurfaceGL::GLContextClearCurrent() {
 bool IOSSurfaceGL::GLContextPresent(uint32_t fbo_id) {
   TRACE_EVENT0("flutter", "IOSSurfaceGL::GLContextPresent");
   return IsValid() && render_target_->PresentRenderBuffer();
-}
-
-// |GPUSurfaceGLDelegate|
-ExternalViewEmbedder* IOSSurfaceGL::GetExternalViewEmbedder() {
-  return this;
 }
 
 }  // namespace flutter

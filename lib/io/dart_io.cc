@@ -5,7 +5,6 @@
 #include "flutter/lib/io/dart_io.h"
 
 #include "flutter/fml/logging.h"
-
 #include "third_party/dart/runtime/include/bin/dart_io_api.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 #include "third_party/tonic/converter/dart_converter.h"
@@ -24,7 +23,7 @@ void DartIO::InitForIsolate(bool may_insecurely_connect_to_all_domains,
   FML_CHECK(!LogIfError(result));
 
   Dart_Handle embedder_config_type =
-      Dart_GetType(io_lib, ToDart("_EmbedderConfig"), 0, nullptr);
+      Dart_GetNonNullableType(io_lib, ToDart("_EmbedderConfig"), 0, nullptr);
   FML_CHECK(!LogIfError(embedder_config_type));
 
   Dart_Handle allow_insecure_connections_result = Dart_SetField(

@@ -5,9 +5,9 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_PUBLIC_FLUTTER_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_PUBLIC_FLUTTER_H_
 
-#include <Windows.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <windows.h>
 
 #include "flutter_export.h"
 #include "flutter_messenger.h"
@@ -47,14 +47,12 @@ typedef struct {
   // it will be ignored in that case.
   const wchar_t* aot_library_path;
 
-  // The switches to pass to the Flutter engine.
-  //
-  // See: https://github.com/flutter/engine/blob/master/shell/common/switches.h
-  // for details. Not all arguments will apply to desktop.
-  const char** switches;
+  // Number of elements in the array passed in as dart_entrypoint_argv.
+  int dart_entrypoint_argc;
 
-  // The number of elements in |switches|.
-  size_t switches_count;
+  // Array of Dart entrypoint arguments. This is deep copied during the call
+  // to FlutterDesktopEngineCreate.
+  const char** dart_entrypoint_argv;
 } FlutterDesktopEngineProperties;
 
 // ========== View Controller ==========
@@ -94,6 +92,7 @@ FLUTTER_EXPORT FlutterDesktopEngineRef FlutterDesktopViewControllerGetEngine(
 FLUTTER_EXPORT FlutterDesktopViewRef
 FlutterDesktopViewControllerGetView(FlutterDesktopViewControllerRef controller);
 
+#ifndef WINUWP
 // Allows the Flutter engine and any interested plugins an opportunity to
 // handle the given message.
 //
@@ -106,6 +105,7 @@ FLUTTER_EXPORT bool FlutterDesktopViewControllerHandleTopLevelWindowProc(
     WPARAM wparam,
     LPARAM lparam,
     LRESULT* result);
+#endif
 
 // ========== Engine ==========
 
@@ -134,6 +134,7 @@ FLUTTER_EXPORT bool FlutterDesktopEngineDestroy(FlutterDesktopEngineRef engine);
 FLUTTER_EXPORT bool FlutterDesktopEngineRun(FlutterDesktopEngineRef engine,
                                             const char* entry_point);
 
+#ifndef WINUWP
 // Processes any pending events in the Flutter engine, and returns the
 // number of nanoseconds until the next scheduled event (or max, if none).
 //
@@ -142,6 +143,10 @@ FLUTTER_EXPORT bool FlutterDesktopEngineRun(FlutterDesktopEngineRef engine,
 // last return value from this function.
 FLUTTER_EXPORT uint64_t
 FlutterDesktopEngineProcessMessages(FlutterDesktopEngineRef engine);
+#endif
+
+FLUTTER_EXPORT void FlutterDesktopEngineReloadSystemFonts(
+    FlutterDesktopEngineRef engine);
 
 // Returns the plugin registrar handle for the plugin with the given name.
 //
@@ -153,6 +158,11 @@ FlutterDesktopEngineGetPluginRegistrar(FlutterDesktopEngineRef engine,
 // Returns the messenger associated with the engine.
 FLUTTER_EXPORT FlutterDesktopMessengerRef
 FlutterDesktopEngineGetMessenger(FlutterDesktopEngineRef engine);
+
+// Returns the texture registrar associated with the engine.
+FLUTTER_EXPORT FlutterDesktopTextureRegistrarRef
+FlutterDesktopEngineGetTextureRegistrar(
+    FlutterDesktopTextureRegistrarRef texture_registrar);
 
 // ========== View ==========
 

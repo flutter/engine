@@ -1,7 +1,6 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-// FLUTTER_NOLINT
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputPlugin.h"
 
@@ -13,7 +12,7 @@
 
 static NSString* const kTextInputChannel = @"flutter/textinput";
 
-// See https://docs.flutter.io/flutter/services/SystemChannels/textInput-constant.html
+// See https://api.flutter.dev/flutter/services/SystemChannels/textInput-constant.html
 static NSString* const kSetClientMethod = @"TextInput.setClient";
 static NSString* const kShowMethod = @"TextInput.show";
 static NSString* const kHideMethod = @"TextInput.hide";
@@ -130,67 +129,20 @@ static NSString* const kMultilineInputType = @"TextInputType.multiline";
 }
 
 #pragma mark -
-#pragma mark NSResponder
+#pragma mark FlutterIntermediateKeyResponder
 
 /**
+ * Handles key down events received from the view controller, responding TRUE if
+ * the event was handled.
+ *
  * Note, the Apple docs suggest that clients should override essentially all the
  * mouse and keyboard event-handling methods of NSResponder. However, experimentation
  * indicates that only key events are processed by the native layer; Flutter processes
  * mouse events. Additionally, processing both keyUp and keyDown results in duplicate
- * processing of the same keys. So for now, limit processing to just keyDown.
+ * processing of the same keys. So for now, limit processing to just handleKeyDown.
  */
-- (void)keyDown:(NSEvent*)event {
-  [_textInputContext handleEvent:event];
-}
-
-#pragma mark -
-#pragma mark NSStandardKeyBindingMethods
-
-/**
- * Note, experimentation indicates that moveRight and moveLeft are called rather
- * than the supposedly more RTL-friendly moveForward and moveBackward.
- */
-- (void)moveLeft:(nullable id)sender {
-  NSRange selection = self.activeModel.selectedRange;
-  if (selection.length == 0) {
-    if (selection.location > 0) {
-      // Move to previous location
-      self.activeModel.selectedRange = NSMakeRange(selection.location - 1, 0);
-      [self updateEditState];
-    }
-  } else {
-    // Collapse current selection
-    self.activeModel.selectedRange = NSMakeRange(selection.location, 0);
-    [self updateEditState];
-  }
-}
-
-- (void)moveRight:(nullable id)sender {
-  NSRange selection = self.activeModel.selectedRange;
-  if (selection.length == 0) {
-    if (selection.location < self.activeModel.text.length) {
-      // Move to next location
-      self.activeModel.selectedRange = NSMakeRange(selection.location + 1, 0);
-      [self updateEditState];
-    }
-  } else {
-    // Collapse current selection
-    self.activeModel.selectedRange = NSMakeRange(selection.location + selection.length, 0);
-    [self updateEditState];
-  }
-}
-
-- (void)deleteBackward:(id)sender {
-  NSRange selection = self.activeModel.selectedRange;
-  NSRange range = selection;
-  if (selection.length == 0) {
-    if (selection.location == 0)
-      return;
-    NSUInteger location = (selection.location == NSNotFound) ? self.activeModel.text.length - 1
-                                                             : selection.location - 1;
-    range = NSMakeRange(location, 1);
-  }
-  [self insertText:@"" replacementRange:range];  // Updates edit state
+- (BOOL)handleKeyDown:(NSEvent*)event {
+  return [_textInputContext handleEvent:event];
 }
 
 #pragma mark -

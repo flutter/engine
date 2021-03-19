@@ -4,8 +4,7 @@
 
 #include "flutter/lib/ui/painting/canvas.h"
 
-#define _USE_MATH_DEFINES
-#include <math.h>
+#include <cmath>
 
 #include "flutter/flow/layers/physical_shape_layer.h"
 #include "flutter/lib/ui/painting/image.h"
@@ -469,7 +468,7 @@ void Canvas::drawShadow(const CanvasPath* path,
   }
   SkScalar dpr = UIDartState::Current()
                      ->platform_configuration()
-                     ->window()
+                     ->get_window(0)
                      ->viewport_metrics()
                      .device_pixel_ratio;
   flutter::PhysicalShapeLayer::DrawShadow(canvas_, path->path(), color,

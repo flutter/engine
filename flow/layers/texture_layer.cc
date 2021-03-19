@@ -4,7 +4,7 @@
 
 #include "flutter/flow/layers/texture_layer.h"
 
-#include "flutter/flow/texture.h"
+#include "flutter/common/graphics/texture.h"
 
 namespace flutter {
 
@@ -32,6 +32,7 @@ void TextureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 
 void TextureLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "TextureLayer::Paint");
+  FML_DCHECK(needs_painting(context));
 
   std::shared_ptr<Texture> texture =
       context.texture_registry.GetTexture(texture_id_);

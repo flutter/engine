@@ -4,18 +4,23 @@
 
 #import <OCMock/OCMock.h>
 #import <XCTest/XCTest.h>
+
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 
-#include "FlutterBinaryMessenger.h"
-
 FLUTTER_ASSERT_ARC
+
+namespace flutter {
+class PointerDataPacket {};
+}
 
 @interface FlutterEngine ()
 - (BOOL)createShell:(NSString*)entrypoint
          libraryURI:(NSString*)libraryURI
        initialRoute:(NSString*)initialRoute;
+- (void)dispatchPointerDataPacket:(std::unique_ptr<flutter::PointerDataPacket>)packet;
 @end
 
 @interface FlutterEngine (TestLowMemory)
@@ -43,6 +48,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 @end
 
 @interface FlutterViewControllerTest : XCTestCase
+@property(nonatomic, strong) id mockEngine;
 @end
 
 // The following conditional compilation defines an API 13 concept on earlier API targets so that
@@ -62,65 +68,70 @@ typedef enum UIAccessibilityContrast : NSInteger {
 @interface FlutterViewController (Tests)
 - (void)surfaceUpdated:(BOOL)appeared;
 - (void)performOrientationUpdate:(UIInterfaceOrientationMask)new_preferences;
+- (void)dispatchPresses:(NSSet<UIPress*>*)presses;
+- (void)scrollEvent:(UIPanGestureRecognizer*)recognizer;
 @end
 
 @implementation FlutterViewControllerTest
 
+- (void)setUp {
+  self.mockEngine = OCMClassMock([FlutterEngine class]);
+}
+
+- (void)tearDown {
+  // We stop mocking here to avoid retain cycles that stop
+  // FlutterViewControllers from deallocing.
+  [self.mockEngine stopMocking];
+  self.mockEngine = nil;
+}
+
 - (void)testViewDidDisappearDoesntPauseEngineWhenNotTheViewController {
-  id engine = OCMClassMock([FlutterEngine class]);
   id lifecycleChannel = OCMClassMock([FlutterBasicMessageChannel class]);
-  OCMStub([engine lifecycleChannel]).andReturn(lifecycleChannel);
-  FlutterViewController* viewControllerA = [[FlutterViewController alloc] initWithEngine:engine
-                                                                                 nibName:nil
-                                                                                  bundle:nil];
-  FlutterViewController* viewControllerB = [[FlutterViewController alloc] initWithEngine:engine
-                                                                                 nibName:nil
-                                                                                  bundle:nil];
+  OCMStub([self.mockEngine lifecycleChannel]).andReturn(lifecycleChannel);
+  FlutterViewController* viewControllerA =
+      [[FlutterViewController alloc] initWithEngine:self.mockEngine nibName:nil bundle:nil];
+  FlutterViewController* viewControllerB =
+      [[FlutterViewController alloc] initWithEngine:self.mockEngine nibName:nil bundle:nil];
   id viewControllerMock = OCMPartialMock(viewControllerA);
   OCMStub([viewControllerMock surfaceUpdated:NO]);
-  OCMStub([engine viewController]).andReturn(viewControllerB);
+  OCMStub([self.mockEngine viewController]).andReturn(viewControllerB);
   [viewControllerA viewDidDisappear:NO];
   OCMReject([lifecycleChannel sendMessage:@"AppLifecycleState.paused"]);
   OCMReject([viewControllerMock surfaceUpdated:[OCMArg any]]);
 }
 
 - (void)testViewDidDisappearDoesPauseEngineWhenIsTheViewController {
-  id engine = OCMClassMock([FlutterEngine class]);
   id lifecycleChannel = OCMClassMock([FlutterBasicMessageChannel class]);
-  OCMStub([engine lifecycleChannel]).andReturn(lifecycleChannel);
-  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
-                                                                                nibName:nil
-                                                                                 bundle:nil];
+  OCMStub([self.mockEngine lifecycleChannel]).andReturn(lifecycleChannel);
+  FlutterViewController* viewController =
+      [[FlutterViewController alloc] initWithEngine:self.mockEngine nibName:nil bundle:nil];
   id viewControllerMock = OCMPartialMock(viewController);
   OCMStub([viewControllerMock surfaceUpdated:NO]);
-  OCMStub([engine viewController]).andReturn(viewController);
+  OCMStub([self.mockEngine viewController]).andReturn(viewController);
   [viewController viewDidDisappear:NO];
   OCMVerify([lifecycleChannel sendMessage:@"AppLifecycleState.paused"]);
   OCMVerify([viewControllerMock surfaceUpdated:NO]);
 }
 
 - (void)testBinaryMessenger {
-  id engine = OCMClassMock([FlutterEngine class]);
-  FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:engine
+  FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:self.mockEngine
                                                                     nibName:nil
                                                                      bundle:nil];
   XCTAssertNotNil(vc);
   id messenger = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
-  OCMStub([engine binaryMessenger]).andReturn(messenger);
+  OCMStub([self.mockEngine binaryMessenger]).andReturn(messenger);
   XCTAssertEqual(vc.binaryMessenger, messenger);
-  OCMVerify([engine binaryMessenger]);
+  OCMVerify([self.mockEngine binaryMessenger]);
 }
 
 #pragma mark - Platform Brightness
 
 - (void)testItReportsLightPlatformBrightnessByDefault {
   // Setup test.
-  id engine = OCMClassMock([FlutterEngine class]);
-
   id settingsChannel = OCMClassMock([FlutterBasicMessageChannel class]);
-  OCMStub([engine settingsChannel]).andReturn(settingsChannel);
+  OCMStub([self.mockEngine settingsChannel]).andReturn(settingsChannel);
 
-  FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:engine
+  FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:self.mockEngine
                                                                     nibName:nil
                                                                      bundle:nil];
 
@@ -133,18 +144,15 @@ typedef enum UIAccessibilityContrast : NSInteger {
                              }]]);
 
   // Clean up mocks
-  [engine stopMocking];
   [settingsChannel stopMocking];
 }
 
 - (void)testItReportsPlatformBrightnessWhenViewWillAppear {
   // Setup test.
-  id engine = OCMClassMock([FlutterEngine class]);
-
   id settingsChannel = OCMClassMock([FlutterBasicMessageChannel class]);
-  OCMStub([engine settingsChannel]).andReturn(settingsChannel);
+  OCMStub([self.mockEngine settingsChannel]).andReturn(settingsChannel);
 
-  FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:engine
+  FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:self.mockEngine
                                                                     nibName:nil
                                                                      bundle:nil];
 
@@ -157,7 +165,6 @@ typedef enum UIAccessibilityContrast : NSInteger {
                              }]]);
 
   // Clean up mocks
-  [engine stopMocking];
   [settingsChannel stopMocking];
 }
 
@@ -169,12 +176,10 @@ typedef enum UIAccessibilityContrast : NSInteger {
   }
 
   // Setup test.
-  id engine = OCMClassMock([FlutterEngine class]);
-
   id settingsChannel = OCMClassMock([FlutterBasicMessageChannel class]);
-  OCMStub([engine settingsChannel]).andReturn(settingsChannel);
+  OCMStub([self.mockEngine settingsChannel]).andReturn(settingsChannel);
 
-  FlutterViewController* realVC = [[FlutterViewController alloc] initWithEngine:engine
+  FlutterViewController* realVC = [[FlutterViewController alloc] initWithEngine:self.mockEngine
                                                                         nibName:nil
                                                                          bundle:nil];
   id mockTraitCollection =
@@ -197,7 +202,6 @@ typedef enum UIAccessibilityContrast : NSInteger {
 
   // Clean up mocks
   [partialMockVC stopMocking];
-  [engine stopMocking];
   [settingsChannel stopMocking];
   [mockTraitCollection stopMocking];
 }
@@ -220,12 +224,10 @@ typedef enum UIAccessibilityContrast : NSInteger {
   }
 
   // Setup test.
-  id engine = OCMClassMock([FlutterEngine class]);
-
   id settingsChannel = OCMClassMock([FlutterBasicMessageChannel class]);
-  OCMStub([engine settingsChannel]).andReturn(settingsChannel);
+  OCMStub([self.mockEngine settingsChannel]).andReturn(settingsChannel);
 
-  FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:engine
+  FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:self.mockEngine
                                                                     nibName:nil
                                                                      bundle:nil];
 
@@ -238,7 +240,6 @@ typedef enum UIAccessibilityContrast : NSInteger {
                              }]]);
 
   // Clean up mocks
-  [engine stopMocking];
   [settingsChannel stopMocking];
 }
 
@@ -250,12 +251,10 @@ typedef enum UIAccessibilityContrast : NSInteger {
   }
 
   // Setup test.
-  id engine = OCMClassMock([FlutterEngine class]);
-
   id settingsChannel = OCMClassMock([FlutterBasicMessageChannel class]);
-  OCMStub([engine settingsChannel]).andReturn(settingsChannel);
+  OCMStub([self.mockEngine settingsChannel]).andReturn(settingsChannel);
 
-  FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:engine
+  FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:self.mockEngine
                                                                     nibName:nil
                                                                      bundle:nil];
 
@@ -268,7 +267,6 @@ typedef enum UIAccessibilityContrast : NSInteger {
                              }]]);
 
   // Clean up mocks
-  [engine stopMocking];
   [settingsChannel stopMocking];
 }
 
@@ -280,12 +278,10 @@ typedef enum UIAccessibilityContrast : NSInteger {
   }
 
   // Setup test.
-  id engine = OCMClassMock([FlutterEngine class]);
-
   id settingsChannel = OCMClassMock([FlutterBasicMessageChannel class]);
-  OCMStub([engine settingsChannel]).andReturn(settingsChannel);
+  OCMStub([self.mockEngine settingsChannel]).andReturn(settingsChannel);
 
-  FlutterViewController* realVC = [[FlutterViewController alloc] initWithEngine:engine
+  FlutterViewController* realVC = [[FlutterViewController alloc] initWithEngine:self.mockEngine
                                                                         nibName:nil
                                                                          bundle:nil];
   id mockTraitCollection = [self fakeTraitCollectionWithContrast:UIAccessibilityContrastHigh];
@@ -307,7 +303,6 @@ typedef enum UIAccessibilityContrast : NSInteger {
 
   // Clean up mocks
   [partialMockVC stopMocking];
-  [engine stopMocking];
   [settingsChannel stopMocking];
   [mockTraitCollection stopMocking];
 }
@@ -462,8 +457,6 @@ typedef enum UIAccessibilityContrast : NSInteger {
                           currentOrientation:(UIInterfaceOrientation)currentOrientation
                         didChangeOrientation:(BOOL)didChange
                         resultingOrientation:(UIInterfaceOrientation)resultingOrientation {
-  id engine = OCMClassMock([FlutterEngine class]);
-
   id deviceMock = OCMPartialMock([UIDevice currentDevice]);
   if (!didChange) {
     OCMReject([deviceMock setValue:[OCMArg any] forKey:@"orientation"]);
@@ -471,7 +464,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
     OCMExpect([deviceMock setValue:@(resultingOrientation) forKey:@"orientation"]);
   }
 
-  FlutterViewController* realVC = [[FlutterViewController alloc] initWithEngine:engine
+  FlutterViewController* realVC = [[FlutterViewController alloc] initWithEngine:self.mockEngine
                                                                         nibName:nil
                                                                          bundle:nil];
   id mockApplication = OCMClassMock([UIApplication class]);
@@ -480,7 +473,6 @@ typedef enum UIAccessibilityContrast : NSInteger {
 
   [realVC performOrientationUpdate:mask];
   OCMVerifyAll(deviceMock);
-  [engine stopMocking];
   [deviceMock stopMocking];
   [mockApplication stopMocking];
 }
@@ -536,17 +528,199 @@ typedef enum UIAccessibilityContrast : NSInteger {
 }
 
 - (void)testNotifyLowMemory {
-  id engine = OCMClassMock([FlutterEngine class]);
-  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
-                                                                                nibName:nil
-                                                                                 bundle:nil];
-  OCMStub([engine viewController]).andReturn(viewController);
+  FlutterViewController* viewController =
+      [[FlutterViewController alloc] initWithEngine:self.mockEngine nibName:nil bundle:nil];
+  OCMStub([self.mockEngine viewController]).andReturn(viewController);
   id viewControllerMock = OCMPartialMock(viewController);
   OCMStub([viewControllerMock surfaceUpdated:NO]);
 
   [viewController beginAppearanceTransition:NO animated:NO];
   [viewController endAppearanceTransition];
-  OCMVerify([engine notifyLowMemory]);
+  OCMVerify([self.mockEngine notifyLowMemory]);
+}
+
+- (void)testValidKeyUpEvent API_AVAILABLE(ios(13.4)) {
+  if (@available(iOS 13.4, *)) {
+    // noop
+  } else {
+    return;
+  }
+
+  id keyEventChannel = OCMClassMock([FlutterBasicMessageChannel class]);
+  OCMStub([self.mockEngine keyEventChannel]).andReturn(keyEventChannel);
+
+  FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:self.mockEngine
+                                                                    nibName:nil
+                                                                     bundle:nil];
+
+  id testSet = [self fakeUiPressSetForPhase:UIPressPhaseBegan
+                                    keyCode:UIKeyboardHIDUsageKeyboardA
+                              modifierFlags:UIKeyModifierShift
+                                 characters:@"a"
+                charactersIgnoringModifiers:@"A"];
+
+  // Exercise behavior under test.
+  [vc dispatchPresses:testSet];
+
+  // Verify behavior.
+  OCMVerify([keyEventChannel
+      sendMessage:[OCMArg checkWithBlock:^BOOL(id message) {
+        return [message[@"keymap"] isEqualToString:@"ios"] &&
+               [message[@"type"] isEqualToString:@"keydown"] &&
+               [message[@"keyCode"] isEqualToNumber:[NSNumber numberWithInt:4]] &&
+               [message[@"modifiers"] isEqualToNumber:[NSNumber numberWithInt:131072]] &&
+               [message[@"characters"] isEqualToString:@"a"] &&
+               [message[@"charactersIgnoringModifiers"] isEqualToString:@"A"];
+      }]]);
+
+  // Clean up mocks
+  [keyEventChannel stopMocking];
+}
+
+- (void)testValidKeyDownEvent API_AVAILABLE(ios(13.4)) {
+  if (@available(iOS 13.4, *)) {
+    // noop
+  } else {
+    return;
+  }
+
+  id keyEventChannel = OCMClassMock([FlutterBasicMessageChannel class]);
+  OCMStub([self.mockEngine keyEventChannel]).andReturn(keyEventChannel);
+
+  FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:self.mockEngine
+                                                                    nibName:nil
+                                                                     bundle:nil];
+
+  id testSet = [self fakeUiPressSetForPhase:UIPressPhaseEnded
+                                    keyCode:UIKeyboardHIDUsageKeyboardA
+                              modifierFlags:UIKeyModifierShift
+                                 characters:@"a"
+                charactersIgnoringModifiers:@"A"];
+
+  // Exercise behavior under test.
+  [vc dispatchPresses:testSet];
+
+  // Verify behavior.
+  OCMVerify([keyEventChannel
+      sendMessage:[OCMArg checkWithBlock:^BOOL(id message) {
+        return [message[@"keymap"] isEqualToString:@"ios"] &&
+               [message[@"type"] isEqualToString:@"keyup"] &&
+               [message[@"keyCode"] isEqualToNumber:[NSNumber numberWithInt:4]] &&
+               [message[@"modifiers"] isEqualToNumber:[NSNumber numberWithInt:131072]] &&
+               [message[@"characters"] isEqualToString:@"a"] &&
+               [message[@"charactersIgnoringModifiers"] isEqualToString:@"A"];
+      }]]);
+
+  // Clean up mocks
+  [keyEventChannel stopMocking];
+}
+
+- (void)testIgnoredKeyEvents API_AVAILABLE(ios(13.4)) {
+  if (@available(iOS 13.4, *)) {
+    // noop
+  } else {
+    return;
+  }
+
+  id keyEventChannel = OCMClassMock([FlutterBasicMessageChannel class]);
+  OCMStub([self.mockEngine keyEventChannel]).andReturn(keyEventChannel);
+
+  FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:self.mockEngine
+                                                                    nibName:nil
+                                                                     bundle:nil];
+
+  id emptySet = [NSSet set];
+  id ignoredSet = [self fakeUiPressSetForPhase:UIPressPhaseStationary
+                                       keyCode:UIKeyboardHIDUsageKeyboardA
+                                 modifierFlags:UIKeyModifierShift
+                                    characters:@"a"
+                   charactersIgnoringModifiers:@"A"];
+
+  id mockUiPress = OCMClassMock([UIPress class]);
+  OCMStub([mockUiPress phase]).andReturn(UIPressPhaseBegan);
+  id emptyKeySet = [NSSet setWithArray:@[ mockUiPress ]];
+  // Exercise behavior under test.
+  [vc dispatchPresses:emptySet];
+  [vc dispatchPresses:ignoredSet];
+  [vc dispatchPresses:emptyKeySet];
+
+  // Verify behavior.
+  OCMVerify(never(), [keyEventChannel sendMessage:[OCMArg any]]);
+
+  // Clean up mocks
+  [keyEventChannel stopMocking];
+}
+
+- (void)testPanGestureRecognizer API_AVAILABLE(ios(13.4)) {
+  if (@available(iOS 13.4, *)) {
+    // noop
+  } else {
+    return;
+  }
+
+  FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:self.mockEngine
+                                                                    nibName:nil
+                                                                     bundle:nil];
+  XCTAssertNotNil(vc);
+  UIView* view = vc.view;
+  XCTAssertNotNil(view);
+  NSArray* gestureRecognizers = view.gestureRecognizers;
+  XCTAssertNotNil(gestureRecognizers);
+
+  BOOL found = NO;
+  for (id gesture in gestureRecognizers) {
+    if ([gesture isKindOfClass:[UIPanGestureRecognizer class]]) {
+      found = YES;
+      break;
+    }
+  }
+  XCTAssertTrue(found);
+}
+
+- (void)testMouseSupport API_AVAILABLE(ios(13.4)) {
+  if (@available(iOS 13.4, *)) {
+    // noop
+  } else {
+    return;
+  }
+
+  FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:self.mockEngine
+                                                                    nibName:nil
+                                                                     bundle:nil];
+  XCTAssertNotNil(vc);
+
+  id mockPanGestureRecognizer = OCMClassMock([UIPanGestureRecognizer class]);
+  XCTAssertNotNil(mockPanGestureRecognizer);
+
+  [vc scrollEvent:mockPanGestureRecognizer];
+
+  [[[self.mockEngine verify] ignoringNonObjectArgs]
+      dispatchPointerDataPacket:std::make_unique<flutter::PointerDataPacket>()];
+}
+
+- (NSSet<UIPress*>*)fakeUiPressSetForPhase:(UIPressPhase)phase
+                                   keyCode:(UIKeyboardHIDUsage)keyCode
+                             modifierFlags:(UIKeyModifierFlags)modifierFlags
+                                characters:(NSString*)characters
+               charactersIgnoringModifiers:(NSString*)charactersIgnoringModifiers
+    API_AVAILABLE(ios(13.4)) {
+  if (@available(iOS 13.4, *)) {
+    // noop
+  } else {
+    return [NSSet set];
+  }
+  id mockUiPress = OCMClassMock([UIPress class]);
+  OCMStub([mockUiPress phase]).andReturn(phase);
+
+  id mockUiKey = OCMClassMock([UIKey class]);
+  OCMStub([mockUiKey keyCode]).andReturn(keyCode);
+  OCMStub([mockUiKey modifierFlags]).andReturn(modifierFlags);
+  OCMStub([mockUiKey characters]).andReturn(characters);
+  OCMStub([mockUiKey charactersIgnoringModifiers]).andReturn(charactersIgnoringModifiers);
+
+  OCMStub([mockUiPress key]).andReturn(mockUiKey);
+
+  return [NSSet setWithArray:@[ mockUiPress ]];
 }
 
 @end

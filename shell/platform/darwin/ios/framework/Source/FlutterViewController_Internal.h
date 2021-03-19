@@ -6,26 +6,29 @@
 #define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERVIEWCONTROLLER_INTERNAL_H_
 
 #include "flutter/fml/memory/weak_ptr.h"
-#include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
+
+#import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterRestorationPlugin.h"
 
 namespace flutter {
 class FlutterPlatformViewsController;
 }
 
-FLUTTER_EXPORT
+FLUTTER_DARWIN_EXPORT
 extern NSNotificationName const FlutterViewControllerWillDealloc;
 
-FLUTTER_EXPORT
+FLUTTER_DARWIN_EXPORT
 extern NSNotificationName const FlutterViewControllerHideHomeIndicator;
 
-FLUTTER_EXPORT
+FLUTTER_DARWIN_EXPORT
 extern NSNotificationName const FlutterViewControllerShowHomeIndicator;
 
 @interface FlutterViewController ()
 
 @property(nonatomic, readonly) BOOL isPresentingViewController;
 - (fml::WeakPtr<FlutterViewController>)getWeakPtr;
-- (flutter::FlutterPlatformViewsController*)platformViewsController;
+- (std::shared_ptr<flutter::FlutterPlatformViewsController>&)platformViewsController;
+- (FlutterRestorationPlugin*)restorationPlugin;
 
 @end
 

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// Set this flag to `true` to cause the engine to visualize the semantics tree
@@ -582,6 +582,8 @@ class SemanticsObject {
       hasAction(ui.SemanticsAction.scrollDown) ||
       hasAction(ui.SemanticsAction.scrollUp);
 
+  bool get hasFocus => hasFlag(ui.SemanticsFlag.isFocused);
+
   /// Whether this object represents a hotizontally scrollable area.
   bool get isHorizontalScrollContainer =>
       hasAction(ui.SemanticsAction.scrollLeft) ||
@@ -851,13 +853,9 @@ class SemanticsObject {
         hasIdentityTransform &&
         verticalContainerAdjustment == 0.0 &&
         horizontalContainerAdjustment == 0.0) {
-      element.style
-        ..removeProperty('transform-origin')
-        ..removeProperty('transform');
+      _resetElementOffsets(element);
       if (containerElement != null) {
-        containerElement.style
-          ..removeProperty('transform-origin')
-          ..removeProperty('transform');
+        _resetElementOffsets(containerElement);
       }
       return;
     }
@@ -877,33 +875,84 @@ class SemanticsObject {
         effectiveTransformIsIdentity = effectiveTransform.isIdentity();
       }
     } else if (!hasIdentityTransform) {
-      effectiveTransform = Matrix4.fromFloat32List(transform!);
+      effectiveTransform = Matrix4.fromFloat32List(transform);
       effectiveTransformIsIdentity = false;
     }
 
-    if (!effectiveTransformIsIdentity) {
-      element.style
-        ..transformOrigin = '0 0 0'
-        ..transform = matrix4ToCssTransform(effectiveTransform);
+    if (!effectiveTransformIsIdentity || isMacOrIOS) {
+      if (effectiveTransformIsIdentity) {
+        effectiveTransform = Matrix4.identity();
+      }
+      if (isDesktop) {
+        element.style
+          ..transformOrigin = '0 0 0'
+          ..transform = (effectiveTransformIsIdentity ? 'translate(0px 0px 0px)'
+              : matrix4ToCssTransform(effectiveTransform));
+      } else {
+        // Mobile screen readers observed to have errors while calculating the
+        // semantics focus borders if css `transform` properties are used.
+        // See: https://github.com/flutter/flutter/issues/68225
+        // Therefore we are calculating a bounding rectangle for the
+        // effective transform and use that rectangle to set TLWH css style
+        // properties.
+        // Note: Identity matrix is not using this code path.
+        final ui.Rect rect =
+            computeBoundingRectangleFromMatrix(effectiveTransform, _rect!);
+        element.style
+          ..top = '${rect.top}px'
+          ..left = '${rect.left}px'
+          ..width = '${rect.width}px'
+          ..height = '${rect.height}px';
+      }
     } else {
-      element.style
-        ..removeProperty('transform-origin')
-        ..removeProperty('transform');
+      _resetElementOffsets(element);
+      // TODO: https://github.com/flutter/flutter/issues/73347
     }
 
     if (containerElement != null) {
       if (!hasZeroRectOffset ||
+          isMacOrIOS ||
           verticalContainerAdjustment != 0.0 ||
           horizontalContainerAdjustment != 0.0) {
         final double translateX = -_rect!.left + horizontalContainerAdjustment;
         final double translateY = -_rect!.top + verticalContainerAdjustment;
-        containerElement.style
-          ..transformOrigin = '0 0 0'
-          ..transform = 'translate(${translateX}px, ${translateY}px)';
+        if (isDesktop) {
+          containerElement.style
+            ..transformOrigin = '0 0 0'
+            ..transform = 'translate(${translateX}px, ${translateY}px)';
+        } else {
+          containerElement.style
+            ..top = '${translateY}px'
+            ..left = '${translateX}px';
+        }
       } else {
-        containerElement.style
+        _resetElementOffsets(containerElement);
+      }
+    }
+  }
+
+  // On Mac OS and iOS, VoiceOver requires left=0 top=0 value to correctly
+  // handle order. See https://github.com/flutter/flutter/issues/73347.
+  static void _resetElementOffsets(html.Element element) {
+    if (isMacOrIOS) {
+      if (isDesktop) {
+        element.style
+          ..transformOrigin = '0 0 0'
+          ..transform = 'translate(0px, 0px)';
+      } else {
+        element.style
+          ..top = '0px'
+          ..left = '0px';
+      }
+    } else {
+      if (isDesktop) {
+        element.style
           ..removeProperty('transform-origin')
           ..removeProperty('transform');
+      } else {
+        element.style
+          ..removeProperty('top')
+          ..removeProperty('left');
       }
     }
   }
@@ -1218,11 +1267,11 @@ class EngineSemanticsOwner {
 
   final SemanticsHelper semanticsHelper = SemanticsHelper();
 
-  /// Whether the user has requested that [updateSemantics] be called when
-  /// the semantic contents of window changes.
+  /// Whether the user has requested that [updateSemantics] be called when the
+  /// semantic contents of window changes.
   ///
-  /// The [ui.Window.onSemanticsEnabledChanged] callback is called whenever this
-  /// value changes.
+  /// The [ui.PlatformDispatcher.onSemanticsEnabledChanged] callback is called
+  /// whenever this value changes.
   ///
   /// This is separate from accessibility [mode], which controls how gestures
   /// are interpreted when this value is true.
@@ -1252,9 +1301,12 @@ class EngineSemanticsOwner {
       _rootSemanticsElement = null;
       _gestureModeClock?.datetime = null;
     }
-
-    if (window._onSemanticsEnabledChanged != null) {
-      window.invokeOnSemanticsEnabledChanged();
+    if (_semanticsEnabled != EnginePlatformDispatcher.instance.semanticsEnabled) {
+      EnginePlatformDispatcher.instance._configuration =
+        EnginePlatformDispatcher.instance._configuration.copyWith(semanticsEnabled: _semanticsEnabled);
+      if (EnginePlatformDispatcher.instance._onSemanticsEnabledChanged != null) {
+        EnginePlatformDispatcher.instance.invokeOnSemanticsEnabledChanged();
+      }
     }
   }
 

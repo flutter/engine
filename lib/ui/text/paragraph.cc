@@ -132,20 +132,19 @@ tonic::Float32List Paragraph::getRectsForPlaceholders() {
 }
 
 Dart_Handle Paragraph::getPositionForOffset(double dx, double dy) {
-  Dart_Handle result = Dart_NewListOf(Dart_CoreType_Int, 2);
   txt::Paragraph::PositionWithAffinity pos =
       m_paragraph->GetGlyphPositionAtCoordinate(dx, dy);
-  Dart_ListSetAt(result, 0, ToDart(pos.position));
-  Dart_ListSetAt(result, 1, ToDart(static_cast<int>(pos.affinity)));
-  return result;
+  std::vector<size_t> result = {
+      pos.position,                      // size_t already
+      static_cast<size_t>(pos.affinity)  // affinity (enum)
+  };
+  return tonic::DartConverter<decltype(result)>::ToDart(result);
 }
 
 Dart_Handle Paragraph::getWordBoundary(unsigned offset) {
   txt::Paragraph::Range<size_t> point = m_paragraph->GetWordBoundary(offset);
-  Dart_Handle result = Dart_NewListOf(Dart_CoreType_Int, 2);
-  Dart_ListSetAt(result, 0, ToDart(point.start));
-  Dart_ListSetAt(result, 1, ToDart(point.end));
-  return result;
+  std::vector<size_t> result = {point.start, point.end};
+  return tonic::DartConverter<decltype(result)>::ToDart(result);
 }
 
 Dart_Handle Paragraph::getLineBoundary(unsigned offset) {
@@ -159,10 +158,8 @@ Dart_Handle Paragraph::getLineBoundary(unsigned offset) {
       break;
     }
   }
-  Dart_Handle result = Dart_NewListOf(Dart_CoreType_Int, 2);
-  Dart_ListSetAt(result, 0, ToDart(line_start));
-  Dart_ListSetAt(result, 1, ToDart(line_end));
-  return result;
+  std::vector<int> result = {line_start, line_end};
+  return tonic::DartConverter<decltype(result)>::ToDart(result);
 }
 
 tonic::Float64List Paragraph::computeLineMetrics() {

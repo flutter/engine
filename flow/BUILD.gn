@@ -12,8 +12,6 @@ source_set("flow") {
     "compositor_context.h",
     "embedded_views.cc",
     "embedded_views.h",
-    "gl_context_switch.cc",
-    "gl_context_switch.h",
     "instrumentation.cc",
     "instrumentation.h",
     "layers/backdrop_filter_layer.cc",
@@ -66,14 +64,13 @@ source_set("flow") {
     "surface.h",
     "surface_frame.cc",
     "surface_frame.h",
-    "texture.cc",
-    "texture.h",
   ]
 
   public_configs = [ "//flutter:config" ]
 
   deps = [
     "//flutter/common",
+    "//flutter/common/graphics",
     "//flutter/fml",
     "//third_party/skia",
   ]
@@ -124,7 +121,10 @@ if (enable_unittests) {
       "//third_party/googletest:gtest",
     ]
 
-    deps = [ ":flow" ]
+    deps = [
+      ":flow",
+      "//flutter/common/graphics",
+    ]
   }
 
   executable("flow_unittests") {
@@ -137,6 +137,7 @@ if (enable_unittests) {
       "flow_test_utils.h",
       "gl_context_switch_unittests.cc",
       "layers/backdrop_filter_layer_unittests.cc",
+      "layers/checkerboard_layertree_unittests.cc",
       "layers/clip_path_layer_unittests.cc",
       "layers/clip_rect_layer_unittests.cc",
       "layers/clip_rrect_layer_unittests.cc",
@@ -166,6 +167,7 @@ if (enable_unittests) {
       ":flow",
       ":flow_fixtures",
       ":flow_testing",
+      "//flutter/common/graphics",
       "//flutter/fml",
       "//flutter/testing:skia",
       "//flutter/testing:testing_lib",
@@ -173,6 +175,14 @@ if (enable_unittests) {
       "//third_party/googletest:gtest",
       "//third_party/skia",
     ]
+
+    if (!defined(defines)) {
+      defines = []
+    }
+    if (is_win) {
+      # Required for M_PI and others.
+      defines += [ "_USE_MATH_DEFINES" ]
+    }
 
     if (is_fuchsia && flutter_enable_legacy_fuchsia_embedder) {
       sources += [ "layers/fuchsia_layer_unittests.cc" ]

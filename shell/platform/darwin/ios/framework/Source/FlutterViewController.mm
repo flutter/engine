@@ -34,6 +34,28 @@ NSNotificationName const FlutterViewControllerHideHomeIndicator =
 NSNotificationName const FlutterViewControllerShowHomeIndicator =
     @"FlutterViewControllerShowHomeIndicator";
 
+// Struct holding the mouse state. The engine doesn't keep track of which
+// mouse buttons have been pressed, so it's the embedding's responsibility.
+typedef struct MouseState {
+  // True if the last event sent to Flutter had at least one mouse button.
+  // pressed.
+  bool flutter_state_is_down = false;
+
+  // True if kAdd has been sent to Flutter. Used to determine whether
+  // to send a kAdd event before sending an incoming mouse event, since
+  // Flutter expects pointers to be added before events are sent for them.
+  bool flutter_state_is_added = false;
+
+  // Current coordinate of the mouse cursor in physical device pixels.
+  CGPoint location = CGPointZero;
+
+  // Last reported translation for an in-flight pan gesture in physical device pixels.
+  CGPoint last_translation = CGPointZero;
+
+  // The currently pressed buttons, as represented in FlutterPointerEvent.
+  uint64_t buttons = 0;
+} MouseState;
+
 // This is left a FlutterBinaryMessenger privately for now to give people a chance to notice the
 // change. Unfortunately unless you have Werror turned on, incompatible pointers as arguments are
 // just a warning.
@@ -78,6 +100,9 @@ typedef enum UIAccessibilityContrast : NSInteger {
   // UIScrollView with height zero and a content offset so we can get those events. See also:
   // https://github.com/flutter/flutter/issues/35050
   fml::scoped_nsobject<UIScrollView> _scrollView;
+  fml::scoped_nsobject<UIPointerInteraction> _pointerInteraction API_AVAILABLE(ios(13.4));
+  fml::scoped_nsobject<UIPanGestureRecognizer> _panGestureRecognizer API_AVAILABLE(ios(13.4));
+  MouseState _mouseState;
 }
 
 @synthesize displayingFlutterUI = _displayingFlutterUI;
@@ -157,10 +182,17 @@ typedef enum UIAccessibilityContrast : NSInteger {
 
 - (void)sharedSetupWithProject:(nullable FlutterDartProject*)project
                   initialRoute:(nullable NSString*)initialRoute {
+  // Need the project to get settings for the view. Initializing it here means
+  // the Engine class won't initialize it later.
+  if (!project) {
+    project = [[[FlutterDartProject alloc] init] autorelease];
+  }
+  FlutterView.forceSoftwareRendering = project.settings.enable_software_rendering;
   auto engine = fml::scoped_nsobject<FlutterEngine>{[[FlutterEngine alloc]
                 initWithName:@"io.flutter"
                      project:project
-      allowHeadlessExecution:self.engineAllowHeadlessExecution]};
+      allowHeadlessExecution:self.engineAllowHeadlessExecution
+          restorationEnabled:[self restorationIdentifier] != nil]};
 
   if (!engine) {
     return;
@@ -597,6 +629,17 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 
   [_engine.get() attachView];
 
+  if (@available(iOS 13.4, *)) {
+    _pointerInteraction.reset([[UIPointerInteraction alloc] initWithDelegate:self]);
+    [self.view addInteraction:_pointerInteraction];
+
+    _panGestureRecognizer.reset(
+        [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(scrollEvent:)]);
+    _panGestureRecognizer.get().allowedScrollTypesMask = UIScrollTypeMaskAll;
+    _panGestureRecognizer.get().allowedTouchTypes = @[ @(UITouchTypeIndirectPointer) ];
+    [_flutterView.get() addGestureRecognizer:_panGestureRecognizer.get()];
+  }
+
   [super viewDidLoad];
 }
 
@@ -612,6 +655,7 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
     [self surfaceUpdated:YES];
   }
   [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.inactive"];
+  [[_engine.get() restorationPlugin] markRestorationComplete];
 
   [super viewWillAppear:animated];
 }
@@ -620,8 +664,9 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
   TRACE_EVENT0("flutter", "viewDidAppear");
   [self onUserSettingsChanged:nil];
   [self onAccessibilityStatusChanged:nil];
-  [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.resumed"];
-
+  if (UIApplication.sharedApplication.applicationState == UIApplicationStateActive) {
+    [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.resumed"];
+  }
   [super viewDidAppear:animated];
 }
 
@@ -753,8 +798,9 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
         return flutter::PointerData::DeviceKind::kTouch;
       case UITouchTypeStylus:
         return flutter::PointerData::DeviceKind::kStylus;
+      case UITouchTypeIndirectPointer:
+        return flutter::PointerData::DeviceKind::kMouse;
       default:
-        // TODO(53696): Handle the UITouchTypeIndirectPointer enum value.
         FML_DLOG(INFO) << "Unhandled touch type: " << touch.type;
         break;
     }
@@ -917,18 +963,18 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 - (void)viewDidLayoutSubviews {
-  CGSize viewSize = self.view.bounds.size;
+  CGRect viewBounds = self.view.bounds;
   CGFloat scale = [UIScreen mainScreen].scale;
 
   // Purposefully place this not visible.
-  _scrollView.get().frame = CGRectMake(0.0, 0.0, viewSize.width, 0.0);
+  _scrollView.get().frame = CGRectMake(0.0, 0.0, viewBounds.size.width, 0.0);
   _scrollView.get().contentOffset = CGPointMake(kScrollViewContentSize, kScrollViewContentSize);
 
   // First time since creation that the dimensions of its view is known.
   bool firstViewBoundsUpdate = !_viewportMetrics.physical_width;
   _viewportMetrics.device_pixel_ratio = scale;
-  _viewportMetrics.physical_width = viewSize.width * scale;
-  _viewportMetrics.physical_height = viewSize.height * scale;
+  _viewportMetrics.physical_width = viewBounds.size.width * scale;
+  _viewportMetrics.physical_height = viewBounds.size.height * scale;
 
   [self updateViewportPadding];
   [self updateViewportMetrics];
@@ -1018,6 +1064,58 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   [self updateViewportMetrics];
 }
 
+- (void)dispatchPresses:(NSSet<UIPress*>*)presses API_AVAILABLE(ios(13.4)) {
+  if (@available(iOS 13.4, *)) {
+    for (UIPress* press in presses) {
+      if (press.key == nil || press.phase == UIPressPhaseStationary ||
+          press.phase == UIPressPhaseChanged) {
+        continue;
+      }
+      NSMutableDictionary* keyMessage = [[@{
+        @"keymap" : @"ios",
+        @"type" : @"unknown",
+        @"keyCode" : @(press.key.keyCode),
+        @"modifiers" : @(press.key.modifierFlags),
+        @"characters" : press.key.characters,
+        @"charactersIgnoringModifiers" : press.key.charactersIgnoringModifiers
+      } mutableCopy] autorelease];
+
+      if (press.phase == UIPressPhaseBegan) {
+        keyMessage[@"type"] = @"keydown";
+      } else if (press.phase == UIPressPhaseEnded || press.phase == UIPressPhaseCancelled) {
+        keyMessage[@"type"] = @"keyup";
+      }
+
+      [[_engine.get() keyEventChannel] sendMessage:keyMessage];
+    }
+  }
+}
+
+- (void)pressesBegan:(NSSet<UIPress*>*)presses withEvent:(UIEvent*)event API_AVAILABLE(ios(9.0)) {
+  if (@available(iOS 13.4, *)) {
+    [self dispatchPresses:presses];
+  }
+}
+
+- (void)pressesChanged:(NSSet<UIPress*>*)presses withEvent:(UIEvent*)event API_AVAILABLE(ios(9.0)) {
+  if (@available(iOS 13.4, *)) {
+    [self dispatchPresses:presses];
+  }
+}
+
+- (void)pressesEnded:(NSSet<UIPress*>*)presses withEvent:(UIEvent*)event API_AVAILABLE(ios(9.0)) {
+  if (@available(iOS 13.4, *)) {
+    [self dispatchPresses:presses];
+  }
+}
+
+- (void)pressesCancelled:(NSSet<UIPress*>*)presses
+               withEvent:(UIEvent*)event API_AVAILABLE(ios(9.0)) {
+  if (@available(iOS 13.4, *)) {
+    [self dispatchPresses:presses];
+  }
+}
+
 #pragma mark - Orientation updates
 
 - (void)onOrientationPreferencesUpdated:(NSNotification*)notification {
@@ -1099,14 +1197,18 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   }
   auto platformView = [_engine.get() platformView];
   int32_t flags = 0;
-  if (UIAccessibilityIsInvertColorsEnabled())
+  if (UIAccessibilityIsInvertColorsEnabled()) {
     flags |= static_cast<int32_t>(flutter::AccessibilityFeatureFlag::kInvertColors);
-  if (UIAccessibilityIsReduceMotionEnabled())
+  }
+  if (UIAccessibilityIsReduceMotionEnabled()) {
     flags |= static_cast<int32_t>(flutter::AccessibilityFeatureFlag::kReduceMotion);
-  if (UIAccessibilityIsBoldTextEnabled())
+  }
+  if (UIAccessibilityIsBoldTextEnabled()) {
     flags |= static_cast<int32_t>(flutter::AccessibilityFeatureFlag::kBoldText);
-  if (UIAccessibilityDarkerSystemColorsEnabled())
+  }
+  if (UIAccessibilityDarkerSystemColorsEnabled()) {
     flags |= static_cast<int32_t>(flutter::AccessibilityFeatureFlag::kHighContrast);
+  }
 #if TARGET_OS_SIMULATOR
   // There doesn't appear to be any way to determine whether the accessibility
   // inspector is enabled on the simulator. We conservatively always turn on the
@@ -1270,7 +1372,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
 #pragma mark - Platform views
 
-- (flutter::FlutterPlatformViewsController*)platformViewsController {
+- (std::shared_ptr<flutter::FlutterPlatformViewsController>&)platformViewsController {
   return [_engine.get() platformViewsController];
 }
 
@@ -1359,6 +1461,85 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
 - (BOOL)isPresentingViewController {
   return self.presentedViewController != nil || self.isPresentingViewControllerAnimating;
+}
+
+- (flutter::PointerData)generatePointerDataForMouse API_AVAILABLE(ios(13.4)) {
+  flutter::PointerData pointer_data;
+
+  pointer_data.Clear();
+
+  pointer_data.kind = flutter::PointerData::DeviceKind::kMouse;
+  pointer_data.change = _mouseState.flutter_state_is_added ? flutter::PointerData::Change::kAdd
+                                                           : flutter::PointerData::Change::kHover;
+  pointer_data.pointer_identifier = reinterpret_cast<int64_t>(_pointerInteraction.get());
+
+  pointer_data.physical_x = _mouseState.location.x;
+  pointer_data.physical_y = _mouseState.location.y;
+
+  return pointer_data;
+}
+
+- (UIPointerRegion*)pointerInteraction:(UIPointerInteraction*)interaction
+                      regionForRequest:(UIPointerRegionRequest*)request
+                         defaultRegion:(UIPointerRegion*)defaultRegion API_AVAILABLE(ios(13.4)) {
+  if (request != nil) {
+    auto packet = std::make_unique<flutter::PointerDataPacket>(1);
+    const CGFloat scale = [UIScreen mainScreen].scale;
+    _mouseState.location = {request.location.x * scale, request.location.y * scale};
+
+    flutter::PointerData pointer_data = [self generatePointerDataForMouse];
+
+    pointer_data.signal_kind = flutter::PointerData::SignalKind::kNone;
+    packet->SetPointerData(/*index=*/0, pointer_data);
+
+    [_engine.get() dispatchPointerDataPacket:std::move(packet)];
+  }
+  return nil;
+}
+
+- (void)scrollEvent:(UIPanGestureRecognizer*)recognizer API_AVAILABLE(ios(13.4)) {
+  CGPoint translation = [recognizer translationInView:self.view];
+  const CGFloat scale = [UIScreen mainScreen].scale;
+
+  translation.x *= scale;
+  translation.y *= scale;
+
+  auto packet = std::make_unique<flutter::PointerDataPacket>(1);
+
+  flutter::PointerData pointer_data = [self generatePointerDataForMouse];
+  pointer_data.signal_kind = flutter::PointerData::SignalKind::kScroll;
+  pointer_data.scroll_delta_x = (translation.x - _mouseState.last_translation.x);
+  pointer_data.scroll_delta_y = -(translation.y - _mouseState.last_translation.y);
+
+  // The translation reported by UIPanGestureRecognizer is the total translation
+  // generated by the pan gesture since the gesture began. We need to be able
+  // to keep track of the last translation value in order to generate the deltaX
+  // and deltaY coordinates for each subsequent scroll event.
+  if (recognizer.state != UIGestureRecognizerStateEnded) {
+    _mouseState.last_translation = translation;
+  } else {
+    _mouseState.last_translation = CGPointZero;
+  }
+
+  packet->SetPointerData(/*index=*/0, pointer_data);
+
+  [_engine.get() dispatchPointerDataPacket:std::move(packet)];
+}
+
+#pragma mark - State Restoration
+
+- (void)encodeRestorableStateWithCoder:(NSCoder*)coder {
+  NSData* restorationData = [[_engine.get() restorationPlugin] restorationData];
+  [coder encodeDataObject:restorationData];
+}
+
+- (void)decodeRestorableStateWithCoder:(NSCoder*)coder {
+  NSData* restorationData = [coder decodeDataObject];
+  [[_engine.get() restorationPlugin] setRestorationData:restorationData];
+}
+
+- (FlutterRestorationPlugin*)restorationPlugin {
+  return [_engine.get() restorationPlugin];
 }
 
 @end
