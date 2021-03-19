@@ -345,14 +345,15 @@ static void SetEventLocationFromCursorPosition(
 // engine.
 static void SetEventPhaseFromCursorButtonState(
     GLFWwindow* window,
-    FlutterPointerEvent* event_data) {
+    FlutterPointerEvent* event_data,
+    int64_t buttons) {
   auto* controller = GetWindowController(window);
   event_data->phase =
-      (controller->buttons == 0)
-          ? (controller->pointer_currently_down ? FlutterPointerPhase::kUp
-                                                : FlutterPointerPhase::kHover)
-          : (controller->pointer_currently_down ? FlutterPointerPhase::kMove
-                                                : FlutterPointerPhase::kDown);
+      buttons
+        ? (controller->pointer_currently_down ? FlutterPointerPhase::kUp
+                                              : FlutterPointerPhase::kHover)
+        : (controller->pointer_currently_down ? FlutterPointerPhase::kMove
+                                              : FlutterPointerPhase::kDown);
 }
 
 // Reports the mouse entering or leaving the Flutter view.
@@ -369,7 +370,8 @@ static void GLFWCursorPositionCallback(GLFWwindow* window, double x, double y) {
   FlutterPointerEvent event = {};
   event.x = x;
   event.y = y;
-  SetEventPhaseFromCursorButtonState(window, &event);
+  auto* controller = GetWindowController(window);
+  SetEventPhaseFromCursorButtonState(window, &event, controller->buttons);
   SendPointerEventWithData(window, event);
 }
 
@@ -392,7 +394,7 @@ static void GLFWMouseButtonCallback(GLFWwindow* window,
                                                : controller->buttons & ~button;
 
   FlutterPointerEvent event = {};
-  SetEventPhaseFromCursorButtonState(window, &event);
+  SetEventPhaseFromCursorButtonState(window, &event, controller->buttons);
   SetEventLocationFromCursorPosition(window, &event);
   SendPointerEventWithData(window, event);
 
@@ -420,7 +422,8 @@ static void GLFWScrollCallback(GLFWwindow* window,
                                double delta_y) {
   FlutterPointerEvent event = {};
   SetEventLocationFromCursorPosition(window, &event);
-  SetEventPhaseFromCursorButtonState(window, &event);
+  auto* controller = GetWindowController(window);
+  SetEventPhaseFromCursorButtonState(window, &event, controller->buttons);
   event.signal_kind = FlutterPointerSignalKind::kFlutterPointerSignalKindScroll;
   // TODO: See if this can be queried from the OS; this value is chosen
   // arbitrarily to get something that feels reasonable.
