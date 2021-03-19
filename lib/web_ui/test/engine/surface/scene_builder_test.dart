@@ -329,7 +329,8 @@ void testMain() {
     }
   });
 
-  test('does not skip painting picture when picture is inside transform', () async {
+  test('does not skip painting picture when picture is '
+      'inside transform with offset', () async {
     final Picture picture = _drawPicture();
     // Picture should not be clipped out since transform will offset it to 500,500
     final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
@@ -344,8 +345,26 @@ void testMain() {
     expect(content.querySelectorAll('flt-picture').single.children, isNotEmpty);
   });
 
+  test('does not skip painting picture when picture is '
+      'inside transform', () async {
+    final Picture picture = _drawPicture();
+    // Picture should not be clipped out since transform will offset it to 500,500
+    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
+    builder.pushOffset(0, 0);
+    builder.pushClipRect(const Rect.fromLTRB(0, 0, 1000, 1000)) as PersistedContainerSurface;
+    builder.pushTransform((Matrix4.identity()..scale(0.5, 0.5)).toFloat64());
+    builder.pushOffset(1000, 1000);
+    builder.addPicture(Offset.zero, picture);
+    builder.pop();
+    builder.pop();
+    builder.pop();
+    html.HtmlElement content = builder.build().webOnlyRootElement;
+    expect(content.querySelectorAll('flt-picture').single.children, isNotEmpty);
+  });
+
   test(
-      'skips painting picture when picture fully clipped out with transform and offset', () async {
+      'skips painting picture when picture fully clipped out with'
+          ' transform and offset', () async {
     final Picture picture = _drawPicture();
     // Picture should be clipped out since transform will offset it to 500,500
     final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
