@@ -65,6 +65,10 @@ struct FlutterDesktopWindowControllerState {
   // has been added since it was last removed).
   bool pointer_currently_added = false;
 
+  bool pointer_currently_down = false;
+
+  int64_t buttons = 0;
+
   // The screen coordinates per inch on the primary monitor. Defaults to a sane
   // value based on pixel_ratio 1.0.
   double monitor_screen_coordinates_per_inch = kDpPerInch;
@@ -301,6 +305,10 @@ static void SendPointerEventWithData(GLFWwindow* window,
       std::chrono::duration_cast<std::chrono::microseconds>(
           std::chrono::high_resolution_clock::now().time_since_epoch())
           .count();
+  event.device_kind = FlutterPointerDeviceKind::kFlutterPointerDeviceKindMouse;
+  event.buttons =
+      (event.phase == FlutterPointerPhase::kAdd) ? 0 : controller->buttons;
+
   // Convert all screen coordinates to pixel coordinates.
   double pixels_per_coordinate =
       controller->window_wrapper->pixels_per_screen_coordinate;
@@ -315,6 +323,10 @@ static void SendPointerEventWithData(GLFWwindow* window,
     controller->pointer_currently_added = true;
   } else if (event_data.phase == FlutterPointerPhase::kRemove) {
     controller->pointer_currently_added = false;
+  } else if (event_data.phase == FlutterPointerPhase::kDown) {
+    controller->pointer_currently_down = true;
+  } else if (event_data.phase == FlutterPointerPhase::kUp) {
+    controller->pointer_currently_down = false;
   }
 }
 
@@ -330,10 +342,13 @@ static void SetEventLocationFromCursorPosition(
 static void SetEventPhaseFromCursorButtonState(
     GLFWwindow* window,
     FlutterPointerEvent* event_data) {
+  auto* controller = GetWindowController(window);
   event_data->phase =
-      glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS
-          ? FlutterPointerPhase::kMove
-          : FlutterPointerPhase::kHover;
+      (controller->buttons == 0)
+          ? (controller->pointer_currently_down ? FlutterPointerPhase::kUp
+                                                : FlutterPointerPhase::kHover)
+          : (controller->pointer_currently_down ? FlutterPointerPhase::kMove
+                                                : FlutterPointerPhase::kDown);
 }
 
 // Reports the mouse entering or leaving the Flutter view.
@@ -359,15 +374,21 @@ static void GLFWMouseButtonCallback(GLFWwindow* window,
                                     int key,
                                     int action,
                                     int mods) {
-  // Flutter currently doesn't understand other buttons, so ignore anything
-  // other than left.
-  if (key != GLFW_MOUSE_BUTTON_LEFT) {
+  FlutterPointerEvent event = {};
+  int64_t button;
+  if (key == GLFW_MOUSE_BUTTON_LEFT) {
+    button = FlutterPointerMouseButtons::kFlutterPointerButtonMousePrimary;
+  } else if (key == GLFW_MOUSE_BUTTON_RIGHT) {
+    button = FlutterPointerMouseButtons::kFlutterPointerButtonMouseSecondary;
+  } else {
     return;
   }
 
-  FlutterPointerEvent event = {};
-  event.phase = (action == GLFW_PRESS) ? FlutterPointerPhase::kDown
-                                       : FlutterPointerPhase::kUp;
+  auto* controller = GetWindowController(window);
+  controller->buttons = (action == GLFW_PRESS) ? controller->buttons | button
+                                               : controller->buttons & ~button;
+
+  SetEventPhaseFromCursorButtonState(window, &event);
   SetEventLocationFromCursorPosition(window, &event);
   SendPointerEventWithData(window, event);
 
@@ -376,15 +397,16 @@ static void GLFWMouseButtonCallback(GLFWwindow* window,
   bool hover_enabled =
       GetWindowController(window)->window_wrapper->hover_tracking_enabled;
   if (!hover_enabled) {
-    glfwSetCursorPosCallback(
-        window, (action == GLFW_PRESS) ? GLFWCursorPositionCallback : nullptr);
+    glfwSetCursorPosCallback(window, (controller->buttons != 0)
+                                         ? GLFWCursorPositionCallback
+                                         : nullptr);
   }
   // Disable enter/exit events while the mouse button is down; GLFW will send
   // an exit event when the mouse button is released, and the pointer should
   // stay valid until then.
   if (hover_enabled) {
     glfwSetCursorEnterCallback(
-        window, (action == GLFW_PRESS) ? nullptr : GLFWCursorEnterCallback);
+        window, (controller->buttons != 0) ? nullptr : GLFWCursorEnterCallback);
   }
 }
 
