@@ -440,6 +440,12 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   _embedderAPI.SendPointerEvent(_engine, &event, 1);
 }
 
+- (void)sendKeyEvent:(const FlutterKeyEvent&)event
+            callback:(FlutterKeyEventCallback)callback
+            userData:(void*)userData {
+  _embedderAPI.SendKeyEvent(_engine, &event, callback, userData);
+}
+
 - (void)setSemanticsEnabled:(BOOL)enabled {
   if (_semanticsEnabled == enabled) {
     return;
@@ -489,9 +495,12 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 }
 
 - (void)engineCallbackOnPlatformMessage:(const FlutterPlatformMessage*)message {
-  NSData* messageData = [NSData dataWithBytesNoCopy:(void*)message->message
-                                             length:message->message_size
-                                       freeWhenDone:NO];
+  NSData* messageData = nil;
+  if (message->message_size > 0) {
+    messageData = [NSData dataWithBytesNoCopy:(void*)message->message
+                                       length:message->message_size
+                                 freeWhenDone:NO];
+  }
   NSString* channel = @(message->channel);
   __block const FlutterPlatformMessageResponseHandle* responseHandle = message->response_handle;
 

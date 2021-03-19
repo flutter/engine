@@ -643,10 +643,10 @@ FILE: ../../../flutter/shell/common/engine_unittests.cc
 FILE: ../../../flutter/shell/common/fixtures/shell_test.dart
 FILE: ../../../flutter/shell/common/fixtures/shelltest_screenshot.png
 FILE: ../../../flutter/shell/common/input_events_unittests.cc
-FILE: ../../../flutter/shell/common/layer_tree_holder.cc
-FILE: ../../../flutter/shell/common/layer_tree_holder.h
-FILE: ../../../flutter/shell/common/layer_tree_holder_unittests.cc
 FILE: ../../../flutter/shell/common/persistent_cache_unittests.cc
+FILE: ../../../flutter/shell/common/pipeline.cc
+FILE: ../../../flutter/shell/common/pipeline.h
+FILE: ../../../flutter/shell/common/pipeline_unittests.cc
 FILE: ../../../flutter/shell/common/platform_view.cc
 FILE: ../../../flutter/shell/common/platform_view.h
 FILE: ../../../flutter/shell/common/pointer_data_dispatcher.cc
@@ -1105,9 +1105,15 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterBacki
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStore.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStoreData.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStoreData.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterChannelKeyResponder.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterChannelKeyResponder.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterChannelKeyResponderUnittests.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEmbedderExternalTextureUnittests.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEmbedderKeyResponder.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEmbedderKeyResponder.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEmbedderKeyResponderUnittests.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEngineTest.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h
@@ -1122,8 +1128,11 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterGLCom
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterGLCompositorUnittests.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterIOSurfaceHolder.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterIOSurfaceHolder.mm
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterIntermediateKeyResponder.h
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterIntermediateKeyResponder.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyPrimaryResponder.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterKeySecondaryResponder.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyboardManager.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyboardManager.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyboardManagerUnittests.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMacOSExternalTexture.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.mm
@@ -1158,6 +1167,8 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterViewC
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterViewControllerTestUtils.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterViewControllerTestUtils.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/KeyCodeMap.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/KeyCodeMap_internal.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/MacOSGLContextSwitch.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/MacOSGLContextSwitch.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/fixtures/flutter_desktop_test.dart
@@ -1585,6 +1596,8 @@ FILE: ../../../flutter/third_party/accessibility/base/simple_token.h
 FILE: ../../../flutter/third_party/accessibility/base/string_utils.cc
 FILE: ../../../flutter/third_party/accessibility/base/string_utils.h
 FILE: ../../../flutter/third_party/accessibility/base/string_utils_unittest.cc
+FILE: ../../../flutter/third_party/accessibility/base/win/string_conversion.cc
+FILE: ../../../flutter/third_party/accessibility/base/win/string_conversion.h
 FILE: ../../../flutter/third_party/accessibility/gfx/transform.cc
 FILE: ../../../flutter/third_party/accessibility/gfx/transform.h
 FILE: ../../../flutter/third_party/tonic/common/build_config.h
@@ -1781,51 +1794,9 @@ FILE: ../../../flutter/third_party/accessibility/ax/ax_position.h
 FILE: ../../../flutter/third_party/accessibility/ax/ax_range.h
 FILE: ../../../flutter/third_party/accessibility/ax/ax_relative_bounds.cc
 FILE: ../../../flutter/third_party/accessibility/ax/ax_relative_bounds.h
+FILE: ../../../flutter/third_party/accessibility/gfx/range/gfx_range_export.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2016 The Chromium Authors. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-   * Redistributions of source code must retain the above copyright
-notice, this list of conditions and the following disclaimer.
-   * Redistributions in binary form must reproduce the above
-copyright notice, this list of conditions and the following disclaimer
-in the documentation and/or other materials provided with the
-distribution.
-   * Neither the name of Google Inc. nor the names of its
-contributors may be used to endorse or promote products derived from
-this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: accessibility
-ORIGIN: ../../../flutter/third_party/accessibility/ax/ax_action_handler_base.cc + ../../../LICENSE
-TYPE: LicenseType.bsd
-FILE: ../../../flutter/third_party/accessibility/ax/ax_action_handler_base.cc
-FILE: ../../../flutter/third_party/accessibility/ax/ax_action_handler_base.h
-FILE: ../../../flutter/third_party/accessibility/ax/ax_base_export.h
-FILE: ../../../flutter/third_party/accessibility/ax/ax_event_intent.cc
-FILE: ../../../flutter/third_party/accessibility/ax/ax_event_intent.h
-FILE: ../../../flutter/third_party/accessibility/ax/test_ax_node_helper.cc
-FILE: ../../../flutter/third_party/accessibility/ax/test_ax_node_helper.h
-FILE: ../../../flutter/third_party/accessibility/ax/test_ax_tree_manager.cc
-FILE: ../../../flutter/third_party/accessibility/ax/test_ax_tree_manager.h
-----------------------------------------------------------------------------------------------------
-Copyright 2020 The Chromium Authors. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -1899,8 +1870,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: accessibility
-ORIGIN: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_base_unittest.cc + ../../../LICENSE
+ORIGIN: ../../../flutter/third_party/accessibility/ax/platform/ax_fragment_root_delegate_win.h + ../../../LICENSE
 TYPE: LicenseType.bsd
+FILE: ../../../flutter/third_party/accessibility/ax/ax_active_popup.cc
+FILE: ../../../flutter/third_party/accessibility/ax/ax_active_popup.h
 FILE: ../../../flutter/third_party/accessibility/ax/ax_clipping_behavior.h
 FILE: ../../../flutter/third_party/accessibility/ax/ax_constants.h
 FILE: ../../../flutter/third_party/accessibility/ax/ax_coordinate_system.h
@@ -1914,7 +1887,16 @@ FILE: ../../../flutter/third_party/accessibility/ax/ax_role_properties_unittest.
 FILE: ../../../flutter/third_party/accessibility/ax/ax_tree_manager.h
 FILE: ../../../flutter/third_party/accessibility/ax/ax_tree_manager_map.cc
 FILE: ../../../flutter/third_party/accessibility/ax/ax_tree_manager_map.h
+FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_fragment_root_delegate_win.h
+FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_fragment_root_win.cc
+FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_fragment_root_win.h
+FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_fragment_root_win_unittest.cc
 FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_base_unittest.cc
+FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_delegate_utils_win.cc
+FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_delegate_utils_win.h
+FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_win_unittest.h
+FILE: ../../../flutter/third_party/accessibility/base/win/scoped_safearray.h
+FILE: ../../../flutter/third_party/accessibility/base/win/scoped_safearray_unittest.cc
 ----------------------------------------------------------------------------------------------------
 Copyright 2019 The Chromium Authors. All rights reserved.
 
@@ -1964,6 +1946,7 @@ FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_de
 FILE: ../../../flutter/third_party/accessibility/ax/platform/compute_attributes.cc
 FILE: ../../../flutter/third_party/accessibility/ax/platform/compute_attributes.h
 FILE: ../../../flutter/third_party/accessibility/base/no_destructor.h
+FILE: ../../../flutter/third_party/accessibility/base/win/atl.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2018 The Chromium Authors. All rights reserved.
 
@@ -2009,6 +1992,8 @@ FILE: ../../../flutter/third_party/accessibility/ax/ax_role_properties.cc
 FILE: ../../../flutter/third_party/accessibility/ax/ax_role_properties.h
 FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_unittest.cc
 FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_unittest.h
+FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_relation_win.cc
+FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_relation_win.h
 FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_unique_id.cc
 FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_unique_id.h
 FILE: ../../../flutter/third_party/accessibility/base/numerics/checked_math.h
@@ -2054,9 +2039,61 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: accessibility
+ORIGIN: ../../../flutter/third_party/accessibility/ax/platform/uia_registrar_win.cc + ../../../LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../flutter/third_party/accessibility/ax/ax_action_handler_base.cc
+FILE: ../../../flutter/third_party/accessibility/ax/ax_action_handler_base.h
+FILE: ../../../flutter/third_party/accessibility/ax/ax_base_export.h
+FILE: ../../../flutter/third_party/accessibility/ax/ax_event_intent.cc
+FILE: ../../../flutter/third_party/accessibility/ax/ax_event_intent.h
+FILE: ../../../flutter/third_party/accessibility/ax/platform/uia_registrar_win.cc
+FILE: ../../../flutter/third_party/accessibility/ax/platform/uia_registrar_win.h
+FILE: ../../../flutter/third_party/accessibility/ax/test_ax_node_helper.cc
+FILE: ../../../flutter/third_party/accessibility/ax/test_ax_node_helper.h
+FILE: ../../../flutter/third_party/accessibility/ax/test_ax_tree_manager.cc
+FILE: ../../../flutter/third_party/accessibility/ax/test_ax_tree_manager.h
+FILE: ../../../flutter/third_party/accessibility/base/win/dispatch_stub.cc
+FILE: ../../../flutter/third_party/accessibility/base/win/dispatch_stub.h
+FILE: ../../../flutter/third_party/accessibility/base/win/variant_util.h
+FILE: ../../../flutter/third_party/accessibility/base/win/variant_vector.cc
+FILE: ../../../flutter/third_party/accessibility/base/win/variant_vector.h
+FILE: ../../../flutter/third_party/accessibility/base/win/variant_vector_unittest.cc
+----------------------------------------------------------------------------------------------------
+Copyright 2020 The Chromium Authors. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * Neither the name of Google Inc. nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: accessibility
 ORIGIN: ../../../flutter/third_party/accessibility/ax_build/build_config.h + ../../../LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../flutter/third_party/accessibility/ax_build/build_config.h
+FILE: ../../../flutter/third_party/accessibility/base/base_export.h
 FILE: ../../../flutter/third_party/accessibility/gfx/geometry/insets.h
 FILE: ../../../flutter/third_party/accessibility/gfx/geometry/insets_f.cc
 FILE: ../../../flutter/third_party/accessibility/gfx/geometry/insets_f.h
@@ -2088,6 +2125,8 @@ FILE: ../../../flutter/third_party/accessibility/gfx/geometry/vector2d_f.cc
 FILE: ../../../flutter/third_party/accessibility/gfx/geometry/vector2d_f.h
 FILE: ../../../flutter/third_party/accessibility/gfx/geometry/vector2d_unittest.cc
 FILE: ../../../flutter/third_party/accessibility/gfx/native_widget_types.h
+FILE: ../../../flutter/third_party/accessibility/gfx/range/range.cc
+FILE: ../../../flutter/third_party/accessibility/gfx/range/range.h
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2012 The Chromium Authors. All rights reserved.
 
@@ -2120,11 +2159,56 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: accessibility
-ORIGIN: ../../../flutter/third_party/accessibility/base/auto_reset.h + ../../../LICENSE
+ORIGIN: ../../../flutter/third_party/accessibility/base/win/atl_module.h + ../../../LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../flutter/third_party/accessibility/base/auto_reset.h
+FILE: ../../../flutter/third_party/accessibility/base/win/atl_module.h
+FILE: ../../../flutter/third_party/accessibility/base/win/enum_variant.cc
+FILE: ../../../flutter/third_party/accessibility/base/win/enum_variant.h
+FILE: ../../../flutter/third_party/accessibility/base/win/enum_variant_unittest.cc
+FILE: ../../../flutter/third_party/accessibility/base/win/scoped_bstr.h
+FILE: ../../../flutter/third_party/accessibility/base/win/scoped_variant.h
+FILE: ../../../flutter/third_party/accessibility/base/win/scoped_variant_unittest.cc
+FILE: ../../../flutter/third_party/accessibility/gfx/range/range_unittest.cc
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2011 The Chromium Authors. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * Neither the name of Google Inc. nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: accessibility
+ORIGIN: ../../../flutter/third_party/accessibility/base/win/scoped_bstr.cc + ../../../LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../flutter/third_party/accessibility/base/win/scoped_bstr.cc
+FILE: ../../../flutter/third_party/accessibility/base/win/scoped_bstr_unittest.cc
+FILE: ../../../flutter/third_party/accessibility/base/win/scoped_variant.cc
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2010 The Chromium Authors. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -2266,6 +2350,9 @@ ORIGIN: ../../../third_party/icu/scripts/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../flutter/third_party/accessibility/ax/ax_tree_data.cc
 FILE: ../../../flutter/third_party/accessibility/ax/ax_tree_data.h
+FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_win.cc
+FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_win.h
+FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_win_unittest.cc
 FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_unique_id_unittest.cc
 FILE: ../../../flutter/third_party/accessibility/ax/platform/test_ax_node_wrapper.cc
 FILE: ../../../flutter/third_party/accessibility/ax/platform/test_ax_node_wrapper.h
@@ -2600,4 +2687,4 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ====================================================================================================
-Total license count: 15
+Total license count: 16
