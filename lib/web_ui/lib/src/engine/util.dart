@@ -280,6 +280,9 @@ void transformLTRB(Matrix4 transform, Float32List ltrb) {
 
   // Handle non-homogenous matrices.
   double w = transform[15];
+  if (w == 0.0) {
+    w = 1.0;
+  }
 
   ltrb[0] = math.min(
       math.min(
