@@ -349,11 +349,11 @@ static void SetEventPhaseFromCursorButtonState(
     int64_t buttons) {
   auto* controller = GetWindowController(window);
   event_data->phase =
-      buttons
-        ? (controller->pointer_currently_down ? FlutterPointerPhase::kUp
-                                              : FlutterPointerPhase::kHover)
-        : (controller->pointer_currently_down ? FlutterPointerPhase::kMove
-                                              : FlutterPointerPhase::kDown);
+      (buttons == 0)
+          ? (controller->pointer_currently_down ? FlutterPointerPhase::kUp
+                                                : FlutterPointerPhase::kHover)
+          : (controller->pointer_currently_down ? FlutterPointerPhase::kMove
+                                                : FlutterPointerPhase::kDown);
 }
 
 // Reports the mouse entering or leaving the Flutter view.
