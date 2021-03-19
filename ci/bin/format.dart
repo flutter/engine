@@ -111,7 +111,7 @@ typedef MessageCallback = Function(String? message, {MessageType type});
 /// Provides services that all format checkers need.
 abstract class FormatChecker {
   FormatChecker({
-    ProcessManager? processManager,
+    ProcessManager processManager = const LocalProcessManager(),
     required this.baseGitRef,
     required this.repoDir,
     required this.srcDir,
@@ -119,13 +119,13 @@ abstract class FormatChecker {
     this.messageCallback,
   }) : _processRunner = ProcessRunner(
           defaultWorkingDirectory: repoDir,
-          processManager: processManager ?? const LocalProcessManager(),
+          processManager: processManager,
         );
 
   /// Factory method that creates subclass format checkers based on the type of check.
   factory FormatChecker.ofType(
     FormatCheck check, {
-    ProcessManager? processManager,
+    ProcessManager processManager = const LocalProcessManager(),
     required String baseGitRef,
     required Directory repoDir,
     required Directory srcDir,
@@ -225,7 +225,7 @@ abstract class FormatChecker {
           'failed to apply.');
       completedJobs
           .where((WorkerJob job) => job.result.exitCode != 0)
-          .map<String?>((WorkerJob job) => job.result.output)
+          .map<String>((WorkerJob job) => job.result.output)
           .forEach(message);
     }
     return patchPool.failedJobs == 0;
@@ -293,7 +293,7 @@ abstract class FormatChecker {
 /// Checks and formats C++/ObjC files using clang-format.
 class ClangFormatChecker extends FormatChecker {
   ClangFormatChecker({
-    ProcessManager? processManager,
+    ProcessManager processManager = const LocalProcessManager(),
     required String baseGitRef,
     required Directory repoDir,
     required Directory srcDir,
@@ -328,7 +328,7 @@ class ClangFormatChecker extends FormatChecker {
     );
   }
 
-  late File clangFormat;
+  late final File clangFormat;
 
   @override
   Future<bool> checkFormatting() async {
@@ -426,7 +426,7 @@ class ClangFormatChecker extends FormatChecker {
 /// Checks the format of Java files uing the Google Java format checker.
 class JavaFormatChecker extends FormatChecker {
   JavaFormatChecker({
-    ProcessManager? processManager,
+    ProcessManager processManager = const LocalProcessManager(),
     required String baseGitRef,
     required Directory repoDir,
     required Directory srcDir,
@@ -453,7 +453,7 @@ class JavaFormatChecker extends FormatChecker {
     );
   }
 
-  late File googleJavaFormatJar;
+  late final File googleJavaFormatJar;
 
   Future<String> _getGoogleJavaFormatVersion() async {
     final ProcessRunnerResult result = await _processRunner
@@ -569,7 +569,7 @@ class JavaFormatChecker extends FormatChecker {
 /// Checks the format of any BUILD.gn files using the "gn format" command.
 class GnFormatChecker extends FormatChecker {
   GnFormatChecker({
-    ProcessManager? processManager,
+    ProcessManager processManager = const LocalProcessManager(),
     required String baseGitRef,
     required Directory repoDir,
     required Directory srcDir,
@@ -593,7 +593,7 @@ class GnFormatChecker extends FormatChecker {
     );
   }
 
-  late File gnBinary;
+  late final File gnBinary;
 
   @override
   Future<bool> checkFormatting() async {
@@ -659,7 +659,8 @@ class GnFormatChecker extends FormatChecker {
 
 @immutable
 class _GrepResult {
-  const _GrepResult(this.file, this.hits, this.lineNumbers);
+  const _GrepResult(this.file, [this.hits = const <String>[], this.lineNumbers = const <int>[]]);
+  bool get isEmpty => hits.isEmpty && lineNumbers.isEmpty;
   final File file;
   final List<String> hits;
   final List<int> lineNumbers;
@@ -668,7 +669,7 @@ class _GrepResult {
 /// Checks for trailing whitspace in Dart files.
 class WhitespaceFormatChecker extends FormatChecker {
   WhitespaceFormatChecker({
-    ProcessManager? processManager,
+    ProcessManager processManager = const LocalProcessManager(),
     required String baseGitRef,
     required Directory repoDir,
     required Directory srcDir,
@@ -705,7 +706,7 @@ class WhitespaceFormatChecker extends FormatChecker {
     return true;
   }
 
-  static Future<_GrepResult?> _hasTrailingWhitespace(File file) async {
+  static Future<_GrepResult> _hasTrailingWhitespace(File file) async {
     final List<String> hits = <String>[];
     final List<int> lineNumbers = <int>[];
     int lineNumber = 0;
@@ -717,12 +718,12 @@ class WhitespaceFormatChecker extends FormatChecker {
       lineNumber++;
     }
     if (hits.isEmpty) {
-      return null;
+      return _GrepResult(file);
     }
     return _GrepResult(file, hits, lineNumbers);
   }
 
-  Stream<_GrepResult?> _whereHasTrailingWhitespace(Iterable<File> files) async* {
+  Stream<_GrepResult> _whereHasTrailingWhitespace(Iterable<File> files) async* {
     final LoadBalancer pool =
         await LoadBalancer.create(Platform.numberOfProcessors, IsolateRunner.spawn);
     for (final File file in files) {
@@ -763,14 +764,14 @@ class WhitespaceFormatChecker extends FormatChecker {
     int inProgress = Platform.numberOfProcessors;
     int pending = total;
     int failed = 0;
-    await for (final _GrepResult? result in _whereHasTrailingWhitespace(
+    await for (final _GrepResult result in _whereHasTrailingWhitespace(
       files.map<File>(
         (String file) => File(
           path.join(repoDir.absolute.path, file),
         ),
       ),
     )) {
-      if (result == null) {
+      if (result.isEmpty) {
         completed++;
       } else {
         failed++;
@@ -855,7 +856,7 @@ Future<int> main(List<String> arguments) async {
           'On Windows, only whitespace and gn checks are currently supported.');
   parser.addFlag('verbose', help: 'Print verbose output.', defaultsTo: verbose);
 
-  late ArgResults options;
+  late final ArgResults options;
   try {
     options = parser.parse(arguments);
   } on FormatException catch (e) {
