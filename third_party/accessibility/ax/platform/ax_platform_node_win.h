@@ -510,9 +510,6 @@ class AX_EXPORT __declspec(uuid("26f5641a-246d-457b-a96d-07f3fae6acf2"))
   // AXPlatformNodeBase overrides.
   void Dispose() override;
 
-  // Relationships between this node and other nodes.
-  //   std::vector<Microsoft::WRL::ComPtr<AXPlatformRelationWin>> relations_;
-
   AXHypertext old_hypertext_;
 
   // These protected methods are still used by BrowserAccessibilityComWin. At

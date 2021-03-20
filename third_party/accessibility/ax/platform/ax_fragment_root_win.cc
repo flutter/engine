@@ -58,8 +58,6 @@ class AXFragmentRootPlatformNodeWin : public AXPlatformNodeWin,
 
       // TODO(gw280): detect and handle errors
       ax_unique_id = std::stoi(value.bstrVal);
-      // if (!base::StringToInt(value.bstrVal, &ax_unique_id))
-      //   return S_OK;
 
       // In the Windows accessibility platform implementation, id 0 represents
       // self; a positive id represents the immediate descendants; and a
