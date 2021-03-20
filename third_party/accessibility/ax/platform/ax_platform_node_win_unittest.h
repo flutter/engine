@@ -6,10 +6,11 @@
 #define UI_ACCESSIBILITY_PLATFORM_AX_PLATFORM_NODE_WIN_UNITTEST_H_
 
 #include "ax_platform_node_unittest.h"
-
+// clang-format off
+#include "third_party/accessibility/base/win/atl.h"  // Must be before UIAutomationCore.h
+// clang-format on
 #include <UIAutomationCore.h>
 #include <wrl.h>
-#include "third_party/accessibility/base/win/atl.h"  // Must be before UIAutomationCore.h
 
 #include <memory>
 #include <string>
