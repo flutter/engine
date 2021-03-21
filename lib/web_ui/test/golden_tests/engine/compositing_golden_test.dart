@@ -22,7 +22,9 @@ void main() {
 
 void testMain() async {
   setUp(() async {
-    debugShowClipLayers = true;
+    // To debug test failures uncomment the following to visualize clipping
+    // layers:
+    // debugShowClipLayers = true;
     SurfaceSceneBuilder.debugForgetFrameScene();
     for (html.Node scene in html.document.querySelectorAll('flt-scene')) {
       scene.remove();
@@ -67,6 +69,52 @@ void testMain() async {
         region: region);
   });
 
+  test('pushClipRect with offset and transform ClipOp none should not clip',
+      () async {
+    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
+
+    builder.pushOffset(0, 80);
+    builder.pushTransform(
+      Matrix4.diagonal3Values(1, -1, 1).toFloat64(),
+    );
+    builder.pushClipRect(Rect.fromLTRB(10, 10, 60, 60),
+        clipBehavior: Clip.none);
+    _drawTestPicture(builder);
+    builder.pop();
+    builder.pop();
+    builder.pop();
+
+    html.document.body.append(builder.build().webOnlyRootElement);
+
+    await matchGoldenFile('compositing_clip_rect_clipop_none.png',
+        region: region);
+  });
+
+  test('pushClipRRect with offset and transform ClipOp none should not clip',
+      () async {
+    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
+
+    builder.pushOffset(0, 80);
+    builder.pushTransform(
+      Matrix4.diagonal3Values(1, -1, 1).toFloat64(),
+    );
+    builder.pushClipRRect(
+        RRect.fromRectAndRadius(
+          const Rect.fromLTRB(10, 10, 60, 60),
+          const Radius.circular(1),
+        ),
+        clipBehavior: Clip.none);
+    _drawTestPicture(builder);
+    builder.pop();
+    builder.pop();
+    builder.pop();
+
+    html.document.body.append(builder.build().webOnlyRootElement);
+
+    await matchGoldenFile('compositing_clip_rrect_clipop_none.png',
+        region: region);
+  });
+
   test('pushClipRRect', () async {
     final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
     builder.pushClipRRect(
@@ -107,6 +155,210 @@ void testMain() async {
 
     await matchGoldenFile('compositing_shifted_physical_shape_clip.png',
         region: region);
+  });
+
+  test('pushPhysicalShape clipOp.none', () async {
+    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
+    builder.pushPhysicalShape(
+      path: Path()..addRect(const Rect.fromLTRB(10, 10, 60, 60)),
+      clipBehavior: Clip.hardEdge,
+      color: const Color.fromRGBO(0, 0, 0, 0.3),
+      elevation: 0,
+    );
+    _drawTestPicture(builder);
+    builder.pop();
+
+    builder.pushOffset(70, 0);
+    builder.pushPhysicalShape(
+      path: Path()
+        ..addRRect(RRect.fromLTRBR(10, 10, 60, 60, const Radius.circular(5))),
+      clipBehavior: Clip.none,
+      color: const Color.fromRGBO(0, 0, 0, 0.3),
+      elevation: 0,
+    );
+    _drawTestPicture(builder);
+    builder.pop();
+    builder.pop();
+
+    html.document.body.append(builder.build().webOnlyRootElement);
+
+    await matchGoldenFile('compositing_shifted_physical_shape_clipnone.png',
+        region: region);
+  });
+
+  test('pushPhysicalShape with path and elevation', () async {
+    Path cutCornersButton = Path()
+      ..moveTo(15, 10)
+      ..lineTo(60, 10)
+      ..lineTo(60, 60)
+      ..lineTo(15, 60)
+      ..lineTo(10, 55)
+      ..lineTo(10, 15);
+
+    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
+    builder.pushPhysicalShape(
+      path: cutCornersButton,
+      clipBehavior: Clip.hardEdge,
+      color: const Color(0xFFA0FFFF),
+      elevation: 2,
+    );
+    _drawTestPicture(builder);
+    builder.pop();
+
+    builder.pushOffset(70, 0);
+    builder.pushPhysicalShape(
+      path: cutCornersButton,
+      clipBehavior: Clip.hardEdge,
+      color: const Color(0xFFA0FFFF),
+      elevation: 8,
+    );
+    _drawTestPicture(builder);
+    builder.pop();
+    builder.pop();
+
+    builder.pushOffset(140, 0);
+    builder.pushPhysicalShape(
+      path: Path()..addOval(Rect.fromLTRB(10, 10, 60, 60)),
+      clipBehavior: Clip.hardEdge,
+      color: const Color(0xFFA0FFFF),
+      elevation: 4,
+    );
+    _drawTestPicture(builder);
+    builder.pop();
+    builder.pop();
+
+    builder.pushOffset(210, 0);
+    builder.pushPhysicalShape(
+      path: Path()
+        ..addRRect(RRect.fromRectAndRadius(
+            Rect.fromLTRB(10, 10, 60, 60), Radius.circular(10.0))),
+      clipBehavior: Clip.hardEdge,
+      color: const Color(0xFFA0FFFF),
+      elevation: 4,
+    );
+    _drawTestPicture(builder);
+    builder.pop();
+    builder.pop();
+
+    html.document.body.append(builder.build().webOnlyRootElement);
+
+    await matchGoldenFile('compositing_physical_shape_path.png',
+        region: region);
+  });
+
+  test('pushPhysicalShape should update across frames', () async {
+    Path cutCornersButton = Path()
+      ..moveTo(15, 10)
+      ..lineTo(60, 10)
+      ..lineTo(60, 60)
+      ..lineTo(15, 60)
+      ..lineTo(10, 55)
+      ..lineTo(10, 15);
+
+    /// Start with shape that has elevation and red color.
+    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
+    EngineLayer oldShapeLayer = builder.pushPhysicalShape(
+      path: cutCornersButton,
+      clipBehavior: Clip.hardEdge,
+      color: const Color(0xFFFF0000),
+      elevation: 2,
+    );
+    _drawTestPicture(builder);
+    builder.pop();
+
+    html.Element viewElement = builder.build().webOnlyRootElement;
+    html.document.body.append(viewElement);
+    await matchGoldenFile('compositing_physical_update_1.png', region: region);
+    viewElement.remove();
+
+    /// Update color to green.
+    final SurfaceSceneBuilder builder2 = SurfaceSceneBuilder();
+    EngineLayer oldShapeLayer2 = builder2.pushPhysicalShape(
+      path: cutCornersButton,
+      clipBehavior: Clip.hardEdge,
+      color: const Color(0xFF00FF00),
+      elevation: 2,
+      oldLayer: oldShapeLayer,
+    );
+    _drawTestPicture(builder2);
+    builder2.pop();
+
+    html.Element viewElement2 = builder2.build().webOnlyRootElement;
+    html.document.body.append(viewElement2);
+    await matchGoldenFile('compositing_physical_update_2.png', region: region);
+    viewElement2.remove();
+
+    /// Update elevation.
+    final SurfaceSceneBuilder builder3 = SurfaceSceneBuilder();
+    EngineLayer oldShapeLayer3 = builder3.pushPhysicalShape(
+      path: cutCornersButton,
+      clipBehavior: Clip.hardEdge,
+      color: const Color(0xFF00FF00),
+      elevation: 6,
+      oldLayer: oldShapeLayer2,
+    );
+    _drawTestPicture(builder3);
+    builder3.pop();
+
+    html.Element viewElement3 = builder3.build().webOnlyRootElement;
+    html.document.body.append(viewElement3);
+    await matchGoldenFile('compositing_physical_update_3.png',
+        region: region, maxDiffRatePercent: 0.8);
+    viewElement3.remove();
+
+    /// Update shape from arbitrary path to rect.
+    final SurfaceSceneBuilder builder4 = SurfaceSceneBuilder();
+    EngineLayer oldShapeLayer4 = builder4.pushPhysicalShape(
+      path: Path()..addOval(Rect.fromLTRB(10, 10, 60, 60)),
+      clipBehavior: Clip.hardEdge,
+      color: const Color(0xFF00FF00),
+      elevation: 6,
+      oldLayer: oldShapeLayer3,
+    );
+    _drawTestPicture(builder4);
+    builder4.pop();
+
+    html.Element viewElement4 = builder4.build().webOnlyRootElement;
+    html.document.body.append(viewElement4);
+    await matchGoldenFile('compositing_physical_update_4.png', region: region);
+    viewElement4.remove();
+
+    /// Update shape back to arbitrary path.
+    final SurfaceSceneBuilder builder5 = SurfaceSceneBuilder();
+    EngineLayer oldShapeLayer5 = builder5.pushPhysicalShape(
+      path: cutCornersButton,
+      clipBehavior: Clip.hardEdge,
+      color: const Color(0xFF00FF00),
+      elevation: 6,
+      oldLayer: oldShapeLayer4,
+    );
+    _drawTestPicture(builder5);
+    builder5.pop();
+
+    html.Element viewElement5 = builder5.build().webOnlyRootElement;
+    html.document.body.append(viewElement5);
+    await matchGoldenFile('compositing_physical_update_3.png',
+        region: region,
+        maxDiffRatePercent: browserEngine == BrowserEngine.webkit ? 0.6 : 0.4);
+    viewElement5.remove();
+
+    /// Update shadow color.
+    final SurfaceSceneBuilder builder6 = SurfaceSceneBuilder();
+    builder6.pushPhysicalShape(
+      path: cutCornersButton,
+      clipBehavior: Clip.hardEdge,
+      color: const Color(0xFF00FF00),
+      shadowColor: const Color(0xFFFF0000),
+      elevation: 6,
+      oldLayer: oldShapeLayer5,
+    );
+    _drawTestPicture(builder6);
+    builder6.pop();
+
+    html.Element viewElement6 = builder6.build().webOnlyRootElement;
+    html.document.body.append(viewElement6);
+    await matchGoldenFile('compositing_physical_update_5.png', region: region);
+    viewElement6.remove();
   });
 
   test('pushImageFilter', () async {
@@ -412,8 +664,10 @@ void _testCullRectComputation() {
     final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
 
     builder.pushTransform(Matrix4.diagonal3Values(
-        EngineWindow.browserDevicePixelRatio,
-        EngineWindow.browserDevicePixelRatio, 1.0).toFloat64());
+            EnginePlatformDispatcher.browserDevicePixelRatio,
+            EnginePlatformDispatcher.browserDevicePixelRatio,
+            1.0)
+        .toFloat64());
 
     // TODO(yjbanov): see the TODO below.
     // final double screenWidth = html.window.innerWidth.toDouble();
@@ -430,9 +684,8 @@ void _testCullRectComputation() {
       const Rect.fromLTRB(-200, -200, 200, 200),
     );
 
-    builder.pushTransform(
-      Matrix4.rotationY(45.0 * math.pi / 180.0).toFloat64()
-    );
+    builder
+        .pushTransform(Matrix4.rotationY(45.0 * math.pi / 180.0).toFloat64());
 
     builder.pushClipRect(
       const Rect.fromLTRB(-140, -140, 140, 140),
@@ -545,9 +798,10 @@ void _testCullRectComputation() {
     'renders clipped text with high quality',
     () async {
       // To reproduce blurriness we need real clipping.
-      debugShowClipLayers = false;
-      final Paragraph paragraph =
-          (ParagraphBuilder(ParagraphStyle(fontFamily: 'Roboto'))..addText('Am I blurry?')).build();
+      final DomParagraph paragraph =
+          (DomParagraphBuilder(ParagraphStyle(fontFamily: 'Roboto'))
+                ..addText('Am I blurry?'))
+              .build();
       paragraph.layout(const ParagraphConstraints(width: 1000));
 
       final Rect canvasSize = Rect.fromLTRB(
@@ -569,7 +823,7 @@ void _testCullRectComputation() {
         final RecordingCanvas canvas = recorder.beginRecording(outerClip);
         canvas.drawParagraph(paragraph, const Offset(8.5, 8.5));
         final Picture picture = recorder.endRecording();
-        expect(canvas.hasArbitraryPaint, false);
+        expect(canvas.renderStrategy.hasArbitraryPaint, false);
 
         builder.addPicture(
           Offset.zero,
@@ -583,7 +837,7 @@ void _testCullRectComputation() {
         final RecordingCanvas canvas = recorder.beginRecording(innerClip);
         canvas.drawParagraph(paragraph, Offset(8.5, 8.5 + innerClip.top));
         final Picture picture = recorder.endRecording();
-        expect(canvas.hasArbitraryPaint, false);
+        expect(canvas.renderStrategy.hasArbitraryPaint, false);
 
         builder.addPicture(
           Offset.zero,
@@ -595,7 +849,10 @@ void _testCullRectComputation() {
 
       final html.Element sceneElement = builder.build().webOnlyRootElement;
       expect(
-        sceneElement.querySelectorAll('p').map<String>((e) => e.innerText).toList(),
+        sceneElement
+            .querySelectorAll('p')
+            .map<String>((e) => e.innerText)
+            .toList(),
         <String>['Am I blurry?', 'Am I blurry?'],
         reason: 'Expected to render text using HTML',
       );

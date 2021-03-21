@@ -69,8 +69,6 @@ source_set("common") {
     "display_manager.h",
     "engine.cc",
     "engine.h",
-    "persistent_cache.cc",
-    "persistent_cache.h",
     "pipeline.cc",
     "pipeline.h",
     "platform_view.cc",
@@ -111,6 +109,7 @@ source_set("common") {
   deps = [
     "//flutter/assets",
     "//flutter/common",
+    "//flutter/common/graphics",
     "//flutter/flow",
     "//flutter/fml",
     "//flutter/lib/ui",
@@ -189,6 +188,7 @@ if (enable_unittests) {
     ]
 
     public_deps = [
+      "//flutter/common/graphics",
       "//flutter/flow",
       "//flutter/fml/dart",
       "//flutter/runtime",
@@ -244,6 +244,7 @@ if (enable_unittests) {
       "input_events_unittests.cc",
       "persistent_cache_unittests.cc",
       "pipeline_unittests.cc",
+      "rasterizer_unittests.cc",
       "shell_unittests.cc",
       "skp_shader_warmup_unittests.cc",
     ]
@@ -252,8 +253,22 @@ if (enable_unittests) {
       ":shell_test_fixture_sources",
       ":shell_unittests_fixtures",
       "//flutter/assets",
+      "//flutter/common/graphics",
+      "//flutter/shell/profiling:profiling_unittests",
       "//flutter/shell/version",
+      "//flutter/testing:fixture_test",
       "//third_party/googletest:gmock",
     ]
+
+    if (is_fuchsia) {
+      sources += [ "shell_fuchsia_unittests.cc" ]
+
+      deps += [
+        "$fuchsia_sdk_root/fidl:fuchsia.intl",
+        "$fuchsia_sdk_root/fidl:fuchsia.settings",
+        "$fuchsia_sdk_root/pkg:fidl_cpp",
+        "$fuchsia_sdk_root/pkg:sys_cpp",
+      ]
+    }
   }
 }

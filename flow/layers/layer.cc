@@ -12,6 +12,7 @@ namespace flutter {
 Layer::Layer()
     : paint_bounds_(SkRect::MakeEmpty()),
       unique_id_(NextUniqueID()),
+      original_layer_id_(unique_id_),
       needs_system_composite_(false) {}
 
 Layer::~Layer() = default;
@@ -67,13 +68,13 @@ void Layer::CheckForChildLayerBelow(PrerollContext* context) {
   }
 }
 
-void Layer::UpdateScene(SceneUpdateContext& context) {
+void Layer::UpdateScene(std::shared_ptr<SceneUpdateContext> context) {
   FML_DCHECK(needs_system_composite());
   FML_DCHECK(child_layer_exists_below_);
 
   SceneUpdateContext::Frame frame(
       context, SkRRect::MakeRect(paint_bounds()), SK_ColorTRANSPARENT,
-      SkScalarRoundToInt(context.alphaf() * 255), "flutter::Layer");
+      SkScalarRoundToInt(context->alphaf() * 255), "flutter::Layer");
 
   frame.AddPaintLayer(this);
 }

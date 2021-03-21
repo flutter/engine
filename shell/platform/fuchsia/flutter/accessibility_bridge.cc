@@ -117,6 +117,14 @@ fuchsia::accessibility::semantics::States AccessibilityBridge::GetNodeStates(
     (*additional_size) += node.value.size();
   }
 
+  // Set toggled state.
+  if (node.HasFlag(flutter::SemanticsFlags::kHasToggledState)) {
+    states.set_toggled_state(
+        node.HasFlag(flutter::SemanticsFlags::kIsToggled)
+            ? fuchsia::accessibility::semantics::ToggledState::ON
+            : fuchsia::accessibility::semantics::ToggledState::OFF);
+  }
+
   return states;
 }
 
@@ -160,6 +168,10 @@ fuchsia::accessibility::semantics::Role AccessibilityBridge::GetNodeRole(
     return fuchsia::accessibility::semantics::Role::TEXT_FIELD;
   }
 
+  if (node.HasFlag(flutter::SemanticsFlags::kIsLink)) {
+    return fuchsia::accessibility::semantics::Role::LINK;
+  }
+
   if (node.HasFlag(flutter::SemanticsFlags::kIsSlider)) {
     return fuchsia::accessibility::semantics::Role::SLIDER;
   }
@@ -170,6 +182,7 @@ fuchsia::accessibility::semantics::Role AccessibilityBridge::GetNodeRole(
   if (node.HasFlag(flutter::SemanticsFlags::kIsImage)) {
     return fuchsia::accessibility::semantics::Role::IMAGE;
   }
+
   // If a flutter node supports the kIncrease or kDecrease actions, it can be
   // treated as a slider control by assistive technology. This is important
   // because users have special gestures to deal with sliders, and Fuchsia API
@@ -177,6 +190,21 @@ fuchsia::accessibility::semantics::Role AccessibilityBridge::GetNodeRole(
   if (node.HasAction(flutter::SemanticsAction::kIncrease) ||
       node.HasAction(flutter::SemanticsAction::kDecrease)) {
     return fuchsia::accessibility::semantics::Role::SLIDER;
+  }
+
+  // If a flutter node has a checked state, then we assume it is either a
+  // checkbox or a radio button. We distinguish between checkboxes and
+  // radio buttons based on membership in a mutually exclusive group.
+  if (node.HasFlag(flutter::SemanticsFlags::kHasCheckedState)) {
+    if (node.HasFlag(flutter::SemanticsFlags::kIsInMutuallyExclusiveGroup)) {
+      return fuchsia::accessibility::semantics::Role::RADIO_BUTTON;
+    } else {
+      return fuchsia::accessibility::semantics::Role::CHECK_BOX;
+    }
+  }
+
+  if (node.HasFlag(flutter::SemanticsFlags::kHasToggledState)) {
+    return fuchsia::accessibility::semantics::Role::TOGGLE_SWITCH;
   }
   return fuchsia::accessibility::semantics::Role::UNKNOWN;
 }
@@ -286,6 +314,7 @@ void AccessibilityBridge::AddSemanticsNodeUpdate(
     nodes_[flutter_node.id] = {
         .id = flutter_node.id,
         .flags = flutter_node.flags,
+        .is_focusable = IsFocusable(flutter_node),
         .rect = flutter_node.rect,
         .transform = flutter_node.transform,
         .children_in_hit_test_order = flutter_node.childrenInHitTestOrder,
@@ -384,6 +413,7 @@ fuchsia::accessibility::semantics::Node AccessibilityBridge::GetRootNodeUpdate(
   nodes_[root_flutter_semantics_node_.id] = {
       .id = root_flutter_semantics_node_.id,
       .flags = root_flutter_semantics_node_.flags,
+      .is_focusable = IsFocusable(root_flutter_semantics_node_),
       .rect = root_flutter_semantics_node_.rect,
       .transform = result,
       .children_in_hit_test_order =
@@ -401,6 +431,15 @@ fuchsia::accessibility::semantics::Node AccessibilityBridge::GetRootNodeUpdate(
   node_size += kNodeIdSize *
                root_flutter_semantics_node_.childrenInTraversalOrder.size();
   return root_fuchsia_node;
+}
+
+void AccessibilityBridge::RequestAnnounce(const std::string message) {
+  fuchsia::accessibility::semantics::SemanticEvent semantic_event;
+  fuchsia::accessibility::semantics::AnnounceEvent announce_event;
+  announce_event.set_message(message);
+  semantic_event.set_announce(std::move(announce_event));
+
+  tree_ptr_->SendSemanticEvent(std::move(semantic_event), []() {});
 }
 
 void AccessibilityBridge::UpdateScreenRects() {
@@ -533,7 +572,36 @@ std::optional<int32_t> AccessibilityBridge::GetHitNode(int32_t node_id,
       return candidate;
     }
   }
-  return node_id;
+
+  if (node.is_focusable) {
+    return node_id;
+  }
+
+  return {};
+}
+
+bool AccessibilityBridge::IsFocusable(
+    const flutter::SemanticsNode& node) const {
+  if (node.HasFlag(flutter::SemanticsFlags::kScopesRoute)) {
+    return false;
+  }
+
+  if (node.HasFlag(flutter::SemanticsFlags::kIsFocusable)) {
+    return true;
+  }
+
+  // Always consider platform views focusable.
+  if (node.IsPlatformViewNode()) {
+    return true;
+  }
+
+  // Always conider actionable nodes focusable.
+  if (node.actions != 0) {
+    return true;
+  }
+
+  // Consider text nodes focusable.
+  return !node.label.empty() || !node.value.empty() || !node.hint.empty();
 }
 
 // |fuchsia::accessibility::semantics::SemanticListener|

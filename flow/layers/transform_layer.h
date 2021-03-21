@@ -15,12 +15,18 @@ class TransformLayer : public ContainerLayer {
  public:
   TransformLayer(const SkMatrix& transform);
 
+#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
+
+  void Diff(DiffContext* context, const Layer* old_layer) override;
+
+#endif  // FLUTTER_ENABLE_DIFF_CONTEXT
+
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
 
   void Paint(PaintContext& context) const override;
 
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
-  void UpdateScene(SceneUpdateContext& context) override;
+  void UpdateScene(std::shared_ptr<SceneUpdateContext> context) override;
 #endif
 
  private:

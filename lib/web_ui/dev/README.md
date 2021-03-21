@@ -7,7 +7,7 @@
 `felt` supports multiple commands as follows:
 
 1. **`felt check-licenses`**: Checks that all Dart and JS source code files contain the correct license headers.
-2. **`felt test`**: Runs all or some tests depending on the passed arguments.
+2. **`felt test`**: Runs all or some tests depending on the passed arguments. It supports a watch mode for convenience.
 3. **`felt build`**: Builds the engine locally so it can be used by Flutter apps. It also supports a watch mode for more convenience.
 
 You could also run `felt help` or `felt help <command>` to get more information about the available commands and arguments.
@@ -41,6 +41,18 @@ To run all tests on Chrome. This will run both integration tests and the unit te
 
 ```
 felt test
+```
+
+To run a specific test:
+
+```
+felt test test/engine/util_test.dart
+```
+
+To enable watch mode so that the test re-runs on every change:
+
+```
+felt test --watch test/engine/util_test.dart
 ```
 
 To run unit tests only:
@@ -155,11 +167,9 @@ Since the engine code and infra recipes do not live in the same repository there
 
 1. Dowload the binaries for the new browser/driver for each operaing system (macOS, linux, windows).
 2. Create CIPD packages for these packages. (More documentation is available for Googlers. go/cipd-flutter-web)
-3. Add the new browser version to the recipe. Do not remove the old one. This recipe will apply to all PRs as soon as it is merged. However, not all PRs will have the up to date code for a while.
-4. Update the version in this repo. Do this by changing the related fields in `browser_lock.yaml` file.
-5. After a few days don't forget to remove the old version from the LUCI recipe.
+3. Update the version in this repo. Do this by changing the related fields in `browser_lock.yaml` file.
 
-Note that for LUCI builders, both unit and integration tests are using the same browser.
+Note that for LUCI builders, for Chrome both unit and integration tests are using the same browser. (For Firefox [issue](https://github.com/flutter/flutter/issues/71617)
 
 Some useful links:
 
@@ -167,3 +177,17 @@ Some useful links:
 2. Browser and driver CIPD [packages](https://chrome-infra-packages.appspot.com/p/flutter_internal) (Note: Access rights are restricted for these packages.)
 3. LUCI web [recipe](https://flutter.googlesource.com/recipes/+/refs/heads/master/recipes/web_engine.py)
 4. More general reading on CIPD packages [link](https://chromium.googlesource.com/chromium/src.git/+/master/docs/cipd.md#What-is-CIPD)
+
+## Troubleshooting
+
+### Can't load Kernel binary: Invalid kernel binary format version.
+
+Some times `.dart_tool` cache invalidation fails, and you'll end up with a cached version of `felt` that is not compatible with the Dart SDK that you're using.
+
+In that case, any invocation to `felt` will fail with:
+
+`Can't load Kernel binary: Invalid kernel binary format version.`
+
+The solution is to delete the cached `felt.snapshot` files within `engine/src/flutter/lib/web_ui`:
+
+**`rm .dart_tool/felt.snapshot*`**

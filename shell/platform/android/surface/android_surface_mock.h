@@ -18,6 +18,9 @@ namespace flutter {
 class AndroidSurfaceMock final : public GPUSurfaceGLDelegate,
                                  public AndroidSurface {
  public:
+  explicit AndroidSurfaceMock(
+      const std::shared_ptr<AndroidContext>& android_context);
+
   MOCK_METHOD(bool, IsValid, (), (const, override));
 
   MOCK_METHOD(void, TeardownOnScreenContext, (), (override));
@@ -49,9 +52,6 @@ class AndroidSurfaceMock final : public GPUSurfaceGLDelegate,
 
   // |GPUSurfaceGLDelegate|
   intptr_t GLContextFBO(GLFrameInfo frame_info) const override;
-
-  // |GPUSurfaceGLDelegate|
-  ExternalViewEmbedder* GetExternalViewEmbedder() override;
 };
 
 }  // namespace flutter

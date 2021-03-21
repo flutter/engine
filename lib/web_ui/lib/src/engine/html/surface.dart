@@ -2,10 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
-part of engine;
-
 /// When `true` prints statistics about what happened to the surface tree when
+
+// @dart = 2.12
+part of engine;
 /// it was composited.
 ///
 /// Also paints an on-screen overlay with the numbers visualized as a timeline.
@@ -33,21 +33,24 @@ const double _kScreenPixelRatioWarningThreshold = 6.0;
 /// Performs any outstanding painting work enqueued by [PersistedPicture]s.
 void commitScene(PersistedScene scene) {
   if (_paintQueue.isNotEmpty) {
-    if (_paintQueue.length > 1) {
-      // Sort paint requests in decreasing canvas size order. Paint requests
-      // attempt to reuse canvases. For efficiency we want the biggest pictures
-      // to find canvases before the smaller ones claim them.
-      _paintQueue.sort((_PaintRequest a, _PaintRequest b) {
-        final double aSize = a.canvasSize.height * a.canvasSize.width;
-        final double bSize = b.canvasSize.height * b.canvasSize.width;
-        return bSize.compareTo(aSize);
-      });
-    }
+    try {
+      if (_paintQueue.length > 1) {
+        // Sort paint requests in decreasing canvas size order. Paint requests
+        // attempt to reuse canvases. For efficiency we want the biggest pictures
+        // to find canvases before the smaller ones claim them.
+        _paintQueue.sort((_PaintRequest a, _PaintRequest b) {
+          final double aSize = a.canvasSize.height * a.canvasSize.width;
+          final double bSize = b.canvasSize.height * b.canvasSize.width;
+          return bSize.compareTo(aSize);
+        });
+      }
 
-    for (_PaintRequest request in _paintQueue) {
-      request.paintCallback();
+      for (_PaintRequest request in _paintQueue) {
+        request.paintCallback();
+      }
+    } finally {
+      _paintQueue = <_PaintRequest>[];
     }
-    _paintQueue = <_PaintRequest>[];
   }
 
   // After the update the retained surfaces are back to active.
@@ -344,18 +347,19 @@ abstract class PersistedSurface implements ui.EngineLayer {
   /// such as on the very first frame.
   @mustCallSuper
   void build() {
-    if (rootElement != null) {
-      try {
-        throw '';
-      } catch (_, stack) {
-        print(
-            'Attempted to build a $runtimeType, but it already has an HTML element ${rootElement!.tagName}.');
-        print(stack.toString().split('\n').take(20).join('\n'));
+    if (assertionsEnabled) {
+      final html.Element? existingElement = rootElement;
+      if (existingElement != null) {
+        throw PersistedSurfaceException(
+          this,
+          'Attempted to build a $runtimeType, but it already has an HTML '
+          'element ${existingElement.tagName}.',
+        );
       }
     }
-    assert(rootElement == null);
     assert(debugAssertSurfaceState(this, PersistedSurfaceState.created));
     rootElement = createElement();
+    assert(rootElement != null);
     applyWebkitClipFix(rootElement);
     if (_debugExplainSurfaceStats) {
       _surfaceStatsFor(this).allocatedDomNodeCount++;
@@ -1088,7 +1092,7 @@ abstract class PersistedContainerSurface extends PersistedSurface {
       for (int indexInOld = 0; indexInOld < oldChildCount; indexInOld += 1) {
         final PersistedSurface? oldChild = oldChildren[indexInOld];
         final bool childAlreadyClaimed = oldChild == null;
-        if (childAlreadyClaimed || !newChild.canUpdateAsMatch(oldChild!)) {
+        if (childAlreadyClaimed || !newChild.canUpdateAsMatch(oldChild)) {
           continue;
         }
         allMatches.add(_PersistedSurfaceMatch(

@@ -4,19 +4,20 @@
 
 #include "flutter/shell/platform/android/android_surface_vulkan.h"
 
+#include <memory>
 #include <utility>
 
 #include "flutter/fml/logging.h"
 #include "flutter/shell/gpu/gpu_surface_vulkan.h"
 #include "flutter/vulkan/vulkan_native_surface_android.h"
+#include "include/core/SkRefCnt.h"
 
 namespace flutter {
 
 AndroidSurfaceVulkan::AndroidSurfaceVulkan(
-    std::shared_ptr<AndroidContext> android_context,
-    std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
-    std::shared_ptr<AndroidExternalViewEmbedder> external_view_embedder)
-    : external_view_embedder_(external_view_embedder),
+    const std::shared_ptr<AndroidContext>& android_context,
+    std::shared_ptr<PlatformViewAndroidJNI> jni_facade)
+    : AndroidSurface(android_context),
       proc_table_(fml::MakeRefCounted<vulkan::VulkanProcTable>()) {}
 
 AndroidSurfaceVulkan::~AndroidSurfaceVulkan() = default;
@@ -47,8 +48,22 @@ std::unique_ptr<Surface> AndroidSurfaceVulkan::CreateGPUSurface(
     return nullptr;
   }
 
-  auto gpu_surface = std::make_unique<GPUSurfaceVulkan>(
-      this, std::move(vulkan_surface_android), true);
+  sk_sp<GrDirectContext> provided_gr_context;
+  if (gr_context) {
+    provided_gr_context = sk_ref_sp(gr_context);
+  } else if (android_context_->GetMainSkiaContext()) {
+    provided_gr_context = android_context_->GetMainSkiaContext();
+  }
+
+  std::unique_ptr<GPUSurfaceVulkan> gpu_surface;
+  if (provided_gr_context) {
+    gpu_surface = std::make_unique<GPUSurfaceVulkan>(
+        provided_gr_context, this, std::move(vulkan_surface_android), true);
+  } else {
+    gpu_surface = std::make_unique<GPUSurfaceVulkan>(
+        this, std::move(vulkan_surface_android), true);
+    android_context_->SetMainSkiaContext(sk_ref_sp(gpu_surface->GetContext()));
+  }
 
   if (!gpu_surface->IsValid()) {
     return nullptr;
@@ -75,10 +90,6 @@ bool AndroidSurfaceVulkan::SetNativeWindow(
     fml::RefPtr<AndroidNativeWindow> window) {
   native_window_ = std::move(window);
   return native_window_ && native_window_->IsValid();
-}
-
-ExternalViewEmbedder* AndroidSurfaceVulkan::GetExternalViewEmbedder() {
-  return external_view_embedder_.get();
 }
 
 fml::RefPtr<vulkan::VulkanProcTable> AndroidSurfaceVulkan::vk() {

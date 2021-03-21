@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// Implements vertical and horizontal scrolling functionality for semantics
@@ -53,20 +53,20 @@ class Scrollable extends RoleManager {
       final int semanticsId = semanticsObject.id;
       if (doScrollForward) {
         if (semanticsObject.isVerticalScrollContainer) {
-          window.invokeOnSemanticsAction(
+          EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
               semanticsId, ui.SemanticsAction.scrollUp, null);
         } else {
           assert(semanticsObject.isHorizontalScrollContainer);
-          window.invokeOnSemanticsAction(
+          EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
               semanticsId, ui.SemanticsAction.scrollLeft, null);
         }
       } else {
         if (semanticsObject.isVerticalScrollContainer) {
-          window.invokeOnSemanticsAction(
+          EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
               semanticsId, ui.SemanticsAction.scrollDown, null);
         } else {
           assert(semanticsObject.isHorizontalScrollContainer);
-          window.invokeOnSemanticsAction(
+          EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
               semanticsId, ui.SemanticsAction.scrollRight, null);
         }
       }

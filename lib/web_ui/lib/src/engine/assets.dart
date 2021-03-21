@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// This class downloads assets over the network.
@@ -61,14 +61,13 @@ class AssetManager {
       final html.EventTarget? target = e.target;
       if (target is html.HttpRequest) {
         if (target.status == 404 && asset == 'AssetManifest.json') {
-          html.window.console
-              .warn('Asset manifest does not exist at `$url` – ignoring.');
+          printWarning('Asset manifest does not exist at `$url` – ignoring.');
           return Uint8List.fromList(utf8.encode('{}')).buffer.asByteData();
         }
         throw AssetManagerException(url, target.status!);
       }
 
-      html.window.console.warn('Caught ProgressEvent with target: $target');
+      printWarning('Caught ProgressEvent with target: $target');
       rethrow;
     }
   }
@@ -88,7 +87,16 @@ class AssetManagerException implements Exception {
 class WebOnlyMockAssetManager implements AssetManager {
   String defaultAssetsDir = '';
   String defaultAssetManifest = '{}';
-  String defaultFontManifest = '[]';
+  String defaultFontManifest = '''[
+   {
+      "family":"$_robotoFontFamily",
+      "fonts":[{"asset":"$_robotoTestFontUrl"}]
+   },
+   {
+      "family":"$_ahemFontFamily",
+      "fonts":[{"asset":"$_ahemFontUrl"}]
+   }
+  ]''';
 
   @override
   String get assetsDir => defaultAssetsDir;

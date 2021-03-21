@@ -6,12 +6,23 @@
 import 'dart:async';
 import 'dart:io' as io;
 
+import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
 
 import 'environment.dart';
 import 'exceptions.dart';
+
+/// Clears the terminal screen and places the cursor at the top left corner.
+///
+/// This works on Linux and Mac. On Windows, it's a no-op.
+void clearTerminalScreen() {
+  if (!io.Platform.isWindows) {
+    // See: https://en.wikipedia.org/wiki/ANSI_escape_code#CSI_sequences
+    print("\x1B[2J\x1B[1;2H");
+  }
+}
 
 class FilePath {
   FilePath.fromCwd(String relativePath)
@@ -185,16 +196,47 @@ mixin ArgUtils<T> on Command<T> {
   }
 }
 
+/// Parses additional options that can be used for all tests.
+class GeneralTestsArgumentParser {
+  static final GeneralTestsArgumentParser _singletonInstance =
+      GeneralTestsArgumentParser._();
+
+  /// The [GeneralTestsArgumentParser] singleton.
+  static GeneralTestsArgumentParser get instance => _singletonInstance;
+
+  GeneralTestsArgumentParser._();
+
+  /// If target name is provided integration tests can run that one test
+  /// instead of running all the tests.
+  bool verbose = false;
+
+  void populateOptions(ArgParser argParser) {
+    argParser
+      ..addFlag(
+        'verbose',
+        defaultsTo: false,
+        help: 'Flag to indicate extra logs should also be printed.',
+      );
+  }
+
+  /// Populate results of the arguments passed.
+  void parseOptions(ArgResults argResults) {
+    verbose = argResults['verbose'] as bool;
+  }
+}
+
+bool get isVerboseLoggingEnabled => GeneralTestsArgumentParser.instance.verbose;
+
 /// There might be proccesses started during the tests.
 ///
 /// Use this list to store those Processes, for cleaning up before shutdown.
-final List<io.Process> processesToCleanUp = List<io.Process>();
+final List<io.Process> processesToCleanUp = <io.Process>[];
 
 /// There might be temporary directories created during the tests.
 ///
 /// Use this list to store those directories and for deleteing them before
 /// shutdown.
-final List<io.Directory> temporaryDirectories = List<io.Directory>();
+final List<io.Directory> temporaryDirectories = <io.Directory>[];
 
 typedef AsyncCallback = Future<void> Function();
 
@@ -202,7 +244,7 @@ typedef AsyncCallback = Future<void> Function();
 ///
 /// Add these operations here to make sure that they will run before felt
 /// exit.
-final List<AsyncCallback> cleanupCallbacks = List<AsyncCallback>();
+final List<AsyncCallback> cleanupCallbacks = <AsyncCallback>[];
 
 /// Cleanup the remaning processes, close open browsers, delete temp files.
 void cleanup() async {

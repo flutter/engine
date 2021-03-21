@@ -14,6 +14,11 @@ void main() {
 }
 
 void testMain() {
+  test('populates flt-renderer and flt-build-mode', () {
+    DomRenderer();
+    expect(html.document.body.attributes['flt-renderer'], 'html (requested explicitly)');
+    expect(html.document.body.attributes['flt-build-mode'], 'debug');
+  });
   test('creating elements works', () {
     final DomRenderer renderer = DomRenderer();
     final html.Element element = renderer.createElement('div');
@@ -57,15 +62,15 @@ void testMain() {
   test('can set style properties on elements', () {
     final DomRenderer renderer = DomRenderer();
     final html.Element element = renderer.createElement('div');
-    renderer.setElementStyle(element, 'color', 'red');
+    DomRenderer.setElementStyle(element, 'color', 'red');
     expect(element.style.color, 'red');
   });
   test('can remove style properties from elements', () {
     final DomRenderer renderer = DomRenderer();
     final html.Element element = renderer.createElement('div');
-    renderer.setElementStyle(element, 'color', 'blue');
+    DomRenderer.setElementStyle(element, 'color', 'blue');
     expect(element.style.color, 'blue');
-    renderer.setElementStyle(element, 'color', null);
+    DomRenderer.setElementStyle(element, 'color', null);
     expect(element.style.color, '');
   });
   test('elements can have children', () {

@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
 
+// @dart = 2.12
 part of dart.ui;
 
 /// The possible actions that can be conveyed from the operating system
@@ -38,6 +38,7 @@ class SemanticsAction {
   static const int _kDismissIndex = 1 << 18;
   static const int _kMoveCursorForwardByWordIndex = 1 << 19;
   static const int _kMoveCursorBackwardByWordIndex = 1 << 20;
+  static const int _kSetText = 1 << 21;
   // READ THIS: if you add an action here, you MUST update the
   // numSemanticsActions value in testing/dart/semantics_test.dart, or tests
   // will fail.
@@ -114,6 +115,14 @@ class SemanticsAction {
   /// The action includes a boolean argument, which indicates whether the cursor
   /// movement should extend (or start) a selection.
   static const SemanticsAction moveCursorBackwardByCharacter = SemanticsAction._(_kMoveCursorBackwardByCharacterIndex);
+
+  /// Replaces the current text in the text field.
+  ///
+  /// This is for example used by the text editing in voice access.
+  ///
+  /// The action includes a string argument, which is the new text to
+  /// replace.
+  static const SemanticsAction setText = SemanticsAction._(_kSetText);
 
   /// Set the text selection to the given range.
   ///
@@ -218,6 +227,7 @@ class SemanticsAction {
     _kDismissIndex: dismiss,
     _kMoveCursorForwardByWordIndex: moveCursorForwardByWord,
     _kMoveCursorBackwardByWordIndex: moveCursorBackwardByWord,
+    _kSetText: setText,
   };
 
   @override
@@ -265,6 +275,8 @@ class SemanticsAction {
         return 'SemanticsAction.moveCursorForwardByWord';
       case _kMoveCursorBackwardByWordIndex:
         return 'SemanticsAction.moveCursorBackwardByWord';
+      case _kSetText:
+        return 'SemanticsAction.setText';
     }
     assert(false, 'Unhandled index: $index');
     return '';
@@ -625,7 +637,8 @@ class SemanticsFlag {
 /// An object that creates [SemanticsUpdate] objects.
 ///
 /// Once created, the [SemanticsUpdate] objects can be passed to
-/// [Window.updateSemantics] to update the semantics conveyed to the user.
+/// [PlatformDispatcher.updateSemantics] to update the semantics conveyed to the
+/// user.
 @pragma('vm:entry-point')
 class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   /// Creates an empty [SemanticsUpdateBuilder] object.
@@ -653,10 +666,10 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   ///
   /// The `actions` are a bit field of [SemanticsAction]s that can be undertaken
   /// by this node. If the user wishes to undertake one of these actions on this
-  /// node, the [Window.onSemanticsAction] will be called with `id` and one of
-  /// the possible [SemanticsAction]s. Because the semantics tree is maintained
-  /// asynchronously, the [Window.onSemanticsAction] callback might be called
-  /// with an action that is no longer possible.
+  /// node, the [PlatformDispatcher.onSemanticsAction] will be called with `id`
+  /// and one of the possible [SemanticsAction]s. Because the semantics tree is
+  /// maintained asynchronously, the [PlatformDispatcher.onSemanticsAction]
+  /// callback might be called with an action that is no longer possible.
   ///
   /// The `label` is a string that describes this node. The `value` property
   /// describes the current value of the node as a string. The `increasedValue`
@@ -832,8 +845,8 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   /// Creates a [SemanticsUpdate] object that encapsulates the updates recorded
   /// by this object.
   ///
-  /// The returned object can be passed to [Window.updateSemantics] to actually
-  /// update the semantics retained by the system.
+  /// The returned object can be passed to [PlatformDispatcher.updateSemantics]
+  /// to actually update the semantics retained by the system.
   SemanticsUpdate build() {
     final SemanticsUpdate semanticsUpdate = SemanticsUpdate._();
     _build(semanticsUpdate);
@@ -847,7 +860,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
 /// To create a SemanticsUpdate object, use a [SemanticsUpdateBuilder].
 ///
 /// Semantics updates can be applied to the system's retained semantics tree
-/// using the [Window.updateSemantics] method.
+/// using the [PlatformDispatcher.updateSemantics] method.
 @pragma('vm:entry-point')
 class SemanticsUpdate extends NativeFieldWrapperClass2 {
   /// This class is created by the engine, and should not be instantiated

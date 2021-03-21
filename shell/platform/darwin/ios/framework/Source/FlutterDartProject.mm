@@ -27,7 +27,7 @@ extern const intptr_t kPlatformStrongDillSize;
 
 static const char* kApplicationKernelSnapshotFileName = "kernel_blob.bin";
 
-static flutter::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
+flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle) {
   auto command_line = flutter::CommandLineFromNSProcessInfo();
 
   // Precedence:
@@ -141,6 +141,10 @@ static flutter::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
   settings.domain_network_policy =
       [FlutterDartProject domainNetworkPolicy:appTransportSecurity].UTF8String;
 
+  // SkParagraph text layout library
+  NSNumber* enableSkParagraph = [mainBundle objectForInfoDictionaryKey:@"FLTEnableSkParagraph"];
+  settings.enable_skparagraph = (enableSkParagraph != nil) ? enableSkParagraph.boolValue : false;
+
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
   // There are no ownership concerns here as all mappings are owned by the
   // embedder and not the engine.
@@ -181,7 +185,17 @@ static flutter::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
   self = [super init];
 
   if (self) {
-    _settings = DefaultSettingsForProcess(bundle);
+    _settings = FLTDefaultSettingsForBundle(bundle);
+  }
+
+  return self;
+}
+
+- (instancetype)initWithSettings:(const flutter::Settings&)settings {
+  self = [self initWithPrecompiledDartBundle:nil];
+
+  if (self) {
+    _settings = settings;
   }
 
   return self;

@@ -59,6 +59,8 @@ using MappingsCallback = std::function<Mappings(void)>;
 
 using FrameRasterizedCallback = std::function<void(const FrameTiming&)>;
 
+class DartIsolate;
+
 struct Settings {
   Settings();
 
@@ -150,6 +152,9 @@ struct Settings {
   // Font settings
   bool use_test_fonts = false;
 
+  // Selects the SkParagraph implementation of the text layout engine.
+  bool enable_skparagraph = false;
+
   // All shells in the process share the same VM. The last shell to shutdown
   // should typically shut down the VM as well. However, applications depend on
   // the behavior of "warming-up" the VM by creating a shell that does not do
@@ -169,12 +174,22 @@ struct Settings {
   TaskObserverRemove task_observer_remove;
   // The main isolate is current when this callback is made. This is a good spot
   // to perform native Dart bindings for libraries not built in.
-  fml::closure root_isolate_create_callback;
+  std::function<void(const DartIsolate&)> root_isolate_create_callback;
+  // TODO(68738): Update isolate callbacks in settings to accept an additional
+  // DartIsolate parameter.
   fml::closure isolate_create_callback;
   // The isolate is not current and may have already been destroyed when this
   // call is made.
   fml::closure root_isolate_shutdown_callback;
   fml::closure isolate_shutdown_callback;
+  // A callback made in the isolate scope of the service isolate when it is
+  // launched. Care must be taken to ensure that callers are assigning callbacks
+  // to the settings object used to launch the VM. If an existing VM is used to
+  // launch an isolate using these settings, the callback will be ignored as the
+  // service isolate has already been launched. Also, this callback will only be
+  // made in the modes in which the service isolate is eligible for launch
+  // (debug and profile).
+  fml::closure service_isolate_create_callback;
   // The callback made on the UI thread in an isolate scope when the engine
   // detects that the framework is idle. The VM also uses this time to perform
   // tasks suitable when idling. Due to this, embedders are still advised to be
@@ -209,11 +224,11 @@ struct Settings {
   FrameRasterizedCallback frame_rasterized_callback;
 
   // This data will be available to the isolate immediately on launch via the
-  // Window.getPersistentIsolateData callback. This is meant for information
-  // that the isolate cannot request asynchronously (platform messages can be
-  // used for that purpose). This data is held for the lifetime of the shell and
-  // is available on isolate restarts in the shell instance. Due to this,
-  // the buffer must be as small as possible.
+  // PlatformDispatcher.getPersistentIsolateData callback. This is meant for
+  // information that the isolate cannot request asynchronously (platform
+  // messages can be used for that purpose). This data is held for the lifetime
+  // of the shell and is available on isolate restarts in the shell instance.
+  // Due to this, the buffer must be as small as possible.
   std::shared_ptr<const fml::Mapping> persistent_isolate_data;
 
   /// Max size of old gen heap size in MB, or 0 for unlimited, -1 for default

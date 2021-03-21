@@ -55,6 +55,7 @@ shared_library("flutter_shell_native") {
     ":icudtl_object",
     "//flutter/assets",
     "//flutter/common",
+    "//flutter/common/graphics",
     "//flutter/flow",
     "//flutter/fml",
     "//flutter/lib/ui",
@@ -124,6 +125,7 @@ android_java_sources = [
   "io/flutter/app/FlutterActivityEvents.java",
   "io/flutter/app/FlutterApplication.java",
   "io/flutter/app/FlutterFragmentActivity.java",
+  "io/flutter/app/FlutterPlayStoreSplitApplication.java",
   "io/flutter/app/FlutterPluginRegistry.java",
   "io/flutter/embedding/android/AndroidKeyProcessor.java",
   "io/flutter/embedding/android/AndroidTouchProcessor.java",
@@ -149,12 +151,15 @@ android_java_sources = [
   "io/flutter/embedding/engine/FlutterEngine.java",
   "io/flutter/embedding/engine/FlutterEngineCache.java",
   "io/flutter/embedding/engine/FlutterEngineConnectionRegistry.java",
+  "io/flutter/embedding/engine/FlutterEngineGroup.java",
   "io/flutter/embedding/engine/FlutterJNI.java",
   "io/flutter/embedding/engine/FlutterOverlaySurface.java",
   "io/flutter/embedding/engine/FlutterShellArgs.java",
   "io/flutter/embedding/engine/dart/DartExecutor.java",
   "io/flutter/embedding/engine/dart/DartMessenger.java",
   "io/flutter/embedding/engine/dart/PlatformMessageHandler.java",
+  "io/flutter/embedding/engine/deferredcomponents/DeferredComponentManager.java",
+  "io/flutter/embedding/engine/deferredcomponents/PlayStoreDeferredComponentManager.java",
   "io/flutter/embedding/engine/loader/ApplicationInfoLoader.java",
   "io/flutter/embedding/engine/loader/FlutterApplicationInfo.java",
   "io/flutter/embedding/engine/loader/FlutterLoader.java",
@@ -184,6 +189,7 @@ android_java_sources = [
   "io/flutter/embedding/engine/renderer/RenderSurface.java",
   "io/flutter/embedding/engine/renderer/SurfaceTextureWrapper.java",
   "io/flutter/embedding/engine/systemchannels/AccessibilityChannel.java",
+  "io/flutter/embedding/engine/systemchannels/DeferredComponentChannel.java",
   "io/flutter/embedding/engine/systemchannels/KeyEventChannel.java",
   "io/flutter/embedding/engine/systemchannels/LifecycleChannel.java",
   "io/flutter/embedding/engine/systemchannels/LocalizationChannel.java",
@@ -216,6 +222,7 @@ android_java_sources = [
   "io/flutter/plugin/editing/FlutterTextUtils.java",
   "io/flutter/plugin/editing/ImeSyncDeferringInsetsCallback.java",
   "io/flutter/plugin/editing/InputConnectionAdaptor.java",
+  "io/flutter/plugin/editing/ListenableEditingState.java",
   "io/flutter/plugin/editing/TextInputPlugin.java",
   "io/flutter/plugin/localization/LocalizationPlugin.java",
   "io/flutter/plugin/mouse/MouseCursorPlugin.java",
@@ -398,7 +405,10 @@ action("pom_libflutter") {
   artifact_id =
       string_replace(android_app_abi, "-", "_") + "_" + flutter_runtime_mode
 
-  outputs = [ "$root_build_dir/$artifact_id.pom" ]
+  outputs = [
+    "$root_build_dir/$artifact_id.pom",
+    "$root_build_dir/$artifact_id.maven-metadata.xml",
+  ]
 
   args = [
     "--destination",
@@ -417,7 +427,10 @@ action("pom_embedding") {
 
   artifact_id = "flutter_embedding_$flutter_runtime_mode"
 
-  outputs = [ "$root_build_dir/$artifact_id.pom" ]
+  outputs = [
+    "$root_build_dir/$artifact_id.pom",
+    "$root_build_dir/$artifact_id.maven-metadata.xml",
+  ]
 
   args = [
     "--destination",
@@ -453,6 +466,7 @@ action("robolectric_tests") {
     "test/io/flutter/embedding/android/RobolectricFlutterActivity.java",
     "test/io/flutter/embedding/engine/FlutterEngineCacheTest.java",
     "test/io/flutter/embedding/engine/FlutterEngineConnectionRegistryTest.java",
+    "test/io/flutter/embedding/engine/FlutterEngineGroupComponentTest.java",
     "test/io/flutter/embedding/engine/FlutterEngineTest.java",
     "test/io/flutter/embedding/engine/FlutterJNITest.java",
     "test/io/flutter/embedding/engine/FlutterShellArgsTest.java",
@@ -460,11 +474,13 @@ action("robolectric_tests") {
     "test/io/flutter/embedding/engine/RenderingComponentTest.java",
     "test/io/flutter/embedding/engine/dart/DartExecutorTest.java",
     "test/io/flutter/embedding/engine/dart/DartMessengerTest.java",
+    "test/io/flutter/embedding/engine/deferredcomponents/PlayStoreDeferredComponentManagerTest.java",
     "test/io/flutter/embedding/engine/loader/ApplicationInfoLoaderTest.java",
     "test/io/flutter/embedding/engine/loader/FlutterLoaderTest.java",
     "test/io/flutter/embedding/engine/mutatorsstack/FlutterMutatorViewTest.java",
     "test/io/flutter/embedding/engine/plugins/shim/ShimPluginRegistryTest.java",
     "test/io/flutter/embedding/engine/renderer/FlutterRendererTest.java",
+    "test/io/flutter/embedding/engine/systemchannels/DeferredComponentChannelTest.java",
     "test/io/flutter/embedding/engine/systemchannels/KeyEventChannelTest.java",
     "test/io/flutter/embedding/engine/systemchannels/PlatformChannelTest.java",
     "test/io/flutter/embedding/engine/systemchannels/RestorationChannelTest.java",
@@ -472,6 +488,7 @@ action("robolectric_tests") {
     "test/io/flutter/plugin/common/StandardMessageCodecTest.java",
     "test/io/flutter/plugin/common/StandardMethodCodecTest.java",
     "test/io/flutter/plugin/editing/InputConnectionAdaptorTest.java",
+    "test/io/flutter/plugin/editing/ListenableEditingStateTest.java",
     "test/io/flutter/plugin/editing/TextInputPluginTest.java",
     "test/io/flutter/plugin/localization/LocalizationPluginTest.java",
     "test/io/flutter/plugin/mouse/MouseCursorPluginTest.java",

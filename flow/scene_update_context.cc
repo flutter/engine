@@ -68,16 +68,34 @@ void SetMaterialColor(scenic::Material& material,
 SceneUpdateContext::SceneUpdateContext(std::string debug_label,
                                        fuchsia::ui::views::ViewToken view_token,
                                        scenic::ViewRefPair view_ref_pair,
-                                       SessionWrapper& session)
+                                       SessionWrapper& session,
+                                       bool intercept_all_input)
     : session_(session),
       root_view_(session_.get(),
                  std::move(view_token),
                  std::move(view_ref_pair.control_ref),
                  std::move(view_ref_pair.view_ref),
                  debug_label),
-      root_node_(session_.get()) {
-  root_view_.AddChild(root_node_);
-  root_node_.SetEventMask(fuchsia::ui::gfx::kMetricsEventMask);
+      metrics_node_(session.get()),
+      layer_tree_node_(session_.get()) {
+  layer_tree_node_.SetLabel("Flutter::LayerTree");
+  metrics_node_.SetLabel("Flutter::MetricsWatcher");
+  metrics_node_.SetEventMask(fuchsia::ui::gfx::kMetricsEventMask);
+  metrics_node_.AddChild(layer_tree_node_);
+  root_view_.AddChild(metrics_node_);
+
+  // Set up the input interceptor at the top of the scene, if applicable.  It
+  // will capture all input, and any unwanted input will be reinjected into
+  // embedded views.
+  if (intercept_all_input) {
+    input_interceptor_node_.emplace(session_.get());
+    input_interceptor_node_->SetLabel("Flutter::InputInterceptor");
+    input_interceptor_node_->SetHitTestBehavior(
+        fuchsia::ui::gfx::HitTestBehavior::kDefault);
+    input_interceptor_node_->SetSemanticVisibility(false);
+
+    metrics_node_.AddChild(input_interceptor_node_.value());
+  }
 
   session_.Present();
 }
@@ -95,7 +113,8 @@ void SceneUpdateContext::EnableWireframe(bool enable) {
       scenic::NewSetEnableDebugViewBoundsCmd(root_view_.id(), enable));
 }
 
-void SceneUpdateContext::Reset() {
+void SceneUpdateContext::Reset(const SkISize& frame_size,
+                               float device_pixel_ratio) {
   paint_tasks_.clear();
   top_entity_ = nullptr;
   top_scale_x_ = 1.f;
@@ -104,9 +123,22 @@ void SceneUpdateContext::Reset() {
   next_elevation_ = 0.f;
   alpha_ = 1.f;
 
+  // Adjust scene scaling to match the device pixel ratio.
+  const float inv_dpr = 1.0f / device_pixel_ratio;
+  layer_tree_node_.SetScale(inv_dpr, inv_dpr, 1.0f);
+
+  // Set up the input interceptor at the top of the scene, if applicable.
+  if (input_interceptor_node_.has_value()) {
+    // TODO(fxb/): Don't hardcode elevation.
+    input_interceptor_node_->SetTranslation(frame_size.width() * 0.5f,
+                                            frame_size.height() * 0.5f, -100.f);
+    input_interceptor_node_->SetShape(scenic::Rectangle(
+        session_.get(), frame_size.width(), frame_size.height()));
+  }
+
   // We are going to be sending down a fresh node hierarchy every frame. So just
-  // enqueue a detach op on the imported root node.
-  session_.get()->Enqueue(scenic::NewDetachChildrenCmd(root_node_.id()));
+  // enqueue a detach op on the layer tree node.
+  layer_tree_node_.DetachChildren();
 }
 
 void SceneUpdateContext::CreateFrame(scenic::EntityNode& entity_node,
@@ -169,7 +201,10 @@ void SceneUpdateContext::UpdateView(int64_t view_id,
                                     const SkSize& size,
                                     std::optional<bool> override_hit_testable) {
   auto* view_holder = ViewHolder::FromId(view_id);
-  FML_DCHECK(view_holder);
+  if (view_holder == nullptr) {
+    FML_LOG(ERROR) << "UpdateView did not find view holder for: " << view_id;
+    return;
+  }
 
   if (size.width() > 0.f && size.height() > 0.f) {
     view_holder->SetProperties(size.width(), size.height(), 0, 0, 0, 0,
@@ -190,6 +225,7 @@ void SceneUpdateContext::UpdateView(int64_t view_id,
 void SceneUpdateContext::CreateView(int64_t view_id,
                                     bool hit_testable,
                                     bool focusable) {
+  FML_LOG(INFO) << "CreateView for view holder: " << view_id;
   zx_handle_t handle = (zx_handle_t)view_id;
   flutter::ViewHolder::Create(handle, nullptr,
                               scenic::ToViewHolderToken(zx::eventpair(handle)),
@@ -205,7 +241,10 @@ void SceneUpdateContext::UpdateView(int64_t view_id,
                                     bool hit_testable,
                                     bool focusable) {
   auto* view_holder = ViewHolder::FromId(view_id);
-  FML_DCHECK(view_holder);
+  if (view_holder == nullptr) {
+    FML_LOG(ERROR) << "UpdateView did not find view holder for: " << view_id;
+    return;
+  }
 
   view_holder->set_hit_testable(hit_testable);
   view_holder->set_focusable(focusable);
@@ -215,29 +254,30 @@ void SceneUpdateContext::DestroyView(int64_t view_id) {
   ViewHolder::Destroy(view_id);
 }
 
-SceneUpdateContext::Entity::Entity(SceneUpdateContext& context)
+SceneUpdateContext::Entity::Entity(std::shared_ptr<SceneUpdateContext> context)
     : context_(context),
-      previous_entity_(context.top_entity_),
-      entity_node_(context.session_.get()) {
-  context.top_entity_ = this;
+      previous_entity_(context->top_entity_),
+      entity_node_(context->session_.get()) {
+  context->top_entity_ = this;
 }
 
 SceneUpdateContext::Entity::~Entity() {
   if (previous_entity_) {
     previous_entity_->embedder_node().AddChild(entity_node_);
   } else {
-    context_.root_node_.AddChild(entity_node_);
+    context_->layer_tree_node_.AddChild(entity_node_);
   }
 
-  FML_DCHECK(context_.top_entity_ == this);
-  context_.top_entity_ = previous_entity_;
+  FML_DCHECK(context_->top_entity_ == this);
+  context_->top_entity_ = previous_entity_;
 }
 
-SceneUpdateContext::Transform::Transform(SceneUpdateContext& context,
-                                         const SkMatrix& transform)
+SceneUpdateContext::Transform::Transform(
+    std::shared_ptr<SceneUpdateContext> context,
+    const SkMatrix& transform)
     : Entity(context),
-      previous_scale_x_(context.top_scale_x_),
-      previous_scale_y_(context.top_scale_y_) {
+      previous_scale_x_(context->top_scale_x_),
+      previous_scale_y_(context->top_scale_y_) {
   entity_node().SetLabel("flutter::Transform");
   if (!transform.isIdentity()) {
     // TODO(SCN-192): The perspective and shear components in the matrix
@@ -255,8 +295,8 @@ SceneUpdateContext::Transform::Transform(SceneUpdateContext& context,
                              decomposition.scale().y,  //
                              1.f                       //
       );
-      context.top_scale_x_ *= decomposition.scale().x;
-      context.top_scale_y_ *= decomposition.scale().y;
+      context->top_scale_x_ *= decomposition.scale().x;
+      context->top_scale_y_ *= decomposition.scale().y;
 
       entity_node().SetRotation(decomposition.rotation().x,  //
                                 decomposition.rotation().y,  //
@@ -267,45 +307,46 @@ SceneUpdateContext::Transform::Transform(SceneUpdateContext& context,
   }
 }
 
-SceneUpdateContext::Transform::Transform(SceneUpdateContext& context,
-                                         float scale_x,
-                                         float scale_y,
-                                         float scale_z)
+SceneUpdateContext::Transform::Transform(
+    std::shared_ptr<SceneUpdateContext> context,
+    float scale_x,
+    float scale_y,
+    float scale_z)
     : Entity(context),
-      previous_scale_x_(context.top_scale_x_),
-      previous_scale_y_(context.top_scale_y_) {
+      previous_scale_x_(context->top_scale_x_),
+      previous_scale_y_(context->top_scale_y_) {
   entity_node().SetLabel("flutter::Transform");
   if (scale_x != 1.f || scale_y != 1.f || scale_z != 1.f) {
     entity_node().SetScale(scale_x, scale_y, scale_z);
-    context.top_scale_x_ *= scale_x;
-    context.top_scale_y_ *= scale_y;
+    context->top_scale_x_ *= scale_x;
+    context->top_scale_y_ *= scale_y;
   }
 }
 
 SceneUpdateContext::Transform::~Transform() {
-  context().top_scale_x_ = previous_scale_x_;
-  context().top_scale_y_ = previous_scale_y_;
+  context()->top_scale_x_ = previous_scale_x_;
+  context()->top_scale_y_ = previous_scale_y_;
 }
 
-SceneUpdateContext::Frame::Frame(SceneUpdateContext& context,
+SceneUpdateContext::Frame::Frame(std::shared_ptr<SceneUpdateContext> context,
                                  const SkRRect& rrect,
                                  SkColor color,
                                  SkAlpha opacity,
                                  std::string label)
     : Entity(context),
-      previous_elevation_(context.top_elevation_),
+      previous_elevation_(context->top_elevation_),
       rrect_(rrect),
       color_(color),
       opacity_(opacity),
-      opacity_node_(context.session_.get()),
+      opacity_node_(context->session_.get()),
       paint_bounds_(SkRect::MakeEmpty()) {
   // Increment elevation trackers before calculating any local elevation.
-  // |UpdateView| can modify context.next_elevation_, which is why it is
+  // |UpdateView| can modify context->next_elevation_, which is why it is
   // neccesary to track this addtional state.
-  context.top_elevation_ += kScenicZElevationBetweenLayers;
-  context.next_elevation_ += kScenicZElevationBetweenLayers;
+  context->top_elevation_ += kScenicZElevationBetweenLayers;
+  context->next_elevation_ += kScenicZElevationBetweenLayers;
 
-  float local_elevation = context.next_elevation_ - previous_elevation_;
+  float local_elevation = context->next_elevation_ - previous_elevation_;
   entity_node().SetTranslation(0.f, 0.f, -local_elevation);
   entity_node().SetLabel(label);
   entity_node().AddChild(opacity_node_);
@@ -318,20 +359,20 @@ SceneUpdateContext::Frame::Frame(SceneUpdateContext& context,
 }
 
 SceneUpdateContext::Frame::~Frame() {
-  context().top_elevation_ = previous_elevation_;
+  context()->top_elevation_ = previous_elevation_;
 
   // Add a part which represents the frame's geometry for clipping purposes
-  context().CreateFrame(entity_node(), rrect_, color_, opacity_, paint_bounds_,
-                        std::move(paint_layers_));
+  context()->CreateFrame(entity_node(), rrect_, color_, opacity_, paint_bounds_,
+                         std::move(paint_layers_));
 }
 
 void SceneUpdateContext::Frame::AddPaintLayer(Layer* layer) {
-  FML_DCHECK(layer->needs_painting());
+  FML_DCHECK(!layer->is_empty());
   paint_layers_.push_back(layer);
   paint_bounds_.join(layer->paint_bounds());
 }
 
-SceneUpdateContext::Clip::Clip(SceneUpdateContext& context,
+SceneUpdateContext::Clip::Clip(std::shared_ptr<SceneUpdateContext> context,
                                const SkRect& shape_bounds)
     : Entity(context) {
   entity_node().SetLabel("flutter::Clip");

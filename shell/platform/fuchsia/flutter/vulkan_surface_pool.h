@@ -26,6 +26,7 @@ class VulkanSurfacePool final {
 
   ~VulkanSurfacePool();
 
+  std::unique_ptr<VulkanSurface> CreateSurface(const SkISize& size);
   std::unique_ptr<VulkanSurface> AcquireSurface(const SkISize& size);
 
   void SubmitSurface(std::unique_ptr<SurfaceProducerSurface> surface);
@@ -40,16 +41,16 @@ class VulkanSurfacePool final {
   vulkan::VulkanProvider& vulkan_provider_;
   sk_sp<GrDirectContext> context_;
   scenic::Session* scenic_session_;
+  fuchsia::sysmem::AllocatorSyncPtr sysmem_allocator_;
   std::vector<std::unique_ptr<VulkanSurface>> available_surfaces_;
   std::unordered_map<uintptr_t, std::unique_ptr<VulkanSurface>>
       pending_surfaces_;
+  uint32_t buffer_id_ = 1;
 
   size_t trace_surfaces_created_ = 0;
   size_t trace_surfaces_reused_ = 0;
 
   std::unique_ptr<VulkanSurface> GetCachedOrCreateSurface(const SkISize& size);
-
-  std::unique_ptr<VulkanSurface> CreateSurface(const SkISize& size);
 
   void RecycleSurface(std::unique_ptr<VulkanSurface> surface);
 

@@ -31,8 +31,15 @@ class DirectoryAssetBundle : public AssetResolver {
   bool IsValidAfterAssetManagerChange() const override;
 
   // |AssetResolver|
+  AssetResolver::AssetResolverType GetType() const override;
+
+  // |AssetResolver|
   std::unique_ptr<fml::Mapping> GetAsMapping(
       const std::string& asset_name) const override;
+
+  // |AssetResolver|
+  std::vector<std::unique_ptr<fml::Mapping>> GetAsMappings(
+      const std::string& asset_pattern) const override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(DirectoryAssetBundle);
 };

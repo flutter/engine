@@ -12,15 +12,16 @@ namespace flutter {
 
 class IOSExternalViewEmbedder : public ExternalViewEmbedder {
  public:
-  IOSExternalViewEmbedder(
-      FlutterPlatformViewsController* platform_views_controller,
-      std::shared_ptr<IOSContext> context);
+  IOSExternalViewEmbedder(const std::shared_ptr<FlutterPlatformViewsController>&
+                              platform_views_controller,
+                          std::shared_ptr<IOSContext> context);
 
   // |ExternalViewEmbedder|
   virtual ~IOSExternalViewEmbedder() override;
 
  private:
-  FlutterPlatformViewsController* platform_views_controller_;
+  const std::shared_ptr<FlutterPlatformViewsController>&
+      platform_views_controller_;
   std::shared_ptr<IOSContext> ios_context_;
 
   // |ExternalViewEmbedder|
@@ -52,8 +53,10 @@ class IOSExternalViewEmbedder : public ExternalViewEmbedder {
   SkCanvas* CompositeEmbeddedView(int view_id) override;
 
   // |ExternalViewEmbedder|
-  void SubmitFrame(GrDirectContext* context,
-                   std::unique_ptr<SurfaceFrame> frame) override;
+  void SubmitFrame(
+      GrDirectContext* context,
+      std::unique_ptr<SurfaceFrame> frame,
+      const std::shared_ptr<fml::SyncSwitch>& gpu_disable_sync_switch) override;
 
   // |ExternalViewEmbedder|
   void EndFrame(

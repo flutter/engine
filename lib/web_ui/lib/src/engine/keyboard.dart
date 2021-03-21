@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// After a keydown is received, this is the duration we wait for a repeat event
@@ -80,15 +80,6 @@ class Keyboard {
     }
 
     final html.KeyboardEvent keyboardEvent = event;
-
-    if (window._onPlatformMessage == null) {
-      return;
-    }
-
-    if (_shouldPreventDefault(event)) {
-      event.preventDefault();
-    }
-
     final String timerKey = keyboardEvent.code!;
 
     // Don't handle synthesizing a keyup event for modifier keys
@@ -135,17 +126,18 @@ class Keyboard {
       'metaState': _lastMetaState,
     };
 
-    window.invokeOnPlatformMessage('flutter/keyevent',
-        _messageCodec.encodeMessage(eventData), _noopCallback);
-  }
-
-  bool _shouldPreventDefault(html.KeyboardEvent event) {
-    switch (event.key) {
-      case 'Tab':
-        return true;
-      default:
-        return false;
-    }
+    EnginePlatformDispatcher.instance.invokeOnPlatformMessage('flutter/keyevent',
+      _messageCodec.encodeMessage(eventData), (ByteData? data) {
+        if (data == null) {
+          return;
+        }
+        final Map<String, dynamic> jsonResponse = _messageCodec.decodeMessage(data);
+        if (jsonResponse['handled'] as bool) {
+          // If the framework handled it, then don't propagate it any further.
+          event.preventDefault();
+        }
+      },
+    );
   }
 
   void _synthesizeKeyup(html.KeyboardEvent event) {
@@ -157,7 +149,7 @@ class Keyboard {
       'metaState': _lastMetaState,
     };
 
-    window.invokeOnPlatformMessage('flutter/keyevent',
+    EnginePlatformDispatcher.instance.invokeOnPlatformMessage('flutter/keyevent',
         _messageCodec.encodeMessage(eventData), _noopCallback);
   }
 }

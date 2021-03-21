@@ -2,13 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// A tree of [Layer]s that, together with a [Size] compose a frame.
 class LayerTree {
+  LayerTree(this.rootLayer);
+
   /// The root of the layer tree.
-  Layer? rootLayer;
+  final RootLayer rootLayer;
 
   /// The size (in physical pixels) of the frame to paint this layer tree into.
   final ui.Size frameSize = ui.window.physicalSize;
@@ -27,7 +29,7 @@ class LayerTree {
       ignoreRasterCache ? null : frame.rasterCache,
       frame.viewEmbedder,
     );
-    rootLayer!.preroll(context, Matrix4.identity());
+    rootLayer.preroll(context, Matrix4.identity());
   }
 
   /// Paints the layer tree into the given [frame].
@@ -48,9 +50,28 @@ class LayerTree {
       ignoreRasterCache ? null : frame.rasterCache,
       frame.viewEmbedder,
     );
-    if (rootLayer!.needsPainting) {
-      rootLayer!.paint(context);
+    if (rootLayer.needsPainting) {
+      rootLayer.paint(context);
     }
+  }
+
+  /// Flattens the tree into a single [ui.Picture].
+  ///
+  /// This picture does not contain any platform views.
+  ui.Picture flatten() {
+    CkPictureRecorder recorder = CkPictureRecorder();
+    CkCanvas canvas = recorder.beginRecording(ui.Rect.largest);
+    final PrerollContext prerollContext = PrerollContext(null, null);
+    rootLayer.preroll(prerollContext, Matrix4.identity());
+
+    CkNWayCanvas internalNodesCanvas = CkNWayCanvas();
+    internalNodesCanvas.addCanvas(canvas);
+    final PaintContext paintContext =
+        PaintContext(internalNodesCanvas, canvas, null, null);
+    if (rootLayer.needsPainting) {
+      rootLayer.paint(paintContext);
+    }
+    return recorder.endRecording();
   }
 }
 

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// Handles clipboard related platform messages.
@@ -186,8 +186,6 @@ class ExecCommandPasteStrategy implements PasteFromClipboardStrategy {
   @override
   Future<String> getData() {
     // TODO(nurhan): https://github.com/flutter/flutter/issues/48581
-    // TODO(nurhan): https://github.com/flutter/flutter/issues/48580
-    print('Paste is not implemented for this browser.');
-    throw UnimplementedError();
+    throw UnimplementedError('Paste is not implemented for this browser.');
   }
 }

@@ -6,6 +6,7 @@
 
 #include "flutter/flow/layers/picture_layer.h"
 
+#include "flutter/flow/testing/diff_context_test.h"
 #include "flutter/flow/testing/skia_gpu_object_layer_test.h"
 #include "flutter/fml/macros.h"
 #include "flutter/testing/mock_canvas.h"
@@ -39,7 +40,7 @@ TEST_F(PictureLayerTest, PaintBeforePreollDies) {
 
   EXPECT_EQ(layer->paint_bounds(), SkRect::MakeEmpty());
   EXPECT_DEATH_IF_SUPPORTED(layer->Paint(paint_context()),
-                            "needs_painting\\(\\)");
+                            "needs_painting\\(context\\)");
 }
 
 TEST_F(PictureLayerTest, PaintingEmptyLayerDies) {
@@ -51,11 +52,11 @@ TEST_F(PictureLayerTest, PaintingEmptyLayerDies) {
 
   layer->Preroll(preroll_context(), SkMatrix());
   EXPECT_EQ(layer->paint_bounds(), SkRect::MakeEmpty());
-  EXPECT_FALSE(layer->needs_painting());
+  EXPECT_FALSE(layer->needs_painting(paint_context()));
   EXPECT_FALSE(layer->needs_system_composite());
 
   EXPECT_DEATH_IF_SUPPORTED(layer->Paint(paint_context()),
-                            "needs_painting\\(\\)");
+                            "needs_painting\\(context\\)");
 }
 #endif
 
@@ -81,22 +82,80 @@ TEST_F(PictureLayerTest, SimplePicture) {
   EXPECT_EQ(layer->paint_bounds(),
             picture_bounds.makeOffset(layer_offset.fX, layer_offset.fY));
   EXPECT_EQ(layer->picture(), mock_picture.get());
-  EXPECT_TRUE(layer->needs_painting());
+  EXPECT_TRUE(layer->needs_painting(paint_context()));
   EXPECT_FALSE(layer->needs_system_composite());
 
   layer->Paint(paint_context());
   auto expected_draw_calls = std::vector(
       {MockCanvas::DrawCall{0, MockCanvas::SaveData{1}},
-       MockCanvas::DrawCall{1,
-                            MockCanvas::ConcatMatrixData{layer_offset_matrix}},
+       MockCanvas::DrawCall{
+           1, MockCanvas::ConcatMatrixData{SkM44(layer_offset_matrix)}},
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
        MockCanvas::DrawCall{
-           1, MockCanvas::SetMatrixData{RasterCache::GetIntegralTransCTM(
-                  layer_offset_matrix)}},
+           1, MockCanvas::SetMatrixData{SkM44(
+                  RasterCache::GetIntegralTransCTM(layer_offset_matrix))}},
 #endif
        MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}});
   EXPECT_EQ(mock_canvas().draw_calls(), expected_draw_calls);
 }
+
+#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
+
+using PictureLayerDiffTest = DiffContextTest;
+
+TEST_F(PictureLayerDiffTest, SimplePicture) {
+  auto picture = CreatePicture(SkRect::MakeLTRB(10, 10, 60, 60), 1);
+
+  MockLayerTree tree1;
+  tree1.root()->Add(CreatePictureLayer(picture));
+
+  auto damage = DiffLayerTree(tree1, MockLayerTree());
+  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(10, 10, 60, 60));
+
+  MockLayerTree tree2;
+  tree2.root()->Add(CreatePictureLayer(picture));
+
+  damage = DiffLayerTree(tree2, tree1);
+  EXPECT_TRUE(damage.frame_damage.isEmpty());
+
+  MockLayerTree tree3;
+  damage = DiffLayerTree(tree3, tree2);
+  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(10, 10, 60, 60));
+}
+
+TEST_F(PictureLayerDiffTest, PictureCompare) {
+  MockLayerTree tree1;
+  auto picture1 = CreatePicture(SkRect::MakeLTRB(10, 10, 60, 60), 1);
+  tree1.root()->Add(CreatePictureLayer(picture1));
+
+  auto damage = DiffLayerTree(tree1, MockLayerTree());
+  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(10, 10, 60, 60));
+
+  MockLayerTree tree2;
+  auto picture2 = CreatePicture(SkRect::MakeLTRB(10, 10, 60, 60), 1);
+  tree2.root()->Add(CreatePictureLayer(picture2));
+
+  damage = DiffLayerTree(tree2, tree1);
+  EXPECT_TRUE(damage.frame_damage.isEmpty());
+
+  MockLayerTree tree3;
+  auto picture3 = CreatePicture(SkRect::MakeLTRB(10, 10, 60, 60), 1);
+  // add offset
+  tree3.root()->Add(CreatePictureLayer(picture3, SkPoint::Make(10, 10)));
+
+  damage = DiffLayerTree(tree3, tree2);
+  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(10, 10, 70, 70));
+
+  MockLayerTree tree4;
+  // different color
+  auto picture4 = CreatePicture(SkRect::MakeLTRB(10, 10, 60, 60), 2);
+  tree4.root()->Add(CreatePictureLayer(picture4, SkPoint::Make(10, 10)));
+
+  damage = DiffLayerTree(tree4, tree3);
+  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(20, 20, 70, 70));
+}
+
+#endif
 
 }  // namespace testing
 }  // namespace flutter

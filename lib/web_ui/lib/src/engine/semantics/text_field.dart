@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// Text editing used by accesibility mode.
@@ -15,12 +15,16 @@ part of engine;
 /// This class is still responsible for hooking up the DOM element with the
 /// [HybridTextEditing] instance so that changes are communicated to Flutter.
 class SemanticsTextEditingStrategy extends DefaultTextEditingStrategy {
+  /// The semantics object which this text editing element belongs to.
+  final SemanticsObject semanticsObject;
+
   /// Creates a [SemanticsTextEditingStrategy] that eagerly instantiates
   /// [domElement] so the caller can insert it before calling
   /// [SemanticsTextEditingStrategy.enable].
-  SemanticsTextEditingStrategy(
+  SemanticsTextEditingStrategy(SemanticsObject semanticsObject,
       HybridTextEditing owner, html.HtmlElement domElement)
-      : super(owner) {
+      : this.semanticsObject = semanticsObject,
+        super(owner) {
     // Make sure the DOM element is of a type that we support for text editing.
     // TODO(yjbanov): move into initializer list when https://github.com/dart-lang/sdk/issues/37881 is fixed.
     assert((domElement is html.InputElement) ||
@@ -31,12 +35,58 @@ class SemanticsTextEditingStrategy extends DefaultTextEditingStrategy {
   @override
   void disable() {
     // We don't want to remove the DOM element because the caller is responsible
-    // for that.
-    //
-    // Remove focus from the editable element to cause the keyboard to hide.
+    // for that. However we still want to stop editing, cleanup the handlers.
+    assert(isEnabled);
+
+    isEnabled = false;
+    _style = null;
+    _geometry = null;
+
+    for (int i = 0; i < _subscriptions.length; i++) {
+      _subscriptions[i].cancel();
+    }
+    _subscriptions.clear();
+    _lastEditingState = null;
+
+    // If focused element is a part of a form, it needs to stay on the DOM
+    // until the autofill context of the form is finalized.
+    // More details on `TextInput.finishAutofillContext` call.
+    if (_appendedToForm &&
+        _inputConfiguration.autofillGroup?.formElement != null) {
+      // We want to save the domElement with the form. However we still
+      // need to keep the text editing domElement attached to the semantics
+      // tree. In order to simplify the logic we will create a clone of the
+      // element.
+      final html.Node textFieldClone = domElement.clone(false);
+      domElement = textFieldClone as html.HtmlElement;
+      _inputConfiguration.autofillGroup?.storeForm();
+    }
+
+    // If the text element still has focus, remove focus from the editable
+    // element to cause the keyboard to hide.
     // Otherwise, the keyboard stays on screen even when the user navigates to
     // a different screen (e.g. by hitting the "back" button).
-    domElement.blur();
+    if (operatingSystem == OperatingSystem.android ||
+        operatingSystem == OperatingSystem.iOs) {
+      domElement.blur();
+    }
+  }
+
+  @override
+  void addEventHandlers() {
+    if (_inputConfiguration.autofillGroup != null) {
+      _subscriptions
+          .addAll(_inputConfiguration.autofillGroup!.addInputEventListeners());
+    }
+
+    // Subscribe to text and selection changes.
+    _subscriptions.add(domElement.onInput.listen(_handleChange));
+
+    _subscriptions.add(domElement.onKeyDown.listen(_maybeSendAction));
+
+    _subscriptions.add(html.document.onSelectionChange.listen(_handleChange));
+
+    preventDefaultForMouseEvents();
   }
 
   @override
@@ -55,8 +105,7 @@ class SemanticsTextEditingStrategy extends DefaultTextEditingStrategy {
     _inputConfiguration = inputConfig;
     _onChange = onChange;
     _onAction = onAction;
-
-    domElement.focus();
+    _applyConfiguration(inputConfig);
   }
 
   @override
@@ -65,6 +114,25 @@ class SemanticsTextEditingStrategy extends DefaultTextEditingStrategy {
 
     // Refocus after setting editing state.
     domElement.focus();
+  }
+
+  @override
+  void placeElement() {
+    // If this text editing element is a part of an autofill group.
+    if (hasAutofillGroup) {
+      placeForm();
+    }
+    domElement.focus();
+  }
+
+  @override
+  void placeForm() {
+    // Switch domElement's parent from semantics object to form.
+    domElement.remove();
+    _inputConfiguration.autofillGroup!.formElement.append(domElement);
+    semanticsObject.element
+        .append(_inputConfiguration.autofillGroup!.formElement);
+    _appendedToForm = true;
   }
 }
 
@@ -84,6 +152,7 @@ class TextField extends RoleManager {
             ? html.TextAreaElement()
             : html.InputElement();
     textEditingElement = SemanticsTextEditingStrategy(
+      semanticsObject,
       textEditing,
       editableDomElement,
     );
@@ -91,7 +160,7 @@ class TextField extends RoleManager {
   }
 
   SemanticsTextEditingStrategy? textEditingElement;
-  html.Element get _textFieldElement => textEditingElement!.domElement;
+  html.HtmlElement get _textFieldElement => textEditingElement!.domElement;
 
   void _setupDomElement() {
     // On iOS, even though the semantic text field is transparent, the cursor
@@ -148,8 +217,8 @@ class TextField extends RoleManager {
       }
 
       textEditing.useCustomEditableElement(textEditingElement);
-      window
-          .invokeOnSemanticsAction(semanticsObject.id, ui.SemanticsAction.tap, null);
+      EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
+          semanticsObject.id, ui.SemanticsAction.tap, null);
     });
   }
 
@@ -159,6 +228,11 @@ class TextField extends RoleManager {
   /// events are present regardless of whether accessibility is enabled or not,
   /// this mode is always enabled.
   void _initializeForWebkit() {
+    // Safari for desktop is also initialized as the other browsers.
+    if (operatingSystem == OperatingSystem.macOs) {
+      _initializeForBlink();
+      return;
+    }
     num? lastTouchStartOffsetX;
     num? lastTouchStartOffsetY;
 
@@ -186,7 +260,7 @@ class TextField extends RoleManager {
 
         if (offsetX * offsetX + offsetY * offsetY < kTouchSlop) {
           // Recognize it as a tap that requires a keyboard.
-          window.invokeOnSemanticsAction(
+          EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
               semanticsObject.id, ui.SemanticsAction.tap, null);
         }
       } else {

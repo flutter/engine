@@ -15,7 +15,7 @@ import 'package:test/test.dart';
 import '../../matchers.dart';
 
 const MethodCodec codec = StandardMethodCodec();
-final EngineWindow window = EngineWindow();
+final EngineSingletonFlutterWindow window = EngineSingletonFlutterWindow(0, EnginePlatformDispatcher.instance);
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -67,6 +67,18 @@ void testMain() {
         expect(view.canUpdateAsMatch(anyView), isFalse);
       });
     });
+
+    group('createElement', () {
+      test('adds reset to stylesheet', () {
+        final element = view.createElement();
+        _assertShadowRootStylesheetContains(element, 'all: initial;');
+      });
+
+      test('creates element transparent to "cursor" property', () {
+        final element = view.createElement();
+        _assertShadowRootStylesheetContains(element, 'cursor: inherit;');
+      });
+    });
   });
 }
 
@@ -85,4 +97,15 @@ Future<void> _createPlatformView(int id, String viewType) {
     (dynamic _) => completer.complete(),
   );
   return completer.future;
+}
+
+void _assertShadowRootStylesheetContains(html.Element element, String rule) {
+  final shadow = element.shadowRoot;
+
+  expect(shadow, isNotNull);
+
+  final html.StyleElement style = shadow.children.first;
+
+  expect(style, isNotNull);
+  expect(style.innerHtml, contains(rule));
 }

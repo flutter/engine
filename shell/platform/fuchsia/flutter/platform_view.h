@@ -6,6 +6,7 @@
 #define FLUTTER_SHELL_PLATFORM_FUCHSIA_PLATFORM_VIEW_H_
 
 #include <fuchsia/ui/input/cpp/fidl.h>
+#include <fuchsia/ui/input3/cpp/fidl.h>
 #include <fuchsia/ui/scenic/cpp/fidl.h>
 #include <lib/fidl/cpp/binding.h>
 #include <lib/fit/function.h>
@@ -14,9 +15,12 @@
 #include <map>
 #include <set>
 
+#include "flow/embedded_views.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/time/time_delta.h"
 #include "flutter/shell/common/platform_view.h"
+#include "flutter/shell/platform/fuchsia/flutter/fuchsia_external_view_embedder.h"
+#include "flutter/shell/platform/fuchsia/flutter/keyboard.h"
 
 #include "accessibility_bridge.h"
 
@@ -43,6 +47,7 @@ using OnCreateSurface = fit::function<std::unique_ptr<flutter::Surface>()>;
 class PlatformView final : public flutter::PlatformView,
                            public AccessibilityBridge::Delegate,
                            private fuchsia::ui::scenic::SessionListener,
+                           private fuchsia::ui::input3::KeyboardListener,
                            private fuchsia::ui::input::InputMethodEditorClient {
  public:
   PlatformView(flutter::PlatformView::Delegate& delegate,
@@ -55,12 +60,15 @@ class PlatformView final : public flutter::PlatformView,
                fidl::InterfaceRequest<fuchsia::ui::scenic::SessionListener>
                    session_listener_request,
                fidl::InterfaceHandle<fuchsia::ui::views::Focuser> focuser,
+               fidl::InterfaceRequest<fuchsia::ui::input3::KeyboardListener>
+                   keyboard_listener,
                fit::closure on_session_listener_error_callback,
                OnEnableWireframe wireframe_enabled_callback,
                OnCreateView on_create_view_callback,
                OnUpdateView on_update_view_callback,
                OnDestroyView on_destroy_view_callback,
                OnCreateSurface on_create_surface_callback,
+               std::shared_ptr<flutter::ExternalViewEmbedder> view_embedder,
                fml::TimeDelta vsync_offset,
                zx_handle_t vsync_event_handle);
 
@@ -77,8 +85,18 @@ class PlatformView final : public flutter::PlatformView,
   // |PlatformView|
   flutter::PointerDataDispatcherMaker GetDispatcherMaker() override;
 
+  // |flutter::PlatformView|
+  std::shared_ptr<flutter::ExternalViewEmbedder> CreateExternalViewEmbedder()
+      override;
+
  private:
   void RegisterPlatformMessageHandlers();
+
+  // |fuchsia.ui.input3.KeyboardListener|
+  // Called by the embedder every time there is a key event to process.
+  void OnKeyEvent(fuchsia::ui::input3::KeyEvent key_event,
+                  fuchsia::ui::input3::KeyboardListener::OnKeyEventCallback
+                      callback) override;
 
   // |fuchsia::ui::input::InputMethodEditorClient|
   void DidUpdateState(
@@ -97,8 +115,6 @@ class PlatformView final : public flutter::PlatformView,
   void OnChildViewStateChanged(scenic::ResourceId view_holder_id, bool state);
 
   bool OnHandlePointerEvent(const fuchsia::ui::input::PointerEvent& pointer);
-
-  bool OnHandleKeyboardEvent(const fuchsia::ui::input::KeyboardEvent& keyboard);
 
   bool OnHandleFocusEvent(const fuchsia::ui::input::FocusEvent& focus);
 
@@ -169,6 +185,7 @@ class PlatformView final : public flutter::PlatformView,
   OnUpdateView on_update_view_callback_;
   OnDestroyView on_destroy_view_callback_;
   OnCreateSurface on_create_surface_callback_;
+  std::shared_ptr<flutter::ExternalViewEmbedder> external_view_embedder_;
 
   int current_text_input_client_ = 0;
   fidl::Binding<fuchsia::ui::input::InputMethodEditorClient> ime_client_;
@@ -195,6 +212,13 @@ class PlatformView final : public flutter::PlatformView,
 
   fml::TimeDelta vsync_offset_;
   zx_handle_t vsync_event_handle_ = 0;
+
+  // The registered binding for serving the keyboard listener server endpoint.
+  fidl::Binding<fuchsia::ui::input3::KeyboardListener>
+      keyboard_listener_binding_;
+
+  // The keyboard translation for fuchsia.ui.input3.KeyEvent.
+  Keyboard keyboard_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformView);
 };

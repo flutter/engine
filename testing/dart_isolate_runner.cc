@@ -56,7 +56,8 @@ std::unique_ptr<AutoIsolateShutdown> RunDartCodeInIsolateOnUITaskRunner(
     std::string entrypoint,
     const std::vector<std::string>& args,
     const std::string& fixtures_path,
-    fml::WeakPtr<IOManager> io_manager) {
+    fml::WeakPtr<IOManager> io_manager,
+    std::shared_ptr<VolatilePathTracker> volatile_path_tracker) {
   FML_CHECK(task_runners.GetUITaskRunner()->RunsTasksOnCurrentThread());
 
   if (!vm_ref) {
@@ -93,7 +94,7 @@ std::unique_ptr<AutoIsolateShutdown> RunDartCodeInIsolateOnUITaskRunner(
     auto kernel_mapping = std::make_unique<fml::FileMapping>(kernel_file);
 
     if (kernel_mapping->GetMapping() == nullptr) {
-      FML_LOG(ERROR) << "Could not setup kernel mapping.";
+      FML_LOG(ERROR) << "Could not set up kernel mapping.";
       return nullptr;
     }
 
@@ -126,7 +127,8 @@ std::unique_ptr<AutoIsolateShutdown> RunDartCodeInIsolateOnUITaskRunner(
           settings.isolate_shutdown_callback,  // isolate shutdown callback
           entrypoint,                          // entrypoint
           std::nullopt,                        // library
-          std::move(isolate_configuration)     // isolate configuration
+          std::move(isolate_configuration),    // isolate configuration
+          std::move(volatile_path_tracker)     // volatile path tracker
           )
           .lock();
 
@@ -146,14 +148,15 @@ std::unique_ptr<AutoIsolateShutdown> RunDartCodeInIsolate(
     std::string entrypoint,
     const std::vector<std::string>& args,
     const std::string& fixtures_path,
-    fml::WeakPtr<IOManager> io_manager) {
+    fml::WeakPtr<IOManager> io_manager,
+    std::shared_ptr<VolatilePathTracker> volatile_path_tracker) {
   std::unique_ptr<AutoIsolateShutdown> result;
   fml::AutoResetWaitableEvent latch;
   fml::TaskRunner::RunNowOrPostTask(
       task_runners.GetUITaskRunner(), fml::MakeCopyable([&]() mutable {
         result = RunDartCodeInIsolateOnUITaskRunner(
             vm_ref, settings, task_runners, entrypoint, args, fixtures_path,
-            io_manager);
+            io_manager, std::move(volatile_path_tracker));
         latch.Signal();
       }));
   latch.Wait();

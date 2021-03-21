@@ -71,11 +71,6 @@ SkMatrix EmbedderSurfaceGL::GLContextSurfaceTransformation() const {
 }
 
 // |GPUSurfaceGLDelegate|
-ExternalViewEmbedder* EmbedderSurfaceGL::GetExternalViewEmbedder() {
-  return external_view_embedder_.get();
-}
-
-// |GPUSurfaceGLDelegate|
 EmbedderSurfaceGL::GLProcResolver EmbedderSurfaceGL::GetGLProcResolver() const {
   return gl_dispatch_table_.gl_proc_resolver;
 }
@@ -85,7 +80,6 @@ std::unique_ptr<Surface> EmbedderSurfaceGL::CreateGPUSurface() {
   const bool render_to_surface = !external_view_embedder_;
   return std::make_unique<GPUSurfaceGL>(this,  // GPU surface GL delegate
                                         render_to_surface  // render to surface
-
   );
 }
 

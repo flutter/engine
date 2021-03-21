@@ -45,6 +45,19 @@ typedef gboolean (*FlEnginePlatformMessageHandler)(
     gpointer user_data);
 
 /**
+ * FlEngineUpdateSemanticsNodeHandler:
+ * @engine: an #FlEngine.
+ * @node: semantic node information.
+ * @user_data: (closure): data provided when registering this handler.
+ *
+ * Function called when semantics node updates are received.
+ */
+typedef void (*FlEngineUpdateSemanticsNodeHandler)(
+    FlEngine* engine,
+    const FlutterSemanticsNode* node,
+    gpointer user_data);
+
+/**
  * fl_engine_new:
  * @project: an #FlDartProject.
  * @renderer: an #FlRenderer.
@@ -56,6 +69,16 @@ typedef gboolean (*FlEnginePlatformMessageHandler)(
 FlEngine* fl_engine_new(FlDartProject* project, FlRenderer* renderer);
 
 /**
+ * fl_engine_get_embedder_api:
+ * @engine: an #FlEngine.
+ *
+ * Gets the embedder API proc table, allowing modificiations for unit testing.
+ *
+ * Returns: a mutable pointer to the embedder API proc table.
+ */
+FlutterEngineProcTable* fl_engine_get_embedder_api(FlEngine* engine);
+
+/**
  * fl_engine_set_platform_message_handler:
  * @engine: an #FlEngine.
  * @handler: function to call when a platform message is received.
@@ -63,7 +86,7 @@ FlEngine* fl_engine_new(FlDartProject* project, FlRenderer* renderer);
  * @destroy_notify: (allow-none): a function which gets called to free
  * @user_data, or %NULL.
  *
- * Registers the function called when a platform message is reveived. Call
+ * Registers the function called when a platform message is received. Call
  * fl_engine_send_platform_message_response() with the response to this message.
  * Ownership of #FlutterPlatformMessageResponseHandle is
  * transferred to the caller, and the message must be responded to to avoid
@@ -72,6 +95,22 @@ FlEngine* fl_engine_new(FlDartProject* project, FlRenderer* renderer);
 void fl_engine_set_platform_message_handler(
     FlEngine* engine,
     FlEnginePlatformMessageHandler handler,
+    gpointer user_data,
+    GDestroyNotify destroy_notify);
+
+/**
+ * fl_engine_set_update_semantics_node_handler:
+ * @engine: an #FlEngine.
+ * @handler: function to call when a semantics node update is received.
+ * @user_data: (closure): user data to pass to @handler.
+ * @destroy_notify: (allow-none): a function which gets called to free
+ * @user_data, or %NULL.
+ *
+ * Registers the function called when a semantics node update is reveived.
+ */
+void fl_engine_set_update_semantics_node_handler(
+    FlEngine* engine,
+    FlEngineUpdateSemanticsNodeHandler handler,
     gpointer user_data,
     GDestroyNotify destroy_notify);
 
@@ -122,6 +161,18 @@ void fl_engine_send_mouse_pointer_event(FlEngine* engine,
                                         double scroll_delta_x,
                                         double scroll_delta_y,
                                         int64_t buttons);
+
+/**
+ * fl_engine_dispatch_semantics_action:
+ * @engine: an #FlEngine.
+ * @id: the semantics action identifier.
+ * @action: the action being dispatched.
+ * @data: (allow-none): data associated with the action.
+ */
+void fl_engine_dispatch_semantics_action(FlEngine* engine,
+                                         uint64_t id,
+                                         FlutterSemanticsAction action,
+                                         GBytes* data);
 
 /**
  * fl_engine_send_platform_message_response:

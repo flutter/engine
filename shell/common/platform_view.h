@@ -5,15 +5,19 @@
 #ifndef COMMON_PLATFORM_VIEW_H_
 #define COMMON_PLATFORM_VIEW_H_
 
+#include <functional>
 #include <memory>
 
+#include "flow/embedded_views.h"
+#include "flutter/common/graphics/texture.h"
 #include "flutter/common/task_runners.h"
 #include "flutter/flow/surface.h"
-#include "flutter/flow/texture.h"
 #include "flutter/fml/macros.h"
+#include "flutter/fml/mapping.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/lib/ui/semantics/custom_accessibility_action.h"
 #include "flutter/lib/ui/semantics/semantics_node.h"
+#include "flutter/lib/ui/window/key_data_packet.h"
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/lib/ui/window/pointer_data_packet.h"
 #include "flutter/lib/ui/window/pointer_data_packet_converter.h"
@@ -50,12 +54,13 @@ class PlatformView {
   ///
   class Delegate {
    public:
+    using KeyDataResponse = std::function<void(bool)>;
     //--------------------------------------------------------------------------
     /// @brief      Notifies the delegate that the platform view was created
     ///             with the given render surface. This surface is platform
     ///             (iOS, Android) and client-rendering API (OpenGL, Software,
     ///             Metal, Vulkan) specific. This is usually a sign to the
-    ///             rasterizer to setup and begin rendering to that surface.
+    ///             rasterizer to set up and begin rendering to that surface.
     ///
     /// @param[in]  surface  The surface
     ///
@@ -122,6 +127,20 @@ class PlatformView {
     ///
     virtual void OnPlatformViewDispatchPointerDataPacket(
         std::unique_ptr<PointerDataPacket> packet) = 0;
+
+    //--------------------------------------------------------------------------
+    /// @brief      Notifies the delegate that the platform view has encountered
+    ///             a key event. This key event and the callback needs to be
+    ///             forwarded to the running root isolate hosted by the engine
+    ///             on the UI thread.
+    ///
+    /// @param[in]  packet    The key data packet containing one key event.
+    /// @param[in]  callback  Called when the framework has decided whether
+    ///                       to handle this key data.
+    ///
+    virtual void OnPlatformViewDispatchKeyDataPacket(
+        std::unique_ptr<KeyDataPacket> packet,
+        std::function<void(bool /* handled */)> callback) = 0;
 
     //--------------------------------------------------------------------------
     /// @brief      Notifies the delegate that the platform view has encountered
@@ -211,23 +230,94 @@ class PlatformView {
         int64_t texture_id) = 0;
 
     //--------------------------------------------------------------------------
-    /// @brief      Directly invokes platform-specific APIs to compute the
-    ///             locale the platform would have natively resolved to.
+    /// @brief      Loads the dart shared library into the dart VM. When the
+    ///             dart library is loaded successfully, the dart future
+    ///             returned by the originating loadLibrary() call completes.
     ///
-    /// @param[in]  supported_locale_data  The vector of strings that represents
-    ///                                    the locales supported by the app.
-    ///                                    Each locale consists of three
-    ///                                    strings: languageCode, countryCode,
-    ///                                    and scriptCode in that order.
+    ///             The Dart compiler may generate separate shared libraries
+    ///             files called 'loading units' when libraries are imported
+    ///             as deferred. Each of these shared libraries are identified
+    ///             by a unique loading unit id. Callers should open and resolve
+    ///             a SymbolMapping from the shared library. The Mappings should
+    ///             be moved into this method, as ownership will be assumed by
+    ///             the dart root isolate after successful loading and released
+    ///             after shutdown of the root isolate. The loading unit may not
+    ///             be used after isolate shutdown. If loading fails, the
+    ///             mappings will be released.
     ///
-    /// @return     A vector of 3 strings languageCode, countryCode, and
-    ///             scriptCode that represents the locale selected by the
-    ///             platform. Empty strings mean the value was unassigned. Empty
-    ///             vector represents a null locale.
+    ///             This method is paired with a RequestDartDeferredLibrary
+    ///             invocation that provides the embedder with the loading unit
+    ///             id of the deferred library to load.
     ///
-    virtual std::unique_ptr<std::vector<std::string>>
-    ComputePlatformViewResolvedLocale(
-        const std::vector<std::string>& supported_locale_data) = 0;
+    ///
+    /// @param[in]  loading_unit_id  The unique id of the deferred library's
+    ///                              loading unit.
+    ///
+    /// @param[in]  snapshot_data    Dart snapshot data of the loading unit's
+    ///                              shared library.
+    ///
+    /// @param[in]  snapshot_data    Dart snapshot instructions of the loading
+    ///                              unit's shared library.
+    ///
+    virtual void LoadDartDeferredLibrary(
+        intptr_t loading_unit_id,
+        std::unique_ptr<const fml::Mapping> snapshot_data,
+        std::unique_ptr<const fml::Mapping> snapshot_instructions) = 0;
+
+    //--------------------------------------------------------------------------
+    /// @brief      Indicates to the dart VM that the request to load a deferred
+    ///             library with the specified loading unit id has failed.
+    ///
+    ///             The dart future returned by the initiating loadLibrary()
+    ///             call will complete with an error.
+    ///
+    /// @param[in]  loading_unit_id  The unique id of the deferred library's
+    ///                              loading unit, as passed in by
+    ///                              RequestDartDeferredLibrary.
+    ///
+    /// @param[in]  error_message    The error message that will appear in the
+    ///                              dart Future.
+    ///
+    /// @param[in]  transient        A transient error is a failure due to
+    ///                              temporary conditions such as no network.
+    ///                              Transient errors allow the dart VM to
+    ///                              re-request the same deferred library and
+    ///                              and loading_unit_id again. Non-transient
+    ///                              errors are permanent and attempts to
+    ///                              re-request the library will instantly
+    ///                              complete with an error.
+    virtual void LoadDartDeferredLibraryError(intptr_t loading_unit_id,
+                                              const std::string error_message,
+                                              bool transient) = 0;
+
+    //--------------------------------------------------------------------------
+    /// @brief      Replaces the asset resolver handled by the engine's
+    ///             AssetManager of the specified `type` with
+    ///             `updated_asset_resolver`. The matching AssetResolver is
+    ///             removed and replaced with `updated_asset_resolvers`.
+    ///
+    ///             AssetResolvers should be updated when the existing resolver
+    ///             becomes obsolete and a newer one becomes available that
+    ///             provides updated access to the same type of assets as the
+    ///             existing one. This update process is meant to be performed
+    ///             at runtime.
+    ///
+    ///             If a null resolver is provided, nothing will be done. If no
+    ///             matching resolver is found, the provided resolver will be
+    ///             added to the end of the AssetManager resolvers queue. The
+    ///             replacement only occurs with the first matching resolver.
+    ///             Any additional matching resolvers are untouched.
+    ///
+    /// @param[in]  updated_asset_resolver  The asset resolver to replace the
+    ///             resolver of matching type with.
+    ///
+    /// @param[in]  type  The type of AssetResolver to update. Only resolvers of
+    ///                   the specified type will be replaced by the updated
+    ///                   resolver.
+    ///
+    virtual void UpdateAssetResolverByType(
+        std::unique_ptr<AssetResolver> updated_asset_resolver,
+        AssetResolver::AssetResolverType type) = 0;
   };
 
   //----------------------------------------------------------------------------
@@ -502,6 +592,17 @@ class PlatformView {
   ///
   void DispatchPointerDataPacket(std::unique_ptr<PointerDataPacket> packet);
 
+  //----------------------------------------------------------------------------
+  /// @brief      Dispatches key events from the embedder to the framework. Each
+  ///             key data packet contains one physical event and multiple
+  ///             logical key events. Each call to this method wakes up the UI
+  ///             thread.
+  ///
+  /// @param[in]  packet  The key data packet to dispatch to the framework.
+  ///
+  void DispatchKeyDataPacket(std::unique_ptr<KeyDataPacket> packet,
+                             Delegate::KeyDataResponse callback);
+
   //--------------------------------------------------------------------------
   /// @brief      Used by the embedder to specify a texture that it wants the
   ///             rasterizer to composite within the Flutter layer tree. All
@@ -581,6 +682,120 @@ class PlatformView {
   ComputePlatformResolvedLocales(
       const std::vector<std::string>& supported_locale_data);
 
+  virtual std::shared_ptr<ExternalViewEmbedder> CreateExternalViewEmbedder();
+
+  //--------------------------------------------------------------------------
+  /// @brief      Invoked when the dart VM requests that a deferred library
+  ///             be loaded. Notifies the engine that the deferred library
+  ///             identified by the specified loading unit id should be
+  ///             downloaded and loaded into the Dart VM via
+  ///             `LoadDartDeferredLibrary`
+  ///
+  ///             Upon encountering errors or otherwise failing to load a
+  ///             loading unit with the specified id, the failure should be
+  ///             directly reported to dart by calling
+  ///             `LoadDartDeferredLibraryFailure` to ensure the waiting dart
+  ///             future completes with an error.
+  ///
+  /// @param[in]  loading_unit_id  The unique id of the deferred library's
+  ///                              loading unit. This id is to be passed
+  ///                              back into LoadDartDeferredLibrary
+  ///                              in order to identify which deferred
+  ///                              library to load.
+  ///
+  virtual void RequestDartDeferredLibrary(intptr_t loading_unit_id);
+
+  //--------------------------------------------------------------------------
+  /// @brief      Loads the Dart shared library into the Dart VM. When the
+  ///             Dart library is loaded successfully, the Dart future
+  ///             returned by the originating loadLibrary() call completes.
+  ///
+  ///             The Dart compiler may generate separate shared libraries
+  ///             files called 'loading units' when libraries are imported
+  ///             as deferred. Each of these shared libraries are identified
+  ///             by a unique loading unit id. Callers should open and resolve
+  ///             a SymbolMapping from the shared library. The Mappings should
+  ///             be moved into this method, as ownership will be assumed by the
+  ///             dart isolate after successful loading and released after
+  ///             shutdown of the dart isolate. If loading fails, the mappings
+  ///             will naturally go out of scope.
+  ///
+  ///             This method is paired with a RequestDartDeferredLibrary
+  ///             invocation that provides the embedder with the loading unit id
+  ///             of the deferred library to load.
+  ///
+  ///
+  /// @param[in]  loading_unit_id  The unique id of the deferred library's
+  ///                              loading unit, as passed in by
+  ///                              RequestDartDeferredLibrary.
+  ///
+  /// @param[in]  snapshot_data    Dart snapshot data of the loading unit's
+  ///                              shared library.
+  ///
+  /// @param[in]  snapshot_data    Dart snapshot instructions of the loading
+  ///                              unit's shared library.
+  ///
+  virtual void LoadDartDeferredLibrary(
+      intptr_t loading_unit_id,
+      std::unique_ptr<const fml::Mapping> snapshot_data,
+      std::unique_ptr<const fml::Mapping> snapshot_instructions);
+
+  //--------------------------------------------------------------------------
+  /// @brief      Indicates to the dart VM that the request to load a deferred
+  ///             library with the specified loading unit id has failed.
+  ///
+  ///             The dart future returned by the initiating loadLibrary() call
+  ///             will complete with an error.
+  ///
+  /// @param[in]  loading_unit_id  The unique id of the deferred library's
+  ///                              loading unit, as passed in by
+  ///                              RequestDartDeferredLibrary.
+  ///
+  /// @param[in]  error_message    The error message that will appear in the
+  ///                              dart Future.
+  ///
+  /// @param[in]  transient        A transient error is a failure due to
+  ///                              temporary conditions such as no network.
+  ///                              Transient errors allow the dart VM to
+  ///                              re-request the same deferred library and
+  ///                              and loading_unit_id again. Non-transient
+  ///                              errors are permanent and attempts to
+  ///                              re-request the library will instantly
+  ///                              complete with an error.
+  ///
+  virtual void LoadDartDeferredLibraryError(intptr_t loading_unit_id,
+                                            const std::string error_message,
+                                            bool transient);
+
+  //--------------------------------------------------------------------------
+  /// @brief      Replaces the asset resolver handled by the engine's
+  ///             AssetManager of the specified `type` with
+  ///             `updated_asset_resolver`. The matching AssetResolver is
+  ///             removed and replaced with `updated_asset_resolvers`.
+  ///
+  ///             AssetResolvers should be updated when the existing resolver
+  ///             becomes obsolete and a newer one becomes available that
+  ///             provides updated access to the same type of assets as the
+  ///             existing one. This update process is meant to be performed
+  ///             at runtime.
+  ///
+  ///             If a null resolver is provided, nothing will be done. If no
+  ///             matching resolver is found, the provided resolver will be
+  ///             added to the end of the AssetManager resolvers queue. The
+  ///             replacement only occurs with the first matching resolver.
+  ///             Any additional matching resolvers are untouched.
+  ///
+  /// @param[in]  updated_asset_resolver  The asset resolver to replace the
+  ///             resolver of matching type with.
+  ///
+  /// @param[in]  type  The type of AssetResolver to update. Only resolvers of
+  ///                   the specified type will be replaced by the updated
+  ///                   resolver.
+  ///
+  virtual void UpdateAssetResolverByType(
+      std::unique_ptr<AssetResolver> updated_asset_resolver,
+      AssetResolver::AssetResolverType type);
+
  protected:
   PlatformView::Delegate& delegate_;
   const TaskRunners task_runners_;
@@ -590,7 +805,7 @@ class PlatformView {
   fml::WeakPtrFactory<PlatformView> weak_factory_;
 
   // Unlike all other methods on the platform view, this is called on the
-  // GPU task runner.
+  // raster task runner.
   virtual std::unique_ptr<Surface> CreateRenderingSurface();
 
  private:

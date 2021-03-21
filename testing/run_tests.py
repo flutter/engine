@@ -97,8 +97,11 @@ def RunEngineExecutable(build_dir, executable_name, filter, flags=[], cwd=buildr
 def RunCCTests(build_dir, filter):
   print("Running Engine Unit-tests.")
 
-  shuffle_flags = [
+  # Not all of the engine unit tests are designed to be run more than once.
+  non_repeatable_shuffle_flags = [
     "--gtest_shuffle",
+  ]
+  shuffle_flags = non_repeatable_shuffle_flags + [
     "--gtest_repeat=2",
   ]
 
@@ -113,8 +116,9 @@ def RunCCTests(build_dir, filter):
   # https://github.com/flutter/flutter/issues/36294
   if not IsWindows():
     RunEngineExecutable(build_dir, 'embedder_unittests', filter, shuffle_flags)
+    RunEngineExecutable(build_dir, 'embedder_proctable_unittests', filter, shuffle_flags)
   else:
-    RunEngineExecutable(build_dir, 'flutter_windows_unittests', filter, shuffle_flags)
+    RunEngineExecutable(build_dir, 'flutter_windows_unittests', filter, non_repeatable_shuffle_flags)
 
     RunEngineExecutable(build_dir, 'client_wrapper_windows_unittests', filter, shuffle_flags)
 
@@ -131,6 +135,8 @@ def RunCCTests(build_dir, filter):
 
   RunEngineExecutable(build_dir, 'runtime_unittests', filter, shuffle_flags)
 
+  RunEngineExecutable(build_dir, 'tonic_unittests', filter, shuffle_flags)
+
   if not IsWindows():
     # https://github.com/flutter/flutter/issues/36295
     RunEngineExecutable(build_dir, 'shell_unittests', filter, shuffle_flags)
@@ -144,17 +150,22 @@ def RunCCTests(build_dir, filter):
 
   RunEngineExecutable(build_dir, 'testing_unittests', filter, shuffle_flags)
 
+  # The accessibility library only supports Mac for now.
+  if IsMac():
+    RunEngineExecutable(build_dir, 'accessibility_unittests', filter, shuffle_flags)
+
   # These unit-tests are Objective-C and can only run on Darwin.
   if IsMac():
     RunEngineExecutable(build_dir, 'flutter_channels_unittests', filter, shuffle_flags)
-    RunEngineExecutable(build_dir, 'flutter_desktop_darwin_unittests', filter, shuffle_flags)
+    RunEngineExecutable(build_dir, 'flutter_desktop_darwin_unittests', filter, non_repeatable_shuffle_flags)
 
   # https://github.com/flutter/flutter/issues/36296
   if IsLinux():
     RunEngineExecutable(build_dir, 'txt_unittests', filter, shuffle_flags)
 
   if IsLinux():
-    RunEngineExecutable(build_dir, 'flutter_linux_unittests', filter, shuffle_flags)
+    RunEngineExecutable(build_dir, 'flutter_linux_unittests', filter, non_repeatable_shuffle_flags)
+    RunEngineExecutable(build_dir, 'flutter_glfw_unittests', filter, non_repeatable_shuffle_flags)
 
 
 def RunEngineBenchmarks(build_dir, filter):
@@ -203,7 +214,14 @@ def SnapshotTest(build_dir, dart_file, kernel_file_output, verbose_dart_snapshot
   if verbose_dart_snapshot:
     RunCmd(snapshot_command, cwd=buildroot_dir)
   else:
-    subprocess.check_output(snapshot_command, cwd=buildroot_dir)
+    try:
+      subprocess.check_output(snapshot_command, cwd=buildroot_dir)
+    except subprocess.CalledProcessError as error:
+      # CalledProcessError's string doesn't print the output. Print it before
+      # the crash for easier inspection.
+      print('Error occurred from the subprocess, with the output:')
+      print(error.output)
+      raise
   assert os.path.exists(kernel_file_output)
 
 
@@ -392,7 +410,7 @@ def RunDartTests(build_dir, filter, verbose_dart_snapshot):
   # This one is a bit messy. The pubspec.yaml at flutter/testing/dart/pubspec.yaml
   # has dependencies that are hardcoded to point to the sky packages at host_debug_unopt/
   # Before running Dart tests, make sure to run just that target (NOT the whole engine)
-  EnsureDebugUnoptSkyPackagesAreBuilt();
+  EnsureDebugUnoptSkyPackagesAreBuilt()
 
   # Now that we have the Sky packages at the hardcoded location, run `pub get`.
   RunEngineExecutable(build_dir, os.path.join('dart-sdk', 'bin', 'pub'), None, flags=['get'], cwd=dart_tests_dir)
@@ -436,7 +454,7 @@ def main():
   parser = argparse.ArgumentParser()
 
   parser.add_argument('--variant', dest='variant', action='store',
-      default='host_debug_unopt', help='The engine build variant to run the tests for.');
+      default='host_debug_unopt', help='The engine build variant to run the tests for.')
   parser.add_argument('--type', type=str, default='all')
   parser.add_argument('--engine-filter', type=str, default='',
       help='A list of engine test executables to run.')

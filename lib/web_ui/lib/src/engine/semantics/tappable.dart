@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// Listens to HTML "click" gestures detected by the browser.
@@ -40,7 +40,7 @@ class Tappable extends RoleManager {
                 GestureMode.browserGestures) {
               return;
             }
-            window.invokeOnSemanticsAction(
+            EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
                 semanticsObject.id, ui.SemanticsAction.tap, null);
           };
           element.addEventListener('click', _clickListener);

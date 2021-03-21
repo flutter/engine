@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of ui;
 
 class SemanticsAction {
@@ -29,6 +29,7 @@ class SemanticsAction {
   static const int _kDismissIndex = 1 << 18;
   static const int _kMoveCursorForwardByWordIndex = 1 << 19;
   static const int _kMoveCursorBackwardByWordIndex = 1 << 20;
+  static const int _kSetText = 1 << 21;
   final int index;
   static const SemanticsAction tap = SemanticsAction._(_kTapIndex);
   static const SemanticsAction longPress = SemanticsAction._(_kLongPressIndex);
@@ -57,6 +58,7 @@ class SemanticsAction {
       SemanticsAction._(_kMoveCursorForwardByWordIndex);
   static const SemanticsAction moveCursorBackwardByWord =
       SemanticsAction._(_kMoveCursorBackwardByWordIndex);
+  static const SemanticsAction setText = SemanticsAction._(_kSetText);
   static const Map<int, SemanticsAction> values = <int, SemanticsAction>{
     _kTapIndex: tap,
     _kLongPressIndex: longPress,
@@ -79,6 +81,7 @@ class SemanticsAction {
     _kDismissIndex: dismiss,
     _kMoveCursorForwardByWordIndex: moveCursorForwardByWord,
     _kMoveCursorBackwardByWordIndex: moveCursorBackwardByWord,
+    _kSetText: setText,
   };
 
   @override
@@ -126,6 +129,8 @@ class SemanticsAction {
         return 'SemanticsAction.moveCursorForwardByWord';
       case _kMoveCursorBackwardByWordIndex:
         return 'SemanticsAction.moveCursorBackwardByWord';
+      case _kSetText:
+        return 'SemanticsAction.setText';
     }
     assert(false, 'Unhandled index: $index');
     return '';
