@@ -5,7 +5,8 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_GAME_PAD_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_GAME_PAD_H_
 
-#include <winrt/Windows.Gaming.Input.h>
+#include <third_party/cppwinrt/generated/winrt/Windows.Foundation.Collections.h>
+#include <third_party/cppwinrt/generated/winrt/Windows.Gaming.Input.h>
 
 #include <functional>
 #include <mutex>

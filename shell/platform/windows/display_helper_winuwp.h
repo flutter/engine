@@ -6,12 +6,12 @@
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_DISPLAY_HELPER_WINUWP_H_
 
 #include <DispatcherQueue.h>
-#include <winrt/Windows.Graphics.Display.h>
-#include <winrt/Windows.System.Profile.h>
-#include <winrt/Windows.UI.Composition.h>
-#include <winrt/Windows.UI.Core.h>
-#include <winrt/Windows.UI.ViewManagement.Core.h>
-#include "winrt/Windows.System.Threading.h"
+#include <third_party/cppwinrt/generated/winrt/Windows.Graphics.Display.h>
+#include <third_party/cppwinrt/generated/winrt/Windows.System.Profile.h>
+#include <third_party/cppwinrt/generated/winrt/Windows.UI.Composition.h>
+#include <third_party/cppwinrt/generated/winrt/Windows.UI.Core.h>
+#include <third_party/cppwinrt/generated/winrt/Windows.UI.ViewManagement.Core.h>
+#include "third_party/cppwinrt/generated/winrt/Windows.System.Threading.h"
 
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
 #include "flutter/shell/platform/windows/game_pad_winuwp.h"
