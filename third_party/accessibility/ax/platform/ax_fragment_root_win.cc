@@ -56,7 +56,8 @@ class AXFragmentRootPlatformNodeWin : public AXPlatformNodeWin,
         value.vt == VT_BSTR) {
       int32_t ax_unique_id;
 
-      // TODO(gw280): detect and handle errors
+      // TODO(gw280): https://github.com/flutter/flutter/issues/78802
+      // detect and handle errors
       ax_unique_id = std::stoi(value.bstrVal);
 
       // In the Windows accessibility platform implementation, id 0 represents

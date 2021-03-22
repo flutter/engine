@@ -473,9 +473,8 @@ gfx::Vector2d AXPlatformNodeWin::CalculateUIAScrollPoint(
 
   const HWND hwnd = GetDelegate()->GetTargetForNativeAccessibilityEvent();
   BASE_DCHECK(hwnd);
-  // TODO(gw280): support scale factors
-  // const float scale_factor =
-  //     display::win::ScreenWin::GetScaleFactorForHWND(hwnd);
+  // TODO(gw280): https://github.com/flutter/flutter/issues/78798
+  // support scale factors
   const float scale_factor = 1.0f;
   const int small_change =
       base::ClampRound(kSmallScrollIncrement * scale_factor);
@@ -951,7 +950,8 @@ IFACEMETHODIMP AXPlatformNodeWin::get_accDefaultAction(VARIANT var_id,
     return S_FALSE;
   }
 
-  // TODO(gw280): Use localized strings
+  // TODO(gw280): https://github.com/flutter/flutter/issues/78799
+  // Use localized strings
   std::u16string action_verb = base::UTF8ToUTF16(
       ui::ToString(static_cast<ax::mojom::DefaultActionVerb>(action)));
   if (action_verb.empty()) {
@@ -5346,7 +5346,8 @@ HRESULT AXPlatformNodeWin::GetNameAsBstr(BSTR* value_bstr) const {
   return S_OK;
 }
 
-// TODO(gw280): Alert targets
+// TODO(gw280): https://github.com/flutter/flutter/issues/78800
+// Alert targets
 void AXPlatformNodeWin::AddAlertTarget() {}
 
 void AXPlatformNodeWin::RemoveAlertTarget() {}
