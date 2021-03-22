@@ -26,12 +26,14 @@ void PlatformViewLayer::Preroll(PrerollContext* context,
                       "does not support embedding";
     return;
   }
-  context->has_platform_view = true;
-  std::unique_ptr<EmbeddedViewParams> params =
-      std::make_unique<EmbeddedViewParams>(matrix, size_,
-                                           context->mutators_stack);
-  context->view_embedder->PrerollCompositeEmbeddedView(view_id_,
-                                                       std::move(params));
+  if (paint_bounds().intersects(context->cull_rect)) {
+    context->has_platform_view = true;
+    std::unique_ptr<EmbeddedViewParams> params =
+        std::make_unique<EmbeddedViewParams>(matrix, size_,
+                                            context->mutators_stack);
+    context->view_embedder->PrerollCompositeEmbeddedView(view_id_,
+                                                        std::move(params));
+  }
 }
 
 void PlatformViewLayer::Paint(PaintContext& context) const {
