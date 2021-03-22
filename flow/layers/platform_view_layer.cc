@@ -30,9 +30,9 @@ void PlatformViewLayer::Preroll(PrerollContext* context,
     context->has_platform_view = true;
     std::unique_ptr<EmbeddedViewParams> params =
         std::make_unique<EmbeddedViewParams>(matrix, size_,
-                                            context->mutators_stack);
+                                             context->mutators_stack);
     context->view_embedder->PrerollCompositeEmbeddedView(view_id_,
-                                                        std::move(params));
+                                                         std::move(params));
   }
 }
 
