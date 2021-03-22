@@ -4473,6 +4473,7 @@ TEST_F(AXPlatformNodeWinTest, IValueProvider_GetValue) {
   EXPECT_HRESULT_SUCCEEDED(
       QueryInterfaceFromNode<IValueProvider>(GetRootAsAXNode()->children()[0])
           ->get_Value(bstr_value.Receive()));
+  // TODO(gw280): https://github.com/flutter/flutter/issues/78460
   EXPECT_STREQ(L"3.000000", bstr_value.Get());
   bstr_value.Reset();
 

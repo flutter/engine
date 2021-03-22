@@ -9,6 +9,7 @@
 // clang-format off
 #include "third_party/accessibility/base/win/atl.h"  // Must be before UIAutomationCore.h
 // clang-format on
+
 #include <UIAutomationCore.h>
 #include <wrl.h>
 

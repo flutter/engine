@@ -93,7 +93,7 @@ TEST_F(AXFragmentRootTest, UIAFindItemByPropertyUniqueId) {
   {
     unique_id = AXPlatformNodeFromNode(GetRootAsAXNode())->GetUniqueId();
     unique_id_variant.Set(
-        SysAllocString((wchar_t*)base::NumberToString16(-unique_id).c_str()));
+        SysAllocString(reinterpret_cast<const wchar_t*>(base::NumberToString16(-unique_id).c_str())));
 
     ComPtr<IRawElementProviderSimple> invalid_element_provider_simple;
     EXPECT_HRESULT_SUCCEEDED(
@@ -113,7 +113,7 @@ TEST_F(AXFragmentRootTest, UIAFindItemByPropertyUniqueId) {
   {
     unique_id = AXPlatformNodeFromNode(GetRootAsAXNode())->GetUniqueId();
     unique_id_variant.Set(
-        SysAllocString((wchar_t*)base::NumberToString16(-unique_id).c_str()));
+        SysAllocString(reinterpret_cast<const wchar_t*>(base::NumberToString16(-unique_id).c_str())));
 
     // When |start_after_element| of FindItemByProperty() is nullptr, we should
     // be able to find "text1".
@@ -151,7 +151,7 @@ TEST_F(AXFragmentRootTest, UIAFindItemByPropertyUniqueId) {
   {
     unique_id = AXPlatformNodeFromNode(text1_node)->GetUniqueId();
     unique_id_variant.Set(
-        SysAllocString((wchar_t*)base::NumberToString16(-unique_id).c_str()));
+        SysAllocString(reinterpret_cast<const wchar_t*>(base::NumberToString16(-unique_id).c_str())));
 
     // When |start_after_element| of FindItemByProperty() is nullptr, we should
     // be able to find "text1".
@@ -188,7 +188,7 @@ TEST_F(AXFragmentRootTest, UIAFindItemByPropertyUniqueId) {
   {
     unique_id = AXPlatformNodeFromNode(button_node)->GetUniqueId();
     unique_id_variant.Set(
-        SysAllocString((wchar_t*)base::NumberToString16(-unique_id).c_str()));
+        SysAllocString(reinterpret_cast<const wchar_t*>(base::NumberToString16(-unique_id).c_str())));
 
     // When |start_after_element| of FindItemByProperty() is nullptr, we should
     // be able to find "button".
@@ -225,7 +225,7 @@ TEST_F(AXFragmentRootTest, UIAFindItemByPropertyUniqueId) {
     unique_id =
         AXPlatformNodeFromNode(button_node->children()[0])->GetUniqueId();
     unique_id_variant.Set(
-        SysAllocString((wchar_t*)base::NumberToString16(-unique_id).c_str()));
+        SysAllocString(reinterpret_cast<const wchar_t*>(base::NumberToString16(-unique_id).c_str())));
 
     // When |start_after_element| of FindItemByProperty() is nullptr, we should
     // be able to find "text2".

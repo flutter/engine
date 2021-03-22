@@ -203,6 +203,9 @@ constexpr int kLargeChangeScaleFactor = 10;
 // cursor keys are used to scroll a webpage.
 constexpr float kSmallScrollIncrement = 40.0f;
 
+// The filename of the DLL to load for UIA.
+constexpr wchar_t kUIADLLFilename[] = L"uiautomationcore.dll";
+
 void AppendTextToString(std::u16string extra_text, std::u16string* string) {
   if (extra_text.empty())
     return;
@@ -474,7 +477,7 @@ gfx::Vector2d AXPlatformNodeWin::CalculateUIAScrollPoint(
   const HWND hwnd = GetDelegate()->GetTargetForNativeAccessibilityEvent();
   BASE_DCHECK(hwnd);
   // TODO(gw280): https://github.com/flutter/flutter/issues/78798
-  // support scale factors
+  // Support scale factors
   const float scale_factor = 1.0f;
   const int small_change =
       base::ClampRound(kSmallScrollIncrement * scale_factor);
@@ -651,7 +654,7 @@ void AXPlatformNodeWin::FireUiaTextEditTextChangedEvent(
       IRawElementProviderSimple*, TextEditChangeType, SAFEARRAY*);
   UiaRaiseTextEditTextChangedEventFunction text_edit_text_changed_func =
       reinterpret_cast<UiaRaiseTextEditTextChangedEventFunction>(
-          ::GetProcAddress(GetModuleHandleW(L"uiautomationcore.dll"),
+          ::GetProcAddress(GetModuleHandleW(kUIADLLFilename),
                            "UiaRaiseTextEditTextChangedEvent"));
   if (!text_edit_text_changed_func) {
     return;
