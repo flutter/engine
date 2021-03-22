@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 // @dart = 2.6
-import 'dart:html' as html;
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
@@ -30,6 +29,6 @@ void testMain() async {
         ..colorFilter = EngineColorFilter.mode(Color(0x40000000),
             BlendMode.dstATop));
     await canvasScreenshot(canvas, 'image_color_fiter_dstatop',
-        region: region, write: true);
+        region: region);
   });
 }
