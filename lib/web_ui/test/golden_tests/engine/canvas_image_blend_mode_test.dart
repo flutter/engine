@@ -12,7 +12,6 @@ import 'package:ui/src/engine.dart';
 
 import 'package:web_engine_tester/golden_tester.dart';
 
-import 'screenshot.dart';
 import 'testimage.dart';
 
 void main() {
