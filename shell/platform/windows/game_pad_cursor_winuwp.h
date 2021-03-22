@@ -33,8 +33,8 @@ class GamepadCursorWinUWP {
       winrt::Windows::UI::Composition::VisualCollection const& rootcollection);
 
  private:
-  // Pointer to a DisplayHelperWinUWP object used to get windowbounds, dpi and
-  // other display related aspects.
+  // Pointer to a DisplayHelperWinUWP object used to get window bounds, DPI and
+  // other display-related aspects.
   DisplayHelperWinUWP* display_helper_;
 
   // Current active compositor. nullptr if not set.
@@ -43,7 +43,7 @@ class GamepadCursorWinUWP {
   // Window that is hosting this emulated cursor.
   winrt::Windows::UI::Core::CoreWindow window_{nullptr};
 
-  // The root of the composition tree that this class will add a custor visual
+  // The root of the composition tree that this class will add a cursor visual
   // to.
   winrt::Windows::UI::Composition::VisualCollection root_collection_{nullptr};
 

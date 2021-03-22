@@ -110,7 +110,7 @@ void GamepadCursorWinUWP::SetCursorTimeout() {
           // the interval hence hide the cursor
           cursor_visual_.IsVisible(false);
 
-          // Reduce mouse move poling frequency while user not interacting with
+          // Reduce mouse move polling frequency while user not interacting with
           // controller
           SetMouseMovePollingFrequency(kReducedPollingFrequency);
         });

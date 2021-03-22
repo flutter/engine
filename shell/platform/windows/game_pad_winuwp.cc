@@ -91,7 +91,7 @@ const winrt::Windows::Gaming::Input::Gamepad* GamepadWinUWP::GetLastGamepad() {
   return gamepad;
 }
 
-bool isValid(double value) {
+static bool IsValid(double value) {
   if (value > 0.1 || value < -0.1) {
     return true;
   }
@@ -109,8 +109,6 @@ void GamepadWinUWP::Process() {
     last_reading_ = current_game_pad_->GetCurrentReading();
   }
 
-  int exitComboPressed = 0;
-
   namespace gi = winrt::Windows::Gaming::Input;
 
   GamepadButtonPressedInternal(last_reading_.Buttons);
@@ -124,7 +122,7 @@ void GamepadWinUWP::Process() {
     left_stick_y_value_ = last_reading_.LeftThumbstickY;
   }
 
-  if (isValid(left_stick_x_value_) || isValid(left_stick_y_value_)) {
+  if (IsValid(left_stick_x_value_) || IsValid(left_stick_y_value_)) {
     RaiseLeftStickMoved(left_stick_x_value_, left_stick_y_value_);
   }
 
@@ -136,7 +134,7 @@ void GamepadWinUWP::Process() {
     right_stick_y_value_ = last_reading_.RightThumbstickY;
   }
 
-  if (isValid(right_stick_x_value_) || isValid(right_stick_y_value_)) {
+  if (IsValid(right_stick_x_value_) || IsValid(right_stick_y_value_)) {
     RaiseRightStickMoved(right_stick_x_value_, right_stick_y_value_);
   }
 
