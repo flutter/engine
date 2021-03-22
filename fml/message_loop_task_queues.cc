@@ -8,6 +8,7 @@
 
 #include <iostream>
 
+#include "flutter/fml/delayed_task.h"
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/message_loop_impl.h"
 
@@ -94,18 +95,14 @@ fml::closure MessageLoopTaskQueues::GetNextTaskToRun(TaskQueueId queue_id,
   if (!HasPendingTasksUnlocked(queue_id)) {
     return nullptr;
   }
-  TaskQueueId top_queue = _kUnmerged;
-  const auto& top = PeekNextTaskUnlocked(queue_id, top_queue);
 
-  if (!HasPendingTasksUnlocked(queue_id)) {
-    WakeUpUnlocked(queue_id, fml::TimePoint::Max());
-  } else {
-    WakeUpUnlocked(queue_id, GetNextWakeTimeUnlocked(queue_id));
-  }
+  TaskQueueId top_queue = _kUnmerged;  // out param.
+  const fml::DelayedTask& top = PeekNextTaskUnlocked(queue_id, top_queue);
 
   if (top.GetTargetTime() > from_time) {
     return nullptr;
   }
+
   fml::closure invocation = top.GetTask();
   queue_entries_.at(top_queue)->delayed_tasks.pop();
   return invocation;
