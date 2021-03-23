@@ -417,21 +417,23 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
   // latest TextEditState from the framework.
   @VisibleForTesting
   void setTextInputEditingState(View view, TextInputChannel.TextEditState state) {
-    mRestartInputPending =
-        mRestartInputPending
-            // Also restart input if the framework decides to remove the
-            // composing region (which is discouraged).
-            // Many IMEs don't expect editors to commit composing text, so a
-            // restart is needed to reset their internal states.
-            || (mLastKnownFrameworkTextEditingState != null
-                && mLastKnownFrameworkTextEditingState.hasComposing()
-                && !state.hasComposing());
+    if (!mRestartInputPending) {
+      // Also restart input if the framework decides to remove the composing
+      // region (which is discouraged). Many IMEs don't expect editors to commit
+      // composing text, so a restart is needed to reset their internal states.
+      mRestartInputPending =
+          mLastKnownFrameworkTextEditingState != null
+              && mLastKnownFrameworkTextEditingState.hasComposing()
+              && !state.hasComposing();
+      if (mRestartInputPending) {
+        Log.w(TAG, "It's discouraged to clear the composing region.");
+      }
+    }
 
     mLastKnownFrameworkTextEditingState = state;
     mEditable.setEditingState(state);
 
-    // Restart if there is a pending restart or the device requires a force restart
-    // (see isRestartAlwaysRequired). Restarting will also update the selection.
+    // Restart if needed. Restarting will also update the selection.
     if (mRestartInputPending) {
       mImm.restartInput(view);
       mRestartInputPending = false;

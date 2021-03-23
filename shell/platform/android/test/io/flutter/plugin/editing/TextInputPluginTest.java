@@ -377,7 +377,7 @@ public class TextInputPluginTest {
         testView, new TextInputChannel.TextEditState("", 0, 0, -1, -1));
     assertEquals(1, testImm.getRestartCount(testView));
     InputConnection connection = textInputPlugin.createInputConnection(testView, new EditorInfo());
-    connection.setComposingText("POWERRRRR", 9);
+    connection.setComposingText("POWERRRRR", 1);
 
     textInputPlugin.setTextInputEditingState(
         testView, new TextInputChannel.TextEditState("UNLIMITED", 0, 0, 0, 9));
@@ -388,7 +388,7 @@ public class TextInputPluginTest {
     // Does not restart since the composing text is committed by the IME.
     assertEquals(1, testImm.getRestartCount(testView));
 
-    connection.setComposingText("POWERRRRR", 9);
+    connection.setComposingText("POWERRRRR", 1);
     assertEquals(1, testImm.getRestartCount(testView));
     textInputPlugin.setTextInputEditingState(
         testView, new TextInputChannel.TextEditState("POWERRRRR", 0, 0, -1, -1));
