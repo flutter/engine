@@ -1162,7 +1162,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         break;
       case AccessibilityNodeInfo.MOVEMENT_GRANULARITY_WORD:
         if (forward && node.textSelectionExtent < node.value.length()) {
-          Pattern pattern = Pattern.compile("[^a-zA-Z0-9](\\b)");
+          Pattern pattern = Pattern.compile("\\p{L}(\\b)");
           Matcher result = pattern.matcher(node.value.substring(node.textSelectionExtent));
           // we discard the first result because we want to find the "next" word
           if (result.find() && result.find()) {
@@ -1172,7 +1172,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
           }
         } else if (!forward && node.textSelectionExtent > 0) {
           // Finds last beginning of the word boundary.
-          Pattern pattern = Pattern.compile("(?s:.*)(\\b)[a-zA-Z0-9]");
+          Pattern pattern = Pattern.compile("(?s:.*)(\\b)\\p{L}");
           Matcher result = pattern.matcher(node.value.substring(0, node.textSelectionExtent));
           if (result.find()) {
             node.textSelectionExtent = result.start(1);
