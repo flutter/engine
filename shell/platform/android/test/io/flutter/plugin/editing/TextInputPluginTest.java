@@ -348,7 +348,7 @@ public class TextInputPluginTest {
   // Update: many other keyboards need this too:
   // https://github.com/flutter/flutter/issues/78827
   @Test
-  public void setTextInputEditingState_restartsIMEOnlyWhenFrameworkRemovesComposingRegion() {
+  public void setTextInputEditingState_restartsIMEOnlyWhenFrameworkChangesComposingRegion() {
     // Initialize a TextInputPlugin that needs to be always restarted.
     InputMethodSubtype inputMethodSubtype =
         new InputMethodSubtype(0, 0, /*locale=*/ "en", "", "", false, false);
@@ -380,16 +380,19 @@ public class TextInputPluginTest {
     connection.setComposingText("POWERRRRR", 1);
 
     textInputPlugin.setTextInputEditingState(
-        testView, new TextInputChannel.TextEditState("UNLIMITED", 0, 0, 0, 9));
-    // Does not restart since the composing region is still there.
+        testView, new TextInputChannel.TextEditState("UNLIMITED POWERRRRR", 0, 0, 10, 19));
+    // Does not restart since the composing text is not changed.
     assertEquals(1, testImm.getRestartCount(testView));
 
     connection.finishComposingText();
     // Does not restart since the composing text is committed by the IME.
     assertEquals(1, testImm.getRestartCount(testView));
 
+    // Does not restart since the composing text is changed by the IME.
     connection.setComposingText("POWERRRRR", 1);
     assertEquals(1, testImm.getRestartCount(testView));
+
+    // The framework tries to commit the composing region.
     textInputPlugin.setTextInputEditingState(
         testView, new TextInputChannel.TextEditState("POWERRRRR", 0, 0, -1, -1));
 

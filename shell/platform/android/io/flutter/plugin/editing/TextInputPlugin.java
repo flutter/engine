@@ -413,20 +413,35 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     mRestartInputPending = false;
   }
 
+  private static boolean composingChanged(
+      TextInputChannel.TextEditState before, TextInputChannel.TextEditState after) {
+    final int composingRegionLength = before.composingEnd - before.composingStart;
+    if (composingRegionLength != after.composingEnd - after.composingStart) {
+      return true;
+    }
+    for (int index = 0; index < composingRegionLength; index++) {
+      if (before.text.charAt(index + before.composingStart)
+          != after.text.charAt(index + after.composingStart)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   // Called by the text input channel to update the text input plugin with the
   // latest TextEditState from the framework.
   @VisibleForTesting
   void setTextInputEditingState(View view, TextInputChannel.TextEditState state) {
-    if (!mRestartInputPending) {
-      // Also restart input if the framework decides to remove the composing
-      // region (which is discouraged). Many IMEs don't expect editors to commit
-      // composing text, so a restart is needed to reset their internal states.
-      mRestartInputPending =
-          mLastKnownFrameworkTextEditingState != null
-              && mLastKnownFrameworkTextEditingState.hasComposing()
-              && !state.hasComposing();
+    if (!mRestartInputPending
+        && mLastKnownFrameworkTextEditingState != null
+        && mLastKnownFrameworkTextEditingState.hasComposing()) {
+      // Also restart input if the framework (or the developer) decides to
+      // change the composing region by itself (which is discouraged). Many IMEs
+      // don't expect editors to commit composing text, so a restart is needed
+      // to reset their internal states.
+      mRestartInputPending = composingChanged(mLastKnownFrameworkTextEditingState, state);
       if (mRestartInputPending) {
-        Log.w(TAG, "It's discouraged to clear the composing region.");
+        Log.w(TAG, "Changing the content within the the composing region is discouraged.");
       }
     }
 
@@ -554,15 +569,14 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     final int selectionEnd = mEditable.getSelectionEnd();
     final int composingStart = mEditable.getComposingStart();
     final int composingEnd = mEditable.getComposingEnd();
-    // The framework needs to send value first.
     final boolean skipFrameworkUpdate =
+        // The framework needs to send its editing state first.
         mLastKnownFrameworkTextEditingState == null
             || (mEditable.toString().equals(mLastKnownFrameworkTextEditingState.text)
                 && selectionStart == mLastKnownFrameworkTextEditingState.selectionStart
                 && selectionEnd == mLastKnownFrameworkTextEditingState.selectionEnd
                 && composingStart == mLastKnownFrameworkTextEditingState.composingStart
                 && composingEnd == mLastKnownFrameworkTextEditingState.composingEnd);
-    // Skip if we're currently setting
     if (!skipFrameworkUpdate) {
       Log.v(TAG, "send EditingState to flutter: " + mEditable.toString());
       textInputChannel.updateEditingState(
