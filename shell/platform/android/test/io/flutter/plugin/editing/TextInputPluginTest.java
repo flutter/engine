@@ -345,16 +345,13 @@ public class TextInputPluginTest {
   // https://github.com/flutter/flutter/issues/31512
   // All modern Samsung keybords are affected including non-korean languages and thus
   // need the restart.
+  // Update: many other keyboards need this too:
+  // https://github.com/flutter/flutter/issues/78827
   @Test
-  public void setTextInputEditingState_alwaysRestartsOnAffectedDevices2() {
+  public void setTextInputEditingState_restartsIMEOnlyWhenFrameworkRemovesComposingRegion() {
     // Initialize a TextInputPlugin that needs to be always restarted.
-    ShadowBuild.setManufacturer("samsung");
     InputMethodSubtype inputMethodSubtype =
         new InputMethodSubtype(0, 0, /*locale=*/ "en", "", "", false, false);
-    Settings.Secure.putString(
-        RuntimeEnvironment.application.getContentResolver(),
-        Settings.Secure.DEFAULT_INPUT_METHOD,
-        "com.sec.android.inputmethod/.SamsungKeypad");
     TestImm testImm =
         Shadow.extract(
             RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
@@ -370,7 +367,7 @@ public class TextInputPluginTest {
             false,
             true,
             TextInputChannel.TextCapitalization.NONE,
-            null,
+            new TextInputChannel.InputType(TextInputChannel.TextInputType.TEXT, false, false),
             null,
             null,
             null,
@@ -378,57 +375,26 @@ public class TextInputPluginTest {
     // There's a pending restart since we initialized the text input client. Flush that now.
     textInputPlugin.setTextInputEditingState(
         testView, new TextInputChannel.TextEditState("", 0, 0, -1, -1));
+    assertEquals(1, testImm.getRestartCount(testView));
+    InputConnection connection = textInputPlugin.createInputConnection(testView, new EditorInfo());
+    connection.setComposingText("POWERRRRR", 9);
 
-    // Move the cursor.
+    textInputPlugin.setTextInputEditingState(
+        testView, new TextInputChannel.TextEditState("UNLIMITED", 0, 0, 0, 9));
+    // Does not restart since the composing region is still there.
+    assertEquals(1, testImm.getRestartCount(testView));
+
+    connection.finishComposingText();
+    // Does not restart since the composing text is committed by the IME.
+    assertEquals(1, testImm.getRestartCount(testView));
+
+    connection.setComposingText("POWERRRRR", 9);
     assertEquals(1, testImm.getRestartCount(testView));
     textInputPlugin.setTextInputEditingState(
-        testView, new TextInputChannel.TextEditState("", 0, 0, -1, -1));
+        testView, new TextInputChannel.TextEditState("POWERRRRR", 0, 0, -1, -1));
 
     // Verify that we've restarted the input.
     assertEquals(2, testImm.getRestartCount(testView));
-  }
-
-  @Test
-  public void setTextInputEditingState_doesNotRestartOnUnaffectedDevices() {
-    // Initialize a TextInputPlugin that needs to be always restarted.
-    ShadowBuild.setManufacturer("samsung");
-    InputMethodSubtype inputMethodSubtype =
-        new InputMethodSubtype(0, 0, /*locale=*/ "en", "", "", false, false);
-    Settings.Secure.putString(
-        RuntimeEnvironment.application.getContentResolver(),
-        Settings.Secure.DEFAULT_INPUT_METHOD,
-        "com.fake.test.blah/.NotTheRightKeyboard");
-    TestImm testImm =
-        Shadow.extract(
-            RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
-    testImm.setCurrentInputMethodSubtype(inputMethodSubtype);
-    View testView = new View(RuntimeEnvironment.application);
-    TextInputChannel textInputChannel = new TextInputChannel(mock(DartExecutor.class));
-    TextInputPlugin textInputPlugin =
-        new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
-    textInputPlugin.setTextInputClient(
-        0,
-        new TextInputChannel.Configuration(
-            false,
-            false,
-            true,
-            TextInputChannel.TextCapitalization.NONE,
-            null,
-            null,
-            null,
-            null,
-            null));
-    // There's a pending restart since we initialized the text input client. Flush that now.
-    textInputPlugin.setTextInputEditingState(
-        testView, new TextInputChannel.TextEditState("", 0, 0, -1, -1));
-
-    // Move the cursor.
-    assertEquals(1, testImm.getRestartCount(testView));
-    textInputPlugin.setTextInputEditingState(
-        testView, new TextInputChannel.TextEditState("", 0, 0, -1, -1));
-
-    // Verify that we've restarted the input.
-    assertEquals(1, testImm.getRestartCount(testView));
   }
 
   @Test
