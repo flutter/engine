@@ -32,8 +32,6 @@ static bool SurfaceWillUpdate(size_t cur_width,
 
 FlutterWindowsView::FlutterWindowsView(
     std::unique_ptr<WindowBindingHandler> window_binding) {
-  surface_manager_ = std::make_unique<AngleSurfaceManager>();
-
   // Take the binding handler, and give it a pointer back to self.
   binding_handler_ = std::move(window_binding);
   binding_handler_->SetView(this);
@@ -118,8 +116,8 @@ uint32_t FlutterWindowsView::GetFrameBufferId(size_t width, size_t height) {
   if (resize_target_width_ == width && resize_target_height_ == height) {
     // Platform thread is blocked for the entire duration until the
     // resize_status_ is set to kDone.
-    surface_manager_->ResizeSurface(GetRenderTarget(), width, height);
-    surface_manager_->MakeCurrent();
+    engine_->surface_manager()->ResizeSurface(GetRenderTarget(), width, height);
+    engine_->surface_manager()->MakeCurrent();
     resize_status_ = ResizeState::kFrameGenerated;
   }
 
@@ -140,8 +138,14 @@ void FlutterWindowsView::OnWindowSizeChanged(size_t width, size_t height) {
   // Called on the platform thread.
   std::unique_lock<std::mutex> lock(resize_mutex_);
 
+  if (!engine_->surface_manager()) {
+    SendWindowMetrics(width, height, binding_handler_->GetDpiScale());
+    return;
+  }
+
   EGLint surface_width, surface_height;
-  surface_manager_->GetSurfaceDimensions(&surface_width, &surface_height);
+  engine_->surface_manager()->GetSurfaceDimensions(&surface_width,
+                                                   &surface_height);
 
   bool surface_will_update =
       SurfaceWillUpdate(surface_width, surface_height, width, height);
@@ -409,15 +413,15 @@ void FlutterWindowsView::SendPointerEventWithData(
 }
 
 bool FlutterWindowsView::MakeCurrent() {
-  return surface_manager_->MakeCurrent();
+  return engine_->surface_manager()->MakeCurrent();
 }
 
 bool FlutterWindowsView::MakeResourceCurrent() {
-  return surface_manager_->MakeResourceCurrent();
+  return engine_->surface_manager()->MakeResourceCurrent();
 }
 
 bool FlutterWindowsView::ClearContext() {
-  return surface_manager_->ClearContext();
+  return engine_->surface_manager()->ClearContext();
 }
 
 bool FlutterWindowsView::SwapBuffers() {
@@ -431,7 +435,7 @@ bool FlutterWindowsView::SwapBuffers() {
     case ResizeState::kResizeStarted:
       return false;
     case ResizeState::kFrameGenerated: {
-      bool swap_buffers_result = surface_manager_->SwapBuffers();
+      bool swap_buffers_result = engine_->surface_manager()->SwapBuffers();
       resize_status_ = ResizeState::kDone;
       lock.unlock();
       resize_cv_.notify_all();
@@ -440,19 +444,39 @@ bool FlutterWindowsView::SwapBuffers() {
     }
     case ResizeState::kDone:
     default:
-      return surface_manager_->SwapBuffers();
+      return engine_->surface_manager()->SwapBuffers();
   }
 }
 
+bool FlutterWindowsView::PresentSoftwareBitmap(const void* allocation,
+                                               size_t row_bytes,
+                                               size_t height) {
+  HDC dc = GetDC(std::get<HWND>(*GetRenderTarget()));
+  BITMAPINFO bmi;
+  memset(&bmi, 0, sizeof(bmi));
+  bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+  bmi.bmiHeader.biWidth = row_bytes / 4;
+  bmi.bmiHeader.biHeight = -height;
+  bmi.bmiHeader.biPlanes = 1;
+  bmi.bmiHeader.biBitCount = 32;
+  bmi.bmiHeader.biCompression = BI_RGB;
+  bmi.bmiHeader.biSizeImage = 0;
+  int ret = SetDIBitsToDevice(dc, 0, 0, row_bytes / 4, height, 0, 0, 0, height,
+                              allocation, &bmi, DIB_RGB_COLORS);
+  return ret != 0;
+}
+
 void FlutterWindowsView::CreateRenderSurface() {
-  PhysicalWindowBounds bounds = binding_handler_->GetPhysicalWindowBounds();
-  surface_manager_->CreateSurface(GetRenderTarget(), bounds.width,
-                                  bounds.height);
+  if (engine_ && engine_->surface_manager()) {
+    PhysicalWindowBounds bounds = binding_handler_->GetPhysicalWindowBounds();
+    engine_->surface_manager()->CreateSurface(GetRenderTarget(), bounds.width,
+                                              bounds.height);
+  }
 }
 
 void FlutterWindowsView::DestroyRenderSurface() {
-  if (surface_manager_) {
-    surface_manager_->DestroySurface();
+  if (engine_ && engine_->surface_manager()) {
+    engine_->surface_manager()->DestroySurface();
   }
 }
 
