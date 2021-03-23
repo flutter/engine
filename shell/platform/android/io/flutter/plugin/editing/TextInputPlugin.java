@@ -419,8 +419,10 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
   void setTextInputEditingState(View view, TextInputChannel.TextEditState state) {
     mRestartInputPending =
         mRestartInputPending
-            // Also restart input if the framework decides to remove the composing
-            // region (which is discouraged).
+            // Also restart input if the framework decides to remove the
+            // composing region (which is discouraged).
+            // Many IMEs don't expect editors to commit composing text, so a
+            // restart is needed to reset their internal states.
             || (mLastKnownFrameworkTextEditingState != null
                 && mLastKnownFrameworkTextEditingState.hasComposing()
                 && !state.hasComposing());
