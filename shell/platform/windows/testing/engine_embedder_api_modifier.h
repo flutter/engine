@@ -23,6 +23,16 @@ class EngineEmbedderApiModifier {
   // engine unless overwritten again.
   FlutterEngineProcTable& embedder_api() { return engine_->embedder_api_; }
 
+  // Explicitly sets the SurfaceManager being used by the FlutterWindowsEngine
+  // instance. This allows us to test fallback paths when a SurfaceManager fails
+  // to initialize for whatever reason.
+  //
+  // Modifications are to the engine, and will last for the lifetime of the
+  // engine unless overwritten again.
+  void SetSurfaceManager(AngleSurfaceManager* surface_manager) {
+    engine_->surface_manager_.reset(surface_manager);
+  }
+
  private:
   FlutterWindowsEngine* engine_;
 };
