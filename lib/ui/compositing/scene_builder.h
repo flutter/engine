@@ -103,6 +103,21 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
 
   void addPicture(double dx, double dy, Picture* picture, int hints);
 
+  void addDisplayList(double dx,
+                      double dy,
+                      double cullLeft,
+                      double cullTop,
+                      double cullRight,
+                      double cullBottom,
+                      double drawLeft,
+                      double drawTop,
+                      double drawRight,
+                      double drawBottom,
+                      Dart_Handle ops,
+                      Dart_Handle data,
+                      Dart_Handle objects,
+                      int hints);
+
   void addTexture(double dx,
                   double dy,
                   double width,

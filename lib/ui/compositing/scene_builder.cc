@@ -10,6 +10,7 @@
 #include "flutter/flow/layers/clip_rrect_layer.h"
 #include "flutter/flow/layers/color_filter_layer.h"
 #include "flutter/flow/layers/container_layer.h"
+#include "flutter/flow/layers/display_list_layer.h"
 #include "flutter/flow/layers/image_filter_layer.h"
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/layers/layer_tree.h"
@@ -59,6 +60,7 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, SceneBuilder);
   V(SceneBuilder, addPlatformView)                  \
   V(SceneBuilder, addRetained)                      \
   V(SceneBuilder, addPicture)                       \
+  V(SceneBuilder, addDisplayList)                   \
   V(SceneBuilder, addTexture)                       \
   V(SceneBuilder, addPerformanceOverlay)            \
   V(SceneBuilder, setRasterizerTracingThreshold)    \
@@ -279,6 +281,29 @@ void SceneBuilder::addPicture(double dx,
   auto layer = std::make_unique<flutter::PictureLayer>(
       SkPoint::Make(dx, dy), UIDartState::CreateGPUObject(picture->picture()),
       !!(hints & 1), !!(hints & 2));
+  AddLayer(std::move(layer));
+}
+
+void SceneBuilder::addDisplayList(double dx,
+                                  double dy,
+                                  double cullLeft,
+                                  double cullTop,
+                                  double cullRight,
+                                  double cullBottom,
+                                  double drawLeft,
+                                  double drawTop,
+                                  double drawRight,
+                                  double drawBottom,
+                                  Dart_Handle ops,
+                                  Dart_Handle data,
+                                  Dart_Handle objects,
+                                  int hints) {
+  auto layer = std::make_unique<flutter::DisplayListLayer>(
+      SkPoint::Make(dx, dy),
+      SkRect::MakeLTRB(cullLeft, cullTop, cullRight, cullBottom),
+      SkRect::MakeLTRB(drawLeft, drawTop, drawRight, drawBottom),
+      !!(hints & 1), !!(hints & 2));
+  // ops.Release();
   AddLayer(std::move(layer));
 }
 

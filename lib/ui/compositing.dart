@@ -706,11 +706,39 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
     bool willChangeHint = false,
   }) {
     final int hints = (isComplexHint ? 1 : 0) | (willChangeHint ? 2 : 0);
-    _addPicture(offset.dx, offset.dy, picture, hints);
+    if (picture is _SkiaPicture) {
+      _addPicture(offset.dx, offset.dy, picture, hints);
+    } else {
+      _DisplayListPicture dlPicture = picture as _DisplayListPicture;
+      _addDisplayList(
+        offset.dx, offset.dy,
+        dlPicture._cullRect!.left, dlPicture._cullRect!.top, dlPicture._cullRect!.right, dlPicture._cullRect!.bottom,
+        dlPicture._drawBounds!.left, dlPicture._drawBounds!.top, dlPicture._drawBounds!.right, dlPicture._drawBounds!.bottom,
+        dlPicture._ops!, dlPicture._data!, dlPicture._objData!,
+        hints,
+      );
+    }
   }
 
   void _addPicture(double dx, double dy, Picture picture, int hints)
       native 'SceneBuilder_addPicture';
+
+  void _addDisplayList(
+    double dx,
+    double dy,
+    double cullLeft,
+    double cullTop,
+    double cullRight,
+    double cullBottom,
+    double drawLeft,
+    double drawTop,
+    double drawRight,
+    double drawBottom,
+    Uint8List ops,
+    ByteData data,
+    List<Object> objects,
+    int hints,
+  ) native 'SceneBuilder_addDisplayList';
 
   /// Adds a backend texture to the scene.
   ///
