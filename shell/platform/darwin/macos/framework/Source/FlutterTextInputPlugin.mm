@@ -86,6 +86,18 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
 @property(nonatomic, weak) FlutterViewController* flutterViewController;
 
 /**
+ * Whether the text input is shown in the view.
+ *
+ * Defaults to TRUE on startup.
+ */
+@property(nonatomic) BOOL shown;
+
+/**
+ * The current state of the keyboard and pressed keys.
+ */
+@property(nonatomic) uint64_t previouslyPressedFlags;
+
+/**
  * The affinity for the current cursor position.
  */
 @property FlutterTextAffinity textAffinity;
@@ -130,15 +142,16 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
 - (instancetype)initWithViewController:(FlutterViewController*)viewController {
   self = [super init];
   if (self != nil) {
-    _flutterViewController = viewController;
     _channel = [FlutterMethodChannel methodChannelWithName:kTextInputChannel
                                            binaryMessenger:viewController.engine.binaryMessenger
                                                      codec:[FlutterJSONMethodCodec sharedInstance]];
+    _shown = FALSE;
     __weak FlutterTextInputPlugin* weakSelf = self;
     [_channel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
       [weakSelf handleMethodCall:call result:result];
     }];
     _textInputContext = [[NSTextInputContext alloc] initWithClient:self];
+    _previouslyPressedFlags = 0;
   }
   return self;
 }
@@ -169,10 +182,10 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
       _activeModel = std::make_unique<flutter::TextInputModel>();
     }
   } else if ([method isEqualToString:kShowMethod]) {
-    [self.flutterViewController addKeyResponder:self];
+    _shown = TRUE;
     [_textInputContext activate];
   } else if ([method isEqualToString:kHideMethod]) {
-    [self.flutterViewController removeKeyResponder:self];
+    _shown = FALSE;
     [_textInputContext deactivate];
   } else if ([method isEqualToString:kClearClientMethod]) {
     _clientID = nil;
@@ -227,13 +240,17 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   NSString* const textAffinity = (self.textAffinity == FlutterTextAffinityUpstream)
                                      ? kTextAffinityUpstream
                                      : kTextAffinityDownstream;
+
+  int composingBase = _activeModel->composing() ? _activeModel->composing_range().base() : -1;
+  int composingExtent = _activeModel->composing() ? _activeModel->composing_range().extent() : -1;
+
   NSDictionary* state = @{
     kSelectionBaseKey : @(_activeModel->selection().base()),
     kSelectionExtentKey : @(_activeModel->selection().extent()),
     kSelectionAffinityKey : textAffinity,
     kSelectionIsDirectionalKey : @NO,
-    kComposingBaseKey : @(_activeModel->composing_range().base()),
-    kComposingExtentKey : @(_activeModel->composing_range().extent()),
+    kComposingBaseKey : @(composingBase),
+    kComposingExtentKey : @(composingExtent),
     kTextKey : [NSString stringWithUTF8String:_activeModel->GetText().c_str()]
   };
 
@@ -241,7 +258,7 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
 }
 
 #pragma mark -
-#pragma mark FlutterIntermediateKeyResponder
+#pragma mark FlutterKeySecondaryResponder
 
 /**
  * Handles key down events received from the view controller, responding TRUE if
@@ -253,7 +270,15 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
  * mouse events. Additionally, processing both keyUp and keyDown results in duplicate
  * processing of the same keys. So for now, limit processing to just handleKeyDown.
  */
-- (BOOL)handleKeyDown:(NSEvent*)event {
+- (BOOL)handleKeyEvent:(NSEvent*)event {
+  if (event.type == NSEventTypeKeyUp ||
+      (event.type == NSEventTypeFlagsChanged && event.modifierFlags < _previouslyPressedFlags)) {
+    return NO;
+  }
+  _previouslyPressedFlags = event.modifierFlags;
+  if (!_shown) {
+    return NO;
+  }
   return [_textInputContext handleEvent:event];
 }
 
@@ -282,6 +307,7 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   _activeModel->AddText([string UTF8String]);
   if (_activeModel->composing()) {
     _activeModel->CommitComposing();
+    _activeModel->EndComposing();
   }
   [self updateEditState];
 }
