@@ -74,7 +74,7 @@ PlatformView::PlatformView(
     OnCreateSurface on_create_surface_callback,
     std::shared_ptr<flutter::ExternalViewEmbedder> external_view_embedder,
     fml::TimeDelta vsync_offset,
-    zx_handle_t vsync_event_handle)
+    std::shared_ptr<SessionConnection> session_connection)
     : flutter::PlatformView(delegate, std::move(task_runners)),
       debug_label_(std::move(debug_label)),
       view_ref_(std::move(view_ref)),
@@ -90,7 +90,7 @@ PlatformView::PlatformView(
       external_view_embedder_(external_view_embedder),
       ime_client_(this),
       vsync_offset_(std::move(vsync_offset)),
-      vsync_event_handle_(vsync_event_handle),
+      session_connection_(session_connection),
       keyboard_listener_binding_(this, std::move(keyboard_listener_request)),
       weak_factory_(this) {
   // Register all error handlers.
@@ -692,7 +692,7 @@ void PlatformView::DeactivateIme() {
 // |flutter::PlatformView|
 std::unique_ptr<flutter::VsyncWaiter> PlatformView::CreateVSyncWaiter() {
   return std::make_unique<flutter_runner::VsyncWaiter>(
-      debug_label_, vsync_event_handle_, task_runners_, vsync_offset_);
+      session_connection_, task_runners_, vsync_offset_);
 }
 
 // |flutter::PlatformView|

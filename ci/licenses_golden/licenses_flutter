@@ -1360,6 +1360,7 @@ FILE: ../../../flutter/shell/platform/fuchsia/flutter/runner.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/runner.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/runner_tzdata_unittest.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/runner_unittest.cc
+FILE: ../../../flutter/shell/platform/fuchsia/flutter/session_connection.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/surface.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/surface.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/task_observers.cc
@@ -1373,7 +1374,6 @@ FILE: ../../../flutter/shell/platform/fuchsia/flutter/vsync_recorder.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/vsync_recorder.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/vsync_waiter.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/vsync_waiter.h
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/vsync_waiter_unittests.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/vulkan_surface.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/vulkan_surface.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/vulkan_surface_pool.cc

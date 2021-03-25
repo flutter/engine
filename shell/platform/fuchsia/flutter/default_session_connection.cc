@@ -17,11 +17,9 @@ DefaultSessionConnection::DefaultSessionConnection(
     fidl::InterfaceHandle<fuchsia::ui::scenic::Session> session,
     fml::closure session_error_callback,
     on_frame_presented_event on_frame_presented_callback,
-    zx_handle_t vsync_event_handle,
     uint64_t max_frames_in_flight)
     : session_wrapper_(session.Bind(), nullptr),
       on_frame_presented_callback_(std::move(on_frame_presented_callback)),
-      vsync_event_handle_(vsync_event_handle),
       kMaxFramesInFlight(max_frames_in_flight) {
   session_wrapper_.set_error_handler(
       [callback = session_error_callback](zx_status_t status) { callback(); });
@@ -29,8 +27,7 @@ DefaultSessionConnection::DefaultSessionConnection(
   // Set the |fuchsia::ui::scenic::OnFramePresented()| event handler that will
   // fire every time a set of one or more frames is presented.
   session_wrapper_.set_on_frame_presented_handler(
-      [this, handle = vsync_event_handle_](
-          fuchsia::scenic::scheduling::FramePresentedInfo info) {
+      [this](fuchsia::scenic::scheduling::FramePresentedInfo info) {
         // Update Scenic's limit for our remaining frames in flight allowed.
         size_t num_presents_handled = info.presentation_infos.size();
         frames_in_flight_allowed_ = info.num_presents_allowed;
@@ -38,9 +35,10 @@ DefaultSessionConnection::DefaultSessionConnection(
         // A frame was presented: Update our |frames_in_flight| to match the
         // updated unfinalized present requests.
         frames_in_flight_ -= num_presents_handled;
-        TRACE_EVENT2("gfx", "DSC::OnFramePresented", "frames_in_flight",
-                     frames_in_flight_, "max_frames_in_flight",
-                     kMaxFramesInFlight);
+        TRACE_DURATION("gfx", "OnFramePresented", "frames_in_flight",
+                       frames_in_flight_, "max_frames_in_flight",
+                       kMaxFramesInFlight, "num_presents_handled",
+                       num_presents_handled);
         FML_DCHECK(frames_in_flight_ >= 0);
 
         VsyncRecorder::GetInstance().UpdateFramePresentedInfo(
@@ -52,7 +50,10 @@ DefaultSessionConnection::DefaultSessionConnection(
         if (present_session_pending_) {
           PresentSession();
         }
-        ToggleSignal(handle, true);
+
+        if (vsync_waiter_initialized_) {
+          vsync_waiter_callback_();
+        }
       }  // callback
   );
 
@@ -70,8 +71,6 @@ DefaultSessionConnection::DefaultSessionConnection(
         VsyncRecorder::GetInstance().UpdateNextPresentationInfo(
             std::move(info));
 
-        // Signal is initially high indicating availability of the session.
-        ToggleSignal(vsync_event_handle_, true);
         initialized_ = true;
 
         PresentSession();
@@ -81,8 +80,8 @@ DefaultSessionConnection::DefaultSessionConnection(
 DefaultSessionConnection::~DefaultSessionConnection() = default;
 
 void DefaultSessionConnection::Present() {
-  TRACE_EVENT2("gfx", "DefaultSessionConnection::Present", "frames_in_flight",
-               frames_in_flight_, "max_frames_in_flight", kMaxFramesInFlight);
+  TRACE_DURATION("gfx", "DefaultSessionConnection::Present", "frames_in_flight",
+                 frames_in_flight_, "max_frames_in_flight", kMaxFramesInFlight);
 
   TRACE_FLOW_BEGIN("gfx", "DefaultSessionConnection::PresentSession",
                    next_present_session_trace_id_);
@@ -101,7 +100,6 @@ void DefaultSessionConnection::Present() {
     FML_CHECK(frames_in_flight_ <= kMaxFramesInFlight);
 
     present_session_pending_ = true;
-    ToggleSignal(vsync_event_handle_, false);
   }
 }
 
@@ -135,7 +133,7 @@ fml::TimePoint DefaultSessionConnection::CalculateNextLatchPoint(
 }
 
 void DefaultSessionConnection::PresentSession() {
-  TRACE_EVENT0("gfx", "DefaultSessionConnection::PresentSession");
+  TRACE_DURATION("gfx", "DefaultSessionConnection::PresentSession");
 
   // If we cannot call Present2() because we have no more Scenic frame budget,
   // then we must wait until the OnFramePresented() event fires so we can
@@ -197,15 +195,12 @@ void DefaultSessionConnection::PresentSession() {
       });
 }
 
-void DefaultSessionConnection::ToggleSignal(zx_handle_t handle, bool set) {
-  const auto signal = VsyncWaiter::SessionPresentSignal;
-  auto status = zx_object_signal(handle,            // handle
-                                 set ? 0 : signal,  // clear mask
-                                 set ? signal : 0   // set mask
-  );
-  if (status != ZX_OK) {
-    FML_LOG(ERROR) << "Could not toggle vsync signal: " << set;
-  }
+void DefaultSessionConnection::InitializeVsyncWaiterCallback(
+    VsyncWaiterCallback callback) {
+  FML_DCHECK(!vsync_waiter_initialized_);
+
+  vsync_waiter_callback_ = callback;
+  vsync_waiter_initialized_ = true;
 }
 
 }  // namespace flutter_runner

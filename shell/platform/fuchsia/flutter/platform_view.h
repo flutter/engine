@@ -72,7 +72,7 @@ class PlatformView final : public flutter::PlatformView,
                OnCreateSurface on_create_surface_callback,
                std::shared_ptr<flutter::ExternalViewEmbedder> view_embedder,
                fml::TimeDelta vsync_offset,
-               zx_handle_t vsync_event_handle);
+               std::shared_ptr<SessionConnection> session_connection);
 
   ~PlatformView();
 
@@ -218,7 +218,7 @@ class PlatformView final : public flutter::PlatformView,
   std::set<std::string /* channel */> unregistered_channels_;
 
   fml::TimeDelta vsync_offset_;
-  zx_handle_t vsync_event_handle_ = 0;
+  std::shared_ptr<SessionConnection> session_connection_;
 
   // The registered binding for serving the keyboard listener server endpoint.
   fidl::Binding<fuchsia::ui::input3::KeyboardListener>

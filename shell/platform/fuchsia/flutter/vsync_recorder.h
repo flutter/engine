@@ -30,7 +30,7 @@ class VsyncRecorder {
   // to be called in |scenic::Session::Present2| immedaite callbacks with the
   // presentation info provided by Scenic.  Only the next vsync
   // information will be saved (in order to handle edge cases involving
-  // multiple Scenic sessions in the same process).  This function is safe to
+  // multiple Scenic sessions in the same process). This function is safe to
   // call from any thread.
   void UpdateNextPresentationInfo(
       fuchsia::scenic::scheduling::FuturePresentationTimes info);

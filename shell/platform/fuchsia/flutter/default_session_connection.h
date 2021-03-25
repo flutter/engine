@@ -14,6 +14,8 @@
 #include "flutter/fml/closure.h"
 #include "flutter/fml/macros.h"
 
+#include "session_connection.h"
+
 namespace flutter_runner {
 
 using on_frame_presented_event =
@@ -21,21 +23,10 @@ using on_frame_presented_event =
 
 // The component residing on the raster thread that is responsible for
 // maintaining the Scenic session connection and presenting node updates.
-class DefaultSessionConnection final : public flutter::SessionWrapper {
+class DefaultSessionConnection final
+    : public flutter::SessionWrapper,
+      public flutter_runner::SessionConnection {
  public:
-  DefaultSessionConnection(
-      std::string debug_label,
-      fidl::InterfaceHandle<fuchsia::ui::scenic::Session> session,
-      fml::closure session_error_callback,
-      on_frame_presented_event on_frame_presented_callback,
-      zx_handle_t vsync_event_handle,
-      uint64_t max_frames_in_flight);
-
-  ~DefaultSessionConnection();
-
-  scenic::Session* get() override { return &session_wrapper_; }
-  void Present() override;
-
   static fml::TimePoint CalculateNextLatchPoint(
       fml::TimePoint present_requested_time,
       fml::TimePoint now,
@@ -44,6 +35,29 @@ class DefaultSessionConnection final : public flutter::SessionWrapper {
       fml::TimeDelta vsync_interval,
       std::deque<std::pair<fml::TimePoint, fml::TimePoint>>&
           future_presentation_infos);
+
+  DefaultSessionConnection(
+      std::string debug_label,
+      fidl::InterfaceHandle<fuchsia::ui::scenic::Session> session,
+      fml::closure session_error_callback,
+      on_frame_presented_event on_frame_presented_callback,
+      uint64_t max_frames_in_flight);
+
+  ~DefaultSessionConnection();
+
+  // |SessionWrapper|
+  scenic::Session* get() override { return &session_wrapper_; }
+
+  // |SessionWrapper|
+  void Present() override;
+
+  // |SessionConnection|
+  void InitializeVsyncWaiterCallback(VsyncWaiterCallback callback) override;
+
+  // |SessionConnection|
+  bool CanRequestNewFrames() override {
+    return frames_in_flight_ < kMaxFramesInFlight;
+  }
 
  private:
   scenic::Session session_wrapper_;
@@ -79,6 +93,9 @@ class DefaultSessionConnection final : public flutter::SessionWrapper {
   int frames_in_flight_allowed_ = 0;
 
   bool present_session_pending_ = false;
+
+  bool vsync_waiter_initialized_ = false;
+  VsyncWaiterCallback vsync_waiter_callback_;
 
   void PresentSession();
 

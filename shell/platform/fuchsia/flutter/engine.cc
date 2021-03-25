@@ -76,10 +76,6 @@ Engine::Engine(Delegate& delegate,
 #endif
       intercept_all_input_(product_config.get_intercept_all_input()),
       weak_factory_(this) {
-  if (zx::event::create(0, &vsync_event_) != ZX_OK) {
-    FML_DLOG(ERROR) << "Could not create the vsync event.";
-    return;
-  }
 
   // Get the task runners from the managed threads. The current thread will be
   // used as the "platform" thread.
@@ -138,10 +134,10 @@ Engine::Engine(Delegate& delegate,
        view_token = std::move(view_token),
        view_ref_pair = std::move(view_ref_pair),
        max_frames_in_flight = product_config.get_max_frames_in_flight(),
-       vsync_handle = vsync_event_.get(), &view_embedder_latch]() mutable {
-        session_connection_.emplace(
+       &view_embedder_latch]() mutable {
+        session_connection_ = std::make_shared<DefaultSessionConnection>(
             thread_label_, std::move(session),
-            std::move(session_error_callback), [](auto) {}, vsync_handle,
+            std::move(session_error_callback), [](auto) {},
             max_frames_in_flight);
         surface_producer_.emplace(session_connection_->get());
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
@@ -149,7 +145,7 @@ Engine::Engine(Delegate& delegate,
           legacy_external_view_embedder_ =
               std::make_shared<flutter::SceneUpdateContext>(
                   thread_label_, std::move(view_token),
-                  std::move(view_ref_pair), session_connection_.value(),
+                  std::move(view_ref_pair), *(session_connection_.get()),
                   intercept_all_input_);
         } else
 #endif
@@ -157,7 +153,7 @@ Engine::Engine(Delegate& delegate,
           external_view_embedder_ =
               std::make_shared<FuchsiaExternalViewEmbedder>(
                   thread_label_, std::move(view_token),
-                  std::move(view_ref_pair), session_connection_.value(),
+                  std::move(view_ref_pair), *session_connection_.get(),
                   surface_producer_.value(), intercept_all_input_);
         }
         view_embedder_latch.Signal();
@@ -232,8 +228,8 @@ Engine::Engine(Delegate& delegate,
   // Setup the callback that will instantiate the platform view.
   flutter::Shell::CreateCallback<flutter::PlatformView>
       on_create_platform_view = fml::MakeCopyable(
-          [debug_label = thread_label_, view_ref = std::move(platform_view_ref),
-           runner_services,
+          [this, debug_label = thread_label_,
+           view_ref = std::move(platform_view_ref), runner_services,
            parent_environment_service_provider =
                std::move(parent_environment_service_provider),
            session_listener_request = std::move(session_listener_request),
@@ -248,7 +244,6 @@ Engine::Engine(Delegate& delegate,
            on_create_surface_callback = std::move(on_create_surface_callback),
            external_view_embedder = GetExternalViewEmbedder(),
            vsync_offset = product_config.get_vsync_offset(),
-           vsync_handle = vsync_event_.get(),
            keyboard_listener_request = std::move(keyboard_listener_request)](
               flutter::Shell& shell) mutable {
             return std::make_unique<flutter_runner::PlatformView>(
@@ -271,7 +266,7 @@ Engine::Engine(Delegate& delegate,
                 std::move(on_create_surface_callback),
                 external_view_embedder,   // external view embedder
                 std::move(vsync_offset),  // vsync offset
-                vsync_handle);
+                session_connection_);
           });
 
   // Setup the callback that will instantiate the rasterizer.
@@ -295,7 +290,7 @@ Engine::Engine(Delegate& delegate,
 
       auto compositor_context =
           std::make_unique<flutter_runner::CompositorContext>(
-              session_connection_.value(), surface_producer_.value(),
+              *(session_connection_.get()), surface_producer_.value(),
               legacy_external_view_embedder_);
       return std::make_unique<flutter::Rasterizer>(
           shell, std::move(compositor_context));

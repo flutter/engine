@@ -30,7 +30,6 @@ class DefaultSessionConnectionTest : public ::testing::Test {
     auto session_listener_request = session_listener_.NewRequest();
 
     scenic_->CreateSession(session_.NewRequest(), session_listener_.Bind());
-    FML_CHECK(zx::event::create(0, &vsync_event_) == ZX_OK);
 
     // Ensure Scenic has had time to wake up before the test logic begins.
     // TODO(61768) Find a better solution than sleeping periodically checking a
@@ -54,7 +53,6 @@ class DefaultSessionConnectionTest : public ::testing::Test {
 
   fidl::InterfaceHandle<fuchsia::ui::scenic::Session> session_;
   fidl::InterfaceHandle<fuchsia::ui::scenic::SessionListener> session_listener_;
-  zx::event vsync_event_;
   thrd_t fidl_thread_;
 };
 
@@ -70,7 +68,7 @@ TEST_F(DefaultSessionConnectionTest, SimplePresentTest) {
 
   flutter_runner::DefaultSessionConnection session_connection(
       "debug label", std::move(session_), on_session_error_callback,
-      on_frame_presented_callback, vsync_event_.get(), 3);
+      on_frame_presented_callback, 3);
 
   for (int i = 0; i < 200; ++i) {
     session_connection.Present();
@@ -92,7 +90,7 @@ TEST_F(DefaultSessionConnectionTest, BatchedPresentTest) {
 
   flutter_runner::DefaultSessionConnection session_connection(
       "debug label", std::move(session_), on_session_error_callback,
-      on_frame_presented_callback, vsync_event_.get(), 3);
+      on_frame_presented_callback, 3);
 
   for (int i = 0; i < 200; ++i) {
     session_connection.Present();

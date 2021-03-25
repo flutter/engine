@@ -269,7 +269,7 @@ class PlatformViewBuilder {
                         std::move(on_update_view_callback_),
                         std::move(on_destroy_view_callback_),
                         std::move(on_create_surface_callback_), view_embedder_,
-                        std::move(vsync_offset_), vsync_event_handle_);
+                        std::move(vsync_offset_), nullptr);
   }
 
  private:
@@ -300,7 +300,6 @@ class PlatformViewBuilder {
   OnCreateSurface on_create_surface_callback_{nullptr};
   std::shared_ptr<flutter::ExternalViewEmbedder> view_embedder_{nullptr};
   fml::TimeDelta vsync_offset_{fml::TimeDelta::Zero()};
-  zx_handle_t vsync_event_handle_{ZX_HANDLE_INVALID};
 };
 
 }  // namespace
