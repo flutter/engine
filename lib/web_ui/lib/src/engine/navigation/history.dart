@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// An abstract class that provides the API for [EngineWindow] to delegate its
@@ -217,8 +217,8 @@ class SingleEntryBrowserHistory extends BrowserHistory {
     if (!_isFlutterEntry(html.window.history.state)) {
       // An entry may not have come from Flutter, for example, when the user
       // refreshes the page. They land directly on the "flutter" entry, so
-      // there's no need to setup the "origin" and "flutter" entries, we can
-      // safely assume they are already setup.
+      // there's no need to set up the "origin" and "flutter" entries, we can
+      // safely assume they are already set up.
       _setupOriginEntry(strategy);
       _setupFlutterEntry(strategy, replace: false, path: path);
     }

@@ -28,15 +28,13 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/profiler_metrics_ios.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/vsync_waiter_ios.h"
-#import "flutter/shell/platform/darwin/ios/ios_context.h"
-#import "flutter/shell/platform/darwin/ios/ios_surface.h"
-#import "flutter/shell/platform/darwin/ios/ios_surface_factory.h"
 #import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 #import "flutter/shell/platform/darwin/ios/rendering_api_selection.h"
 #include "flutter/shell/profiling/sampling_profiler.h"
 
 NSString* const FlutterDefaultDartEntrypoint = nil;
 NSString* const FlutterDefaultInitialRoute = nil;
+NSString* const FlutterEngineWillDealloc = @"FlutterEngineWillDealloc";
 static constexpr int kNumProfilerSamplesPerSec = 5;
 
 @interface FlutterEngineRegistrar : NSObject <FlutterPluginRegistrar>
@@ -57,7 +55,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
 @implementation FlutterEngine {
   fml::scoped_nsobject<FlutterDartProject> _dartProject;
-  flutter::ThreadHost _threadHost;
+  std::shared_ptr<flutter::ThreadHost> _threadHost;
   std::unique_ptr<flutter::Shell> _shell;
   NSString* _labelPrefix;
   std::unique_ptr<fml::WeakPtrFactory<FlutterEngine>> _weakFactory;
@@ -67,15 +65,16 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
   std::shared_ptr<flutter::FlutterPlatformViewsController> _platformViewsController;
   flutter::IOSRenderingAPI _renderingApi;
-  std::shared_ptr<flutter::IOSSurfaceFactory> _surfaceFactory;
-  std::unique_ptr<flutter::ProfilerMetricsIOS> _profiler_metrics;
-  std::unique_ptr<flutter::SamplingProfiler> _profiler;
+  std::shared_ptr<flutter::ProfilerMetricsIOS> _profiler_metrics;
+  std::shared_ptr<flutter::SamplingProfiler> _profiler;
 
   // Channels
   fml::scoped_nsobject<FlutterPlatformPlugin> _platformPlugin;
   fml::scoped_nsobject<FlutterTextInputPlugin> _textInputPlugin;
+  fml::scoped_nsobject<FlutterRestorationPlugin> _restorationPlugin;
   fml::scoped_nsobject<FlutterMethodChannel> _localizationChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _navigationChannel;
+  fml::scoped_nsobject<FlutterMethodChannel> _restorationChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _platformChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _platformViewsChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _textInputChannel;
@@ -87,6 +86,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   int64_t _nextTextureId;
 
   BOOL _allowHeadlessExecution;
+  BOOL _restorationEnabled;
   FlutterBinaryMessengerRelay* _binaryMessenger;
   std::unique_ptr<flutter::ConnectionCollection> _connections;
 }
@@ -106,10 +106,21 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (instancetype)initWithName:(NSString*)labelPrefix
                      project:(FlutterDartProject*)project
       allowHeadlessExecution:(BOOL)allowHeadlessExecution {
+  return [self initWithName:labelPrefix
+                     project:project
+      allowHeadlessExecution:allowHeadlessExecution
+          restorationEnabled:NO];
+}
+
+- (instancetype)initWithName:(NSString*)labelPrefix
+                     project:(FlutterDartProject*)project
+      allowHeadlessExecution:(BOOL)allowHeadlessExecution
+          restorationEnabled:(BOOL)restorationEnabled {
   self = [super init];
   NSAssert(self, @"Super init cannot be nil");
   NSAssert(labelPrefix, @"labelPrefix is required");
 
+  _restorationEnabled = restorationEnabled;
   _allowHeadlessExecution = allowHeadlessExecution;
   _labelPrefix = [labelPrefix copy];
 
@@ -168,9 +179,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
 - (void)recreatePlatformViewController {
   _renderingApi = flutter::GetRenderingAPIForProcess(FlutterView.forceSoftwareRendering);
-  _surfaceFactory = flutter::IOSSurfaceFactory::Create(_renderingApi);
-  _platformViewsController.reset(new flutter::FlutterPlatformViewsController(_surfaceFactory));
-  _surfaceFactory->SetPlatformViewsController(_platformViewsController);
+  _platformViewsController.reset(new flutter::FlutterPlatformViewsController());
 }
 
 - (flutter::IOSRenderingAPI)platformViewsRenderingAPI {
@@ -186,6 +195,10 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
       [object detachFromEngineForRegistrar:registrar];
     }
   }];
+
+  [[NSNotificationCenter defaultCenter] postNotificationName:FlutterEngineWillDealloc
+                                                      object:self
+                                                    userInfo:nil];
 
   /// nil out weak references.
   [_registrars
@@ -312,7 +325,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   self.isolateId = nil;
   _shell.reset();
   _profiler.reset();
-  _threadHost.Reset();
+  _threadHost.reset();
   _platformViewsController.reset();
 }
 
@@ -332,11 +345,17 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (FlutterTextInputPlugin*)textInputPlugin {
   return _textInputPlugin.get();
 }
+- (FlutterRestorationPlugin*)restorationPlugin {
+  return _restorationPlugin.get();
+}
 - (FlutterMethodChannel*)localizationChannel {
   return _localizationChannel.get();
 }
 - (FlutterMethodChannel*)navigationChannel {
   return _navigationChannel.get();
+}
+- (FlutterMethodChannel*)restorationChannel {
+  return _restorationChannel.get();
 }
 - (FlutterMethodChannel*)platformChannel {
   return _platformChannel.get();
@@ -364,6 +383,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (void)resetChannels {
   _localizationChannel.reset();
   _navigationChannel.reset();
+  _restorationChannel.reset();
   _platformChannel.reset();
   _platformViewsChannel.reset();
   _textInputChannel.reset();
@@ -374,10 +394,10 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 }
 
 - (void)startProfiler {
-  FML_DCHECK(!_threadHost.name_prefix.empty());
-  _profiler_metrics = std::make_unique<flutter::ProfilerMetricsIOS>();
-  _profiler = std::make_unique<flutter::SamplingProfiler>(
-      _threadHost.name_prefix.c_str(), _threadHost.profiler_thread->GetTaskRunner(),
+  FML_DCHECK(!_threadHost->name_prefix.empty());
+  _profiler_metrics = std::make_shared<flutter::ProfilerMetricsIOS>();
+  _profiler = std::make_shared<flutter::SamplingProfiler>(
+      _threadHost->name_prefix.c_str(), _threadHost->profiler_thread->GetTaskRunner(),
       [self]() { return self->_profiler_metrics->GenerateSample(); }, kNumProfilerSamplesPerSec);
   _profiler->Start();
 }
@@ -413,6 +433,11 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
     [_initialRoute release];
     _initialRoute = nil;
   }
+
+  _restorationChannel.reset([[FlutterMethodChannel alloc]
+         initWithName:@"flutter/restoration"
+      binaryMessenger:self.binaryMessenger
+                codec:[FlutterStandardMethodCodec sharedInstance]]);
 
   _platformChannel.reset([[FlutterMethodChannel alloc]
          initWithName:@"flutter/platform"
@@ -453,6 +478,10 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   _textInputPlugin.get().textInputDelegate = self;
 
   _platformPlugin.reset([[FlutterPlatformPlugin alloc] initWithEngine:[self getWeakPtr]]);
+
+  _restorationPlugin.reset([[FlutterRestorationPlugin alloc]
+         initWithChannel:_restorationChannel.get()
+      restorationEnabled:_restorationEnabled]);
 }
 
 - (void)maybeSetupPlatformViewChannels {
@@ -497,7 +526,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   _publisher.reset([[FlutterObservatoryPublisher alloc]
       initWithEnableObservatoryPublication:doesObservatoryPublication]);
   [self maybeSetupPlatformViewChannels];
-  _shell->GetIsGpuDisabledSyncSwitch()->SetSwitch(_isGpuDisabled ? true : false);
 }
 
 + (BOOL)isProfilerEnabled {
@@ -519,13 +547,27 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   // initialized.
   fml::MessageLoop::EnsureInitializedForCurrentThread();
 
-  uint32_t threadHostType = flutter::ThreadHost::Type::UI | flutter::ThreadHost::Type::GPU |
+  uint32_t threadHostType = flutter::ThreadHost::Type::UI | flutter::ThreadHost::Type::RASTER |
                             flutter::ThreadHost::Type::IO;
   if ([FlutterEngine isProfilerEnabled]) {
     threadHostType = threadHostType | flutter::ThreadHost::Type::Profiler;
   }
   return {threadLabel.UTF8String,  // label
           threadHostType};
+}
+
+static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSString* libraryURI) {
+  if (libraryURI) {
+    FML_DCHECK(entrypoint) << "Must specify entrypoint if specifying library";
+    settings->advisory_script_entrypoint = entrypoint.UTF8String;
+    settings->advisory_script_uri = libraryURI.UTF8String;
+  } else if (entrypoint) {
+    settings->advisory_script_entrypoint = entrypoint.UTF8String;
+    settings->advisory_script_uri = std::string("main.dart");
+  } else {
+    settings->advisory_script_entrypoint = std::string("main");
+    settings->advisory_script_uri = std::string("main.dart");
+  }
 }
 
 - (BOOL)createShell:(NSString*)entrypoint
@@ -543,20 +585,11 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
   auto platformData = [_dartProject.get() defaultPlatformData];
 
-  if (libraryURI) {
-    FML_DCHECK(entrypoint) << "Must specify entrypoint if specifying library";
-    settings.advisory_script_entrypoint = entrypoint.UTF8String;
-    settings.advisory_script_uri = libraryURI.UTF8String;
-  } else if (entrypoint) {
-    settings.advisory_script_entrypoint = entrypoint.UTF8String;
-    settings.advisory_script_uri = std::string("main.dart");
-  } else {
-    settings.advisory_script_entrypoint = std::string("main");
-    settings.advisory_script_uri = std::string("main.dart");
-  }
+  SetEntryPoint(&settings, entrypoint, libraryURI);
 
   NSString* threadLabel = [FlutterEngine generateThreadLabel:_labelPrefix];
-  _threadHost = [FlutterEngine makeThreadHost:threadLabel];
+  _threadHost = std::make_shared<flutter::ThreadHost>();
+  *_threadHost = [FlutterEngine makeThreadHost:threadLabel];
 
   // Lambda captures by pointers to ObjC objects are fine here because the
   // create call is synchronous.
@@ -564,7 +597,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
       [self](flutter::Shell& shell) {
         [self recreatePlatformViewController];
         return std::make_unique<flutter::PlatformViewIOS>(
-            shell, self->_renderingApi, self->_surfaceFactory, shell.GetTaskRunners());
+            shell, self->_renderingApi, self->_platformViewsController, shell.GetTaskRunners());
       };
 
   flutter::Shell::CreateCallback<flutter::Rasterizer> on_create_rasterizer =
@@ -572,19 +605,20 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
   flutter::TaskRunners task_runners(threadLabel.UTF8String,                          // label
                                     fml::MessageLoop::GetCurrent().GetTaskRunner(),  // platform
-                                    _threadHost.raster_thread->GetTaskRunner(),      // raster
-                                    _threadHost.ui_thread->GetTaskRunner(),          // ui
-                                    _threadHost.io_thread->GetTaskRunner()           // io
+                                    _threadHost->raster_thread->GetTaskRunner(),     // raster
+                                    _threadHost->ui_thread->GetTaskRunner(),         // ui
+                                    _threadHost->io_thread->GetTaskRunner()          // io
   );
 
+  _isGpuDisabled = [UIApplication sharedApplication].applicationState != UIApplicationStateActive;
   // Create the shell. This is a blocking operation.
-  std::unique_ptr<flutter::Shell> shell =
-      flutter::Shell::Create(std::move(task_runners),  // task runners
-                             std::move(platformData),  // window data
-                             std::move(settings),      // settings
-                             on_create_platform_view,  // platform view creation
-                             on_create_rasterizer      // rasterzier creation
-      );
+  std::unique_ptr<flutter::Shell> shell = flutter::Shell::Create(
+      /*platform_data=*/std::move(platformData),
+      /*task_runners=*/std::move(task_runners),
+      /*settings=*/std::move(settings),
+      /*on_create_platform_view=*/on_create_platform_view,
+      /*on_create_rasterizer=*/on_create_rasterizer,
+      /*is_gpu_disabled=*/_isGpuDisabled);
 
   if (shell == nullptr) {
     FML_LOG(ERROR) << "Could not start a shell FlutterEngine with entrypoint: "
@@ -601,7 +635,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 }
 
 - (void)initializeDisplays {
-  double refresh_rate = [[[DisplayLinkManager alloc] init] displayRefreshRate];
+  double refresh_rate = [DisplayLinkManager displayRefreshRate];
   auto display = flutter::Display(refresh_rate);
   _shell->OnDisplayUpdates(flutter::DisplayUpdateType::kStartup, {display});
 }
@@ -726,12 +760,18 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
                               arguments:@[ @(client), @(start), @(end) ]];
 }
 
-#pragma mark - Screenshot Delegate
+#pragma mark - FlutterViewEngineDelegate
 
 - (flutter::Rasterizer::Screenshot)takeScreenshot:(flutter::Rasterizer::ScreenshotType)type
                                   asBase64Encoded:(BOOL)base64Encode {
   FML_DCHECK(_shell) << "Cannot takeScreenshot without a shell";
   return _shell->Screenshot(type, base64Encode);
+}
+
+- (void)flutterViewAccessibilityDidCall {
+  if (self.viewController.view.accessibilityElements == nil) {
+    [self ensureSemanticsEnabled];
+  }
 }
 
 - (NSObject<FlutterBinaryMessenger>*)binaryMessenger {
@@ -783,7 +823,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
     return _connections->AquireConnection(channel.UTF8String);
   } else {
     NSAssert(!handler, @"Setting a message handler before the FlutterEngine has been run.");
-    // Setting a handler to nil for a not setup channel is a noop.
+    // Setting a handler to nil for a channel that has not yet been set up is a no-op.
     return flutter::ConnectionCollection::MakeErrorConnection(-1);
   }
 }
@@ -925,6 +965,50 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
       callback(didTimeout);
     });
   });
+}
+
+- (FlutterEngine*)spawnWithEntrypoint:(/*nullable*/ NSString*)entrypoint
+                           libraryURI:(/*nullable*/ NSString*)libraryURI {
+  NSAssert(_shell, @"Spawning from an engine without a shell (possibly not run).");
+  FlutterEngine* result = [[FlutterEngine alloc] initWithName:_labelPrefix
+                                                      project:_dartProject.get()
+                                       allowHeadlessExecution:_allowHeadlessExecution];
+
+  flutter::RunConfiguration configuration =
+      [_dartProject.get() runConfigurationForEntrypoint:entrypoint libraryOrNil:libraryURI];
+
+  fml::WeakPtr<flutter::PlatformView> platform_view = _shell->GetPlatformView();
+  FML_DCHECK(platform_view);
+  // Static-cast safe since this class always creates PlatformViewIOS instances.
+  flutter::PlatformViewIOS* ios_platform_view =
+      static_cast<flutter::PlatformViewIOS*>(platform_view.get());
+  std::shared_ptr<flutter::IOSContext> context = ios_platform_view->GetIosContext();
+  FML_DCHECK(context);
+
+  // Lambda captures by pointers to ObjC objects are fine here because the
+  // create call is synchronous.
+  flutter::Shell::CreateCallback<flutter::PlatformView> on_create_platform_view =
+      [result, context](flutter::Shell& shell) {
+        [result recreatePlatformViewController];
+        return std::make_unique<flutter::PlatformViewIOS>(
+            shell, context, result->_platformViewsController, shell.GetTaskRunners());
+      };
+
+  flutter::Shell::CreateCallback<flutter::Rasterizer> on_create_rasterizer =
+      [](flutter::Shell& shell) { return std::make_unique<flutter::Rasterizer>(shell); };
+
+  std::unique_ptr<flutter::Shell> shell =
+      _shell->Spawn(std::move(configuration), on_create_platform_view, on_create_rasterizer);
+
+  result->_threadHost = _threadHost;
+  result->_profiler = _profiler;
+  result->_profiler_metrics = _profiler_metrics;
+  [result setupShell:std::move(shell) withObservatoryPublication:NO];
+  return result;
+}
+
+- (const flutter::ThreadHost&)threadHost {
+  return *_threadHost;
 }
 
 @end

@@ -2,13 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of ui;
 
 typedef VoidCallback = void Function();
 typedef FrameCallback = void Function(Duration duration);
 typedef TimingsCallback = void Function(List<FrameTiming> timings);
 typedef PointerDataPacketCallback = void Function(PointerDataPacket packet);
+typedef KeyDataCallback = bool Function(KeyData packet);
 typedef SemanticsActionCallback = void Function(int id, SemanticsAction action, ByteData? args);
 typedef PlatformMessageResponseCallback = void Function(ByteData? data);
 typedef PlatformMessageCallback = void Function(
@@ -35,6 +36,9 @@ abstract class PlatformDispatcher {
 
   PointerDataPacketCallback? get onPointerDataPacket;
   set onPointerDataPacket(PointerDataPacketCallback? callback);
+
+  KeyDataCallback? get onKeyData;
+  set onKeyData(KeyDataCallback? callback);
 
   TimingsCallback? get onReportTimings;
   set onReportTimings(TimingsCallback? callback);

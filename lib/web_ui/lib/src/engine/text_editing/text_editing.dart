@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// Make the content editable span visible to facilitate debugging.
@@ -373,7 +373,11 @@ class AutofillInfo {
 /// The current text and selection state of a text field.
 @visibleForTesting
 class EditingState {
-  EditingState({this.text, this.baseOffset = 0, this.extentOffset = 0});
+  EditingState({this.text, int? baseOffset, int? extentOffset}) :
+    // Don't allow negative numbers. Pick the smallest selection index for base.
+    baseOffset = math.max(0, math.min(baseOffset ?? 0, extentOffset ?? 0)),
+    // Don't allow negative numbers. Pick the greatest selection index for extent.
+    extentOffset = math.max(0, math.max(baseOffset ?? 0, extentOffset ?? 0));
 
   /// Creates an [EditingState] instance using values from an editing state Map
   /// coming from Flutter.
@@ -401,9 +405,10 @@ class EditingState {
     final String? text = flutterEditingState['text'];
 
     return EditingState(
-        text: text,
-        baseOffset: math.max(0, selectionBase),
-        extentOffset: math.max(0, selectionExtent));
+      text: text,
+      baseOffset: selectionBase,
+      extentOffset: selectionExtent,
+    );
   }
 
   /// Creates an [EditingState] instance using values from the editing element
@@ -1262,10 +1267,20 @@ class FirefoxTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     // Refocus on the domElement after blur, so that user can keep editing the
     // text field.
     _subscriptions.add(domElement.onBlur.listen((_) {
-      domElement.focus();
+      _postponeFocus();
     }));
 
     preventDefaultForMouseEvents();
+  }
+
+  void _postponeFocus() {
+    // Firefox does not focus on the editing element if we call the focus
+    // inside the blur event, therefore we postpone the focus.
+    // Calling focus inside a Timer for `0` milliseconds guarantee that it is
+    // called after blur event propagation is completed.
+    Timer(const Duration(milliseconds: 0), () {
+      domElement.focus();
+    });
   }
 
   @override

@@ -27,7 +27,9 @@ UIDartState::UIDartState(
     std::string logger_prefix,
     UnhandledExceptionCallback unhandled_exception_callback,
     std::shared_ptr<IsolateNameServer> isolate_name_server,
-    bool is_root_isolate)
+    bool is_root_isolate,
+    std::shared_ptr<VolatilePathTracker> volatile_path_tracker,
+    bool enable_skparagraph)
     : task_runners_(std::move(task_runners)),
       add_callback_(std::move(add_callback)),
       remove_callback_(std::move(remove_callback)),
@@ -36,12 +38,14 @@ UIDartState::UIDartState(
       io_manager_(std::move(io_manager)),
       skia_unref_queue_(std::move(skia_unref_queue)),
       image_decoder_(std::move(image_decoder)),
+      volatile_path_tracker_(std::move(volatile_path_tracker)),
       advisory_script_uri_(std::move(advisory_script_uri)),
       advisory_script_entrypoint_(std::move(advisory_script_entrypoint)),
       logger_prefix_(std::move(logger_prefix)),
       is_root_isolate_(is_root_isolate),
       unhandled_exception_callback_(unhandled_exception_callback),
-      isolate_name_server_(std::move(isolate_name_server)) {
+      isolate_name_server_(std::move(isolate_name_server)),
+      enable_skparagraph_(enable_skparagraph) {
   AddOrRemoveTaskObserver(true /* add */);
 }
 
@@ -104,6 +108,11 @@ fml::WeakPtr<IOManager> UIDartState::GetIOManager() const {
 
 fml::RefPtr<flutter::SkiaUnrefQueue> UIDartState::GetSkiaUnrefQueue() const {
   return skia_unref_queue_;
+}
+
+std::shared_ptr<VolatilePathTracker> UIDartState::GetVolatilePathTracker()
+    const {
+  return volatile_path_tracker_;
 }
 
 void UIDartState::ScheduleMicrotask(Dart_Handle closure) {
@@ -176,6 +185,10 @@ void UIDartState::ReportUnhandledException(const std::string& error,
   // just log the exception.
   FML_LOG(ERROR) << "Unhandled Exception: " << error << std::endl
                  << stack_trace;
+}
+
+bool UIDartState::enable_skparagraph() const {
+  return enable_skparagraph_;
 }
 
 }  // namespace flutter

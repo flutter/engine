@@ -1484,6 +1484,36 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholderLongestLine)) {
   ASSERT_TRUE(paragraph->longest_line_ >= 50);
 }
 
+TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholderIntrinsicWidth)) {
+  const char* text = "A ";
+  auto icu_text = icu::UnicodeString::fromUTF8(text);
+  std::u16string u16_text(icu_text.getBuffer(),
+                          icu_text.getBuffer() + icu_text.length());
+
+  txt::PlaceholderRun placeholder_run(50, 50, PlaceholderAlignment::kBaseline,
+                                      TextBaseline::kAlphabetic, 0);
+
+  txt::ParagraphStyle paragraph_style;
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
+  text_style.font_size = 20;
+  text_style.decoration_color = SK_ColorBLACK;
+  builder.PushStyle(text_style);
+
+  builder.AddText(u16_text);
+  builder.AddPlaceholder(placeholder_run);
+
+  builder.Pop();
+
+  auto paragraph = BuildParagraph(builder);
+  paragraph->Layout(GetTestCanvasWidth());
+
+  ASSERT_DOUBLE_EQ(paragraph->GetMinIntrinsicWidth(), 50);
+  ASSERT_DOUBLE_EQ(paragraph->GetMaxIntrinsicWidth(), 68);
+}
+
 #if OS_LINUX
 // Tests if manually inserted 0xFFFC characters are replaced to 0xFFFD in order
 // to not interfere with the placeholder box layout.
@@ -1849,6 +1879,491 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(HeightOverrideParagraph)) {
   EXPECT_NEAR(boxes[1].rect.top(), 92.805778503417969, 0.0001);
   EXPECT_FLOAT_EQ(boxes[1].rect.right(), 43.851562);
   EXPECT_NEAR(boxes[1].rect.bottom(), 165.49578857421875, 0.0001);
+
+  ASSERT_TRUE(Snapshot());
+}
+
+TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(HeightOverrideHalfLeadingParagraph)) {
+  // All 3 lines will have the same typeface.
+  const char* text = "01234満毎冠行来昼本可\nabcd\n満毎冠行来昼本可";
+  auto icu_text = icu::UnicodeString::fromUTF8(text);
+  std::u16string u16_text(icu_text.getBuffer(),
+                          icu_text.getBuffer() + icu_text.length());
+
+  txt::ParagraphStyle paragraph_style;
+  paragraph_style.max_lines = 10;
+  paragraph_style.text_height_behavior = TextHeightBehavior::kEvenLeading;
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
+  text_style.font_size = 20;
+  text_style.letter_spacing = 0;
+  text_style.word_spacing = 0;
+  text_style.color = SK_ColorBLACK;
+  text_style.height = 3.6345;
+  text_style.has_height_override = true;
+  // Disables text style leading distribution behavior override so it defaults
+  // to the paragraph style.
+  text_style.has_leading_distribution_override = false;
+  builder.PushStyle(text_style);
+
+  builder.AddText(u16_text);
+
+  builder.Pop();
+
+  auto paragraph = BuildParagraph(builder);
+  paragraph->Layout(550);
+
+  paragraph->Paint(GetCanvas(), 0, 0);
+
+  SkPaint paint;
+  paint.setStyle(SkPaint::kStroke_Style);
+  paint.setAntiAlias(true);
+  paint.setStrokeWidth(1);
+
+  // Tests for GetRectsForRange()
+  Paragraph::RectHeightStyle rect_height_style =
+      Paragraph::RectHeightStyle::kTight;
+  Paragraph::RectWidthStyle rect_width_style =
+      Paragraph::RectWidthStyle::kTight;
+  paint.setColor(SK_ColorRED);
+  std::vector<txt::Paragraph::TextBox> boxes =
+      paragraph->GetRectsForRange(0, 0, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 0ull);
+
+  boxes =
+      paragraph->GetRectsForRange(0, 40, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  // With half-leadding, the x coordinates should remain the same but the glyphs
+  // are shifted up (as compared to AD-scaling).
+  EXPECT_EQ(boxes.size(), 3ull);
+
+  const double line_spacing1 = boxes[1].rect.top() - boxes[0].rect.bottom();
+  const double line_spacing2 = boxes[2].rect.top() - boxes[1].rect.bottom();
+
+  EXPECT_EQ(line_spacing1, line_spacing2);
+  // half leading.
+  EXPECT_NEAR(line_spacing1 * 0.5, boxes[0].rect.top(), 0.5);
+
+  EXPECT_FLOAT_EQ(boxes[1].rect.left(), 0);
+  EXPECT_FLOAT_EQ(boxes[1].rect.right(), 43.851562);
+
+  ASSERT_TRUE(Snapshot());
+}
+
+TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(HeightOverrideHalfLeadingTextStyle)) {
+  // All 3 lines will have the same typeface.
+  const char* text = "01234満毎冠行来昼本可\nabcd\n満毎冠行来昼本可";
+  auto icu_text = icu::UnicodeString::fromUTF8(text);
+  std::u16string u16_text(icu_text.getBuffer(),
+                          icu_text.getBuffer() + icu_text.length());
+
+  txt::ParagraphStyle paragraph_style;
+  paragraph_style.max_lines = 10;
+  paragraph_style.text_height_behavior = TextHeightBehavior::kAll;
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
+  text_style.font_size = 20;
+  text_style.letter_spacing = 0;
+  text_style.word_spacing = 0;
+  text_style.color = SK_ColorBLACK;
+  text_style.height = 3.6345;
+  text_style.has_height_override = true;
+  // Override paragraph_style.text_height_behavior:
+  text_style.has_leading_distribution_override = true;
+  text_style.half_leading = true;
+  builder.PushStyle(text_style);
+
+  builder.AddText(u16_text);
+
+  builder.Pop();
+
+  auto paragraph = BuildParagraph(builder);
+  paragraph->Layout(550);
+
+  paragraph->Paint(GetCanvas(), 0, 0);
+
+  SkPaint paint;
+  paint.setStyle(SkPaint::kStroke_Style);
+  paint.setAntiAlias(true);
+  paint.setStrokeWidth(1);
+
+  // Tests for GetRectsForRange()
+  Paragraph::RectHeightStyle rect_height_style =
+      Paragraph::RectHeightStyle::kTight;
+  Paragraph::RectHeightStyle rect_height_style_max =
+      Paragraph::RectHeightStyle::kMax;
+  Paragraph::RectWidthStyle rect_width_style =
+      Paragraph::RectWidthStyle::kTight;
+  paint.setColor(SK_ColorRED);
+
+  std::vector<txt::Paragraph::TextBox> boxes =
+      paragraph->GetRectsForRange(0, 40, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+
+  std::vector<txt::Paragraph::TextBox> line_boxes = paragraph->GetRectsForRange(
+      0, 40, rect_height_style_max, rect_width_style);
+  EXPECT_EQ(boxes.size(), 3ull);
+  EXPECT_EQ(line_boxes.size(), 3ull);
+
+  const double line_spacing1 = boxes[1].rect.top() - boxes[0].rect.bottom();
+  const double line_spacing2 = boxes[2].rect.top() - boxes[1].rect.bottom();
+
+  EXPECT_EQ(line_spacing1, line_spacing2);
+
+  // half leading.
+  EXPECT_EQ(line_boxes[0].rect.top() - boxes[0].rect.top(),
+            boxes[0].rect.bottom() - line_boxes[0].rect.bottom());
+  EXPECT_EQ(line_boxes[1].rect.top() - boxes[1].rect.top(),
+            boxes[1].rect.bottom() - line_boxes[1].rect.bottom());
+  EXPECT_EQ(line_boxes[2].rect.top() - boxes[2].rect.top(),
+            boxes[2].rect.bottom() - line_boxes[2].rect.bottom());
+  // With half-leadding, the x coordinates should remain the same.
+  EXPECT_FLOAT_EQ(boxes[1].rect.left(), 0);
+  EXPECT_FLOAT_EQ(boxes[1].rect.right(), 43.851562);
+
+  ASSERT_TRUE(Snapshot());
+}
+
+TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(MixedTextHeightBehaviorSameLine)) {
+  // Both runs will still have the same typeface, but with different text height
+  // behaviors.
+  const char* text = "01234満毎冠行来昼本可abcd";
+  auto icu_text = icu::UnicodeString::fromUTF8(text);
+  std::u16string u16_text(icu_text.getBuffer(),
+                          icu_text.getBuffer() + icu_text.length());
+
+  std::u16string u16_text2(icu_text.getBuffer(),
+                           icu_text.getBuffer() + icu_text.length());
+
+  txt::ParagraphStyle paragraph_style;
+  paragraph_style.max_lines = 10;
+  paragraph_style.text_height_behavior = TextHeightBehavior::kAll;
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
+  text_style.font_size = 20;
+  text_style.letter_spacing = 0;
+  text_style.word_spacing = 0;
+  text_style.color = SK_ColorBLACK;
+  text_style.height = 3.6345;
+  text_style.has_height_override = true;
+  // First run, with half-leading.
+  text_style.has_leading_distribution_override = true;
+  text_style.half_leading = true;
+  builder.PushStyle(text_style);
+  builder.AddText(u16_text);
+
+  // Second run with AD-scaling.
+  text_style.has_leading_distribution_override = true;
+  text_style.half_leading = false;
+
+  builder.PushStyle(text_style);
+  builder.AddText(u16_text2);
+  builder.Pop();
+
+  auto paragraph = BuildParagraph(builder);
+  paragraph->Layout(550);
+
+  paragraph->Paint(GetCanvas(), 0, 0);
+
+  SkPaint paint;
+  paint.setStyle(SkPaint::kStroke_Style);
+  paint.setAntiAlias(true);
+  paint.setStrokeWidth(1);
+  // Tests for GetRectsForRange()
+  Paragraph::RectHeightStyle rect_height_style =
+      Paragraph::RectHeightStyle::kTight;
+  Paragraph::RectHeightStyle rect_height_style_max =
+      Paragraph::RectHeightStyle::kMax;
+  Paragraph::RectWidthStyle rect_width_style =
+      Paragraph::RectWidthStyle::kTight;
+  paint.setColor(SK_ColorRED);
+
+  std::vector<txt::Paragraph::TextBox> boxes = paragraph->GetRectsForRange(
+      0, icu_text.length(), rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+
+  std::vector<txt::Paragraph::TextBox> line_boxes = paragraph->GetRectsForRange(
+      0, icu_text.length(), rect_height_style_max, rect_width_style);
+  // The runs has the same typeface so they should be grouped together.
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_EQ(line_boxes.size(), 1ull);
+
+  const double glyphHeight = boxes[0].rect.height();
+  const double metricsAscent = 18.5546875;
+  const double metricsDescent = 4.8828125;
+  EXPECT_DOUBLE_EQ(glyphHeight, metricsAscent + metricsDescent);
+
+  const double line_height = 3.6345 * 20;
+  const double leading = line_height - glyphHeight;
+
+  // Overall descent is from half-leading and overall ascent is from AD-scaling.
+  EXPECT_NEAR(boxes[0].rect.top() - line_boxes[0].rect.top(),
+              leading * metricsAscent / (metricsAscent + metricsDescent),
+              0.001);
+
+  EXPECT_NEAR(line_boxes[0].rect.bottom() - boxes[0].rect.bottom(),
+              leading * 0.5, 0.001);
+}
+
+TEST_F(ParagraphTest,
+       DISABLE_ON_WINDOWS(MixedTextHeightBehaviorSameLineWithZeroHeight)) {
+  // Both runs will still have the same typeface, but with different text height
+  // behaviors.
+  const char* text = "01234満毎冠行来昼本可abcd";
+  auto icu_text = icu::UnicodeString::fromUTF8(text);
+  std::u16string u16_text(icu_text.getBuffer(),
+                          icu_text.getBuffer() + icu_text.length());
+
+  txt::ParagraphStyle paragraph_style;
+  paragraph_style.max_lines = 10;
+  paragraph_style.text_height_behavior = TextHeightBehavior::kAll;
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
+  text_style.font_size = 20;
+  text_style.letter_spacing = 0;
+  text_style.word_spacing = 0;
+  text_style.color = SK_ColorBLACK;
+  // Set height to 0
+  text_style.height = 0;
+  text_style.has_height_override = true;
+  // First run, with half-leading.
+  text_style.has_leading_distribution_override = true;
+  text_style.half_leading = true;
+  builder.PushStyle(text_style);
+  builder.AddText(u16_text);
+
+  // Second run with AD-scaling.
+  text_style.has_leading_distribution_override = true;
+  text_style.half_leading = false;
+
+  builder.PushStyle(text_style);
+  builder.AddText(u16_text);
+  builder.Pop();
+
+  auto paragraph = BuildParagraph(builder);
+  paragraph->Layout(550);
+
+  paragraph->Paint(GetCanvas(), 0, 0);
+
+  SkPaint paint;
+  paint.setStyle(SkPaint::kStroke_Style);
+  paint.setAntiAlias(true);
+  paint.setStrokeWidth(1);
+  // Tests for GetRectsForRange()
+  Paragraph::RectHeightStyle rect_height_style =
+      Paragraph::RectHeightStyle::kTight;
+  Paragraph::RectHeightStyle rect_height_style_max =
+      Paragraph::RectHeightStyle::kMax;
+  Paragraph::RectWidthStyle rect_width_style =
+      Paragraph::RectWidthStyle::kTight;
+  paint.setColor(SK_ColorRED);
+
+  std::vector<txt::Paragraph::TextBox> boxes = paragraph->GetRectsForRange(
+      0, icu_text.length(), rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+
+  std::vector<txt::Paragraph::TextBox> line_boxes = paragraph->GetRectsForRange(
+      0, icu_text.length(), rect_height_style_max, rect_width_style);
+  // The runs has the same typeface so they should be grouped together.
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_EQ(line_boxes.size(), 1ull);
+
+  const double glyphHeight = boxes[0].rect.height();
+  const double metricsAscent = 18.5546875;
+  const double metricsDescent = 4.8828125;
+  EXPECT_DOUBLE_EQ(glyphHeight, metricsAscent + metricsDescent);
+
+  // line_height for both styled runs is 0, but the overall line height is not
+  // 0.
+  EXPECT_DOUBLE_EQ(line_boxes[0].rect.height(),
+                   metricsAscent - (metricsAscent + metricsDescent) / 2);
+  EXPECT_LT(boxes[0].rect.top(), 0.0);
+  EXPECT_GT(boxes[0].rect.bottom(), 0.0);
+}
+
+TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(HeightOverrideHalfLeadingStrut)) {
+  // All 3 lines will have the same typeface.
+  const char* text = "01234満毎冠行来昼本可\nabcd\n満毎冠行来昼本可";
+  auto icu_text = icu::UnicodeString::fromUTF8(text);
+  std::u16string u16_text(icu_text.getBuffer(),
+                          icu_text.getBuffer() + icu_text.length());
+
+  txt::ParagraphStyle paragraph_style;
+  paragraph_style.max_lines = 10;
+  paragraph_style.strut_enabled = true;
+  paragraph_style.strut_has_height_override = true;
+  paragraph_style.strut_height = 3.6345;
+  paragraph_style.strut_font_size = 20;
+  paragraph_style.strut_font_families.push_back("Roboto");
+  paragraph_style.strut_has_leading_distribution_override = true;
+  paragraph_style.strut_half_leading = true;
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
+  text_style.font_size = 20;
+  text_style.letter_spacing = 0;
+  text_style.word_spacing = 0;
+  text_style.color = SK_ColorBLACK;
+  text_style.height = 3.6345;
+  text_style.has_height_override = true;
+  // Override paragraph_style.text_height_behavior:
+  text_style.has_leading_distribution_override = true;
+  text_style.half_leading = true;
+  builder.PushStyle(text_style);
+
+  builder.AddText(u16_text);
+
+  builder.Pop();
+
+  auto paragraph = BuildParagraph(builder);
+  paragraph->Layout(550);
+
+  paragraph->Paint(GetCanvas(), 0, 0);
+
+  SkPaint paint;
+  paint.setStyle(SkPaint::kStroke_Style);
+  paint.setAntiAlias(true);
+  paint.setStrokeWidth(1);
+
+  // Tests for GetRectsForRange()
+  Paragraph::RectHeightStyle rect_height_style =
+      Paragraph::RectHeightStyle::kTight;
+  Paragraph::RectHeightStyle rect_height_style_max =
+      Paragraph::RectHeightStyle::kMax;
+  Paragraph::RectWidthStyle rect_width_style =
+      Paragraph::RectWidthStyle::kTight;
+  paint.setColor(SK_ColorRED);
+
+  std::vector<txt::Paragraph::TextBox> boxes =
+      paragraph->GetRectsForRange(0, 40, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+
+  std::vector<txt::Paragraph::TextBox> line_boxes = paragraph->GetRectsForRange(
+      0, 40, rect_height_style_max, rect_width_style);
+  EXPECT_EQ(boxes.size(), 3ull);
+  EXPECT_EQ(line_boxes.size(), 3ull);
+
+  const double line_spacing1 = boxes[1].rect.top() - boxes[0].rect.bottom();
+  const double line_spacing2 = boxes[2].rect.top() - boxes[1].rect.bottom();
+
+  EXPECT_EQ(line_spacing1, line_spacing2);
+
+  // Strut half leading.
+  EXPECT_EQ(line_boxes[0].rect.top() - boxes[0].rect.top(),
+            boxes[0].rect.bottom() - line_boxes[0].rect.bottom());
+  EXPECT_EQ(line_boxes[1].rect.top() - boxes[1].rect.top(),
+            boxes[1].rect.bottom() - line_boxes[1].rect.bottom());
+  EXPECT_EQ(line_boxes[2].rect.top() - boxes[2].rect.top(),
+            boxes[2].rect.bottom() - line_boxes[2].rect.bottom());
+
+  EXPECT_FLOAT_EQ(boxes[1].rect.left(), 0);
+  EXPECT_FLOAT_EQ(boxes[1].rect.right(), 43.851562);
+
+  ASSERT_TRUE(Snapshot());
+}
+
+TEST_F(ParagraphTest,
+       DISABLE_ON_WINDOWS(ZeroHeightHalfLeadingStrutForceHeight)) {
+  // All 3 lines will have the same typeface.
+  const char* text = "01234満毎冠行来昼本可abcdn満毎冠行来昼本可";
+  auto icu_text = icu::UnicodeString::fromUTF8(text);
+  std::u16string u16_text(icu_text.getBuffer(),
+                          icu_text.getBuffer() + icu_text.length());
+
+  txt::ParagraphStyle paragraph_style;
+  paragraph_style.max_lines = 10;
+  paragraph_style.strut_enabled = true;
+  paragraph_style.strut_has_height_override = true;
+  paragraph_style.strut_height = 0;
+  // Force strut height.
+  paragraph_style.force_strut_height = true;
+  paragraph_style.strut_font_size = 20;
+  paragraph_style.strut_font_families.push_back("Roboto");
+  paragraph_style.strut_half_leading = true;
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
+  text_style.font_size = 20;
+  text_style.letter_spacing = 0;
+  text_style.word_spacing = 0;
+  text_style.color = SK_ColorBLACK;
+  text_style.height = 0;
+  text_style.has_height_override = true;
+
+  // First run, with half-leading.
+  text_style.has_leading_distribution_override = true;
+  text_style.half_leading = true;
+  builder.PushStyle(text_style);
+  builder.AddText(u16_text);
+
+  // Second run with AD-scaling.
+  text_style.has_leading_distribution_override = true;
+  text_style.half_leading = false;
+
+  builder.PushStyle(text_style);
+  builder.AddText(u16_text);
+  builder.Pop();
+
+  auto paragraph = BuildParagraph(builder);
+  paragraph->Layout(550);
+
+  paragraph->Paint(GetCanvas(), 0, 0);
+
+  SkPaint paint;
+  paint.setStyle(SkPaint::kStroke_Style);
+  paint.setAntiAlias(true);
+  paint.setStrokeWidth(1);
+
+  // Tests for GetRectsForRange()
+  Paragraph::RectHeightStyle rect_height_style =
+      Paragraph::RectHeightStyle::kTight;
+  Paragraph::RectHeightStyle rect_height_style_max =
+      Paragraph::RectHeightStyle::kMax;
+  Paragraph::RectWidthStyle rect_width_style =
+      Paragraph::RectWidthStyle::kTight;
+  paint.setColor(SK_ColorRED);
+
+  std::vector<txt::Paragraph::TextBox> boxes = paragraph->GetRectsForRange(
+      0, icu_text.length(), rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+
+  std::vector<txt::Paragraph::TextBox> line_boxes = paragraph->GetRectsForRange(
+      0, icu_text.length(), rect_height_style_max, rect_width_style);
+  // The runs has the same typeface so they should be grouped together.
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_EQ(line_boxes.size(), 1ull);
+
+  const double glyphHeight = boxes[0].rect.height();
+  const double metricsAscent = 18.5546875;
+  const double metricsDescent = 4.8828125;
+  EXPECT_DOUBLE_EQ(glyphHeight, metricsAscent + metricsDescent);
+
+  EXPECT_DOUBLE_EQ(line_boxes[0].rect.height(), 0.0);
 
   ASSERT_TRUE(Snapshot());
 }
@@ -2429,6 +2944,55 @@ TEST_F(ParagraphTest, LINUX_ONLY(JustifyRTLNewLine)) {
   for (size_t i = 0; i < paragraph->glyph_lines_.size(); ++i) {
     ASSERT_EQ(glyph_line_width(i), paragraph_width);
   }
+}
+
+TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(JustifyPlaceholder)) {
+  const char* text1 = "A ";
+  auto icu_text1 = icu::UnicodeString::fromUTF8(text1);
+  std::u16string u16_text1(icu_text1.getBuffer(),
+                           icu_text1.getBuffer() + icu_text1.length());
+
+  txt::PlaceholderRun placeholder_run(60, 60, PlaceholderAlignment::kBaseline,
+                                      TextBaseline::kAlphabetic, 0);
+
+  const char* text2 = " B CCCCC";
+  auto icu_text2 = icu::UnicodeString::fromUTF8(text2);
+  std::u16string u16_text2(icu_text2.getBuffer(),
+                           icu_text2.getBuffer() + icu_text2.length());
+
+  txt::ParagraphStyle paragraph_style;
+  paragraph_style.text_align = TextAlign::justify;
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  text_style.font_families = std::vector<std::string>(1, "Ahem");
+  text_style.font_size = 20;
+  text_style.decoration_color = SK_ColorBLACK;
+  builder.PushStyle(text_style);
+
+  builder.AddText(u16_text1);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddText(u16_text2);
+
+  builder.Pop();
+
+  auto paragraph = BuildParagraph(builder);
+  paragraph->Layout(200);
+
+  Paragraph::RectHeightStyle rect_height_style =
+      Paragraph::RectHeightStyle::kTight;
+  Paragraph::RectWidthStyle rect_width_style =
+      Paragraph::RectWidthStyle::kTight;
+
+  // Check location of placeholder at the center of the line.
+  std::vector<txt::Paragraph::TextBox> boxes =
+      paragraph->GetRectsForRange(2, 3, rect_height_style, rect_width_style);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 70);
+
+  // Check location of character B at the end of the line.
+  boxes =
+      paragraph->GetRectsForRange(4, 5, rect_height_style, rect_width_style);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 180);
 }
 
 TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(LeadingSpaceRTL)) {
@@ -6530,4 +7094,68 @@ TEST_F(ParagraphTest, TextHeightBehaviorRectsParagraph) {
   ASSERT_TRUE(Snapshot());
 }
 
+TEST_F(ParagraphTest, MixedTextHeightBehaviorRectsParagraph) {
+  const char* text = "0123456789";
+  auto icu_text = icu::UnicodeString::fromUTF8(text);
+  std::u16string u16_text(icu_text.getBuffer(),
+                          icu_text.getBuffer() + icu_text.length());
+
+  txt::ParagraphStyle paragraph_style;
+  // The paragraph's first line and the last line use the font's ascent/descent.
+  paragraph_style.text_height_behavior =
+      txt::TextHeightBehavior::kDisableFirstAscent |
+      txt::TextHeightBehavior::kDisableLastDescent;
+
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  text_style.color = SK_ColorBLACK;
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
+  text_style.font_size = 30;
+  text_style.height = 5;
+  text_style.has_height_override = true;
+  text_style.has_leading_distribution_override = true;
+  text_style.half_leading = true;
+
+  builder.PushStyle(text_style);
+  builder.AddText(u16_text);
+
+  text_style.half_leading = false;
+  builder.PushStyle(text_style);
+  builder.AddText(u16_text);
+
+  // 2 identical runs except the first run has half-leading enabled.
+  builder.Pop();
+
+  auto paragraph = BuildParagraph(builder);
+  paragraph->Layout(GetTestCanvasWidth() - 300);
+
+  paragraph->Paint(GetCanvas(), 0, 0);
+
+  SkPaint paint;
+  paint.setStyle(SkPaint::kStroke_Style);
+  paint.setAntiAlias(true);
+  paint.setStrokeWidth(1);
+
+  // Tests for GetRectsForRange()
+  Paragraph::RectHeightStyle rect_height_style =
+      Paragraph::RectHeightStyle::kMax;
+  Paragraph::RectWidthStyle rect_width_style =
+      Paragraph::RectWidthStyle::kTight;
+  paint.setColor(SK_ColorRED);
+  std::vector<txt::Paragraph::TextBox> boxes =
+      paragraph->GetRectsForRange(0, 20, rect_height_style, rect_width_style);
+
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  // The kDisableAll flag is applied.
+  EXPECT_GT(boxes.size(), 1ull);
+  // The height of the line equals to the metrics height of the font
+  // (ascent + descent).
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom() - boxes[0].rect.top(),
+                  27.8320312 + 7.32421875);
+
+  ASSERT_TRUE(Snapshot());
+}
 }  // namespace txt

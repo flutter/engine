@@ -103,14 +103,24 @@ TEST_F(AccessibilityBridgeTest, EnableDisable) {
   EXPECT_TRUE(accessibility_delegate_.enabled());
 }
 
+TEST_F(AccessibilityBridgeTest, RequestAnnounce) {
+  accessibility_bridge_->RequestAnnounce("message");
+  RunLoopUntilIdle();
+
+  auto& last_events = semantics_manager_.GetLastEvents();
+  ASSERT_EQ(last_events.size(), 1u);
+  ASSERT_TRUE(last_events[0].is_announce());
+  EXPECT_EQ(last_events[0].announce().message(), "message");
+}
+
 TEST_F(AccessibilityBridgeTest, UpdatesNodeRoles) {
   flutter::SemanticsNodeUpdates updates;
 
   flutter::SemanticsNode node0;
   node0.id = 0;
   node0.flags |= static_cast<int>(flutter::SemanticsFlags::kIsButton);
-  node0.childrenInTraversalOrder = {1, 2, 3, 4, 5, 6, 7};
-  node0.childrenInHitTestOrder = {1, 2, 3, 4, 5, 6, 7};
+  node0.childrenInTraversalOrder = {1, 2, 3, 4, 5, 6, 7, 8};
+  node0.childrenInHitTestOrder = {1, 2, 3, 4, 5, 6, 7, 8};
   updates.emplace(0, node0);
 
   flutter::SemanticsNode node1;
@@ -164,6 +174,13 @@ TEST_F(AccessibilityBridgeTest, UpdatesNodeRoles) {
   node7.flags |= static_cast<int>(flutter::SemanticsFlags::kHasCheckedState);
   updates.emplace(7, node7);
 
+  flutter::SemanticsNode node8;
+  node8.childrenInTraversalOrder = {};
+  node8.childrenInHitTestOrder = {};
+  node8.id = 8;
+  node8.flags |= static_cast<int>(flutter::SemanticsFlags::kHasToggledState);
+  updates.emplace(7, node8);
+
   accessibility_bridge_->AddSemanticsNodeUpdate(std::move(updates), 1.f);
   RunLoopUntilIdle();
 
@@ -176,7 +193,8 @@ TEST_F(AccessibilityBridgeTest, UpdatesNodeRoles) {
           {4u, fuchsia::accessibility::semantics::Role::SLIDER},
           {5u, fuchsia::accessibility::semantics::Role::LINK},
           {6u, fuchsia::accessibility::semantics::Role::RADIO_BUTTON},
-          {7u, fuchsia::accessibility::semantics::Role::CHECK_BOX}};
+          {7u, fuchsia::accessibility::semantics::Role::CHECK_BOX},
+          {8u, fuchsia::accessibility::semantics::Role::TOGGLE_SWITCH}};
 
   EXPECT_EQ(0, semantics_manager_.DeleteCount());
   EXPECT_EQ(1, semantics_manager_.UpdateCount());
@@ -363,6 +381,31 @@ TEST_F(AccessibilityBridgeTest, PopulatesSelectedState) {
             fuchsia::accessibility::semantics::CheckedState::NONE);
   EXPECT_TRUE(states.has_selected());
   EXPECT_TRUE(states.selected());
+
+  EXPECT_FALSE(semantics_manager_.DeleteOverflowed());
+  EXPECT_FALSE(semantics_manager_.UpdateOverflowed());
+}
+
+TEST_F(AccessibilityBridgeTest, PopulatesToggledState) {
+  flutter::SemanticsNode node0;
+  node0.id = 0;
+  node0.flags |= static_cast<int>(flutter::SemanticsFlags::kHasToggledState);
+  node0.flags |= static_cast<int>(flutter::SemanticsFlags::kIsToggled);
+
+  accessibility_bridge_->AddSemanticsNodeUpdate({{0, node0}}, 1.f);
+  RunLoopUntilIdle();
+
+  EXPECT_EQ(0, semantics_manager_.DeleteCount());
+  EXPECT_EQ(1, semantics_manager_.UpdateCount());
+  EXPECT_EQ(1, semantics_manager_.CommitCount());
+  EXPECT_EQ(1U, semantics_manager_.LastUpdatedNodes().size());
+  const auto& fuchsia_node = semantics_manager_.LastUpdatedNodes().at(0u);
+  EXPECT_EQ(fuchsia_node.node_id(), static_cast<unsigned int>(node0.id));
+  EXPECT_TRUE(fuchsia_node.has_states());
+  const auto& states = fuchsia_node.states();
+  EXPECT_TRUE(states.has_toggled_state());
+  EXPECT_EQ(states.toggled_state(),
+            fuchsia::accessibility::semantics::ToggledState::ON);
 
   EXPECT_FALSE(semantics_manager_.DeleteOverflowed());
   EXPECT_FALSE(semantics_manager_.UpdateOverflowed());
@@ -683,23 +726,32 @@ TEST_F(AccessibilityBridgeTest, HitTest) {
   flutter::SemanticsNode node0;
   node0.id = 0;
   node0.rect.setLTRB(0, 0, 100, 100);
+  node0.flags |= static_cast<int32_t>(flutter::SemanticsFlags::kIsFocusable);
 
   flutter::SemanticsNode node1;
   node1.id = 1;
   node1.rect.setLTRB(10, 10, 20, 20);
+  // Setting platform view id ensures this node is considered focusable.
+  node1.platformViewId = 1u;
 
   flutter::SemanticsNode node2;
   node2.id = 2;
   node2.rect.setLTRB(25, 10, 45, 20);
+  // Setting label ensures this node is considered focusable.
+  node2.label = "label";
 
   flutter::SemanticsNode node3;
   node3.id = 3;
   node3.rect.setLTRB(10, 25, 20, 45);
+  // Setting actions to a nonzero value ensures this node is considered
+  // focusable.
+  node3.actions = 1u;
 
   flutter::SemanticsNode node4;
   node4.id = 4;
   node4.rect.setLTRB(10, 10, 20, 20);
   node4.transform.setTranslate(20, 20, 0);
+  node4.flags |= static_cast<int32_t>(flutter::SemanticsFlags::kIsFocusable);
 
   node0.childrenInTraversalOrder = {1, 2, 3, 4};
   node0.childrenInHitTestOrder = {1, 2, 3, 4};
@@ -739,20 +791,59 @@ TEST_F(AccessibilityBridgeTest, HitTest) {
   EXPECT_EQ(hit_node_id, 4u);
 }
 
-TEST_F(AccessibilityBridgeTest, HitTestOverlapping) {
-  // Tests that the first node in hit test order wins, even if a later node
-  // would be able to recieve the hit.
+TEST_F(AccessibilityBridgeTest, HitTestUnfocusableChild) {
   flutter::SemanticsNode node0;
   node0.id = 0;
   node0.rect.setLTRB(0, 0, 100, 100);
 
   flutter::SemanticsNode node1;
   node1.id = 1;
+  node1.rect.setLTRB(10, 10, 60, 60);
+
+  flutter::SemanticsNode node2;
+  node2.id = 2;
+  node2.rect.setLTRB(50, 50, 100, 100);
+  node2.flags |= static_cast<int32_t>(flutter::SemanticsFlags::kIsFocusable);
+
+  node0.childrenInTraversalOrder = {1, 2};
+  node0.childrenInHitTestOrder = {1, 2};
+
+  accessibility_bridge_->AddSemanticsNodeUpdate(
+      {
+          {0, node0},
+          {1, node1},
+          {2, node2},
+      },
+      1.f);
+  RunLoopUntilIdle();
+
+  uint32_t hit_node_id;
+  auto callback = [&hit_node_id](fuchsia::accessibility::semantics::Hit hit) {
+    EXPECT_TRUE(hit.has_node_id());
+    hit_node_id = hit.node_id();
+  };
+
+  accessibility_bridge_->HitTest({55, 55}, callback);
+  EXPECT_EQ(hit_node_id, 2u);
+}
+
+TEST_F(AccessibilityBridgeTest, HitTestOverlapping) {
+  // Tests that the first node in hit test order wins, even if a later node
+  // would be able to recieve the hit.
+  flutter::SemanticsNode node0;
+  node0.id = 0;
+  node0.rect.setLTRB(0, 0, 100, 100);
+  node0.flags |= static_cast<int32_t>(flutter::SemanticsFlags::kIsFocusable);
+
+  flutter::SemanticsNode node1;
+  node1.id = 1;
   node1.rect.setLTRB(0, 0, 100, 100);
+  node1.flags |= static_cast<int32_t>(flutter::SemanticsFlags::kIsFocusable);
 
   flutter::SemanticsNode node2;
   node2.id = 2;
   node2.rect.setLTRB(25, 10, 45, 20);
+  node2.flags |= static_cast<int32_t>(flutter::SemanticsFlags::kIsFocusable);
 
   node0.childrenInTraversalOrder = {1, 2};
   node0.childrenInHitTestOrder = {2, 1};

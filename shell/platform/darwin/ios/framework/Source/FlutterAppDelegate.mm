@@ -11,9 +11,10 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Internal.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPluginAppLifeCycleDelegate_internal.h"
 
-static NSString* kUIBackgroundMode = @"UIBackgroundModes";
-static NSString* kRemoteNotificationCapabitiliy = @"remote-notification";
-static NSString* kBackgroundFetchCapatibility = @"fetch";
+static NSString* const kUIBackgroundMode = @"UIBackgroundModes";
+static NSString* const kRemoteNotificationCapabitiliy = @"remote-notification";
+static NSString* const kBackgroundFetchCapatibility = @"fetch";
+static NSString* const kRestorationStateAppModificationKey = @"mod-date";
 
 @interface FlutterAppDelegate ()
 @property(nonatomic, copy) FlutterViewController* (^rootFlutterViewControllerGetter)(void);
@@ -158,8 +159,13 @@ static BOOL IsDeepLinkingEnabled(NSDictionary* infoDictionary) {
                        FML_LOG(ERROR)
                            << "Timeout waiting for the first frame when launching an URL.";
                      } else {
+                       NSString* pathAndQuery = url.path;
+                       if ([url.query length] != 0) {
+                         pathAndQuery =
+                             [NSString stringWithFormat:@"%@?%@", pathAndQuery, url.query];
+                       }
                        [flutterViewController.engine.navigationChannel invokeMethod:@"pushRoute"
-                                                                          arguments:url.path];
+                                                                          arguments:pathAndQuery];
                      }
                    }];
       return YES;
@@ -306,6 +312,39 @@ static BOOL IsDeepLinkingEnabled(NSDictionary* infoDictionary) {
             @"to the list of your supported UIBackgroundModes in your Info.plist.");
     }
   }
+}
+
+#pragma mark - State Restoration
+
+- (BOOL)application:(UIApplication*)application shouldSaveApplicationState:(NSCoder*)coder {
+  [coder encodeInt64:self.lastAppModificationTime forKey:kRestorationStateAppModificationKey];
+  return YES;
+}
+
+- (BOOL)application:(UIApplication*)application shouldRestoreApplicationState:(NSCoder*)coder {
+  int64_t stateDate = [coder decodeInt64ForKey:kRestorationStateAppModificationKey];
+  return self.lastAppModificationTime == stateDate;
+}
+
+- (BOOL)application:(UIApplication*)application shouldSaveSecureApplicationState:(NSCoder*)coder {
+  [coder encodeInt64:self.lastAppModificationTime forKey:kRestorationStateAppModificationKey];
+  return YES;
+}
+
+- (BOOL)application:(UIApplication*)application
+    shouldRestoreSecureApplicationState:(NSCoder*)coder {
+  int64_t stateDate = [coder decodeInt64ForKey:kRestorationStateAppModificationKey];
+  return self.lastAppModificationTime == stateDate;
+}
+
+- (int64_t)lastAppModificationTime {
+  NSDate* fileDate;
+  NSError* error = nil;
+  [[[NSBundle mainBundle] executableURL] getResourceValue:&fileDate
+                                                   forKey:NSURLContentModificationDateKey
+                                                    error:&error];
+  NSAssert(error == nil, @"Cannot obtain modification date of main bundle: %@", error);
+  return [fileDate timeIntervalSince1970];
 }
 
 @end

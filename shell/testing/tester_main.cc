@@ -118,7 +118,7 @@ int RunTester(const flutter::Settings& settings,
   if (multithreaded) {
     threadhost = std::make_unique<ThreadHost>(
         thread_label, ThreadHost::Type::Platform | ThreadHost::Type::IO |
-                          ThreadHost::Type::UI | ThreadHost::Type::GPU);
+                          ThreadHost::Type::UI | ThreadHost::Type::RASTER);
     platform_task_runner = current_task_runner;
     raster_task_runner = threadhost->raster_thread->GetTaskRunner();
     ui_task_runner = threadhost->ui_thread->GetTaskRunner();
@@ -144,14 +144,15 @@ int RunTester(const flutter::Settings& settings,
     return std::make_unique<Rasterizer>(shell);
   };
 
-  auto shell = Shell::Create(task_runners,             //
+  auto shell = Shell::Create(flutter::PlatformData(),  //
+                             task_runners,             //
                              settings,                 //
                              on_create_platform_view,  //
                              on_create_rasterizer      //
   );
 
   if (!shell || !shell->IsSetup()) {
-    FML_LOG(ERROR) << "Could not setup the shell.";
+    FML_LOG(ERROR) << "Could not set up the shell.";
     return EXIT_FAILURE;
   }
 

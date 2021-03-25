@@ -191,7 +191,7 @@ void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline,
   }
 
   // EndFrame should perform cleanups for the external_view_embedder.
-  if (external_view_embedder_) {
+  if (surface_ && external_view_embedder_) {
     external_view_embedder_->EndFrame(should_resubmit_frame,
                                       raster_thread_merger_);
   }
@@ -466,11 +466,23 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
         raster_status == RasterStatus::kSkipAndRetry) {
       return raster_status;
     }
+    if (shared_engine_block_thread_merging_ && raster_thread_merger_ &&
+        raster_thread_merger_->IsMerged()) {
+      // TODO(73620): Remove when platform views are accounted for.
+      FML_LOG(ERROR)
+          << "Error: Thread merging not implemented for engines with shared "
+             "components.\n\n"
+             "This is likely a result of using platform views with enigne "
+             "groups.  See "
+             "https://github.com/flutter/flutter/issues/73620.";
+      fml::KillProcess();
+    }
     if (external_view_embedder_ &&
         (!raster_thread_merger_ || raster_thread_merger_->IsMerged())) {
       FML_DCHECK(!frame->IsSubmitted());
-      external_view_embedder_->SubmitFrame(surface_->GetContext(),
-                                           std::move(frame));
+      external_view_embedder_->SubmitFrame(
+          surface_->GetContext(), std::move(frame),
+          delegate_.GetIsGpuDisabledSyncSwitch());
     } else {
       frame->Submit();
     }

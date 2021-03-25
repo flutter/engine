@@ -4,8 +4,11 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterSurfaceManager.h"
 
-#include <OpenGL/gl.h>
+#import <Metal/Metal.h>
+#import <OpenGL/gl.h>
 
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterFrameBufferProvider.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterIOSurfaceHolder.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/MacOSGLContextSwitch.h"
 
 enum {
@@ -14,50 +17,27 @@ enum {
   kFlutterSurfaceManagerBufferCount,
 };
 
-@interface FlutterSurfaceManager () {
-  CGSize _surfaceSize;
+@implementation FlutterIOSurfaceManager {
   CALayer* _containingLayer;  // provided (parent layer)
   CALayer* _contentLayer;
+  CATransform3D _contentTransform;
 
-  NSOpenGLContext* _openGLContext;
-  uint32_t _frameBufferId[kFlutterSurfaceManagerBufferCount];
-  uint32_t _backingTexture[kFlutterSurfaceManagerBufferCount];
-  IOSurfaceRef _ioSurface[kFlutterSurfaceManagerBufferCount];
+  CGSize _surfaceSize;
+  FlutterIOSurfaceHolder* _ioSurfaces[kFlutterSurfaceManagerBufferCount];
 }
-@end
 
-@implementation FlutterSurfaceManager
-
-- (instancetype)initWithLayer:(CALayer*)containingLayer
-                openGLContext:(NSOpenGLContext*)openGLContext {
-  if (self = [super init]) {
+- (instancetype)initWithLayer:(CALayer*)containingLayer contentTransform:(CATransform3D)transform {
+  self = [super init];
+  if (self) {
     _containingLayer = containingLayer;
-    _openGLContext = openGLContext;
-
-    // Layer for content. This is separate from provided layer, because it needs to be flipped
-    // vertically if we render to OpenGL texture
+    _contentTransform = transform;
     _contentLayer = [[CALayer alloc] init];
     [_containingLayer addSublayer:_contentLayer];
 
-    MacOSGLContextSwitch context_switch(openGLContext);
-
-    glGenFramebuffers(2, _frameBufferId);
-    glGenTextures(2, _backingTexture);
-
-    [self createFramebuffer:_frameBufferId[0] withBackingTexture:_backingTexture[0]];
-    [self createFramebuffer:_frameBufferId[1] withBackingTexture:_backingTexture[1]];
+    _ioSurfaces[0] = [[FlutterIOSurfaceHolder alloc] init];
+    _ioSurfaces[1] = [[FlutterIOSurfaceHolder alloc] init];
   }
   return self;
-}
-
-- (void)createFramebuffer:(uint32_t)fbo withBackingTexture:(uint32_t)texture {
-  glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-  glBindTexture(GL_TEXTURE_RECTANGLE_ARB, texture);
-  glTexParameterf(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glTexParameterf(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  glBindTexture(GL_TEXTURE_RECTANGLE_ARB, 0);
 }
 
 - (void)ensureSurfaceSize:(CGSize)size {
@@ -65,71 +45,116 @@ enum {
     return;
   }
   _surfaceSize = size;
-
-  MacOSGLContextSwitch context_switch(_openGLContext);
-
   for (int i = 0; i < kFlutterSurfaceManagerBufferCount; ++i) {
-    if (_ioSurface[i]) {
-      CFRelease(_ioSurface[i]);
-    }
-    unsigned pixelFormat = 'BGRA';
-    unsigned bytesPerElement = 4;
-
-    size_t bytesPerRow =
-        IOSurfaceAlignProperty(kIOSurfaceBytesPerRow, size.width * bytesPerElement);
-    size_t totalBytes = IOSurfaceAlignProperty(kIOSurfaceAllocSize, size.height * bytesPerRow);
-    NSDictionary* options = @{
-      (id)kIOSurfaceWidth : @(size.width),
-      (id)kIOSurfaceHeight : @(size.height),
-      (id)kIOSurfacePixelFormat : @(pixelFormat),
-      (id)kIOSurfaceBytesPerElement : @(bytesPerElement),
-      (id)kIOSurfaceBytesPerRow : @(bytesPerRow),
-      (id)kIOSurfaceAllocSize : @(totalBytes),
-    };
-    _ioSurface[i] = IOSurfaceCreate((CFDictionaryRef)options);
-
-    glBindTexture(GL_TEXTURE_RECTANGLE_ARB, _backingTexture[i]);
-
-    CGLTexImageIOSurface2D(CGLGetCurrentContext(), GL_TEXTURE_RECTANGLE_ARB, GL_RGBA,
-                           int(size.width), int(size.height), GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV,
-                           _ioSurface[i], 0 /* plane */);
-    glBindTexture(GL_TEXTURE_RECTANGLE_ARB, 0);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, _frameBufferId[i]);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_RECTANGLE_ARB,
-                           _backingTexture[i], 0);
-
-    NSAssert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE,
-             @"Framebuffer status check failed");
+    [_ioSurfaces[i] recreateIOSurfaceWithSize:size];
+    [_delegate onUpdateSurface:_ioSurfaces[i] bufferIndex:i size:size];
   }
 }
 
 - (void)swapBuffers {
   _contentLayer.frame = _containingLayer.bounds;
+  _contentLayer.transform = _contentTransform;
+  IOSurfaceRef contentIOSurface = [_ioSurfaces[kFlutterSurfaceManagerBackBuffer] ioSurface];
+  [_contentLayer setContents:(__bridge id)contentIOSurface];
 
-  // The surface is an OpenGL texture, which means it has origin in bottom left corner
-  // and needs to be flipped vertically
-  _contentLayer.transform = CATransform3DMakeScale(1, -1, 1);
-  [_contentLayer setContents:(__bridge id)_ioSurface[kFlutterSurfaceManagerBackBuffer]];
-
-  std::swap(_ioSurface[kFlutterSurfaceManagerBackBuffer],
-            _ioSurface[kFlutterSurfaceManagerFrontBuffer]);
-  std::swap(_frameBufferId[kFlutterSurfaceManagerBackBuffer],
-            _frameBufferId[kFlutterSurfaceManagerFrontBuffer]);
-  std::swap(_backingTexture[kFlutterSurfaceManagerBackBuffer],
-            _backingTexture[kFlutterSurfaceManagerFrontBuffer]);
+  std::swap(_ioSurfaces[kFlutterSurfaceManagerBackBuffer],
+            _ioSurfaces[kFlutterSurfaceManagerFrontBuffer]);
+  [_delegate onSwapBuffers];
 }
 
-- (uint32_t)glFrameBufferId {
-  return _frameBufferId[kFlutterSurfaceManagerBackBuffer];
+- (nonnull FlutterRenderBackingStore*)renderBuffer {
+  @throw([NSException exceptionWithName:@"Sub-classes FlutterIOSurfaceManager of"
+                                         " must override renderBuffer."
+                                 reason:nil
+                               userInfo:nil]);
 }
 
-- (void)dealloc {
-  for (int i = 0; i < kFlutterSurfaceManagerBufferCount; ++i) {
-    if (_ioSurface[i]) {
-      CFRelease(_ioSurface[i]);
-    }
+@end
+
+@implementation FlutterGLSurfaceManager {
+  NSOpenGLContext* _openGLContext;
+
+  FlutterFrameBufferProvider* _frameBuffers[kFlutterSurfaceManagerBufferCount];
+}
+
+- (instancetype)initWithLayer:(CALayer*)containingLayer
+                openGLContext:(NSOpenGLContext*)openGLContext {
+  self = [super initWithLayer:containingLayer contentTransform:CATransform3DMakeScale(1, -1, 1)];
+
+  if (self) {
+    super.delegate = self;
+    _openGLContext = openGLContext;
+
+    _frameBuffers[0] = [[FlutterFrameBufferProvider alloc] initWithOpenGLContext:_openGLContext];
+    _frameBuffers[1] = [[FlutterFrameBufferProvider alloc] initWithOpenGLContext:_openGLContext];
   }
+  return self;
+}
+
+- (FlutterRenderBackingStore*)renderBuffer {
+  uint32_t fboID = [_frameBuffers[kFlutterSurfaceManagerBackBuffer] glFrameBufferId];
+  return [[FlutterOpenGLRenderBackingStore alloc] initWithFrameBufferID:fboID];
+}
+
+- (void)onSwapBuffers {
+  std::swap(_frameBuffers[kFlutterSurfaceManagerBackBuffer],
+            _frameBuffers[kFlutterSurfaceManagerFrontBuffer]);
+}
+
+- (void)onUpdateSurface:(FlutterIOSurfaceHolder*)surface
+            bufferIndex:(size_t)index
+                   size:(CGSize)size {
+  MacOSGLContextSwitch context_switch(_openGLContext);
+  GLuint fbo = [_frameBuffers[index] glFrameBufferId];
+  GLuint texture = [_frameBuffers[index] glTextureId];
+  [surface bindSurfaceToTexture:texture fbo:fbo size:size];
+}
+
+@end
+
+@implementation FlutterMetalSurfaceManager {
+  id<MTLDevice> _device;
+  id<MTLCommandQueue> _commandQueue;
+
+  id<MTLTexture> _textures[kFlutterSurfaceManagerBufferCount];
+}
+
+- (nullable instancetype)initWithDevice:(nonnull id<MTLDevice>)device
+                           commandQueue:(nonnull id<MTLCommandQueue>)commandQueue
+                             metalLayer:(nonnull CAMetalLayer*)layer {
+  self = [super initWithLayer:layer contentTransform:CATransform3DIdentity];
+  if (self) {
+    super.delegate = self;
+    _device = device;
+    _commandQueue = commandQueue;
+  }
+  return self;
+}
+
+- (FlutterRenderBackingStore*)renderBuffer {
+  id<MTLTexture> texture = _textures[kFlutterSurfaceManagerBackBuffer];
+  return [[FlutterMetalRenderBackingStore alloc] initWithTexture:texture];
+}
+
+- (void)onSwapBuffers {
+  std::swap(_textures[kFlutterSurfaceManagerBackBuffer],
+            _textures[kFlutterSurfaceManagerFrontBuffer]);
+}
+
+- (void)onUpdateSurface:(FlutterIOSurfaceHolder*)surface
+            bufferIndex:(size_t)index
+                   size:(CGSize)size {
+  MTLTextureDescriptor* textureDescriptor =
+      [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatBGRA8Unorm
+                                                         width:size.width
+                                                        height:size.height
+                                                     mipmapped:NO];
+  textureDescriptor.usage =
+      MTLTextureUsageShaderRead | MTLTextureUsageRenderTarget | MTLTextureUsageShaderWrite;
+  // plane = 0 for BGRA.
+  _textures[index] = [_device newTextureWithDescriptor:textureDescriptor
+                                             iosurface:[surface ioSurface]
+                                                 plane:0];
 }
 
 @end

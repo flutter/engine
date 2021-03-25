@@ -9,6 +9,7 @@
 #include <optional>
 #include <set>
 #include <string>
+#include <unordered_set>
 
 #include "flutter/common/task_runners.h"
 #include "flutter/fml/compiler_specific.h"
@@ -205,7 +206,9 @@ class DartIsolate : public UIDartState {
   ///                                         for all isolate shutdowns
   ///                                         (including the children of the
   ///                                         root isolate).
-  ///
+  /// @param[in]  spawning_isolate            The isolate that is spawning the
+  ///                                         new isolate. See also
+  ///                                         DartIsolate::SpawnIsolate.
   /// @return     A weak pointer to the root Dart isolate. The caller must
   ///             ensure that the isolate is not referenced for long periods of
   ///             time as it prevents isolate collection when the isolate
@@ -229,7 +232,38 @@ class DartIsolate : public UIDartState {
       const fml::closure& isolate_shutdown_callback,
       std::optional<std::string> dart_entrypoint,
       std::optional<std::string> dart_entrypoint_library,
-      std::unique_ptr<IsolateConfiguration> isolate_configration);
+      std::unique_ptr<IsolateConfiguration> isolate_configration,
+      std::shared_ptr<VolatilePathTracker> volatile_path_tracker,
+      const DartIsolate* spawning_isolate = nullptr);
+
+  //----------------------------------------------------------------------------
+  /// @brief     Creates a running DartIsolate who shares as many resources as
+  ///            possible with the caller DartIsolate.  This allows them to
+  ///            occupy less memory together and to be created faster.
+  /// @details   Shared components will be destroyed when the last live
+  ///            DartIsolate is destroyed.  SpawnIsolate can only be used to
+  ///            create DartIsolates whose executable code is shared with the
+  ///            calling DartIsolate.
+  /// @attention Only certain setups can take advantage of the most savings
+  ///            currently, AOT specifically.
+  /// @return     A weak pointer to a new running DartIsolate. The caller must
+  ///             ensure that the isolate is not referenced for long periods of
+  ///             time as it prevents isolate collection when the isolate
+  ///             terminates itself. The caller may also only use the isolate on
+  ///             the thread on which the isolate was created.
+  std::weak_ptr<DartIsolate> SpawnIsolate(
+      const Settings& settings,
+      std::unique_ptr<PlatformConfiguration> platform_configuration,
+      fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
+      fml::WeakPtr<HintFreedDelegate> hint_freed_delegate,
+      std::string advisory_script_uri,
+      std::string advisory_script_entrypoint,
+      Flags flags,
+      const fml::closure& isolate_create_callback,
+      const fml::closure& isolate_shutdown_callback,
+      std::optional<std::string> dart_entrypoint,
+      std::optional<std::string> dart_entrypoint_library,
+      std::unique_ptr<IsolateConfiguration> isolate_configration) const;
 
   // |UIDartState|
   ~DartIsolate() override;
@@ -384,6 +418,15 @@ class DartIsolate : public UIDartState {
   ///
   fml::RefPtr<fml::TaskRunner> GetMessageHandlingTaskRunner() const;
 
+  bool LoadLoadingUnit(
+      intptr_t loading_unit_id,
+      std::unique_ptr<const fml::Mapping> snapshot_data,
+      std::unique_ptr<const fml::Mapping> snapshot_instructions);
+
+  void LoadLoadingUnitError(intptr_t loading_unit_id,
+                            const std::string error_message,
+                            bool transient);
+
  private:
   friend class IsolateConfiguration;
   class AutoFireClosure {
@@ -401,6 +444,7 @@ class DartIsolate : public UIDartState {
   Phase phase_ = Phase::Unknown;
   std::vector<std::shared_ptr<const fml::Mapping>> kernel_buffers_;
   std::vector<std::unique_ptr<AutoFireClosure>> shutdown_callbacks_;
+  std::unordered_set<fml::RefPtr<DartSnapshot>> loading_unit_snapshots_;
   fml::RefPtr<fml::TaskRunner> message_handling_task_runner_;
   const bool may_insecurely_connect_to_all_domains_;
   std::string domain_network_policy_;
@@ -419,7 +463,9 @@ class DartIsolate : public UIDartState {
       std::string advisory_script_entrypoint,
       Flags flags,
       const fml::closure& isolate_create_callback,
-      const fml::closure& isolate_shutdown_callback);
+      const fml::closure& isolate_shutdown_callback,
+      std::shared_ptr<VolatilePathTracker> volatile_path_tracker,
+      const DartIsolate* spawning_isolate = nullptr);
 
   DartIsolate(const Settings& settings,
               TaskRunners task_runners,
@@ -430,7 +476,8 @@ class DartIsolate : public UIDartState {
               fml::WeakPtr<ImageDecoder> image_decoder,
               std::string advisory_script_uri,
               std::string advisory_script_entrypoint,
-              bool is_root_isolate);
+              bool is_root_isolate,
+              std::shared_ptr<VolatilePathTracker> volatile_path_tracker);
 
   [[nodiscard]] bool Initialize(Dart_Isolate isolate);
 
@@ -447,6 +494,8 @@ class DartIsolate : public UIDartState {
   void OnShutdownCallback();
 
   DartIsolateGroupData& GetIsolateGroupData();
+
+  const DartIsolateGroupData& GetIsolateGroupData() const;
 
   // |Dart_IsolateGroupCreateCallback|
   static Dart_Isolate DartIsolateGroupCreateCallback(
@@ -468,11 +517,18 @@ class DartIsolate : public UIDartState {
       Dart_IsolateFlags* flags,
       char** error);
 
+  typedef std::function<Dart_Isolate(std::shared_ptr<DartIsolateGroupData>*,
+                                     std::shared_ptr<DartIsolate>*,
+                                     Dart_IsolateFlags*,
+                                     char**)>
+      IsolateMaker;
+
   static Dart_Isolate CreateDartIsolateGroup(
       std::unique_ptr<std::shared_ptr<DartIsolateGroupData>> isolate_group_data,
       std::unique_ptr<std::shared_ptr<DartIsolate>> isolate_data,
       Dart_IsolateFlags* flags,
-      char** error);
+      char** error,
+      const IsolateMaker& make_isolate);
 
   static bool InitializeIsolate(std::shared_ptr<DartIsolate> embedder_isolate,
                                 Dart_Isolate isolate,
@@ -491,6 +547,9 @@ class DartIsolate : public UIDartState {
   // |Dart_IsolateGroupCleanupCallback|
   static void DartIsolateGroupCleanupCallback(
       std::shared_ptr<DartIsolateGroupData>* isolate_group_data);
+
+  // |Dart_DeferredLoadHandler|
+  static Dart_Handle OnDartLoadLibrary(intptr_t loading_unit_id);
 
   FML_DISALLOW_COPY_AND_ASSIGN(DartIsolate);
 };

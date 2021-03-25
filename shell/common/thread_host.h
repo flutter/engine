@@ -17,7 +17,7 @@ struct ThreadHost {
   enum Type {
     Platform = 1 << 0,
     UI = 1 << 1,
-    GPU = 1 << 2,
+    RASTER = 1 << 2,
     IO = 1 << 3,
     Profiler = 1 << 4,
   };
@@ -38,8 +38,6 @@ struct ThreadHost {
   ThreadHost(std::string name_prefix, uint64_t type_mask);
 
   ~ThreadHost();
-
-  void Reset();
 };
 
 }  // namespace flutter

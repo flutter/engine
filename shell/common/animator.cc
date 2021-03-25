@@ -29,9 +29,9 @@ Animator::Animator(Delegate& delegate,
       last_vsync_start_time_(),
       last_frame_target_time_(),
       dart_frame_deadline_(0),
-#if FLUTTER_SHELL_ENABLE_METAL
+#if SHELL_ENABLE_METAL
       layer_tree_pipeline_(fml::MakeRefCounted<LayerTreePipeline>(2)),
-#else   // FLUTTER_SHELL_ENABLE_METAL
+#else   // SHELL_ENABLE_METAL
       // TODO(dnfield): We should remove this logic and set the pipeline depth
       // back to 2 in this case. See
       // https://github.com/flutter/engine/pull/9132 for discussion.
@@ -40,7 +40,7 @@ Animator::Animator(Delegate& delegate,
                   task_runners.GetRasterTaskRunner()
               ? 1
               : 2)),
-#endif  // FLUTTER_SHELL_ENABLE_METAL
+#endif  // SHELL_ENABLE_METAL
       pending_frame_semaphore_(1),
       frame_number_(1),
       paused_(false),
@@ -80,6 +80,7 @@ void Animator::EnqueueTraceFlowId(uint64_t trace_flow_id) {
           return;
         }
         self->trace_flow_ids_.push_back(trace_flow_id);
+        self->ScheduleMaybeClearTraceFlowIds();
       });
 }
 
@@ -249,8 +250,27 @@ void Animator::AwaitVSync() {
   delegate_.OnAnimatorNotifyIdle(dart_frame_deadline_);
 }
 
-void Animator::ScheduleSecondaryVsyncCallback(const fml::closure& callback) {
-  waiter_->ScheduleSecondaryCallback(callback);
+void Animator::ScheduleSecondaryVsyncCallback(uintptr_t id,
+                                              const fml::closure& callback) {
+  waiter_->ScheduleSecondaryCallback(id, callback);
+}
+
+void Animator::ScheduleMaybeClearTraceFlowIds() {
+  waiter_->ScheduleSecondaryCallback(
+      reinterpret_cast<uintptr_t>(this), [self = weak_factory_.GetWeakPtr()] {
+        if (!self) {
+          return;
+        }
+        if (!self->frame_scheduled_ && !self->trace_flow_ids_.empty()) {
+          TRACE_EVENT0("flutter",
+                       "Animator::ScheduleMaybeClearTraceFlowIds - callback");
+          while (!self->trace_flow_ids_.empty()) {
+            auto flow_id = self->trace_flow_ids_.front();
+            TRACE_FLOW_END("flutter", "PointerEvent", flow_id);
+            self->trace_flow_ids_.pop_front();
+          }
+        }
+      });
 }
 
 }  // namespace flutter

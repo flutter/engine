@@ -14,6 +14,16 @@ import 'package:path/path.dart' as path;
 import 'environment.dart';
 import 'exceptions.dart';
 
+/// Clears the terminal screen and places the cursor at the top left corner.
+///
+/// This works on Linux and Mac. On Windows, it's a no-op.
+void clearTerminalScreen() {
+  if (!io.Platform.isWindows) {
+    // See: https://en.wikipedia.org/wiki/ANSI_escape_code#CSI_sequences
+    print("\x1B[2J\x1B[1;2H");
+  }
+}
+
 class FilePath {
   FilePath.fromCwd(String relativePath)
       : _absolutePath = path.absolute(relativePath);
@@ -220,13 +230,13 @@ bool get isVerboseLoggingEnabled => GeneralTestsArgumentParser.instance.verbose;
 /// There might be proccesses started during the tests.
 ///
 /// Use this list to store those Processes, for cleaning up before shutdown.
-final List<io.Process> processesToCleanUp = List<io.Process>();
+final List<io.Process> processesToCleanUp = <io.Process>[];
 
 /// There might be temporary directories created during the tests.
 ///
 /// Use this list to store those directories and for deleteing them before
 /// shutdown.
-final List<io.Directory> temporaryDirectories = List<io.Directory>();
+final List<io.Directory> temporaryDirectories = <io.Directory>[];
 
 typedef AsyncCallback = Future<void> Function();
 
@@ -234,7 +244,7 @@ typedef AsyncCallback = Future<void> Function();
 ///
 /// Add these operations here to make sure that they will run before felt
 /// exit.
-final List<AsyncCallback> cleanupCallbacks = List<AsyncCallback>();
+final List<AsyncCallback> cleanupCallbacks = <AsyncCallback>[];
 
 /// Cleanup the remaning processes, close open browsers, delete temp files.
 void cleanup() async {

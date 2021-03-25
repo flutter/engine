@@ -5,6 +5,7 @@
 #ifndef FLUTTER_LIB_UI_WINDOW_PLATFORM_CONFIGURATION_H_
 #define FLUTTER_LIB_UI_WINDOW_PLATFORM_CONFIGURATION_H_
 
+#include <functional>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -21,6 +22,8 @@ namespace flutter {
 class FontCollection;
 class PlatformMessage;
 class Scene;
+
+typedef std::function<void(bool /* handled */)> KeyDataResponse;
 
 //--------------------------------------------------------------------------
 /// @brief An enum for defining the different kinds of accessibility features
@@ -174,6 +177,27 @@ class PlatformConfigurationClient {
   ComputePlatformResolvedLocale(
       const std::vector<std::string>& supported_locale_data) = 0;
 
+  //--------------------------------------------------------------------------
+  /// @brief      Invoked when the Dart VM requests that a deferred library
+  ///             be loaded. Notifies the engine that the deferred library
+  ///             identified by the specified loading unit id should be
+  ///             downloaded and loaded into the Dart VM via
+  ///             `LoadDartDeferredLibrary`
+  ///
+  ///             Upon encountering errors or otherwise failing to load a
+  ///             loading unit with the specified id, the failure should be
+  ///             directly reported to dart by calling
+  ///             `LoadDartDeferredLibraryFailure` to ensure the waiting dart
+  ///             future completes with an error.
+  ///
+  /// @param[in]  loading_unit_id  The unique id of the deferred library's
+  ///                              loading unit. This id is to be passed
+  ///                              back into LoadDartDeferredLibrary
+  ///                              in order to identify which deferred
+  ///                              library to load.
+  ///
+  virtual void RequestDartDeferredLibrary(intptr_t loading_unit_id) = 0;
+
  protected:
   virtual ~PlatformConfigurationClient();
 };
@@ -303,18 +327,35 @@ class PlatformConfiguration final {
                                std::vector<uint8_t> args);
 
   //----------------------------------------------------------------------------
+  /// @brief      Registers a callback to be invoked when the framework has
+  ///             decided whether to handle an event. This callback originates
+  ///             in the platform view and has been forwarded through the engine
+  ///             to here.
+  ///
+  ///             This method will move and store the `callback`, associate it
+  ///             with a self-incrementing identifier, the response ID, then
+  ///             return the ID, which is typically used by
+  ///             Window::DispatchKeyDataPacket.
+  ///
+  /// @param[in]  callback  The callback to be registered.
+  ///
+  /// @return     The response ID to be associated with the callback. Using this
+  ///             ID in CompleteKeyDataResponse will invoke the callback.
+  ///
+  uint64_t RegisterKeyDataResponse(KeyDataResponse callback);
+
+  //----------------------------------------------------------------------------
   /// @brief      Notifies the framework that it is time to begin working on a
-  /// new
-  ///             frame previously scheduled via a call to
+  ///             new frame previously scheduled via a call to
   ///             `PlatformConfigurationClient::ScheduleFrame`. This call
   ///             originates in the animator.
   ///
   ///             The frame time given as the argument indicates the point at
   ///             which the current frame interval began. It is very slightly
   ///             (because of scheduling overhead) in the past. If a new layer
-  ///             tree is not produced and given to the GPU task runner within
-  ///             one frame interval from this point, the Flutter application
-  ///             will jank.
+  ///             tree is not produced and given to the raster task runner
+  ///             within one frame interval from this point, the Flutter
+  ///             application will jank.
   ///
   ///             This method calls the `::_beginFrame` method in `hooks.dart`.
   ///
@@ -328,13 +369,13 @@ class PlatformConfiguration final {
   /// @brief      Dart code cannot fully measure the time it takes for a
   ///             specific frame to be rendered. This is because Dart code only
   ///             runs on the UI task runner. That is only a small part of the
-  ///             overall frame workload. The GPU task runner frame workload is
-  ///             executed on a thread where Dart code cannot run (and hence
+  ///             overall frame workload. The raster task runner frame workload
+  ///             is executed on a thread where Dart code cannot run (and hence
   ///             instrument). Besides, due to the pipelined nature of rendering
   ///             in Flutter, there may be multiple frame workloads being
   ///             processed at any given time. However, for non-Timeline based
   ///             profiling, it is useful for trace collection and processing to
-  ///             happen in Dart. To do this, the GPU task runner frame
+  ///             happen in Dart. To do this, the raster task runner frame
   ///             workloads need to be instrumented separately. After a set
   ///             number of these profiles have been gathered, they need to be
   ///             reported back to Dart code. The engine reports this extra
@@ -391,16 +432,45 @@ class PlatformConfiguration final {
   ///
   void CompletePlatformMessageEmptyResponse(int response_id);
 
+  //----------------------------------------------------------------------------
+  /// @brief      Responds to a previously registered key data message from the
+  ///             framework to the engine.
+  ///
+  ///             For each response_id, this method should be called exactly
+  ///             once. Responding to a response_id that has not been registered
+  ///             or has been invoked will lead to a fatal error.
+  ///
+  /// @param[in] response_id The unique id that identifies the original platform
+  ///                        message to respond to, created by
+  ///                        RegisterKeyDataResponse.
+  /// @param[in] handled     Whether the key data is handled.
+  ///
+  void CompleteKeyDataResponse(uint64_t response_id, bool handled);
+
  private:
   PlatformConfigurationClient* client_;
-  tonic::DartPersistentValue library_;
+  tonic::DartPersistentValue update_locales_;
+  tonic::DartPersistentValue update_user_settings_data_;
+  tonic::DartPersistentValue update_lifecycle_state_;
+  tonic::DartPersistentValue update_semantics_enabled_;
+  tonic::DartPersistentValue update_accessibility_features_;
+  tonic::DartPersistentValue dispatch_platform_message_;
+  tonic::DartPersistentValue dispatch_key_message_;
+  tonic::DartPersistentValue dispatch_semantics_action_;
+  tonic::DartPersistentValue begin_frame_;
+  tonic::DartPersistentValue draw_frame_;
+  tonic::DartPersistentValue report_timings_;
 
   std::unordered_map<int64_t, std::unique_ptr<Window>> windows_;
 
-  // We use id 0 to mean that no response is expected.
+  // ID starts at 1 because an ID of 0 indicates that no response is expected.
   int next_response_id_ = 1;
   std::unordered_map<int, fml::RefPtr<PlatformMessageResponse>>
       pending_responses_;
+
+  // ID starts at 1 because an ID of 0 indicates that no response is expected.
+  uint64_t next_key_response_id_ = 1;
+  std::unordered_map<uint64_t, KeyDataResponse> pending_key_responses_;
 };
 
 }  // namespace flutter

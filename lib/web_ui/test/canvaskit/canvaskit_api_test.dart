@@ -11,6 +11,7 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
+import '../matchers.dart';
 import 'common.dart';
 import 'test_data.dart';
 
@@ -20,13 +21,7 @@ void main() {
 
 void testMain() {
   group('CanvasKit API', () {
-    setUpAll(() async {
-      await ui.webOnlyInitializePlatform();
-    });
-
-    test('Using CanvasKit', () {
-      expect(useCanvasKit, true);
-    });
+    setUpCanvasKitTest();
 
     _blendModeTests();
     _paintStyleTests();
@@ -53,6 +48,7 @@ void testMain() {
     _toSkMatrixFromFloat32Tests();
     _toSkRectTests();
     _skVerticesTests();
+    _paragraphTests();
     group('SkPath', () {
       _pathTests();
     });
@@ -302,9 +298,11 @@ void _imageTests() {
 
     expect(nonAnimated.decodeNextFrame(), -1);
     expect(
-      frame.makeShader(
+      frame.makeShaderOptions(
         canvasKit.TileMode.Repeat,
         canvasKit.TileMode.Mirror,
+        canvasKit.FilterMode.Linear,
+        canvasKit.MipmapMode.Nearest,
         toSkMatrixFromFloat32(Matrix4.identity().storage),
       ),
       isNotNull,
@@ -334,13 +332,10 @@ void _shaderTests() {
 
   test('MakeRadialGradient', () {
     expect(
-        canvasKit.SkShader.MakeRadialGradient(
+        canvasKit.Shader.MakeRadialGradient(
           Float32List.fromList([1, 1]),
           10.0,
-          <Float32List>[
-            Float32List.fromList([0, 0, 0, 1]),
-            Float32List.fromList([1, 1, 1, 1]),
-          ],
+          Uint32List.fromList(<int>[0xff000000, 0xffffffff]),
           Float32List.fromList([0, 1]),
           canvasKit.TileMode.Repeat,
           toSkMatrixFromFloat32(Matrix4.identity().storage),
@@ -351,15 +346,12 @@ void _shaderTests() {
 
   test('MakeTwoPointConicalGradient', () {
     expect(
-        canvasKit.SkShader.MakeTwoPointConicalGradient(
+        canvasKit.Shader.MakeTwoPointConicalGradient(
           Float32List.fromList([1, 1]),
           10.0,
           Float32List.fromList([1, 1]),
           10.0,
-          <Float32List>[
-            Float32List.fromList([0, 0, 0, 1]),
-            Float32List.fromList([1, 1, 1, 1]),
-          ],
+          Uint32List.fromList(<int>[0xff000000, 0xffffffff]),
           Float32List.fromList([0, 1]),
           canvasKit.TileMode.Repeat,
           toSkMatrixFromFloat32(Matrix4.identity().storage),
@@ -370,12 +362,10 @@ void _shaderTests() {
 }
 
 SkShader _makeTestShader() {
-  return canvasKit.SkShader.MakeLinearGradient(
+  return canvasKit.Shader.MakeLinearGradient(
     Float32List.fromList([0, 0]),
     Float32List.fromList([1, 1]),
-    [
-      Float32List.fromList([255, 0, 0, 255]),
-    ],
+    Uint32List.fromList(<int>[0xff0000ff]),
     Float32List.fromList([0, 1]),
     canvasKit.TileMode.Repeat,
   );
@@ -392,15 +382,15 @@ void _paintTests() {
     paint.setAntiAlias(true);
     paint.setColorInt(0x00FFCCAA);
     paint.setShader(_makeTestShader());
-    paint.setMaskFilter(canvasKit.MakeBlurMaskFilter(
+    paint.setMaskFilter(canvasKit.MaskFilter.MakeBlur(
       canvasKit.BlurStyle.Outer,
       2.0,
       true,
     ));
     paint.setFilterQuality(canvasKit.FilterQuality.High);
-    paint.setColorFilter(canvasKit.SkColorFilter.MakeLinearToSRGBGamma());
+    paint.setColorFilter(canvasKit.ColorFilter.MakeLinearToSRGBGamma());
     paint.setStrokeMiter(1.4);
-    paint.setImageFilter(canvasKit.SkImageFilter.MakeBlur(
+    paint.setImageFilter(canvasKit.ImageFilter.MakeBlur(
       1,
       2,
       canvasKit.TileMode.Repeat,
@@ -410,9 +400,9 @@ void _paintTests() {
 }
 
 void _maskFilterTests() {
-  test('MakeBlurMaskFilter', () {
+  test('MaskFilter.MakeBlur', () {
     expect(
-        canvasKit.MakeBlurMaskFilter(
+        canvasKit.MaskFilter.MakeBlur(
           canvasKit.BlurStyle.Outer,
           5.0,
           false,
@@ -424,7 +414,7 @@ void _maskFilterTests() {
 void _colorFilterTests() {
   test('MakeBlend', () {
     expect(
-      canvasKit.SkColorFilter.MakeBlend(
+      canvasKit.ColorFilter.MakeBlend(
         Float32List.fromList([0, 0, 0, 1]),
         canvasKit.BlendMode.SrcATop,
       ),
@@ -434,7 +424,7 @@ void _colorFilterTests() {
 
   test('MakeMatrix', () {
     expect(
-      canvasKit.SkColorFilter.MakeMatrix(
+      canvasKit.ColorFilter.MakeMatrix(
         Float32List(20),
       ),
       isNotNull,
@@ -443,14 +433,14 @@ void _colorFilterTests() {
 
   test('MakeSRGBToLinearGamma', () {
     expect(
-      canvasKit.SkColorFilter.MakeSRGBToLinearGamma(),
+      canvasKit.ColorFilter.MakeSRGBToLinearGamma(),
       isNotNull,
     );
   });
 
   test('MakeLinearToSRGBGamma', () {
     expect(
-      canvasKit.SkColorFilter.MakeLinearToSRGBGamma(),
+      canvasKit.ColorFilter.MakeLinearToSRGBGamma(),
       isNotNull,
     );
   });
@@ -459,17 +449,37 @@ void _colorFilterTests() {
 void _imageFilterTests() {
   test('MakeBlur', () {
     expect(
-      canvasKit.SkImageFilter.MakeBlur(1, 2, canvasKit.TileMode.Repeat, null),
+      canvasKit.ImageFilter.MakeBlur(1, 2, canvasKit.TileMode.Repeat, null),
       isNotNull,
     );
   });
 
   test('MakeMatrixTransform', () {
     expect(
-      canvasKit.SkImageFilter.MakeMatrixTransform(
+      canvasKit.ImageFilter.MakeMatrixTransform(
         toSkMatrixFromFloat32(Matrix4.identity().storage),
         canvasKit.FilterQuality.Medium,
         null,
+      ),
+      isNotNull,
+    );
+  });
+
+  test('MakeColorFilter', () {
+    expect(
+      canvasKit.ImageFilter.MakeColorFilter(
+        canvasKit.ColorFilter.MakeLinearToSRGBGamma(),
+        null,
+      ),
+      isNotNull,
+    );
+  });
+
+  test('MakeCompose', () {
+    expect(
+      canvasKit.ImageFilter.MakeCompose(
+        canvasKit.ImageFilter.MakeBlur(1, 2, canvasKit.TileMode.Repeat, null),
+        canvasKit.ImageFilter.MakeBlur(1, 2, canvasKit.TileMode.Repeat, null),
       ),
       isNotNull,
     );
@@ -786,7 +796,7 @@ void _pathTests() {
 
   test('SkContourMeasureIter/SkContourMeasure', () {
     final SkContourMeasureIter iter =
-        SkContourMeasureIter(_testClosedSkPath(), false, 0);
+        SkContourMeasureIter(_testClosedSkPath(), false, 1.0);
     final SkContourMeasure measure1 = iter.next();
     expect(measure1.length(), 40);
     expect(measure1.getPosTan(5), Float32List.fromList(<double>[15, 10, 1, 0]));
@@ -822,7 +832,7 @@ void _pathTests() {
     expect(measure2, isNull);
   });
 
-  test('SkPath.toCmds and CanvasKit.MakePathFromCmds', () {
+  test('SkPath.toCmds and CanvasKit.Path.MakeFromCmds', () {
     const ui.Rect rect = ui.Rect.fromLTRB(0, 0, 10, 10);
     final SkPath path = SkPath();
     path.addRect(toSkRect(rect));
@@ -834,29 +844,17 @@ void _pathTests() {
       <num>[5], // close
     ]);
 
-    final SkPath copy = canvasKit.MakePathFromCmds(path.toCmds());
+    final SkPath copy = canvasKit.Path.MakeFromCmds(path.toCmds());
     expect(fromSkRect(copy.getBounds()), rect);
   });
 }
 
 SkVertices _testVertices() {
-  return canvasKit.MakeSkVertices(
+  return canvasKit.MakeVertices(
     canvasKit.VertexMode.Triangles,
-    [
-      Float32List.fromList([0, 0]),
-      Float32List.fromList([10, 10]),
-      Float32List.fromList([0, 20]),
-    ],
-    [
-      Float32List.fromList([0, 0]),
-      Float32List.fromList([10, 10]),
-      Float32List.fromList([0, 20]),
-    ],
-    [
-      Float32List.fromList([255, 0, 0, 255]),
-      Float32List.fromList([0, 255, 0, 255]),
-      Float32List.fromList([0, 0, 255, 255]),
-    ],
+    Float32List.fromList([0, 0, 10, 10, 0, 20]),
+    Float32List.fromList([0, 0, 10, 10, 0, 20]),
+    Uint32List.fromList([0xffff0000, 0xff00ff00, 0xff0000ff]),
     Uint16List.fromList([0, 1, 2]),
   );
 }
@@ -910,7 +908,7 @@ void _canvasTests() {
     canvas.saveLayer(
       SkPaint(),
       toSkRect(ui.Rect.fromLTRB(0, 0, 100, 100)),
-      canvasKit.SkImageFilter.MakeBlur(1, 2, canvasKit.TileMode.Repeat, null),
+      canvasKit.ImageFilter.MakeBlur(1, 2, canvasKit.TileMode.Repeat, null),
       0,
     );
   });
@@ -962,10 +960,7 @@ void _canvasTests() {
       Float32List.fromList([1, 0, 2, 3]),
       SkPaint(),
       canvasKit.BlendMode.SrcOver,
-      [
-        Float32List.fromList([0, 0, 0, 1]),
-        Float32List.fromList([1, 1, 1, 1]),
-      ],
+      Uint32List.fromList(<int>[0xff000000, 0xffffffff]),
     );
   });
 
@@ -1155,6 +1150,10 @@ void _canvasTests() {
   });
 
   test('toImage.toByteData', () async {
+    // Pretend that FinalizationRegistry is supported, so we can run this
+    // test in older browsers (the test will use a TestCollector instead of
+    // ProductionCollector)
+    browserSupportsFinalizationRegistry = true;
     final SkPictureRecorder otherRecorder = SkPictureRecorder();
     final SkCanvas otherCanvas =
         otherRecorder.beginRecording(Float32List.fromList([0, 0, 1, 1]));
@@ -1163,14 +1162,14 @@ void _canvasTests() {
       SkPaint(),
     );
     final CkPicture picture =
-        CkPicture(otherRecorder.finishRecordingAsPicture(), null);
+        CkPicture(otherRecorder.finishRecordingAsPicture(), null, null);
     final CkImage image = await picture.toImage(1, 1);
     final ByteData rawData =
         await image.toByteData(format: ui.ImageByteFormat.rawRgba);
-    expect(rawData, isNotNull);
+    expect(rawData.lengthInBytes, greaterThan(0));
     final ByteData pngData =
         await image.toByteData(format: ui.ImageByteFormat.png);
-    expect(pngData, isNotNull);
+    expect(pngData.lengthInBytes, greaterThan(0));
   });
 }
 
@@ -1230,5 +1229,112 @@ void _textStyleTests() {
       expect(toSkPlaceholderAlignment(placeholderAlignment).value,
           placeholderAlignment.index);
     }
+  });
+}
+
+void _paragraphTests() {
+  // This test is just a kitchen sink that blasts CanvasKit with all paragraph
+  // properties all at once, making sure CanvasKit doesn't choke on anything.
+  // In particular, this tests that our JS bindings are correct, such as that
+  // arguments are of acceptable types and passed in the correct order.
+  test('SkParagraph API kitchensink', () {
+    final SkParagraphStyleProperties props = SkParagraphStyleProperties();
+    props.textAlign = canvasKit.TextAlign.Center;
+    props.textDirection = canvasKit.TextDirection.RTL;
+    props.heightMultiplier = 3;
+    props.textHeightBehavior = ui.TextHeightBehavior().encode();
+    props.maxLines = 4;
+    props.ellipsis = '___';
+    props.textStyle = SkTextStyleProperties()
+      ..backgroundColor = Float32List.fromList(<double>[1, 2, 3, 4])
+      ..color = Float32List.fromList(<double>[5, 6, 7, 8])
+      ..foregroundColor = Float32List.fromList(<double>[9, 10, 11, 12])
+      ..decoration = 0x2
+      ..decorationThickness = 2.0
+      ..decorationColor = Float32List.fromList(<double>[13, 14, 15, 16])
+      ..decorationStyle = canvasKit.DecorationStyle.Dotted
+      ..textBaseline = canvasKit.TextBaseline.Ideographic
+      ..fontSize = 24
+      ..letterSpacing = 5
+      ..wordSpacing = 10
+      ..heightMultiplier = 2.5
+      ..locale = 'en_CA'
+      ..fontFamilies = <String>['Roboto', 'serif']
+      ..fontStyle = (SkFontStyle()
+        ..slant = canvasKit.FontSlant.Upright
+        ..weight = canvasKit.FontWeight.Normal)
+      ..shadows = <SkTextShadow>[]
+      ..fontFeatures = <SkFontFeature>[
+        SkFontFeature()
+          ..name = 'pnum'
+          ..value = 1,
+        SkFontFeature()
+          ..name = 'tnum'
+          ..value = 1,
+      ];
+    props.strutStyle = SkStrutStyleProperties()
+      ..fontFamilies = <String>['Roboto', 'Noto']
+      ..fontStyle = (SkFontStyle()
+        ..slant = canvasKit.FontSlant.Italic
+        ..weight = canvasKit.FontWeight.Bold)
+      ..fontSize = 23
+      ..heightMultiplier = 5
+      ..leading = 6
+      ..strutEnabled = true
+      ..forceStrutHeight = false;
+
+    final SkParagraphStyle paragraphStyle = canvasKit.ParagraphStyle(props);
+    final SkParagraphBuilder builder = canvasKit.ParagraphBuilder.Make(
+      paragraphStyle,
+      skiaFontCollection.skFontMgr,
+    );
+
+    builder.addText('Hello');
+    builder.addPlaceholder(
+      50,
+      25,
+      canvasKit.PlaceholderAlignment.Middle,
+      canvasKit.TextBaseline.Ideographic,
+      4.0,
+    );
+    builder.pushStyle(canvasKit.TextStyle(SkTextStyleProperties()
+      ..fontSize = 12));
+    builder.addText('World');
+    builder.pop();
+    builder.pushPaintStyle(canvasKit.TextStyle(SkTextStyleProperties()
+      ..fontSize = 12), SkPaint(), SkPaint());
+    builder.addText('!');
+    builder.pop();
+    final SkParagraph paragraph = builder.build();
+    paragraph.layout(55);
+    expect(paragraph.getAlphabeticBaseline(), within<double>(distance: 0.5, from: 22));
+    expect(paragraph.didExceedMaxLines(), false);
+    expect(paragraph.getHeight(), 28);
+    expect(paragraph.getIdeographicBaseline(), within<double>(distance: 0.5, from: 28));
+    expect(paragraph.getLongestLine(), 50);
+    expect(paragraph.getMaxIntrinsicWidth(), 50);
+    expect(paragraph.getMinIntrinsicWidth(), 50);
+    expect(paragraph.getMaxWidth(), 55);
+    expect(paragraph.getRectsForRange(1, 3, canvasKit.RectHeightStyle.Tight, canvasKit.RectWidthStyle.Max), <double>[]);
+    expect(paragraph.getRectsForPlaceholders(), hasLength(1));
+    expect(paragraph.getGlyphPositionAtCoordinate(5, 5).affinity, canvasKit.Affinity.Downstream);
+
+    // "Hello"
+    for (int i = 0; i < 5; i++) {
+      expect(paragraph.getWordBoundary(i).start, 0);
+      expect(paragraph.getWordBoundary(i).end, 5);
+    }
+    // Placeholder
+    expect(paragraph.getWordBoundary(5).start, 5);
+    expect(paragraph.getWordBoundary(5).end, 6);
+    // "World"
+    for (int i = 6; i < 11; i++) {
+      expect(paragraph.getWordBoundary(i).start, 6);
+      expect(paragraph.getWordBoundary(i).end, 11);
+    }
+    // "!"
+    expect(paragraph.getWordBoundary(11).start, 11);
+    expect(paragraph.getWordBoundary(11).end, 12);
+    paragraph.delete();
   });
 }

@@ -22,7 +22,6 @@ import androidx.annotation.VisibleForTesting;
 import androidx.lifecycle.Lifecycle;
 import io.flutter.FlutterInjector;
 import io.flutter.Log;
-import io.flutter.app.FlutterActivity;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterEngineCache;
 import io.flutter.embedding.engine.FlutterShellArgs;
@@ -307,8 +306,10 @@ import java.util.Arrays;
     return flutterSplashView;
   }
 
-  void onActivityCreated(@Nullable Bundle bundle) {
-    Log.v(TAG, "onActivityCreated. Giving framework and plugins an opportunity to restore state.");
+  void onRestoreInstanceState(@Nullable Bundle bundle) {
+    Log.v(
+        TAG,
+        "onRestoreInstanceState. Giving framework and plugins an opportunity to restore state.");
     ensureAlive();
 
     Bundle pluginState = null;
@@ -397,8 +398,12 @@ import java.util.Arrays;
   private String maybeGetInitialRouteFromIntent(Intent intent) {
     if (host.shouldHandleDeeplinking()) {
       Uri data = intent.getData();
-      if (data != null && !data.toString().isEmpty()) {
-        return data.toString();
+      if (data != null && !data.getPath().isEmpty()) {
+        String pathAndQuery = data.getPath();
+        if (data.getQuery() != null && !data.getQuery().isEmpty()) {
+          pathAndQuery += "?" + data.getQuery();
+        }
+        return pathAndQuery;
       }
     }
     return null;
@@ -750,7 +755,10 @@ import java.util.Arrays;
    * FlutterActivityAndFragmentDelegate}.
    */
   /* package */ interface Host
-      extends SplashScreenProvider, FlutterEngineProvider, FlutterEngineConfigurator {
+      extends SplashScreenProvider,
+          FlutterEngineProvider,
+          FlutterEngineConfigurator,
+          PlatformPlugin.PlatformPluginDelegate {
     /** Returns the {@link Context} that backs the host {@link Activity} or {@code Fragment}. */
     @NonNull
     Context getContext();
@@ -900,10 +908,11 @@ import java.util.Arrays;
     /**
      * Whether state restoration is enabled.
      *
-     * <p>When this returns true, the instance state provided to {@code onActivityCreated(Bundle)}
-     * will be forwarded to the framework via the {@code RestorationChannel} and during {@code
-     * onSaveInstanceState(Bundle)} the current framework instance state obtained from {@code
-     * RestorationChannel} will be stored in the provided bundle.
+     * <p>When this returns true, the instance state provided to {@code
+     * onRestoreInstanceState(Bundle)} will be forwarded to the framework via the {@code
+     * RestorationChannel} and during {@code onSaveInstanceState(Bundle)} the current framework
+     * instance state obtained from {@code RestorationChannel} will be stored in the provided
+     * bundle.
      *
      * <p>This defaults to true, unless a cached engine is used.
      */

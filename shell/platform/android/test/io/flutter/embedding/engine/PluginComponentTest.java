@@ -5,6 +5,7 @@
 package test.io.flutter.embedding.engine;
 
 import static junit.framework.TestCase.assertEquals;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -24,6 +25,8 @@ import org.robolectric.annotation.Config;
 @Config(manifest = Config.NONE)
 @RunWith(RobolectricTestRunner.class)
 public class PluginComponentTest {
+  boolean jniAttached;
+
   @Before
   public void setUp() {
     FlutterInjector.reset();
@@ -32,11 +35,15 @@ public class PluginComponentTest {
   @Test
   public void pluginsCanAccessFlutterAssetPaths() {
     // Setup test.
-    FlutterInjector.setInstance(new FlutterInjector.Builder().setShouldLoadNative(false).build());
+    FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
+    FlutterInjector.setInstance(
+        new FlutterInjector.Builder().setFlutterLoader(new FlutterLoader(mockFlutterJNI)).build());
     FlutterJNI flutterJNI = mock(FlutterJNI.class);
-    when(flutterJNI.isAttached()).thenReturn(true);
+    jniAttached = false;
+    when(flutterJNI.isAttached()).thenAnswer(invocation -> jniAttached);
+    doAnswer(invocation -> jniAttached = true).when(flutterJNI).attachToNative(false);
 
-    FlutterLoader flutterLoader = new FlutterLoader();
+    FlutterLoader flutterLoader = new FlutterLoader(mockFlutterJNI);
 
     // Execute behavior under test.
     FlutterEngine flutterEngine =

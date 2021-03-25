@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of dart.ui;
 
 /// Signature of callbacks that have no arguments and return no data.
@@ -27,6 +27,12 @@ typedef TimingsCallback = void Function(List<FrameTiming> timings);
 
 /// Signature for [PlatformDispatcher.onPointerDataPacket].
 typedef PointerDataPacketCallback = void Function(PointerDataPacket packet);
+
+// Signature for the response to KeyDataCallback.
+typedef _KeyDataResponseCallback = void Function(int responseId, bool handled);
+
+/// Signature for [PlatformDispatcher.onKeyData].
+typedef KeyDataCallback = bool Function(KeyData data);
 
 /// Signature for [PlatformDispatcher.onSemanticsAction].
 typedef SemanticsActionCallback = void Function(int id, SemanticsAction action, ByteData? args);
@@ -332,6 +338,63 @@ class PlatformDispatcher {
     return PointerDataPacket(data: data);
   }
 
+  /// Called by [_dispatchKeyData].
+  void _respondToKeyData(int responseId, bool handled)
+      native 'PlatformConfiguration_respondToKeyData';
+
+  /// A callback that is invoked when key data is available.
+  ///
+  /// The framework invokes this callback in the same zone in which the callback
+  /// was set.
+  KeyDataCallback? get onKeyData => _onKeyData;
+  KeyDataCallback? _onKeyData;
+  Zone _onKeyDataZone = Zone.root;
+  set onKeyData(KeyDataCallback? callback) {
+    _onKeyData = callback;
+    _onKeyDataZone = Zone.current;
+  }
+
+  // Called from the engine, via hooks.dart
+  void _dispatchKeyData(ByteData packet, int responseId) {
+    _invoke2<KeyData, _KeyDataResponseCallback>(
+      (KeyData data, _KeyDataResponseCallback callback) {
+        callback(responseId, onKeyData != null && onKeyData!(data));
+      },
+      _onKeyDataZone,
+      _unpackKeyData(packet),
+      _respondToKeyData,
+    );
+  }
+
+  // If this value changes, update the encoding code in the following files:
+  //
+  //  * key_data.h
+  //  * key.dart (ui)
+  //  * key.dart (web_ui)
+  //  * HardwareKeyboard.java
+  static const int _kKeyDataFieldCount = 5;
+
+  // The packet structure is described in `key_data_packet.h`.
+  static KeyData _unpackKeyData(ByteData packet) {
+    const int kStride = Int64List.bytesPerElement;
+
+    int offset = 0;
+    final int charDataSize = packet.getUint64(kStride * offset++, _kFakeHostEndian);
+    final String? character = charDataSize == 0 ? null : utf8.decoder.convert(
+          packet.buffer.asUint8List(kStride * (offset + _kKeyDataFieldCount), charDataSize));
+
+    final KeyData keyData = KeyData(
+      timeStamp: Duration(microseconds: packet.getUint64(kStride * offset++, _kFakeHostEndian)),
+      type: KeyEventType.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
+      physical: packet.getUint64(kStride * offset++, _kFakeHostEndian),
+      logical: packet.getUint64(kStride * offset++, _kFakeHostEndian),
+      character: character,
+      synthesized: packet.getUint64(kStride * offset++, _kFakeHostEndian) != 0,
+    );
+
+    return keyData;
+  }
+
   /// A callback that is invoked to report the [FrameTiming] of recently
   /// rasterized frames.
   ///
@@ -549,14 +612,10 @@ class PlatformDispatcher {
   /// This is the first locale selected by the user and is the user's primary
   /// locale (the locale the device UI is displayed in)
   ///
-  /// This is equivalent to `locales.first` and will provide an empty non-null
-  /// locale if the [locales] list has not been set or is empty.
-  Locale? get locale {
-    if (locales != null && locales!.isNotEmpty) {
-      return locales!.first;
-    }
-    return null;
-  }
+  /// This is equivalent to `locales.first`, except that it will provide an
+  /// undefined (using the language tag "und") non-null locale if the [locales]
+  /// list has not been set or is empty.
+  Locale get locale => locales.isEmpty ? const Locale.fromSubtags() : locales.first;
 
   /// The full system-reported supported locales of the device.
   ///
@@ -573,7 +632,7 @@ class PlatformDispatcher {
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this value changes.
-  List<Locale>? get locales => configuration.locales;
+  List<Locale> get locales => configuration.locales;
 
   /// Performs the platform-native locale resolution.
   ///
@@ -585,7 +644,7 @@ class PlatformDispatcher {
   /// platform specific APIs without invoking method channels.
   Locale? computePlatformResolvedLocale(List<Locale> supportedLocales) {
     final List<String?> supportedLocalesData = <String?>[];
-    for (Locale locale in supportedLocales) {
+    for (final Locale locale in supportedLocales) {
       supportedLocalesData.add(locale.languageCode);
       supportedLocalesData.add(locale.countryCode);
       supportedLocalesData.add(locale.scriptCode);
@@ -649,12 +708,7 @@ class PlatformDispatcher {
   }
 
   // Called from the engine, via hooks.dart
-  String _localeClosure() {
-    if (locale == null) {
-      return '';
-    }
-    return locale.toString();
-  }
+  String _localeClosure() => locale.toString();
 
   /// The lifecycle state immediately after dart isolate initialization.
   ///
@@ -1295,8 +1349,8 @@ class Locale {
   ///
   /// The subtag values are _case sensitive_ and must be one of the valid
   /// subtags according to CLDR supplemental data:
-  /// [language](http://unicode.org/cldr/latest/common/validity/language.xml),
-  /// [region](http://unicode.org/cldr/latest/common/validity/region.xml). The
+  /// [language](https://github.com/unicode-org/cldr/blob/master/common/validity/language.xml),
+  /// [region](https://github.com/unicode-org/cldr/blob/master/common/validity/region.xml). The
   /// primary language subtag must be at least two and at most eight lowercase
   /// letters, but not four letters. The region region subtag must be two
   /// uppercase letters or three digits. See the [Unicode Language
@@ -1323,10 +1377,14 @@ class Locale {
   ///
   /// The subtag values are _case sensitive_ and must be valid subtags according
   /// to CLDR supplemental data:
-  /// [language](http://unicode.org/cldr/latest/common/validity/language.xml),
-  /// [script](http://unicode.org/cldr/latest/common/validity/script.xml) and
-  /// [region](http://unicode.org/cldr/latest/common/validity/region.xml) for
+  /// [language](https://github.com/unicode-org/cldr/blob/master/common/validity/language.xml),
+  /// [script](https://github.com/unicode-org/cldr/blob/master/common/validity/script.xml) and
+  /// [region](https://github.com/unicode-org/cldr/blob/master/common/validity/region.xml) for
   /// each of languageCode, scriptCode and countryCode respectively.
+  ///
+  /// The [languageCode] subtag is optional. When there is no language subtag,
+  /// the parameter should be omitted or set to "und". When not supplied, the
+  /// [languageCode] defaults to "und", an undefined language code.
   ///
   /// The [countryCode] subtag is optional. When there is no country subtag,
   /// the parameter should be omitted or passed `null` instead of an empty-string.
@@ -1361,7 +1419,7 @@ class Locale {
   ///
   /// This must be a valid Unicode Language subtag as listed in [Unicode CLDR
   /// supplemental
-  /// data](http://unicode.org/cldr/latest/common/validity/language.xml).
+  /// data](https://github.com/unicode-org/cldr/blob/master/common/validity/language.xml).
   ///
   /// See also:
   ///
@@ -1459,7 +1517,7 @@ class Locale {
   ///
   /// This must be a valid Unicode Language Identifier script subtag as listed
   /// in [Unicode CLDR supplemental
-  /// data](http://unicode.org/cldr/latest/common/validity/script.xml).
+  /// data](https://github.com/unicode-org/cldr/blob/master/common/validity/script.xml).
   ///
   /// See also:
   ///

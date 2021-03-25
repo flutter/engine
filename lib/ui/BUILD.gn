@@ -91,6 +91,12 @@ source_set("ui") {
     "text/text_box.h",
     "ui_dart_state.cc",
     "ui_dart_state.h",
+    "volatile_path_tracker.cc",
+    "volatile_path_tracker.h",
+    "window/key_data.cc",
+    "window/key_data.h",
+    "window/key_data_packet.cc",
+    "window/key_data_packet.h",
     "window/platform_configuration.cc",
     "window/platform_configuration.h",
     "window/platform_message.cc",
@@ -132,6 +138,9 @@ source_set("ui") {
   }
   if (flutter_enable_skshaper) {
     defines += [ "FLUTTER_ENABLE_SKSHAPER" ]
+  }
+  if (flutter_always_use_skshaper) {
+    defines += [ "FLUTTER_ALWAYS_USE_SKSHAPER" ]
   }
   if (is_win) {
     # Required for M_PI and others.
@@ -188,6 +197,7 @@ if (enable_unittests) {
     sources = [
       "painting/image_dispose_unittests.cc",
       "painting/image_encoding_unittests.cc",
+      "painting/path_unittests.cc",
       "painting/vertices_unittests.cc",
       "window/platform_configuration_unittests.cc",
       "window/pointer_data_packet_converter_unittests.cc",

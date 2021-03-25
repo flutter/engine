@@ -152,6 +152,9 @@ struct Settings {
   // Font settings
   bool use_test_fonts = false;
 
+  // Selects the SkParagraph implementation of the text layout engine.
+  bool enable_skparagraph = false;
+
   // All shells in the process share the same VM. The last shell to shutdown
   // should typically shut down the VM as well. However, applications depend on
   // the behavior of "warming-up" the VM by creating a shell that does not do
@@ -221,11 +224,11 @@ struct Settings {
   FrameRasterizedCallback frame_rasterized_callback;
 
   // This data will be available to the isolate immediately on launch via the
-  // Window.getPersistentIsolateData callback. This is meant for information
-  // that the isolate cannot request asynchronously (platform messages can be
-  // used for that purpose). This data is held for the lifetime of the shell and
-  // is available on isolate restarts in the shell instance. Due to this,
-  // the buffer must be as small as possible.
+  // PlatformDispatcher.getPersistentIsolateData callback. This is meant for
+  // information that the isolate cannot request asynchronously (platform
+  // messages can be used for that purpose). This data is held for the lifetime
+  // of the shell and is available on isolate restarts in the shell instance.
+  // Due to this, the buffer must be as small as possible.
   std::shared_ptr<const fml::Mapping> persistent_isolate_data;
 
   /// Max size of old gen heap size in MB, or 0 for unlimited, -1 for default

@@ -432,7 +432,7 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
       this(FlutterFragment.class, engineId);
     }
 
-    protected CachedEngineFragmentBuilder(
+    public CachedEngineFragmentBuilder(
         @NonNull Class<? extends FlutterFragment> subclass, @NonNull String engineId) {
       this.fragmentClass = subclass;
       this.engineId = engineId;
@@ -608,6 +608,12 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
     delegate.onAttach(context);
   }
 
+  @Override
+  public void onCreate(@Nullable Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    delegate.onRestoreInstanceState(savedInstanceState);
+  }
+
   @Nullable
   @Override
   public View onCreateView(
@@ -616,21 +622,19 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   }
 
   @Override
-  public void onActivityCreated(@Nullable Bundle savedInstanceState) {
-    super.onActivityCreated(savedInstanceState);
-    delegate.onActivityCreated(savedInstanceState);
-  }
-
-  @Override
   public void onStart() {
     super.onStart();
-    delegate.onStart();
+    if (stillAttachedForEvent("onStart")) {
+      delegate.onStart();
+    }
   }
 
   @Override
   public void onResume() {
     super.onResume();
-    delegate.onResume();
+    if (stillAttachedForEvent("onResume")) {
+      delegate.onResume();
+    }
   }
 
   // TODO(mattcarroll): determine why this can't be in onResume(). Comment reason, or move if
@@ -643,7 +647,9 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   @Override
   public void onPause() {
     super.onPause();
-    delegate.onPause();
+    if (stillAttachedForEvent("onPause")) {
+      delegate.onPause();
+    }
   }
 
   @Override
@@ -672,7 +678,7 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
 
   @Override
   public void detachFromFlutterEngine() {
-    Log.v(
+    Log.w(
         TAG,
         "FlutterFragment "
             + this
@@ -984,7 +990,7 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   public PlatformPlugin providePlatformPlugin(
       @Nullable Activity activity, @NonNull FlutterEngine flutterEngine) {
     if (activity != null) {
-      return new PlatformPlugin(getActivity(), flutterEngine.getPlatformChannel());
+      return new PlatformPlugin(getActivity(), flutterEngine.getPlatformChannel(), this);
     } else {
       return null;
     }
@@ -1110,9 +1116,15 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
     return true;
   }
 
+  @Override
+  public boolean popSystemNavigator() {
+    // Hook for subclass. No-op if returns false.
+    return false;
+  }
+
   private boolean stillAttachedForEvent(String event) {
     if (delegate == null) {
-      Log.v(TAG, "FlutterFragment " + hashCode() + " " + event + " called after release.");
+      Log.w(TAG, "FlutterFragment " + hashCode() + " " + event + " called after release.");
       return false;
     }
     return true;

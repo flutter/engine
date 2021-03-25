@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 
 // HACK: pretend to be dart.ui in order to access its internals
 library dart.ui;
@@ -24,6 +24,7 @@ part '../../lib/ui/compositing.dart';
 part '../../lib/ui/geometry.dart';
 part '../../lib/ui/hash_codes.dart';
 part '../../lib/ui/hooks.dart';
+part '../../lib/ui/key.dart';
 part '../../lib/ui/lerp.dart';
 part '../../lib/ui/natives.dart';
 part '../../lib/ui/painting.dart';
@@ -425,5 +426,18 @@ void main() {
     expectEquals(window.viewPadding.bottom, 40.0);
     expectEquals(window.padding.bottom, 0.0);
     expectEquals(window.systemGestureInsets.bottom, 44.0);
+  });
+
+  test('PlatformDispatcher.locale returns unknown locale when locales is set to empty list', () {
+    late Locale locale;
+    runZoned(() {
+      window.onLocaleChanged = () {
+        locale = PlatformDispatcher.instance.locale;
+      };
+    });
+
+    _updateLocales(<String>[]);
+    expectEquals(locale, const Locale.fromSubtags());
+    expectEquals(locale.languageCode, 'und');
   });
 }

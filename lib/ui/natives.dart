@@ -4,8 +4,8 @@
 
 // TODO(dnfield): remove unused_element ignores when https://github.com/dart-lang/sdk/issues/35164 is resolved.
 
-// @dart = 2.10
 
+// @dart = 2.12
 part of dart.ui;
 
 // Corelib 'print' implementation.
@@ -78,7 +78,7 @@ List<int> saveCompilationTrace() {
 
 dynamic _saveCompilationTrace() native 'SaveCompilationTrace';
 
-void _scheduleMicrotask(void callback()) native 'ScheduleMicrotask';
+void _scheduleMicrotask(void Function() callback) native 'ScheduleMicrotask';
 
 int? _getCallbackHandle(Function closure) native 'GetCallbackHandle';
 Function? _getCallbackFromHandle(int handle) native 'GetCallbackFromHandle';

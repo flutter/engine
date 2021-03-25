@@ -254,7 +254,9 @@ if (enable_unittests) {
       ":shell_unittests_fixtures",
       "//flutter/assets",
       "//flutter/common/graphics",
+      "//flutter/shell/profiling:profiling_unittests",
       "//flutter/shell/version",
+      "//flutter/testing:fixture_test",
       "//third_party/googletest:gmock",
     ]
 

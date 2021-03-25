@@ -15,9 +15,8 @@ static IOSContextGL* CastToGLContext(const std::shared_ptr<IOSContext>& context)
 }
 
 IOSSurfaceGL::IOSSurfaceGL(fml::scoped_nsobject<CAEAGLLayer> layer,
-                           std::shared_ptr<IOSContext> context,
-                           const std::shared_ptr<IOSExternalViewEmbedder>& external_view_embedder)
-    : IOSSurface(context, external_view_embedder) {
+                           std::shared_ptr<IOSContext> context)
+    : IOSSurface(context) {
   render_target_ = CastToGLContext(context)->CreateRenderTarget(std::move(layer));
 }
 
@@ -39,8 +38,16 @@ void IOSSurfaceGL::UpdateStorageSizeIfNecessary() {
 std::unique_ptr<Surface> IOSSurfaceGL::CreateGPUSurface(GrDirectContext* gr_context) {
   if (gr_context) {
     return std::make_unique<GPUSurfaceGL>(sk_ref_sp(gr_context), this, true);
+  } else {
+    IOSContextGL* gl_context = CastToGLContext(GetContext());
+    sk_sp<GrDirectContext> context = gl_context->GetMainContext();
+    if (!context) {
+      context = GPUSurfaceGL::MakeGLContext(this);
+      gl_context->SetMainContext(context);
+    }
+
+    return std::make_unique<GPUSurfaceGL>(context, this, true);
   }
-  return std::make_unique<GPUSurfaceGL>(this, true);
 }
 
 // |GPUSurfaceGLDelegate|

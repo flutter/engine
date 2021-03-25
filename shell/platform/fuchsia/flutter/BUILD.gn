@@ -63,6 +63,8 @@ template("runner_sources") {
       "fuchsia_intl.h",
       "isolate_configurator.cc",
       "isolate_configurator.h",
+      "keyboard.cc",
+      "keyboard.h",
       "logging.h",
       "loop.cc",
       "loop.h",
@@ -109,6 +111,7 @@ template("runner_sources") {
       "//flutter/lib/ui",
       "//flutter/runtime",
       "//flutter/shell/common",
+      "//flutter/shell/platform/common/client_wrapper:client_wrapper",
     ]
     flutter_deps = [
       ":fuchsia_gpu_configuration",
@@ -446,6 +449,7 @@ executable("flutter_runner_unittests") {
     "component_unittest.cc",
     "flutter_runner_fakes.h",
     "fuchsia_intl_unittest.cc",
+    "keyboard_unittest.cc",
     "platform_view_unittest.cc",
     "runner_unittest.cc",
     "tests/engine_unittests.cc",

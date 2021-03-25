@@ -30,6 +30,13 @@ platform channel.
 For PlatformView tests on iOS, you'll also have to edit the dictionaries in
 [AppDelegate.m](https://github.com/flutter/engine/blob/5d9509ae056b04c30295df27f201f31af9777842/testing/scenario_app/ios/Scenarios/Scenarios/AppDelegate.m#L29) and [PlatformViewGoldenTestManager.m](https://github.com/flutter/engine/blob/5d9509ae056b04c30295df27f201f31af9777842/testing/scenario_app/ios/Scenarios/ScenariosUITests/PlatformViewGoldenTestManager.m#L24) so that the correct golden image can be found.  Also, you'll have to add a [GoldenPlatformViewTests](https://github.com/flutter/engine/blob/5d9509ae056b04c30295df27f201f31af9777842/testing/scenario_app/ios/Scenarios/ScenariosUITests/GoldenPlatformViewTests.h#L18) in [PlatformViewUITests.m](https://github.com/flutter/engine/blob/af2ffc02b72af2a89242ca3c89e18269b1584ce5/testing/scenario_app/ios/Scenarios/ScenariosUITests/PlatformViewUITests.m).
 
+If `PlatformViewRotation` is failing, make sure Simulator app Device > Rotate Device Automatically
+is selected, or run:
+
+```bash
+defaults write com.apple.iphonesimulator RotateWindowWhenSignaledByGuest -int 1
+```
+
 ### Generating Golden Images on iOS
 
 Screenshots are saved as
@@ -46,7 +53,7 @@ The test is run on a x86 emulator. To run the test locally, you must create an e
 
 ```
 hw.lcd.density = 480
-hw.lcd.height = 1920
+hw.lcd.height = 1680
 hw.lcd.width = 1080
 lcd.depth = 16
 ```

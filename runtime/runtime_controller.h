@@ -11,9 +11,11 @@
 #include "flutter/common/task_runners.h"
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/fml/macros.h"
+#include "flutter/fml/mapping.h"
 #include "flutter/lib/ui/io_manager.h"
 #include "flutter/lib/ui/text/font_collection.h"
 #include "flutter/lib/ui/ui_dart_state.h"
+#include "flutter/lib/ui/volatile_path_tracker.h"
 #include "flutter/lib/ui/window/platform_configuration.h"
 #include "flutter/lib/ui/window/pointer_data_packet.h"
 #include "flutter/runtime/dart_vm.h"
@@ -109,6 +111,8 @@ class RuntimeController : public PlatformConfigurationClient {
   /// @param[in]  persistent_isolate_data     Unstructured persistent read-only
   ///                                         data that the root isolate can
   ///                                         access in a synchronous manner.
+  /// @param[in]  volatile_path_tracker       Cache for tracking path
+  ///                                         volatility.
   ///
   RuntimeController(
       RuntimeDelegate& client,
@@ -126,7 +130,24 @@ class RuntimeController : public PlatformConfigurationClient {
       const PlatformData& platform_data,
       const fml::closure& isolate_create_callback,
       const fml::closure& isolate_shutdown_callback,
-      std::shared_ptr<const fml::Mapping> persistent_isolate_data);
+      std::shared_ptr<const fml::Mapping> persistent_isolate_data,
+      std::shared_ptr<VolatilePathTracker> volatile_path_tracker);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Create a RuntimeController that shares as many resources as
+  ///             possible with the calling RuntimeController such that together
+  ///             they occupy less memory.
+  /// @return     A RuntimeController with a running isolate.
+  /// @see        RuntimeController::RuntimeController
+  ///
+  std::unique_ptr<RuntimeController> Spawn(
+      RuntimeDelegate& client,
+      std::string advisory_script_uri,
+      std::string advisory_script_entrypoint,
+      const std::function<void(int64_t)>& idle_notification_callback,
+      const fml::closure& isolate_create_callback,
+      const fml::closure& isolate_shutdown_callback,
+      std::shared_ptr<const fml::Mapping> persistent_isolate_data) const;
 
   // |PlatformConfigurationClient|
   ~RuntimeController() override;
@@ -274,13 +295,13 @@ class RuntimeController : public PlatformConfigurationClient {
   /// @brief      Dart code cannot fully measure the time it takes for a
   ///             specific frame to be rendered. This is because Dart code only
   ///             runs on the UI task runner. That is only a small part of the
-  ///             overall frame workload. The GPU task runner frame workload is
-  ///             executed on a thread where Dart code cannot run (and hence
+  ///             overall frame workload. The raster task runner frame workload
+  ///             is executed on a thread where Dart code cannot run (and hence
   ///             instrument). Besides, due to the pipelined nature of rendering
   ///             in Flutter, there may be multiple frame workloads being
   ///             processed at any given time. However, for non-Timeline based
   ///             profiling, it is useful for trace collection and processing to
-  ///             happen in Dart. To do this, the GPU task runner frame
+  ///             happen in Dart. To do this, the raster task runner frame
   ///             workloads need to be instrumented separately. After a set
   ///             number of these profiles have been gathered, they need to be
   ///             reported back to Dart code. The engine reports this extra
@@ -404,6 +425,20 @@ class RuntimeController : public PlatformConfigurationClient {
   bool DispatchPointerDataPacket(const PointerDataPacket& packet);
 
   //----------------------------------------------------------------------------
+  /// @brief      Dispatch the specified pointer data message to the running
+  ///             root isolate.
+  ///
+  /// @param[in]  packet    The key data message to dispatch to the isolate.
+  /// @param[in]  callback  Called when the framework has decided whether
+  ///                       to handle this key data.
+  ///
+  /// @return     If the key data message was dispatched. This may fail is
+  ///             an isolate is not running.
+  ///
+  bool DispatchKeyDataPacket(const KeyDataPacket& packet,
+                             KeyDataResponse callback);
+
+  //----------------------------------------------------------------------------
   /// @brief      Dispatch the semantics action to the specified accessibility
   ///             node.
   ///
@@ -473,6 +508,96 @@ class RuntimeController : public PlatformConfigurationClient {
   ///
   std::optional<uint32_t> GetRootIsolateReturnCode();
 
+  //----------------------------------------------------------------------------
+  /// @brief      Get an identifier that represents the Dart isolate group the
+  ///             root isolate is in.
+  ///
+  /// @return     The root isolate isolate group identifier, zero if one can't
+  ///             be established.
+  uint64_t GetRootIsolateGroup() const;
+
+  //--------------------------------------------------------------------------
+  /// @brief      Loads the Dart shared library into the Dart VM. When the
+  ///             Dart library is loaded successfully, the Dart future
+  ///             returned by the originating loadLibrary() call completes.
+  ///
+  ///             The Dart compiler may generate separate shared libraries
+  ///             files called 'loading units' when libraries are imported
+  ///             as deferred. Each of these shared libraries are identified
+  ///             by a unique loading unit id. Callers should open and resolve
+  ///             a SymbolMapping from the shared library. The Mappings should
+  ///             be moved into this method, as ownership will be assumed by the
+  ///             dart root isolate after successful loading and released after
+  ///             shutdown of the root isolate. The loading unit may not be
+  ///             used after isolate shutdown. If loading fails, the mappings
+  ///             will be released.
+  ///
+  ///             This method is paired with a RequestDartDeferredLibrary
+  ///             invocation that provides the embedder with the loading unit id
+  ///             of the deferred library to load.
+  ///
+  ///
+  /// @param[in]  loading_unit_id  The unique id of the deferred library's
+  ///                              loading unit, as passed in by
+  ///                              RequestDartDeferredLibrary.
+  ///
+  /// @param[in]  snapshot_data    Dart snapshot data of the loading unit's
+  ///                              shared library.
+  ///
+  /// @param[in]  snapshot_data    Dart snapshot instructions of the loading
+  ///                              unit's shared library.
+  ///
+  void LoadDartDeferredLibrary(
+      intptr_t loading_unit_id,
+      std::unique_ptr<const fml::Mapping> snapshot_data,
+      std::unique_ptr<const fml::Mapping> snapshot_instructions);
+
+  //--------------------------------------------------------------------------
+  /// @brief      Indicates to the dart VM that the request to load a deferred
+  ///             library with the specified loading unit id has failed.
+  ///
+  ///             The dart future returned by the initiating loadLibrary() call
+  ///             will complete with an error.
+  ///
+  /// @param[in]  loading_unit_id  The unique id of the deferred library's
+  ///                              loading unit, as passed in by
+  ///                              RequestDartDeferredLibrary.
+  ///
+  /// @param[in]  error_message    The error message that will appear in the
+  ///                              dart Future.
+  ///
+  /// @param[in]  transient        A transient error is a failure due to
+  ///                              temporary conditions such as no network.
+  ///                              Transient errors allow the dart VM to
+  ///                              re-request the same deferred library and
+  ///                              and loading_unit_id again. Non-transient
+  ///                              errors are permanent and attempts to
+  ///                              re-request the library will instantly
+  ///                              complete with an error.
+  virtual void LoadDartDeferredLibraryError(intptr_t loading_unit_id,
+                                            const std::string error_message,
+                                            bool transient);
+
+  // |PlatformConfigurationClient|
+  void RequestDartDeferredLibrary(intptr_t loading_unit_id) override;
+  const fml::WeakPtr<IOManager>& GetIOManager() const { return io_manager_; }
+
+  virtual DartVM* GetDartVM() const { return vm_; }
+
+  const fml::RefPtr<const DartSnapshot>& GetIsolateSnapshot() const {
+    return isolate_snapshot_;
+  }
+
+  const PlatformData& GetPlatformData() const { return platform_data_; }
+
+  const fml::RefPtr<SkiaUnrefQueue>& GetSkiaUnrefQueue() const {
+    return unref_queue_;
+  }
+
+  const fml::WeakPtr<SnapshotDelegate>& GetSnapshotDelegate() const {
+    return snapshot_delegate_;
+  }
+
  protected:
   /// Constructor for Mocks.
   RuntimeController(RuntimeDelegate& client, TaskRunners p_task_runners);
@@ -506,10 +631,12 @@ class RuntimeController : public PlatformConfigurationClient {
   std::function<void(int64_t)> idle_notification_callback_;
   PlatformData platform_data_;
   std::weak_ptr<DartIsolate> root_isolate_;
+  std::weak_ptr<DartIsolate> spawning_isolate_;
   std::optional<uint32_t> root_isolate_return_code_;
   const fml::closure isolate_create_callback_;
   const fml::closure isolate_shutdown_callback_;
   std::shared_ptr<const fml::Mapping> persistent_isolate_data_;
+  std::shared_ptr<VolatilePathTracker> volatile_path_tracker_;
 
   PlatformConfiguration* GetPlatformConfigurationIfAvailable();
 

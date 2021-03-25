@@ -13,9 +13,11 @@
 namespace flutter {
 
 EmbedderExternalViewEmbedder::EmbedderExternalViewEmbedder(
+    bool avoid_backing_store_cache,
     const CreateRenderTargetCallback& create_render_target_callback,
     const PresentCallback& present_callback)
-    : create_render_target_callback_(create_render_target_callback),
+    : avoid_backing_store_cache_(avoid_backing_store_cache),
+      create_render_target_callback_(create_render_target_callback),
       present_callback_(present_callback) {
   FML_DCHECK(create_render_target_callback_);
   FML_DCHECK(present_callback_);
@@ -133,7 +135,8 @@ static FlutterBackingStoreConfig MakeBackingStoreConfig(
 // |ExternalViewEmbedder|
 void EmbedderExternalViewEmbedder::SubmitFrame(
     GrDirectContext* context,
-    std::unique_ptr<SurfaceFrame> frame) {
+    std::unique_ptr<SurfaceFrame> frame,
+    const std::shared_ptr<fml::SyncSwitch>& gpu_disable_sync_switch) {
   auto [matched_render_targets, pending_keys] =
       render_target_cache_.GetExistingTargetsInCache(pending_views_);
 
@@ -262,8 +265,10 @@ void EmbedderExternalViewEmbedder::SubmitFrame(
   // Hold all rendered layers in the render target cache for one frame to
   // see if they may be reused next frame.
   for (auto& render_target : matched_render_targets) {
-    render_target_cache_.CacheRenderTarget(render_target.first,
-                                           std::move(render_target.second));
+    if (!avoid_backing_store_cache_) {
+      render_target_cache_.CacheRenderTarget(render_target.first,
+                                             std::move(render_target.second));
+    }
   }
 
   frame->Submit();

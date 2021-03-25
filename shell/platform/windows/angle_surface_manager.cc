@@ -5,6 +5,24 @@
 #include "flutter/shell/platform/windows/angle_surface_manager.h"
 
 #include <iostream>
+#include <vector>
+
+#ifdef WINUWP
+#include <third_party/cppwinrt/generated/winrt/Windows.UI.Composition.h>
+#include <windows.ui.core.h>
+#endif
+
+#if defined(WINUWP) && defined(USECOREWINDOW)
+#include <winrt/Windows.UI.Core.h>
+#endif
+
+// Logs an EGL error to stderr. This automatically calls eglGetError()
+// and logs the error code.
+static void LogEglError(std::string message) {
+  EGLint error = eglGetError();
+  std::cerr << "EGL: " << message << std::endl;
+  std::cerr << "EGL: eglGetError returned " << error << std::endl;
+}
 
 namespace flutter {
 
@@ -19,19 +37,43 @@ AngleSurfaceManager::~AngleSurfaceManager() {
   CleanUp();
 }
 
+bool AngleSurfaceManager::InitializeEGL(
+    PFNEGLGETPLATFORMDISPLAYEXTPROC egl_get_platform_display_EXT,
+    const EGLint* config,
+    bool should_log) {
+  egl_display_ = egl_get_platform_display_EXT(EGL_PLATFORM_ANGLE_ANGLE,
+                                              EGL_DEFAULT_DISPLAY, config);
+
+  if (egl_display_ == EGL_NO_DISPLAY) {
+    if (should_log) {
+      LogEglError("Failed to get a compatible EGLdisplay");
+    }
+    return false;
+  }
+
+  if (eglInitialize(egl_display_, nullptr, nullptr) == EGL_FALSE) {
+    if (should_log) {
+      LogEglError("Failed to initialize EGL via ANGLE");
+    }
+    return false;
+  }
+
+  return true;
+}
+
 bool AngleSurfaceManager::Initialize() {
-  const EGLint configAttributes[] = {EGL_RED_SIZE,   8, EGL_GREEN_SIZE,   8,
-                                     EGL_BLUE_SIZE,  8, EGL_ALPHA_SIZE,   8,
-                                     EGL_DEPTH_SIZE, 8, EGL_STENCIL_SIZE, 8,
-                                     EGL_NONE};
+  const EGLint config_attributes[] = {EGL_RED_SIZE,   8, EGL_GREEN_SIZE,   8,
+                                      EGL_BLUE_SIZE,  8, EGL_ALPHA_SIZE,   8,
+                                      EGL_DEPTH_SIZE, 8, EGL_STENCIL_SIZE, 8,
+                                      EGL_NONE};
 
   const EGLint display_context_attributes[] = {EGL_CONTEXT_CLIENT_VERSION, 2,
                                                EGL_NONE};
 
-  const EGLint default_display_attributes[] = {
-      // These are prefered display attributes and request ANGLE's D3D11
-      // renderer. eglInitialize will only succeed with these attributes if the
-      // hardware supports D3D11 Feature Level 10_0+.
+  // These are prefered display attributes and request ANGLE's D3D11
+  // renderer. eglInitialize will only succeed with these attributes if the
+  // hardware supports D3D11 Feature Level 10_0+.
+  const EGLint d3d11_display_attributes[] = {
       EGL_PLATFORM_ANGLE_TYPE_ANGLE,
       EGL_PLATFORM_ANGLE_TYPE_D3D11_ANGLE,
 
@@ -43,9 +85,9 @@ bool AngleSurfaceManager::Initialize() {
       EGL_NONE,
   };
 
-  const EGLint fl9_3_display_attributes[] = {
-      // These are used to request ANGLE's D3D11 renderer, with D3D11 Feature
-      // Level 9_3.
+  // These are used to request ANGLE's D3D11 renderer, with D3D11 Feature
+  // Level 9_3.
+  const EGLint d3d11_fl_9_3_display_attributes[] = {
       EGL_PLATFORM_ANGLE_TYPE_ANGLE,
       EGL_PLATFORM_ANGLE_TYPE_D3D11_ANGLE,
       EGL_PLATFORM_ANGLE_MAX_VERSION_MAJOR_ANGLE,
@@ -57,9 +99,9 @@ bool AngleSurfaceManager::Initialize() {
       EGL_NONE,
   };
 
-  const EGLint warp_display_attributes[] = {
-      // These attributes request D3D11 WARP (software rendering fallback) as a
-      // last resort.
+  // These attributes request D3D11 WARP (software rendering fallback) in case
+  // hardware-backed D3D11 is unavailable.
+  const EGLint d3d11_warp_display_attributes[] = {
       EGL_PLATFORM_ANGLE_TYPE_ANGLE,
       EGL_PLATFORM_ANGLE_TYPE_D3D11_ANGLE,
       EGL_PLATFORM_ANGLE_ENABLE_AUTOMATIC_TRIM_ANGLE,
@@ -67,66 +109,51 @@ bool AngleSurfaceManager::Initialize() {
       EGL_NONE,
   };
 
-  PFNEGLGETPLATFORMDISPLAYEXTPROC eglGetPlatformDisplayEXT =
+  // These are used to request ANGLE's D3D9 renderer as a fallback if D3D11
+  // is not available.
+  const EGLint d3d9_display_attributes[] = {
+      EGL_PLATFORM_ANGLE_TYPE_ANGLE,
+      EGL_PLATFORM_ANGLE_TYPE_D3D9_ANGLE,
+      EGL_TRUE,
+      EGL_NONE,
+  };
+
+  std::vector<const EGLint*> display_attributes_configs = {
+      d3d11_display_attributes,
+      d3d11_fl_9_3_display_attributes,
+      d3d11_warp_display_attributes,
+      d3d9_display_attributes,
+  };
+
+  PFNEGLGETPLATFORMDISPLAYEXTPROC egl_get_platform_display_EXT =
       reinterpret_cast<PFNEGLGETPLATFORMDISPLAYEXTPROC>(
           eglGetProcAddress("eglGetPlatformDisplayEXT"));
-  if (!eglGetPlatformDisplayEXT) {
-    std::cerr << "EGL: eglGetPlatformDisplayEXT not available" << std::endl;
+  if (!egl_get_platform_display_EXT) {
+    LogEglError("eglGetPlatformDisplayEXT not available");
     return false;
   }
 
-  // Try to initialize EGL to D3D11 Feature Level 10_0+.
-  egl_display_ =
-      eglGetPlatformDisplayEXT(EGL_PLATFORM_ANGLE_ANGLE, EGL_DEFAULT_DISPLAY,
-                               default_display_attributes);
-  if (egl_display_ == EGL_NO_DISPLAY) {
-    std::cerr << "EGL: Failed to get a compatible EGLdisplay" << std::endl;
-    return false;
-  }
-
-  if (eglInitialize(egl_display_, nullptr, nullptr) == EGL_FALSE) {
-    // If above failed, try to initialize EGL to D3D11 Feature Level 9_3, if
-    // 10_0+ is unavailable.
-    egl_display_ =
-        eglGetPlatformDisplayEXT(EGL_PLATFORM_ANGLE_ANGLE, EGL_DEFAULT_DISPLAY,
-                                 fl9_3_display_attributes);
-    if (egl_display_ == EGL_NO_DISPLAY) {
-      std::cerr << "EGL: Failed to get a compatible 9.3 EGLdisplay"
-                << std::endl;
-      return false;
-    }
-
-    if (eglInitialize(egl_display_, nullptr, nullptr) == EGL_FALSE) {
-      // If all else fails, attempt D3D11 Feature Level 11_0 on WARP as a last
-      // resort
-      egl_display_ = eglGetPlatformDisplayEXT(EGL_PLATFORM_ANGLE_ANGLE,
-                                              EGL_DEFAULT_DISPLAY,
-                                              warp_display_attributes);
-      if (egl_display_ == EGL_NO_DISPLAY) {
-        std::cerr << "EGL: Failed to get a compatible WARP EGLdisplay"
-                  << std::endl;
-        return false;
-      }
-
-      if (eglInitialize(egl_display_, nullptr, nullptr) == EGL_FALSE) {
-        std::cerr << "EGL: Failed to initialize EGL" << std::endl;
-        return false;
-      }
+  // Attempt to initialize ANGLE's renderer in order of: D3D11, D3D11 Feature
+  // Level 9_3, D3D11 WARP and finally D3D9.
+  for (auto config : display_attributes_configs) {
+    bool should_log = (config == display_attributes_configs.back());
+    if (InitializeEGL(egl_get_platform_display_EXT, config, should_log)) {
+      break;
     }
   }
 
   EGLint numConfigs = 0;
-  if ((eglChooseConfig(egl_display_, configAttributes, &egl_config_, 1,
+  if ((eglChooseConfig(egl_display_, config_attributes, &egl_config_, 1,
                        &numConfigs) == EGL_FALSE) ||
       (numConfigs == 0)) {
-    std::cerr << "EGL: Failed to choose first context" << std::endl;
+    LogEglError("Failed to choose first context");
     return false;
   }
 
   egl_context_ = eglCreateContext(egl_display_, egl_config_, EGL_NO_CONTEXT,
                                   display_context_attributes);
   if (egl_context_ == EGL_NO_CONTEXT) {
-    std::cerr << "EGL: Failed to create EGL context" << std::endl;
+    LogEglError("Failed to create EGL context");
     return false;
   }
 
@@ -134,7 +161,7 @@ bool AngleSurfaceManager::Initialize() {
       egl_display_, egl_config_, egl_context_, display_context_attributes);
 
   if (egl_resource_context_ == EGL_NO_CONTEXT) {
-    std::cerr << "EGL: Failed to create EGL resource context" << std::endl;
+    LogEglError("Failed to create EGL resource context");
     return false;
   }
 
@@ -149,7 +176,7 @@ void AngleSurfaceManager::CleanUp() {
     egl_context_ = EGL_NO_CONTEXT;
 
     if (result == EGL_FALSE) {
-      std::cerr << "EGL: Failed to destroy context" << std::endl;
+      LogEglError("Failed to destroy context");
     }
   }
 
@@ -159,7 +186,7 @@ void AngleSurfaceManager::CleanUp() {
     egl_resource_context_ = EGL_NO_CONTEXT;
 
     if (result == EGL_FALSE) {
-      std::cerr << "EGL: Failed to destroy resource context" << std::endl;
+      LogEglError("Failed to destroy resource context");
     }
   }
 
@@ -178,22 +205,31 @@ bool AngleSurfaceManager::CreateSurface(WindowsRenderTarget* render_target,
 
   EGLSurface surface = EGL_NO_SURFACE;
 
-  // Disable Angle's automatic surface sizing logic and provide and exlicit
-  // size.  AngleSurfaceManager is responsible for initiating Angle surface size
-  // changes to avoid race conditions with rendering when automatic mode is
-  // used.
-  const EGLint surfaceAttributes[] = {
-      EGL_FIXED_SIZE_ANGLE, EGL_TRUE, EGL_WIDTH, width,
-      EGL_HEIGHT,           height,   EGL_NONE};
+  const EGLint surfaceAttributes[] = {EGL_NONE};
 
+#ifdef WINUWP
+#ifdef USECOREWINDOW
+  auto target = std::get<winrt::Windows::UI::Core::CoreWindow>(*render_target);
+#else
+  auto target =
+      std::get<winrt::Windows::UI::Composition::SpriteVisual>(*render_target);
+#endif
+  surface = eglCreateWindowSurface(
+      egl_display_, egl_config_,
+      static_cast<EGLNativeWindowType>(winrt::get_abi(target)),
+      surfaceAttributes);
+#else
   surface = eglCreateWindowSurface(
       egl_display_, egl_config_,
       static_cast<EGLNativeWindowType>(std::get<HWND>(*render_target)),
       surfaceAttributes);
+#endif
   if (surface == EGL_NO_SURFACE) {
-    std::cerr << "Surface creation failed." << std::endl;
+    LogEglError("Surface creation failed.");
   }
 
+  surface_width_ = width;
+  surface_height_ = height;
   render_surface_ = surface;
   return true;
 }
@@ -204,29 +240,26 @@ void AngleSurfaceManager::ResizeSurface(WindowsRenderTarget* render_target,
   EGLint existing_width, existing_height;
   GetSurfaceDimensions(&existing_width, &existing_height);
   if (width != existing_width || height != existing_height) {
-    // Destroy existing surface with previous stale dimensions and create new
-    // surface at new size. Since the Windows compositor retains the front
-    // buffer until the new surface has been presented, no need to manually
-    // preserve the previous surface contents. This resize approach could be
-    // further optimized if Angle exposed a public entrypoint for
-    // SwapChain11::reset or SwapChain11::resize.
-    DestroySurface();
-    if (!CreateSurface(render_target, width, height)) {
-      std::cerr << "AngleSurfaceManager::ResizeSurface failed to create surface"
-                << std::endl;
-    }
+    // Resize render_surface_.  Internaly this calls mSwapChain->ResizeBuffers
+    // avoiding the need to destory and recreate the underlying SwapChain.
+    surface_width_ = width;
+    surface_height_ = height;
+    eglPostSubBufferNV(egl_display_, render_surface_, 1, 1, width, height);
   }
 }
 
 void AngleSurfaceManager::GetSurfaceDimensions(EGLint* width, EGLint* height) {
   if (render_surface_ == EGL_NO_SURFACE || !initialize_succeeded_) {
-    width = 0;
-    height = 0;
+    *width = 0;
+    *height = 0;
     return;
   }
 
-  eglQuerySurface(egl_display_, render_surface_, EGL_WIDTH, width);
-  eglQuerySurface(egl_display_, render_surface_, EGL_HEIGHT, height);
+  // Can't use eglQuerySurface here; Because we're not using
+  // EGL_FIXED_SIZE_ANGLE flag anymore, Angle may resize the surface before
+  // Flutter asks it to, which breaks resize redraw synchronization
+  *width = surface_width_;
+  *height = surface_height_;
 }
 
 void AngleSurfaceManager::DestroySurface() {

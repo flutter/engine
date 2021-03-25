@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
 
+// @dart = 2.12
 part of dart.ui;
 
 class _HashEnd { const _HashEnd(); }
@@ -116,7 +116,7 @@ int hashValues(
 int hashList(Iterable<Object?>? arguments) {
   int result = 0;
   if (arguments != null) {
-    for (Object? argument in arguments)
+    for (final Object? argument in arguments)
       result = _Jenkins.combine(result, argument);
   }
   return _Jenkins.finish(result);

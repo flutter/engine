@@ -61,6 +61,11 @@ public class DartExecutor implements BinaryMessenger {
     this.dartMessenger = new DartMessenger(flutterJNI);
     dartMessenger.setMessageHandler("flutter/isolate", isolateChannelMessageHandler);
     this.binaryMessenger = new DefaultBinaryMessenger(dartMessenger);
+    // The JNI might already be attached if coming from a spawned engine. If so, correctly report
+    // that this DartExecutor is already running.
+    if (flutterJNI.isAttached()) {
+      isApplicationRunning = true;
+    }
   }
 
   /**
@@ -121,7 +126,10 @@ public class DartExecutor implements BinaryMessenger {
     Log.v(TAG, "Executing Dart entrypoint: " + dartEntrypoint);
 
     flutterJNI.runBundleAndSnapshotFromLibrary(
-        dartEntrypoint.pathToBundle, dartEntrypoint.dartEntrypointFunctionName, null, assetManager);
+        dartEntrypoint.pathToBundle,
+        dartEntrypoint.dartEntrypointFunctionName,
+        dartEntrypoint.dartEntrypointLibrary,
+        assetManager);
 
     isApplicationRunning = true;
   }
@@ -269,12 +277,25 @@ public class DartExecutor implements BinaryMessenger {
     /** The path within the AssetManager where the app will look for assets. */
     @NonNull public final String pathToBundle;
 
+    /** The library or file location that contains the Dart entrypoint function. */
+    @Nullable public final String dartEntrypointLibrary;
+
     /** The name of a Dart function to execute. */
     @NonNull public final String dartEntrypointFunctionName;
 
     public DartEntrypoint(
         @NonNull String pathToBundle, @NonNull String dartEntrypointFunctionName) {
       this.pathToBundle = pathToBundle;
+      dartEntrypointLibrary = null;
+      this.dartEntrypointFunctionName = dartEntrypointFunctionName;
+    }
+
+    public DartEntrypoint(
+        @NonNull String pathToBundle,
+        @NonNull String dartEntrypointLibrary,
+        @NonNull String dartEntrypointFunctionName) {
+      this.pathToBundle = pathToBundle;
+      this.dartEntrypointLibrary = dartEntrypointLibrary;
       this.dartEntrypointFunctionName = dartEntrypointFunctionName;
     }
 

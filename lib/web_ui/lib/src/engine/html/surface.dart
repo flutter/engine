@@ -2,10 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
-part of engine;
-
 /// When `true` prints statistics about what happened to the surface tree when
+
+// @dart = 2.12
+part of engine;
 /// it was composited.
 ///
 /// Also paints an on-screen overlay with the numbers visualized as a timeline.
@@ -1092,7 +1092,7 @@ abstract class PersistedContainerSurface extends PersistedSurface {
       for (int indexInOld = 0; indexInOld < oldChildCount; indexInOld += 1) {
         final PersistedSurface? oldChild = oldChildren[indexInOld];
         final bool childAlreadyClaimed = oldChild == null;
-        if (childAlreadyClaimed || !newChild.canUpdateAsMatch(oldChild!)) {
+        if (childAlreadyClaimed || !newChild.canUpdateAsMatch(oldChild)) {
           continue;
         }
         allMatches.add(_PersistedSurfaceMatch(

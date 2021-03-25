@@ -28,6 +28,7 @@ _flutter_framework_headers = [
   "framework/Headers/FlutterCallbackCache.h",
   "framework/Headers/FlutterDartProject.h",
   "framework/Headers/FlutterEngine.h",
+  "framework/Headers/FlutterEngineGroup.h",
   "framework/Headers/FlutterHeadlessDartRunner.h",
   "framework/Headers/FlutterPlatformViews.h",
   "framework/Headers/FlutterPlugin.h",
@@ -42,6 +43,8 @@ source_set("flutter_framework_source") {
   cflags_objc = flutter_cflags_objc
   cflags_objcc = flutter_cflags_objcc
 
+  deps = []
+
   sources = [
     "framework/Source/FlutterAppDelegate.mm",
     "framework/Source/FlutterBinaryMessengerRelay.mm",
@@ -50,6 +53,7 @@ source_set("flutter_framework_source") {
     "framework/Source/FlutterDartProject.mm",
     "framework/Source/FlutterDartProject_Internal.h",
     "framework/Source/FlutterEngine.mm",
+    "framework/Source/FlutterEngineGroup.mm",
     "framework/Source/FlutterEngine_Internal.h",
     "framework/Source/FlutterHeadlessDartRunner.mm",
     "framework/Source/FlutterObservatoryPublisher.h",
@@ -62,6 +66,8 @@ source_set("flutter_framework_source") {
     "framework/Source/FlutterPlatformViews_Internal.h",
     "framework/Source/FlutterPlatformViews_Internal.mm",
     "framework/Source/FlutterPluginAppLifeCycleDelegate.mm",
+    "framework/Source/FlutterRestorationPlugin.h",
+    "framework/Source/FlutterRestorationPlugin.mm",
     "framework/Source/FlutterTextInputDelegate.h",
     "framework/Source/FlutterTextInputPlugin.h",
     "framework/Source/FlutterTextInputPlugin.mm",
@@ -99,8 +105,6 @@ source_set("flutter_framework_source") {
     "ios_render_target_gl.mm",
     "ios_surface.h",
     "ios_surface.mm",
-    "ios_surface_factory.h",
-    "ios_surface_factory.mm",
     "ios_surface_gl.h",
     "ios_surface_gl.mm",
     "ios_surface_software.h",
@@ -118,8 +122,6 @@ source_set("flutter_framework_source") {
   defines = [ "FLUTTER_FRAMEWORK=1" ]
 
   if (shell_enable_metal) {
-    defines += [ "FLUTTER_SHELL_ENABLE_METAL=1" ]
-
     sources += [
       "ios_context_metal.h",
       "ios_context_metal.mm",
@@ -128,9 +130,11 @@ source_set("flutter_framework_source") {
       "ios_surface_metal.h",
       "ios_surface_metal.mm",
     ]
+
+    deps += [ "//flutter/shell/platform/darwin/graphics" ]
   }
 
-  deps = [
+  deps += [
     ":ios_gpu_configuration",
     "//flutter/common",
     "//flutter/common/graphics",
@@ -146,7 +150,10 @@ source_set("flutter_framework_source") {
     "//third_party/skia",
   ]
 
-  public_configs = [ "//flutter:config" ]
+  public_configs = [
+    ":ios_gpu_configuration_config",
+    "//flutter:config",
+  ]
 
   libs = [
     "AudioToolbox.framework",
@@ -176,8 +183,10 @@ source_set("ios_test_flutter_mrc") {
   ]
   sources = [
     "framework/Source/FlutterEnginePlatformViewTest.mm",
+    "framework/Source/FlutterEngineTest_mrc.mm",
     "framework/Source/FlutterPlatformPluginTest.mm",
     "framework/Source/FlutterPlatformViewsTest.mm",
+    "framework/Source/FlutterViewTest.mm",
     "framework/Source/accessibility_bridge_test.mm",
   ]
   deps = [
@@ -212,8 +221,10 @@ shared_library("ios_test_flutter") {
     "framework/Source/FlutterAppDelegateTest.mm",
     "framework/Source/FlutterBinaryMessengerRelayTest.mm",
     "framework/Source/FlutterDartProjectTest.mm",
+    "framework/Source/FlutterEngineGroupTest.mm",
     "framework/Source/FlutterEngineTest.mm",
     "framework/Source/FlutterPluginAppLifeCycleDelegateTest.m",
+    "framework/Source/FlutterRestorationPluginTest.mm",
     "framework/Source/FlutterTextInputPluginTest.m",
     "framework/Source/FlutterViewControllerTest.mm",
     "framework/Source/SemanticsObjectTest.mm",
@@ -221,6 +232,7 @@ shared_library("ios_test_flutter") {
   ]
   deps = [
     ":flutter_framework_source",
+    ":ios_gpu_configuration",
     ":ios_test_flutter_mrc",
     "//flutter/common:common",
     "//flutter/shell/platform/darwin/common:framework_shared",
@@ -230,7 +242,10 @@ shared_library("ios_test_flutter") {
     "//third_party/rapidjson",
     "//third_party/skia",
   ]
-  public_configs = [ "//flutter:config" ]
+  public_configs = [
+    ":ios_gpu_configuration_config",
+    "//flutter:config",
+  ]
 }
 
 shared_library("create_flutter_framework_dylib") {
@@ -326,7 +341,8 @@ shared_library("copy_and_verify_framework_module") {
   ]
 }
 
-group("flutter_framework") {
+group("universal_flutter_framework") {
+  visibility = [ ":*" ]
   deps = [
     ":copy_and_verify_framework_module",
     ":copy_dylib",
@@ -336,4 +352,19 @@ group("flutter_framework") {
     ":copy_framework_podspec",
     ":copy_license",
   ]
+}
+
+action("flutter_framework") {
+  script = "//flutter/sky/tools/create_xcframework.py"
+  outputs = [ "$root_out_dir/Flutter.xcframework" ]
+  args = [
+    "--frameworks",
+    rebase_path("$_flutter_framework_dir"),
+    "--name",
+    "Flutter",
+    "--location",
+    rebase_path("$root_out_dir"),
+  ]
+
+  deps = [ ":universal_flutter_framework" ]
 }

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// A canvas that renders to DOM elements and CSS properties.
@@ -135,6 +135,17 @@ class DomCanvas extends EngineCanvas with SaveElementStackTracking {
   }
 }
 
+/// Converts a shadow color specified by the framework to the color that should
+/// actually be applied when rendering the element.
+///
+/// Returns a color for box-shadow based on blur filter at sigma.
+ui.Color blurColor(ui.Color color, double sigma) {
+  final double strength = math.min(
+      math.sqrt(sigma) / (math.pi * 2.0), 1.0);
+  final int reducedAlpha = ((1.0 - strength) * color.alpha).round();
+  return ui.Color((reducedAlpha & 0xff) << 24 | (color.value & 0x00ffffff));
+}
+
 html.HtmlElement _buildDrawRectElement(ui.Rect rect, SurfacePaintData paint, String tagName,
     Matrix4 transform) {
   assert(paint.shader == null);
@@ -175,18 +186,27 @@ html.HtmlElement _buildDrawRectElement(ui.Rect rect, SurfacePaintData paint, Str
     ..transformOrigin = '0 0 0'
     ..transform = effectiveTransform;
 
-  final String cssColor =
-  paint.color == null ? '#000000' : colorToCssString(paint.color)!;
+  String cssColor =
+      paint.color == null ? '#000000' : colorToCssString(paint.color)!;
 
   if (paint.maskFilter != null) {
-    style.filter = 'blur(${paint.maskFilter!.webOnlySigma}px)';
+    final double sigma = paint.maskFilter!.webOnlySigma;
+    if (browserEngine == BrowserEngine.webkit && !isStroke) {
+      // A bug in webkit leaves artifacts when this element is animated
+      // with filter: blur, we use boxShadow instead.
+      style.boxShadow = '0px 0px ${sigma * 2.0}px $cssColor';
+      cssColor = colorToCssString(
+          blurColor(paint.color ?? const ui.Color(0xFF000000), sigma))!;
+    } else {
+      style.filter = 'blur(${sigma}px)';
+    }
   }
 
   if (isStroke) {
     style
       ..width = '${right - left - strokeWidth}px'
       ..height = '${bottom - top - strokeWidth}px'
-      ..border = '${strokeWidth}px solid $cssColor';
+      ..border = '${_borderStrokeToCssUnit(strokeWidth)} solid $cssColor';
   } else {
     style
       ..width = '${right - left}px'
@@ -204,18 +224,26 @@ void _applyRRectBorderRadius(html.CssStyleDeclaration style, ui.RRect rrect) {
       rrect.trRadiusX == rrect.trRadiusY &&
       rrect.blRadiusX == rrect.blRadiusY &&
       rrect.brRadiusX == rrect.brRadiusY) {
-    style.borderRadius = '${rrect.blRadiusX.toStringAsFixed(3)}px';
+    style.borderRadius = '${_borderStrokeToCssUnit(rrect.blRadiusX)}';
     return;
   }
   // Non-uniform. Apply each corner radius.
-  style.borderTopLeftRadius = '${rrect.tlRadiusX.toStringAsFixed(3)}px '
-      '${rrect.tlRadiusY.toStringAsFixed(3)}px';
-  style.borderTopRightRadius = '${rrect.trRadiusX.toStringAsFixed(3)}px '
-      '${rrect.trRadiusY.toStringAsFixed(3)}px';
-  style.borderBottomLeftRadius = '${rrect.blRadiusX.toStringAsFixed(3)}px '
-      '${rrect.blRadiusY.toStringAsFixed(3)}px';
-  style.borderBottomRightRadius = '${rrect.brRadiusX.toStringAsFixed(3)}px '
-      '${rrect.brRadiusY.toStringAsFixed(3)}px';
+  style.borderTopLeftRadius = '${_borderStrokeToCssUnit(rrect.tlRadiusX)} '
+      '${_borderStrokeToCssUnit(rrect.tlRadiusY)}';
+  style.borderTopRightRadius = '${_borderStrokeToCssUnit(rrect.trRadiusX)} '
+      '${_borderStrokeToCssUnit(rrect.trRadiusY)}';
+  style.borderBottomLeftRadius = '${_borderStrokeToCssUnit(rrect.blRadiusX)} '
+      '${_borderStrokeToCssUnit(rrect.blRadiusY)}';
+  style.borderBottomRightRadius = '${_borderStrokeToCssUnit(rrect.brRadiusX)} '
+      '${_borderStrokeToCssUnit(rrect.brRadiusY)}';
+}
+
+String _borderStrokeToCssUnit(double value) {
+  if (value == 0) {
+    // TODO: hairline nees to take into account both dpi and density.
+    value = 1.0;
+  }
+  return '${value.toStringAsFixed(3)}px';
 }
 
 html.Element _pathToSvgElement(SurfacePath path, SurfacePaintData paint,
@@ -224,11 +252,17 @@ html.Element _pathToSvgElement(SurfacePath path, SurfacePaintData paint,
   sb.write(
       '<svg viewBox="0 0 $width $height" width="${width}px" height="${height}px">');
   sb.write('<path ');
-  if (paint.style == ui.PaintingStyle.stroke) {
-    sb.write('stroke="${colorToCssString(paint.color)}" ');
-    sb.write('stroke-width="${paint.strokeWidth}" ');
+  final ui.Color color = paint.color ?? const ui.Color(0xFF000000);
+  if (paint.style == ui.PaintingStyle.stroke ||
+      (paint.style != ui.PaintingStyle.fill &&
+      paint.strokeWidth != 0 && paint.strokeWidth != null)) {
+    sb.write('stroke="${colorToCssString(color)}" ');
+    sb.write('stroke-width="${paint.strokeWidth ?? 1.0}" ');
+    sb.write('fill="none" ');
   } else if (paint.color != null) {
-    sb.write('fill="${colorToCssString(paint.color)}" ');
+    sb.write('fill="${colorToCssString(color)}" ');
+  } else {
+    sb.write('fill="#000000" ');
   }
   if (path.fillType == ui.PathFillType.evenOdd) {
     sb.write('fill-rule="evenodd" ');

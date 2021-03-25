@@ -164,9 +164,6 @@ class IntegrationTestsManager {
       e2eTestsToRun.add(basename);
     }
 
-    int numberOfPassedTests = 0;
-    int numberOfFailedTests = 0;
-
     final Set<String> buildModes = _getBuildModes();
 
     for (String fileName in e2eTestsToRun) {
@@ -175,9 +172,9 @@ class IntegrationTestsManager {
 
     final int numberOfTestsRun = _numberOfPassedTests + _numberOfFailedTests;
 
-    print('INFO: ${numberOfTestsRun} tests run. ${numberOfPassedTests} passed '
-        'and ${numberOfFailedTests} failed.');
-    return numberOfFailedTests == 0;
+    print('INFO: ${numberOfTestsRun} tests run. ${_numberOfPassedTests} passed '
+        'and ${_numberOfFailedTests} failed.');
+    return _numberOfFailedTests == 0;
   }
 
   Future<void> _runTestsTarget(
@@ -252,10 +249,9 @@ class IntegrationTestsManager {
         buildModes = <String>{mode};
       }
     } else {
-      // TODO(nurhan): Enable `release` when recipe is sharded.
       buildModes = _browser == 'chrome'
-          ? {'debug', 'profile'}
-          : {'profile'};
+          ? {'debug', 'profile', 'release'}
+          : {'profile', 'release'};
     }
     return buildModes;
   }
@@ -355,7 +351,7 @@ class IntegrationTestsManager {
         print('ERROR: Test driver file named has ${expectedDriverName} '
             'not found under directory ${testDirectory.path}. Stopping the '
             'integration tests. Please add ${expectedDriverName}. Check to '
-            'README file on more details on how to setup integration tests.');
+            'README file on more details on how to set up integration tests.');
       }
       throw StateError('Error in test files. Check the logs for '
           'further instructions');
@@ -647,8 +643,18 @@ const Map<String, List<String>> blockedTestsListsMapForModes =
 // TODO(nurhan): Remove the failing test after fixing.
 const Map<String, List<String>> blockedTestsListsMapForRenderBackends =
     <String, List<String>>{
-  'auto': [],
+  'auto': [
+    'image_loading_integration.dart',
+    'platform_messages_integration.dart',
+    'profile_diagnostics_integration.dart',
+    'scroll_wheel_integration.dart',
+    'text_editing_integration.dart',
+    'treeshaking_integration.dart',
+    'url_strategy_integration.dart',
+  ],
   'html': [],
   // This test failed on canvaskit on all three build modes.
-  'canvaskit': ['image_loading_integration.dart'],
+  'canvaskit': [
+    'image_loading_integration.dart',
+  ],
 };

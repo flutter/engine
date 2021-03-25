@@ -8,10 +8,15 @@
 #include <iostream>
 #include <sstream>
 
-#include "flutter/shell/platform/common/cpp/path_utils.h"
+#include "flutter/shell/platform/common/client_wrapper/binary_messenger_impl.h"
+#include "flutter/shell/platform/common/client_wrapper/include/flutter/basic_message_channel.h"
+#include "flutter/shell/platform/common/json_message_codec.h"
+#include "flutter/shell/platform/common/path_utils.h"
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
 #include "flutter/shell/platform/windows/string_conversion.h"
 #include "flutter/shell/platform/windows/system_utils.h"
+#include "flutter/shell/platform/windows/task_runner.h"
+#include "third_party/rapidjson/include/rapidjson/document.h"
 
 namespace flutter {
 
@@ -45,7 +50,17 @@ FlutterRendererConfig GetRendererConfig() {
     }
     return host->view()->SwapBuffers();
   };
-  config.open_gl.fbo_callback = [](void* user_data) -> uint32_t { return 0; };
+  config.open_gl.fbo_reset_after_present = true;
+  config.open_gl.fbo_with_frame_info_callback =
+      [](void* user_data, const FlutterFrameInfo* info) -> uint32_t {
+    auto host = static_cast<FlutterWindowsEngine*>(user_data);
+    if (host->view()) {
+      return host->view()->GetFrameBufferId(info->size.width,
+                                            info->size.height);
+    } else {
+      return kWindowFrameBufferID;
+    }
+  };
   config.open_gl.gl_proc_resolver = [](void* user_data,
                                        const char* what) -> void* {
     return reinterpret_cast<void*>(eglGetProcAddress(what));
@@ -56,6 +71,16 @@ FlutterRendererConfig GetRendererConfig() {
       return false;
     }
     return host->view()->MakeResourceCurrent();
+  };
+  config.open_gl.gl_external_texture_frame_callback =
+      [](void* user_data, int64_t texture_id, size_t width, size_t height,
+         FlutterOpenGLTexture* texture) -> bool {
+    auto host = static_cast<FlutterWindowsEngine*>(user_data);
+    if (!host->texture_registrar()) {
+      return false;
+    }
+    return host->texture_registrar()->PopulateTexture(texture_id, width, height,
+                                                      texture);
   };
   return config;
 }
@@ -95,7 +120,7 @@ FlutterWindowsEngine::FlutterWindowsEngine(const FlutterProjectBundle& project)
   embedder_api_.struct_size = sizeof(FlutterEngineProcTable);
   FlutterEngineGetProcAddresses(&embedder_api_);
 
-  task_runner_ = std::make_unique<Win32TaskRunner>(
+  task_runner_ = TaskRunner::Create(
       GetCurrentThreadId(), embedder_api_.GetCurrentTime,
       [this](const auto* task) {
         if (!engine_) {
@@ -114,10 +139,22 @@ FlutterWindowsEngine::FlutterWindowsEngine(const FlutterProjectBundle& project)
   plugin_registrar_ = std::make_unique<FlutterDesktopPluginRegistrar>();
   plugin_registrar_->engine = this;
 
+  messenger_wrapper_ = std::make_unique<BinaryMessengerImpl>(messenger_.get());
   message_dispatcher_ =
       std::make_unique<IncomingMessageDispatcher>(messenger_.get());
+  texture_registrar_ = std::make_unique<FlutterWindowsTextureRegistrar>(this);
+#ifndef WINUWP
   window_proc_delegate_manager_ =
-      std::make_unique<Win32WindowProcDelegateManager>();
+      std::make_unique<WindowProcDelegateManagerWin32>();
+#endif
+
+  // Set up internal channels.
+  // TODO: Replace this with an embedder.h API. See
+  // https://github.com/flutter/flutter/issues/71099
+  settings_channel_ =
+      std::make_unique<BasicMessageChannel<rapidjson::Document>>(
+          messenger_wrapper_.get(), "flutter/settings",
+          &JsonMessageCodec::GetInstance());
 }
 
 FlutterWindowsEngine::~FlutterWindowsEngine() {
@@ -162,12 +199,13 @@ bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
   platform_task_runner.user_data = task_runner_.get();
   platform_task_runner.runs_task_on_current_thread_callback =
       [](void* user_data) -> bool {
-    return static_cast<Win32TaskRunner*>(user_data)->RunsTasksOnCurrentThread();
+    return static_cast<TaskRunner*>(user_data)->RunsTasksOnCurrentThread();
   };
   platform_task_runner.post_task_callback = [](FlutterTask task,
                                                uint64_t target_time_nanos,
                                                void* user_data) -> void {
-    static_cast<Win32TaskRunner*>(user_data)->PostTask(task, target_time_nanos);
+    static_cast<TaskRunner*>(user_data)->PostFlutterTask(task,
+                                                         target_time_nanos);
   };
   FlutterCustomTaskRunners custom_task_runners = {};
   custom_task_runners.struct_size = sizeof(FlutterCustomTaskRunners);
@@ -188,7 +226,9 @@ bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
     auto host = static_cast<FlutterWindowsEngine*>(user_data);
     return host->HandlePlatformMessage(engine_message);
   };
+
   args.custom_task_runners = &custom_task_runners;
+
   if (aot_data_) {
     args.aot_data = aot_data_.get();
   }
@@ -247,6 +287,14 @@ void FlutterWindowsEngine::SendWindowMetricsEvent(
 void FlutterWindowsEngine::SendPointerEvent(const FlutterPointerEvent& event) {
   if (engine_) {
     embedder_api_.SendPointerEvent(engine_, &event, 1);
+  }
+}
+
+void FlutterWindowsEngine::SendKeyEvent(const FlutterKeyEvent& event,
+                                        FlutterKeyEventCallback callback,
+                                        void* user_data) {
+  if (engine_) {
+    embedder_api_.SendKeyEvent(engine_, &event, callback, user_data);
   }
 }
 
@@ -327,7 +375,31 @@ void FlutterWindowsEngine::SendSystemSettings() {
   embedder_api_.UpdateLocales(engine_, flutter_locale_list.data(),
                               flutter_locale_list.size());
 
-  // TODO: Send 'flutter/settings' channel settings here as well.
+  rapidjson::Document settings(rapidjson::kObjectType);
+  auto& allocator = settings.GetAllocator();
+  settings.AddMember("alwaysUse24HourFormat",
+                     Prefer24HourTime(GetUserTimeFormat()), allocator);
+  settings.AddMember("textScaleFactor", 1.0, allocator);
+  // TODO: Implement dark mode support.
+  // https://github.com/flutter/flutter/issues/54612
+  settings.AddMember("platformBrightness", "light", allocator);
+  settings_channel_->Send(settings);
+}
+
+bool FlutterWindowsEngine::RegisterExternalTexture(int64_t texture_id) {
+  return (embedder_api_.RegisterExternalTexture(engine_, texture_id) ==
+          kSuccess);
+}
+
+bool FlutterWindowsEngine::UnregisterExternalTexture(int64_t texture_id) {
+  return (embedder_api_.UnregisterExternalTexture(engine_, texture_id) ==
+          kSuccess);
+}
+
+bool FlutterWindowsEngine::MarkExternalTextureFrameAvailable(
+    int64_t texture_id) {
+  return (embedder_api_.MarkExternalTextureFrameAvailable(
+              engine_, texture_id) == kSuccess);
 }
 
 }  // namespace flutter

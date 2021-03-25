@@ -405,11 +405,11 @@ public class FlutterActivity extends Activity
 
     super.onCreate(savedInstanceState);
 
-    lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_CREATE);
-
     delegate = new FlutterActivityAndFragmentDelegate(this);
     delegate.onAttach(this);
-    delegate.onActivityCreated(savedInstanceState);
+    delegate.onRestoreInstanceState(savedInstanceState);
+
+    lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_CREATE);
 
     configureWindowForTransparency();
     setContentView(createFlutterView());
@@ -532,26 +532,34 @@ public class FlutterActivity extends Activity
   protected void onStart() {
     super.onStart();
     lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_START);
-    delegate.onStart();
+    if (stillAttachedForEvent("onStart")) {
+      delegate.onStart();
+    }
   }
 
   @Override
   protected void onResume() {
     super.onResume();
     lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_RESUME);
-    delegate.onResume();
+    if (stillAttachedForEvent("onResume")) {
+      delegate.onResume();
+    }
   }
 
   @Override
   public void onPostResume() {
     super.onPostResume();
-    delegate.onPostResume();
+    if (stillAttachedForEvent("onPostResume")) {
+      delegate.onPostResume();
+    }
   }
 
   @Override
   protected void onPause() {
     super.onPause();
-    delegate.onPause();
+    if (stillAttachedForEvent("onPause")) {
+      delegate.onPause();
+    }
     lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE);
   }
 
@@ -591,7 +599,7 @@ public class FlutterActivity extends Activity
 
   @Override
   public void detachFromFlutterEngine() {
-    Log.v(
+    Log.w(
         TAG,
         "FlutterActivity "
             + this
@@ -902,11 +910,7 @@ public class FlutterActivity extends Activity
   @Override
   public PlatformPlugin providePlatformPlugin(
       @Nullable Activity activity, @NonNull FlutterEngine flutterEngine) {
-    if (activity != null) {
-      return new PlatformPlugin(getActivity(), flutterEngine.getPlatformChannel());
-    } else {
-      return null;
-    }
+    return new PlatformPlugin(getActivity(), flutterEngine.getPlatformChannel(), this);
   }
 
   /**
@@ -1032,9 +1036,15 @@ public class FlutterActivity extends Activity
     return true;
   }
 
+  @Override
+  public boolean popSystemNavigator() {
+    // Hook for subclass. No-op if returns false.
+    return false;
+  }
+
   private boolean stillAttachedForEvent(String event) {
     if (delegate == null) {
-      Log.v(TAG, "FlutterActivity " + hashCode() + " " + event + " called after release.");
+      Log.w(TAG, "FlutterActivity " + hashCode() + " " + event + " called after release.");
       return false;
     }
     return true;
