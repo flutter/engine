@@ -4,22 +4,38 @@
 
 #include "flutter/flow/layers/display_list_layer.h"
 
-#include "flutter/fml/logging.h"
 #include "flutter/flow/display_list.h"
-#include "third_party/skia/include/core/SkSerialProcs.h"
+#include "third_party/tonic/typed_data/dart_byte_data.h"
 
 namespace flutter {
 
 DisplayListLayer::DisplayListLayer(const SkPoint& offset,
                                    const SkRect& cull_rect,
                                    const SkRect& draw_rect,
+                                   const tonic::Uint8List& ops,
+                                   const tonic::DartByteData& data,
+                                   Dart_Handle objects,
                                    bool is_complex,
                                    bool will_change)
     : offset_(offset),
       cull_rect_(cull_rect),
       draw_rect_(draw_rect),
       is_complex_(is_complex),
-      will_change_(will_change) {}
+      will_change_(will_change) {
+  if (/* Dart_IsNull(data) || */ Dart_IsNull(objects)) {
+    ops_vector_ = std::vector<uint8_t>(0);
+    data_vector_ = std::vector<float>(0);
+    FML_LOG(ERROR) << "Dart display list objects released before use";
+    return;
+  }
+
+  // FML_LOG(ERROR) << "Extracting DL data";
+  const uint8_t* ops_ptr = ops.data();
+  ops_vector_ = std::vector<uint8_t>(ops_ptr, ops_ptr + ops.num_elements());
+
+  const float* data_ptr = static_cast<const float*>(data.data());
+  data_vector_ = std::vector<float>(data_ptr, data_ptr + (data.length_in_bytes() / sizeof(float)));
+}
 
 #ifdef FLUTTER_ENABLE_DIFF_CONTEXT
 
@@ -120,18 +136,18 @@ void DisplayListLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) 
 //                    context->dst_color_space, is_complex_, will_change_);
 //   }
 
-  FML_LOG(ERROR) << "display list cull rect is ["
-    << cull_rect_.left() << ", "
-    << cull_rect_.top() << ", "
-    << cull_rect_.right() << ", "
-    << cull_rect_.bottom() << "]";
-  FML_LOG(ERROR) << "display list draw rect is ["
-    << draw_rect_.left() << ", "
-    << draw_rect_.top() << ", "
-    << draw_rect_.right() << ", "
-    << draw_rect_.bottom() << "]";
+  // FML_LOG(ERROR) << "display list cull rect is ["
+  //   << cull_rect_.left() << ", "
+  //   << cull_rect_.top() << ", "
+  //   << cull_rect_.right() << ", "
+  //   << cull_rect_.bottom() << "]";
+  // FML_LOG(ERROR) << "display list draw rect is ["
+  //   << draw_rect_.left() << ", "
+  //   << draw_rect_.top() << ", "
+  //   << draw_rect_.right() << ", "
+  //   << draw_rect_.bottom() << "]";
   SkRect bounds = draw_rect_;
-  if (bounds.intersect(cull_rect_)) {
+  if (true || bounds.intersect(cull_rect_)) {
     bounds.offset(offset_.x(), offset_.y());
   } else {
     bounds.setEmpty();
@@ -140,7 +156,13 @@ void DisplayListLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) 
     << bounds.left() << ", "
     << bounds.top() << ", "
     << bounds.right() << ", "
-    << bounds.bottom() << "]";
+    << bounds.bottom() << "] "
+    << ops_vector_.size() << " ops";
+  if (bounds.isEmpty()) {
+    FML_LOG(ERROR) << "Contents of empty display list:";
+    DisplayListRasterizer rasterizer(ops_vector_, data_vector_);
+    rasterizer.Describe();
+  }
   set_paint_bounds(bounds);
 }
 
@@ -161,35 +183,36 @@ void DisplayListLayer::Paint(PaintContext& context) const {
 //     return;
 //   }
 
-  if (is_complex_ && will_change_ && is_complex_ != will_change_) {
-    // (for now, basically never)
-    std::vector<uint8_t> ops;
-    std::vector<uint32_t> data;
-    DisplayListRasterizer display_list(ops, data);
-    display_list.Rasterize(context.leaf_nodes_canvas);
-  }
+  // FML_LOG(ERROR) << "painting ["
+  //   << paint_bounds().left() << ", "
+  //   << paint_bounds().top() << ", "
+  //   << paint_bounds().right() << ", "
+  //   << paint_bounds().bottom() << "] "
+  //   << ops_vector_.size() << " ops";
+  DisplayListRasterizer rasterizer(ops_vector_, data_vector_);
+  rasterizer.Rasterize(context.leaf_nodes_canvas);
 
-  SkRect bounds = paint_bounds();
+  // SkRect bounds = paint_bounds();
   SkPaint paint;
   paint.setColor(is_complex_
     ? (will_change_ ? SkColors::kRed : SkColors::kYellow)
     : (will_change_ ? SkColors::kBlue : SkColors::kGreen));
-  paint.setAlphaf(0.125f);
-  context.leaf_nodes_canvas->drawRect(bounds, paint);
-  paint.setStyle(SkPaint::Style::kStroke_Style);
-//   paint.setAlphaf(1.0f);
-  paint.setAntiAlias(true);
-  paint.setColor(SkColors::kBlack);
-//   paint.setStrokeWidth(5.0f);
-  context.leaf_nodes_canvas->drawRect(bounds, paint);
-  context.leaf_nodes_canvas->drawLine(
-    SkPoint::Make(bounds.left(), bounds.top()),
-    SkPoint::Make(bounds.right(), bounds.bottom()),
-    paint);
-  context.leaf_nodes_canvas->drawLine(
-    SkPoint::Make(bounds.right(), bounds.top()),
-    SkPoint::Make(bounds.left(), bounds.bottom()),
-    paint);
+//   paint.setAlphaf(0.125f);
+//   context.leaf_nodes_canvas->drawRect(bounds, paint);
+//   paint.setStyle(SkPaint::Style::kStroke_Style);
+// //   paint.setAlphaf(1.0f);
+//   paint.setAntiAlias(true);
+//   paint.setColor(SkColors::kBlack);
+// //   paint.setStrokeWidth(5.0f);
+//   context.leaf_nodes_canvas->drawRect(bounds, paint);
+//   context.leaf_nodes_canvas->drawLine(
+//     SkPoint::Make(bounds.left(), bounds.top()),
+//     SkPoint::Make(bounds.right(), bounds.bottom()),
+//     paint);
+//   context.leaf_nodes_canvas->drawLine(
+//     SkPoint::Make(bounds.right(), bounds.top()),
+//     SkPoint::Make(bounds.left(), bounds.bottom()),
+//     paint);
 }
 
 }  // namespace flutter

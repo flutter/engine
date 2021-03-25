@@ -20,6 +20,7 @@
 #include "flutter/lib/ui/painting/rrect.h"
 #include "flutter/lib/ui/painting/shader.h"
 #include "third_party/tonic/typed_data/typed_list.h"
+#include "third_party/tonic/typed_data/dart_byte_data.h"
 
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
 #include "flutter/lib/ui/compositing/scene_host.h"  // nogncheck
@@ -113,8 +114,8 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
                       double drawTop,
                       double drawRight,
                       double drawBottom,
-                      Dart_Handle ops,
-                      Dart_Handle data,
+                      tonic::Uint8List& ops,
+                      tonic::DartByteData& data,
                       Dart_Handle objects,
                       int hints);
 

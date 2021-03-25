@@ -82,6 +82,7 @@ source_set("flow") {
     "//flutter/common",
     "//flutter/common/graphics",
     "//flutter/fml",
+    "//flutter/third_party/tonic",
     "//third_party/skia",
   ]
 

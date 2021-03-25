@@ -5,6 +5,8 @@
 #ifndef FLUTTER_FLOW_DISPLAY_LIST_H_
 #define FLUTTER_FLOW_DISPLAY_LIST_H_
 
+#include <sstream>
+
 #include "third_party/skia/include/core/SkColorFilter.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkRRect.h"
@@ -15,111 +17,157 @@
 
 namespace flutter {
 
+#define FOR_EACH_CANVAS_OP(V) \
+  V(setAA, 0, 0),                   \
+  V(clearAA, 0, 0),                 \
+  V(setDither, 0, 0),               \
+  V(clearDither, 0, 0),             \
+  V(setInvertColors, 0, 0),         \
+  V(clearInvertColors, 0, 0),       \
+  V(setFillStyle, 0, 0),            \
+  V(setStrokeStyle, 0, 0),          \
+                                    \
+  V(setCapsButt, 0, 0),             \
+  V(setCapsRound, 0, 0),            \
+  V(setCapsSquare, 0, 0),           \
+  V(setJoinsBevel, 0, 0),           \
+  V(setJoinsMiter, 0, 0),           \
+  V(setJoinsRound, 0, 0),           \
+                                    \
+  V(setStrokeWidth, 1, 0),          \
+  V(setMiterLimit, 1, 0),           \
+                                    \
+  V(setFilterQualityNearest, 0, 0), \
+  V(setFilterQualityLinear, 0, 0),  \
+  V(setFilterQualityMipmap, 0, 0),  \
+  V(setFilterQualityCubic, 0, 0),   \
+                                    \
+  V(setColor, 1, 0x1),              \
+  V(setBlendMode, 1, 0x1),          \
+                                    \
+  V(setShader, 0, 0),               \
+  V(clearShader, 0, 0),             \
+  V(setColorFilter, 0, 0),          \
+  V(clearColorFilter, 0, 0),        \
+  V(setImageFilter, 0, 0),          \
+  V(clearImageFilter, 0, 0),        \
+                                    \
+  V(clearMaskFilter, 0, 0),         \
+  V(setMaskFilterNormal, 1, 0),     \
+  V(setMaskFilterSolid, 1, 0),      \
+  V(setMaskFilterOuter, 1, 0),      \
+  V(setMaskFilterInner, 1, 0),      \
+                                    \
+  V(save, 0, 0),                    \
+  V(saveLayer, 0, 0),               \
+  V(saveLayerBounds, 4, 0),         \
+  V(restore, 0, 0),                 \
+                                    \
+  V(translate, 2, 0),               \
+  V(scale, 2, 0),                   \
+  V(rotate, 1, 0),                  \
+  V(skew, 2, 0),                    \
+  V(transform, 0, 0),               \
+                                    \
+  V(clipRect, 4, 0),                \
+  V(clipRectAA, 4, 0),              \
+  V(clipRectDiff, 4, 0),            \
+  V(clipRectAADiff, 4, 0),          \
+  V(clipRRect, 12, 0),              \
+  V(clipRRectAA, 12, 0),            \
+  V(clipPath, 0, 0),                \
+  V(clipPathAA, 0, 0),              \
+                                    \
+  V(drawPaint, 0, 0),               \
+  V(drawColor, 2, 0x3),             \
+                                    \
+  V(drawLine, 4, 0),                \
+  V(drawRect, 4, 0),                \
+  V(drawOval, 4, 0),                \
+  V(drawCircle, 3, 0),              \
+  V(drawRRect, 12, 0),              \
+  V(drawDRRect, 24, 0),             \
+  V(drawArc, 6, 0),                 \
+  V(drawArcCenter, 6, 0),           \
+  V(drawPath, 0, 0),                \
+                                    \
+  V(drawPoints, 0, 0),              \
+  V(drawLines, 0, 0),               \
+  V(drawPolygon, 0, 0),             \
+                                    \
+  V(drawImage, 2, 0),               \
+  V(drawImageRect, 8, 0),           \
+  V(drawImageNine, 8, 0),           \
+  V(drawAtlas, 0, 0),               \
+  V(drawAtlasColored, 0, 0),        \
+  V(drawAtlasCulled, 4, 0),         \
+  V(drawAtlasColoredCulled, 4, 0),  \
+                                    \
+  V(drawParagraph, 2, 0),           \
+  V(drawPicture, 0, 0),             \
+  V(drawShadow, 1, 0),              \
+  V(drawShadowOccluded, 1, 0)
+
+#define CANVAS_OP_MAKE_ENUM(name, count, imask) cops_##name
 enum CanvasOp {
-  cops_setAA,
-  cops_clearAA,
-  cops_setInvertColors,
-  cops_clearInvertColors,
-  cops_setFillStyle,
-  cops_setStrokeStyle,
-
-  cops_setCapsButt,
-  cops_setCapsRound,
-  cops_setCapsSquare,
-  cops_setJoinsBevel,
-  cops_setJoinsMiter,
-  cops_setJoinsRound,
-
-  cops_setStrokeWidth,
-  cops_setMiterLimit,
-
-  cops_setFilterQualityNearest,
-  cops_setFilterQualityLinear,
-  cops_setFilterQualityMipmap,
-  cops_setFilterQualityCubic,
-
-  cops_setColor,
-  cops_setBlendMode,
-
-  cops_setShader,
-  cops_clearShader,
-  cops_setColorFilter,
-  cops_clearColorFilter,
-  cops_setImageFilter,
-  cops_clearImageFilter,
-
-  cops_clearMaskFilter,
-  cops_setMaskFilterNormal,
-  cops_setMaskFilterSolid,
-  cops_setMaskFilterOuter,
-  cops_setMaskFilterInner,
-
-  cops_save,
-  cops_saveLayer,
-  cops_saveLayerBounds,
-  cops_restore,
-
-  cops_translate,
-  cops_scale,
-  cops_rotate,
-  cops_skew,
-  cops_transform,
-
-  cops_clipRect,
-  cops_clipRectAA,
-  cops_clipRectDiff,
-  cops_clipRectAADiff,
-  cops_clipRRect,
-  cops_clipRRectAA,
-  cops_clipPath,
-  cops_clipPathAA,
-
-  cops_drawPaint,
-  cops_drawColor,
-
-  cops_drawLine,
-  cops_drawRect,
-  cops_drawOval,
-  cops_drawCircle,
-  cops_drawRRect,
-  cops_drawDRRect,
-  cops_drawArc,
-  cops_drawArcCenter,
-  cops_drawPath,
-
-  cops_drawPoints,
-  cops_drawLines,
-  cops_drawPolygon,
-
-  cops_drawImage,
-  cops_drawImageRect,
-  cops_drawImageNine,
-  cops_drawAtlas,
-  cops_drawAtlasColored,
-  cops_drawAtlasCulled,
-  cops_drawAtlasColoredCulled,
-
-  cops_drawParagraph,
-  cops_drawPicture,
-  cops_drawShadow,
-  cops_drawShadowOccluded,
+  FOR_EACH_CANVAS_OP(CANVAS_OP_MAKE_ENUM),
 };
 
 class DisplayListRasterizer {
  public:
-  DisplayListRasterizer(std::vector<uint8_t> ops, std::vector<uint32_t> data);
+  DisplayListRasterizer(std::vector<uint8_t> ops, std::vector<float> data);
 
   void Rasterize(SkCanvas *canvas);
 
+  void Describe();
+
+  static const std::vector<std::string> opNames;
+  static const std::vector<int> opArgCounts;
+  static const std::vector<int> opArgImask;
+
  private:
   std::vector<uint8_t>::iterator ops_it_;
-  std::vector<uint8_t>::iterator ops_end_;
-  std::vector<uint32_t>::iterator data_it_;
+  const std::vector<uint8_t>::iterator ops_end_;
+  std::vector<float>::iterator data_it_;
+  const std::vector<float>::iterator data_end_;
+
+  bool HasOp() { return ops_it_ < ops_end_; }
+  CanvasOp GetOp() { return static_cast<CanvasOp>(*ops_it_++); }
+
+  std::string DescribeNextOp() {
+    if (!HasOp()) {
+      return "END-OF-LIST";
+    }
+    std::stringstream ss;
+    int op_index = *ops_it_;
+    ss << opNames[op_index] << "(" << std::hex;
+    for (int i = 0; i < opArgCounts[op_index]; i++) {
+      if (i > 0) {
+        ss << ", ";
+      }
+      if (data_it_ + i < data_end_) {
+        union { float f; uint32_t i; } data;
+        data.f = data_it_[i];
+        if ((opArgImask[op_index] & (1 << i)) == 0) {
+          ss << data.f;
+        } else {
+          ss << "0x" << data.i;
+        }
+      } else {
+        ss << "... UNDEFINED ...";
+        break;
+      }
+    }
+    ss << ")";
+    return ss.str();
+  }
 
   SkScalar GetScalar() { return static_cast<SkScalar>(*data_it_++); }
-  SkBlendMode GetBlendMode() { return static_cast<SkBlendMode>(*data_it_++); }
+  uint32_t GetUint32() { union { float f; uint32_t i; } data; data.f = *data_it_++; return data.i; }
+
+  SkBlendMode GetBlendMode() { return static_cast<SkBlendMode>(GetUint32()); }
   SkPoint GetPoint() { return SkPoint::Make(GetScalar(), GetScalar()); }
-  SkColor GetColor() { return *data_it_++; }
+  SkColor GetColor() { return GetUint32(); }
   SkRect GetRect() { return SkRect::MakeLTRB(GetScalar(), GetScalar(), GetScalar(), GetScalar()); }
   SkRRect GetRoundRect() {
     SkRect rect = GetRect();

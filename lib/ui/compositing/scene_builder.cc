@@ -30,6 +30,7 @@
 #include "third_party/tonic/dart_args.h"
 #include "third_party/tonic/dart_binding_macros.h"
 #include "third_party/tonic/dart_library_natives.h"
+#include "third_party/tonic/typed_data/dart_byte_data.h"
 
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
 #include "flutter/flow/layers/child_scene_layer.h"  // nogncheck
@@ -294,16 +295,16 @@ void SceneBuilder::addDisplayList(double dx,
                                   double drawTop,
                                   double drawRight,
                                   double drawBottom,
-                                  Dart_Handle ops,
-                                  Dart_Handle data,
+                                  tonic::Uint8List& ops,
+                                  tonic::DartByteData& data,
                                   Dart_Handle objects,
                                   int hints) {
   auto layer = std::make_unique<flutter::DisplayListLayer>(
       SkPoint::Make(dx, dy),
       SkRect::MakeLTRB(cullLeft, cullTop, cullRight, cullBottom),
       SkRect::MakeLTRB(drawLeft, drawTop, drawRight, drawBottom),
+      ops, data, objects,
       !!(hints & 1), !!(hints & 2));
-  // ops.Release();
   AddLayer(std::move(layer));
 }
 

@@ -709,7 +709,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
     if (picture is _SkiaPicture) {
       _addPicture(offset.dx, offset.dy, picture, hints);
     } else {
-      _DisplayListPicture dlPicture = picture as _DisplayListPicture;
+      final _DisplayListPicture dlPicture = picture as _DisplayListPicture;
       _addDisplayList(
         offset.dx, offset.dy,
         dlPicture._cullRect!.left, dlPicture._cullRect!.top, dlPicture._cullRect!.right, dlPicture._cullRect!.bottom,

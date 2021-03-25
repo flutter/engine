@@ -10,6 +10,8 @@
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/raster_cache.h"
 #include "flutter/flow/skia_gpu_object.h"
+#include "third_party/tonic/typed_data/typed_list.h"
+#include "third_party/tonic/typed_data/dart_byte_data.h"
 
 namespace flutter {
 
@@ -18,6 +20,9 @@ class DisplayListLayer : public Layer {
   DisplayListLayer(const SkPoint& offset,
                    const SkRect& cull_rect,
                    const SkRect& draw_rect,
+                   const tonic::Uint8List& ops,
+                   const tonic::DartByteData& data,
+                   Dart_Handle objects,
                    bool is_complex,
                    bool will_change);
 
@@ -35,6 +40,8 @@ class DisplayListLayer : public Layer {
   SkPoint offset_;
   SkRect cull_rect_;
   SkRect draw_rect_;
+  std::vector<uint8_t> ops_vector_;
+  std::vector<float> data_vector_;
   bool is_complex_ = false;
   bool will_change_ = false;
 

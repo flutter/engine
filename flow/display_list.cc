@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/display_list.h"
+#include "flutter/fml/logging.h"
 
 // #include <memory>
 
@@ -47,10 +48,27 @@ namespace flutter {
 
 // DisplayList::~DisplayList() = default;
 
-DisplayListRasterizer::DisplayListRasterizer(std::vector<uint8_t> ops, std::vector<uint32_t> data)
-    : ops_it_(std::begin(ops)),
-      ops_end_(std::end(ops)),
-      data_it_(std::begin(data)) {}
+#define CANVAS_OP_MAKE_STRING(name, count, imask) #name
+#define CANVAS_OP_MAKE_COUNT(name, count, imask) count
+#define CANVAS_OP_MAKE_IMASK(name, count, imask) imask
+
+const std::vector<std::string> DisplayListRasterizer::opNames = {
+  FOR_EACH_CANVAS_OP(CANVAS_OP_MAKE_STRING),
+};
+
+const std::vector<int> DisplayListRasterizer::opArgCounts = {
+  FOR_EACH_CANVAS_OP(CANVAS_OP_MAKE_COUNT),
+};
+
+const std::vector<int> DisplayListRasterizer::opArgImask = {
+  FOR_EACH_CANVAS_OP(CANVAS_OP_MAKE_IMASK),
+};
+
+DisplayListRasterizer::DisplayListRasterizer(std::vector<uint8_t> ops_vector, std::vector<float> data_vector)
+    : ops_it_(ops_vector.begin()),
+      ops_end_(ops_vector.end()),
+      data_it_(data_vector.begin()),
+      data_end_(data_vector.end()) {}
 
 static const std::array<SkSamplingOptions, 4> filter_qualities = {
     SkSamplingOptions(SkFilterMode::kNearest, SkMipmapMode::kNone),
@@ -59,15 +77,33 @@ static const std::array<SkSamplingOptions, 4> filter_qualities = {
     SkSamplingOptions(SkCubicResampler{1 / 3.0f, 1 / 3.0f}),
 };
 
+void DisplayListRasterizer::Describe() {
+  FML_LOG(ERROR) << "Starting ops: " << (ops_end_ - ops_it_) << ", data: " << (data_end_ - data_it_);
+  while(HasOp()) {
+    FML_LOG(ERROR) << DescribeNextOp();
+    CanvasOp op = GetOp();
+    for (int i = 0; i < opArgCounts[op]; i++) {
+      GetScalar();
+    }
+  }
+  FML_LOG(ERROR) << "Remaining ops: " << (ops_end_ - ops_it_) << ", data: " << (data_end_ - data_it_);
+}
+
 void DisplayListRasterizer::Rasterize(SkCanvas* canvas) {
   SkPaint paint;
-  while (ops_it_ < ops_end_) {
-    switch (static_cast<CanvasOp>(*ops_it_++)) {
+  paint.setAntiAlias(true);
+  FML_LOG(ERROR) << "Starting ops: " << (ops_end_ - ops_it_) << ", data: " << (data_end_ - data_it_);
+  while (HasOp()) {
+    FML_LOG(INFO) << DescribeNextOp();
+    CanvasOp op = GetOp();
+    switch (op) {
       case cops_setAA: paint.setAntiAlias(true); break;
       case cops_clearAA: paint.setAntiAlias(false); break;
+      case cops_setDither: paint.setDither(true); break;
+      case cops_clearDither: paint.setDither(false); break;
       case cops_setInvertColors: break; // TODO(flar): replaces colorfilter???
       case cops_clearInvertColors: paint.setColorFilter(nullptr); break;
-      case cops_setColor: paint.setColor(*data_it_++); break;
+      case cops_setColor: paint.setColor(GetColor()); break;
       case cops_setFillStyle: paint.setStyle(SkPaint::Style::kFill_Style); break;
       case cops_setStrokeStyle: paint.setStyle(SkPaint::Style::kStroke_Style); break;
       case cops_setStrokeWidth: paint.setStrokeWidth(GetScalar()); break;
@@ -150,6 +186,7 @@ void DisplayListRasterizer::Rasterize(SkCanvas* canvas) {
       case cops_drawShadowOccluded: GetScalar(); break; // TODO(flar) deal with Path object
     }
   }
+  FML_LOG(ERROR) << "Remaining ops: " << (ops_end_ - ops_it_) << ", data: " << (data_end_ - data_it_);
 }
 
 // Dart_Handle DisplayList::toImage(uint32_t width,
