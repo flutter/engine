@@ -172,7 +172,7 @@ void PlatformMessageResponseTest::Complete(std::unique_ptr<fml::Mapping> data) {
 
 void PlatformMessageResponseTest::CompleteEmpty() {}
 
-class AssetTestResolver final : public AssetResolver {
+class AssetTestResolver : public AssetResolver {
  public:
   AssetTestResolver(Shell* shell);
 
@@ -181,6 +181,8 @@ class AssetTestResolver final : public AssetResolver {
  private:
   Shell* shell_;
   bool IsValid() const override;
+  // |AssetResolver|
+  AssetResolver::AssetResolverType GetType() const override;
   // |AssetResolver|
   std::unique_ptr<fml::Mapping> GetAsMapping(
       const std::string& asset_name) const override;
@@ -193,6 +195,10 @@ class AssetTestResolver final : public AssetResolver {
 AssetTestResolver::AssetTestResolver(Shell* shell) : shell_(shell){};
 
 AssetTestResolver::~AssetTestResolver() = default;
+
+AssetResolver::AssetResolverType AssetTestResolver::GetType() const {
+  return AssetResolverType::kAssetManager;
+}
 
 void AssetTestResolver::CheckQueue() const {
   const auto current_queue_id = fml::MessageLoop::GetCurrentTaskQueueId();
@@ -298,7 +304,7 @@ TEST_F(ShellTest, TestFlutterLoadAssetsOnIOThread) {
   Settings settings = CreateSettingsForFixture();
   auto task_runner = CreateNewThread();
   ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
-                         ThreadHost::Type::Platform | ThreadHost::Type::GPU |
+                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
                              ThreadHost::Type::IO | ThreadHost::Type::UI);
 
   TaskRunners task_runners("test", thread_host.ui_thread->GetTaskRunner(),
