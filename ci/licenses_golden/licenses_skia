@@ -1,4 +1,4 @@
-Signature: 675e2a4a65a732e1b04f79573b8b9b03
+Signature: 32c9c085fcc7a540da0504b1a068d854
 
 UNUSED LICENSES:
 
@@ -1179,6 +1179,7 @@ FILE: ../../../third_party/skia/infra/bots/recipe_modules/git/examples/full.expe
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/gsutil/examples/full.expected/failed_all_uploads.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/gsutil/examples/full.expected/failed_one_upload.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/gsutil/examples/full.expected/gsutil_tests.json
+FILE: ../../../third_party/skia/infra/bots/recipe_modules/gsutil/examples/full.expected/gsutil_win_tests.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/infra/examples/full.expected/infra_tests.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/run/examples/full.expected/test.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/vars/examples/full.expected/Build-Debian10-Clang-x86_64-Release-SKNX_NO_SIMD.json
