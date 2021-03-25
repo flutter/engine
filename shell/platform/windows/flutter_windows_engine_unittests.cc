@@ -122,16 +122,11 @@ TEST(FlutterWindowsEngine, RunWithoutANGLEUsesSoftware) {
   // Stub out UpdateLocales and SendPlatformMessage as we don't have a fully
   // initialized engine instance.
   modifier.embedder_api().UpdateLocales = MOCK_ENGINE_PROC(
-      UpdateLocales,
-      ([](auto engine, const FlutterLocale** locales,
-                                size_t locales_count) {
-        return kSuccess;
-      }));
-  modifier.embedder_api().SendPlatformMessage = MOCK_ENGINE_PROC(
-      SendPlatformMessage,
-      ([](auto engine, auto message) {
-        return kSuccess;
-      }));
+      UpdateLocales, ([](auto engine, const FlutterLocale** locales,
+                         size_t locales_count) { return kSuccess; }));
+  modifier.embedder_api().SendPlatformMessage =
+      MOCK_ENGINE_PROC(SendPlatformMessage,
+                       ([](auto engine, auto message) { return kSuccess; }));
 
   // Set the AngleSurfaceManager to nullptr to test software fallback path.
   modifier.SetSurfaceManager(nullptr);
