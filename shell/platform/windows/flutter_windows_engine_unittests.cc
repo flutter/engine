@@ -46,6 +46,7 @@ TEST(FlutterWindowsEngine, RunDoesExpectedInitialization) {
 
         EXPECT_EQ(version, FLUTTER_ENGINE_VERSION);
         EXPECT_NE(config, nullptr);
+        // We have an AngleSurfaceManager, so this should be using OpenGL.
         EXPECT_EQ(config->type, kOpenGL);
         EXPECT_EQ(user_data, engine_instance);
         // Spot-check arguments.
@@ -85,6 +86,9 @@ TEST(FlutterWindowsEngine, RunDoesExpectedInitialization) {
         return kSuccess;
       }));
 
+  // Set the AngleSurfaceManager to !nullptr to test ANGLE rendering.
+  modifier.SetSurfaceManager(reinterpret_cast<AngleSurfaceManager*>(1));
+
   engine->RunWithEntrypoint(nullptr);
 
   EXPECT_TRUE(run_called);
@@ -94,6 +98,7 @@ TEST(FlutterWindowsEngine, RunDoesExpectedInitialization) {
   // Ensure that deallocation doesn't call the actual Shutdown with the bogus
   // engine pointer that the overridden Run returned.
   modifier.embedder_api().Shutdown = [](auto engine) { return kSuccess; };
+  modifier.ReleaseSurfaceManager();
 }
 
 TEST(FlutterWindowsEngine, RunWithoutANGLEUsesSoftware) {
@@ -114,29 +119,17 @@ TEST(FlutterWindowsEngine, RunWithoutANGLEUsesSoftware) {
         return kSuccess;
       }));
 
-  // It should send locale info.
-  bool update_locales_called = false;
+  // Stub out UpdateLocales and SendPlatformMessage as we don't have a fully
+  // initialized engine instance.
   modifier.embedder_api().UpdateLocales = MOCK_ENGINE_PROC(
       UpdateLocales,
-      ([&update_locales_called](auto engine, const FlutterLocale** locales,
+      ([](auto engine, const FlutterLocale** locales,
                                 size_t locales_count) {
-        update_locales_called = true;
-
-        EXPECT_GT(locales_count, 0);
-        EXPECT_NE(locales, nullptr);
-
         return kSuccess;
       }));
-
-  // And it should send initial settings info.
-  bool settings_message_sent = false;
   modifier.embedder_api().SendPlatformMessage = MOCK_ENGINE_PROC(
       SendPlatformMessage,
-      ([&settings_message_sent](auto engine, auto message) {
-        if (std::string(message->channel) == std::string("flutter/settings")) {
-          settings_message_sent = true;
-        }
-
+      ([](auto engine, auto message) {
         return kSuccess;
       }));
 
@@ -146,7 +139,6 @@ TEST(FlutterWindowsEngine, RunWithoutANGLEUsesSoftware) {
   engine->RunWithEntrypoint(nullptr);
 
   EXPECT_TRUE(run_called);
-  EXPECT_TRUE(update_locales_called);
 
   // Ensure that deallocation doesn't call the actual Shutdown with the bogus
   // engine pointer that the overridden Run returned.
