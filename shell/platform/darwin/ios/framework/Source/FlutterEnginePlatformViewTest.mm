@@ -104,6 +104,7 @@ class MockDelegate : public PlatformView::Delegate {
   [self waitForExpectations:@[ backgroundExpectation ] timeout:5.0];
 
   OCMVerify([mockEngine notifyLowMemory]);
+  [mockEngine stopMocking];
 }
 
 @end
