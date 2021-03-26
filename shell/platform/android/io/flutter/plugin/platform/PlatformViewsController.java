@@ -518,7 +518,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
     if (flutterViewConvertedToImageView) {
       flutterViewConvertedToImageView = false;
-      (((FlutterView) flutterView)
+      ((FlutterView) flutterView)
           .revertImageView(
               () -> {
                 // pass
