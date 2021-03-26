@@ -505,7 +505,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
     for (int i = 0; i < platformViewParent.size(); i++) {
       int viewId = platformViewParent.keyAt(i);
-      ((FlutterView)flutterView).removeView(platformViewParent.get(viewId));
+      ((FlutterView) flutterView).removeView(platformViewParent.get(viewId));
       platformViews.get(viewId).onFlutterViewDetached();
     }
 
