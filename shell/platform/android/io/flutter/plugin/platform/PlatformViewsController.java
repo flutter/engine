@@ -516,14 +516,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       ((FlutterView) flutterView).removeView(overlayView);
     }
 
-    if (flutterViewConvertedToImageView) {
-      flutterViewConvertedToImageView = false;
-      ((FlutterView) flutterView)
-          .revertImageView(
-              () -> {
-                // pass
-              });
-    }
+    flutterViewConvertedToImageView = false;
 
     this.flutterView = null;
   }
