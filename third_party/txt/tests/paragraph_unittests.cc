@@ -2465,7 +2465,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(LeftAlignParagraph)) {
   ASSERT_TRUE(Snapshot());
 }
 
-TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(LeftAlignParagraphHitTest)) {
+TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(LeftAlignRTLParagraphHitTest)) {
   // Regression test for https://github.com/flutter/flutter/issues/54969.
   const char* text = "بمباركة التقليدية قام عن. تصفح";
   auto icu_text = icu::UnicodeString::fromUTF8(text);
@@ -2501,7 +2501,10 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(LeftAlignParagraphHitTest)) {
   ASSERT_TRUE(Snapshot());
 
   // Tests for GetGlyphPositionAtCoordinate()
-  ASSERT_EQ(paragraph->GetGlyphPositionAtCoordinate(GetTestCanvasWidth() - 0.5, 0.5).position, 0ull);
+  ASSERT_EQ(
+      paragraph->GetGlyphPositionAtCoordinate(GetTestCanvasWidth() - 0.5, 0.5)
+          .position,
+      0ull);
 
   ASSERT_TRUE(Snapshot());
 }
