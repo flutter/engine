@@ -482,7 +482,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       controller.onFlutterViewAttached(flutterView);
     }
 
-    for(int i = 0; i < platformViewParent.size(); i++) {
+    for (int i = 0; i < platformViewParent.size(); i++) {
       int viewId = platformViewParent.keyAt(i);
       ((FlutterView) flutterView).addView(platformViewParent.get(viewId));
       platformViews.get(viewId).onFlutterViewAttached(flutterView);
@@ -503,7 +503,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       controller.onFlutterViewDetached();
     }
 
-    for(int i = 0; i < platformViewParent.size(); i++) {
+    for (int i = 0; i < platformViewParent.size(); i++) {
       int viewId = platformViewParent.keyAt(i);
       ((FlutterView)flutterView).removeView(platformViewParent.get(viewId));
       platformViews.get(viewId).onFlutterViewDetached();
@@ -518,10 +518,11 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
     if (flutterViewConvertedToImageView) {
       flutterViewConvertedToImageView = false;
-      ((FlutterView)flutterView).revertImageView(
-          () -> {
-            // pass
-          });
+      (((FlutterView) flutterView)
+          .revertImageView(
+              () -> {
+                // pass
+              });
     }
 
     this.flutterView = null;
