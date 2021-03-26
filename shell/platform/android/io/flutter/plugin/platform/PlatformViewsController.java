@@ -144,6 +144,12 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           }
 
           final PlatformView platformView = factory.create(context, request.viewId, createParams);
+          // If our FlutterEngine is already attached to a Flutter UI, provide that Android
+          // View to this new platform view.
+          if (flutterView != null) {
+            platformView.onFlutterViewAttached(flutterView);
+          }
+
           platformViews.put(request.viewId, platformView);
         }
 
@@ -475,6 +481,12 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     for (VirtualDisplayController controller : vdControllers.values()) {
       controller.onFlutterViewAttached(flutterView);
     }
+
+    for(int i = 0; i < platformViewParent.size(); i++) {
+      int viewId = platformViewParent.keyAt(i);
+      ((FlutterView) flutterView).addView(platformViewParent.get(viewId));
+      platformViews.get(viewId).onFlutterViewAttached(flutterView);
+    }
   }
 
   /**
@@ -485,13 +497,34 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    * the previously attached {@code View}.
    */
   public void detachFromView() {
-    this.flutterView = null;
-
     // Inform all existing platform views that they are no longer associated with
     // a Flutter View.
     for (VirtualDisplayController controller : vdControllers.values()) {
       controller.onFlutterViewDetached();
     }
+
+    for(int i = 0; i < platformViewParent.size(); i++) {
+      int viewId = platformViewParent.keyAt(i);
+      ((FlutterView)flutterView).removeView(platformViewParent.get(viewId));
+      platformViews.get(viewId).onFlutterViewDetached();
+    }
+
+    for (int i = 0; i < overlayLayerViews.size(); i++) {
+      int overlayId = overlayLayerViews.keyAt(i);
+      FlutterImageView overlayView = overlayLayerViews.valueAt(i);
+      overlayView.detachFromRenderer();
+      ((FlutterView) flutterView).removeView(overlayView);
+    }
+
+    if (flutterViewConvertedToImageView) {
+      flutterViewConvertedToImageView = false;
+      ((FlutterView)flutterView).revertImageView(
+          () -> {
+            // pass
+          });
+    }
+
+    this.flutterView = null;
   }
 
   @Override
