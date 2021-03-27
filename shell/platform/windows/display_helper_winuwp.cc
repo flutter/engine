@@ -17,12 +17,12 @@ bool DisplayHelperWinUWP::IsRunningOnXbox() {
   return running_on_xbox_;
 }
 
-float DisplayHelperWinUWP::GetXboxOverscanXOffset() {
-  return xbox_overscan_x_offset_;
+float DisplayHelperWinUWP::GetRenderTargetXOffset() {
+  return render_target_x_offset_;
 }
 
-float DisplayHelperWinUWP::GetXboxOverscanYOffset() {
-  return xbox_overscan_y_offset_;
+float DisplayHelperWinUWP::GetRenderTargetYOffset() {
+  return render_target_y_offset_;
 }
 
 WindowBoundsWinUWP DisplayHelperWinUWP::GetPhysicalBounds() {
@@ -72,8 +72,8 @@ void DisplayHelperWinUWP::ConfigureXboxSpecific() {
 
     // the offset /2 represents how much off-screan the core window is
     // positioned unclear why disabling overscan doesn't correct this
-    xbox_overscan_x_offset_ = bounds.X / 2;
-    xbox_overscan_y_offset_ = bounds.Y / 2;
+    render_target_x_offset_ = bounds.X / 2;
+    render_target_y_offset_ = bounds.Y / 2;
   }
 }
 
@@ -86,9 +86,9 @@ float DisplayHelperWinUWP::GetDpiScale() {
   // Also confirm if it is necessary to use this workaround on 10X
   // https://github.com/flutter/flutter/issues/70198
 
-  if (running_on_xbox_) {
-    return 1.5;
-  }
+  // if (running_on_xbox_) {
+  //   return 1.5;
+  // }
   return static_cast<float>(raw_per_view);
 }
 

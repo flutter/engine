@@ -52,10 +52,10 @@ class DisplayHelperWinUWP {
   bool IsRunningOnXbox();
 
   // Returns a value representing the overscan to correct for X.
-  float GetXboxOverscanXOffset();
+  float GetRenderTargetXOffset();
 
   // Returns a value representing the overscan to correct for Y.
-  float GetXboxOverscanYOffset();
+  float GetRenderTargetYOffset();
 
  private:
   // Test is current context is running on an xbox device and perform device
@@ -71,10 +71,10 @@ class DisplayHelperWinUWP {
   bool running_on_xbox_ = false;
 
   // Current X overscan compensation factor.
-  float xbox_overscan_x_offset_ = 0.0f;
+  float render_target_x_offset_ = 1.0f;
 
   // Current Y overscan compensation factor.
-  float xbox_overscan_y_offset_ = 0.0f;
+  float render_target_y_offset_ = 1.0f;
 };
 }  // namespace flutter
 

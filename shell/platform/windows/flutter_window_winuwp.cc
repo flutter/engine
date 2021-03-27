@@ -30,13 +30,9 @@ WindowsRenderTarget FlutterWindowWinUWP::GetRenderTarget() {
   target_.Root(visual_tree_root_);
 
   render_target_ = compositor_.CreateSpriteVisual();
-  if (display_helper_->IsRunningOnXbox()) {
-    render_target_.Offset({display_helper_->GetXboxOverscanXOffset(),
-                           display_helper_->GetXboxOverscanYOffset(), 1.0});
-  } else {
-    render_target_.Offset({1.0, 1.0, 1.0});
-    ApplyInverseDpiScalingTransform();
-  }
+  render_target_.Offset({display_helper_->GetRenderTargetXOffset(),
+                           display_helper_->GetRenderTargetYOffset(), 1.0});
+  ApplyInverseDpiScalingTransform();
   visual_tree_root_.Children().InsertAtBottom(render_target_);
   game_pad_cursor_ = std::make_unique<GamepadCursorWinUWP>(
       binding_handler_delegate_, display_helper_.get(), window_, compositor_,
@@ -166,7 +162,7 @@ double FlutterWindowWinUWP::GetPosX(
   const double inverse_dpi_scale = GetDpiScale();
 
   return (args.CurrentPoint().Position().X -
-          display_helper_->GetXboxOverscanXOffset()) *
+          display_helper_->GetRenderTargetXOffset()) *
          inverse_dpi_scale;
 }
 
@@ -174,7 +170,7 @@ double FlutterWindowWinUWP::GetPosY(
     winrt::Windows::UI::Core::PointerEventArgs const& args) {
   const double inverse_dpi_scale = GetDpiScale();
   return static_cast<double>((args.CurrentPoint().Position().Y -
-                              display_helper_->GetXboxOverscanYOffset()) *
+                              display_helper_->GetRenderTargetYOffset()) *
                              inverse_dpi_scale);
 }
 

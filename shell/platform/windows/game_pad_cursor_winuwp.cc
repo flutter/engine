@@ -237,8 +237,8 @@ GamepadCursorWinUWP::CreateCursorVisual() {
   cursor_visual.Size({container_size, container_size});
 
   // compensate for overscan in cursor visual
-  cursor_visual.Offset({display_helper_->GetXboxOverscanXOffset(),
-                        display_helper_->GetXboxOverscanYOffset(), 1.0});
+  cursor_visual.Offset({display_helper_->GetRenderTargetXOffset(),
+                        display_helper_->GetRenderTargetYOffset(), 1.0});
 
   winrt::Windows::UI::Composition::CompositionEllipseGeometry circle =
       compositor_.CreateEllipseGeometry();

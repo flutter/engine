@@ -98,7 +98,7 @@ class GamepadCursorWinUWP {
   // used to update engine windowing and input state.
   WindowBindingHandlerDelegate* binding_handler_delegate_;
 
-  // Multipler used to map controller velocity to an appropriate scroll input.
+  // Multiplier used to map controller velocity to an appropriate scroll input.
   const double kControllerScrollMultiplier = 3;
 
   // Multiplier used to scale gamepad input to mouse equivalent response.
