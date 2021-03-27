@@ -30,8 +30,12 @@ class DisplayHelperWinUWP {
  public:
   DisplayHelperWinUWP();
 
-  // Returns with the physical or logical bounds of the active window.
-  WindowBoundsWinUWP GetBounds(bool physical);
+  //physical = true
+  // Returns with the physical bounds of the active window.
+  WindowBoundsWinUWP GetPhysicalBounds();
+
+  // Returns with the logical bounds of the active window.
+  WindowBoundsWinUWP GetLogicalBounds();
 
   // Returns a bounds structure containing width and height information
   // for the backing CoreWindow in either view or physical pixels depending on

@@ -25,8 +25,12 @@ float DisplayHelperWinUWP::GetXboxOverscanYOffset() {
   return xbox_overscan_y_offset_;
 }
 
-WindowBoundsWinUWP DisplayHelperWinUWP::GetBounds(bool physical) {
-  return GetBounds(current_display_info_, physical);
+WindowBoundsWinUWP DisplayHelperWinUWP::GetPhysicalBounds() {
+  return GetBounds(current_display_info_, true);
+}
+
+WindowBoundsWinUWP DisplayHelperWinUWP::GetLogicalBounds() {
+  return GetBounds(current_display_info_, false);
 }
 
 WindowBoundsWinUWP DisplayHelperWinUWP::GetBounds(

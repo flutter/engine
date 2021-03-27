@@ -41,7 +41,7 @@ WindowsRenderTarget FlutterWindowWinUWP::GetRenderTarget() {
   game_pad_cursor_ = std::make_unique<GamepadCursorWinUWP>(
       binding_handler_delegate_, display_helper_.get(), window_, compositor_,
       visual_tree_root_.Children());
-  WindowBoundsWinUWP bounds = display_helper_->GetBounds(true);
+  WindowBoundsWinUWP bounds = display_helper_->GetPhysicalBounds();
 
   render_target_.Size({bounds.width, bounds.height});
   return WindowsRenderTarget(render_target_);
@@ -56,7 +56,7 @@ void FlutterWindowWinUWP::ApplyInverseDpiScalingTransform() {
 }
 
 PhysicalWindowBounds FlutterWindowWinUWP::GetPhysicalWindowBounds() {
-  WindowBoundsWinUWP bounds = display_helper_->GetBounds(true);
+  WindowBoundsWinUWP bounds = display_helper_->GetPhysicalBounds();
   return {static_cast<size_t>(bounds.width),
           static_cast<size_t>(bounds.height)};
 }
@@ -117,7 +117,7 @@ void FlutterWindowWinUWP::OnDpiChanged(
     winrt::Windows::Foundation::IInspectable const&) {
   ApplyInverseDpiScalingTransform();
 
-  WindowBoundsWinUWP bounds = display_helper_->GetBounds(true);
+  WindowBoundsWinUWP bounds = display_helper_->GetPhysicalBounds();
 
   binding_handler_delegate_->OnWindowSizeChanged(
       static_cast<size_t>(bounds.width), static_cast<size_t>(bounds.height));
@@ -182,7 +182,7 @@ void FlutterWindowWinUWP::OnBoundsChanged(
     winrt::Windows::UI::ViewManagement::ApplicationView const& app_view,
     winrt::Windows::Foundation::IInspectable const&) {
   if (binding_handler_delegate_) {
-    auto bounds = display_helper_->GetBounds(true);
+    auto bounds = display_helper_->GetPhysicalBounds();
 
     binding_handler_delegate_->OnWindowSizeChanged(
         static_cast<size_t>(bounds.width), static_cast<size_t>(bounds.height));

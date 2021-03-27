@@ -94,7 +94,7 @@ void GamepadCursorWinUWP::SetCursorTimeout() {
 
   auto queue = winrt::Windows::System::DispatcherQueue::GetForCurrentThread();
 
-  // lazily create timer.
+  // Lazily create timer.
   if (emulated_cursor_hide_timer_ == nullptr) {
     emulated_cursor_hide_timer_ = queue.CreateTimer();
     emulated_cursor_hide_timer_.Interval(std::chrono::seconds(kInactivePeriod));
@@ -139,7 +139,7 @@ void GamepadCursorWinUWP::OnGamepadLeftStickMoved(double x, double y) {
   float new_y =
       cursor_visual_.Offset().y + (kCursorScale * -static_cast<float>(y));
 
-  WindowBoundsWinUWP logical_bounds = display_helper_->GetBounds(false);
+  WindowBoundsWinUWP logical_bounds = display_helper_->GetLogicalBounds();
 
   if (new_x > 0 && new_y > 0 && new_x < logical_bounds.width &&
       new_y < logical_bounds.height) {

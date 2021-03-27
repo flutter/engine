@@ -52,7 +52,7 @@ class GamepadCursorWinUWP {
   // inactivity timer.
   void SetCursorTimeout();
 
-  // Sets the frequency that the gamepad is polled for movement updates.
+  // Sets the frequency, in milliseconds, that the gamepad is polled for movement updates.
   void SetMouseMovePollingFrequency(int ms);
 
   // Notifies current |WindowBindingHandlerDelegate| of gamepad right stick
@@ -76,11 +76,11 @@ class GamepadCursorWinUWP {
   // Show and hide the emulated mouse cursor when a gamepad arrives / departs
   void OnGamepadControllersChanged();
 
-  // Creates a visual representing the emulated cursor and add to the  visual
+  // Creates a visual representing the emulated cursor and add to the visual
   // tree.
   winrt::Windows::UI::Composition::Visual CreateCursorVisual();
 
-  // Starts a timer used to update the position of the cusor visual as the
+  // Starts a timer used to update the position of the cursor visual as the
   // gamepad updates the position.
   void StartGamepadTimer();
 
