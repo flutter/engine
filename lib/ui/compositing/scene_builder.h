@@ -13,6 +13,7 @@
 #include "flutter/lib/ui/compositing/scene.h"
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/painting/color_filter.h"
+#include "flutter/lib/ui/painting/display_list.h"
 #include "flutter/lib/ui/painting/engine_layer.h"
 #include "flutter/lib/ui/painting/image_filter.h"
 #include "flutter/lib/ui/painting/path.h"
@@ -114,9 +115,7 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
                       double drawTop,
                       double drawRight,
                       double drawBottom,
-                      tonic::Uint8List& ops,
-                      tonic::DartByteData& data,
-                      Dart_Handle objects,
+                      DisplayList* displayList,
                       int hints);
 
   void addTexture(double dx,

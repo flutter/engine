@@ -295,15 +295,13 @@ void SceneBuilder::addDisplayList(double dx,
                                   double drawTop,
                                   double drawRight,
                                   double drawBottom,
-                                  tonic::Uint8List& ops,
-                                  tonic::DartByteData& data,
-                                  Dart_Handle objects,
+                                  DisplayList* displayList,
                                   int hints) {
   auto layer = std::make_unique<flutter::DisplayListLayer>(
       SkPoint::Make(dx, dy),
       SkRect::MakeLTRB(cullLeft, cullTop, cullRight, cullBottom),
       SkRect::MakeLTRB(drawLeft, drawTop, drawRight, drawBottom),
-      ops, data, objects,
+      displayList->ops_vector(), displayList->data_vector(),
       !!(hints & 1), !!(hints & 2));
   AddLayer(std::move(layer));
 }

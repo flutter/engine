@@ -28,6 +28,8 @@ source_set("ui") {
     "painting/codec.h",
     "painting/color_filter.cc",
     "painting/color_filter.h",
+    "painting/display_list.cc",
+    "painting/display_list.h",
     "painting/engine_layer.cc",
     "painting/engine_layer.h",
     "painting/gradient.cc",

@@ -714,7 +714,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
         offset.dx, offset.dy,
         dlPicture._cullRect!.left, dlPicture._cullRect!.top, dlPicture._cullRect!.right, dlPicture._cullRect!.bottom,
         dlPicture._drawBounds!.left, dlPicture._drawBounds!.top, dlPicture._drawBounds!.right, dlPicture._drawBounds!.bottom,
-        dlPicture._ops!, dlPicture._data!, dlPicture._objData!,
+        dlPicture,
         hints,
       );
     }
@@ -734,9 +734,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
     double drawTop,
     double drawRight,
     double drawBottom,
-    Uint8List ops,
-    ByteData data,
-    List<Object> objects,
+    _DisplayListPicture dlPicture,
     int hints,
   ) native 'SceneBuilder_addDisplayList';
 

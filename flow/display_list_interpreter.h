@@ -2,18 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_FLOW_DISPLAY_LIST_H_
-#define FLUTTER_FLOW_DISPLAY_LIST_H_
+#ifndef FLUTTER_LIB_UI_PAINTING_DISPLAY_LIST_INTERPRETER_H_
+#define FLUTTER_LIB_UI_PAINTING_DISPLAY_LIST_INTERPRETER_H_
 
 #include <sstream>
 
 #include "third_party/skia/include/core/SkColorFilter.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkRRect.h"
-
-// namespace tonic {
-// class DartLibraryNatives;
-// }  // namespace tonic
 
 namespace flutter {
 
@@ -113,9 +109,9 @@ enum CanvasOp {
   FOR_EACH_CANVAS_OP(CANVAS_OP_MAKE_ENUM),
 };
 
-class DisplayListRasterizer {
+class DisplayListInterpreter {
  public:
-  DisplayListRasterizer(std::vector<uint8_t> ops, std::vector<float> data);
+  DisplayListInterpreter(std::vector<uint8_t> ops, std::vector<float> data);
 
   void Rasterize(SkCanvas *canvas);
 
@@ -184,35 +180,6 @@ class DisplayListRasterizer {
   }
 };
 
-// class DisplayList : public RefCountedDartWrappable<DisplayList> {
-//   DEFINE_WRAPPERTYPEINFO();
-//   FML_FRIEND_MAKE_REF_COUNTED(DisplayList);
-
-//  public:
-
-//   ~DisplayList() override;
-//   static fml::RefPtr<DisplayList> Create(Dart_Handle dart_handle,
-//                                      flutter::SkiaGPUObject<SkPicture> picture);
-
-//   Dart_Handle toImage(uint32_t width,
-//                       uint32_t height,
-//                       Dart_Handle raw_image_callback);
-
-//   void dispose();
-
-//   size_t GetAllocationSize() const override;
-
-//   static void RegisterNatives(tonic::DartLibraryNatives* natives);
-
-//   static Dart_Handle RasterizeToImage(sk_sp<SkPicture> picture,
-//                                       uint32_t width,
-//                                       uint32_t height,
-//                                       Dart_Handle raw_image_callback);
-
-//  private:
-//   Picture(flutter::SkiaGPUObject<SkPicture> picture);
-// };
-
 }  // namespace flutter
 
-#endif  // FLUTTER_FLOW_DISPLAY_LIST_H_
+#endif  // FLUTTER_LIB_UI_PAINTING_DISPLAY_LIST_INTERPRETER_H_

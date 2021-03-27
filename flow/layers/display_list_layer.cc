@@ -4,7 +4,7 @@
 
 #include "flutter/flow/layers/display_list_layer.h"
 
-#include "flutter/flow/display_list.h"
+#include "flutter/flow/display_list_interpreter.h"
 #include "third_party/tonic/typed_data/dart_byte_data.h"
 
 namespace flutter {
@@ -12,30 +12,17 @@ namespace flutter {
 DisplayListLayer::DisplayListLayer(const SkPoint& offset,
                                    const SkRect& cull_rect,
                                    const SkRect& draw_rect,
-                                   const tonic::Uint8List& ops,
-                                   const tonic::DartByteData& data,
-                                   Dart_Handle objects,
+                                   std::shared_ptr<std::vector<uint8_t>> ops,
+                                   std::shared_ptr<std::vector<float>> data,
                                    bool is_complex,
                                    bool will_change)
     : offset_(offset),
       cull_rect_(cull_rect),
       draw_rect_(draw_rect),
+      ops_vector_(ops),
+      data_vector_(data),
       is_complex_(is_complex),
-      will_change_(will_change) {
-  if (/* Dart_IsNull(data) || */ Dart_IsNull(objects)) {
-    ops_vector_ = std::vector<uint8_t>(0);
-    data_vector_ = std::vector<float>(0);
-    FML_LOG(ERROR) << "Dart display list objects released before use";
-    return;
-  }
-
-  // FML_LOG(ERROR) << "Extracting DL data";
-  const uint8_t* ops_ptr = ops.data();
-  ops_vector_ = std::vector<uint8_t>(ops_ptr, ops_ptr + ops.num_elements());
-
-  const float* data_ptr = static_cast<const float*>(data.data());
-  data_vector_ = std::vector<float>(data_ptr, data_ptr + (data.length_in_bytes() / sizeof(float)));
-}
+      will_change_(will_change) {}
 
 #ifdef FLUTTER_ENABLE_DIFF_CONTEXT
 
@@ -152,17 +139,17 @@ void DisplayListLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) 
   } else {
     bounds.setEmpty();
   }
-  FML_LOG(ERROR) << "display list paint bounds is ["
-    << bounds.left() << ", "
-    << bounds.top() << ", "
-    << bounds.right() << ", "
-    << bounds.bottom() << "] "
-    << ops_vector_.size() << " ops";
-  if (bounds.isEmpty()) {
-    FML_LOG(ERROR) << "Contents of empty display list:";
-    DisplayListRasterizer rasterizer(ops_vector_, data_vector_);
-    rasterizer.Describe();
-  }
+  // FML_LOG(ERROR) << "display list paint bounds is ["
+  //   << bounds.left() << ", "
+  //   << bounds.top() << ", "
+  //   << bounds.right() << ", "
+  //   << bounds.bottom() << "] "
+  //   << ops_vector_.size() << " ops";
+  // if (bounds.isEmpty()) {
+  //   FML_LOG(ERROR) << "Contents of empty display list:";
+  //   DisplayListInterpreter interpreter(ops_vector_, data_vector_);
+  //   interpreter.Describe();
+  // }
   set_paint_bounds(bounds);
 }
 
@@ -189,8 +176,8 @@ void DisplayListLayer::Paint(PaintContext& context) const {
   //   << paint_bounds().right() << ", "
   //   << paint_bounds().bottom() << "] "
   //   << ops_vector_.size() << " ops";
-  DisplayListRasterizer rasterizer(ops_vector_, data_vector_);
-  rasterizer.Rasterize(context.leaf_nodes_canvas);
+  DisplayListInterpreter interpreter(*ops_vector_, *data_vector_);
+  interpreter.Rasterize(context.leaf_nodes_canvas);
 
   // SkRect bounds = paint_bounds();
   SkPaint paint;

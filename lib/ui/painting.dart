@@ -4606,10 +4606,10 @@ class _SkiaCanvas extends NativeFieldWrapperClass2 implements Canvas {
     _constructor(recorder, cullRect.left, cullRect.top, cullRect.right, cullRect.bottom);
   }
   void _constructor(PictureRecorder recorder,
-      double left,
-      double top,
-      double right,
-      double bottom) native 'Canvas_constructor';
+                    double left,
+                    double top,
+                    double right,
+                    double bottom) native 'Canvas_constructor';
 
   _SkiaPictureRecorder? _recorder;
 
@@ -4628,13 +4628,13 @@ class _SkiaCanvas extends NativeFieldWrapperClass2 implements Canvas {
     }
   }
   void _saveLayerWithoutBounds(List<dynamic>? paintObjects, ByteData paintData)
-  native 'Canvas_saveLayerWithoutBounds';
+      native 'Canvas_saveLayerWithoutBounds';
   void _saveLayer(double left,
-      double top,
-      double right,
-      double bottom,
-      List<dynamic>? paintObjects,
-      ByteData paintData) native 'Canvas_saveLayer';
+                  double top,
+                  double right,
+                  double bottom,
+                  List<dynamic>? paintObjects,
+                  ByteData paintData) native 'Canvas_saveLayer';
 
   @override
   void restore() native 'Canvas_restore';
@@ -4673,11 +4673,11 @@ class _SkiaCanvas extends NativeFieldWrapperClass2 implements Canvas {
     _clipRect(rect.left, rect.top, rect.right, rect.bottom, clipOp.index, doAntiAlias);
   }
   void _clipRect(double left,
-      double top,
-      double right,
-      double bottom,
-      int clipOp,
-      bool doAntiAlias) native 'Canvas_clipRect';
+                 double top,
+                 double right,
+                 double bottom,
+                 int clipOp,
+                 bool doAntiAlias) native 'Canvas_clipRect';
 
   @override
   void clipRRect(RRect rrect, {bool doAntiAlias = true}) {
@@ -4711,11 +4711,11 @@ class _SkiaCanvas extends NativeFieldWrapperClass2 implements Canvas {
     _drawLine(p1.dx, p1.dy, p2.dx, p2.dy, paint._objects, paint._data);
   }
   void _drawLine(double x1,
-      double y1,
-      double x2,
-      double y2,
-      List<dynamic>? paintObjects,
-      ByteData paintData) native 'Canvas_drawLine';
+                 double y1,
+                 double x2,
+                 double y2,
+                 List<dynamic>? paintObjects,
+                 ByteData paintData) native 'Canvas_drawLine';
 
   @override
   void drawPaint(Paint paint) {
@@ -4732,11 +4732,11 @@ class _SkiaCanvas extends NativeFieldWrapperClass2 implements Canvas {
         paint._objects, paint._data);
   }
   void _drawRect(double left,
-      double top,
-      double right,
-      double bottom,
-      List<dynamic>? paintObjects,
-      ByteData paintData) native 'Canvas_drawRect';
+                 double top,
+                 double right,
+                 double bottom,
+                 List<dynamic>? paintObjects,
+                 ByteData paintData) native 'Canvas_drawRect';
 
   @override
   void drawRRect(RRect rrect, Paint paint) {
@@ -4745,8 +4745,8 @@ class _SkiaCanvas extends NativeFieldWrapperClass2 implements Canvas {
     _drawRRect(rrect._value32, paint._objects, paint._data);
   }
   void _drawRRect(Float32List rrect,
-      List<dynamic>? paintObjects,
-      ByteData paintData) native 'Canvas_drawRRect';
+                  List<dynamic>? paintObjects,
+                  ByteData paintData) native 'Canvas_drawRRect';
 
   @override
   void drawDRRect(RRect outer, RRect inner, Paint paint) {
@@ -4756,9 +4756,9 @@ class _SkiaCanvas extends NativeFieldWrapperClass2 implements Canvas {
     _drawDRRect(outer._value32, inner._value32, paint._objects, paint._data);
   }
   void _drawDRRect(Float32List outer,
-      Float32List inner,
-      List<dynamic>? paintObjects,
-      ByteData paintData) native 'Canvas_drawDRRect';
+                   Float32List inner,
+                   List<dynamic>? paintObjects,
+                   ByteData paintData) native 'Canvas_drawDRRect';
 
   @override
   void drawOval(Rect rect, Paint paint) {
@@ -4768,11 +4768,11 @@ class _SkiaCanvas extends NativeFieldWrapperClass2 implements Canvas {
         paint._objects, paint._data);
   }
   void _drawOval(double left,
-      double top,
-      double right,
-      double bottom,
-      List<dynamic>? paintObjects,
-      ByteData paintData) native 'Canvas_drawOval';
+                 double top,
+                 double right,
+                 double bottom,
+                 List<dynamic>? paintObjects,
+                 ByteData paintData) native 'Canvas_drawOval';
 
   @override
   void drawCircle(Offset c, double radius, Paint paint) {
@@ -4781,10 +4781,10 @@ class _SkiaCanvas extends NativeFieldWrapperClass2 implements Canvas {
     _drawCircle(c.dx, c.dy, radius, paint._objects, paint._data);
   }
   void _drawCircle(double x,
-      double y,
-      double radius,
-      List<dynamic>? paintObjects,
-      ByteData paintData) native 'Canvas_drawCircle';
+                   double y,
+                   double radius,
+                   List<dynamic>? paintObjects,
+                   ByteData paintData) native 'Canvas_drawCircle';
 
   @override
   void drawArc(Rect rect, double startAngle, double sweepAngle, bool useCenter, Paint paint) {
@@ -4794,14 +4794,14 @@ class _SkiaCanvas extends NativeFieldWrapperClass2 implements Canvas {
         sweepAngle, useCenter, paint._objects, paint._data);
   }
   void _drawArc(double left,
-      double top,
-      double right,
-      double bottom,
-      double startAngle,
-      double sweepAngle,
-      bool useCenter,
-      List<dynamic>? paintObjects,
-      ByteData paintData) native 'Canvas_drawArc';
+                double top,
+                double right,
+                double bottom,
+                double startAngle,
+                double sweepAngle,
+                bool useCenter,
+                List<dynamic>? paintObjects,
+                ByteData paintData) native 'Canvas_drawArc';
 
   @override
   void drawPath(Path path, Paint paint) {
@@ -4810,8 +4810,8 @@ class _SkiaCanvas extends NativeFieldWrapperClass2 implements Canvas {
     _drawPath(path, paint._objects, paint._data);
   }
   void _drawPath(Path path,
-      List<dynamic>? paintObjects,
-      ByteData paintData) native 'Canvas_drawPath';
+                 List<dynamic>? paintObjects,
+                 ByteData paintData) native 'Canvas_drawPath';
 
   @override
   void drawImage(Image image, Offset offset, Paint paint) {
@@ -4821,10 +4821,10 @@ class _SkiaCanvas extends NativeFieldWrapperClass2 implements Canvas {
     _drawImage(image._image, offset.dx, offset.dy, paint._objects, paint._data);
   }
   void _drawImage(_Image image,
-      double x,
-      double y,
-      List<dynamic>? paintObjects,
-      ByteData paintData) native 'Canvas_drawImage';
+                  double x,
+                  double y,
+                  List<dynamic>? paintObjects,
+                  ByteData paintData) native 'Canvas_drawImage';
 
   @override
   void drawImageRect(Image image, Rect src, Rect dst, Paint paint) {
@@ -4833,28 +4833,28 @@ class _SkiaCanvas extends NativeFieldWrapperClass2 implements Canvas {
     assert(_rectIsValid(dst));
     assert(paint != null);
     _drawImageRect(image._image,
-        src.left,
-        src.top,
-        src.right,
-        src.bottom,
-        dst.left,
-        dst.top,
-        dst.right,
-        dst.bottom,
-        paint._objects,
-        paint._data);
+                   src.left,
+                   src.top,
+                   src.right,
+                   src.bottom,
+                   dst.left,
+                   dst.top,
+                   dst.right,
+                   dst.bottom,
+                   paint._objects,
+                   paint._data);
   }
   void _drawImageRect(_Image image,
-      double srcLeft,
-      double srcTop,
-      double srcRight,
-      double srcBottom,
-      double dstLeft,
-      double dstTop,
-      double dstRight,
-      double dstBottom,
-      List<dynamic>? paintObjects,
-      ByteData paintData) native 'Canvas_drawImageRect';
+                      double srcLeft,
+                      double srcTop,
+                      double srcRight,
+                      double srcBottom,
+                      double dstLeft,
+                      double dstTop,
+                      double dstRight,
+                      double dstBottom,
+                      List<dynamic>? paintObjects,
+                      ByteData paintData) native 'Canvas_drawImageRect';
 
   @override
   void drawImageNine(Image image, Rect center, Rect dst, Paint paint) {
@@ -4863,28 +4863,28 @@ class _SkiaCanvas extends NativeFieldWrapperClass2 implements Canvas {
     assert(_rectIsValid(dst));
     assert(paint != null);
     _drawImageNine(image._image,
-        center.left,
-        center.top,
-        center.right,
-        center.bottom,
-        dst.left,
-        dst.top,
-        dst.right,
-        dst.bottom,
-        paint._objects,
-        paint._data);
+                   center.left,
+                   center.top,
+                   center.right,
+                   center.bottom,
+                   dst.left,
+                   dst.top,
+                   dst.right,
+                   dst.bottom,
+                   paint._objects,
+                   paint._data);
   }
   void _drawImageNine(_Image image,
-      double centerLeft,
-      double centerTop,
-      double centerRight,
-      double centerBottom,
-      double dstLeft,
-      double dstTop,
-      double dstRight,
-      double dstBottom,
-      List<dynamic>? paintObjects,
-      ByteData paintData) native 'Canvas_drawImageNine';
+                      double centerLeft,
+                      double centerTop,
+                      double centerRight,
+                      double centerBottom,
+                      double dstLeft,
+                      double dstTop,
+                      double dstRight,
+                      double dstBottom,
+                      List<dynamic>? paintObjects,
+                      ByteData paintData) native 'Canvas_drawImageNine';
 
   @override
   void drawPicture(Picture picture) {
@@ -4919,9 +4919,9 @@ class _SkiaCanvas extends NativeFieldWrapperClass2 implements Canvas {
   }
 
   void _drawPoints(List<dynamic>? paintObjects,
-      ByteData paintData,
-      int pointMode,
-      Float32List points) native 'Canvas_drawPoints';
+                   ByteData paintData,
+                   int pointMode,
+                   Float32List points) native 'Canvas_drawPoints';
 
   @override
   void drawVertices(Vertices vertices, BlendMode blendMode, Paint paint) {
@@ -4931,18 +4931,18 @@ class _SkiaCanvas extends NativeFieldWrapperClass2 implements Canvas {
     _drawVertices(vertices, blendMode.index, paint._objects, paint._data);
   }
   void _drawVertices(Vertices vertices,
-      int blendMode,
-      List<dynamic>? paintObjects,
-      ByteData paintData) native 'Canvas_drawVertices';
+                     int blendMode,
+                     List<dynamic>? paintObjects,
+                     ByteData paintData) native 'Canvas_drawVertices';
 
   @override
   void drawAtlas(Image atlas,
-      List<RSTransform> transforms,
-      List<Rect> rects,
-      List<Color>? colors,
-      BlendMode? blendMode,
-      Rect? cullRect,
-      Paint paint) {
+                 List<RSTransform> transforms,
+                 List<Rect> rects,
+                 List<Color>? colors,
+                 BlendMode? blendMode,
+                 Rect? cullRect,
+                 Paint paint) {
     assert(atlas != null); // atlas is checked on the engine side
     assert(transforms != null);
     assert(rects != null);
@@ -4980,19 +4980,19 @@ class _SkiaCanvas extends NativeFieldWrapperClass2 implements Canvas {
     final Float32List? cullRectBuffer = cullRect?._value32;
 
     _drawAtlas(
-        paint._objects, paint._data, atlas._image, rstTransformBuffer, rectBuffer,
-        colorBuffer, (blendMode ?? BlendMode.src).index, cullRectBuffer
+      paint._objects, paint._data, atlas._image, rstTransformBuffer, rectBuffer,
+      colorBuffer, (blendMode ?? BlendMode.src).index, cullRectBuffer
     );
   }
 
   @override
   void drawRawAtlas(Image atlas,
-      Float32List rstTransforms,
-      Float32List rects,
-      Int32List? colors,
-      BlendMode? blendMode,
-      Rect? cullRect,
-      Paint paint) {
+                    Float32List rstTransforms,
+                    Float32List rects,
+                    Int32List? colors,
+                    BlendMode? blendMode,
+                    Rect? cullRect,
+                    Paint paint) {
     assert(atlas != null); // atlas is checked on the engine side
     assert(rstTransforms != null);
     assert(rects != null);
@@ -5008,19 +5008,19 @@ class _SkiaCanvas extends NativeFieldWrapperClass2 implements Canvas {
       throw ArgumentError('If non-null, "colors" length must be one fourth the length of "rstTransforms" and "rects".');
 
     _drawAtlas(
-        paint._objects, paint._data, atlas._image, rstTransforms, rects,
-        colors, (blendMode ?? BlendMode.src).index, cullRect?._value32
+      paint._objects, paint._data, atlas._image, rstTransforms, rects,
+      colors, (blendMode ?? BlendMode.src).index, cullRect?._value32
     );
   }
 
   void _drawAtlas(List<dynamic>? paintObjects,
-      ByteData paintData,
-      _Image atlas,
-      Float32List rstTransforms,
-      Float32List rects,
-      Int32List? colors,
-      int blendMode,
-      Float32List? cullRect) native 'Canvas_drawAtlas';
+                  ByteData paintData,
+                  _Image atlas,
+                  Float32List rstTransforms,
+                  Float32List rects,
+                  Int32List? colors,
+                  int blendMode,
+                  Float32List? cullRect) native 'Canvas_drawAtlas';
 
   @override
   void drawShadow(Path path, Color color, double elevation, bool transparentOccluder) {
@@ -5030,9 +5030,9 @@ class _SkiaCanvas extends NativeFieldWrapperClass2 implements Canvas {
     _drawShadow(path, color.value, elevation, transparentOccluder);
   }
   void _drawShadow(Path path,
-      int color,
-      double elevation,
-      bool transparentOccluder) native 'Canvas_drawShadow';
+                   int color,
+                   double elevation,
+                   bool transparentOccluder) native 'Canvas_drawShadow';
 }
 
 @pragma('vm:entry-point')
@@ -5306,24 +5306,6 @@ class _DisplayListCanvas implements Canvas {
     return dst;
   }
 
-  Uint8List _trimmedOps() {
-    final Uint8List _trimmed = Uint8List(_numOps);
-    _trimmed.setRange(0, _numOps, _ops);
-    return _trimmed;
-  }
-
-  ByteData _trimmedData() {
-    final ByteData _trimmed = ByteData(_numDataBytes);
-    for (int i = 0; i < _numDataBytes; i += 4) {
-      _trimmed.setInt32(i, _data.getInt32(i));
-    }
-    return _trimmed;
-  }
-
-  List<Object> _trimmedObjects() {
-    return List<Object>.unmodifiable(_objData);
-  }
-
   void _addByte(int byte) {
     if (_numOps + 1 > _ops.lengthInBytes) {
       _ops = _growOps(_ops);
@@ -5411,6 +5393,10 @@ class _DisplayListCanvas implements Canvas {
 
   void _addVertices(Vertices vertices) {
     _objData.add(vertices);
+  }
+
+  void _addParagraph(Paragraph paragraph) {
+    _objData.add(paragraph);
   }
 
   void _addPicture(Picture picture) {
@@ -5515,12 +5501,12 @@ class _DisplayListCanvas implements Canvas {
       throw ArgumentError('"matrix4" must have 16 entries.');
     _addOp(_CanvasOp.transform);
     _addFloat64List(matrix4);
-    _ctm.mul(matrix4[0], matrix4[1], matrix4[3],
-             matrix4[4], matrix4[5], matrix4[7]);
-    print('transform [${matrix4[ 0]}, ${matrix4[ 1]}, ${matrix4[ 2]}, ${matrix4[ 3]},');
-    print('           ${matrix4[ 4]}, ${matrix4[ 5]}, ${matrix4[ 6]}, ${matrix4[ 7]},');
-    print('           ${matrix4[ 8]}, ${matrix4[ 9]}, ${matrix4[10]}, ${matrix4[11]},');
-    print('           ${matrix4[12]}, ${matrix4[13]}, ${matrix4[14]}, ${matrix4[15]}]');
+    _ctm.mul(matrix4[0], matrix4[4], matrix4[12],
+             matrix4[1], matrix4[5], matrix4[13]);
+    print('transform [${matrix4[ 0]}, ${matrix4[ 4]}, ${matrix4[ 8]}, ${matrix4[12]},');
+    print('           ${matrix4[ 1]}, ${matrix4[ 5]}, ${matrix4[ 9]}, ${matrix4[13]},');
+    print('           ${matrix4[ 2]}, ${matrix4[ 6]}, ${matrix4[10]}, ${matrix4[14]},');
+    print('           ${matrix4[ 3]}, ${matrix4[ 7]}, ${matrix4[11]}, ${matrix4[15]}]');
   }
 
   @override
@@ -5964,14 +5950,14 @@ class _DisplayListCanvas implements Canvas {
   void drawParagraph(Paragraph paragraph, Offset offset) {
     _addOp(_CanvasOp.drawParagraph);
     _addOffset(offset);
+    _addParagraph(paragraph);
     print('not really rendering: $paragraph');
-    // TODO(flar): Implement drawParagraph
   }
 
   @override
   void drawPicture(Picture picture) {
     _addOp(_CanvasOp.drawPicture);
-    _addPicture(picture);
+    _addPicture(picture as _DisplayListPicture);
     print('adding conservative bounds for drawPicture');
     _addBounds(_cullRect, false);
   }
@@ -5988,22 +5974,43 @@ class _DisplayListCanvas implements Canvas {
 }
 
 /// Local storage version of Picture.
-class _DisplayListPicture implements Picture {
-  _DisplayListPicture._(Rect cullRect, Rect drawBounds, Uint8List ops, ByteData data, List<Object> objects)
+class _DisplayListPicture extends NativeFieldWrapperClass2 implements Picture {
+  _DisplayListPicture._(Rect cullRect,
+                        Rect drawBounds,
+                        Uint8List ops, int numOps,
+                        ByteData data, int numDataBytes,
+                        List<Object> objects)
       : _cullRect = cullRect,
         _drawBounds = drawBounds,
         _ops = ops,
         _data = data,
-        _objData = objects;
+        _objData = objects {
+    _constructor(ops, numOps, data, numDataBytes);
+  }
+  void _constructor(Uint8List ops, int numOps, ByteData data, int dataBytes) native 'DisplayList_constructor';
 
   @override
   Future<Image> toImage(int width, int height) {
     if (width <= 0 || height <= 0)
       throw Exception('Invalid image dimensions.');
-    if (_cullRect == null || _objData == null)
+    final Uint8List? ops = _ops;
+    final ByteData? data = _data;
+    final List<Object>? objects = _objData;
+    if (ops == null || data == null || objects == null)
       throw UnimplementedError('toImage called on disposed Picture');
-    throw UnimplementedError('toImage not implemented');
+    return _futurize(
+          (_Callback<Image?> callback) => _toImage(width, height, (_Image? image) {
+        if (image == null) {
+          callback(null);
+        } else {
+          callback(Image._(image));
+        }
+      }),
+    );
   }
+
+
+  String? _toImage(int width, int height, _Callback<_Image?> callback) native 'DisplayList_toImage';
 
   @override
   void dispose() {
@@ -6039,9 +6046,9 @@ class _DisplayListPictureRecorder implements PictureRecorder {
     return _DisplayListPicture._(
       canvas._cullRect,
       canvas._drawBounds,
-      canvas._trimmedOps(),
-      canvas._trimmedData(),
-      canvas._trimmedObjects(),
+      canvas._ops, canvas._numOps,
+      canvas._data, canvas._numDataBytes,
+      canvas._objData,
     );
   }
 

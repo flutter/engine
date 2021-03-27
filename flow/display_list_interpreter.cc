@@ -2,69 +2,33 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/flow/display_list.h"
+#include "flutter/flow/display_list_interpreter.h"
 #include "flutter/fml/logging.h"
-
-// #include <memory>
-
-// #include "flutter/fml/make_copyable.h"
-// #include "flutter/lib/ui/painting/canvas.h"
-// #include "flutter/lib/ui/ui_dart_state.h"
-// #include "third_party/skia/include/core/SkBlurTypes.h"
-// #include "third_party/skia/include/core/SkImage.h"
-// #include "third_party/tonic/converter/dart_converter.h"
-// #include "third_party/tonic/dart_args.h"
-// #include "third_party/tonic/dart_binding_macros.h"
-// #include "third_party/tonic/dart_library_natives.h"
-// #include "third_party/tonic/dart_persistent_value.h"
-// #include "third_party/tonic/logging/dart_invoke.h"
 
 #include "third_party/skia/include/core/SkImageFilter.h"
 #include "third_party/skia/include/core/SkMaskFilter.h"
+#include "third_party/skia/include/core/SkColorFilter.h"
 #include "third_party/skia/include/core/SkShader.h"
 
 namespace flutter {
-
-// IMPLEMENT_WRAPPERTYPEINFO(ui, DisplayList);
-
-// #define FOR_EACH_BINDING(V) \
-//   V(DisplayList, toImage)       \
-//   V(DisplayList, dispose)       \
-//   V(DisplayList, GetAllocationSize)
-
-// DART_BIND_ALL(DisplayList, FOR_EACH_BINDING)
-
-// fml::RefPtr<DisplayList> DisplayList::Create(
-//     Dart_Handle dart_handle,
-//     flutter::SkiaGPUObject<SkPicture> picture) {
-//   auto canvas_picture = fml::MakeRefCounted<Picture>(std::move(picture));
-
-//   canvas_picture->AssociateWithDartWrapper(dart_handle);
-//   return canvas_picture;
-// }
-
-// DisplayList::DisplayList(flutter::SkiaGPUObject<SkPicture> picture)
-//     : picture_(std::move(picture)) {}
-
-// DisplayList::~DisplayList() = default;
 
 #define CANVAS_OP_MAKE_STRING(name, count, imask) #name
 #define CANVAS_OP_MAKE_COUNT(name, count, imask) count
 #define CANVAS_OP_MAKE_IMASK(name, count, imask) imask
 
-const std::vector<std::string> DisplayListRasterizer::opNames = {
+const std::vector<std::string> DisplayListInterpreter::opNames = {
   FOR_EACH_CANVAS_OP(CANVAS_OP_MAKE_STRING),
 };
 
-const std::vector<int> DisplayListRasterizer::opArgCounts = {
+const std::vector<int> DisplayListInterpreter::opArgCounts = {
   FOR_EACH_CANVAS_OP(CANVAS_OP_MAKE_COUNT),
 };
 
-const std::vector<int> DisplayListRasterizer::opArgImask = {
+const std::vector<int> DisplayListInterpreter::opArgImask = {
   FOR_EACH_CANVAS_OP(CANVAS_OP_MAKE_IMASK),
 };
 
-DisplayListRasterizer::DisplayListRasterizer(std::vector<uint8_t> ops_vector, std::vector<float> data_vector)
+DisplayListInterpreter::DisplayListInterpreter(std::vector<uint8_t> ops_vector, std::vector<float> data_vector)
     : ops_it_(ops_vector.begin()),
       ops_end_(ops_vector.end()),
       data_it_(data_vector.begin()),
@@ -77,7 +41,7 @@ static const std::array<SkSamplingOptions, 4> filter_qualities = {
     SkSamplingOptions(SkCubicResampler{1 / 3.0f, 1 / 3.0f}),
 };
 
-void DisplayListRasterizer::Describe() {
+void DisplayListInterpreter::Describe() {
   FML_LOG(ERROR) << "Starting ops: " << (ops_end_ - ops_it_) << ", data: " << (data_end_ - data_it_);
   while(HasOp()) {
     FML_LOG(ERROR) << DescribeNextOp();
@@ -89,9 +53,29 @@ void DisplayListRasterizer::Describe() {
   FML_LOG(ERROR) << "Remaining ops: " << (ops_end_ - ops_it_) << ", data: " << (data_end_ - data_it_);
 }
 
-void DisplayListRasterizer::Rasterize(SkCanvas* canvas) {
+constexpr float invert_colors[20] = {
+  -1.0,    0,    0, 1.0, 0,
+     0, -1.0,    0, 1.0, 0,
+     0,    0, -1.0, 1.0, 0,
+   1.0,  1.0,  1.0, 1.0, 0
+};
+
+static sk_sp<SkColorFilter> makeColorFilter(bool invertColors, sk_sp<SkColorFilter> filter) {
+  if (!invertColors) {
+    return filter;
+  }
+  sk_sp<SkColorFilter> invert_filter = invertColors ? SkColorFilters::Matrix(invert_colors) : nullptr;
+  if (filter) {
+    invert_filter = invert_filter->makeComposed(filter);
+  }
+  return invert_filter;
+}
+
+void DisplayListInterpreter::Rasterize(SkCanvas* canvas) {
+  int entrySaveCount = canvas->getSaveCount();
   SkPaint paint;
-  paint.setAntiAlias(true);
+  bool invertColors = false;
+  sk_sp<SkColorFilter> colorFilter;
   FML_LOG(ERROR) << "Starting ops: " << (ops_end_ - ops_it_) << ", data: " << (data_end_ - data_it_);
   while (HasOp()) {
     FML_LOG(INFO) << DescribeNextOp();
@@ -101,8 +85,8 @@ void DisplayListRasterizer::Rasterize(SkCanvas* canvas) {
       case cops_clearAA: paint.setAntiAlias(false); break;
       case cops_setDither: paint.setDither(true); break;
       case cops_clearDither: paint.setDither(false); break;
-      case cops_setInvertColors: break; // TODO(flar): replaces colorfilter???
-      case cops_clearInvertColors: paint.setColorFilter(nullptr); break;
+      case cops_setInvertColors: invertColors = true; paint.setColorFilter(makeColorFilter(invertColors, colorFilter));
+      case cops_clearInvertColors: invertColors = false; paint.setColorFilter(colorFilter); break;
       case cops_setColor: paint.setColor(GetColor()); break;
       case cops_setFillStyle: paint.setStyle(SkPaint::Style::kFill_Style); break;
       case cops_setStrokeStyle: paint.setStyle(SkPaint::Style::kStroke_Style); break;
@@ -121,7 +105,7 @@ void DisplayListRasterizer::Rasterize(SkCanvas* canvas) {
       case cops_setMaskFilterOuter: paint.setMaskFilter(SkMaskFilter::MakeBlur(SkBlurStyle::kOuter_SkBlurStyle, GetScalar())); break;
       case cops_setMaskFilterSolid: paint.setMaskFilter(SkMaskFilter::MakeBlur(SkBlurStyle::kSolid_SkBlurStyle, GetScalar())); break;
       case cops_setMaskFilterNormal: paint.setMaskFilter(SkMaskFilter::MakeBlur(SkBlurStyle::kNormal_SkBlurStyle, GetScalar())); break;
-      case cops_clearColorFilter: paint.setColorFilter(nullptr); break;
+      case cops_clearColorFilter: colorFilter = nullptr; paint.setColorFilter(makeColorFilter(invertColors, colorFilter)); break;
       case cops_setColorFilter: break; // TODO(flar) deal with Filter object
       case cops_clearImageFilter: paint.setImageFilter(nullptr); break;
       case cops_setImageFilter: break; // TODO(flar) deal with Filter object
@@ -165,8 +149,8 @@ void DisplayListRasterizer::Rasterize(SkCanvas* canvas) {
       case cops_drawLine: canvas->drawLine(GetPoint(), GetPoint(), paint); break;
       case cops_drawPath: break; // TODO(flar) deal with Path object
 
-      case cops_drawLines: break; // TODO(flar) deal with List of points
       case cops_drawPoints: break; // TODO(flar) deal with List of points
+      case cops_drawLines: break; // TODO(flar) deal with List of points
       case cops_drawPolygon: break; // TODO(flar) deal with List of points
       case cops_drawPicture: break; // TODO(flar) deal with Picture object
 
@@ -186,99 +170,9 @@ void DisplayListRasterizer::Rasterize(SkCanvas* canvas) {
       case cops_drawShadowOccluded: GetScalar(); break; // TODO(flar) deal with Path object
     }
   }
-  FML_LOG(ERROR) << "Remaining ops: " << (ops_end_ - ops_it_) << ", data: " << (data_end_ - data_it_);
+  FML_LOG(ERROR) << "Remaining ops: " << (ops_end_ - ops_it_)
+    << ", data: " << (data_end_ - data_it_)
+    << ", save count delta: " << (canvas->getSaveCount() - entrySaveCount);
 }
-
-// Dart_Handle DisplayList::toImage(uint32_t width,
-//                              uint32_t height,
-//                              Dart_Handle raw_image_callback) {
-//   if (!picture_.get()) {
-//     return tonic::ToDart("Picture is null");
-//   }
-
-//   return RasterizeToImage(picture_.get(), width, height, raw_image_callback);
-// }
-
-// void DisplayList::dispose() {
-//   picture_.reset();
-//   ClearDartWrapper();ToSkRoundRect
-// }
-
-// size_t DisplayList::GetAllocationSize() const {
-//   if (auto picture = picture_.get()) {
-//     return picture->approximateBytesUsed() + sizeof(Picture);
-//   } else {
-//     return sizeof(Picture);
-//   }
-// }
-
-// Dart_Handle DisplayList::RasterizeToImage(sk_sp<SkPicture> picture,
-//                                       uint32_t width,
-//                                       uint32_t height,
-//                                       Dart_Handle raw_image_callback) {
-//   if (Dart_IsNull(raw_image_callback) || !Dart_IsClosure(raw_image_callback)) {
-//     return tonic::ToDart("Image callback was invalid");
-//   }
-
-//   if (width == 0 || height == 0) {
-//     return tonic::ToDart("Image dimensions for scene were invalid.");
-//   }
-
-//   auto* dart_state = UIDartState::Current();
-//   auto image_callback = std::make_unique<tonic::DartPersistentValue>(
-//       dart_state, raw_image_callback);
-//   auto unref_queue = dart_state->GetSkiaUnrefQueue();
-//   auto ui_task_runner = dart_state->GetTaskRunners().GetUITaskRunner();
-//   auto raster_task_runner = dart_state->GetTaskRunners().GetRasterTaskRunner();
-//   auto snapshot_delegate = dart_state->GetSnapshotDelegate();
-
-//   // We can't create an image on this task runner because we don't have a
-//   // graphics context. Even if we did, it would be slow anyway. Also, this
-//   // thread owns the sole reference to the layer tree. So we flatten the layer
-//   // tree into a picture and use that as the thread transport mechanism.
-
-//   auto picture_bounds = SkISize::Make(width, height);
-
-//   auto ui_task = fml::MakeCopyable([image_callback = std::move(image_callback),
-//                                     unref_queue](
-//                                        sk_sp<SkImage> raster_image) mutable {
-//     auto dart_state = image_callback->dart_state().lock();
-//     if (!dart_state) {
-//       // The root isolate could have died in the meantime.
-//       return;
-//     }
-//     tonic::DartState::Scope scope(dart_state);
-
-//     if (!raster_image) {
-//       tonic::DartInvoke(image_callback->Get(), {Dart_Null()});
-//       return;
-//     }
-
-//     auto dart_image = CanvasImage::Create();
-//     dart_image->set_image({std::move(raster_image), std::move(unref_queue)});
-//     auto* raw_dart_image = tonic::ToDart(std::move(dart_image));
-
-//     // All done!
-//     tonic::DartInvoke(image_callback->Get(), {raw_dart_image});
-
-//     // image_callback is associated with the Dart isolate and must be deleted
-//     // on the UI thread.
-//     image_callback.reset();
-//   });
-
-//   // Kick things off on the raster rask runner.
-//   fml::TaskRunner::RunNowOrPostTask(
-//       raster_task_runner,
-//       [ui_task_runner, snapshot_delegate, picture, picture_bounds, ui_task] {
-//         sk_sp<SkImage> raster_image =
-//             snapshot_delegate->MakeRasterSnapshot(picture, picture_bounds);
-
-//         fml::TaskRunner::RunNowOrPostTask(
-//             ui_task_runner,
-//             [ui_task, raster_image]() { ui_task(raster_image); });
-//       });
-
-//   return Dart_Null();
-// }
 
 }  // namespace flutter

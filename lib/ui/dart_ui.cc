@@ -12,6 +12,7 @@
 #include "flutter/lib/ui/painting/canvas.h"
 #include "flutter/lib/ui/painting/codec.h"
 #include "flutter/lib/ui/painting/color_filter.h"
+#include "flutter/lib/ui/painting/display_list.h"
 #include "flutter/lib/ui/painting/engine_layer.h"
 #include "flutter/lib/ui/painting/gradient.h"
 #include "flutter/lib/ui/painting/image.h"
@@ -67,6 +68,7 @@ void DartUI::InitForGlobal() {
     Codec::RegisterNatives(g_natives);
     ColorFilter::RegisterNatives(g_natives);
     DartRuntimeHooks::RegisterNatives(g_natives);
+    DisplayList::RegisterNatives(g_natives);
     EngineLayer::RegisterNatives(g_natives);
     FontCollection::RegisterNatives(g_natives);
     ImageDescriptor::RegisterNatives(g_natives);
