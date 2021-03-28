@@ -14,7 +14,7 @@
 namespace flutter {
 
 // opName (matches Dart enum name), numDataArgs, intArgMask, numObjArgs
-#define FOR_EACH_CANVAS_OP(V) \
+#define FOR_EACH_CANVAS_OP(V)         \
   V(setAA, 0, 0, 0)                   \
   V(clearAA, 0, 0, 0)                 \
   V(setDither, 0, 0, 0)               \
@@ -76,7 +76,7 @@ namespace flutter {
   V(clipPathAA, 0, 0, 1)              \
                                       \
   V(drawPaint, 0, 0, 0)               \
-  V(drawColor, 2, 0x3, 0)             \
+  V(drawColor, 0, 0, 0)               \
                                       \
   V(drawLine, 4, 0, 0)                \
   V(drawRect, 4, 0, 0)                \
@@ -150,43 +150,7 @@ class DisplayListInterpreter {
   bool HasOp() { return ops_it_ < ops_end_; }
   CanvasOp GetOp() { return static_cast<CanvasOp>(*ops_it_++); }
 
-  std::string DescribeNextOp() {
-    if (!HasOp()) {
-      return "END-OF-LIST";
-    }
-    std::stringstream ss;
-    int op_index = *ops_it_;
-    ss << opNames[op_index] << "(" << std::hex;
-    for (int i = 0; i < opArgCounts[op_index]; i++) {
-      if (i > 0) {
-        ss << ", ";
-      }
-      if (data_it_ + i < data_end_) {
-        union { float f; uint32_t i; } data;
-        data.f = data_it_[i];
-        if ((opArgImask[op_index] & (1 << i)) == 0) {
-          ss << data.f;
-        } else {
-          ss << "0x" << data.i;
-        }
-      } else {
-        ss << "... UNDEFINED ...";
-        break;
-      }
-    }
-    if (opObjCounts[op_index] > 0) {
-      if (opArgCounts[op_index] > 0) {
-        ss << ", ";
-      }
-      if (opObjCounts[op_index] > 1) {
-        ss << "[" << opObjCounts[op_index] << " objects]";
-      } else {
-        ss << "[object]";
-      }
-    }
-    ss << ")";
-    return ss.str();
-  }
+  std::string DescribeNextOp();
 
   SkScalar GetScalar() { return static_cast<SkScalar>(*data_it_++); }
   uint32_t GetUint32() { union { float f; uint32_t i; } data; data.f = *data_it_++; return data.i; }

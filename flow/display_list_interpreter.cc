@@ -62,6 +62,44 @@ void DisplayListInterpreter::Describe() {
   FML_LOG(ERROR) << "Remaining ops: " << (ops_end_ - ops_it_) << ", data: " << (data_end_ - data_it_);
 }
 
+std::string DisplayListInterpreter::DescribeNextOp() {
+  if (!HasOp()) {
+    return "END-OF-LIST";
+  }
+  std::stringstream ss;
+  int op_index = *ops_it_;
+  ss << opNames[op_index] << "(" << std::hex;
+  for (int i = 0; i < opArgCounts[op_index]; i++) {
+    if (i > 0) {
+      ss << ", ";
+    }
+    if (data_it_ + i < data_end_) {
+      union { float f; uint32_t i; } data;
+      data.f = data_it_[i];
+      if ((opArgImask[op_index] & (1 << i)) == 0) {
+        ss << data.f;
+      } else {
+        ss << "0x" << data.i;
+      }
+    } else {
+      ss << "... UNDEFINED ...";
+      break;
+    }
+  }
+  if (opObjCounts[op_index] > 0) {
+    if (opArgCounts[op_index] > 0) {
+      ss << ", ";
+    }
+    if (opObjCounts[op_index] > 1) {
+      ss << "[" << opObjCounts[op_index] << " objects]";
+    } else {
+      ss << "[object]";
+    }
+  }
+  ss << ")";
+  return ss.str();
+}
+
 constexpr float invert_colors[20] = {
   -1.0,    0,    0, 1.0, 0,
      0, -1.0,    0, 1.0, 0,
