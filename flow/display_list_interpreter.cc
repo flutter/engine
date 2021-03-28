@@ -12,25 +12,25 @@
 
 namespace flutter {
 
-#define CANVAS_OP_MAKE_STRING(name, count, imask, objcount) #name,
-#define CANVAS_OP_MAKE_COUNT(name, count, imask, objcount) count,
-#define CANVAS_OP_MAKE_IMASK(name, count, imask, objcount) imask,
-#define CANVAS_OP_MAKE_OBJCOUNT(name, count, imask, objcount) objcount,
+#define CANVAS_OP_TAKE_STRING(name, count, imask, objcount) #name,
+#define CANVAS_OP_TAKE_COUNT(name, count, imask, objcount) count,
+#define CANVAS_OP_TAKE_IMASK(name, count, imask, objcount) imask,
+#define CANVAS_OP_TAKE_OBJCOUNT(name, count, imask, objcount) objcount,
 
 const std::vector<std::string> DisplayListInterpreter::opNames = {
-  FOR_EACH_CANVAS_OP(CANVAS_OP_MAKE_STRING)
+  FOR_EACH_CANVAS_OP(CANVAS_OP_TAKE_STRING)
 };
 
 const std::vector<int> DisplayListInterpreter::opArgCounts = {
-  FOR_EACH_CANVAS_OP(CANVAS_OP_MAKE_COUNT)
+  FOR_EACH_CANVAS_OP(CANVAS_OP_TAKE_COUNT)
 };
 
 const std::vector<int> DisplayListInterpreter::opArgImask = {
-  FOR_EACH_CANVAS_OP(CANVAS_OP_MAKE_IMASK)
+  FOR_EACH_CANVAS_OP(CANVAS_OP_TAKE_IMASK)
 };
 
 const std::vector<int> DisplayListInterpreter::opObjCounts = {
-  FOR_EACH_CANVAS_OP(CANVAS_OP_MAKE_OBJCOUNT)
+  FOR_EACH_CANVAS_OP(CANVAS_OP_TAKE_OBJCOUNT)
 };
 
 DisplayListInterpreter::DisplayListInterpreter(
@@ -42,13 +42,6 @@ DisplayListInterpreter::DisplayListInterpreter(
       data_end_(data_vector->end()),
       ops_vector_(std::move(ops_vector)),
       data_vector_(std::move(data_vector)) {}
-
-static const std::array<SkSamplingOptions, 4> filter_qualities = {
-    SkSamplingOptions(SkFilterMode::kNearest, SkMipmapMode::kNone),
-    SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kNone),
-    SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear),
-    SkSamplingOptions(SkCubicResampler{1 / 3.0f, 1 / 3.0f}),
-};
 
 void DisplayListInterpreter::Describe() {
   FML_LOG(ERROR) << "Starting ops: " << (ops_end_ - ops_it_) << ", data: " << (data_end_ - data_it_);
@@ -122,9 +115,11 @@ sk_sp<SkColorFilter> DisplayListInterpreter::makeColorFilter(RasterizeContext& c
   case cops_##name: { execute_##name(context); } break;
 
 void DisplayListInterpreter::Rasterize(SkCanvas* canvas) {
-  int entrySaveCount = canvas->getSaveCount();
   RasterizeContext context;
   context.canvas = canvas;
+  context.filterMode = LinearSampling.filter;
+  context.sampling = LinearSampling;
+  int entrySaveCount = canvas->getSaveCount();
   while (HasOp()) {
     FML_LOG(INFO) << DescribeNextOp();
     switch (GetOp()) {
@@ -197,13 +192,26 @@ CANVAS_MASK_DEFINE_OP(Normal)
 CANVAS_OP_DEFINE_OP(clearImageFilter, context.paint.setImageFilter(nullptr);)
 CANVAS_OP_DEFINE_OP(setImageFilter, /* TODO(flar) deal with Filter object */)
 
-#define CANVAS_FQ_DEFINE_OP(op_type, enum_type) CANVAS_OP_DEFINE_OP(setFilterQuality##op_type, \
-  context.paint.setFilterQuality(SkFilterQuality::k##enum_type##_SkFilterQuality); \
+const SkSamplingOptions DisplayListInterpreter::NearestSampling =
+  SkSamplingOptions(SkFilterMode::kNearest, SkMipmapMode::kNone);
+const SkSamplingOptions DisplayListInterpreter::LinearSampling =
+  SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kNone);
+const SkSamplingOptions DisplayListInterpreter::MipmapSampling =
+  SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear);
+const SkSamplingOptions DisplayListInterpreter::CubicSampling =
+  SkSamplingOptions(SkCubicResampler{1 / 3.0f, 1 / 3.0f});
+
+#define CANVAS_FQ_DEFINE_OP(op_type, enum_type, filter_mode) \
+CANVAS_OP_DEFINE_OP(setFilterQuality##op_type,               \
+  context.filterMode = SkFilterMode::filter_mode;            \
+  context.sampling = op_type##Sampling;                      \
+  context.paint.setFilterQuality(                            \
+      SkFilterQuality::k##enum_type##_SkFilterQuality);      \
 )
-CANVAS_FQ_DEFINE_OP(Nearest, None)
-CANVAS_FQ_DEFINE_OP(Linear, Low)
-CANVAS_FQ_DEFINE_OP(Mipmap, Medium)
-CANVAS_FQ_DEFINE_OP(Cubic, High)
+CANVAS_FQ_DEFINE_OP(Nearest, None, kNearest)
+CANVAS_FQ_DEFINE_OP(Linear, Low, kLinear)
+CANVAS_FQ_DEFINE_OP(Mipmap, Medium, kLinear)
+CANVAS_FQ_DEFINE_OP(Cubic, High, kLinear)
 
 CANVAS_OP_DEFINE_OP(setBlendMode, context.paint.setBlendMode(GetBlendMode());)
 

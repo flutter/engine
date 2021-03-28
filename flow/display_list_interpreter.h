@@ -127,6 +127,11 @@ class DisplayListInterpreter {
   static const std::vector<int> opArgImask;
   static const std::vector<int> opObjCounts;
 
+  static const SkSamplingOptions NearestSampling;
+  static const SkSamplingOptions LinearSampling;
+  static const SkSamplingOptions MipmapSampling;
+  static const SkSamplingOptions CubicSampling;
+
  private:
   std::vector<uint8_t>::iterator ops_it_;
   const std::vector<uint8_t>::iterator ops_end_;
@@ -141,6 +146,8 @@ class DisplayListInterpreter {
     SkPaint paint;
     bool invertColors = false;
     sk_sp<SkColorFilter> colorFilter;
+    SkFilterMode filterMode;
+    SkSamplingOptions sampling;
   };
 
   static sk_sp<SkColorFilter> makeColorFilter(RasterizeContext& context);
@@ -157,8 +164,9 @@ class DisplayListInterpreter {
 
   SkScalar GetAngle() { return GetScalar() * 180.0 / M_PI; }
   SkBlendMode GetBlendMode() { return static_cast<SkBlendMode>(GetUint32()); }
-  SkPoint GetPoint() { return SkPoint::Make(GetScalar(), GetScalar()); }
   SkColor GetColor() { return static_cast<SkColor>(GetUint32()); }
+
+  SkPoint GetPoint() { return SkPoint::Make(GetScalar(), GetScalar()); }
   SkRect GetRect() { return SkRect::MakeLTRB(GetScalar(), GetScalar(), GetScalar(), GetScalar()); }
   SkRRect GetRoundRect() {
     SkRect rect = GetRect();
