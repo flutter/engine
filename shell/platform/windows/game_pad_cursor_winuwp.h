@@ -52,7 +52,8 @@ class GamepadCursorWinUWP {
   // inactivity timer.
   void SetCursorTimeout();
 
-  // Sets the frequency, in milliseconds, that the gamepad is polled for movement updates.
+  // Sets the frequency, in milliseconds, that the gamepad is polled for
+  // movement updates.
   void SetMouseMovePollingFrequency(int ms);
 
   // Notifies current |WindowBindingHandlerDelegate| of gamepad right stick
@@ -90,6 +91,9 @@ class GamepadCursorWinUWP {
   // Configure callbacks to notify when Gamepad hardware events are received.
   void ConfigureGamepad();
 
+  winrt::Windows::Foundation::Numerics::float3 GetScaledInput(
+      const winrt::Windows::Foundation::Numerics::float3 input);
+
   // Object responsible for handling the low level interactions with the
   // gamepad.
   std::unique_ptr<GamepadWinUWP> game_pad_{nullptr};
@@ -99,19 +103,25 @@ class GamepadCursorWinUWP {
   WindowBindingHandlerDelegate* binding_handler_delegate_;
 
   // Multiplier used to map controller velocity to an appropriate scroll input.
-  const double kControllerScrollMultiplier = 3;
+  static constexpr double kControllerScrollMultiplier = 3;
 
   // Multiplier used to scale gamepad input to mouse equivalent response.
-  const int kCursorScale = 30;
+  static constexpr int kCursorScale = 7;
 
   // Number of inactive seconds after which emulated cursor is hidden.
-  const int kInactivePeriod = 5;
+  static constexpr int kInactivePeriod = 5;
 
   // Frequency to poll for input when no active interaction
-  const int kReducedPollingFrequency = 250;
+  static constexpr int kReducedPollingFrequency = 250;
 
   // Frequency to poll for input when user is interacting
-  const int kNormalPollingFrequency = 10;
+  static constexpr int kNormalPollingFrequency = 10;
+
+  // Scancode definitions for dpad to cursor mapping.
+  static constexpr int kScanLeft = 75;
+  static constexpr int kScanRight = 77;
+  static constexpr int kScanUp = 72;
+  static constexpr int kScanDown = 80;
 
   // Timer object used to update the cursor visual.
   winrt::Windows::System::DispatcherQueueTimer cursor_move_timer_{nullptr};

@@ -30,7 +30,7 @@ class DisplayHelperWinUWP {
  public:
   DisplayHelperWinUWP();
 
-  //physical = true
+  // physical = true
   // Returns with the physical bounds of the active window.
   WindowBoundsWinUWP GetPhysicalBounds();
 
@@ -48,8 +48,7 @@ class DisplayHelperWinUWP {
   // backing CoreWindow.
   float GetDpiScale();
 
-  // Returns a value indicating
-  bool IsRunningOnXbox();
+  bool IsRunningOnLargeScreenDevice();
 
   // Returns a value representing the overscan to correct for X.
   float GetRenderTargetXOffset();
@@ -66,9 +65,8 @@ class DisplayHelperWinUWP {
   winrt::Windows::Graphics::Display::DisplayInformation current_display_info_{
       nullptr};
 
-  // Is current context is executing on an XBOX
-  // device.
-  bool running_on_xbox_ = false;
+  // Is current context is executing on a large screen device.
+  bool large_screen_device_ = false;
 
   // Current X overscan compensation factor.
   float render_target_x_offset_ = 1.0f;

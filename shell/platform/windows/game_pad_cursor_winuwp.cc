@@ -130,6 +130,18 @@ void GamepadCursorWinUWP::SetMouseMovePollingFrequency(int ms) {
   }
 }
 
+winrt::Windows::Foundation::Numerics::float3
+GamepadCursorWinUWP::GetScaledInput(
+    const winrt::Windows::Foundation::Numerics::float3 input) {
+  if (!display_helper_->IsRunningOnLargeScreenDevice()) {
+    const float inverse_dpi_scale = display_helper_->GetDpiScale();
+    return {cursor_visual_.Offset().x * inverse_dpi_scale,
+            cursor_visual_.Offset().y * inverse_dpi_scale, 1.0f};
+  } else {
+    return std::move(input);
+  }
+}
+
 void GamepadCursorWinUWP::OnGamepadLeftStickMoved(double x, double y) {
   SetCursorTimeout();
 
@@ -144,48 +156,60 @@ void GamepadCursorWinUWP::OnGamepadLeftStickMoved(double x, double y) {
   if (new_x > 0 && new_y > 0 && new_x < logical_bounds.width &&
       new_y < logical_bounds.height) {
     cursor_visual_.Offset({new_x, new_y, 0});
-    if (!display_helper_->IsRunningOnXbox()) {
-      const double inverse_dpi_scale = display_helper_->GetDpiScale();
-      binding_handler_delegate_->OnPointerMove(
-          cursor_visual_.Offset().x * inverse_dpi_scale,
-          cursor_visual_.Offset().y * inverse_dpi_scale);
-    } else {
-      binding_handler_delegate_->OnPointerMove(cursor_visual_.Offset().x,
-                                               cursor_visual_.Offset().y);
-    }
+
+    winrt::Windows::Foundation::Numerics::float3 scaled =
+        GetScaledInput(cursor_visual_.Offset());
+    binding_handler_delegate_->OnPointerMove(scaled.x, scaled.y);
   }
 }
 
 void GamepadCursorWinUWP::OnGamepadRightStickMoved(double x, double y) {
-  if (!display_helper_->IsRunningOnXbox()) {
-    const double inverse_dpi_scale = display_helper_->GetDpiScale();
-
-    binding_handler_delegate_->OnScroll(
-        cursor_visual_.Offset().x * inverse_dpi_scale,
-        cursor_visual_.Offset().y * inverse_dpi_scale,
-        x * kControllerScrollMultiplier, y * kControllerScrollMultiplier, 1);
-  } else {
-    binding_handler_delegate_->OnScroll(
-        cursor_visual_.Offset().x, cursor_visual_.Offset().y,
-        x * kControllerScrollMultiplier, y * kControllerScrollMultiplier, 1);
-  }
+  winrt::Windows::Foundation::Numerics::float3 scaled =
+      GetScaledInput(cursor_visual_.Offset());
+  binding_handler_delegate_->OnScroll(scaled.x, scaled.y,
+                                      x * kControllerScrollMultiplier,
+                                      y * kControllerScrollMultiplier, 1);
 }
 
 void GamepadCursorWinUWP::OnGamepadButtonPressed(
     winrt::Windows::Gaming::Input::GamepadButtons buttons) {
   if ((buttons & winrt::Windows::Gaming::Input::GamepadButtons::A) ==
       winrt::Windows::Gaming::Input::GamepadButtons::A) {
-    if (!display_helper_->IsRunningOnXbox()) {
-      const double inverse_dpi_scale = display_helper_->GetDpiScale();
-      binding_handler_delegate_->OnPointerDown(
-          cursor_visual_.Offset().x * inverse_dpi_scale,
-          cursor_visual_.Offset().y * inverse_dpi_scale,
-          FlutterPointerMouseButtons::kFlutterPointerButtonMousePrimary);
-    } else {
-      binding_handler_delegate_->OnPointerDown(
-          cursor_visual_.Offset().x, cursor_visual_.Offset().y,
-          FlutterPointerMouseButtons::kFlutterPointerButtonMousePrimary);
-    }
+    winrt::Windows::Foundation::Numerics::float3 scaled =
+        GetScaledInput(cursor_visual_.Offset());
+
+    // TODO(clarkezone) complete keyboard handling including
+    // system key (back), unicode handling, shortcut support,
+    // handling defered delivery, remove the need for action value.
+    // https://github.com/flutter/flutter/issues/70202
+
+    binding_handler_delegate_->OnPointerDown(
+        scaled.x, scaled.y,
+        FlutterPointerMouseButtons::kFlutterPointerButtonMousePrimary);
+  } else if ((buttons &
+              winrt::Windows::Gaming::Input::GamepadButtons::DPadLeft) ==
+             winrt::Windows::Gaming::Input::GamepadButtons::DPadLeft) {
+    binding_handler_delegate_->OnKey(
+        static_cast<int>(winrt::Windows::System::VirtualKey::Left), kScanLeft,
+        0x0100, 0, true, true);
+  } else if ((buttons &
+              winrt::Windows::Gaming::Input::GamepadButtons::DPadRight) ==
+             winrt::Windows::Gaming::Input::GamepadButtons::DPadRight) {
+    binding_handler_delegate_->OnKey(
+        static_cast<int>(winrt::Windows::System::VirtualKey::Right), kScanRight,
+        0x0100, 0, true, true);
+  } else if ((buttons &
+              winrt::Windows::Gaming::Input::GamepadButtons::DPadUp) ==
+             winrt::Windows::Gaming::Input::GamepadButtons::DPadUp) {
+    binding_handler_delegate_->OnKey(
+        static_cast<int>(winrt::Windows::System::VirtualKey::Up), kScanUp,
+        0x0100, 0, true, true);
+  } else if ((buttons &
+              winrt::Windows::Gaming::Input::GamepadButtons::DPadDown) ==
+             winrt::Windows::Gaming::Input::GamepadButtons::DPadDown) {
+    binding_handler_delegate_->OnKey(
+        static_cast<int>(winrt::Windows::System::VirtualKey::Down), kScanDown,
+        0x0100, 0, true, true);
   }
 }
 
@@ -193,18 +217,41 @@ void GamepadCursorWinUWP::OnGamepadButtonReleased(
     winrt::Windows::Gaming::Input::GamepadButtons buttons) {
   if ((buttons & winrt::Windows::Gaming::Input::GamepadButtons::A) ==
       winrt::Windows::Gaming::Input::GamepadButtons::A) {
-    if (!display_helper_->IsRunningOnXbox()) {
-      const double inverse_dpi_scale = display_helper_->GetDpiScale();
+    winrt::Windows::Foundation::Numerics::float3 scaled =
+        GetScaledInput(cursor_visual_.Offset());
 
-      binding_handler_delegate_->OnPointerUp(
-          cursor_visual_.Offset().x * inverse_dpi_scale,
-          cursor_visual_.Offset().y * inverse_dpi_scale,
-          FlutterPointerMouseButtons::kFlutterPointerButtonMousePrimary);
-    } else {
-      binding_handler_delegate_->OnPointerUp(
-          cursor_visual_.Offset().x, cursor_visual_.Offset().y,
-          FlutterPointerMouseButtons::kFlutterPointerButtonMousePrimary);
-    }
+    // TODO(clarkezone) complete keyboard handling including
+    // system key (back), unicode handling, shortcut support,
+    // handling defered delivery, remove the need for action value.
+    // https://github.com/flutter/flutter/issues/70202
+
+    binding_handler_delegate_->OnPointerUp(
+        scaled.x, scaled.y,
+        FlutterPointerMouseButtons::kFlutterPointerButtonMousePrimary);
+  } else if ((buttons &
+              winrt::Windows::Gaming::Input::GamepadButtons::DPadLeft) ==
+             winrt::Windows::Gaming::Input::GamepadButtons::DPadLeft) {
+    binding_handler_delegate_->OnKey(
+        static_cast<int>(winrt::Windows::System::VirtualKey::Left), kScanLeft,
+        0x0100, 0, true, false);
+  } else if ((buttons &
+              winrt::Windows::Gaming::Input::GamepadButtons::DPadRight) ==
+             winrt::Windows::Gaming::Input::GamepadButtons::DPadRight) {
+    binding_handler_delegate_->OnKey(
+        static_cast<int>(winrt::Windows::System::VirtualKey::Right), kScanRight,
+        0x0100, 0, true, false);
+  } else if ((buttons &
+              winrt::Windows::Gaming::Input::GamepadButtons::DPadUp) ==
+             winrt::Windows::Gaming::Input::GamepadButtons::DPadUp) {
+    binding_handler_delegate_->OnKey(
+        static_cast<int>(winrt::Windows::System::VirtualKey::Up), kScanUp,
+        0x0100, 0, true, false);
+  } else if ((buttons &
+              winrt::Windows::Gaming::Input::GamepadButtons::DPadDown) ==
+             winrt::Windows::Gaming::Input::GamepadButtons::DPadDown) {
+    binding_handler_delegate_->OnKey(
+        static_cast<int>(winrt::Windows::System::VirtualKey::Down), kScanDown,
+        0x0100, 0, true, false);
   }
 }
 

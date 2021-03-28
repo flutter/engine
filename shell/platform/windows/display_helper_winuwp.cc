@@ -13,8 +13,8 @@ DisplayHelperWinUWP::DisplayHelperWinUWP() {
   ConfigureXboxSpecific();
 }
 
-bool DisplayHelperWinUWP::IsRunningOnXbox() {
-  return running_on_xbox_;
+bool DisplayHelperWinUWP::IsRunningOnLargeScreenDevice() {
+  return large_screen_device_;
 }
 
 float DisplayHelperWinUWP::GetRenderTargetXOffset() {
@@ -39,7 +39,8 @@ WindowBoundsWinUWP DisplayHelperWinUWP::GetBounds(
   winrt::Windows::UI::ViewManagement::ApplicationView app_view =
       winrt::Windows::UI::ViewManagement::ApplicationView::GetForCurrentView();
   winrt::Windows::Foundation::Rect bounds = app_view.VisibleBounds();
-  if (running_on_xbox_) {
+
+  if (large_screen_device_) {
     return {bounds.Width + (bounds.X), bounds.Height + (bounds.Y)};
   }
 
@@ -53,11 +54,12 @@ WindowBoundsWinUWP DisplayHelperWinUWP::GetBounds(
 }
 
 void DisplayHelperWinUWP::ConfigureXboxSpecific() {
-  running_on_xbox_ =
+  bool running_on_xbox =
       winrt::Windows::System::Profile::AnalyticsInfo::VersionInfo()
           .DeviceFamily() == L"Windows.Xbox";
 
-  if (running_on_xbox_) {
+  if (running_on_xbox) {
+    large_screen_device_ = running_on_xbox;
     bool result =
         winrt::Windows::UI::ViewManagement::ApplicationView::GetForCurrentView()
             .SetDesiredBoundsMode(winrt::Windows::UI::ViewManagement::
@@ -86,9 +88,9 @@ float DisplayHelperWinUWP::GetDpiScale() {
   // Also confirm if it is necessary to use this workaround on 10X
   // https://github.com/flutter/flutter/issues/70198
 
-  // if (running_on_xbox_) {
-  //   return 1.5;
-  // }
+  if (large_screen_device_) {
+    return 1.5;
+  }
   return static_cast<float>(raw_per_view);
 }
 

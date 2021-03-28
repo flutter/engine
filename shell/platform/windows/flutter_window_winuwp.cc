@@ -31,8 +31,10 @@ WindowsRenderTarget FlutterWindowWinUWP::GetRenderTarget() {
 
   render_target_ = compositor_.CreateSpriteVisual();
   render_target_.Offset({display_helper_->GetRenderTargetXOffset(),
-                           display_helper_->GetRenderTargetYOffset(), 1.0});
-  ApplyInverseDpiScalingTransform();
+                         display_helper_->GetRenderTargetYOffset(), 1.0});
+  if (!display_helper_->IsRunningOnLargeScreenDevice()) {
+    ApplyInverseDpiScalingTransform();
+  }
   visual_tree_root_.Children().InsertAtBottom(render_target_);
   game_pad_cursor_ = std::make_unique<GamepadCursorWinUWP>(
       binding_handler_delegate_, display_helper_.get(), window_, compositor_,
