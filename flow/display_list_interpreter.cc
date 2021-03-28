@@ -85,7 +85,6 @@ void DisplayListInterpreter::Rasterize(SkCanvas* canvas) {
   SkPaint paint;
   bool invertColors = false;
   sk_sp<SkColorFilter> colorFilter;
-  FML_LOG(ERROR) << "Starting ops: " << (ops_end_ - ops_it_) << ", data: " << (data_end_ - data_it_);
   while (HasOp()) {
     FML_LOG(INFO) << DescribeNextOp();
     CanvasOp op = GetOp();
@@ -180,9 +179,12 @@ void DisplayListInterpreter::Rasterize(SkCanvas* canvas) {
       case cops_drawShadowOccluded: GetScalar(); break; // TODO(flar) deal with Path object
     }
   }
-  FML_LOG(ERROR) << "Remaining ops: " << (ops_end_ - ops_it_)
-    << ", data: " << (data_end_ - data_it_)
-    << ", save count delta: " << (canvas->getSaveCount() - entrySaveCount);
+  if (ops_it_ != ops_end_ || data_it_ != data_end_ || canvas->getSaveCount() != entrySaveCount) {
+    FML_LOG(ERROR) << "Starting ops: " << ops_vector_->size() << ", data: " << data_vector_->size();
+    FML_LOG(ERROR) << "Remaining ops: " << (ops_end_ - ops_it_)
+      << ", data: " << (data_end_ - data_it_)
+      << ", save count delta: " << (canvas->getSaveCount() - entrySaveCount);
+  }
 }
 
 }  // namespace flutter

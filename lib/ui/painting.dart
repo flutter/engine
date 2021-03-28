@@ -5498,10 +5498,6 @@ class _DisplayListCanvas implements Canvas {
     _addFloat64List(matrix4);
     _ctm.mul(matrix4[0], matrix4[4], matrix4[12],
              matrix4[1], matrix4[5], matrix4[13]);
-    print('transform [${matrix4[ 0]}, ${matrix4[ 4]}, ${matrix4[ 8]}, ${matrix4[12]},');
-    print('           ${matrix4[ 1]}, ${matrix4[ 5]}, ${matrix4[ 9]}, ${matrix4[13]},');
-    print('           ${matrix4[ 2]}, ${matrix4[ 6]}, ${matrix4[10]}, ${matrix4[14]},');
-    print('           ${matrix4[ 3]}, ${matrix4[ 7]}, ${matrix4[11]}, ${matrix4[15]}]');
   }
 
   @override
@@ -5947,7 +5943,6 @@ class _DisplayListCanvas implements Canvas {
     _addOp(_CanvasOp.drawParagraph);
     _addOffset(offset);
     _addParagraph(paragraph);
-    print('not really rendering: $paragraph');
   }
 
   @override
