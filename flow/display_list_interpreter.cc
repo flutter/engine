@@ -12,9 +12,10 @@
 
 namespace flutter {
 
-#define CANVAS_OP_MAKE_STRING(name, count, imask) #name
-#define CANVAS_OP_MAKE_COUNT(name, count, imask) count
-#define CANVAS_OP_MAKE_IMASK(name, count, imask) imask
+#define CANVAS_OP_MAKE_STRING(name, count, imask, objcount) #name
+#define CANVAS_OP_MAKE_COUNT(name, count, imask, objcount) count
+#define CANVAS_OP_MAKE_IMASK(name, count, imask, objcount) imask
+#define CANVAS_OP_MAKE_OBJCOUNT(name, count, imask, objcount) objcount
 
 const std::vector<std::string> DisplayListInterpreter::opNames = {
   FOR_EACH_CANVAS_OP(CANVAS_OP_MAKE_STRING),
@@ -28,11 +29,19 @@ const std::vector<int> DisplayListInterpreter::opArgImask = {
   FOR_EACH_CANVAS_OP(CANVAS_OP_MAKE_IMASK),
 };
 
-DisplayListInterpreter::DisplayListInterpreter(std::vector<uint8_t> ops_vector, std::vector<float> data_vector)
-    : ops_it_(ops_vector.begin()),
-      ops_end_(ops_vector.end()),
-      data_it_(data_vector.begin()),
-      data_end_(data_vector.end()) {}
+const std::vector<int> DisplayListInterpreter::opObjCounts = {
+  FOR_EACH_CANVAS_OP(CANVAS_OP_MAKE_OBJCOUNT),
+};
+
+DisplayListInterpreter::DisplayListInterpreter(
+    std::shared_ptr<std::vector<uint8_t>> ops_vector,
+    std::shared_ptr<std::vector<float>> data_vector)
+    : ops_vector_(ops_vector),
+      ops_it_(ops_vector->begin()),
+      ops_end_(ops_vector->end()),
+      data_vector_(data_vector),
+      data_it_(data_vector->begin()),
+      data_end_(data_vector->end()) {}
 
 static const std::array<SkSamplingOptions, 4> filter_qualities = {
     SkSamplingOptions(SkFilterMode::kNearest, SkMipmapMode::kNone),
@@ -136,7 +145,7 @@ void DisplayListInterpreter::Rasterize(SkCanvas* canvas) {
       case cops_skew: canvas->skew(GetScalar(), GetScalar()); break;
       case cops_transform: break; // TODO(flar) deal with Float64List
 
-      case cops_drawColor: canvas->drawColor(GetColor(), paint.getBlendMode()); break;
+      case cops_drawColor: canvas->drawColor(paint.getColor(), paint.getBlendMode()); break;
       case cops_drawPaint: canvas->drawPaint(paint); break;
 
       case cops_drawRect: canvas->drawRect(GetRect(), paint); break;
@@ -152,9 +161,9 @@ void DisplayListInterpreter::Rasterize(SkCanvas* canvas) {
       case cops_drawPoints: break; // TODO(flar) deal with List of points
       case cops_drawLines: break; // TODO(flar) deal with List of points
       case cops_drawPolygon: break; // TODO(flar) deal with List of points
-      case cops_drawPicture: break; // TODO(flar) deal with Picture object
+      case cops_drawVertices: break; // TODO(flar) deal with List of vertices
 
-      case cops_drawImage: GetScalar(); GetScalar(); break; // TODO(flar) deal with image object
+      case cops_drawImage: GetPoint(); break; // TODO(flar) deal with image object
       case cops_drawImageRect: GetRect(); GetRect(); break; // TODO(flar) deal with image object
       case cops_drawImageNine: GetRect(); GetRect(); break; // TODO(flar) deal with image object
       case cops_drawAtlas:
@@ -165,6 +174,7 @@ void DisplayListInterpreter::Rasterize(SkCanvas* canvas) {
         GetRect();
         break;
 
+      case cops_drawPicture: break; // TODO(flar) deal with Picture object
       case cops_drawParagraph: GetPoint(); break; // TODO(flar) deal with Paragraph object
       case cops_drawShadow: GetScalar(); break; // TODO(flar) deal with Path object
       case cops_drawShadowOccluded: GetScalar(); break; // TODO(flar) deal with Path object

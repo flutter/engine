@@ -5165,6 +5165,7 @@ enum _CanvasOp {
   drawPoints,
   drawLines,
   drawPolygon,
+  drawVertices,
 
   drawImage,
   drawImageRect,
@@ -5286,9 +5287,6 @@ class _DisplayListCanvas implements Canvas {
       dst = Uint8List(src.length + _maxOpsDoubleSize);
     }
     dst.setRange(0, _numOps, src);
-    // for (int i = 0; i < _numOps; i++) {
-    //   dst[i] = src[i];
-    // }
     return dst;
   }
 
@@ -5306,15 +5304,11 @@ class _DisplayListCanvas implements Canvas {
     return dst;
   }
 
-  void _addByte(int byte) {
-    if (_numOps + 1 > _ops.lengthInBytes) {
-      _ops = _growOps(_ops);
-    }
-    _ops[_numOps++] = byte;
-  }
-
   void _addOp(_CanvasOp op) {
-    _addByte(op.index);
+      if (_numOps == _ops.lengthInBytes) {
+        _ops = _growOps(_ops);
+      }
+      _ops[_numOps++] = op.index;
   }
 
   void _addInt(int value) {
@@ -5367,8 +5361,9 @@ class _DisplayListCanvas implements Canvas {
 
   void _addRRect(RRect rrect) {
     _addDouble4(rrect.left, rrect.top, rrect.right, rrect.bottom);
+    // SkRRect Radii order is UL, UR, LR, LL as per SkRRect::Corner indices
     _addDouble4(rrect.tlRadiusX, rrect.tlRadiusY, rrect.trRadiusX, rrect.trRadiusY);
-    _addDouble4(rrect.blRadiusX, rrect.blRadiusY, rrect.brRadiusX, rrect.brRadiusY);
+    _addDouble4(rrect.brRadiusX, rrect.brRadiusY, rrect.blRadiusX, rrect.blRadiusY);
   }
 
   void _addInt32List(Int32List data) {
@@ -5705,7 +5700,7 @@ class _DisplayListCanvas implements Canvas {
     if (_curBlendMode != blendMode) {
       _curBlendMode = blendMode;
       _addOp(_CanvasOp.setBlendMode);
-      _addByte(blendMode.index);
+      _addInt(blendMode.index);
     }
   }
 
@@ -5823,6 +5818,7 @@ class _DisplayListCanvas implements Canvas {
   void drawVertices(Vertices vertices, BlendMode blendMode, Paint paint) {
     _updatePaintData(paint, _drawMask);
     _updateBlendMode(blendMode);
+    _addOp(_CanvasOp.drawVertices);
     _addVertices(vertices);
     print('adding conservative bounds for drawVertices');
     _addBounds(_cullRect);
@@ -5985,9 +5981,9 @@ class _DisplayListPicture extends NativeFieldWrapperClass2 implements Picture {
         _ops = ops,
         _data = data,
         _objData = objects {
-    _constructor(ops, numOps, data, numDataBytes);
+    _constructor(ops, numOps, data, numDataBytes, objects);
   }
-  void _constructor(Uint8List ops, int numOps, ByteData data, int dataBytes) native 'DisplayList_constructor';
+  void _constructor(Uint8List ops, int numOps, ByteData data, int dataBytes, List<Object> objects) native 'DisplayList_constructor';
 
   @override
   Future<Image> toImage(int width, int height) {

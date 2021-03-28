@@ -22,7 +22,11 @@ class DisplayList : public RefCountedDartWrappable<DisplayList> {
   FML_FRIEND_MAKE_REF_COUNTED(DisplayList);
 
  public:
-  static fml::RefPtr<DisplayList> Create(tonic::Uint8List& ops, int numOps, tonic::DartByteData& data, int dataBytes);
+  static fml::RefPtr<DisplayList> Create(tonic::Uint8List& ops,
+                                         int numOps,
+                                         tonic::DartByteData& data,
+                                         int dataBytes,
+                                         Dart_Handle objList);
 
   Dart_Handle toImage(uint32_t width,
                       uint32_t height,

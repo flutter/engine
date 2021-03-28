@@ -22,6 +22,7 @@
 #include "flutter/fml/make_copyable.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "flutter/lib/ui/painting/canvas.h"
+#include "flutter/lib/ui/painting/image_filter.h"
 #include "third_party/skia/include/core/SkImageFilter.h"
 #include "third_party/skia/include/core/SkMaskFilter.h"
 #include "third_party/skia/include/core/SkColorFilter.h"
@@ -46,12 +47,32 @@ FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
 
 void DisplayList::RegisterNatives(tonic::DartLibraryNatives* natives) {
   natives->Register(
-      {{"DisplayList_constructor", DisplayList_constructor, 5, true},
+      {{"DisplayList_constructor", DisplayList_constructor, 6, true},
        FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
 }
 
-fml::RefPtr<DisplayList> DisplayList::Create(tonic::Uint8List& ops, int numOps,
-                                             tonic::DartByteData& data, int dataBytes) {
+// static bool checkObjectLength(int index, int numObjects) {
+//   if (index >= numObjects) {
+//     Dart_ThrowException(
+//         tonic::ToDart("DisplayList object array too short."));
+//     return false;
+//   }
+//   return true;
+// }
+
+// static bool checkImageFilter(Dart_Handle objects[], int numObjects, int index) {
+//   if (checkObjectLength(index, numObjects)) {
+//     Dart_Handle image_filter = objects[index];
+//     ImageFilter* decoded =
+//         tonic::DartConverter<ImageFilter*>::FromDart(image_filter);
+//   }
+// }
+
+fml::RefPtr<DisplayList> DisplayList::Create(tonic::Uint8List& ops,
+                                             int numOps,
+                                             tonic::DartByteData& data,
+                                             int dataBytes,
+                                             Dart_Handle objList) {
   if (numOps < 0 ||
       numOps > ops.num_elements() ||
       dataBytes < 0 || (dataBytes % sizeof(float)) != 0 ||
@@ -60,6 +81,12 @@ fml::RefPtr<DisplayList> DisplayList::Create(tonic::Uint8List& ops, int numOps,
         tonic::ToDart("DisplayList constructor called with bad list lengths."));
     return nullptr;
   }
+  if (Dart_IsNull(objList) || !Dart_IsList(objList)) {
+    Dart_ThrowException(
+        tonic::ToDart("DisplayList constructor called with bad object array."));
+    return nullptr;
+  }
+
   const uint8_t* ops_ptr = ops.data();
   std::shared_ptr<std::vector<uint8_t>> ops_vector =
     std::make_shared<std::vector<uint8_t>>(ops_ptr, ops_ptr + numOps);
@@ -67,6 +94,33 @@ fml::RefPtr<DisplayList> DisplayList::Create(tonic::Uint8List& ops, int numOps,
   const float* data_ptr = static_cast<const float*>(data.data());
   std::shared_ptr<std::vector<float>> data_vector =
     std::make_shared<std::vector<float>>(data_ptr, data_ptr + (dataBytes / sizeof(float)));
+
+  // int numObjects = 0;
+  // Dart_ListLength(objList, &numObjects);
+  // Dart_Handle objects[numObjects];
+  // if (Dart_IsError(
+  //         Dart_ListGetRange(objList, 0, numObjects, objects))) {
+  //   return nullptr;
+  // }
+  // for (int i = 0; i < numObjects; i++) {
+  //   const char *name;
+  //   Dart_Handle type = Dart_InstanceGetType(objects[i]);
+  // }
+  // int obj_index = 0;
+  // for (int i = 0; i < numOps; i++) {
+  //   uint8_t op = ops_ptr[i];
+  //   int opObjs = DisplayListInterpreter::opObjCounts[op];
+  //   if (opObjs > 0) {
+  //     switch (static_cast<CanvasOp>(op)) {
+  //       case cops_setImageFilter: {
+  //         Dart_Handle image_filter = objects[obj_index++];
+  //         ImageFilter* decoded =
+  //             tonic::DartConverter<ImageFilter*>::FromDart(image_filter);
+  //       }
+  //       default: break;
+  //     }
+  //   }
+  // }
 
   return fml::MakeRefCounted<DisplayList>(ops_vector, data_vector);
 }
@@ -143,7 +197,7 @@ Dart_Handle DisplayList::RasterizeToImage(std::shared_ptr<std::vector<uint8_t>> 
       [ui_task_runner, snapshot_delegate, ops, data, picture_bounds, ui_task] {
         sk_sp<SkImage> raster_image =
             snapshot_delegate->MakeRasterSnapshot([ops = std::move(ops), data = std::move(data)](SkCanvas* canvas) {
-              DisplayListInterpreter interpreter(*ops, *data);
+              DisplayListInterpreter interpreter(ops, data);
               interpreter.Rasterize(canvas);
             }, picture_bounds);
 

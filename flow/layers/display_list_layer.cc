@@ -176,7 +176,7 @@ void DisplayListLayer::Paint(PaintContext& context) const {
   //   << paint_bounds().right() << ", "
   //   << paint_bounds().bottom() << "] "
   //   << ops_vector_.size() << " ops";
-  DisplayListInterpreter interpreter(*ops_vector_, *data_vector_);
+  DisplayListInterpreter interpreter(ops_vector_, data_vector_);
   interpreter.Rasterize(context.leaf_nodes_canvas);
 
   // SkRect bounds = paint_bounds();
