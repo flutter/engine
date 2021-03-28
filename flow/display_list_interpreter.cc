@@ -12,36 +12,36 @@
 
 namespace flutter {
 
-#define CANVAS_OP_MAKE_STRING(name, count, imask, objcount) #name
-#define CANVAS_OP_MAKE_COUNT(name, count, imask, objcount) count
-#define CANVAS_OP_MAKE_IMASK(name, count, imask, objcount) imask
-#define CANVAS_OP_MAKE_OBJCOUNT(name, count, imask, objcount) objcount
+#define CANVAS_OP_MAKE_STRING(name, count, imask, objcount) #name,
+#define CANVAS_OP_MAKE_COUNT(name, count, imask, objcount) count,
+#define CANVAS_OP_MAKE_IMASK(name, count, imask, objcount) imask,
+#define CANVAS_OP_MAKE_OBJCOUNT(name, count, imask, objcount) objcount,
 
 const std::vector<std::string> DisplayListInterpreter::opNames = {
-  FOR_EACH_CANVAS_OP(CANVAS_OP_MAKE_STRING),
+  FOR_EACH_CANVAS_OP(CANVAS_OP_MAKE_STRING)
 };
 
 const std::vector<int> DisplayListInterpreter::opArgCounts = {
-  FOR_EACH_CANVAS_OP(CANVAS_OP_MAKE_COUNT),
+  FOR_EACH_CANVAS_OP(CANVAS_OP_MAKE_COUNT)
 };
 
 const std::vector<int> DisplayListInterpreter::opArgImask = {
-  FOR_EACH_CANVAS_OP(CANVAS_OP_MAKE_IMASK),
+  FOR_EACH_CANVAS_OP(CANVAS_OP_MAKE_IMASK)
 };
 
 const std::vector<int> DisplayListInterpreter::opObjCounts = {
-  FOR_EACH_CANVAS_OP(CANVAS_OP_MAKE_OBJCOUNT),
+  FOR_EACH_CANVAS_OP(CANVAS_OP_MAKE_OBJCOUNT)
 };
 
 DisplayListInterpreter::DisplayListInterpreter(
     std::shared_ptr<std::vector<uint8_t>> ops_vector,
     std::shared_ptr<std::vector<float>> data_vector)
-    : ops_vector_(ops_vector),
-      ops_it_(ops_vector->begin()),
+    : ops_it_(ops_vector->begin()),
       ops_end_(ops_vector->end()),
-      data_vector_(data_vector),
       data_it_(data_vector->begin()),
-      data_end_(data_vector->end()) {}
+      data_end_(data_vector->end()),
+      ops_vector_(std::move(ops_vector)),
+      data_vector_(std::move(data_vector)) {}
 
 static const std::array<SkSamplingOptions, 4> filter_qualities = {
     SkSamplingOptions(SkFilterMode::kNearest, SkMipmapMode::kNone),
@@ -69,114 +69,28 @@ constexpr float invert_colors[20] = {
    1.0,  1.0,  1.0, 1.0, 0
 };
 
-static sk_sp<SkColorFilter> makeColorFilter(bool invertColors, sk_sp<SkColorFilter> filter) {
-  if (!invertColors) {
-    return filter;
+sk_sp<SkColorFilter> DisplayListInterpreter::makeColorFilter(RasterizeContext& context) {
+  if (!context.invertColors) {
+    return context.colorFilter;
   }
-  sk_sp<SkColorFilter> invert_filter = invertColors ? SkColorFilters::Matrix(invert_colors) : nullptr;
-  if (filter) {
-    invert_filter = invert_filter->makeComposed(filter);
+  sk_sp<SkColorFilter> invert_filter = SkColorFilters::Matrix(invert_colors);
+  if (context.colorFilter) {
+    invert_filter = invert_filter->makeComposed(context.colorFilter);
   }
   return invert_filter;
 }
 
+#define CANVAS_OP_DISPATCH_OP(name, count, imask, objcount) \
+  case cops_##name: { execute_##name(context); } break;
+
 void DisplayListInterpreter::Rasterize(SkCanvas* canvas) {
   int entrySaveCount = canvas->getSaveCount();
-  SkPaint paint;
-  bool invertColors = false;
-  sk_sp<SkColorFilter> colorFilter;
+  RasterizeContext context;
+  context.canvas = canvas;
   while (HasOp()) {
     FML_LOG(INFO) << DescribeNextOp();
-    CanvasOp op = GetOp();
-    switch (op) {
-      case cops_setAA: paint.setAntiAlias(true); break;
-      case cops_clearAA: paint.setAntiAlias(false); break;
-      case cops_setDither: paint.setDither(true); break;
-      case cops_clearDither: paint.setDither(false); break;
-      case cops_setInvertColors: invertColors = true; paint.setColorFilter(makeColorFilter(invertColors, colorFilter)); break;
-      case cops_clearInvertColors: invertColors = false; paint.setColorFilter(colorFilter); break;
-      case cops_setColor: paint.setColor(GetColor()); break;
-      case cops_setFillStyle: paint.setStyle(SkPaint::Style::kFill_Style); break;
-      case cops_setStrokeStyle: paint.setStyle(SkPaint::Style::kStroke_Style); break;
-      case cops_setStrokeWidth: paint.setStrokeWidth(GetScalar()); break;
-      case cops_setMiterLimit: paint.setStrokeMiter(GetScalar()); break;
-      case cops_setCapsButt: paint.setStrokeCap(SkPaint::Cap::kButt_Cap); break;
-      case cops_setCapsRound: paint.setStrokeCap(SkPaint::Cap::kRound_Cap); break;
-      case cops_setCapsSquare: paint.setStrokeCap(SkPaint::Cap::kSquare_Cap); break;
-      case cops_setJoinsMiter: paint.setStrokeJoin(SkPaint::Join::kMiter_Join); break;
-      case cops_setJoinsRound: paint.setStrokeJoin(SkPaint::Join::kRound_Join); break;
-      case cops_setJoinsBevel: paint.setStrokeJoin(SkPaint::Join::kBevel_Join); break;
-      case cops_clearShader: paint.setShader(nullptr); break;
-      case cops_setShader: break; // TODO(flar) deal with Shader object
-      case cops_clearMaskFilter: paint.setMaskFilter(nullptr); break;
-      case cops_setMaskFilterInner: paint.setMaskFilter(SkMaskFilter::MakeBlur(SkBlurStyle::kInner_SkBlurStyle, GetScalar())); break;
-      case cops_setMaskFilterOuter: paint.setMaskFilter(SkMaskFilter::MakeBlur(SkBlurStyle::kOuter_SkBlurStyle, GetScalar())); break;
-      case cops_setMaskFilterSolid: paint.setMaskFilter(SkMaskFilter::MakeBlur(SkBlurStyle::kSolid_SkBlurStyle, GetScalar())); break;
-      case cops_setMaskFilterNormal: paint.setMaskFilter(SkMaskFilter::MakeBlur(SkBlurStyle::kNormal_SkBlurStyle, GetScalar())); break;
-      case cops_clearColorFilter: colorFilter = nullptr; paint.setColorFilter(makeColorFilter(invertColors, colorFilter)); break;
-      case cops_setColorFilter: break; // TODO(flar) deal with Filter object
-      case cops_clearImageFilter: paint.setImageFilter(nullptr); break;
-      case cops_setImageFilter: break; // TODO(flar) deal with Filter object
-      case cops_setFilterQualityNearest: paint.setFilterQuality(SkFilterQuality::kNone_SkFilterQuality); break;
-      case cops_setFilterQualityLinear: paint.setFilterQuality(SkFilterQuality::kLow_SkFilterQuality); break;
-      case cops_setFilterQualityMipmap: paint.setFilterQuality(SkFilterQuality::kMedium_SkFilterQuality); break;
-      case cops_setFilterQualityCubic: paint.setFilterQuality(SkFilterQuality::kHigh_SkFilterQuality); break;
-      case cops_setBlendMode: paint.setBlendMode(GetBlendMode()); break;
-
-      case cops_save: canvas->save(); break;
-      case cops_saveLayer: canvas->saveLayer(nullptr, &paint); break;
-      case cops_saveLayerBounds: canvas->saveLayer(GetRect(), &paint); break;
-      case cops_restore: canvas->restore(); break;
-
-      case cops_clipRect: canvas->clipRect(GetRect()); break;
-      case cops_clipRectAA: canvas->clipRect(GetRect(), true); break;
-      case cops_clipRectDiff: canvas->clipRect(GetRect(), SkClipOp::kDifference); break;
-      case cops_clipRectAADiff: canvas->clipRect(GetRect(), SkClipOp::kDifference, true); break;
-
-      case cops_clipRRect: canvas->clipRRect(GetRoundRect()); break;
-      case cops_clipRRectAA: canvas->clipRRect(GetRoundRect(), true); break;
-      case cops_clipPath: break; // TODO(flar) deal with Path object
-      case cops_clipPathAA: break; // TODO(flar) deal with Path object
-
-      case cops_translate: canvas->translate(GetScalar(), GetScalar()); break;
-      case cops_scale: canvas->scale(GetScalar(), GetScalar()); break;
-      case cops_rotate: canvas->rotate(GetAngle()); break;
-      case cops_skew: canvas->skew(GetScalar(), GetScalar()); break;
-      case cops_transform: break; // TODO(flar) deal with Float64List
-
-      case cops_drawColor: canvas->drawColor(paint.getColor(), paint.getBlendMode()); break;
-      case cops_drawPaint: canvas->drawPaint(paint); break;
-
-      case cops_drawRect: canvas->drawRect(GetRect(), paint); break;
-      case cops_drawOval: canvas->drawOval(GetRect(), paint); break;
-      case cops_drawRRect: canvas->drawRRect(GetRoundRect(), paint); break;
-      case cops_drawDRRect: canvas->drawDRRect(GetRoundRect(), GetRoundRect(), paint); break;
-      case cops_drawCircle: canvas->drawCircle(GetPoint(), GetScalar(), paint); break;
-      case cops_drawArc: canvas->drawArc(GetRect(), GetAngle(), GetAngle(), false, paint); break;
-      case cops_drawArcCenter: canvas->drawArc(GetRect(), GetAngle(), GetAngle(), true, paint); break;
-      case cops_drawLine: canvas->drawLine(GetPoint(), GetPoint(), paint); break;
-      case cops_drawPath: break; // TODO(flar) deal with Path object
-
-      case cops_drawPoints: break; // TODO(flar) deal with List of points
-      case cops_drawLines: break; // TODO(flar) deal with List of points
-      case cops_drawPolygon: break; // TODO(flar) deal with List of points
-      case cops_drawVertices: break; // TODO(flar) deal with List of vertices
-
-      case cops_drawImage: GetPoint(); break; // TODO(flar) deal with image object
-      case cops_drawImageRect: GetRect(); GetRect(); break; // TODO(flar) deal with image object
-      case cops_drawImageNine: GetRect(); GetRect(); break; // TODO(flar) deal with image object
-      case cops_drawAtlas:
-      case cops_drawAtlasColored:
-        break;
-      case cops_drawAtlasCulled:
-      case cops_drawAtlasColoredCulled:
-        GetRect();
-        break;
-
-      case cops_drawPicture: break; // TODO(flar) deal with Picture object
-      case cops_drawParagraph: GetPoint(); break; // TODO(flar) deal with Paragraph object
-      case cops_drawShadow: GetScalar(); break; // TODO(flar) deal with Path object
-      case cops_drawShadowOccluded: GetScalar(); break; // TODO(flar) deal with Path object
+    switch (GetOp()) {
+      FOR_EACH_CANVAS_OP(CANVAS_OP_DISPATCH_OP)
     }
   }
   if (ops_it_ != ops_end_ || data_it_ != data_end_ || canvas->getSaveCount() != entrySaveCount) {
@@ -186,5 +100,126 @@ void DisplayListInterpreter::Rasterize(SkCanvas* canvas) {
       << ", save count delta: " << (canvas->getSaveCount() - entrySaveCount);
   }
 }
+
+#define CANVAS_OP_DEFINE_OP(name, body)                                   \
+void DisplayListInterpreter::execute_##name(RasterizeContext& context) {  \
+  body                                                                    \
+}
+
+CANVAS_OP_DEFINE_OP(setAA, context.paint.setAntiAlias(true);)
+CANVAS_OP_DEFINE_OP(clearAA, context.paint.setAntiAlias(false);)
+CANVAS_OP_DEFINE_OP(setDither, context.paint.setDither(true);)
+CANVAS_OP_DEFINE_OP(clearDither, context.paint.setDither(false);)
+
+CANVAS_OP_DEFINE_OP(setInvertColors,
+  context.invertColors = true;
+  context.paint.setColorFilter(makeColorFilter(context));
+)
+CANVAS_OP_DEFINE_OP(clearInvertColors,
+  context.invertColors = false;
+  context.paint.setColorFilter(context.colorFilter);
+)
+CANVAS_OP_DEFINE_OP(clearColorFilter,
+  context.colorFilter = nullptr;
+  context.paint.setColorFilter(makeColorFilter(context));
+)
+CANVAS_OP_DEFINE_OP(setColorFilter, /* TODO(flar) deal with Filter objec */)
+CANVAS_OP_DEFINE_OP(setColor, context.paint.setColor(GetColor());)
+CANVAS_OP_DEFINE_OP(setFillStyle, context.paint.setStyle(SkPaint::Style::kFill_Style);)
+CANVAS_OP_DEFINE_OP(setStrokeStyle, context.paint.setStyle(SkPaint::Style::kStroke_Style);)
+CANVAS_OP_DEFINE_OP(setStrokeWidth, context.paint.setStrokeWidth(GetScalar());)
+CANVAS_OP_DEFINE_OP(setMiterLimit, context.paint.setStrokeMiter(GetScalar());)
+
+#define CANVAS_CAP_DEFINE_OP(cap) CANVAS_OP_DEFINE_OP(setCaps##cap, \
+  context.paint.setStrokeCap(SkPaint::Cap::k##cap##_Cap); \
+)
+CANVAS_CAP_DEFINE_OP(Butt)
+CANVAS_CAP_DEFINE_OP(Round)
+CANVAS_CAP_DEFINE_OP(Square)
+
+#define CANVAS_JOIN_DEFINE_OP(join) CANVAS_OP_DEFINE_OP(setJoins##join, \
+  context.paint.setStrokeJoin(SkPaint::Join::k##join##_Join); \
+)
+CANVAS_JOIN_DEFINE_OP(Miter)
+CANVAS_JOIN_DEFINE_OP(Round)
+CANVAS_JOIN_DEFINE_OP(Bevel)
+
+CANVAS_OP_DEFINE_OP(clearShader, context.paint.setShader(nullptr);)
+CANVAS_OP_DEFINE_OP(setShader, /* TODO(flar) deal with Shader object */)
+
+CANVAS_OP_DEFINE_OP(clearMaskFilter, context.paint.setMaskFilter(nullptr);)
+#define CANVAS_MASK_DEFINE_OP(type) CANVAS_OP_DEFINE_OP(setMaskFilter##type, \
+  context.paint.setMaskFilter(SkMaskFilter::MakeBlur(SkBlurStyle::k##type##_SkBlurStyle, GetScalar())); \
+)
+CANVAS_MASK_DEFINE_OP(Inner)
+CANVAS_MASK_DEFINE_OP(Outer)
+CANVAS_MASK_DEFINE_OP(Solid)
+CANVAS_MASK_DEFINE_OP(Normal)
+
+CANVAS_OP_DEFINE_OP(clearImageFilter, context.paint.setImageFilter(nullptr);)
+CANVAS_OP_DEFINE_OP(setImageFilter, /* TODO(flar) deal with Filter object */)
+
+#define CANVAS_FQ_DEFINE_OP(op_type, enum_type) CANVAS_OP_DEFINE_OP(setFilterQuality##op_type, \
+  context.paint.setFilterQuality(SkFilterQuality::k##enum_type##_SkFilterQuality); \
+)
+CANVAS_FQ_DEFINE_OP(Nearest, None)
+CANVAS_FQ_DEFINE_OP(Linear, Low)
+CANVAS_FQ_DEFINE_OP(Mipmap, Medium)
+CANVAS_FQ_DEFINE_OP(Cubic, High)
+
+CANVAS_OP_DEFINE_OP(setBlendMode, context.paint.setBlendMode(GetBlendMode());)
+
+CANVAS_OP_DEFINE_OP(save, context.canvas->save();)
+CANVAS_OP_DEFINE_OP(saveLayer, context.canvas->saveLayer(nullptr, &context.paint);)
+CANVAS_OP_DEFINE_OP(saveLayerBounds, context.canvas->saveLayer(GetRect(), &context.paint);)
+CANVAS_OP_DEFINE_OP(restore, context.canvas->restore();)
+
+CANVAS_OP_DEFINE_OP(clipRect, context.canvas->clipRect(GetRect());)
+CANVAS_OP_DEFINE_OP(clipRectAA, context.canvas->clipRect(GetRect(), true);)
+CANVAS_OP_DEFINE_OP(clipRectDiff, context.canvas->clipRect(GetRect(), SkClipOp::kDifference);)
+CANVAS_OP_DEFINE_OP(clipRectAADiff, context.canvas->clipRect(GetRect(), SkClipOp::kDifference, true);)
+
+CANVAS_OP_DEFINE_OP(clipRRect, context.canvas->clipRRect(GetRoundRect());)
+CANVAS_OP_DEFINE_OP(clipRRectAA, context.canvas->clipRRect(GetRoundRect(), true);)
+CANVAS_OP_DEFINE_OP(clipPath, /* TODO(flar) deal with Path object */)
+CANVAS_OP_DEFINE_OP(clipPathAA, /* TODO(flar) deal with Path object */)
+
+CANVAS_OP_DEFINE_OP(translate, context.canvas->translate(GetScalar(), GetScalar());)
+CANVAS_OP_DEFINE_OP(scale, context.canvas->scale(GetScalar(), GetScalar());)
+CANVAS_OP_DEFINE_OP(rotate, context.canvas->rotate(GetAngle());)
+CANVAS_OP_DEFINE_OP(skew, context.canvas->skew(GetScalar(), GetScalar());)
+CANVAS_OP_DEFINE_OP(transform, /* TODO(flar) deal with Float64List */)
+
+CANVAS_OP_DEFINE_OP(drawColor, context.canvas->drawColor(context.paint.getColor(), context.paint.getBlendMode());)
+CANVAS_OP_DEFINE_OP(drawPaint, context.canvas->drawPaint(context.paint);)
+
+CANVAS_OP_DEFINE_OP(drawRect, context.canvas->drawRect(GetRect(), context.paint);)
+CANVAS_OP_DEFINE_OP(drawOval, context.canvas->drawOval(GetRect(), context.paint);)
+CANVAS_OP_DEFINE_OP(drawRRect, context.canvas->drawRRect(GetRoundRect(), context.paint);)
+CANVAS_OP_DEFINE_OP(drawDRRect, context.canvas->drawDRRect(GetRoundRect(), GetRoundRect(), context.paint);)
+CANVAS_OP_DEFINE_OP(drawCircle, context.canvas->drawCircle(GetPoint(), GetScalar(), context.paint);)
+CANVAS_OP_DEFINE_OP(drawArc, context.canvas->drawArc(GetRect(), GetAngle(), GetAngle(), false, context.paint);)
+CANVAS_OP_DEFINE_OP(drawArcCenter, context.canvas->drawArc(GetRect(), GetAngle(), GetAngle(), true, context.paint);)
+CANVAS_OP_DEFINE_OP(drawLine, context.canvas->drawLine(GetPoint(), GetPoint(), context.paint);)
+CANVAS_OP_DEFINE_OP(drawPath, /* TODO(flar) deal with Path object */)
+
+CANVAS_OP_DEFINE_OP(drawPoints, /* TODO(flar) deal with List of points */)
+CANVAS_OP_DEFINE_OP(drawLines, /* TODO(flar) deal with List of points */)
+CANVAS_OP_DEFINE_OP(drawPolygon, /* TODO(flar) deal with List of points */)
+CANVAS_OP_DEFINE_OP(drawVertices, /* TODO(flar) deal with List of vertices */)
+
+CANVAS_OP_DEFINE_OP(drawImage, GetPoint(); /* TODO(flar) deal with image object */)
+CANVAS_OP_DEFINE_OP(drawImageRect, GetRect(); GetRect(); /* TODO(flar) deal with image object */)
+CANVAS_OP_DEFINE_OP(drawImageNine, GetRect(); GetRect(); /* TODO(flar) deal with image object */)
+
+CANVAS_OP_DEFINE_OP(drawAtlas, /* TODO(flar) deal with all of the atlas objects */)
+CANVAS_OP_DEFINE_OP(drawAtlasColored, /* TODO(flar) deal with all of the atlas objects */)
+CANVAS_OP_DEFINE_OP(drawAtlasCulled, GetRect(); /* TODO(flar) deal with all of the atlas objects */)
+CANVAS_OP_DEFINE_OP(drawAtlasColoredCulled, GetRect(); /* TODO(flar) deal with all of the atlas objects */)
+
+CANVAS_OP_DEFINE_OP(drawPicture, /* TODO(flar) deal with Picture object */)
+CANVAS_OP_DEFINE_OP(drawParagraph, GetPoint(); /* TODO(flar) deal with Paragraph object */)
+CANVAS_OP_DEFINE_OP(drawShadow, GetScalar(); /* TODO(flar) deal with Path object */)
+CANVAS_OP_DEFINE_OP(drawShadowOccluded, GetScalar(); /* TODO(flar) deal with Path object */)
 
 }  // namespace flutter
