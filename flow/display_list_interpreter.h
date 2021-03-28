@@ -177,6 +177,7 @@ class DisplayListInterpreter {
   SkScalar GetScalar() { return static_cast<SkScalar>(*data_it_++); }
   uint32_t GetUint32() { union { float f; uint32_t i; } data; data.f = *data_it_++; return data.i; }
 
+  SkScalar GetAngle() { return GetScalar() * 180.0 / M_PI; }
   SkBlendMode GetBlendMode() { return static_cast<SkBlendMode>(GetUint32()); }
   SkPoint GetPoint() { return SkPoint::Make(GetScalar(), GetScalar()); }
   SkColor GetColor() { return static_cast<SkColor>(GetUint32()); }

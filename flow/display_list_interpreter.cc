@@ -94,7 +94,7 @@ void DisplayListInterpreter::Rasterize(SkCanvas* canvas) {
       case cops_clearAA: paint.setAntiAlias(false); break;
       case cops_setDither: paint.setDither(true); break;
       case cops_clearDither: paint.setDither(false); break;
-      case cops_setInvertColors: invertColors = true; paint.setColorFilter(makeColorFilter(invertColors, colorFilter));
+      case cops_setInvertColors: invertColors = true; paint.setColorFilter(makeColorFilter(invertColors, colorFilter)); break;
       case cops_clearInvertColors: invertColors = false; paint.setColorFilter(colorFilter); break;
       case cops_setColor: paint.setColor(GetColor()); break;
       case cops_setFillStyle: paint.setStyle(SkPaint::Style::kFill_Style); break;
@@ -141,7 +141,7 @@ void DisplayListInterpreter::Rasterize(SkCanvas* canvas) {
 
       case cops_translate: canvas->translate(GetScalar(), GetScalar()); break;
       case cops_scale: canvas->scale(GetScalar(), GetScalar()); break;
-      case cops_rotate: canvas->rotate(GetScalar() * 180 / M_PI); break;
+      case cops_rotate: canvas->rotate(GetAngle()); break;
       case cops_skew: canvas->skew(GetScalar(), GetScalar()); break;
       case cops_transform: break; // TODO(flar) deal with Float64List
 
@@ -153,8 +153,8 @@ void DisplayListInterpreter::Rasterize(SkCanvas* canvas) {
       case cops_drawRRect: canvas->drawRRect(GetRoundRect(), paint); break;
       case cops_drawDRRect: canvas->drawDRRect(GetRoundRect(), GetRoundRect(), paint); break;
       case cops_drawCircle: canvas->drawCircle(GetPoint(), GetScalar(), paint); break;
-      case cops_drawArc: canvas->drawArc(GetRect(), GetScalar(), GetScalar(), false, paint);
-      case cops_drawArcCenter: canvas->drawArc(GetRect(), GetScalar(), GetScalar(), true, paint);
+      case cops_drawArc: canvas->drawArc(GetRect(), GetAngle(), GetAngle(), false, paint); break;
+      case cops_drawArcCenter: canvas->drawArc(GetRect(), GetAngle(), GetAngle(), true, paint); break;
       case cops_drawLine: canvas->drawLine(GetPoint(), GetPoint(), paint); break;
       case cops_drawPath: break; // TODO(flar) deal with Path object
 
