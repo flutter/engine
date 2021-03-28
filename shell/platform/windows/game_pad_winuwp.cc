@@ -44,7 +44,7 @@ void GamepadWinUWP::Initialize() {
   current_game_pad_ = GetLastGamepad();
 }
 
-bool GamepadWinUWP::HasController() {
+bool GamepadWinUWP::HasController() const {
   const std::lock_guard<std::mutex> lock(gamepad_mutex_);
   return current_game_pad_ != nullptr;
 }
@@ -81,8 +81,9 @@ void GamepadWinUWP::RefreshCachedGamepads() {
   }
 }
 
-const winrt::Windows::Gaming::Input::Gamepad* GamepadWinUWP::GetLastGamepad() {
-  winrt::Windows::Gaming::Input::Gamepad* gamepad = nullptr;
+const winrt::Windows::Gaming::Input::Gamepad* GamepadWinUWP::GetLastGamepad()
+    const {
+  const winrt::Windows::Gaming::Input::Gamepad* gamepad = nullptr;
 
   if (!enumerated_game_pads_.empty()) {
     gamepad = &enumerated_game_pads_.back();
@@ -92,10 +93,7 @@ const winrt::Windows::Gaming::Input::Gamepad* GamepadWinUWP::GetLastGamepad() {
 }
 
 static bool IsValid(double value) {
-  if (value > 0.1 || value < -0.1) {
-    return true;
-  }
-  return false;
+  return value > 0.1 || value < -0.1;
 }
 
 void GamepadWinUWP::Process() {
@@ -163,32 +161,26 @@ void GamepadWinUWP::GamepadButtonPressedInternal(
       wgi::GamepadButtons::DPadRight, wgi::GamepadButtons::DPadUp};
 
   for (const auto e : AllButtons) {
-    // if button is pressed
-    if ((e & state) == e) {
-      // if we have not sent a pressed already
-      if ((pressed_buttons_ & e) != e) {
-        // send pressed callback
-        if (button_pressed_callback_ != nullptr) {
-          button_pressed_callback_(e);
-        }
-
-        // set the bit
-        pressed_buttons_ |= e;
+    // if button is pressed we have not sent a pressed already
+    if (((e & state) == e) && ((pressed_buttons_ & e) != e)) {
+      // send pressed callback
+      if (button_pressed_callback_ != nullptr) {
+        button_pressed_callback_(e);
       }
+
+      // set the bit
+      pressed_buttons_ |= e;
     }
 
-    // if button is not pressed
-    if ((e & state) != e) {
-      // if we have sent a pressed already
-      if ((pressed_buttons_ & e) == e) {
-        // send callback
-        if (button_released_callback_ != nullptr) {
-          button_released_callback_(e);
-        }
-
-        // set the pressed bit
-        pressed_buttons_ &= ~e;
+    // if button is not pressed and we have sent a pressed already
+    if (((e & state) != e) && ((pressed_buttons_ & e) == e)) {
+      // send callback
+      if (button_released_callback_ != nullptr) {
+        button_released_callback_(e);
       }
+
+      // set the pressed bit
+      pressed_buttons_ &= ~e;
     }
   }
 }

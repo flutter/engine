@@ -108,13 +108,13 @@ class GamepadCursorWinUWP {
   // Multiplier used to scale gamepad input to mouse equivalent response.
   static constexpr int kCursorScale = 7;
 
-  // Number of inactive seconds after which emulated cursor is hidden.
+  // Number of inactive seconds after which emulated cursor is hidden (ms).
   static constexpr int kInactivePeriod = 5;
 
-  // Frequency to poll for input when no active interaction
+  // Frequency to poll for input when no active interaction (ms).
   static constexpr int kReducedPollingFrequency = 250;
 
-  // Frequency to poll for input when user is interacting
+  // Frequency to poll for input when user is interacting (ms).
   static constexpr int kNormalPollingFrequency = 10;
 
   // Scancode definitions for dpad to cursor mapping.

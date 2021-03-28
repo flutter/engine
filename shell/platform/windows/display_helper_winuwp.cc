@@ -72,8 +72,8 @@ void DisplayHelperWinUWP::ConfigureXboxSpecific() {
         Windows::UI::ViewManagement::ApplicationView::GetForCurrentView();
     winrt::Windows::Foundation::Rect bounds = app_view.VisibleBounds();
 
-    // the offset /2 represents how much off-screan the core window is
-    // positioned unclear why disabling overscan doesn't correct this
+    // The offset /2 represents how much off-screan the CoreWindow is
+    // positioned.
     render_target_x_offset_ = bounds.X / 2;
     render_target_y_offset_ = bounds.Y / 2;
   }

@@ -44,11 +44,11 @@ class GamepadWinUWP {
   void Process();
 
   // There is a controller currently attached.
-  bool HasController();
+  bool HasController() const;
 
  private:
   // Returns the last item in the collection of currently attached Gamepads.
-  const winrt::Windows::Gaming::Input::Gamepad* GetLastGamepad();
+  const winrt::Windows::Gaming::Input::Gamepad* GetLastGamepad() const;
 
   // Handers fired when a Gamepad is attached or removed from the system
   // respectively.
@@ -84,7 +84,7 @@ class GamepadWinUWP {
   const winrt::Windows::Gaming::Input::Gamepad* current_game_pad_;
 
   // Mutex to protect access to current gamepad.
-  std::mutex gamepad_mutex_;
+  mutable std::mutex gamepad_mutex_;
 
   // Storage for most recently communicated trigger and stick values.
   double left_trigger_value_;

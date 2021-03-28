@@ -278,8 +278,8 @@ GamepadCursorWinUWP::CreateCursorVisual() {
       {window_.Bounds().Width / 2, window_.Bounds().Height / 2, 1.0});
 
   // size of the simulated mouse cursor
-  const float size = 20;
-  const float container_size = size + 10;
+  constexpr float size = 20;
+  constexpr float container_size = size + 10;
   auto cursor_visual = compositor_.CreateShapeVisual();
   cursor_visual.Size({container_size, container_size});
 
