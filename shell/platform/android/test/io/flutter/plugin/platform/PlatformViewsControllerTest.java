@@ -363,6 +363,54 @@ public class PlatformViewsControllerTest {
   }
 
   @Test
+  @Config(shadows = {ShadowFlutterJNI.class})
+  public void reattachFlutterView__hybridComposition() {
+    // Create the PlatformViewsController that is under test.
+    PlatformViewsController platformViewsController = new PlatformViewsController();
+
+    int platformViewId = 0;
+    assertNull(platformViewsController.getPlatformViewById(platformViewId));
+
+    PlatformViewFactory viewFactory = mock(PlatformViewFactory.class);
+    PlatformView platformView = mock(PlatformView.class);
+    View androidView = mock(View.class);
+    when(platformView.getView()).thenReturn(androidView);
+    when(viewFactory.create(any(), eq(platformViewId), any())).thenReturn(platformView);
+    platformViewsController.getRegistry().registerViewFactory("testType", viewFactory);
+
+    FlutterJNI jni = new FlutterJNI();
+    FlutterEngine engine = initEngine(jni, platformViewsController);
+    FlutterView initialFlutterView = attachToFlutterView(engine);
+
+    // Simulate create call from the framework.
+    createPlatformView(jni, platformViewsController, platformViewId, "testType");
+
+    // Verify that all views were notified of View attachment.
+    verify(platformView, times(1)).onFlutterViewAttached(eq(initialFlutterView));
+    verify(platformView, never()).onFlutterViewDetached();
+
+    platformViewsController.initializePlatformViewIfNeeded(platformViewId);
+    assertEquals(initialFlutterView.getChildCount(), 2);
+
+    // Detach initial flutter view from engine.
+    initialFlutterView.detachFromFlutterEngine();
+
+    assertEquals(initialFlutterView.getChildCount(), 1);
+
+    // Verify that all views were notified of the View detachment.
+    verify(platformView, times(1)).onFlutterViewAttached(eq(initialFlutterView));
+    verify(platformView, times(1)).onFlutterViewDetached();
+
+
+    FlutterView newFlutterView = attachToFlutterView(engine);
+
+    // Verify that all views were notified of View attachment.
+    verify(platformView, times(1)).onFlutterViewAttached(eq(newFlutterView));
+    verify(platformView, times(1)).onFlutterViewDetached();
+    assertEquals(newFlutterView.getChildCount(), 2);
+  }
+
+  @Test
   @Config(shadows = {ShadowFlutterSurfaceView.class, ShadowFlutterJNI.class})
   public void onEndFrame__destroysOverlaySurfaceAfterFrameOnFlutterSurfaceView() {
     final PlatformViewsController platformViewsController = new PlatformViewsController();
@@ -480,7 +528,6 @@ public class PlatformViewsControllerTest {
     jni.attachToNative(false);
 
     final FlutterView flutterView = attach(jni, platformViewsController);
-
     jni.onFirstFrame();
 
     // Simulate create call from the framework.
@@ -544,7 +591,7 @@ public class PlatformViewsControllerTest {
         "flutter/platform_views", encodeMethodCall(platformDisposeMethodCall), /*replyId=*/ 0);
   }
 
-  private static FlutterView attach(
+  private static FlutterEngine initEngine(
       FlutterJNI jni, PlatformViewsController platformViewsController) {
     final DartExecutor executor = new DartExecutor(jni, mock(AssetManager.class));
     executor.onAttachedToJNI();
@@ -552,20 +599,13 @@ public class PlatformViewsControllerTest {
     final Context context = RuntimeEnvironment.application.getApplicationContext();
     platformViewsController.attach(context, null, executor);
 
-    final FlutterView view =
-        new FlutterView(context, FlutterView.RenderMode.surface) {
-          @Override
-          public FlutterImageView createImageView() {
-            final FlutterImageView view = mock(FlutterImageView.class);
-            when(view.acquireLatestImage()).thenReturn(true);
-            return mock(FlutterImageView.class);
-          }
-        };
-
-    view.layout(0, 0, 100, 100);
-
     final FlutterEngine engine = mock(FlutterEngine.class);
-    when(engine.getRenderer()).thenReturn(new FlutterRenderer(jni));
+    when(engine.getRenderer()).thenReturn(new FlutterRenderer(jni) {
+      @Override
+      public void setSemanticsEnabled(boolean enabled) {
+        // original method requires native
+      }
+    });
     when(engine.getMouseCursorChannel()).thenReturn(mock(MouseCursorChannel.class));
     when(engine.getTextInputChannel()).thenReturn(mock(TextInputChannel.class));
     when(engine.getSettingsChannel()).thenReturn(new SettingsChannel(executor));
@@ -574,8 +614,29 @@ public class PlatformViewsControllerTest {
     when(engine.getKeyEventChannel()).thenReturn(mock(KeyEventChannel.class));
     when(engine.getAccessibilityChannel()).thenReturn(mock(AccessibilityChannel.class));
 
+    return engine;
+  }
+
+  private static FlutterView attachToFlutterView(FlutterEngine engine) {
+    final Context context = RuntimeEnvironment.application.getApplicationContext();
+    final FlutterView view = new FlutterView(context, FlutterView.RenderMode.surface) {
+      @Override
+      public FlutterImageView createImageView() {
+        final FlutterImageView view = mock(FlutterImageView.class);
+        when(view.acquireLatestImage()).thenReturn(true);
+        return mock(FlutterImageView.class);
+      }
+    };
+
+    view.layout(0, 0, 100, 100);
     view.attachToFlutterEngine(engine);
-    platformViewsController.attachToView(view);
+    return view;
+  }
+
+  private static FlutterView attach(
+      FlutterJNI jni, PlatformViewsController platformViewsController) {
+    final FlutterEngine engine = initEngine(jni, platformViewsController);
+    final FlutterView view = attachToFlutterView(engine);
     return view;
   }
 
