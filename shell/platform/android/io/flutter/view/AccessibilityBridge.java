@@ -1165,7 +1165,8 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
           Pattern pattern = Pattern.compile("\\p{L}(\\b)");
           Matcher result = pattern.matcher(node.value.substring(node.textSelectionExtent));
           // we discard the first result because we want to find the "next" word
-          if (result.find() && result.find()) {
+          result.find();
+          if (result.find()) {
             node.textSelectionExtent += result.start(1);
           } else {
             node.textSelectionExtent = node.value.length();
