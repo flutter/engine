@@ -51,9 +51,9 @@
     ]
   },
   {
-    "url": "https://maven.google.com/androidx/window/window/1.0.0-alpha03/window-1.0.0-alpha03.aar",
+    "url": "https://maven.google.com/androidx/window/window/1.0.0-alpha05/window-1.0.0-alpha05.aar",
     "out_file_name": "androidx_window.aar",
-    "maven_dependency": "androidx.window:window:1.0.0-alpha03",
+    "maven_dependency": "androidx.window:window:1.0.0-alpha05",
     "provides": [
       "androidx.window.DisplayFeature",
       "androidx.window.FoldingFeature",
