@@ -225,9 +225,10 @@ abstract class FlutterView {
   ///   applications.
   WindowPadding get padding => viewConfiguration.padding;
 
-  /// Areas of the display that are obstructed by hardware features. This list is
-  /// populated only on Android. If the device has no display features, this list
-  /// is empty.
+  /// Areas of the display that are obstructed by hardware features.
+  ///
+  /// This list is populated only on Android. If the device has no display
+  /// features, this list is empty.
   ///
   /// The area in which the [DisplayFeature.bounds] are defined includes all screens
   /// and the space between them. This means that the space between the screens
