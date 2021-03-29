@@ -83,9 +83,7 @@ public class FlutterEngineCache {
     put(engineId, null);
   }
 
-  /**
-   * Removes all {@link FlutterEngine}'s that are currently in the cache.
-   */
+  /** Removes all {@link FlutterEngine}'s that are currently in the cache. */
   public void clear() {
     cachedEngines.clear();
   }
