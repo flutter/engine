@@ -1134,14 +1134,13 @@ class ViewConfiguration {
   /// populated only on Android. If the device has no display features, this list
   /// is empty.
   ///
-  /// The space in which the [DisplayFeature.bounds] are defined includes all screens
-  /// and the space between them. For a dual-screen device, this means that the space
-  /// between the screens is virtually part of the Flutter view space, with the
-  /// [DisplayFeature.bounds] of the display feature as an obstructed area. The
-  /// [DisplayFeature.type] can be used to determine if this display feature
-  /// obstructs the screen or not. For example, [DisplayFeatureType.hinge] and
-  /// [DisplayFeatureType.cutout] both obstruct the display, while
-  /// [DisplayFeatureType.fold] is more like a crease in the display.
+  /// The area in which the [DisplayFeature.bounds] are defined includes all screens
+  /// and the space between them. This means that the space between the screens
+  /// is virtually part of the Flutter view space, with the [DisplayFeature.bounds]
+  /// of the display feature as an obstructed area. The [DisplayFeature.type] can
+  /// be used to determine if this display feature obstructs the screen or not.
+  /// For example, [DisplayFeatureType.hinge] and [DisplayFeatureType.cutout] both
+  /// obstruct the display, while [DisplayFeatureType.fold] is a crease in the display.
   ///
   /// Folding [DisplayFeature]s like the [DisplayFeatureType.hinge] and
   /// [DisplayFeatureType.fold] also have a [DisplayFeature.state] which can be
@@ -1371,49 +1370,65 @@ class WindowPadding {
   }
 }
 
-/// Area of the display that may be obstructed by a hardware feature.This is
-/// populated only on Android.
+/// Area of the display that may be obstructed by a hardware feature.
+///
+/// This is populated only on Android.
 ///
 /// The [bounds] are measured in logical pixels. On devices with two screens the
-/// coordinate system starts with [0,0] in the top-left corner of the left screen
-/// and expands to include the visual space between the screens and the right screen.
-/// The [type] can be used to determine if this display feature obstructs the screen or not.
+/// coordinate system starts with [0,0] in the top-left corner of the left or top screen
+/// and expands to include both screens and the visual space between them.
+///
+/// The [type] describes the behaviour and how much the [DisplayFeature] obstructs the display.
 /// For example, [DisplayFeatureType.hinge] and [DisplayFeatureType.cutout] both obstruct the display,
 /// while [DisplayFeatureType.fold] does not.
+///
+/// ![Device with a hinge display feature](https://flutter.github.io/assets-for-api-docs/assets/hardware/display_feature_hinge.png)
+///
+/// ![Device with a fold display feature](https://flutter.github.io/assets-for-api-docs/assets/hardware/display_feature_fold.png)
+///
+/// ![Device with a cutout display feature](https://flutter.github.io/assets-for-api-docs/assets/hardware/display_feature_cutout.png)
+///
+/// The [state] contains information about the posture for foldable features
+/// ([DisplayFeatureType.hinge] and [DisplayFeatureType.fold]). The posture is
+/// the shape of the display, for example [DisplayFeatureState.postureFlat] or
+/// [DisplayFeatureState.postureHalfOpened]. For [DisplayFeatureType.cutout],
+/// the state is not used and has the [DisplayFeatureState.unknown] value.
 class DisplayFeature {
   const DisplayFeature({
     required this.bounds,
     required this.type,
     required this.state,
-  });
+  }) : assert(type != DisplayFeatureType.cutout || state == DisplayFeatureState.unknown);
 
-  /// Area of the view occupied by this display feature, measured in logical pixels.
+  /// The area of the flutter view occupied by this display feature, measured in logical pixels.
   ///
-  /// On devices with two screens, the Flutter view spans from the top-right corner
-  /// of the left screen to the bottom-right corner of the right screen, including
-  /// the area occupied by any display feature. Bounds of display features are
-  /// reported in this coordinate system.
+  /// On devices with two screens, the Flutter view spans from the top-left corner
+  /// of the left or top screen to the bottom-right corner of the right or bottom screen,
+  /// including the visual area occupied by any display feature. Bounds of display
+  /// features are reported in this coordinate system.
   ///
   /// For example, on a dual screen device in portrait mode:
   ///
-  /// - [bounds.left] gives you the size of left screen, in logical pixels.
-  /// - [bounds.right] gives you the size of the left screen + the hinge width.
+  /// * [bounds.left] gives you the size of left screen, in logical pixels.
+  /// * [bounds.right] gives you the size of the left screen + the hinge width.
   final Rect bounds;
 
   /// Type of display feature, e.g. hinge, fold, cutout.
   final DisplayFeatureType type;
 
   /// Posture of display feature, which is populated only for folds and hinges.
+  ///
   /// For cutouts, this is [DisplayFeatureState.unknown]
   final DisplayFeatureState state;
 
   @override
   bool operator ==(Object other) {
-    return identical(this, other) || other is DisplayFeature &&
-            runtimeType == other.runtimeType &&
-            bounds == other.bounds &&
-            type == other.type &&
-            state == other.state;
+    if (identical(this, other))
+      return true;
+    if (other.runtimeType != runtimeType)
+      return false;
+    return other is DisplayFeature && bounds == other.bounds &&
+        type == other.type && state == other.state;
   }
 
   @override
@@ -1425,17 +1440,29 @@ class DisplayFeature {
   }
 }
 
-/// Type of display feature (screen obstruction). This enum contains both
-/// foldable obstructions and cutout obstructions.
+/// Type of [DisplayFeature], describing the [DisplayFeature] behaviour and how
+/// much the it obstructs the display.
 ///
-/// Some, like [DisplayFeatureType.fold], can be reported without actually
-/// impeding drawing on the screen. They are useful for knowing where the
-/// display is bent or has a crease. The [DisplayFeature] bounds can be
-/// 0-width in such cases.
+/// Some types of [DisplayFeature], like [DisplayFeatureType.fold], can be
+/// reported without actually impeding drawing on the screen. They are useful
+/// for knowing where the display is bent or has a crease. The
+/// [DisplayFeature.bounds] can be 0-width in such cases.
+///
+/// The shape of the display feature for types [DisplayFeatureType.fold] and
+/// [DisplayFeatureType.hinge] is called the posture and is exposed in
+/// [DisplayFeature.state].
+///
+/// ![Device with a hinge display feature](https://flutter.github.io/assets-for-api-docs/assets/hardware/display_feature_hinge.png)
+///
+/// ![Device with a fold display feature](https://flutter.github.io/assets-for-api-docs/assets/hardware/display_feature_fold.png)
+///
+/// ![Device with a cutout display feature](https://flutter.github.io/assets-for-api-docs/assets/hardware/display_feature_cutout.png)
 enum DisplayFeatureType {
+  /// [DisplayFeature] type is new and not yet known to Flutter.
   unknown,
-  /// A fold in the flexible screen without a physical gap. The bounds for this
-  /// display feature type indicate where the display makes a crease.
+  /// A fold in the flexible screen without a physical gap.
+  ///
+  /// The bounds for this display feature type indicate where the display makes a crease.
   fold,
   /// A physical separation with a hinge that allows two display panels to fold.
   hinge,
@@ -1443,22 +1470,28 @@ enum DisplayFeatureType {
   cutout,
 }
 
-/// State of the display feature.
+/// State of the display feature, which contains information about the posture
+/// for foldable features.
 ///
-///   * For [DisplayFeatureType.fold]s & [DisplayFeatureType.hinge]s, the state is
-///   the posture, corresponding to values found in
-///   [Android Postures](https://developer.android.com/guide/topics/ui/foldables#postures).
-///   * For [DisplayFeatureType.cutout]s, the state is [DisplayFeatureState.unknown].
+/// The posture is the shape made by the parts of the flexible screen or
+/// physical screen panels. Postures correspond to values found in
+/// [Android Postures](https://developer.android.com/guide/topics/ui/foldables#postures).
+///
+/// * For [DisplayFeatureType.fold]s & [DisplayFeatureType.hinge]s, the state is
+///   the posture.
+/// * For [DisplayFeatureType.cutout]s, the state is not used and has the
+/// [DisplayFeatureState.unknown] value.
 enum DisplayFeatureState {
   /// The display feature is a [DisplayFeatureType.cutout] or this state is new
   /// and not yet known to Flutter.
   unknown,
-  /// The foldable device is completely open. The screen space that is presented
-  /// to the user is flat.
+  /// The foldable device is completely open.
+  ///
+  /// The screen space that is presented to the user is flat.
   postureFlat,
-  /// The foldable device's hinge is in an intermediate position between opened
-  /// and closed state. There is a non-flat angle between parts of the flexible
-  /// screen or between physical screen panels.
+  /// Fold angle is in an intermediate position between [postureFlat] and closed state.
+  ///
+  /// There is a non-flat angle between parts of the flexible screen or between physical screen panels.
   postureHalfOpened,
   /// The foldable device is flipped with the flexible screen parts or physical
   /// screens facing opposite directions.

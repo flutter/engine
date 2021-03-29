@@ -229,14 +229,13 @@ abstract class FlutterView {
   /// populated only on Android. If the device has no display features, this list
   /// is empty.
   ///
-  /// The space in which the [DisplayFeature.bounds] are defined includes all screens
-  /// and the space between them. For a dual-screen device, this means that the space
-  /// between the screens is virtually part of the Flutter view space, with the
-  /// [DisplayFeature.bounds] of the display feature as an obstructed area. The
-  /// [DisplayFeature.type] can be used to determine if this display feature
-  /// obstructs the screen or not. For example, [DisplayFeatureType.hinge] and
-  /// [DisplayFeatureType.cutout] both obstruct the display, while
-  /// [DisplayFeatureType.fold] is more like a crease in the display.
+  /// The area in which the [DisplayFeature.bounds] are defined includes all screens
+  /// and the space between them. This means that the space between the screens
+  /// is virtually part of the Flutter view space, with the [DisplayFeature.bounds]
+  /// of the display feature as an obstructed area. The [DisplayFeature.type] can
+  /// be used to determine if this display feature obstructs the screen or not.
+  /// For example, [DisplayFeatureType.hinge] and [DisplayFeatureType.cutout] both
+  /// obstruct the display, while [DisplayFeatureType.fold] is a crease in the display.
   ///
   /// Folding [DisplayFeature]s like the [DisplayFeatureType.hinge] and
   /// [DisplayFeatureType.fold] also have a [DisplayFeature.state] which can be

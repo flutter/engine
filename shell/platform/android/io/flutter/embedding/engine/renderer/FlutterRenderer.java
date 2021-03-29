@@ -386,10 +386,14 @@ public class FlutterRenderer implements TextureRegistry {
   }
 
   /**
-   * Area of the viewport obstructed by a feature, eg. a hinge, a fold crease or camera cutout
+   * Description of a physical feature on the display.
    *
-   * <p>Similar to {@link androidx.window.DisplayFeature}, used for reporting Fold / Hinge areas.
-   * The reason we define our own model is that we also want to support cutouts.
+   * <p>A display feature is a distinctive physical attribute located within the display panel of
+   * the device. It can intrude into the application window space and create a visual distortion,
+   * visual or touch discontinuity, make some area invisible or create a logical divider or
+   * separation in the screen space.
+   *
+   * <p>Based on {@link androidx.window.DisplayFeature}, with added support for cutouts.
    */
   public static final class DisplayFeature {
     public final Rect bounds;
