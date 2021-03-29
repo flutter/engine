@@ -600,12 +600,14 @@ public class PlatformViewsControllerTest {
     platformViewsController.attach(context, null, executor);
 
     final FlutterEngine engine = mock(FlutterEngine.class);
-    when(engine.getRenderer()).thenReturn(new FlutterRenderer(jni) {
-      @Override
-      public void setSemanticsEnabled(boolean enabled) {
-        // original method requires native
-      }
-    });
+    when(engine.getRenderer())
+        .thenReturn(
+            new FlutterRenderer(jni) {
+              @Override
+              public void setSemanticsEnabled(boolean enabled) {
+                // original method requires native
+              }
+            });
     when(engine.getMouseCursorChannel()).thenReturn(mock(MouseCursorChannel.class));
     when(engine.getTextInputChannel()).thenReturn(mock(TextInputChannel.class));
     when(engine.getSettingsChannel()).thenReturn(new SettingsChannel(executor));
@@ -619,14 +621,15 @@ public class PlatformViewsControllerTest {
 
   private static FlutterView attachToFlutterView(FlutterEngine engine) {
     final Context context = RuntimeEnvironment.application.getApplicationContext();
-    final FlutterView view = new FlutterView(context, FlutterView.RenderMode.surface) {
-      @Override
-      public FlutterImageView createImageView() {
-        final FlutterImageView view = mock(FlutterImageView.class);
-        when(view.acquireLatestImage()).thenReturn(true);
-        return mock(FlutterImageView.class);
-      }
-    };
+    final FlutterView view =
+        new FlutterView(context, FlutterView.RenderMode.surface) {
+          @Override
+          public FlutterImageView createImageView() {
+            final FlutterImageView view = mock(FlutterImageView.class);
+            when(view.acquireLatestImage()).thenReturn(true);
+            return mock(FlutterImageView.class);
+          }
+        };
 
     view.layout(0, 0, 100, 100);
     view.attachToFlutterEngine(engine);
