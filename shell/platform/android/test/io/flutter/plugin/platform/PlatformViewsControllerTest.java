@@ -401,7 +401,6 @@ public class PlatformViewsControllerTest {
     verify(platformView, times(1)).onFlutterViewAttached(eq(initialFlutterView));
     verify(platformView, times(1)).onFlutterViewDetached();
 
-
     FlutterView newFlutterView = attachToFlutterView(engine);
 
     // Verify that all views were notified of View attachment.
