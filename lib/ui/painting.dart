@@ -5292,13 +5292,18 @@ class _DisplayListCanvas implements Canvas {
   }
 
   static const int _maxDataDoubleSize = 1 << 24;
-  ByteData _growData(ByteData src) {
-    ByteData dst;
+  ByteData _growData(ByteData src, int neededBytes) {
+    int growLength;
     if (src.lengthInBytes <= _maxDataDoubleSize) {
-      dst = ByteData(src.lengthInBytes * 2);
+      growLength = src.lengthInBytes;
     } else {
-      dst = ByteData(src.lengthInBytes + _maxDataDoubleSize);
+      growLength = _maxDataDoubleSize;
     }
+    if (growLength < neededBytes) {
+      growLength = (neededBytes + _maxDataDoubleSize) ~/ _maxDataDoubleSize;
+      growLength *= _maxDataDoubleSize;
+    }
+    final ByteData dst = ByteData(src.lengthInBytes + growLength);
     for (int i = 0; i < _numDataBytes; i += 4) {
       dst.setInt32(i, src.getInt32(i, _kFakeHostEndian), _kFakeHostEndian);
     }
@@ -5314,7 +5319,7 @@ class _DisplayListCanvas implements Canvas {
 
   void _addInt(int value) {
     if (_numDataBytes + 4 > _data.lengthInBytes) {
-      _data = _growData(_data);
+      _data = _growData(_data, 4);
     }
     _data.setInt32(_numDataBytes, value, _kFakeHostEndian);
     _numDataBytes += 4;
@@ -5322,7 +5327,7 @@ class _DisplayListCanvas implements Canvas {
 
   void _addScalar(double value) {
     if (_numDataBytes + 4 > _data.lengthInBytes) {
-      _data = _growData(_data);
+      _data = _growData(_data, 4);
     }
     _data.setFloat32(_numDataBytes, value, _kFakeHostEndian);
     _numDataBytes += 4;
@@ -5330,7 +5335,7 @@ class _DisplayListCanvas implements Canvas {
 
   void _addScalar2(double v1, double v2) {
     if (_numDataBytes + 8 > _data.lengthInBytes) {
-      _data = _growData(_data);
+      _data = _growData(_data, 8);
     }
     _data.setFloat32(_numDataBytes, v1, _kFakeHostEndian);
     _numDataBytes += 4;
@@ -5340,7 +5345,7 @@ class _DisplayListCanvas implements Canvas {
 
   void _addScalar3(double v1, double v2, double v3) {
     if (_numDataBytes + 12 > _data.lengthInBytes) {
-      _data = _growData(_data);
+      _data = _growData(_data, 12);
     }
     _data.setFloat32(_numDataBytes, v1, _kFakeHostEndian);
     _numDataBytes += 4;
@@ -5352,7 +5357,7 @@ class _DisplayListCanvas implements Canvas {
 
   void _addScalar4(double v1, double v2, double v3, double v4) {
     if (_numDataBytes + 16 > _data.lengthInBytes) {
-      _data = _growData(_data);
+      _data = _growData(_data, 16);
     }
     _data.setFloat32(_numDataBytes, v1, _kFakeHostEndian);
     _numDataBytes += 4;
@@ -5380,11 +5385,27 @@ class _DisplayListCanvas implements Canvas {
   }
 
   void _addInt32List(Int32List data) {
-    _objData.add(data);
+    final int len = data.length;
+    _addInt(len);
+    if (_numDataBytes + len * 4 > _data.lengthInBytes) {
+      _data = _growData(_data, len * 4);
+    }
+    for (int i = 0; i < len; i++) {
+      _data.setInt32(_numDataBytes, data[i], _kFakeHostEndian);
+      _numDataBytes += 4;
+    }
   }
 
   void _addFloat32List(Float32List data) {
-    _objData.add(data);
+    final int len = data.length;
+    _addInt(len);
+    if (_numDataBytes + len * 4 > _data.lengthInBytes) {
+      _data = _growData(_data, len * 4);
+    }
+    for (int i = 0; i < len; i++) {
+      _data.setFloat32(_numDataBytes, data[i], _kFakeHostEndian);
+      _numDataBytes += 4;
+    }
   }
 
   void _addImageData(Image image) {
@@ -5823,8 +5844,9 @@ class _DisplayListCanvas implements Canvas {
     _updatePaintData(paint, _paintMask | _strokeStyleNeeded);
     _addOp(_pointOps[pointMode.index]);
     _addFloat32List(points);
-    print('adding conservative bounds for drawPoints');
-    _addBounds(_cullRect);
+    for (int i = 0; i + 1 < points.length; i += 2) {
+      _addPointToBounds(points[i], points[i + 1]);
+    }
   }
 
   @override

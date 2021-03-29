@@ -122,7 +122,8 @@ fml::RefPtr<DisplayList> DisplayList::Create(tonic::Uint8List& ops,
   //   }
   // }
 
-  return fml::MakeRefCounted<DisplayList>(ops_vector, data_vector);
+  return fml::MakeRefCounted<DisplayList>(std::move(ops_vector),
+                                          std::move(data_vector));
 }
 
 DisplayList::DisplayList(std::shared_ptr<std::vector<uint8_t>> ops_vector,

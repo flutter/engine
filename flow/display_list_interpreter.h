@@ -22,8 +22,8 @@ enum CanvasOpArg {
   point,
   rect,
   round_rect,
-  int32_list,
-  float32_list,
+  uint32_list,
+  scalar_list,
   matrix_row3,
   image,
   path,
@@ -62,7 +62,7 @@ enum CanvasOpArg {
 #define CANVAS_OP_ARGS_Rect_2Angles         CANVAS_OP_ARGS3(rect, angle, angle)
 #define CANVAS_OP_ARGS_RoundRect            CANVAS_OP_ARGS1(round_rect)
 #define CANVAS_OP_ARGS_2RoundRects          CANVAS_OP_ARGS2(round_rect, round_rect)
-#define CANVAS_OP_ARGS_F32List              CANVAS_OP_ARGS1(float32_list)
+#define CANVAS_OP_ARGS_ScalarList           CANVAS_OP_ARGS1(scalar_list)
 #define CANVAS_OP_ARGS_Matrix2x3            CANVAS_OP_ARGS2(matrix_row3, matrix_row3)
 #define CANVAS_OP_ARGS_Matrix3x3            CANVAS_OP_ARGS3(matrix_row3, matrix_row3, matrix_row3)
 #define CANVAS_OP_ARGS_Path                 CANVAS_OP_ARGS1(path)
@@ -70,10 +70,10 @@ enum CanvasOpArg {
 #define CANVAS_OP_ARGS_Vertices             CANVAS_OP_ARGS1(vertices)
 #define CANVAS_OP_ARGS_Image_Point          CANVAS_OP_ARGS2(image, point)
 #define CANVAS_OP_ARGS_Image_2Rects         CANVAS_OP_ARGS3(image, rect, rect)
-#define CANVAS_OP_ARGS_Atlas                CANVAS_OP_ARGS3(image, float32_list, float32_list)
-#define CANVAS_OP_ARGS_Atlas_Colors         CANVAS_OP_ARGS4(image, float32_list, float32_list, int32_list)
-#define CANVAS_OP_ARGS_Atlas_Rect           CANVAS_OP_ARGS4(image, float32_list, float32_list, rect)
-#define CANVAS_OP_ARGS_Atlas_Colors_Rect    CANVAS_OP_ARGS5(image, float32_list, float32_list, int32_list, rect)
+#define CANVAS_OP_ARGS_Atlas                CANVAS_OP_ARGS3(image, scalar_list, scalar_list)
+#define CANVAS_OP_ARGS_Atlas_Colors         CANVAS_OP_ARGS4(image, scalar_list, scalar_list, uint32_list)
+#define CANVAS_OP_ARGS_Atlas_Rect           CANVAS_OP_ARGS4(image, scalar_list, scalar_list, rect)
+#define CANVAS_OP_ARGS_Atlas_Colors_Rect    CANVAS_OP_ARGS5(image, scalar_list, scalar_list, uint32_list, rect)
 #define CANVAS_OP_ARGS_Paragraph_Point      CANVAS_OP_ARGS2(paragraph, point)
 #define CANVAS_OP_ARGS_Picture              CANVAS_OP_ARGS1(picture)
 #define CANVAS_OP_ARGS_Shader               CANVAS_OP_ARGS1(shader)
@@ -156,9 +156,9 @@ enum CanvasOpArg {
   V(drawArcCenter,              Rect_2Angles)       \
   V(drawPath,                   Path)               \
                                                     \
-  V(drawPoints,                 F32List)            \
-  V(drawLines,                  F32List)            \
-  V(drawPolygon,                F32List)            \
+  V(drawPoints,                 ScalarList)         \
+  V(drawLines,                  ScalarList)         \
+  V(drawPolygon,                ScalarList)         \
   V(drawVertices,               Vertices)           \
                                                     \
   V(drawImage,                  Image_Point)        \
@@ -189,7 +189,7 @@ class DisplayListInterpreter {
   void Describe();
 
   static const std::vector<std::string> opNames;
-  static const std::vector<int> opArguments;
+  static const std::vector<uint32_t> opArguments;
 
   static const SkSamplingOptions NearestSampling;
   static const SkSamplingOptions LinearSampling;
@@ -215,8 +215,9 @@ class DisplayListInterpreter {
         data_end(iterator.data_end) {}
 
     bool HasOp() { return ops < ops_end; }
-
     CanvasOp GetOp() { return static_cast<CanvasOp>(*ops++); }
+
+    void skipData(int n) { data += n; }
     SkScalar GetScalar() { return static_cast<SkScalar>(*data++); }
     uint32_t GetUint32() { union { float f; uint32_t i; } u; u.f = *data++; return u.i; }
 
@@ -239,6 +240,20 @@ class DisplayListInterpreter {
       SkRRect rrect;
       rrect.setRectRadii(rect, radii);
       return rrect;
+    }
+
+    uint32_t GetIntList(uint32_t **int_ptr) {
+      uint32_t len = GetUint32();
+      *int_ptr = (uint32_t *) &*data;
+      skipData(len);
+      return len;
+    }
+
+    uint32_t GetFloatList(SkScalar **flt_ptr) {
+      uint32_t len = GetUint32();
+      *flt_ptr = &*data;
+      skipData(len);
+      return len;
     }
 
     std::vector<uint8_t>::iterator ops;

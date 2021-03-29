@@ -19,7 +19,7 @@ const std::vector<std::string> DisplayListInterpreter::opNames = {
   FOR_EACH_CANVAS_OP(CANVAS_OP_TAKE_STRING)
 };
 
-const std::vector<int> DisplayListInterpreter::opArguments = {
+const std::vector<uint32_t> DisplayListInterpreter::opArguments = {
   FOR_EACH_CANVAS_OP(CANVAS_OP_TAKE_ARGS)
 };
 
@@ -76,8 +76,28 @@ std::string DisplayListInterpreter::DescribeOneOp(Iterator& it) {
                           << "ur: (h: " << it.GetScalar() << ", v: " << it.GetScalar() << "), "
                           << "lr: (h: " << it.GetScalar() << ", v: " << it.GetScalar() << "), "
                           << "ll: (h: " << it.GetScalar() << ", v: " << it.GetScalar() << "))"; break;
-      case int32_list: ss << "[Int32List]"; break;
-      case float32_list: ss << "[Float32List]"; break;
+      case uint32_list:
+      case scalar_list: {
+        uint32_t len = it.GetUint32();
+        ss << std::dec << "(len=" << len << ")[" << std::hex;
+        for (uint32_t i = 0; i < len; i++) {
+          if (i > 0) {
+            ss << ", ";
+            if (len > 8 && i == 4) {
+              it.skipData(len - 8);
+              i += (len - 8);
+              ss << "..., ";
+            }
+          }
+          if (arg_type == scalar_list) {
+            ss << it.GetScalar();
+          } else {
+            ss << it.GetUint32();
+          }
+        }
+        ss << "]";
+        break;
+      }
       case matrix_row3: ss << "[" << it.GetScalar() << ", " << it.GetScalar() << ", " << it.GetScalar() << "]"; break;
       case image: ss << "[Image]"; break;
       case path: ss << "[Path]"; break;
@@ -202,17 +222,17 @@ const SkSamplingOptions DisplayListInterpreter::MipmapSampling =
 const SkSamplingOptions DisplayListInterpreter::CubicSampling =
   SkSamplingOptions(SkCubicResampler{1 / 3.0f, 1 / 3.0f});
 
-#define CANVAS_FQ_DEFINE_OP(op_type, enum_type, filter_mode) \
+#define CANVAS_OP_DEFINE_FQ(op_type, enum_type, filter_mode) \
 CANVAS_OP_DEFINE_OP(setFilterQuality##op_type,               \
   context.filterMode = SkFilterMode::filter_mode;            \
   context.sampling = op_type##Sampling;                      \
   context.paint.setFilterQuality(                            \
       SkFilterQuality::k##enum_type##_SkFilterQuality);      \
 )
-CANVAS_FQ_DEFINE_OP(Nearest, None, kNearest)
-CANVAS_FQ_DEFINE_OP(Linear, Low, kLinear)
-CANVAS_FQ_DEFINE_OP(Mipmap, Medium, kLinear)
-CANVAS_FQ_DEFINE_OP(Cubic, High, kLinear)
+CANVAS_OP_DEFINE_FQ(Nearest, None, kNearest)
+CANVAS_OP_DEFINE_FQ(Linear, Low, kLinear)
+CANVAS_OP_DEFINE_FQ(Mipmap, Medium, kLinear)
+CANVAS_OP_DEFINE_FQ(Cubic, High, kLinear)
 
 CANVAS_OP_DEFINE_OP(setBlendMode, context.paint.setBlendMode(it.GetBlendMode());)
 
@@ -263,19 +283,39 @@ CANVAS_OP_DEFINE_OP(drawArcCenter, context.canvas->drawArc(it.GetRect(), it.GetA
 CANVAS_OP_DEFINE_OP(drawLine, context.canvas->drawLine(it.GetPoint(), it.GetPoint(), context.paint);)
 CANVAS_OP_DEFINE_OP(drawPath, /* TODO(flar) deal with Path object */)
 
-CANVAS_OP_DEFINE_OP(drawPoints, /* TODO(flar) deal with List of points */)
-CANVAS_OP_DEFINE_OP(drawLines, /* TODO(flar) deal with List of points */)
-CANVAS_OP_DEFINE_OP(drawPolygon, /* TODO(flar) deal with List of points */)
+#define CANVAS_OP_DEFINE_POINT_OP(mode) \
+CANVAS_OP_DEFINE_OP(draw##mode, \
+  SkScalar *flt_ptr; \
+  uint32_t len = it.GetFloatList(&flt_ptr); \
+  const SkPoint *pt_ptr = reinterpret_cast<const SkPoint*>(flt_ptr); \
+  context.canvas->drawPoints(SkCanvas::PointMode::k##mode##_PointMode, len / 2, pt_ptr, context.paint); \
+)
+CANVAS_OP_DEFINE_POINT_OP(Points)
+CANVAS_OP_DEFINE_POINT_OP(Lines)
+CANVAS_OP_DEFINE_POINT_OP(Polygon)
 CANVAS_OP_DEFINE_OP(drawVertices, /* TODO(flar) deal with List of vertices */)
 
 CANVAS_OP_DEFINE_OP(drawImage, it.GetPoint(); /* TODO(flar) deal with image object */)
 CANVAS_OP_DEFINE_OP(drawImageRect, it.GetRect(); it.GetRect(); /* TODO(flar) deal with image object */)
 CANVAS_OP_DEFINE_OP(drawImageNine, it.GetRect(); it.GetRect(); /* TODO(flar) deal with image object */)
 
-CANVAS_OP_DEFINE_OP(drawAtlas, /* TODO(flar) deal with all of the atlas objects */)
-CANVAS_OP_DEFINE_OP(drawAtlasColored, /* TODO(flar) deal with all of the atlas objects */)
-CANVAS_OP_DEFINE_OP(drawAtlasCulled, it.GetRect(); /* TODO(flar) deal with all of the atlas objects */)
-CANVAS_OP_DEFINE_OP(drawAtlasColoredCulled, it.GetRect(); /* TODO(flar) deal with all of the atlas objects */)
+#define CANVAS_OP_DEFINE_ATLAS(op_type, has_colors, has_rect) \
+CANVAS_OP_DEFINE_OP(op_type,                                  \
+  SkScalar *ptr;                                              \
+  it.GetFloatList(&ptr);                                      \
+  it.GetFloatList(&ptr);                                      \
+  if (has_colors) {                                           \
+    uint32_t *ptr2;                                           \
+    it.GetIntList(&ptr2);                                     \
+  }                                                           \
+  if (has_rect) {                                             \
+    it.GetRect();                                             \
+  }                                                           \
+)
+CANVAS_OP_DEFINE_ATLAS(drawAtlas, false, false)
+CANVAS_OP_DEFINE_ATLAS(drawAtlasColored, true, false)
+CANVAS_OP_DEFINE_ATLAS(drawAtlasCulled, false, true)
+CANVAS_OP_DEFINE_ATLAS(drawAtlasColoredCulled, true, true)
 
 CANVAS_OP_DEFINE_OP(drawPicture, /* TODO(flar) deal with Picture object */)
 CANVAS_OP_DEFINE_OP(drawParagraph, it.GetPoint(); /* TODO(flar) deal with Paragraph object */)
