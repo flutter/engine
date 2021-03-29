@@ -736,24 +736,24 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 
 - (void)applicationBecameActive:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationBecameActive");
+  if (_viewportMetrics.physical_width)
+    [self surfaceUpdated:YES];
   [self goToApplicationLifecycle:@"AppLifecycleState.resumed"];
 }
 
 - (void)applicationWillResignActive:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationWillResignActive");
+  [self surfaceUpdated:NO];
   [self goToApplicationLifecycle:@"AppLifecycleState.inactive"];
 }
 
 - (void)applicationDidEnterBackground:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationDidEnterBackground");
-  [self surfaceUpdated:NO];
   [self goToApplicationLifecycle:@"AppLifecycleState.paused"];
 }
 
 - (void)applicationWillEnterForeground:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationWillEnterForeground");
-  if (_viewportMetrics.physical_width)
-    [self surfaceUpdated:YES];
   [self goToApplicationLifecycle:@"AppLifecycleState.inactive"];
 }
 
