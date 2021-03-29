@@ -22,6 +22,9 @@ class DisplayList : public RefCountedDartWrappable<DisplayList> {
   FML_FRIEND_MAKE_REF_COUNTED(DisplayList);
 
  public:
+
+  ~DisplayList() override;
+
   static fml::RefPtr<DisplayList> Create(tonic::Uint8List& ops,
                                          int numOps,
                                          tonic::DartByteData& data,
@@ -31,6 +34,10 @@ class DisplayList : public RefCountedDartWrappable<DisplayList> {
   Dart_Handle toImage(uint32_t width,
                       uint32_t height,
                       Dart_Handle raw_image_callback);
+
+  void dispose();
+
+  size_t GetAllocationSize() const override;
 
   static Dart_Handle RasterizeToImage(std::shared_ptr<std::vector<uint8_t>> ops,
                                       std::shared_ptr<std::vector<float>> data,
@@ -51,35 +58,6 @@ class DisplayList : public RefCountedDartWrappable<DisplayList> {
   std::shared_ptr<std::vector<uint8_t>> ops_vector_;
   std::shared_ptr<std::vector<float>> data_vector_;
 };
-
-// class DisplayList : public RefCountedDartWrappable<DisplayList> {
-//   DEFINE_WRAPPERTYPEINFO();
-//   FML_FRIEND_MAKE_REF_COUNTED(DisplayList);
-
-//  public:
-
-//   ~DisplayList() override;
-//   static fml::RefPtr<DisplayList> Create(Dart_Handle dart_handle,
-//                                      flutter::SkiaGPUObject<SkPicture> picture);
-
-//   Dart_Handle toImage(uint32_t width,
-//                       uint32_t height,
-//                       Dart_Handle raw_image_callback);
-
-//   void dispose();
-
-//   size_t GetAllocationSize() const override;
-
-//   static void RegisterNatives(tonic::DartLibraryNatives* natives);
-
-//   static Dart_Handle RasterizeToImage(sk_sp<SkPicture> picture,
-//                                       uint32_t width,
-//                                       uint32_t height,
-//                                       Dart_Handle raw_image_callback);
-
-//  private:
-//   Picture(flutter::SkiaGPUObject<SkPicture> picture);
-// };
 
 }  // namespace flutter
 

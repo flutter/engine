@@ -179,27 +179,10 @@ void DisplayListLayer::Paint(PaintContext& context) const {
   DisplayListInterpreter interpreter(ops_vector_, data_vector_);
   interpreter.Rasterize(context.leaf_nodes_canvas);
 
-  // SkRect bounds = paint_bounds();
   SkPaint paint;
   paint.setColor(is_complex_
     ? (will_change_ ? SkColors::kRed : SkColors::kYellow)
     : (will_change_ ? SkColors::kBlue : SkColors::kGreen));
-//   paint.setAlphaf(0.125f);
-//   context.leaf_nodes_canvas->drawRect(bounds, paint);
-//   paint.setStyle(SkPaint::Style::kStroke_Style);
-// //   paint.setAlphaf(1.0f);
-//   paint.setAntiAlias(true);
-//   paint.setColor(SkColors::kBlack);
-// //   paint.setStrokeWidth(5.0f);
-//   context.leaf_nodes_canvas->drawRect(bounds, paint);
-//   context.leaf_nodes_canvas->drawLine(
-//     SkPoint::Make(bounds.left(), bounds.top()),
-//     SkPoint::Make(bounds.right(), bounds.bottom()),
-//     paint);
-//   context.leaf_nodes_canvas->drawLine(
-//     SkPoint::Make(bounds.right(), bounds.top()),
-//     SkPoint::Make(bounds.left(), bounds.bottom()),
-//     paint);
 }
 
 }  // namespace flutter

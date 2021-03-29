@@ -130,10 +130,22 @@ DisplayList::DisplayList(std::shared_ptr<std::vector<uint8_t>> ops_vector,
     : ops_vector_(ops_vector),
       data_vector_(data_vector) {}
 
+DisplayList::~DisplayList() = default;
+
 Dart_Handle DisplayList::toImage(uint32_t width,
                                  uint32_t height,
                                  Dart_Handle raw_image_callback) {
   return RasterizeToImage(ops_vector_, data_vector_, width, height, raw_image_callback);
+}
+
+void DisplayList::dispose() {
+  ops_vector_.reset();
+  data_vector_.reset();
+  ClearDartWrapper();
+}
+
+size_t DisplayList::GetAllocationSize() const {
+  return ops_vector_->size() + (data_vector_->size() * sizeof(float));
 }
 
 Dart_Handle DisplayList::RasterizeToImage(std::shared_ptr<std::vector<uint8_t>> ops,
@@ -208,18 +220,5 @@ Dart_Handle DisplayList::RasterizeToImage(std::shared_ptr<std::vector<uint8_t>> 
 
   return Dart_Null();
 }
-
-// void DisplayList::dispose() {
-//   picture_.reset();
-//   ClearDartWrapper();ToSkRoundRect
-// }
-
-// size_t DisplayList::GetAllocationSize() const {
-//   if (auto picture = picture_.get()) {
-//     return picture->approximateBytesUsed() + sizeof(Picture);
-//   } else {
-//     return sizeof(Picture);
-//   }
-// }
 
 }  // namespace flutter

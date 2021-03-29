@@ -13,105 +13,171 @@
 
 namespace flutter {
 
-// opName (matches Dart enum name), numDataArgs, intArgMask, numObjArgs
-#define FOR_EACH_CANVAS_OP(V)         \
-  V(setAA, 0, 0, 0)                   \
-  V(clearAA, 0, 0, 0)                 \
-  V(setDither, 0, 0, 0)               \
-  V(clearDither, 0, 0, 0)             \
-  V(setInvertColors, 0, 0, 0)         \
-  V(clearInvertColors, 0, 0, 0)       \
-  V(setFillStyle, 0, 0, 0)            \
-  V(setStrokeStyle, 0, 0, 0)          \
-                                      \
-  V(setCapsButt, 0, 0, 0)             \
-  V(setCapsRound, 0, 0, 0)            \
-  V(setCapsSquare, 0, 0, 0)           \
-  V(setJoinsBevel, 0, 0, 0)           \
-  V(setJoinsMiter, 0, 0, 0)           \
-  V(setJoinsRound, 0, 0, 0)           \
-                                      \
-  V(setStrokeWidth, 1, 0, 0)          \
-  V(setMiterLimit, 1, 0, 0)           \
-                                      \
-  V(setFilterQualityNearest, 0, 0, 0) \
-  V(setFilterQualityLinear, 0, 0, 0)  \
-  V(setFilterQualityMipmap, 0, 0, 0)  \
-  V(setFilterQualityCubic, 0, 0, 0)   \
-                                      \
-  V(setColor, 1, 0x1, 0)              \
-  V(setBlendMode, 1, 0x1, 0)          \
-                                      \
-  V(setShader, 0, 0, 1)               \
-  V(clearShader, 0, 0, 0)             \
-  V(setColorFilter, 0, 0, 1)          \
-  V(clearColorFilter, 0, 0, 0)        \
-  V(setImageFilter, 0, 0, 1)          \
-  V(clearImageFilter, 0, 0, 0)        \
-                                      \
-  V(clearMaskFilter, 0, 0, 0)         \
-  V(setMaskFilterNormal, 1, 0, 0)     \
-  V(setMaskFilterSolid, 1, 0, 0)      \
-  V(setMaskFilterOuter, 1, 0, 0)      \
-  V(setMaskFilterInner, 1, 0, 0)      \
-                                      \
-  V(save, 0, 0, 0)                    \
-  V(saveLayer, 0, 0, 0)               \
-  V(saveLayerBounds, 4, 0, 0)         \
-  V(restore, 0, 0, 0)                 \
-                                      \
-  V(translate, 2, 0, 0)               \
-  V(scale, 2, 0, 0)                   \
-  V(rotate, 1, 0, 0)                  \
-  V(skew, 2, 0, 0)                    \
-  V(transform, 0, 0, 1)               \
-                                      \
-  V(clipRect, 4, 0, 0)                \
-  V(clipRectAA, 4, 0, 0)              \
-  V(clipRectDiff, 4, 0, 0)            \
-  V(clipRectAADiff, 4, 0, 0)          \
-  V(clipRRect, 12, 0, 0)              \
-  V(clipRRectAA, 12, 0, 0)            \
-  V(clipPath, 0, 0, 1)                \
-  V(clipPathAA, 0, 0, 1)              \
-                                      \
-  V(drawPaint, 0, 0, 0)               \
-  V(drawColor, 0, 0, 0)               \
-                                      \
-  V(drawLine, 4, 0, 0)                \
-  V(drawRect, 4, 0, 0)                \
-  V(drawOval, 4, 0, 0)                \
-  V(drawCircle, 3, 0, 0)              \
-  V(drawRRect, 12, 0, 0)              \
-  V(drawDRRect, 24, 0, 0)             \
-  V(drawArc, 6, 0, 0)                 \
-  V(drawArcCenter, 6, 0, 0)           \
-  V(drawPath, 0, 0, 1)                \
-                                      \
-  V(drawPoints, 0, 0, 1)              \
-  V(drawLines, 0, 0, 1)               \
-  V(drawPolygon, 0, 0, 1)             \
-  V(drawVertices, 0, 0, 1)            \
-                                      \
-  V(drawImage, 2, 0, 1)               \
-  V(drawImageRect, 8, 0, 1)           \
-  V(drawImageNine, 8, 0, 1)           \
-  V(drawAtlas, 0, 0, 3)               \
-  V(drawAtlasColored, 0, 0, 4)        \
-  V(drawAtlasCulled, 4, 0, 3)         \
-  V(drawAtlasColoredCulled, 4, 0, 4)  \
-                                      \
-  V(drawParagraph, 2, 0, 1)           \
-  V(drawPicture, 0, 0, 1)             \
-  V(drawShadow, 1, 0, 1)              \
-  V(drawShadowOccluded, 1, 0, 1)
+enum CanvasOpArg {
+  empty,  // Forces all following enum values to be non-zero
+  scalar,
+  color,
+  blend_mode,
+  angle,
+  point,
+  rect,
+  round_rect,
+  int32_list,
+  float32_list,
+  matrix_row3,
+  image,
+  path,
+  vertices,
+  paragraph,
+  picture,
+  shader,
+  color_filter,
+  image_filter,
+};
+#define CANVAS_OP_ARG_SHIFT 5
+#define CANVAS_OP_ARG_MASK  ((1 << CANVAS_OP_ARG_SHIFT) - 1)
 
-#define CANVAS_OP_MAKE_ENUM(name, count, imask, objcount) cops_##name,
+#define CANVAS_OP_APPEND_ARG(arg_list, arg) \
+  (((arg_list) << CANVAS_OP_ARG_SHIFT) | CanvasOpArg::arg)
+#define CANVAS_OP_ARGS1(arg) \
+  (CanvasOpArg::arg)
+#define CANVAS_OP_ARGS2(arg1, arg2) \
+  CANVAS_OP_APPEND_ARG(CANVAS_OP_ARGS1(arg2), arg1)
+#define CANVAS_OP_ARGS3(arg1, arg2, arg3) \
+  CANVAS_OP_APPEND_ARG(CANVAS_OP_ARGS2(arg2, arg3), arg1)
+#define CANVAS_OP_ARGS4(arg1, arg2, arg3, arg4) \
+  CANVAS_OP_APPEND_ARG(CANVAS_OP_ARGS3(arg2, arg3, arg4), arg1)
+#define CANVAS_OP_ARGS5(arg1, arg2, arg3, arg4, arg5) \
+  CANVAS_OP_APPEND_ARG(CANVAS_OP_ARGS4(arg2, arg3, arg4, arg5), arg1)
+
+#define CANVAS_OP_ARGS__                    0
+#define CANVAS_OP_ARGS_Scalar               CANVAS_OP_ARGS1(scalar)
+#define CANVAS_OP_ARGS_2Scalars             CANVAS_OP_ARGS2(scalar, scalar)
+#define CANVAS_OP_ARGS_Angle                CANVAS_OP_ARGS1(angle)
+#define CANVAS_OP_ARGS_Color                CANVAS_OP_ARGS1(color)
+#define CANVAS_OP_ARGS_BlendMode            CANVAS_OP_ARGS1(blend_mode)
+#define CANVAS_OP_ARGS_Point_Scalar         CANVAS_OP_ARGS2(point, scalar)
+#define CANVAS_OP_ARGS_2Points              CANVAS_OP_ARGS2(point, point)
+#define CANVAS_OP_ARGS_Rect                 CANVAS_OP_ARGS1(rect)
+#define CANVAS_OP_ARGS_Rect_2Angles         CANVAS_OP_ARGS3(rect, angle, angle)
+#define CANVAS_OP_ARGS_RoundRect            CANVAS_OP_ARGS1(round_rect)
+#define CANVAS_OP_ARGS_2RoundRects          CANVAS_OP_ARGS2(round_rect, round_rect)
+#define CANVAS_OP_ARGS_F32List              CANVAS_OP_ARGS1(float32_list)
+#define CANVAS_OP_ARGS_Matrix2x3            CANVAS_OP_ARGS2(matrix_row3, matrix_row3)
+#define CANVAS_OP_ARGS_Matrix3x3            CANVAS_OP_ARGS3(matrix_row3, matrix_row3, matrix_row3)
+#define CANVAS_OP_ARGS_Path                 CANVAS_OP_ARGS1(path)
+#define CANVAS_OP_ARGS_Path_Scalar          CANVAS_OP_ARGS2(path, scalar)
+#define CANVAS_OP_ARGS_Vertices             CANVAS_OP_ARGS1(vertices)
+#define CANVAS_OP_ARGS_Image_Point          CANVAS_OP_ARGS2(image, point)
+#define CANVAS_OP_ARGS_Image_2Rects         CANVAS_OP_ARGS3(image, rect, rect)
+#define CANVAS_OP_ARGS_Atlas                CANVAS_OP_ARGS3(image, float32_list, float32_list)
+#define CANVAS_OP_ARGS_Atlas_Colors         CANVAS_OP_ARGS4(image, float32_list, float32_list, int32_list)
+#define CANVAS_OP_ARGS_Atlas_Rect           CANVAS_OP_ARGS4(image, float32_list, float32_list, rect)
+#define CANVAS_OP_ARGS_Atlas_Colors_Rect    CANVAS_OP_ARGS5(image, float32_list, float32_list, int32_list, rect)
+#define CANVAS_OP_ARGS_Paragraph_Point      CANVAS_OP_ARGS2(paragraph, point)
+#define CANVAS_OP_ARGS_Picture              CANVAS_OP_ARGS1(picture)
+#define CANVAS_OP_ARGS_Shader               CANVAS_OP_ARGS1(shader)
+#define CANVAS_OP_ARGS_ColorFilter          CANVAS_OP_ARGS1(color_filter)
+#define CANVAS_OP_ARGS_ImageFilter          CANVAS_OP_ARGS1(image_filter)
+
+// opName (matches Dart enum name), argListDescriptor
+#define FOR_EACH_CANVAS_OP(V)                       \
+  V(setAA,                      _)                  \
+  V(clearAA,                    _)                  \
+  V(setDither,                  _)                  \
+  V(clearDither,                _)                  \
+  V(setInvertColors,            _)                  \
+  V(clearInvertColors,          _)                  \
+  V(setFillStyle,               _)                  \
+  V(setStrokeStyle,             _)                  \
+                                                    \
+  V(setCapsButt,                _)                  \
+  V(setCapsRound,               _)                  \
+  V(setCapsSquare,              _)                  \
+  V(setJoinsBevel,              _)                  \
+  V(setJoinsMiter,              _)                  \
+  V(setJoinsRound,              _)                  \
+                                                    \
+  V(setStrokeWidth,             Scalar)             \
+  V(setMiterLimit,              Scalar)             \
+                                                    \
+  V(setFilterQualityNearest,    _)                  \
+  V(setFilterQualityLinear,     _)                  \
+  V(setFilterQualityMipmap,     _)                  \
+  V(setFilterQualityCubic,      _)                  \
+                                                    \
+  V(setColor,                   Color)              \
+  V(setBlendMode,               BlendMode)          \
+                                                    \
+  V(setShader,                  Shader)             \
+  V(clearShader,                _)                  \
+  V(setColorFilter,             ColorFilter)        \
+  V(clearColorFilter,           _)                  \
+  V(setImageFilter,             ImageFilter)        \
+  V(clearImageFilter,           _)                  \
+                                                    \
+  V(clearMaskFilter,            _)                  \
+  V(setMaskFilterNormal,        Scalar)             \
+  V(setMaskFilterSolid,         Scalar)             \
+  V(setMaskFilterOuter,         Scalar)             \
+  V(setMaskFilterInner,         Scalar)             \
+                                                    \
+  V(save,                       _)                  \
+  V(saveLayer,                  _)                  \
+  V(saveLayerBounds,            Rect)               \
+  V(restore,                    _)                  \
+                                                    \
+  V(translate,                  2Scalars)           \
+  V(scale,                      2Scalars)           \
+  V(rotate,                     Angle)              \
+  V(skew,                       2Scalars)           \
+  V(transform2x3,               Matrix2x3)          \
+  V(transform3x3,               Matrix3x3)          \
+                                                    \
+  V(clipRect,                   Rect)               \
+  V(clipRectAA,                 Rect)               \
+  V(clipRectDiff,               Rect)               \
+  V(clipRectAADiff,             Rect)               \
+  V(clipRRect,                  RoundRect)          \
+  V(clipRRectAA,                RoundRect)          \
+  V(clipPath,                   Path)               \
+  V(clipPathAA,                 Path)               \
+                                                    \
+  V(drawPaint,                  _)                  \
+  V(drawColor,                  _)                  \
+                                                    \
+  V(drawLine,                   2Points)            \
+  V(drawRect,                   Rect)               \
+  V(drawOval,                   Rect)               \
+  V(drawCircle,                 Point_Scalar)       \
+  V(drawRRect,                  RoundRect)          \
+  V(drawDRRect,                 2RoundRects)        \
+  V(drawArc,                    Rect_2Angles)       \
+  V(drawArcCenter,              Rect_2Angles)       \
+  V(drawPath,                   Path)               \
+                                                    \
+  V(drawPoints,                 F32List)            \
+  V(drawLines,                  F32List)            \
+  V(drawPolygon,                F32List)            \
+  V(drawVertices,               Vertices)           \
+                                                    \
+  V(drawImage,                  Image_Point)        \
+  V(drawImageRect,              Image_2Rects)       \
+  V(drawImageNine,              Image_2Rects)       \
+  V(drawAtlas,                  Atlas)              \
+  V(drawAtlasColored,           Atlas_Colors)       \
+  V(drawAtlasCulled,            Atlas_Rect)         \
+  V(drawAtlasColoredCulled,     Atlas_Colors_Rect)  \
+                                                    \
+  V(drawParagraph,              Paragraph_Point)    \
+  V(drawPicture,                Picture)            \
+  V(drawShadow,                 Path_Scalar)        \
+  V(drawShadowOccluded,         Path_Scalar)
+
+#define CANVAS_OP_MAKE_ENUM(name, args) cops_##name,
 enum CanvasOp {
   FOR_EACH_CANVAS_OP(CANVAS_OP_MAKE_ENUM)
 };
-
-#define CANVAS_OP_DECLARE_OP(name, count, imask, objcount) void execute_##name(RasterizeContext& context);
 
 class DisplayListInterpreter {
  public:
@@ -123,9 +189,7 @@ class DisplayListInterpreter {
   void Describe();
 
   static const std::vector<std::string> opNames;
-  static const std::vector<int> opArgCounts;
-  static const std::vector<int> opArgImask;
-  static const std::vector<int> opObjCounts;
+  static const std::vector<int> opArguments;
 
   static const SkSamplingOptions NearestSampling;
   static const SkSamplingOptions LinearSampling;
@@ -133,13 +197,55 @@ class DisplayListInterpreter {
   static const SkSamplingOptions CubicSampling;
 
  private:
-  std::vector<uint8_t>::iterator ops_it_;
-  const std::vector<uint8_t>::iterator ops_end_;
-  std::vector<float>::iterator data_it_;
-  const std::vector<float>::iterator data_end_;
-
   std::shared_ptr<std::vector<uint8_t>> ops_vector_;
   std::shared_ptr<std::vector<float>> data_vector_;
+
+  class Iterator {
+   public:
+    Iterator(const DisplayListInterpreter* interpreter)
+      : ops(interpreter->ops_vector_->begin()),
+        ops_end(interpreter->ops_vector_->end()),
+        data(interpreter->data_vector_->begin()),
+        data_end(interpreter->data_vector_->end()) {}
+
+    Iterator(const Iterator& iterator)
+      : ops(iterator.ops),
+        ops_end(iterator.ops_end),
+        data(iterator.data),
+        data_end(iterator.data_end) {}
+
+    bool HasOp() { return ops < ops_end; }
+
+    CanvasOp GetOp() { return static_cast<CanvasOp>(*ops++); }
+    SkScalar GetScalar() { return static_cast<SkScalar>(*data++); }
+    uint32_t GetUint32() { union { float f; uint32_t i; } u; u.f = *data++; return u.i; }
+
+    SkScalar GetAngle() { return GetScalar() * 180.0 / M_PI; }
+    SkBlendMode GetBlendMode() { return static_cast<SkBlendMode>(GetUint32()); }
+    SkColor GetColor() { return static_cast<SkColor>(GetUint32()); }
+
+    SkPoint GetPoint() { return SkPoint::Make(GetScalar(), GetScalar()); }
+    SkRect GetRect() { return SkRect::MakeLTRB(GetScalar(), GetScalar(), GetScalar(), GetScalar()); }
+    SkRRect GetRoundRect() {
+      SkRect rect = GetRect();
+      SkVector radii[4] = {
+        // SkRRect Radii order is UL, UR, LR, LL as per SkRRect::Corner indices
+        { GetScalar(), GetScalar() },
+        { GetScalar(), GetScalar() },
+        { GetScalar(), GetScalar() },
+        { GetScalar(), GetScalar() },
+      };
+
+      SkRRect rrect;
+      rrect.setRectRadii(rect, radii);
+      return rrect;
+    }
+
+    std::vector<uint8_t>::iterator ops;
+    const std::vector<uint8_t>::iterator ops_end;
+    std::vector<float>::iterator data;
+    const std::vector<float>::iterator data_end;
+  };
 
   struct RasterizeContext {
     SkCanvas *canvas;
@@ -152,36 +258,13 @@ class DisplayListInterpreter {
 
   static sk_sp<SkColorFilter> makeColorFilter(RasterizeContext& context);
 
+#define CANVAS_OP_DECLARE_OP(name, args) \
+  void execute_##name(RasterizeContext& context, Iterator& it);
+
   FOR_EACH_CANVAS_OP(CANVAS_OP_DECLARE_OP)
 
-  bool HasOp() { return ops_it_ < ops_end_; }
-  CanvasOp GetOp() { return static_cast<CanvasOp>(*ops_it_++); }
-
-  std::string DescribeNextOp();
-
-  SkScalar GetScalar() { return static_cast<SkScalar>(*data_it_++); }
-  uint32_t GetUint32() { union { float f; uint32_t i; } data; data.f = *data_it_++; return data.i; }
-
-  SkScalar GetAngle() { return GetScalar() * 180.0 / M_PI; }
-  SkBlendMode GetBlendMode() { return static_cast<SkBlendMode>(GetUint32()); }
-  SkColor GetColor() { return static_cast<SkColor>(GetUint32()); }
-
-  SkPoint GetPoint() { return SkPoint::Make(GetScalar(), GetScalar()); }
-  SkRect GetRect() { return SkRect::MakeLTRB(GetScalar(), GetScalar(), GetScalar(), GetScalar()); }
-  SkRRect GetRoundRect() {
-    SkRect rect = GetRect();
-    SkVector radii[4] = {
-      // SkRRect Radii order is UL, UR, LR, LL as per SkRRect::Corner indices
-      { GetScalar(), GetScalar() },
-      { GetScalar(), GetScalar() },
-      { GetScalar(), GetScalar() },
-      { GetScalar(), GetScalar() },
-    };
-
-    SkRRect rrect;
-    rrect.setRectRadii(rect, radii);
-    return rrect;
-  }
+  std::string DescribeNextOp(const Iterator& it);
+  std::string DescribeOneOp(Iterator& it);
 };
 
 }  // namespace flutter

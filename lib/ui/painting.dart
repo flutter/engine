@@ -5138,7 +5138,8 @@ enum _CanvasOp {
   scale,
   rotate,
   skew,
-  transform,
+  transform2x3,
+  transform3x3,
 
   clipRect,
   clipRectAA,
@@ -5319,7 +5320,7 @@ class _DisplayListCanvas implements Canvas {
     _numDataBytes += 4;
   }
 
-  void _addDouble(double value) {
+  void _addScalar(double value) {
     if (_numDataBytes + 4 > _data.lengthInBytes) {
       _data = _growData(_data);
     }
@@ -5327,7 +5328,7 @@ class _DisplayListCanvas implements Canvas {
     _numDataBytes += 4;
   }
 
-  void _addDouble2(double v1, double v2) {
+  void _addScalar2(double v1, double v2) {
     if (_numDataBytes + 8 > _data.lengthInBytes) {
       _data = _growData(_data);
     }
@@ -5337,7 +5338,19 @@ class _DisplayListCanvas implements Canvas {
     _numDataBytes += 4;
   }
 
-  void _addDouble4(double v1, double v2, double v3, double v4) {
+  void _addScalar3(double v1, double v2, double v3) {
+    if (_numDataBytes + 12 > _data.lengthInBytes) {
+      _data = _growData(_data);
+    }
+    _data.setFloat32(_numDataBytes, v1, _kFakeHostEndian);
+    _numDataBytes += 4;
+    _data.setFloat32(_numDataBytes, v2, _kFakeHostEndian);
+    _numDataBytes += 4;
+    _data.setFloat32(_numDataBytes, v3, _kFakeHostEndian);
+    _numDataBytes += 4;
+  }
+
+  void _addScalar4(double v1, double v2, double v3, double v4) {
     if (_numDataBytes + 16 > _data.lengthInBytes) {
       _data = _growData(_data);
     }
@@ -5352,18 +5365,18 @@ class _DisplayListCanvas implements Canvas {
   }
 
   void _addOffset(Offset offset) {
-    _addDouble2(offset.dx, offset.dy);
+    _addScalar2(offset.dx, offset.dy);
   }
 
   void _addRect(Rect r) {
-    _addDouble4(r.left, r.top, r.right, r.bottom);
+    _addScalar4(r.left, r.top, r.right, r.bottom);
   }
 
   void _addRRect(RRect rrect) {
-    _addDouble4(rrect.left, rrect.top, rrect.right, rrect.bottom);
+    _addScalar4(rrect.left, rrect.top, rrect.right, rrect.bottom);
     // SkRRect Radii order is UL, UR, LR, LL as per SkRRect::Corner indices
-    _addDouble4(rrect.tlRadiusX, rrect.tlRadiusY, rrect.trRadiusX, rrect.trRadiusY);
-    _addDouble4(rrect.brRadiusX, rrect.brRadiusY, rrect.blRadiusX, rrect.blRadiusY);
+    _addScalar4(rrect.tlRadiusX, rrect.tlRadiusY, rrect.trRadiusX, rrect.trRadiusY);
+    _addScalar4(rrect.brRadiusX, rrect.brRadiusY, rrect.blRadiusX, rrect.blRadiusY);
   }
 
   void _addInt32List(Int32List data) {
@@ -5371,10 +5384,6 @@ class _DisplayListCanvas implements Canvas {
   }
 
   void _addFloat32List(Float32List data) {
-    _objData.add(data);
-  }
-
-  void _addFloat64List(Float64List data) {
     _objData.add(data);
   }
 
@@ -5465,28 +5474,28 @@ class _DisplayListCanvas implements Canvas {
   @override
   void translate(double dx, double dy) {
     _addOp(_CanvasOp.translate);
-    _addDouble2(dx, dy);
+    _addScalar2(dx, dy);
     _ctm.translate(dx, dy);
   }
 
   @override
   void scale(double sx, [ double? sy ]) {
     _addOp(_CanvasOp.scale);
-    _addDouble2(sx, sy ?? sx);
+    _addScalar2(sx, sy ?? sx);
     _ctm.scale(sx, sy ?? sx);
   }
 
   @override
   void rotate(double radians) {
     _addOp(_CanvasOp.rotate);
-    _addDouble(radians);
+    _addScalar(radians);
     _ctm.rotate(radians);
   }
 
   @override
   void skew(double sx, double sy) {
     _addOp(_CanvasOp.skew);
-    _addDouble2(sx, sy);
+    _addScalar2(sx, sy);
     _ctm.skew(sx, sy);
   }
 
@@ -5494,8 +5503,16 @@ class _DisplayListCanvas implements Canvas {
   void transform(Float64List matrix4) {
     if (matrix4.length != 16)
       throw ArgumentError('"matrix4" must have 16 entries.');
-    _addOp(_CanvasOp.transform);
-    _addFloat64List(matrix4);
+    if (matrix4[3] == 0.0 && matrix4[7] == 0.0 && matrix4[15] == 1.0) {
+      _addOp(_CanvasOp.transform2x3);
+      _addScalar3(matrix4[0], matrix4[4], matrix4[12]);
+      _addScalar3(matrix4[1], matrix4[5], matrix4[13]);
+    } else {
+      _addOp(_CanvasOp.transform3x3);
+      _addScalar3(matrix4[0], matrix4[4], matrix4[12]);
+      _addScalar3(matrix4[1], matrix4[5], matrix4[13]);
+      _addScalar3(matrix4[3], matrix4[7], matrix4[15]);
+    }
     _ctm.mul(matrix4[0], matrix4[4], matrix4[12],
              matrix4[1], matrix4[5], matrix4[13]);
   }
@@ -5622,7 +5639,7 @@ class _DisplayListCanvas implements Canvas {
       if (_curStrokeWidth != paint.strokeWidth) {
         _curStrokeWidth = paint.strokeWidth;
         _addOp(_CanvasOp.setStrokeWidth);
-        _addDouble(_curStrokeWidth);
+        _addScalar(_curStrokeWidth);
       }
       if (_curStrokeCap != paint.strokeCap) {
         _curStrokeCap = paint.strokeCap;
@@ -5635,7 +5652,7 @@ class _DisplayListCanvas implements Canvas {
       if (_curMiterLimit != paint.strokeMiterLimit) {
         _curMiterLimit = paint.strokeMiterLimit;
         _addOp(_CanvasOp.setMiterLimit);
-        _addDouble(_curMiterLimit);
+        _addScalar(_curMiterLimit);
       }
     }
     if ((dataNeeded & _filterQualityNeeded) != 0 && _curFilterQuality != paint.filterQuality) {
@@ -5678,7 +5695,7 @@ class _DisplayListCanvas implements Canvas {
         _addOp(_CanvasOp.clearMaskFilter);
       } else {
         _addOp(_maskFilterOps[filter._style.index]);
-        _addDouble(filter._sigma);
+        _addScalar(filter._sigma);
       }
       _curMaskFilter = paint.maskFilter;
     }
@@ -5745,7 +5762,7 @@ class _DisplayListCanvas implements Canvas {
     _updatePaintData(paint, _drawMask);
     _addOp(_CanvasOp.drawCircle);
     _addOffset(center);
-    _addDouble(radius);
+    _addScalar(radius);
     _addBounds(Rect.fromCenter(center: center, width: radius, height: radius));
   }
 
@@ -5778,7 +5795,7 @@ class _DisplayListCanvas implements Canvas {
     _updatePaintData(paint, _drawMask);
     _addOp(useCenter ? _CanvasOp.drawArcCenter : _CanvasOp.drawArc);
     _addRect(rect);
-    _addDouble2(startAngle, sweepAngle);
+    _addScalar2(startAngle, sweepAngle);
     _addBounds(rect);
   }
 
@@ -5824,8 +5841,8 @@ class _DisplayListCanvas implements Canvas {
   void drawImage(Image image, Offset offset, Paint paint) {
     _updatePaintData(paint, _imageMask);
     _addOp(_CanvasOp.drawImage);
-    _addOffset(offset);
     _addImageData(image);
+    _addOffset(offset);
     _addBounds(Rect.fromLTWH(offset.dx, offset.dy, image.width.toDouble(), image.height.toDouble()), false);
   }
 
@@ -5833,9 +5850,9 @@ class _DisplayListCanvas implements Canvas {
   void drawImageRect(Image image, Rect src, Rect dst, Paint paint) {
     _updatePaintData(paint, _imageMask);
     _addOp(_CanvasOp.drawImageRect);
+    _addImageData(image);
     _addRect(src);
     _addRect(dst);
-    _addImageData(image);
     _addBounds(dst, false);
   }
 
@@ -5843,9 +5860,9 @@ class _DisplayListCanvas implements Canvas {
   void drawImageNine(Image image, Rect center, Rect dst, Paint paint) {
     _updatePaintData(paint, _imageMask);
     _addOp(_CanvasOp.drawImageNine);
+    _addImageData(image);
     _addRect(center);
     _addRect(dst);
-    _addImageData(image);
     _addBounds(dst, false);
   }
 
@@ -5893,13 +5910,13 @@ class _DisplayListCanvas implements Canvas {
     _updatePaintData(paint, _imageMask);
     _updateBlendMode(blendMode ?? BlendMode.src);
     _addOp(op);
+    _addImageData(atlas);
     _addFloat32List(rstTransformBuffer);
     _addFloat32List(rectBuffer);
     if (colorBuffer != null)
       _addInt32List(colorBuffer);
     if (cullRect != null)
       _addRect(cullRect);
-    _addImageData(atlas);
     print('adding conservative bounds for drawAtlas');
     _addBounds(_cullRect, false);
   }
@@ -5927,13 +5944,13 @@ class _DisplayListCanvas implements Canvas {
     _updatePaintData(paint, _imageMask);
     _updateBlendMode(blendMode ?? BlendMode.src);
     _addOp(op);
+    _addImageData(atlas);
     _addFloat32List(rstTransforms);
     _addFloat32List(rects);
     if (colors != null)
       _addInt32List(colors);
     if (cullRect != null)
       _addRect(cullRect);
-    _addImageData(atlas);
     print('adding conservative bounds for drawAtlas');
     _addBounds(_cullRect, false);
   }
@@ -5941,8 +5958,8 @@ class _DisplayListCanvas implements Canvas {
   @override
   void drawParagraph(Paragraph paragraph, Offset offset) {
     _addOp(_CanvasOp.drawParagraph);
-    _addOffset(offset);
     _addParagraph(paragraph);
+    _addOffset(offset);
   }
 
   @override
@@ -5957,8 +5974,8 @@ class _DisplayListCanvas implements Canvas {
   void drawShadow(Path path, Color color, double elevation, bool transparentOccluder) {
     _updateColor(color);
     _addOp(transparentOccluder ? _CanvasOp.drawShadowOccluded : _CanvasOp.drawShadow);
-    _addDouble(elevation);
     _addPathData(path);
+    _addScalar(elevation);
     print('adding conservative bounds for drawShadow');
     _addBounds(_cullRect, false);
   }
