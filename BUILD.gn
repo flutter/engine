@@ -28,6 +28,10 @@ config("config") {
   if (is_fuchsia && flutter_enable_legacy_fuchsia_embedder) {
     defines = [ "LEGACY_FUCHSIA_EMBEDDER" ]
   }
+
+  if (is_debug) {
+    defines = [ "FLUTTER_ENABLE_DIFF_CONTEXT" ]
+  }
 }
 
 config("export_dynamic_symbols") {
@@ -108,8 +112,8 @@ group("flutter") {
       "//flutter/third_party/txt:txt_unittests",
     ]
 
-    # The accessibility library only supports Mac for now.
-    if (is_mac) {
+    # The accessibility library only supports Mac and Windows at the moment.
+    if (is_mac || is_win) {
       public_deps +=
           [ "//flutter/third_party/accessibility:accessibility_unittests" ]
     }

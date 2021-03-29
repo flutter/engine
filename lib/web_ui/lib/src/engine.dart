@@ -17,8 +17,8 @@ import 'dart:js_util' as js_util;
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:js/js.dart'; // ignore: import_of_legacy_library_into_null_safe
-import 'package:meta/meta.dart'; // ignore: import_of_legacy_library_into_null_safe
+import 'package:js/js.dart';
+import 'package:meta/meta.dart';
 
 import '../ui.dart' as ui;
 
@@ -91,6 +91,7 @@ part 'engine/html/recording_canvas.dart';
 part 'engine/html/render_vertices.dart';
 part 'engine/html/scene.dart';
 part 'engine/html/scene_builder.dart';
+part 'engine/html/shader_mask.dart';
 part 'engine/html/shaders/normalized_gradient.dart';
 part 'engine/html/shaders/shader.dart';
 part 'engine/html/shaders/shader_builder.dart';

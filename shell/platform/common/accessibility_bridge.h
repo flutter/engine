@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_COMMON_CPP_ACCESSIBILITY_BRIDGE_H_
-#define FLUTTER_SHELL_PLATFORM_COMMON_CPP_ACCESSIBILITY_BRIDGE_H_
+#ifndef FLUTTER_SHELL_PLATFORM_COMMON_ACCESSIBILITY_BRIDGE_H_
+#define FLUTTER_SHELL_PLATFORM_COMMON_ACCESSIBILITY_BRIDGE_H_
 
 #include <unordered_map>
 
@@ -86,9 +86,10 @@ class AccessibilityBridge
     /// @param[in]  action              The generated flutter semantics action.
     /// @param[in]  data                Additional data associated with the
     ///                                 action.
-    virtual void DispatchAccessibilityAction(AccessibilityNodeId target,
-                                             FlutterSemanticsAction action,
-                                             std::vector<uint8_t> data) = 0;
+    virtual void DispatchAccessibilityAction(
+        AccessibilityNodeId target,
+        FlutterSemanticsAction action,
+        const std::vector<uint8_t>& data) = 0;
 
     //---------------------------------------------------------------------------
     /// @brief      Creates a platform specific FlutterPlatformNodeDelegate.
@@ -153,6 +154,14 @@ class AccessibilityBridge
   ///             data contains information such as the id of the node that
   ///             has the keyboard focus or the text selection range.
   const ui::AXTreeData& GetAXTreeData() const;
+
+  //------------------------------------------------------------------------------
+  /// @brief      Gets all pending accessibility events generated during
+  ///             semantics updates. This is useful when deciding how to handle
+  ///             events in AccessibilityBridgeDelegate::OnAccessibilityEvent in
+  ///             case one may decide to handle an event differently based on
+  ///             all pending events.
+  const std::vector<ui::AXEventGenerator::TargetedEvent> GetPendingEvents();
 
  private:
   // See FlutterSemanticsNode in embedder.h
@@ -280,4 +289,4 @@ class AccessibilityBridge
 
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_PLATFORM_COMMON_CPP_ACCESSIBILITY_BRIDGE_H_
+#endif  // FLUTTER_SHELL_PLATFORM_COMMON_ACCESSIBILITY_BRIDGE_H_

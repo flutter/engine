@@ -378,6 +378,73 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 }
 @end
 
+#pragma mark - FlutterTokenizer
+
+@interface FlutterTokenizer ()
+
+@property(nonatomic, assign) FlutterTextInputView* textInputView;
+
+@end
+
+@implementation FlutterTokenizer
+
+- (instancetype)initWithTextInput:(UIResponder<UITextInput>*)textInput {
+  NSAssert([textInput isKindOfClass:[FlutterTextInputView class]],
+           @"The FlutterTokenizer can only be used in a FlutterTextInputView");
+  self = [super initWithTextInput:textInput];
+  if (self) {
+    _textInputView = (FlutterTextInputView*)textInput;
+  }
+  return self;
+}
+
+- (UITextRange*)rangeEnclosingPosition:(UITextPosition*)position
+                       withGranularity:(UITextGranularity)granularity
+                           inDirection:(UITextDirection)direction {
+  UITextRange* result;
+  switch (granularity) {
+    case UITextGranularityLine:
+      // The default UITextInputStringTokenizer does not handle line granularity
+      // correctly. We need to implement our own line tokenizer.
+      result = [self lineEnclosingPosition:position];
+      break;
+    case UITextGranularityCharacter:
+    case UITextGranularityWord:
+    case UITextGranularitySentence:
+    case UITextGranularityParagraph:
+    case UITextGranularityDocument:
+      // The UITextInputStringTokenizer can handle all these cases correctly.
+      result = [super rangeEnclosingPosition:position
+                             withGranularity:granularity
+                                 inDirection:direction];
+      break;
+  }
+  return result;
+}
+
+- (UITextRange*)lineEnclosingPosition:(UITextPosition*)position {
+  // Gets the first line break position after the input position.
+  NSString* textAfter = [_textInputView
+      textInRange:[_textInputView textRangeFromPosition:position
+                                             toPosition:[_textInputView endOfDocument]]];
+  NSArray<NSString*>* linesAfter = [textAfter componentsSeparatedByString:@"\n"];
+  NSInteger offSetToLineBreak = [linesAfter firstObject].length;
+  UITextPosition* lineBreakAfter = [_textInputView positionFromPosition:position
+                                                                 offset:offSetToLineBreak];
+  // Gets the first line break position before the input position.
+  NSString* textBefore = [_textInputView
+      textInRange:[_textInputView textRangeFromPosition:[_textInputView beginningOfDocument]
+                                             toPosition:position]];
+  NSArray<NSString*>* linesBefore = [textBefore componentsSeparatedByString:@"\n"];
+  NSInteger offSetFromLineBreak = [linesBefore lastObject].length;
+  UITextPosition* lineBreakBefore = [_textInputView positionFromPosition:position
+                                                                  offset:-offSetFromLineBreak];
+
+  return [_textInputView textRangeFromPosition:lineBreakBefore toPosition:lineBreakAfter];
+}
+
+@end
+
 // A FlutterTextInputView that masquerades as a UITextField, and forwards
 // selectors it can't respond to to a shared UITextField instance.
 //
@@ -629,7 +696,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 
 - (id<UITextInputTokenizer>)tokenizer {
   if (_tokenizer == nil) {
-    _tokenizer = [[UITextInputStringTokenizer alloc] initWithTextInput:self];
+    _tokenizer = [[FlutterTokenizer alloc] initWithTextInput:self];
   }
   return _tokenizer;
 }
@@ -673,7 +740,11 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
            @"Expected a FlutterTextRange for range (got %@).", [range class]);
   NSRange textRange = ((FlutterTextRange*)range).range;
   NSAssert(textRange.location != NSNotFound, @"Expected a valid text range.");
-  return [self.text substringWithRange:textRange];
+  // Sanitize the range to prevent going out of bounds.
+  int location = MIN(textRange.location, self.text.length);
+  int length = MIN(self.text.length - location, textRange.length);
+  NSRange safeRange = NSMakeRange(location, length);
+  return [self.text substringWithRange:safeRange];
 }
 
 // Replace the text within the specified range with the given text,
@@ -1169,7 +1240,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 // The current password-autofillable input fields that have yet to be saved.
 @property(nonatomic, readonly)
     NSMutableDictionary<NSString*, FlutterTextInputView*>* autofillContext;
-@property(nonatomic, assign) FlutterTextInputView* activeView;
+@property(nonatomic, strong) FlutterTextInputView* activeView;
 @property(nonatomic, strong) FlutterTextInputViewAccessibilityHider* inputHider;
 @end
 
@@ -1186,7 +1257,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     _reusableInputView = [[FlutterTextInputView alloc] init];
     _reusableInputView.secureTextEntry = NO;
     _autofillContext = [[NSMutableDictionary alloc] init];
-    _activeView = _reusableInputView;
+    _activeView = [_reusableInputView retain];
     _inputHider = [[FlutterTextInputViewAccessibilityHider alloc] init];
   }
 
@@ -1196,6 +1267,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 - (void)dealloc {
   [self hideTextInput];
   [_reusableInputView release];
+  [_activeView release];
   [_inputHider release];
   [_autofillContext release];
   [super dealloc];
@@ -1319,19 +1391,19 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   [self changeInputViewsAutofillVisibility:NO];
   switch (autofillTypeOf(configuration)) {
     case FlutterAutofillTypeNone:
-      _activeView = [self updateAndShowReusableInputView:configuration];
+      self.activeView = [self updateAndShowReusableInputView:configuration];
       break;
     case FlutterAutofillTypeRegular:
       // If the group does not involve password autofill, only install the
       // input view that's being focused.
-      _activeView = [self updateAndShowAutofillViews:nil
-                                        focusedField:configuration
-                                   isPasswordRelated:NO];
+      self.activeView = [self updateAndShowAutofillViews:nil
+                                            focusedField:configuration
+                                       isPasswordRelated:NO];
       break;
     case FlutterAutofillTypePassword:
-      _activeView = [self updateAndShowAutofillViews:configuration[kAssociatedAutofillFields]
-                                        focusedField:configuration
-                                   isPasswordRelated:YES];
+      self.activeView = [self updateAndShowAutofillViews:configuration[kAssociatedAutofillFields]
+                                            focusedField:configuration
+                                       isPasswordRelated:YES];
       break;
   }
 

@@ -12,7 +12,7 @@ import 'package:path/path.dart' as path;
 
 import 'package:test/test.dart';
 
-void main(List<String> args) async {
+Future<void> main(List<String> args) async {
   if (args.length != 2) {
     stderr.writeln('The first argument must be the path to the forntend server dill.');
     stderr.writeln('The second argument must be the path to the flutter_patched_sdk');
@@ -93,7 +93,7 @@ void main(List<String> args) async {
     when(procedure.name).thenReturn(Name('toString'));
     when(procedure.annotations).thenReturn(const <Expression>[]);
     when(procedure.enclosingLibrary).thenReturn(library);
-    when(procedure.enclosingClass).thenReturn(Class());
+    when(procedure.enclosingClass).thenReturn(Class(name: 'foo'));
     when(procedure.isAbstract).thenReturn(true);
     when(procedure.isStatic).thenReturn(false);
     when(function.body).thenReturn(statement);
@@ -112,7 +112,7 @@ void main(List<String> args) async {
     when(procedure.name).thenReturn(Name('toString'));
     when(procedure.annotations).thenReturn(const <Expression>[]);
     when(procedure.enclosingLibrary).thenReturn(library);
-    when(procedure.enclosingClass).thenReturn(Class());
+    when(procedure.enclosingClass).thenReturn(Class(name: 'foo'));
     when(procedure.isAbstract).thenReturn(false);
     when(procedure.isStatic).thenReturn(true);
     when(function.body).thenReturn(statement);
@@ -131,7 +131,7 @@ void main(List<String> args) async {
     when(procedure.name).thenReturn(Name('toString'));
     when(procedure.annotations).thenReturn(const <Expression>[]);
     when(procedure.enclosingLibrary).thenReturn(library);
-    when(procedure.enclosingClass).thenReturn(Class()..isEnum = true);
+    when(procedure.enclosingClass).thenReturn(Class(name: 'foo')..isEnum = true);
     when(procedure.isAbstract).thenReturn(false);
     when(procedure.isStatic).thenReturn(false);
     when(function.body).thenReturn(statement);
@@ -150,7 +150,7 @@ void main(List<String> args) async {
     when(procedure.name).thenReturn(Name('toString'));
     when(procedure.annotations).thenReturn(const <Expression>[]);
     when(procedure.enclosingLibrary).thenReturn(library);
-    when(procedure.enclosingClass).thenReturn(Class());
+    when(procedure.enclosingClass).thenReturn(Class(name: 'foo'));
     when(procedure.isAbstract).thenReturn(false);
     when(procedure.isStatic).thenReturn(false);
     when(function.body).thenReturn(statement);
@@ -181,7 +181,7 @@ void main(List<String> args) async {
     ]);
 
     when(procedure.enclosingLibrary).thenReturn(library);
-    when(procedure.enclosingClass).thenReturn(Class());
+    when(procedure.enclosingClass).thenReturn(Class(name: 'foo'));
     when(procedure.isAbstract).thenReturn(false);
     when(procedure.isStatic).thenReturn(false);
     when(function.body).thenReturn(statement);
@@ -209,7 +209,7 @@ void main(List<String> args) async {
     when(procedure.name).thenReturn(name);
     when(procedure.annotations).thenReturn(const <Expression>[]);
     when(procedure.enclosingLibrary).thenReturn(library);
-    when(procedure.enclosingClass).thenReturn(Class());
+    when(procedure.enclosingClass).thenReturn(Class(name: 'foo'));
     when(procedure.isAbstract).thenReturn(false);
     when(procedure.isStatic).thenReturn(false);
     when(function.body).thenReturn(statement);
@@ -230,7 +230,7 @@ void main(List<String> args) async {
     when(procedure.name).thenReturn(name);
     when(procedure.annotations).thenReturn(const <Expression>[]);
     when(procedure.enclosingLibrary).thenReturn(library);
-    when(procedure.enclosingClass).thenReturn(Class());
+    when(procedure.enclosingClass).thenReturn(Class(name: 'foo'));
     when(procedure.isAbstract).thenReturn(false);
     when(procedure.isStatic).thenReturn(false);
     when(function.body).thenReturn(statement);

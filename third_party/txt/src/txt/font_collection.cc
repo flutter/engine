@@ -295,6 +295,10 @@ std::shared_ptr<minikin::FontFamily> FontCollection::CreateMinikinFontFamily(
     }
   }
 
+  if (skia_typefaces.empty()) {
+    return nullptr;
+  }
+
   SortSkTypefaces(skia_typefaces);
 
   std::vector<minikin::Font> minikin_fonts;
@@ -393,8 +397,12 @@ FontCollection::CreateSktFontCollection() {
   if (!skt_collection_) {
     skt_collection_ = sk_make_sp<skia::textlayout::FontCollection>();
 
+    std::vector<SkString> default_font_families;
+    for (const std::string& family : GetDefaultFontFamilies()) {
+      default_font_families.emplace_back(family);
+    }
     skt_collection_->setDefaultFontManager(default_font_manager_,
-                                           GetDefaultFontFamilies()[0].c_str());
+                                           default_font_families);
     skt_collection_->setAssetFontManager(asset_font_manager_);
     skt_collection_->setDynamicFontManager(dynamic_font_manager_);
     skt_collection_->setTestFontManager(test_font_manager_);

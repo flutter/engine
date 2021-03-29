@@ -8,10 +8,15 @@
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterCodecs.h"
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterChannelKeyResponder.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEmbedderKeyResponder.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyPrimaryResponder.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyboardManager.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterOpenGLRenderer.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderingBackend.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputPlugin.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 #import "flutter/shell/platform/embedder/embedder.h"
@@ -20,6 +25,11 @@ namespace {
 
 /// Clipboard plain text format.
 constexpr char kTextPlainFormat[] = "text/plain";
+
+/// The private notification for voice over.
+static NSString* const EnhancedUserInterfaceNotification =
+    @"NSApplicationDidChangeAccessibilityEnhancedUserInterfaceNotification";
+static NSString* const EnhancedUserInterfaceKey = @"AXEnhancedUserInterface";
 
 /**
  * State tracking for mouse events, to adapt between the events coming from the system and the
@@ -63,17 +73,6 @@ struct MouseState {
   }
 };
 
-/**
- * State tracking for keyboard events, to adapt between the events coming from the system and the
- * events that the embedding API expects.
- */
-struct KeyboardState {
-  /**
-   * The last known pressed modifier flag keys.
-   */
-  uint64_t previously_pressed_flags = 0;
-};
-
 }  // namespace
 
 #pragma mark - Private interface declaration.
@@ -82,16 +81,6 @@ struct KeyboardState {
  * Private interface declaration for FlutterViewController.
  */
 @interface FlutterViewController () <FlutterViewReshapeListener>
-
-/**
- * A list of additional responders to keyboard events.
- *
- * Keyboard events received by FlutterViewController are first dispatched to
- * each additional responder in order. If any of them handle the event (by
- * returning true), the event is not dispatched to later additional responders
- * or to the nextResponder.
- */
-@property(nonatomic) NSMutableOrderedSet<FlutterIntermediateKeyResponder*>* additionalKeyResponders;
 
 /**
  * The tracking area used to generate hover events, if enabled.
@@ -104,14 +93,14 @@ struct KeyboardState {
 @property(nonatomic) MouseState mouseState;
 
 /**
- * The current state of the keyboard and pressed keys.
- */
-@property(nonatomic) KeyboardState keyboardState;
-
-/**
  * Event monitor for keyUp events.
  */
 @property(nonatomic) id keyUpMonitor;
+
+/**
+ * TODO
+ */
+@property(nonatomic) FlutterKeyboardManager* keyboardManager;
 
 /**
  * Starts running |engine|, including any initial setup.
@@ -142,19 +131,6 @@ struct KeyboardState {
 - (void)dispatchMouseEvent:(nonnull NSEvent*)event phase:(FlutterPointerPhase)phase;
 
 /**
- * Sends |event| to all responders in additionalKeyResponders and then to the
- * nextResponder if none of the additional responders handled the event.
- */
-- (void)propagateKeyEvent:(NSEvent*)event ofType:(NSString*)type;
-
-/**
- * Converts |event| to a key event channel message, and sends it to the engine to
- * hand to the framework. Once the framework responds, if the event was not handled,
- * propagates the event to any additional key responders.
- */
-- (void)dispatchKeyEvent:(NSEvent*)event ofType:(NSString*)type;
-
-/**
  * Initializes the KVO for user settings and passes the initial user settings to the engine.
  */
 - (void)sendInitialSettings;
@@ -163,6 +139,11 @@ struct KeyboardState {
  * Responds to updates in the user settings and passes this data to the engine.
  */
 - (void)onSettingsChanged:(NSNotification*)notification;
+
+/**
+ * Responds to updates in accessibility.
+ */
+- (void)onAccessibilityStatusChanged:(NSNotification*)notification;
 
 /**
  * Handles messages received from the Flutter engine on the _*Channel channels.
@@ -200,14 +181,6 @@ struct KeyboardState {
   // The project to run in this controller's engine.
   FlutterDartProject* _project;
 
-  // The plugin used to handle text input. This is not an FlutterPlugin, so must be owned
-  // separately.
-  FlutterTextInputPlugin* _textInputPlugin;
-
-  // A message channel for passing key events to the Flutter engine. This should be replaced with
-  // an embedding API; see Issue #47.
-  FlutterBasicMessageChannel* _keyEventChannel;
-
   // A message channel for sending user settings to the flutter engine.
   FlutterBasicMessageChannel* _settingsChannel;
 
@@ -226,8 +199,14 @@ static void CommonInit(FlutterViewController* controller) {
                                                       project:controller->_project
                                        allowHeadlessExecution:NO];
   }
-  controller->_additionalKeyResponders = [[NSMutableOrderedSet alloc] init];
   controller->_mouseTrackingMode = FlutterMouseTrackingModeInKeyWindow;
+
+  NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
+  // macOS fires this private message when voiceover turns on or off.
+  [center addObserver:controller
+             selector:@selector(onAccessibilityStatusChanged:)
+                 name:EnhancedUserInterfaceNotification
+               object:nil];
 }
 
 - (instancetype)initWithCoder:(NSCoder*)coder {
@@ -278,11 +257,7 @@ static void CommonInit(FlutterViewController* controller) {
 
 - (void)loadView {
   FlutterView* flutterView;
-  BOOL enableMetalRendering = NO;
-#ifdef SHELL_ENABLE_METAL
-  enableMetalRendering = YES;
-#endif
-  if (enableMetalRendering) {
+  if ([FlutterRenderingBackend renderUsingMetal]) {
     FlutterMetalRenderer* metalRenderer = reinterpret_cast<FlutterMetalRenderer*>(_engine.renderer);
     id<MTLDevice> device = metalRenderer.device;
     id<MTLCommandQueue> commandQueue = metalRenderer.commandQueue;
@@ -343,14 +318,6 @@ static void CommonInit(FlutterViewController* controller) {
 
 - (FlutterView*)flutterView {
   return static_cast<FlutterView*>(self.view);
-}
-
-- (void)addKeyResponder:(FlutterIntermediateKeyResponder*)responder {
-  [self.additionalKeyResponders addObject:responder];
-}
-
-- (void)removeKeyResponder:(FlutterIntermediateKeyResponder*)responder {
-  [self.additionalKeyResponders removeObject:responder];
 }
 
 #pragma mark - Private methods
@@ -421,12 +388,26 @@ static void CommonInit(FlutterViewController* controller) {
 }
 
 - (void)addInternalPlugins {
+  __weak FlutterViewController* weakSelf = self;
   [FlutterMouseCursorPlugin registerWithRegistrar:[self registrarForPlugin:@"mousecursor"]];
-  _textInputPlugin = [[FlutterTextInputPlugin alloc] initWithViewController:self];
-  _keyEventChannel =
-      [FlutterBasicMessageChannel messageChannelWithName:@"flutter/keyevent"
-                                         binaryMessenger:_engine.binaryMessenger
-                                                   codec:[FlutterJSONMessageCodec sharedInstance]];
+  _keyboardManager = [[FlutterKeyboardManager alloc] initWithOwner:weakSelf];
+  [_keyboardManager addPrimaryResponder:[[FlutterEmbedderKeyResponder alloc]
+                                            initWithSendEvent:^(const FlutterKeyEvent& event,
+                                                                FlutterKeyEventCallback callback,
+                                                                void* userData) {
+                                              [weakSelf.engine sendKeyEvent:event
+                                                                   callback:callback
+                                                                   userData:userData];
+                                            }]];
+  [_keyboardManager
+      addPrimaryResponder:[[FlutterChannelKeyResponder alloc]
+                              initWithChannel:[FlutterBasicMessageChannel
+                                                  messageChannelWithName:@"flutter/keyevent"
+                                                         binaryMessenger:_engine.binaryMessenger
+                                                                   codec:[FlutterJSONMessageCodec
+                                                                             sharedInstance]]]];
+  [_keyboardManager
+      addSecondaryResponder:[[FlutterTextInputPlugin alloc] initWithViewController:self]];
   _settingsChannel =
       [FlutterBasicMessageChannel messageChannelWithName:@"flutter/settings"
                                          binaryMessenger:_engine.binaryMessenger
@@ -435,7 +416,6 @@ static void CommonInit(FlutterViewController* controller) {
       [FlutterMethodChannel methodChannelWithName:@"flutter/platform"
                                   binaryMessenger:_engine.binaryMessenger
                                             codec:[FlutterJSONMethodCodec sharedInstance]];
-  __weak FlutterViewController* weakSelf = self;
   [_platformChannel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
     [weakSelf handleMethodCall:call result:result];
   }];
@@ -518,64 +498,11 @@ static void CommonInit(FlutterViewController* controller) {
   }
 }
 
-- (void)propagateKeyEvent:(NSEvent*)event ofType:(NSString*)type {
-  if ([type isEqual:@"keydown"]) {
-    for (FlutterIntermediateKeyResponder* responder in self.additionalKeyResponders) {
-      if ([responder handleKeyDown:event]) {
-        return;
-      }
-    }
-    if ([self.nextResponder respondsToSelector:@selector(keyDown:)] &&
-        event.type == NSEventTypeKeyDown) {
-      [self.nextResponder keyDown:event];
-    }
-  } else if ([type isEqual:@"keyup"]) {
-    for (FlutterIntermediateKeyResponder* responder in self.additionalKeyResponders) {
-      if ([responder handleKeyUp:event]) {
-        return;
-      }
-    }
-    if ([self.nextResponder respondsToSelector:@selector(keyUp:)] &&
-        event.type == NSEventTypeKeyUp) {
-      [self.nextResponder keyUp:event];
-    }
-  }
-  if ([self.nextResponder respondsToSelector:@selector(flagsChanged:)] &&
-      event.type == NSEventTypeFlagsChanged) {
-    [self.nextResponder flagsChanged:event];
-  }
-}
-
-- (void)dispatchKeyEvent:(NSEvent*)event ofType:(NSString*)type {
-  // Be sure to add a handler in propagateKeyEvent if you allow more event
-  // types here.
-  if (event.type != NSEventTypeKeyDown && event.type != NSEventTypeKeyUp &&
-      event.type != NSEventTypeFlagsChanged) {
+- (void)onAccessibilityStatusChanged:(NSNotification*)notification {
+  if (!_engine) {
     return;
   }
-  NSMutableDictionary* keyMessage = [@{
-    @"keymap" : @"macos",
-    @"type" : type,
-    @"keyCode" : @(event.keyCode),
-    @"modifiers" : @(event.modifierFlags),
-  } mutableCopy];
-  // Calling these methods on any other type of event
-  // (e.g NSEventTypeFlagsChanged) will raise an exception.
-  if (event.type == NSEventTypeKeyDown || event.type == NSEventTypeKeyUp) {
-    keyMessage[@"characters"] = event.characters;
-    keyMessage[@"charactersIgnoringModifiers"] = event.charactersIgnoringModifiers;
-  }
-  __weak __typeof__(self) weakSelf = self;
-  FlutterReply replyHandler = ^(id _Nullable reply) {
-    if (!reply) {
-      return;
-    }
-    // Only re-dispatch the event to other responders if the framework didn't handle it.
-    if (![[reply valueForKey:@"handled"] boolValue]) {
-      [weakSelf propagateKeyEvent:event ofType:type];
-    }
-  };
-  [_keyEventChannel sendMessage:keyMessage reply:replyHandler];
+  _engine.semanticsEnabled = !!notification.userInfo[EnhancedUserInterfaceKey];
 }
 
 - (void)onSettingsChanged:(NSNotification*)notification {
@@ -673,20 +600,15 @@ static void CommonInit(FlutterViewController* controller) {
 }
 
 - (void)keyDown:(NSEvent*)event {
-  [self dispatchKeyEvent:event ofType:@"keydown"];
+  [_keyboardManager handleEvent:event];
 }
 
 - (void)keyUp:(NSEvent*)event {
-  [self dispatchKeyEvent:event ofType:@"keyup"];
+  [_keyboardManager handleEvent:event];
 }
 
 - (void)flagsChanged:(NSEvent*)event {
-  if (event.modifierFlags < _keyboardState.previously_pressed_flags) {
-    [self keyUp:event];
-  } else {
-    [self keyDown:event];
-  }
-  _keyboardState.previously_pressed_flags = event.modifierFlags;
+  [_keyboardManager handleEvent:event];
 }
 
 - (void)mouseEntered:(NSEvent*)event {

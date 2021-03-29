@@ -12,12 +12,34 @@ ClipRRectLayer::ClipRRectLayer(const SkRRect& clip_rrect, Clip clip_behavior)
   FML_DCHECK(clip_behavior != Clip::none);
 }
 
+#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
+
+void ClipRRectLayer::Diff(DiffContext* context, const Layer* old_layer) {
+  DiffContext::AutoSubtreeRestore subtree(context);
+  auto* prev = static_cast<const ClipRRectLayer*>(old_layer);
+  if (!context->IsSubtreeDirty()) {
+    FML_DCHECK(prev);
+    if (clip_behavior_ != prev->clip_behavior_ ||
+        clip_rrect_ != prev->clip_rrect_) {
+      context->MarkSubtreeDirty(context->GetOldLayerPaintRegion(old_layer));
+    }
+  }
+  if (context->PushCullRect(clip_rrect_.getBounds())) {
+    DiffChildren(context, prev);
+  }
+  context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
+}
+
+#endif  // FLUTTER_ENABLE_DIFF_CONTEXT
+
 void ClipRRectLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "ClipRRectLayer::Preroll");
 
   SkRect previous_cull_rect = context->cull_rect;
   SkRect clip_rrect_bounds = clip_rrect_.getBounds();
-  context->cull_rect.intersect(clip_rrect_bounds);
+  if (!context->cull_rect.intersect(clip_rrect_bounds)) {
+    context->cull_rect.setEmpty();
+  }
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context, UsesSaveLayer());
   context->mutators_stack.PushClipRRect(clip_rrect_);

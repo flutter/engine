@@ -93,7 +93,7 @@ Future<SemanticsActionData> get semanticsAction {
 }
 
 @pragma('vm:entry-point')
-void a11y_main() async { // ignore: non_constant_identifier_names
+void a11y_main() async {
   // Return initial state (semantics disabled).
   notifySemanticsEnabled(PlatformDispatcher.instance.semanticsEnabled);
 
@@ -521,7 +521,7 @@ int _serializeKeyEventType(KeyEventType change) {
 
 // Echo the event data with `_echoKeyEvent`, and returns synthesized as handled.
 @pragma('vm:entry-point')
-void key_data_echo() async { // ignore: non_constant_identifier_names
+void key_data_echo() async {
   PlatformDispatcher.instance.onKeyData = (KeyData data) {
     _echoKeyEvent(
       _serializeKeyEventType(data.type),
@@ -546,6 +546,24 @@ void render_gradient() {
     builder.pushOffset(0.0, 0.0);
 
     builder.addPicture(Offset(0.0, 0.0), CreateGradientBox(size)); // gradient - flutter
+
+    builder.pop();
+
+    PlatformDispatcher.instance.views.first.render(builder.build());
+  };
+  PlatformDispatcher.instance.scheduleFrame();
+}
+
+@pragma('vm:entry-point')
+void render_texture() {
+  PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
+    Size size = Size(800.0, 600.0);
+
+    SceneBuilder builder = SceneBuilder();
+
+    builder.pushOffset(0.0, 0.0);
+
+    builder.addTexture(/*textureId*/1, width: size.width, height: size.height);
 
     builder.pop();
 

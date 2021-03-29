@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_COMMON_CPP_FLUTTER_PLATFORM_NODE_DELEGATE_H_
-#define FLUTTER_SHELL_PLATFORM_COMMON_CPP_FLUTTER_PLATFORM_NODE_DELEGATE_H_
+#ifndef FLUTTER_SHELL_PLATFORM_COMMON_FLUTTER_PLATFORM_NODE_DELEGATE_H_
+#define FLUTTER_SHELL_PLATFORM_COMMON_FLUTTER_PLATFORM_NODE_DELEGATE_H_
 
 #include "flutter/shell/platform/embedder/embedder.h"
 
@@ -37,7 +37,7 @@ class FlutterPlatformNodeDelegate : public ui::AXPlatformNodeDelegateBase {
   /// delegate.
   class OwnerBridge {
    public:
-    ~OwnerBridge() = default;
+    virtual ~OwnerBridge() = default;
 
    protected:
     friend class FlutterPlatformNodeDelegate;
@@ -96,7 +96,7 @@ class FlutterPlatformNodeDelegate : public ui::AXPlatformNodeDelegateBase {
   FlutterPlatformNodeDelegate();
 
   // |ui::AXPlatformNodeDelegateBase|
-  ~FlutterPlatformNodeDelegate() override;
+  virtual ~FlutterPlatformNodeDelegate() override;
 
   // |ui::AXPlatformNodeDelegateBase|
   const ui::AXNodeData& GetData() const override;
@@ -141,4 +141,4 @@ class FlutterPlatformNodeDelegate : public ui::AXPlatformNodeDelegateBase {
 
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_PLATFORM_COMMON_CPP_FLUTTER_PLATFORM_NODE_DELEGATE_H_
+#endif  // FLUTTER_SHELL_PLATFORM_COMMON_FLUTTER_PLATFORM_NODE_DELEGATE_H_

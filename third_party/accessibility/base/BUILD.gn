@@ -23,8 +23,23 @@ source_set("base") {
     "string_utils.h",
   ]
   if (is_win) {
-    # TODO: codecvt_utf8_utf16 is deprecated in C++17
-    defines = [ "_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS" ]
+    sources += [
+      "win/atl.h",
+      "win/atl_module.h",
+      "win/enum_variant.cc",
+      "win/enum_variant.h",
+      "win/scoped_bstr.cc",
+      "win/scoped_bstr.h",
+      "win/scoped_safearray.h",
+      "win/scoped_variant.cc",
+      "win/scoped_variant.h",
+      "win/string_conversion.cc",
+      "win/string_conversion.h",
+      "win/variant_util.h",
+      "win/variant_vector.cc",
+      "win/variant_vector.h",
+    ]
+    libs = [ "propsys.lib" ]
   }
   if (is_mac) {
     sources += [
