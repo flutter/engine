@@ -37,7 +37,6 @@ import io.flutter.embedding.engine.systemchannels.SystemChannel;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 import io.flutter.plugin.localization.LocalizationPlugin;
 import io.flutter.plugin.platform.PlatformViewsController;
-import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.Set;
 

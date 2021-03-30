@@ -82,7 +82,8 @@ public class FlutterEngineTest {
     assertEquals(flutterEngine, registeredEngines.get(0));
   }
 
-  // Helps show the root cause of MissingPluginException type errors like https://github.com/flutter/flutter/issues/78625.
+  // Helps show the root cause of MissingPluginException type errors like
+  // https://github.com/flutter/flutter/issues/78625.
   @Test
   public void itCatchesAndDisplaysRegistrationExceptions() {
     assertTrue(GeneratedPluginRegistrant.getRegisteredEngines().isEmpty());
@@ -99,8 +100,16 @@ public class FlutterEngineTest {
 
     // Check the logs actually says registration failed, so a subsequent MissingPluginException
     // isn't mysterious.
-    assertTrue(ShadowLog.getLogsForTag("GeneratedPluginsRegister").get(0).msg.contains("Tried to automatically register plugins"));
-    assertTrue(ShadowLog.getLogsForTag("GeneratedPluginsRegister").get(1).msg.contains("I'm a bug in the plugin"));
+    assertTrue(
+        ShadowLog.getLogsForTag("GeneratedPluginsRegister")
+            .get(0)
+            .msg
+            .contains("Tried to automatically register plugins"));
+    assertTrue(
+        ShadowLog.getLogsForTag("GeneratedPluginsRegister")
+            .get(1)
+            .msg
+            .contains("I'm a bug in the plugin"));
 
     GeneratedPluginRegistrant.pluginRegistrationException = null;
   }
@@ -131,8 +140,6 @@ public class FlutterEngineTest {
     List<FlutterEngine> registeredEngines = GeneratedPluginRegistrant.getRegisteredEngines();
     assertTrue(registeredEngines.isEmpty());
   }
-
-
 
   @Test
   public void itNotifiesPlatformViewsControllerWhenDevHotRestart() {
