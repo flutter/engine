@@ -14,6 +14,11 @@ final SkClipOp _clipOpIntersect = canvasKit.ClipOp.Intersect;
 /// This is intentionally not memory-managing the underlying [SkCanvas]. See
 /// the docs on [SkCanvas], which explain the reason.
 class CkCanvas {
+  // Cubic equation coefficients recommended by Mitchell & Netravali
+  // in their paper on cubic interpolation.
+  static const double _kMitchellNetravali_B = 1.0 / 3.0;
+  static const double _kMitchellNetravali_C = 1.0 / 3.0;
+
   final SkCanvas skCanvas;
 
   CkCanvas(this.skCanvas);
@@ -115,8 +120,8 @@ class CkCanvas {
         image.skImage,
         offset.dx,
         offset.dy,
-        1.0 / 3.0,
-        1.0 / 3.0,
+        _kMitchellNetravali_B,
+        _kMitchellNetravali_C,
         paint.skiaObject,
       );
     } else {
@@ -138,8 +143,8 @@ class CkCanvas {
         image.skImage,
         toSkRect(src),
         toSkRect(dst),
-        1.0 / 3.0,
-        1.0 / 3.0,
+        _kMitchellNetravali_B,
+        _kMitchellNetravali_C,
         paint.skiaObject,
       );
     } else {
@@ -968,8 +973,8 @@ class CkDrawImageCommand extends CkPaintCommand {
         image.skImage,
         offset.dx,
         offset.dy,
-        1.0 / 3.0,
-        1.0 / 3.0,
+        CkCanvas._kMitchellNetravali_B,
+        CkCanvas._kMitchellNetravali_C,
         paint.skiaObject,
       );
     } else {
@@ -1007,8 +1012,8 @@ class CkDrawImageRectCommand extends CkPaintCommand {
         image.skImage,
         toSkRect(src),
         toSkRect(dst),
-        1.0 / 3.0,
-        1.0 / 3.0,
+        CkCanvas._kMitchellNetravali_B,
+        CkCanvas._kMitchellNetravali_C,
         paint.skiaObject,
       );
     } else {
