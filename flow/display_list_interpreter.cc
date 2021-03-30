@@ -106,7 +106,7 @@ std::string DisplayListInterpreter::DescribeOneOp(Iterator& it) {
       case image: ss << "[Image]"; break;
       case path: ss << "[Path]"; break;
       case vertices: ss << "[Vertices]"; break;
-      case paragraph: ss << "[Paragraph]"; break;
+      case skpicture: ss << "[SkPicture]"; break;
       case picture: ss << "[Picture]"; break;
       case shader: ss << "[Shader]"; break;
       case color_filter: ss << "[ColorFilter]"; break;
@@ -367,7 +367,7 @@ CANVAS_OP_DEFINE_ATLAS(drawAtlasCulled, false, true)
 CANVAS_OP_DEFINE_ATLAS(drawAtlasColoredCulled, true, true)
 
 CANVAS_OP_DEFINE_OP(drawPicture, it.skipSkRef(); /* TODO(flar) deal with Picture object */)
-CANVAS_OP_DEFINE_OP(drawParagraph, it.skipSkRef(); it.GetPoint(); /* TODO(flar) deal with Paragraph object */)
+CANVAS_OP_DEFINE_OP(drawSkPicture, context.canvas->drawPicture(it.GetSkPicture());)
 CANVAS_OP_DEFINE_OP(drawShadow, it.skipSkRef(); it.GetScalar(); /* TODO(flar) deal with Path object */)
 CANVAS_OP_DEFINE_OP(drawShadowOccluded, it.skipSkRef(); it.GetScalar(); /* TODO(flar) deal with Path object */)
 

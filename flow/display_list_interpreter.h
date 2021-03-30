@@ -12,6 +12,7 @@
 #include "third_party/skia/include/core/SkImageFilter.h"
 #include "third_party/skia/include/core/SkShader.h"
 #include "third_party/skia/include/core/SkCanvas.h"
+#include "third_party/skia/include/core/SkPicture.h"
 #include "third_party/skia/include/core/SkRRect.h"
 #include "third_party/skia/include/core/SkVertices.h"
 
@@ -32,7 +33,7 @@ enum CanvasOpArg {
   image,
   path,
   vertices,
-  paragraph,
+  skpicture,
   picture,
   shader,
   color_filter,
@@ -78,7 +79,7 @@ enum CanvasOpArg {
 #define CANVAS_OP_ARGS_Atlas_Colors         CANVAS_OP_ARGS4(image, scalar_list, scalar_list, uint32_list)
 #define CANVAS_OP_ARGS_Atlas_Rect           CANVAS_OP_ARGS4(image, scalar_list, scalar_list, rect)
 #define CANVAS_OP_ARGS_Atlas_Colors_Rect    CANVAS_OP_ARGS5(image, scalar_list, scalar_list, uint32_list, rect)
-#define CANVAS_OP_ARGS_Paragraph_Point      CANVAS_OP_ARGS2(paragraph, point)
+#define CANVAS_OP_ARGS_SkPicture            CANVAS_OP_ARGS1(skpicture)
 #define CANVAS_OP_ARGS_Picture              CANVAS_OP_ARGS1(picture)
 #define CANVAS_OP_ARGS_Shader               CANVAS_OP_ARGS1(shader)
 #define CANVAS_OP_ARGS_ColorFilter          CANVAS_OP_ARGS1(color_filter)
@@ -173,7 +174,7 @@ enum CanvasOpArg {
   V(drawAtlasCulled,            Atlas_Rect)         \
   V(drawAtlasColoredCulled,     Atlas_Colors_Rect)  \
                                                     \
-  V(drawParagraph,              Paragraph_Point)    \
+  V(drawSkPicture,              SkPicture)          \
   V(drawPicture,                Picture)            \
   V(drawShadow,                 Path_Scalar)        \
   V(drawShadowOccluded,         Path_Scalar)
@@ -190,6 +191,7 @@ class DisplayListRefHolder {
   sk_sp<SkImage> image;
   sk_sp<SkVertices> vertices;
   sk_sp<SkShader> shader;
+  sk_sp<SkPicture> picture;
 };
 
 class DisplayListInterpreter {
@@ -280,7 +282,8 @@ class DisplayListInterpreter {
     const sk_sp<SkImageFilter> GetImageFilter() { return (refs++)->imageFilter; }
     const sk_sp<SkImage> GetImage() { return (refs++)->image; }
     const sk_sp<SkVertices> GetVertices() { return (refs++)->vertices; }
-    const sk_sp<SkShader> GetShader() { return (refs++)-> shader; }
+    const sk_sp<SkShader> GetShader() { return (refs++)->shader; }
+    const sk_sp<SkPicture> GetSkPicture() { return (refs++)->picture; }
 
     std::vector<uint8_t>::iterator ops;
     const std::vector<uint8_t>::iterator ops_end;

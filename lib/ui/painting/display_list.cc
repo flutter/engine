@@ -138,11 +138,12 @@ fml::RefPtr<DisplayList> DisplayList::Create(tonic::Uint8List& ops,
           ref_vector->emplace_back(holder);
           break;
         }
-        case paragraph:
-          // TODO(flar): find a way to bake a shader into the refs vector.
-          ref_vector->emplace_back(empty_holder);
-          obj_index++;
+        case skpicture: {
+          DisplayListRefHolder holder;
+          holder.picture = tonic::DartConverter<Picture*>::FromDart(objects[obj_index++])->picture();
+          ref_vector->emplace_back(holder);
           break;
+        }
         case vertices: {
           DisplayListRefHolder holder;
           holder.vertices = tonic::DartConverter<Vertices*>::FromDart(objects[obj_index++])->vertices();

@@ -5176,7 +5176,7 @@ enum _CanvasOp {
   drawAtlasCulled,
   drawAtlasColoredCulled,
 
-  drawParagraph,
+  drawSkPicture,
   drawPicture,
   drawShadow,
   drawShadowOccluded,
@@ -5422,6 +5422,10 @@ class _DisplayListCanvas implements Canvas {
 
   void _addParagraph(Paragraph paragraph) {
     _objData.add(paragraph);
+  }
+
+  void _addSkPicture(_SkiaPicture picture) {
+    _objData.add(picture);
   }
 
   void _addPicture(Picture picture) {
@@ -5979,17 +5983,29 @@ class _DisplayListCanvas implements Canvas {
 
   @override
   void drawParagraph(Paragraph paragraph, Offset offset) {
-    _addOp(_CanvasOp.drawParagraph);
-    _addParagraph(paragraph);
-    _addOffset(offset);
+    final _SkiaPictureRecorder recorder = _SkiaPictureRecorder();
+    final _SkiaCanvas canvas = _SkiaCanvas(recorder);
+    paragraph._paint(canvas, offset.dx, offset.dy);
+    _drawSkiaPicture(recorder.endRecording() as _SkiaPicture);
+    print('adding conservative bounds for drawParagaph');
+  }
+
+  void _drawSkiaPicture(_SkiaPicture picture) {
+    _addOp(_CanvasOp.drawSkPicture);
+    _addSkPicture(picture);
+    _addBounds(_cullRect, false);
   }
 
   @override
   void drawPicture(Picture picture) {
-    _addOp(_CanvasOp.drawPicture);
-    _addPicture(picture as _DisplayListPicture);
-    print('adding conservative bounds for drawPicture');
-    _addBounds(_cullRect, false);
+    if (picture is _SkiaPicture) {
+      _drawSkiaPicture(picture);
+    } else {
+      _addOp(_CanvasOp.drawPicture);
+      _addPicture(picture as _DisplayListPicture);
+      print('adding conservative bounds for drawPicture');
+      _addBounds(_cullRect, false);
+    }
   }
 
   @override
