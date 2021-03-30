@@ -8,6 +8,9 @@
 #include <sstream>
 
 #include "third_party/skia/include/core/SkColorFilter.h"
+#include "third_party/skia/include/core/SkImage.h"
+#include "third_party/skia/include/core/SkImageFilter.h"
+#include "third_party/skia/include/core/SkShader.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkRRect.h"
 
@@ -179,10 +182,18 @@ enum CanvasOp {
   FOR_EACH_CANVAS_OP(CANVAS_OP_MAKE_ENUM)
 };
 
+class DisplayListRefHolder {
+  public:
+  sk_sp<SkColorFilter> colorFilter;
+  sk_sp<SkImageFilter> imageFilter;
+  sk_sp<SkImage> image;
+};
+
 class DisplayListInterpreter {
  public:
   DisplayListInterpreter(std::shared_ptr<std::vector<uint8_t>> ops,
-                         std::shared_ptr<std::vector<float>> data);
+                         std::shared_ptr<std::vector<float>> data,
+                         std::shared_ptr<std::vector<DisplayListRefHolder>> refs);
 
   void Rasterize(SkCanvas *canvas);
 
@@ -199,6 +210,7 @@ class DisplayListInterpreter {
  private:
   std::shared_ptr<std::vector<uint8_t>> ops_vector_;
   std::shared_ptr<std::vector<float>> data_vector_;
+  std::shared_ptr<std::vector<DisplayListRefHolder>> ref_vector_;
 
   class Iterator {
    public:
@@ -206,13 +218,17 @@ class DisplayListInterpreter {
       : ops(interpreter->ops_vector_->begin()),
         ops_end(interpreter->ops_vector_->end()),
         data(interpreter->data_vector_->begin()),
-        data_end(interpreter->data_vector_->end()) {}
+        data_end(interpreter->data_vector_->end()),
+        refs(interpreter->ref_vector_->begin()),
+        refs_end(interpreter->ref_vector_->end()) {}
 
     Iterator(const Iterator& iterator)
       : ops(iterator.ops),
         ops_end(iterator.ops_end),
         data(iterator.data),
-        data_end(iterator.data_end) {}
+        data_end(iterator.data_end),
+        refs(iterator.refs),
+        refs_end(iterator.refs_end) {}
 
     bool HasOp() { return ops < ops_end; }
     CanvasOp GetOp() { return static_cast<CanvasOp>(*ops++); }
@@ -256,10 +272,17 @@ class DisplayListInterpreter {
       return len;
     }
 
+    void skipSkRef() { refs++; }
+    const sk_sp<SkColorFilter> GetColorFilter() { return (refs++)->colorFilter; }
+    const sk_sp<SkImageFilter> GetImageFilter() { return (refs++)->imageFilter; }
+    const sk_sp<SkImage> GetImage() { return (refs++)->image; }
+
     std::vector<uint8_t>::iterator ops;
     const std::vector<uint8_t>::iterator ops_end;
     std::vector<float>::iterator data;
     const std::vector<float>::iterator data_end;
+    std::vector<DisplayListRefHolder>::iterator refs;
+    const std::vector<DisplayListRefHolder>::iterator refs_end;
   };
 
   struct RasterizeContext {

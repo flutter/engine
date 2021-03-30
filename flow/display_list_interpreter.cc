@@ -25,19 +25,23 @@ const std::vector<uint32_t> DisplayListInterpreter::opArguments = {
 
 DisplayListInterpreter::DisplayListInterpreter(
     std::shared_ptr<std::vector<uint8_t>> ops_vector,
-    std::shared_ptr<std::vector<float>> data_vector)
+    std::shared_ptr<std::vector<float>> data_vector,
+    std::shared_ptr<std::vector<DisplayListRefHolder>> ref_vector)
     : ops_vector_(std::move(ops_vector)),
-      data_vector_(std::move(data_vector)) {}
+      data_vector_(std::move(data_vector)),
+      ref_vector_(ref_vector) {}
 
 void DisplayListInterpreter::Describe() {
   Iterator it(this);
   FML_LOG(ERROR) << "Starting ops: " << (it.ops_end - it.ops)
-                 << ", data: " << (it.data_end - it.data);
+                 << ", data: " << (it.data_end - it.data)
+                 << ", refs: " << (it.refs_end - it.refs);
   while(it.HasOp()) {
     FML_LOG(ERROR) << DescribeOneOp(it);
   }
   FML_LOG(ERROR) << "Remaining ops: " << (it.ops_end - it.ops)
-                 << ", data: " << (it.data_end - it.data);
+                 << ", data: " << (it.data_end - it.data)
+                 << ", refs: " << (it.refs_end - it.refs);
 }
 
 std::string DisplayListInterpreter::DescribeNextOp(const Iterator& it) {
@@ -147,10 +151,16 @@ void DisplayListInterpreter::Rasterize(SkCanvas* canvas) {
       FOR_EACH_CANVAS_OP(CANVAS_OP_DISPATCH_OP)
     }
   }
-  if (it.ops != it.ops_end || it.data != it.data_end || canvas->getSaveCount() != entrySaveCount) {
-    FML_LOG(ERROR) << "Starting ops: " << ops_vector_->size() << ", data: " << data_vector_->size();
+  if (it.ops != it.ops_end ||
+      it.data != it.data_end ||
+      it.refs != it.refs_end ||
+      canvas->getSaveCount() != entrySaveCount) {
+    FML_LOG(ERROR) << "Starting ops: " << ops_vector_->size()
+                   << ", data: " << data_vector_->size()
+                   << ", refs: " << ref_vector_->size();
     FML_LOG(ERROR) << "Remaining ops: " << (it.ops_end - it.ops)
       << ", data: " << (it.data_end - it.data)
+      << ", refs: " << (it.refs_end - it.refs)
       << ", save count delta: " << (canvas->getSaveCount() - entrySaveCount);
   }
 }
@@ -177,7 +187,10 @@ CANVAS_OP_DEFINE_OP(clearColorFilter,
   context.colorFilter = nullptr;
   context.paint.setColorFilter(makeColorFilter(context));
 )
-CANVAS_OP_DEFINE_OP(setColorFilter, /* TODO(flar) deal with Filter objec */)
+CANVAS_OP_DEFINE_OP(setColorFilter,
+  context.colorFilter = it.GetColorFilter();
+  context.paint.setColorFilter(makeColorFilter(context));
+)
 CANVAS_OP_DEFINE_OP(setColor, context.paint.setColor(it.GetColor());)
 CANVAS_OP_DEFINE_OP(setFillStyle, context.paint.setStyle(SkPaint::Style::kFill_Style);)
 CANVAS_OP_DEFINE_OP(setStrokeStyle, context.paint.setStyle(SkPaint::Style::kStroke_Style);)
@@ -199,7 +212,7 @@ CANVAS_JOIN_DEFINE_OP(Round)
 CANVAS_JOIN_DEFINE_OP(Bevel)
 
 CANVAS_OP_DEFINE_OP(clearShader, context.paint.setShader(nullptr);)
-CANVAS_OP_DEFINE_OP(setShader, /* TODO(flar) deal with Shader object */)
+CANVAS_OP_DEFINE_OP(setShader, it.skipSkRef();)
 
 CANVAS_OP_DEFINE_OP(clearMaskFilter, context.paint.setMaskFilter(nullptr);)
 #define CANVAS_MASK_DEFINE_OP(type) CANVAS_OP_DEFINE_OP(setMaskFilter##type, \
@@ -211,7 +224,7 @@ CANVAS_MASK_DEFINE_OP(Solid)
 CANVAS_MASK_DEFINE_OP(Normal)
 
 CANVAS_OP_DEFINE_OP(clearImageFilter, context.paint.setImageFilter(nullptr);)
-CANVAS_OP_DEFINE_OP(setImageFilter, /* TODO(flar) deal with Filter object */)
+CANVAS_OP_DEFINE_OP(setImageFilter, context.paint.setImageFilter(it.GetImageFilter());)
 
 const SkSamplingOptions DisplayListInterpreter::NearestSampling =
   SkSamplingOptions(SkFilterMode::kNearest, SkMipmapMode::kNone);
@@ -248,8 +261,8 @@ CANVAS_OP_DEFINE_OP(clipRectAADiff, context.canvas->clipRect(it.GetRect(), SkCli
 
 CANVAS_OP_DEFINE_OP(clipRRect, context.canvas->clipRRect(it.GetRoundRect());)
 CANVAS_OP_DEFINE_OP(clipRRectAA, context.canvas->clipRRect(it.GetRoundRect(), true);)
-CANVAS_OP_DEFINE_OP(clipPath, /* TODO(flar) deal with Path object */)
-CANVAS_OP_DEFINE_OP(clipPathAA, /* TODO(flar) deal with Path object */)
+CANVAS_OP_DEFINE_OP(clipPath, it.skipSkRef(); /* TODO(flar) deal with Path object */)
+CANVAS_OP_DEFINE_OP(clipPathAA, it.skipSkRef(); /* TODO(flar) deal with Path object */)
 
 CANVAS_OP_DEFINE_OP(translate, context.canvas->translate(it.GetScalar(), it.GetScalar());)
 CANVAS_OP_DEFINE_OP(scale, context.canvas->scale(it.GetScalar(), it.GetScalar());)
@@ -281,45 +294,81 @@ CANVAS_OP_DEFINE_OP(drawCircle, context.canvas->drawCircle(it.GetPoint(), it.Get
 CANVAS_OP_DEFINE_OP(drawArc, context.canvas->drawArc(it.GetRect(), it.GetAngle(), it.GetAngle(), false, context.paint);)
 CANVAS_OP_DEFINE_OP(drawArcCenter, context.canvas->drawArc(it.GetRect(), it.GetAngle(), it.GetAngle(), true, context.paint);)
 CANVAS_OP_DEFINE_OP(drawLine, context.canvas->drawLine(it.GetPoint(), it.GetPoint(), context.paint);)
-CANVAS_OP_DEFINE_OP(drawPath, /* TODO(flar) deal with Path object */)
+CANVAS_OP_DEFINE_OP(drawPath, it.skipSkRef(); /* TODO(flar) deal with Path object */)
 
-#define CANVAS_OP_DEFINE_POINT_OP(mode) \
-CANVAS_OP_DEFINE_OP(draw##mode, \
-  SkScalar *flt_ptr; \
-  uint32_t len = it.GetFloatList(&flt_ptr); \
-  const SkPoint *pt_ptr = reinterpret_cast<const SkPoint*>(flt_ptr); \
-  context.canvas->drawPoints(SkCanvas::PointMode::k##mode##_PointMode, len / 2, pt_ptr, context.paint); \
+#define CANVAS_OP_DEFINE_POINT_OP(mode)                                   \
+CANVAS_OP_DEFINE_OP(draw##mode,                                           \
+  SkScalar *flt_ptr;                                                      \
+  uint32_t len = it.GetFloatList(&flt_ptr);                               \
+  const SkPoint *pt_ptr = reinterpret_cast<const SkPoint*>(flt_ptr);      \
+  context.canvas->drawPoints(SkCanvas::PointMode::k##mode##_PointMode,    \
+                             len / 2, pt_ptr, context.paint);             \
 )
 CANVAS_OP_DEFINE_POINT_OP(Points)
 CANVAS_OP_DEFINE_POINT_OP(Lines)
 CANVAS_OP_DEFINE_POINT_OP(Polygon)
-CANVAS_OP_DEFINE_OP(drawVertices, /* TODO(flar) deal with List of vertices */)
+CANVAS_OP_DEFINE_OP(drawVertices, it.skipSkRef(); /* TODO(flar) deal with List of vertices */)
 
-CANVAS_OP_DEFINE_OP(drawImage, it.GetPoint(); /* TODO(flar) deal with image object */)
-CANVAS_OP_DEFINE_OP(drawImageRect, it.GetRect(); it.GetRect(); /* TODO(flar) deal with image object */)
-CANVAS_OP_DEFINE_OP(drawImageNine, it.GetRect(); it.GetRect(); /* TODO(flar) deal with image object */)
+CANVAS_OP_DEFINE_OP(drawImage,
+  sk_sp<SkImage> image = it.GetImage();
+  SkPoint point = it.GetPoint();
+  context.canvas->drawImage(image, point.fX, point.fY, context.sampling, &context.paint);
+)
+CANVAS_OP_DEFINE_OP(drawImageRect,
+  sk_sp<SkImage> image = it.GetImage();
+  SkRect src = it.GetRect();
+  SkRect dst = it.GetRect();
+  context.canvas->drawImageRect(image, src, dst, context.sampling, &context.paint, SkCanvas::kFast_SrcRectConstraint);
+)
+CANVAS_OP_DEFINE_OP(drawImageNine,
+  sk_sp<SkImage> image = it.GetImage();
+  SkRect center = it.GetRect();
+  SkRect dst = it.GetRect();
+  context.canvas->drawImageNine(image.get(), center.round(), dst, context.filterMode);
+)
 
-#define CANVAS_OP_DEFINE_ATLAS(op_type, has_colors, has_rect) \
-CANVAS_OP_DEFINE_OP(op_type,                                  \
-  SkScalar *ptr;                                              \
-  it.GetFloatList(&ptr);                                      \
-  it.GetFloatList(&ptr);                                      \
-  if (has_colors) {                                           \
-    uint32_t *ptr2;                                           \
-    it.GetIntList(&ptr2);                                     \
-  }                                                           \
-  if (has_rect) {                                             \
-    it.GetRect();                                             \
-  }                                                           \
+#define CANVAS_OP_DEFINE_ATLAS(op_type, has_colors, has_rect)   \
+CANVAS_OP_DEFINE_OP(op_type,                                    \
+  sk_sp<SkImage> image = it.GetImage();                         \
+  SkScalar *rst_ptr;                                            \
+  int nrstscalars = it.GetFloatList(&rst_ptr);                  \
+  SkScalar *rect_ptr;                                           \
+  int nrectscalars = it.GetFloatList(&rect_ptr);                \
+  int numrects = nrectscalars / 4;                              \
+  uint32_t *clr_ptr = nullptr;                                  \
+  int ncolorints = numrects;                                    \
+  if (has_colors) {                                             \
+    ncolorints = it.GetIntList(&clr_ptr);                       \
+  }                                                             \
+  SkRect* pCullRect = nullptr;                                  \
+  SkRect cull_rect;                                             \
+  if (has_rect) {                                               \
+    cull_rect = it.GetRect();                                   \
+    pCullRect = &cull_rect;                                     \
+  }                                                             \
+  if (nrectscalars != numrects * 4 ||                           \
+      nrstscalars != numrects * 4 ||                            \
+      ncolorints != numrects) {                                 \
+    FML_LOG(ERROR) << "Mismatched Atlas array lengths";         \
+    return;                                                     \
+  }                                                             \
+  context.canvas->drawAtlas(                                    \
+    image.get(),                                                \
+    reinterpret_cast<const SkRSXform*>(rst_ptr),                \
+    reinterpret_cast<const SkRect*>(rect_ptr),                  \
+    reinterpret_cast<const SkColor*>(clr_ptr),                  \
+    numrects,                                                   \
+    context.paint.getBlendMode(), context.sampling, pCullRect,  \
+    &context.paint);                                            \
 )
 CANVAS_OP_DEFINE_ATLAS(drawAtlas, false, false)
 CANVAS_OP_DEFINE_ATLAS(drawAtlasColored, true, false)
 CANVAS_OP_DEFINE_ATLAS(drawAtlasCulled, false, true)
 CANVAS_OP_DEFINE_ATLAS(drawAtlasColoredCulled, true, true)
 
-CANVAS_OP_DEFINE_OP(drawPicture, /* TODO(flar) deal with Picture object */)
-CANVAS_OP_DEFINE_OP(drawParagraph, it.GetPoint(); /* TODO(flar) deal with Paragraph object */)
-CANVAS_OP_DEFINE_OP(drawShadow, it.GetScalar(); /* TODO(flar) deal with Path object */)
-CANVAS_OP_DEFINE_OP(drawShadowOccluded, it.GetScalar(); /* TODO(flar) deal with Path object */)
+CANVAS_OP_DEFINE_OP(drawPicture, it.skipSkRef(); /* TODO(flar) deal with Picture object */)
+CANVAS_OP_DEFINE_OP(drawParagraph, it.skipSkRef(); it.GetPoint(); /* TODO(flar) deal with Paragraph object */)
+CANVAS_OP_DEFINE_OP(drawShadow, it.skipSkRef(); it.GetScalar(); /* TODO(flar) deal with Path object */)
+CANVAS_OP_DEFINE_OP(drawShadowOccluded, it.skipSkRef(); it.GetScalar(); /* TODO(flar) deal with Path object */)
 
 }  // namespace flutter

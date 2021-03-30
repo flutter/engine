@@ -95,48 +95,101 @@ fml::RefPtr<DisplayList> DisplayList::Create(tonic::Uint8List& ops,
   std::shared_ptr<std::vector<float>> data_vector =
     std::make_shared<std::vector<float>>(data_ptr, data_ptr + (dataBytes / sizeof(float)));
 
-  // int numObjects = 0;
-  // Dart_ListLength(objList, &numObjects);
-  // Dart_Handle objects[numObjects];
-  // if (Dart_IsError(
-  //         Dart_ListGetRange(objList, 0, numObjects, objects))) {
-  //   return nullptr;
-  // }
-  // for (int i = 0; i < numObjects; i++) {
-  //   const char *name;
-  //   Dart_Handle type = Dart_InstanceGetType(objects[i]);
-  // }
-  // int obj_index = 0;
-  // for (int i = 0; i < numOps; i++) {
-  //   uint8_t op = ops_ptr[i];
-  //   int opObjs = DisplayListInterpreter::opObjCounts[op];
-  //   if (opObjs > 0) {
-  //     switch (static_cast<CanvasOp>(op)) {
-  //       case cops_setImageFilter: {
-  //         Dart_Handle image_filter = objects[obj_index++];
-  //         ImageFilter* decoded =
-  //             tonic::DartConverter<ImageFilter*>::FromDart(image_filter);
-  //       }
-  //       default: break;
-  //     }
-  //   }
-  // }
+  intptr_t numObjects = 0;
+  Dart_ListLength(objList, &numObjects);
+  Dart_Handle objects[numObjects];
+  if (Dart_IsError(
+          Dart_ListGetRange(objList, 0, numObjects, objects))) {
+    return nullptr;
+  }
+
+  std::shared_ptr<std::vector<DisplayListRefHolder>> ref_vector =
+    std::make_shared<std::vector<DisplayListRefHolder>>();
+  int obj_index = 0;
+  const DisplayListRefHolder empty_holder;
+  for (uint8_t op : *ops_vector) {
+    for (uint32_t args = DisplayListInterpreter::opArguments[op];
+         args != 0;
+         args >>= CANVAS_OP_ARG_SHIFT) {
+      switch (static_cast<CanvasOpArg>(args & CANVAS_OP_ARG_MASK)) {
+        case color_filter: {
+          DisplayListRefHolder holder;
+          holder.colorFilter = tonic::DartConverter<ColorFilter*>::FromDart(objects[obj_index++])->filter();
+          ref_vector->emplace_back(holder);
+          break;
+        }
+        case image_filter: {
+          DisplayListRefHolder holder;
+          holder.imageFilter = tonic::DartConverter<ImageFilter*>::FromDart(objects[obj_index++])->filter();
+          ref_vector->emplace_back(holder);
+          break;
+        }
+        case picture:
+          ref_vector->emplace_back(empty_holder);
+          obj_index++;
+          break;
+        case path:
+          ref_vector->emplace_back(empty_holder);
+          obj_index++;
+          // ref_vector->emplace_back(static_cast<sk_sp<SkRefCnt>>(tonic::DartConverter<CanvasPath*>::FromDart(objects[obj_index++])->path()));
+          break;
+        case shader:
+          ref_vector->emplace_back(empty_holder);
+          obj_index++;
+          // ref_vector->emplace_back(static_cast<sk_sp<SkRefCnt>>(tonic::DartConverter<Shader*>::FromDart(objects[obj_index++])->picture()));
+          break;
+        case image: {
+          DisplayListRefHolder holder;
+          holder.image = tonic::DartConverter<CanvasImage*>::FromDart(objects[obj_index++])->image();
+          ref_vector->emplace_back(holder);
+          break;
+        }
+        case paragraph:
+          ref_vector->emplace_back(empty_holder);
+          obj_index++;
+          break;
+        case vertices:
+          ref_vector->emplace_back(empty_holder);
+          obj_index++;
+          break;
+        case empty:
+        case angle:
+        case color:
+        case blend_mode:
+        case matrix_row3:
+        case point:
+        case rect:
+        case round_rect:
+        case scalar:
+        case scalar_list:
+        case uint32_list:
+          break;
+      }
+    }
+  }
+  if (obj_index != numObjects) {
+    FML_LOG(ERROR) << "Bad number of objects: " << obj_index << " != " << numObjects;
+    return nullptr;
+  }
 
   return fml::MakeRefCounted<DisplayList>(std::move(ops_vector),
-                                          std::move(data_vector));
+                                          std::move(data_vector),
+                                          std::move(ref_vector));
 }
 
 DisplayList::DisplayList(std::shared_ptr<std::vector<uint8_t>> ops_vector,
-                         std::shared_ptr<std::vector<float>> data_vector)
+                         std::shared_ptr<std::vector<float>> data_vector,
+                         std::shared_ptr<std::vector<DisplayListRefHolder>> ref_vector)
     : ops_vector_(ops_vector),
-      data_vector_(data_vector) {}
+      data_vector_(data_vector),
+      ref_vector_(ref_vector) {}
 
 DisplayList::~DisplayList() = default;
 
 Dart_Handle DisplayList::toImage(uint32_t width,
                                  uint32_t height,
                                  Dart_Handle raw_image_callback) {
-  return RasterizeToImage(ops_vector_, data_vector_, width, height, raw_image_callback);
+  return RasterizeToImage(ops_vector_, data_vector_, ref_vector_, width, height, raw_image_callback);
 }
 
 void DisplayList::dispose() {
@@ -151,6 +204,7 @@ size_t DisplayList::GetAllocationSize() const {
 
 Dart_Handle DisplayList::RasterizeToImage(std::shared_ptr<std::vector<uint8_t>> ops,
                                           std::shared_ptr<std::vector<float>> data,
+                                          std::shared_ptr<std::vector<DisplayListRefHolder>> refs,
                                           uint32_t width,
                                           uint32_t height,
                                           Dart_Handle raw_image_callback) {
@@ -207,10 +261,10 @@ Dart_Handle DisplayList::RasterizeToImage(std::shared_ptr<std::vector<uint8_t>> 
   // Kick things off on the raster rask runner.
   fml::TaskRunner::RunNowOrPostTask(
       raster_task_runner,
-      [ui_task_runner, snapshot_delegate, ops, data, picture_bounds, ui_task] {
+      [ui_task_runner, snapshot_delegate, ops, data, refs, picture_bounds, ui_task] {
         sk_sp<SkImage> raster_image =
-            snapshot_delegate->MakeRasterSnapshot([ops = std::move(ops), data = std::move(data)](SkCanvas* canvas) {
-              DisplayListInterpreter interpreter(ops, data);
+            snapshot_delegate->MakeRasterSnapshot([ops = std::move(ops), data = std::move(data), refs = std::move(refs)](SkCanvas* canvas) {
+              DisplayListInterpreter interpreter(ops, data, refs);
               interpreter.Rasterize(canvas);
             }, picture_bounds);
 

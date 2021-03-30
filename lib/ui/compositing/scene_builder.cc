@@ -301,7 +301,7 @@ void SceneBuilder::addDisplayList(double dx,
       SkPoint::Make(dx, dy),
       SkRect::MakeLTRB(cullLeft, cullTop, cullRight, cullBottom),
       SkRect::MakeLTRB(drawLeft, drawTop, drawRight, drawBottom),
-      displayList->ops_vector(), displayList->data_vector(),
+      displayList->ops_vector(), displayList->data_vector(), displayList->ref_vector(),
       !!(hints & 1), !!(hints & 2));
   AddLayer(std::move(layer));
 }

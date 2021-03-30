@@ -7,6 +7,7 @@
 
 #include <memory>
 
+#include "flutter/flow/display_list_interpreter.h"
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/raster_cache.h"
 #include "flutter/flow/skia_gpu_object.h"
@@ -22,6 +23,7 @@ class DisplayListLayer : public Layer {
                    const SkRect& draw_rect,
                    std::shared_ptr<std::vector<uint8_t>> ops,
                    std::shared_ptr<std::vector<float>> data,
+                   std::shared_ptr<std::vector<DisplayListRefHolder>> refs,
                    bool is_complex,
                    bool will_change);
 
@@ -41,6 +43,7 @@ class DisplayListLayer : public Layer {
   SkRect draw_rect_;
   std::shared_ptr<std::vector<uint8_t>> ops_vector_;
   std::shared_ptr<std::vector<float>> data_vector_;
+  std::shared_ptr<std::vector<DisplayListRefHolder>> ref_vector_;
   bool is_complex_ = false;
   bool will_change_ = false;
 

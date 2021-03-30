@@ -7,9 +7,14 @@
 
 #include <sstream>
 
+#include "flutter/flow/display_list_interpreter.h"
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "third_party/tonic/typed_data/typed_list.h"
 #include "third_party/tonic/typed_data/dart_byte_data.h"
+#include "third_party/skia/include/core/SkRefCnt.h"
+#include "third_party/skia/include/core/SkColorFilter.h"
+#include "third_party/skia/include/core/SkImageFilter.h"
+#include "third_party/skia/include/core/SkImage.h"
 
 namespace tonic {
 class DartLibraryNatives;
@@ -41,6 +46,7 @@ class DisplayList : public RefCountedDartWrappable<DisplayList> {
 
   static Dart_Handle RasterizeToImage(std::shared_ptr<std::vector<uint8_t>> ops,
                                       std::shared_ptr<std::vector<float>> data,
+                                      std::shared_ptr<std::vector<DisplayListRefHolder>> refs,
                                       uint32_t width,
                                       uint32_t height,
                                       Dart_Handle raw_image_callback);
@@ -49,14 +55,17 @@ class DisplayList : public RefCountedDartWrappable<DisplayList> {
 
   std::shared_ptr<std::vector<uint8_t>> ops_vector() { return ops_vector_; }
   std::shared_ptr<std::vector<float>> data_vector() { return data_vector_; }
+  std::shared_ptr<std::vector<DisplayListRefHolder>> ref_vector() { return ref_vector_; }
 
  private:
   explicit DisplayList(std::shared_ptr<std::vector<uint8_t>> ops_vector,
-                       std::shared_ptr<std::vector<float>> data_vector);
+                       std::shared_ptr<std::vector<float>> data_vector,
+                       std::shared_ptr<std::vector<DisplayListRefHolder>> ref_vector);
   // explicit DisplayList();
 
   std::shared_ptr<std::vector<uint8_t>> ops_vector_;
   std::shared_ptr<std::vector<float>> data_vector_;
+  std::shared_ptr<std::vector<DisplayListRefHolder>> ref_vector_;
 };
 
 }  // namespace flutter

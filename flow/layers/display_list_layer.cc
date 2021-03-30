@@ -14,6 +14,7 @@ DisplayListLayer::DisplayListLayer(const SkPoint& offset,
                                    const SkRect& draw_rect,
                                    std::shared_ptr<std::vector<uint8_t>> ops,
                                    std::shared_ptr<std::vector<float>> data,
+                                   std::shared_ptr<std::vector<DisplayListRefHolder>> refs,
                                    bool is_complex,
                                    bool will_change)
     : offset_(offset),
@@ -21,6 +22,7 @@ DisplayListLayer::DisplayListLayer(const SkPoint& offset,
       draw_rect_(draw_rect),
       ops_vector_(ops),
       data_vector_(data),
+      ref_vector_(refs),
       is_complex_(is_complex),
       will_change_(will_change) {}
 
@@ -176,7 +178,7 @@ void DisplayListLayer::Paint(PaintContext& context) const {
   //   << paint_bounds().right() << ", "
   //   << paint_bounds().bottom() << "] "
   //   << ops_vector_.size() << " ops";
-  DisplayListInterpreter interpreter(ops_vector_, data_vector_);
+  DisplayListInterpreter interpreter(ops_vector_, data_vector_, ref_vector_);
   interpreter.Rasterize(context.leaf_nodes_canvas);
 
   SkPaint paint;
