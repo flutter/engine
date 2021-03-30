@@ -451,7 +451,8 @@ bool FlutterWindowsView::SwapBuffers() {
 bool FlutterWindowsView::PresentSoftwareBitmap(const void* allocation,
                                                size_t row_bytes,
                                                size_t height) {
-  return binding_handler_->OnBitmapSurfaceUpdated(allocation, row_bytes, height);
+  return binding_handler_->OnBitmapSurfaceUpdated(allocation, row_bytes,
+                                                  height);
 }
 
 void FlutterWindowsView::CreateRenderSurface() {
