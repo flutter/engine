@@ -40,7 +40,8 @@ public class GeneratedPluginRegister {
               + ") but could not find and invoke the GeneratedPluginRegistrant.");
       Log.e(
         TAG,
-        "Received exception " + e.getCause());
+        // getCause here because the first layer of the exception would be from reflect.
+        "Received exception while registering: " + e.getCause());
     }
   }
 }

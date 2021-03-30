@@ -64,6 +64,9 @@ public class FlutterEngineTest {
   @After
   public void tearDown() {
     GeneratedPluginRegistrant.clearRegisteredEngines();
+    // Make sure to not forget to remove the mock exception in the generated plugin registration
+    // mock, or everything subsequent will break.
+    GeneratedPluginRegistrant.pluginRegistrationException = null;
   }
 
   @Test
@@ -93,7 +96,11 @@ public class FlutterEngineTest {
     List<FlutterEngine> registeredEngines = GeneratedPluginRegistrant.getRegisteredEngines();
     // When it crashes, it doesn't end up registering anything.
     assertEquals(0, registeredEngines.size());
-    assertTrue(ShadowLog.getLogsForTag("GeneratedPluginsRegister")[0].msg.contains("Tried to automatically register plugins"));
+
+    // Check the logs actually says registration failed, so a subsequent MissingPluginException
+    // isn't mysterious.
+    assertTrue(ShadowLog.getLogsForTag("GeneratedPluginsRegister").get(0).msg.contains("Tried to automatically register plugins"));
+    assertTrue(ShadowLog.getLogsForTag("GeneratedPluginsRegister").get(1).msg.contains("I'm a bug in the plugin"));
 
     GeneratedPluginRegistrant.pluginRegistrationException = null;
   }
