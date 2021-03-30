@@ -13,6 +13,7 @@
 #include "third_party/skia/include/core/SkShader.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkRRect.h"
+#include "third_party/skia/include/core/SkVertices.h"
 
 namespace flutter {
 
@@ -187,6 +188,8 @@ class DisplayListRefHolder {
   sk_sp<SkColorFilter> colorFilter;
   sk_sp<SkImageFilter> imageFilter;
   sk_sp<SkImage> image;
+  sk_sp<SkVertices> vertices;
+  sk_sp<SkShader> shader;
 };
 
 class DisplayListInterpreter {
@@ -276,6 +279,8 @@ class DisplayListInterpreter {
     const sk_sp<SkColorFilter> GetColorFilter() { return (refs++)->colorFilter; }
     const sk_sp<SkImageFilter> GetImageFilter() { return (refs++)->imageFilter; }
     const sk_sp<SkImage> GetImage() { return (refs++)->image; }
+    const sk_sp<SkVertices> GetVertices() { return (refs++)->vertices; }
+    const sk_sp<SkShader> GetShader() { return (refs++)-> shader; }
 
     std::vector<uint8_t>::iterator ops;
     const std::vector<uint8_t>::iterator ops_end;

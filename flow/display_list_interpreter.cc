@@ -212,7 +212,7 @@ CANVAS_JOIN_DEFINE_OP(Round)
 CANVAS_JOIN_DEFINE_OP(Bevel)
 
 CANVAS_OP_DEFINE_OP(clearShader, context.paint.setShader(nullptr);)
-CANVAS_OP_DEFINE_OP(setShader, it.skipSkRef();)
+CANVAS_OP_DEFINE_OP(setShader, context.paint.setShader(it.GetShader());)
 
 CANVAS_OP_DEFINE_OP(clearMaskFilter, context.paint.setMaskFilter(nullptr);)
 #define CANVAS_MASK_DEFINE_OP(type) CANVAS_OP_DEFINE_OP(setMaskFilter##type, \
@@ -307,7 +307,7 @@ CANVAS_OP_DEFINE_OP(draw##mode,                                           \
 CANVAS_OP_DEFINE_POINT_OP(Points)
 CANVAS_OP_DEFINE_POINT_OP(Lines)
 CANVAS_OP_DEFINE_POINT_OP(Polygon)
-CANVAS_OP_DEFINE_OP(drawVertices, it.skipSkRef(); /* TODO(flar) deal with List of vertices */)
+CANVAS_OP_DEFINE_OP(drawVertices, context.canvas->drawVertices(it.GetVertices(), context.paint.getBlendMode(), context.paint);)
 
 CANVAS_OP_DEFINE_OP(drawImage,
   sk_sp<SkImage> image = it.GetImage();

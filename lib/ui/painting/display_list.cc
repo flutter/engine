@@ -22,6 +22,7 @@
 #include "flutter/fml/make_copyable.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "flutter/lib/ui/painting/canvas.h"
+#include "flutter/lib/ui/painting/shader.h"
 #include "flutter/lib/ui/painting/image_filter.h"
 #include "third_party/skia/include/core/SkImageFilter.h"
 #include "third_party/skia/include/core/SkMaskFilter.h"
@@ -50,23 +51,6 @@ void DisplayList::RegisterNatives(tonic::DartLibraryNatives* natives) {
       {{"DisplayList_constructor", DisplayList_constructor, 6, true},
        FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
 }
-
-// static bool checkObjectLength(int index, int numObjects) {
-//   if (index >= numObjects) {
-//     Dart_ThrowException(
-//         tonic::ToDart("DisplayList object array too short."));
-//     return false;
-//   }
-//   return true;
-// }
-
-// static bool checkImageFilter(Dart_Handle objects[], int numObjects, int index) {
-//   if (checkObjectLength(index, numObjects)) {
-//     Dart_Handle image_filter = objects[index];
-//     ImageFilter* decoded =
-//         tonic::DartConverter<ImageFilter*>::FromDart(image_filter);
-//   }
-// }
 
 fml::RefPtr<DisplayList> DisplayList::Create(tonic::Uint8List& ops,
                                              int numOps,
@@ -125,19 +109,29 @@ fml::RefPtr<DisplayList> DisplayList::Create(tonic::Uint8List& ops,
           break;
         }
         case picture:
+          // TODO(flar): find a way to bake a picture into the refs vector.
           ref_vector->emplace_back(empty_holder);
           obj_index++;
           break;
         case path:
+          // TODO(flar): find a way to bake a path into the refs vector.
           ref_vector->emplace_back(empty_holder);
           obj_index++;
           // ref_vector->emplace_back(static_cast<sk_sp<SkRefCnt>>(tonic::DartConverter<CanvasPath*>::FromDart(objects[obj_index++])->path()));
           break;
-        case shader:
-          ref_vector->emplace_back(empty_holder);
-          obj_index++;
-          // ref_vector->emplace_back(static_cast<sk_sp<SkRefCnt>>(tonic::DartConverter<Shader*>::FromDart(objects[obj_index++])->picture()));
+        case shader: {
+          DisplayListRefHolder holder;
+          // TODO(flar) we should eventually be baking the filterquality into the Shader
+          // The existing Shader::shader(FQ) API is meant to be called in context from
+          // the SkiaCanvas. We could be parsing the stream to determine the filter quality
+          // that would be in effect when we reach this op, but that is overhead to consider
+          // another time.  (The dart DisplayListCanvas code could also encode the current
+          // FQ into the op code - but soon we should be able to encode it into the shader
+          // itself and this will be moot...)
+          holder.shader = tonic::DartConverter<Shader*>::FromDart(objects[obj_index++])->shader(SkFilterQuality::kLow_SkFilterQuality);
+          ref_vector->emplace_back(holder);
           break;
+        }
         case image: {
           DisplayListRefHolder holder;
           holder.image = tonic::DartConverter<CanvasImage*>::FromDart(objects[obj_index++])->image();
@@ -145,13 +139,16 @@ fml::RefPtr<DisplayList> DisplayList::Create(tonic::Uint8List& ops,
           break;
         }
         case paragraph:
+          // TODO(flar): find a way to bake a shader into the refs vector.
           ref_vector->emplace_back(empty_holder);
           obj_index++;
           break;
-        case vertices:
-          ref_vector->emplace_back(empty_holder);
-          obj_index++;
+        case vertices: {
+          DisplayListRefHolder holder;
+          holder.vertices = tonic::DartConverter<Vertices*>::FromDart(objects[obj_index++])->vertices();
+          ref_vector->emplace_back(holder);
           break;
+        }
         case empty:
         case angle:
         case color:
