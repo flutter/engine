@@ -35,6 +35,7 @@ import org.mockito.stubbing.Answer;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
+import org.robolectric.shadows.ShadowLog;
 
 @Config(manifest = Config.NONE)
 @RunWith(RobolectricTestRunner.class)
@@ -78,6 +79,25 @@ public class FlutterEngineTest {
     assertEquals(flutterEngine, registeredEngines.get(0));
   }
 
+  // Helps show the root cause of MissingPluginException type errors like https://github.com/flutter/flutter/issues/78625.
+  @Test
+  public void itCatchesAndDisplaysRegistrationExceptions() {
+    assertTrue(GeneratedPluginRegistrant.getRegisteredEngines().isEmpty());
+    GeneratedPluginRegistrant.pluginRegistrationException =
+        new RuntimeException("I'm a bug in the plugin");
+    FlutterLoader mockFlutterLoader = mock(FlutterLoader.class);
+    when(mockFlutterLoader.automaticallyRegisterPlugins()).thenReturn(true);
+    FlutterEngine flutterEngine =
+        new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, flutterJNI);
+
+    List<FlutterEngine> registeredEngines = GeneratedPluginRegistrant.getRegisteredEngines();
+    // When it crashes, it doesn't end up registering anything.
+    assertEquals(0, registeredEngines.size());
+    assertTrue(ShadowLog.getLogsForTag("GeneratedPluginsRegister")[0].msg.contains("Tried to automatically register plugins"));
+
+    GeneratedPluginRegistrant.pluginRegistrationException = null;
+  }
+
   @Test
   public void itDoesNotAutomaticallyRegistersPluginsWhenFlutterLoaderDisablesIt() {
     assertTrue(GeneratedPluginRegistrant.getRegisteredEngines().isEmpty());
@@ -105,17 +125,7 @@ public class FlutterEngineTest {
     assertTrue(registeredEngines.isEmpty());
   }
 
-  @Test
-  public void itCanBeConfiguredToNotAutomaticallyRegisterPlugins() {
-    new FlutterEngine(
-        RuntimeEnvironment.application,
-        mock(FlutterLoader.class),
-        flutterJNI,
-        /*dartVmArgs=*/ new String[] {},
-        /*automaticallyRegisterPlugins=*/ false);
 
-    assertTrue(GeneratedPluginRegistrant.getRegisteredEngines().isEmpty());
-  }
 
   @Test
   public void itNotifiesPlatformViewsControllerWhenDevHotRestart() {
