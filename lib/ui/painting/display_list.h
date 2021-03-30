@@ -40,6 +40,8 @@ class DisplayList : public RefCountedDartWrappable<DisplayList> {
                       uint32_t height,
                       Dart_Handle raw_image_callback);
 
+  DisplayListData data() { return { ops_vector_, data_vector_, ref_vector_ }; }
+
   void dispose();
 
   size_t GetAllocationSize() const override;

@@ -34,7 +34,7 @@ enum CanvasOpArg {
   path,
   vertices,
   skpicture,
-  picture,
+  display_list,
   shader,
   color_filter,
   image_filter,
@@ -80,7 +80,7 @@ enum CanvasOpArg {
 #define CANVAS_OP_ARGS_Atlas_Rect           CANVAS_OP_ARGS4(image, scalar_list, scalar_list, rect)
 #define CANVAS_OP_ARGS_Atlas_Colors_Rect    CANVAS_OP_ARGS5(image, scalar_list, scalar_list, uint32_list, rect)
 #define CANVAS_OP_ARGS_SkPicture            CANVAS_OP_ARGS1(skpicture)
-#define CANVAS_OP_ARGS_Picture              CANVAS_OP_ARGS1(picture)
+#define CANVAS_OP_ARGS_DisplayList          CANVAS_OP_ARGS1(display_list)
 #define CANVAS_OP_ARGS_Shader               CANVAS_OP_ARGS1(shader)
 #define CANVAS_OP_ARGS_ColorFilter          CANVAS_OP_ARGS1(color_filter)
 #define CANVAS_OP_ARGS_ImageFilter          CANVAS_OP_ARGS1(image_filter)
@@ -175,7 +175,7 @@ enum CanvasOpArg {
   V(drawAtlasColoredCulled,     Atlas_Colors_Rect)  \
                                                     \
   V(drawSkPicture,              SkPicture)          \
-  V(drawPicture,                Picture)            \
+  V(drawDisplayList,            DisplayList)        \
   V(drawShadow,                 Path_Scalar)        \
   V(drawShadowOccluded,         Path_Scalar)
 
@@ -184,18 +184,29 @@ enum CanvasOp {
   FOR_EACH_CANVAS_OP(CANVAS_OP_MAKE_ENUM)
 };
 
+class DisplayListRefHolder;
+
+struct DisplayListData {
+  std::shared_ptr<std::vector<uint8_t>> ops_vector;
+  std::shared_ptr<std::vector<float>> data_vector;
+  std::shared_ptr<std::vector<DisplayListRefHolder>> ref_vector;
+};
+
 class DisplayListRefHolder {
-  public:
+ public:
   sk_sp<SkColorFilter> colorFilter;
   sk_sp<SkImageFilter> imageFilter;
   sk_sp<SkImage> image;
   sk_sp<SkVertices> vertices;
   sk_sp<SkShader> shader;
   sk_sp<SkPicture> picture;
+  DisplayListData displayList;
 };
 
 class DisplayListInterpreter {
  public:
+  DisplayListInterpreter(DisplayListData data);
+
   DisplayListInterpreter(std::shared_ptr<std::vector<uint8_t>> ops,
                          std::shared_ptr<std::vector<float>> data,
                          std::shared_ptr<std::vector<DisplayListRefHolder>> refs);
@@ -284,6 +295,7 @@ class DisplayListInterpreter {
     const sk_sp<SkVertices> GetVertices() { return (refs++)->vertices; }
     const sk_sp<SkShader> GetShader() { return (refs++)->shader; }
     const sk_sp<SkPicture> GetSkPicture() { return (refs++)->picture; }
+    const DisplayListData GetDisplayList() { return (refs++)->displayList; }
 
     std::vector<uint8_t>::iterator ops;
     const std::vector<uint8_t>::iterator ops_end;

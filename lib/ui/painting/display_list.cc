@@ -108,11 +108,12 @@ fml::RefPtr<DisplayList> DisplayList::Create(tonic::Uint8List& ops,
           ref_vector->emplace_back(holder);
           break;
         }
-        case picture:
-          // TODO(flar): find a way to bake a picture into the refs vector.
-          ref_vector->emplace_back(empty_holder);
-          obj_index++;
+        case display_list: {
+          DisplayListRefHolder holder;
+          holder.displayList = tonic::DartConverter<DisplayList*>::FromDart(objects[obj_index++])->data();
+          ref_vector->emplace_back(holder);
           break;
+        }
         case path:
           // TODO(flar): find a way to bake a path into the refs vector.
           ref_vector->emplace_back(empty_holder);
@@ -123,11 +124,12 @@ fml::RefPtr<DisplayList> DisplayList::Create(tonic::Uint8List& ops,
           DisplayListRefHolder holder;
           // TODO(flar) we should eventually be baking the filterquality into the Shader
           // The existing Shader::shader(FQ) API is meant to be called in context from
-          // the SkiaCanvas. We could be parsing the stream to determine the filter quality
-          // that would be in effect when we reach this op, but that is overhead to consider
-          // another time.  (The dart DisplayListCanvas code could also encode the current
-          // FQ into the op code - but soon we should be able to encode it into the shader
-          // itself and this will be moot...)
+          // the SkiaCanvas paint method. We could parse the stream to determine the
+          // filter quality that would be in effect when we reach this op, but that is
+          // overhead to consider  another time.
+          // (The dart DisplayListCanvas code could also encode the current FQ into the
+          // op code - but soon we should be able to encode it into the shader itself
+          // and this issue will be moot...)
           holder.shader = tonic::DartConverter<Shader*>::FromDart(objects[obj_index++])->shader(SkFilterQuality::kLow_SkFilterQuality);
           ref_vector->emplace_back(holder);
           break;

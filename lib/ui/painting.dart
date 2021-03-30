@@ -5177,7 +5177,7 @@ enum _CanvasOp {
   drawAtlasColoredCulled,
 
   drawSkPicture,
-  drawPicture,
+  drawDisplayList,
   drawShadow,
   drawShadowOccluded,
 }
@@ -6002,10 +6002,11 @@ class _DisplayListCanvas implements Canvas {
   void drawPicture(Picture picture) {
     if (picture is _SkiaPicture) {
       _drawSkiaPicture(picture);
+      print('adding conservative bounds for drawPicture(Skia)');
     } else {
-      _addOp(_CanvasOp.drawPicture);
+      _addOp(_CanvasOp.drawDisplayList);
       _addPicture(picture as _DisplayListPicture);
-      print('adding conservative bounds for drawPicture');
+      print('adding conservative bounds for drawPicture(DisplayList)');
       _addBounds(_cullRect, false);
     }
   }

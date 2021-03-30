@@ -23,13 +23,18 @@ const std::vector<uint32_t> DisplayListInterpreter::opArguments = {
   FOR_EACH_CANVAS_OP(CANVAS_OP_TAKE_ARGS)
 };
 
+DisplayListInterpreter::DisplayListInterpreter(DisplayListData data)
+    : ops_vector_(data.ops_vector),
+      data_vector_(data.data_vector),
+      ref_vector_(data.ref_vector) {}
+
 DisplayListInterpreter::DisplayListInterpreter(
     std::shared_ptr<std::vector<uint8_t>> ops_vector,
     std::shared_ptr<std::vector<float>> data_vector,
     std::shared_ptr<std::vector<DisplayListRefHolder>> ref_vector)
     : ops_vector_(std::move(ops_vector)),
       data_vector_(std::move(data_vector)),
-      ref_vector_(ref_vector) {}
+      ref_vector_(std::move(ref_vector)) {}
 
 void DisplayListInterpreter::Describe() {
   Iterator it(this);
@@ -107,7 +112,7 @@ std::string DisplayListInterpreter::DescribeOneOp(Iterator& it) {
       case path: ss << "[Path]"; break;
       case vertices: ss << "[Vertices]"; break;
       case skpicture: ss << "[SkPicture]"; break;
-      case picture: ss << "[Picture]"; break;
+      case display_list: ss << "[DisplayList]"; break;
       case shader: ss << "[Shader]"; break;
       case color_filter: ss << "[ColorFilter]"; break;
       case image_filter: ss << "[ImageFilter]"; break;
@@ -366,7 +371,7 @@ CANVAS_OP_DEFINE_ATLAS(drawAtlasColored, true, false)
 CANVAS_OP_DEFINE_ATLAS(drawAtlasCulled, false, true)
 CANVAS_OP_DEFINE_ATLAS(drawAtlasColoredCulled, true, true)
 
-CANVAS_OP_DEFINE_OP(drawPicture, it.skipSkRef(); /* TODO(flar) deal with Picture object */)
+CANVAS_OP_DEFINE_OP(drawDisplayList, DisplayListInterpreter(it.GetDisplayList()).Rasterize(context.canvas);)
 CANVAS_OP_DEFINE_OP(drawSkPicture, context.canvas->drawPicture(it.GetSkPicture());)
 CANVAS_OP_DEFINE_OP(drawShadow, it.skipSkRef(); it.GetScalar(); /* TODO(flar) deal with Path object */)
 CANVAS_OP_DEFINE_OP(drawShadowOccluded, it.skipSkRef(); it.GetScalar(); /* TODO(flar) deal with Path object */)
