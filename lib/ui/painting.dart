@@ -5420,9 +5420,9 @@ class _DisplayListCanvas implements Canvas {
     _objData.add(vertices);
   }
 
-  void _addParagraph(Paragraph paragraph) {
-    _objData.add(paragraph);
-  }
+  // void _addParagraph(Paragraph paragraph) {
+  //   _objData.add(paragraph);
+  // }
 
   void _addSkPicture(_SkiaPicture picture) {
     _objData.add(picture);
@@ -5601,9 +5601,11 @@ class _DisplayListCanvas implements Canvas {
   static const int _maskFilterNeeded = 11;
   static const int _ditherNeeded = 12;
 
-  static const int _paintMask = _aaNeeded | _colorNeeded | _blendNeeded;
-  static const int _drawMask = _paintMask | _paintStyleNeeded;
-  static const int _imageMask = _blendNeeded | _filterQualityNeeded;
+  static const int _paintMask = _aaNeeded | _colorNeeded | _blendNeeded | _invertColorsNeeded
+                              | _colorFilterNeeded | _shaderNeeded;
+  static const int _drawMask = _paintMask | _paintStyleNeeded | _maskFilterNeeded;
+  static const int _strokeMask = _paintMask | _strokeStyleNeeded | _maskFilterNeeded;
+  static const int _imageMask = _blendNeeded | _filterQualityNeeded | _imageFilterNeeded | _ditherNeeded;
   static const int _saveLayerMask = _blendNeeded;
 
   static const List<_CanvasOp> _filterQualityOps = <_CanvasOp>[
@@ -5744,7 +5746,7 @@ class _DisplayListCanvas implements Canvas {
 
   @override
   void drawPaint(Paint paint) {
-    _updatePaintData(paint, _drawMask);
+    _updatePaintData(paint, _paintMask);
     _addOp(_CanvasOp.drawPaint);
     _addBounds(_cullRect, false);
   }
@@ -5759,7 +5761,7 @@ class _DisplayListCanvas implements Canvas {
 
   @override
   void drawLine(Offset p1, Offset p2, Paint paint) {
-    _updatePaintData(paint, _paintMask | _strokeStyleNeeded);
+    _updatePaintData(paint, _strokeMask);
     _addOp(_CanvasOp.drawLine);
     _addOffset(p1);
     _addOffset(p2);
@@ -5845,7 +5847,7 @@ class _DisplayListCanvas implements Canvas {
 
   @override
   void drawRawPoints(PointMode pointMode, Float32List points, Paint paint) {
-    _updatePaintData(paint, _paintMask | _strokeStyleNeeded);
+    _updatePaintData(paint, _strokeMask);
     _addOp(_pointOps[pointMode.index]);
     _addFloat32List(points);
     for (int i = 0; i + 1 < points.length; i += 2) {

@@ -141,8 +141,8 @@ sk_sp<SkColorFilter> DisplayListInterpreter::makeColorFilter(RasterizeContext& c
 void DisplayListInterpreter::Rasterize(SkCanvas* canvas) {
   RasterizeContext context;
   context.canvas = canvas;
-  context.filterMode = LinearSampling.filter;
-  context.sampling = LinearSampling;
+  context.filterMode = NearestSampling.filter;
+  context.sampling = NearestSampling;
   int entrySaveCount = canvas->getSaveCount();
   Iterator it(this);
   while (it.HasOp()) {
