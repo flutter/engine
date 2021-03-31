@@ -137,7 +137,14 @@ void AndroidExternalViewEmbedder::SubmitFrame(
         // slighly larger. For example, {0.3, 0.5, 3.1, 4.7} becomes {0, 0, 4,
         // 5}.
         intersection_rect.set(intersection_rect.roundOut());
-        overlay_layers.at(view_id).push_back(intersection_rect);
+        if (overlay_layers.at(view_id).empty()) {
+          overlay_layers.at(view_id).push_back(intersection_rect);
+        } else if (intersection_rect.contains(
+                       overlay_layers.at(view_id).back())) {
+          overlay_layers.at(view_id).back() = intersection_rect;
+        } else {
+          overlay_layers.at(view_id).back().join(intersection_rect);
+        }
         // Clip the background canvas, so it doesn't contain any of the pixels
         // drawn on the overlay layer.
         background_canvas->clipRect(intersection_rect, SkClipOp::kDifference);
