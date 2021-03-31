@@ -23,6 +23,7 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, Picture);
 
 #define FOR_EACH_BINDING(V) \
   V(Picture, toImage)       \
+  V(Picture, getBounds)     \
   V(Picture, dispose)       \
   V(Picture, GetAllocationSize)
 
@@ -41,6 +42,18 @@ Picture::Picture(flutter::SkiaGPUObject<SkPicture> picture)
     : picture_(std::move(picture)) {}
 
 Picture::~Picture() = default;
+
+tonic::Float32List Picture::getBounds() {
+  tonic::Float32List rect(Dart_NewTypedData(Dart_TypedData_kFloat32, 4));
+  if (auto picture = picture_.get()) {
+    const SkRect& bounds = picture->cullRect();
+    rect[0] = bounds.left();
+    rect[1] = bounds.top();
+    rect[2] = bounds.right();
+    rect[3] = bounds.bottom();
+  }
+  return rect;
+}
 
 Dart_Handle Picture::toImage(uint32_t width,
                              uint32_t height,

@@ -5057,6 +5057,12 @@ class _SkiaPicture extends NativeFieldWrapperClass2 implements Picture {
 
   String? _toImage(int width, int height, _Callback<_Image?> callback) native 'Picture_toImage';
 
+  Rect _getBounds() {
+    final Float32List rect = _getBoundsF32();
+    return Rect.fromLTRB(rect[0], rect[1], rect[2], rect[3]);
+  }
+  Float32List _getBoundsF32() native 'Picture_getBounds';
+
   @override
   void dispose() native 'Picture_dispose';
 
@@ -5201,6 +5207,9 @@ class _MatrixTransform {
   double mxx; double mxy; double mxt;
   double myx; double myy; double myt;
 
+  bool get isRectilinear => (mxy == 0.0 && myx == 0.0) || (mxx == 0.0 && myy == 0.0);
+  bool get isNotRectilinear => (mxy != 0.0 || myx != 0.0) && (mxx != 0.0 || myy != 0.0);
+
   double transformX(double x, double y) {
     return x * mxx + y * mxy + mxt;
   }
@@ -5245,16 +5254,55 @@ class _MatrixTransform {
   }
 }
 
+class _BoundsAccumulator {
+  double _minX = Rect._giantScalar;
+  double _minY = Rect._giantScalar;
+  double _maxX = -Rect._giantScalar;
+  double _maxY = -Rect._giantScalar;
+
+  void accumulate(double x, double y) {
+    if (_minX > x)
+      _minX = x;
+    if (_minY > y)
+      _minY = y;
+    if (_maxX < x)
+      _maxX = x;
+    if (_maxY < y)
+      _maxY = y;
+  }
+
+  void accumulateBounds(Rect r, RSTransform rst) {
+    accumulateRstBounds(r.left, r.top, r.right, r.bottom, rst.scos, rst.ssin, rst.tx, rst.ty);
+  }
+
+  void accumulateRstBounds(double left, double top, double right, double bottom,
+                           double scos, double ssin, double tx, double ty) {
+    if (ssin == 0) {
+      accumulate(scos * left  + tx, scos * top    + ty);
+      accumulate(scos * right + tx, scos * bottom + ty);
+      return;
+    } else if (scos == 0) {
+      accumulate(-ssin * top    + tx, ssin * left  + ty);
+      accumulate(-ssin * bottom + tx, ssin * right + ty);
+      return;
+    } else {
+      accumulate(scos * left  - ssin * top    + tx, ssin * left  + scos * top    + ty);
+      accumulate(scos * right - ssin * top    + tx, ssin * right + scos * top    + ty);
+      accumulate(scos * left  - ssin * bottom + tx, ssin * left  + scos * bottom + ty);
+      accumulate(scos * right - ssin * bottom + tx, ssin * right + scos * bottom + ty);
+    }
+  }
+
+  Rect get bounds => Rect.fromLTRB(_minX, _minY, _maxX, _maxY);
+}
+
 /// Local storage version of Canvas
 class _DisplayListCanvas implements Canvas {
   /// Make a Canvas2
   _DisplayListCanvas(PictureRecorder recorder, [Rect? cullRect])
       : _recorder = recorder as _DisplayListPictureRecorder,
         _cullRect = cullRect ?? Rect.largest,
-        _minX = Rect._giantScalar,
-        _minY = Rect._giantScalar,
-        _maxX = -Rect._giantScalar,
-        _maxY = -Rect._giantScalar,
+        _accumulator = _BoundsAccumulator(),
         _ops = Uint8List(128), _numOps = 0,
         _data = ByteData(128 * 4), _numDataBytes = 0,
         _objData = <Object>[],
@@ -5265,10 +5313,7 @@ class _DisplayListCanvas implements Canvas {
 
   _DisplayListPictureRecorder? _recorder;
   Rect _cullRect;
-  double _minX;
-  double _minY;
-  double _maxX;
-  double _maxY;
+  _BoundsAccumulator _accumulator;
   int _numOps;
   Uint8List _ops;
   int _numDataBytes;
@@ -5277,7 +5322,7 @@ class _DisplayListCanvas implements Canvas {
   _MatrixTransform _ctm;
   List<_MatrixTransform> _ctmStack;
 
-  Rect get _drawBounds => Rect.fromLTRB(_minX, _minY, _maxX, _maxY);
+  Rect get _drawBounds => _accumulator.bounds;
 
   static const int _maxOpsDoubleSize = 1 << 20;
   Uint8List _growOps(Uint8List src) {
@@ -5420,15 +5465,11 @@ class _DisplayListCanvas implements Canvas {
     _objData.add(vertices);
   }
 
-  // void _addParagraph(Paragraph paragraph) {
-  //   _objData.add(paragraph);
-  // }
-
   void _addSkPicture(_SkiaPicture picture) {
     _objData.add(picture);
   }
 
-  void _addPicture(Picture picture) {
+  void _addPicture(_DisplayListPicture picture) {
     _objData.add(picture);
   }
 
@@ -5445,16 +5486,7 @@ class _DisplayListCanvas implements Canvas {
   }
 
   void _addPointToBounds(double ux, double uy) {
-    final double dx = _ctm.transformX(ux, uy);
-    final double dy = _ctm.transformY(ux, uy);
-    if (_minX > dx)
-      _minX = dx;
-    if (_minY > dy)
-      _minY = dy;
-    if (_maxX < dx)
-      _maxX = dx;
-    if (_maxY < dy)
-      _maxY = dy;
+    _accumulator.accumulate(_ctm.transformX(ux, uy), _ctm.transformY(ux, uy));
   }
 
   void _addLTRBToBounds(double l, double t, double r, double b, [ bool? isStroke ]) {
@@ -5462,6 +5494,10 @@ class _DisplayListCanvas implements Canvas {
     final double pad = isStroke ? _curStrokeWidth : 0;
     _addPointToBounds(l - pad, t - pad);
     _addPointToBounds(r + pad, b + pad);
+    if (_ctm.isNotRectilinear) {
+      _addPointToBounds(r + pad, t - pad);
+      _addPointToBounds(l - pad, b + pad);
+    }
   }
 
   void _addBounds(Rect r, [ bool? isStroke ]) {
@@ -5748,7 +5784,6 @@ class _DisplayListCanvas implements Canvas {
   void drawPaint(Paint paint) {
     _updatePaintData(paint, _paintMask);
     _addOp(_CanvasOp.drawPaint);
-    _addBounds(_cullRect, false);
   }
 
   @override
@@ -5756,7 +5791,6 @@ class _DisplayListCanvas implements Canvas {
     _updateColor(color);
     _updateBlendMode(blendMode);
     _addOp(_CanvasOp.drawColor);
-    _addBounds(_cullRect, false);
   }
 
   @override
@@ -5850,9 +5884,11 @@ class _DisplayListCanvas implements Canvas {
     _updatePaintData(paint, _strokeMask);
     _addOp(_pointOps[pointMode.index]);
     _addFloat32List(points);
+    final _BoundsAccumulator ptBounds = _BoundsAccumulator();
     for (int i = 0; i + 1 < points.length; i += 2) {
-      _addPointToBounds(points[i], points[i + 1]);
+      ptBounds.accumulate(points[i], points[i + 1]);
     }
+    _addBounds(ptBounds.bounds, true);
   }
 
   @override
@@ -5911,6 +5947,7 @@ class _DisplayListCanvas implements Canvas {
     final Float32List rstTransformBuffer = Float32List(rectCount * 4);
     final Float32List rectBuffer = Float32List(rectCount * 4);
 
+    final _BoundsAccumulator rstBounds = _BoundsAccumulator();
     for (int i = 0; i < rectCount; ++i) {
       final int index0 = i * 4;
       final int index1 = index0 + 1;
@@ -5927,6 +5964,7 @@ class _DisplayListCanvas implements Canvas {
       rectBuffer[index1] = rect.top;
       rectBuffer[index2] = rect.right;
       rectBuffer[index3] = rect.bottom;
+      rstBounds.accumulateBounds(rect, rstTransform);
     }
 
     final Int32List? colorBuffer = (colors == null || colors.isEmpty) ? null : _encodeColorList(colors);
@@ -5945,8 +5983,7 @@ class _DisplayListCanvas implements Canvas {
       _addInt32List(colorBuffer);
     if (cullRect != null)
       _addRect(cullRect);
-    print('adding conservative bounds for drawAtlas');
-    _addBounds(_cullRect, false);
+    _addBounds(rstBounds.bounds, false);
   }
 
   @override
@@ -5965,6 +6002,12 @@ class _DisplayListCanvas implements Canvas {
     if (colors != null && colors.length * 4 != rectCount)
       throw ArgumentError('If non-null, "colors" length must be one fourth the length of "rstTransforms" and "rects".');
 
+    final _BoundsAccumulator rstBounds = _BoundsAccumulator();
+    for (int i = 0; i < rects.length; i += 4) {
+      rstBounds.accumulateRstBounds(
+          rects[i], rects[i+1], rects[i+2], rects[i+3],
+          rstTransforms[i], rstTransforms[i+1], rstTransforms[i+2], rstTransforms[i+3]);
+    }
     final _CanvasOp op = (cullRect == null)
         ? (colors == null) ? _CanvasOp.drawAtlas : _CanvasOp.drawAtlasColored
         : (colors == null) ? _CanvasOp.drawAtlasCulled : _CanvasOp.drawAtlasColoredCulled;
@@ -5979,8 +6022,19 @@ class _DisplayListCanvas implements Canvas {
       _addInt32List(colors);
     if (cullRect != null)
       _addRect(cullRect);
-    print('adding conservative bounds for drawAtlas');
-    _addBounds(_cullRect, false);
+    _addBounds(rstBounds.bounds, false);
+  }
+
+  void _drawSkiaPicture(_SkiaPicture picture) {
+    _addOp(_CanvasOp.drawSkPicture);
+    _addSkPicture(picture);
+    _addBounds(picture._getBounds(), false);
+  }
+
+  void _drawDisplayListPicture(_DisplayListPicture picture) {
+    _addOp(_CanvasOp.drawDisplayList);
+    _addPicture(picture);
+    _addBounds(picture._drawBounds ?? Rect.zero, false);
   }
 
   @override
@@ -5989,25 +6043,14 @@ class _DisplayListCanvas implements Canvas {
     final _SkiaCanvas canvas = _SkiaCanvas(recorder);
     paragraph._paint(canvas, offset.dx, offset.dy);
     _drawSkiaPicture(recorder.endRecording() as _SkiaPicture);
-    print('adding conservative bounds for drawParagaph');
-  }
-
-  void _drawSkiaPicture(_SkiaPicture picture) {
-    _addOp(_CanvasOp.drawSkPicture);
-    _addSkPicture(picture);
-    _addBounds(_cullRect, false);
   }
 
   @override
   void drawPicture(Picture picture) {
     if (picture is _SkiaPicture) {
       _drawSkiaPicture(picture);
-      print('adding conservative bounds for drawPicture(Skia)');
     } else {
-      _addOp(_CanvasOp.drawDisplayList);
-      _addPicture(picture as _DisplayListPicture);
-      print('adding conservative bounds for drawPicture(DisplayList)');
-      _addBounds(_cullRect, false);
+      _drawDisplayListPicture(picture as _DisplayListPicture);
     }
   }
 

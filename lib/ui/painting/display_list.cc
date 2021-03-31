@@ -22,6 +22,7 @@
 #include "flutter/fml/make_copyable.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "flutter/lib/ui/painting/canvas.h"
+#include "flutter/lib/ui/painting/path.h"
 #include "flutter/lib/ui/painting/shader.h"
 #include "flutter/lib/ui/painting/image_filter.h"
 #include "third_party/skia/include/core/SkImageFilter.h"
@@ -114,12 +115,12 @@ fml::RefPtr<DisplayList> DisplayList::Create(tonic::Uint8List& ops,
           ref_vector->emplace_back(holder);
           break;
         }
-        case path:
-          // TODO(flar): find a way to bake a path into the refs vector.
-          ref_vector->emplace_back(empty_holder);
-          obj_index++;
-          // ref_vector->emplace_back(static_cast<sk_sp<SkRefCnt>>(tonic::DartConverter<CanvasPath*>::FromDart(objects[obj_index++])->path()));
+        case path: {
+          DisplayListRefHolder holder;
+          holder.pathData = tonic::DartConverter<CanvasPath*>::FromDart(objects[obj_index++])->path().serialize();
+          ref_vector->emplace_back(holder);
           break;
+        }
         case shader: {
           DisplayListRefHolder holder;
           // TODO(flar) we should eventually be baking the filterquality into the Shader

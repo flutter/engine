@@ -5,6 +5,7 @@
 #ifndef FLUTTER_LIB_UI_PAINTING_PICTURE_H_
 #define FLUTTER_LIB_UI_PAINTING_PICTURE_H_
 
+#include "third_party/tonic/typed_data/typed_list.h"
 #include "flutter/flow/skia_gpu_object.h"
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/painting/image.h"
@@ -32,6 +33,8 @@ class Picture : public RefCountedDartWrappable<Picture> {
   Dart_Handle toImage(uint32_t width,
                       uint32_t height,
                       Dart_Handle raw_image_callback);
+
+  tonic::Float32List getBounds();
 
   void dispose();
 

@@ -13,6 +13,7 @@
 #include "third_party/skia/include/core/SkShader.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkPicture.h"
+#include "third_party/skia/include/core/SkPath.h"
 #include "third_party/skia/include/core/SkRRect.h"
 #include "third_party/skia/include/core/SkVertices.h"
 
@@ -200,6 +201,7 @@ class DisplayListRefHolder {
   sk_sp<SkVertices> vertices;
   sk_sp<SkShader> shader;
   sk_sp<SkPicture> picture;
+  sk_sp<SkData> pathData;
   DisplayListData displayList;
 };
 
@@ -296,6 +298,10 @@ class DisplayListInterpreter {
     const sk_sp<SkShader> GetShader() { return (refs++)->shader; }
     const sk_sp<SkPicture> GetSkPicture() { return (refs++)->picture; }
     const DisplayListData GetDisplayList() { return (refs++)->displayList; }
+    void GetPath(SkPath& path) {
+      SkData* data = (refs++)->pathData.get();
+      path.readFromMemory(data->data(), data->size());
+    }
 
     std::vector<uint8_t>::iterator ops;
     const std::vector<uint8_t>::iterator ops_end;

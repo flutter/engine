@@ -5,6 +5,7 @@
 #include "flutter/flow/display_list_interpreter.h"
 #include "flutter/fml/logging.h"
 
+#include "flutter/flow/layers/physical_shape_layer.h"
 #include "third_party/skia/include/core/SkImageFilter.h"
 #include "third_party/skia/include/core/SkMaskFilter.h"
 #include "third_party/skia/include/core/SkColorFilter.h"
@@ -299,7 +300,11 @@ CANVAS_OP_DEFINE_OP(drawCircle, context.canvas->drawCircle(it.GetPoint(), it.Get
 CANVAS_OP_DEFINE_OP(drawArc, context.canvas->drawArc(it.GetRect(), it.GetAngle(), it.GetAngle(), false, context.paint);)
 CANVAS_OP_DEFINE_OP(drawArcCenter, context.canvas->drawArc(it.GetRect(), it.GetAngle(), it.GetAngle(), true, context.paint);)
 CANVAS_OP_DEFINE_OP(drawLine, context.canvas->drawLine(it.GetPoint(), it.GetPoint(), context.paint);)
-CANVAS_OP_DEFINE_OP(drawPath, it.skipSkRef(); /* TODO(flar) deal with Path object */)
+CANVAS_OP_DEFINE_OP(drawPath,
+  SkPath path;
+  it.GetPath(path);
+  context.canvas->drawPath(path, context.paint);
+)
 
 #define CANVAS_OP_DEFINE_POINT_OP(mode)                                   \
 CANVAS_OP_DEFINE_OP(draw##mode,                                           \
@@ -373,7 +378,18 @@ CANVAS_OP_DEFINE_ATLAS(drawAtlasColoredCulled, true, true)
 
 CANVAS_OP_DEFINE_OP(drawDisplayList, DisplayListInterpreter(it.GetDisplayList()).Rasterize(context.canvas);)
 CANVAS_OP_DEFINE_OP(drawSkPicture, context.canvas->drawPicture(it.GetSkPicture());)
-CANVAS_OP_DEFINE_OP(drawShadow, it.skipSkRef(); it.GetScalar(); /* TODO(flar) deal with Path object */)
-CANVAS_OP_DEFINE_OP(drawShadowOccluded, it.skipSkRef(); it.GetScalar(); /* TODO(flar) deal with Path object */)
+
+#define CANVAS_OP_DEFINE_SHADOW_OP(optype, occludes)                       \
+CANVAS_OP_DEFINE_OP(optype,                                                \
+  SkPath path;                                                             \
+  it.GetPath(path);                                                        \
+  SkColor color = context.paint.getColor();                                \
+  /* TODO(flar): How to deal with dpr */                                   \
+  SkScalar dpr = 1.0;                                                      \
+  flutter::PhysicalShapeLayer::DrawShadow(context.canvas, path, color,     \
+                                          it.GetScalar(), occludes, dpr);  \
+)
+CANVAS_OP_DEFINE_SHADOW_OP(drawShadow, false)
+CANVAS_OP_DEFINE_SHADOW_OP(drawShadowOccluded, true)
 
 }  // namespace flutter
