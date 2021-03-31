@@ -883,7 +883,9 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       int overlayId = overlayLayerViews.keyAt(i);
       FlutterImageView overlayView = overlayLayerViews.valueAt(i);
       overlayView.detachFromRenderer();
-      ((FlutterView) flutterView).removeView(overlayView);
+      if (flutterView != null) {
+        ((FlutterView) flutterView).removeView(overlayView);
+      }
     }
     overlayLayerViews.clear();
   }
