@@ -31,7 +31,9 @@ void DecodeInts(const tonic::Int32List& ints, T* out) {
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, Vertices);
 
-#define FOR_EACH_BINDING(V) V(Vertices, init)
+#define FOR_EACH_BINDING(V) \
+  V(Vertices, init)         \
+  V(Vertices, getBounds)
 
 FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
 
@@ -92,6 +94,16 @@ bool Vertices::init(Dart_Handle vertices_handle,
   vertices->AssociateWithDartWrapper(vertices_handle);
 
   return true;
+}
+
+tonic::Float32List Vertices::getBounds() {
+  tonic::Float32List rect(Dart_NewTypedData(Dart_TypedData_kFloat32, 4));
+  const SkRect& bounds = vertices_->bounds();
+  rect[0] = bounds.left();
+  rect[1] = bounds.top();
+  rect[2] = bounds.right();
+  rect[3] = bounds.bottom();
+  return rect;
 }
 
 size_t Vertices::GetAllocationSize() const {

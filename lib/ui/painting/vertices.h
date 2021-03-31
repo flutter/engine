@@ -33,6 +33,8 @@ class Vertices : public RefCountedDartWrappable<Vertices> {
 
   const sk_sp<SkVertices>& vertices() const { return vertices_; }
 
+  tonic::Float32List getBounds();
+
   size_t GetAllocationSize() const override;
 
  private:

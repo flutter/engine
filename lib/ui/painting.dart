@@ -3811,6 +3811,12 @@ class Vertices extends NativeFieldWrapperClass2 {
              Float32List? textureCoordinates,
              Int32List? colors,
              Uint16List? indices) native 'Vertices_init';
+
+  Rect _getBounds() {
+    final Float32List rect = _getBoundsF32();
+    return Rect.fromLTRB(rect[0], rect[1], rect[2], rect[3]);
+  }
+  Float32List _getBoundsF32() native 'Vertices_getBounds';
 }
 
 /// Defines how a list of points is interpreted when drawing a set of points.
@@ -5897,8 +5903,7 @@ class _DisplayListCanvas implements Canvas {
     _updateBlendMode(blendMode);
     _addOp(_CanvasOp.drawVertices);
     _addVertices(vertices);
-    print('adding conservative bounds for drawVertices');
-    _addBounds(_cullRect);
+    _addBounds(vertices._getBounds());
   }
 
   @override
@@ -6054,14 +6059,24 @@ class _DisplayListCanvas implements Canvas {
     }
   }
 
+  // Constants from physical_shape_layer.cc
+  static const double _kLightHeight = 600;
+  static const double _kLightRadius = 800;
+  Rect _shadowBounds(Rect pathBounds, double elevation) {
+    final double lightRelativeHeight = _kLightHeight - elevation;
+    final double tx = elevation * (_kLightRadius + pathBounds.width * 0.5) / lightRelativeHeight;
+    final double ty = elevation * (_kLightRadius + 600 + pathBounds.height) / lightRelativeHeight;
+    return Rect.fromLTRB(pathBounds.left  - tx, pathBounds.top,
+                         pathBounds.right + tx, pathBounds.bottom + ty);
+  }
+
   @override
   void drawShadow(Path path, Color color, double elevation, bool transparentOccluder) {
     _updateColor(color);
     _addOp(transparentOccluder ? _CanvasOp.drawShadowOccluded : _CanvasOp.drawShadow);
     _addPathData(path);
     _addScalar(elevation);
-    print('adding conservative bounds for drawShadow');
-    _addBounds(_cullRect, false);
+    _addBounds(_shadowBounds(path.getBounds(), elevation), false);
   }
 }
 
