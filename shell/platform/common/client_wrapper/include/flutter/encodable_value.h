@@ -144,6 +144,20 @@ using EncodableValueVariant = std::variant<std::monostate,
 //
 // The order/indexes of the variant types is part of the API surface, and is
 // guaranteed not to change.
+//
+// The variant types are mapped with Dart types in following ways:
+// std::monostate       -> null
+// bool                 -> bool
+// int32_t              -> int
+// int64_t              -> int
+// double               -> double
+// std::string          -> String
+// std::vector<uint8_t> -> Uint8List
+// std::vector<int32_t> -> Int32List
+// std::vector<int64_t> -> Int64List
+// std::vector<double>  -> Float64List
+// EncodableList        -> List
+// EncodableMap         -> Map
 class EncodableValue : public internal::EncodableValueVariant {
  public:
   // Rely on std::variant for most of the constructors/operators.
@@ -189,7 +203,7 @@ class EncodableValue : public internal::EncodableValueVariant {
   //
   // Calling this method if the value doesn't contain either an int32_t or an
   // int64_t will throw an exception.
-  int64_t LongValue() {
+  int64_t LongValue() const {
     if (std::holds_alternative<int32_t>(*this)) {
       return std::get<int32_t>(*this);
     }
