@@ -4302,6 +4302,175 @@ class Canvas extends NativeFieldWrapperClass2 {
 
   /// Draws the given [Image] into the canvas with its top-left corner at the
   /// given [Offset]. The image is composited into the canvas using the given [Paint].
+  ///
+  /// An example usage to draw an asset:
+  ///
+  /// ```dart
+  /// class CustomAssetImage extends StatefulWidget {
+  ///   final String asset;
+  ///
+  ///   const CustomAssetImage({required this.asset});
+  ///
+  ///   @override
+  ///   _CustomAssetImageState createState() => _CustomAssetImageState();
+  /// }
+  ///
+  /// class _CustomAssetImageState extends State<CustomAssetImage> {
+  ///   // ImageInfo provides informations to be used on the image rendering
+  ///   ImageInfo? imageInfo;
+  ///   late final VoidCallback _removeListener;
+  ///
+  ///   @override
+  ///   void initState() {
+  ///     super.initState();
+  ///
+  ///     // ExactAssetImage don't care about the widget context
+  ///     final imageProvider = ExactAssetImage(widget.asset);
+  ///     final stream = imageProvider.resolve(ImageConfiguration.empty);
+  ///
+  ///     // A image stream is used because the image can change over time, like when
+  ///     // there are many frames (e.g. GIFs) or the resource image was mutated
+  ///     final listener = ImageStreamListener(_setImage);
+  ///
+  ///     // Each time a new frame is provided, set [imageInfo] so that the painter
+  ///     // is rebuilt
+  ///     stream.addListener(listener);
+  ///
+  ///     _removeListener = () => stream.removeListener(listener);
+  ///   }
+  ///
+  ///   void _setImage(ImageInfo info, _) {
+  ///     setState(() {
+  ///       imageInfo = info;
+  ///     });
+  ///   }
+  ///
+  ///   @override
+  ///   Widget build(BuildContext context) {
+  ///     if (imageInfo?.image == null) {
+  ///       return CircularProgressIndicator();
+  ///     } else {
+  ///       final image = imageInfo!.image;
+  ///       final painter = ImagePainter(image: image);
+  ///
+  ///       return CustomPaint(
+  ///         painter: painter,
+  ///         // For proper layouting, set the CustomPaint size to the image's Size
+  ///         size: Size(
+  ///           image.width.toDouble(),
+  ///           image.height.toDouble(),
+  ///         ),
+  ///       );
+  ///     }
+  ///   }
+  ///
+  ///   @override
+  ///   void dispose() {
+  ///     _removeListener();
+  ///     super.dispose();
+  ///   }
+  /// }
+  ///
+  /// class ImagePainter extends CustomPainter {
+  ///   final ui.Image image;
+  ///
+  ///   const ImagePainter({required this.image});
+  ///
+  ///   @override
+  ///   void paint(Canvas canvas, Size size) =>
+  ///       canvas.drawImage(image, Offset.zero, Paint());
+  ///
+  ///   @override
+  ///   bool shouldRepaint(covariant ImagePainter oldDelegate) =>
+  ///       oldDelegate.image != image;
+  /// }
+  /// ```
+  ///
+  /// Note, however, that the previous example used [ExactAssetImage] as the
+  /// provider for simplicity. Thus, it can't handle changes in the current
+  /// [BuildContext].
+  ///
+  /// If you need to provide an [ImageConfiguration] based on the current
+  /// [BuildContext] you may use [AssetImage] and [createLocalImageConfiguration],
+  /// like in the following sample:
+  ///
+  /// ```dart
+  /// class CustomAssetImage extends StatefulWidget {
+  ///   final String asset;
+  ///
+  ///   const CustomAssetImage({required this.asset});
+  ///
+  ///   @override
+  ///   _CustomAssetImageState createState() => _CustomAssetImageState();
+  /// }
+  ///
+  /// class _CustomAssetImageState extends State<CustomAssetImage> {
+  ///   late final ImageProvider _imageProvider;
+  ///   late final ImageStreamListener _listener;
+  ///   ImageStream? _imageStream;
+  ///   ImageInfo? imageInfo;
+  ///
+  ///   @override
+  ///   void initState() {
+  ///     super.initState();
+  ///     _imageProvider = AssetImage(widget.asset);
+  ///     _listener = ImageStreamListener(_setImage);
+  ///   }
+  ///
+  ///   void _setImage(ImageInfo info, _) {
+  ///     setState(() {
+  ///       imageInfo = info;
+  ///     });
+  ///   }
+  ///
+  ///   @override
+  ///   void didChangeDependencies() {
+  ///     super.didChangeDependencies();
+  ///
+  ///     // Everytime the dependencies change, the stream is recreated based on the
+  ///     // new [BuildContext]
+  ///     final imageConfiguration = createLocalImageConfiguration(context);
+  ///     final stream = _imageProvider.resolve(imageConfiguration);
+  ///
+  ///     // Short-circuit if the keys are equal
+  ///     if (_imageStream?.key == stream.key) {
+  ///       return;
+  ///     }
+  ///
+  ///     // Remove the listener from the old stream and add it to the new stream
+  ///     _imageStream?.removeListener(_listener);
+  ///
+  ///     _imageStream = stream;
+  ///     _imageStream!.addListener(_listener);
+  ///   }
+  ///
+  ///   @override
+  ///   Widget build(BuildContext context) {
+  ///     if (imageInfo?.image == null) {
+  ///       return CircularProgressIndicator();
+  ///     } else {
+  ///       final image = imageInfo!.image;
+  ///       // The ImagePainter is the same as the sample above
+  ///       final painter = ImagePainter(image: image);
+  ///
+  ///       return CustomPaint(
+  ///         painter: painter,
+  ///         // For proper layouting, set the CustomPaint size to the image's Size
+  ///         size: Size(
+  ///           image.width.toDouble(),
+  ///           image.height.toDouble(),
+  ///         ),
+  ///       );
+  ///     }
+  ///   }
+  ///
+  ///   @override
+  ///   void dispose() {
+  ///     _imageStream?.removeListener(_listener);
+  ///     super.dispose();
+  ///   }
+  /// }
+  /// ```
   void drawImage(Image image, Offset offset, Paint paint) {
     assert(image != null); // image is checked on the engine side
     assert(_offsetIsValid(offset));
