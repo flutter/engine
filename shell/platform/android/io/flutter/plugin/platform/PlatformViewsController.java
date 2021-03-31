@@ -486,6 +486,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    * the previously attached {@code View}.
    */
   public void detachFromView() {
+    destroyOverlaySurfaces();
     this.flutterView = null;
 
     // Inform all existing platform views that they are no longer associated with
