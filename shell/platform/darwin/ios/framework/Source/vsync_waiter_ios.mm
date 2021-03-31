@@ -23,7 +23,8 @@ VsyncWaiterIOS::VsyncWaiterIOS(flutter::TaskRunners task_runners)
                                              callback:std::bind(&VsyncWaiterIOS::FireCallback,
                                                                 this,
                                                                 std::placeholders::_1,
-                                                                std::placeholders::_2)]) {}
+                                                                std::placeholders::_2)]),
+      task_runner_(task_runners_.GetUITaskRunner()) {}
 
 VsyncWaiterIOS::~VsyncWaiterIOS() {
   // This way, we will get no more callbacks from the display link that holds a weak (non-nilling)
@@ -33,6 +34,19 @@ VsyncWaiterIOS::~VsyncWaiterIOS() {
 
 void VsyncWaiterIOS::AwaitVSync() {
   [client_.get() await];
+}
+
+void VsyncWaiterIOS::Pause() {
+  [client_.get() invalidate];
+  client_.reset();
+}
+
+void VsyncWaiterIOS::Unpause() {
+  assert(!client_.get());
+  client_.reset([[VSyncClient alloc]
+      initWithTaskRunner:task_runner_
+                callback:std::bind(&VsyncWaiterIOS::FireCallback, this, std::placeholders::_1,
+                                   std::placeholders::_2)]);
 }
 
 }  // namespace flutter
@@ -58,9 +72,18 @@ void VsyncWaiterIOS::AwaitVSync() {
                                         forMode:NSRunLoopCommonModes];
       [client release];
     });
+
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(onInvalidateDisplayLink:)
+                                                 name:@"FlutterInvalidateDisplayLink"
+                                               object:nil];
   }
 
   return self;
+}
+
+-(void)onInvalidateDisplayLink:(NSNotification*)notification {
+  [display_link_.get() invalidate];
 }
 
 - (void)await {
@@ -84,6 +107,7 @@ void VsyncWaiterIOS::AwaitVSync() {
 }
 
 - (void)dealloc {
+  [[NSNotificationCenter defaultCenter] removeObserver:self];
   [self invalidate];
 
   [super dealloc];

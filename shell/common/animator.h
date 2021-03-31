@@ -69,9 +69,9 @@ class Animator final {
   void ScheduleSecondaryVsyncCallback(uintptr_t id,
                                       const fml::closure& callback);
 
-  void Start();
+  void Pause();
 
-  void Stop();
+  void Unpause();
 
   void SetDimensionChangePending();
 

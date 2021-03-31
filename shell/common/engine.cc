@@ -259,13 +259,13 @@ tonic::DartErrorHandleType Engine::GetUIIsolateLastError() {
 
 void Engine::OnOutputSurfaceCreated() {
   have_surface_ = true;
-  StartAnimatorIfPossible();
+  UnpauseAnimatorIfPossible();
   ScheduleFrame();
 }
 
 void Engine::OnOutputSurfaceDestroyed() {
   have_surface_ = false;
-  StopAnimator();
+  PauseAnimator();
 }
 
 void Engine::SetViewportMetrics(const ViewportMetrics& metrics) {
@@ -319,11 +319,11 @@ bool Engine::HandleLifecyclePlatformMessage(PlatformMessage* message) {
   if (state == "AppLifecycleState.paused" ||
       state == "AppLifecycleState.detached") {
     activity_running_ = false;
-    StopAnimator();
+    PauseAnimator();
   } else if (state == "AppLifecycleState.resumed" ||
              state == "AppLifecycleState.inactive") {
     activity_running_ = true;
-    StartAnimatorIfPossible();
+    UnpauseAnimatorIfPossible();
   }
 
   // Always schedule a frame when the app does become active as per API
@@ -437,14 +437,16 @@ void Engine::SetAccessibilityFeatures(int32_t flags) {
   runtime_controller_->SetAccessibilityFeatures(flags);
 }
 
-void Engine::StopAnimator() {
-  animator_->Stop();
+void Engine::PauseAnimator() {
+  animator_->Pause();
 }
 
-void Engine::StartAnimatorIfPossible() {
+bool Engine::UnpauseAnimatorIfPossible() {
   if (activity_running_ && have_surface_) {
-    animator_->Start();
+    animator_->Unpause();
+    return true;
   }
+  return false;
 }
 
 std::string Engine::DefaultRouteName() {

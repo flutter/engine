@@ -172,6 +172,12 @@ class PlatformViewIOS final : public PlatformView {
   std::unique_ptr<std::vector<std::string>> ComputePlatformResolvedLocales(
       const std::vector<std::string>& supported_locale_data) override;
 
+  // |PlatformView|
+  void NotifyCreated() override;
+
+  // |PlatformView|
+  void NotifyDestroyed() override;
+
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformViewIOS);
 };
 
