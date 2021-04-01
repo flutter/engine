@@ -5630,18 +5630,18 @@ class _DisplayListCanvas implements Canvas {
   MaskFilter? _curMaskFilter;
   ImageFilter? _curImageFilter;
 
-  static const int _aaNeeded = 1;
-  static const int _colorNeeded = 2;
-  static const int _blendNeeded = 3;
-  static const int _invertColorsNeeded = 4;
-  static const int _filterQualityNeeded = 5;
-  static const int _paintStyleNeeded = 6;
-  static const int _strokeStyleNeeded = 7;
-  static const int _shaderNeeded = 8;
-  static const int _colorFilterNeeded = 9;
-  static const int _imageFilterNeeded = 10;
-  static const int _maskFilterNeeded = 11;
-  static const int _ditherNeeded = 12;
+  static const int _aaNeeded            = 1 << 0;
+  static const int _colorNeeded         = 1 << 1;
+  static const int _blendNeeded         = 1 << 2;
+  static const int _invertColorsNeeded  = 1 << 3;
+  static const int _filterQualityNeeded = 1 << 4;
+  static const int _paintStyleNeeded    = 1 << 5;
+  static const int _strokeStyleNeeded   = 1 << 6;
+  static const int _shaderNeeded        = 1 << 7;
+  static const int _colorFilterNeeded   = 1 << 8;
+  static const int _imageFilterNeeded   = 1 << 9;
+  static const int _maskFilterNeeded    = 1 << 10;
+  static const int _ditherNeeded        = 1 << 11;
 
   static const int _paintMask = _aaNeeded | _colorNeeded | _blendNeeded | _invertColorsNeeded
                               | _colorFilterNeeded | _shaderNeeded;
