@@ -60,14 +60,14 @@ class LabelAndValue extends RoleManager {
 
     final StringBuffer combinedValue = StringBuffer();
     if (hasLabel) {
-      combinedValue.write(semanticsObject.label);
+      combinedValue.write(semanticsObject.attributedLabel!.string);
       if (shouldDisplayValue) {
         combinedValue.write(' ');
       }
     }
 
     if (shouldDisplayValue) {
-      combinedValue.write(semanticsObject.value);
+      combinedValue.write(semanticsObject.attributedValue?.string);
     }
 
     semanticsObject.element

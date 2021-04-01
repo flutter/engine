@@ -58,11 +58,11 @@ void SemanticsUpdateBuilder::updateNode(
     double bottom,
     double elevation,
     double thickness,
-    std::string label,
-    std::string hint,
-    std::string value,
-    std::string increasedValue,
-    std::string decreasedValue,
+    AttributedString* attributedLabel,
+    AttributedString* attributedValue,
+    AttributedString* attributedIncreasedValue,
+    AttributedString* attributedDecreasedValue,
+    AttributedString* attributedHint,
     int textDirection,
     const tonic::Float64List& transform,
     const tonic::Int32List& childrenInTraversalOrder,
@@ -91,11 +91,16 @@ void SemanticsUpdateBuilder::updateNode(
   node.rect = SkRect::MakeLTRB(left, top, right, bottom);
   node.elevation = elevation;
   node.thickness = thickness;
-  node.label = label;
-  node.hint = hint;
-  node.value = value;
-  node.increasedValue = increasedValue;
-  node.decreasedValue = decreasedValue;
+  node.label = attributedLabel->GetString();
+  node.labelAttributes = attributedLabel->GetAttributes();
+  node.value = attributedValue->GetString();
+  node.valueAttributes = attributedValue->GetAttributes();
+  node.increasedValue = attributedIncreasedValue->GetString();
+  node.increasedValueAttributes = attributedIncreasedValue->GetAttributes();
+  node.decreasedValue = attributedDecreasedValue->GetString();
+  node.decreasedValueAttributes = attributedDecreasedValue->GetAttributes();
+  node.hint = attributedHint->GetString();
+  node.hintAttributes = attributedHint->GetAttributes();
   node.textDirection = textDirection;
   SkScalar scalarTransform[16];
   for (int i = 0; i < 16; ++i) {

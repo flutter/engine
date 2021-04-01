@@ -107,15 +107,15 @@ class Incrementable extends RoleManager {
     final String surrogateTextValue = '$_currentSurrogateValue';
     _element.value = surrogateTextValue;
     _element.setAttribute('aria-valuenow', surrogateTextValue);
-    _element.setAttribute('aria-valuetext', semanticsObject.value!);
+    _element.setAttribute('aria-valuetext', semanticsObject.attributedValue!.string);
 
-    final bool canIncrease = semanticsObject.increasedValue!.isNotEmpty;
+    final bool canIncrease = semanticsObject.attributedIncreasedValue!.string.isNotEmpty;
     final String surrogateMaxTextValue =
         canIncrease ? '${_currentSurrogateValue + 1}' : surrogateTextValue;
     _element.max = surrogateMaxTextValue;
     _element.setAttribute('aria-valuemax', surrogateMaxTextValue);
 
-    final bool canDecrease = semanticsObject.decreasedValue!.isNotEmpty;
+    final bool canDecrease = semanticsObject.attributedDecreasedValue!.string.isNotEmpty;
     final String surrogateMinTextValue =
         canDecrease ? '${_currentSurrogateValue - 1}' : surrogateTextValue;
     _element.min = surrogateMinTextValue;

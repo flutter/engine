@@ -359,14 +359,14 @@ void testMain() {
           builder.updateNode(
             id: 1,
             isTextField: true,
-            value: 'Hello',
+            attributedValue: AttributedString('Hello'),
             isFocused: focusFieldId == 1,
             rect: ui.Rect.fromLTRB(0, 0, 50, 10),
           ),
           builder.updateNode(
             id: 2,
             isTextField: true,
-            value: 'World',
+            attributedValue: AttributedString('World'),
             isFocused: focusFieldId == 2,
             rect: ui.Rect.fromLTRB(0, 20, 50, 10),
           ),
@@ -419,8 +419,8 @@ SemanticsObject createTextFieldSemantics({
   final SemanticsTester tester = SemanticsTester(semantics());
   tester.updateNode(
     id: 0,
-    label: label,
-    value: value,
+    attributedLabel: AttributedString(label),
+    attributedValue: AttributedString(value),
     isTextField: true,
     isFocused: isFocused,
     isMultiline: isMultiline,

@@ -24,8 +24,10 @@
 #include "flutter/lib/ui/painting/picture.h"
 #include "flutter/lib/ui/painting/picture_recorder.h"
 #include "flutter/lib/ui/painting/vertices.h"
+#include "flutter/lib/ui/semantics/attributed_string.h"
 #include "flutter/lib/ui/semantics/semantics_update.h"
 #include "flutter/lib/ui/semantics/semantics_update_builder.h"
+#include "flutter/lib/ui/semantics/string_attribute.h"
 #include "flutter/lib/ui/text/font_collection.h"
 #include "flutter/lib/ui/text/paragraph.h"
 #include "flutter/lib/ui/text/paragraph_builder.h"
@@ -59,6 +61,7 @@ const uint8_t* GetSymbol(Dart_NativeFunction native_function) {
 void DartUI::InitForGlobal() {
   if (!g_natives) {
     g_natives = new tonic::DartLibraryNatives();
+    AttributedString::RegisterNatives(g_natives);
     Canvas::RegisterNatives(g_natives);
     CanvasGradient::RegisterNatives(g_natives);
     CanvasImage::RegisterNatives(g_natives);
@@ -74,6 +77,7 @@ void DartUI::InitForGlobal() {
     ImageShader::RegisterNatives(g_natives);
     ImmutableBuffer::RegisterNatives(g_natives);
     IsolateNameServerNatives::RegisterNatives(g_natives);
+    NativeStringAttribute::RegisterNatives(g_natives);
     Paragraph::RegisterNatives(g_natives);
     ParagraphBuilder::RegisterNatives(g_natives);
     Picture::RegisterNatives(g_natives);

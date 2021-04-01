@@ -59,6 +59,160 @@ void createVertices() {
 void _validateVertices(Vertices vertices) native 'ValidateVertices';
 
 @pragma('vm:entry-point')
+void sendSemanticsUpdate() {
+  final SemanticsUpdateBuilder builder = SemanticsUpdateBuilder();
+  AttributedString attributedLabel = AttributedString(
+    "label",
+    attributes: <StringAttribute> [
+      SpellOutStringAttribute(range: TextRange(start: 1, end: 2)),
+    ],
+  );
+
+  AttributedString attributedValue = AttributedString(
+    "value",
+    attributes: <StringAttribute> [
+      SpellOutStringAttribute(range: TextRange(start: 2, end: 3)),
+    ],
+  );
+
+  AttributedString attributedIncreasedValue = AttributedString(
+    "increasedValue",
+    attributes: <StringAttribute> [
+      SpellOutStringAttribute(range: TextRange(start: 4, end: 5)),
+    ],
+  );
+
+  AttributedString attributedDecreasedValue = AttributedString(
+    "decreasedValue",
+    attributes: <StringAttribute> [
+      SpellOutStringAttribute(range: TextRange(start: 5, end: 6)),
+    ],
+  );
+
+  AttributedString attributedHintFragment1 = AttributedString(
+    "hintFragment1",
+    attributes: <StringAttribute> [
+      LocaleStringAttribute(
+        locale: Locale('en', 'MX'),
+        range: TextRange(start: 0, end: 1),
+      ),
+    ],
+  );
+  AttributedString attributedHintFragment2 = AttributedString(
+    "hintFragment2",
+    attributes: <StringAttribute> [
+      SpellOutStringAttribute(range: TextRange(start: 3, end: 6)),
+    ],
+  );
+  AttributedString attributedHintFragment3 = AttributedString(
+    "hintFragment3",
+    attributes: <StringAttribute> [
+      SpellOutStringAttribute(range: TextRange(start: 0, end: 6)),
+    ],
+  );
+
+  final Float64List transform = Float64List(16);
+  final Int32List childrenInTraversalOrder = Int32List(0);
+  final Int32List childrenInHitTestOrder = Int32List(0);
+  final Int32List additionalActions = Int32List(0);
+  transform[0] = 1;
+  transform[1] = 0;
+  transform[2] = 0;
+  transform[3] = 0;
+
+  transform[4] = 0;
+  transform[5] = 1;
+  transform[6] = 0;
+  transform[7] = 0;
+
+  transform[8] = 0;
+  transform[9] = 0;
+  transform[10] = 1;
+  transform[11] = 0;
+
+  transform[12] = 0;
+  transform[13] = 0;
+  transform[14] = 0;
+  transform[15] = 0;
+  builder.updateNode(
+    id: 0,
+    flags: 0,
+    actions: 0,
+    maxValueLength: 0,
+    currentValueLength: 0,
+    textSelectionBase: -1,
+    textSelectionExtent: -1,
+    platformViewId: -1,
+    scrollChildren: 0,
+    scrollIndex: 0,
+    scrollPosition: 0,
+    scrollExtentMax: 0,
+    scrollExtentMin: 0,
+    rect: Rect.fromLTRB(0, 0, 10, 10),
+    elevation: 0,
+    thickness: 0,
+    attributedLabel: attributedLabel,
+    attributedValue: attributedValue,
+    attributedIncreasedValue: attributedIncreasedValue,
+    attributedDecreasedValue: attributedDecreasedValue,
+    attributedHint: attributedHintFragment1 + attributedHintFragment2 + attributedHintFragment3,
+    textDirection: TextDirection.ltr,
+    transform: transform,
+    childrenInTraversalOrder: childrenInTraversalOrder,
+    childrenInHitTestOrder: childrenInHitTestOrder,
+    additionalActions: additionalActions
+  );
+  _semanticsUpdate(builder.build());
+}
+
+void _semanticsUpdate(SemanticsUpdate update) native 'SemanticsUpdate';
+
+@pragma('vm:entry-point')
+void createConcatString() {
+  AttributedString stringFragment1 = AttributedString(
+    "stringFragment1",
+    attributes: <StringAttribute> [
+      LocaleStringAttribute(
+        locale: Locale('en', 'MX'),
+        range: TextRange(start: 0, end: 1),
+      ),
+    ],
+  );
+  AttributedString stringFragment2 = AttributedString(
+    "stringFragment2",
+    attributes: <StringAttribute> [
+      SpellOutStringAttribute(range: TextRange(start: 3, end: 6)),
+    ],
+  );
+  AttributedString stringFragment3 = AttributedString(
+    "stringFragment3",
+    attributes: <StringAttribute> [
+      SpellOutStringAttribute(range: TextRange(start: 0, end: 6)),
+    ],
+  );
+  _sendAttributedString(stringFragment1 + stringFragment2 + stringFragment3);
+}
+
+void _sendAttributedString(AttributedString update) native 'SendAttributedString';
+
+@pragma('vm:entry-point')
+void createAttributedString() {
+  AttributedString myString = AttributedString(
+    "myString",
+    attributes: <StringAttribute> [
+      LocaleStringAttribute(
+        locale: Locale('en', 'MX'),
+        range: TextRange(start: 0, end: 1),
+      ),
+      SpellOutStringAttribute(range: TextRange(start: 3, end: 6)),
+    ],
+  );
+  _sendToStringResult(myString.toString());
+}
+
+void _sendToStringResult(String update) native 'SendToStringResult';
+
+@pragma('vm:entry-point')
 void createPath() {
   final Path path = Path()..lineTo(10, 10);
   _validatePath(path);

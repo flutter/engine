@@ -165,7 +165,7 @@ void _testEngineSemanticsOwner() {
     expect(tree[0].id, 0);
     expect(tree[0].element.tagName.toLowerCase(), 'flt-semantics');
     expect(tree[1].id, 1);
-    expect(tree[1].label, 'Hello');
+    expect(tree[1].attributedLabel.string, 'Hello');
 
     expectSemanticsTree('''
 <sem style="$rootSemanticStyle">

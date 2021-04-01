@@ -331,7 +331,7 @@ class TextField extends RoleManager {
     if (semanticsObject.hasLabel) {
       editableElement.setAttribute(
         'aria-label',
-        semanticsObject.label!,
+        semanticsObject.attributedLabel!.string,
       );
     } else {
       editableElement.removeAttribute('aria-label');
@@ -346,7 +346,7 @@ class TextField extends RoleManager {
     // currently focused.
     bool needsDomFocusRequest = false;
     final EditingState editingState = EditingState(
-      text: semanticsObject.value,
+      text: semanticsObject.attributedValue?.string,
       baseOffset: semanticsObject.textSelectionBase,
       extentOffset: semanticsObject.textSelectionExtent,
     );
