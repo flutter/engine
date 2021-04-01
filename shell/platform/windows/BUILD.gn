@@ -93,9 +93,15 @@ source_set("flutter_windows_source") {
   # Target-specific sources.
   if (target_os == "winuwp") {
     sources += [
+      "display_helper_winuwp.cc",
+      "display_helper_winuwp.h",
       "flutter_window_winuwp.cc",
       "flutter_window_winuwp.h",
       "flutter_windows_winuwp.cc",
+      "game_pad_cursor_winuwp.cc",
+      "game_pad_cursor_winuwp.h",
+      "game_pad_winuwp.cc",
+      "game_pad_winuwp.h",
       "platform_handler_winuwp.cc",
       "platform_handler_winuwp.h",
       "system_utils_winuwp.cc",
@@ -142,10 +148,14 @@ source_set("flutter_windows_source") {
 
   public_configs = [ ":relative_angle_headers" ]
 
-  defines = [
-    "FLUTTER_ENGINE_NO_PROTOTYPES",
-    "USECOREWINDOW",
-  ]
+  if (target_os == "winuwp") {
+    defines = [
+      "_SILENCE_CLANG_COROUTINE_MESSAGE",
+      "FLUTTER_ENGINE_NO_PROTOTYPES",
+    ]
+  } else {
+    defines = [ "FLUTTER_ENGINE_NO_PROTOTYPES" ]
+  }
 
   deps = [
     ":flutter_windows_headers",
