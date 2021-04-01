@@ -10,12 +10,12 @@
 
 #include "flutter/shell/platform/linux/fl_accessibility_plugin.h"
 #include "flutter/shell/platform/linux/fl_engine_private.h"
-#include "flutter/shell/platform/linux/fl_key_event_plugin.h"
+#include "flutter/shell/platform/linux/fl_keyboard_manager.h"
+#include "flutter/shell/platform/linux/fl_key_channel_responder.h"
 #include "flutter/shell/platform/linux/fl_mouse_cursor_plugin.h"
 #include "flutter/shell/platform/linux/fl_platform_plugin.h"
 #include "flutter/shell/platform/linux/fl_plugin_registrar_private.h"
 #include "flutter/shell/platform/linux/fl_renderer_gl.h"
-#include "flutter/shell/platform/linux/fl_text_input_plugin.h"
 #include "flutter/shell/platform/linux/fl_view_accessible.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_engine.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_plugin_registry.h"
@@ -39,10 +39,9 @@ struct _FlView {
 
   // Flutter system channel handlers.
   FlAccessibilityPlugin* accessibility_plugin;
-  FlKeyEventPlugin* key_event_plugin;
+  FlKeybaordManager* keyboard_manager;
   FlMouseCursorPlugin* mouse_cursor_plugin;
   FlPlatformPlugin* platform_plugin;
-  FlTextInputPlugin* text_input_plugin;
 
   GList* gl_area_list;
   GList* used_area_list;
@@ -181,9 +180,15 @@ static void fl_view_constructed(GObject* object) {
   // Create system channel handlers.
   FlBinaryMessenger* messenger = fl_engine_get_binary_messenger(self->engine);
   self->accessibility_plugin = fl_accessibility_plugin_new(self);
-  self->text_input_plugin = fl_text_input_plugin_new(messenger, self);
-  self->key_event_plugin =
-      fl_key_event_plugin_new(messenger, self->text_input_plugin);
+  self->text_input_plugin = ;
+  self->keyboard_manager = fl_keyboard_manager_new(
+      fl_text_input_plugin_new(messenger, self),
+      gdk_event_put);
+  fl_keyboard_manager_add_responder(
+      self->keyboard_manager,
+      fl_key_channel_responder_new(
+          self->keyboard_manager,
+          messenger));
   self->mouse_cursor_plugin = fl_mouse_cursor_plugin_new(messenger, self);
   self->platform_plugin = fl_platform_plugin_new(messenger);
 
