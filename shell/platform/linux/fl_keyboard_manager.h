@@ -5,10 +5,9 @@
 #ifndef FLUTTER_SHELL_PLATFORM_LINUX_FL_KEYBOARD_MANAGER_H_
 #define FLUTTER_SHELL_PLATFORM_LINUX_FL_KEYBOARD_MANAGER_H_
 
-#include "flutter/shell/platform/linux/fl_text_input_plugin.h"
-
 #include <gdk/gdk.h>
 
+#include "flutter/shell/platform/linux/fl_text_input_plugin.h"
 #include "flutter/shell/platform/linux/fl_key_responder.h"
 
 /**
@@ -22,10 +21,11 @@
  * Type definition for a function that will be called when a key event is
  * received from the engine.
  **/
-typedef void (*FlKeyboardManagerRedispatcher)(GdkEvent* event);
+typedef void (*FlKeyboardManagerRedispatcher)(const GdkEvent* event);
 
 G_BEGIN_DECLS
 
+#define FL_KEYBOARD_MANAGER fl_keyboard_manager_get_type
 G_DECLARE_FINAL_TYPE(FlKeyboardManager,
                      fl_keyboard_manager,
                      FL,
@@ -67,7 +67,7 @@ void fl_keyboard_manager_add_responder(
     FlKeyboardManager* manager,
     FlKeyResponder* responder);
 
-bool fl_keyboard_manager_handle_event(GdkEvent* event);
+gboolean fl_keyboard_manager_handle_event(FlKeyboardManager* manager, GdkEventKey* event);
 
 G_END_DECLS
 

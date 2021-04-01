@@ -5,16 +5,18 @@
 #ifndef FLUTTER_SHELL_PLATFORM_LINUX_FL_KEY_RESPONDER_H_
 #define FLUTTER_SHELL_PLATFORM_LINUX_FL_KEY_RESPONDER_H_
 
-#include "flutter/shell/platform/linux/fl_text_input_plugin.h"
-#include "flutter/shell/platform/linux/public/flutter_linux/fl_binary_messenger.h"
-#include "flutter/shell/platform/linux/public/flutter_linux/fl_value.h"
-
 #include <gdk/gdk.h>
 #include <cinttypes>
 
-typedef void (*FlKeyResponderAsyncCallback)(FlKeyboardManager* manager, uint64_t sequence_id, bool handled);
+#include "flutter/shell/platform/linux/public/flutter_linux/fl_binary_messenger.h"
+#include "flutter/shell/platform/linux/public/flutter_linux/fl_value.h"
 
 G_BEGIN_DECLS
+
+typedef struct _FlKeyboardManager FlKeyboardManager;
+typedef void (*FlKeyResponderAsyncCallback)(FlKeyboardManager* manager, uint64_t sequence_id, bool handled);
+
+#define FL_TYPE_KEY_RESPONDER fl_key_responder_get_type ()
 
 G_DECLARE_INTERFACE(FlKeyResponder,
                     fl_key_responder,
@@ -34,7 +36,7 @@ struct _FlKeyResponderInterface {
    *
    * Returns: (transfer full): an #FlPluginRegistrar.
    */
-  bool (*handle_event)(FlKeyResponder* responder, GdkEvent* event, FlKeyResponderAsyncCallback callback, gpointer user_data);
+  bool (*handle_event)(FlKeyResponder* responder, GdkEventKey* event, FlKeyResponderAsyncCallback callback, gpointer user_data);
 };
 
 /**
@@ -44,7 +46,7 @@ struct _FlKeyResponderInterface {
  * of SystemChannels.keyEvent from the Flutter services library.
  */
 
-bool fl_key_responder_handle_event(FlKeyResponder* responder, GdkEvent* event, FlKeyResponderAsyncCallback callback, gpointer user_data);
+bool fl_key_responder_handle_event(FlKeyResponder* responder, GdkEventKey* event, FlKeyResponderAsyncCallback callback, gpointer user_data);
 
 G_END_DECLS
 

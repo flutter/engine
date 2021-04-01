@@ -39,7 +39,7 @@ struct _FlView {
 
   // Flutter system channel handlers.
   FlAccessibilityPlugin* accessibility_plugin;
-  FlKeybaordManager* keyboard_manager;
+  FlKeyboardManager* keyboard_manager;
   FlMouseCursorPlugin* mouse_cursor_plugin;
   FlPlatformPlugin* platform_plugin;
 
@@ -180,15 +180,12 @@ static void fl_view_constructed(GObject* object) {
   // Create system channel handlers.
   FlBinaryMessenger* messenger = fl_engine_get_binary_messenger(self->engine);
   self->accessibility_plugin = fl_accessibility_plugin_new(self);
-  self->text_input_plugin = ;
   self->keyboard_manager = fl_keyboard_manager_new(
       fl_text_input_plugin_new(messenger, self),
       gdk_event_put);
   fl_keyboard_manager_add_responder(
       self->keyboard_manager,
-      fl_key_channel_responder_new(
-          self->keyboard_manager,
-          messenger));
+      FL_KEY_RESPONDER(fl_key_channel_responder_new(self->keyboard_manager, messenger)));
   self->mouse_cursor_plugin = fl_mouse_cursor_plugin_new(messenger, self);
   self->platform_plugin = fl_platform_plugin_new(messenger);
 
@@ -267,10 +264,9 @@ static void fl_view_dispose(GObject* object) {
   g_clear_object(&self->renderer);
   g_clear_object(&self->engine);
   g_clear_object(&self->accessibility_plugin);
-  g_clear_object(&self->key_event_plugin);
+  g_clear_object(&self->keyboard_manager);
   g_clear_object(&self->mouse_cursor_plugin);
   g_clear_object(&self->platform_plugin);
-  g_clear_object(&self->text_input_plugin);
   g_list_free_full(self->gl_area_list, g_object_unref);
   self->gl_area_list = nullptr;
 
@@ -506,7 +502,7 @@ static gboolean event_box_motion_notify_event(GtkWidget* widget,
 static gboolean fl_view_key_press_event(GtkWidget* widget, GdkEventKey* event) {
   FlView* self = FL_VIEW(widget);
 
-  return fl_key_event_plugin_send_key_event(self->key_event_plugin, event);
+  return fl_keyboard_manager_handle_event(self->keyboard_manager, event);
 }
 
 // Implements GtkWidget::key_release_event.
@@ -514,7 +510,7 @@ static gboolean fl_view_key_release_event(GtkWidget* widget,
                                           GdkEventKey* event) {
   FlView* self = FL_VIEW(widget);
 
-  return fl_key_event_plugin_send_key_event(self->key_event_plugin, event);
+  return fl_keyboard_manager_handle_event(self->keyboard_manager, event);
 }
 
 static void fl_view_put(FlView* self,
