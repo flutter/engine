@@ -26,6 +26,15 @@ static void LogEglError(std::string message) {
 
 namespace flutter {
 
+std::unique_ptr<AngleSurfaceManager> AngleSurfaceManager::Create() {
+  std::unique_ptr<AngleSurfaceManager> manager;
+  manager.reset(new AngleSurfaceManager());
+  if (!manager->initialize_succeeded_) {
+    return nullptr;
+  }
+  return std::move(manager);
+}
+
 AngleSurfaceManager::AngleSurfaceManager()
     : egl_config_(nullptr),
       egl_display_(EGL_NO_DISPLAY),
@@ -70,7 +79,7 @@ bool AngleSurfaceManager::Initialize() {
   const EGLint display_context_attributes[] = {EGL_CONTEXT_CLIENT_VERSION, 2,
                                                EGL_NONE};
 
-  // These are prefered display attributes and request ANGLE's D3D11
+  // These are preferred display attributes and request ANGLE's D3D11
   // renderer. eglInitialize will only succeed with these attributes if the
   // hardware supports D3D11 Feature Level 10_0+.
   const EGLint d3d11_display_attributes[] = {
@@ -241,7 +250,7 @@ void AngleSurfaceManager::ResizeSurface(WindowsRenderTarget* render_target,
   GetSurfaceDimensions(&existing_width, &existing_height);
   if (width != existing_width || height != existing_height) {
     // Resize render_surface_.  Internaly this calls mSwapChain->ResizeBuffers
-    // avoiding the need to destory and recreate the underlying SwapChain.
+    // avoiding the need to destroy and recreate the underlying SwapChain.
     surface_width_ = width;
     surface_height_ = height;
     eglPostSubBufferNV(egl_display_, render_surface_, 1, 1, width, height);

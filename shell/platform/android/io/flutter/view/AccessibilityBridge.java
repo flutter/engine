@@ -523,7 +523,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
    */
   @Override
   @SuppressWarnings("deprecation")
-  // Supressing Lint warning for new API, as we are version guarding all calls to newer APIs
+  // Suppressing Lint warning for new API, as we are version guarding all calls to newer APIs
   @SuppressLint("NewApi")
   public AccessibilityNodeInfo createAccessibilityNodeInfo(int virtualViewId) {
     if (virtualViewId >= MIN_ENGINE_GENERATED_NODE_ID) {
@@ -552,7 +552,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     //
     // In this case, register the accessibility node in the view embedder,
     // so the accessibility tree can be mirrored as a subtree of the Flutter accessibility tree.
-    // This is in constrast to hybrid composition where the embeded view is in the view hiearchy,
+    // This is in constrast to hybrid composition where the embedded view is in the view hiearchy,
     // so it doesn't need to be mirrored.
     //
     // See the case down below for how hybrid composition is handled.
@@ -852,7 +852,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         View embeddedView =
             platformViewsAccessibilityDelegate.getPlatformViewById(child.platformViewId);
 
-        // Add the embeded view as a child of the current accessibility node if it's using
+        // Add the embedded view as a child of the current accessibility node if it's using
         // hybrid composition.
         //
         // In this case, the view is in the Activity's view hierarchy, so it doesn't need to be
@@ -1165,7 +1165,8 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
           Pattern pattern = Pattern.compile("\\p{L}(\\b)");
           Matcher result = pattern.matcher(node.value.substring(node.textSelectionExtent));
           // we discard the first result because we want to find the "next" word
-          if (result.find() && result.find()) {
+          result.find();
+          if (result.find()) {
             node.textSelectionExtent += result.start(1);
           } else {
             node.textSelectionExtent = node.value.length();
@@ -1909,7 +1910,9 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     // IS_MULTILINE(1 << 19);
     IS_READ_ONLY(1 << 20),
     IS_FOCUSABLE(1 << 21),
-    IS_LINK(1 << 22);
+    IS_LINK(1 << 22),
+    IS_SLIDER(1 << 23),
+    IS_KEYBOARD_KEY(1 << 24);
 
     final int value;
 

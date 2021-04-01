@@ -196,7 +196,7 @@ class EngineAutofillForm {
     ids.sort();
     final StringBuffer idBuffer = StringBuffer();
 
-    // Add a seperator between element identifiers.
+    // Add a separator between element identifiers.
     for (final String id in ids) {
       if (idBuffer.length > 0) {
         idBuffer.write('*');
@@ -1373,9 +1373,13 @@ class TextEditingChannel {
         // UITextInput.firstRecForRange.
         break;
 
+      case 'TextInput.setCaretRect':
+        // No-op: not supported on this platform.
+        break;
+
       default:
-        throw StateError(
-            'Unsupported method call on the flutter/textinput channel: ${call.method}');
+        EnginePlatformDispatcher.instance._replyToPlatformMessage(callback, null);
+        return;
     }
     EnginePlatformDispatcher.instance
         ._replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));

@@ -700,7 +700,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholderBaselineParagraph)) {
     GetCanvas()->drawRect(boxes[i].rect, paint);
   }
   EXPECT_EQ(boxes.size(), 1ull);
-  // Verify the other text didn't just shift to accomodate it.
+  // Verify the other text didn't just shift to accommodate it.
   EXPECT_FLOAT_EQ(boxes[0].rect.left(), 75.34375);
   EXPECT_FLOAT_EQ(boxes[0].rect.top(), 14.226246);
   EXPECT_FLOAT_EQ(boxes[0].rect.right(), 90.945312);
@@ -776,7 +776,7 @@ TEST_F(ParagraphTest,
     GetCanvas()->drawRect(boxes[i].rect, paint);
   }
   EXPECT_EQ(boxes.size(), 1ull);
-  // Verify the other text didn't just shift to accomodate it.
+  // Verify the other text didn't just shift to accommodate it.
   EXPECT_FLOAT_EQ(boxes[0].rect.left(), 75.34375);
   EXPECT_FLOAT_EQ(boxes[0].rect.top(), 25.53125);
   EXPECT_FLOAT_EQ(boxes[0].rect.right(), 90.945312);
@@ -852,7 +852,7 @@ TEST_F(ParagraphTest,
     GetCanvas()->drawRect(boxes[i].rect, paint);
   }
   EXPECT_EQ(boxes.size(), 1ull);
-  // Verify the other text didn't just shift to accomodate it.
+  // Verify the other text didn't just shift to accommodate it.
   EXPECT_FLOAT_EQ(boxes[0].rect.left(), 75.34375);
   EXPECT_FLOAT_EQ(boxes[0].rect.top(), -0.12109375);
   EXPECT_FLOAT_EQ(boxes[0].rect.right(), 90.945312);
@@ -926,7 +926,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholderBottomParagraph)) {
     GetCanvas()->drawRect(boxes[i].rect, paint);
   }
   EXPECT_EQ(boxes.size(), 1ull);
-  // Verify the other text didn't just shift to accomodate it.
+  // Verify the other text didn't just shift to accommodate it.
   EXPECT_FLOAT_EQ(boxes[0].rect.left(), 0.5);
   EXPECT_FLOAT_EQ(boxes[0].rect.top(), 19.53125);
   EXPECT_FLOAT_EQ(boxes[0].rect.right(), 16.101562);
@@ -1000,7 +1000,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholderTopParagraph)) {
     GetCanvas()->drawRect(boxes[i].rect, paint);
   }
   EXPECT_EQ(boxes.size(), 1ull);
-  // Verify the other text didn't just shift to accomodate it.
+  // Verify the other text didn't just shift to accommodate it.
   EXPECT_FLOAT_EQ(boxes[0].rect.left(), 0.5);
   EXPECT_FLOAT_EQ(boxes[0].rect.top(), 0);
   EXPECT_FLOAT_EQ(boxes[0].rect.right(), 16.101562);
@@ -1074,7 +1074,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholderMiddleParagraph)) {
     GetCanvas()->drawRect(boxes[i].rect, paint);
   }
   EXPECT_EQ(boxes.size(), 1ull);
-  // Verify the other text didn't just shift to accomodate it.
+  // Verify the other text didn't just shift to accommodate it.
   EXPECT_FLOAT_EQ(boxes[0].rect.left(), 75.34375);
   EXPECT_FLOAT_EQ(boxes[0].rect.top(), 9.765625);
   EXPECT_FLOAT_EQ(boxes[0].rect.right(), 90.945312);
@@ -1150,7 +1150,7 @@ TEST_F(ParagraphTest,
     GetCanvas()->drawRect(boxes[i].rect, paint);
   }
   EXPECT_EQ(boxes.size(), 1ull);
-  // Verify the other text didn't just shift to accomodate it.
+  // Verify the other text didn't just shift to accommodate it.
   EXPECT_FLOAT_EQ(boxes[0].rect.left(), 135.5);
   EXPECT_FLOAT_EQ(boxes[0].rect.top(), 4.7033391);
   EXPECT_FLOAT_EQ(boxes[0].rect.right(), 162.5);
@@ -2461,6 +2461,50 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(LeftAlignParagraph)) {
   ASSERT_EQ(paragraph->GetGlyphPositionAtCoordinate(1, 35).position, 68ull);
   ASSERT_EQ(paragraph->GetGlyphPositionAtCoordinate(1, 70).position, 134ull);
   ASSERT_EQ(paragraph->GetGlyphPositionAtCoordinate(2000, 35).position, 134ull);
+
+  ASSERT_TRUE(Snapshot());
+}
+
+TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(LeftAlignRTLParagraphHitTest)) {
+  // Regression test for https://github.com/flutter/flutter/issues/54969.
+  const char* text = "بمباركة التقليدية قام عن. تصفح";
+  auto icu_text = icu::UnicodeString::fromUTF8(text);
+  std::u16string u16_text(icu_text.getBuffer(),
+                          icu_text.getBuffer() + icu_text.length());
+
+  txt::ParagraphStyle paragraph_style;
+  paragraph_style.max_lines = 1;
+  paragraph_style.text_align = TextAlign::left;
+  paragraph_style.text_direction = TextDirection::rtl;
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
+  text_style.font_size = 26;
+  text_style.letter_spacing = 1;
+  text_style.word_spacing = 5;
+  text_style.color = SK_ColorBLACK;
+  text_style.height = 1;
+  text_style.decoration = TextDecoration::kUnderline;
+  text_style.decoration_color = SK_ColorBLACK;
+  builder.PushStyle(text_style);
+
+  builder.AddText(u16_text);
+
+  builder.Pop();
+
+  auto paragraph = BuildParagraph(builder);
+  paragraph->Layout(GetTestCanvasWidth());
+
+  paragraph->Paint(GetCanvas(), 0, 0);
+
+  ASSERT_TRUE(Snapshot());
+
+  // Tests for GetGlyphPositionAtCoordinate()
+  ASSERT_EQ(
+      paragraph->GetGlyphPositionAtCoordinate(GetTestCanvasWidth() - 0.5, 0.5)
+          .position,
+      0ull);
 
   ASSERT_TRUE(Snapshot());
 }

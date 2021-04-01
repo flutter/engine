@@ -980,26 +980,55 @@ void _canvasTests() {
     );
   });
 
-  test('drawImage', () {
+  test('drawImageOptions', () {
     final SkAnimatedImage image =
         canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage);
-    canvas.drawImage(
+    canvas.drawImageOptions(
       image.getCurrentFrame(),
       10,
       20,
+      canvasKit.FilterMode.Linear,
+      canvasKit.MipmapMode.None,
       SkPaint(),
     );
   });
 
-  test('drawImageRect', () {
+  test('drawImageCubic', () {
     final SkAnimatedImage image =
-        canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage);
-    canvas.drawImageRect(
+    canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage);
+    canvas.drawImageCubic(
+      image.getCurrentFrame(),
+      10,
+      20,
+      0.3,
+      0.3,
+      SkPaint(),
+    );
+  });
+
+  test('drawImageRectOptions', () {
+    final SkAnimatedImage image =
+    canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage);
+    canvas.drawImageRectOptions(
       image.getCurrentFrame(),
       Float32List.fromList([0, 0, 1, 1]),
       Float32List.fromList([0, 0, 1, 1]),
+      canvasKit.FilterMode.Linear,
+      canvasKit.MipmapMode.None,
       SkPaint(),
-      false,
+    );
+  });
+
+  test('drawImageRectCubic', () {
+    final SkAnimatedImage image =
+    canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage);
+    canvas.drawImageRectCubic(
+      image.getCurrentFrame(),
+      Float32List.fromList([0, 0, 1, 1]),
+      Float32List.fromList([0, 0, 1, 1]),
+      0.3,
+      0.3,
+      SkPaint(),
     );
   });
 
@@ -1010,6 +1039,7 @@ void _canvasTests() {
       image.getCurrentFrame(),
       Float32List.fromList([0, 0, 1, 1]),
       Float32List.fromList([0, 0, 1, 1]),
+      canvasKit.FilterMode.Linear,
       SkPaint(),
     );
   });
@@ -1297,27 +1327,47 @@ void _paragraphTests() {
       canvasKit.TextBaseline.Ideographic,
       4.0,
     );
-    builder.pushStyle(canvasKit.TextStyle(SkTextStyleProperties()
-      ..fontSize = 12));
+    builder
+        .pushStyle(canvasKit.TextStyle(SkTextStyleProperties()..fontSize = 12));
     builder.addText('World');
     builder.pop();
-    builder.pushPaintStyle(canvasKit.TextStyle(SkTextStyleProperties()
-      ..fontSize = 12), SkPaint(), SkPaint());
+    builder.pushPaintStyle(
+        canvasKit.TextStyle(SkTextStyleProperties()..fontSize = 12),
+        SkPaint(),
+        SkPaint());
     builder.addText('!');
     builder.pop();
     final SkParagraph paragraph = builder.build();
     paragraph.layout(55);
-    expect(paragraph.getAlphabeticBaseline(), within<double>(distance: 0.5, from: 22));
+    expect(paragraph.getAlphabeticBaseline(),
+        within<double>(distance: 0.5, from: 22));
     expect(paragraph.didExceedMaxLines(), false);
     expect(paragraph.getHeight(), 28);
-    expect(paragraph.getIdeographicBaseline(), within<double>(distance: 0.5, from: 28));
+    expect(paragraph.getIdeographicBaseline(),
+        within<double>(distance: 0.5, from: 28));
     expect(paragraph.getLongestLine(), 50);
     expect(paragraph.getMaxIntrinsicWidth(), 50);
     expect(paragraph.getMinIntrinsicWidth(), 50);
     expect(paragraph.getMaxWidth(), 55);
-    expect(paragraph.getRectsForRange(1, 3, canvasKit.RectHeightStyle.Tight, canvasKit.RectWidthStyle.Max), <double>[]);
+    expect(
+        paragraph.getRectsForRange(1, 3, canvasKit.RectHeightStyle.Tight,
+            canvasKit.RectWidthStyle.Max),
+        <double>[]);
     expect(paragraph.getRectsForPlaceholders(), hasLength(1));
-    expect(paragraph.getGlyphPositionAtCoordinate(5, 5).affinity, canvasKit.Affinity.Downstream);
+    expect(paragraph.getLineMetrics(), hasLength(1));
+
+    final SkLineMetrics lineMetrics = paragraph.getLineMetrics().single;
+    expect(lineMetrics.ascent, 20.703125);
+    expect(lineMetrics.descent, 4.296875);
+    expect(lineMetrics.isHardBreak, true);
+    expect(lineMetrics.baseline, 22.140625);
+    expect(lineMetrics.height, 28);
+    expect(lineMetrics.left, 2.5);
+    expect(lineMetrics.width, 50);
+    expect(lineMetrics.lineNumber, 0);
+
+    expect(paragraph.getGlyphPositionAtCoordinate(5, 5).affinity,
+        canvasKit.Affinity.Downstream);
 
     // "Hello"
     for (int i = 0; i < 5; i++) {
@@ -1335,6 +1385,7 @@ void _paragraphTests() {
     // "!"
     expect(paragraph.getWordBoundary(11).start, 11);
     expect(paragraph.getWordBoundary(11).end, 12);
+
     paragraph.delete();
   });
 }
