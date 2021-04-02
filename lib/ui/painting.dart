@@ -4386,13 +4386,11 @@ class Canvas extends NativeFieldWrapperClass2 {
   /// }
   /// ```
   ///
-  /// Note, however, that the previous example used [ExactAssetImage] as the
-  /// provider for simplicity. Thus, it can't handle changes in the current
-  /// [BuildContext].
+  /// The previous example used [ExactAssetImage] as the provider for
+  /// simplicity. Thus, it can't handle changes in the current [BuildContext].
   ///
-  /// If you need to provide an [ImageConfiguration] based on the current
-  /// [BuildContext] you may use [AssetImage] and [createLocalImageConfiguration],
-  /// like in the following sample:
+  /// To provide an [ImageConfiguration] based on the current [BuildContext]
+  /// you may use [AssetImage] and [createLocalImageConfiguration]:
   ///
   /// ```dart
   /// class CustomAssetImage extends StatefulWidget {
