@@ -4394,7 +4394,7 @@ class Canvas extends NativeFieldWrapperClass2 {
   /// simplicity. Thus, it can't handle changes in the current [BuildContext].
   ///
   /// To provide an [ImageConfiguration] based on the current [BuildContext]
-  /// you may use [AssetImage] and [createLocalImageConfiguration]:
+  /// consider using [AssetImage] with [createLocalImageConfiguration]:
   /// 
   /// {@tool snippet}
   ///
