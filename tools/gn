@@ -261,7 +261,7 @@ def to_gn_args(args):
 
     if sys.platform == 'darwin' and args.target_os not in ['android', 'fuchsia']:
       # OpenGL is deprecated on macOS > 10.11.
-      # This is not neccessarily needed but enabling this until we have a way to
+      # This is not necessarily needed but enabling this until we have a way to
       # build a macOS metal only shell and a gl only shell.
       gn_args['allow_deprecated_api_calls'] = True
       gn_args['skia_use_metal'] = True
@@ -287,10 +287,11 @@ def to_gn_args(args):
     if args.arm_float_abi:
       gn_args['arm_float_abi'] = args.arm_float_abi
 
-    # Whether to build trained Dart SDK snapshots of dart2js and dartdevc,
-    # including the web sdk kernel and source files.
-    if args.target_os is None:
-      # dart_platform_sdk is not declared for Android targets.
+    # dart_platform_sdk is only defined for host builds, linux arm host builds
+    # specify target_os=linux
+    if args.target_os is None or args.target_os == 'linux':
+      # dart_platform_sdk=True means exclude web-related files, e.g. dart2js,
+      # dartdevc, web SDK kernel and source files.
       gn_args['dart_platform_sdk'] = not args.full_dart_sdk
     gn_args['full_dart_sdk'] = args.full_dart_sdk
 
@@ -369,7 +370,7 @@ def parse_args(args):
 
   parser.add_argument('--goma', default=True, action='store_true')
   parser.add_argument('--no-goma', dest='goma', action='store_false')
-  parser.add_argument('--xcode-symlinks', action='store_true', help='Set to true for builds targetting macOS or iOS ' +
+  parser.add_argument('--xcode-symlinks', action='store_true', help='Set to true for builds targeting macOS or iOS ' +
       'when using goma. If set, symlinks to the Xcode provided sysroot and SDKs will be created in a generated ' +
       'folder, which will avoid potential backend errors in Fuchsia RBE. Instead of specifying the flag on each invocation ' +
       'the FLUTTER_GOMA_CREATE_XCODE_SYMLINKS environment variable may be set to 1 to achieve the same effect.')

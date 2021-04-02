@@ -19,10 +19,10 @@
 
 namespace flutter {
 
-// A win32 flutter child window used as implementatin for flutter view.  In the
-// future, there will likely be a CoreWindow-based FlutterWindow as well.  At
-// the point may make sense to dependency inject the native window rather than
-// inherit.
+// A win32 flutter child window used as implementations for flutter view.  In
+// the future, there will likely be a CoreWindow-based FlutterWindow as well.
+// At the point may make sense to dependency inject the native window rather
+// than inherit.
 class FlutterWindowWin32 : public WindowWin32, public WindowBindingHandler {
  public:
   // Create flutter Window for use as child window
@@ -97,6 +97,11 @@ class FlutterWindowWin32 : public WindowWin32, public WindowBindingHandler {
 
   // |FlutterWindowBindingHandler|
   void OnWindowResized() override;
+
+  // |FlutterWindowBindingHandler|
+  bool OnBitmapSurfaceUpdated(const void* allocation,
+                              size_t row_bytes,
+                              size_t height) override;
 
  private:
   // A pointer to a FlutterWindowsView that can be used to update engine
