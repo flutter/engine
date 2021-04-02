@@ -13,8 +13,8 @@
 #include <GLES2/gl2ext.h>
 
 // Windows platform specific includes
-#include <memory>
 #include <windows.h>
+#include <memory>
 
 #include "window_binding_handler.h"
 
