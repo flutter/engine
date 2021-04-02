@@ -344,6 +344,7 @@ CANVAS_OP_DEFINE_OP(op_type,                                    \
   int nrstscalars = it.GetFloatList(&rst_ptr);                  \
   SkScalar *rect_ptr;                                           \
   int nrectscalars = it.GetFloatList(&rect_ptr);                \
+  SkBlendMode blendMode = it.GetBlendMode();                    \
   int numrects = nrectscalars / 4;                              \
   uint32_t *clr_ptr = nullptr;                                  \
   int ncolorints = numrects;                                    \
@@ -368,7 +369,7 @@ CANVAS_OP_DEFINE_OP(op_type,                                    \
     reinterpret_cast<const SkRect*>(rect_ptr),                  \
     reinterpret_cast<const SkColor*>(clr_ptr),                  \
     numrects,                                                   \
-    context.paint.getBlendMode(), context.sampling, pCullRect,  \
+    blendMode, context.sampling, pCullRect,  \
     &context.paint);                                            \
 )
 CANVAS_OP_DEFINE_ATLAS(drawAtlas, false, false)

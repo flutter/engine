@@ -5979,11 +5979,11 @@ class _DisplayListCanvas implements Canvas {
         : (colorBuffer == null) ? _CanvasOp.drawAtlasCulled : _CanvasOp.drawAtlasColoredCulled;
 
     _updatePaintData(paint, _imageMask);
-    _updateBlendMode(blendMode ?? BlendMode.src);
     _addOp(op);
     _addImageData(atlas);
     _addFloat32List(rstTransformBuffer);
     _addFloat32List(rectBuffer);
+    _addInt((blendMode ?? BlendMode.src).index);
     if (colorBuffer != null)
       _addInt32List(colorBuffer);
     if (cullRect != null)
@@ -6018,11 +6018,11 @@ class _DisplayListCanvas implements Canvas {
         : (colors == null) ? _CanvasOp.drawAtlasCulled : _CanvasOp.drawAtlasColoredCulled;
 
     _updatePaintData(paint, _imageMask);
-    _updateBlendMode(blendMode ?? BlendMode.src);
     _addOp(op);
     _addImageData(atlas);
     _addFloat32List(rstTransforms);
     _addFloat32List(rects);
+    _addInt((blendMode ?? BlendMode.src).index);
     if (colors != null)
       _addInt32List(colors);
     if (cullRect != null)

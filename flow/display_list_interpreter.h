@@ -55,6 +55,8 @@ enum CanvasOpArg {
   CANVAS_OP_APPEND_ARG(CANVAS_OP_ARGS3(arg2, arg3, arg4), arg1)
 #define CANVAS_OP_ARGS5(arg1, arg2, arg3, arg4, arg5) \
   CANVAS_OP_APPEND_ARG(CANVAS_OP_ARGS4(arg2, arg3, arg4, arg5), arg1)
+#define CANVAS_OP_ARGS6(arg1, arg2, arg3, arg4, arg5, arg6) \
+  CANVAS_OP_APPEND_ARG(CANVAS_OP_ARGS5(arg2, arg3, arg4, arg5, arg6), arg1)
 
 #define CANVAS_OP_ARGS__                    0
 #define CANVAS_OP_ARGS_Scalar               CANVAS_OP_ARGS1(scalar)
@@ -76,10 +78,10 @@ enum CanvasOpArg {
 #define CANVAS_OP_ARGS_Vertices             CANVAS_OP_ARGS1(vertices)
 #define CANVAS_OP_ARGS_Image_Point          CANVAS_OP_ARGS2(image, point)
 #define CANVAS_OP_ARGS_Image_2Rects         CANVAS_OP_ARGS3(image, rect, rect)
-#define CANVAS_OP_ARGS_Atlas                CANVAS_OP_ARGS3(image, scalar_list, scalar_list)
-#define CANVAS_OP_ARGS_Atlas_Colors         CANVAS_OP_ARGS4(image, scalar_list, scalar_list, uint32_list)
-#define CANVAS_OP_ARGS_Atlas_Rect           CANVAS_OP_ARGS4(image, scalar_list, scalar_list, rect)
-#define CANVAS_OP_ARGS_Atlas_Colors_Rect    CANVAS_OP_ARGS5(image, scalar_list, scalar_list, uint32_list, rect)
+#define CANVAS_OP_ARGS_Atlas                CANVAS_OP_ARGS4(image, scalar_list, scalar_list, blend_mode)
+#define CANVAS_OP_ARGS_Atlas_Colors         CANVAS_OP_ARGS5(image, scalar_list, scalar_list, blend_mode, uint32_list)
+#define CANVAS_OP_ARGS_Atlas_Rect           CANVAS_OP_ARGS5(image, scalar_list, scalar_list, blend_mode, rect)
+#define CANVAS_OP_ARGS_Atlas_Colors_Rect    CANVAS_OP_ARGS6(image, scalar_list, scalar_list, blend_mode, uint32_list, rect)
 #define CANVAS_OP_ARGS_SkPicture            CANVAS_OP_ARGS1(skpicture)
 #define CANVAS_OP_ARGS_DisplayList          CANVAS_OP_ARGS1(display_list)
 #define CANVAS_OP_ARGS_Shader               CANVAS_OP_ARGS1(shader)
