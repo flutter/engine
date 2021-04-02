@@ -1234,6 +1234,26 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 
 @end
 
+@interface FlutterTimingProxy : NSObject
+@property(nonatomic, assign) id target;
+@end
+
+@implementation FlutterTimingProxy
+
++ (instancetype)proxyWithTarget:(id)target {
+  FlutterTimingProxy* proxy = [[self new] autorelease];
+  if (proxy) {
+    proxy.target = target;
+  }
+  return proxy;
+}
+
+- (void)enableActiveViewAccessibility {
+  [self.target enableActiveViewAccessibility];
+}
+
+@end
+
 @interface FlutterTextInputPlugin ()
 @property(nonatomic, strong) FlutterTextInputView* reusableInputView;
 
@@ -1345,15 +1365,15 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   if (!_enableFlutterTextInputViewAccessibilityTimer) {
     _enableFlutterTextInputViewAccessibilityTimer =
         [[NSTimer scheduledTimerWithTimeInterval:kUITextInputAccessibilityEnablingDelaySeconds
-                                          target:self
-                                        selector:@selector(enableActiveViewAccessibility:)
+                                          target:[FlutterTimingProxy proxyWithTarget:self]
+                                        selector:@selector(enableActiveViewAccessibility)
                                         userInfo:nil
                                          repeats:NO] retain];
   }
   [_activeView becomeFirstResponder];
 }
 
-- (void)enableActiveViewAccessibility:(NSTimer*)time {
+- (void)enableActiveViewAccessibility {
   if (_activeView.isFirstResponder) {
     _activeView.accessibilityEnabled = YES;
   }

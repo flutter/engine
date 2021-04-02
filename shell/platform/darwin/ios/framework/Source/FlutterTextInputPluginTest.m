@@ -245,7 +245,8 @@ FLUTTER_ASSERT_ARC
   @autoreleasepool {
     FlutterTextInputPlugin* inputPlugin = [FlutterTextInputPlugin new];
     activeView = inputPlugin.activeView;
-    activeView.textInputDelegate = (id<FlutterTextInputDelegate>)inputPlugin;
+    FlutterEngine* flutterEngine = [[FlutterEngine alloc] init];
+    activeView.textInputDelegate = (id<FlutterTextInputDelegate>)flutterEngine;
   }
   [activeView updateEditingState];
 }
