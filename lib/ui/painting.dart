@@ -4303,6 +4303,8 @@ class Canvas extends NativeFieldWrapperClass2 {
   /// Draws the given [Image] into the canvas with its top-left corner at the
   /// given [Offset]. The image is composited into the canvas using the given [Paint].
   ///
+  /// {@tool snippet}
+  ///
   /// An example usage to draw an asset:
   ///
   /// ```dart
@@ -4386,11 +4388,15 @@ class Canvas extends NativeFieldWrapperClass2 {
   /// }
   /// ```
   ///
+  /// {@end-tool}
+  ///
   /// The previous example used [ExactAssetImage] as the provider for
   /// simplicity. Thus, it can't handle changes in the current [BuildContext].
   ///
   /// To provide an [ImageConfiguration] based on the current [BuildContext]
   /// you may use [AssetImage] and [createLocalImageConfiguration]:
+  /// 
+  /// {@tool sample}
   ///
   /// ```dart
   /// class CustomAssetImage extends StatefulWidget {
@@ -4469,6 +4475,7 @@ class Canvas extends NativeFieldWrapperClass2 {
   ///   }
   /// }
   /// ```
+  /// {@end-tool}
   void drawImage(Image image, Offset offset, Paint paint) {
     assert(image != null); // image is checked on the engine side
     assert(_offsetIsValid(offset));
