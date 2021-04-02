@@ -14,7 +14,7 @@
 
 G_BEGIN_DECLS
 
-#define FL_KEY_CHANNEL_RESPONDER fl_key_channel_responder_get_type
+#define FL_KEY_CHANNEL_RESPONDER fl_key_channel_responder_get_type ()
 G_DECLARE_FINAL_TYPE(FlKeyChannelResponder,
                      fl_key_channel_responder,
                      FL,

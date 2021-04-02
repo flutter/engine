@@ -6,6 +6,12 @@
 
 #include <cinttypes>
 
+G_DECLARE_FINAL_TYPE(FlKeyboardPendingEvent,
+                     fl_keyboard_pending_event,
+                     FL,
+                     KEYBOARD_PENDING_EVENT,
+                     GObject);
+
 struct _FlKeyboardPendingEvent {
   GdkEventKey* event;
 
@@ -21,6 +27,26 @@ struct _FlKeyboardPendingEvent {
   uint64_t hash;
 };
 
+G_DEFINE_TYPE(FlKeyboardPendingEvent, fl_keyboard_pending_event, G_TYPE_OBJECT)
+
+// Dispose method for FlKeyboardPendingEvent.
+static void fl_keyboard_pending_event_dispose(GObject* object) {
+  // Redundant, but added so that we don't get a warning about unused function
+  // for FL_IS_KEYBOARD_PENDING_EVENT.
+  g_return_if_fail(FL_IS_KEYBOARD_PENDING_EVENT(object));
+
+  FlKeyboardPendingEvent* self = FL_KEYBOARD_PENDING_EVENT(object);
+  g_clear_pointer(&self->event, gdk_event_free);
+  G_OBJECT_CLASS(fl_keyboard_pending_event_parent_class)->dispose(object);
+}
+
+// Class Initialization method for FlKeyboardPendingEvent class.
+static void fl_keyboard_pending_event_class_init(FlKeyboardPendingEventClass* klass) {
+  G_OBJECT_CLASS(klass)->dispose = fl_keyboard_pending_event_dispose;
+}
+
+// Initialization for FlKeyboardPendingEvent instances.
+static void fl_keyboard_pending_event_init(FlKeyboardPendingEvent* self) {}
 
 // Calculates a unique ID for a given GdkEventKey object to use for
 // identification of responses from the framework.
@@ -67,9 +93,9 @@ static void fl_keyboard_manager_dispose(GObject* object) {
 
   g_clear_object(&self->text_input_plugin);
   g_ptr_array_free(self->responder_list, TRUE);
-  g_ptr_array_set_free_func(self->pending_responds, g_free);
+  g_ptr_array_set_free_func(self->pending_responds, g_object_unref);
   g_ptr_array_free(self->pending_responds, TRUE);
-  g_ptr_array_set_free_func(self->pending_redispatches, g_free);
+  g_ptr_array_set_free_func(self->pending_redispatches, g_object_unref);
   g_ptr_array_free(self->pending_redispatches, TRUE);
 
   G_OBJECT_CLASS(fl_keyboard_manager_parent_class)->dispose(object);
@@ -107,7 +133,7 @@ static bool fl_keyboard_manager_remove_redispatched(FlKeyboardManager* self, uin
   if (found) {
     gpointer removed = g_ptr_array_remove_index_fast(self->pending_redispatches, result_index);
     g_return_val_if_fail(removed != nullptr, TRUE);
-    g_free(removed);
+    g_object_unref(removed);
     return TRUE;
   } else {
     return FALSE;
@@ -144,7 +170,7 @@ static void responder_handle_event_callback(FlKeyboardManager* self, uint64_t se
       g_ptr_array_add(self->pending_redispatches, pending);
       self->redispatch_callback(reinterpret_cast<GdkEvent*>(pending->event));
     } else {
-      g_free(pending);
+      g_object_unref(pending);
     }
   }
 }
