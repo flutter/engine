@@ -2,10 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
-part of engine;
-
 /// When `true` prints statistics about what happened to the surface tree when
+
+// @dart = 2.12
+part of engine;
 /// it was composited.
 ///
 /// Also paints an on-screen overlay with the numbers visualized as a timeline.
@@ -33,21 +33,24 @@ const double _kScreenPixelRatioWarningThreshold = 6.0;
 /// Performs any outstanding painting work enqueued by [PersistedPicture]s.
 void commitScene(PersistedScene scene) {
   if (_paintQueue.isNotEmpty) {
-    if (_paintQueue.length > 1) {
-      // Sort paint requests in decreasing canvas size order. Paint requests
-      // attempt to reuse canvases. For efficiency we want the biggest pictures
-      // to find canvases before the smaller ones claim them.
-      _paintQueue.sort((_PaintRequest a, _PaintRequest b) {
-        final double aSize = a.canvasSize.height * a.canvasSize.width;
-        final double bSize = b.canvasSize.height * b.canvasSize.width;
-        return bSize.compareTo(aSize);
-      });
-    }
+    try {
+      if (_paintQueue.length > 1) {
+        // Sort paint requests in decreasing canvas size order. Paint requests
+        // attempt to reuse canvases. For efficiency we want the biggest pictures
+        // to find canvases before the smaller ones claim them.
+        _paintQueue.sort((_PaintRequest a, _PaintRequest b) {
+          final double aSize = a.canvasSize.height * a.canvasSize.width;
+          final double bSize = b.canvasSize.height * b.canvasSize.width;
+          return bSize.compareTo(aSize);
+        });
+      }
 
-    for (_PaintRequest request in _paintQueue) {
-      request.paintCallback();
+      for (_PaintRequest request in _paintQueue) {
+        request.paintCallback();
+      }
+    } finally {
+      _paintQueue = <_PaintRequest>[];
     }
-    _paintQueue = <_PaintRequest>[];
   }
 
   // After the update the retained surfaces are back to active.
@@ -275,7 +278,6 @@ abstract class PersistedSurface implements ui.EngineLayer {
   /// retain came in.
   @mustCallSuper
   @visibleForTesting
-  @protected
   void revive() {
     assert(debugAssertSurfaceState(this, PersistedSurfaceState.released));
     state = PersistedSurfaceState.created;
@@ -304,6 +306,7 @@ abstract class PersistedSurface implements ui.EngineLayer {
   html.Element? rootElement;
 
   /// Whether this surface can update an existing [oldSurface].
+  @mustCallSuper
   bool canUpdateAsMatch(PersistedSurface oldSurface) {
     return oldSurface.isActive && runtimeType == oldSurface.runtimeType;
   }
@@ -342,21 +345,21 @@ abstract class PersistedSurface implements ui.EngineLayer {
   ///
   /// This is called when we failed to locate an existing DOM element to reuse,
   /// such as on the very first frame.
-  @protected
   @mustCallSuper
   void build() {
-    if (rootElement != null) {
-      try {
-        throw '';
-      } catch (_, stack) {
-        print(
-            'Attempted to build a $runtimeType, but it already has an HTML element ${rootElement!.tagName}.');
-        print(stack.toString().split('\n').take(20).join('\n'));
+    if (assertionsEnabled) {
+      final html.Element? existingElement = rootElement;
+      if (existingElement != null) {
+        throw PersistedSurfaceException(
+          this,
+          'Attempted to build a $runtimeType, but it already has an HTML '
+          'element ${existingElement.tagName}.',
+        );
       }
     }
-    assert(rootElement == null);
     assert(debugAssertSurfaceState(this, PersistedSurfaceState.created));
     rootElement = createElement();
+    assert(rootElement != null);
     applyWebkitClipFix(rootElement);
     if (_debugExplainSurfaceStats) {
       _surfaceStatsFor(this).allocatedDomNodeCount++;
@@ -371,7 +374,6 @@ abstract class PersistedSurface implements ui.EngineLayer {
   /// frame, we reuse old ones as much as possible. This method should only be
   /// called when [isTotalMatchFor] returns true for the [oldSurface]. Otherwise
   /// adopting the [oldSurface]'s elements could lead to correctness issues.
-  @protected
   @mustCallSuper
   void adoptElements(covariant PersistedSurface oldSurface) {
     assert(oldSurface.rootElement != null);
@@ -399,7 +401,6 @@ abstract class PersistedSurface implements ui.EngineLayer {
   ///
   /// Attempts to reuse [oldSurface]'s DOM element, if possible. Otherwise,
   /// creates a new element by calling [build].
-  @protected
   @mustCallSuper
   void update(covariant PersistedSurface oldSurface) {
     assert(oldSurface != null); // ignore: unnecessary_null_comparison
@@ -424,7 +425,6 @@ abstract class PersistedSurface implements ui.EngineLayer {
   ///
   /// This is also different from [build], which constructs a brand new surface
   /// sub-tree.
-  @protected
   @mustCallSuper
   void retain() {
     assert(rootElement != null);
@@ -448,7 +448,6 @@ abstract class PersistedSurface implements ui.EngineLayer {
   ///
   /// This method may be overridden by concrete implementations, for example, to
   /// recycle the resources owned by this surface.
-  @protected
   @mustCallSuper
   void discard() {
     assert(debugAssertSurfaceState(this, PersistedSurfaceState.active));
@@ -471,7 +470,6 @@ abstract class PersistedSurface implements ui.EngineLayer {
     state = PersistedSurfaceState.released;
   }
 
-  @protected
   @mustCallSuper
   void debugValidate(List<String> validationErrors) {
     if (rootElement == null) {
@@ -541,7 +539,6 @@ abstract class PersistedSurface implements ui.EngineLayer {
   /// clip behaviors.
   ///
   /// This method is called by the [preroll] method.
-  @protected
   void recomputeTransformAndClip() {
     _transform = parent!._transform;
     _localClipBounds = null;
@@ -578,7 +575,6 @@ abstract class PersistedSurface implements ui.EngineLayer {
     }
   }
 
-  @protected
   @mustCallSuper
   void debugPrintAttributes(StringBuffer buffer) {
     if (rootElement != null) {
@@ -586,7 +582,6 @@ abstract class PersistedSurface implements ui.EngineLayer {
     }
   }
 
-  @protected
   @mustCallSuper
   void debugPrintChildren(StringBuffer buffer, int indent) {}
 
@@ -1097,7 +1092,7 @@ abstract class PersistedContainerSurface extends PersistedSurface {
       for (int indexInOld = 0; indexInOld < oldChildCount; indexInOld += 1) {
         final PersistedSurface? oldChild = oldChildren[indexInOld];
         final bool childAlreadyClaimed = oldChild == null;
-        if (childAlreadyClaimed || !newChild.canUpdateAsMatch(oldChild!)) {
+        if (childAlreadyClaimed || !newChild.canUpdateAsMatch(oldChild)) {
           continue;
         }
         allMatches.add(_PersistedSurfaceMatch(
@@ -1155,7 +1150,6 @@ abstract class PersistedContainerSurface extends PersistedSurface {
   }
 
   @override
-  @protected
   @mustCallSuper
   void debugValidate(List<String> validationErrors) {
     super.debugValidate(validationErrors);

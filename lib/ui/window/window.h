@@ -5,10 +5,12 @@
 #ifndef FLUTTER_LIB_UI_WINDOW_WINDOW_H_
 #define FLUTTER_LIB_UI_WINDOW_WINDOW_H_
 
+#include <functional>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
+#include "flutter/lib/ui/window/key_data_packet.h"
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/lib/ui/window/pointer_data_packet.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
@@ -18,17 +20,30 @@
 namespace flutter {
 class Window final {
  public:
-  explicit Window(ViewportMetrics metrics);
+  Window(int64_t window_id, ViewportMetrics metrics);
 
   ~Window();
 
+  int window_id() const { return window_id_; }
+
   const ViewportMetrics& viewport_metrics() const { return viewport_metrics_; }
 
+  // Dispatch a packet to the framework that indicates one or a few pointer
+  // events.
   void DispatchPointerDataPacket(const PointerDataPacket& packet);
+  // Dispatch a packet to the framework that indicates a key event.
+  //
+  // The `response_id` is used to label the response of whether the key event
+  // is handled by the framework, typically the return value of
+  // PlatformConfiguration::RegisterKeyDataResponse.
+  // It should be used later in
+  // PlatformConfiguration::CompleteKeyDataResponse.
+  void DispatchKeyDataPacket(const KeyDataPacket& packet, uint64_t response_id);
   void UpdateWindowMetrics(const ViewportMetrics& metrics);
 
  private:
   tonic::DartPersistentValue library_;
+  int64_t window_id_;
   ViewportMetrics viewport_metrics_;
 };
 

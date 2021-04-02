@@ -5,7 +5,7 @@
 #ifndef FLUTTER_SHELL_PLATFORM_IOS_EXTERNAL_TEXTURE_GL_H_
 #define FLUTTER_SHELL_PLATFORM_IOS_EXTERNAL_TEXTURE_GL_H_
 
-#include "flutter/flow/texture.h"
+#include "flutter/common/graphics/texture.h"
 #include "flutter/fml/platform/darwin/cf_utils.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterTexture.h"
@@ -34,7 +34,7 @@ class IOSExternalTextureGL final : public Texture {
              const SkRect& bounds,
              bool freeze,
              GrDirectContext* context,
-             SkFilterQuality filter_quality) override;
+             const SkSamplingOptions& sampling) override;
 
   // |Texture|
   void OnGrContextCreated() override;
@@ -60,9 +60,9 @@ class IOSExternalTextureGL final : public Texture {
 
   void CreateRGBATextureFromPixelBuffer();
 
-  sk_sp<SkImage> CreateImageFromYUVTextures(GrContext* context, const SkRect& bounds);
+  sk_sp<SkImage> CreateImageFromYUVTextures(GrDirectContext* context, const SkRect& bounds);
 
-  sk_sp<SkImage> CreateImageFromRGBATexture(GrContext* context, const SkRect& bounds);
+  sk_sp<SkImage> CreateImageFromRGBATexture(GrDirectContext* context, const SkRect& bounds);
 
   FML_DISALLOW_COPY_AND_ASSIGN(IOSExternalTextureGL);
 };

@@ -1,7 +1,6 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-// FLUTTER_NOLINT
 
 #import "flutter/shell/platform/darwin/common/framework/Source/FlutterStandardCodec_Internal.h"
 
@@ -46,7 +45,7 @@
 }
 
 - (id)decode:(NSData*)message {
-  if (message == nil)
+  if ([message length] == 0)
     return nil;
   FlutterStandardReader* reader = [_readerWriter readerWithData:message];
   id value = [reader readValue];

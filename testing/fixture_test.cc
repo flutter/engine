@@ -9,6 +9,7 @@ namespace testing {
 
 FixtureTest::FixtureTest()
     : native_resolver_(std::make_shared<TestDartNativeResolver>()),
+      split_aot_symbols_(LoadELFSplitSymbolFromFixturesIfNeccessary()),
       assets_dir_(fml::OpenDirectory(GetFixturesPath(),
                                      false,
                                      fml::FilePermission::kRead)),
@@ -40,10 +41,16 @@ void FixtureTest::SetSnapshotsAndAssets(Settings& settings) {
   if (DartVM::IsRunningPrecompiledCode()) {
     FML_CHECK(PrepareSettingsForAOTWithSymbols(settings, aot_symbols_));
   } else {
-    settings.application_kernels = [this]() {
+    settings.application_kernels = [this]() -> Mappings {
       std::vector<std::unique_ptr<const fml::Mapping>> kernel_mappings;
-      kernel_mappings.emplace_back(
-          fml::FileMapping::CreateReadOnly(assets_dir_, "kernel_blob.bin"));
+      auto kernel_mapping =
+          fml::FileMapping::CreateReadOnly(assets_dir_, "kernel_blob.bin");
+      if (!kernel_mapping || !kernel_mapping->IsValid()) {
+        FML_LOG(ERROR) << "Could not find kernel blob for test fixture not "
+                          "running in precompiled mode.";
+        return kernel_mappings;
+      }
+      kernel_mappings.emplace_back(std::move(kernel_mapping));
       return kernel_mappings;
     };
   }

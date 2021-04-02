@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 class SurfaceCanvas implements ui.Canvas {
@@ -444,8 +444,7 @@ class SurfaceCanvas implements ui.Canvas {
   void drawPicture(ui.Picture picture) {
     // ignore: unnecessary_null_comparison
     assert(picture != null); // picture is checked on the engine side
-    // TODO(het): Support this
-    throw UnimplementedError();
+    _canvas.drawPicture(picture);
   }
 
   @override

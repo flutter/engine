@@ -11,15 +11,16 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.os.Build;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.util.SparseArray;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import androidx.annotation.VisibleForTesting;
+import io.flutter.Log;
 import io.flutter.embedding.android.AndroidTouchProcessor;
 import io.flutter.embedding.android.FlutterImageView;
 import io.flutter.embedding.android.FlutterView;
@@ -83,7 +84,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   // The views returned by `PlatformView#getView()`.
   //
   // This only applies to hybrid composition.
-  private final SparseArray<View> platformViews;
+  private final SparseArray<PlatformView> platformViews;
 
   // The platform view parents that are appended to `FlutterView`.
   // If an entry in `platformViews` doesn't have an entry in this array, the platform view isn't
@@ -143,32 +144,24 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           }
 
           final PlatformView platformView = factory.create(context, request.viewId, createParams);
-          final View view = platformView.getView();
-          if (view == null) {
-            throw new IllegalStateException(
-                "PlatformView#getView() returned null, but an Android view reference was expected.");
-          }
-          if (view.getParent() != null) {
-            throw new IllegalStateException(
-                "The Android view returned from PlatformView#getView() was already added to a parent view.");
-          }
-          platformViews.put(request.viewId, view);
+          platformViews.put(request.viewId, platformView);
         }
 
         @Override
         public void disposeAndroidViewForPlatformView(int viewId) {
           // Hybrid view.
-          final View platformView = platformViews.get(viewId);
+          final PlatformView platformView = platformViews.get(viewId);
           final FlutterMutatorView parentView = platformViewParent.get(viewId);
           if (platformView != null) {
             if (parentView != null) {
-              parentView.removeView(platformView);
+              parentView.removeView(platformView.getView());
             }
             platformViews.remove(viewId);
+            platformView.dispose();
           }
 
           if (parentView != null) {
-            ((FlutterView) flutterView).removeView(parentView);
+            ((ViewGroup) parentView.getParent()).removeView(parentView);
             platformViewParent.remove(viewId);
           }
         }
@@ -311,8 +304,10 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
             vdControllers.get(touch.viewId).dispatchTouchEvent(event);
           } else if (platformViews.get(viewId) != null) {
             final MotionEvent event = toMotionEvent(density, touch, /*usingVirtualDiplays=*/ false);
-            View view = platformViews.get(touch.viewId);
-            view.dispatchTouchEvent(event);
+            View view = platformViews.get(touch.viewId).getView();
+            if (view != null) {
+              view.dispatchTouchEvent(event);
+            }
           } else {
             throw new IllegalStateException("Sending touch to an unknown view with id: " + viewId);
           }
@@ -435,7 +430,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    *     controller. This should be the context of the Activity hosting the Flutter application.
    * @param textureRegistry The texture registry which provides the output textures into which the
    *     embedded views will be rendered.
-   * @param dartExecutor The dart execution context, which is used to setup a system channel.
+   * @param dartExecutor The dart execution context, which is used to set up a system channel.
    */
   public void attach(
       Context context, TextureRegistry textureRegistry, @NonNull DartExecutor dartExecutor) {
@@ -460,7 +455,10 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    */
   @UiThread
   public void detach() {
-    platformViewsChannel.setPlatformViewsHandler(null);
+    if (platformViewsChannel != null) {
+      platformViewsChannel.setPlatformViewsHandler(null);
+    }
+    destroyOverlaySurfaces();
     platformViewsChannel = null;
     context = null;
     textureRegistry = null;
@@ -488,6 +486,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    * the previously attached {@code View}.
    */
   public void detachFromView() {
+    destroyOverlaySurfaces();
     this.flutterView = null;
 
     // Inform all existing platform views that they are no longer associated with
@@ -578,13 +577,18 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   public View getPlatformViewById(Integer id) {
     // Hybrid composition.
     if (platformViews.get(id) != null) {
-      return platformViews.get(id);
+      return platformViews.get(id).getView();
     }
     VirtualDisplayController controller = vdControllers.get(id);
     if (controller == null) {
       return null;
     }
     return controller.getView();
+  }
+
+  @Override
+  public boolean usesVirtualDisplay(Integer id) {
+    return vdControllers.containsKey(id);
   }
 
   private void lockInputConnection(@NonNull VirtualDisplayController controller) {
@@ -688,6 +692,10 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       controller.dispose();
     }
     vdControllers.clear();
+
+    while (platformViews.size() > 0) {
+      channelHandler.disposeAndroidViewForPlatformView(platformViews.keyAt(0));
+    }
   }
 
   private void initializeRootImageViewIfNeeded() {
@@ -697,21 +705,35 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     }
   }
 
+  /**
+   * Initializes a platform view and adds it to the view hierarchy.
+   *
+   * @param viewId The view ID.
+   * @hide
+   */
   @VisibleForTesting
   void initializePlatformViewIfNeeded(int viewId) {
-    final View view = platformViews.get(viewId);
-    if (view == null) {
+    final PlatformView platformView = platformViews.get(viewId);
+    if (platformView == null) {
       throw new IllegalStateException(
           "Platform view hasn't been initialized from the platform view channel.");
     }
     if (platformViewParent.get(viewId) != null) {
       return;
     }
+    if (platformView.getView() == null) {
+      throw new IllegalStateException(
+          "PlatformView#getView() returned null, but an Android view reference was expected.");
+    }
+    if (platformView.getView().getParent() != null) {
+      throw new IllegalStateException(
+          "The Android view returned from PlatformView#getView() was already added to a parent view.");
+    }
     final FlutterMutatorView parentView =
         new FlutterMutatorView(
             context, context.getResources().getDisplayMetrics().density, androidTouchProcessor);
     platformViewParent.put(viewId, parentView);
-    parentView.addView(view);
+    parentView.addView(platformView.getView());
     ((FlutterView) flutterView).addView(parentView);
   }
 
@@ -719,6 +741,19 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     androidTouchProcessor = new AndroidTouchProcessor(flutterRenderer, /*trackMotionEvents=*/ true);
   }
 
+  /**
+   * Called when a platform view id displayed in the current frame.
+   *
+   * @param viewId The ID of the platform view.
+   * @param x The left position relative to {@code FlutterView}.
+   * @param y The top position relative to {@code FlutterView}.
+   * @param width The width of the platform view.
+   * @param height The height of the platform view.
+   * @param viewWidth The original width of the platform view before applying the mutator stack.
+   * @param viewHeight The original height of the platform view before applying the mutator stack.
+   * @param mutatorsStack The mutator stack.
+   * @hide
+   */
   public void onDisplayPlatformView(
       int viewId,
       int x,
@@ -738,13 +773,28 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
     final FrameLayout.LayoutParams layoutParams =
         new FrameLayout.LayoutParams(viewWidth, viewHeight);
-    final View platformView = platformViews.get(viewId);
-    platformView.setLayoutParams(layoutParams);
-    platformView.bringToFront();
+    final View view = platformViews.get(viewId).getView();
+    if (view != null) {
+      view.setLayoutParams(layoutParams);
+      view.bringToFront();
+    }
     currentFrameUsedPlatformViewIds.add(viewId);
   }
 
+  /**
+   * Called when an overlay surface is displayed in the current frame.
+   *
+   * @param id The ID of the surface.
+   * @param x The left position relative to {@code FlutterView}.
+   * @param y The top position relative to {@code FlutterView}.
+   * @param width The width of the surface.
+   * @param height The height of the surface.
+   * @hide
+   */
   public void onDisplayOverlaySurface(int id, int x, int y, int width, int height) {
+    if (overlayLayerViews.get(id) == null) {
+      throw new IllegalStateException("The overlay surface (id:" + id + ") doesn't exist");
+    }
     initializeRootImageViewIfNeeded();
 
     final FlutterImageView overlayView = overlayLayerViews.get(id);
@@ -766,6 +816,11 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     currentFrameUsedPlatformViewIds.clear();
   }
 
+  /**
+   * Called by {@code FlutterJNI} when the Flutter frame was submitted.
+   *
+   * @hide
+   */
   public void onEndFrame() {
     final FlutterView view = (FlutterView) flutterView;
     // If there are no platform views in the current frame,
@@ -834,6 +889,13 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     }
   }
 
+  /**
+   * Creates and tracks the overlay surface.
+   *
+   * @param imageView The surface that displays the overlay.
+   * @return Wrapper object that provides the layer id and the surface.
+   * @hide
+   */
   @VisibleForTesting
   @TargetApi(19)
   public FlutterOverlaySurface createOverlaySurface(@NonNull FlutterImageView imageView) {
@@ -842,6 +904,13 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     return new FlutterOverlaySurface(id, imageView.getSurface());
   }
 
+  /**
+   * Creates an overlay surface while the Flutter view is rendered by {@code FlutterImageView}.
+   *
+   * <p>This method is invoked by {@code FlutterJNI} only.
+   *
+   * @hide
+   */
   @TargetApi(19)
   public FlutterOverlaySurface createOverlaySurface() {
     // Overlay surfaces have the same size as the background surface.
@@ -858,12 +927,21 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
             FlutterImageView.SurfaceKind.overlay));
   }
 
+  /**
+   * Destroys the overlay surfaces and removes them from the view hierarchy.
+   *
+   * <p>This method is used only internally by {@code FlutterJNI}.
+   *
+   * @hide
+   */
   public void destroyOverlaySurfaces() {
     for (int i = 0; i < overlayLayerViews.size(); i++) {
       int overlayId = overlayLayerViews.keyAt(i);
       FlutterImageView overlayView = overlayLayerViews.valueAt(i);
       overlayView.detachFromRenderer();
-      ((FlutterView) flutterView).removeView(overlayView);
+      if (flutterView != null) {
+        ((FlutterView) flutterView).removeView(overlayView);
+      }
     }
     overlayLayerViews.clear();
   }

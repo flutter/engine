@@ -8,6 +8,7 @@
 #include <functional>
 #include <memory>
 #include <mutex>
+#include <unordered_map>
 
 #include "flutter/common/task_runners.h"
 #include "flutter/fml/time/time_point.h"
@@ -25,16 +26,11 @@ class VsyncWaiter : public std::enable_shared_from_this<VsyncWaiter> {
 
   void AsyncWaitForVsync(const Callback& callback);
 
-  /// Add a secondary callback for the next vsync.
+  /// Add a secondary callback for key |id| for the next vsync.
   ///
-  /// See also |PointerDataDispatcher::ScheduleSecondaryVsyncCallback|.
-  void ScheduleSecondaryCallback(const fml::closure& callback);
-
-  static constexpr float kUnknownRefreshRateFPS = 0.0;
-
-  // Get the display's maximum refresh rate in the unit of frame per second.
-  // Return kUnknownRefreshRateFPS if the refresh rate is unknown.
-  virtual float GetDisplayRefreshRate() const;
+  /// See also |PointerDataDispatcher::ScheduleSecondaryVsyncCallback| and
+  /// |Animator::ScheduleMaybeClearTraceFlowIds|.
+  void ScheduleSecondaryCallback(uintptr_t id, const fml::closure& callback);
 
  protected:
   // On some backends, the |FireCallback| needs to be made from a static C
@@ -58,9 +54,7 @@ class VsyncWaiter : public std::enable_shared_from_this<VsyncWaiter> {
  private:
   std::mutex callback_mutex_;
   Callback callback_;
-
-  std::mutex secondary_callback_mutex_;
-  fml::closure secondary_callback_;
+  std::unordered_map<uintptr_t, fml::closure> secondary_callbacks_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(VsyncWaiter);
 };

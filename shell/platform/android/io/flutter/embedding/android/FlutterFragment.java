@@ -88,6 +88,8 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   protected static final String ARG_DART_ENTRYPOINT = "dart_entrypoint";
   /** Initial Flutter route that is rendered in a Navigator widget. */
   protected static final String ARG_INITIAL_ROUTE = "initial_route";
+  /** Whether the activity delegate should handle the deeplinking request. */
+  protected static final String ARG_HANDLE_DEEPLINKING = "handle_deeplinking";
   /** Path to Flutter's Dart code. */
   protected static final String ARG_APP_BUNDLE_PATH = "app_bundle_path";
   /** Flutter shell arguments. */
@@ -185,6 +187,7 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
     private final Class<? extends FlutterFragment> fragmentClass;
     private String dartEntrypoint = "main";
     private String initialRoute = "/";
+    private boolean handleDeeplinking = false;
     private String appBundlePath = null;
     private FlutterShellArgs shellArgs = null;
     private RenderMode renderMode = RenderMode.surface;
@@ -221,6 +224,16 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
     @NonNull
     public NewEngineFragmentBuilder initialRoute(@NonNull String initialRoute) {
       this.initialRoute = initialRoute;
+      return this;
+    }
+
+    /**
+     * Whether to handle the deeplinking from the {@code Intent} automatically if the {@code
+     * getInitialRoute} returns null.
+     */
+    @NonNull
+    public NewEngineFragmentBuilder handleDeeplinking(@NonNull Boolean handleDeeplinking) {
+      this.handleDeeplinking = handleDeeplinking;
       return this;
     }
 
@@ -316,6 +329,7 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
     protected Bundle createArgs() {
       Bundle args = new Bundle();
       args.putString(ARG_INITIAL_ROUTE, initialRoute);
+      args.putBoolean(ARG_HANDLE_DEEPLINKING, handleDeeplinking);
       args.putString(ARG_APP_BUNDLE_PATH, appBundlePath);
       args.putString(ARG_DART_ENTRYPOINT, dartEntrypoint);
       // TODO(mattcarroll): determine if we should have an explicit FlutterTestFragment instead of
@@ -409,6 +423,7 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
     private final Class<? extends FlutterFragment> fragmentClass;
     private final String engineId;
     private boolean destroyEngineWithFragment = false;
+    private boolean handleDeeplinking = false;
     private RenderMode renderMode = RenderMode.surface;
     private TransparencyMode transparencyMode = TransparencyMode.transparent;
     private boolean shouldAttachEngineToActivity = true;
@@ -417,7 +432,7 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
       this(FlutterFragment.class, engineId);
     }
 
-    protected CachedEngineFragmentBuilder(
+    public CachedEngineFragmentBuilder(
         @NonNull Class<? extends FlutterFragment> subclass, @NonNull String engineId) {
       this.fragmentClass = subclass;
       this.engineId = engineId;
@@ -457,6 +472,16 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
     public CachedEngineFragmentBuilder transparencyMode(
         @NonNull TransparencyMode transparencyMode) {
       this.transparencyMode = transparencyMode;
+      return this;
+    }
+
+    /**
+     * Whether to handle the deeplinking from the {@code Intent} automatically if the {@code
+     * getInitialRoute} returns null.
+     */
+    @NonNull
+    public CachedEngineFragmentBuilder handleDeeplinking(@NonNull Boolean handleDeeplinking) {
+      this.handleDeeplinking = handleDeeplinking;
       return this;
     }
 
@@ -512,6 +537,7 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
       Bundle args = new Bundle();
       args.putString(ARG_CACHED_ENGINE_ID, engineId);
       args.putBoolean(ARG_DESTROY_ENGINE_WITH_FRAGMENT, destroyEngineWithFragment);
+      args.putBoolean(ARG_HANDLE_DEEPLINKING, handleDeeplinking);
       args.putString(
           ARG_FLUTTERVIEW_RENDER_MODE,
           renderMode != null ? renderMode.name() : RenderMode.surface.name());
@@ -582,6 +608,12 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
     delegate.onAttach(context);
   }
 
+  @Override
+  public void onCreate(@Nullable Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    delegate.onRestoreInstanceState(savedInstanceState);
+  }
+
   @Nullable
   @Override
   public View onCreateView(
@@ -590,21 +622,19 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   }
 
   @Override
-  public void onActivityCreated(@Nullable Bundle savedInstanceState) {
-    super.onActivityCreated(savedInstanceState);
-    delegate.onActivityCreated(savedInstanceState);
-  }
-
-  @Override
   public void onStart() {
     super.onStart();
-    delegate.onStart();
+    if (stillAttachedForEvent("onStart")) {
+      delegate.onStart();
+    }
   }
 
   @Override
   public void onResume() {
     super.onResume();
-    delegate.onResume();
+    if (stillAttachedForEvent("onResume")) {
+      delegate.onResume();
+    }
   }
 
   // TODO(mattcarroll): determine why this can't be in onResume(). Comment reason, or move if
@@ -617,33 +647,61 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   @Override
   public void onPause() {
     super.onPause();
-    delegate.onPause();
+    if (stillAttachedForEvent("onPause")) {
+      delegate.onPause();
+    }
   }
 
   @Override
   public void onStop() {
     super.onStop();
-    delegate.onStop();
+    if (stillAttachedForEvent("onStop")) {
+      delegate.onStop();
+    }
   }
 
   @Override
   public void onDestroyView() {
     super.onDestroyView();
-    delegate.onDestroyView();
+    if (stillAttachedForEvent("onDestroyView")) {
+      delegate.onDestroyView();
+    }
   }
 
   @Override
   public void onSaveInstanceState(Bundle outState) {
     super.onSaveInstanceState(outState);
-    delegate.onSaveInstanceState(outState);
+    if (stillAttachedForEvent("onSaveInstanceState")) {
+      delegate.onSaveInstanceState(outState);
+    }
+  }
+
+  @Override
+  public void detachFromFlutterEngine() {
+    Log.w(
+        TAG,
+        "FlutterFragment "
+            + this
+            + " connection to the engine "
+            + getFlutterEngine()
+            + " evicted by another attaching activity");
+    // Redundant calls are ok.
+    delegate.onDestroyView();
+    delegate.onDetach();
+    delegate.release();
+    delegate = null;
   }
 
   @Override
   public void onDetach() {
     super.onDetach();
-    delegate.onDetach();
-    delegate.release();
-    delegate = null;
+    if (delegate != null) {
+      delegate.onDetach();
+      delegate.release();
+      delegate = null;
+    } else {
+      Log.v(TAG, "FlutterFragment " + this + " onDetach called after release.");
+    }
   }
 
   /**
@@ -660,7 +718,9 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   @ActivityCallThrough
   public void onRequestPermissionsResult(
       int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-    delegate.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    if (stillAttachedForEvent("onRequestPermissionsResult")) {
+      delegate.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    }
   }
 
   /**
@@ -675,7 +735,9 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
    */
   @ActivityCallThrough
   public void onNewIntent(@NonNull Intent intent) {
-    delegate.onNewIntent(intent);
+    if (stillAttachedForEvent("onNewIntent")) {
+      delegate.onNewIntent(intent);
+    }
   }
 
   /**
@@ -685,7 +747,9 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
    */
   @ActivityCallThrough
   public void onBackPressed() {
-    delegate.onBackPressed();
+    if (stillAttachedForEvent("onBackPressed")) {
+      delegate.onBackPressed();
+    }
   }
 
   /**
@@ -700,7 +764,9 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
    */
   @Override
   public void onActivityResult(int requestCode, int resultCode, Intent data) {
-    delegate.onActivityResult(requestCode, resultCode, data);
+    if (stillAttachedForEvent("onActivityResult")) {
+      delegate.onActivityResult(requestCode, resultCode, data);
+    }
   }
 
   /**
@@ -711,7 +777,9 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
    */
   @ActivityCallThrough
   public void onUserLeaveHint() {
-    delegate.onUserLeaveHint();
+    if (stillAttachedForEvent("onUserLeaveHint")) {
+      delegate.onUserLeaveHint();
+    }
   }
 
   /**
@@ -725,7 +793,9 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
    */
   @ActivityCallThrough
   public void onTrimMemory(int level) {
-    delegate.onTrimMemory(level);
+    if (stillAttachedForEvent("onTrimMemory")) {
+      delegate.onTrimMemory(level);
+    }
   }
 
   /**
@@ -736,7 +806,9 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   @Override
   public void onLowMemory() {
     super.onLowMemory();
-    delegate.onLowMemory();
+    if (stillAttachedForEvent("onLowMemory")) {
+      delegate.onLowMemory();
+    }
   }
 
   /**
@@ -918,7 +990,7 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   public PlatformPlugin providePlatformPlugin(
       @Nullable Activity activity, @NonNull FlutterEngine flutterEngine) {
     if (activity != null) {
-      return new PlatformPlugin(getActivity(), flutterEngine.getPlatformChannel());
+      return new PlatformPlugin(getActivity(), flutterEngine.getPlatformChannel(), this);
     } else {
       return null;
     }
@@ -929,8 +1001,8 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
    *
    * <p>This method is called after {@link #provideFlutterEngine(Context)}, and after the given
    * {@link FlutterEngine} has been attached to the owning {@code FragmentActivity}. See {@link
-   * io.flutter.embedding.engine.plugins.activity.ActivityControlSurface#attachToActivity(Activity,
-   * Lifecycle)}.
+   * io.flutter.embedding.engine.plugins.activity.ActivityControlSurface#attachToActivity(
+   * ExclusiveAppComponent, Lifecycle)}.
    *
    * <p>It is possible that the owning {@code FragmentActivity} opted not to connect itself as an
    * {@link io.flutter.embedding.engine.plugins.activity.ActivityControlSurface}. In that case, any
@@ -974,6 +1046,15 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   @Override
   public boolean shouldAttachEngineToActivity() {
     return getArguments().getBoolean(ARG_SHOULD_ATTACH_ENGINE_TO_ACTIVITY);
+  }
+
+  /**
+   * Whether to handle the deeplinking from the {@code Intent} automatically if the {@code
+   * getInitialRoute} returns null.
+   */
+  @Override
+  public boolean shouldHandleDeeplinking() {
+    return getArguments().getBoolean(ARG_HANDLE_DEEPLINKING);
   }
 
   @Override
@@ -1030,6 +1111,20 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
       return getArguments().getBoolean(ARG_ENABLE_STATE_RESTORATION);
     }
     if (getCachedEngineId() != null) {
+      return false;
+    }
+    return true;
+  }
+
+  @Override
+  public boolean popSystemNavigator() {
+    // Hook for subclass. No-op if returns false.
+    return false;
+  }
+
+  private boolean stillAttachedForEvent(String event) {
+    if (delegate == null) {
+      Log.w(TAG, "FlutterFragment " + hashCode() + " " + event + " called after release.");
       return false;
     }
     return true;

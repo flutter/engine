@@ -1,7 +1,8 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-// FLUTTER_NOLINT
+
+// FLUTTER_NOLINT: https://github.com/flutter/flutter/issues/68331
 
 #include "vulkan_window.h"
 
@@ -20,7 +21,16 @@ namespace vulkan {
 VulkanWindow::VulkanWindow(fml::RefPtr<VulkanProcTable> proc_table,
                            std::unique_ptr<VulkanNativeSurface> native_surface,
                            bool render_to_surface)
-    : valid_(false), vk(std::move(proc_table)) {
+    : VulkanWindow(/*context/*/ nullptr,
+                   proc_table,
+                   std::move(native_surface),
+                   render_to_surface) {}
+
+VulkanWindow::VulkanWindow(const sk_sp<GrDirectContext>& context,
+                           fml::RefPtr<VulkanProcTable> proc_table,
+                           std::unique_ptr<VulkanNativeSurface> native_surface,
+                           bool render_to_surface)
+    : valid_(false), vk(std::move(proc_table)), skia_gr_context_(context) {
   if (!vk || !vk->HasAcquiredMandatoryProcAddresses()) {
     FML_DLOG(INFO) << "Proc table has not acquired mandatory proc addresses.";
     return;
@@ -42,9 +52,9 @@ VulkanWindow::VulkanWindow(fml::RefPtr<VulkanProcTable> proc_table,
                                                      std::move(extensions));
 
   if (!application_->IsValid() || !vk->AreInstanceProcsSetup()) {
-    // Make certain the application instance was created and it setup the
+    // Make certain the application instance was created and it set up the
     // instance proc table entries.
-    FML_DLOG(INFO) << "Instance proc addresses have not been setup.";
+    FML_DLOG(INFO) << "Instance proc addresses have not been set up.";
     return;
   }
 
@@ -54,9 +64,9 @@ VulkanWindow::VulkanWindow(fml::RefPtr<VulkanProcTable> proc_table,
 
   if (logical_device_ == nullptr || !logical_device_->IsValid() ||
       !vk->AreDeviceProcsSetup()) {
-    // Make certain the device was created and it setup the device proc table
+    // Make certain the device was created and it set up the device proc table
     // entries.
-    FML_DLOG(INFO) << "Device proc addresses have not been setup.";
+    FML_DLOG(INFO) << "Device proc addresses have not been set up.";
     return;
   }
 
@@ -77,7 +87,7 @@ VulkanWindow::VulkanWindow(fml::RefPtr<VulkanProcTable> proc_table,
 
   // Create the Skia GrDirectContext.
 
-  if (!CreateSkiaGrContext()) {
+  if (!skia_gr_context_ && !CreateSkiaGrContext()) {
     FML_DLOG(INFO) << "Could not create Skia context.";
     return;
   }
@@ -85,7 +95,7 @@ VulkanWindow::VulkanWindow(fml::RefPtr<VulkanProcTable> proc_table,
   // Create the swapchain.
 
   if (!RecreateSwapchain()) {
-    FML_DLOG(INFO) << "Could not setup the swapchain initially.";
+    FML_DLOG(INFO) << "Could not set up the swapchain initially.";
     return;
   }
 

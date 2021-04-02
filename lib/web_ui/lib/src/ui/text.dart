@@ -1,9 +1,8 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-// Synced 2019-05-30T14:20:57.833907.
 
-// @dart = 2.10
+// @dart = 2.12
 part of ui;
 
 enum FontStyle {
@@ -69,44 +68,56 @@ class FontWeight {
 }
 
 class FontFeature {
-  const FontFeature(this.feature, [this.value = 1])
-      : assert(feature != null), // ignore: unnecessary_null_comparison
-        assert(feature.length == 4),
-        assert(value != null), // ignore: unnecessary_null_comparison
-        assert(value >= 0);
+  const FontFeature(
+    this.feature,
+    [ this.value = 1 ]
+  ) : assert(feature != null), // ignore: unnecessary_null_comparison
+      assert(feature.length == 4, 'Feature tag must be exactly four characters long.'),
+      assert(value != null), // ignore: unnecessary_null_comparison
+      assert(value >= 0, 'Feature value must be zero or a positive integer.');
   const FontFeature.enable(String feature) : this(feature, 1);
   const FontFeature.disable(String feature) : this(feature, 0);
-  const FontFeature.randomize()
-      : feature = 'rand',
-        value = 1;
+  const FontFeature.alternative(this.value) : feature = 'aalt';
+  const FontFeature.alternativeFractions() : feature = 'afrc', value = 1;
+  const FontFeature.contextualAlternates() : feature = 'calt', value = 1;
+  const FontFeature.caseSensitiveForms() : feature = 'case', value = 1;
+  factory FontFeature.characterVariant(int value) {
+    assert(value >= 1);
+    assert(value <= 20);
+    return FontFeature('cv${value.toString().padLeft(2, "0")}');
+  }
+  const FontFeature.denominator() : feature = 'dnom', value = 1;
+  const FontFeature.fractions() : feature = 'frac', value = 1;
+  const FontFeature.historicalForms() : feature = 'hist', value = 1;
+  const FontFeature.historicalLigatures() : feature = 'hlig', value = 1;
+  const FontFeature.liningFigures() : feature = 'lnum', value = 1;
+  const FontFeature.localeAware({ bool enable = true }) : feature = 'locl', value = enable ? 1 : 0;
+  const FontFeature.notationalForms([this.value = 1]) : feature = 'nalt', assert(value >= 0);
+  const FontFeature.numerators() : feature = 'numr', value = 1;
+  const FontFeature.oldstyleFigures() : feature = 'onum', value = 1;
+  const FontFeature.ordinalForms() : feature = 'ordn', value = 1;
+  const FontFeature.proportionalFigures() : feature = 'pnum', value = 1;
+  const FontFeature.randomize() : feature = 'rand', value = 1;
+  const FontFeature.stylisticAlternates() : feature = 'salt', value = 1;
+  const FontFeature.scientificInferiors() : feature = 'sinf', value = 1;
   factory FontFeature.stylisticSet(int value) {
     assert(value >= 1);
     assert(value <= 20);
     return FontFeature('ss${value.toString().padLeft(2, "0")}');
   }
-  const FontFeature.slashedZero()
-      : feature = 'zero',
-        value = 1;
-  const FontFeature.oldstyleFigures()
-      : feature = 'onum',
-        value = 1;
-  const FontFeature.proportionalFigures()
-      : feature = 'pnum',
-        value = 1;
-  const FontFeature.tabularFigures()
-      : feature = 'tnum',
-        value = 1;
+  const FontFeature.subscripts() : feature = 'subs', value = 1;
+  const FontFeature.superscripts() : feature = 'sups', value = 1;
+  const FontFeature.swash([this.value = 1]) : feature = 'swsh', assert(value >= 0);
+  const FontFeature.tabularFigures() : feature = 'tnum', value = 1;
+  const FontFeature.slashedZero() : feature = 'zero', value = 1;
+
   final String feature;
   final int value;
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other)) {
-      return true;
-    }
-    if (other.runtimeType != runtimeType) {
+    if (other.runtimeType != runtimeType)
       return false;
-    }
     return other is FontFeature
         && other.feature == feature
         && other.value == value;
@@ -116,7 +127,7 @@ class FontFeature {
   int get hashCode => hashValues(feature, value);
 
   @override
-  String toString() => 'FontFeature($feature, $value)';
+  String toString() => "FontFeature('$feature', $value)";
 }
 
 // The order of this enum must match the order of the values in RenderStyleConstants.h's ETextAlign.
@@ -193,18 +204,29 @@ enum TextDecorationStyle {
   wavy
 }
 
+enum TextLeadingDistribution {
+  proportional,
+  even,
+}
+
 class TextHeightBehavior {
   const TextHeightBehavior({
     this.applyHeightToFirstAscent = true,
     this.applyHeightToLastDescent = true,
+    this.leadingDistribution = TextLeadingDistribution.proportional,
   });
-  const TextHeightBehavior.fromEncoded(int encoded)
-      : applyHeightToFirstAscent = (encoded & 0x1) == 0,
-        applyHeightToLastDescent = (encoded & 0x2) == 0;
+  TextHeightBehavior.fromEncoded(int encoded)
+    : applyHeightToFirstAscent = (encoded & 0x1) == 0,
+      applyHeightToLastDescent = (encoded & 0x2) == 0,
+      leadingDistribution = TextLeadingDistribution.values[encoded >> 2];
   final bool applyHeightToFirstAscent;
   final bool applyHeightToLastDescent;
+  final TextLeadingDistribution leadingDistribution;
+
   int encode() {
-    return (applyHeightToFirstAscent ? 0 : 1 << 0) | (applyHeightToLastDescent ? 0 : 1 << 1);
+    return (applyHeightToFirstAscent ? 0 : 1 << 0)
+         | (applyHeightToLastDescent ? 0 : 1 << 1)
+         | (leadingDistribution.index << 2);
   }
 
   @override
@@ -213,7 +235,8 @@ class TextHeightBehavior {
      return false;
     return other is TextHeightBehavior
         && other.applyHeightToFirstAscent == applyHeightToFirstAscent
-        && other.applyHeightToLastDescent == applyHeightToLastDescent;
+        && other.applyHeightToLastDescent == applyHeightToLastDescent
+        && other.leadingDistribution == leadingDistribution;
   }
 
   @override
@@ -228,7 +251,8 @@ class TextHeightBehavior {
   String toString() {
     return 'TextHeightBehavior('
              'applyHeightToFirstAscent: $applyHeightToFirstAscent, '
-             'applyHeightToLastDescent: $applyHeightToLastDescent'
+             'applyHeightToLastDescent: $applyHeightToLastDescent, '
+             'leadingDistribution: $leadingDistribution'
            ')';
   }
 }
@@ -249,13 +273,14 @@ abstract class TextStyle {
     double? letterSpacing,
     double? wordSpacing,
     double? height,
+    TextLeadingDistribution? leadingDistribution,
     Locale? locale,
     Paint? background,
     Paint? foreground,
     List<Shadow>? shadows,
     List<FontFeature>? fontFeatures,
   }) {
-    if (engine.experimentalUseSkia) {
+    if (engine.useCanvasKit) {
       return engine.CkTextStyle(
         color: color,
         decoration: decoration,
@@ -319,7 +344,7 @@ abstract class ParagraphStyle {
     String? ellipsis,
     Locale? locale,
   }) {
-    if (engine.experimentalUseSkia) {
+    if (engine.useCanvasKit) {
       return engine.CkParagraphStyle(
         textAlign: textAlign,
         textDirection: textDirection,
@@ -359,6 +384,7 @@ abstract class StrutStyle {
     List<String>? fontFamilyFallback,
     double? fontSize,
     double? height,
+    TextLeadingDistribution? leadingDistribution,
     double? leading,
     FontWeight? fontWeight,
     FontStyle? fontStyle,
@@ -586,10 +612,12 @@ abstract class Paragraph {
 
 abstract class ParagraphBuilder {
   factory ParagraphBuilder(ParagraphStyle style) {
-    if (engine.experimentalUseSkia) {
+    if (engine.useCanvasKit) {
       return engine.CkParagraphBuilder(style);
+    } else if (engine.WebExperiments.instance!.useCanvasRichText) {
+      return engine.CanvasParagraphBuilder(style as engine.EngineParagraphStyle);
     } else {
-      return engine.EngineParagraphBuilder(style as engine.EngineParagraphStyle);
+      return engine.DomParagraphBuilder(style as engine.EngineParagraphStyle);
     }
   }
   void pushStyle(TextStyle style);
@@ -609,7 +637,7 @@ abstract class ParagraphBuilder {
 }
 
 Future<void> loadFontFromList(Uint8List list, {String? fontFamily}) {
-  if (engine.experimentalUseSkia) {
+  if (engine.useCanvasKit) {
     return engine.skiaFontCollection.loadFontFromList(list, fontFamily: fontFamily).then(
       (_) => engine.sendFontChangeMessage()
     );

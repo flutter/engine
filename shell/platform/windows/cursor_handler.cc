@@ -6,7 +6,7 @@
 
 #include <windows.h>
 
-#include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/standard_method_codec.h"
+#include "flutter/shell/platform/common/client_wrapper/include/flutter/standard_method_codec.h"
 
 static constexpr char kChannelName[] = "flutter/mousecursor";
 
@@ -40,6 +40,7 @@ void CursorHandler::HandleMethodCall(
     if (kind_iter == arguments.end()) {
       result->Error("Argument error",
                     "Missing argument while trying to activate system cursor");
+      return;
     }
     const auto& kind = std::get<std::string>(kind_iter->second);
     delegate_->UpdateFlutterCursor(kind);

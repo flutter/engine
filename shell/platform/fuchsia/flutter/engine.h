@@ -5,6 +5,8 @@
 #ifndef FLUTTER_SHELL_PLATFORM_FUCHSIA_ENGINE_H_
 #define FLUTTER_SHELL_PLATFORM_FUCHSIA_ENGINE_H_
 
+#include <optional>
+
 #include <fuchsia/intl/cpp/fidl.h>
 #include <fuchsia/io/cpp/fidl.h>
 #include <fuchsia/ui/gfx/cpp/fidl.h>
@@ -14,6 +16,7 @@
 #include <lib/ui/scenic/cpp/view_ref_pair.h>
 #include <lib/zx/event.h>
 
+#include "flutter/flow/embedded_views.h"
 #include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
 #include "flutter/shell/common/shell.h"
@@ -31,6 +34,10 @@
 
 namespace flutter_runner {
 
+namespace testing {
+class EngineTest;
+}
+
 // Represents an instance of running Flutter engine along with the threads
 // that host the same.
 class Engine final {
@@ -45,7 +52,6 @@ class Engine final {
          std::shared_ptr<sys::ServiceDirectory> svc,
          std::shared_ptr<sys::ServiceDirectory> runner_services,
          flutter::Settings settings,
-         fml::RefPtr<const flutter::DartSnapshot> isolate_snapshot,
          fuchsia::ui::views::ViewToken view_token,
          scenic::ViewRefPair view_ref_pair,
          UniqueFDIONS fdio_ns,
@@ -55,7 +61,7 @@ class Engine final {
 
   // Returns the Dart return code for the root isolate if one is present. This
   // call is thread safe and synchronous. This call must be made infrequently.
-  std::pair<bool, uint32_t> GetEngineReturnCode() const;
+  std::optional<uint32_t> GetEngineReturnCode() const;
 
 #if !defined(DART_PRODUCT)
   void WriteProfileToTrace() const;
@@ -69,9 +75,9 @@ class Engine final {
 
   std::optional<SessionConnection> session_connection_;
   std::optional<VulkanSurfaceProducer> surface_producer_;
-  std::optional<FuchsiaExternalViewEmbedder> external_view_embedder_;
+  std::shared_ptr<FuchsiaExternalViewEmbedder> external_view_embedder_;
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
-  std::optional<flutter::SceneUpdateContext> legacy_external_view_embedder_;
+  std::shared_ptr<flutter::SceneUpdateContext> legacy_external_view_embedder_;
 #endif
 
   std::unique_ptr<IsolateConfigurator> isolate_configurator_;
@@ -84,8 +90,13 @@ class Engine final {
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
   bool use_legacy_renderer_ = true;
 #endif
+  bool intercept_all_input_ = false;
 
   fml::WeakPtrFactory<Engine> weak_factory_;
+
+  static void WarmupSkps(fml::BasicTaskRunner* concurrent_task_runner,
+                         fml::BasicTaskRunner* raster_task_runner,
+                         VulkanSurfaceProducer& surface_producer);
 
   void OnMainIsolateStart();
 
@@ -97,8 +108,13 @@ class Engine final {
   void CreateView(int64_t view_id, bool hit_testable, bool focusable);
   void UpdateView(int64_t view_id, bool hit_testable, bool focusable);
   void DestroyView(int64_t view_id);
+  std::shared_ptr<flutter::ExternalViewEmbedder> GetExternalViewEmbedder();
 
   std::unique_ptr<flutter::Surface> CreateSurface();
+
+  friend class testing::EngineTest;
+
+  fidl::InterfacePtr<fuchsia::ui::input3::Keyboard> keyboard_svc_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(Engine);
 };

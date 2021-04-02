@@ -9,7 +9,7 @@ import 'dart:io';
 import 'package:pedantic/pedantic.dart';
 
 import 'package:path/path.dart' as path;
-import 'package:test_core/src/util/io.dart'; // ignore: implementation_imports
+import 'package:test_core/src/util/io.dart';
 
 import 'browser.dart';
 import 'common.dart';
@@ -70,7 +70,8 @@ user_pref("dom.max_script_run_time", 0);
         url.toString(),
         '--profile',
         '${temporaryProfileDirectory.path}',
-        '--headless',
+        if (!debug)
+          '--headless',
         '-width $kMaxScreenshotWidth',
         '-height $kMaxScreenshotHeight',
         isMac ? '--new-window' : '-new-window',

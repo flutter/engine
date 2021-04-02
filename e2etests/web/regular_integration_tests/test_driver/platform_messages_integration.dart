@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import 'dart:html' as html;
-// ignore: undefined_shown_name
 import 'dart:ui' as ui show platformViewRegistry;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -28,7 +27,7 @@ void main() async {
     await tester.tap(find.byKey(const Key('input')));
     // Focus in input, otherwise clipboard will fail with
     // 'document is not focused' platform exception.
-    html.document.querySelector('input').focus();
+    html.document.querySelector('input')?.focus();
     await Clipboard.setData(const ClipboardData(text: 'sample text'));
   }, skip: true); // https://github.com/flutter/flutter/issues/54296
 
@@ -36,8 +35,7 @@ void main() async {
       (WidgetTester tester) async {
     int viewInstanceCount = 0;
 
-    final int currentViewId = platformViewsRegistry.getNextPlatformViewId();
-    // ignore: undefined_prefixed_name
+    platformViewsRegistry.getNextPlatformViewId();
     ui.platformViewRegistry.registerViewFactory('MyView', (int viewId) {
       ++viewInstanceCount;
       return html.DivElement();
@@ -46,14 +44,11 @@ void main() async {
     app.main();
     await tester.pumpAndSettle();
     final Map<String, dynamic> createArgs = <String, dynamic>{
-      'id': '567',
+      'id': 567,
       'viewType': 'MyView',
     };
     await SystemChannels.platform_views.invokeMethod<void>('create', createArgs);
-    final Map<String, dynamic> disposeArgs = <String, dynamic>{
-      'id': '567',
-    };
-    await SystemChannels.platform_views.invokeMethod<void>('dispose', disposeArgs);
+    await SystemChannels.platform_views.invokeMethod<void>('dispose', 567);
     expect(viewInstanceCount, 1);
   });
 }

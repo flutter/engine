@@ -1,7 +1,6 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-// FLUTTER_NOLINT
 
 #include "flutter/shell/common/platform_view.h"
 
@@ -43,6 +42,12 @@ void PlatformView::DispatchPointerDataPacket(
       pointer_data_packet_converter_.Convert(std::move(packet)));
 }
 
+void PlatformView::DispatchKeyDataPacket(std::unique_ptr<KeyDataPacket> packet,
+                                         KeyDataResponse callback) {
+  delegate_.OnPlatformViewDispatchKeyDataPacket(std::move(packet),
+                                                std::move(callback));
+}
+
 void PlatformView::DispatchSemanticsAction(int32_t id,
                                            SemanticsAction action,
                                            std::vector<uint8_t> args) {
@@ -72,9 +77,16 @@ void PlatformView::NotifyCreated() {
   fml::TaskRunner::RunNowOrPostTask(
       task_runners_.GetRasterTaskRunner(), [platform_view, &surface, &latch]() {
         surface = platform_view->CreateRenderingSurface();
+        if (surface && !surface->IsValid()) {
+          surface.reset();
+        }
         latch.Signal();
       });
   latch.Wait();
+  if (!surface) {
+    FML_LOG(ERROR) << "Failed to create platform view rendering surface";
+    return;
+  }
   delegate_.OnPlatformViewCreated(std::move(surface));
 }
 
@@ -83,7 +95,7 @@ void PlatformView::NotifyDestroyed() {
 }
 
 sk_sp<GrDirectContext> PlatformView::CreateResourceContext() const {
-  FML_DLOG(WARNING) << "This platform does not setup the resource "
+  FML_DLOG(WARNING) << "This platform does not set up the resource "
                        "context on the IO thread for async texture uploads.";
   return nullptr;
 }
@@ -130,6 +142,13 @@ std::unique_ptr<Surface> PlatformView::CreateRenderingSurface() {
   return nullptr;
 }
 
+std::shared_ptr<ExternalViewEmbedder>
+PlatformView::CreateExternalViewEmbedder() {
+  FML_DLOG(WARNING)
+      << "This platform doesn't support embedding external views.";
+  return nullptr;
+}
+
 void PlatformView::SetNextFrameCallback(const fml::closure& closure) {
   if (!closure) {
     return;
@@ -144,6 +163,23 @@ PlatformView::ComputePlatformResolvedLocales(
   std::unique_ptr<std::vector<std::string>> out =
       std::make_unique<std::vector<std::string>>();
   return out;
+}
+
+void PlatformView::RequestDartDeferredLibrary(intptr_t loading_unit_id) {}
+
+void PlatformView::LoadDartDeferredLibrary(
+    intptr_t loading_unit_id,
+    std::unique_ptr<const fml::Mapping> snapshot_data,
+    std::unique_ptr<const fml::Mapping> snapshot_instructions) {}
+
+void PlatformView::LoadDartDeferredLibraryError(intptr_t loading_unit_id,
+                                                const std::string error_message,
+                                                bool transient) {}
+
+void PlatformView::UpdateAssetResolverByType(
+    std::unique_ptr<AssetResolver> updated_asset_resolver,
+    AssetResolver::AssetResolverType type) {
+  delegate_.UpdateAssetResolverByType(std::move(updated_asset_resolver), type);
 }
 
 }  // namespace flutter

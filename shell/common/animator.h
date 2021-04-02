@@ -47,8 +47,6 @@ class Animator final {
 
   ~Animator();
 
-  float GetDisplayRefreshRate() const;
-
   void RequestFrame(bool regenerate_layer_tree = true);
 
   void Render(std::unique_ptr<flutter::LayerTree> layer_tree);
@@ -65,10 +63,11 @@ class Animator final {
   ///           secondary callback will still be executed at vsync.
   ///
   ///           This callback is used to provide the vsync signal needed by
-  ///           `SmoothPointerDataDispatcher`.
+  ///           `SmoothPointerDataDispatcher`, and for our own flow events.
   ///
   /// @see      `PointerDataDispatcher::ScheduleSecondaryVsyncCallback`.
-  void ScheduleSecondaryVsyncCallback(const fml::closure& callback);
+  void ScheduleSecondaryVsyncCallback(uintptr_t id,
+                                      const fml::closure& callback);
 
   void Start();
 
@@ -76,8 +75,9 @@ class Animator final {
 
   void SetDimensionChangePending();
 
-  // Enqueue |trace_flow_id| into |trace_flow_ids_|.  The corresponding flow
-  // will be ended during the next |BeginFrame|.
+  // Enqueue |trace_flow_id| into |trace_flow_ids_|.  The flow event will be
+  // ended at either the next frame, or the next vsync interval with no active
+  // active rendering.
   void EnqueueTraceFlowId(uint64_t trace_flow_id);
 
  private:
@@ -92,6 +92,9 @@ class Animator final {
   void AwaitVSync();
 
   const char* FrameParity();
+
+  // Clear |trace_flow_ids_| if |frame_scheduled_| is false.
+  void ScheduleMaybeClearTraceFlowIds();
 
   Delegate& delegate_;
   TaskRunners task_runners_;
@@ -110,7 +113,7 @@ class Animator final {
   bool frame_scheduled_;
   int notify_idle_task_id_;
   bool dimension_change_pending_;
-  SkISize last_layer_tree_size_;
+  SkISize last_layer_tree_size_ = {0, 0};
   std::deque<uint64_t> trace_flow_ids_;
 
   fml::WeakPtrFactory<Animator> weak_factory_;

@@ -260,17 +260,11 @@ class ParagraphTxt : public Paragraph {
   struct GlyphPosition {
     Range<size_t> code_units;
     Range<double> x_pos;
-    // Tracks the cluster that this glyph position belongs to. For example, in
-    // extended emojis, multiple glyph positions will have the same cluster. The
-    // cluster can be used as a key to distinguish between codepoints that
-    // contribute to the drawing of a single glyph.
-    size_t cluster;
 
     GlyphPosition(double x_start,
                   double x_advance,
                   size_t code_unit_index,
-                  size_t code_unit_width,
-                  size_t cluster);
+                  size_t code_unit_width);
 
     void Shift(double delta);
   };
@@ -321,8 +315,8 @@ class ParagraphTxt : public Paragraph {
   double longest_line_ = -1.0f;
   double max_intrinsic_width_ = 0;
   double min_intrinsic_width_ = 0;
-  double alphabetic_baseline_ = FLT_MAX;
-  double ideographic_baseline_ = FLT_MAX;
+  double alphabetic_baseline_ = std::numeric_limits<double>::max();
+  double ideographic_baseline_ = std::numeric_limits<double>::max();
 
   bool needs_layout_ = true;
 

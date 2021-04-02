@@ -36,7 +36,12 @@ class PluginRegistrarWindows : public PluginRegistrar {
         FlutterDesktopPluginRegistrarGetView(core_registrar));
   }
 
-  virtual ~PluginRegistrarWindows() = default;
+  virtual ~PluginRegistrarWindows() {
+    // Must be the first call.
+    ClearPlugins();
+    // Explicitly cleared to facilitate destruction order testing.
+    view_.reset();
+  }
 
   // Prevent copying.
   PluginRegistrarWindows(PluginRegistrarWindows const&) = delete;
@@ -44,7 +49,7 @@ class PluginRegistrarWindows : public PluginRegistrar {
 
   FlutterView* GetView() { return view_.get(); }
 
-  // Registers |delegate| to recieve WindowProc callbacks for the top-level
+  // Registers |delegate| to receive WindowProc callbacks for the top-level
   // window containing this Flutter instance. Returns an ID that can be used to
   // unregister the handler.
   //

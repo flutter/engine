@@ -21,14 +21,47 @@
          "enabled": true
       },
       {
+         "name":"Linux Fuchsia FEMU",
+         "repo":"engine",
+         "enabled": true
+      },
+      {
          "name":"Linux Host Engine",
+         "repo":"engine",
+         "enabled": true
+      },
+      {
+         "name":"Linux Arm Host Engine",
          "repo":"engine",
          "enabled": true
       },
       {
          "name":"Linux Web Engine",
          "repo":"engine",
-         "enabled": true
+         "enabled": true,
+         "run_if": [
+            "DEPS",
+            "lib/web_ui/**",
+            "web_sdk/**",
+            "e2etests/web/**",
+            "tools/**",
+            "ci/**",
+            "flutter_frontend_server/**"
+         ]
+      },
+      {
+        "name":"Linux Web Framework tests",
+        "repo":"engine",
+        "enabled": true,
+        "run_if": [
+            "DEPS",
+            "lib/web_ui/**",
+            "web_sdk/**",
+            "e2etests/web/**",
+            "tools/**",
+            "ci/**",
+            "flutter_frontend_server/**"
+        ]
       },
       {
          "name":"Mac Android AOT Engine",
@@ -53,7 +86,16 @@
       {
          "name":"Mac Web Engine",
          "repo":"engine",
-         "enabled": true
+         "enabled": true,
+         "run_if": [
+             "DEPS",
+             "lib/web_ui/**",
+             "web_sdk/**",
+             "e2etests/web/**",
+             "tools/**",
+             "ci/**",
+             "flutter_frontend_server/**"
+         ]
       },
       {
          "name":"Windows Android AOT Engine",
@@ -68,7 +110,8 @@
       {
          "name":"Windows Web Engine",
          "repo":"engine",
-         "enabled": true
+         "enabled": true,
+         "run_if": ["DEPS", "lib/web_ui/**", "web_sdk/**"]
       }
    ]
 }

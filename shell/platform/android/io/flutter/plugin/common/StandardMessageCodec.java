@@ -4,8 +4,8 @@
 
 package io.flutter.plugin.common;
 
-import android.util.Log;
 import io.flutter.BuildConfig;
+import io.flutter.Log;
 import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
@@ -21,7 +21,7 @@ import java.util.Map.Entry;
  * MessageCodec using the Flutter standard binary encoding.
  *
  * <p>This codec is guaranteed to be compatible with the corresponding <a
- * href="https://docs.flutter.io/flutter/services/StandardMessageCodec-class.html">StandardMessageCodec</a>
+ * href="https://api.flutter.dev/flutter/services/StandardMessageCodec-class.html">StandardMessageCodec</a>
  * on the Dart side. These parts of the Flutter SDK are evolved synchronously.
  *
  * <p>Supported messages are acyclic values of these forms:
@@ -208,10 +208,8 @@ public class StandardMessageCodec implements MessageCodec<Object> {
   protected void writeValue(ByteArrayOutputStream stream, Object value) {
     if (value == null || value.equals(null)) {
       stream.write(NULL);
-    } else if (value == Boolean.TRUE) {
-      stream.write(TRUE);
-    } else if (value == Boolean.FALSE) {
-      stream.write(FALSE);
+    } else if (value instanceof Boolean) {
+      stream.write(((Boolean) value).booleanValue() ? TRUE : FALSE);
     } else if (value instanceof Number) {
       if (value instanceof Integer || value instanceof Short || value instanceof Byte) {
         stream.write(INT);

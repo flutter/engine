@@ -23,7 +23,7 @@ void DartIO::InitForIsolate(bool may_insecurely_connect_to_all_domains,
   FML_CHECK(!LogIfError(result));
 
   Dart_Handle embedder_config_type =
-      Dart_GetType(io_lib, ToDart("_EmbedderConfig"), 0, nullptr);
+      Dart_GetNonNullableType(io_lib, ToDart("_EmbedderConfig"), 0, nullptr);
   FML_CHECK(!LogIfError(embedder_config_type));
 
   Dart_Handle allow_insecure_connections_result = Dart_SetField(

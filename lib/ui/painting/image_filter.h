@@ -6,6 +6,7 @@
 #define FLUTTER_LIB_UI_PAINTING_IMAGE_FILTER_H_
 
 #include "flutter/lib/ui/dart_wrapper.h"
+#include "flutter/lib/ui/painting/color_filter.h"
 #include "flutter/lib/ui/painting/image.h"
 #include "flutter/lib/ui/painting/picture.h"
 #include "third_party/skia/include/core/SkImageFilter.h"
@@ -21,10 +22,15 @@ class ImageFilter : public RefCountedDartWrappable<ImageFilter> {
   ~ImageFilter() override;
   static fml::RefPtr<ImageFilter> Create();
 
+  static SkSamplingOptions SamplingFromIndex(int filterQualityIndex);
+  static SkFilterMode FilterModeFromIndex(int index);
+
   void initImage(CanvasImage* image);
   void initPicture(Picture*);
-  void initBlur(double sigma_x, double sigma_y);
-  void initMatrix(const tonic::Float64List& matrix4, int filter_quality);
+  void initBlur(double sigma_x, double sigma_y, SkTileMode tile_mode);
+  void initMatrix(const tonic::Float64List& matrix4, int filter_quality_index);
+  void initColorFilter(ColorFilter* colorFilter);
+  void initComposeFilter(ImageFilter* outer, ImageFilter* inner);
 
   const sk_sp<SkImageFilter>& filter() const { return filter_; }
 

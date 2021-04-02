@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
 
+// @dart = 2.12
 part of dart.ui;
 
 /// Static methods to allow for simple sharing of [SendPort]s across [Isolate]s.
@@ -33,7 +33,7 @@ class IsolateNameServer {
   ///
   /// The `name` argument must not be null.
   static SendPort? lookupPortByName(String name) {
-    assert(name != null, "'name' cannot be null."); // ignore: unnecessary_null_comparison
+    assert(name != null, "'name' cannot be null.");
     return _lookupPortByName(name);
   }
 
@@ -51,8 +51,8 @@ class IsolateNameServer {
   ///
   /// The `port` and `name` arguments must not be null.
   static bool registerPortWithName(SendPort port, String name) {
-    assert(port != null, "'port' cannot be null."); // ignore: unnecessary_null_comparison
-    assert(name != null, "'name' cannot be null."); // ignore: unnecessary_null_comparison
+    assert(port != null, "'port' cannot be null.");
+    assert(name != null, "'name' cannot be null.");
     return _registerPortWithName(port, name);
   }
 
@@ -68,7 +68,7 @@ class IsolateNameServer {
   ///
   /// The `name` argument must not be null.
   static bool removePortNameMapping(String name) {
-    assert(name != null, "'name' cannot be null."); // ignore: unnecessary_null_comparison
+    assert(name != null, "'name' cannot be null.");
     return _removePortNameMapping(name);
   }
 

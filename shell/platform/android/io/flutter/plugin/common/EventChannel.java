@@ -4,9 +4,9 @@
 
 package io.flutter.plugin.common;
 
-import android.util.Log;
 import androidx.annotation.UiThread;
 import io.flutter.BuildConfig;
+import io.flutter.Log;
 import io.flutter.plugin.common.BinaryMessenger.BinaryMessageHandler;
 import io.flutter.plugin.common.BinaryMessenger.BinaryReply;
 import java.nio.ByteBuffer;
@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * responses and events are encoded into binary before being transmitted back to Flutter. The {@link
  * MethodCodec} used must be compatible with the one used by the Flutter application. This can be
  * achieved by creating an <a
- * href="https://docs.flutter.io/flutter/services/EventChannel-class.html">EventChannel</a>
+ * href="https://api.flutter.dev/flutter/services/EventChannel-class.html">EventChannel</a>
  * counterpart of this channel on the Dart side. The Java type of stream configuration arguments,
  * events, and error details is {@code Object}, but only values supported by the specified {@link
  * MethodCodec} can be used.
@@ -88,7 +88,7 @@ public final class EventChannel {
   }
 
   /**
-   * Handler of stream setup and tear-down requests.
+   * Handler of stream setup and teardown requests.
    *
    * <p>Implementations must be prepared to accept sequences of alternating calls to {@link
    * #onListen(Object, EventSink)} and {@link #onCancel(Object)}. Implementations should ideally

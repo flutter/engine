@@ -7,13 +7,21 @@
 
 #include <functional>
 
+#include "flow/embedded_views.h"
 #include "flutter/fml/macros.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/embedder_surface.h"
-#include "flutter/shell/platform/embedder/embedder_surface_gl.h"
 #include "flutter/shell/platform/embedder/embedder_surface_software.h"
 #include "flutter/shell/platform/embedder/vsync_waiter_embedder.h"
+
+#ifdef SHELL_ENABLE_GL
+#include "flutter/shell/platform/embedder/embedder_surface_gl.h"
+#endif
+
+#ifdef SHELL_ENABLE_METAL
+#include "flutter/shell/platform/embedder/embedder_surface_metal.h"
+#endif
 
 namespace flutter {
 
@@ -40,6 +48,15 @@ class PlatformViewEmbedder final : public PlatformView {
         compute_platform_resolved_locale_callback;
   };
 
+  // Create a platform view that sets up a software rasterizer.
+  PlatformViewEmbedder(
+      PlatformView::Delegate& delegate,
+      flutter::TaskRunners task_runners,
+      EmbedderSurfaceSoftware::SoftwareDispatchTable software_dispatch_table,
+      PlatformDispatchTable platform_dispatch_table,
+      std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder);
+
+#ifdef SHELL_ENABLE_GL
   // Creates a platform view that sets up an OpenGL rasterizer.
   PlatformViewEmbedder(
       PlatformView::Delegate& delegate,
@@ -47,15 +64,18 @@ class PlatformViewEmbedder final : public PlatformView {
       EmbedderSurfaceGL::GLDispatchTable gl_dispatch_table,
       bool fbo_reset_after_present,
       PlatformDispatchTable platform_dispatch_table,
-      std::unique_ptr<EmbedderExternalViewEmbedder> external_view_embedder);
+      std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder);
+#endif
 
-  // Create a platform view that sets up a software rasterizer.
+#ifdef SHELL_ENABLE_METAL
+  // Creates a platform view that sets up an metal rasterizer.
   PlatformViewEmbedder(
       PlatformView::Delegate& delegate,
       flutter::TaskRunners task_runners,
-      EmbedderSurfaceSoftware::SoftwareDispatchTable software_dispatch_table,
+      std::unique_ptr<EmbedderSurfaceMetal> embedder_surface,
       PlatformDispatchTable platform_dispatch_table,
-      std::unique_ptr<EmbedderExternalViewEmbedder> external_view_embedder);
+      std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder);
+#endif
 
   ~PlatformViewEmbedder() override;
 
@@ -69,11 +89,15 @@ class PlatformViewEmbedder final : public PlatformView {
       fml::RefPtr<flutter::PlatformMessage> message) override;
 
  private:
+  std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder_;
   std::unique_ptr<EmbedderSurface> embedder_surface_;
   PlatformDispatchTable platform_dispatch_table_;
 
   // |PlatformView|
   std::unique_ptr<Surface> CreateRenderingSurface() override;
+
+  // |PlatformView|
+  std::shared_ptr<ExternalViewEmbedder> CreateExternalViewEmbedder() override;
 
   // |PlatformView|
   sk_sp<GrDirectContext> CreateResourceContext() const override;

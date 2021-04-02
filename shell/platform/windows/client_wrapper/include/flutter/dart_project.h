@@ -13,6 +13,22 @@ namespace flutter {
 // A set of Flutter and Dart assets used to initialize a Flutter engine.
 class DartProject {
  public:
+#ifdef WINUWP
+  // Creates a DartProject from a series of absolute paths.
+  // The directory should contain the following top-level items:
+  // - icudtl.dat (provided as a resource by the Flutter tool)
+  // - flutter_assets (as built by the Flutter tool)
+  // - app.so, for an AOT build (as built by the Flutter tool)
+  //
+  // The path must be absolute.
+  explicit DartProject(const std::wstring& assetspath,
+                       const std::wstring& icupath,
+                       const std::wstring& aotpath) {
+    assets_path_ = assetspath;
+    icu_data_path_ = icupath;
+    aot_library_path_ = aotpath;
+  }
+#else
   // Creates a DartProject from a directory path. The directory should contain
   // the following top-level items:
   // - icudtl.dat (provided as a resource by the Flutter tool)
@@ -26,18 +42,20 @@ class DartProject {
     icu_data_path_ = path + L"\\icudtl.dat";
     aot_library_path_ = path + L"\\app.so";
   }
+#endif
 
   ~DartProject() = default;
 
-  // Switches to pass to the Flutter engine. See
-  // https://github.com/flutter/engine/blob/master/shell/common/switches.h
-  // for details. Not all switches will apply to embedding mode. Switches have
-  // not stability guarantee, and are subject to change without notice.
-  //
-  // Note: This WILL BE REMOVED in the future. If you call this, please see
-  // https://github.com/flutter/flutter/issues/38569.
-  void SetEngineSwitches(const std::vector<std::string>& switches) {
-    engine_switches_ = switches;
+  // Sets the command line arguments that should be passed to the Dart
+  // entrypoint.
+  void set_dart_entrypoint_arguments(std::vector<std::string> arguments) {
+    dart_entrypoint_arguments_ = std::move(arguments);
+  }
+
+  // Returns any command line arguments that should be passed to the Dart
+  // entrypoint.
+  const std::vector<std::string>& dart_entrypoint_arguments() const {
+    return dart_entrypoint_arguments_;
   }
 
  private:
@@ -52,9 +70,6 @@ class DartProject {
   const std::wstring& assets_path() const { return assets_path_; }
   const std::wstring& icu_data_path() const { return icu_data_path_; }
   const std::wstring& aot_library_path() const { return aot_library_path_; }
-  const std::vector<std::string>& engine_switches() const {
-    return engine_switches_;
-  }
 
   // The path to the assets directory.
   std::wstring assets_path_;
@@ -63,8 +78,8 @@ class DartProject {
   // The path to the AOT library. This will always return a path, but non-AOT
   // builds will not be expected to actually have a library at that path.
   std::wstring aot_library_path_;
-  // Switches to pass to the engine.
-  std::vector<std::string> engine_switches_;
+  // The list of arguments to pass through to the Dart entrypoint.
+  std::vector<std::string> dart_entrypoint_arguments_;
 };
 
 }  // namespace flutter

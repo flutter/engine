@@ -15,7 +15,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.Settings;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowInsets;
@@ -28,12 +27,15 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import io.flutter.BuildConfig;
+import io.flutter.Log;
 import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
 import io.flutter.plugin.platform.PlatformViewsAccessibilityDelegate;
 import io.flutter.util.Predicate;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Bridge between Android's OS accessibility system and Flutter's accessibility system.
@@ -128,7 +130,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
   // due to the time required to communicate tree changes from Flutter to Android.
   //
   // See the Flutter docs on SemanticsNode:
-  // https://docs.flutter.io/flutter/semantics/SemanticsNode-class.html
+  // https://api.flutter.dev/flutter/semantics/SemanticsNode-class.html
   @NonNull private final Map<Integer, SemanticsNode> flutterSemanticsTree = new HashMap<>();
 
   // The set of all custom Flutter accessibility actions that are present in the running
@@ -141,7 +143,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
   // custom accessibility actions,
   // https://developer.android.com/reference/android/view/accessibility/AccessibilityNodeInfo.AccessibilityAction.
   // Flutter supports custom accessibility actions via {@code customSemanticsActions} within
-  // a {@code Semantics} widget, https://docs.flutter.io/flutter/widgets/Semantics-class.html.
+  // a {@code Semantics} widget, https://api.flutter.dev/flutter/widgets/Semantics-class.html.
   // {@code customAccessibilityActions} are an Android-side cache of all custom accessibility
   // types declared within the running Flutter app.
   //
@@ -154,7 +156,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
   // https://developer.android.com/reference/android/view/accessibility/AccessibilityNodeInfo.AccessibilityAction
   //
   // See the Flutter documentation for the Semantics widget:
-  // https://docs.flutter.io/flutter/widgets/Semantics-class.html
+  // https://api.flutter.dev/flutter/widgets/Semantics-class.html
   @NonNull
   private final Map<Integer, CustomAccessibilityAction> customAccessibilityActions =
       new HashMap<>();
@@ -205,6 +207,11 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
   // The widget within Flutter that currently sits beneath a cursor, e.g,
   // beneath a stylus or mouse cursor.
   @Nullable private SemanticsNode hoveredObject;
+
+  @VisibleForTesting
+  public int getHoveredObjectId() {
+    return hoveredObject.id;
+  }
 
   // A Java/Android cached representation of the Flutter app's navigation stack. The Flutter
   // navigation stack is tracked so that accessibility announcements can be made during Flutter's
@@ -516,7 +523,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
    */
   @Override
   @SuppressWarnings("deprecation")
-  // Supressing Lint warning for new API, as we are version guarding all calls to newer APIs
+  // Suppressing Lint warning for new API, as we are version guarding all calls to newer APIs
   @SuppressLint("NewApi")
   public AccessibilityNodeInfo createAccessibilityNodeInfo(int virtualViewId) {
     if (virtualViewId >= MIN_ENGINE_GENERATED_NODE_ID) {
@@ -541,12 +548,21 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       return null;
     }
 
+    // Generate accessibility node for platform views using a virtual display.
+    //
+    // In this case, register the accessibility node in the view embedder,
+    // so the accessibility tree can be mirrored as a subtree of the Flutter accessibility tree.
+    // This is in constrast to hybrid composition where the embedded view is in the view hiearchy,
+    // so it doesn't need to be mirrored.
+    //
+    // See the case down below for how hybrid composition is handled.
     if (semanticsNode.platformViewId != -1) {
-      // For platform views we delegate the node creation to the accessibility view embedder.
       View embeddedView =
           platformViewsAccessibilityDelegate.getPlatformViewById(semanticsNode.platformViewId);
-      Rect bounds = semanticsNode.getGlobalRect();
-      return accessibilityViewEmbedder.getRootNode(embeddedView, semanticsNode.id, bounds);
+      if (platformViewsAccessibilityDelegate.usesVirtualDisplay(semanticsNode.platformViewId)) {
+        Rect bounds = semanticsNode.getGlobalRect();
+        return accessibilityViewEmbedder.getRootNode(embeddedView, semanticsNode.id, bounds);
+      }
     }
 
     AccessibilityNodeInfo result =
@@ -619,8 +635,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     }
 
     // These are non-ops on older devices. Attempting to interact with the text will cause Talkback
-    // to read the
-    // contents of the text box instead.
+    // to read the contents of the text box instead.
     if (Build.VERSION.SDK_INT > Build.VERSION_CODES.JELLY_BEAN_MR2) {
       if (semanticsNode.hasAction(Action.SET_SELECTION)) {
         result.addAction(AccessibilityNodeInfo.ACTION_SET_SELECTION);
@@ -633,6 +648,13 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       }
       if (semanticsNode.hasAction(Action.PASTE)) {
         result.addAction(AccessibilityNodeInfo.ACTION_PASTE);
+      }
+    }
+
+    // Set text API isn't available until API 21.
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+      if (semanticsNode.hasAction(Action.SET_TEXT)) {
+        result.addAction(AccessibilityNodeInfo.ACTION_SET_TEXT);
       }
     }
 
@@ -823,11 +845,27 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     }
 
     for (SemanticsNode child : semanticsNode.childrenInTraversalOrder) {
-      if (!child.hasFlag(Flag.IS_HIDDEN)) {
-        result.addChild(rootAccessibilityView, child.id);
+      if (child.hasFlag(Flag.IS_HIDDEN)) {
+        continue;
       }
-    }
+      if (child.platformViewId != -1) {
+        View embeddedView =
+            platformViewsAccessibilityDelegate.getPlatformViewById(child.platformViewId);
 
+        // Add the embedded view as a child of the current accessibility node if it's using
+        // hybrid composition.
+        //
+        // In this case, the view is in the Activity's view hierarchy, so it doesn't need to be
+        // mirrored.
+        //
+        // See the case above for how virtual displays are handled.
+        if (!platformViewsAccessibilityDelegate.usesVirtualDisplay(child.platformViewId)) {
+          result.addChild(embeddedView);
+          continue;
+        }
+      }
+      result.addChild(rootAccessibilityView, child.id);
+    }
     return result;
   }
 
@@ -1004,6 +1042,12 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
           }
           accessibilityChannel.dispatchSemanticsAction(
               virtualViewId, Action.SET_SELECTION, selection);
+          // The voice access expects the semantics node to update immediately. We update the
+          // semantics node based on prediction. If the result is incorrect, it will be updated in
+          // the next frame.
+          SemanticsNode node = flutterSemanticsTree.get(virtualViewId);
+          node.textSelectionBase = selection.get("base");
+          node.textSelectionExtent = selection.get("extent");
           return true;
         }
       case AccessibilityNodeInfo.ACTION_COPY:
@@ -1025,6 +1069,16 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         {
           accessibilityChannel.dispatchSemanticsAction(virtualViewId, Action.DISMISS);
           return true;
+        }
+      case AccessibilityNodeInfo.ACTION_SET_TEXT:
+        {
+          // Set text APIs aren't available until API 21. We can't handle the case here so
+          // return false instead. It's extremely unlikely that this case would ever be
+          // triggered in the first place in API < 21.
+          if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+            return false;
+          }
+          return performSetText(semanticsNode, virtualViewId, arguments);
         }
       default:
         // might be a custom accessibility accessibilityAction.
@@ -1054,6 +1108,9 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         arguments.getInt(AccessibilityNodeInfo.ACTION_ARGUMENT_MOVEMENT_GRANULARITY_INT);
     final boolean extendSelection =
         arguments.getBoolean(AccessibilityNodeInfo.ACTION_ARGUMENT_EXTEND_SELECTION_BOOLEAN);
+    // The voice access expects the semantics node to update immediately. We update the semantics
+    // node based on prediction. If the result is incorrect, it will be updated in the next frame.
+    predictCursorMovement(semanticsNode, granularity, forward, extendSelection);
     switch (granularity) {
       case AccessibilityNodeInfo.MOVEMENT_GRANULARITY_CHARACTER:
         {
@@ -1081,8 +1138,100 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
           return true;
         }
         break;
+      case AccessibilityNodeInfo.MOVEMENT_GRANULARITY_LINE:
+      case AccessibilityNodeInfo.MOVEMENT_GRANULARITY_PARAGRAPH:
+      case AccessibilityNodeInfo.MOVEMENT_GRANULARITY_PAGE:
+        return true;
     }
     return false;
+  }
+
+  private void predictCursorMovement(
+      @NonNull SemanticsNode node, int granularity, boolean forward, boolean extendSelection) {
+    if (node.textSelectionExtent < 0 || node.textSelectionBase < 0) {
+      return;
+    }
+
+    switch (granularity) {
+      case AccessibilityNodeInfo.MOVEMENT_GRANULARITY_CHARACTER:
+        if (forward && node.textSelectionExtent < node.value.length()) {
+          node.textSelectionExtent += 1;
+        } else if (!forward && node.textSelectionExtent > 0) {
+          node.textSelectionExtent -= 1;
+        }
+        break;
+      case AccessibilityNodeInfo.MOVEMENT_GRANULARITY_WORD:
+        if (forward && node.textSelectionExtent < node.value.length()) {
+          Pattern pattern = Pattern.compile("\\p{L}(\\b)");
+          Matcher result = pattern.matcher(node.value.substring(node.textSelectionExtent));
+          // we discard the first result because we want to find the "next" word
+          result.find();
+          if (result.find()) {
+            node.textSelectionExtent += result.start(1);
+          } else {
+            node.textSelectionExtent = node.value.length();
+          }
+        } else if (!forward && node.textSelectionExtent > 0) {
+          // Finds last beginning of the word boundary.
+          Pattern pattern = Pattern.compile("(?s:.*)(\\b)\\p{L}");
+          Matcher result = pattern.matcher(node.value.substring(0, node.textSelectionExtent));
+          if (result.find()) {
+            node.textSelectionExtent = result.start(1);
+          }
+        }
+        break;
+      case AccessibilityNodeInfo.MOVEMENT_GRANULARITY_LINE:
+        if (forward && node.textSelectionExtent < node.value.length()) {
+          // Finds the next new line.
+          Pattern pattern = Pattern.compile("(?!^)(\\n)");
+          Matcher result = pattern.matcher(node.value.substring(node.textSelectionExtent));
+          if (result.find()) {
+            node.textSelectionExtent += result.start(1);
+          } else {
+            node.textSelectionExtent = node.value.length();
+          }
+        } else if (!forward && node.textSelectionExtent > 0) {
+          // Finds the last new line.
+          Pattern pattern = Pattern.compile("(?s:.*)(\\n)");
+          Matcher result = pattern.matcher(node.value.substring(0, node.textSelectionExtent));
+          if (result.find()) {
+            node.textSelectionExtent = result.start(1);
+          } else {
+            node.textSelectionExtent = 0;
+          }
+        }
+        break;
+      case AccessibilityNodeInfo.MOVEMENT_GRANULARITY_PARAGRAPH:
+      case AccessibilityNodeInfo.MOVEMENT_GRANULARITY_PAGE:
+        if (forward) {
+          node.textSelectionExtent = node.value.length();
+        } else {
+          node.textSelectionExtent = 0;
+        }
+        break;
+    }
+    if (!extendSelection) {
+      node.textSelectionBase = node.textSelectionExtent;
+    }
+  }
+
+  /**
+   * Handles the responsibilities of {@link #performAction(int, int, Bundle)} for the specific
+   * scenario of cursor movement.
+   */
+  @TargetApi(21)
+  @RequiresApi(21)
+  private boolean performSetText(SemanticsNode node, int virtualViewId, @NonNull Bundle arguments) {
+    String newText = "";
+    if (arguments != null
+        && arguments.containsKey(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE)) {
+      newText = arguments.getString(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE);
+    }
+    accessibilityChannel.dispatchSemanticsAction(virtualViewId, Action.SET_TEXT, newText);
+    // The voice access expects the semantics node to update immediately. We update the semantics
+    // node based on prediction. If the result is incorrect, it will be updated in the next frame.
+    node.value = newText;
+    return true;
   }
 
   // TODO(ianh): implement findAccessibilityNodeInfosByText()
@@ -1328,16 +1477,29 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
 
     // Dispatch a TYPE_WINDOW_STATE_CHANGED event if the most recent route id changed from the
     // previously cached route id.
+
+    // Finds the last route that is not in the previous routes.
     SemanticsNode lastAdded = null;
     for (SemanticsNode semanticsNode : newRoutes) {
       if (!flutterNavigationStack.contains(semanticsNode.id)) {
         lastAdded = semanticsNode;
       }
     }
+
+    // If all the routes are in the previous route, get the last route.
     if (lastAdded == null && newRoutes.size() > 0) {
       lastAdded = newRoutes.get(newRoutes.size() - 1);
     }
-    if (lastAdded != null && lastAdded.id != previousRouteId) {
+
+    // There are two cases if lastAdded != nil
+    // 1. lastAdded is not in previous routes. In this case,
+    //    lastAdded.id != previousRouteId
+    // 2. All new routes are in previous routes and
+    //    lastAdded = newRoutes.last.
+    // In the first case, we need to announce new route. In the second case,
+    // we need to announce if one list is shorter than the other.
+    if (lastAdded != null
+        && (lastAdded.id != previousRouteId || newRoutes.size() != flutterNavigationStack.size())) {
       previousRouteId = lastAdded.id;
       sendWindowChangeEvent(lastAdded);
     }
@@ -1712,7 +1874,8 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     CUSTOM_ACTION(1 << 17),
     DISMISS(1 << 18),
     MOVE_CURSOR_FORWARD_BY_WORD(1 << 19),
-    MOVE_CURSOR_BACKWARD_BY_WORD(1 << 20);
+    MOVE_CURSOR_BACKWARD_BY_WORD(1 << 20),
+    SET_TEXT(1 << 21);
 
     public final int value;
 
@@ -1747,7 +1910,9 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     // IS_MULTILINE(1 << 19);
     IS_READ_ONLY(1 << 20),
     IS_FOCUSABLE(1 << 21),
-    IS_LINK(1 << 22);
+    IS_LINK(1 << 22),
+    IS_SLIDER(1 << 23),
+    IS_KEYBOARD_KEY(1 << 24);
 
     final int value;
 
@@ -1794,13 +1959,13 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
    * custom accessibility actions,
    * https://developer.android.com/reference/android/view/accessibility/AccessibilityNodeInfo.AccessibilityAction.
    * Flutter supports custom accessibility actions via {@code customSemanticsActions} within a
-   * {@code Semantics} widget, https://docs.flutter.io/flutter/widgets/Semantics-class.html.
+   * {@code Semantics} widget, https://api.flutter.dev/flutter/widgets/Semantics-class.html.
    *
    * <p>See the Android documentation for custom accessibility actions:
    * https://developer.android.com/reference/android/view/accessibility/AccessibilityNodeInfo.AccessibilityAction
    *
    * <p>See the Flutter documentation for the Semantics widget:
-   * https://docs.flutter.io/flutter/widgets/Semantics-class.html
+   * https://api.flutter.dev/flutter/widgets/Semantics-class.html
    */
   private static class CustomAccessibilityAction {
     CustomAccessibilityAction() {}
@@ -1812,7 +1977,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
 
     // The Flutter ID of this custom accessibility action. See Flutter's Semantics widget for
     // custom accessibility action definitions:
-    // https://docs.flutter.io/flutter/widgets/Semantics-class.html
+    // https://api.flutter.dev/flutter/widgets/Semantics-class.html
     private int id = -1;
 
     // The ID of the standard Flutter accessibility action that this {@code
@@ -2139,7 +2304,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
           return result;
         }
       }
-      return this;
+      return isFocusable() ? this : null;
     }
 
     // TODO(goderbauer): This should be decided by the framework once we have more information

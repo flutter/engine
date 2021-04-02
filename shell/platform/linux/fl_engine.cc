@@ -3,16 +3,19 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_engine.h"
-#include "flutter/shell/platform/linux/fl_engine_private.h"
+
+#include <gmodule.h>
+
+#include <cstring>
 
 #include "flutter/shell/platform/linux/fl_binary_messenger_private.h"
+#include "flutter/shell/platform/linux/fl_dart_project_private.h"
+#include "flutter/shell/platform/linux/fl_engine_private.h"
 #include "flutter/shell/platform/linux/fl_plugin_registrar_private.h"
 #include "flutter/shell/platform/linux/fl_renderer.h"
 #include "flutter/shell/platform/linux/fl_renderer_headless.h"
+#include "flutter/shell/platform/linux/fl_settings_plugin.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_plugin_registry.h"
-
-#include <gmodule.h>
-#include <cstring>
 
 static constexpr int kMicrosecondsPerNanosecond = 1000;
 
@@ -28,13 +31,20 @@ struct _FlEngine {
   FlDartProject* project;
   FlRenderer* renderer;
   FlBinaryMessenger* binary_messenger;
+  FlSettingsPlugin* settings_plugin;
   FlutterEngineAOTData aot_data;
   FLUTTER_API_SYMBOL(FlutterEngine) engine;
+  FlutterEngineProcTable embedder_api;
 
   // Function to call when a platform message is received.
   FlEnginePlatformMessageHandler platform_message_handler;
   gpointer platform_message_handler_data;
   GDestroyNotify platform_message_handler_destroy_notify;
+
+  // Function to call when a semantic node is received.
+  FlEngineUpdateSemanticsNodeHandler update_semantics_node_handler;
+  gpointer update_semantics_node_handler_data;
+  GDestroyNotify update_semantics_node_handler_destroy_notify;
 };
 
 G_DEFINE_QUARK(fl_engine_error_quark, fl_engine_error)
@@ -52,7 +62,7 @@ G_DEFINE_TYPE_WITH_CODE(
 // Subclass of GSource that integrates Flutter tasks into the GLib main loop.
 typedef struct {
   GSource parent;
-  FlEngine* self;
+  FlEngine* engine;
   FlutterTask task;
 } FlutterSource;
 
@@ -125,7 +135,7 @@ static void setup_locales(FlEngine* self) {
   }
   FlutterLocale** locales =
       reinterpret_cast<FlutterLocale**>(locales_array->pdata);
-  FlutterEngineResult result = FlutterEngineUpdateLocales(
+  FlutterEngineResult result = self->embedder_api.UpdateLocales(
       self->engine, const_cast<const FlutterLocale**>(locales),
       locales_array->len);
   if (result != kSuccess) {
@@ -138,10 +148,10 @@ static gboolean flutter_source_dispatch(GSource* source,
                                         GSourceFunc callback,
                                         gpointer user_data) {
   FlutterSource* fl_source = reinterpret_cast<FlutterSource*>(source);
-  FlEngine* self = fl_source->self;
+  FlEngine* self = fl_source->engine;
 
   FlutterEngineResult result =
-      FlutterEngineRunTask(self->engine, &fl_source->task);
+      self->embedder_api.RunTask(self->engine, &fl_source->task);
   if (result != kSuccess) {
     g_warning("Failed to run Flutter task\n");
   }
@@ -149,12 +159,57 @@ static gboolean flutter_source_dispatch(GSource* source,
   return G_SOURCE_REMOVE;
 }
 
+// Called when the engine is disposed.
+static void engine_weak_notify_cb(gpointer user_data,
+                                  GObject* where_the_object_was) {
+  FlutterSource* source = reinterpret_cast<FlutterSource*>(user_data);
+  source->engine = nullptr;
+  g_source_destroy(reinterpret_cast<GSource*>(source));
+}
+
+// Called when a flutter source completes.
+static void flutter_source_finalize(GSource* source) {
+  FlutterSource* fl_source = reinterpret_cast<FlutterSource*>(source);
+  if (fl_source->engine != nullptr) {
+    g_object_weak_unref(G_OBJECT(fl_source->engine), engine_weak_notify_cb,
+                        fl_source);
+    fl_source->engine = nullptr;
+  }
+}
+
+// Called when engine needs a backing store for a specific #FlutterLayer.
+static bool compositor_create_backing_store_callback(
+    const FlutterBackingStoreConfig* config,
+    FlutterBackingStore* backing_store_out,
+    void* user_data) {
+  g_return_val_if_fail(FL_IS_RENDERER(user_data), false);
+  return fl_renderer_create_backing_store(FL_RENDERER(user_data), config,
+                                          backing_store_out);
+}
+
+// Called when the backing store is to be released.
+static bool compositor_collect_backing_store_callback(
+    const FlutterBackingStore* renderer,
+    void* user_data) {
+  g_return_val_if_fail(FL_IS_RENDERER(user_data), false);
+  return fl_renderer_collect_backing_store(FL_RENDERER(user_data), renderer);
+}
+
+// Called when embedder should composite contents of each layer onto the screen.
+static bool compositor_present_layers_callback(const FlutterLayer** layers,
+                                               size_t layers_count,
+                                               void* user_data) {
+  g_return_val_if_fail(FL_IS_RENDERER(user_data), false);
+  return fl_renderer_present_layers(FL_RENDERER(user_data), layers,
+                                    layers_count);
+}
+
 // Table of functions for Flutter GLib main loop integration.
 static GSourceFuncs flutter_source_funcs = {
     nullptr,                  // prepare
     nullptr,                  // check
     flutter_source_dispatch,  // dispatch
-    nullptr,                  // finalize
+    flutter_source_finalize,  // finalize
     nullptr,
     nullptr  // Internal usage
 };
@@ -226,7 +281,8 @@ static void fl_engine_post_task(FlutterTask task,
   g_autoptr(GSource) source =
       g_source_new(&flutter_source_funcs, sizeof(FlutterSource));
   FlutterSource* fl_source = reinterpret_cast<FlutterSource*>(source);
-  fl_source->self = self;
+  fl_source->engine = self;
+  g_object_weak_ref(G_OBJECT(self), engine_weak_notify_cb, fl_source);
   fl_source->task = task;
   g_source_set_ready_time(source,
                           target_time_nanos / kMicrosecondsPerNanosecond);
@@ -250,6 +306,17 @@ static void fl_engine_platform_message_cb(const FlutterPlatformMessage* message,
   if (!handled) {
     fl_engine_send_platform_message_response(self, message->response_handle,
                                              nullptr, nullptr);
+  }
+}
+
+// Called when a semantic node update is received from the engine.
+static void fl_engine_update_semantics_node_cb(const FlutterSemanticsNode* node,
+                                               void* user_data) {
+  FlEngine* self = FL_ENGINE(user_data);
+
+  if (self->update_semantics_node_handler != nullptr) {
+    self->update_semantics_node_handler(
+        self, node, self->update_semantics_node_handler_data);
   }
 }
 
@@ -281,18 +348,19 @@ static void fl_engine_dispose(GObject* object) {
   FlEngine* self = FL_ENGINE(object);
 
   if (self->engine != nullptr) {
-    FlutterEngineShutdown(self->engine);
+    self->embedder_api.Shutdown(self->engine);
     self->engine = nullptr;
   }
 
   if (self->aot_data != nullptr) {
-    FlutterEngineCollectAOTData(self->aot_data);
+    self->embedder_api.CollectAOTData(self->aot_data);
     self->aot_data = nullptr;
   }
 
   g_clear_object(&self->project);
   g_clear_object(&self->renderer);
   g_clear_object(&self->binary_messenger);
+  g_clear_object(&self->settings_plugin);
 
   if (self->platform_message_handler_destroy_notify) {
     self->platform_message_handler_destroy_notify(
@@ -300,6 +368,13 @@ static void fl_engine_dispose(GObject* object) {
   }
   self->platform_message_handler_data = nullptr;
   self->platform_message_handler_destroy_notify = nullptr;
+
+  if (self->update_semantics_node_handler_destroy_notify) {
+    self->update_semantics_node_handler_destroy_notify(
+        self->update_semantics_node_handler_data);
+  }
+  self->update_semantics_node_handler_data = nullptr;
+  self->update_semantics_node_handler_destroy_notify = nullptr;
 
   G_OBJECT_CLASS(fl_engine_parent_class)->dispose(object);
 }
@@ -310,6 +385,9 @@ static void fl_engine_class_init(FlEngineClass* klass) {
 
 static void fl_engine_init(FlEngine* self) {
   self->thread = g_thread_self();
+
+  self->embedder_api.struct_size = sizeof(FlutterEngineProcTable);
+  FlutterEngineGetProcAddresses(&self->embedder_api);
 
   self->binary_messenger = fl_binary_messenger_new(self);
 }
@@ -353,17 +431,17 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
   FlutterCustomTaskRunners custom_task_runners = {};
   custom_task_runners.struct_size = sizeof(FlutterCustomTaskRunners);
   custom_task_runners.platform_task_runner = &platform_task_runner;
+  custom_task_runners.render_task_runner = &platform_task_runner;
 
   g_autoptr(GPtrArray) command_line_args =
-      g_ptr_array_new_with_free_func(g_free);
-  g_ptr_array_add(command_line_args, g_strdup("flutter"));
-  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-  gboolean enable_mirrors = fl_dart_project_get_enable_mirrors(self->project);
-  G_GNUC_END_IGNORE_DEPRECATIONS
-  if (enable_mirrors) {
-    g_ptr_array_add(command_line_args,
-                    g_strdup("--dart-flags=--enable_mirrors=true"));
-  }
+      fl_dart_project_get_switches(self->project);
+  // FlutterProjectArgs expects a full argv, so when processing it for flags
+  // the first item is treated as the executable and ignored. Add a dummy value
+  // so that all switches are used.
+  g_ptr_array_insert(command_line_args, 0, g_strdup("flutter"));
+
+  gchar** dart_entrypoint_args =
+      fl_dart_project_get_dart_entrypoint_arguments(self->project);
 
   FlutterProjectArgs args = {};
   args.struct_size = sizeof(FlutterProjectArgs);
@@ -373,14 +451,30 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
   args.command_line_argv =
       reinterpret_cast<const char* const*>(command_line_args->pdata);
   args.platform_message_callback = fl_engine_platform_message_cb;
+  args.update_semantics_node_callback = fl_engine_update_semantics_node_cb;
   args.custom_task_runners = &custom_task_runners;
   args.shutdown_dart_vm_when_done = true;
+  args.dart_entrypoint_argc =
+      dart_entrypoint_args != nullptr ? g_strv_length(dart_entrypoint_args) : 0;
+  args.dart_entrypoint_argv =
+      reinterpret_cast<const char* const*>(dart_entrypoint_args);
 
-  if (FlutterEngineRunsAOTCompiledDartCode()) {
+  FlutterCompositor compositor = {};
+  compositor.struct_size = sizeof(FlutterCompositor);
+  compositor.user_data = self->renderer;
+  compositor.create_backing_store_callback =
+      compositor_create_backing_store_callback;
+  compositor.collect_backing_store_callback =
+      compositor_collect_backing_store_callback;
+  compositor.present_layers_callback = compositor_present_layers_callback;
+  args.compositor = &compositor;
+
+  if (self->embedder_api.RunsAOTCompiledDartCode()) {
     FlutterEngineAOTDataSource source = {};
     source.type = kFlutterEngineAOTDataSourceTypeElfPath;
     source.elf_path = fl_dart_project_get_aot_library_path(self->project);
-    if (FlutterEngineCreateAOTData(&source, &self->aot_data) != kSuccess) {
+    if (self->embedder_api.CreateAOTData(&source, &self->aot_data) !=
+        kSuccess) {
       g_set_error(error, fl_engine_error_quark(), FL_ENGINE_ERROR_FAILED,
                   "Failed to create AOT data");
       return FALSE;
@@ -388,7 +482,7 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
     args.aot_data = self->aot_data;
   }
 
-  FlutterEngineResult result = FlutterEngineInitialize(
+  FlutterEngineResult result = self->embedder_api.Initialize(
       FLUTTER_ENGINE_VERSION, &config, &args, self, &self->engine);
   if (result != kSuccess) {
     g_set_error(error, fl_engine_error_quark(), FL_ENGINE_ERROR_FAILED,
@@ -396,7 +490,7 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
     return FALSE;
   }
 
-  result = FlutterEngineRunInitialized(self->engine);
+  result = self->embedder_api.RunInitialized(self->engine);
   if (result != kSuccess) {
     g_set_error(error, fl_engine_error_quark(), FL_ENGINE_ERROR_FAILED,
                 "Failed to run Flutter engine");
@@ -405,7 +499,18 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
 
   setup_locales(self);
 
+  self->settings_plugin = fl_settings_plugin_new(self->binary_messenger);
+  fl_settings_plugin_start(self->settings_plugin);
+
+  result = self->embedder_api.UpdateSemanticsEnabled(self->engine, TRUE);
+  if (result != kSuccess)
+    g_warning("Failed to enable accessibility features on Flutter engine");
+
   return TRUE;
+}
+
+FlutterEngineProcTable* fl_engine_get_embedder_api(FlEngine* self) {
+  return &(self->embedder_api);
 }
 
 void fl_engine_set_platform_message_handler(
@@ -424,6 +529,23 @@ void fl_engine_set_platform_message_handler(
   self->platform_message_handler = handler;
   self->platform_message_handler_data = user_data;
   self->platform_message_handler_destroy_notify = destroy_notify;
+}
+
+void fl_engine_set_update_semantics_node_handler(
+    FlEngine* self,
+    FlEngineUpdateSemanticsNodeHandler handler,
+    gpointer user_data,
+    GDestroyNotify destroy_notify) {
+  g_return_if_fail(FL_IS_ENGINE(self));
+
+  if (self->update_semantics_node_handler_destroy_notify) {
+    self->update_semantics_node_handler_destroy_notify(
+        self->update_semantics_node_handler_data);
+  }
+
+  self->update_semantics_node_handler = handler;
+  self->update_semantics_node_handler_data = user_data;
+  self->update_semantics_node_handler_destroy_notify = destroy_notify;
 }
 
 gboolean fl_engine_send_platform_message_response(
@@ -446,12 +568,12 @@ gboolean fl_engine_send_platform_message_response(
     data =
         static_cast<const uint8_t*>(g_bytes_get_data(response, &data_length));
   }
-  FlutterEngineResult result = FlutterEngineSendPlatformMessageResponse(
+  FlutterEngineResult result = self->embedder_api.SendPlatformMessageResponse(
       self->engine, handle, data, data_length);
 
   if (result != kSuccess) {
     g_set_error(error, fl_engine_error_quark(), FL_ENGINE_ERROR_FAILED,
-                "Failed to send platorm message response");
+                "Failed to send platform message response");
     return FALSE;
   }
 
@@ -477,9 +599,10 @@ void fl_engine_send_platform_message(FlEngine* self,
       return;
     }
 
-    FlutterEngineResult result = FlutterPlatformMessageCreateResponseHandle(
-        self->engine, fl_engine_platform_message_response_cb, task,
-        &response_handle);
+    FlutterEngineResult result =
+        self->embedder_api.PlatformMessageCreateResponseHandle(
+            self->engine, fl_engine_platform_message_response_cb, task,
+            &response_handle);
     if (result != kSuccess) {
       g_task_return_new_error(task, fl_engine_error_quark(),
                               FL_ENGINE_ERROR_FAILED,
@@ -501,7 +624,7 @@ void fl_engine_send_platform_message(FlEngine* self,
   fl_message.message_size = message != nullptr ? g_bytes_get_size(message) : 0;
   fl_message.response_handle = response_handle;
   FlutterEngineResult result =
-      FlutterEngineSendPlatformMessage(self->engine, &fl_message);
+      self->embedder_api.SendPlatformMessage(self->engine, &fl_message);
 
   if (result != kSuccess && task != nullptr) {
     g_task_return_new_error(task, fl_engine_error_quark(),
@@ -511,7 +634,8 @@ void fl_engine_send_platform_message(FlEngine* self,
   }
 
   if (response_handle != nullptr) {
-    FlutterPlatformMessageReleaseResponseHandle(self->engine, response_handle);
+    self->embedder_api.PlatformMessageReleaseResponseHandle(self->engine,
+                                                            response_handle);
   }
 }
 
@@ -539,7 +663,7 @@ void fl_engine_send_window_metrics_event(FlEngine* self,
   event.width = width;
   event.height = height;
   event.pixel_ratio = pixel_ratio;
-  FlutterEngineSendWindowMetricsEvent(self->engine, &event);
+  self->embedder_api.SendWindowMetricsEvent(self->engine, &event);
 }
 
 void fl_engine_send_mouse_pointer_event(FlEngine* self,
@@ -569,7 +693,28 @@ void fl_engine_send_mouse_pointer_event(FlEngine* self,
   fl_event.scroll_delta_y = scroll_delta_y;
   fl_event.device_kind = kFlutterPointerDeviceKindMouse;
   fl_event.buttons = buttons;
-  FlutterEngineSendPointerEvent(self->engine, &fl_event, 1);
+  self->embedder_api.SendPointerEvent(self->engine, &fl_event, 1);
+}
+
+void fl_engine_dispatch_semantics_action(FlEngine* self,
+                                         uint64_t id,
+                                         FlutterSemanticsAction action,
+                                         GBytes* data) {
+  g_return_if_fail(FL_IS_ENGINE(self));
+
+  if (self->engine == nullptr) {
+    return;
+  }
+
+  const uint8_t* action_data = nullptr;
+  size_t action_data_length = 0;
+  if (data != nullptr) {
+    action_data = static_cast<const uint8_t*>(
+        g_bytes_get_data(data, &action_data_length));
+  }
+
+  self->embedder_api.DispatchSemanticsAction(self->engine, id, action,
+                                             action_data, action_data_length);
 }
 
 G_MODULE_EXPORT FlBinaryMessenger* fl_engine_get_binary_messenger(

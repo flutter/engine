@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of ui;
 
 enum PointMode {
@@ -30,7 +30,7 @@ class Vertices {
     List<Color>? colors,
     List<int>? indices,
   }) {
-    if (engine.experimentalUseSkia) {
+    if (engine.useCanvasKit) {
       return engine.CkVertices(
         mode,
         positions,
@@ -53,7 +53,7 @@ class Vertices {
     Int32List? colors,
     Uint16List? indices,
   }) {
-    if (engine.experimentalUseSkia) {
+    if (engine.useCanvasKit) {
       return engine.CkVertices.raw(
         mode,
         positions,
@@ -73,7 +73,7 @@ class Vertices {
 
 abstract class PictureRecorder {
   factory PictureRecorder() {
-    if (engine.experimentalUseSkia) {
+    if (engine.useCanvasKit) {
       return engine.CkPictureRecorder();
     } else {
       return engine.EnginePictureRecorder();
@@ -85,7 +85,7 @@ abstract class PictureRecorder {
 
 abstract class Canvas {
   factory Canvas(PictureRecorder recorder, [Rect? cullRect]) {
-    if (engine.experimentalUseSkia) {
+    if (engine.useCanvasKit) {
       return engine.CanvasKitCanvas(recorder, cullRect);
     } else {
       return engine.SurfaceCanvas(recorder as engine.EnginePictureRecorder, cullRect);

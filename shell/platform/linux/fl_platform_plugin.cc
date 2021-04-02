@@ -17,10 +17,16 @@ static constexpr char kUnknownClipboardFormatError[] =
 static constexpr char kFailedError[] = "Failed";
 static constexpr char kGetClipboardDataMethod[] = "Clipboard.getData";
 static constexpr char kSetClipboardDataMethod[] = "Clipboard.setData";
+static constexpr char kClipboardHasStringsMethod[] = "Clipboard.hasStrings";
+static constexpr char kPlaySoundMethod[] = "SystemSound.play";
 static constexpr char kSystemNavigatorPopMethod[] = "SystemNavigator.pop";
 static constexpr char kTextKey[] = "text";
+static constexpr char kValueKey[] = "value";
 
 static constexpr char kTextPlainFormat[] = "text/plain";
+
+static constexpr char kSoundTypeAlert[] = "SystemSoundType.alert";
+static constexpr char kSoundTypeClick[] = "SystemSoundType.click";
 
 struct _FlPlatformPlugin {
   GObject parent_instance;
@@ -50,6 +56,22 @@ static void clipboard_text_cb(GtkClipboard* clipboard,
     result = fl_value_new_map();
     fl_value_set_string_take(result, kTextKey, fl_value_new_string(text));
   }
+
+  g_autoptr(FlMethodResponse) response =
+      FL_METHOD_RESPONSE(fl_method_success_response_new(result));
+  send_response(method_call, response);
+}
+
+// Called when clipboard text received during has_strings.
+static void clipboard_text_has_strings_cb(GtkClipboard* clipboard,
+                                          const gchar* text,
+                                          gpointer user_data) {
+  g_autoptr(FlMethodCall) method_call = FL_METHOD_CALL(user_data);
+
+  g_autoptr(FlValue) result = fl_value_new_map();
+  fl_value_set_string_take(
+      result, kValueKey,
+      fl_value_new_bool(text != nullptr && strlen(text) > 0));
 
   g_autoptr(FlMethodResponse) response =
       FL_METHOD_RESPONSE(fl_method_success_response_new(result));
@@ -100,8 +122,45 @@ static FlMethodResponse* clipboard_get_data_async(FlPlatformPlugin* self,
   gtk_clipboard_request_text(clipboard, clipboard_text_cb,
                              g_object_ref(method_call));
 
-  // Will response later.
+  // Will respond later.
   return nullptr;
+}
+
+// Called when Flutter wants to know if the content of the clipboard is able to
+// be pasted, without actually accessing the clipboard content itself.
+static FlMethodResponse* clipboard_has_strings_async(
+    FlPlatformPlugin* self,
+    FlMethodCall* method_call) {
+  GtkClipboard* clipboard =
+      gtk_clipboard_get_default(gdk_display_get_default());
+  gtk_clipboard_request_text(clipboard, clipboard_text_has_strings_cb,
+                             g_object_ref(method_call));
+
+  // Will respond later.
+  return nullptr;
+}
+
+// Called when Flutter wants to play a sound.
+static FlMethodResponse* system_sound_play(FlPlatformPlugin* self,
+                                           FlValue* args) {
+  if (fl_value_get_type(args) != FL_VALUE_TYPE_STRING) {
+    return FL_METHOD_RESPONSE(fl_method_error_response_new(
+        kBadArgumentsError, "Expected string", nullptr));
+  }
+
+  const gchar* type = fl_value_get_string(args);
+  if (strcmp(type, kSoundTypeAlert) == 0) {
+    GdkDisplay* display = gdk_display_get_default();
+    if (display != nullptr) {
+      gdk_display_beep(display);
+    }
+  } else if (strcmp(type, kSoundTypeClick) == 0) {
+    // We don't make sounds for keyboard on desktops.
+  } else {
+    g_warning("Ignoring unknown sound type %s in SystemSound.play.\n", type);
+  }
+
+  return FL_METHOD_RESPONSE(fl_method_not_implemented_response_new());
 }
 
 // Called when Flutter wants to quit the application.
@@ -131,6 +190,10 @@ static void method_call_cb(FlMethodChannel* channel,
     response = clipboard_set_data(self, args);
   } else if (strcmp(method, kGetClipboardDataMethod) == 0) {
     response = clipboard_get_data_async(self, method_call);
+  } else if (strcmp(method, kClipboardHasStringsMethod) == 0) {
+    response = clipboard_has_strings_async(self, method_call);
+  } else if (strcmp(method, kPlaySoundMethod) == 0) {
+    response = system_sound_play(self, args);
   } else if (strcmp(method, kSystemNavigatorPopMethod) == 0) {
     response = system_navigator_pop(self);
   } else {

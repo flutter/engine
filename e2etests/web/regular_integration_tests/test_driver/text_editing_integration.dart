@@ -7,13 +7,16 @@ import 'dart:js_util' as js_util;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:regular_integration_tests/text_editing_main.dart' as app;
 import 'package:flutter/material.dart';
-
 import 'package:integration_test/integration_test.dart';
 
+import 'package:regular_integration_tests/text_editing_main.dart' as app;
+import 'package:regular_integration_tests/common.dart';
+
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  final IntegrationTestWidgetsFlutterBinding binding =
+      IntegrationTestWidgetsFlutterBinding.ensureInitialized()
+          as IntegrationTestWidgetsFlutterBinding;
 
   testWidgets('Focused text field creates a native input element',
       (WidgetTester tester) async {
@@ -38,9 +41,17 @@ void main() {
 
     // Change the value of the TextFormField.
     final TextFormField textFormField = tester.widget(finder);
-    textFormField.controller.text = 'New Value';
+    textFormField.controller?.text = 'New Value';
     // DOM element's value also changes.
     expect(input.value, 'New Value');
+
+    // Firefox can't make up its mind about what the screenshot should
+    // look like between LUCI and local.
+    //
+    // https://github.com/flutter/flutter/issues/73382
+    if (!isFirefox) {
+      await binding.takeScreenshot('focused_text_field');
+    }
   });
 
   testWidgets('Input field with no initial value works',
@@ -66,7 +77,7 @@ void main() {
 
     // Change the value of the TextFormField.
     final TextFormField textFormField = tester.widget(finder);
-    textFormField.controller.text = 'New Value';
+    textFormField.controller?.text = 'New Value';
     // DOM element's value also changes.
     expect(input.value, 'New Value');
   });
@@ -143,6 +154,72 @@ void main() {
     expect(input2.value, 'Text2');
   });
 
+  testWidgets(
+      'Jump between TextFormFields with tab key after CapsLock is'
+      'activated', (WidgetTester tester) async {
+    app.main();
+    await tester.pumpAndSettle();
+
+    // TODO(nurhan): https://github.com/flutter/flutter/issues/51885
+    SystemChannels.textInput.setMockMethodCallHandler(null);
+
+    // Focus on a TextFormField.
+    final Finder finder = find.byKey(const Key('input'));
+    expect(finder, findsOneWidget);
+    await tester.tap(find.byKey(const Key('input')));
+
+    // A native input element will be appended to the DOM.
+    final List<Node> nodeList = document.getElementsByTagName('input');
+    expect(nodeList.length, equals(1));
+    final InputElement input =
+        document.getElementsByTagName('input')[0] as InputElement;
+
+    // Press and release CapsLock.
+    dispatchKeyboardEvent(input, 'keydown', <String, dynamic>{
+      'key': 'CapsLock',
+      'code': 'CapsLock',
+      'bubbles': true,
+      'cancelable': true,
+    });
+    dispatchKeyboardEvent(input, 'keyup', <String, dynamic>{
+      'key': 'CapsLock',
+      'code': 'CapsLock',
+      'bubbles': true,
+      'cancelable': true,
+    });
+
+    // Press and release AltGr key.
+    // Regression test for https://github.com/flutter/flutter/issues/58979.
+    dispatchKeyboardEvent(input, 'keydown', <String, dynamic>{
+      'key': 'AltGraph',
+      'code': 'AltRight',
+      'bubbles': true,
+      'cancelable': true,
+    });
+    dispatchKeyboardEvent(input, 'keyup', <String, dynamic>{
+      'key': 'AltGraph',
+      'code': 'AltRight',
+      'bubbles': true,
+      'cancelable': true,
+    });
+
+    // Press Tab. The focus should move to the next TextFormField.
+    dispatchKeyboardEvent(input, 'keydown', <String, dynamic>{
+      'key': 'Tab',
+      'code': 'Tab',
+      'bubbles': true,
+      'cancelable': true,
+    });
+
+    await tester.pumpAndSettle();
+
+    // A native input element for the next TextField should be attached to the
+    // DOM.
+    final InputElement input2 =
+        document.getElementsByTagName('input')[0] as InputElement;
+    expect(input2.value, 'Text2');
+  });
+
   testWidgets('Read-only fields work', (WidgetTester tester) async {
     const String text = 'Lorem ipsum dolor sit amet';
     app.main();
@@ -175,8 +252,8 @@ void main() {
     expect(input.hasAttribute('readonly'), isTrue);
 
     // Make sure the entire text is selected.
-    TextRange range =
-        TextRange(start: input.selectionStart, end: input.selectionEnd);
+    TextRange range = TextRange(
+        start: input.selectionStart ?? 0, end: input.selectionEnd ?? 0);
     expect(range.textInside(text), text);
 
     // Double tap to select the first word.
@@ -189,7 +266,8 @@ void main() {
     await gesture.up();
     await gesture.down(firstWordOffset);
     await gesture.up();
-    range = TextRange(start: input.selectionStart, end: input.selectionEnd);
+    range = TextRange(
+        start: input.selectionStart ?? 0, end: input.selectionEnd ?? 0);
     expect(range.textInside(text), 'Lorem');
 
     // Double tap to select the last word.
@@ -202,7 +280,8 @@ void main() {
     await gesture.up();
     await gesture.down(lastWordOffset);
     await gesture.up();
-    range = TextRange(start: input.selectionStart, end: input.selectionEnd);
+    range = TextRange(
+        start: input.selectionStart ?? 0, end: input.selectionEnd ?? 0);
     expect(range.textInside(text), 'amet');
   });
 }

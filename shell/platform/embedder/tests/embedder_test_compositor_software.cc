@@ -12,9 +12,8 @@ namespace flutter {
 namespace testing {
 
 EmbedderTestCompositorSoftware::EmbedderTestCompositorSoftware(
-    SkISize surface_size,
-    sk_sp<GrDirectContext> context)
-    : EmbedderTestCompositor(surface_size, context) {}
+    SkISize surface_size)
+    : EmbedderTestCompositor(surface_size, nullptr) {}
 
 EmbedderTestCompositorSoftware::~EmbedderTestCompositorSoftware() = default;
 
@@ -41,7 +40,7 @@ bool EmbedderTestCompositorSoftware::UpdateOffscrenComposition(
   for (size_t i = 0; i < layers_count; ++i) {
     const auto* layer = layers[i];
 
-    sk_sp<SkImage> platform_renderered_contents;
+    sk_sp<SkImage> platform_rendered_contents;
 
     sk_sp<SkImage> layer_image;
     SkIPoint canvas_offset = SkIPoint::Make(0, 0);
@@ -54,10 +53,9 @@ bool EmbedderTestCompositorSoftware::UpdateOffscrenComposition(
 
         break;
       case kFlutterLayerContentTypePlatformView:
-        layer_image =
-            platform_view_renderer_callback_
-                ? platform_view_renderer_callback_(*layer, context_.get())
-                : nullptr;
+        layer_image = platform_view_renderer_callback_
+                          ? platform_view_renderer_callback_(*layer, nullptr)
+                          : nullptr;
         canvas_offset = SkIPoint::Make(layer->offset.x, layer->offset.y);
         break;
     };

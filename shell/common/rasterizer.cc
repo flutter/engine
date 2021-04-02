@@ -1,15 +1,15 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-// FLUTTER_NOLINT
 
 #include "flutter/shell/common/rasterizer.h"
 
+#include <algorithm>
 #include <utility>
 
+#include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/fml/time/time_delta.h"
 #include "flutter/fml/time/time_point.h"
-#include "flutter/shell/common/persistent_cache.h"
 #include "flutter/shell/common/serialization_callbacks.h"
 #include "third_party/skia/include/core/SkEncodedImageFormat.h"
 #include "third_party/skia/include/core/SkImageEncoder.h"
@@ -77,8 +77,8 @@ void Rasterizer::Setup(std::unique_ptr<Surface> surface) {
                              user_override_resource_cache_bytes_);
   }
   compositor_context_->OnGrContextCreated();
-  if (surface_->GetExternalViewEmbedder() &&
-      surface_->GetExternalViewEmbedder()->SupportsDynamicThreadMerging() &&
+  if (external_view_embedder_ &&
+      external_view_embedder_->SupportsDynamicThreadMerging() &&
       !raster_thread_merger_) {
     const auto platform_id =
         delegate_.GetTaskRunners().GetPlatformTaskRunner()->GetTaskQueueId();
@@ -191,11 +191,10 @@ void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline,
     consume_result = PipelineConsumeResult::MoreAvailable;
   }
 
-  // Merging the thread as we know the next `Draw` should be run on the platform
-  // thread.
-  if (surface_ != nullptr && surface_->GetExternalViewEmbedder() != nullptr) {
-    surface_->GetExternalViewEmbedder()->EndFrame(should_resubmit_frame,
-                                                  raster_thread_merger_);
+  // EndFrame should perform cleanups for the external_view_embedder.
+  if (surface_ && external_view_embedder_) {
+    external_view_embedder_->EndFrame(should_resubmit_frame,
+                                      raster_thread_merger_);
   }
 
   // Consume as many pipeline items as possible. But yield the event loop
@@ -272,13 +271,30 @@ sk_sp<SkImage> Rasterizer::DoMakeRasterSnapshot(
                 return;
               }
 
+              GrRecordingContext* context = surface_->GetContext();
+              auto max_size = context->maxRenderTargetSize();
+              double scale_factor = std::min(
+                  1.0, static_cast<double>(max_size) /
+                           static_cast<double>(std::max(image_info.width(),
+                                                        image_info.height())));
+
+              // Scale down the render target size to the max supported by the
+              // GPU if necessary. Exceeding the max would otherwise cause a
+              // null result.
+              if (scale_factor < 1.0) {
+                image_info = image_info.makeWH(
+                    static_cast<double>(image_info.width()) * scale_factor,
+                    static_cast<double>(image_info.height()) * scale_factor);
+              }
+
               // When there is an on screen surface, we need a render target
               // SkSurface because we want to access texture backed images.
-              sk_sp<SkSurface> surface = SkSurface::MakeRenderTarget(
-                  surface_->GetContext(),  // context
-                  SkBudgeted::kNo,         // budgeted
-                  image_info               // image info
-              );
+              sk_sp<SkSurface> surface =
+                  SkSurface::MakeRenderTarget(context,          // context
+                                              SkBudgeted::kNo,  // budgeted
+                                              image_info        // image info
+                  );
+              surface->getCanvas()->scale(scale_factor, scale_factor);
               result = DrawSnapshot(surface, draw_callback);
             }));
   }
@@ -308,7 +324,8 @@ sk_sp<SkImage> Rasterizer::ConvertToRasterImage(sk_sp<SkImage> image) {
     return nullptr;
   }
 
-  return DoMakeRasterSnapshot(image->dimensions(),
+  SkISize image_size = image->dimensions();
+  return DoMakeRasterSnapshot(image_size,
                               [image = std::move(image)](SkCanvas* canvas) {
                                 canvas->drawImage(image, 0, 0);
                               });
@@ -424,14 +441,12 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
   // for instrumentation.
   compositor_context_->ui_time().SetLapTime(layer_tree.build_time());
 
-  auto* external_view_embedder = surface_->GetExternalViewEmbedder();
-
   SkCanvas* embedder_root_canvas = nullptr;
-  if (external_view_embedder != nullptr) {
-    external_view_embedder->BeginFrame(
+  if (external_view_embedder_) {
+    external_view_embedder_->BeginFrame(
         layer_tree.frame_size(), surface_->GetContext(),
         layer_tree.device_pixel_ratio(), raster_thread_merger_);
-    embedder_root_canvas = external_view_embedder->GetRootCanvas();
+    embedder_root_canvas = external_view_embedder_->GetRootCanvas();
   }
 
   // On Android, the external view embedder deletes surfaces in `BeginFrame`.
@@ -454,13 +469,13 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
       embedder_root_canvas ? embedder_root_canvas : frame->SkiaCanvas();
 
   auto compositor_frame = compositor_context_->AcquireFrame(
-      surface_->GetContext(),       // skia GrContext
-      root_surface_canvas,          // root surface canvas
-      external_view_embedder,       // external view embedder
-      root_surface_transformation,  // root surface transformation
-      true,                         // instrumentation enabled
-      frame->supports_readback(),   // surface supports pixel reads
-      raster_thread_merger_         // thread merger
+      surface_->GetContext(),         // skia GrContext
+      root_surface_canvas,            // root surface canvas
+      external_view_embedder_.get(),  // external view embedder
+      root_surface_transformation,    // root surface transformation
+      true,                           // instrumentation enabled
+      frame->supports_readback(),     // surface supports pixel reads
+      raster_thread_merger_           // thread merger
   );
 
   if (compositor_frame) {
@@ -469,10 +484,23 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
         raster_status == RasterStatus::kSkipAndRetry) {
       return raster_status;
     }
-    if (external_view_embedder != nullptr) {
+    if (shared_engine_block_thread_merging_ && raster_thread_merger_ &&
+        raster_thread_merger_->IsMerged()) {
+      // TODO(73620): Remove when platform views are accounted for.
+      FML_LOG(ERROR)
+          << "Error: Thread merging not implemented for engines with shared "
+             "components.\n\n"
+             "This is likely a result of using platform views with enigne "
+             "groups.  See "
+             "https://github.com/flutter/flutter/issues/73620.";
+      fml::KillProcess();
+    }
+    if (external_view_embedder_ &&
+        (!raster_thread_merger_ || raster_thread_merger_->IsMerged())) {
       FML_DCHECK(!frame->IsSubmitted());
-      external_view_embedder->SubmitFrame(surface_->GetContext(),
-                                          std::move(frame));
+      external_view_embedder_->SubmitFrame(
+          surface_->GetContext(), std::move(frame),
+          delegate_.GetIsGpuDisabledSyncSwitch());
     } else {
       frame->Submit();
     }
@@ -511,6 +539,7 @@ static sk_sp<SkData> ScreenshotLayerTreeAsPicture(
 #if defined(OS_FUCHSIA)
   SkSerialProcs procs = {0};
   procs.fImageProc = SerializeImageWithoutData;
+  procs.fTypefaceProc = SerializeTypefaceWithoutData;
 #else
   SkSerialProcs procs = {0};
   procs.fTypefaceProc = SerializeTypefaceWithData;
@@ -650,6 +679,11 @@ Rasterizer::Screenshot Rasterizer::ScreenshotLastLayerTree(
 
 void Rasterizer::SetNextFrameCallback(const fml::closure& callback) {
   next_frame_callback_ = callback;
+}
+
+void Rasterizer::SetExternalViewEmbedder(
+    const std::shared_ptr<ExternalViewEmbedder>& view_embedder) {
+  external_view_embedder_ = view_embedder;
 }
 
 void Rasterizer::FireNextFrameCallbackIfPresent() {

@@ -282,21 +282,20 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
   return YES;
 }
 
-- (SemanticsObject*)routeFocusObject {
-  // Returns the first SemanticObject in this branch that has
-  // the NamesRoute flag with a non-nil semantic label. Otherwise
-  // returns nil.
+- (NSString*)routeName {
+  // Returns the first non-null and non-empty semantic label of a child
+  // with an NamesRoute flag. Otherwise returns nil.
   if ([self node].HasFlag(flutter::SemanticsFlags::kNamesRoute)) {
     NSString* newName = [self accessibilityLabel];
     if (newName != nil && [newName length] > 0) {
-      return self;
+      return newName;
     }
   }
   if ([self hasChildren]) {
     for (SemanticsObject* child in self.children) {
-      SemanticsObject* focusObject = [child routeFocusObject];
-      if (focusObject != nil) {
-        return focusObject;
+      NSString* newName = [child routeName];
+      if (newName != nil && [newName length] > 0) {
+        return newName;
       }
     }
   }
@@ -531,6 +530,11 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
   if ([self node].HasFlag(flutter::SemanticsFlags::kIsLink)) {
     traits |= UIAccessibilityTraitLink;
   }
+  if (traits == UIAccessibilityTraitNone && ![self hasChildren] &&
+      [[self accessibilityLabel] length] != 0 &&
+      ![self node].HasFlag(flutter::SemanticsFlags::kIsTextField)) {
+    traits = UIAccessibilityTraitStaticText;
+  }
   return traits;
 }
 
@@ -558,10 +562,9 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
   // `accessibilityContainer` and `accessibilityElementAtIndex`.
   if (self = [super initWithAccessibilityContainer:object.bridge->view()]) {
     _semanticsObject = object;
-    flutter::FlutterPlatformViewsController* controller =
-        object.bridge->GetPlatformViewsController();
+    auto controller = object.bridge->GetPlatformViewsController();
     if (controller) {
-      _platformView = [[controller->GetPlatformViewByID(object.node.platformViewId) view] retain];
+      _platformView = [controller->GetPlatformViewByID(object.node.platformViewId) retain];
     }
   }
   return self;
@@ -573,9 +576,34 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
   [super dealloc];
 }
 
-- (NSArray*)accessibilityElements {
-  return @[ _semanticsObject, _platformView ];
+#pragma mark - UIAccessibilityContainer overrides
+
+- (NSInteger)accessibilityElementCount {
+  // This container should only contain 2 elements:
+  // 1. The semantic object that represents this container.
+  // 2. The platform view object.
+  return 2;
 }
+
+- (nullable id)accessibilityElementAtIndex:(NSInteger)index {
+  FML_DCHECK(index < 2);
+  if (index == 0) {
+    return _semanticsObject;
+  } else {
+    return _platformView;
+  }
+}
+
+- (NSInteger)indexOfAccessibilityElement:(id)element {
+  FML_DCHECK(element == _semanticsObject || element == _platformView);
+  if (element == _semanticsObject) {
+    return 0;
+  } else {
+    return 1;
+  }
+}
+
+#pragma mark - UIAccessibilityElement overrides
 
 - (CGRect)accessibilityFrame {
   return _semanticsObject.accessibilityFrame;

@@ -18,9 +18,7 @@ namespace flutter {
 
 class IOSSurfaceSoftware final : public IOSSurface, public GPUSurfaceSoftwareDelegate {
  public:
-  IOSSurfaceSoftware(fml::scoped_nsobject<CALayer> layer,
-                     std::shared_ptr<IOSContext> context,
-                     FlutterPlatformViewsController* platform_views_controller);
+  IOSSurfaceSoftware(fml::scoped_nsobject<CALayer> layer, std::shared_ptr<IOSContext> context);
 
   ~IOSSurfaceSoftware() override;
 
@@ -38,9 +36,6 @@ class IOSSurfaceSoftware final : public IOSSurface, public GPUSurfaceSoftwareDel
 
   // |GPUSurfaceSoftwareDelegate|
   bool PresentBackingStore(sk_sp<SkSurface> backing_store) override;
-
-  // |GPUSurfaceSoftwareDelegate|
-  ExternalViewEmbedder* GetExternalViewEmbedder() override;
 
  private:
   fml::scoped_nsobject<CALayer> layer_;

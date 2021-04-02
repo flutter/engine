@@ -12,9 +12,8 @@
 #include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/shell/platform/embedder/embedder.h"
-#include "flutter/shell/platform/embedder/embedder_external_texture_gl.h"
+#include "flutter/shell/platform/embedder/embedder_external_texture_resolver.h"
 #include "flutter/shell/platform/embedder/embedder_thread_host.h"
-
 namespace flutter {
 
 struct ShellArgs;
@@ -29,8 +28,8 @@ class EmbedderEngine {
                  RunConfiguration run_configuration,
                  Shell::CreateCallback<PlatformView> on_create_platform_view,
                  Shell::CreateCallback<Rasterizer> on_create_rasterizer,
-                 EmbedderExternalTextureGL::ExternalTextureCallback
-                     external_texture_callback);
+                 std::unique_ptr<EmbedderExternalTextureResolver>
+                     external_texture_resolver);
 
   ~EmbedderEngine();
 
@@ -52,6 +51,22 @@ class EmbedderEngine {
 
   bool DispatchPointerDataPacket(
       std::unique_ptr<flutter::PointerDataPacket> packet);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Notifies the platform view that the embedder has sent it a key
+  ///             data packet. A key data packet contains one key event. This
+  ///             call originates in the platform view and the shell has
+  ///             forwarded the same to the engine on the UI task runner here.
+  ///             The platform view will decide whether to handle this event,
+  ///             and send the result using `callback`, which will be called
+  ///             exactly once.
+  ///
+  /// @param[in]  packet    The key data packet.
+  /// @param[in]  callback  Called when the framework has decided whether
+  ///                       to handle this key data.
+  ///
+  bool DispatchKeyDataPacket(std::unique_ptr<flutter::KeyDataPacket> packet,
+                             KeyDataResponse callback);
 
   bool SendPlatformMessage(fml::RefPtr<flutter::PlatformMessage> message);
 
@@ -90,8 +105,7 @@ class EmbedderEngine {
   RunConfiguration run_configuration_;
   std::unique_ptr<ShellArgs> shell_args_;
   std::unique_ptr<Shell> shell_;
-  const EmbedderExternalTextureGL::ExternalTextureCallback
-      external_texture_callback_;
+  std::unique_ptr<EmbedderExternalTextureResolver> external_texture_resolver_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderEngine);
 };

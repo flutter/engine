@@ -19,12 +19,12 @@ import android.content.res.Resources.NotFoundException;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager.LayoutParams;
+import io.flutter.Log;
 import io.flutter.plugin.common.PluginRegistry;
 import io.flutter.plugin.platform.PlatformPlugin;
 import io.flutter.util.Preconditions;
@@ -50,10 +50,11 @@ import java.util.ArrayList;
  * your activity implement {@link PluginRegistry} and/or {@link
  * io.flutter.view.FlutterView.Provider} and forward those methods to this class as well.
  *
- * <p>Deprecation: {@link io.flutter.embedding.android.FlutterActivity} is the new API that now
- * replaces this class and {@link io.flutter.app.FlutterActivity}. See
- * https://flutter.dev/go/android-project-migration for more migration details.
+ * @deprecated {@link io.flutter.embedding.android.FlutterActivity} is the new API that now replaces
+ *     this class and {@link io.flutter.app.FlutterActivity}. See
+ *     https://flutter.dev/go/android-project-migration for more migration details.
  */
+@Deprecated
 public final class FlutterActivityDelegate
     implements FlutterActivityEvents, FlutterView.Provider, PluginRegistry {
   private static final String SPLASH_SCREEN_META_DATA_KEY =
@@ -321,9 +322,6 @@ public final class FlutterActivityDelegate
     final int observatoryPort = intent.getIntExtra("observatory-port", 0);
     if (observatoryPort > 0) {
       args.add("--observatory-port=" + Integer.toString(observatoryPort));
-    }
-    if (intent.getBooleanExtra("disable-service-auth-codes", false)) {
-      args.add("--disable-service-auth-codes");
     }
     if (intent.getBooleanExtra("endless-trace-buffer", false)) {
       args.add("--endless-trace-buffer");

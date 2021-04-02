@@ -10,6 +10,7 @@
 #include "flutter/flow/surface_frame.h"
 #include "flutter/fml/memory/ref_counted.h"
 #include "flutter/fml/raster_thread_merger.h"
+#include "flutter/fml/synchronization/sync_switch.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkPath.h"
 #include "third_party/skia/include/core/SkPoint.h"
@@ -123,7 +124,7 @@ class Mutator {
 //
 // For example consider the following stack: [T1, T2, T3], where T1 is the top
 // of the stack and T3 is the bottom of the stack. Applying this mutators stack
-// to a platform view P1 will result in T1(T2(T2(P1))).
+// to a platform view P1 will result in T1(T2(T3(P1))).
 class MutatorsStack {
  public:
   MutatorsStack() = default;
@@ -147,7 +148,7 @@ class MutatorsStack {
   const std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator Bottom()
       const;
 
-  // Returns an iterator pointing to the begining of the mutator vector, which
+  // Returns an iterator pointing to the beginning of the mutator vector, which
   // is the mutator that is furtherest from the leaf node.
   const std::vector<std::shared_ptr<Mutator>>::const_iterator Begin() const;
 
@@ -217,6 +218,9 @@ class EmbeddedViewParams {
     final_bounding_rect_ = other.final_bounding_rect_;
   };
 
+  // The transformation Matrix corresponding to the sum of all the
+  // transformations in the platform view's mutator stack.
+  const SkMatrix& transformMatrix() const { return matrix_; };
   // The original size of the platform view before any mutation matrix is
   // applied.
   const SkSize& sizePoints() const { return size_points_; };
@@ -276,7 +280,7 @@ class ExternalViewEmbedder {
   // sets the stage for the next pre-roll.
   virtual void CancelFrame() = 0;
 
-  // Indicates the begining of a frame.
+  // Indicates the beginning of a frame.
   //
   // The `raster_thread_merger` will be null if |SupportsDynamicThreadMerging|
   // returns false.
@@ -309,8 +313,10 @@ class ExternalViewEmbedder {
   // This method can mutate the root Skia canvas before submitting the frame.
   //
   // It can also allocate frames for overlay surfaces to compose hybrid views.
-  virtual void SubmitFrame(GrDirectContext* context,
-                           std::unique_ptr<SurfaceFrame> frame);
+  virtual void SubmitFrame(
+      GrDirectContext* context,
+      std::unique_ptr<SurfaceFrame> frame,
+      const std::shared_ptr<fml::SyncSwitch>& gpu_disable_sync_switch);
 
   // This method provides the embedder a way to do additional tasks after
   // |SubmitFrame|. For example, merge task runners if `should_resubmit_frame`

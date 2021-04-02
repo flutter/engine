@@ -4,11 +4,11 @@
 
 package io.flutter.plugin.common;
 
-import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import io.flutter.BuildConfig;
+import io.flutter.Log;
 import io.flutter.plugin.common.BinaryMessenger.BinaryMessageHandler;
 import io.flutter.plugin.common.BinaryMessenger.BinaryReply;
 import java.nio.ByteBuffer;
@@ -22,7 +22,7 @@ import java.util.Locale;
  * <p>Messages are encoded into binary before being sent, and binary messages received are decoded
  * into Java objects. The {@link MessageCodec} used must be compatible with the one used by the
  * Flutter application. This can be achieved by creating a <a
- * href="https://docs.flutter.io/flutter/services/BasicMessageChannel-class.html">BasicMessageChannel</a>
+ * href="https://api.flutter.dev/flutter/services/BasicMessageChannel-class.html">BasicMessageChannel</a>
  * counterpart of this channel on the Dart side. The static Java type of messages sent and received
  * is {@code Object}, but only values supported by the specified {@link MessageCodec} can be used.
  *
@@ -106,8 +106,8 @@ public final class BasicMessageChannel<T> {
 
   /**
    * Adjusts the number of messages that will get buffered when sending messages to channels that
-   * aren't fully setup yet. For example, the engine isn't running yet or the channel's message
-   * handler isn't setup on the Dart side yet.
+   * aren't fully set up yet. For example, the engine isn't running yet or the channel's message
+   * handler isn't set up on the Dart side yet.
    */
   public void resizeChannelBuffer(int newSize) {
     resizeChannelBuffer(messenger, name, newSize);

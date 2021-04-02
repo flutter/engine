@@ -8,6 +8,15 @@
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 
+#ifdef SHELL_ENABLE_GL
+#include "flutter/shell/platform/embedder/tests/embedder_test_compositor_gl.h"
+#include "flutter/shell/platform/embedder/tests/embedder_test_context_gl.h"
+#endif
+
+#ifdef SHELL_ENABLE_METAL
+#include "flutter/shell/platform/embedder/tests/embedder_test_context_metal.h"
+#endif
+
 namespace flutter {
 namespace testing {
 
@@ -25,6 +34,7 @@ EmbedderConfigBuilder::EmbedderConfigBuilder(
 
   custom_task_runners_.struct_size = sizeof(FlutterCustomTaskRunners);
 
+#ifdef SHELL_ENABLE_GL
   opengl_renderer_config_.struct_size = sizeof(FlutterOpenGLRendererConfig);
   opengl_renderer_config_.make_current = [](void* context) -> bool {
     return reinterpret_cast<EmbedderTestContextGL*>(context)->GLMakeCurrent();
@@ -57,6 +67,11 @@ EmbedderConfigBuilder::EmbedderConfigBuilder(
     return reinterpret_cast<EmbedderTestContext*>(context)
         ->GetRootSurfaceTransformation();
   };
+#endif
+
+#ifdef SHELL_ENABLE_METAL
+  InitializeMetalRendererConfig();
+#endif
 
   software_renderer_config_.struct_size = sizeof(FlutterSoftwareRendererConfig);
   software_renderer_config_.surface_present_callback =
@@ -107,14 +122,11 @@ FlutterProjectArgs& EmbedderConfigBuilder::GetProjectArgs() {
 void EmbedderConfigBuilder::SetSoftwareRendererConfig(SkISize surface_size) {
   renderer_config_.type = FlutterRendererType::kSoftware;
   renderer_config_.software = software_renderer_config_;
-
-  // TODO(chinmaygarde): The compositor still uses a GL surface for operation.
-  // Once this is no longer the case, don't setup the GL surface when using the
-  // software renderer config.
-  context_.SetupOpenGLSurface(surface_size);
+  context_.SetupSurface(surface_size);
 }
 
 void EmbedderConfigBuilder::SetOpenGLFBOCallBack() {
+#ifdef SHELL_ENABLE_GL
   // SetOpenGLRendererConfig must be called before this.
   FML_CHECK(renderer_config_.type == FlutterRendererType::kOpenGL);
   renderer_config_.open_gl.fbo_callback = [](void* context) -> uint32_t {
@@ -127,21 +139,34 @@ void EmbedderConfigBuilder::SetOpenGLFBOCallBack() {
     return reinterpret_cast<EmbedderTestContextGL*>(context)->GLGetFramebuffer(
         frame_info);
   };
+#endif
 }
 
 void EmbedderConfigBuilder::SetOpenGLPresentCallBack() {
+#ifdef SHELL_ENABLE_GL
   // SetOpenGLRendererConfig must be called before this.
   FML_CHECK(renderer_config_.type == FlutterRendererType::kOpenGL);
   renderer_config_.open_gl.present = [](void* context) -> bool {
     // passing a placeholder fbo_id.
     return reinterpret_cast<EmbedderTestContextGL*>(context)->GLPresent(0);
   };
+#endif
 }
 
 void EmbedderConfigBuilder::SetOpenGLRendererConfig(SkISize surface_size) {
+#ifdef SHELL_ENABLE_GL
   renderer_config_.type = FlutterRendererType::kOpenGL;
   renderer_config_.open_gl = opengl_renderer_config_;
-  context_.SetupOpenGLSurface(surface_size);
+  context_.SetupSurface(surface_size);
+#endif
+}
+
+void EmbedderConfigBuilder::SetMetalRendererConfig(SkISize surface_size) {
+#ifdef SHELL_ENABLE_METAL
+  renderer_config_.type = FlutterRendererType::kMetal;
+  renderer_config_.metal = metal_renderer_config_;
+  context_.SetupSurface(surface_size);
+#endif
 }
 
 void EmbedderConfigBuilder::SetAssetsPath() {
@@ -208,6 +233,14 @@ void EmbedderConfigBuilder::AddCommandLineArgument(std::string arg) {
   command_line_arguments_.emplace_back(std::move(arg));
 }
 
+void EmbedderConfigBuilder::AddDartEntrypointArgument(std::string arg) {
+  if (arg.size() == 0) {
+    return;
+  }
+
+  dart_entrypoint_arguments_.emplace_back(std::move(arg));
+}
+
 void EmbedderConfigBuilder::SetPlatformTaskRunner(
     const FlutterTaskRunnerDescription* runner) {
   if (runner == nullptr) {
@@ -232,7 +265,7 @@ void EmbedderConfigBuilder::SetPlatformMessageCallback(
   context_.SetPlatformMessageCallback(callback);
 }
 
-void EmbedderConfigBuilder::SetCompositor() {
+void EmbedderConfigBuilder::SetCompositor(bool avoid_backing_store_cache) {
   context_.SetupCompositor();
   auto& compositor = context_.GetCompositor();
   compositor_.struct_size = sizeof(compositor_);
@@ -262,6 +295,7 @@ void EmbedderConfigBuilder::SetCompositor() {
 
     );
   };
+  compositor_.avoid_backing_store_cache = avoid_backing_store_cache;
   project_args_.compositor = &compositor_;
 }
 
@@ -308,6 +342,23 @@ UniqueEngine EmbedderConfigBuilder::SetupEngine(bool run) const {
     project_args.command_line_argc = 0;
   }
 
+  std::vector<const char*> dart_args;
+  dart_args.reserve(dart_entrypoint_arguments_.size());
+
+  for (const auto& arg : dart_entrypoint_arguments_) {
+    dart_args.push_back(arg.c_str());
+  }
+
+  if (dart_args.size() > 0) {
+    project_args.dart_entrypoint_argv = dart_args.data();
+    project_args.dart_entrypoint_argc = dart_args.size();
+  } else {
+    // Clear it out in case this is not the first engine launch from the
+    // embedder config builder.
+    project_args.dart_entrypoint_argv = nullptr;
+    project_args.dart_entrypoint_argc = 0;
+  }
+
   auto result =
       run ? FlutterEngineRun(FLUTTER_ENGINE_VERSION, &renderer_config_,
                              &project_args, &context_, &engine)
@@ -320,6 +371,55 @@ UniqueEngine EmbedderConfigBuilder::SetupEngine(bool run) const {
 
   return UniqueEngine{engine};
 }
+
+#ifdef SHELL_ENABLE_METAL
+
+void EmbedderConfigBuilder::InitializeMetalRendererConfig() {
+  if (context_.GetContextType() != EmbedderTestContextType::kMetalContext) {
+    return;
+  }
+
+  metal_renderer_config_.struct_size = sizeof(metal_renderer_config_);
+  EmbedderTestContextMetal& metal_context =
+      reinterpret_cast<EmbedderTestContextMetal&>(context_);
+
+  metal_renderer_config_.device =
+      metal_context.GetTestMetalContext()->GetMetalDevice();
+  metal_renderer_config_.present_command_queue =
+      metal_context.GetTestMetalContext()->GetMetalCommandQueue();
+  metal_renderer_config_.get_next_drawable_callback =
+      [](void* user_data, const FlutterFrameInfo* frame_info) {
+        EmbedderTestContextMetal* metal_context =
+            reinterpret_cast<EmbedderTestContextMetal*>(user_data);
+        SkISize surface_size =
+            SkISize::Make(frame_info->size.width, frame_info->size.height);
+        TestMetalContext::TextureInfo texture_info =
+            metal_context->GetTestMetalContext()->CreateMetalTexture(
+                surface_size);
+        FlutterMetalTexture texture;
+        texture.struct_size = sizeof(FlutterMetalTexture);
+        texture.texture_id = texture_info.texture_id;
+        texture.texture =
+            reinterpret_cast<FlutterMetalTextureHandle>(texture_info.texture);
+        return texture;
+      };
+  metal_renderer_config_.present_drawable_callback =
+      [](void* user_data, const FlutterMetalTexture* texture) -> bool {
+    EmbedderTestContextMetal* metal_context =
+        reinterpret_cast<EmbedderTestContextMetal*>(user_data);
+    return metal_context->Present(texture->texture_id);
+  };
+  metal_renderer_config_.external_texture_frame_callback =
+      [](void* user_data, int64_t texture_id, size_t width, size_t height,
+         FlutterMetalExternalTexture* texture_out) -> bool {
+    EmbedderTestContextMetal* metal_context =
+        reinterpret_cast<EmbedderTestContextMetal*>(user_data);
+    return metal_context->PopulateExternalTexture(texture_id, width, height,
+                                                  texture_out);
+  };
+}
+
+#endif  // SHELL_ENABLE_METAL
 
 }  // namespace testing
 }  // namespace flutter

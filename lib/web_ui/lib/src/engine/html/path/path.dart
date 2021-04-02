@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// A complex, one-dimensional subset of a plane.
@@ -12,13 +12,13 @@ part of engine;
 /// self-intersect.
 ///
 /// Stores the verbs and points as they are given to us, with exceptions:
-///   - we only record "Close" if it was immediately preceeded by Move | Line | Quad | Cubic
+///   - we only record "Close" if it was immediately preceded by Move | Line | Quad | Cubic
 ///   - we insert a Move(0,0) if Line | Quad | Cubic is our first command
 ///
 ///   The iterator does more cleanup, especially if forceClose == true
 ///   1. If we encounter degenerate segments, remove them
 ///   2. if we encounter Close, return a cons'd up Line() first (if the curr-pt != start-pt)
-///   3. if we encounter Move without a preceeding Close, and forceClose is true, goto #2
+///   3. if we encounter Move without a preceding Close, and forceClose is true, goto #2
 ///   4. if we encounter Line | Quad | Cubic after Close, cons up a Move
 class SurfacePath implements ui.Path {
   // Initial valid of last move to index so we can detect if a move to
@@ -1524,24 +1524,38 @@ class SurfacePath implements ui.Path {
     return SurfacePathMetrics._(this, forceClosed);
   }
 
-  /// Detects if path is rounded rectangle and returns rounded rectangle or
-  /// null.
+  /// Detects if path is rounded rectangle.
+  ///
+  /// Returns rounded rectangle or null.
   ///
   /// Used for web optimization of physical shape represented as
   /// a persistent div.
-  ui.RRect? get webOnlyPathAsRoundedRect => pathRef.getRRect();
+  ui.RRect? toRoundedRect() => pathRef.getRRect();
 
-  /// Detects if path is simple rectangle and returns rectangle or null.
+  /// Detects if path is simple rectangle.
+  ///
+  /// Returns rectangle or null.
   ///
   /// Used for web optimization of physical shape represented as
-  /// a persistent div.
-  ui.Rect? get webOnlyPathAsRect => pathRef.getRect();
+  /// a persistent div. !Warning it does not detect if closed, don't use this
+  /// for optimizing strokes.
+  ui.Rect? toRect() => pathRef.getRect();
 
-  /// Detects if path is simple oval and returns bounding rectangle or null.
+  /// Detects if path is a vertical or horizontal line.
+  ///
+  /// Returns LTRB or null.
   ///
   /// Used for web optimization of physical shape represented as
   /// a persistent div.
-  ui.Rect? get webOnlyPathAsCircle =>
+  ui.Rect? toStraightLine() => pathRef.getStraightLine();
+
+  /// Detects if path is simple oval.
+  ///
+  /// Returns bounding rectangle or null.
+  ///
+  /// Used for web optimization of physical shape represented as
+  /// a persistent div.
+  ui.Rect? toCircle() =>
       pathRef.isOval == -1 ? null : pathRef.getBounds();
 
   /// Returns if Path is empty.

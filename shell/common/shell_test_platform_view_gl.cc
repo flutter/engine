@@ -38,6 +38,12 @@ std::unique_ptr<Surface> ShellTestPlatformViewGL::CreateRenderingSurface() {
 }
 
 // |PlatformView|
+std::shared_ptr<ExternalViewEmbedder>
+ShellTestPlatformViewGL::CreateExternalViewEmbedder() {
+  return shell_test_external_view_embedder_;
+}
+
+// |PlatformView|
 PointerDataDispatcherMaker ShellTestPlatformViewGL::GetDispatcherMaker() {
   return [](DefaultPointerDataDispatcher::Delegate& delegate) {
     return std::make_unique<SmoothPointerDataDispatcher>(delegate);
@@ -71,11 +77,6 @@ ShellTestPlatformViewGL::GetGLProcResolver() const {
   return [surface = &gl_surface_](const char* name) -> void* {
     return surface->GetProcAddress(name);
   };
-}
-
-// |GPUSurfaceGLDelegate|
-ExternalViewEmbedder* ShellTestPlatformViewGL::GetExternalViewEmbedder() {
-  return shell_test_external_view_embedder_.get();
 }
 
 }  // namespace testing

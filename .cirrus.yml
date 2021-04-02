@@ -1,33 +1,11 @@
-gcp_credentials: ENCRYPTED[987a78af29b91ce8489594c9ab3fec21845bbe5ba68294b8f6def3cf0d380830f06687a89ea69c87344c5ade369700fe]
-
-web_shard_template: &WEB_SHARD_TEMPLATE
-  only_if: "changesInclude('.cirrus.yml', 'DEPS', 'lib/web_ui/**', 'web_sdk/**') || $CIRRUS_PR == ''"
-  environment:
-    # As of March 2020, the Web shards needed 16G of RAM and 4 CPUs to run all framework tests with goldens without flaking.
-    # The tests are encountering a flake in Chrome. Increasing the number of shards to decrease race conditions.
-    # Shard number kept at 8 for the engine since 12 shards exhausted the Cirrus limits.
-    # https://github.com/flutter/flutter/issues/62510
-    WEB_SHARD_COUNT: 8
-    CPU: 4
-    MEMORY: 16G
-    CHROME_NO_SANDBOX: true
-  compile_host_script: |
-    cd $ENGINE_PATH/src
-    ./flutter/tools/gn --unoptimized --full-dart-sdk
-    ninja -C out/host_debug_unopt
-  fetch_framework_script: |
-    cd $ENGINE_PATH/src/flutter/tools
-    ./clone_flutter.sh
-    cd $FRAMEWORK_PATH/flutter
-    bin/flutter update-packages --local-engine=host_debug_unopt
-  script:
-    - dart --enable-asserts $FRAMEWORK_PATH/flutter/dev/bots/test.dart --local-engine=host_debug_unopt
+gcp_credentials: ENCRYPTED[a4b6c1cb428a657573b775d39dd8006beed3013d01ca3d1a3972bdc2bd39bb937dd91ea3d98eeb9ce55e4bd303d045d3]
 
 # LINUX
 task:
   gke_container:
     dockerfile: "ci/docker/build/Dockerfile"
     builder_image_name: docker-builder # gce vm image
+    builder_image_project: flutter-cirrus
     cluster_name: build-32-cluster
     zone: us-central1-a
     namespace: default
@@ -42,9 +20,6 @@ task:
     FRAMEWORK_PATH: "/tmp/master_framework"
     PATH: "$FLUTTER_ENGINE/third_party/dart/tools/sdks/dart-sdk/bin:$DEPOT_TOOLS:$PATH"
     USE_ANDROID: "False"
-    # TODO(liyuqian): currently we're using flutter-cirrus GCP project. Migrate
-    # to flutter-infra project once the metrics_center service is stabilized,
-    BENCHMARK_GCP_CREDENTIALS: ENCRYPTED[da76d2b7b39894de70fae1fc9182c97cc41400adc93f0f1c49bc7442f15fb933da8d756ed88523810a9a77c34f51a693]
   setup_script: |
     git clone --depth 1 https://chromium.googlesource.com/chromium/tools/depot_tools.git $DEPOT_TOOLS
     mkdir -p $ENGINE_PATH/src
@@ -55,25 +30,6 @@ task:
     mv $CIRRUS_WORKING_DIR flutter
     gclient sync
   matrix:
-    - name: build_and_benchmark_linux_release
-      only_if: $CIRRUS_BRANCH == 'master' # Only run for post-submit commits.
-      compile_host_script: |
-        cd $ENGINE_PATH/src
-        ./flutter/tools/gn --runtime-mode=release
-        ninja -C out/host_release
-      benchmark_host_script: |
-        cd $ENGINE_PATH/src/out/host_release/
-        ./txt_benchmarks --benchmark_format=json > txt_benchmarks.json
-        ./fml_benchmarks --benchmark_format=json > fml_benchmarks.json
-        ./shell_benchmarks --benchmark_format=json > shell_benchmarks.json
-        ./ui_benchmarks --benchmark_format=json > ui_benchmarks.json
-        cd $ENGINE_PATH/src/flutter/testing/benchmark
-        pub get
-        dart bin/parse_and_send.dart ../../../out/host_release/txt_benchmarks.json
-        dart bin/parse_and_send.dart ../../../out/host_release/fml_benchmarks.json
-        dart bin/parse_and_send.dart ../../../out/host_release/shell_benchmarks.json
-        dart bin/parse_and_send.dart ../../../out/host_release/ui_benchmarks.json
-
     # The following test depends on Flutter framework repo. It may fail if the
     # framework repo is currently broken.
     - name: build_and_test_linux_unopt_debug
@@ -88,46 +44,18 @@ task:
         mkdir -p $FRAMEWORK_PATH
         cd $FRAMEWORK_PATH
         git clone https://github.com/flutter/flutter.git
-      test_web_script: |
-        cd $FRAMEWORK_PATH/flutter/dev/integration_tests/web
-        ../../../bin/flutter config --local-engine=host_debug_unopt --no-analytics --enable-web
-        ../../../bin/flutter --local-engine=host_debug_unopt build web -v
       analyze_framework_script: |
         cd $FRAMEWORK_PATH/flutter
         rm -rf bin/cache/pkg/sky_engine
+        mkdir -p bin/cache/pkg/
         cp -r $ENGINE_PATH/src/out/host_debug_unopt/gen/dart-pkg/sky_engine bin/cache/pkg/
         bin/flutter update-packages --local-engine=host_debug_unopt
         bin/flutter analyze --dartdocs --flutter-repo --local-engine=host_debug_unopt
       test_framework_script: |
         cd $FRAMEWORK_PATH/flutter/packages/flutter
-        ../../bin/flutter test --local-engine=host_debug_unopt
-
-    # PLEASE KEEP THESE WEB TEST SHARDS IN SYNC WITH THEIR COUNTERPARTS IN flutter/flutter's CIRRUS CONFIG.
-    - name: web_tests-0-linux
-      << : *WEB_SHARD_TEMPLATE
-
-    - name: web_tests-1-linux
-      << : *WEB_SHARD_TEMPLATE
-
-    - name: web_tests-2-linux
-      << : *WEB_SHARD_TEMPLATE
-
-    - name: web_tests-3-linux
-      << : *WEB_SHARD_TEMPLATE
-
-    - name: web_tests-4-linux
-      << : *WEB_SHARD_TEMPLATE
-
-    - name: web_tests-5-linux
-      << : *WEB_SHARD_TEMPLATE
-
-    - name: web_tests-6-linux
-      << : *WEB_SHARD_TEMPLATE
-
-    - name: web_tests-7_last-linux # last Web shard must end with _last
-      << : *WEB_SHARD_TEMPLATE
-
-    - name: build_test
+        ../../bin/flutter test --local-engine=host_debug_unopt --null-assertions --sound-null-safety
+    # TODO(fujino): remove this once ci/licenses.sh is run on LUCI
+    - name: licenses_check
       build_script: |
         cd $ENGINE_PATH/src/flutter
-        ./ci/build.sh
+        ./ci/licenses.sh

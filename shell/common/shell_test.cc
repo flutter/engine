@@ -5,7 +5,6 @@
 #define FML_USED_ON_EMBEDDER
 
 #include "flutter/shell/common/shell_test.h"
-#include "flutter/shell/common/shell_test_platform_view.h"
 
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/flow/layers/transform_layer.h"
@@ -13,6 +12,7 @@
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/runtime/dart_vm.h"
+#include "flutter/shell/common/shell_test_platform_view.h"
 #include "flutter/shell/common/vsync_waiter_fallback.h"
 #include "flutter/testing/testing.h"
 
@@ -22,7 +22,7 @@ namespace testing {
 ShellTest::ShellTest()
     : thread_host_("io.flutter.test." + GetCurrentTestName() + ".",
                    ThreadHost::Type::Platform | ThreadHost::Type::IO |
-                       ThreadHost::Type::UI | ThreadHost::Type::GPU) {}
+                       ThreadHost::Type::UI | ThreadHost::Type::RASTER) {}
 
 void ShellTest::SendEnginePlatformMessage(
     Shell* shell,
@@ -231,6 +231,12 @@ bool ShellTest::GetNeedsReportTimings(Shell* shell) {
   return shell->needs_report_timings_;
 }
 
+void ShellTest::StorePersistentCache(PersistentCache* cache,
+                                     const SkData& key,
+                                     const SkData& value) {
+  cache->store(key, value);
+}
+
 void ShellTest::OnServiceProtocol(
     Shell* shell,
     ServiceProtocolEnum some_protocol,
@@ -308,7 +314,8 @@ std::unique_ptr<Shell> ShellTest::CreateShell(
     TaskRunners task_runners,
     bool simulate_vsync,
     std::shared_ptr<ShellTestExternalViewEmbedder>
-        shell_test_external_view_embedder) {
+        shell_test_external_view_embedder,
+    bool is_gpu_disabled) {
   const auto vsync_clock = std::make_shared<ShellTestVsyncClock>();
   CreateVsyncWaiter create_vsync_waiter = [&]() {
     if (simulate_vsync) {
@@ -320,7 +327,7 @@ std::unique_ptr<Shell> ShellTest::CreateShell(
     }
   };
   return Shell::Create(
-      task_runners, settings,
+      flutter::PlatformData(), task_runners, settings,
       [vsync_clock, &create_vsync_waiter,
        shell_test_external_view_embedder](Shell& shell) {
         return ShellTestPlatformView::Create(
@@ -329,7 +336,8 @@ std::unique_ptr<Shell> ShellTest::CreateShell(
             ShellTestPlatformView::BackendType::kDefaultBackend,
             shell_test_external_view_embedder);
       },
-      [](Shell& shell) { return std::make_unique<Rasterizer>(shell); });
+      [](Shell& shell) { return std::make_unique<Rasterizer>(shell); },
+      is_gpu_disabled);
 }
 void ShellTest::DestroyShell(std::unique_ptr<Shell> shell) {
   DestroyShell(std::move(shell), GetTaskRunnersForFixture());

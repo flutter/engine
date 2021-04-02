@@ -9,8 +9,7 @@
 #include <memory>
 
 #include "flutter/fml/macros.h"
-#include "flutter/shell/platform/embedder/tests/embedder_test_context_gl.h"
-#include "flutter/shell/platform/embedder/tests/embedder_test_context_software.h"
+#include "flutter/shell/platform/embedder/tests/embedder_test_context.h"
 #include "flutter/testing/testing.h"
 #include "flutter/testing/thread_test.h"
 
@@ -19,19 +18,14 @@ namespace testing {
 
 class EmbedderTest : public ThreadTest {
  public:
-  enum class ContextType {
-    kSoftwareContext,
-    kOpenGLContext,
-  };
-
   EmbedderTest();
 
   std::string GetFixturesDirectory() const;
 
-  EmbedderTestContext& GetEmbedderContext(ContextType type);
+  EmbedderTestContext& GetEmbedderContext(EmbedderTestContextType type);
 
  private:
-  std::map<ContextType, std::unique_ptr<EmbedderTestContext>>
+  std::map<EmbedderTestContextType, std::unique_ptr<EmbedderTestContext>>
       embedder_contexts_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderTest);

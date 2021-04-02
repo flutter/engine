@@ -25,6 +25,8 @@ class MockDelegate : public PlatformView::Delegate {
   void OnPlatformViewDispatchPlatformMessage(fml::RefPtr<PlatformMessage> message) override {}
   void OnPlatformViewDispatchPointerDataPacket(std::unique_ptr<PointerDataPacket> packet) override {
   }
+  void OnPlatformViewDispatchKeyDataPacket(std::unique_ptr<KeyDataPacket> packet,
+                                           std::function<void(bool)> callback) override {}
   void OnPlatformViewDispatchSemanticsAction(int32_t id,
                                              SemanticsAction action,
                                              std::vector<uint8_t> args) override {}
@@ -34,11 +36,15 @@ class MockDelegate : public PlatformView::Delegate {
   void OnPlatformViewUnregisterTexture(int64_t texture_id) override {}
   void OnPlatformViewMarkTextureFrameAvailable(int64_t texture_id) override {}
 
-  std::unique_ptr<std::vector<std::string>> ComputePlatformViewResolvedLocale(
-      const std::vector<std::string>& supported_locale_data) override {
-    std::unique_ptr<std::vector<std::string>> out = std::make_unique<std::vector<std::string>>();
-    return out;
+  void LoadDartDeferredLibrary(intptr_t loading_unit_id,
+                               std::unique_ptr<const fml::Mapping> snapshot_data,
+                               std::unique_ptr<const fml::Mapping> snapshot_instructions) override {
   }
+  void LoadDartDeferredLibraryError(intptr_t loading_unit_id,
+                                    const std::string error_message,
+                                    bool transient) override {}
+  void UpdateAssetResolverByType(std::unique_ptr<AssetResolver> updated_asset_resolver,
+                                 AssetResolver::AssetResolverType type) override {}
 };
 
 }  // namespace
@@ -67,6 +73,7 @@ class MockDelegate : public PlatformView::Delegate {
   auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/mock_delegate,
       /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
+      /*platform_views_controller=*/nil,
       /*task_runners=*/runners);
 
   id project = OCMClassMock([FlutterDartProject class]);
@@ -80,17 +87,24 @@ class MockDelegate : public PlatformView::Delegate {
   OCMVerify([mockEngine notifyLowMemory]);
   OCMReject([mockEngine notifyLowMemory]);
 
+  XCTNSNotificationExpectation* memoryExpectation = [[XCTNSNotificationExpectation alloc]
+      initWithName:UIApplicationDidReceiveMemoryWarningNotification];
   [[NSNotificationCenter defaultCenter]
       postNotificationName:UIApplicationDidReceiveMemoryWarningNotification
                     object:nil];
+  [self waitForExpectations:@[ memoryExpectation ] timeout:5.0];
   OCMVerify([mockEngine notifyLowMemory]);
   OCMReject([mockEngine notifyLowMemory]);
 
+  XCTNSNotificationExpectation* backgroundExpectation = [[XCTNSNotificationExpectation alloc]
+      initWithName:UIApplicationDidEnterBackgroundNotification];
   [[NSNotificationCenter defaultCenter]
       postNotificationName:UIApplicationDidEnterBackgroundNotification
                     object:nil];
+  [self waitForExpectations:@[ backgroundExpectation ] timeout:5.0];
 
   OCMVerify([mockEngine notifyLowMemory]);
+  [mockEngine stopMocking];
 }
 
 @end

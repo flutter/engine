@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of ui;
 
 abstract class Scene {
@@ -34,7 +34,7 @@ abstract class PhysicalShapeEngineLayer implements EngineLayer {}
 
 abstract class SceneBuilder {
   factory SceneBuilder() {
-    if (engine.experimentalUseSkia) {
+    if (engine.useCanvasKit) {
       return engine.LayerSceneBuilder();
     } else {
       return engine.SurfaceSceneBuilder();
@@ -86,6 +86,7 @@ abstract class SceneBuilder {
     Rect maskRect,
     BlendMode blendMode, {
     ShaderMaskEngineLayer? oldLayer,
+    FilterQuality filterQuality = FilterQuality.low,
   });
   PhysicalShapeEngineLayer? pushPhysicalShape({
     required Path path,

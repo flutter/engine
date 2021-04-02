@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// Computes winding number and onCurveCount for a path and point.
@@ -146,7 +146,7 @@ class PathWinding {
 
     _QuadRoots quadRoots = _QuadRoots();
     final int n = quadRoots.findRoots(
-        startY - 2 * y1 + endY, 2 * (y1 - startY), endY - y);
+        startY - 2 * y1 + endY, 2 * (y1 - startY), startY - y);
     assert(n <= 1);
     double xt;
     if (0 == n) {

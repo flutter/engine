@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of engine;
 
 /// A surface that transforms its children using CSS transform.
@@ -29,8 +29,10 @@ class PersistedTransform extends PersistedContainerSurface
 
   @override
   html.Element createElement() {
-    return defaultCreateElement('flt-transform')
-      ..style.transformOrigin = '0 0 0';
+    html.Element element = domRenderer.createElement('flt-transform');
+    DomRenderer.setElementStyle(element, 'position', 'absolute');
+    DomRenderer.setElementStyle(element, 'transform-origin', '0 0 0');
+    return element;
   }
 
   @override

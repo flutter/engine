@@ -18,15 +18,19 @@ class EmbedderTestContextSoftware : public EmbedderTestContext {
 
   size_t GetSurfacePresentCount() const override;
 
+  // |EmbedderTestContext|
+  EmbedderTestContextType GetContextType() const override;
+
   bool Present(sk_sp<SkImage> image);
 
  protected:
   virtual void SetupCompositor() override;
 
  private:
-  std::unique_ptr<TestGLSurface> gl_surface_;
+  sk_sp<SkSurface> surface_;
+  SkISize surface_size_;
   size_t software_surface_present_count_ = 0;
-  void SetupOpenGLSurface(SkISize surface_size) override;
+  void SetupSurface(SkISize surface_size) override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderTestContextSoftware);
 };

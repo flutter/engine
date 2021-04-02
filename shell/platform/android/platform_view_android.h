@@ -15,12 +15,27 @@
 #include "flutter/fml/platform/android/scoped_java_ref.h"
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/shell/common/platform_view.h"
+#include "flutter/shell/platform/android/context/android_context.h"
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
 #include "flutter/shell/platform/android/platform_view_android_delegate/platform_view_android_delegate.h"
 #include "flutter/shell/platform/android/surface/android_native_window.h"
 #include "flutter/shell/platform/android/surface/android_surface.h"
 
 namespace flutter {
+
+class AndroidSurfaceFactoryImpl : public AndroidSurfaceFactory {
+ public:
+  AndroidSurfaceFactoryImpl(const std::shared_ptr<AndroidContext>& context,
+                            std::shared_ptr<PlatformViewAndroidJNI> jni_facade);
+
+  ~AndroidSurfaceFactoryImpl() override;
+
+  std::unique_ptr<AndroidSurface> CreateSurface() override;
+
+ private:
+  const std::shared_ptr<AndroidContext>& android_context_;
+  std::shared_ptr<PlatformViewAndroidJNI> jni_facade_;
+};
 
 class PlatformViewAndroid final : public PlatformView {
  public:
@@ -37,6 +52,17 @@ class PlatformViewAndroid final : public PlatformView {
                       flutter::TaskRunners task_runners,
                       std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
                       bool use_software_rendering);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Creates a new PlatformViewAndroid but using an existing
+  ///             Android GPU context to create new surfaces. This maximizes
+  ///             resource sharing between 2 PlatformViewAndroids of 2 Shells.
+  ///
+  PlatformViewAndroid(
+      PlatformView::Delegate& delegate,
+      flutter::TaskRunners task_runners,
+      const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade,
+      const std::shared_ptr<flutter::AndroidContext>& android_context);
 
   ~PlatformViewAndroid() override;
 
@@ -78,8 +104,29 @@ class PlatformViewAndroid final : public PlatformView {
       int64_t texture_id,
       const fml::jni::JavaObjectWeakGlobalRef& surface_texture);
 
+  // |PlatformView|
+  void LoadDartDeferredLibrary(
+      intptr_t loading_unit_id,
+      std::unique_ptr<const fml::Mapping> snapshot_data,
+      std::unique_ptr<const fml::Mapping> snapshot_instructions) override;
+
+  void LoadDartDeferredLibraryError(intptr_t loading_unit_id,
+                                    const std::string error_message,
+                                    bool transient) override;
+
+  // |PlatformView|
+  void UpdateAssetResolverByType(
+      std::unique_ptr<AssetResolver> updated_asset_resolver,
+      AssetResolver::AssetResolverType type) override;
+
+  const std::shared_ptr<AndroidContext>& GetAndroidContext() {
+    return android_context_;
+  }
+
  private:
   const std::shared_ptr<PlatformViewAndroidJNI> jni_facade_;
+  std::shared_ptr<AndroidContext> android_context_;
+  std::shared_ptr<AndroidSurfaceFactoryImpl> surface_factory_;
 
   PlatformViewAndroidDelegate platform_view_android_delegate_;
 
@@ -108,6 +155,9 @@ class PlatformViewAndroid final : public PlatformView {
   std::unique_ptr<Surface> CreateRenderingSurface() override;
 
   // |PlatformView|
+  std::shared_ptr<ExternalViewEmbedder> CreateExternalViewEmbedder() override;
+
+  // |PlatformView|
   sk_sp<GrDirectContext> CreateResourceContext() const override;
 
   // |PlatformView|
@@ -116,6 +166,16 @@ class PlatformViewAndroid final : public PlatformView {
   // |PlatformView|
   std::unique_ptr<std::vector<std::string>> ComputePlatformResolvedLocales(
       const std::vector<std::string>& supported_locale_data) override;
+
+  // |PlatformView|
+  void RequestDartDeferredLibrary(intptr_t loading_unit_id) override;
+
+  std::shared_ptr<AndroidSurfaceFactoryImpl> MakeSurfaceFactory(
+      const std::shared_ptr<AndroidContext>& android_context,
+      const PlatformViewAndroidJNI& jni_facade);
+
+  std::unique_ptr<AndroidSurface> MakeSurface(
+      const std::shared_ptr<AndroidSurfaceFactoryImpl>& surface_factory);
 
   void InstallFirstFrameCallback();
 
