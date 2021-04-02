@@ -289,7 +289,7 @@ CANVAS_OP_DEFINE_OP(transform3x3,
   ));
 )
 
-CANVAS_OP_DEFINE_OP(drawColor, context.canvas->drawColor(context.paint.getColor(), context.paint.getBlendMode());)
+CANVAS_OP_DEFINE_OP(drawColor, context.canvas->drawColor(it.GetColor(), it.GetBlendMode());)
 CANVAS_OP_DEFINE_OP(drawPaint, context.canvas->drawPaint(context.paint);)
 
 CANVAS_OP_DEFINE_OP(drawRect, context.canvas->drawRect(it.GetRect(), context.paint);)
@@ -317,7 +317,7 @@ CANVAS_OP_DEFINE_OP(draw##mode,                                           \
 CANVAS_OP_DEFINE_POINT_OP(Points)
 CANVAS_OP_DEFINE_POINT_OP(Lines)
 CANVAS_OP_DEFINE_POINT_OP(Polygon)
-CANVAS_OP_DEFINE_OP(drawVertices, context.canvas->drawVertices(it.GetVertices(), context.paint.getBlendMode(), context.paint);)
+CANVAS_OP_DEFINE_OP(drawVertices, context.canvas->drawVertices(it.GetVertices(), it.GetBlendMode(), context.paint);)
 
 CANVAS_OP_DEFINE_OP(drawImage,
   sk_sp<SkImage> image = it.GetImage();
@@ -340,11 +340,11 @@ CANVAS_OP_DEFINE_OP(drawImageNine,
 #define CANVAS_OP_DEFINE_ATLAS(op_type, has_colors, has_rect)   \
 CANVAS_OP_DEFINE_OP(op_type,                                    \
   sk_sp<SkImage> image = it.GetImage();                         \
+  SkBlendMode blendMode = it.GetBlendMode();                    \
   SkScalar *rst_ptr;                                            \
   int nrstscalars = it.GetFloatList(&rst_ptr);                  \
   SkScalar *rect_ptr;                                           \
   int nrectscalars = it.GetFloatList(&rect_ptr);                \
-  SkBlendMode blendMode = it.GetBlendMode();                    \
   int numrects = nrectscalars / 4;                              \
   uint32_t *clr_ptr = nullptr;                                  \
   int ncolorints = numrects;                                    \
@@ -369,7 +369,7 @@ CANVAS_OP_DEFINE_OP(op_type,                                    \
     reinterpret_cast<const SkRect*>(rect_ptr),                  \
     reinterpret_cast<const SkColor*>(clr_ptr),                  \
     numrects,                                                   \
-    blendMode, context.sampling, pCullRect,  \
+    blendMode, context.sampling, pCullRect,                     \
     &context.paint);                                            \
 )
 CANVAS_OP_DEFINE_ATLAS(drawAtlas, false, false)
@@ -384,11 +384,12 @@ CANVAS_OP_DEFINE_OP(drawSkPicture, context.canvas->drawPicture(it.GetSkPicture()
 CANVAS_OP_DEFINE_OP(optype,                                                \
   SkPath path;                                                             \
   it.GetPath(path);                                                        \
-  SkColor color = context.paint.getColor();                                \
+  SkColor color = it.GetColor();                                           \
+  SkScalar elevation = it.GetScalar();                                     \
   /* TODO(flar): How to deal with dpr */                                   \
   SkScalar dpr = 1.0;                                                      \
   flutter::PhysicalShapeLayer::DrawShadow(context.canvas, path, color,     \
-                                          it.GetScalar(), occludes, dpr);  \
+                                          elevation, occludes, dpr);       \
 )
 CANVAS_OP_DEFINE_SHADOW_OP(drawShadow, false)
 CANVAS_OP_DEFINE_SHADOW_OP(drawShadowOccluded, true)

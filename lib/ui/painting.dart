@@ -5309,154 +5309,180 @@ class _DisplayListCanvas implements Canvas {
       : _recorder = recorder as _DisplayListPictureRecorder,
         _cullRect = cullRect ?? Rect.largest,
         _accumulator = _BoundsAccumulator(),
-        _ops = Uint8List(128), _numOps = 0,
-        _data = ByteData(128 * 4), _numDataBytes = 0,
+        _ops = _emptyOps, _numOps = 0,
+        _data = _emptyData, _numData = 0,
+        _dataInts = _emptyInts, _dataFloats = _emptyFloats,
         _objData = <Object>[],
         _ctm = _MatrixTransform._identity(),
         _ctmStack = <_MatrixTransform>[] {
     _recorder!._canvas = this;
   }
 
+  static Uint8List _emptyOps = Uint8List(0);
+  static Uint8List _cachedOps = _emptyOps;
+  static ByteData _emptyData = ByteData(0);
+  static ByteData _cachedData = _emptyData;
+  static Uint32List _emptyInts = _emptyData.buffer.asUint32List();
+  static Float32List _emptyFloats = _emptyData.buffer.asFloat32List();
+  static List<Object> _deadObjects = List<Object>.empty(growable: false);
+
   _DisplayListPictureRecorder? _recorder;
   Rect _cullRect;
   _BoundsAccumulator _accumulator;
   int _numOps;
   Uint8List _ops;
-  int _numDataBytes;
+  int _numData;
   ByteData _data;
+  late Uint32List _dataInts;
+  late Float32List _dataFloats;
   List<Object> _objData;
   _MatrixTransform _ctm;
   List<_MatrixTransform> _ctmStack;
 
+  void _dispose() {
+    if (_cachedOps.length < _ops.length) {
+      _cachedOps = _ops;
+    }
+    if (_cachedData.lengthInBytes < _data.lengthInBytes) {
+      _cachedData = _data;
+    }
+    _recorder = null;
+    _ops = _emptyOps;
+    _data = _emptyData;
+    _dataInts = _emptyInts;
+    _dataFloats = _emptyFloats;
+    _numOps = _numData = 0;
+    _objData = _deadObjects;
+  }
+
   Rect get _drawBounds => _accumulator.bounds;
 
-  static const int _maxOpsDoubleSize = 1 << 20;
-  Uint8List _growOps(Uint8List src) {
-    Uint8List dst;
-    if (src.length <= _maxOpsDoubleSize) {
-      dst = Uint8List(src.length * 2);
+  static const int _minOpsSize = 1 << 8;
+  static const int _maxOpsGrow = 1 << 20;
+  static const int _minDataSize = 1 << 10;
+  static const int _maxDataGrow = 1 << 24;
+
+  int _newSize(int curSize, int minSize, int maxGrow, int needed) {
+    int newSize;
+    if (curSize < minSize) {
+      newSize = minSize;
+    } else if (curSize < maxGrow) {
+      newSize = curSize * 2;
     } else {
-      dst = Uint8List(src.length + _maxOpsDoubleSize);
+      newSize = curSize + maxGrow;
     }
-    dst.setRange(0, _numOps, src);
-    return dst;
+    if (newSize < curSize + needed) {
+      newSize = curSize + needed + maxGrow;
+      newSize -= newSize % maxGrow;
+    }
+    return newSize;
   }
 
-  static const int _maxDataDoubleSize = 1 << 24;
-  ByteData _growData(ByteData src, int neededBytes) {
-    int growLength;
-    if (src.lengthInBytes <= _maxDataDoubleSize) {
-      growLength = src.lengthInBytes;
-    } else {
-      growLength = _maxDataDoubleSize;
-    }
-    if (growLength < neededBytes) {
-      growLength = (neededBytes + _maxDataDoubleSize) ~/ _maxDataDoubleSize;
-      growLength *= _maxDataDoubleSize;
-    }
-    final ByteData dst = ByteData(src.lengthInBytes + growLength);
-    for (int i = 0; i < _numDataBytes; i += 4) {
-      dst.setInt32(i, src.getInt32(i, _kFakeHostEndian), _kFakeHostEndian);
-    }
-    return dst;
-  }
-
-  void _addOp(_CanvasOp op) {
-      if (_numOps == _ops.lengthInBytes) {
-        _ops = _growOps(_ops);
+  void _addOp(_CanvasOp op, int dataNeeded) {
+    if (_numOps >= _ops.length) {
+      if (_recorder == null)
+        throw StateError('Attempting to render to disposed Canvas');
+      final int newSize = _newSize(_ops.length, _minOpsSize, _maxOpsGrow, 1);
+      final Uint8List newOps;
+      if (newSize <= _cachedOps.length) {
+        newOps = _cachedOps;
+        _cachedOps = _emptyOps;
+      } else {
+        newOps = Uint8List(_newSize(_ops.length, _minOpsSize, _maxOpsGrow, 1));
       }
-      _ops[_numOps++] = op.index;
+      newOps.setRange(0, _numOps, _ops);
+      _ops = newOps;
+    }
+    if (_numData + dataNeeded >= _dataInts.length) {
+      final int newSize = 4 * _newSize(_dataInts.length, _minDataSize, _maxDataGrow, dataNeeded);
+      final ByteData newData;
+      if (newSize <= _cachedData.lengthInBytes / 4) {
+        newData = _cachedData;
+        _cachedData = _emptyData;
+      } else {
+        newData = ByteData(4 * _newSize(_dataInts.length, _minDataSize, _maxDataGrow, dataNeeded));
+      }
+      final Uint32List newInts = newData.buffer.asUint32List();
+      newInts.setRange(0, _numData, _dataInts);
+      _data = newData;
+      _dataInts = newInts;
+      _dataFloats = newData.buffer.asFloat32List();
+    }
+    assert(_numOps < _ops.length);
+    _ops[_numOps++] = op.index;
   }
 
   void _addInt(int value) {
-    if (_numDataBytes + 4 > _data.lengthInBytes) {
-      _data = _growData(_data, 4);
-    }
-    _data.setInt32(_numDataBytes, value, _kFakeHostEndian);
-    _numDataBytes += 4;
+    assert(_numData < _dataInts.length);
+    _dataInts[_numData++] = value;
   }
 
   void _addScalar(double value) {
-    if (_numDataBytes + 4 > _data.lengthInBytes) {
-      _data = _growData(_data, 4);
-    }
-    _data.setFloat32(_numDataBytes, value, _kFakeHostEndian);
-    _numDataBytes += 4;
+    assert(_numData < _dataFloats.length);
+    _dataFloats[_numData++] = value;
   }
 
   void _addScalar2(double v1, double v2) {
-    if (_numDataBytes + 8 > _data.lengthInBytes) {
-      _data = _growData(_data, 8);
-    }
-    _data.setFloat32(_numDataBytes, v1, _kFakeHostEndian);
-    _numDataBytes += 4;
-    _data.setFloat32(_numDataBytes, v2, _kFakeHostEndian);
-    _numDataBytes += 4;
+    assert(_numData + 2 <= _dataFloats.length);
+    _dataFloats[_numData++] = v1;
+    _dataFloats[_numData++] = v2;
   }
 
   void _addScalar3(double v1, double v2, double v3) {
-    if (_numDataBytes + 12 > _data.lengthInBytes) {
-      _data = _growData(_data, 12);
-    }
-    _data.setFloat32(_numDataBytes, v1, _kFakeHostEndian);
-    _numDataBytes += 4;
-    _data.setFloat32(_numDataBytes, v2, _kFakeHostEndian);
-    _numDataBytes += 4;
-    _data.setFloat32(_numDataBytes, v3, _kFakeHostEndian);
-    _numDataBytes += 4;
+    assert(_numData + 3 <= _dataFloats.length);
+    _dataFloats[_numData++] = v1;
+    _dataFloats[_numData++] = v2;
+    _dataFloats[_numData++] = v3;
   }
 
-  void _addScalar4(double v1, double v2, double v3, double v4) {
-    if (_numDataBytes + 16 > _data.lengthInBytes) {
-      _data = _growData(_data, 16);
-    }
-    _data.setFloat32(_numDataBytes, v1, _kFakeHostEndian);
-    _numDataBytes += 4;
-    _data.setFloat32(_numDataBytes, v2, _kFakeHostEndian);
-    _numDataBytes += 4;
-    _data.setFloat32(_numDataBytes, v3, _kFakeHostEndian);
-    _numDataBytes += 4;
-    _data.setFloat32(_numDataBytes, v4, _kFakeHostEndian);
-    _numDataBytes += 4;
-  }
-
+  static const int _nOffsetData = 2;
   void _addOffset(Offset offset) {
-    _addScalar2(offset.dx, offset.dy);
+    assert(_numData + _nOffsetData <= _dataFloats.length);
+    _dataFloats[_numData++] = offset.dx;
+    _dataFloats[_numData++] = offset.dy;
   }
 
+  static const int _nRectData = 4;
   void _addRect(Rect r) {
-    _addScalar4(r.left, r.top, r.right, r.bottom);
+    assert(_numData + _nRectData <= _dataFloats.length);
+    _dataFloats[_numData++] = r.left;
+    _dataFloats[_numData++] = r.top;
+    _dataFloats[_numData++] = r.right;
+    _dataFloats[_numData++] = r.bottom;
   }
 
+  static const int _nRoundRectData = 12;
   void _addRRect(RRect rrect) {
-    _addScalar4(rrect.left, rrect.top, rrect.right, rrect.bottom);
+    assert(_numData + _nRoundRectData <= _dataFloats.length);
+    _dataFloats[_numData++] = rrect.left;
+    _dataFloats[_numData++] = rrect.top;
+    _dataFloats[_numData++] = rrect.right;
+    _dataFloats[_numData++] = rrect.bottom;
     // SkRRect Radii order is UL, UR, LR, LL as per SkRRect::Corner indices
-    _addScalar4(rrect.tlRadiusX, rrect.tlRadiusY, rrect.trRadiusX, rrect.trRadiusY);
-    _addScalar4(rrect.brRadiusX, rrect.brRadiusY, rrect.blRadiusX, rrect.blRadiusY);
+    _dataFloats[_numData++] = rrect.tlRadiusX;
+    _dataFloats[_numData++] = rrect.tlRadiusY;
+    _dataFloats[_numData++] = rrect.trRadiusX;
+    _dataFloats[_numData++] = rrect.trRadiusY;
+    _dataFloats[_numData++] = rrect.brRadiusX;
+    _dataFloats[_numData++] = rrect.brRadiusY;
+    _dataFloats[_numData++] = rrect.blRadiusX;
+    _dataFloats[_numData++] = rrect.blRadiusY;
   }
 
   void _addInt32List(Int32List data) {
     final int len = data.length;
-    _addInt(len);
-    if (_numDataBytes + len * 4 > _data.lengthInBytes) {
-      _data = _growData(_data, len * 4);
-    }
-    for (int i = 0; i < len; i++) {
-      _data.setInt32(_numDataBytes, data[i], _kFakeHostEndian);
-      _numDataBytes += 4;
-    }
+    assert(_numData + len + 1 <= _dataInts.length);
+    _dataInts[_numData++] = len;
+    _dataInts.setRange(_numData, _numData + len, data);
+    _numData += len;
   }
 
   void _addFloat32List(Float32List data) {
     final int len = data.length;
-    _addInt(len);
-    if (_numDataBytes + len * 4 > _data.lengthInBytes) {
-      _data = _growData(_data, len * 4);
-    }
-    for (int i = 0; i < len; i++) {
-      _data.setFloat32(_numDataBytes, data[i], _kFakeHostEndian);
-      _numDataBytes += 4;
-    }
+    assert(_numData + len + 1 <= _dataFloats.length);
+    _dataInts[_numData++] = len;
+    _dataFloats.setRange(_numData, _numData + len, data);
+    _numData += len;
   }
 
   void _addImageData(Image image) {
@@ -5512,7 +5538,7 @@ class _DisplayListCanvas implements Canvas {
 
   @override
   void save() {
-    _addOp(_CanvasOp.save);
+    _addOp(_CanvasOp.save, 0);
     _ctmStack.add(_MatrixTransform._copy(_ctm));
   }
 
@@ -5520,9 +5546,9 @@ class _DisplayListCanvas implements Canvas {
   void saveLayer(Rect? bounds, Paint paint) {
     _updatePaintData(paint, _saveLayerMask);
     if (bounds == null) {
-      _addOp(_CanvasOp.saveLayer);
+      _addOp(_CanvasOp.saveLayer, 0);
     } else {
-      _addOp(_CanvasOp.saveLayerBounds);
+      _addOp(_CanvasOp.saveLayerBounds, _nRectData);
       _addRect(bounds);
     }
     _ctmStack.add(_MatrixTransform._copy(_ctm));
@@ -5535,33 +5561,33 @@ class _DisplayListCanvas implements Canvas {
   void restore() {
     if (_ctmStack.isNotEmpty) {
       _ctm = _ctmStack.removeLast();
-      _addOp(_CanvasOp.restore);
+      _addOp(_CanvasOp.restore, 0);
     }
   }
   @override
   void translate(double dx, double dy) {
-    _addOp(_CanvasOp.translate);
+    _addOp(_CanvasOp.translate, 2);
     _addScalar2(dx, dy);
     _ctm.translate(dx, dy);
   }
 
   @override
   void scale(double sx, [ double? sy ]) {
-    _addOp(_CanvasOp.scale);
+    _addOp(_CanvasOp.scale, 2);
     _addScalar2(sx, sy ?? sx);
     _ctm.scale(sx, sy ?? sx);
   }
 
   @override
   void rotate(double radians) {
-    _addOp(_CanvasOp.rotate);
+    _addOp(_CanvasOp.rotate, 1);
     _addScalar(radians);
     _ctm.rotate(radians);
   }
 
   @override
   void skew(double sx, double sy) {
-    _addOp(_CanvasOp.skew);
+    _addOp(_CanvasOp.skew, 2);
     _addScalar2(sx, sy);
     _ctm.skew(sx, sy);
   }
@@ -5571,11 +5597,11 @@ class _DisplayListCanvas implements Canvas {
     if (matrix4.length != 16)
       throw ArgumentError('"matrix4" must have 16 entries.');
     if (matrix4[3] == 0.0 && matrix4[7] == 0.0 && matrix4[15] == 1.0) {
-      _addOp(_CanvasOp.transform2x3);
+      _addOp(_CanvasOp.transform2x3, 6);
       _addScalar3(matrix4[0], matrix4[4], matrix4[12]);
       _addScalar3(matrix4[1], matrix4[5], matrix4[13]);
     } else {
-      _addOp(_CanvasOp.transform3x3);
+      _addOp(_CanvasOp.transform3x3, 9);
       _addScalar3(matrix4[0], matrix4[4], matrix4[12]);
       _addScalar3(matrix4[1], matrix4[5], matrix4[13]);
       _addScalar3(matrix4[3], matrix4[7], matrix4[15]);
@@ -5588,10 +5614,10 @@ class _DisplayListCanvas implements Canvas {
   void clipRect(Rect rect, {ClipOp clipOp = ClipOp.intersect, bool doAntiAlias = false}) {
     switch (clipOp) {
       case ClipOp.intersect:
-        _addOp(doAntiAlias ? _CanvasOp.clipRectAA : _CanvasOp.clipRect);
+        _addOp(doAntiAlias ? _CanvasOp.clipRectAA : _CanvasOp.clipRect, _nRectData);
         break;
       case ClipOp.difference:
-        _addOp(doAntiAlias ? _CanvasOp.clipRectAADiff : _CanvasOp.clipRectDiff);
+        _addOp(doAntiAlias ? _CanvasOp.clipRectAADiff : _CanvasOp.clipRectDiff, _nRectData);
         break;
     }
     _addRect(rect);
@@ -5602,14 +5628,14 @@ class _DisplayListCanvas implements Canvas {
     if (rrect.isRect) {
       clipRect(rrect.outerRect, doAntiAlias: doAntiAlias);
     } else {
-      _addOp(doAntiAlias ? _CanvasOp.clipRRectAA : _CanvasOp.clipRRect);
+      _addOp(doAntiAlias ? _CanvasOp.clipRRectAA : _CanvasOp.clipRRect, _nRoundRectData);
       _addRRect(rrect);
     }
   }
 
   @override
   void clipPath(Path path, {bool doAntiAlias = false}) {
-    _addOp(doAntiAlias ? _CanvasOp.clipPathAA : _CanvasOp.clipPath);
+    _addOp(doAntiAlias ? _CanvasOp.clipPathAA : _CanvasOp.clipPath, 0);
     _addPathData(path);
   }
 
@@ -5679,26 +5705,30 @@ class _DisplayListCanvas implements Canvas {
   void _updatePaintData(Paint paint, int dataNeeded) {
     if ((dataNeeded & _aaNeeded) != 0 && _curAA != paint.isAntiAlias) {
       _curAA = paint.isAntiAlias;
-      _addOp(_curAA ? _CanvasOp.setAA : _CanvasOp.clearAA);
+      _addOp(_curAA ? _CanvasOp.setAA : _CanvasOp.clearAA, 0);
     }
     if ((dataNeeded & _ditherNeeded) != 0 && _curDither != paint._dither) {
       _curDither = paint._dither;
-      _addOp(_curDither ? _CanvasOp.setDither : _CanvasOp.clearDither);
+      _addOp(_curDither ? _CanvasOp.setDither : _CanvasOp.clearDither, 0);
     }
-    if ((dataNeeded & _colorNeeded) != 0) {
-      _updateColor(paint.color);
+    if ((dataNeeded & _colorNeeded) != 0 && _curColor != paint.color) {
+      _curColor = paint.color;
+      _addOp(_CanvasOp.setColor, 1);
+      _addInt(_curColor.value);
     }
-    if ((dataNeeded & _blendNeeded) != 0) {
-      _updateBlendMode(paint.blendMode);
+    if ((dataNeeded & _blendNeeded) != 0 && _curBlendMode != paint.blendMode) {
+      _curBlendMode = paint.blendMode;
+      _addOp(_CanvasOp.setBlendMode, 1);
+      _addInt(_curBlendMode.index);
     }
     if ((dataNeeded & _invertColorsNeeded) != 0 && _curInvertColors != paint.invertColors) {
       _curInvertColors = paint.invertColors;
-      _addOp(_curInvertColors ? _CanvasOp.setInvertColors : _CanvasOp.clearInvertColors);
+      _addOp(_curInvertColors ? _CanvasOp.setInvertColors : _CanvasOp.clearInvertColors, 0);
     }
     if ((dataNeeded & _paintStyleNeeded) != 0) {
       if (_curPaintStyle != paint.style) {
         _curPaintStyle = paint.style;
-        _addOp(_curPaintStyle == PaintingStyle.fill ? _CanvasOp.setFillStyle : _CanvasOp.setStrokeStyle);
+        _addOp(_curPaintStyle == PaintingStyle.fill ? _CanvasOp.setFillStyle : _CanvasOp.setStrokeStyle, 0);
       }
       if (_curPaintStyle == PaintingStyle.stroke) {
         dataNeeded |= _strokeStyleNeeded;
@@ -5707,33 +5737,33 @@ class _DisplayListCanvas implements Canvas {
     if ((dataNeeded & _strokeStyleNeeded) != 0) {
       if (_curStrokeWidth != paint.strokeWidth) {
         _curStrokeWidth = paint.strokeWidth;
-        _addOp(_CanvasOp.setStrokeWidth);
+        _addOp(_CanvasOp.setStrokeWidth, 1);
         _addScalar(_curStrokeWidth);
       }
       if (_curStrokeCap != paint.strokeCap) {
         _curStrokeCap = paint.strokeCap;
-        _addOp(_strokeCapOps[_curStrokeCap.index]);
+        _addOp(_strokeCapOps[_curStrokeCap.index], 0);
       }
       if (_curStrokeJoin != paint.strokeJoin) {
         _curStrokeJoin = paint.strokeJoin;
-        _addOp(_strokeJoinOps[_curStrokeJoin.index]);
+        _addOp(_strokeJoinOps[_curStrokeJoin.index], 0);
       }
       if (_curMiterLimit != paint.strokeMiterLimit) {
         _curMiterLimit = paint.strokeMiterLimit;
-        _addOp(_CanvasOp.setMiterLimit);
+        _addOp(_CanvasOp.setMiterLimit, 1);
         _addScalar(_curMiterLimit);
       }
     }
     if ((dataNeeded & _filterQualityNeeded) != 0 && _curFilterQuality != paint.filterQuality) {
       _curFilterQuality = paint.filterQuality;
-      _addOp(_filterQualityOps[_curFilterQuality.index]);
+      _addOp(_filterQualityOps[_curFilterQuality.index], 0);
     }
     if ((dataNeeded & _shaderNeeded) != 0 && _curShader != paint.shader) {
       final Shader? shader = paint.shader;
       if (shader == null) {
-        _addOp(_CanvasOp.clearShader);
+        _addOp(_CanvasOp.clearShader, 0);
       } else {
-        _addOp(_CanvasOp.setShader);
+        _addOp(_CanvasOp.setShader, 0);
         _addShader(shader);
       }
       _curShader = paint.shader;
@@ -5741,9 +5771,9 @@ class _DisplayListCanvas implements Canvas {
     if ((dataNeeded & _colorFilterNeeded) != 0 && _curColorFilter != paint.colorFilter) {
       final _ColorFilter? filter = paint.colorFilter?._toNativeColorFilter();
       if (filter == null) {
-        _addOp(_CanvasOp.clearColorFilter);
+        _addOp(_CanvasOp.clearColorFilter, 0);
       } else {
-        _addOp(_CanvasOp.setColorFilter);
+        _addOp(_CanvasOp.setColorFilter, 0);
         _addColorFilter(filter);
       }
       _curColorFilter = paint.colorFilter;
@@ -5751,9 +5781,9 @@ class _DisplayListCanvas implements Canvas {
     if ((dataNeeded & _imageFilterNeeded) != 0 && _curImageFilter != paint.imageFilter) {
       final _ImageFilter? filter = paint.imageFilter?._toNativeImageFilter();
       if (filter == null) {
-        _addOp(_CanvasOp.clearImageFilter);
+        _addOp(_CanvasOp.clearImageFilter, 0);
       } else {
-        _addOp(_CanvasOp.setImageFilter);
+        _addOp(_CanvasOp.setImageFilter, 0);
         _addImageFilter(filter);
       }
       _curImageFilter = paint.imageFilter;
@@ -5761,48 +5791,32 @@ class _DisplayListCanvas implements Canvas {
     if ((dataNeeded & _maskFilterNeeded) != 0 && _curMaskFilter != paint.maskFilter) {
       final MaskFilter? filter = paint.maskFilter;
       if (filter == null) {
-        _addOp(_CanvasOp.clearMaskFilter);
+        _addOp(_CanvasOp.clearMaskFilter, 0);
       } else {
-        _addOp(_maskFilterOps[filter._style.index]);
+        _addOp(_maskFilterOps[filter._style.index], 1);
         _addScalar(filter._sigma);
       }
       _curMaskFilter = paint.maskFilter;
     }
   }
 
-  void _updateColor(Color color) {
-    if (_curColor != color) {
-      _curColor = color;
-      _addOp(_CanvasOp.setColor);
-      _addInt(color.value);
-    }
-  }
-
-  void _updateBlendMode(BlendMode blendMode) {
-    if (_curBlendMode != blendMode) {
-      _curBlendMode = blendMode;
-      _addOp(_CanvasOp.setBlendMode);
-      _addInt(blendMode.index);
-    }
-  }
-
   @override
   void drawPaint(Paint paint) {
     _updatePaintData(paint, _paintMask);
-    _addOp(_CanvasOp.drawPaint);
+    _addOp(_CanvasOp.drawPaint, 0);
   }
 
   @override
   void drawColor(Color color, BlendMode blendMode) {
-    _updateColor(color);
-    _updateBlendMode(blendMode);
-    _addOp(_CanvasOp.drawColor);
+    _addOp(_CanvasOp.drawColor, 2);
+    _addInt(color.value);
+    _addInt(blendMode.index);
   }
 
   @override
   void drawLine(Offset p1, Offset p2, Paint paint) {
     _updatePaintData(paint, _strokeMask);
-    _addOp(_CanvasOp.drawLine);
+    _addOp(_CanvasOp.drawLine, 2 * _nOffsetData);
     _addOffset(p1);
     _addOffset(p2);
     _addBounds(Rect.fromPoints(p1, p2), true);
@@ -5811,7 +5825,7 @@ class _DisplayListCanvas implements Canvas {
   @override
   void drawRect(Rect rect, Paint paint) {
     _updatePaintData(paint, _drawMask);
-    _addOp(_CanvasOp.drawRect);
+    _addOp(_CanvasOp.drawRect, _nRectData);
     _addRect(rect);
     _addBounds(rect);
   }
@@ -5819,7 +5833,7 @@ class _DisplayListCanvas implements Canvas {
   @override
   void drawOval(Rect rect, Paint paint) {
     _updatePaintData(paint, _drawMask);
-    _addOp(_CanvasOp.drawOval);
+    _addOp(_CanvasOp.drawOval, _nRectData);
     _addRect(rect);
     _addBounds(rect);
   }
@@ -5827,7 +5841,7 @@ class _DisplayListCanvas implements Canvas {
   @override
   void drawCircle(Offset center, double radius, Paint paint) {
     _updatePaintData(paint, _drawMask);
-    _addOp(_CanvasOp.drawCircle);
+    _addOp(_CanvasOp.drawCircle, _nOffsetData + 1);
     _addOffset(center);
     _addScalar(radius);
     _addBounds(Rect.fromCenter(center: center, width: radius, height: radius));
@@ -5842,7 +5856,7 @@ class _DisplayListCanvas implements Canvas {
       drawOval(outerRect, paint);
     } else {
       _updatePaintData(paint, _drawMask);
-      _addOp(_CanvasOp.drawRRect);
+      _addOp(_CanvasOp.drawRRect, _nRoundRectData);
       _addRRect(rrect);
     }
     _addBounds(outerRect);
@@ -5851,7 +5865,7 @@ class _DisplayListCanvas implements Canvas {
   @override
   void drawDRRect(RRect outer, RRect inner, Paint paint) {
     _updatePaintData(paint, _drawMask);
-    _addOp(_CanvasOp.drawDRRect);
+    _addOp(_CanvasOp.drawDRRect, 2 * _nRoundRectData);
     _addRRect(outer);
     _addRRect(inner);
     _addBounds(outer.outerRect);
@@ -5860,7 +5874,7 @@ class _DisplayListCanvas implements Canvas {
   @override
   void drawArc(Rect rect, double startAngle, double sweepAngle, bool useCenter, Paint paint) {
     _updatePaintData(paint, _drawMask);
-    _addOp(useCenter ? _CanvasOp.drawArcCenter : _CanvasOp.drawArc);
+    _addOp(useCenter ? _CanvasOp.drawArcCenter : _CanvasOp.drawArc, _nRectData + 2);
     _addRect(rect);
     _addScalar2(startAngle, sweepAngle);
     _addBounds(rect);
@@ -5869,14 +5883,23 @@ class _DisplayListCanvas implements Canvas {
   @override
   void drawPath(Path path, Paint paint) {
     _updatePaintData(paint, _drawMask);
-    _addOp(_CanvasOp.drawPath);
+    _addOp(_CanvasOp.drawPath, 0);
     _addPathData(path);
     _addBounds(path.getBounds());
   }
 
   @override
   void drawPoints(PointMode pointMode, List<Offset> points, Paint paint) {
-    drawRawPoints(pointMode, _encodePointList(points), paint);
+    _updatePaintData(paint, _strokeMask);
+    _addOp(_pointOps[pointMode.index], points.length * 2 + 1);
+    _dataInts[_numData++] = points.length * 2;
+    final _BoundsAccumulator ptBounds = _BoundsAccumulator();
+    for (Offset pt in points) {
+      _dataFloats[_numData++] = pt.dx;
+      _dataFloats[_numData++] = pt.dy;
+      ptBounds.accumulate(pt.dx, pt.dy);
+    }
+    _addBounds(ptBounds.bounds, true);
   }
 
   static const List<_CanvasOp> _pointOps = <_CanvasOp>[
@@ -5888,7 +5911,7 @@ class _DisplayListCanvas implements Canvas {
   @override
   void drawRawPoints(PointMode pointMode, Float32List points, Paint paint) {
     _updatePaintData(paint, _strokeMask);
-    _addOp(_pointOps[pointMode.index]);
+    _addOp(_pointOps[pointMode.index], points.length + 1);
     _addFloat32List(points);
     final _BoundsAccumulator ptBounds = _BoundsAccumulator();
     for (int i = 0; i + 1 < points.length; i += 2) {
@@ -5900,16 +5923,16 @@ class _DisplayListCanvas implements Canvas {
   @override
   void drawVertices(Vertices vertices, BlendMode blendMode, Paint paint) {
     _updatePaintData(paint, _drawMask);
-    _updateBlendMode(blendMode);
-    _addOp(_CanvasOp.drawVertices);
+    _addOp(_CanvasOp.drawVertices, 1);
     _addVertices(vertices);
+    _addInt(blendMode.index);
     _addBounds(vertices._getBounds());
   }
 
   @override
   void drawImage(Image image, Offset offset, Paint paint) {
     _updatePaintData(paint, _imageMask);
-    _addOp(_CanvasOp.drawImage);
+    _addOp(_CanvasOp.drawImage, _nOffsetData);
     _addImageData(image);
     _addOffset(offset);
     _addBounds(Rect.fromLTWH(offset.dx, offset.dy, image.width.toDouble(), image.height.toDouble()), false);
@@ -5918,7 +5941,7 @@ class _DisplayListCanvas implements Canvas {
   @override
   void drawImageRect(Image image, Rect src, Rect dst, Paint paint) {
     _updatePaintData(paint, _imageMask);
-    _addOp(_CanvasOp.drawImageRect);
+    _addOp(_CanvasOp.drawImageRect, 2 * _nRectData);
     _addImageData(image);
     _addRect(src);
     _addRect(dst);
@@ -5928,11 +5951,31 @@ class _DisplayListCanvas implements Canvas {
   @override
   void drawImageNine(Image image, Rect center, Rect dst, Paint paint) {
     _updatePaintData(paint, _imageMask);
-    _addOp(_CanvasOp.drawImageNine);
+    _addOp(_CanvasOp.drawImageNine, 2 * _nRectData);
     _addImageData(image);
     _addRect(center);
     _addRect(dst);
     _addBounds(dst, false);
+  }
+
+  void _addAtlasOp(int rectCount, bool hasColors, bool hasCullRect) {
+    if (hasColors) {
+      if (hasCullRect) {
+        // 3 list counts + 2 lists of 4 values per rect + 1 list of 1 value per rect + rect + blend mode
+        _addOp(_CanvasOp.drawAtlasColoredCulled, 3 + rectCount * 9 + _nRectData + 1);
+      } else {
+        // 3 list counts + 2 lists of 4 values per rect + 1 list of 1 value per rect + blend mode
+        _addOp(_CanvasOp.drawAtlasColored, 3 + rectCount * 9 + 1);
+      }
+    } else {
+      if (hasCullRect) {
+        // 2 list counts + 2 lists of 4 values per rect + rect + blend mode
+        _addOp(_CanvasOp.drawAtlasCulled, 2 + rectCount * 8 + _nRectData + 1);
+      } else {
+        // 2 list counts + 2 lists of 4 values per rect + blend mode
+        _addOp(_CanvasOp.drawAtlas, 2 + rectCount * 8 + 1);
+      }
+    }
   }
 
   @override
@@ -5949,45 +5992,41 @@ class _DisplayListCanvas implements Canvas {
     if (colors != null && colors.isNotEmpty && colors.length != rectCount)
       throw ArgumentError('If non-null, "colors" length must match that of "transforms" and "rects".');
 
-    final Float32List rstTransformBuffer = Float32List(rectCount * 4);
-    final Float32List rectBuffer = Float32List(rectCount * 4);
+    _updatePaintData(paint, _imageMask);
+    _addAtlasOp(rectCount, colors?.isNotEmpty ?? false, cullRect != null);
+    _addImageData(atlas);
+    _addInt((blendMode ?? BlendMode.src).index);
 
+    _dataInts[_numData++] = rectCount * 4;
+    int rstBase = _numData;
+    _numData += rectCount * 4;
+    _dataInts[_numData++] = rectCount * 4;
+    int rectBase = _numData;
+    _numData += rectCount * 4;
     final _BoundsAccumulator rstBounds = _BoundsAccumulator();
-    for (int i = 0; i < rectCount; ++i) {
-      final int index0 = i * 4;
-      final int index1 = index0 + 1;
-      final int index2 = index0 + 2;
-      final int index3 = index0 + 3;
+    for (int i = 0; i < rectCount; i++) {
       final RSTransform rstTransform = transforms[i];
       final Rect rect = rects[i];
       assert(_rectIsValid(rect));
-      rstTransformBuffer[index0] = rstTransform.scos;
-      rstTransformBuffer[index1] = rstTransform.ssin;
-      rstTransformBuffer[index2] = rstTransform.tx;
-      rstTransformBuffer[index3] = rstTransform.ty;
-      rectBuffer[index0] = rect.left;
-      rectBuffer[index1] = rect.top;
-      rectBuffer[index2] = rect.right;
-      rectBuffer[index3] = rect.bottom;
+      _dataFloats[rstBase++] = rstTransform.scos;
+      _dataFloats[rstBase++] = rstTransform.ssin;
+      _dataFloats[rstBase++] = rstTransform.tx;
+      _dataFloats[rstBase++] = rstTransform.ty;
+      _dataFloats[rectBase++] = rect.left;
+      _dataFloats[rectBase++] = rect.top;
+      _dataFloats[rectBase++] = rect.right;
+      _dataFloats[rectBase++] = rect.bottom;
       rstBounds.accumulateBounds(rect, rstTransform);
     }
-
-    final Int32List? colorBuffer = (colors == null || colors.isEmpty) ? null : _encodeColorList(colors);
-
-    final _CanvasOp op = (cullRect == null)
-        ? (colorBuffer == null) ? _CanvasOp.drawAtlas : _CanvasOp.drawAtlasColored
-        : (colorBuffer == null) ? _CanvasOp.drawAtlasCulled : _CanvasOp.drawAtlasColoredCulled;
-
-    _updatePaintData(paint, _imageMask);
-    _addOp(op);
-    _addImageData(atlas);
-    _addFloat32List(rstTransformBuffer);
-    _addFloat32List(rectBuffer);
-    _addInt((blendMode ?? BlendMode.src).index);
-    if (colorBuffer != null)
-      _addInt32List(colorBuffer);
+    if (colors != null && colors.isNotEmpty) {
+      _dataInts[_numData++] = rectCount;
+      for (int i = 0; i < rectCount; i++) {
+        _dataInts[_numData++] = colors[i].value;
+      }
+    }
     if (cullRect != null)
       _addRect(cullRect);
+
     _addBounds(rstBounds.bounds, false);
   }
 
@@ -6007,37 +6046,35 @@ class _DisplayListCanvas implements Canvas {
     if (colors != null && colors.length * 4 != rectCount)
       throw ArgumentError('If non-null, "colors" length must be one fourth the length of "rstTransforms" and "rects".');
 
+    _updatePaintData(paint, _imageMask);
+    _addAtlasOp(rectCount, colors?.isNotEmpty ?? false, cullRect != null);
+    _addImageData(atlas);
+    _addInt((blendMode ?? BlendMode.src).index);
+
+    _addFloat32List(rstTransforms);
+    _addFloat32List(rects);
+    if (colors != null)
+      _addInt32List(colors);
+    if (cullRect != null)
+      _addRect(cullRect);
+
     final _BoundsAccumulator rstBounds = _BoundsAccumulator();
     for (int i = 0; i < rects.length; i += 4) {
       rstBounds.accumulateRstBounds(
           rects[i], rects[i+1], rects[i+2], rects[i+3],
           rstTransforms[i], rstTransforms[i+1], rstTransforms[i+2], rstTransforms[i+3]);
     }
-    final _CanvasOp op = (cullRect == null)
-        ? (colors == null) ? _CanvasOp.drawAtlas : _CanvasOp.drawAtlasColored
-        : (colors == null) ? _CanvasOp.drawAtlasCulled : _CanvasOp.drawAtlasColoredCulled;
-
-    _updatePaintData(paint, _imageMask);
-    _addOp(op);
-    _addImageData(atlas);
-    _addFloat32List(rstTransforms);
-    _addFloat32List(rects);
-    _addInt((blendMode ?? BlendMode.src).index);
-    if (colors != null)
-      _addInt32List(colors);
-    if (cullRect != null)
-      _addRect(cullRect);
     _addBounds(rstBounds.bounds, false);
   }
 
   void _drawSkiaPicture(_SkiaPicture picture) {
-    _addOp(_CanvasOp.drawSkPicture);
+    _addOp(_CanvasOp.drawSkPicture, 0);
     _addSkPicture(picture);
     _addBounds(picture._getBounds(), false);
   }
 
   void _drawDisplayListPicture(_DisplayListPicture picture) {
-    _addOp(_CanvasOp.drawDisplayList);
+    _addOp(_CanvasOp.drawDisplayList, 0);
     _addPicture(picture);
     _addBounds(picture._drawBounds ?? Rect.zero, false);
   }
@@ -6072,9 +6109,9 @@ class _DisplayListCanvas implements Canvas {
 
   @override
   void drawShadow(Path path, Color color, double elevation, bool transparentOccluder) {
-    _updateColor(color);
-    _addOp(transparentOccluder ? _CanvasOp.drawShadowOccluded : _CanvasOp.drawShadow);
+    _addOp(transparentOccluder ? _CanvasOp.drawShadowOccluded : _CanvasOp.drawShadow, 2);
     _addPathData(path);
+    _addInt(color.value);
     _addScalar(elevation);
     _addBounds(_shadowBounds(path.getBounds(), elevation), false);
   }
@@ -6148,15 +6185,16 @@ class _DisplayListPictureRecorder implements PictureRecorder {
     final _DisplayListCanvas? canvas = _canvas;
     if (canvas == null)
       throw StateError('PictureRecorder did not start recording.');
-    canvas._recorder = null;
     _canvas = null;
-    return _DisplayListPicture._(
+    final Picture picture = _DisplayListPicture._(
       canvas._cullRect,
       canvas._drawBounds,
       canvas._ops, canvas._numOps,
-      canvas._data, canvas._numDataBytes,
+      canvas._data, canvas._numData,
       canvas._objData,
     );
+    canvas._dispose();
+    return picture;
   }
 
   _DisplayListCanvas? _canvas;

@@ -33,7 +33,7 @@ class DisplayList : public RefCountedDartWrappable<DisplayList> {
   static fml::RefPtr<DisplayList> Create(tonic::Uint8List& ops,
                                          int numOps,
                                          tonic::DartByteData& data,
-                                         int dataBytes,
+                                         int numData,
                                          Dart_Handle objList);
 
   Dart_Handle toImage(uint32_t width,

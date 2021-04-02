@@ -56,12 +56,12 @@ void DisplayList::RegisterNatives(tonic::DartLibraryNatives* natives) {
 fml::RefPtr<DisplayList> DisplayList::Create(tonic::Uint8List& ops,
                                              int numOps,
                                              tonic::DartByteData& data,
-                                             int dataBytes,
+                                             int numData,
                                              Dart_Handle objList) {
   if (numOps < 0 ||
       numOps > ops.num_elements() ||
-      dataBytes < 0 || (dataBytes % sizeof(float)) != 0 ||
-      dataBytes > (int) data.length_in_bytes()) {
+      numData < 0 || (data.length_in_bytes() % sizeof(float)) != 0 ||
+      numData > (int) (data.length_in_bytes() / sizeof(float))) {
     Dart_ThrowException(
         tonic::ToDart("DisplayList constructor called with bad list lengths."));
     return nullptr;
@@ -78,7 +78,7 @@ fml::RefPtr<DisplayList> DisplayList::Create(tonic::Uint8List& ops,
 
   const float* data_ptr = static_cast<const float*>(data.data());
   std::shared_ptr<std::vector<float>> data_vector =
-    std::make_shared<std::vector<float>>(data_ptr, data_ptr + (dataBytes / sizeof(float)));
+    std::make_shared<std::vector<float>>(data_ptr, data_ptr + numData);
 
   intptr_t numObjects = 0;
   Dart_ListLength(objList, &numObjects);
