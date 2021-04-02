@@ -4396,7 +4396,7 @@ class Canvas extends NativeFieldWrapperClass2 {
   /// To provide an [ImageConfiguration] based on the current [BuildContext]
   /// you may use [AssetImage] and [createLocalImageConfiguration]:
   /// 
-  /// {@tool sample}
+  /// {@tool snippet}
   ///
   /// ```dart
   /// class CustomAssetImage extends StatefulWidget {
