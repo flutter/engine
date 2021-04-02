@@ -4476,6 +4476,11 @@ class Canvas extends NativeFieldWrapperClass2 {
   /// }
   /// ```
   /// {@end-tool}
+  /// 
+  /// See also:
+  /// * [ImageProvider], which identifies a image and provides its stream.
+  /// * [createLocalImageConfiguration], which provides an [ImageConfiguration]
+  /// accordingly to the current context.
   void drawImage(Image image, Offset offset, Paint paint) {
     assert(image != null); // image is checked on the engine side
     assert(_offsetIsValid(offset));
