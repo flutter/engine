@@ -248,6 +248,7 @@ FLUTTER_ASSERT_ARC
     FlutterEngine* flutterEngine = [[FlutterEngine alloc] init];
     activeView.textInputDelegate = (id<FlutterTextInputDelegate>)flutterEngine;
   }
+  XCTAssert(!activeView.textInputDelegate);
   [activeView updateEditingState];
 }
 

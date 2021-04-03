@@ -1234,14 +1234,18 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 
 @end
 
-@interface FlutterTimingProxy : NSObject
-@property(nonatomic, assign) id target;
+@interface FlutterTextInputPlugin ()
+- (void)enableActiveViewAccessibility;
 @end
 
-@implementation FlutterTimingProxy
+@interface FlutterTimerProxy : NSObject
+@property(nonatomic, assign) FlutterTextInputPlugin* target;
+@end
 
-+ (instancetype)proxyWithTarget:(id)target {
-  FlutterTimingProxy* proxy = [[self new] autorelease];
+@implementation FlutterTimerProxy
+
++ (instancetype)proxyWithTarget:(FlutterTextInputPlugin*)target {
+  FlutterTimerProxy* proxy = [[self new] autorelease];
   if (proxy) {
     proxy.target = target;
   }
@@ -1365,7 +1369,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   if (!_enableFlutterTextInputViewAccessibilityTimer) {
     _enableFlutterTextInputViewAccessibilityTimer =
         [[NSTimer scheduledTimerWithTimeInterval:kUITextInputAccessibilityEnablingDelaySeconds
-                                          target:[FlutterTimingProxy proxyWithTarget:self]
+                                          target:[FlutterTimerProxy proxyWithTarget:self]
                                         selector:@selector(enableActiveViewAccessibility)
                                         userInfo:nil
                                          repeats:NO] retain];
