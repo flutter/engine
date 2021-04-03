@@ -20,6 +20,8 @@ class Tappable extends RoleManager {
   @override
   void update() {
     final html.Element element = semanticsObject.element;
+    // "tab-index" HTML attribute is necessary to make the element focusable.
+    element.tabIndex = 0;
 
     semanticsObject.setAriaRole(
         'button', semanticsObject.hasFlag(ui.SemanticsFlag.isButton));
@@ -48,6 +50,9 @@ class Tappable extends RoleManager {
       } else {
         _stopListening();
       }
+    }
+    if (semanticsObject.isFlagsDirty && semanticsObject.hasFocus) {
+      element.focus();
     }
   }
 

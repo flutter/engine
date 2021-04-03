@@ -69,6 +69,7 @@ class SemanticsNodeUpdate {
     required this.childrenInTraversalOrder,
     required this.childrenInHitTestOrder,
     required this.additionalActions,
+    required this.editableTextId,
   });
 
   /// See [ui.SemanticsUpdateBuilder.updateNode].
@@ -148,6 +149,8 @@ class SemanticsNodeUpdate {
 
   /// See [ui.SemanticsUpdateBuilder.updateNode].
   final double thickness;
+
+  final int? editableTextId;
 }
 
 /// Identifies one of the roles a [SemanticsObject] plays.
@@ -270,8 +273,8 @@ class SemanticsObject {
   }
 
   /// See [ui.SemanticsUpdateBuilder.updateNode].
-  int? get flags => _flags;
-  int? _flags;
+  int get flags => _flags;
+  int _flags = 0;
 
   /// Whether the [flags] field has been updated but has not been applied to the
   /// DOM yet.
@@ -536,6 +539,16 @@ class SemanticsObject {
     _dirtyFields |= _additionalActionsIndex;
   }
 
+  int? get editableTextId => _editableTextId;
+  int? _editableTextId;
+
+  static const int _editableTextIdIndex = 1 << 22;
+
+  bool get isEditableTextIdDirty => _isDirty(_editableTextIdIndex);
+  void _markEditableTextIdDirty() {
+    _dirtyFields |= _editableTextIdIndex;
+  }
+
   /// A unique permanent identifier of the semantics node in the tree.
   final int id;
 
@@ -584,7 +597,7 @@ class SemanticsObject {
   SemanticsObject? _parent;
 
   /// Whether this node currently has a given [SemanticsFlag].
-  bool hasFlag(ui.SemanticsFlag flag) => _flags! & flag.index != 0;
+  bool hasFlag(ui.SemanticsFlag flag) => _flags & flag.index != 0;
 
   /// Whether [actions] contains the given action.
   bool hasAction(ui.SemanticsAction action) => (_actions! & action.index) != 0;
@@ -743,6 +756,11 @@ class SemanticsObject {
       _markAdditionalActionsDirty();
     }
 
+    if (_editableTextId != update.editableTextId) {
+      _editableTextId = update.editableTextId;
+      _markEditableTextIdDirty();
+    }
+
     // Apply updates to the DOM.
     _updateRoles();
     _updateChildrenInTraversalOrder();
@@ -788,12 +806,16 @@ class SemanticsObject {
   /// Detects the roles that this semantics object corresponds to and manages
   /// the lifecycles of [SemanticsObjectRole] objects.
   void _updateRoles() {
-    _updateRole(Role.labelAndValue, (hasLabel || hasValue) && !isVisualOnly);
+    _updateRole(Role.labelAndValue, (hasLabel || hasValue) && !isTextField && !isVisualOnly);
     _updateRole(Role.textField, isTextField);
-    _updateRole(
-        Role.tappable,
-        hasAction(ui.SemanticsAction.tap) ||
-            hasFlag(ui.SemanticsFlag.isButton));
+
+    bool shouldUseTappableRole =
+      (hasAction(ui.SemanticsAction.tap) || hasFlag(ui.SemanticsFlag.isButton)) &&
+      // Text fields manage their own focus/tap interactions. We don't need the
+      // tappable role manager. It only confuses AT.
+      !isTextField;
+
+    _updateRole(Role.tappable, shouldUseTappableRole);
     _updateRole(Role.incrementable, isIncrementable);
     _updateRole(Role.scrollable,
         isVerticalScrollContainer || isHorizontalScrollContainer);

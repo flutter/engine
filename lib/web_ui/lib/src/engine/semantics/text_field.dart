@@ -151,6 +151,10 @@ class TextField extends RoleManager {
         semanticsObject.hasFlag(ui.SemanticsFlag.isMultiline)
             ? html.TextAreaElement()
             : html.InputElement();
+    editableDomElement.setAttribute(
+      'flt-editable-text-id',
+      semanticsObject.editableTextId.toString(),
+    );
     textEditingElement = SemanticsTextEditingStrategy(
       semanticsObject,
       textEditing,
@@ -159,8 +163,8 @@ class TextField extends RoleManager {
     _setupDomElement();
   }
 
-  SemanticsTextEditingStrategy? textEditingElement;
-  html.HtmlElement get _textFieldElement => textEditingElement!.domElement;
+  late final SemanticsTextEditingStrategy textEditingElement;
+  html.HtmlElement get _textFieldElement => textEditingElement.domElement;
 
   void _setupDomElement() {
     // On iOS, even though the semantic text field is transparent, the cursor
@@ -204,6 +208,13 @@ class TextField extends RoleManager {
         _initializeForWebkit();
         break;
     }
+
+    // Tell the text editing system to use the <input> element supplied by the
+    // semantics node instead of the default one.
+    textEditing.registerEditingElement(
+      semanticsObject.editableTextId!,
+      textEditingElement,
+    );
   }
 
   /// Chrome on Android reports text field activation as a "click" event.
@@ -216,7 +227,6 @@ class TextField extends RoleManager {
         return;
       }
 
-      textEditing.useCustomEditableElement(textEditingElement);
       EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
           semanticsObject.id, ui.SemanticsAction.tap, null);
     });
@@ -237,7 +247,6 @@ class TextField extends RoleManager {
     num? lastTouchStartOffsetY;
 
     _textFieldElement.addEventListener('touchstart', (html.Event event) {
-      textEditing.useCustomEditableElement(textEditingElement);
       final html.TouchEvent touchEvent = event as html.TouchEvent;
       lastTouchStartOffsetX = touchEvent.changedTouches!.last.client.x;
       lastTouchStartOffsetY = touchEvent.changedTouches!.last.client.y;
@@ -251,7 +260,7 @@ class TextField extends RoleManager {
         final num offsetX = touchEvent.changedTouches!.last.client.x;
         final num offsetY = touchEvent.changedTouches!.last.client.y;
 
-        // This should match the similar constant define in:
+        // This should match the similar constant defined in:
         //
         // lib/src/gestures/constants.dart
         //
@@ -276,11 +285,17 @@ class TextField extends RoleManager {
   void update() {
     // The user is editing the semantic text field directly, so there's no need
     // to do any update here.
+    _textFieldElement.setAttribute(
+      'aria-label',
+      semanticsObject.hasLabel
+        ? semanticsObject.label!
+        : '',
+    );
   }
 
   @override
   void dispose() {
     _textFieldElement.remove();
-    textEditing.stopUsingCustomEditableElement();
+    textEditing.unregisterEditingElement(semanticsObject.editableTextId!);
   }
 }

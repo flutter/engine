@@ -29,17 +29,19 @@ EditingState lastEditingState;
 String lastInputAction;
 
 final InputConfiguration singlelineConfig = InputConfiguration(
+  editableTextId: 1,
   inputType: EngineInputType.text,
 );
 final Map<String, dynamic> flutterSinglelineConfig =
-    createFlutterConfig('text');
+    createFlutterConfig('text', 1);
 
 final InputConfiguration multilineConfig = InputConfiguration(
+  editableTextId: 1,
   inputType: EngineInputType.multiline,
   inputAction: 'TextInputAction.newline',
 );
 final Map<String, dynamic> flutterMultilineConfig =
-    createFlutterConfig('multiline');
+    createFlutterConfig('multiline', 1);
 
 void trackEditingState(EditingState editingState) {
   lastEditingState = editingState;
@@ -68,7 +70,8 @@ void testMain() {
     setUp(() {
       testTextEditing = HybridTextEditing();
       editingElement = GloballyPositionedTextEditingStrategy(testTextEditing);
-      testTextEditing.useCustomEditableElement(editingElement);
+      testTextEditing.registerEditingElement(1, editingElement);
+      testTextEditing.configuration = singlelineConfig;
     });
 
     test('Creates element when enabled and removes it when disabled', () {
@@ -108,7 +111,10 @@ void testMain() {
     });
 
     test('Respects read-only config', () {
-      final InputConfiguration config = InputConfiguration(readOnly: true);
+      final InputConfiguration config = InputConfiguration(
+        editableTextId: 1,
+        readOnly: true,
+      );
       editingElement.enable(
         config,
         onChange: trackEditingState,
@@ -123,7 +129,10 @@ void testMain() {
     });
 
     test('Knows how to create password fields', () {
-      final InputConfiguration config = InputConfiguration(obscureText: true);
+      final InputConfiguration config = InputConfiguration(
+        editableTextId: 1,
+        obscureText: true,
+      );
       editingElement.enable(
         config,
         onChange: trackEditingState,
@@ -138,7 +147,10 @@ void testMain() {
     });
 
     test('Knows to turn autocorrect off', () {
-      final InputConfiguration config = InputConfiguration(autocorrect: false);
+      final InputConfiguration config = InputConfiguration(
+        editableTextId: 1,
+        autocorrect: false,
+      );
       editingElement.enable(
         config,
         onChange: trackEditingState,
@@ -153,7 +165,10 @@ void testMain() {
     });
 
     test('Knows to turn autocorrect on', () {
-      final InputConfiguration config = InputConfiguration(autocorrect: true);
+      final InputConfiguration config = InputConfiguration(
+        editableTextId: 1,
+        autocorrect: true,
+      );
       editingElement.enable(
         config,
         onChange: trackEditingState,
@@ -287,8 +302,10 @@ void testMain() {
     });
 
     test('Triggers input action', () {
-      final InputConfiguration config =
-          InputConfiguration(inputAction: 'TextInputAction.done');
+      final InputConfiguration config = InputConfiguration(
+        editableTextId: 1,
+        inputAction: 'TextInputAction.done',
+      );
       editingElement.enable(
         config,
         onChange: trackEditingState,
@@ -310,6 +327,7 @@ void testMain() {
 
     test('Does not trigger input action in multi-line mode', () {
       final InputConfiguration config = InputConfiguration(
+        editableTextId: 1,
         inputType: EngineInputType.multiline,
         inputAction: 'TextInputAction.done',
       );
@@ -347,11 +365,11 @@ void testMain() {
       expect(editingElement.domElement.style.width, '');
       expect(editingElement.domElement.style.height, '');
 
-      testTextEditing.setEditableSizeAndTransform(EditableTextGeometry(
+      testTextEditing.acceptCommand(TextInputSetEditableSizeAndTransform(geometry: EditableTextGeometry(
         width: 13,
         height: 12,
         globalTransform: Matrix4.translationValues(14, 15, 0).storage,
-      ));
+      )), () {});
 
       // setEditableSizeAndTransform calls placeElement, so expecting geometry to be applied.
       expect(editingElement.domElement.style.transform,
@@ -376,6 +394,7 @@ void testMain() {
       testInputElement = InputElement();
       testTextEditing = HybridTextEditing();
       editingElement = GloballyPositionedTextEditingStrategy(testTextEditing);
+      testTextEditing.configuration = singlelineConfig;
     });
 
     tearDown(() {
@@ -387,14 +406,17 @@ void testMain() {
           SemanticsObject(5, null), testTextEditing, testInputElement);
       // Create a configuration with an AutofillGroup of four text fields.
       final Map<String, dynamic> flutterMultiAutofillElementConfig =
-          createFlutterConfig('text',
-              autofillHint: 'username',
-              autofillHintsForFields: [
-            'username',
-            'email',
-            'name',
-            'telephoneNumber'
-          ]);
+          createFlutterConfig(
+            'text',
+            1,
+            autofillHint: 'username',
+            autofillHintsForFields: [
+              'username',
+              'email',
+              'name',
+              'telephoneNumber'
+            ],
+          );
       final MethodCall setClient = MethodCall('TextInput.setClient',
           <dynamic>[123, flutterMultiAutofillElementConfig]);
       sendFrameworkMessage(codec.encodeMethodCall(setClient));
@@ -584,11 +606,11 @@ void testMain() {
         onChange: trackEditingState,
         onAction: trackInputAction,
       );
-      testTextEditing.setEditableSizeAndTransform(EditableTextGeometry(
+      testTextEditing.acceptCommand(TextInputSetEditableSizeAndTransform(geometry: EditableTextGeometry(
         height: 12,
         width: 13,
         globalTransform: Matrix4.translationValues(14, 15, 0).storage,
-      ));
+      )), () {});
 
       void checkPlacementIsEmpty() {
         expect(editingElement.domElement.style.transform, '');
@@ -623,7 +645,7 @@ void testMain() {
         'TextInput.setClient',
         <dynamic>[
           ++clientId,
-          createFlutterConfig(inputType,
+          createFlutterConfig(inputType, 1,
               inputAction: inputAction, decimal: decimal),
         ],
       );
@@ -644,7 +666,7 @@ void testMain() {
     }
 
     String getEditingInputMode() {
-      return textEditing.editingElement.domElement.getAttribute('inputmode');
+      return textEditing.currentStrategy.domElement.getAttribute('inputmode');
     }
 
     setUp(() {
@@ -671,7 +693,7 @@ void testMain() {
       const MethodCall show = MethodCall('TextInput.show');
       sendFrameworkMessage(codec.encodeMethodCall(show));
 
-      checkInputEditingState(textEditing.editingElement.domElement, '', 0, 0);
+      checkInputEditingState(textEditing.currentStrategy.domElement, '', 0, 0);
 
       const MethodCall setEditingState =
           MethodCall('TextInput.setEditingState', <String, dynamic>{
@@ -682,7 +704,7 @@ void testMain() {
       sendFrameworkMessage(codec.encodeMethodCall(setEditingState));
 
       checkInputEditingState(
-          textEditing.editingElement.domElement, 'abcd', 2, 3);
+          textEditing.currentStrategy.domElement, 'abcd', 2, 3);
 
       const MethodCall hide = MethodCall('TextInput.hide');
       sendFrameworkMessage(codec.encodeMethodCall(hide));
@@ -714,7 +736,7 @@ void testMain() {
       sendFrameworkMessage(codec.encodeMethodCall(show));
 
       checkInputEditingState(
-          textEditing.editingElement.domElement, 'abcd', 2, 3);
+          textEditing.currentStrategy.domElement, 'abcd', 2, 3);
 
       const MethodCall clearClient = MethodCall('TextInput.clearClient');
       sendFrameworkMessage(codec.encodeMethodCall(clearClient));
@@ -728,7 +750,7 @@ void testMain() {
     test('setClient, setEditingState, show, updateConfig, clearClient', () {
       final MethodCall setClient = MethodCall('TextInput.setClient', <dynamic>[
         123,
-        createFlutterConfig('text', readOnly: true),
+        createFlutterConfig('text', 1, readOnly: true),
       ]);
       sendFrameworkMessage(codec.encodeMethodCall(setClient));
 
@@ -745,13 +767,13 @@ void testMain() {
       const MethodCall show = MethodCall('TextInput.show');
       sendFrameworkMessage(codec.encodeMethodCall(show));
 
-      final HtmlElement element = textEditing.editingElement.domElement;
+      final HtmlElement element = textEditing.currentStrategy.domElement;
       expect(element.getAttribute('readonly'), 'readonly');
 
       // Update the read-only config.
       final MethodCall updateConfig = MethodCall(
         'TextInput.updateConfig',
-        createFlutterConfig('text', readOnly: false),
+        createFlutterConfig('text', 1, readOnly: false),
       );
       sendFrameworkMessage(codec.encodeMethodCall(updateConfig));
 
@@ -787,10 +809,10 @@ void testMain() {
       sendFrameworkMessage(codec.encodeMethodCall(show));
 
       checkInputEditingState(
-          textEditing.editingElement.domElement, 'abcd', 2, 3);
+          textEditing.currentStrategy.domElement, 'abcd', 2, 3);
 
       // DOM element is blurred.
-      textEditing.editingElement.domElement.blur();
+      textEditing.currentStrategy.domElement.blur();
 
       // For ios-safari the connection is closed.
       if (browserEngine == BrowserEngine.webkit &&
@@ -807,7 +829,7 @@ void testMain() {
         expect(spy.messages, hasLength(0));
         await Future<void>.delayed(Duration.zero);
         // DOM element still keeps the focus.
-        expect(document.activeElement, textEditing.editingElement.domElement);
+        expect(document.activeElement, textEditing.currentStrategy.domElement);
       }
     },
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
@@ -834,7 +856,7 @@ void testMain() {
       sendFrameworkMessage(codec.encodeMethodCall(show));
 
       checkInputEditingState(
-          textEditing.editingElement.domElement, 'abcd', 2, 3);
+          textEditing.currentStrategy.domElement, 'abcd', 2, 3);
 
       const MethodCall finishAutofillContext =
           MethodCall('TextInput.finishAutofillContext', false);
@@ -859,14 +881,17 @@ void testMain() {
     test('finishAutofillContext removes form from DOM', () async {
       // Create a configuration with an AutofillGroup of four text fields.
       final Map<String, dynamic> flutterMultiAutofillElementConfig =
-          createFlutterConfig('text',
-              autofillHint: 'username',
-              autofillHintsForFields: [
-            'username',
-            'email',
-            'name',
-            'telephoneNumber'
-          ]);
+          createFlutterConfig(
+            'text',
+            1,
+            autofillHint: 'username',
+            autofillHintsForFields: [
+              'username',
+              'email',
+              'name',
+              'telephoneNumber'
+            ],
+          );
       final MethodCall setClient = MethodCall('TextInput.setClient',
           <dynamic>[123, flutterMultiAutofillElementConfig]);
       sendFrameworkMessage(codec.encodeMethodCall(setClient));
@@ -915,7 +940,7 @@ void testMain() {
     test('finishAutofillContext with save submits forms', () async {
       // Create a configuration with an AutofillGroup of four text fields.
       final Map<String, dynamic> flutterMultiAutofillElementConfig =
-          createFlutterConfig('text',
+          createFlutterConfig('text', 1,
               autofillHint: 'username',
               autofillHintsForFields: [
             'username',
@@ -968,7 +993,7 @@ void testMain() {
     test('forms submits for focused input', () async {
       // Create a configuration with an AutofillGroup of four text fields.
       final Map<String, dynamic> flutterMultiAutofillElementConfig =
-          createFlutterConfig('text',
+          createFlutterConfig('text', 1,
               autofillHint: 'username',
               autofillHintsForFields: [
             'username',
@@ -1044,7 +1069,7 @@ void testMain() {
       sendFrameworkMessage(codec.encodeMethodCall(show));
 
       checkInputEditingState(
-          textEditing.editingElement.domElement, 'abcd', 2, 3);
+          textEditing.currentStrategy.domElement, 'abcd', 2, 3);
 
       final MethodCall setClient2 = MethodCall(
           'TextInput.setClient', <dynamic>[567, flutterSinglelineConfig]);
@@ -1086,7 +1111,7 @@ void testMain() {
 
       // The second [setEditingState] should override the first one.
       checkInputEditingState(
-          textEditing.editingElement.domElement, 'xyz', 0, 2);
+          textEditing.currentStrategy.domElement, 'xyz', 0, 2);
 
       const MethodCall clearClient = MethodCall('TextInput.clearClient');
       sendFrameworkMessage(codec.encodeMethodCall(clearClient));
@@ -1100,7 +1125,7 @@ void testMain() {
         'setSizeAndTransform, setEditingState, clearClient', () {
       // Create a configuration with focused element has autofil hint.
       final Map<String, dynamic> flutterSingleAutofillElementConfig =
-          createFlutterConfig('text', autofillHint: 'username');
+          createFlutterConfig('text', 1, autofillHint: 'username');
       final MethodCall setClient = MethodCall('TextInput.setClient',
           <dynamic>[123, flutterSingleAutofillElementConfig]);
       sendFrameworkMessage(codec.encodeMethodCall(setClient));
@@ -1123,7 +1148,7 @@ void testMain() {
 
       // The second [setEditingState] should override the first one.
       checkInputEditingState(
-          textEditing.editingElement.domElement, 'abcd', 2, 3);
+          textEditing.currentStrategy.domElement, 'abcd', 2, 3);
 
       final FormElement formElement = document.getElementsByTagName('form')[0];
       // The form has one input element and one submit button.
@@ -1144,7 +1169,7 @@ void testMain() {
         'editing state', () {
       // Create a configuration with focused element has autofil hint.
       final Map<String, dynamic> flutterSingleAutofillElementConfig =
-          createFlutterConfig('text', autofillHint: 'username');
+          createFlutterConfig('text', 1, autofillHint: 'username');
       final MethodCall setClient = MethodCall('TextInput.setClient',
           <dynamic>[123, flutterSingleAutofillElementConfig]);
       sendFrameworkMessage(codec.encodeMethodCall(setClient));
@@ -1161,7 +1186,7 @@ void testMain() {
       sendFrameworkMessage(codec.encodeMethodCall(show));
 
       final InputElement inputElement =
-          textEditing.editingElement.domElement as InputElement;
+          textEditing.currentStrategy.domElement as InputElement;
       expect(inputElement.value, 'abcd');
       if (!(browserEngine == BrowserEngine.webkit &&
           operatingSystem == OperatingSystem.macOs)) {
@@ -1181,11 +1206,11 @@ void testMain() {
       sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
 
       // Check the element still has focus. User can keep editing.
-      expect(document.activeElement, textEditing.editingElement.domElement);
+      expect(document.activeElement, textEditing.currentStrategy.domElement);
 
       // Check the cursor location is the same.
       checkInputEditingState(
-          textEditing.editingElement.domElement, 'abcd', 2, 3);
+          textEditing.currentStrategy.domElement, 'abcd', 2, 3);
 
       const MethodCall clearClient = MethodCall('TextInput.clearClient');
       sendFrameworkMessage(codec.encodeMethodCall(clearClient));
@@ -1202,7 +1227,7 @@ void testMain() {
         'setSizeAndTransform setEditingState, clearClient', () {
       // Create a configuration with an AutofillGroup of four text fields.
       final Map<String, dynamic> flutterMultiAutofillElementConfig =
-          createFlutterConfig('text',
+          createFlutterConfig('text', 1,
               autofillHint: 'username',
               autofillHintsForFields: [
             'username',
@@ -1232,7 +1257,7 @@ void testMain() {
 
       // The second [setEditingState] should override the first one.
       checkInputEditingState(
-          textEditing.editingElement.domElement, 'abcd', 2, 3);
+          textEditing.currentStrategy.domElement, 'abcd', 2, 3);
 
       final FormElement formElement = document.getElementsByTagName('form')[0];
       // The form has 4 input elements and one submit button.
@@ -1252,6 +1277,7 @@ void testMain() {
       // Create a configuration with an AutofillGroup of four text fields.
       final Map<String, dynamic> capitilizeWordsConfig = createFlutterConfig(
           'text',
+          1,
           textCapitalization: 'TextCapitalization.none');
       final MethodCall setClient = MethodCall(
           'TextInput.setClient', <dynamic>[123, capitilizeWordsConfig]);
@@ -1274,12 +1300,12 @@ void testMain() {
       if (browserEngine == BrowserEngine.webkit &&
           operatingSystem == OperatingSystem.iOs) {
         expect(
-            textEditing.editingElement.domElement
+            textEditing.currentStrategy.domElement
                 .getAttribute('autocapitalize'),
             'off');
       } else {
         expect(
-            textEditing.editingElement.domElement
+            textEditing.currentStrategy.domElement
                 .getAttribute('autocapitalize'),
             isNull);
       }
@@ -1292,6 +1318,7 @@ void testMain() {
       // Create a configuration with an AutofillGroup of four text fields.
       final Map<String, dynamic> capitilizeWordsConfig = createFlutterConfig(
           'text',
+          1,
           textCapitalization: 'TextCapitalization.characters');
       final MethodCall setClient = MethodCall(
           'TextInput.setClient', <dynamic>[123, capitilizeWordsConfig]);
@@ -1313,7 +1340,7 @@ void testMain() {
       if (browserEngine == BrowserEngine.webkit &&
           operatingSystem == OperatingSystem.iOs) {
         expect(
-            textEditing.editingElement.domElement
+            textEditing.currentStrategy.domElement
                 .getAttribute('autocapitalize'),
             'characters');
       }
@@ -1349,7 +1376,7 @@ void testMain() {
       const MethodCall show = MethodCall('TextInput.show');
       sendFrameworkMessage(codec.encodeMethodCall(show));
 
-      final HtmlElement domElement = textEditing.editingElement.domElement;
+      final HtmlElement domElement = textEditing.currentStrategy.domElement;
 
       checkInputEditingState(domElement, 'abcd', 2, 3);
 
@@ -1360,7 +1387,7 @@ void testMain() {
               const Point<double>(160.0, 70.0)));
       expect(domElement.style.transform,
           'matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 10, 20, 30, 1)');
-      expect(textEditing.editingElement.domElement.style.font,
+      expect(textEditing.currentStrategy.domElement.style.font,
           '500 12px sans-serif');
 
       const MethodCall clearClient = MethodCall('TextInput.clearClient');
@@ -1405,7 +1432,7 @@ void testMain() {
       });
       sendFrameworkMessage(codec.encodeMethodCall(setEditingState));
 
-      final HtmlElement domElement = textEditing.editingElement.domElement;
+      final HtmlElement domElement = textEditing.currentStrategy.domElement;
 
       checkInputEditingState(domElement, 'abcd', 2, 3);
 
@@ -1420,18 +1447,18 @@ void testMain() {
         'matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 10, 20, 30, 1)',
       );
       expect(
-        textEditing.editingElement.domElement.style.font,
+        textEditing.currentStrategy.domElement.style.font,
         '500 12px sans-serif',
       );
 
       // For `blink` and `webkit` browser engines the overlay would be hidden.
       if (browserEngine == BrowserEngine.blink ||
           browserEngine == BrowserEngine.webkit) {
-        expect(textEditing.editingElement.domElement.classes,
+        expect(textEditing.currentStrategy.domElement.classes,
             contains('transparentTextEditing'));
       } else {
         expect(
-            textEditing.editingElement.domElement.classes.any(
+            textEditing.currentStrategy.domElement.classes.any(
                 (element) => element.toString() == 'transparentTextEditing'),
             isFalse);
       }
@@ -1467,7 +1494,7 @@ void testMain() {
       const MethodCall show = MethodCall('TextInput.show');
       sendFrameworkMessage(codec.encodeMethodCall(show));
 
-      final HtmlElement domElement = textEditing.editingElement.domElement;
+      final HtmlElement domElement = textEditing.currentStrategy.domElement;
 
       checkInputEditingState(domElement, 'abcd', 2, 3);
 
@@ -1479,7 +1506,7 @@ void testMain() {
       expect(domElement.style.transform,
           'matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 10, 20, 30, 1)');
       expect(
-          textEditing.editingElement.domElement.style.font, '12px sans-serif');
+          textEditing.currentStrategy.domElement.style.font, '12px sans-serif');
 
       hideKeyboard();
     },
@@ -1489,7 +1516,7 @@ void testMain() {
     test('Canonicalizes font family', () {
       showKeyboard();
 
-      final HtmlElement input = textEditing.editingElement.domElement;
+      final HtmlElement input = textEditing.currentStrategy.domElement;
 
       MethodCall setStyle;
 
@@ -1528,7 +1555,7 @@ void testMain() {
 
       // Check if the selection range is correct.
       checkInputEditingState(
-          textEditing.editingElement.domElement, 'xyz', 1, 2);
+          textEditing.currentStrategy.domElement, 'xyz', 1, 2);
 
       const MethodCall setEditingState2 =
           MethodCall('TextInput.setEditingState', <String, dynamic>{
@@ -1540,7 +1567,7 @@ void testMain() {
 
       // The negative offset values are applied to the dom element as 0.
       checkInputEditingState(
-          textEditing.editingElement.domElement, 'xyz', 0, 0);
+          textEditing.currentStrategy.domElement, 'xyz', 0, 0);
 
       hideKeyboard();
     });
@@ -1561,7 +1588,7 @@ void testMain() {
       const MethodCall show = MethodCall('TextInput.show');
       sendFrameworkMessage(codec.encodeMethodCall(show));
 
-      final InputElement input = textEditing.editingElement.domElement;
+      final InputElement input = textEditing.currentStrategy.domElement;
 
       input.value = 'something';
       input.dispatchEvent(Event.eventType('Event', 'input'));
@@ -1585,7 +1612,7 @@ void testMain() {
       input.setSelectionRange(2, 5);
       if (browserEngine == BrowserEngine.firefox) {
         Event keyup = KeyboardEvent('keyup');
-        textEditing.editingElement.domElement.dispatchEvent(keyup);
+        textEditing.currentStrategy.domElement.dispatchEvent(keyup);
       } else {
         document.dispatchEvent(Event.eventType('Event', 'selectionchange'));
       }
@@ -1613,7 +1640,7 @@ void testMain() {
       // Create a configuration with an AutofillGroup of four text fields.
       final String hintForFirstElement = 'familyName';
       final Map<String, dynamic> flutterMultiAutofillElementConfig =
-          createFlutterConfig('text',
+          createFlutterConfig('text', 1,
               autofillHint: 'email',
               autofillHintsForFields: [
             hintForFirstElement,
@@ -1643,7 +1670,7 @@ void testMain() {
 
       // The second [setEditingState] should override the first one.
       checkInputEditingState(
-          textEditing.editingElement.domElement, 'abcd', 2, 3);
+          textEditing.currentStrategy.domElement, 'abcd', 2, 3);
 
       final FormElement formElement = document.getElementsByTagName('form')[0];
       // The form has 4 input elements and one submit button.
@@ -1694,7 +1721,7 @@ void testMain() {
       const MethodCall show = MethodCall('TextInput.show');
       sendFrameworkMessage(codec.encodeMethodCall(show));
 
-      final TextAreaElement textarea = textEditing.editingElement.domElement;
+      final TextAreaElement textarea = textEditing.currentStrategy.domElement;
       checkTextAreaEditingState(textarea, '', 0, 0);
 
       // Can set editing state and preserve new lines.
@@ -1712,7 +1739,7 @@ void testMain() {
       textarea.dispatchEvent(Event.eventType('Event', 'input'));
       textarea.setSelectionRange(2, 5);
       if (browserEngine == BrowserEngine.firefox) {
-        textEditing.editingElement.domElement
+        textEditing.currentStrategy.domElement
             .dispatchEvent(KeyboardEvent('keyup'));
       } else {
         document.dispatchEvent(Event.eventType('Event', 'selectionchange'));
@@ -1836,7 +1863,7 @@ void testMain() {
       expect(lastInputAction, isNull);
 
       dispatchKeyboardEvent(
-        textEditing.editingElement.domElement,
+        textEditing.currentStrategy.domElement,
         'keydown',
         keyCode: _kReturnKeyCode,
       );
@@ -1859,7 +1886,7 @@ void testMain() {
       );
 
       final KeyboardEvent event = dispatchKeyboardEvent(
-        textEditing.editingElement.domElement,
+        textEditing.currentStrategy.domElement,
         'keydown',
         keyCode: _kReturnKeyCode,
       );
@@ -2289,7 +2316,8 @@ void checkTextAreaEditingState(
 /// For simplicity this method is using `autofillHint` as the `uniqueId` for
 /// simplicity.
 Map<String, dynamic> createFlutterConfig(
-  String inputType, {
+  String inputType,
+  int editableTextId, {
   bool readOnly = false,
   bool obscureText = false,
   bool autocorrect = true,
@@ -2300,6 +2328,7 @@ Map<String, dynamic> createFlutterConfig(
   bool decimal = false,
 }) {
   return <String, dynamic>{
+    'editableTextId': editableTextId,
     'inputType': <String, dynamic>{
       'name': 'TextInputType.$inputType',
       if (decimal) 'decimal': true,

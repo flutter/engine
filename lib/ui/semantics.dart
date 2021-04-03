@@ -745,7 +745,12 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     required Int32List childrenInTraversalOrder,
     required Int32List childrenInHitTestOrder,
     required Int32List additionalActions,
+    int? editableTextId,
   }) {
+    assert(
+      SemanticsFlag.isTextField.index & flags == 0 || editableTextId != null,
+      'Text field semantics node must provide a non-ull editableTextId',
+    );
     assert(_matrix4IsValid(transform));
     assert(
       // ignore: unnecessary_null_comparison

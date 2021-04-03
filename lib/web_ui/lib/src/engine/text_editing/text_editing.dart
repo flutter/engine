@@ -8,6 +8,9 @@ part of engine;
 /// Make the content editable span visible to facilitate debugging.
 bool _debugVisibleTextEditing = false;
 
+/// Set this to `true` to print when text input commands are scheduled and run.
+bool _debugPrintTextInputCommands = false;
+
 /// The `keyCode` of the "Enter" key.
 const int _kReturnKeyCode = 13;
 
@@ -508,6 +511,7 @@ class EditingState {
 /// This corresponds to Flutter's [TextInputConfiguration].
 class InputConfiguration {
   InputConfiguration({
+    required this.editableTextId,
     this.inputType = EngineInputType.text,
     this.inputAction = 'TextInputAction.done',
     this.obscureText = false,
@@ -521,7 +525,8 @@ class InputConfiguration {
 
   InputConfiguration.fromFrameworkMessage(
       Map<String, dynamic> flutterInputConfiguration)
-      : inputType = EngineInputType.fromName(
+      : editableTextId = flutterInputConfiguration['editableTextId'],
+        inputType = EngineInputType.fromName(
           flutterInputConfiguration['inputType']['name'],
           isDecimal: flutterInputConfiguration['inputType']['decimal'] ?? false,
         ),
@@ -540,6 +545,8 @@ class InputConfiguration {
         autofillGroup = EngineAutofillForm.fromFrameworkMessage(
             flutterInputConfiguration['autofill'],
             flutterInputConfiguration['fields']);
+
+  final int editableTextId;
 
   /// The type of information being edited in the input control.
   final EngineInputType inputType;
@@ -1296,6 +1303,195 @@ class FirefoxTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
   }
 }
 
+/// Base class for all `TextInput` commands sent through the `flutter/textinput`
+/// channel.
+@immutable
+abstract class TextInputCommand {
+  const TextInputCommand();
+
+  /// If `true` the command is delayed until a [TextEditingStrategy] becomes available.
+  /// 
+  /// When running with semantics enabled the editing strategy is provided by the
+  /// semantics tree, which is availabe only after the semantics update.
+  bool get isWaitUntilEditingStrategyIsAvailable => true;
+
+  /// Executes the logic for this command.
+  void run(HybridTextEditing textEditing);
+}
+
+@immutable
+class QueuedTextInputCommand {
+  QueuedTextInputCommand(this.command, this.callback);
+
+  final TextInputCommand command;
+  final ui.VoidCallback callback;
+}
+
+class TextInputSetClient extends TextInputCommand {
+  TextInputSetClient({
+    required this.clientId,
+    required this.configuration,
+  });
+
+  final int clientId;
+  final InputConfiguration configuration;
+
+  /// Run eagerly because it contains data about the text field used to flush
+  /// the command queue.
+  @override
+  bool get isWaitUntilEditingStrategyIsAvailable => false;
+
+  void run(HybridTextEditing textEditing) {
+    final bool clientIdChanged = textEditing._clientId != null && textEditing._clientId != clientId;
+    if (clientIdChanged && textEditing.isEditing) {
+      // We're connecting a new client. Any pending command for the previous client
+      // are irrelevant at this point.
+      textEditing._commandQueue.clear();
+      textEditing.stopEditing();
+    }
+    textEditing._clientId = clientId;
+    textEditing.configuration = configuration;
+    if (!EngineSemanticsOwner.instance.semanticsEnabled) {
+      textEditing.initializeDefaultTextEditingElement();
+    }
+  }
+}
+
+/// Responds to the 'TextInput.updateConfig' message.
+class TextInputUpdateConfig extends TextInputCommand {
+  TextInputUpdateConfig();
+
+  void run(HybridTextEditing textEditing) {
+    textEditing.currentStrategy._applyConfiguration(textEditing.configuration!);
+  }
+}
+
+/// Responds to the 'TextInput.setEditingState' message.
+class TextInputSetEditingState extends TextInputCommand {
+  TextInputSetEditingState({
+    required this.state,
+  });
+
+  final EditingState state;
+
+  void run(HybridTextEditing textEditing) {
+    textEditing.currentStrategy.setEditingState(state);
+  }
+}
+
+/// Responds to the 'TextInput.show' message.
+class TextInputShow extends TextInputCommand {
+  const TextInputShow();
+
+  void run(HybridTextEditing textEditing) {
+    if (!textEditing.isEditing) {
+      textEditing._startEditing();
+    }
+  }
+}
+
+/// Responds to the 'TextInput.setEditableSizeAndTransform' message.
+class TextInputSetEditableSizeAndTransform extends TextInputCommand {
+  TextInputSetEditableSizeAndTransform({
+    required this.geometry,
+  });
+
+  final EditableTextGeometry geometry;
+
+  void run(HybridTextEditing textEditing) {
+    textEditing.currentStrategy.updateElementPlacement(geometry);
+  }
+}
+
+/// Responds to the 'TextInput.setStyle' message.
+class TextInputSetStyle extends TextInputCommand {
+  TextInputSetStyle({
+    required this.style,
+  });
+
+  final EditableTextStyle style;
+
+  void run(HybridTextEditing textEditing) {
+    textEditing.currentStrategy.updateElementStyle(style);
+  }
+}
+
+/// Responds to the 'TextInput.clearClient' message.
+class TextInputClearClient extends TextInputCommand {
+  const TextInputClearClient();
+
+  void run(HybridTextEditing textEditing) {
+    if (textEditing.isEditing) {
+      textEditing.stopEditing();
+    }
+  }
+}
+
+/// Responds to the 'TextInput.hide' message.
+class TextInputHide extends TextInputCommand {
+  const TextInputHide();
+
+  void run(HybridTextEditing textEditing) {
+    if (textEditing.isEditing) {
+      textEditing.stopEditing();
+    }
+  }
+}
+
+class TextInputSetMarkedTextRect extends TextInputCommand {
+  const TextInputSetMarkedTextRect();
+
+  void run(HybridTextEditing textEditing) {
+    // No-op: this message is currently only used on iOS to implement
+    // UITextInput.firstRecForRange.
+  }
+}
+
+class TextInputFinishAutofillContext extends TextInputCommand {
+  TextInputFinishAutofillContext({
+    required this.saveForm,
+  });
+
+  final bool saveForm;
+
+  @override
+  bool get isWaitUntilEditingStrategyIsAvailable => false;
+
+  void run(HybridTextEditing textEditing) {
+    // Close the text editing connection. Form is finalizing.
+    textEditing.sendTextConnectionClosedToFrameworkIfAny();
+    if (saveForm) {
+      saveForms();
+    }
+    // Clean the forms from DOM after submitting them.
+    cleanForms();
+  }
+}
+
+/// Used for submitting the forms attached on the DOM.
+///
+/// Browser will save the information entered to the form.
+///
+/// Called when the form is finalized with save option `true`.
+/// See: https://github.com/flutter/flutter/blob/bf9f3a3dcfea3022f9cf2dfc3ab10b120b48b19d/packages/flutter/lib/src/services/text_input.dart#L1277
+void saveForms() {
+  formsOnTheDom.forEach((String identifier, html.FormElement form) {
+    final html.InputElement submitBtn =
+        form.getElementsByClassName('submitBtn').first as html.InputElement;
+    submitBtn.click();
+  });
+}
+
+/// Used for removing the forms on the DOM.
+///
+/// Called when the form is finalized.
+void cleanForms() {
+  for (html.FormElement form in formsOnTheDom.values) {
+    form.remove();
+  }
+  formsOnTheDom.clear();
+}
+
 /// Translates the message-based communication between the framework and the
 /// engine [implementation].
 ///
@@ -1311,97 +1507,78 @@ class TextEditingChannel {
       ByteData? data, ui.PlatformMessageResponseCallback? callback) {
     const JSONMethodCodec codec = JSONMethodCodec();
     final MethodCall call = codec.decodeMethodCall(data);
+    late final TextInputCommand command;
     switch (call.method) {
       case 'TextInput.setClient':
-        implementation.setClient(
-          call.arguments[0],
-          InputConfiguration.fromFrameworkMessage(call.arguments[1]),
+        command = TextInputSetClient(
+          clientId: call.arguments[0],
+          configuration: InputConfiguration.fromFrameworkMessage(call.arguments[1]),
         );
         break;
 
       case 'TextInput.updateConfig':
-        final config = InputConfiguration.fromFrameworkMessage(call.arguments);
-        implementation.updateConfig(config);
+        // Set configuration eagerly because it contains data about the text
+        // field used to flush the command queue. However, delaye applying the
+        // configuration because the strategy may not be available yet.
+        implementation.configuration = InputConfiguration.fromFrameworkMessage(call.arguments);
+        command = TextInputUpdateConfig();
         break;
 
       case 'TextInput.setEditingState':
-        implementation
-            .setEditingState(EditingState.fromFrameworkMessage(call.arguments));
+        command = TextInputSetEditingState(
+          state: EditingState.fromFrameworkMessage(call.arguments),
+        );
         break;
 
       case 'TextInput.show':
-        implementation.show();
+        command = const TextInputShow();
         break;
 
       case 'TextInput.setEditableSizeAndTransform':
-        implementation.setEditableSizeAndTransform(
-            EditableTextGeometry.fromFrameworkMessage(call.arguments));
+        command = TextInputSetEditableSizeAndTransform(
+          geometry: EditableTextGeometry.fromFrameworkMessage(call.arguments),
+        );
         break;
 
       case 'TextInput.setStyle':
-        implementation
-            .setStyle(EditableTextStyle.fromFrameworkMessage(call.arguments));
+        command = TextInputSetStyle(
+          style: EditableTextStyle.fromFrameworkMessage(call.arguments),
+        );
         break;
 
       case 'TextInput.clearClient':
-        implementation.clearClient();
+        command = const TextInputClearClient();
         break;
 
       case 'TextInput.hide':
-        implementation.hide();
+        command = const TextInputHide();
         break;
 
       case 'TextInput.requestAutofill':
-        // No-op:  This message is sent by the framework to requests the platform autofill UI to appear.
-        // Since autofill UI is a part of the browser, web engine does not need to utilize this method.
+        // There's no API to request autofill on the web. Instead we let the
+        // browser show autofill options automatically, if available. We
+        // therefore simply ignore this message.
         break;
 
       case 'TextInput.finishAutofillContext':
-        final bool saveForm = call.arguments as bool;
-        // Close the text editing connection. Form is finalizing.
-        implementation.sendTextConnectionClosedToFrameworkIfAny();
-        if (saveForm) {
-          saveForms();
-        }
-        // Clean the forms from DOM after submitting them.
-        cleanForms();
+        command = TextInputFinishAutofillContext(
+          saveForm: call.arguments as bool,
+        );
         break;
 
       case 'TextInput.setMarkedTextRect':
-        // No-op: this message is currently only used on iOS to implement
-        // UITextInput.firstRecForRange.
+        command = const TextInputSetMarkedTextRect();
         break;
 
       default:
         throw StateError(
             'Unsupported method call on the flutter/textinput channel: ${call.method}');
     }
-    EnginePlatformDispatcher.instance
-        ._replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
-  }
 
-  /// Used for submitting the forms attached on the DOM.
-  ///
-  /// Browser will save the information entered to the form.
-  ///
-  /// Called when the form is finalized with save option `true`.
-  /// See: https://github.com/flutter/flutter/blob/bf9f3a3dcfea3022f9cf2dfc3ab10b120b48b19d/packages/flutter/lib/src/services/text_input.dart#L1277
-  void saveForms() {
-    formsOnTheDom.forEach((String identifier, html.FormElement form) {
-      final html.InputElement submitBtn =
-          form.getElementsByClassName('submitBtn').first as html.InputElement;
-      submitBtn.click();
+    implementation.acceptCommand(command, () {
+      EnginePlatformDispatcher.instance
+          ._replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
     });
-  }
-
-  /// Used for removing the forms on the DOM.
-  ///
-  /// Called when the form is finalized.
-  void cleanForms() {
-    for (html.FormElement form in formsOnTheDom.values) {
-      form.remove();
-    }
-    formsOnTheDom.clear();
   }
 
   /// Sends the 'TextInputClient.updateEditingState' message to the framework.
@@ -1473,116 +1650,14 @@ class HybridTextEditing {
   /// The constructor also decides which text editing strategy to use depending
   /// on the operating system and browser engine.
   HybridTextEditing() {
-    if (browserEngine == BrowserEngine.webkit &&
-        operatingSystem == OperatingSystem.iOs) {
-      this._defaultEditingElement = IOSTextEditingStrategy(this);
-    } else if (browserEngine == BrowserEngine.webkit) {
-      this._defaultEditingElement = SafariDesktopTextEditingStrategy(this);
-    } else if (browserEngine == BrowserEngine.blink &&
-        operatingSystem == OperatingSystem.android) {
-      this._defaultEditingElement = AndroidTextEditingStrategy(this);
-    } else if (browserEngine == BrowserEngine.firefox) {
-      this._defaultEditingElement = FirefoxTextEditingStrategy(this);
-    } else {
-      this._defaultEditingElement = GloballyPositionedTextEditingStrategy(this);
-    }
     channel = TextEditingChannel(this);
   }
 
   late TextEditingChannel channel;
 
-  /// The text editing stategy used. It can change depending on the
-  /// formfactor/browser.
-  ///
-  /// It uses an HTML element to manage editing state when a custom element is
-  /// not provided via [useCustomEditableElement]
-  late final DefaultTextEditingStrategy _defaultEditingElement;
-
-  /// The HTML element used to manage editing state.
-  ///
-  /// This field is populated using [useCustomEditableElement]. If `null` the
-  /// [_defaultEditingElement] is used instead.
-  DefaultTextEditingStrategy? _customEditingElement;
-
-  DefaultTextEditingStrategy get editingElement {
-    return _customEditingElement ?? _defaultEditingElement;
-  }
-
-  /// Responds to the 'TextInput.setClient' message.
-  void setClient(int? clientId, InputConfiguration configuration) {
-    final bool clientIdChanged = _clientId != null && _clientId != clientId;
-    if (clientIdChanged && isEditing) {
-      stopEditing();
-    }
-    _clientId = clientId;
-    _configuration = configuration;
-  }
-
-  void updateConfig(InputConfiguration configuration) {
-    _configuration = configuration;
-    editingElement._applyConfiguration(_configuration);
-  }
-
-  /// Responds to the 'TextInput.setEditingState' message.
-  void setEditingState(EditingState state) {
-    editingElement.setEditingState(state);
-  }
-
-  /// Responds to the 'TextInput.show' message.
-  void show() {
-    if (!isEditing) {
-      _startEditing();
-    }
-  }
-
-  /// Responds to the 'TextInput.setEditableSizeAndTransform' message.
-  void setEditableSizeAndTransform(EditableTextGeometry geometry) {
-    editingElement.updateElementPlacement(geometry);
-  }
-
-  /// Responds to the 'TextInput.setStyle' message.
-  void setStyle(EditableTextStyle style) {
-    editingElement.updateElementStyle(style);
-  }
-
-  /// Responds to the 'TextInput.clearClient' message.
-  void clearClient() {
-    // We do not distinguish between "clearClient" and "hide" on the Web.
-    hide();
-  }
-
-  /// Responds to the 'TextInput.hide' message.
-  void hide() {
-    if (isEditing) {
-      stopEditing();
-    }
-  }
-
   /// A CSS class name used to identify all elements used for text editing.
   @visibleForTesting
   static const String textEditingClass = 'flt-text-editing';
-
-  static bool isEditingElement(html.Element element) {
-    return element.classes.contains(textEditingClass);
-  }
-
-  /// Requests that [customEditingElement] is used for managing text editing state
-  /// instead of the hidden default element.
-  ///
-  /// Use [stopUsingCustomEditableElement] to switch back to default element.
-  void useCustomEditableElement(
-      DefaultTextEditingStrategy? customEditingElement) {
-    if (isEditing && customEditingElement != _customEditingElement) {
-      stopEditing();
-    }
-    _customEditingElement = customEditingElement;
-  }
-
-  /// Switches back to using the built-in default element for managing text
-  /// editing state.
-  void stopUsingCustomEditableElement() {
-    useCustomEditableElement(null);
-  }
 
   int? _clientId;
 
@@ -1592,13 +1667,104 @@ class HybridTextEditing {
   @visibleForTesting
   bool isEditing = false;
 
-  late InputConfiguration _configuration;
+  InputConfiguration? configuration;
+
+  final List<QueuedTextInputCommand> _commandQueue = <QueuedTextInputCommand>[];
+  int? get currentEditableTextId => configuration?.editableTextId;
+  final Map<int, DefaultTextEditingStrategy> _strategies = <int, DefaultTextEditingStrategy>{};
+
+  DefaultTextEditingStrategy get currentStrategy {
+    assert(this.currentEditableTextId != null);
+    final int currentEditableTextId = this.currentEditableTextId!;
+    assert(_strategies.containsKey(currentEditableTextId));
+    return _strategies[currentEditableTextId]!;
+  }
+
+  /// Registers the strategy to be used to provide editing functionality for
+  /// text field identified by [editableTextId].
+  /// 
+  /// See also:
+  /// 
+  ///  * [SemanticsTextEditingStrategy], which supplies the editing strategy in a11y mode.
+  ///  * [initializeDefaultTextEditingElement], which supplies the editing strategy in non-a11y mode.
+  void registerEditingElement(int editableTextId, DefaultTextEditingStrategy strategy) {
+    _strategies[editableTextId] = strategy;
+    _flushCommandQueue();
+  }
+
+  /// Removes the strategy for the text field identified by [editableTextId].
+  /// 
+  /// This happens when the text box is no longer needed.
+  void unregisterEditingElement(int editableTextId) {
+    _strategies.remove(editableTextId);
+  }
+
+  void initializeDefaultTextEditingElement() {
+    assert(currentEditableTextId != null);
+    late final DefaultTextEditingStrategy strategy;
+    if (browserEngine == BrowserEngine.webkit &&
+        operatingSystem == OperatingSystem.iOs) {
+      strategy = IOSTextEditingStrategy(this);
+    } else if (browserEngine == BrowserEngine.webkit) {
+      strategy = SafariDesktopTextEditingStrategy(this);
+    } else if (browserEngine == BrowserEngine.blink &&
+        operatingSystem == OperatingSystem.android) {
+      strategy = AndroidTextEditingStrategy(this);
+    } else if (browserEngine == BrowserEngine.firefox) {
+      strategy = FirefoxTextEditingStrategy(this);
+    } else {
+      strategy = GloballyPositionedTextEditingStrategy(this);
+    }
+    registerEditingElement(currentEditableTextId!, strategy);
+  }
+
+  void acceptCommand(TextInputCommand command, ui.VoidCallback callback) {
+    if (_debugPrintTextInputCommands) {
+      print('Received ${command.runtimeType}');
+    }
+    if (command.isWaitUntilEditingStrategyIsAvailable) {
+      _commandQueue.add(QueuedTextInputCommand(command, callback));
+      _flushCommandQueue();
+    } else {
+      _runCommand(command, callback);
+    }
+  }
+
+  void _flushCommandQueue() {
+    if (_commandQueue.isEmpty) {
+      return;
+    }
+
+    final int? editableTextId = currentEditableTextId;
+    if (editableTextId == null) {
+      return;
+    }
+
+    final DefaultTextEditingStrategy? strategy = _strategies[editableTextId];
+    if (strategy == null) {
+      return;
+    }
+
+    final List<QueuedTextInputCommand> queue = _commandQueue.toList();
+    _commandQueue.clear();
+    for (QueuedTextInputCommand command in queue) {
+      _runCommand(command.command, command.callback);
+    }
+  }
+
+  void _runCommand(TextInputCommand command, ui.VoidCallback callback) {
+    if (_debugPrintTextInputCommands) {
+      print('Running ${command.runtimeType}');
+    }
+    command.run(this);
+    callback();
+  }
 
   void _startEditing() {
     assert(!isEditing);
     isEditing = true;
-    editingElement.enable(
-      _configuration,
+    currentStrategy.enable(
+      configuration!,
       onChange: (EditingState? editingState) {
         channel.updateEditingState(_clientId, editingState);
       },
@@ -1611,7 +1777,13 @@ class HybridTextEditing {
   void stopEditing() {
     assert(isEditing);
     isEditing = false;
-    editingElement.disable();
+    currentStrategy.disable();
+
+    // When not in a11y mode, remove the editing element eagerly. a11y text
+    // fields are cleaned up through semantics update.
+    if (!EngineSemanticsOwner.instance.semanticsEnabled) {
+      unregisterEditingElement(currentEditableTextId!);
+    }
   }
 
   void sendTextConnectionClosedToFrameworkIfAny() {

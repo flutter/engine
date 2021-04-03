@@ -302,7 +302,12 @@ class SemanticsUpdateBuilder {
     required Int32List childrenInTraversalOrder,
     required Int32List childrenInHitTestOrder,
     required Int32List additionalActions,
+    int? editableTextId,
   }) {
+    assert(
+      SemanticsFlag.isTextField.index & flags == 0 || editableTextId != null,
+      'Text field semantics node must provide a non-ull editableTextId',
+    );
     if (transform.length != 16)
       throw ArgumentError('transform argument must have 16 entries.');
     _nodeUpdates.add(engine.SemanticsNodeUpdate(
@@ -332,6 +337,7 @@ class SemanticsUpdateBuilder {
       childrenInHitTestOrder: childrenInHitTestOrder,
       additionalActions: additionalActions,
       platformViewId: platformViewId,
+      editableTextId: editableTextId,
     ));
   }
 
