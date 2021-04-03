@@ -90,6 +90,20 @@ public class FlutterFragmentActivityTest {
   }
 
   @Test
+  public void itDoesNotRegisterPluginsTwiceWhenUsingACachedEngine() {
+    FlutterFragmentActivity activity =
+        Robolectric.buildActivity(FlutterFragmentActivityWithProvidedEngine.class).get();
+    activity.onCreate(null);
+    activity.configureFlutterEngine(activity.getFlutterEngine());
+
+    List<FlutterEngine> registeredEngines = GeneratedPluginRegistrant.getRegisteredEngines();
+    // This might cause the plugins to be registered twice, once by the FlutterEngine constructor,
+    // and once by the default FlutterFragmentActivity.configureFlutterEngine implementation.
+    // Test that it doesn't happen.
+    assertEquals(1, registeredEngines.size());
+  }
+
+  @Test
   public void itReturnsValueFromMetaDataWhenCallsShouldHandleDeepLinkingCase1()
       throws PackageManager.NameNotFoundException {
     FlutterFragmentActivity activity =
@@ -157,10 +171,12 @@ public class FlutterFragmentActivityTest {
     @Override
     public FlutterEngine provideFlutterEngine(@NonNull Context context) {
       FlutterJNI flutterJNI = mock(FlutterJNI.class);
+      FlutterLoader flutterLoader = mock(FlutterLoader.class);
       when(flutterJNI.isAttached()).thenReturn(true);
+      when(flutterLoader.automaticallyRegisterPlugins()).thenReturn(true);
 
       return new FlutterEngine(
-          context, mock(FlutterLoader.class), flutterJNI, new String[] {}, false);
+          context, flutterLoader, flutterJNI, new String[] {}, true);
     }
   }
 
