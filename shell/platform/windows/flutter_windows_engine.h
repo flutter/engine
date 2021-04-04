@@ -74,6 +74,9 @@ class FlutterWindowsEngine {
   void SetPluginRegistrarDestructionCallback(
       FlutterDesktopOnPluginRegistrarDestroyed callback);
 
+  // Set switches member to the givern switches.
+  void SetSwitches(std::vector<std::string> switches);
+
   FlutterDesktopMessengerRef messenger() { return messenger_.get(); }
 
   IncomingMessageDispatcher* message_dispatcher() {
@@ -191,6 +194,9 @@ class FlutterWindowsEngine {
   // is being destroyed.
   FlutterDesktopOnPluginRegistrarDestroyed
       plugin_registrar_destruction_callback_ = nullptr;
+
+  // Collection of engine switches.
+  std::vector<std::string> switches_;
 
 #ifndef WINUWP
   // The manager for WindowProc delegate registration and callbacks.

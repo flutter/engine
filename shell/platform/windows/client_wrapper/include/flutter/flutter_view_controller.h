@@ -18,6 +18,7 @@
 #include "plugin_registry.h"
 
 #ifdef WINUWP
+#include <windows.applicationmodel.activation.h>
 #include <windows.ui.core.h>
 #endif
 
@@ -43,8 +44,10 @@ class FlutterViewController {
   // either using CoreWindow.
   //
   // |dart_project| will be used to configure the engine backing this view.
-  explicit FlutterViewController(ABI::Windows::UI::Core::CoreWindow* window,
-                                 const DartProject& project);
+  explicit FlutterViewController(
+      ABI::Windows::UI::Core::CoreWindow* window,
+      ABI::Windows::ApplicationModel::Activation::IActivatedEventArgs* args,
+      const DartProject& project);
 #endif
 
   virtual ~FlutterViewController();

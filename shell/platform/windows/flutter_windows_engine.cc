@@ -142,6 +142,13 @@ FlutterWindowsEngine::FlutterWindowsEngine(const FlutterProjectBundle& project)
   embedder_api_.struct_size = sizeof(FlutterEngineProcTable);
   FlutterEngineGetProcAddresses(&embedder_api_);
 
+#ifndef WINUWP
+  // FlutterProjectArgs is expecting a full argv, so when processing it for
+  // flags the first item is treated as the executable and ignored. Add a dummy
+  // value so that all provided arguments are used.
+  switches_ = project_->GetSwitches();
+#endif
+
   task_runner_ = TaskRunner::Create(
       GetCurrentThreadId(), embedder_api_.GetCurrentTime,
       [this](const auto* task) {
@@ -184,6 +191,10 @@ FlutterWindowsEngine::~FlutterWindowsEngine() {
   Stop();
 }
 
+void FlutterWindowsEngine::SetSwitches(std::vector<std::string> switches) {
+  switches_ = switches;
+}
+
 bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
   if (!project_->HasValidPaths()) {
     std::cerr << "Missing or unresolvable paths to assets." << std::endl;
@@ -199,13 +210,9 @@ bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
     }
   }
 
-  // FlutterProjectArgs is expecting a full argv, so when processing it for
-  // flags the first item is treated as the executable and ignored. Add a dummy
-  // value so that all provided arguments are used.
-  std::vector<std::string> switches = project_->GetSwitches();
   std::vector<const char*> argv = {"placeholder"};
   std::transform(
-      switches.begin(), switches.end(), std::back_inserter(argv),
+      switches_.begin(), switches_.end(), std::back_inserter(argv),
       [](const std::string& arg) -> const char* { return arg.c_str(); });
 
   const std::vector<std::string>& entrypoint_args =
