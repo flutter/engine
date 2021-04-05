@@ -14,6 +14,7 @@
 
 // Windows platform specific includes
 #include <windows.h>
+#include <memory>
 
 #include "window_binding_handler.h"
 
@@ -31,7 +32,7 @@ class AngleSurfaceManager {
   AngleSurfaceManager& operator=(const AngleSurfaceManager&) = delete;
 
   // Creates an EGLSurface wrapper and backing DirectX 11 SwapChain
-  // asociated with window, in the appropriate format for display.
+  // associated with window, in the appropriate format for display.
   // Target represents the visual entity to bind to.  Width and
   // height represent dimensions surface is created at.
   bool CreateSurface(WindowsRenderTarget* render_target,

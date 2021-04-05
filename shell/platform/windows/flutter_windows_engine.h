@@ -108,7 +108,7 @@ class FlutterWindowsEngine {
                     void* user_data);
 
   // Sends the given message to the engine, calling |reply| with |user_data|
-  // when a reponse is received from the engine if they are non-null.
+  // when a response is received from the engine if they are non-null.
   bool SendPlatformMessage(const char* channel,
                            const uint8_t* message,
                            const size_t message_size,
@@ -140,7 +140,7 @@ class FlutterWindowsEngine {
 
  private:
   // Allows swapping out embedder_api_ calls in tests.
-  friend class EngineEmbedderApiModifier;
+  friend class EngineModifier;
 
   // Sends system settings (e.g., locale) to the engine.
   //
