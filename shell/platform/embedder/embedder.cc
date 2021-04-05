@@ -446,26 +446,6 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
   texture_info.fID = texture->name;
   texture_info.fFormat = texture->format;
 
-  struct Captures {
-    VoidCallback destruction_callback;
-    void* user_data;
-    GrDirectContext* gr_direct_context;
-  };
-  auto captures = std::make_unique<Captures>();
-  captures->destruction_callback = texture->destruction_callback;
-  captures->user_data = texture->user_data;
-  captures->gr_direct_context = context;
-  auto release_proc = [](void* context) {
-    auto captures = reinterpret_cast<Captures*>(context);
-    if (captures->gr_direct_context) {
-      captures->gr_direct_context->flushAndSubmit();
-      captures->gr_direct_context->resetContext(kAll_GrBackendState);
-    }
-    if (captures->destruction_callback) {
-      captures->destruction_callback(captures->user_data);
-    }
-  };
-
   GrBackendTexture backend_texture(config.size.width,   //
                                    config.size.height,  //
                                    GrMipMapped::kNo,    //
@@ -482,8 +462,9 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
       kN32_SkColorType,             // color type
       SkColorSpace::MakeSRGB(),     // color space
       &surface_properties,          // surface properties
-      release_proc,                 // release proc
-      captures.release()            // release context
+      static_cast<SkSurface::TextureReleaseProc>(
+          texture->destruction_callback),  // release proc
+      texture->user_data                   // release context
   );
 
   if (!surface) {
