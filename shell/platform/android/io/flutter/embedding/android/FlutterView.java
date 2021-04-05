@@ -484,16 +484,13 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
               + " and type = "
               + displayFeature.getClass().getSimpleName());
       if (displayFeature instanceof FoldingFeature) {
-        DisplayFeatureType type = DisplayFeatureType.UNKNOWN;
+        DisplayFeatureType type;
         DisplayFeatureState state = DisplayFeatureState.UNKNOWN;
         final FoldingFeature feature = (FoldingFeature) displayFeature;
-        switch (feature.getType()) {
-          case FoldingFeature.TYPE_FOLD:
-            type = DisplayFeatureType.FOLD;
-            break;
-          case FoldingFeature.TYPE_HINGE:
-            type = DisplayFeatureType.HINGE;
-            break;
+        if (feature.getOcclusionMode() == FoldingFeature.OCCLUSION_NONE) {
+          type = DisplayFeatureType.FOLD;
+        } else {
+          type = DisplayFeatureType.HINGE;
         }
         switch (feature.getState()) {
           case FoldingFeature.STATE_FLAT:

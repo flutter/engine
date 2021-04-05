@@ -1130,12 +1130,14 @@ class ViewConfiguration {
   /// phone sensor housings).
   final WindowPadding padding;
 
+
+  /// {@template dart.ui.ViewConfiguration.displayFeatures}
   /// Areas of the display that are obstructed by hardware features.
   ///
   /// This list is populated only on Android. If the device has no display
   /// features, this list is empty.
   ///
-  /// The area in which the [DisplayFeature.bounds] are defined includes all screens
+  /// The coordinate space in which the [DisplayFeature.bounds] are defined includes all screens
   /// and the space between them. This means that the space between the screens
   /// is virtually part of the Flutter view space, with the [DisplayFeature.bounds]
   /// of the display feature as an obstructed area. The [DisplayFeature.type] can
@@ -1146,6 +1148,7 @@ class ViewConfiguration {
   /// Folding [DisplayFeature]s like the [DisplayFeatureType.hinge] and
   /// [DisplayFeatureType.fold] also have a [DisplayFeature.state] which can be
   /// used to determine the posture the device is in.
+  /// {@endtemplate}
   final List<DisplayFeature> displayFeatures;
 
   @override
@@ -1379,7 +1382,7 @@ class WindowPadding {
 /// coordinate system starts with [0,0] in the top-left corner of the left or top screen
 /// and expands to include both screens and the visual space between them.
 ///
-/// The [type] describes the behaviour and how much the [DisplayFeature] obstructs the display.
+/// The [type] describes the behaviour and if [DisplayFeature] obstructs the display.
 /// For example, [DisplayFeatureType.hinge] and [DisplayFeatureType.cutout] both obstruct the display,
 /// while [DisplayFeatureType.fold] does not.
 ///
@@ -1441,17 +1444,19 @@ class DisplayFeature {
   }
 }
 
-/// Type of [DisplayFeature], describing the [DisplayFeature] behaviour and how
-/// much the it obstructs the display.
+/// Type of [DisplayFeature], describing the [DisplayFeature] behaviour and if
+/// it obstructs the display.
 ///
 /// Some types of [DisplayFeature], like [DisplayFeatureType.fold], can be
 /// reported without actually impeding drawing on the screen. They are useful
 /// for knowing where the display is bent or has a crease. The
 /// [DisplayFeature.bounds] can be 0-width in such cases.
 ///
-/// The shape of the display feature for types [DisplayFeatureType.fold] and
+/// The shape formed by the screens for types [DisplayFeatureType.fold] and
 /// [DisplayFeatureType.hinge] is called the posture and is exposed in
-/// [DisplayFeature.state].
+/// [DisplayFeature.state]. For example, the [DisplayFeatureState.postureFlat] posture
+/// means the screens form a flat surface, while [DisplayFeatureState.postureFlipped]
+/// posture means the screens are facing opposite directions.
 ///
 /// ![Device with a hinge display feature](https://flutter.github.io/assets-for-api-docs/assets/hardware/display_feature_hinge.png)
 ///
@@ -1490,7 +1495,7 @@ enum DisplayFeatureState {
   ///
   /// The screen space that is presented to the user is flat.
   postureFlat,
-  /// Fold angle is in an intermediate position between [postureFlat] and closed state.
+  /// Fold angle is in an intermediate position between opened and closed state.
   ///
   /// There is a non-flat angle between parts of the flexible screen or between physical screen panels.
   postureHalfOpened,

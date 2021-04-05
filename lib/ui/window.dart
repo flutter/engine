@@ -225,22 +225,7 @@ abstract class FlutterView {
   ///   applications.
   WindowPadding get padding => viewConfiguration.padding;
 
-  /// Areas of the display that are obstructed by hardware features.
-  ///
-  /// This list is populated only on Android. If the device has no display
-  /// features, this list is empty.
-  ///
-  /// The area in which the [DisplayFeature.bounds] are defined includes all screens
-  /// and the space between them. This means that the space between the screens
-  /// is virtually part of the Flutter view space, with the [DisplayFeature.bounds]
-  /// of the display feature as an obstructed area. The [DisplayFeature.type] can
-  /// be used to determine if this display feature obstructs the screen or not.
-  /// For example, [DisplayFeatureType.hinge] and [DisplayFeatureType.cutout] both
-  /// obstruct the display, while [DisplayFeatureType.fold] is a crease in the display.
-  ///
-  /// Folding [DisplayFeature]s like the [DisplayFeatureType.hinge] and
-  /// [DisplayFeatureType.fold] also have a [DisplayFeature.state] which can be
-  /// used to determine the posture the device is in.
+  /// {@macro dart.ui.ViewConfiguration.displayFeatures}
   ///
   /// When this changes, [onMetricsChanged] is called.
   ///
