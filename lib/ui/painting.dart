@@ -4395,7 +4395,7 @@ class Canvas extends NativeFieldWrapperClass2 {
   ///
   /// To provide an [ImageConfiguration] based on the current [BuildContext]
   /// consider using [AssetImage] with [createLocalImageConfiguration]:
-  /// 
+  ///
   /// {@tool snippet}
   ///
   /// ```dart
@@ -4476,7 +4476,7 @@ class Canvas extends NativeFieldWrapperClass2 {
   /// }
   /// ```
   /// {@end-tool}
-  /// 
+  ///
   /// See also:
   /// * [ImageProvider], which identifies a image and provides its stream.
   /// * [createLocalImageConfiguration], which provides an [ImageConfiguration]
