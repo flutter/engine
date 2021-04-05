@@ -14,7 +14,7 @@
 G_BEGIN_DECLS
 
 typedef struct _FlKeyboardManager FlKeyboardManager;
-typedef void (*FlKeyResponderAsyncCallback)(FlKeyboardManager* manager, uint64_t sequence_id, bool handled);
+typedef void (*FlKeyResponderAsyncCallback)(bool handled, gpointer user_data);
 
 #define FL_TYPE_KEY_RESPONDER fl_key_responder_get_type ()
 

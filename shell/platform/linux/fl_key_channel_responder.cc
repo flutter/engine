@@ -239,7 +239,7 @@ static void handle_response(GObject* object,
   bool handled = fl_value_get_bool(handled_value);
 
   remove_pending_event(self, data->id);
-  data->callback(self->manager, data->id, handled);
+  data->callback(handled, data->user_data);
 }
 
 // Disposes of an FlKeyChannelResponder instance.
