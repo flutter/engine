@@ -4309,16 +4309,16 @@ class Canvas extends NativeFieldWrapperClass2 {
   ///
   /// ```dart
   /// class CustomAssetImage extends StatefulWidget {
-  ///   final String asset;
-  ///
   ///   const CustomAssetImage({required this.asset});
+  ///
+  ///   final String asset;
   ///
   ///   @override
   ///   _CustomAssetImageState createState() => _CustomAssetImageState();
   /// }
   ///
   /// class _CustomAssetImageState extends State<CustomAssetImage> {
-  ///   // ImageInfo provides informations to be used on the image rendering
+  ///   // ImageInfo provides informations to be used on the image rendering.
   ///   ImageInfo? imageInfo;
   ///   late final VoidCallback _removeListener;
   ///
@@ -4326,16 +4326,16 @@ class Canvas extends NativeFieldWrapperClass2 {
   ///   void initState() {
   ///     super.initState();
   ///
-  ///     // ExactAssetImage don't care about the widget context
+  ///     // ExactAssetImage don't care about the widget context.
   ///     final imageProvider = ExactAssetImage(widget.asset);
   ///     final stream = imageProvider.resolve(ImageConfiguration.empty);
   ///
   ///     // A image stream is used because the image can change over time, like when
-  ///     // there are many frames (e.g. GIFs) or the resource image was mutated
+  ///     // there are many frames (e.g. GIFs) or the resource image was mutated.
   ///     final listener = ImageStreamListener(_setImage);
   ///
   ///     // Each time a new frame is provided, set [imageInfo] so that the painter
-  ///     // is rebuilt
+  ///     // is rebuilt.
   ///     stream.addListener(listener);
   ///
   ///     _removeListener = () => stream.removeListener(listener);
@@ -4357,7 +4357,7 @@ class Canvas extends NativeFieldWrapperClass2 {
   ///
   ///       return CustomPaint(
   ///         painter: painter,
-  ///         // For proper layouting, set the CustomPaint size to the image's Size
+  ///         // For proper layouting, set the CustomPaint size to the image's Size.
   ///         size: Size(
   ///           image.width.toDouble(),
   ///           image.height.toDouble(),
@@ -4374,9 +4374,9 @@ class Canvas extends NativeFieldWrapperClass2 {
   /// }
   ///
   /// class ImagePainter extends CustomPainter {
-  ///   final ui.Image image;
-  ///
   ///   const ImagePainter({required this.image});
+  ///
+  ///   final ui.Image image;
   ///
   ///   @override
   ///   void paint(Canvas canvas, Size size) =>
@@ -4432,16 +4432,16 @@ class Canvas extends NativeFieldWrapperClass2 {
   ///     super.didChangeDependencies();
   ///
   ///     // Everytime the dependencies change, the stream is recreated based on the
-  ///     // new [BuildContext]
+  ///     // new [BuildContext].
   ///     final imageConfiguration = createLocalImageConfiguration(context);
   ///     final stream = _imageProvider.resolve(imageConfiguration);
   ///
-  ///     // Short-circuit if the keys are equal
+  ///     // Short-circuit if the keys are equal.
   ///     if (_imageStream?.key == stream.key) {
   ///       return;
   ///     }
   ///
-  ///     // Remove the listener from the old stream and add it to the new stream
+  ///     // Remove the listener from the old stream and add it to the new stream.
   ///     _imageStream?.removeListener(_listener);
   ///
   ///     _imageStream = stream;
@@ -4454,12 +4454,12 @@ class Canvas extends NativeFieldWrapperClass2 {
   ///       return CircularProgressIndicator();
   ///     } else {
   ///       final image = imageInfo!.image;
-  ///       // The ImagePainter is the same as the sample above
+  ///       // The ImagePainter is the same as the sample above.
   ///       final painter = ImagePainter(image: image);
   ///
   ///       return CustomPaint(
   ///         painter: painter,
-  ///         // For proper layouting, set the CustomPaint size to the image's Size
+  ///         // For proper layouting, set the CustomPaint size to the image's Size.
   ///         size: Size(
   ///           image.width.toDouble(),
   ///           image.height.toDouble(),
