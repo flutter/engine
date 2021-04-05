@@ -48,7 +48,7 @@ G_DEFINE_TYPE_WITH_CODE(
   G_IMPLEMENT_INTERFACE(FL_TYPE_KEY_RESPONDER,
                         fl_key_channel_responder_iface_init))
 
-static bool fl_key_channel_responder_handle_event(
+static void fl_key_channel_responder_handle_event(
     FlKeyResponder* responder,
     GdkEventKey* event,
     FlKeyResponderAsyncCallback callback,
@@ -270,7 +270,7 @@ FlKeyChannelResponder* fl_key_channel_responder_new(
     FlBinaryMessenger* messenger) {
   g_return_val_if_fail(FL_IS_BINARY_MESSENGER(messenger), nullptr);
 
-  FlKeyChannelResponder* self = FL_KEY_CHANNEL_RESPONDER(g_object_new(FL_KEY_CHANNEL_RESPONDER(), nullptr));
+  FlKeyChannelResponder* self = FL_KEY_CHANNEL_RESPONDER(g_object_new(fl_key_channel_responder_get_type(), nullptr));
   self->last_id = 1;
   self->manager = manager;
 
@@ -284,14 +284,14 @@ FlKeyChannelResponder* fl_key_channel_responder_new(
 }
 
 // Sends a key event to the framework.
-static bool fl_key_channel_responder_handle_event(
+static void fl_key_channel_responder_handle_event(
     FlKeyResponder* responder,
     GdkEventKey* event,
     FlKeyResponderAsyncCallback callback,
     gpointer user_data) {
   FlKeyChannelResponder* self = FL_KEY_CHANNEL_RESPONDER(responder);
-  g_return_val_if_fail(event != nullptr, FALSE);
-  g_return_val_if_fail(callback != nullptr, FALSE);
+  g_return_if_fail(event != nullptr);
+  g_return_if_fail(callback != nullptr);
 
   uint64_t id = (++self->last_id);
 
@@ -304,7 +304,7 @@ static bool fl_key_channel_responder_handle_event(
       type = kTypeValueUp;
       break;
     default:
-      return FALSE;
+      return;
   }
 
   int64_t scan_code = event->hardware_keycode;
@@ -380,7 +380,4 @@ static bool fl_key_channel_responder_handle_event(
   // Send the message off to the framework for handling (or not).
   fl_basic_message_channel_send(self->channel, message, nullptr,
                                 handle_response, data);
-  // Return true before we know what the framework will do, because if it
-  // doesn't handle the key, we'll re-dispatch it later.
-  return TRUE;
 }

@@ -36,7 +36,7 @@ struct _FlKeyResponderInterface {
    *
    * Returns: (transfer full): an #FlPluginRegistrar.
    */
-  bool (*handle_event)(FlKeyResponder* responder, GdkEventKey* event, FlKeyResponderAsyncCallback callback, gpointer user_data);
+  void (*handle_event)(FlKeyResponder* responder, GdkEventKey* event, FlKeyResponderAsyncCallback callback, gpointer user_data);
 };
 
 /**
@@ -46,7 +46,7 @@ struct _FlKeyResponderInterface {
  * of SystemChannels.keyEvent from the Flutter services library.
  */
 
-bool fl_key_responder_handle_event(FlKeyResponder* responder, GdkEventKey* event, FlKeyResponderAsyncCallback callback, gpointer user_data);
+void fl_key_responder_handle_event(FlKeyResponder* responder, GdkEventKey* event, FlKeyResponderAsyncCallback callback, gpointer user_data);
 
 G_END_DECLS
 

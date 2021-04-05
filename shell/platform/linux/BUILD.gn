@@ -168,6 +168,7 @@ executable("flutter_linux_unittests") {
     "fl_event_channel_test.cc",
     "fl_json_message_codec_test.cc",
     "fl_json_method_codec_test.cc",
+    "fl_keyboard_manager_test.cc",
     "fl_message_codec_test.cc",
     "fl_method_channel_test.cc",
     "fl_method_codec_test.cc",

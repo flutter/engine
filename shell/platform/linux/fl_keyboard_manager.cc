@@ -9,7 +9,7 @@
 G_BEGIN_DECLS
 
 // Declare and define a private class to hold response data from the framework.
-#define FL_KEYBOARD_MANAGER_USER_DATA fl_keyboard_manager_user_data_get_type ()
+#define FL_TYPE_KEYBOARD_MANAGER_USER_DATA fl_keyboard_manager_user_data_get_type ()
 G_DECLARE_FINAL_TYPE(FlKeyboardManagerUserData,
                      fl_keyboard_manager_user_data,
                      FL,
@@ -128,10 +128,10 @@ FlKeyboardPendingEvent* fl_keyboard_pending_event_new(
   // window).
   GdkEventKey* event_copy = reinterpret_cast<GdkEventKey*>(
       gdk_event_copy(reinterpret_cast<GdkEvent*>(event)));
-  self->event = event;
+  self->event = event_copy;
   self->sequence_id = sequence_id;
   self->unreplied = to_reply;
-  self->any_handled = any_handled;
+  self->any_handled = false;
   self->hash = fl_keyboard_manager_get_event_hash(event);
   return self;
 }
@@ -217,13 +217,15 @@ static bool fl_keyboard_manager_remove_redispatched(FlKeyboardManager* self, uin
   }
 }
 
-static void responder_handle_event_callback(bool handled, gpointer user_data) {
-  g_return_if_fail(FL_IS_KEYBOARD_MANAGER(self));
+static void responder_handle_event_callback(bool handled, gpointer user_data_ptr) {
+  g_return_if_fail(FL_IS_KEYBOARD_MANAGER_USER_DATA(user_data_ptr));
+  FlKeyboardManagerUserData* user_data = reinterpret_cast<FlKeyboardManagerUserData*>(user_data_ptr);
+  FlKeyboardManager* self = user_data->manager;
 
   guint result_index;
   gboolean found = g_ptr_array_find_with_equal_func(
     self->pending_responds,
-    static_cast<const uint64_t*>(&sequence_id),
+    &user_data->sequence_id,
     compare_pending_by_sequence_id,
     &result_index);
   g_return_if_fail(found);
@@ -298,7 +300,7 @@ gboolean fl_keyboard_manager_handle_event(FlKeyboardManager* self, GdkEventKey* 
   }
 
   FlKeyboardPendingEvent* pending = fl_keyboard_pending_event_new(
-    reinterpret_cast<GdkEvent*>(event),
+    event,
     ++self->last_sequence_id,
     self->responder_list->len);
 
