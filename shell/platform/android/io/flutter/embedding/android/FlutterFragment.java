@@ -9,9 +9,11 @@ import android.content.ComponentCallbacks2;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v4.app.FragmentActivity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -38,8 +40,11 @@ import io.flutter.plugin.platform.PlatformPlugin;
  *   <li>{@link #onUserLeaveHint()}
  * </ol>
  *
- * Additionally, when starting an {@code Activity} for a result from this {@code Fragment}, be sure
- * to invoke {@link Fragment#startActivityForResult(Intent, int)} rather than {@link
+ * {@link #onBackPressed()} does not need to be called through if the fragment is constructed by
+ * one of the builders with {@code enableAutomaticOnBackPressedHandling(true)}.
+ *
+ * <p>Additionally, when starting an {@code Activity} for a result from this {@code Fragment}, be
+ * sure to invoke {@link Fragment#startActivityForResult(Intent, int)} rather than {@link
  * android.app.Activity#startActivityForResult(Intent, int)}. If the {@code Activity} version of the
  * method is invoked then this {@code Fragment} will never receive its {@link
  * Fragment#onActivityResult(int, int, Intent)} callback.
@@ -120,6 +125,12 @@ public class FlutterFragment extends Fragment
    * when this fragment is created and destroyed.
    */
   protected static final String ARG_ENABLE_STATE_RESTORATION = "enable_state_restoration";
+  /**
+   * True if the fragment should receive {@link #onBackPressed()} events automatically, without
+   * requiring an explicit activity call through.
+   */
+  protected static final String ARG_ENABLE_AUTOMATIC_ON_BACK_PRESSED_HANDLING =
+      "enable_automatic_on_back_pressed_handling";
 
   /**
    * Creates a {@code FlutterFragment} with a default configuration.
@@ -194,6 +205,7 @@ public class FlutterFragment extends Fragment
     private RenderMode renderMode = RenderMode.surface;
     private TransparencyMode transparencyMode = TransparencyMode.transparent;
     private boolean shouldAttachEngineToActivity = true;
+    private boolean enableAutomaticOnBackPressedHandling = false;
 
     /**
      * Constructs a {@code NewEngineFragmentBuilder} that is configured to construct an instance of
@@ -321,6 +333,27 @@ public class FlutterFragment extends Fragment
     }
 
     /**
+     * Whether or not this {@code FlutterFragment} should automatically receive {@link
+     * #onBackPressed()} events, rather than requiring an explicit activity call through. Disabled
+     * by default.
+     *
+     * <p>When enabled, the fragment will use an {@link OnBackPressedCallback} to receive events
+     * from the activity automatically. If enabled, you should <b>not</b> invoke {@link
+     * #onBackPressed()} manually.
+     *
+     * <p>Enabling this behavior relies on explicit behavior in {@link #popSystemNavigator()}. It's
+     * not recommended to override that method when enabling this attribute, but if you do, you
+     * should always fall back to calling {@code super.popSystemNavigator()} when not relying on
+     * custom behavior.
+     */
+    @NonNull
+    public NewEngineFragmentBuilder enableAutomaticOnBackPressedHandling(
+        boolean enableAutomaticOnBackPressedHandling) {
+      this.enableAutomaticOnBackPressedHandling = enableAutomaticOnBackPressedHandling;
+      return this;
+    }
+
+    /**
      * Creates a {@link Bundle} of arguments that are assigned to the new {@code FlutterFragment}.
      *
      * <p>Subclasses should override this method to add new properties to the {@link Bundle}.
@@ -346,6 +379,8 @@ public class FlutterFragment extends Fragment
           transparencyMode != null ? transparencyMode.name() : TransparencyMode.transparent.name());
       args.putBoolean(ARG_SHOULD_ATTACH_ENGINE_TO_ACTIVITY, shouldAttachEngineToActivity);
       args.putBoolean(ARG_DESTROY_ENGINE_WITH_FRAGMENT, true);
+      args.putBoolean(
+          ARG_ENABLE_AUTOMATIC_ON_BACK_PRESSED_HANDLING, enableAutomaticOnBackPressedHandling);
       return args;
     }
 
@@ -428,6 +463,7 @@ public class FlutterFragment extends Fragment
     private RenderMode renderMode = RenderMode.surface;
     private TransparencyMode transparencyMode = TransparencyMode.transparent;
     private boolean shouldAttachEngineToActivity = true;
+    private boolean enableAutomaticOnBackPressedHandling = false;
 
     private CachedEngineFragmentBuilder(@NonNull String engineId) {
       this(FlutterFragment.class, engineId);
@@ -528,6 +564,27 @@ public class FlutterFragment extends Fragment
     }
 
     /**
+     * Whether or not this {@code FlutterFragment} should automatically receive {@link
+     * #onBackPressed()} events, rather than requiring an explicit activity call through. Disabled
+     * by default.
+     *
+     * <p>When enabled, the fragment will use an {@link OnBackPressedCallback} to receive events
+     * from the activity automatically. If enabled, you should <b>not</b> invoke {@link
+     * #onBackPressed()} manually.
+     *
+     * <p>Enabling this behavior relies on explicit behavior in {@link #popSystemNavigator()}. It's
+     * not recommended to override that method when enabling this attribute, but if you do, you
+     * should always fall back to calling {@code super.popSystemNavigator()} when not relying on
+     * custom behavior.
+     */
+    @NonNull
+    public CachedEngineFragmentBuilder enableAutomaticOnBackPressedHandling(
+        boolean enableAutomaticOnBackPressedHandling) {
+      this.enableAutomaticOnBackPressedHandling = enableAutomaticOnBackPressedHandling;
+      return this;
+    }
+
+    /**
      * Creates a {@link Bundle} of arguments that are assigned to the new {@code FlutterFragment}.
      *
      * <p>Subclasses should override this method to add new properties to the {@link Bundle}.
@@ -546,6 +603,8 @@ public class FlutterFragment extends Fragment
           ARG_FLUTTERVIEW_TRANSPARENCY_MODE,
           transparencyMode != null ? transparencyMode.name() : TransparencyMode.transparent.name());
       args.putBoolean(ARG_SHOULD_ATTACH_ENGINE_TO_ACTIVITY, shouldAttachEngineToActivity);
+      args.putBoolean(
+          ARG_ENABLE_AUTOMATIC_ON_BACK_PRESSED_HANDLING, enableAutomaticOnBackPressedHandling);
       return args;
     }
 
@@ -581,6 +640,14 @@ public class FlutterFragment extends Fragment
   // implementation for details about why it exists.
   @VisibleForTesting /* package */ FlutterActivityAndFragmentDelegate delegate;
 
+  private final OnBackPressedCallback onBackPressedCallback =
+      new OnBackPressedCallback(true) {
+        @Override
+        public void handleOnBackPressed() {
+          onBackPressed();
+        }
+      };
+
   public FlutterFragment() {
     // Ensure that we at least have an empty Bundle of arguments so that we don't
     // need to continually check for null arguments before grabbing one.
@@ -607,6 +674,9 @@ public class FlutterFragment extends Fragment
     super.onAttach(context);
     delegate = new FlutterActivityAndFragmentDelegate(this);
     delegate.onAttach(context);
+    if (getArguments().getBoolean(ARG_ENABLE_AUTOMATIC_ON_BACK_PRESSED_HANDLING, false)) {
+      requireActivity().getOnBackPressedDispatcher().addCallback(this, onBackPressedCallback);
+    }
   }
 
   @Override
@@ -743,6 +813,9 @@ public class FlutterFragment extends Fragment
 
   /**
    * The hardware back button was pressed.
+   *
+   * <p>If the fragment uses {@code enableAutomaticOnBackPressedHandling(true)}, this method should
+   * not be called through. It will be called automatically instead.
    *
    * <p>See {@link android.app.Activity#onBackPressed()}
    */
@@ -1117,8 +1190,25 @@ public class FlutterFragment extends Fragment
     return true;
   }
 
+  /**
+   * {@inheritDoc}
+   *
+   * Be wary of overriding this method when using {@code enableAutomaticOnBackPressedHandling(true)}.
+   * The general recommendation is to avoid overriding it in that case, but if you do, always
+   * {@code return super.popSystemNavigator()} rather than {@code return false}. Otherwise the
+   * navigation behavior will break.
+   */
   @Override
   public boolean popSystemNavigator() {
+    if (getArguments().getBoolean(ARG_ENABLE_AUTOMATIC_ON_BACK_PRESSED_HANDLING, false)) {
+      FragmentActivity activity = getActivity();
+      if (activity != null) {
+        onBackPressedCallback.setEnabled(false);
+        activity.getOnBackPressedDispatcher().onBackPressed();
+        onBackPressedCallback.setEnabled(true);
+        return true;
+      }
+    }
     // Hook for subclass. No-op if returns false.
     return false;
   }
