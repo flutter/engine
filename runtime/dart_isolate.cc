@@ -331,6 +331,7 @@ DartIsolate::DartIsolate(
                   advisory_script_entrypoint,
                   settings.log_tag,
                   settings.unhandled_exception_callback,
+                  settings.log_message_callback,
                   DartVMRef::GetIsolateNameServer(),
                   is_root_isolate,
                   std::move(volatile_path_tracker),
@@ -446,7 +447,6 @@ void DartIsolate::SetMessageHandlingTaskRunner(
   message_handling_task_runner_ = runner;
 
   message_handler().Initialize([runner](std::function<void()> task) {
-    TRACE_EVENT0("flutter", "DartIsolate::PostMessage");
     runner->PostTask([task = std::move(task)]() {
       TRACE_EVENT0("flutter", "DartIsolate::HandleMessage");
       task();
