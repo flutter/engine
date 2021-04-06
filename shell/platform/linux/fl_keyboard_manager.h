@@ -69,7 +69,7 @@ void fl_keyboard_manager_add_responder(FlKeyboardManager* manager,
 gboolean fl_keyboard_manager_handle_event(FlKeyboardManager* manager,
                                           GdkEventKey* event);
 
-gboolean fl_keyboard_manager_has_pending_redispatched(
+gboolean fl_keyboard_manager_state_clear(
     FlKeyboardManager* manager);
 
 G_END_DECLS

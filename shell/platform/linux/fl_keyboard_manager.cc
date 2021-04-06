@@ -255,9 +255,7 @@ static void responder_handle_event_callback(bool handled,
       compare_pending_by_sequence_id, &result_index);
   g_return_if_fail(found);
   printf("callback 3\n");
-  FlKeyboardPendingEvent* pending1 = reinterpret_cast<FlKeyboardPendingEvent*>(
-      g_ptr_array_index(self->pending_responds, result_index));
-  FlKeyboardPendingEvent* pending = FL_KEYBOARD_PENDING_EVENT(pending1);
+  FlKeyboardPendingEvent* pending = FL_KEYBOARD_PENDING_EVENT(g_ptr_array_index(self->pending_responds, result_index));
   printf("callback 4\n");
   g_return_if_fail(pending != nullptr);
   g_return_if_fail(pending->unreplied > 0);
@@ -271,7 +269,7 @@ static void responder_handle_event_callback(bool handled,
     if (!pending->any_handled) {
       printf("callback 6\n");
       // If no responders have handled, send it to text plugin.
-      if (self->text_input_plugin != nullptr &&
+      if (self->text_input_plugin == nullptr ||
           !fl_text_input_plugin_filter_keypress(self->text_input_plugin,
                                                 pending->event)) {
         // If text plugin doesn't handle either, redispatch.
@@ -364,7 +362,7 @@ gboolean fl_keyboard_manager_handle_event(FlKeyboardManager* self,
   return TRUE;
 }
 
-gboolean fl_keyboard_manager_has_pending_redispatched(FlKeyboardManager* self) {
+gboolean fl_keyboard_manager_state_clear(FlKeyboardManager* self) {
   g_return_val_if_fail(FL_IS_KEYBOARD_MANAGER(self), FALSE);
-  return self->pending_redispatches->len > 0;
+  return self->pending_responds->len == 0 && self->pending_redispatches->len == 0;
 }

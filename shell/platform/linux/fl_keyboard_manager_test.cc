@@ -186,7 +186,7 @@ static GdkEventKey* key_event_new(gboolean is_down,
 namespace {
 // A global variable to store redispatched scancode. It is a global variable so
 // that it can be used in a function without user_data.
-int g_redispatch_keyval = 0;
+guint g_redispatch_keyval = 0;
 }  // namespace
 
 static void store_redispatch_keyval(const GdkEvent* event) {
@@ -210,7 +210,7 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithAsyncResponds) {
   manager_handled = fl_keyboard_manager_handle_event(
       manager, key_event_new(true, GDK_KEY_a, 0x26, 0x10, false));
   EXPECT_EQ(manager_handled, true);
-  EXPECT_EQ(g_redispatch_keyval, 0);
+  EXPECT_EQ(g_redispatch_keyval, 0u);
   EXPECT_EQ(call_records->len, 1u);
   gpointer record_ptr = g_ptr_array_index(call_records, 0);
   record = FL_KEYBOARD_CALL_RECORD(record_ptr);
@@ -218,16 +218,54 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithAsyncResponds) {
   EXPECT_EQ(record->event->keyval, 0x61u);
   EXPECT_EQ(record->event->hardware_keycode, 0x26u);
 
-  EXPECT_FALSE(fl_keyboard_manager_has_pending_redispatched(manager));
   record->callback(true, record->user_data);
-  EXPECT_EQ(g_redispatch_keyval, 0);
-  EXPECT_FALSE(fl_keyboard_manager_has_pending_redispatched(manager));
+  EXPECT_EQ(g_redispatch_keyval, 0u);
 
+  EXPECT_TRUE(fl_keyboard_manager_state_clear(manager));
   g_ptr_array_clear(call_records);
 
   /// Test 2: Two events that are unhandled by the framework
+  manager_handled = fl_keyboard_manager_handle_event(
+      manager, key_event_new(true, GDK_KEY_a, 0x26, 0x10, false));
+  EXPECT_EQ(manager_handled, true);
+  EXPECT_EQ(g_redispatch_keyval, 0u);
+  EXPECT_EQ(call_records->len, 1u);
+  record = FL_KEYBOARD_CALL_RECORD(g_ptr_array_index(call_records, 0));
+  EXPECT_EQ(record->responder->delegate_id, 1);
+  EXPECT_EQ(record->event->keyval, 0x61u);
+  EXPECT_EQ(record->event->hardware_keycode, 0x26u);
 
-  g_redispatch_keyval = 0;
+  // Dispatch another key event
+  manager_handled = fl_keyboard_manager_handle_event(
+      manager, key_event_new(true, GDK_KEY_b, 0x38, 0x10, false));
+  EXPECT_EQ(manager_handled, true);
+  EXPECT_EQ(g_redispatch_keyval, 0u);
+  EXPECT_EQ(call_records->len, 2u);
+  record = FL_KEYBOARD_CALL_RECORD(g_ptr_array_index(call_records, 1));
+  EXPECT_EQ(record->responder->delegate_id, 1);
+  EXPECT_EQ(record->event->keyval, 0x62u);
+  EXPECT_EQ(record->event->hardware_keycode, 0x38u);
+
+  // Resolve the second event first to test out-of-order response
+  record = FL_KEYBOARD_CALL_RECORD(g_ptr_array_index(call_records, 1));
+  record->callback(false, record->user_data);
+  EXPECT_EQ(g_redispatch_keyval, 0x62u);
+  record = FL_KEYBOARD_CALL_RECORD(g_ptr_array_index(call_records, 0));
+  record->callback(false, record->user_data);
+  EXPECT_EQ(g_redispatch_keyval, 0x61u);
+
+  // Resolve redispatches
+  manager_handled = fl_keyboard_manager_handle_event(
+      manager, key_event_new(true, GDK_KEY_b, 0x38, 0x10, false));
+  EXPECT_EQ(manager_handled, false);
+  manager_handled = fl_keyboard_manager_handle_event(
+      manager, key_event_new(true, GDK_KEY_a, 0x26, 0x10, false));
+  EXPECT_EQ(manager_handled, false);
+
+  EXPECT_TRUE(fl_keyboard_manager_state_clear(manager));
+  g_ptr_array_clear(call_records);
+
+  g_redispatch_keyval = 0u;
 }
 
 // #PRESS   keyval 0x61 keycode 0x26 state 0x10 ismod 0 snd 0 grp 0 time 1762702987
