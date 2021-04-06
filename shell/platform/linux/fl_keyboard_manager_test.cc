@@ -87,10 +87,10 @@ static FlKeyboardCallRecord* fl_keyboard_call_record_new(
   return self;
 }
 
-// static void dont_respond(FlKeyResponderAsyncCallback callback, gpointer user_data) {}
-static void respond_true(FlKeyResponderAsyncCallback callback, gpointer user_data) {
-  callback(true, user_data);
-}
+static void dont_respond(FlKeyResponderAsyncCallback callback, gpointer user_data) {}
+// static void respond_true(FlKeyResponderAsyncCallback callback, gpointer user_data) {
+//   callback(true, user_data);
+// }
 // static void respond_false(FlKeyResponderAsyncCallback callback, gpointer user_data) {
 //   callback(false, user_data);
 // }
@@ -149,25 +149,34 @@ static FlKeyMockResponder* fl_key_mock_responder_new(
   return self;
 }
 
+static void g_ptr_array_clear(GPtrArray* array) {
+  g_ptr_array_remove_range(array, 0, array->len);
+}
+
+namespace {
+// A global variable to store new event. It is a global variable so that it can
+// be returned as a dynamically allocated object for easy use.
+GdkEventKey _g_key_event;
+}
+
 static GdkEventKey* key_event_new(
     gboolean is_down,
     guint keyval,
     guint16 hardware_keycode,
     guint state,
     gboolean is_modifier) {
-  GdkEventKey* event = g_new(GdkEventKey, 1);
-  event->type = is_down ? GDK_KEY_PRESS : GDK_KEY_RELEASE;
-  event->window = nullptr;
-  event->send_event = FALSE;
-  event->time = 12345;
-  event->state = state;
-  event->keyval = keyval;
-  event->length = 0;
-  event->string = nullptr;
-  event->hardware_keycode = hardware_keycode;
-  event->group = 0;
-  event->is_modifier = is_modifier ? 1 : 0;
-  return event;
+  _g_key_event.type = is_down ? GDK_KEY_PRESS : GDK_KEY_RELEASE;
+  _g_key_event.window = nullptr;
+  _g_key_event.send_event = FALSE;
+  _g_key_event.time = 12345;
+  _g_key_event.state = state;
+  _g_key_event.keyval = keyval;
+  _g_key_event.length = 0;
+  _g_key_event.string = nullptr;
+  _g_key_event.hardware_keycode = hardware_keycode;
+  _g_key_event.group = 0;
+  _g_key_event.is_modifier = is_modifier ? 1 : 0;
+  return &_g_key_event;
 }
 
 namespace {
@@ -185,37 +194,34 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithAsyncResponds) {
   FlKeyboardCallRecord* record;
 
   gboolean manager_handled = false;
-  printf("Main 1\n");
   g_autoptr(FlKeyboardManager) manager = fl_keyboard_manager_new(
       nullptr, store_redispatch_keyval);
-  printf("Main 2\n");
   fl_keyboard_manager_add_responder(manager,
-      FL_KEY_RESPONDER(fl_key_mock_responder_new(call_records, 1, respond_true)));
+      FL_KEY_RESPONDER(fl_key_mock_responder_new(call_records, 1, dont_respond)));
 
-  printf("Main 3\n");
   /// Test 1: One event that is handled by the framework
 
   // Dispatch a key event
-  g_autofree GdkEventKey* event = key_event_new(true, GDK_KEY_a, 0x26, 0x10, false);
-
   manager_handled = fl_keyboard_manager_handle_event(
       manager,
-      event);
-  printf("Main 4\n");
+      key_event_new(true, GDK_KEY_a, 0x26, 0x10, false));
   EXPECT_EQ(manager_handled, true);
   EXPECT_EQ(g_redispatch_keyval, 0);
   EXPECT_EQ(call_records->len, 1u);
   gpointer record_ptr = g_ptr_array_index(call_records, 0);
-  printf("Main [0] %lx\n", (uint64_t)record_ptr);
   record = FL_KEYBOARD_CALL_RECORD(record_ptr);
-  printf("Main 5\n");
   EXPECT_EQ(record->responder->delegate_id, 1);
   EXPECT_EQ(record->event->keyval, 0x61u);
   EXPECT_EQ(record->event->hardware_keycode, 0x26u);
 
-  // record->callback(true, record->user_data);
-  printf("Main 6\n");
-  // EXPECT_EQ(g_redispatch_keyval, 0);
+  EXPECT_FALSE(fl_keyboard_manager_has_pending_redispatched(manager));
+  record->callback(true, record->user_data);
+  EXPECT_EQ(g_redispatch_keyval, 0);
+  EXPECT_FALSE(fl_keyboard_manager_has_pending_redispatched(manager));
+
+  g_ptr_array_clear(call_records);
+
+  /// Test 2: Two events that are unhandled by the framework
 
   g_redispatch_keyval = 0;
 }

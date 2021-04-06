@@ -347,3 +347,8 @@ gboolean fl_keyboard_manager_handle_event(FlKeyboardManager* self, GdkEventKey* 
 
   return TRUE;
 }
+
+gboolean fl_keyboard_manager_has_pending_redispatched(FlKeyboardManager* self) {
+  g_return_val_if_fail(FL_IS_KEYBOARD_MANAGER(self), FALSE);
+  return self->pending_redispatches->len > 0;
+}

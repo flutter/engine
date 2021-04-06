@@ -69,6 +69,8 @@ void fl_keyboard_manager_add_responder(
 
 gboolean fl_keyboard_manager_handle_event(FlKeyboardManager* manager, GdkEventKey* event);
 
+gboolean fl_keyboard_manager_has_pending_redispatched(FlKeyboardManager* manager);
+
 G_END_DECLS
 
 #endif  // FLUTTER_SHELL_PLATFORM_LINUX_FL_KEYBOARD_MANAGER_H_
