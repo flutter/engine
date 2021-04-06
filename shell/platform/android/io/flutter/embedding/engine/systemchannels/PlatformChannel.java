@@ -54,22 +54,25 @@ public class PlatformChannel {
       }
     }
   }
+
   private PendingTaskQueue pendingTasks = new PendingTaskQueue();
 
   @NonNull @VisibleForTesting
   final MethodChannel.MethodCallHandler parsingMethodCallHandler =
       new MethodChannel.MethodCallHandler() {
         @Override
-        public void onMethodCall(@NonNull final MethodCall call, @NonNull final MethodChannel.Result result) {
+        public void onMethodCall(
+            @NonNull final MethodCall call, @NonNull final MethodChannel.Result result) {
           if (platformMessageHandler == null) {
             // If no explicit PlatformMessageHandler has been registered then we
             // need to forward this call to an API later.
-            pendingTasks.addTask(new Runnable() {
-              @Override
-              public void run() {
-                onMethodCall(call, result);
-              }
-            });
+            pendingTasks.addTask(
+                new Runnable() {
+                  @Override
+                  public void run() {
+                    onMethodCall(call, result);
+                  }
+                });
             return;
           }
 
