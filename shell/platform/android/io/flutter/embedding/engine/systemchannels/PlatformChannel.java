@@ -56,7 +56,6 @@ public class PlatformChannel {
   }
   private PendingTaskQueue pendingTasks = new PendingTaskQueue();
 
-
   @NonNull @VisibleForTesting
   final MethodChannel.MethodCallHandler parsingMethodCallHandler =
       new MethodChannel.MethodCallHandler() {
