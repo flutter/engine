@@ -95,6 +95,7 @@ void testNoCrashes() {
     testCanvas((Canvas canvas) => canvas.drawShadow(path, color, double.nan, true));
     testCanvas((Canvas canvas) => canvas.drawVertices(Vertices(VertexMode.triangles, <Offset>[]), null, paint));
     testCanvas((Canvas canvas) => canvas.getSaveCount());
+    testCanvas((Canvas canvas) => canvas.resetTransform());
     testCanvas((Canvas canvas) => canvas.restore());
     testCanvas((Canvas canvas) => canvas.rotate(double.nan));
     testCanvas((Canvas canvas) => canvas.save());

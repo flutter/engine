@@ -2795,6 +2795,7 @@ dart:ui,Canvas,drawRRect
 dart:ui,Canvas,drawRect
 dart:ui,Canvas,drawShadow
 dart:ui,Canvas,getSaveCount
+dart:ui,Canvas,resetTransform
 dart:ui,Canvas,restore
 dart:ui,Canvas,save
 dart:ui,Canvas,scale

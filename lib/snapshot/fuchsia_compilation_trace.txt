@@ -1958,6 +1958,7 @@ dart:ui,Canvas,restore
 dart:ui,Canvas,translate
 dart:ui,Canvas,transform
 dart:ui,Canvas,_transform
+dart:ui,Canvas,resetTransform
 dart:ui,Canvas,clipRRect
 dart:ui,Canvas,_clipRRect
 dart:ui,Canvas,clipPath
