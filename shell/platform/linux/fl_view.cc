@@ -10,8 +10,8 @@
 
 #include "flutter/shell/platform/linux/fl_accessibility_plugin.h"
 #include "flutter/shell/platform/linux/fl_engine_private.h"
-#include "flutter/shell/platform/linux/fl_keyboard_manager.h"
 #include "flutter/shell/platform/linux/fl_key_channel_responder.h"
+#include "flutter/shell/platform/linux/fl_keyboard_manager.h"
 #include "flutter/shell/platform/linux/fl_mouse_cursor_plugin.h"
 #include "flutter/shell/platform/linux/fl_platform_plugin.h"
 #include "flutter/shell/platform/linux/fl_plugin_registrar_private.h"
@@ -181,11 +181,10 @@ static void fl_view_constructed(GObject* object) {
   FlBinaryMessenger* messenger = fl_engine_get_binary_messenger(self->engine);
   self->accessibility_plugin = fl_accessibility_plugin_new(self);
   self->keyboard_manager = fl_keyboard_manager_new(
-      fl_text_input_plugin_new(messenger, self),
-      gdk_event_put);
+      fl_text_input_plugin_new(messenger, self), gdk_event_put);
   fl_keyboard_manager_add_responder(
-      self->keyboard_manager,
-      FL_KEY_RESPONDER(fl_key_channel_responder_new(self->keyboard_manager, messenger)));
+      self->keyboard_manager, FL_KEY_RESPONDER(fl_key_channel_responder_new(
+                                  self->keyboard_manager, messenger)));
   self->mouse_cursor_plugin = fl_mouse_cursor_plugin_new(messenger, self);
   self->platform_plugin = fl_platform_plugin_new(messenger);
 
@@ -502,8 +501,11 @@ static gboolean event_box_motion_notify_event(GtkWidget* widget,
 static gboolean fl_view_key_press_event(GtkWidget* widget, GdkEventKey* event) {
   FlView* self = FL_VIEW(widget);
 
-  printf("#PRESS   keyval 0x%x keycode 0x%x state 0x%x ismod %d snd %d grp %d time %d\n",
-    event->keyval, event->hardware_keycode, event->state, event->is_modifier, event->send_event, event->group, event->time);
+  printf(
+      "#PRESS   keyval 0x%x keycode 0x%x state 0x%x ismod %d snd %d grp %d "
+      "time %d\n",
+      event->keyval, event->hardware_keycode, event->state, event->is_modifier,
+      event->send_event, event->group, event->time);
   fflush(stdout);
   return fl_keyboard_manager_handle_event(self->keyboard_manager, event);
 }
@@ -513,8 +515,11 @@ static gboolean fl_view_key_release_event(GtkWidget* widget,
                                           GdkEventKey* event) {
   FlView* self = FL_VIEW(widget);
 
-  printf("#RELEASE keyval 0x%x keycode 0x%x state 0x%x ismod %d snd %d grp %d time %d\n",
-    event->keyval, event->hardware_keycode, event->state, event->is_modifier, event->send_event, event->group, event->time);
+  printf(
+      "#RELEASE keyval 0x%x keycode 0x%x state 0x%x ismod %d snd %d grp %d "
+      "time %d\n",
+      event->keyval, event->hardware_keycode, event->state, event->is_modifier,
+      event->send_event, event->group, event->time);
   fflush(stdout);
   return fl_keyboard_manager_handle_event(self->keyboard_manager, event);
 }

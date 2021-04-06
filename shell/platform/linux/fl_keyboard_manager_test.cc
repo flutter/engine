@@ -9,12 +9,13 @@
 #include "gtest/gtest.h"
 
 namespace {
-typedef void (*CallbackHandler)(FlKeyResponderAsyncCallback callback, gpointer user_data);
+typedef void (*CallbackHandler)(FlKeyResponderAsyncCallback callback,
+                                gpointer user_data);
 }
 
 G_BEGIN_DECLS
 
-#define FL_TYPE_KEYBOARD_CALL_RECORD fl_keyboard_call_record_get_type ()
+#define FL_TYPE_KEYBOARD_CALL_RECORD fl_keyboard_call_record_get_type()
 G_DECLARE_FINAL_TYPE(FlKeyboardCallRecord,
                      fl_keyboard_call_record,
                      FL,
@@ -31,7 +32,7 @@ struct _FlKeyboardCallRecord {
   gpointer user_data;
 };
 
-#define FL_TYPE_KEY_MOCK_RESPONDER fl_key_mock_responder_get_type ()
+#define FL_TYPE_KEY_MOCK_RESPONDER fl_key_mock_responder_get_type()
 G_DECLARE_FINAL_TYPE(FlKeyMockResponder,
                      fl_key_mock_responder,
                      FL,
@@ -63,7 +64,8 @@ static void fl_keyboard_call_record_dispose(GObject* object) {
 }
 
 // Class Initialization method for FlKeyboardCallRecord class.
-static void fl_keyboard_call_record_class_init(FlKeyboardCallRecordClass* klass) {
+static void fl_keyboard_call_record_class_init(
+    FlKeyboardCallRecordClass* klass) {
   G_OBJECT_CLASS(klass)->dispose = fl_keyboard_call_record_dispose;
 }
 
@@ -77,7 +79,8 @@ static FlKeyboardCallRecord* fl_keyboard_call_record_new(
   g_return_val_if_fail(callback != nullptr, nullptr);
   g_return_val_if_fail(user_data != nullptr, nullptr);
 
-  FlKeyboardCallRecord* self = FL_KEYBOARD_CALL_RECORD(g_object_new(fl_keyboard_call_record_get_type(), nullptr));
+  FlKeyboardCallRecord* self = FL_KEYBOARD_CALL_RECORD(
+      g_object_new(fl_keyboard_call_record_get_type(), nullptr));
 
   self->responder = responder;
   self->event = event;
@@ -87,23 +90,24 @@ static FlKeyboardCallRecord* fl_keyboard_call_record_new(
   return self;
 }
 
-static void dont_respond(FlKeyResponderAsyncCallback callback, gpointer user_data) {}
-// static void respond_true(FlKeyResponderAsyncCallback callback, gpointer user_data) {
+static void dont_respond(FlKeyResponderAsyncCallback callback,
+                         gpointer user_data) {}
+// static void respond_true(FlKeyResponderAsyncCallback callback, gpointer
+// user_data) {
 //   callback(true, user_data);
 // }
-// static void respond_false(FlKeyResponderAsyncCallback callback, gpointer user_data) {
+// static void respond_false(FlKeyResponderAsyncCallback callback, gpointer
+// user_data) {
 //   callback(false, user_data);
 // }
 
-static void fl_key_mock_responder_iface_init(
-    FlKeyResponderInterface* iface);
+static void fl_key_mock_responder_iface_init(FlKeyResponderInterface* iface);
 
-G_DEFINE_TYPE_WITH_CODE(
-  FlKeyMockResponder,
-  fl_key_mock_responder,
-  G_TYPE_OBJECT,
-  G_IMPLEMENT_INTERFACE(FL_TYPE_KEY_RESPONDER,
-                        fl_key_mock_responder_iface_init))
+G_DEFINE_TYPE_WITH_CODE(FlKeyMockResponder,
+                        fl_key_mock_responder,
+                        G_TYPE_OBJECT,
+                        G_IMPLEMENT_INTERFACE(FL_TYPE_KEY_RESPONDER,
+                                              fl_key_mock_responder_iface_init))
 
 static void fl_key_mock_responder_handle_event(
     FlKeyResponder* responder,
@@ -111,8 +115,7 @@ static void fl_key_mock_responder_handle_event(
     FlKeyResponderAsyncCallback callback,
     gpointer user_data);
 
-static void fl_key_mock_responder_iface_init(
-    FlKeyResponderInterface* iface) {
+static void fl_key_mock_responder_iface_init(FlKeyResponderInterface* iface) {
   iface->handle_event = fl_key_mock_responder_handle_event;
 }
 
@@ -123,16 +126,17 @@ static void fl_key_mock_responder_handle_event(
     gpointer user_data) {
   printf("MockHandle 1\n");
   FlKeyMockResponder* self = FL_KEY_MOCK_RESPONDER(responder);
-  g_ptr_array_add(self->call_records, FL_KEYBOARD_CALL_RECORD(fl_keyboard_call_record_new(self, event, callback, user_data)));
-  printf("MockHandle [0] %lx\n", (uint64_t)FL_KEYBOARD_CALL_RECORD(g_ptr_array_index(self->call_records, 0)));
+  g_ptr_array_add(self->call_records,
+                  FL_KEYBOARD_CALL_RECORD(fl_keyboard_call_record_new(
+                      self, event, callback, user_data)));
+  printf("MockHandle [0] %lx\n", (uint64_t)FL_KEYBOARD_CALL_RECORD(
+                                     g_ptr_array_index(self->call_records, 0)));
   self->callback_handler(callback, user_data);
 }
 
-static void fl_key_mock_responder_class_init(FlKeyMockResponderClass* klass) {
-}
+static void fl_key_mock_responder_class_init(FlKeyMockResponderClass* klass) {}
 
-static void fl_key_mock_responder_init(FlKeyMockResponder* self) {
-}
+static void fl_key_mock_responder_init(FlKeyMockResponder* self) {}
 
 static FlKeyMockResponder* fl_key_mock_responder_new(
     GPtrArray* call_records,
@@ -140,7 +144,8 @@ static FlKeyMockResponder* fl_key_mock_responder_new(
     CallbackHandler callback_handler) {
   g_return_val_if_fail(callback_handler != nullptr, nullptr);
 
-  FlKeyMockResponder* self = FL_KEY_MOCK_RESPONDER(g_object_new(fl_key_mock_responder_get_type(), nullptr));
+  FlKeyMockResponder* self = FL_KEY_MOCK_RESPONDER(
+      g_object_new(fl_key_mock_responder_get_type(), nullptr));
 
   self->call_records = call_records;
   self->callback_handler = callback_handler;
@@ -157,14 +162,13 @@ namespace {
 // A global variable to store new event. It is a global variable so that it can
 // be returned as a dynamically allocated object for easy use.
 GdkEventKey _g_key_event;
-}
+}  // namespace
 
-static GdkEventKey* key_event_new(
-    gboolean is_down,
-    guint keyval,
-    guint16 hardware_keycode,
-    guint state,
-    gboolean is_modifier) {
+static GdkEventKey* key_event_new(gboolean is_down,
+                                  guint keyval,
+                                  guint16 hardware_keycode,
+                                  guint state,
+                                  gboolean is_modifier) {
   _g_key_event.type = is_down ? GDK_KEY_PRESS : GDK_KEY_RELEASE;
   _g_key_event.window = nullptr;
   _g_key_event.send_event = FALSE;
@@ -183,7 +187,7 @@ namespace {
 // A global variable to store redispatched scancode. It is a global variable so
 // that it can be used in a function without user_data.
 int g_redispatch_keyval = 0;
-}
+}  // namespace
 
 static void store_redispatch_keyval(const GdkEvent* event) {
   g_redispatch_keyval = reinterpret_cast<const GdkEventKey*>(event)->keyval;
@@ -194,17 +198,17 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithAsyncResponds) {
   FlKeyboardCallRecord* record;
 
   gboolean manager_handled = false;
-  g_autoptr(FlKeyboardManager) manager = fl_keyboard_manager_new(
-      nullptr, store_redispatch_keyval);
-  fl_keyboard_manager_add_responder(manager,
-      FL_KEY_RESPONDER(fl_key_mock_responder_new(call_records, 1, dont_respond)));
+  g_autoptr(FlKeyboardManager) manager =
+      fl_keyboard_manager_new(nullptr, store_redispatch_keyval);
+  fl_keyboard_manager_add_responder(
+      manager, FL_KEY_RESPONDER(
+                   fl_key_mock_responder_new(call_records, 1, dont_respond)));
 
   /// Test 1: One event that is handled by the framework
 
   // Dispatch a key event
   manager_handled = fl_keyboard_manager_handle_event(
-      manager,
-      key_event_new(true, GDK_KEY_a, 0x26, 0x10, false));
+      manager, key_event_new(true, GDK_KEY_a, 0x26, 0x10, false));
   EXPECT_EQ(manager_handled, true);
   EXPECT_EQ(g_redispatch_keyval, 0);
   EXPECT_EQ(call_records->len, 1u);

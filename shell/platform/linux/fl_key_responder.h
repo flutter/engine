@@ -16,7 +16,7 @@ G_BEGIN_DECLS
 typedef struct _FlKeyboardManager FlKeyboardManager;
 typedef void (*FlKeyResponderAsyncCallback)(bool handled, gpointer user_data);
 
-#define FL_TYPE_KEY_RESPONDER fl_key_responder_get_type ()
+#define FL_TYPE_KEY_RESPONDER fl_key_responder_get_type()
 
 G_DECLARE_INTERFACE(FlKeyResponder,
                     fl_key_responder,
@@ -36,7 +36,10 @@ struct _FlKeyResponderInterface {
    *
    * Returns: (transfer full): an #FlPluginRegistrar.
    */
-  void (*handle_event)(FlKeyResponder* responder, GdkEventKey* event, FlKeyResponderAsyncCallback callback, gpointer user_data);
+  void (*handle_event)(FlKeyResponder* responder,
+                       GdkEventKey* event,
+                       FlKeyResponderAsyncCallback callback,
+                       gpointer user_data);
 };
 
 /**
@@ -46,7 +49,10 @@ struct _FlKeyResponderInterface {
  * of SystemChannels.keyEvent from the Flutter services library.
  */
 
-void fl_key_responder_handle_event(FlKeyResponder* responder, GdkEventKey* event, FlKeyResponderAsyncCallback callback, gpointer user_data);
+void fl_key_responder_handle_event(FlKeyResponder* responder,
+                                   GdkEventKey* event,
+                                   FlKeyResponderAsyncCallback callback,
+                                   gpointer user_data);
 
 G_END_DECLS
 

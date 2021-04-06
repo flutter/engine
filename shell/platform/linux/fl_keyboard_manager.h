@@ -7,8 +7,8 @@
 
 #include <gdk/gdk.h>
 
-#include "flutter/shell/platform/linux/fl_text_input_plugin.h"
 #include "flutter/shell/platform/linux/fl_key_responder.h"
+#include "flutter/shell/platform/linux/fl_text_input_plugin.h"
 
 /**
  * FlKeyEventPluginCallback:
@@ -63,13 +63,14 @@ FlKeyboardManager* fl_keyboard_manager_new(
     FlTextInputPlugin* text_input_plugin,
     FlKeyboardManagerRedispatcher redispatch_callback);
 
-void fl_keyboard_manager_add_responder(
-    FlKeyboardManager* manager,
-    FlKeyResponder* responder);
+void fl_keyboard_manager_add_responder(FlKeyboardManager* manager,
+                                       FlKeyResponder* responder);
 
-gboolean fl_keyboard_manager_handle_event(FlKeyboardManager* manager, GdkEventKey* event);
+gboolean fl_keyboard_manager_handle_event(FlKeyboardManager* manager,
+                                          GdkEventKey* event);
 
-gboolean fl_keyboard_manager_has_pending_redispatched(FlKeyboardManager* manager);
+gboolean fl_keyboard_manager_has_pending_redispatched(
+    FlKeyboardManager* manager);
 
 G_END_DECLS
 

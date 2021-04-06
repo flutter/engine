@@ -38,15 +38,14 @@ struct _FlKeyChannelResponder {
   uint64_t last_id;
 };
 
-static void fl_key_channel_responder_iface_init(
-    FlKeyResponderInterface* iface);
+static void fl_key_channel_responder_iface_init(FlKeyResponderInterface* iface);
 
 G_DEFINE_TYPE_WITH_CODE(
-  FlKeyChannelResponder,
-  fl_key_channel_responder,
-  G_TYPE_OBJECT,
-  G_IMPLEMENT_INTERFACE(FL_TYPE_KEY_RESPONDER,
-                        fl_key_channel_responder_iface_init))
+    FlKeyChannelResponder,
+    fl_key_channel_responder,
+    G_TYPE_OBJECT,
+    G_IMPLEMENT_INTERFACE(FL_TYPE_KEY_RESPONDER,
+                          fl_key_channel_responder_iface_init))
 
 static void fl_key_channel_responder_handle_event(
     FlKeyResponder* responder,
@@ -135,8 +134,9 @@ static void fl_key_event_response_data_dispose(GObject* object) {
   g_return_if_fail(FL_IS_KEY_EVENT_RESPONSE_DATA(object));
   FlKeyEventResponseData* self = FL_KEY_EVENT_RESPONSE_DATA(object);
   if (self->responder != nullptr) {
-    g_object_remove_weak_pointer(G_OBJECT(self->responder),
-                                 reinterpret_cast<gpointer*>(&(self->responder)));
+    g_object_remove_weak_pointer(
+        G_OBJECT(self->responder),
+        reinterpret_cast<gpointer*>(&(self->responder)));
     self->responder = nullptr;
   }
 }
@@ -150,13 +150,14 @@ static void fl_key_event_response_data_class_init(
 // Instance initialization method for FlKeyEventResponseData private class.
 static void fl_key_event_response_data_init(FlKeyEventResponseData* self) {}
 
-// Creates a new FlKeyEventResponseData private class with a responder that created
-// the request, a unique ID for tracking, and optional user data.
-// Will keep a weak pointer to the responder.
-FlKeyEventResponseData* fl_key_event_response_data_new(FlKeyChannelResponder* responder,
-                                                       uint64_t id,
-                                                       FlKeyResponderAsyncCallback callback,
-                                                       gpointer user_data) {
+// Creates a new FlKeyEventResponseData private class with a responder that
+// created the request, a unique ID for tracking, and optional user data. Will
+// keep a weak pointer to the responder.
+FlKeyEventResponseData* fl_key_event_response_data_new(
+    FlKeyChannelResponder* responder,
+    uint64_t id,
+    FlKeyResponderAsyncCallback callback,
+    gpointer user_data) {
   FlKeyEventResponseData* self = FL_KEY_EVENT_RESPONSE_DATA(
       g_object_new(fl_key_event_response_data_get_type(), nullptr));
 
@@ -172,8 +173,9 @@ FlKeyEventResponseData* fl_key_event_response_data_new(FlKeyChannelResponder* re
 }
 
 // Finds an event in the event queue that was sent to the framework by its ID.
-GdkEventKey* fl_key_channel_responder_find_pending_event(FlKeyChannelResponder* self,
-                                                    uint64_t id) {
+GdkEventKey* fl_key_channel_responder_find_pending_event(
+    FlKeyChannelResponder* self,
+    uint64_t id) {
   for (guint i = 0; i < self->pending_events->len; ++i) {
     if (FL_KEY_EVENT_PAIR(g_ptr_array_index(self->pending_events, i))->id ==
         id) {
@@ -253,7 +255,8 @@ static void fl_key_channel_responder_dispose(GObject* object) {
 }
 
 // Initializes the FlKeyChannelResponder class methods.
-static void fl_key_channel_responder_class_init(FlKeyChannelResponderClass* klass) {
+static void fl_key_channel_responder_class_init(
+    FlKeyChannelResponderClass* klass) {
   G_OBJECT_CLASS(klass)->dispose = fl_key_channel_responder_dispose;
 }
 
@@ -270,14 +273,14 @@ FlKeyChannelResponder* fl_key_channel_responder_new(
     FlBinaryMessenger* messenger) {
   g_return_val_if_fail(FL_IS_BINARY_MESSENGER(messenger), nullptr);
 
-  FlKeyChannelResponder* self = FL_KEY_CHANNEL_RESPONDER(g_object_new(fl_key_channel_responder_get_type(), nullptr));
+  FlKeyChannelResponder* self = FL_KEY_CHANNEL_RESPONDER(
+      g_object_new(fl_key_channel_responder_get_type(), nullptr));
   self->last_id = 1;
   self->manager = manager;
 
   g_autoptr(FlJsonMessageCodec) codec = fl_json_message_codec_new();
-  self->channel = fl_basic_message_channel_new(
-      messenger, kChannelName,
-      FL_MESSAGE_CODEC(codec));
+  self->channel = fl_basic_message_channel_new(messenger, kChannelName,
+                                               FL_MESSAGE_CODEC(codec));
 
   self->pending_events = g_ptr_array_new_with_free_func(g_object_unref);
   return self;
