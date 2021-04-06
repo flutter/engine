@@ -26,7 +26,7 @@ class ShellIOManager final : public IOManager {
 
   ShellIOManager(
       sk_sp<GrDirectContext> resource_context,
-      std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch,
+      const std::shared_ptr<const fml::SyncSwitch>& is_gpu_disabled_sync_switch,
       fml::RefPtr<fml::TaskRunner> unref_queue_task_runner);
 
   ~ShellIOManager() override;
