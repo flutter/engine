@@ -980,26 +980,55 @@ void _canvasTests() {
     );
   });
 
-  test('drawImage', () {
+  test('drawImageOptions', () {
     final SkAnimatedImage image =
         canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage);
-    canvas.drawImage(
+    canvas.drawImageOptions(
       image.getCurrentFrame(),
       10,
       20,
+      canvasKit.FilterMode.Linear,
+      canvasKit.MipmapMode.None,
       SkPaint(),
     );
   });
 
-  test('drawImageRect', () {
+  test('drawImageCubic', () {
     final SkAnimatedImage image =
-        canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage);
-    canvas.drawImageRect(
+    canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage);
+    canvas.drawImageCubic(
+      image.getCurrentFrame(),
+      10,
+      20,
+      0.3,
+      0.3,
+      SkPaint(),
+    );
+  });
+
+  test('drawImageRectOptions', () {
+    final SkAnimatedImage image =
+    canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage);
+    canvas.drawImageRectOptions(
       image.getCurrentFrame(),
       Float32List.fromList([0, 0, 1, 1]),
       Float32List.fromList([0, 0, 1, 1]),
+      canvasKit.FilterMode.Linear,
+      canvasKit.MipmapMode.None,
       SkPaint(),
-      false,
+    );
+  });
+
+  test('drawImageRectCubic', () {
+    final SkAnimatedImage image =
+    canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage);
+    canvas.drawImageRectCubic(
+      image.getCurrentFrame(),
+      Float32List.fromList([0, 0, 1, 1]),
+      Float32List.fromList([0, 0, 1, 1]),
+      0.3,
+      0.3,
+      SkPaint(),
     );
   });
 
@@ -1010,6 +1039,7 @@ void _canvasTests() {
       image.getCurrentFrame(),
       Float32List.fromList([0, 0, 1, 1]),
       Float32List.fromList([0, 0, 1, 1]),
+      canvasKit.FilterMode.Linear,
       SkPaint(),
     );
   });
@@ -1310,11 +1340,11 @@ void _paragraphTests() {
     final SkParagraph paragraph = builder.build();
     paragraph.layout(55);
     expect(paragraph.getAlphabeticBaseline(),
-        within<double>(distance: 0.5, from: 22));
+        within<double>(distance: 0.5, from: 20.7));
     expect(paragraph.didExceedMaxLines(), false);
-    expect(paragraph.getHeight(), 28);
+    expect(paragraph.getHeight(), 25);
     expect(paragraph.getIdeographicBaseline(),
-        within<double>(distance: 0.5, from: 28));
+        within<double>(distance: 0.5, from: 25));
     expect(paragraph.getLongestLine(), 50);
     expect(paragraph.getMaxIntrinsicWidth(), 50);
     expect(paragraph.getMinIntrinsicWidth(), 50);
@@ -1327,11 +1357,11 @@ void _paragraphTests() {
     expect(paragraph.getLineMetrics(), hasLength(1));
 
     final SkLineMetrics lineMetrics = paragraph.getLineMetrics().single;
-    expect(lineMetrics.ascent, 20.703125);
-    expect(lineMetrics.descent, 4.296875);
+    expect(lineMetrics.ascent, within<double>(distance: 0.5, from: 20.7));
+    expect(lineMetrics.descent, within<double>(distance: 0.2, from: 4.3));
     expect(lineMetrics.isHardBreak, true);
-    expect(lineMetrics.baseline, 22.140625);
-    expect(lineMetrics.height, 28);
+    expect(lineMetrics.baseline, within<double>(distance: 0.5, from: 20.7));
+    expect(lineMetrics.height, 25);
     expect(lineMetrics.left, 2.5);
     expect(lineMetrics.width, 50);
     expect(lineMetrics.lineNumber, 0);
