@@ -40,8 +40,8 @@ import io.flutter.plugin.platform.PlatformPlugin;
  *   <li>{@link #onUserLeaveHint()}
  * </ol>
  *
- * {@link #onBackPressed()} does not need to be called through if the fragment is constructed by
- * one of the builders with {@code enableAutomaticOnBackPressedHandling(true)}.
+ * {@link #onBackPressed()} does not need to be called through if the fragment is constructed by one
+ * of the builders with {@code enableAutomaticOnBackPressedHandling(true)}.
  *
  * <p>Additionally, when starting an {@code Activity} for a result from this {@code Fragment}, be
  * sure to invoke {@link Fragment#startActivityForResult(Intent, int)} rather than {@link
@@ -1193,10 +1193,10 @@ public class FlutterFragment extends Fragment
   /**
    * {@inheritDoc}
    *
-   * Be wary of overriding this method when using {@code enableAutomaticOnBackPressedHandling(true)}.
-   * The general recommendation is to avoid overriding it in that case, but if you do, always
-   * {@code return super.popSystemNavigator()} rather than {@code return false}. Otherwise the
-   * navigation behavior will break.
+   * <p>Be wary of overriding this method when using {@code
+   * enableAutomaticOnBackPressedHandling(true)}. The general recommendation is to avoid overriding
+   * it in that case, but if you do, always {@code return super.popSystemNavigator()} rather than
+   * {@code return false}. Otherwise the navigation behavior will break.
    */
   @Override
   public boolean popSystemNavigator() {
