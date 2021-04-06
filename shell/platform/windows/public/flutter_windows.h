@@ -45,7 +45,7 @@ typedef struct {
   // containing the executable.
   const wchar_t* icu_data_path;
 
-  // The path to the AOT libary file for your application, if any.
+  // The path to the AOT library file for your application, if any.
   // This can either be an absolute path or a path relative to the directory
   // containing the executable. This can be nullptr for a non-AOT build, as
   // it will be ignored in that case.
@@ -131,9 +131,10 @@ FLUTTER_EXPORT bool FlutterDesktopViewControllerHandleTopLevelWindowProc(
 // Creates a Flutter engine with the given properties.
 //
 // The caller owns the returned reference, and is responsible for calling
-// FlutterDesktopEngineDestroy.
+// FlutterDesktopEngineDestroy. The lifetime of |engine_properties| is required
+// to extend only until the end of this call.
 FLUTTER_EXPORT FlutterDesktopEngineRef FlutterDesktopEngineCreate(
-    const FlutterDesktopEngineProperties& engine_properties);
+    const FlutterDesktopEngineProperties* engine_properties);
 
 // Shuts down and destroys the given engine instance. Returns true if the
 // shutdown was successful, or if the engine was not running.
