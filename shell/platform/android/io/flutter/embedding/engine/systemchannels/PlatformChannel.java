@@ -5,19 +5,25 @@
 package io.flutter.embedding.engine.systemchannels;
 
 import android.content.pm.ActivityInfo;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
 import io.flutter.Log;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
-import java.util.ArrayList;
-import java.util.List;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 /**
  * System channel that receives requests for host platform behavior, e.g., haptic and sound effects,
@@ -29,14 +35,46 @@ public class PlatformChannel {
   @NonNull public final MethodChannel channel;
   @Nullable private PlatformMessageHandler platformMessageHandler;
 
+  private static class PendingTaskQueue {
+    private final Queue<Runnable> queue;
+
+    public PendingTaskQueue() {
+      queue = new ConcurrentLinkedQueue<Runnable>();
+    }
+
+    public void addTask(Runnable task) {
+      queue.add(task);
+    }
+
+    public void runTasks() {
+      if (queue == null || queue.isEmpty()) {
+        return;
+      }
+
+      Runnable task = queue.poll();
+      while (task != null) {
+        task.run();
+        task = queue.poll();
+      }
+    }
+  }
+  private PendingTaskQueue pendingTasks = new PendingTaskQueue();
+
+
   @NonNull @VisibleForTesting
   final MethodChannel.MethodCallHandler parsingMethodCallHandler =
       new MethodChannel.MethodCallHandler() {
         @Override
-        public void onMethodCall(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
+        public void onMethodCall(@NonNull final MethodCall call, @NonNull final MethodChannel.Result result) {
           if (platformMessageHandler == null) {
-            // If no explicit PlatformMessageHandler has been registered then we don't
-            // need to forward this call to an API. Return.
+            // If no explicit PlatformMessageHandler has been registered then we
+            // need to forward this call to an API later.
+            pendingTasks.addTask(new Runnable() {
+              @Override
+              public void run() {
+                onMethodCall(call, result);
+              }
+            });
             return;
           }
 
@@ -192,6 +230,11 @@ public class PlatformChannel {
    */
   public void setPlatformMessageHandler(@Nullable PlatformMessageHandler platformMessageHandler) {
     this.platformMessageHandler = platformMessageHandler;
+
+    // Run pending tasks
+    if (platformMessageHandler != null) {
+      pendingTasks.runTasks();
+    }
   }
 
   // TODO(mattcarroll): add support for IntDef annotations, then add @ScreenOrientation
