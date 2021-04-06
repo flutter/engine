@@ -15,8 +15,8 @@ import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingDeque;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -32,10 +32,10 @@ public class PlatformChannel {
   @Nullable private PlatformMessageHandler platformMessageHandler;
 
   private static class PendingTaskQueue {
-    private final BlockingQueue<Runnable> queue;
+    private final Queue<Runnable> queue;
 
     public PendingTaskQueue() {
-      queue = new LinkedBlockingDeque<Runnable>();
+      queue = new ConcurrentLinkedQueue<Runnable>();
     }
 
     public void addTask(Runnable task) {
