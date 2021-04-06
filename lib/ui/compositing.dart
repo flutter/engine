@@ -495,8 +495,9 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
 
   /// Pushes a backdrop filter operation onto the operation stack.
   ///
-  /// The given filter is applied to the current contents of the scene prior to
-  /// rasterizing the given objects.
+  /// The given filter is applied to the current contents of the scene as far back as
+  /// the most recent save layer and rendered back to the scene using the indicated
+  /// [blendMode] prior to rasterizing the child layers.
   ///
   /// {@macro dart.ui.sceneBuilder.oldLayer}
   ///

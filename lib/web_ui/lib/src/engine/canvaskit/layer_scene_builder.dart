@@ -106,7 +106,7 @@ class LayerSceneBuilder implements ui.SceneBuilder {
   }) {
     return pushLayer<BackdropFilterEngineLayer>(BackdropFilterEngineLayer(
       filter,
-      ui.Paint()..blendMode = blendMode,
+      blendMode,
     ));
   }
 

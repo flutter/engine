@@ -283,7 +283,8 @@ TEST_F(BackdropLayerDiffTest, BackdropLayer) {
   }
 
   MockLayerTree l1(SkISize::Make(100, 100));
-  l1.root()->Add(std::make_shared<BackdropFilterLayer>(filter));
+  l1.root()->Add(
+      std::make_shared<BackdropFilterLayer>(filter, SkBlendMode::kSrcOver));
 
   // no clip, effect over entire surface
   auto damage = DiffLayerTree(l1, MockLayerTree(SkISize::Make(100, 100)));
@@ -293,7 +294,8 @@ TEST_F(BackdropLayerDiffTest, BackdropLayer) {
 
   auto clip = std::make_shared<ClipRectLayer>(SkRect::MakeLTRB(20, 20, 60, 60),
                                               Clip::hardEdge);
-  clip->Add(std::make_shared<BackdropFilterLayer>(filter));
+  clip->Add(
+      std::make_shared<BackdropFilterLayer>(filter, SkBlendMode::kSrcOver));
   l2.root()->Add(clip);
   damage = DiffLayerTree(l2, MockLayerTree(SkISize::Make(100, 100)));
 
