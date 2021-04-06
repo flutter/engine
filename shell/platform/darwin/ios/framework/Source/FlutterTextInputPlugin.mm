@@ -483,9 +483,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 
 #pragma mark - FlutterTextPlaceholder
 
-@implementation FlutterTextPlaceholder {
-  NSArray<UITextSelectionRect*>* _notRects;
-}
+@implementation FlutterTextPlaceholder
 
 - (NSArray<UITextSelectionRect*>*)rects {
   // Returning anything other than an empty array here seems to cause PencilKit to enter an infinite
@@ -761,26 +759,21 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 #pragma mark UIScribbleInteractionDelegate
 
 - (void)scribbleInteractionWillBeginWriting:(UIScribbleInteraction*)interaction {
-  NSLog(@"[scribble] scribbleInteractionWillBeginWriting");
   _scribbleInProgress = true;
   [_textInputDelegate scribbleInteractionBegan];
 }
 
 - (void)scribbleInteractionDidFinishWriting:(UIScribbleInteraction*)interaction {
-  NSLog(@"[scribble] scribbleInteractionDidFinishWriting");
   _scribbleInProgress = false;
   [_textInputDelegate scribbleInteractionFinished];
 }
 
 - (BOOL)scribbleInteraction:(UIScribbleInteraction*)interaction
       shouldBeginAtLocation:(CGPoint)location {
-  NSLog(@"[scribble] scribbleInteraction shouldBeginAtLocation: %@, %@", @(location.x),
-        @(location.y));
   return true;
 }
 
 - (BOOL)scribbleInteractionShouldDelayFocus:(UIScribbleInteraction*)interaction {
-  NSLog(@"[scribble] scribbleInteractionShouldDelayFocus");
   return false;
 }
 
@@ -940,7 +933,6 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 }
 
 - (void)setMarkedText:(NSString*)markedText selectedRange:(NSRange)markedSelectedRange {
-  NSLog(@"[scribble] setMarkedText %@", markedText);
   NSRange selectedRange = _selectedTextRange.range;
   NSRange markedTextRange = ((FlutterTextRange*)self.markedTextRange).range;
 
@@ -1010,6 +1002,10 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   NSInteger newLocation = (NSInteger)offsetPosition + offset;
   if (newLocation < 0 || newLocation > (NSInteger)self.text.length) {
     return nil;
+  }
+
+  if (_scribbleInProgress) {
+    return [FlutterTextPosition positionWithIndex:newLocation];
   }
 
   if (offset >= 0) {
@@ -1155,7 +1151,8 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     NSArray* rect = rects[i];
     [rectsAsRect addObject:@[
       [NSNumber numberWithInt:[rect[0] intValue]], [NSNumber numberWithInt:[rect[1] intValue]],
-      [NSNumber numberWithInt:[rect[2] intValue]], [NSNumber numberWithInt:[rect[3] intValue]]
+      [NSNumber numberWithInt:[rect[2] intValue]], [NSNumber numberWithInt:[rect[3] intValue]],
+      [NSNumber numberWithInt:[rect[4] intValue]]
     ]];
   }
   _selectionRects = rectsAsRect;
@@ -1201,11 +1198,17 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   if (end < start) {
     first = end;
   }
-  if ([_selectionRects count] > first) {
-    return CGRectMake(
-        [_selectionRects[first][0] floatValue], [_selectionRects[first][1] floatValue],
-        [_selectionRects[first][2] floatValue], [_selectionRects[first][3] floatValue]);
+  for (NSUInteger i = 0; i < [_selectionRects count]; i++) {
+    if ([_selectionRects[i][4] unsignedIntegerValue] <= first &&
+        (i + 1 == [_selectionRects count] ||
+         [_selectionRects[i + 1][4] unsignedIntegerValue] > first)) {
+      CGRect rect =
+          CGRectMake([_selectionRects[i][0] floatValue], [_selectionRects[i][1] floatValue],
+                     [_selectionRects[i][2] floatValue], [_selectionRects[i][3] floatValue]);
+      return rect;
+    }
   }
+
   // TODO(cbracken) Implement.
   return CGRectZero;
 }
@@ -1213,21 +1216,19 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 - (CGRect)caretRectForPosition:(UITextPosition*)position {
   // TODO(cbracken) Implement.
   NSUInteger start = ((FlutterTextPosition*)position).index;
-  NSLog(@"[scribble][cursor] caretRectForPosition (%@)", @(start));
   return CGRectZero;
 }
 
 - (UITextPosition*)closestPositionToPoint:(CGPoint)point {
   // TODO(cbracken) Implement.
-  NSLog(@"[scribble] closestPositionToPoint (%@, %@)", @(point.x), @(point.y));
-
   if ([_selectionRects count] == 0) {
     NSUInteger currentIndex = ((FlutterTextPosition*)_selectedTextRange.start).index;
     return [FlutterTextPosition positionWithIndex:currentIndex];
   }
 
-  FlutterTextRange* range =
-      [[FlutterTextRange rangeWithNSRange:NSMakeRange(0, [_selectionRects count])] copy];
+  FlutterTextRange* range = [[FlutterTextRange
+      rangeWithNSRange:fml::RangeForCharactersInRange(self.text, NSMakeRange(0, self.text.length))]
+      copy];
   return [self closestPositionToPoint:point withinRange:range];
 }
 
@@ -1235,22 +1236,27 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   // TODO(cbracken) Implement.
   NSUInteger start = ((FlutterTextPosition*)range.start).index;
   NSUInteger end = ((FlutterTextPosition*)range.end).index;
-  NSLog(@"[scribble] selectionRectsForRange %@ -> %@", @(start), @(end));
   NSMutableArray* rects = [[NSMutableArray alloc] init];
-  for (NSUInteger i = start; i <= end && i < [_selectionRects count]; i++) {
-    float width = [_selectionRects[i][2] floatValue];
-    if (start == end) {
-      width = 0;
+  for (NSUInteger i = 0; i < [_selectionRects count]; i++) {
+    if ([_selectionRects[i][4] unsignedIntegerValue] >= start &&
+        [_selectionRects[i][4] unsignedIntegerValue] <= end) {
+      float width = [_selectionRects[i][2] floatValue];
+      if (start == end) {
+        width = 0;
+      }
+      CGRect rect =
+          CGRectMake([_selectionRects[i][0] floatValue], [_selectionRects[i][1] floatValue], width,
+                     [_selectionRects[i][3] floatValue]);
+      FlutterTextSelectionRect* selectionRect = [[FlutterTextSelectionRect alloc]
+          initWithRectAndInfo:rect
+             writingDirection:UITextWritingDirectionNatural
+                containsStart:(i == 0)
+                  containsEnd:(i == fml::RangeForCharactersInRange(self.text,
+                                                                   NSMakeRange(0, self.text.length))
+                                        .length)
+                   isVertical:FALSE];
+      [rects addObject:selectionRect];
     }
-    CGRect rect = CGRectMake([_selectionRects[i][0] floatValue], [_selectionRects[i][1] floatValue],
-                             width, [_selectionRects[i][3] floatValue]);
-    FlutterTextSelectionRect* selectionRect =
-        [[FlutterTextSelectionRect alloc] initWithRectAndInfo:rect
-                                             writingDirection:UITextWritingDirectionNatural
-                                                containsStart:(i == 0)
-                                                  containsEnd:(i == self.text.length)
-                                                   isVertical:FALSE];
-    [rects addObject:selectionRect];
   }
   return rects;
 }
@@ -1259,35 +1265,39 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   // TODO(cbracken) Implement.
   NSUInteger start = ((FlutterTextPosition*)range.start).index;
   NSUInteger end = ((FlutterTextPosition*)range.end).index;
-  NSLog(@"[scribble] closestPositionToPoint (%@, %@) withinRange %@, %@", @(point.x), @(point.y),
-        @(start), @(end));
 
-  NSUInteger _closestIndex = start;
+  NSUInteger _closestIndex = 0;
   CGRect _closestRect = CGRectZero;
+  NSUInteger _closestPosition = 0;
   float _closestY = 0;
   float _closestX = 0;
-  for (NSUInteger i = start; i < [_selectionRects count] && i < end; i++) {
-    CGRect rect =
-        CGRectMake([_selectionRects[i][0] floatValue], [_selectionRects[i][1] floatValue],
-                   [_selectionRects[i][2] floatValue], [_selectionRects[i][3] floatValue]);
-    CGPoint pointForComparison = CGPointMake(rect.origin.x, rect.origin.y + rect.size.height * 0.5);
-    float yDist = abs(pointForComparison.y - point.y);
-    float xDist = abs(pointForComparison.x - point.x);
-    if (_closestIndex == i ||
-        (yDist < _closestY ||
-         (yDist == _closestY &&
-          ((point.y <= rect.origin.y + rect.size.height && xDist < _closestX) ||
-           (point.y > rect.origin.y + rect.size.height &&
-            rect.origin.x > _closestRect.origin.x))))) {
-      _closestY = yDist;
-      _closestX = xDist;
-      _closestIndex = i;
-      _closestRect = rect;
+  for (NSUInteger i = 0; i < [_selectionRects count] && i < end; i++) {
+    NSUInteger position = [_selectionRects[i][4] unsignedIntegerValue];
+    if (position >= start && position <= end) {
+      CGRect rect =
+          CGRectMake([_selectionRects[i][0] floatValue], [_selectionRects[i][1] floatValue],
+                     [_selectionRects[i][2] floatValue], [_selectionRects[i][3] floatValue]);
+      CGPoint pointForComparison =
+          CGPointMake(rect.origin.x, rect.origin.y + rect.size.height * 0.5);
+      float yDist = abs(pointForComparison.y - point.y);
+      float xDist = abs(pointForComparison.x - point.x);
+      if (_closestIndex == 0 ||
+          (yDist < _closestY ||
+           (yDist == _closestY &&
+            ((point.y <= rect.origin.y + rect.size.height && xDist < _closestX) ||
+             (point.y > rect.origin.y + rect.size.height &&
+              rect.origin.x > _closestRect.origin.x))))) {
+        _closestY = yDist;
+        _closestX = xDist;
+        _closestIndex = i;
+        _closestRect = rect;
+        _closestPosition = position;
+      }
     }
   }
 
-  if ([_selectionRects count] > 0 && [_selectionRects count] >= end) {
-    NSUInteger i = end - 1;
+  if ([_selectionRects count] > 0 && self.text.length >= end) {
+    NSUInteger i = [_selectionRects count] - 1;
     CGRect rect =
         CGRectMake([_selectionRects[i][0] floatValue], [_selectionRects[i][1] floatValue],
                    [_selectionRects[i][2] floatValue], [_selectionRects[i][3] floatValue]);
@@ -1301,13 +1311,12 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
                                 rect.origin.x + rect.size.width > _closestRect.origin.x)))) {
       _closestY = yDist;
       _closestX = xDist;
-      _closestIndex = end;
+      _closestIndex = [_selectionRects count];
+      _closestPosition = end;
     }
   }
 
-  NSLog(@"[scribble] closestPositionToPoint (%@, %@) withinRange %@, %@ -> %@", @(point.x),
-        @(point.y), @(start), @(end), @(_closestIndex));
-  return [FlutterTextPosition positionWithIndex:_closestIndex];
+  return [FlutterTextPosition positionWithIndex:_closestPosition];
 }
 
 - (UITextRange*)characterRangeAtPoint:(CGPoint)point {
@@ -1370,19 +1379,16 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 }
 
 - (void)insertText:(NSString*)text {
-  NSLog(@"[scribble] insertText: %@", text);
   _selectionAffinity = _kTextAffinityDownstream;
   [self replaceRange:_selectedTextRange withText:text];
 }
 
 - (UITextPlaceholder*)insertTextPlaceholderWithSize:(CGSize)size {
-  NSLog(@"[scribble] insertTextPlaceholderWithSize");
   [_textInputDelegate insertTextPlaceholderWithSize:size withClient:_textInputClient];
   return [[FlutterTextPlaceholder alloc] init];
 }
 
 - (void)removeTextPlaceholder:(UITextPlaceholder*)textPlaceholder {
-  NSLog(@"[scribble] removeTextPlaceholder");
   [_textInputDelegate removeTextPlaceholder:_textInputClient];
 }
 
@@ -1548,7 +1554,6 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
   NSString* method = call.method;
-  NSLog(@"TextInputPlugin.handleMethodCall %@", method);
   id args = call.arguments;
   if ([method isEqualToString:@"TextInput.show"]) {
     [self showTextInput];
@@ -1869,7 +1874,6 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 
 - (BOOL)indirectScribbleInteraction:(UIIndirectScribbleInteraction*)interaction
                    isElementFocused:(UIScribbleElementIdentifier)elementIdentifier {
-  NSLog(@"[scribble][delegate] isElementFocused:%@", elementIdentifier);
   return false;
 }
 
@@ -1877,8 +1881,6 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
                focusElementIfNeeded:(UIScribbleElementIdentifier)elementIdentifier
                      referencePoint:(CGPoint)focusReferencePoint
                          completion:(void (^)(UIResponder<UITextInput>* focusedInput))completion {
-  NSLog(@"[scribble][delegate] focusElementIfNeeded:%@ referencePoint:(%@, %@)", elementIdentifier,
-        @(focusReferencePoint.x), @(focusReferencePoint.y));
   _reusableInputView.scribbleFocusing = true;
   [_textInputDelegate focusElement:elementIdentifier
                            atPoint:focusReferencePoint
@@ -1891,23 +1893,19 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 
 - (BOOL)indirectScribbleInteraction:(UIIndirectScribbleInteraction*)interaction
          shouldDelayFocusForElement:(UIScribbleElementIdentifier)elementIdentifier {
-  NSLog(@"[scribble][delegate] shouldDelayFocusForElement:%@", elementIdentifier);
   return true;
 }
 
 - (void)indirectScribbleInteraction:(UIIndirectScribbleInteraction*)interaction
           willBeginWritingInElement:(UIScribbleElementIdentifier)elementIdentifier {
-  NSLog(@"[scribble][delegate] willBeginWritingInElement:%@", elementIdentifier);
 }
 
 - (void)indirectScribbleInteraction:(UIIndirectScribbleInteraction*)interaction
           didFinishWritingInElement:(UIScribbleElementIdentifier)elementIdentifier {
-  NSLog(@"[scribble][delegate] didFinishWritingInElement:%@", elementIdentifier);
 }
 
 - (CGRect)indirectScribbleInteraction:(UIIndirectScribbleInteraction*)interaction
                       frameForElement:(UIScribbleElementIdentifier)elementIdentifier {
-  NSLog(@"[scribble][delegate] frameForElement:%@", elementIdentifier);
   NSValue* elementValue = [_scribbleElements objectForKey:elementIdentifier];
   if (elementValue == nil) {
     return CGRectZero;
@@ -1919,7 +1917,6 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
               requestElementsInRect:(CGRect)rect
                          completion:
                              (void (^)(NSArray<UIScribbleElementIdentifier>* elements))completion {
-  NSLog(@"[scribble][delegate] requestElementsInRect:%@", @(rect));
   [_textInputDelegate
       requestElementsInRect:rect
                      result:^(id _Nullable result) {
