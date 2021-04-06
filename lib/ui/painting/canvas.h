@@ -52,6 +52,7 @@ class Canvas : public RefCountedDartWrappable<Canvas> {
   void rotate(double radians);
   void skew(double sx, double sy);
   void transform(const tonic::Float64List& matrix4);
+  void resetTranfrom();
 
   void clipRect(double left,
                 double top,

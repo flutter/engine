@@ -4094,6 +4094,9 @@ class Canvas extends NativeFieldWrapperClass2 {
   }
   void _transform(Float64List matrix4) native 'Canvas_transform';
 
+  /// Sets the current matrix to identity. Any prior matrix state is overwritten.
+  void resetTransform() native 'Canvas_resetTransform';
+
   /// Reduces the clip region to the intersection of the current clip and the
   /// given rectangle.
   ///
