@@ -188,7 +188,6 @@ static SkiaGPUObject<SkImage> UploadRasterImage(
       fml::SyncSwitch::Handlers()
           .SetIfTrue([&result, &pixmap, &image] {
             SkSafeRef(image.get());
-            FML_DLOG(ERROR) << "Raster....";
             sk_sp<SkImage> texture_image = SkImage::MakeFromRaster(
                 pixmap,
                 [](const void* pixels, SkImage::ReleaseContext context) {
@@ -200,7 +199,6 @@ static SkiaGPUObject<SkImage> UploadRasterImage(
           .SetIfFalse([&result, context = io_manager->GetResourceContext(),
                        &pixmap, queue = io_manager->GetSkiaUnrefQueue()] {
             TRACE_EVENT0("flutter", "MakeCrossContextImageFromPixmap");
-            FML_DLOG(ERROR) << "Gpu....";
             sk_sp<SkImage> texture_image = SkImage::MakeCrossContextFromPixmap(
                 context.get(),  // context
                 pixmap,         // pixmap
