@@ -517,14 +517,6 @@ static void NotifyLowMemoryWarning(JNIEnv* env,
   ANDROID_SHELL_HOLDER->NotifyLowMemoryWarning();
 }
 
-static void DisableGpu(JNIEnv* env, jobject obj, jlong shell_holder) {
-  ANDROID_SHELL_HOLDER->DisableGpu();
-}
-
-static void EnableGpu(JNIEnv* env, jobject obj, jlong shell_holder) {
-  ANDROID_SHELL_HOLDER->EnableGpu();
-}
-
 static jboolean FlutterTextUtilsIsEmoji(JNIEnv* env,
                                         jobject obj,
                                         jint codePoint) {
@@ -676,16 +668,6 @@ bool RegisterApi(JNIEnv* env) {
           .name = "nativeNotifyLowMemoryWarning",
           .signature = "(J)V",
           .fnPtr = reinterpret_cast<void*>(&NotifyLowMemoryWarning),
-      },
-      {
-          .name = "nativeDisableGpu",
-          .signature = "(J)V",
-          .fnPtr = reinterpret_cast<void*>(&DisableGpu),
-      },
-      {
-          .name = "nativeEnableGpu",
-          .signature = "(J)V",
-          .fnPtr = reinterpret_cast<void*>(&EnableGpu),
       },
 
       // Start of methods from FlutterView

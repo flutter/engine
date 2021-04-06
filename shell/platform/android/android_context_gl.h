@@ -122,7 +122,6 @@ class AndroidContextGL : public AndroidContext {
   EGLConfig config_;
   EGLContext context_;
   EGLContext resource_context_;
-  EGLSurface pbuffer_surface_;
   bool valid_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(AndroidContextGL);

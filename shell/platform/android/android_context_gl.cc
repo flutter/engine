@@ -59,15 +59,6 @@ static void LogLastEGLError() {
   FML_LOG(ERROR) << "Unknown EGL Error";
 }
 
-static EGLResult<EGLSurface> CreatePbufferSurface(EGLDisplay display,
-                                                  EGLConfig config) {
-  FML_CHECK(display != EGL_NO_DISPLAY)
-      << "Attempted to create a pbuffer with an uninitialized display";
-  EGLint attribs[] = {EGL_WIDTH, 1, EGL_HEIGHT, 1, EGL_NONE};
-  EGLSurface surface = eglCreatePbufferSurface(display, config, attribs);
-  return {surface != EGL_NO_SURFACE, surface};
-}
-
 static EGLResult<EGLContext> CreateContext(EGLDisplay display,
                                            EGLConfig config,
                                            EGLContext share = EGL_NO_CONTEXT) {
@@ -121,10 +112,7 @@ AndroidEGLSurface::AndroidEGLSurface(EGLSurface surface,
 
 AndroidEGLSurface::~AndroidEGLSurface() {
   auto result = eglDestroySurface(display_, surface_);
-  if (result != EGL_TRUE) {
-    FML_LOG(ERROR) << "Could not destroy surface";
-    LogLastEGLError();
-  }
+  FML_DCHECK(result == EGL_TRUE);
 }
 
 bool AndroidEGLSurface::IsValid() const {
@@ -192,14 +180,6 @@ AndroidContextGL::AndroidContextGL(
       CreateContext(environment_->Display(), config_, context_);
   if (!success) {
     FML_LOG(ERROR) << "Could not create an EGL resource context";
-    LogLastEGLError();
-    return;
-  }
-
-  std::tie(success, pbuffer_surface_) =
-      CreatePbufferSurface(environment_->Display(), config_);
-  if (!success) {
-    FML_LOG(ERROR) << "Could not create pbuffer surface";
     LogLastEGLError();
     return;
   }
