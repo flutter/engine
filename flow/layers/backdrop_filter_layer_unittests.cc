@@ -117,8 +117,10 @@ TEST_F(BackdropFilterLayerTest, NonSrcOverBlend) {
   auto layer =
       std::make_shared<BackdropFilterLayer>(layer_filter, SkBlendMode::kSrc);
   layer->Add(mock_layer);
+  auto parent = std::make_shared<ClipRectLayer>(child_bounds, Clip::hardEdge);
+  parent->Add(layer);
 
-  layer->Preroll(preroll_context(), initial_transform);
+  parent->Preroll(preroll_context(), initial_transform);
   EXPECT_EQ(layer->paint_bounds(), child_bounds);
   EXPECT_TRUE(layer->needs_painting(paint_context()));
   EXPECT_EQ(mock_layer->parent_matrix(), initial_transform);

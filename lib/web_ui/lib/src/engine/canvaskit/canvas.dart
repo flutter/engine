@@ -269,7 +269,7 @@ class CkCanvas {
     skCanvas.saveLayer(paint?.skiaObject, null, null, null);
   }
 
-  void saveLayerWithFilter(ui.Rect bounds, ui.ImageFilter filter, CkPaint? paint) {
+  void saveLayerWithFilter(ui.Rect bounds, ui.ImageFilter filter, [ CkPaint? paint ]) {
     final _CkManagedSkImageFilterConvertible convertible =
         filter as _CkManagedSkImageFilterConvertible;
     return skCanvas.saveLayer(
@@ -505,7 +505,7 @@ class RecordingCkCanvas extends CkCanvas {
   }
 
   @override
-  void saveLayerWithFilter(ui.Rect bounds, ui.ImageFilter filter, CkPaint? paint) {
+  void saveLayerWithFilter(ui.Rect bounds, ui.ImageFilter filter, [ CkPaint? paint ]) {
     super.saveLayerWithFilter(bounds, filter, paint);
     _addCommand(CkSaveLayerWithFilterCommand(bounds, filter, paint));
   }
