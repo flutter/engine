@@ -110,7 +110,7 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 }
 
 - (BOOL)accessibilityScroll:(UIAccessibilityScrollDirection)direction {
-  return [_semanticsObject accessibilityScroll: direction];
+  return [_semanticsObject accessibilityScroll:direction];
 }
 
 - (BOOL)accessibilityPerformEscape {
