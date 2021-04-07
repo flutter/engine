@@ -154,17 +154,16 @@ public class FlutterFragmentTest {
             .destroyEngineWithFragment(true)
             .build();
     fragment.setDelegate(mockDelegate);
-    ActivityController<FragmentActivity> activityController =
+    FragmentActivity activity =
         Robolectric.setupActivity(FragmentActivity.class);
-    activityController
-        .get()
+    activity
         .getSupportFragmentManager()
         .beginTransaction()
         .add(android.R.id.content, fragment)
         .commitNow();
     OnBackPressedCallback callback = mock(OnBackPressedCallback.class);
     when(callback.isEnabled()).thenReturn(true);
-    activityController.get().getOnBackPressedDispatcher().addCallback(callback);
+    activity.getOnBackPressedDispatcher().addCallback(callback);
 
     assertTrue(fragment.popSystemNavigator());
 
