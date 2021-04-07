@@ -122,4 +122,3 @@ const int _glslStd450Cross = 68;
 const int _glslStd450Normalize = 69;
 const int _glslStd450FaceForward = 70;
 const int _glslStd450Reflect = 71;
-

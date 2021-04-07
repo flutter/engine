@@ -21,7 +21,7 @@ void main() async {
         'goldens',
         path.basenameWithoutExtension(file.path) + target.extension,
       ));
-      out.writeAsStringSync(result.source);
+      out.writeAsStringSync(result.src);
     }
   }
 }

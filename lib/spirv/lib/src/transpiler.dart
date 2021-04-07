@@ -2,17 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
 // @dart = 2.12
 part of spirv;
 
 /// The name of the fragment-coordinate parameter when generating SkSL.
 const String _fragParamName = 'iFragCoord';
-
-/// The name of a float4 parameter that will be assigned with the first
-/// two elements of the float2 input for SkSL shaders, to emulate
-/// gl_FragCoord.
-const String _fragVariableName = 'iFC';
 
 /// The name of a local variable in the main function of an SkSL shader.
 /// It will be assigned in place of an output variable at location 0.
@@ -38,7 +32,7 @@ const String _mainFunctionName = 'main';
 /// which is advanced by methods with names beginning in "read", "parse",
 /// or "op". State is written to member variables as the read position
 /// advances, this will become more complex with a larger supported
-/// subset of SPIR-V, and with more optimized output. It is currently 
+/// subset of SPIR-V, and with more optimized output. It is currently
 /// designed only for simplicity and speed, as the resuling code
 /// will be compiled and optimized before making it to the GPU.
 ///
@@ -52,8 +46,8 @@ const String _mainFunctionName = 'main';
 /// The accompanying documentation is at
 /// https://www.khronos.org/registry/spir-v/specs/unified1/SPIRV.html
 ///
-/// For the spec of a specific instruction, navigate to the above url with 
-/// the capitalized name of the operator appended. For example, for 
+/// For the spec of a specific instruction, navigate to the above url with
+/// the capitalized name of the operator appended. For example, for
 /// [opConstant] append `#OpConstant`, like the following:
 /// https://www.khronos.org/registry/spir-v/specs/unified1/SPIRV.html#OpConstant
 class _Transpiler {
@@ -80,9 +74,8 @@ class _Transpiler {
   /// See [opDecorate] for more information.
   final Map<int, int> locations = <int, int>{};
 
-  /// ID mapped to built-in decorator.
-  /// See [opDecorate] for more information.
-  final Map<int, int> builtins = <int, int>{};
+  /// ID mapped to ID. Used by [OpLoad].
+  final Map<int, int> alias = <int, int>{};
 
   /// The current word-index in the SPIR-V buffer.
   int position = 0;
@@ -119,6 +112,10 @@ class _Transpiler {
   /// Set by [opVariable].
   int colorOutput = 0;
 
+  /// The ID for the fragment coordinate builtin.
+  /// Set by [opDecorate].
+  int fragCoord = 0;
+
   /// The number of floats used by uniforms.
   int uniformFloatCount = 0;
 
@@ -129,7 +126,7 @@ class _Transpiler {
   /// The source of [currentFunction] is stored in [functionDefs].
   late StringBuffer out;
 
-  /// Scan through all the words and populate [out] with source code, 
+  /// Scan through all the words and populate [out] with source code,
   /// or throw an exception. Calls to [parseInstruction] will affect
   /// the state of the transpiler, including [position] and [out].
   void transpile() {
@@ -149,7 +146,7 @@ class _Transpiler {
   }
 
   TranspileException failure(String why) =>
-    TranspileException._(currentOp, why);
+      TranspileException._(currentOp, why);
 
   void writeHeader() {
     switch (target) {
@@ -168,6 +165,9 @@ class _Transpiler {
   }
 
   String resolveName(int id) {
+    if (alias.containsKey(id)) {
+      return resolveName(alias[id]!);
+    }
     if (id == colorOutput) {
       if (target == TargetLanguage.glslES) {
         return _glslESColorName;
@@ -176,12 +176,8 @@ class _Transpiler {
       }
     } else if (id == entryPoint) {
       return _mainFunctionName;
-    } else if (builtins[id] == _builtinFragCoord) {
-      if (target == TargetLanguage.sksl) {
-        return _fragVariableName;
-      } else {
-        return _glslFragCoord;
-      }
+    } else if (id == fragCoord && target != TargetLanguage.sksl) {
+      return _glslFragCoord;
     }
     return 'i$id';
   }
@@ -216,7 +212,7 @@ class _Transpiler {
     while (position < nextPosition) {
       final int word = readWord();
       for (int i = 0; i < 4; i++) {
-        final int octet = (word >> (i*8)) & 0xFF;
+        final int octet = (word >> (i * 8)) & 0xFF;
         if (octet == 0) {
           return utf8.decode(literal);
         }
@@ -370,7 +366,7 @@ class _Transpiler {
     final String ext = readStringLiteral();
     if (ext != _glslStd450) {
       throw failure('only "$_glslStd450" is supported. Got "$ext".');
-    } 
+    }
   }
 
   void opExtInst() {
@@ -512,7 +508,7 @@ class _Transpiler {
   void opTypeFunction() {
     final int id = readWord();
     final int returnType = readWord();
-    final int paramCount = nextPosition-position;
+    final int paramCount = nextPosition - position;
     final List<int> params = List<int>.filled(paramCount, 0);
     for (int i = 0; i < paramCount; i++) {
       params[i] = readWord();
@@ -527,7 +523,9 @@ class _Transpiler {
     String valueString = '$value';
     if (types[type] == _Type.float) {
       final double v = Int32List.fromList(<int>[value])
-        .buffer.asByteData().getFloat32(0, Endian.little);
+          .buffer
+          .asByteData()
+          .getFloat32(0, Endian.little);
       valueString = '$v';
     }
     final String typeName = resolveType(type);
@@ -538,14 +536,14 @@ class _Transpiler {
     final String type = resolveType(readWord());
     final String id = resolveName(readWord());
     src.write('const $type $id = $type(');
-    final int count = nextPosition-position;
+    final int count = nextPosition - position;
     for (int i = 0; i < count; i++) {
       src.write(resolveName(readWord()));
-      if (i < count-1) {
+      if (i < count - 1) {
         src.write(', ');
       }
     }
-    src.writeln(');'); 
+    src.writeln(');');
   }
 
   void opFunction() {
@@ -556,21 +554,21 @@ class _Transpiler {
       returnType = 'half4';
     }
 
-    // ignore function control   
+    // ignore function control
     position++;
-    
+
     final String name = resolveName(id);
     final String opening = '$returnType $name(';
     final StringBuffer def = StringBuffer();
     def.write(opening);
     src.write(opening);
-    
+
     if (target == TargetLanguage.sksl && id == entryPoint) {
       const String fragParam = 'float2 $_fragParamName';
       def.write(fragParam);
       src.write(fragParam);
     }
-    
+
     final int typeIndex = readWord();
     final _FunctionType? functionType = functionTypes[typeIndex];
     if (functionType == null) {
@@ -615,7 +613,7 @@ class _Transpiler {
     out.writeln('}');
     out.writeln();
     // Remove trailing two space characters, if present.
-    indent = indent.substring(0, max(0, indent.length-2));
+    indent = indent.substring(0, max(0, indent.length - 2));
     currentFunction = 0;
     out = src;
     currentFunctionType = null;
@@ -625,14 +623,14 @@ class _Transpiler {
     final String type = resolveType(readWord());
     final String name = resolveName(readWord());
     final String functionName = resolveName(readWord());
-    final List<String> args = List<String>.generate(
-      nextPosition-position, (int i) {
-        return resolveName(readWord());
-      });
+    final List<String> args =
+        List<String>.generate(nextPosition - position, (int i) {
+      return resolveName(readWord());
+    });
     out.write('$indent$type $name = $functionName(');
     for (int i = 0; i < args.length; i++) {
       out.write(args[i]);
-      if (i < args.length-1) {
+      if (i < args.length - 1) {
         out.write(', ');
       }
     }
@@ -675,11 +673,11 @@ class _Transpiler {
   }
 
   void opLoad() {
-    final String type = resolveType(readWord());
-    final String name = resolveName(readWord());
-    final String pointer = resolveName(readWord());
-
-    out.writeln('$indent$type $name = $pointer;');
+    // ignore type
+    position++;
+    final int id = readWord();
+    final int pointer = readWord();
+    alias[id] = pointer;
   }
 
   void opStore() {
@@ -694,7 +692,7 @@ class _Transpiler {
     final String base = resolveName(readWord());
 
     out.write('$indent$type $name = $base');
-    final int count = nextPosition-position;
+    final int count = nextPosition - position;
     for (int i = 0; i < count; i++) {
       final String index = resolveName(readWord());
       out.write('[$index]');
@@ -707,7 +705,9 @@ class _Transpiler {
     final int decoration = readWord();
     switch (decoration) {
       case _decorationBuiltIn:
-        builtins[target] = readWord();
+        if (readWord() == _builtinFragCoord) {
+          fragCoord = target;
+        }
         return;
       case _decorationLocation:
         locations[target] = readWord();
@@ -726,11 +726,11 @@ class _Transpiler {
 
     out.write('$indent$type $name = $type(');
 
-    final int count = nextPosition-position;
+    final int count = nextPosition - position;
     for (int i = 0; i < count; i++) {
       final int index = readWord();
       out.write('$vector1Name[$index]');
-      if (i < count-1) {
+      if (i < count - 1) {
         out.write(', ');
       }
     }
@@ -741,10 +741,10 @@ class _Transpiler {
     final String type = resolveType(readWord());
     final String name = resolveName(readWord());
     out.write('$indent$type $name = $type(');
-    final int count = nextPosition-position;
+    final int count = nextPosition - position;
     for (int i = 0; i < count; i++) {
       out.write(resolveName(readWord()));
-      if (i < count-1) {
+      if (i < count - 1) {
         out.write(', ');
       }
     }
@@ -756,7 +756,7 @@ class _Transpiler {
     final String name = resolveName(readWord());
     final String src = resolveName(readWord());
     out.write('$indent$type $name = $src');
-    final int count = nextPosition-position;
+    final int count = nextPosition - position;
     for (int i = 0; i < count; i++) {
       final int index = readWord();
       out.write('[$index]');
@@ -776,8 +776,13 @@ class _Transpiler {
     indent = indent + '  ';
     if (target == TargetLanguage.sksl && currentFunction == entryPoint) {
       final String ind = indent;
-      out..write(ind)
-        ..writeln('float4 $_fragVariableName = float4($_fragParamName, 0, 0);')
+      if (fragCoord > 0) {
+        final String fragName = resolveName(fragCoord);
+        out
+          ..write(ind)
+          ..writeln('float4 $fragName = float4($_fragParamName, 0, 0);');
+      }
+      out
         ..write(ind)
         ..writeln('float4 $_colorVariableName;');
     }
@@ -931,7 +936,7 @@ class _Transpiler {
     out.write('$indent$typeName $resultName = $name(');
     for (int i = 0; i < argCount; i++) {
       out.write(resolveName(readWord()));
-      if (i < argCount-1) {
+      if (i < argCount - 1) {
         out.write(', ');
       }
     }

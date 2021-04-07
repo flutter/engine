@@ -21,13 +21,13 @@ void main() {
           path.basenameWithoutExtension(file.path) + target.extension,
         ));
         if (!source.existsSync()) {
-          fail('${file.path} does not have matching golden'); 
+          fail('${file.path} does not have matching golden');
         }
         final result = transpile(
           file.readAsBytesSync().buffer,
           target.language,
         );
-        expect(result.source, equals(source.readAsStringSync()));
+        expect(result.src, equals(source.readAsStringSync()));
       }
     }
   });
