@@ -12,6 +12,13 @@
 
 #include <gdk/gdk.h>
 
+typedef FlValue* (*FlValueConverter)(FlValue*);
+
+typedef struct _FlKeyChannelResponderMock {
+  FlValueConverter value_converter;
+  const char* channel_name;
+} FlKeyChannelResponderMock;
+
 G_BEGIN_DECLS
 
 #define FL_TYPE_KEY_CHANNEL_RESPONDER fl_key_channel_responder_get_type()
@@ -48,7 +55,8 @@ G_DECLARE_FINAL_TYPE(FlKeyChannelResponder,
  *
  * Returns: a new #FlKeyChannelResponder.
  */
-FlKeyChannelResponder* fl_key_channel_responder_new(FlBinaryMessenger* messenger);
+FlKeyChannelResponder* fl_key_channel_responder_new(FlBinaryMessenger* messenger,
+  FlKeyChannelResponderMock* mock = nullptr);
 
 G_END_DECLS
 

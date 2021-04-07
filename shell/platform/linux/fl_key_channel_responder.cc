@@ -35,6 +35,8 @@ struct _FlKeyChannelResponder {
   FlBasicMessageChannel* channel;
   GPtrArray* pending_events;
   uint64_t last_id;
+
+  FlKeyChannelResponderMock* mock;
 };
 
 static void fl_key_channel_responder_iface_init(FlKeyResponderInterface* iface);
@@ -232,6 +234,9 @@ static void handle_response(GObject* object,
   FlBasicMessageChannel* messageChannel = FL_BASIC_MESSAGE_CHANNEL(object);
   FlValue* message =
       fl_basic_message_channel_send_finish(messageChannel, result, &error);
+  if (self->mock != nullptr && self->mock->value_converter != nullptr) {
+    message = self->mock->value_converter(message);
+  }
   if (error != nullptr) {
     g_warning("Unable to retrieve framework response: %s", error->message);
     return;
@@ -268,15 +273,18 @@ static void fl_key_channel_responder_init(FlKeyChannelResponder* self) {}
 // an optional callback to call when a response is received, and an optional
 // channel name to use when sending messages.
 FlKeyChannelResponder* fl_key_channel_responder_new(
-    FlBinaryMessenger* messenger) {
+    FlBinaryMessenger* messenger,
+    FlKeyChannelResponderMock* mock) {
   g_return_val_if_fail(FL_IS_BINARY_MESSENGER(messenger), nullptr);
 
   FlKeyChannelResponder* self = FL_KEY_CHANNEL_RESPONDER(
       g_object_new(fl_key_channel_responder_get_type(), nullptr));
   self->last_id = 1;
+  self->mock = mock;
 
   g_autoptr(FlJsonMessageCodec) codec = fl_json_message_codec_new();
-  self->channel = fl_basic_message_channel_new(messenger, kChannelName,
+  const char* channel_name = mock == nullptr ? kChannelName : mock->channel_name;
+  self->channel = fl_basic_message_channel_new(messenger, channel_name,
                                                FL_MESSAGE_CODEC(codec));
 
   self->pending_events = g_ptr_array_new_with_free_func(g_object_unref);
