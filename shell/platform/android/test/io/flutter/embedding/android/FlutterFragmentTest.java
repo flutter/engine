@@ -154,8 +154,7 @@ public class FlutterFragmentTest {
             .destroyEngineWithFragment(true)
             .build();
     fragment.setDelegate(mockDelegate);
-    FragmentActivity activity =
-        Robolectric.setupActivity(FragmentActivity.class);
+    FragmentActivity activity = Robolectric.setupActivity(FragmentActivity.class);
     activity
         .getSupportFragmentManager()
         .beginTransaction()
