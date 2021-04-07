@@ -1,0 +1,40 @@
+const float i15 = 3.0;
+uniform float i18;
+const float i22 = 5.0;
+const float i30 = 8.0;
+uniform float2 i34;
+half4 main(float2 iFragCoord);
+float2 i11(float i10);
+
+half4 main(float2 iFragCoord) {
+  float4 iFC = float4(iFragCoord, 0, 0);
+  float4 oColor;
+  float i31;
+  i31 = i30;
+  float2 i32 = i11(i31);
+  float2 i35 = i34;
+  float2 i36 = i32 * i35;
+  float4 i39 = iFC;
+  float2 i40 = float2(i39[0], i39[1]);
+  float i41 = i36[0];
+  float i42 = i36[1];
+  float i43 = i40[0];
+  float i44 = i40[1];
+  float4 i45 = float4(i41, i42, i43, i44);
+  oColor = i45;
+  return oColor;
+}
+
+float2 i11(float i10) {
+  float i13;
+  float i14 = i10;
+  float i16 = i14 + i15;
+  float i19 = i18;
+  float i20 = i16 + i19;
+  i13 = i20;
+  float i21 = i13;
+  float i23 = i21 + i22;
+  float2 i24 = float2(i23, i23);
+  return i24;
+}
+
