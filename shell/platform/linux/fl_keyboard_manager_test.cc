@@ -95,14 +95,12 @@ static FlKeyboardCallRecord* fl_keyboard_call_record_new(
 
 static void dont_respond(FlKeyResponderAsyncCallback callback,
                          gpointer user_data) {}
-// static void respond_true(FlKeyResponderAsyncCallback callback, gpointer
-// user_data) {
-//   callback(true, user_data);
-// }
-// static void respond_false(FlKeyResponderAsyncCallback callback, gpointer
-// user_data) {
-//   callback(false, user_data);
-// }
+static void respond_true(FlKeyResponderAsyncCallback callback, gpointer user_data) {
+  callback(true, user_data);
+}
+static void respond_false(FlKeyResponderAsyncCallback callback, gpointer user_data) {
+  callback(false, user_data);
+}
 
 static void fl_key_mock_responder_iface_init(FlKeyResponderInterface* iface);
 
@@ -143,15 +141,12 @@ static void fl_key_mock_responder_init(FlKeyMockResponder* self) {}
 
 static FlKeyMockResponder* fl_key_mock_responder_new(
     GPtrArray* call_records,
-    int delegate_id,
-    CallbackHandler callback_handler) {
-  g_return_val_if_fail(callback_handler != nullptr, nullptr);
-
+    int delegate_id) {
   FlKeyMockResponder* self = FL_KEY_MOCK_RESPONDER(
       g_object_new(fl_key_mock_responder_get_type(), nullptr));
 
   self->call_records = call_records;
-  self->callback_handler = callback_handler;
+  self->callback_handler = dont_respond;
   self->delegate_id = delegate_id;
 
   return self;
@@ -226,8 +221,7 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithAsyncResponds) {
   g_autoptr(FlKeyboardManager) manager =
       fl_keyboard_manager_new(nullptr, store_redispatched_event);
   fl_keyboard_manager_add_responder(
-      manager, FL_KEY_RESPONDER(
-                   fl_key_mock_responder_new(call_records, 1, dont_respond)));
+      manager, FL_KEY_RESPONDER(fl_key_mock_responder_new(call_records, 1)));
 
   /// Test 1: One event that is handled by the framework
 
@@ -237,8 +231,7 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithAsyncResponds) {
   EXPECT_EQ(manager_handled, true);
   EXPECT_EQ(redispatched_events()->len, 0u);
   EXPECT_EQ(call_records->len, 1u);
-  gpointer record_ptr = g_ptr_array_index(call_records, 0);
-  record = FL_KEYBOARD_CALL_RECORD(record_ptr);
+  record = FL_KEYBOARD_CALL_RECORD(g_ptr_array_index(call_records, 0));
   EXPECT_EQ(record->responder->delegate_id, 1);
   EXPECT_EQ(record->event->keyval, 0x61u);
   EXPECT_EQ(record->event->hardware_keycode, 0x26u);
@@ -306,5 +299,58 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithAsyncResponds) {
   record = FL_KEYBOARD_CALL_RECORD(g_ptr_array_index(call_records, 0));
   record->callback(true, record->user_data);
 
+  g_ptr_array_clear(redispatched_events());
+}
+
+TEST(FlKeyboardManagerTest, SingleDelegateWithSyncResponds) {
+  GPtrArray* call_records = g_ptr_array_new_with_free_func(g_object_unref);
+  FlKeyboardCallRecord* record;
+
+  gboolean manager_handled = false;
+  g_autoptr(FlKeyboardManager) manager =
+      fl_keyboard_manager_new(nullptr, store_redispatched_event);
+  FlKeyMockResponder* responder = fl_key_mock_responder_new(call_records, 1);
+  fl_keyboard_manager_add_responder(manager, FL_KEY_RESPONDER(responder));
+
+  /// Test 1: One event that is handled by the framework
+
+  // Dispatch a key event
+  responder->callback_handler = respond_true;
+  manager_handled = fl_keyboard_manager_handle_event(
+      manager, key_event_new(true, GDK_KEY_a, kKeyCodeKeyA, 0x10, false));
+  EXPECT_EQ(manager_handled, true);
+  EXPECT_EQ(call_records->len, 1u);
+  record = FL_KEYBOARD_CALL_RECORD(g_ptr_array_index(call_records, 0));
+  EXPECT_EQ(record->responder->delegate_id, 1);
+  EXPECT_EQ(record->event->keyval, 0x61u);
+  EXPECT_EQ(record->event->hardware_keycode, 0x26u);
+  EXPECT_EQ(redispatched_events()->len, 0u);
+
+  EXPECT_TRUE(fl_keyboard_manager_state_clear(manager));
+
+  EXPECT_TRUE(fl_keyboard_manager_state_clear(manager));
+  g_ptr_array_clear(call_records);
+
+  /// Test 2: An event unhandled by the framework
+  responder->callback_handler = respond_false;
+  manager_handled = fl_keyboard_manager_handle_event(
+      manager, key_event_new(true, GDK_KEY_a, kKeyCodeKeyA, 0x10, false));
+  EXPECT_EQ(manager_handled, true);
+  EXPECT_EQ(call_records->len, 1u);
+  record = FL_KEYBOARD_CALL_RECORD(g_ptr_array_index(call_records, 0));
+  EXPECT_EQ(record->responder->delegate_id, 1);
+  EXPECT_EQ(record->event->keyval, 0x61u);
+  EXPECT_EQ(record->event->hardware_keycode, 0x26u);
+  EXPECT_EQ(redispatched_events()->len, 1u);
+
+  g_ptr_array_clear(call_records);
+
+  // Resolve redispatch
+  manager_handled = fl_keyboard_manager_handle_event(
+      manager, GDK_EVENT_KEY(g_ptr_array_index(redispatched_events(), 0)));
+  EXPECT_EQ(manager_handled, false);
+  EXPECT_EQ(call_records->len, 0u);
+
+  EXPECT_TRUE(fl_keyboard_manager_state_clear(manager));
   g_ptr_array_clear(redispatched_events());
 }
