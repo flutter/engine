@@ -3,7 +3,11 @@
 // found in the LICENSE file.
 
 // @dart = 2.12
-part of engine;
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'message_codec.dart';
+import 'serialization.dart';
 
 /// [MessageCodec] with unencoded binary messages represented using [ByteData].
 ///

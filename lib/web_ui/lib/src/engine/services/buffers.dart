@@ -3,7 +3,8 @@
 // found in the LICENSE file.
 
 // @dart = 2.12
-part of engine;
+import 'dart:collection';
+import 'dart:typed_data';
 
 abstract class _TypedDataBuffer<E> extends ListBase<E> {
   static const int _initialLength = 8;

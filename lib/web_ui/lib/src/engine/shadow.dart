@@ -3,7 +3,11 @@
 // found in the LICENSE file.
 
 // @dart = 2.12
-part of engine;
+import 'dart:html' as html;
+import 'dart:math' as math;
+
+import 'package:meta/meta.dart';
+import 'package:ui/ui.dart' as ui;
 
 /// How far is the light source from the surface of the UI.
 ///

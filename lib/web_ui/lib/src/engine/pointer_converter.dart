@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 // @dart = 2.12
-part of engine;
+import 'package:ui/ui.dart' as ui;
 
 const bool _debugLogPointerConverter = false;
 

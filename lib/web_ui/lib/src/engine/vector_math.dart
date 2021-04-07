@@ -3,7 +3,10 @@
 // found in the LICENSE file.
 
 // @dart = 2.12
-part of engine;
+import 'dart:math' as math;
+import 'dart:typed_data';
+
+import 'package:ui/src/engine.dart' show assertionsEnabled;
 
 class Matrix4 {
   final Float32List _m4storage;

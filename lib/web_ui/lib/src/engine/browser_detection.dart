@@ -3,7 +3,9 @@
 // found in the LICENSE file.
 
 // @dart = 2.12
-part of engine;
+import 'dart:html' as html;
+
+import 'package:meta/meta.dart';
 
 /// The HTML engine used by the current browser.
 enum BrowserEngine {

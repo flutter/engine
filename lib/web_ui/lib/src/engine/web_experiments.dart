@@ -3,7 +3,9 @@
 // found in the LICENSE file.
 
 // @dart = 2.12
-part of engine;
+import 'dart:js' as js;
+
+import 'package:ui/src/engine.dart' show registerHotRestartListener;
 
 /// A bag of all experiment flags in the web engine.
 ///

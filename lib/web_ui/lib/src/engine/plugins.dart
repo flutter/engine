@@ -3,6 +3,8 @@
 // found in the LICENSE file.
 
 // @dart = 2.12
-part of engine;
+import 'dart:typed_data';
+
+import 'package:ui/ui.dart' as ui;
 
 Future<void> Function(String, ByteData?, ui.PlatformMessageResponseCallback?)? pluginMessageCallHandler;

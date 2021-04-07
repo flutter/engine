@@ -11,7 +11,13 @@ import 'dart:html' as html;
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
-import 'package:ui/src/engine.dart';
+import 'package:ui/src/engine.dart' show window;
+import 'package:ui/src/engine/browser_detection.dart';
+import 'package:ui/src/engine/navigation/history.dart';
+import 'package:ui/src/engine/navigation/url_strategy.dart';
+import 'package:ui/src/engine/services/message_codec.dart';
+import 'package:ui/src/engine/services/message_codecs.dart';
+import 'package:ui/src/engine/test_embedding.dart';
 
 import '../spy.dart';
 

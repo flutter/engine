@@ -3,7 +3,8 @@
 // found in the LICENSE file.
 
 // @dart = 2.12
-part of engine;
+import 'dart:math' as math;
+import 'dart:typed_data';
 
 // This is a small library to handle stability for floating point operations.
 //

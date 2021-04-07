@@ -3,7 +3,12 @@
 // found in the LICENSE file.
 
 // @dart = 2.12
-part of engine;
+import 'dart:async';
+import 'dart:html' as html;
+
+import 'package:ui/ui.dart' as ui;
+
+import 'navigation/url_strategy.dart';
 
 const bool _debugLogHistoryActions = false;
 

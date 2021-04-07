@@ -3,7 +3,9 @@
 // found in the LICENSE file.
 
 // @dart = 2.12
-part of engine;
+import 'dart:typed_data';
+
+import 'buffers.dart';
 
 /// Write-only buffer for incrementally building a [ByteData] instance.
 ///
