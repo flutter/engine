@@ -1,0 +1,43 @@
+#version 300 es
+
+precision mediump float;
+
+layout ( location = 0 ) out vec4 oColor;
+
+const float i15 = 3.0;
+layout ( location = 0 ) uniform float i18;
+const float i22 = 5.0;
+const float i30 = 8.0;
+layout ( location = 1 ) uniform vec2 i34;
+void main();
+vec2 i11(float i10);
+
+void main() {
+  float i31;
+  i31 = i30;
+  vec2 i32 = i11(i31);
+  vec2 i35 = i34;
+  vec2 i36 = i32 * i35;
+  vec4 i39 = gl_FragCoord;
+  vec2 i40 = vec2(i39[0], i39[1]);
+  float i41 = i36[0];
+  float i42 = i36[1];
+  float i43 = i40[0];
+  float i44 = i40[1];
+  vec4 i45 = vec4(i41, i42, i43, i44);
+  oColor = i45;
+}
+
+vec2 i11(float i10) {
+  float i13;
+  float i14 = i10;
+  float i16 = i14 + i15;
+  float i19 = i18;
+  float i20 = i16 + i19;
+  i13 = i20;
+  float i21 = i13;
+  float i23 = i21 + i22;
+  vec2 i24 = vec2(i23, i23);
+  return i24;
+}
+

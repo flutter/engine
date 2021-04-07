@@ -1,0 +1,141 @@
+#version 100
+
+precision mediump float;
+
+const float i70 = 10.0;
+const float i100 = 1.0;
+const float i101 = 0.0;
+const vec4 i143 = vec4(i100, i100, i100, i100);
+void main();
+float i10(float i9);
+vec2 i16(vec2 i15);
+vec3 i22(vec3 i21);
+vec4 i28(vec4 i27);
+mat2 i34(mat2 i33);
+mat3 i40(mat3 i39);
+mat4 i46(mat4 i45);
+
+void main() {
+  float i69;
+  float i71;
+  vec2 i73;
+  vec2 i76;
+  vec3 i78;
+  vec3 i84;
+  vec4 i86;
+  vec4 i93;
+  mat2 i95;
+  mat2 i109;
+  mat3 i111;
+  mat3 i121;
+  mat4 i123;
+  mat4 i139;
+  i71 = i70;
+  float i72 = i10(i71);
+  i69 = i72;
+  float i74 = i69;
+  vec2 i75 = vec2(i74, i74);
+  i76 = i75;
+  vec2 i77 = i16(i76);
+  i73 = i77;
+  vec2 i79 = i73;
+  float i80 = i69;
+  float i81 = i79[0];
+  float i82 = i79[1];
+  vec3 i83 = vec3(i81, i82, i80);
+  i84 = i83;
+  vec3 i85 = i22(i84);
+  i78 = i85;
+  vec3 i87 = i78;
+  float i88 = i69;
+  float i89 = i87[0];
+  float i90 = i87[1];
+  float i91 = i87[2];
+  vec4 i92 = vec4(i89, i90, i91, i88);
+  i93 = i92;
+  vec4 i94 = i28(i93);
+  i86 = i94;
+  vec4 i96 = i86;
+  vec2 i97 = vec2(i96[0], i96[1]);
+  vec4 i98 = i86;
+  vec2 i99 = vec2(i98[2], i98[3]);
+  float i102 = i97[0];
+  float i103 = i97[1];
+  float i104 = i99[0];
+  float i105 = i99[1];
+  vec2 i106 = vec2(i102, i103);
+  vec2 i107 = vec2(i104, i105);
+  mat2 i108 = mat2(i106, i107);
+  i109 = i108;
+  mat2 i110 = i34(i109);
+  i95 = i110;
+  mat2 i112 = i95;
+  float i113 = i112[0][0];
+  float i114 = i112[0][1];
+  float i115 = i112[1][0];
+  float i116 = i112[1][1];
+  vec3 i117 = vec3(i113, i114, i101);
+  vec3 i118 = vec3(i115, i116, i101);
+  vec3 i119 = vec3(i101, i101, i100);
+  mat3 i120 = mat3(i117, i118, i119);
+  i121 = i120;
+  mat3 i122 = i40(i121);
+  i111 = i122;
+  mat3 i124 = i111;
+  float i125 = i124[0][0];
+  float i126 = i124[0][1];
+  float i127 = i124[0][2];
+  float i128 = i124[1][0];
+  float i129 = i124[1][1];
+  float i130 = i124[1][2];
+  float i131 = i124[2][0];
+  float i132 = i124[2][1];
+  float i133 = i124[2][2];
+  vec4 i134 = vec4(i125, i126, i127, i101);
+  vec4 i135 = vec4(i128, i129, i130, i101);
+  vec4 i136 = vec4(i131, i132, i133, i101);
+  vec4 i137 = vec4(i101, i101, i101, i100);
+  mat4 i138 = mat4(i134, i135, i136, i137);
+  i139 = i138;
+  mat4 i140 = i46(i139);
+  i123 = i140;
+  mat4 i144 = i123;
+  vec4 i145 = i143 * i144;
+  gl_FragColor = i145;
+}
+
+float i10(float i9) {
+  float i48 = i9;
+  return i48;
+}
+
+vec2 i16(vec2 i15) {
+  vec2 i51 = i15;
+  return i51;
+}
+
+vec3 i22(vec3 i21) {
+  vec3 i54 = i21;
+  return i54;
+}
+
+vec4 i28(vec4 i27) {
+  vec4 i57 = i27;
+  return i57;
+}
+
+mat2 i34(mat2 i33) {
+  mat2 i60 = i33;
+  return i60;
+}
+
+mat3 i40(mat3 i39) {
+  mat3 i63 = i39;
+  return i63;
+}
+
+mat4 i46(mat4 i45) {
+  mat4 i66 = i45;
+  return i66;
+}
+
