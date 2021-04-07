@@ -69,7 +69,7 @@ class ShellIOManager final : public IOManager {
   // Unref queue management.
   fml::RefPtr<flutter::SkiaUnrefQueue> unref_queue_;
 
-  std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch_;
+  const std::shared_ptr<const fml::SyncSwitch>& is_gpu_disabled_sync_switch_;
 
   fml::WeakPtrFactory<ShellIOManager> weak_factory_;
 
