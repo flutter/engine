@@ -129,10 +129,8 @@ public class FlutterFragmentTest {
             .destroyEngineWithFragment(true)
             .build();
     fragment.setDelegate(mockDelegate);
-    ActivityController<FragmentActivity> activityController =
-        Robolectric.setupActivity(FragmentActivity.class);
-    activityController
-        .get()
+    FragmentActivity activity = Robolectric.setupActivity(FragmentActivity.class);
+    activity
         .getSupportFragmentManager()
         .beginTransaction()
         .add(android.R.id.content, fragment)
@@ -140,7 +138,7 @@ public class FlutterFragmentTest {
 
     verify(mockDelegate, never()).onBackPressed();
 
-    activityController.get().onBackPressed();
+    activity.onBackPressed();
 
     verify(mockDelegate, times(1)).onBackPressed();
   }
