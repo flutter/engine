@@ -48,9 +48,7 @@ G_DECLARE_FINAL_TYPE(FlKeyChannelResponder,
  *
  * Returns: a new #FlKeyChannelResponder.
  */
-FlKeyChannelResponder* fl_key_channel_responder_new(
-    FlKeyboardManager* manager,
-    FlBinaryMessenger* messenger);
+FlKeyChannelResponder* fl_key_channel_responder_new(FlBinaryMessenger* messenger);
 
 G_END_DECLS
 

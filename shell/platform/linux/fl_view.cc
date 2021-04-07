@@ -183,8 +183,7 @@ static void fl_view_constructed(GObject* object) {
   self->keyboard_manager = fl_keyboard_manager_new(
       fl_text_input_plugin_new(messenger, self), gdk_event_put);
   fl_keyboard_manager_add_responder(
-      self->keyboard_manager, FL_KEY_RESPONDER(fl_key_channel_responder_new(
-                                  self->keyboard_manager, messenger)));
+      self->keyboard_manager, FL_KEY_RESPONDER(fl_key_channel_responder_new(messenger)));
   self->mouse_cursor_plugin = fl_mouse_cursor_plugin_new(messenger, self);
   self->platform_plugin = fl_platform_plugin_new(messenger);
 

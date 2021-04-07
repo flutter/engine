@@ -32,7 +32,6 @@ static constexpr uint64_t kMaxPendingEvents = 1000;
 struct _FlKeyChannelResponder {
   GObject parent_instance;
 
-  FlKeyboardManager* manager;
   FlBasicMessageChannel* channel;
   GPtrArray* pending_events;
   uint64_t last_id;
@@ -269,14 +268,12 @@ static void fl_key_channel_responder_init(FlKeyChannelResponder* self) {}
 // an optional callback to call when a response is received, and an optional
 // channel name to use when sending messages.
 FlKeyChannelResponder* fl_key_channel_responder_new(
-    FlKeyboardManager* manager,
     FlBinaryMessenger* messenger) {
   g_return_val_if_fail(FL_IS_BINARY_MESSENGER(messenger), nullptr);
 
   FlKeyChannelResponder* self = FL_KEY_CHANNEL_RESPONDER(
       g_object_new(fl_key_channel_responder_get_type(), nullptr));
   self->last_id = 1;
-  self->manager = manager;
 
   g_autoptr(FlJsonMessageCodec) codec = fl_json_message_codec_new();
   self->channel = fl_basic_message_channel_new(messenger, kChannelName,
