@@ -244,19 +244,19 @@ static bool fl_keyboard_manager_remove_redispatched(FlKeyboardManager* self,
 static void responder_handle_event_callback(bool handled,
                                             gpointer user_data_ptr) {
   g_return_if_fail(FL_IS_KEYBOARD_MANAGER_USER_DATA(user_data_ptr));
-  g_autoptr(FlKeyboardManagerUserData) user_data =
+  FlKeyboardManagerUserData* user_data =
       FL_KEYBOARD_MANAGER_USER_DATA(user_data_ptr);
   printf("callback 2\n");
   FlKeyboardManager* self = user_data->manager;
 
-  guint result_index;
+  guint result_index = -1;
   gboolean found = g_ptr_array_find_with_equal_func(
       self->pending_responds, &user_data->sequence_id,
       compare_pending_by_sequence_id, &result_index);
   g_return_if_fail(found);
   printf("callback 3\n");
   FlKeyboardPendingEvent* pending = FL_KEYBOARD_PENDING_EVENT(g_ptr_array_index(self->pending_responds, result_index));
-  printf("callback 4\n");
+  printf("callback 4 unrep %zu\n", pending->unreplied);
   g_return_if_fail(pending != nullptr);
   g_return_if_fail(pending->unreplied > 0);
   pending->unreplied -= 1;
@@ -264,6 +264,7 @@ static void responder_handle_event_callback(bool handled,
   // All responders have replied.
   if (pending->unreplied == 0) {
     printf("callback 5\n");
+    g_object_unref(user_data_ptr);
     g_ptr_array_remove_index_fast(self->pending_responds, result_index);
     bool should_redispatch = false;
     if (!pending->any_handled) {
@@ -317,6 +318,7 @@ void fl_keyboard_manager_add_responder(FlKeyboardManager* self,
   g_return_if_fail(responder != nullptr);
 
   g_ptr_array_add(self->responder_list, responder);
+  printf("after add len %u\n", self->responder_list->len);
 }
 
 static void dispatch_pending_to_responder(gpointer responder_data,
@@ -342,7 +344,7 @@ gboolean fl_keyboard_manager_handle_event(FlKeyboardManager* self,
     return FALSE;
   }
 
-  printf("Handle 2\n");
+  printf("Handle 2 len %u\n", self->responder_list->len);
   FlKeyboardPendingEvent* pending = fl_keyboard_pending_event_new(
       event, ++self->last_sequence_id, self->responder_list->len);
 
