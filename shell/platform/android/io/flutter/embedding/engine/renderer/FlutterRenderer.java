@@ -276,7 +276,7 @@ public class FlutterRenderer implements TextureRegistry {
             + ", B: "
             + viewportMetrics.systemGestureInsetRight
             + "\n"
-            + "Display Features Count: "
+            + "Display Features: "
             + viewportMetrics.displayFeatures.size());
 
     int[] displayFeaturesBounds = new int[viewportMetrics.displayFeatures.size() * 4];

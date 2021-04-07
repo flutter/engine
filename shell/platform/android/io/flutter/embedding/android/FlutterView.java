@@ -349,8 +349,6 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
       setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_YES_EXCLUDE_DESCENDANTS);
     }
-
-    windowManager = new androidx.window.WindowManager(getContext());
   }
 
   /**
@@ -442,6 +440,11 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     sendViewportMetricsToFlutter();
   }
 
+  @VisibleForTesting()
+  protected androidx.window.WindowManager createWindowManager() {
+    return new androidx.window.WindowManager(getContext());
+  }
+
   /**
    * Invoked when this is attached to the window.
    *
@@ -450,6 +453,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   @Override
   protected void onAttachedToWindow() {
     super.onAttachedToWindow();
+    this.windowManager = createWindowManager();
     windowManager.registerLayoutChangeCallback(
         ContextCompat.getMainExecutor(getContext()), windowManagerListener);
   }
@@ -462,6 +466,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   @Override
   protected void onDetachedFromWindow() {
     windowManager.unregisterLayoutChangeCallback(windowManagerListener);
+    this.windowManager = null;
     super.onDetachedFromWindow();
   }
 
@@ -470,7 +475,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
    * features. Fold, hinge and cutout areas are populated here.
    */
   @TargetApi(28)
-  private void setWindowManagerDisplayFeatures(WindowLayoutInfo layoutInfo) {
+  protected void setWindowManagerDisplayFeatures(WindowLayoutInfo layoutInfo) {
     List<DisplayFeature> displayFeatures = layoutInfo.getDisplayFeatures();
     List<FlutterRenderer.DisplayFeature> result = new ArrayList<>();
 

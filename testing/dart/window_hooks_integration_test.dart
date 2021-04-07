@@ -395,7 +395,7 @@ void main() {
   test('Window padding/insets/viewPadding/systemGestureInsets', () {
     _updateWindowMetrics(
       0,     // window id
-      0,     // screen id
+      0,     // device pixel ratio
       800.0, // width
       600.0, // height
       50.0,  // padding top
@@ -422,7 +422,7 @@ void main() {
 
     _updateWindowMetrics(
       0,     // window id
-      0,     // screen id
+      0,     // device pixel ratio
       800.0, // width
       600.0, // height
       50.0,  // padding top
@@ -446,6 +446,59 @@ void main() {
     expectEquals(window.viewPadding.bottom, 40.0);
     expectEquals(window.padding.bottom, 0.0);
     expectEquals(window.systemGestureInsets.bottom, 44.0);
+  });
+
+  test('Window displayFeatures updates decode properly', () {
+    _updateWindowMetrics(
+      0,     // window id
+      2,     // device pixel ratio
+      800.0, // width
+      600.0, // height
+      50.0,  // padding top
+      0.0,   // padding right
+      40.0,  // padding bottom
+      0.0,   // padding left
+      0.0,   // inset top
+      0.0,   // inset right
+      0.0,   // inset bottom
+      0.0,   // inset left
+      0.0,   // system gesture inset top
+      0.0,   // system gesture inset right
+      0.0,   // system gesture inset bottom
+      0.0,   // system gesture inset left
+      [],    // display features bounds
+      [],    // display features types
+      [],    // display features states
+    );
+
+    expectIterablesEqual(window.displayFeatures, []);
+
+    _updateWindowMetrics(
+      0,     // window id
+      2,     // device pixel ratio
+      800.0, // width
+      600.0, // height
+      50.0,  // padding top
+      0.0,   // padding right
+      40.0,  // padding bottom
+      0.0,   // padding left
+      0.0,   // inset top
+      0.0,   // inset right
+      400.0, // inset bottom
+      0.0,   // inset left
+      0.0,   // system gesture inset top
+      0.0,   // system gesture inset right
+      44.0,  // system gesture inset bottom
+      0.0,   // system gesture inset left
+      [0, 0, 100, 100],    // display features bounds
+      [2],    // display features types
+      [3],    // display features states
+    );
+
+    // Display feature bounds is measured in logical pixels
+    expectEquals(window.displayFeatures[0].bounds, Rect.fromLTRB(0, 0, 50, 50));
+    expectEquals(window.displayFeatures[0].type, DisplayFeatureType.hinge);
+    expectEquals(window.displayFeatures[0].state, DisplayFeatureState.postureFlipped);
   });
 
   test('PlatformDispatcher.locale returns unknown locale when locales is set to empty list', () {

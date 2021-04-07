@@ -229,10 +229,10 @@ class PlatformDispatcher {
     required List<int> state,
     required double devicePixelRatio,
   }) {
-    assert(bounds.length / 4 == type.length);
+    assert(bounds.length / 4 == type.length, 'Bounds are rectangles, requiring 4 measurements each');
     assert(type.length == state.length);
     final List<DisplayFeature> result = <DisplayFeature>[];
-    for(int i = 0 ; i < type.length; i++){
+    for(int i = 0; i < type.length; i++){
       final int rectOffset = i * 4;
       result.add(DisplayFeature(
         bounds: Rect.fromLTRB(
@@ -1137,8 +1137,8 @@ class ViewConfiguration {
   /// This list is populated only on Android. If the device has no display
   /// features, this list is empty.
   ///
-  /// The coordinate space in which the [DisplayFeature.bounds] are defined includes all screens
-  /// and the space between them. This means that the space between the screens
+  /// The coordinate space in which the [DisplayFeature.bounds] are defined spans
+  /// across the screens currently in use. This means that the space between the screens
   /// is virtually part of the Flutter view space, with the [DisplayFeature.bounds]
   /// of the display feature as an obstructed area. The [DisplayFeature.type] can
   /// be used to determine if this display feature obstructs the screen or not.
@@ -1472,7 +1472,7 @@ enum DisplayFeatureType {
   fold,
   /// A physical separation with a hinge that allows two display panels to fold.
   hinge,
-  /// A non-functional area of the screen, usually housing cameras or sensors.
+  /// A non-displaying area of the screen, usually housing cameras or sensors.
   cutout,
 }
 
@@ -1480,7 +1480,7 @@ enum DisplayFeatureType {
 /// for foldable features.
 ///
 /// The posture is the shape made by the parts of the flexible screen or
-/// physical screen panels. Postures correspond to values found in
+/// physical screen panels. They are inspired by and similar to
 /// [Android Postures](https://developer.android.com/guide/topics/ui/foldables#postures).
 ///
 /// * For [DisplayFeatureType.fold]s & [DisplayFeatureType.hinge]s, the state is
@@ -1497,10 +1497,12 @@ enum DisplayFeatureState {
   postureFlat,
   /// Fold angle is in an intermediate position between opened and closed state.
   ///
-  /// There is a non-flat angle between parts of the flexible screen or between physical screen panels.
+  /// There is a non-flat angle between parts of the flexible screen or between
+  /// physical screen panels such that the screens start to face each other.
   postureHalfOpened,
   /// The foldable device is flipped with the flexible screen parts or physical
-  /// screens facing opposite directions.
+  /// screens facing opposite directions. Not all postures are possible on all
+  /// foldable devices. Some do not support the flipped posture.
   postureFlipped,
 }
 

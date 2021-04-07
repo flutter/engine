@@ -96,7 +96,7 @@ std::ostream& operator<<(std::ostream& os, const ViewportMetrics& a) {
      << a.physical_system_gesture_inset_right << "R "
      << a.physical_system_gesture_inset_bottom << "B "
      << a.physical_system_gesture_inset_left << "L] "
-     << "Display Features size: " << a.physical_display_features_type.size();
+     << "Display Features: " << a.physical_display_features_type.size();
   return os;
 }
 
