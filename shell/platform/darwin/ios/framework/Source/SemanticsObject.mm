@@ -97,6 +97,34 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
   }
 }
 
+- (BOOL)accessibilityActivate {
+  return [_semanticsObject accessibilityActivate];
+}
+
+- (void)accessibilityIncrement {
+  [_semanticsObject accessibilityIncrement];
+}
+
+- (void)accessibilityDecrement {
+  [_semanticsObject accessibilityDecrement];
+}
+
+- (BOOL)accessibilityScroll:(UIAccessibilityScrollDirection)direction {
+  return [_semanticsObject accessibilityScroll: direction];
+}
+
+- (BOOL)accessibilityPerformEscape {
+  return [_semanticsObject accessibilityPerformEscape];
+}
+
+- (void)accessibilityElementDidBecomeFocused {
+  [_semanticsObject accessibilityElementDidBecomeFocused];
+}
+
+- (void)accessibilityElementDidLoseFocus {
+  [_semanticsObject accessibilityElementDidLoseFocus];
+}
+
 @end  // FlutterSwitchSemanticsObject
 
 @implementation FlutterCustomAccessibilityAction {
