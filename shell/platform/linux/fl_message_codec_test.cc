@@ -67,12 +67,16 @@ static FlTestCodec* fl_test_codec_new() {
 }
 
 TEST(FlMessageCodecTest, EncodeMessage) {
+  printf("T0\n");
   g_autoptr(FlTestCodec) codec = fl_test_codec_new();
 
+  printf("T1\n");
   g_autoptr(FlValue) value = fl_value_new_int(1);
   g_autoptr(GError) error = nullptr;
+  printf("T2\n");
   g_autoptr(GBytes) message =
       fl_message_codec_encode_message(FL_MESSAGE_CODEC(codec), value, &error);
+  printf("T3\n");
   EXPECT_NE(message, nullptr);
   EXPECT_EQ(error, nullptr);
   EXPECT_EQ(g_bytes_get_size(message), static_cast<gsize>(1));

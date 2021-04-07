@@ -10,24 +10,16 @@
 #include "flutter/shell/platform/linux/fl_binary_messenger_private.h"
 #include "flutter/shell/platform/linux/testing/fl_test.h"
 
-// namespace {
-// struct EchoResponseData {
-//   GMainLoop* loop;
-// }
-// }
-
 static const char* expected_value = nullptr;
 static gboolean expected_handled = FALSE;
 
 static FlValue* echo_response_cb(FlValue* echoed_value) {
   gchar* text = fl_value_to_string(echoed_value);
-  printf("echo 1 %s\n", expected_value);fflush(stdout);
   EXPECT_STREQ(text, expected_value);
-  printf("echo 2 %s\n", expected_value);fflush(stdout);
+  g_free(text);
 
   FlValue* value = fl_value_new_map();
   fl_value_set_string_take(value, "handled", fl_value_new_bool(expected_handled));
-  printf("newvalue %s\n", fl_value_to_string(value));
   return value;
 }
 

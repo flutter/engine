@@ -25,15 +25,12 @@ static constexpr char kUnicodeScalarValuesKey[] = "unicodeScalarValues";
 static constexpr char kGtkToolkit[] = "gtk";
 static constexpr char kLinuxKeymap[] = "linux";
 
-static constexpr uint64_t kMaxPendingEvents = 1000;
-
 // Definition of the FlKeyChannelResponder GObject class.
 
 struct _FlKeyChannelResponder {
   GObject parent_instance;
 
   FlBasicMessageChannel* channel;
-  GPtrArray* pending_events;
   uint64_t last_id;
 
   FlKeyChannelResponderMock* mock;
@@ -57,58 +54,6 @@ static void fl_key_channel_responder_handle_event(
 static void fl_key_channel_responder_iface_init(
     FlKeyResponderInterface* iface) {
   iface->handle_event = fl_key_channel_responder_handle_event;
-}
-
-// Declare and define a private pair object to bind the id and the event
-// together.
-
-G_DECLARE_FINAL_TYPE(FlKeyEventPair,
-                     fl_key_event_pair,
-                     FL,
-                     KEY_EVENT_PAIR,
-                     GObject);
-
-struct _FlKeyEventPair {
-  GObject parent_instance;
-
-  uint64_t id;
-  GdkEventKey* event;
-};
-
-G_DEFINE_TYPE(FlKeyEventPair, fl_key_event_pair, G_TYPE_OBJECT)
-
-// Dispose method for FlKeyEventPair.
-static void fl_key_event_pair_dispose(GObject* object) {
-  // Redundant, but added so that we don't get a warning about unused function
-  // for FL_IS_KEY_EVENT_PAIR.
-  g_return_if_fail(FL_IS_KEY_EVENT_PAIR(object));
-
-  FlKeyEventPair* self = FL_KEY_EVENT_PAIR(object);
-  g_clear_pointer(&self->event, gdk_event_free);
-  G_OBJECT_CLASS(fl_key_event_pair_parent_class)->dispose(object);
-}
-
-// Class Initialization method for FlKeyEventPair class.
-static void fl_key_event_pair_class_init(FlKeyEventPairClass* klass) {
-  G_OBJECT_CLASS(klass)->dispose = fl_key_event_pair_dispose;
-}
-
-// Initialization for FlKeyEventPair instances.
-static void fl_key_event_pair_init(FlKeyEventPair* self) {}
-
-// Creates a new FlKeyEventPair instance, given a unique ID, and an event struct
-// to keep.
-FlKeyEventPair* fl_key_event_pair_new(uint64_t id, GdkEventKey* event) {
-  FlKeyEventPair* self =
-      FL_KEY_EVENT_PAIR(g_object_new(fl_key_event_pair_get_type(), nullptr));
-
-  // Copy the event to preserve refcounts for referenced values (mainly the
-  // window).
-  GdkEventKey* event_copy = reinterpret_cast<GdkEventKey*>(
-      gdk_event_copy(reinterpret_cast<GdkEvent*>(event)));
-  self->id = id;
-  self->event = event_copy;
-  return self;
 }
 
 // Declare and define a private class to hold response data from the framework.
@@ -173,48 +118,6 @@ FlKeyEventResponseData* fl_key_event_response_data_new(
   return self;
 }
 
-// Finds an event in the event queue that was sent to the framework by its ID.
-GdkEventKey* fl_key_channel_responder_find_pending_event(
-    FlKeyChannelResponder* self,
-    uint64_t id) {
-  for (guint i = 0; i < self->pending_events->len; ++i) {
-    if (FL_KEY_EVENT_PAIR(g_ptr_array_index(self->pending_events, i))->id ==
-        id) {
-      return FL_KEY_EVENT_PAIR(g_ptr_array_index(self->pending_events, i))
-          ->event;
-    }
-  }
-  return nullptr;
-}
-
-// Removes an event from the pending event queue.
-static void remove_pending_event(FlKeyChannelResponder* self, uint64_t id) {
-  for (guint i = 0; i < self->pending_events->len; ++i) {
-    if (FL_KEY_EVENT_PAIR(g_ptr_array_index(self->pending_events, i))->id ==
-        id) {
-      g_ptr_array_remove_index(self->pending_events, i);
-      return;
-    }
-  }
-  g_warning("Tried to remove pending event with id %" PRIu64
-            ", but the event was not found.",
-            id);
-}
-
-// Adds an GdkEventKey to the pending event queue, with a unique ID, and the
-// responder that added it.
-static void add_pending_event(FlKeyChannelResponder* self,
-                              uint64_t id,
-                              GdkEventKey* event) {
-  if (self->pending_events->len > kMaxPendingEvents) {
-    g_warning(
-        "There are %d keyboard events that have not yet received a "
-        "response from the framework. Are responses being sent?",
-        self->pending_events->len);
-  }
-  g_ptr_array_add(self->pending_events, fl_key_event_pair_new(id, event));
-}
-
 // Handles a response from the framework to a key event sent to the framework
 // earlier.
 static void handle_response(GObject* object,
@@ -244,7 +147,6 @@ static void handle_response(GObject* object,
   g_autoptr(FlValue) handled_value = fl_value_lookup_string(message, "handled");
   bool handled = fl_value_get_bool(handled_value);
 
-  remove_pending_event(self, data->id);
   data->callback(handled, data->user_data);
 }
 
@@ -253,7 +155,6 @@ static void fl_key_channel_responder_dispose(GObject* object) {
   FlKeyChannelResponder* self = FL_KEY_CHANNEL_RESPONDER(object);
 
   g_clear_object(&self->channel);
-  g_ptr_array_free(self->pending_events, TRUE);
 
   G_OBJECT_CLASS(fl_key_channel_responder_parent_class)->dispose(object);
 }
@@ -287,7 +188,6 @@ FlKeyChannelResponder* fl_key_channel_responder_new(
   self->channel = fl_basic_message_channel_new(messenger, channel_name,
                                                FL_MESSAGE_CODEC(codec));
 
-  self->pending_events = g_ptr_array_new_with_free_func(g_object_unref);
   return self;
 }
 
@@ -381,8 +281,6 @@ static void fl_key_channel_responder_handle_event(
                              fl_value_new_int(unicodeScalarValues));
   }
 
-  // Track the event as pending a response from the framework.
-  add_pending_event(self, id, event);
   FlKeyEventResponseData* data =
       fl_key_event_response_data_new(self, id, callback, user_data);
   // Send the message off to the framework for handling (or not).
