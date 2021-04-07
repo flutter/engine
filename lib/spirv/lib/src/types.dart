@@ -8,19 +8,20 @@ part of spirv;
 enum _Type {
   _void,
   _bool,
-  _int, 
+  _int,
   float,
   float2,
   float3,
   float4,
   float2x2,
   float3x3,
-  float4x4, 
+  float4x4,
 }
 
 class _FunctionType {
   /// Result-id of the return type.
   final int returnType;
+
   /// Type-id for each parameter.
   final List<int> params;
 
@@ -59,7 +60,7 @@ String _skslTypeName(_Type t) {
     case _Type.float4x4:
       return 'float4x4';
     default:
-      throw Error();
+      throw TypeError();
   }
 }
 
@@ -86,7 +87,7 @@ String _glslTypeName(_Type t) {
     case _Type.float4x4:
       return 'mat4';
     default:
-      throw Error();
+      throw TypeError();
   }
 }
 
@@ -107,6 +108,6 @@ int _typeFloatCount(_Type t) {
     case _Type.float4x4:
       return 16;
     default:
-      throw Error();
+      throw TypeError();
   }
 }

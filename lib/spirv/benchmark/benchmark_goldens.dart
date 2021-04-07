@@ -17,8 +17,8 @@ import '../test/golden.dart';
 /// times to perform each transpilation, and it will return
 /// the average of those values.
 ///
-/// The default number of iterations is tuned for running as 
-/// an AOT compiled binary with 
+/// The default number of iterations is tuned for running as
+/// an AOT compiled binary with
 /// `dart compile exe benchmark/benchmark_goldens.dart`
 ///
 /// When benchmarking with the dart VM, low iteration values

@@ -14,10 +14,8 @@ void main() {
   float i31;
   i31 = i30;
   vec2 i32 = i11(i31);
-  vec2 i35 = i34;
-  vec2 i36 = i32 * i35;
-  vec4 i39 = gl_FragCoord;
-  vec2 i40 = vec2(i39[0], i39[1]);
+  vec2 i36 = i32 * i34;
+  vec2 i40 = vec2(gl_FragCoord[0], gl_FragCoord[1]);
   float i41 = i36[0];
   float i42 = i36[1];
   float i43 = i40[0];
@@ -28,13 +26,10 @@ void main() {
 
 vec2 i11(float i10) {
   float i13;
-  float i14 = i10;
-  float i16 = i14 + i15;
-  float i19 = i18;
-  float i20 = i16 + i19;
+  float i16 = i10 + i15;
+  float i20 = i16 + i18;
   i13 = i20;
-  float i21 = i13;
-  float i23 = i21 + i22;
+  float i23 = i13 + i22;
   vec2 i24 = vec2(i23, i23);
   return i24;
 }
