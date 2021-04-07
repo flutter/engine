@@ -27,7 +27,7 @@ the code will need to adhere to the following rules.
 
 These rules may become less strict in future versions. Confirmant SPIR-V should succesfully transpile from the current version onwards.  In other words, a spir-v shader you use now that meets these rules should keep working, but the output of the transpiler may change for that shader.
 
-Textures, control flow, and structured types are being considered for addition but not currently supported.
+Support for textures, control flow, and structured types is planned, but not currently included.
 
 ## Testing
 
