@@ -9,10 +9,17 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+import android.content.Intent;
+import androidx.fragment.app.FragmentActivity;
+import androidx.activity.OnBackPressedCallback;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.RuntimeEnvironment;
+import org.robolectric.android.controller.ActivityController;
 import org.robolectric.annotation.Config;
 
 @Config(manifest = Config.NONE)
@@ -113,5 +120,57 @@ public class FlutterFragmentTest {
     // 1 time same as before.
     verify(mockDelegate, times(1)).onDestroyView();
     verify(mockDelegate, times(1)).onDetach();
+  }
+
+  @Test
+  public void itDelegatesOnBackPressedAutomaticallyWhenEnabled() {
+    FlutterActivityAndFragmentDelegate mockDelegate =
+        mock(FlutterActivityAndFragmentDelegate.class);
+    FlutterFragment fragment =
+        FlutterFragment.withCachedEngine("my_cached_engine")
+            .destroyEngineWithFragment(true)
+            .build();
+    fragment.setDelegate(mockDelegate);
+    ActivityController<FragmentActivity> activityController =
+        Robolectric.setupActivity(FragmentActivity.class);
+    activityController
+        .get()
+        .getSupportFragmentManager()
+        .beginTransaction()
+        .add(android.R.id.content, fragment)
+        .commitNow();
+
+    verify(mockDelegate, never()).onBackPressed();
+
+    activityController.get().onBackPressed();
+
+    verify(mockDelegate, times(1)).onBackPressed();
+  }
+
+  @Test
+  public void itHandlesPopSystemNavigationAutomaticallyWhenEnabled() {
+    FlutterActivityAndFragmentDelegate mockDelegate =
+        mock(FlutterActivityAndFragmentDelegate.class);
+    FlutterFragment fragment =
+        FlutterFragment.withCachedEngine("my_cached_engine")
+            .destroyEngineWithFragment(true)
+            .build();
+    fragment.setDelegate(mockDelegate);
+    ActivityController<FragmentActivity> activityController =
+        Robolectric.setupActivity(FragmentActivity.class);
+    activityController
+        .get()
+        .getSupportFragmentManager()
+        .beginTransaction()
+        .add(android.R.id.content, fragment)
+        .commitNow();
+    OnBackPressedCallback callback = mock(OnBackPressedCallback.class);
+    when(callback.isEnabled()).thenReturn(true);
+    activityController.get().getOnBackPressedDispatcher().addCallback(callback);
+
+    assertTrue(fragment.popSystemNavigator());
+
+    verify(mockDelegate, never()).onBackPressed();
+    verify(callback, times(1)).handleOnBackPressed();
   }
 }
