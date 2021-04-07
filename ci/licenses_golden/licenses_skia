@@ -1,4 +1,4 @@
-Signature: e28dc6924edc9483c1a5beba38f219b8
+Signature: d51b39ff9c1ed38352ee0469cafa3d83
 
 UNUSED LICENSES:
 
@@ -5124,10 +5124,14 @@ FILE: ../../../third_party/skia/src/sksl/ir/SkSLConstructorArray.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLConstructorArray.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLConstructorDiagonalMatrix.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLConstructorDiagonalMatrix.h
+FILE: ../../../third_party/skia/src/sksl/ir/SkSLConstructorMatrixResize.cpp
+FILE: ../../../third_party/skia/src/sksl/ir/SkSLConstructorMatrixResize.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLConstructorScalarCast.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLConstructorScalarCast.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLConstructorSplat.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLConstructorSplat.h
+FILE: ../../../third_party/skia/src/sksl/ir/SkSLConstructorVector.cpp
+FILE: ../../../third_party/skia/src/sksl/ir/SkSLConstructorVector.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLConstructorVectorCast.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLConstructorVectorCast.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLDoStatement.cpp
