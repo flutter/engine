@@ -744,11 +744,7 @@ static void InvokeDartPluginRegistrantIfAvailable(Dart_Handle library_handle) {
   if (Dart_IsError(plugin_registrant)) {
     return;
   }
-  Dart_Handle result =
-      tonic::DartInvokeField(plugin_registrant, "register", {});
-  if (tonic::LogIfError(result)) {
-    FML_LOG(ERROR) << "The Dart plugin registrant produced an error";
-  }
+  tonic::LogIfError(tonic::DartInvokeField(plugin_registrant, "register", {}));
 }
 
 bool DartIsolate::RunFromLibrary(std::optional<std::string> library_name,
