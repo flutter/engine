@@ -4,6 +4,7 @@
 
 // @dart = 2.6
 import 'dart:async';
+import 'dart:html' as html;
 import 'dart:math' as math;
 
 import 'package:test/bootstrap/browser.dart';
@@ -224,6 +225,32 @@ void testMain() async {
     final canvas = DomCanvas(domRenderer.createElement('flt-picture'));
     testGiantParagraphStyles(canvas);
     return takeScreenshot(canvas, bounds, 'canvas_paragraph_giant_paragraph_style_dom');
+  });
+
+  test('giant font size on the body tag (DOM)', () async {
+    const Rect bounds = Rect.fromLTWH(0, 0, 300, 200);
+
+    // Store the old font size value on the body, and set a gaint font size.
+    final String oldBodyFontSize = html.document.body.style.fontSize;
+    html.document.body.style.fontSize = '100px';
+
+    final canvas = DomCanvas(domRenderer.createElement('flt-picture'));
+    final CanvasParagraph paragraph = rich(
+      ParagraphStyle(fontFamily: 'Roboto'),
+      (CanvasParagraphBuilder builder) {
+        builder.pushStyle(EngineTextStyle.only(color: yellow, fontSize: 24.0));
+        builder.addText('Lorem ');
+        builder.pushStyle(EngineTextStyle.only(color: red, fontSize: 48.0));
+        builder.addText('ipsum');
+      },
+    )..layout(constrain(double.infinity));
+    final Rect rect = Rect.fromLTRB(0.0, 0.0, paragraph.maxIntrinsicWidth, paragraph.height);
+    canvas.drawRect(rect, SurfacePaintData()..color = black);
+    canvas.drawParagraph(paragraph, Offset.zero);
+    await takeScreenshot(canvas, bounds, 'canvas_paragraph_giant_body_font_size_dom');
+
+    // Restore the old font size value.
+    html.document.body.style.fontSize = oldBodyFontSize;
   });
 
   test('paints spans with varying heights/baselines', () {
