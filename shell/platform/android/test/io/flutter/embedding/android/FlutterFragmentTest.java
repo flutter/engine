@@ -137,7 +137,7 @@ public class FlutterFragmentTest {
 
     FlutterFragment fragment =
         FlutterFragment.withCachedEngine("my_cached_engine")
-            .enableAutomaticOnBackPressedHandling(true)
+            .shouldAutomaticallyHandleOnBackPressed(true)
             .build();
     FragmentActivity activity = Robolectric.setupActivity(FragmentActivity.class);
     activity
@@ -168,7 +168,7 @@ public class FlutterFragmentTest {
 
     FlutterFragment fragment =
         FlutterFragment.withCachedEngine("my_cached_engine")
-            .enableAutomaticOnBackPressedHandling(true)
+            .shouldAutomaticallyHandleOnBackPressed(true)
             .build();
     FragmentActivity activity = Robolectric.setupActivity(FragmentActivity.class);
     activity
