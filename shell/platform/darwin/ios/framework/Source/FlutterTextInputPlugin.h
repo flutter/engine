@@ -81,6 +81,7 @@
 
 /** A tokenizer used by `FlutterTextInputView` to customize string parsing. */
 @interface FlutterTokenizer : UITextInputStringTokenizer
+@end
 
 @interface FlutterTextSelectionRect : UITextSelectionRect
 

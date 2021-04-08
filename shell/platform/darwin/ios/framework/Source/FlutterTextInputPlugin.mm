@@ -441,6 +441,10 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
                                                                   offset:-offSetFromLineBreak];
 
   return [_textInputView textRangeFromPosition:lineBreakBefore toPosition:lineBreakAfter];
+}
+
+@end
+
 #pragma mark - FlutterTextSelectionRect
 
 @implementation FlutterTextSelectionRect
@@ -759,11 +763,13 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 #pragma mark UIScribbleInteractionDelegate
 
 - (void)scribbleInteractionWillBeginWriting:(UIScribbleInteraction*)interaction {
+  NSLog(@"[scribble] scribbleInteractionWillBeginWriting");
   _scribbleInProgress = true;
   [_textInputDelegate scribbleInteractionBegan];
 }
 
 - (void)scribbleInteractionDidFinishWriting:(UIScribbleInteraction*)interaction {
+  NSLog(@"[scribble] scribbleInteractionDidFinishWriting");
   _scribbleInProgress = false;
   [_textInputDelegate scribbleInteractionFinished];
 }
@@ -1146,6 +1152,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 // physical keyboard.
 
 - (void)setSelectionRects:(NSArray*)rects {
+  NSLog(@"[scribble] setSelectionRects");
   NSMutableArray* rectsAsRect = [[NSMutableArray alloc] initWithCapacity:[rects count]];
   for (NSUInteger i = 0; i < [rects count]; i++) {
     NSArray* rect = rects[i];
@@ -1163,7 +1170,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
            @"Expected a FlutterTextPosition for range.start (got %@).", [range.start class]);
   NSAssert([range.end isKindOfClass:[FlutterTextPosition class]],
            @"Expected a FlutterTextPosition for range.end (got %@).", [range.end class]);
-
+  NSLog(@"[scribble] firstRectForRange");
   NSUInteger start = ((FlutterTextPosition*)range.start).index;
   NSUInteger end = ((FlutterTextPosition*)range.end).index;
   if (_markedTextRange != nil) {
@@ -1205,9 +1212,13 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
       CGRect rect =
           CGRectMake([_selectionRects[i][0] floatValue], [_selectionRects[i][1] floatValue],
                      [_selectionRects[i][2] floatValue], [_selectionRects[i][3] floatValue]);
+      NSLog(@"[scribble] firstRectForRange (%@ - %@) -> %@, %@, %@, %@", @(start), @(end),
+            @(rect.origin.x), @(rect.origin.y), @(rect.size.width), @(rect.size.height));
       return rect;
     }
   }
+
+  NSLog(@"[scribble] firstRectForRange (%@ - %@) -> CGRectZero", @(start), @(end));
 
   // TODO(cbracken) Implement.
   return CGRectZero;
@@ -1215,12 +1226,12 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 
 - (CGRect)caretRectForPosition:(UITextPosition*)position {
   // TODO(cbracken) Implement.
-  NSUInteger start = ((FlutterTextPosition*)position).index;
   return CGRectZero;
 }
 
 - (UITextPosition*)closestPositionToPoint:(CGPoint)point {
   // TODO(cbracken) Implement.
+  NSLog(@"[scribble] closestPositionToPoint");
   if ([_selectionRects count] == 0) {
     NSUInteger currentIndex = ((FlutterTextPosition*)_selectedTextRange.start).index;
     return [FlutterTextPosition positionWithIndex:currentIndex];
@@ -1234,6 +1245,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 
 - (NSArray*)selectionRectsForRange:(UITextRange*)range {
   // TODO(cbracken) Implement.
+  NSLog(@"[scribble] selectionRectsForRange");
   NSUInteger start = ((FlutterTextPosition*)range.start).index;
   NSUInteger end = ((FlutterTextPosition*)range.end).index;
   NSMutableArray* rects = [[NSMutableArray alloc] init];
@@ -1315,6 +1327,8 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
       _closestPosition = end;
     }
   }
+  NSLog(@"[scribble] closestPositionToPoint (%@, %@) within range (%@ - %@) -> %@", @(point.x),
+        @(point.y), @(start), @(end), @(_closestPosition));
 
   return [FlutterTextPosition positionWithIndex:_closestPosition];
 }
@@ -1848,17 +1862,15 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 }
 
 - (void)addToInputParentViewIfNeeded:(FlutterTextInputView*)inputView {
-  if (![inputView isDescendantOfView:_inputHider]) {
-    [_inputHider addSubview:inputView];
-  }
+  // TODO: Find a different way to do what FlutterTextInputViewAccessibilityHider was doing
   UIView* parentView = self.keyWindow;
-  if (_inputHider.superview != parentView) {
-    [parentView addSubview:_inputHider];
+  if (inputView.superview != parentView) {
     if (@available(iOS 14.0, *)) {
       UIScribbleInteraction* interaction =
           [[[UIScribbleInteraction alloc] initWithDelegate:inputView] autorelease];
       [inputView addInteraction:interaction];
     }
+    [parentView addSubview:inputView];
   }
 }
 
