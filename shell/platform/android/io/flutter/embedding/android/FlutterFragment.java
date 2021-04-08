@@ -336,9 +336,10 @@ public class FlutterFragment extends Fragment
      * #onBackPressed()} events, rather than requiring an explicit activity call through. Disabled
      * by default.
      *
-     * <p>When enabled, the fragment will use an {@link OnBackPressedCallback} to receive events
-     * from the activity automatically. If enabled, you should <b>not</b> invoke {@link
-     * #onBackPressed()} manually.
+     * <p>When enabled, the activity will automatically dispatch back-press events to the fragment's
+     * {@link OnBackPressedCallback}, instead of requiring the activity to manually call {@link
+     * #onBackPressed()} in client code. If enabled, do <b>not</b> invoke {@link #onBackPressed()}
+     * manually.
      *
      * <p>This behavior relies on the implementation of {@link #popSystemNavigator()}. It's not
      * recommended to override that method when enabling this attribute, but if you do, you should
@@ -567,9 +568,10 @@ public class FlutterFragment extends Fragment
      * #onBackPressed()} events, rather than requiring an explicit activity call through. Disabled
      * by default.
      *
-     * <p>When enabled, the fragment will use an {@link OnBackPressedCallback} to receive events
-     * from the activity automatically. If enabled, you should <b>not</b> invoke {@link
-     * #onBackPressed()} manually.
+     * <p>When enabled, the activity will automatically dispatch back-press events to the fragment's
+     * {@link OnBackPressedCallback}, instead of requiring the activity to manually call {@link
+     * #onBackPressed()} in client code. If enabled, do <b>not</b> invoke {@link #onBackPressed()}
+     * manually.
      *
      * <p>Enabling this behavior relies on explicit behavior in {@link #popSystemNavigator()}. It's
      * not recommended to override that method when enabling this attribute, but if you do, you
