@@ -700,7 +700,6 @@ bool DartIsolate::MarkIsolateRunnable() {
 
 [[nodiscard]] static bool InvokeMainEntrypoint(
     Dart_Handle user_entrypoint_function,
-    Dart_Handle plugin_registrant_function,
     Dart_Handle args) {
   if (tonic::LogIfError(user_entrypoint_function)) {
     FML_LOG(ERROR) << "Could not resolve main entrypoint function.";
@@ -767,8 +766,7 @@ bool DartIsolate::RunFromLibrary(std::optional<std::string> library_name,
     }
   }
 
-  if (!InvokeMainEntrypoint(user_entrypoint_function, plugin_registrant,
-                            entrypoint_args)) {
+  if (!InvokeMainEntrypoint(user_entrypoint_function, entrypoint_args)) {
     return false;
   }
 
