@@ -1205,10 +1205,16 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   if (end < start) {
     first = end;
   }
+  FlutterTextRange* textRange = [[FlutterTextRange
+      rangeWithNSRange:fml::RangeForCharactersInRange(self.text, NSMakeRange(0, self.text.length))]
+      copy];
+  NSLog(@"[scribble] firstRectForRange (%@ - %@), textRange.range.length: %@", @(start), @(end),
+        @(textRange.range.length));
   for (NSUInteger i = 0; i < [_selectionRects count]; i++) {
     if ([_selectionRects[i][4] unsignedIntegerValue] <= first &&
-        (i + 1 == [_selectionRects count] ||
-         [_selectionRects[i + 1][4] unsignedIntegerValue] > first)) {
+        ((i + 1 == [_selectionRects count] && textRange.range.length > first) ||
+         (i + 1 < [_selectionRects count] &&
+          [_selectionRects[i + 1][4] unsignedIntegerValue] > first))) {
       CGRect rect =
           CGRectMake([_selectionRects[i][0] floatValue], [_selectionRects[i][1] floatValue],
                      [_selectionRects[i][2] floatValue], [_selectionRects[i][3] floatValue]);
@@ -1283,7 +1289,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   NSUInteger _closestPosition = 0;
   float _closestY = 0;
   float _closestX = 0;
-  for (NSUInteger i = 0; i < [_selectionRects count] && i < end; i++) {
+  for (NSUInteger i = 0; i < [_selectionRects count]; i++) {
     NSUInteger position = [_selectionRects[i][4] unsignedIntegerValue];
     if (position >= start && position <= end) {
       CGRect rect =
@@ -1308,8 +1314,13 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     }
   }
 
-  if ([_selectionRects count] > 0 && self.text.length >= end) {
+  FlutterTextRange* textRange = [[FlutterTextRange
+      rangeWithNSRange:fml::RangeForCharactersInRange(self.text, NSMakeRange(0, self.text.length))]
+      copy];
+
+  if ([_selectionRects count] > 0 && textRange.range.length == end) {
     NSUInteger i = [_selectionRects count] - 1;
+    NSUInteger position = [_selectionRects[i][4] unsignedIntegerValue] + 1;
     CGRect rect =
         CGRectMake([_selectionRects[i][0] floatValue], [_selectionRects[i][1] floatValue],
                    [_selectionRects[i][2] floatValue], [_selectionRects[i][3] floatValue]);
@@ -1324,7 +1335,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
       _closestY = yDist;
       _closestX = xDist;
       _closestIndex = [_selectionRects count];
-      _closestPosition = end;
+      _closestPosition = position;
     }
   }
   NSLog(@"[scribble] closestPositionToPoint (%@, %@) within range (%@ - %@) -> %@", @(point.x),

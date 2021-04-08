@@ -506,15 +506,17 @@ FLUTTER_ASSERT_ARC
   FlutterTextRange* range = [FlutterTextRange rangeWithNSRange:NSMakeRange(1, 1)];
   CGRect testRect = CGRectMake(100, 100, 100, 100);
   [inputView setSelectionRects:@[
-    @[ @0, @0, @100, @100 ],
+    @[ @0, @0, @100, @100, @0 ],
     @[
-      @(testRect.origin.x), @(testRect.origin.y), @(testRect.size.width), @(testRect.size.height)
+      @(testRect.origin.x), @(testRect.origin.y), @(testRect.size.width), @(testRect.size.height),
+      @1
     ],
-    @[ @200, @200, @100, @100 ]
+    @[ @200, @200, @100, @100, @2 ]
   ]];
   NSLog(@"testRect: %@, firstRect: %@", @(testRect), @([inputView firstRectForRange:range]));
   XCTAssertTrue(CGRectEqualToRect(testRect, [inputView firstRectForRange:range]));
 
+  [inputView setTextInputState:@{@"text" : @"COM"}];
   FlutterTextRange* rangeOutsideBounds = [FlutterTextRange rangeWithNSRange:NSMakeRange(3, 1)];
   XCTAssertTrue(CGRectEqualToRect(CGRectZero, [inputView firstRectForRange:rangeOutsideBounds]));
 }
@@ -525,9 +527,9 @@ FLUTTER_ASSERT_ARC
 
   // Minimize the vertical distance from the center of the rects first
   [inputView setSelectionRects:@[
-    @[ @0, @0, @100, @100 ],
-    @[ @0, @100, @100, @100 ],
-    @[ @0, @200, @100, @100 ],
+    @[ @0, @0, @100, @100, @0 ],
+    @[ @0, @100, @100, @100, @1 ],
+    @[ @0, @200, @100, @100, @2 ],
   ]];
   CGPoint point = CGPointMake(150, 150);
   XCTAssertEqual(1, ((FlutterTextPosition*)[inputView closestPositionToPoint:point]).index);
@@ -535,11 +537,11 @@ FLUTTER_ASSERT_ARC
   // Then, if the point is above the bottom of the closest rects vertically, get the closest x
   // origin
   [inputView setSelectionRects:@[
-    @[ @0, @0, @100, @100 ],
-    @[ @0, @100, @100, @100 ],
-    @[ @100, @100, @100, @100 ],
-    @[ @200, @100, @100, @100 ],
-    @[ @0, @200, @100, @100 ],
+    @[ @0, @0, @100, @100, @0 ],
+    @[ @0, @100, @100, @100, @1 ],
+    @[ @100, @100, @100, @100, @2 ],
+    @[ @200, @100, @100, @100, @3 ],
+    @[ @0, @200, @100, @100, @4 ],
   ]];
   point = CGPointMake(125, 150);
   XCTAssertEqual(2, ((FlutterTextPosition*)[inputView closestPositionToPoint:point]).index);
@@ -547,21 +549,21 @@ FLUTTER_ASSERT_ARC
   // However, if the point is below the bottom of the closest rects vertically, get the position
   // farthest to the right
   [inputView setSelectionRects:@[
-    @[ @0, @0, @100, @100 ],
-    @[ @0, @100, @100, @100 ],
-    @[ @100, @100, @100, @100 ],
-    @[ @200, @100, @100, @100 ],
-    @[ @0, @300, @100, @100 ],
+    @[ @0, @0, @100, @100, @0 ],
+    @[ @0, @100, @100, @100, @1 ],
+    @[ @100, @100, @100, @100, @2 ],
+    @[ @200, @100, @100, @100, @3 ],
+    @[ @0, @300, @100, @100, @4 ],
   ]];
   point = CGPointMake(125, 201);
   XCTAssertEqual(3, ((FlutterTextPosition*)[inputView closestPositionToPoint:point]).index);
 
   // Also check a point at the right edge of the last selection rect
   [inputView setSelectionRects:@[
-    @[ @0, @0, @100, @100 ],
-    @[ @0, @100, @100, @100 ],
-    @[ @100, @100, @100, @100 ],
-    @[ @200, @100, @100, @100 ],
+    @[ @0, @0, @100, @100, @0 ],
+    @[ @0, @100, @100, @100, @1 ],
+    @[ @100, @100, @100, @100, @2 ],
+    @[ @200, @100, @100, @100, @3 ],
   ]];
   point = CGPointMake(125, 250);
   XCTAssertEqual(4, ((FlutterTextPosition*)[inputView closestPositionToPoint:point]).index);
@@ -576,16 +578,16 @@ FLUTTER_ASSERT_ARC
   CGRect testRect0 = CGRectMake(100, 100, 100, 100);
   CGRect testRect1 = CGRectMake(200, 200, 100, 100);
   [inputView setSelectionRects:@[
-    @[ @0, @0, @100, @100 ],
+    @[ @0, @0, @100, @100, @0 ],
     @[
       @(testRect0.origin.x), @(testRect0.origin.y), @(testRect0.size.width),
-      @(testRect0.size.height)
+      @(testRect0.size.height), @1
     ],
     @[
       @(testRect1.origin.x), @(testRect1.origin.y), @(testRect1.size.width),
-      @(testRect1.size.height)
+      @(testRect1.size.height), @2
     ],
-    @[ @300, @300, @100, @100 ]
+    @[ @300, @300, @100, @100, @3 ]
   ]];
   XCTAssertTrue(CGRectEqualToRect(testRect0, [inputView selectionRectsForRange:range][0].rect));
   XCTAssertTrue(CGRectEqualToRect(testRect1, [inputView selectionRectsForRange:range][1].rect));
@@ -598,11 +600,11 @@ FLUTTER_ASSERT_ARC
 
   // Do not return a position before the start of the range
   [inputView setSelectionRects:@[
-    @[ @0, @0, @100, @100 ],
-    @[ @0, @100, @100, @100 ],
-    @[ @100, @100, @100, @100 ],
-    @[ @200, @100, @100, @100 ],
-    @[ @0, @200, @100, @100 ],
+    @[ @0, @0, @100, @100, @0 ],
+    @[ @0, @100, @100, @100, @1 ],
+    @[ @100, @100, @100, @100, @2 ],
+    @[ @200, @100, @100, @100, @3 ],
+    @[ @0, @200, @100, @100, @4 ],
   ]];
   CGPoint point = CGPointMake(125, 150);
   FlutterTextRange* range = [[FlutterTextRange rangeWithNSRange:NSMakeRange(3, 2)] copy];
@@ -611,11 +613,11 @@ FLUTTER_ASSERT_ARC
 
   // Do not return a position after the end of the range
   [inputView setSelectionRects:@[
-    @[ @0, @0, @100, @100 ],
-    @[ @0, @100, @100, @100 ],
-    @[ @100, @100, @100, @100 ],
-    @[ @200, @100, @100, @100 ],
-    @[ @0, @200, @100, @100 ],
+    @[ @0, @0, @100, @100, @0 ],
+    @[ @0, @100, @100, @100, @1 ],
+    @[ @100, @100, @100, @100, @2 ],
+    @[ @200, @100, @100, @100, @3 ],
+    @[ @0, @200, @100, @100, @4 ],
   ]];
   point = CGPointMake(125, 150);
   range = [[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)] copy];
