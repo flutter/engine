@@ -125,7 +125,8 @@ public class FlutterFragmentTest {
         mock(FlutterActivityAndFragmentDelegate.class);
     FlutterFragment fragment =
         FlutterFragment.withCachedEngine("my_cached_engine")
-            .destroyEngineWithFragment(true)
+            .enableAutomaticOnBackPressedHandling(true)
+            .shouldAttachEngineToActivity(false)
             .build();
     fragment.setDelegate(mockDelegate);
     FragmentActivity activity = Robolectric.setupActivity(FragmentActivity.class);
@@ -148,7 +149,8 @@ public class FlutterFragmentTest {
         mock(FlutterActivityAndFragmentDelegate.class);
     FlutterFragment fragment =
         FlutterFragment.withCachedEngine("my_cached_engine")
-            .destroyEngineWithFragment(true)
+            .enableAutomaticOnBackPressedHandling(true)
+            .shouldAttachEngineToActivity(false)
             .build();
     fragment.setDelegate(mockDelegate);
     FragmentActivity activity = Robolectric.setupActivity(FragmentActivity.class);
