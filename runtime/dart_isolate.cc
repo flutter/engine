@@ -756,18 +756,18 @@ bool DartIsolate::RunFromLibrary(std::optional<std::string> library_name,
   //
   // Since this method may or may not be defined, check if the class is defined
   // in the default library before calling the method.
-  Dart_Handle classRegistrant =
+  Dart_Handle plugin_registrant =
       ::Dart_GetClass(library_handle, tonic::ToDart("_PluginRegistrant"));
 
-  if (!Dart_IsError(classRegistrant)) {
+  if (!Dart_IsError(plugin_registrant)) {
     Dart_Handle result =
-        tonic::DartInvokeField(classRegistrant, "register", {});
+        tonic::DartInvokeField(plugin_registrant, "register", {});
     if (tonic::LogIfError(result)) {
       FML_LOG(ERROR) << "Could not invoke the Dart plugin registrant.";
     }
   }
 
-  if (!InvokeMainEntrypoint(user_entrypoint_function, classRegistrant,
+  if (!InvokeMainEntrypoint(user_entrypoint_function, plugin_registrant,
                             entrypoint_args)) {
     return false;
   }
