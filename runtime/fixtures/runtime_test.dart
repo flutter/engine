@@ -118,7 +118,6 @@ void testCanConvertListOfInts(List<int> args){
 bool didCallRegistrantBeforeEntrypoint = false;
 
 // Test the Dart plugin registrant.
-// _PluginRegistrant requires the entrypoint annotation, so the compiler doesn't tree shake it.
 @pragma('vm:entry-point')
 class _PluginRegistrant {
 
