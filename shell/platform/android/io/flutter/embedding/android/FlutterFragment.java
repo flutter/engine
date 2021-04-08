@@ -1202,6 +1202,9 @@ public class FlutterFragment extends Fragment
     if (getArguments().getBoolean(ARG_SHOULD_AUTOMATICALLY_HANDLE_ON_BACK_PRESSED, false)) {
       FragmentActivity activity = getActivity();
       if (activity != null) {
+        // Unless we disable the callback, the dispatcher call will trigger it. This will then
+        // trigger the fragment's onBackPressed() implementation, which will call through to the
+        // dart side and likely call back through to this method, creating an infinite call loop.
         onBackPressedCallback.setEnabled(false);
         activity.getOnBackPressedDispatcher().onBackPressed();
         onBackPressedCallback.setEnabled(true);
