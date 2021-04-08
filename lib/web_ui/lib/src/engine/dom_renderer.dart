@@ -152,7 +152,7 @@ class DomRenderer {
   html.Element? _glassPaneElement;
 
   // The ShadowRoot of the [glassPaneElement].
-  html.ShadowRoot? _glassPaneElementShadowRoot;
+  // html.ShadowRoot? _glassPaneElementShadowRoot; // unused externally, for now...
 
   final html.Element rootElement = html.document.body!;
 
@@ -455,11 +455,12 @@ flt-glass-pane * {
       'delegatesFocus': 'true',
     });
 
-    _glassPaneElementShadowRoot = glassPaneElementShadowRoot;
+    // _glassPaneElementShadowRoot = glassPaneElementShadowRoot;
 
     bodyElement.append(glassPaneElement);
 
     final html.StyleElement shadowRootStyleElement = html.StyleElement();
+    // The shadowRootStyleElement must be appended to the DOM, or its `sheet` will be null later...
     glassPaneElementShadowRoot.append(shadowRootStyleElement);
 
     final html.CssStyleSheet shadowRootStyleSheet = shadowRootStyleElement.sheet as html.CssStyleSheet;
