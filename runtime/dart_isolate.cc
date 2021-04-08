@@ -763,7 +763,7 @@ bool DartIsolate::RunFromLibrary(std::optional<std::string> library_name,
     Dart_Handle result =
         tonic::DartInvokeField(classRegistrant, "register", {});
     if (tonic::LogIfError(result)) {
-      FML_LOG(ERROR) << "Could not invoke the main entrypoint.";
+      FML_LOG(ERROR) << "Could not invoke the Dart plugin registrant.";
     }
   }
 
