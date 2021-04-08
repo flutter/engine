@@ -644,7 +644,7 @@ TEST_F(DartIsolateTest, DartPluginRegistrantIsCalled) {
   ASSERT_EQ(isolate->get()->GetPhase(), DartIsolate::Phase::Running);
   latch.Wait();
   ASSERT_EQ(messages.size(), 1u);
-  ASSERT_EQ(messages[0], "_registerPlugins was called");
+  ASSERT_EQ(messages[0], "_PluginRegistrant.register() was called");
 }
 
 }  // namespace testing
