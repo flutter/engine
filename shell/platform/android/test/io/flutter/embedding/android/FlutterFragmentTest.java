@@ -124,19 +124,14 @@ public class FlutterFragmentTest {
     FlutterActivityAndFragmentDelegate mockDelegate =
         mock(FlutterActivityAndFragmentDelegate.class);
     FlutterFragment fragment =
-        FlutterFragment.withCachedEngine("my_cached_engine")
-            .enableAutomaticOnBackPressedHandling(true)
-            .shouldAttachEngineToActivity(false)
-            .build();
-    fragment.setDelegate(mockDelegate);
+        FlutterFragment.withNewEngine().enableAutomaticOnBackPressedHandling(true).build();
     FragmentActivity activity = Robolectric.setupActivity(FragmentActivity.class);
     activity
         .getSupportFragmentManager()
         .beginTransaction()
         .add(android.R.id.content, fragment)
         .commitNow();
-
-    verify(mockDelegate, never()).onBackPressed();
+    fragment.setDelegate(mockDelegate);
 
     activity.onBackPressed();
 
@@ -148,11 +143,7 @@ public class FlutterFragmentTest {
     FlutterActivityAndFragmentDelegate mockDelegate =
         mock(FlutterActivityAndFragmentDelegate.class);
     FlutterFragment fragment =
-        FlutterFragment.withCachedEngine("my_cached_engine")
-            .enableAutomaticOnBackPressedHandling(true)
-            .shouldAttachEngineToActivity(false)
-            .build();
-    fragment.setDelegate(mockDelegate);
+        FlutterFragment.withNewEngine().enableAutomaticOnBackPressedHandling(true).build();
     FragmentActivity activity = Robolectric.setupActivity(FragmentActivity.class);
     activity
         .getSupportFragmentManager()
@@ -162,6 +153,7 @@ public class FlutterFragmentTest {
     OnBackPressedCallback callback = mock(OnBackPressedCallback.class);
     when(callback.isEnabled()).thenReturn(true);
     activity.getOnBackPressedDispatcher().addCallback(callback);
+    fragment.setDelegate(mockDelegate);
 
     assertTrue(fragment.popSystemNavigator());
 
