@@ -162,6 +162,12 @@ void fl_engine_send_mouse_pointer_event(FlEngine* engine,
                                         double scroll_delta_y,
                                         int64_t buttons);
 
+void fl_engine_send_key_event(FlEngine* engine,
+                              const FlutterKeyEvent* event,
+                              FlutterKeyEventCallback callback,
+                              void* user_data);
+
+
 /**
  * fl_engine_dispatch_semantics_action:
  * @engine: an #FlEngine.

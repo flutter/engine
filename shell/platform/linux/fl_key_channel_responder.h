@@ -5,12 +5,12 @@
 #ifndef FLUTTER_SHELL_PLATFORM_LINUX_FL_KEY_CHANNEL_RESPONDER_H_
 #define FLUTTER_SHELL_PLATFORM_LINUX_FL_KEY_CHANNEL_RESPONDER_H_
 
+#include <gdk/gdk.h>
+
 #include "flutter/shell/platform/linux/fl_key_responder.h"
 #include "flutter/shell/platform/linux/fl_keyboard_manager.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_binary_messenger.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_value.h"
-
-#include <gdk/gdk.h>
 
 typedef FlValue* (*FlValueConverter)(FlValue*);
 
@@ -21,7 +21,7 @@ typedef struct _FlKeyChannelResponderMock {
 
 G_BEGIN_DECLS
 
-#define FL_TYPE_KEY_CHANNEL_RESPONDER fl_key_channel_responder_get_type()
+#define FL_TYPE_KEY_CHANNEL_RESPONDER fl_key_channel_responder_get_type ()
 G_DECLARE_FINAL_TYPE(FlKeyChannelResponder,
                      fl_key_channel_responder,
                      FL,

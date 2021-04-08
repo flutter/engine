@@ -31,7 +31,6 @@ struct _FlKeyChannelResponder {
   GObject parent_instance;
 
   FlBasicMessageChannel* channel;
-  uint64_t last_id;
 
   FlKeyChannelResponderMock* mock;
 };
@@ -67,7 +66,6 @@ struct _FlKeyEventResponseData {
   GObject parent_instance;
 
   FlKeyChannelResponder* responder;
-  uint64_t id;
   FlKeyResponderAsyncCallback callback;
   gpointer user_data;
 };
@@ -99,9 +97,8 @@ static void fl_key_event_response_data_init(FlKeyEventResponseData* self) {}
 // Creates a new FlKeyEventResponseData private class with a responder that
 // created the request, a unique ID for tracking, and optional user data. Will
 // keep a weak pointer to the responder.
-FlKeyEventResponseData* fl_key_event_response_data_new(
+static FlKeyEventResponseData* fl_key_event_response_data_new(
     FlKeyChannelResponder* responder,
-    uint64_t id,
     FlKeyResponderAsyncCallback callback,
     gpointer user_data) {
   FlKeyEventResponseData* self = FL_KEY_EVENT_RESPONSE_DATA(
@@ -112,7 +109,6 @@ FlKeyEventResponseData* fl_key_event_response_data_new(
   // while the framework was responding.
   g_object_add_weak_pointer(G_OBJECT(responder),
                             reinterpret_cast<gpointer*>(&(self->responder)));
-  self->id = id;
   self->callback = callback;
   self->user_data = user_data;
   return self;
@@ -180,7 +176,6 @@ FlKeyChannelResponder* fl_key_channel_responder_new(
 
   FlKeyChannelResponder* self = FL_KEY_CHANNEL_RESPONDER(
       g_object_new(fl_key_channel_responder_get_type(), nullptr));
-  self->last_id = 1;
   self->mock = mock;
 
   g_autoptr(FlJsonMessageCodec) codec = fl_json_message_codec_new();
@@ -200,8 +195,6 @@ static void fl_key_channel_responder_handle_event(
   FlKeyChannelResponder* self = FL_KEY_CHANNEL_RESPONDER(responder);
   g_return_if_fail(event != nullptr);
   g_return_if_fail(callback != nullptr);
-
-  uint64_t id = (++self->last_id);
 
   const gchar* type;
   switch (event->type) {
@@ -282,7 +275,7 @@ static void fl_key_channel_responder_handle_event(
   }
 
   FlKeyEventResponseData* data =
-      fl_key_event_response_data_new(self, id, callback, user_data);
+      fl_key_event_response_data_new(self, callback, user_data);
   // Send the message off to the framework for handling (or not).
   fl_basic_message_channel_send(self->channel, message, nullptr,
                                 handle_response, data);
