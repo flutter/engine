@@ -13,10 +13,15 @@ import static org.mockito.Mockito.when;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.fragment.app.FragmentActivity;
+import io.flutter.embedding.engine.FlutterEngine;
+import io.flutter.embedding.engine.FlutterEngineCache;
+import io.flutter.embedding.engine.FlutterJNI;
+import io.flutter.embedding.engine.loader.FlutterLoader;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
 @Config(manifest = Config.NONE)
@@ -121,16 +126,28 @@ public class FlutterFragmentTest {
 
   @Test
   public void itDelegatesOnBackPressedAutomaticallyWhenEnabled() {
-    FlutterActivityAndFragmentDelegate mockDelegate =
-        mock(FlutterActivityAndFragmentDelegate.class);
+    // We need to mock FlutterJNI to avoid triggering native code.
+    FlutterJNI flutterJNI = mock(FlutterJNI.class);
+    when(flutterJNI.isAttached()).thenReturn(true);
+
+    FlutterEngine flutterEngine =
+        new FlutterEngine(
+            RuntimeEnvironment.application, new FlutterLoader(), flutterJNI, null, false);
+    FlutterEngineCache.getInstance().put("my_cached_engine", flutterEngine);
+
     FlutterFragment fragment =
-        FlutterFragment.withNewEngine().enableAutomaticOnBackPressedHandling(true).build();
+        FlutterFragment.withCachedEngine("my_cached_engine")
+            .enableAutomaticOnBackPressedHandling(true)
+            .build();
     FragmentActivity activity = Robolectric.setupActivity(FragmentActivity.class);
     activity
         .getSupportFragmentManager()
         .beginTransaction()
         .add(android.R.id.content, fragment)
         .commitNow();
+
+    FlutterActivityAndFragmentDelegate mockDelegate =
+        mock(FlutterActivityAndFragmentDelegate.class);
     fragment.setDelegate(mockDelegate);
 
     activity.onBackPressed();
@@ -140,10 +157,19 @@ public class FlutterFragmentTest {
 
   @Test
   public void itHandlesPopSystemNavigationAutomaticallyWhenEnabled() {
-    FlutterActivityAndFragmentDelegate mockDelegate =
-        mock(FlutterActivityAndFragmentDelegate.class);
+    // We need to mock FlutterJNI to avoid triggering native code.
+    FlutterJNI flutterJNI = mock(FlutterJNI.class);
+    when(flutterJNI.isAttached()).thenReturn(true);
+
+    FlutterEngine flutterEngine =
+        new FlutterEngine(
+            RuntimeEnvironment.application, new FlutterLoader(), flutterJNI, null, false);
+    FlutterEngineCache.getInstance().put("my_cached_engine", flutterEngine);
+
     FlutterFragment fragment =
-        FlutterFragment.withNewEngine().enableAutomaticOnBackPressedHandling(true).build();
+        FlutterFragment.withCachedEngine("my_cached_engine")
+            .enableAutomaticOnBackPressedHandling(true)
+            .build();
     FragmentActivity activity = Robolectric.setupActivity(FragmentActivity.class);
     activity
         .getSupportFragmentManager()
@@ -153,6 +179,9 @@ public class FlutterFragmentTest {
     OnBackPressedCallback callback = mock(OnBackPressedCallback.class);
     when(callback.isEnabled()).thenReturn(true);
     activity.getOnBackPressedDispatcher().addCallback(callback);
+
+    FlutterActivityAndFragmentDelegate mockDelegate =
+        mock(FlutterActivityAndFragmentDelegate.class);
     fragment.setDelegate(mockDelegate);
 
     assertTrue(fragment.popSystemNavigator());
