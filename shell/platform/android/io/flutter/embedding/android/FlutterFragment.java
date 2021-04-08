@@ -815,8 +815,8 @@ public class FlutterFragment extends Fragment
   /**
    * The hardware back button was pressed.
    *
-   * <p>If the fragment uses {@code shouldAutomaticallyHandleOnBackPressed(true)}, this method should
-   * not be called through. It will be called automatically instead.
+   * <p>If the fragment uses {@code shouldAutomaticallyHandleOnBackPressed(true)}, this method
+   * should not be called through. It will be called automatically instead.
    *
    * <p>See {@link android.app.Activity#onBackPressed()}
    */
