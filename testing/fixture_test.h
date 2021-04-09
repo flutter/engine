@@ -23,9 +23,9 @@ class FixtureTest : public ThreadTest {
   FixtureTest();
 
   // Allows to customize the kernel, ELF and split ELF filenames.
-  explicit FixtureTest(std::string kernel_filename,
-                       std::string elf_filename,
-                       std::string elf_split_filename);
+  FixtureTest(std::string kernel_filename,
+              std::string elf_filename,
+              std::string elf_split_filename);
 
   virtual Settings CreateSettingsForFixture();
 
