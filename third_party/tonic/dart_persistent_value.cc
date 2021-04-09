@@ -43,7 +43,7 @@ void DartPersistentValue::Clear() {
     return;
   }
 
-  /// TODO(tbd): Remove the handle even if the isolate is shutting down.  This
+  /// TODO(80155): Remove the handle even if the isolate is shutting down.  This
   /// may cause memory to stick around until the isolate group is destroyed.
   /// Currently if DartState::IsShuttingDown == true, this code will crash when
   /// binding the isolate.
