@@ -156,7 +156,13 @@ template("dart_snapshot") {
   testonly = true
 
   dart_snapshot_kernel_target_name = "_dsk_$target_name"
-  dart_snapshot_kernel_path = "$target_gen_dir/assets/kernel_blob.bin"
+
+  if (defined(invoker.dart_kernel)) {
+    dart_snapshot_kernel_path = invoker.dart_kernel
+  } else {
+    dart_snapshot_kernel_path = "$target_gen_dir/assets/kernel_blob.bin"
+  }
+
   dart_snapshot_kernel(dart_snapshot_kernel_target_name) {
     dart_main = invoker.dart_main
     dart_kernel = dart_snapshot_kernel_path
@@ -257,7 +263,11 @@ template("test_fixtures") {
     dart_snapshot_target_name = "_ds_$target_name"
     dart_snapshot(dart_snapshot_target_name) {
       dart_main = invoker.dart_main
+      if (defined(invoker.dart_kernel)) {
+        dart_kernel = invoker.dart_kernel
+      }
     }
+
     test_public_deps += [ ":$dart_snapshot_target_name" ]
   }
 

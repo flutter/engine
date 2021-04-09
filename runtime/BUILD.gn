@@ -136,4 +136,24 @@ if (enable_unittests) {
       "//third_party/skia",
     ]
   }
+
+  test_fixtures("no_dart_plugin_registrant_test") {
+    dart_main = "fixtures/no_dart_plugin_registrant_test.dart"
+    dart_kernel = "$target_gen_dir/assets/no_plugin_registrant_kernel_blob.bin"
+  }
+
+  executable("no_dart_plugin_registrant_unittests") {
+    testonly = true
+
+    sources = [ "no_dart_plugin_registrant_unittests.cc" ]
+
+    public_configs = [ "//flutter:export_dynamic_symbols" ]
+
+    public_deps = [
+      ":no_dart_plugin_registrant_test",
+      "//flutter/fml",
+      "//flutter/testing",
+      "//flutter/testing:fixture_test",
+    ]
+  }
 }

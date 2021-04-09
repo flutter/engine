@@ -20,6 +20,7 @@ namespace testing {
 class FixtureTest : public ThreadTest {
  public:
   FixtureTest();
+  FixtureTest(std::string kernel_file);
 
   virtual Settings CreateSettingsForFixture();
 
@@ -33,6 +34,7 @@ class FixtureTest : public ThreadTest {
   ELFAOTSymbols split_aot_symbols_;
 
  private:
+  std::string kernel_file_;
   fml::UniqueFD assets_dir_;
   ELFAOTSymbols aot_symbols_;
 
