@@ -19,7 +19,7 @@ namespace testing {
 
 class FixtureTest : public ThreadTest {
  public:
-  // Uses kernel_blob.bin as the kernel file name.
+  // Uses the default filenames from the fixtures generator.
   FixtureTest();
 
   // Allows to customize the kernel, ELF and split ELF filenames.
