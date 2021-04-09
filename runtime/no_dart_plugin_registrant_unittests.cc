@@ -5,10 +5,10 @@
 #include "flutter/runtime/dart_isolate.h"
 
 #include "flutter/fml/paths.h"
-#include "flutter/testing/fixture_test.h"
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/runtime/dart_vm_lifecycle.h"
 #include "flutter/testing/dart_isolate_runner.h"
+#include "flutter/testing/fixture_test.h"
 #include "flutter/testing/testing.h"
 
 namespace flutter {
@@ -17,8 +17,8 @@ namespace testing {
 const std::string kernel_file_name = "no_plugin_registrant_kernel_blob.bin";
 
 class DartIsolateTest : public FixtureTest {
-  public:
-    DartIsolateTest() : FixtureTest(kernel_file_name) {}
+ public:
+  DartIsolateTest() : FixtureTest(kernel_file_name) {}
 };
 
 TEST_F(DartIsolateTest, DartPluginRegistrantIsNotPresent) {
@@ -36,7 +36,14 @@ TEST_F(DartIsolateTest, DartPluginRegistrantIsNotPresent) {
         latch.Signal();
       })));
 
-  const auto settings = CreateSettingsForFixture();
+  auto settings = CreateSettingsForFixture();
+  auto did_throw_exception = false;
+  settings.unhandled_exception_callback = [&](const std::string& error,
+                                              const std::string& stack_trace) {
+    did_throw_exception = true;
+    return true;
+  };
+
   auto vm_ref = DartVMRef::Create(settings);
   auto thread = CreateNewThread();
   TaskRunners task_runners(GetCurrentTestName(),  //
@@ -46,11 +53,10 @@ TEST_F(DartIsolateTest, DartPluginRegistrantIsNotPresent) {
                            thread                 //
   );
 
-
-  auto kernel_file_path = fml::paths::JoinPaths({GetFixturesPath(), kernel_file_name});
-  auto isolate = RunDartCodeInIsolate(vm_ref, settings, task_runners,
-                                      "main", {},
-                                      kernel_file_path);
+  auto kernel_file_path =
+      fml::paths::JoinPaths({GetFixturesPath(), kernel_file_name});
+  auto isolate = RunDartCodeInIsolate(vm_ref, settings, task_runners, "main",
+                                      {}, kernel_file_path);
 
   ASSERT_TRUE(isolate);
   ASSERT_EQ(isolate->get()->GetPhase(), DartIsolate::Phase::Running);
@@ -59,6 +65,7 @@ TEST_F(DartIsolateTest, DartPluginRegistrantIsNotPresent) {
 
   ASSERT_EQ(messages.size(), 1u);
   ASSERT_EQ(messages[0], "main() was called");
+  ASSERT_FALSE(did_throw_exception);
 }
 
 }  // namespace testing
