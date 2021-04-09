@@ -215,18 +215,16 @@ class TextHeightBehavior {
     this.applyHeightToLastDescent = true,
     this.leadingDistribution = TextLeadingDistribution.proportional,
   });
-  TextHeightBehavior.fromEncoded(int encoded)
+  const TextHeightBehavior.fromEncoded(int encoded, this.leadingDistribution)
     : applyHeightToFirstAscent = (encoded & 0x1) == 0,
-      applyHeightToLastDescent = (encoded & 0x2) == 0,
-      leadingDistribution = TextLeadingDistribution.values[encoded >> 2];
+      applyHeightToLastDescent = (encoded & 0x2) == 0;
   final bool applyHeightToFirstAscent;
   final bool applyHeightToLastDescent;
   final TextLeadingDistribution leadingDistribution;
 
   int encode() {
     return (applyHeightToFirstAscent ? 0 : 1 << 0)
-         | (applyHeightToLastDescent ? 0 : 1 << 1)
-         | (leadingDistribution.index << 2);
+         | (applyHeightToLastDescent ? 0 : 1 << 1);
   }
 
   @override
