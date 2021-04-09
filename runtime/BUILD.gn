@@ -137,9 +137,9 @@ if (enable_unittests) {
     ]
   }
 
-  test_fixtures("no_dart_plugin_registrant_test") {
+  test_fixtures("no_plugin_registrant") {
     dart_main = "fixtures/no_dart_plugin_registrant_test.dart"
-    dart_kernel = "$target_gen_dir/assets/no_plugin_registrant_kernel_blob.bin"
+    use_target_as_artifact_prefix = true
   }
 
   executable("no_dart_plugin_registrant_unittests") {
@@ -150,7 +150,7 @@ if (enable_unittests) {
     public_configs = [ "//flutter:export_dynamic_symbols" ]
 
     public_deps = [
-      ":no_dart_plugin_registrant_test",
+      ":no_plugin_registrant",
       "//flutter/fml",
       "//flutter/testing",
       "//flutter/testing:fixture_test",

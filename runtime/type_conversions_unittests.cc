@@ -26,9 +26,11 @@ class TypeConversionsTest : public FixtureTest {
     auto thread = CreateNewThread();
     TaskRunners single_threaded_task_runner(GetCurrentTestName(), thread,
                                             thread, thread, thread);
+    auto kernel_path = fml::paths::JoinPaths(
+        {GetFixturesPath(), "runtime_fixtures_kernel_blob.bin"});
     auto isolate =
         RunDartCodeInIsolate(vm_, settings_, single_threaded_task_runner,
-                             entrypoint, {}, GetDefaultKernelFilePath());
+                             entrypoint, {}, kernel_path);
     if (!isolate || isolate->get()->GetPhase() != DartIsolate::Phase::Running) {
       return false;
     }

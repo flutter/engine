@@ -15,10 +15,11 @@ namespace flutter {
 namespace testing {
 
 const std::string kernel_file_name = "no_plugin_registrant_kernel_blob.bin";
+const std::string elf_file_name = "no_plugin_registrant_app_elf_snapshot.so";
 
 class DartIsolateTest : public FixtureTest {
  public:
-  DartIsolateTest() : FixtureTest(kernel_file_name) {}
+  DartIsolateTest() : FixtureTest(kernel_file_name, elf_file_name, "") {}
 };
 
 TEST_F(DartIsolateTest, DartPluginRegistrantIsNotPresent) {
@@ -53,10 +54,10 @@ TEST_F(DartIsolateTest, DartPluginRegistrantIsNotPresent) {
                            thread                 //
   );
 
-  auto kernel_file_path =
+  auto kernel_path =
       fml::paths::JoinPaths({GetFixturesPath(), kernel_file_name});
   auto isolate = RunDartCodeInIsolate(vm_ref, settings, task_runners, "main",
-                                      {}, kernel_file_path);
+                                      {}, kernel_path);
 
   ASSERT_TRUE(isolate);
   ASSERT_EQ(isolate->get()->GetPhase(), DartIsolate::Phase::Running);
