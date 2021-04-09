@@ -9,8 +9,8 @@ namespace flutter {
 namespace testing {
 
 namespace {
-  void NopFinalizer(void* isolate_callback_data, void* peer) {}
-}
+void NopFinalizer(void* isolate_callback_data, void* peer) {}
+}  // namespace
 
 class DartWeakPersistentHandle : public FixtureTest {
  public:

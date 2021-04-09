@@ -64,16 +64,14 @@ TEST_F(DartPersistentHandleTest, ClearAfterShutdown) {
   ASSERT_TRUE(RunWithEntrypoint("callGiveObjectToNative"));
   event.Wait();
 
-  // This causes the shutdown of the isolate.
-  running_isolate_.reset();
+  running_isolate_->Shutdown();
 
   fml::AutoResetWaitableEvent clear;
-  task_runners_.GetUITaskRunner()->PostTask([&]{
+  task_runners_.GetUITaskRunner()->PostTask([&] {
     persistent_value.Clear();
     clear.Signal();
   });
   clear.Wait();
-
 }
 }  // namespace testing
 }  // namespace flutter
