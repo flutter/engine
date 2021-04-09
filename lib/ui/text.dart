@@ -1628,8 +1628,8 @@ class TextHeightBehavior {
 
   /// Creates a new TextHeightBehavior object from an encoded form.
   ///
-  /// See [encode] for the creation of the encoded form.
-  const TextHeightBehavior.fromEncoded(int encoded, this.leadingDistribution)
+  /// See [_encode] for the creation of the encoded form.
+  const TextHeightBehavior._fromEncoded(int encoded, this.leadingDistribution)
     : applyHeightToFirstAscent = (encoded & 0x1) == 0,
       applyHeightToLastDescent = (encoded & 0x2) == 0;
 
@@ -1671,7 +1671,7 @@ class TextHeightBehavior {
 
   /// Returns an encoded int representation of this object (excluding
   /// [leadingDistribution]).
-  int encode() {
+  int _encode() {
     return (applyHeightToFirstAscent ? 0 : 1 << 0)
          | (applyHeightToLastDescent ? 0 : 1 << 1);
   }
@@ -2072,7 +2072,7 @@ Int32List _encodeParagraphStyle(
   }
   if (textHeightBehavior != null) {
     result[0] |= 1 << 6;
-    result[6] = textHeightBehavior.encode();
+    result[6] = textHeightBehavior._encode();
   }
   if (fontFamily != null) {
     result[0] |= 1 << 7;
@@ -2237,7 +2237,7 @@ class ParagraphStyle {
              'maxLines: ${      _encoded[0] & 0x020 == 0x020 ? _encoded[5]                       : "unspecified"}, '
              'textHeightBehavior: ${
                                 _encoded[0] & 0x040 == 0x040 ?
-                                          TextHeightBehavior.fromEncoded(_encoded[6], _leadingDistribution).toString() : "unspecified"}, '
+                                          TextHeightBehavior._fromEncoded(_encoded[6], _leadingDistribution).toString() : "unspecified"}, '
              'fontFamily: ${    _encoded[0] & 0x080 == 0x080 ? _fontFamily                       : "unspecified"}, '
              'fontSize: ${      _encoded[0] & 0x100 == 0x100 ? _fontSize                         : "unspecified"}, '
              'height: ${        _encoded[0] & 0x200 == 0x200 ? "${_height}x"                     : "unspecified"}, '

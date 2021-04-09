@@ -107,22 +107,6 @@ void main() {
       expect(behavior4.leadingDistribution, equals(TextLeadingDistribution.even));
     });
 
-    test('encode works', () {
-      expect(behavior0.encode(), equals(0));
-      expect(behavior1.encode(), equals(3));
-      expect(behavior2.encode(), equals(1));
-      expect(behavior3.encode(), equals(2));
-      expect(behavior4.encode(), equals(2));
-    });
-
-    test('decode works', () {
-      expect(const TextHeightBehavior.fromEncoded(0, TextLeadingDistribution.proportional), equals(behavior0));
-      expect(const TextHeightBehavior.fromEncoded(3, TextLeadingDistribution.proportional), equals(behavior1));
-      expect(const TextHeightBehavior.fromEncoded(1, TextLeadingDistribution.proportional), equals(behavior2));
-      expect(const TextHeightBehavior.fromEncoded(2, TextLeadingDistribution.proportional), equals(behavior3));
-      expect(const TextHeightBehavior.fromEncoded(2, TextLeadingDistribution.even), equals(behavior4));
-    });
-
     test('toString works', () {
       expect(behavior0.toString(), equals('TextHeightBehavior(applyHeightToFirstAscent: true, applyHeightToLastDescent: true, leadingDistribution: TextLeadingDistribution.proportional)'));
       expect(behavior1.toString(), equals('TextHeightBehavior(applyHeightToFirstAscent: false, applyHeightToLastDescent: false, leadingDistribution: TextLeadingDistribution.proportional)'));
