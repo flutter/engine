@@ -278,7 +278,7 @@ void testMain() async {
       SurfacePaintData()..color = red,
     );
 
-    await takeScreenshot(canvas, bounds, 'canvas_paragraph_giant_body_font_size_dom', write: true);
+    await takeScreenshot(canvas, bounds, 'canvas_paragraph_giant_body_font_size_dom');
 
     // Restore the old font size value.
     html.document.body.style.fontSize = oldBodyFontSize;
