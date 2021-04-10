@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
+// @dart = 2.9
 @TestOn('chrome || safari || firefox')
 
 import 'dart:async';
@@ -88,9 +88,12 @@ void _testEngineSemanticsOwner() {
     expect(semantics().semanticsEnabled, false);
 
     // Synthesize a click on the placeholder.
+    final root = getRootDocument();
     final html.Element placeholder =
-        html.document.querySelectorAll('flt-semantics-placeholder').single;
+        root.querySelector('flt-semantics-placeholder');
+
     expect(placeholder.isConnected, true);
+
     final html.Rectangle<num> rect = placeholder.getBoundingClientRect();
     placeholder.dispatchEvent(html.MouseEvent(
       'click',
@@ -353,10 +356,10 @@ void _testContainer() {
   </sem-c>
 </sem>''');
 
-    final html.Element parentElement =
-        html.document.querySelector('flt-semantics');
+    final root = getRootDocument();
+    final html.Element parentElement = root.querySelector('flt-semantics');
     final html.Element container =
-        html.document.querySelector('flt-semantics-container');
+        root.querySelector('flt-semantics-container');
 
     if (isMacOrIOS) {
       expect(parentElement.style.top, '0px');
@@ -401,10 +404,10 @@ void _testContainer() {
   </sem-c>
 </sem>''');
 
-    final html.Element parentElement =
-        html.document.querySelector('flt-semantics');
+    final root = getRootDocument();
+    final html.Element parentElement = root.querySelector('flt-semantics');
     final html.Element container =
-        html.document.querySelector('flt-semantics-container');
+        root.querySelector('flt-semantics-container');
 
     expect(parentElement.style.transform, 'matrix(1, 0, 0, 1, 10, 10)');
     expect(parentElement.style.transformOrigin, '0px 0px 0px');
@@ -446,10 +449,12 @@ void _testContainer() {
   </sem-c>
 </sem>''');
     }
-    final html.Element parentElement =
-        html.document.querySelector('flt-semantics');
+
+    final root = getRootDocument();
+    final html.Element parentElement = root.querySelector('flt-semantics');
     final html.Element container =
-        html.document.querySelector('flt-semantics-container');
+        root.querySelector('flt-semantics-container');
+
     if (isMacOrIOS) {
       expect(parentElement.style.top, '0px');
       expect(parentElement.style.left, '0px');
@@ -804,8 +809,8 @@ void _testIncrementables() {
   <input aria-valuenow="1" aria-valuetext="d" aria-valuemax="2" aria-valuemin="1">
 </sem>''');
 
-    final html.InputElement input =
-        html.document.querySelectorAll('input').single;
+    final root = getRootDocument();
+    final html.InputElement input = root.querySelector('input');
     input.value = '2';
     input.dispatchEvent(html.Event('change'));
 
@@ -839,8 +844,8 @@ void _testIncrementables() {
   <input aria-valuenow="1" aria-valuetext="d" aria-valuemax="1" aria-valuemin="0">
 </sem>''');
 
-    final html.InputElement input =
-        html.document.querySelectorAll('input').single;
+    final root = getRootDocument();
+    final html.InputElement input = root.querySelector('input');
     input.value = '0';
     input.dispatchEvent(html.Event('change'));
 
@@ -933,20 +938,21 @@ void _testTextField() {
 
     semantics().updateSemantics(builder.build());
 
-    final html.Element textField = html.document
-        .querySelectorAll('input[data-semantics-role="text-field"]')
-        .single;
+    final root = getRootDocument();
 
-    expect(html.document.activeElement, isNot(textField));
+    final html.Element textField =
+        root.querySelector('input[data-semantics-role="text-field"]');
+
+    expect(root.activeElement, isNot(textField));
 
     textField.focus();
 
-    expect(html.document.activeElement, textField);
+    expect(root.activeElement, textField);
     expect(await logger.idLog.first, 0);
     expect(await logger.actionLog.first, ui.SemanticsAction.tap);
 
     semantics().semanticsEnabled = false;
-  },  // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
+  }, // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
       // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
       // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
       skip: (browserEngine != BrowserEngine.blink));
