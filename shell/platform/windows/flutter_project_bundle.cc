@@ -80,8 +80,16 @@ UniqueAotDataPtr FlutterProjectBundle::LoadAotData(
 
 FlutterProjectBundle::~FlutterProjectBundle() {}
 
+void FlutterProjectBundle::SetSwitches(std::vector<std::string> switches) {
+  engine_switches_ = std::move(switches);
+}
+
 const std::vector<std::string> FlutterProjectBundle::GetSwitches() {
+#if WINUWP
+  return engine_switches_;
+#else
   return GetSwitchesFromEnvironment();
+#endif
 }
 
 }  // namespace flutter

@@ -44,6 +44,7 @@ class FlutterViewController {
   // either using CoreWindow.
   //
   // |dart_project| will be used to configure the engine backing this view.
+  // |IActivatedEventArgs| will be used to configure the engine switches.  Can be set to nullptr.
   explicit FlutterViewController(
       ABI::Windows::UI::Core::CoreWindow* window,
       ABI::Windows::ApplicationModel::Activation::IActivatedEventArgs* args,
