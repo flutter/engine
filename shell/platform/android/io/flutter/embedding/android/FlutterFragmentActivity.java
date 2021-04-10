@@ -589,7 +589,7 @@ public class FlutterFragmentActivity extends FragmentActivity
   @Override
   public void configureFlutterEngine(@NonNull FlutterEngine flutterEngine) {
     if (flutterFragment.isFlutterEngineInjected()) {
-      // If the FlutterEngine was explicitly built and injected into thi FlutterActivity, the
+      // If the FlutterEngine was explicitly built and injected into this FlutterActivity, the
       // builder should explicitly decide whether to automatically register plugins via the
       // FlutterEngine's construction parameter or via the AndroidManifest metadata.
       return;

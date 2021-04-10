@@ -50,8 +50,11 @@ public class FlutterActivityTest {
   public void setUp() {
     GeneratedPluginRegistrant.clearRegisteredEngines();
     FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
+    when(mockFlutterJNI.isAttached()).thenReturn(true);
+    FlutterJNI.Factory mockFlutterJNIFactory = mock(FlutterJNI.Factory.class);
+    when(mockFlutterJNIFactory.provideFlutterJNI()).thenReturn(mockFlutterJNI);
     FlutterInjector.setInstance(
-        new FlutterInjector.Builder().setFlutterLoader(new FlutterLoader(mockFlutterJNI)).build());
+        new FlutterInjector.Builder().setFlutterJNIFactory(mockFlutterJNIFactory).build());
   }
 
   @After
@@ -220,10 +223,10 @@ public class FlutterActivityTest {
     ActivityController<FlutterActivity> activityController =
         Robolectric.buildActivity(FlutterActivity.class, intent);
     FlutterActivity activity = activityController.get();
-    activity.onCreate(null);
 
-    assertTrue(GeneratedPluginRegistrant.getRegisteredEngines().isEmpty());
-    activity.configureFlutterEngine(activity.getFlutterEngine());
+    // This calls onAttach on FlutterActivityAndFragmentDelegate and subsequently
+    // configureFlutterEngine which registers the plugins.
+    activity.onCreate(null);
 
     List<FlutterEngine> registeredEngines = GeneratedPluginRegistrant.getRegisteredEngines();
     assertEquals(1, registeredEngines.size());
