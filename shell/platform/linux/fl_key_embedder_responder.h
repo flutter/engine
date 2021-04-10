@@ -16,7 +16,7 @@ constexpr int kMaxConvertedKeyData = 3;
 
 G_BEGIN_DECLS
 
-#define FL_TYPE_KEY_EMBEDDER_RESPONDER fl_key_embedder_responder_get_type ()
+#define FL_TYPE_KEY_EMBEDDER_RESPONDER fl_key_embedder_responder_get_type()
 G_DECLARE_FINAL_TYPE(FlKeyEmbedderResponder,
                      fl_key_embedder_responder,
                      FL,

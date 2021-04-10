@@ -7,7 +7,6 @@
 #include <gtk/gtk.h>
 #include <cinttypes>
 
-#include "flutter/shell/platform/linux/fl_keyboard_manager.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_basic_message_channel.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_json_message_codec.h"
 
@@ -179,7 +178,8 @@ FlKeyChannelResponder* fl_key_channel_responder_new(
   self->mock = mock;
 
   g_autoptr(FlJsonMessageCodec) codec = fl_json_message_codec_new();
-  const char* channel_name = mock == nullptr ? kChannelName : mock->channel_name;
+  const char* channel_name =
+      mock == nullptr ? kChannelName : mock->channel_name;
   self->channel = fl_basic_message_channel_new(messenger, channel_name,
                                                FL_MESSAGE_CODEC(codec));
 

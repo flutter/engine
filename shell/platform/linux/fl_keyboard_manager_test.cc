@@ -14,11 +14,7 @@ typedef void (*CallbackHandler)(FlKeyResponderAsyncCallback callback,
 
 constexpr guint16 kKeyCodeKeyA = 0x26u;
 constexpr guint16 kKeyCodeKeyB = 0x38u;
-}
 
-G_BEGIN_DECLS
-
-#define FL_TYPE_KEYBOARD_CALL_RECORD fl_keyboard_call_record_get_type()
 G_DECLARE_FINAL_TYPE(FlKeyboardCallRecord,
                      fl_keyboard_call_record,
                      FL,
@@ -50,8 +46,6 @@ struct _FlKeyMockResponder {
   CallbackHandler callback_handler;
   int delegate_id;
 };
-
-G_END_DECLS
 
 G_DEFINE_TYPE(FlKeyboardCallRecord, fl_keyboard_call_record, G_TYPE_OBJECT)
 
@@ -95,10 +89,12 @@ static FlKeyboardCallRecord* fl_keyboard_call_record_new(
 
 static void dont_respond(FlKeyResponderAsyncCallback callback,
                          gpointer user_data) {}
-static void respond_true(FlKeyResponderAsyncCallback callback, gpointer user_data) {
+static void respond_true(FlKeyResponderAsyncCallback callback,
+                         gpointer user_data) {
   callback(true, user_data);
 }
-static void respond_false(FlKeyResponderAsyncCallback callback, gpointer user_data) {
+static void respond_false(FlKeyResponderAsyncCallback callback,
+                          gpointer user_data) {
   callback(false, user_data);
 }
 
@@ -139,9 +135,8 @@ static void fl_key_mock_responder_class_init(FlKeyMockResponderClass* klass) {}
 
 static void fl_key_mock_responder_init(FlKeyMockResponder* self) {}
 
-static FlKeyMockResponder* fl_key_mock_responder_new(
-    GPtrArray* call_records,
-    int delegate_id) {
+static FlKeyMockResponder* fl_key_mock_responder_new(GPtrArray* call_records,
+                                                     int delegate_id) {
   FlKeyMockResponder* self = FL_KEY_MOCK_RESPONDER(
       g_object_new(fl_key_mock_responder_get_type(), nullptr));
 
@@ -201,7 +196,8 @@ static void gdk_event_destroy_notify(gpointer pointer) {
 
 static GPtrArray* redispatched_events() {
   if (_g_redispatched_events == nullptr) {
-    _g_redispatched_events = g_ptr_array_new_with_free_func(gdk_event_destroy_notify);
+    _g_redispatched_events =
+        g_ptr_array_new_with_free_func(gdk_event_destroy_notify);
   }
   return _g_redispatched_events;
 }
@@ -268,11 +264,13 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithAsyncResponds) {
   record = FL_KEYBOARD_CALL_RECORD(g_ptr_array_index(call_records, 1));
   record->callback(false, record->user_data);
   EXPECT_EQ(redispatched_events()->len, 1u);
-  EXPECT_EQ(GDK_EVENT_KEY(g_ptr_array_last(redispatched_events()))->keyval, 0x62u);
+  EXPECT_EQ(GDK_EVENT_KEY(g_ptr_array_last(redispatched_events()))->keyval,
+            0x62u);
   record = FL_KEYBOARD_CALL_RECORD(g_ptr_array_index(call_records, 0));
   record->callback(false, record->user_data);
   EXPECT_EQ(redispatched_events()->len, 2u);
-  EXPECT_EQ(GDK_EVENT_KEY(g_ptr_array_last(redispatched_events()))->keyval, 0x61u);
+  EXPECT_EQ(GDK_EVENT_KEY(g_ptr_array_last(redispatched_events()))->keyval,
+            0x61u);
 
   g_ptr_array_clear(call_records);
 
@@ -420,3 +418,5 @@ TEST(FlKeyboardManagerTest, WithTwoAsyncDelegates) {
 
   g_ptr_array_clear(redispatched_events());
 }
+
+}  // namespace
