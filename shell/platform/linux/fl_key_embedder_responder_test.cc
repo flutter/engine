@@ -11,10 +11,16 @@
 #include "flutter/shell/platform/linux/fl_engine_private.h"
 #include "flutter/shell/platform/linux/testing/fl_test.h"
 
-static const char* expected_value = nullptr;
 static gboolean expected_handled = FALSE;
 
 namespace {
+constexpr guint16 kKeyCodeKeyA = 0x26u;
+// constexpr guint16 kKeyCodeKeyB = 0x38u;
+
+static GdkEventKey* GDK_EVENT_KEY(gpointer pointer) {
+  return reinterpret_cast<GdkEventKey*>(pointer);
+}
+
 G_DECLARE_FINAL_TYPE(FlKeyboardCallRecord,
                      fl_keyboard_call_record,
                      FL,
@@ -74,6 +80,32 @@ static FlKeyboardCallRecord* fl_keyboard_call_record_new(
   return self;
 }
 
+// A global variable to store new event. It is a global variable so that it can
+// be returned by key_event_new, which does not properly release this event.
+// It is reused by different key_event_new calls.
+GdkEventKey* _g_key_event;
+
+static GdkEventKey* key_event_new(gboolean is_down,
+                                  guint keyval,
+                                  guint16 hardware_keycode,
+                                  guint state,
+                                  gboolean is_modifier) {
+  if (_g_key_event == nullptr)
+    _g_key_event = GDK_EVENT_KEY(gdk_event_new(GDK_KEY_PRESS));
+  _g_key_event->type = is_down ? GDK_KEY_PRESS : GDK_KEY_RELEASE;
+  _g_key_event->window = nullptr;
+  _g_key_event->send_event = FALSE;
+  _g_key_event->time = 12345;
+  _g_key_event->state = state;
+  _g_key_event->keyval = keyval;
+  _g_key_event->length = 0;
+  _g_key_event->string = nullptr;
+  _g_key_event->hardware_keycode = hardware_keycode;
+  _g_key_event->group = 0;
+  _g_key_event->is_modifier = is_modifier ? 1 : 0;
+  return _g_key_event;
+}
+
 static void responder_callback(bool handled, gpointer user_data) {
   EXPECT_EQ(handled, expected_handled);
   g_main_loop_quit(static_cast<GMainLoop*>(user_data));
@@ -81,7 +113,7 @@ static void responder_callback(bool handled, gpointer user_data) {
 
 // Test sending a letter "A";
 TEST(FlKeyEmbedderResponderTest, SendKeyEvent) {
-  g_autoptr(GMainLoop) loop = g_main_loop_new(nullptr, 0);
+  // g_autoptr(GMainLoop) loop = g_main_loop_new(nullptr, 0);
   g_autoptr(GPtrArray) call_records =
       g_ptr_array_new_with_free_func(g_object_unref);
 
@@ -101,56 +133,12 @@ TEST(FlKeyEmbedderResponderTest, SendKeyEvent) {
   g_autoptr(FlKeyResponder) responder =
       FL_KEY_RESPONDER(fl_key_embedder_responder_new(engine));
 
-  char string[] = "A";
-  GdkEventKey key_event = GdkEventKey{
-      GDK_KEY_PRESS,                         // event type
-      nullptr,                               // window (not needed)
-      FALSE,                                 // event was sent explicitly
-      12345,                                 // time
-      0x0,                                   // modifier state
-      GDK_KEY_A,                             // key code
-      1,                                     // length of string representation
-      reinterpret_cast<gchar*>(&string[0]),  // string representation
-      0x04,                                  // scan code
-      0,                                     // keyboard group
-      0,                                     // is a modifier
-  };
-
   // printf("Test 1 %s\n", expected_value);fflush(stdout);
-  fl_key_responder_handle_event(responder, &key_event, responder_callback,
-                                loop);
-  // printf("Test 2 %s\n", expected_value);fflush(stdout);
-  expected_value =
-      "{type: keydown, keymap: linux, scanCode: 4, toolkit: gtk, keyCode: 65, "
-      "modifiers: 0, unicodeScalarValues: 65}";
-  expected_handled = FALSE;
+  fl_key_responder_handle_event(responder,
+    key_event_new(true, GDK_KEY_a, kKeyCodeKeyA, 0x10, false),
+    responder_callback, nullptr);
 
-  // Blocks here until echo_response_cb is called.
-  g_main_loop_run(loop);
-
-  key_event = GdkEventKey{
-      GDK_KEY_RELEASE,                       // event type
-      nullptr,                               // window (not needed)
-      FALSE,                                 // event was sent explicitly
-      23456,                                 // time
-      0x0,                                   // modifier state
-      GDK_KEY_A,                             // key code
-      1,                                     // length of string representation
-      reinterpret_cast<gchar*>(&string[0]),  // string representation
-      0x04,                                  // scan code
-      0,                                     // keyboard group
-      0,                                     // is a modifier
-  };
-
-  fl_key_responder_handle_event(responder, &key_event, responder_callback,
-                                loop);
-  expected_value =
-      "{type: keyup, keymap: linux, scanCode: 4, toolkit: gtk, keyCode: 65, "
-      "modifiers: 0, unicodeScalarValues: 65}";
-  expected_handled = FALSE;
-
-  // Blocks here until echo_response_cb is called.
-  g_main_loop_run(loop);
+  EXPECT_EQ(call_records->len, 1u);
 }
 
 }  // namespace
