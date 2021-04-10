@@ -324,8 +324,7 @@ public class FlutterActivityTest {
       when(flutterJNI.isAttached()).thenReturn(true);
       when(flutterLoader.automaticallyRegisterPlugins()).thenReturn(true);
 
-      return new FlutterEngine(
-          context, flutterLoader, flutterJNI, new String[] {}, true);
+      return new FlutterEngine(context, flutterLoader, flutterJNI, new String[] {}, true);
     }
   }
 

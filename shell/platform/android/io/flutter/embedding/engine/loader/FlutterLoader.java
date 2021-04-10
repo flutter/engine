@@ -71,9 +71,7 @@ public class FlutterLoader {
 
   /** Creates a {@code FlutterLoader} that uses a default constructed {@link FlutterJNI}. */
   public FlutterLoader() {
-    this(
-      FlutterInjector.instance().flutterJNIFactory().provideFlutterJNI()
-    );
+    this(FlutterInjector.instance().flutterJNIFactory().provideFlutterJNI());
   }
 
   /**

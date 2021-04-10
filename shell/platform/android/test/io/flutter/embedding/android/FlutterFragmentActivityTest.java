@@ -17,7 +17,6 @@ import android.widget.FrameLayout;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import io.flutter.FlutterInjector;
-import io.flutter.embedding.android.FlutterFragmentActivity;
 import io.flutter.embedding.android.FlutterActivityLaunchConfigs.BackgroundMode;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterJNI;
@@ -184,8 +183,7 @@ public class FlutterFragmentActivityTest {
       when(flutterJNI.isAttached()).thenReturn(true);
       when(flutterLoader.automaticallyRegisterPlugins()).thenReturn(true);
 
-      return new FlutterEngine(
-          context, flutterLoader, flutterJNI, new String[] {}, true);
+      return new FlutterEngine(context, flutterLoader, flutterJNI, new String[] {}, true);
     }
   }
 

@@ -836,9 +836,8 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   }
 
   /**
-   * Returns true a {@code FlutterEngine} was explicitly created and injected into the
-   * {@code FlutterFragment} rather than one that was created implicitly in the
-   * {@code FlutterFragment}.
+   * Returns true a {@code FlutterEngine} was explicitly created and injected into the {@code
+   * FlutterFragment} rather than one that was created implicitly in the {@code FlutterFragment}.
    */
   /* package */ boolean isFlutterEngineInjected() {
     return delegate.isFlutterEngineFromHost();

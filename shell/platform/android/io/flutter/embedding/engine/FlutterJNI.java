@@ -1263,10 +1263,8 @@ public class FlutterJNI {
    * A factory for creating {@code FlutterJNI} instances. Useful for FlutterJNI injections during
    * tests.
    */
-  static public class Factory {
-    /**
-     * @return a {@link FlutterJNI} instance.
-     */
+  public static class Factory {
+    /** @return a {@link FlutterJNI} instance. */
     public FlutterJNI provideFlutterJNI() {
       return new FlutterJNI();
     }
