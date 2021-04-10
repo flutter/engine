@@ -4,6 +4,8 @@
 
 #include "flutter/shell/platform/linux/fl_settings_plugin.h"
 
+#include <gmodule.h>
+#include <gtk/gtk.h>
 #include <cstring>
 
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_basic_message_channel.h"
@@ -32,6 +34,26 @@ struct _FlSettingsPlugin {
 
 G_DEFINE_TYPE(FlSettingsPlugin, fl_settings_plugin, G_TYPE_OBJECT)
 
+static bool is_dark_theme(GSettings* interface_settings) {
+  // GTK doesn't have a specific flag for dark themes, so we check if the
+  // window text color is light or dark
+  GtkApplication* app = GTK_APPLICATION(g_application_get_default());
+  GtkWidget* window = GTK_WIDGET(gtk_application_get_active_window(app));
+
+  if (G_UNLIKELY(window == nullptr)) {
+    // As a fallback, check if the theme name contains 'dark'
+    g_autofree gchar* gtk_theme =
+        g_settings_get_string(interface_settings, kDesktopGtkThemeKey);
+    g_autofree gchar* gtk_theme_down = g_utf8_strdown(gtk_theme, -1);
+    return strstr(gtk_theme_down, "dark") != nullptr;
+  }
+
+  GdkRGBA color;
+  GtkStyleContext* style = gtk_widget_get_style_context(window);
+  gtk_style_context_get_color(style, GTK_STATE_FLAG_NORMAL, &color);
+  return color.red > 0.5 && color.blue > 0.5 && color.green > 0.5;
+}
+
 // Sends the current settings to the Flutter engine.
 static void update_settings(FlSettingsPlugin* self) {
   gdouble scaling_factor = 1.0;
@@ -45,12 +67,7 @@ static void update_settings(FlSettingsPlugin* self) {
         g_settings_get_string(self->interface_settings, kDesktopClockFormatKey);
     always_use_24hr = g_strcmp0(clock_format, kClockFormat24Hour) == 0;
 
-    // GTK doesn't have a specific flag for dark themes, so we have some
-    // hard-coded themes for Ubuntu (Yaru) and GNOME (Adwaita).
-    g_autofree gchar* gtk_theme =
-        g_settings_get_string(self->interface_settings, kDesktopGtkThemeKey);
-    if (g_strcmp0(gtk_theme, "Yaru-dark") == 0 ||
-        g_strcmp0(gtk_theme, "Adwaita-dark") == 0) {
+    if (is_dark_theme(self->interface_settings)) {
       platform_brightness = kPlatformBrightnessDark;
     }
   }
