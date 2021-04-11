@@ -19,7 +19,6 @@ static constexpr char kPlatformBrightnessLight[] = "light";
 static constexpr char kPlatformBrightnessDark[] = "dark";
 
 static constexpr char kDesktopInterfaceSchema[] = "org.gnome.desktop.interface";
-static constexpr char kDesktopGtkThemeKey[] = "gtk-theme";
 static constexpr char kDesktopTextScalingFactorKey[] = "text-scaling-factor";
 static constexpr char kDesktopClockFormatKey[] = "clock-format";
 static constexpr char kClockFormat24Hour[] = "24h";
@@ -34,24 +33,25 @@ struct _FlSettingsPlugin {
 
 G_DEFINE_TYPE(FlSettingsPlugin, fl_settings_plugin, G_TYPE_OBJECT)
 
-static bool is_dark_theme(GSettings* interface_settings) {
-  // GTK doesn't have a specific flag for dark themes, so we check if the
-  // window text color is light or dark
-  GtkApplication* app = GTK_APPLICATION(g_application_get_default());
-  GtkWidget* window = GTK_WIDGET(gtk_application_get_active_window(app));
+static bool is_dark_color(GdkRGBA* color) {
+  return color->red < 0.5 && color->green < 0.5 && color->blue < 0.5;
+}
 
-  if (G_UNLIKELY(window == nullptr)) {
-    // As a fallback, check if the theme name contains 'dark'
-    g_autofree gchar* gtk_theme =
-        g_settings_get_string(interface_settings, kDesktopGtkThemeKey);
-    g_autofree gchar* gtk_theme_down = g_utf8_strdown(gtk_theme, -1);
-    return strstr(gtk_theme_down, "dark") != nullptr;
+static bool is_dark_theme() {
+  // GTK doesn't have a specific flag for dark themes, so we check if the
+  // style text color is light or dark
+  GList* windows = gtk_window_list_toplevels();
+  if (windows == nullptr) {
+    return false;
   }
+
+  GtkWidget* window = GTK_WIDGET(windows->data);
+  g_list_free(windows);
 
   GdkRGBA color;
   GtkStyleContext* style = gtk_widget_get_style_context(window);
   gtk_style_context_get_color(style, GTK_STATE_FLAG_NORMAL, &color);
-  return color.red > 0.5 && color.blue > 0.5 && color.green > 0.5;
+  return !is_dark_color(&color);
 }
 
 // Sends the current settings to the Flutter engine.
@@ -66,10 +66,10 @@ static void update_settings(FlSettingsPlugin* self) {
     g_autofree gchar* clock_format =
         g_settings_get_string(self->interface_settings, kDesktopClockFormatKey);
     always_use_24hr = g_strcmp0(clock_format, kClockFormat24Hour) == 0;
+  }
 
-    if (is_dark_theme(self->interface_settings)) {
-      platform_brightness = kPlatformBrightnessDark;
-    }
+  if (is_dark_theme()) {
+    platform_brightness = kPlatformBrightnessDark;
   }
 
   g_autoptr(FlValue) message = fl_value_new_map();
