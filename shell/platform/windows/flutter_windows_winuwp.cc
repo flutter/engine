@@ -57,17 +57,26 @@ FlutterDesktopViewControllerCreateFromCoreWindow(
       std::unique_ptr<flutter::FlutterWindowsEngine>(EngineFromHandle(engine)));
   state->view->CreateRenderSurface();
 
-  winrt::Windows::ApplicationModel::Activation::LaunchActivatedEventArgs
+  winrt::Windows::ApplicationModel::Activation::IActivatedEventArgs
       arg_interface{nullptr};
   winrt::copy_from_abi(arg_interface, args);
 
   std::vector<std::string> engine_switches;
-
-  if (arg_interface != nullptr) {
-    std::string launchargs = winrt::to_string(arg_interface.Arguments());
-    if (!launchargs.empty()) {
-      engine_switches = split(launchargs);
-    }
+  winrt::Windows::ApplicationModel::Activation::LaunchActivatedEventArgs launch{
+      nullptr};
+  switch (arg_interface.Kind()) {
+    case winrt::Windows::ApplicationModel::Activation::ActivationKind::Launch:
+      launch = arg_interface.as<winrt::Windows::ApplicationModel::Activation::
+                                    LaunchActivatedEventArgs>();
+      if (launch != nullptr) {
+        std::string launchargs = winrt::to_string(launch.Arguments());
+        if (!launchargs.empty()) {
+          engine_switches = split(launchargs);
+        }
+      }
+      break;
+    default:
+      break;
   }
 
   state->view->GetEngine()->SetSwitches(engine_switches);
