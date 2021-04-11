@@ -28,19 +28,16 @@ static flutter::FlutterWindowsEngine* EngineFromHandle(
   return reinterpret_cast<flutter::FlutterWindowsEngine*>(ref);
 }
 
+// Resturns a list of discrete arguments splitting the input using a ",".
 std::vector<std::string> split(std::string const s) {
-  size_t pos_start = 0, pos_end = 1;
-  std::string token;
-  std::vector<std::string> result;
-
-  while ((pos_end = s.find(",", pos_start)) != std::string::npos) {
-    token = s.substr(pos_start, pos_end - pos_start);
-    pos_start = pos_end + 1;
-    result.push_back(token);
+  // Split by ','.
+  std::vector<std::string> components;
+  std::istringstream stream(s);
+  std::string component;
+  while (getline(stream, component, ',')) {
+    components.push_back(component);
   }
-
-  result.push_back(s.substr(pos_start));
-  return (std::move(result));
+  return (std::move(components));
 }
 
 FlutterDesktopViewControllerRef
