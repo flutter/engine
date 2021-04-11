@@ -13,6 +13,7 @@
 #include <filesystem>
 #include <iostream>
 #include <memory>
+#include <sstream>
 #include <vector>
 
 #include <winrt/Windows.ApplicationModel.Activation.h>
