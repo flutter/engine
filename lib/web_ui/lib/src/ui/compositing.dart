@@ -79,6 +79,7 @@ abstract class SceneBuilder {
   });
   BackdropFilterEngineLayer? pushBackdropFilter(
     ImageFilter filter, {
+    BlendMode blendMode = BlendMode.srcOver,
     BackdropFilterEngineLayer? oldLayer,
   });
   ShaderMaskEngineLayer? pushShaderMask(
@@ -86,6 +87,7 @@ abstract class SceneBuilder {
     Rect maskRect,
     BlendMode blendMode, {
     ShaderMaskEngineLayer? oldLayer,
+    FilterQuality filterQuality = FilterQuality.low,
   });
   PhysicalShapeEngineLayer? pushPhysicalShape({
     required Path path,

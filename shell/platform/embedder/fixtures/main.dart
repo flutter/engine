@@ -93,7 +93,7 @@ Future<SemanticsActionData> get semanticsAction {
 }
 
 @pragma('vm:entry-point')
-void a11y_main() async { // ignore: non_constant_identifier_names
+void a11y_main() async {
   // Return initial state (semantics disabled).
   notifySemanticsEnabled(PlatformDispatcher.instance.semanticsEnabled);
 
@@ -521,7 +521,7 @@ int _serializeKeyEventType(KeyEventType change) {
 
 // Echo the event data with `_echoKeyEvent`, and returns synthesized as handled.
 @pragma('vm:entry-point')
-void key_data_echo() async { // ignore: non_constant_identifier_names
+void key_data_echo() async {
   PlatformDispatcher.instance.onKeyData = (KeyData data) {
     _echoKeyEvent(
       _serializeKeyEventType(data.type),
@@ -876,6 +876,47 @@ void render_targets_are_recycled() {
 void nativeArgumentsCallback(List<String> args) native 'NativeArgumentsCallback';
 
 @pragma('vm:entry-point')
+void custom_logger(List<String> args) {
+  print("hello world");
+}
+
+@pragma('vm:entry-point')
 void dart_entrypoint_args(List<String> args) {
   nativeArgumentsCallback(args);
+}
+
+void snapshotsCallback(Image big_image, Image small_image) native 'SnapshotsCallback';
+
+@pragma('vm:entry-point')
+void snapshot_large_scene(int max_size) async {
+  // Set width to double the max size, which will result in height being half the max size after scaling.
+  double width = max_size * 2.0, height = max_size.toDouble();
+
+  PictureRecorder recorder = PictureRecorder();
+  {
+    Canvas canvas = Canvas(recorder, Rect.fromLTWH(0, 0, width, height));
+    Paint paint = Paint();
+    // Bottom left
+    paint.color = Color.fromARGB(255, 100, 255, 100);
+    canvas.drawRect(Rect.fromLTWH(0, height / 2, width / 2, height / 2), paint);
+    // Top right
+    paint.color = Color.fromARGB(255, 100, 100, 255);
+    canvas.drawRect(Rect.fromLTWH(width / 2, 0, width / 2, height / 2), paint);
+  }
+  Picture picture = recorder.endRecording();
+  Image big_image = await picture.toImage(width.toInt(), height.toInt());
+
+  // The max size varies across hardware/drivers, so normalize the result to a smaller target size in
+  // order to reliably test against an image fixture.
+  double small_width = 128, small_height = 64;
+  recorder = PictureRecorder();
+  {
+    Canvas canvas = Canvas(recorder, Rect.fromLTWH(0, 0, small_width, small_height));
+    canvas.scale(small_width / big_image.width);
+    canvas.drawImage(big_image, Offset.zero, Paint());
+  }
+  picture = recorder.endRecording();
+  Image small_image = await picture.toImage(small_width.toInt(), small_height.toInt());
+
+  snapshotsCallback(big_image, small_image);
 }

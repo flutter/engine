@@ -200,7 +200,7 @@ void FuchsiaExternalViewEmbedder::EndFrame(
 void FuchsiaExternalViewEmbedder::SubmitFrame(
     GrDirectContext* context,
     std::unique_ptr<flutter::SurfaceFrame> frame,
-    const std::shared_ptr<fml::SyncSwitch>& gpu_disable_sync_switch) {
+    const std::shared_ptr<const fml::SyncSwitch>& gpu_disable_sync_switch) {
   TRACE_EVENT0("flutter", "FuchsiaExternalViewEmbedder::SubmitFrame");
   std::vector<std::unique_ptr<SurfaceProducerSurface>> frame_surfaces;
   std::unordered_map<EmbedderLayerId, size_t> frame_surface_indices;
@@ -522,7 +522,7 @@ void FuchsiaExternalViewEmbedder::Reset() {
   // Detach the root node to prepare for the next frame.
   layer_tree_node_.DetachChildren();
 
-  // Clear images on all layers so they aren't cached unnecesarily.
+  // Clear images on all layers so they aren't cached unnecessarily.
   for (auto& layer : scenic_layers_) {
     layer.material.SetTexture(0);
   }

@@ -25,18 +25,18 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:web_test_utils/goldens.dart';
 import 'package:web_test_utils/image_compare.dart';
 
-import 'package:test_api/src/backend/runtime.dart'; // ignore: implementation_imports
-import 'package:test_api/src/backend/suite_platform.dart'; // ignore: implementation_imports
-import 'package:test_core/src/runner/runner_suite.dart'; // ignore: implementation_imports
-import 'package:test_core/src/runner/platform.dart'; // ignore: implementation_imports
-import 'package:test_core/src/util/stack_trace_mapper.dart'; // ignore: implementation_imports
-import 'package:test_api/src/utils.dart'; // ignore: implementation_imports
-import 'package:test_core/src/runner/suite.dart'; // ignore: implementation_imports
-import 'package:test_core/src/runner/plugin/platform_helpers.dart'; // ignore: implementation_imports
-import 'package:test_core/src/runner/environment.dart'; // ignore: implementation_imports
+import 'package:test_api/src/backend/runtime.dart';
+import 'package:test_api/src/backend/suite_platform.dart';
+import 'package:test_core/src/runner/runner_suite.dart';
+import 'package:test_core/src/runner/platform.dart';
+import 'package:test_core/src/util/stack_trace_mapper.dart';
+import 'package:test_api/src/utils.dart';
+import 'package:test_core/src/runner/suite.dart';
+import 'package:test_core/src/runner/plugin/platform_helpers.dart';
+import 'package:test_core/src/runner/environment.dart';
 
-import 'package:test_core/src/util/io.dart'; // ignore: implementation_imports
-import 'package:test_core/src/runner/configuration.dart'; // ignore: implementation_imports
+import 'package:test_core/src/util/io.dart';
+import 'package:test_core/src/runner/configuration.dart';
 
 import 'browser.dart';
 import 'common.dart';
@@ -541,7 +541,7 @@ class BrowserManager {
 
     // For the cases where we use a delegator such as `adb` (for Android) or
     // `xcrun` (for IOS), these delegator processes can shut down before the
-    // websocket is available. Therefore do not throw an error if proccess
+    // websocket is available. Therefore do not throw an error if process
     // exits with exitCode 0. Note that `browser` will throw and error if the
     // exit code was not 0, which will be processed by the next callback.
     browser.onExit.catchError((dynamic error, StackTrace stackTrace) {

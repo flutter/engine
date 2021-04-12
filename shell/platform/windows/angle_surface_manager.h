@@ -14,6 +14,7 @@
 
 // Windows platform specific includes
 #include <windows.h>
+#include <memory>
 
 #include "window_binding_handler.h"
 
@@ -23,9 +24,7 @@ namespace flutter {
 // destroy surfaces
 class AngleSurfaceManager {
  public:
-  // Creates a new surface manager retaining reference to the passed-in target
-  // for the lifetime of the manager.
-  AngleSurfaceManager();
+  static std::unique_ptr<AngleSurfaceManager> Create();
   ~AngleSurfaceManager();
 
   // Disallow copy/move.
@@ -33,7 +32,7 @@ class AngleSurfaceManager {
   AngleSurfaceManager& operator=(const AngleSurfaceManager&) = delete;
 
   // Creates an EGLSurface wrapper and backing DirectX 11 SwapChain
-  // asociated with window, in the appropriate format for display.
+  // associated with window, in the appropriate format for display.
   // Target represents the visual entity to bind to.  Width and
   // height represent dimensions surface is created at.
   bool CreateSurface(WindowsRenderTarget* render_target,
@@ -75,6 +74,10 @@ class AngleSurfaceManager {
   void CleanUp();
 
  private:
+  // Creates a new surface manager retaining reference to the passed-in target
+  // for the lifetime of the manager.
+  AngleSurfaceManager();
+
   // Attempts to initialize EGL using ANGLE.
   bool InitializeEGL(
       PFNEGLGETPLATFORMDISPLAYEXTPROC egl_get_platform_display_EXT,
@@ -104,6 +107,9 @@ class AngleSurfaceManager {
   // Requested dimensions for current surface
   EGLint surface_width_ = 0;
   EGLint surface_height_ = 0;
+
+  // Number of active instances of AngleSurfaceManager
+  static int instance_count_;
 };
 
 }  // namespace flutter

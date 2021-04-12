@@ -357,13 +357,12 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
   CGFloat screenScale = [UIScreen mainScreen].scale;
   CATransform3D finalTransform = CATransform3DMakeScale(1 / screenScale, 1 / screenScale, 1);
 
-  // Mask view needs to be full screen because we might draw platform view pixels outside of the
-  // `ChildClippingView`. Since the mask view's frame will be based on the `clipView`'s coordinate
-  // system, we need to convert the flutter_view's frame to the clipView's coordinate system. The
-  // mask view is not displayed on the screen.
-  CGRect maskViewFrame = [flutter_view_ convertRect:flutter_view_.get().frame toView:clipView];
-  FlutterClippingMaskView* maskView =
-      [[[FlutterClippingMaskView alloc] initWithFrame:maskViewFrame] autorelease];
+  UIView* flutter_view = flutter_view_.get();
+  FlutterClippingMaskView* maskView = [[[FlutterClippingMaskView alloc]
+      initWithFrame:CGRectMake(-clipView.frame.origin.x, -clipView.frame.origin.y,
+                               CGRectGetWidth(flutter_view.bounds),
+                               CGRectGetHeight(flutter_view.bounds))] autorelease];
+
   auto iter = mutators_stack.Begin();
   while (iter != mutators_stack.End()) {
     switch ((*iter)->GetType()) {
@@ -392,7 +391,7 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
   // So we need to revese this translate so the platform view can layout at the correct offset.
   //
   // Note that we don't apply this transform matrix the clippings because clippings happen on the
-  // mask view, whose origin is alwasy (0,0) to the flutter_view.
+  // mask view, whose origin is always (0,0) to the flutter_view.
   CATransform3D reverseTranslate =
       CATransform3DMakeTranslation(-clipView.frame.origin.x, -clipView.frame.origin.y, 0);
   embedded_view.layer.transform = CATransform3DConcat(finalTransform, reverseTranslate);
@@ -467,7 +466,7 @@ bool FlutterPlatformViewsController::SubmitFrame(
     GrDirectContext* gr_context,
     std::shared_ptr<IOSContext> ios_context,
     std::unique_ptr<SurfaceFrame> frame,
-    const std::shared_ptr<fml::SyncSwitch>& gpu_disable_sync_switch) {
+    const std::shared_ptr<const fml::SyncSwitch>& gpu_disable_sync_switch) {
   bool result = false;
   gpu_disable_sync_switch->Execute(
       fml::SyncSwitch::Handlers().SetIfTrue([&] { result = false; }).SetIfFalse([&] {
@@ -538,7 +537,7 @@ bool FlutterPlatformViewsController::SubmitFrameGpuSafe(GrDirectContext* gr_cont
         // and the platform view rect.
         joined_rect.intersect(platform_view_rect);
         // Subpixels in the platform may not align with the canvas subpixels.
-        // To workaround it, round the floating point bounds and make the rect slighly larger.
+        // To workaround it, round the floating point bounds and make the rect slightly larger.
         // For example, {0.3, 0.5, 3.1, 4.7} becomes {0, 0, 4, 5}.
         joined_rect.setLTRB(std::floor(joined_rect.left()), std::floor(joined_rect.top()),
                             std::ceil(joined_rect.right()), std::ceil(joined_rect.bottom()));

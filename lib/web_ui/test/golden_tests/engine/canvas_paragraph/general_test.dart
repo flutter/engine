@@ -4,6 +4,7 @@
 
 // @dart = 2.6
 import 'dart:async';
+import 'dart:html' as html;
 import 'dart:math' as math;
 
 import 'package:test/bootstrap/browser.dart';
@@ -226,6 +227,63 @@ void testMain() async {
     return takeScreenshot(canvas, bounds, 'canvas_paragraph_giant_paragraph_style_dom');
   });
 
+  test('giant font size on the body tag (DOM)', () async {
+    const Rect bounds = Rect.fromLTWH(0, 0, 600, 200);
+
+    // Store the old font size value on the body, and set a gaint font size.
+    final String oldBodyFontSize = html.document.body.style.fontSize;
+    html.document.body.style.fontSize = '100px';
+
+    final canvas = DomCanvas(domRenderer.createElement('flt-picture'));
+    Offset offset = Offset(10.0, 10.0);
+
+    final CanvasParagraph paragraph = rich(
+      ParagraphStyle(fontFamily: 'Roboto'),
+      (CanvasParagraphBuilder builder) {
+        builder.pushStyle(EngineTextStyle.only(color: yellow, fontSize: 24.0));
+        builder.addText('Lorem ');
+        builder.pushStyle(EngineTextStyle.only(color: red, fontSize: 48.0));
+        builder.addText('ipsum');
+      },
+    )..layout(constrain(double.infinity));
+    final Rect rect = Rect.fromLTWH(offset.dx, offset.dy, paragraph.maxIntrinsicWidth, paragraph.height);
+    canvas.drawRect(rect, SurfacePaintData()..color = black);
+    canvas.drawParagraph(paragraph, offset);
+    offset = offset.translate(paragraph.maxIntrinsicWidth, 0.0);
+
+    // Add some extra padding between the two paragraphs.
+    offset = offset.translate(20.0, 0.0);
+
+    // Use the same height as the previous paragraph so that the 2 paragraphs
+    // look nice in the screenshot.
+    final double placeholderHeight = paragraph.height;
+    final double placeholderWidth = paragraph.height * 2;
+
+    final CanvasParagraph paragraph2 = rich(
+      ParagraphStyle(),
+      (CanvasParagraphBuilder builder) {
+        builder.addPlaceholder(placeholderWidth, placeholderHeight, PlaceholderAlignment.baseline, baseline: TextBaseline.alphabetic);
+      },
+    )..layout(constrain(double.infinity));
+    final Rect rect2 = Rect.fromLTWH(offset.dx, offset.dy, paragraph2.maxIntrinsicWidth, paragraph2.height);
+    canvas.drawRect(rect2, SurfacePaintData()..color = black);
+    canvas.drawParagraph(paragraph2, offset);
+    // Draw a rect in the placeholder.
+    // Leave some padding around the placeholder to make the black paragraph
+    // background visible.
+    final double padding = 5;
+    final TextBox placeholderBox = paragraph2.getBoxesForPlaceholders().single;
+    canvas.drawRect(
+      placeholderBox.toRect().shift(offset).deflate(padding),
+      SurfacePaintData()..color = red,
+    );
+
+    await takeScreenshot(canvas, bounds, 'canvas_paragraph_giant_body_font_size_dom');
+
+    // Restore the old font size value.
+    html.document.body.style.fontSize = oldBodyFontSize;
+  });
+
   test('paints spans with varying heights/baselines', () {
     final canvas = BitmapCanvas(bounds, RenderStrategy());
 
@@ -311,5 +369,102 @@ void testMain() async {
 
     canvas.drawParagraph(paragraph, Offset.zero);
     return takeScreenshot(canvas, bounds, 'canvas_paragraph_decoration');
+  });
+
+  void testFontFeatures(EngineCanvas canvas) {
+    final String text = 'Aa Bb Dd Ee Ff Difficult';
+    final FontFeature enableSmallCaps = FontFeature('smcp');
+    final FontFeature disableSmallCaps = FontFeature('smcp', 0);
+
+    final String numeric = '123.4560';
+    final FontFeature enableOnum = FontFeature('onum');
+
+    final FontFeature disableLigatures = FontFeature('liga', 0);
+
+    final CanvasParagraph paragraph = rich(
+      ParagraphStyle(fontFamily: 'Roboto'),
+      (CanvasParagraphBuilder builder) {
+        // Small Caps
+        builder.pushStyle(EngineTextStyle.only(
+          height: 1.5,
+          color: black,
+          fontSize: 32.0,
+        ));
+        builder.pushStyle(EngineTextStyle.only(
+          color: blue,
+          fontFeatures: <FontFeature>[enableSmallCaps],
+        ));
+        builder.addText(text);
+        // Make sure disabling a font feature also works.
+        builder.pushStyle(EngineTextStyle.only(
+          color: black,
+          fontFeatures: <FontFeature>[disableSmallCaps],
+        ));
+        builder.addText(' (smcp)\n');
+        builder.pop(); // disableSmallCaps
+        builder.pop(); // enableSmallCaps
+
+        // No ligatures
+        builder.pushStyle(EngineTextStyle.only(
+          color: blue,
+          fontFeatures: <FontFeature>[disableLigatures],
+        ));
+        builder.addText(text);
+        builder.pop(); // disableLigatures
+        builder.addText(' (no liga)\n');
+
+        // No font features
+        builder.pushStyle(EngineTextStyle.only(
+          color: blue,
+        ));
+        builder.addText(text);
+        builder.pop(); // color: blue
+        builder.addText(' (none)\n');
+
+        // Onum
+        builder.pushStyle(EngineTextStyle.only(
+          color: blue,
+          fontFeatures: <FontFeature>[enableOnum],
+        ));
+        builder.addText(numeric);
+        builder.pop(); // enableOnum
+        builder.addText(' (onum)\n');
+
+        // No font features
+        builder.pushStyle(EngineTextStyle.only(
+          color: blue,
+        ));
+        builder.addText(numeric);
+        builder.pop(); // color: blue
+        builder.addText(' (none)\n\n');
+
+        // Multiple font features
+        builder.addText('Combined (smcp, onum):\n');
+        builder.pushStyle(EngineTextStyle.only(
+          color: blue,
+          fontFeatures: <FontFeature>[
+            enableSmallCaps,
+            enableOnum,
+          ],
+        ));
+        builder.addText('$text - $numeric');
+        builder.pop(); // enableSmallCaps, enableOnum
+      },
+    )..layout(constrain(double.infinity));
+    canvas.drawParagraph(paragraph, Offset.zero);
+  }
+
+  test('font features', () {
+    const Rect bounds = Rect.fromLTWH(0, 0, 600, 500);
+    final canvas = BitmapCanvas(bounds, RenderStrategy());
+    testFontFeatures(canvas);
+    return takeScreenshot(canvas, bounds, 'canvas_paragraph_font_features');
+  });
+
+  test('font features (DOM)', () {
+    const Rect bounds = Rect.fromLTWH(0, 0, 600, 500);
+    final canvas = DomCanvas(domRenderer.createElement('flt-picture'));
+    testFontFeatures(canvas);
+    return takeScreenshot(canvas, bounds, 'canvas_paragraph_font_features_dom');
   });
 }

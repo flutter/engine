@@ -217,6 +217,7 @@ class BitmapCanvas extends EngineCanvas {
       }
     }
     _children.clear();
+    _childOverdraw = false;
     _cachedLastCssFont = null;
     _setupInitialTransform();
   }
@@ -441,8 +442,8 @@ class BitmapCanvas extends EngineCanvas {
     if (blendMode != null) {
       element.style.mixBlendMode = _stringForBlendMode(blendMode) ?? '';
     }
-    // Switch to preferring DOM from now on.
-    _childOverdraw = true;
+    // Switch to preferring DOM from now on, and close the current canvas.
+    _closeCurrentCanvas();
   }
 
   @override
@@ -576,7 +577,7 @@ class BitmapCanvas extends EngineCanvas {
       String cssColor = paint.color == null
           ? '#000000'
           : colorToCssString(
-              paint.color)!; // ignore: unnecessary_null_comparison
+              paint.color)!;
       final double sigma = paint.maskFilter!.webOnlySigma;
       if (browserEngine == BrowserEngine.webkit && !isStroke) {
         // A bug in webkit leaves artifacts when this element is animated
@@ -601,9 +602,7 @@ class BitmapCanvas extends EngineCanvas {
       _applyTargetSize(
           imageElement, image.width.toDouble(), image.height.toDouble());
     }
-    _childOverdraw = true;
-    _canvasPool.closeCurrentCanvas();
-    _cachedLastCssFont = null;
+    _closeCurrentCanvas();
   }
 
   html.ImageElement _reuseOrCreateImage(HtmlImage htmlImage) {
@@ -649,6 +648,7 @@ class BitmapCanvas extends EngineCanvas {
         case ui.BlendMode.color:
         case ui.BlendMode.luminosity:
         case ui.BlendMode.xor:
+        case ui.BlendMode.dstATop:
           imgElement = _createImageElementWithSvgFilter(
               image, colorFilter.color, colorFilter.blendMode, paint);
           break;
@@ -697,7 +697,7 @@ class BitmapCanvas extends EngineCanvas {
     // code path that sets the size of the element and clips.
     //
     // If there is a color filter set however, we maybe using background-image
-    // to render therefore we have to explicitely set width/height of the
+    // to render therefore we have to explicitly set width/height of the
     // element for blending to work with background-color.
     if (dst.width == image.width &&
         dst.height == image.height &&
@@ -750,7 +750,7 @@ class BitmapCanvas extends EngineCanvas {
     final String heightPx = '${targetHeight.toStringAsFixed(2)}px';
     imageStyle
       // left,top are set to 0 (although position is absolute) because
-      // Chrome will glitch if you leave them out, reproducable with
+      // Chrome will glitch if you leave them out, reproducible with
       // canvas_image_blend_test on row 6,  MacOS / Chrome 81.04.
       ..left = "0px"
       ..top = "0px"
@@ -847,6 +847,7 @@ class BitmapCanvas extends EngineCanvas {
   void _closeCurrentCanvas() {
     _canvasPool.closeCurrentCanvas();
     _childOverdraw = true;
+    _cachedLastCssFont = null;
   }
 
   void setCssFont(String cssFont) {

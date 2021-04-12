@@ -1426,6 +1426,7 @@ void testMain() {
 
       // For `blink` and `webkit` browser engines the overlay would be hidden.
       if (browserEngine == BrowserEngine.blink ||
+          browserEngine == BrowserEngine.samsung ||
           browserEngine == BrowserEngine.webkit) {
         expect(textEditing.editingElement.domElement.classes,
             contains('transparentTextEditing'));
@@ -1442,7 +1443,7 @@ void testMain() {
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
         skip: browserEngine == BrowserEngine.webkit);
 
-    test('input font set succesfully with null fontWeightIndex', () {
+    test('input font set successfully with null fontWeightIndex', () {
       final MethodCall setClient = MethodCall(
           'TextInput.setClient', <dynamic>[123, flutterSinglelineConfig]);
       sendFrameworkMessage(codec.encodeMethodCall(setClient));
@@ -1924,6 +1925,7 @@ void testMain() {
 
       // For `blink` and `webkit` browser engines the overlay would be hidden.
       if (browserEngine == BrowserEngine.blink ||
+          browserEngine == BrowserEngine.samsung ||
           browserEngine == BrowserEngine.webkit) {
         expect(firstElement.classes, contains('transparentTextEditing'));
       } else {

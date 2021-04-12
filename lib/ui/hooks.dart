@@ -132,14 +132,10 @@ typedef _ListStringArgFunction(List<String> args);
 @pragma('vm:entry-point')
 // ignore: unused_element
 void _runMainZoned(Function startMainIsolateFunction,
-                   Function? dartPluginRegistrant,
                    Function userMainFunction,
                    List<String> args) {
   startMainIsolateFunction(() {
     runZonedGuarded<void>(() {
-      if (dartPluginRegistrant != null) {
-        dartPluginRegistrant();
-      }
       if (userMainFunction is _ListStringArgFunction) {
         (userMainFunction as dynamic)(args);
       } else {
@@ -159,7 +155,7 @@ void _invoke(void Function()? callback, Zone zone) {
     return;
   }
 
-  assert(zone != null); // ignore: unnecessary_null_comparison
+  assert(zone != null);
 
   if (identical(zone, Zone.current)) {
     callback();
@@ -178,7 +174,7 @@ void _invoke1<A>(void Function(A a)? callback, Zone zone, A arg) {
     return;
   }
 
-  assert(zone != null); // ignore: unnecessary_null_comparison
+  assert(zone != null);
 
   if (identical(zone, Zone.current)) {
     callback(arg);
@@ -197,7 +193,7 @@ void _invoke2<A1, A2>(void Function(A1 a1, A2 a2)? callback, Zone zone, A1 arg1,
     return;
   }
 
-  assert(zone != null); // ignore: unnecessary_null_comparison
+  assert(zone != null);
 
   if (identical(zone, Zone.current)) {
     callback(arg1, arg2);
@@ -218,7 +214,7 @@ void _invoke3<A1, A2, A3>(void Function(A1 a1, A2 a2, A3 a3)? callback, Zone zon
     return;
   }
 
-  assert(zone != null); // ignore: unnecessary_null_comparison
+  assert(zone != null);
 
   if (identical(zone, Zone.current)) {
     callback(arg1, arg2, arg3);
