@@ -81,6 +81,8 @@ class MessageLoopTaskQueues
 
   size_t GetNumPendingTasks(TaskQueueId queue_id) const;
 
+  static TaskSourceGrade GetCurrentTaskSourceGrade();
+
   // Observers methods.
 
   void AddTaskObserver(TaskQueueId queue_id,

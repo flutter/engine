@@ -11,6 +11,7 @@
 
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/message_loop_impl.h"
+#include "flutter/fml/task_source.h"
 
 namespace fml {
 
@@ -18,7 +19,12 @@ std::mutex MessageLoopTaskQueues::creation_mutex_;
 
 const size_t TaskQueueId::kUnmerged = ULONG_MAX;
 
+// Guarded by creation_mutex_.
 fml::RefPtr<MessageLoopTaskQueues> MessageLoopTaskQueues::instance_;
+
+// Guarded by creation_mutex_.
+static thread_local TaskSourceGrade tls_task_source_grade =
+    TaskSourceGrade::kPrimary;
 
 TaskQueueEntry::TaskQueueEntry(TaskQueueId created_for_arg)
     : owner_of(_kUnmerged),
@@ -72,6 +78,11 @@ void MessageLoopTaskQueues::DisposeTasks(TaskQueueId queue_id) {
   }
 }
 
+TaskSourceGrade MessageLoopTaskQueues::GetCurrentTaskSourceGrade() {
+  std::scoped_lock creation(creation_mutex_);
+  return tls_task_source_grade;
+}
+
 void MessageLoopTaskQueues::RegisterTask(
     TaskQueueId queue_id,
     const fml::closure& task,
@@ -118,6 +129,10 @@ fml::closure MessageLoopTaskQueues::GetNextTaskToRun(TaskQueueId queue_id,
   fml::closure invocation = top.task.GetTask();
   queue_entries_.at(top.task_queue_id)
       ->task_source->PopTask(top.task_source_grade);
+  {
+    std::scoped_lock creation(creation_mutex_);
+    tls_task_source_grade = top.task_source_grade;
+  }
   return invocation;
 }
 
