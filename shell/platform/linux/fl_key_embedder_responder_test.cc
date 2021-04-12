@@ -13,8 +13,24 @@
 
 static gboolean expected_handled = FALSE;
 
+namespace {
 constexpr guint16 kKeyCodeKeyA = 0x26u;
 // constexpr guint16 kKeyCodeKeyB = 0x38u;
+
+constexpr uint64_t kPhysicalKeyA = 0x00070004;
+// constexpr uint64_t kPhysicalControlLeft = 0x000700e0;
+// constexpr uint64_t kPhysicalControlRight = 0x000700e4;
+// constexpr uint64_t kPhysicalShiftLeft = 0x000700e1;
+// constexpr uint64_t kPhysicalShiftRight = 0x000700e5;
+// constexpr uint64_t kPhysicalKeyNumLock = 0x00070053;
+
+constexpr uint64_t kLogicalKeyA = 0x00000061;
+// constexpr uint64_t kLogicalControlLeft = 0x00300000105;
+// constexpr uint64_t kLogicalControlRight = 0x00400000105;
+// constexpr uint64_t kLogicalShiftLeft = 0x0030000010d;
+// constexpr uint64_t kLogicalShiftRight = 0x0040000010d;
+// constexpr uint64_t kLogicalKeyNumLock = 0x0000000010a;
+}  // namespace
 
 G_DECLARE_FINAL_TYPE(FlKeyEmbedderCallRecord,
                      fl_key_embedder_call_record,
@@ -71,6 +87,7 @@ static FlKeyEmbedderCallRecord* fl_key_embedder_call_record_new(
     strcpy(clone_character, event->character);
     clone_event->character = clone_character;
   }
+  self->event = clone_event;
   self->callback = callback;
   self->user_data = user_data;
 
@@ -83,7 +100,8 @@ namespace {
 GdkEventKey _g_key_event;
 }  // namespace
 
-static GdkEventKey* key_event_new(gboolean is_down,
+static GdkEventKey* key_event_new(guint32 time_in_milliseconds,
+                                  gboolean is_down,
                                   guint keyval,
                                   guint16 hardware_keycode,
                                   guint state,
@@ -91,7 +109,7 @@ static GdkEventKey* key_event_new(gboolean is_down,
   _g_key_event.type = is_down ? GDK_KEY_PRESS : GDK_KEY_RELEASE;
   _g_key_event.window = nullptr;
   _g_key_event.send_event = FALSE;
-  _g_key_event.time = 12345;
+  _g_key_event.time = time_in_milliseconds;
   _g_key_event.state = state;
   _g_key_event.keyval = keyval;
   _g_key_event.length = 0;
@@ -107,44 +125,50 @@ static void responder_callback(bool handled, gpointer user_data) {
   g_main_loop_quit(static_cast<GMainLoop*>(user_data));
 }
 
-TEST(FlKeyEmbedderResponderTest, NeedThisToWork) {
-  g_autoptr(FlEngine) engine = make_mock_engine();
-  FlutterEngineProcTable* embedder_api = fl_engine_get_embedder_api(engine);
+namespace {
+GPtrArray* g_call_records;
+}
 
-  embedder_api->DispatchSemanticsAction = MOCK_ENGINE_PROC(
-      DispatchSemanticsAction,
-      ([](auto engine, uint64_t id, FlutterSemanticsAction action,
-          const uint8_t* data, size_t data_length) { return kSuccess; }));
+static FlEngine* make_mock_engine_with_records() {
+  FlEngine* engine = make_mock_engine();
+  FlutterEngineProcTable* embedder_api = fl_engine_get_embedder_api(engine);
+  embedder_api->SendKeyEvent = [](auto engine, const FlutterKeyEvent* event,
+                                  FlutterKeyEventCallback callback,
+                                  void* user_data) {
+    g_ptr_array_add(g_call_records, fl_key_embedder_call_record_new(
+                                        event, callback, user_data));
+
+    return kSuccess;
+  };
+
+  return engine;
 }
 
 // Test sending a letter "A";
 TEST(FlKeyEmbedderResponderTest, SendKeyEvent) {
-  // g_autoptr(GMainLoop) loop = g_main_loop_new(nullptr, 0);
-  g_autoptr(GPtrArray) call_records =
-      g_ptr_array_new_with_free_func(g_object_unref);
-
-  g_autoptr(FlEngine) engine = make_mock_engine();
-  FlutterEngineProcTable* embedder_api = fl_engine_get_embedder_api(engine);
-
-  embedder_api->SendKeyEvent = MOCK_ENGINE_PROC(
-      SendKeyEvent,
-      ([&call_records](auto engine, const FlutterKeyEvent* event,
-                       FlutterKeyEventCallback callback, void* user_data) {
-        // printf("Callback: before add %d\n", len);
-        g_ptr_array_add(call_records, fl_key_embedder_call_record_new(
-                                          event, callback, user_data));
-
-        // printf("Callback: before return\n");
-        return kSuccess;
-      }));
-
+  EXPECT_EQ(g_call_records, nullptr);
+  g_call_records = g_ptr_array_new_with_free_func(g_object_unref);
+  g_autoptr(FlEngine) engine = make_mock_engine_with_records();
   g_autoptr(FlKeyResponder) responder =
       FL_KEY_RESPONDER(fl_key_embedder_responder_new(engine));
+  int user_data = 123;  // Arbitrary user data
 
-  // printf("Test 1 %s\n", expected_value);fflush(stdout);
+  FlKeyEmbedderCallRecord* record;
+
   fl_key_responder_handle_event(
-      responder, key_event_new(true, GDK_KEY_a, kKeyCodeKeyA, 0x10, false),
-      responder_callback, nullptr);
+      responder,
+      key_event_new(12345, true, GDK_KEY_a, kKeyCodeKeyA, 0x10, false),
+      responder_callback, &user_data);
 
-  EXPECT_EQ(call_records->len, 1u);
+  EXPECT_EQ(g_call_records->len, 1u);
+  record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 0));
+  EXPECT_EQ(record->event->struct_size, sizeof(FlutterKeyEvent));
+  EXPECT_EQ(record->event->timestamp, 12345000);
+  EXPECT_EQ(record->event->type, kFlutterKeyEventTypeDown);
+  EXPECT_EQ(record->event->physical, kPhysicalKeyA);
+  EXPECT_EQ(record->event->logical, kLogicalKeyA);
+  EXPECT_STREQ(record->event->character, "a");
+  EXPECT_EQ(record->event->synthesized, false);
+
+  g_clear_object(&g_call_records);
 }
