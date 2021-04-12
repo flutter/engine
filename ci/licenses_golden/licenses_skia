@@ -1,4 +1,4 @@
-Signature: 9a6194c7384df568822dec48b5ae0cfb
+Signature: 2757dec70878f6f1e06cf90386cd8bef
 
 UNUSED LICENSES:
 
@@ -6037,7 +6037,6 @@ FILE: ../../../third_party/skia/include/private/SkTDArray.h
 FILE: ../../../third_party/skia/include/private/SkTemplates.h
 FILE: ../../../third_party/skia/include/utils/SkBase64.h
 FILE: ../../../third_party/skia/include/utils/SkCamera.h
-FILE: ../../../third_party/skia/include/utils/SkInterpolator.h
 FILE: ../../../third_party/skia/include/utils/SkParse.h
 FILE: ../../../third_party/skia/include/utils/SkParsePath.h
 FILE: ../../../third_party/skia/include/utils/SkRandom.h
@@ -6238,7 +6237,6 @@ FILE: ../../../third_party/skia/src/core/SkStroke.cpp
 FILE: ../../../third_party/skia/src/core/SkWriter32.h
 FILE: ../../../third_party/skia/src/ports/SkFontMgr_empty_factory.cpp
 FILE: ../../../third_party/skia/src/ports/SkImageEncoder_CG.cpp
-FILE: ../../../third_party/skia/src/utils/SkInterpolator.cpp
 ----------------------------------------------------------------------------------------------------
 Copyright 2008 The Android Open Source Project
 
