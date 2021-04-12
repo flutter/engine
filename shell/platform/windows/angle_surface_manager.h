@@ -14,6 +14,7 @@
 
 // Windows platform specific includes
 #include <windows.h>
+#include <memory>
 
 #include "window_binding_handler.h"
 
@@ -106,6 +107,9 @@ class AngleSurfaceManager {
   // Requested dimensions for current surface
   EGLint surface_width_ = 0;
   EGLint surface_height_ = 0;
+
+  // Number of active instances of AngleSurfaceManager
+  static int instance_count_;
 };
 
 }  // namespace flutter
