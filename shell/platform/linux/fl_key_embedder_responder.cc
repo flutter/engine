@@ -238,8 +238,7 @@ static uint64_t pressed_logical_for_physical(GHashTable* pressing_records,
 // Handles a response from the framework to a key event sent to the framework
 // earlier.
 static void handle_response(bool handled, gpointer user_data) {
-  g_autoptr(FlKeyEmbedderUserData) data =
-      FL_KEY_EMBEDDER_USER_DATA(user_data);
+  g_autoptr(FlKeyEmbedderUserData) data = FL_KEY_EMBEDDER_USER_DATA(user_data);
 
   // Return if the weak pointer has been destroyed.
   if (data->responder == nullptr) {

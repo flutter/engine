@@ -118,8 +118,7 @@ static FlKeyChannelUserData* fl_key_channel_user_data_new(
 static void handle_response(GObject* object,
                             GAsyncResult* result,
                             gpointer user_data) {
-  g_autoptr(FlKeyChannelUserData) data =
-      FL_KEY_CHANNEL_USER_DATA(user_data);
+  g_autoptr(FlKeyChannelUserData) data = FL_KEY_CHANNEL_USER_DATA(user_data);
 
   // Will also return if the weak pointer has been destroyed.
   if (data->responder == nullptr) {
