@@ -18,8 +18,8 @@ void main() {
 }
 
 void testMain() async {
-  const double screenWidth = 600.0;
-  const double screenHeight = 800.0;
+  const double screenWidth = 500.0;
+  const double screenHeight = 500.0;
   const Rect screenRect = Rect.fromLTWH(0, 0, screenWidth, screenHeight);
 
   setUp(() async {
@@ -33,7 +33,7 @@ void testMain() async {
   // Should clip image with oval.
   test('Clips image with oval clip path', () async {
     final engine.RecordingCanvas rc =
-        engine.RecordingCanvas(const Rect.fromLTRB(0, 0, 400, 300));
+        engine.RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
     rc.save();
     Image testImage = createTestImage();
     double testWidth = testImage.width.toDouble();
@@ -50,7 +50,7 @@ void testMain() async {
   // Regression test for https://github.com/flutter/flutter/issues/48683
   test('Clips triangle with oval clip path', () async {
     final engine.RecordingCanvas rc =
-        engine.RecordingCanvas(const Rect.fromLTRB(0, 0, 400, 300));
+        engine.RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
     rc.save();
     double testWidth = 200;
     double testHeight = 150;
@@ -74,7 +74,7 @@ void testMain() async {
   // Regression test for https://github.com/flutter/flutter/issues/78782
   test('Clips on Safari when clip bounds off screen', () async {
     final engine.RecordingCanvas rc =
-    engine.RecordingCanvas(const Rect.fromLTRB(0, 0, 400, 300));
+    engine.RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
     rc.save();
     double testWidth = 200;
     double testHeight = 150;
@@ -102,7 +102,7 @@ void testMain() async {
   // Tests oval clipping using border radius 50%.
   test('Clips against oval', () async {
     final engine.RecordingCanvas rc =
-    engine.RecordingCanvas(const Rect.fromLTRB(0, 0, 400, 300));
+    engine.RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
     rc.save();
     double testWidth = 200;
     double testHeight = 150;
