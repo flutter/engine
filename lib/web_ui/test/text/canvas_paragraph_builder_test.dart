@@ -148,7 +148,7 @@ void testMain() async {
     paragraph.layout(ParagraphConstraints(width: double.infinity));
     expect(
       paragraph.toDomElement().outerHtml,
-      '<p style="$defaultFontSize $defaultFontFamily $paragraphStyle overflow: hidden; height: ${expectedHeight}px; text-overflow: ellipsis;">'
+      '<p style="$defaultFontSize $defaultFontFamily $paragraphStyle overflow-y: hidden; height: ${expectedHeight}px;">'
       '<span style="$defaultColor $defaultFontSize $defaultFontFamily">'
       'Hello'
       '</span>'

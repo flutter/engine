@@ -157,14 +157,6 @@ class CanvasParagraph implements EngineParagraph {
         ..height = '${height}px';
     }
 
-    if (paragraphStyle._ellipsis != null &&
-        (paragraphStyle._maxLines == null || paragraphStyle._maxLines == 1)) {
-      cssStyle
-        ..width = '${width}px'
-        ..overflowX = 'hidden'
-        ..textOverflow = 'ellipsis';
-    }
-
     // 2. Append all spans to the paragraph.
 
     ParagraphSpan? span;
@@ -177,7 +169,8 @@ class CanvasParagraph implements EngineParagraph {
         domRenderer.append(element, domRenderer.createElement('br'));
       }
 
-      for (final RangeBox box in lines[i].boxes!) {
+      final EngineLineMetrics line = lines[i];
+      for (final RangeBox box in line.boxes!) {
         if (box is SpanBox) {
           if (box.span != span) {
             span = box.span;
@@ -202,6 +195,11 @@ class CanvasParagraph implements EngineParagraph {
         } else {
           throw UnimplementedError('Unknown box type: ${box.runtimeType}');
         }
+      }
+
+      final String? ellipsis = line.ellipsis;
+      if (ellipsis != null) {
+        domRenderer.appendText(element, ellipsis);
       }
     }
 
