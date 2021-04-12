@@ -55,13 +55,13 @@ static void fl_key_channel_responder_iface_init(
 }
 
 // Declare and define a private class to hold response data from the framework.
-G_DECLARE_FINAL_TYPE(FlKeyEventResponseData,
-                     fl_key_event_response_data,
+G_DECLARE_FINAL_TYPE(FlKeyChannelUserData,
+                     fl_key_channel_user_data,
                      FL,
-                     KEY_EVENT_RESPONSE_DATA,
+                     KEY_CHANNEL_USER_DATA,
                      GObject);
 
-struct _FlKeyEventResponseData {
+struct _FlKeyChannelUserData {
   GObject parent_instance;
 
   FlKeyChannelResponder* responder;
@@ -69,13 +69,13 @@ struct _FlKeyEventResponseData {
   gpointer user_data;
 };
 
-// Definition for FlKeyEventResponseData private class.
-G_DEFINE_TYPE(FlKeyEventResponseData, fl_key_event_response_data, G_TYPE_OBJECT)
+// Definition for FlKeyChannelUserData private class.
+G_DEFINE_TYPE(FlKeyChannelUserData, fl_key_channel_user_data, G_TYPE_OBJECT)
 
-// Dispose method for FlKeyEventResponseData private class.
-static void fl_key_event_response_data_dispose(GObject* object) {
-  g_return_if_fail(FL_IS_KEY_EVENT_RESPONSE_DATA(object));
-  FlKeyEventResponseData* self = FL_KEY_EVENT_RESPONSE_DATA(object);
+// Dispose method for FlKeyChannelUserData private class.
+static void fl_key_channel_user_data_dispose(GObject* object) {
+  g_return_if_fail(FL_IS_KEY_CHANNEL_USER_DATA(object));
+  FlKeyChannelUserData* self = FL_KEY_CHANNEL_USER_DATA(object);
   if (self->responder != nullptr) {
     g_object_remove_weak_pointer(
         G_OBJECT(self->responder),
@@ -84,24 +84,24 @@ static void fl_key_event_response_data_dispose(GObject* object) {
   }
 }
 
-// Class initialization method for FlKeyEventResponseData private class.
-static void fl_key_event_response_data_class_init(
-    FlKeyEventResponseDataClass* klass) {
-  G_OBJECT_CLASS(klass)->dispose = fl_key_event_response_data_dispose;
+// Class initialization method for FlKeyChannelUserData private class.
+static void fl_key_channel_user_data_class_init(
+    FlKeyChannelUserDataClass* klass) {
+  G_OBJECT_CLASS(klass)->dispose = fl_key_channel_user_data_dispose;
 }
 
-// Instance initialization method for FlKeyEventResponseData private class.
-static void fl_key_event_response_data_init(FlKeyEventResponseData* self) {}
+// Instance initialization method for FlKeyChannelUserData private class.
+static void fl_key_channel_user_data_init(FlKeyChannelUserData* self) {}
 
-// Creates a new FlKeyEventResponseData private class with a responder that
+// Creates a new FlKeyChannelUserData private class with a responder that
 // created the request, a unique ID for tracking, and optional user data. Will
 // keep a weak pointer to the responder.
-static FlKeyEventResponseData* fl_key_event_response_data_new(
+static FlKeyChannelUserData* fl_key_channel_user_data_new(
     FlKeyChannelResponder* responder,
     FlKeyResponderAsyncCallback callback,
     gpointer user_data) {
-  FlKeyEventResponseData* self = FL_KEY_EVENT_RESPONSE_DATA(
-      g_object_new(fl_key_event_response_data_get_type(), nullptr));
+  FlKeyChannelUserData* self = FL_KEY_CHANNEL_USER_DATA(
+      g_object_new(fl_key_channel_user_data_get_type(), nullptr));
 
   self->responder = responder;
   // Add a weak pointer so we can know if the key event responder disappeared
@@ -118,8 +118,8 @@ static FlKeyEventResponseData* fl_key_event_response_data_new(
 static void handle_response(GObject* object,
                             GAsyncResult* result,
                             gpointer user_data) {
-  g_autoptr(FlKeyEventResponseData) data =
-      FL_KEY_EVENT_RESPONSE_DATA(user_data);
+  g_autoptr(FlKeyChannelUserData) data =
+      FL_KEY_CHANNEL_USER_DATA(user_data);
 
   // Will also return if the weak pointer has been destroyed.
   if (data->responder == nullptr) {
@@ -274,8 +274,8 @@ static void fl_key_channel_responder_handle_event(
                              fl_value_new_int(unicodeScalarValues));
   }
 
-  FlKeyEventResponseData* data =
-      fl_key_event_response_data_new(self, callback, user_data);
+  FlKeyChannelUserData* data =
+      fl_key_channel_user_data_new(self, callback, user_data);
   // Send the message off to the framework for handling (or not).
   fl_basic_message_channel_send(self->channel, message, nullptr,
                                 handle_response, data);

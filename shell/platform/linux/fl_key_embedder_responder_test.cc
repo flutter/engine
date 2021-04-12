@@ -21,13 +21,13 @@ static GdkEventKey* GDK_EVENT_KEY(gpointer pointer) {
   return reinterpret_cast<GdkEventKey*>(pointer);
 }
 
-G_DECLARE_FINAL_TYPE(FlKeyboardCallRecord,
-                     fl_keyboard_call_record,
+G_DECLARE_FINAL_TYPE(FlKeyEmbedderCallRecord,
+                     fl_key_embedder_call_record,
                      FL,
-                     KEYBOARD_CALL_RECORD,
+                     KEY_EMBEDDER_CALL_RECORD,
                      GObject);
 
-struct _FlKeyboardCallRecord {
+struct _FlKeyEmbedderCallRecord {
   GObject parent_instance;
 
   FlutterKeyEvent* event;
@@ -35,36 +35,36 @@ struct _FlKeyboardCallRecord {
   gpointer user_data;
 };
 
-G_DEFINE_TYPE(FlKeyboardCallRecord, fl_keyboard_call_record, G_TYPE_OBJECT)
+G_DEFINE_TYPE(FlKeyEmbedderCallRecord, fl_key_embedder_call_record, G_TYPE_OBJECT)
 
-static void fl_keyboard_call_record_init(FlKeyboardCallRecord* self) {}
+static void fl_key_embedder_call_record_init(FlKeyEmbedderCallRecord* self) {}
 
-// Dispose method for FlKeyboardCallRecord.
-static void fl_keyboard_call_record_dispose(GObject* object) {
-  g_return_if_fail(FL_IS_KEYBOARD_CALL_RECORD(object));
+// Dispose method for FlKeyEmbedderCallRecord.
+static void fl_key_embedder_call_record_dispose(GObject* object) {
+  g_return_if_fail(FL_IS_KEY_EMBEDDER_CALL_RECORD(object));
 
-  FlKeyboardCallRecord* self = FL_KEYBOARD_CALL_RECORD(object);
+  FlKeyEmbedderCallRecord* self = FL_KEY_EMBEDDER_CALL_RECORD(object);
   if (self->event != nullptr) {
     g_free(const_cast<char*>(self->event->character));
     g_free(self->event);
   }
-  G_OBJECT_CLASS(fl_keyboard_call_record_parent_class)->dispose(object);
+  G_OBJECT_CLASS(fl_key_embedder_call_record_parent_class)->dispose(object);
 }
 
-// Class Initialization method for FlKeyboardCallRecord class.
-static void fl_keyboard_call_record_class_init(
-    FlKeyboardCallRecordClass* klass) {
-  G_OBJECT_CLASS(klass)->dispose = fl_keyboard_call_record_dispose;
+// Class Initialization method for FlKeyEmbedderCallRecord class.
+static void fl_key_embedder_call_record_class_init(
+    FlKeyEmbedderCallRecordClass* klass) {
+  G_OBJECT_CLASS(klass)->dispose = fl_key_embedder_call_record_dispose;
 }
 
-static FlKeyboardCallRecord* fl_keyboard_call_record_new(
+static FlKeyEmbedderCallRecord* fl_key_embedder_call_record_new(
     const FlutterKeyEvent* event,
     FlutterKeyEventCallback callback,
     gpointer user_data) {
   g_return_val_if_fail(event != nullptr, nullptr);
 
-  FlKeyboardCallRecord* self = FL_KEYBOARD_CALL_RECORD(
-      g_object_new(fl_keyboard_call_record_get_type(), nullptr));
+  FlKeyEmbedderCallRecord* self = FL_KEY_EMBEDDER_CALL_RECORD(
+      g_object_new(fl_key_embedder_call_record_get_type(), nullptr));
 
   FlutterKeyEvent* clone_event = g_new(FlutterKeyEvent, 1);
   *clone_event = *event;
@@ -124,7 +124,7 @@ TEST(FlKeyEmbedderResponderTest, SendKeyEvent) {
       SendKeyEvent, ([&call_records](auto engine, const FlutterKeyEvent* event,
                                      FlutterKeyEventCallback callback,
                                      void* user_data) -> FlutterEngineResult {
-        g_ptr_array_add(call_records, fl_keyboard_call_record_new(
+        g_ptr_array_add(call_records, fl_key_embedder_call_record_new(
                                           event, callback, user_data));
 
         return kSuccess;
