@@ -44,7 +44,8 @@ void testMain() async {
     rc.drawImageRect(testImage, Rect.fromLTRB(0, 0, testWidth, testHeight),
         Rect.fromLTWH(100, 30, testWidth, testHeight), Paint());
     rc.restore();
-    await canvasScreenshot(rc, 'image_clipped_by_oval');
+    await canvasScreenshot(rc, 'image_clipped_by_oval',
+      region: screenRect);
   });
 
   // Regression test for https://github.com/flutter/flutter/issues/48683
@@ -68,7 +69,8 @@ void testMain() async {
           ..color = Color(0xFF00FF00)
           ..style = PaintingStyle.fill);
     rc.restore();
-    await canvasScreenshot(rc, 'triangle_clipped_by_oval');
+    await canvasScreenshot(rc, 'triangle_clipped_by_oval',
+      region: screenRect);
   });
 
   // Regression test for https://github.com/flutter/flutter/issues/78782
