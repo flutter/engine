@@ -96,7 +96,7 @@ void testMain() async {
     rc.drawImageRect(createTestImage(), Rect.fromLTRB(0, 0, testWidth, testHeight),
         Rect.fromLTWH(-50, 0, testWidth, testHeight), Paint());
     rc.restore();
-    await canvasScreenshot(rc, 'image_clipped_by_triangle_off_screen', write: true);
+    await canvasScreenshot(rc, 'image_clipped_by_triangle_off_screen');
   });
 
   // Tests oval clipping using border radius 50%.
@@ -121,7 +121,7 @@ void testMain() async {
     rc.drawImageRect(createTestImage(), Rect.fromLTRB(0, 0, testWidth, testHeight),
         Rect.fromLTWH(-50, 0, testWidth, testHeight), Paint());
     rc.restore();
-    await canvasScreenshot(rc, 'image_clipped_by_oval_path', write: true);
+    await canvasScreenshot(rc, 'image_clipped_by_oval_path');
   });
 }
 
