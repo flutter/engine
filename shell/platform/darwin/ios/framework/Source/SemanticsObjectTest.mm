@@ -231,9 +231,11 @@ class MockAccessibilityBridge : public AccessibilityBridgeIos {
 
 - (void)testFlutterSwitchSemanticsObjectForwardsCalls {
   SemanticsObject* mockSemanticsObject = OCMClassMock([SemanticsObject class]);
-  FlutterSwitchSemanticsObject* switchObj = [[FlutterSwitchSemanticsObject alloc] initWithSemanticsObject:mockSemanticsObject];
+  FlutterSwitchSemanticsObject* switchObj =
+      [[FlutterSwitchSemanticsObject alloc] initWithSemanticsObject:mockSemanticsObject];
   OCMStub([mockSemanticsObject accessibilityActivate]).andReturn(YES);
-  OCMStub([mockSemanticsObject accessibilityScroll:UIAccessibilityScrollDirectionRight]).andReturn(NO);
+  OCMStub([mockSemanticsObject accessibilityScroll:UIAccessibilityScrollDirectionRight])
+      .andReturn(NO);
   OCMStub([mockSemanticsObject accessibilityPerformEscape]).andReturn(YES);
 
   XCTAssertTrue([switchObj accessibilityActivate]);
