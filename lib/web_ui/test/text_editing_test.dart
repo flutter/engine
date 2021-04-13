@@ -100,8 +100,7 @@ void testMain() {
       expect(input.getAttribute('type'), null);
 
       // Input is appended to the glass pane.
-      expect(textEditingRoot.contains(editingElement.domElement),
-          isTrue);
+      expect(textEditingRoot.contains(editingElement.domElement), isTrue);
 
       editingElement.disable();
       expect(
@@ -813,7 +812,8 @@ void testMain() {
         expect(spy.messages, hasLength(0));
         await Future<void>.delayed(Duration.zero);
         // DOM element still keeps the focus.
-        expect(textEditingRoot.activeElement, textEditing.editingElement.domElement);
+        expect(textEditingRoot.activeElement,
+            textEditing.editingElement.domElement);
       }
     },
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
@@ -1187,7 +1187,8 @@ void testMain() {
       sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
 
       // Check the element still has focus. User can keep editing.
-      expect(textEditingRoot.activeElement, textEditing.editingElement.domElement);
+      expect(
+          textEditingRoot.activeElement, textEditing.editingElement.domElement);
 
       // Check the cursor location is the same.
       checkInputEditingState(
@@ -2174,8 +2175,7 @@ void testMain() {
         onAction: trackInputAction,
       );
 
-      final TextAreaElement input =
-          textEditingRoot.querySelector('textarea');
+      final TextAreaElement input = textEditingRoot.querySelector('textarea');
       input.value = 'Test';
       input.selectionStart = 1;
       input.selectionEnd = 2;
