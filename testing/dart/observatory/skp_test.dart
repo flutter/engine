@@ -48,7 +48,10 @@ void main() {
 
       window.render(scene);
       scene.dispose();
-      completer.complete();
+      // window.onBeginFrame = (Duration timeStamp) {
+        completer.complete();
+      // };
+      // window.scheduleFrame();
     };
     window.scheduleFrame();
     await completer.future;

@@ -38,6 +38,7 @@ class TesterPlatformView : public PlatformView,
   TesterPlatformView(Delegate& delegate, TaskRunners task_runners)
       : PlatformView(delegate, std::move(task_runners)) {}
 
+  // |PlatformView|
   std::unique_ptr<Surface> CreateRenderingSurface() override {
     auto surface = std::make_unique<GPUSurfaceSoftware>(
         this, true /* render to surface */);
@@ -45,6 +46,7 @@ class TesterPlatformView : public PlatformView,
     return surface;
   }
 
+  // |GPUSurfaceSoftwareDelegate|
   sk_sp<SkSurface> AcquireBackingStore(const SkISize& size) override {
     if (sk_surface_ != nullptr &&
         SkISize::Make(sk_surface_->width(), sk_surface_->height()) == size) {
@@ -66,6 +68,7 @@ class TesterPlatformView : public PlatformView,
     return sk_surface_;
   }
 
+  // |GPUSurfaceSoftwareDelegate|
   bool PresentBackingStore(sk_sp<SkSurface> backing_store) override {
     return true;
   }

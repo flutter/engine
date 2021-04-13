@@ -225,13 +225,17 @@ def SnapshotTest(build_dir, dart_file, kernel_file_output, verbose_dart_snapshot
   assert os.path.exists(kernel_file_output)
 
 
-def RunDartTest(build_dir, dart_file, verbose_dart_snapshot, multithreaded):
+def RunDartTest(build_dir, dart_file, verbose_dart_snapshot, multithreaded, enable_observatory=False):
   kernel_file_name = os.path.basename(dart_file) + '.kernel.dill'
   kernel_file_output = os.path.join(out_dir, kernel_file_name)
 
   SnapshotTest(build_dir, dart_file, kernel_file_output, verbose_dart_snapshot)
 
-  command_args = [
+  command_args = []
+  if not enable_observatory:
+    command_args.append('--disable-observatory')
+
+  command_args += [
     '--use-test-fonts',
     kernel_file_output
   ]
@@ -259,7 +263,7 @@ def EnsureDebugUnoptSkyPackagesAreBuilt():
   variant_out_dir = os.path.join(out_dir, 'host_debug_unopt')
 
   ninja_command = [
-    'autoninja',
+    'ninja',
     '-C',
     variant_out_dir,
     'flutter/sky/packages'
@@ -414,7 +418,16 @@ def RunDartTests(build_dir, filter, verbose_dart_snapshot):
   # Now that we have the Sky packages at the hardcoded location, run `pub get`.
   RunEngineExecutable(build_dir, os.path.join('dart-sdk', 'bin', 'pub'), None, flags=['get'], cwd=dart_tests_dir)
 
+  dart_observatory_tests = glob.glob('%s/observatory/*_test.dart' % dart_tests_dir)
   dart_tests = glob.glob('%s/*_test.dart' % dart_tests_dir)
+
+  for dart_test_file in dart_observatory_tests:
+    if filter is not None and os.path.basename(dart_test_file) not in filter:
+      print("Skipping %s due to filter." % dart_test_file)
+    else:
+      print("Testing dart file %s with observatory enabled" % dart_test_file)
+      RunDartTest(build_dir, dart_test_file, verbose_dart_snapshot, True, True)
+      RunDartTest(build_dir, dart_test_file, verbose_dart_snapshot, False, True)
 
   for dart_test_file in dart_tests:
     if filter is not None and os.path.basename(dart_test_file) not in filter:
