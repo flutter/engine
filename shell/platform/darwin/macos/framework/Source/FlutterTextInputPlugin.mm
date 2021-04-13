@@ -166,7 +166,7 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
     _textInputContext = [[NSTextInputContext alloc] initWithClient:self];
     _previouslyPressedFlags = 0;
 
-    self.flutterViewController = viewController;
+    _flutterViewController = viewController;
 
     // Initialize with the zero matrix which is not
     // an affine transform.
