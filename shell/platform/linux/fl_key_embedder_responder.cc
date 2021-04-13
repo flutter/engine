@@ -297,7 +297,7 @@ static void fl_key_embedder_responder_handle_event(
   out_event.type = kFlutterKeyEventTypeDown;
   out_event.timestamp = event_to_timestamp(event);
   out_event.physical = physical_key;
-  out_event.logical = physical_key;
+  out_event.logical = logical_key;
   out_event.character = character_to_free;
   out_event.synthesized = false;
 
