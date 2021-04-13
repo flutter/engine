@@ -182,9 +182,9 @@ class FontManager {
         // ```
         // html.document.fonts!.add(fontFace);
         // ```
-        // But dart:html expects the return value to be non-null, and firefox
-        // returns null. This causes the app to crash with a null check
-        // exception.
+        // But dart:html expects the return value to be non-null, and Firefox
+        // returns null. This causes the app to crash in Firefox with a null
+        // check exception.
         //
         // TODO(mdebbar): Revert this once the dart:html type is fixed.
         //                https://github.com/dart-lang/sdk/issues/45676
