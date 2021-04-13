@@ -154,8 +154,9 @@ class DomRenderer {
   html.Element? get glassPaneElement => _glassPaneElement;
   html.Element? _glassPaneElement;
 
-  // The ShadowRoot of the [glassPaneElement].
-  // html.ShadowRoot? _glassPaneElementShadowRoot; // unused externally, for now...
+  /// The ShadowRoot of the [glassPaneElement].
+  html.ShadowRoot? get glassPaneShadow => _glassPaneShadow;
+  html.ShadowRoot? _glassPaneShadow;
 
   final html.Element rootElement = html.document.body!;
 
@@ -457,6 +458,7 @@ flt-glass-pane * {
       'mode': 'open',
       'delegatesFocus': 'true',
     });
+    _glassPaneShadow = glassPaneElementShadowRoot;
 
     // _glassPaneElementShadowRoot = glassPaneElementShadowRoot;
 

@@ -111,13 +111,11 @@ void testMain() {
           browserEngine == BrowserEngine.edge));
 
   test('accesibility placeholder is attached after creation', () {
-    DomRenderer();
+    final DomRenderer renderer = DomRenderer();
 
     expect(
-        html.document
-            .querySelector('flt-glass-pane')
-            ?.shadowRoot
-            ?.querySelectorAll('flt-semantics-placeholder'),
-        isNotEmpty);
+      renderer.glassPaneShadow?.querySelectorAll('flt-semantics-placeholder'),
+      isNotEmpty,
+    );
   });
 }

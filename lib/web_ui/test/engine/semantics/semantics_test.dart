@@ -88,9 +88,8 @@ void _testEngineSemanticsOwner() {
     expect(semantics().semanticsEnabled, false);
 
     // Synthesize a click on the placeholder.
-    final root = getRootDocument();
     final html.Element placeholder =
-        root.querySelector('flt-semantics-placeholder');
+        appShadowRoot.querySelector('flt-semantics-placeholder');
 
     expect(placeholder.isConnected, true);
 
@@ -356,10 +355,10 @@ void _testContainer() {
   </sem-c>
 </sem>''');
 
-    final root = getRootDocument();
-    final html.Element parentElement = root.querySelector('flt-semantics');
+    final html.Element parentElement =
+        appShadowRoot.querySelector('flt-semantics');
     final html.Element container =
-        root.querySelector('flt-semantics-container');
+        appShadowRoot.querySelector('flt-semantics-container');
 
     if (isMacOrIOS) {
       expect(parentElement.style.top, '0px');
@@ -404,10 +403,10 @@ void _testContainer() {
   </sem-c>
 </sem>''');
 
-    final root = getRootDocument();
-    final html.Element parentElement = root.querySelector('flt-semantics');
+    final html.Element parentElement =
+        appShadowRoot.querySelector('flt-semantics');
     final html.Element container =
-        root.querySelector('flt-semantics-container');
+        appShadowRoot.querySelector('flt-semantics-container');
 
     expect(parentElement.style.transform, 'matrix(1, 0, 0, 1, 10, 10)');
     expect(parentElement.style.transformOrigin, '0px 0px 0px');
@@ -450,10 +449,10 @@ void _testContainer() {
 </sem>''');
     }
 
-    final root = getRootDocument();
-    final html.Element parentElement = root.querySelector('flt-semantics');
+    final html.Element parentElement =
+        appShadowRoot.querySelector('flt-semantics');
     final html.Element container =
-        root.querySelector('flt-semantics-container');
+        appShadowRoot.querySelector('flt-semantics-container');
 
     if (isMacOrIOS) {
       expect(parentElement.style.top, '0px');
@@ -809,8 +808,7 @@ void _testIncrementables() {
   <input aria-valuenow="1" aria-valuetext="d" aria-valuemax="2" aria-valuemin="1">
 </sem>''');
 
-    final root = getRootDocument();
-    final html.InputElement input = root.querySelector('input');
+    final html.InputElement input = appShadowRoot.querySelector('input');
     input.value = '2';
     input.dispatchEvent(html.Event('change'));
 
@@ -844,8 +842,7 @@ void _testIncrementables() {
   <input aria-valuenow="1" aria-valuetext="d" aria-valuemax="1" aria-valuemin="0">
 </sem>''');
 
-    final root = getRootDocument();
-    final html.InputElement input = root.querySelector('input');
+    final html.InputElement input = appShadowRoot.querySelector('input');
     input.value = '0';
     input.dispatchEvent(html.Event('change'));
 
@@ -938,16 +935,14 @@ void _testTextField() {
 
     semantics().updateSemantics(builder.build());
 
-    final root = getRootDocument();
-
     final html.Element textField =
-        root.querySelector('input[data-semantics-role="text-field"]');
+        appShadowRoot.querySelector('input[data-semantics-role="text-field"]');
 
-    expect(root.activeElement, isNot(textField));
+    expect(appShadowRoot.activeElement, isNot(textField));
 
     textField.focus();
 
-    expect(root.activeElement, textField);
+    expect(appShadowRoot.activeElement, textField);
     expect(await logger.idLog.first, 0);
     expect(await logger.actionLog.first, ui.SemanticsAction.tap);
 

@@ -12,26 +12,20 @@ import 'package:ui/ui.dart' as ui;
 
 import '../../matchers.dart';
 
-/// Gets the root document or shadow root where the Flutter app is being rendered.
+/// Gets the DOM host where the Flutter app is being rendered.
 ///
-/// This function returns the correct root for the flutter app under testing,
-/// instead of hardcoding html.document across the test.
+/// This function returns the correct host for the flutter app under testing,
+/// so we don't have to hardcode html.document across the test. (The host of a
+/// normal flutter app used to be html.document, but now that the app is wrapped
+/// in a Shadow DOM, that's not the case anymore.)
 ///
-/// The root of a normal flutter app used to be html.document, but now that the
-/// whole app is wrapped in a Shadow DOM, that's not the case anymore.
+/// A [html.ShadowRoot] quacks very similarly to a [html.Document], but
+/// unfortunately they don't share any class/implement any interface that let us
+/// use them interchangeably.
 ///
-/// A [html.ShadowRoot] quacks very similarly to a [html.Document], but unfortunately
-/// they don't share any class/implement any interface that let us use them interchangeably.
-/// To do so, just:
-///
-///   final root = getRootDocument();
-///
-/// So getRootDocument can be changed to return ShadowRoot or Document without
-/// the need to modify your code.
-///
-html.ShadowRoot getRootDocument() {
-  return html.document.querySelector('flt-glass-pane')!.shadowRoot!;
-}
+/// This flutterRoot can be changed to return ShadowRoot or Document without
+/// the need to modify (most of) your code.
+html.ShadowRoot get appShadowRoot => domRenderer.glassPaneShadow!;
 
 /// CSS style applied to the root of the semantics tree.
 // TODO(yjbanov): this should be handled internally by [expectSemanticsTree].
@@ -357,14 +351,14 @@ class SemanticsTester {
 /// Verifies the HTML structure of the current semantics tree.
 void expectSemanticsTree(String semanticsHtml) {
   expect(
-    canonicalizeHtml(getRootDocument().querySelector('flt-semantics')!.outerHtml!),
+    canonicalizeHtml(appShadowRoot.querySelector('flt-semantics')!.outerHtml!),
     canonicalizeHtml(semanticsHtml),
   );
 }
 
 /// Finds the first HTML element in the semantics tree used for scrolling.
 html.Element? findScrollable() {
-  return getRootDocument().querySelectorAll('flt-semantics').cast<html.Element?>().firstWhere(
+  return appShadowRoot.querySelectorAll('flt-semantics').cast<html.Element?>().firstWhere(
         (html.Element? element) =>
             element!.style.overflow == 'hidden' ||
             element.style.overflowY == 'scroll' ||
