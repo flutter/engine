@@ -25,9 +25,11 @@ void _emptyCallback(dynamic _) {}
 
 /// The root node that hosts all DOM required for text editing.
 ///
-/// This is something similar to [html.Document]. Currently, it's a [html.ShadowRoot].
+/// This needs to be something similar to [html.Document].
+/// Currently, it's a [html.ShadowRoot].
 @visibleForTesting
-html.ShadowRoot get textEditingRoot => html.document.querySelector('flt-glass-pane')!.shadowRoot!;
+html.ShadowRoot get textEditingRoot =>
+    domRenderer.glassPaneElement!.shadowRoot!;
 
 /// These style attributes are constant throughout the life time of an input
 /// element.
@@ -379,11 +381,13 @@ class AutofillInfo {
 /// The current text and selection state of a text field.
 @visibleForTesting
 class EditingState {
-  EditingState({this.text, int? baseOffset, int? extentOffset}) :
-    // Don't allow negative numbers. Pick the smallest selection index for base.
-    baseOffset = math.max(0, math.min(baseOffset ?? 0, extentOffset ?? 0)),
-    // Don't allow negative numbers. Pick the greatest selection index for extent.
-    extentOffset = math.max(0, math.max(baseOffset ?? 0, extentOffset ?? 0));
+  // Don't allow negative offsets.
+  // For `baseOffset`, pick the smallest selection index.
+  // For `extentOffset`, pick the greatest selection index.
+  EditingState({this.text, int? baseOffset, int? extentOffset})
+      : baseOffset = math.max(0, math.min(baseOffset ?? 0, extentOffset ?? 0)),
+        extentOffset =
+            math.max(0, math.max(baseOffset ?? 0, extentOffset ?? 0));
 
   /// Creates an [EditingState] instance using values from an editing state Map
   /// coming from Flutter.
@@ -1383,7 +1387,8 @@ class TextEditingChannel {
         break;
 
       default:
-        EnginePlatformDispatcher.instance._replyToPlatformMessage(callback, null);
+        EnginePlatformDispatcher.instance
+            ._replyToPlatformMessage(callback, null);
         return;
     }
     EnginePlatformDispatcher.instance
@@ -1489,7 +1494,7 @@ class HybridTextEditing {
     } else if (browserEngine == BrowserEngine.webkit) {
       this._defaultEditingElement = SafariDesktopTextEditingStrategy(this);
     } else if ((browserEngine == BrowserEngine.blink ||
-        browserEngine == BrowserEngine.samsung) &&
+            browserEngine == BrowserEngine.samsung) &&
         operatingSystem == OperatingSystem.android) {
       this._defaultEditingElement = AndroidTextEditingStrategy(this);
     } else if (browserEngine == BrowserEngine.firefox) {
