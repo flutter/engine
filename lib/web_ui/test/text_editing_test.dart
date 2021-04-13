@@ -69,6 +69,8 @@ void testMain() {
       testTextEditing = HybridTextEditing();
       editingElement = GloballyPositionedTextEditingStrategy(testTextEditing);
       testTextEditing.useCustomEditableElement(editingElement);
+      // Ensure the glass-pane and its shadow root exist.
+      domRenderer.reset();
     });
 
     test('Creates element when enabled and removes it when disabled', () {
@@ -78,9 +80,8 @@ void testMain() {
       );
       // The focus initially is on the body.
       expect(document.activeElement, document.body);
+      expect(textEditingRoot.activeElement, null);
 
-      // The line below, initializes the whole flutter app structure. Up until now,
-      // the DOM is completely empty.
       editingElement.enable(
         singlelineConfig,
         onChange: trackEditingState,
