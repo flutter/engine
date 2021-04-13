@@ -263,7 +263,7 @@ def EnsureDebugUnoptSkyPackagesAreBuilt():
   variant_out_dir = os.path.join(out_dir, 'host_debug_unopt')
 
   ninja_command = [
-    'ninja',
+    'autoninja',
     '-C',
     variant_out_dir,
     'flutter/sky/packages'
