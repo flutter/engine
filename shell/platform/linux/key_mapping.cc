@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "key_mapping.h"
+
 #include <glib.h>
 #include <map>
 
@@ -17,8 +19,8 @@
 //
 // Returns whether the newly added value was already in the hash table or not.
 static bool insert_record(GHashTable* table, guint64 xkb, guint64 fl_key) {
-  return g_hash_table_insert(table, GUINT_TO_POINTER(xkb),
-                             GUINT_TO_POINTER(fl_key));
+  return g_hash_table_insert(table, uint64_to_gpointer(xkb),
+                             uint64_to_gpointer(fl_key));
 }
 
 void initialize_xkb_to_physical_key(GHashTable* table) {

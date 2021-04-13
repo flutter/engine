@@ -12,6 +12,12 @@
 #include "flutter/shell/platform/linux/testing/fl_test.h"
 
 namespace {
+constexpr gboolean kRelease = FALSE;
+constexpr gboolean kPress = TRUE;
+
+constexpr gboolean kIsModifier = TRUE;
+constexpr gboolean kIsNotModifier = FALSE;
+
 constexpr guint16 kKeyCodeKeyA = 0x26u;
 constexpr guint16 kKeyCodeShiftRight = 0x3eu;
 // constexpr guint16 kKeyCodeKeyB = 0x38u;
@@ -174,7 +180,8 @@ TEST(FlKeyEmbedderResponderTest, SendKeyEvent) {
   // Key down
   fl_key_responder_handle_event(
       responder,
-      key_event_new(12345, true, GDK_KEY_a, kKeyCodeKeyA, 0x10, false),
+      key_event_new(12345, kPress, GDK_KEY_a, kKeyCodeKeyA, 0x10,
+                    kIsNotModifier),
       responder_callback, &user_data);
 
   EXPECT_EQ(g_call_records->len, 1u);
@@ -195,7 +202,8 @@ TEST(FlKeyEmbedderResponderTest, SendKeyEvent) {
   // Key up
   fl_key_responder_handle_event(
       responder,
-      key_event_new(12346, false, GDK_KEY_a, kKeyCodeKeyA, 0x10, false),
+      key_event_new(12346, kRelease, GDK_KEY_a, kKeyCodeKeyA, 0x10,
+                    kIsNotModifier),
       responder_callback, &user_data);
 
   EXPECT_EQ(g_call_records->len, 1u);
@@ -215,7 +223,8 @@ TEST(FlKeyEmbedderResponderTest, SendKeyEvent) {
   // Key down
   fl_key_responder_handle_event(
       responder,
-      key_event_new(12347, true, GDK_KEY_q, kKeyCodeKeyA, 0x10, false),
+      key_event_new(12347, kPress, GDK_KEY_q, kKeyCodeKeyA, 0x10,
+                    kIsNotModifier),
       responder_callback, &user_data);
 
   EXPECT_EQ(g_call_records->len, 1u);
@@ -234,7 +243,8 @@ TEST(FlKeyEmbedderResponderTest, SendKeyEvent) {
   // Key up
   fl_key_responder_handle_event(
       responder,
-      key_event_new(12348, false, GDK_KEY_q, kKeyCodeKeyA, 0x10, false),
+      key_event_new(12348, kRelease, GDK_KEY_q, kKeyCodeKeyA, 0x10,
+                    kIsNotModifier),
       responder_callback, &user_data);
 
   EXPECT_EQ(g_call_records->len, 1u);
@@ -267,7 +277,8 @@ TEST(FlKeyEmbedderResponderTest, PressShiftDuringLetterKeyTap) {
   // Press shift right
   fl_key_responder_handle_event(
       responder,
-      key_event_new(101, true, GDK_KEY_Shift_R, kKeyCodeShiftRight, 0x10, true),
+      key_event_new(101, kPress, GDK_KEY_Shift_R, kKeyCodeShiftRight, 0x10,
+                    kIsModifier),
       responder_callback, &user_data);
 
   EXPECT_EQ(g_call_records->len, 1u);
@@ -283,7 +294,8 @@ TEST(FlKeyEmbedderResponderTest, PressShiftDuringLetterKeyTap) {
 
   // Press key A
   fl_key_responder_handle_event(
-      responder, key_event_new(102, true, GDK_KEY_A, kKeyCodeKeyA, 0x11, false),
+      responder,
+      key_event_new(102, kPress, GDK_KEY_A, kKeyCodeKeyA, 0x11, kIsNotModifier),
       responder_callback, &user_data);
 
   EXPECT_EQ(g_call_records->len, 1u);
@@ -298,10 +310,11 @@ TEST(FlKeyEmbedderResponderTest, PressShiftDuringLetterKeyTap) {
   g_ptr_array_clear(g_call_records);
 
   // Release shift right
-  fl_key_responder_handle_event(responder,
-                                key_event_new(103, false, GDK_KEY_Shift_R,
-                                              kKeyCodeShiftRight, 0x11, true),
-                                responder_callback, &user_data);
+  fl_key_responder_handle_event(
+      responder,
+      key_event_new(103, kRelease, GDK_KEY_Shift_R, kKeyCodeShiftRight, 0x11,
+                    kIsModifier),
+      responder_callback, &user_data);
 
   EXPECT_EQ(g_call_records->len, 1u);
   record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 0));
@@ -317,12 +330,13 @@ TEST(FlKeyEmbedderResponderTest, PressShiftDuringLetterKeyTap) {
   // Release key A
   fl_key_responder_handle_event(
       responder,
-      key_event_new(104, false, GDK_KEY_A, kKeyCodeKeyA, 0x10, false),
+      key_event_new(104, kRelease, GDK_KEY_A, kKeyCodeKeyA, 0x10,
+                    kIsNotModifier),
       responder_callback, &user_data);
 
   EXPECT_EQ(g_call_records->len, 1u);
   record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 0));
-  EXPECT_EQ(record->event->type, kFlutterKeyEventTypeDown);
+  EXPECT_EQ(record->event->type, kFlutterKeyEventTypeUp);
   EXPECT_EQ(record->event->physical, kPhysicalKeyA);
   EXPECT_EQ(record->event->logical, kLogicalKeyA);
   EXPECT_STREQ(record->event->character, nullptr);
