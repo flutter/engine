@@ -22,7 +22,7 @@ void main() {
         await developer.Service.getInfo();
 
     if (info.serverUri == null) {
-      fail('This test _must_ be run with --enable-vmservice.');
+      fail('This test must not be run with --disable-observatory.');
     }
 
     vmService = await vmServiceConnectUri(
