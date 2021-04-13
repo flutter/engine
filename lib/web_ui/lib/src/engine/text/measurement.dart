@@ -33,9 +33,7 @@ class RulerHost {
       ..left = '0'
       ..width = '0'
       ..height = '0';
-
-    // Inject the ruler host into the shadowRoot of the glass-pane of this app.
-    domRenderer.glassPaneElement!.shadowRoot!.append(_rulerHost);
+    html.document.body!.append(_rulerHost);
     registerHotRestartListener(dispose);
   }
 
@@ -65,7 +63,7 @@ class RulerHost {
 ///
 /// All instances of [ParagraphRuler] should be created through this class.
 class RulerManager extends RulerHost {
-  RulerManager({required this.rulerCacheCapacity}) : super();
+  RulerManager({required this.rulerCacheCapacity}): super();
 
   final int rulerCacheCapacity;
 
@@ -692,7 +690,7 @@ double _measureSubstring(
     width = _lastWidth;
   } else {
     final String sub =
-        start == 0 && end == text.length ? text : text.substring(start, end);
+      start == 0 && end == text.length ? text : text.substring(start, end);
     width = _canvasContext.measureText(sub).width!.toDouble();
   }
 
