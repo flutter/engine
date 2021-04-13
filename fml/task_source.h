@@ -65,13 +65,13 @@ class TaskSource {
   /// the secondary heap has been paused or not.
   TopTask Top() const;
 
- private:
-  friend class MessageLoopTaskQueues;
-
+  /// Pause providing tasks from secondary task heap.
   void PauseSecondary();
 
+  /// Resume providing tasks from secondary task heap.
   void ResumeSecondary();
 
+ private:
   const fml::TaskQueueId task_queue_id_;
   fml::DelayedTaskQueue primary_task_queue_;
   fml::DelayedTaskQueue secondary_task_queue_;
