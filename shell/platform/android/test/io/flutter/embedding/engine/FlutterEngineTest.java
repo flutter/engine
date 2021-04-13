@@ -107,9 +107,7 @@ public class FlutterEngineTest {
             .contains("Tried to automatically register plugins"));
     assertEquals(
         GeneratedPluginRegistrant.pluginRegistrationException,
-        ShadowLog.getLogsForTag("GeneratedPluginsRegister")
-            .get(1)
-            .throwable.getCause());
+        ShadowLog.getLogsForTag("GeneratedPluginsRegister").get(1).throwable.getCause());
 
     GeneratedPluginRegistrant.pluginRegistrationException = null;
   }
