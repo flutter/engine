@@ -98,7 +98,10 @@ class SemanticsTextEditingStrategy extends DefaultTextEditingStrategy {
       {_OnChangeCallback? onChange, _OnActionCallback? onAction}) {
     // In accesibilty mode, the user of this class is supposed to insert the
     // [domElement] on their own. Let's make sure they did.
-    assert(domRenderer.glassPaneElement!.shadowRoot!.contains(domElement));
+    assert(html.document
+        .querySelector('flt-glass-pane')!
+        .shadowRoot!
+        .contains(domElement));
 
     isEnabled = true;
     _inputConfiguration = inputConfig;
