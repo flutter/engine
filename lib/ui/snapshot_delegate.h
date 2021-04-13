@@ -5,6 +5,7 @@
 #ifndef FLUTTER_LIB_UI_SNAPSHOT_DELEGATE_H_
 #define FLUTTER_LIB_UI_SNAPSHOT_DELEGATE_H_
 
+#include <tuple>
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkPicture.h"
 
@@ -12,8 +13,9 @@ namespace flutter {
 
 class SnapshotDelegate {
  public:
-  virtual sk_sp<SkImage> MakeRasterSnapshot(sk_sp<SkPicture> picture,
-                                            SkISize picture_size) = 0;
+  virtual std::tuple<sk_sp<SkImage>, int> MakeRasterSnapshot(
+      sk_sp<SkPicture> picture,
+      SkISize picture_size) = 0;
 
   virtual sk_sp<SkImage> ConvertToRasterImage(sk_sp<SkImage> image) = 0;
 };

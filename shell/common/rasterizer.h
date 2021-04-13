@@ -462,8 +462,9 @@ class Rasterizer final : public SnapshotDelegate {
   bool shared_engine_block_thread_merging_ = false;
 
   // |SnapshotDelegate|
-  sk_sp<SkImage> MakeRasterSnapshot(sk_sp<SkPicture> picture,
-                                    SkISize picture_size) override;
+  std::tuple<sk_sp<SkImage>, int> MakeRasterSnapshot(
+      sk_sp<SkPicture> picture,
+      SkISize picture_size) override;
 
   // |SnapshotDelegate|
   sk_sp<SkImage> ConvertToRasterImage(sk_sp<SkImage> image) override;
@@ -474,7 +475,7 @@ class Rasterizer final : public SnapshotDelegate {
       GrDirectContext* surface_context,
       bool compressed);
 
-  sk_sp<SkImage> DoMakeRasterSnapshot(
+  std::tuple<sk_sp<SkImage>, int> DoMakeRasterSnapshot(
       SkISize size,
       std::function<void(SkCanvas*)> draw_callback);
 
