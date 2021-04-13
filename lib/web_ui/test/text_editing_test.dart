@@ -1945,8 +1945,7 @@ void testMain() {
         onAction: trackInputAction,
       );
 
-      final TextAreaElement input =
-          textEditingRoot.querySelector('textarea');
+      final TextAreaElement input = textEditingRoot.querySelector('textarea');
       input.value = 'Test';
       input.selectionStart = 1;
       input.selectionEnd = 2;
