@@ -242,6 +242,7 @@ public class FlutterEngineTest {
 
     verify(mockFlutterLoader, times(1)).startInitialization(any());
     verify(mockFlutterLoader, times(1)).ensureInitializationComplete(any(), any());
+    FlutterInjector.reset();
   }
 
   @Test
