@@ -24,7 +24,7 @@ fml::RefPtr<MessageLoopTaskQueues> MessageLoopTaskQueues::instance_;
 
 // Guarded by creation_mutex_.
 static thread_local TaskSourceGrade tls_task_source_grade =
-    TaskSourceGrade::kPrimary;
+    TaskSourceGrade::kUnspecified;
 
 TaskQueueEntry::TaskQueueEntry(TaskQueueId created_for_arg)
     : owner_of(_kUnmerged),
@@ -72,9 +72,9 @@ void MessageLoopTaskQueues::DisposeTasks(TaskQueueId queue_id) {
   const auto& queue_entry = queue_entries_.at(queue_id);
   FML_DCHECK(queue_entry->subsumed_by == _kUnmerged);
   TaskQueueId subsumed = queue_entry->owner_of;
-  queue_entry->task_source->Clear();
+  queue_entry->task_source->ShutDown();
   if (subsumed != _kUnmerged) {
-    queue_entries_.at(subsumed)->task_source->Clear();
+    queue_entries_.at(subsumed)->task_source->ShutDown();
   }
 }
 
@@ -91,8 +91,8 @@ void MessageLoopTaskQueues::RegisterTask(
   std::lock_guard guard(queue_mutex_);
   size_t order = order_++;
   const auto& queue_entry = queue_entries_.at(queue_id);
-  queue_entry->task_source->RegisterTask(task_source_grade,
-                                         {order, task, target_time});
+  queue_entry->task_source->RegisterTask(
+      {order, task, target_time, task_source_grade});
   TaskQueueId loop_to_wake = queue_id;
   if (queue_entry->subsumed_by != _kUnmerged) {
     loop_to_wake = queue_entry->subsumed_by;
@@ -128,10 +128,10 @@ fml::closure MessageLoopTaskQueues::GetNextTaskToRun(TaskQueueId queue_id,
   }
   fml::closure invocation = top.task.GetTask();
   queue_entries_.at(top.task_queue_id)
-      ->task_source->PopTask(top.task_source_grade);
+      ->task_source->PopTask(top.task.GetTaskSourceGrade());
   {
     std::scoped_lock creation(creation_mutex_);
-    tls_task_source_grade = top.task_source_grade;
+    tls_task_source_grade = top.task.GetTaskSourceGrade();
   }
   return invocation;
 }
@@ -151,12 +151,12 @@ size_t MessageLoopTaskQueues::GetNumPendingTasks(TaskQueueId queue_id) const {
   }
 
   size_t total_tasks = 0;
-  total_tasks += queue_entry->task_source->Size();
+  total_tasks += queue_entry->task_source->GetNumPendingTasks();
 
   TaskQueueId subsumed = queue_entry->owner_of;
   if (subsumed != _kUnmerged) {
     const auto& subsumed_entry = queue_entries_.at(subsumed);
-    total_tasks += subsumed_entry->task_source->Size();
+    total_tasks += subsumed_entry->task_source->GetNumPendingTasks();
   }
   return total_tasks;
 }
@@ -297,7 +297,7 @@ bool MessageLoopTaskQueues::HasPendingTasksUnlocked(
     return false;
   }
 
-  if (!entry->task_source->Empty()) {
+  if (!entry->task_source->IsEmpty()) {
     return true;
   }
 
@@ -306,7 +306,7 @@ bool MessageLoopTaskQueues::HasPendingTasksUnlocked(
     // this is not an owner and queue is empty.
     return false;
   } else {
-    return !queue_entries_.at(subsumed)->task_source->Empty();
+    return !queue_entries_.at(subsumed)->task_source->IsEmpty();
   }
 }
 
@@ -328,8 +328,8 @@ TaskSource::TopTask MessageLoopTaskQueues::PeekNextTaskUnlocked(
   TaskSource* subsumed_tasks = queue_entries_.at(subsumed)->task_source.get();
 
   // we are owning another task queue
-  const bool subsumed_has_task = !subsumed_tasks->Empty();
-  const bool owner_has_task = !owner_tasks->Empty();
+  const bool subsumed_has_task = !subsumed_tasks->IsEmpty();
+  const bool owner_has_task = !owner_tasks->IsEmpty();
   fml::TaskQueueId top_queue_id = owner;
   if (owner_has_task && subsumed_has_task) {
     const auto owner_task = owner_tasks->Top();

@@ -3486,7 +3486,7 @@ TEST_F(EmbedderTest, ObjectsPostedViaPortsServicedOnSecondaryTaskHeap) {
     trampoline = [&](Dart_Handle handle) {
       ASSERT_TRUE(tonic::DartConverter<bool>::FromDart(handle));
       auto task_grade = fml::MessageLoopTaskQueues::GetCurrentTaskSourceGrade();
-      EXPECT_EQ(task_grade, fml::TaskSourceGrade::kSecondary);
+      EXPECT_EQ(task_grade, fml::TaskSourceGrade::kDartMicroTasks);
       event.Signal();
     };
     ASSERT_EQ(FlutterEnginePostDartObject(engine.get(), port, &object),

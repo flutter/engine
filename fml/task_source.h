@@ -7,37 +7,32 @@
 
 #include "flutter/fml/delayed_task.h"
 #include "flutter/fml/task_queue_id.h"
+#include "flutter/fml/task_source_grade.h"
 
 namespace fml {
 
 class MessageLoopTaskQueues;
 
-enum TaskSourceGrade {
-  kPrimary,
-  kSecondary,
-};
-
 class TaskSource {
  public:
   struct TopTask {
     TaskQueueId task_queue_id;
-    TaskSourceGrade task_source_grade;
-    DelayedTask task;
+    const DelayedTask& task;
   };
 
   explicit TaskSource(TaskQueueId task_queue_id);
 
   ~TaskSource();
 
-  void Clear();
+  void ShutDown();
 
-  void RegisterTask(TaskSourceGrade grade, DelayedTask&& task);
+  void RegisterTask(const DelayedTask& task);
 
   void PopTask(TaskSourceGrade grade);
 
-  size_t Size() const;
+  size_t GetNumPendingTasks() const;
 
-  bool Empty() const;
+  bool IsEmpty() const;
 
   TopTask Top() const;
 

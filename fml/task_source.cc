@@ -11,19 +11,24 @@ namespace fml {
 TaskSource::TaskSource(TaskQueueId task_queue_id)
     : task_queue_id_(task_queue_id) {}
 
-TaskSource::~TaskSource() = default;
+TaskSource::~TaskSource() {
+  ShutDown();
+}
 
-void TaskSource::Clear() {
+void TaskSource::ShutDown() {
   primary_task_queue_ = {};
   secondary_task_queue_ = {};
 }
 
-void TaskSource::RegisterTask(TaskSourceGrade grade, DelayedTask&& task) {
-  switch (grade) {
-    case TaskSourceGrade::kPrimary:
+void TaskSource::RegisterTask(const DelayedTask& task) {
+  switch (task.GetTaskSourceGrade()) {
+    case TaskSourceGrade::kUserInteraction:
       primary_task_queue_.push(task);
       break;
-    case TaskSourceGrade::kSecondary:
+    case TaskSourceGrade::kUnspecified:
+      primary_task_queue_.push(task);
+      break;
+    case TaskSourceGrade::kDartMicroTasks:
       secondary_task_queue_.push(task);
       break;
   }
@@ -31,16 +36,19 @@ void TaskSource::RegisterTask(TaskSourceGrade grade, DelayedTask&& task) {
 
 void TaskSource::PopTask(TaskSourceGrade grade) {
   switch (grade) {
-    case TaskSourceGrade::kPrimary:
+    case TaskSourceGrade::kUserInteraction:
       primary_task_queue_.pop();
       break;
-    case TaskSourceGrade::kSecondary:
+    case TaskSourceGrade::kUnspecified:
+      primary_task_queue_.pop();
+      break;
+    case TaskSourceGrade::kDartMicroTasks:
       secondary_task_queue_.pop();
       break;
   }
 }
 
-size_t TaskSource::Size() const {
+size_t TaskSource::GetNumPendingTasks() const {
   size_t size = primary_task_queue_.size();
   if (secondary_pause_requests_ == 0) {
     size += secondary_task_queue_.size();
@@ -48,24 +56,22 @@ size_t TaskSource::Size() const {
   return size;
 }
 
-bool TaskSource::Empty() const {
-  return Size() == 0;
+bool TaskSource::IsEmpty() const {
+  return GetNumPendingTasks() == 0;
 }
 
 TaskSource::TopTask TaskSource::Top() const {
-  FML_CHECK(!Empty());
+  FML_CHECK(!IsEmpty());
   if (secondary_pause_requests_ > 0 || secondary_task_queue_.empty()) {
     const auto& primary_top = primary_task_queue_.top();
     return {
         .task_queue_id = task_queue_id_,
-        .task_source_grade = TaskSourceGrade::kPrimary,
         .task = primary_top,
     };
   } else if (primary_task_queue_.empty()) {
     const auto& secondary_top = secondary_task_queue_.top();
     return {
         .task_queue_id = task_queue_id_,
-        .task_source_grade = TaskSourceGrade::kSecondary,
         .task = secondary_top,
     };
   } else {
@@ -74,13 +80,11 @@ TaskSource::TopTask TaskSource::Top() const {
     if (primary_top > secondary_top) {
       return {
           .task_queue_id = task_queue_id_,
-          .task_source_grade = TaskSourceGrade::kSecondary,
           .task = secondary_top,
       };
     } else {
       return {
           .task_queue_id = task_queue_id_,
-          .task_source_grade = TaskSourceGrade::kPrimary,
           .task = primary_top,
       };
     }
