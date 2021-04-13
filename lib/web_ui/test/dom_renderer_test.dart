@@ -113,7 +113,11 @@ void testMain() {
   test('accesibility placeholder is attached after creation', () {
     DomRenderer();
 
-    expect(html.document.getElementsByTagName('flt-semantics-placeholder'),
+    expect(
+        html.document
+            .querySelector('flt-glass-pane')
+            ?.shadowRoot
+            ?.querySelectorAll('flt-semantics-placeholder'),
         isNotEmpty);
   });
 }
