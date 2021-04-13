@@ -23,11 +23,11 @@ const String transparentTextEditingClass = 'transparentTextEditing';
 
 void _emptyCallback(dynamic _) {}
 
-/// The root node that hosts all DOM required for text editing.
+/// The default root that hosts all DOM required for text editing when a11y is not enabled.
 ///
 /// This is something similar to [html.Document]. Currently, it's a [html.ShadowRoot].
 @visibleForTesting
-html.ShadowRoot get textEditingRoot => html.document.querySelector('flt-glass-pane')!.shadowRoot!;
+html.ShadowRoot get defaultTextEditingRoot => domRenderer.glassPaneShadow!;
 
 /// These style attributes are constant throughout the life time of an input
 /// element.
@@ -235,7 +235,7 @@ class EngineAutofillForm {
 
   void placeForm(html.HtmlElement mainTextEditingElement) {
     formElement.append(mainTextEditingElement);
-    textEditingRoot.append(formElement);
+    defaultTextEditingRoot.append(formElement);
   }
 
   void storeForm() {
@@ -800,7 +800,7 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
       // DOM later, when the first location information arrived.
       // Otherwise, on Blink based Desktop browsers, the autofill menu appears
       // on top left of the screen.
-      textEditingRoot.append(domElement);
+      defaultTextEditingRoot.append(domElement);
       _appendedToForm = false;
     }
 
@@ -1177,7 +1177,7 @@ class AndroidTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     if (hasAutofillGroup) {
       placeForm();
     } else {
-      textEditingRoot.append(domElement);
+      defaultTextEditingRoot.append(domElement);
     }
     inputConfig.textCapitalization.setAutocapitalizeAttribute(domElement);
   }

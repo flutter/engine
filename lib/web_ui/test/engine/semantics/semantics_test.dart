@@ -29,26 +29,20 @@ void main() {
 
 String rootSemanticStyle = '';
 
-/// Gets the root document or shadow root where the Flutter app is being rendered.
+/// Gets the DOM host where the Flutter app is being rendered.
 ///
-/// This function returns the correct root for the flutter app under testing,
-/// instead of hardcoding html.document across the test.
+/// This function returns the correct host for the flutter app under testing,
+/// so we don't have to hardcode html.document across the test. (The host of a
+/// normal flutter app used to be html.document, but now that the app is wrapped
+/// in a Shadow DOM, that's not the case anymore.)
 ///
-/// The root of a normal flutter app used to be html.document, but now that the
-/// whole app is wrapped in a Shadow DOM, that's not the case anymore.
+/// A [html.ShadowRoot] quacks very similarly to a [html.Document], but
+/// unfortunately they don't share any class/implement any interface that let us
+/// use them interchangeably.
 ///
-/// A [html.ShadowRoot] quacks very similarly to a [html.Document], but unfortunately
-/// they don't share any class/implement any interface that let us use them interchangeably.
-/// To do so, just:
-///
-///   final root = getRootDocument();
-///
-/// So getRootDocument can be changed to return ShadowRoot or Document without
-/// the need to modify your code.
-///
-html.ShadowRoot getRootDocument() {
-  return html.document.querySelector('flt-glass-pane').shadowRoot;
-}
+/// This flutterRoot can be changed to return ShadowRoot or Document without
+/// the need to modify (most of) your code.
+html.ShadowRoot get appShadowRoot => domRenderer.glassPaneShadow;
 
 void testMain() {
   setUp(() {
@@ -114,9 +108,8 @@ void _testEngineSemanticsOwner() {
     expect(semantics().semanticsEnabled, false);
 
     // Synthesize a click on the placeholder.
-    final root = getRootDocument();
     final html.Element placeholder =
-        root.querySelector('flt-semantics-placeholder');
+        appShadowRoot.querySelector('flt-semantics-placeholder');
     final html.Rectangle<num> rect = placeholder.getBoundingClientRect();
     placeholder.dispatchEvent(html.MouseEvent(
       'click',
@@ -355,10 +348,10 @@ void _testContainer() {
   </sem-c>
 </sem>''');
 
-    final root = getRootDocument();
-    final html.Element parentElement = root.querySelector('flt-semantics');
+    final html.Element parentElement =
+        appShadowRoot.querySelector('flt-semantics');
     final html.Element container =
-        root.querySelector('flt-semantics-container');
+        appShadowRoot.querySelector('flt-semantics-container');
 
     if (isMacOrIOS) {
       expect(parentElement.style.top, '0px');
@@ -403,10 +396,10 @@ void _testContainer() {
   </sem-c>
 </sem>''');
 
-    final root = getRootDocument();
-    final html.Element parentElement = root.querySelector('flt-semantics');
+    final html.Element parentElement =
+        appShadowRoot.querySelector('flt-semantics');
     final html.Element container =
-        root.querySelector('flt-semantics-container');
+        appShadowRoot.querySelector('flt-semantics-container');
 
     expect(parentElement.style.transform, 'matrix(1, 0, 0, 1, 10, 10)');
     expect(parentElement.style.transformOrigin, '0px 0px 0px');
@@ -449,10 +442,10 @@ void _testContainer() {
 </sem>''');
     }
 
-    final root = getRootDocument();
-    final html.Element parentElement = root.querySelector('flt-semantics');
+    final html.Element parentElement =
+        appShadowRoot.querySelector('flt-semantics');
     final html.Element container =
-        root.querySelector('flt-semantics-container');
+        appShadowRoot.querySelector('flt-semantics-container');
 
     if (isMacOrIOS) {
       expect(parentElement.style.top, '0px');
@@ -808,8 +801,7 @@ void _testIncrementables() {
   <input aria-valuenow="1" aria-valuetext="d" aria-valuemax="2" aria-valuemin="1">
 </sem>''');
 
-    final root = getRootDocument();
-    final html.InputElement input = root.querySelector('input');
+    final html.InputElement input = appShadowRoot.querySelector('input');
     input.value = '2';
     input.dispatchEvent(html.Event('change'));
 
@@ -843,8 +835,7 @@ void _testIncrementables() {
   <input aria-valuenow="1" aria-valuetext="d" aria-valuemax="1" aria-valuemin="0">
 </sem>''');
 
-    final root = getRootDocument();
-    final html.InputElement input = root.querySelector('input');
+    final html.InputElement input = appShadowRoot.querySelector('input');
     input.value = '0';
     input.dispatchEvent(html.Event('change'));
 
@@ -937,16 +928,14 @@ void _testTextField() {
 
     semantics().updateSemantics(builder.build());
 
-    final root = getRootDocument();
-
     final html.Element textField =
-        root.querySelector('input[data-semantics-role="text-field"]');
+        appShadowRoot.querySelector('input[data-semantics-role="text-field"]');
 
-    expect(root.activeElement, isNot(textField));
+    expect(appShadowRoot.activeElement, isNot(textField));
 
     textField.focus();
 
-    expect(root.activeElement, textField);
+    expect(appShadowRoot.activeElement, textField);
     expect(await logger.idLog.first, 0);
     expect(await logger.actionLog.first, ui.SemanticsAction.tap);
 
@@ -1443,18 +1432,14 @@ void _testLiveRegion() {
 }
 
 void expectSemanticsTree(String semanticsHtml) {
-  final root = getRootDocument();
-
   expect(
-    canonicalizeHtml(root.querySelector('flt-semantics').outerHtml),
+    canonicalizeHtml(appShadowRoot.querySelector('flt-semantics').outerHtml),
     canonicalizeHtml(semanticsHtml),
   );
 }
 
 html.Element findScrollable() {
-  final root = getRootDocument();
-
-  return root.querySelectorAll('flt-semantics').firstWhere(
+  return appShadowRoot.querySelectorAll('flt-semantics').firstWhere(
         (html.Element element) =>
             element.style.overflow == 'hidden' ||
             element.style.overflowY == 'scroll' ||
