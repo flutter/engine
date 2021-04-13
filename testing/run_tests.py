@@ -232,7 +232,6 @@ def RunDartTest(build_dir, dart_file, verbose_dart_snapshot, multithreaded):
   SnapshotTest(build_dir, dart_file, kernel_file_output, verbose_dart_snapshot)
 
   command_args = [
-    '--disable-observatory',
     '--use-test-fonts',
     kernel_file_output
   ]
