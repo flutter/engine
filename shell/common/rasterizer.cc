@@ -17,6 +17,7 @@
 #include "third_party/skia/include/core/SkSerialProcs.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/core/SkSurfaceCharacterization.h"
+#include "third_party/skia/include/core/SkTime.h"
 #include "third_party/skia/include/utils/SkBase64.h"
 
 // When screenshotting we want to ensure we call the base method for
@@ -215,15 +216,20 @@ void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline,
 }
 
 namespace {
-sk_sp<SkImage> DrawSnapshot(
+std::tuple<sk_sp<SkImage>, int> DrawSnapshot(
     sk_sp<SkSurface> surface,
     const std::function<void(SkCanvas*)>& draw_callback) {
   if (surface == nullptr || surface->getCanvas() == nullptr) {
-    return nullptr;
+    return std::make_tuple(nullptr, 0);
   }
+
+  double cost_start = SkTime::GetNSecs();
+  int cost = 0;
 
   draw_callback(surface->getCanvas());
   surface->getCanvas()->flush();
+  // as microseconds
+  cost += static_cast<int>(SkTime::GetNSecs() - cost_start) / 1000;
 
   sk_sp<SkImage> device_snapshot;
   {
@@ -232,25 +238,26 @@ sk_sp<SkImage> DrawSnapshot(
   }
 
   if (device_snapshot == nullptr) {
-    return nullptr;
+    return std::make_tuple(nullptr, 0);
   }
 
   {
     TRACE_EVENT0("flutter", "DeviceHostTransfer");
     if (auto raster_image = device_snapshot->makeRasterImage()) {
-      return raster_image;
+      return std::make_tuple(raster_image, cost);
     }
   }
 
-  return nullptr;
+  return std::make_tuple(nullptr, 0);
 }
 }  // namespace
 
-sk_sp<SkImage> Rasterizer::DoMakeRasterSnapshot(
+std::tuple<sk_sp<SkImage>, int>
+Rasterizer::DoMakeRasterSnapshot(
     SkISize size,
     std::function<void(SkCanvas*)> draw_callback) {
   TRACE_EVENT0("flutter", __FUNCTION__);
-  sk_sp<SkImage> result;
+  std::tuple<sk_sp<SkImage>, int> result;
   SkImageInfo image_info = SkImageInfo::MakeN32Premul(
       size.width(), size.height(), SkColorSpace::MakeSRGB());
   if (surface_ == nullptr || surface_->GetContext() == nullptr) {
@@ -302,7 +309,8 @@ sk_sp<SkImage> Rasterizer::DoMakeRasterSnapshot(
   return result;
 }
 
-sk_sp<SkImage> Rasterizer::MakeRasterSnapshot(sk_sp<SkPicture> picture,
+std::tuple<sk_sp<SkImage>, int>
+Rasterizer::MakeRasterSnapshot(sk_sp<SkPicture> picture,
                                               SkISize picture_size) {
   return DoMakeRasterSnapshot(picture_size,
                               [picture = std::move(picture)](SkCanvas* canvas) {
@@ -325,10 +333,12 @@ sk_sp<SkImage> Rasterizer::ConvertToRasterImage(sk_sp<SkImage> image) {
   }
 
   SkISize image_size = image->dimensions();
-  return DoMakeRasterSnapshot(image_size,
+  sk_sp<SkImage> result;
+  std::tie(result, std::ignore) = DoMakeRasterSnapshot(image_size,
                               [image = std::move(image)](SkCanvas* canvas) {
                                 canvas->drawImage(image, 0, 0);
                               });
+  return result;
 }
 
 RasterStatus Rasterizer::DoDraw(

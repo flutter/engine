@@ -1617,6 +1617,8 @@ enum PixelFormat {
   bgra8888,
 }
 
+const bool kReleaseMode = bool.fromEnvironment('dart.vm.product', defaultValue: false);
+
 /// Opaque handle to raw decoded image data (pixels).
 ///
 /// To obtain an [Image] object, use the [ImageDescriptor] API.
@@ -1648,6 +1650,9 @@ class Image {
       return true;
     }());
     _image._handles.add(this);
+    if (!kReleaseMode) {
+      ImagePerfInfos.setResourceDecodeTime(this, _image.resourceDecodeTime);
+    }
   }
 
   // C++ unit tests access this.
@@ -1830,6 +1835,54 @@ class Image {
   String toString() => _image.toString();
 }
 
+class ImagePerfData {
+  ImagePerfData(this.resourceDecodeTime);
+  int resourceDecodeTime;
+}
+
+class ImagePerfInfos {
+  static Expando<ImagePerfData> expando = Expando<ImagePerfData>('ImagePerfInfos');
+  static int getResourceDecodeTime(Image image) {
+    var info = expando[image] ;
+    if (info == null) {
+      return 0;
+    }
+    return info.resourceDecodeTime;
+  }
+  static void setResourceDecodeTime(Image image, int time) {
+    expando[image] = ImagePerfData(time);
+  }
+  static void setResourceDecodeTimePri(_Image image, int time) {
+    if (!kReleaseMode) {
+      image.resourceDecodeTime = time;
+      image.handles.forEach((imageh) {
+          setResourceDecodeTime(imageh, time);
+      });
+    }
+  }
+}
+
+extension ImagePerfInfo on Image {
+  int get resourceDecodeTime => _getResourceDecodeTime();
+  set resourceDecodeTime(int time) {
+    _setResourceDecodeTime(time);
+  }
+
+  int _getResourceDecodeTime() {
+    return ImagePerfInfos.getResourceDecodeTime(this);
+  }
+
+  void _setResourceDecodeTime(int time) {
+    ImagePerfInfos.setResourceDecodeTime(this, time);
+  }
+
+  int get resourceMemoryCachedSize => _getResourceMemoryCachedSize();
+  int _getResourceMemoryCachedSize() {
+    const int RGBA = 4;
+    return this.width * this.height * RGBA;
+  }
+}
+
 @pragma('vm:entry-point')
 class _Image extends NativeFieldWrapperClass2 {
   // This class is created by the engine, and should not be instantiated
@@ -1872,6 +1925,10 @@ class _Image extends NativeFieldWrapperClass2 {
   void _dispose() native 'Image_dispose';
 
   Set<Image> _handles = <Image>{};
+
+  int resourceDecodeTime = 0;
+
+  Set<Image> get handles => _handles;
 
   @override
   String toString() => '[$width\u00D7$height]';

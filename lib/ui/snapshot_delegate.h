@@ -7,12 +7,13 @@
 
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkPicture.h"
+#include <tuple>
 
 namespace flutter {
 
 class SnapshotDelegate {
  public:
-  virtual sk_sp<SkImage> MakeRasterSnapshot(sk_sp<SkPicture> picture,
+  virtual std::tuple<sk_sp<SkImage>, int> MakeRasterSnapshot(sk_sp<SkPicture> picture,
                                             SkISize picture_size) = 0;
 
   virtual sk_sp<SkImage> ConvertToRasterImage(sk_sp<SkImage> image) = 0;

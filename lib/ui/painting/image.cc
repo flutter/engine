@@ -10,6 +10,8 @@
 #include "third_party/tonic/dart_binding_macros.h"
 #include "third_party/tonic/dart_library_natives.h"
 
+#include "third_party/tonic/logging/dart_invoke.h"
+
 namespace flutter {
 
 typedef CanvasImage Image;
@@ -41,6 +43,23 @@ CanvasImage::~CanvasImage() = default;
 
 Dart_Handle CanvasImage::toByteData(int format, Dart_Handle callback) {
   return EncodeImage(this, format, callback);
+}
+
+void CanvasImage::setResourceDecodeTime(int microseconds) {
+  Dart_Handle dartio_lib = Dart_LookupLibrary(tonic::ToDart("dart:ui"));
+  if (!Dart_IsNull(dartio_lib)) {
+    Dart_Handle ImagePerfInfos_cls = Dart_GetClass(dartio_lib, tonic::ToDart("ImagePerfInfos"));
+    if (!Dart_IsNull(ImagePerfInfos_cls)) {
+      Dart_Handle setResourceDecodeTime_closure =
+        Dart_GetStaticMethodClosure(
+                dartio_lib,
+                ImagePerfInfos_cls,
+                tonic::ToDart("setResourceDecodeTimePri"));
+      tonic::DartInvoke(setResourceDecodeTime_closure, {
+          tonic::ToDart(this),
+          tonic::ToDart(microseconds)});
+    }
+  }
 }
 
 void CanvasImage::dispose() {

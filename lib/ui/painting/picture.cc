@@ -94,7 +94,8 @@ Dart_Handle Picture::RasterizeToImage(sk_sp<SkPicture> picture,
 
   auto ui_task = fml::MakeCopyable([image_callback = std::move(image_callback),
                                     unref_queue](
-                                       sk_sp<SkImage> raster_image) mutable {
+                                       sk_sp<SkImage> raster_image,
+                                       int raster_cost) mutable {
     auto dart_state = image_callback->dart_state().lock();
     if (!dart_state) {
       // The root isolate could have died in the meantime.
@@ -109,6 +110,7 @@ Dart_Handle Picture::RasterizeToImage(sk_sp<SkPicture> picture,
 
     auto dart_image = CanvasImage::Create();
     dart_image->set_image({std::move(raster_image), std::move(unref_queue)});
+    dart_image->setResourceDecodeTime(raster_cost);
     auto* raw_dart_image = tonic::ToDart(std::move(dart_image));
 
     // All done!
@@ -123,12 +125,15 @@ Dart_Handle Picture::RasterizeToImage(sk_sp<SkPicture> picture,
   fml::TaskRunner::RunNowOrPostTask(
       raster_task_runner,
       [ui_task_runner, snapshot_delegate, picture, picture_bounds, ui_task] {
-        sk_sp<SkImage> raster_image =
+        sk_sp<SkImage> raster_image;
+        int raster_cost;
+        std::tie(raster_image, raster_cost) =
             snapshot_delegate->MakeRasterSnapshot(picture, picture_bounds);
 
         fml::TaskRunner::RunNowOrPostTask(
             ui_task_runner,
-            [ui_task, raster_image]() { ui_task(raster_image); });
+            [ui_task, raster_image, raster_cost]() {
+                ui_task(raster_image, raster_cost); });
       });
 
   return Dart_Null();
