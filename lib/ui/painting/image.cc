@@ -46,7 +46,7 @@ Dart_Handle CanvasImage::toByteData(int format, Dart_Handle callback) {
 }
 
 void CanvasImage::setResourceDecodeTime(int microseconds) {
-  if (Dart_CurrentIsolate() == NULL){
+  if (Dart_CurrentIsolate() == NULL) {
     return;
   }
   Dart_Handle dartio_lib = Dart_LookupLibrary(tonic::ToDart("dart:ui"));
