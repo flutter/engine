@@ -744,9 +744,7 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
 
   auto ui_task = [engine = engine_->GetWeakPtr(),                            //
                   raster_task_runner = task_runners_.GetRasterTaskRunner(),  //
-                  raster_task,
-                  &latch  //
-  ] {
+                  raster_task]() {
     if (engine) {
       engine->OnOutputSurfaceCreated();
     }
@@ -829,7 +827,7 @@ void Shell::OnPlatformViewDestroyed() {
 
   auto ui_task = [engine = engine_->GetWeakPtr(),
                   raster_task_runner = task_runners_.GetRasterTaskRunner(),
-                  raster_task, &latch]() {
+                  raster_task]() {
     if (engine) {
       engine->OnOutputSurfaceDestroyed();
     }
