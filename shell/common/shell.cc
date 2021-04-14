@@ -716,27 +716,7 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
 
   // Prevent any request to change the thread configuration for raster and
   // platform queues while the platform view is being created.
-  //
-  // This prevents false positives such as this method starts assuming that the
-  // raster and platform queues have a given thread configuration, but then the
-  // configuration is changed by a task, and the asumption is not longer true.
-  //
-  // This incorrect assumption can lead to dead lock.
-  // See `should_post_raster_task` for more.
   rasterizer_->DisableThreadMergerIfNeeded();
-
-  // The normal flow executed by this method is that the platform thread is
-  // starting the sequence and waiting on the latch. Later the UI thread posts
-  // raster_task to the raster thread which signals the latch. If the raster and
-  // the platform threads are the same this results in a deadlock as the
-  // raster_task will never be posted to the plaform/raster thread that is
-  // blocked on a latch. To avoid the described deadlock, if the raster and the
-  // platform threads are the same, should_post_raster_task will be false, and
-  // then instead of posting a task to the raster thread, the ui thread just
-  // signals the latch and the platform/raster thread follows with executing
-  // raster_task.
-  const bool should_post_raster_task =
-      !task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread();
 
   // Note:
   // This is a synchronous operation because certain platforms depend on
@@ -764,7 +744,7 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
 
   auto ui_task = [engine = engine_->GetWeakPtr(),                            //
                   raster_task_runner = task_runners_.GetRasterTaskRunner(),  //
-                  raster_task, should_post_raster_task,
+                  raster_task,
                   &latch  //
   ] {
     if (engine) {
@@ -772,13 +752,7 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
     }
     // Step 2: Next, tell the raster thread that it should create a surface for
     // its rasterizer.
-    if (should_post_raster_task) {
-      fml::TaskRunner::RunNowOrPostTask(raster_task_runner, raster_task);
-    } else {
-      // See comment on should_post_raster_task, in this case we just unblock
-      // the platform thread.
-      latch.Signal();
-    }
+    fml::TaskRunner::RunNowOrPostTask(raster_task_runner, raster_task);
   };
 
   // Threading: Capture platform view by raw pointer and not the weak pointer.
@@ -809,12 +783,6 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   fml::TaskRunner::RunNowOrPostTask(task_runners_.GetIOTaskRunner(), io_task);
 
   latch.Wait();
-  if (!should_post_raster_task) {
-    // See comment on should_post_raster_task, in this case the raster_task
-    // wasn't executed, and we just run it here as the platform thread
-    // is the raster thread.
-    raster_task();
-  }
 }
 
 // |PlatformView::Delegate|
@@ -825,27 +793,7 @@ void Shell::OnPlatformViewDestroyed() {
 
   // Prevent any request to change the thread configuration for raster and
   // platform queues while the platform view is being destroyed.
-  //
-  // This prevents false positives such as this method starts assuming that the
-  // raster and platform queues have a given thread configuration, but then the
-  // configuration is changed by a task, and the asumption is not longer true.
-  //
-  // This incorrect assumption can lead to dead lock.
-  // See `should_post_raster_task` for more.
   rasterizer_->DisableThreadMergerIfNeeded();
-
-  // The normal flow executed by this method is that the platform thread is
-  // starting the sequence and waiting on the latch. Later the UI thread posts
-  // raster_task to the raster thread triggers signaling the latch(on the IO
-  // thread). If the raster and the platform threads are the same this results
-  // in a deadlock as the raster_task will never be posted to the plaform/raster
-  // thread that is blocked on a latch.  To avoid the described deadlock, if the
-  // raster and the platform threads are the same, should_post_raster_task will
-  // be false, and then instead of posting a task to the raster thread, the ui
-  // thread just signals the latch and the platform/raster thread follows with
-  // executing raster_task.
-  const bool should_post_raster_task =
-      !task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread();
 
   // Note:
   // This is a synchronous operation because certain platforms depend on
@@ -881,17 +829,11 @@ void Shell::OnPlatformViewDestroyed() {
 
   auto ui_task = [engine = engine_->GetWeakPtr(),
                   raster_task_runner = task_runners_.GetRasterTaskRunner(),
-                  raster_task, should_post_raster_task, &latch]() {
+                  raster_task, &latch]() {
     if (engine) {
       engine->OnOutputSurfaceDestroyed();
     }
-    if (should_post_raster_task) {
-      fml::TaskRunner::RunNowOrPostTask(raster_task_runner, raster_task);
-    } else {
-      // See comment on should_post_raster_task, in this case we just unblock
-      // the platform thread.
-      latch.Signal();
-    }
+    fml::TaskRunner::RunNowOrPostTask(raster_task_runner, raster_task);
   };
 
   // Step 0: Post a task onto the UI thread to tell the engine that its output
@@ -899,13 +841,6 @@ void Shell::OnPlatformViewDestroyed() {
   fml::TaskRunner::RunNowOrPostTask(task_runners_.GetUITaskRunner(), ui_task);
 
   latch.Wait();
-  if (!should_post_raster_task) {
-    // See comment on should_post_raster_task, in this case the raster_task
-    // wasn't executed, and we just run it here as the platform thread
-    // is the raster thread.
-    raster_task();
-    latch.Wait();
-  }
 }
 
 // |PlatformView::Delegate|
