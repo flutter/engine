@@ -124,17 +124,16 @@ static uint64_t ConvertWinButtonToFlutterButton(UINT button) {
 // input.
 // See
 // https://docs.microsoft.com/en-us/windows/win32/tablet/system-events-and-mouse-messages?redirectedfrom=MSDN#distinguishing-pen-input-from-mouse-and-touch.
-//
-// We could additionally distinguish between touch and pen by using
-// constexpr LPARAM kTouchSignature = kTouchOrPenSignature | 0x80
-// which works on Vista or later. However, at this time, Flutter doesn't
-// distinguish between touch and pen.
 static FlutterPointerDeviceKind GetFlutterPointerDeviceKind() {
   constexpr LPARAM kTouchOrPenSignature = 0xFF515700;
+  constexpr LPARAM kTouchSignature = kTouchOrPenSignature | 0x80;
   constexpr LPARAM kSignatureMask = 0xFFFFFF00;
   LPARAM info = GetMessageExtraInfo();
   if ((info & kSignatureMask) == kTouchOrPenSignature) {
-    return kFlutterPointerDeviceKindTouch;
+    if ((info & kTouchSignature) == kTouchSignature) {
+      return kFlutterPointerDeviceKindTouch;
+    }
+    return kFlutterPointerDeviceKindStylus;
   }
   return kFlutterPointerDeviceKindMouse;
 }

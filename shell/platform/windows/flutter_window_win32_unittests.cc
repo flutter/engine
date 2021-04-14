@@ -545,12 +545,18 @@ TEST(FlutterWindowWin32Test, OnPointerStarSendsDeviceType) {
   FlutterWindowWin32 win32window(100, 100);
   MockWindowBindingHandlerDelegate delegate;
   win32window.SetView(&delegate);
+  // Move
   EXPECT_CALL(delegate,
               OnPointerMove(10.0, 10.0, kFlutterPointerDeviceKindMouse))
       .Times(1);
   EXPECT_CALL(delegate,
               OnPointerMove(10.0, 10.0, kFlutterPointerDeviceKindTouch))
       .Times(1);
+  EXPECT_CALL(delegate,
+              OnPointerMove(10.0, 10.0, kFlutterPointerDeviceKindStylus))
+      .Times(1);
+
+  // Down
   EXPECT_CALL(delegate,
               OnPointerDown(10.0, 10.0, kFlutterPointerDeviceKindMouse,
                             kFlutterPointerButtonMousePrimary))
@@ -559,16 +565,30 @@ TEST(FlutterWindowWin32Test, OnPointerStarSendsDeviceType) {
               OnPointerDown(10.0, 10.0, kFlutterPointerDeviceKindTouch,
                             kFlutterPointerButtonMousePrimary))
       .Times(1);
+  EXPECT_CALL(delegate,
+              OnPointerDown(10.0, 10.0, kFlutterPointerDeviceKindStylus,
+                            kFlutterPointerButtonMousePrimary))
+      .Times(1);
+
+  // Up
   EXPECT_CALL(delegate, OnPointerUp(10.0, 10.0, kFlutterPointerDeviceKindMouse,
                                     kFlutterPointerButtonMousePrimary))
       .Times(1);
   EXPECT_CALL(delegate, OnPointerUp(10.0, 10.0, kFlutterPointerDeviceKindTouch,
                                     kFlutterPointerButtonMousePrimary))
       .Times(1);
+  EXPECT_CALL(delegate,
+              OnPointerDown(10.0, 10.0, kFlutterPointerDeviceKindStylus,
+                            kFlutterPointerButtonMousePrimary))
+      .Times(1);
+
+  // Leave
   EXPECT_CALL(delegate, OnPointerLeave(kFlutterPointerDeviceKindMouse))
       .Times(1);
   EXPECT_CALL(delegate, OnPointerLeave(kFlutterPointerDeviceKindTouch))
       .Times(1);
+  EXPECT_CALL(delegate, OnPointerLeave(kFlutterPointerDeviceKindStylus))
+      .Times(1);
 
   win32window.OnPointerMove(10.0, 10.0);
   win32window.OnPointerDown(
@@ -577,15 +597,26 @@ TEST(FlutterWindowWin32Test, OnPointerStarSendsDeviceType) {
                           static_cast<UINT>(kFlutterPointerButtonMousePrimary));
   win32window.OnPointerLeave();
 
-  LPARAM previous_lparam = SetMessageExtraInfo(0xFF515700);
-
+  // Touch
+  LPARAM original_lparam = SetMessageExtraInfo(0xFF515780);
   win32window.OnPointerMove(10.0, 10.0);
   win32window.OnPointerDown(
       10.0, 10.0, static_cast<UINT>(kFlutterPointerButtonMousePrimary));
   win32window.OnPointerUp(10.0, 10.0,
                           static_cast<UINT>(kFlutterPointerButtonMousePrimary));
   win32window.OnPointerLeave();
-  SetMessageExtraInfo(previous_lparam);
+
+  // Pen
+  SetMessageExtraInfo(0xFF515700);
+  win32window.OnPointerMove(10.0, 10.0);
+  win32window.OnPointerDown(
+      10.0, 10.0, static_cast<UINT>(kFlutterPointerButtonMousePrimary));
+  win32window.OnPointerUp(10.0, 10.0,
+                          static_cast<UINT>(kFlutterPointerButtonMousePrimary));
+  win32window.OnPointerLeave();
+
+  // Reset extra info for other tests.
+  SetMessageExtraInfo(original_lparam);
 }
 
 }  // namespace testing
