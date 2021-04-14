@@ -9,6 +9,7 @@
 
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/linux/fl_engine_private.h"
+#include "flutter/shell/platform/linux/fl_key_embedder_responder_private.h"
 #include "flutter/shell/platform/linux/key_mapping.h"
 
 namespace {
@@ -145,6 +146,10 @@ static void fl_key_embedder_responder_class_init(
 // Initializes an FlKeyEmbedderResponder instance.
 static void fl_key_embedder_responder_init(FlKeyEmbedderResponder* self) {}
 
+static void garray_free_notify(gpointer array) {
+  g_free(array);
+}
+
 // Creates a new FlKeyEmbedderResponder instance, with a messenger used to send
 // messages to the framework, an FlTextInputPlugin used to handle key events
 // that the framework doesn't handle. Mainly for testing purposes, it also takes
@@ -167,6 +172,9 @@ FlKeyEmbedderResponder* fl_key_embedder_responder_new(FlEngine* engine) {
   initialize_xkb_to_physical_key(self->xkb_to_physical_key);
   self->keyval_to_logical_key = g_hash_table_new(g_direct_hash, g_direct_equal);
   initialize_gtk_keyval_to_logical_key(self->keyval_to_logical_key);
+  self->modifier_bit_to_physical_keys = g_hash_table_new_full(
+      g_direct_hash, g_direct_equal, NULL, garray_free_notify);
+  // initialize_modifier_bit_to_physical_keys(self->modifier_bit_to_physical_keys);
 
   return self;
 }
@@ -258,8 +266,69 @@ static void handle_response(bool handled, gpointer user_data) {
   data->callback(handled, data->user_data);
 }
 
-static void synchronize_pressed_states_foreach(FlKeyEmbedderResponder* self) {
+static void synthesize_simple_event(FlKeyEmbedderResponder* self,
+                                    FlutterKeyEventType type,
+                                    uint64_t physical,
+                                    uint64_t logical,
+                                    double timestamp) {
+  FlutterKeyEvent out_event;
+  out_event.struct_size = sizeof(out_event);
+  out_event.timestamp = timestamp;
+  out_event.type = type;
+  out_event.physical = physical;
+  out_event.logical = logical;
+  out_event.character = nullptr;
+  out_event.synthesized = true;
+  fl_engine_send_key_event(self->engine, &out_event, nullptr, nullptr);
+}
 
+namespace {
+typedef struct {
+  FlKeyEmbedderResponder* self;
+  guint state;
+  double timestamp;
+} SyncPressedStatesForeachData;
+}  // namespace
+
+static void synchronize_pressed_states_foreach(gpointer key,
+                                               gpointer value,
+                                               gpointer user_data) {
+  SyncPressedStatesForeachData* foreach_data =
+      reinterpret_cast<SyncPressedStatesForeachData*>(user_data);
+  FlKeyEmbedderCheckedKey* checked_key =
+      reinterpret_cast<FlKeyEmbedderCheckedKey*>(value);
+
+  guint modifier_bit = GPOINTER_TO_INT(key);
+  FlKeyEmbedderResponder* self = foreach_data->self;
+  uint64_t* physical_keys = checked_key->physical_keys;
+
+  bool pressed_by_state = foreach_data->state & modifier_bit;
+  bool pressed_by_record = false;
+
+  for (guint physical_key_idx = 0; physical_key_idx < checked_key->length;
+       physical_key_idx++) {
+    uint64_t physical_key = physical_keys[physical_key_idx];
+    uint64_t logical_key =
+        lookup_hash_table(self->pressing_records, physical_key);
+    if (logical_key != 0) {
+      pressed_by_record = true;
+      if (!pressed_by_state) {
+        synthesize_simple_event(self, kFlutterKeyEventTypeUp, physical_key,
+                                logical_key, foreach_data->timestamp);
+        g_hash_table_remove(self->pressing_records,
+                            uint64_to_gpointer(physical_key));
+      }
+    }
+  }
+  if (pressed_by_state && !pressed_by_record) {
+    uint64_t physical_key = physical_keys[0];
+    uint64_t logical_key = checked_key->first_logical_key;
+    synthesize_simple_event(self, kFlutterKeyEventTypeDown, physical_key,
+                            logical_key, foreach_data->timestamp);
+    g_hash_table_insert(self->pressing_records,
+                        uint64_to_gpointer(physical_key),
+                        uint64_to_gpointer(logical_key));
+  }
 }
 
 static int _text_idx = 0;
@@ -270,13 +339,12 @@ static void fl_key_embedder_responder_handle_event(
     GdkEventKey* event,
     FlKeyResponderAsyncCallback callback,
     gpointer user_data) {
-
   _text_idx += 1;
   printf(
       "#%7s keyval 0x%x keycode 0x%x state 0x%x ismod %d snd %d grp %d "
       "time %d [%d]\n",
-      event->type == GDK_KEY_PRESS ? "PRESS" : "RELEASE",
-      event->keyval, event->hardware_keycode, event->state, event->is_modifier,
+      event->type == GDK_KEY_PRESS ? "PRESS" : "RELEASE", event->keyval,
+      event->hardware_keycode, event->state, event->is_modifier,
       event->send_event, event->group, event->time, _text_idx);
   fflush(stdout);
 
@@ -288,22 +356,36 @@ static void fl_key_embedder_responder_handle_event(
       event_to_physical_key(event, self->xkb_to_physical_key);
   uint64_t logical_key =
       event_to_logical_key(event, self->keyval_to_logical_key);
+  double timestamp = event_to_timestamp(event);
   bool is_physical_down = event->type == GDK_KEY_PRESS;
 
   uint64_t last_logical_record =
       lookup_hash_table(self->pressing_records, physical_key);
-  uint64_t next_logical_record = is_physical_down ? last_logical_record : 0;
 
-  printf("last %lu next %lu down %d type %d\n", last_logical_record,
-         next_logical_record, is_physical_down, event->type);
-  fflush(stdout);
+  // printf("last %lu next %lu down %d type %d\n", last_logical_record,
+  //        next_logical_record, is_physical_down, event->type);
+  // fflush(stdout);
 
-  synchronize_pressed_states_foreach(self);
+  if (is_physical_down) {
+    g_hash_table_insert(self->pressing_records,
+                        uint64_to_gpointer(physical_key),
+                        uint64_to_gpointer(logical_key));
+  } else {
+    g_hash_table_remove(self->pressing_records,
+                        uint64_to_gpointer(physical_key));
+  }
+
+  SyncPressedStatesForeachData sync_pressed_state_data;
+  sync_pressed_state_data.self = self;
+  sync_pressed_state_data.state = event->state;
+  sync_pressed_state_data.timestamp = timestamp;
+  g_hash_table_foreach(self->modifier_bit_to_physical_keys,
+                       synchronize_pressed_states_foreach,
+                       &sync_pressed_state_data);
 
   FlutterKeyEvent out_event;
   out_event.struct_size = sizeof(out_event);
-  out_event.type = kFlutterKeyEventTypeDown;
-  out_event.timestamp = event_to_timestamp(event);
+  out_event.timestamp = timestamp;
   out_event.physical = physical_key;
   out_event.logical = logical_key;
   out_event.character = nullptr;
@@ -320,14 +402,19 @@ static void fl_key_embedder_responder_handle_event(
       return;
     } else {
       out_event.type = kFlutterKeyEventTypeDown;
-      out_event.logical = logical_key;
+      character_to_free = event_to_character(event);  // Might be null
+      out_event.character = character_to_free;
     }
-    character_to_free = event_to_character(event);  // Might be null
-    out_event.character = character_to_free;
   } else {  // is_physical_down false
-    out_event.character = nullptr;
-    out_event.type = kFlutterKeyEventTypeUp;
-    out_event.logical = logical_key;
+    if (!last_logical_record) {
+      // The physical key has been released before. It might indicate a missed
+      // event due to loss of focus, or multiple keyboards pressed keys with the
+      // same physical key. Ignore the up event.
+      callback(true, user_data);
+      return;
+    } else {
+      out_event.type = kFlutterKeyEventTypeUp;
+    }
   }
 
   FlKeyEmbedderUserData* response_data =

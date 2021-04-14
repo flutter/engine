@@ -24,6 +24,8 @@ void initialize_xkb_to_physical_key(GHashTable* table);
 // Flutter's logical key code values.
 void initialize_gtk_keyval_to_logical_key(GHashTable* table);
 
-void initialize_modifier_bit_to_physical_keys(GHashTable* table);
+void initialize_modifier_bit_to_checked_keys(GHashTable* table);
+
+void initialize_mode_bit_to_checked_keys(GHashTable* table);
 
 #endif  // KEYBOARD_MAP_H_

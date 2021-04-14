@@ -184,8 +184,7 @@ TEST(FlKeyEmbedderResponderTest, SendKeyEvent) {
   // Key down
   fl_key_responder_handle_event(
       responder,
-      key_event_new(12345, kPress, GDK_KEY_a, kKeyCodeKeyA, 0,
-                    kIsNotModifier),
+      key_event_new(12345, kPress, GDK_KEY_a, kKeyCodeKeyA, 0, kIsNotModifier),
       responder_callback, &user_data);
 
   EXPECT_EQ(g_call_records->len, 1u);
@@ -204,11 +203,10 @@ TEST(FlKeyEmbedderResponderTest, SendKeyEvent) {
   // Skip testing key repeats, which is not present on GDK.
 
   // Key up
-  fl_key_responder_handle_event(
-      responder,
-      key_event_new(12346, kRelease, GDK_KEY_a, kKeyCodeKeyA, 0,
-                    kIsNotModifier),
-      responder_callback, &user_data);
+  fl_key_responder_handle_event(responder,
+                                key_event_new(12346, kRelease, GDK_KEY_a,
+                                              kKeyCodeKeyA, 0, kIsNotModifier),
+                                responder_callback, &user_data);
 
   EXPECT_EQ(g_call_records->len, 1u);
   record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 0));
@@ -227,8 +225,7 @@ TEST(FlKeyEmbedderResponderTest, SendKeyEvent) {
   // Key down
   fl_key_responder_handle_event(
       responder,
-      key_event_new(12347, kPress, GDK_KEY_q, kKeyCodeKeyA, 0,
-                    kIsNotModifier),
+      key_event_new(12347, kPress, GDK_KEY_q, kKeyCodeKeyA, 0, kIsNotModifier),
       responder_callback, &user_data);
 
   EXPECT_EQ(g_call_records->len, 1u);
@@ -245,11 +242,10 @@ TEST(FlKeyEmbedderResponderTest, SendKeyEvent) {
   g_ptr_array_clear(g_call_records);
 
   // Key up
-  fl_key_responder_handle_event(
-      responder,
-      key_event_new(12348, kRelease, GDK_KEY_q, kKeyCodeKeyA, 0,
-                    kIsNotModifier),
-      responder_callback, &user_data);
+  fl_key_responder_handle_event(responder,
+                                key_event_new(12348, kRelease, GDK_KEY_q,
+                                              kKeyCodeKeyA, 0, kIsNotModifier),
+                                responder_callback, &user_data);
 
   EXPECT_EQ(g_call_records->len, 1u);
   record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 0));
@@ -334,8 +330,7 @@ TEST(FlKeyEmbedderResponderTest, PressShiftDuringLetterKeyTap) {
   // Release key A
   fl_key_responder_handle_event(
       responder,
-      key_event_new(104, kRelease, GDK_KEY_A, kKeyCodeKeyA, 0,
-                    kIsNotModifier),
+      key_event_new(104, kRelease, GDK_KEY_A, kKeyCodeKeyA, 0, kIsNotModifier),
       responder_callback, &user_data);
 
   EXPECT_EQ(g_call_records->len, 1u);
