@@ -282,6 +282,7 @@ public class FlutterJNI {
 
   @NonNull private final Looper mainLooper; // cached to avoid synchronization on repeat access.
 
+  // Prefer using the FlutterJNI.Factory so it's easier to test.
   public FlutterJNI() {
     // We cache the main looper so that we can ensure calls are made on the main thread
     // without consistently paying the synchronization cost of getMainLooper().

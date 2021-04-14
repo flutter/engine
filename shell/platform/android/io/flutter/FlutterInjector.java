@@ -94,7 +94,7 @@ public final class FlutterInjector {
   }
 
   @NonNull
-  public FlutterJNI.Factory flutterJNIFactory() {
+  public FlutterJNI.Factory getFlutterJNIFactory() {
     return flutterJniFactory;
   }
 

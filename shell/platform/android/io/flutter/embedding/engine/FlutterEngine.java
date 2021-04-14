@@ -286,7 +286,7 @@ public class FlutterEngine {
     FlutterInjector injector = FlutterInjector.instance();
 
     if (flutterJNI == null) {
-      flutterJNI = injector.flutterJNIFactory().provideFlutterJNI();
+      flutterJNI = injector.getFlutterJNIFactory().provideFlutterJNI();
     }
     this.flutterJNI = flutterJNI;
 
