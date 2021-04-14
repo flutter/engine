@@ -53,9 +53,9 @@ import java.util.Set;
  * interaction.
  *
  * <p>Multiple {@code FlutterEngine}s may exist, execute Dart code, and render UIs within a single
- * Android app. For better memory performance characteristics, construct multiple
- * {@code FlutterEngine}s via {@link io.flutter.embedding.engine.FlutterEngineGroup}
- * rather than via {@code FlutterEngine}'s constructor directly.
+ * Android app. For better memory performance characteristics, construct multiple {@code
+ * FlutterEngine}s via {@link io.flutter.embedding.engine.FlutterEngineGroup} rather than via {@code
+ * FlutterEngine}'s constructor directly.
  *
  * <p>To start running Dart and/or Flutter within this {@code FlutterEngine}, get a reference to
  * this engine's {@link DartExecutor} and then use {@link
