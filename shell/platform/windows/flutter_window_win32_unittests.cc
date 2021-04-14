@@ -577,9 +577,8 @@ TEST(FlutterWindowWin32Test, OnPointerStarSendsDeviceType) {
   EXPECT_CALL(delegate, OnPointerUp(10.0, 10.0, kFlutterPointerDeviceKindTouch,
                                     kFlutterPointerButtonMousePrimary))
       .Times(1);
-  EXPECT_CALL(delegate,
-              OnPointerDown(10.0, 10.0, kFlutterPointerDeviceKindStylus,
-                            kFlutterPointerButtonMousePrimary))
+  EXPECT_CALL(delegate, OnPointerUp(10.0, 10.0, kFlutterPointerDeviceKindStylus,
+                                    kFlutterPointerButtonMousePrimary))
       .Times(1);
 
   // Leave
@@ -591,28 +590,22 @@ TEST(FlutterWindowWin32Test, OnPointerStarSendsDeviceType) {
       .Times(1);
 
   win32window.OnPointerMove(10.0, 10.0);
-  win32window.OnPointerDown(
-      10.0, 10.0, static_cast<UINT>(kFlutterPointerButtonMousePrimary));
-  win32window.OnPointerUp(10.0, 10.0,
-                          static_cast<UINT>(kFlutterPointerButtonMousePrimary));
+  win32window.OnPointerDown(10.0, 10.0, WM_LBUTTONDOWN);
+  win32window.OnPointerUp(10.0, 10.0, WM_LBUTTONDOWN);
   win32window.OnPointerLeave();
 
   // Touch
-  LPARAM original_lparam = SetMessageExtraInfo(0xFF515780);
+  LPARAM original_lparam = SetMessageExtraInfo(0xFF51578b);
   win32window.OnPointerMove(10.0, 10.0);
-  win32window.OnPointerDown(
-      10.0, 10.0, static_cast<UINT>(kFlutterPointerButtonMousePrimary));
-  win32window.OnPointerUp(10.0, 10.0,
-                          static_cast<UINT>(kFlutterPointerButtonMousePrimary));
+  win32window.OnPointerDown(10.0, 10.0, WM_LBUTTONDOWN);
+  win32window.OnPointerUp(10.0, 10.0, WM_LBUTTONDOWN);
   win32window.OnPointerLeave();
 
   // Pen
   SetMessageExtraInfo(0xFF515700);
   win32window.OnPointerMove(10.0, 10.0);
-  win32window.OnPointerDown(
-      10.0, 10.0, static_cast<UINT>(kFlutterPointerButtonMousePrimary));
-  win32window.OnPointerUp(10.0, 10.0,
-                          static_cast<UINT>(kFlutterPointerButtonMousePrimary));
+  win32window.OnPointerDown(10.0, 10.0, WM_LBUTTONDOWN);
+  win32window.OnPointerUp(10.0, 10.0, WM_LBUTTONDOWN);
   win32window.OnPointerLeave();
 
   // Reset extra info for other tests.
