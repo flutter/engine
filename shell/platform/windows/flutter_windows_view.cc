@@ -279,7 +279,9 @@ void FlutterWindowsView::SetEventPhaseFromCursorButtonState(
   }
 }
 
-void FlutterWindowsView::SendPointerMove(double x, double y,FlutterPointerDeviceKind device_kind) {
+void FlutterWindowsView::SendPointerMove(double x,
+                                         double y,
+                                         FlutterPointerDeviceKind device_kind) {
   FlutterPointerEvent event = {};
   event.x = x;
   event.y = y;
@@ -288,7 +290,9 @@ void FlutterWindowsView::SendPointerMove(double x, double y,FlutterPointerDevice
   SendPointerEventWithData(event);
 }
 
-void FlutterWindowsView::SendPointerDown(double x, double y, FlutterPointerDeviceKind device_kind) {
+void FlutterWindowsView::SendPointerDown(double x,
+                                         double y,
+                                         FlutterPointerDeviceKind device_kind) {
   FlutterPointerEvent event = {};
   SetEventPhaseFromCursorButtonState(&event);
   event.x = x;
@@ -298,7 +302,9 @@ void FlutterWindowsView::SendPointerDown(double x, double y, FlutterPointerDevic
   SetMouseFlutterStateDown(true);
 }
 
-void FlutterWindowsView::SendPointerUp(double x, double y, FlutterPointerDeviceKind device_kind) {
+void FlutterWindowsView::SendPointerUp(double x,
+                                       double y,
+                                       FlutterPointerDeviceKind device_kind) {
   FlutterPointerEvent event = {};
   SetEventPhaseFromCursorButtonState(&event);
   event.x = x;
@@ -310,7 +316,8 @@ void FlutterWindowsView::SendPointerUp(double x, double y, FlutterPointerDeviceK
   }
 }
 
-void FlutterWindowsView::SendPointerLeave(FlutterPointerDeviceKind device_kind) {
+void FlutterWindowsView::SendPointerLeave(
+    FlutterPointerDeviceKind device_kind) {
   FlutterPointerEvent event = {};
   event.device_kind = device_kind;
   event.phase = FlutterPointerPhase::kRemove;

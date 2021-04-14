@@ -182,10 +182,14 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   void SendWindowMetrics(size_t width, size_t height, double dpiscale) const;
 
   // Reports a mouse movement to Flutter engine.
-  void SendPointerMove(double x, double y, FlutterPointerDeviceKind device_kind);
+  void SendPointerMove(double x,
+                       double y,
+                       FlutterPointerDeviceKind device_kind);
 
   // Reports mouse press to Flutter engine.
-  void SendPointerDown(double x, double y, FlutterPointerDeviceKind device_kind);
+  void SendPointerDown(double x,
+                       double y,
+                       FlutterPointerDeviceKind device_kind);
 
   // Reports mouse release to Flutter engine.
   void SendPointerUp(double x, double y, FlutterPointerDeviceKind device_kind);

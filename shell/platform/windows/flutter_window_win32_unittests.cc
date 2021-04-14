@@ -159,6 +159,36 @@ class MockFlutterWindowWin32 : public FlutterWindowWin32 {
   MOCK_METHOD1(UpdateCursorRect, void(const Rect&));
 };
 
+class MockWindowBindingHandlerDelegate : public WindowBindingHandlerDelegate {
+ public:
+  // Prevent copying.
+  MockWindowBindingHandlerDelegate(MockWindowBindingHandlerDelegate const&) =
+      delete;
+  MockWindowBindingHandlerDelegate& operator=(
+      MockWindowBindingHandlerDelegate const&) = delete;
+
+  MOCK_METHOD2(OnWindowSizeChanged, void(size_t, size_t));
+  MOCK_METHOD3(OnPointerMove, void(double, double, FlutterPointerDeviceKind));
+  MOCK_METHOD4(OnPointerDown,
+               void(double,
+                    double,
+                    FlutterPointerDeviceKind,
+                    FlutterPointerMouseButtons));
+  MOCK_METHOD4(OnPointerUp,
+               void(double,
+                    double,
+                    FlutterPointerDeviceKind,
+                    FlutterPointerMouseButtons));
+  MOCK_METHOD1(OnPointerLeave, void(FlutterPointerDeviceKind));
+  MOCK_METHOD1(OnText, void(const std::u16string&));
+  MOCK_METHOD6(OnKey, bool(int, int, int, char32_t, bool, bool));
+  MOCK_METHOD0(OnComposeBegin, void());
+  MOCK_METHOD0(OnComposeCommit, void());
+  MOCK_METHOD0(OnComposeEnd, void());
+  MOCK_METHOD2(OnComposeChange, void(const std::u16string&, int));
+  MOCK_METHOD5(OnScroll, void(double, double, double, double, int));
+};
+
 // A FlutterWindowsView that overrides the RegisterKeyboardHandlers function
 // to register the keyboard hook handlers that can be spied upon.
 class TestFlutterWindowsView : public FlutterWindowsView {
@@ -507,6 +537,24 @@ TEST(FlutterWindowWin32Test, OnCursorRectUpdatedHighDPI) {
 
   Rect cursor_rect(Point(10, 20), Size(30, 40));
   win32window.OnCursorRectUpdated(cursor_rect);
+}
+
+TEST(FlutterWindowWin32Test, OnPointerMoveSendsDeviceType) {
+  FlutterWindowWin32 win32window;
+  MockWindowBindingHandlerDelegate delegate;
+  win32window.SetView(&delegate);
+
+  win32window.OnPointerMove(10.0, 10.0);
+  EXPECT_CALL(delegate,
+              OnPointerMove(10.0, 10.0, kFlutterPointerDeviceKindMouse))
+      .Times(1);
+
+  LPARAM previous_lparam = SetMessageExtraInfo(0xFF515700);
+  win32window.OnPointerMove(10.0, 10.0);
+  EXPECT_CALL(delegate,
+              OnPointerMove(10.0, 10.0, kFlutterPointerDeviceKindTouch))
+      .Times(1);
+  SetMessageExtraInfo(previous_lparam);
 }
 
 }  // namespace testing
