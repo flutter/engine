@@ -161,6 +161,8 @@ class MockFlutterWindowWin32 : public FlutterWindowWin32 {
 
 class MockWindowBindingHandlerDelegate : public WindowBindingHandlerDelegate {
  public:
+  MockWindowBindingHandlerDelegate() {}
+
   // Prevent copying.
   MockWindowBindingHandlerDelegate(MockWindowBindingHandlerDelegate const&) =
       delete;
@@ -539,21 +541,50 @@ TEST(FlutterWindowWin32Test, OnCursorRectUpdatedHighDPI) {
   win32window.OnCursorRectUpdated(cursor_rect);
 }
 
-TEST(FlutterWindowWin32Test, OnPointerMoveSendsDeviceType) {
+TEST(FlutterWindowWin32Test, OnPointerStarSendsDeviceType) {
   FlutterWindowWin32 win32window;
   MockWindowBindingHandlerDelegate delegate;
   win32window.SetView(&delegate);
-
-  win32window.OnPointerMove(10.0, 10.0);
   EXPECT_CALL(delegate,
               OnPointerMove(10.0, 10.0, kFlutterPointerDeviceKindMouse))
       .Times(1);
-
-  LPARAM previous_lparam = SetMessageExtraInfo(0xFF515700);
-  win32window.OnPointerMove(10.0, 10.0);
   EXPECT_CALL(delegate,
               OnPointerMove(10.0, 10.0, kFlutterPointerDeviceKindTouch))
       .Times(1);
+  EXPECT_CALL(delegate,
+              OnPointerDown(10.0, 10.0, kFlutterPointerDeviceKindMouse,
+                            kFlutterPointerButtonMousePrimary))
+      .Times(1);
+  EXPECT_CALL(delegate,
+              OnPointerDown(10.0, 10.0, kFlutterPointerDeviceKindTouch,
+                            kFlutterPointerButtonMousePrimary))
+      .Times(1);
+  EXPECT_CALL(delegate, OnPointerUp(10.0, 10.0, kFlutterPointerDeviceKindMouse,
+                                    kFlutterPointerButtonMousePrimary))
+      .Times(1);
+  EXPECT_CALL(delegate, OnPointerUp(10.0, 10.0, kFlutterPointerDeviceKindTouch,
+                                    kFlutterPointerButtonMousePrimary))
+      .Times(1);
+  EXPECT_CALL(delegate, OnPointerLeave(kFlutterPointerDeviceKindMouse))
+      .Times(1);
+  EXPECT_CALL(delegate, OnPointerLeave(kFlutterPointerDeviceKindTouch))
+      .Times(1);
+
+  win32window.OnPointerMove(10.0, 10.0);
+  win32window.OnPointerDown(
+      10.0, 10.0, static_cast<UINT>(kFlutterPointerButtonMousePrimary));
+  win32window.OnPointerUp(10.0, 10.0,
+                          static_cast<UINT>(kFlutterPointerButtonMousePrimary));
+  win32Window.OnPointerLeave();
+
+  LPARAM previous_lparam = SetMessageExtraInfo(0xFF515700);
+
+  win32window.OnPointerMove(10.0, 10.0);
+  win32window.OnPointerDown(
+      10.0, 10.0, static_cast<UINT>(kFlutterPointerButtonMousePrimary));
+  win32window.OnPointerUp(10.0, 10.0,
+                          static_cast<UINT>(kFlutterPointerButtonMousePrimary));
+  win32Window.OnPointerLeave();
   SetMessageExtraInfo(previous_lparam);
 }
 
