@@ -6,6 +6,15 @@
 @JS()
 library engine;
 
+// This file is transformed during the build process in order to make it a
+// single library. Some notable transformations:
+//
+// 1. Imports of engine/* files are stripped out.
+// 2. Exports of engine/* files are replaced with a part directive.
+//
+// The code that performs the transformations lives in:
+// - https://github.com/flutter/engine/blob/master/web_sdk/sdk_rewriter.dart
+
 import 'dart:async';
 import 'dart:collection'
     // Some of these names are used in services/buffers.dart for example.
