@@ -1840,10 +1840,11 @@ class ImagePerfData {
   int resourceDecodeTime;
 }
 
+// ignore: avoid_classes_with_only_static_members
 class ImagePerfInfos {
   static Expando<ImagePerfData> expando = Expando<ImagePerfData>('ImagePerfInfos');
   static int getResourceDecodeTime(Image image) {
-    var info = expando[image] ;
+    final ImagePerfData? info = expando[image];
     if (info == null) {
       return 0;
     }
@@ -1855,9 +1856,9 @@ class ImagePerfInfos {
   static void setResourceDecodeTimePri(_Image image, int time) {
     if (!kReleaseMode) {
       image.resourceDecodeTime = time;
-      image.handles.forEach((imageh) {
-          setResourceDecodeTime(imageh, time);
-      });
+      for(final Image imageh in image.handles) {
+        setResourceDecodeTime(imageh, time);
+      }
     }
   }
 }
@@ -1879,7 +1880,7 @@ extension ImagePerfInfo on Image {
   int get resourceMemoryCachedSize => _getResourceMemoryCachedSize();
   int _getResourceMemoryCachedSize() {
     const int RGBA = 4;
-    return this.width * this.height * RGBA;
+    return width * height * RGBA;
   }
 }
 
