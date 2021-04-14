@@ -87,20 +87,24 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   void OnWindowSizeChanged(size_t width, size_t height) override;
 
   // |WindowBindingHandlerDelegate|
-  void OnPointerMove(double x, double y) override;
+  void OnPointerMove(double x,
+                     double y,
+                     FlutterPointerDeviceKind device_kind) override;
 
   // |WindowBindingHandlerDelegate|
   void OnPointerDown(double x,
                      double y,
+                     FlutterPointerDeviceKind device_kind,
                      FlutterPointerMouseButtons button) override;
 
   // |WindowBindingHandlerDelegate|
   void OnPointerUp(double x,
                    double y,
+                   FlutterPointerDeviceKind device_kind,
                    FlutterPointerMouseButtons button) override;
 
   // |WindowBindingHandlerDelegate|
-  void OnPointerLeave() override;
+  void OnPointerLeave(FlutterPointerDeviceKind device_kind) override;
 
   // |WindowBindingHandlerDelegate|
   void OnText(const std::u16string&) override;
