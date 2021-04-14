@@ -19,10 +19,10 @@ constexpr gboolean kIsModifier = TRUE;
 constexpr gboolean kIsNotModifier = FALSE;
 
 constexpr guint16 kKeyCodeKeyA = 0x26u;
+// constexpr guint16 kKeyCodeKeyB = 0x38u;
 constexpr guint16 kKeyCodeShiftRight = 0x3eu;
 constexpr guint16 kKeyCodeNumpad1 = 0x57u;
 constexpr guint16 kKeyCodeNumLock = 0x4du;
-// constexpr guint16 kKeyCodeKeyB = 0x38u;
 
 constexpr uint64_t kPhysicalKeyA = 0x00070004;
 // constexpr uint64_t kPhysicalKeyQ = 0x00070014;
@@ -435,4 +435,70 @@ TEST(FlKeyEmbedderResponderTest, TapNumLockDuringNumpadKeyTap) {
   g_ptr_array_clear(g_call_records);
 
   g_clear_object(&g_call_records);
+}
+
+TEST(FlKeyEmbedderResponderTest, IgnoreDuplicateDownEvent) {
+  EXPECT_EQ(g_call_records, nullptr);
+  g_call_records = g_ptr_array_new_with_free_func(g_object_unref);
+  g_autoptr(FlEngine) engine = make_mock_engine_with_records();
+  g_autoptr(FlKeyResponder) responder =
+      FL_KEY_RESPONDER(fl_key_embedder_responder_new(engine));
+  int user_data = 123;  // Arbitrary user data
+
+  FlKeyEmbedderCallRecord* record;
+
+  // Press KeyA
+  fl_key_responder_handle_event(
+      responder,
+      key_event_new(101, kPress, GDK_KEY_a, kKeyCodeKeyA, 0,
+                    kIsNotModifier),
+      responder_callback, &user_data);
+
+  EXPECT_EQ(g_call_records->len, 1u);
+
+  record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 0));
+  invoke_record_callback_and_verify(record, TRUE, &user_data);
+  g_ptr_array_clear(g_call_records);
+
+  // Press KeyA again (with different logical key, not necessarily but for
+  // coverage).
+  fl_key_responder_handle_event(
+      responder,
+      key_event_new(102, kPress, GDK_KEY_q, kKeyCodeKeyA, 0,
+                    kIsNotModifier),
+      responder_callback, &user_data);
+
+  EXPECT_EQ(g_call_records->len, 0u);
+
+  // Release KeyA
+  fl_key_responder_handle_event(
+      responder,
+      key_event_new(103, kRelease, GDK_KEY_q, kKeyCodeKeyA, 0,
+                    kIsNotModifier),
+      responder_callback, &user_data);
+
+  EXPECT_EQ(g_call_records->len, 1u);
+  record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 0));
+  invoke_record_callback_and_verify(record, TRUE, &user_data);
+  g_ptr_array_clear(g_call_records);
+
+  g_clear_object(&g_call_records);
+}
+
+TEST(FlKeyEmbedderResponderTest, IgnoreAbruptUpEvent) {
+  EXPECT_EQ(g_call_records, nullptr);
+  g_call_records = g_ptr_array_new_with_free_func(g_object_unref);
+  g_autoptr(FlEngine) engine = make_mock_engine_with_records();
+  g_autoptr(FlKeyResponder) responder =
+      FL_KEY_RESPONDER(fl_key_embedder_responder_new(engine));
+  int user_data = 123;  // Arbitrary user data
+
+  // Release KeyA before it was even pressed.
+  fl_key_responder_handle_event(
+      responder,
+      key_event_new(103, kRelease, GDK_KEY_q, kKeyCodeKeyA, 0,
+                    kIsNotModifier),
+      responder_callback, &user_data);
+
+  EXPECT_EQ(g_call_records->len, 0u);
 }
