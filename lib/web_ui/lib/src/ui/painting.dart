@@ -349,6 +349,9 @@ class ImagePerfData {
 }
 
 // no-op in web target
+class _Image {
+}
+// no-op in web target
 // ignore: avoid_classes_with_only_static_members
 class ImagePerfInfos {
   static Expando<ImagePerfData> expando = Expando<ImagePerfData>('ImagePerfInfos');
