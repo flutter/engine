@@ -342,6 +342,25 @@ abstract class Image {
   String toString() => '[$width\u00D7$height]';
 }
 
+// no-op in web target
+class ImagePerfData {
+  ImagePerfData(this.resourceDecodeTime);
+  int resourceDecodeTime;
+}
+
+// no-op in web target
+// ignore: avoid_classes_with_only_static_members
+class ImagePerfInfos {
+  static Expando<ImagePerfData> expando = Expando<ImagePerfData>('ImagePerfInfos');
+  static int getResourceDecodeTime(Image image) {
+    return 0;
+  }
+  static void setResourceDecodeTime(Image image, int time) {
+  }
+  static void setResourceDecodeTimePri(_Image image, int time) {
+  }
+}
+
 abstract class ColorFilter {
   const factory ColorFilter.mode(Color color, BlendMode blendMode) = engine.EngineColorFilter.mode;
   const factory ColorFilter.matrix(List<double> matrix) = engine.EngineColorFilter.matrix;
