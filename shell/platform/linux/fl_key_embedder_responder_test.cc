@@ -184,7 +184,7 @@ TEST(FlKeyEmbedderResponderTest, SendKeyEvent) {
   // Key down
   fl_key_responder_handle_event(
       responder,
-      key_event_new(12345, kPress, GDK_KEY_a, kKeyCodeKeyA, 0x10,
+      key_event_new(12345, kPress, GDK_KEY_a, kKeyCodeKeyA, 0,
                     kIsNotModifier),
       responder_callback, &user_data);
 
@@ -206,7 +206,7 @@ TEST(FlKeyEmbedderResponderTest, SendKeyEvent) {
   // Key up
   fl_key_responder_handle_event(
       responder,
-      key_event_new(12346, kRelease, GDK_KEY_a, kKeyCodeKeyA, 0x10,
+      key_event_new(12346, kRelease, GDK_KEY_a, kKeyCodeKeyA, 0,
                     kIsNotModifier),
       responder_callback, &user_data);
 
@@ -227,7 +227,7 @@ TEST(FlKeyEmbedderResponderTest, SendKeyEvent) {
   // Key down
   fl_key_responder_handle_event(
       responder,
-      key_event_new(12347, kPress, GDK_KEY_q, kKeyCodeKeyA, 0x10,
+      key_event_new(12347, kPress, GDK_KEY_q, kKeyCodeKeyA, 0,
                     kIsNotModifier),
       responder_callback, &user_data);
 
@@ -247,7 +247,7 @@ TEST(FlKeyEmbedderResponderTest, SendKeyEvent) {
   // Key up
   fl_key_responder_handle_event(
       responder,
-      key_event_new(12348, kRelease, GDK_KEY_q, kKeyCodeKeyA, 0x10,
+      key_event_new(12348, kRelease, GDK_KEY_q, kKeyCodeKeyA, 0,
                     kIsNotModifier),
       responder_callback, &user_data);
 
@@ -281,7 +281,7 @@ TEST(FlKeyEmbedderResponderTest, PressShiftDuringLetterKeyTap) {
   // Press shift right
   fl_key_responder_handle_event(
       responder,
-      key_event_new(101, kPress, GDK_KEY_Shift_R, kKeyCodeShiftRight, 0x10,
+      key_event_new(101, kPress, GDK_KEY_Shift_R, kKeyCodeShiftRight, 0,
                     kIsModifier),
       responder_callback, &user_data);
 
@@ -299,7 +299,7 @@ TEST(FlKeyEmbedderResponderTest, PressShiftDuringLetterKeyTap) {
   // Press key A
   fl_key_responder_handle_event(
       responder,
-      key_event_new(102, kPress, GDK_KEY_A, kKeyCodeKeyA, 0x11, kIsNotModifier),
+      key_event_new(102, kPress, GDK_KEY_A, kKeyCodeKeyA, 0x1, kIsNotModifier),
       responder_callback, &user_data);
 
   EXPECT_EQ(g_call_records->len, 1u);
@@ -334,7 +334,7 @@ TEST(FlKeyEmbedderResponderTest, PressShiftDuringLetterKeyTap) {
   // Release key A
   fl_key_responder_handle_event(
       responder,
-      key_event_new(104, kRelease, GDK_KEY_A, kKeyCodeKeyA, 0x10,
+      key_event_new(104, kRelease, GDK_KEY_A, kKeyCodeKeyA, 0,
                     kIsNotModifier),
       responder_callback, &user_data);
 
@@ -351,7 +351,6 @@ TEST(FlKeyEmbedderResponderTest, PressShiftDuringLetterKeyTap) {
 
   g_clear_object(&g_call_records);
 }
-
 
 // Press Numpad 1, tap NumLock, then release Numpad 1.
 //
@@ -389,7 +388,8 @@ TEST(FlKeyEmbedderResponderTest, TapNumLockDuringNumpadKeyTap) {
   // Press NumLock
   fl_key_responder_handle_event(
       responder,
-      key_event_new(102, kPress, GDK_KEY_Num_Lock, kKeyCodeNumLock, 0x10, kIsNotModifier),
+      key_event_new(102, kPress, GDK_KEY_Num_Lock, kKeyCodeNumLock, 0x10,
+                    kIsNotModifier),
       responder_callback, &user_data);
 
   EXPECT_EQ(g_call_records->len, 1u);
@@ -403,7 +403,7 @@ TEST(FlKeyEmbedderResponderTest, TapNumLockDuringNumpadKeyTap) {
   invoke_record_callback_and_verify(record, TRUE, &user_data);
   g_ptr_array_clear(g_call_records);
 
-  // Release shift right
+  // Release NumLock
   fl_key_responder_handle_event(
       responder,
       key_event_new(103, kRelease, GDK_KEY_Num_Lock, kKeyCodeNumLock, 0x10,
@@ -421,10 +421,10 @@ TEST(FlKeyEmbedderResponderTest, TapNumLockDuringNumpadKeyTap) {
   invoke_record_callback_and_verify(record, TRUE, &user_data);
   g_ptr_array_clear(g_call_records);
 
-  // Release key A
+  // Release numpad 1
   fl_key_responder_handle_event(
       responder,
-      key_event_new(104, kRelease, GDK_KEY_KP_End, kKeyCodeNumpad1, 0x10,
+      key_event_new(104, kRelease, GDK_KEY_KP_End, kKeyCodeNumpad1, 0,
                     kIsNotModifier),
       responder_callback, &user_data);
 

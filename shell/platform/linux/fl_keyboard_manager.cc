@@ -133,29 +133,22 @@ static uint64_t fl_keyboard_manager_get_event_hash(GdkEventKey* event) {
 FlKeyboardPendingEvent* fl_keyboard_pending_event_new(GdkEventKey* event,
                                                       uint64_t sequence_id,
                                                       size_t to_reply) {
-  printf("new pending 1\n");
   FlKeyboardPendingEvent* self = FL_KEYBOARD_PENDING_EVENT(
       g_object_new(fl_keyboard_pending_event_get_type(), nullptr));
-  printf("new pending 2\n");
 
   FL_KEYBOARD_PENDING_EVENT(self);
 
-  printf("new 1\n");
   // Copy the event to preserve refcounts for referenced values (mainly the
   // window).
   GdkEventKey* event_copy = reinterpret_cast<GdkEventKey*>(
       gdk_event_copy(reinterpret_cast<GdkEvent*>(event)));
-  printf("new 1.5\n");
   FlKeyboardPendingEvent* self2 = FL_KEYBOARD_PENDING_EVENT(self);
-  printf("new 2\n");
   self->event = event_copy;
   self->sequence_id = sequence_id;
   self->unreplied = to_reply;
   self->any_handled = false;
   self->hash = fl_keyboard_manager_get_event_hash(event);
-  printf("new 3\n");
   // FlKeyboardPendingEvent* self2 = FL_KEYBOARD_PENDING_EVENT(self);
-  printf("new 4\n");
   return self2;
 }
 
@@ -246,7 +239,6 @@ static void responder_handle_event_callback(bool handled,
   g_return_if_fail(FL_IS_KEYBOARD_MANAGER_USER_DATA(user_data_ptr));
   FlKeyboardManagerUserData* user_data =
       FL_KEYBOARD_MANAGER_USER_DATA(user_data_ptr);
-  printf("callback 2\n");
   FlKeyboardManager* self = user_data->manager;
 
   guint result_index = -1;
@@ -254,22 +246,18 @@ static void responder_handle_event_callback(bool handled,
       self->pending_responds, &user_data->sequence_id,
       compare_pending_by_sequence_id, &result_index);
   g_return_if_fail(found);
-  printf("callback 3\n");
   FlKeyboardPendingEvent* pending = FL_KEYBOARD_PENDING_EVENT(
       g_ptr_array_index(self->pending_responds, result_index));
-  printf("callback 4 unrep %zu\n", pending->unreplied);
   g_return_if_fail(pending != nullptr);
   g_return_if_fail(pending->unreplied > 0);
   pending->unreplied -= 1;
   pending->any_handled = pending->any_handled || handled;
   // All responders have replied.
   if (pending->unreplied == 0) {
-    printf("callback 5\n");
     g_object_unref(user_data_ptr);
     g_ptr_array_remove_index_fast(self->pending_responds, result_index);
     bool should_redispatch = false;
     if (!pending->any_handled) {
-      printf("callback 6\n");
       // If no responders have handled, send it to text plugin.
       if (self->text_input_plugin == nullptr ||
           !fl_text_input_plugin_filter_keypress(self->text_input_plugin,
@@ -279,15 +267,12 @@ static void responder_handle_event_callback(bool handled,
       }
     }
     if (should_redispatch) {
-      printf("callback 7\n");
       g_ptr_array_add(self->pending_redispatches, pending);
       self->redispatch_callback(reinterpret_cast<GdkEvent*>(pending->event));
     } else {
-      printf("callback 8\n");
       g_object_unref(pending);
     }
   }
-  printf("callback ret\n");
 }
 
 FlKeyboardManager* fl_keyboard_manager_new(
@@ -319,7 +304,6 @@ void fl_keyboard_manager_add_responder(FlKeyboardManager* self,
   g_return_if_fail(responder != nullptr);
 
   g_ptr_array_add(self->responder_list, responder);
-  printf("after add len %u\n", self->responder_list->len);
 }
 
 static void dispatch_pending_to_responder(gpointer responder_data,
@@ -339,19 +323,14 @@ gboolean fl_keyboard_manager_handle_event(FlKeyboardManager* self,
   g_return_val_if_fail(event != nullptr, FALSE);
 
   uint64_t incoming_hash = fl_keyboard_manager_get_event_hash(event);
-  printf("Handle 1\n");
   if (fl_keyboard_manager_remove_redispatched(self, incoming_hash)) {
-    printf("Handle ret\n");
     return FALSE;
   }
 
-  printf("Handle 2 len %u\n", self->responder_list->len);
   FlKeyboardPendingEvent* pending = fl_keyboard_pending_event_new(
       event, ++self->last_sequence_id, self->responder_list->len);
 
-  printf("Handle 2.5\n");
   g_ptr_array_add(self->pending_responds, pending);
-  printf("Handle 3\n");
   FlKeyboardManagerUserData* user_data =
       fl_keyboard_manager_user_data_new(self, pending->sequence_id);
   DispatchPendingToResponderForeachData data{
@@ -360,7 +339,6 @@ gboolean fl_keyboard_manager_handle_event(FlKeyboardManager* self,
   };
   g_ptr_array_foreach(self->responder_list, dispatch_pending_to_responder,
                       &data);
-  printf("Handle 4\n");
 
   return TRUE;
 }

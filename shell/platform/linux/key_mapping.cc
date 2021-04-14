@@ -416,3 +416,43 @@ void initialize_gtk_keyval_to_logical_key(GHashTable* table) {
   insert_record(table, 0x0000ffe8, 0x400000109);  // Meta_R
   insert_record(table, 0x0000ffe2, 0x40000010d);  // Shift_R
 }
+
+void initialize_modifier_bit_to_physical_keys(GHashTable* table) {
+  GArray* array;
+
+  array = g_array_new(TRUE, FALSE, sizeof(uint64_t));
+  g_hash_table_insert(table, uint64_to_gpointer(GDK_SHIFT_MASK), array);
+  g_array_set_size(array, 2);
+  int data_shift[] = {
+      0x000700e1,  // ShiftLeft
+      0x000700e5,  // ShiftRight
+  };
+  g_array_append_vals(array, data_shift, 2);
+
+  array = g_array_new(TRUE, FALSE, sizeof(uint64_t));
+  g_hash_table_insert(table, uint64_to_gpointer(GDK_CONTROL_MASK), array);
+  g_array_set_size(array, 2);
+  int data_control[] = {
+      0x000700e0,  // ControlLeft
+      0x000700e4,  // ControlRight
+  };
+  g_array_append_vals(array, data_control, 2);
+
+  array = g_array_new(TRUE, FALSE, sizeof(uint64_t));
+  g_hash_table_insert(table, uint64_to_gpointer(GDK_MOD1_MASK), array);
+  g_array_set_size(array, 2);
+  int data_mod1[] = {
+      0x000700e2,  // AltLeft
+      0x000700e6,  // AltRight
+  };
+  g_array_append_vals(array, data_mod1, 2);
+
+  array = g_array_new(TRUE, FALSE, sizeof(uint64_t));
+  g_hash_table_insert(table, uint64_to_gpointer(GDK_MOD4_MASK), array);
+  g_array_set_size(array, 2);
+  int data_mod4[] = {
+      0x000700e3,  // MetaLeft
+      0x000700e7,  // MetaRight
+  };
+  g_array_append_vals(array, data_mod4, 2);
+}
