@@ -542,7 +542,7 @@ TEST(FlutterWindowWin32Test, OnCursorRectUpdatedHighDPI) {
 }
 
 TEST(FlutterWindowWin32Test, OnPointerStarSendsDeviceType) {
-  FlutterWindowWin32 win32window;
+  FlutterWindowWin32 win32window(100, 100);
   MockWindowBindingHandlerDelegate delegate;
   win32window.SetView(&delegate);
   EXPECT_CALL(delegate,
@@ -575,7 +575,7 @@ TEST(FlutterWindowWin32Test, OnPointerStarSendsDeviceType) {
       10.0, 10.0, static_cast<UINT>(kFlutterPointerButtonMousePrimary));
   win32window.OnPointerUp(10.0, 10.0,
                           static_cast<UINT>(kFlutterPointerButtonMousePrimary));
-  win32Window.OnPointerLeave();
+  win32window.OnPointerLeave();
 
   LPARAM previous_lparam = SetMessageExtraInfo(0xFF515700);
 
@@ -584,7 +584,7 @@ TEST(FlutterWindowWin32Test, OnPointerStarSendsDeviceType) {
       10.0, 10.0, static_cast<UINT>(kFlutterPointerButtonMousePrimary));
   win32window.OnPointerUp(10.0, 10.0,
                           static_cast<UINT>(kFlutterPointerButtonMousePrimary));
-  win32Window.OnPointerLeave();
+  win32window.OnPointerLeave();
   SetMessageExtraInfo(previous_lparam);
 }
 
