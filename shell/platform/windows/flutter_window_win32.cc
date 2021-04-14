@@ -125,8 +125,8 @@ static uint64_t ConvertWinButtonToFlutterButton(UINT button) {
 // See
 // https://docs.microsoft.com/en-us/windows/win32/tablet/system-events-and-mouse-messages?redirectedfrom=MSDN#distinguishing-pen-input-from-mouse-and-touch.
 static FlutterPointerDeviceKind GetFlutterPointerDeviceKind() {
-  constexpr int kTouchOrPenSignature = 0xFF515700;
-  constexpr int kSignatureMask = 0xFFFFFF00;
+  constexpr LPARAM kTouchOrPenSignature = 0xFF515700;
+  constexpr LPARAM kSignatureMask = 0xFFFFFF00;
   LPARAM info = GetMessageExtraInfo();
   if ((info & kSignatureMask) == kTouchOrPenSignature) {
     return kFlutterPointerDeviceKindTouch;
