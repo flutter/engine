@@ -133,6 +133,7 @@ static void fl_key_embedder_responder_dispose(GObject* object) {
   g_clear_pointer(&self->pressing_records, g_hash_table_unref);
   g_clear_pointer(&self->xkb_to_physical_key, g_hash_table_unref);
   g_clear_pointer(&self->keyval_to_logical_key, g_hash_table_unref);
+  g_clear_pointer(&self->modifier_bit_to_physical_keys, g_hash_table_unref);
 
   G_OBJECT_CLASS(fl_key_embedder_responder_parent_class)->dispose(object);
 }
@@ -146,8 +147,11 @@ static void fl_key_embedder_responder_class_init(
 // Initializes an FlKeyEmbedderResponder instance.
 static void fl_key_embedder_responder_init(FlKeyEmbedderResponder* self) {}
 
-static void garray_free_notify(gpointer array) {
-  g_free(array);
+static void checked_key_free_notify(gpointer pointer) {
+  FlKeyEmbedderCheckedKey* checked_key =
+      reinterpret_cast<FlKeyEmbedderCheckedKey*>(pointer);
+  g_free(checked_key->physical_keys);
+  g_free(checked_key);
 }
 
 // Creates a new FlKeyEmbedderResponder instance, with a messenger used to send
@@ -173,8 +177,8 @@ FlKeyEmbedderResponder* fl_key_embedder_responder_new(FlEngine* engine) {
   self->keyval_to_logical_key = g_hash_table_new(g_direct_hash, g_direct_equal);
   initialize_gtk_keyval_to_logical_key(self->keyval_to_logical_key);
   self->modifier_bit_to_physical_keys = g_hash_table_new_full(
-      g_direct_hash, g_direct_equal, NULL, garray_free_notify);
-  // initialize_modifier_bit_to_physical_keys(self->modifier_bit_to_physical_keys);
+      g_direct_hash, g_direct_equal, NULL, checked_key_free_notify);
+  initialize_modifier_bit_to_checked_keys(self->modifier_bit_to_physical_keys);
 
   return self;
 }
@@ -286,23 +290,25 @@ namespace {
 typedef struct {
   FlKeyEmbedderResponder* self;
   guint state;
+  uint64_t current_physical_key;
   double timestamp;
-} SyncPressedStatesForeachData;
+} SyncPressedStatesLoopContext;
 }  // namespace
 
-static void synchronize_pressed_states_foreach(gpointer key,
-                                               gpointer value,
-                                               gpointer user_data) {
-  SyncPressedStatesForeachData* foreach_data =
-      reinterpret_cast<SyncPressedStatesForeachData*>(user_data);
+static void synchronize_pressed_states_loop_body(gpointer key,
+                                                 gpointer value,
+                                                 gpointer user_data) {
+  SyncPressedStatesLoopContext* context =
+      reinterpret_cast<SyncPressedStatesLoopContext*>(user_data);
   FlKeyEmbedderCheckedKey* checked_key =
       reinterpret_cast<FlKeyEmbedderCheckedKey*>(value);
 
   guint modifier_bit = GPOINTER_TO_INT(key);
-  FlKeyEmbedderResponder* self = foreach_data->self;
+  FlKeyEmbedderResponder* self = context->self;
   uint64_t* physical_keys = checked_key->physical_keys;
+  printf("Syn: 1 state %x bit %x curPhy %lx\n", context->state, modifier_bit, context->current_physical_key);
 
-  bool pressed_by_state = foreach_data->state & modifier_bit;
+  bool pressed_by_state = context->state & modifier_bit;
   bool pressed_by_record = false;
 
   for (guint physical_key_idx = 0; physical_key_idx < checked_key->length;
@@ -310,11 +316,21 @@ static void synchronize_pressed_states_foreach(gpointer key,
     uint64_t physical_key = physical_keys[physical_key_idx];
     uint64_t logical_key =
         lookup_hash_table(self->pressing_records, physical_key);
-    if (logical_key != 0) {
+    // If this event is the down event of the key, then the state will be
+    // flipped but haven't reflected on the state. Flip it manually here.
+    bool adjusted_this_key_pressed =
+        (logical_key != 0) ^
+        (physical_key == context->current_physical_key);
+
+    printf("Syn: 2 phy %lx record %lx adju %d\n", physical_key, logical_key, adjusted_this_key_pressed);
+    if (adjusted_this_key_pressed) {
       pressed_by_record = true;
       if (!pressed_by_state) {
+        printf("Syn: 3 SYN: phy %lx log %lx currPh %lx\n", physical_key,
+               logical_key, context->current_physical_key);
+        g_return_if_fail(physical_key != context->current_physical_key);
         synthesize_simple_event(self, kFlutterKeyEventTypeUp, physical_key,
-                                logical_key, foreach_data->timestamp);
+                                logical_key, context->timestamp);
         g_hash_table_remove(self->pressing_records,
                             uint64_to_gpointer(physical_key));
       }
@@ -322,9 +338,11 @@ static void synchronize_pressed_states_foreach(gpointer key,
   }
   if (pressed_by_state && !pressed_by_record) {
     uint64_t physical_key = physical_keys[0];
+    g_return_if_fail(physical_key != context->current_physical_key);
     uint64_t logical_key = checked_key->first_logical_key;
+    printf("Syn: 4 SYN: phy %lx log %lx\n", physical_key, logical_key);
     synthesize_simple_event(self, kFlutterKeyEventTypeDown, physical_key,
-                            logical_key, foreach_data->timestamp);
+                            logical_key, context->timestamp);
     g_hash_table_insert(self->pressing_records,
                         uint64_to_gpointer(physical_key),
                         uint64_to_gpointer(logical_key));
@@ -357,16 +375,16 @@ static void fl_key_embedder_responder_handle_event(
   uint64_t logical_key =
       event_to_logical_key(event, self->keyval_to_logical_key);
   double timestamp = event_to_timestamp(event);
-  bool is_physical_down = event->type == GDK_KEY_PRESS;
+  bool is_down_event = event->type == GDK_KEY_PRESS;
 
   uint64_t last_logical_record =
       lookup_hash_table(self->pressing_records, physical_key);
 
   // printf("last %lu next %lu down %d type %d\n", last_logical_record,
-  //        next_logical_record, is_physical_down, event->type);
+  //        next_logical_record, is_down_event, event->type);
   // fflush(stdout);
 
-  if (is_physical_down) {
+  if (is_down_event) {
     g_hash_table_insert(self->pressing_records,
                         uint64_to_gpointer(physical_key),
                         uint64_to_gpointer(logical_key));
@@ -375,13 +393,15 @@ static void fl_key_embedder_responder_handle_event(
                         uint64_to_gpointer(physical_key));
   }
 
-  SyncPressedStatesForeachData sync_pressed_state_data;
-  sync_pressed_state_data.self = self;
-  sync_pressed_state_data.state = event->state;
-  sync_pressed_state_data.timestamp = timestamp;
+  // printf("Before foreach\n");
+  SyncPressedStatesLoopContext sync_pressed_state_context;
+  sync_pressed_state_context.self = self;
+  sync_pressed_state_context.state = event->state;
+  sync_pressed_state_context.timestamp = timestamp;
+  sync_pressed_state_context.current_physical_key = physical_key;
   g_hash_table_foreach(self->modifier_bit_to_physical_keys,
-                       synchronize_pressed_states_foreach,
-                       &sync_pressed_state_data);
+                       synchronize_pressed_states_loop_body,
+                       &sync_pressed_state_context);
 
   FlutterKeyEvent out_event;
   out_event.struct_size = sizeof(out_event);
@@ -392,7 +412,7 @@ static void fl_key_embedder_responder_handle_event(
   out_event.synthesized = false;
 
   g_autofree char* character_to_free = nullptr;
-  if (is_physical_down) {
+  if (is_down_event) {
     if (last_logical_record) {
       // A key has been pressed that has the exact physical key as a currently
       // pressed one, usually indicating multiple keyboards are pressing keys
@@ -405,7 +425,7 @@ static void fl_key_embedder_responder_handle_event(
       character_to_free = event_to_character(event);  // Might be null
       out_event.character = character_to_free;
     }
-  } else {  // is_physical_down false
+  } else {  // is_down_event false
     if (!last_logical_record) {
       // The physical key has been released before. It might indicate a missed
       // event due to loss of focus, or multiple keyboards pressed keys with the

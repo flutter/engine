@@ -26,7 +26,7 @@ constexpr guint16 kKeyCodeNumLock = 0x4du;
 
 constexpr uint64_t kPhysicalKeyA = 0x00070004;
 // constexpr uint64_t kPhysicalKeyQ = 0x00070014;
-// constexpr uint64_t kPhysicalControlLeft = 0x000700e0;
+constexpr uint64_t kPhysicalControlLeft = 0x000700e0;
 // constexpr uint64_t kPhysicalControlRight = 0x000700e4;
 // constexpr uint64_t kPhysicalShiftLeft = 0x000700e1;
 constexpr uint64_t kPhysicalShiftRight = 0x000700e5;
@@ -35,7 +35,7 @@ constexpr uint64_t kPhysicalKeyNumLock = 0x00070053;
 
 constexpr uint64_t kLogicalKeyA = 0x00000061;
 constexpr uint64_t kLogicalKeyQ = 0x00000071;
-// constexpr uint64_t kLogicalControlLeft = 0x00300000105;
+constexpr uint64_t kLogicalControlLeft = 0x00300000105;
 // constexpr uint64_t kLogicalControlRight = 0x00400000105;
 // constexpr uint64_t kLogicalShiftLeft = 0x0030000010d;
 constexpr uint64_t kLogicalShiftRight = 0x0040000010d;
@@ -312,7 +312,7 @@ TEST(FlKeyEmbedderResponderTest, PressShiftDuringLetterKeyTap) {
   // Release shift right
   fl_key_responder_handle_event(
       responder,
-      key_event_new(103, kRelease, GDK_KEY_Shift_R, kKeyCodeShiftRight, 0x11,
+      key_event_new(103, kRelease, GDK_KEY_Shift_R, kKeyCodeShiftRight, 0x1,
                     kIsModifier),
       responder_callback, &user_data);
 
@@ -450,8 +450,7 @@ TEST(FlKeyEmbedderResponderTest, IgnoreDuplicateDownEvent) {
   // Press KeyA
   fl_key_responder_handle_event(
       responder,
-      key_event_new(101, kPress, GDK_KEY_a, kKeyCodeKeyA, 0,
-                    kIsNotModifier),
+      key_event_new(101, kPress, GDK_KEY_a, kKeyCodeKeyA, 0, kIsNotModifier),
       responder_callback, &user_data);
 
   EXPECT_EQ(g_call_records->len, 1u);
@@ -464,8 +463,7 @@ TEST(FlKeyEmbedderResponderTest, IgnoreDuplicateDownEvent) {
   // coverage).
   fl_key_responder_handle_event(
       responder,
-      key_event_new(102, kPress, GDK_KEY_q, kKeyCodeKeyA, 0,
-                    kIsNotModifier),
+      key_event_new(102, kPress, GDK_KEY_q, kKeyCodeKeyA, 0, kIsNotModifier),
       responder_callback, &user_data);
 
   EXPECT_EQ(g_call_records->len, 0u);
@@ -473,8 +471,7 @@ TEST(FlKeyEmbedderResponderTest, IgnoreDuplicateDownEvent) {
   // Release KeyA
   fl_key_responder_handle_event(
       responder,
-      key_event_new(103, kRelease, GDK_KEY_q, kKeyCodeKeyA, 0,
-                    kIsNotModifier),
+      key_event_new(103, kRelease, GDK_KEY_q, kKeyCodeKeyA, 0, kIsNotModifier),
       responder_callback, &user_data);
 
   EXPECT_EQ(g_call_records->len, 1u);
@@ -496,9 +493,84 @@ TEST(FlKeyEmbedderResponderTest, IgnoreAbruptUpEvent) {
   // Release KeyA before it was even pressed.
   fl_key_responder_handle_event(
       responder,
-      key_event_new(103, kRelease, GDK_KEY_q, kKeyCodeKeyA, 0,
-                    kIsNotModifier),
+      key_event_new(103, kRelease, GDK_KEY_q, kKeyCodeKeyA, 0, kIsNotModifier),
       responder_callback, &user_data);
 
   EXPECT_EQ(g_call_records->len, 0u);
+
+  g_clear_object(&g_call_records);
+}
+
+// Press Shift, key A, then release Shift, key A.
+TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncPressingState) {
+  EXPECT_EQ(g_call_records, nullptr);
+  g_call_records = g_ptr_array_new_with_free_func(g_object_unref);
+  g_autoptr(FlEngine) engine = make_mock_engine_with_records();
+  g_autoptr(FlKeyResponder) responder =
+      FL_KEY_RESPONDER(fl_key_embedder_responder_new(engine));
+  int user_data = 123;  // Arbitrary user data
+
+  FlKeyEmbedderCallRecord* record;
+
+  // A key down of control left is missed.
+  guint state = GDK_CONTROL_MASK;
+
+  // Send a normal event
+  fl_key_responder_handle_event(
+      responder,
+      key_event_new(101, kPress, GDK_KEY_a, kKeyCodeKeyA, state,
+                    kIsNotModifier),
+      responder_callback, &user_data);
+
+  EXPECT_EQ(g_call_records->len, 2u);
+  record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 0));
+  EXPECT_EQ(record->event->timestamp, 101000);
+  EXPECT_EQ(record->event->type, kFlutterKeyEventTypeDown);
+  EXPECT_EQ(record->event->physical, kPhysicalControlLeft);
+  EXPECT_EQ(record->event->logical, kLogicalControlLeft);
+  EXPECT_STREQ(record->event->character, nullptr);
+  EXPECT_EQ(record->event->synthesized, true);
+
+  record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 1));
+  EXPECT_EQ(record->event->timestamp, 101000);
+  EXPECT_EQ(record->event->type, kFlutterKeyEventTypeDown);
+  EXPECT_EQ(record->event->physical, kPhysicalKeyA);
+  EXPECT_EQ(record->event->logical, kLogicalKeyA);
+  EXPECT_STREQ(record->event->character, "a");
+  EXPECT_EQ(record->event->synthesized, false);
+
+  invoke_record_callback_and_verify(record, TRUE, &user_data);
+  g_ptr_array_clear(g_call_records);
+
+  // A key up of control right is missed.
+  state = 0;
+
+  // Release key A
+  fl_key_responder_handle_event(
+      responder,
+      key_event_new(102, kRelease, GDK_KEY_A, kKeyCodeKeyA, state,
+                    kIsNotModifier),
+      responder_callback, &user_data);
+
+  EXPECT_EQ(g_call_records->len, 2u);
+  record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 0));
+  EXPECT_EQ(record->event->timestamp, 102000);
+  EXPECT_EQ(record->event->type, kFlutterKeyEventTypeUp);
+  EXPECT_EQ(record->event->physical, kPhysicalControlLeft);
+  EXPECT_EQ(record->event->logical, kLogicalControlLeft);
+  EXPECT_STREQ(record->event->character, nullptr);
+  EXPECT_EQ(record->event->synthesized, true);
+
+  record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 1));
+  EXPECT_EQ(record->event->timestamp, 102000);
+  EXPECT_EQ(record->event->type, kFlutterKeyEventTypeUp);
+  EXPECT_EQ(record->event->physical, kPhysicalKeyA);
+  EXPECT_EQ(record->event->logical, kLogicalKeyA);
+  EXPECT_STREQ(record->event->character, nullptr);
+  EXPECT_EQ(record->event->synthesized, false);
+
+  invoke_record_callback_and_verify(record, TRUE, &user_data);
+  g_ptr_array_clear(g_call_records);
+
+  g_clear_object(&g_call_records);
 }
