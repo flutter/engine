@@ -160,7 +160,8 @@ class CanvasParagraph implements EngineParagraph {
     // 2. Append all spans to the paragraph.
 
     ParagraphSpan? span;
-    late html.HtmlElement element;
+
+    html.HtmlElement element = rootElement;
     final List<EngineLineMetrics> lines = computeLineMetrics();
 
     for (int i = 0; i < lines.length; i++) {
