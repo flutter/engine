@@ -12,6 +12,7 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureGL.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterGLCompositor.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalCompositor.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterOpenGLRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderingBackend.h"
@@ -136,9 +137,10 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   // Pointer to the Dart AOT snapshot and instruction data.
   _FlutterEngineAOTData* _aotData;
 
-  // _macOSGLCompositor is created when the engine is created and
-  // it's destruction is handled by ARC when the engine is destroyed.
-  std::unique_ptr<flutter::FlutterGLCompositor> _macOSGLCompositor;
+  // _macOSCompositor is created when the engine is created and
+  // its destruction is handled by ARC when the engine is destroyed.
+  // This is either a FlutterGLCompositor or a FlutterMetalCompositor instance.
+  std::unique_ptr<flutter::FlutterCompositor> _macOSCompositor;
 
   // FlutterCompositor is copied and used in embedder.cc.
   FlutterCompositor _compositor;
@@ -319,7 +321,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     return nil;
   }
 
-  // TODO(richardjcai): Add support for creating a FlutterGLCompositor
+  // TODO(richardjcai): Add support for creating a FlutterCompositor
   // with a nil _viewController for headless engines.
   // https://github.com/flutter/flutter/issues/71606
   if (!_viewController) {
@@ -329,12 +331,12 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   FlutterOpenGLRenderer* openGLRenderer = reinterpret_cast<FlutterOpenGLRenderer*>(_renderer);
   [openGLRenderer.openGLContext makeCurrentContext];
 
-  _macOSGLCompositor =
+  _macOSCompositor =
       std::make_unique<flutter::FlutterGLCompositor>(_viewController, openGLRenderer.openGLContext);
 
   _compositor = {};
   _compositor.struct_size = sizeof(FlutterCompositor);
-  _compositor.user_data = _macOSGLCompositor.get();
+  _compositor.user_data = _macOSCompositor.get();
 
   _compositor.create_backing_store_callback = [](const FlutterBackingStoreConfig* config,  //
                                                  FlutterBackingStore* backing_store_out,   //
@@ -360,7 +362,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   };
 
   __weak FlutterEngine* weakSelf = self;
-  _macOSGLCompositor->SetPresentCallback([weakSelf]() {
+  _macOSCompositor->SetPresentCallback([weakSelf]() {
     FlutterOpenGLRenderer* openGLRenderer =
         reinterpret_cast<FlutterOpenGLRenderer*>(weakSelf.renderer);
     return [openGLRenderer glPresent];

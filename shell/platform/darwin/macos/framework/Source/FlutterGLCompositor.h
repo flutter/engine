@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifndef FLUTTER_GL_COMPOSITOR_H_
+#define FLUTTER_GL_COMPOSITOR_H_
+
 #include <map>
 
 #include "flutter/fml/macros.h"
@@ -75,3 +78,5 @@ class FlutterGLCompositor : public FlutterCompositor {
 };
 
 }  // namespace flutter
+
+#endif  // FLUTTER_GL_COMPOSITOR_H_
