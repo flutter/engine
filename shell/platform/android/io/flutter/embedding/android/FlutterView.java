@@ -101,7 +101,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   @Nullable private MouseCursorPlugin mouseCursorPlugin;
   @Nullable private TextInputPlugin textInputPlugin;
   @Nullable private LocalizationPlugin localizationPlugin;
-  @Nullable private AndroidKeyProcessor androidKeyProcessor;
+  @Nullable private KeyboardManager keyboardManager;
   @Nullable private AndroidTouchProcessor androidTouchProcessor;
   @Nullable private AccessibilityBridge accessibilityBridge;
 
@@ -744,7 +744,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     // superclass. The key processor will typically handle all events except
     // those where it has re-dispatched the event after receiving a reply from
     // the framework that the framework did not handle it.
-    return (isAttachedToFlutterEngine() && androidKeyProcessor.onKeyEvent(event))
+    return (isAttachedToFlutterEngine() && keyboardManager.handleEvent(event))
         || super.dispatchKeyEvent(event);
   }
 
@@ -894,8 +894,9 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
             this.flutterEngine.getTextInputChannel(),
             this.flutterEngine.getPlatformViewsController());
     localizationPlugin = this.flutterEngine.getLocalizationPlugin();
-    androidKeyProcessor =
-        new AndroidKeyProcessor(this, this.flutterEngine.getKeyEventChannel(), textInputPlugin);
+
+    keyboardManager =
+        new KeyboardManager(this, textInputPlugin, flutterEngine.getKeyEventChannel());
     androidTouchProcessor =
         new AndroidTouchProcessor(this.flutterEngine.getRenderer(), /*trackMotionEvents=*/ false);
     accessibilityBridge =
@@ -979,8 +980,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     // TODO(mattcarroll): once this is proven to work, move this line ot TextInputPlugin
     textInputPlugin.getInputMethodManager().restartInput(this);
     textInputPlugin.destroy();
-
-    androidKeyProcessor.destroy();
+    keyboardManager.destroy();
 
     if (mouseCursorPlugin != null) {
       mouseCursorPlugin.destroy();

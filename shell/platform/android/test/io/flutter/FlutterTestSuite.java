@@ -11,6 +11,8 @@ import io.flutter.embedding.android.FlutterAndroidComponentTest;
 import io.flutter.embedding.android.FlutterFragmentActivityTest;
 import io.flutter.embedding.android.FlutterFragmentTest;
 import io.flutter.embedding.android.FlutterViewTest;
+import io.flutter.embedding.android.KeyChannelResponderTest;
+import io.flutter.embedding.android.KeyboardManagerTest;
 import io.flutter.embedding.engine.FlutterEngineCacheTest;
 import io.flutter.embedding.engine.FlutterEngineConnectionRegistryTest;
 import io.flutter.embedding.engine.FlutterEngineGroupComponentTest;
@@ -75,6 +77,8 @@ import test.io.flutter.embedding.engine.PluginComponentTest;
   FlutterViewTest.class,
   InputConnectionAdaptorTest.class,
   DeferredComponentChannelTest.class,
+  KeyboardManagerTest.class,
+  KeyChannelResponderTest.class,
   KeyEventChannelTest.class,
   ListenableEditingStateTest.class,
   LocalizationPluginTest.class,

@@ -42,8 +42,8 @@ import androidx.annotation.RequiresApi;
 import androidx.annotation.UiThread;
 import io.flutter.Log;
 import io.flutter.app.FlutterPluginRegistry;
-import io.flutter.embedding.android.AndroidKeyProcessor;
 import io.flutter.embedding.android.AndroidTouchProcessor;
+import io.flutter.embedding.android.KeyboardManager;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.renderer.SurfaceTextureWrapper;
@@ -127,7 +127,7 @@ public class FlutterView extends SurfaceView
   private final TextInputPlugin mTextInputPlugin;
   private final LocalizationPlugin mLocalizationPlugin;
   private final MouseCursorPlugin mMouseCursorPlugin;
-  private final AndroidKeyProcessor androidKeyProcessor;
+  private final KeyboardManager mKeyboardManager;
   private final AndroidTouchProcessor androidTouchProcessor;
   private AccessibilityBridge mAccessibilityNodeProvider;
   private final SurfaceHolder.Callback mSurfaceCallback;
@@ -228,13 +228,15 @@ public class FlutterView extends SurfaceView
         mNativeView.getPluginRegistry().getPlatformViewsController();
     mTextInputPlugin =
         new TextInputPlugin(this, new TextInputChannel(dartExecutor), platformViewsController);
+    mKeyboardManager = new KeyboardManager(this, mTextInputPlugin, keyEventChannel);
+    mTextInputPlugin.setKeyboardManager(mKeyboardManager);
+
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
       mMouseCursorPlugin = new MouseCursorPlugin(this, new MouseCursorChannel(dartExecutor));
     } else {
       mMouseCursorPlugin = null;
     }
     mLocalizationPlugin = new LocalizationPlugin(context, localizationChannel);
-    androidKeyProcessor = new AndroidKeyProcessor(this, keyEventChannel, mTextInputPlugin);
     androidTouchProcessor =
         new AndroidTouchProcessor(flutterRenderer, /*trackMotionEvents=*/ false);
     platformViewsController.attachToFlutterRenderer(flutterRenderer);
@@ -282,7 +284,7 @@ public class FlutterView extends SurfaceView
     // superclass. The key processor will typically handle all events except
     // those where it has re-dispatched the event after receiving a reply from
     // the framework that the framework did not handle it.
-    return (isAttached() && androidKeyProcessor.onKeyEvent(event)) || super.dispatchKeyEvent(event);
+    return (isAttached() && mKeyboardManager.handleEvent(event)) || super.dispatchKeyEvent(event);
   }
 
   public FlutterNativeView getFlutterNativeView() {
