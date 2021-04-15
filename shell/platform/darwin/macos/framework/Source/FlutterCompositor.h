@@ -6,6 +6,7 @@
 #define FLUTTER_COMPOSITOR_H_
 
 #include <functional>
+#include <list>
 
 #include "flutter/fml/macros.h"
 #include "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
@@ -52,8 +53,24 @@ class FlutterCompositor {
 
  protected:
   __weak const FlutterViewController* view_controller_;
-
   PresentCallback present_callback_;
+
+  // frame_started_ keeps track of if a layer has been
+  // created for the frame.
+  bool frame_started_ = false;
+
+  // Set frame_started_ to true and reset all layer state.
+  void StartFrame();
+
+  // Creates a CALayer object which is backed by the supplied IOSurface, and
+  // adds it to the root CALayer for this FlutterViewController's view.
+  void InsertCALayerForIOSurface(
+      const IOSurfaceRef& io_surface,
+      CATransform3D transform = CATransform3DIdentity);
+
+ private:
+  // A list of the active CALayer objects for the frame that need to be removed.
+  std::list<CALayer*> active_ca_layers_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterCompositor);
 };
