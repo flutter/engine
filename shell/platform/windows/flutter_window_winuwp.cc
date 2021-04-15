@@ -184,11 +184,11 @@ double FlutterWindowWinUWP::GetPosY(
 FlutterPointerDeviceKind FlutterWindowWinUWP::GetPointerDeviceKind(
     winrt::Windows::UI::Core::PointerEventArgs const& args) {
   switch (args.CurrentPoint().PointerDevice().PointerDeviceType()) {
-    case winrt::Windows::Devices::Input::PointerDeviceType.Mouse:
+    case winrt::Windows::Devices::Input::PointerDeviceType::Mouse:
       return kFlutterPointerDeviceKindMouse;
-    case winrt::Windows::Devices::Input::PointerDeviceType.Pen:
+    case winrt::Windows::Devices::Input::PointerDeviceType::Pen:
       return kFlutterPointerDeviceKindStylus;
-    case winrt::Windows::Devices::Input::PointerDeviceType.Touch:
+    case winrt::Windows::Devices::Input::PointerDeviceType::Touch:
       return kFlutterPointerDeviceKindTouch;
   }
   return kFlutterPointerDeviceKindMouse;
