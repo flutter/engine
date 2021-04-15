@@ -19,6 +19,7 @@ class EmbedderTestBackingStoreProducer {
     kSoftwareBuffer,
     kOpenGLFramebuffer,
     kOpenGLTexture,
+    kMetalTexture,
   };
 
   EmbedderTestBackingStoreProducer(sk_sp<GrDirectContext> context,
@@ -37,6 +38,9 @@ class EmbedderTestBackingStoreProducer {
 
   bool CreateSoftware(const FlutterBackingStoreConfig* config,
                       FlutterBackingStore* backing_store_out);
+
+  bool CreateMTLTexture(const FlutterBackingStoreConfig* config,
+                        FlutterBackingStore* renderer_out);
 
   sk_sp<GrDirectContext> context_;
   RenderTargetType type_;

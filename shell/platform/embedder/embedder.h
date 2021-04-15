@@ -495,6 +495,13 @@ typedef struct {
   /// Handle to the MTLTexture that is owned by the embedder. Engine will render
   /// the frame into this texture.
   FlutterMetalTextureHandle texture;
+  /// A baton that is not interpreted by the engine in any way. It will be given
+  /// back to the embedder in the destruction callback below. Embedder resources
+  /// may be associated with this baton.
+  void* user_data;
+  /// The callback invoked by the engine when it no longer needs this backing
+  /// store.
+  VoidCallback destruction_callback;
 } FlutterMetalTexture;
 
 /// Callback for when a metal texture is requested.
@@ -945,8 +952,10 @@ typedef struct {
 } FlutterSoftwareBackingStore;
 
 typedef struct {
-  // A Metal texture for Flutter to render into.
-  FlutterMetalTexture texture;
+  union {
+    // A Metal texture for Flutter to render into.
+    FlutterMetalTexture texture;
+  };
 } FlutterMetalBackingStore;
 
 typedef enum {

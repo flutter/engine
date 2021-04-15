@@ -52,6 +52,7 @@ class EmbedderTestContextMetal : public EmbedderTestContext {
   TestExternalTextureCallback external_texture_frame_callback_ = nullptr;
   SkISize surface_size_ = SkISize::MakeEmpty();
   std::unique_ptr<TestMetalContext> metal_context_;
+  std::unique_ptr<TestMetalSurface> metal_surface_;
   size_t present_count_ = 0;
 
   void SetupSurface(SkISize surface_size) override;
