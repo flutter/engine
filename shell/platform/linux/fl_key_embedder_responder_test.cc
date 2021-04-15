@@ -658,8 +658,8 @@ TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncLockModeOnNonSelfEvents) {
   invoke_record_callback_and_verify(record, TRUE, &user_data);
   g_ptr_array_clear(g_call_records);
 
-  // Release NumLock. Since the previous event should have synthesized NumLock to be
-  // pressed, this should result in a normal event.
+  // Release NumLock. Since the previous event should have synthesized NumLock
+  // to be pressed, this should result in a normal event.
   g_expected_handled = true;
   fl_key_responder_handle_event(
       responder,

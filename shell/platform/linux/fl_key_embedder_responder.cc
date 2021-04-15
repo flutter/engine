@@ -427,15 +427,17 @@ static int find_closest_next_stage(int start, int option1, int option2) {
 }
 
 static void update_pressing_state(FlKeyEmbedderResponder* self,
-                                          uint64_t physical_key,
-                                          uint64_t logical_key) {
+                                  uint64_t physical_key,
+                                  uint64_t logical_key) {
   if (logical_key != 0) {
-    g_return_if_fail(lookup_hash_table(self->pressing_records, physical_key) == 0);
+    g_return_if_fail(lookup_hash_table(self->pressing_records, physical_key) ==
+                     0);
     g_hash_table_insert(self->pressing_records,
                         uint64_to_gpointer(physical_key),
                         uint64_to_gpointer(logical_key));
   } else {
-    g_return_if_fail(lookup_hash_table(self->pressing_records, physical_key) != 0);
+    g_return_if_fail(lookup_hash_table(self->pressing_records, physical_key) !=
+                     0);
     g_hash_table_remove(self->pressing_records,
                         uint64_to_gpointer(physical_key));
   }
@@ -509,7 +511,8 @@ static void synchronize_lock_mode_states_loop_body(gpointer key,
 
   // If the event is for the target key, then the last stage transition should
   // be handled by the main event logic instead of synthesization.
-  const int destination_stage = cycle_stage_to_after(stage_by_event, stage_by_record);
+  const int destination_stage =
+      cycle_stage_to_after(stage_by_event, stage_by_record);
 
   printf("SynLock: stage by recrd %d\n", stage_by_record);
   printf("SynLock: stage by event %d\n", stage_by_event);
@@ -531,10 +534,7 @@ static void synchronize_lock_mode_states_loop_body(gpointer key,
         standard_current_stage == 0 || standard_current_stage == 2;
     FlutterKeyEventType type =
         is_down_event ? kFlutterKeyEventTypeDown : kFlutterKeyEventTypeUp;
-    update_pressing_state(
-      self,
-      physical_key,
-      is_down_event ? logical_key : 0);
+    update_pressing_state(self, physical_key, is_down_event ? logical_key : 0);
     possibly_update_lock_mode_bit(self, physical_key, is_down_event);
     synthesize_simple_event(self, type, physical_key, logical_key,
                             context->timestamp);
@@ -588,10 +588,7 @@ static void fl_key_embedder_responder_handle_event(
                        synchronize_lock_mode_states_loop_body,
                        &sync_pressed_state_context);
 
-  update_pressing_state(
-    self,
-    physical_key,
-    is_down_event ? logical_key : 0);
+  update_pressing_state(self, physical_key, is_down_event ? logical_key : 0);
   possibly_update_lock_mode_bit(self, physical_key, is_down_event);
 
   // printf("Before foreach\n");
