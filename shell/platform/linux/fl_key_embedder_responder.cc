@@ -509,7 +509,7 @@ static void synchronize_lock_mode_states_loop_body(gpointer key,
 
   // If the event is for the target key, then the last stage transition should
   // be handled by the main event logic instead of synthesization.
-  const int destination_stage = stage_by_event;
+  const int destination_stage = cycle_stage_to_after(stage_by_event, stage_by_record);
 
   printf("SynLock: stage by recrd %d\n", stage_by_record);
   printf("SynLock: stage by event %d\n", stage_by_event);

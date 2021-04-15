@@ -579,7 +579,7 @@ TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncPressingState) {
 }
 
 // Test if missed lock keys can be detected and synthesized with state
-// information.
+// information upon events that are not for this modifier key.
 TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncLockModeOnNonSelfEvents) {
   EXPECT_EQ(g_call_records, nullptr);
   g_call_records = g_ptr_array_new_with_free_func(g_object_unref);
@@ -658,16 +658,114 @@ TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncLockModeOnNonSelfEvents) {
   invoke_record_callback_and_verify(record, TRUE, &user_data);
   g_ptr_array_clear(g_call_records);
 
-  // Press NumLock. Since the previous event should have synthesized NumLock to be
-  // pressed, this should result in no events.
+  // Release NumLock. Since the previous event should have synthesized NumLock to be
+  // pressed, this should result in a normal event.
   g_expected_handled = true;
   fl_key_responder_handle_event(
       responder,
-      key_event_new(102, kPress, GDK_KEY_Num_Lock, kKeyCodeNumLock, state,
-                    kIsNotModifier),
+      key_event_new(103, kRelease, GDK_KEY_Num_Lock, kKeyCodeNumLock, state,
+                    kIsModifier),
       verify_response_handled, &user_data);
 
-  EXPECT_EQ(g_call_records->len, 0u);
+  EXPECT_EQ(g_call_records->len, 1u);
+  record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 0));
+  EXPECT_EQ(record->event->timestamp, 103000);
+  EXPECT_EQ(record->event->type, kFlutterKeyEventTypeUp);
+  EXPECT_EQ(record->event->physical, kPhysicalKeyNumLock);
+  EXPECT_EQ(record->event->logical, kLogicalKeyNumLock);
+  EXPECT_STREQ(record->event->character, nullptr);
+  EXPECT_EQ(record->event->synthesized, false);
+
+  g_clear_object(&g_call_records);
+}
+
+// Test if missed lock keys can be detected and synthesized with state
+// information upon events that are for this modifier key.
+TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncLockModeOnSelfEvents) {
+  EXPECT_EQ(g_call_records, nullptr);
+  g_call_records = g_ptr_array_new_with_free_func(g_object_unref);
+  g_autoptr(FlEngine) engine = make_mock_engine_with_records();
+  g_autoptr(FlKeyResponder) responder =
+      FL_KEY_RESPONDER(fl_key_embedder_responder_new(engine));
+  int user_data = 123;  // Arbitrary user data
+
+  FlKeyEmbedderCallRecord* record;
+
+  // The NumLock is desynchronized by being enabled.
+  guint state = GDK_MOD2_MASK;
+
+  // NumLock down
+  fl_key_responder_handle_event(
+      responder,
+      key_event_new(101, kPress, GDK_KEY_Num_Lock, kKeyCodeNumLock, state,
+                    kIsModifier),
+      verify_response_handled, &user_data);
+
+  EXPECT_EQ(g_call_records->len, 3u);
+  record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 0));
+  EXPECT_EQ(record->event->timestamp, 101000);
+  EXPECT_EQ(record->event->type, kFlutterKeyEventTypeDown);
+  EXPECT_EQ(record->event->physical, kPhysicalKeyNumLock);
+  EXPECT_EQ(record->event->logical, kLogicalKeyNumLock);
+  EXPECT_STREQ(record->event->character, nullptr);
+  EXPECT_EQ(record->event->synthesized, true);
+
+  record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 1));
+  EXPECT_EQ(record->event->timestamp, 101000);
+  EXPECT_EQ(record->event->type, kFlutterKeyEventTypeUp);
+  EXPECT_EQ(record->event->physical, kPhysicalKeyNumLock);
+  EXPECT_EQ(record->event->logical, kLogicalKeyNumLock);
+  EXPECT_STREQ(record->event->character, nullptr);
+  EXPECT_EQ(record->event->synthesized, true);
+
+  record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 2));
+  EXPECT_EQ(record->event->timestamp, 101000);
+  EXPECT_EQ(record->event->type, kFlutterKeyEventTypeDown);
+  EXPECT_EQ(record->event->physical, kPhysicalKeyNumLock);
+  EXPECT_EQ(record->event->logical, kLogicalKeyNumLock);
+  EXPECT_STREQ(record->event->character, nullptr);
+  EXPECT_EQ(record->event->synthesized, false);
+
+  invoke_record_callback_and_verify(record, TRUE, &user_data);
+  g_ptr_array_clear(g_call_records);
+
+  // The NumLock is desynchronized by staying enabled.
+  state = GDK_MOD2_MASK;
+
+  // NumLock up
+  fl_key_responder_handle_event(
+      responder,
+      key_event_new(102, kRelease, GDK_KEY_Num_Lock, kKeyCodeNumLock, state,
+                    kIsModifier),
+      verify_response_handled, &user_data);
+
+  EXPECT_EQ(g_call_records->len, 3u);
+  record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 0));
+  EXPECT_EQ(record->event->timestamp, 102000);
+  EXPECT_EQ(record->event->type, kFlutterKeyEventTypeUp);
+  EXPECT_EQ(record->event->physical, kPhysicalKeyNumLock);
+  EXPECT_EQ(record->event->logical, kLogicalKeyNumLock);
+  EXPECT_STREQ(record->event->character, nullptr);
+  EXPECT_EQ(record->event->synthesized, true);
+
+  record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 1));
+  EXPECT_EQ(record->event->timestamp, 102000);
+  EXPECT_EQ(record->event->type, kFlutterKeyEventTypeDown);
+  EXPECT_EQ(record->event->physical, kPhysicalKeyNumLock);
+  EXPECT_EQ(record->event->logical, kLogicalKeyNumLock);
+  EXPECT_STREQ(record->event->character, nullptr);
+  EXPECT_EQ(record->event->synthesized, true);
+
+  record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 2));
+  EXPECT_EQ(record->event->timestamp, 102000);
+  EXPECT_EQ(record->event->type, kFlutterKeyEventTypeUp);
+  EXPECT_EQ(record->event->physical, kPhysicalKeyNumLock);
+  EXPECT_EQ(record->event->logical, kLogicalKeyNumLock);
+  EXPECT_STREQ(record->event->character, nullptr);
+  EXPECT_EQ(record->event->synthesized, false);
+
+  invoke_record_callback_and_verify(record, TRUE, &user_data);
+  g_ptr_array_clear(g_call_records);
 
   g_clear_object(&g_call_records);
 }
