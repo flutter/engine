@@ -96,13 +96,19 @@ struct _FlKeyEmbedderResponder {
   // Both keys and values are directly stored uint64s.
   GHashTable* pressing_records;
 
+  guint lock_mode_records;
+
   // A static map from XKB to Flutter's physical key code
   GHashTable* xkb_to_physical_key;
 
   // A static map from GTK keyval to Flutter's logical key code
   GHashTable* keyval_to_logical_key;
 
-  GHashTable* modifier_bit_to_physical_keys;
+  GHashTable* modifier_bit_to_checked_keys;
+
+  GHashTable* lock_mode_bit_to_checked_keys;
+
+  GHashTable* physical_key_to_lock_mode_bit;
 };
 
 static void fl_key_embedder_responder_iface_init(
@@ -133,7 +139,8 @@ static void fl_key_embedder_responder_dispose(GObject* object) {
   g_clear_pointer(&self->pressing_records, g_hash_table_unref);
   g_clear_pointer(&self->xkb_to_physical_key, g_hash_table_unref);
   g_clear_pointer(&self->keyval_to_logical_key, g_hash_table_unref);
-  g_clear_pointer(&self->modifier_bit_to_physical_keys, g_hash_table_unref);
+  g_clear_pointer(&self->modifier_bit_to_checked_keys, g_hash_table_unref);
+  g_clear_pointer(&self->lock_mode_bit_to_checked_keys, g_hash_table_unref);
 
   G_OBJECT_CLASS(fl_key_embedder_responder_parent_class)->dispose(object);
 }
@@ -154,6 +161,16 @@ static void checked_key_free_notify(gpointer pointer) {
   g_free(checked_key);
 }
 
+static void initialize_physical_key_to_lock_mode_bit_loop_body(gpointer lock_mode_bit,
+                                              gpointer value,
+                                              gpointer user_data) {
+  FlKeyEmbedderCheckedKey* checked_key =
+      reinterpret_cast<FlKeyEmbedderCheckedKey*>(value);
+  GHashTable* table = reinterpret_cast<GHashTable*>(user_data);
+  g_hash_table_insert(table, uint64_to_gpointer(checked_key->physical_keys[0]),
+      GUINT_TO_POINTER(lock_mode_bit));
+}
+
 // Creates a new FlKeyEmbedderResponder instance, with a messenger used to send
 // messages to the framework, an FlTextInputPlugin used to handle key events
 // that the framework doesn't handle. Mainly for testing purposes, it also takes
@@ -172,13 +189,26 @@ FlKeyEmbedderResponder* fl_key_embedder_responder_new(FlEngine* engine) {
                             reinterpret_cast<gpointer*>(&(self->engine)));
 
   self->pressing_records = g_hash_table_new(g_direct_hash, g_direct_equal);
+  self->lock_mode_records = 0;
+
   self->xkb_to_physical_key = g_hash_table_new(g_direct_hash, g_direct_equal);
   initialize_xkb_to_physical_key(self->xkb_to_physical_key);
+
   self->keyval_to_logical_key = g_hash_table_new(g_direct_hash, g_direct_equal);
   initialize_gtk_keyval_to_logical_key(self->keyval_to_logical_key);
-  self->modifier_bit_to_physical_keys = g_hash_table_new_full(
+
+  self->modifier_bit_to_checked_keys = g_hash_table_new_full(
       g_direct_hash, g_direct_equal, NULL, checked_key_free_notify);
-  initialize_modifier_bit_to_checked_keys(self->modifier_bit_to_physical_keys);
+  initialize_modifier_bit_to_checked_keys(self->modifier_bit_to_checked_keys);
+
+  self->lock_mode_bit_to_checked_keys = g_hash_table_new_full(
+      g_direct_hash, g_direct_equal, NULL, checked_key_free_notify);
+  initialize_lock_mode_bit_to_checked_keys(self->lock_mode_bit_to_checked_keys);
+
+  self->physical_key_to_lock_mode_bit = g_hash_table_new(g_direct_hash, g_direct_equal);
+  g_hash_table_foreach(self->lock_mode_bit_to_checked_keys,
+    initialize_physical_key_to_lock_mode_bit_loop_body,
+    self->physical_key_to_lock_mode_bit);
 
   return self;
 }
@@ -290,7 +320,8 @@ namespace {
 typedef struct {
   FlKeyEmbedderResponder* self;
   guint state;
-  uint64_t current_physical_key;
+  uint64_t event_physical_key;
+  bool is_down;
   double timestamp;
 } SyncPressedStatesLoopContext;
 }  // namespace
@@ -303,34 +334,34 @@ static void synchronize_pressed_states_loop_body(gpointer key,
   FlKeyEmbedderCheckedKey* checked_key =
       reinterpret_cast<FlKeyEmbedderCheckedKey*>(value);
 
-  guint modifier_bit = GPOINTER_TO_INT(key);
+  const guint modifier_bit = GPOINTER_TO_INT(key);
   FlKeyEmbedderResponder* self = context->self;
-  uint64_t* physical_keys = checked_key->physical_keys;
-  printf("Syn: 1 state %x bit %x curPhy %lx\n", context->state, modifier_bit, context->current_physical_key);
+  const uint64_t* physical_keys = checked_key->physical_keys;
+  // printf("Syn: 1 state %x bit %x curPhy %lx\n", context->state, modifier_bit, context->event_physical_key);
 
-  bool pressed_by_state = context->state & modifier_bit;
+  const bool pressed_by_state = (context->state & modifier_bit) != 0;
   bool pressed_by_record = false;
 
   for (guint physical_key_idx = 0; physical_key_idx < checked_key->length;
        physical_key_idx++) {
-    uint64_t physical_key = physical_keys[physical_key_idx];
-    uint64_t logical_key =
+    const uint64_t physical_key = physical_keys[physical_key_idx];
+    const uint64_t pressed_logical_key =
         lookup_hash_table(self->pressing_records, physical_key);
-    // If this event is the down event of the key, then the state will be
-    // flipped but haven't reflected on the state. Flip it manually here.
-    bool adjusted_this_key_pressed =
-        (logical_key != 0) ^
-        (physical_key == context->current_physical_key);
+    // If this event is an event of the key, then the state will be flipped but
+    // haven't reflected on the state. Flip it manually here.
+    const bool adjusted_this_key_pressed =
+        (pressed_logical_key != 0) ^
+        (physical_key == context->event_physical_key);
 
-    printf("Syn: 2 phy %lx record %lx adju %d\n", physical_key, logical_key, adjusted_this_key_pressed);
+    // printf("Syn: 2 phy %lx record %lx adju %d\n", physical_key, pressed_logical_key, adjusted_this_key_pressed);
     if (adjusted_this_key_pressed) {
       pressed_by_record = true;
       if (!pressed_by_state) {
-        printf("Syn: 3 SYN: phy %lx log %lx currPh %lx\n", physical_key,
-               logical_key, context->current_physical_key);
-        g_return_if_fail(physical_key != context->current_physical_key);
+        // printf("Syn: 3 SYN: phy %lx log %lx currPh %lx\n", physical_key,
+        //        pressed_logical_key, context->event_physical_key);
+        g_return_if_fail(physical_key != context->event_physical_key);
         synthesize_simple_event(self, kFlutterKeyEventTypeUp, physical_key,
-                                logical_key, context->timestamp);
+                                pressed_logical_key, context->timestamp);
         g_hash_table_remove(self->pressing_records,
                             uint64_to_gpointer(physical_key));
       }
@@ -338,14 +369,147 @@ static void synchronize_pressed_states_loop_body(gpointer key,
   }
   if (pressed_by_state && !pressed_by_record) {
     uint64_t physical_key = physical_keys[0];
-    g_return_if_fail(physical_key != context->current_physical_key);
+    g_return_if_fail(physical_key != context->event_physical_key);
     uint64_t logical_key = checked_key->first_logical_key;
-    printf("Syn: 4 SYN: phy %lx log %lx\n", physical_key, logical_key);
+    // printf("Syn: 4 SYN: phy %lx log %lx\n", physical_key, logical_key);
     synthesize_simple_event(self, kFlutterKeyEventTypeDown, physical_key,
                             logical_key, context->timestamp);
     g_hash_table_insert(self->pressing_records,
                         uint64_to_gpointer(physical_key),
                         uint64_to_gpointer(logical_key));
+  }
+}
+
+// Find the stage # before the event (of the 4 stages as documented in
+// `synchronize_lock_mode_states_loop_body`) by the current record.
+static int find_stage_by_record(bool is_down, bool is_enabled) {
+  constexpr int stage_by_record_index[] = {
+    0, // isDown: 0,  isEnabled: 0
+    2, //         0              1
+    3, //         1              0
+    1  //         1              1
+  };
+  return stage_by_record_index[(is_down << 1) + is_enabled];
+}
+
+// Find the stage # before the event (of the 4 stages as documented in
+// `synchronize_lock_mode_states_loop_body`) by the event.
+static int find_stage_by_event(bool is_down, bool is_enabled) {
+  constexpr int stage_by_record_index[] = {
+    3, // isDown: 0,  isEnabled: 0
+    1, //         0              1
+    0, //         1              0
+    2  //         1              1
+  };
+  return stage_by_record_index[(is_down << 1) + is_enabled];
+}
+
+// Find the first stage # greater than `start` that is equivalent to `target` in
+// a cycle of 4.
+//
+// That is, if `target` is less than `start`, return target + 4.
+static int cycle_stage_to_after(int target, int start) {
+  g_return_val_if_fail(target >= -4 && target < 4, target);
+  g_return_val_if_fail(start >= 0 && start < 4, target);
+  constexpr int kNumStages = 4;
+  return target >= start ? target : target + kNumStages;
+}
+
+static int find_closest_next_stage(int start, int option1, int option2) {
+  const int adjusted_option1 = cycle_stage_to_after(option1, start);
+  const int adjusted_option2 = cycle_stage_to_after(option2, start);
+  return adjusted_option1 < adjusted_option2 ? adjusted_option1 : adjusted_option2;
+}
+
+static void possibly_update_lock_mode_bit(FlKeyEmbedderResponder* self,
+    uint64_t physical_key, bool is_down) {
+  if (!is_down) {
+    return;
+  }
+  guint mode_bit = GPOINTER_TO_UINT(g_hash_table_lookup(self->physical_key_to_lock_mode_bit, uint64_to_gpointer(physical_key)));
+  if (mode_bit != 0) {
+    self->lock_mode_records ^= mode_bit;
+  }
+}
+
+static void synchronize_lock_mode_states_loop_body(gpointer key,
+                                              gpointer value,
+                                              gpointer user_data) {
+  SyncPressedStatesLoopContext* context =
+      reinterpret_cast<SyncPressedStatesLoopContext*>(user_data);
+  FlKeyEmbedderCheckedKey* checked_key =
+      reinterpret_cast<FlKeyEmbedderCheckedKey*>(value);
+
+  guint modifier_bit = GPOINTER_TO_INT(key);
+  FlKeyEmbedderResponder* self = context->self;
+
+  const bool is_down_event = context->is_down;
+
+  const uint64_t logical_key = checked_key->first_logical_key;
+  const uint64_t physical_key = checked_key->physical_keys[0];
+  // printf("Syn: 1 state %x bit %x curPhy %lx\n", context->state, modifier_bit, context->event_physical_key);
+
+  // A lock mode key can be at any of a 4-stage cycle:
+  //
+  //      Up,Disabled  ->  Down,Enabled  ->  Up,Enabled  ->  Down,Disabled  ->
+  //           [0]             [1]               [2]             [3]
+  // EventType:       Down               Up             Down                Up
+  //     State:        0                  1              1                  0
+  //
+  // If the incoming event is the target key, then we know exactly which stage
+  // the true state is at.
+  //
+  // Otherwise, since we only know "state", we can tell if the true stage is
+  // either 0/3 or 1/2. Choose the shorter one.
+
+  const uint64_t pressed_logical_key =
+        lookup_hash_table(self->pressing_records, physical_key);
+  // For simplicity, we're not considering remapped lock keys until we meet such cases.
+  g_return_if_fail(pressed_logical_key == 0 || pressed_logical_key == logical_key);
+  const bool pressed_by_record = pressed_logical_key != 0;
+  const bool enabled_by_record = (self->lock_mode_records & modifier_bit) != 0;
+  const int stage_by_record = find_stage_by_record(pressed_by_record, enabled_by_record);
+
+  const bool event_is_target_key = physical_key == context->event_physical_key;
+  printf("SynLock: evtIsTarget %d ph %lx evPh %lx\n", event_is_target_key, physical_key, context->event_physical_key);
+  const bool enabled_by_state = (context->state & modifier_bit) != 0;
+  const int stage_by_event = event_is_target_key ?
+      find_stage_by_event(is_down_event, enabled_by_state) :
+      find_closest_next_stage(
+        stage_by_record,
+        find_stage_by_record(true, enabled_by_state),
+        find_stage_by_record(false, enabled_by_state));
+
+  // If the event is for the target key, then the last stage transition should be
+  // handled by the main event logic instead of synthesization.
+  const int destination_stage = stage_by_event;
+
+  printf("SynLock: stage by recrd %d\n", stage_by_record);
+  printf("SynLock: stage by event %d\n", stage_by_event);
+  printf("SynLock: stage by dest  %d\n", destination_stage);
+  g_return_if_fail(stage_by_record <= destination_stage);
+  if (stage_by_record == destination_stage) {
+    return;
+  }
+  for (int current_stage = stage_by_record; current_stage < destination_stage; current_stage += 1) {
+    if (current_stage == 9) {
+      return;
+    }
+    printf("SynLock: syn for stage %d\n", current_stage);
+
+    const int standard_current_stage = current_stage >= 4 ? current_stage - 4 : current_stage;
+    const bool is_down_event = standard_current_stage == 0 || standard_current_stage == 2;
+    FlutterKeyEventType type = is_down_event ? kFlutterKeyEventTypeDown : kFlutterKeyEventTypeUp;
+    if (is_down_event) {
+      g_hash_table_insert(self->pressing_records,
+                          uint64_to_gpointer(physical_key),
+                          uint64_to_gpointer(logical_key));
+    } else {
+      g_hash_table_remove(self->pressing_records,
+                          uint64_to_gpointer(physical_key));
+    }
+    possibly_update_lock_mode_bit(self, physical_key, is_down_event);
+    synthesize_simple_event(self, type, physical_key, logical_key, context->timestamp);
   }
 }
 
@@ -357,18 +521,18 @@ static void fl_key_embedder_responder_handle_event(
     GdkEventKey* event,
     FlKeyResponderAsyncCallback callback,
     gpointer user_data) {
+  FlKeyEmbedderResponder* self = FL_KEY_EMBEDDER_RESPONDER(responder);
   _text_idx += 1;
   printf(
       "#%7s keyval 0x%x keycode 0x%x state 0x%x ismod %d snd %d grp %d "
-      "time %d [%d]\n",
+      "time %d [%d] curLock %x\n",
       event->type == GDK_KEY_PRESS ? "PRESS" : "RELEASE", event->keyval,
       event->hardware_keycode, event->state, event->is_modifier,
-      event->send_event, event->group, event->time, _text_idx);
+      event->send_event, event->group, event->time, _text_idx, self->lock_mode_records);
   fflush(stdout);
 
   g_return_if_fail(event != nullptr);
   g_return_if_fail(callback != nullptr);
-  FlKeyEmbedderResponder* self = FL_KEY_EMBEDDER_RESPONDER(responder);
 
   uint64_t physical_key =
       event_to_physical_key(event, self->xkb_to_physical_key);
@@ -384,6 +548,17 @@ static void fl_key_embedder_responder_handle_event(
   //        next_logical_record, is_down_event, event->type);
   // fflush(stdout);
 
+  SyncPressedStatesLoopContext sync_pressed_state_context;
+  sync_pressed_state_context.self = self;
+  sync_pressed_state_context.state = event->state;
+  sync_pressed_state_context.timestamp = timestamp;
+  sync_pressed_state_context.is_down = is_down_event;
+  sync_pressed_state_context.event_physical_key = physical_key;
+
+  g_hash_table_foreach(self->lock_mode_bit_to_checked_keys,
+      synchronize_lock_mode_states_loop_body,
+      &sync_pressed_state_context);
+
   if (is_down_event) {
     g_hash_table_insert(self->pressing_records,
                         uint64_to_gpointer(physical_key),
@@ -392,14 +567,10 @@ static void fl_key_embedder_responder_handle_event(
     g_hash_table_remove(self->pressing_records,
                         uint64_to_gpointer(physical_key));
   }
+  possibly_update_lock_mode_bit(self, physical_key, is_down_event);
 
   // printf("Before foreach\n");
-  SyncPressedStatesLoopContext sync_pressed_state_context;
-  sync_pressed_state_context.self = self;
-  sync_pressed_state_context.state = event->state;
-  sync_pressed_state_context.timestamp = timestamp;
-  sync_pressed_state_context.current_physical_key = physical_key;
-  g_hash_table_foreach(self->modifier_bit_to_physical_keys,
+  g_hash_table_foreach(self->modifier_bit_to_checked_keys,
                        synchronize_pressed_states_loop_body,
                        &sync_pressed_state_context);
 

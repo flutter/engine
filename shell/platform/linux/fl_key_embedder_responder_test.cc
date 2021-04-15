@@ -365,7 +365,7 @@ TEST(FlKeyEmbedderResponderTest, TapNumLockDuringNumpadKeyTap) {
   // Press Numpad 1
   fl_key_responder_handle_event(
       responder,
-      key_event_new(101, kPress, GDK_KEY_KP_1, kKeyCodeNumpad1, 0x10,
+      key_event_new(101, kPress, GDK_KEY_KP_End, kKeyCodeNumpad1, 0,
                     kIsNotModifier),
       responder_callback, &user_data);
 
@@ -374,7 +374,7 @@ TEST(FlKeyEmbedderResponderTest, TapNumLockDuringNumpadKeyTap) {
   EXPECT_EQ(record->event->type, kFlutterKeyEventTypeDown);
   EXPECT_EQ(record->event->physical, kPhysicalKeyNumpad1);
   EXPECT_EQ(record->event->logical, kLogicalKeyNumpad1);
-  EXPECT_STREQ(record->event->character, "1");
+  EXPECT_STREQ(record->event->character, nullptr); // TODO
   EXPECT_EQ(record->event->synthesized, false);
 
   invoke_record_callback_and_verify(record, TRUE, &user_data);
@@ -383,7 +383,7 @@ TEST(FlKeyEmbedderResponderTest, TapNumLockDuringNumpadKeyTap) {
   // Press NumLock
   fl_key_responder_handle_event(
       responder,
-      key_event_new(102, kPress, GDK_KEY_Num_Lock, kKeyCodeNumLock, 0x10,
+      key_event_new(102, kPress, GDK_KEY_Num_Lock, kKeyCodeNumLock, 0,
                     kIsNotModifier),
       responder_callback, &user_data);
 
@@ -419,7 +419,7 @@ TEST(FlKeyEmbedderResponderTest, TapNumLockDuringNumpadKeyTap) {
   // Release numpad 1
   fl_key_responder_handle_event(
       responder,
-      key_event_new(104, kRelease, GDK_KEY_KP_End, kKeyCodeNumpad1, 0,
+      key_event_new(104, kRelease, GDK_KEY_KP_1, kKeyCodeNumpad1, 0x10,
                     kIsNotModifier),
       responder_callback, &user_data);
 
