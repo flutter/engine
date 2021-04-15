@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of engine;
 
 abstract class EngineGradient implements ui.Gradient {
@@ -178,8 +177,11 @@ class GradientLinear extends EngineGradient {
     final double offsetX = shaderBounds!.left;
     final double offsetY = shaderBounds.top;
     if (matrix4 != null) {
-      final centerX = (from.dx + to.dx) / 2.0;
-      final centerY = (from.dy + to.dy) / 2.0;
+      // The matrix is relative to shaderBounds so we shift center by
+      // shaderBounds top-left origin.
+      final centerX = (from.dx + to.dx) / 2.0 - shaderBounds.left;
+      final centerY = (from.dy + to.dy) / 2.0 - shaderBounds.top;
+
       matrix4.transform(from.dx - centerX, from.dy - centerY);
       final double fromX = matrix4.transformedX + centerX;
       final double fromY = matrix4.transformedY + centerY;
@@ -188,8 +190,9 @@ class GradientLinear extends EngineGradient {
           fromX - offsetX,
           fromY - offsetY,
           matrix4.transformedX + centerX - offsetX,
-          matrix4.transformedY - offsetY + centerY);
+          matrix4.transformedY + centerY - offsetY);
     } else {
+      print('matrix is null');
       gradient = ctx!.createLinearGradient(from.dx - offsetX, from.dy - offsetY,
           to.dx - offsetX, to.dy - offsetY);
     }
