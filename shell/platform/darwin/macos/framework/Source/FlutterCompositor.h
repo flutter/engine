@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifndef FLUTTER_COMPOSITOR_H_
+#define FLUTTER_COMPOSITOR_H_
+
 #include <functional>
 
 #include "flutter/fml/macros.h"
@@ -16,6 +19,8 @@ namespace flutter {
 class FlutterCompositor {
  public:
   FlutterCompositor(FlutterViewController* view_controller);
+
+  virtual ~FlutterCompositor() = default;
 
   // Creates a BackingStore and saves updates the backing_store_out
   // data with the new BackingStore data.
@@ -54,3 +59,5 @@ class FlutterCompositor {
 };
 
 }  // namespace flutter
+
+#endif  // FLUTTER_COMPOSITOR_H_
