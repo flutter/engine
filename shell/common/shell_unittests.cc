@@ -345,26 +345,6 @@ TEST_F(ShellTest, InitializeWithDisabledGpu) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
-TEST_F(ShellTest, InitializeWithGPUAndPlatformThreadsTheSame) {
-  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
-  Settings settings = CreateSettingsForFixture();
-  ThreadHost thread_host(
-      "io.flutter.test." + GetCurrentTestName() + ".",
-      ThreadHost::Type::Platform | ThreadHost::Type::IO | ThreadHost::Type::UI);
-  TaskRunners task_runners(
-      "test",
-      thread_host.platform_thread->GetTaskRunner(),  // platform
-      thread_host.platform_thread->GetTaskRunner(),  // raster
-      thread_host.ui_thread->GetTaskRunner(),        // ui
-      thread_host.io_thread->GetTaskRunner()         // io
-  );
-  auto shell = CreateShell(std::move(settings), std::move(task_runners));
-  ASSERT_TRUE(DartVMRef::IsInstanceRunning());
-  ASSERT_TRUE(ValidateShell(shell.get()));
-  DestroyShell(std::move(shell), std::move(task_runners));
-  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
-}
-
 TEST_F(ShellTest, FixturesAreFunctional) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
   auto settings = CreateSettingsForFixture();
