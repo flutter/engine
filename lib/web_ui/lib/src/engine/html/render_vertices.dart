@@ -183,6 +183,9 @@ class _WebGlRenderer implements _GlRenderer {
     if (indices == null) {
       gl.drawTriangles(vertexCount, vertices._mode);
     } else {
+      /// If indices are specified to use shared vertices to reduce vertex
+      /// data transfer, use drawElements to map from vertex indices to
+      /// triangles.
       Object? indexBuffer = gl.createBuffer();
       gl.bindElementArrayBuffer(indexBuffer);
       gl.bufferElementData(indices, gl.kStaticDraw);
