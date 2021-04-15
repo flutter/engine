@@ -1077,7 +1077,7 @@ TEST_F(ShellTest,
   TaskRunners task_runners(
       "test",
       thread_host.platform_thread->GetTaskRunner(),  // platform
-      thread_host.platform_thread->GetTaskRunner(),  // raster
+      thread_host.raster_thread->GetTaskRunner(),    // raster
       thread_host.ui_thread->GetTaskRunner(),        // ui
       thread_host.io_thread->GetTaskRunner()         // io
   );
