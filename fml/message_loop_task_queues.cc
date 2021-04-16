@@ -12,6 +12,7 @@
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/message_loop_impl.h"
 #include "flutter/fml/task_source.h"
+#include "flutter/fml/thread_local.h"
 
 namespace fml {
 
@@ -22,9 +23,22 @@ const size_t TaskQueueId::kUnmerged = ULONG_MAX;
 // Guarded by creation_mutex_.
 fml::RefPtr<MessageLoopTaskQueues> MessageLoopTaskQueues::instance_;
 
+namespace {
+
+// iOS prior to version 9 prevents c++11 thread_local and __thread specefier,
+// having us resort to boxed enum containers.
+class TaskSourceGradeHolder {
+ public:
+  TaskSourceGrade task_source_grade;
+
+  explicit TaskSourceGradeHolder(TaskSourceGrade task_source_grade_arg)
+      : task_source_grade(task_source_grade_arg) {}
+};
+}  // namespace
+
 // Guarded by creation_mutex_.
-static thread_local TaskSourceGrade tls_task_source_grade =
-    TaskSourceGrade::kUnspecified;
+FML_THREAD_LOCAL ThreadLocalUniquePtr<TaskSourceGradeHolder>
+    tls_task_source_grade;
 
 TaskQueueEntry::TaskQueueEntry(TaskQueueId created_for_arg)
     : owner_of(_kUnmerged),
@@ -39,6 +53,8 @@ fml::RefPtr<MessageLoopTaskQueues> MessageLoopTaskQueues::GetInstance() {
   std::scoped_lock creation(creation_mutex_);
   if (!instance_) {
     instance_ = fml::MakeRefCounted<MessageLoopTaskQueues>();
+    tls_task_source_grade.reset(
+        new TaskSourceGradeHolder{TaskSourceGrade::kUnspecified});
   }
   return instance_;
 }
@@ -80,7 +96,7 @@ void MessageLoopTaskQueues::DisposeTasks(TaskQueueId queue_id) {
 
 TaskSourceGrade MessageLoopTaskQueues::GetCurrentTaskSourceGrade() {
   std::scoped_lock creation(creation_mutex_);
-  return tls_task_source_grade;
+  return tls_task_source_grade.get()->task_source_grade;
 }
 
 void MessageLoopTaskQueues::RegisterTask(
@@ -131,7 +147,8 @@ fml::closure MessageLoopTaskQueues::GetNextTaskToRun(TaskQueueId queue_id,
       ->task_source->PopTask(top.task.GetTaskSourceGrade());
   {
     std::scoped_lock creation(creation_mutex_);
-    tls_task_source_grade = top.task.GetTaskSourceGrade();
+    const auto task_source_grade = top.task.GetTaskSourceGrade();
+    tls_task_source_grade.reset(new TaskSourceGradeHolder{task_source_grade});
   }
   return invocation;
 }
