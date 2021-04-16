@@ -17,8 +17,8 @@ import java.util.HashSet;
  * A class to process {@link KeyEvent}s dispatched to a {@link FlutterView}, either from a hardware
  * keyboard or an IME event.
  *
- * <p>A class that sends Android {@link KeyEvent} to the currently registered {@link
- * PrimaryResponder}s, and re-dispatches those not handled by the primary responders.
+ * <p>A class that sends Android {@link KeyEvent} to the a list of {@link PrimaryResponder}s, and
+ * re-dispatches those not handled by the primary responders.
  *
  * <p>Flutter uses asynchronous event handling to avoid blocking the UI thread, but Android requires
  * that events are handled synchronously. So, when a key event is received by Flutter, it tells
@@ -28,12 +28,12 @@ import java.util.HashSet;
  * synthesizes a new event to send to Android, without handling it this time.
  *
  * <p>A new {@link KeyEvent} sent to a {@link KeyboardManager} can be propagated to 3 different
- * types of "responder"s:
+ * types of "responder"s (in the listed order):
  *
  * <ul>
  *   <li>{@link PrimaryResponder}s: An immutable list of key responders in a {@link KeyboardManager}
- *       that each implements the {@link PrimaryResponder} interface. a {@link PrimaryResponder} is
- *       capable of handling {@link KeyEvent}s asynchronously.
+ *       that each implements the {@link PrimaryResponder} interface. A {@link PrimaryResponder} is
+ *       a key responder that's capable of handling {@link KeyEvent}s asynchronously.
  *       <p>When a new {@link KeyEvent} is received, {@link KeyboardManager} calls the {@link
  *       PrimaryResponder#handleEvent(KeyEvent, OnKeyEventHandledCallback)} method on its {@link
  *       PrimaryResponder}s. Each {@link PrimaryResponder} must call the supplied {@link
@@ -48,9 +48,9 @@ import java.util.HashSet;
  *       TextInputPlugin}, if any.
  *   <li><b>"Redispatch"</b>: if there's no currently focused text field in {@link TextInputPlugin},
  *       or the text field does not handle the {@link KeyEvent} either, the {@link KeyEvent} will be
- *       sent back to the top of the activity's view hierachy, allowing the {@link KeyEvent} to be
- *       "redispatched", only this time the {@link KeyboardManager} will not try to handle the
- *       redispatched {@link KeyEvent}.
+ *       sent back to the top of the activity's view hierachy, allowing it to be "redispatched",
+ *       only this time the {@link KeyboardManager} will not try to handle the redispatched {@link
+ *       KeyEvent}.
  * </ul>
  */
 public class KeyboardManager {
