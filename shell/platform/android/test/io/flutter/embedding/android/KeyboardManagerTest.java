@@ -73,8 +73,6 @@ public class KeyboardManagerTest {
     when(mockFlutterJni.isAttached()).thenReturn(true);
     mockEngine = mockFlutterEngine();
     mockKeyEventChannel = mockEngine.getKeyEventChannel();
-    // mockView = mock(View.class);
-    // mockRootView = mock(View.class);
     when(mockView.getRootView()).thenAnswer(invocation -> mockRootView);
     when(mockView.dispatchKeyEvent(any(KeyEvent.class)))
         .thenAnswer(

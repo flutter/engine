@@ -1,12 +1,14 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 package io.flutter.embedding.android;
 
 import android.view.KeyEvent;
 import androidx.annotation.NonNull;
 import io.flutter.embedding.engine.systemchannels.KeyEventChannel;
 
-/**
- * A light wrapper around a {@link KeyEventChannel} that turns it into a {@link PrimaryResponder}.
- */
+/** A light wrapper around a {@link KeyEventChannel}, turning it into a {@link PrimaryResponder}. */
 class KeyChannelResponder implements KeyboardManager.PrimaryResponder {
   private static final String TAG = "KeyChannelResponder";
 
@@ -39,6 +41,5 @@ class KeyChannelResponder implements KeyboardManager.PrimaryResponder {
         flutterEvent,
         isKeyUp,
         (isEventHandled) -> onKeyEventHandledCallback.onKeyEventHandled(isEventHandled));
-    return;
   }
 }
