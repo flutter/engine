@@ -551,13 +551,13 @@ static void fl_key_embedder_responder_handle_event(
     gpointer user_data) {
   FlKeyEmbedderResponder* self = FL_KEY_EMBEDDER_RESPONDER(responder);
   _text_idx += 1;
-  // printf(
-  //     "#%7s keyval 0x%x keycode 0x%x state 0x%x ismod %d snd %d grp %d "
-  //     "time %d [%d] curLock %x\n",
-  //     event->type == GDK_KEY_PRESS ? "PRESS" : "RELEASE", event->keyval,
-  //     event->hardware_keycode, event->state, event->is_modifier,
-  //     event->send_event, event->group, event->time, _text_idx,
-  //     self->lock_mode_records);
+  printf(
+      "#%7s keyval 0x%x keycode 0x%x state 0x%x ismod %d snd %d grp %d "
+      "time %d [%d] curLock %x\n",
+      event->type == GDK_KEY_PRESS ? "PRESS" : "RELEASE", event->keyval,
+      event->hardware_keycode, event->state, event->is_modifier,
+      event->send_event, event->group, event->time, _text_idx,
+      self->lock_mode_records);
   fflush(stdout);
 
   g_return_if_fail(event != nullptr);
