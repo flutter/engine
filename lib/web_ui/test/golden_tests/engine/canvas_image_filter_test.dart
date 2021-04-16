@@ -23,7 +23,7 @@ void testMain() async {
   test('Draws image with dstATop color filter', () async {
     final RecordingCanvas canvas = RecordingCanvas(region);
     canvas.drawImage(createFlutterLogoTestImage(), Offset(10, 10),
-      Paint() as SurfacePaint
+      makePaint()
         ..colorFilter = EngineColorFilter.mode(Color(0x40000000),
             BlendMode.dstATop));
     await canvasScreenshot(canvas, 'image_color_fiter_dstatop',
