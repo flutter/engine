@@ -22,8 +22,7 @@ class EngineScubaTester {
 
   static Future<EngineScubaTester> initialize(
       {ui.Size viewportSize = const ui.Size(2400, 1800)}) async {
-    assert(viewportSize != null);
-
+    
     assert(() {
       if (viewportSize.width.ceil() != viewportSize.width ||
           viewportSize.height.ceil() != viewportSize.height) {
