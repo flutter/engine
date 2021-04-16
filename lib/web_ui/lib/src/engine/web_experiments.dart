@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 import 'dart:js' as js;
 
 import 'package:ui/src/engine.dart' show registerHotRestartListener;

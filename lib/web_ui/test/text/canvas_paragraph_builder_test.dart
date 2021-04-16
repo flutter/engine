@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
@@ -134,23 +133,23 @@ void testMain() async {
     final EngineParagraphStyle style = EngineParagraphStyle(ellipsis: '...');
     final CanvasParagraphBuilder builder = CanvasParagraphBuilder(style);
 
-    builder.addText('Hello');
+    builder.addText('HelloWorld');
 
     final CanvasParagraph paragraph = builder.build();
     expect(paragraph.paragraphStyle, style);
-    expect(paragraph.toPlainText(), 'Hello');
+    expect(paragraph.toPlainText(), 'HelloWorld');
 
     double expectedHeight = 14.0;
     if (isIosSafari) {
       // On iOS Safari, the height measurement is one extra pixel.
       expectedHeight++;
     }
-    paragraph.layout(ParagraphConstraints(width: double.infinity));
+    paragraph.layout(ParagraphConstraints(width: 100.0));
     expect(
       paragraph.toDomElement().outerHtml,
-      '<p style="$defaultFontSize $defaultFontFamily $paragraphStyle overflow: hidden; height: ${expectedHeight}px; text-overflow: ellipsis;">'
+      '<p style="$defaultFontSize $defaultFontFamily $paragraphStyle width: 100px; overflow-y: hidden; height: ${expectedHeight}px;">'
       '<span style="$defaultColor $defaultFontSize $defaultFontFamily">'
-      'Hello'
+      'Hell...'
       '</span>'
       '</p>',
     );
