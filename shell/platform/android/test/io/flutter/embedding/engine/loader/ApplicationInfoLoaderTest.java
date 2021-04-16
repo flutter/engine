@@ -51,10 +51,10 @@ public class ApplicationInfoLoaderTest {
 
   @Config(shadows = {ApplicationInfoLoaderTest.ShadowNetworkSecurityPolicy.class})
   @Test
-  public void itVotesAgainstClearTextIfSecurityPolicySaysSo() {
+  public void itIgnoresSystemSecurityPolicyDueToIssue72723() {
     FlutterApplicationInfo info = ApplicationInfoLoader.load(RuntimeEnvironment.application);
     assertNotNull(info);
-    assertEquals(false, info.clearTextPermitted);
+    assertEquals(true, info.clearTextPermitted);
   }
 
   @Implements(NetworkSecurityPolicy.class)

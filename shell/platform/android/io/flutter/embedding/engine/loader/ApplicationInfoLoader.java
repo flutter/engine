@@ -148,9 +148,10 @@ public final class ApplicationInfoLoader {
     ApplicationInfo appInfo = getApplicationInfo(applicationContext);
     // Prior to API 23, cleartext traffic is allowed.
     boolean clearTextPermitted = true;
-    if (android.os.Build.VERSION.SDK_INT >= 23) {
-      clearTextPermitted = NetworkSecurityPolicy.getInstance().isCleartextTrafficPermitted();
-    }
+    // We should check NetworkSecurityPolicy.getInstance().isCleartextTrafficPermitted() from the OS
+    // as well to enforce it at the dart:io level but have reverted that feature due to
+    // https://github.com/flutter/flutter/issues/72723. Checking it is an expensive call that
+    // wouldn't be used in dart:io.
 
     return new FlutterApplicationInfo(
         getString(appInfo.metaData, PUBLIC_AOT_SHARED_LIBRARY_NAME),
