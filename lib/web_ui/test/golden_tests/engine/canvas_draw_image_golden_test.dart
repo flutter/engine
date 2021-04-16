@@ -469,7 +469,7 @@ void testMain() async {
     canvas.drawCircle(Offset(60, 240), 50, Paint() as SurfacePaint ..color = Color(0x801080E0));
     canvas.drawCircle(Offset(360, 370), 30, Paint() as SurfacePaint ..color = Color(0x80E010E0));
     await canvasScreenshot(canvas, 'draw_3d_oval_clipped',
-        region: region,
+        region: const Rect.fromLTRB(0, 0, 500, 500),
         maxDiffRatePercent: 1.0,
         setupPerspective: true);
   });
@@ -501,7 +501,7 @@ void testMain() async {
     canvas.drawCircle(Offset(100, 100), 4, Paint() as SurfacePaint ..color = Color(0xFF000000));
     canvas.drawCircle(Offset(100, 50), 4, Paint() as SurfacePaint ..color = Color(0xFF000000));
     await canvasScreenshot(canvas, 'draw_3d_path',
-        region: region,
+        region: const Rect.fromLTRB(0, 0, 500, 500),
         maxDiffRatePercent: 1.0,
         setupPerspective: true);
   });
@@ -534,7 +534,7 @@ void testMain() async {
     canvas.drawCircle(Offset(100, 100), 4, Paint() as SurfacePaint ..color = Color(0xFF000000));
     canvas.drawCircle(Offset(100, 50), 4, Paint() as SurfacePaint ..color = Color(0xFF000000));
     await canvasScreenshot(canvas, 'draw_3d_path_clipped',
-        region: region,
+        region: const Rect.fromLTRB(0, 0, 500, 500),
         maxDiffRatePercent: 1.0,
         setupPerspective: true);
   });
