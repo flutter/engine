@@ -274,6 +274,8 @@ FILE: ../../../flutter/fml/task_runner.cc
 FILE: ../../../flutter/fml/task_runner.h
 FILE: ../../../flutter/fml/task_source.cc
 FILE: ../../../flutter/fml/task_source.h
+FILE: ../../../flutter/fml/task_source_grade.h
+FILE: ../../../flutter/fml/task_source_unittests.cc
 FILE: ../../../flutter/fml/thread.cc
 FILE: ../../../flutter/fml/thread.h
 FILE: ../../../flutter/fml/thread_local.cc

@@ -114,9 +114,6 @@ void VsyncWaiter::FireCallback(fml::TimePoint frame_start_time,
 
   if (callback) {
     auto flow_identifier = fml::tracing::TraceNonce();
-    auto ui_task_queue_id = task_runners_.GetUITaskRunner()->GetTaskQueueId();
-    auto task_queues = fml::MessageLoopTaskQueues::GetInstance();
-    task_queues->PauseSecondarySource(ui_task_queue_id);
 
     // The base trace ensures that flows have a root to begin from if one does
     // not exist. The trace viewer will ignore traces that have no base event
@@ -127,13 +124,11 @@ void VsyncWaiter::FireCallback(fml::TimePoint frame_start_time,
     TRACE_FLOW_BEGIN("flutter", kVsyncFlowName, flow_identifier);
 
     task_runners_.GetUITaskRunner()->PostTaskForTime(
-        [callback, flow_identifier, frame_start_time, frame_target_time,
-         task_queues, ui_task_queue_id]() {
+        [callback, flow_identifier, frame_start_time, frame_target_time]() {
           FML_TRACE_EVENT("flutter", kVsyncTraceName, "StartTime",
                           frame_start_time, "TargetTime", frame_target_time);
           callback(frame_start_time, frame_target_time);
           TRACE_FLOW_END("flutter", kVsyncFlowName, flow_identifier);
-          task_queues->ResumeSecondarySource(ui_task_queue_id);
         },
         frame_start_time);
   }
