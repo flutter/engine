@@ -14,6 +14,8 @@ void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
+SurfacePaint makePaint() => Paint() as SurfacePaint;
+
 void testMain() async {
   const double screenWidth = 100.0;
   const double screenHeight = 100.0;
