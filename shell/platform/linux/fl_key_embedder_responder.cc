@@ -499,7 +499,7 @@ static void synchronize_lock_mode_states_loop_body(gpointer key,
       find_stage_by_record(pressed_by_record, enabled_by_record);
 
   const bool event_is_target_key = physical_key == context->event_physical_key;
-  printf("SynLock: evtIsTarget %d ph %lx evPh %lx\n", event_is_target_key,
+  // printf("SynLock: evtIsTarget %d ph %lx evPh %lx\n", event_is_target_key,
          physical_key, context->event_physical_key);
   const bool enabled_by_state = (context->state & modifier_bit) != 0;
   const int stage_by_event =
@@ -514,9 +514,9 @@ static void synchronize_lock_mode_states_loop_body(gpointer key,
   const int destination_stage =
       cycle_stage_to_after(stage_by_event, stage_by_record);
 
-  printf("SynLock: stage by recrd %d\n", stage_by_record);
-  printf("SynLock: stage by event %d\n", stage_by_event);
-  printf("SynLock: stage by dest  %d\n", destination_stage);
+  // printf("SynLock: stage by recrd %d\n", stage_by_record);
+  // printf("SynLock: stage by event %d\n", stage_by_event);
+  // printf("SynLock: stage by dest  %d\n", destination_stage);
   g_return_if_fail(stage_by_record <= destination_stage);
   if (stage_by_record == destination_stage) {
     return;
@@ -526,7 +526,7 @@ static void synchronize_lock_mode_states_loop_body(gpointer key,
     if (current_stage == 9) {
       return;
     }
-    printf("SynLock: syn for stage %d\n", current_stage);
+    // printf("SynLock: syn for stage %d\n", current_stage);
 
     const int standard_current_stage =
         current_stage >= 4 ? current_stage - 4 : current_stage;
@@ -551,13 +551,13 @@ static void fl_key_embedder_responder_handle_event(
     gpointer user_data) {
   FlKeyEmbedderResponder* self = FL_KEY_EMBEDDER_RESPONDER(responder);
   _text_idx += 1;
-  printf(
-      "#%7s keyval 0x%x keycode 0x%x state 0x%x ismod %d snd %d grp %d "
-      "time %d [%d] curLock %x\n",
-      event->type == GDK_KEY_PRESS ? "PRESS" : "RELEASE", event->keyval,
-      event->hardware_keycode, event->state, event->is_modifier,
-      event->send_event, event->group, event->time, _text_idx,
-      self->lock_mode_records);
+  // printf(
+  //     "#%7s keyval 0x%x keycode 0x%x state 0x%x ismod %d snd %d grp %d "
+  //     "time %d [%d] curLock %x\n",
+  //     event->type == GDK_KEY_PRESS ? "PRESS" : "RELEASE", event->keyval,
+  //     event->hardware_keycode, event->state, event->is_modifier,
+  //     event->send_event, event->group, event->time, _text_idx,
+  //     self->lock_mode_records);
   fflush(stdout);
 
   g_return_if_fail(event != nullptr);

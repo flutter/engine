@@ -121,13 +121,10 @@ static void fl_key_mock_responder_handle_event(
     GdkEventKey* event,
     FlKeyResponderAsyncCallback callback,
     gpointer user_data) {
-  printf("MockHandle 1\n");
   FlKeyMockResponder* self = FL_KEY_MOCK_RESPONDER(responder);
   g_ptr_array_add(self->call_records,
                   FL_KEYBOARD_CALL_RECORD(fl_keyboard_call_record_new(
                       self, event, callback, user_data)));
-  printf("MockHandle [0] %lx\n", (uint64_t)FL_KEYBOARD_CALL_RECORD(
-                                     g_ptr_array_index(self->call_records, 0)));
   self->callback_handler(callback, user_data);
 }
 
@@ -382,7 +379,6 @@ TEST(FlKeyboardManagerTest, WithTwoAsyncDelegates) {
 
   record = FL_KEYBOARD_CALL_RECORD(g_ptr_array_index(call_records, 0));
   record->callback(true, record->user_data);
-  printf("T1 mid\n");
   record = FL_KEYBOARD_CALL_RECORD(g_ptr_array_index(call_records, 1));
   record->callback(false, record->user_data);
   EXPECT_EQ(redispatched_events()->len, 0u);
