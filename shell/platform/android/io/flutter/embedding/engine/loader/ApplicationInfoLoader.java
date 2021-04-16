@@ -9,7 +9,6 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.res.XmlResourceParser;
 import android.os.Bundle;
-import android.security.NetworkSecurityPolicy;
 import androidx.annotation.NonNull;
 import java.io.IOException;
 import org.json.JSONArray;
