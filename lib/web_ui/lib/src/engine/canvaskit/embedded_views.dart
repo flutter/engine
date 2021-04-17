@@ -121,11 +121,15 @@ class HtmlViewEmbedder {
 
     // TODO(het): Support creation parameters.
     html.Element embeddedView = factory(viewId!);
-    _views[viewId] = embeddedView;
 
-    _rootViews[viewId] = embeddedView;
+    embed(viewId, embeddedView);
 
     callback!(codec.encodeSuccessEnvelope(null));
+  }
+
+  void embed(int viewId, html.Element view) {
+    _views[viewId] = view;
+    _rootViews[viewId] = view;
   }
 
   void _dispose(
@@ -179,10 +183,20 @@ class HtmlViewEmbedder {
   }
 
   void _compositeWithParams(int viewId, EmbeddedViewParams params) {
+    // Here, `platformView` refers to the <slot> tag in the shadowDOM,
+    // and `content` is the DIV that contains the actual platform view.
     final html.Element platformView = _views[viewId]!;
-    platformView.style.width = '${params.size.width}px';
-    platformView.style.height = '${params.size.height}px';
-    platformView.style.position = 'absolute';
+    if (_platformViewSlots) {
+      // Apply the sizing information to the contents...
+      final html.Element content = platformViewContentManager.getContent(viewId);
+      content.style.width = '${params.size.width}px';
+      content.style.height = '${params.size.height}px';
+      content.style.position = 'absolute';
+    } else {
+      platformView.style.width = '${params.size.width}px';
+      platformView.style.height = '${params.size.height}px';
+      platformView.style.position = 'absolute';
+    }
 
     // <flt-scene-host> disables pointer events. Reenable them here because the
     // underlying platform view would want to handle the pointer events.
@@ -200,7 +214,13 @@ class HtmlViewEmbedder {
       );
       _rootViews[viewId] = newPlatformViewRoot;
     }
-    _applyMutators(params.mutators, platformView, viewId);
+
+    if (_platformViewSlots) {
+      final html.Element content = platformViewContentManager.getContent(viewId);
+      _applyMutators(params.mutators, content, viewId);
+    } else {
+      _applyMutators(params.mutators, platformView, viewId);
+    }
   }
 
   int _countClips(MutatorsStack mutators) {

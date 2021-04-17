@@ -70,11 +70,18 @@ class PlatformViewRegistry {
 
   /// Register [viewTypeId] as being creating by the given [factory].
   bool registerViewFactory(String viewTypeId, PlatformViewFactory factory) {
+
+    engine.platformViewContentManager.registerFactory(viewTypeId, factory);
+
     if (registeredFactories.containsKey(viewTypeId)) {
       return false;
     }
     registeredFactories[viewTypeId] = factory;
     return true;
+  }
+
+  void embed(int viewId, html.Element content) {
+    _createdViews[viewId] = content;
   }
 
   /// Returns the view that has been created with the given [id], or `null` if
@@ -130,7 +137,8 @@ void _createPlatformView(
   // TODO(het): Use creation parameters.
   final html.Element element = platformViewFactory(id);
 
-  platformViewRegistry._createdViews[id] = element;
+  platformViewRegistry.embed(id, element);
+
   callback(codec.encodeSuccessEnvelope(null));
 }
 

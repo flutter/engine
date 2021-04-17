@@ -314,6 +314,8 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     };
   }
 
+  PlatformViewMessageHandler? _platformViewMessageHandler;
+
   void _sendPlatformMessage(
     String name,
     ByteData? data,
@@ -448,8 +450,23 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
                 _handleWebTestEnd2EndMessage(codec, data)));
         return;
 
+      // Here's the entrypoint to create/dispose platform views...
+      // Good opportunity to inject a new component that handles them!
       case 'flutter/platform_views':
-        if (useCanvasKit) {
+        if (_platformViewSlots) {
+          if (_platformViewMessageHandler == null) {
+            _platformViewMessageHandler = PlatformViewMessageHandler(
+              contentManager: platformViewContentManager,
+              viewContentHandler: (int _, html.Element content) {
+                domRenderer.glassPaneElement!.append(content);
+              },
+              viewSlotHandler: useCanvasKit ? 
+                  rasterizer!.surface.viewEmbedder.embed : 
+                  ui.platformViewRegistry.embed,
+            );
+          }
+          _platformViewMessageHandler!.handlePlatformViewCall(data, callback!);
+        } else if (useCanvasKit) {
           rasterizer!.surface.viewEmbedder
               .handlePlatformViewCall(data, callback);
         } else {

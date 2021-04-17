@@ -18,6 +18,10 @@ class PersistedPlatformView extends PersistedLeafSurface {
 
   @override
   html.Element createElement() {
+    if (_platformViewSlots) {
+      return ui.platformViewRegistry.getCreatedView(viewId)!;
+    }
+
     html.Element element = defaultCreateElement('flt-platform-view');
 
     // Allow the platform view host element to receive pointer events.
@@ -59,8 +63,22 @@ class PersistedPlatformView extends PersistedLeafSurface {
   @override
   Matrix4? get localTransformInverse => null;
 
+  void _applyOnContent() {
+    rootElement!.style
+      ..transform = 'translate(${dx}px, ${dy}px)';
+
+    final html.Element content = platformViewContentManager.getContent(viewId);
+    content.style
+      ..width = '${width}px'
+      ..height = '${height}px';
+  }
+
   @override
   void apply() {
+    if (_platformViewSlots) {
+      return _applyOnContent();
+    }
+
     rootElement!.style
       ..transform = 'translate(${dx}px, ${dy}px)'
       ..width = '${width}px'

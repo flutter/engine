@@ -248,6 +248,8 @@ part 'engine/onscreen_logging.dart';
 part 'engine/picture.dart';
 part 'engine/platform_dispatcher.dart';
 part 'engine/platform_views.dart';
+part 'engine/platform_views/content_manager.dart';
+part 'engine/platform_views/message_handler.dart';
 part 'engine/profiler.dart';
 part 'engine/rrect_renderer.dart';
 part 'engine/semantics/accessibility.dart';
@@ -412,6 +414,12 @@ class NullTreeSanitizer implements html.NodeTreeSanitizer {
   @override
   void sanitizeTree(html.Node node) {}
 }
+
+/// Enable the Slots technique to render HtmlPlatformViews.
+const bool _platformViewSlots =
+    bool.fromEnvironment('FLUTTER_WEB_USE_SLOTS', defaultValue: false);
+
+final PlatformViewContentManager platformViewContentManager = PlatformViewContentManager();
 
 /// Converts a matrix represented using [Float64List] to one represented using
 /// [Float32List].
