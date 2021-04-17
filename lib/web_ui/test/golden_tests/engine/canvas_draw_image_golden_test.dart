@@ -411,7 +411,7 @@ void testMain() async {
     // of the image are 40x40. Drawing into a destination that is smaller
     // than that will not provide enough room to draw the center portion.
     canvas.drawImageNine(testImage, Rect.fromLTWH(20, 20, 20, 20),
-        Rect.fromLTWH(20, 20, 30, 30), Paint());
+        Rect.fromLTWH(20, 20, 36, 36), Paint());
     Picture picture = recorder.endRecording();
 
     final SurfaceSceneBuilder builder = SurfaceSceneBuilder();

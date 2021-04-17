@@ -299,7 +299,7 @@ class SurfaceCanvas implements ui.Canvas {
     if (imageDim == destDim) {
       // If the src and dest are the same size then we do not need scaling
       // We return 4 values for a single slice
-      return [ img0, dst0, img1, dst1 ];
+      return <double>[ img0, dst0, img1, dst1 ];
     }
 
     final double edge0Dim = imgC0 - img0;
@@ -311,7 +311,7 @@ class SurfaceCanvas implements ui.Canvas {
       // center position in the destination
       // this produces only 2 slices which is 8 values
       double dstC = dst0 + destDim * edge0Dim / edgesDim;
-      return [
+      return <double>[
         img0,  dst0, imgC0, dstC,
         imgC1, dstC, img1,  dst1,
       ];
@@ -321,7 +321,7 @@ class SurfaceCanvas implements ui.Canvas {
     // we need 3 slices which is 12 values
     final double dstC0 = dst0 + edge0Dim;
     final double dstC1 = dst1 - edge1Dim;
-    return [
+    return <double>[
       img0,  dst0,  imgC0, dstC0,
       imgC0, dstC0, imgC1, dstC1,
       imgC1, dstC1, img1,  dst1
