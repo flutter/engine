@@ -429,6 +429,7 @@ void initialize_modifier_bit_to_checked_keys(GHashTable* table) {
   data->first_logical_key = 0x30000010d;  // shiftLeft
   physical_keys = g_new(uint64_t, 2);
   data->physical_keys = physical_keys;
+  data->is_caps_lock = false;
   *(physical_keys++) = 0x000700e1;  // ShiftLeft
   *(physical_keys++) = 0x000700e5;  // ShiftRight
 
@@ -438,6 +439,7 @@ void initialize_modifier_bit_to_checked_keys(GHashTable* table) {
   data->first_logical_key = 0x300000105;  // controlLeft
   physical_keys = g_new(uint64_t, 2);
   data->physical_keys = physical_keys;
+  data->is_caps_lock = false;
   *(physical_keys++) = 0x000700e0;  // ControlLeft
   *(physical_keys++) = 0x000700e4;  // ControlRight
 
@@ -447,6 +449,7 @@ void initialize_modifier_bit_to_checked_keys(GHashTable* table) {
   data->first_logical_key = 0x300000102;  // altLeft
   physical_keys = g_new(uint64_t, 2);
   data->physical_keys = physical_keys;
+  data->is_caps_lock = false;
   *(physical_keys++) = 0x000700e2;  // AltLeft
   *(physical_keys++) = 0x000700e6;  // AltRight
 
@@ -456,6 +459,7 @@ void initialize_modifier_bit_to_checked_keys(GHashTable* table) {
   data->first_logical_key = 0x300000109;  // metaLeft
   physical_keys = g_new(uint64_t, 2);
   data->physical_keys = physical_keys;
+  data->is_caps_lock = false;
   *(physical_keys++) = 0x000700e3;  // MetaLeft
   *(physical_keys++) = 0x000700e7;  // MetaRight
 }
@@ -470,6 +474,7 @@ void initialize_lock_mode_bit_to_checked_keys(GHashTable* table) {
   data->first_logical_key = 0x000000104;  // capsLock
   physical_keys = g_new(uint64_t, 1);
   data->physical_keys = physical_keys;
+  data->is_caps_lock = true;
   *(physical_keys++) = 0x00070039;  // CapsLock
 
   data = g_new(FlKeyEmbedderCheckedKey, 1);
@@ -478,5 +483,6 @@ void initialize_lock_mode_bit_to_checked_keys(GHashTable* table) {
   data->first_logical_key = 0x00000010a;  // numLock
   physical_keys = g_new(uint64_t, 1);
   data->physical_keys = physical_keys;
+  data->is_caps_lock = false;
   *(physical_keys++) = 0x00070053;  // NumLock
 }

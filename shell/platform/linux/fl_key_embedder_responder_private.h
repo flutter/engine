@@ -16,6 +16,7 @@ typedef struct {
   size_t length;
   uint64_t* physical_keys;
   uint64_t first_logical_key;
+  bool is_caps_lock;
 } FlKeyEmbedderCheckedKey;
 
 #endif  // FLUTTER_SHELL_PLATFORM_LINUX_FL_KEY_EMBEDDER_RESPONDER_PRIVATE_H_

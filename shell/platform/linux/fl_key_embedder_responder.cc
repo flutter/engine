@@ -384,30 +384,6 @@ static void synchronize_pressed_states_loop_body(gpointer key,
   }
 }
 
-// Find the stage # before the event (of the 4 stages as documented in
-// `synchronize_lock_mode_states_loop_body`) by the current record.
-static int find_stage_by_record(bool is_down, bool is_enabled) {
-  constexpr int stage_by_record_index[] = {
-      0,  // isDown: 0,  isEnabled: 0
-      2,  //         0              1
-      3,  //         1              0
-      1   //         1              1
-  };
-  return stage_by_record_index[(is_down << 1) + is_enabled];
-}
-
-// Find the stage # before the event (of the 4 stages as documented in
-// `synchronize_lock_mode_states_loop_body`) by the event.
-static int find_stage_by_event(bool is_down, bool is_enabled) {
-  constexpr int stage_by_record_index[] = {
-      3,  // isDown: 0,  isEnabled: 0
-      1,  //         0              1
-      0,  //         1              0
-      2   //         1              1
-  };
-  return stage_by_record_index[(is_down << 1) + is_enabled];
-}
-
 // Find the first stage # greater than `start` that is equivalent to `target` in
 // a cycle of 4.
 //
@@ -419,11 +395,43 @@ static int cycle_stage_to_after(int target, int start) {
   return target >= start ? target : target + kNumStages;
 }
 
-static int find_closest_next_stage(int start, int option1, int option2) {
-  const int adjusted_option1 = cycle_stage_to_after(option1, start);
-  const int adjusted_option2 = cycle_stage_to_after(option2, start);
-  return adjusted_option1 < adjusted_option2 ? adjusted_option1
-                                             : adjusted_option2;
+// Find the stage # before the event (of the 4 stages as documented in
+// `synchronize_lock_mode_states_loop_body`) by the current record.
+static int find_stage_by_record(bool is_down, bool is_enabled) {
+  constexpr int stage_by_record_index[] = {
+      0,  // is_down: 0,  is_enabled: 0
+      2,  //          0               1
+      3,  //          1               0
+      1   //          1               1
+  };
+  return stage_by_record_index[(is_down << 1) + is_enabled];
+}
+
+static int find_stage_by_self_event(int stage_by_record,
+                                    bool is_down_event,
+                                    bool is_state_on,
+                                    bool is_caps_lock) {
+  g_return_val_if_fail(stage_by_record >= 0 && stage_by_record < 4,
+                       stage_by_record);
+  if (!is_state_on) {
+    return is_caps_lock ? 2 : 0;
+  }
+  if (is_down_event) {
+    return is_caps_lock ? 0 : 2;
+  }
+  return stage_by_record;
+}
+
+static int find_stage_by_others_event(int stage_by_record, bool is_state_on) {
+  g_return_val_if_fail(stage_by_record >= 0 && stage_by_record < 4,
+                       stage_by_record);
+  if (!is_state_on) {
+    return 0;
+  }
+  if (stage_by_record == 0) {
+    return 1;
+  }
+  return stage_by_record;
 }
 
 static void update_pressing_state(FlKeyEmbedderResponder* self,
@@ -449,8 +457,9 @@ static void possibly_update_lock_mode_bit(FlKeyEmbedderResponder* self,
   if (!is_down) {
     return;
   }
-  guint mode_bit = GPOINTER_TO_UINT(g_hash_table_lookup(
+  const guint mode_bit = GPOINTER_TO_UINT(g_hash_table_lookup(
       self->physical_key_to_lock_mode_bit, uint64_to_gpointer(physical_key)));
+  printf("Mode bit for PhK %lx is %x\n", physical_key, mode_bit);
   if (mode_bit != 0) {
     self->lock_mode_records ^= mode_bit;
   }
@@ -467,25 +476,27 @@ static void synchronize_lock_mode_states_loop_body(gpointer key,
   guint modifier_bit = GPOINTER_TO_INT(key);
   FlKeyEmbedderResponder* self = context->self;
 
-  const bool is_down_event = context->is_down;
-
   const uint64_t logical_key = checked_key->first_logical_key;
   const uint64_t physical_key = checked_key->physical_keys[0];
-  // printf("Syn: 1 state %x bit %x curPhy %lx\n", context->state, modifier_bit,
-  // context->event_physical_key);
+  printf("Syn: 1 state %x bit %x curPhy %lx\n", context->state, modifier_bit,
+  context->event_physical_key);
 
-  // A lock mode key can be at any of a 4-stage cycle:
+  // A lock mode key can be at any of a 4-stage cycle. The following table lists
+  // the definition of each stage (TruePressed and TrueEnabled), the event of
+  // the lock key between every 2 stages (SelfType and SelfState), and the event
+  // of other keys at each stage (OthersState). Notice that SelfState uses different
+  // rule for CapsLock.
   //
-  //      Up,Disabled  ->  Down,Enabled  ->  Up,Enabled  ->  Down,Disabled  ->
-  //           [0]             [1]               [2]             [3]
-  // EventType:       Down               Up             Down                Up
-  //     State:        0                  1              1                  0
+  //           #    [0]           [1]            [2]             [3]
+  //     TruePressed: Released      Pressed        Released        Pressed
+  //     TrueEnabled: Disabled      Enabled        Enabled         Disabled
+  //        SelfType:          Down           Up             Down              Up
+  // SelfState(Caps):           1             1               0                1
+  //  SelfState(Etc):           0             1               1                1
+  //     OthersState:    0             1              1                1
   //
-  // If the incoming event is the target key, then we know exactly which stage
-  // the true state is at.
-  //
-  // Otherwise, since we only know "state", we can tell if the true stage is
-  // either 0/3 or 1/2. Choose the shorter one.
+  // Except for stage 0, we can't derive the exact stage just from event
+  // information. Choose the stage that requires the minimal synthesization.
 
   const uint64_t pressed_logical_key =
       lookup_hash_table(self->pressing_records, physical_key);
@@ -493,30 +504,25 @@ static void synchronize_lock_mode_states_loop_body(gpointer key,
   // cases.
   g_return_if_fail(pressed_logical_key == 0 ||
                    pressed_logical_key == logical_key);
-  const bool pressed_by_record = pressed_logical_key != 0;
-  const bool enabled_by_record = (self->lock_mode_records & modifier_bit) != 0;
-  const int stage_by_record =
-      find_stage_by_record(pressed_by_record, enabled_by_record);
+  const int stage_by_record = find_stage_by_record(
+      pressed_logical_key != 0, (self->lock_mode_records & modifier_bit) != 0);
 
-  const bool event_is_target_key = physical_key == context->event_physical_key;
-  // printf("SynLock: evtIsTarget %d ph %lx evPh %lx\n", event_is_target_key,
-         physical_key, context->event_physical_key);
   const bool enabled_by_state = (context->state & modifier_bit) != 0;
+  const bool is_self_event = physical_key == context->event_physical_key;
   const int stage_by_event =
-      event_is_target_key
-          ? find_stage_by_event(is_down_event, enabled_by_state)
-          : find_closest_next_stage(
-                stage_by_record, find_stage_by_record(true, enabled_by_state),
-                find_stage_by_record(false, enabled_by_state));
+      is_self_event
+          ? find_stage_by_self_event(stage_by_record, context->is_down,
+                                     enabled_by_state, checked_key->is_caps_lock)
+          : find_stage_by_others_event(stage_by_record, enabled_by_state);
 
   // If the event is for the target key, then the last stage transition should
   // be handled by the main event logic instead of synthesization.
   const int destination_stage =
       cycle_stage_to_after(stage_by_event, stage_by_record);
 
-  // printf("SynLock: stage by recrd %d\n", stage_by_record);
-  // printf("SynLock: stage by event %d\n", stage_by_event);
-  // printf("SynLock: stage by dest  %d\n", destination_stage);
+  printf("SynLock: stage by recrd %d\n", stage_by_record);
+  printf("SynLock: stage by event %d\n", stage_by_event);
+  printf("SynLock: stage by dest  %d\n", destination_stage);
   g_return_if_fail(stage_by_record <= destination_stage);
   if (stage_by_record == destination_stage) {
     return;
@@ -526,7 +532,7 @@ static void synchronize_lock_mode_states_loop_body(gpointer key,
     if (current_stage == 9) {
       return;
     }
-    // printf("SynLock: syn for stage %d\n", current_stage);
+    printf("SynLock: syn for stage %d\n", current_stage);
 
     const int standard_current_stage =
         current_stage >= 4 ? current_stage - 4 : current_stage;
@@ -551,31 +557,25 @@ static void fl_key_embedder_responder_handle_event(
     gpointer user_data) {
   FlKeyEmbedderResponder* self = FL_KEY_EMBEDDER_RESPONDER(responder);
   _text_idx += 1;
-  printf(
-      "#%7s keyval 0x%x keycode 0x%x state 0x%x ismod %d snd %d grp %d "
-      "time %d [%d] curLock %x\n",
-      event->type == GDK_KEY_PRESS ? "PRESS" : "RELEASE", event->keyval,
-      event->hardware_keycode, event->state, event->is_modifier,
-      event->send_event, event->group, event->time, _text_idx,
-      self->lock_mode_records);
-  fflush(stdout);
 
   g_return_if_fail(event != nullptr);
   g_return_if_fail(callback != nullptr);
 
-  uint64_t physical_key =
+  const uint64_t physical_key =
       event_to_physical_key(event, self->xkb_to_physical_key);
-  uint64_t logical_key =
+  const uint64_t logical_key =
       event_to_logical_key(event, self->keyval_to_logical_key);
-  double timestamp = event_to_timestamp(event);
-  bool is_down_event = event->type == GDK_KEY_PRESS;
+  const double timestamp = event_to_timestamp(event);
+  const bool is_down_event = event->type == GDK_KEY_PRESS;
 
-  uint64_t last_logical_record =
-      lookup_hash_table(self->pressing_records, physical_key);
-
-  // printf("last %lu next %lu down %d type %d\n", last_logical_record,
-  //        next_logical_record, is_down_event, event->type);
-  // fflush(stdout);
+  printf(
+      "#%7s keyval 0x%x keycode 0x%x state 0x%x ismod %d snd %d grp %d "
+      "time %d [%d] curLock %x PhK %lx\n",
+      event->type == GDK_KEY_PRESS ? "PRESS" : "RELEASE", event->keyval,
+      event->hardware_keycode, event->state, event->is_modifier,
+      event->send_event, event->group, event->time, _text_idx,
+      self->lock_mode_records, physical_key);
+  fflush(stdout);
 
   SyncPressedStatesLoopContext sync_pressed_state_context;
   sync_pressed_state_context.self = self;
@@ -588,6 +588,8 @@ static void fl_key_embedder_responder_handle_event(
                        synchronize_lock_mode_states_loop_body,
                        &sync_pressed_state_context);
 
+  const uint64_t last_logical_record =
+      lookup_hash_table(self->pressing_records, physical_key);
   update_pressing_state(self, physical_key, is_down_event ? logical_key : 0);
   possibly_update_lock_mode_bit(self, physical_key, is_down_event);
 
@@ -635,4 +637,5 @@ static void fl_key_embedder_responder_handle_event(
 
   fl_engine_send_key_event(self->engine, &out_event, handle_response,
                            response_data);
+  fflush(stdout);
 }
