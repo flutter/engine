@@ -53,18 +53,6 @@ std::unique_ptr<AndroidSurface> AndroidSurfaceFactoryImpl::CreateSurface() {
   }
 }
 
-std::unique_ptr<AndroidSurface>
-AndroidSurfaceFactoryImpl::CreatePbufferSurface() {
-  switch (android_context_->RenderingApi()) {
-    case AndroidRenderingAPI::kOpenGLES:
-      return std::make_unique<AndroidSurfaceGL>(android_context_, jni_facade_);
-    case AndroidRenderingAPI::kSoftware:
-    case AndroidRenderingAPI::kVulkan:
-    default:
-      return nullptr;
-  }
-}
-
 static std::shared_ptr<flutter::AndroidContext> CreateAndroidContext(
     bool use_software_rendering,
     bool create_onscreen_surface) {
@@ -89,12 +77,11 @@ PlatformViewAndroid::PlatformViewAndroid(
     std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
     bool use_software_rendering,
     bool create_onscreen_surface)
-    : PlatformViewAndroid(
-          delegate,
-          std::move(task_runners),
-          std::move(jni_facade),
-          CreateAndroidContext(use_software_rendering, create_onscreen_surface),
-          create_onscreen_surface) {}
+    : PlatformViewAndroid(delegate,
+                          std::move(task_runners),
+                          std::move(jni_facade),
+                          CreateAndroidContext(use_software_rendering,
+                                               create_onscreen_surface)) {}
 
 PlatformViewAndroid::PlatformViewAndroid(
     PlatformView::Delegate& delegate,
