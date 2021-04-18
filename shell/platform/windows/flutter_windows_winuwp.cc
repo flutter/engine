@@ -29,9 +29,8 @@ static flutter::FlutterWindowsEngine* EngineFromHandle(
   return reinterpret_cast<flutter::FlutterWindowsEngine*>(ref);
 }
 
-// Resturns a list of discrete arguments splitting the input using a ",".
+// Returns a list of discrete arguments splitting the input using a ",".
 std::vector<std::string> SplitCommaSeparatedString(const std::string& s) {
-  // Split by ','.
   std::vector<std::string> components;
   std::istringstream stream(s);
   std::string component;
