@@ -42,7 +42,7 @@ class FlutterProjectBundle {
   const std::vector<std::string> GetSwitches();
 
   // Sets engine switches.
-  void SetSwitches(std::vector<std::string> switches);
+  void SetSwitches(std::vector<std::string> const& switches);
 
   // Attempts to load AOT data for this bundle. The returned data must be
   // retained until any engine instance it is passed to has been shut down.

@@ -184,7 +184,8 @@ FlutterWindowsEngine::~FlutterWindowsEngine() {
   Stop();
 }
 
-void FlutterWindowsEngine::SetSwitches(std::vector<std::string> switches) {
+void FlutterWindowsEngine::SetSwitches(
+    std::vector<std::string> const& switches) {
   project_->SetSwitches(switches);
 }
 

@@ -30,7 +30,7 @@ static flutter::FlutterWindowsEngine* EngineFromHandle(
 }
 
 // Resturns a list of discrete arguments splitting the input using a ",".
-std::vector<std::string> split(std::string const s) {
+std::vector<std::string> SplitCommaSeparatedString(const std::string& s) {
   // Split by ','.
   std::vector<std::string> components;
   std::istringstream stream(s);
@@ -38,7 +38,7 @@ std::vector<std::string> split(std::string const s) {
   while (getline(stream, component, ',')) {
     components.push_back(component);
   }
-  return (std::move(components));
+  return (components);
 }
 
 FlutterDesktopViewControllerRef
@@ -64,19 +64,16 @@ FlutterDesktopViewControllerCreateFromCoreWindow(
   std::vector<std::string> engine_switches;
   winrt::Windows::ApplicationModel::Activation::LaunchActivatedEventArgs launch{
       nullptr};
-  switch (arg_interface.Kind()) {
-    case winrt::Windows::ApplicationModel::Activation::ActivationKind::Launch:
-      launch = arg_interface.as<winrt::Windows::ApplicationModel::Activation::
-                                    LaunchActivatedEventArgs>();
-      if (launch != nullptr) {
-        std::string launchargs = winrt::to_string(launch.Arguments());
-        if (!launchargs.empty()) {
-          engine_switches = split(launchargs);
-        }
+  if (arg_interface.Kind() ==
+      winrt::Windows::ApplicationModel::Activation::ActivationKind::Launch) {
+    launch = arg_interface.as<winrt::Windows::ApplicationModel::Activation::
+                                  LaunchActivatedEventArgs>();
+    if (launch != nullptr) {
+      std::string launchargs = winrt::to_string(launch.Arguments());
+      if (!launchargs.empty()) {
+        engine_switches = SplitCommaSeparatedString(launchargs);
       }
-      break;
-    default:
-      break;
+    }
   }
 
   state->view->GetEngine()->SetSwitches(engine_switches);

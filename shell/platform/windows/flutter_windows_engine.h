@@ -75,7 +75,7 @@ class FlutterWindowsEngine {
       FlutterDesktopOnPluginRegistrarDestroyed callback);
 
   // Sets switches member to the given switches.
-  void SetSwitches(std::vector<std::string> switches);
+  void SetSwitches(std::vector<std::string> const& switches);
 
   FlutterDesktopMessengerRef messenger() { return messenger_.get(); }
 
