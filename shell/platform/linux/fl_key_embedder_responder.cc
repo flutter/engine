@@ -584,19 +584,15 @@ static void fl_key_embedder_responder_handle_event(
   sync_pressed_state_context.is_down = is_down_event;
   sync_pressed_state_context.event_physical_key = physical_key;
 
+  // Update lock mode states
   g_hash_table_foreach(self->lock_mode_bit_to_checked_keys,
                        synchronize_lock_mode_states_loop_body,
                        &sync_pressed_state_context);
 
+  // Construct the real event
+  printf("Real event\n");
   const uint64_t last_logical_record =
       lookup_hash_table(self->pressing_records, physical_key);
-  update_pressing_state(self, physical_key, is_down_event ? logical_key : 0);
-  possibly_update_lock_mode_bit(self, physical_key, is_down_event);
-
-  // printf("Before foreach\n");
-  g_hash_table_foreach(self->modifier_bit_to_checked_keys,
-                       synchronize_pressed_states_loop_body,
-                       &sync_pressed_state_context);
 
   FlutterKeyEvent out_event;
   out_event.struct_size = sizeof(out_event);
@@ -631,6 +627,13 @@ static void fl_key_embedder_responder_handle_event(
       out_event.type = kFlutterKeyEventTypeUp;
     }
   }
+  update_pressing_state(self, physical_key, is_down_event ? logical_key : 0);
+  possibly_update_lock_mode_bit(self, physical_key, is_down_event);
+
+  // Update pressing states
+  g_hash_table_foreach(self->modifier_bit_to_checked_keys,
+                       synchronize_pressed_states_loop_body,
+                       &sync_pressed_state_context);
 
   FlKeyEmbedderUserData* response_data =
       fl_key_embedder_user_data_new(self, callback, user_data);

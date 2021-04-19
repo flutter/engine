@@ -173,6 +173,11 @@ static FlEngine* make_mock_engine_with_records() {
   return engine;
 }
 
+static void clear_g_call_records() {
+  g_ptr_array_free(g_call_records, TRUE);
+  g_call_records = nullptr;
+}
+
 // Basic key presses
 TEST(FlKeyEmbedderResponderTest, SendKeyEvent) {
   EXPECT_EQ(g_call_records, nullptr);
@@ -264,7 +269,7 @@ TEST(FlKeyEmbedderResponderTest, SendKeyEvent) {
   invoke_record_callback_and_verify(record, FALSE, &user_data);
   g_ptr_array_clear(g_call_records);
 
-  g_clear_object(&g_call_records);
+  clear_g_call_records();
 }
 
 // Press Shift, key A, then release Shift, key A.
@@ -348,7 +353,7 @@ TEST(FlKeyEmbedderResponderTest, PressShiftDuringLetterKeyTap) {
   invoke_record_callback_and_verify(record, TRUE, &user_data);
   g_ptr_array_clear(g_call_records);
 
-  g_clear_object(&g_call_records);
+  clear_g_call_records();
 }
 
 // Press or release Numpad 1 between presses/releases of NumLock.
@@ -513,7 +518,7 @@ TEST(FlKeyEmbedderResponderTest, TapNumPadKeysBetweenNumLockEvents) {
   invoke_record_callback_and_verify(record, TRUE, &user_data);
   g_ptr_array_clear(g_call_records);
 
-  g_clear_object(&g_call_records);
+  clear_g_call_records();
 }
 
 // Press or release letter key between presses/releases of CapsLock.
@@ -674,7 +679,7 @@ TEST(FlKeyEmbedderResponderTest, TapLetterKeysBetweenCapsLockEvents) {
   invoke_record_callback_and_verify(record, TRUE, &user_data);
   g_ptr_array_clear(g_call_records);
 
-  g_clear_object(&g_call_records);
+  clear_g_call_records();
 }
 
 TEST(FlKeyEmbedderResponderTest, IgnoreDuplicateDownEvent) {
@@ -720,7 +725,7 @@ TEST(FlKeyEmbedderResponderTest, IgnoreDuplicateDownEvent) {
   invoke_record_callback_and_verify(record, TRUE, &user_data);
   g_ptr_array_clear(g_call_records);
 
-  g_clear_object(&g_call_records);
+  clear_g_call_records();
 }
 
 TEST(FlKeyEmbedderResponderTest, IgnoreAbruptUpEvent) {
@@ -740,7 +745,7 @@ TEST(FlKeyEmbedderResponderTest, IgnoreAbruptUpEvent) {
 
   EXPECT_EQ(g_call_records->len, 0u);
 
-  g_clear_object(&g_call_records);
+  clear_g_call_records();
 }
 
 // Test if missed modifier keys can be detected and synthesized with state
@@ -815,7 +820,7 @@ TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncPressingState) {
   invoke_record_callback_and_verify(record, TRUE, &user_data);
   g_ptr_array_clear(g_call_records);
 
-  g_clear_object(&g_call_records);
+  clear_g_call_records();
 }
 
 // Test if missed lock keys can be detected and synthesized with state
@@ -917,7 +922,7 @@ TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncLockModeOnNonSelfEvents) {
 
   EXPECT_EQ(g_call_records->len, 0u);
 
-  g_clear_object(&g_call_records);
+  clear_g_call_records();
 }
 
 // Test if missed lock keys can be detected and synthesized with state
@@ -1016,5 +1021,5 @@ TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncLockModeOnSelfEvents) {
   invoke_record_callback_and_verify(record, TRUE, &user_data);
   g_ptr_array_clear(g_call_records);
 
-  g_clear_object(&g_call_records);
+  clear_g_call_records();
 }
