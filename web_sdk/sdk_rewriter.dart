@@ -115,21 +115,12 @@ void main(List<String> arguments) {
   }
 }
 
-final RegExp _dartLangVersion = RegExp(r'\n// @dart = (.*)');
-
 String _preprocessEnginePartFile(String source) {
   if (source.contains('\npart of engine;')) {
     // The file hasn't been migrated yet.
     // Do nothing.
-  } else if (_dartLangVersion.hasMatch(source)) {
-    // The file contains a dart language version. We should insert the part
-    // directive after it.
-    source = source.replaceFirstMapped(_dartLangVersion, (Match match) {
-      return '${match.group(0)}\npart of engine;';
-    });
   } else {
-    // The file doesn't have a dart language version, so we just insert the part
-    // directive at the beginning.
+    // Insert the part directive at the beginning of the file.
     source = 'part of engine;\n' + source;
   }
   return source;
