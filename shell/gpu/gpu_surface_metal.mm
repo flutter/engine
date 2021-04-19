@@ -6,6 +6,7 @@
 
 #import <Metal/Metal.h>
 
+#include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/platform/darwin/cf_utils.h"
 #include "flutter/fml/trace_event.h"
@@ -32,6 +33,16 @@ bool GPUSurfaceMetal::IsValid() {
   return context_ != nullptr;
 }
 
+void GPUSurfaceMetal::PrecompileKnownSKSLsIfNecessary() {
+  auto* current_context = GetContext();
+  if (current_context == precompiled_sksl_context_) {
+    // Known SKSLs have already been prepared in this context.
+    return;
+  }
+  precompiled_sksl_context_ = current_context;
+  flutter::PersistentCache::GetCacheForProcess()->PrecompileKnownSKSLs(precompiled_sksl_context_);
+}
+
 // |Surface|
 std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrame(const SkISize& frame_size) {
   if (!IsValid()) {
@@ -43,6 +54,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrame(const SkISize& frame
     FML_LOG(ERROR) << "Metal surface was asked for an empty frame.";
     return nullptr;
   }
+
+  PrecompileKnownSKSLsIfNecessary();
 
   switch (render_target_type_) {
     case MTLRenderTargetType::kCAMetalLayer:
@@ -155,6 +168,10 @@ GrDirectContext* GPUSurfaceMetal::GetContext() {
 
 // |Surface|
 std::unique_ptr<GLContextResult> GPUSurfaceMetal::MakeRenderContextCurrent() {
+  // A context may be either be necessary to render to the surface or to snapshot an offscreen
+  // surface. Either way, SKSL precompilation must be attempted.
+  PrecompileKnownSKSLsIfNecessary();
+
   // This backend has no such concept.
   return std::make_unique<GLContextDefaultResult>(true);
 }
