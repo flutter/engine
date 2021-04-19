@@ -824,13 +824,16 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// After calling this function, the scene builder object is invalid and
   /// cannot be used further.
-  Scene build() {
+  ///
+  /// A [frameKey] may be optionally supplied to associate any [FrameTiming]
+  /// objects and/or timeline traces with a particular identifier.
+  Scene build({int? frameKey}) {
     final Scene scene = Scene._();
-    _build(scene);
+    _build(scene, frameKey ?? -1);
     return scene;
   }
 
-  void _build(Scene outScene) native 'SceneBuilder_build';
+  void _build(Scene outScene, int frameKey) native 'SceneBuilder_build';
 }
 
 /// (Fuchsia-only) Hosts content provided by another application.

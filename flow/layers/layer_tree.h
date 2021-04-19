@@ -85,6 +85,14 @@ class LayerTree {
     checkerboard_offscreen_layers_ = checkerboard;
   }
 
+  void set_frame_key(int64_t frame_key) {
+    frame_key_ = frame_key;
+  }
+
+  int64_t frame_key() const {
+    return frame_key_;
+  }
+
  private:
   std::shared_ptr<Layer> root_layer_;
   fml::TimePoint vsync_start_;
@@ -96,6 +104,7 @@ class LayerTree {
   uint32_t rasterizer_tracing_threshold_;
   bool checkerboard_raster_cache_images_;
   bool checkerboard_offscreen_layers_;
+  int64_t frame_key_;
 
 #ifdef FLUTTER_ENABLE_DIFF_CONTEXT
   PaintRegionMap paint_region_map_;

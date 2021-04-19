@@ -344,12 +344,13 @@ void SceneBuilder::setCheckerboardOffscreenLayers(bool checkerboard) {
   checkerboard_offscreen_layers_ = checkerboard;
 }
 
-void SceneBuilder::build(Dart_Handle scene_handle) {
+void SceneBuilder::build(Dart_Handle scene_handle, int64_t frame_key) {
   FML_DCHECK(layer_stack_.size() >= 1);
 
   Scene::create(scene_handle, layer_stack_[0], rasterizer_tracing_threshold_,
                 checkerboard_raster_cache_images_,
-                checkerboard_offscreen_layers_);
+                checkerboard_offscreen_layers_,
+                frame_key);
   ClearDartWrapper();  // may delete this object.
 }
 

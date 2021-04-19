@@ -349,6 +349,7 @@ RasterStatus Rasterizer::DoDraw(
   timing.Set(FrameTiming::kBuildStart, layer_tree->build_start());
   timing.Set(FrameTiming::kBuildFinish, layer_tree->build_finish());
   timing.Set(FrameTiming::kRasterStart, fml::TimePoint::Now());
+  timing.SetFrameKey(layer_tree->frame_key());
 
   PersistentCache* persistent_cache = PersistentCache::GetCacheForProcess();
   persistent_cache->ResetStoredNewShaders();

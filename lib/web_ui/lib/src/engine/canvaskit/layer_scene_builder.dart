@@ -84,7 +84,7 @@ class LayerSceneBuilder implements ui.SceneBuilder {
   }
 
   @override
-  LayerScene build() {
+  LayerScene build({int? frameKey}) {
     return LayerScene(rootLayer);
   }
 

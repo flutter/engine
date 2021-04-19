@@ -538,7 +538,7 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   /// After calling this function, the scene builder object is invalid and
   /// cannot be used further.
   @override
-  SurfaceScene build() {
+  SurfaceScene build({int? frameKey}) {
     // "Build finish" and "raster start" happen back-to-back because we
     // render on the same thread, so there's no overhead from hopping to
     // another thread.

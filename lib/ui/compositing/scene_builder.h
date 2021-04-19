@@ -130,7 +130,7 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
   void setCheckerboardRasterCacheImages(bool checkerboard);
   void setCheckerboardOffscreenLayers(bool checkerboard);
 
-  void build(Dart_Handle scene_handle);
+  void build(Dart_Handle scene_handle, int64_t frame_key);
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 

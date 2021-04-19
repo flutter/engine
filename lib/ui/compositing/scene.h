@@ -28,7 +28,8 @@ class Scene : public RefCountedDartWrappable<Scene> {
                      std::shared_ptr<flutter::Layer> rootLayer,
                      uint32_t rasterizerTracingThreshold,
                      bool checkerboardRasterCacheImages,
-                     bool checkerboardOffscreenLayers);
+                     bool checkerboardOffscreenLayers,
+                     int64_t frame_key);
 
   std::unique_ptr<flutter::LayerTree> takeLayerTree();
 
@@ -44,7 +45,8 @@ class Scene : public RefCountedDartWrappable<Scene> {
   explicit Scene(std::shared_ptr<flutter::Layer> rootLayer,
                  uint32_t rasterizerTracingThreshold,
                  bool checkerboardRasterCacheImages,
-                 bool checkerboardOffscreenLayers);
+                 bool checkerboardOffscreenLayers,
+                 int64_t frame_key);
 
   std::unique_ptr<flutter::LayerTree> layer_tree_;
 };

@@ -40,8 +40,14 @@ class FrameTiming {
     return data_[phase] = value;
   }
 
+  int64_t GetFrameKey() const { return frame_key_; }
+  void SetFrameKey(int64_t value) {
+    frame_key_ = value;
+  }
+
  private:
   fml::TimePoint data_[kCount];
+  int64_t frame_key_;
 };
 
 using TaskObserverAdd =

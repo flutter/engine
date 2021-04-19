@@ -31,17 +31,19 @@ void Scene::create(Dart_Handle scene_handle,
                    std::shared_ptr<flutter::Layer> rootLayer,
                    uint32_t rasterizerTracingThreshold,
                    bool checkerboardRasterCacheImages,
-                   bool checkerboardOffscreenLayers) {
+                   bool checkerboardOffscreenLayers,
+                   int64_t frame_key) {
   auto scene = fml::MakeRefCounted<Scene>(
       std::move(rootLayer), rasterizerTracingThreshold,
-      checkerboardRasterCacheImages, checkerboardOffscreenLayers);
+      checkerboardRasterCacheImages, checkerboardOffscreenLayers, frame_key);
   scene->AssociateWithDartWrapper(scene_handle);
 }
 
 Scene::Scene(std::shared_ptr<flutter::Layer> rootLayer,
              uint32_t rasterizerTracingThreshold,
              bool checkerboardRasterCacheImages,
-             bool checkerboardOffscreenLayers) {
+             bool checkerboardOffscreenLayers,
+             int64_t frame_key) {
   // Currently only supports a single window.
   auto viewport_metrics = UIDartState::Current()
                               ->platform_configuration()
@@ -57,6 +59,7 @@ Scene::Scene(std::shared_ptr<flutter::Layer> rootLayer,
   layer_tree_->set_checkerboard_raster_cache_images(
       checkerboardRasterCacheImages);
   layer_tree_->set_checkerboard_offscreen_layers(checkerboardOffscreenLayers);
+  layer_tree_->set_frame_key(frame_key);
 }
 
 Scene::~Scene() {}
