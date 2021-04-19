@@ -459,7 +459,7 @@ static void possibly_update_lock_mode_bit(FlKeyEmbedderResponder* self,
   }
   const guint mode_bit = GPOINTER_TO_UINT(g_hash_table_lookup(
       self->physical_key_to_lock_mode_bit, uint64_to_gpointer(physical_key)));
-  printf("Mode bit for PhK %lx is %x\n", physical_key, mode_bit);
+  // printf("Mode bit for PhK %lx is %x\n", physical_key, mode_bit);
   if (mode_bit != 0) {
     self->lock_mode_records ^= mode_bit;
   }
@@ -590,7 +590,7 @@ static void fl_key_embedder_responder_handle_event(
                        &sync_pressed_state_context);
 
   // Construct the real event
-  printf("Real event\n");
+  // printf("Real event\n");
   const uint64_t last_logical_record =
       lookup_hash_table(self->pressing_records, physical_key);
 
