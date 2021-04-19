@@ -85,13 +85,9 @@ class LayerTree {
     checkerboard_offscreen_layers_ = checkerboard;
   }
 
-  void set_frame_key(int64_t frame_key) {
-    frame_key_ = frame_key;
-  }
+  void set_frame_key(int64_t frame_key) { frame_key_ = frame_key; }
 
-  int64_t frame_key() const {
-    return frame_key_;
-  }
+  int64_t frame_key() const { return frame_key_; }
 
  private:
   std::shared_ptr<Layer> root_layer_;

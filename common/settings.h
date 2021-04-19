@@ -41,9 +41,7 @@ class FrameTiming {
   }
 
   int64_t GetFrameKey() const { return frame_key_; }
-  void SetFrameKey(int64_t value) {
-    frame_key_ = value;
-  }
+  void SetFrameKey(int64_t value) { frame_key_ = value; }
 
  private:
   fml::TimePoint data_[kCount];
