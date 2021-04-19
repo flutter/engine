@@ -2766,6 +2766,10 @@ TEST_F(ShellTest, UpdateAssetResolverByTypeDoesNotReplaceMismatchType) {
 }
 
 TEST_F(ShellTest, CanCreateShellsWithGLBackend) {
+#if !SHELL_ENABLE_GL
+  // GL emulation does not exist on Fuchsia.
+  GTEST_SKIP();
+#endif  // !SHELL_ENABLE_GL
   auto settings = CreateSettingsForFixture();
   std::unique_ptr<Shell> shell =
       CreateShell(settings,                                       //

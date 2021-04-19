@@ -70,7 +70,7 @@ sk_sp<GrDirectContext> GPUSurfaceGL::MakeGLContext(
 
   context->setResourceCacheLimits(kGrCacheMaxCount, kGrCacheMaxByteSize);
 
-  PersistentCache::GetCacheForProcess()->PrecompileKnownSKSLs(context.get());
+  PersistentCache::GetCacheForProcess()->PrecompileKnownSkSLs(context.get());
 
   return context;
 }

@@ -35,7 +35,7 @@ static void WaitForIO(Shell* shell) {
 
 static void WaitForRaster(Shell* shell) {
   std::promise<bool> raster_task_finished;
-  shell->GetTaskRunners().GetIOTaskRunner()->PostTask(
+  shell->GetTaskRunners().GetRasterTaskRunner()->PostTask(
       [&raster_task_finished]() { raster_task_finished.set_value(true); });
   raster_task_finished.get_future().wait();
 }
@@ -111,9 +111,9 @@ TEST_F(PersistentCacheTest, CacheSkSLWorks) {
   first_frame_latch.Wait();
   WaitForIO(shell.get());
 
-// Shader precompilation from SKSL is not implemented on the Skia Vulkan
+// Shader precompilation from SkSL is not implemented on the Skia Vulkan
 // backend so don't run the second half of this test on Vulkan. This can get
-// removed if SKSL precompilation is implemented in the Skia Vulkan backend.
+// removed if SkSL precompilation is implemented in the Skia Vulkan backend.
 #if !defined(SHELL_ENABLE_VULKAN)
   // To check that all shaders are precompiled, verify that no new skp is dumped
   // due to shader compilations.
@@ -124,22 +124,7 @@ TEST_F(PersistentCacheTest, CacheSkSLWorks) {
 #endif  // !defined(SHELL_ENABLE_VULKAN)
 
   // Remove all files generated
-  fml::FileVisitor remove_visitor = [&remove_visitor](
-                                        const fml::UniqueFD& directory,
-                                        const std::string& filename) {
-    if (fml::IsDirectory(directory, filename.c_str())) {
-      {  // To trigger fml::~UniqueFD before fml::UnlinkDirectory
-        fml::UniqueFD sub_dir =
-            fml::OpenDirectoryReadOnly(directory, filename.c_str());
-        fml::VisitFiles(sub_dir, remove_visitor);
-      }
-      fml::UnlinkDirectory(directory, filename.c_str());
-    } else {
-      fml::UnlinkFile(directory, filename.c_str());
-    }
-    return true;
-  };
-  fml::VisitFiles(dir.fd(), remove_visitor);
+  fml::RemoveFilesInDirectory(dir.fd());
   DestroyShell(std::move(shell));
 }
 
@@ -193,27 +178,12 @@ TEST_F(PersistentCacheTest, CanPrecompileMetalShaders) {
   WaitForRaster(shell.get());
   WaitForIO(shell.get());
 
-  // Assert that SKSLs have been generated.
+  // Assert that SkSLs have been generated.
   auto filled_cache = PersistentCache::GetCacheForProcess()->LoadSkSLs();
   ASSERT_GT(filled_cache.size(), 0u);
 
-  // Remove all files generated
-  fml::FileVisitor remove_visitor = [&remove_visitor](
-                                        const fml::UniqueFD& directory,
-                                        const std::string& filename) {
-    if (fml::IsDirectory(directory, filename.c_str())) {
-      {  // To trigger fml::~UniqueFD before fml::UnlinkDirectory
-        fml::UniqueFD sub_dir =
-            fml::OpenDirectoryReadOnly(directory, filename.c_str());
-        fml::VisitFiles(sub_dir, remove_visitor);
-      }
-      fml::UnlinkDirectory(directory, filename.c_str());
-    } else {
-      fml::UnlinkFile(directory, filename.c_str());
-    }
-    return true;
-  };
-  fml::VisitFiles(dir.fd(), remove_visitor);
+  // Remove all files generated.
+  fml::RemoveFilesInDirectory(dir.fd());
   DestroyShell(std::move(shell));
 }
 

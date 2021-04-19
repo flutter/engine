@@ -192,29 +192,25 @@ sk_sp<SkData> ParseBase64(const std::string& input) {
   return data;
 }
 
-size_t PersistentCache::PrecompileKnownSKSLs(GrDirectContext* context) const {
+size_t PersistentCache::PrecompileKnownSkSLs(GrDirectContext* context) const {
   auto known_sksls = LoadSkSLs();
   // A trace must be present even if no precompilations have been completed.
-  FML_TRACE_EVENT("flutter", "PersistentCache::PrecompileKnownSKSLs", "count",
+  FML_TRACE_EVENT("flutter", "PersistentCache::PrecompileKnownSkSLs", "count",
                   known_sksls.size());
 
   if (context == nullptr) {
     return 0;
   }
 
-  if (known_sksls.empty()) {
-    return 0;
-  }
-
   size_t precompiled_count = 0;
   for (const auto& sksl : known_sksls) {
-    TRACE_EVENT0("flutter", "PrecompilingSKSL");
+    TRACE_EVENT0("flutter", "PrecompilingSkSL");
     if (context->precompileShader(*sksl.first, *sksl.second)) {
       precompiled_count++;
     }
   }
 
-  FML_TRACE_COUNTER("flutter", "PersistentCache::PrecompiledSKSLs",
+  FML_TRACE_COUNTER("flutter", "PersistentCache::PrecompiledSkSLs",
                     reinterpret_cast<int64_t>(this),  // Trace Counter ID
                     "Successful", precompiled_count);
   return precompiled_count;

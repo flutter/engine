@@ -51,7 +51,7 @@ class SK_API_AVAILABLE_CA_METAL_LAYER GPUSurfaceMetal : public Surface {
 
   void ReleaseUnusedDrawableIfNecessary();
 
-  void PrecompileKnownSKSLsIfNecessary();
+  void PrecompileKnownSkSLsIfNecessary();
 
   FML_DISALLOW_COPY_AND_ASSIGN(GPUSurfaceMetal);
 };

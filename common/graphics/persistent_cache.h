@@ -75,19 +75,19 @@ class PersistentCache : public GrContextOptions::PersistentCache {
   std::vector<SkSLCache> LoadSkSLs() const;
 
   //----------------------------------------------------------------------------
-  /// @brief      Precompile SKSLs packaged with the application and gathered
-  ///             during during previous runs in the given context.
+  /// @brief      Precompile SkSLs packaged with the application and gathered
+  ///             during previous runs in the given context.
   ///
   /// @warning    The context must be the rendering context. This context may be
   ///             destroyed during application suspension and subsequently
-  ///             recreated. The SKSLs must be precompiled again in the new
+  ///             recreated. The SkSLs must be precompiled again in the new
   ///             context.
   ///
   /// @param      context  The rendering context to precompile shaders in.
   ///
-  /// @return     The number of SKSLs precompiled.
+  /// @return     The number of SkSLs precompiled.
   ///
-  size_t PrecompileKnownSKSLs(GrDirectContext* context) const;
+  size_t PrecompileKnownSkSLs(GrDirectContext* context) const;
 
   // Return mappings for all skp's accessible through the AssetManager
   std::vector<std::unique_ptr<fml::Mapping>> GetSkpsFromAssetManager() const;

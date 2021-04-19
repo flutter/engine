@@ -33,14 +33,14 @@ bool GPUSurfaceMetal::IsValid() {
   return context_ != nullptr;
 }
 
-void GPUSurfaceMetal::PrecompileKnownSKSLsIfNecessary() {
+void GPUSurfaceMetal::PrecompileKnownSkSLsIfNecessary() {
   auto* current_context = GetContext();
   if (current_context == precompiled_sksl_context_) {
-    // Known SKSLs have already been prepared in this context.
+    // Known SkSLs have already been prepared in this context.
     return;
   }
   precompiled_sksl_context_ = current_context;
-  flutter::PersistentCache::GetCacheForProcess()->PrecompileKnownSKSLs(precompiled_sksl_context_);
+  flutter::PersistentCache::GetCacheForProcess()->PrecompileKnownSkSLs(precompiled_sksl_context_);
 }
 
 // |Surface|
@@ -55,7 +55,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrame(const SkISize& frame
     return nullptr;
   }
 
-  PrecompileKnownSKSLsIfNecessary();
+  PrecompileKnownSkSLsIfNecessary();
 
   switch (render_target_type_) {
     case MTLRenderTargetType::kCAMetalLayer:
@@ -168,9 +168,9 @@ GrDirectContext* GPUSurfaceMetal::GetContext() {
 
 // |Surface|
 std::unique_ptr<GLContextResult> GPUSurfaceMetal::MakeRenderContextCurrent() {
-  // A context may be either be necessary to render to the surface or to snapshot an offscreen
-  // surface. Either way, SKSL precompilation must be attempted.
-  PrecompileKnownSKSLsIfNecessary();
+  // A context may either be necessary to render to the surface or to snapshot an offscreen
+  // surface. Either way, SkSL precompilation must be attempted.
+  PrecompileKnownSkSLsIfNecessary();
 
   // This backend has no such concept.
   return std::make_unique<GLContextDefaultResult>(true);
