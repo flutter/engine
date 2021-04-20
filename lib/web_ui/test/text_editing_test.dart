@@ -1577,7 +1577,9 @@ void testMain() {
           <String, dynamic>{
             'text': 'something',
             'selectionBase': 9,
-            'selectionExtent': 9
+            'selectionExtent': 9,
+            'composingBase': -1,
+            'composingExtent': -1
           }
         ],
       );
@@ -1601,7 +1603,9 @@ void testMain() {
           <String, dynamic>{
             'text': 'something',
             'selectionBase': 2,
-            'selectionExtent': 5
+            'selectionExtent': 5,
+            'composingBase': -1,
+            'composingExtent': -1
           }
         ],
       );
@@ -1674,7 +1678,9 @@ void testMain() {
             hintForFirstElement: <String, dynamic>{
               'text': 'something',
               'selectionBase': 9,
-              'selectionExtent': 9
+              'selectionExtent': 9,
+              'composingBase': -1,
+              'composingExtent': -1
             }
           },
         ],
@@ -1733,6 +1739,8 @@ void testMain() {
             'text': 'something\nelse',
             'selectionBase': 14,
             'selectionExtent': 14,
+            'composingBase': -1,
+            'composingExtent': -1
           }
         ],
       );
@@ -1747,6 +1755,8 @@ void testMain() {
             'text': 'something\nelse',
             'selectionBase': 2,
             'selectionExtent': 5,
+            'composingBase': -1,
+            'composingExtent': -1
           }
         ],
       );
