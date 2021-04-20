@@ -1335,6 +1335,7 @@ TEST_F(ShellTest, ReportTimingsIsCalledImmediatelyAfterTheFirstFrame) {
   };
   AddNativeCallback("NativeReportTimingsCallback",
                     CREATE_NATIVE_ENTRY(nativeTimingCallback));
+  ASSERT_TRUE(configuration.IsValid());
   RunEngine(shell.get(), std::move(configuration));
 
   for (int i = 0; i < 10; i += 1) {
@@ -2763,6 +2764,79 @@ TEST_F(ShellTest, UpdateAssetResolverByTypeDoesNotReplaceMismatchType) {
 
   DestroyShell(std::move(shell), std::move(task_runners));
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+}
+
+TEST_F(ShellTest, CanCreateShellsWithGLBackend) {
+#if !SHELL_ENABLE_GL
+  // GL emulation does not exist on Fuchsia.
+  GTEST_SKIP();
+#endif  // !SHELL_ENABLE_GL
+  auto settings = CreateSettingsForFixture();
+  std::unique_ptr<Shell> shell =
+      CreateShell(settings,                                       //
+                  GetTaskRunnersForFixture(),                     //
+                  false,                                          //
+                  nullptr,                                        //
+                  false,                                          //
+                  ShellTestPlatformView::BackendType::kGLBackend  //
+      );
+  ASSERT_NE(shell, nullptr);
+  ASSERT_TRUE(shell->IsSetup());
+  PlatformViewNotifyCreated(shell.get());
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("emptyMain");
+  RunEngine(shell.get(), std::move(configuration));
+  PumpOneFrame(shell.get());
+  PlatformViewNotifyDestroyed(shell.get());
+  DestroyShell(std::move(shell));
+}
+
+TEST_F(ShellTest, CanCreateShellsWithVulkanBackend) {
+#if !SHELL_ENABLE_VULKAN
+  GTEST_SKIP();
+#endif  // !SHELL_ENABLE_VULKAN
+  auto settings = CreateSettingsForFixture();
+  std::unique_ptr<Shell> shell =
+      CreateShell(settings,                                           //
+                  GetTaskRunnersForFixture(),                         //
+                  false,                                              //
+                  nullptr,                                            //
+                  false,                                              //
+                  ShellTestPlatformView::BackendType::kVulkanBackend  //
+      );
+  ASSERT_NE(shell, nullptr);
+  ASSERT_TRUE(shell->IsSetup());
+  PlatformViewNotifyCreated(shell.get());
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("emptyMain");
+  RunEngine(shell.get(), std::move(configuration));
+  PumpOneFrame(shell.get());
+  PlatformViewNotifyDestroyed(shell.get());
+  DestroyShell(std::move(shell));
+}
+
+TEST_F(ShellTest, CanCreateShellsWithMetalBackend) {
+#if !SHELL_ENABLE_METAL
+  GTEST_SKIP();
+#endif  // !SHELL_ENABLE_METAL
+  auto settings = CreateSettingsForFixture();
+  std::unique_ptr<Shell> shell =
+      CreateShell(settings,                                          //
+                  GetTaskRunnersForFixture(),                        //
+                  false,                                             //
+                  nullptr,                                           //
+                  false,                                             //
+                  ShellTestPlatformView::BackendType::kMetalBackend  //
+      );
+  ASSERT_NE(shell, nullptr);
+  ASSERT_TRUE(shell->IsSetup());
+  PlatformViewNotifyCreated(shell.get());
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("emptyMain");
+  RunEngine(shell.get(), std::move(configuration));
+  PumpOneFrame(shell.get());
+  PlatformViewNotifyDestroyed(shell.get());
+  DestroyShell(std::move(shell));
 }
 
 }  // namespace testing

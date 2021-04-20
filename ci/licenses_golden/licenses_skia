@@ -1,4 +1,4 @@
-Signature: c2916a479d544120b805bae8b091b965
+Signature: 40623d3d0fe8f6f3ac0e379653534873
 
 UNUSED LICENSES:
 
@@ -5120,6 +5120,7 @@ FILE: ../../../third_party/skia/gm/particles.cpp
 FILE: ../../../third_party/skia/gm/runtimeeffectimage.cpp
 FILE: ../../../third_party/skia/include/gpu/gl/egl/GrGLMakeEGLInterface.h
 FILE: ../../../third_party/skia/include/gpu/gl/glx/GrGLMakeGLXInterface.h
+FILE: ../../../third_party/skia/modules/canvaskit/paragraph_bindings_gen.cpp
 FILE: ../../../third_party/skia/src/core/SkYUVAInfoLocation.h
 FILE: ../../../third_party/skia/src/gpu/GrInnerFanTriangulator.h
 FILE: ../../../third_party/skia/src/gpu/GrPersistentCacheUtils.cpp
