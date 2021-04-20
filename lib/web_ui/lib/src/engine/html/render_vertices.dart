@@ -85,55 +85,15 @@ class _WebGlRenderer implements _GlRenderer {
 
   /// Cached vertex shader reused by [drawVertices] and gradients.
   static String? _baseVertexShader;
-  @override
-  void drawVertices(
-      html.CanvasRenderingContext2D? context,
-      int canvasWidthInPixels,
-      int canvasHeightInPixels,
-      Matrix4 transform,
-      SurfaceVertices vertices,
-      ui.BlendMode blendMode,
-      SurfacePaintData paint) {
-    // Compute bounds of vertices.
-    final Float32List positions = vertices._positions;
-    ui.Rect bounds = _computeVerticesBounds(positions, transform);
-    double minValueX = bounds.left;
-    double minValueY = bounds.top;
-    double maxValueX = bounds.right;
-    double maxValueY = bounds.bottom;
-    double offsetX = 0;
-    double offsetY = 0;
-    int widthInPixels = canvasWidthInPixels;
-    int heightInPixels = canvasHeightInPixels;
-    // If vertices fall outside the bitmap area, cull.
-    if (maxValueX < 0 || maxValueY < 0) {
-      return;
-    }
-    if (minValueX > widthInPixels || minValueY > heightInPixels) {
-      return;
-    }
-    // If Vertices are is smaller than hosting canvas, allocate minimal
-    // offscreen canvas to reduce readPixels data size.
-    if ((maxValueX - minValueX) < widthInPixels &&
-        (maxValueY - minValueY) < heightInPixels) {
-      widthInPixels = maxValueX.ceil() - minValueX.floor();
-      heightInPixels = maxValueY.ceil() - minValueY.floor();
-      offsetX = minValueX.floor().toDouble();
-      offsetY = minValueY.floor().toDouble();
-    }
-    if (widthInPixels == 0 || heightInPixels == 0) {
-      return;
-    }
-    final String vertexShader = writeBaseVertexShader();
-    final String fragmentShader = _writeVerticesFragmentShader();
-    _GlContext gl = _GlContextCache.createGlContext(widthInPixels, heightInPixels)!;
+  static String? _textureVertexShader;
 
-    _GlProgram glProgram = gl.useAndCacheProgram(vertexShader, fragmentShader);
-
+  static void _setupVertexTransforms(_GlContext gl, _GlProgram glProgram,
+      double offsetX, double offsetY, double widthInPixels,
+      double heightInPixels, Matrix4 transform) {
     Object transformUniform = gl.getUniformLocation(glProgram.program,
         'u_ctransform');
     Matrix4 transformAtOffset = transform.clone()
-        ..translate(-offsetX, -offsetY);
+      ..translate(-offsetX, -offsetY);
     gl.setUniformMatrix4fv(transformUniform, false, transformAtOffset.storage);
 
     // Set uniform to scale 0..width/height pixels coordinates to -1..1
@@ -143,58 +103,19 @@ class _WebGlRenderer implements _GlRenderer {
         -2.0 / heightInPixels.toDouble(), 1, 1);
     Object shift = gl.getUniformLocation(glProgram.program, 'u_shift');
     gl.setUniform4f(shift, -1, 1, 0, 0);
+  }
 
-    // Setup geometry.
-    Object positionsBuffer = gl.createBuffer()!;
-    assert(positionsBuffer != null); // ignore: unnecessary_null_comparison
-    gl.bindArrayBuffer(positionsBuffer);
-    gl.bufferData(positions, gl.kStaticDraw);
-    Object? positionLoc = gl.getAttributeLocation(glProgram.program, 'position');
-    js_util.callMethod(
-        gl.glContext, 'vertexAttribPointer', <dynamic>[
-          positionLoc, 2, gl.kFloat, false, 0, 0,
-    ]);
-    gl.enableVertexAttribArray(0);
+  @override
+  void drawVertices(
+      html.CanvasRenderingContext2D? context,
+      int canvasWidthInPixels,
+      int canvasHeightInPixels,
+      Matrix4 transform,
+      SurfaceVertices vertices,
+      ui.BlendMode blendMode,
+      SurfacePaintData paint) {
 
-    // Setup color buffer.
-    Object? colorsBuffer = gl.createBuffer();
-    gl.bindArrayBuffer(colorsBuffer);
-
-    final int vertexCount = positions.length ~/ 2;
-
-    // Buffer kBGRA_8888.
-    if (vertices._colors == null) {
-      final ui.Color color = paint.color ?? ui.Color(0xFF000000);
-      Uint32List vertexColors = Uint32List(vertexCount);
-      for (int i = 0; i < vertexCount; i++) {
-        vertexColors[i] = color.value;
-      }
-      gl.bufferData(vertexColors, gl.kStaticDraw);
-    } else {
-      gl.bufferData(vertices._colors, gl.kStaticDraw);
-    }
-    Object colorLoc = gl.getAttributeLocation(glProgram.program, 'color');
-    js_util.callMethod(gl.glContext, 'vertexAttribPointer',
-        <dynamic>[colorLoc, 4, gl.kUnsignedByte, true, 0, 0]);
-    gl.enableVertexAttribArray(1);
-    gl.clear();
-    final Uint16List ?indices = vertices._indices;
-    if (indices == null) {
-      gl.drawTriangles(vertexCount, vertices._mode);
-    } else {
-      /// If indices are specified to use shared vertices to reduce vertex
-      /// data transfer, use drawElements to map from vertex indices to
-      /// triangles.
-      Object? indexBuffer = gl.createBuffer();
-      gl.bindElementArrayBuffer(indexBuffer);
-      gl.bufferElementData(indices, gl.kStaticDraw);
-      gl.drawElements(gl.kTriangles, indices.length, gl.kUnsignedShort);
-    }
-
-    context!.save();
-    context.resetTransform();
-    gl.drawImage(context, offsetX, offsetY);
-    context.restore();
+    
   }
 
   static final Uint16List _vertexIndicesForRect = Uint16List.fromList(
@@ -331,6 +252,24 @@ class _WebGlRenderer implements _GlRenderer {
     return _baseVertexShader!;
   }
 
+  static String writeTextureVertexShader() {
+    if (_textureVertexShader == null) {
+      ShaderBuilder builder = ShaderBuilder(webGLVersion);
+      builder.addIn(ShaderType.kVec4, name: 'position');
+      builder.addIn(ShaderType.kVec2, name: 'texcoord');
+      builder.addUniform(ShaderType.kMat4, name: 'u_ctransform');
+      builder.addUniform(ShaderType.kVec4, name: 'u_scale');
+      builder.addUniform(ShaderType.kVec4, name: 'u_shift');
+      builder.addOut(ShaderType.kVec2, name: 'v_texcoord');
+      ShaderMethod method = builder.addMethod('main');
+      method.addStatement(
+          'gl_Position = ((u_ctransform * position) * u_scale) + u_shift;');
+      method.addStatement('v_texcoord = texcoord;');
+      _textureVertexShader = builder.build();
+    }
+    return _textureVertexShader!;
+  }
+
   /// This fragment shader enables Int32List of colors to be passed directly
   /// to gl context buffer for rendering by decoding RGBA8888.
   ///     #version 300 es
@@ -346,6 +285,17 @@ class _WebGlRenderer implements _GlRenderer {
     builder.addIn(ShaderType.kVec4, name:'v_color');
     ShaderMethod method = builder.addMethod('main');
     method.addStatement('${builder.fragmentColor.name} = v_color;');
+    return builder.build();
+  }
+
+  String _writeVerticesTextureFragmentShader() {
+    ShaderBuilder builder = ShaderBuilder.fragment(webGLVersion);
+    builder.floatPrecision = ShaderPrecision.kMedium;
+    builder.addIn(ShaderType.kVec2, name:'v_texcoord');
+    builder.addUniform(ShaderType.kSampler2D, name: 'u_texture');
+    ShaderMethod method = builder.addMethod('main');
+    method.addStatement('${builder.fragmentColor.name} = '
+        '${builder.texture2DFunction}(u_texture, v_texcoord);');
     return builder.build();
   }
 
@@ -490,11 +440,13 @@ class _GlContext {
   dynamic _kStaticDraw;
   dynamic _kFloat;
   dynamic _kColorBufferBit;
+  dynamic _kTexture2D;
   dynamic _kTriangles;
   dynamic _kLinkStatus;
   dynamic _kUnsignedByte;
   dynamic _kUnsignedShort;
   dynamic _kRGBA;
+  int? _kTexture0;
 
   Object? _canvas;
   int? _widthInPixels;
@@ -531,7 +483,7 @@ class _GlContext {
           left, top, _widthInPixels, _heightInPixels]);
   }
 
-  _GlProgram useAndCacheProgram(
+  _GlProgram cacheProgram(
       String vertexShaderSource, String fragmentShaderSource) {
     String cacheKey = '$vertexShaderSource||$fragmentShaderSource';
     _GlProgram? cachedProgram = _programCache[cacheKey];
@@ -547,7 +499,6 @@ class _GlContext {
       linkProgram(program);
       cachedProgram = _GlProgram(program);
       _programCache[cacheKey] = cachedProgram;
-      useProgram(program);
     }
     return cachedProgram;
   }
@@ -582,8 +533,8 @@ class _GlContext {
     }
   }
 
-  void useProgram(Object? program) {
-    js_util.callMethod(glContext, 'useProgram', <dynamic>[program]);
+  void useProgram(_GlProgram program) {
+    js_util.callMethod(glContext, 'useProgram', <dynamic>[program.program]);
   }
 
   Object? createBuffer() =>
@@ -593,8 +544,43 @@ class _GlContext {
     js_util.callMethod(glContext, 'bindBuffer', <dynamic>[kArrayBuffer, buffer]);
   }
 
+  Object? createVertexArray() =>
+      js_util.callMethod(glContext, 'createVertexArray', const <dynamic>[]);
+
+  void bindVertexArray(Object vertexObjectArray) {
+    js_util.callMethod(glContext, 'bindVertexArray',
+        <dynamic>[vertexObjectArray]);
+  }
+
   void bindElementArrayBuffer(Object? buffer) {
     js_util.callMethod(glContext, 'bindBuffer', <dynamic>[kElementArrayBuffer, buffer]);
+  }
+
+  Object? createTexture() =>
+      js_util.callMethod(glContext, 'createTexture', const <dynamic>[]);
+
+  void generateMipmap(dynamic target) =>
+      js_util.callMethod(glContext, 'generateMipmap', <dynamic>[target]);
+
+  void bindTexture(dynamic target, Object? buffer) {
+    js_util.callMethod(glContext, 'bindTexture', <dynamic>[target, buffer]);
+  }
+
+  void activeTexture(int textureUnit) {
+    js_util.callMethod(glContext, 'activeTexture', <dynamic>[textureUnit]);
+  }
+
+  void texImage2D(dynamic target, int level, dynamic internalFormat,
+      dynamic format, dynamic dataType,
+      dynamic pixels, {int? width, int? height, int border = 0}) {
+    if (width == null) {
+      js_util.callMethod(glContext, 'texImage2D', <dynamic>[
+        target, level, internalFormat, format, dataType, pixels]);
+    } else {
+      js_util.callMethod(glContext, 'texImage2D', <dynamic>[
+        target, level, internalFormat, width, height, border, format, dataType,
+        pixels]);
+    }
   }
 
   void deleteBuffer(Object buffer) {
@@ -609,7 +595,7 @@ class _GlContext {
     js_util.callMethod(glContext, 'bufferData', <dynamic>[kElementArrayBuffer, data, type]);
   }
 
-  void enableVertexAttribArray(int index) {
+  void enableVertexAttribArray(dynamic index) {
     js_util.callMethod(glContext, 'enableVertexAttribArray', <dynamic>[index]);
   }
 
@@ -705,6 +691,12 @@ class _GlContext {
 
   dynamic get kColorBufferBit =>
       _kColorBufferBit ??= js_util.getProperty(glContext, 'COLOR_BUFFER_BIT');
+
+  dynamic get kTexture2D =>
+      _kTexture2D ??= js_util.getProperty(glContext, 'TEXTURE_2D');
+
+  int get kTexture0 =>
+      _kTexture0 ??= js_util.getProperty(glContext, 'TEXTURE0') as int;
 
   /// Returns reference to uniform in program.
   Object getUniformLocation(Object program, String uniformName) {

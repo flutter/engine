@@ -229,6 +229,8 @@ class ShaderBuilder {
   String _precisionToString(int precision) => precision == ShaderPrecision.kLow
       ? 'lowp'
       : precision == ShaderPrecision.kMedium ? 'mediump' : 'highp';
+
+  String get texture2DFunction => isWebGl2 ? 'texture' : 'texture2D';
 }
 
 class ShaderMethod {
