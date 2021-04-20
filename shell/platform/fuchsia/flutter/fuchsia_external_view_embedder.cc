@@ -23,6 +23,41 @@ constexpr float kScenicZElevationBetweenLayers = 0.0001f;
 constexpr float kScenicZElevationForPlatformView = 100.f;
 constexpr float kScenicElevationForInputInterceptor = 500.f;
 
+SkScalar OpacityFromMutatorStack(const flutter::MutatorsStack& mutatorsStack) {
+  SkScalar mutatorsOpacity = 1.f;
+  for (auto i = mutatorsStack.Bottom(); i != mutatorsStack.Top(); ++i) {
+    const auto& mutator = *i;
+    switch (mutator->GetType()) {
+      case flutter::MutatorType::opacity: {
+        mutatorsOpacity *= std::clamp(mutator->GetAlphaFloat(), 0.f, 1.f);
+      } break;
+      default: {
+        break;
+      }
+    }
+  }
+
+  return mutatorsOpacity;
+}
+
+SkMatrix TransformFromMutatorStack(
+    const flutter::MutatorsStack& mutatorsStack) {
+  SkMatrix mutatorsTransform;
+  for (auto i = mutatorsStack.Bottom(); i != mutatorsStack.Top(); ++i) {
+    const auto& mutator = *i;
+    switch (mutator->GetType()) {
+      case flutter::MutatorType::transform: {
+        mutatorsTransform.preConcat(mutator->GetMatrix());
+      } break;
+      default: {
+        break;
+      }
+    }
+  }
+
+  return mutatorsTransform;
+}
+
 }  // namespace
 
 FuchsiaExternalViewEmbedder::FuchsiaExternalViewEmbedder(
@@ -165,7 +200,7 @@ void FuchsiaExternalViewEmbedder::EndFrame(
 void FuchsiaExternalViewEmbedder::SubmitFrame(
     GrDirectContext* context,
     std::unique_ptr<flutter::SurfaceFrame> frame,
-    const std::shared_ptr<fml::SyncSwitch>& gpu_disable_sync_switch) {
+    const std::shared_ptr<const fml::SyncSwitch>& gpu_disable_sync_switch) {
   TRACE_EVENT0("flutter", "FuchsiaExternalViewEmbedder::SubmitFrame");
   std::vector<std::unique_ptr<SurfaceProducerSurface>> frame_surfaces;
   std::unordered_map<EmbedderLayerId, size_t> frame_surface_indices;
@@ -214,32 +249,28 @@ void FuchsiaExternalViewEmbedder::SubmitFrame(
         FML_DCHECK(layer->second.embedded_view_params.has_value());
         auto& view_params = layer->second.embedded_view_params.value();
 
-        // Compute offset and size for the platform view.
-        SkPoint view_offset =
-            SkPoint::Make(view_params.finalBoundingRect().left(),
-                          view_params.finalBoundingRect().top());
-        SkSize view_size =
-            SkSize::Make(view_params.finalBoundingRect().width(),
-                         view_params.finalBoundingRect().height());
+        // Validate the MutatorsStack encodes the same transform as the
+        // transform matrix.
+        FML_DCHECK(TransformFromMutatorStack(view_params.mutatorsStack()) ==
+                   view_params.transformMatrix());
 
-        // Compute opacity for the platform view.
-        float view_opacity = 1.0f;
-        for (auto i = view_params.mutatorsStack().Bottom();
-             i != view_params.mutatorsStack().Top(); ++i) {
-          const auto& mutator = *i;
-          switch (mutator->GetType()) {
-            case flutter::MutatorType::opacity: {
-              view_opacity *= std::clamp(mutator->GetAlphaFloat(), 0.0f, 1.0f);
-            } break;
-            default: {
-              break;
-            }
-          }
-        }
-
+        // Get the ScenicView structure corresponding to the platform view.
         auto found = scenic_views_.find(layer_id.value());
         FML_DCHECK(found != scenic_views_.end());
         auto& view_holder = found->second;
+
+        // Compute offset and size for the platform view.
+        const SkMatrix& view_transform = view_params.transformMatrix();
+        const SkPoint view_offset = SkPoint::Make(
+            view_transform.getTranslateX(), view_transform.getTranslateY());
+        const SkSize view_size = view_params.sizePoints();
+        const SkSize view_scale = SkSize::Make(view_transform.getScaleX(),
+                                               view_transform.getScaleY());
+        FML_DCHECK(!view_size.isEmpty() && !view_scale.isEmpty());
+
+        // Compute opacity for the platform view.
+        const float view_opacity =
+            OpacityFromMutatorStack(view_params.mutatorsStack());
 
         // Set opacity.
         if (view_opacity != view_holder.opacity) {
@@ -247,14 +278,19 @@ void FuchsiaExternalViewEmbedder::SubmitFrame(
           view_holder.opacity = view_opacity;
         }
 
-        // Set offset and elevation.
+        // Set transform and elevation.
         const float view_elevation =
             kScenicZElevationBetweenLayers * scenic_layer_index +
             embedded_views_height;
         if (view_offset != view_holder.offset ||
+            view_scale != view_holder.scale ||
             view_elevation != view_holder.elevation) {
           view_holder.entity_node.SetTranslation(view_offset.fX, view_offset.fY,
                                                  -view_elevation);
+          view_holder.entity_node.SetScale(view_scale.fWidth,
+                                           view_scale.fHeight, 1.f);
+          view_holder.offset = view_offset;
+          view_holder.scale = view_scale;
           view_holder.elevation = view_elevation;
         }
 
@@ -277,8 +313,8 @@ void FuchsiaExternalViewEmbedder::SubmitFrame(
               .bounding_box =
                   {
                       .min = {.x = 0.f, .y = 0.f, .z = -1000.f},
-                      .max = {.x = view_size.width(),
-                              .y = view_size.height(),
+                      .max = {.x = view_size.fWidth,
+                              .y = view_size.fHeight,
                               .z = 0.f},
                   },
               .inset_from_min = {.x = 0.f, .y = 0.f, .z = 0.f},
@@ -299,8 +335,8 @@ void FuchsiaExternalViewEmbedder::SubmitFrame(
       if (layer->second.canvas_spy->DidDrawIntoCanvas()) {
         const auto& surface_index = frame_surface_indices.find(layer_id);
         FML_DCHECK(surface_index != frame_surface_indices.end());
-        scenic::Image* surface_image =
-            frame_surfaces[surface_index->second]->GetImage();
+        uint32_t surface_image_id =
+            frame_surfaces[surface_index->second]->GetImageId();
 
         // Create a new layer if needed for the surface.
         FML_DCHECK(scenic_layer_index <= scenic_layers_.size());
@@ -363,7 +399,7 @@ void FuchsiaExternalViewEmbedder::SubmitFrame(
             layer->second.surface_size.height() * 0.5f, -layer_elevation);
         scenic_layer.material.SetColor(SK_AlphaOPAQUE, SK_AlphaOPAQUE,
                                        SK_AlphaOPAQUE, SK_AlphaOPAQUE - 1);
-        scenic_layer.material.SetTexture(*surface_image);
+        scenic_layer.material.SetTexture(surface_image_id);
 
         // Only the first (i.e. the bottom-most) layer should receive input.
         // TODO: Workaround for invisible overlays stealing input. Remove when
@@ -486,7 +522,7 @@ void FuchsiaExternalViewEmbedder::Reset() {
   // Detach the root node to prepare for the next frame.
   layer_tree_node_.DetachChildren();
 
-  // Clear images on all layers so they aren't cached unnecesarily.
+  // Clear images on all layers so they aren't cached unnecessarily.
   for (auto& layer : scenic_layers_) {
     layer.material.SetTexture(0);
   }

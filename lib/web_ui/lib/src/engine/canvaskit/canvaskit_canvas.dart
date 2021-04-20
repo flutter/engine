@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of engine;
 
 /// An implementation of [ui.Canvas] that is backed by a CanvasKit canvas.
@@ -260,11 +259,6 @@ class CanvasKitCanvas implements ui.Canvas {
     assert(rectIsValid(center));
     assert(rectIsValid(dst));
     assert(paint != null); // ignore: unnecessary_null_comparison
-    _drawImageNine(image, center, dst, paint);
-  }
-
-  void _drawImageNine(
-      ui.Image image, ui.Rect center, ui.Rect dst, ui.Paint paint) {
     _canvas.drawImageNine(image as CkImage, center, dst, paint as CkPaint);
   }
 
@@ -373,11 +367,11 @@ class CanvasKitCanvas implements ui.Canvas {
       rectBuffer[index3] = rect.bottom;
     }
 
-    final List<Float32List>? colorBuffer =
-        (colors == null || colors.isEmpty) ? null : toSkFloatColorList(colors);
+    final Uint32List? colorBuffer =
+        (colors == null || colors.isEmpty) ? null : toFlatColors(colors);
 
-    _drawAtlas(
-        paint, atlas, rstTransformBuffer, rectBuffer, colorBuffer, blendMode ?? ui.BlendMode.src);
+    _drawAtlas(paint, atlas, rstTransformBuffer, rectBuffer, colorBuffer,
+        blendMode ?? ui.BlendMode.src);
   }
 
   @override
@@ -406,9 +400,8 @@ class CanvasKitCanvas implements ui.Canvas {
       throw ArgumentError(
           'If non-null, "colors" length must be one fourth the length of "rstTransforms" and "rects".');
 
-    final List<Float32List>? colorBuffer = colors == null ? null : encodeRawColorList(colors);
-
-    _drawAtlas(paint, atlas, rstTransforms, rects, colorBuffer, blendMode ?? ui.BlendMode.src);
+    _drawAtlas(paint, atlas, rstTransforms, rects,
+        colors?.buffer.asUint32List(), blendMode ?? ui.BlendMode.src);
   }
 
   // TODO(hterkelsen): Pass a cull_rect once CanvasKit supports that.
@@ -417,7 +410,7 @@ class CanvasKitCanvas implements ui.Canvas {
     ui.Image atlas,
     Float32List rstTransforms,
     Float32List rects,
-    List<Float32List>? colors,
+    Uint32List? colors,
     ui.BlendMode blendMode,
   ) {
     _canvas.drawAtlasRaw(

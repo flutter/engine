@@ -18,6 +18,8 @@
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_standard_method_codec.h"
 #include "gtest/gtest.h"
 
+const int32_t kFlutterSemanticsCustomActionIdBatchEnd = -1;
+
 struct _FlutterEngine {
   bool running;
   FlutterPlatformMessageCallback platform_message_callback;
@@ -323,6 +325,26 @@ FlutterEngineResult FlutterEngineSendPlatformMessage(
         engine, message->channel, message->response_handle,
         static_cast<const uint8_t*>(g_bytes_get_data(response, nullptr)),
         g_bytes_get_size(response));
+  } else if (strcmp(message->channel, "test/key-event-delayed") == 0) {
+    static std::unique_ptr<const FlutterPlatformMessageResponseHandle>
+        delayed_response_handle = nullptr;
+    g_autoptr(FlJsonMessageCodec) codec = fl_json_message_codec_new();
+    g_autoptr(FlValue) handledValue = fl_value_new_map();
+    fl_value_set_string_take(handledValue, "handled", fl_value_new_bool(true));
+    g_autoptr(GBytes) response = fl_message_codec_encode_message(
+        FL_MESSAGE_CODEC(codec), handledValue, nullptr);
+    if (delayed_response_handle == nullptr) {
+      delayed_response_handle.reset(message->response_handle);
+    } else {
+      send_response(
+          engine, message->channel, message->response_handle,
+          static_cast<const uint8_t*>(g_bytes_get_data(response, nullptr)),
+          g_bytes_get_size(response));
+      send_response(
+          engine, message->channel, delayed_response_handle.release(),
+          static_cast<const uint8_t*>(g_bytes_get_data(response, nullptr)),
+          g_bytes_get_size(response));
+    }
   }
 
   return kSuccess;
@@ -424,6 +446,21 @@ FlutterEngineResult FlutterEngineUpdateLocales(FLUTTER_API_SYMBOL(FlutterEngine)
   return kSuccess;
 }
 
+FlutterEngineResult FlutterEngineUpdateSemanticsEnabled(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    bool enabled) {
+  return kSuccess;
+}
+
+FlutterEngineResult FlutterEngineDispatchSemanticsAction(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    uint64_t id,
+    FlutterSemanticsAction action,
+    const uint8_t* data,
+    size_t data_length) {
+  return kSuccess;
+}
+
 }  // namespace
 
 FlutterEngineResult FlutterEngineGetProcAddresses(
@@ -453,6 +490,8 @@ FlutterEngineResult FlutterEngineGetProcAddresses(
       &FlutterEngineSendPlatformMessageResponse;
   table->RunTask = &FlutterEngineRunTask;
   table->UpdateLocales = &FlutterEngineUpdateLocales;
+  table->UpdateSemanticsEnabled = &FlutterEngineUpdateSemanticsEnabled;
+  table->DispatchSemanticsAction = &FlutterEngineDispatchSemanticsAction;
   table->RunsAOTCompiledDartCode = &FlutterEngineRunsAOTCompiledDartCode;
 
   return kSuccess;

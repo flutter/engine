@@ -27,7 +27,8 @@ void testMain() {
     await webOnlyInitializeEngine();
   });
 
-  group('SceneBuilder', () {
+  group('SceneBuilder', ()
+  {
     test('pushOffset implements surface lifecycle', () {
       testLayerLifeCycle((SceneBuilder sceneBuilder, EngineLayer oldLayer) {
         return sceneBuilder.pushOffset(10, 20, oldLayer: oldLayer);
@@ -328,6 +329,65 @@ void testMain() {
     }
   });
 
+  test('does not skip painting picture when picture is '
+      'inside transform with offset', () async {
+    final Picture picture = _drawPicture();
+    // Picture should not be clipped out since transform will offset it to 500,500
+    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
+    builder.pushOffset(0, 0);
+    builder.pushClipRect(const Rect.fromLTRB(0, 0, 1000, 1000)) as PersistedContainerSurface;
+    builder.pushTransform((Matrix4.identity()..scale(0.5, 0.5)).toFloat64());
+    builder.addPicture(Offset(1000, 1000), picture);
+    builder.pop();
+    builder.pop();
+    builder.pop();
+    html.HtmlElement content = builder.build().webOnlyRootElement;
+    expect(content.querySelectorAll('flt-picture').single.children, isNotEmpty);
+  });
+
+  test('does not skip painting picture when picture is '
+      'inside transform', () async {
+    final Picture picture = _drawPicture();
+    // Picture should not be clipped out since transform will offset it to 500,500
+    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
+    builder.pushOffset(0, 0);
+    builder.pushClipRect(const Rect.fromLTRB(0, 0, 1000, 1000)) as PersistedContainerSurface;
+    builder.pushTransform((Matrix4.identity()..scale(0.5, 0.5)).toFloat64());
+    builder.pushOffset(1000, 1000);
+    builder.addPicture(Offset.zero, picture);
+    builder.pop();
+    builder.pop();
+    builder.pop();
+    html.HtmlElement content = builder.build().webOnlyRootElement;
+    expect(content.querySelectorAll('flt-picture').single.children, isNotEmpty);
+  });
+
+  test(
+      'skips painting picture when picture fully clipped out with'
+          ' transform and offset', () async {
+    final Picture picture = _drawPicture();
+    // Picture should be clipped out since transform will offset it to 500,500
+    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
+    builder.pushOffset(50, 50);
+    builder.pushClipRect(
+        const Rect.fromLTRB(0, 0, 1000, 1000)) as PersistedContainerSurface;
+    builder.pushTransform((Matrix4.identity()
+      ..scale(2, 2)).toFloat64());
+    builder.pushOffset(500, 500);
+    builder.addPicture(Offset.zero, picture);
+    builder.pop();
+    builder.pop();
+    builder.pop();
+    builder.pop();
+    html.HtmlElement content = builder
+        .build()
+        .webOnlyRootElement;
+    expect(content
+        .querySelectorAll('flt-picture')
+        .single
+        .children, isEmpty);
+  });
+
   test('releases old canvas when picture is fully clipped out after addRetained', () async {
     final Picture picture = _drawPicture();
 
@@ -412,12 +472,12 @@ void testMain() {
       final bool useOffset = int.tryParse(char) == null;
       final EnginePictureRecorder recorder = PictureRecorder();
       final RecordingCanvas canvas = recorder.beginRecording(const Rect.fromLTRB(0, 0, 400, 400));
-      final Paragraph paragraph = (ParagraphBuilder(ParagraphStyle())..addText(char)).build();
+      final DomParagraph paragraph = (DomParagraphBuilder(ParagraphStyle())..addText(char)).build();
       paragraph.layout(ParagraphConstraints(width: 1000));
       canvas.drawParagraph(paragraph, Offset.zero);
       final EngineLayer newLayer = useOffset
-        ? builder.pushOffset(0, 0, oldLayer: oldLayer)
-        : builder.pushOpacity(100, oldLayer: oldLayer);
+          ? builder.pushOffset(0, 0, oldLayer: oldLayer)
+          : builder.pushOpacity(100, oldLayer: oldLayer);
       builder.addPicture(Offset.zero, recorder.endRecording());
       builder.pop();
       return newLayer;
@@ -588,6 +648,40 @@ void testMain() {
     expect(canvas2.width > unscaledWidth, true);
     expect(canvas2.height > unscaledHeight, true);
   });
+
+  test('Should recycle canvas once', () async {
+    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
+    final Picture picture1 = _drawPicture();
+    EngineLayer oldLayer = builder.pushClipRect(
+      const Rect.fromLTRB(10, 10, 300, 300),
+    );
+    builder.addPicture(Offset.zero, picture1);
+    builder.pop();
+    builder.build();
+
+    // Force update to scene which will utilize reuse code path.
+    final SurfaceSceneBuilder builder2 = SurfaceSceneBuilder();
+    EngineLayer oldLayer2 = builder2.pushClipRect(
+        const Rect.fromLTRB(5, 10, 300, 300),
+        oldLayer: oldLayer
+    );
+    builder2.addPicture(Offset.zero, _drawEmptyPicture());
+    builder2.pop();
+
+    html.HtmlElement contentAfterReuse = builder2.build().webOnlyRootElement;
+    expect(contentAfterReuse, isNotNull);
+
+    final SurfaceSceneBuilder builder3 = SurfaceSceneBuilder();
+    builder3.pushClipRect(
+        const Rect.fromLTRB(25, 10, 300, 300),
+        oldLayer: oldLayer2
+    );
+    builder3.addPicture(Offset.zero, _drawEmptyPicture());
+    builder3.pop();
+    // This build will crash if canvas gets recycled twice.
+    html.HtmlElement contentAfterReuse2 = builder3.build().webOnlyRootElement;
+    expect(contentAfterReuse2, isNotNull);
+  });
 }
 
 typedef TestLayerBuilder = EngineLayer Function(
@@ -682,7 +776,7 @@ class MockPersistedPicture extends PersistedPicture {
   int updateCount = 0;
   int applyPaintCount = 0;
 
-  final BitmapCanvas _fakeCanvas = BitmapCanvas(const Rect.fromLTRB(0, 0, 10, 10));
+  final BitmapCanvas _fakeCanvas = BitmapCanvas(const Rect.fromLTRB(0, 0, 10, 10), RenderStrategy());
 
   @override
   EngineCanvas get debugCanvas {
@@ -724,6 +818,7 @@ class MockPersistedPicture extends PersistedPicture {
   int get bitmapPixelCount => 0;
 }
 
+/// Draw 4 circles within 50, 50, 120, 120 bounds
 Picture _drawPicture() {
   const double offsetX = 50;
   const double offsetY = 50;
@@ -758,6 +853,12 @@ Picture _drawPicture() {
       Paint()
         ..style = PaintingStyle.fill
         ..color = const Color.fromRGBO(0, 0, 255, 1));
+  return recorder.endRecording();
+}
+
+Picture _drawEmptyPicture() {
+  final EnginePictureRecorder recorder = PictureRecorder();
+  recorder.beginRecording(const Rect.fromLTRB(0, 0, 400, 400));
   return recorder.endRecording();
 }
 

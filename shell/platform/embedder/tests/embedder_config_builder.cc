@@ -13,6 +13,10 @@
 #include "flutter/shell/platform/embedder/tests/embedder_test_context_gl.h"
 #endif
 
+#ifdef SHELL_ENABLE_METAL
+#include "flutter/shell/platform/embedder/tests/embedder_test_context_metal.h"
+#endif
+
 namespace flutter {
 namespace testing {
 
@@ -65,6 +69,10 @@ EmbedderConfigBuilder::EmbedderConfigBuilder(
   };
 #endif
 
+#ifdef SHELL_ENABLE_METAL
+  InitializeMetalRendererConfig();
+#endif
+
   software_renderer_config_.struct_size = sizeof(FlutterSoftwareRendererConfig);
   software_renderer_config_.surface_present_callback =
       [](void* context, const void* allocation, size_t row_bytes,
@@ -91,6 +99,7 @@ EmbedderConfigBuilder::EmbedderConfigBuilder(
     SetAssetsPath();
     SetIsolateCreateCallbackHook();
     SetSemanticsCallbackHooks();
+    SetLogMessageCallbackHook();
     SetLocalizationCallbackHooks();
     AddCommandLineArgument("--disable-observatory");
 
@@ -153,6 +162,14 @@ void EmbedderConfigBuilder::SetOpenGLRendererConfig(SkISize surface_size) {
 #endif
 }
 
+void EmbedderConfigBuilder::SetMetalRendererConfig(SkISize surface_size) {
+#ifdef SHELL_ENABLE_METAL
+  renderer_config_.type = FlutterRendererType::kMetal;
+  renderer_config_.metal = metal_renderer_config_;
+  context_.SetupSurface(surface_size);
+#endif
+}
+
 void EmbedderConfigBuilder::SetAssetsPath() {
   project_args_.assets_path = context_.GetAssetsPath().c_str();
 }
@@ -193,6 +210,16 @@ void EmbedderConfigBuilder::SetSemanticsCallbackHooks() {
       EmbedderTestContext::GetUpdateSemanticsNodeCallbackHook();
   project_args_.update_semantics_custom_action_callback =
       EmbedderTestContext::GetUpdateSemanticsCustomActionCallbackHook();
+}
+
+void EmbedderConfigBuilder::SetLogMessageCallbackHook() {
+  project_args_.log_message_callback =
+      EmbedderTestContext::GetLogMessageCallbackHook();
+}
+
+void EmbedderConfigBuilder::SetLogTag(std::string tag) {
+  log_tag_ = std::move(tag);
+  project_args_.log_tag = log_tag_.c_str();
 }
 
 void EmbedderConfigBuilder::SetLocalizationCallbackHooks() {
@@ -355,6 +382,55 @@ UniqueEngine EmbedderConfigBuilder::SetupEngine(bool run) const {
 
   return UniqueEngine{engine};
 }
+
+#ifdef SHELL_ENABLE_METAL
+
+void EmbedderConfigBuilder::InitializeMetalRendererConfig() {
+  if (context_.GetContextType() != EmbedderTestContextType::kMetalContext) {
+    return;
+  }
+
+  metal_renderer_config_.struct_size = sizeof(metal_renderer_config_);
+  EmbedderTestContextMetal& metal_context =
+      reinterpret_cast<EmbedderTestContextMetal&>(context_);
+
+  metal_renderer_config_.device =
+      metal_context.GetTestMetalContext()->GetMetalDevice();
+  metal_renderer_config_.present_command_queue =
+      metal_context.GetTestMetalContext()->GetMetalCommandQueue();
+  metal_renderer_config_.get_next_drawable_callback =
+      [](void* user_data, const FlutterFrameInfo* frame_info) {
+        EmbedderTestContextMetal* metal_context =
+            reinterpret_cast<EmbedderTestContextMetal*>(user_data);
+        SkISize surface_size =
+            SkISize::Make(frame_info->size.width, frame_info->size.height);
+        TestMetalContext::TextureInfo texture_info =
+            metal_context->GetTestMetalContext()->CreateMetalTexture(
+                surface_size);
+        FlutterMetalTexture texture;
+        texture.struct_size = sizeof(FlutterMetalTexture);
+        texture.texture_id = texture_info.texture_id;
+        texture.texture =
+            reinterpret_cast<FlutterMetalTextureHandle>(texture_info.texture);
+        return texture;
+      };
+  metal_renderer_config_.present_drawable_callback =
+      [](void* user_data, const FlutterMetalTexture* texture) -> bool {
+    EmbedderTestContextMetal* metal_context =
+        reinterpret_cast<EmbedderTestContextMetal*>(user_data);
+    return metal_context->Present(texture->texture_id);
+  };
+  metal_renderer_config_.external_texture_frame_callback =
+      [](void* user_data, int64_t texture_id, size_t width, size_t height,
+         FlutterMetalExternalTexture* texture_out) -> bool {
+    EmbedderTestContextMetal* metal_context =
+        reinterpret_cast<EmbedderTestContextMetal*>(user_data);
+    return metal_context->PopulateExternalTexture(texture_id, width, height,
+                                                  texture_out);
+  };
+}
+
+#endif  // SHELL_ENABLE_METAL
 
 }  // namespace testing
 }  // namespace flutter

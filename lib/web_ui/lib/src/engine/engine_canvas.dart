@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of engine;
 
 /// Defines canvas interface common across canvases that the [SceneBuilder]
@@ -254,9 +253,6 @@ html.Element _drawParagraphElement(
   assert(paragraph.isLaidOut);
 
   final html.HtmlElement paragraphElement = paragraph.toDomElement();
-  paragraphElement.style
-      ..height = '${paragraph.height}px'
-      ..width = '${paragraph.width}px';
 
   if (transform != null) {
     setElementTransform(

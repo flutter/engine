@@ -398,8 +398,12 @@ import java.util.Arrays;
   private String maybeGetInitialRouteFromIntent(Intent intent) {
     if (host.shouldHandleDeeplinking()) {
       Uri data = intent.getData();
-      if (data != null && !data.toString().isEmpty()) {
-        return data.toString();
+      if (data != null && !data.getPath().isEmpty()) {
+        String pathAndQuery = data.getPath();
+        if (data.getQuery() != null && !data.getQuery().isEmpty()) {
+          pathAndQuery += "?" + data.getQuery();
+        }
+        return pathAndQuery;
       }
     }
     return null;

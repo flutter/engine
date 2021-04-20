@@ -8,7 +8,7 @@
 ;
                OpCapability Shader
           %1 = OpExtInstImport "GLSL.std.450"
-         %13 = OpExtInstImport "This.Doesn't.Exist"
+         %13 = OpExtInstImport "OpenCL.std"
                OpMemoryModel Logical GLSL450
                OpEntryPoint Fragment %main "main" %oColor
                OpExecutionMode %main OriginLowerLeft

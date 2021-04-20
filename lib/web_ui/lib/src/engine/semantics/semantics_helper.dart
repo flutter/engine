@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of engine;
 
 /// The maximum [semanticsActivationAttempts] before we give up waiting for
@@ -33,7 +32,7 @@ String placeholderMessage = 'Enable accessibility';
 /// event which should be forwarded to the framework.
 ///
 /// It does this by using a [SemanticsEnabler]. The [SemanticsEnabler]
-/// implementation is choosen using form factor type.
+/// implementation is chosen using form factor type.
 ///
 /// See [DesktopSemanticsEnabler], [MobileSemanticsEnabler].
 class SemanticsHelper {
@@ -256,8 +255,11 @@ class MobileSemanticsEnabler extends SemanticsEnabler {
   @override
   bool tryEnableSemantics(html.Event event) {
     if (_schedulePlaceholderRemoval) {
-      final bool removeNow =
-          (browserEngine != BrowserEngine.webkit || event.type == 'touchend');
+      // The event type can also be click for VoiceOver.
+      final bool removeNow = (browserEngine != BrowserEngine.webkit ||
+          event.type == 'touchend' ||
+          event.type == 'pointerup' ||
+          event.type == 'click');
       if (removeNow) {
         _semanticsPlaceholder!.remove();
         _semanticsPlaceholder = null;
@@ -280,10 +282,16 @@ class MobileSemanticsEnabler extends SemanticsEnabler {
       return true;
     }
 
+    // ios-safari browsers which starts sending `pointer` events instead of
+    // `touch` events. (Tested with 12.1 which uses touch events vs 13.5
+    // which uses pointer events.)
     const Set<String> kInterestingEventTypes = <String>{
       'click',
       'touchstart',
       'touchend',
+      'pointerdown',
+      'pointermove',
+      'pointerup',
     };
 
     if (!kInterestingEventTypes.contains(event.type)) {
@@ -302,9 +310,10 @@ class MobileSemanticsEnabler extends SemanticsEnabler {
     // In Chrome the debouncing works well enough to detect accessibility
     // request.
     final bool blinkEnableConditionPassed =
-        browserEngine == BrowserEngine.blink &&
-            EngineSemanticsOwner.instance.gestureMode ==
-                GestureMode.browserGestures;
+        (browserEngine == BrowserEngine.blink ||
+            browserEngine == BrowserEngine.samsung) &&
+        EngineSemanticsOwner.instance.gestureMode ==
+            GestureMode.browserGestures;
 
     // In Safari debouncing doesn't work. Instead we look at where exactly
     // (within 1 pixel) the event landed. If it landed exactly in the middle of
@@ -333,6 +342,11 @@ class MobileSemanticsEnabler extends SemanticsEnabler {
           final html.TouchEvent touch = event as html.TouchEvent;
           activationPoint = touch.changedTouches!.first.client;
           break;
+        case 'pointerdown':
+        case 'pointerup':
+          final html.PointerEvent touch = event as html.PointerEvent;
+          activationPoint = new html.Point(touch.client.x, touch.client.y);
+          break;
         default:
           // The event is not relevant, forward to framework as normal.
           return true;
@@ -341,9 +355,11 @@ class MobileSemanticsEnabler extends SemanticsEnabler {
       final html.Rectangle<num> activatingElementRect =
           domRenderer.glassPaneElement!.getBoundingClientRect();
       final double midX = (activatingElementRect.left +
-          (activatingElementRect.right - activatingElementRect.left) / 2).toDouble();
+              (activatingElementRect.right - activatingElementRect.left) / 2)
+          .toDouble();
       final double midY = (activatingElementRect.top +
-          (activatingElementRect.bottom - activatingElementRect.top) / 2).toDouble();
+              (activatingElementRect.bottom - activatingElementRect.top) / 2)
+          .toDouble();
       final double deltaX = activationPoint.x.toDouble() - midX;
       final double deltaY = activationPoint.y.toDouble() - midY;
       final double deltaSquared = deltaX * deltaX + deltaY * deltaY;

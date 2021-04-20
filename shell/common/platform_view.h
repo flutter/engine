@@ -5,6 +5,7 @@
 #ifndef COMMON_PLATFORM_VIEW_H_
 #define COMMON_PLATFORM_VIEW_H_
 
+#include <functional>
 #include <memory>
 
 #include "flow/embedded_views.h"
@@ -16,6 +17,7 @@
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/lib/ui/semantics/custom_accessibility_action.h"
 #include "flutter/lib/ui/semantics/semantics_node.h"
+#include "flutter/lib/ui/window/key_data_packet.h"
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/lib/ui/window/pointer_data_packet.h"
 #include "flutter/lib/ui/window/pointer_data_packet_converter.h"
@@ -52,12 +54,13 @@ class PlatformView {
   ///
   class Delegate {
    public:
+    using KeyDataResponse = std::function<void(bool)>;
     //--------------------------------------------------------------------------
     /// @brief      Notifies the delegate that the platform view was created
     ///             with the given render surface. This surface is platform
     ///             (iOS, Android) and client-rendering API (OpenGL, Software,
     ///             Metal, Vulkan) specific. This is usually a sign to the
-    ///             rasterizer to setup and begin rendering to that surface.
+    ///             rasterizer to set up and begin rendering to that surface.
     ///
     /// @param[in]  surface  The surface
     ///
@@ -124,6 +127,20 @@ class PlatformView {
     ///
     virtual void OnPlatformViewDispatchPointerDataPacket(
         std::unique_ptr<PointerDataPacket> packet) = 0;
+
+    //--------------------------------------------------------------------------
+    /// @brief      Notifies the delegate that the platform view has encountered
+    ///             a key event. This key event and the callback needs to be
+    ///             forwarded to the running root isolate hosted by the engine
+    ///             on the UI thread.
+    ///
+    /// @param[in]  packet    The key data packet containing one key event.
+    /// @param[in]  callback  Called when the framework has decided whether
+    ///                       to handle this key data.
+    ///
+    virtual void OnPlatformViewDispatchKeyDataPacket(
+        std::unique_ptr<KeyDataPacket> packet,
+        std::function<void(bool /* handled */)> callback) = 0;
 
     //--------------------------------------------------------------------------
     /// @brief      Notifies the delegate that the platform view has encountered
@@ -247,15 +264,60 @@ class PlatformView {
         std::unique_ptr<const fml::Mapping> snapshot_data,
         std::unique_ptr<const fml::Mapping> snapshot_instructions) = 0;
 
-    // TODO(garyq): Implement a proper asset_resolver replacement instead of
-    // overwriting the entire asset manager.
     //--------------------------------------------------------------------------
-    /// @brief      Sets the asset manager of the engine to asset_manager
+    /// @brief      Indicates to the dart VM that the request to load a deferred
+    ///             library with the specified loading unit id has failed.
     ///
-    /// @param[in]  asset_manager  The asset manager to use.
+    ///             The dart future returned by the initiating loadLibrary()
+    ///             call will complete with an error.
     ///
-    virtual void UpdateAssetManager(
-        std::shared_ptr<AssetManager> asset_manager) = 0;
+    /// @param[in]  loading_unit_id  The unique id of the deferred library's
+    ///                              loading unit, as passed in by
+    ///                              RequestDartDeferredLibrary.
+    ///
+    /// @param[in]  error_message    The error message that will appear in the
+    ///                              dart Future.
+    ///
+    /// @param[in]  transient        A transient error is a failure due to
+    ///                              temporary conditions such as no network.
+    ///                              Transient errors allow the dart VM to
+    ///                              re-request the same deferred library and
+    ///                              and loading_unit_id again. Non-transient
+    ///                              errors are permanent and attempts to
+    ///                              re-request the library will instantly
+    ///                              complete with an error.
+    virtual void LoadDartDeferredLibraryError(intptr_t loading_unit_id,
+                                              const std::string error_message,
+                                              bool transient) = 0;
+
+    //--------------------------------------------------------------------------
+    /// @brief      Replaces the asset resolver handled by the engine's
+    ///             AssetManager of the specified `type` with
+    ///             `updated_asset_resolver`. The matching AssetResolver is
+    ///             removed and replaced with `updated_asset_resolvers`.
+    ///
+    ///             AssetResolvers should be updated when the existing resolver
+    ///             becomes obsolete and a newer one becomes available that
+    ///             provides updated access to the same type of assets as the
+    ///             existing one. This update process is meant to be performed
+    ///             at runtime.
+    ///
+    ///             If a null resolver is provided, nothing will be done. If no
+    ///             matching resolver is found, the provided resolver will be
+    ///             added to the end of the AssetManager resolvers queue. The
+    ///             replacement only occurs with the first matching resolver.
+    ///             Any additional matching resolvers are untouched.
+    ///
+    /// @param[in]  updated_asset_resolver  The asset resolver to replace the
+    ///             resolver of matching type with.
+    ///
+    /// @param[in]  type  The type of AssetResolver to update. Only resolvers of
+    ///                   the specified type will be replaced by the updated
+    ///                   resolver.
+    ///
+    virtual void UpdateAssetResolverByType(
+        std::unique_ptr<AssetResolver> updated_asset_resolver,
+        AssetResolver::AssetResolverType type) = 0;
   };
 
   //----------------------------------------------------------------------------
@@ -530,6 +592,17 @@ class PlatformView {
   ///
   void DispatchPointerDataPacket(std::unique_ptr<PointerDataPacket> packet);
 
+  //----------------------------------------------------------------------------
+  /// @brief      Dispatches key events from the embedder to the framework. Each
+  ///             key data packet contains one physical event and multiple
+  ///             logical key events. Each call to this method wakes up the UI
+  ///             thread.
+  ///
+  /// @param[in]  packet  The key data packet to dispatch to the framework.
+  ///
+  void DispatchKeyDataPacket(std::unique_ptr<KeyDataPacket> packet,
+                             Delegate::KeyDataResponse callback);
+
   //--------------------------------------------------------------------------
   /// @brief      Used by the embedder to specify a texture that it wants the
   ///             rasterizer to composite within the Flutter layer tree. All
@@ -667,14 +740,61 @@ class PlatformView {
       std::unique_ptr<const fml::Mapping> snapshot_data,
       std::unique_ptr<const fml::Mapping> snapshot_instructions);
 
-  // TODO(garyq): Implement a proper asset_resolver replacement instead of
-  // overwriting the entire asset manager.
   //--------------------------------------------------------------------------
-  /// @brief      Sets the asset manager of the engine to asset_manager
+  /// @brief      Indicates to the dart VM that the request to load a deferred
+  ///             library with the specified loading unit id has failed.
   ///
-  /// @param[in]  asset_manager  The asset manager to use.
+  ///             The dart future returned by the initiating loadLibrary() call
+  ///             will complete with an error.
   ///
-  virtual void UpdateAssetManager(std::shared_ptr<AssetManager> asset_manager);
+  /// @param[in]  loading_unit_id  The unique id of the deferred library's
+  ///                              loading unit, as passed in by
+  ///                              RequestDartDeferredLibrary.
+  ///
+  /// @param[in]  error_message    The error message that will appear in the
+  ///                              dart Future.
+  ///
+  /// @param[in]  transient        A transient error is a failure due to
+  ///                              temporary conditions such as no network.
+  ///                              Transient errors allow the dart VM to
+  ///                              re-request the same deferred library and
+  ///                              and loading_unit_id again. Non-transient
+  ///                              errors are permanent and attempts to
+  ///                              re-request the library will instantly
+  ///                              complete with an error.
+  ///
+  virtual void LoadDartDeferredLibraryError(intptr_t loading_unit_id,
+                                            const std::string error_message,
+                                            bool transient);
+
+  //--------------------------------------------------------------------------
+  /// @brief      Replaces the asset resolver handled by the engine's
+  ///             AssetManager of the specified `type` with
+  ///             `updated_asset_resolver`. The matching AssetResolver is
+  ///             removed and replaced with `updated_asset_resolvers`.
+  ///
+  ///             AssetResolvers should be updated when the existing resolver
+  ///             becomes obsolete and a newer one becomes available that
+  ///             provides updated access to the same type of assets as the
+  ///             existing one. This update process is meant to be performed
+  ///             at runtime.
+  ///
+  ///             If a null resolver is provided, nothing will be done. If no
+  ///             matching resolver is found, the provided resolver will be
+  ///             added to the end of the AssetManager resolvers queue. The
+  ///             replacement only occurs with the first matching resolver.
+  ///             Any additional matching resolvers are untouched.
+  ///
+  /// @param[in]  updated_asset_resolver  The asset resolver to replace the
+  ///             resolver of matching type with.
+  ///
+  /// @param[in]  type  The type of AssetResolver to update. Only resolvers of
+  ///                   the specified type will be replaced by the updated
+  ///                   resolver.
+  ///
+  virtual void UpdateAssetResolverByType(
+      std::unique_ptr<AssetResolver> updated_asset_resolver,
+      AssetResolver::AssetResolverType type);
 
  protected:
   PlatformView::Delegate& delegate_;

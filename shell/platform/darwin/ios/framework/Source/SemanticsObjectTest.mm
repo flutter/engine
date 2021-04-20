@@ -217,4 +217,47 @@ class MockAccessibilityBridge : public AccessibilityBridgeIos {
   XCTAssertTrue(bridge->observations[0].action == flutter::SemanticsAction::kShowOnScreen);
 }
 
+- (void)testSemanticsObjectAndPlatformViewSemanticsContainerDontHaveRetainCycle {
+  fml::WeakPtrFactory<flutter::MockAccessibilityBridge> factory(
+      new flutter::MockAccessibilityBridge());
+  fml::WeakPtr<flutter::MockAccessibilityBridge> bridge = factory.GetWeakPtr();
+  SemanticsObject* object = [[SemanticsObject alloc] initWithBridge:bridge uid:1];
+  object.platformViewSemanticsContainer =
+      [[FlutterPlatformViewSemanticsContainer alloc] initWithSemanticsObject:object];
+  __weak SemanticsObject* weakObject = object;
+  object = nil;
+  XCTAssertNil(weakObject);
+}
+
+- (void)testFlutterSwitchSemanticsObjectForwardsCalls {
+  SemanticsObject* mockSemanticsObject = OCMClassMock([SemanticsObject class]);
+  FlutterSwitchSemanticsObject* switchObj =
+      [[FlutterSwitchSemanticsObject alloc] initWithSemanticsObject:mockSemanticsObject];
+  OCMStub([mockSemanticsObject accessibilityActivate]).andReturn(YES);
+  OCMStub([mockSemanticsObject accessibilityScroll:UIAccessibilityScrollDirectionRight])
+      .andReturn(NO);
+  OCMStub([mockSemanticsObject accessibilityPerformEscape]).andReturn(YES);
+
+  XCTAssertTrue([switchObj accessibilityActivate]);
+  OCMVerify([mockSemanticsObject accessibilityActivate]);
+
+  [switchObj accessibilityIncrement];
+  OCMVerify([mockSemanticsObject accessibilityIncrement]);
+
+  [switchObj accessibilityDecrement];
+  OCMVerify([mockSemanticsObject accessibilityDecrement]);
+
+  XCTAssertFalse([switchObj accessibilityScroll:UIAccessibilityScrollDirectionRight]);
+  OCMVerify([mockSemanticsObject accessibilityScroll:UIAccessibilityScrollDirectionRight]);
+
+  XCTAssertTrue([switchObj accessibilityPerformEscape]);
+  OCMVerify([mockSemanticsObject accessibilityPerformEscape]);
+
+  [switchObj accessibilityElementDidBecomeFocused];
+  OCMVerify([mockSemanticsObject accessibilityElementDidBecomeFocused]);
+
+  [switchObj accessibilityElementDidLoseFocus];
+  OCMVerify([mockSemanticsObject accessibilityElementDidLoseFocus]);
+}
+
 @end

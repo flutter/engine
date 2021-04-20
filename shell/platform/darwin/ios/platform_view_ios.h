@@ -40,6 +40,11 @@ namespace flutter {
  */
 class PlatformViewIOS final : public PlatformView {
  public:
+  PlatformViewIOS(PlatformView::Delegate& delegate,
+                  const std::shared_ptr<IOSContext>& context,
+                  const std::shared_ptr<FlutterPlatformViewsController>& platform_views_controller,
+                  flutter::TaskRunners task_runners);
+
   explicit PlatformViewIOS(
       PlatformView::Delegate& delegate,
       IOSRenderingAPI rendering_api,
@@ -88,9 +93,12 @@ class PlatformViewIOS final : public PlatformView {
   // |PlatformView|
   void SetSemanticsEnabled(bool enabled) override;
 
+  /** Accessor for the `IOSContext` associated with the platform view. */
+  const std::shared_ptr<IOSContext>& GetIosContext() { return ios_context_; }
+
  private:
   /// Smart pointer for use with objective-c observers.
-  /// This guarentees we remove the observer.
+  /// This guarantees we remove the observer.
   class ScopedObserver {
    public:
     ScopedObserver();
@@ -103,7 +111,7 @@ class PlatformViewIOS final : public PlatformView {
     id<NSObject> observer_;
   };
 
-  /// Smart pointer that guarentees we communicate clearing Accessibility
+  /// Smart pointer that guarantees we communicate clearing Accessibility
   /// information to Dart.
   class AccessibilityBridgePtr {
    public:

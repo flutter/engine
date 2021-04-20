@@ -5,7 +5,7 @@
 ; Schema: 0
 ;
 ; A GLSL instruction not in the set defined in `constants.dart` is used
-; on line 30. (Round, inst with id '1' is used).
+; on line 30.
 ;
                OpCapability Shader
           %1 = OpExtInstImport "GLSL.std.450"
@@ -27,7 +27,7 @@
          %11 = OpConstantComposite %v4float %float_0 %float_0 %float_0 %float_0
        %main = OpFunction %void None %3
           %5 = OpLabel
-         %13 = OpExtInst %v4float %1 1 %11
+         %13 = OpExtInst %v4float %1 Round %11
                OpStore %oColor %13
                OpReturn
                OpFunctionEnd

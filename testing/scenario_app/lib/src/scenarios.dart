@@ -36,6 +36,7 @@ Map<String, ScenarioFactory> _scenarios = <String, ScenarioFactory>{
   'platform_view_opacity': () => PlatformViewOpacityScenario(PlatformDispatcher.instance, 'PlatformViewOpacity', id: _viewId++),
   'platform_view_multiple': () => MultiPlatformViewScenario(PlatformDispatcher.instance, firstId: 6, secondId: _viewId++),
   'platform_view_multiple_background_foreground': () => MultiPlatformViewBackgroundForegroundScenario(PlatformDispatcher.instance, firstId: _viewId++, secondId: _viewId++),
+  'non_full_screen_flutter_view_platform_view': () => NonFullScreenFlutterViewPlatformViewScenario(PlatformDispatcher.instance, 'Hello from Scenarios (Platform View)', id: _viewId++),
   'poppable_screen': () => PoppableScreenScenario(PlatformDispatcher.instance),
   'platform_view_rotate': () => PlatformViewScenario(PlatformDispatcher.instance, 'Rotate Platform View', id: _viewId++),
   'platform_view_gesture_reject_eager': () => PlatformViewForTouchIOSScenario(PlatformDispatcher.instance, 'platform view touch', id: _viewId++, accept: false),
@@ -46,6 +47,7 @@ Map<String, ScenarioFactory> _scenarios = <String, ScenarioFactory>{
   'initial_route_reply': () => InitialRouteReply(PlatformDispatcher.instance),
   'platform_view_with_continuous_texture': () => PlatformViewWithContinuousTexture(PlatformDispatcher.instance, 'Platform View', id: _viewId++),
   'bogus_font_text': () => BogusFontText(PlatformDispatcher.instance),
+  'spawn_engine_works' : () => BogusFontText(PlatformDispatcher.instance),
 };
 
 Map<String, dynamic> _currentScenarioParams = <String, dynamic>{};

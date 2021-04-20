@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of engine;
 
 /// Generic callback signature, used by [_futurize].
@@ -278,22 +277,28 @@ void transformLTRB(Matrix4 transform, Float32List ltrb) {
 
   _tempPointMatrix.multiplyTranspose(transform);
 
+  // Handle non-homogenous matrices.
+  double w = transform[15];
+  if (w == 0.0) {
+    w = 1.0;
+  }
+
   ltrb[0] = math.min(
       math.min(
           math.min(_tempPointData[0], _tempPointData[1]), _tempPointData[2]),
-      _tempPointData[3]);
+      _tempPointData[3]) / w;
   ltrb[1] = math.min(
       math.min(
           math.min(_tempPointData[4], _tempPointData[5]), _tempPointData[6]),
-      _tempPointData[7]);
+      _tempPointData[7]) / w;
   ltrb[2] = math.max(
       math.max(
           math.max(_tempPointData[0], _tempPointData[1]), _tempPointData[2]),
-      _tempPointData[3]);
+      _tempPointData[3]) / w;
   ltrb[3] = math.max(
       math.max(
           math.max(_tempPointData[4], _tempPointData[5]), _tempPointData[6]),
-      _tempPointData[7]);
+      _tempPointData[7]) / w;
 }
 
 /// Returns true if [rect] contains every point that is also contained by the
@@ -446,9 +451,9 @@ const Set<String> _genericFontFamilies = <String>{
 /// For iOS, default to -apple-system, where it should be available, otherwise
 /// default to Arial. BlinkMacSystemFont is used for Chrome on iOS.
 final String _fallbackFontFamily =
-    _isMacOrIOS ? '-apple-system, BlinkMacSystemFont' : 'Arial';
+    isMacOrIOS ? '-apple-system, BlinkMacSystemFont' : 'Arial';
 
-bool get _isMacOrIOS =>
+bool get isMacOrIOS =>
     operatingSystem == OperatingSystem.iOs ||
     operatingSystem == OperatingSystem.macOs;
 
@@ -460,7 +465,7 @@ String? canonicalizeFontFamily(String? fontFamily) {
   if (_genericFontFamilies.contains(fontFamily)) {
     return fontFamily;
   }
-  if (_isMacOrIOS) {
+  if (isMacOrIOS) {
     // Unlike Safari, Chrome on iOS does not correctly fallback to cupertino
     // on sans-serif.
     // Map to San Francisco Text/Display fonts, use -apple-system,
@@ -596,46 +601,8 @@ int clampInt(int value, int min, int max) {
   }
 }
 
-ui.Rect computeBoundingRectangleFromMatrix(Matrix4 transform, ui.Rect rect) {
-    final Float32List m = transform.storage;
-    // Apply perspective transform to all 4 corners. Can't use left,top, bottom,
-    // right since for example rotating 45 degrees would yield inaccurate size.
-    double x = rect.left;
-    double y = rect.top;
-    double wp = 1.0 / ((m[3] * x) + (m[7] * y) + m[15]);
-    double xp = ((m[0] * x) + (m[4] * y) + m[12]) * wp;
-    double yp = ((m[1] * x) + (m[5] * y) + m[13]) * wp;
-    double minX = xp, maxX = xp;
-    double minY =yp, maxY = yp;
-    x = rect.right;
-    y = rect.bottom;
-    wp = 1.0 / ((m[3] * x) + (m[7] * y) + m[15]);
-    xp = ((m[0] * x) + (m[4] * y) + m[12]) * wp;
-    yp = ((m[1] * x) + (m[5] * y) + m[13]) * wp;
-
-    minX = math.min(minX, xp);
-    maxX = math.max(maxX, xp);
-    minY = math.min(minY, yp);
-    maxY = math.max(maxY, yp);
-
-    x = rect.left;
-    y = rect.bottom;
-    wp = 1.0 / ((m[3] * x) + (m[7] * y) + m[15]);
-    xp = ((m[0] * x) + (m[4] * y) + m[12]) * wp;
-    yp = ((m[1] * x) + (m[5] * y) + m[13]) * wp;
-    minX = math.min(minX, xp);
-    maxX = math.max(maxX, xp);
-    minY = math.min(minY, yp);
-    maxY = math.max(maxY, yp);
-
-    x = rect.right;
-    y = rect.top;
-    wp = 1.0 / ((m[3] * x) + (m[7] * y) + m[15]);
-    xp = ((m[0] * x) + (m[4] * y) + m[12]) * wp;
-    yp = ((m[1] * x) + (m[5] * y) + m[13]) * wp;
-    minX = math.min(minX, xp);
-    maxX = math.max(maxX, xp);
-    minY = math.min(minY, yp);
-    maxY = math.max(maxY, yp);
-    return ui.Rect.fromLTWH(minX, minY, maxX-minX, maxY-minY);
-  }
+/// Prints a warning message to the console.
+///
+/// This function can be overridden in tests. This could be useful, for example,
+/// to verify that warnings are printed under certain circumstances.
+void Function(String) printWarning = html.window.console.warn;

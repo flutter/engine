@@ -3,8 +3,10 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/linux/fl_key_event_plugin.h"
+#include "flutter/shell/platform/linux/fl_key_event_plugin_private.h"
 
 #include <gtk/gtk.h>
+#include <cinttypes>
 
 #include "flutter/shell/platform/linux/fl_text_input_plugin.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_basic_message_channel.h"
@@ -113,9 +115,11 @@ G_DEFINE_TYPE(FlKeyEventResponseData, fl_key_event_response_data, G_TYPE_OBJECT)
 static void fl_key_event_response_data_dispose(GObject* object) {
   g_return_if_fail(FL_IS_KEY_EVENT_RESPONSE_DATA(object));
   FlKeyEventResponseData* self = FL_KEY_EVENT_RESPONSE_DATA(object);
-  // Don't need to weak pointer anymore.
-  g_object_remove_weak_pointer(G_OBJECT(self->plugin),
-                               reinterpret_cast<gpointer*>(&(self->plugin)));
+  if (self->plugin != nullptr) {
+    g_object_remove_weak_pointer(G_OBJECT(self->plugin),
+                                 reinterpret_cast<gpointer*>(&(self->plugin)));
+    self->plugin = nullptr;
+  }
 }
 
 // Class initialization method for FlKeyEventResponseData private class.
@@ -148,7 +152,7 @@ FlKeyEventResponseData* fl_key_event_response_data_new(FlKeyEventPlugin* plugin,
 
 // Calculates a unique ID for a given GdkEventKey object to use for
 // identification of responses from the framework.
-static uint64_t get_event_id(GdkEventKey* event) {
+uint64_t fl_key_event_plugin_get_event_id(GdkEventKey* event) {
   // Combine the event timestamp, the type of event, and the hardware keycode
   // (scan code) of the event to come up with a unique id for this event that
   // can be derived solely from the event data itself, so that we can identify
@@ -159,26 +163,30 @@ static uint64_t get_event_id(GdkEventKey* event) {
 }
 
 // Finds an event in the event queue that was sent to the framework by its ID.
-static GdkEventKey* find_pending_event(FlKeyEventPlugin* self, uint64_t id) {
-  if (self->pending_events->len == 0 ||
-      FL_KEY_EVENT_PAIR(g_ptr_array_index(self->pending_events, 0))->id != id) {
-    return nullptr;
+GdkEventKey* fl_key_event_plugin_find_pending_event(FlKeyEventPlugin* self,
+                                                    uint64_t id) {
+  for (guint i = 0; i < self->pending_events->len; ++i) {
+    if (FL_KEY_EVENT_PAIR(g_ptr_array_index(self->pending_events, i))->id ==
+        id) {
+      return FL_KEY_EVENT_PAIR(g_ptr_array_index(self->pending_events, i))
+          ->event;
+    }
   }
-
-  return FL_KEY_EVENT_PAIR(g_ptr_array_index(self->pending_events, 0))->event;
+  return nullptr;
 }
 
 // Removes an event from the pending event queue.
 static void remove_pending_event(FlKeyEventPlugin* self, uint64_t id) {
-  if (self->pending_events->len == 0 ||
-      FL_KEY_EVENT_PAIR(g_ptr_array_index(self->pending_events, 0))->id != id) {
-    g_warning(
-        "Tried to remove pending event with id %ld, but the event was out of "
-        "order, or is unknown.",
-        id);
-    return;
+  for (guint i = 0; i < self->pending_events->len; ++i) {
+    if (FL_KEY_EVENT_PAIR(g_ptr_array_index(self->pending_events, i))->id ==
+        id) {
+      g_ptr_array_remove_index(self->pending_events, i);
+      return;
+    }
   }
-  g_ptr_array_remove_index(self->pending_events, 0);
+  g_warning("Tried to remove pending event with id %" PRIu64
+            ", but the event was not found.",
+            id);
 }
 
 // Adds an GdkEventKey to the pending event queue, with a unique ID, and the
@@ -221,12 +229,11 @@ static void handle_response(GObject* object,
   g_autoptr(FlValue) handled_value = fl_value_lookup_string(message, "handled");
   bool handled = FALSE;
   if (handled_value != nullptr) {
-    GdkEventKey* event = find_pending_event(self, data->id);
+    GdkEventKey* event = fl_key_event_plugin_find_pending_event(self, data->id);
     if (event == nullptr) {
-      g_warning(
-          "Event response for event id %ld received, but event was received "
-          "out of order, or is unknown.",
-          data->id);
+      g_warning("Event response for event id %" PRIu64
+                " received, but pending event was not found.",
+                data->id);
     } else {
       handled = fl_value_get_bool(handled_value);
       if (!handled) {
@@ -262,9 +269,12 @@ static void fl_key_event_plugin_dispose(GObject* object) {
   FlKeyEventPlugin* self = FL_KEY_EVENT_PLUGIN(object);
 
   g_clear_object(&self->channel);
-  g_object_remove_weak_pointer(
-      G_OBJECT(self->text_input_plugin),
-      reinterpret_cast<gpointer*>(&(self->text_input_plugin)));
+  if (self->text_input_plugin != nullptr) {
+    g_object_remove_weak_pointer(
+        G_OBJECT(self->text_input_plugin),
+        reinterpret_cast<gpointer*>(&(self->text_input_plugin)));
+    self->text_input_plugin = nullptr;
+  }
   g_ptr_array_free(self->pending_events, TRUE);
 
   G_OBJECT_CLASS(fl_key_event_plugin_parent_class)->dispose(object);
@@ -321,12 +331,12 @@ bool fl_key_event_plugin_send_key_event(FlKeyEventPlugin* self,
   // unique ID, since they are part of the event structure that we can look up
   // when we receive a random event that may or may not have been
   // tracked/produced by this code.
-  uint64_t id = get_event_id(event);
+  uint64_t id = fl_key_event_plugin_get_event_id(event);
   if (self->pending_events->len != 0 &&
-      FL_KEY_EVENT_PAIR(g_ptr_array_index(self->pending_events, 0))->id == id) {
-    // If the event is at the head of the queue of pending events we've seen,
-    // and has the same id, then we know that this is a re-dispatched event, and
-    // we shouldn't respond to it, but we should remove it from tracking.
+      fl_key_event_plugin_find_pending_event(self, id) != nullptr) {
+    // If the event is in the queue of pending events we've seen, then we know
+    // that this is a re-dispatched event, and we shouldn't respond to it, but
+    // we should remove it from tracking.
     remove_pending_event(self, id);
     return FALSE;
   }

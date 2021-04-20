@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of engine;
 
 const ui.Color _defaultTextColor = ui.Color(0xFFFF0000);
@@ -21,10 +20,12 @@ class EngineLineMetrics implements ui.LineMetrics {
     required this.baseline,
     required this.lineNumber,
   })  : displayText = null,
+        ellipsis = null,
         startIndex = -1,
         endIndex = -1,
         endIndexWithoutNewlines = -1,
-        widthWithTrailingSpaces = width;
+        widthWithTrailingSpaces = width,
+        boxes = null;
 
   EngineLineMetrics.withText(
     String this.displayText, {
@@ -44,14 +45,43 @@ class EngineLineMetrics implements ui.LineMetrics {
         assert(width != null), // ignore: unnecessary_null_comparison
         assert(left != null), // ignore: unnecessary_null_comparison
         assert(lineNumber != null && lineNumber >= 0), // ignore: unnecessary_null_comparison
+        ellipsis = null,
         ascent = double.infinity,
         descent = double.infinity,
         unscaledAscent = double.infinity,
         height = double.infinity,
-        baseline = double.infinity;
+        baseline = double.infinity,
+        boxes = null;
+
+  EngineLineMetrics.rich(
+    this.lineNumber, {
+    required this.ellipsis,
+    required this.startIndex,
+    required this.endIndex,
+    required this.endIndexWithoutNewlines,
+    required this.hardBreak,
+    required this.width,
+    required this.widthWithTrailingSpaces,
+    required this.left,
+    required this.height,
+    required this.baseline,
+    required this.ascent,
+    required this.descent,
+    // Didn't use `this.boxes` because we want it to be non-null in this
+    // constructor.
+    required List<RangeBox> boxes,
+  })  : displayText = null,
+        unscaledAscent = double.infinity,
+        this.boxes = boxes;
 
   /// The text to be rendered on the screen representing this line.
   final String? displayText;
+
+  /// The string to be displayed as an overflow indicator.
+  ///
+  /// When the value is non-null, it means this line is overflowing and the
+  /// [ellipsis] needs to be displayed at the end of it.
+  final String? ellipsis;
 
   /// The index (inclusive) in the text where this line begins.
   final int startIndex;
@@ -65,6 +95,10 @@ class EngineLineMetrics implements ui.LineMetrics {
   /// The index (exclusive) in the text where this line ends, ignoring newline
   /// characters.
   final int endIndexWithoutNewlines;
+
+  /// The list of boxes representing the entire line, possibly across multiple
+  /// spans.
+  final List<RangeBox>? boxes;
 
   @override
   final bool hardBreak;
@@ -104,6 +138,10 @@ class EngineLineMetrics implements ui.LineMetrics {
 
   @override
   final int lineNumber;
+
+  bool overlapsWith(int startIndex, int endIndex) {
+    return startIndex < this.endIndex && this.startIndex < endIndex;
+  }
 
   @override
   int get hashCode => ui.hashValues(
@@ -380,7 +418,7 @@ class DomParagraph implements EngineParagraph {
     }
 
     final List<EngineLineMetrics> lines = _measurementResult!.lines!;
-    canvas.setFontFromParagraphStyle(_geometricStyle);
+    canvas.setCssFont(_geometricStyle.cssFontString);
 
     // Then paint the text.
     canvas._setUpPaint(_paint!.paintData, null);
@@ -441,6 +479,8 @@ class DomParagraph implements EngineParagraph {
 
     final html.CssStyleDeclaration paragraphStyle = paragraphElement.style;
     paragraphStyle
+      ..height = '${height}px'
+      ..width = '${width}px'
       ..position = 'absolute'
       ..whiteSpace = 'pre-wrap'
       ..overflowWrap = 'break-word'
@@ -1035,6 +1075,19 @@ class EngineTextStyle implements ui.TextStyle {
     );
   }
 
+  late final TextHeightStyle heightStyle = _createHeightStyle();
+
+  TextHeightStyle _createHeightStyle() {
+    return TextHeightStyle(
+      fontFamily: _effectiveFontFamily,
+      fontSize: _fontSize ?? DomRenderer.defaultFontSize,
+      height: _height,
+      // TODO(mdebbar): Pass the actual value when font features become supported
+      //                https://github.com/flutter/flutter/issues/64595
+      fontFeatures: null,
+    );
+  }
+
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) {
@@ -1157,6 +1210,8 @@ class EngineStrutStyle implements ui.StrutStyle {
     List<String>? fontFamilyFallback,
     double? fontSize,
     double? height,
+    //TODO(LongCatIsLooong): implement leadingDistribution.
+    ui.TextLeadingDistribution? leadingDistribution,
     double? leading,
     ui.FontWeight? fontWeight,
     ui.FontStyle? fontStyle,
@@ -1165,6 +1220,7 @@ class EngineStrutStyle implements ui.StrutStyle {
         _fontFamilyFallback = fontFamilyFallback,
         _fontSize = fontSize,
         _height = height,
+        _leadingDistribution = leadingDistribution,
         _leading = leading,
         _fontWeight = fontWeight,
         _fontStyle = fontStyle,
@@ -1178,6 +1234,7 @@ class EngineStrutStyle implements ui.StrutStyle {
   final ui.FontWeight? _fontWeight;
   final ui.FontStyle? _fontStyle;
   final bool? _forceStrutHeight;
+  final ui.TextLeadingDistribution? _leadingDistribution;
 
   @override
   bool operator ==(Object other) {
@@ -1192,6 +1249,7 @@ class EngineStrutStyle implements ui.StrutStyle {
         && other._fontSize == _fontSize
         && other._height == _height
         && other._leading == _leading
+        && other._leadingDistribution == _leadingDistribution
         && other._fontWeight == _fontWeight
         && other._fontStyle == _fontStyle
         && other._forceStrutHeight == _forceStrutHeight
@@ -1205,6 +1263,7 @@ class EngineStrutStyle implements ui.StrutStyle {
         _fontSize,
         _height,
         _leading,
+        _leadingDistribution,
         _fontWeight,
         _fontStyle,
         _forceStrutHeight,
@@ -1328,7 +1387,7 @@ class DomParagraphBuilder implements ui.ParagraphBuilder {
   /// paragraph. Plain text is more efficient to lay out and measure than rich
   /// text.
   EngineParagraph? _tryBuildPlainText() {
-    ui.Color color = _defaultTextColor;
+    ui.Color? color;
     ui.TextDecoration? decoration;
     ui.Color? decorationColor;
     ui.TextDecorationStyle? decorationStyle;
@@ -1416,6 +1475,10 @@ class DomParagraphBuilder implements ui.ParagraphBuilder {
       i++;
     }
 
+    if (color == null && foreground == null) {
+      color = _defaultTextColor;
+    }
+
     final EngineTextStyle cumulativeStyle = EngineTextStyle(
       color: color,
       decoration: decoration,
@@ -1443,7 +1506,7 @@ class DomParagraphBuilder implements ui.ParagraphBuilder {
       paint = foreground;
     } else {
       paint = ui.Paint();
-      paint.color = color;
+      paint.color = color!;
     }
 
     if (i >= _ops.length) {
@@ -1709,6 +1772,9 @@ void _applyTextStyleToElement({
   if (color != null) {
     cssStyle.color = colorToCssString(color);
   }
+  if (style._height != null) {
+    cssStyle.lineHeight = '${style._height}';
+  }
   if (style._fontSize != null) {
     cssStyle.fontSize = '${style._fontSize!.floor()}px';
   }
@@ -1757,6 +1823,11 @@ void _applyTextStyleToElement({
         }
       }
     }
+  }
+
+  final List<ui.FontFeature>? fontFeatures = style._fontFeatures;
+  if (fontFeatures != null && fontFeatures.isNotEmpty) {
+    cssStyle.fontFeatureSettings = _fontFeatureListToCss(fontFeatures);
   }
 }
 
@@ -1823,6 +1894,22 @@ String _shadowListToCss(List<ui.Shadow> shadows) {
     ui.Shadow shadow = shadows[i];
     sb.write('${shadow.offset.dx}px ${shadow.offset.dy}px '
         '${shadow.blurRadius}px ${colorToCssString(shadow.color)}');
+  }
+  return sb.toString();
+}
+
+String _fontFeatureListToCss(List<ui.FontFeature> fontFeatures) {
+  assert(fontFeatures.isNotEmpty);
+
+  // For more details, see:
+  // * https://developer.mozilla.org/en-US/docs/Web/CSS/font-feature-settings
+  StringBuffer sb = new StringBuffer();
+  for (int i = 0, len = fontFeatures.length; i < len; i++) {
+    if (i != 0) {
+      sb.write(',');
+    }
+    ui.FontFeature fontFeature = fontFeatures[i];
+    sb.write('"${fontFeature.feature}" ${fontFeature.value}');
   }
   return sb.toString();
 }

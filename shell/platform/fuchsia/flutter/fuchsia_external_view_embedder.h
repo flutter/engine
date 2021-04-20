@@ -74,10 +74,10 @@ class FuchsiaExternalViewEmbedder final : public flutter::ExternalViewEmbedder {
       fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
 
   // |ExternalViewEmbedder|
-  void SubmitFrame(
-      GrDirectContext* context,
-      std::unique_ptr<flutter::SurfaceFrame> frame,
-      const std::shared_ptr<fml::SyncSwitch>& gpu_disable_sync_switch) override;
+  void SubmitFrame(GrDirectContext* context,
+                   std::unique_ptr<flutter::SurfaceFrame> frame,
+                   const std::shared_ptr<const fml::SyncSwitch>&
+                       gpu_disable_sync_switch) override;
 
   // |ExternalViewEmbedder|
   void CancelFrame() override { Reset(); }
@@ -86,8 +86,8 @@ class FuchsiaExternalViewEmbedder final : public flutter::ExternalViewEmbedder {
   bool SupportsDynamicThreadMerging() override { return false; }
 
   // View manipulation.
-  // |SetViewProperties| doesn't manipulate the view directly -- it sets
-  // prending properties for the next |UpdateView| call.
+  // |SetViewProperties| doesn't manipulate the view directly -- it sets pending
+  // properties for the next |UpdateView| call.
   void EnableWireframe(bool enable);
   void CreateView(int64_t view_id);
   void DestroyView(int64_t view_id);
@@ -119,6 +119,7 @@ class FuchsiaExternalViewEmbedder final : public flutter::ExternalViewEmbedder {
     scenic::ViewHolder view_holder;
 
     SkPoint offset = SkPoint::Make(0.f, 0.f);
+    SkSize scale = SkSize::MakeEmpty();
     SkSize size = SkSize::MakeEmpty();
     float elevation = 0.f;
     float opacity = 1.f;

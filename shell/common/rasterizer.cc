@@ -4,6 +4,7 @@
 
 #include "flutter/shell/common/rasterizer.h"
 
+#include <algorithm>
 #include <utility>
 
 #include "flutter/common/graphics/persistent_cache.h"
@@ -270,13 +271,30 @@ sk_sp<SkImage> Rasterizer::DoMakeRasterSnapshot(
                 return;
               }
 
+              GrRecordingContext* context = surface_->GetContext();
+              auto max_size = context->maxRenderTargetSize();
+              double scale_factor = std::min(
+                  1.0, static_cast<double>(max_size) /
+                           static_cast<double>(std::max(image_info.width(),
+                                                        image_info.height())));
+
+              // Scale down the render target size to the max supported by the
+              // GPU if necessary. Exceeding the max would otherwise cause a
+              // null result.
+              if (scale_factor < 1.0) {
+                image_info = image_info.makeWH(
+                    static_cast<double>(image_info.width()) * scale_factor,
+                    static_cast<double>(image_info.height()) * scale_factor);
+              }
+
               // When there is an on screen surface, we need a render target
               // SkSurface because we want to access texture backed images.
-              sk_sp<SkSurface> surface = SkSurface::MakeRenderTarget(
-                  surface_->GetContext(),  // context
-                  SkBudgeted::kNo,         // budgeted
-                  image_info               // image info
-              );
+              sk_sp<SkSurface> surface =
+                  SkSurface::MakeRenderTarget(context,          // context
+                                              SkBudgeted::kNo,  // budgeted
+                                              image_info        // image info
+                  );
+              surface->getCanvas()->scale(scale_factor, scale_factor);
               result = DrawSnapshot(surface, draw_callback);
             }));
   }
@@ -436,7 +454,6 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
   // Deleting a surface also clears the GL context. Therefore, acquire the
   // frame after calling `BeginFrame` as this operation resets the GL context.
   auto frame = surface_->AcquireFrame(layer_tree.frame_size());
-
   if (frame == nullptr) {
     return RasterStatus::kFailed;
   }
@@ -465,6 +482,17 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
     if (raster_status == RasterStatus::kFailed ||
         raster_status == RasterStatus::kSkipAndRetry) {
       return raster_status;
+    }
+    if (shared_engine_block_thread_merging_ && raster_thread_merger_ &&
+        raster_thread_merger_->IsMerged()) {
+      // TODO(73620): Remove when platform views are accounted for.
+      FML_LOG(ERROR)
+          << "Error: Thread merging not implemented for engines with shared "
+             "components.\n\n"
+             "This is likely a result of using platform views with enigne "
+             "groups.  See "
+             "https://github.com/flutter/flutter/issues/73620.";
+      fml::KillProcess();
     }
     if (external_view_embedder_ &&
         (!raster_thread_merger_ || raster_thread_merger_->IsMerged())) {

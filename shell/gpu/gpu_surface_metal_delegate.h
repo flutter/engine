@@ -24,10 +24,10 @@ typedef void* GPUMTLCommandQueueHandle;
 typedef void* GPUCAMetalLayerHandle;
 
 // expected to be id<MTLTexture>
-typedef void* GPUMTLTextureHandle;
+typedef const void* GPUMTLTextureHandle;
 
 struct GPUMTLTextureInfo {
-  intptr_t texture_id;
+  int64_t texture_id;
   GPUMTLTextureHandle texture;
 };
 
@@ -59,7 +59,7 @@ class GPUSurfaceMetalDelegate {
 
   //------------------------------------------------------------------------------
   /// @brief Returns the handle to the CAMetalLayer to render to. This is only
-  /// called when the specifed render target type is `kCAMetalLayer`.
+  /// called when the specified render target type is `kCAMetalLayer`.
   ///
   virtual GPUCAMetalLayerHandle GetCAMetalLayer(
       const SkISize& frame_info) const = 0;
@@ -87,7 +87,7 @@ class GPUSurfaceMetalDelegate {
   ///
   /// @see |GPUSurfaceMetalDelegate::GetMTLTexture|
   ///
-  virtual bool PresentTexture(intptr_t texture_id) const = 0;
+  virtual bool PresentTexture(GPUMTLTextureInfo texture) const = 0;
 
   MTLRenderTargetType GetRenderTargetType();
 

@@ -2,14 +2,23 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of engine;
 
 /// Set this flag to `true` to cause the engine to visualize the semantics tree
-/// on the screen.
+/// on the screen for debugging.
 ///
-/// This is useful for debugging.
-const bool _debugShowSemanticsNodes = false;
+/// This only works in profile and release modes. Debug mode does not support
+/// passing compile-time constants.
+///
+/// Example:
+///
+/// ```
+/// flutter run -d chrome --profile --dart-define=FLUTTER_WEB_DEBUG_SHOW_SEMANTICS=true
+/// ```
+const bool _debugShowSemanticsNodes = bool.fromEnvironment(
+  'FLUTTER_WEB_DEBUG_SHOW_SEMANTICS',
+  defaultValue: false,
+);
 
 /// Contains updates for the semantics tree.
 ///
@@ -233,15 +242,17 @@ class SemanticsObject {
   /// Creates a semantics tree node with the given [id] and [owner].
   SemanticsObject(this.id, this.owner) {
     // DOM nodes created for semantics objects are positioned absolutely using
-    // transforms. We use a transparent color instead of "visibility:hidden" or
-    // "display:none" so that a screen reader does not ignore these elements.
+    // transforms.
     element.style.position = 'absolute';
 
     // The root node has some properties that other nodes do not.
-    if (id == 0) {
+    if (id == 0 && !_debugShowSemanticsNodes) {
       // Make all semantics transparent. We use `filter` instead of `opacity`
       // attribute because `filter` is stronger. `opacity` does not apply to
       // some elements, particularly on iOS, such as the slider thumb and track.
+      //
+      // We use transparency instead of "visibility:hidden" or "display:none"
+      // so that a screen reader does not ignore these elements.
       element.style.filter = 'opacity(0%)';
 
       // Make text explicitly transparent to signal to the browser that no
@@ -249,11 +260,11 @@ class SemanticsObject {
       element.style.color = 'rgba(0,0,0,0)';
     }
 
+    // Make semantic elements visible for debugging by outlining them using a
+    // green border. We do not use `border` attribute because it affects layout
+    // (`outline` does not).
     if (_debugShowSemanticsNodes) {
-      element.style
-        ..filter = 'opacity(90%)'
-        ..outline = '1px solid green'
-        ..color = 'purple';
+      element.style.outline = '1px solid green';
     }
   }
 
@@ -582,6 +593,8 @@ class SemanticsObject {
       hasAction(ui.SemanticsAction.scrollDown) ||
       hasAction(ui.SemanticsAction.scrollUp);
 
+  bool get hasFocus => hasFlag(ui.SemanticsFlag.isFocused);
+
   /// Whether this object represents a hotizontally scrollable area.
   bool get isHorizontalScrollContainer =>
       hasAction(ui.SemanticsAction.scrollLeft) ||
@@ -851,25 +864,9 @@ class SemanticsObject {
         hasIdentityTransform &&
         verticalContainerAdjustment == 0.0 &&
         horizontalContainerAdjustment == 0.0) {
-      if (isDesktop) {
-        element.style
-          ..removeProperty('transform-origin')
-          ..removeProperty('transform');
-      } else {
-        element.style
-          ..removeProperty('top')
-          ..removeProperty('left');
-      }
+      _clearSemanticElementTransform(element);
       if (containerElement != null) {
-        if (isDesktop) {
-          containerElement.style
-            ..removeProperty('transform-origin')
-            ..removeProperty('transform');
-        } else {
-          containerElement.style
-            ..removeProperty('top')
-            ..removeProperty('left');
-        }
+        _clearSemanticElementTransform(containerElement);
       }
       return;
     }
@@ -889,41 +886,16 @@ class SemanticsObject {
         effectiveTransformIsIdentity = effectiveTransform.isIdentity();
       }
     } else if (!hasIdentityTransform) {
-      effectiveTransform = Matrix4.fromFloat32List(transform!);
+      effectiveTransform = Matrix4.fromFloat32List(transform);
       effectiveTransformIsIdentity = false;
     }
 
     if (!effectiveTransformIsIdentity) {
-      if (isDesktop) {
-        element.style
-          ..transformOrigin = '0 0 0'
-          ..transform = matrix4ToCssTransform(effectiveTransform);
-      } else {
-        // Mobile screen readers observed to have errors while calculating the
-        // semantics focus borders if css `transform` properties are used.
-        // See: https://github.com/flutter/flutter/issues/68225
-        // Therefore we are calculating a bounding rectangle for the
-        // effective transform and use that rectangle to set TLWH css style
-        // properties.
-        // Note: Identity matrix is not using this code path.
-        final ui.Rect rect =
-            computeBoundingRectangleFromMatrix(effectiveTransform, _rect!);
-        element.style
-          ..top = '${rect.top}px'
-          ..left = '${rect.left}px'
-          ..width = '${rect.width}px'
-          ..height = '${rect.height}px';
-      }
+      element.style
+        ..transformOrigin = '0 0 0'
+        ..transform = matrix4ToCssTransform(effectiveTransform);
     } else {
-      if (isDesktop) {
-        element.style
-          ..removeProperty('transform-origin')
-          ..removeProperty('transform');
-      } else {
-        element.style
-          ..removeProperty('top')
-          ..removeProperty('left');
-      }
+      _clearSemanticElementTransform(element);
     }
 
     if (containerElement != null) {
@@ -932,26 +904,34 @@ class SemanticsObject {
           horizontalContainerAdjustment != 0.0) {
         final double translateX = -_rect!.left + horizontalContainerAdjustment;
         final double translateY = -_rect!.top + verticalContainerAdjustment;
-        if (isDesktop) {
-          containerElement.style
-            ..transformOrigin = '0 0 0'
-            ..transform = 'translate(${translateX}px, ${translateY}px)';
-        } else {
-          containerElement.style
-            ..top = '${translateY}px'
-            ..left = '${translateX}px';
-        }
+        containerElement.style
+          ..top = '${translateY}px'
+          ..left = '${translateX}px';
       } else {
-        if (isDesktop) {
-          containerElement.style
-            ..removeProperty('transform-origin')
-            ..removeProperty('transform');
-        } else {
-          containerElement.style
-            ..removeProperty('top')
-            ..removeProperty('left');
-        }
+        _clearSemanticElementTransform(containerElement);
       }
+    }
+  }
+
+  /// Clears the transform on a semantic element as if an identity transform is
+  /// applied.
+  ///
+  /// On macOS and iOS, VoiceOver requires `left=0; top=0` value to correctly
+  /// handle traversal order.
+  ///
+  /// See https://github.com/flutter/flutter/issues/73347.
+  static void _clearSemanticElementTransform(html.Element element) {
+    element.style
+      ..removeProperty('transform-origin')
+      ..removeProperty('transform');
+    if (isMacOrIOS) {
+      element.style
+        ..top = '0px'
+        ..left = '0px';
+    } else {
+      element.style
+        ..removeProperty('top')
+        ..removeProperty('left');
     }
   }
 
@@ -1172,7 +1152,7 @@ class EngineSemanticsOwner {
 
   /// Declares that the [child] must be attached to the [parent].
   ///
-  /// Attachments take precendence over detachments (see [_detachObject]). This
+  /// Attachments take precedence over detachments (see [_detachObject]). This
   /// allows the same node to be detached from one parent in the tree and
   /// reattached to another parent.
   void _attachObject({required SemanticsObject parent, required SemanticsObject child}) {
@@ -1503,19 +1483,7 @@ class EngineSemanticsOwner {
     if (_rootSemanticsElement == null) {
       final SemanticsObject root = _semanticsTree[0]!;
       _rootSemanticsElement = root.element;
-      // We render semantics inside the glasspane for proper focus and event
-      // handling. If semantics is behind the glasspane, the phone will disable
-      // focusing by touch, only by tabbing around the UI. If semantics is in
-      // front of glasspane, then DOM event won't bubble up to the glasspane so
-      // it can forward events to the framework.
-      //
-      // We insert the semantics root before the scene host. For all widgets
-      // in the scene, except for platform widgets, the scene host will pass the
-      // pointer events through to the semantics tree. However, for platform
-      // views, the pointer events will not pass through, and will be handled
-      // by the platform view.
-      domRenderer.glassPaneElement!
-          .insertBefore(_rootSemanticsElement!, domRenderer.sceneHostElement);
+      domRenderer.semanticsHostElement!.append(root.element);
     }
 
     _finalizeTree();

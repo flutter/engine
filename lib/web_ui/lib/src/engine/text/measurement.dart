@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of engine;
 
 // TODO(yjbanov): this is a hack we use to compute ideographic baseline; this
@@ -23,12 +22,9 @@ bool _newlinePredicate(int char) {
       prop == LineCharProperty.CR;
 }
 
-/// Manages [ParagraphRuler] instances and caches them per unique
-/// [ParagraphGeometricStyle].
-///
-/// All instances of [ParagraphRuler] should be created through this class.
-class RulerManager {
-  RulerManager({required this.rulerCacheCapacity}) {
+/// Hosts ruler DOM elements in a hidden container.
+class RulerHost {
+  RulerHost() {
     _rulerHost.style
       ..position = 'fixed'
       ..visibility = 'hidden'
@@ -41,8 +37,6 @@ class RulerManager {
     registerHotRestartListener(dispose);
   }
 
-  final int rulerCacheCapacity;
-
   /// Hosts a cache of rulers that measure text.
   ///
   /// This element exists purely for organizational purposes. Otherwise the
@@ -51,9 +45,31 @@ class RulerManager {
   /// purpose.
   final html.Element _rulerHost = html.Element.tag('flt-ruler-host');
 
+  /// Releases the resources used by this [RulerHost].
+  ///
+  /// After this is called, this object is no longer usable.
+  void dispose() {
+    _rulerHost.remove();
+  }
+
+  /// Adds an element used for measuring text as a child of [_rulerHost].
+  void addElement(html.HtmlElement element) {
+    _rulerHost.append(element);
+  }
+}
+
+/// Manages [ParagraphRuler] instances and caches them per unique
+/// [ParagraphGeometricStyle].
+///
+/// All instances of [ParagraphRuler] should be created through this class.
+class RulerManager extends RulerHost {
+  RulerManager({required this.rulerCacheCapacity}): super();
+
+  final int rulerCacheCapacity;
+
   /// The cache of rulers used to measure text.
   ///
-  /// Each ruler is keyed by paragraph style. This allows us to setup the
+  /// Each ruler is keyed by paragraph style. This allows us to set up the
   /// ruler's DOM structure once during the very first measurement of a given
   /// paragraph style. Subsequent measurements could reuse the same ruler and
   /// only swap the text contents. This minimizes the amount of work a browser
@@ -76,13 +92,6 @@ class RulerManager {
         cleanUpRulerCache();
       });
     }
-  }
-
-  /// Releases the resources used by this [RulerManager].
-  ///
-  /// After this is called, this object is no longer usable.
-  void dispose() {
-    _rulerHost.remove();
   }
 
   // Evicts all rulers from the cache.
@@ -127,11 +136,6 @@ class RulerManager {
         }
       }
     }
-  }
-
-  /// Adds an element used for measuring text as a child of [_rulerHost].
-  void addHostElement(html.DivElement element) {
-    _rulerHost.append(element);
   }
 
   /// Performs a cache lookup to find an existing [ParagraphRuler] for the given
@@ -479,7 +483,7 @@ class DomTextMeasurementService extends TextMeasurementService {
       height = naturalHeight;
     } else {
       // Lazily compute [lineHeight] when [maxLines] is not null.
-      lineHeight = ruler.lineHeightDimensions!.height;
+      lineHeight = ruler.lineHeight;
       height = math.min(naturalHeight, maxLines * lineHeight);
     }
 
@@ -587,8 +591,9 @@ class CanvasTextMeasurementService extends TextMeasurementService {
       }
     }
 
+    final double alphabeticBaseline = ruler.alphabeticBaseline;
     final int lineCount = linesCalculator.lines.length;
-    final double lineHeight = ruler.lineHeightDimensions!.height;
+    final double lineHeight = ruler.lineHeight;
     final double naturalHeight = lineCount * lineHeight;
     final int? maxLines = style.maxLines;
     final double height = maxLines == null
@@ -598,8 +603,8 @@ class CanvasTextMeasurementService extends TextMeasurementService {
     final MeasurementResult result = MeasurementResult(
       constraints.width,
       isSingleLine: lineCount == 1,
-      alphabeticBaseline: ruler.alphabeticBaseline,
-      ideographicBaseline: ruler.alphabeticBaseline * _baselineRatioHack,
+      alphabeticBaseline: alphabeticBaseline,
+      ideographicBaseline: alphabeticBaseline * _baselineRatioHack,
       height: height,
       naturalHeight: naturalHeight,
       lineHeight: lineHeight,

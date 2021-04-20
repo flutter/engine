@@ -63,6 +63,8 @@ template("runner_sources") {
       "fuchsia_intl.h",
       "isolate_configurator.cc",
       "isolate_configurator.h",
+      "keyboard.cc",
+      "keyboard.h",
       "logging.h",
       "loop.cc",
       "loop.h",
@@ -109,6 +111,7 @@ template("runner_sources") {
       "//flutter/lib/ui",
       "//flutter/runtime",
       "//flutter/shell/common",
+      "//flutter/shell/platform/common/client_wrapper:client_wrapper",
     ]
     flutter_deps = [
       ":fuchsia_gpu_configuration",
@@ -121,6 +124,7 @@ template("runner_sources") {
     public_deps = [
                     "$fuchsia_sdk_root/pkg:scenic_cpp",
                     "$fuchsia_sdk_root/pkg:sys_cpp",
+                    "$fuchsia_sdk_root/pkg:sys_inspect_cpp",
                     "//flutter/shell/platform/fuchsia/runtime/dart/utils",
                   ] + flutter_public_deps
 
@@ -446,6 +450,7 @@ executable("flutter_runner_unittests") {
     "component_unittest.cc",
     "flutter_runner_fakes.h",
     "fuchsia_intl_unittest.cc",
+    "keyboard_unittest.cc",
     "platform_view_unittest.cc",
     "runner_unittest.cc",
     "tests/engine_unittests.cc",
@@ -829,6 +834,10 @@ fuchsia_test_archive("embedder_tests") {
     {
       path = "$root_gen_dir/flutter/shell/platform/embedder/assets/scene_without_custom_compositor_with_xform.png"
       dest = "assets/scene_without_custom_compositor_with_xform.png"
+    },
+    {
+      path = "$root_gen_dir/flutter/shell/platform/embedder/assets/snapshot_large_scene.png"
+      dest = "assets/snapshot_large_scene.png"
     },
     {
       path = "$root_gen_dir/flutter/shell/platform/embedder/assets/verifyb143464703.png"

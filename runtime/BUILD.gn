@@ -49,6 +49,8 @@ source_set("runtime") {
     "dart_vm.h",
     "dart_vm_data.cc",
     "dart_vm_data.h",
+    "dart_vm_initializer.cc",
+    "dart_vm_initializer.h",
     "dart_vm_lifecycle.cc",
     "dart_vm_lifecycle.h",
     "embedder_resources.cc",
@@ -132,6 +134,26 @@ if (enable_unittests) {
       "//flutter/third_party/tonic",
       "//third_party/dart/runtime/bin:elf_loader",
       "//third_party/skia",
+    ]
+  }
+
+  test_fixtures("no_plugin_registrant") {
+    dart_main = "fixtures/no_dart_plugin_registrant_test.dart"
+    use_target_as_artifact_prefix = true
+  }
+
+  executable("no_dart_plugin_registrant_unittests") {
+    testonly = true
+
+    sources = [ "no_dart_plugin_registrant_unittests.cc" ]
+
+    public_configs = [ "//flutter:export_dynamic_symbols" ]
+
+    public_deps = [
+      ":no_plugin_registrant",
+      "//flutter/fml",
+      "//flutter/testing",
+      "//flutter/testing:fixture_test",
     ]
   }
 }

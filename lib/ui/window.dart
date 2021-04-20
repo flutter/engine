@@ -517,7 +517,7 @@ class SingletonFlutterWindow extends FlutterWindow {
   ///
   /// {@macro dart.ui.window.accessorForwardWarning}
   ///
-  /// It's prefered to use [SchedulerBinding.addTimingsCallback] than to use
+  /// It's preferred to use [SchedulerBinding.addTimingsCallback] than to use
   /// [SingletonFlutterWindow.onReportTimings] directly because
   /// [SchedulerBinding.addTimingsCallback] allows multiple callbacks.
   ///
@@ -554,6 +554,15 @@ class SingletonFlutterWindow extends FlutterWindow {
   PointerDataPacketCallback? get onPointerDataPacket => platformDispatcher.onPointerDataPacket;
   set onPointerDataPacket(PointerDataPacketCallback? callback) {
     platformDispatcher.onPointerDataPacket = callback;
+  }
+
+  /// A callback that is invoked when key data is available.
+  ///
+  /// The framework invokes this callback in the same zone in which the
+  /// callback was set.
+  KeyDataCallback? get onKeyData => platformDispatcher.onKeyData;
+  set onKeyData(KeyDataCallback? callback) {
+    platformDispatcher.onKeyData = callback;
   }
 
   /// The route or path that the embedder requested when the application was

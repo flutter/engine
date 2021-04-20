@@ -19,6 +19,7 @@
 #include "flutter/lib/ui/semantics/semantics_node.h"
 #include "flutter/lib/ui/snapshot_delegate.h"
 #include "flutter/lib/ui/text/font_collection.h"
+#include "flutter/lib/ui/volatile_path_tracker.h"
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
 #include "flutter/runtime/dart_vm.h"
@@ -114,7 +115,8 @@ class Engine final : public RuntimeDelegate,
     ///
     /// * AOT assets give to JIT/DBC mode VM's and vice-versa.
     /// * The assets could not be found in the asset manager. Callers must make
-    ///   sure their run configuration asset managers have been correctly setup.
+    ///   sure their run configuration asset managers have been correctly set
+    ///   up.
     /// * The assets themselves were corrupt or invalid. Callers must make sure
     ///   their asset delivery mechanisms are sound.
     /// * The application entry-point or the root library of the entry-point
@@ -296,6 +298,7 @@ class Engine final : public RuntimeDelegate,
          Settings settings,
          std::unique_ptr<Animator> animator,
          fml::WeakPtr<IOManager> io_manager,
+         const std::shared_ptr<FontCollection>& font_collection,
          std::unique_ptr<RuntimeController> runtime_controller);
 
   //----------------------------------------------------------------------------
@@ -345,12 +348,30 @@ class Engine final : public RuntimeDelegate,
          DartVM& vm,
          fml::RefPtr<const DartSnapshot> isolate_snapshot,
          TaskRunners task_runners,
-         const PlatformData platform_data,
+         const PlatformData& platform_data,
          Settings settings,
          std::unique_ptr<Animator> animator,
          fml::WeakPtr<IOManager> io_manager,
          fml::RefPtr<SkiaUnrefQueue> unref_queue,
-         fml::WeakPtr<SnapshotDelegate> snapshot_delegate);
+         fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
+         std::shared_ptr<VolatilePathTracker> volatile_path_tracker);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Create a Engine that shares as many resources as
+  ///             possible with the calling Engine such that together
+  ///             they occupy less memory and be created faster.
+  /// @details    This method ultimately calls DartIsolate::SpawnIsolate to make
+  ///             sure resources are shared.  This should only be called on
+  ///             running Engines.
+  /// @return     A new Engine with a running isolate.
+  /// @see        Engine::Engine
+  /// @see        DartIsolate::SpawnIsolate
+  ///
+  std::unique_ptr<Engine> Spawn(
+      Delegate& delegate,
+      const PointerDataDispatcherMaker& dispatcher_maker,
+      Settings settings,
+      std::unique_ptr<Animator> animator) const;
 
   //----------------------------------------------------------------------------
   /// @brief      Destroys the engine engine. Called by the shell on the UI task
@@ -709,6 +730,21 @@ class Engine final : public RuntimeDelegate,
                                  uint64_t trace_flow_id);
 
   //----------------------------------------------------------------------------
+  /// @brief      Notifies the engine that the embedder has sent it a key data
+  ///             packet. A key data packet contains one key event. This call
+  ///             originates in the platform view and the shell has forwarded
+  ///             the same to the engine on the UI task runner here. The engine
+  ///             will decide whether to handle this event, and send the
+  ///             result using `callback`, which will be called exactly once.
+  ///
+  /// @param[in]  packet    The key data packet.
+  /// @param[in]  callback  Called when the framework has decided whether
+  ///                       to handle this key data.
+  ///
+  void DispatchKeyDataPacket(std::unique_ptr<KeyDataPacket> packet,
+                             KeyDataResponse callback);
+
+  //----------------------------------------------------------------------------
   /// @brief      Notifies the engine that the embedder encountered an
   ///             accessibility related action on the specified node. This call
   ///             originates on the platform view and has been forwarded to the
@@ -769,7 +805,8 @@ class Engine final : public RuntimeDelegate,
                         uint64_t trace_flow_id) override;
 
   // |PointerDataDispatcher::Delegate|
-  void ScheduleSecondaryVsyncCallback(const fml::closure& callback) override;
+  void ScheduleSecondaryVsyncCallback(uintptr_t id,
+                                      const fml::closure& callback) override;
 
   //----------------------------------------------------------------------------
   /// @brief      Get the last Entrypoint that was used in the RunConfiguration
@@ -825,6 +862,39 @@ class Engine final : public RuntimeDelegate,
       std::unique_ptr<const fml::Mapping> snapshot_data,
       std::unique_ptr<const fml::Mapping> snapshot_instructions);
 
+  //--------------------------------------------------------------------------
+  /// @brief      Indicates to the dart VM that the request to load a deferred
+  ///             library with the specified loading unit id has failed.
+  ///
+  ///             The dart future returned by the initiating loadLibrary() call
+  ///             will complete with an error.
+  ///
+  /// @param[in]  loading_unit_id  The unique id of the deferred library's
+  ///                              loading unit, as passed in by
+  ///                              RequestDartDeferredLibrary.
+  ///
+  /// @param[in]  error_message    The error message that will appear in the
+  ///                              dart Future.
+  ///
+  /// @param[in]  transient        A transient error is a failure due to
+  ///                              temporary conditions such as no network.
+  ///                              Transient errors allow the dart VM to
+  ///                              re-request the same deferred library and
+  ///                              and loading_unit_id again. Non-transient
+  ///                              errors are permanent and attempts to
+  ///                              re-request the library will instantly
+  ///                              complete with an error.
+  void LoadDartDeferredLibraryError(intptr_t loading_unit_id,
+                                    const std::string error_message,
+                                    bool transient);
+
+  //--------------------------------------------------------------------------
+  /// @brief      Accessor for the RuntimeController.
+  ///
+  const RuntimeController* GetRuntimeController() const {
+    return runtime_controller_.get();
+  }
+
  private:
   Engine::Delegate& delegate_;
   const Settings settings_;
@@ -843,7 +913,7 @@ class Engine final : public RuntimeDelegate,
   std::shared_ptr<AssetManager> asset_manager_;
   bool activity_running_;
   bool have_surface_;
-  FontCollection font_collection_;
+  std::shared_ptr<FontCollection> font_collection_;
   ImageDecoder image_decoder_;
   TaskRunners task_runners_;
   size_t hint_freed_bytes_since_last_idle_ = 0;

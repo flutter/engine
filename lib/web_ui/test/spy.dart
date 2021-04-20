@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'dart:typed_data';
 
 import 'package:ui/src/engine.dart' hide window;
@@ -31,8 +30,8 @@ class PlatformMessage {
 /// It holds all intercepted platform messages in a [messages] list that can
 /// be inspected in tests.
 class PlatformMessagesSpy {
-  PlatformMessageCallback _callback;
-  PlatformMessageCallback _backup;
+  PlatformMessageCallback? _callback;
+  PlatformMessageCallback? _backup;
 
   bool get _isActive => _callback != null;
 
@@ -44,8 +43,8 @@ class PlatformMessagesSpy {
   /// This is typically called inside a test's `setUp` callback.
   void setUp() {
     assert(!_isActive);
-    _callback = (String channel, ByteData data,
-        PlatformMessageResponseCallback callback) {
+    _callback = (String channel, ByteData? data,
+        PlatformMessageResponseCallback? callback) {
       messages.add(PlatformMessage(
         channel,
         const JSONMethodCodec().decodeMethodCall(data),

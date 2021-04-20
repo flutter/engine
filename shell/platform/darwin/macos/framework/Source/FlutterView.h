@@ -4,6 +4,8 @@
 
 #import <Cocoa/Cocoa.h>
 
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterResizableBackingStoreProvider.h"
+
 /**
  * Listener for view resizing.
  */
@@ -21,18 +23,21 @@
 @interface FlutterView : NSView
 
 /**
- * The OpenGL context of backing surface.
+ * Initialize a FlutterView that will be rendered to using Metal rendering apis.
  */
-@property(readwrite, nonatomic, nonnull) NSOpenGLContext* openGLContext;
+- (nullable instancetype)initWithMTLDevice:(nonnull id<MTLDevice>)device
+                              commandQueue:(nonnull id<MTLCommandQueue>)commandQueue
+                           reshapeListener:(nonnull id<FlutterViewReshapeListener>)reshapeListener
+    NS_DESIGNATED_INITIALIZER;
 
 - (nullable instancetype)initWithFrame:(NSRect)frame
-                          shareContext:(nonnull NSOpenGLContext*)shareContext
+                           mainContext:(nonnull NSOpenGLContext*)mainContext
                        reshapeListener:(nonnull id<FlutterViewReshapeListener>)reshapeListener
     NS_DESIGNATED_INITIALIZER;
 
-- (nullable instancetype)initWithShareContext:(nonnull NSOpenGLContext*)shareContext
-                              reshapeListener:
-                                  (nonnull id<FlutterViewReshapeListener>)reshapeListener;
+- (nullable instancetype)initWithMainContext:(nonnull NSOpenGLContext*)mainContext
+                             reshapeListener:
+                                 (nonnull id<FlutterViewReshapeListener>)reshapeListener;
 
 - (nullable instancetype)initWithFrame:(NSRect)frameRect
                            pixelFormat:(nullable NSOpenGLPixelFormat*)format NS_UNAVAILABLE;
@@ -46,9 +51,15 @@
 - (void)present;
 
 /**
- * Ensures that framebuffer with requested size exists and returns the ID. Expected to be called on
- * raster thread.
+ * Ensures that a backing store with requested size exists and returns the descriptor. Expected to
+ * be called on raster thread.
  */
-- (int)frameBufferIDForSize:(CGSize)size;
+- (nonnull FlutterRenderBackingStore*)backingStoreForSize:(CGSize)size;
+
+/**
+ * Must be called when shutting down. Unblocks raster thread and prevents any further
+ * synchronization.
+ */
+- (void)shutdown;
 
 @end

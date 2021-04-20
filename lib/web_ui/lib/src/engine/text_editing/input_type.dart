@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of engine;
 
 /// Various types of inputs used in text fields.
@@ -104,7 +103,7 @@ class NumberInputType extends EngineInputType {
 /// Decimal input type.
 ///
 /// Input keyboard with containing the digits 0–9 and a decimal separator.
-/// Seperator can be `.`, `,` depending on the locale.
+/// Separator can be `.`, `,` depending on the locale.
 class DecimalInputType extends EngineInputType {
   const DecimalInputType();
 

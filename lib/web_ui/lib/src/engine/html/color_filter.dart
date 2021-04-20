@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of engine;
 
 /// A surface that applies an [ColorFilter] to its children.
@@ -149,6 +148,9 @@ String? svgFilterFromBlendMode(
     case ui.BlendMode.srcOut:
       svgFilter = _srcOutColorFilterToSvg(filterColor);
       break;
+    case ui.BlendMode.dstATop:
+      svgFilter = _dstATopColorFilterToSvg(filterColor);
+      break;
     case ui.BlendMode.xor:
       svgFilter = _xorColorFilterToSvg(filterColor);
       break;
@@ -199,7 +201,6 @@ String? svgFilterFromBlendMode(
       break;
     case ui.BlendMode.src:
     case ui.BlendMode.dst:
-    case ui.BlendMode.dstATop:
     case ui.BlendMode.dstIn:
     case ui.BlendMode.dstOut:
     case ui.BlendMode.dstOver:
@@ -242,6 +243,20 @@ String _srcInColorFilterToSvg(ui.Color? color) {
       '</feFlood>'
       '<feComposite in="flood" in2="destalpha" '
       'operator="arithmetic" k1="1" k2="0" k3="0" k4="0" result="comp">'
+      '</feComposite>'
+      '</filter></svg>';
+}
+
+/// The destination that overlaps the source is composited with the source and
+/// replaces the destination. dst-atop	CR = CB*αB*αA+CA*αA*(1-αB)	αR=αA
+String _dstATopColorFilterToSvg(ui.Color? color) {
+  _filterIdCounter += 1;
+  return '$kSvgResourceHeader'
+      '<filter id="_fcf$_filterIdCounter" '
+      'filterUnits="objectBoundingBox" x="0%" y="0%" width="100%" height="100%">'
+      '<feFlood flood-color="${colorToCssString(color)}" flood-opacity="1" result="flood">'
+      '</feFlood>'
+      '<feComposite in="SourceGraphic" in2="flood" operator="atop" result="comp">'
       '</feComposite>'
       '</filter></svg>';
 }

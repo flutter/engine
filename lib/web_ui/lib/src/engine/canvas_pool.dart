@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of engine;
 
 /// Allocates and caches 0 or more canvas(s) for [BitmapCanvas].
@@ -927,8 +926,8 @@ class ContextStateHandle {
       fillStyle = colorString;
       strokeStyle = colorString;
     } else {
-      fillStyle = '';
-      strokeStyle = '';
+      fillStyle = '#000000';
+      strokeStyle = '#000000';
     }
 
     final ui.MaskFilter? maskFilter = paint.maskFilter;

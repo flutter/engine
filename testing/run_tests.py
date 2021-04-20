@@ -150,6 +150,10 @@ def RunCCTests(build_dir, filter):
 
   RunEngineExecutable(build_dir, 'testing_unittests', filter, shuffle_flags)
 
+  # The accessibility library only supports Mac for now.
+  if IsMac():
+    RunEngineExecutable(build_dir, 'accessibility_unittests', filter, shuffle_flags)
+
   # These unit-tests are Objective-C and can only run on Darwin.
   if IsMac():
     RunEngineExecutable(build_dir, 'flutter_channels_unittests', filter, shuffle_flags)
@@ -210,18 +214,28 @@ def SnapshotTest(build_dir, dart_file, kernel_file_output, verbose_dart_snapshot
   if verbose_dart_snapshot:
     RunCmd(snapshot_command, cwd=buildroot_dir)
   else:
-    subprocess.check_output(snapshot_command, cwd=buildroot_dir)
+    try:
+      subprocess.check_output(snapshot_command, cwd=buildroot_dir)
+    except subprocess.CalledProcessError as error:
+      # CalledProcessError's string doesn't print the output. Print it before
+      # the crash for easier inspection.
+      print('Error occurred from the subprocess, with the output:')
+      print(error.output)
+      raise
   assert os.path.exists(kernel_file_output)
 
 
-def RunDartTest(build_dir, dart_file, verbose_dart_snapshot, multithreaded):
+def RunDartTest(build_dir, dart_file, verbose_dart_snapshot, multithreaded, enable_observatory=False):
   kernel_file_name = os.path.basename(dart_file) + '.kernel.dill'
   kernel_file_output = os.path.join(out_dir, kernel_file_name)
 
   SnapshotTest(build_dir, dart_file, kernel_file_output, verbose_dart_snapshot)
 
-  command_args = [
-    '--disable-observatory',
+  command_args = []
+  if not enable_observatory:
+    command_args.append('--disable-observatory')
+
+  command_args += [
     '--use-test-fonts',
     kernel_file_output
   ]
@@ -399,12 +413,22 @@ def RunDartTests(build_dir, filter, verbose_dart_snapshot):
   # This one is a bit messy. The pubspec.yaml at flutter/testing/dart/pubspec.yaml
   # has dependencies that are hardcoded to point to the sky packages at host_debug_unopt/
   # Before running Dart tests, make sure to run just that target (NOT the whole engine)
-  EnsureDebugUnoptSkyPackagesAreBuilt();
+  EnsureDebugUnoptSkyPackagesAreBuilt()
 
   # Now that we have the Sky packages at the hardcoded location, run `pub get`.
   RunEngineExecutable(build_dir, os.path.join('dart-sdk', 'bin', 'pub'), None, flags=['get'], cwd=dart_tests_dir)
 
+  dart_observatory_tests = glob.glob('%s/observatory/*_test.dart' % dart_tests_dir)
   dart_tests = glob.glob('%s/*_test.dart' % dart_tests_dir)
+
+  if 'release' not in build_dir:
+    for dart_test_file in dart_observatory_tests:
+      if filter is not None and os.path.basename(dart_test_file) not in filter:
+        print("Skipping %s due to filter." % dart_test_file)
+      else:
+        print("Testing dart file %s with observatory enabled" % dart_test_file)
+        RunDartTest(build_dir, dart_test_file, verbose_dart_snapshot, True, True)
+        RunDartTest(build_dir, dart_test_file, verbose_dart_snapshot, False, True)
 
   for dart_test_file in dart_tests:
     if filter is not None and os.path.basename(dart_test_file) not in filter:
@@ -443,7 +467,7 @@ def main():
   parser = argparse.ArgumentParser()
 
   parser.add_argument('--variant', dest='variant', action='store',
-      default='host_debug_unopt', help='The engine build variant to run the tests for.');
+      default='host_debug_unopt', help='The engine build variant to run the tests for.')
   parser.add_argument('--type', type=str, default='all')
   parser.add_argument('--engine-filter', type=str, default='',
       help='A list of engine test executables to run.')

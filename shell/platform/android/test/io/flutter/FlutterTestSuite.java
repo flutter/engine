@@ -13,17 +13,19 @@ import io.flutter.embedding.android.FlutterFragmentTest;
 import io.flutter.embedding.android.FlutterViewTest;
 import io.flutter.embedding.engine.FlutterEngineCacheTest;
 import io.flutter.embedding.engine.FlutterEngineConnectionRegistryTest;
+import io.flutter.embedding.engine.FlutterEngineGroupComponentTest;
 import io.flutter.embedding.engine.FlutterJNITest;
 import io.flutter.embedding.engine.LocalizationPluginTest;
 import io.flutter.embedding.engine.RenderingComponentTest;
 import io.flutter.embedding.engine.dart.DartExecutorTest;
 import io.flutter.embedding.engine.dart.DartMessengerTest;
-import io.flutter.embedding.engine.dynamicfeatures.PlayStoreDynamicFeatureManagerTest;
+import io.flutter.embedding.engine.deferredcomponents.PlayStoreDeferredComponentManagerTest;
 import io.flutter.embedding.engine.loader.ApplicationInfoLoaderTest;
 import io.flutter.embedding.engine.loader.FlutterLoaderTest;
 import io.flutter.embedding.engine.mutatorsstack.FlutterMutatorViewTest;
 import io.flutter.embedding.engine.plugins.shim.ShimPluginRegistryTest;
 import io.flutter.embedding.engine.renderer.FlutterRendererTest;
+import io.flutter.embedding.engine.systemchannels.DeferredComponentChannelTest;
 import io.flutter.embedding.engine.systemchannels.KeyEventChannelTest;
 import io.flutter.embedding.engine.systemchannels.PlatformChannelTest;
 import io.flutter.embedding.engine.systemchannels.RestorationChannelTest;
@@ -58,6 +60,7 @@ import test.io.flutter.embedding.engine.PluginComponentTest;
   FlutterAndroidComponentTest.class,
   FlutterEngineCacheTest.class,
   FlutterEngineConnectionRegistryTest.class,
+  FlutterEngineGroupComponentTest.class,
   FlutterEngineTest.class,
   FlutterFragmentActivityTest.class,
   FlutterFragmentTest.class,
@@ -71,6 +74,7 @@ import test.io.flutter.embedding.engine.PluginComponentTest;
   FlutterShellArgsTest.class,
   FlutterViewTest.class,
   InputConnectionAdaptorTest.class,
+  DeferredComponentChannelTest.class,
   KeyEventChannelTest.class,
   ListenableEditingStateTest.class,
   LocalizationPluginTest.class,
@@ -78,7 +82,7 @@ import test.io.flutter.embedding.engine.PluginComponentTest;
   PlatformChannelTest.class,
   PlatformPluginTest.class,
   PlatformViewsControllerTest.class,
-  PlayStoreDynamicFeatureManagerTest.class,
+  PlayStoreDeferredComponentManagerTest.class,
   PluginComponentTest.class,
   PreconditionsTest.class,
   RenderingComponentTest.class,

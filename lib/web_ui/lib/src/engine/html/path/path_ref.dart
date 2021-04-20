@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of engine;
 
 /// Stores the path verbs, points and conic weights.
@@ -157,7 +156,7 @@ class PathRef {
   int get isRect => fIsRect ? fRRectOrOvalStartIdx : -1;
   ui.RRect? getRRect() => fIsRRect ? _getRRect() : null;
   ui.Rect? getRect() {
-    /// Use _detectRect() for detection if explicity addRect was used (fIsRect) or
+    /// Use _detectRect() for detection if explicitly addRect was used (fIsRect) or
     /// it is a potential due to moveTo + 3 lineTo verbs.
     if (fIsRect) {
       return ui.Rect.fromLTRB(

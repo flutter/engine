@@ -15,9 +15,9 @@
 #include <memory>
 #include <vector>
 
-#include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/plugin_registrar.h"
-#include "flutter/shell/platform/common/cpp/incoming_message_dispatcher.h"
-#include "flutter/shell/platform/common/cpp/path_utils.h"
+#include "flutter/shell/platform/common/client_wrapper/include/flutter/plugin_registrar.h"
+#include "flutter/shell/platform/common/incoming_message_dispatcher.h"
+#include "flutter/shell/platform/common/path_utils.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/windows/flutter_project_bundle.h"
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
@@ -49,6 +49,18 @@ static FlutterDesktopViewRef HandleForView(flutter::FlutterWindowsView* view) {
   return reinterpret_cast<FlutterDesktopViewRef>(view);
 }
 
+// Returns the texture registrar corresponding to the given opaque API handle.
+static flutter::FlutterWindowsTextureRegistrar* TextureRegistrarFromHandle(
+    FlutterDesktopTextureRegistrarRef ref) {
+  return reinterpret_cast<flutter::FlutterWindowsTextureRegistrar*>(ref);
+}
+
+// Returns the opaque API handle for the given texture registrar instance.
+static FlutterDesktopTextureRegistrarRef HandleForTextureRegistrar(
+    flutter::FlutterWindowsTextureRegistrar* registrar) {
+  return reinterpret_cast<FlutterDesktopTextureRegistrarRef>(registrar);
+}
+
 void FlutterDesktopViewControllerDestroy(
     FlutterDesktopViewControllerRef controller) {
   delete controller;
@@ -64,9 +76,14 @@ FlutterDesktopViewRef FlutterDesktopViewControllerGetView(
   return HandleForView(controller->view.get());
 }
 
+void FlutterDesktopViewControllerForceRedraw(
+    FlutterDesktopViewControllerRef controller) {
+  controller->view->ForceRedraw();
+}
+
 FlutterDesktopEngineRef FlutterDesktopEngineCreate(
-    const FlutterDesktopEngineProperties& engine_properties) {
-  flutter::FlutterProjectBundle project(engine_properties);
+    const FlutterDesktopEngineProperties* engine_properties) {
+  flutter::FlutterProjectBundle project(*engine_properties);
   auto engine = std::make_unique<flutter::FlutterWindowsEngine>(project);
   return HandleForEngine(engine.release());
 }
@@ -105,6 +122,12 @@ FlutterDesktopMessengerRef FlutterDesktopEngineGetMessenger(
   return EngineFromHandle(engine)->messenger();
 }
 
+FlutterDesktopTextureRegistrarRef FlutterDesktopEngineGetTextureRegistrar(
+    FlutterDesktopEngineRef engine) {
+  return HandleForTextureRegistrar(
+      EngineFromHandle(engine)->texture_registrar());
+}
+
 HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef view) {
   return std::get<HWND>(*ViewFromHandle(view)->GetRenderTarget());
 }
@@ -125,7 +148,7 @@ void FlutterDesktopResyncOutputStreams() {
   std::ios::sync_with_stdio();
 }
 
-// Implementations of common/cpp/ API methods.
+// Implementations of common/ API methods.
 
 FlutterDesktopMessengerRef FlutterDesktopPluginRegistrarGetMessenger(
     FlutterDesktopPluginRegistrarRef registrar) {
@@ -170,4 +193,30 @@ void FlutterDesktopMessengerSetCallback(FlutterDesktopMessengerRef messenger,
                                         void* user_data) {
   messenger->engine->message_dispatcher()->SetMessageCallback(channel, callback,
                                                               user_data);
+}
+
+FlutterDesktopTextureRegistrarRef FlutterDesktopRegistrarGetTextureRegistrar(
+    FlutterDesktopPluginRegistrarRef registrar) {
+  return HandleForTextureRegistrar(registrar->engine->texture_registrar());
+}
+
+int64_t FlutterDesktopTextureRegistrarRegisterExternalTexture(
+    FlutterDesktopTextureRegistrarRef texture_registrar,
+    const FlutterDesktopTextureInfo* texture_info) {
+  return TextureRegistrarFromHandle(texture_registrar)
+      ->RegisterTexture(texture_info);
+}
+
+bool FlutterDesktopTextureRegistrarUnregisterExternalTexture(
+    FlutterDesktopTextureRegistrarRef texture_registrar,
+    int64_t texture_id) {
+  return TextureRegistrarFromHandle(texture_registrar)
+      ->UnregisterTexture(texture_id);
+}
+
+bool FlutterDesktopTextureRegistrarMarkExternalTextureFrameAvailable(
+    FlutterDesktopTextureRegistrarRef texture_registrar,
+    int64_t texture_id) {
+  return TextureRegistrarFromHandle(texture_registrar)
+      ->MarkTextureFrameAvailable(texture_id);
 }

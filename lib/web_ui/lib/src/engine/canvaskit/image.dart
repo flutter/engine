@@ -2,55 +2,106 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of engine;
 
 /// Instantiates a [ui.Codec] backed by an `SkAnimatedImage` from Skia.
 ui.Codec skiaInstantiateImageCodec(Uint8List list,
     [int? width, int? height, int? format, int? rowBytes]) {
-  return CkAnimatedImage.decodeFromBytes(list);
+  return CkAnimatedImage.decodeFromBytes(list, 'encoded image bytes');
+}
+
+/// Thrown when the web engine fails to decode an image, either due to a
+/// network issue, corrupted image contents, or missing codec.
+class ImageCodecException implements Exception {
+  ImageCodecException(this._message);
+
+  final String _message;
+
+  @override
+  String toString() => 'ImageCodecException: $_message';
+}
+
+const String _kNetworkImageMessage = 'Failed to load network image.';
+
+typedef HttpRequestFactory = html.HttpRequest Function();
+HttpRequestFactory httpRequestFactory = () => html.HttpRequest();
+void debugRestoreHttpRequestFactory() {
+  httpRequestFactory = () => html.HttpRequest();
 }
 
 /// Instantiates a [ui.Codec] backed by an `SkAnimatedImage` from Skia after
 /// requesting from URI.
 Future<ui.Codec> skiaInstantiateWebImageCodec(
-    String uri, WebOnlyImageCodecChunkCallback? chunkCallback) {
+    String url, WebOnlyImageCodecChunkCallback? chunkCallback) {
   Completer<ui.Codec> completer = Completer<ui.Codec>();
-  //TODO: Switch to using MakeImageFromCanvasImageSource when animated images are supported.
-  html.HttpRequest.request(uri, responseType: "arraybuffer",
-      onProgress: (html.ProgressEvent event) {
-    if (event.lengthComputable) {
-      chunkCallback?.call(event.loaded!, event.total!);
-    }
-  }).then((html.HttpRequest response) {
-    if (response.status != 200) {
-      completer.completeError(Exception(
-          'Network image request failed with status: ${response.status}'));
-    }
-    final Uint8List list =
-        new Uint8List.view((response.response as ByteBuffer));
-    final CkAnimatedImage codec = CkAnimatedImage.decodeFromBytes(list);
-    completer.complete(codec);
-  }, onError: (dynamic error) {
-    completer.completeError(error);
+
+  final html.HttpRequest request = httpRequestFactory();
+  request.open('GET', url, async: true);
+  request.responseType = 'arraybuffer';
+  if (chunkCallback != null) {
+    request.onProgress.listen((html.ProgressEvent event) {
+      chunkCallback.call(event.loaded!, event.total!);
+    });
+  }
+
+  request.onError.listen((html.ProgressEvent event) {
+    completer.completeError(ImageCodecException('$_kNetworkImageMessage\n'
+        'Image URL: $url\n'
+        'Trying to load an image from another domain? Find answers at:\n'
+        'https://flutter.dev/docs/development/platform-integration/web-images'));
   });
+
+  request.onLoad.listen((html.ProgressEvent event) {
+    final int status = request.status!;
+    final bool accepted = status >= 200 && status < 300;
+    final bool fileUri = status == 0; // file:// URIs have status of 0.
+    final bool notModified = status == 304;
+    final bool unknownRedirect = status > 307 && status < 400;
+    final bool success = accepted || fileUri || notModified || unknownRedirect;
+
+    if (!success) {
+      completer.completeError(
+        ImageCodecException('$_kNetworkImageMessage\n'
+            'Image URL: $url\n'
+            'Server response code: $status'),
+      );
+      return;
+    }
+
+    try {
+      final Uint8List list =
+          new Uint8List.view((request.response as ByteBuffer));
+      final CkAnimatedImage codec = CkAnimatedImage.decodeFromBytes(list, url);
+      completer.complete(codec);
+    } catch (error, stackTrace) {
+      completer.completeError(error, stackTrace);
+    }
+  });
+
+  request.send();
   return completer.future;
 }
 
 /// The CanvasKit implementation of [ui.Codec].
 ///
 /// Wraps `SkAnimatedImage`.
-class CkAnimatedImage extends ManagedSkiaObject<SkAnimatedImage> implements ui.Codec {
+class CkAnimatedImage extends ManagedSkiaObject<SkAnimatedImage>
+    implements ui.Codec {
   /// Decodes an image from a list of encoded bytes.
-  CkAnimatedImage.decodeFromBytes(this._bytes);
+  CkAnimatedImage.decodeFromBytes(this._bytes, this.src);
 
+  final String src;
   final Uint8List _bytes;
 
   @override
   SkAnimatedImage createDefault() {
-    final SkAnimatedImage? animatedImage = canvasKit.MakeAnimatedImageFromEncoded(_bytes);
+    final SkAnimatedImage? animatedImage =
+        canvasKit.MakeAnimatedImageFromEncoded(_bytes);
     if (animatedImage == null) {
-      throw Exception('Failed to decode image');
+      throw ImageCodecException(
+        'Failed to decode image data.\n'
+        'Image source: $src',
+      );
     }
     return animatedImage;
   }
@@ -120,22 +171,31 @@ class CkImage implements ui.Image, StackTraceDebugger {
       // IMPORTANT: the alphaType, colorType, and colorSpace passed to
       // _encodeImage and to canvasKit.MakeImage must be the same. Otherwise
       // Skia will misinterpret the pixels and corrupt the image.
-      final ByteData originalBytes = _encodeImage(
+      final ByteData? originalBytes = _encodeImage(
         skImage: skImage,
         format: ui.ImageByteFormat.rawRgba,
         alphaType: canvasKit.AlphaType.Premul,
         colorType: canvasKit.ColorType.RGBA_8888,
         colorSpace: SkColorSpaceSRGB,
       );
+      if (originalBytes == null) {
+        printWarning('Unable to encode image to bytes. We will not '
+            'be able to resurrect it once it has been garbage collected.');
+        return;
+      }
+      final int originalWidth = skImage.width();
+      final int originalHeight = skImage.height();
       box = SkiaObjectBox<CkImage, SkImage>.resurrectable(this, skImage, () {
         return canvasKit.MakeImage(
-          originalBytes.buffer.asUint8List(),
-          width,
-          height,
-          canvasKit.AlphaType.Premul,
-          canvasKit.ColorType.RGBA_8888,
-          SkColorSpaceSRGB,
-        );
+            SkImageInfo(
+              alphaType: canvasKit.AlphaType.Premul,
+              colorType: canvasKit.ColorType.RGBA_8888,
+              colorSpace: SkColorSpaceSRGB,
+              width: originalWidth,
+              height: originalHeight,
+            ),
+            originalBytes.buffer.asUint8List(),
+            4 * originalWidth);
       });
     }
   }
@@ -220,23 +280,28 @@ class CkImage implements ui.Image, StackTraceDebugger {
     ui.ImageByteFormat format = ui.ImageByteFormat.rawRgba,
   }) {
     assert(_debugCheckIsNotDisposed());
-    return Future<ByteData>.value(_encodeImage(
+    ByteData? data = _encodeImage(
       skImage: skImage,
       format: format,
       alphaType: canvasKit.AlphaType.Premul,
       colorType: canvasKit.ColorType.RGBA_8888,
       colorSpace: SkColorSpaceSRGB,
-    ));
+    );
+    if (data == null) {
+      return Future<ByteData>.error('Failed to encode the image into bytes.');
+    } else {
+      return Future<ByteData>.value(data);
+    }
   }
 
-  static ByteData _encodeImage({
+  static ByteData? _encodeImage({
     required SkImage skImage,
     required ui.ImageByteFormat format,
     required SkAlphaType alphaType,
     required SkColorType colorType,
     required ColorSpace colorSpace,
   }) {
-    Uint8List bytes;
+    Uint8List? bytes;
 
     if (format == ui.ImageByteFormat.rawRgba) {
       final SkImageInfo imageInfo = SkImageInfo(
@@ -246,15 +311,12 @@ class CkImage implements ui.Image, StackTraceDebugger {
         width: skImage.width(),
         height: skImage.height(),
       );
-      bytes = skImage.readPixels(imageInfo, 0, 0);
+      bytes = skImage.readPixels(0, 0, imageInfo);
     } else {
-      final SkData skData = skImage.encodeToData(); //defaults to PNG 100%
-      // make a copy that we can return
-      bytes = Uint8List.fromList(canvasKit.getDataBytes(skData));
-      skData.delete();
+      bytes = skImage.encodeToBytes(); //defaults to PNG 100%
     }
 
-    return bytes.buffer.asByteData(0, bytes.length);
+    return bytes?.buffer.asByteData(0, bytes.length);
   }
 
   @override

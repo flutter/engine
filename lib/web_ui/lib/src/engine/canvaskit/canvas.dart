@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of engine;
 
 /// Memoized value for ClipOp.Intersect, so we don't have to hit JS-interop
@@ -14,6 +13,11 @@ final SkClipOp _clipOpIntersect = canvasKit.ClipOp.Intersect;
 /// This is intentionally not memory-managing the underlying [SkCanvas]. See
 /// the docs on [SkCanvas], which explain the reason.
 class CkCanvas {
+  // Cubic equation coefficients recommended by Mitchell & Netravali
+  // in their paper on cubic interpolation.
+  static const double _kMitchellNetravali_B = 1.0 / 3.0;
+  static const double _kMitchellNetravali_C = 1.0 / 3.0;
+
   final SkCanvas skCanvas;
 
   CkCanvas(this.skCanvas);
@@ -65,12 +69,13 @@ class CkCanvas {
     );
   }
 
+  // TODO(flar): CanvasKit does not expose sampling options available on SkCanvas.drawAtlas
   void drawAtlasRaw(
     CkPaint paint,
     CkImage atlas,
     Float32List rstTransforms,
     Float32List rects,
-    List<Float32List>? colors,
+    Uint32List? colors,
     ui.BlendMode blendMode,
   ) {
     skCanvas.drawAtlas(
@@ -108,30 +113,57 @@ class CkCanvas {
   }
 
   void drawImage(CkImage image, ui.Offset offset, CkPaint paint) {
-    skCanvas.drawImage(
-      image.skImage,
-      offset.dx,
-      offset.dy,
-      paint.skiaObject,
-    );
+    ui.FilterQuality filterQuality = paint.filterQuality;
+    if (filterQuality == ui.FilterQuality.high) {
+      skCanvas.drawImageCubic(
+        image.skImage,
+        offset.dx,
+        offset.dy,
+        _kMitchellNetravali_B,
+        _kMitchellNetravali_C,
+        paint.skiaObject,
+      );
+    } else {
+      skCanvas.drawImageOptions(
+        image.skImage,
+        offset.dx,
+        offset.dy,
+        toSkFilterMode(filterQuality),
+        toSkMipmapMode(filterQuality),
+        paint.skiaObject,
+      );
+    }
   }
 
   void drawImageRect(CkImage image, ui.Rect src, ui.Rect dst, CkPaint paint) {
-    skCanvas.drawImageRect(
-      image.skImage,
-      toSkRect(src),
-      toSkRect(dst),
-      paint.skiaObject,
-      false,
-    );
+    ui.FilterQuality filterQuality = paint.filterQuality;
+    if (filterQuality == ui.FilterQuality.high) {
+      skCanvas.drawImageRectCubic(
+        image.skImage,
+        toSkRect(src),
+        toSkRect(dst),
+        _kMitchellNetravali_B,
+        _kMitchellNetravali_C,
+        paint.skiaObject,
+      );
+    } else {
+      skCanvas.drawImageRectOptions(
+        image.skImage,
+        toSkRect(src),
+        toSkRect(dst),
+        toSkFilterMode(filterQuality),
+        toSkMipmapMode(filterQuality),
+        paint.skiaObject,
+      );
+    }
   }
 
-  void drawImageNine(
-      CkImage image, ui.Rect center, ui.Rect dst, CkPaint paint) {
+  void drawImageNine(CkImage image, ui.Rect center, ui.Rect dst, CkPaint paint) {
     skCanvas.drawImageNine(
       image.skImage,
       toSkRect(center),
       toSkRect(dst),
+      toSkFilterMode(paint.filterQuality),
       paint.skiaObject,
     );
   }
@@ -192,10 +224,10 @@ class CkCanvas {
     skCanvas.drawRect(toSkRect(rect), paint.skiaObject);
   }
 
-  void drawShadow(CkPath path, ui.Color color, double elevation,
-      bool transparentOccluder) {
-    drawSkShadow(skCanvas, path, color, elevation,
-        transparentOccluder, ui.window.devicePixelRatio);
+  void drawShadow(
+      CkPath path, ui.Color color, double elevation, bool transparentOccluder) {
+    drawSkShadow(skCanvas, path, color, elevation, transparentOccluder,
+        ui.window.devicePixelRatio);
   }
 
   void drawVertices(
@@ -236,10 +268,11 @@ class CkCanvas {
     skCanvas.saveLayer(paint?.skiaObject, null, null, null);
   }
 
-  void saveLayerWithFilter(ui.Rect bounds, ui.ImageFilter filter) {
-    final _CkManagedSkImageFilterConvertible convertible = filter as _CkManagedSkImageFilterConvertible;
+  void saveLayerWithFilter(ui.Rect bounds, ui.ImageFilter filter, [ CkPaint? paint ]) {
+    final _CkManagedSkImageFilterConvertible convertible =
+        filter as _CkManagedSkImageFilterConvertible;
     return skCanvas.saveLayer(
-      null,
+      paint?.skiaObject,
       toSkRect(bounds),
       convertible._imageFilter.skiaObject,
       0,
@@ -267,8 +300,8 @@ class CkCanvas {
 
 class RecordingCkCanvas extends CkCanvas {
   RecordingCkCanvas(SkCanvas skCanvas, ui.Rect bounds)
-    : pictureSnapshot = CkPictureSnapshot(bounds),
-      super(skCanvas);
+      : pictureSnapshot = CkPictureSnapshot(bounds),
+        super(skCanvas);
 
   @override
   final CkPictureSnapshot pictureSnapshot;
@@ -310,7 +343,8 @@ class RecordingCkCanvas extends CkCanvas {
     CkPaint paint,
   ) {
     super.drawArc(oval, startAngle, sweepAngle, useCenter, paint);
-    _addCommand(CkDrawArcCommand(oval, startAngle, sweepAngle, useCenter, paint));
+    _addCommand(
+        CkDrawArcCommand(oval, startAngle, sweepAngle, useCenter, paint));
   }
 
   @override
@@ -319,11 +353,12 @@ class RecordingCkCanvas extends CkCanvas {
     CkImage atlas,
     Float32List rstTransforms,
     Float32List rects,
-    List<Float32List>? colors,
+    Uint32List? colors,
     ui.BlendMode blendMode,
   ) {
     super.drawAtlasRaw(paint, atlas, rstTransforms, rects, colors, blendMode);
-    _addCommand(CkDrawAtlasCommand(paint, atlas, rstTransforms, rects, colors, blendMode));
+    _addCommand(CkDrawAtlasCommand(
+        paint, atlas, rstTransforms, rects, colors, blendMode));
   }
 
   @override
@@ -418,10 +453,11 @@ class RecordingCkCanvas extends CkCanvas {
   }
 
   @override
-  void drawShadow(CkPath path, ui.Color color, double elevation,
-      bool transparentOccluder) {
+  void drawShadow(
+      CkPath path, ui.Color color, double elevation, bool transparentOccluder) {
     super.drawShadow(path, color, elevation, transparentOccluder);
-    _addCommand(CkDrawShadowCommand(path, color, elevation, transparentOccluder));
+    _addCommand(
+        CkDrawShadowCommand(path, color, elevation, transparentOccluder));
   }
 
   @override
@@ -468,9 +504,9 @@ class RecordingCkCanvas extends CkCanvas {
   }
 
   @override
-  void saveLayerWithFilter(ui.Rect bounds, ui.ImageFilter filter) {
-    super.saveLayerWithFilter(bounds, filter);
-    _addCommand(CkSaveLayerWithFilterCommand(bounds, filter));
+  void saveLayerWithFilter(ui.Rect bounds, ui.ImageFilter filter, [ CkPaint? paint ]) {
+    super.saveLayerWithFilter(bounds, filter, paint);
+    _addCommand(CkSaveLayerWithFilterCommand(bounds, filter, paint));
   }
 
   @override
@@ -627,7 +663,7 @@ class CkTransformCommand extends CkPaintCommand {
   @override
   void apply(SkCanvas canvas) {
     canvas.concat(toSkMatrixFromFloat32(matrix4));
- }
+  }
 }
 
 class CkSkewCommand extends CkPaintCommand {
@@ -660,7 +696,8 @@ class CkClipRectCommand extends CkPaintCommand {
 }
 
 class CkDrawArcCommand extends CkPaintCommand {
-  CkDrawArcCommand(this.oval, this.startAngle, this.sweepAngle, this.useCenter, this.paint);
+  CkDrawArcCommand(
+      this.oval, this.startAngle, this.sweepAngle, this.useCenter, this.paint);
 
   final ui.Rect oval;
   final double startAngle;
@@ -682,13 +719,14 @@ class CkDrawArcCommand extends CkPaintCommand {
 }
 
 class CkDrawAtlasCommand extends CkPaintCommand {
-  CkDrawAtlasCommand(this.paint, this.atlas, this.rstTransforms, this.rects, this.colors, this.blendMode);
+  CkDrawAtlasCommand(this.paint, this.atlas, this.rstTransforms, this.rects,
+      this.colors, this.blendMode);
 
   final CkPaint paint;
   final CkImage atlas;
   final Float32List rstTransforms;
   final Float32List rects;
-  final List<Float32List>? colors;
+  final Uint32List? colors;
   final ui.BlendMode blendMode;
 
   @override
@@ -924,16 +962,30 @@ class CkDrawImageCommand extends CkPaintCommand {
   final CkPaint paint;
 
   CkDrawImageCommand(CkImage image, this.offset, this.paint)
-    : this.image = image.clone();
+      : this.image = image.clone();
 
   @override
   void apply(SkCanvas canvas) {
-    canvas.drawImage(
-      image.skImage,
-      offset.dx,
-      offset.dy,
-      paint.skiaObject,
-    );
+    ui.FilterQuality filterQuality = paint.filterQuality;
+    if (filterQuality == ui.FilterQuality.high) {
+      canvas.drawImageCubic(
+        image.skImage,
+        offset.dx,
+        offset.dy,
+        CkCanvas._kMitchellNetravali_B,
+        CkCanvas._kMitchellNetravali_C,
+        paint.skiaObject,
+      );
+    } else {
+      canvas.drawImageOptions(
+        image.skImage,
+        offset.dx,
+        offset.dy,
+        toSkFilterMode(filterQuality),
+        toSkMipmapMode(filterQuality),
+        paint.skiaObject,
+      );
+    }
   }
 
   @override
@@ -949,17 +1001,30 @@ class CkDrawImageRectCommand extends CkPaintCommand {
   final CkPaint paint;
 
   CkDrawImageRectCommand(CkImage image, this.src, this.dst, this.paint)
-    : this.image = image.clone();
+      : this.image = image.clone();
 
   @override
   void apply(SkCanvas canvas) {
-    canvas.drawImageRect(
-      image.skImage,
-      toSkRect(src),
-      toSkRect(dst),
-      paint.skiaObject,
-      false,
-    );
+    ui.FilterQuality filterQuality = paint.filterQuality;
+    if (filterQuality == ui.FilterQuality.high) {
+      canvas.drawImageRectCubic(
+        image.skImage,
+        toSkRect(src),
+        toSkRect(dst),
+        CkCanvas._kMitchellNetravali_B,
+        CkCanvas._kMitchellNetravali_C,
+        paint.skiaObject,
+      );
+    } else {
+      canvas.drawImageRectOptions(
+        image.skImage,
+        toSkRect(src),
+        toSkRect(dst),
+        toSkFilterMode(filterQuality),
+        toSkMipmapMode(filterQuality),
+        paint.skiaObject,
+      );
+    }
   }
 
   @override
@@ -970,7 +1035,7 @@ class CkDrawImageRectCommand extends CkPaintCommand {
 
 class CkDrawImageNineCommand extends CkPaintCommand {
   CkDrawImageNineCommand(CkImage image, this.center, this.dst, this.paint)
-    : this.image = image.clone();
+      : this.image = image.clone();
 
   final CkImage image;
   final ui.Rect center;
@@ -983,6 +1048,7 @@ class CkDrawImageNineCommand extends CkPaintCommand {
       image.skImage,
       toSkRect(center),
       toSkRect(dst),
+      toSkFilterMode(paint.filterQuality),
       paint.skiaObject,
     );
   }
@@ -1054,16 +1120,18 @@ class CkSaveLayerWithoutBoundsCommand extends CkPaintCommand {
 }
 
 class CkSaveLayerWithFilterCommand extends CkPaintCommand {
-  CkSaveLayerWithFilterCommand(this.bounds, this.filter);
+  CkSaveLayerWithFilterCommand(this.bounds, this.filter, this.paint);
 
   final ui.Rect bounds;
   final ui.ImageFilter filter;
+  final CkPaint? paint;
 
   @override
   void apply(SkCanvas canvas) {
-    final _CkManagedSkImageFilterConvertible convertible = filter as _CkManagedSkImageFilterConvertible;
+    final _CkManagedSkImageFilterConvertible convertible =
+        filter as _CkManagedSkImageFilterConvertible;
     return canvas.saveLayer(
-      null,
+      paint?.skiaObject,
       toSkRect(bounds),
       convertible._imageFilter.skiaObject,
       0,

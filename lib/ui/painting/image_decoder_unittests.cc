@@ -40,7 +40,7 @@ class TestIOManager final : public IOManager {
         weak_factory_(this) {
     FML_CHECK(task_runner->RunsTasksOnCurrentThread())
         << "The IO manager must be initialized its primary task runner. The "
-           "test harness may not be setup correctly/safely.";
+           "test harness may not be set up correctly/safely.";
     weak_prototype_ = weak_factory_.GetWeakPtr();
   }
 
@@ -71,7 +71,7 @@ class TestIOManager final : public IOManager {
   }
 
   // |IOManager|
-  std::shared_ptr<fml::SyncSwitch> GetIsGpuDisabledSyncSwitch() override {
+  std::shared_ptr<const fml::SyncSwitch> GetIsGpuDisabledSyncSwitch() override {
     did_access_is_gpu_disabled_sync_switch_ = true;
     return is_gpu_disabled_sync_switch_;
   }
@@ -556,10 +556,10 @@ TEST(ImageDecoderTest, VerifySimpleDecoding) {
   auto descriptor =
       fml::MakeRefCounted<ImageDescriptor>(std::move(data), std::move(codec));
 
-  ASSERT_EQ(
-      ImageFromCompressedData(descriptor, 6, 2, fml::tracing::TraceFlow(""))
-          ->dimensions(),
-      SkISize::Make(6, 2));
+  ASSERT_EQ(ImageFromCompressedData(descriptor.get(), 6, 2,
+                                    fml::tracing::TraceFlow(""))
+                ->dimensions(),
+            SkISize::Make(6, 2));
 }
 
 TEST(ImageDecoderTest, VerifySubpixelDecodingPreservesExifOrientation) {
@@ -574,8 +574,8 @@ TEST(ImageDecoderTest, VerifySubpixelDecodingPreservesExifOrientation) {
   ASSERT_EQ(SkISize::Make(600, 200), image->dimensions());
 
   auto decode = [descriptor](uint32_t target_width, uint32_t target_height) {
-    return ImageFromCompressedData(descriptor, target_width, target_height,
-                                   fml::tracing::TraceFlow(""));
+    return ImageFromCompressedData(descriptor.get(), target_width,
+                                   target_height, fml::tracing::TraceFlow(""));
   };
 
   auto expected_data = OpenFixtureAsSkData("Horizontal.png");
@@ -637,9 +637,9 @@ TEST_F(ImageDecoderFixtureTest,
   });
   latch.Wait();
 
-  auto isolate =
-      RunDartCodeInIsolate(vm_ref, settings, runners, "main", {},
-                           GetFixturesPath(), io_manager->GetWeakIOManager());
+  auto isolate = RunDartCodeInIsolate(vm_ref, settings, runners, "main", {},
+                                      GetDefaultKernelFilePath(),
+                                      io_manager->GetWeakIOManager());
 
   // Latch the IO task runner.
   runners.GetIOTaskRunner()->PostTask([&]() { io_latch.Wait(); });

@@ -7,8 +7,8 @@
 #include <filesystem>
 #include <iostream>
 
-#include "flutter/shell/platform/common/cpp/engine_switches.h"  // nogncheck
-#include "flutter/shell/platform/common/cpp/path_utils.h"
+#include "flutter/shell/platform/common/engine_switches.h"  // nogncheck
+#include "flutter/shell/platform/common/path_utils.h"
 
 namespace flutter {
 
@@ -80,8 +80,17 @@ UniqueAotDataPtr FlutterProjectBundle::LoadAotData(
 
 FlutterProjectBundle::~FlutterProjectBundle() {}
 
+void FlutterProjectBundle::SetSwitches(
+    const std::vector<std::string>& switches) {
+  engine_switches_ = switches;
+}
+
 const std::vector<std::string> FlutterProjectBundle::GetSwitches() {
+#if WINUWP
+  return engine_switches_;
+#else
   return GetSwitchesFromEnvironment();
+#endif
 }
 
 }  // namespace flutter

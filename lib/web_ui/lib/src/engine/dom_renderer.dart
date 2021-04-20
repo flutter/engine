@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of engine;
 
 class DomRenderer {
@@ -54,17 +53,32 @@ class DomRenderer {
   /// This element is created and inserted in the HTML DOM once. It is never
   /// removed or moved. However the [sceneElement] may be replaced inside it.
   ///
-  /// This element precedes the [glassPaneElement] so that it never receives
-  /// input events. All input events are processed by [glassPaneElement] and the
-  /// semantics tree.
+  /// This element is inserted after the [semanticsHostElement] so that
+  /// platform views take precedence in DOM event handling.
   html.Element? get sceneHostElement => _sceneHostElement;
   html.Element? _sceneHostElement;
+
+  /// The element that contains the semantics tree.
+  ///
+  /// This element is created and inserted in the HTML DOM once. It is never
+  /// removed or moved.
+  ///
+  /// We render semantics inside the glasspane for proper focus and event
+  /// handling. If semantics is behind the glasspane, the phone will disable
+  /// focusing by touch, only by tabbing around the UI. If semantics is in
+  /// front of glasspane, then DOM event won't bubble up to the glasspane so
+  /// it can forward events to the framework.
+  ///
+  /// This element is inserted before the [semanticsHostElement] so that
+  /// platform views take precedence in DOM event handling.
+  html.Element? get semanticsHostElement => _semanticsHostElement;
+  html.Element? _semanticsHostElement;
 
   /// The last scene element rendered by the [render] method.
   html.Element? get sceneElement => _sceneElement;
   html.Element? _sceneElement;
 
-  /// This is state persistant across hot restarts that indicates what
+  /// This is state persistent across hot restarts that indicates what
   /// to clear.  We delay removal of old visible state to make the
   /// transition appear smooth.
   static const String _staleHotRestartStore = '__flutter_state';
@@ -179,6 +193,21 @@ class DomRenderer {
       element.style.removeProperty(name);
     } else {
       element.style.setProperty(name, value);
+    }
+  }
+
+  static void setClipPath(html.Element element, String? value) {
+    if (browserEngine == BrowserEngine.webkit) {
+      if (value == null) {
+        element.style.removeProperty('-webkit-clip-path');
+      } else {
+        element.style.setProperty('-webkit-clip-path', value);
+      }
+    }
+    if (value == null) {
+      element.style.removeProperty('clip-path');
+    } else {
+      element.style.setProperty('clip-path', value);
     }
   }
 
@@ -330,6 +359,14 @@ flt-glass-pane * {
     }
 
     final html.BodyElement bodyElement = html.document.body!;
+
+    setElementAttribute(
+      bodyElement,
+      'flt-renderer',
+      '${useCanvasKit ? 'canvaskit' : 'html'} (${_autoDetect ? 'auto-selected' : 'requested explicitly'})',
+    );
+    setElementAttribute(bodyElement, 'flt-build-mode', buildMode);
+
     setElementStyle(bodyElement, 'position', 'fixed');
     setElementStyle(bodyElement, 'top', '0');
     setElementStyle(bodyElement, 'right', '0');
@@ -404,6 +441,14 @@ flt-glass-pane * {
 
     _sceneHostElement = createElement('flt-scene-host');
 
+    final html.Element semanticsHostElement = createElement('flt-semantics-host');
+    semanticsHostElement.style
+      ..position = 'absolute'
+      ..transformOrigin = '0 0 0';
+    _semanticsHostElement = semanticsHostElement;
+    updateSemanticsScreenProperties();
+    glassPaneElement.append(semanticsHostElement);
+
     // Don't allow the scene to receive pointer events.
     _sceneHostElement!.style.pointerEvents = 'none';
 
@@ -420,7 +465,14 @@ flt-glass-pane * {
     // by the platform view.
     glassPaneElement.insertBefore(_accesibilityPlaceholder, _sceneHostElement);
 
+    // When debugging semantics, make the scene semi-transparent so that the
+    // semantics tree is visible.
+    if (_debugShowSemanticsNodes) {
+      _sceneHostElement!.style.opacity = '0.3';
+    }
+
     PointerBinding.initInstance(glassPaneElement);
+    KeyboardBinding.initInstance(glassPaneElement);
 
     // Hide the DOM nodes used to render the scene from accessibility, because
     // the accessibility tree is built from the SemanticsNode tree as a parallel
@@ -430,7 +482,7 @@ flt-glass-pane * {
     if (html.window.visualViewport == null && isWebKit) {
       // Safari sometimes gives us bogus innerWidth/innerHeight values when the
       // page loads. When it changes the values to correct ones it does not
-      // notify of the change via `onResize`. As a workaround, we setup a
+      // notify of the change via `onResize`. As a workaround, we set up a
       // temporary periodic timer that polls innerWidth and triggers the
       // resizeListener so that the framework can react to the change.
       //
@@ -440,7 +492,7 @@ flt-glass-pane * {
       // VisualViewport API is not enabled in Firefox as well. On the other hand
       // Firefox returns correct values for innerHeight, innerWidth.
       // Firefox also triggers html.window.onResize therefore we don't need this
-      // timer setup for Firefox.
+      // timer to be set up for Firefox.
       final int initialInnerWidth = html.window.innerWidth!;
       // Counts how many times we checked screen size. We check up to 5 times.
       int checkCount = 0;
@@ -460,7 +512,7 @@ flt-glass-pane * {
     if (useCanvasKit) {
       _canvasKitScript?.remove();
       _canvasKitScript = html.ScriptElement();
-      _canvasKitScript!.src = canvasKitBaseUrl + 'canvaskit.js';
+      _canvasKitScript!.src = canvasKitJavaScriptBindingsUrl;
 
       // TODO(hterkelsen): Rather than this monkey-patch hack, we should
       // build CanvasKit ourselves. See:
@@ -535,6 +587,13 @@ flt-glass-pane * {
     EnginePlatformDispatcher.instance._updateLocales();
   }
 
+  /// The framework specifies semantics in physical pixels, but CSS uses
+  /// logical pixels. To compensate, we inject an inverse scale at the root
+  /// level.
+  void updateSemanticsScreenProperties() {
+    _semanticsHostElement!.style.transform = 'scale(${1 / html.window.devicePixelRatio})';
+  }
+
   /// Called immediately after browser window metrics change.
   ///
   /// When there is a text editing going on in mobile devices, do not change
@@ -545,6 +604,7 @@ flt-glass-pane * {
   /// Note: always check for rotations for a mobile device. Update the physical
   /// size if the change is caused by a rotation.
   void _metricsDidChange(html.Event? event) {
+    updateSemanticsScreenProperties();
     if (isMobile && !window.isRotation() && textEditing.isEditing) {
       window.computeOnScreenKeyboardInsets();
       EnginePlatformDispatcher.instance.invokeOnMetricsChanged();

@@ -81,6 +81,10 @@ AccessibilityBridge::GetNodeAttributes(const flutter::SemanticsNode& node,
     *added_size += node.label.size();
   }
 
+  if (node.HasFlag(flutter::SemanticsFlags::kIsKeyboardKey)) {
+    attributes.set_is_keyboard_key(true);
+  }
+
   return attributes;
 }
 
@@ -115,6 +119,14 @@ fuchsia::accessibility::semantics::States AccessibilityBridge::GetNodeStates(
   } else {
     states.set_value(node.value);
     (*additional_size) += node.value.size();
+  }
+
+  // Set toggled state.
+  if (node.HasFlag(flutter::SemanticsFlags::kHasToggledState)) {
+    states.set_toggled_state(
+        node.HasFlag(flutter::SemanticsFlags::kIsToggled)
+            ? fuchsia::accessibility::semantics::ToggledState::ON
+            : fuchsia::accessibility::semantics::ToggledState::OFF);
   }
 
   return states;
@@ -195,6 +207,9 @@ fuchsia::accessibility::semantics::Role AccessibilityBridge::GetNodeRole(
     }
   }
 
+  if (node.HasFlag(flutter::SemanticsFlags::kHasToggledState)) {
+    return fuchsia::accessibility::semantics::Role::TOGGLE_SWITCH;
+  }
   return fuchsia::accessibility::semantics::Role::UNKNOWN;
 }
 
@@ -233,7 +248,7 @@ std::unordered_set<int32_t> AccessibilityBridge::GetDescendants(
 // nodes should give us a negative ID.
 static uint32_t FlutterIdToFuchsiaId(int32_t flutter_node_id) {
   FML_DCHECK(flutter_node_id >= 0)
-      << "Unexpectedly recieved a negative semantics node ID.";
+      << "Unexpectedly received a negative semantics node ID.";
   return static_cast<uint32_t>(flutter_node_id);
 }
 
@@ -303,6 +318,7 @@ void AccessibilityBridge::AddSemanticsNodeUpdate(
     nodes_[flutter_node.id] = {
         .id = flutter_node.id,
         .flags = flutter_node.flags,
+        .is_focusable = IsFocusable(flutter_node),
         .rect = flutter_node.rect,
         .transform = flutter_node.transform,
         .children_in_hit_test_order = flutter_node.childrenInHitTestOrder,
@@ -401,6 +417,7 @@ fuchsia::accessibility::semantics::Node AccessibilityBridge::GetRootNodeUpdate(
   nodes_[root_flutter_semantics_node_.id] = {
       .id = root_flutter_semantics_node_.id,
       .flags = root_flutter_semantics_node_.flags,
+      .is_focusable = IsFocusable(root_flutter_semantics_node_),
       .rect = root_flutter_semantics_node_.rect,
       .transform = result,
       .children_in_hit_test_order =
@@ -418,6 +435,15 @@ fuchsia::accessibility::semantics::Node AccessibilityBridge::GetRootNodeUpdate(
   node_size += kNodeIdSize *
                root_flutter_semantics_node_.childrenInTraversalOrder.size();
   return root_fuchsia_node;
+}
+
+void AccessibilityBridge::RequestAnnounce(const std::string message) {
+  fuchsia::accessibility::semantics::SemanticEvent semantic_event;
+  fuchsia::accessibility::semantics::AnnounceEvent announce_event;
+  announce_event.set_message(message);
+  semantic_event.set_announce(std::move(announce_event));
+
+  tree_ptr_->SendSemanticEvent(std::move(semantic_event), []() {});
 }
 
 void AccessibilityBridge::UpdateScreenRects() {
@@ -502,7 +528,7 @@ void AccessibilityBridge::OnAccessibilityActionRequested(
   if (nodes_.find(node_id) == nodes_.end()) {
     FML_LOG(ERROR) << "Attempted to send accessibility action "
                    << static_cast<int32_t>(action)
-                   << " to unkonwn node id: " << node_id;
+                   << " to unknown node id: " << node_id;
     callback(false);
     return;
   }
@@ -535,7 +561,7 @@ std::optional<int32_t> AccessibilityBridge::GetHitNode(int32_t node_id,
                                                        float y) {
   auto it = nodes_.find(node_id);
   if (it == nodes_.end()) {
-    FML_LOG(ERROR) << "Attempted to hit test unkonwn node id: " << node_id;
+    FML_LOG(ERROR) << "Attempted to hit test unknown node id: " << node_id;
     return {};
   }
   auto const& node = it->second;
@@ -550,7 +576,36 @@ std::optional<int32_t> AccessibilityBridge::GetHitNode(int32_t node_id,
       return candidate;
     }
   }
-  return node_id;
+
+  if (node.is_focusable) {
+    return node_id;
+  }
+
+  return {};
+}
+
+bool AccessibilityBridge::IsFocusable(
+    const flutter::SemanticsNode& node) const {
+  if (node.HasFlag(flutter::SemanticsFlags::kScopesRoute)) {
+    return false;
+  }
+
+  if (node.HasFlag(flutter::SemanticsFlags::kIsFocusable)) {
+    return true;
+  }
+
+  // Always consider platform views focusable.
+  if (node.IsPlatformViewNode()) {
+    return true;
+  }
+
+  // Always conider actionable nodes focusable.
+  if (node.actions != 0) {
+    return true;
+  }
+
+  // Consider text nodes focusable.
+  return !node.label.empty() || !node.value.empty() || !node.hint.empty();
 }
 
 // |fuchsia::accessibility::semantics::SemanticListener|

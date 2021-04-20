@@ -4,15 +4,15 @@
 
 import 'dart:io';
 
-import 'package:flutter_frontend_server/server.dart';
-import 'package:frontend_server/frontend_server.dart' as frontend show ProgramTransformer;
+import 'package:frontend_server/frontend_server.dart' as frontend
+    show ProgramTransformer, ToStringTransformer, ToStringVisitor;
 import 'package:kernel/kernel.dart';
 import 'package:mockito/mockito.dart';
 import 'package:path/path.dart' as path;
 
 import 'package:test/test.dart';
 
-void main(List<String> args) async {
+Future<void> main(List<String> args) async {
   if (args.length != 2) {
     stderr.writeln('The first argument must be the path to the forntend server dill.');
     stderr.writeln('The second argument must be the path to the flutter_patched_sdk');
@@ -25,7 +25,7 @@ void main(List<String> args) async {
   };
 
   test('No packages', () {
-    final ToStringTransformer transformer = ToStringTransformer(null, <String>{});
+    final frontend.ToStringTransformer transformer = frontend.ToStringTransformer(null, <String>{});
 
     final MockComponent component = MockComponent();
     transformer.transform(component);
@@ -33,7 +33,7 @@ void main(List<String> args) async {
   });
 
   test('dart:ui package', () {
-    final ToStringTransformer transformer = ToStringTransformer(null, uiAndFlutter);
+    final frontend.ToStringTransformer transformer = frontend.ToStringTransformer(null, uiAndFlutter);
 
     final MockComponent component = MockComponent();
     transformer.transform(component);
@@ -42,7 +42,7 @@ void main(List<String> args) async {
 
   test('Child transformer', () {
     final MockTransformer childTransformer = MockTransformer();
-    final ToStringTransformer transformer = ToStringTransformer(childTransformer, <String>{});
+    final frontend.ToStringTransformer transformer = frontend.ToStringTransformer(childTransformer, <String>{});
 
     final MockComponent component = MockComponent();
     transformer.transform(component);
@@ -51,7 +51,7 @@ void main(List<String> args) async {
   });
 
   test('ToStringVisitor ignores non-toString procedures', () {
-    final ToStringVisitor visitor = ToStringVisitor(uiAndFlutter);
+    final frontend.ToStringVisitor visitor = frontend.ToStringVisitor(uiAndFlutter);
     final MockProcedure procedure = MockProcedure();
     when(procedure.name).thenReturn(Name('main'));
     when(procedure.annotations).thenReturn(const <Expression>[]);
@@ -65,11 +65,12 @@ void main(List<String> args) async {
     //
     // void main() {}
     // String toString() => 'why?';
-    final ToStringVisitor visitor = ToStringVisitor(uiAndFlutter);
+    final frontend.ToStringVisitor visitor = frontend.ToStringVisitor(uiAndFlutter);
     final MockProcedure procedure = MockProcedure();
     final MockFunctionNode function = MockFunctionNode();
     final MockStatement statement = MockStatement();
-    final Library library = Library(Uri.parse('package:some_package/src/blah.dart'));
+    final Uri uri = Uri.parse('package:some_package/src/blah.dart');
+    final Library library = Library(uri, fileUri: uri);
     when(procedure.function).thenReturn(function);
     when(procedure.name).thenReturn(Name('toString'));
     when(procedure.annotations).thenReturn(const <Expression>[]);
@@ -84,16 +85,17 @@ void main(List<String> args) async {
   });
 
   test('ToStringVisitor ignores abstract toString', () {
-    final ToStringVisitor visitor = ToStringVisitor(uiAndFlutter);
+    final frontend.ToStringVisitor visitor = frontend.ToStringVisitor(uiAndFlutter);
     final MockProcedure procedure = MockProcedure();
     final MockFunctionNode function = MockFunctionNode();
     final MockStatement statement = MockStatement();
-    final Library library = Library(Uri.parse('package:some_package/src/blah.dart'));
+    final Uri uri = Uri.parse('package:some_package/src/blah.dart');
+    final Library library = Library(uri, fileUri: uri);
     when(procedure.function).thenReturn(function);
     when(procedure.name).thenReturn(Name('toString'));
     when(procedure.annotations).thenReturn(const <Expression>[]);
     when(procedure.enclosingLibrary).thenReturn(library);
-    when(procedure.enclosingClass).thenReturn(Class());
+    when(procedure.enclosingClass).thenReturn(Class(name: 'foo', fileUri: uri));
     when(procedure.isAbstract).thenReturn(true);
     when(procedure.isStatic).thenReturn(false);
     when(function.body).thenReturn(statement);
@@ -103,16 +105,17 @@ void main(List<String> args) async {
   });
 
   test('ToStringVisitor ignores static toString', () {
-    final ToStringVisitor visitor = ToStringVisitor(uiAndFlutter);
+    final frontend.ToStringVisitor visitor = frontend.ToStringVisitor(uiAndFlutter);
     final MockProcedure procedure = MockProcedure();
     final MockFunctionNode function = MockFunctionNode();
     final MockStatement statement = MockStatement();
-    final Library library = Library(Uri.parse('package:some_package/src/blah.dart'));
+    final Uri uri = Uri.parse('package:some_package/src/blah.dart');
+    final Library library = Library(uri, fileUri: uri);
     when(procedure.function).thenReturn(function);
     when(procedure.name).thenReturn(Name('toString'));
     when(procedure.annotations).thenReturn(const <Expression>[]);
     when(procedure.enclosingLibrary).thenReturn(library);
-    when(procedure.enclosingClass).thenReturn(Class());
+    when(procedure.enclosingClass).thenReturn(Class(name: 'foo', fileUri: uri));
     when(procedure.isAbstract).thenReturn(false);
     when(procedure.isStatic).thenReturn(true);
     when(function.body).thenReturn(statement);
@@ -122,16 +125,17 @@ void main(List<String> args) async {
   });
 
   test('ToStringVisitor ignores enum toString', () {
-    final ToStringVisitor visitor = ToStringVisitor(uiAndFlutter);
+    final frontend.ToStringVisitor visitor = frontend.ToStringVisitor(uiAndFlutter);
     final MockProcedure procedure = MockProcedure();
     final MockFunctionNode function = MockFunctionNode();
     final MockStatement statement = MockStatement();
-    final Library library = Library(Uri.parse('package:some_package/src/blah.dart'));
+    final Uri uri = Uri.parse('package:some_package/src/blah.dart');
+    final Library library = Library(uri, fileUri: uri);
     when(procedure.function).thenReturn(function);
     when(procedure.name).thenReturn(Name('toString'));
     when(procedure.annotations).thenReturn(const <Expression>[]);
     when(procedure.enclosingLibrary).thenReturn(library);
-    when(procedure.enclosingClass).thenReturn(Class()..isEnum = true);
+    when(procedure.enclosingClass).thenReturn(Class(name: 'foo', fileUri: uri)..isEnum = true);
     when(procedure.isAbstract).thenReturn(false);
     when(procedure.isStatic).thenReturn(false);
     when(function.body).thenReturn(statement);
@@ -141,16 +145,17 @@ void main(List<String> args) async {
   });
 
   test('ToStringVisitor ignores non-specified libraries', () {
-    final ToStringVisitor visitor = ToStringVisitor(uiAndFlutter);
+    final frontend.ToStringVisitor visitor = frontend.ToStringVisitor(uiAndFlutter);
     final MockProcedure procedure = MockProcedure();
     final MockFunctionNode function = MockFunctionNode();
     final MockStatement statement = MockStatement();
-    final Library library = Library(Uri.parse('package:some_package/src/blah.dart'));
+    final Uri uri = Uri.parse('package:some_package/src/blah.dart');
+    final Library library = Library(uri, fileUri: uri);
     when(procedure.function).thenReturn(function);
     when(procedure.name).thenReturn(Name('toString'));
     when(procedure.annotations).thenReturn(const <Expression>[]);
     when(procedure.enclosingLibrary).thenReturn(library);
-    when(procedure.enclosingClass).thenReturn(Class());
+    when(procedure.enclosingClass).thenReturn(Class(name: 'foo', fileUri: uri));
     when(procedure.isAbstract).thenReturn(false);
     when(procedure.isStatic).thenReturn(false);
     when(function.body).thenReturn(statement);
@@ -160,13 +165,14 @@ void main(List<String> args) async {
   });
 
   test('ToStringVisitor ignores @keepToString', () {
-    final ToStringVisitor visitor = ToStringVisitor(uiAndFlutter);
+    final frontend.ToStringVisitor visitor = frontend.ToStringVisitor(uiAndFlutter);
     final MockProcedure procedure = MockProcedure();
     final MockFunctionNode function = MockFunctionNode();
     final MockStatement statement = MockStatement();
-    final Library library = Library(Uri.parse('dart:ui'));
+    final Uri uri = Uri.parse('dart:ui');
+    final Library library = Library(uri, fileUri: uri);
     final Name name = Name('toString');
-    final Class annotation = Class(name: '_KeepToString')..parent = Library(Uri.parse('dart:ui'));
+    final Class annotation = Class(name: '_KeepToString', fileUri: uri)..parent = library;
 
     when(procedure.function).thenReturn(function);
     when(procedure.name).thenReturn(name);
@@ -181,7 +187,7 @@ void main(List<String> args) async {
     ]);
 
     when(procedure.enclosingLibrary).thenReturn(library);
-    when(procedure.enclosingClass).thenReturn(Class());
+    when(procedure.enclosingClass).thenReturn(Class(name: 'foo', fileUri: uri));
     when(procedure.isAbstract).thenReturn(false);
     when(procedure.isStatic).thenReturn(false);
     when(function.body).thenReturn(statement);
@@ -198,18 +204,19 @@ void main(List<String> args) async {
   }
 
   test('ToStringVisitor replaces toString in specified libraries (dart:ui)', () {
-    final ToStringVisitor visitor = ToStringVisitor(uiAndFlutter);
+    final frontend.ToStringVisitor visitor = frontend.ToStringVisitor(uiAndFlutter);
     final MockProcedure procedure = MockProcedure();
     final MockFunctionNode function = MockFunctionNode();
     final MockStatement statement = MockStatement();
-    final Library library = Library(Uri.parse('dart:ui'));
+    final Uri uri = Uri.parse('dart:ui');
+    final Library library = Library(uri, fileUri: uri);
     final Name name = Name('toString');
 
     when(procedure.function).thenReturn(function);
     when(procedure.name).thenReturn(name);
     when(procedure.annotations).thenReturn(const <Expression>[]);
     when(procedure.enclosingLibrary).thenReturn(library);
-    when(procedure.enclosingClass).thenReturn(Class());
+    when(procedure.enclosingClass).thenReturn(Class(name: 'foo', fileUri: uri));
     when(procedure.isAbstract).thenReturn(false);
     when(procedure.isStatic).thenReturn(false);
     when(function.body).thenReturn(statement);
@@ -219,18 +226,19 @@ void main(List<String> args) async {
   });
 
   test('ToStringVisitor replaces toString in specified libraries (package:flutter)', () {
-    final ToStringVisitor visitor = ToStringVisitor(uiAndFlutter);
+    final frontend.ToStringVisitor visitor = frontend.ToStringVisitor(uiAndFlutter);
     final MockProcedure procedure = MockProcedure();
     final MockFunctionNode function = MockFunctionNode();
     final MockStatement statement = MockStatement();
-    final Library library = Library(Uri.parse('package:flutter/src/foundation.dart'));
+    final Uri uri = Uri.parse('package:flutter/src/foundation.dart');
+    final Library library = Library(uri, fileUri: uri);
     final Name name = Name('toString');
 
     when(procedure.function).thenReturn(function);
     when(procedure.name).thenReturn(name);
     when(procedure.annotations).thenReturn(const <Expression>[]);
     when(procedure.enclosingLibrary).thenReturn(library);
-    when(procedure.enclosingClass).thenReturn(Class());
+    when(procedure.enclosingClass).thenReturn(Class(name: 'foo', fileUri: uri));
     when(procedure.isAbstract).thenReturn(false);
     when(procedure.isStatic).thenReturn(false);
     when(function.body).thenReturn(statement);

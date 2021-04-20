@@ -2,21 +2,18 @@
 
 import argparse
 import subprocess
+import sys
 
 def main():
   parser = argparse.ArgumentParser()
   parser.add_argument(
       'input',
-      type=pathlib.Path,
-      required=True,
       help='path to input SPIR-V assembly file')
   parser.add_argument(
       'output',
-      type=pathlib.Path,
-      required=True,
       help='path to output SPIR-V binary file')
   args = parser.parse_args()
-  subprocess.run([
+  return subprocess.call([
     'spirv-as',
     '-o',
     args.output,
@@ -24,5 +21,5 @@ def main():
   ])
 
 if __name__ == '__main__':
-  main()
+  sys.exit(main())
 

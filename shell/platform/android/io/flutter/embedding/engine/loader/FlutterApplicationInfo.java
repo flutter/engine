@@ -11,13 +11,14 @@ public final class FlutterApplicationInfo {
   private static final String DEFAULT_ISOLATE_SNAPSHOT_DATA = "isolate_snapshot_data";
   private static final String DEFAULT_FLUTTER_ASSETS_DIR = "flutter_assets";
 
-  final String aotSharedLibraryName;
-  final String vmSnapshotData;
-  final String isolateSnapshotData;
-  final String flutterAssetsDir;
-  final String domainNetworkPolicy;
-  final String nativeLibraryDir;
-  final boolean clearTextPermitted;
+  public final String aotSharedLibraryName;
+  public final String vmSnapshotData;
+  public final String isolateSnapshotData;
+  public final String flutterAssetsDir;
+  public final String domainNetworkPolicy;
+  public final String nativeLibraryDir;
+  public final boolean clearTextPermitted;
+  final boolean automaticallyRegisterPlugins;
 
   public FlutterApplicationInfo(
       String aotSharedLibraryName,
@@ -26,7 +27,8 @@ public final class FlutterApplicationInfo {
       String flutterAssetsDir,
       String domainNetworkPolicy,
       String nativeLibraryDir,
-      boolean clearTextPermitted) {
+      boolean clearTextPermitted,
+      boolean automaticallyRegisterPlugins) {
     this.aotSharedLibraryName =
         aotSharedLibraryName == null ? DEFAULT_AOT_SHARED_LIBRARY_NAME : aotSharedLibraryName;
     this.vmSnapshotData = vmSnapshotData == null ? DEFAULT_VM_SNAPSHOT_DATA : vmSnapshotData;
@@ -37,5 +39,6 @@ public final class FlutterApplicationInfo {
     this.nativeLibraryDir = nativeLibraryDir;
     this.domainNetworkPolicy = domainNetworkPolicy == null ? "" : domainNetworkPolicy;
     this.clearTextPermitted = clearTextPermitted;
+    this.automaticallyRegisterPlugins = automaticallyRegisterPlugins;
   }
 }

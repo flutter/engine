@@ -87,7 +87,7 @@ class Rasterizer final : public SnapshotDelegate {
     ///
     /// For example, on some platforms when the application is backgrounded it
     /// is critical that GPU operations are not processed.
-    virtual std::shared_ptr<fml::SyncSwitch> GetIsGpuDisabledSyncSwitch()
+    virtual std::shared_ptr<const fml::SyncSwitch> GetIsGpuDisabledSyncSwitch()
         const = 0;
   };
 
@@ -119,7 +119,7 @@ class Rasterizer final : public SnapshotDelegate {
   //----------------------------------------------------------------------------
   /// @brief      Destroys the rasterizer. This must happen on the raster task
   ///             runner. All GPU resources are collected before this call
-  ///             returns. Any context setup by the embedder to hold these
+  ///             returns. Any context set up by the embedder to hold these
   ///             resources can be immediately collected as well.
   ///
   ~Rasterizer();
@@ -132,7 +132,7 @@ class Rasterizer final : public SnapshotDelegate {
   ///             call. No rendering may occur before this call. The surface is
   ///             held till the balancing call to `Rasterizer::Teardown` is
   ///             made. Calling a setup before tearing down the previous surface
-  ///             (if this is not the first time the surface has been setup) is
+  ///             (if this is not the first time the surface has been set up) is
   ///             user error.
   ///
   /// @see        `Rasterizer::Teardown`
@@ -142,7 +142,7 @@ class Rasterizer final : public SnapshotDelegate {
   void Setup(std::unique_ptr<Surface> surface);
 
   //----------------------------------------------------------------------------
-  /// @brief      Releases the previously setup on-screen render surface and
+  /// @brief      Releases the previously set up on-screen render surface and
   ///             collects associated resources. No more rendering may occur
   ///             till the next call to `Rasterizer::Setup` with a new render
   ///             surface. Calling a teardown without a setup is user error.
@@ -434,6 +434,15 @@ class Rasterizer final : public SnapshotDelegate {
   ///
   void DisableThreadMergerIfNeeded();
 
+  /// @brief   Mechanism to stop thread merging when using shared engine
+  ///          components.
+  /// @details This is a temporary workaround until thread merging can be
+  ///          supported correctly.  This should be called on the raster
+  ///          thread.
+  /// @see     https://github.com/flutter/flutter/issues/73620
+  ///
+  void BlockThreadMerging() { shared_engine_block_thread_merging_ = true; }
+
  private:
   Delegate& delegate_;
   std::unique_ptr<Surface> surface_;
@@ -450,6 +459,7 @@ class Rasterizer final : public SnapshotDelegate {
   fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger_;
   fml::TaskRunnerAffineWeakPtrFactory<Rasterizer> weak_factory_;
   std::shared_ptr<ExternalViewEmbedder> external_view_embedder_;
+  bool shared_engine_block_thread_merging_ = false;
 
   // |SnapshotDelegate|
   sk_sp<SkImage> MakeRasterSnapshot(sk_sp<SkPicture> picture,

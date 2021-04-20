@@ -4,6 +4,8 @@
 
 #define FML_USED_ON_EMBEDDER
 
+#include <limits>
+
 #include "flutter/shell/platform/embedder/tests/embedder_unittests_util.h"
 
 namespace flutter {
@@ -28,37 +30,43 @@ sk_sp<SkSurface> CreateRenderSurface(const FlutterLayer& layer,
   return surface;
 }
 
-bool RasterImagesAreSame(sk_sp<SkImage> a, sk_sp<SkImage> b) {
-  FML_CHECK(!a->isTextureBacked());
-  FML_CHECK(!b->isTextureBacked());
+// Normalizes the color-space, color-type and alpha-type for comparison.
+static sk_sp<SkData> NormalizeImage(sk_sp<SkImage> image) {
+  // To avoid clipping, convert to a very wide gamut, and a high bit depth.
+  sk_sp<SkColorSpace> norm_colorspace = SkColorSpace::MakeRGB(
+      SkNamedTransferFn::kRec2020, SkNamedGamut::kRec2020);
+  SkImageInfo norm_image_info =
+      SkImageInfo::Make(image->width(), image->height(),
+                        SkColorType::kR16G16B16A16_unorm_SkColorType,
+                        SkAlphaType::kUnpremul_SkAlphaType, norm_colorspace);
+  size_t row_bytes = norm_image_info.minRowBytes();
+  size_t size = norm_image_info.computeByteSize(row_bytes);
+  sk_sp<SkData> data = SkData::MakeUninitialized(size);
+  if (!data) {
+    FML_CHECK(false) << "Unable to allocate data.";
+  }
 
+  bool success = image->readPixels(norm_image_info, data->writable_data(),
+                                   row_bytes, 0, 0);
+  if (!success) {
+    FML_CHECK(false) << "Unable to read pixels.";
+  }
+
+  return data;
+}
+
+bool RasterImagesAreSame(sk_sp<SkImage> a, sk_sp<SkImage> b) {
   if (!a || !b) {
     return false;
   }
 
-  SkPixmap pixmapA;
-  SkPixmap pixmapB;
+  FML_CHECK(!a->isTextureBacked());
+  FML_CHECK(!b->isTextureBacked());
 
-  if (!a->peekPixels(&pixmapA)) {
-    FML_LOG(ERROR) << "Could not peek pixels of image A.";
-    return false;
-  }
+  sk_sp<SkData> normalized_a = NormalizeImage(a);
+  sk_sp<SkData> normalized_b = NormalizeImage(b);
 
-  if (!b->peekPixels(&pixmapB)) {
-    FML_LOG(ERROR) << "Could not peek pixels of image B.";
-
-    return false;
-  }
-
-  const auto sizeA = pixmapA.rowBytes() * pixmapA.height();
-  const auto sizeB = pixmapB.rowBytes() * pixmapB.height();
-
-  if (sizeA != sizeB) {
-    FML_LOG(ERROR) << "Pixmap sizes were inconsistent.";
-    return false;
-  }
-
-  return ::memcmp(pixmapA.addr(), pixmapB.addr(), sizeA) == 0;
+  return normalized_a->equals(normalized_b.get());
 }
 
 bool WriteImageToDisk(const fml::UniqueFD& directory,
@@ -68,7 +76,7 @@ bool WriteImageToDisk(const fml::UniqueFD& directory,
     return false;
   }
 
-  auto data = image->encodeToData(SkEncodedImageFormat::kPNG, 100);
+  auto data = image->encodeToData();
 
   if (!data) {
     return false;
@@ -93,6 +101,8 @@ bool ImageMatchesFixture(const std::string& fixture_file_name,
 
   FML_CHECK(fixture_image) << "Could not create image from fixture: "
                            << fixture_file_name;
+
+  FML_CHECK(scene_image) << "Invalid scene image.";
 
   auto scene_image_subset = scene_image->makeSubset(
       SkIRect::MakeWH(fixture_image->width(), fixture_image->height()));

@@ -30,6 +30,8 @@ class AutoIsolateShutdown {
 
   [[nodiscard]] bool RunInIsolateScope(std::function<bool(void)> closure);
 
+  void Shutdown();
+
   DartIsolate* get() {
     FML_CHECK(isolate_);
     return isolate_.get();
@@ -42,14 +44,16 @@ class AutoIsolateShutdown {
   FML_DISALLOW_COPY_AND_ASSIGN(AutoIsolateShutdown);
 };
 
-void RunDartCodeInIsolate(DartVMRef& vm_ref,
-                          std::unique_ptr<AutoIsolateShutdown>& result,
-                          const Settings& settings,
-                          const TaskRunners& task_runners,
-                          std::string entrypoint,
-                          const std::vector<std::string>& args,
-                          const std::string& fixtures_path,
-                          fml::WeakPtr<IOManager> io_manager = {});
+void RunDartCodeInIsolate(
+    DartVMRef& vm_ref,
+    std::unique_ptr<AutoIsolateShutdown>& result,
+    const Settings& settings,
+    const TaskRunners& task_runners,
+    std::string entrypoint,
+    const std::vector<std::string>& args,
+    const std::string& fixtures_path,
+    fml::WeakPtr<IOManager> io_manager = {},
+    std::shared_ptr<VolatilePathTracker> volatile_path_tracker = nullptr);
 
 std::unique_ptr<AutoIsolateShutdown> RunDartCodeInIsolate(
     DartVMRef& vm_ref,
@@ -58,7 +62,8 @@ std::unique_ptr<AutoIsolateShutdown> RunDartCodeInIsolate(
     std::string entrypoint,
     const std::vector<std::string>& args,
     const std::string& fixtures_path,
-    fml::WeakPtr<IOManager> io_manager = {});
+    fml::WeakPtr<IOManager> io_manager = {},
+    std::shared_ptr<VolatilePathTracker> volatile_path_tracker = nullptr);
 
 }  // namespace testing
 }  // namespace flutter
