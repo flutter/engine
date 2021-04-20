@@ -257,7 +257,8 @@ def RunDartTest(build_dir, dart_file, verbose_dart_snapshot, multithreaded, enab
     threading = 'single-threaded'
 
   print("Running test '%s' using 'flutter_tester' (%s)" % (kernel_file_name, threading))
-  RunEngineExecutable(build_dir, 'flutter_tester', None, command_args, forbidden_output=['[ERROR'])
+  forbidden_output = [] if 'unopt' in build_dir else ['[ERROR']
+  RunEngineExecutable(build_dir, 'flutter_tester', None, command_args, forbidden_output=forbidden_output)
 
 def RunPubGet(build_dir, directory):
   print("Running 'pub get' in the tests directory %s" % dart_tests_dir)
@@ -273,7 +274,7 @@ def EnsureDebugUnoptSkyPackagesAreBuilt():
   variant_out_dir = os.path.join(out_dir, 'host_debug_unopt')
 
   ninja_command = [
-    'autoninja',
+    'ninja',
     '-C',
     variant_out_dir,
     'flutter/sky/packages'
