@@ -9,6 +9,8 @@ dependencies:
   image: ^2.1.4
 
 dependency_overrides:
+  #  spirv:
+  #    path: ../../lib/spirv
  sky_engine:
    path: ../../../out/host_debug_unopt/gen/dart-pkg/sky_engine
  sky_services:

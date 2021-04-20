@@ -258,9 +258,6 @@ class _Transpiler {
       case _opTypeBool:
         opTypeBool();
         break;
-      case _opTypeInt:
-        opTypeInt();
-        break;
       case _opTypeFloat:
         opTypeFloat();
         break;
@@ -410,7 +407,6 @@ class _Transpiler {
     switch (capability) {
       case _capabilityMatrix:
       case _capabilityShader:
-      case _capabilityLinkage:
         return;
       default:
         throw failure('$capability is not a supported capability');
@@ -423,14 +419,6 @@ class _Transpiler {
 
   void opTypeBool() {
     types[readWord()] = _Type._bool;
-  }
-
-  void opTypeInt() {
-    types[readWord()] = _Type._int;
-    final int width = readWord();
-    if (width != 32) {
-      throw failure('int width must be 32');
-    }
   }
 
   void opTypeFloat() {
@@ -927,6 +915,8 @@ class _Transpiler {
       case _glslStd450Reflect:
         parseGLSLOp(id, type, 'reflect', 2);
         return;
+      default:
+        throw failure('$id is not a supported GLSL instruction.');
     }
   }
 

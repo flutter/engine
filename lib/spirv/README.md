@@ -1,5 +1,7 @@
 # SPIR-V Transpiler
 
+Note: This library is currently considered experimental until shader compilation is verified by engine unit tests, see the Testing section below for more details.
+
 A dart library for transpiling a subset of SPIR-V to the shader languages used by Flutter internally.
 
 - [SkSL](https://skia.org/docs/user/sksl/)
@@ -31,12 +33,18 @@ Support for textures, control flow, and structured types is planned, but not cur
 
 ## Testing
 
-Tests are based on golden files contained at `tests/goldens`. SPIR-V binary files
-ending in `.spv` are read and transpiled to each supported language. The results
-are compared against the `.golden` files. If you add or change `.spv` files, or if
-you modify the transpiler in a way that changes its output, you can run `dart run tool/regenerate_goldens.dart` to generate new `.golden` files.
+## Exception Tests
 
-The current `.spv` files are generated from `.glsl` files under `tests/goldens/src`, by running `./tool/compile_to_spirv.sh`. That requires `glslangValidator` and `spirv-opt` to
-be on your `PATH`. If you compile new `.spv` files, be sure to generate new golden files as well with `dart run tool/regenerate_goldens.dart`.
+Exception tests are compiled to the `spirv_unittests` target. These tests rely on the `.spvasm` (SPIR-V Assembly)  and `.glsl` files contained under `test/exception_shaders` in this directory. They are compiled to binary SPIR-V using `spirv-asm`, from the SwiftShader dependency, and each is verified by a test described in `test/spirv_exception_test.dart`. The purpose of these tests is to exercise every explicit failure path for shader transpilation. Each `glsl` or `spvasm` file should include a comment describing the failure that it is testing. The given files should be valid apart from the single failure case they are testing.
 
-Golden files can be validated locally during development using tools like `glslangValidator`. They will also be compiled and tested for compilation errors as part of Flutter's engine unit tests.
+These tests can be run alone by executing `./spirv_unittests` in the build-output directory.
+
+Steps for adding a new exception test: 
+
+1. Add a new file
+
+## Pixel Tests
+
+Pixel test are not yet checked in, and should run as part of unit-testing for each implementation of `dart:ui`. These tests aim to validate the correctness of transpilation to each target language. Each shader should render the color green #00FF00 for a correct transpilation, and any other color for failure. They will be a combination of `.spvasm` files and more-readable GLSL files that are compiled to SPIR-V via `glslang`, provided by the SwiftShader dependency. Information for pixel tests will be expanded in a follow-up PR.
+
+These tests will be able to be run alone by executing `./ui_unittests` in the build-output directory.
