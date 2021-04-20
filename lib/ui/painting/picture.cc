@@ -18,6 +18,25 @@
 #include "third_party/tonic/logging/dart_invoke.h"
 
 namespace flutter {
+namespace {
+void PostUpdateUITask(fml::RefPtr<fml::TaskRunner> ui_task_runner,
+                      std::function<void(sk_sp<SkImage>)> ui_task,
+                      sk_sp<SkImage> raster_image) {
+  fml::TaskRunner::RunNowOrPostTask(
+      ui_task_runner, [ui_task, raster_image]() { ui_task(raster_image); });
+}
+
+void DrawSnapshotFallback(
+    fml::WeakPtr<flutter::SnapshotDelegate> snapshot_delegate,
+    sk_sp<SkPicture> picture,
+    const SkISize& picture_bounds,
+    fml::RefPtr<fml::TaskRunner> ui_task_runner,
+    std::function<void(sk_sp<SkImage>)> ui_task) {
+  auto raster_image =
+      snapshot_delegate->DrawSnapshotAndTransferToHost(picture, picture_bounds);
+  PostUpdateUITask(ui_task_runner, ui_task, raster_image);
+}
+}  // namespace
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, Picture);
 
@@ -83,6 +102,8 @@ Dart_Handle Picture::RasterizeToImage(sk_sp<SkPicture> picture,
   auto unref_queue = dart_state->GetSkiaUnrefQueue();
   auto ui_task_runner = dart_state->GetTaskRunners().GetUITaskRunner();
   auto raster_task_runner = dart_state->GetTaskRunners().GetRasterTaskRunner();
+  auto io_task_runner = dart_state->GetTaskRunners().GetIOTaskRunner();
+  fml::WeakPtr<IOManager> io_manager = dart_state->GetIOManager();
   auto snapshot_delegate = dart_state->GetSnapshotDelegate();
 
   // We can't create an image on this task runner because we don't have a
@@ -122,13 +143,34 @@ Dart_Handle Picture::RasterizeToImage(sk_sp<SkPicture> picture,
   // Kick things off on the raster rask runner.
   fml::TaskRunner::RunNowOrPostTask(
       raster_task_runner,
-      [ui_task_runner, snapshot_delegate, picture, picture_bounds, ui_task] {
-        sk_sp<SkImage> raster_image =
-            snapshot_delegate->MakeRasterSnapshot(picture, picture_bounds);
-
-        fml::TaskRunner::RunNowOrPostTask(
-            ui_task_runner,
-            [ui_task, raster_image]() { ui_task(raster_image); });
+      [raster_task_runner, io_task_runner, io_manager, ui_task_runner,
+       snapshot_delegate, picture, picture_bounds, ui_task] {
+        auto raster_texture =
+            snapshot_delegate->DrawSnapshotTexture(picture, picture_bounds);
+        if (raster_texture) {
+          fml::TaskRunner::RunNowOrPostTask(
+              io_task_runner,
+              [raster_task_runner, ui_task_runner, ui_task, io_manager,
+               raster_texture, picture, picture_bounds, snapshot_delegate] {
+                auto resource_context = io_manager->GetResourceContext();
+                auto raster_image = SnapshotDelegate::TextureToImage(
+                    resource_context.get(), raster_texture);
+                if (raster_image) {
+                  PostUpdateUITask(ui_task_runner, ui_task, raster_image);
+                } else {
+                  fml::TaskRunner::RunNowOrPostTask(
+                      raster_task_runner, [ui_task_runner, snapshot_delegate,
+                                           picture, picture_bounds, ui_task] {
+                        DrawSnapshotFallback(snapshot_delegate, picture,
+                                             picture_bounds, ui_task_runner,
+                                             ui_task);
+                      });
+                }
+              });
+        } else {
+          DrawSnapshotFallback(snapshot_delegate, picture, picture_bounds,
+                               ui_task_runner, ui_task);
+        }
       });
 
   return Dart_Null();

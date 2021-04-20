@@ -462,11 +462,22 @@ class Rasterizer final : public SnapshotDelegate {
   bool shared_engine_block_thread_merging_ = false;
 
   // |SnapshotDelegate|
-  sk_sp<SkImage> MakeRasterSnapshot(sk_sp<SkPicture> picture,
-                                    SkISize picture_size) override;
+  sk_sp<SkImage> DrawSnapshotAndTransferToHost(sk_sp<SkPicture> picture,
+                                               SkISize picture_size) override;
 
   // |SnapshotDelegate|
-  sk_sp<SkImage> ConvertToRasterImage(sk_sp<SkImage> image) override;
+  sk_sp<SkImage> DrawSnapshotTextureAndTransferToHost(
+      sk_sp<SkPicture> picture,
+      SkISize picture_size) override;
+
+  // |SnapshotDelegate|
+  std::shared_ptr<SnapshotDelegate::GpuSnapshot> DrawSnapshotTexture(
+      sk_sp<SkPicture> picture,
+      SkISize picture_size) override;
+
+  // |SnapshotDelegate|
+  std::shared_ptr<SnapshotDelegate::GpuSnapshot> ConvertToRasterImageTexture(
+      sk_sp<SkImage> image) override;
 
   sk_sp<SkData> ScreenshotLayerTreeAsImage(
       flutter::LayerTree* tree,
@@ -474,7 +485,7 @@ class Rasterizer final : public SnapshotDelegate {
       GrDirectContext* surface_context,
       bool compressed);
 
-  sk_sp<SkImage> DoMakeRasterSnapshot(
+  std::shared_ptr<SnapshotDelegate::GpuSnapshot> DoDrawSnapshotTexture(
       SkISize size,
       std::function<void(SkCanvas*)> draw_callback);
 

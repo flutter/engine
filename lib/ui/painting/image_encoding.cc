@@ -132,12 +132,15 @@ void ConvertImageToRaster(sk_sp<SkImage> image,
   raster_task_runner->PostTask([image, encode_task = std::move(encode_task),
                                 resource_context, snapshot_delegate,
                                 io_task_runner]() {
-    sk_sp<SkImage> raster_image =
-        snapshot_delegate->ConvertToRasterImage(image);
-
+    auto raster_texture = snapshot_delegate->ConvertToRasterImageTexture(image);
     io_task_runner->PostTask([image, encode_task = std::move(encode_task),
-                              raster_image = std::move(raster_image),
+                              raster_texture = std::move(raster_texture),
                               resource_context]() mutable {
+      sk_sp<SkImage> raster_image;
+      if (resource_context && raster_texture) {
+        raster_image =
+            SnapshotDelegate::TextureToImage(resource_context, raster_texture);
+      }
       if (!raster_image) {
         // The rasterizer was unable to render the cross-context image
         // (presumably because it does not have a GrContext).  In that case,
