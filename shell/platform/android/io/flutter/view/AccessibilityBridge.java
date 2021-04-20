@@ -1784,6 +1784,8 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
    * Hook called just before a {@link SemanticsNode} is removed from the Android cache of Flutter's
    * semantics tree.
    */
+  @TargetApi(19)
+  @RequiresApi(19)
   private void willRemoveSemanticsNode(SemanticsNode semanticsNodeToBeRemoved) {
     if (BuildConfig.DEBUG) {
       if (!flutterSemanticsTree.containsKey(semanticsNodeToBeRemoved.id)) {
