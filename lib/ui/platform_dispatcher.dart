@@ -1151,7 +1151,7 @@ class FrameTiming {
     required int buildFinish,
     required int rasterStart,
     required int rasterFinish,
-    required int frameKey,
+    int? frameKey,
   }) {
     return FrameTiming._(<int>[
       vsyncStart,
@@ -1159,7 +1159,7 @@ class FrameTiming {
       buildFinish,
       rasterStart,
       rasterFinish,
-      frameKey,
+      frameKey ?? -1,
     ]);
   }
 
