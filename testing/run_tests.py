@@ -429,7 +429,7 @@ def RunDartTests(build_dir, filter, verbose_dart_snapshot):
   RunEngineExecutable(build_dir, os.path.join('dart-sdk', 'bin', 'pub'), None, flags=['get'], cwd=dart_tests_dir)
 
   dart_observatory_tests = glob.glob('%s/observatory/*_test.dart' % dart_tests_dir)
-  dart_tests = glob.glob('%s/*platform_view_test.dart' % dart_tests_dir)
+  dart_tests = glob.glob('%s/*_test.dart' % dart_tests_dir)
 
   if 'release' not in build_dir:
     for dart_test_file in dart_observatory_tests:
