@@ -13,10 +13,11 @@ namespace {
 
 class AccessibilityBridgeMacDelegateSpy : public AccessibilityBridgeMacDelegate {
  public:
-  AccessibilityBridgeMacDelegateSpy(__weak FlutterEngine* flutter_engine) : AccessibilityBridgeMacDelegate(flutter_engine) {}
+  AccessibilityBridgeMacDelegateSpy(__weak FlutterEngine* flutter_engine)
+      : AccessibilityBridgeMacDelegate(flutter_engine) {}
 
   std::unordered_map<std::string, gfx::NativeViewAccessible> actual_notifications;
- 
+
  private:
   void DispatchMacOSNotification(gfx::NativeViewAccessible native_node,
                                  NSAccessibilityNotificationName mac_notification) override {
@@ -76,17 +77,15 @@ TEST(AccessibilityBridgeMacDelegateTest, sendsAccessibilityCreateNotificationToM
   node_data.id = 0;
   ax_node.SetData(node_data);
   std::vector<ui::AXEventIntent> intent;
-  ui::AXEventGenerator::EventParams event_params(
-    ui::AXEventGenerator::Event::CHILDREN_CHANGED,
-    ax::mojom::EventFrom::kNone,
-    intent
-  );
+  ui::AXEventGenerator::EventParams event_params(ui::AXEventGenerator::Event::CHILDREN_CHANGED,
+                                                 ax::mojom::EventFrom::kNone, intent);
   ui::AXEventGenerator::TargetedEvent targeted_event(&ax_node, event_params);
 
   spy.OnAccessibilityEvent(targeted_event);
-  
+
   EXPECT_EQ(spy.actual_notifications.size(), 1u);
-  EXPECT_EQ(spy.actual_notifications.find([NSAccessibilityCreatedNotification UTF8String])->second, expectedTarget);
+  EXPECT_EQ(spy.actual_notifications.find([NSAccessibilityCreatedNotification UTF8String])->second,
+            expectedTarget);
   [engine shutDownEngine];
   NSApp = nil;
 }
