@@ -458,6 +458,12 @@ void DartIsolate::SetMessageHandlingTaskRunner(
   message_handling_task_runner_ = runner;
 
   message_handler().Initialize([runner](std::function<void()> task) {
+#ifdef OS_FUCHSIA
+    runner->PostTask([task = std::move(task)]() {
+      TRACE_EVENT0("flutter", "DartIsolate::HandleMessage");
+      task();
+    });
+#else
     auto task_queues = fml::MessageLoopTaskQueues::GetInstance();
     task_queues->RegisterTask(
         runner->GetTaskQueueId(),
@@ -466,6 +472,7 @@ void DartIsolate::SetMessageHandlingTaskRunner(
           task();
         },
         fml::TimePoint::Now(), fml::TaskSourceGrade::kDartMicroTasks);
+#endif
   });
 }
 
