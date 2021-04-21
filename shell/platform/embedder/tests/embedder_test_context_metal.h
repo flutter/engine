@@ -45,6 +45,8 @@ class EmbedderTestContextMetal : public EmbedderTestContext {
 
   TestMetalContext* GetTestMetalContext();
 
+  FlutterMetalTexture GetNextDrawable(const FlutterFrameInfo* frame_info);
+
  private:
   // This allows the builder to access the hooks.
   friend class EmbedderConfigBuilder;

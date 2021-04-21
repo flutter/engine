@@ -71,5 +71,17 @@ bool EmbedderTestContextMetal::PopulateExternalTexture(
   }
 }
 
+FlutterMetalTexture EmbedderTestContextMetal::GetNextDrawable(const FlutterFrameInfo* frame_info) {
+  auto texture_info = metal_surface_->GetTextureInfo();
+
+  FlutterMetalTexture texture;
+  texture.struct_size = sizeof(FlutterMetalTexture);
+  texture.texture_id = texture_info.texture_id;
+  texture.texture =
+      reinterpret_cast<FlutterMetalTextureHandle>(texture_info.texture);
+  return texture;
+}
+
+
 }  // namespace testing
 }  // namespace flutter
