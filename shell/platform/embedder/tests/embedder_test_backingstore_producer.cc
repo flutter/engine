@@ -219,6 +219,7 @@ bool EmbedderTestBackingStoreProducer::CreateMTLTexture(
   backing_store_out->metal.texture.texture = texture_info.fTexture.get();
   // The balancing unref is in the destruction callback.
   surface->ref();
+  backing_store_out->metal.struct_size = sizeof(FlutterMetalBackingStore);
   backing_store_out->metal.texture.user_data = surface.get();
   backing_store_out->metal.texture.destruction_callback = [](void* user_data) {
     reinterpret_cast<SkSurface*>(user_data)->unref();

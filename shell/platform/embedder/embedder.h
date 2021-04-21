@@ -952,8 +952,12 @@ typedef struct {
 } FlutterSoftwareBackingStore;
 
 typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterMetalBackingStore).
+  size_t struct_size;
   union {
-    // A Metal texture for Flutter to render into.
+    // A Metal texture for Flutter to render into. Ownership is not transferred
+    // to Flutter; the texture is CFRetained on successfully being passed in and
+    // CFReleased when no longer used.
     FlutterMetalTexture texture;
   };
 } FlutterMetalBackingStore;

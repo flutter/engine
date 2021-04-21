@@ -571,9 +571,13 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
     const FlutterMetalBackingStore* metal) {
 #ifdef SHELL_ENABLE_METAL
   GrMtlTextureInfo texture_info;
-  texture_info.fTexture =
-      sk_cf_obj<FlutterMetalTextureHandle>{metal->texture.texture};
-
+  if (!metal->texture.texture) {
+    FML_LOG(ERROR) << "Embedder supplied null Metal texture.";
+    return nullptr;
+  }
+  sk_cf_obj<FlutterMetalTextureHandle> mtl_texture;
+  mtl_texture.retain(metal->texture.texture);
+  texture_info.fTexture = mtl_texture;
   GrBackendTexture backend_texture(config.size.width,   //
                                    config.size.height,  //
                                    GrMipMapped::kNo,    //
@@ -589,11 +593,17 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
       1,                         // sample count
       kN32_SkColorType,          // color type
       SkColorSpace::MakeSRGB(),  // color space
-      &surface_properties        // surface properties
+      &surface_properties,       // surface properties
+      static_cast<SkSurface::TextureReleaseProc>(
+          metal->texture.destruction_callback),  // release proc
+      metal->texture.user_data                   // release context
   );
 
   if (!surface) {
-    FML_LOG(ERROR) << "Could not wrap embedder supplied render texture.";
+    FML_LOG(ERROR) << "Could not wrap embedder supplied Metal render texture.";
+    if (metal->texture.destruction_callback) {
+      metal->texture.destruction_callback(metal->texture.user_data);
+    }
     return nullptr;
   }
 
