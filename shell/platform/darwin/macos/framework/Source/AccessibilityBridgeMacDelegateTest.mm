@@ -3,10 +3,10 @@
 // found in the LICENSE file.
 #include "flutter/testing/testing.h"
 
-#import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterAppDelegate.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/AccessibilityBridgeMacDelegate.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
 namespace flutter::testing {
 
 namespace {
@@ -35,17 +35,22 @@ FlutterEngine* CreateTestEngine() {
 }
 }  // namespace
 
-TEST(AccessibilityBridgeMacDelegateTest, sendsAccessibilityCreateNotificationToMainFlutterWindow) {
-  // Mocks NSApp.
-  NSApp = [[NSApplication alloc] init];
-  FlutterAppDelegate* appDelegate = [[FlutterAppDelegate alloc] init];
+TEST(AccessibilityBridgeMacDelegateTest,
+     sendsAccessibilityCreateNotificationToWindowOfFlutterView) {
+  FlutterEngine* engine = CreateTestEngine();
+  NSString* fixtures = @(testing::GetFixturesPath());
+  FlutterDartProject* project = [[FlutterDartProject alloc]
+      initWithAssetsPath:fixtures
+             ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:project];
+  [viewController loadView];
+  [engine setViewController:viewController];
+
   NSWindow* expectedTarget = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 800, 600)
                                                          styleMask:NSBorderlessWindowMask
                                                            backing:NSBackingStoreBuffered
                                                              defer:NO];
-  appDelegate.mainFlutterWindow = expectedTarget;
-  NSApp.delegate = appDelegate;
-  FlutterEngine* engine = CreateTestEngine();
+  expectedTarget.contentView = viewController.view;
   // Setting up bridge so that the AccessibilityBridgeMacDelegateSpy
   // can query semantics information from.
   engine.semanticsEnabled = YES;
@@ -87,7 +92,6 @@ TEST(AccessibilityBridgeMacDelegateTest, sendsAccessibilityCreateNotificationToM
   EXPECT_EQ(spy.actual_notifications.find([NSAccessibilityCreatedNotification UTF8String])->second,
             expectedTarget);
   [engine shutDownEngine];
-  NSApp = nil;
 }
 
 }  // flutter::testing
