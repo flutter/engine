@@ -6,21 +6,13 @@
 
 namespace flutter {
 
-std::vector<uint8_t> GetVectorFromNSData(NSData* data) {
+std::vector<uint8_t> CopyNSDataToVector(NSData* data) {
   const uint8_t* bytes = reinterpret_cast<const uint8_t*>(data.bytes);
   return std::vector<uint8_t>(bytes, bytes + data.length);
 }
 
-NSData* GetNSDataFromVector(const std::vector<uint8_t>& buffer) {
-  return [NSData dataWithBytes:buffer.data() length:buffer.size()];
-}
-
-std::unique_ptr<fml::Mapping> GetMappingFromNSData(NSData* data) {
-  return std::make_unique<fml::DataMapping>(GetVectorFromNSData(data));
-}
-
-NSData* GetNSDataFromMapping(std::unique_ptr<fml::Mapping> mapping) {
-  return [NSData dataWithBytes:mapping->GetMapping() length:mapping->GetSize()];
+std::unique_ptr<fml::Mapping> CopyNSDataToMapping(NSData* data) {
+  return std::make_unique<fml::DataMapping>(CopyNSDataToVector(data));
 }
 
 }  // namespace flutter

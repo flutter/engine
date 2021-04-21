@@ -807,7 +807,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   fml::RefPtr<flutter::PlatformMessage> platformMessage =
       (message == nil) ? fml::MakeRefCounted<flutter::PlatformMessage>(channel.UTF8String, response)
                        : fml::MakeRefCounted<flutter::PlatformMessage>(
-                             channel.UTF8String, flutter::GetVectorFromNSData(message), response);
+                             channel.UTF8String, flutter::CopyNSDataToVector(message), response);
 
   _shell->GetPlatformView()->DispatchPlatformMessage(platformMessage);
 }
