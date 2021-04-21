@@ -172,7 +172,7 @@ sk_sp<SkImage> ImageDescriptor::image() const {
   SkBitmap bitmap;
   if (!bitmap.tryAllocPixels(image_info_)) {
     FML_DLOG(ERROR) << "Failed to allocate memory for bitmap of size "
-                   << image_info_.computeMinByteSize() << "B";
+                    << image_info_.computeMinByteSize() << "B";
     return nullptr;
   }
 
