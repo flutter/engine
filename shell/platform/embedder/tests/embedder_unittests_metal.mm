@@ -125,8 +125,7 @@ TEST_F(EmbedderTest, MetalCompositorMustBeAbleToRenderPlatformViews) {
   builder.SetCompositor();
   builder.SetDartEntrypoint("can_composite_platform_views");
 
-  builder.SetRenderTargetType(
-      EmbedderTestBackingStoreProducer::RenderTargetType::kMetalTexture);
+  builder.SetRenderTargetType(EmbedderTestBackingStoreProducer::RenderTargetType::kMetalTexture);
 
   fml::CountDownLatch latch(3);
   context.GetCompositor().SetNextPresentCallback(
@@ -185,8 +184,7 @@ TEST_F(EmbedderTest, MetalCompositorMustBeAbleToRenderPlatformViews) {
 
   context.AddNativeCallback(
       "SignalNativeTest",
-      CREATE_NATIVE_ENTRY(
-          [&latch](Dart_NativeArguments args) { latch.CountDown(); }));
+      CREATE_NATIVE_ENTRY([&latch](Dart_NativeArguments args) { latch.CountDown(); }));
 
   auto engine = builder.LaunchEngine();
 
@@ -196,13 +194,11 @@ TEST_F(EmbedderTest, MetalCompositorMustBeAbleToRenderPlatformViews) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
-            kSuccess);
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event), kSuccess);
   ASSERT_TRUE(engine.is_valid());
 
   latch.Wait();
 }
-
 
 TEST_F(EmbedderTest, CanRenderSceneWithoutCustomCompositorMetal) {
   auto& context = GetEmbedderContext(EmbedderTestContextType::kMetalContext);
@@ -223,11 +219,9 @@ TEST_F(EmbedderTest, CanRenderSceneWithoutCustomCompositorMetal) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
-            kSuccess);
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event), kSuccess);
 
-  ASSERT_TRUE(ImageMatchesFixture("scene_without_custom_compositor.png",
-                                  rendered_scene));
+  ASSERT_TRUE(ImageMatchesFixture("scene_without_custom_compositor.png", rendered_scene));
 }
 
 }  // namespace testing

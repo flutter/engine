@@ -571,7 +571,8 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
     const FlutterMetalBackingStore* metal) {
 #ifdef SHELL_ENABLE_METAL
   GrMtlTextureInfo texture_info;
-  texture_info.fTexture = sk_cf_obj<FlutterMetalTextureHandle>{metal->texture.texture};
+  texture_info.fTexture =
+      sk_cf_obj<FlutterMetalTextureHandle>{metal->texture.texture};
 
   GrBackendTexture backend_texture(config.size.width,   //
                                    config.size.height,  //

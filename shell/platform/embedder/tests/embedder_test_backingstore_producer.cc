@@ -185,15 +185,15 @@ bool EmbedderTestBackingStoreProducer::CreateMTLTexture(
   const auto image_info =
       SkImageInfo::MakeN32Premul(config->size.width, config->size.height);
 
-  auto surface = SkSurface::MakeRenderTarget(
-      context_.get(),               // context
-      SkBudgeted::kNo,              // budgeted
-      image_info,                   // image info
-      1,                            // sample count
-      kTopLeft_GrSurfaceOrigin,     // surface origin
-      nullptr,                      // surface properties
-      false                         // mipmaps
-  );
+  auto surface =
+      SkSurface::MakeRenderTarget(context_.get(),            // context
+                                  SkBudgeted::kNo,           // budgeted
+                                  image_info,                // image info
+                                  1,                         // sample count
+                                  kTopLeft_GrSurfaceOrigin,  // surface origin
+                                  nullptr,  // surface properties
+                                  false     // mipmaps
+      );
 
   if (!surface) {
     FML_LOG(ERROR) << "Could not create render target for compositor layer.";
@@ -220,8 +220,9 @@ bool EmbedderTestBackingStoreProducer::CreateMTLTexture(
   // The balancing unref is in the destruction callback.
   surface->ref();
   backing_store_out->metal.texture.user_data = surface.get();
-  backing_store_out->metal.texture.destruction_callback =
-      [](void* user_data) { reinterpret_cast<SkSurface*>(user_data)->unref(); };
+  backing_store_out->metal.texture.destruction_callback = [](void* user_data) {
+    reinterpret_cast<SkSurface*>(user_data)->unref();
+  };
 
   return true;
 #else

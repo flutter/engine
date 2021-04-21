@@ -400,7 +400,8 @@ void EmbedderConfigBuilder::InitializeMetalRendererConfig() {
       metal_context.GetTestMetalContext()->GetMetalCommandQueue();
   metal_renderer_config_.get_next_drawable_callback =
       [](void* user_data, const FlutterFrameInfo* frame_info) {
-        return reinterpret_cast<EmbedderTestContextMetal*>(user_data)->GetNextDrawable(frame_info);
+        return reinterpret_cast<EmbedderTestContextMetal*>(user_data)
+            ->GetNextDrawable(frame_info);
       };
   metal_renderer_config_.present_drawable_callback =
       [](void* user_data, const FlutterMetalTexture* texture) -> bool {
