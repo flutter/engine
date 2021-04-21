@@ -4,6 +4,7 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/AccessibilityBridgeMacDelegate.h"
 
+#import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterAppDelegate.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformNodeDelegateMac.h"
 #include "flutter/shell/platform/embedder/embedder.h"
@@ -265,9 +266,10 @@ AccessibilityBridgeMacDelegate::MacOSEventsFromAXEvent(ui::AXEventGenerator::Eve
     case ui::AXEventGenerator::Event::CHILDREN_CHANGED: {
       // NSAccessibilityCreatedNotification seems to be the only way to let
       // Voiceover pick up layout changes.
+      FlutterAppDelegate* appDelegate = (FlutterAppDelegate*)[NSApp delegate];
       events.push_back({
           .name = NSAccessibilityCreatedNotification,
-          .target = [NSApp mainWindow],
+          .target = appDelegate.mainFlutterWindow,
           .user_info = nil,
       });
       break;
