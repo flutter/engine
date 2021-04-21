@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
@@ -41,6 +40,21 @@ void main() {
 
 void testMain() async {
   await ui.webOnlyInitializeTestDomRenderer();
+
+  test('does not crash on empty spans', () {
+    final CanvasParagraph paragraph = rich(ahemStyle, (builder) {
+      builder.pushStyle(EngineTextStyle.only(color: blue));
+      builder.addText('');
+
+      builder.pushStyle(EngineTextStyle.only(color: red));
+      builder.addText('Lorem ipsum');
+
+      builder.pushStyle(EngineTextStyle.only(color: green));
+      builder.addText('');
+    });
+
+    expect(() => paragraph.layout(constrain(double.infinity)), returnsNormally);
+  });
 
   test('measures spans in the same line correctly', () {
     final CanvasParagraph paragraph = rich(ahemStyle, (builder) {

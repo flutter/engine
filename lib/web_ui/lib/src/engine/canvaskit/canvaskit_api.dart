@@ -7,7 +7,6 @@
 /// Prefer keeping the original CanvasKit names so it is easier to locate
 /// the API behind these bindings in the Skia source code.
 
-// @dart = 2.12
 part of engine;
 
 /// Entrypoint into the CanvasKit API.
@@ -665,6 +664,12 @@ class SkFilterMode {
   external int get value;
 }
 
+SkFilterMode toSkFilterMode(ui.FilterQuality filterQuality) {
+  return filterQuality == ui.FilterQuality.none
+      ? canvasKit.FilterMode.Nearest
+      : canvasKit.FilterMode.Linear;
+}
+
 @JS()
 class SkMipmapModeEnum {
   external SkMipmapMode get None;
@@ -675,6 +680,12 @@ class SkMipmapModeEnum {
 @JS()
 class SkMipmapMode {
   external int get value;
+}
+
+SkMipmapMode toSkMipmapMode(ui.FilterQuality filterQuality) {
+  return filterQuality == ui.FilterQuality.medium
+      ? canvasKit.MipmapMode.Linear
+      : canvasKit.MipmapMode.None;
 }
 
 @JS()
@@ -734,6 +745,13 @@ class SkImage {
   external void delete();
   external int width();
   external int height();
+  external SkShader makeShaderCubic(
+    SkTileMode tileModeX,
+    SkTileMode tileModeY,
+    double B,
+    double C,
+    Float32List? matrix, // 3x3 matrix
+  );
   external SkShader makeShaderOptions(
     SkTileMode tileModeX,
     SkTileMode tileModeY,
@@ -755,6 +773,7 @@ class SkShaderNamespace {
     Uint32List colors,
     Float32List colorStops,
     SkTileMode tileMode,
+    Float32List? matrix,
   );
 
   external SkShader MakeRadialGradient(
@@ -1351,23 +1370,43 @@ class SkCanvas {
     Float32List inner,
     SkPaint paint,
   );
-  external void drawImage(
+  external void drawImageCubic(
     SkImage image,
     double x,
     double y,
+    double B,
+    double C,
     SkPaint paint,
   );
-  external void drawImageRect(
+  external void drawImageOptions(
+    SkImage image,
+    double x,
+    double y,
+    SkFilterMode filterMode,
+    SkMipmapMode mipmapMode,
+    SkPaint paint,
+  );
+  external void drawImageRectCubic(
     SkImage image,
     Float32List src,
     Float32List dst,
+    double B,
+    double C,
     SkPaint paint,
-    bool fastSample,
+  );
+  external void drawImageRectOptions(
+    SkImage image,
+    Float32List src,
+    Float32List dst,
+    SkFilterMode filterMode,
+    SkMipmapMode mipmapMode,
+    SkPaint paint,
   );
   external void drawImageNine(
     SkImage image,
     Float32List center,
     Float32List dst,
+    SkFilterMode filterMode,
     SkPaint paint,
   );
   external void drawLine(

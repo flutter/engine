@@ -105,11 +105,9 @@ public class FlutterEngineTest {
             .get(0)
             .msg
             .contains("Tried to automatically register plugins"));
-    assertTrue(
-        ShadowLog.getLogsForTag("GeneratedPluginsRegister")
-            .get(1)
-            .msg
-            .contains("I'm a bug in the plugin"));
+    assertEquals(
+        GeneratedPluginRegistrant.pluginRegistrationException,
+        ShadowLog.getLogsForTag("GeneratedPluginsRegister").get(1).throwable.getCause());
 
     GeneratedPluginRegistrant.pluginRegistrationException = null;
   }
@@ -244,6 +242,7 @@ public class FlutterEngineTest {
 
     verify(mockFlutterLoader, times(1)).startInitialization(any());
     verify(mockFlutterLoader, times(1)).ensureInitializationComplete(any(), any());
+    FlutterInjector.reset();
   }
 
   @Test

@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of engine;
 
 /// Requests that the browser schedule a frame.
@@ -389,7 +388,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
             });
             return;
           case 'HapticFeedback.vibrate':
-            final String type = decoded.arguments;
+            final String? type = decoded.arguments;
             domRenderer.vibrate(_getHapticFeedbackDuration(type));
             _replyToPlatformMessage(
                 callback, codec.encodeSuccessEnvelope(true));
@@ -499,7 +498,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     _replyToPlatformMessage(callback, null);
   }
 
-  int _getHapticFeedbackDuration(String type) {
+  int _getHapticFeedbackDuration(String? type) {
     switch (type) {
       case 'HapticFeedbackType.lightImpact':
         return DomRenderer.vibrateLightImpact;

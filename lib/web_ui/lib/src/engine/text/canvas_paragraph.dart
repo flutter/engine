@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of engine;
 
 /// A paragraph made up of a flat list of text spans and placeholders.
@@ -134,6 +133,7 @@ class CanvasParagraph implements EngineParagraph {
 
     // 1. Set paragraph-level styles.
     _applyNecessaryParagraphStyles(element: rootElement, style: paragraphStyle);
+    _applySpanStylesToParagraph(element: rootElement, spans: spans);
     final html.CssStyleDeclaration cssStyle = rootElement.style;
     cssStyle
       ..position = 'absolute'
@@ -156,18 +156,11 @@ class CanvasParagraph implements EngineParagraph {
         ..height = '${height}px';
     }
 
-    if (paragraphStyle._ellipsis != null &&
-        (paragraphStyle._maxLines == null || paragraphStyle._maxLines == 1)) {
-      cssStyle
-        ..width = '${width}px'
-        ..overflowX = 'hidden'
-        ..textOverflow = 'ellipsis';
-    }
-
     // 2. Append all spans to the paragraph.
 
     ParagraphSpan? span;
-    late html.HtmlElement element;
+
+    html.HtmlElement element = rootElement;
     final List<EngineLineMetrics> lines = computeLineMetrics();
 
     for (int i = 0; i < lines.length; i++) {
@@ -176,7 +169,8 @@ class CanvasParagraph implements EngineParagraph {
         domRenderer.append(element, domRenderer.createElement('br'));
       }
 
-      for (final RangeBox box in lines[i].boxes!) {
+      final EngineLineMetrics line = lines[i];
+      for (final RangeBox box in line.boxes!) {
         if (box is SpanBox) {
           if (box.span != span) {
             span = box.span;
@@ -201,6 +195,11 @@ class CanvasParagraph implements EngineParagraph {
         } else {
           throw UnimplementedError('Unknown box type: ${box.runtimeType}');
         }
+      }
+
+      final String? ellipsis = line.ellipsis;
+      if (ellipsis != null) {
+        domRenderer.appendText(element, ellipsis);
       }
     }
 
@@ -281,6 +280,39 @@ void _applyNecessaryParagraphStyles({
   }
   if (style._textDirection != null) {
     cssStyle.direction = _textDirectionToCss(style._textDirection);
+  }
+}
+
+/// Applies some span-level style to a paragraph [element].
+///
+/// For example, it looks for the greatest font size among spans, and applies it
+/// to the paragraph. While this seems to have no effect, it prevents the
+/// paragraph from inheriting its font size from the body tag, which leads to
+/// incorrect vertical alignment of spans.
+void _applySpanStylesToParagraph({
+  required html.HtmlElement element,
+  required List<ParagraphSpan> spans,
+}) {
+  double fontSize = 0.0;
+  String? fontFamily;
+  for (final ParagraphSpan span in spans) {
+    if (span is FlatTextSpan) {
+      final double? spanFontSize = span.style._fontSize;
+      if (spanFontSize != null && spanFontSize > fontSize) {
+        fontSize = spanFontSize;
+        if (span.style._isFontFamilyProvided) {
+          fontFamily = span.style._effectiveFontFamily;
+        }
+      }
+    }
+  }
+
+  final html.CssStyleDeclaration cssStyle = element.style;
+  if (fontSize != 0.0) {
+    cssStyle.fontSize = '${fontSize}px';
+  }
+  if (fontFamily != null) {
+    cssStyle.fontFamily = canonicalizeFontFamily(fontFamily);
   }
 }
 

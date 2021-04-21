@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 import 'dart:html' as html;
 import 'dart:math' as math;
 import 'dart:typed_data';
@@ -259,8 +258,6 @@ void testMain() {
       await testTextStyle('paragraph font size', paragraphFontSize: 22);
     });
 
-    // TODO(yjbanov): paragraphHeight seems to have no effect, but maybe I'm using it wrong.
-    //                https://github.com/flutter/flutter/issues/74337
     test('text styles - paragraph height', () async {
       await testTextStyle('paragraph height', layoutWidth: 50, paragraphHeight: 1.5);
     });

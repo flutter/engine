@@ -37,11 +37,8 @@ public class GeneratedPluginRegister {
           TAG,
           "Tried to automatically register plugins with FlutterEngine ("
               + flutterEngine
-              + ") but could not find and invoke the GeneratedPluginRegistrant.");
-      Log.e(
-          TAG,
-          // getCause here because the first layer of the exception would be from reflect.
-          "Received exception while registering: " + e.getCause());
+              + ") but could not find or invoke the GeneratedPluginRegistrant.");
+      Log.e(TAG, "Received exception while registering", e);
     }
   }
 }

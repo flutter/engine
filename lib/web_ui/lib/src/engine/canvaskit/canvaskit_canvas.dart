@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of engine;
 
 /// An implementation of [ui.Canvas] that is backed by a CanvasKit canvas.
@@ -260,11 +259,6 @@ class CanvasKitCanvas implements ui.Canvas {
     assert(rectIsValid(center));
     assert(rectIsValid(dst));
     assert(paint != null); // ignore: unnecessary_null_comparison
-    _drawImageNine(image, center, dst, paint);
-  }
-
-  void _drawImageNine(
-      ui.Image image, ui.Rect center, ui.Rect dst, ui.Paint paint) {
     _canvas.drawImageNine(image as CkImage, center, dst, paint as CkPaint);
   }
 

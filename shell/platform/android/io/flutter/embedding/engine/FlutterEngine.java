@@ -53,8 +53,9 @@ import java.util.Set;
  * interaction.
  *
  * <p>Multiple {@code FlutterEngine}s may exist, execute Dart code, and render UIs within a single
- * Android app. Flutter at this point makes no guarantees on the performance of running multiple
- * engines. Use at your own risk. See https://github.com/flutter/flutter/issues/37644 for details.
+ * Android app. For better memory performance characteristics, construct multiple {@code
+ * FlutterEngine}s via {@link io.flutter.embedding.engine.FlutterEngineGroup} rather than via {@code
+ * FlutterEngine}'s constructor directly.
  *
  * <p>To start running Dart and/or Flutter within this {@code FlutterEngine}, get a reference to
  * this engine's {@link DartExecutor} and then use {@link
@@ -157,7 +158,7 @@ public class FlutterEngine {
    * <p>If the Dart VM has already started, the given arguments will have no effect.
    */
   public FlutterEngine(@NonNull Context context, @Nullable String[] dartVmArgs) {
-    this(context, /* flutterLoader */ null, new FlutterJNI(), dartVmArgs, true);
+    this(context, /* flutterLoader */ null, /* flutterJNI */ null, dartVmArgs, true);
   }
 
   /**
@@ -173,7 +174,7 @@ public class FlutterEngine {
     this(
         context,
         /* flutterLoader */ null,
-        new FlutterJNI(),
+        /* flutterJNI */ null,
         dartVmArgs,
         automaticallyRegisterPlugins);
   }
@@ -204,7 +205,7 @@ public class FlutterEngine {
     this(
         context,
         /* flutterLoader */ null,
-        new FlutterJNI(),
+        /* flutterJNI */ null,
         new PlatformViewsController(),
         dartVmArgs,
         automaticallyRegisterPlugins,
@@ -282,6 +283,14 @@ public class FlutterEngine {
     } catch (NameNotFoundException e) {
       assetManager = context.getAssets();
     }
+
+    FlutterInjector injector = FlutterInjector.instance();
+
+    if (flutterJNI == null) {
+      flutterJNI = injector.getFlutterJNIFactory().provideFlutterJNI();
+    }
+    this.flutterJNI = flutterJNI;
+
     this.dartExecutor = new DartExecutor(flutterJNI, assetManager);
     this.dartExecutor.onAttachedToJNI();
 
@@ -307,9 +316,8 @@ public class FlutterEngine {
 
     this.localizationPlugin = new LocalizationPlugin(context, localizationChannel);
 
-    this.flutterJNI = flutterJNI;
     if (flutterLoader == null) {
-      flutterLoader = FlutterInjector.instance().flutterLoader();
+      flutterLoader = injector.flutterLoader();
     }
 
     if (!flutterJNI.isAttached()) {
@@ -320,7 +328,7 @@ public class FlutterEngine {
     flutterJNI.addEngineLifecycleListener(engineLifecycleListener);
     flutterJNI.setPlatformViewsController(platformViewsController);
     flutterJNI.setLocalizationPlugin(localizationPlugin);
-    flutterJNI.setDeferredComponentManager(FlutterInjector.instance().deferredComponentManager());
+    flutterJNI.setDeferredComponentManager(injector.deferredComponentManager());
 
     // It should typically be a fresh, unattached JNI. But on a spawned engine, the JNI instance
     // is already attached to a native shell. In that case, the Java FlutterEngine is created around

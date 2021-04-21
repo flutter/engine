@@ -71,7 +71,7 @@ class TestIOManager final : public IOManager {
   }
 
   // |IOManager|
-  std::shared_ptr<fml::SyncSwitch> GetIsGpuDisabledSyncSwitch() override {
+  std::shared_ptr<const fml::SyncSwitch> GetIsGpuDisabledSyncSwitch() override {
     did_access_is_gpu_disabled_sync_switch_ = true;
     return is_gpu_disabled_sync_switch_;
   }
@@ -637,9 +637,9 @@ TEST_F(ImageDecoderFixtureTest,
   });
   latch.Wait();
 
-  auto isolate =
-      RunDartCodeInIsolate(vm_ref, settings, runners, "main", {},
-                           GetFixturesPath(), io_manager->GetWeakIOManager());
+  auto isolate = RunDartCodeInIsolate(vm_ref, settings, runners, "main", {},
+                                      GetDefaultKernelFilePath(),
+                                      io_manager->GetWeakIOManager());
 
   // Latch the IO task runner.
   runners.GetIOTaskRunner()->PostTask([&]() { io_latch.Wait(); });

@@ -74,6 +74,9 @@ class FlutterWindowsEngine {
   void SetPluginRegistrarDestructionCallback(
       FlutterDesktopOnPluginRegistrarDestroyed callback);
 
+  // Sets switches member to the given switches.
+  void SetSwitches(const std::vector<std::string>& switches);
+
   FlutterDesktopMessengerRef messenger() { return messenger_.get(); }
 
   IncomingMessageDispatcher* message_dispatcher() {
@@ -140,7 +143,7 @@ class FlutterWindowsEngine {
 
  private:
   // Allows swapping out embedder_api_ calls in tests.
-  friend class EngineEmbedderApiModifier;
+  friend class EngineModifier;
 
   // Sends system settings (e.g., locale) to the engine.
   //
