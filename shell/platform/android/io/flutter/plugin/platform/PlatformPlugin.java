@@ -14,6 +14,7 @@ import android.view.HapticFeedbackConstants;
 import android.view.SoundEffectConstants;
 import android.view.View;
 import android.view.Window;
+import android.view.WindowInsets;
 import android.view.WindowManager;
 import androidx.activity.OnBackPressedDispatcherOwner;
 import androidx.annotation.NonNull;
@@ -235,6 +236,13 @@ public class PlatformPlugin {
       }
     }
 
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+      System.out.println("how about this");
+      // THIS WORKS
+      Window window = activity.getWindow();
+      window.setFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS, WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+    }
+
     mEnabledOverlays = enabledOverlays;
     updateSystemUiOverlays();
   }
@@ -280,6 +288,7 @@ public class PlatformPlugin {
         }
       }
       if (systemChromeStyle.systemNavigationBarColor != null) {
+        System.out.println("Setting navigationBarColor");
         window.setNavigationBarColor(systemChromeStyle.systemNavigationBarColor);
       }
     }
@@ -297,6 +306,7 @@ public class PlatformPlugin {
         }
       }
       if (systemChromeStyle.statusBarColor != null) {
+        System.out.println("Setting statusBarColor");
         window.setStatusBarColor(systemChromeStyle.statusBarColor);
       }
     }
@@ -305,6 +315,20 @@ public class PlatformPlugin {
       window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
       window.setNavigationBarDividerColor(systemChromeStyle.systemNavigationBarDividerColor);
     }
+
+    // Consume insets
+//    System.out.println("Setting up consuming insets");
+//    view.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
+//      @Override
+//      public WindowInsets onApplyWindowInsets(View v, WindowInsets insets) {
+//        // 1. Move views on top edge down by insets.getSystemWindowInsetTop()
+//        // 2. Move views on bottom edge up by insets.getSystemWindowInsetBottom()
+//        // 3. Also check getSystemWindowInsetLeft/Right(), such as for landscape
+//        // orientations
+//        return insets.consumeSystemWindowInsets();
+//      }
+//    });
+
     view.setSystemUiVisibility(flags);
     currentTheme = systemChromeStyle;
   }
