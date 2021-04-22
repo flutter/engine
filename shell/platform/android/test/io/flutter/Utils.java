@@ -4,13 +4,13 @@
 
 package io.flutter;
 
+import static org.junit.Assert.assertTrue;
+
 import android.content.res.Configuration;
-import java.util.Locale;
 import android.os.Build;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-
-import static org.junit.Assert.assertTrue;
+import java.util.Locale;
 
 public class Utils {
 

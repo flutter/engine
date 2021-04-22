@@ -850,9 +850,8 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     }
     // Android Q or later doesn't call this method.
     //
-    // However, since this is implementation detail, a future version of Android might call this
-    // method
-    // again, fallback to calling the @hide method as expected by ViewGroup.
+    // However, since this is implementation detail, a future version of Android might call
+    // this method again, fallback to calling the @hide method as expected by ViewGroup.
     Method findViewByAccessibilityIdTraversalMethod;
     try {
       findViewByAccessibilityIdTraversalMethod =
