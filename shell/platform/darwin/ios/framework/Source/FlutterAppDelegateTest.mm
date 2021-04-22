@@ -60,7 +60,7 @@ FLUTTER_ASSERT_ARC
   BOOL result = [appDelegate
                application:[UIApplication sharedApplication]
       continueUserActivity:userActivity
-        restorationHandler: ^(NSArray<id<UIUserActivityRestoring>>* __nullable restorableObjects){
+        restorationHandler:^(NSArray<id<UIUserActivityRestoring>>* __nullable restorableObjects){
         }];
   XCTAssertTrue(result);
   OCMVerify([navigationChannel invokeMethod:@"pushRoute" arguments:@"/custom/route?query=test"]);
