@@ -25,7 +25,6 @@ executable("testing") {
   deps = [
     "//flutter/assets",
     "//flutter/common",
-    "//flutter/flow",
     "//flutter/fml",
     "//flutter/lib/snapshot",
     "//flutter/shell/common",
