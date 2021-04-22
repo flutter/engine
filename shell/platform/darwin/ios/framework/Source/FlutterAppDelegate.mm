@@ -227,9 +227,43 @@ static BOOL IsDeepLinkingEnabled(NSDictionary* infoDictionary) {
     continueUserActivity:(NSUserActivity*)userActivity
       restorationHandler:(void (^)(NSArray* __nullable restorableObjects))restorationHandler {
 #endif
-  return [_lifeCycleDelegate application:application
-                    continueUserActivity:userActivity
-                      restorationHandler:restorationHandler];
+  if ([_lifeCycleDelegate application:application
+                 continueUserActivity:userActivity
+                   restorationHandler:restorationHandler]) {
+    return YES;
+  } else if (userActivity.activityType == NSUserActivityTypeBrowsingWeb) {
+    return NO;
+  } else {
+    NSURLComponents* components = [NSURLComponents componentsWithURL:userActivity.webpageURL
+                                             resolvingAgainstBaseURL:YES];
+
+    if (components == nil or components.path == nil) {
+      return NO;
+    }
+    FlutterViewController* flutterViewController = [self rootFlutterViewController];
+    if (flutterViewController) {
+      [flutterViewController.engine
+          waitForFirstFrame:3.0
+                   callback:^(BOOL didTimeout) {
+                     if (didTimeout) {
+                       FML_LOG(ERROR) << "Timeout waiting for the first frame when launching a "
+                                         "universal link.";
+                     } else {
+                       NSString* pathAndQuery = components.path;
+                       if (components.query != nil and [components.query length] != 0) {
+                         pathAndQuery =
+                             [NSString stringWithFormat:@"%@?%@", pathAndQuery, components.query];
+                       }
+                       [flutterViewController.engine.navigationChannel invokeMethod:@"pushRoute"
+                                                                          arguments:pathAndQuery];
+                     }
+                   }];
+      return YES;
+    } else {
+      FML_LOG(ERROR) << "Attempting to open a universal link without a Flutter RootViewController.";
+      return NO;
+    }
+  }
 }
 
 #pragma mark - FlutterPluginRegistry methods. All delegating to the rootViewController
