@@ -42,4 +42,26 @@ FLUTTER_ASSERT_ARC
   OCMVerify([navigationChannel invokeMethod:@"pushRoute" arguments:@"/custom/route?query=test"]);
 }
 
+- (void)skip_testLaunchUniversalLink {
+  FlutterAppDelegate* appDelegate = [[FlutterAppDelegate alloc] init];
+  FlutterViewController* viewController = OCMClassMock([FlutterViewController class]);
+  FlutterEngine* engine = OCMClassMock([FlutterEngine class]);
+  FlutterMethodChannel* navigationChannel = OCMClassMock([FlutterMethodChannel class]);
+  OCMStub([engine navigationChannel]).andReturn(navigationChannel);
+  OCMStub([viewController engine]).andReturn(engine);
+  OCMStub([engine waitForFirstFrame:3.0 callback:([OCMArg invokeBlockWithArgs:@(NO), nil])]);
+  appDelegate.rootFlutterViewControllerGetter = ^{
+    return viewController;
+  };
+  NSURL* url = [NSURL URLWithString:@"http://myApp/custom/route?query=test"];
+  NSUserActivity* userActivity = [[NSUserActivity alloc] initWithActivityType:NSUserActivityTypeBrowsingWeb];
+  userActivity.webpageURL = url;
+  BOOL result = [appDelegate application:[UIApplication sharedApplication]
+                                continueUserActivity:userActivity
+                                restorationHandler: ^(NSArray<id<UIUserActivityRestoring>>* __nullable
+                                                      restorableObjects){}];
+  XCTAssertTrue(result);
+  OCMVerify([navigationChannel invokeMethod:@"pushRoute" arguments:@"/custom/route?query=test"]);
+}
+
 @end
