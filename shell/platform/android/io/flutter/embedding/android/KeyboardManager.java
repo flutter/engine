@@ -164,7 +164,7 @@ public class KeyboardManager {
   public boolean handleEvent(@NonNull KeyEvent keyEvent) {
     final boolean isRedispatchedEvent = redispatchedEvents.remove(keyEvent);
     if (isRedispatchedEvent) {
-      return !isRedispatchedEvent;
+      return false;
     }
 
     if (primaryResponders.length > 0) {
