@@ -27,6 +27,11 @@ AccessibilityBridgeMacDelegate::AccessibilityBridgeMacDelegate(__weak FlutterEng
 
 void AccessibilityBridgeMacDelegate::OnAccessibilityEvent(
     ui::AXEventGenerator::TargetedEvent targeted_event) {
+  if (!flutter_engine_.viewController) {
+    // For headless engine, we don't need to send accessibility events
+    // because there is no view.
+    return;
+  }
   ui::AXNode* ax_node = targeted_event.node;
   std::vector<AccessibilityBridgeMacDelegate::NSAccessibilityEvent> events =
       MacOSEventsFromAXEvent(targeted_event.event_params.event, *ax_node);
@@ -337,6 +342,8 @@ void AccessibilityBridgeMacDelegate::DispatchAccessibilityAction(ui::AXNode::AXI
                                                                  FlutterSemanticsAction action,
                                                                  const std::vector<uint8_t>& data) {
   NSCAssert(flutter_engine_, @"Flutter engine should not be deallocated");
+  NSCAssert(flutter_engine_.viewController,
+            @"A headless engine should not receive accessibility actions");
   [flutter_engine_ dispatchSemanticsAction:action toTarget:target withData:data];
 }
 
