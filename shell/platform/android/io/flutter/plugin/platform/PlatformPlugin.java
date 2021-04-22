@@ -14,7 +14,6 @@ import android.view.HapticFeedbackConstants;
 import android.view.SoundEffectConstants;
 import android.view.View;
 import android.view.Window;
-import android.view.WindowInsets;
 import android.view.WindowManager;
 import androidx.activity.OnBackPressedDispatcherOwner;
 import androidx.annotation.NonNull;
@@ -207,41 +206,93 @@ public class PlatformPlugin {
 
   private void setSystemChromeEnabledSystemUIOverlays(
       List<PlatformChannel.SystemUiOverlay> overlaysToShow) {
-    // Start by assuming we want to hide all system overlays (like an immersive
-    // game).
-    int enabledOverlays =
-        DEFAULT_SYSTEM_UI
-            | View.SYSTEM_UI_FLAG_FULLSCREEN
-            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
+    // LEAN BACK
+    // Available starting at 16
+    // Should not show overlays, tap to reveal overlays, needs onChange callback
+    // When the overlays come in on tap, the app does not recieve the gesture and does not know the system overlay
+    // has changed. The overlays cannot be dismissed, so adding the callback support will allow users to restore
+    // the system ui and dismiss the overlays.
+    // Not compatible with top/bottom overlays enabled.
+    //
+    // View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+    // | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+    // | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+    // | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+    // | View.SYSTEM_UI_FLAG_FULLSCREEN;
 
+    // IMMERSIVE
+    // Available starting at 19
+    // Should not show overlays, swipe from edges to revela overlays, needs onChange callback
+    // When the overlays come in on swipe, the app does not receive the gesture and does not know the system overlay
+    // has changed. The overlays cannot be dismissed, so adding callback support will allow users to restore the
+    // system ui and dismiss the overlays.
+    // Not compatible with top/bottom overlays enabled.
+    //
+    // View.SYSTEM_UI_FLAG_IMMERSIVE
+    // | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+    // | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+    // | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+    // | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+    // | View.SYSTEM_UI_FLAG_FULLSCREEN;
+
+    // STICKY IMMERSIVE
+    // Available starting at 19
+    // Should not show overlays, swipe from edges to reveal overlays. The app will also receive the swipe gesture.
+    // The overlays cannot be dismissed, so adding callback support will allow users to restore the
+    // system ui and dismiss the overlays.
+    // Not compatible with top/bottom overlays enabled.
+    //
+    // View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+    // | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+    // | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+    // | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+    // | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+    // | View.SYSTEM_UI_FLAG_FULLSCREEN;
+
+    // EDGE TO EDGE
+    // Available starting at 16
+    // SDK 29 and up will apply a translucent body scrim behind 2/3 button navigation bars to ensure contrast with
+    // buttons on the nav bar.
+    // SDK 28 and lower will support a transparent 2/3 button navigation bar.
+    // Overlays should be included and not removed.
+    // View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+    // | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+    // | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
+
+    System.out.println("edge to edge");
+    int enabledOverlays =
+            View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
+
+    // MANUAL
+    // Use original implementation for backwards compatibility
+    // int enabledOverlays =
+    //         DEFAULT_SYSTEM_UI
+    //                 | View.SYSTEM_UI_FLAG_FULLSCREEN
+    //                 | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+    //                 | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
+    //
     // The SYSTEM_UI_FLAG_IMMERSIVE_STICKY flag was introduced in API 19, so we
     // apply it
     // if desired, and if the current Android version is 19 or greater.
-    if (overlaysToShow.size() == 0 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-      enabledOverlays |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
-    }
-
-    // Re-add any desired system overlays.
-    for (int i = 0; i < overlaysToShow.size(); ++i) {
-      PlatformChannel.SystemUiOverlay overlayToShow = overlaysToShow.get(i);
-      switch (overlayToShow) {
-        case TOP_OVERLAYS:
-          enabledOverlays &= ~View.SYSTEM_UI_FLAG_FULLSCREEN;
-          break;
-        case BOTTOM_OVERLAYS:
-          enabledOverlays &= ~View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION;
-          enabledOverlays &= ~View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
-          break;
-      }
-    }
-
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-      System.out.println("how about this");
-      // THIS WORKS
-      Window window = activity.getWindow();
-      window.setFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS, WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-    }
+    // if (overlaysToShow.size() == 0 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+    //   enabledOverlays |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
+    // }
+    // Apply any specified overlays
+    // for (int i = 0; i < overlaysToShow.size(); ++i) {
+    //   PlatformChannel.SystemUiOverlay overlayToShow = overlaysToShow.get(i);
+    //   switch (overlayToShow) {
+    //     case TOP_OVERLAYS:
+    //       enabledOverlays &= ~View.SYSTEM_UI_FLAG_FULLSCREEN;
+    //       break;
+    //     case BOTTOM_OVERLAYS:
+    //       // Don;t remove this for edge to edge
+    //       enabledOverlays &= ~View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION;
+    //       enabledOverlays &= ~View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
+    //       break;
+    //   }
+    // }
 
     mEnabledOverlays = enabledOverlays;
     updateSystemUiOverlays();
@@ -270,64 +321,65 @@ public class PlatformPlugin {
     Window window = activity.getWindow();
     View view = window.getDecorView();
     int flags = view.getSystemUiVisibility();
-    // You can change the navigation bar color (including translucent colors)
-    // in Android, but you can't change the color of the navigation buttons until
-    // Android O.
-    // LIGHT vs DARK effectively isn't supported until then.
-    // Build.VERSION_CODES.O
-    if (Build.VERSION.SDK_INT >= 26) {
-      if (systemChromeStyle.systemNavigationBarIconBrightness != null) {
-        switch (systemChromeStyle.systemNavigationBarIconBrightness) {
-          case DARK:
-            // View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
-            flags |= 0x10;
-            break;
-          case LIGHT:
-            flags &= ~0x10;
-            break;
-        }
-      }
-      if (systemChromeStyle.systemNavigationBarColor != null) {
-        System.out.println("Setting navigationBarColor");
-        window.setNavigationBarColor(systemChromeStyle.systemNavigationBarColor);
+
+    // SYSTEM STATUS BAR -------------------------------------------------------------------
+    // You can't change the color of the system status bar until SDK 21.
+    // If transparent, SDK 29 and higher may apply a translucent scrim behind the bar to ensure
+    // proper contrast. This can be overridden with SystemChromeStyle.systemStatusBarContrastEnforced.
+    if (systemChromeStyle.statusBarColor != null && Build.VERSION.SDK_INT >= 21) {
+      window.setStatusBarColor(systemChromeStyle.statusBarColor);
+    }
+    // You can't change the color of the status icons until SDK 23.
+    if (systemChromeStyle.statusBarIconBrightness != null && Build.VERSION.SDK_INT >= 23) {
+      switch (systemChromeStyle.statusBarIconBrightness) {
+        case DARK:
+          // View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+          flags |= 0x2000;
+          break;
+        case LIGHT:
+          flags &= ~0x2000;
+          break;
       }
     }
-    // Build.VERSION_CODES.M
-    if (Build.VERSION.SDK_INT >= 23) {
-      if (systemChromeStyle.statusBarIconBrightness != null) {
-        switch (systemChromeStyle.statusBarIconBrightness) {
-          case DARK:
-            // View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
-            flags |= 0x2000;
-            break;
-          case LIGHT:
-            flags &= ~0x2000;
-            break;
-        }
-      }
-      if (systemChromeStyle.statusBarColor != null) {
-        System.out.println("Setting statusBarColor");
-        window.setStatusBarColor(systemChromeStyle.statusBarColor);
+    // You can't override the enforced contrast for a transparent status bar until SDK 29.
+    // This overrides the translucent scrim that may be placed behind the bar on SDK 29+ to ensure
+    // contrast is appropriate when using full screen layout modes like Edge to Edge.
+//    if (systemChromeStyle.systemStatusBarContrastEnforced != null && Build.VERSION.SDK_INT >= 29) {
+//      window.setStatusBarContrastEnforced(systemChromeStyle.systemStatusBarContrastEnforced);
+//    }
+
+    // SYSTEM NAVIGATION BAR --------------------------------------------------------------
+    // You can't change the color of the system navigation bar until SDK 21.
+    // If transparent, SDK 29 and higher may apply a translucent scrim behind 2/3 button navigation bars to ensure
+    // proper contrast. This can be overridden with SystemChromeStyle.systemNavigationBarContrastEnforced.
+    if (systemChromeStyle.systemNavigationBarColor != null && Build.VERSION.SDK_INT >= 21) {
+      window.setNavigationBarColor(systemChromeStyle.systemNavigationBarColor);
+    }
+    // You can't change the color of the navigation buttons until SDK 26.
+    if (systemChromeStyle.systemNavigationBarIconBrightness != null && Build.VERSION.SDK_INT >= 26) {
+      switch (systemChromeStyle.systemNavigationBarIconBrightness) {
+        case DARK:
+          // View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+          flags |= 0x10;
+          break;
+        case LIGHT:
+          flags &= ~0x10;
+          break;
       }
     }
+    // You can't change the color of the navigation bar divider color until SDK 28.
     if (systemChromeStyle.systemNavigationBarDividerColor != null && Build.VERSION.SDK_INT >= 28) {
       window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
       window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
       window.setNavigationBarDividerColor(systemChromeStyle.systemNavigationBarDividerColor);
     }
 
-    // Consume insets
-//    System.out.println("Setting up consuming insets");
-//    view.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
-//      @Override
-//      public WindowInsets onApplyWindowInsets(View v, WindowInsets insets) {
-//        // 1. Move views on top edge down by insets.getSystemWindowInsetTop()
-//        // 2. Move views on bottom edge up by insets.getSystemWindowInsetBottom()
-//        // 3. Also check getSystemWindowInsetLeft/Right(), such as for landscape
-//        // orientations
-//        return insets.consumeSystemWindowInsets();
-//      }
-//    });
+    // You can't override the enforced contrast for a transparent navigation bar until SDK 29.
+    // This overrides the translucent scrim that may be placed behind 2/3 button navigation bars on SDK 29+ to ensure
+    // contrast is appropriate when using full screen layout modes like Edge to Edge.
+//    if (systemChromeStyle.systemNavigationBarContrastEnforced != null && Build.VERSION.SDK_INT >= 29) {
+//      window.setNavigationBarContrastEnforced(systemChromeStyle.systemNavigationBarContrastEnforced);
+//    }
 
     view.setSystemUiVisibility(flags);
     currentTheme = systemChromeStyle;
