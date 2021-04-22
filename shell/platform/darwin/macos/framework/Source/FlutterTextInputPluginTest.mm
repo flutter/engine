@@ -106,12 +106,12 @@
       .andReturn(windowMock);
 
   OCMExpect(  // NOLINT(google-objc-avoid-throwing-exception)
-      [viewMock convertRect:NSMakeRect(28, 171, 2, 19) toView:nil])
-      .andReturn(NSMakeRect(28, 171, 2, 19));
+      [viewMock convertRect:NSMakeRect(28, 10, 2, 19) toView:nil])
+      .andReturn(NSMakeRect(28, 10, 2, 19));
 
   OCMExpect(  // NOLINT(google-objc-avoid-throwing-exception)
-      [windowMock convertRectToScreen:NSMakeRect(28, 171, 2, 19)])
-      .andReturn(NSMakeRect(38, 181, 2, 19));
+      [windowMock convertRectToScreen:NSMakeRect(28, 10, 2, 19)])
+      .andReturn(NSMakeRect(38, 20, 2, 19));
 
   FlutterTextInputPlugin* plugin =
       [[FlutterTextInputPlugin alloc] initWithViewController:controllerMock];
@@ -147,12 +147,12 @@
 
   @try {
     OCMVerify(  // NOLINT(google-objc-avoid-throwing-exception)
-        [windowMock convertRectToScreen:NSMakeRect(28, 171, 2, 19)]);
+        [windowMock convertRectToScreen:NSMakeRect(28, 10, 2, 19)]);
   } @catch (...) {
     return false;
   }
 
-  return NSEqualRects(rect, NSMakeRect(38, 181, 2, 19));
+  return NSEqualRects(rect, NSMakeRect(38, 20, 2, 19));
 }
 
 @end
