@@ -5,9 +5,10 @@
 #ifndef FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_TEST_BACKINGSTORE_PRODUCER_H_
 #define FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_TEST_BACKINGSTORE_PRODUCER_H_
 
+#include <memory>
 #include "flutter/fml/macros.h"
 #include "flutter/shell/platform/embedder/embedder.h"
-
+#include "flutter/testing/test_metal_context.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 
 namespace flutter {
@@ -44,6 +45,10 @@ class EmbedderTestBackingStoreProducer {
 
   sk_sp<GrDirectContext> context_;
   RenderTargetType type_;
+
+#ifdef SHELL_ENABLE_METAL
+  std::unique_ptr<TestMetalContext> test_metal_context_;
+#endif
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderTestBackingStoreProducer);
 };

@@ -59,7 +59,6 @@ bool EmbedderTestCompositorMetal::UpdateOffscrenComposition(
         layer_image =
             reinterpret_cast<SkSurface*>(layer->backing_store->user_data)
                 ->makeImageSnapshot();
-
         break;
       case kFlutterLayerContentTypePlatformView:
         layer_image =

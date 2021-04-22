@@ -591,8 +591,8 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
       backend_texture,           // back-end texture
       kTopLeft_GrSurfaceOrigin,  // surface origin
       1,                         // sample count
-      kN32_SkColorType,          // color type
-      SkColorSpace::MakeSRGB(),  // color space
+      kBGRA_8888_SkColorType,    // color type
+      nullptr,                   // color space
       &surface_properties,       // surface properties
       static_cast<SkSurface::TextureReleaseProc>(
           metal->texture.destruction_callback),  // release proc
@@ -601,9 +601,6 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
 
   if (!surface) {
     FML_LOG(ERROR) << "Could not wrap embedder supplied Metal render texture.";
-    if (metal->texture.destruction_callback) {
-      metal->texture.destruction_callback(metal->texture.user_data);
-    }
     return nullptr;
   }
 

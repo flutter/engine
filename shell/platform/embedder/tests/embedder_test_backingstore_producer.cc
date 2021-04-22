@@ -5,21 +5,29 @@
 #include "flutter/shell/platform/embedder/tests/embedder_test_backingstore_producer.h"
 
 #include "flutter/fml/logging.h"
+#include "include/core/SkImageInfo.h"
+#include "include/core/SkSize.h"
 #include "third_party/skia/include/core/SkSurface.h"
+
+#include <memory>
 
 namespace flutter {
 namespace testing {
 
-EmbedderTestBackingStoreProducer::EmbedderTestBackingStoreProducer(
-    sk_sp<GrDirectContext> context,
-    RenderTargetType type)
-    : context_(context), type_(type) {}
+EmbedderTestBackingStoreProducer::EmbedderTestBackingStoreProducer(sk_sp<GrDirectContext> context,
+                                                                   RenderTargetType type)
+    : context_(context)
+    , type_(type)
+#ifdef SHELL_ENABLE_METAL
+    , test_metal_context_(std::make_unique<TestMetalContext>())
+#endif
+{
+}
 
 EmbedderTestBackingStoreProducer::~EmbedderTestBackingStoreProducer() = default;
 
-bool EmbedderTestBackingStoreProducer::Create(
-    const FlutterBackingStoreConfig* config,
-    FlutterBackingStore* renderer_out) {
+bool EmbedderTestBackingStoreProducer::Create(const FlutterBackingStoreConfig* config,
+                                              FlutterBackingStore* renderer_out) {
   switch (type_) {
     case RenderTargetType::kSoftwareBuffer:
       return CreateSoftware(config, renderer_out);
@@ -38,21 +46,18 @@ bool EmbedderTestBackingStoreProducer::Create(
   }
 }
 
-bool EmbedderTestBackingStoreProducer::CreateFramebuffer(
-    const FlutterBackingStoreConfig* config,
-    FlutterBackingStore* backing_store_out) {
+bool EmbedderTestBackingStoreProducer::CreateFramebuffer(const FlutterBackingStoreConfig* config,
+                                                         FlutterBackingStore* backing_store_out) {
 #ifdef SHELL_ENABLE_GL
-  const auto image_info =
-      SkImageInfo::MakeN32Premul(config->size.width, config->size.height);
+  const auto image_info = SkImageInfo::MakeN32Premul(config->size.width, config->size.height);
 
-  auto surface = SkSurface::MakeRenderTarget(
-      context_.get(),               // context
-      SkBudgeted::kNo,              // budgeted
-      image_info,                   // image info
-      1,                            // sample count
-      kBottomLeft_GrSurfaceOrigin,  // surface origin
-      nullptr,                      // surface properties
-      false                         // mipmaps
+  auto surface = SkSurface::MakeRenderTarget(context_.get(),               // context
+                                             SkBudgeted::kNo,              // budgeted
+                                             image_info,                   // image info
+                                             1,                            // sample count
+                                             kBottomLeft_GrSurfaceOrigin,  // surface origin
+                                             nullptr,                      // surface properties
+                                             false                         // mipmaps
   );
 
   if (!surface) {
@@ -82,8 +87,9 @@ bool EmbedderTestBackingStoreProducer::CreateFramebuffer(
   // The balancing unref is in the destruction callback.
   surface->ref();
   backing_store_out->open_gl.framebuffer.user_data = surface.get();
-  backing_store_out->open_gl.framebuffer.destruction_callback =
-      [](void* user_data) { reinterpret_cast<SkSurface*>(user_data)->unref(); };
+  backing_store_out->open_gl.framebuffer.destruction_callback = [](void* user_data) {
+    reinterpret_cast<SkSurface*>(user_data)->unref();
+  };
 
   return true;
 #else
@@ -91,21 +97,18 @@ bool EmbedderTestBackingStoreProducer::CreateFramebuffer(
 #endif
 }
 
-bool EmbedderTestBackingStoreProducer::CreateTexture(
-    const FlutterBackingStoreConfig* config,
-    FlutterBackingStore* backing_store_out) {
+bool EmbedderTestBackingStoreProducer::CreateTexture(const FlutterBackingStoreConfig* config,
+                                                     FlutterBackingStore* backing_store_out) {
 #ifdef SHELL_ENABLE_GL
-  const auto image_info =
-      SkImageInfo::MakeN32Premul(config->size.width, config->size.height);
+  const auto image_info = SkImageInfo::MakeN32Premul(config->size.width, config->size.height);
 
-  auto surface = SkSurface::MakeRenderTarget(
-      context_.get(),               // context
-      SkBudgeted::kNo,              // budgeted
-      image_info,                   // image info
-      1,                            // sample count
-      kBottomLeft_GrSurfaceOrigin,  // surface origin
-      nullptr,                      // surface properties
-      false                         // mipmaps
+  auto surface = SkSurface::MakeRenderTarget(context_.get(),               // context
+                                             SkBudgeted::kNo,              // budgeted
+                                             image_info,                   // image info
+                                             1,                            // sample count
+                                             kBottomLeft_GrSurfaceOrigin,  // surface origin
+                                             nullptr,                      // surface properties
+                                             false                         // mipmaps
   );
 
   if (!surface) {
@@ -113,8 +116,8 @@ bool EmbedderTestBackingStoreProducer::CreateTexture(
     return false;
   }
 
-  GrBackendTexture render_texture = surface->getBackendTexture(
-      SkSurface::BackendHandleAccess::kDiscardWrite_BackendHandleAccess);
+  GrBackendTexture render_texture =
+      surface->getBackendTexture(SkSurface::BackendHandleAccess::kDiscardWrite_BackendHandleAccess);
 
   if (!render_texture.isValid()) {
     FML_LOG(ERROR) << "Backend render texture was invalid.";
@@ -136,8 +139,9 @@ bool EmbedderTestBackingStoreProducer::CreateTexture(
   // The balancing unref is in the destruction callback.
   surface->ref();
   backing_store_out->open_gl.texture.user_data = surface.get();
-  backing_store_out->open_gl.texture.destruction_callback =
-      [](void* user_data) { reinterpret_cast<SkSurface*>(user_data)->unref(); };
+  backing_store_out->open_gl.texture.destruction_callback = [](void* user_data) {
+    reinterpret_cast<SkSurface*>(user_data)->unref();
+  };
 
   return true;
 #else
@@ -145,15 +149,13 @@ bool EmbedderTestBackingStoreProducer::CreateTexture(
 #endif
 }
 
-bool EmbedderTestBackingStoreProducer::CreateSoftware(
-    const FlutterBackingStoreConfig* config,
-    FlutterBackingStore* backing_store_out) {
-  auto surface = SkSurface::MakeRaster(
-      SkImageInfo::MakeN32Premul(config->size.width, config->size.height));
+bool EmbedderTestBackingStoreProducer::CreateSoftware(const FlutterBackingStoreConfig* config,
+                                                      FlutterBackingStore* backing_store_out) {
+  auto surface =
+      SkSurface::MakeRaster(SkImageInfo::MakeN32Premul(config->size.width, config->size.height));
 
   if (!surface) {
-    FML_LOG(ERROR)
-        << "Could not create the render target for compositor layer.";
+    FML_LOG(ERROR) << "Could not create the render target for compositor layer.";
     return false;
   }
 
@@ -178,45 +180,33 @@ bool EmbedderTestBackingStoreProducer::CreateSoftware(
   return true;
 }
 
-bool EmbedderTestBackingStoreProducer::CreateMTLTexture(
-    const FlutterBackingStoreConfig* config,
-    FlutterBackingStore* backing_store_out) {
+bool EmbedderTestBackingStoreProducer::CreateMTLTexture(const FlutterBackingStoreConfig* config,
+                                                        FlutterBackingStore* backing_store_out) {
 #ifdef SHELL_ENABLE_METAL
-  const auto image_info =
-      SkImageInfo::MakeN32Premul(config->size.width, config->size.height);
+  // TODO(gw280): Use SkSurface::MakeRenderTarget instead of generating our
+  // own MTLTexture and wrapping it.
+  auto surface_size = SkISize::Make(config->size.width, config->size.height);
+  auto texture_info = test_metal_context_->CreateMetalTexture(surface_size);
+  sk_cf_obj<FlutterMetalTextureHandle> texture;
+  texture.retain(texture_info.texture);
 
-  auto surface =
-      SkSurface::MakeRenderTarget(context_.get(),            // context
-                                  SkBudgeted::kNo,           // budgeted
-                                  image_info,                // image info
-                                  1,                         // sample count
-                                  kTopLeft_GrSurfaceOrigin,  // surface origin
-                                  nullptr,  // surface properties
-                                  false     // mipmaps
-      );
+  GrMtlTextureInfo skia_texture_info;
+  skia_texture_info.fTexture = texture;
+  GrBackendTexture backend_texture(surface_size.width(), surface_size.height(), GrMipmapped::kNo,
+                                   skia_texture_info);
+
+  sk_sp<SkSurface> surface = SkSurface::MakeFromBackendTexture(
+      context_.get(), backend_texture, kTopLeft_GrSurfaceOrigin, 1,
+      kBGRA_8888_SkColorType, nullptr, nullptr);
 
   if (!surface) {
-    FML_LOG(ERROR) << "Could not create render target for compositor layer.";
-    return false;
-  }
-
-  GrBackendTexture render_texture = surface->getBackendTexture(
-      SkSurface::BackendHandleAccess::kDiscardWrite_BackendHandleAccess);
-
-  if (!render_texture.isValid()) {
-    FML_LOG(ERROR) << "Backend render texture was invalid.";
-    return false;
-  }
-
-  GrMtlTextureInfo texture_info = {};
-  if (!render_texture.getMtlTextureInfo(&texture_info)) {
-    FML_LOG(ERROR) << "Could not access backend texture info.";
+    FML_LOG(ERROR) << "Could not create Skia surface from a Metal texture.";
     return false;
   }
 
   backing_store_out->type = kFlutterBackingStoreTypeMetal;
   backing_store_out->user_data = surface.get();
-  backing_store_out->metal.texture.texture = texture_info.fTexture.get();
+  backing_store_out->metal.texture.texture = texture_info.texture;
   // The balancing unref is in the destruction callback.
   surface->ref();
   backing_store_out->metal.struct_size = sizeof(FlutterMetalBackingStore);
