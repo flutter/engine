@@ -467,9 +467,14 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
     CGRect rect =
         CGRectApplyAffineTransform(_caretRect, CATransform3DGetAffineTransform(_editableTransform));
 
-    // flip and convert to screen coordinates
+    // flip
     double viewHeight = self.flutterViewController.view.bounds.size.height;
     rect.origin.y = viewHeight - rect.origin.y - rect.size.height;
+
+    // convert to window coordinates
+    rect = [self.flutterViewController.view convertRect:rect toView:nil];
+
+    // convert to screen coordinates
     return [self.flutterViewController.view.window convertRectToScreen:rect];
   } else {
     return CGRectZero;

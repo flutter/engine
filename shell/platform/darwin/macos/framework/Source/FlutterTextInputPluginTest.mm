@@ -106,6 +106,10 @@
       .andReturn(windowMock);
 
   OCMExpect(  // NOLINT(google-objc-avoid-throwing-exception)
+      [viewMock convertRect:NSMakeRect(28, 171, 2, 19) toView:nil])
+      .andReturn(NSMakeRect(28, 171, 2, 19));
+
+  OCMExpect(  // NOLINT(google-objc-avoid-throwing-exception)
       [windowMock convertRectToScreen:NSMakeRect(28, 171, 2, 19)])
       .andReturn(NSMakeRect(38, 181, 2, 19));
 
