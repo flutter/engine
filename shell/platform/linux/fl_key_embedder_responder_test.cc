@@ -538,8 +538,7 @@ TEST(FlKeyEmbedderResponderTest, TapLetterKeysBetweenCapsLockEvents) {
   // Press key A (stage 0)
   fl_key_responder_handle_event(
       responder,
-      key_event_new(101, kPress, GDK_KEY_a, kKeyCodeKeyA, 0,
-                    kIsNotModifier),
+      key_event_new(101, kPress, GDK_KEY_a, kKeyCodeKeyA, 0, kIsNotModifier),
       verify_response_handled, &user_data);
 
   EXPECT_EQ(g_call_records->len, 1u);
@@ -610,8 +609,7 @@ TEST(FlKeyEmbedderResponderTest, TapLetterKeysBetweenCapsLockEvents) {
   // Press key A (stage 2)
   fl_key_responder_handle_event(
       responder,
-      key_event_new(101, kPress, GDK_KEY_A, kKeyCodeKeyA, 0x2,
-                    kIsNotModifier),
+      key_event_new(101, kPress, GDK_KEY_A, kKeyCodeKeyA, 0x2, kIsNotModifier),
       verify_response_handled, &user_data);
 
   EXPECT_EQ(g_call_records->len, 1u);

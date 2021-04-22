@@ -479,18 +479,18 @@ static void synchronize_lock_mode_states_loop_body(gpointer key,
   const uint64_t logical_key = checked_key->first_logical_key;
   const uint64_t physical_key = checked_key->physical_keys[0];
   printf("Syn: 1 state %x bit %x curPhy %lx\n", context->state, modifier_bit,
-  context->event_physical_key);
+         context->event_physical_key);
 
   // A lock mode key can be at any of a 4-stage cycle. The following table lists
   // the definition of each stage (TruePressed and TrueEnabled), the event of
   // the lock key between every 2 stages (SelfType and SelfState), and the event
-  // of other keys at each stage (OthersState). Notice that SelfState uses different
-  // rule for CapsLock.
+  // of other keys at each stage (OthersState). Notice that SelfState uses
+  // different rule for CapsLock.
   //
   //           #    [0]           [1]            [2]             [3]
   //     TruePressed: Released      Pressed        Released        Pressed
   //     TrueEnabled: Disabled      Enabled        Enabled         Disabled
-  //        SelfType:          Down           Up             Down              Up
+  //        SelfType:          Down           Up             Down Up
   // SelfState(Caps):           1             1               0                1
   //  SelfState(Etc):           0             1               1                1
   //     OthersState:    0             1              1                1
@@ -512,7 +512,8 @@ static void synchronize_lock_mode_states_loop_body(gpointer key,
   const int stage_by_event =
       is_self_event
           ? find_stage_by_self_event(stage_by_record, context->is_down,
-                                     enabled_by_state, checked_key->is_caps_lock)
+                                     enabled_by_state,
+                                     checked_key->is_caps_lock)
           : find_stage_by_others_event(stage_by_record, enabled_by_state);
 
   // If the event is for the target key, then the last stage transition should
