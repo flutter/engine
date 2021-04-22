@@ -749,6 +749,7 @@ public class FlutterViewTest {
   }
 
   @Test
+  @SuppressLint("PrivateApi")
   public void findViewByAccessibilityIdTraversal_returnsRootViewOnAndroid28() throws Exception {
     Utils.setApiVersion(28);
 
@@ -761,6 +762,7 @@ public class FlutterViewTest {
   }
 
   @Test
+  @SuppressLint("PrivateApi")
   public void findViewByAccessibilityIdTraversal_returnsChildViewOnAndroid28() throws Exception {
     Utils.setApiVersion(28);
 
@@ -778,6 +780,7 @@ public class FlutterViewTest {
   }
 
   @Test
+  @SuppressLint("PrivateApi")
   public void findViewByAccessibilityIdTraversal_returnsRootViewOnAndroid29() throws Exception {
     Utils.setApiVersion(29);
 
