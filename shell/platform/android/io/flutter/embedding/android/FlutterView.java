@@ -843,17 +843,20 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
    * @param accessibilityId The view accessibility id.
    * @return The view matching the accessibility id if any.
    */
+  @SuppressLint("PrivateApi")
   public View findViewByAccessibilityIdTraversal(int accessibilityId) {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
       return findViewByAccessibilityIdRootedAtCurrentView(accessibilityId, this);
     }
     // Android Q or later doesn't call this method.
-    // However, since this is implementation detail, fallback to calling the @hide method as
-    // expected by ViewGroup.
+    //
+    // However, since this is implementation detail, a future version of Android might call this
+    // method
+    // again, fallback to calling the @hide method as expected by ViewGroup.
     Method findViewByAccessibilityIdTraversalMethod;
     try {
       findViewByAccessibilityIdTraversalMethod =
-          View.class.getDeclaredMethod("findViewByAccessibilityIdTraversal", Integer.class);
+          View.class.getDeclaredMethod("findViewByAccessibilityIdTraversal", int.class);
     } catch (NoSuchMethodException exception) {
       return null;
     }
@@ -874,6 +877,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
    * @param currentView The root view.
    * @return A descendant of currentView or currentView itself.
    */
+  @SuppressLint("PrivateApi")
   private View findViewByAccessibilityIdRootedAtCurrentView(int accessibilityId, View currentView) {
     Method getAccessibilityViewIdMethod;
     try {
