@@ -206,6 +206,14 @@ public class PlatformPlugin {
 
   private void setSystemChromeEnabledSystemUIOverlays(
       List<PlatformChannel.SystemUiOverlay> overlaysToShow) {
+    System.out.println("lean back");
+    int enabledOverlays =
+            View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+            | View.SYSTEM_UI_FLAG_FULLSCREEN;
+
     // LEAN BACK
     // Available starting at 16
     // Should not show overlays, tap to reveal overlays, needs onChange callback
@@ -255,15 +263,10 @@ public class PlatformPlugin {
     // buttons on the nav bar.
     // SDK 28 and lower will support a transparent 2/3 button navigation bar.
     // Overlays should be included and not removed.
+
     // View.SYSTEM_UI_FLAG_LAYOUT_STABLE
     // | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
     // | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
-
-    System.out.println("edge to edge");
-    int enabledOverlays =
-            View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
 
     // MANUAL
     // Use original implementation for backwards compatibility
@@ -287,12 +290,33 @@ public class PlatformPlugin {
     //       enabledOverlays &= ~View.SYSTEM_UI_FLAG_FULLSCREEN;
     //       break;
     //     case BOTTOM_OVERLAYS:
-    //       // Don;t remove this for edge to edge
-    //       enabledOverlays &= ~View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION;
+    //       enabledOverlays &= ~View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION; // Don't remove this for edge to edge, this is the OG bug
     //       enabledOverlays &= ~View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
     //       break;
     //   }
     // }
+
+    // Set up a listener to notify the framework when the system ui has changed.
+    View decorView = activity.getWindow().getDecorView();
+    decorView.setOnSystemUiVisibilityChangeListener
+            (new View.OnSystemUiVisibilityChangeListener() {
+              @Override
+              public void onSystemUiVisibilityChange(int visibility) {
+                if ((visibility & View.SYSTEM_UI_FLAG_FULLSCREEN) == 0) {
+                  // The system bars are visible. Make any desired adjustments to your UI, such as
+                  // showing the action bar or other navigational controls.
+                  // Another common action is to set a timer to dismiss the system bars and restore
+                  // the fullscreen mode that was perviously enabled.
+                  // TODO(Piinks): Wire up callback to the framework
+                  System.out.println("No longer in fullscreen");
+                } else {
+                  // The system bars are NOT visible. Make any desired adjustments to your UI, such
+                  // as hiding the action bar or other navigational controls.
+                  // TODO(Piinks): Wire up callback to the framework
+                  System.out.println("Fullscreen");
+                }
+              }
+            });
 
     mEnabledOverlays = enabledOverlays;
     updateSystemUiOverlays();
