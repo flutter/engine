@@ -54,12 +54,14 @@ FLUTTER_ASSERT_ARC
     return viewController;
   };
   NSURL* url = [NSURL URLWithString:@"http://myApp/custom/route?query=test"];
-  NSUserActivity* userActivity = [[NSUserActivity alloc] initWithActivityType:NSUserActivityTypeBrowsingWeb];
+  NSUserActivity* userActivity =
+      [[NSUserActivity alloc] initWithActivityType:NSUserActivityTypeBrowsingWeb];
   userActivity.webpageURL = url;
-  BOOL result = [appDelegate application:[UIApplication sharedApplication]
-                                continueUserActivity:userActivity
-                                restorationHandler: ^(NSArray<id<UIUserActivityRestoring>>* __nullable
-                                                      restorableObjects){}];
+  BOOL result = [appDelegate
+               application:[UIApplication sharedApplication]
+      continueUserActivity:userActivity
+        restorationHandler: ^(NSArray<id<UIUserActivityRestoring>>* __nullable restorableObjects){
+        }];
   XCTAssertTrue(result);
   OCMVerify([navigationChannel invokeMethod:@"pushRoute" arguments:@"/custom/route?query=test"]);
 }
