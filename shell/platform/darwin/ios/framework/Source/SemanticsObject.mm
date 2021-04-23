@@ -284,7 +284,7 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
   // item that is currently off screen but the a11y navigation needs to know
   // about.
   return (([self node].flags & ~flutter::kScrollableSemanticsFlags) != 0 &&
-          [self node].flags != static_cast<int32_t>(flutter::SemanticsFlags::kIsHidden)) ||
+          ([self node].flags & ~static_cast<int32_t>(flutter::SemanticsFlags::kIsHidden)) != 1) ||
          ![self node].label.empty() || ![self node].value.empty() || ![self node].hint.empty() ||
          ([self node].actions & ~flutter::kScrollableSemanticsActions) != 0;
 }

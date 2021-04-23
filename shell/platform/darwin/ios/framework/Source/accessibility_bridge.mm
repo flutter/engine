@@ -222,7 +222,9 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
     if (last_focused_semantics_object_id_ != kSemanticObjectIdInvalid) {
       // Tries to refocus the previous focused semantics object to avoid random jumps.
       nextToFocus = [objects_.get() objectForKey:@(last_focused_semantics_object_id_)];
-      if (!nextToFocus && root) {
+      if (nextToFocus) {
+        nextToFocus = FindFirstFocusable(nextToFocus);
+      } else if (root) {
         nextToFocus = FindFirstFocusable(root);
       }
     }
@@ -235,7 +237,9 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
     SemanticsObject* nextToFocus = nil;
     if (last_focused_semantics_object_id_ != kSemanticObjectIdInvalid) {
       nextToFocus = [objects_.get() objectForKey:@(last_focused_semantics_object_id_)];
-      if (!nextToFocus && root) {
+      if (nextToFocus) {
+        nextToFocus = FindFirstFocusable(nextToFocus);
+      } else if (root) {
         nextToFocus = FindFirstFocusable(root);
       }
     }
@@ -319,6 +323,8 @@ SemanticsObject* AccessibilityBridge::GetOrCreateObject(int32_t uid,
 
 void AccessibilityBridge::VisitObjectsRecursivelyAndRemove(SemanticsObject* object,
                                                            NSMutableArray<NSNumber*>* doomed_uids) {
+  NSLog(@"id %u is accessibility element %d has rect: %@", object.uid,
+        object.isAccessibilityElement, NSStringFromCGRect(object.accessibilityFrame));
   [doomed_uids removeObject:@(object.uid)];
   for (SemanticsObject* child in [object children])
     VisitObjectsRecursivelyAndRemove(child, doomed_uids);
@@ -329,14 +335,13 @@ SemanticsObject* AccessibilityBridge::FindFirstFocusable(SemanticsObject* object
     return object;
   }
 
-  SemanticsObject* candidate = nil;
   for (SemanticsObject* child in [object children]) {
+    SemanticsObject* candidate = FindFirstFocusable(child);
     if (candidate) {
-      break;
+      return candidate;
     }
-    candidate = FindFirstFocusable(child);
   }
-  return candidate;
+  return nil;
 }
 
 void AccessibilityBridge::HandleEvent(NSDictionary<NSString*, id>* annotatedEvent) {
