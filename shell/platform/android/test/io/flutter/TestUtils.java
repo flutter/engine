@@ -12,7 +12,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Locale;
 
-public class Utils {
+public class TestUtils {
 
   public static void setApiVersion(int apiVersion) {
     try {
