@@ -323,8 +323,6 @@ SemanticsObject* AccessibilityBridge::GetOrCreateObject(int32_t uid,
 
 void AccessibilityBridge::VisitObjectsRecursivelyAndRemove(SemanticsObject* object,
                                                            NSMutableArray<NSNumber*>* doomed_uids) {
-  NSLog(@"id %u is accessibility element %d has rect: %@", object.uid,
-        object.isAccessibilityElement, NSStringFromCGRect(object.accessibilityFrame));
   [doomed_uids removeObject:@(object.uid)];
   for (SemanticsObject* child in [object children])
     VisitObjectsRecursivelyAndRemove(child, doomed_uids);
