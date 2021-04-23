@@ -512,8 +512,8 @@ class _WebGlRenderer implements _GlRenderer {
       //
       // This will write u and v floats, clamp/repeat and mirror the value and
       // pass it to sampler.
-      method.addTileStatements('texcoord.x', 'u', tileModeX);
-      method.addTileStatements('texcoord.y', 'v', tileModeY);
+      method.addTileStatements('v_texcoord.x', 'u', tileModeX);
+      method.addTileStatements('v_texcoord.y', 'v', tileModeY);
       method.addStatement('vec2 uv = vec2(u, v);');
       method.addStatement('${builder.fragmentColor.name} = '
           '${builder.texture2DFunction}(u_texture, uv);');
