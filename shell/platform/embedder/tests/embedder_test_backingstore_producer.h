@@ -8,8 +8,11 @@
 #include <memory>
 #include "flutter/fml/macros.h"
 #include "flutter/shell/platform/embedder/embedder.h"
-#include "flutter/testing/test_metal_context.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
+
+#ifdef SHELL_ENABLE_METAL
+#include "flutter/testing/test_metal_context.h"
+#endif
 
 namespace flutter {
 namespace testing {
