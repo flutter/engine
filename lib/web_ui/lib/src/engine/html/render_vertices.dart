@@ -49,6 +49,10 @@ class SurfaceVertices implements ui.Vertices {
   }
 }
 
+/// Lazily initializes web gl.
+///
+/// Used to treeshake WebGlRenderer when user doesn't create Vertices object
+/// to use the API.
 void initWebGl() {
   _glRenderer ??= _WebGlRenderer();
 }
@@ -105,6 +109,25 @@ class _WebGlRenderer implements _GlRenderer {
     gl.setUniform4f(shift, -1, 1, 0, 0);
   }
 
+  static void _setupTextureScalar(_GlContext gl, _GlProgram glProgram,
+      double sx, double sy) {
+    Object scalar = gl.getUniformLocation(glProgram.program, 'u_texscale');
+    gl.setUniform2f(scalar, sx, sy);
+  }
+
+  static dynamic _tileModeToGlWrapping(_GlContext gl, ui.TileMode tileMode) {
+    switch(tileMode) {
+      case ui.TileMode.clamp:
+        return gl.kClampToEdge;
+      case ui.TileMode.decal:
+        return gl.kClampToEdge;
+      case ui.TileMode.mirror:
+        return gl.kMirroredRepeat;
+      case ui.TileMode.repeated:
+        return gl.kRepeat;
+    }
+  }
+
   @override
   void drawVertices(
       html.CanvasRenderingContext2D? context,
@@ -115,7 +138,183 @@ class _WebGlRenderer implements _GlRenderer {
       ui.BlendMode blendMode,
       SurfacePaintData paint) {
 
-    
+    // Compute bounds of vertices.
+    final Float32List positions = vertices._positions;
+    ui.Rect bounds = _computeVerticesBounds(positions, transform);
+    double minValueX = bounds.left;
+    double minValueY = bounds.top;
+    double maxValueX = bounds.right;
+    double maxValueY = bounds.bottom;
+    double offsetX = 0;
+    double offsetY = 0;
+    int widthInPixels = canvasWidthInPixels;
+    int heightInPixels = canvasHeightInPixels;
+    // If vertices fall outside the bitmap area, cull.
+    if (maxValueX < 0 || maxValueY < 0) {
+      return;
+    }
+    if (minValueX > widthInPixels || minValueY > heightInPixels) {
+      return;
+    }
+    // If Vertices are is smaller than hosting canvas, allocate minimal
+    // offscreen canvas to reduce readPixels data size.
+    if ((maxValueX - minValueX) < widthInPixels &&
+        (maxValueY - minValueY) < heightInPixels) {
+      widthInPixels = maxValueX.ceil() - minValueX.floor();
+      heightInPixels = maxValueY.ceil() - minValueY.floor();
+      offsetX = minValueX.floor().toDouble();
+      offsetY = minValueY.floor().toDouble();
+    }
+    if (widthInPixels == 0 || heightInPixels == 0) {
+      return;
+    }
+
+    final bool isWebGl2 = webGLVersion == WebGLVersion.webgl2;
+
+    final ImageShader? imageShader = paint.shader == null ? null
+        : paint.shader as ImageShader;
+
+    final String vertexShader = imageShader == null
+        ? writeBaseVertexShader() : writeTextureVertexShader();
+    final String fragmentShader = imageShader == null
+        ? _writeVerticesFragmentShader()
+        : _writeVerticesTextureFragmentShader(isWebGl2,
+        imageShader.tileModeX, imageShader.tileModeY);
+
+    _GlContext gl = _GlContextCache.createGlContext(widthInPixels, heightInPixels)!;
+
+    _GlProgram glProgram = gl.cacheProgram(vertexShader, fragmentShader);
+    gl.useProgram(glProgram);
+
+    Object? positionAttributeLocation =
+        gl.getAttributeLocation(glProgram.program, 'position');
+
+    _setupVertexTransforms(gl, glProgram, offsetX, offsetY,
+        widthInPixels.toDouble(), heightInPixels.toDouble(),
+        transform);
+
+    if (imageShader != null) {
+      /// To map from vertex position to texture coordinate in 0..1 range,
+      /// we setup scalar to be used in vertex shader.
+      _setupTextureScalar(gl, glProgram, 1.0 / imageShader._image.width.toDouble(),
+          1.0 / imageShader._image.height.toDouble());
+    }
+
+    // Setup geometry.
+    //
+    // Create buffer for vertex coordinates.
+    Object positionsBuffer = gl.createBuffer()!;
+    assert(positionsBuffer != null); // ignore: unnecessary_null_comparison
+
+    Object? vao;
+    if (imageShader != null) {
+      if (isWebGl2) {
+        // Create a vertex array object.
+        vao = gl.createVertexArray();
+        // Set vertex array object as active one.
+        gl.bindVertexArray(vao!);
+      }
+    }
+    // Turn on position attribute.
+    gl.enableVertexAttribArray(positionAttributeLocation);
+    // Bind buffer as position buffer and transfer data.
+    gl.bindArrayBuffer(positionsBuffer);
+    gl.bufferData(positions, gl.kStaticDraw);
+    // Setup data format for attribute.
+    js_util.callMethod(
+        gl.glContext, 'vertexAttribPointer', <dynamic>[
+      positionAttributeLocation, 2, gl.kFloat, false, 0, 0,
+    ]);
+
+    final int vertexCount = positions.length ~/ 2;
+    Object? texture;
+
+    if (imageShader == null) {
+      // Setup color buffer.
+      Object? colorsBuffer = gl.createBuffer();
+      gl.bindArrayBuffer(colorsBuffer);
+
+      // Buffer kBGRA_8888.
+      if (vertices._colors == null) {
+        final ui.Color color = paint.color ?? ui.Color(0xFF000000);
+        Uint32List vertexColors = Uint32List(vertexCount);
+        for (int i = 0; i < vertexCount; i++) {
+          vertexColors[i] = color.value;
+        }
+        gl.bufferData(vertexColors, gl.kStaticDraw);
+      } else {
+        gl.bufferData(vertices._colors, gl.kStaticDraw);
+      }
+      Object colorLoc = gl.getAttributeLocation(glProgram.program, 'color');
+      js_util.callMethod(gl.glContext, 'vertexAttribPointer',
+          <dynamic>[colorLoc, 4, gl.kUnsignedByte, true, 0, 0]);
+      gl.enableVertexAttribArray(colorLoc);
+    } else {
+      // Copy image it to the texture.
+      texture = gl.createTexture();
+      // use texture unit 0 ??webgl2?
+      gl.activeTexture(gl.kTexture0 + 0);
+      gl.bindTexture(gl.kTexture2D, texture);
+
+      gl.texImage2D(
+          gl.kTexture2D,
+          0,
+          gl.kRGBA,
+          gl.kRGBA,
+          gl.kUnsignedByte,
+          imageShader._image.imgElement
+      );
+
+      if (isWebGl2) {
+        // Texture REPEAT and MIRROR is only supported in WebGL 2, for
+        // WebGL 1.0 we let shader compute correct uv coordinates.
+        gl.texParameteri(gl.kTexture2D, gl.kTextureWrapS,
+            _tileModeToGlWrapping(gl, imageShader.tileModeX));
+
+        gl.texParameteri(gl.kTexture2D, gl.kTextureWrapT,
+            _tileModeToGlWrapping(gl, imageShader.tileModeY));
+
+        // Mipmapping saves your texture in different resolutions
+        // so the graphics card can choose which resolution is optimal
+        // without artifacts.
+        gl.generateMipmap(gl.kTexture2D);
+      } else {
+        // For webgl1, if a texture is not mipmap complete, then the return
+        // value of a texel fetch is (0, 0, 0, 1), so we have to set
+        // minifying function to filter.
+        // See https://www.khronos.org/registry/webgl/specs/1.0.0/#5.13.8.
+        gl.texParameteri(gl.kTexture2D, gl.kTextureWrapS,
+            gl.kClampToEdge);
+        gl.texParameteri(gl.kTexture2D, gl.kTextureWrapT,
+            gl.kClampToEdge);
+        gl.texParameteri(gl.kTexture2D, gl.kTextureMinFilter, gl.kLinear);
+      }
+    }
+
+    // Finally render triangles.
+    gl.clear();
+
+    final Uint16List ?indices = vertices._indices;
+    if (indices == null) {
+      gl.drawTriangles(vertexCount, vertices._mode);
+    } else {
+      /// If indices are specified to use shared vertices to reduce vertex
+      /// data transfer, use drawElements to map from vertex indices to
+      /// triangles.
+      Object? indexBuffer = gl.createBuffer();
+      gl.bindElementArrayBuffer(indexBuffer);
+      gl.bufferElementData(indices, gl.kStaticDraw);
+      gl.drawElements(gl.kTriangles, indices.length, gl.kUnsignedShort);
+    }
+
+    if (vao != null) {
+      gl.unbindVertexArray();
+    }
+
+    context!.save();
+    context.resetTransform();
+    gl.drawImage(context, offsetX, offsetY);
+    context.restore();
   }
 
   static final Uint16List _vertexIndicesForRect = Uint16List.fromList(
@@ -256,15 +455,17 @@ class _WebGlRenderer implements _GlRenderer {
     if (_textureVertexShader == null) {
       ShaderBuilder builder = ShaderBuilder(webGLVersion);
       builder.addIn(ShaderType.kVec4, name: 'position');
-      builder.addIn(ShaderType.kVec2, name: 'texcoord');
       builder.addUniform(ShaderType.kMat4, name: 'u_ctransform');
       builder.addUniform(ShaderType.kVec4, name: 'u_scale');
+      builder.addUniform(ShaderType.kVec2, name: 'u_texscale');
       builder.addUniform(ShaderType.kVec4, name: 'u_shift');
       builder.addOut(ShaderType.kVec2, name: 'v_texcoord');
       ShaderMethod method = builder.addMethod('main');
       method.addStatement(
           'gl_Position = ((u_ctransform * position) * u_scale) + u_shift;');
-      method.addStatement('v_texcoord = texcoord;');
+      method.addStatement(
+          'v_texcoord = vec2(position.x * u_texscale.x, '
+          '(position.y * u_texscale.y));');
       _textureVertexShader = builder.build();
     }
     return _textureVertexShader!;
@@ -288,14 +489,30 @@ class _WebGlRenderer implements _GlRenderer {
     return builder.build();
   }
 
-  String _writeVerticesTextureFragmentShader() {
+  String _writeVerticesTextureFragmentShader(bool isWebGl2,
+      ui.TileMode? tileModeX, ui.TileMode? tileModeY) {
     ShaderBuilder builder = ShaderBuilder.fragment(webGLVersion);
     builder.floatPrecision = ShaderPrecision.kMedium;
     builder.addIn(ShaderType.kVec2, name:'v_texcoord');
     builder.addUniform(ShaderType.kSampler2D, name: 'u_texture');
     ShaderMethod method = builder.addMethod('main');
-    method.addStatement('${builder.fragmentColor.name} = '
-        '${builder.texture2DFunction}(u_texture, v_texcoord);');
+    if (isWebGl2
+        || tileModeX == null || tileModeY == null
+        || (tileModeX == ui.TileMode.clamp && tileModeY == ui.TileMode.clamp)) {
+      method.addStatement('${builder.fragmentColor.name} = '
+          '${builder.texture2DFunction}(u_texture, v_texcoord);');
+    } else {
+      // Repeat and mirror are not supported for webgl1. Write code to
+      // adjust texture coordinate.
+      //
+      // This will write u and v floats, clamp/repeat and mirror the value and
+      // pass it to sampler.
+      method.addTileStatements('texcoord.x', 'u', tileModeX);
+      method.addTileStatements('texcoord.y', 'v', tileModeY);
+      method.addStatement('vec2 uv = vec2(u, v);');
+      method.addStatement('${builder.fragmentColor.name} = '
+          '${builder.texture2DFunction}(u_texture, uv);');
+    }
     return builder.build();
   }
 
@@ -441,11 +658,18 @@ class _GlContext {
   dynamic _kFloat;
   dynamic _kColorBufferBit;
   dynamic _kTexture2D;
+  dynamic _kTextureWrapS;
+  dynamic _kTextureWrapT;
+  dynamic _kRepeat;
+  dynamic _kClampToEdge;
+  dynamic _kMirroredRepeat;
   dynamic _kTriangles;
   dynamic _kLinkStatus;
   dynamic _kUnsignedByte;
   dynamic _kUnsignedShort;
   dynamic _kRGBA;
+  dynamic _kLinear;
+  dynamic _kTextureMinFilter;
   int? _kTexture0;
 
   Object? _canvas;
@@ -552,6 +776,11 @@ class _GlContext {
         <dynamic>[vertexObjectArray]);
   }
 
+  void unbindVertexArray() {
+    js_util.callMethod(glContext, 'bindVertexArray',
+        <dynamic>[null]);
+  }
+
   void bindElementArrayBuffer(Object? buffer) {
     js_util.callMethod(glContext, 'bindBuffer', <dynamic>[kElementArrayBuffer, buffer]);
   }
@@ -581,6 +810,11 @@ class _GlContext {
         target, level, internalFormat, width, height, border, format, dataType,
         pixels]);
     }
+  }
+
+  void texParameteri(dynamic target, dynamic parameterName, dynamic value) {
+    js_util.callMethod(glContext, 'texParameteri', <dynamic>[
+      target, parameterName, value]);
   }
 
   void deleteBuffer(Object buffer) {
@@ -697,6 +931,28 @@ class _GlContext {
 
   int get kTexture0 =>
       _kTexture0 ??= js_util.getProperty(glContext, 'TEXTURE0') as int;
+
+  dynamic get kTextureWrapS =>
+      _kTextureWrapS ??= js_util.getProperty(glContext, 'TEXTURE_WRAP_S');
+
+  dynamic get kTextureWrapT =>
+      _kTextureWrapT ??= js_util.getProperty(glContext, 'TEXTURE_WRAP_T');
+
+  dynamic get kRepeat =>
+      _kRepeat ??= js_util.getProperty(glContext, 'REPEAT');
+
+  dynamic get kClampToEdge =>
+      _kClampToEdge ??= js_util.getProperty(glContext, 'CLAMP_TO_EDGE');
+
+  dynamic get kMirroredRepeat =>
+      _kMirroredRepeat ??= js_util.getProperty(glContext, 'MIRRORED_REPEAT');
+
+  dynamic get kLinear =>
+      _kLinear ??= js_util.getProperty(glContext, 'LINEAR');
+
+  dynamic get kTextureMinFilter =>
+      _kTextureMinFilter ??= js_util.getProperty(glContext,
+          'TEXTURE_MIN_FILTER');
 
   /// Returns reference to uniform in program.
   Object getUniformLocation(Object program, String uniformName) {

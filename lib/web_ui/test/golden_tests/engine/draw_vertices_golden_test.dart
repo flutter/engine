@@ -2,12 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:async';
 import 'dart:html' as html;
 import 'dart:typed_data';
+import 'dart:js_util' as js_util;
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
-import 'package:ui/ui.dart' hide TextStyle;
+import 'package:ui/ui.dart' hide TextStyle, ImageShader;
 import 'package:ui/src/engine.dart';
 
 import 'package:web_engine_tester/golden_tester.dart';
@@ -231,4 +233,73 @@ void testMain() async {
         BlendMode.srcOver,
         Paint()..color = Color.fromARGB(255, 0, 128, 0));
   });
+
+  Future<void> testTexture(TileMode tileMode, String filename) async {
+    final Uint16List indices = Uint16List.fromList(<int>[
+      0, 1, 2, 3, 4, 0
+    ]);
+
+    final RecordingCanvas rc =
+        RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
+
+    final Vertices vertices = Vertices.raw(VertexMode.triangles,
+        Float32List.fromList([
+          210.0, 150.0, 0.0, 0.0, 80.0, 30.0,
+          220.0, 15.0, 280.0, 30.0,
+        ]),
+        indices: indices);
+
+    TileMode tmx = TileMode.clamp;
+    TileMode tmy = TileMode.clamp;
+    Float32List matrix4 = Matrix4.identity().storage;
+
+    final HtmlImage img = await createTestImage();
+    final SurfacePaint paint = SurfacePaint();
+
+    if (img != null) {
+      final ImageShader imgShader = ImageShader(
+          img, tileMode, tileMode,
+          Float64List.fromList(matrix4),
+          FilterQuality.high);
+
+      paint.shader = imgShader;
+    }
+    rc.drawVertices(vertices as SurfaceVertices, BlendMode.srcOver,
+        paint);
+    await _checkScreenshot(rc, filename);
+  }
+
+  test('Should draw triangle with texture and indices', () async {
+    await testTexture(TileMode.clamp, 'draw_vertices_texture');
+  });
+
+  test('Should draw triangle with texture and indices', () async {
+    await testTexture(TileMode.mirror, 'draw_vertices_texture_mirror');
+  });
+
+  test('Should draw triangle with texture and indices', () async {
+    await testTexture(TileMode.repeated, 'draw_vertices_texture_repeated');
+  });
+}
+
+Future<HtmlImage> createTestImage({int width = 50, int height = 40}) {
+  html.CanvasElement canvas =
+  new html.CanvasElement(width: width, height: height);
+  html.CanvasRenderingContext2D ctx = canvas.context2D;
+  ctx.fillStyle = '#E04040';
+  ctx.fillRect(0, 0, width / 3, height);
+  ctx.fill();
+  ctx.fillStyle = '#40E080';
+  ctx.fillRect(width / 3, 0, width / 3, height);
+  ctx.fill();
+  ctx.fillStyle = '#2040E0';
+  ctx.fillRect(2 * width / 3, 0, width / 3, height);
+  ctx.fill();
+  html.ImageElement imageElement = html.ImageElement();
+  Completer<HtmlImage> completer = Completer();
+  imageElement.onLoad.listen((event) {
+    completer.complete(HtmlImage(imageElement, width, height));
+  });
+  imageElement.src = js_util.callMethod(canvas, 'toDataURL', <dynamic>[]);
+  return completer.future;
 }

@@ -945,7 +945,8 @@ class BitmapCanvas extends EngineCanvas {
     final Int32List? colors = vertices._colors;
     final ui.VertexMode mode = vertices._mode;
     html.CanvasRenderingContext2D? ctx = _canvasPool.context;
-    if (colors == null && paint.style != ui.PaintingStyle.fill) {
+    if (colors == null && paint.style != ui.PaintingStyle.fill &&
+        paint.shader == null) {
       final Float32List positions = mode == ui.VertexMode.triangles
           ? vertices._positions
           : _convertVertexPositions(mode, vertices._positions);
