@@ -138,4 +138,57 @@ TEST(AccessibilityBridgeMacDelegateTest, doesNotSendAccessibilityCreateNotificat
   [engine shutDownEngine];
 }
 
+TEST(AccessibilityBridgeMacDelegateTest, doesNotSendAccessibilityCreateNotificationWhenNoWindow) {
+  FlutterEngine* engine = CreateTestEngine();
+  // Create a view controller without attaching it to a window.
+  NSString* fixtures = @(testing::GetFixturesPath());
+  FlutterDartProject* project = [[FlutterDartProject alloc]
+      initWithAssetsPath:fixtures
+             ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:project];
+  [viewController loadView];
+  [engine setViewController:viewController];
+
+  // Setting up bridge so that the AccessibilityBridgeMacDelegateSpy
+  // can query semantics information from.
+  engine.semanticsEnabled = YES;
+  auto bridge = engine.accessibilityBridge.lock();
+  FlutterSemanticsNode root;
+  root.id = 0;
+  root.flags = static_cast<FlutterSemanticsFlag>(0);
+  root.actions = static_cast<FlutterSemanticsAction>(0);
+  root.text_selection_base = -1;
+  root.text_selection_extent = -1;
+  root.label = "root";
+  root.hint = "";
+  root.value = "";
+  root.increased_value = "";
+  root.decreased_value = "";
+  root.child_count = 0;
+  root.custom_accessibility_actions_count = 0;
+  bridge->AddFlutterSemanticsNodeUpdate(&root);
+
+  bridge->CommitUpdates();
+  auto platform_node_delegate = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
+
+  AccessibilityBridgeMacDelegateSpy spy(engine);
+
+  // Creates a targeted event.
+  ui::AXTree tree;
+  ui::AXNode ax_node(&tree, nullptr, 0, 0);
+  ui::AXNodeData node_data;
+  node_data.id = 0;
+  ax_node.SetData(node_data);
+  std::vector<ui::AXEventIntent> intent;
+  ui::AXEventGenerator::EventParams event_params(ui::AXEventGenerator::Event::CHILDREN_CHANGED,
+                                                 ax::mojom::EventFrom::kNone, intent);
+  ui::AXEventGenerator::TargetedEvent targeted_event(&ax_node, event_params);
+
+  spy.OnAccessibilityEvent(targeted_event);
+
+  // Does not send any notification if the engine is headless.
+  EXPECT_EQ(spy.actual_notifications.size(), 0u);
+  [engine shutDownEngine];
+}
+
 }  // flutter::testing

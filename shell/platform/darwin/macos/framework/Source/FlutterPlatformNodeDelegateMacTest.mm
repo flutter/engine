@@ -145,6 +145,13 @@ TEST(FlutterPlatformNodeDelegateMac, CanPerformAction) {
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:project];
   [engine setViewController:viewController];
 
+  // Attach the view to a NSWindow.
+  NSWindow* window = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 800, 600)
+                                                 styleMask:NSBorderlessWindowMask
+                                                   backing:NSBackingStoreBuffered
+                                                     defer:NO];
+  window.contentView = viewController.view;
+
   engine.semanticsEnabled = YES;
   auto bridge = engine.accessibilityBridge.lock();
   // Initialize ax node data.
@@ -196,6 +203,8 @@ TEST(FlutterPlatformNodeDelegateMac, CanPerformAction) {
 
   EXPECT_EQ(called_action, FlutterSemanticsAction::kFlutterSemanticsActionTap);
   EXPECT_EQ(called_id, 1u);
+
+  [engine setViewController:nil];
   [engine shutDownEngine];
 }
 
