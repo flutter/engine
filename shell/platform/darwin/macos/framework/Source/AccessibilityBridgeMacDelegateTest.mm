@@ -186,7 +186,7 @@ TEST(AccessibilityBridgeMacDelegateTest, doesNotSendAccessibilityCreateNotificat
 
   spy.OnAccessibilityEvent(targeted_event);
 
-  // Does not send any notification if the engine is headless.
+  // Does not send any notification if the flutter view is not attached to a NSWindow.
   EXPECT_EQ(spy.actual_notifications.size(), 0u);
   [engine shutDownEngine];
 }
