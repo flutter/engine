@@ -252,8 +252,13 @@ class _WebGlRenderer implements _GlRenderer {
     } else {
       // Copy image it to the texture.
       texture = gl.createTexture();
-      // use texture unit 0 ??webgl2?
-      gl.activeTexture(gl.kTexture0 + 0);
+      // Texture units are a global array of references to to textures.
+      // By setting activeTexture, we associate the bound texture to a unit.
+      // Every time we call a texture function such as textImage2D with a target
+      // like TEXTURE_2D, it looks up which texture using the currently active
+      // unit to find which actual texture is bound to it.
+      // In our case we have a single texture unit 0.
+      gl.activeTexture(gl.kTexture0);
       gl.bindTexture(gl.kTexture2D, texture);
 
       gl.texImage2D(
