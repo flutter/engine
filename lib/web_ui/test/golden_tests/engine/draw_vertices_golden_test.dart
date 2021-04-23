@@ -26,6 +26,7 @@ void testMain() async {
   // Commit a recording canvas to a bitmap, and compare with the expected
   Future<void> _checkScreenshot(RecordingCanvas rc, String fileName,
       {Rect region = const Rect.fromLTWH(0, 0, 500, 500),
+      double maxDiffRatePercent = 0.0,
       bool write = false}) async {
     final EngineCanvas engineCanvas =
         BitmapCanvas(screenRect, RenderStrategy());
@@ -41,7 +42,7 @@ void testMain() async {
         '$fileName.png',
         region: region,
         write: write,
-        maxDiffRatePercent: 0.0,
+        maxDiffRatePercent: maxDiffRatePercent,
       );
     } finally {
       // The page is reused across tests, so remove the element after taking the
@@ -371,7 +372,7 @@ void testMain() async {
     paint.shader = imgShader;
 
     rc.drawVertices(vertices as SurfaceVertices, BlendMode.srcOver, paint);
-    await _checkScreenshot(rc, filename);
+    await _checkScreenshot(rc, filename, maxDiffRatePercent: 1.0);
   }
 
   test('Should draw triangle with texture and indices', () async {
