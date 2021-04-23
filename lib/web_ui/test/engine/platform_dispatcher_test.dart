@@ -3,6 +3,8 @@
 // found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:html' as html;
+import 'dart:js_util' as js_util;
 import 'dart:typed_data';
 
 import 'package:ui/src/engine.dart';
@@ -12,6 +14,9 @@ import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
 void main() {
+  // Patch browser so that clipboard api is not available.
+  dynamic clipboard = js_util.getProperty(html.window.navigator, 'clipboard');
+  js_util.setProperty(html.window.navigator, 'clipboard', null);
   internalBootstrapBrowserTest(() => testMain);
 }
 
@@ -53,6 +58,23 @@ void testMain() {
       expect(
         codec.decodeEnvelope(response!),
         true,
+      );
+    });
+
+    test('responds correctly to flutter/platform Clipboard.getData failure',
+            () async {
+      const MethodCodec codec = JSONMethodCodec();
+      final Completer<ByteData?> completer = Completer<ByteData?>();
+      ui.PlatformDispatcher.instance.sendPlatformMessage(
+        'flutter/platform',
+        codec.encodeMethodCall(MethodCall(
+          'Clipboard.getData',
+        )),
+        completer.complete,
+      );
+      final ByteData? response = await completer.future;
+      expect(() => codec.decodeEnvelope(response!) ,
+         throwsA(isA<PlatformException>()),
       );
     });
   });
