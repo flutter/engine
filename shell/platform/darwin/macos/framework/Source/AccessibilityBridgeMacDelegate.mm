@@ -343,7 +343,7 @@ void AccessibilityBridgeMacDelegate::DispatchAccessibilityAction(ui::AXNode::AXI
   NSCAssert(flutter_engine_, @"Flutter engine should not be deallocated");
   NSCAssert(flutter_engine_.viewController.viewLoaded && flutter_engine_.viewController.view.window,
             @"The accessibility bridge should not receive accessibility actions if the flutter view"
-            @"is not loaded or attaches to a NSWindow.");
+            @"is not loaded or attached to a NSWindow.");
   [flutter_engine_ dispatchSemanticsAction:action toTarget:target withData:data];
 }
 
