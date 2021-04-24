@@ -76,6 +76,7 @@ source_set("flow") {
     "//flutter/common",
     "//flutter/common/graphics",
     "//flutter/fml",
+    "//flutter/fml/trace",
     "//third_party/skia",
   ]
 
@@ -177,9 +178,9 @@ if (enable_unittests) {
       ":flow_testing",
       "//flutter/common/graphics",
       "//flutter/fml",
+      "//flutter/fml/trace",
       "//flutter/testing:skia",
       "//flutter/testing:testing_lib",
-      "//third_party/dart/runtime:libdart_jit",  # for tracing
       "//third_party/googletest:gtest",
       "//third_party/skia",
     ]

@@ -8,7 +8,7 @@
 #include "flutter/fml/base32.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/size.h"
-#include "flutter/fml/trace_event.h"
+#include "flutter/fml/trace/trace_event.h"
 #include "third_party/skia/include/core/SkColorFilter.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"

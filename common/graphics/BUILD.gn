@@ -21,6 +21,7 @@ source_set("graphics") {
   deps = [
     "//flutter/assets",
     "//flutter/fml",
+    "//flutter/fml/trace",
     "//flutter/shell/version:version",
     "//third_party/rapidjson",
     "//third_party/skia",

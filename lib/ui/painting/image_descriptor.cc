@@ -6,7 +6,7 @@
 
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/logging.h"
-#include "flutter/fml/trace_event.h"
+#include "flutter/fml/trace/trace_event.h"
 #include "flutter/lib/ui/painting/codec.h"
 #include "flutter/lib/ui/painting/image_decoder.h"
 #include "flutter/lib/ui/painting/multi_frame_codec.h"

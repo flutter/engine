@@ -13,7 +13,7 @@
 
 #include "flutter/common/task_runners.h"
 #include "flutter/fml/logging.h"
-#include "flutter/fml/trace_event.h"
+#include "flutter/fml/trace/trace_event.h"
 
 namespace flutter {
 

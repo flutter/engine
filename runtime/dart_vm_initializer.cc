@@ -8,7 +8,7 @@
 
 #include "flutter/fml/logging.h"
 #include "flutter/fml/synchronization/shared_mutex.h"
-#include "flutter/fml/trace_event.h"
+#include "flutter/fml/trace/trace_event.h"
 
 // Tracks whether Dart has been initialized and if it is safe to call Dart
 // APIs.

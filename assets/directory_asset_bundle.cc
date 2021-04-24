@@ -10,7 +10,7 @@
 #include "flutter/fml/eintr_wrapper.h"
 #include "flutter/fml/file.h"
 #include "flutter/fml/mapping.h"
-#include "flutter/fml/trace_event.h"
+#include "flutter/fml/trace/trace_event.h"
 
 namespace flutter {
 

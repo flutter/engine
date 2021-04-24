@@ -1,0 +1,15 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+# Utilities for tracing to the timeline. The timeline is a Dart utility and
+# including this dependency will cause the Dart runtime to be included within
+#  the target.
+source_set("trace") {
+  sources = [
+    "trace_event.cc",
+    "trace_event.h",
+  ]
+
+  public_deps = [ "//flutter/fml/dart" ]
+}

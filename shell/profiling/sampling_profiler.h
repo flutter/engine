@@ -12,7 +12,7 @@
 
 #include "flutter/fml/synchronization/count_down_latch.h"
 #include "flutter/fml/task_runner.h"
-#include "flutter/fml/trace_event.h"
+#include "flutter/fml/trace/trace_event.h"
 
 namespace flutter {
 

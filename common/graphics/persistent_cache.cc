@@ -15,7 +15,7 @@
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/paths.h"
-#include "flutter/fml/trace_event.h"
+#include "flutter/fml/trace/trace_event.h"
 #include "flutter/shell/version/version.h"
 #include "rapidjson/document.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"

@@ -10,7 +10,7 @@
 
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/platform/darwin/platform_version.h"
-#include "flutter/fml/trace_event.h"
+#include "flutter/fml/trace/trace_event.h"
 #include "flutter/runtime/ptrace_check.h"
 #include "flutter/shell/common/engine.h"
 #include "flutter/shell/common/platform_view.h"

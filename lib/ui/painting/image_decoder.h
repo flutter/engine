@@ -13,7 +13,7 @@
 #include "flutter/fml/concurrent_message_loop.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
-#include "flutter/fml/trace_event.h"
+#include "flutter/fml/trace/trace_event.h"
 #include "flutter/lib/ui/io_manager.h"
 #include "flutter/lib/ui/painting/image_descriptor.h"
 #include "third_party/skia/include/core/SkData.h"

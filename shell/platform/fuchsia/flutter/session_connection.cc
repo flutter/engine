@@ -5,7 +5,7 @@
 #include "session_connection.h"
 
 #include "flutter/fml/make_copyable.h"
-#include "flutter/fml/trace_event.h"
+#include "flutter/fml/trace/trace_event.h"
 
 #include "vsync_recorder.h"
 #include "vsync_waiter.h"

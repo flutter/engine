@@ -18,7 +18,7 @@
 #include "flutter/fml/size.h"
 #include "flutter/fml/synchronization/count_down_latch.h"
 #include "flutter/fml/time/time_delta.h"
-#include "flutter/fml/trace_event.h"
+#include "flutter/fml/trace/trace_event.h"
 #include "flutter/lib/io/dart_io.h"
 #include "flutter/lib/ui/dart_runtime_hooks.h"
 #include "flutter/lib/ui/dart_ui.h"

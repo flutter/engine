@@ -10,7 +10,7 @@
 #include "flutter/common/task_runners.h"
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/make_copyable.h"
-#include "flutter/fml/trace_event.h"
+#include "flutter/fml/trace/trace_event.h"
 #include "flutter/lib/ui/painting/image.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "third_party/skia/include/core/SkCanvas.h"

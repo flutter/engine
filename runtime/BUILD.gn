@@ -21,17 +21,45 @@ source_set("test_font") {
   }
 }
 
+is_profile_or_release =
+    flutter_runtime_mode == "profile" || flutter_runtime_mode == "release"
+
+# Fuchsia is special in that it does not use Flutter's policy of using JIT in
+# debug runtime mode and AOT in the profile and release modes. This is to
+# accommodate various runner configurations. :libdart allows for this by
+# not linking in a runtime and deferring that responsibility to the target.
+# However, all other non-runner target are now left with having to decide how to
+# link in a VM.
+group("libdart_flutter_policy") {
+  public_deps = []
+
+  # Flutter use AOT in profile or release and JIT in debug.
+  if (is_profile_or_release) {
+    public_deps += [ "//third_party/dart/runtime:libdart_precompiled_runtime" ]
+  } else {
+    public_deps += [ "//third_party/dart/runtime:libdart_jit" ]
+  }
+
+  # Instead of packaging the VM and isolate snapshots separately along with the
+  # AOT blob, JIT variants look for these assets in the binary itself.
+  if (!is_profile_or_release) {
+    public_deps += [ "//flutter/lib/snapshot" ]
+  }
+}
+
 # Picks the libdart implementation based on the Flutter runtime mode.
 group("libdart") {
   public_deps = []
 
-  if (flutter_runtime_mode == "profile" || flutter_runtime_mode == "release") {
-    public_deps += [ "//third_party/dart/runtime:libdart_precompiled_runtime" ]
-  } else {
-    public_deps += [
-      "//flutter/lib/snapshot",
-      "//third_party/dart/runtime:libdart_jit",
-    ]
+  # Whether Fuchsia uses JIT or AOT does not depend on the runtime mode. Instead
+  # multiple runner variants are built and those runners explicitly link in the
+  # right variant of the VM.
+  if (!is_fuchsia) {
+    public_deps += [ ":libdart_flutter_policy" ]
+  }
+
+  if (!is_profile_or_release) {
+    public_deps += [ "//flutter/lib/snapshot" ]
   }
 }
 

@@ -19,6 +19,7 @@ source_set("testing_lib") {
 
   public_deps = [
     "//flutter/fml",
+    "//flutter/fml/trace",
     "//third_party/googletest:gmock",
     "//third_party/googletest:gtest",
   ]
@@ -36,7 +37,10 @@ source_set("testing") {
     "test_timeout_listener.h",
   ]
 
-  public_deps = [ ":testing_lib" ]
+  public_deps = [
+    ":testing_lib",
+    "//flutter/runtime:libdart_flutter_policy",
+  ]
 }
 
 source_set("dart") {

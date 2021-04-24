@@ -17,7 +17,7 @@
 #include "flutter/fml/compiler_specific.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
-#include "flutter/fml/trace_event.h"
+#include "flutter/fml/trace/trace_event.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkColor.h"
 #include "third_party/skia/include/core/SkColorFilter.h"

@@ -17,7 +17,7 @@
 #include <utility>
 
 #include "dart_component_controller.h"
-#include "flutter/fml/trace_event.h"
+#include "flutter/fml/trace/trace_event.h"
 #include "logging.h"
 #include "runtime/dart/utils/inlines.h"
 #include "runtime/dart/utils/vmservice_object.h"

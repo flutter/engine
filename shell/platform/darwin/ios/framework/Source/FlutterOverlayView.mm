@@ -9,7 +9,7 @@
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/fml/platform/darwin/cf_utils.h"
 #include "flutter/fml/synchronization/waitable_event.h"
-#include "flutter/fml/trace_event.h"
+#include "flutter/fml/trace/trace_event.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/rasterizer.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"

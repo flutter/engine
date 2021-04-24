@@ -14,7 +14,7 @@
 #include "flutter/fml/file.h"
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/paths.h"
-#include "flutter/fml/trace_event.h"
+#include "flutter/fml/trace/trace_event.h"
 #include "flutter/fml/unique_fd.h"
 #include "flutter/lib/snapshot/snapshot.h"
 #include "flutter/lib/ui/text/font_collection.h"

@@ -11,7 +11,7 @@
 
 #include "flutter/fml/macros.h"
 #include "flutter/fml/task_runner.h"
-#include "flutter/fml/trace_event.h"
+#include "flutter/fml/trace/trace_event.h"
 #include "third_party/skia/include/core/SkPath.h"
 
 namespace flutter {

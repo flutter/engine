@@ -18,7 +18,7 @@
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/paths.h"
-#include "flutter/fml/trace_event.h"
+#include "flutter/fml/trace/trace_event.h"
 #include "flutter/fml/unique_fd.h"
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/shell/common/engine.h"

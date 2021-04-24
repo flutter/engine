@@ -9,7 +9,7 @@
 #include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/platform/darwin/cf_utils.h"
-#include "flutter/fml/trace_event.h"
+#include "flutter/fml/trace/trace_event.h"
 #include "flutter/shell/gpu/gpu_surface_metal_delegate.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"

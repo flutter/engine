@@ -4,7 +4,7 @@
 
 #include "flutter/shell/common/pointer_data_dispatcher.h"
 
-#include "flutter/fml/trace_event.h"
+#include "flutter/fml/trace/trace_event.h"
 
 namespace flutter {
 

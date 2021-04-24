@@ -11,7 +11,7 @@
 
 #include "dart_runner.h"
 #include "flutter/fml/logging.h"
-#include "flutter/fml/trace_event.h"
+#include "flutter/fml/trace/trace_event.h"
 #include "logging.h"
 #include "platform/utils.h"
 #include "runtime/dart/utils/files.h"

@@ -4,7 +4,7 @@
 
 #include "flutter/shell/platform/android/external_view_embedder/external_view_embedder.h"
 
-#include "flutter/fml/trace_event.h"
+#include "flutter/fml/trace/trace_event.h"
 #include "flutter/shell/platform/android/surface/android_surface.h"
 
 namespace flutter {

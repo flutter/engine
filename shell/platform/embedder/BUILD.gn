@@ -81,6 +81,7 @@ template("embedder_source_set") {
       "//flutter/common/graphics",
       "//flutter/flow",
       "//flutter/fml",
+      "//flutter/fml/trace",
       "//flutter/lib/ui",
       "//flutter/runtime:libdart",
       "//flutter/shell/common",

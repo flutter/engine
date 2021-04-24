@@ -7,6 +7,7 @@ import("//flutter/shell/config.gni")
 _profiler_deps = [
   "//flutter/common",
   "//flutter/fml",
+  "//flutter/fml/trace",
 ]
 
 source_set("profiling") {

@@ -9,7 +9,7 @@
 
 #include "flutter/fml/paths.h"
 #include "flutter/fml/posix_wrappers.h"
-#include "flutter/fml/trace_event.h"
+#include "flutter/fml/trace/trace_event.h"
 #include "flutter/lib/io/dart_io.h"
 #include "flutter/lib/ui/dart_runtime_hooks.h"
 #include "flutter/lib/ui/dart_ui.h"

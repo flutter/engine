@@ -7,7 +7,6 @@
 #include <algorithm>
 
 #include "flutter/fml/thread.h"
-#include "flutter/fml/trace_event.h"
 
 namespace fml {
 
@@ -100,7 +99,6 @@ void ConcurrentMessageLoop::WorkerMain() {
     // themselves try to post more tasks to the message loop.
     lock.unlock();
 
-    TRACE_EVENT0("flutter", "ConcurrentWorkerWake");
     // Execute the primary task we woke up for.
     if (task) {
       task();

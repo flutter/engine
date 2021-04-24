@@ -9,7 +9,7 @@
 
 #include "flutter/fml/logging.h"
 #include "flutter/fml/posix_wrappers.h"
-#include "flutter/fml/trace_event.h"
+#include "flutter/fml/trace/trace_event.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
 #include "third_party/skia/include/utils/SkEventTracer.h"
 #include "third_party/skia/include/utils/SkTraceEventPhase.h"

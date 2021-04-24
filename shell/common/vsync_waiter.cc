@@ -5,7 +5,7 @@
 #include "flutter/shell/common/vsync_waiter.h"
 
 #include "flutter/fml/task_runner.h"
-#include "flutter/fml/trace_event.h"
+#include "flutter/fml/trace/trace_event.h"
 #include "fml/message_loop_task_queues.h"
 
 namespace flutter {

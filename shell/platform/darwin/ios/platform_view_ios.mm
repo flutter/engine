@@ -9,7 +9,7 @@
 
 #include "flutter/common/task_runners.h"
 #include "flutter/fml/synchronization/waitable_event.h"
-#include "flutter/fml/trace_event.h"
+#include "flutter/fml/trace/trace_event.h"
 #include "flutter/shell/common/shell_io_manager.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/vsync_waiter_ios.h"

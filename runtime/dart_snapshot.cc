@@ -8,7 +8,7 @@
 
 #include "flutter/fml/native_library.h"
 #include "flutter/fml/paths.h"
-#include "flutter/fml/trace_event.h"
+#include "flutter/fml/trace/trace_event.h"
 #include "flutter/lib/snapshot/snapshot.h"
 #include "flutter/runtime/dart_vm.h"
 #include "third_party/dart/runtime/include/dart_api.h"

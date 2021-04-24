@@ -4,7 +4,7 @@
 
 #include "flutter/lib/ui/compositing/scene.h"
 
-#include "flutter/fml/trace_event.h"
+#include "flutter/fml/trace/trace_event.h"
 #include "flutter/lib/ui/painting/image.h"
 #include "flutter/lib/ui/painting/picture.h"
 #include "flutter/lib/ui/ui_dart_state.h"

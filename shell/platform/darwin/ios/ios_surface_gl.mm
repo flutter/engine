@@ -4,7 +4,7 @@
 
 #import "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
 
-#include "flutter/fml/trace_event.h"
+#include "flutter/fml/trace/trace_event.h"
 #include "flutter/shell/gpu/gpu_surface_gl.h"
 #import "flutter/shell/platform/darwin/ios/ios_context_gl.h"
 

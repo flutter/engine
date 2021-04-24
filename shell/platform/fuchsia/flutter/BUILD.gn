@@ -118,6 +118,7 @@ template("runner_sources") {
       "//flutter/assets",
       "//flutter/common",
       "//flutter/fml",
+      "//flutter/fml/trace",
       "//flutter/vulkan",
     ]
 

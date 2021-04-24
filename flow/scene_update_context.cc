@@ -10,7 +10,7 @@
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/matrix_decomposition.h"
 #include "flutter/flow/view_holder.h"
-#include "flutter/fml/trace_event.h"
+#include "flutter/fml/trace/trace_event.h"
 #include "include/core/SkColor.h"
 
 namespace flutter {
