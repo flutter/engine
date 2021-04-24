@@ -21,7 +21,10 @@ G_DECLARE_FINAL_TYPE(FlPlatformViewsPlugin,
  * FlPlatformViewsPlugin:
  *
  * #FlPlatformViewsPlugin is a plugin that implements the shell side
- * of SystemChannels.platform_views from the Flutter services library.
+ * of SystemChannels.platform_views from the Flutter services library. This also
+ * manages shell-side platform views registration, processes platform views
+ * construction and destruction request from Framework side, transmit gesture
+ * events to widgets.
  */
 
 /**

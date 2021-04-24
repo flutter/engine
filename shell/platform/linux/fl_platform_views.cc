@@ -25,25 +25,23 @@ G_MODULE_EXPORT GtkWidget* fl_platform_view_get_view(FlPlatformView* self) {
   g_return_val_if_fail(FL_IS_PLATFORM_VIEW(self), nullptr);
 
   GtkWidget* widget = FL_PLATFORM_VIEW_GET_CLASS(self)->get_view(self);
-  if (widget && !GTK_IS_WIDGET(widget)) {
+  if (!widget || !GTK_IS_WIDGET(widget)) {
     g_critical("fl_platform_view::get_view should return GtkWidget");
+    return nullptr;
   }
 
-  if (widget) {
-    FlPlatformViewPrivate* priv = reinterpret_cast<FlPlatformViewPrivate*>(
-        fl_platform_view_get_instance_private(self));
-    gtk_widget_set_direction(widget, priv->direction);
-  }
+  FlPlatformViewPrivate* priv = static_cast<FlPlatformViewPrivate*>(
+      fl_platform_view_get_instance_private(self));
+  gtk_widget_set_direction(widget, priv->direction);
+
   return widget;
 }
 
 void fl_platform_view_set_direction(FlPlatformView* self,
                                     GtkTextDirection direction) {
-  FlPlatformViewPrivate* priv = reinterpret_cast<FlPlatformViewPrivate*>(
+  FlPlatformViewPrivate* priv = static_cast<FlPlatformViewPrivate*>(
       fl_platform_view_get_instance_private(self));
   priv->direction = direction;
-  // apply GtkTextDirection to widget.
-  fl_platform_view_get_view(self);
 }
 
 // Added here to stop the compiler from optimizing this function away.

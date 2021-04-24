@@ -27,6 +27,43 @@ G_DECLARE_DERIVABLE_TYPE(FlPlatformView,
  *
  * #FlPlatformView is an abstract class that wraps a #GtkWidget for embedding in
  * the Flutter hierarchy.
+ *
+ * The following example shows how to implement an #FlPlatformView.
+ * |[<!-- language="C" -->
+ *   // Type definition, destructor, init and class_init are omitted.
+ *   struct _WebViewPlatformView { // extends FlPlatformView
+ *     FlPlatformView parent_instance;
+ *     int64_t view_identifier;
+ *     WebKitWebView *webview; // holds reference to your widget.
+ *   };
+ *
+ *   G_DEFINE_TYPE(WebViewPlatformView,
+ *                 webview_platform_view,
+ *                 fl_platform_view_get_type ())
+ *
+ *   static GtkWidget *
+ *   webview_plaform_view_get_view (FlPlatformView *platform_view) {
+ *     // Simply return the #GtkWidget you created in constructor.
+ *     // DO NOT create widgets in this function, which will be called
+ *     // every frame.
+ *     WebViewPlatformView *self = WEBVIEW_PLATFORM_VIEW (platform_view);
+ *     return GTK_WIDGET (self->webview);
+ *   }
+ *
+ *   // Constructor should be called by your custom #FlPlatformViewFactory.
+ *   WebViewPlatformView *
+ *   webview_platform_view_new (FlBinaryMessenger *messenger,
+ *                              int64_t view_identifier,
+ *                              FlValue *args) {
+ *     // Initializes your #GtkWidget, and stores it in #FlPlatformView.
+ *     WebKitWebView *webview = webview_web_view_new ();
+ *
+ *     WebViewPlatformView *view = WEBVIEW_PLATFORM_VIEW (
+ *         g_object_new (webview_platform_view_get_type (), NULL));
+ *     view->webview = webview;
+ *     return view;
+ *   }
+ * ]|
  */
 
 struct _FlPlatformViewClass {
@@ -50,8 +87,6 @@ struct _FlPlatformViewClass {
  */
 GtkWidget* fl_platform_view_get_view(FlPlatformView* platform_view);
 
-//
-
 G_DECLARE_INTERFACE(FlPlatformViewFactory,
                     fl_platform_view_factory,
                     FL,
@@ -62,6 +97,58 @@ G_DECLARE_INTERFACE(FlPlatformViewFactory,
  * FlPlatformViewFactory:
  *
  * #FlPlatformViewFactory vends #FlPlatformView objects for embedding.
+ *
+ * The following example shows how to implement an #FlPlatformViewFactory.
+ * In common cases, #FlPlatformViewFactory may not hold references to your
+ * own #FlPlatformView. Flutter will manage life-cycle of platform views
+ * created by your factory.
+ *
+ * For header of your subclass:
+ * |[<!-- language="C" -->
+ *   // platform_view_factory.h
+ *   G_DECLARE_FINAL_TYPE(WebViewFactory,
+ *                        webview_factory,
+ *                        WEBVIEW,
+ *                        FACTORY,
+ *                        GObject)
+ *
+ *   // Creates your own platform view factory. Messenger can be used for
+ *   // Dart-side code to control single #FlPlatformView (or #GtkWidget).
+ *   WebViewFactory *
+ *   webview_factory_new(FlBinaryMessenger *messenger);
+ * ]|
+ *
+ * For source of your subclass:
+ * |[<!-- language="C" -->
+ *   // platform_view_factory.c
+ *   // Type definitions and webview_factory_new are omitted.
+ *
+ *   static FlPlatformView *
+ *   webview_factory_create_platform_view (FlPlatformViewFactory *factory,
+ *                                         int64_t view_identifier,
+ *                                         FlValue *args) {
+ *     // Creates a new instance of your custom #FlPlatformView implementation.
+ *     // Flutter will take the reference, and release it when Dart-side widget
+ *     // is destructed.
+ *     WebViewFactory *self = WEBVIEW_FACTORY (factory);
+ *     return FL_PLATFORM_VIEW (
+ *         webview_platform_view_new (self->messenger, view_identifier, args));
+ *   }
+ *
+ *   static FlMessageCodec *
+ *   webview_factory_get_create_arguments_codec (FlPlatformViewFactory *self) {
+ *     // Simply creates a new instance of message codec.
+ *     return FL_MESSAGE_CODEC (fl_standard_message_codec_new ());
+ *   }
+ *
+ *   static void
+ *   webview_factory_fl_platform_view_factory_iface_init (
+ *     FlPlatformViewFactoryInterface* iface) {
+ *     iface->create_platform_view = webview_factory_create_platform_view;
+ *     iface->get_create_arguments_codec =
+ *         webview_factory_get_create_arguments_codec;
+ *   }
+ * ]|
  */
 
 struct _FlPlatformViewFactoryInterface {

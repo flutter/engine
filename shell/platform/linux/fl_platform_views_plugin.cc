@@ -37,7 +37,7 @@ struct _FlPlatformViewsPlugin {
 
 G_DEFINE_TYPE(FlPlatformViewsPlugin, fl_platform_views_plugin, G_TYPE_OBJECT)
 
-// Sends the method call response to Flutter.
+// Sends the method call response to Flutter Framework.
 static void send_response(FlMethodCall* method_call,
                           FlMethodResponse* response) {
   g_autoptr(GError) error = nullptr;
