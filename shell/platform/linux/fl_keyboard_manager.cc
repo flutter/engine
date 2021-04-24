@@ -343,7 +343,7 @@ gboolean fl_keyboard_manager_handle_event(FlKeyboardManager* self,
   return TRUE;
 }
 
-gboolean fl_keyboard_manager_state_clear(FlKeyboardManager* self) {
+gboolean fl_keyboard_manager_is_state_clear(FlKeyboardManager* self) {
   g_return_val_if_fail(FL_IS_KEYBOARD_MANAGER(self), FALSE);
   return self->pending_responds->len == 0 &&
          self->pending_redispatches->len == 0;
