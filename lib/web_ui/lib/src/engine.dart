@@ -415,11 +415,10 @@ class NullTreeSanitizer implements html.NodeTreeSanitizer {
   void sanitizeTree(html.Node node) {}
 }
 
-/// Enable the Slots technique to render HtmlPlatformViews.
-const bool _platformViewSlots =
-    bool.fromEnvironment('FLUTTER_WEB_USE_SLOTS', defaultValue: false);
-
-final PlatformViewContentManager platformViewContentManager = PlatformViewContentManager();
+/// The shared instance of PlatformViewManager shared across the engine to handle
+/// rendering of PlatformViews into the web app.
+/// TODO(dit): How to make this overridable from tests?
+final PlatformViewManager platformViewManager = PlatformViewManager();
 
 /// Converts a matrix represented using [Float64List] to one represented using
 /// [Float32List].

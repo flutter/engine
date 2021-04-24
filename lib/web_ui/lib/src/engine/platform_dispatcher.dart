@@ -450,28 +450,22 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
                 _handleWebTestEnd2EndMessage(codec, data)));
         return;
 
-      // Here's the entrypoint to create/dispose platform views...
-      // Good opportunity to inject a new component that handles them!
       case 'flutter/platform_views':
-        if (_platformViewSlots) {
-          if (_platformViewMessageHandler == null) {
-            _platformViewMessageHandler = PlatformViewMessageHandler(
-              contentManager: platformViewContentManager,
-              viewContentHandler: (int _, html.Element content) {
-                domRenderer.glassPaneElement!.append(content);
-              },
-              viewSlotHandler: useCanvasKit ? 
-                  rasterizer!.surface.viewEmbedder.embed : 
-                  ui.platformViewRegistry.embed,
-            );
-          }
-          _platformViewMessageHandler!.handlePlatformViewCall(data, callback!);
-        } else if (useCanvasKit) {
-          rasterizer!.surface.viewEmbedder
-              .handlePlatformViewCall(data, callback);
-        } else {
-          ui.handlePlatformViewCall(data!, callback!);
+        if (_platformViewMessageHandler == null) {
+          _platformViewMessageHandler = PlatformViewMessageHandler(
+            contentManager: platformViewManager,
+            contentHandler: (int _, html.Element content) {
+              domRenderer.glassPaneElement!.append(content);
+            },
+            slotHandler: useCanvasKit ?
+                rasterizer!.surface.viewEmbedder.create :
+                null, // noop, everything is handled by the `platformViewManager`
+            disposeHandler: useCanvasKit ?
+                rasterizer!.surface.viewEmbedder.dispose :
+                null, // noop, everything is handled by the `platformViewManager`
+          );
         }
+        _platformViewMessageHandler!.handlePlatformViewCall(data, callback!);
         return;
 
       case 'flutter/accessibility':

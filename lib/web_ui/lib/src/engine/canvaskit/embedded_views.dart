@@ -37,9 +37,6 @@ class HtmlViewEmbedder {
   final Map<int, EmbeddedViewParams> _currentCompositionParams =
       <int, EmbeddedViewParams>{};
 
-  /// The HTML element associated with the given view id.
-  final Map<int?, html.Element> _views = <int?, html.Element>{};
-
   /// The root view in the stack of mutator elements for the view id.
   final Map<int?, html.Element?> _rootViews = <int?, html.Element?>{};
 
@@ -74,78 +71,14 @@ class HtmlViewEmbedder {
     _frameSize = size;
   }
 
-  void handlePlatformViewCall(
-    ByteData? data,
-    ui.PlatformMessageResponseCallback? callback,
-  ) {
-    const MethodCodec codec = StandardMethodCodec();
-    final MethodCall decoded = codec.decodeMethodCall(data);
-
-    switch (decoded.method) {
-      case 'create':
-        _create(decoded, callback);
-        return;
-      case 'dispose':
-        _dispose(decoded, callback!);
-        return;
-    }
-    callback!(null);
+  /// Links a `viewId` and `slot` into this `HtmlViewEmbedder` instance.
+  void create(int viewId, html.Element slot) {
+    _rootViews[viewId] = slot;
   }
 
-  void _create(
-      MethodCall methodCall, ui.PlatformMessageResponseCallback? callback) {
-    final Map<dynamic, dynamic> args = methodCall.arguments;
-    final int? viewId = args['id'];
-    final String? viewType = args['viewType'];
-    const MethodCodec codec = StandardMethodCodec();
-
-    if (_views[viewId] != null) {
-      callback!(codec.encodeErrorEnvelope(
-        code: 'recreating_view',
-        message: 'trying to create an already created view',
-        details: 'view id: $viewId',
-      ));
-      return;
-    }
-
-    final ui.PlatformViewFactory? factory =
-        ui.platformViewRegistry.registeredFactories[viewType];
-    if (factory == null) {
-      callback!(codec.encodeErrorEnvelope(
-        code: 'unregistered_view_type',
-        message: 'trying to create a view with an unregistered type',
-        details: 'unregistered view type: $viewType',
-      ));
-      return;
-    }
-
-    // TODO(het): Support creation parameters.
-    html.Element embeddedView = factory(viewId!);
-
-    embed(viewId, embeddedView);
-
-    callback!(codec.encodeSuccessEnvelope(null));
-  }
-
-  void embed(int viewId, html.Element view) {
-    _views[viewId] = view;
-    _rootViews[viewId] = view;
-  }
-
-  void _dispose(
-      MethodCall methodCall, ui.PlatformMessageResponseCallback callback) {
-    final int? viewId = methodCall.arguments;
-    const MethodCodec codec = StandardMethodCodec();
-    if (viewId == null || !_views.containsKey(viewId)) {
-      callback(codec.encodeErrorEnvelope(
-        code: 'unknown_view',
-        message: 'trying to dispose an unknown view',
-        details: 'view id: $viewId',
-      ));
-      return;
-    }
+  /// Disposes a given `viewId`, and frees its resources.
+  void dispose(int viewId) {
     _viewsToDispose.add(viewId);
-    callback(codec.encodeSuccessEnvelope(null));
   }
 
   List<CkCanvas> getCurrentCanvases() {
@@ -182,26 +115,34 @@ class HtmlViewEmbedder {
     return _pictureRecorders[viewId]!.recordingCanvas;
   }
 
+  // Applies the required sizing information from `params` to the `content` element.
+  //
+  // See `_applyOnContent` in the PersistedPlatformView class for the HTML version
+  // of this code.
+  void _updateContentSize(html.Element content, EmbeddedViewParams params) {
+    content.style.width = '${params.size.width}px';
+    content.style.height = '${params.size.height}px';
+    content.style.position = 'absolute';
+  }
+
   void _compositeWithParams(int viewId, EmbeddedViewParams params) {
-    // Here, `platformView` refers to the <slot> tag in the shadowDOM,
-    // and `content` is the DIV that contains the actual platform view.
-    final html.Element platformView = _views[viewId]!;
-    if (_platformViewSlots) {
-      // Apply the sizing information to the contents...
-      final html.Element content = platformViewContentManager.getContent(viewId);
-      content.style.width = '${params.size.width}px';
-      content.style.height = '${params.size.height}px';
-      content.style.position = 'absolute';
-    } else {
-      platformView.style.width = '${params.size.width}px';
-      platformView.style.height = '${params.size.height}px';
-      platformView.style.position = 'absolute';
-    }
+    // Here, `slot` refers to the <slot> tag in the shadowDOM, which this class
+    // may re-root if needed (see _reconstructClipViewsChain).
+    final html.Element slot = platformViewManager.getSlot(viewId);
+
+    // Because of how slots project content, the width/height of the DOM needs to
+    // be set in the `content`, which should never be moved from its position in
+    // the DOM.
+    final html.Element content = platformViewManager.getContent(viewId);
+
+    // Apply the sizing information to the contents...
+    _updateContentSize(content, params);
 
     // <flt-scene-host> disables pointer events. Reenable them here because the
     // underlying platform view would want to handle the pointer events.
-    platformView.style.pointerEvents = 'auto';
+    slot.style.pointerEvents = 'auto';
 
+    // Recompute the position in the DOM of the `slot` element...
     final int currentClippingCount = _countClips(params.mutators);
     final int? previousClippingCount = _clipCount[viewId];
     if (currentClippingCount != previousClippingCount) {
@@ -209,18 +150,14 @@ class HtmlViewEmbedder {
       html.Element oldPlatformViewRoot = _rootViews[viewId]!;
       html.Element? newPlatformViewRoot = _reconstructClipViewsChain(
         currentClippingCount,
-        platformView,
+        slot,
         oldPlatformViewRoot,
       );
       _rootViews[viewId] = newPlatformViewRoot;
     }
 
-    if (_platformViewSlots) {
-      final html.Element content = platformViewContentManager.getContent(viewId);
-      _applyMutators(params.mutators, content, viewId);
-    } else {
-      _applyMutators(params.mutators, platformView, viewId);
-    }
+    // Apply mutators in the `content` element...
+    _applyMutators(params.mutators, content, viewId);
   }
 
   int _countClips(MutatorsStack mutators) {
@@ -432,7 +369,7 @@ class HtmlViewEmbedder {
       int viewId = _compositionOrder[i];
 
       if (assertionsEnabled) {
-        if (!_views.containsKey(viewId)) {
+        if (!platformViewManager.knowsViewId(viewId)) {
           debugInvalidViewIds ??= <int>[];
           debugInvalidViewIds.add(viewId);
           continue;
@@ -471,10 +408,8 @@ class HtmlViewEmbedder {
     }
 
     for (final int viewId in _viewsToDispose) {
-      final html.Element rootView = _rootViews[viewId]!;
-      rootView.remove();
-      _views.remove(viewId);
-      _rootViews.remove(viewId);
+      // Remove viewId from the _rootViews Map, and then from the DOM.
+      _rootViews.remove(viewId)!.remove();
       _releaseOverlay(viewId);
       _currentCompositionParams.remove(viewId);
       _clipCount.remove(viewId);
