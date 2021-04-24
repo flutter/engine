@@ -14,28 +14,29 @@ public class GeneratedPluginRegister {
   /**
    * Registers all plugins that an app lists in its pubspec.yaml.
    *
-   * <p>To let each plugin set itself up to listen to usage calls from Dart via platform channel,
-   * each plugin is given a chance to initialize itself and setup platform channel listeners in
+   * <p>In order to allow each plugin to listen to calls from Dart via Platform Channels, each
+   * plugin is given a chance to initialize and setup Platform Channel listeners in
    * {@link
    * io.flutter.embedding.engine.plugins.FlutterPlugin#onAttachedToEngine(io.flutter.embedding.engine.plugins.FlutterPlugin.FlutterPluginBinding)}.
    *
-   * <p>The list of plugins needing setup is not known to the Flutter engine, but generated at build
-   * time based on the plugin dependencies specified in the Flutter project's pubspec.yaml.
+   * <p>The list of plugins that need to be setup is not known to the Flutter engine. The Flutter
+   * tools generates it at build time based on the plugin dependencies specified in the Flutter
+   * project's pubspec.yaml.
    *
-   * <p>The Flutter tool generates that list in a class called {@code GeneratedPluginRegistrant}.
+   * <p>The Flutter tools generates that list in a class called {@code GeneratedPluginRegistrant}.
    * That class contains generated code to register every plugin in the pubspec.yaml with a {@link
-   * FlutterEngine}. That file is generated in the Flutter project's directory.
+   * FlutterEngine}. That code's file is generated in the Flutter project's directory.
    *
-   * <p>The {@link FlutterEngine} (when a {@link FlutterEngine} is explicitly created) or the {@link
-   * io.flutter.embedding.android.FlutterActivity} (when a {@link FlutterEngine} is implicitly
-   * created) will automatically call the {@code GeneratedPluginRegistrant}, typically at the
-   * beginning of the application for normal full-Flutter apps, to register all plugins when a
-   * {@link FlutterEngine} is created.
+   * <p>In a normal full-Flutter application, the {@link io.flutter.embedding.android.FlutterActivity}
+   * will automatically call the {@code GeneratedPluginRegistrant} to register all plugins. In
+   * a typical full-Flutter application, the {@link io.flutter.embedding.android.FlutterActivity}
+   * creates a {@link FlutterEngine}. When a {@link FlutterEngine} is explicitly created, it
+   * automatically registers plugins during its construction.
    *
    * <p>Since the {@link FlutterEngine} belongs to the Flutter engine and the
    * GeneratedPluginRegistrant class belongs to the app project, the {@link FlutterEngine} cannot
    * place a compile-time dependency on GeneratedPluginRegistrant to invoke it. Instead, this class
-   * uses reflection to attempt to locate the generated file and then use it at runtime.
+   * uses reflection to attempt to locate the generated file and then uses it at runtime.
    *
    * <p>This method fizzles if the GeneratedPluginRegistrant cannot be found or invoked. This
    * situation should never occur, but if any eventuality comes up that prevents an app from using
