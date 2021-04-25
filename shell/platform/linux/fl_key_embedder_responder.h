@@ -26,27 +26,18 @@ G_DECLARE_FINAL_TYPE(FlKeyEmbedderResponder,
 /**
  * FlKeyEmbedderResponder:
  *
- * #FlKeyEmbedderResponder is a plugin that implements the shell side
- * of SystemEmbedders.keyEvent from the Flutter services library.
+ * A #FlKeyResponder that handles events by sending the converted events
+ * through the embedder API.
+ *
+ * This class corresponds to the HardwareKeyboard API in the framework.
  */
 
 /**
  * fl_key_embedder_responder_new:
- * @messenger: an #FlBinaryMessenger.
- * @response_callback: the callback to call when a response is received.  If not
- *                     given (nullptr), then the default response callback is
- *                     used. Typically used for tests to receive event
- *                     information. If specified, unhandled events will not be
- *                     re-dispatched.
- * @text_input_plugin: The #FlTextInputPlugin to send key events to if the
- *                     framework doesn't handle them.
- * @embedder_name: the name of the embedder to send key events to the framework
- *                on. If not given (nullptr), then the standard key event
- *                embedder name is used. Typically used for tests to send on a
- *                test embedder.
+ * @engine: The #FlEngine, whose the embedder API will be used to send
+ * the event.
  *
- * Creates a new plugin that implements SystemEmbedders.keyEvent from the
- * Flutter services library.
+ * Creates a new #FlKeyEmbedderResponder.
  *
  * Returns: a new #FlKeyEmbedderResponder.
  */

@@ -12,11 +12,10 @@
 
 /**
  * FlKeyboardManagerRedispatcher:
- *
- * The signature for a function where #FlKeyboardManager redispatches key events
- * that are not handled by anyone.
- *
  * @event: the event to dispatch.
+ *
+ * The signature for a callback with which a #FlKeyboardManager redispatches
+ * key events that are not handled by anyone.
  **/
 typedef void (*FlKeyboardManagerRedispatcher)(const GdkEvent* event);
 
