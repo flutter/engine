@@ -14,7 +14,7 @@
 // flutter/flutter@dev/tools/gen_keycodes/bin/gen_keycodes.dart and should not
 // be edited directly.
 //
-// Edit the template dev/tools/gen_keycodes/data/gtk_keyboard_map_cc.tmpl
+// Edit the template dev/tools/gen_keycodes/data/gtk_key_mapping_cc.tmpl
 // instead. See dev/tools/gen_keycodes/README.md for more information.
 
 // Insert a new entry into a hashtable from uint64 to uint64.
@@ -245,69 +245,69 @@ void initialize_xkb_to_physical_key(GHashTable* table) {
 }
 
 void initialize_gtk_keyval_to_logical_key(GHashTable* table) {
-  insert_record(table, 0x000000a5, 0x1100070089);   // yen
-  insert_record(table, 0x0000fd06, 0x1000000405);   // 3270_EraseEOF
-  insert_record(table, 0x0000fd0e, 0x1000000503);   // 3270_Attn
-  insert_record(table, 0x0000fd15, 0x1000000402);   // 3270_Copy
-  insert_record(table, 0x0000fd16, 0x1000000d2f);   // 3270_Play
-  insert_record(table, 0x0000fd1b, 0x1000000406);   // 3270_ExSelect
-  insert_record(table, 0x0000fd1d, 0x1000000608);   // 3270_PrintScreen
-  insert_record(table, 0x0000fd1e, 0x100000000d);   // 3270_Enter
+  insert_record(table, 0x000000a5, 0x01100070089);  // yen
+  insert_record(table, 0x0000fd06, 0x01000000405);  // 3270_EraseEOF
+  insert_record(table, 0x0000fd0e, 0x01000000503);  // 3270_Attn
+  insert_record(table, 0x0000fd15, 0x01000000402);  // 3270_Copy
+  insert_record(table, 0x0000fd16, 0x01000000d2f);  // 3270_Play
+  insert_record(table, 0x0000fd1b, 0x01000000406);  // 3270_ExSelect
+  insert_record(table, 0x0000fd1d, 0x01000000608);  // 3270_PrintScreen
+  insert_record(table, 0x0000fd1e, 0x0100000000d);  // 3270_Enter
   insert_record(table, 0x0000fe03, 0x40000000102);  // ISO_Level3_Shift
-  insert_record(table, 0x0000fe08, 0x1000000709);   // ISO_Next_Group
-  insert_record(table, 0x0000fe0a, 0x100000070a);   // ISO_Prev_Group
-  insert_record(table, 0x0000fe0c, 0x1000000707);   // ISO_First_Group
-  insert_record(table, 0x0000fe0e, 0x1000000708);   // ISO_Last_Group
-  insert_record(table, 0x0000fe20, 0x1000000009);   // ISO_Left_Tab
-  insert_record(table, 0x0000fe34, 0x100000000d);   // ISO_Enter
-  insert_record(table, 0x0000ff08, 0x1000000008);   // BackSpace
-  insert_record(table, 0x0000ff09, 0x1000000009);   // Tab
-  insert_record(table, 0x0000ff0b, 0x1000000401);   // Clear
-  insert_record(table, 0x0000ff0d, 0x100000000d);   // Return
-  insert_record(table, 0x0000ff13, 0x1000000509);   // Pause
-  insert_record(table, 0x0000ff14, 0x100000010c);   // Scroll_Lock
-  insert_record(table, 0x0000ff1b, 0x100000001b);   // Escape
-  insert_record(table, 0x0000ff21, 0x1000000719);   // Kanji
-  insert_record(table, 0x0000ff24, 0x100000071b);   // Romaji
-  insert_record(table, 0x0000ff25, 0x1000000716);   // Hiragana
-  insert_record(table, 0x0000ff26, 0x100000071a);   // Katakana
-  insert_record(table, 0x0000ff27, 0x1000000717);   // Hiragana_Katakana
-  insert_record(table, 0x0000ff28, 0x100000071c);   // Zenkaku
-  insert_record(table, 0x0000ff29, 0x1000000715);   // Hankaku
-  insert_record(table, 0x0000ff2a, 0x100000071d);   // Zenkaku_Hankaku
-  insert_record(table, 0x0000ff2f, 0x1000000714);   // Eisu_Shift
-  insert_record(table, 0x0000ff31, 0x1000000711);   // Hangul
-  insert_record(table, 0x0000ff34, 0x1000000712);   // Hangul_Hanja
-  insert_record(table, 0x0000ff37, 0x1000000703);   // Codeinput
-  insert_record(table, 0x0000ff3c, 0x1000000710);   // SingleCandidate
-  insert_record(table, 0x0000ff3e, 0x100000070e);   // PreviousCandidate
-  insert_record(table, 0x0000ff50, 0x1000000306);   // Home
-  insert_record(table, 0x0000ff51, 0x1000000302);   // Left
-  insert_record(table, 0x0000ff52, 0x1000000304);   // Up
-  insert_record(table, 0x0000ff53, 0x1000000303);   // Right
-  insert_record(table, 0x0000ff54, 0x1000000301);   // Down
-  insert_record(table, 0x0000ff55, 0x1000000308);   // Page_Up
-  insert_record(table, 0x0000ff56, 0x1000000307);   // Page_Down
-  insert_record(table, 0x0000ff57, 0x1000000305);   // End
-  insert_record(table, 0x0000ff60, 0x100000050c);   // Select
-  insert_record(table, 0x0000ff61, 0x1000000a0c);   // Print
-  insert_record(table, 0x0000ff62, 0x1000000506);   // Execute
-  insert_record(table, 0x0000ff63, 0x1000000407);   // Insert
-  insert_record(table, 0x0000ff65, 0x100000040a);   // Undo
-  insert_record(table, 0x0000ff66, 0x1000000409);   // Redo
-  insert_record(table, 0x0000ff67, 0x1000000505);   // Menu
-  insert_record(table, 0x0000ff68, 0x1000000507);   // Find
-  insert_record(table, 0x0000ff69, 0x1000000504);   // Cancel
-  insert_record(table, 0x0000ff6a, 0x1000000508);   // Help
-  insert_record(table, 0x0000ff7e, 0x100000070b);   // Mode_switch
-  insert_record(table, 0x0000ff7f, 0x100000010a);   // Num_Lock
-  insert_record(table, 0x0000ff80, 0x0000000020);   // KP_Space
-  insert_record(table, 0x0000ff89, 0x1000000009);   // KP_Tab
+  insert_record(table, 0x0000fe08, 0x01000000709);  // ISO_Next_Group
+  insert_record(table, 0x0000fe0a, 0x0100000070a);  // ISO_Prev_Group
+  insert_record(table, 0x0000fe0c, 0x01000000707);  // ISO_First_Group
+  insert_record(table, 0x0000fe0e, 0x01000000708);  // ISO_Last_Group
+  insert_record(table, 0x0000fe20, 0x01000000009);  // ISO_Left_Tab
+  insert_record(table, 0x0000fe34, 0x0100000000d);  // ISO_Enter
+  insert_record(table, 0x0000ff08, 0x01000000008);  // BackSpace
+  insert_record(table, 0x0000ff09, 0x01000000009);  // Tab
+  insert_record(table, 0x0000ff0b, 0x01000000401);  // Clear
+  insert_record(table, 0x0000ff0d, 0x0100000000d);  // Return
+  insert_record(table, 0x0000ff13, 0x01000000509);  // Pause
+  insert_record(table, 0x0000ff14, 0x0100000010c);  // Scroll_Lock
+  insert_record(table, 0x0000ff1b, 0x0100000001b);  // Escape
+  insert_record(table, 0x0000ff21, 0x01000000719);  // Kanji
+  insert_record(table, 0x0000ff24, 0x0100000071b);  // Romaji
+  insert_record(table, 0x0000ff25, 0x01000000716);  // Hiragana
+  insert_record(table, 0x0000ff26, 0x0100000071a);  // Katakana
+  insert_record(table, 0x0000ff27, 0x01000000717);  // Hiragana_Katakana
+  insert_record(table, 0x0000ff28, 0x0100000071c);  // Zenkaku
+  insert_record(table, 0x0000ff29, 0x01000000715);  // Hankaku
+  insert_record(table, 0x0000ff2a, 0x0100000071d);  // Zenkaku_Hankaku
+  insert_record(table, 0x0000ff2f, 0x01000000714);  // Eisu_Shift
+  insert_record(table, 0x0000ff31, 0x01000000711);  // Hangul
+  insert_record(table, 0x0000ff34, 0x01000000712);  // Hangul_Hanja
+  insert_record(table, 0x0000ff37, 0x01000000703);  // Codeinput
+  insert_record(table, 0x0000ff3c, 0x01000000710);  // SingleCandidate
+  insert_record(table, 0x0000ff3e, 0x0100000070e);  // PreviousCandidate
+  insert_record(table, 0x0000ff50, 0x01000000306);  // Home
+  insert_record(table, 0x0000ff51, 0x01000000302);  // Left
+  insert_record(table, 0x0000ff52, 0x01000000304);  // Up
+  insert_record(table, 0x0000ff53, 0x01000000303);  // Right
+  insert_record(table, 0x0000ff54, 0x01000000301);  // Down
+  insert_record(table, 0x0000ff55, 0x01000000308);  // Page_Up
+  insert_record(table, 0x0000ff56, 0x01000000307);  // Page_Down
+  insert_record(table, 0x0000ff57, 0x01000000305);  // End
+  insert_record(table, 0x0000ff60, 0x0100000050c);  // Select
+  insert_record(table, 0x0000ff61, 0x01000000a0c);  // Print
+  insert_record(table, 0x0000ff62, 0x01000000506);  // Execute
+  insert_record(table, 0x0000ff63, 0x01000000407);  // Insert
+  insert_record(table, 0x0000ff65, 0x0100000040a);  // Undo
+  insert_record(table, 0x0000ff66, 0x01000000409);  // Redo
+  insert_record(table, 0x0000ff67, 0x01000000505);  // Menu
+  insert_record(table, 0x0000ff68, 0x01000000507);  // Find
+  insert_record(table, 0x0000ff69, 0x01000000504);  // Cancel
+  insert_record(table, 0x0000ff6a, 0x01000000508);  // Help
+  insert_record(table, 0x0000ff7e, 0x0100000070b);  // Mode_switch
+  insert_record(table, 0x0000ff7f, 0x0100000010a);  // Num_Lock
+  insert_record(table, 0x0000ff80, 0x00000000020);  // KP_Space
+  insert_record(table, 0x0000ff89, 0x01000000009);  // KP_Tab
   insert_record(table, 0x0000ff8d, 0x5000000000d);  // KP_Enter
-  insert_record(table, 0x0000ff91, 0x1000000801);   // KP_F1
-  insert_record(table, 0x0000ff92, 0x1000000802);   // KP_F2
-  insert_record(table, 0x0000ff93, 0x1000000803);   // KP_F3
-  insert_record(table, 0x0000ff94, 0x1000000804);   // KP_F4
+  insert_record(table, 0x0000ff91, 0x01000000801);  // KP_F1
+  insert_record(table, 0x0000ff92, 0x01000000802);  // KP_F2
+  insert_record(table, 0x0000ff93, 0x01000000803);  // KP_F3
+  insert_record(table, 0x0000ff94, 0x01000000804);  // KP_F4
   insert_record(table, 0x0000ff95, 0x50000000037);  // KP_Home
   insert_record(table, 0x0000ff96, 0x50000000034);  // KP_Left
   insert_record(table, 0x0000ff97, 0x50000000038);  // KP_Up
@@ -321,7 +321,7 @@ void initialize_gtk_keyval_to_logical_key(GHashTable* table) {
   insert_record(table, 0x0000ffaa, 0x5000000002a);  // KP_Multiply
   insert_record(table, 0x0000ffab, 0x5000000002b);  // KP_Add
   insert_record(table, 0x0000ffad, 0x5000000002d);  // KP_Subtract
-  insert_record(table, 0x0000ffae, 0x000000002e);   // KP_Decimal
+  insert_record(table, 0x0000ffae, 0x0000000002e);  // KP_Decimal
   insert_record(table, 0x0000ffaf, 0x5000000002f);  // KP_Divide
   insert_record(table, 0x0000ffb0, 0x50000000030);  // KP_0
   insert_record(table, 0x0000ffb1, 0x50000000031);  // KP_1
@@ -334,88 +334,88 @@ void initialize_gtk_keyval_to_logical_key(GHashTable* table) {
   insert_record(table, 0x0000ffb8, 0x50000000038);  // KP_8
   insert_record(table, 0x0000ffb9, 0x50000000039);  // KP_9
   insert_record(table, 0x0000ffbd, 0x5000000003d);  // KP_Equal
-  insert_record(table, 0x0000ffbe, 0x1000000801);   // F1
-  insert_record(table, 0x0000ffbf, 0x1000000802);   // F2
-  insert_record(table, 0x0000ffc0, 0x1000000803);   // F3
-  insert_record(table, 0x0000ffc1, 0x1000000804);   // F4
-  insert_record(table, 0x0000ffc2, 0x1000000805);   // F5
-  insert_record(table, 0x0000ffc3, 0x1000000806);   // F6
-  insert_record(table, 0x0000ffc4, 0x1000000807);   // F7
-  insert_record(table, 0x0000ffc5, 0x1000000808);   // F8
-  insert_record(table, 0x0000ffc6, 0x1000000809);   // F9
-  insert_record(table, 0x0000ffc7, 0x100000080a);   // F10
-  insert_record(table, 0x0000ffc8, 0x100000080b);   // F11
-  insert_record(table, 0x0000ffc9, 0x100000080c);   // F12
-  insert_record(table, 0x0000ffca, 0x100000080d);   // F13
-  insert_record(table, 0x0000ffcb, 0x100000080e);   // F14
-  insert_record(table, 0x0000ffcc, 0x100000080f);   // F15
-  insert_record(table, 0x0000ffcd, 0x1000000810);   // F16
-  insert_record(table, 0x0000ffce, 0x1000000811);   // F17
-  insert_record(table, 0x0000ffcf, 0x1000000812);   // F18
-  insert_record(table, 0x0000ffd0, 0x1000000813);   // F19
-  insert_record(table, 0x0000ffd1, 0x1000000814);   // F20
-  insert_record(table, 0x0000ffd2, 0x1000000815);   // F21
-  insert_record(table, 0x0000ffd3, 0x1000000816);   // F22
-  insert_record(table, 0x0000ffd4, 0x1000000817);   // F23
-  insert_record(table, 0x0000ffd5, 0x1000000818);   // F24
+  insert_record(table, 0x0000ffbe, 0x01000000801);  // F1
+  insert_record(table, 0x0000ffbf, 0x01000000802);  // F2
+  insert_record(table, 0x0000ffc0, 0x01000000803);  // F3
+  insert_record(table, 0x0000ffc1, 0x01000000804);  // F4
+  insert_record(table, 0x0000ffc2, 0x01000000805);  // F5
+  insert_record(table, 0x0000ffc3, 0x01000000806);  // F6
+  insert_record(table, 0x0000ffc4, 0x01000000807);  // F7
+  insert_record(table, 0x0000ffc5, 0x01000000808);  // F8
+  insert_record(table, 0x0000ffc6, 0x01000000809);  // F9
+  insert_record(table, 0x0000ffc7, 0x0100000080a);  // F10
+  insert_record(table, 0x0000ffc8, 0x0100000080b);  // F11
+  insert_record(table, 0x0000ffc9, 0x0100000080c);  // F12
+  insert_record(table, 0x0000ffca, 0x0100000080d);  // F13
+  insert_record(table, 0x0000ffcb, 0x0100000080e);  // F14
+  insert_record(table, 0x0000ffcc, 0x0100000080f);  // F15
+  insert_record(table, 0x0000ffcd, 0x01000000810);  // F16
+  insert_record(table, 0x0000ffce, 0x01000000811);  // F17
+  insert_record(table, 0x0000ffcf, 0x01000000812);  // F18
+  insert_record(table, 0x0000ffd0, 0x01000000813);  // F19
+  insert_record(table, 0x0000ffd1, 0x01000000814);  // F20
+  insert_record(table, 0x0000ffd2, 0x01000000815);  // F21
+  insert_record(table, 0x0000ffd3, 0x01000000816);  // F22
+  insert_record(table, 0x0000ffd4, 0x01000000817);  // F23
+  insert_record(table, 0x0000ffd5, 0x01000000818);  // F24
   insert_record(table, 0x0000ffe1, 0x3000000010d);  // Shift_L
   insert_record(table, 0x0000ffe2, 0x4000000010d);  // Shift_R
   insert_record(table, 0x0000ffe3, 0x30000000105);  // Control_L
   insert_record(table, 0x0000ffe4, 0x40000000105);  // Control_R
-  insert_record(table, 0x0000ffe5, 0x1000000104);   // Caps_Lock
+  insert_record(table, 0x0000ffe5, 0x01000000104);  // Caps_Lock
   insert_record(table, 0x0000ffe7, 0x30000000109);  // Meta_L
   insert_record(table, 0x0000ffe8, 0x40000000109);  // Meta_R
   insert_record(table, 0x0000ffe9, 0x30000000102);  // Alt_L
   insert_record(table, 0x0000ffea, 0x40000000102);  // Alt_R
-  insert_record(table, 0x0000ffeb, 0x100000010e);   // Super_L
-  insert_record(table, 0x0000ffec, 0x100000010e);   // Super_R
-  insert_record(table, 0x0000ffed, 0x1000000108);   // Hyper_L
-  insert_record(table, 0x0000ffee, 0x1000000108);   // Hyper_R
-  insert_record(table, 0x0000ffff, 0x100000007f);   // Delete
-  insert_record(table, 0x1008ff02, 0x1000000602);   // MonBrightnessUp
-  insert_record(table, 0x1008ff03, 0x1000000601);   // MonBrightnessDown
-  insert_record(table, 0x1008ff10, 0x100000060a);   // Standby
-  insert_record(table, 0x1008ff11, 0x1000000a0f);   // AudioLowerVolume
-  insert_record(table, 0x1008ff12, 0x1000000a11);   // AudioMute
-  insert_record(table, 0x1008ff13, 0x1000000a10);   // AudioRaiseVolume
-  insert_record(table, 0x1008ff14, 0x1000000d2f);   // AudioPlay
-  insert_record(table, 0x1008ff15, 0x1000000a07);   // AudioStop
-  insert_record(table, 0x1008ff16, 0x1000000a09);   // AudioPrev
-  insert_record(table, 0x1008ff17, 0x1000000a08);   // AudioNext
-  insert_record(table, 0x1008ff18, 0x1000000c04);   // HomePage
-  insert_record(table, 0x1008ff19, 0x1000000b03);   // Mail
-  insert_record(table, 0x1008ff1b, 0x1000000c06);   // Search
-  insert_record(table, 0x1008ff1c, 0x1000000d30);   // AudioRecord
-  insert_record(table, 0x1008ff20, 0x1000000b02);   // Calendar
-  insert_record(table, 0x1008ff26, 0x1000000c01);   // Back
-  insert_record(table, 0x1008ff27, 0x1000000c03);   // Forward
-  insert_record(table, 0x1008ff28, 0x1000000c07);   // Stop
-  insert_record(table, 0x1008ff29, 0x1000000c05);   // Refresh
-  insert_record(table, 0x1008ff2a, 0x1000000607);   // PowerOff
-  insert_record(table, 0x1008ff2b, 0x100000060b);   // WakeUp
-  insert_record(table, 0x1008ff2c, 0x1000000604);   // Eject
-  insert_record(table, 0x1008ff2d, 0x1000000b07);   // ScreenSaver
-  insert_record(table, 0x1008ff2f, 0x1100010082);   // Sleep
-  insert_record(table, 0x1008ff30, 0x1000000c02);   // Favorites
-  insert_record(table, 0x1008ff31, 0x1000000d2e);   // AudioPause
-  insert_record(table, 0x1008ff3e, 0x1000000d31);   // AudioRewind
-  insert_record(table, 0x1008ff56, 0x1000000a01);   // Close
-  insert_record(table, 0x1008ff57, 0x1000000402);   // Copy
-  insert_record(table, 0x1008ff58, 0x1000000404);   // Cut
-  insert_record(table, 0x1008ff61, 0x1000000605);   // LogOff
-  insert_record(table, 0x1008ff68, 0x1000000a0a);   // New
-  insert_record(table, 0x1008ff6b, 0x1000000a0b);   // Open
-  insert_record(table, 0x1008ff6d, 0x1000000408);   // Paste
-  insert_record(table, 0x1008ff6e, 0x1000000b0d);   // Phone
-  insert_record(table, 0x1008ff72, 0x1000000a03);   // Reply
-  insert_record(table, 0x1008ff77, 0x1000000a0d);   // Save
-  insert_record(table, 0x1008ff7b, 0x1000000a04);   // Send
-  insert_record(table, 0x1008ff7c, 0x1000000a0e);   // Spell
-  insert_record(table, 0x1008ff8b, 0x100000050d);   // ZoomIn
-  insert_record(table, 0x1008ff8c, 0x100000050e);   // ZoomOut
-  insert_record(table, 0x1008ff90, 0x1000000a02);   // MailForward
-  insert_record(table, 0x1008ff97, 0x1000000d2c);   // AudioForward
-  insert_record(table, 0x1008ffa7, 0x1100000014);   // Suspend
+  insert_record(table, 0x0000ffeb, 0x0100000010e);  // Super_L
+  insert_record(table, 0x0000ffec, 0x0100000010e);  // Super_R
+  insert_record(table, 0x0000ffed, 0x01000000108);  // Hyper_L
+  insert_record(table, 0x0000ffee, 0x01000000108);  // Hyper_R
+  insert_record(table, 0x0000ffff, 0x0100000007f);  // Delete
+  insert_record(table, 0x1008ff02, 0x01000000602);  // MonBrightnessUp
+  insert_record(table, 0x1008ff03, 0x01000000601);  // MonBrightnessDown
+  insert_record(table, 0x1008ff10, 0x0100000060a);  // Standby
+  insert_record(table, 0x1008ff11, 0x01000000a0f);  // AudioLowerVolume
+  insert_record(table, 0x1008ff12, 0x01000000a11);  // AudioMute
+  insert_record(table, 0x1008ff13, 0x01000000a10);  // AudioRaiseVolume
+  insert_record(table, 0x1008ff14, 0x01000000d2f);  // AudioPlay
+  insert_record(table, 0x1008ff15, 0x01000000a07);  // AudioStop
+  insert_record(table, 0x1008ff16, 0x01000000a09);  // AudioPrev
+  insert_record(table, 0x1008ff17, 0x01000000a08);  // AudioNext
+  insert_record(table, 0x1008ff18, 0x01000000c04);  // HomePage
+  insert_record(table, 0x1008ff19, 0x01000000b03);  // Mail
+  insert_record(table, 0x1008ff1b, 0x01000000c06);  // Search
+  insert_record(table, 0x1008ff1c, 0x01000000d30);  // AudioRecord
+  insert_record(table, 0x1008ff20, 0x01000000b02);  // Calendar
+  insert_record(table, 0x1008ff26, 0x01000000c01);  // Back
+  insert_record(table, 0x1008ff27, 0x01000000c03);  // Forward
+  insert_record(table, 0x1008ff28, 0x01000000c07);  // Stop
+  insert_record(table, 0x1008ff29, 0x01000000c05);  // Refresh
+  insert_record(table, 0x1008ff2a, 0x01000000607);  // PowerOff
+  insert_record(table, 0x1008ff2b, 0x0100000060b);  // WakeUp
+  insert_record(table, 0x1008ff2c, 0x01000000604);  // Eject
+  insert_record(table, 0x1008ff2d, 0x01000000b07);  // ScreenSaver
+  insert_record(table, 0x1008ff2f, 0x01100010082);  // Sleep
+  insert_record(table, 0x1008ff30, 0x01000000c02);  // Favorites
+  insert_record(table, 0x1008ff31, 0x01000000d2e);  // AudioPause
+  insert_record(table, 0x1008ff3e, 0x01000000d31);  // AudioRewind
+  insert_record(table, 0x1008ff56, 0x01000000a01);  // Close
+  insert_record(table, 0x1008ff57, 0x01000000402);  // Copy
+  insert_record(table, 0x1008ff58, 0x01000000404);  // Cut
+  insert_record(table, 0x1008ff61, 0x01000000605);  // LogOff
+  insert_record(table, 0x1008ff68, 0x01000000a0a);  // New
+  insert_record(table, 0x1008ff6b, 0x01000000a0b);  // Open
+  insert_record(table, 0x1008ff6d, 0x01000000408);  // Paste
+  insert_record(table, 0x1008ff6e, 0x01000000b0d);  // Phone
+  insert_record(table, 0x1008ff72, 0x01000000a03);  // Reply
+  insert_record(table, 0x1008ff77, 0x01000000a0d);  // Save
+  insert_record(table, 0x1008ff7b, 0x01000000a04);  // Send
+  insert_record(table, 0x1008ff7c, 0x01000000a0e);  // Spell
+  insert_record(table, 0x1008ff8b, 0x0100000050d);  // ZoomIn
+  insert_record(table, 0x1008ff8c, 0x0100000050e);  // ZoomOut
+  insert_record(table, 0x1008ff90, 0x01000000a02);  // MailForward
+  insert_record(table, 0x1008ff97, 0x01000000d2c);  // AudioForward
+  insert_record(table, 0x1008ffa7, 0x01100000014);  // Suspend
 }
 
 void initialize_modifier_bit_to_checked_keys(GHashTable* table) {
@@ -450,18 +450,18 @@ void initialize_modifier_bit_to_checked_keys(GHashTable* table) {
   data->is_caps_lock = false;
 }
 
-void initialize_lock_bit_to_checked_keys(GHashTable* table) {
+void initialize_lock_mode_bit_to_checked_keys(GHashTable* table) {
   FlKeyEmbedderCheckedKey* data;
 
   data = g_new(FlKeyEmbedderCheckedKey, 1);
   g_hash_table_insert(table, GUINT_TO_POINTER(GDK_LOCK_MASK), data);
-  data->primary_logical_key = 0x1000000104;  // capsLock
-  data->primary_physical_key = 0x000070039;  // capsLock
+  data->primary_logical_key = 0x01000000104;  // capsLock
+  data->primary_physical_key = 0x000070039;   // capsLock
   data->is_caps_lock = true;
 
   data = g_new(FlKeyEmbedderCheckedKey, 1);
   g_hash_table_insert(table, GUINT_TO_POINTER(GDK_MOD2_MASK), data);
-  data->primary_logical_key = 0x100000010a;  // numLock
-  data->primary_physical_key = 0x000070053;  // numLock
+  data->primary_logical_key = 0x0100000010a;  // numLock
+  data->primary_physical_key = 0x000070053;   // numLock
   data->is_caps_lock = false;
 }
