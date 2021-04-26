@@ -419,56 +419,10 @@ static void synchronize_pressed_states_loop_body(gpointer key,
   }
 }
 
-// Find the first stage # greater than `start` that is equivalent to `target` in
-// a cycle of 4.
+// Update the pressing record.
 //
-// That is, if `target` is less than `start`, return target + 4.
-static int cycle_stage_to_after(int target, int start) {
-  g_return_val_if_fail(target >= -4 && target < 4, target);
-  g_return_val_if_fail(start >= 0 && start < 4, target);
-  constexpr int kNumStages = 4;
-  return target >= start ? target : target + kNumStages;
-}
-
-// Find the stage # before the event (of the 4 stages as documented in
-// `synchronize_lock_states_loop_body`) by the current record.
-static int find_stage_by_record(bool is_down, bool is_enabled) {
-  constexpr int stage_by_record_index[] = {
-      0,  // is_down: 0,  is_enabled: 0
-      2,  //          0               1
-      3,  //          1               0
-      1   //          1               1
-  };
-  return stage_by_record_index[(is_down << 1) + is_enabled];
-}
-
-static int find_stage_by_self_event(int stage_by_record,
-                                    bool is_down_event,
-                                    bool is_state_on,
-                                    bool is_caps_lock) {
-  g_return_val_if_fail(stage_by_record >= 0 && stage_by_record < 4,
-                       stage_by_record);
-  if (!is_state_on) {
-    return is_caps_lock ? 2 : 0;
-  }
-  if (is_down_event) {
-    return is_caps_lock ? 0 : 2;
-  }
-  return stage_by_record;
-}
-
-static int find_stage_by_others_event(int stage_by_record, bool is_state_on) {
-  g_return_val_if_fail(stage_by_record >= 0 && stage_by_record < 4,
-                       stage_by_record);
-  if (!is_state_on) {
-    return 0;
-  }
-  if (stage_by_record == 0) {
-    return 1;
-  }
-  return stage_by_record;
-}
-
+// If `logical_key` is 0, the record will be set as "released". Otherwise,
+// the record will be set as "pressed" with this logical key.
 static void update_pressing_state(FlKeyEmbedderResponder* self,
                                   uint64_t physical_key,
                                   uint64_t logical_key) {
@@ -484,6 +438,49 @@ static void update_pressing_state(FlKeyEmbedderResponder* self,
     g_hash_table_remove(self->pressing_records,
                         uint64_to_gpointer(physical_key));
   }
+}
+
+// Find the stage # by the current record, which should be the recorded stage before the
+// event.
+static int find_stage_by_record(bool is_down, bool is_enabled) {
+  constexpr int stage_by_record_index[] = {
+      0,  // is_down: 0,  is_enabled: 0
+      2,  //          0               1
+      3,  //          1               0
+      1   //          1               1
+  };
+  return stage_by_record_index[(is_down << 1) + is_enabled];
+}
+
+// Find the stage # by an event for the target key, which should be inferred
+// stage before the event.
+static int find_stage_by_self_event(int stage_by_record,
+                                    bool is_down_event,
+                                    bool is_state_on,
+                                    bool is_caps_lock) {
+  g_return_val_if_fail(stage_by_record >= 0 && stage_by_record < 4,
+                       stage_by_record);
+  if (!is_state_on) {
+    return is_caps_lock ? 2 : 0;
+  }
+  if (is_down_event) {
+    return is_caps_lock ? 0 : 2;
+  }
+  return stage_by_record;
+}
+
+// Find the stage # by an event for a non-target key, which should be inferred
+// stage during the event.
+static int find_stage_by_others_event(int stage_by_record, bool is_state_on) {
+  g_return_val_if_fail(stage_by_record >= 0 && stage_by_record < 4,
+                       stage_by_record);
+  if (!is_state_on) {
+    return 0;
+  }
+  if (stage_by_record == 0) {
+    return 1;
+  }
+  return stage_by_record;
 }
 
 static void possibly_update_lock_bit(FlKeyEmbedderResponder* self,
@@ -521,15 +518,15 @@ static void synchronize_lock_states_loop_body(gpointer key,
   // the definition of each stage (TruePressed and TrueEnabled), the event of
   // the lock key between every 2 stages (SelfType and SelfState), and the event
   // of other keys at each stage (OthersState). Notice that SelfState uses
-  // different rule for CapsLock.
+  // different rule for CapsLock from for other keys.
   //
-  //           #    [0]           [1]            [2]             [3]
-  //     TruePressed: Released      Pressed        Released        Pressed
-  //     TrueEnabled: Disabled      Enabled        Enabled         Disabled
-  //        SelfType:          Down           Up             Down Up
-  // SelfState(Caps):           1             1               0                1
-  //  SelfState(Etc):           0             1               1                1
-  //     OthersState:    0             1              1                1
+  //               #    [0]         [1]          [2]           [3]
+  //     TruePressed: Released    Pressed      Released      Pressed
+  //     TrueEnabled: Disabled    Enabled      Enabled       Disabled
+  //        SelfType:         Down         Up           Down            Up
+  // SelfState(Caps):          1           1             0              1
+  //  SelfState(Etc):          0           1             1              1
+  //     OthersState:    0           1            1              1
   //
   // Except for stage 0, we can't derive the exact stage just from event
   // information. Choose the stage that requires the minimal synthesization.
@@ -552,10 +549,12 @@ static void synchronize_lock_states_loop_body(gpointer key,
                                      checked_key->is_caps_lock)
           : find_stage_by_others_event(stage_by_record, enabled_by_state);
 
-  // If the event is for the target key, then the last stage transition should
-  // be handled by the main event logic instead of synthesization.
-  const int destination_stage =
-      cycle_stage_to_after(stage_by_event, stage_by_record);
+  // The destination stage is equal to stage_by_event but shifted cyclically to
+  // be no less than stage_by_record.
+  constexpr int kNumStages = 4;
+  const int destination_stage = stage_by_event >= stage_by_record
+                                    ? stage_by_event
+                                    : stage_by_event + kNumStages;
 
   printf("SynLock: stage by recrd %d\n", stage_by_record);
   printf("SynLock: stage by event %d\n", stage_by_event);
