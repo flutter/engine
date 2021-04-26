@@ -104,7 +104,7 @@ public class PlatformChannel {
                 break;
               case "SystemChrome.setEnabledSystemUIMode":
                 try {
-                  SystemUiMode mode = decodeSystemUiMode((JSONArray) arguments);
+                  SystemUiMode mode = decodeSystemUiMode((String) arguments);
                   platformMessageHandler.showSystemUiMode(mode);
                   result.success(null);
                 } catch (JSONException | NoSuchFieldException exception) {
@@ -333,10 +333,9 @@ public class PlatformChannel {
    * @throws NoSuchFieldException if any of the given encoded mode name is invalid.
    */
   @NonNull
-  private SystemUiMode decodeSystemUiMode(@NonNull JSONObject encodedSystemUiMode)
+  private SystemUiMode decodeSystemUiMode(@NonNull String encodedSystemUiMode)
           throws JSONException, NoSuchFieldException {
-    String encodedMode = encodedSystemUiMode.getString(i);
-    SystemUiMode mode = SystemUiMode.fromValue(encodedMode);
+    SystemUiMode mode = SystemUiMode.fromValue(encodedSystemUiMode);
     switch (mode) {
       case LEAN_BACK:
         return SystemUiMode.LEAN_BACK;
@@ -347,6 +346,9 @@ public class PlatformChannel {
       case EDGE_TO_EDGE:
         return SystemUiMode.EDGE_TO_EDGE;
     }
+
+    // Execution should never ever get this far, but if it does, we default to edge to edge.
+    return SystemUiMode.EDGE_TO_EDGE;
   }
 
   /**
@@ -363,11 +365,11 @@ public class PlatformChannel {
     Integer systemNavigationBarColor = null;
     // TODO(mattcarroll): add color annotation
     Integer systemNavigationBarDividerColor = null;
-    boolean systemNavigationBarContrastEnforced = null;
+    boolean systemNavigationBarContrastEnforced = true;
     Brightness statusBarIconBrightness = null;
     // TODO(mattcarroll): add color annotation
     Integer statusBarColor = null;
-    boolean systemStatusBarContrastEnforced = null;
+    boolean systemStatusBarContrastEnforced = true;
 
     if (!encodedStyle.isNull("systemNavigationBarIconBrightness")) {
       systemNavigationBarIconBrightness =
@@ -618,7 +620,7 @@ public class PlatformChannel {
     LEAN_BACK("SystemUiMode.lean_back"),
     IMMERSIVE("SystemUiMode.immersive"),
     IMMERSIVE_STICKY("SystemUiMode.immersive_sticky"),
-    EDGE_TO_EDGE("SystemUiMode.edge_to_edge"),
+    EDGE_TO_EDGE("SystemUiMode.edge_to_edge");
 
     @NonNull
     static SystemUiMode fromValue(@NonNull String encodedName) throws NoSuchFieldException {
