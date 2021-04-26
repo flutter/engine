@@ -242,9 +242,6 @@ String? svgFilterFromColorMatrix(List<double> matrix) {
       '<filter id="_fcf$_filterIdCounter" '
       'filterUnits="objectBoundingBox" x="0%" y="0%" width="100%" height="100%">'
       '<feColorMatrix values="$sbMatrix" result="comp"/>'
-      // '<feComposite in="recolor" in2="SourceGraphic" '
-      // 'operator="arithmetic" k1="1" k2="0" k3="0" k4="0" result="comp">'
-      // '</feComposite>'
       '</filter></svg>';
 }
 
