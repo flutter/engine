@@ -82,6 +82,15 @@ final String canvasKitJavaScriptBindingsUrl =
     canvasKitBuildUrl + 'canvaskit.js';
 String canvasKitWasmModuleUrl(String file) => canvasKitBuildUrl + file;
 
+/// Enable the Local Font Access API.
+///
+/// This is an experimental API being proposed in Chrome. See this link for
+/// more information: https://web.dev/local-fonts/
+const bool _enableLocalFontAccess = bool.fromEnvironment(
+  'FLUTTER_WEB_LOCAL_FONT_ACCESS',
+  defaultValue: false,
+);
+
 /// Initialize CanvasKit.
 ///
 /// This calls `CanvasKitInit` and assigns the global [canvasKit] object.

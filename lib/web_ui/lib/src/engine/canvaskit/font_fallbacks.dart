@@ -408,6 +408,32 @@ class NotoFont {
     }
   }
 
+  Future<void> addLocalFallbackFonts() async {
+    /// If the Local Font Access API is enabled, then request permission to read
+    /// local fonts and add them to the default set of fonts.
+    if (_enableLocalFontAccess) {
+      final html.Navigator navigator = html.window.navigator;
+      if (js_util.hasProperty(navigator, 'fonts')) {
+        final dynamic fonts = js_util.getProperty(navigator, 'fonts');
+        try {
+          final dynamic localFonts = await js_util.callMethod(
+            fonts,
+            'query',
+            [],
+          );
+          print('GOT LOCAL FONTS!');
+          print(localFonts);
+        } catch (e) {
+          if (js_util.getProperty(e, 'name') != 'TypeError') {
+            rethrow;
+          }
+          html.window.console
+              .warn('Could not request the Local Fonts permission.');
+        }
+      }
+    }
+  }
+
   void reset() {
     resolvedFont = null;
     _decodingCompleter = null;

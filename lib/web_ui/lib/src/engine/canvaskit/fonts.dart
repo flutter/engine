@@ -21,6 +21,11 @@ class SkiaFontCollection {
   /// Fonts which have been registered and loaded.
   final List<_RegisteredFont> _registeredFonts = <_RegisteredFont>[];
 
+  /// Fonts obtained from the Local Font Access API.
+  ///
+  /// This is only non-empty if [_enableLocalFontAccess] is true.
+  final List<_RegisteredFont> _localFonts = <_RegisteredFont>[];
+
   final Map<String, List<SkTypeface>> familyToTypefaceMap =
       <String, List<SkTypeface>>{};
 
