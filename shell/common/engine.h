@@ -948,9 +948,9 @@ class Engine final : public RuntimeDelegate,
 
   void SetNeedsReportTimings(bool value) override;
 
-  void StopAnimator();
+  void PauseAnimator();
 
-  void StartAnimatorIfPossible();
+  bool UnpauseAnimatorIfPossible();
 
   bool HandleLifecyclePlatformMessage(PlatformMessage* message);
 

@@ -44,8 +44,13 @@ class VsyncWaiterIOS final : public VsyncWaiter {
 
   ~VsyncWaiterIOS() override;
 
+  void Pause() override;
+
+  void Unpause() override;
+
  private:
   fml::scoped_nsobject<VSyncClient> client_;
+  fml::RefPtr<fml::TaskRunner> task_runner_;
 
   // |VsyncWaiter|
   void AwaitVSync() override;

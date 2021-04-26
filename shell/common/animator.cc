@@ -53,16 +53,18 @@ Animator::Animator(Delegate& delegate,
 
 Animator::~Animator() = default;
 
-void Animator::Stop() {
+void Animator::Pause() {
   paused_ = true;
+  waiter_->Pause();
 }
 
-void Animator::Start() {
+void Animator::Unpause() {
   if (!paused_) {
     return;
   }
 
   paused_ = false;
+  waiter_->Unpause();
   RequestFrame();
 }
 

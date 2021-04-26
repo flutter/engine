@@ -667,6 +667,7 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
   if (UIApplication.sharedApplication.applicationState == UIApplicationStateActive) {
     [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.resumed"];
   }
+
   [super viewDidAppear:animated];
 }
 
@@ -685,6 +686,8 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
     [self flushOngoingTouches];
     [_engine.get() notifyLowMemory];
   }
+
+  //[[NSNotificationCenter defaultCenter] postNotificationName:@"FlutterInvalidateDisplayLink" object:nil];
 
   [super viewDidDisappear:animated];
 }
