@@ -314,6 +314,32 @@ public class PlatformChannel {
   }
 
   /**
+   * Decodes an object of JSON-encoded mode to a {@link SystemUiMode}.
+   *
+   * @throws JSONException if {@code encodedSystemUiMode} does not contain expected keys and
+   *     value types.
+   * @throws NoSuchFieldException if any of the given encoded mode name is invalid.
+   */
+  @NonNull
+  private SystemUiMode decodeSystemUiMode(@NonNull JSONObject encodedSystemUiMode)
+          throws JSONException, NoSuchFieldException {
+    String encodedMode = encodedSystemUiMode.getString(i);
+    SystemUiMode mode = SystemUiMode.fromValue(encodedMode);
+    switch (mode) {
+      case LEAN_BACK:
+        return SystemUiMode.LEAN_BACK;
+      case IMMERSIVE:
+        return SystemUiMode.IMMERSIVE;
+      case IMMERSIVE_STICKY:
+        return SystemUiMode.IMMERSIVE_STICKY;
+      case EDGE_TO_EDGE:
+        return SystemUiMode.EDGE_TO_EDGE;
+      case MANUAL:
+        return SystemUiMode.MANUAL;
+    }
+  }
+
+  /**
    * Decodes a JSON-encoded {@code encodedStyle} to a {@link SystemChromeStyle}.
    *
    * @throws JSONException if {@code encodedStyle} does not contain expected keys and value types.
@@ -400,11 +426,38 @@ public class PlatformChannel {
     void showSystemOverlays(@NonNull List<SystemUiOverlay> overlays);
 
     /**
-     * The Flutter application would like to restore the visibility of system overlays to the last
-     * set of overlays sent via {@link #showSystemOverlays(List)}.
+     * The Flutter application would like the Android system to display the given {@code mode}, or manually configured
+     * {@code overlays}.
      *
-     * <p>If {@link #showSystemOverlays(List)} has yet to be called, then a default system overlay
-     * appearance is desired:
+     * <p>{@link SystemUiMode#LEAN_BACK} refers to a fullscreen experience that restores system bars upon tapping
+     * anywhere in the application. This tap gesture is not received by the application.
+     *
+     * <p>{@link SystemUiMode#IMMERSIVE} refers to a fullscreen experience that restores system bars upon swiping from
+     * the edge of the viewport. This swipe gesture is not recived by the application.
+     *
+     * <p>{@link SystemUiMode#IMMERSIVE_STICKY} refers to a fullscreen experience that restores system bars upon swiping
+     * from the edge of the viewport. This swipe gesture is received by the application, in contrast to
+     * {@link SystemUiMode#IMMERSIVE}.
+     *
+     * <p>{@link SystemUiMode#EDGE_TO_EDGE} refers to a layout configuration that will consume the full viewport. This
+     * full screen experience does not hide status bars. These status bars can be set to transparent, making the buttons
+     * and icons hover over the fullscreen application.
+     *
+     * <p>{@link SystemUiMode#MANUAL} allows for manual configuration of system status bars. These can be set with the
+     * given {@code overlays}. {@link SystemUiOverlay#TOP_OVERLAYS} refers to system overlays such as the status bar,
+     * while {@link SystemUiOverlay#BOTTOM_OVERLAYS} refers to system overlays such as the
+     * back/home/recents navigation on the bottom of the screen. An empty list of {@code overlays} should hide all
+     * system overlays.
+     */
+    // TODO(Piinks): add callback for system Ui change
+    void showSystemUiMode(@NonNull SystemUiMode mode, @Nullable List<SystemUiOverlay> overlays);
+
+    /**
+     * The Flutter application would like to restore the visibility of system overlays to the last
+     * set of overlays sent via {@link #showSystemOverlays(List)} or {@link #showSystemUiMode(SystemUiMode, List)}.
+     *
+     * <p>If {@link #showSystemOverlays(List)} or {@link #showSystemUiMode(SystemUiMode, List)} has yet to be called,
+     * then a default system overlay appearance is desired:
      *
      * <p>{@code View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN }
      */
@@ -538,6 +591,33 @@ public class PlatformChannel {
     @NonNull private String encodedName;
 
     SystemUiOverlay(@NonNull String encodedName) {
+      this.encodedName = encodedName;
+    }
+  }
+
+  /**
+   * The set of Android system fullscreen modes as perceived by the Flutter application.
+   */
+  public enum SystemUiMode {
+    LEAN_BACK("SystemUiMode.lean_back"),
+    IMMERSIVE("SystemUiMode.immersive"),
+    IMMERSIVE_STICKY("SystemUiMode.immersive_sticky"),
+    EDGE_TO_EDGE("SystemUiMode.edge_to_edge"),
+    MANUAL("SystemUiMode.manual");
+
+    @NonNull
+    static SystemUiMode fromValue(@NonNull String encodedName) throws NoSuchFieldException {
+      for (SystemUiMode mode : SystemUiMode.values()) {
+        if (mode.encodedName.equals(encodedName)) {
+          return mode;
+        }
+      }
+      throw new NoSuchFieldException("No such SystemUiMode: " + encodedName);
+    }
+
+    @NonNull private String encodedName;
+
+    SystemUiMode(@NonNull String encodedName) {
       this.encodedName = encodedName;
     }
   }

@@ -74,6 +74,9 @@ using namespace flutter;
   } else if ([method isEqualToString:@"SystemChrome.setEnabledSystemUIOverlays"]) {
     [self setSystemChromeEnabledSystemUIOverlays:args];
     result(nil);
+  } else if ([method isEqualToString:@"SystemChrome.setEnabledSystemUIMode"]) {
+    [self setSystemChromeEnabledSystemUIMode:args];
+    result(nil);
   } else if ([method isEqualToString:@"SystemChrome.restoreSystemUIOverlays"]) {
     [self restoreSystemChromeSystemUIOverlays];
     result(nil);
@@ -159,6 +162,26 @@ using namespace flutter;
 - (void)setSystemChromeEnabledSystemUIOverlays:(NSArray*)overlays {
   // Checks if the top status bar should be visible. This platform ignores all
   // other overlays
+
+  // We opt out of view controller based status bar visibility since we want
+  // to be able to modify this on the fly. The key used is
+  // UIViewControllerBasedStatusBarAppearance
+  [UIApplication sharedApplication].statusBarHidden =
+      ![overlays containsObject:@"SystemUiOverlay.top"];
+  if ([overlays containsObject:@"SystemUiOverlay.bottom"]) {
+    [[NSNotificationCenter defaultCenter]
+        postNotificationName:FlutterViewControllerShowHomeIndicator
+                      object:nil];
+  } else {
+    [[NSNotificationCenter defaultCenter]
+        postNotificationName:FlutterViewControllerHideHomeIndicator
+                      object:nil];
+  }
+}
+
+- (void)setSystemChromeEnabledSystemUIMode:(NSObject*)mode enabledOverlays:(NSArray*)overlays {
+  // Checks if the top status bar should be visible. This platform ignores all
+  // other overlays and UI modes
 
   // We opt out of view controller based status bar visibility since we want
   // to be able to modify this on the fly. The key used is
