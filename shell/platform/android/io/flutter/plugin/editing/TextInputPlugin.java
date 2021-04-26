@@ -49,7 +49,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
   @NonNull private PlatformViewsController platformViewsController;
   @Nullable private Rect lastClientRect;
   private ImeSyncDeferringInsetsCallback imeSyncCallback;
-  private KeyboardManager mKeyboardManager;
+  private KeyboardManager keyboardManager;
 
   // Initialize the "last seen" text editing values to a non-null value.
   private TextEditState mLastKnownFrameworkTextEditingState;
@@ -176,8 +176,8 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     return imeSyncCallback;
   }
 
-  public void setKeyboardManager(KeyboardManager processor) {
-    mKeyboardManager = processor;
+  public void setKeyboardManager(KeyboardManager keyboardManager) {
+    this.keyboardManager = keyboardManager;
   }
   /**
    * Use the current platform view input connection until unlockPlatformViewInputConnection is
@@ -325,7 +325,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
 
     InputConnectionAdaptor connection =
         new InputConnectionAdaptor(
-            view, inputTarget.id, textInputChannel, mKeyboardManager, mEditable, outAttrs);
+            view, inputTarget.id, textInputChannel, keyboardManager, mEditable, outAttrs);
     outAttrs.initialSelStart = mEditable.getSelectionStart();
     outAttrs.initialSelEnd = mEditable.getSelectionEnd();
 

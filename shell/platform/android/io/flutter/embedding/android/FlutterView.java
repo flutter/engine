@@ -727,7 +727,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
    * D-pad button. It is generally not invoked when a virtual software keyboard is used, though a
    * software keyboard may choose to invoke this method in some situations.
    *
-   * <p>{@link KeyEvent}s are sent from Android to Flutter. {@link AndroidKeyProcessor} may do some
+   * <p>{@link KeyEvent}s are sent from Android to Flutter. {@link KeyboardManager} may do some
    * additional work with the given {@link KeyEvent}, e.g., combine this {@code keyCode} with the
    * previous {@code keyCode} to generate a unicode combined character.
    */

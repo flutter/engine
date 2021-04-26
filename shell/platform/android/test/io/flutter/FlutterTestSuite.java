@@ -4,7 +4,6 @@
 
 package io.flutter;
 
-import io.flutter.embedding.android.AndroidKeyProcessorTest;
 import io.flutter.embedding.android.FlutterActivityAndFragmentDelegateTest;
 import io.flutter.embedding.android.FlutterActivityTest;
 import io.flutter.embedding.android.FlutterAndroidComponentTest;
@@ -53,7 +52,6 @@ import test.io.flutter.embedding.engine.PluginComponentTest;
 @RunWith(Suite.class)
 @SuiteClasses({
   AccessibilityBridgeTest.class,
-  AndroidKeyProcessorTest.class,
   ApplicationInfoLoaderTest.class,
   DartExecutorTest.class,
   DartMessengerTest.class,

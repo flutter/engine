@@ -8,7 +8,7 @@ import android.view.KeyEvent;
 import android.view.View;
 import androidx.annotation.NonNull;
 import io.flutter.Log;
-import io.flutter.embedding.android.KeyboardManager.PrimaryResponder.OnKeyEventHandledCallback;
+import io.flutter.embedding.android.KeyboardManager.Responder.OnKeyEventHandledCallback;
 import io.flutter.embedding.engine.systemchannels.KeyEventChannel;
 import io.flutter.plugin.editing.TextInputPlugin;
 import java.util.HashSet;
@@ -17,33 +17,33 @@ import java.util.HashSet;
  * A class to process {@link KeyEvent}s dispatched to a {@link FlutterView}, either from a hardware
  * keyboard or an IME event.
  *
- * <p>A class that sends Android {@link KeyEvent} to the a list of {@link PrimaryResponder}s, and
+ * <p>A class that sends Android {@link KeyEvent} to the a list of {@link Responder}s, and
  * re-dispatches those not handled by the primary responders.
  *
  * <p>Flutter uses asynchronous event handling to avoid blocking the UI thread, but Android requires
- * that events are handled synchronously. So, when a key event is received by Flutter, it tells
- * Android synchronously that the key has been handled so that it won't propagate to other
- * components. Flutter then uses "delayed event synthesis", where it sends the event to the
+ * that events are handled synchronously. So, when the Android system sends new @{link KeyEvent} to
+ * Flutter, Flutter responds synchronously that the key has been handled so that it won't propagate
+ * to other components. It then uses "delayed event synthesis", where it sends the event to the
  * framework, and if the framework responds that it has not handled the event, then this class
  * synthesizes a new event to send to Android, without handling it this time.
  *
  * <p>A new {@link KeyEvent} sent to a {@link KeyboardManager} can be propagated to 3 different
- * types of "responder"s (in the listed order):
+ * types of responders (in the listed order):
  *
  * <ul>
- *   <li>{@link PrimaryResponder}s: An immutable list of key responders in a {@link KeyboardManager}
- *       that each implements the {@link PrimaryResponder} interface. A {@link PrimaryResponder} is
+ *   <li>{@link Responder}s: An immutable list of key responders in a {@link KeyboardManager}
+ *       that each implements the {@link Responder} interface. A {@link Responder} is
  *       a key responder that's capable of handling {@link KeyEvent}s asynchronously.
  *       <p>When a new {@link KeyEvent} is received, {@link KeyboardManager} calls the {@link
- *       PrimaryResponder#handleEvent(KeyEvent, OnKeyEventHandledCallback)} method on its {@link
- *       PrimaryResponder}s. Each {@link PrimaryResponder} must call the supplied {@link
+ *       Responder#handleEvent(KeyEvent, OnKeyEventHandledCallback)} method on its {@link
+ *       Responder}s. Each {@link Responder} must call the supplied {@link
  *       OnKeyEventHandledCallback} exactly once, when it has decided wether to handle the key event
- *       callback. More than one {@link PrimaryResponder} is allowed to reply true and handle the
+ *       callback. More than one {@link Responder} is allowed to reply true and handle the
  *       same {@link KeyEvent}.
  *       <p>Typically a {@link KeyboardManager} uses a {@link KeyChannelResponder} as its only
- *       {@link PrimaryResponder}.
- *   <li>{@link TextInputPlugin}: if every {@link PrimaryResponder} has replied false to a {@link
- *       KeyEvent}, or if the {@link KeyboardManager} has zero {@link PrimaryResponder}s, the {@link
+ *       {@link Responder}.
+ *   <li>{@link TextInputPlugin}: if every {@link Responder} has replied false to a {@link
+ *       KeyEvent}, or if the {@link KeyboardManager} has zero {@link Responder}s, the {@link
  *       KeyEvent} will be sent to the currently focused editable text field in {@link
  *       TextInputPlugin}, if any.
  *   <li><b>"Redispatch"</b>: if there's no currently focused text field in {@link TextInputPlugin},
@@ -57,7 +57,7 @@ public class KeyboardManager {
   private static final String TAG = "KeyboardManager";
 
   KeyboardManager(
-      View view, @NonNull TextInputPlugin textInputPlugin, PrimaryResponder[] primaryResponders) {
+      View view, @NonNull TextInputPlugin textInputPlugin, Responder[] primaryResponders) {
     this.view = view;
     this.textInputPlugin = textInputPlugin;
     this.primaryResponders = primaryResponders;
@@ -65,7 +65,7 @@ public class KeyboardManager {
 
   /**
    * Constructor for {@link KeyboardManager} that uses a {@link KeyChannelResponder} as its only
-   * {@link PrimaryResponder}.
+   * {@link Responder}.
    *
    * <p>The view is used as the destination to send the synthesized key to. This means that the the
    * next thing in the focus chain will get the event when the {@link KeyChannelResponder} returns
@@ -89,7 +89,7 @@ public class KeyboardManager {
     this(
         view,
         textInputPlugin,
-        new KeyboardManager.PrimaryResponder[] {new KeyChannelResponder(keyEventChannel)});
+        new KeyboardManager.Responder[] {new KeyChannelResponder(keyEventChannel)});
   }
 
   /**
@@ -98,26 +98,26 @@ public class KeyboardManager {
    * <p>Implementers of this interface should be owned by a {@link KeyboardManager}, in order to
    * receive key events.
    *
-   * <p>After receiving a {@link KeyEvent}, the {@link PrimaryResponder} must call the supplied
+   * <p>After receiving a {@link KeyEvent}, the {@link Responder} must call the supplied
    * {@link OnKeyEventHandledCallback} exactly once, to inform the {@link KeyboardManager} whether
    * it wishes to handle the {@link KeyEvent}. The {@link KeyEvent} will not be propagated to the
-   * {@link TextInputPlugin} or be redispatched to the view hierachy if the key responder answered
+   * {@link TextInputPlugin} or be redispatched to the view hierachy if any key responders answered
    * yes.
    *
-   * <p>If a {@link PrimaryResponder} fails to call the {@link OnKeyEventHandledCallback} callback,
+   * <p>If a {@link Responder} fails to call the {@link OnKeyEventHandledCallback} callback,
    * the {@link KeyEvent} will never be sent to the {@link TextInputPlugin}, and the {@link
    * KeyboardManager} class can't detect such errors as there is no timeout.
    */
-  interface PrimaryResponder {
+  interface Responder {
     interface OnKeyEventHandledCallback {
       void onKeyEventHandled(Boolean canHandleEvent);
     }
 
     /**
-     * Informs this {@link PrimaryResponder} that a new {@link KeyEvent} needs processing.
+     * Informs this {@link Responder} that a new {@link KeyEvent} needs processing.
      *
-     * @param keyEvent the new {@link KeyEvent} this {@link PrimaryResponder} may be interested in.
-     * @param onKeyEventHandledCallback the method to call when this {@link PrimaryResponder} has
+     * @param keyEvent the new {@link KeyEvent} this {@link Responder} may be interested in.
+     * @param onKeyEventHandledCallback the method to call when this {@link Responder} has
      *     decided whether to handle the {@link keyEvent}.
      */
     void handleEvent(
@@ -156,7 +156,7 @@ public class KeyboardManager {
     }
   }
 
-  @NonNull protected final PrimaryResponder[] primaryResponders;
+  @NonNull protected final Responder[] primaryResponders;
   @NonNull private final HashSet<KeyEvent> redispatchedEvents = new HashSet<>();
   @NonNull private final TextInputPlugin textInputPlugin;
   private final View view;
@@ -169,7 +169,7 @@ public class KeyboardManager {
 
     if (primaryResponders.length > 0) {
       final PerEventCallbackBuilder callbackBuilder = new PerEventCallbackBuilder(keyEvent);
-      for (final PrimaryResponder primaryResponder : primaryResponders) {
+      for (final Responder primaryResponder : primaryResponders) {
         primaryResponder.handleEvent(keyEvent, callbackBuilder.buildCallback());
       }
     } else {

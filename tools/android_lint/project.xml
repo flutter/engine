@@ -133,7 +133,6 @@
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterActivity.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/android/KeyChannelResponder.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterView.java" />
-    <src file="../../../flutter/shell/platform/android/io/flutter/embedding/android/AndroidKeyProcessor.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/android/AndroidTouchProcessor.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterActivityAndFragmentDelegate.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterImageView.java" />
@@ -185,7 +184,6 @@
     <src file="../../../flutter/shell/platform/android/test/io/flutter/embedding/android/FlutterFragmentActivityTest.java" />
     <src file="../../../flutter/shell/platform/android/test/io/flutter/embedding/android/FlutterFragmentTest.java" />
     <src file="../../../flutter/shell/platform/android/test/io/flutter/embedding/android/FlutterActivityTest.java" />
-    <src file="../../../flutter/shell/platform/android/test/io/flutter/embedding/android/AndroidKeyProcessorTest.java" />
     <src file="../../../flutter/shell/platform/android/test/io/flutter/plugins/GeneratedPluginRegistrant.java" />
   </module>
 </project>
