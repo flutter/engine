@@ -14,9 +14,6 @@ import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
 void main() {
-  // Patch browser so that clipboard api is not available.
-  dynamic clipboard = js_util.getProperty(html.window.navigator, 'clipboard');
-  js_util.setProperty(html.window.navigator, 'clipboard', null);
   internalBootstrapBrowserTest(() => testMain);
 }
 
@@ -62,7 +59,11 @@ void testMain() {
     });
 
     test('responds correctly to flutter/platform Clipboard.getData failure',
-            () async {
+        () async {
+      // Patch browser so that clipboard api is not available.
+      dynamic originalClipboard =
+          js_util.getProperty(html.window.navigator, 'clipboard');
+      js_util.setProperty(html.window.navigator, 'clipboard', null);
       const MethodCodec codec = JSONMethodCodec();
       final Completer<ByteData?> completer = Completer<ByteData?>();
       ui.PlatformDispatcher.instance.sendPlatformMessage(
@@ -73,9 +74,12 @@ void testMain() {
         completer.complete,
       );
       final ByteData? response = await completer.future;
-      expect(() => codec.decodeEnvelope(response!) ,
-         throwsA(isA<PlatformException>()),
+      expect(
+        () => codec.decodeEnvelope(response!),
+        throwsA(isA<PlatformException>()),
       );
+      js_util.setProperty(
+          html.window.navigator, 'clipboard', originalClipboard);
     });
   });
 }
