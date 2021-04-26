@@ -342,6 +342,7 @@ abstract class Image {
   String toString() => '[$width\u00D7$height]';
 }
 
+// We don't have an easy way to compute ImagePerfData in web target.
 // no-op in web target
 class ImagePerfData {
   ImagePerfData(this.resourceDecodeTime);
