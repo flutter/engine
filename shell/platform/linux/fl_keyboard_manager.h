@@ -103,8 +103,7 @@ gboolean fl_keyboard_manager_handle_event(FlKeyboardManager* manager,
  *
  * Returns: true if the manager's various states are cleared.
  */
-gboolean fl_keyboard_manager_is_state_clear(
-    FlKeyboardManager* manager);
+gboolean fl_keyboard_manager_is_state_clear(FlKeyboardManager* manager);
 
 G_END_DECLS
 

@@ -154,14 +154,14 @@ static void fl_key_embedder_responder_class_init(
 // Initializes an FlKeyEmbedderResponder instance.
 static void fl_key_embedder_responder_init(FlKeyEmbedderResponder* self) {}
 
-static void initialize_physical_key_to_lock_bit_loop_body(
-    gpointer lock_bit,
-    gpointer value,
-    gpointer user_data) {
+static void initialize_physical_key_to_lock_bit_loop_body(gpointer lock_bit,
+                                                          gpointer value,
+                                                          gpointer user_data) {
   FlKeyEmbedderCheckedKey* checked_key =
       reinterpret_cast<FlKeyEmbedderCheckedKey*>(value);
   GHashTable* table = reinterpret_cast<GHashTable*>(user_data);
-  g_hash_table_insert(table, uint64_to_gpointer(checked_key->physical_keys[0]),
+  g_hash_table_insert(table,
+                      uint64_to_gpointer(checked_key->primary_physical_key),
                       GUINT_TO_POINTER(lock_bit));
 }
 
@@ -191,12 +191,12 @@ FlKeyEmbedderResponder* fl_key_embedder_responder_new(FlEngine* engine) {
   self->keyval_to_logical_key = g_hash_table_new(g_direct_hash, g_direct_equal);
   initialize_gtk_keyval_to_logical_key(self->keyval_to_logical_key);
 
-  self->modifier_bit_to_checked_keys = g_hash_table_new_full(
-      g_direct_hash, g_direct_equal, NULL, g_free);
+  self->modifier_bit_to_checked_keys =
+      g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, g_free);
   initialize_modifier_bit_to_checked_keys(self->modifier_bit_to_checked_keys);
 
-  self->lock_bit_to_checked_keys = g_hash_table_new_full(
-      g_direct_hash, g_direct_equal, NULL, g_free);
+  self->lock_bit_to_checked_keys =
+      g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, g_free);
   initialize_lock_bit_to_checked_keys(self->lock_bit_to_checked_keys);
 
   self->physical_key_to_lock_bit =
@@ -332,10 +332,10 @@ static void synchronize_pressed_states_loop_body(gpointer key,
   const guint modifier_bit = GPOINTER_TO_INT(key);
   FlKeyEmbedderResponder* self = context->self;
   const uint64_t physical_keys[] = {
-    checked_key->primary_physical_key,
-    checked_key->secondary_physical_key,
+      checked_key->primary_physical_key,
+      checked_key->secondary_physical_key,
   };
-  const int length = checked_key->secondary_physical_key == 0 ? 1 : 2;
+  const guint length = checked_key->secondary_physical_key == 0 ? 1 : 2;
   // printf("Syn: 1 state %x bit %x curPhy %lx\n", context->state, modifier_bit,
   // context->event_physical_key);
 
@@ -449,8 +449,8 @@ static void update_pressing_state(FlKeyEmbedderResponder* self,
 }
 
 static void possibly_update_lock_bit(FlKeyEmbedderResponder* self,
-                                          uint64_t physical_key,
-                                          bool is_down) {
+                                     uint64_t physical_key,
+                                     bool is_down) {
   if (!is_down) {
     return;
   }
@@ -463,8 +463,8 @@ static void possibly_update_lock_bit(FlKeyEmbedderResponder* self,
 }
 
 static void synchronize_lock_states_loop_body(gpointer key,
-                                                   gpointer value,
-                                                   gpointer user_data) {
+                                              gpointer value,
+                                              gpointer user_data) {
   SyncPressedStatesLoopContext* context =
       reinterpret_cast<SyncPressedStatesLoopContext*>(user_data);
   FlKeyEmbedderCheckedKey* checked_key =

@@ -19,31 +19,25 @@ constexpr gboolean kIsModifier = TRUE;
 constexpr gboolean kIsNotModifier = FALSE;
 
 constexpr guint16 kKeyCodeKeyA = 0x26u;
-// constexpr guint16 kKeyCodeKeyB = 0x38u;
-constexpr guint16 kKeyCodeShiftRight = 0x3eu;
+constexpr guint16 kKeyCodeShiftRight = 0x3Eu;
 constexpr guint16 kKeyCodeNumpad1 = 0x57u;
-constexpr guint16 kKeyCodeNumLock = 0x4du;
+constexpr guint16 kKeyCodeNumLock = 0x4Du;
 constexpr guint16 kKeyCodeCapsLock = 0x42u;
 
 constexpr uint64_t kPhysicalKeyA = 0x00070004;
-// constexpr uint64_t kPhysicalKeyQ = 0x00070014;
 constexpr uint64_t kPhysicalControlLeft = 0x000700e0;
-// constexpr uint64_t kPhysicalControlRight = 0x000700e4;
-// constexpr uint64_t kPhysicalShiftLeft = 0x000700e1;
-constexpr uint64_t kPhysicalShiftRight = 0x000700e5;
+constexpr uint64_t kPhysicalShiftRight = 0x000700E5;
 constexpr uint64_t kPhysicalKeyNumpad1 = 0x00070059;
 constexpr uint64_t kPhysicalKeyNumLock = 0x00070053;
 constexpr uint64_t kPhysicalKeyCapsLock = 0x00070039;
 
 constexpr uint64_t kLogicalKeyA = 0x00000061;
 constexpr uint64_t kLogicalKeyQ = 0x00000071;
-constexpr uint64_t kLogicalControlLeft = 0x00300000105;
-// constexpr uint64_t kLogicalControlRight = 0x00400000105;
-// constexpr uint64_t kLogicalShiftLeft = 0x0030000010d;
-constexpr uint64_t kLogicalShiftRight = 0x0040000010d;
-constexpr uint64_t kLogicalKeyNumpad1 = 0x00200000031;
-constexpr uint64_t kLogicalKeyNumLock = 0x0000000010a;
-constexpr uint64_t kLogicalKeyCapsLock = 0x00000000104;
+constexpr uint64_t kLogicalControlLeft = 0x30000000105;
+constexpr uint64_t kLogicalShiftRight = 0x4000000010D;
+constexpr uint64_t kLogicalKeyNumpad1 = 0x50000000031;
+constexpr uint64_t kLogicalKeyNumLock = 0x100000010A;
+constexpr uint64_t kLogicalKeyCapsLock = 0x1000000104;
 }  // namespace
 
 static void g_ptr_array_clear(GPtrArray* array) {
