@@ -36,3 +36,7 @@ ninja -C "$SRC_DIR/out/host_debug_unopt" sky_engine sky_services -j 400
   cd "$SCRIPT_DIR/android"
   ./gradlew assembleDebug --no-daemon
 )
+
+# LUCI expects to find the APK here
+mkdir -p "$SCRIPT_DIR/android/app/build/outputs/apk/debug"
+cp "$SCRIPT_DIR/build/app/outputs/apk/debug/app-debug.apk" "$SCRIPT_DIR/android/app/build/outputs/apk/debug"
