@@ -24,11 +24,13 @@ void testMain() {
   late EngineSingletonFlutterWindow window;
 
   setUp(() {
+    print('>> SETUP');
     ui.webOnlyInitializeEngine();
     window = EngineSingletonFlutterWindow(0, EnginePlatformDispatcher.instance);
   });
 
   tearDown(() async {
+    print('>> TEARDOWN');
     await window.resetHistory();
   });
 
@@ -125,7 +127,7 @@ void testMain() {
     expect(window.browserHistory.urlStrategy!.getPath(), '/baz');
   });
 
-  test('initialize browser history with default url strategy (single)', () async {
+  verbose('initialize browser history with default url strategy (single)', () async {
     // On purpose, we don't initialize history on the window. We want to let the
     // window to self-initialize when it receives a navigation message.
 
@@ -150,7 +152,7 @@ void testMain() {
     expect(window.browserHistory.urlStrategy!.getPath(), '/bar');
   }, skip: true); // https://github.com/flutter/flutter/issues/50836
 
-  test('initialize browser history with default url strategy (multiple)', () async {
+  verbose('initialize browser history with default url strategy (multiple)', () async {
     // On purpose, we don't initialize history on the window. We want to let the
     // window to self-initialize when it receives a navigation message.
 
@@ -178,7 +180,7 @@ void testMain() {
     expect(window.browserHistory.urlStrategy!.getPath(), '/baz');
   }, skip: true); // https://github.com/flutter/flutter/issues/50836
 
-  test('can disable location strategy', () async {
+  verbose('can disable location strategy', () async {
     // Disable URL strategy.
     expect(() => jsSetUrlStrategy(null), returnsNormally);
     // History should be initialized.
@@ -222,6 +224,19 @@ void testMain() {
     ui.window.locale.countryCode;
     ui.window.locales.first.countryCode;
   });
+}
+
+void verbose(String name, dynamic body, {bool? skip}) {
+
+  test(
+    name,
+    () async {
+      print('>> STARTED: "$name"');
+      await body();
+      print('>> COMPLETED: "$name"');
+    },
+    skip: skip,
+  );
 }
 
 void jsSetUrlStrategy(dynamic strategy) {

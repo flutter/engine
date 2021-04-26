@@ -13,10 +13,18 @@ const bool/*!*/ _debugPrintPlatformMessages = false;
 /// check to determine whether it was set or not. We need an extra boolean.
 bool _isUrlStrategySet = false;
 
+void _debugLogStackTrace(String label) {
+  if (assertionsEnabled) {
+    // debugPrintStack(label: label);
+    print('>> HISTORY: "$label"');
+  }
+}
+
 /// A custom URL strategy set by the app before running.
 UrlStrategy? _customUrlStrategy;
 set customUrlStrategy(UrlStrategy? strategy) {
   assert(!_isUrlStrategySet, 'Cannot set URL strategy more than once.');
+  _debugLogStackTrace('set customUrlStrategy = \n$strategy\n');
   _isUrlStrategySet = true;
   _customUrlStrategy = strategy;
 }
@@ -52,6 +60,7 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
         ? _customUrlStrategy
         : _createDefaultUrlStrategy();
     // Prevent any further customization of URL strategy.
+    _debugLogStackTrace('get _urlStrategyForInitialization\n$urlStrategy\n');
     _isUrlStrategySet = true;
     return urlStrategy;
   }
@@ -94,6 +103,7 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
     required bool useSingle,
   }) async {
     // Prevent any further customization of URL strategy.
+    _debugLogStackTrace('debugInitializeHistory(useSingle: $useSingle) \n$strategy\n');
     _isUrlStrategySet = true;
     _usingRouter = false;
     await _browserHistory?.tearDown();
@@ -105,10 +115,13 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
   }
 
   Future<void> resetHistory() async {
+    print('>> BEFORE browserHistory.tearDown');
     await _browserHistory?.tearDown();
+    print('>> AFTER browserHistory.tearDown');
     _browserHistory = null;
     // Reset the globals too.
     _usingRouter = false;
+    _debugLogStackTrace('resetHistory');
     _isUrlStrategySet = false;
     _customUrlStrategy = null;
   }
