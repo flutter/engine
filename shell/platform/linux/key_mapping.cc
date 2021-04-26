@@ -450,7 +450,7 @@ void initialize_modifier_bit_to_checked_keys(GHashTable* table) {
   data->is_caps_lock = false;
 }
 
-void initialize_lock_mode_bit_to_checked_keys(GHashTable* table) {
+void initialize_lock_bit_to_checked_keys(GHashTable* table) {
   FlKeyEmbedderCheckedKey* data;
 
   data = g_new(FlKeyEmbedderCheckedKey, 1);
