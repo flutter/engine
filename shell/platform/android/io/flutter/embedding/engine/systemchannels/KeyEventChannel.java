@@ -31,8 +31,8 @@ public class KeyEventChannel {
   public interface EventResponseHandler {
 
     /**
-     * Called whenever the framework responds that a given key event was handled or not handled by the
-     * framework.
+     * Called whenever the framework responds that a given key event was handled or not handled by
+     * the framework.
      *
      * @param isEventHandled whether the framework decides to handle the event.
      */

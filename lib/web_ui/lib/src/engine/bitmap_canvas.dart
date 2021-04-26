@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of engine;
 
 /// A raw HTML canvas that is directly written to.
@@ -574,10 +573,8 @@ class BitmapCanvas extends EngineCanvas {
   void _applyFilter(html.Element element, SurfacePaintData paint) {
     if (paint.maskFilter != null) {
       final bool isStroke = paint.style == ui.PaintingStyle.stroke;
-      String cssColor = paint.color == null
-          ? '#000000'
-          : colorToCssString(
-              paint.color)!;
+      String cssColor =
+          paint.color == null ? '#000000' : colorToCssString(paint.color)!;
       final double sigma = paint.maskFilter!.webOnlySigma;
       if (browserEngine == BrowserEngine.webkit && !isStroke) {
         // A bug in webkit leaves artifacts when this element is animated
@@ -943,12 +940,13 @@ class BitmapCanvas extends EngineCanvas {
     // blendMode. https://github.com/flutter/flutter/issues/40096
     // Move rendering to OffscreenCanvas so that transform is preserved
     // as well.
-    assert(paint.shader == null,
-        'Linear/Radial/SweepGradient and ImageShader not supported yet');
+    assert(paint.shader == null || paint.shader is ImageShader,
+        'Linear/Radial/SweepGradient not supported yet');
     final Int32List? colors = vertices._colors;
     final ui.VertexMode mode = vertices._mode;
     html.CanvasRenderingContext2D? ctx = _canvasPool.context;
-    if (colors == null && paint.style != ui.PaintingStyle.fill) {
+    if (colors == null && paint.style != ui.PaintingStyle.fill &&
+        paint.shader == null) {
       final Float32List positions = mode == ui.VertexMode.triangles
           ? vertices._positions
           : _convertVertexPositions(mode, vertices._positions);
@@ -1195,14 +1193,33 @@ List<html.Element> _clipContent(List<_SaveClipEntry> clipStack,
         ..height = '${roundRect.bottom - clipOffsetY}px';
       setElementTransform(curElement, newClipTransform.storage);
     } else if (entry.path != null) {
-      curElement.style
-        ..transform = matrix4ToCssTransform(newClipTransform)
-        ..transformOrigin = '0 0 0';
-      String svgClipPath =
-          createSvgClipDef(curElement as html.HtmlElement, entry.path!);
-      final html.Element clipElement =
-          html.Element.html(svgClipPath, treeSanitizer: _NullTreeSanitizer());
-      clipDefs.add(clipElement);
+      // Clipping optimization when we know that the path is an oval.
+      // We use a div with border-radius set to 50% with a size that is
+      // set to path bounds and set overflow to hidden.
+      final SurfacePath surfacePath = entry.path as SurfacePath;
+      if (surfacePath.pathRef.isOval != -1) {
+        final ui.Rect ovalBounds = surfacePath.getBounds();
+        final double clipOffsetX = ovalBounds.left;
+        final double clipOffsetY = ovalBounds.top;
+        newClipTransform = newClipTransform.clone()
+          ..translate(clipOffsetX, clipOffsetY);
+        curElement.style
+          ..overflow = 'hidden'
+          ..width = '${ovalBounds.width}px'
+          ..height = '${ovalBounds.height}px'
+          ..borderRadius = '50%';
+        setElementTransform(curElement, newClipTransform.storage);
+      } else {
+        // Abitrary path clipping.
+        curElement.style
+          ..transform = matrix4ToCssTransform(newClipTransform)
+          ..transformOrigin = '0 0 0';
+        String svgClipPath =
+            createSvgClipDef(curElement as html.HtmlElement, entry.path!);
+        final html.Element clipElement =
+            html.Element.html(svgClipPath, treeSanitizer: _NullTreeSanitizer());
+        clipDefs.add(clipElement);
+      }
     }
     // Reverse the transform of the clipping element so children can use
     // effective transform to render.

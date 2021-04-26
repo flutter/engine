@@ -18,6 +18,9 @@
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/runtime/dart_vm_lifecycle.h"
 #include "flutter/runtime/isolate_configuration.h"
+#include "fml/message_loop_task_queues.h"
+#include "fml/task_source.h"
+#include "fml/time/time_point.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
 #include "third_party/tonic/converter/dart_converter.h"
@@ -203,6 +206,12 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRunningRootIsolate(
   return isolate;
 }
 
+void DartIsolate::SpawnIsolateShutdownCallback(
+    std::shared_ptr<DartIsolateGroupData>* isolate_group_data,
+    std::shared_ptr<DartIsolate>* isolate_data) {
+  DartIsolate::DartIsolateShutdownCallback(isolate_group_data, isolate_data);
+}
+
 std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
     const Settings& settings,
     fml::RefPtr<const DartSnapshot> isolate_snapshot,
@@ -267,7 +276,9 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
       return Dart_CreateIsolateInGroup(
           /*group_member=*/spawning_isolate->isolate(),
           /*name=*/(*isolate_group_data)->GetAdvisoryScriptEntrypoint().c_str(),
-          /*shutdown_callback=*/nullptr,
+          /*shutdown_callback=*/
+          reinterpret_cast<Dart_IsolateShutdownCallback>(
+              DartIsolate::SpawnIsolateShutdownCallback),
           /*cleanup_callback=*/nullptr,
           /*child_isolate_data=*/isolate_data,
           /*error=*/error);
@@ -447,10 +458,21 @@ void DartIsolate::SetMessageHandlingTaskRunner(
   message_handling_task_runner_ = runner;
 
   message_handler().Initialize([runner](std::function<void()> task) {
+#ifdef OS_FUCHSIA
     runner->PostTask([task = std::move(task)]() {
       TRACE_EVENT0("flutter", "DartIsolate::HandleMessage");
       task();
     });
+#else
+    auto task_queues = fml::MessageLoopTaskQueues::GetInstance();
+    task_queues->RegisterTask(
+        runner->GetTaskQueueId(),
+        [task = std::move(task)]() {
+          TRACE_EVENT0("flutter", "DartIsolate::HandleMessage");
+          task();
+        },
+        fml::TimePoint::Now(), fml::TaskSourceGrade::kDartMicroTasks);
+#endif
   });
 }
 

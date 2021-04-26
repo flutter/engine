@@ -269,8 +269,13 @@ FILE: ../../../flutter/fml/synchronization/sync_switch_unittest.cc
 FILE: ../../../flutter/fml/synchronization/waitable_event.cc
 FILE: ../../../flutter/fml/synchronization/waitable_event.h
 FILE: ../../../flutter/fml/synchronization/waitable_event_unittest.cc
+FILE: ../../../flutter/fml/task_queue_id.h
 FILE: ../../../flutter/fml/task_runner.cc
 FILE: ../../../flutter/fml/task_runner.h
+FILE: ../../../flutter/fml/task_source.cc
+FILE: ../../../flutter/fml/task_source.h
+FILE: ../../../flutter/fml/task_source_grade.h
+FILE: ../../../flutter/fml/task_source_unittests.cc
 FILE: ../../../flutter/fml/thread.cc
 FILE: ../../../flutter/fml/thread.h
 FILE: ../../../flutter/fml/thread_local.cc
@@ -514,6 +519,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/key_map.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/keyboard.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/keyboard_binding.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/mouse_cursor.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/navigation.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/navigation/history.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/navigation/js_url_strategy.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/navigation/url_strategy.dart
@@ -537,6 +543,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/semantics/semantics.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/semantics/semantics_helper.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/semantics/tappable.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/semantics/text_field.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/services.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/services/buffers.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/services/message_codec.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/services/message_codecs.dart
@@ -674,6 +681,8 @@ FILE: ../../../flutter/shell/common/shell_test_platform_view.cc
 FILE: ../../../flutter/shell/common/shell_test_platform_view.h
 FILE: ../../../flutter/shell/common/shell_test_platform_view_gl.cc
 FILE: ../../../flutter/shell/common/shell_test_platform_view_gl.h
+FILE: ../../../flutter/shell/common/shell_test_platform_view_metal.h
+FILE: ../../../flutter/shell/common/shell_test_platform_view_metal.mm
 FILE: ../../../flutter/shell/common/shell_test_platform_view_vulkan.cc
 FILE: ../../../flutter/shell/common/shell_test_platform_view_vulkan.h
 FILE: ../../../flutter/shell/common/shell_unittests.cc
@@ -1111,6 +1120,8 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterBacki
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterChannelKeyResponder.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterChannelKeyResponder.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterChannelKeyResponderUnittests.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterCompositor.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterCompositor.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEmbedderExternalTextureUnittests.mm

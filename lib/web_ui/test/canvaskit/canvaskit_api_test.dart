@@ -368,6 +368,7 @@ SkShader _makeTestShader() {
     Uint32List.fromList(<int>[0xff0000ff]),
     Float32List.fromList([0, 1]),
     canvasKit.TileMode.Repeat,
+    null,
   );
 }
 
@@ -1272,7 +1273,7 @@ void _paragraphTests() {
     props.textAlign = canvasKit.TextAlign.Center;
     props.textDirection = canvasKit.TextDirection.RTL;
     props.heightMultiplier = 3;
-    props.textHeightBehavior = ui.TextHeightBehavior().encode();
+    props.textHeightBehavior = 0;
     props.maxLines = 4;
     props.ellipsis = '___';
     props.textStyle = SkTextStyleProperties()

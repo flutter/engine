@@ -31,15 +31,15 @@ import java.util.HashSet;
  * types of responders (in the listed order):
  *
  * <ul>
- *   <li>{@link Responder}s: An immutable list of key responders in a {@link KeyboardManager}
- *       that each implements the {@link Responder} interface. A {@link Responder} is
- *       a key responder that's capable of handling {@link KeyEvent}s asynchronously.
+ *   <li>{@link Responder}s: An immutable list of key responders in a {@link KeyboardManager} that
+ *       each implements the {@link Responder} interface. A {@link Responder} is a key responder
+ *       that's capable of handling {@link KeyEvent}s asynchronously.
  *       <p>When a new {@link KeyEvent} is received, {@link KeyboardManager} calls the {@link
  *       Responder#handleEvent(KeyEvent, OnKeyEventHandledCallback)} method on its {@link
  *       Responder}s. Each {@link Responder} must call the supplied {@link
  *       OnKeyEventHandledCallback} exactly once, when it has decided wether to handle the key event
- *       callback. More than one {@link Responder} is allowed to reply true and handle the
- *       same {@link KeyEvent}.
+ *       callback. More than one {@link Responder} is allowed to reply true and handle the same
+ *       {@link KeyEvent}.
  *       <p>Typically a {@link KeyboardManager} uses a {@link KeyChannelResponder} as its only
  *       {@link Responder}.
  *   <li>{@link TextInputPlugin}: if every {@link Responder} has replied false to a {@link
@@ -98,14 +98,14 @@ public class KeyboardManager {
    * <p>Implementers of this interface should be owned by a {@link KeyboardManager}, in order to
    * receive key events.
    *
-   * <p>After receiving a {@link KeyEvent}, the {@link Responder} must call the supplied
-   * {@link OnKeyEventHandledCallback} exactly once, to inform the {@link KeyboardManager} whether
-   * it wishes to handle the {@link KeyEvent}. The {@link KeyEvent} will not be propagated to the
+   * <p>After receiving a {@link KeyEvent}, the {@link Responder} must call the supplied {@link
+   * OnKeyEventHandledCallback} exactly once, to inform the {@link KeyboardManager} whether it
+   * wishes to handle the {@link KeyEvent}. The {@link KeyEvent} will not be propagated to the
    * {@link TextInputPlugin} or be redispatched to the view hierachy if any key responders answered
    * yes.
    *
-   * <p>If a {@link Responder} fails to call the {@link OnKeyEventHandledCallback} callback,
-   * the {@link KeyEvent} will never be sent to the {@link TextInputPlugin}, and the {@link
+   * <p>If a {@link Responder} fails to call the {@link OnKeyEventHandledCallback} callback, the
+   * {@link KeyEvent} will never be sent to the {@link TextInputPlugin}, and the {@link
    * KeyboardManager} class can't detect such errors as there is no timeout.
    */
   interface Responder {
@@ -117,8 +117,8 @@ public class KeyboardManager {
      * Informs this {@link Responder} that a new {@link KeyEvent} needs processing.
      *
      * @param keyEvent the new {@link KeyEvent} this {@link Responder} may be interested in.
-     * @param onKeyEventHandledCallback the method to call when this {@link Responder} has
-     *     decided whether to handle the {@link keyEvent}.
+     * @param onKeyEventHandledCallback the method to call when this {@link Responder} has decided
+     *     whether to handle the {@link keyEvent}.
      */
     void handleEvent(
         @NonNull KeyEvent keyEvent, @NonNull OnKeyEventHandledCallback onKeyEventHandledCallback);
