@@ -1864,21 +1864,15 @@ class ImagePerfInfos {
 }
 
 extension ImagePerfInfo on Image {
-  int get resourceDecodeTime => _getResourceDecodeTime();
-  set resourceDecodeTime(int time) {
-    _setResourceDecodeTime(time);
-  }
-
-  int _getResourceDecodeTime() {
+  int get resourceDecodeTime {
     return ImagePerfInfos.getResourceDecodeTime(this);
   }
 
-  void _setResourceDecodeTime(int time) {
+  set resourceDecodeTime(int time) {
     ImagePerfInfos.setResourceDecodeTime(this, time);
   }
 
-  int get resourceMemoryCachedSize => _getResourceMemoryCachedSize();
-  int _getResourceMemoryCachedSize() {
+  int get resourceMemoryCachedSize {
     const int RGBA = 4;
     return width * height * RGBA;
   }
