@@ -14,8 +14,20 @@
 
 typedef FlValue* (*FlValueConverter)(FlValue*);
 
+/**
+ * FlKeyChannelResponderMock:
+ *
+ * Options to mock several functionalities. Only used in unittests.
+ */
 typedef struct _FlKeyChannelResponderMock {
+  /**
+   * FlKeyChannelResponderMock::value_converter:
+   */
   FlValueConverter value_converter;
+
+  /**
+   * FlKeyChannelResponderMock::channel_name:
+   */
   const char* channel_name;
 } FlKeyChannelResponderMock;
 
@@ -31,27 +43,18 @@ G_DECLARE_FINAL_TYPE(FlKeyChannelResponder,
 /**
  * FlKeyChannelResponder:
  *
- * #FlKeyChannelResponder is a plugin that implements the shell side
- * of SystemChannels.keyEvent from the Flutter services library.
+ * A #FlKeyResponder that handles events by sending the raw event data
+ * in JSON through the message channel.
+ *
+ * This class corresponds to the RawKeyboard API in the framework.
  */
 
 /**
  * fl_key_channel_responder_new:
- * @messenger: an #FlBinaryMessenger.
- * @response_callback: the callback to call when a response is received.  If not
- *                     given (nullptr), then the default response callback is
- *                     used. Typically used for tests to receive event
- *                     information. If specified, unhandled events will not be
- *                     re-dispatched.
- * @text_input_plugin: The #FlTextInputPlugin to send key events to if the
- *                     framework doesn't handle them.
- * @channel_name: the name of the channel to send key events to the framework
- *                on. If not given (nullptr), then the standard key event
- *                channel name is used. Typically used for tests to send on a
- *                test channel.
+ * @messenger: the messenger that the message channel should be built on.
+ * @mock: options to mock several functionalities. Only used in unittests.
  *
- * Creates a new plugin that implements SystemChannels.keyEvent from the
- * Flutter services library.
+ * Creates a new #FlKeyChannelResponder.
  *
  * Returns: a new #FlKeyChannelResponder.
  */

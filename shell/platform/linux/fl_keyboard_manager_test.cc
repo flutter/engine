@@ -232,7 +232,7 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithAsyncResponds) {
   record->callback(true, record->user_data);
   EXPECT_EQ(redispatched_events()->len, 0u);
 
-  EXPECT_TRUE(fl_keyboard_manager_state_clear(manager));
+  EXPECT_TRUE(fl_keyboard_manager_is_state_clear(manager));
   g_ptr_array_clear(call_records);
 
   /// Test 2: Two events that are unhandled by the framework
@@ -281,7 +281,7 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithAsyncResponds) {
   EXPECT_EQ(call_records->len, 0u);
 
   g_ptr_array_clear(redispatched_events());
-  EXPECT_TRUE(fl_keyboard_manager_state_clear(manager));
+  EXPECT_TRUE(fl_keyboard_manager_is_state_clear(manager));
 
   /// Test 3: Dispatch the same event again to ensure that prevention from
   /// redispatching only works once.
@@ -321,9 +321,9 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithSyncResponds) {
   EXPECT_EQ(record->event->hardware_keycode, 0x26u);
   EXPECT_EQ(redispatched_events()->len, 0u);
 
-  EXPECT_TRUE(fl_keyboard_manager_state_clear(manager));
+  EXPECT_TRUE(fl_keyboard_manager_is_state_clear(manager));
 
-  EXPECT_TRUE(fl_keyboard_manager_state_clear(manager));
+  EXPECT_TRUE(fl_keyboard_manager_is_state_clear(manager));
   g_ptr_array_clear(call_records);
 
   /// Test 2: An event unhandled by the framework
@@ -346,7 +346,7 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithSyncResponds) {
   EXPECT_EQ(manager_handled, false);
   EXPECT_EQ(call_records->len, 0u);
 
-  EXPECT_TRUE(fl_keyboard_manager_state_clear(manager));
+  EXPECT_TRUE(fl_keyboard_manager_is_state_clear(manager));
   g_ptr_array_clear(redispatched_events());
 }
 
@@ -383,7 +383,7 @@ TEST(FlKeyboardManagerTest, WithTwoAsyncDelegates) {
   record->callback(false, record->user_data);
   EXPECT_EQ(redispatched_events()->len, 0u);
 
-  EXPECT_TRUE(fl_keyboard_manager_state_clear(manager));
+  EXPECT_TRUE(fl_keyboard_manager_is_state_clear(manager));
   g_ptr_array_clear(call_records);
 
   /// Test 2: All delegates respond false
@@ -409,7 +409,7 @@ TEST(FlKeyboardManagerTest, WithTwoAsyncDelegates) {
   EXPECT_EQ(manager_handled, false);
   EXPECT_EQ(call_records->len, 0u);
 
-  EXPECT_TRUE(fl_keyboard_manager_state_clear(manager));
+  EXPECT_TRUE(fl_keyboard_manager_is_state_clear(manager));
   g_ptr_array_clear(call_records);
 
   g_ptr_array_clear(redispatched_events());

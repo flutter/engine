@@ -11,21 +11,17 @@
 #include "flutter/shell/platform/linux/fl_text_input_plugin.h"
 
 /**
- * FlKeyEventPluginCallback:
- * @source_object: (nullable): the object the key event was started with.
- * @message: the message returned from the framework.
- * @handled: a boolean indicating whether the key event was handled in the
- *           framework.
- * @user_data: user data passed to the callback.
+ * FlKeyboardManagerRedispatcher:
+ * @event: the event to dispatch.
  *
- * Type definition for a function that will be called when a key event is
- * received from the engine.
+ * The signature for a callback with which a #FlKeyboardManager redispatches
+ * key events that are not handled by anyone.
  **/
 typedef void (*FlKeyboardManagerRedispatcher)(const GdkEvent* event);
 
 G_BEGIN_DECLS
 
-#define FL_KEYBOARD_MANAGER fl_keyboard_manager_get_type
+#define FL_TYPE_KEYBOARD_MANAGER fl_keyboard_manager_get_type
 G_DECLARE_FINAL_TYPE(FlKeyboardManager,
                      fl_keyboard_manager,
                      FL,
@@ -35,41 +31,80 @@ G_DECLARE_FINAL_TYPE(FlKeyboardManager,
 /**
  * FlKeyboardManager:
  *
- * #FlKeyboardManager is a plugin that implements the shell side
- * of SystemChannels.keyEvent from the Flutter services library.
+ * A hub that manages how key events are dispatched to various processing
+ * objects of Flutter, or possibly back to the system.
+ *
+ * This class manage one or more objects of #FlKeyResponder, as well as a
+ * #TextInputPlugin.
+ *
+ * An event that is received by #fl_keyboard_manager_handle_event is first
+ * dispatched to *all* responders. Each responder responds *ascynchronously*
+ * with a boolean, indicating whether it handles the event.
+ *
+ * An event that is not handled by any responders is then passed to to the
+ * #TextInputPlugin, which responds *synchronously* with a boolean, indicating
+ * whether it handles the event.
+ *
+ * If no processing objects handle the event, the event is then "redispatched":
+ * sent back to the system using #redispatch_callback.
+ *
+ * Preventing responders from receiving events is not supported, because in
+ * reality this class will only support 2 hardcoded ones (channel and
+ * embedder), where the only purpose of supporting two is to support the legacy
+ * API (channel) during the deprecation window, after which the channel
+ * responder should be removed.
  */
 
 /**
  * fl_keyboard_manager_new:
- * @messenger: an #FlBinaryMessenger.
- * @response_callback: the callback to call when a response is received.  If not
- *                     given (nullptr), then the default response callback is
- *                     used. Typically used for tests to receive event
- *                     information. If specified, unhandled events will not be
- *                     re-dispatched.
- * @text_input_plugin: The #FlTextInputPlugin to send key events to if the
- *                     framework doesn't handle them.
- * @channel_name: the name of the channel to send key events to the framework
- *                on. If not given (nullptr), then the standard key event
- *                channel name is used. Typically used for tests to send on a
- *                test channel.
+ * @text_input_plugin: the #FlTextInputPlugin to send key events to if the
+ * framework doesn't handle them.
+ * @redispatch_callback: how the events should be sent if no processing
+ * objects handle the event. Typically #gdk_event_put.
  *
- * Creates a new plugin that implements SystemChannels.keyEvent from the
- * Flutter services library.
+ * Create a new #FlKeyboardManager. The text input plugin must be specified
+ * now, while the responders should be added later with
+ * #fl_keyboard_manager_add_responder.
  *
- * Returns: a new #FlKeyEventPlugin.
+ * Returns: a new #FlKeyboardManager.
  */
 FlKeyboardManager* fl_keyboard_manager_new(
     FlTextInputPlugin* text_input_plugin,
     FlKeyboardManagerRedispatcher redispatch_callback);
 
+/**
+ * fl_keyboard_manager_add_responder:
+ * @manager: the #FlKeyboardManager self.
+ * @responder: the new responder to be added.
+ *
+ * Add a new #FlKeyResponder to the #FlKeyboardManager. Responders added
+ * earlier will receive events earlier.
+ */
 void fl_keyboard_manager_add_responder(FlKeyboardManager* manager,
                                        FlKeyResponder* responder);
 
+/**
+ * fl_keyboard_manager_handle_event:
+ * @manager: the #FlKeyboardManager self.
+ * @event: the event to be dispatched.
+ *
+ * Add a new #FlKeyResponder to the #FlKeyboardManager. Responders added
+ * earlier will receive events earlier.
+ */
 gboolean fl_keyboard_manager_handle_event(FlKeyboardManager* manager,
                                           GdkEventKey* event);
 
-gboolean fl_keyboard_manager_state_clear(FlKeyboardManager* manager);
+/**
+ * fl_keyboard_manager_is_state_clear:
+ * @manager: the #FlKeyboardManager self.
+ *
+ * Whether the manager's various states are cleared, i.e. no pending events
+ * for redispatching or for responding. This is mostly used in unittests.
+ *
+ * Returns: true if the manager's various states are cleared.
+ */
+gboolean fl_keyboard_manager_is_state_clear(
+    FlKeyboardManager* manager);
 
 G_END_DECLS
 

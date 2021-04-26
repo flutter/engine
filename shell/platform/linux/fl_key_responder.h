@@ -14,27 +14,41 @@
 G_BEGIN_DECLS
 
 typedef struct _FlKeyboardManager FlKeyboardManager;
+
+/**
+ * FlKeyResponderAsyncCallback:
+ * @event: whether the event has been handled.
+ * @user_data: the same value as user_data sent by
+ * #fl_key_responder_handle_event.
+ *
+ * The signature for a callback with which a #FlKeyResponder asynchronously
+ * reports whether the responder handles the event.
+ **/
 typedef void (*FlKeyResponderAsyncCallback)(bool handled, gpointer user_data);
 
 #define FL_TYPE_KEY_RESPONDER fl_key_responder_get_type()
-
 G_DECLARE_INTERFACE(FlKeyResponder,
                     fl_key_responder,
                     FL,
                     KEY_RESPONDER,
                     GObject);
 
+/**
+ * FlKeyResponder:
+ *
+ * An interface for a responder that can process a key event and decides
+ * asynchronously whether to handle an event.
+ *
+ * To use this class, add it with #fl_keyboard_manager_add_responder.
+ */
+
 struct _FlKeyResponderInterface {
   GTypeInterface g_iface;
 
   /**
-   * FlPluginRegistry::get_registrar_for_plugin:
-   * @registry: an #FlPluginRegistry.
-   * @name: plugin name.
+   * FlKeyResponder::handle_event:
    *
-   * Gets the plugin registrar for the the plugin with @name.
-   *
-   * Returns: (transfer full): an #FlPluginRegistrar.
+   * The implementation of #fl_key_responder_handle_event.
    */
   void (*handle_event)(FlKeyResponder* responder,
                        GdkEventKey* event,
@@ -43,12 +57,18 @@ struct _FlKeyResponderInterface {
 };
 
 /**
- * FlKeyResponder:
+ * fl_key_responder_handle_event:
+ * @responder: the #FlKeyResponder self.
+ * @event: the event to be handled. Must not be null.
+ * @callback: the callback to report the result. It should be called exactly
+ * once. Must not be null.
+ * @user_data: a value that will be sent back in the callback. Can be null.
  *
- * #FlKeyResponder is a plugin that implements the shell side
- * of SystemChannels.keyEvent from the Flutter services library.
+ * Let the responder handle an event, expecting the responder to report
+ * whether to handle the event. The result will be reported by invoking
+ * `callback` exactly once, which might happen after
+ * `fl_key_responder_handle_event` or during it.
  */
-
 void fl_key_responder_handle_event(FlKeyResponder* responder,
                                    GdkEventKey* event,
                                    FlKeyResponderAsyncCallback callback,
