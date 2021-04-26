@@ -631,7 +631,7 @@ class BitmapCanvas extends EngineCanvas {
         paint.colorFilter as EngineColorFilter?;
     html.HtmlElement imgElement;
     if (colorFilter is _CkBlendModeColorFilter) {
-      imgElement = _createImageElementWithBlend(image as HtmlImage,
+      imgElement = _createImageElementWithBlend(image,
           colorFilter.color, colorFilter.blendMode, paint);
     } else if (colorFilter is _CkMatrixColorFilter) {
       imgElement = _createImageElementWithSvgColorMatrixFilter(
@@ -684,11 +684,9 @@ class BitmapCanvas extends EngineCanvas {
       case ui.BlendMode.dstATop:
         return _createImageElementWithSvgBlendFilter(
             image, color, blendMode, paint);
-        break;
       default:
         return _createBackgroundImageWithBlend(
             image, color, blendMode, paint);
-        break;
     }
   }
 
