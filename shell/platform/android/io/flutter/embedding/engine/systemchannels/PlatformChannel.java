@@ -102,6 +102,18 @@ public class PlatformChannel {
                   result.error("error", exception.getMessage(), null);
                 }
                 break;
+              case "SystemChrome.setEnabledSystemUIMode":
+                try {
+                  SystemUiMode mode = decodeSystemUiMode((JSONArray) arguments);
+                  platformMessageHandler.showSystemUiMode(mode);
+                  result.success(null);
+                } catch (JSONException | NoSuchFieldException exception) {
+                  // JSONException: One or more expected fields were either omitted or referenced an
+                  // invalid type.
+                  // NoSuchFieldException: One or more of the overlay names are invalid.
+                  result.error("error", exception.getMessage(), null);
+                }
+                break;
               case "SystemChrome.restoreSystemUIOverlays":
                 platformMessageHandler.restoreSystemUiOverlays();
                 result.success(null);
@@ -334,8 +346,6 @@ public class PlatformChannel {
         return SystemUiMode.IMMERSIVE_STICKY;
       case EDGE_TO_EDGE:
         return SystemUiMode.EDGE_TO_EDGE;
-      case MANUAL:
-        return SystemUiMode.MANUAL;
     }
   }
 
@@ -353,9 +363,11 @@ public class PlatformChannel {
     Integer systemNavigationBarColor = null;
     // TODO(mattcarroll): add color annotation
     Integer systemNavigationBarDividerColor = null;
+    boolean systemNavigationBarContrastEnforced = null;
     Brightness statusBarIconBrightness = null;
     // TODO(mattcarroll): add color annotation
     Integer statusBarColor = null;
+    boolean systemStatusBarContrastEnforced = null;
 
     if (!encodedStyle.isNull("systemNavigationBarIconBrightness")) {
       systemNavigationBarIconBrightness =
@@ -364,6 +376,14 @@ public class PlatformChannel {
 
     if (!encodedStyle.isNull("systemNavigationBarColor")) {
       systemNavigationBarColor = encodedStyle.getInt("systemNavigationBarColor");
+    }
+
+    if (!encodedStyle.isNull("systemNavigationBarContrastEnforced")) {
+      systemNavigationBarContrastEnforced = encodedStyle.getBoolean("systemNavigationBarContrastEnforced");
+    }
+
+    if (!encodedStyle.isNull("systemNavigationBarDividerColor")) {
+      systemNavigationBarDividerColor = encodedStyle.getInt("systemNavigationBarDividerColor");
     }
 
     if (!encodedStyle.isNull("statusBarIconBrightness")) {
@@ -375,16 +395,18 @@ public class PlatformChannel {
       statusBarColor = encodedStyle.getInt("statusBarColor");
     }
 
-    if (!encodedStyle.isNull("systemNavigationBarDividerColor")) {
-      systemNavigationBarDividerColor = encodedStyle.getInt("systemNavigationBarDividerColor");
+    if (!encodedStyle.isNull("systemStatusBarContrastEnforced")) {
+      systemStatusBarContrastEnforced = encodedStyle.getBoolean("systemStatusBarContrastEnforced");
     }
 
     return new SystemChromeStyle(
         statusBarColor,
         statusBarIconBrightness,
+        systemStatusBarContrastEnforced,
         systemNavigationBarColor,
         systemNavigationBarIconBrightness,
-        systemNavigationBarDividerColor);
+        systemNavigationBarDividerColor,
+        systemNavigationBarContrastEnforced);
   }
 
   /**
@@ -442,15 +464,9 @@ public class PlatformChannel {
      * <p>{@link SystemUiMode#EDGE_TO_EDGE} refers to a layout configuration that will consume the full viewport. This
      * full screen experience does not hide status bars. These status bars can be set to transparent, making the buttons
      * and icons hover over the fullscreen application.
-     *
-     * <p>{@link SystemUiMode#MANUAL} allows for manual configuration of system status bars. These can be set with the
-     * given {@code overlays}. {@link SystemUiOverlay#TOP_OVERLAYS} refers to system overlays such as the status bar,
-     * while {@link SystemUiOverlay#BOTTOM_OVERLAYS} refers to system overlays such as the
-     * back/home/recents navigation on the bottom of the screen. An empty list of {@code overlays} should hide all
-     * system overlays.
      */
     // TODO(Piinks): add callback for system Ui change
-    void showSystemUiMode(@NonNull SystemUiMode mode, @Nullable List<SystemUiOverlay> overlays);
+    void showSystemUiMode(@NonNull SystemUiMode mode);
 
     /**
      * The Flutter application would like to restore the visibility of system overlays to the last
@@ -603,7 +619,6 @@ public class PlatformChannel {
     IMMERSIVE("SystemUiMode.immersive"),
     IMMERSIVE_STICKY("SystemUiMode.immersive_sticky"),
     EDGE_TO_EDGE("SystemUiMode.edge_to_edge"),
-    MANUAL("SystemUiMode.manual");
 
     @NonNull
     static SystemUiMode fromValue(@NonNull String encodedName) throws NoSuchFieldException {
@@ -642,23 +657,29 @@ public class PlatformChannel {
     // TODO(mattcarroll): add color annotation
     @Nullable public final Integer statusBarColor;
     @Nullable public final Brightness statusBarIconBrightness;
+    @Nullable public final boolean systemStatusBarContrastEnforced;
     // TODO(mattcarroll): add color annotation
     @Nullable public final Integer systemNavigationBarColor;
     @Nullable public final Brightness systemNavigationBarIconBrightness;
     // TODO(mattcarroll): add color annotation
     @Nullable public final Integer systemNavigationBarDividerColor;
+    @Nullable public final boolean systemNavigationBarContrastEnforced;
 
     public SystemChromeStyle(
         @Nullable Integer statusBarColor,
         @Nullable Brightness statusBarIconBrightness,
+        @Nullable boolean systemStatusBarContrastEnforced,
         @Nullable Integer systemNavigationBarColor,
         @Nullable Brightness systemNavigationBarIconBrightness,
-        @Nullable Integer systemNavigationBarDividerColor) {
+        @Nullable Integer systemNavigationBarDividerColor,
+        @Nullable boolean systemNavigationBarContrastEnforced) {
       this.statusBarColor = statusBarColor;
       this.statusBarIconBrightness = statusBarIconBrightness;
+      this.systemStatusBarContrastEnforced = systemStatusBarContrastEnforced;
       this.systemNavigationBarColor = systemNavigationBarColor;
       this.systemNavigationBarIconBrightness = systemNavigationBarIconBrightness;
       this.systemNavigationBarDividerColor = systemNavigationBarDividerColor;
+      this.systemNavigationBarContrastEnforced = systemNavigationBarContrastEnforced;
     }
   }
 

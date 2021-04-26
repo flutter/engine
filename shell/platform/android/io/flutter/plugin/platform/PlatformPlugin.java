@@ -86,8 +86,8 @@ public class PlatformPlugin {
         }
 
         @Override
-        public void showSystemUiMode(@NonNull SystemUiMode mode, @Nullable List<SystemUiOverlay> overlays) {
-          setSystemChromeEnabledSystemUIMode(mode, overlays);
+        public void showSystemUiMode(@NonNull SystemUiMode mode) {
+          setSystemChromeEnabledSystemUIMode(mode);
         }
 
         @Override
@@ -317,8 +317,6 @@ public class PlatformPlugin {
     updateSystemUiOverlays();
   }
 
-  // This method is deprecated, use setSystemChromeEnabledSystemUIMode instead.
-  @Deprecated
   private void setSystemChromeEnabledSystemUIOverlays(
       List<PlatformChannel.SystemUiOverlay> overlaysToShow) {
     // Start by assuming we want to hide all system overlays (like an immersive

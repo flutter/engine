@@ -179,16 +179,16 @@ using namespace flutter;
   }
 }
 
-- (void)setSystemChromeEnabledSystemUIMode:(NSObject*)mode enabledOverlays:(NSArray*)overlays {
-  // Checks if the top status bar should be visible. This platform ignores all
-  // other overlays and UI modes
+- (void)setSystemChromeEnabledSystemUIOverlays:(NSString*)mode {
+  // Checks if the top status bar should be visible, reflected by edge to edge setting. This platform ignores all
+  // other system ui modes.
 
   // We opt out of view controller based status bar visibility since we want
   // to be able to modify this on the fly. The key used is
   // UIViewControllerBasedStatusBarAppearance
   [UIApplication sharedApplication].statusBarHidden =
-      ![overlays containsObject:@"SystemUiOverlay.top"];
-  if ([overlays containsObject:@"SystemUiOverlay.bottom"]) {
+      ![mode isEqualToString:@"SystemUiMode.edge_to_edge"];
+  if ([mode isEqualToString:@"SystemUiMode.edge_to_edge"]) {
     [[NSNotificationCenter defaultCenter]
         postNotificationName:FlutterViewControllerShowHomeIndicator
                       object:nil];
