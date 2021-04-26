@@ -373,9 +373,9 @@ public class FlutterFragmentActivity extends FragmentActivity
   /**
    * Retrieves the previously created {@link FlutterFragment} if possible.
    *
-   * If the activity is recreated, an existing {@link FlutterFragment} may already exist.
-   * Retain a reference to that {@link FlutterFragment} in the {@code #flutterFragment} field
-   * and avoid re-creating another {@link FlutterFragment}.
+   * <p>If the activity is recreated, an existing {@link FlutterFragment} may already exist. Retain
+   * a reference to that {@link FlutterFragment} in the {@code #flutterFragment} field and avoid
+   * re-creating another {@link FlutterFragment}.
    */
   @VisibleForTesting
   FlutterFragment retrieveExistingFlutterFragmentIfPossible() {
