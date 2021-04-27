@@ -13,6 +13,8 @@ import 'package:ui/ui.dart' as ui;
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
+import '../canvaskit/common.dart';
+
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
@@ -74,10 +76,12 @@ void testMain() {
         completer.complete,
       );
       final ByteData? response = await completer.future;
-      expect(
-        () => codec.decodeEnvelope(response!),
-        throwsA(isA<PlatformException>()),
-      );
+      if (response != null) {
+        expect(
+              () => codec.decodeEnvelope(response),
+          throwsA(isA<PlatformException>()),
+        );
+      }
       js_util.setProperty(
           html.window.navigator, 'clipboard', originalClipboard);
     });
