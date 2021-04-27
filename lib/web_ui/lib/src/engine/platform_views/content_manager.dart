@@ -169,10 +169,14 @@ class PlatformViewManager {
         content = factoryFunction(viewId);
       }
 
-      // Scrutinize closely any modifications to `content`.
+      // Scrutinize closely any other modifications to `content`.
       // We shouldn't modify users' returned `content` if at all possible.
       // Note there's also no getContent(viewId) function anymore, to prevent
       // from later modifications too.
+      if (content.style.height.isEmpty) {
+        printWarning('Height of Platform View type: [$viewType] may not be set. Defaulting to `height: 100%`.\nSet `style.height` to any appropriate value to stop this message.');
+        content.style.height = '100%';
+      }
 
       return wrapper..append(content);
     });
