@@ -418,6 +418,11 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
           case 'Clipboard.getData':
             ClipboardMessageHandler().getDataMethodCall(callback);
             return;
+          case 'LocalFontAccess':
+            requestLocalFonts();
+            _replyToPlatformMessage(
+                callback, codec.encodeSuccessEnvelope(true));
+            return;
         }
         break;
 

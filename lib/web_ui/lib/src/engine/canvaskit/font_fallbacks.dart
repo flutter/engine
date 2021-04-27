@@ -58,20 +58,25 @@ class FontFallbackData {
 
   final Map<String, int> fontFallbackCounts = <String, int>{};
 
-  void registerFallbackFont(String family, Uint8List bytes) {
+  void registerFallbackFont(String family, Uint8List bytes,
+      {bool countedName: true}) {
     final SkTypeface? typeface =
         canvasKit.FontMgr.RefDefault().MakeTypefaceFromData(bytes);
     if (typeface == null) {
       printWarning('Failed to parse fallback font $family as a font.');
       return;
     }
-    fontFallbackCounts.putIfAbsent(family, () => 0);
-    int fontFallbackTag = fontFallbackCounts[family]!;
-    fontFallbackCounts[family] = fontFallbackCounts[family]! + 1;
-    String countedFamily = '$family $fontFallbackTag';
-    registeredFallbackFonts
-        .add(_RegisteredFont(bytes, countedFamily, typeface));
-    globalFontFallbacks.add(countedFamily);
+    String? familyName;
+    if (countedName) {
+      fontFallbackCounts.putIfAbsent(family, () => 0);
+      int fontFallbackTag = fontFallbackCounts[family]!;
+      fontFallbackCounts[family] = fontFallbackCounts[family]! + 1;
+      familyName = '$family $fontFallbackTag';
+    } else {
+      familyName = family;
+    }
+    registeredFallbackFonts.add(_RegisteredFont(bytes, familyName, typeface));
+    globalFontFallbacks.add(familyName);
   }
 }
 
@@ -134,6 +139,49 @@ Future<void> findFontsForMissingCodeunits(List<int> codeUnits) async {
             'characters. Please add a font asset for the missing characters.'
             ' See: https://flutter.dev/docs/cookbook/design/fonts');
         data.codeUnitsWithNoKnownFont.addAll(missingCodeUnits);
+      }
+    }
+  }
+}
+
+Future<void> requestLocalFonts() async {
+  /// If the Local Font Access API is enabled, then request permission to read
+  /// local fonts and add them to the default set of fonts.
+  if (_enableLocalFontAccess) {
+    final FontFallbackData fallbacks = FontFallbackData.instance;
+    final html.Navigator navigator = html.window.navigator;
+    if (js_util.hasProperty(navigator, 'fonts')) {
+      final dynamic fonts = js_util.getProperty(navigator, 'fonts');
+      try {
+        final dynamic localFonts = await js_util.promiseToFuture<dynamic>(
+          js_util.callMethod(
+            fonts,
+            'query',
+            [],
+          ),
+        );
+        final List<Future<void>> localFontFutures = <Future<void>>[];
+        for (dynamic localFont in localFonts) {
+          final String family = js_util.getProperty(localFont, 'family');
+          final html.Blob blob = await js_util
+              .promiseToFuture(js_util.callMethod(localFont, 'blob', []));
+          final html.FileReader reader = html.FileReader();
+          localFontFutures.add(reader.onLoadEnd.first.then((_) {
+            print('REGISTERING $family');
+            fallbacks.registerFallbackFont(family, reader.result as Uint8List,
+                countedName: false);
+          }));
+          reader.readAsArrayBuffer(blob);
+        }
+        await Future.wait(localFontFutures);
+        await skiaFontCollection.ensureFontsLoaded();
+        await sendFontChangeMessage();
+      } catch (e) {
+        if (js_util.getProperty(e, 'name') != 'TypeError') {
+          rethrow;
+        }
+        html.window.console
+            .warn('Could not request the Local Fonts permission.');
       }
     }
   }
@@ -404,32 +452,6 @@ class NotoFont {
         _decodingCompleter!.complete();
       } else {
         await _decodingCompleter!.future;
-      }
-    }
-  }
-
-  Future<void> addLocalFallbackFonts() async {
-    /// If the Local Font Access API is enabled, then request permission to read
-    /// local fonts and add them to the default set of fonts.
-    if (_enableLocalFontAccess) {
-      final html.Navigator navigator = html.window.navigator;
-      if (js_util.hasProperty(navigator, 'fonts')) {
-        final dynamic fonts = js_util.getProperty(navigator, 'fonts');
-        try {
-          final dynamic localFonts = await js_util.callMethod(
-            fonts,
-            'query',
-            [],
-          );
-          print('GOT LOCAL FONTS!');
-          print(localFonts);
-        } catch (e) {
-          if (js_util.getProperty(e, 'name') != 'TypeError') {
-            rethrow;
-          }
-          html.window.console
-              .warn('Could not request the Local Fonts permission.');
-        }
       }
     }
   }
