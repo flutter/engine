@@ -1,4 +1,4 @@
-Signature: bc34adc3a58f78443d21140ad44fd709
+Signature: d1470f55ace450c822aa73951e972e47
 
 UNUSED LICENSES:
 
@@ -5699,6 +5699,8 @@ FILE: ../../../third_party/skia/modules/androidkit/src/Paint.cpp
 FILE: ../../../third_party/skia/modules/androidkit/src/RuntimeShaderBuilder.cpp
 FILE: ../../../third_party/skia/modules/androidkit/src/Shader.cpp
 FILE: ../../../third_party/skia/modules/androidkit/src/Surface.cpp
+FILE: ../../../third_party/skia/modules/androidkit/src/SurfaceThread.cpp
+FILE: ../../../third_party/skia/modules/androidkit/src/SurfaceThread.h
 FILE: ../../../third_party/skia/modules/skottie/src/effects/FractalNoiseEffect.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/effects/SphereEffect.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/effects/ThresholdEffect.cpp
