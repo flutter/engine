@@ -149,6 +149,10 @@ struct _FlKeyEmbedderResponder {
   // It is a bit mask composed of GTK mode bits.
   guint lock_records;
 
+  // The inferred mode indicating whether the CapsLock state logic is reversed
+  // on this platform.
+  //
+  // For more information, see #update_caps_lock_state_logic_inferrence.
   StateLogicInferrence caps_lock_state_logic_inferrence;
 
   // A static map from XKB code to Flutter's physical key code.
@@ -427,8 +431,9 @@ static void synchronize_pressed_states_loop_body(gpointer key,
 
 // Update the pressing record.
 //
-// If `logical_key` is 0, the record will be set as "released". Otherwise,
-// the record will be set as "pressed" with this logical key.
+// If `logical_key` is 0, the record will be set as "released".  Otherwise, the
+// record will be set as "pressed" with this logical key.  This function asserts
+// that the key is pressed if the caller asked to release, and vice versa.
 static void update_pressing_state(FlKeyEmbedderResponder* self,
                                   uint64_t physical_key,
                                   uint64_t logical_key) {
@@ -443,6 +448,23 @@ static void update_pressing_state(FlKeyEmbedderResponder* self,
                      0);
     g_hash_table_remove(self->pressing_records,
                         uint64_to_gpointer(physical_key));
+  }
+}
+
+// Update the lock record.
+//
+// If `is_down` is false, this function is a no-op.  Otherwise, this function
+// finds the lock bit corresponding to `physical_key`, and flips its bit.
+static void possibly_update_lock_bit(FlKeyEmbedderResponder* self,
+                                     uint64_t physical_key,
+                                     bool is_down) {
+  if (!is_down) {
+    return;
+  }
+  const guint mode_bit = GPOINTER_TO_UINT(g_hash_table_lookup(
+      self->physical_key_to_lock_bit, uint64_to_gpointer(physical_key)));
+  if (mode_bit != 0) {
+    self->lock_records ^= mode_bit;
   }
 }
 
@@ -487,19 +509,22 @@ static int find_stage_by_others_event(int stage_by_record, bool is_state_on) {
   return stage_by_record;
 }
 
-static void possibly_update_lock_bit(FlKeyEmbedderResponder* self,
-                                     uint64_t physical_key,
-                                     bool is_down) {
-  if (!is_down) {
-    return;
-  }
-  const guint mode_bit = GPOINTER_TO_UINT(g_hash_table_lookup(
-      self->physical_key_to_lock_bit, uint64_to_gpointer(physical_key)));
-  if (mode_bit != 0) {
-    self->lock_records ^= mode_bit;
-  }
-}
-
+// Infer caps_lock_state_logic_inferrence if applicable.
+//
+// In most cases, when a lock key is pressed or released, its event has the
+// key's state as 0-1-1-1 for the 4 stages (as documented in
+// #synchronize_lock_states_loop_body) respectively.  But in very rare cases it
+// produces 1-1-0-1, which we call "reversed state logic".  This is observed
+// when using Chrome Remote Desktop on macOS.
+//
+// To detect whether the current platform is normal or reversed, this function
+// is called on the first down event of CapsLock before calculating stages.
+// This function then store the inferred mode as
+// self->caps_lock_state_logic_inferrence.
+//
+// Note that this does not help if the same app session is used alternatively
+// between a reversed platform and a normal platform.  But this is the best we
+// can do.
 static void update_caps_lock_state_logic_inferrence(
     FlKeyEmbedderResponder* self,
     bool is_down_event,
