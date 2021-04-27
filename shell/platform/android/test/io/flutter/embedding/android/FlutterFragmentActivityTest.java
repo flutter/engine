@@ -180,7 +180,7 @@ public class FlutterFragmentActivityTest {
     // a FlutterEngine to be created.
     activity.onCreate(null);
     assertNotNull(activity.getFlutterEngine());
-    assertEquals(1, activity.engineCreated);
+    assertEquals(1, activity.numberOfEnginesCreated);
   }
 
   @Test
@@ -196,11 +196,11 @@ public class FlutterFragmentActivityTest {
 
     activity.onCreate(null);
     assertEquals(engine, activity.getFlutterEngine());
-    assertEquals(0, activity.engineCreated);
+    assertEquals(0, activity.numberOfEnginesCreated);
   }
 
   static class FlutterFragmentActivityWithProvidedEngine extends FlutterFragmentActivity {
-    int engineCreated = 0;
+    int numberOfEnginesCreated = 0;
 
     @Override
     protected FlutterFragment createFlutterFragment() {
@@ -215,7 +215,7 @@ public class FlutterFragmentActivityTest {
       when(flutterJNI.isAttached()).thenReturn(true);
       when(flutterLoader.automaticallyRegisterPlugins()).thenReturn(true);
 
-      engineCreated++;
+      numberOfEnginesCreated++;
       return new FlutterEngine(context, flutterLoader, flutterJNI, new String[] {}, true);
     }
   }
