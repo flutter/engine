@@ -62,10 +62,12 @@ mkdir -p "$OUTDIR"
 echo "Compiling kernel..."
 
 "$HOST_TOOLS/dart" \
+  # No need for observatory/DDS.
   --disable-dart-dev \
   "$HOST_TOOLS/gen/frontend_server.dart.snapshot" \
   --sdk-root "$HOST_TOOLS/flutter_patched_sdk" \
   --target=flutter \
+  # Avoid printing out a lot of verbosity that doesn't help this test.
   --no-print-incremental-dependencies \
   --aot \
   --tfa  \
