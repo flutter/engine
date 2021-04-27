@@ -423,31 +423,31 @@ void initialize_modifier_bit_to_checked_keys(GHashTable* table) {
 
   data = g_new(FlKeyEmbedderCheckedKey, 1);
   g_hash_table_insert(table, GUINT_TO_POINTER(GDK_SHIFT_MASK), data);
+  data->is_caps_lock = false;
   data->primary_logical_key = 0x3000000010d;   // shiftLeft
   data->primary_physical_key = 0x0000700e1;    // shiftLeft
   data->secondary_physical_key = 0x0000700e5;  // shiftRight
-  data->is_caps_lock = false;
 
   data = g_new(FlKeyEmbedderCheckedKey, 1);
   g_hash_table_insert(table, GUINT_TO_POINTER(GDK_CONTROL_MASK), data);
+  data->is_caps_lock = false;
   data->primary_logical_key = 0x30000000105;   // controlLeft
   data->primary_physical_key = 0x0000700e0;    // controlLeft
   data->secondary_physical_key = 0x0000700e4;  // controlRight
-  data->is_caps_lock = false;
 
   data = g_new(FlKeyEmbedderCheckedKey, 1);
   g_hash_table_insert(table, GUINT_TO_POINTER(GDK_MOD1_MASK), data);
+  data->is_caps_lock = false;
   data->primary_logical_key = 0x30000000102;   // altLeft
   data->primary_physical_key = 0x0000700e2;    // altLeft
   data->secondary_physical_key = 0x0000700e6;  // altRight
-  data->is_caps_lock = false;
 
   data = g_new(FlKeyEmbedderCheckedKey, 1);
   g_hash_table_insert(table, GUINT_TO_POINTER(GDK_MOD4_MASK), data);
+  data->is_caps_lock = false;
   data->primary_logical_key = 0x30000000109;   // metaLeft
   data->primary_physical_key = 0x0000700e3;    // metaLeft
   data->secondary_physical_key = 0x0000700e7;  // metaRight
-  data->is_caps_lock = false;
 }
 
 void initialize_lock_bit_to_checked_keys(GHashTable* table) {
@@ -455,13 +455,13 @@ void initialize_lock_bit_to_checked_keys(GHashTable* table) {
 
   data = g_new(FlKeyEmbedderCheckedKey, 1);
   g_hash_table_insert(table, GUINT_TO_POINTER(GDK_LOCK_MASK), data);
+  data->is_caps_lock = true;
   data->primary_logical_key = 0x01000000104;  // capsLock
   data->primary_physical_key = 0x000070039;   // capsLock
-  data->is_caps_lock = true;
 
   data = g_new(FlKeyEmbedderCheckedKey, 1);
   g_hash_table_insert(table, GUINT_TO_POINTER(GDK_MOD2_MASK), data);
+  data->is_caps_lock = false;
   data->primary_logical_key = 0x0100000010a;  // numLock
   data->primary_physical_key = 0x000070053;   // numLock
-  data->is_caps_lock = false;
 }

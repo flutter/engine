@@ -121,6 +121,16 @@ static FlKeyEmbedderUserData* fl_key_embedder_user_data_new(
 
 /* Define FlKeyEmbedderResponder */
 
+namespace {
+
+typedef enum {
+  kStateLogicUndecided,
+  kStateLogicNormal,
+  kStateLogicReversed,
+} StateLogicInferrence;
+
+}
+
 struct _FlKeyEmbedderResponder {
   GObject parent_instance;
 
@@ -138,6 +148,8 @@ struct _FlKeyEmbedderResponder {
   //
   // It is a bit mask composed of GTK mode bits.
   guint lock_records;
+
+  StateLogicInferrence caps_lock_state_logic_inferrence;
 
   // A static map from XKB code to Flutter's physical key code.
   //
@@ -250,6 +262,7 @@ FlKeyEmbedderResponder* fl_key_embedder_responder_new(FlEngine* engine) {
 
   self->pressing_records = g_hash_table_new(g_direct_hash, g_direct_equal);
   self->lock_records = 0;
+  self->caps_lock_state_logic_inferrence = kStateLogicUndecided;
 
   self->xkb_to_physical_key = g_hash_table_new(g_direct_hash, g_direct_equal);
   initialize_xkb_to_physical_key(self->xkb_to_physical_key);
@@ -440,8 +453,8 @@ static void update_pressing_state(FlKeyEmbedderResponder* self,
   }
 }
 
-// Find the stage # by the current record, which should be the recorded stage before the
-// event.
+// Find the stage # by the current record, which should be the recorded stage
+// before the event.
 static int find_stage_by_record(bool is_down, bool is_enabled) {
   constexpr int stage_by_record_index[] = {
       0,  // is_down: 0,  is_enabled: 0
@@ -457,14 +470,12 @@ static int find_stage_by_record(bool is_down, bool is_enabled) {
 static int find_stage_by_self_event(int stage_by_record,
                                     bool is_down_event,
                                     bool is_state_on,
-                                    bool is_caps_lock) {
-  g_return_val_if_fail(stage_by_record >= 0 && stage_by_record < 4,
-                       stage_by_record);
+                                    bool reverse_state_logic) {
   if (!is_state_on) {
-    return is_caps_lock ? 2 : 0;
+    return reverse_state_logic ? 2 : 0;
   }
   if (is_down_event) {
-    return is_caps_lock ? 0 : 2;
+    return reverse_state_logic ? 0 : 2;
   }
   return stage_by_record;
 }
@@ -497,7 +508,33 @@ static void possibly_update_lock_bit(FlKeyEmbedderResponder* self,
   }
 }
 
+static void update_caps_lock_state_logic_inferrence(
+    FlKeyEmbedderResponder* self,
+    bool is_down_event,
+    bool enabled_by_state,
+    int stage_by_record) {
+  if (self->caps_lock_state_logic_inferrence != kStateLogicUndecided) {
+    return;
+  }
+  if (!is_down_event) {
+    return;
+  }
+  const int stage_by_event = find_stage_by_self_event(
+      stage_by_record, is_down_event, enabled_by_state, false);
+  if ((stage_by_event == 0 && stage_by_record == 2) ||
+      (stage_by_event == 2 && stage_by_record == 0)) {
+    self->caps_lock_state_logic_inferrence = kStateLogicReversed;
+  } else {
+    self->caps_lock_state_logic_inferrence = kStateLogicNormal;
+  }
+  printf("Infer: byEvent %d byRecord %d result reversed %d\n", stage_by_event,
+         stage_by_record,
+         self->caps_lock_state_logic_inferrence == kStateLogicReversed);
+}
+
 // The loop body to synchronize lock states.
+//
+// This function might modify self->caps_lock_state_logic_inferrence.
 static void synchronize_lock_states_loop_body(gpointer key,
                                               gpointer value,
                                               gpointer user_data) {
@@ -517,15 +554,15 @@ static void synchronize_lock_states_loop_body(gpointer key,
   // A lock mode key can be at any of a 4-stage cycle. The following table lists
   // the definition of each stage (TruePressed and TrueEnabled), the event of
   // the lock key between every 2 stages (SelfType and SelfState), and the event
-  // of other keys at each stage (OthersState). Notice that SelfState uses
-  // different rule for CapsLock from for other keys.
+  // of other keys at each stage (OthersState). Notice that on certain platforms
+  // SelfState uses a reversed rule for certain keys (SelfState(rvsd)).
   //
   //               #    [0]         [1]          [2]           [3]
   //     TruePressed: Released    Pressed      Released      Pressed
   //     TrueEnabled: Disabled    Enabled      Enabled       Disabled
   //        SelfType:         Down         Up           Down            Up
-  // SelfState(Caps):          1           1             0              1
-  //  SelfState(Etc):          0           1             1              1
+  //       SelfState:          0           1             1              1
+  // SelfState(rvsd):          1           1             0              1
   //     OthersState:    0           1            1              1
   //
   // Except for stage 0, we can't derive the exact stage just from event
@@ -542,11 +579,19 @@ static void synchronize_lock_states_loop_body(gpointer key,
 
   const bool enabled_by_state = (context->state & modifier_bit) != 0;
   const bool is_self_event = physical_key == context->event_physical_key;
+  if (is_self_event && checked_key->is_caps_lock) {
+    update_caps_lock_state_logic_inferrence(self, context->is_down,
+                                            enabled_by_state, stage_by_record);
+    g_return_if_fail(self->caps_lock_state_logic_inferrence !=
+                     kStateLogicUndecided);
+  }
+  const bool reverse_state_logic =
+      checked_key->is_caps_lock &&
+      self->caps_lock_state_logic_inferrence == kStateLogicReversed;
   const int stage_by_event =
       is_self_event
           ? find_stage_by_self_event(stage_by_record, context->is_down,
-                                     enabled_by_state,
-                                     checked_key->is_caps_lock)
+                                     enabled_by_state, reverse_state_logic)
           : find_stage_by_others_event(stage_by_record, enabled_by_state);
 
   // The destination stage is equal to stage_by_event but shifted cyclically to
