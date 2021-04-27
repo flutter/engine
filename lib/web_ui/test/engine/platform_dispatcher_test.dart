@@ -13,8 +13,6 @@ import 'package:ui/ui.dart' as ui;
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
-import '../canvaskit/common.dart';
-
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
