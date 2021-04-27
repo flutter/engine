@@ -5269,8 +5269,8 @@ package:flutter/src/services/system_chrome.dart,SystemUiOverlayStyle,get:statusB
 package:flutter/src/services/system_chrome.dart,SystemUiOverlayStyle,get:statusBarIconBrightness
 package:flutter/src/services/system_chrome.dart,SystemUiOverlayStyle,get:systemStatusBarContrastEnforced
 package:flutter/src/services/system_chrome.dart,SystemUiOverlayStyle,get:systemNavigationBarColor
-package:flutter/src/services/system_chrome.dart,SystemUiOverlayStyle,get:systemNavigationBarDividerColor
 package:flutter/src/services/system_chrome.dart,SystemUiOverlayStyle,get:systemNavigationBarIconBrightness
+package:flutter/src/services/system_chrome.dart,SystemUiOverlayStyle,get:systemNavigationBarDividerColor
 package:flutter/src/services/system_chrome.dart,SystemUiOverlayStyle,get:systemNavigationBarContrastEnforced
 package:flutter/src/widgets/app.dart,WidgetsApp,get:builder
 package:flutter/src/widgets/app.dart,WidgetsApp,get:localizationsDelegates

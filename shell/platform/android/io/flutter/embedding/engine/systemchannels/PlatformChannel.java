@@ -360,45 +360,45 @@ public class PlatformChannel {
   @NonNull
   private SystemChromeStyle decodeSystemChromeStyle(@NonNull JSONObject encodedStyle)
       throws JSONException, NoSuchFieldException {
-    Brightness systemNavigationBarIconBrightness = null;
+    // TODO(mattcarroll): add color annotation
+    Integer statusBarColor = null;
+    Brightness statusBarIconBrightness = null;
+    boolean systemStatusBarContrastEnforced = true;
     // TODO(mattcarroll): add color annotation
     Integer systemNavigationBarColor = null;
+    Brightness systemNavigationBarIconBrightness = null;
     // TODO(mattcarroll): add color annotation
     Integer systemNavigationBarDividerColor = null;
     boolean systemNavigationBarContrastEnforced = true;
-    Brightness statusBarIconBrightness = null;
-    // TODO(mattcarroll): add color annotation
-    Integer statusBarColor = null;
-    boolean systemStatusBarContrastEnforced = true;
 
-    if (!encodedStyle.isNull("systemNavigationBarIconBrightness")) {
-      systemNavigationBarIconBrightness =
-          Brightness.fromValue(encodedStyle.getString("systemNavigationBarIconBrightness"));
+    if (!encodedStyle.isNull("statusBarColor")) {
+      statusBarColor = encodedStyle.getInt("statusBarColor");
+    }
+
+    if (!encodedStyle.isNull("statusBarIconBrightness")) {
+      statusBarIconBrightness =
+              Brightness.fromValue(encodedStyle.getString("statusBarIconBrightness"));
+    }
+
+    if (!encodedStyle.isNull("systemStatusBarContrastEnforced")) {
+      systemStatusBarContrastEnforced = encodedStyle.getBoolean("systemStatusBarContrastEnforced");
     }
 
     if (!encodedStyle.isNull("systemNavigationBarColor")) {
       systemNavigationBarColor = encodedStyle.getInt("systemNavigationBarColor");
     }
 
-    if (!encodedStyle.isNull("systemNavigationBarContrastEnforced")) {
-      systemNavigationBarContrastEnforced = encodedStyle.getBoolean("systemNavigationBarContrastEnforced");
+    if (!encodedStyle.isNull("systemNavigationBarIconBrightness")) {
+      systemNavigationBarIconBrightness =
+          Brightness.fromValue(encodedStyle.getString("systemNavigationBarIconBrightness"));
     }
 
     if (!encodedStyle.isNull("systemNavigationBarDividerColor")) {
       systemNavigationBarDividerColor = encodedStyle.getInt("systemNavigationBarDividerColor");
     }
 
-    if (!encodedStyle.isNull("statusBarIconBrightness")) {
-      statusBarIconBrightness =
-          Brightness.fromValue(encodedStyle.getString("statusBarIconBrightness"));
-    }
-
-    if (!encodedStyle.isNull("statusBarColor")) {
-      statusBarColor = encodedStyle.getInt("statusBarColor");
-    }
-
-    if (!encodedStyle.isNull("systemStatusBarContrastEnforced")) {
-      systemStatusBarContrastEnforced = encodedStyle.getBoolean("systemStatusBarContrastEnforced");
+    if (!encodedStyle.isNull("systemNavigationBarContrastEnforced")) {
+      systemNavigationBarContrastEnforced = encodedStyle.getBoolean("systemNavigationBarContrastEnforced");
     }
 
     return new SystemChromeStyle(
