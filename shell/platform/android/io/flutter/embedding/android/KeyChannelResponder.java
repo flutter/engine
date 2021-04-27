@@ -4,6 +4,7 @@
 
 package io.flutter.embedding.android;
 
+import android.view.KeyCharacterMap;
 import android.view.KeyEvent;
 import androidx.annotation.NonNull;
 import io.flutter.embedding.engine.systemchannels.KeyEventChannel;
@@ -79,7 +80,7 @@ class KeyChannelResponder implements KeyboardManager.Responder {
   }
 
   @Override
-  void handleEvent(
+  public void handleEvent(
       @NonNull KeyEvent keyEvent, @NonNull OnKeyEventHandledCallback onKeyEventHandledCallback) {
     final int action = keyEvent.getAction();
     if (action != KeyEvent.ACTION_DOWN && action != KeyEvent.ACTION_UP) {
