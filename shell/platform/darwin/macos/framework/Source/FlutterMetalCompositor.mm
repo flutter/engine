@@ -4,6 +4,8 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalCompositor.h"
 
+#include "flutter/fml/logging.h"
+
 namespace flutter {
 
 FlutterMetalCompositor::FlutterMetalCompositor(FlutterViewController* view_controller)
