@@ -12,9 +12,9 @@ part of engine;
 // import '../../../ui.dart' as ui show PlatformMessageResponseCallback;
 // import './content_manager.dart';
 
-/// A function that handles a newly created [html.SlotElement] for a platform
-/// view with a unique [int] id.
-typedef PlatformViewSlotHandler = void Function(int, html.SlotElement);
+/// A function that handles a newly created [html.Element] for a platform
+/// view SLOT (insertion point) with a unique [int] id.
+typedef PlatformViewSlotHandler = void Function(int, html.Element);
 
 /// A function that handle a newly created [html.Element] with the contents of a
 /// platform view with a unique [int] id.
@@ -26,15 +26,20 @@ typedef PlatformViewDisposeHandler = void Function(int);
 
 /// This class handles incoming framework messages to create/dispose Platform Views.
 ///
-/// It uses a [PlatformViewManager] to manage the creation of the DOM of
-/// the PlatformViews. This `contentManager` is shared across the engine, to perform
-/// all operations related to platform views (registration, rendering, etc...)
+/// (An instance of this class is connected to the `flutter/platform_views`
+/// Platform Channel in the [EnginePlatformDispatcher] class.)
+///
+/// It uses a [PlatformViewManager] to handle the CRUD of the DOM of Platform Views.
+/// This `contentManager` is shared across the engine, to perform
+/// all operations related to platform views (registration, rendering, etc...),
+/// regardless of the rendering backend.
 ///
 /// When a platform view is created, the injection into the App DOM is delegated
-/// to a [PlatformViewSlotHandler] and a [ConventViewHandler] function, which will
-/// decide where in the global DOM to inject the different components of the view.
+/// to a [PlatformViewSlotHandler] and a [PlatformViewContentHandler] function,
+/// which will decide where in the global DOM to inject the different parts
+/// of the Platform View.
 ///
-/// When a platform view is disposed of, it is removed from the cache (and DOM)
+/// When a Platform View is disposed of, it is removed from the cache (and DOM)
 /// directly by the `contentManager`. However, we give the framework a final chance
 /// to do cleanup by calling a [PlatformViewDisposeHandler] with the `viewId` that
 /// is being disposed of.
@@ -56,6 +61,19 @@ class PlatformViewMessageHandler {
        this._contentHandler = contentHandler,
        this._disposeHandler = disposeHandler;
 
+  /// Handle a `create` Platform View message.
+  ///
+  /// This will attempt to render the `contents` and `slot` of a Platform View,
+  /// if its `viewType` has been registered previously.
+  ///
+  /// (See [PlatformViewContentManager.registerFactory] for more details.)
+  ///
+  /// When the `contents` and `slot` of the Platform View are created, they are
+  /// delegated to the [_slotHandler] and [_contentHandler] functions, so the
+  /// active rendering backend can inject them in the right place of the DOM.
+  ///
+  /// If all goes well, this function will `callback` with an empty success envelope.
+  /// In case of error, this will `callback` with an error envelope describing the error.
   void _createPlatformView(
     MethodCall methodCall,
     ui.PlatformMessageResponseCallback callback,
@@ -77,12 +95,11 @@ class PlatformViewMessageHandler {
       viewId,
       args,
     );
-    final html.SlotElement slot = _contentManager.renderSlot(viewType, viewId);
+    final html.Element slot = _contentManager.renderSlot(viewType, viewId);
 
     try {
       // For now, we don't need anything fancier. If needed, this can be converted
-      // to a PlatformViewStrategy class for each web-renderer backend.
-      // The Strategy can also be expanded to take care of disposal, too.
+      // to a PlatformViewStrategy class for each web-renderer backend?
       if (_contentHandler != null) {
         _contentHandler!(viewId, content);
       }
@@ -99,6 +116,16 @@ class PlatformViewMessageHandler {
     }
   }
 
+  /// Handle a `dispose` Platform View message.
+  ///
+  /// This will clear the cached information that the framework has about a given
+  /// `viewId`, through the [_contentManager].
+  ///
+  /// Once that's done, the dispose call is delegated to the [_disposeHandler]
+  /// function, so the active rendering backend can dispose of whatever resources
+  /// it needed to get ahold of.
+  ///
+  /// This function should always `callback` with an empty success envelope.
   void _disposePlatformView(
     MethodCall methodCall,
     ui.PlatformMessageResponseCallback callback,
@@ -118,6 +145,11 @@ class PlatformViewMessageHandler {
     callback(_codec.encodeSuccessEnvelope(null));
   }
 
+  /// Handles a PlatformViewCall to the `flutter/platform_views` channel.
+  ///
+  /// This method handles two possible messages:
+  /// * `create`: See [_createPlatformView]
+  /// * `dispose`: See [_disposePlatformView]
   void handlePlatformViewCall(
     ByteData? data,
     ui.PlatformMessageResponseCallback callback,

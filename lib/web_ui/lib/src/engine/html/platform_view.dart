@@ -22,23 +22,14 @@ class PersistedPlatformView extends PersistedLeafSurface {
   @override
   Matrix4? get localTransformInverse => null;
 
-  // Applies the width/height information in the `content` element of the Platform View.
-  //
-  // See `_updateContentSize` in the HtmlViewEmbedder for the canvaskit version.
-  void _applyOnContent() {
-    final html.Element content = platformViewManager.getContent(viewId);
-    content.style
+  @override
+  void apply() {
+    // See `_compositeWithParams` in the HtmlViewEmbedder for the canvaskit equivalent.
+    rootElement!.style
+      ..transform = 'translate(${dx}px, ${dy}px)'
       ..width = '${width}px'
       ..height = '${height}px'
       ..position = 'absolute';
-  }
-
-  @override
-  void apply() {
-    rootElement!.style
-      ..transform = 'translate(${dx}px, ${dy}px)';
-
-    _applyOnContent();
   }
 
   // Platform Views can only be updated if their viewId matches.

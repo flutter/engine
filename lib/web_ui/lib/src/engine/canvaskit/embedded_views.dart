@@ -115,32 +115,16 @@ class HtmlViewEmbedder {
     return _pictureRecorders[viewId]!.recordingCanvas;
   }
 
-  // Applies the required sizing information from `params` to the `content` element.
-  //
-  // See `_applyOnContent` in the PersistedPlatformView class for the HTML version
-  // of this code.
-  void _updateContentSize(html.Element content, EmbeddedViewParams params) {
-    content.style.width = '${params.size.width}px';
-    content.style.height = '${params.size.height}px';
-    content.style.position = 'absolute';
-  }
-
   void _compositeWithParams(int viewId, EmbeddedViewParams params) {
-    // Here, `slot` refers to the <slot> tag in the shadowDOM, which this class
-    // may re-root if needed (see _reconstructClipViewsChain).
+    // See [PlatformViewManager] for more info about PlatformView `slot` and `content`.
     final html.Element slot = platformViewManager.getSlot(viewId);
 
-    // Because of how slots project content, the width/height of the DOM needs to
-    // be set in the `content`, which should never be moved from its position in
-    // the DOM.
-    final html.Element content = platformViewManager.getContent(viewId);
-
-    // Apply the sizing information to the contents...
-    _updateContentSize(content, params);
-
-    // <flt-scene-host> disables pointer events. Reenable them here because the
-    // underlying platform view would want to handle the pointer events.
-    slot.style.pointerEvents = 'auto';
+    // See `apply()` in the PersistedPlatformView class for the HTML version
+    // of this code.
+    slot.style
+        ..width = '${params.size.width}px'
+        ..height = '${params.size.height}px'
+        ..position = 'absolute';
 
     // Recompute the position in the DOM of the `slot` element...
     final int currentClippingCount = _countClips(params.mutators);
@@ -156,8 +140,7 @@ class HtmlViewEmbedder {
       _rootViews[viewId] = newPlatformViewRoot;
     }
 
-    // Apply mutators in the `content` element...
-    _applyMutators(params.mutators, content, viewId);
+    _applyMutators(params.mutators, slot, viewId);
   }
 
   int _countClips(MutatorsStack mutators) {
