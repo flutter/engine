@@ -1273,7 +1273,7 @@ void _paragraphTests() {
     props.textAlign = canvasKit.TextAlign.Center;
     props.textDirection = canvasKit.TextDirection.RTL;
     props.heightMultiplier = 3;
-    props.textHeightBehavior = 0;
+    props.textHeightBehavior = canvasKit.TextHeightBehavior.All;
     props.maxLines = 4;
     props.ellipsis = '___';
     props.textStyle = SkTextStyleProperties()
@@ -1427,6 +1427,37 @@ void _paragraphTests() {
       [
         [0, 0, 13.770000457763672, 75],
       ],
+    );
+  });
+
+  test('TextHeightBehavior', () {
+    expect(
+      toSkTextHeightBehavior(ui.TextHeightBehavior(
+        applyHeightToFirstAscent: true,
+        applyHeightToLastDescent: true,
+      )),
+      canvasKit.TextHeightBehavior.All,
+    );
+    expect(
+      toSkTextHeightBehavior(ui.TextHeightBehavior(
+        applyHeightToFirstAscent: false,
+        applyHeightToLastDescent: true,
+      )),
+      canvasKit.TextHeightBehavior.DisableFirstAscent,
+    );
+    expect(
+      toSkTextHeightBehavior(ui.TextHeightBehavior(
+        applyHeightToFirstAscent: true,
+        applyHeightToLastDescent: false,
+      )),
+      canvasKit.TextHeightBehavior.DisableLastDescent,
+    );
+    expect(
+      toSkTextHeightBehavior(ui.TextHeightBehavior(
+        applyHeightToFirstAscent: false,
+        applyHeightToLastDescent: false,
+      )),
+      canvasKit.TextHeightBehavior.DisableAll,
     );
   });
 }
