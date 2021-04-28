@@ -29,6 +29,9 @@ class DomRenderer {
   static const int vibrateHeavyImpact = 30;
   static const int vibrateSelectionClick = 10;
 
+  // The tag name for the root view of the flutter app (glass-pane)
+  static const String _glassPaneTagName = 'flt-glass-pane';
+
   /// Fires when browser language preferences change.
   static const html.EventStreamProvider<html.Event> languageChangeEvent =
       const html.EventStreamProvider<html.Event>('languagechange');
@@ -345,7 +348,7 @@ flt-semantics [contentEditable="true"] {
     // on using gray background. This CSS rule disables that.
     if (isWebKit) {
       sheet.insertRule('''
-flt-glass-pane * {
+$_glassPaneTagName * {
   -webkit-tap-highlight-color: transparent;
 }
 ''', sheet.cssRules.length);
@@ -446,7 +449,7 @@ flt-glass-pane * {
     // IMPORTANT: the glass pane element must come after the scene element in the DOM node list so
     //            it can intercept input events.
     _glassPaneElement?.remove();
-    final html.Element glassPaneElement = createElement('flt-glass-pane');
+    final html.Element glassPaneElement = createElement(_glassPaneTagName);
     _glassPaneElement = glassPaneElement;
     glassPaneElement.style
       ..position = 'absolute'
