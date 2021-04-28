@@ -84,8 +84,9 @@ class PlatformViewMessageHandler {
 
     if (!_contentManager.knowsViewType(viewType)) {
       callback(_codec.encodeErrorEnvelope(
-        code: 'Unregistered factory',
-        message: "No factory registered for viewtype '$viewType'",
+        code: 'unregistered_view_type',
+        message: 'trying to create a view with an unregistered type',
+        details: 'unregistered view type: $viewType',
       ));
       return;
     }
@@ -108,10 +109,11 @@ class PlatformViewMessageHandler {
       }
 
       callback(_codec.encodeSuccessEnvelope(null));
-    } catch (e) {
+    } on _PlatformViewAlreadyCreatedException catch (e) {
       callback(_codec.encodeErrorEnvelope(
-        code: 'Failure rendering platform view',
-        message: e.toString(),
+        code: 'recreating_view',
+        message: 'trying to create an already created view',
+        details: 'view id: ${e.viewId}',
       ));
     }
   }

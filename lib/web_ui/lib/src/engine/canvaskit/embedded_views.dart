@@ -18,6 +18,12 @@ import 'path.dart';
 import 'picture_recorder.dart';
 import 'surface.dart';
 
+// An Exception to signal that a given `viewId` has already been created.
+class _PlatformViewAlreadyCreatedException implements Exception {
+  final int viewId;
+  _PlatformViewAlreadyCreatedException(this.viewId);
+}
+
 /// This composites HTML views into the [ui.Scene].
 class HtmlViewEmbedder {
   /// A picture recorder associated with a view id.
@@ -73,6 +79,10 @@ class HtmlViewEmbedder {
 
   /// Links a `viewId` and `slot` into this `HtmlViewEmbedder` instance.
   void create(int viewId, html.Element slot) {
+    if (_rootViews.containsKey(viewId)) {
+      // This will be handled by the MessageHandler
+      throw _PlatformViewAlreadyCreatedException(viewId);
+    }
     _rootViews[viewId] = slot;
   }
 
