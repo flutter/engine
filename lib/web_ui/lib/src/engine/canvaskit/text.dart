@@ -89,7 +89,8 @@ class CkParagraphStyle implements ui.ParagraphStyle {
       skStrutStyle.heightMultiplier = style._height;
     }
 
-    switch (style._leadingDistribution ?? paragraphHeightBehavior?.leadingDistribution) {
+    final ui.TextLeadingDistribution? effectiveLeadingDistribution = style._leadingDistribution ?? paragraphHeightBehavior?.leadingDistribution;
+    switch (effectiveLeadingDistribution) {
       case null:
         break;
       case ui.TextLeadingDistribution.even:

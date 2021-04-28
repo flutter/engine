@@ -368,7 +368,7 @@ void testMain() {
         ),
       );
       await testTextStyle(
-        'half leading',
+        'half leading overrides paragraph style half leading',
         height: 20,
         fontSize: 10,
         leadingDistribution: ui.TextLeadingDistribution.proportional,
