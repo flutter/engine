@@ -50,6 +50,9 @@ export 'engine/navigation/js_url_strategy.dart';
 import 'engine/navigation/url_strategy.dart';
 export 'engine/navigation/url_strategy.dart';
 
+import 'engine/html/offscreen_canvas.dart';
+export 'engine/html/offscreen_canvas.dart';
+
 import 'engine/plugins.dart';
 export 'engine/plugins.dart';
 

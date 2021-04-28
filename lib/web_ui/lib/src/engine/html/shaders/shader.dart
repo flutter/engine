@@ -40,9 +40,9 @@ class GradientSweep extends EngineGradient {
 
     initWebGl();
     // Render gradient into a bitmap and create a canvas pattern.
-    _OffScreenCanvas offScreenCanvas =
-        _OffScreenCanvas(widthInPixels, heightInPixels);
-    _GlContext gl = _OffScreenCanvas.supported
+    OffScreenCanvas offScreenCanvas =
+        OffScreenCanvas(widthInPixels, heightInPixels);
+    _GlContext gl = OffScreenCanvas.supported
         ? _GlContext.fromOffscreenCanvas(offScreenCanvas._canvas!)
         : _GlContext.fromCanvas(
             offScreenCanvas._glCanvas!, webGLVersion == WebGLVersion.webgl1);
@@ -223,9 +223,9 @@ class GradientLinear extends EngineGradient {
     assert(widthInPixels > 0 && heightInPixels > 0);
     initWebGl();
     // Render gradient into a bitmap and create a canvas pattern.
-    _OffScreenCanvas offScreenCanvas =
-        _OffScreenCanvas(widthInPixels, heightInPixels);
-    _GlContext gl = _OffScreenCanvas.supported
+    OffScreenCanvas offScreenCanvas =
+        OffScreenCanvas(widthInPixels, heightInPixels);
+    _GlContext gl = OffScreenCanvas.supported
         ? _GlContext.fromOffscreenCanvas(offScreenCanvas._canvas!)
         : _GlContext.fromCanvas(
             offScreenCanvas._glCanvas!, webGLVersion == WebGLVersion.webgl1);
@@ -494,9 +494,9 @@ class GradientRadial extends EngineGradient {
 
     initWebGl();
     // Render gradient into a bitmap and create a canvas pattern.
-    _OffScreenCanvas offScreenCanvas =
-        _OffScreenCanvas(widthInPixels, heightInPixels);
-    _GlContext gl = _OffScreenCanvas.supported
+    OffScreenCanvas offScreenCanvas =
+        OffScreenCanvas(widthInPixels, heightInPixels);
+    _GlContext gl = OffScreenCanvas.supported
         ? _GlContext.fromOffscreenCanvas(offScreenCanvas._canvas!)
         : _GlContext.fromCanvas(
             offScreenCanvas._glCanvas!, webGLVersion == WebGLVersion.webgl1);

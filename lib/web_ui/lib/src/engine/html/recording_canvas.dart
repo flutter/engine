@@ -355,7 +355,6 @@ class RecordingCanvas {
 
   void drawRect(ui.Rect rect, SurfacePaint paint) {
     assert(!_recordingEnded);
-    assert(paint.shader == null || paint.shader is! ImageShader, 'ImageShader not supported yet');
     if (paint.shader != null) {
       renderStrategy.hasArbitraryPaint = true;
     }

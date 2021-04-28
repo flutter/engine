@@ -1085,47 +1085,12 @@ class _GlContext {
   }
 }
 
-/// Polyfill for html.OffscreenCanvas that is not supported on some browsers.
-class _OffScreenCanvas {
-  html.OffscreenCanvas? _canvas;
-  html.CanvasElement? _glCanvas;
-  int width;
-  int height;
-
-  _OffScreenCanvas(this.width, this.height) {
-    if (_OffScreenCanvas.supported) {
-      _canvas = html.OffscreenCanvas(width, height);
-    } else {
-      _glCanvas = html.CanvasElement(
-        width: width,
-        height: height,
-      );
-      _glCanvas!.className = 'gl-canvas';
-      final double cssWidth = width / EnginePlatformDispatcher.browserDevicePixelRatio;
-      final double cssHeight = height / EnginePlatformDispatcher.browserDevicePixelRatio;
-      _glCanvas!.style
-        ..position = 'absolute'
-        ..width = '${cssWidth}px'
-        ..height = '${cssHeight}px';
-    }
-  }
-
-  void dispose() {
-    _canvas = null;
-    _glCanvas = null;
-  }
-
-  /// Feature detects OffscreenCanvas.
-  static bool get supported =>
-      js_util.hasProperty(html.window, 'OffscreenCanvas');
-}
-
 /// Creates gl context from cached OffscreenCanvas for webgl rendering to image.
 class _GlContextCache {
   static int _maxPixelWidth = 0;
   static int _maxPixelHeight = 0;
   static _GlContext? _cachedContext;
-  static _OffScreenCanvas? _offScreenCanvas;
+  static OffScreenCanvas? _offScreenCanvas;
 
   static void dispose() {
     _maxPixelWidth = 0;
@@ -1142,8 +1107,8 @@ class _GlContextCache {
       _maxPixelWidth = math.max(_maxPixelWidth, widthInPixels);
       _maxPixelHeight = math.max(_maxPixelHeight, widthInPixels);
     }
-    _offScreenCanvas ??= _OffScreenCanvas(widthInPixels, heightInPixels);
-    if (_OffScreenCanvas.supported) {
+    _offScreenCanvas ??= OffScreenCanvas(widthInPixels, heightInPixels);
+    if (OffScreenCanvas.supported) {
       _cachedContext ??=
           _GlContext.fromOffscreenCanvas(_offScreenCanvas!._canvas!);
     } else {
