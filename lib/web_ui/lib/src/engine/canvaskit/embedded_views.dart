@@ -126,6 +126,12 @@ class HtmlViewEmbedder {
   }
 
   void _compositeWithParams(int viewId, EmbeddedViewParams params) {
+    if (!platformViewManager.knowsViewId(viewId)) {
+      // The view has been disposed of. Noop here.
+      // [submitFrame] will report the deletion of this (and maybe other) views at once.
+      return;
+    }
+
     // See [PlatformViewManager] for more info about PlatformView `slot` and `content`.
     final html.Element slot = platformViewManager.getSlot(viewId);
 
