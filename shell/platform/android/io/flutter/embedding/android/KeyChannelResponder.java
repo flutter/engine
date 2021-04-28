@@ -15,13 +15,13 @@ import io.flutter.embedding.engine.systemchannels.KeyEventChannel;
  *
  * <p>This class corresponds to the RawKeyboard API in the framework.
  */
-class KeyChannelResponder implements KeyboardManager.Responder {
+public class KeyChannelResponder implements KeyboardManager.Responder {
   private static final String TAG = "KeyChannelResponder";
 
   @NonNull private final KeyEventChannel keyEventChannel;
   private int combiningCharacter;
 
-  KeyChannelResponder(@NonNull KeyEventChannel keyEventChannel) {
+  public KeyChannelResponder(@NonNull KeyEventChannel keyEventChannel) {
     this.keyEventChannel = keyEventChannel;
   }
 

@@ -56,20 +56,12 @@ import java.util.HashSet;
 public class KeyboardManager {
   private static final String TAG = "KeyboardManager";
 
-  KeyboardManager(
-      View view, @NonNull TextInputPlugin textInputPlugin, Responder[] primaryResponders) {
-    this.view = view;
-    this.textInputPlugin = textInputPlugin;
-    this.primaryResponders = primaryResponders;
-  }
-
   /**
-   * Constructor for {@link KeyboardManager} that uses a {@link KeyChannelResponder} as its only
-   * {@link Responder}.
+   * Constructor for {@link KeyboardManager} that takes a list of {@link Responder}s.
    *
    * <p>The view is used as the destination to send the synthesized key to. This means that the the
-   * next thing in the focus chain will get the event when the {@link KeyChannelResponder} returns
-   * false from onKeyDown/onKeyUp.
+   * next thing in the focus chain will get the event when the {@link Responder}s return false from
+   * onKeyDown/onKeyUp.
    *
    * <p>It is possible that that in the middle of the async round trip, the focus chain could
    * change, and instead of the native widget that was "next" when the event was fired getting the
@@ -82,9 +74,16 @@ public class KeyboardManager {
    * @param textInputPlugin a plugin, which, if set, is given key events before the framework is,
    *     and if it has a valid input connection and is accepting text, then it will handle the event
    *     and the framework will not receive it.
-   * @param keyEventChannel the event channel to listen to for new key events.
+   * @param responders the {@link Responder}s new {@link KeyEvent}s will be first dispatched to.
    */
   public KeyboardManager(
+      View view, @NonNull TextInputPlugin textInputPlugin, Responder[] responders) {
+    this.view = view;
+    this.textInputPlugin = textInputPlugin;
+    this.responders = responders;
+  }
+
+  KeyboardManager(
       View view, @NonNull TextInputPlugin textInputPlugin, KeyEventChannel keyEventChannel) {
     this(
         view,
@@ -148,7 +147,7 @@ public class KeyboardManager {
     }
 
     @NonNull final KeyEvent keyEvent;
-    int unrepliedCount = primaryResponders.length;
+    int unrepliedCount = responders.length;
     boolean isEventHandled = false;
 
     public OnKeyEventHandledCallback buildCallback() {
@@ -156,7 +155,7 @@ public class KeyboardManager {
     }
   }
 
-  @NonNull protected final Responder[] primaryResponders;
+  @NonNull protected final Responder[] responders;
   @NonNull private final HashSet<KeyEvent> redispatchedEvents = new HashSet<>();
   @NonNull private final TextInputPlugin textInputPlugin;
   private final View view;
@@ -167,9 +166,9 @@ public class KeyboardManager {
       return false;
     }
 
-    if (primaryResponders.length > 0) {
+    if (responders.length > 0) {
       final PerEventCallbackBuilder callbackBuilder = new PerEventCallbackBuilder(keyEvent);
-      for (final Responder primaryResponder : primaryResponders) {
+      for (final Responder primaryResponder : responders) {
         primaryResponder.handleEvent(keyEvent, callbackBuilder.buildCallback());
       }
     } else {

@@ -228,7 +228,9 @@ public class FlutterView extends SurfaceView
         mNativeView.getPluginRegistry().getPlatformViewsController();
     mTextInputPlugin =
         new TextInputPlugin(this, new TextInputChannel(dartExecutor), platformViewsController);
-    mKeyboardManager = new KeyboardManager(this, mTextInputPlugin, keyEventChannel);
+    mKeyboardManager =
+        new KeyboardManager(
+            this, mTextInputPlugin, new Responder[] {new KeyChannelResponder(keyEventChannel)});
     mTextInputPlugin.setKeyboardManager(mKeyboardManager);
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
