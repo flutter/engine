@@ -441,7 +441,8 @@ flt-glass-pane * {
 
     _sceneHostElement = createElement('flt-scene-host');
 
-    final html.Element semanticsHostElement = createElement('flt-semantics-host');
+    final html.Element semanticsHostElement =
+        createElement('flt-semantics-host');
     semanticsHostElement.style
       ..position = 'absolute'
       ..transformOrigin = '0 0 0';
@@ -509,7 +510,7 @@ flt-glass-pane * {
       });
     }
 
-    if (useCanvasKit) {
+    if (useCanvasKit && !hasNativeCanvasKit) {
       _canvasKitScript?.remove();
       _canvasKitScript = html.ScriptElement();
       _canvasKitScript!.src = canvasKitJavaScriptBindingsUrl;
@@ -591,7 +592,8 @@ flt-glass-pane * {
   /// logical pixels. To compensate, we inject an inverse scale at the root
   /// level.
   void updateSemanticsScreenProperties() {
-    _semanticsHostElement!.style.transform = 'scale(${1 / html.window.devicePixelRatio})';
+    _semanticsHostElement!.style.transform =
+        'scale(${1 / html.window.devicePixelRatio})';
   }
 
   /// Called immediately after browser window metrics change.
