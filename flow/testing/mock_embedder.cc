@@ -7,31 +7,38 @@
 namespace flutter {
 namespace testing {
 
-MockViewEmbedder::MockViewEmbedder(SkCanvas* root_canvas)
-    : root_canvas_(root_canvas) {}
+MockViewEmbedder::MockViewEmbedder() = default;
 
+MockViewEmbedder::~MockViewEmbedder() = default;
+
+// |ExternalViewEmbedder|
 SkCanvas* MockViewEmbedder::GetRootCanvas() {
-  return root_canvas_;
+  return nullptr;
 }
 
+// |ExternalViewEmbedder|
 void MockViewEmbedder::CancelFrame() {}
 
+// |ExternalViewEmbedder|
 void MockViewEmbedder::BeginFrame(
     SkISize frame_size,
     GrDirectContext* context,
     double device_pixel_ratio,
     fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {}
 
+// |ExternalViewEmbedder|
 void MockViewEmbedder::PrerollCompositeEmbeddedView(
     int view_id,
     std::unique_ptr<EmbeddedViewParams> params) {}
 
+// |ExternalViewEmbedder|
 std::vector<SkCanvas*> MockViewEmbedder::GetCurrentCanvases() {
-  return std::vector<SkCanvas*>({root_canvas_});
+  return std::vector<SkCanvas*>({});
 }
 
+// |ExternalViewEmbedder|
 SkCanvas* MockViewEmbedder::CompositeEmbeddedView(int view_id) {
-  return root_canvas_;
+  return nullptr;
 }
 
 }  // namespace testing

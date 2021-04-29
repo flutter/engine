@@ -12,30 +12,33 @@ namespace testing {
 
 class MockViewEmbedder : public ExternalViewEmbedder {
  public:
-  MockViewEmbedder(SkCanvas* root_canvas);
+  MockViewEmbedder();
 
-  ~MockViewEmbedder() = default;
+  ~MockViewEmbedder();
 
+  // |ExternalViewEmbedder|
   SkCanvas* GetRootCanvas() override;
 
+  // |ExternalViewEmbedder|
   void CancelFrame() override;
 
+  // |ExternalViewEmbedder|
   void BeginFrame(
       SkISize frame_size,
       GrDirectContext* context,
       double device_pixel_ratio,
       fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
 
+  // |ExternalViewEmbedder|
   void PrerollCompositeEmbeddedView(
       int view_id,
       std::unique_ptr<EmbeddedViewParams> params) override;
 
+  // |ExternalViewEmbedder|
   std::vector<SkCanvas*> GetCurrentCanvases() override;
 
+  // |ExternalViewEmbedder|
   SkCanvas* CompositeEmbeddedView(int view_id) override;
-
- private:
-  SkCanvas* root_canvas_;
 };
 
 }  // namespace testing

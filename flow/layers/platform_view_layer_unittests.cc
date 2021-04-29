@@ -56,7 +56,7 @@ TEST_F(PlatformViewLayerTest, ClippedPlatformViewPrerollsAndPaintsNothing) {
   parent_clip_layer->Add(child_clip_layer);
   child_clip_layer->Add(layer);
 
-  auto embedder = MockViewEmbedder(&mock_canvas());
+  auto embedder = MockViewEmbedder();
   preroll_context()->view_embedder = &embedder;
 
   parent_clip_layer->Preroll(preroll_context(), SkMatrix());
