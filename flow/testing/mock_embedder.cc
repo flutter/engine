@@ -20,13 +20,11 @@ void MockViewEmbedder::BeginFrame(
     SkISize frame_size,
     GrDirectContext* context,
     double device_pixel_ratio,
-    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
-}
+    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {}
 
 void MockViewEmbedder::PrerollCompositeEmbeddedView(
     int view_id,
-    std::unique_ptr<EmbeddedViewParams> params) {
-}
+    std::unique_ptr<EmbeddedViewParams> params) {}
 
 std::vector<SkCanvas*> MockViewEmbedder::GetCurrentCanvases() {
   return std::vector<SkCanvas*>({root_canvas_});
