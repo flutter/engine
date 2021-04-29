@@ -126,6 +126,9 @@ class HtmlViewEmbedder {
   }
 
   void _compositeWithParams(int viewId, EmbeddedViewParams params) {
+    // We need to do something similar in [PersistedPlatformView.createElement],
+    // because tests often short-circuit the lifecycle of a Platform View, and
+    // getSlot will throw an unwanted assertion!
     if (!platformViewManager.knowsViewId(viewId)) {
       // The view has been disposed of. Noop here.
       // [submitFrame] will report the deletion of this (and maybe other) views at once.
