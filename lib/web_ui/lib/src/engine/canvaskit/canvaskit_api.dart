@@ -7,7 +7,6 @@
 /// Prefer keeping the original CanvasKit names so it is easier to locate
 /// the API behind these bindings in the Skia source code.
 
-// @dart = 2.12
 part of engine;
 
 /// Entrypoint into the CanvasKit API.
@@ -43,6 +42,7 @@ class CanvasKit {
   external SkRectWidthStyleEnum get RectWidthStyle;
   external SkAffinityEnum get Affinity;
   external SkTextAlignEnum get TextAlign;
+  external SkTextHeightBehaviorEnum get TextHeightBehavior;
   external SkTextDirectionEnum get TextDirection;
   external SkFontWeightEnum get FontWeight;
   external SkFontSlantEnum get FontSlant;
@@ -292,10 +292,40 @@ SkTextAlign toSkTextAlign(ui.TextAlign align) {
 }
 
 @JS()
+class SkTextHeightBehaviorEnum {
+  external SkTextHeightBehavior get All;
+  external SkTextHeightBehavior get DisableFirstAscent;
+  external SkTextHeightBehavior get DisableLastDescent;
+  external SkTextHeightBehavior get DisableAll;
+}
+
+@JS()
+class SkTextHeightBehavior {
+  external int get value;
+}
+
+final List<SkTextHeightBehavior> _skTextHeightBehaviors =
+    <SkTextHeightBehavior>[
+  canvasKit.TextHeightBehavior.All,
+  canvasKit.TextHeightBehavior.DisableFirstAscent,
+  canvasKit.TextHeightBehavior.DisableLastDescent,
+  canvasKit.TextHeightBehavior.DisableAll,
+];
+
+SkTextHeightBehavior toSkTextHeightBehavior(ui.TextHeightBehavior behavior) {
+  int index = (behavior.applyHeightToFirstAscent ? 0 : 1 << 0) |
+      (behavior.applyHeightToLastDescent ? 0 : 1 << 1);
+  return _skTextHeightBehaviors[index];
+}
+
+@JS()
 class SkRectHeightStyleEnum {
-  // TODO(yjbanov): support all styles
   external SkRectHeightStyle get Tight;
   external SkRectHeightStyle get Max;
+  external SkRectHeightStyle get IncludeLineSpacingMiddle;
+  external SkRectHeightStyle get IncludeLineSpacingTop;
+  external SkRectHeightStyle get IncludeLineSpacingBottom;
+  external SkRectHeightStyle get Strut;
 }
 
 @JS()
@@ -306,11 +336,14 @@ class SkRectHeightStyle {
 final List<SkRectHeightStyle> _skRectHeightStyles = <SkRectHeightStyle>[
   canvasKit.RectHeightStyle.Tight,
   canvasKit.RectHeightStyle.Max,
+  canvasKit.RectHeightStyle.IncludeLineSpacingMiddle,
+  canvasKit.RectHeightStyle.IncludeLineSpacingTop,
+  canvasKit.RectHeightStyle.IncludeLineSpacingBottom,
+  canvasKit.RectHeightStyle.Strut,
 ];
 
 SkRectHeightStyle toSkRectHeightStyle(ui.BoxHeightStyle style) {
-  final int index = style.index;
-  return _skRectHeightStyles[index < 2 ? index : 0];
+  return _skRectHeightStyles[style.index];
 }
 
 @JS()
@@ -774,6 +807,7 @@ class SkShaderNamespace {
     Uint32List colors,
     Float32List colorStops,
     SkTileMode tileMode,
+    Float32List? matrix,
   );
 
   external SkShader MakeRadialGradient(
@@ -1531,7 +1565,7 @@ class SkParagraphStyleProperties {
   external set textAlign(SkTextAlign? value);
   external set textDirection(SkTextDirection? value);
   external set heightMultiplier(double? value);
-  external set textHeightBehavior(int? value);
+  external set textHeightBehavior(SkTextHeightBehavior? value);
   external set maxLines(int? value);
   external set ellipsis(String? value);
   external set textStyle(SkTextStyleProperties? value);

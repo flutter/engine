@@ -2,8 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 import 'dart:async';
+import 'dart:html' as html;
+import 'dart:js_util' as js_util;
 import 'dart:typed_data';
 
 import 'package:ui/src/engine.dart';
@@ -55,6 +56,32 @@ void testMain() {
         codec.decodeEnvelope(response!),
         true,
       );
+    });
+
+    test('responds correctly to flutter/platform Clipboard.getData failure',
+        () async {
+      // Patch browser so that clipboard api is not available.
+      dynamic originalClipboard =
+          js_util.getProperty(html.window.navigator, 'clipboard');
+      js_util.setProperty(html.window.navigator, 'clipboard', null);
+      const MethodCodec codec = JSONMethodCodec();
+      final Completer<ByteData?> completer = Completer<ByteData?>();
+      ui.PlatformDispatcher.instance.sendPlatformMessage(
+        'flutter/platform',
+        codec.encodeMethodCall(MethodCall(
+          'Clipboard.getData',
+        )),
+        completer.complete,
+      );
+      final ByteData? response = await completer.future;
+      if (response != null) {
+        expect(
+              () => codec.decodeEnvelope(response),
+          throwsA(isA<PlatformException>()),
+        );
+      }
+      js_util.setProperty(
+          html.window.navigator, 'clipboard', originalClipboard);
     });
   });
 }

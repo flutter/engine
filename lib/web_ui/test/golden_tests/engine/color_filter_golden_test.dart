@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 import 'dart:html' as html;
 import 'dart:js_util' as js_util;
 
@@ -46,6 +45,26 @@ void testMain() async {
     // TODO: update golden for this test after canvas sandwich detection is
     // added to RecordingCanvas.
     await matchGoldenFile('color_filter_blendMode_color.png', region: region,
+        maxDiffRatePercent: 12.0);
+  });
+
+  test('Should apply matrix color filter to image', () async {
+    final List<double> colorMatrix = <double>[
+      0.2126, 0.7152, 0.0722, 0, 0, //
+      0.2126, 0.7152, 0.0722, 0, 0, //
+      0.2126, 0.7152, 0.0722, 0, 0, //
+      0, 0, 0, 1, 0, //
+    ];
+    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
+    final Picture backgroundPicture = _drawBackground();
+    builder.addPicture(Offset.zero, backgroundPicture);
+    builder.pushColorFilter(
+        EngineColorFilter.matrix(colorMatrix));
+    final Picture circles1 = _drawTestPictureWithCircles(30, 30);
+    builder.addPicture(Offset.zero, circles1);
+    builder.pop();
+    html.document.body!.append(builder.build().webOnlyRootElement!);
+    await matchGoldenFile('color_filter_matrix.png', region: region,
         maxDiffRatePercent: 12.0);
   });
 

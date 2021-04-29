@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of engine;
 
 /// A raw HTML canvas that is directly written to.
@@ -574,10 +573,8 @@ class BitmapCanvas extends EngineCanvas {
   void _applyFilter(html.Element element, SurfacePaintData paint) {
     if (paint.maskFilter != null) {
       final bool isStroke = paint.style == ui.PaintingStyle.stroke;
-      String cssColor = paint.color == null
-          ? '#000000'
-          : colorToCssString(
-              paint.color)!;
+      String cssColor =
+          paint.color == null ? '#000000' : colorToCssString(paint.color)!;
       final double sigma = paint.maskFilter!.webOnlySigma;
       if (browserEngine == BrowserEngine.webkit && !isStroke) {
         // A bug in webkit leaves artifacts when this element is animated
@@ -634,29 +631,11 @@ class BitmapCanvas extends EngineCanvas {
         paint.colorFilter as EngineColorFilter?;
     html.HtmlElement imgElement;
     if (colorFilter is _CkBlendModeColorFilter) {
-      switch (colorFilter.blendMode) {
-        case ui.BlendMode.colorBurn:
-        case ui.BlendMode.colorDodge:
-        case ui.BlendMode.hue:
-        case ui.BlendMode.modulate:
-        case ui.BlendMode.overlay:
-        case ui.BlendMode.plus:
-        case ui.BlendMode.srcIn:
-        case ui.BlendMode.srcATop:
-        case ui.BlendMode.srcOut:
-        case ui.BlendMode.saturation:
-        case ui.BlendMode.color:
-        case ui.BlendMode.luminosity:
-        case ui.BlendMode.xor:
-        case ui.BlendMode.dstATop:
-          imgElement = _createImageElementWithSvgFilter(
-              image, colorFilter.color, colorFilter.blendMode, paint);
-          break;
-        default:
-          imgElement = _createBackgroundImageWithBlend(
-              image, colorFilter.color, colorFilter.blendMode, paint);
-          break;
-      }
+      imgElement = _createImageElementWithBlend(image,
+          colorFilter.color, colorFilter.blendMode, paint);
+    } else if (colorFilter is _CkMatrixColorFilter) {
+      imgElement = _createImageElementWithSvgColorMatrixFilter(
+          image, colorFilter.matrix , paint);
     } else {
       // No Blending, create an image by cloning original loaded image.
       imgElement = _reuseOrCreateImage(htmlImage);
@@ -684,6 +663,31 @@ class BitmapCanvas extends EngineCanvas {
       _children.add(imgElement);
     }
     return imgElement;
+  }
+
+  html.HtmlElement _createImageElementWithBlend(HtmlImage image,
+      ui.Color color, ui.BlendMode blendMode, SurfacePaintData paint) {
+    switch (blendMode) {
+      case ui.BlendMode.colorBurn:
+      case ui.BlendMode.colorDodge:
+      case ui.BlendMode.hue:
+      case ui.BlendMode.modulate:
+      case ui.BlendMode.overlay:
+      case ui.BlendMode.plus:
+      case ui.BlendMode.srcIn:
+      case ui.BlendMode.srcATop:
+      case ui.BlendMode.srcOut:
+      case ui.BlendMode.saturation:
+      case ui.BlendMode.color:
+      case ui.BlendMode.luminosity:
+      case ui.BlendMode.xor:
+      case ui.BlendMode.dstATop:
+        return _createImageElementWithSvgBlendFilter(
+            image, color, blendMode, paint);
+      default:
+        return _createBackgroundImageWithBlend(
+            image, color, blendMode, paint);
+    }
   }
 
   @override
@@ -814,7 +818,7 @@ class BitmapCanvas extends EngineCanvas {
   }
 
   // Creates an image element and an svg filter to apply on the element.
-  html.HtmlElement _createImageElementWithSvgFilter(
+  html.HtmlElement _createImageElementWithSvgBlendFilter(
       HtmlImage image,
       ui.Color? filterColor,
       ui.BlendMode colorFilterBlendMode,
@@ -831,6 +835,22 @@ class BitmapCanvas extends EngineCanvas {
     if (colorFilterBlendMode == ui.BlendMode.saturation) {
       imgElement.style.backgroundColor = colorToCssString(filterColor);
     }
+    return imgElement;
+  }
+
+  // Creates an image element and an svg color matrix filter to apply on the element.
+  html.HtmlElement _createImageElementWithSvgColorMatrixFilter(
+      HtmlImage image,
+      List<double> matrix,
+      SurfacePaintData paint) {
+    // For srcIn blendMode, we use an svg filter to apply to image element.
+    String? svgFilter = svgFilterFromColorMatrix(matrix);
+    final html.Element filterElement =
+    html.Element.html(svgFilter, treeSanitizer: _NullTreeSanitizer());
+    rootElement.append(filterElement);
+    _children.add(filterElement);
+    final html.HtmlElement imgElement = _reuseOrCreateImage(image);
+    imgElement.style.filter = 'url(#_fcf${_filterIdCounter})';
     return imgElement;
   }
 
@@ -943,12 +963,13 @@ class BitmapCanvas extends EngineCanvas {
     // blendMode. https://github.com/flutter/flutter/issues/40096
     // Move rendering to OffscreenCanvas so that transform is preserved
     // as well.
-    assert(paint.shader == null,
-        'Linear/Radial/SweepGradient and ImageShader not supported yet');
+    assert(paint.shader == null || paint.shader is ImageShader,
+        'Linear/Radial/SweepGradient not supported yet');
     final Int32List? colors = vertices._colors;
     final ui.VertexMode mode = vertices._mode;
     html.CanvasRenderingContext2D? ctx = _canvasPool.context;
-    if (colors == null && paint.style != ui.PaintingStyle.fill) {
+    if (colors == null && paint.style != ui.PaintingStyle.fill &&
+        paint.shader == null) {
       final Float32List positions = mode == ui.VertexMode.triangles
           ? vertices._positions
           : _convertVertexPositions(mode, vertices._positions);
@@ -1195,14 +1216,33 @@ List<html.Element> _clipContent(List<_SaveClipEntry> clipStack,
         ..height = '${roundRect.bottom - clipOffsetY}px';
       setElementTransform(curElement, newClipTransform.storage);
     } else if (entry.path != null) {
-      curElement.style
-        ..transform = matrix4ToCssTransform(newClipTransform)
-        ..transformOrigin = '0 0 0';
-      String svgClipPath =
-          createSvgClipDef(curElement as html.HtmlElement, entry.path!);
-      final html.Element clipElement =
-          html.Element.html(svgClipPath, treeSanitizer: _NullTreeSanitizer());
-      clipDefs.add(clipElement);
+      // Clipping optimization when we know that the path is an oval.
+      // We use a div with border-radius set to 50% with a size that is
+      // set to path bounds and set overflow to hidden.
+      final SurfacePath surfacePath = entry.path as SurfacePath;
+      if (surfacePath.pathRef.isOval != -1) {
+        final ui.Rect ovalBounds = surfacePath.getBounds();
+        final double clipOffsetX = ovalBounds.left;
+        final double clipOffsetY = ovalBounds.top;
+        newClipTransform = newClipTransform.clone()
+          ..translate(clipOffsetX, clipOffsetY);
+        curElement.style
+          ..overflow = 'hidden'
+          ..width = '${ovalBounds.width}px'
+          ..height = '${ovalBounds.height}px'
+          ..borderRadius = '50%';
+        setElementTransform(curElement, newClipTransform.storage);
+      } else {
+        // Abitrary path clipping.
+        curElement.style
+          ..transform = matrix4ToCssTransform(newClipTransform)
+          ..transformOrigin = '0 0 0';
+        String svgClipPath =
+            createSvgClipDef(curElement as html.HtmlElement, entry.path!);
+        final html.Element clipElement =
+            html.Element.html(svgClipPath, treeSanitizer: _NullTreeSanitizer());
+        clipDefs.add(clipElement);
+      }
     }
     // Reverse the transform of the clipping element so children can use
     // effective transform to render.
