@@ -59,6 +59,9 @@ export 'engine/html/path/path_ref.dart';
 import 'engine/html/path/path_utils.dart';
 export 'engine/html/path/path_utils.dart';
 
+import 'engine/html/shaders/normalized_gradient.dart';
+import 'engine/html/shaders/shader_builder.dart';
+
 import 'engine/mouse_cursor.dart';
 export 'engine/mouse_cursor.dart';
 
@@ -176,9 +179,7 @@ part 'engine/html/render_vertices.dart';
 part 'engine/html/scene.dart';
 part 'engine/html/scene_builder.dart';
 part 'engine/html/shader_mask.dart';
-part 'engine/html/shaders/normalized_gradient.dart';
 part 'engine/html/shaders/shader.dart';
-part 'engine/html/shaders/shader_builder.dart';
 part 'engine/html/surface.dart';
 part 'engine/html/surface_stats.dart';
 part 'engine/html/transform.dart';

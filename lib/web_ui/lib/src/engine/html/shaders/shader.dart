@@ -438,7 +438,7 @@ String _writeSharedGradientShader(ShaderBuilder builder, ShaderMethod method,
       probeName = 'tiled_st';
       break;
   }
-  _writeUnrolledBinarySearch(method, 0, gradient.thresholdCount - 1,
+  writeUnrolledBinarySearch(method, 0, gradient.thresholdCount - 1,
       probe: probeName,
       sourcePrefix: 'threshold',
       biasName: 'bias',
