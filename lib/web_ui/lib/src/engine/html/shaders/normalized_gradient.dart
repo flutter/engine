@@ -98,7 +98,7 @@ class NormalizedGradient {
   }
 
   /// Sets uniforms for threshold, bias and scale for program.
-  void setupUniforms(_GlContext gl, _GlProgram glProgram) {
+  void setupUniforms(GlContext gl, GlProgram glProgram) {
     for (int i = 0; i < thresholdCount; i++) {
       Object biasId = gl.getUniformLocation(glProgram.program, 'bias_$i');
       gl.setUniform4f(biasId, _bias[i * 4], _bias[i * 4 + 1], _bias[i * 4 + 2], _bias[i * 4 + 3]);
