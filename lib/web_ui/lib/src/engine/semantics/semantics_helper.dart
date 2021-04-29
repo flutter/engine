@@ -51,6 +51,15 @@ class SemanticsHelper {
   html.Element prepareAccessibilityPlaceholder() {
     return _semanticsEnabler.prepareAccessibilityPlaceholder();
   }
+
+  /// Stops waiting for the user to enable semantics and removes the
+  /// placeholder.
+  ///
+  /// This is used when semantics is enabled programmatically and therefore the
+  /// placehodler is no longer needed.
+  void dispose() {
+    _semanticsEnabler.dispose();
+  }
 }
 
 @visibleForTesting
@@ -92,6 +101,9 @@ abstract class SemanticsEnabler {
   ///
   /// If not they are sent to framework as normal events.
   bool get isWaitingToEnableSemantics;
+
+  /// Stops waiting for the user to enable semantics and removes the placeholder.
+  void dispose();
 }
 
 @visibleForTesting
@@ -115,7 +127,7 @@ class DesktopSemanticsEnabler extends SemanticsEnabler {
   /// semantics.
   int semanticsActivationAttempts = 0;
 
-  /// Instructs [_tryEnableSemantics] to remove [_semanticsPlaceholder].
+  /// Instructs [tryEnableSemantics] to remove [_semanticsPlaceholder].
   ///
   /// The placeholder is removed upon any next event.
   bool _schedulePlaceholderRemoval = false;
@@ -126,10 +138,15 @@ class DesktopSemanticsEnabler extends SemanticsEnabler {
 
   @override
   bool tryEnableSemantics(html.Event event) {
+    // Semantics may be enabled programmatically. If there's a race between that
+    // and the DOM event, we may end up here while there's no longer a placeholder
+    // to work with.
+    if (!isWaitingToEnableSemantics) {
+      return true;
+    }
+
     if (_schedulePlaceholderRemoval) {
-      _semanticsPlaceholder!.remove();
-      _semanticsPlaceholder = null;
-      semanticsActivationTimer = null;
+      dispose();
       return true;
     }
 
@@ -215,6 +232,13 @@ class DesktopSemanticsEnabler extends SemanticsEnabler {
       ..height = '1px';
     return placeholder;
   }
+
+  @override
+  void dispose() {
+    _semanticsPlaceholder?.remove();
+    _semanticsPlaceholder = null;
+    semanticsActivationTimer = null;
+  }
 }
 
 @visibleForTesting
@@ -254,6 +278,13 @@ class MobileSemanticsEnabler extends SemanticsEnabler {
 
   @override
   bool tryEnableSemantics(html.Event event) {
+    // Semantics may be enabled programmatically. If there's a race between that
+    // and the DOM event, we may end up here while there's no longer a placeholder
+    // to work with.
+    if (!isWaitingToEnableSemantics) {
+      return true;
+    }
+
     if (_schedulePlaceholderRemoval) {
       // The event type can also be click for VoiceOver.
       final bool removeNow = (browserEngine != BrowserEngine.webkit ||
@@ -261,9 +292,7 @@ class MobileSemanticsEnabler extends SemanticsEnabler {
           event.type == 'pointerup' ||
           event.type == 'click');
       if (removeNow) {
-        _semanticsPlaceholder!.remove();
-        _semanticsPlaceholder = null;
-        semanticsActivationTimer = null;
+        dispose();
       }
       return true;
     }
@@ -402,5 +431,12 @@ class MobileSemanticsEnabler extends SemanticsEnabler {
       ..bottom = '0';
 
     return placeholder;
+  }
+
+  @override
+  void dispose() {
+    _semanticsPlaceholder?.remove();
+    _semanticsPlaceholder = null;
+    semanticsActivationTimer = null;
   }
 }

@@ -88,13 +88,14 @@ void _testEngineSemanticsOwner() {
     expect(semantics().mode, AccessibilityMode.unknown);
   });
 
-  test('auto-enables semantics', () async {
+  test('placeholder enables semantics', () async {
     domRenderer.reset(); // triggers `autoEnableOnTap` to be called
     expect(semantics().semanticsEnabled, false);
 
     // Synthesize a click on the placeholder.
     final html.Element placeholder =
         html.document.querySelectorAll('flt-semantics-placeholder').single;
+    expect(placeholder.isConnected, true);
     final html.Rectangle<num> rect = placeholder.getBoundingClientRect();
     placeholder.dispatchEvent(html.MouseEvent(
       'click',
@@ -105,6 +106,30 @@ void _testEngineSemanticsOwner() {
       await Future<void>.delayed(const Duration(milliseconds: 50));
     }
     expect(semantics().semanticsEnabled, true);
+
+    // The placeholder should be removed
+    placeholder.click();
+    await Future<void>.delayed(Duration.zero);
+    expect(placeholder.isConnected, false);
+  });
+
+  test('auto-enables semantics', () async {
+    domRenderer.reset(); // triggers `autoEnableOnTap` to be called
+    expect(semantics().semanticsEnabled, false);
+
+    final html.Element placeholder =
+        html.document.querySelectorAll('flt-semantics-placeholder').single;
+    expect(placeholder.isConnected, true);
+
+    // Sending a semantics update should auto-enable engine semantics.
+    final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
+    updateNode(builder, id: 0);
+    semantics().updateSemantics(builder.build());
+
+    expect(semantics().semanticsEnabled, true);
+
+    // The placeholder should be removed
+    expect(placeholder.isConnected, false);
   });
 
   void renderLabel(String label) {
