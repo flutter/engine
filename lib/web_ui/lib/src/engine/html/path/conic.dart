@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'dart:math' as math;
 
 import 'package:ui/ui.dart' as ui;
+
 import 'path_utils.dart';
 
 /// Converts conic curve to a list of quadratic curves for rendering on

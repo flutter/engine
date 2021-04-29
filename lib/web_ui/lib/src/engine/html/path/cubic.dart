@@ -5,8 +5,8 @@
 import 'dart:typed_data';
 import 'dart:math' as math;
 
-import 'path_utils.dart';
 import '../../util.dart';
+import 'path_utils.dart';
 
 /// Chops cubic at Y extrema points and writes result to [dest].
 ///

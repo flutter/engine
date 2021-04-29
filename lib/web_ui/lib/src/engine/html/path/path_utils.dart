@@ -5,6 +5,7 @@
 import 'dart:math' as math;
 
 import 'package:ui/ui.dart' as ui;
+
 import 'path_ref.dart';
 
 /// Mask used to keep track of types of verbs used in a path segment.

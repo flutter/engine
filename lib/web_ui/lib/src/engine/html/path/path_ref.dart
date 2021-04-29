@@ -7,8 +7,9 @@ import 'dart:js_util' as js_util;
 import 'dart:math' as math;
 
 import 'package:ui/ui.dart' as ui;
-import 'path_utils.dart';
+
 import '../../util.dart';
+import 'path_utils.dart';
 
 /// Stores the path verbs, points and conic weights.
 ///
