@@ -39,7 +39,7 @@ class PathWinding {
           _computeQuadWinding();
           break;
         case SPath.kConicVerb:
-          _computeConicWinding(pathRef._conicWeights![iter._conicWeightIndex]);
+          _computeConicWinding(pathRef.conicWeights![iter._conicWeightIndex]);
           break;
         case SPath.kCubicVerb:
           _computeCubicWinding();
@@ -143,7 +143,7 @@ class PathWinding {
       return 0;
     }
 
-    _QuadRoots quadRoots = _QuadRoots();
+    QuadRoots quadRoots = QuadRoots();
     final int n = quadRoots.findRoots(
         startY - 2 * y1 + endY, 2 * (y1 - startY), startY - y);
     assert(n <= 1);
@@ -158,7 +158,7 @@ class PathWinding {
       final double B = 2 * (x1 - C);
       xt = polyEval(A, B, C, t);
     }
-    if (_nearlyEqual(xt, x)) {
+    if (SPath.nearlyEqual(xt, x)) {
       if (x != x2 || y != endY) {
         // don't test end points; they're start points
         _onCurveCount += 1;
@@ -177,7 +177,7 @@ class PathWinding {
     final double y1 = buffer[3];
     final double x2 = buffer[4];
     final double y2 = buffer[5];
-    double? tValueAtExtrema = _validUnitDivide(y0 - y1, y0 - y1 - y1 + y2);
+    double? tValueAtExtrema = validUnitDivide(y0 - y1, y0 - y1 - y1 + y2);
     if (tValueAtExtrema != null) {
       // Chop quad at t value by interpolating along p0-p1 and p1-p2.
       double p01x = x0 + (tValueAtExtrema * (x1 - x0));
@@ -259,7 +259,7 @@ class PathWinding {
     // B = b*w - w * yCept + yCept - a
     B -= C;
     C -= y;
-    final _QuadRoots quadRoots = _QuadRoots();
+    final QuadRoots quadRoots = QuadRoots();
     int n = quadRoots.findRoots(A, 2 * B, C);
     assert(n <= 1);
     double xt;
@@ -274,7 +274,7 @@ class PathWinding {
           _conicEvalNumerator(conic.p0x, conic.p1x, conic.p2x, conic.fW, root) /
               _conicEvalDenominator(conic.fW, root);
     }
-    if (_nearlyEqual(xt, x)) {
+    if (SPath.nearlyEqual(xt, x)) {
       if (x != conic.p2x || y != conic.p2y) {
         // don't test end points; they're start points
         _onCurveCount += 1;
@@ -339,7 +339,7 @@ class PathWinding {
       return;
     }
     double xt = _evalCubicPts(px0, px1, px2, px3, t);
-    if (_nearlyEqual(xt, x)) {
+    if (SPath.nearlyEqual(xt, x)) {
       if (x != px3 || y != py3) {
         // don't test end points; they're start points
         _onCurveCount += 1;
@@ -443,7 +443,7 @@ class PathIterator {
 
   int peek() {
     if (_verbIndex < pathRef.countVerbs()) {
-      return pathRef._fVerbs[_verbIndex];
+      return pathRef.atVerb(_verbIndex);
     }
     if (_needClose && _segmentState == SPathSegmentState.kAfterPrimitive) {
       return (_lastPointX != _moveToX || _lastPointY != _moveToY)
@@ -466,7 +466,7 @@ class PathIterator {
       }
       return SPath.kDoneVerb;
     }
-    int verb = pathRef._fVerbs[_verbIndex++];
+    int verb = pathRef.atVerb(_verbIndex++);
     switch (verb) {
       case SPath.kMoveVerb:
         if (_needClose) {

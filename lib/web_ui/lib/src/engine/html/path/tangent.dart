@@ -19,7 +19,7 @@ void tangentLine(
   }
   final double dx = x1 - x0;
   final double dy = y1 - y0;
-  if (!_nearlyEqual((x - x0) * dy, dx * (y - y0))) {
+  if (!SPath.nearlyEqual((x - x0) * dy, dx * (y - y0))) {
     return;
   }
   tangents.add(ui.Offset(dx, dy));
@@ -40,7 +40,7 @@ void tangentQuad(
   if (!SPath.between(x0, x, x1) && !SPath.between(x1, x, x2)) {
     return;
   }
-  final _QuadRoots roots = _QuadRoots();
+  final QuadRoots roots = QuadRoots();
   int n = roots.findRoots(y0 - 2 * y1 + y2, 2 * (y1 - y0), y0 - y);
   for (int index = 0; index < n; ++index) {
     double t = index == 0 ? roots.root0! : roots.root1!;
@@ -48,7 +48,7 @@ void tangentQuad(
     double A = x2 - 2 * x1 + C;
     double B = 2 * (x1 - C);
     double xt = polyEval(A, B, C, t);
-    if (!_nearlyEqual(x, xt)) {
+    if (!SPath.nearlyEqual(x, xt)) {
       continue;
     }
     tangents.add(_evalQuadTangentAt(x0, y0, x1, y1, x2, y2, t));
@@ -100,13 +100,13 @@ void tangentConic(Float32List pts, double x, double y, double weight,
   // B = b*w - w * yCept + yCept - a
   B -= C;
   C -= y;
-  final _QuadRoots quadRoots = _QuadRoots();
+  final QuadRoots quadRoots = QuadRoots();
   int n = quadRoots.findRoots(A, 2 * B, C);
   for (int index = 0; index < n; ++index) {
     double t = index == 0 ? quadRoots.root0! : quadRoots.root1!;
     double xt = _conicEvalNumerator(x0, x1, x2, weight, t) /
         _conicEvalDenominator(weight, t);
-    if (!_nearlyEqual(x, xt)) {
+    if (!SPath.nearlyEqual(x, xt)) {
       continue;
     }
     Conic conic = Conic(x0, y0, x1, y1, x2, y2, weight);
@@ -145,7 +145,7 @@ void tangentCubic(
     }
     double xt = _evalCubicPts(dst[bufferPos], dst[bufferPos + 2],
         dst[bufferPos + 4], dst[bufferPos + 6], t);
-    if (!_nearlyEqual(x, xt)) {
+    if (!SPath.nearlyEqual(x, xt)) {
       continue;
     }
     tangents.add(_evalCubicTangentAt(dst, bufferPos, t));

@@ -2,7 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import 'dart:async';
+import 'dart:html' as html;
+import 'dart:js_util' as js_util;
+import 'dart:typed_data';
+import 'package:ui/src/engine/browser_detection.dart';
+import 'package:ui/src/engine/util.dart';
+import 'package:ui/ui.dart' as ui;
 
 final bool _supportsDecode = js_util.getProperty(
         js_util.getProperty(

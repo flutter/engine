@@ -189,7 +189,7 @@ class RecordingCanvas {
       } catch (e) {
         // commands should never fail, but...
         // https://bugzilla.mozilla.org/show_bug.cgi?id=941146
-        if (!_isNsErrorFailureException(e)) {
+        if (!isNsErrorFailureException(e)) {
           rethrow;
         }
       }
@@ -321,7 +321,7 @@ class RecordingCanvas {
 
   void drawLine(ui.Offset p1, ui.Offset p2, SurfacePaint paint) {
     assert(!_recordingEnded);
-    assert(paint.shader == null || paint.shader is! ImageShader, 'ImageShader not supported yet');
+    assert(paint.shader == null || paint.shader is! EngineImageShader, 'ImageShader not supported yet');
     final double paintSpread = math.max(_getPaintSpread(paint), 1.0);
     final PaintDrawLine command = PaintDrawLine(p1, p2, paint.paintData);
     // TODO(yjbanov): This can be optimized. Currently we create a box around
@@ -345,7 +345,7 @@ class RecordingCanvas {
 
   void drawPaint(SurfacePaint paint) {
     assert(!_recordingEnded);
-    assert(paint.shader == null || paint.shader is! ImageShader, 'ImageShader not supported yet');
+    assert(paint.shader == null || paint.shader is! EngineImageShader, 'ImageShader not supported yet');
     renderStrategy.hasArbitraryPaint = true;
     _didDraw = true;
     final PaintDrawPaint command = PaintDrawPaint(paint.paintData);
@@ -371,7 +371,7 @@ class RecordingCanvas {
 
   void drawRRect(ui.RRect rrect, SurfacePaint paint) {
     assert(!_recordingEnded);
-    assert(paint.shader == null || paint.shader is! ImageShader, 'ImageShader not supported yet');
+    assert(paint.shader == null || paint.shader is! EngineImageShader, 'ImageShader not supported yet');
     if (paint.shader != null || !rrect.webOnlyUniformRadii) {
       renderStrategy.hasArbitraryPaint = true;
     }
@@ -388,7 +388,7 @@ class RecordingCanvas {
 
   void drawDRRect(ui.RRect outer, ui.RRect inner, SurfacePaint paint) {
     assert(!_recordingEnded);
-    assert(paint.shader == null || paint.shader is! ImageShader, 'ImageShader not supported yet');
+    assert(paint.shader == null || paint.shader is! EngineImageShader, 'ImageShader not supported yet');
     // Check the inner bounds are contained within the outer bounds
     // see: https://cs.chromium.org/chromium/src/third_party/skia/src/core/SkCanvas.cpp?l=1787-1789
     ui.Rect innerRect = inner.outerRect;
@@ -447,7 +447,7 @@ class RecordingCanvas {
 
   void drawOval(ui.Rect rect, SurfacePaint paint) {
     assert(!_recordingEnded);
-    assert(paint.shader == null || paint.shader is! ImageShader, 'ImageShader not supported yet');
+    assert(paint.shader == null || paint.shader is! EngineImageShader, 'ImageShader not supported yet');
     renderStrategy.hasArbitraryPaint = true;
     _didDraw = true;
     final double paintSpread = _getPaintSpread(paint);
@@ -462,7 +462,7 @@ class RecordingCanvas {
 
   void drawCircle(ui.Offset c, double radius, SurfacePaint paint) {
     assert(!_recordingEnded);
-    assert(paint.shader == null || paint.shader is! ImageShader, 'ImageShader not supported yet');
+    assert(paint.shader == null || paint.shader is! EngineImageShader, 'ImageShader not supported yet');
     renderStrategy.hasArbitraryPaint = true;
     _didDraw = true;
     final double paintSpread = _getPaintSpread(paint);
@@ -480,7 +480,7 @@ class RecordingCanvas {
 
   void drawPath(ui.Path path, SurfacePaint paint) {
     assert(!_recordingEnded);
-    assert(paint.shader == null || paint.shader is! ImageShader, 'ImageShader not supported yet');
+    assert(paint.shader == null || paint.shader is! EngineImageShader, 'ImageShader not supported yet');
     if (paint.shader == null) {
       // For Rect/RoundedRect paths use drawRect/drawRRect code paths for
       // DomCanvas optimization.
@@ -517,7 +517,7 @@ class RecordingCanvas {
 
   void drawImage(ui.Image image, ui.Offset offset, SurfacePaint paint) {
     assert(!_recordingEnded);
-    assert(paint.shader == null || paint.shader is! ImageShader, 'ImageShader not supported yet');
+    assert(paint.shader == null || paint.shader is! EngineImageShader, 'ImageShader not supported yet');
     renderStrategy.hasArbitraryPaint = true;
     renderStrategy.hasImageElements = true;
     _didDraw = true;
@@ -555,7 +555,7 @@ class RecordingCanvas {
   void drawImageRect(
       ui.Image image, ui.Rect src, ui.Rect dst, SurfacePaint paint) {
     assert(!_recordingEnded);
-    assert(paint.shader == null || paint.shader is! ImageShader, 'ImageShader not supported yet');
+    assert(paint.shader == null || paint.shader is! EngineImageShader, 'ImageShader not supported yet');
     renderStrategy.hasArbitraryPaint = true;
     renderStrategy.hasImageElements = true;
     _didDraw = true;
@@ -612,7 +612,7 @@ class RecordingCanvas {
     _didDraw = true;
     final PaintDrawVertices command =
         PaintDrawVertices(vertices, blendMode, paint.paintData);
-    _growPaintBoundsByPoints(vertices._positions, 0, paint, command);
+    _growPaintBoundsByPoints(vertices.positions, 0, paint, command);
     _commands.add(command);
   }
 

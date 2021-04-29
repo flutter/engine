@@ -732,12 +732,12 @@ void _chopQuadBetweenT(
   final bool chopStart = startT != 0;
   final double t = chopStart ? startT : stopT;
 
-  final double ab1x = _interpolate(p0x, p1x, t);
-  final double ab1y = _interpolate(p0y, p1y, t);
-  final double bc1x = _interpolate(p1x, p2x, t);
-  final double bc1y = _interpolate(p1y, p2y, t);
-  final double abc1x = _interpolate(ab1x, bc1x, t);
-  final double abc1y = _interpolate(ab1y, bc1y, t);
+  final double ab1x = interpolate(p0x, p1x, t);
+  final double ab1y = interpolate(p0y, p1y, t);
+  final double bc1x = interpolate(p1x, p2x, t);
+  final double bc1y = interpolate(p1y, p2y, t);
+  final double abc1x = interpolate(ab1x, bc1x, t);
+  final double abc1y = interpolate(ab1y, bc1y, t);
   if (!chopStart) {
     // Return left side of curve.
     buffer[0] = p0x;
@@ -761,12 +761,12 @@ void _chopQuadBetweenT(
   // We chopped at startT, now the right hand side of curve is at
   // abc1x, abc1y, bc1x, bc1y, p2x, p2y
   final double endT = (stopT - startT) / (1 - startT);
-  final double ab2x = _interpolate(abc1x, bc1x, endT);
-  final double ab2y = _interpolate(abc1y, bc1y, endT);
-  final double bc2x = _interpolate(bc1x, p2x, endT);
-  final double bc2y = _interpolate(bc1y, p2y, endT);
-  final double abc2x = _interpolate(ab2x, bc2x, endT);
-  final double abc2y = _interpolate(ab2y, bc2y, endT);
+  final double ab2x = interpolate(abc1x, bc1x, endT);
+  final double ab2y = interpolate(abc1y, bc1y, endT);
+  final double bc2x = interpolate(bc1x, p2x, endT);
+  final double bc2y = interpolate(bc1y, p2y, endT);
+  final double abc2x = interpolate(ab2x, bc2x, endT);
+  final double abc2y = interpolate(ab2y, bc2y, endT);
 
   buffer[0] = abc1x;
   buffer[1] = abc1y;

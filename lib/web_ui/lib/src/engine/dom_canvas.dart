@@ -212,16 +212,16 @@ html.HtmlElement _buildDrawRectElement(ui.Rect rect, SurfacePaintData paint, Str
       ..height = '${bottom - top}px'
       ..backgroundColor = cssColor;
 
-    if (paint.shader != null && paint.shader is ImageShader) {
-      _applyImageShaderToElement(rectangle, paint.shader! as ImageShader);
+    if (paint.shader != null && paint.shader is EngineImageShader) {
+      _applyImageShaderToElement(rectangle, paint.shader! as EngineImageShader);
     }
   }
   return rectangle;
 }
 
 void _applyImageShaderToElement(html.HtmlElement targetElement,
-    ImageShader imageShader) {
-  final HtmlImage image = imageShader._image;
+    EngineImageShader imageShader) {
+  final HtmlImage image = imageShader.image;
   targetElement.style.backgroundImage = image.imgElement.src;
 }
 

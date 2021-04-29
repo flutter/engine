@@ -198,7 +198,7 @@ class Conic {
     final double coeff0 = fW * p20 - p20;
     final double coeff1 = p20 - 2 * wP10;
     final double coeff2 = wP10;
-    final _QuadRoots quadRoots = _QuadRoots();
+    final QuadRoots quadRoots = QuadRoots();
     int rootCount = quadRoots.findRoots(coeff0, coeff1, coeff2);
     assert(rootCount == 0 || rootCount == 1);
     if (rootCount == 1) {
@@ -230,12 +230,12 @@ class Conic {
     final double dz1 = dz0 + (dz2 - dz0) * t;
     // Compute new weights.
     final double root = math.sqrt(dz1);
-    if (_nearlyEqual(root, 0)) {
+    if (SPath.nearlyEqual(root, 0)) {
       return false;
     }
     final double w0 = dz0 / root;
     final double w2 = dz2 / root;
-    if (_nearlyEqual(dz0, 0) || _nearlyEqual(dz1, 0) || _nearlyEqual(dz2, 0)) {
+    if (SPath.nearlyEqual(dz0, 0) || SPath.nearlyEqual(dz1, 0) || SPath.nearlyEqual(dz2, 0)) {
       return false;
     }
     // Now we can construct the 2 conics by projecting 3D down to 2D.
@@ -420,7 +420,7 @@ class _ConicBounds {
     // ------------------------------------------------
     //       {t^2 (2 - 2 w), t (-2 + 2 w), 1}
     // Calculate coefficients and solve root.
-    _QuadRoots roots = _QuadRoots();
+    QuadRoots roots = QuadRoots();
     final double P20x = x2 - x1;
     final double P10x = cpX - x1;
     final double wP10x = w * P10x;

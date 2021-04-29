@@ -50,8 +50,21 @@ export 'engine/navigation/js_url_strategy.dart';
 import 'engine/navigation/url_strategy.dart';
 export 'engine/navigation/url_strategy.dart';
 
-import 'engine/html/offscreen_canvas.dart';
-export 'engine/html/offscreen_canvas.dart';
+// import 'engine/html/offscreen_canvas.dart';
+// export 'engine/html/offscreen_canvas.dart';
+
+import 'engine/html/shaders/shader.dart';
+export 'engine/html/shaders/shader.dart';
+
+import 'engine/html/shaders/image_shader.dart';
+export 'engine/html/shaders/image_shader.dart';
+
+import 'engine/html/render_vertices.dart';
+export 'engine/html/render_vertices.dart';
+
+// This import is intentionally commented out because the analyzer says it's unused.
+// import 'engine/html/shaders/normalized_gradient.dart';
+export 'engine/html/shaders/normalized_gradient.dart';
 
 import 'engine/plugins.dart';
 export 'engine/plugins.dart';
@@ -73,6 +86,18 @@ export 'engine/services/message_codec.dart';
 import 'engine/services/message_codecs.dart';
 export 'engine/services/message_codecs.dart';
 
+import 'engine/html/painting.dart';
+export 'engine/html/painting.dart';
+
+import 'engine/html/path/path_ref.dart';
+export 'engine/html/path/path_ref.dart';
+
+import 'engine/html/path/path_utils.dart';
+export 'engine/html/path/path_utils.dart';
+
+import 'engine/html_image_codec.dart';
+export 'engine/html_image_codec.dart';
+
 // This import is intentionally commented out because the analyzer says it's unused.
 // import 'engine/services/serialization.dart';
 export 'engine/services/serialization.dart';
@@ -83,8 +108,11 @@ export 'engine/shadow.dart';
 import 'engine/test_embedding.dart';
 export 'engine/test_embedding.dart';
 
-import 'engine/ulps.dart';
-export 'engine/ulps.dart';
+// import 'engine/ulps.dart';
+// export 'engine/ulps.dart';
+
+import 'engine/util.dart';
+export 'engine/util.dart';
 
 import 'engine/validators.dart';
 export 'engine/validators.dart';
@@ -135,6 +163,7 @@ part 'engine/dom_canvas.dart';
 part 'engine/dom_renderer.dart';
 part 'engine/engine_canvas.dart';
 part 'engine/frame_reference.dart';
+part 'engine/font_change_util.dart';
 part 'engine/html/backdrop_filter.dart';
 part 'engine/html/canvas.dart';
 part 'engine/html/clip.dart';
@@ -143,30 +172,22 @@ part 'engine/html/debug_canvas_reuse_overlay.dart';
 part 'engine/html/image_filter.dart';
 part 'engine/html/offset.dart';
 part 'engine/html/opacity.dart';
-part 'engine/html/painting.dart';
 part 'engine/html/path/conic.dart';
 part 'engine/html/path/cubic.dart';
 part 'engine/html/path/path.dart';
 part 'engine/html/path/path_metrics.dart';
-part 'engine/html/path/path_ref.dart';
 part 'engine/html/path/path_to_svg.dart';
-part 'engine/html/path/path_utils.dart';
 part 'engine/html/path/path_windings.dart';
 part 'engine/html/path/tangent.dart';
 part 'engine/html/picture.dart';
 part 'engine/html/platform_view.dart';
 part 'engine/html/recording_canvas.dart';
-part 'engine/html/render_vertices.dart';
 part 'engine/html/scene.dart';
 part 'engine/html/scene_builder.dart';
 part 'engine/html/shader_mask.dart';
-part 'engine/html/shaders/normalized_gradient.dart';
-part 'engine/html/shaders/shader.dart';
-part 'engine/html/shaders/shader_builder.dart';
 part 'engine/html/surface.dart';
 part 'engine/html/surface_stats.dart';
 part 'engine/html/transform.dart';
-part 'engine/html_image_codec.dart';
 part 'engine/keyboard_binding.dart';
 part 'engine/keyboard.dart';
 part 'engine/key_map.dart';
@@ -203,7 +224,6 @@ part 'engine/text_editing/autofill_hint.dart';
 part 'engine/text_editing/input_type.dart';
 part 'engine/text_editing/text_capitalization.dart';
 part 'engine/text_editing/text_editing.dart';
-part 'engine/util.dart';
 part 'engine/window.dart';
 
 // The mode the app is running in.
