@@ -454,15 +454,9 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         if (_platformViewMessageHandler == null) {
           _platformViewMessageHandler = PlatformViewMessageHandler(
             contentManager: platformViewManager,
-            contentHandler: (int _, html.Element content) {
+            contentHandler: (html.Element content) {
               domRenderer.glassPaneElement!.append(content);
-            },
-            slotHandler: useCanvasKit ?
-                rasterizer!.surface.viewEmbedder.create :
-                null, // noop, everything is handled by the `platformViewManager`
-            disposeHandler: useCanvasKit ?
-                rasterizer!.surface.viewEmbedder.dispose :
-                null, // noop, everything is handled by the `platformViewManager`
+            }
           );
         }
         _platformViewMessageHandler!.handlePlatformViewCall(data, callback!);

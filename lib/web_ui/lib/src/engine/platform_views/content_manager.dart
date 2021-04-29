@@ -40,8 +40,8 @@ class PlatformViewManager {
   // The references to content tags, indexed by their framework-given ID.
   final Map<int, html.Element> _contents = {};
 
-  String _getSlotName(String viewType, int viewId) {
-    return 'flt-pv-${viewType}-$viewId';
+  String _getSlotName(int viewId) {
+    return 'flt-pv-slot-$viewId';
   }
 
   /// Returns `true` if the passed in `viewType` has been registered before.
@@ -76,14 +76,6 @@ class PlatformViewManager {
     return true;
   }
 
-  /// Returns the `slot` associated to a `viewId`, if it's been rendered (and not disposed of).
-  ///
-  /// See [renderSlot] to understand how `slots` are rendered.
-  html.Element getSlot(int viewId) {
-    assert(_slots.containsKey(viewId));
-    return _slots[viewId]!;
-  }
-
   /// Creates the HTML markup for the `slot` of a Platform View.
   ///
   /// The result of this call is cached in the `_slots` Map, so it can be accessed
@@ -106,11 +98,8 @@ class PlatformViewManager {
   ///
   /// (When the framework accesses a `slot`, it's really accessing its wrapper
   /// `flt-platform-view-slot` tag)
-  html.Element renderSlot(String viewType, int viewId) {
-    assert(knowsViewType(viewType),
-        'Attempted to render slot of unregistered viewType: $viewType');
-
-    final String slotName = _getSlotName(viewType, viewId);
+  html.Element renderSlot(int viewId) {
+    final String slotName = _getSlotName(viewId);
 
     return _slots.putIfAbsent(viewId, () {
       final html.Element wrapper = html.document
@@ -153,7 +142,7 @@ class PlatformViewManager {
     assert(knowsViewType(viewType),
         'Attempted to render contents of unregistered viewType: $viewType');
 
-    final String slotName = _getSlotName(viewType, viewId);
+    final String slotName = _getSlotName(viewId);
 
     return _contents.putIfAbsent(viewId, () {
       final html.Element wrapper = html.document
@@ -164,6 +153,7 @@ class PlatformViewManager {
       late html.Element content;
 
       if (factoryFunction is ParameterizedPlatformViewFactory) {
+        // TODO: Determine `params` better, maybe it needs to be a subset?
         content = factoryFunction(viewId, params: params);
       } else {
         content = factoryFunction(viewId);

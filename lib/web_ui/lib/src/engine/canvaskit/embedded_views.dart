@@ -18,12 +18,6 @@ import 'path.dart';
 import 'picture_recorder.dart';
 import 'surface.dart';
 
-// An Exception to signal that a given `viewId` has already been created.
-class _PlatformViewAlreadyCreatedException implements Exception {
-  final int viewId;
-  _PlatformViewAlreadyCreatedException(this.viewId);
-}
-
 /// This composites HTML views into the [ui.Scene].
 class HtmlViewEmbedder {
   /// A picture recorder associated with a view id.
@@ -77,20 +71,6 @@ class HtmlViewEmbedder {
     _frameSize = size;
   }
 
-  /// Links a `viewId` and `slot` into this `HtmlViewEmbedder` instance.
-  void create(int viewId, html.Element slot) {
-    if (_rootViews.containsKey(viewId)) {
-      // This will be handled by the MessageHandler
-      throw _PlatformViewAlreadyCreatedException(viewId);
-    }
-    _rootViews[viewId] = slot;
-  }
-
-  /// Disposes a given `viewId`, and frees its resources.
-  void dispose(int viewId) {
-    _viewsToDispose.add(viewId);
-  }
-
   List<CkCanvas> getCurrentCanvases() {
     final List<CkCanvas> canvases = <CkCanvas>[];
     for (int i = 0; i < _compositionOrder.length; i++) {
@@ -126,17 +106,13 @@ class HtmlViewEmbedder {
   }
 
   void _compositeWithParams(int viewId, EmbeddedViewParams params) {
-    // We need to do something similar in [PersistedPlatformView.createElement],
-    // because tests often short-circuit the lifecycle of a Platform View, and
-    // getSlot will throw an unwanted assertion!
-    if (!platformViewManager.knowsViewId(viewId)) {
-      // The view has been disposed of. Noop here.
-      // [submitFrame] will report the deletion of this (and maybe other) views at once.
-      return;
-    }
-
     // See [PlatformViewManager] for more info about PlatformView `slot` and `content`.
-    final html.Element slot = platformViewManager.getSlot(viewId);
+    final html.Element slot = platformViewManager.renderSlot(viewId);
+
+    // We haven't seen this viewId yet, let's cache its root for clips/transforms.
+    if (!_rootViews.containsKey(viewId)) {
+      _rootViews[viewId] = slot;
+    }
 
     // See `apply()` in the PersistedPlatformView class for the HTML version
     // of this code.
@@ -345,8 +321,6 @@ class HtmlViewEmbedder {
   }
 
   void submitFrame() {
-    disposeViews();
-
     for (int i = 0; i < _compositionOrder.length; i++) {
       int viewId = _compositionOrder[i];
       _ensureOverlayInitialized(viewId);
@@ -387,12 +361,10 @@ class HtmlViewEmbedder {
       skiaSceneHost!.append(overlay);
       _activeCompositionOrder.add(viewId);
     }
+
     _compositionOrder.clear();
 
-    for (final int unusedViewId in unusedViews) {
-      _releaseOverlay(unusedViewId);
-      _rootViews[unusedViewId]?.remove();
-    }
+    disposeViews(unusedViews);
 
     if (assertionsEnabled) {
       if (debugInvalidViewIds != null && debugInvalidViewIds.isNotEmpty) {
@@ -404,12 +376,8 @@ class HtmlViewEmbedder {
     }
   }
 
-  void disposeViews() {
-    if (_viewsToDispose.isEmpty) {
-      return;
-    }
-
-    for (final int viewId in _viewsToDispose) {
+  void disposeViews(Set<int> viewsToDispose) {
+    for (final int viewId in viewsToDispose) {
       // Remove viewId from the _rootViews Map, and then from the DOM.
       _rootViews.remove(viewId)!.remove();
       _releaseOverlay(viewId);
@@ -419,7 +387,6 @@ class HtmlViewEmbedder {
       _cleanUpClipDefs(viewId);
       _svgClipDefs.remove(viewId);
     }
-    _viewsToDispose.clear();
   }
 
   void _releaseOverlay(int viewId) {

@@ -16,17 +16,7 @@ class PersistedPlatformView extends PersistedLeafSurface {
 
   @override
   html.Element createElement() {
-    // We need to do something similar in [HtmlViewEmbedder._compositeWithParams],
-    // because tests often short-circuit the lifecycle of a Platform View, and
-    // getSlot will throw an unwanted assertion.
-    // Instead, we return a non-functional PlatformView, as the previous iteration
-    // of the code did, so old (framework) tests keep passing.
-    // See: https://github.com/flutter/engine/blob/ee1696721b02539d5f32b1cbfdf6bfa107663e91/lib/web_ui/lib/src/engine/html/platform_view.dart#L49-L55
-    if (assertionsEnabled && !platformViewManager.knowsViewId(viewId)) {
-      return html.DivElement()..id = 'only-to-vw-flutter/test/widgets/html_element_view_test.dart';
-    }
-
-    return platformViewManager.getSlot(viewId);
+    return platformViewManager.renderSlot(viewId);
   }
 
   @override
