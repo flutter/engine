@@ -60,8 +60,13 @@ import 'engine/html/path/path_utils.dart';
 export 'engine/html/path/path_utils.dart';
 
 import 'engine/html/shaders/normalized_gradient.dart';
+export 'engine/html/shaders/normalized_gradient.dart';
+
 import 'engine/html/shaders/shader_builder.dart';
+export 'engine/html/shaders/shader_builder.dart';
+
 import 'engine/html/shaders/vertex_shaders.dart';
+export 'engine/html/shaders/vertex_shaders.dart';
 
 import 'engine/mouse_cursor.dart';
 export 'engine/mouse_cursor.dart';

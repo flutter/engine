@@ -4,6 +4,8 @@
 
 import 'dart:typed_data';
 
+import 'package:ui/src/engine.dart';
+
 import 'package:ui/ui.dart' as ui;
 import 'shader_builder.dart';
 
