@@ -476,7 +476,7 @@ class Shell final : public PlatformView::Delegate,
 
   // |PlatformView::Delegate|
   void OnPlatformViewDispatchPlatformMessage(
-      fml::RefPtr<PlatformMessage> message) override;
+      std::unique_ptr<PlatformMessage> message) override;
 
   // |PlatformView::Delegate|
   void OnPlatformViewDispatchPointerDataPacket(
@@ -547,9 +547,9 @@ class Shell final : public PlatformView::Delegate,
 
   // |Engine::Delegate|
   void OnEngineHandlePlatformMessage(
-      fml::RefPtr<PlatformMessage> message) override;
+      std::unique_ptr<PlatformMessage> message) override;
 
-  void HandleEngineSkiaMessage(fml::RefPtr<PlatformMessage> message);
+  void HandleEngineSkiaMessage(std::unique_ptr<PlatformMessage> message);
 
   // |Engine::Delegate|
   void OnPreEngineRestart() override;

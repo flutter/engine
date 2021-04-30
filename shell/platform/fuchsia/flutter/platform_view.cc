@@ -707,7 +707,7 @@ PlatformView::CreateExternalViewEmbedder() {
 
 // |flutter::PlatformView|
 void PlatformView::HandlePlatformMessage(
-    fml::RefPtr<flutter::PlatformMessage> message) {
+    std::unique_ptr<flutter::PlatformMessage> message) {
   if (!message) {
     return;
   }
