@@ -1763,22 +1763,16 @@ fml::Status Shell::WaitForFirstFrame(fml::TimeDelta timeout) {
   }
 
   // Check for overflow.
-  bool success = true;
   auto now = std::chrono::steady_clock::now();
   auto max_duration = std::chrono::steady_clock::time_point::max() - now;
   auto desired_duration = std::chrono::milliseconds(timeout.ToMilliseconds());
-
-  auto condition = [&waiting_for_first_frame = waiting_for_first_frame_] {
-    return !waiting_for_first_frame.load();
-  };
+  auto duration = now + std::min(max_duration, desired_duration);
 
   std::unique_lock<std::mutex> lock(waiting_for_first_frame_mutex_);
-  if (max_duration < desired_duration) {
-    waiting_for_first_frame_condition_.wait(lock, condition);
-  } else {
-    success = waiting_for_first_frame_condition_.wait_until(
-        lock, now + desired_duration, condition);
-  }
+  bool success = waiting_for_first_frame_condition_.wait_until(
+      lock, duration, [&waiting_for_first_frame = waiting_for_first_frame_] {
+        return !waiting_for_first_frame.load();
+      });
   if (success) {
     return fml::Status();
   } else {
