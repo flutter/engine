@@ -38,8 +38,8 @@ export 'engine/alarm_clock.dart';
 import 'engine/browser_detection.dart';
 export 'engine/browser_detection.dart';
 
-import  'engine/html_image_codec.dart';
-export  'engine/html_image_codec.dart';
+import 'engine/html_image_codec.dart';
+export 'engine/html_image_codec.dart';
 
 import 'engine/html/path_to_svg_clip.dart';
 export 'engine/html/path_to_svg_clip.dart';
