@@ -14,7 +14,7 @@
 
 namespace flutter {
 
-class PlatformMessage : public fml::RefCountedThreadSafe<PlatformMessage> {
+class PlatformMessage {
  public:
   PlatformMessage(std::string channel,
                   std::vector<uint8_t> data,
