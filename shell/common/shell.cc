@@ -1762,14 +1762,23 @@ fml::Status Shell::WaitForFirstFrame(fml::TimeDelta timeout) {
                        "because it is responsible for generating the frame.");
   }
 
+  // Check for overflow.
+  bool success = true;
+  auto now = std::chrono::steady_clock::now();
+  auto max_duration = std::chrono::steady_clock::time_point::max() - now;
+  auto desired_duration = std::chrono::milliseconds(timeout.ToMilliseconds());
+
+  auto condition = [&waiting_for_first_frame = waiting_for_first_frame_] {
+    return !waiting_for_first_frame.load();
+  };
+
   std::unique_lock<std::mutex> lock(waiting_for_first_frame_mutex_);
-  bool success = waiting_for_first_frame_condition_.wait_until(
-      lock,
-      std::chrono::system_clock::now() +
-          std::chrono::milliseconds(timeout.ToMilliseconds()),
-      [&waiting_for_first_frame = waiting_for_first_frame_] {
-        return !waiting_for_first_frame.load();
-      });
+  if (max_duration < desired_duration) {
+    waiting_for_first_frame_condition_.wait(lock, condition);
+  } else {
+    success = waiting_for_first_frame_condition_.wait_until(
+        lock, now + desired_duration, condition);
+  }
   if (success) {
     return fml::Status();
   } else {
