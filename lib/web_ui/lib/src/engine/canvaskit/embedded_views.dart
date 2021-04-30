@@ -48,9 +48,6 @@ class HtmlViewEmbedder {
   /// The views that need to be recomposited into the scene on the next frame.
   final Set<int> _viewsToRecomposite = <int>{};
 
-  /// The views that need to be disposed of on the next frame.
-  final Set<int> _viewsToDispose = <int>{};
-
   /// The list of view ids that should be composited, in order.
   List<int> _compositionOrder = <int>[];
 
