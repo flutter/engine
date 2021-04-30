@@ -1,4 +1,4 @@
-Signature: a1711e32cff7d07c1549d6375df02ae4
+Signature: c832a11b1394490412830855b34b3368
 
 UNUSED LICENSES:
 
@@ -614,16 +614,12 @@ FILE: ../../../third_party/skia/src/effects/imagefilters/SkShaderImageFilter.cpp
 FILE: ../../../third_party/skia/src/gpu/GrAppliedClip.h
 FILE: ../../../third_party/skia/src/gpu/GrAuditTrail.cpp
 FILE: ../../../third_party/skia/src/gpu/GrAuditTrail.h
-FILE: ../../../third_party/skia/src/gpu/GrBitmapTextureMaker.cpp
-FILE: ../../../third_party/skia/src/gpu/GrBitmapTextureMaker.h
 FILE: ../../../third_party/skia/src/gpu/GrClipStackClip.cpp
 FILE: ../../../third_party/skia/src/gpu/GrClipStackClip.h
 FILE: ../../../third_party/skia/src/gpu/GrColorSpaceXform.cpp
 FILE: ../../../third_party/skia/src/gpu/GrColorSpaceXform.h
 FILE: ../../../third_party/skia/src/gpu/GrDirectContextPriv.h
 FILE: ../../../third_party/skia/src/gpu/GrFixedClip.h
-FILE: ../../../third_party/skia/src/gpu/GrImageTextureMaker.cpp
-FILE: ../../../third_party/skia/src/gpu/GrImageTextureMaker.h
 FILE: ../../../third_party/skia/src/gpu/GrOpsRenderPass.cpp
 FILE: ../../../third_party/skia/src/gpu/GrOpsRenderPass.h
 FILE: ../../../third_party/skia/src/gpu/GrProgramDesc.cpp
@@ -645,8 +641,6 @@ FILE: ../../../third_party/skia/src/gpu/GrSurfaceProxy.h
 FILE: ../../../third_party/skia/src/gpu/GrSwizzle.h
 FILE: ../../../third_party/skia/src/gpu/GrTextureAdjuster.cpp
 FILE: ../../../third_party/skia/src/gpu/GrTextureAdjuster.h
-FILE: ../../../third_party/skia/src/gpu/GrTextureMaker.cpp
-FILE: ../../../third_party/skia/src/gpu/GrTextureMaker.h
 FILE: ../../../third_party/skia/src/gpu/GrTextureProducer.cpp
 FILE: ../../../third_party/skia/src/gpu/GrTextureProducer.h
 FILE: ../../../third_party/skia/src/gpu/GrTextureProxy.cpp
@@ -1434,7 +1428,6 @@ FILE: ../../../third_party/skia/src/sksl/sksl_gpu.sksl
 FILE: ../../../third_party/skia/src/sksl/sksl_public.sksl
 FILE: ../../../third_party/skia/src/sksl/sksl_rt_colorfilter.sksl
 FILE: ../../../third_party/skia/src/sksl/sksl_rt_shader.sksl
-FILE: ../../../third_party/skia/src/sksl/sksl_runtime.sksl
 FILE: ../../../third_party/skia/src/sksl/sksl_vert.sksl
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2011 Google Inc. All rights reserved.
@@ -5038,7 +5031,6 @@ FILE: ../../../third_party/skia/gm/inverseclip.cpp
 FILE: ../../../third_party/skia/gm/labyrinth.cpp
 FILE: ../../../third_party/skia/gm/preservefillrule.cpp
 FILE: ../../../third_party/skia/gm/sample_matrix_constant.cpp
-FILE: ../../../third_party/skia/gm/sample_matrix_variable.cpp
 FILE: ../../../third_party/skia/gm/swizzle.cpp
 FILE: ../../../third_party/skia/gm/tilemodes_alpha.cpp
 FILE: ../../../third_party/skia/include/core/SkPathTypes.h
@@ -5696,6 +5688,7 @@ FILE: ../../../third_party/skia/include/private/GrMtlTypesPriv.h
 FILE: ../../../third_party/skia/include/utils/SkOrderedFontMgr.h
 FILE: ../../../third_party/skia/modules/androidkit/src/AndroidKit.cpp
 FILE: ../../../third_party/skia/modules/androidkit/src/Canvas.cpp
+FILE: ../../../third_party/skia/modules/androidkit/src/Matrix.cpp
 FILE: ../../../third_party/skia/modules/androidkit/src/Paint.cpp
 FILE: ../../../third_party/skia/modules/androidkit/src/RuntimeShaderBuilder.cpp
 FILE: ../../../third_party/skia/modules/androidkit/src/Shader.cpp
