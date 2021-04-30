@@ -3,13 +3,15 @@
 // found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:typed_data';
 import 'dart:html' as html;
 import 'dart:js_util' as js_util;
+import 'dart:typed_data';
 import 'dart:math' as math;
-import 'package:ui/src/engine/browser_detection.dart';
-import 'package:ui/src/engine/vector_math.dart';
+
 import 'package:ui/ui.dart' as ui;
+
+import 'browser_detection.dart';
+import 'vector_math.dart';
 
 /// Generic callback signature, used by [_futurize].
 typedef Callback<T> = void Function(T result);
