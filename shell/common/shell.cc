@@ -1763,8 +1763,10 @@ fml::Status Shell::WaitForFirstFrame(fml::TimeDelta timeout) {
   }
 
   std::unique_lock<std::mutex> lock(waiting_for_first_frame_mutex_);
-  bool success = waiting_for_first_frame_condition_.wait_for(
-      lock, std::chrono::milliseconds(timeout.ToMilliseconds()),
+  bool success = waiting_for_first_frame_condition_.wait_until(
+      lock,
+      std::chrono::system_clock::now() +
+          std::chrono::milliseconds(timeout.ToMilliseconds()),
       [&waiting_for_first_frame = waiting_for_first_frame_] {
         return !waiting_for_first_frame.load();
       });
