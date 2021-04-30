@@ -992,12 +992,11 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 }
 
 - (NSUInteger)decrementOffsetPosition:(NSUInteger)position {
-  return fml::RangeForCharacterAtIndex(self.text, MAX(0, position - 1)).location;
+  return MAX(0, position - 1);
 }
 
 - (NSUInteger)incrementOffsetPosition:(NSUInteger)position {
-  NSRange charRange = fml::RangeForCharacterAtIndex(self.text, position);
-  return MIN(position + charRange.length, self.text.length);
+  return MIN(position + 1, self.text.length);
 }
 
 - (UITextPosition*)positionFromPosition:(UITextPosition*)position offset:(NSInteger)offset {
@@ -1155,9 +1154,10 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   for (NSUInteger i = 0; i < [rects count]; i++) {
     NSArray* rect = rects[i];
     [rectsAsRect addObject:@[
-      [NSNumber numberWithInt:[rect[0] intValue]], [NSNumber numberWithInt:[rect[1] intValue]],
-      [NSNumber numberWithInt:[rect[2] intValue]], [NSNumber numberWithInt:[rect[3] intValue]],
-      [NSNumber numberWithInt:[rect[4] intValue]]
+      [NSNumber numberWithFloat:[rect[0] floatValue]],
+      [NSNumber numberWithFloat:[rect[1] floatValue]],
+      [NSNumber numberWithFloat:[rect[2] floatValue]],
+      [NSNumber numberWithFloat:[rect[3] floatValue]], [NSNumber numberWithInt:[rect[4] intValue]]
     ]];
   }
   _selectionRects = rectsAsRect;
@@ -1216,8 +1216,9 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
       CGRect rect =
           CGRectMake([_selectionRects[i][0] floatValue], [_selectionRects[i][1] floatValue],
                      [_selectionRects[i][2] floatValue], [_selectionRects[i][3] floatValue]);
-      NSLog(@"[scribble] firstRectForRange (%@ - %@) -> %@, %@, %@, %@", @(start), @(end),
-            @(rect.origin.x), @(rect.origin.y), @(rect.size.width), @(rect.size.height));
+      NSLog(@"[scribble] firstRectForRange (%@ - %@) -> (%@) %@, %@, %@, %@", @(start), @(end),
+            @([_selectionRects[i][4] unsignedIntegerValue]), @(rect.origin.x), @(rect.origin.y),
+            @(rect.size.width), @(rect.size.height));
       return rect;
     }
   }
@@ -1302,7 +1303,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
       float xDist = abs(pointForComparison.x - point.x);
       if (_closestIndex == 0 ||
           (yDist < _closestY - 1 ||
-           (yDist == _closestY &&
+           (yDist >= _closestY - 1 && yDist <= _closestY + 1 &&
             ((point.y <= rect.origin.y + rect.size.height && xDist < _closestX) ||
              (point.y > rect.origin.y + rect.size.height &&
               rect.origin.x > _closestRect.origin.x))))) {
@@ -1331,7 +1332,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
       float yDist = abs(pointForComparison.y - point.y);
       float xDist = abs(pointForComparison.x - point.x);
       if (yDist < _closestY - 1 ||
-          (yDist == _closestY &&
+          (yDist >= _closestY - 1 && yDist <= _closestY + 1 &&
            ((point.y <= rect.origin.y + rect.size.height && xDist < _closestX) ||
             (point.y > rect.origin.y + rect.size.height &&
              rect.origin.x + rect.size.width > _closestRect.origin.x)))) {
@@ -1910,15 +1911,18 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 }
 
 - (void)addToInputParentViewIfNeeded:(FlutterTextInputView*)inputView {
-  // TODO: Find a different way to do what FlutterTextInputViewAccessibilityHider was doing
+  if (![inputView isDescendantOfView:_inputHider]) {
+    [_inputHider addSubview:inputView];
+  }
   UIView* parentView = self.keyWindow;
-  if (inputView.superview != parentView) {
+  if (_inputHider.superview != parentView) {
+    [parentView addSubview:_inputHider];
     if (@available(iOS 14.0, *)) {
+      NSLog(@"[scribble] addToInputParentViewIfNeeded - setup UIScribbleInteraction");
       UIScribbleInteraction* interaction =
           [[[UIScribbleInteraction alloc] initWithDelegate:inputView] autorelease];
       [inputView addInteraction:interaction];
     }
-    [parentView addSubview:inputView];
   }
 }
 
