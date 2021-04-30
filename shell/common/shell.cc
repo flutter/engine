@@ -1766,7 +1766,8 @@ fml::Status Shell::WaitForFirstFrame(fml::TimeDelta timeout) {
   auto now = std::chrono::steady_clock::now();
   auto max_duration = std::chrono::steady_clock::time_point::max() - now;
   auto desired_duration = std::chrono::milliseconds(timeout.ToMilliseconds());
-  auto duration = now + std::min(max_duration, desired_duration);
+  auto duration =
+      now + (desired_duration > max_duration ? max_duration : desired_duration);
 
   std::unique_lock<std::mutex> lock(waiting_for_first_frame_mutex_);
   bool success = waiting_for_first_frame_condition_.wait_until(
