@@ -48,6 +48,7 @@ bool radiusIsValid(ui.Radius radius) {
   return true;
 }
 
+/// Validates color and color stops used for a gradient.
 void validateColorStops(List<ui.Color> colors, List<double>? colorStops) {
   if (colorStops == null) {
     if (colors.length != 2)
