@@ -683,7 +683,7 @@ TEST_F(PlatformViewTests, UpdateViewTest) {
           "flutter/platform_views",
           std::vector<uint8_t>(txt, txt + sizeof(txt)),
           fml::RefPtr<flutter::PlatformMessageResponse>());
-  base_view->HandlePlatformMessage(message);
+  base_view->HandlePlatformMessage(std::move(message));
 
   RunLoopUntilIdle();
 
@@ -740,7 +740,7 @@ TEST_F(PlatformViewTests, DestroyViewTest) {
           "flutter/platform_views",
           std::vector<uint8_t>(txt, txt + sizeof(txt)),
           fml::RefPtr<flutter::PlatformMessageResponse>());
-  base_view->HandlePlatformMessage(message);
+  base_view->HandlePlatformMessage(std::move(message));
 
   RunLoopUntilIdle();
 
@@ -939,7 +939,7 @@ TEST_F(PlatformViewTests, RequestFocusTest) {
       std::make_unique<flutter::PlatformMessage>(
           "flutter/platform_views",
           std::vector<uint8_t>(buff, buff + sizeof(buff)), response);
-  base_view->HandlePlatformMessage(message);
+  base_view->HandlePlatformMessage(std::move(message));
 
   RunLoopUntilIdle();
 
@@ -1002,7 +1002,7 @@ TEST_F(PlatformViewTests, RequestFocusFailTest) {
       std::make_unique<flutter::PlatformMessage>(
           "flutter/platform_views",
           std::vector<uint8_t>(buff, buff + sizeof(buff)), response);
-  base_view->HandlePlatformMessage(message);
+  base_view->HandlePlatformMessage(std::move(message));
 
   RunLoopUntilIdle();
 
