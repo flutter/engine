@@ -5,7 +5,7 @@
 part of engine;
 
 final ByteData? _fontChangeMessage =
-JSONMessageCodec().encodeMessage(<String, dynamic>{'type': 'fontsChange'});
+    JSONMessageCodec().encodeMessage(<String, dynamic>{'type': 'fontsChange'});
 
 // Font load callbacks will typically arrive in sequence, we want to prevent
 // sendFontChangeMessage of causing multiple synchronous rebuilds.
@@ -21,7 +21,7 @@ FutureOr<void> sendFontChangeMessage() async {
       EnginePlatformDispatcher.instance.invokeOnPlatformMessage(
         'flutter/system',
         _fontChangeMessage,
-            (_) {},
+        (_) {},
       );
     });
   }

@@ -4,11 +4,13 @@
 
 import 'dart:async';
 import 'dart:html' as html;
-import 'dart:js_util' as js_util;
 import 'dart:typed_data';
-import 'package:ui/src/engine/browser_detection.dart';
-import 'package:ui/src/engine/util.dart';
+import 'dart:js_util' as js_util;
+
 import 'package:ui/ui.dart' as ui;
+
+import 'browser_detection.dart';
+import 'util.dart';
 
 final bool _supportsDecode = js_util.getProperty(
         js_util.getProperty(
