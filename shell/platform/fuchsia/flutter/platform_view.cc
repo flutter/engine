@@ -1067,8 +1067,8 @@ void PlatformView::HandleFlutterPlatformViewsChannelPlatformMessage(
     });
     focuser_->RequestFocus(
         std::move(ref),
-        [view_ref = view_ref->value.GetUint64(),
-         message](fuchsia::ui::views::Focuser_RequestFocus_Result result) {
+        [view_ref = view_ref->value.GetUint64(), message = std::move(message)](
+            fuchsia::ui::views::Focuser_RequestFocus_Result result) {
           if (message->response().get()) {
             int result_code =
                 result.is_err()
