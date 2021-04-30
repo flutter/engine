@@ -471,7 +471,7 @@ bool PlatformView::OnChildViewDisconnected(scenic::ResourceId view_holder_id) {
       std::make_unique<flutter::PlatformMessage>(
           "flutter/platform_views",
           std::vector<uint8_t>(call.begin(), call.end()), nullptr);
-  DispatchPlatformMessage(message);
+  DispatchPlatformMessage(std::move(message));
 
   return true;
 }
@@ -498,7 +498,7 @@ bool PlatformView::OnChildViewStateChanged(scenic::ResourceId view_holder_id,
       std::make_unique<flutter::PlatformMessage>(
           "flutter/platform_views",
           std::vector<uint8_t>(call.begin(), call.end()), nullptr);
-  DispatchPlatformMessage(message);
+  DispatchPlatformMessage(std::move(message));
 
   return true;
 }
