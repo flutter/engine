@@ -38,6 +38,9 @@ export 'engine/alarm_clock.dart';
 import 'engine/browser_detection.dart';
 export 'engine/browser_detection.dart';
 
+import  'engine/html_image_codec.dart';
+export  'engine/html_image_codec.dart';
+
 import 'engine/html/path_to_svg_clip.dart';
 export 'engine/html/path_to_svg_clip.dart';
 
@@ -189,7 +192,6 @@ part 'engine/html/shaders/shader.dart';
 part 'engine/html/surface.dart';
 part 'engine/html/surface_stats.dart';
 part 'engine/html/transform.dart';
-part 'engine/html_image_codec.dart';
 part 'engine/keyboard_binding.dart';
 part 'engine/keyboard.dart';
 part 'engine/key_map.dart';
