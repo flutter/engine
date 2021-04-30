@@ -633,7 +633,7 @@ TEST_F(PlatformViewTests, CreateViewTest) {
           "flutter/platform_views",
           std::vector<uint8_t>(txt, txt + sizeof(txt)),
           fml::RefPtr<flutter::PlatformMessageResponse>());
-  base_view->HandlePlatformMessage(message);
+  base_view->HandlePlatformMessage(std::move(message));
 
   RunLoopUntilIdle();
 
