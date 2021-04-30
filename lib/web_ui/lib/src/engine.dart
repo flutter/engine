@@ -41,6 +41,9 @@ export 'engine/browser_detection.dart';
 import 'engine/html_image_codec.dart';
 export 'engine/html_image_codec.dart';
 
+import 'engine/html/painting.dart';
+export 'engine/html/painting.dart';
+
 import 'engine/html/path_to_svg_clip.dart';
 export 'engine/html/path_to_svg_clip.dart';
 
@@ -177,7 +180,6 @@ part 'engine/html/debug_canvas_reuse_overlay.dart';
 part 'engine/html/image_filter.dart';
 part 'engine/html/offset.dart';
 part 'engine/html/opacity.dart';
-part 'engine/html/painting.dart';
 part 'engine/html/path/path.dart';
 part 'engine/html/path/path_to_svg.dart';
 part 'engine/html/path/path_windings.dart';
