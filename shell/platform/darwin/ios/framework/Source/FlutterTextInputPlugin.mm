@@ -824,14 +824,10 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 }
 
 - (void)setSelectedTextRange:(UITextRange*)selectedTextRange {
-  if (_scribbleFocused) {
-    _scribbleFocused = false;
-    self.selectedTextRange = _selectedTextRange;
-    return;
-  }
   [self setSelectedTextRangeLocal:selectedTextRange];
   [self updateEditingState];
-  if (_scribbleInProgress) {
+  if (_scribbleInProgress || _scribbleFocused) {
+    _scribbleFocused = false;
     FlutterTextRange* flutterTextRange = (FlutterTextRange*)selectedTextRange;
     if (flutterTextRange.range.length > 0) {
       [_textInputDelegate showToolbar:_textInputClient];
@@ -944,7 +940,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   NSRange selectedRange = _selectedTextRange.range;
   NSRange markedTextRange = ((FlutterTextRange*)self.markedTextRange).range;
 
-  if (_scribbleInProgress)
+  if (_scribbleInProgress || _scribbleFocusing || _scribbleFocused)
     return;
 
   if (markedText == nil)
@@ -1197,7 +1193,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     return _cachedFirstRect;
   }
 
-  if (!_scribbleInProgress) {
+  if (!_scribbleInProgress && !_scribbleFocusing && !_scribbleFocused) {
     [_textInputDelegate showAutocorrectionPromptRectForStart:start
                                                          end:end
                                                   withClient:_textInputClient];
@@ -1253,9 +1249,9 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 
 - (NSArray*)selectionRectsForRange:(UITextRange*)range {
   // TODO(cbracken) Implement.
-  NSLog(@"[scribble] selectionRectsForRange");
   NSUInteger start = ((FlutterTextPosition*)range.start).index;
   NSUInteger end = ((FlutterTextPosition*)range.end).index;
+  NSLog(@"[scribble] selectionRectsForRange %@ - %@", @(start), @(end));
   NSMutableArray* rects = [[NSMutableArray alloc] init];
   for (NSUInteger i = 0; i < [_selectionRects count]; i++) {
     if ([_selectionRects[i][4] unsignedIntegerValue] >= start &&
@@ -1275,9 +1271,12 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
                                                                    NSMakeRange(0, self.text.length))
                                         .length)
                    isVertical:FALSE];
+      // NSLog(@"[scribble] selectionRect(%@) %@, %@, %@, %@", @(_selectionRects[i][4]),
+      //       @(_selectionRects[i][0]), @(_selectionRects[i][1]), width, @(_selectionRects[i][3]));
       [rects addObject:selectionRect];
     }
   }
+  NSLog(@"[scribble] selectionRectsForRange %@ - %@ -> %@", @(start), @(end), @([rects count]));
   return rects;
 }
 
@@ -1302,7 +1301,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
       float yDist = abs(pointForComparison.y - point.y);
       float xDist = abs(pointForComparison.x - point.x);
       if (_closestIndex == 0 ||
-          (yDist < _closestY ||
+          (yDist < _closestY - 1 ||
            (yDist == _closestY &&
             ((point.y <= rect.origin.y + rect.size.height && xDist < _closestX) ||
              (point.y > rect.origin.y + rect.size.height &&
@@ -1331,7 +1330,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
           CGPointMake(rect.origin.x + rect.size.width, rect.origin.y + rect.size.height * 0.5);
       float yDist = abs(pointForComparison.y - point.y);
       float xDist = abs(pointForComparison.x - point.x);
-      if (yDist < _closestY ||
+      if (yDist < _closestY - 1 ||
           (yDist == _closestY &&
            ((point.y <= rect.origin.y + rect.size.height && xDist < _closestX) ||
             (point.y > rect.origin.y + rect.size.height &&
@@ -1409,9 +1408,37 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 }
 
 - (void)insertText:(NSString*)text {
-  if (_hasPlaceholder) {
-    _selectionRects = @[];
+  NSMutableArray* copiedRects = [[NSMutableArray alloc] initWithCapacity:[_selectionRects count]];
+  NSUInteger insertPosition = ((FlutterTextPosition*)_selectedTextRange.start).index - 1;
+  NSUInteger insertIndex = 0;
+  for (NSUInteger i = 0; i < [_selectionRects count]; i++) {
+    NSUInteger rectPosition = [_selectionRects[i][4] unsignedIntegerValue];
+    if (rectPosition == insertPosition) {
+      insertIndex = i;
+      for (NSUInteger j = 0; j <= text.length; j++) {
+        [copiedRects addObject:@[
+          _selectionRects[i][0],
+          _selectionRects[i][1],
+          _selectionRects[i][2],
+          _selectionRects[i][3],
+          [NSNumber numberWithInt:rectPosition + j],
+        ]];
+      }
+    } else {
+      if (rectPosition > insertPosition) {
+        rectPosition = rectPosition + text.length;
+      }
+      [copiedRects addObject:@[
+        _selectionRects[i][0],
+        _selectionRects[i][1],
+        _selectionRects[i][2],
+        _selectionRects[i][3],
+        [NSNumber numberWithInt:rectPosition],
+      ]];
+    }
   }
+
+  _selectionRects = copiedRects;
   _selectionAffinity = _kTextAffinityDownstream;
   [self replaceRange:_selectedTextRange withText:text];
 }
@@ -1901,13 +1928,14 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 
 - (void)clearTextInputClient {
   [_activeView setTextInputClient:0];
+  _activeView.frame = CGRectZero;
 }
 
 #pragma mark UIIndirectScribbleInteractionDelegate
 
 - (BOOL)indirectScribbleInteraction:(UIIndirectScribbleInteraction*)interaction
                    isElementFocused:(UIScribbleElementIdentifier)elementIdentifier {
-  return false;
+  return _reusableInputView.scribbleFocused;
 }
 
 - (void)indirectScribbleInteraction:(UIIndirectScribbleInteraction*)interaction
@@ -1926,7 +1954,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 
 - (BOOL)indirectScribbleInteraction:(UIIndirectScribbleInteraction*)interaction
          shouldDelayFocusForElement:(UIScribbleElementIdentifier)elementIdentifier {
-  return true;
+  return NO;
 }
 
 - (void)indirectScribbleInteraction:(UIIndirectScribbleInteraction*)interaction
