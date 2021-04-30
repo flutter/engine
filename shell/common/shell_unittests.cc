@@ -788,8 +788,7 @@ TEST_F(ShellTest,
 
   PumpOneFrame(shell.get(), 100, 100, builder);
 
-  auto result =
-      shell->WaitForFirstFrame(fml::TimeDelta::Max());
+  auto result = shell->WaitForFirstFrame(fml::TimeDelta::Max());
   ASSERT_TRUE(result.ok()) << "Result: " << static_cast<int>(result.code())
                            << ": " << result.message();
 
@@ -1340,8 +1339,7 @@ TEST_F(ShellTest, WaitForFirstFrame) {
 
   RunEngine(shell.get(), std::move(configuration));
   PumpOneFrame(shell.get());
-  fml::Status result =
-      shell->WaitForFirstFrame(fml::TimeDelta::Max());
+  fml::Status result = shell->WaitForFirstFrame(fml::TimeDelta::Max());
   ASSERT_TRUE(result.ok());
 
   DestroyShell(std::move(shell));
@@ -1359,8 +1357,7 @@ TEST_F(ShellTest, WaitForFirstFrameZeroSizeFrame) {
 
   RunEngine(shell.get(), std::move(configuration));
   PumpOneFrame(shell.get(), {1.0, 0.0, 0.0});
-  fml::Status result =
-      shell->WaitForFirstFrame(fml::TimeDelta::Max());
+  fml::Status result = shell->WaitForFirstFrame(fml::TimeDelta::Max());
   ASSERT_FALSE(result.ok());
   ASSERT_EQ(result.code(), fml::StatusCode::kDeadlineExceeded);
 
@@ -1378,8 +1375,7 @@ TEST_F(ShellTest, WaitForFirstFrameTimeout) {
   configuration.SetEntrypoint("emptyMain");
 
   RunEngine(shell.get(), std::move(configuration));
-  fml::Status result =
-      shell->WaitForFirstFrame(fml::TimeDelta::Zero());
+  fml::Status result = shell->WaitForFirstFrame(fml::TimeDelta::Zero());
   ASSERT_FALSE(result.ok());
   ASSERT_EQ(result.code(), fml::StatusCode::kDeadlineExceeded);
 
@@ -1398,8 +1394,7 @@ TEST_F(ShellTest, WaitForFirstFrameMultiple) {
 
   RunEngine(shell.get(), std::move(configuration));
   PumpOneFrame(shell.get());
-  fml::Status result =
-      shell->WaitForFirstFrame(fml::TimeDelta::Max());
+  fml::Status result = shell->WaitForFirstFrame(fml::TimeDelta::Max());
   ASSERT_TRUE(result.ok());
   for (int i = 0; i < 100; ++i) {
     result = shell->WaitForFirstFrame(fml::TimeDelta::Zero());
@@ -1429,8 +1424,7 @@ TEST_F(ShellTest, WaitForFirstFrameInlined) {
   PumpOneFrame(shell.get());
   fml::AutoResetWaitableEvent event;
   task_runner->PostTask([&shell, &event] {
-    fml::Status result =
-        shell->WaitForFirstFrame(fml::TimeDelta::Max());
+    fml::Status result = shell->WaitForFirstFrame(fml::TimeDelta::Max());
     ASSERT_FALSE(result.ok());
     ASSERT_EQ(result.code(), fml::StatusCode::kFailedPrecondition);
     event.Signal();
