@@ -13,13 +13,13 @@
 
 namespace flutter {
 
-std::vector<uint8_t> GetVectorFromNSData(NSData* data);
+fml::NonOwnedMapping CopyNSDataToMapping(NSData* data);
 
-NSData* GetNSDataFromVector(const std::vector<uint8_t>& buffer);
+NSData* CopyMappingToNSData(fml::NonOwnedMapping buffer);
 
-std::unique_ptr<fml::Mapping> GetMappingFromNSData(NSData* data);
+std::unique_ptr<fml::Mapping> CopyNSDataToMappingPtr(NSData* data);
 
-NSData* GetNSDataFromMapping(std::unique_ptr<fml::Mapping> mapping);
+NSData* CopyMappingPtrToNSData(std::unique_ptr<fml::Mapping> mapping);
 
 }  // namespace flutter
 

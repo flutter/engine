@@ -496,7 +496,7 @@ class Shell final : public PlatformView::Delegate,
   void OnPlatformViewDispatchSemanticsAction(
       int32_t id,
       SemanticsAction action,
-      std::vector<uint8_t> args) override;
+      fml::NonOwnedMapping args) override;
 
   // |PlatformView::Delegate|
   void OnPlatformViewSetSemanticsEnabled(bool enabled) override;

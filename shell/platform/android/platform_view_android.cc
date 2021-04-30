@@ -180,8 +180,8 @@ void PlatformViewAndroid::DispatchPlatformMessage(JNIEnv* env,
                                                   jint response_id) {
   uint8_t* message_data =
       static_cast<uint8_t*>(env->GetDirectBufferAddress(java_message_data));
-  std::vector<uint8_t> message =
-      std::vector<uint8_t>(message_data, message_data + java_message_position);
+  fml::NonOwnedMapping message = fml::NonOwnedMapping::Copy(
+      message_data, message_data + java_message_position);
 
   fml::RefPtr<flutter::PlatformMessageResponse> response;
   if (response_id) {
@@ -266,15 +266,15 @@ void PlatformViewAndroid::DispatchSemanticsAction(JNIEnv* env,
                                                   jobject args,
                                                   jint args_position) {
   if (env->IsSameObject(args, NULL)) {
-    std::vector<uint8_t> args_vector;
     PlatformView::DispatchSemanticsAction(
-        id, static_cast<flutter::SemanticsAction>(action), args_vector);
+        id, static_cast<flutter::SemanticsAction>(action),
+        fml::NonOwnedMapping());
     return;
   }
 
   uint8_t* args_data = static_cast<uint8_t*>(env->GetDirectBufferAddress(args));
-  std::vector<uint8_t> args_vector =
-      std::vector<uint8_t>(args_data, args_data + args_position);
+  auto args_vector =
+      fml::NonOwnedMapping::Copy(args_data, args_data + args_position);
 
   PlatformView::DispatchSemanticsAction(
       id, static_cast<flutter::SemanticsAction>(action),

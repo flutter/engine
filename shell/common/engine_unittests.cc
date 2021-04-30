@@ -96,7 +96,8 @@ std::unique_ptr<PlatformMessage> MakePlatformMessage(
   const uint8_t* data = reinterpret_cast<const uint8_t*>(buffer.GetString());
 
   std::unique_ptr<PlatformMessage> message = std::make_unique<PlatformMessage>(
-      channel, std::vector<uint8_t>(data, data + buffer.GetSize()), response);
+      channel, fml::NonOwnedMapping::Copy(data, data + buffer.GetSize()),
+      response);
   return message;
 }
 

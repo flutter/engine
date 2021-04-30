@@ -1104,8 +1104,8 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
           const FlutterPlatformMessage incoming_message = {
               sizeof(FlutterPlatformMessage),  // struct_size
               message->channel().c_str(),      // channel
-              message->data().data(),          // message
-              message->data().size(),          // message_size
+              message->data().GetMapping(),    // message
+              message->data().GetSize(),       // message_size
               handle,                          // response_handle
           };
           handle->message = std::move(message);
@@ -1637,7 +1637,7 @@ FlutterEngineResult FlutterEngineSendPlatformMessage(
   } else {
     message = std::make_unique<flutter::PlatformMessage>(
         flutter_message->channel,
-        std::vector<uint8_t>(message_data, message_data + message_size),
+        fml::NonOwnedMapping::Copy(message_data, message_data + message_size),
         response);
   }
 
@@ -1829,7 +1829,7 @@ FlutterEngineResult FlutterEngineDispatchSemanticsAction(
   if (!reinterpret_cast<flutter::EmbedderEngine*>(engine)
            ->DispatchSemanticsAction(
                id, engine_action,
-               std::vector<uint8_t>({data, data + data_length}))) {
+               fml::NonOwnedMapping::Copy(data, data + data_length))) {
     return LOG_EMBEDDER_ERROR(kInternalInconsistency,
                               "Could not dispatch semantics action.");
   }
@@ -1953,9 +1953,10 @@ static bool DispatchJSONPlatformMessage(FLUTTER_API_SYMBOL(FlutterEngine)
   }
 
   auto platform_message = std::make_unique<flutter::PlatformMessage>(
-      channel_name.c_str(),                                       // channel
-      std::vector<uint8_t>{message, message + buffer.GetSize()},  // message
-      nullptr                                                     // response
+      channel_name.c_str(),  // channel
+      fml::NonOwnedMapping::Copy(message,
+                                 message + buffer.GetSize()),  // message
+      nullptr                                                  // response
   );
 
   return reinterpret_cast<flutter::EmbedderEngine*>(engine)

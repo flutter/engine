@@ -82,11 +82,39 @@ const uint8_t* DataMapping::GetMapping() const {
 }
 
 // NonOwnedMapping
+NonOwnedMapping::NonOwnedMapping()
+    : data_(nullptr), size_(0), release_proc_(), uses_free_(false) {}
 
 NonOwnedMapping::NonOwnedMapping(const uint8_t* data,
                                  size_t size,
                                  const ReleaseProc& release_proc)
-    : data_(data), size_(size), release_proc_(release_proc) {}
+    : data_(data),
+      size_(size),
+      release_proc_(release_proc),
+      uses_free_(false) {}
+
+NonOwnedMapping::NonOwnedMapping(fml::NonOwnedMapping&& mapping)
+    : data_(mapping.data_),
+      size_(mapping.size_),
+      release_proc_(mapping.release_proc_),
+      uses_free_(mapping.uses_free_) {
+  mapping.data_ = nullptr;
+  mapping.size_ = 0;
+  mapping.release_proc_ = nullptr;
+  mapping.uses_free_ = false;
+}
+
+namespace {
+void FreeProc(const uint8_t* data, size_t size) {
+  free(const_cast<uint8_t*>(data));
+}
+}  // namespace
+
+NonOwnedMapping NonOwnedMapping::WithFree(const uint8_t* data, size_t size) {
+  auto result = NonOwnedMapping(data, size, FreeProc);
+  result.uses_free_ = true;
+  return result;
+}
 
 NonOwnedMapping::~NonOwnedMapping() {
   if (release_proc_) {
@@ -100,6 +128,14 @@ size_t NonOwnedMapping::GetSize() const {
 
 const uint8_t* NonOwnedMapping::GetMapping() const {
   return data_;
+}
+
+const uint8_t* NonOwnedMapping::Release() {
+  const uint8_t* result = data_;
+  data_ = nullptr;
+  size_ = 0;
+  release_proc_ = nullptr;
+  return result;
 }
 
 // Symbol Mapping

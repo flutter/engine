@@ -998,16 +998,17 @@ void Shell::OnPlatformViewDispatchKeyDataPacket(
 // |PlatformView::Delegate|
 void Shell::OnPlatformViewDispatchSemanticsAction(int32_t id,
                                                   SemanticsAction action,
-                                                  std::vector<uint8_t> args) {
+                                                  fml::NonOwnedMapping args) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
   task_runners_.GetUITaskRunner()->PostTask(
-      [engine = engine_->GetWeakPtr(), id, action, args = std::move(args)] {
+      fml::MakeCopyable([engine = engine_->GetWeakPtr(), id, action,
+                         args = std::move(args)]() mutable {
         if (engine) {
           engine->DispatchSemanticsAction(id, action, std::move(args));
         }
-      });
+      }));
 }
 
 // |PlatformView::Delegate|
@@ -1225,7 +1226,8 @@ void Shell::HandleEngineSkiaMessage(std::unique_ptr<PlatformMessage> message) {
   const auto& data = message->data();
 
   rapidjson::Document document;
-  document.Parse(reinterpret_cast<const char*>(data.data()), data.size());
+  document.Parse(reinterpret_cast<const char*>(data.GetMapping()),
+                 data.GetSize());
   if (document.HasParseError() || !document.IsObject())
     return;
   auto root = document.GetObject();
@@ -1806,7 +1808,9 @@ bool Shell::ReloadSystemFonts() {
   std::string message = buffer.GetString();
   std::unique_ptr<PlatformMessage> fontsChangeMessage =
       std::make_unique<flutter::PlatformMessage>(
-          kSystemChannel, std::vector<uint8_t>(message.begin(), message.end()),
+          kSystemChannel,
+          fml::NonOwnedMapping::Copy(message.c_str(),
+                                     message.c_str() + message.length()),
           nullptr);
 
   OnPlatformViewDispatchPlatformMessage(std::move(fontsChangeMessage));
