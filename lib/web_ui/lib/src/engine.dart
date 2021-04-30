@@ -167,6 +167,7 @@ part 'engine/color_filter.dart';
 part 'engine/dom_canvas.dart';
 part 'engine/dom_renderer.dart';
 part 'engine/engine_canvas.dart';
+part 'engine/font_change_util.dart';
 part 'engine/frame_reference.dart';
 part 'engine/html/backdrop_filter.dart';
 part 'engine/html/canvas.dart';
@@ -228,7 +229,6 @@ part 'engine/text_editing/autofill_hint.dart';
 part 'engine/text_editing/input_type.dart';
 part 'engine/text_editing/text_capitalization.dart';
 part 'engine/text_editing/text_editing.dart';
-part 'engine/font_change_util.dart';
 part 'engine/window.dart';
 
 // The mode the app is running in.

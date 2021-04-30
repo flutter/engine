@@ -170,8 +170,8 @@ class _WebGlRenderer implements _GlRenderer {
 
     final bool isWebGl2 = webGLVersion == WebGLVersion.webgl2;
 
-    final ImageShader? imageShader = paint.shader == null ? null
-        : paint.shader as ImageShader;
+    final EngineImageShader? imageShader = paint.shader == null ? null
+        : paint.shader as EngineImageShader;
 
     final String vertexShader = imageShader == null
         ? VertexShaders.writeBaseVertexShader() : writeTextureVertexShader();

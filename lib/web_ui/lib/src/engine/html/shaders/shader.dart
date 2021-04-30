@@ -135,8 +135,8 @@ class GradientSweep extends EngineGradient {
   final Float32List? matrix4;
 }
 
-class ImageShader implements ui.ImageShader {
-  ImageShader(ui.Image image, this.tileModeX, this.tileModeY, this.matrix4, this.filterQuality)
+class EngineImageShader implements ui.ImageShader {
+  EngineImageShader(ui.Image image, this.tileModeX, this.tileModeY, this.matrix4, this.filterQuality)
       : _image = image as HtmlImage;
 
   final ui.TileMode tileModeX;
