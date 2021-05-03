@@ -62,8 +62,14 @@ export 'engine/html/path/path_metrics.dart';
 import 'engine/html/path/path_ref.dart';
 export 'engine/html/path/path_ref.dart';
 
+import 'engine/html/path/path_to_svg.dart';
+export 'engine/html/path/path_to_svg.dart';
+
 import 'engine/html/path/path_utils.dart';
 export 'engine/html/path/path_utils.dart';
+
+import 'engine/html/path/tangent.dart';
+export 'engine/html/path/tangent.dart';
 
 import 'engine/html/shaders/normalized_gradient.dart';
 export 'engine/html/shaders/normalized_gradient.dart';
@@ -181,9 +187,7 @@ part 'engine/html/image_filter.dart';
 part 'engine/html/offset.dart';
 part 'engine/html/opacity.dart';
 part 'engine/html/path/path.dart';
-part 'engine/html/path/path_to_svg.dart';
 part 'engine/html/path/path_windings.dart';
-part 'engine/html/path/tangent.dart';
 part 'engine/html/picture.dart';
 part 'engine/html/platform_view.dart';
 part 'engine/html/recording_canvas.dart';
