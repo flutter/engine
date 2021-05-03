@@ -182,8 +182,24 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
       double windowInnerHeight;
       final html.VisualViewport? viewport = html.window.visualViewport;
       if (viewport != null) {
-        windowInnerWidth = viewport.width!.toDouble() * devicePixelRatio;
-        windowInnerHeight = viewport.height!.toDouble() * devicePixelRatio;
+        if (browserEngine == BrowserEngine.webkit &&
+            operatingSystem == OperatingSystem.iOs) {
+          /// Chrome on iOS reports incorrect viewport.height when app
+          /// starts in portrait orientation and the phone is rotated to
+          /// landscape.
+          ///
+          /// We instead use documentElement clientWidth/Height to read
+          /// accurate physical size. VisualViewport api is only used during
+          /// text editing to make sure inset is correctly reported to
+          /// framework.
+          final double docWidth = html.document.documentElement!.clientWidth.toDouble();
+          final double docHeight = html.document.documentElement!.clientHeight.toDouble();
+          windowInnerWidth = docWidth * devicePixelRatio;
+          windowInnerHeight = docHeight * devicePixelRatio;
+        } else {
+          windowInnerWidth = viewport.width!.toDouble() * devicePixelRatio;
+          windowInnerHeight = viewport.height!.toDouble() * devicePixelRatio;
+        }
       } else {
         windowInnerWidth = html.window.innerWidth! * devicePixelRatio;
         windowInnerHeight = html.window.innerHeight! * devicePixelRatio;
@@ -195,11 +211,16 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
     }
   }
 
-  void computeOnScreenKeyboardInsets() {
+  void computeOnScreenKeyboardInsets(bool isEditingOnMobile) {
     double windowInnerHeight;
     final html.VisualViewport? viewport = html.window.visualViewport;
     if (viewport != null) {
-      windowInnerHeight = viewport.height!.toDouble() * devicePixelRatio;
+      if (browserEngine == BrowserEngine.webkit &&
+          operatingSystem == OperatingSystem.iOs && isEditingOnMobile) {
+        windowInnerHeight = html.document.documentElement!.clientHeight! * devicePixelRatio;
+      } else {
+        windowInnerHeight = viewport.height!.toDouble() * devicePixelRatio;
+      }
     } else {
       windowInnerHeight = html.window.innerHeight! * devicePixelRatio;
     }
