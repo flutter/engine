@@ -77,8 +77,8 @@ typedef struct {
 // FlutterDesktopViewControllerDestroy. Returns a null pointer in the event of
 // an error.
 #ifdef WINUWP
-// The CoreApplicationView implementation accepts a pointer to the host CoreApplicationView
-// and view hookup is performed in the construction path.
+// The CoreApplicationView implementation accepts a pointer to the host
+// CoreApplicationView and view hookup is performed in the construction path.
 FLUTTER_EXPORT FlutterDesktopViewControllerRef
 FlutterDesktopViewControllerCreateFromCoreApplicationView(
     ABI::Windows::ApplicationModel::Core::CoreApplicationView* window,
@@ -193,8 +193,10 @@ FlutterDesktopEngineGetTextureRegistrar(
 // ========== View ==========
 
 #ifdef WINUWP
-// Return backing CoreApplicationView for manipulation of CoreWindow and CoreTitleBar in host application.
-FLUTTER_EXPORT ABI::Windows::ApplicationModel::Core::CoreApplicationView* FlutterDesktopViewGetCoreApplicationView(FlutterDesktopViewRef view);
+// Return backing CoreApplicationView for manipulation of CoreWindow and
+// CoreTitleBar in host application.
+FLUTTER_EXPORT ABI::Windows::ApplicationModel::Core::CoreApplicationView*
+FlutterDesktopViewGetCoreApplicationView(FlutterDesktopViewRef view);
 #else
 // Return backing HWND for manipulation in host application.
 FLUTTER_EXPORT HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef view);
