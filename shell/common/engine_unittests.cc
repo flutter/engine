@@ -308,9 +308,14 @@ TEST_F(EngineTest, NotifyIdleMoreThanOncePerFiveSeconds) {
     auto mock_runtime_controller =
         std::make_unique<MockRuntimeController>(client, task_runners_);
 
+    // Verify we get an initial call with the bytes, since it's 10 seconds.
     EXPECT_CALL(*mock_runtime_controller, NotifyIdle(200, 100)).Times(1);
+    // Verify that we do not get called again, since it's only been 3 more
+    // seconds.
     EXPECT_CALL(*mock_runtime_controller, NotifyIdle(400, 0)).Times(1);
+    // Verify that we get called again, since it's now been 6 seconds.
     EXPECT_CALL(*mock_runtime_controller, NotifyIdle(600, 300 + 500)).Times(1);
+    // Set up mocking of the timepoint logic. Calls at 10, 13, and 16 seconds.
     EXPECT_CALL(delegate_, GetCurrentTimePoint())
         .Times(3)
         .WillOnce(::testing::Return(
@@ -331,6 +336,8 @@ TEST_F(EngineTest, NotifyIdleMoreThanOncePerFiveSeconds) {
         /*font_collection=*/std::make_shared<FontCollection>(),
         /*runtime_controller=*/std::move(mock_runtime_controller));
 
+    // Verifications are above, since we std::moved the unique_ptr for the
+    // mock.
     engine->HintFreed(100);
     engine->NotifyIdle(200);
 
