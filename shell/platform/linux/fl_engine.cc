@@ -17,8 +17,6 @@
 #include "flutter/shell/platform/linux/fl_settings_plugin.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_plugin_registry.h"
 
-static constexpr int kMicrosecondsPerNanosecond = 1000;
-
 // Unique number associated with platform tasks.
 static constexpr size_t kPlatformTaskRunnerIdentifier = 1;
 
@@ -32,6 +30,7 @@ struct _FlEngine {
   FlRenderer* renderer;
   FlBinaryMessenger* binary_messenger;
   FlSettingsPlugin* settings_plugin;
+  FlTaskRunner* task_runner;
   FlutterEngineAOTData aot_data;
   FLUTTER_API_SYMBOL(FlutterEngine) engine;
   FlutterEngineProcTable embedder_api;
@@ -143,40 +142,6 @@ static void setup_locales(FlEngine* self) {
   }
 }
 
-// Callback to run a Flutter task in the GLib main loop.
-static gboolean flutter_source_dispatch(GSource* source,
-                                        GSourceFunc callback,
-                                        gpointer user_data) {
-  FlutterSource* fl_source = reinterpret_cast<FlutterSource*>(source);
-  FlEngine* self = fl_source->engine;
-
-  FlutterEngineResult result =
-      self->embedder_api.RunTask(self->engine, &fl_source->task);
-  if (result != kSuccess) {
-    g_warning("Failed to run Flutter task\n");
-  }
-
-  return G_SOURCE_REMOVE;
-}
-
-// Called when the engine is disposed.
-static void engine_weak_notify_cb(gpointer user_data,
-                                  GObject* where_the_object_was) {
-  FlutterSource* source = reinterpret_cast<FlutterSource*>(user_data);
-  source->engine = nullptr;
-  g_source_destroy(reinterpret_cast<GSource*>(source));
-}
-
-// Called when a flutter source completes.
-static void flutter_source_finalize(GSource* source) {
-  FlutterSource* fl_source = reinterpret_cast<FlutterSource*>(source);
-  if (fl_source->engine != nullptr) {
-    g_object_weak_unref(G_OBJECT(fl_source->engine), engine_weak_notify_cb,
-                        fl_source);
-    fl_source->engine = nullptr;
-  }
-}
-
 // Called when engine needs a backing store for a specific #FlutterLayer.
 static bool compositor_create_backing_store_callback(
     const FlutterBackingStoreConfig* config,
@@ -203,16 +168,6 @@ static bool compositor_present_layers_callback(const FlutterLayer** layers,
   return fl_renderer_present_layers(FL_RENDERER(user_data), layers,
                                     layers_count);
 }
-
-// Table of functions for Flutter GLib main loop integration.
-static GSourceFuncs flutter_source_funcs = {
-    nullptr,                  // prepare
-    nullptr,                  // check
-    flutter_source_dispatch,  // dispatch
-    flutter_source_finalize,  // finalize
-    nullptr,
-    nullptr  // Internal usage
-};
 
 // Flutter engine rendering callbacks.
 
@@ -278,15 +233,7 @@ static void fl_engine_post_task(FlutterTask task,
                                 void* user_data) {
   FlEngine* self = static_cast<FlEngine*>(user_data);
 
-  g_autoptr(GSource) source =
-      g_source_new(&flutter_source_funcs, sizeof(FlutterSource));
-  FlutterSource* fl_source = reinterpret_cast<FlutterSource*>(source);
-  fl_source->engine = self;
-  g_object_weak_ref(G_OBJECT(self), engine_weak_notify_cb, fl_source);
-  fl_source->task = task;
-  g_source_set_ready_time(source,
-                          target_time_nanos / kMicrosecondsPerNanosecond);
-  g_source_attach(source, nullptr);
+  fl_task_runner_post_task(self->task_runner, task, target_time_nanos);
 }
 
 // Called when a platform message is received from the engine.
@@ -362,6 +309,9 @@ static void fl_engine_dispose(GObject* object) {
   g_clear_object(&self->binary_messenger);
   g_clear_object(&self->settings_plugin);
 
+  fl_task_runner_stop(self->task_runner);
+  g_clear_object(&self->task_runner);
+
   if (self->platform_message_handler_destroy_notify) {
     self->platform_message_handler_destroy_notify(
         self->platform_message_handler_data);
@@ -405,6 +355,11 @@ FlEngine* fl_engine_new(FlDartProject* project, FlRenderer* renderer) {
 G_MODULE_EXPORT FlEngine* fl_engine_new_headless(FlDartProject* project) {
   g_autoptr(FlRendererHeadless) renderer = fl_renderer_headless_new();
   return fl_engine_new(project, FL_RENDERER(renderer));
+}
+
+static void fl_engine_execute_task(FlutterTask task, gpointer user_data) {
+  FlEngine* self = FL_ENGINE(user_data);
+  self->embedder_api.RunTask(self->engine, &task);
 }
 
 gboolean fl_engine_start(FlEngine* self, GError** error) {
@@ -501,6 +456,8 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
 
   self->settings_plugin = fl_settings_plugin_new(self->binary_messenger);
   fl_settings_plugin_start(self->settings_plugin);
+
+  self->task_runner = fl_task_runner_new(fl_engine_execute_task, self);
 
   result = self->embedder_api.UpdateSemanticsEnabled(self->engine, TRUE);
   if (result != kSuccess)
@@ -721,4 +678,9 @@ G_MODULE_EXPORT FlBinaryMessenger* fl_engine_get_binary_messenger(
     FlEngine* self) {
   g_return_val_if_fail(FL_IS_ENGINE(self), nullptr);
   return self->binary_messenger;
+}
+
+FlTaskRunner* fl_engine_get_task_runner(FlEngine* self) {
+  g_return_val_if_fail(FL_IS_ENGINE(self), nullptr);
+  return self->task_runner;
 }

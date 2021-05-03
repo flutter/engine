@@ -9,6 +9,7 @@
 
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/linux/fl_renderer.h"
+#include "flutter/shell/platform/linux/fl_task_runner.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_dart_project.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_engine.h"
 
@@ -225,6 +226,8 @@ void fl_engine_send_platform_message(FlEngine* engine,
 GBytes* fl_engine_send_platform_message_finish(FlEngine* engine,
                                                GAsyncResult* result,
                                                GError** error);
+
+FlTaskRunner* fl_engine_get_task_runner(FlEngine* engine);
 
 G_END_DECLS
 
