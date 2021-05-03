@@ -3,6 +3,23 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/common/buffer_conversions.h"
+#import "flutter/fml/platform/darwin/scoped_nsobject.h"
+
+namespace {
+class NSDataMapping : public fml::Mapping {
+ public:
+  NSDataMapping(NSData* data) : data_([data retain]) {}
+
+  size_t GetSize() const override { return [data_.get() length]; }
+
+  const uint8_t* GetMapping() const override {
+    return static_cast<const uint8_t*>([data_.get() bytes]);
+  }
+
+ private:
+  fml::scoped_nsobject<NSData> data_;
+};
+}
 
 /// A proxy object that behaves like NSData represented in a Mapping.
 /// This isn't a subclass of NSData because NSData is in a class cluster.
@@ -100,8 +117,8 @@ std::vector<uint8_t> CopyNSDataToVector(NSData* data) {
   return std::vector<uint8_t>(bytes, bytes + data.length);
 }
 
-std::unique_ptr<fml::Mapping> CopyNSDataToMapping(NSData* data) {
-  return std::make_unique<fml::DataMapping>(CopyNSDataToVector(data));
+std::unique_ptr<fml::Mapping> CovertNSDataToMapping(NSData* data) {
+  return std::make_unique<NSDataMapping>(data);
 }
 
 NSData* ConvertMessageToNSData(fml::RefPtr<PlatformMessage> message) {

@@ -16,7 +16,7 @@ namespace flutter {
 
 std::vector<uint8_t> CopyNSDataToVector(NSData* data);
 
-std::unique_ptr<fml::Mapping> CopyNSDataToMapping(NSData* data);
+std::unique_ptr<fml::Mapping> CovertNSDataToMapping(NSData* data);
 
 NSData* ConvertMessageToNSData(fml::RefPtr<PlatformMessage> message);
 

@@ -27,7 +27,7 @@ void PlatformMessageRouter::HandlePlatformMessage(
     handler(data, ^(NSData* reply) {
       if (completer) {
         if (reply) {
-          completer->Complete(CopyNSDataToMapping(reply));
+          completer->Complete(CovertNSDataToMapping(reply));
         } else {
           completer->CompleteEmpty();
         }
