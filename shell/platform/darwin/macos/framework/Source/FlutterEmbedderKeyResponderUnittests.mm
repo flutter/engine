@@ -79,12 +79,12 @@ constexpr uint64_t kPhysicalAltRight = 0x000700e6;
 
 constexpr uint64_t kLogicalKeyA = 0x00000061;
 constexpr uint64_t kLogicalKeyW = 0x00000077;
-constexpr uint64_t kLogicalShiftLeft = 0x0030000010d;
-constexpr uint64_t kLogicalShiftRight = 0x0040000010d;
-constexpr uint64_t kLogicalCapsLock = 0x00000000104;
-constexpr uint64_t kLogicalNumpad1 = 0x00200000031;
-constexpr uint64_t kLogicalF1 = 0x00000000801;
-constexpr uint64_t kLogicalAltRight = 0x00400000102;
+constexpr uint64_t kLogicalShiftLeft = 0x3000000010d;
+constexpr uint64_t kLogicalShiftRight = 0x4000000010d;
+constexpr uint64_t kLogicalCapsLock = 0x01000000104;
+constexpr uint64_t kLogicalNumpad1 = 0x20000000031;
+constexpr uint64_t kLogicalF1 = 0x01000000801;
+constexpr uint64_t kLogicalAltRight = 0x40000000102;
 
 typedef void (^ResponseCallback)(bool handled);
 

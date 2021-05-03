@@ -87,11 +87,11 @@ constexpr uint64_t kPhysicalShiftRight = 0x000700e5;
 constexpr uint64_t kPhysicalKeyNumLock = 0x00070053;
 
 constexpr uint64_t kLogicalKeyA = 0x00000061;
-constexpr uint64_t kLogicalControlLeft = 0x00300000105;
-constexpr uint64_t kLogicalControlRight = 0x00400000105;
-constexpr uint64_t kLogicalShiftLeft = 0x0030000010d;
-constexpr uint64_t kLogicalShiftRight = 0x0040000010d;
-constexpr uint64_t kLogicalKeyNumLock = 0x0000000010a;
+constexpr uint64_t kLogicalControlLeft = 0x30000000105;
+constexpr uint64_t kLogicalControlRight = 0x40000000105;
+constexpr uint64_t kLogicalShiftLeft = 0x3000000010d;
+constexpr uint64_t kLogicalShiftRight = 0x4000000010d;
+constexpr uint64_t kLogicalKeyNumLock = 0x0100000010a;
 }  // namespace
 
 // Test the most basic key events.

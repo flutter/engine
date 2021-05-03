@@ -28,13 +28,13 @@ const int kPhysicalScrollLock = 0x00070047;
 const int kLogicalKeyA = 0x00000000061;
 const int kLogicalKeyU = 0x00000000075;
 const int kLogicalDigit1 = 0x00000000031;
-const int kLogicalNumpad1 = 0x00200000031;
-const int kLogicalShiftLeft = 0x030000010d;
-const int kLogicalShiftRight = 0x040000010d;
-const int kLogicalMetaLeft = 0x0300000109;
+const int kLogicalNumpad1 = 0x50000000031;
+const int kLogicalShiftLeft = 0x3000000010d;
+const int kLogicalShiftRight = 0x4000000010d;
+const int kLogicalMetaLeft = 0x30000000109;
 const int kLogicalTab = 0x0000000009;
-const int kLogicalCapsLock = 0x00000000104;
-const int kLogicalScrollLock = 0x0000000010c;
+const int kLogicalCapsLock = 0x01000000104;
+const int kLogicalScrollLock = 0x0100000010c;
 
 typedef VoidCallback = void Function();
 
