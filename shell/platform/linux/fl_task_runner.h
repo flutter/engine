@@ -45,7 +45,7 @@ void fl_task_runner_post_task(FlTaskRunner* task_runner,
  * @task_runner: an #FlTaskRunner.
  *
  * Requests stop. After this method completes no more tasks will be executed
- * on the task runner. Remaining scheduled tasks will be invoked.
+ * by the task runner. Remaining scheduled tasks will be ignored.
  * Must be invoked on main thread.
  */
 void fl_task_runner_stop(FlTaskRunner* task_runner);
