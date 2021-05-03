@@ -1,3 +1,4 @@
+:: TODO(yjbanov): migrate LUCI to felt.bat and delete this file.
 :: felt_windows: a command-line utility for Windows for building and testing
 :: Flutter web engine.
 :: FELT stands for Flutter Engine Local Tester.
