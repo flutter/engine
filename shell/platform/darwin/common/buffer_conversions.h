@@ -10,12 +10,17 @@
 #include <vector>
 
 #include "flutter/fml/mapping.h"
+#import "flutter/lib/ui/window/platform_message.h"
 
 namespace flutter {
 
 std::vector<uint8_t> CopyNSDataToVector(NSData* data);
 
 std::unique_ptr<fml::Mapping> CopyNSDataToMapping(NSData* data);
+
+NSData* ConvertMessageToNSData(fml::RefPtr<PlatformMessage> message);
+
+NSData* ConvertMappingToNSData(std::unique_ptr<fml::Mapping> mapping);
 
 }  // namespace flutter
 
