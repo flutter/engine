@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <memory>
+#include "flow/frame_timings.h"
 #define FML_USED_ON_EMBEDDER
 
 #include "flutter/shell/common/rasterizer.h"
@@ -91,7 +93,8 @@ TEST(RasterizerTest, drawEmptyPipeline) {
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = fml::AdoptRef(new Pipeline<LayerTree>(/*depth=*/10));
-    rasterizer->Draw(pipeline, nullptr);
+    rasterizer->Draw(std::make_unique<FrameTimingsRecorder>(), pipeline,
+                     nullptr);
     latch.Signal();
   });
   latch.Wait();
@@ -148,7 +151,8 @@ TEST(RasterizerTest,
     bool result = pipeline->Produce().Complete(std::move(layer_tree));
     EXPECT_TRUE(result);
     auto no_discard = [](LayerTree&) { return false; };
-    rasterizer->Draw(pipeline, no_discard);
+    rasterizer->Draw(std::make_unique<FrameTimingsRecorder>(), pipeline,
+                     no_discard);
     latch.Signal();
   });
   latch.Wait();
@@ -202,7 +206,8 @@ TEST(
     bool result = pipeline->Produce().Complete(std::move(layer_tree));
     EXPECT_TRUE(result);
     auto no_discard = [](LayerTree&) { return false; };
-    rasterizer->Draw(pipeline, no_discard);
+    rasterizer->Draw(std::make_unique<FrameTimingsRecorder>(), pipeline,
+                     no_discard);
     latch.Signal();
   });
   latch.Wait();
@@ -261,7 +266,8 @@ TEST(
   bool result = pipeline->Produce().Complete(std::move(layer_tree));
   EXPECT_TRUE(result);
   auto no_discard = [](LayerTree&) { return false; };
-  rasterizer->Draw(pipeline, no_discard);
+  rasterizer->Draw(std::make_unique<FrameTimingsRecorder>(), pipeline,
+                   no_discard);
 }
 
 TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNoSurfaceIsSet) {
@@ -294,7 +300,8 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNoSurfaceIsSet) {
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = fml::AdoptRef(new Pipeline<LayerTree>(/*depth=*/10));
     auto no_discard = [](LayerTree&) { return false; };
-    rasterizer->Draw(pipeline, no_discard);
+    rasterizer->Draw(std::make_unique<FrameTimingsRecorder>(), pipeline,
+                     no_discard);
     latch.Signal();
   });
   latch.Wait();

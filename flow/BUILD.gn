@@ -14,6 +14,8 @@ source_set("flow") {
     "diff_context.h",
     "embedded_views.cc",
     "embedded_views.h",
+    "frame_timings.cc",
+    "frame_timings.h",
     "instrumentation.cc",
     "instrumentation.h",
     "layers/backdrop_filter_layer.cc",

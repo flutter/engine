@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <memory>
+#include "flow/frame_timings.h"
 #define FML_USED_ON_EMBEDDER
 
 #include "flutter/shell/common/shell_test.h"
@@ -136,7 +138,10 @@ void ShellTest::SetViewportMetrics(Shell* shell, double width, double height) {
           const auto frame_begin_time = fml::TimePoint::Now();
           const auto frame_end_time =
               frame_begin_time + fml::TimeDelta::FromSecondsF(1.0 / 60.0);
-          engine->animator_->BeginFrame(frame_begin_time, frame_end_time);
+          std::unique_ptr<FrameTimingsRecorder> recorder =
+              std::make_unique<FrameTimingsRecorder>();
+          recorder->RecordVsync(frame_begin_time, frame_end_time);
+          engine->animator_->BeginFrame(std::move(recorder));
         }
         latch.Signal();
       });
@@ -175,7 +180,10 @@ void ShellTest::PumpOneFrame(Shell* shell,
         const auto frame_begin_time = fml::TimePoint::Now();
         const auto frame_end_time =
             frame_begin_time + fml::TimeDelta::FromSecondsF(1.0 / 60.0);
-        engine->animator_->BeginFrame(frame_begin_time, frame_end_time);
+        std::unique_ptr<FrameTimingsRecorder> recorder =
+            std::make_unique<FrameTimingsRecorder>();
+        recorder->RecordVsync(frame_begin_time, frame_end_time);
+        engine->animator_->BeginFrame(std::move(recorder));
         latch.Signal();
       });
   latch.Wait();
