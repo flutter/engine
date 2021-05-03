@@ -89,7 +89,7 @@ class AccessibilityBridge
     ///                                 action.
     virtual void DispatchAccessibilityAction(AccessibilityNodeId target,
                                              FlutterSemanticsAction action,
-                                             fml::NonOwnedMapping data) = 0;
+                                             fml::MallocMapping data) = 0;
 
     //---------------------------------------------------------------------------
     /// @brief      Creates a platform specific FlutterPlatformNodeDelegate.
@@ -277,7 +277,7 @@ class AccessibilityBridge
   // |FlutterPlatformNodeDelegate::OwnerBridge|
   void DispatchAccessibilityAction(AccessibilityNodeId target,
                                    FlutterSemanticsAction action,
-                                   fml::NonOwnedMapping data) override;
+                                   fml::MallocMapping data) override;
 
   // |FlutterPlatformNodeDelegate::OwnerBridge|
   gfx::RectF RelativeToGlobalBounds(const ui::AXNode* node,

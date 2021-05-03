@@ -77,6 +77,6 @@
  */
 - (void)dispatchSemanticsAction:(FlutterSemanticsAction)action
                        toTarget:(uint16_t)target
-                       withData:(fml::NonOwnedMapping)data;
+                       withData:(fml::MallocMapping)data;
 
 @end

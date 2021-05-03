@@ -131,7 +131,7 @@ Dart_Handle SendPlatformMessage(Dart_Handle window,
     dart_state->platform_configuration()->client()->HandlePlatformMessage(
         std::make_unique<PlatformMessage>(
             name,
-            fml::NonOwnedMapping::Copy(buffer, buffer + data.length_in_bytes()),
+            fml::MallocMapping::Copy(buffer, buffer + data.length_in_bytes()),
             response));
   }
 
@@ -339,7 +339,7 @@ void PlatformConfiguration::DispatchPlatformMessage(
 
 void PlatformConfiguration::DispatchSemanticsAction(int32_t id,
                                                     SemanticsAction action,
-                                                    fml::NonOwnedMapping args) {
+                                                    fml::MallocMapping args) {
   std::shared_ptr<tonic::DartState> dart_state =
       dispatch_semantics_action_.dart_state().lock();
   if (!dart_state) {

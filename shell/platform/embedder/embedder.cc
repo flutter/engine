@@ -1637,7 +1637,7 @@ FlutterEngineResult FlutterEngineSendPlatformMessage(
   } else {
     message = std::make_unique<flutter::PlatformMessage>(
         flutter_message->channel,
-        fml::NonOwnedMapping::Copy(message_data, message_data + message_size),
+        fml::MallocMapping::Copy(message_data, message_data + message_size),
         response);
   }
 
@@ -1829,7 +1829,7 @@ FlutterEngineResult FlutterEngineDispatchSemanticsAction(
   if (!reinterpret_cast<flutter::EmbedderEngine*>(engine)
            ->DispatchSemanticsAction(
                id, engine_action,
-               fml::NonOwnedMapping::Copy(data, data + data_length))) {
+               fml::MallocMapping::Copy(data, data + data_length))) {
     return LOG_EMBEDDER_ERROR(kInternalInconsistency,
                               "Could not dispatch semantics action.");
   }
@@ -1954,9 +1954,9 @@ static bool DispatchJSONPlatformMessage(FLUTTER_API_SYMBOL(FlutterEngine)
 
   auto platform_message = std::make_unique<flutter::PlatformMessage>(
       channel_name.c_str(),  // channel
-      fml::NonOwnedMapping::Copy(message,
-                                 message + buffer.GetSize()),  // message
-      nullptr                                                  // response
+      fml::MallocMapping::Copy(message,
+                               message + buffer.GetSize()),  // message
+      nullptr                                                // response
   );
 
   return reinterpret_cast<flutter::EmbedderEngine*>(engine)

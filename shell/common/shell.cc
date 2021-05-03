@@ -998,7 +998,7 @@ void Shell::OnPlatformViewDispatchKeyDataPacket(
 // |PlatformView::Delegate|
 void Shell::OnPlatformViewDispatchSemanticsAction(int32_t id,
                                                   SemanticsAction action,
-                                                  fml::NonOwnedMapping args) {
+                                                  fml::MallocMapping args) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
@@ -1809,8 +1809,8 @@ bool Shell::ReloadSystemFonts() {
   std::unique_ptr<PlatformMessage> fontsChangeMessage =
       std::make_unique<flutter::PlatformMessage>(
           kSystemChannel,
-          fml::NonOwnedMapping::Copy(message.c_str(),
-                                     message.c_str() + message.length()),
+          fml::MallocMapping::Copy(message.c_str(),
+                                   message.c_str() + message.length()),
           nullptr);
 
   OnPlatformViewDispatchPlatformMessage(std::move(fontsChangeMessage));

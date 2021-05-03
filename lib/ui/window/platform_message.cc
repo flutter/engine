@@ -9,7 +9,7 @@
 namespace flutter {
 
 PlatformMessage::PlatformMessage(std::string channel,
-                                 fml::NonOwnedMapping data,
+                                 fml::MallocMapping data,
                                  fml::RefPtr<PlatformMessageResponse> response)
     : channel_(std::move(channel)),
       data_(std::move(data)),

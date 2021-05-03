@@ -13,9 +13,9 @@
 
 namespace flutter {
 
-fml::NonOwnedMapping CopyNSDataToMapping(NSData* data);
+fml::MallocMapping CopyNSDataToMapping(NSData* data);
 
-NSData* CopyMappingToNSData(fml::NonOwnedMapping buffer);
+NSData* CopyMappingToNSData(fml::MallocMapping buffer);
 
 std::unique_ptr<fml::Mapping> CopyNSDataToMappingPtr(NSData* data);
 

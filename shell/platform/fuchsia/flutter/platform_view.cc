@@ -177,9 +177,9 @@ void PlatformView::DidUpdateState(
 
   const uint8_t* data = reinterpret_cast<const uint8_t*>(buffer.GetString());
   DispatchPlatformMessage(std::make_unique<flutter::PlatformMessage>(
-      kTextInputChannel,                                    // channel
-      std::vector<uint8_t>(data, data + buffer.GetSize()),  // message
-      nullptr)                                              // response
+      kTextInputChannel,                                        // channel
+      fml::MallocMapping::Copy(data, data + buffer.GetSize()),  // message
+      nullptr)                                                  // response
   );
   last_text_state_ =
       std::make_unique<fuchsia::ui::input::TextInputState>(state);
@@ -207,9 +207,9 @@ void PlatformView::OnAction(fuchsia::ui::input::InputMethodAction action) {
 
   const uint8_t* data = reinterpret_cast<const uint8_t*>(buffer.GetString());
   DispatchPlatformMessage(std::make_unique<flutter::PlatformMessage>(
-      kTextInputChannel,                                    // channel
-      std::vector<uint8_t>(data, data + buffer.GetSize()),  // message
-      nullptr)                                              // response
+      kTextInputChannel,                                        // channel
+      fml::MallocMapping::Copy(data, data + buffer.GetSize()),  // message
+      nullptr)                                                  // response
   );
 }
 
@@ -446,7 +446,8 @@ bool PlatformView::OnChildViewConnected(scenic::ResourceId view_holder_id) {
   std::unique_ptr<flutter::PlatformMessage> message =
       std::make_unique<flutter::PlatformMessage>(
           "flutter/platform_views",
-          std::vector<uint8_t>(call.begin(), call.end()), nullptr);
+          fml::MallocMapping::Copy(call.c_str(), call.c_str() + call.size()),
+          nullptr);
   DispatchPlatformMessage(std::move(message));
 
   return true;
@@ -470,7 +471,8 @@ bool PlatformView::OnChildViewDisconnected(scenic::ResourceId view_holder_id) {
   std::unique_ptr<flutter::PlatformMessage> message =
       std::make_unique<flutter::PlatformMessage>(
           "flutter/platform_views",
-          std::vector<uint8_t>(call.begin(), call.end()), nullptr);
+          fml::MallocMapping::Copy(call.c_str(), call.c_str() + call.size()),
+          nullptr);
   DispatchPlatformMessage(std::move(message));
 
   return true;
@@ -497,7 +499,8 @@ bool PlatformView::OnChildViewStateChanged(scenic::ResourceId view_holder_id,
   std::unique_ptr<flutter::PlatformMessage> message =
       std::make_unique<flutter::PlatformMessage>(
           "flutter/platform_views",
-          std::vector<uint8_t>(call.begin(), call.end()), nullptr);
+          fml::MallocMapping::Copy(call.c_str(), call.c_str() + call.size()),
+          nullptr);
   DispatchPlatformMessage(std::move(message));
 
   return true;
@@ -646,9 +649,9 @@ void PlatformView::OnKeyEvent(
 
   const uint8_t* data = reinterpret_cast<const uint8_t*>(buffer.GetString());
   DispatchPlatformMessage(std::make_unique<flutter::PlatformMessage>(
-      kKeyEventChannel,                                     // channel
-      std::vector<uint8_t>(data, data + buffer.GetSize()),  // data
-      nullptr)                                              // response
+      kKeyEventChannel,                                         // channel
+      fml::MallocMapping::Copy(data, data + buffer.GetSize()),  // data
+      nullptr)                                                  // response
   );
   callback(fuchsia::ui::input3::KeyEventStatus::HANDLED);
 }
@@ -766,7 +769,8 @@ void PlatformView::HandleAccessibilityChannelPlatformMessage(
   const flutter::StandardMessageCodec& standard_message_codec =
       flutter::StandardMessageCodec::GetInstance(nullptr);
   std::unique_ptr<flutter::EncodableValue> decoded =
-      standard_message_codec.DecodeMessage(message->data());
+      standard_message_codec.DecodeMessage(message->data().GetMapping(),
+                                           message->data().GetSize());
 
   flutter::EncodableMap map = std::get<flutter::EncodableMap>(*decoded);
   std::string type =
@@ -789,7 +793,8 @@ void PlatformView::HandleFlutterPlatformChannelPlatformMessage(
   FML_DCHECK(message->channel() == kFlutterPlatformChannel);
   const auto& data = message->data();
   rapidjson::Document document;
-  document.Parse(reinterpret_cast<const char*>(data.data()), data.size());
+  document.Parse(reinterpret_cast<const char*>(data.GetMapping()),
+                 data.GetSize());
   if (document.HasParseError() || !document.IsObject()) {
     return;
   }
@@ -810,7 +815,8 @@ void PlatformView::HandleFlutterTextInputChannelPlatformMessage(
   FML_DCHECK(message->channel() == kTextInputChannel);
   const auto& data = message->data();
   rapidjson::Document document;
-  document.Parse(reinterpret_cast<const char*>(data.data()), data.size());
+  document.Parse(reinterpret_cast<const char*>(data.GetMapping()),
+                 data.GetSize());
   if (document.HasParseError() || !document.IsObject()) {
     return;
   }
@@ -900,7 +906,8 @@ void PlatformView::HandleFlutterPlatformViewsChannelPlatformMessage(
   FML_DCHECK(message->channel() == kFlutterPlatformViewsChannel);
   const auto& data = message->data();
   rapidjson::Document document;
-  document.Parse(reinterpret_cast<const char*>(data.data()), data.size());
+  document.Parse(reinterpret_cast<const char*>(data.GetMapping()),
+                 data.GetSize());
   if (document.HasParseError() || !document.IsObject()) {
     FML_LOG(ERROR) << "Could not parse document";
     return;

@@ -763,7 +763,7 @@ class Engine final : public RuntimeDelegate,
   ///
   void DispatchSemanticsAction(int id,
                                SemanticsAction action,
-                               fml::NonOwnedMapping args);
+                               fml::MallocMapping args);
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the engine that the embedder has expressed an opinion

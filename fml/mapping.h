@@ -105,24 +105,45 @@ class DataMapping final : public Mapping {
 class NonOwnedMapping final : public Mapping {
  public:
   using ReleaseProc = std::function<void(const uint8_t* data, size_t size)>;
-  NonOwnedMapping();
-
   NonOwnedMapping(const uint8_t* data,
                   size_t size,
                   const ReleaseProc& release_proc = nullptr);
 
-  NonOwnedMapping(fml::NonOwnedMapping&& mapping);
-
   ~NonOwnedMapping() override;
+
+  // |Mapping|
+  size_t GetSize() const override;
+
+  // |Mapping|
+  const uint8_t* GetMapping() const override;
+
+ private:
+  const uint8_t* const data_;
+  const size_t size_;
+  const ReleaseProc release_proc_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(NonOwnedMapping);
+};
+
+/// A Mapping like NonOwnedMapping, but uses Free as its release proc.
+class MallocMapping final : public Mapping {
+ public:
+  MallocMapping();
+
+  MallocMapping(const uint8_t* data, size_t size);
+
+  MallocMapping(fml::MallocMapping&& mapping);
+
+  ~MallocMapping() override;
 
   /// Copies the data from `begin` to `end`.
   /// It's templated since void* arithemetic isn't allowed and we want support
   /// for `uint8_t` and `char`.
   template <typename T>
-  static NonOwnedMapping Copy(const T* begin, const T* end) {
+  static MallocMapping Copy(const T* begin, const T* end) {
     size_t length = end - begin;
-    auto result = NonOwnedMapping::WithFree(
-        reinterpret_cast<uint8_t*>(malloc(length)), length);
+    auto result =
+        MallocMapping(reinterpret_cast<uint8_t*>(malloc(length)), length);
     memcpy(const_cast<uint8_t*>(result.GetMapping()), begin, length);
     return result;
   }
@@ -136,21 +157,11 @@ class NonOwnedMapping final : public Mapping {
   /// Removes ownership of the data buffer.
   const uint8_t* Release();
 
-  /// Returns true if the Mapping uses `free` to delete the memory.
-  /// This is important for passing ownership to C/ObjC code like NSData.  It
-  /// has to be a special case because std::function comparisions aren't
-  /// possible.
-  bool UsesFree() const { return uses_free_; }
-
  private:
-  static NonOwnedMapping WithFree(const uint8_t* data, size_t size);
-
   const uint8_t* data_;
   size_t size_;
-  ReleaseProc release_proc_;
-  bool uses_free_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(NonOwnedMapping);
+  FML_DISALLOW_COPY_AND_ASSIGN(MallocMapping);
 };
 
 class SymbolMapping final : public Mapping {

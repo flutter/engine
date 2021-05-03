@@ -539,7 +539,7 @@ gfx::RectF AccessibilityBridge::RelativeToGlobalBounds(const ui::AXNode* node,
 void AccessibilityBridge::DispatchAccessibilityAction(
     AccessibilityNodeId target,
     FlutterSemanticsAction action,
-    fml::NonOwnedMapping data) {
+    fml::MallocMapping data) {
   delegate_->DispatchAccessibilityAction(target, action, std::move(data));
 }
 

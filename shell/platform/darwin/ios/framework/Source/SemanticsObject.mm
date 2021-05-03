@@ -310,7 +310,7 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
   args.push_back(action_id >> 24);
   [self bridge]->DispatchSemanticsAction(
       [self uid], flutter::SemanticsAction::kCustomAction,
-      fml::NonOwnedMapping::Copy(args.data(), args.data() + args.size() * sizeof(uint8_t)));
+      fml::MallocMapping::Copy(args.data(), args.data() + args.size() * sizeof(uint8_t)));
   return YES;
 }
 

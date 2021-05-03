@@ -17,25 +17,25 @@ namespace flutter {
 class PlatformMessage {
  public:
   PlatformMessage(std::string channel,
-                  fml::NonOwnedMapping data,
+                  fml::MallocMapping data,
                   fml::RefPtr<PlatformMessageResponse> response);
   PlatformMessage(std::string channel,
                   fml::RefPtr<PlatformMessageResponse> response);
   ~PlatformMessage();
 
   const std::string& channel() const { return channel_; }
-  const fml::NonOwnedMapping& data() const { return data_; }
+  const fml::MallocMapping& data() const { return data_; }
   bool hasData() { return hasData_; }
 
   const fml::RefPtr<PlatformMessageResponse>& response() const {
     return response_;
   }
 
-  fml::NonOwnedMapping releaseData() { return std::move(data_); }
+  fml::MallocMapping releaseData() { return std::move(data_); }
 
  private:
   std::string channel_;
-  fml::NonOwnedMapping data_;
+  fml::MallocMapping data_;
   bool hasData_;
   fml::RefPtr<PlatformMessageResponse> response_;
 };

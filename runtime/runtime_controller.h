@@ -453,7 +453,7 @@ class RuntimeController : public PlatformConfigurationClient {
   ///
   bool DispatchSemanticsAction(int32_t id,
                                SemanticsAction action,
-                               fml::NonOwnedMapping args);
+                               fml::MallocMapping args);
 
   //----------------------------------------------------------------------------
   /// @brief      Gets the main port identifier of the root isolate.

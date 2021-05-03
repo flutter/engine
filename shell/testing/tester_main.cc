@@ -254,7 +254,7 @@ int RunTester(const flutter::Settings& settings,
   const char* locale_json =
       "{\"method\":\"setLocale\",\"args\":[\"en\",\"US\",\"\",\"\",\"zh\","
       "\"CN\",\"\",\"\"]}";
-  auto locale_bytes = fml::NonOwnedMapping::Copy(
+  auto locale_bytes = fml::MallocMapping::Copy(
       locale_json, locale_json + std::strlen(locale_json));
   fml::RefPtr<flutter::PlatformMessageResponse> response;
   shell->GetPlatformView()->DispatchPlatformMessage(

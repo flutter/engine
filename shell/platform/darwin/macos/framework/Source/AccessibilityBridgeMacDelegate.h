@@ -30,7 +30,7 @@ class AccessibilityBridgeMacDelegate : public AccessibilityBridge::Accessibility
   // |AccessibilityBridge::AccessibilityBridgeDelegate|
   void DispatchAccessibilityAction(AccessibilityNodeId target,
                                    FlutterSemanticsAction action,
-                                   fml::NonOwnedMapping data) override;
+                                   fml::MallocMapping data) override;
 
   // |AccessibilityBridge::AccessibilityBridgeDelegate|
   std::unique_ptr<FlutterPlatformNodeDelegate> CreateFlutterPlatformNodeDelegate() override;

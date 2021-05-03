@@ -339,7 +339,7 @@ AccessibilityBridgeMacDelegate::MacOSEventsFromAXEvent(ui::AXEventGenerator::Eve
 
 void AccessibilityBridgeMacDelegate::DispatchAccessibilityAction(ui::AXNode::AXID target,
                                                                  FlutterSemanticsAction action,
-                                                                 fml::NonOwnedMapping data) {
+                                                                 fml::MallocMapping data) {
   NSCAssert(flutter_engine_, @"Flutter engine should not be deallocated");
   NSCAssert(flutter_engine_.viewController.viewLoaded && flutter_engine_.viewController.view.window,
             @"The accessibility bridge should not receive accessibility actions if the flutter view"

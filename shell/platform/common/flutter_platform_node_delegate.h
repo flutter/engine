@@ -57,7 +57,7 @@ class FlutterPlatformNodeDelegate : public ui::AXPlatformNodeDelegateBase {
     ///                                 action.
     virtual void DispatchAccessibilityAction(AccessibilityNodeId target,
                                              FlutterSemanticsAction action,
-                                             fml::NonOwnedMapping data) = 0;
+                                             fml::MallocMapping data) = 0;
 
     //---------------------------------------------------------------------------
     /// @brief      Get the native accessibility node with the given id.

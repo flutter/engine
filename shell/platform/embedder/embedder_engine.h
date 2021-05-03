@@ -82,7 +82,7 @@ class EmbedderEngine {
 
   bool DispatchSemanticsAction(int id,
                                flutter::SemanticsAction action,
-                               fml::NonOwnedMapping args);
+                               fml::MallocMapping args);
 
   bool OnVsyncEvent(intptr_t baton,
                     fml::TimePoint frame_start_time,

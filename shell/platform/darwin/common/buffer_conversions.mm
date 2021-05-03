@@ -6,18 +6,18 @@
 
 namespace flutter {
 
-fml::NonOwnedMapping CopyNSDataToMapping(NSData* data) {
+fml::MallocMapping CopyNSDataToMapping(NSData* data) {
   const uint8_t* bytes = static_cast<const uint8_t*>(data.bytes);
-  return fml::NonOwnedMapping::Copy(bytes, bytes + data.length);
+  return fml::MallocMapping::Copy(bytes, bytes + data.length);
 }
 
-NSData* CopyMappingToNSData(fml::NonOwnedMapping buffer) {
+NSData* CopyMappingToNSData(fml::MallocMapping buffer) {
   return [NSData dataWithBytes:const_cast<uint8_t*>(buffer.GetMapping()) length:buffer.GetSize()];
 }
 
 std::unique_ptr<fml::Mapping> CopyNSDataToMappingPtr(NSData* data) {
   auto mapping = CopyNSDataToMapping(data);
-  return std::make_unique<fml::NonOwnedMapping>(std::move(mapping));
+  return std::make_unique<fml::MallocMapping>(std::move(mapping));
 }
 
 NSData* CopyMappingPtrToNSData(std::unique_ptr<fml::Mapping> mapping) {

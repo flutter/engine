@@ -37,8 +37,8 @@ static constexpr char kSettingsChannel[] = "flutter/settings";
 static constexpr char kIsolateChannel[] = "flutter/isolate";
 
 namespace {
-fml::NonOwnedMapping MakeMapping(const std::string& str) {
-  return fml::NonOwnedMapping::Copy(str.c_str(), str.c_str() + str.length());
+fml::MallocMapping MakeMapping(const std::string& str) {
+  return fml::MallocMapping::Copy(str.c_str(), str.c_str() + str.length());
 }
 }  // namespace
 
@@ -444,7 +444,7 @@ void Engine::DispatchKeyDataPacket(std::unique_ptr<KeyDataPacket> packet,
 
 void Engine::DispatchSemanticsAction(int id,
                                      SemanticsAction action,
-                                     fml::NonOwnedMapping args) {
+                                     fml::MallocMapping args) {
   runtime_controller_->DispatchSemanticsAction(id, action, std::move(args));
 }
 
