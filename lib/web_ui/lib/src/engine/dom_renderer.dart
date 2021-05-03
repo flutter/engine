@@ -93,7 +93,7 @@ class DomRenderer {
   /// See for more details:
   /// https://developer.mozilla.org/en-US/docs/Web/API/Document/hasFocus
   bool get windowHasFocus =>
-      js_util.callMethod(html.document, 'hasFocus', <dynamic>[]);
+      js_util.callMethod(html.document, 'hasFocus', <dynamic>[]) ?? false;
 
   void _setupHotRestart() {
     // This persists across hot restarts to clear stale DOM.

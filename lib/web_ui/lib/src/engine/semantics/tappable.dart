@@ -20,8 +20,8 @@ class Tappable extends RoleManager {
   void update() {
     final html.Element element = semanticsObject.element;
 
-    // "tab-index" HTML attribute is necessary to make the element can be
-    // focused by AT. Otherwise, it skips over it.
+    // "tab-index=0" is used to allow keyboard traversal of non-form elements.
+    // See also: https://developer.mozilla.org/en-US/docs/Web/Accessibility/Keyboard-navigable_JavaScript_widgets
     element.tabIndex = 0;
 
     semanticsObject.setAriaRole(
@@ -52,6 +52,8 @@ class Tappable extends RoleManager {
         _stopListening();
       }
     }
+
+    // Request focus so that the AT shifts a11y focus to this node.
     if (semanticsObject.isFlagsDirty && semanticsObject.hasFocus) {
       element.focus();
     }
