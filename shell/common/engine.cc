@@ -240,7 +240,7 @@ void Engine::NotifyIdle(int64_t deadline) {
   fml::TimePoint now = delegate_.GetCurrentTimePoint();
   fml::TimeDelta delta = now - last_hint_freed_call_time_;
   size_t hint_freed_bytes = 0;
-  if (delta.ToMilliseconds() > 5000) {
+  if (delta.ToMilliseconds() > 5000 && hint_freed_bytes_since_last_call_ > 0) {
     hint_freed_bytes = hint_freed_bytes_since_last_call_;
     hint_freed_bytes_since_last_call_ = 0;
     last_hint_freed_call_time_ = now;
