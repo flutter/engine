@@ -837,6 +837,10 @@ TEST(KeyboardKeyEmbedderHandlerTest, SynthesizeWithInitialTogglingState) {
   results.clear();
 }
 
+// A key down event for shift right must not be redispatched even if
+// the framework returns unhandled.
+//
+// The reason for this test is documented in |IsEventThatMustNotRedispatch|.
 TEST(KeyboardKeyEmbedderHandlerTest, NeverRedispatchShiftRightKeyDown) {
   TestKeystate key_state;
   std::vector<TestFlutterKeyEvent> results;
