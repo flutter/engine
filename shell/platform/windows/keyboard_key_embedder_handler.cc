@@ -126,6 +126,18 @@ uint64_t KeyboardKeyEmbedderHandler::getLogicalKey(int key,
   }
 }
 
+// Returns true if this key is a special key that Flutter must not redispatch.
+//
+// This is a temporary solution to https://github.com/flutter/flutter/issues/81674,
+static bool IsEventThatMustNotRedispatch(int virtual_key, bool was_down) {
+#ifdef WINUWP
+  return false;
+#else
+  return virtual_key == VK_RSHIFT
+      && !was_down;
+#endif
+}
+
 void KeyboardKeyEmbedderHandler::KeyboardHook(
     int key,
     int scancode,
@@ -228,16 +240,20 @@ void KeyboardKeyEmbedderHandler::KeyboardHook(
       .character = character_bytes,
       .synthesized = false,
   };
+  const bool must_not_redispatch = IsEventThatMustNotRedispatch(key, was_down);
 
   response_id_ += 1;
   uint64_t response_id = response_id_;
   PendingResponse pending{
       .callback =
-          [this, callback = std::move(callback)](bool handled,
+          [this, callback = std::move(callback), must_not_redispatch](bool handled,
                                                  uint64_t response_id) {
             auto found = pending_responses_.find(response_id);
             if (found != pending_responses_.end()) {
               pending_responses_.erase(found);
+            }
+            if (must_not_redispatch) {
+              handled = true;
             }
             callback(handled);
           },
