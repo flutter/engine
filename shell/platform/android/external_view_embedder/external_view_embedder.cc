@@ -104,6 +104,8 @@ void AndroidExternalViewEmbedder::SubmitFrame(
     overlay_layers.insert({view_id, {}});
 
     sk_sp<RTree> rtree = view_rtrees_.at(view_id);
+    SkRect joined_rect;
+
     // Determinate if Flutter UI intersects with any of the previous
     // platform views stacked by z position.
     //
@@ -116,33 +118,26 @@ void AndroidExternalViewEmbedder::SubmitFrame(
       // Each rect corresponds to a native view that renders Flutter UI.
       std::list<SkRect> intersection_rects =
           rtree->searchNonOverlappingDrawnRects(current_view_rect);
-      auto allocation_size = intersection_rects.size();
 
       // Limit the number of native views, so it doesn't grow forever.
       //
       // In this case, the rects are merged into a single one that is the union
       // of all the rects.
-      if (allocation_size > kMaxLayerAllocations) {
-        SkRect joined_rect;
-        for (const SkRect& rect : intersection_rects) {
-          joined_rect.join(rect);
-        }
-        intersection_rects.clear();
-        intersection_rects.push_back(joined_rect);
-      }
-      for (SkRect& intersection_rect : intersection_rects) {
-        // Subpixels in the platform may not align with the canvas subpixels.
-        //
-        // To workaround it, round the floating point bounds and make the rect
-        // slightly larger. For example, {0.3, 0.5, 3.1, 4.7} becomes {0, 0, 4,
-        // 5}.
-        intersection_rect.set(intersection_rect.roundOut());
-        overlay_layers.at(view_id).push_back(intersection_rect);
-        // Clip the background canvas, so it doesn't contain any of the pixels
-        // drawn on the overlay layer.
-        background_canvas->clipRect(intersection_rect, SkClipOp::kDifference);
+      for (const SkRect& rect : intersection_rects) {
+        joined_rect.join(rect);
       }
     }
+
+    // Subpixels in the platform may not align with the canvas subpixels.
+    //
+    // To workaround it, round the floating point bounds and make the rect
+    // slightly larger. For example, {0.3, 0.5, 3.1, 4.7} becomes {0, 0, 4,
+    // 5}.
+    joined_rect.set(joined_rect.roundOut());
+    overlay_layers.at(view_id).push_back(joined_rect);
+    // Clip the background canvas, so it doesn't contain any of the pixels
+    // drawn on the overlay layer.
+    background_canvas->clipRect(joined_rect, SkClipOp::kDifference);
     background_canvas->drawPicture(pictures.at(view_id));
   }
   // Submit the background canvas frame before switching the GL context to
