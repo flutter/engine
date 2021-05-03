@@ -22,7 +22,9 @@ class FlutterView {
 
 #ifdef WINUWP
   // Returns the backing CoreApplicationView for the view.
-  ABI::Windows::ApplicationModel::Core::CoreApplicationView* GetNativeWindow() { return FlutterDesktopViewGetCoreApplicationView(view_); }
+  ABI::Windows::ApplicationModel::Core::CoreApplicationView* GetNativeWindow() {
+    return FlutterDesktopViewGetCoreApplicationView(view_);
+  }
 #else
   // Returns the backing HWND for the view.
   HWND GetNativeWindow() { return FlutterDesktopViewGetHWND(view_); }
