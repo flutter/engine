@@ -237,6 +237,8 @@ FileType identifyFile(String name, Reader reader) {
       // These commonly include the word "copyright" but in a way that isn't necessarily a copyright statement that applies to the file.
       // Since there's so few of them, and none have their own copyright statement, we just treat them as binary files.
       return FileType.binary;
+    case '.wasm':
+      return FileType.binary;
   }
   bytes ??= reader();
   assert(bytes.isNotEmpty);
