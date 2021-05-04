@@ -443,7 +443,7 @@ void initialize_modifier_bit_to_checked_keys(GHashTable* table) {
   data->secondary_physical_key = 0x0000700e6;  // altRight
 
   data = g_new(FlKeyEmbedderCheckedKey, 1);
-  g_hash_table_insert(table, GUINT_TO_POINTER(GDK_MOD4_MASK), data);
+  g_hash_table_insert(table, GUINT_TO_POINTER(GDK_META_MASK), data);
   data->is_caps_lock = false;
   data->primary_logical_key = 0x30000000109;   // metaLeft
   data->primary_physical_key = 0x0000700e3;    // metaLeft
