@@ -20,6 +20,7 @@ source_set("common") {
     "//flutter/common",
     "//flutter/flow",
     "//flutter/fml",
+    "//flutter/lib/ui:ui",
     "//flutter/runtime",
     "//flutter/shell/common",
     "//third_party/dart/runtime:dart_api",

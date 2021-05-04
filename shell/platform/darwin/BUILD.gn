@@ -40,6 +40,7 @@ source_set("flutter_channels") {
     "//flutter/common",
     "//flutter/flow",
     "//flutter/fml",
+    "//flutter/lib/ui:ui",
     "//flutter/runtime",
     "//flutter/shell/common",
     "//third_party/skia",
