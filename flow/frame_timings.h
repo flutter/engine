@@ -17,18 +17,19 @@ namespace flutter {
 /// Records timestamps for various phases of a frame rendering process.
 ///
 /// Recorder is created on vsync and destroyed after the rasterization of the
-/// frame.
+/// frame. This class is thread safe and doesn't require additional
+/// synchronization.
 class FrameTimingsRecorder {
  public:
   /// Various states that the recorder can be in. When created the recorder is
   /// in an unitialized state and transtions in sequential order of the states.
   enum class State : uint32_t {
-    kUninitialized = 1,
-    kVsync = 2,
-    kBuildStart = 3,
-    kBuildEnd = 4,
-    kRasterStart = 5,
-    kRasterEnd = 6,
+    kUninitialized = 0,
+    kVsync = 1,
+    kBuildStart = 2,
+    kBuildEnd = 3,
+    kRasterStart = 4,
+    kRasterEnd = 5,
   };
 
   /// Default constructor, initializes the recorder with State::kUninitialized.
@@ -82,12 +83,12 @@ class FrameTimingsRecorder {
   mutable std::mutex state_mutex_;
   State state_ = State::kUninitialized;
 
-  fml::TimePoint vsync_start_ = fml::TimePoint::Min();
-  fml::TimePoint vsync_target_ = fml::TimePoint::Min();
-  fml::TimePoint build_start_ = fml::TimePoint::Min();
-  fml::TimePoint build_end_ = fml::TimePoint::Min();
-  fml::TimePoint raster_start_ = fml::TimePoint::Min();
-  fml::TimePoint raster_end_ = fml::TimePoint::Min();
+  fml::TimePoint vsync_start_;
+  fml::TimePoint vsync_target_;
+  fml::TimePoint build_start_;
+  fml::TimePoint build_end_;
+  fml::TimePoint raster_start_;
+  fml::TimePoint raster_end_;
 
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(FrameTimingsRecorder);
 };
