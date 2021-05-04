@@ -298,11 +298,16 @@ class Shell final : public PlatformView::Delegate,
                                     bool base64_encode);
 
   //----------------------------------------------------------------------------
-  /// @brief   Pauses the calling thread until the first frame is presented.
+  /// @brief      Pauses the calling thread until the first frame is presented.
   ///
-  /// @return  'kOk' when the first frame has been presented before the timeout
-  ///          successfully, 'kFailedPrecondition' if called from the GPU or UI
-  ///          thread, 'kDeadlineExceeded' if there is a timeout.
+  /// @param[in]  timeout  The duration to wait before timing out. If this
+  ///                      duration would cause an overflow when added to
+  ///                      std::chrono::steady_clock::now(), this method will
+  ///                      wait indefinitely for the first frame.
+  ///
+  /// @return     'kOk' when the first frame has been presented before the
+  ///             timeout successfully, 'kFailedPrecondition' if called from the
+  ///             GPU or UI thread, 'kDeadlineExceeded' if there is a timeout.
   ///
   fml::Status WaitForFirstFrame(fml::TimeDelta timeout);
 
@@ -570,6 +575,9 @@ class Shell final : public PlatformView::Delegate,
 
   // |Engine::Delegate|
   void RequestDartDeferredLibrary(intptr_t loading_unit_id) override;
+
+  // |Engine::Delegate|
+  fml::TimePoint GetCurrentTimePoint() override;
 
   // |Rasterizer::Delegate|
   void OnFrameRasterized(const FrameTiming&) override;
