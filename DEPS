@@ -152,7 +152,7 @@ deps = {
   # WARNING: Unused Dart dependencies in the list below till "WARNING:" marker are removed automatically - see create_updated_flutter_deps.py.
 
   'src/third_party/dart/third_party/devtools':
-   {'packages': [{'version': 'git_revision:12ad5341ae0a275042c84a4e7be9a6c98db65612', 'package': 'dart/third_party/flutter/devtools'}], 'dep_type': 'cipd'},
+   {'packages': [{'version': 'git_revision:' + Var('dart_devtools_rev'), 'package': 'dart/third_party/flutter/devtools'}], 'dep_type': 'cipd'},
 
   'src/third_party/dart/third_party/pkg/args':
    Var('dart_git') + '/args.git@d8fea36c10ef96797be02e3d132d572445cd86f4',
