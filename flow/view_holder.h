@@ -19,6 +19,7 @@
 #include "flutter/fml/task_runner.h"
 #include "third_party/skia/include/core/SkColor.h"
 #include "third_party/skia/include/core/SkPoint.h"
+#include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/core/SkSize.h"
 
 namespace flutter {
@@ -29,21 +30,23 @@ namespace flutter {
 // This object is created and destroyed on the |Rasterizer|'s thread.
 class ViewHolder {
  public:
-  using BindCallback = std::function<void(scenic::ResourceId)>;
+  using ViewIdCallback = std::function<void(scenic::ResourceId)>;
 
+  // `Create`, `Destroy`, and `FromId` must be executed on the raster thread or
+  // errors will occur.
+  //
+  // `on_bind_callback` and `on_unbind_callback` will likewise execute on the
+  // raster thread; clients are responsible for re-threading the callback if
+  // needed.
   static void Create(zx_koid_t id,
-                     fml::RefPtr<fml::TaskRunner> ui_task_runner,
-                     fuchsia::ui::views::ViewHolderToken view_holder_token,
-                     const BindCallback& on_bind_callback);
-  static void Destroy(zx_koid_t id);
+                     ViewIdCallback on_view_created,
+                     fuchsia::ui::views::ViewHolderToken view_holder_token);
+  static void Destroy(zx_koid_t id, ViewIdCallback on_view_destroyed);
   static ViewHolder* FromId(zx_koid_t id);
 
-  ViewHolder(fml::RefPtr<fml::TaskRunner> ui_task_runner,
-             fuchsia::ui::views::ViewHolderToken view_holder_token,
-             const BindCallback& on_bind_callback);
   ~ViewHolder() = default;
 
-  // Sets the properties/opacity of the child view by issuing a Scenic command.
+  // Sets the properties of the child view by issuing a Scenic command.
   void SetProperties(double width,
                      double height,
                      double insetTop,
@@ -57,31 +60,29 @@ class ViewHolder {
   void UpdateScene(scenic::Session* session,
                    scenic::ContainerNode& container_node,
                    const SkPoint& offset,
-                   const SkSize& size,
-                   SkAlpha opacity,
-                   bool hit_testable);
+                   SkAlpha opacity);
 
-  bool hit_testable() { return hit_testable_; }
-  void set_hit_testable(bool value) { hit_testable_ = value; }
-
-  bool focusable() { return focusable_; }
-  void set_focusable(bool value) { focusable_ = value; }
+  // Alters various apsects of the ViewHolder's ViewProperties.  The updates
+  // are applied to Scenic on the new |UpdateScene| call.
+  void set_hit_testable(bool value);
+  void set_focusable(bool value);
+  void set_size(const SkSize& size);
+  void set_occlusion_hint(const SkRect& occlusion_hint);
 
  private:
-  fml::RefPtr<fml::TaskRunner> ui_task_runner_;
+  ViewHolder(fuchsia::ui::views::ViewHolderToken view_holder_token,
+             ViewIdCallback on_view_created);
 
   std::unique_ptr<scenic::EntityNode> entity_node_;
   std::unique_ptr<scenic::OpacityNodeHACK> opacity_node_;
   std::unique_ptr<scenic::ViewHolder> view_holder_;
 
   fuchsia::ui::views::ViewHolderToken pending_view_holder_token_;
-  BindCallback pending_bind_callback_;
+  ViewIdCallback on_view_created_;
 
-  bool hit_testable_ = true;
-  bool focusable_ = true;
-
-  fuchsia::ui::gfx::ViewProperties pending_properties_;
-  bool has_pending_properties_ = false;
+  fuchsia::ui::gfx::HitTestBehavior hit_test_behavior_ =
+      fuchsia::ui::gfx::HitTestBehavior::kDefault;
+  fuchsia::ui::gfx::ViewProperties view_properties_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ViewHolder);
 };
