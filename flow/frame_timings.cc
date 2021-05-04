@@ -60,7 +60,7 @@ fml::TimeDelta FrameTimingsRecorder::GetBuildDuration() const {
 void FrameTimingsRecorder::RecordVsync(fml::TimePoint vsync_start,
                                        fml::TimePoint vsync_target) {
   std::scoped_lock state_lock(state_mutex_);
-  FML_CHECK(state_ == State::kUnitialized);
+  FML_CHECK(state_ == State::kUninitialized);
   state_ = State::kVsync;
   vsync_start_ = vsync_start;
   vsync_target_ = vsync_target;
