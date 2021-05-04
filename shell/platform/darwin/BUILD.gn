@@ -64,6 +64,7 @@ executable("flutter_channels_unittests") {
     ":flutter_channels",
     ":flutter_channels_fixtures",
     "//flutter/testing",
+    "//third_party/dart/runtime:libdart_jit",
   ]
 
   public_configs = [ "//flutter:config" ]

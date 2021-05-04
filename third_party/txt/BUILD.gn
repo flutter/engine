@@ -185,7 +185,7 @@ source_set("txt") {
 if (enable_unittests) {
   txt_common_executable_deps = [
     "//flutter/fml",  # For ICU initialization.
-    "//flutter/fml/trace",
+    "//third_party/dart/runtime:libdart_jit",  # For logging.
   ]
 
   test_fixtures("txt_fixtures") {

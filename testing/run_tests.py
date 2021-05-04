@@ -509,10 +509,7 @@ def main():
   args = parser.parse_args()
 
   if args.type == 'all':
-    types = ['engine', 'benchmarks', 'java', 'objc', 'font-subset']
-    if args.variant == 'host_debug' or args.variant == 'host_debug_unopt':
-      # flutter_tester can only be built in JIT mode. So Dart tests may only run in JIT runtime modes.
-      types.append('dart')
+    types = ['engine', 'dart', 'benchmarks', 'java', 'objc', 'font-subset']
   else:
     types = args.type.split(',')
 
@@ -526,7 +523,6 @@ def main():
 
   if 'dart' in types:
     assert not IsWindows(), "Dart tests can't be run on windows. https://github.com/flutter/flutter/issues/36301."
-    assert args.variant == 'host_debug' or args.variant == 'host_debug_unopt', "Dart tests can only be run in Debug runtime modes."
     dart_filter = args.dart_filter.split(',') if args.dart_filter else None
     RunDartTests(build_dir, dart_filter, args.verbose_dart_snapshot)
     RunConstFinderTests(build_dir)

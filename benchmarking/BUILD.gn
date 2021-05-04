@@ -16,7 +16,7 @@ source_set("benchmarking") {
 
   public_deps = [
     "//flutter/fml",
-    "//flutter/runtime:libdart_flutter_policy",
+    "//flutter/runtime:libdart",
     "//third_party/benchmark",
   ]
 

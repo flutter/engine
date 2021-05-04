@@ -2,42 +2,37 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/common/config.gni")
+import("//build/fuchsia/sdk.gni")
 
-if (flutter_runtime_mode == "debug") {
-  executable("testing") {
-    output_name = "flutter_tester"
+executable("testing") {
+  output_name = "flutter_tester"
 
-    public_configs = [
-      "//flutter:config",
-      "//flutter:export_dynamic_symbols",
-    ]
+  public_configs = [
+    "//flutter:config",
+    "//flutter:export_dynamic_symbols",
+  ]
 
-    sources = [ "tester_main.cc" ]
-    if (is_win) {
-      libs = [
-        "psapi.lib",
-        "user32.lib",
-        "FontSub.lib",
-        "shlwapi.lib",
-      ]
-    }
-
-    deps = [
-      "//flutter/assets",
-      "//flutter/common",
-      "//flutter/flow",
-      "//flutter/fml",
-      "//flutter/fml/trace",
-      "//flutter/lib/snapshot",
-      "//flutter/shell/common",
-      "//flutter/shell/gpu:gpu_surface_software",
-      "//third_party/dart/runtime/bin:dart_io_api",
-      "//third_party/skia",
+  sources = [ "tester_main.cc" ]
+  if (is_win) {
+    libs = [
+      "psapi.lib",
+      "user32.lib",
+      "FontSub.lib",
+      "shlwapi.lib",
     ]
   }
-} else {
-  group("testing") {
-    # The Flutter Dart tester is only available in JIT runtime modes.
-  }
+
+  deps = [
+    "//flutter/assets",
+    "//flutter/common",
+    "//flutter/flow",
+    "//flutter/fml",
+    "//flutter/lib/snapshot",
+    "//flutter/shell/common",
+    "//flutter/shell/gpu:gpu_surface_software",
+    "//flutter/third_party/tonic",
+    "//third_party/dart/runtime:libdart_jit",
+    "//third_party/dart/runtime/bin:dart_io_api",
+    "//third_party/skia",
+  ]
 }
