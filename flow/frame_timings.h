@@ -24,12 +24,12 @@ class FrameTimingsRecorder {
   /// Various states that the recorder can be in. When created the recorder is
   /// in an unitialized state and transtions in sequential order of the states.
   enum class State : uint32_t {
-    kUninitialized = 0,
-    kVsync = 1,
-    kBuildStart = 2,
-    kBuildEnd = 3,
-    kRasterStart = 4,
-    kRasterEnd = 5,
+    kUninitialized,
+    kVsync,
+    kBuildStart,
+    kBuildEnd,
+    kRasterStart,
+    kRasterEnd,
   };
 
   /// Default constructor, initializes the recorder with State::kUninitialized.

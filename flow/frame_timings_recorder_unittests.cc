@@ -59,7 +59,7 @@ TEST(FrameTimingsRecorderTest, RecordRasterTimes) {
   ASSERT_EQ(raster_end, recorder->GetRasterEndTime());
 }
 
-#ifndef OS_FUCHSIA
+#if !defined(OS_FUCHSIA) && (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
 
 // Windows doesn't allow testing with killed by signal.
 #ifdef OS_WIN
