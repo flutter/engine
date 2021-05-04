@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "assets/directory_asset_bundle.h"
+#include "flutter/assets/asset_resolver.h"
 #include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/flow/layers/picture_layer.h"
@@ -149,6 +150,83 @@ class TestAssetResolver : public AssetResolver {
   AssetResolver::AssetResolverType type_;
 };
 
+class PlatformMessageResponseTest : public flutter::PlatformMessageResponse {
+ public:
+  void Complete(std::unique_ptr<fml::Mapping> data) override;
+
+  void CompleteEmpty() override;
+
+ private:
+  explicit PlatformMessageResponseTest();
+
+  ~PlatformMessageResponseTest() override;
+
+  FML_FRIEND_MAKE_REF_COUNTED(PlatformMessageResponseTest);
+};
+
+PlatformMessageResponseTest::PlatformMessageResponseTest() {}
+
+PlatformMessageResponseTest::~PlatformMessageResponseTest() = default;
+
+void PlatformMessageResponseTest::Complete(std::unique_ptr<fml::Mapping> data) {
+}
+
+void PlatformMessageResponseTest::CompleteEmpty() {}
+
+class AssetTestResolver : public AssetResolver {
+ public:
+  AssetTestResolver(Shell* shell);
+
+  ~AssetTestResolver() override;
+
+ private:
+  Shell* shell_;
+  bool IsValid() const override;
+  // |AssetResolver|
+  AssetResolver::AssetResolverType GetType() const override;
+  // |AssetResolver|
+  std::unique_ptr<fml::Mapping> GetAsMapping(
+      const std::string& asset_name) const override;
+  void CheckQueue() const;
+  // |AssetResolver|
+  bool IsValidAfterAssetManagerChange() const override;
+  FML_DISALLOW_COPY_AND_ASSIGN(AssetTestResolver);
+};
+
+AssetTestResolver::AssetTestResolver(Shell* shell) : shell_(shell){};
+
+AssetTestResolver::~AssetTestResolver() = default;
+
+AssetResolver::AssetResolverType AssetTestResolver::GetType() const {
+  return AssetResolverType::kAssetManager;
+}
+
+void AssetTestResolver::CheckQueue() const {
+  const auto current_queue_id = fml::MessageLoop::GetCurrentTaskQueueId();
+  const auto io_queue_id =
+      shell_->GetTaskRunners().GetIOTaskRunner()->GetTaskQueueId();
+  ASSERT_TRUE(current_queue_id == io_queue_id);
+}
+
+// |AssetResolver|
+std::unique_ptr<fml::Mapping> AssetTestResolver::GetAsMapping(
+    const std::string& asset_name) const {
+  if (asset_name.compare("TestFlutterLoadAssets.json") == 0) {
+    CheckQueue();
+  }
+  return nullptr;
+}
+
+// |AssetResolver|
+bool AssetTestResolver::IsValid() const {
+  return true;
+}
+
+// |AssetResolver|
+bool AssetTestResolver::IsValidAfterAssetManagerChange() const {
+  return false;
+}
+
 static bool ValidateShell(Shell* shell) {
   if (!shell) {
     return false;
@@ -221,6 +299,38 @@ static void TestDartVmFlags(std::vector<const char*>& flags) {
   for (size_t i = 0; i < flags.size(); ++i) {
     EXPECT_EQ(settings.dart_flags[i], flags[i]);
   }
+}
+
+TEST_F(ShellTest, TestFlutterLoadAssetsOnIOThread) {
+  Settings settings = CreateSettingsForFixture();
+  auto task_runner = CreateNewThread();
+  ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
+                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
+                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+
+  TaskRunners task_runners("test", thread_host.ui_thread->GetTaskRunner(),
+                           thread_host.raster_thread->GetTaskRunner(),
+                           thread_host.ui_thread->GetTaskRunner(),
+                           thread_host.io_thread->GetTaskRunner());
+
+  std::unique_ptr<Shell> shell =
+      CreateShell(std::move(settings), std::move(task_runners));
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("emptyMain");
+  configuration.AddAssetResolver(
+      std::make_unique<AssetTestResolver>(shell.get()));
+
+  RunEngine(shell.get(), std::move(configuration));
+
+  std::string request_json = "TestFlutterLoadAssets.json";
+  std::vector<uint8_t> data(request_json.begin(), request_json.end());
+  auto platform_message = fml::MakeRefCounted<PlatformMessage>(
+      "flutter/assets", std::move(data),
+      fml::MakeRefCounted<flutter::testing::PlatformMessageResponseTest>());
+  SendEnginePlatformMessage(shell.get(), std::move(platform_message));
+
+  DestroyShell(std::move(shell), std::move(task_runners));
 }
 
 static void PostSync(const fml::RefPtr<fml::TaskRunner>& task_runner,
