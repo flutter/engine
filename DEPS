@@ -43,6 +43,7 @@ vars = {
   'dart_boringssl_rev': '1607f54fed72c6589d560254626909a64124f091',
   'dart_clock_rev': 'a494269254ba978e7ef8f192c5f7fec3fc05b9d3',
   'dart_collection_rev': '9967dcd3d7645db6de48d5abfab3018bb0c84236',
+  'dart_devtools_rev': '12ad5341ae0a275042c84a4e7be9a6c98db65612',
   'dart_http_throttle_tag': '1.0.2',
   'dart_intl_tag': '0.17.0-nullsafety',
   'dart_linter_tag': '1.4.0',
@@ -149,6 +150,9 @@ deps = {
    Var('dart_git') + '/sdk.git' + '@' + Var('dart_revision'),
 
   # WARNING: Unused Dart dependencies in the list below till "WARNING:" marker are removed automatically - see create_updated_flutter_deps.py.
+
+  'src/third_party/dart/third_party/devtools':
+   {'packages': [{'version': 'git_revision:12ad5341ae0a275042c84a4e7be9a6c98db65612', 'package': 'dart/third_party/flutter/devtools'}], 'dep_type': 'cipd'},
 
   'src/third_party/dart/third_party/pkg/args':
    Var('dart_git') + '/args.git@d8fea36c10ef96797be02e3d132d572445cd86f4',
