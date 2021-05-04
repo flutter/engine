@@ -10,6 +10,6 @@ if __name__ == '__main__':
     pub = "pub"
     if os.name == "nt":
         pub = "pub.bat"
-    subprocess.check_call([os.path.join(leading, pub), "global", "activate", "-spath", "./src/flutter/tools/generate_package_config"])
-    subprocess.check_call([os.path.join(leading, pub), "global", "run", "generate_package_config:generate_from_legacy", "src/flutter/flutter_frontend_server/.packages"])
-    subprocess.check_call([os.path.join(leading, pub), "global", "run", "generate_package_config:generate_from_legacy", "src/flutter/tools/const_finder/.packages"])
+    subprocess.check_call([os.path.join(leading, pub), "-v", "--trace", "global", "activate", "-spath", "./src/flutter/tools/generate_package_config"])
+    subprocess.check_call([os.path.join(leading, pub), "-v", "--trace", "global", "run", "generate_package_config:generate_from_legacy", "src/flutter/flutter_frontend_server/.packages"])
+    subprocess.check_call([os.path.join(leading, pub), "-v", "--trace", "global", "run", "generate_package_config:generate_from_legacy", "src/flutter/tools/const_finder/.packages"])
