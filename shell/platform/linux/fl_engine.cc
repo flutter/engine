@@ -365,6 +365,8 @@ static void fl_engine_execute_task(FlutterTask task, gpointer user_data) {
 gboolean fl_engine_start(FlEngine* self, GError** error) {
   g_return_val_if_fail(FL_IS_ENGINE(self), FALSE);
 
+  self->task_runner = fl_task_runner_new(fl_engine_execute_task, self);
+
   FlutterRendererConfig config = {};
   config.type = kOpenGL;
   config.open_gl.struct_size = sizeof(FlutterOpenGLRendererConfig);
@@ -456,8 +458,6 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
 
   self->settings_plugin = fl_settings_plugin_new(self->binary_messenger);
   fl_settings_plugin_start(self->settings_plugin);
-
-  self->task_runner = fl_task_runner_new(fl_engine_execute_task, self);
 
   result = self->embedder_api.UpdateSemanticsEnabled(self->engine, TRUE);
   if (result != kSuccess)
