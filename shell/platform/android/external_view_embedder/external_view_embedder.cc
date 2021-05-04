@@ -131,8 +131,9 @@ void AndroidExternalViewEmbedder::SubmitFrame(
     // Subpixels in the platform may not align with the canvas subpixels.
     //
     // To workaround it, round the floating point bounds and make the rect
-    // slightly larger. For example, {0.3, 0.5, 3.1, 4.7} becomes {0, 0, 4,
-    // 5}.
+    // slightly larger.
+    //
+    // For example, {0.3, 0.5, 3.1, 4.7} becomes {0, 0, 4, 5}.
     joined_rect.set(joined_rect.roundOut());
     overlay_layers.at(view_id).push_back(joined_rect);
     // Clip the background canvas, so it doesn't contain any of the pixels
