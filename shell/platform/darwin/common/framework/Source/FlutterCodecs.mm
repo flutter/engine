@@ -16,7 +16,6 @@
 }
 
 - (NSData*)encode:(id)message {
-  NSAssert(!message || [message isKindOfClass:[NSData class]], @"");
   return message;
 }
 
