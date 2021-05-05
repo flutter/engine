@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/linux/fl_task_runner.h"
+#include "flutter/shell/platform/linux/fl_engine_private.h"
 
 static constexpr int kMicrosecondsPerNanosecond = 1000;
 static constexpr int kMillisecondsPerMicrosecond = 1000;
@@ -10,8 +11,7 @@ static constexpr int kMillisecondsPerMicrosecond = 1000;
 struct _FlTaskRunner {
   GObject parent_instance;
 
-  FlTaskExecutor executor;
-  gpointer executor_user_data;
+  FlEngine* engine;
 
   GMutex mutex;
   GCond cond;
@@ -42,12 +42,23 @@ static void fl_task_runner_init(FlTaskRunner* self) {
   g_cond_init(&self->cond);
 }
 
+static void engine_weak_notify_cb(gpointer user_data,
+                                  GObject* where_the_object_was) {
+  FlTaskRunner* self = FL_TASK_RUNNER(user_data);
+  self->engine = nullptr;
+}
+
 void fl_task_runner_dispose(GObject* object) {
   FlTaskRunner* self = FL_TASK_RUNNER(object);
 
   // this should never happen because the task runner is retained while blocking
   // main thread
   g_assert(!self->blocking_main_thread);
+
+  if (self->engine != nullptr) {
+    g_object_weak_unref(G_OBJECT(self->engine), engine_weak_notify_cb, self);
+    self->engine = nullptr;
+  }
 
   g_mutex_clear(&self->mutex);
   g_cond_clear(&self->cond);
@@ -60,12 +71,11 @@ void fl_task_runner_dispose(GObject* object) {
   G_OBJECT_CLASS(fl_task_runner_parent_class)->dispose(object);
 }
 
-FlTaskRunner* fl_task_runner_new(FlTaskExecutor executor,
-                                 gpointer executor_user_data) {
+FlTaskRunner* fl_task_runner_new(FlEngine* engine) {
   FlTaskRunner* res =
       FL_TASK_RUNNER(g_object_new(fl_task_runner_get_type(), nullptr));
-  res->executor = executor;
-  res->executor_user_data = executor_user_data;
+  res->engine = engine;
+  g_object_weak_ref(G_OBJECT(engine), engine_weak_notify_cb, res);
   return res;
 }
 
@@ -91,11 +101,13 @@ static void fl_task_runner_process_expired_tasks_locked(FlTaskRunner* self) {
 
   g_mutex_unlock(&self->mutex);
 
-  l = expired_tasks;
-  while (l != nullptr && !self->stopped) {
-    FlTaskRunnerTask* task = static_cast<FlTaskRunnerTask*>(l->data);
-    self->executor(task->task, self->executor_user_data);
-    l = l->next;
+  if (self->engine) {
+    l = expired_tasks;
+    while (l != nullptr && !self->stopped) {
+      FlTaskRunnerTask* task = static_cast<FlTaskRunnerTask*>(l->data);
+      fl_engine_execute_task(self->engine, &task->task);
+      l = l->next;
+    }
   }
 
   g_list_free_full(expired_tasks, g_free);

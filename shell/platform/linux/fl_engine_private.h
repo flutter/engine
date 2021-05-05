@@ -236,6 +236,15 @@ GBytes* fl_engine_send_platform_message_finish(FlEngine* engine,
  */
 FlTaskRunner* fl_engine_get_task_runner(FlEngine* engine);
 
+/**
+ * fl_engine_execute_task:
+ * @engine: an #FlEngine.
+ * @task: a #FlutterTask to execute.
+ *
+ * Executes given Flutter task.
+ */
+void fl_engine_execute_task(FlEngine* engine, FlutterTask* task);
+
 G_END_DECLS
 
 #endif  // FLUTTER_SHELL_PLATFORM_LINUX_FL_ENGINE_PRIVATE_H_

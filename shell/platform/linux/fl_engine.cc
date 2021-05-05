@@ -350,15 +350,10 @@ G_MODULE_EXPORT FlEngine* fl_engine_new_headless(FlDartProject* project) {
   return fl_engine_new(project, FL_RENDERER(renderer));
 }
 
-static void fl_engine_execute_task(FlutterTask task, gpointer user_data) {
-  FlEngine* self = FL_ENGINE(user_data);
-  self->embedder_api.RunTask(self->engine, &task);
-}
-
 gboolean fl_engine_start(FlEngine* self, GError** error) {
   g_return_val_if_fail(FL_IS_ENGINE(self), FALSE);
 
-  self->task_runner = fl_task_runner_new(fl_engine_execute_task, self);
+  self->task_runner = fl_task_runner_new(self);
 
   FlutterRendererConfig config = {};
   config.type = kOpenGL;
@@ -676,4 +671,8 @@ G_MODULE_EXPORT FlBinaryMessenger* fl_engine_get_binary_messenger(
 FlTaskRunner* fl_engine_get_task_runner(FlEngine* self) {
   g_return_val_if_fail(FL_IS_ENGINE(self), nullptr);
   return self->task_runner;
+}
+
+void fl_engine_execute_task(FlEngine* self, FlutterTask* task) {
+  self->embedder_api.RunTask(self->engine, task);
 }

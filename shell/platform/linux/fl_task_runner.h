@@ -8,12 +8,11 @@
 #include <glib-object.h>
 
 #include "flutter/shell/platform/embedder/embedder.h"
+#include "flutter/shell/platform/linux/public/flutter_linux/fl_engine.h"
 
 G_BEGIN_DECLS
 
 G_DECLARE_FINAL_TYPE(FlTaskRunner, fl_task_runner, FL, TASK_RUNNER, GObject);
-
-typedef void (*FlTaskExecutor)(FlutterTask task, gpointer user_data);
 
 /**
  * fl_task_runner_new:
@@ -24,8 +23,7 @@ typedef void (*FlTaskExecutor)(FlutterTask task, gpointer user_data);
  *
  * Returns: an #FlTaskRunner.
  */
-FlTaskRunner* fl_task_runner_new(FlTaskExecutor executor,
-                                 gpointer executor_user_data);
+FlTaskRunner* fl_task_runner_new(FlEngine* engine);
 
 /**
  * fl_task_runner_post_task:
