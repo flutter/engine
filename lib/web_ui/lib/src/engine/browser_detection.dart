@@ -151,9 +151,9 @@ OperatingSystem? debugOperatingSystemOverride;
 
 @visibleForTesting
 OperatingSystem detectOperatingSystem({
-  @visibleForTesting String? overridePlatform,
-  @visibleForTesting String? overrideUserAgent,
-  @visibleForTesting int? overrideMaxTouchPoints,
+  String? overridePlatform,
+  String? overrideUserAgent,
+  int? overrideMaxTouchPoints,
 }) {
   final String platform = overridePlatform ?? html.window.navigator.platform!;
   final String userAgent = overrideUserAgent ?? html.window.navigator.userAgent;
