@@ -2,9 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:async';
 import 'dart:html' as html;
-import 'dart:typed_data';
 
 import 'package:ui/src/engine.dart';
 
