@@ -227,6 +227,13 @@ GBytes* fl_engine_send_platform_message_finish(FlEngine* engine,
                                                GAsyncResult* result,
                                                GError** error);
 
+/**
+ * fl_engine_get_task_runner:
+ * @engine: an #FlEngine.
+ * @result: a #FlTaskRunner.
+ *
+ * Returns: task runner responsible for scheduling Flutter tasks.
+ */
 FlTaskRunner* fl_engine_get_task_runner(FlEngine* engine);
 
 G_END_DECLS
