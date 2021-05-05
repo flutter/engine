@@ -181,6 +181,7 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
       double windowInnerWidth;
       double windowInnerHeight;
       final html.VisualViewport? viewport = html.window.visualViewport;
+
       if (viewport != null) {
         if (browserEngine == BrowserEngine.webkit &&
             operatingSystem == OperatingSystem.iOs) {
@@ -216,7 +217,7 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
     final html.VisualViewport? viewport = html.window.visualViewport;
     if (viewport != null) {
       if (browserEngine == BrowserEngine.webkit &&
-          operatingSystem == OperatingSystem.iOs && isEditingOnMobile) {
+          operatingSystem == OperatingSystem.iOs && !isEditingOnMobile) {
         windowInnerHeight = html.document.documentElement!.clientHeight! * devicePixelRatio;
       } else {
         windowInnerHeight = viewport.height!.toDouble() * devicePixelRatio;
