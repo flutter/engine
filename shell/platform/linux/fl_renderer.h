@@ -249,7 +249,7 @@ gboolean fl_renderer_present_layers(FlRenderer* renderer,
  * @target_height: height of frame being waited for
  *
  * Holds the thread until frame with requested dimensions is presented.
- * While waiting for frame flutter platform and raster tasks are being
+ * While waiting for frame Flutter platform and raster tasks are being
  * processed.
  */
 void fl_renderer_wait_for_frame(FlRenderer* renderer,

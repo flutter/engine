@@ -16,8 +16,7 @@ G_DECLARE_FINAL_TYPE(FlTaskRunner, fl_task_runner, FL, TASK_RUNNER, GObject);
 
 /**
  * fl_task_runner_new:
- * @executor: Function responsible for executing Flutter tasks.
- * @executor_user_data: user data for executor.
+ * @engine: the #FlEngine owning the task runner.
  *
  * Creates new task runner instance.
  *
