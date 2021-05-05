@@ -674,5 +674,6 @@ FlTaskRunner* fl_engine_get_task_runner(FlEngine* self) {
 }
 
 void fl_engine_execute_task(FlEngine* self, FlutterTask* task) {
+  g_return_if_fail(FL_IS_ENGINE(self));
   self->embedder_api.RunTask(self->engine, task);
 }
