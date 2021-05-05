@@ -16,8 +16,8 @@ G_DECLARE_FINAL_TYPE(FlTaskRunner, fl_task_runner, FL, TASK_RUNNER, GObject);
 typedef void (*FlTaskExecutor)(FlutterTask task, gpointer user_data);
 
 /**
- * fl_task_runner_new
- * @executor: Function responsible for executing fluter tasks.
+ * fl_task_runner_new:
+ * @executor: Function responsible for executing Flutter tasks.
  * @executor_user_data: user data for executor.
  *
  * Creates new task runner instance.
@@ -28,12 +28,12 @@ FlTaskRunner* fl_task_runner_new(FlTaskExecutor executor,
                                  gpointer executor_user_data);
 
 /**
- * fl_task_runner_post_task
+ * fl_task_runner_post_task:
  * @task_runner: an #FlTaskRunner.
- * @task: flutter task being scheduled
+ * @task: Flutter task being scheduled
  * @target_time_nanos: absolute time in nanoseconds
  *
- * Posts a flutter task to be executed on main thread. This function is thread
+ * Posts a Flutter task to be executed on main thread. This function is thread
  * safe and may be called from any thread.
  */
 void fl_task_runner_post_task(FlTaskRunner* task_runner,
@@ -41,7 +41,7 @@ void fl_task_runner_post_task(FlTaskRunner* task_runner,
                               uint64_t target_time_nanos);
 
 /**
- * fl_task_runner_stop
+ * fl_task_runner_stop:
  * @task_runner: an #FlTaskRunner.
  *
  * Requests stop. After this method completes no more tasks will be executed
@@ -51,7 +51,7 @@ void fl_task_runner_post_task(FlTaskRunner* task_runner,
 void fl_task_runner_stop(FlTaskRunner* task_runner);
 
 /**
- * fl_task_runner_block_main_thread
+ * fl_task_runner_block_main_thread:
  * @task_runner: an #FlTaskRunner.
  *
  * Blocks main thread until fl_task_runner_release_main_thread is called.
@@ -62,7 +62,7 @@ void fl_task_runner_stop(FlTaskRunner* task_runner);
 void fl_task_runner_block_main_thread(FlTaskRunner* task_runner);
 
 /**
- * fl_task_runner_release_main_thread
+ * fl_task_runner_release_main_thread:
  * @task_runner: an #FlTaskRunner.
  *
  * Unblocks main thread. This will resume normal processing of main loop.

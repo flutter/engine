@@ -243,7 +243,7 @@ gboolean fl_renderer_present_layers(FlRenderer* renderer,
                                     size_t layers_count);
 
 /**
- * fl_renderer_wait_for_frame
+ * fl_renderer_wait_for_frame:
  * @renderer: an #FlRenderer.
  * @target_width: width of frame being waited for
  * @target_height: height of frame being waited for
