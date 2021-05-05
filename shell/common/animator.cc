@@ -181,6 +181,14 @@ void Animator::Render(std::unique_ptr<flutter::LayerTree> layer_tree) {
   }
   last_layer_tree_size_ = layer_tree->frame_size();
 
+  if (!frame_timings_recorder_) {
+    // Framework can directly call render with a built scene.
+    frame_timings_recorder_ = std::make_unique<FrameTimingsRecorder>();
+    const fml::TimePoint placeholder_time = fml::TimePoint::Now();
+    frame_timings_recorder_->RecordVsync(placeholder_time, placeholder_time);
+    frame_timings_recorder_->RecordBuildStart(placeholder_time);
+  }
+
   frame_timings_recorder_->RecordBuildEnd(fml::TimePoint::Now());
 
   // Commit the pending continuation.
