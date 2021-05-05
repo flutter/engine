@@ -218,7 +218,7 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
     if (viewport != null) {
       if (browserEngine == BrowserEngine.webkit &&
           operatingSystem == OperatingSystem.iOs && !isEditingOnMobile) {
-        windowInnerHeight = html.document.documentElement!.clientHeight! * devicePixelRatio;
+        windowInnerHeight = html.document.documentElement!.clientHeight * devicePixelRatio;
       } else {
         windowInnerHeight = viewport.height!.toDouble() * devicePixelRatio;
       }
