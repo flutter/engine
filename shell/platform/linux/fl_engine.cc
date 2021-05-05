@@ -58,13 +58,6 @@ G_DEFINE_TYPE_WITH_CODE(
     G_IMPLEMENT_INTERFACE(fl_plugin_registry_get_type(),
                           fl_engine_plugin_registry_iface_init))
 
-// Subclass of GSource that integrates Flutter tasks into the GLib main loop.
-typedef struct {
-  GSource parent;
-  FlEngine* engine;
-  FlutterTask task;
-} FlutterSource;
-
 // Parse a locale into its components.
 static void parse_locale(const gchar* locale,
                          gchar** language,
