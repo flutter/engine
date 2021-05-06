@@ -36,6 +36,7 @@ class CkParagraphStyle implements ui.ParagraphStyle {
         _textDirection = textDirection ?? ui.TextDirection.ltr,
         _fontFamily = fontFamily,
         _fontSize = fontSize,
+        _height = height,
         _fontWeight = fontWeight,
         _fontStyle = fontStyle;
 
@@ -43,12 +44,14 @@ class CkParagraphStyle implements ui.ParagraphStyle {
   final ui.TextDirection? _textDirection;
   final String? _fontFamily;
   final double? _fontSize;
+  final double? _height;
   final ui.FontWeight? _fontWeight;
   final ui.FontStyle? _fontStyle;
 
   static SkTextStyleProperties toSkTextStyleProperties(
     String? fontFamily,
     double? fontSize,
+    double? height,
     ui.FontWeight? fontWeight,
     ui.FontStyle? fontStyle,
   ) {
@@ -59,6 +62,10 @@ class CkParagraphStyle implements ui.ParagraphStyle {
 
     if (fontSize != null) {
       skTextStyle.fontSize = fontSize;
+    }
+
+    if (height != null) {
+      skTextStyle.heightMultiplier = height;
     }
 
     skTextStyle.fontFamilies = _getEffectiveFontFamilies(fontFamily);
@@ -131,7 +138,8 @@ class CkParagraphStyle implements ui.ParagraphStyle {
     }
 
     if (textHeightBehavior != null) {
-      properties.textHeightBehavior = textHeightBehavior.encode();
+      properties.textHeightBehavior =
+          toSkTextHeightBehavior(textHeightBehavior);
     }
 
     if (ellipsis != null) {
@@ -142,8 +150,8 @@ class CkParagraphStyle implements ui.ParagraphStyle {
       properties.strutStyle = toSkStrutStyleProperties(strutStyle);
     }
 
-    properties.textStyle =
-        toSkTextStyleProperties(fontFamily, fontSize, fontWeight, fontStyle);
+    properties.textStyle = toSkTextStyleProperties(
+        fontFamily, fontSize, height, fontWeight, fontStyle);
 
     return canvasKit.ParagraphStyle(properties);
   }
@@ -152,6 +160,7 @@ class CkParagraphStyle implements ui.ParagraphStyle {
     return CkTextStyle(
       fontFamily: _fontFamily,
       fontSize: _fontSize,
+      height: _height,
       fontWeight: _fontWeight,
       fontStyle: _fontStyle,
     );

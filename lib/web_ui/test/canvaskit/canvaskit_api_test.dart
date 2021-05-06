@@ -996,7 +996,7 @@ void _canvasTests() {
 
   test('drawImageCubic', () {
     final SkAnimatedImage image =
-    canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage);
+        canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage);
     canvas.drawImageCubic(
       image.getCurrentFrame(),
       10,
@@ -1009,7 +1009,7 @@ void _canvasTests() {
 
   test('drawImageRectOptions', () {
     final SkAnimatedImage image =
-    canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage);
+        canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage);
     canvas.drawImageRectOptions(
       image.getCurrentFrame(),
       Float32List.fromList([0, 0, 1, 1]),
@@ -1022,7 +1022,7 @@ void _canvasTests() {
 
   test('drawImageRectCubic', () {
     final SkAnimatedImage image =
-    canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage);
+        canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage);
     canvas.drawImageRectCubic(
       image.getCurrentFrame(),
       Float32List.fromList([0, 0, 1, 1]),
@@ -1273,7 +1273,7 @@ void _paragraphTests() {
     props.textAlign = canvasKit.TextAlign.Center;
     props.textDirection = canvasKit.TextDirection.RTL;
     props.heightMultiplier = 3;
-    props.textHeightBehavior = ui.TextHeightBehavior().encode();
+    props.textHeightBehavior = canvasKit.TextHeightBehavior.All;
     props.maxLines = 4;
     props.ellipsis = '___';
     props.textStyle = SkTextStyleProperties()
@@ -1388,5 +1388,76 @@ void _paragraphTests() {
     expect(paragraph.getWordBoundary(11).end, 12);
 
     paragraph.delete();
+  });
+
+  test('RectHeightStyle', () {
+    SkParagraphStyleProperties props = SkParagraphStyleProperties();
+    props.heightMultiplier = 3;
+    props.textAlign = canvasKit.TextAlign.Start;
+    props.textDirection = canvasKit.TextDirection.LTR;
+    props.textStyle = SkTextStyleProperties()
+      ..fontSize = 25
+      ..fontFamilies = <String>['Roboto']
+      ..fontStyle = (SkFontStyle()..weight = canvasKit.FontWeight.Normal);
+    props.strutStyle = SkStrutStyleProperties()
+      ..strutEnabled = true
+      ..forceStrutHeight = true
+      ..fontSize = 25
+      ..fontFamilies = <String>['Roboto']
+      ..heightMultiplier = 3
+      ..fontStyle = (SkFontStyle()..weight = canvasKit.FontWeight.Normal);
+    final SkParagraphStyle paragraphStyle = canvasKit.ParagraphStyle(props);
+    final SkParagraphBuilder builder =
+        canvasKit.ParagraphBuilder.MakeFromFontProvider(
+      paragraphStyle,
+      skiaFontCollection.fontProvider,
+    );
+    builder.addText('hello');
+
+    final SkParagraph paragraph = builder.build();
+    paragraph.layout(500);
+
+    expect(
+      paragraph.getRectsForRange(
+        0,
+        1,
+        canvasKit.RectHeightStyle.Strut,
+        canvasKit.RectWidthStyle.Tight,
+      ),
+      [
+        [0, 0, 13.770000457763672, 75],
+      ],
+    );
+  });
+
+  test('TextHeightBehavior', () {
+    expect(
+      toSkTextHeightBehavior(ui.TextHeightBehavior(
+        applyHeightToFirstAscent: true,
+        applyHeightToLastDescent: true,
+      )),
+      canvasKit.TextHeightBehavior.All,
+    );
+    expect(
+      toSkTextHeightBehavior(ui.TextHeightBehavior(
+        applyHeightToFirstAscent: false,
+        applyHeightToLastDescent: true,
+      )),
+      canvasKit.TextHeightBehavior.DisableFirstAscent,
+    );
+    expect(
+      toSkTextHeightBehavior(ui.TextHeightBehavior(
+        applyHeightToFirstAscent: true,
+        applyHeightToLastDescent: false,
+      )),
+      canvasKit.TextHeightBehavior.DisableLastDescent,
+    );
+    expect(
+      toSkTextHeightBehavior(ui.TextHeightBehavior(
+        applyHeightToFirstAscent: false,
+        applyHeightToLastDescent: false,
+      )),
+      canvasKit.TextHeightBehavior.DisableAll,
+    );
   });
 }

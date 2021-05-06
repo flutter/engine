@@ -614,7 +614,7 @@ class Shadow {
   // See SkBlurMask::ConvertRadiusToSigma().
   // <https://github.com/google/skia/blob/bb5b77db51d2e149ee66db284903572a5aac09be/src/effects/SkBlurMask.cpp#L23>
   static double convertRadiusToSigma(double radius) {
-    return radius * 0.57735 + 0.5;
+    return radius > 0 ? radius * 0.57735 + 0.5 : 0;
   }
 
   double get blurSigma => convertRadiusToSigma(blurRadius);
@@ -693,12 +693,9 @@ class Shadow {
 class ImageShader extends Shader {
   factory ImageShader(Image image, TileMode tmx, TileMode tmy, Float64List matrix4, {
     FilterQuality? filterQuality,
-  }) {
-    if (engine.useCanvasKit) {
-      return engine.CkImageShader(image, tmx, tmy, matrix4, filterQuality);
-    }
-    throw UnsupportedError('ImageShader not implemented for web platform.');
-  }
+  }) => engine.useCanvasKit
+      ? engine.CkImageShader(image, tmx, tmy, matrix4, filterQuality)
+      : engine.ImageShader(image, tmx, tmy, matrix4, filterQuality);
 }
 
 class ImmutableBuffer {
