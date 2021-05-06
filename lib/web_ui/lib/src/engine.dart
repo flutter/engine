@@ -38,6 +38,27 @@ export 'engine/alarm_clock.dart';
 import 'engine/browser_detection.dart';
 export 'engine/browser_detection.dart';
 
+import 'engine/html/path_to_svg_clip.dart';
+export 'engine/html/path_to_svg_clip.dart';
+
+import 'engine/html/path/conic.dart';
+export 'engine/html/path/conic.dart';
+
+import 'engine/html/path/cubic.dart';
+export 'engine/html/path/cubic.dart';
+
+import 'engine/html/path/path_iterator.dart';
+export 'engine/html/path/path_iterator.dart';
+
+import 'engine/html/path/path_metrics.dart';
+export 'engine/html/path/path_metrics.dart';
+
+import 'engine/html/path/path_ref.dart';
+export 'engine/html/path/path_ref.dart';
+
+import 'engine/html/path/path_utils.dart';
+export 'engine/html/path/path_utils.dart';
+
 import 'engine/mouse_cursor.dart';
 export 'engine/mouse_cursor.dart';
 
@@ -51,13 +72,22 @@ import 'engine/navigation/url_strategy.dart';
 export 'engine/navigation/url_strategy.dart';
 
 // import 'engine/html/offscreen_canvas.dart';
-// export 'engine/html/offscreen_canvas.dart';
+export 'engine/html/offscreen_canvas.dart';
 
 import 'engine/html/shaders/shader.dart';
 export 'engine/html/shaders/shader.dart';
 
+// import 'engine/html/shaders/shader_builder.dart';
+export 'engine/html/shaders/shader_builder.dart';
+
 import 'engine/html/shaders/image_shader.dart';
 export 'engine/html/shaders/image_shader.dart';
+
+// import 'engine/html/shaders/vertex_shaders.dart';
+export 'engine/html/shaders/vertex_shaders.dart';
+
+// import 'engine/html/shaders/webgl_context.dart';
+export 'engine/html/shaders/webgl_context.dart';
 
 import 'engine/html/render_vertices.dart';
 export 'engine/html/render_vertices.dart';
@@ -89,12 +119,6 @@ export 'engine/services/message_codecs.dart';
 import 'engine/html/painting.dart';
 export 'engine/html/painting.dart';
 
-import 'engine/html/path/path_ref.dart';
-export 'engine/html/path/path_ref.dart';
-
-import 'engine/html/path/path_utils.dart';
-export 'engine/html/path/path_utils.dart';
-
 import 'engine/html_image_codec.dart';
 export 'engine/html_image_codec.dart';
 
@@ -124,7 +148,7 @@ import 'engine/web_experiments.dart';
 export 'engine/web_experiments.dart';
 
 part 'engine/assets.dart';
-part 'engine/bitmap_canvas.dart';
+part 'engine/html/bitmap_canvas.dart';
 part 'engine/canvaskit/canvas.dart';
 part 'engine/canvaskit/canvaskit_canvas.dart';
 part 'engine/canvaskit/canvaskit_api.dart';
@@ -172,10 +196,7 @@ part 'engine/html/debug_canvas_reuse_overlay.dart';
 part 'engine/html/image_filter.dart';
 part 'engine/html/offset.dart';
 part 'engine/html/opacity.dart';
-part 'engine/html/path/conic.dart';
-part 'engine/html/path/cubic.dart';
 part 'engine/html/path/path.dart';
-part 'engine/html/path/path_metrics.dart';
 part 'engine/html/path/path_to_svg.dart';
 part 'engine/html/path/path_windings.dart';
 part 'engine/html/path/tangent.dart';

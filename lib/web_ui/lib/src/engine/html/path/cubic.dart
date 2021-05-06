@@ -2,12 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import 'dart:typed_data';
+import 'dart:math' as math;
+
+import '../../util.dart';
+import 'path_utils.dart';
 
 /// Chops cubic at Y extrema points and writes result to [dest].
 ///
 /// [points] and [dest] are allowed to share underlying storage as long.
-int _chopCubicAtYExtrema(Float32List points, Float32List dest) {
+int chopCubicAtYExtrema(Float32List points, Float32List dest) {
   final double y0 = points[1];
   final double y1 = points[3];
   final double y2 = points[5];
@@ -134,7 +138,7 @@ void _chopCubicAtT(Float32List points, int bufferPos, Float32List outPts,
 //
 // Options are Newton Raphson (quadratic convergence with typically
 // 3 iterations or bisection with 16 iterations.
-double? _chopMonoAtY(Float32List _buffer, int bufferStartPos, double y) {
+double? chopMonoAtY(Float32List _buffer, int bufferStartPos, double y) {
   // Translate curve points relative to y.
   final double ycrv0 = _buffer[1 + bufferStartPos] - y;
   final double ycrv1 = _buffer[3 + bufferStartPos] - y;
@@ -180,7 +184,7 @@ double? _chopMonoAtY(Float32List _buffer, int bufferStartPos, double y) {
   return (tNeg + tPos) / 2;
 }
 
-double _evalCubicPts(double c0, double c1, double c2, double c3, double t) {
+double evalCubicPts(double c0, double c1, double c2, double c3, double t) {
   double A = c3 + 3 * (c1 - c2) - c0;
   double B = 3 * (c2 - c1 - c1 + c0);
   double C = 3 * (c1 - c0);
@@ -189,7 +193,7 @@ double _evalCubicPts(double c0, double c1, double c2, double c3, double t) {
 }
 
 // Reusable class to compute bounds without object allocation.
-class _CubicBounds {
+class CubicBounds {
   double minX = 0.0;
   double maxX = 0.0;
   double minY = 0.0;
@@ -337,7 +341,7 @@ class _CubicBounds {
 }
 
 /// Chops cubic spline at startT and stopT, writes result to buffer.
-void _chopCubicBetweenT(
+void chopCubicBetweenT(
     List<double> points, double startT, double stopT, Float32List buffer) {
   assert(startT != 0 || stopT != 0);
   final double p3y = points[7];

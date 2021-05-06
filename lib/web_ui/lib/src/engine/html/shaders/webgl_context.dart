@@ -7,7 +7,7 @@ import 'dart:js_util' as js_util;
 import 'dart:math' as math;
 import 'dart:typed_data';
 
- import 'package:ui/ui.dart' as ui;
+import 'package:ui/ui.dart' as ui;
 
 import '../offscreen_canvas.dart';
 import '../../browser_detection.dart';

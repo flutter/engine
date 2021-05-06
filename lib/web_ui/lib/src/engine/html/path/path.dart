@@ -1251,7 +1251,7 @@ class SurfacePath implements ui.Path {
       if (tangents.length > oldCount) {
         int last = tangents.length - 1;
         final ui.Offset tangent = tangents[last];
-        if (SPath.nearlyEqual(_lengthSquaredOffset(tangent), 0)) {
+        if (SPath.nearlyEqual(lengthSquaredOffset(tangent), 0)) {
           tangents.remove(last);
         } else {
           for (int index = 0; index < last; ++index) {
@@ -1454,9 +1454,9 @@ class SurfacePath implements ui.Path {
     final PathRefIterator iter = PathRefIterator(pathRef);
     final Float32List points = pathRef.points;
     int verb;
-    _CubicBounds? cubicBounds;
-    _QuadBounds? quadBounds;
-    _ConicBounds? conicBounds;
+    CubicBounds? cubicBounds;
+    QuadBounds? quadBounds;
+    ConicBounds? conicBounds;
     while ((verb = iter.nextIndex()) != SPath.kDoneVerb) {
       final int pIndex = iter.iterIndex;
       switch (verb) {
@@ -1469,7 +1469,7 @@ class SurfacePath implements ui.Path {
           minY = maxY = points[pIndex + 3];
           break;
         case SPath.kQuadVerb:
-          quadBounds ??= _QuadBounds();
+          quadBounds ??= QuadBounds();
           quadBounds.calculateBounds(points, pIndex);
           minX = quadBounds.minX;
           minY = quadBounds.minY;
@@ -1477,7 +1477,7 @@ class SurfacePath implements ui.Path {
           maxY = quadBounds.maxY;
           break;
         case SPath.kConicVerb:
-          conicBounds ??= _ConicBounds();
+          conicBounds ??= ConicBounds();
           conicBounds.calculateBounds(points, iter.conicWeight, pIndex);
           minX = conicBounds.minX;
           minY = conicBounds.minY;
@@ -1485,7 +1485,7 @@ class SurfacePath implements ui.Path {
           maxY = conicBounds.maxY;
           break;
         case SPath.kCubicVerb:
-          cubicBounds ??= _CubicBounds();
+          cubicBounds ??= CubicBounds();
           cubicBounds.calculateBounds(points, pIndex);
           minX = cubicBounds.minX;
           minY = cubicBounds.minY;
@@ -1520,7 +1520,7 @@ class SurfacePath implements ui.Path {
   /// as if they had been closed, even if they were not explicitly closed.
   @override
   SurfacePathMetrics computeMetrics({bool forceClosed = false}) {
-    return SurfacePathMetrics._(this, forceClosed);
+    return SurfacePathMetrics(this.pathRef, forceClosed);
   }
 
   /// Detects if path is rounded rectangle.
@@ -1650,50 +1650,3 @@ bool _isSimple2dTransform(Float32List m) =>
     m[2] == 0.0;
 // m[1] - 2D rotation is simple
 // m[0] - scale x is simple
-
-double _lengthSquaredOffset(ui.Offset offset) {
-  final double dx = offset.dx;
-  final double dy = offset.dy;
-  return dx * dx + dy * dy;
-}
-
-/// Converts Path to svg element that contains a clip-path definition.
-///
-/// Calling this method updates [_clipIdCounter]. The HTML id of the generated
-/// clip is set to "svgClip${_clipIdCounter}", e.g. "svgClip123".
-String _pathToSvgClipPath(ui.Path path,
-    {double offsetX = 0,
-      double offsetY = 0,
-      double scaleX = 1.0,
-      double scaleY = 1.0}) {
-  _clipIdCounter += 1;
-  final StringBuffer sb = StringBuffer();
-  sb.write(kSvgResourceHeader);
-  sb.write('<defs>');
-
-  final String clipId = 'svgClip$_clipIdCounter';
-
-  if (browserEngine == BrowserEngine.firefox) {
-    // Firefox objectBoundingBox fails to scale to 1x1 units, instead use
-    // no clipPathUnits but write the path in target units.
-    sb.write('<clipPath id=$clipId>');
-    sb.write('<path fill="#FFFFFF" d="');
-  } else {
-    sb.write('<clipPath id=$clipId clipPathUnits="objectBoundingBox">');
-    sb.write('<path transform="scale($scaleX, $scaleY)" fill="#FFFFFF" d="');
-  }
-
-  pathToSvg(path as SurfacePath, sb, offsetX: offsetX, offsetY: offsetY);
-  sb.write('"></path></clipPath></defs></svg');
-  return sb.toString();
-}
-
-/// Counter used for generating clip path id inside an svg <defs> tag.
-int _clipIdCounter = 0;
-
-/// Used for clipping and filter svg resources.
-///
-/// Position needs to be absolute since these svgs are sandwiched between
-/// canvas elements and can cause layout shifts otherwise.
-const String kSvgResourceHeader = '<svg width="0" height="0" '
-    'style="position:absolute">';

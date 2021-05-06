@@ -312,8 +312,8 @@ class Convexicator {
     if (SPath.nearlyEqual(largest, largest + cross)) {
       final double nearlyZeroSquared =
           SPath.scalarNearlyZero * SPath.scalarNearlyZero;
-      if (SPath.nearlyEqual(_lengthSquared(lastX, lastY), nearlyZeroSquared) ||
-          SPath.nearlyEqual(_lengthSquared(curVecX, curVecY), nearlyZeroSquared)) {
+      if (SPath.nearlyEqual(lengthSquared(lastX, lastY), nearlyZeroSquared) ||
+          SPath.nearlyEqual(lengthSquared(curVecX, curVecY), nearlyZeroSquared)) {
         // Length of either vector is smaller than tolerance to be able
         // to compute direction.
         return DirChange.kUnknown;
@@ -375,10 +375,10 @@ class Convexicator {
     int lastSy = kValueNeverReturnedBySign;
     for (int outerLoop = 0; outerLoop < 2; ++outerLoop) {
       while (pointIndex != lastPointIndex) {
-        double vecX = pathRef.fPoints[pointIndex * 2] -
-            pathRef.fPoints[currentPoint * 2];
-        double vecY = pathRef.fPoints[pointIndex * 2 + 1] -
-            pathRef.fPoints[currentPoint * 2 + 1];
+        double vecX = pathRef.pointXAt(pointIndex) -
+            pathRef.pointXAt(currentPoint);
+        double vecY = pathRef.pointYAt(pointIndex) -
+            pathRef.pointYAt(currentPoint);
         if (!(vecX == 0 && vecY == 0)) {
           // Give up if vector construction failed.
           // give up if vector construction failed
@@ -415,4 +415,27 @@ enum DirChange {
   kInvalid
 }
 
-double _lengthSquared(double dx, double dy) => dx * dx + dy * dy;
+double lengthSquaredOffset(ui.Offset offset) {
+  final double dx = offset.dx;
+  final double dy = offset.dy;
+  return dx * dx + dy * dy;
+}
+
+double lengthSquared(double dx, double dy) => dx * dx + dy * dy;
+
+/// Evaluates A * t^2 + B * t + C = 0 for quadratic curve.
+class SkQuadCoefficients {
+  SkQuadCoefficients(
+      double x0, double y0, double x1, double y1, double x2, double y2)
+      : cx = x0,
+        cy = y0,
+        bx = 2 * (x1 - x0),
+        by = 2 * (y1 - y0),
+        ax = x2 - (2 * x1) + x0,
+        ay = y2 - (2 * y1) + y0;
+  final double ax, ay, bx, by, cx, cy;
+
+  double evalX(double t) => (ax * t + bx) * t + cx;
+
+  double evalY(double t) => (ay * t + by) * t + cy;
+}

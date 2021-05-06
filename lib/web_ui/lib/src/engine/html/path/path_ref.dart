@@ -133,6 +133,10 @@ class PathRef {
     return ui.Offset(fPoints[index * 2], fPoints[index * 2 + 1]);
   }
 
+  double pointXAt(int index) => fPoints[index * 2];
+
+  double pointYAt(int index) => fPoints[index * 2 + 1];
+
   double atWeight(int index) {
     return _conicWeights![index];
   }

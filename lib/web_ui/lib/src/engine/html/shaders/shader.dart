@@ -18,8 +18,10 @@ import '../render_vertices.dart';
 import '../../browser_detection.dart';
 import '../../validators.dart';
 import '../../vector_math.dart';
-import '../../ulps.dart';
 import '../../util.dart';
+
+const double kFltEpsilon = 1.19209290E-07; // == 1 / (2 ^ 23)
+const double kFltEpsilonSquared = 1.19209290E-07 * 1.19209290E-07;
 
 abstract class EngineGradient implements ui.Gradient {
   /// Hidden constructor to prevent subclassing.

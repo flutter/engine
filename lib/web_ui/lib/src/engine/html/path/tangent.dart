@@ -104,8 +104,8 @@ void tangentConic(Float32List pts, double x, double y, double weight,
   int n = quadRoots.findRoots(A, 2 * B, C);
   for (int index = 0; index < n; ++index) {
     double t = index == 0 ? quadRoots.root0! : quadRoots.root1!;
-    double xt = _conicEvalNumerator(x0, x1, x2, weight, t) /
-        _conicEvalDenominator(weight, t);
+    double xt = Conic.evalNumerator(x0, x1, x2, weight, t) /
+        Conic.evalDenominator(weight, t);
     if (!SPath.nearlyEqual(x, xt)) {
       continue;
     }
@@ -136,14 +136,14 @@ void tangentCubic(
     return;
   }
   final Float32List dst = Float32List(20);
-  int n = _chopCubicAtYExtrema(pts, dst);
+  int n = chopCubicAtYExtrema(pts, dst);
   for (int i = 0; i <= n; ++i) {
     int bufferPos = i * 6;
-    double? t = _chopMonoAtY(dst, i * 6, y);
+    double? t = chopMonoAtY(dst, i * 6, y);
     if (t == null) {
       continue;
     }
-    double xt = _evalCubicPts(dst[bufferPos], dst[bufferPos + 2],
+    double xt = evalCubicPts(dst[bufferPos], dst[bufferPos + 2],
         dst[bufferPos + 4], dst[bufferPos + 6], t);
     if (!SPath.nearlyEqual(x, xt)) {
       continue;
@@ -186,7 +186,7 @@ ui.Offset _evalCubicTangentAt(Float32List points, int bufferPos, double t) {
 
 ui.Offset _evalCubicDerivative(double x0, double y0, double x1, double y1,
     double x2, double y2, double x3, double y3, double t) {
-  final _SkQuadCoefficients coeff = _SkQuadCoefficients(
+  final SkQuadCoefficients coeff = SkQuadCoefficients(
     x3 + 3 * (x1 - x2) - x0,
     y3 + 3 * (y1 - y2) - y0,
     2 * (x2 - (2 * x1) + x0),
