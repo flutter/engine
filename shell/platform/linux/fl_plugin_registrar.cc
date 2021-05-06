@@ -51,6 +51,7 @@ FlPluginRegistrar* fl_plugin_registrar_new(
     FlTextureRegistrar* texture_registrar) {
   g_return_val_if_fail(view == nullptr || FL_IS_VIEW(view), nullptr);
   g_return_val_if_fail(FL_IS_BINARY_MESSENGER(messenger), nullptr);
+  g_return_val_if_fail(FL_IS_TEXTURE_REGISTRAR(texture_registrar), nullptr);
 
   FlPluginRegistrar* self = FL_PLUGIN_REGISTRAR(
       g_object_new(fl_plugin_registrar_get_type(), nullptr));
