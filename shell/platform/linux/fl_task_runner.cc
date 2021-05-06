@@ -31,54 +31,6 @@ typedef struct _FlTaskRunnerTask {
 
 G_DEFINE_TYPE(FlTaskRunner, fl_task_runner, G_TYPE_OBJECT)
 
-static void fl_task_runner_dispose(GObject* object);
-
-static void fl_task_runner_class_init(FlTaskRunnerClass* klass) {
-  G_OBJECT_CLASS(klass)->dispose = fl_task_runner_dispose;
-}
-
-static void fl_task_runner_init(FlTaskRunner* self) {
-  g_mutex_init(&self->mutex);
-  g_cond_init(&self->cond);
-}
-
-static void engine_weak_notify_cb(gpointer user_data,
-                                  GObject* where_the_object_was) {
-  FlTaskRunner* self = FL_TASK_RUNNER(user_data);
-  self->engine = nullptr;
-}
-
-void fl_task_runner_dispose(GObject* object) {
-  FlTaskRunner* self = FL_TASK_RUNNER(object);
-
-  // this should never happen because the task runner is retained while blocking
-  // main thread
-  g_assert(!self->blocking_main_thread);
-
-  if (self->engine != nullptr) {
-    g_object_weak_unref(G_OBJECT(self->engine), engine_weak_notify_cb, self);
-    self->engine = nullptr;
-  }
-
-  g_mutex_clear(&self->mutex);
-  g_cond_clear(&self->cond);
-
-  g_list_free_full(self->pending_tasks, g_free);
-  if (self->timeout_source_id != 0) {
-    g_source_remove(self->timeout_source_id);
-  }
-
-  G_OBJECT_CLASS(fl_task_runner_parent_class)->dispose(object);
-}
-
-FlTaskRunner* fl_task_runner_new(FlEngine* engine) {
-  FlTaskRunner* res =
-      FL_TASK_RUNNER(g_object_new(fl_task_runner_get_type(), nullptr));
-  res->engine = engine;
-  g_object_weak_ref(G_OBJECT(engine), engine_weak_notify_cb, res);
-  return res;
-}
-
 // Removes expired tasks from the task queue and executes them.
 // The execution is performed with mutex unlocked.
 static void fl_task_runner_process_expired_tasks_locked(FlTaskRunner* self) {
@@ -172,9 +124,50 @@ static void fl_task_runner_tasks_did_change_locked(FlTaskRunner* self) {
   }
 }
 
-void fl_task_runner_stop(FlTaskRunner* self) {
-  // No locking necessary, stop is only set and read on main thread
-  self->stopped = true;
+static void engine_weak_notify_cb(gpointer user_data,
+                                  GObject* where_the_object_was) {
+  FlTaskRunner* self = FL_TASK_RUNNER(user_data);
+  self->engine = nullptr;
+}
+
+void fl_task_runner_dispose(GObject* object) {
+  FlTaskRunner* self = FL_TASK_RUNNER(object);
+
+  // this should never happen because the task runner is retained while blocking
+  // main thread
+  g_assert(!self->blocking_main_thread);
+
+  if (self->engine != nullptr) {
+    g_object_weak_unref(G_OBJECT(self->engine), engine_weak_notify_cb, self);
+    self->engine = nullptr;
+  }
+
+  g_mutex_clear(&self->mutex);
+  g_cond_clear(&self->cond);
+
+  g_list_free_full(self->pending_tasks, g_free);
+  if (self->timeout_source_id != 0) {
+    g_source_remove(self->timeout_source_id);
+  }
+
+  G_OBJECT_CLASS(fl_task_runner_parent_class)->dispose(object);
+}
+
+static void fl_task_runner_class_init(FlTaskRunnerClass* klass) {
+  G_OBJECT_CLASS(klass)->dispose = fl_task_runner_dispose;
+}
+
+static void fl_task_runner_init(FlTaskRunner* self) {
+  g_mutex_init(&self->mutex);
+  g_cond_init(&self->cond);
+}
+
+FlTaskRunner* fl_task_runner_new(FlEngine* engine) {
+  FlTaskRunner* res =
+      FL_TASK_RUNNER(g_object_new(fl_task_runner_get_type(), nullptr));
+  res->engine = engine;
+  g_object_weak_ref(G_OBJECT(engine), engine_weak_notify_cb, res);
+  return res;
 }
 
 void fl_task_runner_post_task(FlTaskRunner* self,
@@ -190,6 +183,11 @@ void fl_task_runner_post_task(FlTaskRunner* self,
 
   self->pending_tasks = g_list_append(self->pending_tasks, runner_task);
   fl_task_runner_tasks_did_change_locked(self);
+}
+
+void fl_task_runner_stop(FlTaskRunner* self) {
+  // No locking necessary, stop is only set and read on main thread
+  self->stopped = true;
 }
 
 void fl_task_runner_block_main_thread(FlTaskRunner* self) {
