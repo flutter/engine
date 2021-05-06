@@ -482,6 +482,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/color_filter.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/dom_canvas.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/dom_renderer.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/engine_canvas.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/font_change_util.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/frame_reference.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/backdrop_filter.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/canvas.dart
@@ -495,12 +496,14 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/painting.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/path/conic.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/path/cubic.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/path/path.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/path/path_iterator.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/path/path_metrics.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/path/path_ref.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/path/path_to_svg.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/path/path_utils.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/path/path_windings.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/path/tangent.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/path_to_svg_clip.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/picture.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/platform_view.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/recording_canvas.dart
@@ -1111,6 +1114,7 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterView
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Info.plist
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/AccessibilityBridgeMacDelegate.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/AccessibilityBridgeMacDelegate.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/AccessibilityBridgeMacDelegateTest.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterAppDelegate.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStore.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStore.mm
@@ -1147,6 +1151,8 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterKeybo
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyboardManager.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyboardManagerUnittests.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMacOSExternalTexture.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalCompositor.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalCompositor.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRendererTest.mm
@@ -1372,6 +1378,8 @@ FILE: ../../../flutter/shell/platform/fuchsia/runtime/dart/utils/inlines.h
 FILE: ../../../flutter/shell/platform/fuchsia/runtime/dart/utils/logging.h
 FILE: ../../../flutter/shell/platform/fuchsia/runtime/dart/utils/mapped_resource.cc
 FILE: ../../../flutter/shell/platform/fuchsia/runtime/dart/utils/mapped_resource.h
+FILE: ../../../flutter/shell/platform/fuchsia/runtime/dart/utils/root_inspect_node.cc
+FILE: ../../../flutter/shell/platform/fuchsia/runtime/dart/utils/root_inspect_node.h
 FILE: ../../../flutter/shell/platform/fuchsia/runtime/dart/utils/tempfs.cc
 FILE: ../../../flutter/shell/platform/fuchsia/runtime/dart/utils/tempfs.h
 FILE: ../../../flutter/shell/platform/fuchsia/runtime/dart/utils/vmo.cc
