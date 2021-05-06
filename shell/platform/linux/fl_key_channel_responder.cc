@@ -24,8 +24,77 @@ static constexpr char kUnicodeScalarValuesKey[] = "unicodeScalarValues";
 static constexpr char kGtkToolkit[] = "gtk";
 static constexpr char kLinuxKeymap[] = "linux";
 
-// Definition of the FlKeyChannelResponder GObject class.
+/* Declare and define FlKeyChannelUserData */
 
+/**
+ * FlKeyChannelUserData:
+ * The user_data used when #FlKeyChannelResponder sends message through the
+ * channel.
+ */
+G_DECLARE_FINAL_TYPE(FlKeyChannelUserData,
+                     fl_key_channel_user_data,
+                     FL,
+                     KEY_CHANNEL_USER_DATA,
+                     GObject);
+
+struct _FlKeyChannelUserData {
+  GObject parent_instance;
+
+  // The current responder.
+  FlKeyChannelResponder* responder;
+  // The callback provided by the caller #FlKeyboardManager.
+  FlKeyResponderAsyncCallback callback;
+  // The user_data provided by the caller #FlKeyboardManager.
+  gpointer user_data;
+};
+
+// Definition for FlKeyChannelUserData private class.
+G_DEFINE_TYPE(FlKeyChannelUserData, fl_key_channel_user_data, G_TYPE_OBJECT)
+
+// Dispose method for FlKeyChannelUserData private class.
+static void fl_key_channel_user_data_dispose(GObject* object) {
+  g_return_if_fail(FL_IS_KEY_CHANNEL_USER_DATA(object));
+  FlKeyChannelUserData* self = FL_KEY_CHANNEL_USER_DATA(object);
+  if (self->responder != nullptr) {
+    g_object_remove_weak_pointer(
+        G_OBJECT(self->responder),
+        reinterpret_cast<gpointer*>(&(self->responder)));
+    self->responder = nullptr;
+  }
+}
+
+// Class initialization method for FlKeyChannelUserData private class.
+static void fl_key_channel_user_data_class_init(
+    FlKeyChannelUserDataClass* klass) {
+  G_OBJECT_CLASS(klass)->dispose = fl_key_channel_user_data_dispose;
+}
+
+// Instance initialization method for FlKeyChannelUserData private class.
+static void fl_key_channel_user_data_init(FlKeyChannelUserData* self) {}
+
+// Creates a new FlKeyChannelUserData private class with all information.
+//
+// The callback and the user_data might be nullptr.
+static FlKeyChannelUserData* fl_key_channel_user_data_new(
+    FlKeyChannelResponder* responder,
+    FlKeyResponderAsyncCallback callback,
+    gpointer user_data) {
+  FlKeyChannelUserData* self = FL_KEY_CHANNEL_USER_DATA(
+      g_object_new(fl_key_channel_user_data_get_type(), nullptr));
+
+  self->responder = responder;
+  // Add a weak pointer so we can know if the key event responder disappeared
+  // while the framework was responding.
+  g_object_add_weak_pointer(G_OBJECT(responder),
+                            reinterpret_cast<gpointer*>(&(self->responder)));
+  self->callback = callback;
+  self->user_data = user_data;
+  return self;
+}
+
+/* Define FlKeyChannelResponder */
+
+// Definition of the FlKeyChannelResponder GObject class.
 struct _FlKeyChannelResponder {
   GObject parent_instance;
 
@@ -54,67 +123,10 @@ static void fl_key_channel_responder_iface_init(
   iface->handle_event = fl_key_channel_responder_handle_event;
 }
 
-// Declare and define a private class to hold response data from the framework.
-G_DECLARE_FINAL_TYPE(FlKeyChannelUserData,
-                     fl_key_channel_user_data,
-                     FL,
-                     KEY_CHANNEL_USER_DATA,
-                     GObject);
+/* Implement FlKeyChannelResponder */
 
-struct _FlKeyChannelUserData {
-  GObject parent_instance;
-
-  FlKeyChannelResponder* responder;
-  FlKeyResponderAsyncCallback callback;
-  gpointer user_data;
-};
-
-// Definition for FlKeyChannelUserData private class.
-G_DEFINE_TYPE(FlKeyChannelUserData, fl_key_channel_user_data, G_TYPE_OBJECT)
-
-// Dispose method for FlKeyChannelUserData private class.
-static void fl_key_channel_user_data_dispose(GObject* object) {
-  g_return_if_fail(FL_IS_KEY_CHANNEL_USER_DATA(object));
-  FlKeyChannelUserData* self = FL_KEY_CHANNEL_USER_DATA(object);
-  if (self->responder != nullptr) {
-    g_object_remove_weak_pointer(
-        G_OBJECT(self->responder),
-        reinterpret_cast<gpointer*>(&(self->responder)));
-    self->responder = nullptr;
-  }
-}
-
-// Class initialization method for FlKeyChannelUserData private class.
-static void fl_key_channel_user_data_class_init(
-    FlKeyChannelUserDataClass* klass) {
-  G_OBJECT_CLASS(klass)->dispose = fl_key_channel_user_data_dispose;
-}
-
-// Instance initialization method for FlKeyChannelUserData private class.
-static void fl_key_channel_user_data_init(FlKeyChannelUserData* self) {}
-
-// Creates a new FlKeyChannelUserData private class with a responder that
-// created the request, a unique ID for tracking, and optional user data. Will
-// keep a weak pointer to the responder.
-static FlKeyChannelUserData* fl_key_channel_user_data_new(
-    FlKeyChannelResponder* responder,
-    FlKeyResponderAsyncCallback callback,
-    gpointer user_data) {
-  FlKeyChannelUserData* self = FL_KEY_CHANNEL_USER_DATA(
-      g_object_new(fl_key_channel_user_data_get_type(), nullptr));
-
-  self->responder = responder;
-  // Add a weak pointer so we can know if the key event responder disappeared
-  // while the framework was responding.
-  g_object_add_weak_pointer(G_OBJECT(responder),
-                            reinterpret_cast<gpointer*>(&(self->responder)));
-  self->callback = callback;
-  self->user_data = user_data;
-  return self;
-}
-
-// Handles a response from the framework to a key event sent to the framework
-// earlier.
+// Handles a response from the method channel to a key event sent to the
+// framework earlier.
 static void handle_response(GObject* object,
                             GAsyncResult* result,
                             gpointer user_data) {

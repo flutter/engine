@@ -6,73 +6,16 @@
 
 #include <cinttypes>
 
-// Declare and define a private class to hold response data from the framework.
-#define FL_TYPE_KEYBOARD_MANAGER_USER_DATA \
-  fl_keyboard_manager_user_data_get_type()
-G_DECLARE_FINAL_TYPE(FlKeyboardManagerUserData,
-                     fl_keyboard_manager_user_data,
-                     FL,
-                     KEYBOARD_MANAGER_USER_DATA,
-                     GObject);
+/* Declare and define FlKeyboardPendingEvent */
 
-struct _FlKeyboardManagerUserData {
-  GObject parent_instance;
-
-  FlKeyboardManager* manager;
-  uint64_t sequence_id;
-};
-
-namespace {
-typedef struct {
-  GdkEventKey* event;
-  FlKeyboardManagerUserData* user_data;
-} DispatchPendingToResponderForeachData;
-}  // namespace
-
-// Definition for FlKeyboardManagerUserData private class.
-G_DEFINE_TYPE(FlKeyboardManagerUserData,
-              fl_keyboard_manager_user_data,
-              G_TYPE_OBJECT)
-
-// Dispose method for FlKeyboardManagerUserData private class.
-static void fl_keyboard_manager_user_data_dispose(GObject* object) {
-  g_return_if_fail(FL_IS_KEYBOARD_MANAGER_USER_DATA(object));
-  FlKeyboardManagerUserData* self = FL_KEYBOARD_MANAGER_USER_DATA(object);
-  if (self->manager != nullptr) {
-    g_object_remove_weak_pointer(G_OBJECT(self->manager),
-                                 reinterpret_cast<gpointer*>(&(self->manager)));
-    self->manager = nullptr;
-  }
-}
-
-// Class initialization method for FlKeyboardManagerUserData private class.
-static void fl_keyboard_manager_user_data_class_init(
-    FlKeyboardManagerUserDataClass* klass) {
-  G_OBJECT_CLASS(klass)->dispose = fl_keyboard_manager_user_data_dispose;
-}
-
-// Instance initialization method for FlKeyboardManagerUserData private class.
-static void fl_keyboard_manager_user_data_init(
-    FlKeyboardManagerUserData* self) {}
-
-// Creates a new FlKeyboardManagerUserData private class with a responder that
-// created the request, a unique ID for tracking, and optional user data. Will
-// keep a weak pointer to the responder.
-FlKeyboardManagerUserData* fl_keyboard_manager_user_data_new(
-    FlKeyboardManager* manager,
-    uint64_t sequence_id) {
-  FlKeyboardManagerUserData* self = FL_KEYBOARD_MANAGER_USER_DATA(
-      g_object_new(fl_keyboard_manager_user_data_get_type(), nullptr));
-
-  self->manager = manager;
-  // Add a weak pointer so we can know if the key event responder disappeared
-  // while the framework was responding.
-  g_object_add_weak_pointer(G_OBJECT(manager),
-                            reinterpret_cast<gpointer*>(&(self->manager)));
-  self->sequence_id = sequence_id;
-  return self;
-}
-
+/**
+ * FlKeyboardPendingEvent:
+ * A record for events that have been received by the manager, but
+ * dispatched to other objects, whose results have yet to return.
+ *
+ * This object is used by both the "pending_responds" list and the
+ * "pending_redispatches" list.
+ */
 G_DECLARE_FINAL_TYPE(FlKeyboardPendingEvent,
                      fl_keyboard_pending_event,
                      FL,
@@ -82,9 +25,14 @@ G_DECLARE_FINAL_TYPE(FlKeyboardPendingEvent,
 struct _FlKeyboardPendingEvent {
   GObject parent_instance;
 
+  // A clone of the target event.
+  //
+  // This is freed by #FlKeyboardPendingEvent.
   GdkEventKey* event;
 
   // Self-incrementing ID attached to an event sent to the framework.
+  //
+  // Used to identify pending responds.
   uint64_t sequence_id;
   // The number of responders that haven't replied.
   size_t unreplied;
@@ -98,7 +46,6 @@ struct _FlKeyboardPendingEvent {
 
 G_DEFINE_TYPE(FlKeyboardPendingEvent, fl_keyboard_pending_event, G_TYPE_OBJECT)
 
-// Dispose method for FlKeyboardPendingEvent.
 static void fl_keyboard_pending_event_dispose(GObject* object) {
   // Redundant, but added so that we don't get a warning about unused function
   // for FL_IS_KEYBOARD_PENDING_EVENT.
@@ -109,13 +56,11 @@ static void fl_keyboard_pending_event_dispose(GObject* object) {
   G_OBJECT_CLASS(fl_keyboard_pending_event_parent_class)->dispose(object);
 }
 
-// Class Initialization method for FlKeyboardPendingEvent class.
 static void fl_keyboard_pending_event_class_init(
     FlKeyboardPendingEventClass* klass) {
   G_OBJECT_CLASS(klass)->dispose = fl_keyboard_pending_event_dispose;
 }
 
-// Initialization for FlKeyboardPendingEvent instances.
 static void fl_keyboard_pending_event_init(FlKeyboardPendingEvent* self) {}
 
 // Calculates a unique ID for a given GdkEventKey object to use for
@@ -130,6 +75,8 @@ static uint64_t fl_keyboard_manager_get_event_hash(GdkEventKey* event) {
          (static_cast<uint64_t>(event->hardware_keycode) & 0xffff) << 48;
 }
 
+// Create a new FlKeyboardPendingEvent by providing the target event,
+// the sequence ID, and the number of responders that will reply.
 FlKeyboardPendingEvent* fl_keyboard_pending_event_new(GdkEventKey* event,
                                                       uint64_t sequence_id,
                                                       size_t to_reply) {
@@ -148,17 +95,93 @@ FlKeyboardPendingEvent* fl_keyboard_pending_event_new(GdkEventKey* event,
   self->unreplied = to_reply;
   self->any_handled = false;
   self->hash = fl_keyboard_manager_get_event_hash(event);
-  // FlKeyboardPendingEvent* self2 = FL_KEYBOARD_PENDING_EVENT(self);
   return self2;
 }
+
+/* Declare and define FlKeyboardManagerUserData */
+
+/**
+ * FlKeyEmbedderUserData:
+ * The user_data used when #FlKeyboardManagerUserData sends event to
+ * responders.
+ */
+#define FL_TYPE_KEYBOARD_MANAGER_USER_DATA \
+  fl_keyboard_manager_user_data_get_type()
+G_DECLARE_FINAL_TYPE(FlKeyboardManagerUserData,
+                     fl_keyboard_manager_user_data,
+                     FL,
+                     KEYBOARD_MANAGER_USER_DATA,
+                     GObject);
+
+struct _FlKeyboardManagerUserData {
+  GObject parent_instance;
+
+  // A weak reference to the owner manager.
+  FlKeyboardManager* manager;
+  uint64_t sequence_id;
+};
+
+namespace {
+
+// Context variables for the foreach call used to dispatch events to responders.
+typedef struct {
+  GdkEventKey* event;
+  FlKeyboardManagerUserData* user_data;
+} DispatchToResponderLoopContext;
+
+}  // namespace
+
+G_DEFINE_TYPE(FlKeyboardManagerUserData,
+              fl_keyboard_manager_user_data,
+              G_TYPE_OBJECT)
+
+static void fl_keyboard_manager_user_data_dispose(GObject* object) {
+  g_return_if_fail(FL_IS_KEYBOARD_MANAGER_USER_DATA(object));
+  FlKeyboardManagerUserData* self = FL_KEYBOARD_MANAGER_USER_DATA(object);
+  if (self->manager != nullptr) {
+    g_object_remove_weak_pointer(G_OBJECT(self->manager),
+                                 reinterpret_cast<gpointer*>(&(self->manager)));
+    self->manager = nullptr;
+  }
+}
+
+static void fl_keyboard_manager_user_data_class_init(
+    FlKeyboardManagerUserDataClass* klass) {
+  G_OBJECT_CLASS(klass)->dispose = fl_keyboard_manager_user_data_dispose;
+}
+
+static void fl_keyboard_manager_user_data_init(
+    FlKeyboardManagerUserData* self) {}
+
+// Creates a new FlKeyboardManagerUserData private class with all information.
+FlKeyboardManagerUserData* fl_keyboard_manager_user_data_new(
+    FlKeyboardManager* manager,
+    uint64_t sequence_id) {
+  FlKeyboardManagerUserData* self = FL_KEYBOARD_MANAGER_USER_DATA(
+      g_object_new(fl_keyboard_manager_user_data_get_type(), nullptr));
+
+  self->manager = manager;
+  // Add a weak pointer so we can know if the key event responder disappeared
+  // while the framework was responding.
+  g_object_add_weak_pointer(G_OBJECT(manager),
+                            reinterpret_cast<gpointer*>(&(self->manager)));
+  self->sequence_id = sequence_id;
+  return self;
+}
+
+/* Define FlKeyboardManager */
 
 struct _FlKeyboardManager {
   GObject parent_instance;
 
+  // The callback that unhandled events should be redispatched through.
   FlKeyboardManagerRedispatcher redispatch_callback;
 
-  // A text plugin. Automatially released on dispose.
+  // A text plugin.
+  //
+  // Released by the manager on dispose.
   FlTextInputPlugin* text_input_plugin;
+
   // An array of #FlKeyResponder. Elements are added with
   // #fl_keyboard_manager_add_responder immediately after initialization and are
   // automatically released on dispose.
@@ -168,16 +191,25 @@ struct _FlKeyboardManager {
   // release the elements unless it is transferring them to
   // pending_redispatches.
   GPtrArray* pending_responds;
+
   // An array of #FlKeyboardPendingEvent. FlKeyboardManager must manually
   // release the elements.
   GPtrArray* pending_redispatches;
 
+  // The last sequence ID used. Increased by 1 by every use.
   uint64_t last_sequence_id;
 };
 
 G_DEFINE_TYPE(FlKeyboardManager, fl_keyboard_manager, G_TYPE_OBJECT);
 
-// Disposes of an FlKeyboardManager instance.
+static void fl_keyboard_manager_dispose(GObject* object);
+
+static void fl_keyboard_manager_class_init(FlKeyboardManagerClass* klass) {
+  G_OBJECT_CLASS(klass)->dispose = fl_keyboard_manager_dispose;
+}
+
+static void fl_keyboard_manager_init(FlKeyboardManager* self) {}
+
 static void fl_keyboard_manager_dispose(GObject* object) {
   FlKeyboardManager* self = FL_KEYBOARD_MANAGER(object);
 
@@ -192,14 +224,9 @@ static void fl_keyboard_manager_dispose(GObject* object) {
   G_OBJECT_CLASS(fl_keyboard_manager_parent_class)->dispose(object);
 }
 
-// Initializes the FlKeyboardManager class methods.
-static void fl_keyboard_manager_class_init(FlKeyboardManagerClass* klass) {
-  G_OBJECT_CLASS(klass)->dispose = fl_keyboard_manager_dispose;
-}
+/* Implement FlKeyboardManager */
 
-static void fl_keyboard_manager_init(FlKeyboardManager* self) {}
-
-// Compare a #FlKeyboardPendingEvent with the given sequence_id. The #needle
+// Compare a #FlKeyboardPendingEvent with the given sequence_id. The needle
 // should be a pointer to uint64_t sequence_id.
 static gboolean compare_pending_by_sequence_id(
     gconstpointer pending,
@@ -217,6 +244,10 @@ static gboolean compare_pending_by_hash(gconstpointer pending,
   return static_cast<const FlKeyboardPendingEvent*>(pending)->hash == hash;
 }
 
+// Try to remove a pending event from `pending_redispatches` with the target
+// hash.
+//
+// Returns true if the event is found and removed.
 static bool fl_keyboard_manager_remove_redispatched(FlKeyboardManager* self,
                                                     uint64_t hash) {
   guint result_index;
@@ -234,6 +265,7 @@ static bool fl_keyboard_manager_remove_redispatched(FlKeyboardManager* self,
   }
 }
 
+// The callback used by a responder after the event was dispatched.
 static void responder_handle_event_callback(bool handled,
                                             gpointer user_data_ptr) {
   g_return_if_fail(FL_IS_KEYBOARD_MANAGER_USER_DATA(user_data_ptr));
@@ -306,15 +338,15 @@ void fl_keyboard_manager_add_responder(FlKeyboardManager* self,
   g_ptr_array_add(self->responder_list, responder);
 }
 
-static void dispatch_pending_to_responder(gpointer responder_data,
-                                          gpointer foreach_data_ptr) {
-  DispatchPendingToResponderForeachData* foreach_data =
-      reinterpret_cast<DispatchPendingToResponderForeachData*>(
-          foreach_data_ptr);
+// The loop body to dispatch an event to a responder.
+static void dispatch_to_responder(gpointer responder_data,
+                                  gpointer foreach_data_ptr) {
+  DispatchToResponderLoopContext* context =
+      reinterpret_cast<DispatchToResponderLoopContext*>(foreach_data_ptr);
   FlKeyResponder* responder = FL_KEY_RESPONDER(responder_data);
-  fl_key_responder_handle_event(responder, foreach_data->event,
+  fl_key_responder_handle_event(responder, context->event,
                                 responder_handle_event_callback,
-                                foreach_data->user_data);
+                                context->user_data);
 }
 
 gboolean fl_keyboard_manager_handle_event(FlKeyboardManager* self,
@@ -333,12 +365,11 @@ gboolean fl_keyboard_manager_handle_event(FlKeyboardManager* self,
   g_ptr_array_add(self->pending_responds, pending);
   FlKeyboardManagerUserData* user_data =
       fl_keyboard_manager_user_data_new(self, pending->sequence_id);
-  DispatchPendingToResponderForeachData data{
+  DispatchToResponderLoopContext data{
       .event = event,
       .user_data = user_data,
   };
-  g_ptr_array_foreach(self->responder_list, dispatch_pending_to_responder,
-                      &data);
+  g_ptr_array_foreach(self->responder_list, dispatch_to_responder, &data);
 
   return TRUE;
 }
