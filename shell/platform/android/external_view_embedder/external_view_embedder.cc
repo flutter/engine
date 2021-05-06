@@ -76,7 +76,7 @@ SkRect AndroidExternalViewEmbedder::GetViewRect(int view_id) const {
 void AndroidExternalViewEmbedder::SubmitFrame(
     GrDirectContext* context,
     std::unique_ptr<SurfaceFrame> frame,
-    const std::shared_ptr<fml::SyncSwitch>& gpu_disable_sync_switch) {
+    const std::shared_ptr<const fml::SyncSwitch>& gpu_disable_sync_switch) {
   TRACE_EVENT0("flutter", "AndroidExternalViewEmbedder::SubmitFrame");
 
   if (!FrameHasPlatformLayers()) {
@@ -134,7 +134,7 @@ void AndroidExternalViewEmbedder::SubmitFrame(
         // Subpixels in the platform may not align with the canvas subpixels.
         //
         // To workaround it, round the floating point bounds and make the rect
-        // slighly larger. For example, {0.3, 0.5, 3.1, 4.7} becomes {0, 0, 4,
+        // slightly larger. For example, {0.3, 0.5, 3.1, 4.7} becomes {0, 0, 4,
         // 5}.
         intersection_rect.set(intersection_rect.roundOut());
         overlay_layers.at(view_id).push_back(intersection_rect);

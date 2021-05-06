@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of engine;
 
 /// Performs layout on a [CanvasParagraph].
@@ -297,19 +296,6 @@ class TextLayoutService {
     // After layout, each line has boxes that contain enough information to make
     // it possible to do hit testing. Once we find the box, we look inside that
     // box to find where exactly the `offset` is located.
-
-    // [offset] is above all the lines.
-    if (offset.dy < 0) {
-      return ui.TextPosition(offset: 0, affinity: ui.TextAffinity.downstream);
-    }
-
-    // [offset] is below all the lines.
-    if (offset.dy >= paragraph.height) {
-      return ui.TextPosition(
-        offset: paragraph.toPlainText().length,
-        affinity: ui.TextAffinity.upstream,
-      );
-    }
 
     final EngineLineMetrics line = _findLineForY(offset.dy);
     // [offset] is to the left of the line.
@@ -773,13 +759,6 @@ class LineBuilder {
 
   /// Extends the line by setting a [newEnd].
   void extendTo(LineBreakResult newEnd) {
-    // If the current end of the line is a hard break, the line shouldn't be
-    // extended any further.
-    assert(
-      isEmpty || !end.isHard || _isLastBoxAPlaceholder,
-      'Cannot extend a line that ends with a hard break.',
-    );
-
     ascent = math.max(ascent, spanometer.ascent);
     descent = math.max(descent, spanometer.descent);
 
@@ -974,7 +953,7 @@ class LineBuilder {
       // 3. `allowEmpty` is false.
       if (breakingPoint == nextBreak.indexWithoutTrailingSpaces) {
         // In this case, we just extend to `nextBreak` instead of creating a new
-        // artifical break. It's safe (and better) to do so, because we don't
+        // artificial break. It's safe (and better) to do so, because we don't
         // want the trailing white space to go to the next line.
         extendTo(nextBreak);
       } else {

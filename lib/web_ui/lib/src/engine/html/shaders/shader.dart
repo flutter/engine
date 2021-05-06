@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of engine;
 
 abstract class EngineGradient implements ui.Gradient {
@@ -21,14 +20,14 @@ abstract class EngineGradient implements ui.Gradient {
 class GradientSweep extends EngineGradient {
   GradientSweep(this.center, this.colors, this.colorStops, this.tileMode,
       this.startAngle, this.endAngle, this.matrix4)
-      : assert(_offsetIsValid(center)),
+      : assert(offsetIsValid(center)),
         assert(colors != null), // ignore: unnecessary_null_comparison
         assert(tileMode != null), // ignore: unnecessary_null_comparison
         assert(startAngle != null), // ignore: unnecessary_null_comparison
         assert(endAngle != null), // ignore: unnecessary_null_comparison
         assert(startAngle < endAngle),
         super._() {
-    _validateColorStops(colors, colorStops);
+    validateColorStops(colors, colorStops);
   }
 
   @override
@@ -52,9 +51,10 @@ class GradientSweep extends EngineGradient {
     NormalizedGradient normalizedGradient =
         NormalizedGradient(colors, stops: colorStops);
 
-    _GlProgram glProgram = gl.useAndCacheProgram(
+    _GlProgram glProgram = gl.cacheProgram(
         _WebGlRenderer.writeBaseVertexShader(),
         _createSweepFragmentShader(normalizedGradient, tileMode));
+    gl.useProgram(glProgram);
 
     Object tileOffset =
         gl.getUniformLocation(glProgram.program, 'u_tile_offset');
@@ -135,6 +135,18 @@ class GradientSweep extends EngineGradient {
   final Float32List? matrix4;
 }
 
+class ImageShader implements ui.ImageShader {
+  ImageShader(ui.Image image, this.tileModeX, this.tileModeY, this.matrix4, this.filterQuality)
+      : _image = image as HtmlImage;
+
+  final ui.TileMode tileModeX;
+  final ui.TileMode tileModeY;
+  final Float64List matrix4;
+  final ui.FilterQuality? filterQuality;
+  final HtmlImage _image;
+}
+
+
 class GradientLinear extends EngineGradient {
   GradientLinear(
     this.from,
@@ -143,14 +155,14 @@ class GradientLinear extends EngineGradient {
     this.colorStops,
     this.tileMode,
     Float32List? matrix,
-  )   : assert(_offsetIsValid(from)),
-        assert(_offsetIsValid(to)),
+  )   : assert(offsetIsValid(from)),
+        assert(offsetIsValid(to)),
         assert(colors != null), // ignore: unnecessary_null_comparison
         assert(tileMode != null), // ignore: unnecessary_null_comparison
-        this.matrix4 = matrix == null ? null : _FastMatrix32(matrix),
+        this.matrix4 = matrix == null ? null : FastMatrix32(matrix),
         super._() {
     if (assertionsEnabled) {
-      _validateColorStops(colors, colorStops);
+      validateColorStops(colors, colorStops);
     }
   }
 
@@ -159,7 +171,7 @@ class GradientLinear extends EngineGradient {
   final List<ui.Color> colors;
   final List<double>? colorStops;
   final ui.TileMode tileMode;
-  final _FastMatrix32? matrix4;
+  final FastMatrix32? matrix4;
 
   @override
   Object createPaintStyle(html.CanvasRenderingContext2D? ctx,
@@ -173,13 +185,16 @@ class GradientLinear extends EngineGradient {
 
   html.CanvasGradient _createCanvasGradient(html.CanvasRenderingContext2D? ctx,
       ui.Rect? shaderBounds, double density) {
-    _FastMatrix32? matrix4 = this.matrix4;
+    FastMatrix32? matrix4 = this.matrix4;
     html.CanvasGradient gradient;
     final double offsetX = shaderBounds!.left;
     final double offsetY = shaderBounds.top;
     if (matrix4 != null) {
-      final centerX = (from.dx + to.dx) / 2.0;
-      final centerY = (from.dy + to.dy) / 2.0;
+      // The matrix is relative to shaderBounds so we shift center by
+      // shaderBounds top-left origin.
+      final centerX = (from.dx + to.dx) / 2.0 - shaderBounds.left;
+      final centerY = (from.dy + to.dy) / 2.0 - shaderBounds.top;
+
       matrix4.transform(from.dx - centerX, from.dy - centerY);
       final double fromX = matrix4.transformedX + centerX;
       final double fromY = matrix4.transformedY + centerY;
@@ -188,8 +203,9 @@ class GradientLinear extends EngineGradient {
           fromX - offsetX,
           fromY - offsetY,
           matrix4.transformedX + centerX - offsetX,
-          matrix4.transformedY - offsetY + centerY);
+          matrix4.transformedY + centerY - offsetY);
     } else {
+      print('matrix is null');
       gradient = ctx!.createLinearGradient(from.dx - offsetX, from.dy - offsetY,
           to.dx - offsetX, to.dy - offsetY);
     }
@@ -218,9 +234,10 @@ class GradientLinear extends EngineGradient {
     NormalizedGradient normalizedGradient =
         NormalizedGradient(colors, stops: colorStops);
 
-    _GlProgram glProgram = gl.useAndCacheProgram(
+    _GlProgram glProgram = gl.cacheProgram(
         _WebGlRenderer.writeBaseVertexShader(),
         _createLinearFragmentShader(normalizedGradient, tileMode));
+    gl.useProgram(glProgram);
 
     // Setup from/to uniforms.
     //
@@ -488,10 +505,11 @@ class GradientRadial extends EngineGradient {
     NormalizedGradient normalizedGradient =
         NormalizedGradient(colors, stops: colorStops);
 
-    _GlProgram glProgram = gl.useAndCacheProgram(
+    _GlProgram glProgram = gl.cacheProgram(
         _WebGlRenderer.writeBaseVertexShader(),
         _createRadialFragmentShader(
             normalizedGradient, shaderBounds, tileMode));
+    gl.useProgram(glProgram);
 
     Object tileOffset =
         gl.getUniformLocation(glProgram.program, 'u_tile_offset');

@@ -15,7 +15,7 @@ part of dart.ui;
 /// See also:
 ///   - file://./../../lib/ui/semantics/semantics_node.h
 class SemanticsAction {
-  const SemanticsAction._(this.index) : assert(index != null); // ignore: unnecessary_null_comparison
+  const SemanticsAction._(this.index) : assert(index != null);
 
   static const int _kTapIndex = 1 << 0;
   static const int _kLongPressIndex = 1 << 1;
@@ -313,13 +313,14 @@ class SemanticsFlag {
   static const int _kIsFocusableIndex = 1 << 21;
   static const int _kIsLinkIndex = 1 << 22;
   static const int _kIsSliderIndex = 1 << 23;
+  static const int _kIsKeyboardKeyIndex = 1 << 24;
   // READ THIS: if you add a flag here, you MUST update the numSemanticsFlags
   // value in testing/dart/semantics_test.dart, or tests will fail. Also,
   // please update the Flag enum in
   // flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java,
   // and the SemanticsFlag class in lib/web_ui/lib/src/ui/semantics.dart.
 
-  const SemanticsFlag._(this.index) : assert(index != null); // ignore: unnecessary_null_comparison
+  const SemanticsFlag._(this.index) : assert(index != null);
 
   /// The numerical value for this flag.
   ///
@@ -373,6 +374,9 @@ class SemanticsFlag {
 
   /// Whether the semantic node represents a slider.
   static const SemanticsFlag isSlider = SemanticsFlag._(_kIsSliderIndex);
+
+  /// Whether the semantic node represents a keyboard key.
+  static const SemanticsFlag isKeyboardKey = SemanticsFlag._(_kIsKeyboardKeyIndex);
 
   /// Whether the semantic node is read only.
   ///
@@ -575,6 +579,7 @@ class SemanticsFlag {
     _kIsFocusableIndex: isFocusable,
     _kIsLinkIndex: isLink,
     _kIsSliderIndex: isSlider,
+    _kIsKeyboardKeyIndex: isKeyboardKey,
 };
 
   @override
@@ -628,6 +633,8 @@ class SemanticsFlag {
         return 'SemanticsFlag.isLink';
       case _kIsSliderIndex:
         return 'SemanticsFlag.isSlider';
+      case _kIsKeyboardKeyIndex:
+        return 'SemanticsFlag.isKeyboardKey';
     }
     assert(false, 'Unhandled index: $index');
     return '';
@@ -748,7 +755,6 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   }) {
     assert(_matrix4IsValid(transform));
     assert(
-      // ignore: unnecessary_null_comparison
       scrollChildren == 0 || scrollChildren == null || (scrollChildren > 0 && childrenInHitTestOrder != null),
       'If a node has scrollChildren, it must have childrenInHitTestOrder',
     );
@@ -832,8 +838,8 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   /// [SemanticsAction.index] value. For custom actions this argument should not be
   /// provided.
   void updateCustomAction({required int id, String? label, String? hint, int overrideId = -1}) {
-    assert(id != null); // ignore: unnecessary_null_comparison
-    assert(overrideId != null); // ignore: unnecessary_null_comparison
+    assert(id != null);
+    assert(overrideId != null);
     _updateCustomAction(id, label, hint, overrideId);
   }
   void _updateCustomAction(

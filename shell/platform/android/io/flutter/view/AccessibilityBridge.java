@@ -34,6 +34,8 @@ import io.flutter.util.Predicate;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Bridge between Android's OS accessibility system and Flutter's accessibility system.
@@ -521,7 +523,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
    */
   @Override
   @SuppressWarnings("deprecation")
-  // Supressing Lint warning for new API, as we are version guarding all calls to newer APIs
+  // Suppressing Lint warning for new API, as we are version guarding all calls to newer APIs
   @SuppressLint("NewApi")
   public AccessibilityNodeInfo createAccessibilityNodeInfo(int virtualViewId) {
     if (virtualViewId >= MIN_ENGINE_GENERATED_NODE_ID) {
@@ -550,7 +552,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     //
     // In this case, register the accessibility node in the view embedder,
     // so the accessibility tree can be mirrored as a subtree of the Flutter accessibility tree.
-    // This is in constrast to hybrid composition where the embeded view is in the view hiearchy,
+    // This is in constrast to hybrid composition where the embedded view is in the view hiearchy,
     // so it doesn't need to be mirrored.
     //
     // See the case down below for how hybrid composition is handled.
@@ -633,8 +635,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     }
 
     // These are non-ops on older devices. Attempting to interact with the text will cause Talkback
-    // to read the
-    // contents of the text box instead.
+    // to read the contents of the text box instead.
     if (Build.VERSION.SDK_INT > Build.VERSION_CODES.JELLY_BEAN_MR2) {
       if (semanticsNode.hasAction(Action.SET_SELECTION)) {
         result.addAction(AccessibilityNodeInfo.ACTION_SET_SELECTION);
@@ -647,6 +648,13 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       }
       if (semanticsNode.hasAction(Action.PASTE)) {
         result.addAction(AccessibilityNodeInfo.ACTION_PASTE);
+      }
+    }
+
+    // Set text API isn't available until API 21.
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+      if (semanticsNode.hasAction(Action.SET_TEXT)) {
+        result.addAction(AccessibilityNodeInfo.ACTION_SET_TEXT);
       }
     }
 
@@ -685,7 +693,8 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     } else {
       result.setBoundsInParent(bounds);
     }
-    result.setBoundsInScreen(bounds);
+    final Rect boundsInScreen = getBoundsInScreen(bounds);
+    result.setBoundsInScreen(boundsInScreen);
     result.setVisibleToUser(true);
     result.setEnabled(
         !semanticsNode.hasFlag(Flag.HAS_ENABLED_STATE) || semanticsNode.hasFlag(Flag.IS_ENABLED));
@@ -844,7 +853,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         View embeddedView =
             platformViewsAccessibilityDelegate.getPlatformViewById(child.platformViewId);
 
-        // Add the embeded view as a child of the current accessibility node if it's using
+        // Add the embedded view as a child of the current accessibility node if it's using
         // hybrid composition.
         //
         // In this case, the view is in the Activity's view hierarchy, so it doesn't need to be
@@ -859,6 +868,20 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       result.addChild(rootAccessibilityView, child.id);
     }
     return result;
+  }
+
+  /**
+   * Get the bounds in screen with root FlutterView's offset.
+   *
+   * @param bounds the bounds in FlutterView
+   * @return the bounds with offset
+   */
+  private Rect getBoundsInScreen(Rect bounds) {
+    Rect boundsInScreen = new Rect(bounds);
+    int[] locationOnScreen = new int[2];
+    rootAccessibilityView.getLocationOnScreen(locationOnScreen);
+    boundsInScreen.offset(locationOnScreen[0], locationOnScreen[1]);
+    return boundsInScreen;
   }
 
   /**
@@ -1034,6 +1057,12 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
           }
           accessibilityChannel.dispatchSemanticsAction(
               virtualViewId, Action.SET_SELECTION, selection);
+          // The voice access expects the semantics node to update immediately. We update the
+          // semantics node based on prediction. If the result is incorrect, it will be updated in
+          // the next frame.
+          SemanticsNode node = flutterSemanticsTree.get(virtualViewId);
+          node.textSelectionBase = selection.get("base");
+          node.textSelectionExtent = selection.get("extent");
           return true;
         }
       case AccessibilityNodeInfo.ACTION_COPY:
@@ -1064,7 +1093,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
           if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
             return false;
           }
-          return performSetText(virtualViewId, arguments);
+          return performSetText(semanticsNode, virtualViewId, arguments);
         }
       default:
         // might be a custom accessibility accessibilityAction.
@@ -1094,6 +1123,9 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         arguments.getInt(AccessibilityNodeInfo.ACTION_ARGUMENT_MOVEMENT_GRANULARITY_INT);
     final boolean extendSelection =
         arguments.getBoolean(AccessibilityNodeInfo.ACTION_ARGUMENT_EXTEND_SELECTION_BOOLEAN);
+    // The voice access expects the semantics node to update immediately. We update the semantics
+    // node based on prediction. If the result is incorrect, it will be updated in the next frame.
+    predictCursorMovement(semanticsNode, granularity, forward, extendSelection);
     switch (granularity) {
       case AccessibilityNodeInfo.MOVEMENT_GRANULARITY_CHARACTER:
         {
@@ -1121,8 +1153,81 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
           return true;
         }
         break;
+      case AccessibilityNodeInfo.MOVEMENT_GRANULARITY_LINE:
+      case AccessibilityNodeInfo.MOVEMENT_GRANULARITY_PARAGRAPH:
+      case AccessibilityNodeInfo.MOVEMENT_GRANULARITY_PAGE:
+        return true;
     }
     return false;
+  }
+
+  private void predictCursorMovement(
+      @NonNull SemanticsNode node, int granularity, boolean forward, boolean extendSelection) {
+    if (node.textSelectionExtent < 0 || node.textSelectionBase < 0) {
+      return;
+    }
+
+    switch (granularity) {
+      case AccessibilityNodeInfo.MOVEMENT_GRANULARITY_CHARACTER:
+        if (forward && node.textSelectionExtent < node.value.length()) {
+          node.textSelectionExtent += 1;
+        } else if (!forward && node.textSelectionExtent > 0) {
+          node.textSelectionExtent -= 1;
+        }
+        break;
+      case AccessibilityNodeInfo.MOVEMENT_GRANULARITY_WORD:
+        if (forward && node.textSelectionExtent < node.value.length()) {
+          Pattern pattern = Pattern.compile("\\p{L}(\\b)");
+          Matcher result = pattern.matcher(node.value.substring(node.textSelectionExtent));
+          // we discard the first result because we want to find the "next" word
+          result.find();
+          if (result.find()) {
+            node.textSelectionExtent += result.start(1);
+          } else {
+            node.textSelectionExtent = node.value.length();
+          }
+        } else if (!forward && node.textSelectionExtent > 0) {
+          // Finds last beginning of the word boundary.
+          Pattern pattern = Pattern.compile("(?s:.*)(\\b)\\p{L}");
+          Matcher result = pattern.matcher(node.value.substring(0, node.textSelectionExtent));
+          if (result.find()) {
+            node.textSelectionExtent = result.start(1);
+          }
+        }
+        break;
+      case AccessibilityNodeInfo.MOVEMENT_GRANULARITY_LINE:
+        if (forward && node.textSelectionExtent < node.value.length()) {
+          // Finds the next new line.
+          Pattern pattern = Pattern.compile("(?!^)(\\n)");
+          Matcher result = pattern.matcher(node.value.substring(node.textSelectionExtent));
+          if (result.find()) {
+            node.textSelectionExtent += result.start(1);
+          } else {
+            node.textSelectionExtent = node.value.length();
+          }
+        } else if (!forward && node.textSelectionExtent > 0) {
+          // Finds the last new line.
+          Pattern pattern = Pattern.compile("(?s:.*)(\\n)");
+          Matcher result = pattern.matcher(node.value.substring(0, node.textSelectionExtent));
+          if (result.find()) {
+            node.textSelectionExtent = result.start(1);
+          } else {
+            node.textSelectionExtent = 0;
+          }
+        }
+        break;
+      case AccessibilityNodeInfo.MOVEMENT_GRANULARITY_PARAGRAPH:
+      case AccessibilityNodeInfo.MOVEMENT_GRANULARITY_PAGE:
+        if (forward) {
+          node.textSelectionExtent = node.value.length();
+        } else {
+          node.textSelectionExtent = 0;
+        }
+        break;
+    }
+    if (!extendSelection) {
+      node.textSelectionBase = node.textSelectionExtent;
+    }
   }
 
   /**
@@ -1131,13 +1236,16 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
    */
   @TargetApi(21)
   @RequiresApi(21)
-  private boolean performSetText(int virtualViewId, @NonNull Bundle arguments) {
+  private boolean performSetText(SemanticsNode node, int virtualViewId, @NonNull Bundle arguments) {
     String newText = "";
     if (arguments != null
         && arguments.containsKey(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE)) {
       newText = arguments.getString(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE);
     }
     accessibilityChannel.dispatchSemanticsAction(virtualViewId, Action.SET_TEXT, newText);
+    // The voice access expects the semantics node to update immediately. We update the semantics
+    // node based on prediction. If the result is incorrect, it will be updated in the next frame.
+    node.value = newText;
     return true;
   }
 
@@ -1355,6 +1463,14 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       }
       if (semanticsNode.hadPreviousConfig) {
         updated.add(semanticsNode);
+      }
+      if (semanticsNode.platformViewId != -1
+          && !platformViewsAccessibilityDelegate.usesVirtualDisplay(semanticsNode.platformViewId)) {
+        View embeddedView =
+            platformViewsAccessibilityDelegate.getPlatformViewById(semanticsNode.platformViewId);
+        if (embeddedView != null) {
+          embeddedView.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_AUTO);
+        }
       }
     }
 
@@ -1683,6 +1799,8 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
    * Hook called just before a {@link SemanticsNode} is removed from the Android cache of Flutter's
    * semantics tree.
    */
+  @TargetApi(19)
+  @RequiresApi(19)
   private void willRemoveSemanticsNode(SemanticsNode semanticsNodeToBeRemoved) {
     if (BuildConfig.DEBUG) {
       if (!flutterSemanticsTree.containsKey(semanticsNodeToBeRemoved.id)) {
@@ -1709,6 +1827,18 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
           embeddedAccessibilityFocusedNodeId,
           AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED);
       embeddedAccessibilityFocusedNodeId = null;
+    }
+
+    if (semanticsNodeToBeRemoved.platformViewId != -1
+        && !platformViewsAccessibilityDelegate.usesVirtualDisplay(
+            semanticsNodeToBeRemoved.platformViewId)) {
+      View embeddedView =
+          platformViewsAccessibilityDelegate.getPlatformViewById(
+              semanticsNodeToBeRemoved.platformViewId);
+      if (embeddedView != null) {
+        embeddedView.setImportantForAccessibility(
+            View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
+      }
     }
 
     if (accessibilityFocusedSemanticsNode == semanticsNodeToBeRemoved) {
@@ -1817,7 +1947,9 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     // IS_MULTILINE(1 << 19);
     IS_READ_ONLY(1 << 20),
     IS_FOCUSABLE(1 << 21),
-    IS_LINK(1 << 22);
+    IS_LINK(1 << 22),
+    IS_SLIDER(1 << 23),
+    IS_KEYBOARD_KEY(1 << 24);
 
     final int value;
 

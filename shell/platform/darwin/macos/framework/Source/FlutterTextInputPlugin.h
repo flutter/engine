@@ -6,7 +6,7 @@
 
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterViewController.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterIntermediateKeyResponder.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeySecondaryResponder.h"
 
 /**
  * A plugin to handle text input.
@@ -17,7 +17,7 @@
  * This is not an FlutterPlugin since it needs access to FlutterViewController internals, so needs
  * to be managed differently.
  */
-@interface FlutterTextInputPlugin : FlutterIntermediateKeyResponder
+@interface FlutterTextInputPlugin : NSObject <FlutterKeySecondaryResponder>
 
 /**
  * Initializes a text input plugin that coordinates key event handling with |viewController|.
@@ -29,4 +29,5 @@
 // Private methods made visible for testing
 @interface FlutterTextInputPlugin (TestMethods)
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
+- (NSRect)firstRectForCharacterRange:(NSRange)range actualRange:(NSRangePointer)actualRange;
 @end

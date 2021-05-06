@@ -11,10 +11,10 @@ import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
 import 'package:pool/pool.dart';
 import 'package:test_core/src/runner/hack_register_platform.dart'
-    as hack; // ignore: implementation_imports
-import 'package:test_api/src/backend/runtime.dart'; // ignore: implementation_imports
+    as hack;
+import 'package:test_api/src/backend/runtime.dart';
 import 'package:test_core/src/executable.dart'
-    as test; // ignore: implementation_imports
+    as test;
 import 'package:web_test_utils/goldens.dart';
 
 import 'common.dart';
@@ -491,7 +491,7 @@ class TestCommand extends Command<bool> with ArgUtils {
   bool get isChromeIntegrationTestAvailable =>
       (isChrome && isLuci && io.Platform.isLinux) || (isChrome && !isLuci);
 
-  /// Due to efficiancy constraints, Firefox integration tests only run on
+  /// Due to efficiency constraints, Firefox integration tests only run on
   /// Linux on LUCI.
   ///
   /// For now Firefox integration tests only run on Linux and Mac on local.
@@ -541,7 +541,7 @@ class TestCommand extends Command<bool> with ArgUtils {
   /// Runs all tests specified in [targets].
   ///
   /// Unlike [_runAllTestsForCurrentPlatform], this does not filter targets
-  /// by platform/browser capabilites, and instead attempts to run all of
+  /// by platform/browser capabilities, and instead attempts to run all of
   /// them.
   Future<void> _runSpecificTests(List<FilePath> targets) async {
     await _runTestBatch(targets, concurrency: 1, expectFailure: false);

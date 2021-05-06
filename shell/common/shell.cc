@@ -372,7 +372,6 @@ Shell::Shell(DartVMRef vm,
       vm_(std::move(vm)),
       is_gpu_disabled_sync_switch_(new fml::SyncSwitch(is_gpu_disabled)),
       volatile_path_tracker_(std::move(volatile_path_tracker)),
-      pending_draw_semaphore_(1),
       weak_factory_gpu_(nullptr),
       weak_factory_(this) {
   FML_CHECK(vm_) << "Must have access to VM to create a shell.";
@@ -1139,7 +1138,7 @@ void Shell::OnAnimatorNotifyIdle(int64_t deadline) {
 }
 
 // |Animator::Delegate|
-void Shell::OnAnimatorDraw(std::shared_ptr<LayerTreeHolder> layer_tree_holder,
+void Shell::OnAnimatorDraw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline,
                            fml::TimePoint frame_target_time) {
   FML_DCHECK(is_setup_);
 
@@ -1159,28 +1158,19 @@ void Shell::OnAnimatorDraw(std::shared_ptr<LayerTreeHolder> layer_tree_holder,
            tree.frame_size() != expected_frame_size_;
   };
 
-  if (!pending_draw_semaphore_.TryWait()) {
-    // Multiple calls to OnAnimatorDraw will still result in a
-    // single request to the Rasterizer::Draw.
-    return;
-  }
-
   task_runners_.GetRasterTaskRunner()->PostTask(
-      [&pending_draw_semaphore = pending_draw_semaphore_,
-       &waiting_for_first_frame = waiting_for_first_frame_,
+      [&waiting_for_first_frame = waiting_for_first_frame_,
        &waiting_for_first_frame_condition = waiting_for_first_frame_condition_,
-       rasterizer = rasterizer_->GetWeakPtr(),
-       discard_callback = std::move(discard_callback),
-       layer_tree_holder = std::move(layer_tree_holder)]() {
+       rasterizer = rasterizer_->GetWeakPtr(), pipeline = std::move(pipeline),
+       discard_callback = std::move(discard_callback)]() {
         if (rasterizer) {
-          rasterizer->Draw(std::move(layer_tree_holder),
-                           std::move(discard_callback));
+          rasterizer->Draw(pipeline, std::move(discard_callback));
+
           if (waiting_for_first_frame.load()) {
             waiting_for_first_frame.store(false);
             waiting_for_first_frame_condition.notify_all();
           }
         }
-        pending_draw_semaphore.Signal();
       });
 }
 
@@ -1339,7 +1329,12 @@ void Shell::UpdateAssetResolverByType(
 
 // |Engine::Delegate|
 void Shell::RequestDartDeferredLibrary(intptr_t loading_unit_id) {
-  platform_view_->RequestDartDeferredLibrary(loading_unit_id);
+  task_runners_.GetPlatformTaskRunner()->PostTask(
+      [view = platform_view_->GetWeakPtr(), loading_unit_id] {
+        if (view) {
+          view->RequestDartDeferredLibrary(loading_unit_id);
+        }
+      });
 }
 
 void Shell::ReportTimings() {
@@ -1767,10 +1762,16 @@ fml::Status Shell::WaitForFirstFrame(fml::TimeDelta timeout) {
                        "because it is responsible for generating the frame.");
   }
 
+  // Check for overflow.
+  auto now = std::chrono::steady_clock::now();
+  auto max_duration = std::chrono::steady_clock::time_point::max() - now;
+  auto desired_duration = std::chrono::milliseconds(timeout.ToMilliseconds());
+  auto duration =
+      now + (desired_duration > max_duration ? max_duration : desired_duration);
+
   std::unique_lock<std::mutex> lock(waiting_for_first_frame_mutex_);
-  bool success = waiting_for_first_frame_condition_.wait_for(
-      lock, std::chrono::milliseconds(timeout.ToMilliseconds()),
-      [&waiting_for_first_frame = waiting_for_first_frame_] {
+  bool success = waiting_for_first_frame_condition_.wait_until(
+      lock, duration, [&waiting_for_first_frame = waiting_for_first_frame_] {
         return !waiting_for_first_frame.load();
       });
   if (success) {
@@ -1811,13 +1812,42 @@ bool Shell::ReloadSystemFonts() {
   return true;
 }
 
-std::shared_ptr<fml::SyncSwitch> Shell::GetIsGpuDisabledSyncSwitch() const {
+std::shared_ptr<const fml::SyncSwitch> Shell::GetIsGpuDisabledSyncSwitch()
+    const {
   return is_gpu_disabled_sync_switch_;
+}
+
+void Shell::SetGpuAvailability(GpuAvailability availability) {
+  switch (availability) {
+    case GpuAvailability::kAvailable:
+      is_gpu_disabled_sync_switch_->SetSwitch(false);
+      return;
+    case GpuAvailability::kFlushAndMakeUnavailable: {
+      fml::AutoResetWaitableEvent latch;
+      fml::TaskRunner::RunNowOrPostTask(
+          task_runners_.GetIOTaskRunner(),
+          [io_manager = io_manager_.get(), &latch]() {
+            io_manager->GetSkiaUnrefQueue()->Drain();
+            latch.Signal();
+          });
+      latch.Wait();
+    }
+      // FALLTHROUGH
+    case GpuAvailability::kUnavailable:
+      is_gpu_disabled_sync_switch_->SetSwitch(true);
+      return;
+    default:
+      FML_DCHECK(false);
+  }
 }
 
 void Shell::OnDisplayUpdates(DisplayUpdateType update_type,
                              std::vector<Display> displays) {
   display_manager_->HandleDisplayUpdates(update_type, displays);
+}
+
+fml::TimePoint Shell::GetCurrentTimePoint() {
+  return fml::TimePoint::Now();
 }
 
 }  // namespace flutter

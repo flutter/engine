@@ -6,9 +6,11 @@
 
 #include <cstdlib>
 #include <cstring>
+#include <iostream>
 
 #include "flutter/assets/asset_manager.h"
 #include "flutter/assets/directory_asset_bundle.h"
+#include "flutter/flow/embedded_views.h"
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/file.h"
 #include "flutter/fml/make_copyable.h"
@@ -21,6 +23,7 @@
 #include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/switches.h"
 #include "flutter/shell/common/thread_host.h"
+#include "flutter/shell/gpu/gpu_surface_software.h"
 #include "third_party/dart/runtime/include/bin/dart_io_api.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 
@@ -29,6 +32,87 @@
 #endif  // defined(OS_POSIX)
 
 namespace flutter {
+
+class TesterExternalViewEmbedder : public ExternalViewEmbedder {
+  // |ExternalViewEmbedder|
+  SkCanvas* GetRootCanvas() override { return nullptr; }
+
+  // |ExternalViewEmbedder|
+  void CancelFrame() override {}
+
+  // |ExternalViewEmbedder|
+  void BeginFrame(
+      SkISize frame_size,
+      GrDirectContext* context,
+      double device_pixel_ratio,
+      fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override {}
+
+  // |ExternalViewEmbedder|
+  void PrerollCompositeEmbeddedView(
+      int view_id,
+      std::unique_ptr<EmbeddedViewParams> params) override {}
+
+  // |ExternalViewEmbedder|
+  std::vector<SkCanvas*> GetCurrentCanvases() override { return {&canvas_}; }
+
+  // |ExternalViewEmbedder|
+  SkCanvas* CompositeEmbeddedView(int view_id) override { return &canvas_; }
+
+ private:
+  SkCanvas canvas_;
+};
+
+class TesterPlatformView : public PlatformView,
+                           public GPUSurfaceSoftwareDelegate {
+ public:
+  TesterPlatformView(Delegate& delegate, TaskRunners task_runners)
+      : PlatformView(delegate, std::move(task_runners)) {}
+
+  // |PlatformView|
+  std::unique_ptr<Surface> CreateRenderingSurface() override {
+    auto surface = std::make_unique<GPUSurfaceSoftware>(
+        this, true /* render to surface */);
+    FML_DCHECK(surface->IsValid());
+    return surface;
+  }
+
+  // |GPUSurfaceSoftwareDelegate|
+  sk_sp<SkSurface> AcquireBackingStore(const SkISize& size) override {
+    if (sk_surface_ != nullptr &&
+        SkISize::Make(sk_surface_->width(), sk_surface_->height()) == size) {
+      // The old and new surface sizes are the same. Nothing to do here.
+      return sk_surface_;
+    }
+
+    SkImageInfo info =
+        SkImageInfo::MakeN32(size.fWidth, size.fHeight, kPremul_SkAlphaType,
+                             SkColorSpace::MakeSRGB());
+    sk_surface_ = SkSurface::MakeRaster(info, nullptr);
+
+    if (sk_surface_ == nullptr) {
+      FML_LOG(ERROR)
+          << "Could not create backing store for software rendering.";
+      return nullptr;
+    }
+
+    return sk_surface_;
+  }
+
+  // |GPUSurfaceSoftwareDelegate|
+  bool PresentBackingStore(sk_sp<SkSurface> backing_store) override {
+    return true;
+  }
+
+  // |PlatformView|
+  std::shared_ptr<ExternalViewEmbedder> CreateExternalViewEmbedder() override {
+    return external_view_embedder_;
+  }
+
+ private:
+  sk_sp<SkSurface> sk_surface_ = nullptr;
+  std::shared_ptr<TesterExternalViewEmbedder> external_view_embedder_ =
+      std::make_shared<TesterExternalViewEmbedder>();
+};
 
 // Checks whether the engine's main Dart isolate has no pending work.  If so,
 // then exit the given message loop.
@@ -137,7 +221,8 @@ int RunTester(const flutter::Settings& settings,
 
   Shell::CreateCallback<PlatformView> on_create_platform_view =
       [](Shell& shell) {
-        return std::make_unique<PlatformView>(shell, shell.GetTaskRunners());
+        return std::make_unique<TesterPlatformView>(shell,
+                                                    shell.GetTaskRunners());
       };
 
   Shell::CreateCallback<Rasterizer> on_create_rasterizer = [](Shell& shell) {
@@ -160,6 +245,8 @@ int RunTester(const flutter::Settings& settings,
     FML_LOG(ERROR) << "Dart kernel file not specified.";
     return EXIT_FAILURE;
   }
+
+  shell->GetPlatformView()->NotifyCreated();
 
   // Initialize default testing locales. There is no platform to
   // pass locales on the tester, so to retain expected locale behavior,
@@ -291,6 +378,14 @@ int main(int argc, char* argv[]) {
 
   // The tools that read logs get confused if there is a log tag specified.
   settings.log_tag = "";
+
+  settings.log_message_callback = [](const std::string& tag,
+                                     const std::string& message) {
+    if (tag.size() > 0) {
+      std::cout << tag << ": ";
+    }
+    std::cout << message << std::endl;
+  };
 
   settings.task_observer_add = [](intptr_t key, fml::closure callback) {
     fml::MessageLoop::GetCurrent().AddTaskObserver(key, std::move(callback));

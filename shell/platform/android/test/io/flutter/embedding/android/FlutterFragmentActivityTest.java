@@ -3,6 +3,7 @@ package io.flutter.embedding.android;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.HANDLE_DEEPLINKING_META_DATA_KEY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -16,6 +17,7 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import io.flutter.FlutterInjector;
 import io.flutter.embedding.android.FlutterActivityLaunchConfigs.BackgroundMode;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterJNI;
@@ -35,12 +37,20 @@ import org.robolectric.annotation.Config;
 public class FlutterFragmentActivityTest {
   @Before
   public void setUp() {
+    FlutterInjector.reset();
     GeneratedPluginRegistrant.clearRegisteredEngines();
+    FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
+    when(mockFlutterJNI.isAttached()).thenReturn(true);
+    FlutterJNI.Factory mockFlutterJNIFactory = mock(FlutterJNI.Factory.class);
+    when(mockFlutterJNIFactory.provideFlutterJNI()).thenReturn(mockFlutterJNI);
+    FlutterInjector.setInstance(
+        new FlutterInjector.Builder().setFlutterJNIFactory(mockFlutterJNIFactory).build());
   }
 
   @After
   public void tearDown() {
     GeneratedPluginRegistrant.clearRegisteredEngines();
+    FlutterInjector.reset();
   }
 
   @Test
@@ -76,7 +86,7 @@ public class FlutterFragmentActivityTest {
   @Test
   public void itRegistersPluginsAtConfigurationTime() {
     FlutterFragmentActivity activity =
-        Robolectric.buildActivity(FlutterFragmentActivityWithProvidedEngine.class).get();
+        Robolectric.buildActivity(FlutterFragmentActivity.class).get();
     assertTrue(GeneratedPluginRegistrant.getRegisteredEngines().isEmpty());
 
     // Calling onCreate on the FlutterFragmentActivity will create a FlutterFragment and
@@ -87,6 +97,20 @@ public class FlutterFragmentActivityTest {
     List<FlutterEngine> registeredEngines = GeneratedPluginRegistrant.getRegisteredEngines();
     assertEquals(1, registeredEngines.size());
     assertEquals(activity.getFlutterEngine(), registeredEngines.get(0));
+  }
+
+  @Test
+  public void itDoesNotRegisterPluginsTwiceWhenUsingACachedEngine() {
+    FlutterFragmentActivity activity =
+        Robolectric.buildActivity(FlutterFragmentActivityWithProvidedEngine.class).get();
+    activity.onCreate(null);
+    activity.configureFlutterEngine(activity.getFlutterEngine());
+
+    List<FlutterEngine> registeredEngines = GeneratedPluginRegistrant.getRegisteredEngines();
+    // This might cause the plugins to be registered twice, once by the FlutterEngine constructor,
+    // and once by the default FlutterFragmentActivity.configureFlutterEngine implementation.
+    // Test that it doesn't happen.
+    assertEquals(1, registeredEngines.size());
   }
 
   @Test
@@ -147,7 +171,57 @@ public class FlutterFragmentActivityTest {
     assertTrue(foundCustomView);
   }
 
+  @Test
+  public void itCreatesAValidFlutterFragment() {
+    FlutterFragmentActivityWithProvidedEngine activity =
+        Robolectric.buildActivity(FlutterFragmentActivityWithProvidedEngine.class).get();
+
+    // Creating the FlutterFragmentActivity will create and attach the FlutterFragment, causing
+    // a FlutterEngine to be created.
+    activity.onCreate(null);
+    assertNotNull(activity.getFlutterEngine());
+    assertEquals(1, activity.numberOfEnginesCreated);
+  }
+
+  @Test
+  public void itRetrievesExistingFlutterFragmentWhenRecreated() {
+    FlutterFragmentActivityWithProvidedEngine activity =
+        spy(Robolectric.buildActivity(FlutterFragmentActivityWithProvidedEngine.class).get());
+
+    FlutterFragment fragment = mock(FlutterFragment.class);
+    when(activity.retrieveExistingFlutterFragmentIfPossible()).thenReturn(fragment);
+
+    FlutterEngine engine = mock(FlutterEngine.class);
+    when(fragment.getFlutterEngine()).thenReturn(engine);
+
+    activity.onCreate(null);
+    assertEquals(engine, activity.getFlutterEngine());
+    assertEquals(0, activity.numberOfEnginesCreated);
+  }
+
+  @Test
+  public void itHandlesNewFragmentRecreationDuringRestoreWhenActivityIsRecreated() {
+    FlutterFragmentActivityWithProvidedEngine activity =
+        spy(Robolectric.buildActivity(FlutterFragmentActivityWithProvidedEngine.class).get());
+
+    FlutterFragment fragment = mock(FlutterFragment.class);
+    // Similar to the above case, except here, it's not just the activity that was destroyed and
+    // could have its fragment restored in the fragment manager. Here, both activity and fragment
+    // are destroyed. And the fragment manager recreated the fragment on activity recreate.
+    when(activity.retrieveExistingFlutterFragmentIfPossible()).thenReturn(null, fragment);
+
+    FlutterEngine engine = mock(FlutterEngine.class);
+    when(fragment.getFlutterEngine()).thenReturn(engine);
+
+    activity.onCreate(null);
+    // The framework would have recreated a new fragment but the fragment activity wouldn't have
+    // created a new one again.
+    assertEquals(0, activity.numberOfEnginesCreated);
+  }
+
   static class FlutterFragmentActivityWithProvidedEngine extends FlutterFragmentActivity {
+    int numberOfEnginesCreated = 0;
+
     @Override
     protected FlutterFragment createFlutterFragment() {
       return FlutterFragment.createDefault();
@@ -157,10 +231,12 @@ public class FlutterFragmentActivityTest {
     @Override
     public FlutterEngine provideFlutterEngine(@NonNull Context context) {
       FlutterJNI flutterJNI = mock(FlutterJNI.class);
+      FlutterLoader flutterLoader = mock(FlutterLoader.class);
       when(flutterJNI.isAttached()).thenReturn(true);
+      when(flutterLoader.automaticallyRegisterPlugins()).thenReturn(true);
 
-      return new FlutterEngine(
-          context, mock(FlutterLoader.class), flutterJNI, new String[] {}, false);
+      numberOfEnginesCreated++;
+      return new FlutterEngine(context, flutterLoader, flutterJNI, new String[] {}, true);
     }
   }
 

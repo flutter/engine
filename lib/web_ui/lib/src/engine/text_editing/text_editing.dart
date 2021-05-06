@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of engine;
 
 /// Make the content editable span visible to facilitate debugging.
@@ -15,6 +14,7 @@ const int _kReturnKeyCode = 13;
 /// is autofilled.
 bool browserHasAutofillOverlay() =>
     browserEngine == BrowserEngine.blink ||
+    browserEngine == BrowserEngine.samsung ||
     browserEngine == BrowserEngine.webkit;
 
 /// `transparentTextEditing` class is configured to make the autofill overlay
@@ -195,7 +195,7 @@ class EngineAutofillForm {
     ids.sort();
     final StringBuffer idBuffer = StringBuffer();
 
-    // Add a seperator between element identifiers.
+    // Add a separator between element identifiers.
     for (final String id in ids) {
       if (idBuffer.length > 0) {
         idBuffer.write('*');
@@ -1372,9 +1372,13 @@ class TextEditingChannel {
         // UITextInput.firstRecForRange.
         break;
 
+      case 'TextInput.setCaretRect':
+        // No-op: not supported on this platform.
+        break;
+
       default:
-        throw StateError(
-            'Unsupported method call on the flutter/textinput channel: ${call.method}');
+        EnginePlatformDispatcher.instance._replyToPlatformMessage(callback, null);
+        return;
     }
     EnginePlatformDispatcher.instance
         ._replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
@@ -1478,7 +1482,8 @@ class HybridTextEditing {
       this._defaultEditingElement = IOSTextEditingStrategy(this);
     } else if (browserEngine == BrowserEngine.webkit) {
       this._defaultEditingElement = SafariDesktopTextEditingStrategy(this);
-    } else if (browserEngine == BrowserEngine.blink &&
+    } else if ((browserEngine == BrowserEngine.blink ||
+        browserEngine == BrowserEngine.samsung) &&
         operatingSystem == OperatingSystem.android) {
       this._defaultEditingElement = AndroidTextEditingStrategy(this);
     } else if (browserEngine == BrowserEngine.firefox) {

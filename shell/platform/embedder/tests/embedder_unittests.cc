@@ -453,6 +453,46 @@ TEST_F(EmbedderTest, InvalidPlatformMessages) {
 }
 
 //------------------------------------------------------------------------------
+/// Tests that setting a custom log callback works as expected and defaults to
+/// using tag "flutter".
+TEST_F(EmbedderTest, CanSetCustomLogMessageCallback) {
+  fml::AutoResetWaitableEvent callback_latch;
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetDartEntrypoint("custom_logger");
+  builder.SetSoftwareRendererConfig();
+  context.SetLogMessageCallback(
+      [&callback_latch](const char* tag, const char* message) {
+        EXPECT_EQ(std::string(tag), "flutter");
+        EXPECT_EQ(std::string(message), "hello world");
+        callback_latch.Signal();
+      });
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+  callback_latch.Wait();
+}
+
+//------------------------------------------------------------------------------
+/// Tests that setting a custom log tag works.
+TEST_F(EmbedderTest, CanSetCustomLogTag) {
+  fml::AutoResetWaitableEvent callback_latch;
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetDartEntrypoint("custom_logger");
+  builder.SetSoftwareRendererConfig();
+  builder.SetLogTag("butterfly");
+  context.SetLogMessageCallback(
+      [&callback_latch](const char* tag, const char* message) {
+        EXPECT_EQ(std::string(tag), "butterfly");
+        EXPECT_EQ(std::string(message), "hello world");
+        callback_latch.Signal();
+      });
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+  callback_latch.Wait();
+}
+
+//------------------------------------------------------------------------------
 /// Asserts behavior of FlutterProjectArgs::shutdown_dart_vm_when_done (which is
 /// set to true by default in these unit-tests).
 ///
@@ -740,7 +780,7 @@ TEST_F(EmbedderTest, CaDeinitializeAnEngine) {
   // It is ok to deinitialize an engine multiple times.
   ASSERT_EQ(FlutterEngineDeinitialize(engine.get()), kSuccess);
 
-  // Sending events to a deinitalized engine fails.
+  // Sending events to a deinitialized engine fails.
   FlutterWindowMetricsEvent event = {};
   event.struct_size = sizeof(event);
   event.width = 800;
@@ -1154,7 +1194,7 @@ TEST_F(EmbedderTest, CanCreateAndCollectAValidElfSource) {
   ASSERT_EQ(FlutterEngineCollectAOTData(data_out), kSuccess);
 
   const auto elf_path =
-      fml::paths::JoinPaths({GetFixturesPath(), kAOTAppELFFileName});
+      fml::paths::JoinPaths({GetFixturesPath(), kDefaultAOTAppELFFileName});
 
   data_in.type = kFlutterEngineAOTDataSourceTypeElfPath;
   data_in.elf_path = elf_path.c_str();

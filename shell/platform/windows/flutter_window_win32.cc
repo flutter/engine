@@ -120,6 +120,24 @@ static uint64_t ConvertWinButtonToFlutterButton(UINT button) {
   return 0;
 }
 
+// This method is only valid during a window message related to mouse/touch
+// input.
+// See
+// https://docs.microsoft.com/en-us/windows/win32/tablet/system-events-and-mouse-messages?redirectedfrom=MSDN#distinguishing-pen-input-from-mouse-and-touch.
+static FlutterPointerDeviceKind GetFlutterPointerDeviceKind() {
+  constexpr LPARAM kTouchOrPenSignature = 0xFF515700;
+  constexpr LPARAM kTouchSignature = kTouchOrPenSignature | 0x80;
+  constexpr LPARAM kSignatureMask = 0xFFFFFF00;
+  LPARAM info = GetMessageExtraInfo();
+  if ((info & kSignatureMask) == kTouchOrPenSignature) {
+    if ((info & kTouchSignature) == kTouchSignature) {
+      return kFlutterPointerDeviceKindTouch;
+    }
+    return kFlutterPointerDeviceKindStylus;
+  }
+  return kFlutterPointerDeviceKindMouse;
+}
+
 void FlutterWindowWin32::OnDpiScale(unsigned int dpi){};
 
 // When DesktopWindow notifies that a WM_Size message has come in
@@ -131,14 +149,15 @@ void FlutterWindowWin32::OnResize(unsigned int width, unsigned int height) {
 }
 
 void FlutterWindowWin32::OnPointerMove(double x, double y) {
-  binding_handler_delegate_->OnPointerMove(x, y);
+  binding_handler_delegate_->OnPointerMove(x, y, GetFlutterPointerDeviceKind());
 }
 
 void FlutterWindowWin32::OnPointerDown(double x, double y, UINT button) {
   uint64_t flutter_button = ConvertWinButtonToFlutterButton(button);
   if (flutter_button != 0) {
     binding_handler_delegate_->OnPointerDown(
-        x, y, static_cast<FlutterPointerMouseButtons>(flutter_button));
+        x, y, GetFlutterPointerDeviceKind(),
+        static_cast<FlutterPointerMouseButtons>(flutter_button));
   }
 }
 
@@ -146,12 +165,13 @@ void FlutterWindowWin32::OnPointerUp(double x, double y, UINT button) {
   uint64_t flutter_button = ConvertWinButtonToFlutterButton(button);
   if (flutter_button != 0) {
     binding_handler_delegate_->OnPointerUp(
-        x, y, static_cast<FlutterPointerMouseButtons>(flutter_button));
+        x, y, GetFlutterPointerDeviceKind(),
+        static_cast<FlutterPointerMouseButtons>(flutter_button));
   }
 }
 
 void FlutterWindowWin32::OnPointerLeave() {
-  binding_handler_delegate_->OnPointerLeave();
+  binding_handler_delegate_->OnPointerLeave(GetFlutterPointerDeviceKind());
 }
 
 void FlutterWindowWin32::OnSetCursor() {
@@ -204,6 +224,24 @@ void FlutterWindowWin32::OnCursorRectUpdated(const Rect& rect) {
   Point origin(rect.left() * scale, rect.top() * scale);
   Size size(rect.width() * scale, rect.height() * scale);
   UpdateCursorRect(Rect(origin, size));
+}
+
+bool FlutterWindowWin32::OnBitmapSurfaceUpdated(const void* allocation,
+                                                size_t row_bytes,
+                                                size_t height) {
+  HDC dc = ::GetDC(std::get<HWND>(GetRenderTarget()));
+  BITMAPINFO bmi;
+  memset(&bmi, 0, sizeof(bmi));
+  bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+  bmi.bmiHeader.biWidth = row_bytes / 4;
+  bmi.bmiHeader.biHeight = -height;
+  bmi.bmiHeader.biPlanes = 1;
+  bmi.bmiHeader.biBitCount = 32;
+  bmi.bmiHeader.biCompression = BI_RGB;
+  bmi.bmiHeader.biSizeImage = 0;
+  int ret = SetDIBitsToDevice(dc, 0, 0, row_bytes / 4, height, 0, 0, 0, height,
+                              allocation, &bmi, DIB_RGB_COLORS);
+  return ret != 0;
 }
 
 }  // namespace flutter

@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of engine;
 
 class DomRenderer {
@@ -79,7 +78,7 @@ class DomRenderer {
   html.Element? get sceneElement => _sceneElement;
   html.Element? _sceneElement;
 
-  /// This is state persistant across hot restarts that indicates what
+  /// This is state persistent across hot restarts that indicates what
   /// to clear.  We delay removal of old visible state to make the
   /// transition appear smooth.
   static const String _staleHotRestartStore = '__flutter_state';

@@ -200,7 +200,7 @@ void FuchsiaExternalViewEmbedder::EndFrame(
 void FuchsiaExternalViewEmbedder::SubmitFrame(
     GrDirectContext* context,
     std::unique_ptr<flutter::SurfaceFrame> frame,
-    const std::shared_ptr<fml::SyncSwitch>& gpu_disable_sync_switch) {
+    const std::shared_ptr<const fml::SyncSwitch>& gpu_disable_sync_switch) {
   TRACE_EVENT0("flutter", "FuchsiaExternalViewEmbedder::SubmitFrame");
   std::vector<std::unique_ptr<SurfaceProducerSurface>> frame_surfaces;
   std::unordered_map<EmbedderLayerId, size_t> frame_surface_indices;
@@ -303,26 +303,32 @@ void FuchsiaExternalViewEmbedder::SubmitFrame(
           view_holder.hit_testable = view_holder.pending_hit_testable;
         }
 
-        // Set size and focusable.
+        // Set size, occlusion hint, and focusable.
         //
         // Scenic rejects `SetViewProperties` calls with a zero size.
         if (!view_size.isEmpty() &&
             (view_size != view_holder.size ||
+             view_holder.pending_occlusion_hint != view_holder.occlusion_hint ||
              view_holder.pending_focusable != view_holder.focusable)) {
+          view_holder.size = view_size;
+          view_holder.occlusion_hint = view_holder.pending_occlusion_hint;
+          view_holder.focusable = view_holder.pending_focusable;
           view_holder.view_holder.SetViewProperties({
               .bounding_box =
                   {
                       .min = {.x = 0.f, .y = 0.f, .z = -1000.f},
-                      .max = {.x = view_size.fWidth,
-                              .y = view_size.fHeight,
+                      .max = {.x = view_holder.size.fWidth,
+                              .y = view_holder.size.fHeight,
                               .z = 0.f},
                   },
-              .inset_from_min = {.x = 0.f, .y = 0.f, .z = 0.f},
-              .inset_from_max = {.x = 0.f, .y = 0.f, .z = 0.f},
-              .focus_change = view_holder.pending_focusable,
+              .inset_from_min = {.x = view_holder.occlusion_hint.fLeft,
+                                 .y = view_holder.occlusion_hint.fTop,
+                                 .z = 0.f},
+              .inset_from_max = {.x = view_holder.occlusion_hint.fRight,
+                                 .y = view_holder.occlusion_hint.fBottom,
+                                 .z = 0.f},
+              .focus_change = view_holder.focusable,
           });
-          view_holder.size = view_size;
-          view_holder.focusable = view_holder.pending_focusable;
         }
 
         // Attach the ScenicView to the main scene graph.
@@ -475,7 +481,8 @@ void FuchsiaExternalViewEmbedder::EnableWireframe(bool enable) {
   session_.Present();
 }
 
-void FuchsiaExternalViewEmbedder::CreateView(int64_t view_id) {
+void FuchsiaExternalViewEmbedder::CreateView(int64_t view_id,
+                                             ViewIdCallback on_view_bound) {
   FML_DCHECK(scenic_views_.find(view_id) == scenic_views_.end());
 
   ScenicView new_view = {
@@ -486,6 +493,7 @@ void FuchsiaExternalViewEmbedder::CreateView(int64_t view_id) {
           scenic::ToViewHolderToken(zx::eventpair((zx_handle_t)view_id)),
           "Flutter::PlatformView"),
   };
+  on_view_bound(new_view.view_holder.id());
 
   new_view.opacity_node.SetLabel("flutter::PlatformView::OpacityMutator");
   new_view.entity_node.SetLabel("flutter::PlatformView::TransformMutator");
@@ -497,18 +505,26 @@ void FuchsiaExternalViewEmbedder::CreateView(int64_t view_id) {
   scenic_views_.emplace(std::make_pair(view_id, std::move(new_view)));
 }
 
-void FuchsiaExternalViewEmbedder::DestroyView(int64_t view_id) {
-  size_t erased = scenic_views_.erase(view_id);
-  FML_DCHECK(erased == 1);
+void FuchsiaExternalViewEmbedder::DestroyView(int64_t view_id,
+                                              ViewIdCallback on_view_unbound) {
+  auto scenic_view = scenic_views_.find(view_id);
+  FML_DCHECK(scenic_view != scenic_views_.end());
+  scenic::ResourceId resource_id = scenic_view->second.view_holder.id();
+
+  scenic_views_.erase(scenic_view);
+  on_view_unbound(resource_id);
 }
 
-void FuchsiaExternalViewEmbedder::SetViewProperties(int64_t view_id,
-                                                    bool hit_testable,
-                                                    bool focusable) {
+void FuchsiaExternalViewEmbedder::SetViewProperties(
+    int64_t view_id,
+    const SkRect& occlusion_hint,
+    bool hit_testable,
+    bool focusable) {
   auto found = scenic_views_.find(view_id);
   FML_DCHECK(found != scenic_views_.end());
   auto& view_holder = found->second;
 
+  view_holder.pending_occlusion_hint = occlusion_hint;
   view_holder.pending_hit_testable = hit_testable;
   view_holder.pending_focusable = focusable;
 }
@@ -522,7 +538,7 @@ void FuchsiaExternalViewEmbedder::Reset() {
   // Detach the root node to prepare for the next frame.
   layer_tree_node_.DetachChildren();
 
-  // Clear images on all layers so they aren't cached unnecesarily.
+  // Clear images on all layers so they aren't cached unnecessarily.
   for (auto& layer : scenic_layers_) {
     layer.material.SetTexture(0);
   }

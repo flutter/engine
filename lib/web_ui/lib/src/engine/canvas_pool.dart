@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of engine;
 
 /// Allocates and caches 0 or more canvas(s) for [BitmapCanvas].
@@ -194,7 +193,7 @@ class _CanvasPool extends _SaveStackTracking {
         } catch (e) {
           // Firefox may explode here:
           // https://bugzilla.mozilla.org/show_bug.cgi?id=941146
-          if (!_isNsErrorFailureException(e)) {
+          if (!isNsErrorFailureException(e)) {
             rethrow;
           }
         }

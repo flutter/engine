@@ -35,7 +35,6 @@
 #include "flutter/shell/common/animator.h"
 #include "flutter/shell/common/display_manager.h"
 #include "flutter/shell/common/engine.h"
-#include "flutter/shell/common/layer_tree_holder.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/shell_io_manager.h"
@@ -50,8 +49,20 @@ enum class DartErrorCode {
   ApiError = 253,
   /// The Dart error code for a compilation error.
   CompilationError = 254,
-  /// The Dart error code for an unkonwn error.
+  /// The Dart error code for an unknown error.
   UnknownError = 255
+};
+
+/// Values for |Shell::SetGpuAvailability|.
+enum class GpuAvailability {
+  /// Indicates that GPU operations should be permitted.
+  kAvailable = 0,
+  /// Indicates that the GPU is about to become unavailable, and to attempt to
+  /// flush any GPU related resources now.
+  kFlushAndMakeUnavailable = 1,
+  /// Indicates that the GPU is unavailable, and that no attempt should be made
+  /// to even flush GPU objects until it is available again.
+  kUnavailable = 2
 };
 
 //------------------------------------------------------------------------------
@@ -287,11 +298,16 @@ class Shell final : public PlatformView::Delegate,
                                     bool base64_encode);
 
   //----------------------------------------------------------------------------
-  /// @brief   Pauses the calling thread until the first frame is presented.
+  /// @brief      Pauses the calling thread until the first frame is presented.
   ///
-  /// @return  'kOk' when the first frame has been presented before the timeout
-  ///          successfully, 'kFailedPrecondition' if called from the GPU or UI
-  ///          thread, 'kDeadlineExceeded' if there is a timeout.
+  /// @param[in]  timeout  The duration to wait before timing out. If this
+  ///                      duration would cause an overflow when added to
+  ///                      std::chrono::steady_clock::now(), this method will
+  ///                      wait indefinitely for the first frame.
+  ///
+  /// @return     'kOk' when the first frame has been presented before the
+  ///             timeout successfully, 'kFailedPrecondition' if called from the
+  ///             GPU or UI thread, 'kDeadlineExceeded' if there is a timeout.
   ///
   fml::Status WaitForFirstFrame(fml::TimeDelta timeout);
 
@@ -325,8 +341,13 @@ class Shell final : public PlatformView::Delegate,
   bool EngineHasLivePorts() const;
 
   //----------------------------------------------------------------------------
-  /// @brief     Accessor for the disable GPU SyncSwitch
-  std::shared_ptr<fml::SyncSwitch> GetIsGpuDisabledSyncSwitch() const override;
+  /// @brief     Accessor for the disable GPU SyncSwitch.
+  std::shared_ptr<const fml::SyncSwitch> GetIsGpuDisabledSyncSwitch()
+      const override;
+
+  //----------------------------------------------------------------------------
+  /// @brief     Marks the GPU as available or unavailable.
+  void SetGpuAvailability(GpuAvailability availability);
 
   //----------------------------------------------------------------------------
   /// @brief      Get a pointer to the Dart VM used by this running shell
@@ -384,9 +405,6 @@ class Shell final : public PlatformView::Delegate,
   std::atomic<bool> waiting_for_first_frame_ = true;
   std::mutex waiting_for_first_frame_mutex_;
   std::condition_variable waiting_for_first_frame_condition_;
-
-  // Signalled when draw task on the raster thread is complete.
-  fml::Semaphore pending_draw_semaphore_;
 
   // Written in the UI thread and read from the raster thread. Hence make it
   // atomic.
@@ -521,7 +539,7 @@ class Shell final : public PlatformView::Delegate,
   void OnAnimatorNotifyIdle(int64_t deadline) override;
 
   // |Animator::Delegate|
-  void OnAnimatorDraw(std::shared_ptr<LayerTreeHolder> layer_tree_holder,
+  void OnAnimatorDraw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline,
                       fml::TimePoint frame_target_time) override;
 
   // |Animator::Delegate|
@@ -557,6 +575,9 @@ class Shell final : public PlatformView::Delegate,
 
   // |Engine::Delegate|
   void RequestDartDeferredLibrary(intptr_t loading_unit_id) override;
+
+  // |Engine::Delegate|
+  fml::TimePoint GetCurrentTimePoint() override;
 
   // |Rasterizer::Delegate|
   void OnFrameRasterized(const FrameTiming&) override;

@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of engine;
 
 /// When set to true, all platform messages will be printed to the console.
@@ -272,7 +271,6 @@ typedef _JsSetUrlStrategy = void Function(JsUrlStrategy?);
 //
 // TODO: Add integration test https://github.com/flutter/flutter/issues/66852
 @JS('_flutter_web_set_location_strategy')
-// ignore: unused_element
 external set _jsSetUrlStrategy(_JsSetUrlStrategy? newJsSetUrlStrategy);
 
 UrlStrategy? _createDefaultUrlStrategy() {
