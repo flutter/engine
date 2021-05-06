@@ -29,7 +29,7 @@ G_DECLARE_FINAL_TYPE(FlKeyEmbedderResponder,
  * A #FlKeyResponder that handles events by sending the converted events
  * through the embedder API.
  *
- * This class corresponds to the HardwareKeyboard API in the framework.
+ * This class communicates with the HardwareKeyboard API in the framework.
  */
 
 /**

@@ -236,6 +236,10 @@ static void fl_key_embedder_responder_dispose(GObject* object) {
   G_OBJECT_CLASS(fl_key_embedder_responder_parent_class)->dispose(object);
 }
 
+// Fill in #physical_key_to_lock_bit by associating a physical key with
+// its corresponding modifier bit.
+//
+// This is used as the body of a loop over #lock_bit_to_checked_keys.
 static void initialize_physical_key_to_lock_bit_loop_body(gpointer lock_bit,
                                                           gpointer value,
                                                           gpointer user_data) {
@@ -247,11 +251,7 @@ static void initialize_physical_key_to_lock_bit_loop_body(gpointer lock_bit,
                       GUINT_TO_POINTER(lock_bit));
 }
 
-// Creates a new FlKeyEmbedderResponder instance, with a messenger used to send
-// messages to the framework, an FlTextInputPlugin used to handle key events
-// that the framework doesn't handle. Mainly for testing purposes, it also takes
-// an optional callback to call when a response is received, and an optional
-// embedder name to use when sending messages.
+// Creates a new FlKeyEmbedderResponder instance with an engine.
 FlKeyEmbedderResponder* fl_key_embedder_responder_new(FlEngine* engine) {
   g_return_val_if_fail(FL_IS_ENGINE(engine), nullptr);
 
@@ -375,7 +375,10 @@ typedef struct {
 
 }  // namespace
 
-// The loop body to synchronize pressing states.
+// Synchronizes the pressing state of a key to its state from the event by
+// synthesizing events.
+//
+// This is used as the body of a loop over #modifier_bit_to_checked_keys.
 static void synchronize_pressed_states_loop_body(gpointer key,
                                                  gpointer value,
                                                  gpointer user_data) {
@@ -402,14 +405,17 @@ static void synchronize_pressed_states_loop_body(gpointer key,
         lookup_hash_table(self->pressing_records, physical_key);
     // If this event is an event of the key, then the state will be flipped but
     // haven't reflected on the state. Flip it manually here.
-    const bool adjusted_this_key_pressed =
-        (pressed_logical_key != 0) ^
-        (physical_key == context->event_physical_key);
 
-    if (adjusted_this_key_pressed) {
+    const bool this_key_is_event_key = physical_key
+        == context->event_physical_key;
+    const bool this_key_pressed_before_event = pressed_logical_key != 0;
+    const bool this_key_pressed_after_event = this_key_pressed_before_event
+        ^ this_key_is_event_key;
+
+    if (this_key_pressed_after_event) {
       pressed_by_record = true;
       if (!pressed_by_state) {
-        g_return_if_fail(physical_key != context->event_physical_key);
+        g_return_if_fail(!this_key_is_event_key);
         synthesize_simple_event(self, kFlutterKeyEventTypeUp, physical_key,
                                 pressed_logical_key, context->timestamp);
         g_hash_table_remove(self->pressing_records,
@@ -546,9 +552,12 @@ static void update_caps_lock_state_logic_inferrence(
   }
 }
 
-// The loop body to synchronize lock states.
+// Synchronizes the lock state of a key to its state from the event by
+// synthesizing events.
 //
-// This function might modify self->caps_lock_state_logic_inferrence.
+// This is used as the body of a loop over #lock_bit_to_checked_keys.
+//
+// This function might modify #caps_lock_state_logic_inferrence.
 static void synchronize_lock_states_loop_body(gpointer key,
                                               gpointer value,
                                               gpointer user_data) {
@@ -623,8 +632,7 @@ static void synchronize_lock_states_loop_body(gpointer key,
       return;
     }
 
-    const int standard_current_stage =
-        current_stage >= 4 ? current_stage - 4 : current_stage;
+    const int standard_current_stage = current_stage % kNumStages;
     const bool is_down_event =
         standard_current_stage == 0 || standard_current_stage == 2;
     FlutterKeyEventType type =

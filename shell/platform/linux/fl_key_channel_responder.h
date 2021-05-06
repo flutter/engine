@@ -17,16 +17,19 @@ typedef FlValue* (*FlValueConverter)(FlValue*);
 /**
  * FlKeyChannelResponderMock:
  *
- * Options to mock several functionalities. Only used in unittests.
+ * Allows mocking of FlKeyChannelResponder methods and values. Only used in unittests.
  */
 typedef struct _FlKeyChannelResponderMock {
   /**
    * FlKeyChannelResponderMock::value_converter:
+   * If #value_converter is not nullptr, then this function is applied to the reply
+   * of the message, whose return value is taken as the message reply.
    */
   FlValueConverter value_converter;
 
   /**
    * FlKeyChannelResponderMock::channel_name:
+   * Mocks the channel name to send the message.
    */
   const char* channel_name;
 } FlKeyChannelResponderMock;
@@ -46,7 +49,7 @@ G_DECLARE_FINAL_TYPE(FlKeyChannelResponder,
  * A #FlKeyResponder that handles events by sending the raw event data
  * in JSON through the message channel.
  *
- * This class corresponds to the RawKeyboard API in the framework.
+ * This class communicates with the RawKeyboard API in the framework.
  */
 
 /**

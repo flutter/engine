@@ -220,7 +220,7 @@ static void fl_key_channel_responder_handle_event(
   }
 
   int64_t scan_code = event->hardware_keycode;
-  int64_t unicodeScalarValues = gdk_keyval_to_unicode(event->keyval);
+  int64_t unicode_scarlar_values = gdk_keyval_to_unicode(event->keyval);
 
   // For most modifier keys, GTK keeps track of the "pressed" state of the
   // modifier keys. Flutter uses this information to keep modifier keys from
@@ -280,7 +280,7 @@ static void fl_key_channel_responder_handle_event(
   fl_value_set_string_take(message, kKeyCodeKey,
                            fl_value_new_int(event->keyval));
   fl_value_set_string_take(message, kModifiersKey, fl_value_new_int(state));
-  if (unicodeScalarValues != 0) {
+  if (unicode_scarlar_values != 0) {
     fl_value_set_string_take(message, kUnicodeScalarValuesKey,
                              fl_value_new_int(unicodeScalarValues));
   }
