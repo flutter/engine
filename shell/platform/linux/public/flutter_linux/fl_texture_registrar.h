@@ -31,7 +31,7 @@ G_DECLARE_FINAL_TYPE(FlTextureRegistrar,
 /**
  * fl_texture_registrar_register_texture:
  * @registrar: an #FlTextureRegistrar.
- * @texture: (transfer-full): a #FlTexture for registration.
+ * @texture: an #FlTexture for registration.
  *
  * Registers a texture and returns the unique ID for that texture.
  *

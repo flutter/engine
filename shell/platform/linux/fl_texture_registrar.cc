@@ -62,7 +62,7 @@ fl_texture_registrar_register_texture(FlTextureRegistrar* self,
   g_return_val_if_fail(FL_IS_TEXTURE(texture), 0);
 
   int64_t id = fl_texture_get_texture_id(texture);
-  g_hash_table_insert(self->textures, GINT_TO_POINTER(id), texture);
+  g_hash_table_insert(self->textures, GINT_TO_POINTER(id), g_object_ref(texture));
 
   if (self->engine == nullptr) {
     return 0;
