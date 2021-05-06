@@ -30,6 +30,9 @@ class HtmlViewEmbedder {
   /// The set of platform views using the backup surface.
   final Set<int> _viewsUsingBackupSurface = <int>{};
 
+  /// Whether or not this embedder has already warned about too many overlays.
+  bool _warnedAboutTooManyOverlays = false;
+
   /// A picture recorder associated with a view id.
   ///
   /// When we composite in the platform view, we need to create a new canvas
@@ -502,6 +505,16 @@ class HtmlViewEmbedder {
     if (overlay == null) {
       if (_backupSurface == null) {
         assert(_viewsUsingBackupSurface.isEmpty);
+        if (assertionsEnabled) {
+          if (!_warnedAboutTooManyOverlays) {
+            html.window.console
+                .warn('Flutter was unable to create enough overlay surfaces. '
+                    'This is usually caused by too many platform views being '
+                    'displayed at once. '
+                    'You may experience incorrect rendering.');
+            _warnedAboutTooManyOverlays = true;
+          }
+        }
         _backupSurface = Surface(this);
       }
       overlay = _backupSurface;
