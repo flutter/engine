@@ -8,7 +8,7 @@ namespace flutter {
 
 fml::MallocMapping CopyNSDataToMapping(NSData* data) {
   const uint8_t* bytes = static_cast<const uint8_t*>(data.bytes);
-  return fml::MallocMapping::Copy(bytes, bytes + data.length);
+  return fml::MallocMapping::Copy(bytes, data.length);
 }
 
 NSData* CopyMappingToNSData(fml::MallocMapping buffer) {

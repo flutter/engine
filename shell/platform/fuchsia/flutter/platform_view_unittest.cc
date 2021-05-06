@@ -575,8 +575,7 @@ TEST_F(PlatformViewTests, EnableWireframeTest) {
 
   std::unique_ptr<flutter::PlatformMessage> message =
       std::make_unique<flutter::PlatformMessage>(
-          "flutter/platform_views",
-          fml::MallocMapping::Copy(txt, txt + sizeof(txt)),
+          "flutter/platform_views", fml::MallocMapping::Copy(txt, sizeof(txt)),
           fml::RefPtr<flutter::PlatformMessageResponse>());
   base_view->HandlePlatformMessage(std::move(message));
 
@@ -635,8 +634,7 @@ TEST_F(PlatformViewTests, CreateViewTest) {
 
   std::unique_ptr<flutter::PlatformMessage> message =
       std::make_unique<flutter::PlatformMessage>(
-          "flutter/platform_views",
-          fml::MallocMapping::Copy(txt, txt + sizeof(txt)),
+          "flutter/platform_views", fml::MallocMapping::Copy(txt, sizeof(txt)),
           fml::RefPtr<flutter::PlatformMessageResponse>());
   base_view->HandlePlatformMessage(std::move(message));
 
@@ -686,8 +684,7 @@ TEST_F(PlatformViewTests, UpdateViewTest) {
 
   std::unique_ptr<flutter::PlatformMessage> message =
       std::make_unique<flutter::PlatformMessage>(
-          "flutter/platform_views",
-          fml::MallocMapping::Copy(txt, txt + sizeof(txt)),
+          "flutter/platform_views", fml::MallocMapping::Copy(txt, sizeof(txt)),
           fml::RefPtr<flutter::PlatformMessageResponse>());
   base_view->HandlePlatformMessage(std::move(message));
 
@@ -743,8 +740,7 @@ TEST_F(PlatformViewTests, DestroyViewTest) {
 
   std::unique_ptr<flutter::PlatformMessage> message =
       std::make_unique<flutter::PlatformMessage>(
-          "flutter/platform_views",
-          fml::MallocMapping::Copy(txt, txt + sizeof(txt)),
+          "flutter/platform_views", fml::MallocMapping::Copy(txt, sizeof(txt)),
           fml::RefPtr<flutter::PlatformMessageResponse>());
   base_view->HandlePlatformMessage(std::move(message));
 
@@ -805,9 +801,8 @@ TEST_F(PlatformViewTests, ViewEventsTest) {
   static_cast<flutter::PlatformView*>(&platform_view)
       ->HandlePlatformMessage(std::make_unique<flutter::PlatformMessage>(
           "flutter/platform_views",
-          fml::MallocMapping::Copy(
-              create_view_call.c_str(),
-              create_view_call.c_str() + create_view_call.size()),
+          fml::MallocMapping::Copy(create_view_call.c_str(),
+                                   create_view_call.size()),
           fml::RefPtr<flutter::PlatformMessageResponse>()));
   RunLoopUntilIdle();
 
@@ -942,7 +937,7 @@ TEST_F(PlatformViewTests, RequestFocusTest) {
   std::unique_ptr<flutter::PlatformMessage> message =
       std::make_unique<flutter::PlatformMessage>(
           "flutter/platform_views",
-          fml::MallocMapping::Copy(buff, buff + sizeof(buff)), response);
+          fml::MallocMapping::Copy(buff, sizeof(buff)), response);
   base_view->HandlePlatformMessage(std::move(message));
 
   RunLoopUntilIdle();
@@ -1004,7 +999,7 @@ TEST_F(PlatformViewTests, RequestFocusFailTest) {
   std::unique_ptr<flutter::PlatformMessage> message =
       std::make_unique<flutter::PlatformMessage>(
           "flutter/platform_views",
-          fml::MallocMapping::Copy(buff, buff + sizeof(buff)), response);
+          fml::MallocMapping::Copy(buff, sizeof(buff)), response);
   base_view->HandlePlatformMessage(std::move(message));
 
   RunLoopUntilIdle();

@@ -1809,9 +1809,7 @@ bool Shell::ReloadSystemFonts() {
   std::unique_ptr<PlatformMessage> fontsChangeMessage =
       std::make_unique<flutter::PlatformMessage>(
           kSystemChannel,
-          fml::MallocMapping::Copy(message.c_str(),
-                                   message.c_str() + message.length()),
-          nullptr);
+          fml::MallocMapping::Copy(message.c_str(), message.length()), nullptr);
 
   OnPlatformViewDispatchPlatformMessage(std::move(fontsChangeMessage));
   return true;

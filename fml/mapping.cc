@@ -120,6 +120,13 @@ MallocMapping::~MallocMapping() {
   }
 }
 
+MallocMapping MallocMapping::Copy(const void* begin, size_t length) {
+  auto result =
+      MallocMapping(reinterpret_cast<uint8_t*>(malloc(length)), length);
+  memcpy(const_cast<uint8_t*>(result.GetMapping()), begin, length);
+  return result;
+}
+
 size_t MallocMapping::GetSize() const {
   return size_;
 }

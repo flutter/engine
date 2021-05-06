@@ -130,8 +130,7 @@ Dart_Handle SendPlatformMessage(Dart_Handle window,
     const uint8_t* buffer = static_cast<const uint8_t*>(data.data());
     dart_state->platform_configuration()->client()->HandlePlatformMessage(
         std::make_unique<PlatformMessage>(
-            name,
-            fml::MallocMapping::Copy(buffer, buffer + data.length_in_bytes()),
+            name, fml::MallocMapping::Copy(buffer, data.length_in_bytes()),
             response));
   }
 

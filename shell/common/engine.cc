@@ -38,7 +38,7 @@ static constexpr char kIsolateChannel[] = "flutter/isolate";
 
 namespace {
 fml::MallocMapping MakeMapping(const std::string& str) {
-  return fml::MallocMapping::Copy(str.c_str(), str.c_str() + str.length());
+  return fml::MallocMapping::Copy(str.c_str(), str.length());
 }
 }  // namespace
 

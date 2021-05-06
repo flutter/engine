@@ -1489,8 +1489,8 @@ TEST_F(ShellTest, SetResourceCacheSize) {
                                 "method": "Skia.setResourceCacheMaxBytes",
                                 "args": 10000
                               })json";
-  auto data = fml::MallocMapping::Copy(
-      request_json.c_str(), request_json.c_str() + request_json.length());
+  auto data =
+      fml::MallocMapping::Copy(request_json.c_str(), request_json.length());
   auto platform_message = std::make_unique<PlatformMessage>(
       "flutter/skia", std::move(data), nullptr);
   SendEnginePlatformMessage(shell.get(), std::move(platform_message));

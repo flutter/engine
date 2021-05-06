@@ -142,11 +142,10 @@ class MallocMapping final : public Mapping {
   template <typename T>
   static MallocMapping Copy(const T* begin, const T* end) {
     size_t length = end - begin;
-    auto result =
-        MallocMapping(reinterpret_cast<uint8_t*>(malloc(length)), length);
-    memcpy(const_cast<uint8_t*>(result.GetMapping()), begin, length);
-    return result;
+    return Copy(begin, length);
   }
+
+  static MallocMapping Copy(const void* begin, size_t length);
 
   // |Mapping|
   size_t GetSize() const override;

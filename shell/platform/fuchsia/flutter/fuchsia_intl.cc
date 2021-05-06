@@ -66,7 +66,7 @@ fml::MallocMapping MakeLocalizationPlatformMessageData(
   rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
   document.Accept(writer);
   auto data = reinterpret_cast<const uint8_t*>(buffer.GetString());
-  return fml::MallocMapping::Copy(data, data + buffer.GetSize());
+  return fml::MallocMapping::Copy(data, buffer.GetSize());
 }
 
 }  // namespace flutter_runner
