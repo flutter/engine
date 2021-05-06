@@ -921,7 +921,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
   @visibleForTesting
   late Rasterizer? rasterizer =
-      useCanvasKit ? Rasterizer(Surface(HtmlViewEmbedder())) : null;
+      useCanvasKit ? Rasterizer(Surface(HtmlViewEmbedder.instance)) : null;
 
   /// In Flutter, platform messages are exchanged between threads so the
   /// messages and responses have to be exchanged asynchronously. We simulate

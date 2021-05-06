@@ -122,7 +122,7 @@ void testMain() {
     List<String> getTransformChain(html.Element viewHost) {
       final List<String> chain = <String>[];
       html.Element? element = viewHost;
-      while(element != null && element.tagName.toLowerCase() != 'flt-scene') {
+      while (element != null && element.tagName.toLowerCase() != 'flt-scene') {
         chain.add(element.style.transform);
         element = element.parent;
       }
@@ -145,9 +145,8 @@ void testMain() {
       sb.pushOffset(3, 3);
       sb.addPlatformView(0, width: 10, height: 10);
       dispatcher.rasterizer!.draw(sb.build().layerTree);
-      final html.Element viewHost = domRenderer.sceneElement!
-        .querySelectorAll('#view-0')
-        .single;
+      final html.Element viewHost =
+          domRenderer.sceneElement!.querySelectorAll('#view-0').single;
 
       expect(
         getTransformChain(viewHost),
@@ -173,9 +172,8 @@ void testMain() {
       sb.pushOffset(9, 9);
       sb.addPlatformView(0, width: 10, height: 10);
       dispatcher.rasterizer!.draw(sb.build().layerTree);
-      final html.Element viewHost = domRenderer.sceneElement!
-        .querySelectorAll('#view-0')
-        .single;
+      final html.Element viewHost =
+          domRenderer.sceneElement!.querySelectorAll('#view-0').single;
 
       expect(
         getTransformChain(viewHost),
@@ -189,16 +187,14 @@ void testMain() {
 
     test('renders overlays on top of platform views', () async {
       expect(OverlayCache.instance.debugLength, 0);
-      final CkPicture testPicture = paintPicture(
-        ui.Rect.fromLTRB(0, 0, 10, 10),
-        (CkCanvas canvas) {
-          canvas.drawCircle(ui.Offset(5, 5), 5, CkPaint());
-        }
-      );
+      final CkPicture testPicture =
+          paintPicture(ui.Rect.fromLTRB(0, 0, 10, 10), (CkCanvas canvas) {
+        canvas.drawCircle(ui.Offset(5, 5), 5, CkPaint());
+      });
 
       // Initialize all platform views to be used in the test.
       final List<int> platformViewIds = <int>[];
-      for (int i = 0; i < OverlayCache.kDefaultCacheSize * 2; i++) {
+      for (int i = 0; i < HtmlViewEmbedder.maximumOverlaySurfaces * 2; i++) {
         ui.platformViewRegistry.registerViewFactory(
           'test-platform-view',
           (viewId) => html.DivElement()..id = 'view-$i',
@@ -210,7 +206,7 @@ void testMain() {
       final EnginePlatformDispatcher dispatcher =
           ui.window.platformDispatcher as EnginePlatformDispatcher;
 
-      void renderTestScene({ required int viewCount }) {
+      void renderTestScene({required int viewCount}) {
         LayerSceneBuilder sb = LayerSceneBuilder();
         sb.pushOffset(0, 0);
         for (int i = 0; i < viewCount; i++) {
@@ -227,8 +223,8 @@ void testMain() {
       // Frame 1:
       //   Render: up to cache size platform views.
       //   Expect: main canvas plus platform view overlays; empty cache.
-      renderTestScene(viewCount: OverlayCache.kDefaultCacheSize);
-      expect(countCanvases(), OverlayCache.kDefaultCacheSize + 1);
+      renderTestScene(viewCount: HtmlViewEmbedder.maximumOverlaySurfaces);
+      expect(countCanvases(), HtmlViewEmbedder.maximumOverlaySurfaces + 1);
       expect(OverlayCache.instance.debugLength, 0);
 
       // Frame 2:
@@ -237,22 +233,23 @@ void testMain() {
       await Future<void>.delayed(Duration.zero);
       renderTestScene(viewCount: 0);
       expect(countCanvases(), 1);
-      expect(OverlayCache.instance.debugLength, 5);
+      expect(OverlayCache.instance.debugLength, 8);
 
       // Frame 3:
       //   Render: less than cache size platform views.
       //   Expect: overlays reused; cache shrinks.
       await Future<void>.delayed(Duration.zero);
-      renderTestScene(viewCount: OverlayCache.kDefaultCacheSize - 2);
-      expect(countCanvases(), OverlayCache.kDefaultCacheSize - 1);
+      renderTestScene(viewCount: HtmlViewEmbedder.maximumOverlaySurfaces - 2);
+      expect(countCanvases(), HtmlViewEmbedder.maximumOverlaySurfaces - 1);
       expect(OverlayCache.instance.debugLength, 2);
 
       // Frame 4:
       //   Render: more platform views than max cache size.
-      //   Expect: cache empty (everything reused).
+      //   Expect: main canvas, backup overlay, maximum overlays;
+      //           cache empty (everything reused).
       await Future<void>.delayed(Duration.zero);
-      renderTestScene(viewCount: OverlayCache.kDefaultCacheSize * 2);
-      expect(countCanvases(), OverlayCache.kDefaultCacheSize * 2 + 1);
+      renderTestScene(viewCount: HtmlViewEmbedder.maximumOverlaySurfaces * 2);
+      expect(countCanvases(), HtmlViewEmbedder.maximumOverlaySurfaces + 2);
       expect(OverlayCache.instance.debugLength, 0);
 
       // Frame 5:
@@ -261,7 +258,7 @@ void testMain() {
       await Future<void>.delayed(Duration.zero);
       renderTestScene(viewCount: 0);
       expect(countCanvases(), 1);
-      expect(OverlayCache.instance.debugLength, 5);
+      expect(OverlayCache.instance.debugLength, 8);
 
       // Frame 6:
       //   Render: deleted platform views.
@@ -286,7 +283,7 @@ void testMain() {
       } on AssertionError catch (error) {
         expect(
           error.toString(),
-          'Assertion failed: "Cannot render platform views: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9. These views have not been created, or they have been deleted."',
+          'Assertion failed: "Cannot render platform views: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15. These views have not been created, or they have been deleted."',
         );
       }
 

@@ -6,6 +6,30 @@ part of engine;
 
 /// This composites HTML views into the [ui.Scene].
 class HtmlViewEmbedder {
+  /// The [HtmlViewEmbedder] singleton.
+  static HtmlViewEmbedder instance = HtmlViewEmbedder._();
+
+  HtmlViewEmbedder._();
+
+  /// The maximum number of overlay surfaces that can be live at once.
+  static const int maximumOverlaySurfaces = 8;
+
+  /// A shared backup surface to use as an overlay once we have run out of
+  /// surfaces.
+  ///
+  /// If there are more platform views than [maximumSize], then eventually we
+  /// will run out of overlays and all platform views will send their canvas
+  /// painting commands to a shared overlay. This could cause fidelity issues if
+  /// there are interleaving paint operations which overlap platform views.
+  Surface? _backupSurface;
+
+  /// The picture recorder shared by all platform views which paint to the
+  /// backup surface.
+  CkPictureRecorder? _backupPictureRecorder;
+
+  /// The set of platform views using the backup surface.
+  final Set<int> _viewsUsingBackupSurface = <int>{};
+
   /// A picture recorder associated with a view id.
   ///
   /// When we composite in the platform view, we need to create a new canvas
@@ -24,10 +48,10 @@ class HtmlViewEmbedder {
       <int, EmbeddedViewParams>{};
 
   /// The HTML element associated with the given view id.
-  final Map<int?, html.Element> _views = <int?, html.Element>{};
+  final Map<int, html.Element> _views = <int, html.Element>{};
 
   /// The root view in the stack of mutator elements for the view id.
-  final Map<int?, html.Element?> _rootViews = <int?, html.Element?>{};
+  final Map<int, html.Element> _rootViews = <int, html.Element>{};
 
   /// Surfaces used to draw on top of platform views, keyed by platform view ID.
   ///
@@ -130,20 +154,32 @@ class HtmlViewEmbedder {
     callback(codec.encodeSuccessEnvelope(null));
   }
 
-  List<CkCanvas?> getCurrentCanvases() {
-    final List<CkCanvas?> canvases = <CkCanvas?>[];
+  List<CkCanvas> getCurrentCanvases() {
+    final Set<CkCanvas> canvases = <CkCanvas>{};
     for (int i = 0; i < _compositionOrder.length; i++) {
       final int viewId = _compositionOrder[i];
-      canvases.add(_pictureRecorders[viewId]!.recordingCanvas);
+      canvases.add(_pictureRecorders[viewId]!.recordingCanvas!);
     }
-    return canvases;
+    return canvases.toList();
   }
 
   void prerollCompositeEmbeddedView(int viewId, EmbeddedViewParams params) {
-    final pictureRecorder = CkPictureRecorder();
-    pictureRecorder.beginRecording(ui.Offset.zero & _frameSize);
-    pictureRecorder.recordingCanvas!.clear(ui.Color(0x00000000));
-    _pictureRecorders[viewId] = pictureRecorder;
+    _ensureOverlayInitialized(viewId);
+    if (_viewsUsingBackupSurface.contains(viewId)) {
+      if (_backupPictureRecorder == null) {
+        // Only initialize the picture recorder for the backup surface once.
+        final pictureRecorder = CkPictureRecorder();
+        pictureRecorder.beginRecording(ui.Offset.zero & _frameSize);
+        pictureRecorder.recordingCanvas!.clear(ui.Color(0x00000000));
+        _backupPictureRecorder = pictureRecorder;
+      }
+      _pictureRecorders[viewId] = _backupPictureRecorder!;
+    } else {
+      final pictureRecorder = CkPictureRecorder();
+      pictureRecorder.beginRecording(ui.Offset.zero & _frameSize);
+      pictureRecorder.recordingCanvas!.clear(ui.Color(0x00000000));
+      _pictureRecorders[viewId] = pictureRecorder;
+    }
     _compositionOrder.add(viewId);
 
     // Do nothing if the params didn't change.
@@ -179,7 +215,7 @@ class HtmlViewEmbedder {
     if (currentClippingCount != previousClippingCount) {
       _clipCount[viewId] = currentClippingCount;
       html.Element oldPlatformViewRoot = _rootViews[viewId]!;
-      html.Element? newPlatformViewRoot = _reconstructClipViewsChain(
+      html.Element newPlatformViewRoot = _reconstructClipViewsChain(
         currentClippingCount,
         platformView,
         oldPlatformViewRoot,
@@ -199,7 +235,7 @@ class HtmlViewEmbedder {
     return clipCount;
   }
 
-  html.Element? _reconstructClipViewsChain(
+  html.Element _reconstructClipViewsChain(
     int numClips,
     html.Element platformView,
     html.Element headClipView,
@@ -209,21 +245,21 @@ class HtmlViewEmbedder {
       indexInFlutterView = skiaSceneHost!.children.indexOf(headClipView);
       headClipView.remove();
     }
-    html.Element? head = platformView;
+    html.Element head = platformView;
     int clipIndex = 0;
     // Re-use as much existing clip views as needed.
     while (head != headClipView && clipIndex < numClips) {
-      head = head!.parent;
+      head = head.parent!;
       clipIndex++;
     }
     // If there weren't enough existing clip views, add more.
     while (clipIndex < numClips) {
       html.Element clippingView = html.Element.tag('flt-clip');
-      clippingView.append(head!);
+      clippingView.append(head);
       head = clippingView;
       clipIndex++;
     }
-    head!.remove();
+    head.remove();
 
     // If the chain was previously attached, attach it to the same position.
     if (indexInFlutterView > -1) {
@@ -304,7 +340,8 @@ class HtmlViewEmbedder {
     // pixels, so scale down the head element to match the logical resolution.
     final double scale = window.devicePixelRatio;
     final double inverseScale = 1 / scale;
-    final Matrix4 scaleMatrix = Matrix4.diagonal3Values(inverseScale, inverseScale, 1);
+    final Matrix4 scaleMatrix =
+        Matrix4.diagonal3Values(inverseScale, inverseScale, 1);
     headTransform = scaleMatrix.multiplied(headTransform);
     head.style.transform = float64ListToCssTransform(headTransform.storage);
   }
@@ -338,18 +375,34 @@ class HtmlViewEmbedder {
   void submitFrame() {
     disposeViews();
 
+    SurfaceFrame? _backupFrame;
     for (int i = 0; i < _compositionOrder.length; i++) {
       int viewId = _compositionOrder[i];
-      _ensureOverlayInitialized(viewId);
-      final SurfaceFrame frame =
-          _overlays[viewId]!.acquireFrame(_frameSize);
-      final CkCanvas canvas = frame.skiaCanvas;
-      canvas.drawPicture(
-        _pictureRecorders[viewId]!.endRecording(),
-      );
-      frame.submit();
+      if (_viewsUsingBackupSurface.contains(viewId)) {
+        _backupFrame ??= _backupSurface!.acquireFrame(_frameSize);
+        // Only draw the picture to the backup surface once, on the last
+        // platform view.
+        if (i == _compositionOrder.length - 1) {
+          _backupFrame.skiaCanvas
+              .drawPicture(_pictureRecorders[viewId]!.endRecording());
+          _backupFrame.submit();
+        }
+      } else {
+        // If this view was just disposed then skip it. It will be reported
+        // later.
+        if (!_views.containsKey(viewId)) {
+          continue;
+        }
+        final SurfaceFrame frame = _overlays[viewId]!.acquireFrame(_frameSize);
+        final CkCanvas canvas = frame.skiaCanvas;
+        canvas.drawPicture(
+          _pictureRecorders[viewId]!.endRecording(),
+        );
+        frame.submit();
+      }
     }
     _pictureRecorders.clear();
+    _backupPictureRecorder = null;
     if (_listEquals(_compositionOrder, _activeCompositionOrder)) {
       _compositionOrder.clear();
       return;
@@ -416,7 +469,17 @@ class HtmlViewEmbedder {
 
   void _releaseOverlay(int viewId) {
     if (_overlays[viewId] != null) {
-      OverlayCache.instance.releaseOverlay(_overlays[viewId]!);
+      Surface overlay = _overlays[viewId]!;
+      if (overlay == _backupSurface) {
+        _viewsUsingBackupSurface.remove(viewId);
+        if (_viewsUsingBackupSurface.isEmpty) {
+          _backupSurface!.htmlElement.remove();
+          _backupSurface!.dispose();
+          _backupSurface = null;
+        }
+      } else {
+        OverlayCache.instance.releaseOverlay(overlay);
+      }
       _overlays.remove(viewId);
     }
   }
@@ -424,33 +487,69 @@ class HtmlViewEmbedder {
   void _ensureOverlayInitialized(int viewId) {
     // If there's an active overlay for the view ID, continue using it.
     Surface? overlay = _overlays[viewId];
-    if (overlay != null) {
+    if (overlay != null && !_viewsUsingBackupSurface.contains(viewId)) {
       return;
     }
 
-    // Try reusing a cached overlay created for another platform view.
-    overlay = OverlayCache.instance.reserveOverlay();
+    // If this view was using the backup surface, try using a surface from the
+    // cache before falling back on the backup surface again.
+    _viewsUsingBackupSurface.remove(viewId);
 
-    // If nothing to reuse, create a new overlay.
+    // Try reusing a cached overlay created for another platform view.
+    overlay = OverlayCache.instance.reserveOverlay(this) ??
+        OverlayCache.instance.createOverlay(this);
+
     if (overlay == null) {
-      overlay = Surface(this);
+      if (_backupSurface == null) {
+        assert(_viewsUsingBackupSurface.isEmpty);
+        _backupSurface = Surface(this);
+      }
+      overlay = _backupSurface;
+      _viewsUsingBackupSurface.add(viewId);
     }
 
-    _overlays[viewId] = overlay;
+    _overlays[viewId] = overlay!;
+  }
+
+  void debugClear() {
+    _backupSurface?.dispose();
+    _backupSurface?.htmlElement.remove();
+    _backupSurface = null;
+    _backupPictureRecorder?.endRecording();
+    _backupPictureRecorder = null;
+    _viewsUsingBackupSurface.clear();
+    for (final pictureRecorder in _pictureRecorders.values) {
+      if (pictureRecorder.isRecording) {
+        pictureRecorder.endRecording();
+      }
+    }
+    _pictureRecorders.clear();
+    _currentCompositionParams.clear();
+    _views.keys.forEach((viewId) {
+      _viewsToDispose.add(viewId);
+    });
+    disposeViews();
+    _compositionOrder.clear();
+    _activeCompositionOrder.clear();
+    _viewsToRecomposite.clear();
   }
 }
 
 /// Caches surfaces used to overlay platform views.
 class OverlayCache {
-  static const int kDefaultCacheSize = 5;
-
   /// The cache singleton.
-  static final OverlayCache instance = OverlayCache(kDefaultCacheSize);
+  static final OverlayCache instance =
+      OverlayCache(HtmlViewEmbedder.maximumOverlaySurfaces);
 
   OverlayCache(this.maximumSize);
 
   /// The cache will not grow beyond this size.
   final int maximumSize;
+
+  /// The number of surfaces which have been created by this cache.
+  ///
+  /// Calls to [createOverlay] will only return non-null if this cache hasn't
+  int _surfacesCreated = 0;
 
   /// Cached surfaces, available for reuse.
   final List<Surface> _cache = <Surface>[];
@@ -460,10 +559,21 @@ class OverlayCache {
   /// Useful in tests.
   List<Surface> get debugCachedSurfaces => _cache;
 
-  /// Reserves an overlay from the cache, if available.
+  /// Creates a new overlay, unless this cache has already created [maximumSize]
+  /// overlays.
+  Surface? createOverlay(HtmlViewEmbedder viewEmbedder) {
+    if (_surfacesCreated < maximumSize) {
+      _surfacesCreated++;
+      return Surface(viewEmbedder);
+    }
+    return null;
+  }
+
+  /// Reserves an overlay from the cache.
   ///
-  /// Returns null if the cache is empty.
-  Surface? reserveOverlay() {
+  /// If the maximum number of overlays have already been reserved, this returns
+  /// [null].
+  Surface? reserveOverlay(HtmlViewEmbedder viewEmbedder) {
     if (_cache.isEmpty) {
       return null;
     }
@@ -478,6 +588,7 @@ class OverlayCache {
     if (_cache.length < maximumSize) {
       _cache.add(overlay);
     } else {
+      _surfacesCreated--;
       overlay.dispose();
     }
   }
@@ -489,6 +600,7 @@ class OverlayCache {
       overlay.dispose();
     }
     _cache.clear();
+    _surfacesCreated = 0;
   }
 }
 
