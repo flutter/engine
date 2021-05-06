@@ -6,6 +6,15 @@
 
 #pragma mark - Codec for basic message channel
 
+static const UInt8 s_zeroBuffer[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+static const Class s_nsNumber = [NSNumber class];
+static const id s_nsNull = [NSNull null];
+static const Class s_nsString = [NSString class];
+static const Class s_nsData = [NSData class];
+static const Class s_nsArray = [NSArray class];
+static const Class s_nsDictionary = [NSDictionary class];
+static const Class s_flutterStandardTypedData = [FlutterStandardTypedData class];
+
 @implementation FlutterStandardMessageCodec {
   FlutterStandardReaderWriter* _readerWriter;
 }
@@ -221,114 +230,141 @@ using namespace flutter;
   [super dealloc];
 }
 
-- (void)writeByte:(UInt8)value {
-  [_data appendBytes:&value length:1];
+static void WriteByte(CFMutableDataRef data, UInt8 value) {
+  CFDataAppendBytes(data, &value, 1);
 }
 
-- (void)writeBytes:(const void*)bytes length:(NSUInteger)length {
-  [_data appendBytes:bytes length:length];
+static void WriteBytes(CFMutableDataRef data, const void* bytes, NSUInteger length) {
+  CFDataAppendBytes(data, (const UInt8*)bytes, length);
 }
 
-- (void)writeData:(NSData*)data {
-  [_data appendData:data];
+static void WriteData(CFMutableDataRef destination, NSData* source) {
+  CFDataAppendBytes(destination, (const UInt8*)source.bytes, source.length);
 }
 
-- (void)writeSize:(UInt32)size {
+static void WriteSize(CFMutableDataRef data, UInt32 size) {
   if (size < 254) {
-    [self writeByte:(UInt8)size];
+    WriteByte(data, (UInt8)size);
   } else if (size <= 0xffff) {
-    [self writeByte:254];
+    WriteByte(data, 254);
     UInt16 value = (UInt16)size;
-    [self writeBytes:&value length:2];
+    WriteBytes(data, &value, 2);
   } else {
-    [self writeByte:255];
-    [self writeBytes:&size length:4];
+    WriteByte(data, 255);
+    WriteBytes(data, &size, 4);
   }
 }
 
-- (void)writeAlignment:(UInt8)alignment {
-  UInt8 mod = _data.length % alignment;
+static void WriteAlignment(CFMutableDataRef data, UInt8 alignment) {
+  assert(alignment <= 8);
+  UInt8 mod = CFDataGetLength(data) % alignment;
   if (mod) {
-    for (int i = 0; i < (alignment - mod); i++) {
-      [self writeByte:0];
-    }
+    WriteBytes(data, s_zeroBuffer, alignment - mod);
   }
 }
 
-- (void)writeUTF8:(NSString*)value {
+static void WriteUTF8(CFMutableDataRef data, NSString* value) {
   UInt32 length = [value lengthOfBytesUsingEncoding:NSUTF8StringEncoding];
-  [self writeSize:length];
-  [self writeBytes:value.UTF8String length:length];
+  WriteSize(data, length);
+  WriteBytes(data, value.UTF8String, length);
 }
 
-- (void)writeValue:(id)value {
-  if (value == nil || value == [NSNull null]) {
-    [self writeByte:FlutterStandardFieldNil];
-  } else if ([value isKindOfClass:[NSNumber class]]) {
+static void WriteValue(CFMutableDataRef data, id value) {
+  if (value == nil || value == s_nsNull) {
+    WriteByte(data, FlutterStandardFieldNil);
+  } else if ([value isKindOfClass:s_nsNumber]) {
     CFNumberRef number = (CFNumberRef)value;
     BOOL success = NO;
     if (CFGetTypeID(number) == CFBooleanGetTypeID()) {
       BOOL b = CFBooleanGetValue((CFBooleanRef)number);
-      [self writeByte:(b ? FlutterStandardFieldTrue : FlutterStandardFieldFalse)];
+      WriteByte(data, (b ? FlutterStandardFieldTrue : FlutterStandardFieldFalse));
       success = YES;
     } else if (CFNumberIsFloatType(number)) {
       Float64 f;
       success = CFNumberGetValue(number, kCFNumberFloat64Type, &f);
       if (success) {
-        [self writeByte:FlutterStandardFieldFloat64];
-        [self writeAlignment:8];
-        [self writeBytes:(UInt8*)&f length:8];
+        WriteByte(data, FlutterStandardFieldFloat64);
+        WriteAlignment(data, 8);
+        WriteBytes(data, (UInt8*)&f, 8);
       }
     } else if (CFNumberGetByteSize(number) <= 4) {
       SInt32 n;
       success = CFNumberGetValue(number, kCFNumberSInt32Type, &n);
       if (success) {
-        [self writeByte:FlutterStandardFieldInt32];
-        [self writeBytes:(UInt8*)&n length:4];
+        WriteByte(data, FlutterStandardFieldInt32);
+        WriteBytes(data, (UInt8*)&n, 4);
       }
     } else if (CFNumberGetByteSize(number) <= 8) {
       SInt64 n;
       success = CFNumberGetValue(number, kCFNumberSInt64Type, &n);
       if (success) {
-        [self writeByte:FlutterStandardFieldInt64];
-        [self writeBytes:(UInt8*)&n length:8];
+        WriteByte(data, FlutterStandardFieldInt64);
+        WriteBytes(data, (UInt8*)&n, 8);
       }
     }
     if (!success) {
       NSLog(@"Unsupported value: %@ of number type %ld", value, CFNumberGetType(number));
-      NSAssert(NO, @"Unsupported value for standard codec");
+      assert(NO);  // Unsupported value for standard codec.
     }
-  } else if ([value isKindOfClass:[NSString class]]) {
+  } else if ([value isKindOfClass:s_nsString]) {
     NSString* string = value;
-    [self writeByte:FlutterStandardFieldString];
-    [self writeUTF8:string];
-  } else if ([value isKindOfClass:[FlutterStandardTypedData class]]) {
+    WriteByte(data, FlutterStandardFieldString);
+    WriteUTF8(data, string);
+  } else if ([value isKindOfClass:s_flutterStandardTypedData]) {
     FlutterStandardTypedData* typedData = value;
-    [self writeByte:FlutterStandardFieldForDataType(typedData.type)];
-    [self writeSize:typedData.elementCount];
-    [self writeAlignment:typedData.elementSize];
-    [self writeData:typedData.data];
-  } else if ([value isKindOfClass:[NSData class]]) {
-    [self writeValue:[FlutterStandardTypedData typedDataWithBytes:value]];
-  } else if ([value isKindOfClass:[NSArray class]]) {
+    WriteByte(data, FlutterStandardFieldForDataType(typedData.type));
+    WriteSize(data, typedData.elementCount);
+    WriteAlignment(data, typedData.elementSize);
+    WriteData(data, typedData.data);
+  } else if ([value isKindOfClass:s_nsData]) {
+    WriteValue(data, [FlutterStandardTypedData typedDataWithBytes:value]);
+  } else if ([value isKindOfClass:s_nsArray]) {
     NSArray* array = value;
-    [self writeByte:FlutterStandardFieldList];
-    [self writeSize:array.count];
+    WriteByte(data, FlutterStandardFieldList);
+    WriteSize(data, array.count);
     for (id object in array) {
-      [self writeValue:object];
+      WriteValue(data, object);
     }
-  } else if ([value isKindOfClass:[NSDictionary class]]) {
+  } else if ([value isKindOfClass:s_nsDictionary]) {
     NSDictionary* dict = value;
-    [self writeByte:FlutterStandardFieldMap];
-    [self writeSize:dict.count];
+    WriteByte(data, FlutterStandardFieldMap);
+    WriteSize(data, dict.count);
     for (id key in dict) {
-      [self writeValue:key];
-      [self writeValue:[dict objectForKey:key]];
+      WriteValue(data, key);
+      WriteValue(data, [dict objectForKey:key]);
     }
   } else {
     NSLog(@"Unsupported value: %@ of type %@", value, [value class]);
-    NSAssert(NO, @"Unsupported value for standard codec");
+    assert(NO);  // Unsupported value for standard codec.
   }
+}
+
+- (void)writeByte:(UInt8)value {
+  WriteByte((CFMutableDataRef)_data, value);
+}
+
+- (void)writeBytes:(const void*)bytes length:(NSUInteger)length {
+  WriteBytes((CFMutableDataRef)_data, bytes, length);
+}
+
+- (void)writeData:(NSData*)data {
+  WriteData((CFMutableDataRef)_data, data);
+}
+
+- (void)writeSize:(UInt32)size {
+  WriteSize((CFMutableDataRef)_data, size);
+}
+
+- (void)writeAlignment:(UInt8)alignment {
+  WriteAlignment((CFMutableDataRef)_data, alignment);
+}
+
+- (void)writeUTF8:(NSString*)value {
+  WriteUTF8((CFMutableDataRef)_data, value);
+}
+
+- (void)writeValue:(id)value {
+  WriteValue((CFMutableDataRef)_data, value);
 }
 @end
 
@@ -450,7 +486,7 @@ using namespace flutter;
       NSMutableArray* array = [NSMutableArray arrayWithCapacity:length];
       for (UInt32 i = 0; i < length; i++) {
         id value = [self readValue];
-        [array addObject:(value == nil ? [NSNull null] : value)];
+        [array addObject:(value == nil ? s_nsNull : value)];
       }
       return array;
     }
@@ -460,8 +496,8 @@ using namespace flutter;
       for (UInt32 i = 0; i < size; i++) {
         id key = [self readValue];
         id val = [self readValue];
-        [dict setObject:(val == nil ? [NSNull null] : val)
-                 forKey:(key == nil ? [NSNull null] : key)];
+        [dict setObject:(val == nil ? s_nsNull : val)
+                 forKey:(key == nil ? s_nsNull : key)];
       }
       return dict;
     }
