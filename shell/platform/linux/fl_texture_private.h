@@ -11,21 +11,24 @@
 G_BEGIN_DECLS
 
 /**
- * fl_texture_populate_texture:
+ * fl_texture_populate:
  * @texture: an #FlTexture.
  * @width: width of the texture.
  * @height: height of the texture.
  * @opengl_texture: (out): return an #FlutterOpenGLTexture.
+ * @error: (allow-none): #GError location to store the error occurring, or
+ * %NULL to ignore.
  *
  * Attempts to populate the specified @opengl_texture with texture details
  * such as the name, width, height and the pixel format.
  *
  * Returns: %TRUE on success.
  */
-gboolean fl_texture_populate_texture(FlTexture* texture,
-                                     uint32_t width,
-                                     uint32_t height,
-                                     FlutterOpenGLTexture* opengl_texture);
+gboolean fl_texture_populate(FlTexture* texture,
+                             uint32_t width,
+                             uint32_t height,
+                             FlutterOpenGLTexture* opengl_texture,
+                             GError** error);
 
 /**
  * fl_texture_get_texture_id:

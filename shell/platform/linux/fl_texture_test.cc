@@ -11,54 +11,68 @@
 
 #include <epoxy/gl.h>
 
+static constexpr uint32_t BUFFER_WIDTH = 4u;
+static constexpr uint32_t BUFFER_HEIGHT = 4u;
+static constexpr uint32_t REAL_BUFFER_WIDTH = 2u;
+static constexpr uint32_t REAL_BUFFER_HEIGHT = 2u;
+
+G_DECLARE_FINAL_TYPE(FlTestTexture,
+                     fl_test_texture,
+                     FL,
+                     TEST_TEXTURE,
+                     FlTexture)
+
+/// A simple texture.
+struct _FlTestTexture {
+  FlTexture parent_instance;
+};
+
+G_DEFINE_TYPE(FlTestTexture, fl_test_texture, fl_texture_get_type())
+
+static gboolean fl_test_texture_populate(FlTexture* texture,
+                                         uint32_t* target,
+                                         uint32_t* format,
+                                         uint32_t* width,
+                                         uint32_t* height,
+                                         GError** error) {
+  EXPECT_TRUE(FL_IS_TEST_TEXTURE(texture));
+
+  EXPECT_EQ(*width, BUFFER_WIDTH);
+  EXPECT_EQ(*height, BUFFER_HEIGHT);
+  *target = GL_TEXTURE_2D;
+  *format = GL_R8;
+  *width = REAL_BUFFER_WIDTH;
+  *height = REAL_BUFFER_HEIGHT;
+
+  return TRUE;
+}
+
+static void fl_test_texture_class_init(FlTestTextureClass* klass) {
+  FL_TEXTURE_CLASS(klass)->populate = fl_test_texture_populate;
+}
+
+static void fl_test_texture_init(FlTestTexture* self) {}
+
+static FlTestTexture* fl_test_texture_new() {
+  return FL_TEST_TEXTURE(g_object_new(fl_test_texture_get_type(), nullptr));
+}
+
 // Test that getting the texture ID works.
 TEST(FlTextureTest, TextureID) {
-  // Texture ID is not assigned until the pixel buffer is copied once.
-  static constexpr uint32_t BUFFER_WIDTH = 4u;
-  static constexpr uint32_t BUFFER_HEIGHT = 4u;
-  static constexpr uint32_t REAL_BUFFER_WIDTH = 2u;
-  static constexpr uint32_t REAL_BUFFER_HEIGHT = 2u;
-  FlCopyPixelBufferCallback callback =
-      [](const uint8_t** out_buffer, uint32_t* format, uint32_t* width,
-         uint32_t* height, gpointer user_data) -> gboolean {
-    static const uint8_t buffer[] = {0xc9, 0xc8, 0xc7, 0xc6};
-    EXPECT_EQ(*width, BUFFER_WIDTH);
-    EXPECT_EQ(*height, BUFFER_HEIGHT);
-    *out_buffer = buffer;
-    *format = GL_R8;
-    *width = REAL_BUFFER_WIDTH;
-    *height = REAL_BUFFER_HEIGHT;
-    return TRUE;
-  };
-  g_autoptr(FlTexture) texture =
-      FL_TEXTURE(fl_pixel_buffer_texture_new(callback, nullptr, nullptr));
+  // Texture ID is not assigned until the testure is populated.
+  g_autoptr(FlTexture) texture = FL_TEXTURE(fl_test_texture_new());
   EXPECT_EQ(fl_texture_get_texture_id(texture),
             reinterpret_cast<int64_t>(texture));
 }
 
 // Test that populating an OpenGL texture works.
 TEST(FlTextureTest, PopulateTexture) {
-  static constexpr uint32_t BUFFER_WIDTH = 4u;
-  static constexpr uint32_t BUFFER_HEIGHT = 4u;
-  static constexpr uint32_t REAL_BUFFER_WIDTH = 2u;
-  static constexpr uint32_t REAL_BUFFER_HEIGHT = 2u;
-  FlCopyPixelBufferCallback callback =
-      [](const uint8_t** out_buffer, uint32_t* format, uint32_t* width,
-         uint32_t* height, gpointer user_data) -> gboolean {
-    static const uint8_t buffer[] = {0x7a, 0x8a, 0x9a, 0xaa};
-    EXPECT_EQ(*width, BUFFER_WIDTH);
-    EXPECT_EQ(*height, BUFFER_HEIGHT);
-    *out_buffer = buffer;
-    *format = GL_R8;
-    *width = REAL_BUFFER_WIDTH;
-    *height = REAL_BUFFER_HEIGHT;
-    return TRUE;
-  };
-  g_autoptr(FlTexture) texture =
-      FL_TEXTURE(fl_pixel_buffer_texture_new(callback, nullptr, nullptr));
+  g_autoptr(FlTexture) texture = FL_TEXTURE(fl_test_texture_new());
   FlutterOpenGLTexture opengl_texture = {0};
-  EXPECT_TRUE(fl_texture_populate_texture(texture, BUFFER_WIDTH, BUFFER_HEIGHT,
-                                          &opengl_texture));
+  g_autoptr(GError) error = nullptr;
+  EXPECT_TRUE(fl_texture_populate(texture, BUFFER_WIDTH, BUFFER_HEIGHT,
+                                  &opengl_texture, &error));
+  EXPECT_EQ(error, nullptr);
   EXPECT_EQ(opengl_texture.width, REAL_BUFFER_WIDTH);
   EXPECT_EQ(opengl_texture.height, REAL_BUFFER_HEIGHT);
 }

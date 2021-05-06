@@ -280,8 +280,13 @@ static bool fl_engine_gl_external_texture_frame_callback(
   if (!self->texture_registrar) {
     return false;
   }
-  return fl_texture_registrar_populate_texture(
-      self->texture_registrar, texture_id, width, height, texture);
+  g_autoptr(GError) error = nullptr;
+  gboolean result = fl_texture_registrar_populate_texture(
+      self->texture_registrar, texture_id, width, height, texture, &error);
+  if (!result) {
+    g_warning("%s", error->message);
+  }
+  return result;
 }
 
 // Called by the engine to determine if it is on the GTK thread.

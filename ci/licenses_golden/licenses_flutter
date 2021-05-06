@@ -1428,6 +1428,7 @@ FILE: ../../../flutter/shell/platform/linux/fl_method_response_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_mouse_cursor_plugin.cc
 FILE: ../../../flutter/shell/platform/linux/fl_mouse_cursor_plugin.h
 FILE: ../../../flutter/shell/platform/linux/fl_pixel_buffer_texture.cc
+FILE: ../../../flutter/shell/platform/linux/fl_pixel_buffer_texture_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_platform_plugin.cc
 FILE: ../../../flutter/shell/platform/linux/fl_platform_plugin.h
 FILE: ../../../flutter/shell/platform/linux/fl_plugin_registrar.cc

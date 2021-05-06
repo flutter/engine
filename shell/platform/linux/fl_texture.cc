@@ -18,14 +18,14 @@ static void fl_texture_class_init(FlTextureClass* klass) {}
 
 static void fl_texture_init(FlTexture* self) {}
 
-gboolean fl_texture_populate_texture(FlTexture* self,
-                                     uint32_t width,
-                                     uint32_t height,
-                                     FlutterOpenGLTexture* opengl_texture) {
+gboolean fl_texture_populate(FlTexture* self,
+                             uint32_t width,
+                             uint32_t height,
+                             FlutterOpenGLTexture* opengl_texture,
+                             GError** error) {
   uint32_t target = 0, name = 0;
-  bool populate_result = FL_TEXTURE_GET_CLASS(self)->populate_texture(
-      self, &target, &name, &width, &height);
-  if (!populate_result) {
+  if (!FL_TEXTURE_GET_CLASS(self)->populate(self, &target, &name, &width,
+                                            &height, error)) {
     return false;
   }
 

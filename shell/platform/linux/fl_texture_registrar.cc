@@ -90,13 +90,16 @@ gboolean fl_texture_registrar_populate_texture(
     int64_t texture_id,
     uint32_t width,
     uint32_t height,
-    FlutterOpenGLTexture* opengl_texture) {
+    FlutterOpenGLTexture* opengl_texture,
+    GError** error) {
   FlTexture* texture = FL_TEXTURE(
       g_hash_table_lookup(self->textures, GINT_TO_POINTER(texture_id)));
   if (texture == nullptr) {
+    g_set_error(error, fl_engine_error_quark(), FL_ENGINE_ERROR_FAILED,
+                "Unable to find texture %" G_GINT64_FORMAT, texture_id);
     return FALSE;
   }
-  return fl_texture_populate_texture(texture, width, height, opengl_texture);
+  return fl_texture_populate(texture, width, height, opengl_texture, error);
 }
 
 G_MODULE_EXPORT void fl_texture_registrar_unregister_texture(

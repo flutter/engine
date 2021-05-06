@@ -28,6 +28,8 @@ FlTextureRegistrar* fl_texture_registrar_new(FlEngine* engine);
  * @width: width of the texture.
  * @height: height of the texture.
  * @opengl_texture: (out): return an #FlutterOpenGLTexture.
+ * @error: (allow-none): #GError location to store the error occurring, or
+ * %NULL to ignore.
  *
  * Attempts to populate the given @texture_id.
  *
@@ -38,7 +40,8 @@ gboolean fl_texture_registrar_populate_texture(
     int64_t texture_id,
     uint32_t width,
     uint32_t height,
-    FlutterOpenGLTexture* opengl_texture);
+    FlutterOpenGLTexture* opengl_texture,
+    GError** error);
 
 /**
  * fl_texture_registrar_get_texture:
