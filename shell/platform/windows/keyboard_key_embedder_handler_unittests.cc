@@ -85,6 +85,7 @@ constexpr uint64_t kPhysicalControlRight = 0x000700e4;
 constexpr uint64_t kPhysicalShiftLeft = 0x000700e1;
 constexpr uint64_t kPhysicalShiftRight = 0x000700e5;
 constexpr uint64_t kPhysicalKeyNumLock = 0x00070053;
+constexpr uint64_t kPhysicalKeyNumpad1 = 0x00070059;
 
 constexpr uint64_t kLogicalKeyA = 0x00000061;
 constexpr uint64_t kLogicalControlLeft = 0x30000000105;
@@ -92,6 +93,7 @@ constexpr uint64_t kLogicalControlRight = 0x40000000105;
 constexpr uint64_t kLogicalShiftLeft = 0x3000000010d;
 constexpr uint64_t kLogicalShiftRight = 0x4000000010d;
 constexpr uint64_t kLogicalKeyNumLock = 0x0100000010a;
+constexpr uint64_t kLogicalKeyNumpad1 = 0x50000000031;
 }  // namespace
 
 // Test the most basic key events.
@@ -187,8 +189,8 @@ TEST(KeyboardKeyEmbedderHandlerTest, ToggleNumLockDuringNumpadPress) {
   EXPECT_EQ(results.size(), 1);
   event = &results[0];
   EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
-  EXPECT_EQ(event->physical, 0x00070059);
-  EXPECT_EQ(event->logical, 0x00200000031);
+  EXPECT_EQ(event->physical, kPhysicalKeyNumpad1);
+  EXPECT_EQ(event->logical, kLogicalKeyNumpad1);
   // EXPECT_STREQ(event->character, "1"); // TODO
   EXPECT_EQ(event->synthesized, false);
   results.clear();
@@ -201,8 +203,8 @@ TEST(KeyboardKeyEmbedderHandlerTest, ToggleNumLockDuringNumpadPress) {
   EXPECT_EQ(results.size(), 1);
   event = &results[0];
   EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
-  EXPECT_EQ(event->physical, 0x00070053);
-  EXPECT_EQ(event->logical, 0x0000010a);
+  EXPECT_EQ(event->physical, kPhysicalKeyNumLock);
+  EXPECT_EQ(event->logical, kLogicalKeyNumLock);
   EXPECT_STREQ(event->character, "");
   EXPECT_EQ(event->synthesized, false);
   results.clear();
@@ -215,8 +217,8 @@ TEST(KeyboardKeyEmbedderHandlerTest, ToggleNumLockDuringNumpadPress) {
   EXPECT_EQ(results.size(), 1);
   event = &results[0];
   EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
-  EXPECT_EQ(event->physical, 0x00070053);
-  EXPECT_EQ(event->logical, 0x0000010a);
+  EXPECT_EQ(event->physical, kPhysicalKeyNumLock);
+  EXPECT_EQ(event->logical, kLogicalKeyNumLock);
   EXPECT_STREQ(event->character, "");
   EXPECT_EQ(event->synthesized, false);
   results.clear();
@@ -228,8 +230,8 @@ TEST(KeyboardKeyEmbedderHandlerTest, ToggleNumLockDuringNumpadPress) {
   EXPECT_EQ(results.size(), 1);
   event = &results[0];
   EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
-  EXPECT_EQ(event->physical, 0x00070059);
-  EXPECT_EQ(event->logical, 0x00200000031);
+  EXPECT_EQ(event->physical, kPhysicalKeyNumpad1);
+  EXPECT_EQ(event->logical, kLogicalKeyNumpad1);
   EXPECT_STREQ(event->character, "");
   EXPECT_EQ(event->synthesized, false);
   results.clear();
