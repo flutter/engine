@@ -196,6 +196,9 @@ void fl_task_runner_block_main_thread(FlTaskRunner* self) {
     fl_task_runner_process_expired_tasks_locked(self);
   }
 
+  // Tasks might have changed in the meanwhile, reschedule timeout
+  fl_task_runner_tasks_did_change_locked(self);
+
   g_object_unref(self);
 }
 
