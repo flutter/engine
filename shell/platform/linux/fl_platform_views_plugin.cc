@@ -14,6 +14,7 @@
 
 static constexpr char kChannelName[] = "flutter/platform_views";
 static constexpr char kBadArgumentsError[] = "Bad Arguments";
+static constexpr char kBadPreconditionError[] = "Illegal State";
 static constexpr char kCreateMethod[] = "create";
 static constexpr char kDisposeMethod[] = "dispose";
 static constexpr char kAcceptGestureMethod[] = "acceptGesture";
@@ -131,6 +132,11 @@ static FlMethodResponse* platform_views_accept_gesture(
         kBadArgumentsError, "Argument list missing or malformed", nullptr));
   }
 
+  if (!self->gesture_helper) {
+    return FL_METHOD_RESPONSE(fl_method_error_response_new(
+        kBadPreconditionError, "Gesture helper destroyed", nullptr));
+  }
+
   int64_t view_id = fl_value_get_int(fl_value_get_list_value(args, 0));
   int64_t pointer_id = fl_value_get_int(fl_value_get_list_value(args, 1));
   FlPlatformView* platform_view =
@@ -202,6 +208,11 @@ static FlMethodResponse* platform_views_enter(FlPlatformViewsPlugin* self,
         kBadArgumentsError, "Argument list missing or malformed", nullptr));
   }
 
+  if (!self->gesture_helper) {
+    return FL_METHOD_RESPONSE(fl_method_error_response_new(
+        kBadPreconditionError, "Gesture helper destroyed", nullptr));
+  }
+
   int64_t view_id = fl_value_get_int(fl_value_get_list_value(args, 0));
   FlPlatformView* platform_view =
       fl_platform_views_plugin_get_platform_view(self, view_id);
@@ -224,6 +235,11 @@ static FlMethodResponse* platform_views_exit(FlPlatformViewsPlugin* self,
       fl_value_get_length(args) != 1) {
     return FL_METHOD_RESPONSE(fl_method_error_response_new(
         kBadArgumentsError, "Argument list missing or malformed", nullptr));
+  }
+
+  if (!self->gesture_helper) {
+    return FL_METHOD_RESPONSE(fl_method_error_response_new(
+        kBadPreconditionError, "Gesture helper destroyed", nullptr));
   }
 
   int64_t view_id = fl_value_get_int(fl_value_get_list_value(args, 0));
@@ -300,6 +316,12 @@ static void fl_platform_views_plugin_dispose(GObject* object) {
   g_hash_table_destroy(self->platform_views);
   self->factories = self->platform_views = nullptr;
 
+  if (self->gesture_helper != nullptr) {
+    g_object_remove_weak_pointer(
+        G_OBJECT(self), reinterpret_cast<gpointer*>(&(self->gesture_helper)));
+    self->gesture_helper = nullptr;
+  }
+
   G_OBJECT_CLASS(fl_platform_views_plugin_parent_class)->dispose(object);
 }
 
@@ -325,6 +347,9 @@ FlPlatformViewsPlugin* fl_platform_views_plugin_new(
                                             nullptr);
 
   self->gesture_helper = gesture_helper;
+  g_object_add_weak_pointer(
+      G_OBJECT(self), reinterpret_cast<gpointer*>(&(self->gesture_helper)));
+
   self->factories =
       g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_object_unref);
   self->platform_views = g_hash_table_new_full(g_direct_hash, g_direct_equal,

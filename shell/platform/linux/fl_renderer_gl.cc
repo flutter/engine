@@ -124,6 +124,9 @@ static gboolean fl_renderer_gl_present_layers(FlRenderer* renderer,
             .width = static_cast<int>(layer->size.width),
             .height = static_cast<int>(layer->size.height),
         };
+
+        // Makes a copy of mutation array from embedder API so we can use it out
+        // of this method.
         g_autoptr(GPtrArray) mutations =
             g_ptr_array_new_full(layer->platform_view->mutations_count, g_free);
         for (size_t i = 0; i < layer->platform_view->mutations_count; i++) {
