@@ -20,7 +20,8 @@ G_DECLARE_FINAL_TYPE(FlClippingView,
 /**
  * FlClippingView:
  *
- * #FlClippingView is a GTK widget that draws its child with mutators.
+ * #FlClippingView is a GTK widget that applies clipping mutations set by
+ * Framework side to child platform view.
  */
 
 /**
@@ -37,7 +38,7 @@ GtkWidget* fl_clipping_view_new();
  * @clipping_view: an #FlClippingView.
  * @child: (transfer-none): widget to apply mutators.
  * @geometry: geometry of widget.
- * @mutations: (transfer-full): mutations to be applied.
+ * @mutations: the clipping mutations to be applied.
  *
  * Reset child widget and its mutations.
  */

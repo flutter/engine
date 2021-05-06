@@ -48,7 +48,7 @@ void fl_view_add_gl_area(FlView* view,
  * @view: an #FlView.
  * @widget: a #GtkWidget.
  * @geometry: geometry of the widget.
- * @mutations: (transfer-full): the mutations applied to the widget.
+ * @mutations: the clipping mutations applied to the widget.
  *
  * Append a #GtkWidget at top of stacked children of #FlView.
  */

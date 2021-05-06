@@ -143,7 +143,7 @@ G_DECLARE_INTERFACE(FlPlatformViewFactory,
  *
  *   static void
  *   webview_factory_fl_platform_view_factory_iface_init (
- *     FlPlatformViewFactoryInterface* iface) {
+ *     FlPlatformViewFactoryInterface *iface) {
  *     iface->create_platform_view = webview_factory_create_platform_view;
  *     iface->get_create_arguments_codec =
  *         webview_factory_get_create_arguments_codec;

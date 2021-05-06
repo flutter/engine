@@ -115,15 +115,16 @@ static gboolean fl_renderer_gl_present_layers(FlRenderer* renderer,
             fl_platform_views_plugin_get_platform_view(
                 plugin, layer->platform_view->identifier);
         GtkWidget* widget = fl_platform_view_get_view(platform_view);
-        if (!widget)
+        if (!widget) {
           continue;
+        }
         GdkRectangle geometry = {
             .x = static_cast<int>(layer->offset.x),
             .y = static_cast<int>(layer->offset.y),
             .width = static_cast<int>(layer->size.width),
             .height = static_cast<int>(layer->size.height),
         };
-        GPtrArray* mutations =
+        g_autoptr(GPtrArray) mutations =
             g_ptr_array_new_full(layer->platform_view->mutations_count, g_free);
         for (size_t i = 0; i < layer->platform_view->mutations_count; i++) {
           FlutterPlatformViewMutation* mutation =

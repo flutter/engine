@@ -18,10 +18,7 @@ G_DEFINE_TYPE(FlClippingView, fl_clipping_view, GTK_TYPE_EVENT_BOX)
 static void fl_clipping_view_dispose(GObject* gobject) {
   FlClippingView* self = FL_CLIPPING_VIEW(gobject);
 
-  if (self->mutations) {
-    g_ptr_array_unref(self->mutations);
-    self->mutations = nullptr;
-  }
+  g_clear_pointer(&self->mutations, g_ptr_array_unref);
 
   G_OBJECT_CLASS(fl_clipping_view_parent_class)->dispose(gobject);
 }
@@ -160,17 +157,16 @@ void fl_clipping_view_reset(FlClippingView* self,
 
   GtkWidget* old_child = gtk_bin_get_child(GTK_BIN(self));
   if (old_child != child) {
-    if (old_child)
+    if (old_child) {
       gtk_container_remove(GTK_CONTAINER(self), old_child);
+    }
 
     g_object_ref(child);
     gtk_container_add(GTK_CONTAINER(self), child);
   }
-  if (self->mutations) {
-    g_ptr_array_unref(self->mutations);
-  }
   self->geometry = *geometry;
-  self->mutations = mutations;
+  g_clear_pointer(&self->mutations, g_ptr_array_unref);
+  self->mutations = g_ptr_array_ref(mutations);
 
   if (mutations) {
     for (guint i = 0; i < mutations->len; i++) {
