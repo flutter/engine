@@ -660,16 +660,30 @@ class GradientConical extends GradientRadial {
 
 /// Backend implementation of [ui.ImageFilter].
 ///
-/// Currently only `blur` is supported.
-class EngineImageFilter implements ui.ImageFilter {
-  EngineImageFilter.blur({this.sigmaX = 0.0, this.sigmaY = 0.0});
+/// Currently only `blur` and `matrix` are supported.
+abstract class EngineImageFilter implements ui.ImageFilter {
+  factory EngineImageFilter.blur({ required double sigmaX, required double sigmaY }) = _BlurEngineImageFilter;
+  factory EngineImageFilter.matrix({ required Float64List matrix }) = _MatrixEngineImageFilter;
+
+  EngineImageFilter._();
+
+  String get _filterAttribute => '';
+  String get _transformAttribute => '';
+}
+
+class _BlurEngineImageFilter extends EngineImageFilter {
+  _BlurEngineImageFilter({ this.sigmaX = 0.0, this.sigmaY = 0.0 }) : super._();
 
   final double sigmaX;
   final double sigmaY;
 
+  String get _filterAttribute => _imageFilterToCss(this);
+
   @override
   bool operator ==(Object other) {
-    return other is EngineImageFilter &&
+    if (other.runtimeType != runtimeType)
+      return false;
+    return other is _BlurEngineImageFilter &&
         other.sigmaX == sigmaX &&
         other.sigmaY == sigmaY;
   }
@@ -680,5 +694,30 @@ class EngineImageFilter implements ui.ImageFilter {
   @override
   String toString() {
     return 'ImageFilter.blur($sigmaX, $sigmaY)';
+  }
+}
+
+class _MatrixEngineImageFilter extends EngineImageFilter {
+  _MatrixEngineImageFilter({ required this.matrix }) : super._();
+
+  final Float64List matrix;
+
+  String get _transformAttribute => float64ListToCssTransform(matrix);
+
+  @override
+  bool operator ==(Object other) {
+    if (other.runtimeType != runtimeType)
+      return false;
+    return other is _MatrixEngineImageFilter
+        // && other.filterQuality == filterQuality
+        && _listEquals<double>(other.matrix, matrix);
+  }
+
+  @override
+  int get hashCode => ui.hashList(matrix);
+
+  @override
+  String toString() {
+    return 'ImageFilter.matrix($matrix)';
   }
 }

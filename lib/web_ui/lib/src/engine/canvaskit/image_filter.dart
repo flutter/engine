@@ -22,7 +22,7 @@ abstract class CkManagedSkImageFilterConvertible<T extends Object>
 
 /// The CanvasKit implementation of [ui.ImageFilter].
 ///
-/// Currently only supports `blur`.
+/// Currently only supports `blur`, `matrix`, and ColorFilters.
 abstract class CkImageFilter extends ManagedSkiaObject<SkImageFilter>
     implements CkManagedSkImageFilterConvertible<SkImageFilter> {
   factory CkImageFilter.blur(
@@ -31,6 +31,9 @@ abstract class CkImageFilter extends ManagedSkiaObject<SkImageFilter>
       required ui.TileMode tileMode}) = _CkBlurImageFilter;
   factory CkImageFilter.color({required CkColorFilter colorFilter}) =
       CkColorFilterImageFilter;
+  factory CkImageFilter.matrix(
+      {required Float64List matrix,
+      required ui.FilterQuality filterQuality}) = _CkMatrixImageFilter;
 
   CkImageFilter._();
 
@@ -125,4 +128,34 @@ class _CkBlurImageFilter extends CkImageFilter {
   String toString() {
     return 'ImageFilter.blur($sigmaX, $sigmaY, $_modeString)';
   }
+}
+
+class _CkMatrixImageFilter extends CkImageFilter {
+  _CkMatrixImageFilter({ required this.matrix, required this.filterQuality }) : super._();
+
+  Float64List matrix;
+  ui.FilterQuality filterQuality;
+
+  SkImageFilter _initSkiaObject() {
+    return canvasKit.ImageFilter.MakeMatrixTransform(
+      toSkMatrixFromFloat64(matrix),
+      toSkFilterQuality(filterQuality),
+      null,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (other.runtimeType != runtimeType)
+      return false;
+    return other is _CkMatrixImageFilter
+        && other.filterQuality == filterQuality
+        && _listEquals<double>(other.matrix, matrix);
+  }
+
+  @override
+  int get hashCode => ui.hashValues(filterQuality, ui.hashList(matrix));
+
+  @override
+  String toString() => 'ImageFilter.matrix($matrix, $filterQuality)';
 }

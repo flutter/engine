@@ -586,6 +586,6 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
 // HTML only supports a single radius, but Flutter ImageFilter supports separate
 // horizontal and vertical radii. The best approximation we can provide is to
 // average the two radii together for a single compromise value.
-String _imageFilterToCss(EngineImageFilter filter) {
+String _imageFilterToCss(_BlurEngineImageFilter filter) {
   return 'blur(${(filter.sigmaX + filter.sigmaY) / 2}px)';
 }
