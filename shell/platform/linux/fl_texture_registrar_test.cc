@@ -15,7 +15,7 @@
 TEST(FlTextureRegistrarTest, RegisterTexture) {
   g_autoptr(FlEngine) engine = make_mock_engine();
   g_autoptr(FlTextureRegistrar) registrar = fl_texture_registrar_new(engine);
-  FlTexture* texture =
+  g_autoptr(FlTexture) texture =
       FL_TEXTURE(fl_pixel_buffer_texture_new(nullptr, nullptr, nullptr));
   int64_t id = fl_texture_registrar_register_texture(registrar, texture);
 
@@ -30,7 +30,9 @@ TEST(FlTextureRegistrarTest, RegisterTexture) {
 TEST(FlTextureRegistrarTest, MarkTextureFrameAvailable) {
   g_autoptr(FlEngine) engine = make_mock_engine();
   g_autoptr(FlTextureRegistrar) registrar = fl_texture_registrar_new(engine);
-  int64_t id = fl_texture_registrar_register_texture(registrar, nullptr);
+  g_autoptr(FlTexture) texture =
+      FL_TEXTURE(fl_pixel_buffer_texture_new(nullptr, nullptr, nullptr));
+  int64_t id = fl_texture_registrar_register_texture(registrar, texture);
   fl_texture_registrar_mark_texture_frame_available(registrar, id);
 }
 
@@ -54,7 +56,7 @@ TEST(FlTextureRegistrarTest, PopulateTexture) {
     *height = REAL_BUFFER_HEIGHT;
     return TRUE;
   };
-  FlTexture* texture =
+  g_autoptr(FlTexture) texture =
       FL_TEXTURE(fl_pixel_buffer_texture_new(callback, nullptr, nullptr));
   int64_t id = fl_texture_registrar_register_texture(registrar, texture);
   FlutterOpenGLTexture opengl_texture;
