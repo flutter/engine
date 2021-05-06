@@ -183,8 +183,7 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
       final html.VisualViewport? viewport = html.window.visualViewport;
 
       if (viewport != null) {
-        if (browserEngine == BrowserEngine.webkit &&
-            operatingSystem == OperatingSystem.iOs) {
+        if (operatingSystem == OperatingSystem.iOs) {
           /// Chrome on iOS reports incorrect viewport.height when app
           /// starts in portrait orientation and the phone is rotated to
           /// landscape.
@@ -216,8 +215,7 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
     double windowInnerHeight;
     final html.VisualViewport? viewport = html.window.visualViewport;
     if (viewport != null) {
-      if (browserEngine == BrowserEngine.webkit &&
-          operatingSystem == OperatingSystem.iOs && !isEditingOnMobile) {
+      if (operatingSystem == OperatingSystem.iOs && !isEditingOnMobile) {
         windowInnerHeight = html.document.documentElement!.clientHeight * devicePixelRatio;
       } else {
         windowInnerHeight = viewport.height!.toDouble() * devicePixelRatio;
