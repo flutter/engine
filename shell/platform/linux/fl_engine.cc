@@ -301,8 +301,6 @@ static void fl_engine_dispose(GObject* object) {
   g_clear_object(&self->renderer);
   g_clear_object(&self->binary_messenger);
   g_clear_object(&self->settings_plugin);
-
-  fl_task_runner_stop(self->task_runner);
   g_clear_object(&self->task_runner);
 
   if (self->platform_message_handler_destroy_notify) {

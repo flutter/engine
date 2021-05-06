@@ -38,16 +38,6 @@ void fl_task_runner_post_task(FlTaskRunner* task_runner,
                               uint64_t target_time_nanos);
 
 /**
- * fl_task_runner_stop:
- * @task_runner: an #FlTaskRunner.
- *
- * Requests stop. After this method completes no more tasks will be executed
- * by the task runner. Remaining scheduled tasks will be ignored.
- * Must be invoked on main thread.
- */
-void fl_task_runner_stop(FlTaskRunner* task_runner);
-
-/**
  * fl_task_runner_block_main_thread:
  * @task_runner: an #FlTaskRunner.
  *

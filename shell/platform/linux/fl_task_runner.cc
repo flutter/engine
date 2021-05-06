@@ -19,8 +19,6 @@ struct _FlTaskRunner {
   guint timeout_source_id;
   GList /*<FlTaskRunnerTask>*/* pending_tasks;
   gboolean blocking_main_thread;
-
-  gboolean stopped;
 };
 
 typedef struct _FlTaskRunnerTask {
@@ -53,13 +51,11 @@ static void fl_task_runner_process_expired_tasks_locked(FlTaskRunner* self) {
 
   g_mutex_unlock(&self->mutex);
 
-  if (self->engine) {
-    l = expired_tasks;
-    while (l != nullptr && !self->stopped) {
-      FlTaskRunnerTask* task = static_cast<FlTaskRunnerTask*>(l->data);
-      fl_engine_execute_task(self->engine, &task->task);
-      l = l->next;
-    }
+  l = expired_tasks;
+  while (l != nullptr && self->engine) {
+    FlTaskRunnerTask* task = static_cast<FlTaskRunnerTask*>(l->data);
+    fl_engine_execute_task(self->engine, &task->task);
+    l = l->next;
   }
 
   g_list_free_full(expired_tasks, g_free);
@@ -183,11 +179,6 @@ void fl_task_runner_post_task(FlTaskRunner* self,
 
   self->pending_tasks = g_list_append(self->pending_tasks, runner_task);
   fl_task_runner_tasks_did_change_locked(self);
-}
-
-void fl_task_runner_stop(FlTaskRunner* self) {
-  // No locking necessary, stop is only set and read on main thread
-  self->stopped = true;
 }
 
 void fl_task_runner_block_main_thread(FlTaskRunner* self) {
