@@ -236,18 +236,18 @@ static void fl_key_embedder_responder_dispose(GObject* object) {
   G_OBJECT_CLASS(fl_key_embedder_responder_parent_class)->dispose(object);
 }
 
-// Fill in #physical_key_to_lock_bit by associating a physical key with
+// Fill in #physical_key_to_lock_bit by associating a logical key with
 // its corresponding modifier bit.
 //
 // This is used as the body of a loop over #lock_bit_to_checked_keys.
-static void initialize_physical_key_to_lock_bit_loop_body(gpointer lock_bit,
-                                                          gpointer value,
-                                                          gpointer user_data) {
+static void initialize_logical_key_to_lock_bit_loop_body(gpointer lock_bit,
+                                                         gpointer value,
+                                                         gpointer user_data) {
   FlKeyEmbedderCheckedKey* checked_key =
       reinterpret_cast<FlKeyEmbedderCheckedKey*>(value);
   GHashTable* table = reinterpret_cast<GHashTable*>(user_data);
   g_hash_table_insert(table,
-                      uint64_to_gpointer(checked_key->primary_physical_key),
+                      uint64_to_gpointer(checked_key->primary_logical_key),
                       GUINT_TO_POINTER(lock_bit));
 }
 
@@ -282,11 +282,11 @@ FlKeyEmbedderResponder* fl_key_embedder_responder_new(FlEngine* engine) {
       g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, g_free);
   initialize_lock_bit_to_checked_keys(self->lock_bit_to_checked_keys);
 
-  self->physical_key_to_lock_bit =
+  self->logical_key_to_lock_bit =
       g_hash_table_new(g_direct_hash, g_direct_equal);
   g_hash_table_foreach(self->lock_bit_to_checked_keys,
-                       initialize_physical_key_to_lock_bit_loop_body,
-                       self->physical_key_to_lock_bit);
+                       initialize_logical_key_to_lock_bit_loop_body,
+                       self->logical_key_to_lock_bit);
 
   return self;
 }
@@ -462,13 +462,13 @@ static void update_pressing_state(FlKeyEmbedderResponder* self,
 // If `is_down` is false, this function is a no-op.  Otherwise, this function
 // finds the lock bit corresponding to `physical_key`, and flips its bit.
 static void possibly_update_lock_bit(FlKeyEmbedderResponder* self,
-                                     uint64_t physical_key,
+                                     uint64_t logical_key,
                                      bool is_down) {
   if (!is_down) {
     return;
   }
   const guint mode_bit = GPOINTER_TO_UINT(g_hash_table_lookup(
-      self->physical_key_to_lock_bit, uint64_to_gpointer(physical_key)));
+      self->logical_key_to_lock_bit, uint64_to_gpointer(logical_key)));
   if (mode_bit != 0) {
     self->lock_records ^= mode_bit;
   }
@@ -638,7 +638,7 @@ static void synchronize_lock_states_loop_body(gpointer key,
     FlutterKeyEventType type =
         is_down_event ? kFlutterKeyEventTypeDown : kFlutterKeyEventTypeUp;
     update_pressing_state(self, physical_key, is_down_event ? logical_key : 0);
-    possibly_update_lock_bit(self, physical_key, is_down_event);
+    possibly_update_lock_bit(self, logical_key, is_down_event);
     synthesize_simple_event(self, type, physical_key, logical_key,
                             context->timestamp);
   }
