@@ -66,7 +66,7 @@ static void fl_task_runner_process_expired_tasks_locked(FlTaskRunner* self) {
 static void fl_task_runner_tasks_did_change_locked(FlTaskRunner* self);
 
 // Invoked from a timeout source. Removes and executes expired tasks
-// and rechedules timeout if needed.
+// and reschedules timeout if needed.
 static gboolean fl_task_runner_on_expired_timeout(gpointer data) {
   FlTaskRunner* self = FL_TASK_RUNNER(data);
 
