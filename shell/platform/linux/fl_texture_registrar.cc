@@ -36,10 +36,7 @@ static void engine_weak_notify_cb(gpointer user_data,
 static void fl_texture_registrar_dispose(GObject* object) {
   FlTextureRegistrar* self = FL_TEXTURE_REGISTRAR(object);
 
-  if (self->textures != nullptr) {
-    g_hash_table_destroy(self->textures);
-    self->textures = nullptr;
-  }
+  g_clear_pointer(&self->textures, g_hash_table_unref);
 
   if (self->engine != nullptr) {
     g_object_weak_unref(G_OBJECT(self->engine), engine_weak_notify_cb, self);
