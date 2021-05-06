@@ -16,6 +16,7 @@ struct _FlPluginRegistrar {
   // Messenger to communicate on.
   FlBinaryMessenger* messenger;
 
+  // Texture registrar in use.
   FlTextureRegistrar* texture_registrar;
 };
 
