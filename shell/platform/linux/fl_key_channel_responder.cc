@@ -282,7 +282,7 @@ static void fl_key_channel_responder_handle_event(
   fl_value_set_string_take(message, kModifiersKey, fl_value_new_int(state));
   if (unicode_scarlar_values != 0) {
     fl_value_set_string_take(message, kUnicodeScalarValuesKey,
-                             fl_value_new_int(unicodeScalarValues));
+                             fl_value_new_int(unicode_scarlar_values));
   }
 
   FlKeyChannelUserData* data =
