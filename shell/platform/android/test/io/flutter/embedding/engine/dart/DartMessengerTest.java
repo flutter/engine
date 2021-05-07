@@ -46,7 +46,7 @@ public class DartMessengerTest {
         .onMessage(any(ByteBuffer.class), any(DartMessenger.Reply.class));
 
     messenger.setMessageHandler("test", throwingHandler);
-    messenger.handleMessageFromDart("test", new byte[] {}, 0);
+    messenger.handleMessageFromDart("test", ByteBuffer.allocate(0), 0);
     assertNotNull(reportingHandler.latestException);
     assertTrue(reportingHandler.latestException instanceof AssertionError);
     currentThread.setUncaughtExceptionHandler(savedHandler);
