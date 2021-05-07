@@ -18,6 +18,11 @@ constexpr uint64_t kGtkKeyIdPlane = 0x00600000000;
 
 constexpr uint64_t kMicrosecondsPerMillisecond = 1000;
 
+// Look up a hash table that maps a uint64_t to a uint64_t.
+//
+// Returns 0 if not found.
+//
+// Both key and value should be directly hashed.
 static uint64_t lookup_hash_table(GHashTable* table, uint64_t key) {
   return gpointer_to_uint64(
       g_hash_table_lookup(table, uint64_to_gpointer(key)));
@@ -149,8 +154,17 @@ struct _FlKeyEmbedderResponder {
   // It is a bit mask composed of GTK mode bits.
   guint lock_records;
 
-  // The inferred mode indicating whether the CapsLock state logic is reversed
-  // on this platform.
+  // Internal record for the last observed key mapping.
+  //
+  // It stores the physical key last seen during a key down event for a logical
+  // key. It is used to synthesize modifier keys and lock keys.
+  //
+  // It is a map from Flutter logical key to physical key.  Both keys and
+  // values are directly stored uint64s.  This table is freed by the responder.
+  GHashTable* mapping_records;
+
+  // The inferred logic type indicating whether the CapsLock state logic is
+  // reversed on this platform.
   //
   // For more information, see #update_caps_lock_state_logic_inferrence.
   StateLogicInferrence caps_lock_state_logic_inferrence;
@@ -265,6 +279,7 @@ FlKeyEmbedderResponder* fl_key_embedder_responder_new(FlEngine* engine) {
                             reinterpret_cast<gpointer*>(&(self->engine)));
 
   self->pressing_records = g_hash_table_new(g_direct_hash, g_direct_equal);
+  self->mapping_records = g_hash_table_new(g_direct_hash, g_direct_equal);
   self->lock_records = 0;
   self->caps_lock_state_logic_inferrence = kStateLogicUndecided;
 
@@ -375,6 +390,28 @@ typedef struct {
 
 }  // namespace
 
+// Update the pressing record.
+//
+// If `logical_key` is 0, the record will be set as "released".  Otherwise, the
+// record will be set as "pressed" with this logical key.  This function asserts
+// that the key is pressed if the caller asked to release, and vice versa.
+static void update_pressing_state(FlKeyEmbedderResponder* self,
+                                  uint64_t physical_key,
+                                  uint64_t logical_key) {
+  if (logical_key != 0) {
+    g_return_if_fail(lookup_hash_table(self->pressing_records, physical_key) ==
+                     0);
+    g_hash_table_insert(self->pressing_records,
+                        uint64_to_gpointer(physical_key),
+                        uint64_to_gpointer(logical_key));
+  } else {
+    g_return_if_fail(lookup_hash_table(self->pressing_records, physical_key) !=
+                     0);
+    g_hash_table_remove(self->pressing_records,
+                        uint64_to_gpointer(physical_key));
+  }
+}
+
 // Synchronizes the pressing state of a key to its state from the event by
 // synthesizing events.
 //
@@ -398,13 +435,12 @@ static void synchronize_pressed_states_loop_body(gpointer key,
   const bool pressed_by_state = (context->state & modifier_bit) != 0;
   bool pressed_by_record = false;
 
+  // If the modifier should not be pressed, release all keys.
   for (guint physical_key_idx = 0; physical_key_idx < length;
        physical_key_idx++) {
     const uint64_t physical_key = physical_keys[physical_key_idx];
     const uint64_t pressed_logical_key =
         lookup_hash_table(self->pressing_records, physical_key);
-    // If this event is an event of the key, then the state will be flipped but
-    // haven't reflected on the state. Flip it manually here.
 
     const bool this_key_is_event_key = physical_key
         == context->event_physical_key;
@@ -418,42 +454,29 @@ static void synchronize_pressed_states_loop_body(gpointer key,
         g_return_if_fail(!this_key_is_event_key);
         synthesize_simple_event(self, kFlutterKeyEventTypeUp, physical_key,
                                 pressed_logical_key, context->timestamp);
-        g_hash_table_remove(self->pressing_records,
-                            uint64_to_gpointer(physical_key));
+        update_pressing_state(self, physical_key, 0);
       }
     }
   }
+  // If the modifier should be pressed, press its primary key.
   if (pressed_by_state && !pressed_by_record) {
-    uint64_t physical_key = checked_key->primary_physical_key;
+    const uint64_t logical_key = checked_key->primary_logical_key;
+    const uint64_t record_physical_key = lookup_hash_table(self->mapping_records,
+        logical_key);
+    // The physical key is derived from past mapping record if possible.
+    //
+    // The event to be synthesized is a key down event. There might not have
+    // been a mapping record, in which case the hard-coded #primary_physical_key
+    // is used.
+    const uint64_t physical_key = record_physical_key != 0 ? record_physical_key :
+        checked_key->primary_physical_key;
+    if (record_physical_key == 0) {
+      update_mapping_record(self, physical_key, logical_key);
+    }
     g_return_if_fail(physical_key != context->event_physical_key);
-    uint64_t logical_key = checked_key->primary_logical_key;
     synthesize_simple_event(self, kFlutterKeyEventTypeDown, physical_key,
                             logical_key, context->timestamp);
-    g_hash_table_insert(self->pressing_records,
-                        uint64_to_gpointer(physical_key),
-                        uint64_to_gpointer(logical_key));
-  }
-}
-
-// Update the pressing record.
-//
-// If `logical_key` is 0, the record will be set as "released".  Otherwise, the
-// record will be set as "pressed" with this logical key.  This function asserts
-// that the key is pressed if the caller asked to release, and vice versa.
-static void update_pressing_state(FlKeyEmbedderResponder* self,
-                                  uint64_t physical_key,
-                                  uint64_t logical_key) {
-  if (logical_key != 0) {
-    g_return_if_fail(lookup_hash_table(self->pressing_records, physical_key) ==
-                     0);
-    g_hash_table_insert(self->pressing_records,
-                        uint64_to_gpointer(physical_key),
-                        uint64_to_gpointer(logical_key));
-  } else {
-    g_return_if_fail(lookup_hash_table(self->pressing_records, physical_key) !=
-                     0);
-    g_hash_table_remove(self->pressing_records,
-                        uint64_to_gpointer(physical_key));
+    update_pressing_state(self, physical_key, logical_key);
   }
 }
 
@@ -472,6 +495,14 @@ static void possibly_update_lock_bit(FlKeyEmbedderResponder* self,
   if (mode_bit != 0) {
     self->lock_records ^= mode_bit;
   }
+}
+
+static void update_mapping_record(FlKeyEmbedderResponder* self,
+                                     uint64_t physical_key,
+                                     uint64_t logical_key) {
+  g_hash_table_insert(self->mapping_records,
+                  uint64_to_gpointer(logical_key),
+                  uint64_to_gpointer(physical_key));
 }
 
 // Find the stage # by the current record, which should be the recorded stage
@@ -515,22 +546,21 @@ static int find_stage_by_others_event(int stage_by_record, bool is_state_on) {
   return stage_by_record;
 }
 
-// Infer caps_lock_state_logic_inferrence if applicable.
+// Infer the logic type of CapsLock on the current platform if applicable.
 //
 // In most cases, when a lock key is pressed or released, its event has the
 // key's state as 0-1-1-1 for the 4 stages (as documented in
 // #synchronize_lock_states_loop_body) respectively.  But in very rare cases it
 // produces 1-1-0-1, which we call "reversed state logic".  This is observed
-// when using Chrome Remote Desktop on macOS.
+// when using Chrome Remote Desktop on macOS (likely a bug).
 //
-// To detect whether the current platform is normal or reversed, this function
-// is called on the first down event of CapsLock before calculating stages.
-// This function then store the inferred mode as
+// To detect whether the current platform behaves normally or reversed, this
+// function is called on the first down event of CapsLock before calculating
+// stages.  This function then store the inferred mode as
 // self->caps_lock_state_logic_inferrence.
 //
-// Note that this does not help if the same app session is used alternatively
-// between a reversed platform and a normal platform.  But this is the best we
-// can do.
+// This does not help if the same app session is used alternatively between a
+// reversed platform and a normal platform.  But this is the best we can do.
 static void update_caps_lock_state_logic_inferrence(
     FlKeyEmbedderResponder* self,
     bool is_down_event,
@@ -570,13 +600,28 @@ static void synchronize_lock_states_loop_body(gpointer key,
   FlKeyEmbedderResponder* self = context->self;
 
   const uint64_t logical_key = checked_key->primary_logical_key;
-  const uint64_t physical_key = checked_key->primary_physical_key;
+  const uint64_t record_physical_key = lookup_hash_table(self->mapping_records,
+      logical_key);
+  // The physical key is derived from past mapping record if possible.
+  //
+  // If the event to be synthesized is a key up event, then there must have
+  // been a key down event before, which has updated the mapping record.
+  // If the event to be synthesized is a key down event, then there might
+  // not have been a mapping record, in which case the hard-coded
+  // #primary_physical_key is used.
+  const uint64_t physical_key = record_physical_key != 0 ? record_physical_key :
+      checked_key->primary_physical_key;
+  if (record_physical_key == 0) {
+    update_mapping_record(self, physical_key, logical_key);
+  }
 
-  // A lock mode key can be at any of a 4-stage cycle. The following table lists
-  // the definition of each stage (TruePressed and TrueEnabled), the event of
-  // the lock key between every 2 stages (SelfType and SelfState), and the event
-  // of other keys at each stage (OthersState). Notice that on certain platforms
-  // SelfState uses a reversed rule for certain keys (SelfState(rvsd)).
+  // A lock mode key can be at any of a 4-stage cycle, depending on whether it's
+  // pressed and enabled. The following table lists the definition of each
+  // stage (TruePressed and TrueEnabled), the event of the lock key between
+  // every 2 stages (SelfType and SelfState), and the event of other keys at
+  // each stage (OthersState). On certain platforms SelfState uses a reversed
+  // rule for certain keys (SelfState(rvsd), as documented in
+  // #update_caps_lock_state_logic_inferrence).
   //
   //               #    [0]         [1]          [2]           [3]
   //     TruePressed: Released    Pressed      Released      Pressed
@@ -586,8 +631,8 @@ static void synchronize_lock_states_loop_body(gpointer key,
   // SelfState(rvsd):          1           1             0              1
   //     OthersState:    0           1            1              1
   //
-  // Except for stage 0, we can't derive the exact stage just from event
-  // information. Choose the stage that requires the minimal synthesization.
+  // When the exact stage can't be derived, choose the stage that requires the
+  // minimal synthesization.
 
   const uint64_t pressed_logical_key =
       lookup_hash_table(self->pressing_records, physical_key);
@@ -661,6 +706,10 @@ static void fl_key_embedder_responder_handle_event(
       event_to_logical_key(event, self->keyval_to_logical_key);
   const double timestamp = event_to_timestamp(event);
   const bool is_down_event = event->type == GDK_KEY_PRESS;
+
+  if (is_down_event) {
+    update_mapping_record(self, physical_key, logical_key);
+  }
 
   SyncStateLoopContext sync_pressed_state_context;
   sync_pressed_state_context.self = self;
