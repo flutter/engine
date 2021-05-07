@@ -725,6 +725,9 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
   /// Determines if the given [text] contains any code points which are not
   /// supported by the current set of fonts.
   void _ensureFontsSupportText(String text) {
+    // TODO(hterkelsen): THIS IS JUST FOR DEBUGGING
+    return;
+
     // TODO(hterkelsen): Make this faster for the common case where the text
     // is supported by the given fonts.
 
