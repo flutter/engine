@@ -23,7 +23,7 @@ constexpr guint16 kKeyCodeShiftRight = 0x3Eu;
 constexpr guint16 kKeyCodeNumpad1 = 0x57u;
 constexpr guint16 kKeyCodeNumLock = 0x4Du;
 constexpr guint16 kKeyCodeCapsLock = 0x42u;
-constexpr guint16 kKeyCodeControlLeft = 0x25u;
+// constexpr guint16 kKeyCodeControlLeft = 0x25u;
 
 constexpr uint64_t kPhysicalKeyA = 0x00070004;
 constexpr uint64_t kPhysicalControlLeft = 0x000700e0;
@@ -974,11 +974,11 @@ TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncPressingState) {
 
   // Press physical CapsLock remapped to logical ControlLeft.
 
-  state = GDK_CONTROL_MASK;
+  state = 0;
 
   fl_key_responder_handle_event(
       responder,
-      key_event_new(101, kPress, GDK_KEY_Caps_Lock, kKeyCodeControlLeft, state,
+      key_event_new(101, kPress, GDK_KEY_Control_L, kKeyCodeCapsLock, state,
                     kIsModifier),
       verify_response_handled, &user_data);
 
