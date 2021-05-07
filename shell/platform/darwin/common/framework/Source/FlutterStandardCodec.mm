@@ -256,7 +256,7 @@ static void WriteSize(CFMutableDataRef data, UInt32 size) {
 }
 
 static void WriteAlignment(CFMutableDataRef data, UInt8 alignment) {
-  assert(alignment <= 8);
+  NSCAssert(alignment <= 8, @"Alignment larger than kZeroBuffer.");
   UInt8 mod = CFDataGetLength(data) % alignment;
   if (mod) {
     WriteBytes(data, kZeroBuffer, alignment - mod);
@@ -304,7 +304,7 @@ static void WriteValue(CFMutableDataRef data, id value) {
     }
     if (!success) {
       NSLog(@"Unsupported value: %@ of number type %ld", value, CFNumberGetType(number));
-      assert(NO);  // Unsupported value for standard codec.
+      NSCAssert(NO, @"Unsupported value for standard codec.");
     }
   } else if ([value isKindOfClass:kNSStringClass]) {
     NSString* string = value;
@@ -335,7 +335,7 @@ static void WriteValue(CFMutableDataRef data, id value) {
     }
   } else {
     NSLog(@"Unsupported value: %@ of type %@", value, [value class]);
-    assert(NO);  // Unsupported value for standard codec.
+    NSCAssert(NO, @"Unsupported value for standard codec.");
   }
 }
 
