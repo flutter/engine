@@ -130,7 +130,11 @@ class MallocMapping final : public Mapping {
  public:
   MallocMapping();
 
-  MallocMapping(const uint8_t* data, size_t size);
+  /// Creates a MallocMapping for a region of memory (without copying it).
+  /// The function will `abort()` if the malloc fails.
+  /// @param data The starting address of the mapping.
+  /// @param size The size of the mapping in bytes.
+  MallocMapping(uint8_t* data, size_t size);
 
   MallocMapping(fml::MallocMapping&& mapping);
 
@@ -141,10 +145,15 @@ class MallocMapping final : public Mapping {
   /// for `uint8_t` and `char`.
   template <typename T>
   static MallocMapping Copy(const T* begin, const T* end) {
+    FML_DCHECK(end > begin);
     size_t length = end - begin;
     return Copy(begin, length);
   }
 
+  /// Copies a region of memory into a MallocMapping.
+  /// The function will `abort()` if the malloc fails.
+  /// @param begin The starting address of where we will copy.
+  /// @param length The length of the region to copy in bytes.
   static MallocMapping Copy(const void* begin, size_t length);
 
   // |Mapping|
@@ -154,10 +163,11 @@ class MallocMapping final : public Mapping {
   const uint8_t* GetMapping() const override;
 
   /// Removes ownership of the data buffer.
-  const uint8_t* Release();
+  /// After this is called; the mapping will point to nullptr.
+  [[nodiscard]] uint8_t* Release();
 
  private:
-  const uint8_t* data_;
+  uint8_t* data_;
   size_t size_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(MallocMapping);
