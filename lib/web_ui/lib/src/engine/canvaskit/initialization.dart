@@ -82,10 +82,25 @@ final String canvasKitJavaScriptBindingsUrl =
     canvasKitBuildUrl + 'canvaskit.js';
 String canvasKitWasmModuleUrl(String file) => canvasKitBuildUrl + file;
 
+/// Whether or not this browser has a native implementation of CanvasKit.
+///
+/// If so, we can use the native implementation rather than downloading
+/// CanvasKit.
+final bool hasNativeCanvasKit = js_util.hasProperty(html.window, 'canvasKit');
+
 /// Initialize CanvasKit.
 ///
 /// This calls `CanvasKitInit` and assigns the global [canvasKit] object.
 Future<void> initializeCanvasKit() {
+  assert(useCanvasKit);
+
+  if (hasNativeCanvasKit) {
+    final CanvasKit nativeCk = js_util.getProperty(html.window, 'canvasKit');
+    canvasKit = nativeCk;
+    windowFlutterCanvasKit = nativeCk;
+    return Future<void>.value();
+  }
+
   final Completer<void> canvasKitCompleter = Completer<void>();
   late StreamSubscription<html.Event> loadSubscription;
   loadSubscription = domRenderer.canvasKitScript!.onLoad.listen((_) {
