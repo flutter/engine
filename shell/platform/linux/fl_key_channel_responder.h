@@ -17,13 +17,14 @@ typedef FlValue* (*FlValueConverter)(FlValue*);
 /**
  * FlKeyChannelResponderMock:
  *
- * Allows mocking of FlKeyChannelResponder methods and values. Only used in unittests.
+ * Allows mocking of FlKeyChannelResponder methods and values. Only used in
+ * unittests.
  */
 typedef struct _FlKeyChannelResponderMock {
   /**
    * FlKeyChannelResponderMock::value_converter:
-   * If #value_converter is not nullptr, then this function is applied to the reply
-   * of the message, whose return value is taken as the message reply.
+   * If #value_converter is not nullptr, then this function is applied to the
+   * reply of the message, whose return value is taken as the message reply.
    */
   FlValueConverter value_converter;
 

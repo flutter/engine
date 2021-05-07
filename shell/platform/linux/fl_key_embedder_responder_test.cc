@@ -942,7 +942,7 @@ TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncPressingState) {
   invoke_record_callback_and_verify(record, TRUE, &user_data);
   g_ptr_array_clear(g_call_records);
 
-  // A key up of control right is missed.
+  // A key up of control left is missed.
   state = 0;
 
   // Send a normal event (KeyA up)
@@ -982,7 +982,7 @@ TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncPressingState) {
                     kIsModifier),
       verify_response_handled, &user_data);
 
-  EXPECT_EQ(g_call_records->len, 2u);
+  EXPECT_EQ(g_call_records->len, 1u);
   record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 0));
   EXPECT_EQ(record->event->timestamp, 101000);
   EXPECT_EQ(record->event->type, kFlutterKeyEventTypeDown);
@@ -1004,7 +1004,8 @@ TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncPressingState) {
                     kIsNotModifier),
       verify_response_handled, &user_data);
 
-  // The synthesized event should have physical CapsLock and logical ControlLeft.
+  // The synthesized event should have physical CapsLock and logical
+  // ControlLeft.
   EXPECT_EQ(g_call_records->len, 2u);
   record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 0));
   EXPECT_EQ(record->event->timestamp, 102000);
@@ -1132,7 +1133,8 @@ TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncLockModeOnNonSelfEvents) {
 
 // Test if missed lock keys can be detected and synthesized with state
 // information upon events that are not for this modifier key.
-TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncLockModeOnSelfEventsRemapped) {
+TEST(FlKeyEmbedderResponderTest,
+     SynthesizeForDesyncLockModeOnSelfEventsRemapped) {
   EXPECT_EQ(g_call_records, nullptr);
   g_call_records = g_ptr_array_new_with_free_func(g_object_unref);
   g_autoptr(FlEngine) engine = make_mock_engine_with_records();

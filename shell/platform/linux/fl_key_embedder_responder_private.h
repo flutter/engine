@@ -32,12 +32,12 @@
  * available to pressing states, which is the right of the modifiers.
  */
 typedef struct {
-  // The logical key for the primary key.
-  uint64_t primary_logical_key;
   // The physical key for the primary key.
   uint64_t primary_physical_key;
-  // The physical key for the secondary key.
-  uint64_t secondary_physical_key;
+  // The logical key for the primary key.
+  uint64_t primary_logical_key;
+  // The logical key for the secondary key.
+  uint64_t secondary_logical_key;
   // Whether this key is CapsLock.  CapsLock uses a different event model in GDK
   // and needs special treatment.
   bool is_caps_lock;

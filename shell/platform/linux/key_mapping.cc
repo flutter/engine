@@ -424,30 +424,30 @@ void initialize_modifier_bit_to_checked_keys(GHashTable* table) {
   data = g_new(FlKeyEmbedderCheckedKey, 1);
   g_hash_table_insert(table, GUINT_TO_POINTER(GDK_SHIFT_MASK), data);
   data->is_caps_lock = false;
-  data->primary_logical_key = 0x3000000010d;   // shiftLeft
-  data->primary_physical_key = 0x0000700e1;    // shiftLeft
-  data->secondary_physical_key = 0x0000700e5;  // shiftRight
+  data->primary_physical_key = 0x0000700e1;     // shiftLeft
+  data->primary_logical_key = 0x3000000010d;    // shiftLeft
+  data->secondary_logical_key = 0x4000000010d;  // shiftRight
 
   data = g_new(FlKeyEmbedderCheckedKey, 1);
   g_hash_table_insert(table, GUINT_TO_POINTER(GDK_CONTROL_MASK), data);
   data->is_caps_lock = false;
-  data->primary_logical_key = 0x30000000105;   // controlLeft
-  data->primary_physical_key = 0x0000700e0;    // controlLeft
-  data->secondary_physical_key = 0x0000700e4;  // controlRight
+  data->primary_physical_key = 0x0000700e0;     // controlLeft
+  data->primary_logical_key = 0x30000000105;    // controlLeft
+  data->secondary_logical_key = 0x40000000105;  // controlRight
 
   data = g_new(FlKeyEmbedderCheckedKey, 1);
   g_hash_table_insert(table, GUINT_TO_POINTER(GDK_MOD1_MASK), data);
   data->is_caps_lock = false;
-  data->primary_logical_key = 0x30000000102;   // altLeft
-  data->primary_physical_key = 0x0000700e2;    // altLeft
-  data->secondary_physical_key = 0x0000700e6;  // altRight
+  data->primary_physical_key = 0x0000700e2;     // altLeft
+  data->primary_logical_key = 0x30000000102;    // altLeft
+  data->secondary_logical_key = 0x40000000102;  // altRight
 
   data = g_new(FlKeyEmbedderCheckedKey, 1);
   g_hash_table_insert(table, GUINT_TO_POINTER(GDK_META_MASK), data);
   data->is_caps_lock = false;
-  data->primary_logical_key = 0x30000000109;   // metaLeft
-  data->primary_physical_key = 0x0000700e3;    // metaLeft
-  data->secondary_physical_key = 0x0000700e7;  // metaRight
+  data->primary_physical_key = 0x0000700e3;     // metaLeft
+  data->primary_logical_key = 0x30000000109;    // metaLeft
+  data->secondary_logical_key = 0x40000000109;  // metaRight
 }
 
 void initialize_lock_bit_to_checked_keys(GHashTable* table) {
@@ -456,12 +456,12 @@ void initialize_lock_bit_to_checked_keys(GHashTable* table) {
   data = g_new(FlKeyEmbedderCheckedKey, 1);
   g_hash_table_insert(table, GUINT_TO_POINTER(GDK_LOCK_MASK), data);
   data->is_caps_lock = true;
-  data->primary_logical_key = 0x01000000104;  // capsLock
   data->primary_physical_key = 0x000070039;   // capsLock
+  data->primary_logical_key = 0x01000000104;  // capsLock
 
   data = g_new(FlKeyEmbedderCheckedKey, 1);
   g_hash_table_insert(table, GUINT_TO_POINTER(GDK_MOD2_MASK), data);
   data->is_caps_lock = false;
-  data->primary_logical_key = 0x0100000010a;  // numLock
   data->primary_physical_key = 0x000070053;   // numLock
+  data->primary_logical_key = 0x0100000010a;  // numLock
 }
