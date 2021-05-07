@@ -59,14 +59,11 @@ TEST(FrameTimingsRecorderTest, RecordRasterTimes) {
   ASSERT_EQ(raster_end, recorder->GetRasterEndTime());
 }
 
-#if !defined(OS_FUCHSIA) && (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
+// Windows and Fuchsia don't allow testing with killed by signal.
+#if !defined(OS_FUCHSIA) && !defined(OS_WIN) && \
+    (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
 
-// Windows doesn't allow testing with killed by signal.
-#ifdef OS_WIN
-TEST(FrameTimingsRecorderTest, DISABLED_ThrowWhenRecordBuildBeforeVsync) {
-#else
 TEST(FrameTimingsRecorderTest, ThrowWhenRecordBuildBeforeVsync) {
-#endif
   auto recorder = std::make_unique<FrameTimingsRecorder>();
 
   const auto build_start = fml::TimePoint::Now();
@@ -75,12 +72,7 @@ TEST(FrameTimingsRecorderTest, ThrowWhenRecordBuildBeforeVsync) {
               "Check failed: state_ == State::kVsync.");
 }
 
-// Windows doesn't allow testing with killed by signal.
-#ifdef OS_WIN
-TEST(FrameTimingsRecorderTest, DISABLED_ThrowWhenRecordRasterBeforeBuildEnd) {
-#else
 TEST(FrameTimingsRecorderTest, ThrowWhenRecordRasterBeforeBuildEnd) {
-#endif
   auto recorder = std::make_unique<FrameTimingsRecorder>();
 
   const auto st = fml::TimePoint::Now();
