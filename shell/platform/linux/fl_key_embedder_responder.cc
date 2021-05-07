@@ -201,7 +201,7 @@ struct _FlKeyEmbedderResponder {
   //
   // It is a map from primary physical keys to lock bits.  Both keys and values
   // are directly stored uint64s.  This table is freed by the responder.
-  GHashTable* physical_key_to_lock_bit;
+  GHashTable* logical_key_to_lock_bit;
 };
 
 static void fl_key_embedder_responder_iface_init(
@@ -250,7 +250,7 @@ static void fl_key_embedder_responder_dispose(GObject* object) {
   G_OBJECT_CLASS(fl_key_embedder_responder_parent_class)->dispose(object);
 }
 
-// Fill in #physical_key_to_lock_bit by associating a logical key with
+// Fill in #logical_key_to_lock_bit by associating a logical key with
 // its corresponding modifier bit.
 //
 // This is used as the body of a loop over #lock_bit_to_checked_keys.
@@ -412,6 +412,31 @@ static void update_pressing_state(FlKeyEmbedderResponder* self,
   }
 }
 
+// Update the lock record.
+//
+// If `is_down` is false, this function is a no-op.  Otherwise, this function
+// finds the lock bit corresponding to `physical_key`, and flips its bit.
+static void possibly_update_lock_bit(FlKeyEmbedderResponder* self,
+                                     uint64_t logical_key,
+                                     bool is_down) {
+  if (!is_down) {
+    return;
+  }
+  const guint mode_bit = GPOINTER_TO_UINT(g_hash_table_lookup(
+      self->logical_key_to_lock_bit, uint64_to_gpointer(logical_key)));
+  if (mode_bit != 0) {
+    self->lock_records ^= mode_bit;
+  }
+}
+
+static void update_mapping_record(FlKeyEmbedderResponder* self,
+                                     uint64_t physical_key,
+                                     uint64_t logical_key) {
+  g_hash_table_insert(self->mapping_records,
+                  uint64_to_gpointer(logical_key),
+                  uint64_to_gpointer(physical_key));
+}
+
 // Synchronizes the pressing state of a key to its state from the event by
 // synthesizing events.
 //
@@ -478,31 +503,6 @@ static void synchronize_pressed_states_loop_body(gpointer key,
                             logical_key, context->timestamp);
     update_pressing_state(self, physical_key, logical_key);
   }
-}
-
-// Update the lock record.
-//
-// If `is_down` is false, this function is a no-op.  Otherwise, this function
-// finds the lock bit corresponding to `physical_key`, and flips its bit.
-static void possibly_update_lock_bit(FlKeyEmbedderResponder* self,
-                                     uint64_t logical_key,
-                                     bool is_down) {
-  if (!is_down) {
-    return;
-  }
-  const guint mode_bit = GPOINTER_TO_UINT(g_hash_table_lookup(
-      self->logical_key_to_lock_bit, uint64_to_gpointer(logical_key)));
-  if (mode_bit != 0) {
-    self->lock_records ^= mode_bit;
-  }
-}
-
-static void update_mapping_record(FlKeyEmbedderResponder* self,
-                                     uint64_t physical_key,
-                                     uint64_t logical_key) {
-  g_hash_table_insert(self->mapping_records,
-                  uint64_to_gpointer(logical_key),
-                  uint64_to_gpointer(physical_key));
 }
 
 // Find the stage # by the current record, which should be the recorded stage
@@ -696,6 +696,7 @@ static void fl_key_embedder_responder_handle_event(
     FlKeyResponderAsyncCallback callback,
     gpointer user_data) {
   FlKeyEmbedderResponder* self = FL_KEY_EMBEDDER_RESPONDER(responder);
+  printf("ev scan %hx\n", event->hardware_keycode);fflush(stdout);
 
   g_return_if_fail(event != nullptr);
   g_return_if_fail(callback != nullptr);

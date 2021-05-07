@@ -28,17 +28,17 @@ constexpr guint16 kKeyCodeControlLeft = 0x25u;
 constexpr uint64_t kPhysicalKeyA = 0x00070004;
 constexpr uint64_t kPhysicalControlLeft = 0x000700e0;
 constexpr uint64_t kPhysicalShiftRight = 0x000700E5;
-constexpr uint64_t kPhysicalKeyNumpad1 = 0x00070059;
-constexpr uint64_t kPhysicalKeyNumLock = 0x00070053;
-constexpr uint64_t kPhysicalKeyCapsLock = 0x00070039;
+constexpr uint64_t kPhysicalNumpad1 = 0x00070059;
+constexpr uint64_t kPhysicalNumLock = 0x00070053;
+constexpr uint64_t kPhysicalCapsLock = 0x00070039;
 
 constexpr uint64_t kLogicalKeyA = 0x00000061;
 constexpr uint64_t kLogicalKeyQ = 0x00000071;
 constexpr uint64_t kLogicalControlLeft = 0x30000000105;
 constexpr uint64_t kLogicalShiftRight = 0x4000000010D;
-constexpr uint64_t kLogicalKeyNumpad1 = 0x50000000031;
-constexpr uint64_t kLogicalKeyNumLock = 0x100000010A;
-constexpr uint64_t kLogicalKeyCapsLock = 0x1000000104;
+constexpr uint64_t kLogicalNumpad1 = 0x50000000031;
+constexpr uint64_t kLogicalNumLock = 0x100000010A;
+constexpr uint64_t kLogicalCapsLock = 0x1000000104;
 }  // namespace
 
 static void g_ptr_array_clear(GPtrArray* array) {
@@ -379,8 +379,8 @@ TEST(FlKeyEmbedderResponderTest, TapNumPadKeysBetweenNumLockEvents) {
   EXPECT_EQ(g_call_records->len, 1u);
   record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 0));
   EXPECT_EQ(record->event->type, kFlutterKeyEventTypeDown);
-  EXPECT_EQ(record->event->physical, kPhysicalKeyNumpad1);
-  EXPECT_EQ(record->event->logical, kLogicalKeyNumpad1);
+  EXPECT_EQ(record->event->physical, kPhysicalNumpad1);
+  EXPECT_EQ(record->event->logical, kLogicalNumpad1);
   EXPECT_STREQ(record->event->character, nullptr);  // TODO
   EXPECT_EQ(record->event->synthesized, false);
 
@@ -397,8 +397,8 @@ TEST(FlKeyEmbedderResponderTest, TapNumPadKeysBetweenNumLockEvents) {
   EXPECT_EQ(g_call_records->len, 1u);
   record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 0));
   EXPECT_EQ(record->event->type, kFlutterKeyEventTypeDown);
-  EXPECT_EQ(record->event->physical, kPhysicalKeyNumLock);
-  EXPECT_EQ(record->event->logical, kLogicalKeyNumLock);
+  EXPECT_EQ(record->event->physical, kPhysicalNumLock);
+  EXPECT_EQ(record->event->logical, kLogicalNumLock);
   EXPECT_STREQ(record->event->character, nullptr);
   EXPECT_EQ(record->event->synthesized, false);
 
@@ -415,8 +415,8 @@ TEST(FlKeyEmbedderResponderTest, TapNumPadKeysBetweenNumLockEvents) {
   EXPECT_EQ(g_call_records->len, 1u);
   record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 0));
   EXPECT_EQ(record->event->type, kFlutterKeyEventTypeUp);
-  EXPECT_EQ(record->event->physical, kPhysicalKeyNumpad1);
-  EXPECT_EQ(record->event->logical, kLogicalKeyNumpad1);
+  EXPECT_EQ(record->event->physical, kPhysicalNumpad1);
+  EXPECT_EQ(record->event->logical, kLogicalNumpad1);
   EXPECT_STREQ(record->event->character, nullptr);
   EXPECT_EQ(record->event->synthesized, false);
 
@@ -433,8 +433,8 @@ TEST(FlKeyEmbedderResponderTest, TapNumPadKeysBetweenNumLockEvents) {
   EXPECT_EQ(g_call_records->len, 1u);
   record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 0));
   EXPECT_EQ(record->event->type, kFlutterKeyEventTypeUp);
-  EXPECT_EQ(record->event->physical, kPhysicalKeyNumLock);
-  EXPECT_EQ(record->event->logical, kLogicalKeyNumLock);
+  EXPECT_EQ(record->event->physical, kPhysicalNumLock);
+  EXPECT_EQ(record->event->logical, kLogicalNumLock);
   EXPECT_STREQ(record->event->character, nullptr);
   EXPECT_EQ(record->event->synthesized, false);
 
@@ -451,8 +451,8 @@ TEST(FlKeyEmbedderResponderTest, TapNumPadKeysBetweenNumLockEvents) {
   EXPECT_EQ(g_call_records->len, 1u);
   record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 0));
   EXPECT_EQ(record->event->type, kFlutterKeyEventTypeDown);
-  EXPECT_EQ(record->event->physical, kPhysicalKeyNumpad1);
-  EXPECT_EQ(record->event->logical, kLogicalKeyNumpad1);
+  EXPECT_EQ(record->event->physical, kPhysicalNumpad1);
+  EXPECT_EQ(record->event->logical, kLogicalNumpad1);
   EXPECT_STREQ(record->event->character, nullptr);  // TODO
   EXPECT_EQ(record->event->synthesized, false);
 
@@ -469,8 +469,8 @@ TEST(FlKeyEmbedderResponderTest, TapNumPadKeysBetweenNumLockEvents) {
   EXPECT_EQ(g_call_records->len, 1u);
   record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 0));
   EXPECT_EQ(record->event->type, kFlutterKeyEventTypeDown);
-  EXPECT_EQ(record->event->physical, kPhysicalKeyNumLock);
-  EXPECT_EQ(record->event->logical, kLogicalKeyNumLock);
+  EXPECT_EQ(record->event->physical, kPhysicalNumLock);
+  EXPECT_EQ(record->event->logical, kLogicalNumLock);
   EXPECT_STREQ(record->event->character, nullptr);
   EXPECT_EQ(record->event->synthesized, false);
 
@@ -487,8 +487,8 @@ TEST(FlKeyEmbedderResponderTest, TapNumPadKeysBetweenNumLockEvents) {
   EXPECT_EQ(g_call_records->len, 1u);
   record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 0));
   EXPECT_EQ(record->event->type, kFlutterKeyEventTypeUp);
-  EXPECT_EQ(record->event->physical, kPhysicalKeyNumpad1);
-  EXPECT_EQ(record->event->logical, kLogicalKeyNumpad1);
+  EXPECT_EQ(record->event->physical, kPhysicalNumpad1);
+  EXPECT_EQ(record->event->logical, kLogicalNumpad1);
   EXPECT_STREQ(record->event->character, nullptr);
   EXPECT_EQ(record->event->synthesized, false);
 
@@ -505,8 +505,8 @@ TEST(FlKeyEmbedderResponderTest, TapNumPadKeysBetweenNumLockEvents) {
   EXPECT_EQ(g_call_records->len, 1u);
   record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 0));
   EXPECT_EQ(record->event->type, kFlutterKeyEventTypeUp);
-  EXPECT_EQ(record->event->physical, kPhysicalKeyNumLock);
-  EXPECT_EQ(record->event->logical, kLogicalKeyNumLock);
+  EXPECT_EQ(record->event->physical, kPhysicalNumLock);
+  EXPECT_EQ(record->event->logical, kLogicalNumLock);
   EXPECT_STREQ(record->event->character, nullptr);
   EXPECT_EQ(record->event->synthesized, false);
 
@@ -540,8 +540,8 @@ TEST(FlKeyEmbedderResponderTest, TapLetterKeysBetweenCapsLockEvents) {
   EXPECT_EQ(g_call_records->len, 1u);
   record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 0));
   EXPECT_EQ(record->event->type, kFlutterKeyEventTypeDown);
-  EXPECT_EQ(record->event->physical, kPhysicalKeyCapsLock);
-  EXPECT_EQ(record->event->logical, kLogicalKeyCapsLock);
+  EXPECT_EQ(record->event->physical, kPhysicalCapsLock);
+  EXPECT_EQ(record->event->logical, kLogicalCapsLock);
   EXPECT_STREQ(record->event->character, nullptr);
   EXPECT_EQ(record->event->synthesized, false);
 
@@ -575,8 +575,8 @@ TEST(FlKeyEmbedderResponderTest, TapLetterKeysBetweenCapsLockEvents) {
   EXPECT_EQ(g_call_records->len, 1u);
   record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 0));
   EXPECT_EQ(record->event->type, kFlutterKeyEventTypeUp);
-  EXPECT_EQ(record->event->physical, kPhysicalKeyCapsLock);
-  EXPECT_EQ(record->event->logical, kLogicalKeyCapsLock);
+  EXPECT_EQ(record->event->physical, kPhysicalCapsLock);
+  EXPECT_EQ(record->event->logical, kLogicalCapsLock);
   EXPECT_STREQ(record->event->character, nullptr);
   EXPECT_EQ(record->event->synthesized, false);
 
@@ -611,8 +611,8 @@ TEST(FlKeyEmbedderResponderTest, TapLetterKeysBetweenCapsLockEvents) {
   EXPECT_EQ(g_call_records->len, 1u);
   record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 0));
   EXPECT_EQ(record->event->type, kFlutterKeyEventTypeDown);
-  EXPECT_EQ(record->event->physical, kPhysicalKeyCapsLock);
-  EXPECT_EQ(record->event->logical, kLogicalKeyCapsLock);
+  EXPECT_EQ(record->event->physical, kPhysicalCapsLock);
+  EXPECT_EQ(record->event->logical, kLogicalCapsLock);
   EXPECT_STREQ(record->event->character, nullptr);
   EXPECT_EQ(record->event->synthesized, false);
 
@@ -646,8 +646,8 @@ TEST(FlKeyEmbedderResponderTest, TapLetterKeysBetweenCapsLockEvents) {
   EXPECT_EQ(g_call_records->len, 1u);
   record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 0));
   EXPECT_EQ(record->event->type, kFlutterKeyEventTypeUp);
-  EXPECT_EQ(record->event->physical, kPhysicalKeyCapsLock);
-  EXPECT_EQ(record->event->logical, kLogicalKeyCapsLock);
+  EXPECT_EQ(record->event->physical, kPhysicalCapsLock);
+  EXPECT_EQ(record->event->logical, kLogicalCapsLock);
   EXPECT_STREQ(record->event->character, nullptr);
   EXPECT_EQ(record->event->synthesized, false);
 
@@ -716,8 +716,8 @@ TEST(FlKeyEmbedderResponderTest, TapLetterKeysBetweenCapsLockEventsReversed) {
   EXPECT_EQ(g_call_records->len, 1u);
   record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 0));
   EXPECT_EQ(record->event->type, kFlutterKeyEventTypeDown);
-  EXPECT_EQ(record->event->physical, kPhysicalKeyCapsLock);
-  EXPECT_EQ(record->event->logical, kLogicalKeyCapsLock);
+  EXPECT_EQ(record->event->physical, kPhysicalCapsLock);
+  EXPECT_EQ(record->event->logical, kLogicalCapsLock);
   EXPECT_STREQ(record->event->character, nullptr);
   EXPECT_EQ(record->event->synthesized, false);
 
@@ -734,8 +734,8 @@ TEST(FlKeyEmbedderResponderTest, TapLetterKeysBetweenCapsLockEventsReversed) {
   EXPECT_EQ(g_call_records->len, 1u);
   record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 0));
   EXPECT_EQ(record->event->type, kFlutterKeyEventTypeUp);
-  EXPECT_EQ(record->event->physical, kPhysicalKeyCapsLock);
-  EXPECT_EQ(record->event->logical, kLogicalKeyCapsLock);
+  EXPECT_EQ(record->event->physical, kPhysicalCapsLock);
+  EXPECT_EQ(record->event->logical, kLogicalCapsLock);
   EXPECT_STREQ(record->event->character, nullptr);
   EXPECT_EQ(record->event->synthesized, false);
 
@@ -787,8 +787,8 @@ TEST(FlKeyEmbedderResponderTest, TapLetterKeysBetweenCapsLockEventsReversed) {
   EXPECT_EQ(g_call_records->len, 1u);
   record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 0));
   EXPECT_EQ(record->event->type, kFlutterKeyEventTypeDown);
-  EXPECT_EQ(record->event->physical, kPhysicalKeyCapsLock);
-  EXPECT_EQ(record->event->logical, kLogicalKeyCapsLock);
+  EXPECT_EQ(record->event->physical, kPhysicalCapsLock);
+  EXPECT_EQ(record->event->logical, kLogicalCapsLock);
   EXPECT_STREQ(record->event->character, nullptr);
   EXPECT_EQ(record->event->synthesized, false);
 
@@ -805,8 +805,8 @@ TEST(FlKeyEmbedderResponderTest, TapLetterKeysBetweenCapsLockEventsReversed) {
   EXPECT_EQ(g_call_records->len, 1u);
   record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 0));
   EXPECT_EQ(record->event->type, kFlutterKeyEventTypeUp);
-  EXPECT_EQ(record->event->physical, kPhysicalKeyCapsLock);
-  EXPECT_EQ(record->event->logical, kLogicalKeyCapsLock);
+  EXPECT_EQ(record->event->physical, kPhysicalCapsLock);
+  EXPECT_EQ(record->event->logical, kLogicalCapsLock);
   EXPECT_STREQ(record->event->character, nullptr);
   EXPECT_EQ(record->event->synthesized, false);
 
@@ -974,7 +974,7 @@ TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncPressingState) {
 
   // Press physical CapsLock remapped to logical ControlLeft.
 
-  guint state = GDK_CONTROL_MASK;
+  state = GDK_CONTROL_MASK;
 
   fl_key_responder_handle_event(
       responder,
@@ -1009,7 +1009,7 @@ TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncPressingState) {
   record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 0));
   EXPECT_EQ(record->event->timestamp, 102000);
   EXPECT_EQ(record->event->type, kFlutterKeyEventTypeUp);
-  EXPECT_EQ(record->event->physical, kPhysicalKeyCapsLock);
+  EXPECT_EQ(record->event->physical, kPhysicalCapsLock);
   EXPECT_EQ(record->event->logical, kLogicalControlLeft);
   EXPECT_STREQ(record->event->character, nullptr);
   EXPECT_EQ(record->event->synthesized, true);
@@ -1054,8 +1054,8 @@ TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncLockModeOnNonSelfEvents) {
   record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 0));
   EXPECT_EQ(record->event->timestamp, 101000);
   EXPECT_EQ(record->event->type, kFlutterKeyEventTypeDown);
-  EXPECT_EQ(record->event->physical, kPhysicalKeyNumLock);
-  EXPECT_EQ(record->event->logical, kLogicalKeyNumLock);
+  EXPECT_EQ(record->event->physical, kPhysicalNumLock);
+  EXPECT_EQ(record->event->logical, kLogicalNumLock);
   EXPECT_STREQ(record->event->character, nullptr);
   EXPECT_EQ(record->event->synthesized, true);
 
@@ -1084,24 +1084,24 @@ TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncLockModeOnNonSelfEvents) {
   record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 0));
   EXPECT_EQ(record->event->timestamp, 102000);
   EXPECT_EQ(record->event->type, kFlutterKeyEventTypeUp);
-  EXPECT_EQ(record->event->physical, kPhysicalKeyNumLock);
-  EXPECT_EQ(record->event->logical, kLogicalKeyNumLock);
+  EXPECT_EQ(record->event->physical, kPhysicalNumLock);
+  EXPECT_EQ(record->event->logical, kLogicalNumLock);
   EXPECT_STREQ(record->event->character, nullptr);
   EXPECT_EQ(record->event->synthesized, true);
 
   record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 1));
   EXPECT_EQ(record->event->timestamp, 102000);
   EXPECT_EQ(record->event->type, kFlutterKeyEventTypeDown);
-  EXPECT_EQ(record->event->physical, kPhysicalKeyNumLock);
-  EXPECT_EQ(record->event->logical, kLogicalKeyNumLock);
+  EXPECT_EQ(record->event->physical, kPhysicalNumLock);
+  EXPECT_EQ(record->event->logical, kLogicalNumLock);
   EXPECT_STREQ(record->event->character, nullptr);
   EXPECT_EQ(record->event->synthesized, true);
 
   record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 2));
   EXPECT_EQ(record->event->timestamp, 102000);
   EXPECT_EQ(record->event->type, kFlutterKeyEventTypeUp);
-  EXPECT_EQ(record->event->physical, kPhysicalKeyNumLock);
-  EXPECT_EQ(record->event->logical, kLogicalKeyNumLock);
+  EXPECT_EQ(record->event->physical, kPhysicalNumLock);
+  EXPECT_EQ(record->event->logical, kLogicalNumLock);
   EXPECT_STREQ(record->event->character, nullptr);
   EXPECT_EQ(record->event->synthesized, true);
 
@@ -1156,8 +1156,8 @@ TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncLockModeOnSelfEventsRemapped
   record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 0));
   EXPECT_EQ(record->event->timestamp, 101000);
   EXPECT_EQ(record->event->type, kFlutterKeyEventTypeDown);
-  EXPECT_EQ(record->event->physical, kPhysicalKeyNumLock);
-  EXPECT_EQ(record->event->logical, kLogicalKeyNumLock);
+  EXPECT_EQ(record->event->physical, kPhysicalNumLock);
+  EXPECT_EQ(record->event->logical, kLogicalNumLock);
   EXPECT_STREQ(record->event->character, nullptr);
   EXPECT_EQ(record->event->synthesized, true);
 
@@ -1186,24 +1186,24 @@ TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncLockModeOnSelfEventsRemapped
   record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 0));
   EXPECT_EQ(record->event->timestamp, 102000);
   EXPECT_EQ(record->event->type, kFlutterKeyEventTypeUp);
-  EXPECT_EQ(record->event->physical, kPhysicalKeyNumLock);
-  EXPECT_EQ(record->event->logical, kLogicalKeyNumLock);
+  EXPECT_EQ(record->event->physical, kPhysicalNumLock);
+  EXPECT_EQ(record->event->logical, kLogicalNumLock);
   EXPECT_STREQ(record->event->character, nullptr);
   EXPECT_EQ(record->event->synthesized, true);
 
   record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 1));
   EXPECT_EQ(record->event->timestamp, 102000);
   EXPECT_EQ(record->event->type, kFlutterKeyEventTypeDown);
-  EXPECT_EQ(record->event->physical, kPhysicalKeyNumLock);
-  EXPECT_EQ(record->event->logical, kLogicalKeyNumLock);
+  EXPECT_EQ(record->event->physical, kPhysicalNumLock);
+  EXPECT_EQ(record->event->logical, kLogicalNumLock);
   EXPECT_STREQ(record->event->character, nullptr);
   EXPECT_EQ(record->event->synthesized, true);
 
   record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 2));
   EXPECT_EQ(record->event->timestamp, 102000);
   EXPECT_EQ(record->event->type, kFlutterKeyEventTypeUp);
-  EXPECT_EQ(record->event->physical, kPhysicalKeyNumLock);
-  EXPECT_EQ(record->event->logical, kLogicalKeyNumLock);
+  EXPECT_EQ(record->event->physical, kPhysicalNumLock);
+  EXPECT_EQ(record->event->logical, kLogicalNumLock);
   EXPECT_STREQ(record->event->character, nullptr);
   EXPECT_EQ(record->event->synthesized, true);
 
@@ -1258,24 +1258,24 @@ TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncLockModeOnSelfEvents) {
   record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 0));
   EXPECT_EQ(record->event->timestamp, 101000);
   EXPECT_EQ(record->event->type, kFlutterKeyEventTypeDown);
-  EXPECT_EQ(record->event->physical, kPhysicalKeyNumLock);
-  EXPECT_EQ(record->event->logical, kLogicalKeyNumLock);
+  EXPECT_EQ(record->event->physical, kPhysicalNumLock);
+  EXPECT_EQ(record->event->logical, kLogicalNumLock);
   EXPECT_STREQ(record->event->character, nullptr);
   EXPECT_EQ(record->event->synthesized, true);
 
   record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 1));
   EXPECT_EQ(record->event->timestamp, 101000);
   EXPECT_EQ(record->event->type, kFlutterKeyEventTypeUp);
-  EXPECT_EQ(record->event->physical, kPhysicalKeyNumLock);
-  EXPECT_EQ(record->event->logical, kLogicalKeyNumLock);
+  EXPECT_EQ(record->event->physical, kPhysicalNumLock);
+  EXPECT_EQ(record->event->logical, kLogicalNumLock);
   EXPECT_STREQ(record->event->character, nullptr);
   EXPECT_EQ(record->event->synthesized, true);
 
   record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 2));
   EXPECT_EQ(record->event->timestamp, 101000);
   EXPECT_EQ(record->event->type, kFlutterKeyEventTypeDown);
-  EXPECT_EQ(record->event->physical, kPhysicalKeyNumLock);
-  EXPECT_EQ(record->event->logical, kLogicalKeyNumLock);
+  EXPECT_EQ(record->event->physical, kPhysicalNumLock);
+  EXPECT_EQ(record->event->logical, kLogicalNumLock);
   EXPECT_STREQ(record->event->character, nullptr);
   EXPECT_EQ(record->event->synthesized, false);
 
@@ -1296,32 +1296,32 @@ TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncLockModeOnSelfEvents) {
   record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 0));
   EXPECT_EQ(record->event->timestamp, 102000);
   EXPECT_EQ(record->event->type, kFlutterKeyEventTypeUp);
-  EXPECT_EQ(record->event->physical, kPhysicalKeyNumLock);
-  EXPECT_EQ(record->event->logical, kLogicalKeyNumLock);
+  EXPECT_EQ(record->event->physical, kPhysicalNumLock);
+  EXPECT_EQ(record->event->logical, kLogicalNumLock);
   EXPECT_STREQ(record->event->character, nullptr);
   EXPECT_EQ(record->event->synthesized, true);
 
   record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 1));
   EXPECT_EQ(record->event->timestamp, 102000);
   EXPECT_EQ(record->event->type, kFlutterKeyEventTypeDown);
-  EXPECT_EQ(record->event->physical, kPhysicalKeyNumLock);
-  EXPECT_EQ(record->event->logical, kLogicalKeyNumLock);
+  EXPECT_EQ(record->event->physical, kPhysicalNumLock);
+  EXPECT_EQ(record->event->logical, kLogicalNumLock);
   EXPECT_STREQ(record->event->character, nullptr);
   EXPECT_EQ(record->event->synthesized, true);
 
   record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 2));
   EXPECT_EQ(record->event->timestamp, 102000);
   EXPECT_EQ(record->event->type, kFlutterKeyEventTypeUp);
-  EXPECT_EQ(record->event->physical, kPhysicalKeyNumLock);
-  EXPECT_EQ(record->event->logical, kLogicalKeyNumLock);
+  EXPECT_EQ(record->event->physical, kPhysicalNumLock);
+  EXPECT_EQ(record->event->logical, kLogicalNumLock);
   EXPECT_STREQ(record->event->character, nullptr);
   EXPECT_EQ(record->event->synthesized, true);
 
   record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 3));
   EXPECT_EQ(record->event->timestamp, 102000);
   EXPECT_EQ(record->event->type, kFlutterKeyEventTypeDown);
-  EXPECT_EQ(record->event->physical, kPhysicalKeyNumLock);
-  EXPECT_EQ(record->event->logical, kLogicalKeyNumLock);
+  EXPECT_EQ(record->event->physical, kPhysicalNumLock);
+  EXPECT_EQ(record->event->logical, kLogicalNumLock);
   EXPECT_STREQ(record->event->character, nullptr);
   EXPECT_EQ(record->event->synthesized, false);
 
