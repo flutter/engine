@@ -7,6 +7,8 @@
 #pragma mark - Codec for basic message channel
 
 static const UInt8 kZeroBuffer[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+// Classes are cached in static variables to avoid the extra method calls in a
+// highly traffic'd recursive function.
 static const Class kNSNumberClass = [NSNumber class];
 static const id kNSNull = [NSNull null];
 static const Class kNSStringClass = [NSString class];
