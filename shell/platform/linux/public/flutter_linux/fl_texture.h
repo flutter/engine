@@ -20,13 +20,18 @@ G_DECLARE_DERIVABLE_TYPE(FlTexture, fl_texture, FL, TEXTURE, GObject)
  * FlTexture:
  *
  * #FlTexture is an abstract class that represents an OpenGL texture.
+ *
+ * If you want to render textures in other OpenGL context, create and use the
+ * #GdkGLContext by calling gdk_window_create_gl_context () with the #GdkWindow
+ * of #FlView. The context will be shared with the one used by Flutter.
  */
 
 struct _FlTextureClass {
   GObjectClass parent_class;
 
   /**
-   * Virtual method called when Flutter populates this texture.
+   * Virtual method called when Flutter populates this texture. The OpenGL
+   * context used by Flutter has been already set.
    * @texture: an #FlTexture.
    * @target: texture target (example GL_TEXTURE_2D or GL_TEXTURE_RECTANGLE).
    * @name: (out): name of texture.
