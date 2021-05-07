@@ -659,7 +659,7 @@ hooks = [
     'pattern': '.',
     'condition': 'download_windows_deps',
     'action': [
-      'python',
+      'python3',
       'src/build/win/generate_winrt_headers.py',
     ]
   }
