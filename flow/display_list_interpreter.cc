@@ -278,7 +278,7 @@ CANVAS_OP_DEFINE_OP(transform2x3,
   context.canvas->concat(SkMatrix::MakeAll(
     it.GetScalar(), it.GetScalar(), it.GetScalar(),
     it.GetScalar(), it.GetScalar(), it.GetScalar(),
-    0.0, 0.0, 0.1
+    0.0, 0.0, 1.0
   ));
 )
 CANVAS_OP_DEFINE_OP(transform3x3,

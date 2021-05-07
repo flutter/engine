@@ -91,8 +91,24 @@ fml::RefPtr<DisplayList> DisplayList::Create(tonic::Uint8List& ops,
   std::shared_ptr<std::vector<DisplayListRefHolder>> ref_vector =
     std::make_shared<std::vector<DisplayListRefHolder>>();
   int obj_index = 0;
-  const DisplayListRefHolder empty_holder;
+  SkSamplingOptions sampling = DisplayListInterpreter::NearestSampling;
   for (uint8_t op : *ops_vector) {
+    switch (op) {
+      // All of the following op types have no arguments so they can
+      // use continue instead of break for efficiency.
+      case CanvasOp::cops_setFilterQualityNearest:
+        sampling = DisplayListInterpreter::NearestSampling;
+        continue;
+      case CanvasOp::cops_setFilterQualityLinear:
+        sampling = DisplayListInterpreter::LinearSampling;
+        continue;
+      case CanvasOp::cops_setFilterQualityMipmap:
+        sampling = DisplayListInterpreter::MipmapSampling;
+        continue;
+      case CanvasOp::cops_setFilterQualityCubic:
+        sampling = DisplayListInterpreter::CubicSampling;
+        continue;
+    }
     for (uint32_t args = DisplayListInterpreter::opArguments[op];
          args != 0;
          args >>= CANVAS_OP_ARG_SHIFT) {
@@ -123,15 +139,7 @@ fml::RefPtr<DisplayList> DisplayList::Create(tonic::Uint8List& ops,
         }
         case shader: {
           DisplayListRefHolder holder;
-          // TODO(flar) we should eventually be baking the filterquality into the Shader
-          // The existing Shader::shader(FQ) API is meant to be called in context from
-          // the SkiaCanvas paint method. We could parse the stream to determine the
-          // filter quality that would be in effect when we reach this op, but that is
-          // overhead to consider  another time.
-          // (The dart DisplayListCanvas code could also encode the current FQ into the
-          // op code - but soon we should be able to encode it into the shader itself
-          // and this issue will be moot...)
-          holder.shader = tonic::DartConverter<Shader*>::FromDart(objects[obj_index++])->shader(SkFilterQuality::kLow_SkFilterQuality);
+          holder.shader = tonic::DartConverter<Shader*>::FromDart(objects[obj_index++])->shader(sampling);
           ref_vector->emplace_back(holder);
           break;
         }

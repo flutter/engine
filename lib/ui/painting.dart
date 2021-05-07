@@ -5980,12 +5980,12 @@ class _DisplayListCanvas implements Canvas {
 
   @override
   void drawAtlas(Image atlas,
-      List<RSTransform> transforms,
-      List<Rect> rects,
-      List<Color>? colors,
-      BlendMode? blendMode,
-      Rect? cullRect,
-      Paint paint) {
+                 List<RSTransform> transforms,
+                 List<Rect> rects,
+                 List<Color>? colors,
+                 BlendMode? blendMode,
+                 Rect? cullRect,
+                 Paint paint) {
     final int rectCount = rects.length;
     if (transforms.length != rectCount)
       throw ArgumentError('"transforms" and "rects" lengths must match.');
@@ -6032,12 +6032,12 @@ class _DisplayListCanvas implements Canvas {
 
   @override
   void drawRawAtlas(Image atlas,
-      Float32List rstTransforms,
-      Float32List rects,
-      Int32List? colors,
-      BlendMode? blendMode,
-      Rect? cullRect,
-      Paint paint) {
+                    Float32List rstTransforms,
+                    Float32List rects,
+                    Int32List? colors,
+                    BlendMode? blendMode,
+                    Rect? cullRect,
+                    Paint paint) {
     final int rectCount = rects.length;
     if (rstTransforms.length != rectCount)
       throw ArgumentError('"rstTransforms" and "rects" lengths must match.');
