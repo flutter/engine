@@ -70,7 +70,8 @@
       },
       {
          "name":"Windows UWP Engine",
-         "repo":"engine"
+         "repo":"engine",
+         "enabled": false
       },
       {
          "name":"Windows Web Engine",
