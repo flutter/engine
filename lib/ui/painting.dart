@@ -4824,13 +4824,14 @@ class _SkiaCanvas extends NativeFieldWrapperClass2 implements Canvas {
     assert(image != null); // image is checked on the engine side
     assert(_offsetIsValid(offset));
     assert(paint != null);
-    _drawImage(image._image, offset.dx, offset.dy, paint._objects, paint._data);
+    _drawImage(image._image, offset.dx, offset.dy, paint._objects, paint._data, paint.filterQuality.index);
   }
   void _drawImage(_Image image,
                   double x,
                   double y,
                   List<dynamic>? paintObjects,
-                  ByteData paintData) native 'Canvas_drawImage';
+                  ByteData paintData,
+                  int filterQualityIndex) native 'Canvas_drawImage';
 
   @override
   void drawImageRect(Image image, Rect src, Rect dst, Paint paint) {
@@ -4848,7 +4849,8 @@ class _SkiaCanvas extends NativeFieldWrapperClass2 implements Canvas {
                    dst.right,
                    dst.bottom,
                    paint._objects,
-                   paint._data);
+                   paint._data,
+                   paint.filterQuality.index);
   }
   void _drawImageRect(_Image image,
                       double srcLeft,
@@ -4860,7 +4862,8 @@ class _SkiaCanvas extends NativeFieldWrapperClass2 implements Canvas {
                       double dstRight,
                       double dstBottom,
                       List<dynamic>? paintObjects,
-                      ByteData paintData) native 'Canvas_drawImageRect';
+                      ByteData paintData,
+                      int filterQualityIndex) native 'Canvas_drawImageRect';
 
   @override
   void drawImageNine(Image image, Rect center, Rect dst, Paint paint) {
@@ -4878,7 +4881,8 @@ class _SkiaCanvas extends NativeFieldWrapperClass2 implements Canvas {
                    dst.right,
                    dst.bottom,
                    paint._objects,
-                   paint._data);
+                   paint._data,
+                   paint.filterQuality.index);
   }
   void _drawImageNine(_Image image,
                       double centerLeft,
@@ -4890,7 +4894,8 @@ class _SkiaCanvas extends NativeFieldWrapperClass2 implements Canvas {
                       double dstRight,
                       double dstBottom,
                       List<dynamic>? paintObjects,
-                      ByteData paintData) native 'Canvas_drawImageNine';
+                      ByteData paintData,
+                      int filterQualityIndex) native 'Canvas_drawImageNine';
 
   @override
   void drawPicture(Picture picture) {
