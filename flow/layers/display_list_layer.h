@@ -11,8 +11,8 @@
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/raster_cache.h"
 #include "flutter/flow/skia_gpu_object.h"
-#include "third_party/tonic/typed_data/typed_list.h"
 #include "third_party/tonic/typed_data/dart_byte_data.h"
+#include "third_party/tonic/typed_data/typed_list.h"
 
 namespace flutter {
 

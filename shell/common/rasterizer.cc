@@ -315,8 +315,9 @@ sk_sp<SkImage> Rasterizer::DoMakeRasterSnapshot(
   return result;
 }
 
-sk_sp<SkImage> Rasterizer::MakeRasterSnapshot(std::function<void(SkCanvas*)> draw_callback,
-                                              SkISize picture_size) {
+sk_sp<SkImage> Rasterizer::MakeRasterSnapshot(
+    std::function<void(SkCanvas*)> draw_callback,
+    SkISize picture_size) {
   return DoMakeRasterSnapshot(picture_size, draw_callback);
 }
 

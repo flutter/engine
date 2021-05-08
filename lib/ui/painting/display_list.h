@@ -9,12 +9,12 @@
 
 #include "flutter/flow/display_list_interpreter.h"
 #include "flutter/lib/ui/dart_wrapper.h"
-#include "third_party/tonic/typed_data/typed_list.h"
-#include "third_party/tonic/typed_data/dart_byte_data.h"
-#include "third_party/skia/include/core/SkRefCnt.h"
 #include "third_party/skia/include/core/SkColorFilter.h"
-#include "third_party/skia/include/core/SkImageFilter.h"
 #include "third_party/skia/include/core/SkImage.h"
+#include "third_party/skia/include/core/SkImageFilter.h"
+#include "third_party/skia/include/core/SkRefCnt.h"
+#include "third_party/tonic/typed_data/dart_byte_data.h"
+#include "third_party/tonic/typed_data/typed_list.h"
 
 namespace tonic {
 class DartLibraryNatives;
@@ -27,7 +27,6 @@ class DisplayList : public RefCountedDartWrappable<DisplayList> {
   FML_FRIEND_MAKE_REF_COUNTED(DisplayList);
 
  public:
-
   ~DisplayList() override;
 
   static fml::RefPtr<DisplayList> Create(tonic::Uint8List& ops,
@@ -40,29 +39,33 @@ class DisplayList : public RefCountedDartWrappable<DisplayList> {
                       uint32_t height,
                       Dart_Handle raw_image_callback);
 
-  DisplayListData data() { return { ops_vector_, data_vector_, ref_vector_ }; }
+  DisplayListData data() { return {ops_vector_, data_vector_, ref_vector_}; }
 
   void dispose();
 
   size_t GetAllocationSize() const override;
 
-  static Dart_Handle RasterizeToImage(std::shared_ptr<std::vector<uint8_t>> ops,
-                                      std::shared_ptr<std::vector<float>> data,
-                                      std::shared_ptr<std::vector<DisplayListRefHolder>> refs,
-                                      uint32_t width,
-                                      uint32_t height,
-                                      Dart_Handle raw_image_callback);
+  static Dart_Handle RasterizeToImage(
+      std::shared_ptr<std::vector<uint8_t>> ops,
+      std::shared_ptr<std::vector<float>> data,
+      std::shared_ptr<std::vector<DisplayListRefHolder>> refs,
+      uint32_t width,
+      uint32_t height,
+      Dart_Handle raw_image_callback);
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
   std::shared_ptr<std::vector<uint8_t>> ops_vector() { return ops_vector_; }
   std::shared_ptr<std::vector<float>> data_vector() { return data_vector_; }
-  std::shared_ptr<std::vector<DisplayListRefHolder>> ref_vector() { return ref_vector_; }
+  std::shared_ptr<std::vector<DisplayListRefHolder>> ref_vector() {
+    return ref_vector_;
+  }
 
  private:
-  explicit DisplayList(std::shared_ptr<std::vector<uint8_t>> ops_vector,
-                       std::shared_ptr<std::vector<float>> data_vector,
-                       std::shared_ptr<std::vector<DisplayListRefHolder>> ref_vector);
+  explicit DisplayList(
+      std::shared_ptr<std::vector<uint8_t>> ops_vector,
+      std::shared_ptr<std::vector<float>> data_vector,
+      std::shared_ptr<std::vector<DisplayListRefHolder>> ref_vector);
   // explicit DisplayList();
 
   std::shared_ptr<std::vector<uint8_t>> ops_vector_;

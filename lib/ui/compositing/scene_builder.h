@@ -20,8 +20,8 @@
 #include "flutter/lib/ui/painting/picture.h"
 #include "flutter/lib/ui/painting/rrect.h"
 #include "flutter/lib/ui/painting/shader.h"
-#include "third_party/tonic/typed_data/typed_list.h"
 #include "third_party/tonic/typed_data/dart_byte_data.h"
+#include "third_party/tonic/typed_data/typed_list.h"
 
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
 #include "flutter/lib/ui/compositing/scene_host.h"  // nogncheck

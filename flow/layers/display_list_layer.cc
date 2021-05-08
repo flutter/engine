@@ -9,14 +9,15 @@
 
 namespace flutter {
 
-DisplayListLayer::DisplayListLayer(const SkPoint& offset,
-                                   const SkRect& cull_rect,
-                                   const SkRect& draw_rect,
-                                   std::shared_ptr<std::vector<uint8_t>> ops,
-                                   std::shared_ptr<std::vector<float>> data,
-                                   std::shared_ptr<std::vector<DisplayListRefHolder>> refs,
-                                   bool is_complex,
-                                   bool will_change)
+DisplayListLayer::DisplayListLayer(
+    const SkPoint& offset,
+    const SkRect& cull_rect,
+    const SkRect& draw_rect,
+    std::shared_ptr<std::vector<uint8_t>> ops,
+    std::shared_ptr<std::vector<float>> data,
+    std::shared_ptr<std::vector<DisplayListRefHolder>> refs,
+    bool is_complex,
+    bool will_change)
     : offset_(offset),
       cull_rect_(cull_rect),
       draw_rect_(draw_rect),
@@ -106,24 +107,25 @@ void DisplayListLayer::Diff(DiffContext* context, const Layer* old_layer) {
 
 #endif  // FLUTTER_ENABLE_DIFF_CONTEXT
 
-void DisplayListLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
+void DisplayListLayer::Preroll(PrerollContext* context,
+                               const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "DisplayListLayer::Preroll");
 
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
   CheckForChildLayerBelow(context);
 #endif
 
-//   if (auto* cache = context->raster_cache) {
-//     TRACE_EVENT0("flutter", "DisplayListLayer::RasterCache (Preroll)");
+  //   if (auto* cache = context->raster_cache) {
+  //     TRACE_EVENT0("flutter", "DisplayListLayer::RasterCache (Preroll)");
 
-//     SkMatrix ctm = matrix;
-//     ctm.preTranslate(offset_.x(), offset_.y());
-// #ifndef SUPPORT_FRACTIONAL_TRANSLATION
-//     ctm = RasterCache::GetIntegralTransCTM(ctm);
-// #endif
-//     cache->Prepare(context->gr_context, sk_picture, ctm,
-//                    context->dst_color_space, is_complex_, will_change_);
-//   }
+  //     SkMatrix ctm = matrix;
+  //     ctm.preTranslate(offset_.x(), offset_.y());
+  // #ifndef SUPPORT_FRACTIONAL_TRANSLATION
+  //     ctm = RasterCache::GetIntegralTransCTM(ctm);
+  // #endif
+  //     cache->Prepare(context->gr_context, sk_picture, ctm,
+  //                    context->dst_color_space, is_complex_, will_change_);
+  //   }
 
   // FML_LOG(ERROR) << "display list cull rect is ["
   //   << cull_rect_.left() << ", "
@@ -166,11 +168,11 @@ void DisplayListLayer::Paint(PaintContext& context) const {
       context.leaf_nodes_canvas->getTotalMatrix()));
 #endif
 
-//   if (context.raster_cache &&
-//       context.raster_cache->Draw(*picture(), *context.leaf_nodes_canvas)) {
-//     TRACE_EVENT_INSTANT0("flutter", "raster cache hit");
-//     return;
-//   }
+  //   if (context.raster_cache &&
+  //       context.raster_cache->Draw(*picture(), *context.leaf_nodes_canvas)) {
+  //     TRACE_EVENT_INSTANT0("flutter", "raster cache hit");
+  //     return;
+  //   }
 
   // FML_LOG(ERROR) << "painting ["
   //   << paint_bounds().left() << ", "
@@ -183,8 +185,8 @@ void DisplayListLayer::Paint(PaintContext& context) const {
 
   SkPaint paint;
   paint.setColor(is_complex_
-    ? (will_change_ ? SkColors::kRed : SkColors::kYellow)
-    : (will_change_ ? SkColors::kBlue : SkColors::kGreen));
+                     ? (will_change_ ? SkColors::kRed : SkColors::kYellow)
+                     : (will_change_ ? SkColors::kBlue : SkColors::kGreen));
 }
 
 }  // namespace flutter

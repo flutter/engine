@@ -7,14 +7,14 @@
 
 #include <sstream>
 
+#include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkColorFilter.h"
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkImageFilter.h"
-#include "third_party/skia/include/core/SkShader.h"
-#include "third_party/skia/include/core/SkCanvas.h"
-#include "third_party/skia/include/core/SkPicture.h"
 #include "third_party/skia/include/core/SkPath.h"
+#include "third_party/skia/include/core/SkPicture.h"
 #include "third_party/skia/include/core/SkRRect.h"
+#include "third_party/skia/include/core/SkShader.h"
 #include "third_party/skia/include/core/SkVertices.h"
 
 namespace flutter {
@@ -41,12 +41,11 @@ enum CanvasOpArg {
   image_filter,
 };
 #define CANVAS_OP_ARG_SHIFT 5
-#define CANVAS_OP_ARG_MASK  ((1 << CANVAS_OP_ARG_SHIFT) - 1)
+#define CANVAS_OP_ARG_MASK ((1 << CANVAS_OP_ARG_SHIFT) - 1)
 
 #define CANVAS_OP_APPEND_ARG(arg_list, arg) \
   (((arg_list) << CANVAS_OP_ARG_SHIFT) | CanvasOpArg::arg)
-#define CANVAS_OP_ARGS1(arg) \
-  (CanvasOpArg::arg)
+#define CANVAS_OP_ARGS1(arg) (CanvasOpArg::arg)
 #define CANVAS_OP_ARGS2(arg1, arg2) \
   CANVAS_OP_APPEND_ARG(CANVAS_OP_ARGS1(arg2), arg1)
 #define CANVAS_OP_ARGS3(arg1, arg2, arg3) \
@@ -58,6 +57,7 @@ enum CanvasOpArg {
 #define CANVAS_OP_ARGS6(arg1, arg2, arg3, arg4, arg5, arg6) \
   CANVAS_OP_APPEND_ARG(CANVAS_OP_ARGS5(arg2, arg3, arg4, arg5, arg6), arg1)
 
+// clang-format off
 #define CANVAS_OP_ARGS__                    0
 #define CANVAS_OP_ARGS_Scalar               CANVAS_OP_ARGS1(scalar)
 #define CANVAS_OP_ARGS_2Scalars             CANVAS_OP_ARGS2(scalar, scalar)
@@ -182,11 +182,10 @@ enum CanvasOpArg {
   V(drawDisplayList,            DisplayList)        \
   V(drawShadow,                 Path_Scalar_Scalar) \
   V(drawShadowOccluded,         Path_Scalar_Scalar)
+// clang-format on
 
 #define CANVAS_OP_MAKE_ENUM(name, args) cops_##name,
-enum CanvasOp {
-  FOR_EACH_CANVAS_OP(CANVAS_OP_MAKE_ENUM)
-};
+enum CanvasOp { FOR_EACH_CANVAS_OP(CANVAS_OP_MAKE_ENUM) };
 
 class DisplayListRefHolder;
 
@@ -212,11 +211,12 @@ class DisplayListInterpreter {
  public:
   DisplayListInterpreter(DisplayListData data);
 
-  DisplayListInterpreter(std::shared_ptr<std::vector<uint8_t>> ops,
-                         std::shared_ptr<std::vector<float>> data,
-                         std::shared_ptr<std::vector<DisplayListRefHolder>> refs);
+  DisplayListInterpreter(
+      std::shared_ptr<std::vector<uint8_t>> ops,
+      std::shared_ptr<std::vector<float>> data,
+      std::shared_ptr<std::vector<DisplayListRefHolder>> refs);
 
-  void Rasterize(SkCanvas *canvas);
+  void Rasterize(SkCanvas* canvas);
 
   void Describe();
 
@@ -236,42 +236,53 @@ class DisplayListInterpreter {
   class Iterator {
    public:
     Iterator(const DisplayListInterpreter* interpreter)
-      : ops(interpreter->ops_vector_->begin()),
-        ops_end(interpreter->ops_vector_->end()),
-        data(interpreter->data_vector_->begin()),
-        data_end(interpreter->data_vector_->end()),
-        refs(interpreter->ref_vector_->begin()),
-        refs_end(interpreter->ref_vector_->end()) {}
+        : ops(interpreter->ops_vector_->begin()),
+          ops_end(interpreter->ops_vector_->end()),
+          data(interpreter->data_vector_->begin()),
+          data_end(interpreter->data_vector_->end()),
+          refs(interpreter->ref_vector_->begin()),
+          refs_end(interpreter->ref_vector_->end()) {}
 
     Iterator(const Iterator& iterator)
-      : ops(iterator.ops),
-        ops_end(iterator.ops_end),
-        data(iterator.data),
-        data_end(iterator.data_end),
-        refs(iterator.refs),
-        refs_end(iterator.refs_end) {}
+        : ops(iterator.ops),
+          ops_end(iterator.ops_end),
+          data(iterator.data),
+          data_end(iterator.data_end),
+          refs(iterator.refs),
+          refs_end(iterator.refs_end) {}
 
     bool HasOp() { return ops < ops_end; }
     CanvasOp GetOp() { return static_cast<CanvasOp>(*ops++); }
 
     void skipData(int n) { data += n; }
     SkScalar GetScalar() { return static_cast<SkScalar>(*data++); }
-    uint32_t GetUint32() { union { float f; uint32_t i; } u; u.f = *data++; return u.i; }
+    uint32_t GetUint32() {
+      union {
+        float f;
+        uint32_t i;
+      } u;
+      u.f = *data++;
+      return u.i;
+    }
 
     SkScalar GetAngle() { return GetScalar() * 180.0 / M_PI; }
     SkBlendMode GetBlendMode() { return static_cast<SkBlendMode>(GetUint32()); }
     SkColor GetColor() { return static_cast<SkColor>(GetUint32()); }
 
     SkPoint GetPoint() { return SkPoint::Make(GetScalar(), GetScalar()); }
-    SkRect GetRect() { return SkRect::MakeLTRB(GetScalar(), GetScalar(), GetScalar(), GetScalar()); }
+    SkRect GetRect() {
+      return SkRect::MakeLTRB(GetScalar(), GetScalar(), GetScalar(),
+                              GetScalar());
+    }
     SkRRect GetRoundRect() {
       SkRect rect = GetRect();
       SkVector radii[4] = {
-        // SkRRect Radii order is UL, UR, LR, LL as per SkRRect::Corner indices
-        { GetScalar(), GetScalar() },
-        { GetScalar(), GetScalar() },
-        { GetScalar(), GetScalar() },
-        { GetScalar(), GetScalar() },
+          // SkRRect Radii order is UL, UR, LR, LL
+          // as per SkRRect::Corner indices
+          {GetScalar(), GetScalar()},
+          {GetScalar(), GetScalar()},
+          {GetScalar(), GetScalar()},
+          {GetScalar(), GetScalar()},
       };
 
       SkRRect rrect;
@@ -279,14 +290,14 @@ class DisplayListInterpreter {
       return rrect;
     }
 
-    uint32_t GetIntList(uint32_t **int_ptr) {
+    uint32_t GetIntList(uint32_t** int_ptr) {
       uint32_t len = GetUint32();
-      *int_ptr = (uint32_t *) &*data;
+      *int_ptr = (uint32_t*)&*data;
       skipData(len);
       return len;
     }
 
-    uint32_t GetFloatList(SkScalar **flt_ptr) {
+    uint32_t GetFloatList(SkScalar** flt_ptr) {
       uint32_t len = GetUint32();
       *flt_ptr = &*data;
       skipData(len);
@@ -294,8 +305,12 @@ class DisplayListInterpreter {
     }
 
     void skipSkRef() { refs++; }
-    const sk_sp<SkColorFilter> GetColorFilter() { return (refs++)->colorFilter; }
-    const sk_sp<SkImageFilter> GetImageFilter() { return (refs++)->imageFilter; }
+    const sk_sp<SkColorFilter> GetColorFilter() {
+      return (refs++)->colorFilter;
+    }
+    const sk_sp<SkImageFilter> GetImageFilter() {
+      return (refs++)->imageFilter;
+    }
     const sk_sp<SkImage> GetImage() { return (refs++)->image; }
     const sk_sp<SkVertices> GetVertices() { return (refs++)->vertices; }
     const sk_sp<SkShader> GetShader() { return (refs++)->shader; }
@@ -315,7 +330,7 @@ class DisplayListInterpreter {
   };
 
   struct RasterizeContext {
-    SkCanvas *canvas;
+    SkCanvas* canvas;
     SkPaint paint;
     bool invertColors = false;
     sk_sp<SkColorFilter> colorFilter;

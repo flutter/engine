@@ -5,12 +5,12 @@
 #ifndef FLUTTER_LIB_UI_PAINTING_PICTURE_H_
 #define FLUTTER_LIB_UI_PAINTING_PICTURE_H_
 
-#include "third_party/tonic/typed_data/typed_list.h"
 #include "flutter/flow/skia_gpu_object.h"
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/painting/image.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "third_party/skia/include/core/SkPicture.h"
+#include "third_party/tonic/typed_data/typed_list.h"
 
 namespace tonic {
 class DartLibraryNatives;
