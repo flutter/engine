@@ -373,11 +373,18 @@ class AutofillInfo {
 /// The current text and selection state of a text field.
 @visibleForTesting
 class EditingState {
-  EditingState({this.text, int? baseOffset, int? extentOffset}) :
-    // Don't allow negative numbers. Pick the smallest selection index for base.
-    baseOffset = math.max(0, math.min(baseOffset ?? 0, extentOffset ?? 0)),
-    // Don't allow negative numbers. Pick the greatest selection index for extent.
-    extentOffset = math.max(0, math.max(baseOffset ?? 0, extentOffset ?? 0));
+  EditingState(
+      {this.text,
+      int? baseOffset,
+      int? extentOffset,
+      this.composingBase,
+      this.composingExtent})
+      :
+        // Don't allow negative numbers. Pick the smallest selection index for base.
+        baseOffset = math.max(0, math.min(baseOffset ?? 0, extentOffset ?? 0)),
+        // Don't allow negative numbers. Pick the greatest selection index for extent.
+        extentOffset =
+            math.max(0, math.max(baseOffset ?? 0, extentOffset ?? 0));
 
   /// Creates an [EditingState] instance using values from an editing state Map
   /// coming from Flutter.
@@ -436,6 +443,22 @@ class EditingState {
     }
   }
 
+  EditingState copyWith({
+    String? text,
+    int? baseOffset,
+    int? extentOffset,
+    int? composingBase,
+    int? composingExtent,
+  }) {
+    return EditingState(
+      text: text ?? this.text,
+      baseOffset: baseOffset ?? this.baseOffset,
+      extentOffset: extentOffset ?? this.extentOffset,
+      composingBase: composingBase ?? this.composingBase,
+      composingExtent: composingExtent ?? this.composingExtent,
+    );
+  }
+
   /// The counterpart of [EditingState.fromFrameworkMessage]. It generates a Map that
   /// can be sent to Flutter.
   // TODO(mdebbar): Should we get `selectionAffinity` and other properties from flutter's editing state?
@@ -443,6 +466,8 @@ class EditingState {
         'text': text,
         'selectionBase': baseOffset,
         'selectionExtent': extentOffset,
+        'composingBase': composingBase ?? -1,
+        'composingExtent': composingExtent ?? -1,
       };
 
   /// The current text being edited.
@@ -454,11 +479,18 @@ class EditingState {
   /// The offset at which the text selection terminates.
   final int? extentOffset;
 
+  /// The start range of text that is still being composed.
+  final int? composingBase;
+
+  /// The end range of text that is still being composed.
+  final int? composingExtent;
+
   /// Whether the current editing state is valid or not.
   bool get isValid => baseOffset! >= 0 && extentOffset! >= 0;
 
   @override
-  int get hashCode => ui.hashValues(text, baseOffset, extentOffset);
+  int get hashCode => ui.hashValues(
+      text, baseOffset, extentOffset, composingBase, composingExtent);
 
   @override
   bool operator ==(Object other) {
@@ -471,7 +503,9 @@ class EditingState {
     return other is EditingState &&
         other.text == text &&
         other.baseOffset == baseOffset &&
-        other.extentOffset == extentOffset;
+        other.extentOffset == extentOffset &&
+        other.composingBase == composingBase &&
+        other.composingExtent == composingExtent;
   }
 
   @override
@@ -772,6 +806,8 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
   bool get appendedToForm => _appendedToForm;
   bool _appendedToForm = false;
 
+  String? composingText;
+
   html.FormElement? get focusedFormElement =>
       _inputConfiguration.autofillGroup?.formElement;
 
@@ -849,6 +885,10 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
       domElement.focus();
     }));
 
+    domElement.addEventListener('compositionstart', _handleCompositionStart);
+    domElement.addEventListener('compositionupdate', _handleCompositionChange);
+    domElement.addEventListener('compositionend', _handleCompositionEnd);
+
     preventDefaultForMouseEvents();
   }
 
@@ -882,6 +922,12 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
       _subscriptions[i].cancel();
     }
     _subscriptions.clear();
+
+    domElement.removeEventListener('compositionstart', _handleCompositionStart);
+    domElement.removeEventListener(
+        'compositionupdate', _handleCompositionChange);
+    domElement.removeEventListener('compositionend', _handleCompositionEnd);
+
     // If focused element is a part of a form, it needs to stay on the DOM
     // until the autofill context of the form is finalized.
     // More details on `TextInput.finishAutofillContext` call.
@@ -921,8 +967,38 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
 
     EditingState newEditingState = EditingState.fromDomElement(domElement,
         textCapitalization: _inputConfiguration.textCapitalization);
+    if (composingText != null && newEditingState.text != null) {
+      int composingBase = newEditingState.text!.lastIndexOf(composingText!);
+      if (composingBase >= 0) {
+        newEditingState = newEditingState.copyWith(
+            composingBase: composingBase,
+            composingExtent: composingBase + composingText!.length);
+      }
+    }
 
     if (newEditingState != _lastEditingState) {
+      _lastEditingState = newEditingState;
+      _onChange!(_lastEditingState);
+    }
+  }
+
+  void _handleCompositionStart(html.Event event) {
+    if (event is html.CompositionEvent) {
+      composingText = null;
+    }
+  }
+
+  void _handleCompositionChange(html.Event event) {
+    if (event is html.CompositionEvent) {
+      composingText = event.data;
+    }
+  }
+
+  void _handleCompositionEnd(html.Event event) {
+    if (event is html.CompositionEvent) {
+      composingText = null;
+      EditingState newEditingState = EditingState.fromDomElement(domElement,
+          textCapitalization: _inputConfiguration.textCapitalization);
       _lastEditingState = newEditingState;
       _onChange!(_lastEditingState);
     }
@@ -1377,7 +1453,8 @@ class TextEditingChannel {
         break;
 
       default:
-        EnginePlatformDispatcher.instance._replyToPlatformMessage(callback, null);
+        EnginePlatformDispatcher.instance
+            ._replyToPlatformMessage(callback, null);
         return;
     }
     EnginePlatformDispatcher.instance
@@ -1483,7 +1560,7 @@ class HybridTextEditing {
     } else if (browserEngine == BrowserEngine.webkit) {
       this._defaultEditingElement = SafariDesktopTextEditingStrategy(this);
     } else if ((browserEngine == BrowserEngine.blink ||
-        browserEngine == BrowserEngine.samsung) &&
+            browserEngine == BrowserEngine.samsung) &&
         operatingSystem == OperatingSystem.android) {
       this._defaultEditingElement = AndroidTextEditingStrategy(this);
     } else if (browserEngine == BrowserEngine.firefox) {
