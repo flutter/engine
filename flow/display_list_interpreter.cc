@@ -362,10 +362,14 @@ CANVAS_OP_DEFINE_OP(clipRRectAA) {
   context.canvas->clipRRect(it.GetRoundRect(), true);
 }
 CANVAS_OP_DEFINE_OP(clipPath) {
-  it.skipSkRef(); /* TODO(flar) deal with Path object */
+  SkPath path;
+  it.GetPath(path);
+  context.canvas->clipPath(path);
 }
 CANVAS_OP_DEFINE_OP(clipPathAA) {
-  it.skipSkRef(); /* TODO(flar) deal with Path object */
+  SkPath path;
+  it.GetPath(path);
+  context.canvas->clipPath(path, true);
 }
 
 CANVAS_OP_DEFINE_OP(translate) {
