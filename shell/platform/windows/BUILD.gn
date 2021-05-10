@@ -74,8 +74,6 @@ source_set("flutter_windows_source") {
     "keyboard_key_handler.h",
     "platform_handler.cc",
     "platform_handler.h",
-    "string_conversion.cc",
-    "string_conversion.h",
     "system_utils.h",
     "task_runner.h",
     "text_input_plugin.cc",
@@ -152,6 +150,8 @@ source_set("flutter_windows_source") {
     defines = [ "FLUTTER_ENGINE_NO_PROTOTYPES" ]
   }
 
+  public_deps = [ ":string_conversion" ]
+
   deps = [
     ":flutter_windows_headers",
     "//flutter/shell/platform/common:common_cpp",
@@ -169,6 +169,30 @@ source_set("flutter_windows_source") {
     "//third_party/angle:libGLESv2_static",
     "//third_party/rapidjson",
   ]
+}
+
+# Windows registry utilities.
+source_set("registry") {
+  sources = [
+    "registry.cc",
+    "registry.h",
+  ]
+
+  if (target_os == "winuwp") {
+    cflags = [ "/EHsc" ]
+  }
+}
+
+# String encoding conversion utilities.
+source_set("string_conversion") {
+  sources = [
+    "string_conversion.cc",
+    "string_conversion.h",
+  ]
+
+  if (target_os == "winuwp") {
+    cflags = [ "/EHsc" ]
+  }
 }
 
 copy("publish_headers_windows") {
@@ -209,6 +233,7 @@ executable("flutter_windows_unittests") {
   sources = [
     # "flutter_project_bundle_unittests.cc", //TODO failing due to switches test failing.  Blocked on https://github.com/flutter/flutter/issues/74153
     # "flutter_windows_engine_unittests.cc", //TODO failing to send / receive platform message get plugins working first.  Blocked on https://github.com/flutter/flutter/issues/74155
+    "registry_unittests.cc",
     "string_conversion_unittests.cc",
     "system_utils_unittests.cc",
     "testing/engine_modifier.h",
@@ -247,6 +272,7 @@ executable("flutter_windows_unittests") {
     ":flutter_windows_fixtures",
     ":flutter_windows_headers",
     ":flutter_windows_source",
+    ":registry",
     "//flutter/shell/platform/common:common_cpp",
     "//flutter/shell/platform/embedder:embedder_as_internal_library",
     "//flutter/shell/platform/embedder:embedder_test_utils",
