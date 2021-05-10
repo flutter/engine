@@ -1332,3 +1332,45 @@ TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncLockModeOnSelfEvents) {
 
   clear_g_call_records();
 }
+
+TEST(FlKeyEmbedderResponderTest, SynthesizationOccursOnSkippedEvents) {
+  EXPECT_EQ(g_call_records, nullptr);
+  g_call_records = g_ptr_array_new_with_free_func(g_object_unref);
+  g_autoptr(FlEngine) engine = make_mock_engine_with_records();
+  g_autoptr(FlKeyResponder) responder =
+      FL_KEY_RESPONDER(fl_key_embedder_responder_new(engine));
+  int user_data = 123;  // Arbitrary user data
+
+  FlKeyEmbedderCallRecord* record;
+
+  // The NumLock is desynchronized by being enabled, and Control is pressed.
+  guint state = GDK_MOD2_MASK | GDK_CONTROL_MASK;
+
+  // Send a KeyA up event, which will be ignored
+  fl_key_responder_handle_event(
+      responder,
+      key_event_new(101, kRelease, GDK_KEY_a, kKeyCodeKeyA, state,
+                    kIsNotModifier),
+      verify_response_handled, &user_data);
+
+  EXPECT_EQ(g_call_records->len, 2u);
+  record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 0));
+  EXPECT_EQ(record->event->timestamp, 101000);
+  EXPECT_EQ(record->event->type, kFlutterKeyEventTypeDown);
+  EXPECT_EQ(record->event->physical, kPhysicalNumLock);
+  EXPECT_EQ(record->event->logical, kLogicalNumLock);
+  EXPECT_STREQ(record->event->character, nullptr);
+  EXPECT_EQ(record->event->synthesized, true);
+
+  record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 1));
+  EXPECT_EQ(record->event->timestamp, 101000);
+  EXPECT_EQ(record->event->type, kFlutterKeyEventTypeDown);
+  EXPECT_EQ(record->event->physical, kPhysicalControlLeft);
+  EXPECT_EQ(record->event->logical, kLogicalControlLeft);
+  EXPECT_STREQ(record->event->character, nullptr);
+  EXPECT_EQ(record->event->synthesized, true);
+
+  g_ptr_array_clear(g_call_records);
+
+  clear_g_call_records();
+}

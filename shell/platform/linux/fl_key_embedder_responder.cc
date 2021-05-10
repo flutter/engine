@@ -659,10 +659,7 @@ static void synchronize_lock_states_loop_body(gpointer key,
       recorded_physical_key == 0
           ? 0
           : lookup_hash_table(self->pressing_records, recorded_physical_key);
-  // const uint64_t pressed_logical_key =
-  //     lookup_hash_table(self->pressing_records, physical_key);
-  // For simplicity, we're not considering remapped lock keys until we meet such
-  // cases.
+
   g_return_if_fail(pressed_logical_key == 0 ||
                    pressed_logical_key == logical_key);
   fflush(stdout);
@@ -755,6 +752,11 @@ static void fl_key_embedder_responder_handle_event(
                        synchronize_lock_states_loop_body,
                        &sync_pressed_state_context);
 
+  // Update pressing states
+  g_hash_table_foreach(self->modifier_bit_to_checked_keys,
+                       synchronize_pressed_states_loop_body,
+                       &sync_pressed_state_context);
+
   // Construct the real event
   const uint64_t last_logical_record =
       lookup_hash_table(self->pressing_records, physical_key);
@@ -792,11 +794,6 @@ static void fl_key_embedder_responder_handle_event(
       out_event.type = kFlutterKeyEventTypeUp;
     }
   }
-
-  // Update pressing states
-  g_hash_table_foreach(self->modifier_bit_to_checked_keys,
-                       synchronize_pressed_states_loop_body,
-                       &sync_pressed_state_context);
 
   update_pressing_state(self, physical_key, is_down_event ? logical_key : 0);
   possibly_update_lock_bit(self, logical_key, is_down_event);
