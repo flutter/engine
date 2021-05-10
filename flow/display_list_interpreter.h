@@ -265,7 +265,7 @@ class DisplayListInterpreter {
       return u.i;
     }
 
-    SkScalar GetDegrees() { return SkRadiansToDegrees(GetScalar()); }
+    SkScalar GetDegrees() { return GetScalar() * 180 / SK_DoublePI; }
     SkBlendMode GetBlendMode() { return static_cast<SkBlendMode>(GetUint32()); }
     SkColor GetColor() { return static_cast<SkColor>(GetUint32()); }
 
