@@ -5675,7 +5675,7 @@ class _DisplayListCanvas implements Canvas {
   static const int _ditherNeeded        = 1 << 11;
 
   static const int _paintMask = _aaNeeded | _colorNeeded | _blendNeeded | _invertColorsNeeded
-                              | _colorFilterNeeded | _shaderNeeded;
+                              | _colorFilterNeeded | _shaderNeeded | _imageFilterNeeded;
   static const int _drawMask = _paintMask | _paintStyleNeeded | _maskFilterNeeded;
   static const int _strokeMask = _paintMask | _strokeStyleNeeded | _maskFilterNeeded;
   static const int _imageMask = _blendNeeded | _filterQualityNeeded | _imageFilterNeeded | _ditherNeeded;
@@ -5899,7 +5899,7 @@ class _DisplayListCanvas implements Canvas {
     _addOp(_pointOps[pointMode.index], points.length * 2 + 1);
     _dataInts[_numData++] = points.length * 2;
     final _BoundsAccumulator ptBounds = _BoundsAccumulator();
-    for (Offset pt in points) {
+    for (final Offset pt in points) {
       _dataFloats[_numData++] = pt.dx;
       _dataFloats[_numData++] = pt.dy;
       ptBounds.accumulate(pt.dx, pt.dy);
@@ -5991,6 +5991,12 @@ class _DisplayListCanvas implements Canvas {
                  BlendMode? blendMode,
                  Rect? cullRect,
                  Paint paint) {
+    assert(atlas != null); // atlas is checked on the engine side
+    assert(transforms != null);
+    assert(rects != null);
+    assert(colors == null || colors.isEmpty || blendMode != null);
+    assert(paint != null);
+
     final int rectCount = rects.length;
     if (transforms.length != rectCount)
       throw ArgumentError('"transforms" and "rects" lengths must match.');
@@ -6058,7 +6064,7 @@ class _DisplayListCanvas implements Canvas {
 
     _addFloat32List(rstTransforms);
     _addFloat32List(rects);
-    if (colors != null)
+    if (colors != null && colors.isNotEmpty)
       _addInt32List(colors);
     if (cullRect != null)
       _addRect(cullRect);
