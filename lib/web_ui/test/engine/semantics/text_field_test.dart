@@ -245,7 +245,10 @@ void testMain() {
 
       strategy.disable();
       semantics().semanticsEnabled = false;
-    });
+
+      // TODO(yjbanov): this test passes locally but fails on LUCI
+      //                https://github.com/flutter/flutter/issues/82207
+    }, skip: browserEngine == BrowserEngine.webkit);
 
     test('Works in multi-line mode', () {
       semantics()
