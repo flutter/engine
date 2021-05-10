@@ -171,11 +171,12 @@ TEST_F(PerformanceOverlayLayerTest, SimpleRasterizerStatistics) {
   text_paint.setColor(SK_ColorGRAY);
   SkPoint text_position = SkPoint::Make(16.0f, 22.0f);
 
-  // TODO(https://github.com/flutter/flutter/issues/82202): Remove once the performance overlay
-  // can use Fuchsia's font manager instead of the empty default.
+  // TODO(https://github.com/flutter/flutter/issues/82202): Remove once the
+  // performance overlay can use Fuchsia's font manager instead of the empty
+  // default.
 #if defined(OS_FUCHSIA)
   GTEST_SKIP() << "Expectation requires a valid default font manager";
-#endif // OS_FUCHSIA
+#endif  // OS_FUCHSIA
   EXPECT_EQ(mock_canvas().draw_calls(),
             std::vector({MockCanvas::DrawCall{
                 0, MockCanvas::DrawTextData{overlay_text_data, text_paint,
