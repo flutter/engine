@@ -513,7 +513,8 @@ flt-glass-pane * {
       });
     }
 
-    if (useCanvasKit) {
+    // Only reset CanvasKit if it wasn't already loaded.
+    if (useCanvasKit && windowFlutterCanvasKit == null) {
       _canvasKitScript?.remove();
       _canvasKitScript = html.ScriptElement();
       _canvasKitScript!.src = canvasKitJavaScriptBindingsUrl;
