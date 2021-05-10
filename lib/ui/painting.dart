@@ -3863,7 +3863,7 @@ enum ClipOp {
 }
 
 /// A flag to enable use of the new DisplayList format for Picture objects.
-bool useDisplayListPictures = true;
+bool _useDisplayListPictures = false;
 
 /// An interface for recording graphical operations.
 ///
@@ -3895,11 +3895,8 @@ abstract class Canvas {
   ///
   /// To end the recording, call [PictureRecorder.endRecording] on the
   /// given recorder.
-  factory Canvas(PictureRecorder recorder, [ Rect? cullRect ]) {
-    return useDisplayListPictures
-        ? _DisplayListCanvas(recorder, cullRect)
-        : _SkiaCanvas(recorder, cullRect);
-  }
+  factory Canvas(PictureRecorder recorder, [ Rect? cullRect ]) =>
+      recorder._makeCanvas(cullRect);
 
   /// Saves a copy of the current transform and clip on the save stack.
   ///
@@ -4579,10 +4576,13 @@ abstract class PictureRecorder {
   /// [Canvas] and begin recording, pass this [PictureRecorder] to the
   /// [Canvas] constructor.
   factory PictureRecorder() {
-    return useDisplayListPictures
+    return _useDisplayListPictures
         ? _DisplayListPictureRecorder()
         : _SkiaPictureRecorder();
   }
+
+  // Return a canvas appropriate for this PictureRecorder type
+  Canvas _makeCanvas(Rect? cullRect);
 
   /// Whether this object is currently recording commands.
   ///
@@ -4603,10 +4603,10 @@ abstract class PictureRecorder {
 
 class _SkiaCanvas extends NativeFieldWrapperClass2 implements Canvas {
   @pragma('vm:entry-point')
-  _SkiaCanvas(PictureRecorder recorder, [ Rect? cullRect ]) : assert(recorder != null) {
+  _SkiaCanvas(_SkiaPictureRecorder recorder, [ Rect? cullRect ]) : assert(recorder != null) {
     if (recorder.isRecording)
       throw ArgumentError('"recorder" must not already be associated with another Canvas.');
-    _recorder = recorder as _SkiaPictureRecorder;
+    _recorder = recorder;
     _recorder!._canvas = this;
     cullRect ??= Rect.largest;
     _constructor(recorder, cullRect.left, cullRect.top, cullRect.right, cullRect.bottom);
@@ -5087,6 +5087,9 @@ class _SkiaPictureRecorder extends NativeFieldWrapperClass2 implements PictureRe
   void _constructor() native 'PictureRecorder_constructor';
 
   @override
+  Canvas _makeCanvas(Rect? cullRect) => _SkiaCanvas(this, cullRect);
+
+  @override
   bool get isRecording => _canvas != null;
 
   @override
@@ -5307,11 +5310,9 @@ class _BoundsAccumulator {
   Rect get bounds => Rect.fromLTRB(_minX, _minY, _maxX, _maxY);
 }
 
-/// Local storage version of Canvas
 class _DisplayListCanvas implements Canvas {
-  /// Make a Canvas2
-  _DisplayListCanvas(PictureRecorder recorder, [Rect? cullRect])
-      : _recorder = recorder as _DisplayListPictureRecorder,
+  _DisplayListCanvas(_DisplayListPictureRecorder recorder, [Rect? cullRect])
+      : _recorder = recorder,
         _cullRect = cullRect ?? Rect.largest,
         _accumulator = _BoundsAccumulator(),
         _ops = _emptyOps, _numOps = 0,
@@ -5320,7 +5321,7 @@ class _DisplayListCanvas implements Canvas {
         _objData = <Object>[],
         _ctm = _MatrixTransform._identity(),
         _ctmStack = <_MatrixTransform>[] {
-    _recorder!._canvas = this;
+    recorder._canvas = this;
   }
 
   static Uint8List _emptyOps = Uint8List(0);
@@ -6188,6 +6189,9 @@ class _DisplayListPicture extends NativeFieldWrapperClass2 implements Picture {
 
 /// Local storage version of PictureRecorder
 class _DisplayListPictureRecorder implements PictureRecorder {
+  @override
+  Canvas _makeCanvas(Rect? cullRect) => _DisplayListCanvas(this, cullRect);
+
   @override
   bool get isRecording => _canvas != null;
 

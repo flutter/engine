@@ -100,9 +100,6 @@ Future<void> pumpImage() async {
   );
   final Image image = await completer.future;
 
-  // This test assumes the old Skia Picture/Canvas implementation
-  useDisplayListPictures = false;
-
   final FrameCallback renderBlank = (Duration duration) {
     image.dispose();
 
