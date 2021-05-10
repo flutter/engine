@@ -469,9 +469,6 @@ static void synchronize_pressed_states_loop_body(gpointer key,
   //     whether to synthesize a press event later.
   for (guint logical_key_idx = 0; logical_key_idx < length; logical_key_idx++) {
     const uint64_t logical_key = logical_keys[logical_key_idx];
-    // const bool this_key_is_event_key =
-    //     logical_key == context->event_logical_key;
-
     const uint64_t recorded_physical_key =
         lookup_hash_table(self->mapping_records, logical_key);
     const uint64_t pressed_logical_key_before_event =
@@ -483,9 +480,6 @@ static void synchronize_pressed_states_loop_body(gpointer key,
 
     g_return_if_fail(pressed_logical_key_before_event == 0 ||
                       pressed_logical_key_before_event == logical_key);
-
-    // const bool this_key_pressed_after_event =
-        // this_key_pressed_before_event ^ this_key_is_event_key;
 
     pressed_by_record = pressed_by_record || this_key_pressed_before_event;
 
