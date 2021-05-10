@@ -504,17 +504,17 @@ static void synchronize_pressed_states_loop_body(gpointer key,
   // If the modifier should be pressed, press its primary key.
   if (pressed_by_state && !pressed_by_record) {
     const uint64_t logical_key = checked_key->primary_logical_key;
-    const uint64_t record_physical_key =
+    const uint64_t recorded_physical_key =
         lookup_hash_table(self->mapping_records, logical_key);
     // The physical key is derived from past mapping record if possible.
     //
     // The event to be synthesized is a key down event. There might not have
     // been a mapping record, in which case the hard-coded #primary_physical_key
     // is used.
-    const uint64_t physical_key = record_physical_key != 0
-                                      ? record_physical_key
+    const uint64_t physical_key = recorded_physical_key != 0
+                                      ? recorded_physical_key
                                       : checked_key->primary_physical_key;
-    if (record_physical_key == 0) {
+    if (recorded_physical_key == 0) {
       printf("update by synpress ph %lx lo %lx\n", physical_key, logical_key);
       fflush(stdout);
       update_mapping_record(self, physical_key, logical_key);
@@ -623,7 +623,7 @@ static void synchronize_lock_states_loop_body(gpointer key,
   FlKeyEmbedderResponder* self = context->self;
 
   const uint64_t logical_key = checked_key->primary_logical_key;
-  const uint64_t record_physical_key =
+  const uint64_t recorded_physical_key =
       lookup_hash_table(self->mapping_records, logical_key);
   // The physical key is derived from past mapping record if possible.
   //
@@ -632,8 +632,8 @@ static void synchronize_lock_states_loop_body(gpointer key,
   // If the event to be synthesized is a key down event, then there might
   // not have been a mapping record, in which case the hard-coded
   // #primary_physical_key is used.
-  const uint64_t physical_key = record_physical_key != 0
-                                    ? record_physical_key
+  const uint64_t physical_key = recorded_physical_key != 0
+                                    ? recorded_physical_key
                                     : checked_key->primary_physical_key;
 
   // A lock mode key can be at any of a 4-stage cycle, depending on whether it's
@@ -656,13 +656,15 @@ static void synchronize_lock_states_loop_body(gpointer key,
   // minimal synthesization.
 
   const uint64_t pressed_logical_key =
-      lookup_hash_table(self->pressing_records, physical_key);
+      recorded_physical_key == 0
+          ? 0
+          : lookup_hash_table(self->pressing_records, recorded_physical_key);
+  // const uint64_t pressed_logical_key =
+  //     lookup_hash_table(self->pressing_records, physical_key);
   // For simplicity, we're not considering remapped lock keys until we meet such
   // cases.
   g_return_if_fail(pressed_logical_key == 0 ||
                    pressed_logical_key == logical_key);
-  printf("pressedLogical %lx lockRecords %d\n", pressed_logical_key,
-         self->lock_records);
   fflush(stdout);
   const int stage_by_record = find_stage_by_record(
       pressed_logical_key != 0, (self->lock_records & modifier_bit) != 0);
@@ -707,7 +709,7 @@ static void synchronize_lock_states_loop_body(gpointer key,
     const int standard_current_stage = current_stage % kNumStages;
     const bool is_down_event =
         standard_current_stage == 0 || standard_current_stage == 2;
-    if (is_down_event && record_physical_key == 0) {
+    if (is_down_event && recorded_physical_key == 0) {
       printf("update by lock ph %lx lo %lx\n", physical_key, logical_key);
       fflush(stdout);
       update_mapping_record(self, physical_key, logical_key);

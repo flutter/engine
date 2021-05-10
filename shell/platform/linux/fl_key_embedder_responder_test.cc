@@ -1000,7 +1000,7 @@ TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncPressingState) {
   // Send a normal event (KeyA down).
   fl_key_responder_handle_event(
       responder,
-      key_event_new(102, kRelease, GDK_KEY_A, kKeyCodeKeyA, state,
+      key_event_new(102, kPress, GDK_KEY_A, kKeyCodeKeyA, state,
                     kIsNotModifier),
       verify_response_handled, &user_data);
 
@@ -1020,7 +1020,7 @@ TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncPressingState) {
   EXPECT_EQ(record->event->type, kFlutterKeyEventTypeDown);
   EXPECT_EQ(record->event->physical, kPhysicalKeyA);
   EXPECT_EQ(record->event->logical, kLogicalKeyA);
-  EXPECT_STREQ(record->event->character, nullptr);
+  EXPECT_STREQ(record->event->character, "A");
   EXPECT_EQ(record->event->synthesized, false);
 
   invoke_record_callback_and_verify(record, TRUE, &user_data);
