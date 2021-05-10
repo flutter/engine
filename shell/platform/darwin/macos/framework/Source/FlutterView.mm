@@ -4,6 +4,7 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderingBackend.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterResizeSynchronizer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterSurfaceManager.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/MacOSGLContextSwitch.h"
@@ -11,16 +12,33 @@
 #import <OpenGL/gl.h>
 #import <QuartzCore/QuartzCore.h>
 
-@interface FlutterView () <FlutterResizeSynchronizerDelegate> {
+@interface FlutterView () {
   __weak id<FlutterViewReshapeListener> _reshapeListener;
   FlutterResizeSynchronizer* _resizeSynchronizer;
-  FlutterSurfaceManager* _surfaceManager;
-  NSOpenGLContext* _openGLContext;
+  id<FlutterResizableBackingStoreProvider> _resizableBackingStoreProvider;
 }
 
 @end
 
 @implementation FlutterView
+
+- (instancetype)initWithMTLDevice:(id<MTLDevice>)device
+                     commandQueue:(id<MTLCommandQueue>)commandQueue
+                  reshapeListener:(id<FlutterViewReshapeListener>)reshapeListener {
+  self = [super initWithFrame:NSZeroRect];
+  if (self) {
+    [self setWantsLayer:YES];
+    [self setLayerContentsRedrawPolicy:NSViewLayerContentsRedrawDuringViewResize];
+    _reshapeListener = reshapeListener;
+    _resizableBackingStoreProvider =
+        [[FlutterMetalResizableBackingStoreProvider alloc] initWithDevice:device
+                                                             commandQueue:commandQueue
+                                                                    layer:self.layer];
+    _resizeSynchronizer =
+        [[FlutterResizeSynchronizer alloc] initWithDelegate:_resizableBackingStoreProvider];
+  }
+  return self;
+}
 
 - (instancetype)initWithMainContext:(NSOpenGLContext*)mainContext
                     reshapeListener:(id<FlutterViewReshapeListener>)reshapeListener {
@@ -32,37 +50,22 @@
               reshapeListener:(id<FlutterViewReshapeListener>)reshapeListener {
   self = [super initWithFrame:frame];
   if (self) {
-    _openGLContext = mainContext;
     [self setWantsLayer:YES];
-
-    _resizeSynchronizer = [[FlutterResizeSynchronizer alloc] initWithDelegate:self];
-    _surfaceManager = [[FlutterSurfaceManager alloc] initWithLayer:self.layer
-                                                     openGLContext:_openGLContext];
-
     _reshapeListener = reshapeListener;
+    _resizableBackingStoreProvider =
+        [[FlutterOpenGLResizableBackingStoreProvider alloc] initWithMainContext:mainContext
+                                                                          layer:self.layer];
+    _resizeSynchronizer =
+        [[FlutterResizeSynchronizer alloc] initWithDelegate:_resizableBackingStoreProvider];
   }
   return self;
 }
 
-- (void)resizeSynchronizerFlush:(FlutterResizeSynchronizer*)synchronizer {
-  MacOSGLContextSwitch context_switch(_openGLContext);
-  glFlush();
-}
-
-- (void)resizeSynchronizerCommit:(FlutterResizeSynchronizer*)synchronizer {
-  [CATransaction begin];
-  [CATransaction setDisableActions:YES];
-
-  [_surfaceManager swapBuffers];
-
-  [CATransaction commit];
-}
-
-- (int)frameBufferIDForSize:(CGSize)size {
+- (FlutterRenderBackingStore*)backingStoreForSize:(CGSize)size {
   if ([_resizeSynchronizer shouldEnsureSurfaceForSize:size]) {
-    [_surfaceManager ensureSurfaceSize:size];
+    [_resizableBackingStoreProvider onBackingStoreResized:size];
   }
-  return [_surfaceManager glFrameBufferId];
+  return [_resizableBackingStoreProvider backingStore];
 }
 
 - (void)present {
@@ -103,6 +106,31 @@
   [super viewDidChangeBackingProperties];
   // Force redraw
   [_reshapeListener viewDidReshape:self];
+}
+
+- (void)shutdown {
+  [_resizeSynchronizer shutdown];
+}
+#pragma mark - NSAccessibility overrides
+
+- (BOOL)isAccessibilityElement {
+  return YES;
+}
+
+- (NSAccessibilityRole)accessibilityRole {
+  return NSAccessibilityGroupRole;
+}
+
+- (NSString*)accessibilityLabel {
+  // TODO(chunhtai): Provides a way to let developer customize the accessibility
+  // label.
+  // https://github.com/flutter/flutter/issues/75446
+  NSString* applicationName =
+      [NSBundle.mainBundle objectForInfoDictionaryKey:@"CFBundleDisplayName"];
+  if (!applicationName) {
+    applicationName = [NSBundle.mainBundle objectForInfoDictionaryKey:@"CFBundleName"];
+  }
+  return applicationName;
 }
 
 @end

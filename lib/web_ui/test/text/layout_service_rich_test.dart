@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
@@ -41,6 +40,21 @@ void main() {
 
 void testMain() async {
   await ui.webOnlyInitializeTestDomRenderer();
+
+  test('does not crash on empty spans', () {
+    final CanvasParagraph paragraph = rich(ahemStyle, (builder) {
+      builder.pushStyle(EngineTextStyle.only(color: blue));
+      builder.addText('');
+
+      builder.pushStyle(EngineTextStyle.only(color: red));
+      builder.addText('Lorem ipsum');
+
+      builder.pushStyle(EngineTextStyle.only(color: green));
+      builder.addText('');
+    });
+
+    expect(() => paragraph.layout(constrain(double.infinity)), returnsNormally);
+  });
 
   test('measures spans in the same line correctly', () {
     final CanvasParagraph paragraph = rich(ahemStyle, (builder) {
@@ -147,6 +161,66 @@ void testMain() async {
     expectLines(paragraph, [
       l('Lorem ', 0, 6, hardBreak: false, width: 50.0, left: 0.0),
       l('ipsum', 6, 11, hardBreak: true, width: 50.0, left: 0.0),
+    ]);
+  });
+
+  test('should handle placeholder-only paragraphs', () {
+    final EngineParagraphStyle paragraphStyle = EngineParagraphStyle(
+      fontFamily: 'ahem',
+      fontSize: 10,
+      textAlign: ui.TextAlign.center,
+    );
+    final CanvasParagraph paragraph = rich(paragraphStyle, (builder) {
+      builder.addPlaceholder(300.0, 50.0, ui.PlaceholderAlignment.baseline, baseline: ui.TextBaseline.alphabetic);
+    })..layout(constrain(500.0));
+
+    expect(paragraph.maxIntrinsicWidth, 300.0);
+    expect(paragraph.minIntrinsicWidth, 300.0);
+    expect(paragraph.height, 50.0);
+    expectLines(paragraph, [
+      l('', 0, 0, hardBreak: true, width: 300.0, left: 100.0),
+    ]);
+  });
+
+  test('correct maxIntrinsicWidth when paragraph ends with placeholder', () {
+    final EngineParagraphStyle paragraphStyle = EngineParagraphStyle(
+      fontFamily: 'ahem',
+      fontSize: 10,
+      textAlign: ui.TextAlign.center,
+    );
+    final CanvasParagraph paragraph = rich(paragraphStyle, (builder) {
+      builder.addText('abcd');
+      builder.addPlaceholder(300.0, 50.0, ui.PlaceholderAlignment.bottom);
+    })..layout(constrain(400.0));
+
+    expect(paragraph.maxIntrinsicWidth, 340.0);
+    expect(paragraph.minIntrinsicWidth, 300.0);
+    expect(paragraph.height, 50.0);
+    expectLines(paragraph, [
+      l('abcd', 0, 4, hardBreak: true, width: 340.0, left: 30.0),
+    ]);
+  });
+
+  test('handles new line followed by a placeholder', () {
+    final EngineParagraphStyle paragraphStyle = EngineParagraphStyle(
+      fontFamily: 'ahem',
+      fontSize: 10,
+      textAlign: ui.TextAlign.center,
+    );
+    final CanvasParagraph paragraph = rich(paragraphStyle, (builder) {
+      builder.addText('Lorem\n');
+      builder.addPlaceholder(300.0, 40.0, ui.PlaceholderAlignment.bottom);
+      builder.addText('ipsum');
+    })..layout(constrain(300.0));
+
+    // The placeholder's width + "ipsum"
+    expect(paragraph.maxIntrinsicWidth, 300.0 + 50.0);
+    expect(paragraph.minIntrinsicWidth, 300.0);
+    expect(paragraph.height, 10.0 + 40.0 + 10.0);
+    expectLines(paragraph, [
+      l('Lorem', 0, 6, hardBreak: true, width: 50.0, height: 10.0, left: 125.0),
+      l('', 6, 6, hardBreak: false, width: 300.0, height: 40.0, left: 0.0),
+      l('ipsum', 6, 11, hardBreak: true, width: 50.0, height: 10.0, left: 125.0),
     ]);
   });
 }

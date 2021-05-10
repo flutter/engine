@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of engine;
 
 /// A raw HTML canvas that is directly written to.
@@ -71,7 +70,8 @@ class BitmapCanvas extends EngineCanvas {
 
   /// Keeps track of what device pixel ratio was used when this [BitmapCanvas]
   /// was created.
-  final double _devicePixelRatio = EnginePlatformDispatcher.browserDevicePixelRatio;
+  final double _devicePixelRatio =
+      EnginePlatformDispatcher.browserDevicePixelRatio;
 
   // Compensation for [_initializeViewport] snapping canvas position to 1 pixel.
   int? _canvasPositionX, _canvasPositionY;
@@ -177,13 +177,15 @@ class BitmapCanvas extends EngineCanvas {
 
   static int _widthToPhysical(double width) {
     final double boundsWidth = width + 1;
-    return (boundsWidth * EnginePlatformDispatcher.browserDevicePixelRatio).ceil() +
+    return (boundsWidth * EnginePlatformDispatcher.browserDevicePixelRatio)
+            .ceil() +
         2 * kPaddingPixels;
   }
 
   static int _heightToPhysical(double height) {
     final double boundsHeight = height + 1;
-    return (boundsHeight * EnginePlatformDispatcher.browserDevicePixelRatio).ceil() +
+    return (boundsHeight * EnginePlatformDispatcher.browserDevicePixelRatio)
+            .ceil() +
         2 * kPaddingPixels;
   }
 
@@ -214,6 +216,7 @@ class BitmapCanvas extends EngineCanvas {
       }
     }
     _children.clear();
+    _childOverdraw = false;
     _cachedLastCssFont = null;
     _setupInitialTransform();
   }
@@ -227,7 +230,8 @@ class BitmapCanvas extends EngineCanvas {
   /// * [PersistedPicture._recycleCanvas] which also uses this method
   ///   for the same reason.
   bool isReusable() {
-    return _devicePixelRatio == EnginePlatformDispatcher.browserDevicePixelRatio;
+    return _devicePixelRatio ==
+        EnginePlatformDispatcher.browserDevicePixelRatio;
   }
 
   /// Returns a "data://" URI containing a representation of the image in this
@@ -336,8 +340,10 @@ class BitmapCanvas extends EngineCanvas {
   ///   prefer DOM if canvas has not been allocated yet.
   ///
   bool _useDomForRenderingFill(SurfacePaintData paint) =>
+      _renderStrategy.isInsideShaderMask ||
       (_preserveImageData == false && _contains3dTransform) ||
-      (_childOverdraw && _canvasPool._canvas == null &&
+      (_childOverdraw &&
+          _canvasPool._canvas == null &&
           paint.maskFilter == null &&
           paint.shader == null &&
           paint.style != ui.PaintingStyle.stroke);
@@ -346,12 +352,14 @@ class BitmapCanvas extends EngineCanvas {
   ///
   /// DOM canvas is generated for simple strokes using borders.
   bool _useDomForRenderingFillAndStroke(SurfacePaintData paint) =>
+      _renderStrategy.isInsideShaderMask ||
       (_preserveImageData == false && _contains3dTransform) ||
-          ((_childOverdraw || _renderStrategy.hasImageElements ||
+      ((_childOverdraw ||
+              _renderStrategy.hasImageElements ||
               _renderStrategy.hasParagraphs) &&
-              _canvasPool._canvas == null &&
-              paint.maskFilter == null &&
-              paint.shader == null);
+          _canvasPool._canvas == null &&
+          paint.maskFilter == null &&
+          paint.shader == null);
 
   @override
   void drawColor(ui.Color color, ui.BlendMode blendMode) {
@@ -373,8 +381,8 @@ class BitmapCanvas extends EngineCanvas {
         ..lineTo(p2.dx, p2.dy);
       drawPath(path, paint);
     } else {
-      ui.Rect? shaderBounds = (paint.shader != null) ?
-      ui.Rect.fromPoints(p1, p2) : null;
+      ui.Rect? shaderBounds =
+          (paint.shader != null) ? ui.Rect.fromPoints(p1, p2) : null;
       _setUpPaint(paint, shaderBounds);
       _canvasPool.strokeLine(p1, p2);
       _tearDownPaint();
@@ -386,8 +394,8 @@ class BitmapCanvas extends EngineCanvas {
     if (_useDomForRenderingFill(paint)) {
       drawRect(_computeScreenBounds(_canvasPool._currentTransform), paint);
     } else {
-      ui.Rect? shaderBounds = (paint.shader != null) ?
-      _computePictureBounds() : null;
+      ui.Rect? shaderBounds =
+          (paint.shader != null) ? _computePictureBounds() : null;
       _setUpPaint(paint, shaderBounds);
       _canvasPool.fill();
       _tearDownPaint();
@@ -433,8 +441,8 @@ class BitmapCanvas extends EngineCanvas {
     if (blendMode != null) {
       element.style.mixBlendMode = _stringForBlendMode(blendMode) ?? '';
     }
-    // Switch to preferring DOM from now on.
-    _childOverdraw = true;
+    // Switch to preferring DOM from now on, and close the current canvas.
+    _closeCurrentCanvas();
   }
 
   @override
@@ -450,8 +458,8 @@ class BitmapCanvas extends EngineCanvas {
               math.min(rect.left, rect.right), math.min(rect.top, rect.bottom)),
           paint);
     } else {
-    _setUpPaint(paint, rrect.outerRect);
-    _canvasPool.drawRRect(rrect, paint.style);
+      _setUpPaint(paint, rrect.outerRect);
+      _canvasPool.drawRRect(rrect, paint.style);
       _tearDownPaint();
     }
   }
@@ -495,8 +503,11 @@ class BitmapCanvas extends EngineCanvas {
           paint);
       element.style.borderRadius = '50%';
     } else {
-      _setUpPaint(paint, paint.shader != null
-          ? ui.Rect.fromCircle(center: c, radius: radius) : null);
+      _setUpPaint(
+          paint,
+          paint.shader != null
+              ? ui.Rect.fromCircle(center: c, radius: radius)
+              : null);
       _canvasPool.drawCircle(c, radius, paint.style);
       _tearDownPaint();
     }
@@ -509,16 +520,18 @@ class BitmapCanvas extends EngineCanvas {
       final SurfacePath surfacePath = path as SurfacePath;
       final ui.Rect? pathAsLine = surfacePath.toStraightLine();
       if (pathAsLine != null) {
-        final ui.Rect rect = (pathAsLine.top == pathAsLine.bottom) ?
-          ui.Rect.fromLTWH(pathAsLine.left, pathAsLine.top, pathAsLine.width, 1)
-          : ui.Rect.fromLTWH(pathAsLine.left, pathAsLine.top, 1, pathAsLine.height);
+        final ui.Rect rect = (pathAsLine.top == pathAsLine.bottom)
+            ? ui.Rect.fromLTWH(
+                pathAsLine.left, pathAsLine.top, pathAsLine.width, 1)
+            : ui.Rect.fromLTWH(
+                pathAsLine.left, pathAsLine.top, 1, pathAsLine.height);
 
         html.HtmlElement element = _buildDrawRectElement(
             rect, paint, 'draw-rect', _canvasPool._currentTransform);
         _drawElement(
             element,
-            ui.Offset(
-                math.min(rect.left, rect.right), math.min(rect.top, rect.bottom)),
+            ui.Offset(math.min(rect.left, rect.right),
+                math.min(rect.top, rect.bottom)),
             paint);
         return;
       }
@@ -527,7 +540,7 @@ class BitmapCanvas extends EngineCanvas {
         drawRect(pathAsRect, paint);
         return;
       }
-      final ui.RRect ? pathAsRRect = surfacePath.toRoundedRect();
+      final ui.RRect? pathAsRRect = surfacePath.toRoundedRect();
       if (pathAsRRect != null) {
         drawRRect(pathAsRRect, paint);
         return;
@@ -544,11 +557,32 @@ class BitmapCanvas extends EngineCanvas {
             ..transformOrigin = '0 0 0';
         }
       }
+      _applyFilter(svgElm, paint);
       _drawElement(svgElm, ui.Offset(0, 0), paint);
     } else {
       _setUpPaint(paint, paint.shader != null ? path.getBounds() : null);
-      _canvasPool.drawPath(path, paint.style);
+      if (paint.style == null && paint.strokeWidth != null) {
+        _canvasPool.drawPath(path, ui.PaintingStyle.stroke);
+      } else {
+        _canvasPool.drawPath(path, paint.style);
+      }
       _tearDownPaint();
+    }
+  }
+
+  void _applyFilter(html.Element element, SurfacePaintData paint) {
+    if (paint.maskFilter != null) {
+      final bool isStroke = paint.style == ui.PaintingStyle.stroke;
+      String cssColor =
+          paint.color == null ? '#000000' : colorToCssString(paint.color)!;
+      final double sigma = paint.maskFilter!.webOnlySigma;
+      if (browserEngine == BrowserEngine.webkit && !isStroke) {
+        // A bug in webkit leaves artifacts when this element is animated
+        // with filter: blur, we use boxShadow instead.
+        element.style.boxShadow = '0px 0px ${sigma * 2.0}px $cssColor';
+      } else {
+        element.style.filter = 'blur(${sigma}px)';
+      }
     }
   }
 
@@ -565,9 +599,7 @@ class BitmapCanvas extends EngineCanvas {
       _applyTargetSize(
           imageElement, image.width.toDouble(), image.height.toDouble());
     }
-    _childOverdraw = true;
-    _canvasPool.closeCurrentCanvas();
-    _cachedLastCssFont = null;
+    _closeCurrentCanvas();
   }
 
   html.ImageElement _reuseOrCreateImage(HtmlImage htmlImage) {
@@ -595,31 +627,15 @@ class BitmapCanvas extends EngineCanvas {
       ui.Image image, ui.Offset p, SurfacePaintData paint) {
     final HtmlImage htmlImage = image as HtmlImage;
     final ui.BlendMode? blendMode = paint.blendMode;
-    final EngineColorFilter? colorFilter = paint.colorFilter as EngineColorFilter?;
+    final EngineColorFilter? colorFilter =
+        paint.colorFilter as EngineColorFilter?;
     html.HtmlElement imgElement;
     if (colorFilter is _CkBlendModeColorFilter) {
-      switch (colorFilter.blendMode) {
-        case ui.BlendMode.colorBurn:
-        case ui.BlendMode.colorDodge:
-        case ui.BlendMode.hue:
-        case ui.BlendMode.modulate:
-        case ui.BlendMode.overlay:
-        case ui.BlendMode.plus:
-        case ui.BlendMode.srcIn:
-        case ui.BlendMode.srcATop:
-        case ui.BlendMode.srcOut:
-        case ui.BlendMode.saturation:
-        case ui.BlendMode.color:
-        case ui.BlendMode.luminosity:
-        case ui.BlendMode.xor:
-          imgElement = _createImageElementWithSvgFilter(image,
-              colorFilter.color, colorFilter.blendMode, paint);
-          break;
-        default:
-          imgElement = _createBackgroundImageWithBlend(image,
-              colorFilter.color, colorFilter.blendMode, paint);
-          break;
-      }
+      imgElement = _createImageElementWithBlend(image,
+          colorFilter.color, colorFilter.blendMode, paint);
+    } else if (colorFilter is _CkMatrixColorFilter) {
+      imgElement = _createImageElementWithSvgColorMatrixFilter(
+          image, colorFilter.matrix , paint);
     } else {
       // No Blending, create an image by cloning original loaded image.
       imgElement = _reuseOrCreateImage(htmlImage);
@@ -649,6 +665,31 @@ class BitmapCanvas extends EngineCanvas {
     return imgElement;
   }
 
+  html.HtmlElement _createImageElementWithBlend(HtmlImage image,
+      ui.Color color, ui.BlendMode blendMode, SurfacePaintData paint) {
+    switch (blendMode) {
+      case ui.BlendMode.colorBurn:
+      case ui.BlendMode.colorDodge:
+      case ui.BlendMode.hue:
+      case ui.BlendMode.modulate:
+      case ui.BlendMode.overlay:
+      case ui.BlendMode.plus:
+      case ui.BlendMode.srcIn:
+      case ui.BlendMode.srcATop:
+      case ui.BlendMode.srcOut:
+      case ui.BlendMode.saturation:
+      case ui.BlendMode.color:
+      case ui.BlendMode.luminosity:
+      case ui.BlendMode.xor:
+      case ui.BlendMode.dstATop:
+        return _createImageElementWithSvgBlendFilter(
+            image, color, blendMode, paint);
+      default:
+        return _createBackgroundImageWithBlend(
+            image, color, blendMode, paint);
+    }
+  }
+
   @override
   void drawImageRect(
       ui.Image image, ui.Rect src, ui.Rect dst, SurfacePaintData paint) {
@@ -660,7 +701,7 @@ class BitmapCanvas extends EngineCanvas {
     // code path that sets the size of the element and clips.
     //
     // If there is a color filter set however, we maybe using background-image
-    // to render therefore we have to explicitely set width/height of the
+    // to render therefore we have to explicitly set width/height of the
     // element for blending to work with background-color.
     if (dst.width == image.width &&
         dst.height == image.height &&
@@ -713,7 +754,7 @@ class BitmapCanvas extends EngineCanvas {
     final String heightPx = '${targetHeight.toStringAsFixed(2)}px';
     imageStyle
       // left,top are set to 0 (although position is absolute) because
-      // Chrome will glitch if you leave them out, reproducable with
+      // Chrome will glitch if you leave them out, reproducible with
       // canvas_image_blend_test on row 6,  MacOS / Chrome 81.04.
       ..left = "0px"
       ..top = "0px"
@@ -777,7 +818,7 @@ class BitmapCanvas extends EngineCanvas {
   }
 
   // Creates an image element and an svg filter to apply on the element.
-  html.HtmlElement _createImageElementWithSvgFilter(
+  html.HtmlElement _createImageElementWithSvgBlendFilter(
       HtmlImage image,
       ui.Color? filterColor,
       ui.BlendMode colorFilterBlendMode,
@@ -797,6 +838,22 @@ class BitmapCanvas extends EngineCanvas {
     return imgElement;
   }
 
+  // Creates an image element and an svg color matrix filter to apply on the element.
+  html.HtmlElement _createImageElementWithSvgColorMatrixFilter(
+      HtmlImage image,
+      List<double> matrix,
+      SurfacePaintData paint) {
+    // For srcIn blendMode, we use an svg filter to apply to image element.
+    String? svgFilter = svgFilterFromColorMatrix(matrix);
+    final html.Element filterElement =
+    html.Element.html(svgFilter, treeSanitizer: _NullTreeSanitizer());
+    rootElement.append(filterElement);
+    _children.add(filterElement);
+    final html.HtmlElement imgElement = _reuseOrCreateImage(image);
+    imgElement.style.filter = 'url(#_fcf${_filterIdCounter})';
+    return imgElement;
+  }
+
   // Should be called when we add new html elements into rootElement so that
   // paint order is preserved.
   //
@@ -810,6 +867,7 @@ class BitmapCanvas extends EngineCanvas {
   void _closeCurrentCanvas() {
     _canvasPool.closeCurrentCanvas();
     _childOverdraw = true;
+    _cachedLastCssFont = null;
   }
 
   void setCssFont(String cssFont) {
@@ -886,12 +944,6 @@ class BitmapCanvas extends EngineCanvas {
     _closeCurrentCanvas();
   }
 
-  /// Paints the [picture] into this canvas.
-  void drawPicture(ui.Picture picture) {
-    final EnginePicture enginePicture = picture as EnginePicture;
-    enginePicture.recordingCanvas!.apply(this, bounds);
-  }
-
   /// Draws vertices on a gl context.
   ///
   /// If both colors and textures is specified in paint data,
@@ -911,12 +963,13 @@ class BitmapCanvas extends EngineCanvas {
     // blendMode. https://github.com/flutter/flutter/issues/40096
     // Move rendering to OffscreenCanvas so that transform is preserved
     // as well.
-    assert(paint.shader == null,
-        'Linear/Radial/SweepGradient and ImageShader not supported yet');
+    assert(paint.shader == null || paint.shader is EngineImageShader,
+        'Linear/Radial/SweepGradient not supported yet');
     final Int32List? colors = vertices._colors;
     final ui.VertexMode mode = vertices._mode;
     html.CanvasRenderingContext2D? ctx = _canvasPool.context;
-    if (colors == null) {
+    if (colors == null && paint.style != ui.PaintingStyle.fill &&
+        paint.shader == null) {
       final Float32List positions = mode == ui.VertexMode.triangles
           ? vertices._positions
           : _convertVertexPositions(mode, vertices._positions);
@@ -950,12 +1003,17 @@ class BitmapCanvas extends EngineCanvas {
     } else {
       _drawPointsPaint.style = ui.PaintingStyle.fill;
     }
-    _drawPointsPaint.color = paint.color;
-    _drawPointsPaint.strokeWidth = paint.strokeWidth;
+    _drawPointsPaint.color = paint.color ?? const ui.Color(0xFF000000);
     _drawPointsPaint.maskFilter = paint.maskFilter;
 
+    final double dpr = ui.window.devicePixelRatio;
+    // Use hairline (device pixel when strokeWidth is not specified).
+    final double strokeWidth =
+        paint.strokeWidth == null ? 1.0 / dpr : paint.strokeWidth!;
+    _drawPointsPaint.strokeWidth = strokeWidth;
     _setUpPaint(_drawPointsPaint, null);
-    _canvasPool.drawPoints(pointMode, points, paint.strokeWidth! / 2.0);
+    // Draw point using circle with half radius.
+    _canvasPool.drawPoints(pointMode, points, strokeWidth / 2.0);
     _tearDownPaint();
   }
 
@@ -994,13 +1052,13 @@ class BitmapCanvas extends EngineCanvas {
     Vector3 bottomLeft = inverted.perspectiveTransform(Vector3(0, height, 0));
     return ui.Rect.fromLTRB(
       math.min(topLeft.x,
-              math.min(topRight.x, math.min(bottomRight.x, bottomLeft.x))),
+          math.min(topRight.x, math.min(bottomRight.x, bottomLeft.x))),
       math.min(topLeft.y,
-              math.min(topRight.y, math.min(bottomRight.y, bottomLeft.y))),
+          math.min(topRight.y, math.min(bottomRight.y, bottomLeft.y))),
       math.max(topLeft.x,
-              math.max(topRight.x, math.max(bottomRight.x, bottomLeft.x))),
+          math.max(topRight.x, math.max(bottomRight.x, bottomLeft.x))),
       math.max(topLeft.y,
-              math.max(topRight.y, math.max(bottomRight.y, bottomLeft.y))),
+          math.max(topRight.y, math.max(bottomRight.y, bottomLeft.y))),
     );
   }
 
@@ -1158,14 +1216,33 @@ List<html.Element> _clipContent(List<_SaveClipEntry> clipStack,
         ..height = '${roundRect.bottom - clipOffsetY}px';
       setElementTransform(curElement, newClipTransform.storage);
     } else if (entry.path != null) {
-      curElement.style
-        ..transform = matrix4ToCssTransform(newClipTransform)
-        ..transformOrigin = '0 0 0';
-      String svgClipPath =
-          createSvgClipDef(curElement as html.HtmlElement, entry.path!);
-      final html.Element clipElement =
-          html.Element.html(svgClipPath, treeSanitizer: _NullTreeSanitizer());
-      clipDefs.add(clipElement);
+      // Clipping optimization when we know that the path is an oval.
+      // We use a div with border-radius set to 50% with a size that is
+      // set to path bounds and set overflow to hidden.
+      final SurfacePath surfacePath = entry.path as SurfacePath;
+      if (surfacePath.pathRef.isOval != -1) {
+        final ui.Rect ovalBounds = surfacePath.getBounds();
+        final double clipOffsetX = ovalBounds.left;
+        final double clipOffsetY = ovalBounds.top;
+        newClipTransform = newClipTransform.clone()
+          ..translate(clipOffsetX, clipOffsetY);
+        curElement.style
+          ..overflow = 'hidden'
+          ..width = '${ovalBounds.width}px'
+          ..height = '${ovalBounds.height}px'
+          ..borderRadius = '50%';
+        setElementTransform(curElement, newClipTransform.storage);
+      } else {
+        // Abitrary path clipping.
+        curElement.style
+          ..transform = matrix4ToCssTransform(newClipTransform)
+          ..transformOrigin = '0 0 0';
+        String svgClipPath =
+            createSvgClipDef(curElement as html.HtmlElement, entry.path!);
+        final html.Element clipElement =
+            html.Element.html(svgClipPath, treeSanitizer: _NullTreeSanitizer());
+        clipDefs.add(clipElement);
+      }
     }
     // Reverse the transform of the clipping element so children can use
     // effective transform to render.

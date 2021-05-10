@@ -99,6 +99,7 @@ EmbedderConfigBuilder::EmbedderConfigBuilder(
     SetAssetsPath();
     SetIsolateCreateCallbackHook();
     SetSemanticsCallbackHooks();
+    SetLogMessageCallbackHook();
     SetLocalizationCallbackHooks();
     AddCommandLineArgument("--disable-observatory");
 
@@ -209,6 +210,16 @@ void EmbedderConfigBuilder::SetSemanticsCallbackHooks() {
       EmbedderTestContext::GetUpdateSemanticsNodeCallbackHook();
   project_args_.update_semantics_custom_action_callback =
       EmbedderTestContext::GetUpdateSemanticsCustomActionCallbackHook();
+}
+
+void EmbedderConfigBuilder::SetLogMessageCallbackHook() {
+  project_args_.log_message_callback =
+      EmbedderTestContext::GetLogMessageCallbackHook();
+}
+
+void EmbedderConfigBuilder::SetLogTag(std::string tag) {
+  log_tag_ = std::move(tag);
+  project_args_.log_tag = log_tag_.c_str();
 }
 
 void EmbedderConfigBuilder::SetLocalizationCallbackHooks() {
@@ -389,25 +400,22 @@ void EmbedderConfigBuilder::InitializeMetalRendererConfig() {
       metal_context.GetTestMetalContext()->GetMetalCommandQueue();
   metal_renderer_config_.get_next_drawable_callback =
       [](void* user_data, const FlutterFrameInfo* frame_info) {
-        EmbedderTestContextMetal* metal_context =
-            reinterpret_cast<EmbedderTestContextMetal*>(user_data);
-        SkISize surface_size =
-            SkISize::Make(frame_info->size.width, frame_info->size.height);
-        TestMetalContext::TextureInfo texture_info =
-            metal_context->GetTestMetalContext()->CreateMetalTexture(
-                surface_size);
-        FlutterMetalTexture texture;
-        texture.struct_size = sizeof(FlutterMetalTexture);
-        texture.texture_id = texture_info.texture_id;
-        texture.texture =
-            reinterpret_cast<FlutterMetalTextureHandle>(texture_info.texture);
-        return texture;
+        return reinterpret_cast<EmbedderTestContextMetal*>(user_data)
+            ->GetNextDrawable(frame_info);
       };
   metal_renderer_config_.present_drawable_callback =
       [](void* user_data, const FlutterMetalTexture* texture) -> bool {
     EmbedderTestContextMetal* metal_context =
         reinterpret_cast<EmbedderTestContextMetal*>(user_data);
     return metal_context->Present(texture->texture_id);
+  };
+  metal_renderer_config_.external_texture_frame_callback =
+      [](void* user_data, int64_t texture_id, size_t width, size_t height,
+         FlutterMetalExternalTexture* texture_out) -> bool {
+    EmbedderTestContextMetal* metal_context =
+        reinterpret_cast<EmbedderTestContextMetal*>(user_data);
+    return metal_context->PopulateExternalTexture(texture_id, width, height,
+                                                  texture_out);
   };
 }
 

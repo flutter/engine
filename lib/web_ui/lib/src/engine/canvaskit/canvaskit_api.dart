@@ -7,7 +7,6 @@
 /// Prefer keeping the original CanvasKit names so it is easier to locate
 /// the API behind these bindings in the Skia source code.
 
-// @dart = 2.12
 part of engine;
 
 /// Entrypoint into the CanvasKit API.
@@ -43,6 +42,7 @@ class CanvasKit {
   external SkRectWidthStyleEnum get RectWidthStyle;
   external SkAffinityEnum get Affinity;
   external SkTextAlignEnum get TextAlign;
+  external SkTextHeightBehaviorEnum get TextHeightBehavior;
   external SkTextDirectionEnum get TextDirection;
   external SkFontWeightEnum get FontWeight;
   external SkFontSlantEnum get FontSlant;
@@ -292,10 +292,40 @@ SkTextAlign toSkTextAlign(ui.TextAlign align) {
 }
 
 @JS()
+class SkTextHeightBehaviorEnum {
+  external SkTextHeightBehavior get All;
+  external SkTextHeightBehavior get DisableFirstAscent;
+  external SkTextHeightBehavior get DisableLastDescent;
+  external SkTextHeightBehavior get DisableAll;
+}
+
+@JS()
+class SkTextHeightBehavior {
+  external int get value;
+}
+
+final List<SkTextHeightBehavior> _skTextHeightBehaviors =
+    <SkTextHeightBehavior>[
+  canvasKit.TextHeightBehavior.All,
+  canvasKit.TextHeightBehavior.DisableFirstAscent,
+  canvasKit.TextHeightBehavior.DisableLastDescent,
+  canvasKit.TextHeightBehavior.DisableAll,
+];
+
+SkTextHeightBehavior toSkTextHeightBehavior(ui.TextHeightBehavior behavior) {
+  int index = (behavior.applyHeightToFirstAscent ? 0 : 1 << 0) |
+      (behavior.applyHeightToLastDescent ? 0 : 1 << 1);
+  return _skTextHeightBehaviors[index];
+}
+
+@JS()
 class SkRectHeightStyleEnum {
-  // TODO(yjbanov): support all styles
   external SkRectHeightStyle get Tight;
   external SkRectHeightStyle get Max;
+  external SkRectHeightStyle get IncludeLineSpacingMiddle;
+  external SkRectHeightStyle get IncludeLineSpacingTop;
+  external SkRectHeightStyle get IncludeLineSpacingBottom;
+  external SkRectHeightStyle get Strut;
 }
 
 @JS()
@@ -306,11 +336,14 @@ class SkRectHeightStyle {
 final List<SkRectHeightStyle> _skRectHeightStyles = <SkRectHeightStyle>[
   canvasKit.RectHeightStyle.Tight,
   canvasKit.RectHeightStyle.Max,
+  canvasKit.RectHeightStyle.IncludeLineSpacingMiddle,
+  canvasKit.RectHeightStyle.IncludeLineSpacingTop,
+  canvasKit.RectHeightStyle.IncludeLineSpacingBottom,
+  canvasKit.RectHeightStyle.Strut,
 ];
 
 SkRectHeightStyle toSkRectHeightStyle(ui.BoxHeightStyle style) {
-  final int index = style.index;
-  return _skRectHeightStyles[index < 2 ? index : 0];
+  return _skRectHeightStyles[style.index];
 }
 
 @JS()
@@ -665,6 +698,12 @@ class SkFilterMode {
   external int get value;
 }
 
+SkFilterMode toSkFilterMode(ui.FilterQuality filterQuality) {
+  return filterQuality == ui.FilterQuality.none
+      ? canvasKit.FilterMode.Nearest
+      : canvasKit.FilterMode.Linear;
+}
+
 @JS()
 class SkMipmapModeEnum {
   external SkMipmapMode get None;
@@ -675,6 +714,12 @@ class SkMipmapModeEnum {
 @JS()
 class SkMipmapMode {
   external int get value;
+}
+
+SkMipmapMode toSkMipmapMode(ui.FilterQuality filterQuality) {
+  return filterQuality == ui.FilterQuality.medium
+      ? canvasKit.MipmapMode.Linear
+      : canvasKit.MipmapMode.None;
 }
 
 @JS()
@@ -734,6 +779,13 @@ class SkImage {
   external void delete();
   external int width();
   external int height();
+  external SkShader makeShaderCubic(
+    SkTileMode tileModeX,
+    SkTileMode tileModeY,
+    double B,
+    double C,
+    Float32List? matrix, // 3x3 matrix
+  );
   external SkShader makeShaderOptions(
     SkTileMode tileModeX,
     SkTileMode tileModeY,
@@ -742,7 +794,7 @@ class SkImage {
     Float32List? matrix, // 3x3 matrix
   );
   external Uint8List readPixels(int srcX, int srcY, SkImageInfo imageInfo);
-  external SkData encodeToData();
+  external Uint8List? encodeToBytes();
   external bool isAliasOf(SkImage other);
   external bool isDeleted();
 }
@@ -755,6 +807,7 @@ class SkShaderNamespace {
     Uint32List colors,
     Float32List colorStops,
     SkTileMode tileMode,
+    Float32List? matrix,
   );
 
   external SkShader MakeRadialGradient(
@@ -1177,7 +1230,8 @@ class SkPath {
 
   /// Serializes the path into a list of commands.
   ///
-  /// The list can be used to create a new [SkPath] using [CanvasKit.Path.MakeFromCmds].
+  /// The list can be used to create a new [SkPath] using
+  /// [CanvasKit.Path.MakeFromCmds].
   external List<dynamic> toCmds();
 
   external void delete();
@@ -1350,23 +1404,43 @@ class SkCanvas {
     Float32List inner,
     SkPaint paint,
   );
-  external void drawImage(
+  external void drawImageCubic(
     SkImage image,
     double x,
     double y,
+    double B,
+    double C,
     SkPaint paint,
   );
-  external void drawImageRect(
+  external void drawImageOptions(
+    SkImage image,
+    double x,
+    double y,
+    SkFilterMode filterMode,
+    SkMipmapMode mipmapMode,
+    SkPaint paint,
+  );
+  external void drawImageRectCubic(
     SkImage image,
     Float32List src,
     Float32List dst,
+    double B,
+    double C,
     SkPaint paint,
-    bool fastSample,
+  );
+  external void drawImageRectOptions(
+    SkImage image,
+    Float32List src,
+    Float32List dst,
+    SkFilterMode filterMode,
+    SkMipmapMode mipmapMode,
+    SkPaint paint,
   );
   external void drawImageNine(
     SkImage image,
     Float32List center,
     Float32List dst,
+    SkFilterMode filterMode,
     SkPaint paint,
   );
   external void drawLine(
@@ -1470,7 +1544,13 @@ class SkParagraphBuilder {
   external void pushPaintStyle(
       SkTextStyle textStyle, SkPaint foreground, SkPaint background);
   external void pop();
-  external void addPlaceholder(SkPlaceholderStyleProperties placeholderStyle);
+  external void addPlaceholder(
+    double width,
+    double height,
+    SkPlaceholderAlignment alignment,
+    SkTextBaseline baseline,
+    double offset,
+  );
   external SkParagraph build();
   external void delete();
 }
@@ -1485,7 +1565,7 @@ class SkParagraphStyleProperties {
   external set textAlign(SkTextAlign? value);
   external set textDirection(SkTextDirection? value);
   external set heightMultiplier(double? value);
-  external set textHeightBehavior(int? value);
+  external set textHeightBehavior(SkTextHeightBehavior? value);
   external set maxLines(int? value);
   external set ellipsis(String? value);
   external set textStyle(SkTextStyleProperties? value);
@@ -1608,16 +1688,6 @@ class SkStrutStyleProperties {
 
 @JS()
 @anonymous
-class SkPlaceholderStyleProperties {
-  external set width(double? value);
-  external set height(double? value);
-  external set alignment(SkPlaceholderAlignment? value);
-  external set offset(double? value);
-  external set baseline(SkTextBaseline? value);
-}
-
-@JS()
-@anonymous
 class SkFontStyle {
   external set weight(SkFontWeight? value);
   external set slant(SkFontSlant? value);
@@ -1646,6 +1716,8 @@ class SkTypeface {}
 class SkFont {
   external SkFont(SkTypeface typeface);
   external Uint8List getGlyphIDs(String text);
+  external void getGlyphBounds(
+      List<int> glyphs, SkPaint? paint, Uint8List? output);
 }
 
 @JS()
@@ -1653,7 +1725,7 @@ class SkFont {
 class SkFontMgr {
   external String? getFamilyName(int fontId);
   external void delete();
-  external SkTypeface MakeTypefaceFromData(Uint8List font);
+  external SkTypeface? MakeTypefaceFromData(Uint8List font);
 }
 
 @JS('window.flutterCanvasKit.TypefaceFontProvider')
@@ -1664,11 +1736,29 @@ class TypefaceFontProvider extends SkFontMgr {
 
 @JS()
 @anonymous
+class SkLineMetrics {
+  external int get startIndex;
+  external int get endIndex;
+  external int get endExcludingWhitespaces;
+  external int get endIncludingNewline;
+  external bool get isHardBreak;
+  external double get ascent;
+  external double get descent;
+  external double get height;
+  external double get width;
+  external double get left;
+  external double get baseline;
+  external int get lineNumber;
+}
+
+@JS()
+@anonymous
 class SkParagraph {
   external double getAlphabeticBaseline();
   external bool didExceedMaxLines();
   external double getHeight();
   external double getIdeographicBaseline();
+  external List<SkLineMetrics> getLineMetrics();
   external double getLongestLine();
   external double getMaxIntrinsicWidth();
   external double getMinIntrinsicWidth();

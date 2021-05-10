@@ -28,12 +28,15 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowInsets;
 import android.view.WindowManager;
+import android.widget.FrameLayout;
+import io.flutter.TestUtils;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.loader.FlutterLoader;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.systemchannels.SettingsChannel;
 import io.flutter.plugin.platform.PlatformViewsController;
+import java.lang.reflect.Method;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Before;
 import org.junit.Test;
@@ -659,35 +662,18 @@ public class FlutterViewTest {
   }
 
   @Test
-  public void flutterImageView_acquireLatestImageReturnsFalse() {
-    final ImageReader mockReader = mock(ImageReader.class);
-    when(mockReader.getMaxImages()).thenReturn(2);
-
-    final FlutterImageView imageView =
-        spy(
-            new FlutterImageView(
-                RuntimeEnvironment.application,
-                mockReader,
-                FlutterImageView.SurfaceKind.background));
-
-    assertFalse(imageView.acquireLatestImage());
-
-    final FlutterJNI jni = mock(FlutterJNI.class);
-    imageView.attachToRenderer(new FlutterRenderer(jni));
-
-    when(mockReader.acquireLatestImage()).thenReturn(null);
-    assertFalse(imageView.acquireLatestImage());
-  }
-
-  @Test
   @SuppressLint("WrongCall") /*View#onDraw*/
-  public void flutterImageView_acquiresMaxImagesAtMost() {
+  public void flutterImageView_acquiresImageClosesPreviousImageUnlessNoNewImage() {
     final ImageReader mockReader = mock(ImageReader.class);
     when(mockReader.getMaxImages()).thenReturn(3);
 
     final Image mockImage = mock(Image.class);
     when(mockImage.getPlanes()).thenReturn(new Plane[0]);
-    when(mockReader.acquireLatestImage()).thenReturn(mockImage);
+    // Mock no latest image on the second time
+    when(mockReader.acquireLatestImage())
+        .thenReturn(mockImage)
+        .thenReturn(null)
+        .thenReturn(mockImage);
 
     final FlutterImageView imageView =
         spy(
@@ -700,33 +686,27 @@ public class FlutterViewTest {
     imageView.attachToRenderer(new FlutterRenderer(jni));
     doNothing().when(imageView).invalidate();
 
-    assertTrue(imageView.acquireLatestImage()); // 1 image
-    assertTrue(imageView.acquireLatestImage()); // 2 images
-    assertTrue(imageView.acquireLatestImage()); // 3 images
-    assertTrue(imageView.acquireLatestImage()); // 3 images
-    verify(mockReader, times(3)).acquireLatestImage();
+    assertTrue(imageView.acquireLatestImage()); // No previous, acquire latest image
+    assertFalse(
+        imageView.acquireLatestImage()); // Mock no image when acquire, don't close, and assertFalse
+    assertTrue(imageView.acquireLatestImage()); // Acquire latest image and close previous
+    assertTrue(imageView.acquireLatestImage()); // Acquire latest image and close previous
+    assertTrue(imageView.acquireLatestImage()); // Acquire latest image and close previous
+    verify(mockImage, times(3)).close(); // Close 3 times
 
-    imageView.onDraw(mock(Canvas.class)); // 3 images
-    assertTrue(imageView.acquireLatestImage()); // 3 images
-    verify(mockReader, times(3)).acquireLatestImage();
+    imageView.onDraw(mock(Canvas.class)); // Draw latest image
 
-    imageView.onDraw(mock(Canvas.class)); // 2 images
-    assertTrue(imageView.acquireLatestImage()); // 3 images
-    verify(mockReader, times(4)).acquireLatestImage();
+    assertTrue(imageView.acquireLatestImage()); // acquire latest image and close previous
 
-    imageView.onDraw(mock(Canvas.class)); // 2 images
-    imageView.onDraw(mock(Canvas.class)); // 1 image
-    imageView.onDraw(mock(Canvas.class)); // 1 image
+    imageView.onDraw(mock(Canvas.class)); // Draw latest image
+    imageView.onDraw(mock(Canvas.class)); // Draw latest image
+    imageView.onDraw(mock(Canvas.class)); // Draw latest image
 
-    assertTrue(imageView.acquireLatestImage()); // 2 images
-    assertTrue(imageView.acquireLatestImage()); // 3 images
-    assertTrue(imageView.acquireLatestImage()); // 3 images
-    assertTrue(imageView.acquireLatestImage()); // 3 images
     verify(mockReader, times(6)).acquireLatestImage();
   }
 
   @Test
-  public void flutterImageView_detachFromRendererClosesAllImages() {
+  public void flutterImageView_detachFromRendererClosesPreviousImage() {
     final ImageReader mockReader = mock(ImageReader.class);
     when(mockReader.getMaxImages()).thenReturn(2);
 
@@ -746,54 +726,12 @@ public class FlutterViewTest {
     doNothing().when(imageView).invalidate();
     imageView.acquireLatestImage();
     imageView.acquireLatestImage();
+    verify(mockImage, times(1)).close();
+
     imageView.detachFromRenderer();
-
-    verify(mockImage, times(2)).close();
-  }
-
-  @Test
-  @SuppressLint("WrongCall") /*View#onDraw*/
-  public void flutterImageView_onDrawClosesAllImages() {
-    final ImageReader mockReader = mock(ImageReader.class);
-    when(mockReader.getMaxImages()).thenReturn(2);
-
-    final Image mockImage = mock(Image.class);
-    when(mockImage.getPlanes()).thenReturn(new Plane[0]);
-    when(mockReader.acquireLatestImage()).thenReturn(mockImage);
-
-    final FlutterImageView imageView =
-        spy(
-            new FlutterImageView(
-                RuntimeEnvironment.application,
-                mockReader,
-                FlutterImageView.SurfaceKind.background));
-
-    final FlutterJNI jni = mock(FlutterJNI.class);
-    imageView.attachToRenderer(new FlutterRenderer(jni));
-
-    doNothing().when(imageView).invalidate();
-    imageView.acquireLatestImage();
-    imageView.acquireLatestImage();
-
-    imageView.onDraw(mock(Canvas.class));
-    imageView.onDraw(mock(Canvas.class));
-
-    // 1 image is closed and 1 is active.
-    verify(mockImage, times(1)).close();
-    verify(mockReader, times(2)).acquireLatestImage();
-
-    // This call doesn't do anything because there isn't
-    // an image in the queue.
-    imageView.onDraw(mock(Canvas.class));
-    verify(mockImage, times(1)).close();
-
-    // Aquire another image and push it to the queue.
-    imageView.acquireLatestImage();
-    verify(mockReader, times(3)).acquireLatestImage();
-
-    // Then, the second image is closed.
-    imageView.onDraw(mock(Canvas.class));
-    verify(mockImage, times(2)).close();
+    // There's an acquireLatestImage() in detachFromRenderer(),
+    // so it will be 2 times called close() inside detachFromRenderer()
+    verify(mockImage, times(3)).close();
   }
 
   @Test
@@ -808,6 +746,50 @@ public class FlutterViewTest {
     surfaceView.setAlpha(1.0f);
     assertTrue(surfaceView.gatherTransparentRegion(mockRegion));
     verify(mockRegion, times(1)).op(0, 0, 0, 0, Region.Op.DIFFERENCE);
+  }
+
+  @Test
+  @SuppressLint("PrivateApi")
+  public void findViewByAccessibilityIdTraversal_returnsRootViewOnAndroid28() throws Exception {
+    TestUtils.setApiVersion(28);
+
+    FlutterView flutterView = new FlutterView(RuntimeEnvironment.application);
+
+    Method getAccessibilityViewIdMethod = View.class.getDeclaredMethod("getAccessibilityViewId");
+    Integer accessibilityViewId = (Integer) getAccessibilityViewIdMethod.invoke(flutterView);
+
+    assertEquals(flutterView, flutterView.findViewByAccessibilityIdTraversal(accessibilityViewId));
+  }
+
+  @Test
+  @SuppressLint("PrivateApi")
+  public void findViewByAccessibilityIdTraversal_returnsChildViewOnAndroid28() throws Exception {
+    TestUtils.setApiVersion(28);
+
+    FlutterView flutterView = new FlutterView(RuntimeEnvironment.application);
+    FrameLayout childView1 = new FrameLayout(RuntimeEnvironment.application);
+    flutterView.addView(childView1);
+
+    FrameLayout childView2 = new FrameLayout(RuntimeEnvironment.application);
+    childView1.addView(childView2);
+
+    Method getAccessibilityViewIdMethod = View.class.getDeclaredMethod("getAccessibilityViewId");
+    Integer accessibilityViewId = (Integer) getAccessibilityViewIdMethod.invoke(childView2);
+
+    assertEquals(childView2, flutterView.findViewByAccessibilityIdTraversal(accessibilityViewId));
+  }
+
+  @Test
+  @SuppressLint("PrivateApi")
+  public void findViewByAccessibilityIdTraversal_returnsRootViewOnAndroid29() throws Exception {
+    TestUtils.setApiVersion(29);
+
+    FlutterView flutterView = new FlutterView(RuntimeEnvironment.application);
+
+    Method getAccessibilityViewIdMethod = View.class.getDeclaredMethod("getAccessibilityViewId");
+    Integer accessibilityViewId = (Integer) getAccessibilityViewIdMethod.invoke(flutterView);
+
+    assertEquals(null, flutterView.findViewByAccessibilityIdTraversal(accessibilityViewId));
   }
 
   /*

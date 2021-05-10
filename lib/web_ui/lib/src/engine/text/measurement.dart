@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of engine;
 
 // TODO(yjbanov): this is a hack we use to compute ideographic baseline; this
@@ -70,7 +69,7 @@ class RulerManager extends RulerHost {
 
   /// The cache of rulers used to measure text.
   ///
-  /// Each ruler is keyed by paragraph style. This allows us to setup the
+  /// Each ruler is keyed by paragraph style. This allows us to set up the
   /// ruler's DOM structure once during the very first measurement of a given
   /// paragraph style. Subsequent measurements could reuse the same ruler and
   /// only swap the text contents. This minimizes the amount of work a browser

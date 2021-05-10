@@ -2,8 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'package:ui/ui.dart' as ui;
+
+import '../util.dart';
 
 /// Implementation of [ui.Paint] used by the HTML rendering backend.
 class SurfacePaint implements ui.Paint {

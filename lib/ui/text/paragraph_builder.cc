@@ -32,6 +32,7 @@ namespace {
 
 // TextStyle
 
+const int tsLeadingDistributionIndex = 0;
 const int tsColorIndex = 1;
 const int tsTextDecorationIndex = 2;
 const int tsTextDecorationColorIndex = 3;
@@ -51,6 +52,7 @@ const int tsForegroundIndex = 16;
 const int tsTextShadowsIndex = 17;
 const int tsFontFeaturesIndex = 18;
 
+const int tsLeadingDistributionMask = 1 << tsLeadingDistributionIndex;
 const int tsColorMask = 1 << tsColorIndex;
 const int tsTextDecorationMask = 1 << tsTextDecorationIndex;
 const int tsTextDecorationColorMask = 1 << tsTextDecorationColorIndex;
@@ -116,14 +118,16 @@ constexpr uint32_t kFontFeatureTagLength = 4;
 const int sFontWeightIndex = 0;
 const int sFontStyleIndex = 1;
 const int sFontFamilyIndex = 2;
-const int sFontSizeIndex = 3;
-const int sHeightIndex = 4;
-const int sLeadingIndex = 5;
-const int sForceStrutHeightIndex = 6;
+const int sLeadingDistributionIndex = 3;
+const int sFontSizeIndex = 4;
+const int sHeightIndex = 5;
+const int sLeadingIndex = 6;
+const int sForceStrutHeightIndex = 7;
 
 const int sFontWeightMask = 1 << sFontWeightIndex;
 const int sFontStyleMask = 1 << sFontStyleIndex;
 const int sFontFamilyMask = 1 << sFontFamilyIndex;
+const int sLeadingDistributionMask = 1 << sLeadingDistributionIndex;
 const int sFontSizeMask = 1 << sFontSizeIndex;
 const int sHeightMask = 1 << sHeightIndex;
 const int sLeadingMask = 1 << sLeadingIndex;
@@ -198,6 +202,8 @@ void decodeStrut(Dart_Handle strut_data,
         static_cast<txt::FontStyle>(uint8_data[byte_count++]);
   }
 
+  paragraph_style.strut_half_leading = mask & sLeadingDistributionMask;
+
   std::vector<float> float_data;
   float_data.resize((byte_data.length_in_bytes() - byte_count) / 4);
   memcpy(float_data.data(),
@@ -214,10 +220,10 @@ void decodeStrut(Dart_Handle strut_data,
   if (mask & sLeadingMask) {
     paragraph_style.strut_leading = float_data[float_count++];
   }
-  if (mask & sForceStrutHeightMask) {
-    // The boolean is stored as the last bit in the bitmask.
-    paragraph_style.force_strut_height = (mask & 1 << 7) != 0;
-  }
+
+  // The boolean is stored as the last bit in the bitmask, as null
+  // and false have the same behavior.
+  paragraph_style.force_strut_height = mask & sForceStrutHeightMask;
 
   if (mask & sFontFamilyMask) {
     paragraph_style.strut_font_families = strut_font_families;
@@ -373,7 +379,7 @@ void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
                                  Dart_Handle foreground_data,
                                  Dart_Handle shadows_data,
                                  Dart_Handle font_features_data) {
-  FML_DCHECK(encoded.num_elements() == 8);
+  FML_DCHECK(encoded.num_elements() == 9);
 
   int32_t mask = encoded[0];
 
@@ -381,6 +387,7 @@ void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
   // explicitly given.
   txt::TextStyle style = m_paragraphBuilder->PeekStyle();
 
+  style.half_leading = mask & tsLeadingDistributionMask;
   // Only change the style property from the previous value if a new explicitly
   // set value is available
   if (mask & tsColorMask) {

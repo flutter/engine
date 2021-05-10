@@ -26,6 +26,7 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.text.InputType;
 import android.text.Selection;
+import android.util.SparseArray;
 import android.util.SparseIntArray;
 import android.view.KeyEvent;
 import android.view.View;
@@ -54,6 +55,7 @@ import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.platform.PlatformViewsController;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -343,16 +345,13 @@ public class TextInputPluginTest {
   // https://github.com/flutter/flutter/issues/31512
   // All modern Samsung keybords are affected including non-korean languages and thus
   // need the restart.
+  // Update: many other keyboards need this too:
+  // https://github.com/flutter/flutter/issues/78827
   @Test
-  public void setTextInputEditingState_alwaysRestartsOnAffectedDevices2() {
+  public void setTextInputEditingState_restartsIMEOnlyWhenFrameworkChangesComposingRegion() {
     // Initialize a TextInputPlugin that needs to be always restarted.
-    ShadowBuild.setManufacturer("samsung");
     InputMethodSubtype inputMethodSubtype =
         new InputMethodSubtype(0, 0, /*locale=*/ "en", "", "", false, false);
-    Settings.Secure.putString(
-        RuntimeEnvironment.application.getContentResolver(),
-        Settings.Secure.DEFAULT_INPUT_METHOD,
-        "com.sec.android.inputmethod/.SamsungKeypad");
     TestImm testImm =
         Shadow.extract(
             RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
@@ -368,7 +367,7 @@ public class TextInputPluginTest {
             false,
             true,
             TextInputChannel.TextCapitalization.NONE,
-            null,
+            new TextInputChannel.InputType(TextInputChannel.TextInputType.TEXT, false, false),
             null,
             null,
             null,
@@ -376,57 +375,29 @@ public class TextInputPluginTest {
     // There's a pending restart since we initialized the text input client. Flush that now.
     textInputPlugin.setTextInputEditingState(
         testView, new TextInputChannel.TextEditState("", 0, 0, -1, -1));
-
-    // Move the cursor.
     assertEquals(1, testImm.getRestartCount(testView));
+    InputConnection connection = textInputPlugin.createInputConnection(testView, new EditorInfo());
+    connection.setComposingText("POWERRRRR", 1);
+
     textInputPlugin.setTextInputEditingState(
-        testView, new TextInputChannel.TextEditState("", 0, 0, -1, -1));
+        testView, new TextInputChannel.TextEditState("UNLIMITED POWERRRRR", 0, 0, 10, 19));
+    // Does not restart since the composing text is not changed.
+    assertEquals(1, testImm.getRestartCount(testView));
+
+    connection.finishComposingText();
+    // Does not restart since the composing text is committed by the IME.
+    assertEquals(1, testImm.getRestartCount(testView));
+
+    // Does not restart since the composing text is changed by the IME.
+    connection.setComposingText("POWERRRRR", 1);
+    assertEquals(1, testImm.getRestartCount(testView));
+
+    // The framework tries to commit the composing region.
+    textInputPlugin.setTextInputEditingState(
+        testView, new TextInputChannel.TextEditState("POWERRRRR", 0, 0, -1, -1));
 
     // Verify that we've restarted the input.
     assertEquals(2, testImm.getRestartCount(testView));
-  }
-
-  @Test
-  public void setTextInputEditingState_doesNotRestartOnUnaffectedDevices() {
-    // Initialize a TextInputPlugin that needs to be always restarted.
-    ShadowBuild.setManufacturer("samsung");
-    InputMethodSubtype inputMethodSubtype =
-        new InputMethodSubtype(0, 0, /*locale=*/ "en", "", "", false, false);
-    Settings.Secure.putString(
-        RuntimeEnvironment.application.getContentResolver(),
-        Settings.Secure.DEFAULT_INPUT_METHOD,
-        "com.fake.test.blah/.NotTheRightKeyboard");
-    TestImm testImm =
-        Shadow.extract(
-            RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
-    testImm.setCurrentInputMethodSubtype(inputMethodSubtype);
-    View testView = new View(RuntimeEnvironment.application);
-    TextInputChannel textInputChannel = new TextInputChannel(mock(DartExecutor.class));
-    TextInputPlugin textInputPlugin =
-        new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
-    textInputPlugin.setTextInputClient(
-        0,
-        new TextInputChannel.Configuration(
-            false,
-            false,
-            true,
-            TextInputChannel.TextCapitalization.NONE,
-            null,
-            null,
-            null,
-            null,
-            null));
-    // There's a pending restart since we initialized the text input client. Flush that now.
-    textInputPlugin.setTextInputEditingState(
-        testView, new TextInputChannel.TextEditState("", 0, 0, -1, -1));
-
-    // Move the cursor.
-    assertEquals(1, testImm.getRestartCount(testView));
-    textInputPlugin.setTextInputEditingState(
-        testView, new TextInputChannel.TextEditState("", 0, 0, -1, -1));
-
-    // Verify that we've restarted the input.
-    assertEquals(1, testImm.getRestartCount(testView));
   }
 
   @Test
@@ -862,6 +833,92 @@ public class TextInputPluginTest {
     assertEquals(testAfm.empty, testAfm.exitId);
     textInputPlugin.destroy();
     assertEquals("1".hashCode(), testAfm.exitId);
+  }
+
+  @Test
+  public void autofill_testAutofillUpdatesTheFramework() {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+      return;
+    }
+
+    TestAfm testAfm =
+        Shadow.extract(RuntimeEnvironment.application.getSystemService(AutofillManager.class));
+    FlutterView testView = new FlutterView(RuntimeEnvironment.application);
+    TextInputChannel textInputChannel = spy(new TextInputChannel(mock(DartExecutor.class)));
+    TextInputPlugin textInputPlugin =
+        new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
+
+    // Set up an autofill scenario with 2 fields.
+    final TextInputChannel.Configuration.Autofill autofill1 =
+        new TextInputChannel.Configuration.Autofill(
+            "1",
+            new String[] {"HINT1"},
+            new TextInputChannel.TextEditState("field 1", 0, 0, -1, -1));
+    final TextInputChannel.Configuration.Autofill autofill2 =
+        new TextInputChannel.Configuration.Autofill(
+            "2",
+            new String[] {"HINT2", "EXTRA"},
+            new TextInputChannel.TextEditState("field 2", 0, 0, -1, -1));
+
+    final TextInputChannel.Configuration config1 =
+        new TextInputChannel.Configuration(
+            false,
+            false,
+            true,
+            TextInputChannel.TextCapitalization.NONE,
+            null,
+            null,
+            null,
+            autofill1,
+            null);
+    final TextInputChannel.Configuration config2 =
+        new TextInputChannel.Configuration(
+            false,
+            false,
+            true,
+            TextInputChannel.TextCapitalization.NONE,
+            null,
+            null,
+            null,
+            autofill2,
+            null);
+
+    final TextInputChannel.Configuration autofillConfiguration =
+        new TextInputChannel.Configuration(
+            false,
+            false,
+            true,
+            TextInputChannel.TextCapitalization.NONE,
+            null,
+            null,
+            null,
+            autofill1,
+            new TextInputChannel.Configuration[] {config1, config2});
+
+    textInputPlugin.setTextInputClient(0, autofillConfiguration);
+    textInputPlugin.setTextInputEditingState(
+        testView, new TextInputChannel.TextEditState("", 0, 0, -1, -1));
+
+    final SparseArray<AutofillValue> autofillValues = new SparseArray();
+    autofillValues.append("1".hashCode(), AutofillValue.forText("focused field"));
+    autofillValues.append("2".hashCode(), AutofillValue.forText("unfocused field"));
+
+    // Autofill both fields.
+    textInputPlugin.autofill(autofillValues);
+
+    // Verify the Editable has been updated.
+    assertTrue(textInputPlugin.getEditable().toString().equals("focused field"));
+
+    // The autofill value of the focused field is sent via updateEditingState.
+    verify(textInputChannel, times(1))
+        .updateEditingState(anyInt(), eq("focused field"), eq(13), eq(13), eq(-1), eq(-1));
+
+    final ArgumentCaptor<HashMap> mapCaptor = ArgumentCaptor.forClass(HashMap.class);
+
+    verify(textInputChannel, times(1)).updateEditingStateWithTag(anyInt(), mapCaptor.capture());
+    final TextInputChannel.TextEditState editState =
+        (TextInputChannel.TextEditState) mapCaptor.getValue().get("2");
+    assertEquals(editState.text, "unfocused field");
   }
 
   @Test

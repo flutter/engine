@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "flutter/common/graphics/texture.h"
+#include "flutter/flow/diff_context.h"
 #include "flutter/flow/embedded_views.h"
 #include "flutter/flow/instrumentation.h"
 #include "flutter/flow/raster_cache.h"
@@ -34,6 +35,10 @@
 #endif
 
 namespace flutter {
+
+namespace testing {
+class MockLayer;
+}  // namespace testing
 
 static constexpr SkRect kGiantRect = SkRect::MakeLTRB(-1E9F, -1E9F, 1E9F, 1E9F);
 
@@ -64,7 +69,14 @@ struct PrerollContext {
   // Informs whether a layer needs to be system composited.
   bool child_scene_layer_exists_below = false;
 #endif
+  // These allow us to track properties like elevation, opacity, and the
+  // prescence of a texture layer during Preroll.
+  bool has_texture_layer = false;
 };
+
+class PictureLayer;
+class PerformanceOverlayLayer;
+class TextureLayer;
 
 // Represents a single composited layer. Created on the UI thread but then
 // subquently used on the Rasterizer thread.
@@ -72,6 +84,33 @@ class Layer {
  public:
   Layer();
   virtual ~Layer();
+
+  virtual void AssignOldLayer(Layer* old_layer) {
+    original_layer_id_ = old_layer->original_layer_id_;
+  }
+
+#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
+
+  // Used to establish link between old layer and new layer that replaces it.
+  // If this method returns true, it is assumed that this layer replaces the old
+  // layer in tree and is able to diff with it.
+  virtual bool IsReplacing(DiffContext* context, const Layer* old_layer) const {
+    return original_layer_id_ == old_layer->original_layer_id_;
+  }
+
+  // Performs diff with given layer
+  virtual void Diff(DiffContext* context, const Layer* old_layer) {}
+
+  // Used when diffing retained layer; In case the layer is identical, it
+  // doesn't need to be diffed, but the paint region needs to be stored in diff
+  // context so that it can be used in next frame
+  virtual void PreservePaintRegion(DiffContext* context) {
+    // retained layer means same instance so 'this' is used to index into both
+    // current and old region
+    context->SetLayerPaintRegion(this, context->GetOldLayerPaintRegion(this));
+  }
+
+#endif  // FLUTTER_ENABLE_DIFF_CONTEXT
 
   virtual void Preroll(PrerollContext* context, const SkMatrix& matrix);
 
@@ -163,6 +202,11 @@ class Layer {
     needs_system_composite_ = value;
   }
 
+  bool subtree_has_platform_view() const { return subtree_has_platform_view_; }
+  void set_subtree_has_platform_view(bool value) {
+    subtree_has_platform_view_ = value;
+  }
+
   // Returns the paint bounds in the layer's local coordinate system
   // as determined during Preroll().  The bounds should include any
   // transform, clip or distortions performed by the layer itself,
@@ -190,6 +234,16 @@ class Layer {
   // Determines if the Paint() method is necessary based on the properties
   // of the indicated PaintContext object.
   bool needs_painting(PaintContext& context) const {
+    if (subtree_has_platform_view_) {
+      // Workaround for the iOS embedder. The iOS embedder expects that
+      // if we preroll it, then we will later call its Paint() method.
+      // Now that we preroll all layers without any culling, we may
+      // call its Preroll() without calling its Paint(). For now, we
+      // will not perform paint culling on any subtree that has a
+      // platform view.
+      // See https://github.com/flutter/flutter/issues/81419
+      return true;
+    }
     // Workaround for Skia bug (quickReject does not reject empty bounds).
     // https://bugs.chromium.org/p/skia/issues/detail?id=10951
     if (paint_bounds_.isEmpty()) {
@@ -198,7 +252,22 @@ class Layer {
     return !context.leaf_nodes_canvas->quickReject(paint_bounds_);
   }
 
+  // Propagated unique_id of the first layer in "chain" of replacement layers
+  // that can be diffed.
+  uint64_t original_layer_id() const { return original_layer_id_; }
+
   uint64_t unique_id() const { return unique_id_; }
+
+#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
+
+  virtual const PictureLayer* as_picture_layer() const { return nullptr; }
+  virtual const TextureLayer* as_texture_layer() const { return nullptr; }
+  virtual const PerformanceOverlayLayer* as_performance_overlay_layer() const {
+    return nullptr;
+  }
+  virtual const testing::MockLayer* as_mock_layer() const { return nullptr; }
+
+#endif  // FLUTTER_ENABLE_DIFF_CONTEXT
 
  protected:
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
@@ -208,7 +277,9 @@ class Layer {
  private:
   SkRect paint_bounds_;
   uint64_t unique_id_;
+  uint64_t original_layer_id_;
   bool needs_system_composite_;
+  bool subtree_has_platform_view_;
 
   static uint64_t NextUniqueID();
 

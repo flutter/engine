@@ -34,16 +34,13 @@ static const int kGrCacheMaxCount = 8192;
 // system channel.
 static const size_t kGrCacheMaxByteSize = 24 * (1 << 20);
 
-GPUSurfaceGL::GPUSurfaceGL(GPUSurfaceGLDelegate* delegate,
-                           bool render_to_surface)
-    : delegate_(delegate),
-      render_to_surface_(render_to_surface),
-      weak_factory_(this) {
-  auto context_switch = delegate_->GLContextMakeCurrent();
+sk_sp<GrDirectContext> GPUSurfaceGL::MakeGLContext(
+    GPUSurfaceGLDelegate* delegate) {
+  auto context_switch = delegate->GLContextMakeCurrent();
   if (!context_switch->GetResult()) {
     FML_LOG(ERROR)
-        << "Could not make the context current to setup the gr context.";
-    return;
+        << "Could not make the context current to set up the Gr context.";
+    return nullptr;
   }
 
   GrContextOptions options;
@@ -64,32 +61,24 @@ GPUSurfaceGL::GPUSurfaceGL(GPUSurfaceGLDelegate* delegate,
   // TODO(goderbauer): remove option when skbug.com/7523 is fixed.
   // A similar work-around is also used in shell/common/io_manager.cc.
   options.fDisableGpuYUVConversion = true;
+  auto context = GrDirectContext::MakeGL(delegate->GetGLInterface(), options);
 
-  auto context = GrDirectContext::MakeGL(delegate_->GetGLInterface(), options);
-
-  if (context == nullptr) {
-    FML_LOG(ERROR) << "Failed to setup Skia Gr context.";
-    return;
+  if (!context) {
+    FML_LOG(ERROR) << "Failed to set up Skia Gr context.";
+    return nullptr;
   }
 
-  context_ = std::move(context);
+  context->setResourceCacheLimits(kGrCacheMaxCount, kGrCacheMaxByteSize);
 
-  context_->setResourceCacheLimits(kGrCacheMaxCount, kGrCacheMaxByteSize);
+  PersistentCache::GetCacheForProcess()->PrecompileKnownSkSLs(context.get());
 
+  return context;
+}
+
+GPUSurfaceGL::GPUSurfaceGL(GPUSurfaceGLDelegate* delegate,
+                           bool render_to_surface)
+    : GPUSurfaceGL(MakeGLContext(delegate), delegate, render_to_surface) {
   context_owner_ = true;
-
-  valid_ = true;
-
-  std::vector<PersistentCache::SkSLCache> caches =
-      PersistentCache::GetCacheForProcess()->LoadSkSLs();
-  int compiled_count = 0;
-  for (const auto& cache : caches) {
-    compiled_count += context_->precompileShader(*cache.first, *cache.second);
-  }
-  FML_LOG(INFO) << "Found " << caches.size() << " SkSL shaders; precompiled "
-                << compiled_count;
-
-  delegate_->GLContextClearCurrent();
 }
 
 GPUSurfaceGL::GPUSurfaceGL(sk_sp<GrDirectContext> gr_context,
@@ -97,19 +86,19 @@ GPUSurfaceGL::GPUSurfaceGL(sk_sp<GrDirectContext> gr_context,
                            bool render_to_surface)
     : delegate_(delegate),
       context_(gr_context),
+      context_owner_(false),
       render_to_surface_(render_to_surface),
       weak_factory_(this) {
   auto context_switch = delegate_->GLContextMakeCurrent();
   if (!context_switch->GetResult()) {
     FML_LOG(ERROR)
-        << "Could not make the context current to setup the gr context.";
+        << "Could not make the context current to set up the Gr context.";
     return;
   }
 
   delegate_->GLContextClearCurrent();
 
-  valid_ = true;
-  context_owner_ = false;
+  valid_ = gr_context != nullptr;
 }
 
 GPUSurfaceGL::~GPUSurfaceGL() {
@@ -172,7 +161,7 @@ static sk_sp<SkSurface> WrapOnscreenSurface(GrDirectContext* context,
   SkSurfaceProps surface_props(0, kUnknown_SkPixelGeometry);
 
   return SkSurface::MakeFromBackendRenderTarget(
-      context,                                       // gr context
+      context,                                       // Gr context
       render_target,                                 // render target
       GrSurfaceOrigin::kBottomLeft_GrSurfaceOrigin,  // origin
       color_type,                                    // color type

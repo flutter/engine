@@ -8,12 +8,15 @@
 #include <algorithm>
 #include <vector>
 
+#import "flutter/shell/platform/darwin/macos/framework/Source/AccessibilityBridgeMacDelegate.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureGL.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterGLCompositor.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterOpenGLRenderer.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderingBackend.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
-#import "flutter/shell/platform/embedder/embedder.h"
+#include "flutter/shell/platform/embedder/embedder.h"
 
 /**
  * Constructs and returns a FlutterLocale struct corresponding to |locale|, which must outlive
@@ -89,7 +92,7 @@ static FlutterLocale FlutterLocaleFromNSLocale(NSLocale* locale) {
 }
 
 - (id<FlutterTextureRegistry>)textures {
-  return _flutterEngine.openGLRenderer;
+  return _flutterEngine.renderer;
 }
 
 - (NSView*)view {
@@ -117,6 +120,9 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 @implementation FlutterEngine {
   // The embedding-API-level engine object.
   FLUTTER_API_SYMBOL(FlutterEngine) _engine;
+
+  // The private member for accessibility.
+  std::shared_ptr<flutter::AccessibilityBridge> _bridge;
 
   // The project being run by this engine.
   FlutterDartProject* _project;
@@ -151,9 +157,16 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   _project = project ?: [[FlutterDartProject alloc] init];
   _messageHandlers = [[NSMutableDictionary alloc] init];
   _allowHeadlessExecution = allowHeadlessExecution;
+  _semanticsEnabled = NO;
+
   _embedderAPI.struct_size = sizeof(FlutterEngineProcTable);
   FlutterEngineGetProcAddresses(&_embedderAPI);
-  _openGLRenderer = [[FlutterOpenGLRenderer alloc] initWithFlutterEngine:self];
+
+  if ([FlutterRenderingBackend renderUsingMetal]) {
+    _renderer = [[FlutterMetalRenderer alloc] initWithFlutterEngine:self];
+  } else {
+    _renderer = [[FlutterOpenGLRenderer alloc] initWithFlutterEngine:self];
+  }
 
   NSNotificationCenter* notificationCenter = [NSNotificationCenter defaultCenter];
   [notificationCenter addObserver:self
@@ -181,8 +194,6 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     return NO;
   }
 
-  const FlutterRendererConfig rendererConfig = [_openGLRenderer createRendererConfig];
-
   // TODO(stuartmorgan): Move internal channel registration from FlutterViewController to here.
 
   // FlutterProjectArgs is expecting a full argv, so when processing it for
@@ -205,6 +216,16 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   flutterArguments.command_line_argc = static_cast<int>(argv.size());
   flutterArguments.command_line_argv = argv.size() > 0 ? argv.data() : nullptr;
   flutterArguments.platform_message_callback = (FlutterPlatformMessageCallback)OnPlatformMessage;
+  flutterArguments.update_semantics_node_callback = [](const FlutterSemanticsNode* node,
+                                                       void* user_data) {
+    FlutterEngine* engine = (__bridge FlutterEngine*)user_data;
+    [engine updateSemanticsNode:node];
+  };
+  flutterArguments.update_semantics_custom_action_callback =
+      [](const FlutterSemanticsCustomAction* action, void* user_data) {
+        FlutterEngine* engine = (__bridge FlutterEngine*)user_data;
+        [engine updateSemanticsCustomActions:action];
+      };
   flutterArguments.custom_dart_entrypoint = entrypoint.UTF8String;
   flutterArguments.shutdown_dart_vm_when_done = true;
   flutterArguments.dart_entrypoint_argc = dartEntrypointArgs.size();
@@ -237,6 +258,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
   flutterArguments.compositor = [self createFlutterCompositor];
 
+  FlutterRendererConfig rendererConfig = [_renderer createRendererConfig];
   FlutterEngineResult result = _embedderAPI.Initialize(
       FLUTTER_ENGINE_VERSION, &rendererConfig, &flutterArguments, (__bridge void*)(self), &_engine);
   if (result != kSuccess) {
@@ -284,7 +306,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
 - (void)setViewController:(FlutterViewController*)controller {
   _viewController = controller;
-  [_openGLRenderer setFlutterView:controller.flutterView];
+  [_renderer setFlutterView:controller.flutterView];
 
   if (!controller && !_allowHeadlessExecution) {
     [self shutDownEngine];
@@ -292,17 +314,23 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 }
 
 - (FlutterCompositor*)createFlutterCompositor {
+  // When rendering with metal do not support platform views.
+  if ([FlutterRenderingBackend renderUsingMetal]) {
+    return nil;
+  }
+
   // TODO(richardjcai): Add support for creating a FlutterGLCompositor
   // with a nil _viewController for headless engines.
   // https://github.com/flutter/flutter/issues/71606
-  if (_viewController == nullptr) {
-    return nullptr;
+  if (!_viewController) {
+    return nil;
   }
 
-  [_openGLRenderer.openGLContext makeCurrentContext];
+  FlutterOpenGLRenderer* openGLRenderer = reinterpret_cast<FlutterOpenGLRenderer*>(_renderer);
+  [openGLRenderer.openGLContext makeCurrentContext];
 
-  _macOSGLCompositor = std::make_unique<flutter::FlutterGLCompositor>(
-      _viewController, _openGLRenderer.openGLContext);
+  _macOSGLCompositor =
+      std::make_unique<flutter::FlutterGLCompositor>(_viewController, openGLRenderer.openGLContext);
 
   _compositor = {};
   _compositor.struct_size = sizeof(FlutterCompositor);
@@ -331,9 +359,12 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
                                                                                layers_count);
   };
 
-  __weak FlutterEngine* weak_self = self;
-  _macOSGLCompositor->SetPresentCallback(
-      [weak_self]() { return [weak_self.openGLRenderer glPresent]; });
+  __weak FlutterEngine* weakSelf = self;
+  _macOSGLCompositor->SetPresentCallback([weakSelf]() {
+    FlutterOpenGLRenderer* openGLRenderer =
+        reinterpret_cast<FlutterOpenGLRenderer*>(weakSelf.renderer);
+    return [openGLRenderer glPresent];
+  });
 
   _compositor.avoid_backing_store_cache = true;
 
@@ -381,6 +412,10 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   return _embedderAPI;
 }
 
+- (std::weak_ptr<flutter::AccessibilityBridge>)accessibilityBridge {
+  return _bridge;
+}
+
 - (void)updateWindowMetrics {
   if (!_engine) {
     return;
@@ -403,6 +438,35 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
 - (void)sendPointerEvent:(const FlutterPointerEvent&)event {
   _embedderAPI.SendPointerEvent(_engine, &event, 1);
+}
+
+- (void)sendKeyEvent:(const FlutterKeyEvent&)event
+            callback:(FlutterKeyEventCallback)callback
+            userData:(void*)userData {
+  _embedderAPI.SendKeyEvent(_engine, &event, callback, userData);
+}
+
+- (void)setSemanticsEnabled:(BOOL)enabled {
+  if (_semanticsEnabled == enabled) {
+    return;
+  }
+  _semanticsEnabled = enabled;
+  if (!_semanticsEnabled && _bridge) {
+    _bridge.reset();
+  } else if (_semanticsEnabled && !_bridge) {
+    _bridge = std::make_shared<flutter::AccessibilityBridge>(
+        std::make_unique<flutter::AccessibilityBridgeMacDelegate>(self));
+  }
+  if (!_semanticsEnabled) {
+    self.viewController.view.accessibilityChildren = nil;
+  }
+  _embedderAPI.UpdateSemanticsEnabled(_engine, _semanticsEnabled);
+}
+
+- (void)dispatchSemanticsAction:(FlutterSemanticsAction)action
+                       toTarget:(uint16_t)target
+                       withData:(const std::vector<uint8_t>&)data {
+  _embedderAPI.DispatchSemanticsAction(_engine, target, action, data.data(), data.size());
 }
 
 #pragma mark - Private methods
@@ -431,9 +495,12 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 }
 
 - (void)engineCallbackOnPlatformMessage:(const FlutterPlatformMessage*)message {
-  NSData* messageData = [NSData dataWithBytesNoCopy:(void*)message->message
-                                             length:message->message_size
-                                       freeWhenDone:NO];
+  NSData* messageData = nil;
+  if (message->message_size > 0) {
+    messageData = [NSData dataWithBytesNoCopy:(void*)message->message
+                                       length:message->message_size
+                                 freeWhenDone:NO];
+  }
   NSString* channel = @(message->channel);
   __block const FlutterPlatformMessageResponseHandle* responseHandle = message->response_handle;
 
@@ -464,6 +531,10 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 - (void)shutDownEngine {
   if (_engine == nullptr) {
     return;
+  }
+
+  if (_viewController && _viewController.flutterView) {
+    [_viewController.flutterView shutdown];
   }
 
   FlutterEngineResult result = _embedderAPI.Deinitialize(_engine);
@@ -559,7 +630,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 #pragma mark - FlutterTextureRegistrar
 
 - (int64_t)registerTexture:(id<FlutterTexture>)texture {
-  return [_openGLRenderer registerTexture:texture];
+  return [_renderer registerTexture:texture];
 }
 
 - (BOOL)registerTextureWithID:(int64_t)textureId {
@@ -567,7 +638,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 }
 
 - (void)textureFrameAvailable:(int64_t)textureID {
-  [_openGLRenderer textureFrameAvailable:textureID];
+  [_renderer textureFrameAvailable:textureID];
 }
 
 - (BOOL)markTextureFrameAvailable:(int64_t)textureID {
@@ -575,11 +646,40 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 }
 
 - (void)unregisterTexture:(int64_t)textureID {
-  [_openGLRenderer unregisterTexture:textureID];
+  [_renderer unregisterTexture:textureID];
 }
 
 - (BOOL)unregisterTextureWithID:(int64_t)textureID {
   return _embedderAPI.UnregisterExternalTexture(_engine, textureID) == kSuccess;
+}
+
+- (void)updateSemanticsNode:(const FlutterSemanticsNode*)node {
+  NSAssert(_bridge, @"The accessibility bridge must be initialized.");
+  if (node->id == kFlutterSemanticsNodeIdBatchEnd) {
+    return;
+  }
+  _bridge->AddFlutterSemanticsNodeUpdate(node);
+}
+
+- (void)updateSemanticsCustomActions:(const FlutterSemanticsCustomAction*)action {
+  NSAssert(_bridge, @"The accessibility bridge must be initialized.");
+  if (action->id == kFlutterSemanticsNodeIdBatchEnd) {
+    // Custom action with id = kFlutterSemanticsNodeIdBatchEnd indicates this is
+    // the end of the update batch.
+    _bridge->CommitUpdates();
+    // Attaches the accessibility root to the flutter view.
+    auto root = _bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
+    if (root) {
+      if ([self.viewController.view.accessibilityChildren count] == 0) {
+        NSAccessibilityElement* native_root = root->GetNativeViewAccessible();
+        self.viewController.view.accessibilityChildren = @[ native_root ];
+      }
+    } else {
+      self.viewController.view.accessibilityChildren = nil;
+    }
+    return;
+  }
+  _bridge->AddFlutterSemanticsCustomActionUpdate(action);
 }
 
 #pragma mark - Task runner integration

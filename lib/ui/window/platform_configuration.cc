@@ -124,12 +124,12 @@ Dart_Handle SendPlatformMessage(Dart_Handle window,
   }
   if (Dart_IsNull(data_handle)) {
     dart_state->platform_configuration()->client()->HandlePlatformMessage(
-        fml::MakeRefCounted<PlatformMessage>(name, response));
+        std::make_unique<PlatformMessage>(name, response));
   } else {
     tonic::DartByteData data(data_handle);
     const uint8_t* buffer = static_cast<const uint8_t*>(data.data());
     dart_state->platform_configuration()->client()->HandlePlatformMessage(
-        fml::MakeRefCounted<PlatformMessage>(
+        std::make_unique<PlatformMessage>(
             name, std::vector<uint8_t>(buffer, buffer + data.length_in_bytes()),
             response));
   }
@@ -179,6 +179,15 @@ void GetPersistentIsolateData(Dart_NativeArguments args) {
   Dart_SetReturnValue(
       args, tonic::DartByteData::Create(persistent_isolate_data->GetMapping(),
                                         persistent_isolate_data->GetSize()));
+}
+
+void RespondToKeyData(Dart_Handle window, int response_id, bool handled) {
+  UIDartState::Current()->platform_configuration()->CompleteKeyDataResponse(
+      response_id, handled);
+}
+
+void _RespondToKeyData(Dart_NativeArguments args) {
+  tonic::DartCallStatic(&RespondToKeyData, args);
 }
 
 Dart_Handle ToByteData(const std::vector<uint8_t>& buffer) {
@@ -296,7 +305,7 @@ void PlatformConfiguration::UpdateAccessibilityFeatures(int32_t values) {
 }
 
 void PlatformConfiguration::DispatchPlatformMessage(
-    fml::RefPtr<PlatformMessage> message) {
+    std::unique_ptr<PlatformMessage> message) {
   std::shared_ptr<tonic::DartState> dart_state =
       dispatch_platform_message_.dart_state().lock();
   if (!dart_state) {
@@ -347,6 +356,13 @@ void PlatformConfiguration::DispatchSemanticsAction(int32_t id,
       dispatch_semantics_action_.Get(),
       {tonic::ToDart(id), tonic::ToDart(static_cast<int32_t>(action)),
        args_handle}));
+}
+
+uint64_t PlatformConfiguration::RegisterKeyDataResponse(
+    KeyDataResponse callback) {
+  uint64_t response_id = next_key_response_id_++;
+  pending_key_responses_[response_id] = std::move(callback);
+  return response_id;
 }
 
 void PlatformConfiguration::BeginFrame(fml::TimePoint frameTime) {
@@ -424,6 +440,21 @@ void PlatformConfiguration::CompletePlatformMessageResponse(
   response->Complete(std::make_unique<fml::DataMapping>(std::move(data)));
 }
 
+void PlatformConfiguration::CompleteKeyDataResponse(uint64_t response_id,
+                                                    bool handled) {
+  if (response_id == 0) {
+    return;
+  }
+  auto it = pending_key_responses_.find(response_id);
+  FML_DCHECK(it != pending_key_responses_.end());
+  if (it == pending_key_responses_.end()) {
+    return;
+  }
+  KeyDataResponse callback = std::move(it->second);
+  pending_key_responses_.erase(it);
+  callback(handled);
+}
+
 Dart_Handle ComputePlatformResolvedLocale(Dart_Handle supportedLocalesHandle) {
   std::vector<std::string> supportedLocales =
       tonic::DartConverter<std::vector<std::string>>::FromDart(
@@ -454,6 +485,7 @@ void PlatformConfiguration::RegisterNatives(
        true},
       {"PlatformConfiguration_respondToPlatformMessage",
        _RespondToPlatformMessage, 3, true},
+      {"PlatformConfiguration_respondToKeyData", _RespondToKeyData, 3, true},
       {"PlatformConfiguration_render", Render, 3, true},
       {"PlatformConfiguration_updateSemantics", UpdateSemantics, 2, true},
       {"PlatformConfiguration_setIsolateDebugName", SetIsolateDebugName, 2,

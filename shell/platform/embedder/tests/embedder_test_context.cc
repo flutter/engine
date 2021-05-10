@@ -17,7 +17,8 @@ namespace testing {
 
 EmbedderTestContext::EmbedderTestContext(std::string assets_path)
     : assets_path_(std::move(assets_path)),
-      aot_symbols_(LoadELFSymbolFromFixturesIfNeccessary()),
+      aot_symbols_(
+          LoadELFSymbolFromFixturesIfNeccessary(kDefaultAOTAppELFFileName)),
       native_resolver_(std::make_shared<TestDartNativeResolver>()) {
   SetupAOTMappingsIfNecessary();
   SetupAOTDataIfNecessary();
@@ -53,8 +54,8 @@ void EmbedderTestContext::SetupAOTDataIfNecessary() {
   FlutterEngineAOTDataSource data_in = {};
   FlutterEngineAOTData data_out = nullptr;
 
-  const auto elf_path =
-      fml::paths::JoinPaths({GetFixturesPath(), kAOTAppELFFileName});
+  const auto elf_path = fml::paths::JoinPaths(
+      {GetFixturesPath(), testing::kDefaultAOTAppELFFileName});
 
   data_in.type = kFlutterEngineAOTDataSourceTypeElfPath;
   data_in.elf_path = elf_path.c_str();
@@ -140,6 +141,11 @@ void EmbedderTestContext::PlatformMessageCallback(
   }
 }
 
+void EmbedderTestContext::SetLogMessageCallback(
+    const LogMessageCallback& callback) {
+  log_message_callback_ = callback;
+}
+
 FlutterUpdateSemanticsNodeCallback
 EmbedderTestContext::GetUpdateSemanticsNodeCallbackHook() {
   return [](const FlutterSemanticsNode* semantics_node, void* user_data) {
@@ -160,6 +166,15 @@ EmbedderTestContext::GetUpdateSemanticsCustomActionCallbackHook() {
   };
 }
 
+FlutterLogMessageCallback EmbedderTestContext::GetLogMessageCallbackHook() {
+  return [](const char* tag, const char* message, void* user_data) {
+    auto context = reinterpret_cast<EmbedderTestContext*>(user_data);
+    if (auto callback = context->log_message_callback_) {
+      callback(tag, message);
+    }
+  };
+}
+
 FlutterComputePlatformResolvedLocaleCallback
 EmbedderTestContext::GetComputePlatformResolvedLocaleCallbackHook() {
   return [](const FlutterLocale** supported_locales,
@@ -174,8 +189,8 @@ FlutterTransformation EmbedderTestContext::GetRootSurfaceTransformation() {
 
 EmbedderTestCompositor& EmbedderTestContext::GetCompositor() {
   FML_CHECK(compositor_)
-      << "Accessed the compositor on a context where one was not setup. Use "
-         "the config builder to setup a context with a custom compositor.";
+      << "Accessed the compositor on a context where one was not set up. Use "
+         "the config builder to set up a context with a custom compositor.";
   return *compositor_;
 }
 

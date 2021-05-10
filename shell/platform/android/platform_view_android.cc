@@ -29,14 +29,14 @@
 namespace flutter {
 
 AndroidSurfaceFactoryImpl::AndroidSurfaceFactoryImpl(
-    const AndroidContext& context,
+    const std::shared_ptr<AndroidContext>& context,
     std::shared_ptr<PlatformViewAndroidJNI> jni_facade)
     : android_context_(context), jni_facade_(jni_facade) {}
 
 AndroidSurfaceFactoryImpl::~AndroidSurfaceFactoryImpl() = default;
 
 std::unique_ptr<AndroidSurface> AndroidSurfaceFactoryImpl::CreateSurface() {
-  switch (android_context_.RenderingApi()) {
+  switch (android_context_->RenderingApi()) {
     case AndroidRenderingAPI::kSoftware:
       return std::make_unique<AndroidSurfaceSoftware>(android_context_,
                                                       jni_facade_);
@@ -48,51 +48,64 @@ std::unique_ptr<AndroidSurface> AndroidSurfaceFactoryImpl::CreateSurface() {
                                                     jni_facade_);
 #endif  // SHELL_ENABLE_VULKAN
     default:
+      FML_DCHECK(false);
       return nullptr;
   }
-  return nullptr;
+}
+
+static std::shared_ptr<flutter::AndroidContext> CreateAndroidContext(
+    bool use_software_rendering,
+    bool create_onscreen_surface) {
+  if (!create_onscreen_surface) {
+    return nullptr;
+  }
+  if (use_software_rendering) {
+    return std::make_shared<AndroidContext>(AndroidRenderingAPI::kSoftware);
+  }
+#if SHELL_ENABLE_VULKAN
+  return std::make_shared<AndroidContext>(AndroidRenderingAPI::kVulkan);
+#else   // SHELL_ENABLE_VULKAN
+  return std::make_unique<AndroidContextGL>(
+      AndroidRenderingAPI::kOpenGLES,
+      fml::MakeRefCounted<AndroidEnvironmentGL>());
+#endif  // SHELL_ENABLE_VULKAN
 }
 
 PlatformViewAndroid::PlatformViewAndroid(
     PlatformView::Delegate& delegate,
     flutter::TaskRunners task_runners,
     std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
-    bool use_software_rendering)
-    : PlatformView(delegate, std::move(task_runners)),
-      jni_facade_(jni_facade),
-      platform_view_android_delegate_(jni_facade) {
-  if (use_software_rendering) {
-    android_context_ =
-        std::make_unique<AndroidContext>(AndroidRenderingAPI::kSoftware);
-  } else {
-#if SHELL_ENABLE_VULKAN
-    android_context_ =
-        std::make_unique<AndroidContext>(AndroidRenderingAPI::kVulkan);
-#else   // SHELL_ENABLE_VULKAN
-    android_context_ = std::make_unique<AndroidContextGL>(
-        AndroidRenderingAPI::kOpenGLES,
-        fml::MakeRefCounted<AndroidEnvironmentGL>());
-#endif  // SHELL_ENABLE_VULKAN
-  }
-  FML_CHECK(android_context_ && android_context_->IsValid())
-      << "Could not create an Android context.";
-
-  surface_factory_ = std::make_shared<AndroidSurfaceFactoryImpl>(
-      *android_context_, jni_facade);
-
-  android_surface_ = surface_factory_->CreateSurface();
-  FML_CHECK(android_surface_ && android_surface_->IsValid())
-      << "Could not create an OpenGL, Vulkan or Software surface to setup "
-         "rendering.";
-}
+    bool use_software_rendering,
+    bool create_onscreen_surface)
+    : PlatformViewAndroid(delegate,
+                          std::move(task_runners),
+                          std::move(jni_facade),
+                          CreateAndroidContext(use_software_rendering,
+                                               create_onscreen_surface)) {}
 
 PlatformViewAndroid::PlatformViewAndroid(
     PlatformView::Delegate& delegate,
     flutter::TaskRunners task_runners,
-    std::shared_ptr<PlatformViewAndroidJNI> jni_facade)
+    const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade,
+    const std::shared_ptr<flutter::AndroidContext>& android_context)
     : PlatformView(delegate, std::move(task_runners)),
       jni_facade_(jni_facade),
-      platform_view_android_delegate_(jni_facade) {}
+      android_context_(std::move(android_context)),
+      platform_view_android_delegate_(jni_facade) {
+  // TODO(dnfield): always create a pbuffer surface for background use to
+  // resolve https://github.com/flutter/flutter/issues/73675
+  if (android_context_) {
+    FML_CHECK(android_context_->IsValid())
+        << "Could not create surface from invalid Android context.";
+    surface_factory_ = std::make_shared<AndroidSurfaceFactoryImpl>(
+        android_context_, jni_facade_);
+    android_surface_ = surface_factory_->CreateSurface();
+
+    FML_CHECK(android_surface_ && android_surface_->IsValid())
+        << "Could not create an OpenGL, Vulkan or Software surface to set up "
+           "rendering.";
+  }
+}
 
 PlatformViewAndroid::~PlatformViewAndroid() = default;
 
@@ -177,7 +190,7 @@ void PlatformViewAndroid::DispatchPlatformMessage(JNIEnv* env,
   }
 
   PlatformView::DispatchPlatformMessage(
-      fml::MakeRefCounted<flutter::PlatformMessage>(
+      std::make_unique<flutter::PlatformMessage>(
           std::move(name), std::move(message), std::move(response)));
 }
 
@@ -191,8 +204,8 @@ void PlatformViewAndroid::DispatchEmptyPlatformMessage(JNIEnv* env,
   }
 
   PlatformView::DispatchPlatformMessage(
-      fml::MakeRefCounted<flutter::PlatformMessage>(std::move(name),
-                                                    std::move(response)));
+      std::make_unique<flutter::PlatformMessage>(std::move(name),
+                                                 std::move(response)));
 }
 
 void PlatformViewAndroid::InvokePlatformMessageResponseCallback(
@@ -230,14 +243,15 @@ void PlatformViewAndroid::InvokePlatformMessageEmptyResponseCallback(
 
 // |PlatformView|
 void PlatformViewAndroid::HandlePlatformMessage(
-    fml::RefPtr<flutter::PlatformMessage> message) {
+    std::unique_ptr<flutter::PlatformMessage> message) {
   int response_id = 0;
   if (auto response = message->response()) {
     response_id = next_response_id_++;
     pending_responses_[response_id] = response;
   }
   // This call can re-enter in InvokePlatformMessageXxxResponseCallback.
-  jni_facade_->FlutterViewHandlePlatformMessage(message, response_id);
+  jni_facade_->FlutterViewHandlePlatformMessage(std::move(message),
+                                                response_id);
   message = nullptr;
 }
 
@@ -291,7 +305,8 @@ std::unique_ptr<Surface> PlatformViewAndroid::CreateRenderingSurface() {
   if (!android_surface_) {
     return nullptr;
   }
-  return android_surface_->CreateGPUSurface();
+  return android_surface_->CreateGPUSurface(
+      android_context_->GetMainSkiaContext().get());
 }
 
 // |PlatformView|

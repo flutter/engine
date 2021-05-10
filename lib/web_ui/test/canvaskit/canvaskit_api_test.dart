@@ -11,6 +11,7 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
+import '../matchers.dart';
 import 'common.dart';
 import 'test_data.dart';
 
@@ -47,6 +48,7 @@ void testMain() {
     _toSkMatrixFromFloat32Tests();
     _toSkRectTests();
     _skVerticesTests();
+    _paragraphTests();
     group('SkPath', () {
       _pathTests();
     });
@@ -366,6 +368,7 @@ SkShader _makeTestShader() {
     Uint32List.fromList(<int>[0xff0000ff]),
     Float32List.fromList([0, 1]),
     canvasKit.TileMode.Repeat,
+    null,
   );
 }
 
@@ -978,26 +981,55 @@ void _canvasTests() {
     );
   });
 
-  test('drawImage', () {
+  test('drawImageOptions', () {
     final SkAnimatedImage image =
         canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage);
-    canvas.drawImage(
+    canvas.drawImageOptions(
       image.getCurrentFrame(),
       10,
       20,
+      canvasKit.FilterMode.Linear,
+      canvasKit.MipmapMode.None,
       SkPaint(),
     );
   });
 
-  test('drawImageRect', () {
+  test('drawImageCubic', () {
     final SkAnimatedImage image =
         canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage);
-    canvas.drawImageRect(
+    canvas.drawImageCubic(
+      image.getCurrentFrame(),
+      10,
+      20,
+      0.3,
+      0.3,
+      SkPaint(),
+    );
+  });
+
+  test('drawImageRectOptions', () {
+    final SkAnimatedImage image =
+        canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage);
+    canvas.drawImageRectOptions(
       image.getCurrentFrame(),
       Float32List.fromList([0, 0, 1, 1]),
       Float32List.fromList([0, 0, 1, 1]),
+      canvasKit.FilterMode.Linear,
+      canvasKit.MipmapMode.None,
       SkPaint(),
-      false,
+    );
+  });
+
+  test('drawImageRectCubic', () {
+    final SkAnimatedImage image =
+        canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage);
+    canvas.drawImageRectCubic(
+      image.getCurrentFrame(),
+      Float32List.fromList([0, 0, 1, 1]),
+      Float32List.fromList([0, 0, 1, 1]),
+      0.3,
+      0.3,
+      SkPaint(),
     );
   });
 
@@ -1008,6 +1040,7 @@ void _canvasTests() {
       image.getCurrentFrame(),
       Float32List.fromList([0, 0, 1, 1]),
       Float32List.fromList([0, 0, 1, 1]),
+      canvasKit.FilterMode.Linear,
       SkPaint(),
     );
   });
@@ -1227,5 +1260,204 @@ void _textStyleTests() {
       expect(toSkPlaceholderAlignment(placeholderAlignment).value,
           placeholderAlignment.index);
     }
+  });
+}
+
+void _paragraphTests() {
+  // This test is just a kitchen sink that blasts CanvasKit with all paragraph
+  // properties all at once, making sure CanvasKit doesn't choke on anything.
+  // In particular, this tests that our JS bindings are correct, such as that
+  // arguments are of acceptable types and passed in the correct order.
+  test('SkParagraph API kitchensink', () {
+    final SkParagraphStyleProperties props = SkParagraphStyleProperties();
+    props.textAlign = canvasKit.TextAlign.Center;
+    props.textDirection = canvasKit.TextDirection.RTL;
+    props.heightMultiplier = 3;
+    props.textHeightBehavior = canvasKit.TextHeightBehavior.All;
+    props.maxLines = 4;
+    props.ellipsis = '___';
+    props.textStyle = SkTextStyleProperties()
+      ..backgroundColor = Float32List.fromList(<double>[1, 2, 3, 4])
+      ..color = Float32List.fromList(<double>[5, 6, 7, 8])
+      ..foregroundColor = Float32List.fromList(<double>[9, 10, 11, 12])
+      ..decoration = 0x2
+      ..decorationThickness = 2.0
+      ..decorationColor = Float32List.fromList(<double>[13, 14, 15, 16])
+      ..decorationStyle = canvasKit.DecorationStyle.Dotted
+      ..textBaseline = canvasKit.TextBaseline.Ideographic
+      ..fontSize = 24
+      ..letterSpacing = 5
+      ..wordSpacing = 10
+      ..heightMultiplier = 2.5
+      ..locale = 'en_CA'
+      ..fontFamilies = <String>['Roboto', 'serif']
+      ..fontStyle = (SkFontStyle()
+        ..slant = canvasKit.FontSlant.Upright
+        ..weight = canvasKit.FontWeight.Normal)
+      ..shadows = <SkTextShadow>[]
+      ..fontFeatures = <SkFontFeature>[
+        SkFontFeature()
+          ..name = 'pnum'
+          ..value = 1,
+        SkFontFeature()
+          ..name = 'tnum'
+          ..value = 1,
+      ];
+    props.strutStyle = SkStrutStyleProperties()
+      ..fontFamilies = <String>['Roboto', 'Noto']
+      ..fontStyle = (SkFontStyle()
+        ..slant = canvasKit.FontSlant.Italic
+        ..weight = canvasKit.FontWeight.Bold)
+      ..fontSize = 23
+      ..heightMultiplier = 5
+      ..leading = 6
+      ..strutEnabled = true
+      ..forceStrutHeight = false;
+
+    final SkParagraphStyle paragraphStyle = canvasKit.ParagraphStyle(props);
+    final SkParagraphBuilder builder = canvasKit.ParagraphBuilder.Make(
+      paragraphStyle,
+      skiaFontCollection.skFontMgr,
+    );
+
+    builder.addText('Hello');
+    builder.addPlaceholder(
+      50,
+      25,
+      canvasKit.PlaceholderAlignment.Middle,
+      canvasKit.TextBaseline.Ideographic,
+      4.0,
+    );
+    builder
+        .pushStyle(canvasKit.TextStyle(SkTextStyleProperties()..fontSize = 12));
+    builder.addText('World');
+    builder.pop();
+    builder.pushPaintStyle(
+        canvasKit.TextStyle(SkTextStyleProperties()..fontSize = 12),
+        SkPaint(),
+        SkPaint());
+    builder.addText('!');
+    builder.pop();
+    final SkParagraph paragraph = builder.build();
+    paragraph.layout(55);
+    expect(paragraph.getAlphabeticBaseline(),
+        within<double>(distance: 0.5, from: 20.7));
+    expect(paragraph.didExceedMaxLines(), false);
+    expect(paragraph.getHeight(), 25);
+    expect(paragraph.getIdeographicBaseline(),
+        within<double>(distance: 0.5, from: 25));
+    expect(paragraph.getLongestLine(), 50);
+    expect(paragraph.getMaxIntrinsicWidth(), 50);
+    expect(paragraph.getMinIntrinsicWidth(), 50);
+    expect(paragraph.getMaxWidth(), 55);
+    expect(
+        paragraph.getRectsForRange(1, 3, canvasKit.RectHeightStyle.Tight,
+            canvasKit.RectWidthStyle.Max),
+        <double>[]);
+    expect(paragraph.getRectsForPlaceholders(), hasLength(1));
+    expect(paragraph.getLineMetrics(), hasLength(1));
+
+    final SkLineMetrics lineMetrics = paragraph.getLineMetrics().single;
+    expect(lineMetrics.ascent, within<double>(distance: 0.5, from: 20.7));
+    expect(lineMetrics.descent, within<double>(distance: 0.2, from: 4.3));
+    expect(lineMetrics.isHardBreak, true);
+    expect(lineMetrics.baseline, within<double>(distance: 0.5, from: 20.7));
+    expect(lineMetrics.height, 25);
+    expect(lineMetrics.left, 2.5);
+    expect(lineMetrics.width, 50);
+    expect(lineMetrics.lineNumber, 0);
+
+    expect(paragraph.getGlyphPositionAtCoordinate(5, 5).affinity,
+        canvasKit.Affinity.Downstream);
+
+    // "Hello"
+    for (int i = 0; i < 5; i++) {
+      expect(paragraph.getWordBoundary(i).start, 0);
+      expect(paragraph.getWordBoundary(i).end, 5);
+    }
+    // Placeholder
+    expect(paragraph.getWordBoundary(5).start, 5);
+    expect(paragraph.getWordBoundary(5).end, 6);
+    // "World"
+    for (int i = 6; i < 11; i++) {
+      expect(paragraph.getWordBoundary(i).start, 6);
+      expect(paragraph.getWordBoundary(i).end, 11);
+    }
+    // "!"
+    expect(paragraph.getWordBoundary(11).start, 11);
+    expect(paragraph.getWordBoundary(11).end, 12);
+
+    paragraph.delete();
+  });
+
+  test('RectHeightStyle', () {
+    SkParagraphStyleProperties props = SkParagraphStyleProperties();
+    props.heightMultiplier = 3;
+    props.textAlign = canvasKit.TextAlign.Start;
+    props.textDirection = canvasKit.TextDirection.LTR;
+    props.textStyle = SkTextStyleProperties()
+      ..fontSize = 25
+      ..fontFamilies = <String>['Roboto']
+      ..fontStyle = (SkFontStyle()..weight = canvasKit.FontWeight.Normal);
+    props.strutStyle = SkStrutStyleProperties()
+      ..strutEnabled = true
+      ..forceStrutHeight = true
+      ..fontSize = 25
+      ..fontFamilies = <String>['Roboto']
+      ..heightMultiplier = 3
+      ..fontStyle = (SkFontStyle()..weight = canvasKit.FontWeight.Normal);
+    final SkParagraphStyle paragraphStyle = canvasKit.ParagraphStyle(props);
+    final SkParagraphBuilder builder =
+        canvasKit.ParagraphBuilder.MakeFromFontProvider(
+      paragraphStyle,
+      skiaFontCollection.fontProvider,
+    );
+    builder.addText('hello');
+
+    final SkParagraph paragraph = builder.build();
+    paragraph.layout(500);
+
+    expect(
+      paragraph.getRectsForRange(
+        0,
+        1,
+        canvasKit.RectHeightStyle.Strut,
+        canvasKit.RectWidthStyle.Tight,
+      ),
+      [
+        [0, 0, 13.770000457763672, 75],
+      ],
+    );
+  });
+
+  test('TextHeightBehavior', () {
+    expect(
+      toSkTextHeightBehavior(ui.TextHeightBehavior(
+        applyHeightToFirstAscent: true,
+        applyHeightToLastDescent: true,
+      )),
+      canvasKit.TextHeightBehavior.All,
+    );
+    expect(
+      toSkTextHeightBehavior(ui.TextHeightBehavior(
+        applyHeightToFirstAscent: false,
+        applyHeightToLastDescent: true,
+      )),
+      canvasKit.TextHeightBehavior.DisableFirstAscent,
+    );
+    expect(
+      toSkTextHeightBehavior(ui.TextHeightBehavior(
+        applyHeightToFirstAscent: true,
+        applyHeightToLastDescent: false,
+      )),
+      canvasKit.TextHeightBehavior.DisableLastDescent,
+    );
+    expect(
+      toSkTextHeightBehavior(ui.TextHeightBehavior(
+        applyHeightToFirstAscent: false,
+        applyHeightToLastDescent: false,
+      )),
+      canvasKit.TextHeightBehavior.DisableAll,
+    );
   });
 }

@@ -6,9 +6,12 @@
 import 'dart:html' as html;
 import 'dart:js_util' as js_util;
 
+import 'package:meta/meta.dart';
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
-import 'package:ui/src/engine.dart';
+import 'package:ui/src/engine.dart' show domRenderer, window;
+import 'package:ui/src/engine/browser_detection.dart';
+import 'package:ui/src/engine/pointer_binding.dart';
 import 'package:ui/ui.dart' as ui;
 
 const int _kNoButtonChange = -1;
@@ -596,18 +599,16 @@ void testMain() {
         packets.add(packet);
       };
 
-      glassPane.dispatchEvent(html.WheelEvent(
-        'wheel',
-        button: 1,
+      glassPane.dispatchEvent(context.wheel(
+        buttons: 0,
         clientX: 10,
         clientY: 10,
         deltaX: 10,
         deltaY: 10,
       ));
 
-      glassPane.dispatchEvent(html.WheelEvent(
-        'wheel',
-        button: 1,
+      glassPane.dispatchEvent(context.wheel(
+        buttons: 0,
         clientX: 20,
         clientY: 50,
         deltaX: 10,
@@ -621,9 +622,8 @@ void testMain() {
         clientY: 50.0,
       ));
 
-      glassPane.dispatchEvent(html.WheelEvent(
-        'wheel',
-        button: 1,
+      glassPane.dispatchEvent(context.wheel(
+        buttons: 1,
         clientX: 30,
         clientY: 60,
         deltaX: 10,
@@ -1485,6 +1485,8 @@ void testMain() {
       expect(packets[0].data[0].change, equals(ui.PointerChange.move));
       expect(packets[0].data[0].synthesized, equals(true));
       expect(packets[0].data[0].buttons, equals(2));
+      expect(packets[0].data[0].physicalX, equals(20.0 * dpi));
+      expect(packets[0].data[0].physicalY, equals(20.0 * dpi));
       expect(packets[0].data[1].change, equals(ui.PointerChange.up));
       expect(packets[0].data[1].synthesized, equals(false));
       expect(packets[0].data[1].buttons, equals(0));
@@ -1657,6 +1659,90 @@ void testMain() {
       expect(packets[0].data[1].change, equals(ui.PointerChange.down));
       expect(packets[0].data[1].synthesized, equals(false));
       expect(packets[0].data[1].buttons, equals(2));
+      packets.clear();
+    },
+  );
+
+  _testEach<_ButtonedEventMixin>(
+    [
+      _PointerEventContext(),
+      _MouseEventContext(),
+    ],
+    'handles overlapping left/right down and up events',
+    (_ButtonedEventMixin context) {
+      PointerBinding.instance.debugOverrideDetector(context);
+      // This can happen with the following gesture sequence:
+      //
+      //     LMB:   down-------------------up
+      //     RMB:              down------------------up
+      // Flutter:   down-------move-------move-------up
+
+      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
+        packets.add(packet);
+      };
+
+      // Press and hold LMB.
+      glassPane.dispatchEvent(context.mouseDown(
+        button: 0,
+        buttons: 1,
+        clientX: 5.0,
+        clientY: 100.0,
+      ));
+      expect(packets, hasLength(1));
+      expect(packets[0].data, hasLength(2));
+      expect(packets[0].data[0].change, equals(ui.PointerChange.add));
+      expect(packets[0].data[0].synthesized, equals(true));
+      expect(packets[0].data[1].change, equals(ui.PointerChange.down));
+      expect(packets[0].data[1].synthesized, equals(false));
+      expect(packets[0].data[1].buttons, equals(1));
+      expect(packets[0].data[1].physicalX, equals(5.0 * dpi));
+      expect(packets[0].data[1].physicalY, equals(100.0 * dpi));
+      packets.clear();
+
+      // Press and hold RMB. The pointer is already down, so we only send a move
+      // to update the position of the pointer.
+      glassPane.dispatchEvent(context.mouseDown(
+        button: 2,
+        buttons: 3,
+        clientX: 20.0,
+        clientY: 100.0,
+      ));
+      expect(packets, hasLength(1));
+      expect(packets[0].data, hasLength(1));
+      expect(packets[0].data[0].change, equals(ui.PointerChange.move));
+      expect(packets[0].data[0].buttons, equals(3));
+      expect(packets[0].data[0].physicalX, equals(20.0 * dpi));
+      expect(packets[0].data[0].physicalY, equals(100.0 * dpi));
+      packets.clear();
+
+      // Release LMB. The pointer is still down (RMB), so we only send a move to
+      // update the position of the pointer.
+      glassPane.dispatchEvent(context.mouseUp(
+        button: 0,
+        buttons: 2,
+        clientX: 30.0,
+        clientY: 100.0,
+      ));
+      expect(packets, hasLength(1));
+      expect(packets[0].data, hasLength(1));
+      expect(packets[0].data[0].change, equals(ui.PointerChange.move));
+      expect(packets[0].data[0].buttons, equals(2));
+      expect(packets[0].data[0].physicalX, equals(30.0 * dpi));
+      expect(packets[0].data[0].physicalY, equals(100.0 * dpi));
+      packets.clear();
+
+      // Release RMB. There's no more buttons down, so we send an up event.
+      glassPane.dispatchEvent(context.mouseUp(
+        button: 2,
+        buttons: 0,
+        clientX: 30.0,
+        clientY: 100.0,
+      ));
+      expect(packets, hasLength(1));
+      expect(packets[0].data, hasLength(1));
+      expect(packets[0].data[0].change, equals(ui.PointerChange.up));
+      expect(packets[0].data[0].buttons, equals(0));
       packets.clear();
     },
   );
@@ -2006,6 +2092,60 @@ void testMain() {
     },
   );
 
+  _testEach<_PointerEventContext>(
+    [
+      _PointerEventContext(),
+    ],
+    'handles random pointer id on up events',
+    (_PointerEventContext context) {
+      PointerBinding.instance.debugOverrideDetector(context);
+      // This happens with pens that are simulated with mouse events
+      // (e.g. Wacom). It sends events with the pointer type "mouse", and
+      // assigns a random pointer ID to each event.
+      //
+      // For more info, see: https://github.com/flutter/flutter/issues/75559
+
+      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
+        packets.add(packet);
+      };
+
+      glassPane.dispatchEvent(context.mouseDown(
+        pointerId: 12,
+        button: 0,
+        buttons: 1,
+        clientX: 10.0,
+        clientY: 10.0,
+      ));
+
+      expect(packets, hasLength(1));
+      expect(packets.single.data, hasLength(2));
+
+      expect(packets.single.data[0].change, equals(ui.PointerChange.add));
+      expect(packets.single.data[0].synthesized, equals(true));
+      expect(packets.single.data[1].change, equals(ui.PointerChange.down));
+      packets.clear();
+
+      expect(
+        () {
+          glassPane.dispatchEvent(context.mouseUp(
+            pointerId: 41,
+            button: 0,
+            buttons: 0,
+            clientX: 10.0,
+            clientY: 10.0,
+          ));
+        },
+        returnsNormally,
+      );
+
+      expect(packets, hasLength(1));
+      expect(packets.single.data, hasLength(1));
+
+      expect(packets.single.data[0].change, equals(ui.PointerChange.up));
+    },
+  );
+
   // TOUCH ADAPTER
 
   _testEach(
@@ -2141,7 +2281,7 @@ mixin _ButtonedEventMixin on _BasicEventContext {
       {double clientX, double clientY, int button, int buttons});
 
   // Generate an event that releases all mouse buttons.
-  html.Event mouseUp({double clientX, double clientY, int button});
+  html.Event mouseUp({double clientX, double clientY, int button, int buttons});
 
   html.Event hover({double clientX, double clientY}) {
     return mouseMove(
@@ -2179,6 +2319,27 @@ mixin _ButtonedEventMixin on _BasicEventContext {
       clientX: clientX,
       clientY: clientY,
     );
+  }
+
+  html.Event wheel({
+    @required int buttons,
+    @required double clientX,
+    @required double clientY,
+    @required double deltaX,
+    @required double deltaY,
+  }) {
+    final Function jsWheelEvent = js_util.getProperty(html.window, 'WheelEvent');
+    final List<dynamic> eventArgs = <dynamic>[
+      'wheel',
+      <String, dynamic>{
+        'buttons': buttons,
+        'clientX': clientX,
+        'clientY': clientY,
+        'deltaX': deltaX,
+        'deltaY': deltaY,
+      }
+    ];
+    return js_util.callConstructor(jsWheelEvent, js_util.jsify(eventArgs));
   }
 }
 
@@ -2362,10 +2523,10 @@ class _MouseEventContext extends _BasicEventContext
   }
 
   @override
-  html.Event mouseUp({double clientX, double clientY, int button}) {
+  html.Event mouseUp({double clientX, double clientY, int button, int buttons}) {
     return _createMouseEvent(
       'mouseup',
-      buttons: 0,
+      buttons: buttons,
       button: button,
       clientX: clientX,
       clientY: clientY,
@@ -2432,9 +2593,9 @@ class _PointerEventContext extends _BasicEventContext
 
   @override
   html.Event mouseDown(
-      {double clientX, double clientY, int button, int buttons}) {
+      {double clientX, double clientY, int button, int buttons, int pointerId = 1}) {
     return _downWithFullDetails(
-      pointer: 1,
+      pointer: pointerId,
       buttons: buttons,
       button: button,
       clientX: clientX,
@@ -2476,9 +2637,9 @@ class _PointerEventContext extends _BasicEventContext
 
   @override
   html.Event mouseMove(
-      {double clientX, double clientY, int button, int buttons}) {
+      {double clientX, double clientY, int button, int buttons, int pointerId = 1}) {
     return _moveWithFullDetails(
-      pointer: 1,
+      pointer: pointerId,
       buttons: buttons,
       button: button,
       clientX: clientX,
@@ -2518,10 +2679,11 @@ class _PointerEventContext extends _BasicEventContext
   }
 
   @override
-  html.Event mouseUp({double clientX, double clientY, int button}) {
+  html.Event mouseUp({double clientX, double clientY, int button, int buttons, int pointerId = 1}) {
     return _upWithFullDetails(
-      pointer: 1,
+      pointer: pointerId,
       button: button,
+      buttons: buttons,
       clientX: clientX,
       clientY: clientY,
       pointerType: 'mouse',
@@ -2532,12 +2694,13 @@ class _PointerEventContext extends _BasicEventContext
       {double clientX,
       double clientY,
       int button,
+      int buttons,
       int pointer,
       String pointerType}) {
     return html.PointerEvent('pointerup', <String, dynamic>{
       'pointerId': pointer,
       'button': button,
-      'buttons': 0,
+      'buttons': buttons,
       'clientX': clientX,
       'clientY': clientY,
       'pointerType': pointerType,

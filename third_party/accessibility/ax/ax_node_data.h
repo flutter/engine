@@ -5,8 +5,7 @@
 #ifndef UI_ACCESSIBILITY_AX_NODE_DATA_H_
 #define UI_ACCESSIBILITY_AX_NODE_DATA_H_
 
-#include <stdint.h>
-
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <string>
@@ -34,10 +33,6 @@ AX_BASE_EXPORT bool IsNodeIdIntListAttribute(ax::mojom::IntListAttribute attr);
 struct AX_BASE_EXPORT AXNodeData {
   // Defines the type used for AXNode IDs.
   using AXID = int32_t;
-
-  // If a node is not yet or no longer valid, its ID should have a value of
-  // kInvalidAXID.
-  static constexpr AXID kInvalidAXID = 0;
 
   AXNodeData();
   virtual ~AXNodeData();

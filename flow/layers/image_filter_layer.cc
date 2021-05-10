@@ -11,22 +11,63 @@ ImageFilterLayer::ImageFilterLayer(sk_sp<SkImageFilter> filter)
       transformed_filter_(nullptr),
       render_count_(1) {}
 
+#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
+
+void ImageFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
+  DiffContext::AutoSubtreeRestore subtree(context);
+  auto* prev = static_cast<const ImageFilterLayer*>(old_layer);
+  if (!context->IsSubtreeDirty()) {
+    FML_DCHECK(prev);
+    if (filter_ != prev->filter_) {
+      context->MarkSubtreeDirty(context->GetOldLayerPaintRegion(old_layer));
+    }
+  }
+
+  DiffChildren(context, prev);
+
+  SkMatrix inverse;
+  if (context->GetTransform().invert(&inverse)) {
+    auto screen_bounds = context->CurrentSubtreeRegion().ComputeBounds();
+
+    auto filter = filter_->makeWithLocalMatrix(context->GetTransform());
+
+    auto filter_bounds =
+        filter->filterBounds(screen_bounds.roundOut(), SkMatrix::I(),
+                             SkImageFilter::kForward_MapDirection);
+    context->AddLayerBounds(inverse.mapRect(SkRect::Make(filter_bounds)));
+
+    // Technically, there is no readback with ImageFilterLayer, but we can't
+    // clip the filter (because it may sample out of clip rect) so if any part
+    // of layer is repainted the whole layer needs to be.
+    // TODO(knopp) There is a room for optimization here - this doesn't need to
+    // be done if we know for sure that we're using raster cache
+    context->AddReadbackRegion(filter_bounds);
+  }
+
+  context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
+}
+
+#endif  // FLUTTER_ENABLE_DIFF_CONTEXT
+
 void ImageFilterLayer::Preroll(PrerollContext* context,
                                const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "ImageFilterLayer::Preroll");
-
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
 
   SkRect child_bounds = SkRect::MakeEmpty();
   PrerollChildren(context, matrix, &child_bounds);
-  if (filter_) {
-    const SkIRect filter_input_bounds = child_bounds.roundOut();
-    SkIRect filter_output_bounds =
-        filter_->filterBounds(filter_input_bounds, SkMatrix::I(),
-                              SkImageFilter::kForward_MapDirection);
-    child_bounds = SkRect::Make(filter_output_bounds);
+
+  if (!filter_) {
+    set_paint_bounds(child_bounds);
+    return;
   }
+
+  const SkIRect filter_input_bounds = child_bounds.roundOut();
+  SkIRect filter_output_bounds = filter_->filterBounds(
+      filter_input_bounds, SkMatrix::I(), SkImageFilter::kForward_MapDirection);
+  child_bounds = SkRect::Make(filter_output_bounds);
+
   set_paint_bounds(child_bounds);
 
   transformed_filter_ = nullptr;

@@ -1426,6 +1426,7 @@ void testMain() {
 
       // For `blink` and `webkit` browser engines the overlay would be hidden.
       if (browserEngine == BrowserEngine.blink ||
+          browserEngine == BrowserEngine.samsung ||
           browserEngine == BrowserEngine.webkit) {
         expect(textEditing.editingElement.domElement.classes,
             contains('transparentTextEditing'));
@@ -1442,7 +1443,7 @@ void testMain() {
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
         skip: browserEngine == BrowserEngine.webkit);
 
-    test('input font set succesfully with null fontWeightIndex', () {
+    test('input font set successfully with null fontWeightIndex', () {
       final MethodCall setClient = MethodCall(
           'TextInput.setClient', <dynamic>[123, flutterSinglelineConfig]);
       sendFrameworkMessage(codec.encodeMethodCall(setClient));
@@ -1924,6 +1925,7 @@ void testMain() {
 
       // For `blink` and `webkit` browser engines the overlay would be hidden.
       if (browserEngine == BrowserEngine.blink ||
+          browserEngine == BrowserEngine.samsung ||
           browserEngine == BrowserEngine.webkit) {
         expect(firstElement.classes, contains('transparentTextEditing'));
       } else {
@@ -2092,6 +2094,24 @@ void testMain() {
         singlelineConfig,
         onChange: trackEditingState,
         onAction: trackInputAction,
+      );
+    });
+
+    test('Fix flipped base and extent offsets', () {
+      expect(
+        EditingState(baseOffset: 10, extentOffset: 4),
+        EditingState(baseOffset: 4, extentOffset: 10),
+      );
+
+      expect(
+        EditingState.fromFrameworkMessage(<String, dynamic>{
+          'selectionBase': 10,
+          'selectionExtent': 4,
+        }),
+        EditingState.fromFrameworkMessage(<String, dynamic>{
+          'selectionBase': 4,
+          'selectionExtent': 10,
+        }),
       );
     });
 

@@ -12,6 +12,18 @@
 
 FLUTTER_ASSERT_NOT_ARC
 
+@interface FlutterEngineSpy : FlutterEngine
+@property(nonatomic) BOOL ensureSemanticsEnabledCalled;
+@end
+
+@implementation FlutterEngineSpy
+
+- (void)ensureSemanticsEnabled {
+  _ensureSemanticsEnabledCalled = YES;
+}
+
+@end
+
 @interface FlutterEngineTest_mrc : XCTestCase
 @end
 
@@ -33,14 +45,19 @@ FLUTTER_ASSERT_NOT_ARC
   std::shared_ptr<flutter::IOSContext> engine_context = [engine iosPlatformView]->GetIosContext();
   std::shared_ptr<flutter::IOSContext> spawn_context = [spawn iosPlatformView]->GetIosContext();
   XCTAssertEqual(engine_context, spawn_context);
-  // If this assert fails it means we may be using the software or OpenGL
-  // renderer when we were expecting Metal.  For software rendering, this is
-  // expected to be nullptr.  For OpenGL, implementing this is an outstanding
-  // change see https://github.com/flutter/flutter/issues/73744.
+  // If this assert fails it means we may be using the software.  For software rendering, this is
+  // expected to be nullptr.
   XCTAssertTrue(engine_context->GetMainContext() != nullptr);
   XCTAssertEqual(engine_context->GetMainContext(), spawn_context->GetMainContext());
   [engine release];
   [spawn release];
+}
+
+- (void)testEnableSemanticsWhenFlutterViewAccessibilityDidCall {
+  FlutterEngineSpy* engine = [[FlutterEngineSpy alloc] initWithName:@"foobar"];
+  engine.ensureSemanticsEnabledCalled = NO;
+  [engine flutterViewAccessibilityDidCall];
+  XCTAssertTrue(engine.ensureSemanticsEnabledCalled);
 }
 
 @end

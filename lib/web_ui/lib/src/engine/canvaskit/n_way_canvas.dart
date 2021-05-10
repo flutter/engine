@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of engine;
 
 /// A virtual canvas that applies operations to multiple canvases at once.
@@ -31,9 +30,9 @@ class CkNWayCanvas {
   }
 
   /// Calls [saveLayerWithFilter] on all canvases.
-  void saveLayerWithFilter(ui.Rect bounds, ui.ImageFilter filter) {
+  void saveLayerWithFilter(ui.Rect bounds, ui.ImageFilter filter, [ CkPaint? paint ]) {
     for (int i = 0; i < _canvases.length; i++) {
-      _canvases[i]!.saveLayerWithFilter(bounds, filter);
+      _canvases[i]!.saveLayerWithFilter(bounds, filter, paint);
     }
   }
 

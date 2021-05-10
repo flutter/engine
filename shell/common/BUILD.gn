@@ -232,6 +232,15 @@ if (enable_unittests) {
 
       public_deps += [ "//flutter/vulkan" ]
     }
+
+    if (test_enable_metal) {
+      sources += [
+        "shell_test_platform_view_metal.h",
+        "shell_test_platform_view_metal.mm",
+      ]
+
+      public_deps += [ "//flutter/shell/platform/darwin/graphics" ]
+    }
   }
 
   shell_host_executable("shell_unittests") {
@@ -256,6 +265,7 @@ if (enable_unittests) {
       "//flutter/common/graphics",
       "//flutter/shell/profiling:profiling_unittests",
       "//flutter/shell/version",
+      "//flutter/testing:fixture_test",
       "//third_party/googletest:gmock",
     ]
 

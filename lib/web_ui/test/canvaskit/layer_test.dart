@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 import 'dart:typed_data';
 
 import 'package:test/bootstrap/browser.dart';
@@ -26,8 +25,8 @@ void testMain() {
           ui.window.platformDispatcher as EnginePlatformDispatcher;
 
       final CkPicture picture =
-          paintPicture(ui.Rect.fromLTRB(0, 0, 30, 30), (CkCanvas canvas) {
-        canvas.drawRect(ui.Rect.fromLTRB(0, 0, 30, 30),
+          paintPicture(ui.Rect.fromLTRB(0, 0, 60, 60), (CkCanvas canvas) {
+        canvas.drawRect(ui.Rect.fromLTRB(0, 0, 60, 60),
             CkPaint()..style = ui.PaintingStyle.fill);
       });
 
@@ -44,11 +43,17 @@ void testMain() {
       sb.addPicture(ui.Offset.zero, picture);
       final LayerTree layerTree = sb.build().layerTree;
       dispatcher.rasterizer!.draw(layerTree);
-      final ClipRectLayer clipRect = layerTree.rootLayer as ClipRectLayer;
+      final ClipRectEngineLayer clipRect = layerTree.rootLayer.debugLayers.single as ClipRectEngineLayer;
       expect(clipRect.paintBounds, ui.Rect.fromLTRB(15, 15, 30, 30));
 
-      final TransformLayer transform = clipRect.debugLayers.single as TransformLayer;
+      final TransformEngineLayer transform = clipRect.debugLayers.single as TransformEngineLayer;
       expect(transform.paintBounds, ui.Rect.fromLTRB(0, 0, 30, 30));
+    });
+
+    test('can push a leaf layer without a container layer', () async {
+      final CkPictureRecorder recorder = CkPictureRecorder();
+      recorder.beginRecording(ui.Rect.zero);
+      LayerSceneBuilder().addPicture(ui.Offset.zero, recorder.endRecording());
     });
     // TODO: https://github.com/flutter/flutter/issues/60040
   }, skip: isIosSafari);

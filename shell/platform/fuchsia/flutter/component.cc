@@ -407,6 +407,11 @@ Application::Application(
         return std::make_unique<fml::NonOwnedMapping>(isolate_instructions, 0,
                                                       hold_snapshot);
       };
+      isolate_snapshot_ = fml::MakeRefCounted<flutter::DartSnapshot>(
+          std::make_shared<fml::NonOwnedMapping>(isolate_data, 0,
+                                                 hold_snapshot),
+          std::make_shared<fml::NonOwnedMapping>(isolate_instructions, 0,
+                                                 hold_snapshot));
     } else {
       const int namespace_fd = application_data_directory_.get();
       settings_.vm_snapshot_data = [namespace_fd]() {
@@ -491,6 +496,14 @@ Application::Application(
 
   settings_.task_observer_remove = std::bind(
       &CurrentMessageLoopRemoveAfterTaskObserver, std::placeholders::_1);
+
+  settings_.log_message_callback = [](const std::string& tag,
+                                      const std::string& message) {
+    if (tag.size() > 0) {
+      std::cout << tag << ": ";
+    }
+    std::cout << message << std::endl;
+  };
 
   settings_.dart_flags = {"--no_causal_async_stacks", "--lazy_async_stacks"};
 

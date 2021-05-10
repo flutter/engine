@@ -453,6 +453,46 @@ TEST_F(EmbedderTest, InvalidPlatformMessages) {
 }
 
 //------------------------------------------------------------------------------
+/// Tests that setting a custom log callback works as expected and defaults to
+/// using tag "flutter".
+TEST_F(EmbedderTest, CanSetCustomLogMessageCallback) {
+  fml::AutoResetWaitableEvent callback_latch;
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetDartEntrypoint("custom_logger");
+  builder.SetSoftwareRendererConfig();
+  context.SetLogMessageCallback(
+      [&callback_latch](const char* tag, const char* message) {
+        EXPECT_EQ(std::string(tag), "flutter");
+        EXPECT_EQ(std::string(message), "hello world");
+        callback_latch.Signal();
+      });
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+  callback_latch.Wait();
+}
+
+//------------------------------------------------------------------------------
+/// Tests that setting a custom log tag works.
+TEST_F(EmbedderTest, CanSetCustomLogTag) {
+  fml::AutoResetWaitableEvent callback_latch;
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetDartEntrypoint("custom_logger");
+  builder.SetSoftwareRendererConfig();
+  builder.SetLogTag("butterfly");
+  context.SetLogMessageCallback(
+      [&callback_latch](const char* tag, const char* message) {
+        EXPECT_EQ(std::string(tag), "butterfly");
+        EXPECT_EQ(std::string(message), "hello world");
+        callback_latch.Signal();
+      });
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+  callback_latch.Wait();
+}
+
+//------------------------------------------------------------------------------
 /// Asserts behavior of FlutterProjectArgs::shutdown_dart_vm_when_done (which is
 /// set to true by default in these unit-tests).
 ///
@@ -740,7 +780,7 @@ TEST_F(EmbedderTest, CaDeinitializeAnEngine) {
   // It is ok to deinitialize an engine multiple times.
   ASSERT_EQ(FlutterEngineDeinitialize(engine.get()), kSuccess);
 
-  // Sending events to a deinitalized engine fails.
+  // Sending events to a deinitialized engine fails.
   FlutterWindowMetricsEvent event = {};
   event.struct_size = sizeof(event);
   event.width = 800;
@@ -948,7 +988,7 @@ TEST_F(EmbedderTest, VerifyB143464703WithSoftwareBackend) {
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
 
-  auto renderered_scene = context.GetNextSceneImage();
+  auto rendered_scene = context.GetNextSceneImage();
 
   latch.Wait();
 
@@ -957,8 +997,8 @@ TEST_F(EmbedderTest, VerifyB143464703WithSoftwareBackend) {
 #if !defined(OS_LINUX)
   GTEST_SKIP() << "Skipping golden tests on non-Linux OSes";
 #endif  // OS_LINUX
-  ASSERT_TRUE(ImageMatchesFixture("verifyb143464703_soft_noxform.png",
-                                  renderered_scene));
+  ASSERT_TRUE(
+      ImageMatchesFixture("verifyb143464703_soft_noxform.png", rendered_scene));
 }
 
 TEST_F(EmbedderTest, CanSendLowMemoryNotification) {
@@ -1154,7 +1194,7 @@ TEST_F(EmbedderTest, CanCreateAndCollectAValidElfSource) {
   ASSERT_EQ(FlutterEngineCollectAOTData(data_out), kSuccess);
 
   const auto elf_path =
-      fml::paths::JoinPaths({GetFixturesPath(), kAOTAppELFFileName});
+      fml::paths::JoinPaths({GetFixturesPath(), kDefaultAOTAppELFFileName});
 
   data_in.type = kFlutterEngineAOTDataSourceTypeElfPath;
   data_in.elf_path = elf_path.c_str();
@@ -1189,6 +1229,209 @@ TEST_F(EmbedderTest, CanLaunchAndShutdownWithAValidElfSource) {
   // Wait for the root isolate to launch.
   latch.Wait();
   engine.reset();
+}
+
+//------------------------------------------------------------------------------
+// Key Data
+//------------------------------------------------------------------------------
+
+typedef struct {
+  std::shared_ptr<fml::AutoResetWaitableEvent> latch;
+  bool returned;
+} KeyEventUserData;
+
+// Convert `kind` in integer form to its enum form.
+//
+// It performs a revesed mapping from `_serializeKeyEventType`
+// in shell/platform/embedder/fixtures/main.dart.
+FlutterKeyEventType UnserializeKeyEventKind(uint64_t kind) {
+  switch (kind) {
+    case 1:
+      return kFlutterKeyEventTypeUp;
+    case 2:
+      return kFlutterKeyEventTypeDown;
+    case 3:
+      return kFlutterKeyEventTypeRepeat;
+    default:
+      FML_UNREACHABLE();
+      return kFlutterKeyEventTypeUp;
+  }
+}
+
+// Checks the equality of two `FlutterKeyEvent` by each of their members except
+// for `character`. The `character` must be checked separately.
+void ExpectKeyEventEq(const FlutterKeyEvent& subject,
+                      const FlutterKeyEvent& baseline) {
+  EXPECT_EQ(subject.timestamp, baseline.timestamp);
+  EXPECT_EQ(subject.type, baseline.type);
+  EXPECT_EQ(subject.physical, baseline.physical);
+  EXPECT_EQ(subject.logical, baseline.logical);
+  EXPECT_EQ(subject.synthesized, baseline.synthesized);
+}
+
+TEST_F(EmbedderTest, KeyDataIsCorrectlySerialized) {
+  auto message_latch = std::make_shared<fml::AutoResetWaitableEvent>();
+  uint64_t echoed_char;
+  FlutterKeyEvent echoed_event;
+
+  auto native_echo_event = [&](Dart_NativeArguments args) {
+    echoed_event.type =
+        UnserializeKeyEventKind(tonic::DartConverter<uint64_t>::FromDart(
+            Dart_GetNativeArgument(args, 0)));
+    echoed_event.timestamp = tonic::DartConverter<uint64_t>::FromDart(
+        Dart_GetNativeArgument(args, 1));
+    echoed_event.physical = tonic::DartConverter<uint64_t>::FromDart(
+        Dart_GetNativeArgument(args, 2));
+    echoed_event.logical = tonic::DartConverter<uint64_t>::FromDart(
+        Dart_GetNativeArgument(args, 3));
+    echoed_char = tonic::DartConverter<uint64_t>::FromDart(
+        Dart_GetNativeArgument(args, 4));
+    echoed_event.synthesized =
+        tonic::DartConverter<bool>::FromDart(Dart_GetNativeArgument(args, 5));
+
+    message_latch->Signal();
+  };
+
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetSoftwareRendererConfig();
+  builder.SetDartEntrypoint("key_data_echo");
+  fml::AutoResetWaitableEvent ready;
+  context.AddNativeCallback(
+      "SignalNativeTest",
+      CREATE_NATIVE_ENTRY(
+          [&ready](Dart_NativeArguments args) { ready.Signal(); }));
+
+  context.AddNativeCallback("EchoKeyEvent",
+                            CREATE_NATIVE_ENTRY(native_echo_event));
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+  ready.Wait();
+
+  // A normal down event
+  const FlutterKeyEvent down_event_upper_a{
+      .struct_size = sizeof(FlutterKeyEvent),
+      .timestamp = 1,
+      .type = kFlutterKeyEventTypeDown,
+      .physical = 0x00070004,
+      .logical = 0x00000000061,
+      .character = "A",
+      .synthesized = false,
+  };
+  FlutterEngineSendKeyEvent(
+      engine.get(), &down_event_upper_a, [](bool handled, void* user_data) {},
+      nullptr);
+  message_latch->Wait();
+
+  ExpectKeyEventEq(echoed_event, down_event_upper_a);
+  EXPECT_EQ(echoed_char, 0x41llu);
+
+  // A repeat event with multi-byte character
+  const FlutterKeyEvent repeat_event_wide_char{
+      .struct_size = sizeof(FlutterKeyEvent),
+      .timestamp = 1000,
+      .type = kFlutterKeyEventTypeRepeat,
+      .physical = 0x00070005,
+      .logical = 0x00000000062,
+      .character = "∆",
+      .synthesized = false,
+  };
+  FlutterEngineSendKeyEvent(
+      engine.get(), &repeat_event_wide_char,
+      [](bool handled, void* user_data) {}, nullptr);
+  message_latch->Wait();
+
+  ExpectKeyEventEq(echoed_event, repeat_event_wide_char);
+  EXPECT_EQ(echoed_char, 0x2206llu);
+
+  // An up event with no character, synthesized
+  const FlutterKeyEvent up_event{
+      .struct_size = sizeof(FlutterKeyEvent),
+      .timestamp = 1000000,
+      .type = kFlutterKeyEventTypeUp,
+      .physical = 0x00070006,
+      .logical = 0x00000000063,
+      .character = nullptr,
+      .synthesized = true,
+  };
+  FlutterEngineSendKeyEvent(
+      engine.get(), &up_event, [](bool handled, void* user_data) {}, nullptr);
+  message_latch->Wait();
+
+  ExpectKeyEventEq(echoed_event, up_event);
+  EXPECT_EQ(echoed_char, 0llu);
+}
+
+TEST_F(EmbedderTest, KeyDataResponseIsCorrectlyInvoked) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetSoftwareRendererConfig();
+  builder.SetDartEntrypoint("key_data_echo");
+  fml::AutoResetWaitableEvent ready;
+  context.AddNativeCallback(
+      "SignalNativeTest",
+      CREATE_NATIVE_ENTRY(
+          [&ready](Dart_NativeArguments args) { ready.Signal(); }));
+
+  context.AddNativeCallback(
+      "EchoKeyEvent", CREATE_NATIVE_ENTRY([](Dart_NativeArguments args) {}));
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+  ready.Wait();
+
+  // Dispatch a single event
+  FlutterKeyEvent event{
+      .struct_size = sizeof(FlutterKeyEvent),
+      .timestamp = 1000,
+      .type = kFlutterKeyEventTypeDown,
+      .physical = 0x00070005,
+      .logical = 0x00000000062,
+      .character = nullptr,
+  };
+
+  KeyEventUserData user_data1{
+      .latch = std::make_shared<fml::AutoResetWaitableEvent>(),
+  };
+  // Entrypoint `key_data_echo` uses `event.synthesized` as `handled`.
+  event.synthesized = true;
+  FlutterEngineSendKeyEvent(
+      engine.get(), &event,
+      [](bool handled, void* untyped_user_data) {
+        KeyEventUserData* user_data =
+            reinterpret_cast<KeyEventUserData*>(untyped_user_data);
+        EXPECT_EQ(handled, true);
+        user_data->latch->Signal();
+      },
+      &user_data1);
+  user_data1.latch->Wait();
+
+  // Dispatch two events back to back, using the same callback on different
+  // user_data
+  KeyEventUserData user_data2{
+      .latch = std::make_shared<fml::AutoResetWaitableEvent>(),
+      .returned = false,
+  };
+  KeyEventUserData user_data3{
+      .latch = std::make_shared<fml::AutoResetWaitableEvent>(),
+      .returned = false,
+  };
+  auto callback23 = [](bool handled, void* untyped_user_data) {
+    KeyEventUserData* user_data =
+        reinterpret_cast<KeyEventUserData*>(untyped_user_data);
+    EXPECT_EQ(handled, false);
+    user_data->returned = true;
+    user_data->latch->Signal();
+  };
+
+  event.synthesized = false;
+  FlutterEngineSendKeyEvent(engine.get(), &event, callback23, &user_data2);
+  FlutterEngineSendKeyEvent(engine.get(), &event, callback23, &user_data3);
+  user_data2.latch->Wait();
+  user_data3.latch->Wait();
+  EXPECT_TRUE(user_data2.returned);
+  EXPECT_TRUE(user_data3.returned);
 }
 
 }  // namespace testing

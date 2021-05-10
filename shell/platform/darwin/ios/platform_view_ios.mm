@@ -72,7 +72,7 @@ PlatformMessageRouter& PlatformViewIOS::GetPlatformMessageRouter() {
 }
 
 // |PlatformView|
-void PlatformViewIOS::HandlePlatformMessage(fml::RefPtr<flutter::PlatformMessage> message) {
+void PlatformViewIOS::HandlePlatformMessage(std::unique_ptr<flutter::PlatformMessage> message) {
   platform_message_router_.HandlePlatformMessage(std::move(message));
 }
 
@@ -148,7 +148,7 @@ std::unique_ptr<Surface> PlatformViewIOS::CreateRenderingSurface() {
                       "has no ViewController.";
     return nullptr;
   }
-  return ios_surface_->CreateGPUSurface();
+  return ios_surface_->CreateGPUSurface(ios_context_->GetMainContext().get());
 }
 
 // |PlatformView|
@@ -207,6 +207,7 @@ void PlatformViewIOS::OnPreEngineRestart() const {
     return;
   }
   [owner_controller_.get() platformViewsController]->Reset();
+  [[owner_controller_.get() restorationPlugin] reset];
 }
 
 std::unique_ptr<std::vector<std::string>> PlatformViewIOS::ComputePlatformResolvedLocales(

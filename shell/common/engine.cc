@@ -43,6 +43,7 @@ Engine::Engine(
     Settings settings,
     std::unique_ptr<Animator> animator,
     fml::WeakPtr<IOManager> io_manager,
+    const std::shared_ptr<FontCollection>& font_collection,
     std::unique_ptr<RuntimeController> runtime_controller)
     : delegate_(delegate),
       settings_(std::move(settings)),
@@ -50,6 +51,7 @@ Engine::Engine(
       runtime_controller_(std::move(runtime_controller)),
       activity_running_(true),
       have_surface_(false),
+      font_collection_(font_collection),
       image_decoder_(task_runners, image_decoder_task_runner, io_manager),
       task_runners_(std::move(task_runners)),
       weak_factory_(this) {
@@ -61,7 +63,7 @@ Engine::Engine(Delegate& delegate,
                DartVM& vm,
                fml::RefPtr<const DartSnapshot> isolate_snapshot,
                TaskRunners task_runners,
-               const PlatformData platform_data,
+               const PlatformData& platform_data,
                Settings settings,
                std::unique_ptr<Animator> animator,
                fml::WeakPtr<IOManager> io_manager,
@@ -75,6 +77,7 @@ Engine::Engine(Delegate& delegate,
              settings,
              std::move(animator),
              io_manager,
+             std::make_shared<FontCollection>(),
              nullptr) {
   runtime_controller_ = std::make_unique<RuntimeController>(
       *this,                                 // runtime delegate
@@ -111,6 +114,7 @@ std::unique_ptr<Engine> Engine::Spawn(
       /*settings=*/settings,
       /*animator=*/std::move(animator),
       /*io_manager=*/runtime_controller_->GetIOManager(),
+      /*font_collection=*/font_collection_,
       /*runtime_controller=*/nullptr);
   result->runtime_controller_ = runtime_controller_->Spawn(
       *result,                               // runtime delegate
@@ -132,7 +136,7 @@ fml::WeakPtr<Engine> Engine::GetWeakPtr() const {
 
 void Engine::SetupDefaultFontManager() {
   TRACE_EVENT0("flutter", "Engine::SetupDefaultFontManager");
-  font_collection_.SetupDefaultFontManager();
+  font_collection_->SetupDefaultFontManager();
 }
 
 std::shared_ptr<AssetManager> Engine::GetAssetManager() {
@@ -152,10 +156,10 @@ bool Engine::UpdateAssetManager(
   }
 
   // Using libTXT as the text engine.
-  font_collection_.RegisterFonts(asset_manager_);
+  font_collection_->RegisterFonts(asset_manager_);
 
   if (settings_.use_test_fonts) {
-    font_collection_.RegisterTestFonts();
+    font_collection_->RegisterTestFonts();
   }
 
   return true;
@@ -199,13 +203,13 @@ Engine::RunStatus Engine::Run(RunConfiguration configuration) {
 
   auto service_id = runtime_controller_->GetRootIsolateServiceID();
   if (service_id.has_value()) {
-    fml::RefPtr<PlatformMessage> service_id_message =
-        fml::MakeRefCounted<flutter::PlatformMessage>(
+    std::unique_ptr<PlatformMessage> service_id_message =
+        std::make_unique<flutter::PlatformMessage>(
             kIsolateChannel,
             std::vector<uint8_t>(service_id.value().begin(),
                                  service_id.value().end()),
             nullptr);
-    HandlePlatformMessage(service_id_message);
+    HandlePlatformMessage(std::move(service_id_message));
   }
 
   return Engine::RunStatus::Success;
@@ -222,15 +226,26 @@ void Engine::ReportTimings(std::vector<int64_t> timings) {
 }
 
 void Engine::HintFreed(size_t size) {
-  hint_freed_bytes_since_last_idle_ += size;
+  hint_freed_bytes_since_last_call_ += size;
 }
 
 void Engine::NotifyIdle(int64_t deadline) {
   auto trace_event = std::to_string(deadline - Dart_TimelineGetMicros());
   TRACE_EVENT1("flutter", "Engine::NotifyIdle", "deadline_now_delta",
                trace_event.c_str());
-  runtime_controller_->NotifyIdle(deadline, hint_freed_bytes_since_last_idle_);
-  hint_freed_bytes_since_last_idle_ = 0;
+  // Avoid asking the RuntimeController to call Dart_HintFreed more than once
+  // every 5 seconds.
+  // This is to avoid GCs happening too frequently e.g. when an animated GIF is
+  // playing and disposing of an image every frame.
+  fml::TimePoint now = delegate_.GetCurrentTimePoint();
+  fml::TimeDelta delta = now - last_hint_freed_call_time_;
+  size_t hint_freed_bytes = 0;
+  if (delta.ToMilliseconds() > 5000 && hint_freed_bytes_since_last_call_ > 0) {
+    hint_freed_bytes = hint_freed_bytes_since_last_call_;
+    hint_freed_bytes_since_last_call_ = 0;
+    last_hint_freed_call_time_ = now;
+  }
+  runtime_controller_->NotifyIdle(deadline, hint_freed_bytes);
 }
 
 std::optional<uint32_t> Engine::GetUIIsolateReturnCode() {
@@ -281,7 +296,7 @@ void Engine::SetViewportMetrics(const ViewportMetrics& metrics) {
   }
 }
 
-void Engine::DispatchPlatformMessage(fml::RefPtr<PlatformMessage> message) {
+void Engine::DispatchPlatformMessage(std::unique_ptr<PlatformMessage> message) {
   std::string channel = message->channel();
   if (channel == kLifecycleChannel) {
     if (HandleLifecyclePlatformMessage(message.get())) {
@@ -334,7 +349,7 @@ bool Engine::HandleLifecyclePlatformMessage(PlatformMessage* message) {
 }
 
 bool Engine::HandleNavigationPlatformMessage(
-    fml::RefPtr<PlatformMessage> message) {
+    std::unique_ptr<PlatformMessage> message) {
   const auto& data = message->data();
 
   rapidjson::Document document;
@@ -411,6 +426,14 @@ void Engine::DispatchPointerDataPacket(
   pointer_data_dispatcher_->DispatchPacket(std::move(packet), trace_flow_id);
 }
 
+void Engine::DispatchKeyDataPacket(std::unique_ptr<KeyDataPacket> packet,
+                                   KeyDataResponse callback) {
+  TRACE_EVENT0("flutter", "Engine::DispatchKeyDataPacket");
+  if (runtime_controller_) {
+    runtime_controller_->DispatchKeyDataPacket(*packet, std::move(callback));
+  }
+}
+
 void Engine::DispatchSemanticsAction(int id,
                                      SemanticsAction action,
                                      std::vector<uint8_t> args) {
@@ -465,7 +488,7 @@ void Engine::UpdateSemantics(SemanticsNodeUpdates update,
   delegate_.OnEngineUpdateSemantics(std::move(update), std::move(actions));
 }
 
-void Engine::HandlePlatformMessage(fml::RefPtr<PlatformMessage> message) {
+void Engine::HandlePlatformMessage(std::unique_ptr<PlatformMessage> message) {
   if (message->channel() == kAssetChannel) {
     HandleAssetPlatformMessage(std::move(message));
   } else {
@@ -492,7 +515,7 @@ void Engine::SetNeedsReportTimings(bool needs_reporting) {
 }
 
 FontCollection& Engine::GetFontCollection() {
-  return font_collection_;
+  return *font_collection_;
 }
 
 void Engine::DoDispatchPacket(std::unique_ptr<PointerDataPacket> packet,
@@ -503,11 +526,13 @@ void Engine::DoDispatchPacket(std::unique_ptr<PointerDataPacket> packet,
   }
 }
 
-void Engine::ScheduleSecondaryVsyncCallback(const fml::closure& callback) {
-  animator_->ScheduleSecondaryVsyncCallback(callback);
+void Engine::ScheduleSecondaryVsyncCallback(uintptr_t id,
+                                            const fml::closure& callback) {
+  animator_->ScheduleSecondaryVsyncCallback(id, callback);
 }
 
-void Engine::HandleAssetPlatformMessage(fml::RefPtr<PlatformMessage> message) {
+void Engine::HandleAssetPlatformMessage(
+    std::unique_ptr<PlatformMessage> message) {
   fml::RefPtr<PlatformMessageResponse> response = message->response();
   if (!response) {
     return;

@@ -241,6 +241,10 @@ public class FlutterFragmentActivity extends FragmentActivity
   @Override
   protected void onCreate(@Nullable Bundle savedInstanceState) {
     switchLaunchThemeForNormalTheme();
+    // Get an existing fragment reference first before onCreate since onCreate would re-attach
+    // existing fragments. This would cause FlutterFragment to reference the host activity which
+    // should be aware of its child fragment.
+    flutterFragment = retrieveExistingFlutterFragmentIfPossible();
 
     super.onCreate(savedInstanceState);
 
@@ -367,20 +371,36 @@ public class FlutterFragmentActivity extends FragmentActivity
   }
 
   /**
+   * Retrieves the previously created {@link FlutterFragment} if possible.
+   *
+   * <p>If the activity is recreated, an existing {@link FlutterFragment} may already exist. Retain
+   * a reference to that {@link FlutterFragment} in the {@code #flutterFragment} field and avoid
+   * re-creating another {@link FlutterFragment}.
+   */
+  @VisibleForTesting
+  FlutterFragment retrieveExistingFlutterFragmentIfPossible() {
+    FragmentManager fragmentManager = getSupportFragmentManager();
+    return (FlutterFragment) fragmentManager.findFragmentByTag(TAG_FLUTTER_FRAGMENT);
+  }
+
+  /**
    * Ensure that a {@link FlutterFragment} is attached to this {@code FlutterFragmentActivity}.
    *
    * <p>If no {@link FlutterFragment} exists in this {@code FlutterFragmentActivity}, then a {@link
-   * FlutterFragment} is created and added. If a {@link FlutterFragment} does exist in this {@code
-   * FlutterFragmentActivity}, then a reference to that {@link FlutterFragment} is retained in
-   * {@code #flutterFragment}.
+   * FlutterFragment} is created and added.
    */
   private void ensureFlutterFragmentCreated() {
-    FragmentManager fragmentManager = getSupportFragmentManager();
-    flutterFragment = (FlutterFragment) fragmentManager.findFragmentByTag(TAG_FLUTTER_FRAGMENT);
+    if (flutterFragment == null) {
+      // If both activity and fragment have been destroyed, the activity restore may have
+      // already recreated a new instance of the fragment again via the FragmentActivity.onCreate
+      // and the FragmentManager.
+      flutterFragment = retrieveExistingFlutterFragmentIfPossible();
+    }
     if (flutterFragment == null) {
       // No FlutterFragment exists yet. This must be the initial Activity creation. We will create
       // and add a new FlutterFragment to this Activity.
       flutterFragment = createFlutterFragment();
+      FragmentManager fragmentManager = getSupportFragmentManager();
       fragmentManager
           .beginTransaction()
           .add(FRAGMENT_CONTAINER_ID, flutterFragment, TAG_FLUTTER_FRAGMENT)
@@ -580,12 +600,21 @@ public class FlutterFragmentActivity extends FragmentActivity
    * <p>This method is called after {@link #provideFlutterEngine(Context)}.
    *
    * <p>All plugins listed in the app's pubspec are registered in the base implementation of this
-   * method. To avoid automatic plugin registration, override this method without invoking super().
-   * To keep automatic plugin registration and further configure the flutterEngine, override this
-   * method, invoke super(), and then configure the flutterEngine as desired.
+   * method unless the FlutterEngine for this activity was externally created. To avoid the
+   * automatic plugin registration for implicitly created FlutterEngines, override this method
+   * without invoking super(). To keep automatic plugin registration and further configure the
+   * FlutterEngine, override this method, invoke super(), and then configure the FlutterEngine as
+   * desired.
    */
   @Override
   public void configureFlutterEngine(@NonNull FlutterEngine flutterEngine) {
+    if (flutterFragment != null && flutterFragment.isFlutterEngineInjected()) {
+      // If the FlutterEngine was explicitly built and injected into this FlutterActivity, the
+      // builder should explicitly decide whether to automatically register plugins via the
+      // FlutterEngine's construction parameter or via the AndroidManifest metadata.
+      return;
+    }
+
     GeneratedPluginRegister.registerGeneratedPlugins(flutterEngine);
   }
 

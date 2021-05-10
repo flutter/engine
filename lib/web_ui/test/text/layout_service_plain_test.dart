@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
@@ -41,6 +40,16 @@ void main() {
 
 void testMain() async {
   await ui.webOnlyInitializeTestDomRenderer();
+
+  test('no text', () {
+    final CanvasParagraph paragraph = CanvasParagraphBuilder(ahemStyle).build();
+    paragraph.layout(constrain(double.infinity));
+
+    expect(paragraph.maxIntrinsicWidth, 0);
+    expect(paragraph.minIntrinsicWidth, 0);
+    expect(paragraph.height, 0);
+    expect(paragraph.computeLineMetrics(), isEmpty);
+  });
 
   test('preserves whitespace when measuring', () {
     CanvasParagraph paragraph;

@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of engine;
 
 /// Instantiates a [ui.Codec] backed by an `SkAnimatedImage` from Skia.
@@ -172,13 +171,18 @@ class CkImage implements ui.Image, StackTraceDebugger {
       // IMPORTANT: the alphaType, colorType, and colorSpace passed to
       // _encodeImage and to canvasKit.MakeImage must be the same. Otherwise
       // Skia will misinterpret the pixels and corrupt the image.
-      final ByteData originalBytes = _encodeImage(
+      final ByteData? originalBytes = _encodeImage(
         skImage: skImage,
         format: ui.ImageByteFormat.rawRgba,
         alphaType: canvasKit.AlphaType.Premul,
         colorType: canvasKit.ColorType.RGBA_8888,
         colorSpace: SkColorSpaceSRGB,
       );
+      if (originalBytes == null) {
+        printWarning('Unable to encode image to bytes. We will not '
+            'be able to resurrect it once it has been garbage collected.');
+        return;
+      }
       final int originalWidth = skImage.width();
       final int originalHeight = skImage.height();
       box = SkiaObjectBox<CkImage, SkImage>.resurrectable(this, skImage, () {
@@ -276,23 +280,28 @@ class CkImage implements ui.Image, StackTraceDebugger {
     ui.ImageByteFormat format = ui.ImageByteFormat.rawRgba,
   }) {
     assert(_debugCheckIsNotDisposed());
-    return Future<ByteData>.value(_encodeImage(
+    ByteData? data = _encodeImage(
       skImage: skImage,
       format: format,
       alphaType: canvasKit.AlphaType.Premul,
       colorType: canvasKit.ColorType.RGBA_8888,
       colorSpace: SkColorSpaceSRGB,
-    ));
+    );
+    if (data == null) {
+      return Future<ByteData>.error('Failed to encode the image into bytes.');
+    } else {
+      return Future<ByteData>.value(data);
+    }
   }
 
-  static ByteData _encodeImage({
+  static ByteData? _encodeImage({
     required SkImage skImage,
     required ui.ImageByteFormat format,
     required SkAlphaType alphaType,
     required SkColorType colorType,
     required ColorSpace colorSpace,
   }) {
-    Uint8List bytes;
+    Uint8List? bytes;
 
     if (format == ui.ImageByteFormat.rawRgba) {
       final SkImageInfo imageInfo = SkImageInfo(
@@ -304,13 +313,10 @@ class CkImage implements ui.Image, StackTraceDebugger {
       );
       bytes = skImage.readPixels(0, 0, imageInfo);
     } else {
-      final SkData skData = skImage.encodeToData(); //defaults to PNG 100%
-      // make a copy that we can return
-      bytes = Uint8List.fromList(canvasKit.getDataBytes(skData));
-      skData.delete();
+      bytes = skImage.encodeToBytes(); //defaults to PNG 100%
     }
 
-    return bytes.buffer.asByteData(0, bytes.length);
+    return bytes?.buffer.asByteData(0, bytes.length);
   }
 
   @override

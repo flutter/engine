@@ -13,21 +13,36 @@
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
 #include "flutter/testing/testing.h"
 
-namespace flutter::testing {
+@interface TestOpenGLEngine : FlutterEngine
 
-namespace {
-// Returns an engine configured for the test fixture resource configuration.
-FlutterEngine* CreateTestEngine() {
-  NSString* fixtures = @(testing::GetFixturesPath());
+@property(nonatomic, readwrite) id<FlutterRenderer> renderer;
+
+- (nullable instancetype)initWithGLRenderer;
+
+@end
+
+@implementation TestOpenGLEngine
+
+@synthesize renderer;
+
+- (nullable instancetype)initWithGLRenderer {
+  NSString* fixtures = @(flutter::testing::GetFixturesPath());
   FlutterDartProject* project = [[FlutterDartProject alloc]
       initWithAssetsPath:fixtures
              ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
-  return [[FlutterEngine alloc] initWithName:@"test" project:project allowHeadlessExecution:true];
+  self = [self initWithName:@"test" project:project allowHeadlessExecution:true];
+  if (self) {
+    renderer = [[FlutterOpenGLRenderer alloc] initWithFlutterEngine:self];
+  }
+  return self;
 }
-}  // namespace
+
+@end
+
+namespace flutter::testing {
 
 TEST(FlutterOpenGLRenderer, RegisterExternalTexture) {
-  FlutterEngine* engine = CreateTestEngine();
+  FlutterEngine* engine = [[TestOpenGLEngine alloc] initWithGLRenderer];
   EXPECT_TRUE([engine runWithEntrypoint:@"main"]);
 
   id<FlutterTexture> flutterTexture = OCMProtocolMock(@protocol(FlutterTexture));
@@ -40,20 +55,22 @@ TEST(FlutterOpenGLRenderer, RegisterExternalTexture) {
         return kSuccess;
       });
 
-  [engine.openGLRenderer registerTexture:flutterTexture];
+  FlutterOpenGLRenderer* openGLRenderer = reinterpret_cast<FlutterOpenGLRenderer*>(engine.renderer);
+  [openGLRenderer registerTexture:flutterTexture];
   EXPECT_TRUE(called);
 
   [engine shutDownEngine];
 }
 
 TEST(FlutterOpenGLRenderer, UnregisterExternalTexture) {
-  FlutterEngine* engine = CreateTestEngine();
+  FlutterEngine* engine = [[TestOpenGLEngine alloc] initWithGLRenderer];
   EXPECT_TRUE([engine runWithEntrypoint:@"main"]);
 
   id<FlutterTexture> flutterTexture = OCMProtocolMock(@protocol(FlutterTexture));
   bool called = false;
 
-  int64_t registeredTextureId = [engine.openGLRenderer registerTexture:flutterTexture];
+  FlutterOpenGLRenderer* openGLRenderer = reinterpret_cast<FlutterOpenGLRenderer*>(engine.renderer);
+  int64_t registeredTextureId = [openGLRenderer registerTexture:flutterTexture];
   engine.embedderAPI.UnregisterExternalTexture =
       MOCK_ENGINE_PROC(UnregisterExternalTexture, [&](auto engine, int64_t textureIdentifier) {
         called = true;
@@ -61,20 +78,21 @@ TEST(FlutterOpenGLRenderer, UnregisterExternalTexture) {
         return kSuccess;
       });
 
-  [engine.openGLRenderer unregisterTexture:registeredTextureId];
+  [openGLRenderer unregisterTexture:registeredTextureId];
   EXPECT_TRUE(called);
 
   [engine shutDownEngine];
 }
 
 TEST(FlutterOpenGLRenderer, MarkExternalTextureFrameAvailable) {
-  FlutterEngine* engine = CreateTestEngine();
+  FlutterEngine* engine = [[TestOpenGLEngine alloc] initWithGLRenderer];
   EXPECT_TRUE([engine runWithEntrypoint:@"main"]);
 
   id<FlutterTexture> flutterTexture = OCMProtocolMock(@protocol(FlutterTexture));
   bool called = false;
 
-  int64_t registeredTextureId = [engine.openGLRenderer registerTexture:flutterTexture];
+  FlutterOpenGLRenderer* openGLRenderer = reinterpret_cast<FlutterOpenGLRenderer*>(engine.renderer);
+  int64_t registeredTextureId = [openGLRenderer registerTexture:flutterTexture];
   engine.embedderAPI.MarkExternalTextureFrameAvailable = MOCK_ENGINE_PROC(
       MarkExternalTextureFrameAvailable, [&](auto engine, int64_t textureIdentifier) {
         called = true;
@@ -82,14 +100,14 @@ TEST(FlutterOpenGLRenderer, MarkExternalTextureFrameAvailable) {
         return kSuccess;
       });
 
-  [engine.openGLRenderer textureFrameAvailable:registeredTextureId];
+  [openGLRenderer textureFrameAvailable:registeredTextureId];
   EXPECT_TRUE(called);
 
   [engine shutDownEngine];
 }
 
 TEST(FlutterOpenGLRenderer, PresetDelegatesToFlutterView) {
-  FlutterEngine* engine = CreateTestEngine();
+  FlutterEngine* engine = [[TestOpenGLEngine alloc] initWithGLRenderer];
   FlutterOpenGLRenderer* renderer = [[FlutterOpenGLRenderer alloc] initWithFlutterEngine:engine];
   id mockFlutterView = OCMClassMock([FlutterView class]);
   [[mockFlutterView expect] present];
@@ -99,7 +117,7 @@ TEST(FlutterOpenGLRenderer, PresetDelegatesToFlutterView) {
 }
 
 TEST(FlutterOpenGLRenderer, FBOReturnedByFlutterView) {
-  FlutterEngine* engine = CreateTestEngine();
+  FlutterEngine* engine = [[TestOpenGLEngine alloc] initWithGLRenderer];
   FlutterOpenGLRenderer* renderer = [[FlutterOpenGLRenderer alloc] initWithFlutterEngine:engine];
   id mockFlutterView = OCMClassMock([FlutterView class]);
   FlutterFrameInfo frameInfo;
@@ -109,7 +127,7 @@ TEST(FlutterOpenGLRenderer, FBOReturnedByFlutterView) {
   dimensions.height = 200;
   frameInfo.size = dimensions;
   CGSize size = CGSizeMake(dimensions.width, dimensions.height);
-  [[mockFlutterView expect] frameBufferIDForSize:size];
+  [[mockFlutterView expect] backingStoreForSize:size];
   [renderer setFlutterView:mockFlutterView];
   [renderer openGLContext];
   [renderer fboForFrameInfo:&frameInfo];

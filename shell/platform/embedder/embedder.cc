@@ -48,6 +48,7 @@ extern const intptr_t kPlatformStrongDillSize;
 #include "flutter/shell/common/switches.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/embedder_engine.h"
+#include "flutter/shell/platform/embedder/embedder_external_texture_resolver.h"
 #include "flutter/shell/platform/embedder/embedder_platform_message_response.h"
 #include "flutter/shell/platform/embedder/embedder_render_target.h"
 #include "flutter/shell/platform/embedder/embedder_struct_macros.h"
@@ -468,7 +469,6 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
 
   if (!surface) {
     FML_LOG(ERROR) << "Could not wrap embedder supplied render texture.";
-    texture->destruction_callback(texture->user_data);
     return nullptr;
   }
 
@@ -511,7 +511,6 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
 
   if (!surface) {
     FML_LOG(ERROR) << "Could not wrap embedder supplied frame-buffer.";
-    framebuffer->destruction_callback(framebuffer->user_data);
     return nullptr;
   }
   return surface;
@@ -536,7 +535,9 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
   captures->user_data = software->user_data;
   auto release_proc = [](void* pixels, void* context) {
     auto captures = reinterpret_cast<Captures*>(context);
-    captures->destruction_callback(captures->user_data);
+    if (captures->destruction_callback) {
+      captures->destruction_callback(captures->user_data);
+    }
   };
 
   auto surface = SkSurface::MakeRasterDirectReleaseProc(
@@ -550,10 +551,57 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
   if (!surface) {
     FML_LOG(ERROR)
         << "Could not wrap embedder supplied software render buffer.";
-    software->destruction_callback(software->user_data);
+    if (software->destruction_callback) {
+      software->destruction_callback(software->user_data);
+    }
     return nullptr;
   }
   return surface;
+}
+
+static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
+    GrDirectContext* context,
+    const FlutterBackingStoreConfig& config,
+    const FlutterMetalBackingStore* metal) {
+#ifdef SHELL_ENABLE_METAL
+  GrMtlTextureInfo texture_info;
+  if (!metal->texture.texture) {
+    FML_LOG(ERROR) << "Embedder supplied null Metal texture.";
+    return nullptr;
+  }
+  sk_cf_obj<FlutterMetalTextureHandle> mtl_texture;
+  mtl_texture.retain(metal->texture.texture);
+  texture_info.fTexture = mtl_texture;
+  GrBackendTexture backend_texture(config.size.width,   //
+                                   config.size.height,  //
+                                   GrMipMapped::kNo,    //
+                                   texture_info         //
+  );
+
+  SkSurfaceProps surface_properties(0, kUnknown_SkPixelGeometry);
+
+  auto surface = SkSurface::MakeFromBackendTexture(
+      context,                   // context
+      backend_texture,           // back-end texture
+      kTopLeft_GrSurfaceOrigin,  // surface origin
+      1,                         // sample count
+      kBGRA_8888_SkColorType,    // color type
+      nullptr,                   // color space
+      &surface_properties,       // surface properties
+      static_cast<SkSurface::TextureReleaseProc>(
+          metal->texture.destruction_callback),  // release proc
+      metal->texture.user_data                   // release context
+  );
+
+  if (!surface) {
+    FML_LOG(ERROR) << "Could not wrap embedder supplied Metal render texture.";
+    return nullptr;
+  }
+
+  return surface;
+#else
+  return nullptr;
+#endif
 }
 
 static std::unique_ptr<flutter::EmbedderRenderTarget>
@@ -612,6 +660,10 @@ CreateEmbedderRenderTarget(const FlutterCompositor* compositor,
     case kFlutterBackingStoreTypeSoftware:
       render_surface = MakeSkSurfaceFromBackingStore(context, config,
                                                      &backing_store.software);
+      break;
+    case kFlutterBackingStoreTypeMetal:
+      render_surface =
+          MakeSkSurfaceFromBackingStore(context, config, &backing_store.metal);
       break;
   };
 
@@ -672,7 +724,7 @@ InferExternalViewEmbedderFromArgs(const FlutterCompositor* compositor) {
 }
 
 struct _FlutterPlatformMessageResponseHandle {
-  fml::RefPtr<flutter::PlatformMessage> message;
+  std::unique_ptr<flutter::PlatformMessage> message;
 };
 
 struct LoadedElfDeleter {
@@ -944,6 +996,18 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
     settings.root_isolate_create_callback =
         [callback, user_data](const auto& isolate) { callback(user_data); };
   }
+  if (SAFE_ACCESS(args, log_message_callback, nullptr) != nullptr) {
+    FlutterLogMessageCallback callback =
+        SAFE_ACCESS(args, log_message_callback, nullptr);
+    settings.log_message_callback = [callback, user_data](
+                                        const std::string& tag,
+                                        const std::string& message) {
+      callback(tag.c_str(), message.c_str(), user_data);
+    };
+  }
+  if (SAFE_ACCESS(args, log_tag, nullptr) != nullptr) {
+    settings.log_tag = SAFE_ACCESS(args, log_tag, nullptr);
+  }
 
   flutter::PlatformViewEmbedder::UpdateSemanticsNodesCallback
       update_semantics_nodes_callback = nullptr;
@@ -1035,7 +1099,7 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
   if (SAFE_ACCESS(args, platform_message_callback, nullptr) != nullptr) {
     platform_message_response_callback =
         [ptr = args->platform_message_callback,
-         user_data](fml::RefPtr<flutter::PlatformMessage> message) {
+         user_data](std::unique_ptr<flutter::PlatformMessage> message) {
           auto handle = new FlutterPlatformMessageResponseHandle();
           const FlutterPlatformMessage incoming_message = {
               sizeof(FlutterPlatformMessage),  // struct_size
@@ -1135,9 +1199,11 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
         return std::make_unique<flutter::Rasterizer>(shell);
       };
 
+  using ExternalTextureResolver = flutter::EmbedderExternalTextureResolver;
+  std::unique_ptr<ExternalTextureResolver> external_texture_resolver;
+  external_texture_resolver = std::make_unique<ExternalTextureResolver>();
+
 #ifdef SHELL_ENABLE_GL
-  // TODO(chinmaygarde): This is the wrong spot for this. It belongs in the
-  // platform view jump table.
   flutter::EmbedderExternalTextureGL::ExternalTextureCallback
       external_texture_callback;
   if (config->type == kOpenGL) {
@@ -1146,54 +1212,42 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
                     nullptr) != nullptr) {
       external_texture_callback =
           [ptr = open_gl_config->gl_external_texture_frame_callback, user_data](
-              int64_t texture_identifier, GrDirectContext* context,
-              const SkISize& size) -> sk_sp<SkImage> {
-        FlutterOpenGLTexture texture = {};
-
-        if (!ptr(user_data, texture_identifier, size.width(), size.height(),
-                 &texture)) {
+              int64_t texture_identifier, size_t width,
+              size_t height) -> std::unique_ptr<FlutterOpenGLTexture> {
+        std::unique_ptr<FlutterOpenGLTexture> texture =
+            std::make_unique<FlutterOpenGLTexture>();
+        if (!ptr(user_data, texture_identifier, width, height, texture.get())) {
           return nullptr;
         }
-
-        GrGLTextureInfo gr_texture_info = {texture.target, texture.name,
-                                           texture.format};
-
-        size_t width = size.width();
-        size_t height = size.height();
-
-        if (texture.width != 0 && texture.height != 0) {
-          width = texture.width;
-          height = texture.height;
-        }
-
-        GrBackendTexture gr_backend_texture(width, height, GrMipMapped::kNo,
-                                            gr_texture_info);
-        SkImage::TextureReleaseProc release_proc = texture.destruction_callback;
-        auto image = SkImage::MakeFromTexture(
-            context,                   // context
-            gr_backend_texture,        // texture handle
-            kTopLeft_GrSurfaceOrigin,  // origin
-            kRGBA_8888_SkColorType,    // color type
-            kPremul_SkAlphaType,       // alpha type
-            nullptr,                   // colorspace
-            release_proc,              // texture release proc
-            texture.user_data          // texture release context
-        );
-
-        if (!image) {
-          // In case Skia rejects the image, call the release proc so that
-          // embedders can perform collection of intermediates.
-          if (release_proc) {
-            release_proc(texture.user_data);
-          }
-          FML_LOG(ERROR) << "Could not create external texture.";
-          return nullptr;
-        }
-
-        return image;
+        return texture;
       };
     }
   }
+  external_texture_resolver =
+      std::make_unique<ExternalTextureResolver>(external_texture_callback);
+#endif
+#ifdef SHELL_ENABLE_METAL
+  flutter::EmbedderExternalTextureMetal::ExternalTextureCallback
+      external_texture_metal_callback;
+  if (config->type == kMetal) {
+    const FlutterMetalRendererConfig* metal_config = &config->metal;
+    if (SAFE_ACCESS(metal_config, external_texture_frame_callback, nullptr)) {
+      external_texture_metal_callback =
+          [ptr = metal_config->external_texture_frame_callback, user_data](
+              int64_t texture_identifier, size_t width,
+              size_t height) -> std::unique_ptr<FlutterMetalExternalTexture> {
+        std::unique_ptr<FlutterMetalExternalTexture> texture =
+            std::make_unique<FlutterMetalExternalTexture>();
+        texture->struct_size = sizeof(FlutterMetalExternalTexture);
+        if (!ptr(user_data, texture_identifier, width, height, texture.get())) {
+          return nullptr;
+        }
+        return texture;
+      };
+    }
+  }
+  external_texture_resolver = std::make_unique<ExternalTextureResolver>(
+      external_texture_metal_callback);
 #endif
 
   auto thread_host =
@@ -1202,7 +1256,7 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
 
   if (!thread_host || !thread_host->IsValid()) {
     return LOG_EMBEDDER_ERROR(kInvalidArguments,
-                              "Could not setup or infer thread configuration "
+                              "Could not set up or infer thread configuration "
                               "to run the Flutter engine on.");
   }
 
@@ -1245,16 +1299,13 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
 
   // Create the engine but don't launch the shell or run the root isolate.
   auto embedder_engine = std::make_unique<flutter::EmbedderEngine>(
-      std::move(thread_host),        //
-      std::move(task_runners),       //
-      std::move(settings),           //
-      std::move(run_configuration),  //
-      on_create_platform_view,       //
-      on_create_rasterizer           //
-#ifdef SHELL_ENABLE_GL
-      ,
-      external_texture_callback  //
-#endif
+      std::move(thread_host),               //
+      std::move(task_runners),              //
+      std::move(settings),                  //
+      std::move(run_configuration),         //
+      on_create_platform_view,              //
+      on_create_rasterizer,                 //
+      std::move(external_texture_resolver)  //
   );
 
   // Release the ownership of the embedder engine to the caller.
@@ -1382,6 +1433,8 @@ inline flutter::PointerData::DeviceKind ToPointerDataKind(
       return flutter::PointerData::DeviceKind::kMouse;
     case kFlutterPointerDeviceKindTouch:
       return flutter::PointerData::DeviceKind::kTouch;
+    case kFlutterPointerDeviceKindStylus:
+      return flutter::PointerData::DeviceKind::kStylus;
   }
   return flutter::PointerData::DeviceKind::kMouse;
 }
@@ -1492,6 +1545,58 @@ FlutterEngineResult FlutterEngineSendPointerEvent(
                                   "running Flutter application.");
 }
 
+static inline flutter::KeyEventType MapKeyEventType(
+    FlutterKeyEventType event_kind) {
+  switch (event_kind) {
+    case kFlutterKeyEventTypeUp:
+      return flutter::KeyEventType::kUp;
+    case kFlutterKeyEventTypeDown:
+      return flutter::KeyEventType::kDown;
+    case kFlutterKeyEventTypeRepeat:
+      return flutter::KeyEventType::kRepeat;
+  }
+  return flutter::KeyEventType::kUp;
+}
+
+FlutterEngineResult FlutterEngineSendKeyEvent(FLUTTER_API_SYMBOL(FlutterEngine)
+                                                  engine,
+                                              const FlutterKeyEvent* event,
+                                              FlutterKeyEventCallback callback,
+                                              void* user_data) {
+  if (engine == nullptr) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments, "Engine handle was invalid.");
+  }
+
+  if (event == nullptr) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments, "Invalid key event.");
+  }
+
+  const char* character = SAFE_ACCESS(event, character, nullptr);
+
+  flutter::KeyData key_data;
+  key_data.Clear();
+  key_data.timestamp = (uint64_t)SAFE_ACCESS(event, timestamp, 0);
+  key_data.type = MapKeyEventType(
+      SAFE_ACCESS(event, type, FlutterKeyEventType::kFlutterKeyEventTypeUp));
+  key_data.physical = SAFE_ACCESS(event, physical, 0);
+  key_data.logical = SAFE_ACCESS(event, logical, 0);
+  key_data.synthesized = SAFE_ACCESS(event, synthesized, false);
+
+  auto packet = std::make_unique<flutter::KeyDataPacket>(key_data, character);
+
+  auto response = [callback, user_data](bool handled) {
+    if (callback != nullptr)
+      callback(handled, user_data);
+  };
+
+  return reinterpret_cast<flutter::EmbedderEngine*>(engine)
+                 ->DispatchKeyDataPacket(std::move(packet), response)
+             ? kSuccess
+             : LOG_EMBEDDER_ERROR(kInternalInconsistency,
+                                  "Could not dispatch the key event to the "
+                                  "running Flutter application.");
+}
+
 FlutterEngineResult FlutterEngineSendPlatformMessage(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
     const FlutterPlatformMessage* flutter_message) {
@@ -1525,12 +1630,12 @@ FlutterEngineResult FlutterEngineSendPlatformMessage(
     response = response_handle->message->response();
   }
 
-  fml::RefPtr<flutter::PlatformMessage> message;
+  std::unique_ptr<flutter::PlatformMessage> message;
   if (message_size == 0) {
-    message = fml::MakeRefCounted<flutter::PlatformMessage>(
+    message = std::make_unique<flutter::PlatformMessage>(
         flutter_message->channel, response);
   } else {
-    message = fml::MakeRefCounted<flutter::PlatformMessage>(
+    message = std::make_unique<flutter::PlatformMessage>(
         flutter_message->channel,
         std::vector<uint8_t>(message_data, message_data + message_size),
         response);
@@ -1569,7 +1674,7 @@ FlutterEngineResult FlutterPlatformMessageCreateResponseHandle(
 
   auto handle = new FlutterPlatformMessageResponseHandle();
 
-  handle->message = fml::MakeRefCounted<flutter::PlatformMessage>(
+  handle->message = std::make_unique<flutter::PlatformMessage>(
       "",  // The channel is empty and unused as the response handle is going
            // to referenced directly in the |FlutterEngineSendPlatformMessage|
            // with the container message discarded.
@@ -1847,7 +1952,7 @@ static bool DispatchJSONPlatformMessage(FLUTTER_API_SYMBOL(FlutterEngine)
     return false;
   }
 
-  auto platform_message = fml::MakeRefCounted<flutter::PlatformMessage>(
+  auto platform_message = std::make_unique<flutter::PlatformMessage>(
       channel_name.c_str(),                                       // channel
       std::vector<uint8_t>{message, message + buffer.GetSize()},  // message
       nullptr                                                     // response
@@ -2166,6 +2271,7 @@ FlutterEngineResult FlutterEngineGetProcAddresses(
   SET_PROC(RunInitialized, FlutterEngineRunInitialized);
   SET_PROC(SendWindowMetricsEvent, FlutterEngineSendWindowMetricsEvent);
   SET_PROC(SendPointerEvent, FlutterEngineSendPointerEvent);
+  SET_PROC(SendKeyEvent, FlutterEngineSendKeyEvent);
   SET_PROC(SendPlatformMessage, FlutterEngineSendPlatformMessage);
   SET_PROC(PlatformMessageCreateResponseHandle,
            FlutterPlatformMessageCreateResponseHandle);

@@ -4,8 +4,9 @@
 
 #include "ax_node_data.h"
 
-#include <stddef.h>
 #include <algorithm>
+#include <cstddef>
+#include <iterator>
 #include <set>
 #include <utility>
 

@@ -388,7 +388,8 @@ class DartIsolate : public UIDartState {
   /// @brief      Transition the isolate to the `Phase::Shutdown` phase. The
   ///             only thing left to do is to collect the isolate.
   ///
-  /// @return     If the isolate succesfully transitioned to the shutdown phase.
+  /// @return     If the isolate successfully transitioned to the shutdown
+  ///             phase.
   ///
   [[nodiscard]] bool Shutdown();
 
@@ -517,15 +518,18 @@ class DartIsolate : public UIDartState {
       Dart_IsolateFlags* flags,
       char** error);
 
+  typedef std::function<Dart_Isolate(std::shared_ptr<DartIsolateGroupData>*,
+                                     std::shared_ptr<DartIsolate>*,
+                                     Dart_IsolateFlags*,
+                                     char**)>
+      IsolateMaker;
+
   static Dart_Isolate CreateDartIsolateGroup(
       std::unique_ptr<std::shared_ptr<DartIsolateGroupData>> isolate_group_data,
       std::unique_ptr<std::shared_ptr<DartIsolate>> isolate_data,
       Dart_IsolateFlags* flags,
       char** error,
-      std::function<Dart_Isolate(std::shared_ptr<DartIsolateGroupData>*,
-                                 std::shared_ptr<DartIsolate>*,
-                                 Dart_IsolateFlags*,
-                                 char**)> make_isolate);
+      const IsolateMaker& make_isolate);
 
   static bool InitializeIsolate(std::shared_ptr<DartIsolate> embedder_isolate,
                                 Dart_Isolate isolate,
@@ -547,6 +551,10 @@ class DartIsolate : public UIDartState {
 
   // |Dart_DeferredLoadHandler|
   static Dart_Handle OnDartLoadLibrary(intptr_t loading_unit_id);
+
+  static void SpawnIsolateShutdownCallback(
+      std::shared_ptr<DartIsolateGroupData>* isolate_group_data,
+      std::shared_ptr<DartIsolate>* isolate_data);
 
   FML_DISALLOW_COPY_AND_ASSIGN(DartIsolate);
 };

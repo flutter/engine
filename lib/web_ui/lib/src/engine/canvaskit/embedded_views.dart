@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of engine;
 
 /// This composites HTML views into the [ui.Scene].
@@ -359,14 +358,17 @@ class HtmlViewEmbedder {
     final Set<int> unusedViews = Set<int>.from(_activeCompositionOrder);
     _activeCompositionOrder.clear();
 
+    List<int>? debugInvalidViewIds;
     for (int i = 0; i < _compositionOrder.length; i++) {
       int viewId = _compositionOrder[i];
 
-      assert(
-        _views.containsKey(viewId),
-        'Cannot render platform view $viewId. '
-        'It has not been created, or it has been deleted.',
-      );
+      if (assertionsEnabled) {
+        if (!_views.containsKey(viewId)) {
+          debugInvalidViewIds ??= <int>[];
+          debugInvalidViewIds.add(viewId);
+          continue;
+        }
+      }
 
       unusedViews.remove(viewId);
       html.Element platformViewRoot = _rootViews[viewId]!;
@@ -381,6 +383,16 @@ class HtmlViewEmbedder {
 
     for (final int unusedViewId in unusedViews) {
       _releaseOverlay(unusedViewId);
+      _rootViews[unusedViewId]?.remove();
+    }
+
+    if (assertionsEnabled) {
+      if (debugInvalidViewIds != null && debugInvalidViewIds.isNotEmpty) {
+        throw AssertionError(
+          'Cannot render platform views: ${debugInvalidViewIds.join(', ')}. '
+          'These views have not been created, or they have been deleted.',
+        );
+      }
     }
   }
 
@@ -476,6 +488,7 @@ class OverlayCache {
     for (final Surface overlay in _cache) {
       overlay.dispose();
     }
+    _cache.clear();
   }
 }
 

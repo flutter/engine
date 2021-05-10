@@ -136,7 +136,24 @@ TEST_F(DartIsolateTest, SpawnIsolate) {
   auto spawn = weak_spawn.lock();
   ASSERT_TRUE(spawn);
   ASSERT_EQ(spawn->GetPhase(), DartIsolate::Phase::Running);
+
+  // TODO(74520): Remove conditional once isolate groups are supported by JIT.
+  if (DartVM::IsRunningPrecompiledCode()) {
+    Dart_IsolateGroup isolate_group;
+    {
+      auto isolate_scope = tonic::DartIsolateScope(root_isolate->isolate());
+      isolate_group = Dart_CurrentIsolateGroup();
+    }
+    {
+      auto isolate_scope = tonic::DartIsolateScope(root_isolate->isolate());
+      Dart_IsolateGroup spawn_isolate_group = Dart_CurrentIsolateGroup();
+      ASSERT_TRUE(isolate_group != nullptr);
+      ASSERT_EQ(isolate_group, spawn_isolate_group);
+    }
+  }
+
   ASSERT_TRUE(spawn->Shutdown());
+  ASSERT_TRUE(spawn->IsShuttingDown());
   ASSERT_TRUE(root_isolate->Shutdown());
 }
 
@@ -198,7 +215,7 @@ TEST_F(DartIsolateTest, IsolateCanLoadAndRunDartCode) {
                            GetCurrentTaskRunner()   //
   );
   auto isolate = RunDartCodeInIsolate(vm_ref, settings, task_runners, "main",
-                                      {}, GetFixturesPath());
+                                      {}, GetDefaultKernelFilePath());
   ASSERT_TRUE(isolate);
   ASSERT_EQ(isolate->get()->GetPhase(), DartIsolate::Phase::Running);
 }
@@ -215,7 +232,7 @@ TEST_F(DartIsolateTest, IsolateCannotLoadAndRunUnknownDartEntrypoint) {
   );
   auto isolate =
       RunDartCodeInIsolate(vm_ref, settings, task_runners, "thisShouldNotExist",
-                           {}, GetFixturesPath());
+                           {}, GetDefaultKernelFilePath());
   ASSERT_FALSE(isolate);
 }
 
@@ -230,7 +247,7 @@ TEST_F(DartIsolateTest, CanRunDartCodeCodeSynchronously) {
                            GetCurrentTaskRunner()   //
   );
   auto isolate = RunDartCodeInIsolate(vm_ref, settings, task_runners, "main",
-                                      {}, GetFixturesPath());
+                                      {}, GetDefaultKernelFilePath());
 
   ASSERT_TRUE(isolate);
   ASSERT_EQ(isolate->get()->GetPhase(), DartIsolate::Phase::Running);
@@ -259,9 +276,9 @@ TEST_F(DartIsolateTest, CanRegisterNativeCallback) {
                            thread,                //
                            thread                 //
   );
-  auto isolate =
-      RunDartCodeInIsolate(vm_ref, settings, task_runners,
-                           "canRegisterNativeCallback", {}, GetFixturesPath());
+  auto isolate = RunDartCodeInIsolate(vm_ref, settings, task_runners,
+                                      "canRegisterNativeCallback", {},
+                                      GetDefaultKernelFilePath());
   ASSERT_TRUE(isolate);
   ASSERT_EQ(isolate->get()->GetPhase(), DartIsolate::Phase::Running);
   Wait();
@@ -291,7 +308,7 @@ TEST_F(DartIsolateTest, CanSaveCompilationTrace) {
   );
   auto isolate = RunDartCodeInIsolate(vm_ref, settings, task_runners,
                                       "testCanSaveCompilationTrace", {},
-                                      GetFixturesPath());
+                                      GetDefaultKernelFilePath());
   ASSERT_TRUE(isolate);
   ASSERT_EQ(isolate->get()->GetPhase(), DartIsolate::Phase::Running);
 
@@ -351,7 +368,7 @@ TEST_F(DartSecondaryIsolateTest, CanLaunchSecondaryIsolates) {
   );
   auto isolate = RunDartCodeInIsolate(vm_ref, settings, task_runners,
                                       "testCanLaunchSecondaryIsolate", {},
-                                      GetFixturesPath());
+                                      GetDefaultKernelFilePath());
   ASSERT_TRUE(isolate);
   ASSERT_EQ(isolate->get()->GetPhase(), DartIsolate::Phase::Running);
   ChildShutdownWait();  // wait for child isolate to shutdown first
@@ -379,7 +396,7 @@ TEST_F(DartIsolateTest, CanRecieveArguments) {
   );
   auto isolate = RunDartCodeInIsolate(vm_ref, settings, task_runners,
                                       "testCanRecieveArguments", {"arg1"},
-                                      GetFixturesPath());
+                                      GetDefaultKernelFilePath());
   ASSERT_TRUE(isolate);
   ASSERT_EQ(isolate->get()->GetPhase(), DartIsolate::Phase::Running);
 
@@ -461,7 +478,7 @@ TEST_F(DartIsolateTest,
   );
   {
     auto isolate = RunDartCodeInIsolate(vm_ref, settings, task_runners, "main",
-                                        {}, GetFixturesPath());
+                                        {}, GetDefaultKernelFilePath());
     ASSERT_TRUE(isolate);
     ASSERT_EQ(isolate->get()->GetPhase(), DartIsolate::Phase::Running);
   }
@@ -489,7 +506,7 @@ TEST_F(DartIsolateTest,
   );
   {
     auto isolate = RunDartCodeInIsolate(vm_ref, instance_settings, task_runners,
-                                        "main", {}, GetFixturesPath());
+                                        "main", {}, GetDefaultKernelFilePath());
     ASSERT_TRUE(isolate);
     ASSERT_EQ(isolate->get()->GetPhase(), DartIsolate::Phase::Running);
   }
@@ -580,9 +597,9 @@ TEST_F(DartIsolateTest, DISABLED_ValidLoadingUnitSucceeds) {
                            thread,                //
                            thread                 //
   );
-  auto isolate =
-      RunDartCodeInIsolate(vm_ref, settings, task_runners,
-                           "canCallDeferredLibrary", {}, GetFixturesPath());
+  auto isolate = RunDartCodeInIsolate(vm_ref, settings, task_runners,
+                                      "canCallDeferredLibrary", {},
+                                      GetDefaultKernelFilePath());
   ASSERT_TRUE(isolate);
   ASSERT_EQ(isolate->get()->GetPhase(), DartIsolate::Phase::Running);
   Wait();
@@ -595,6 +612,40 @@ TEST_F(DartIsolateTest, DISABLED_ValidLoadingUnitSucceeds) {
   ASSERT_TRUE(isolate->get()->LoadLoadingUnit(2, std::move(isolate_data),
                                               std::move(isolate_instructions)));
   Wait();
+}
+
+TEST_F(DartIsolateTest, DartPluginRegistrantIsCalled) {
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+
+  std::vector<std::string> messages;
+  fml::AutoResetWaitableEvent latch;
+
+  AddNativeCallback(
+      "PassMessage",
+      CREATE_NATIVE_ENTRY(([&latch, &messages](Dart_NativeArguments args) {
+        auto message = tonic::DartConverter<std::string>::FromDart(
+            Dart_GetNativeArgument(args, 0));
+        messages.push_back(message);
+        latch.Signal();
+      })));
+
+  const auto settings = CreateSettingsForFixture();
+  auto vm_ref = DartVMRef::Create(settings);
+  auto thread = CreateNewThread();
+  TaskRunners task_runners(GetCurrentTestName(),  //
+                           thread,                //
+                           thread,                //
+                           thread,                //
+                           thread                 //
+  );
+  auto isolate = RunDartCodeInIsolate(vm_ref, settings, task_runners,
+                                      "mainForPluginRegistrantTest", {},
+                                      GetDefaultKernelFilePath());
+  ASSERT_TRUE(isolate);
+  ASSERT_EQ(isolate->get()->GetPhase(), DartIsolate::Phase::Running);
+  latch.Wait();
+  ASSERT_EQ(messages.size(), 1u);
+  ASSERT_EQ(messages[0], "_PluginRegistrant.register() was called");
 }
 
 }  // namespace testing

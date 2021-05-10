@@ -6,8 +6,13 @@
 
 #include "flutter/shell/common/rasterizer.h"
 
+#include <memory>
+
+#include "flutter/flow/frame_timings.h"
+#include "flutter/fml/time/time_point.h"
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/testing/testing.h"
+
 #include "gmock/gmock.h"
 
 using testing::_;
@@ -24,7 +29,7 @@ class MockDelegate : public Rasterizer::Delegate {
   MOCK_CONST_METHOD0(GetLatestFrameTargetTime, fml::TimePoint());
   MOCK_CONST_METHOD0(GetTaskRunners, const TaskRunners&());
   MOCK_CONST_METHOD0(GetIsGpuDisabledSyncSwitch,
-                     std::shared_ptr<fml::SyncSwitch>());
+                     std::shared_ptr<const fml::SyncSwitch>());
 };
 
 class MockSurface : public Surface {
@@ -55,11 +60,11 @@ class MockExternalViewEmbedder : public ExternalViewEmbedder {
                    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger));
   MOCK_METHOD0(GetCurrentCanvases, std::vector<SkCanvas*>());
   MOCK_METHOD1(CompositeEmbeddedView, SkCanvas*(int view_id));
-  MOCK_METHOD3(
-      SubmitFrame,
-      void(GrDirectContext* context,
-           std::unique_ptr<SurfaceFrame> frame,
-           const std::shared_ptr<fml::SyncSwitch>& gpu_disable_sync_switch));
+  MOCK_METHOD3(SubmitFrame,
+               void(GrDirectContext* context,
+                    std::unique_ptr<SurfaceFrame> frame,
+                    const std::shared_ptr<const fml::SyncSwitch>&
+                        gpu_disable_sync_switch));
   MOCK_METHOD2(EndFrame,
                void(bool should_resubmit_frame,
                     fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger));
@@ -71,6 +76,16 @@ TEST(RasterizerTest, create) {
   MockDelegate delegate;
   auto rasterizer = std::make_unique<Rasterizer>(delegate);
   EXPECT_TRUE(rasterizer != nullptr);
+}
+
+static std::unique_ptr<FrameTimingsRecorder> CreateFinishedBuildRecorder() {
+  std::unique_ptr<FrameTimingsRecorder> recorder =
+      std::make_unique<FrameTimingsRecorder>();
+  const auto now = fml::TimePoint::Now();
+  recorder->RecordVsync(now, now);
+  recorder->RecordBuildStart(now);
+  recorder->RecordBuildEnd(now);
+  return recorder;
 }
 
 TEST(RasterizerTest, drawEmptyPipeline) {
@@ -91,7 +106,7 @@ TEST(RasterizerTest, drawEmptyPipeline) {
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = fml::AdoptRef(new Pipeline<LayerTree>(/*depth=*/10));
-    rasterizer->Draw(pipeline, nullptr);
+    rasterizer->Draw(CreateFinishedBuildRecorder(), pipeline, nullptr);
     latch.Signal();
   });
   latch.Wait();
@@ -148,7 +163,7 @@ TEST(RasterizerTest,
     bool result = pipeline->Produce().Complete(std::move(layer_tree));
     EXPECT_TRUE(result);
     auto no_discard = [](LayerTree&) { return false; };
-    rasterizer->Draw(pipeline, no_discard);
+    rasterizer->Draw(CreateFinishedBuildRecorder(), pipeline, no_discard);
     latch.Signal();
   });
   latch.Wait();
@@ -202,7 +217,7 @@ TEST(
     bool result = pipeline->Produce().Complete(std::move(layer_tree));
     EXPECT_TRUE(result);
     auto no_discard = [](LayerTree&) { return false; };
-    rasterizer->Draw(pipeline, no_discard);
+    rasterizer->Draw(CreateFinishedBuildRecorder(), pipeline, no_discard);
     latch.Signal();
   });
   latch.Wait();
@@ -261,7 +276,7 @@ TEST(
   bool result = pipeline->Produce().Complete(std::move(layer_tree));
   EXPECT_TRUE(result);
   auto no_discard = [](LayerTree&) { return false; };
-  rasterizer->Draw(pipeline, no_discard);
+  rasterizer->Draw(CreateFinishedBuildRecorder(), pipeline, no_discard);
 }
 
 TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNoSurfaceIsSet) {
@@ -294,7 +309,7 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNoSurfaceIsSet) {
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = fml::AdoptRef(new Pipeline<LayerTree>(/*depth=*/10));
     auto no_discard = [](LayerTree&) { return false; };
-    rasterizer->Draw(pipeline, no_discard);
+    rasterizer->Draw(CreateFinishedBuildRecorder(), pipeline, no_discard);
     latch.Signal();
   });
   latch.Wait();

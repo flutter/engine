@@ -19,17 +19,13 @@ class Shader : public RefCountedDartWrappable<Shader> {
  public:
   ~Shader() override;
 
-  sk_sp<SkShader> shader() { return shader_.get(); }
-
-  void set_shader(flutter::SkiaGPUObject<SkShader> shader) {
-    shader_ = std::move(shader);
-  }
+  virtual sk_sp<SkShader> shader(SkSamplingOptions) = 0;
 
  protected:
-  Shader(flutter::SkiaGPUObject<SkShader> shader = {});
+  Shader() {}
 
  private:
-  flutter::SkiaGPUObject<SkShader> shader_;
+  //  flutter::SkiaGPUObject<SkShader> shader_;
 };
 
 }  // namespace flutter

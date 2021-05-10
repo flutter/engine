@@ -4,6 +4,8 @@
 
 #include "flutter/flow/layers/image_filter_layer.h"
 
+#include "flutter/flow/layers/transform_layer.h"
+#include "flutter/flow/testing/diff_context_test.h"
 #include "flutter/flow/testing/layer_test.h"
 #include "flutter/flow/testing/mock_layer.h"
 #include "flutter/fml/macros.h"
@@ -75,7 +77,8 @@ TEST_F(ImageFilterLayerTest, SimpleFilter) {
   const SkPath child_path = SkPath().addRect(child_bounds);
   const SkPaint child_paint = SkPaint(SkColors::kYellow);
   auto layer_filter = SkImageFilters::MatrixTransform(
-      SkMatrix(), SkFilterQuality::kMedium_SkFilterQuality, nullptr);
+      SkMatrix(),
+      SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear), nullptr);
   auto mock_layer = std::make_shared<MockLayer>(child_path, child_paint);
   auto layer = std::make_shared<ImageFilterLayer>(layer_filter);
   layer->Add(mock_layer);
@@ -109,7 +112,8 @@ TEST_F(ImageFilterLayerTest, SimpleFilterBounds) {
   const SkPaint child_paint = SkPaint(SkColors::kYellow);
   const SkMatrix filter_transform = SkMatrix::Scale(2.0, 2.0);
   auto layer_filter = SkImageFilters::MatrixTransform(
-      filter_transform, SkFilterQuality::kMedium_SkFilterQuality, nullptr);
+      filter_transform,
+      SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear), nullptr);
   auto mock_layer = std::make_shared<MockLayer>(child_path, child_paint);
   auto layer = std::make_shared<ImageFilterLayer>(layer_filter);
   layer->Add(mock_layer);
@@ -144,7 +148,8 @@ TEST_F(ImageFilterLayerTest, MultipleChildren) {
   const SkPaint child_paint1 = SkPaint(SkColors::kYellow);
   const SkPaint child_paint2 = SkPaint(SkColors::kCyan);
   auto layer_filter = SkImageFilters::MatrixTransform(
-      SkMatrix(), SkFilterQuality::kMedium_SkFilterQuality, nullptr);
+      SkMatrix(),
+      SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear), nullptr);
   auto mock_layer1 = std::make_shared<MockLayer>(child_path1, child_paint1);
   auto mock_layer2 = std::make_shared<MockLayer>(child_path2, child_paint2);
   auto layer = std::make_shared<ImageFilterLayer>(layer_filter);
@@ -189,9 +194,11 @@ TEST_F(ImageFilterLayerTest, Nested) {
   const SkPaint child_paint1 = SkPaint(SkColors::kYellow);
   const SkPaint child_paint2 = SkPaint(SkColors::kCyan);
   auto layer_filter1 = SkImageFilters::MatrixTransform(
-      SkMatrix(), SkFilterQuality::kMedium_SkFilterQuality, nullptr);
+      SkMatrix(),
+      SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear), nullptr);
   auto layer_filter2 = SkImageFilters::MatrixTransform(
-      SkMatrix(), SkFilterQuality::kMedium_SkFilterQuality, nullptr);
+      SkMatrix(),
+      SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear), nullptr);
   auto mock_layer1 = std::make_shared<MockLayer>(child_path1, child_paint1);
   auto mock_layer2 = std::make_shared<MockLayer>(child_path2, child_paint2);
   auto layer1 = std::make_shared<ImageFilterLayer>(layer_filter1);
@@ -242,7 +249,8 @@ TEST_F(ImageFilterLayerTest, Nested) {
 
 TEST_F(ImageFilterLayerTest, Readback) {
   auto layer_filter = SkImageFilters::MatrixTransform(
-      SkMatrix(), SkFilterQuality::kMedium_SkFilterQuality, nullptr);
+      SkMatrix(),
+      SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear), nullptr);
   auto initial_transform = SkMatrix();
 
   // ImageFilterLayer does not read from surface
@@ -262,7 +270,8 @@ TEST_F(ImageFilterLayerTest, Readback) {
 
 TEST_F(ImageFilterLayerTest, ChildIsCached) {
   auto layer_filter = SkImageFilters::MatrixTransform(
-      SkMatrix(), SkFilterQuality::kMedium_SkFilterQuality, nullptr);
+      SkMatrix(),
+      SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear), nullptr);
   auto initial_transform = SkMatrix::Translate(50.0, 25.5);
   auto other_transform = SkMatrix::Scale(1.0, 2.0);
   const SkPath child_path = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
@@ -291,7 +300,8 @@ TEST_F(ImageFilterLayerTest, ChildIsCached) {
 
 TEST_F(ImageFilterLayerTest, ChildrenNotCached) {
   auto layer_filter = SkImageFilters::MatrixTransform(
-      SkMatrix(), SkFilterQuality::kMedium_SkFilterQuality, nullptr);
+      SkMatrix(),
+      SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear), nullptr);
   auto initial_transform = SkMatrix::Translate(50.0, 25.5);
   auto other_transform = SkMatrix::Scale(1.0, 2.0);
   const SkPath child_path1 = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
@@ -324,6 +334,58 @@ TEST_F(ImageFilterLayerTest, ChildrenNotCached) {
   EXPECT_FALSE(raster_cache()->Draw(mock_layer2.get(), other_canvas));
   EXPECT_FALSE(raster_cache()->Draw(mock_layer2.get(), cache_canvas));
 }
+
+#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
+
+using ImageFilterLayerDiffTest = DiffContextTest;
+
+TEST_F(ImageFilterLayerDiffTest, ImageFilterLayer) {
+  auto filter = SkImageFilters::Blur(10, 10, SkTileMode::kClamp, nullptr);
+
+  {
+    // tests later assume 30px paint area, fail early if that's not the case
+    auto paint_rect =
+        filter->filterBounds(SkIRect::MakeWH(10, 10), SkMatrix::I(),
+                             SkImageFilter::kForward_MapDirection);
+    EXPECT_EQ(paint_rect, SkIRect::MakeLTRB(-30, -30, 40, 40));
+  }
+
+  MockLayerTree l1;
+  auto filter_layer = std::make_shared<ImageFilterLayer>(filter);
+  auto path = SkPath().addRect(SkRect::MakeLTRB(100, 100, 110, 110));
+  filter_layer->Add(std::make_shared<MockLayer>(path));
+  l1.root()->Add(filter_layer);
+
+  auto damage = DiffLayerTree(l1, MockLayerTree());
+  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(70, 70, 140, 140));
+
+  MockLayerTree l2;
+  auto scale = std::make_shared<TransformLayer>(SkMatrix::Scale(2.0, 2.0));
+  scale->Add(filter_layer);
+  l2.root()->Add(scale);
+
+  damage = DiffLayerTree(l2, MockLayerTree());
+  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(140, 140, 280, 280));
+
+  MockLayerTree l3;
+  l3.root()->Add(scale);
+
+  // path outside of ImageFilterLayer
+  auto path1 = SkPath().addRect(SkRect::MakeLTRB(130, 130, 140, 140));
+  l3.root()->Add(std::make_shared<MockLayer>(path1));
+  damage = DiffLayerTree(l3, l2);
+  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(130, 130, 140, 140));
+
+  // path intersecting ImageFilterLayer, should trigger ImageFilterLayer repaint
+  MockLayerTree l4;
+  l4.root()->Add(scale);
+  auto path2 = SkPath().addRect(SkRect::MakeLTRB(130, 130, 141, 141));
+  l4.root()->Add(std::make_shared<MockLayer>(path2));
+  damage = DiffLayerTree(l4, l3);
+  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(130, 130, 280, 280));
+}
+
+#endif
 
 }  // namespace testing
 }  // namespace flutter

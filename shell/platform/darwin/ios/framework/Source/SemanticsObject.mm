@@ -66,6 +66,10 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
   [anInvocation invoke];
 }
 
+// The following methods are explicitly forwarded to the wrapped SemanticsObject because the
+// forwarding logic above doesn't apply to them since they are also implemented in the UISwitch
+// class, the base class.
+
 - (CGRect)accessibilityFrame {
   return [_semanticsObject accessibilityFrame];
 }
@@ -95,6 +99,34 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
   } else {
     return [super accessibilityValue];
   }
+}
+
+- (BOOL)accessibilityActivate {
+  return [_semanticsObject accessibilityActivate];
+}
+
+- (void)accessibilityIncrement {
+  [_semanticsObject accessibilityIncrement];
+}
+
+- (void)accessibilityDecrement {
+  [_semanticsObject accessibilityDecrement];
+}
+
+- (BOOL)accessibilityScroll:(UIAccessibilityScrollDirection)direction {
+  return [_semanticsObject accessibilityScroll:direction];
+}
+
+- (BOOL)accessibilityPerformEscape {
+  return [_semanticsObject accessibilityPerformEscape];
+}
+
+- (void)accessibilityElementDidBecomeFocused {
+  [_semanticsObject accessibilityElementDidBecomeFocused];
+}
+
+- (void)accessibilityElementDidLoseFocus {
+  [_semanticsObject accessibilityElementDidLoseFocus];
 }
 
 @end  // FlutterSwitchSemanticsObject
@@ -242,17 +274,16 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
   if ([self node].HasFlag(flutter::SemanticsFlags::kScopesRoute))
     return false;
 
-  // If the only flag(s) set are scrolling related AND
-  // The only flags set are not kIsHidden OR
-  // The node doesn't have a label, value, or hint OR
-  // The only actions set are scrolling related actions.
+  // If the node is scrollable AND hidden OR
+  // The node has a label, value, or hint OR
+  // The node has non-scrolling related actions.
   //
-  // The kIsHidden flag set with any other flag just means this node is now
+  // The kIsHidden flag set with the scrollable flag means this node is now
   // hidden but still is a valid target for a11y focus in the tree, e.g. a list
   // item that is currently off screen but the a11y navigation needs to know
   // about.
-  return (([self node].flags & ~flutter::kScrollableSemanticsFlags) != 0 &&
-          [self node].flags != static_cast<int32_t>(flutter::SemanticsFlags::kIsHidden)) ||
+  return (([self node].flags & flutter::kScrollableSemanticsFlags) != 0 &&
+          ([self node].flags & static_cast<int32_t>(flutter::SemanticsFlags::kIsHidden)) != 0) ||
          ![self node].label.empty() || ![self node].value.empty() || ![self node].hint.empty() ||
          ([self node].actions & ~flutter::kScrollableSemanticsActions) != 0;
 }
@@ -576,9 +607,34 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
   [super dealloc];
 }
 
-- (NSArray*)accessibilityElements {
-  return @[ _semanticsObject, _platformView ];
+#pragma mark - UIAccessibilityContainer overrides
+
+- (NSInteger)accessibilityElementCount {
+  // This container should only contain 2 elements:
+  // 1. The semantic object that represents this container.
+  // 2. The platform view object.
+  return 2;
 }
+
+- (nullable id)accessibilityElementAtIndex:(NSInteger)index {
+  FML_DCHECK(index < 2);
+  if (index == 0) {
+    return _semanticsObject;
+  } else {
+    return _platformView;
+  }
+}
+
+- (NSInteger)indexOfAccessibilityElement:(id)element {
+  FML_DCHECK(element == _semanticsObject || element == _platformView);
+  if (element == _semanticsObject) {
+    return 0;
+  } else {
+    return 1;
+  }
+}
+
+#pragma mark - UIAccessibilityElement overrides
 
 - (CGRect)accessibilityFrame {
   return _semanticsObject.accessibilityFrame;

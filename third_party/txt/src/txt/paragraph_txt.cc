@@ -284,7 +284,7 @@ bool ParagraphTxt::ComputeLineBreaks() {
     }
 
     // Setup breaker. We wait to set the line width in order to account for the
-    // widths of the inline placeholders, which are calcualted in the loop over
+    // widths of the inline placeholders, which are calculated in the loop over
     // the runs.
     breaker_.setLineWidths(0.0f, 0, width_);
     breaker_.setJustified(paragraph_style_.text_align == TextAlign::justify);
@@ -553,20 +553,28 @@ void ParagraphTxt::ComputeStrut(StrutMetrics* strut, SkFont& font) {
     SkFontMetrics strut_metrics;
     font.getMetrics(&strut_metrics);
 
+    const double metrics_height =
+        -strut_metrics.fAscent + strut_metrics.fDescent;
+
     if (paragraph_style_.strut_has_height_override) {
-      double metrics_height = -strut_metrics.fAscent + strut_metrics.fDescent;
-      strut->ascent = (-strut_metrics.fAscent / metrics_height) *
-                      paragraph_style_.strut_height *
-                      paragraph_style_.strut_font_size;
-      strut->descent = (strut_metrics.fDescent / metrics_height) *
-                       paragraph_style_.strut_height *
-                       paragraph_style_.strut_font_size;
-      strut->leading =
-          // Zero leading if there is no user specified strut leading.
+      const double strut_height =
+          paragraph_style_.strut_height * paragraph_style_.strut_font_size;
+      const double metrics_leading =
+          // Zero extra leading if there is no user specified strut leading.
           paragraph_style_.strut_leading < 0
               ? 0
               : (paragraph_style_.strut_leading *
                  paragraph_style_.strut_font_size);
+
+      const double available_height =
+          paragraph_style_.strut_half_leading ? metrics_height : strut_height;
+
+      strut->ascent =
+          (-strut_metrics.fAscent / metrics_height) * available_height;
+      strut->descent =
+          (strut_metrics.fDescent / metrics_height) * available_height;
+
+      strut->leading = metrics_leading + strut_height - available_height;
     } else {
       strut->ascent = -strut_metrics.fAscent;
       strut->descent = strut_metrics.fDescent;
@@ -671,8 +679,8 @@ void ParagraphTxt::Layout(double width) {
   glyph_lines_.clear();
   code_unit_runs_.clear();
   inline_placeholder_code_unit_runs_.clear();
-  max_right_ = FLT_MIN;
-  min_left_ = FLT_MAX;
+  max_right_ = std::numeric_limits<double>::lowest();
+  min_left_ = std::numeric_limits<double>::max();
   final_line_count_ = 0;
 
   if (!ComputeLineBreaks())
@@ -909,8 +917,9 @@ void ParagraphTxt::Layout(double width) {
             blob_buffer.glyphs[blob_index] = layout.getGlyphId(glyph_index);
 
             size_t pos_index = blob_index * 2;
-            blob_buffer.pos[pos_index] =
-                layout.getX(glyph_index) + justify_x_offset_delta;
+            blob_buffer.pos[pos_index] = layout.getX(glyph_index) +
+                                         justify_x_offset +
+                                         justify_x_offset_delta;
             blob_buffer.pos[pos_index + 1] = layout.getY(glyph_index);
 
             if (glyph_index == cluster_start_glyph_index)
@@ -1028,10 +1037,11 @@ void ParagraphTxt::Layout(double width) {
         Range<double> record_x_pos(
             glyph_positions.front().x_pos.start - run_x_offset,
             glyph_positions.back().x_pos.end - run_x_offset);
-        paint_records.emplace_back(
-            run.style(), SkPoint::Make(run_x_offset + justify_x_offset, 0),
-            builder.make(), *metrics, line_number, record_x_pos.start,
-            record_x_pos.end, run.is_ghost(), run.placeholder_run());
+        paint_records.emplace_back(run.style(), SkPoint::Make(run_x_offset, 0),
+                                   builder.make(), *metrics, line_number,
+                                   record_x_pos.start, record_x_pos.end,
+                                   run.is_ghost(), run.placeholder_run());
+
         justify_x_offset += justify_x_offset_delta;
 
         line_glyph_positions.insert(line_glyph_positions.end(),
@@ -1107,8 +1117,10 @@ void ParagraphTxt::Layout(double width) {
 
     // Calculate the amount to advance in the y direction. This is done by
     // computing the maximum ascent and descent with respect to the strut.
-    double max_ascent = strut_.ascent + strut_.half_leading;
-    double max_descent = strut_.descent + strut_.half_leading;
+    double max_ascent = IsStrutValid() ? strut_.ascent + strut_.half_leading
+                                       : std::numeric_limits<double>::lowest();
+    double max_descent = IsStrutValid() ? strut_.descent + strut_.half_leading
+                                        : std::numeric_limits<double>::lowest();
     double max_unscaled_ascent = 0;
     for (const PaintRecord& paint_record : paint_records) {
       UpdateLineMetrics(paint_record.metrics(), paint_record.style(),
@@ -1186,79 +1198,96 @@ void ParagraphTxt::UpdateLineMetrics(const SkFontMetrics& metrics,
                                      size_t line_number,
                                      size_t line_limit) {
   if (!strut_.force_strut) {
-    double ascent;
-    double descent;
-    if (style.has_height_override) {
-      // Scale the ascent and descent such that the sum of ascent and
-      // descent is `fontsize * style.height * style.font_size`.
-      //
-      // The raw metrics do not add up to fontSize. The state of font
-      // metrics is a mess:
-      //
-      // Each font has 4 sets of vertical metrics:
-      //
-      // * hhea: hheaAscender, hheaDescender, hheaLineGap.
-      //     Used by Apple.
-      // * OS/2 typo: typoAscender, typoDescender, typoLineGap.
-      //     Used sometimes by Windows for layout.
-      // * OS/2 win: winAscent, winDescent.
-      //     Also used by Windows, generally will be cut if extends past
-      //     these metrics.
-      // * EM Square: ascent, descent
-      //     Not actively used, but this defines the 'scale' of the
-      //     units used.
-      //
-      // `Use Typo Metrics` is a boolean that, when enabled, prefers
-      // typo metrics over win metrics. Default is off. Enabled by most
-      // modern fonts.
-      //
-      // In addition to these different sets of metrics, there are also
-      // multiple strategies for using these metrics:
-      //
-      // * Adobe: Set hhea values to typo equivalents.
-      // * Microsoft: Set hhea values to win equivalents.
-      // * Web: Use hhea values for text, regardless of `Use Typo Metrics`
-      //     The hheaLineGap is distributed half across the top and half
-      //     across the bottom of the line.
-      //   Exceptions:
-      //     Windows: All browsers respect `Use Typo Metrics`
-      //     Firefox respects `Use Typo Metrics`.
-      //
-      // This pertains to this code in that it is ambiguous which set of
-      // metrics we are actually using via SkFontMetrics. This in turn
-      // means that if we use the raw metrics, we will see differences
-      // between platforms as well as unpredictable line heights.
-      //
-      // A more thorough explanation is available at
-      // https://glyphsapp.com/tutorials/vertical-metrics
-      //
-      // Doing this ascent/descent normalization to the EM Square allows
-      // a sane, consistent, and reasonable line height to be specified,
-      // though it breaks with what is done by any of the platforms above.
-      double metrics_height = -metrics.fAscent + metrics.fDescent;
-      ascent =
-          (-metrics.fAscent / metrics_height) * style.height * style.font_size;
-      descent =
-          (metrics.fDescent / metrics_height) * style.height * style.font_size;
-    } else {
-      // Use the font-provided ascent, descent, and leading directly.
-      ascent = (-metrics.fAscent + metrics.fLeading / 2);
-      descent = (metrics.fDescent + metrics.fLeading / 2);
-    }
+    const double metrics_font_height = metrics.fDescent - metrics.fAscent;
+    // The overall height of the glyph blob. If neither the ascent or the
+    // descent is disabled, we have block_height = ascent + descent, where
+    // "ascent" is the extent from the top of the blob to its baseline, and
+    // "descent" is the extent from the text blob's baseline to its bottom. Not
+    // to be mistaken with the font's ascent and descent.
+    const double blob_height = style.has_height_override
+                                   ? style.height * style.font_size
+                                   : metrics_font_height + metrics.fLeading;
 
-    // Account for text_height_behavior in paragraph_style_.
+    // Scale the ascent and descent such that the sum of ascent and
+    // descent is `style.height * style.font_size`.
     //
-    // Disable first line ascent modifications.
-    if (line_number == 0 && paragraph_style_.text_height_behavior &
-                                TextHeightBehavior::kDisableFirstAscent) {
-      ascent = -metrics.fAscent;
+    // The raw metrics do not add up to fontSize. The state of font
+    // metrics is a mess:
+    //
+    // Each font has 4 sets of vertical metrics:
+    //
+    // * hhea: hheaAscender, hheaDescender, hheaLineGap.
+    //     Used by Apple.
+    // * OS/2 typo: typoAscender, typoDescender, typoLineGap.
+    //     Used sometimes by Windows for layout.
+    // * OS/2 win: winAscent, winDescent.
+    //     Also used by Windows, generally will be cut if extends past
+    //     these metrics.
+    // * EM Square: ascent, descent
+    //     Not actively used, but this defines the 'scale' of the
+    //     units used.
+    //
+    // `Use Typo Metrics` is a boolean that, when enabled, prefers
+    // typo metrics over win metrics. Default is off. Enabled by most
+    // modern fonts.
+    //
+    // In addition to these different sets of metrics, there are also
+    // multiple strategies for using these metrics:
+    //
+    // * Adobe: Set hhea values to typo equivalents.
+    // * Microsoft: Set hhea values to win equivalents.
+    // * Web: Use hhea values for text, regardless of `Use Typo Metrics`
+    //     The hheaLineGap is distributed half across the top and half
+    //     across the bottom of the line.
+    //   Exceptions:
+    //     Windows: All browsers respect `Use Typo Metrics`
+    //     Firefox respects `Use Typo Metrics`.
+    //
+    // This pertains to this code in that it is ambiguous which set of
+    // metrics we are actually using via SkFontMetrics. This in turn
+    // means that if we use the raw metrics, we will see differences
+    // between platforms as well as unpredictable line heights.
+    //
+    // A more thorough explanation is available at
+    // https://glyphsapp.com/tutorials/vertical-metrics
+    //
+    // Doing this ascent/descent normalization to the EM Square allows
+    // a sane, consistent, and reasonable "blob_height" to be specified,
+    // though it breaks with what is done by any of the platforms above.
+    const bool shouldNormalizeFont =
+        style.has_height_override && !style.half_leading;
+    const double font_height =
+        shouldNormalizeFont ? style.font_size : metrics_font_height;
+
+    // Reserve the outermost vertical space we want to distribute evenly over
+    // and under the text ("half-leading").
+    double leading;
+    if (style.half_leading) {
+      leading = blob_height - font_height;
+    } else {
+      leading = style.has_height_override ? 0.0 : metrics.fLeading;
     }
-    // Disable last line descent modifications.
-    if (line_number == line_limit - 1 &&
-        paragraph_style_.text_height_behavior &
-            TextHeightBehavior::kDisableLastDescent) {
-      descent = metrics.fDescent;
-    }
+    const double half_leading = leading / 2;
+
+    // Proportionally distribute the remaining vertical space above and below
+    // the glyph blob's baseline, per the font's ascent/discent ratio.
+    const double available_vspace = blob_height - leading;
+    const double modifiedAscent =
+        -metrics.fAscent / metrics_font_height * available_vspace +
+        half_leading;
+    const double modifiedDescent =
+        metrics.fDescent / metrics_font_height * available_vspace +
+        half_leading;
+
+    const bool disableAscent =
+        line_number == 0 && paragraph_style_.text_height_behavior &
+                                TextHeightBehavior::kDisableFirstAscent;
+    const bool disableDescent = line_number == line_limit - 1 &&
+                                paragraph_style_.text_height_behavior &
+                                    TextHeightBehavior::kDisableLastDescent;
+
+    double ascent = disableAscent ? -metrics.fAscent : modifiedAscent;
+    double descent = disableDescent ? metrics.fDescent : modifiedDescent;
 
     ComputePlaceholder(placeholder_run, ascent, descent);
 
@@ -1621,9 +1650,9 @@ void ParagraphTxt::PaintShadow(SkCanvas* canvas,
 
     SkPaint paint;
     paint.setColor(text_shadow.color);
-    if (text_shadow.blur_radius != 0.0) {
+    if (text_shadow.blur_sigma > 0.5) {
       paint.setMaskFilter(SkMaskFilter::MakeBlur(
-          kNormal_SkBlurStyle, text_shadow.blur_radius, false));
+          kNormal_SkBlurStyle, text_shadow.blur_sigma, false));
     }
     canvas->drawTextBlob(record.text(), offset.x() + text_shadow.offset.x(),
                          offset.y() + text_shadow.offset.y(), paint);
@@ -1642,8 +1671,8 @@ std::vector<Paragraph::TextBox> ParagraphTxt::GetRectsForRange(
     // Per-line metrics for max and min coordinates for left and right boxes.
     // These metrics cannot be calculated in layout generically because of
     // selections that do not cover the whole line.
-    SkScalar max_right = FLT_MIN;
-    SkScalar min_left = FLT_MAX;
+    SkScalar max_right = std::numeric_limits<SkScalar>::lowest();
+    SkScalar min_left = std::numeric_limits<SkScalar>::max();
   };
 
   std::map<size_t, LineBoxMetrics> line_box_metrics;
@@ -1887,8 +1916,7 @@ Paragraph::PositionWithAffinity ParagraphTxt::GetGlyphPositionAtCoordinate(
   }
 
   if (gp == nullptr) {
-    const GlyphPosition& last_glyph = line_glyph_position.back();
-    return PositionWithAffinity(last_glyph.code_units.end, UPSTREAM);
+    gp = &line_glyph_position.back();
   }
 
   // Find the direction of the run that contains this glyph.
@@ -1920,8 +1948,8 @@ std::vector<Paragraph::TextBox> ParagraphTxt::GetRectsForPlaceholders() {
     // Per-line metrics for max and min coordinates for left and right boxes.
     // These metrics cannot be calculated in layout generically because of
     // selections that do not cover the whole line.
-    SkScalar max_right = FLT_MIN;
-    SkScalar min_left = FLT_MAX;
+    SkScalar max_right = std::numeric_limits<SkScalar>::lowest();
+    SkScalar min_left = std::numeric_limits<SkScalar>::max();
   };
 
   std::vector<Paragraph::TextBox> boxes;

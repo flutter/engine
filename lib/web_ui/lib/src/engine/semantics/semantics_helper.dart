@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of engine;
 
 /// The maximum [semanticsActivationAttempts] before we give up waiting for
@@ -33,7 +32,7 @@ String placeholderMessage = 'Enable accessibility';
 /// event which should be forwarded to the framework.
 ///
 /// It does this by using a [SemanticsEnabler]. The [SemanticsEnabler]
-/// implementation is choosen using form factor type.
+/// implementation is chosen using form factor type.
 ///
 /// See [DesktopSemanticsEnabler], [MobileSemanticsEnabler].
 class SemanticsHelper {
@@ -311,9 +310,10 @@ class MobileSemanticsEnabler extends SemanticsEnabler {
     // In Chrome the debouncing works well enough to detect accessibility
     // request.
     final bool blinkEnableConditionPassed =
-        browserEngine == BrowserEngine.blink &&
-            EngineSemanticsOwner.instance.gestureMode ==
-                GestureMode.browserGestures;
+        (browserEngine == BrowserEngine.blink ||
+            browserEngine == BrowserEngine.samsung) &&
+        EngineSemanticsOwner.instance.gestureMode ==
+            GestureMode.browserGestures;
 
     // In Safari debouncing doesn't work. Instead we look at where exactly
     // (within 1 pixel) the event landed. If it landed exactly in the middle of

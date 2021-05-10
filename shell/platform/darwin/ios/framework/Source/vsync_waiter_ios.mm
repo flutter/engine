@@ -18,12 +18,16 @@
 namespace flutter {
 
 VsyncWaiterIOS::VsyncWaiterIOS(flutter::TaskRunners task_runners)
-    : VsyncWaiter(std::move(task_runners)),
-      client_([[VSyncClient alloc] initWithTaskRunner:task_runners_.GetUITaskRunner()
-                                             callback:std::bind(&VsyncWaiterIOS::FireCallback,
-                                                                this,
-                                                                std::placeholders::_1,
-                                                                std::placeholders::_2)]) {}
+    : VsyncWaiter(std::move(task_runners)) {
+  auto callback = [this](std::unique_ptr<flutter::FrameTimingsRecorder> recorder) {
+    const fml::TimePoint start_time = recorder->GetVsyncStartTime();
+    const fml::TimePoint target_time = recorder->GetVsyncTargetTime();
+    FireCallback(start_time, target_time, true);
+  };
+  client_ =
+      fml::scoped_nsobject{[[VSyncClient alloc] initWithTaskRunner:task_runners_.GetUITaskRunner()
+                                                          callback:callback]};
+}
 
 VsyncWaiterIOS::~VsyncWaiterIOS() {
   // This way, we will get no more callbacks from the display link that holds a weak (non-nilling)
@@ -74,9 +78,12 @@ void VsyncWaiterIOS::AwaitVSync() {
   fml::TimePoint frame_start_time = fml::TimePoint::Now() - fml::TimeDelta::FromSecondsF(delay);
   fml::TimePoint frame_target_time = frame_start_time + fml::TimeDelta::FromSecondsF(link.duration);
 
+  std::unique_ptr<flutter::FrameTimingsRecorder> recorder =
+      std::make_unique<flutter::FrameTimingsRecorder>();
+  recorder->RecordVsync(frame_start_time, frame_target_time);
   display_link_.get().paused = YES;
 
-  callback_(frame_start_time, frame_target_time);
+  callback_(std::move(recorder));
 }
 
 - (void)invalidate {
@@ -91,26 +98,16 @@ void VsyncWaiterIOS::AwaitVSync() {
 
 @end
 
-@implementation DisplayLinkManager {
-  fml::scoped_nsobject<CADisplayLink> display_link_;
-}
+@implementation DisplayLinkManager
 
-- (instancetype)init {
-  self = [super init];
-
-  if (self) {
-    display_link_ = fml::scoped_nsobject<CADisplayLink> {
-      [[CADisplayLink displayLinkWithTarget:self selector:@selector(onDisplayLink:)] retain]
-    };
-    display_link_.get().paused = YES;
-  }
-
-  return self;
-}
-
-- (double)displayRefreshRate {
++ (double)displayRefreshRate {
   if (@available(iOS 10.3, *)) {
-    auto preferredFPS = display_link_.get().preferredFramesPerSecond;  // iOS 10.0
+    fml::scoped_nsobject<CADisplayLink> display_link = fml::scoped_nsobject<CADisplayLink> {
+      [[CADisplayLink displayLinkWithTarget:[[DisplayLinkManager new] autorelease]
+                                   selector:@selector(onDisplayLink:)] retain]
+    };
+    display_link.get().paused = YES;
+    auto preferredFPS = display_link.get().preferredFramesPerSecond;  // iOS 10.0
 
     // From Docs:
     // The default value for preferredFramesPerSecond is 0. When this value is 0, the preferred
@@ -129,12 +126,6 @@ void VsyncWaiterIOS::AwaitVSync() {
 
 - (void)onDisplayLink:(CADisplayLink*)link {
   // no-op.
-}
-
-- (void)dealloc {
-  [display_link_.get() invalidate];
-
-  [super dealloc];
 }
 
 @end
