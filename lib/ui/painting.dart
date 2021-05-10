@@ -5675,7 +5675,7 @@ class _DisplayListCanvas implements Canvas {
   static const int _ditherNeeded        = 1 << 11;
 
   static const int _paintMask = _aaNeeded | _colorNeeded | _blendNeeded | _invertColorsNeeded
-                              | _colorFilterNeeded | _shaderNeeded | _imageFilterNeeded;
+                              | _colorFilterNeeded | _shaderNeeded | _ditherNeeded | _imageFilterNeeded;
   static const int _drawMask = _paintMask | _paintStyleNeeded | _maskFilterNeeded;
   static const int _strokeMask = _paintMask | _strokeStyleNeeded | _maskFilterNeeded;
   static const int _imageMask = _blendNeeded | _filterQualityNeeded | _imageFilterNeeded | _ditherNeeded;
