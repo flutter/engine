@@ -481,9 +481,6 @@ static void synchronize_pressed_states_loop_body(gpointer key,
     const bool this_key_pressed_before_event =
         pressed_logical_key_before_event != 0;
 
-    printf("pressedLogical %lx logical %lx recordedPh %lx\n", pressed_logical_key_before_event,
-           logical_key, recorded_physical_key);
-    fflush(stdout);
     g_return_if_fail(pressed_logical_key_before_event == 0 ||
                       pressed_logical_key_before_event == logical_key);
 
@@ -493,8 +490,6 @@ static void synchronize_pressed_states_loop_body(gpointer key,
     pressed_by_record = pressed_by_record || this_key_pressed_before_event;
 
     if (this_key_pressed_before_event && !pressed_by_state) {
-      printf("syn by release\n");
-      fflush(stdout);
       synthesize_simple_event(self, kFlutterKeyEventTypeUp,
                               recorded_physical_key, logical_key,
                               context->timestamp);
@@ -515,13 +510,9 @@ static void synchronize_pressed_states_loop_body(gpointer key,
                                       ? recorded_physical_key
                                       : checked_key->primary_physical_key;
     if (recorded_physical_key == 0) {
-      printf("update by synpress ph %lx lo %lx\n", physical_key, logical_key);
-      fflush(stdout);
       update_mapping_record(self, physical_key, logical_key);
     }
     g_return_if_fail(logical_key != context->event_logical_key);
-    printf("syn by press\n");
-    fflush(stdout);
     synthesize_simple_event(self, kFlutterKeyEventTypeDown, physical_key,
                             logical_key, context->timestamp);
     update_pressing_state(self, physical_key, logical_key);
@@ -694,9 +685,6 @@ static void synchronize_lock_states_loop_body(gpointer key,
   if (stage_by_record == destination_stage) {
     return;
   }
-  printf("stageByRecord %d, stageDest %d\n", stage_by_record,
-         destination_stage);
-  fflush(stdout);
   for (int current_stage = stage_by_record; current_stage < destination_stage;
        current_stage += 1) {
     if (current_stage == 9) {
@@ -707,16 +695,12 @@ static void synchronize_lock_states_loop_body(gpointer key,
     const bool is_down_event =
         standard_current_stage == 0 || standard_current_stage == 2;
     if (is_down_event && recorded_physical_key == 0) {
-      printf("update by lock ph %lx lo %lx\n", physical_key, logical_key);
-      fflush(stdout);
       update_mapping_record(self, physical_key, logical_key);
     }
     FlutterKeyEventType type =
         is_down_event ? kFlutterKeyEventTypeDown : kFlutterKeyEventTypeUp;
     update_pressing_state(self, physical_key, is_down_event ? logical_key : 0);
     possibly_update_lock_bit(self, logical_key, is_down_event);
-    printf("syn by lock\n");
-    fflush(stdout);
     synthesize_simple_event(self, type, physical_key, logical_key,
                             context->timestamp);
   }
@@ -798,8 +782,6 @@ static void fl_key_embedder_responder_handle_event(
   update_pressing_state(self, physical_key, is_down_event ? logical_key : 0);
   possibly_update_lock_bit(self, logical_key, is_down_event);
   if (is_down_event) {
-    printf("update by event ph %lx lo %lx\n", physical_key, logical_key);
-    fflush(stdout);
     update_mapping_record(self, physical_key, logical_key);
   }
   FlKeyEmbedderUserData* response_data =
