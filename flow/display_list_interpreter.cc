@@ -86,7 +86,7 @@ std::string DisplayListInterpreter::DescribeOneOp(Iterator& it) {
         ss << "BlendMode(" << std::dec << it.GetUint32() << ")";
         break;
       case angle:
-        ss << it.GetAngle();
+        ss << it.GetDegrees();
         break;
       case point:
         ss << "Point(x: " << it.GetScalar() << ", y: " << it.GetScalar() << ")";
@@ -379,7 +379,7 @@ CANVAS_OP_DEFINE_OP(scale) {
   context.canvas->scale(it.GetScalar(), it.GetScalar());
 }
 CANVAS_OP_DEFINE_OP(rotate) {
-  context.canvas->rotate(it.GetAngle());
+  context.canvas->rotate(it.GetDegrees());
 }
 CANVAS_OP_DEFINE_OP(skew) {
   context.canvas->skew(it.GetScalar(), it.GetScalar());
@@ -423,11 +423,11 @@ CANVAS_OP_DEFINE_OP(drawCircle) {
   context.canvas->drawCircle(it.GetPoint(), it.GetScalar(), context.paint);
 }
 CANVAS_OP_DEFINE_OP(drawArc) {
-  context.canvas->drawArc(it.GetRect(), it.GetAngle(), it.GetAngle(), false,
+  context.canvas->drawArc(it.GetRect(), it.GetDegrees(), it.GetDegrees(), false,
                           context.paint);
 }
 CANVAS_OP_DEFINE_OP(drawArcCenter) {
-  context.canvas->drawArc(it.GetRect(), it.GetAngle(), it.GetAngle(), true,
+  context.canvas->drawArc(it.GetRect(), it.GetDegrees(), it.GetDegrees(), true,
                           context.paint);
 }
 CANVAS_OP_DEFINE_OP(drawLine) {

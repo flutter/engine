@@ -5,7 +5,6 @@
 #ifndef FLUTTER_LIB_UI_PAINTING_DISPLAY_LIST_INTERPRETER_H_
 #define FLUTTER_LIB_UI_PAINTING_DISPLAY_LIST_INTERPRETER_H_
 
-#include <cmath>
 #include <sstream>
 
 #include "third_party/skia/include/core/SkCanvas.h"
@@ -266,7 +265,7 @@ class DisplayListInterpreter {
       return u.i;
     }
 
-    SkScalar GetAngle() { return GetScalar() * 180.0 / M_PI; }
+    SkScalar GetDegrees() { return SkRadiansToDegrees(GetScalar()); }
     SkBlendMode GetBlendMode() { return static_cast<SkBlendMode>(GetUint32()); }
     SkColor GetColor() { return static_cast<SkColor>(GetUint32()); }
 
