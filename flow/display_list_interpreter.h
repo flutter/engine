@@ -305,7 +305,6 @@ class DisplayListInterpreter {
       return len;
     }
 
-    void skipSkRef() { refs++; }
     const sk_sp<SkColorFilter> GetColorFilter() {
       return (refs++)->colorFilter;
     }
