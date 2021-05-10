@@ -5,6 +5,7 @@
 #ifndef FLUTTER_LIB_UI_PAINTING_DISPLAY_LIST_INTERPRETER_H_
 #define FLUTTER_LIB_UI_PAINTING_DISPLAY_LIST_INTERPRETER_H_
 
+#include <cmath>
 #include <sstream>
 
 #include "third_party/skia/include/core/SkCanvas.h"
