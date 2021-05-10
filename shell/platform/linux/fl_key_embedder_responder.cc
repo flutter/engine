@@ -479,7 +479,7 @@ static void synchronize_pressed_states_loop_body(gpointer key,
         pressed_logical_key_before_event != 0;
 
     g_return_if_fail(pressed_logical_key_before_event == 0 ||
-                      pressed_logical_key_before_event == logical_key);
+                     pressed_logical_key_before_event == logical_key);
 
     pressed_by_record = pressed_by_record || this_key_pressed_before_event;
 
@@ -506,7 +506,6 @@ static void synchronize_pressed_states_loop_body(gpointer key,
     if (recorded_physical_key == 0) {
       update_mapping_record(self, physical_key, logical_key);
     }
-    g_return_if_fail(logical_key != context->event_logical_key);
     synthesize_simple_event(self, kFlutterKeyEventTypeDown, physical_key,
                             logical_key, context->timestamp);
     update_pressing_state(self, physical_key, logical_key);
