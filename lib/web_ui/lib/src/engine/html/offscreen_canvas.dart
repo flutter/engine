@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:async';
 import 'dart:html' as html;
 import 'dart:js_util' as js_util;
 import 'package:ui/src/engine.dart';
@@ -65,6 +66,30 @@ class OffScreenCanvas {
     js_util.callMethod(targetContext, 'drawImage',
         <dynamic>[offScreenCanvas ?? canvasElement!, 0, 0, width, height,
           0, 0, width, height]);
+  }
+
+  /// Converts canvas contents to an image and returns as data url.
+  Future<String> toDataUrl() {
+    final Completer<String> completer = Completer<String>();
+    if (offScreenCanvas != null) {
+      offScreenCanvas!.convertToBlob().then((html.Blob value) {
+        final fileReader = html.FileReader();
+        fileReader.onLoad.listen((event) {
+          completer.complete(js_util.getProperty(
+              js_util.getProperty(event, 'target')!, 'result')!);
+        });
+        fileReader.readAsDataUrl(value);
+      });
+      return completer.future;
+    } else {
+      return Future.value(canvasElement!.toDataUrl());
+    }
+  }
+
+  /// Draws an image to canvas for both offscreen canvas canvas context2d.
+  void drawImage(Object image, int x, int y, int width, int height) {
+    js_util.callMethod(
+        getContext2d()!, 'drawImage', <dynamic>[image, x, y, width, height]);
   }
 
   /// Feature detects OffscreenCanvas.
