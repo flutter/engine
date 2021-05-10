@@ -9,6 +9,7 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformNodeDelegateMac.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
 #include "flutter/third_party/accessibility/ax/ax_action_data.h"
 
@@ -59,8 +60,98 @@ TEST(FlutterPlatformNodeDelegateMac, Basics) {
   [engine shutDownEngine];
 }
 
+TEST(FlutterPlatformNodeDelegateMac, SelectableTextHasCorrectSemantics) {
+  FlutterEngine* engine = CreateTestEngine();
+  engine.semanticsEnabled = YES;
+  auto bridge = engine.accessibilityBridge.lock();
+  // Initialize ax node data.
+  FlutterSemanticsNode root;
+  root.id = 0;
+  root.flags =
+      static_cast<FlutterSemanticsFlag>(FlutterSemanticsFlag::kFlutterSemanticsFlagIsTextField |
+                                        FlutterSemanticsFlag::kFlutterSemanticsFlagIsReadOnly);
+  root.actions = static_cast<FlutterSemanticsAction>(0);
+  root.text_selection_base = 1;
+  root.text_selection_extent = 3;
+  root.label = "";
+  root.hint = "";
+  // Selectable text store its text in value
+  root.value = "selectable text";
+  root.increased_value = "";
+  root.decreased_value = "";
+  root.child_count = 0;
+  root.custom_accessibility_actions_count = 0;
+  bridge->AddFlutterSemanticsNodeUpdate(&root);
+
+  bridge->CommitUpdates();
+
+  auto root_platform_node_delegate = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
+  // Verify the accessibility attribute matches.
+  NSAccessibilityElement* native_accessibility =
+      root_platform_node_delegate->GetNativeViewAccessible();
+  std::string value = [native_accessibility.accessibilityValue UTF8String];
+  EXPECT_EQ(value, "selectable text");
+  EXPECT_EQ(native_accessibility.accessibilityRole, NSAccessibilityStaticTextRole);
+  EXPECT_EQ([native_accessibility.accessibilityChildren count], 0u);
+  NSRange selection = native_accessibility.accessibilitySelectedTextRange;
+  EXPECT_EQ(selection.location, 1u);
+  EXPECT_EQ(selection.length, 2u);
+  std::string selected_text = [native_accessibility.accessibilitySelectedText UTF8String];
+  EXPECT_EQ(selected_text, "el");
+}
+
+TEST(FlutterPlatformNodeDelegateMac, SelectableTextWithoutSelectionReturnZeroRange) {
+  FlutterEngine* engine = CreateTestEngine();
+  engine.semanticsEnabled = YES;
+  auto bridge = engine.accessibilityBridge.lock();
+  // Initialize ax node data.
+  FlutterSemanticsNode root;
+  root.id = 0;
+  root.flags =
+      static_cast<FlutterSemanticsFlag>(FlutterSemanticsFlag::kFlutterSemanticsFlagIsTextField |
+                                        FlutterSemanticsFlag::kFlutterSemanticsFlagIsReadOnly);
+  root.actions = static_cast<FlutterSemanticsAction>(0);
+  root.text_selection_base = -1;
+  root.text_selection_extent = -1;
+  root.label = "";
+  root.hint = "";
+  // Selectable text store its text in value
+  root.value = "selectable text";
+  root.increased_value = "";
+  root.decreased_value = "";
+  root.child_count = 0;
+  root.custom_accessibility_actions_count = 0;
+  bridge->AddFlutterSemanticsNodeUpdate(&root);
+
+  bridge->CommitUpdates();
+
+  auto root_platform_node_delegate = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
+  // Verify the accessibility attribute matches.
+  NSAccessibilityElement* native_accessibility =
+      root_platform_node_delegate->GetNativeViewAccessible();
+  NSRange selection = native_accessibility.accessibilitySelectedTextRange;
+  EXPECT_TRUE(selection.location == NSNotFound);
+  EXPECT_EQ(selection.length, 0u);
+}
+
 TEST(FlutterPlatformNodeDelegateMac, CanPerformAction) {
   FlutterEngine* engine = CreateTestEngine();
+
+  // Set up view controller.
+  NSString* fixtures = @(testing::GetFixturesPath());
+  FlutterDartProject* project = [[FlutterDartProject alloc]
+      initWithAssetsPath:fixtures
+             ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:project];
+  [engine setViewController:viewController];
+
+  // Attach the view to a NSWindow.
+  NSWindow* window = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 800, 600)
+                                                 styleMask:NSBorderlessWindowMask
+                                                   backing:NSBackingStoreBuffered
+                                                     defer:NO];
+  window.contentView = viewController.view;
+
   engine.semanticsEnabled = YES;
   auto bridge = engine.accessibilityBridge.lock();
   // Initialize ax node data.
@@ -112,6 +203,8 @@ TEST(FlutterPlatformNodeDelegateMac, CanPerformAction) {
 
   EXPECT_EQ(called_action, FlutterSemanticsAction::kFlutterSemanticsActionTap);
   EXPECT_EQ(called_id, 1u);
+
+  [engine setViewController:nil];
   [engine shutDownEngine];
 }
 

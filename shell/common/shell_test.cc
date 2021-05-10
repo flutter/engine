@@ -6,6 +6,7 @@
 
 #include "flutter/shell/common/shell_test.h"
 
+#include "flutter/flow/frame_timings.h"
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/flow/layers/transform_layer.h"
 #include "flutter/fml/build_config.h"
@@ -26,16 +27,17 @@ ShellTest::ShellTest()
 
 void ShellTest::SendEnginePlatformMessage(
     Shell* shell,
-    fml::RefPtr<PlatformMessage> message) {
+    std::unique_ptr<PlatformMessage> message) {
   fml::AutoResetWaitableEvent latch;
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(),
-      [shell, &latch, message = std::move(message)]() {
-        if (auto engine = shell->weak_engine_) {
-          engine->HandlePlatformMessage(std::move(message));
-        }
-        latch.Signal();
-      });
+      fml::MakeCopyable(
+          [shell, &latch, message = std::move(message)]() mutable {
+            if (auto engine = shell->weak_engine_) {
+              engine->HandlePlatformMessage(std::move(message));
+            }
+            latch.Signal();
+          }));
   latch.Wait();
 }
 
@@ -136,7 +138,10 @@ void ShellTest::SetViewportMetrics(Shell* shell, double width, double height) {
           const auto frame_begin_time = fml::TimePoint::Now();
           const auto frame_end_time =
               frame_begin_time + fml::TimeDelta::FromSecondsF(1.0 / 60.0);
-          engine->animator_->BeginFrame(frame_begin_time, frame_end_time);
+          std::unique_ptr<FrameTimingsRecorder> recorder =
+              std::make_unique<FrameTimingsRecorder>();
+          recorder->RecordVsync(frame_begin_time, frame_end_time);
+          engine->animator_->BeginFrame(std::move(recorder));
         }
         latch.Signal();
       });
@@ -166,7 +171,7 @@ void ShellTest::PumpOneFrame(Shell* shell,
                              flutter::ViewportMetrics viewport_metrics,
                              LayerTreeBuilder builder) {
   // Set viewport to nonempty, and call Animator::BeginFrame to make the layer
-  // tree holder nonempty. Without either of this, the layer tree below
+  // tree pipeline nonempty. Without either of this, the layer tree below
   // won't be rasterized.
   fml::AutoResetWaitableEvent latch;
   shell->GetTaskRunners().GetUITaskRunner()->PostTask(
@@ -175,7 +180,10 @@ void ShellTest::PumpOneFrame(Shell* shell,
         const auto frame_begin_time = fml::TimePoint::Now();
         const auto frame_end_time =
             frame_begin_time + fml::TimeDelta::FromSecondsF(1.0 / 60.0);
-        engine->animator_->BeginFrame(frame_begin_time, frame_end_time);
+        std::unique_ptr<FrameTimingsRecorder> recorder =
+            std::make_unique<FrameTimingsRecorder>();
+        recorder->RecordVsync(frame_begin_time, frame_end_time);
+        engine->animator_->BeginFrame(std::move(recorder));
         latch.Signal();
       });
   latch.Wait();
@@ -199,12 +207,6 @@ void ShellTest::PumpOneFrame(Shell* shell,
         runtime_delegate->Render(std::move(layer_tree));
         latch.Signal();
       });
-  latch.Wait();
-
-  // Wait for render to finish.
-  latch.Reset();
-  shell->GetTaskRunners().GetRasterTaskRunner()->PostTask(
-      [&latch]() { latch.Signal(); });
   latch.Wait();
 }
 
@@ -321,30 +323,48 @@ std::unique_ptr<Shell> ShellTest::CreateShell(
     bool simulate_vsync,
     std::shared_ptr<ShellTestExternalViewEmbedder>
         shell_test_external_view_embedder,
-    bool is_gpu_disabled) {
+    bool is_gpu_disabled,
+    ShellTestPlatformView::BackendType rendering_backend) {
   const auto vsync_clock = std::make_shared<ShellTestVsyncClock>();
+
   CreateVsyncWaiter create_vsync_waiter = [&]() {
     if (simulate_vsync) {
       return static_cast<std::unique_ptr<VsyncWaiter>>(
           std::make_unique<ShellTestVsyncWaiter>(task_runners, vsync_clock));
     } else {
       return static_cast<std::unique_ptr<VsyncWaiter>>(
-          std::make_unique<VsyncWaiterFallback>(task_runners));
+          std::make_unique<VsyncWaiterFallback>(task_runners, true));
     }
   };
-  return Shell::Create(
-      flutter::PlatformData(), task_runners, settings,
-      [vsync_clock, &create_vsync_waiter,
-       shell_test_external_view_embedder](Shell& shell) {
+
+  Shell::CreateCallback<PlatformView> platfrom_view_create_callback =
+      [vsync_clock,                        //
+       &create_vsync_waiter,               //
+       shell_test_external_view_embedder,  //
+       rendering_backend                   //
+  ](Shell& shell) {
         return ShellTestPlatformView::Create(
-            shell, shell.GetTaskRunners(), vsync_clock,
-            std::move(create_vsync_waiter),
-            ShellTestPlatformView::BackendType::kDefaultBackend,
-            shell_test_external_view_embedder);
-      },
-      [](Shell& shell) { return std::make_unique<Rasterizer>(shell); },
-      is_gpu_disabled);
+            shell,                             //
+            shell.GetTaskRunners(),            //
+            vsync_clock,                       //
+            std::move(create_vsync_waiter),    //
+            rendering_backend,                 //
+            shell_test_external_view_embedder  //
+        );
+      };
+
+  Shell::CreateCallback<Rasterizer> rasterizer_create_callback =
+      [](Shell& shell) { return std::make_unique<Rasterizer>(shell); };
+
+  return Shell::Create(flutter::PlatformData(),        //
+                       task_runners,                   //
+                       settings,                       //
+                       platfrom_view_create_callback,  //
+                       rasterizer_create_callback,     //
+                       is_gpu_disabled                 //
+  );
 }
+
 void ShellTest::DestroyShell(std::unique_ptr<Shell> shell) {
   DestroyShell(std::move(shell), GetTaskRunnersForFixture());
 }

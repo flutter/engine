@@ -57,7 +57,7 @@ class MockPlatformViewDelegate : public PlatformView::Delegate {
                void(const ViewportMetrics& metrics));
 
   MOCK_METHOD1(OnPlatformViewDispatchPlatformMessage,
-               void(fml::RefPtr<PlatformMessage> message));
+               void(std::unique_ptr<PlatformMessage> message));
 
   MOCK_METHOD1(OnPlatformViewDispatchPointerDataPacket,
                void(std::unique_ptr<PointerDataPacket> packet));
@@ -139,7 +139,8 @@ class TestAssetResolver : public AssetResolver {
   }
 
   std::vector<std::unique_ptr<fml::Mapping>> GetAsMappings(
-      const std::string& asset_pattern) const override {
+      const std::string& asset_pattern,
+      const std::optional<std::string>& subdir) const override {
     return {};
   };
 
@@ -533,8 +534,7 @@ static void CheckFrameTimings(const std::vector<FrameTiming>& timings,
   }
 }
 
-// TODO(43192): This test is disable because of flakiness.
-TEST_F(ShellTest, DISABLED_ReportTimingsIsCalled) {
+TEST_F(ShellTest, ReportTimingsIsCalled) {
   fml::TimePoint start = fml::TimePoint::Now();
   auto settings = CreateSettingsForFixture();
   std::unique_ptr<Shell> shell = CreateShell(settings);
@@ -550,6 +550,7 @@ TEST_F(ShellTest, DISABLED_ReportTimingsIsCalled) {
   auto nativeTimingCallback = [&reportLatch,
                                &timestamps](Dart_NativeArguments args) {
     Dart_Handle exception = nullptr;
+    ASSERT_EQ(timestamps.size(), 0ul);
     timestamps = tonic::DartConverter<std::vector<int64_t>>::FromArguments(
         args, 0, exception);
     reportLatch.Signal();
@@ -671,7 +672,7 @@ TEST_F(ShellTest, ExternalEmbedderNoThreadMerger) {
                                SkPaint(SkColor4f::FromColor(SK_ColorRED)));
     auto sk_picture = recorder.finishRecordingAsPicture();
     fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
-        this->GetCurrentTaskRunner(), fml::TimeDelta::FromSeconds(0));
+        this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto picture_layer = std::make_shared<PictureLayer>(
         SkPoint::Make(10, 10),
         flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
@@ -726,7 +727,7 @@ TEST_F(ShellTest,
                                SkPaint(SkColor4f::FromColor(SK_ColorRED)));
     auto sk_picture = recorder.finishRecordingAsPicture();
     fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
-        this->GetCurrentTaskRunner(), fml::TimeDelta::FromSeconds(0));
+        this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto picture_layer = std::make_shared<PictureLayer>(
         SkPoint::Make(10, 10),
         flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
@@ -778,7 +779,7 @@ TEST_F(ShellTest,
                                SkPaint(SkColor4f::FromColor(SK_ColorRED)));
     auto sk_picture = recorder.finishRecordingAsPicture();
     fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
-        this->GetCurrentTaskRunner(), fml::TimeDelta::FromSeconds(0));
+        this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto picture_layer = std::make_shared<PictureLayer>(
         SkPoint::Make(10, 10),
         flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
@@ -787,9 +788,9 @@ TEST_F(ShellTest,
 
   PumpOneFrame(shell.get(), 100, 100, builder);
 
-  auto result =
-      shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1000));
-  ASSERT_TRUE(result.ok());
+  auto result = shell->WaitForFirstFrame(fml::TimeDelta::Max());
+  ASSERT_TRUE(result.ok()) << "Result: " << static_cast<int>(result.code())
+                           << ": " << result.message();
 
   ASSERT_TRUE(raster_thread_merger->IsEnabled());
 
@@ -799,7 +800,6 @@ TEST_F(ShellTest,
   // Validate the platform view can be recreated and destroyed again
   ValidateShell(shell.get());
   ASSERT_TRUE(raster_thread_merger->IsEnabled());
-
   DestroyShell(std::move(shell));
 }
 
@@ -852,7 +852,7 @@ TEST_F(ShellTest,
                                SkPaint(SkColor4f::FromColor(SK_ColorRED)));
     auto sk_picture = recorder.finishRecordingAsPicture();
     fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
-        this->GetCurrentTaskRunner(), fml::TimeDelta::FromSeconds(0));
+        this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto picture_layer = std::make_shared<PictureLayer>(
         SkPoint::Make(10, 10),
         flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
@@ -927,7 +927,7 @@ TEST_F(ShellTest,
                                SkPaint(SkColor4f::FromColor(SK_ColorRED)));
     auto sk_picture = recorder.finishRecordingAsPicture();
     fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
-        this->GetCurrentTaskRunner(), fml::TimeDelta::FromSeconds(0));
+        this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto picture_layer = std::make_shared<PictureLayer>(
         SkPoint::Make(10, 10),
         flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
@@ -1000,7 +1000,7 @@ TEST_F(ShellTest,
                                SkPaint(SkColor4f::FromColor(SK_ColorRED)));
     auto sk_picture = recorder.finishRecordingAsPicture();
     fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
-        this->GetCurrentTaskRunner(), fml::TimeDelta::FromSeconds(0));
+        this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto picture_layer = std::make_shared<PictureLayer>(
         SkPoint::Make(10, 10),
         flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
@@ -1048,7 +1048,7 @@ TEST_F(ShellTest, OnPlatformViewDestroyWithoutRasterThreadMerger) {
                                SkPaint(SkColor4f::FromColor(SK_ColorRED)));
     auto sk_picture = recorder.finishRecordingAsPicture();
     fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
-        this->GetCurrentTaskRunner(), fml::TimeDelta::FromSeconds(0));
+        this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto picture_layer = std::make_shared<PictureLayer>(
         SkPoint::Make(10, 10),
         flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
@@ -1119,7 +1119,7 @@ TEST_F(ShellTest,
                                SkPaint(SkColor4f::FromColor(SK_ColorRED)));
     auto sk_picture = recorder.finishRecordingAsPicture();
     fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
-        this->GetCurrentTaskRunner(), fml::TimeDelta::FromSeconds(0));
+        this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto picture_layer = std::make_shared<PictureLayer>(
         SkPoint::Make(10, 10),
         flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
@@ -1143,7 +1143,7 @@ TEST_F(ShellTest,
 #if defined(OS_FUCHSIA)
        DISABLED_SkipAndSubmitFrame
 #else
-       SkipAndSubmitFrame
+       DISABLED_SkipAndSubmitFrame
 #endif
 ) {
   auto settings = CreateSettingsForFixture();
@@ -1262,57 +1262,6 @@ TEST(SettingsTest, FrameTimingSetsAndGetsProperly) {
   }
 }
 
-#if FLUTTER_RELEASE
-TEST_F(ShellTest, ReportTimingsIsCalledLaterInReleaseMode) {
-#else
-TEST_F(ShellTest, ReportTimingsIsCalledSoonerInNonReleaseMode) {
-#endif
-  fml::TimePoint start = fml::TimePoint::Now();
-  auto settings = CreateSettingsForFixture();
-  std::unique_ptr<Shell> shell = CreateShell(settings);
-
-  // Create the surface needed by rasterizer
-  PlatformViewNotifyCreated(shell.get());
-
-  auto configuration = RunConfiguration::InferFromSettings(settings);
-  ASSERT_TRUE(configuration.IsValid());
-  configuration.SetEntrypoint("reportTimingsMain");
-
-  // Wait for 2 reports: the first one is the immediate callback of the first
-  // frame; the second one will exercise the batching logic.
-  fml::CountDownLatch reportLatch(2);
-  std::vector<int64_t> timestamps;
-  auto nativeTimingCallback = [&reportLatch,
-                               &timestamps](Dart_NativeArguments args) {
-    Dart_Handle exception = nullptr;
-    timestamps = tonic::DartConverter<std::vector<int64_t>>::FromArguments(
-        args, 0, exception);
-    reportLatch.CountDown();
-  };
-  AddNativeCallback("NativeReportTimingsCallback",
-                    CREATE_NATIVE_ENTRY(nativeTimingCallback));
-  RunEngine(shell.get(), std::move(configuration));
-
-  PumpOneFrame(shell.get());
-  PumpOneFrame(shell.get());
-
-  reportLatch.Wait();
-  DestroyShell(std::move(shell));
-
-  fml::TimePoint finish = fml::TimePoint::Now();
-  fml::TimeDelta elapsed = finish - start;
-
-#if FLUTTER_RELEASE
-  // Our batch time is 1000ms. Hopefully the 800ms limit is relaxed enough to
-  // make it not too flaky.
-  ASSERT_TRUE(elapsed >= fml::TimeDelta::FromMilliseconds(800));
-#else
-  // Our batch time is 100ms. Hopefully the 500ms limit is relaxed enough to
-  // make it not too flaky.
-  ASSERT_TRUE(elapsed <= fml::TimeDelta::FromMilliseconds(500));
-#endif
-}
-
 TEST_F(ShellTest, ReportTimingsIsCalledImmediatelyAfterTheFirstFrame) {
   auto settings = CreateSettingsForFixture();
   std::unique_ptr<Shell> shell = CreateShell(settings);
@@ -1328,12 +1277,14 @@ TEST_F(ShellTest, ReportTimingsIsCalledImmediatelyAfterTheFirstFrame) {
   auto nativeTimingCallback = [&reportLatch,
                                &timestamps](Dart_NativeArguments args) {
     Dart_Handle exception = nullptr;
+    ASSERT_EQ(timestamps.size(), 0ul);
     timestamps = tonic::DartConverter<std::vector<int64_t>>::FromArguments(
         args, 0, exception);
     reportLatch.Signal();
   };
   AddNativeCallback("NativeReportTimingsCallback",
                     CREATE_NATIVE_ENTRY(nativeTimingCallback));
+  ASSERT_TRUE(configuration.IsValid());
   RunEngine(shell.get(), std::move(configuration));
 
   for (int i = 0; i < 10; i += 1) {
@@ -1390,8 +1341,7 @@ TEST_F(ShellTest, WaitForFirstFrame) {
 
   RunEngine(shell.get(), std::move(configuration));
   PumpOneFrame(shell.get());
-  fml::Status result =
-      shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1000));
+  fml::Status result = shell->WaitForFirstFrame(fml::TimeDelta::Max());
   ASSERT_TRUE(result.ok());
 
   DestroyShell(std::move(shell));
@@ -1409,8 +1359,7 @@ TEST_F(ShellTest, WaitForFirstFrameZeroSizeFrame) {
 
   RunEngine(shell.get(), std::move(configuration));
   PumpOneFrame(shell.get(), {1.0, 0.0, 0.0});
-  fml::Status result =
-      shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1000));
+  fml::Status result = shell->WaitForFirstFrame(fml::TimeDelta::Zero());
   ASSERT_FALSE(result.ok());
   ASSERT_EQ(result.code(), fml::StatusCode::kDeadlineExceeded);
 
@@ -1428,8 +1377,7 @@ TEST_F(ShellTest, WaitForFirstFrameTimeout) {
   configuration.SetEntrypoint("emptyMain");
 
   RunEngine(shell.get(), std::move(configuration));
-  fml::Status result =
-      shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(10));
+  fml::Status result = shell->WaitForFirstFrame(fml::TimeDelta::Zero());
   ASSERT_FALSE(result.ok());
   ASSERT_EQ(result.code(), fml::StatusCode::kDeadlineExceeded);
 
@@ -1448,11 +1396,10 @@ TEST_F(ShellTest, WaitForFirstFrameMultiple) {
 
   RunEngine(shell.get(), std::move(configuration));
   PumpOneFrame(shell.get());
-  fml::Status result =
-      shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1000));
+  fml::Status result = shell->WaitForFirstFrame(fml::TimeDelta::Max());
   ASSERT_TRUE(result.ok());
   for (int i = 0; i < 100; ++i) {
-    result = shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1));
+    result = shell->WaitForFirstFrame(fml::TimeDelta::Zero());
     ASSERT_TRUE(result.ok());
   }
 
@@ -1479,13 +1426,12 @@ TEST_F(ShellTest, WaitForFirstFrameInlined) {
   PumpOneFrame(shell.get());
   fml::AutoResetWaitableEvent event;
   task_runner->PostTask([&shell, &event] {
-    fml::Status result =
-        shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1000));
+    fml::Status result = shell->WaitForFirstFrame(fml::TimeDelta::Max());
     ASSERT_FALSE(result.ok());
     ASSERT_EQ(result.code(), fml::StatusCode::kFailedPrecondition);
     event.Signal();
   });
-  ASSERT_FALSE(event.WaitWithTimeout(fml::TimeDelta::FromMilliseconds(1000)));
+  ASSERT_FALSE(event.WaitWithTimeout(fml::TimeDelta::Max()));
 
   DestroyShell(std::move(shell), std::move(task_runners));
 }
@@ -1544,7 +1490,7 @@ TEST_F(ShellTest, SetResourceCacheSize) {
                                 "args": 10000
                               })json";
   std::vector<uint8_t> data(request_json.begin(), request_json.end());
-  auto platform_message = fml::MakeRefCounted<PlatformMessage>(
+  auto platform_message = std::make_unique<PlatformMessage>(
       "flutter/skia", std::move(data), nullptr);
   SendEnginePlatformMessage(shell.get(), std::move(platform_message));
   PumpOneFrame(shell.get());
@@ -1814,7 +1760,7 @@ TEST_F(ShellTest, Screenshot) {
                                SkPaint(SkColor4f::FromColor(SK_ColorRED)));
     auto sk_picture = recorder.finishRecordingAsPicture();
     fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
-        this->GetCurrentTaskRunner(), fml::TimeDelta::FromSeconds(0));
+        this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto picture_layer = std::make_shared<PictureLayer>(
         SkPoint::Make(10, 10),
         flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
@@ -2104,7 +2050,7 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
   // 1. Construct a picture and a picture layer to be raster cached.
   sk_sp<SkPicture> picture = MakeSizedPicture(10, 10);
   fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
-      GetCurrentTaskRunner(), fml::TimeDelta::FromSeconds(0));
+      GetCurrentTaskRunner(), fml::TimeDelta::Zero());
   auto picture_layer = std::make_shared<PictureLayer>(
       SkPoint::Make(0, 0),
       flutter::SkiaGPUObject<SkPicture>({MakeSizedPicture(100, 100), queue}),
@@ -2436,16 +2382,78 @@ TEST_F(ShellTest, AssetManagerMulti) {
   asset_manager.PushBack(
       std::make_unique<DirectoryAssetBundle>(std::move(asset_dir_fd), false));
 
-  auto mappings = asset_manager.GetAsMappings("(.*)");
-  ASSERT_TRUE(mappings.size() == 4);
+  auto mappings = asset_manager.GetAsMappings("(.*)", std::nullopt);
+  EXPECT_EQ(mappings.size(), 4u);
 
   std::vector<std::string> expected_results = {
       "good0",
       "good1",
   };
 
-  mappings = asset_manager.GetAsMappings("(.*)good(.*)");
-  ASSERT_TRUE(mappings.size() == expected_results.size());
+  mappings = asset_manager.GetAsMappings("(.*)good(.*)", std::nullopt);
+  ASSERT_EQ(mappings.size(), expected_results.size());
+
+  for (auto& mapping : mappings) {
+    std::string result(reinterpret_cast<const char*>(mapping->GetMapping()),
+                       mapping->GetSize());
+    EXPECT_NE(
+        std::find(expected_results.begin(), expected_results.end(), result),
+        expected_results.end());
+  }
+}
+
+#if defined(OS_FUCHSIA)
+TEST_F(ShellTest, AssetManagerMultiSubdir) {
+  std::string subdir_path = "subdir";
+
+  fml::ScopedTemporaryDirectory asset_dir;
+  fml::UniqueFD asset_dir_fd = fml::OpenDirectory(
+      asset_dir.path().c_str(), false, fml::FilePermission::kRead);
+  fml::UniqueFD subdir_fd =
+      fml::OpenDirectory((asset_dir.path() + "/" + subdir_path).c_str(), true,
+                         fml::FilePermission::kReadWrite);
+
+  std::vector<std::string> filenames = {
+      "bad0",
+      "notgood",  // this is to make sure the pattern (.*)good(.*) only matches
+                  // things in the subdirectory
+  };
+
+  std::vector<std::string> subdir_filenames = {
+      "good0",
+      "good1",
+      "bad1",
+  };
+
+  for (auto filename : filenames) {
+    bool success = fml::WriteAtomically(asset_dir_fd, filename.c_str(),
+                                        fml::DataMapping(filename));
+    ASSERT_TRUE(success);
+  }
+
+  for (auto filename : subdir_filenames) {
+    bool success = fml::WriteAtomically(subdir_fd, filename.c_str(),
+                                        fml::DataMapping(filename));
+    ASSERT_TRUE(success);
+  }
+
+  AssetManager asset_manager;
+  asset_manager.PushBack(
+      std::make_unique<DirectoryAssetBundle>(std::move(asset_dir_fd), false));
+
+  auto mappings = asset_manager.GetAsMappings("(.*)", std::nullopt);
+  EXPECT_EQ(mappings.size(), 5u);
+
+  mappings = asset_manager.GetAsMappings("(.*)", subdir_path);
+  EXPECT_EQ(mappings.size(), 3u);
+
+  std::vector<std::string> expected_results = {
+      "good0",
+      "good1",
+  };
+
+  mappings = asset_manager.GetAsMappings("(.*)good(.*)", subdir_path);
+  ASSERT_EQ(mappings.size(), expected_results.size());
 
   for (auto& mapping : mappings) {
     std::string result(reinterpret_cast<const char*>(mapping->GetMapping()),
@@ -2455,6 +2463,7 @@ TEST_F(ShellTest, AssetManagerMulti) {
         expected_results.end());
   }
 }
+#endif  // OS_FUCHSIA
 
 TEST_F(ShellTest, Spawn) {
   auto settings = CreateSettingsForFixture();
@@ -2699,6 +2708,79 @@ TEST_F(ShellTest, UpdateAssetResolverByTypeDoesNotReplaceMismatchType) {
 
   DestroyShell(std::move(shell), std::move(task_runners));
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+}
+
+TEST_F(ShellTest, CanCreateShellsWithGLBackend) {
+#if !SHELL_ENABLE_GL
+  // GL emulation does not exist on Fuchsia.
+  GTEST_SKIP();
+#endif  // !SHELL_ENABLE_GL
+  auto settings = CreateSettingsForFixture();
+  std::unique_ptr<Shell> shell =
+      CreateShell(settings,                                       //
+                  GetTaskRunnersForFixture(),                     //
+                  false,                                          //
+                  nullptr,                                        //
+                  false,                                          //
+                  ShellTestPlatformView::BackendType::kGLBackend  //
+      );
+  ASSERT_NE(shell, nullptr);
+  ASSERT_TRUE(shell->IsSetup());
+  PlatformViewNotifyCreated(shell.get());
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("emptyMain");
+  RunEngine(shell.get(), std::move(configuration));
+  PumpOneFrame(shell.get());
+  PlatformViewNotifyDestroyed(shell.get());
+  DestroyShell(std::move(shell));
+}
+
+TEST_F(ShellTest, CanCreateShellsWithVulkanBackend) {
+#if !SHELL_ENABLE_VULKAN
+  GTEST_SKIP();
+#endif  // !SHELL_ENABLE_VULKAN
+  auto settings = CreateSettingsForFixture();
+  std::unique_ptr<Shell> shell =
+      CreateShell(settings,                                           //
+                  GetTaskRunnersForFixture(),                         //
+                  false,                                              //
+                  nullptr,                                            //
+                  false,                                              //
+                  ShellTestPlatformView::BackendType::kVulkanBackend  //
+      );
+  ASSERT_NE(shell, nullptr);
+  ASSERT_TRUE(shell->IsSetup());
+  PlatformViewNotifyCreated(shell.get());
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("emptyMain");
+  RunEngine(shell.get(), std::move(configuration));
+  PumpOneFrame(shell.get());
+  PlatformViewNotifyDestroyed(shell.get());
+  DestroyShell(std::move(shell));
+}
+
+TEST_F(ShellTest, CanCreateShellsWithMetalBackend) {
+#if !SHELL_ENABLE_METAL
+  GTEST_SKIP();
+#endif  // !SHELL_ENABLE_METAL
+  auto settings = CreateSettingsForFixture();
+  std::unique_ptr<Shell> shell =
+      CreateShell(settings,                                          //
+                  GetTaskRunnersForFixture(),                        //
+                  false,                                             //
+                  nullptr,                                           //
+                  false,                                             //
+                  ShellTestPlatformView::BackendType::kMetalBackend  //
+      );
+  ASSERT_NE(shell, nullptr);
+  ASSERT_TRUE(shell->IsSetup());
+  PlatformViewNotifyCreated(shell.get());
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("emptyMain");
+  RunEngine(shell.get(), std::move(configuration));
+  PumpOneFrame(shell.get());
+  PlatformViewNotifyDestroyed(shell.get());
+  DestroyShell(std::move(shell));
 }
 
 }  // namespace testing

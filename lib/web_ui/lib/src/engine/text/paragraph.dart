@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of engine;
 
 const ui.Color _defaultTextColor = ui.Color(0xFFFF0000);
@@ -1825,6 +1824,11 @@ void _applyTextStyleToElement({
       }
     }
   }
+
+  final List<ui.FontFeature>? fontFeatures = style._fontFeatures;
+  if (fontFeatures != null && fontFeatures.isNotEmpty) {
+    cssStyle.fontFeatureSettings = _fontFeatureListToCss(fontFeatures);
+  }
 }
 
 html.Element _createPlaceholderElement({
@@ -1890,6 +1894,22 @@ String _shadowListToCss(List<ui.Shadow> shadows) {
     ui.Shadow shadow = shadows[i];
     sb.write('${shadow.offset.dx}px ${shadow.offset.dy}px '
         '${shadow.blurRadius}px ${colorToCssString(shadow.color)}');
+  }
+  return sb.toString();
+}
+
+String _fontFeatureListToCss(List<ui.FontFeature> fontFeatures) {
+  assert(fontFeatures.isNotEmpty);
+
+  // For more details, see:
+  // * https://developer.mozilla.org/en-US/docs/Web/CSS/font-feature-settings
+  StringBuffer sb = new StringBuffer();
+  for (int i = 0, len = fontFeatures.length; i < len; i++) {
+    if (i != 0) {
+      sb.write(',');
+    }
+    ui.FontFeature fontFeature = fontFeatures[i];
+    sb.write('"${fontFeature.feature}" ${fontFeature.value}');
   }
   return sb.toString();
 }

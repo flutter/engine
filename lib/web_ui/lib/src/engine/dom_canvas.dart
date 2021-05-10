@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of engine;
 
 /// A canvas that renders to DOM elements and CSS properties.
@@ -268,7 +267,7 @@ html.Element _pathToSvgElement(SurfacePath path, SurfacePaintData paint,
     sb.write('fill-rule="evenodd" ');
   }
   sb.write('d="');
-  pathToSvg(path, sb);
+  pathToSvg(path.pathRef, sb);
   sb.write('"></path>');
   sb.write('</svg>');
   return html.Element.html(sb.toString(), treeSanitizer: _NullTreeSanitizer());

@@ -124,6 +124,7 @@ template("runner_sources") {
     public_deps = [
                     "$fuchsia_sdk_root/pkg:scenic_cpp",
                     "$fuchsia_sdk_root/pkg:sys_cpp",
+                    "$fuchsia_sdk_root/pkg:sys_inspect_cpp",
                     "//flutter/shell/platform/fuchsia/runtime/dart/utils",
                   ] + flutter_public_deps
 
@@ -833,6 +834,10 @@ fuchsia_test_archive("embedder_tests") {
     {
       path = "$root_gen_dir/flutter/shell/platform/embedder/assets/scene_without_custom_compositor_with_xform.png"
       dest = "assets/scene_without_custom_compositor_with_xform.png"
+    },
+    {
+      path = "$root_gen_dir/flutter/shell/platform/embedder/assets/snapshot_large_scene.png"
+      dest = "assets/snapshot_large_scene.png"
     },
     {
       path = "$root_gen_dir/flutter/shell/platform/embedder/assets/verifyb143464703.png"

@@ -155,18 +155,13 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
                object:nil];
 
   [center addObserver:self
+             selector:@selector(applicationWillEnterForeground:)
+                 name:UIApplicationWillEnterForegroundNotification
+               object:nil];
+
+  [center addObserver:self
              selector:@selector(applicationDidEnterBackground:)
                  name:UIApplicationDidEnterBackgroundNotification
-               object:nil];
-
-  [center addObserver:self
-             selector:@selector(applicationBecameActive:)
-                 name:UIApplicationDidBecomeActiveNotification
-               object:nil];
-
-  [center addObserver:self
-             selector:@selector(applicationWillResignActive:)
-                 name:UIApplicationWillResignActiveNotification
                object:nil];
 
   [center addObserver:self
@@ -526,7 +521,8 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   _publisher.reset([[FlutterObservatoryPublisher alloc]
       initWithEnableObservatoryPublication:doesObservatoryPublication]);
   [self maybeSetupPlatformViewChannels];
-  _shell->GetIsGpuDisabledSyncSwitch()->SetSwitch(_isGpuDisabled ? true : false);
+  _shell->SetGpuAvailability(_isGpuDisabled ? flutter::GpuAvailability::kUnavailable
+                                            : flutter::GpuAvailability::kAvailable);
 }
 
 + (BOOL)isProfilerEnabled {
@@ -611,15 +607,16 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
                                     _threadHost->io_thread->GetTaskRunner()          // io
   );
 
+  _isGpuDisabled =
+      [UIApplication sharedApplication].applicationState == UIApplicationStateBackground;
   // Create the shell. This is a blocking operation.
   std::unique_ptr<flutter::Shell> shell = flutter::Shell::Create(
-      std::move(platformData),  // window data
-      std::move(task_runners),  // task runners
-      std::move(settings),      // settings
-      on_create_platform_view,  // platform view creation
-      on_create_rasterizer,     // rasterzier creation
-      /*is_gpu_disabled=*/[UIApplication sharedApplication].applicationState !=
-          UIApplicationStateActive);
+      /*platform_data=*/std::move(platformData),
+      /*task_runners=*/std::move(task_runners),
+      /*settings=*/std::move(settings),
+      /*on_create_platform_view=*/on_create_platform_view,
+      /*on_create_rasterizer=*/on_create_rasterizer,
+      /*is_gpu_disabled=*/_isGpuDisabled);
 
   if (shell == nullptr) {
     FML_LOG(ERROR) << "Could not start a shell FlutterEngine with entrypoint: "
@@ -807,12 +804,12 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
                                 callback(reply);
                               },
                               _shell->GetTaskRunners().GetPlatformTaskRunner());
-  fml::RefPtr<flutter::PlatformMessage> platformMessage =
-      (message == nil) ? fml::MakeRefCounted<flutter::PlatformMessage>(channel.UTF8String, response)
-                       : fml::MakeRefCounted<flutter::PlatformMessage>(
+  std::unique_ptr<flutter::PlatformMessage> platformMessage =
+      (message == nil) ? std::make_unique<flutter::PlatformMessage>(channel.UTF8String, response)
+                       : std::make_unique<flutter::PlatformMessage>(
                              channel.UTF8String, flutter::GetVectorFromNSData(message), response);
 
-  _shell->GetPlatformView()->DispatchPlatformMessage(platformMessage);
+  _shell->GetPlatformView()->DispatchPlatformMessage(std::move(platformMessage));
 }
 
 - (FlutterBinaryMessengerConnection)setMessageHandlerOnChannel:(NSString*)channel
@@ -887,15 +884,12 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 
 #pragma mark - Notifications
 
-- (void)applicationBecameActive:(NSNotification*)notification {
+- (void)applicationWillEnterForeground:(NSNotification*)notification {
   [self setIsGpuDisabled:NO];
 }
 
-- (void)applicationWillResignActive:(NSNotification*)notification {
-  [self setIsGpuDisabled:YES];
-}
-
 - (void)applicationDidEnterBackground:(NSNotification*)notification {
+  [self setIsGpuDisabled:YES];
   [self notifyLowMemory];
 }
 
@@ -905,7 +899,8 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 
 - (void)setIsGpuDisabled:(BOOL)value {
   if (_shell) {
-    _shell->GetIsGpuDisabledSyncSwitch()->SetSwitch(value ? true : false);
+    _shell->SetGpuAvailability(value ? flutter::GpuAvailability::kUnavailable
+                                     : flutter::GpuAvailability::kAvailable);
   }
   _isGpuDisabled = value;
 }

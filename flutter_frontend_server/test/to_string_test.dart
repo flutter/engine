@@ -12,7 +12,7 @@ import 'package:path/path.dart' as path;
 
 import 'package:test/test.dart';
 
-void main(List<String> args) async {
+Future<void> main(List<String> args) async {
   if (args.length != 2) {
     stderr.writeln('The first argument must be the path to the forntend server dill.');
     stderr.writeln('The second argument must be the path to the flutter_patched_sdk');
@@ -69,7 +69,8 @@ void main(List<String> args) async {
     final MockProcedure procedure = MockProcedure();
     final MockFunctionNode function = MockFunctionNode();
     final MockStatement statement = MockStatement();
-    final Library library = Library(Uri.parse('package:some_package/src/blah.dart'));
+    final Uri uri = Uri.parse('package:some_package/src/blah.dart');
+    final Library library = Library(uri, fileUri: uri);
     when(procedure.function).thenReturn(function);
     when(procedure.name).thenReturn(Name('toString'));
     when(procedure.annotations).thenReturn(const <Expression>[]);
@@ -88,12 +89,13 @@ void main(List<String> args) async {
     final MockProcedure procedure = MockProcedure();
     final MockFunctionNode function = MockFunctionNode();
     final MockStatement statement = MockStatement();
-    final Library library = Library(Uri.parse('package:some_package/src/blah.dart'));
+    final Uri uri = Uri.parse('package:some_package/src/blah.dart');
+    final Library library = Library(uri, fileUri: uri);
     when(procedure.function).thenReturn(function);
     when(procedure.name).thenReturn(Name('toString'));
     when(procedure.annotations).thenReturn(const <Expression>[]);
     when(procedure.enclosingLibrary).thenReturn(library);
-    when(procedure.enclosingClass).thenReturn(Class(name: 'foo'));
+    when(procedure.enclosingClass).thenReturn(Class(name: 'foo', fileUri: uri));
     when(procedure.isAbstract).thenReturn(true);
     when(procedure.isStatic).thenReturn(false);
     when(function.body).thenReturn(statement);
@@ -107,12 +109,13 @@ void main(List<String> args) async {
     final MockProcedure procedure = MockProcedure();
     final MockFunctionNode function = MockFunctionNode();
     final MockStatement statement = MockStatement();
-    final Library library = Library(Uri.parse('package:some_package/src/blah.dart'));
+    final Uri uri = Uri.parse('package:some_package/src/blah.dart');
+    final Library library = Library(uri, fileUri: uri);
     when(procedure.function).thenReturn(function);
     when(procedure.name).thenReturn(Name('toString'));
     when(procedure.annotations).thenReturn(const <Expression>[]);
     when(procedure.enclosingLibrary).thenReturn(library);
-    when(procedure.enclosingClass).thenReturn(Class(name: 'foo'));
+    when(procedure.enclosingClass).thenReturn(Class(name: 'foo', fileUri: uri));
     when(procedure.isAbstract).thenReturn(false);
     when(procedure.isStatic).thenReturn(true);
     when(function.body).thenReturn(statement);
@@ -126,12 +129,13 @@ void main(List<String> args) async {
     final MockProcedure procedure = MockProcedure();
     final MockFunctionNode function = MockFunctionNode();
     final MockStatement statement = MockStatement();
-    final Library library = Library(Uri.parse('package:some_package/src/blah.dart'));
+    final Uri uri = Uri.parse('package:some_package/src/blah.dart');
+    final Library library = Library(uri, fileUri: uri);
     when(procedure.function).thenReturn(function);
     when(procedure.name).thenReturn(Name('toString'));
     when(procedure.annotations).thenReturn(const <Expression>[]);
     when(procedure.enclosingLibrary).thenReturn(library);
-    when(procedure.enclosingClass).thenReturn(Class(name: 'foo')..isEnum = true);
+    when(procedure.enclosingClass).thenReturn(Class(name: 'foo', fileUri: uri)..isEnum = true);
     when(procedure.isAbstract).thenReturn(false);
     when(procedure.isStatic).thenReturn(false);
     when(function.body).thenReturn(statement);
@@ -145,12 +149,13 @@ void main(List<String> args) async {
     final MockProcedure procedure = MockProcedure();
     final MockFunctionNode function = MockFunctionNode();
     final MockStatement statement = MockStatement();
-    final Library library = Library(Uri.parse('package:some_package/src/blah.dart'));
+    final Uri uri = Uri.parse('package:some_package/src/blah.dart');
+    final Library library = Library(uri, fileUri: uri);
     when(procedure.function).thenReturn(function);
     when(procedure.name).thenReturn(Name('toString'));
     when(procedure.annotations).thenReturn(const <Expression>[]);
     when(procedure.enclosingLibrary).thenReturn(library);
-    when(procedure.enclosingClass).thenReturn(Class(name: 'foo'));
+    when(procedure.enclosingClass).thenReturn(Class(name: 'foo', fileUri: uri));
     when(procedure.isAbstract).thenReturn(false);
     when(procedure.isStatic).thenReturn(false);
     when(function.body).thenReturn(statement);
@@ -164,9 +169,10 @@ void main(List<String> args) async {
     final MockProcedure procedure = MockProcedure();
     final MockFunctionNode function = MockFunctionNode();
     final MockStatement statement = MockStatement();
-    final Library library = Library(Uri.parse('dart:ui'));
+    final Uri uri = Uri.parse('dart:ui');
+    final Library library = Library(uri, fileUri: uri);
     final Name name = Name('toString');
-    final Class annotation = Class(name: '_KeepToString')..parent = Library(Uri.parse('dart:ui'));
+    final Class annotation = Class(name: '_KeepToString', fileUri: uri)..parent = library;
 
     when(procedure.function).thenReturn(function);
     when(procedure.name).thenReturn(name);
@@ -181,7 +187,7 @@ void main(List<String> args) async {
     ]);
 
     when(procedure.enclosingLibrary).thenReturn(library);
-    when(procedure.enclosingClass).thenReturn(Class(name: 'foo'));
+    when(procedure.enclosingClass).thenReturn(Class(name: 'foo', fileUri: uri));
     when(procedure.isAbstract).thenReturn(false);
     when(procedure.isStatic).thenReturn(false);
     when(function.body).thenReturn(statement);
@@ -202,14 +208,15 @@ void main(List<String> args) async {
     final MockProcedure procedure = MockProcedure();
     final MockFunctionNode function = MockFunctionNode();
     final MockStatement statement = MockStatement();
-    final Library library = Library(Uri.parse('dart:ui'));
+    final Uri uri = Uri.parse('dart:ui');
+    final Library library = Library(uri, fileUri: uri);
     final Name name = Name('toString');
 
     when(procedure.function).thenReturn(function);
     when(procedure.name).thenReturn(name);
     when(procedure.annotations).thenReturn(const <Expression>[]);
     when(procedure.enclosingLibrary).thenReturn(library);
-    when(procedure.enclosingClass).thenReturn(Class(name: 'foo'));
+    when(procedure.enclosingClass).thenReturn(Class(name: 'foo', fileUri: uri));
     when(procedure.isAbstract).thenReturn(false);
     when(procedure.isStatic).thenReturn(false);
     when(function.body).thenReturn(statement);
@@ -223,14 +230,15 @@ void main(List<String> args) async {
     final MockProcedure procedure = MockProcedure();
     final MockFunctionNode function = MockFunctionNode();
     final MockStatement statement = MockStatement();
-    final Library library = Library(Uri.parse('package:flutter/src/foundation.dart'));
+    final Uri uri = Uri.parse('package:flutter/src/foundation.dart');
+    final Library library = Library(uri, fileUri: uri);
     final Name name = Name('toString');
 
     when(procedure.function).thenReturn(function);
     when(procedure.name).thenReturn(name);
     when(procedure.annotations).thenReturn(const <Expression>[]);
     when(procedure.enclosingLibrary).thenReturn(library);
-    when(procedure.enclosingClass).thenReturn(Class(name: 'foo'));
+    when(procedure.enclosingClass).thenReturn(Class(name: 'foo', fileUri: uri));
     when(procedure.isAbstract).thenReturn(false);
     when(procedure.isStatic).thenReturn(false);
     when(function.body).thenReturn(statement);

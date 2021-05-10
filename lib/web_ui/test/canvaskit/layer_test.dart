@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 import 'dart:typed_data';
 
 import 'package:test/bootstrap/browser.dart';
@@ -26,8 +25,8 @@ void testMain() {
           ui.window.platformDispatcher as EnginePlatformDispatcher;
 
       final CkPicture picture =
-          paintPicture(ui.Rect.fromLTRB(0, 0, 30, 30), (CkCanvas canvas) {
-        canvas.drawRect(ui.Rect.fromLTRB(0, 0, 30, 30),
+          paintPicture(ui.Rect.fromLTRB(0, 0, 60, 60), (CkCanvas canvas) {
+        canvas.drawRect(ui.Rect.fromLTRB(0, 0, 60, 60),
             CkPaint()..style = ui.PaintingStyle.fill);
       });
 

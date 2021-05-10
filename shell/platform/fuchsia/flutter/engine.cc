@@ -50,9 +50,9 @@ void UpdateNativeThreadLabelNames(const std::string& label,
   set_thread_name(runners.GetIOTaskRunner(), label, ".io");
 }
 
-fml::RefPtr<flutter::PlatformMessage> MakeLocalizationPlatformMessage(
+std::unique_ptr<flutter::PlatformMessage> MakeLocalizationPlatformMessage(
     const fuchsia::intl::Profile& intl_profile) {
-  return fml::MakeRefCounted<flutter::PlatformMessage>(
+  return std::make_unique<flutter::PlatformMessage>(
       "flutter/localization", MakeLocalizationPlatformMessageData(intl_profile),
       nullptr);
 }
@@ -176,16 +176,16 @@ Engine::Engine(Delegate& delegate,
   OnEnableWireframe on_enable_wireframe_callback = std::bind(
       &Engine::DebugWireframeSettingsChanged, this, std::placeholders::_1);
 
-  OnCreateView on_create_view_callback =
-      std::bind(&Engine::CreateView, this, std::placeholders::_1,
-                std::placeholders::_2, std::placeholders::_3);
+  OnCreateView on_create_view_callback = std::bind(
+      &Engine::CreateView, this, std::placeholders::_1, std::placeholders::_2,
+      std::placeholders::_3, std::placeholders::_4);
 
-  OnUpdateView on_update_view_callback =
-      std::bind(&Engine::UpdateView, this, std::placeholders::_1,
-                std::placeholders::_2, std::placeholders::_3);
+  OnUpdateView on_update_view_callback = std::bind(
+      &Engine::UpdateView, this, std::placeholders::_1, std::placeholders::_2,
+      std::placeholders::_3, std::placeholders::_4);
 
-  OnDestroyView on_destroy_view_callback =
-      std::bind(&Engine::DestroyView, this, std::placeholders::_1);
+  OnDestroyView on_destroy_view_callback = std::bind(
+      &Engine::DestroyView, this, std::placeholders::_1, std::placeholders::_2);
 
   OnCreateSurface on_create_surface_callback =
       std::bind(&Engine::CreateSurface, this);
@@ -402,7 +402,7 @@ Engine::Engine(Delegate& delegate,
       auto message = MakeLocalizationPlatformMessage(profile);
       FML_VLOG(-1) << "Sending LocalizationPlatformMessage";
       flutter_runner_engine->shell_->GetPlatformView()->DispatchPlatformMessage(
-          message);
+          std::move(message));
     };
 
     FML_VLOG(-1) << "Requesting intl Profile";
@@ -580,62 +580,73 @@ void Engine::DebugWireframeSettingsChanged(bool enabled) {
   });
 }
 
-void Engine::CreateView(int64_t view_id, bool hit_testable, bool focusable) {
+void Engine::CreateView(int64_t view_id,
+                        ViewIdCallback on_view_bound,
+                        bool hit_testable,
+                        bool focusable) {
   FML_CHECK(shell_);
 
   shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask(
-      [this, view_id, hit_testable, focusable]() {
+      [this, view_id, hit_testable, focusable,
+       on_view_bound = std::move(on_view_bound)]() {
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
         if (use_legacy_renderer_) {
           FML_CHECK(legacy_external_view_embedder_);
-          legacy_external_view_embedder_->CreateView(view_id, hit_testable,
-                                                     focusable);
+          legacy_external_view_embedder_->CreateView(
+              view_id, std::move(on_view_bound), hit_testable, focusable);
         } else
 #endif
         {
           FML_CHECK(external_view_embedder_);
-          external_view_embedder_->CreateView(view_id);
-          external_view_embedder_->SetViewProperties(view_id, hit_testable,
-                                                     focusable);
+          external_view_embedder_->CreateView(view_id,
+                                              std::move(on_view_bound));
+          external_view_embedder_->SetViewProperties(
+              view_id, SkRect::MakeEmpty(), hit_testable, focusable);
         }
       });
 }
 
-void Engine::UpdateView(int64_t view_id, bool hit_testable, bool focusable) {
+void Engine::UpdateView(int64_t view_id,
+                        SkRect occlusion_hint,
+                        bool hit_testable,
+                        bool focusable) {
   FML_CHECK(shell_);
 
   shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask(
-      [this, view_id, hit_testable, focusable]() {
+      [this, view_id, occlusion_hint, hit_testable, focusable]() {
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
         if (use_legacy_renderer_) {
           FML_CHECK(legacy_external_view_embedder_);
-          legacy_external_view_embedder_->UpdateView(view_id, hit_testable,
-                                                     focusable);
+          legacy_external_view_embedder_->UpdateView(view_id, occlusion_hint,
+                                                     hit_testable, focusable);
         } else
 #endif
         {
           FML_CHECK(external_view_embedder_);
-          external_view_embedder_->SetViewProperties(view_id, hit_testable,
-                                                     focusable);
+          external_view_embedder_->SetViewProperties(view_id, occlusion_hint,
+                                                     hit_testable, focusable);
         }
       });
 }
 
-void Engine::DestroyView(int64_t view_id) {
+void Engine::DestroyView(int64_t view_id, ViewIdCallback on_view_unbound) {
   FML_CHECK(shell_);
 
-  shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask([this, view_id]() {
+  shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask(
+      [this, view_id, on_view_unbound = std::move(on_view_unbound)]() {
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
-    if (use_legacy_renderer_) {
-      FML_CHECK(legacy_external_view_embedder_);
-      legacy_external_view_embedder_->DestroyView(view_id);
-    } else
+        if (use_legacy_renderer_) {
+          FML_CHECK(legacy_external_view_embedder_);
+          legacy_external_view_embedder_->DestroyView(
+              view_id, std::move(on_view_unbound));
+        } else
 #endif
-    {
-      FML_CHECK(external_view_embedder_);
-      external_view_embedder_->DestroyView(view_id);
-    }
-  });
+        {
+          FML_CHECK(external_view_embedder_);
+          external_view_embedder_->DestroyView(view_id,
+                                               std::move(on_view_unbound));
+        }
+      });
 }
 
 std::unique_ptr<flutter::Surface> Engine::CreateSurface() {

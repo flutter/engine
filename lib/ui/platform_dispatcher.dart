@@ -358,7 +358,7 @@ class PlatformDispatcher {
   void _dispatchKeyData(ByteData packet, int responseId) {
     _invoke2<KeyData, _KeyDataResponseCallback>(
       (KeyData data, _KeyDataResponseCallback callback) {
-        callback(responseId, onKeyData == null ? false : onKeyData!(data));
+        callback(responseId, onKeyData != null && onKeyData!(data));
       },
       _onKeyDataZone,
       _unpackKeyData(packet),
@@ -644,7 +644,7 @@ class PlatformDispatcher {
   /// platform specific APIs without invoking method channels.
   Locale? computePlatformResolvedLocale(List<Locale> supportedLocales) {
     final List<String?> supportedLocalesData = <String?>[];
-    for (Locale locale in supportedLocales) {
+    for (final Locale locale in supportedLocales) {
       supportedLocalesData.add(locale.languageCode);
       supportedLocalesData.add(locale.countryCode);
       supportedLocalesData.add(locale.scriptCode);
@@ -673,7 +673,7 @@ class PlatformDispatcher {
   ///    observe when this callback is invoked.
   VoidCallback? get onLocaleChanged => _onLocaleChanged;
   VoidCallback? _onLocaleChanged;
-  Zone _onLocaleChangedZone = Zone.root; // ignore: unused_field
+  Zone _onLocaleChangedZone = Zone.root;
   set onLocaleChanged(VoidCallback? callback) {
     _onLocaleChanged = callback;
     _onLocaleChangedZone = Zone.current;
@@ -1367,7 +1367,7 @@ class Locale {
   const Locale(
     this._languageCode, [
     this._countryCode,
-  ]) : assert(_languageCode != null), // ignore: unnecessary_null_comparison
+  ]) : assert(_languageCode != null),
        assert(_languageCode != ''),
        scriptCode = null;
 
@@ -1395,7 +1395,7 @@ class Locale {
     String languageCode = 'und',
     this.scriptCode,
     String? countryCode,
-  }) : assert(languageCode != null), // ignore: unnecessary_null_comparison
+  }) : assert(languageCode != null),
        assert(languageCode != ''),
        _languageCode = languageCode,
        assert(scriptCode != ''),

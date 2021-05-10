@@ -100,6 +100,29 @@ class MockAccessibilityBridge : public AccessibilityBridgeIos {
   XCTAssertEqual([object accessibilityTraits], UIAccessibilityTraitStaticText);
 }
 
+- (void)testNodeWithImplicitScrollIsAnAccessibilityElementWhenItisHidden {
+  fml::WeakPtrFactory<flutter::AccessibilityBridgeIos> factory(
+      new flutter::MockAccessibilityBridge());
+  fml::WeakPtr<flutter::AccessibilityBridgeIos> bridge = factory.GetWeakPtr();
+  flutter::SemanticsNode node;
+  node.flags = static_cast<int32_t>(flutter::SemanticsFlags::kHasImplicitScrolling) |
+               static_cast<int32_t>(flutter::SemanticsFlags::kIsHidden);
+  FlutterSemanticsObject* object = [[FlutterSemanticsObject alloc] initWithBridge:bridge uid:0];
+  [object setSemanticsNode:&node];
+  XCTAssertEqual(object.isAccessibilityElement, YES);
+}
+
+- (void)testNodeWithImplicitScrollIsNotAnAccessibilityElementWhenItisNotHidden {
+  fml::WeakPtrFactory<flutter::AccessibilityBridgeIos> factory(
+      new flutter::MockAccessibilityBridge());
+  fml::WeakPtr<flutter::AccessibilityBridgeIos> bridge = factory.GetWeakPtr();
+  flutter::SemanticsNode node;
+  node.flags = static_cast<int32_t>(flutter::SemanticsFlags::kHasImplicitScrolling);
+  FlutterSemanticsObject* object = [[FlutterSemanticsObject alloc] initWithBridge:bridge uid:0];
+  [object setSemanticsNode:&node];
+  XCTAssertEqual(object.isAccessibilityElement, NO);
+}
+
 - (void)testIntresetingSemanticsObjectWithLabelHasStaticTextTrait {
   fml::WeakPtrFactory<flutter::AccessibilityBridgeIos> factory(
       new flutter::MockAccessibilityBridge());
@@ -227,6 +250,37 @@ class MockAccessibilityBridge : public AccessibilityBridgeIos {
   __weak SemanticsObject* weakObject = object;
   object = nil;
   XCTAssertNil(weakObject);
+}
+
+- (void)testFlutterSwitchSemanticsObjectForwardsCalls {
+  SemanticsObject* mockSemanticsObject = OCMClassMock([SemanticsObject class]);
+  FlutterSwitchSemanticsObject* switchObj =
+      [[FlutterSwitchSemanticsObject alloc] initWithSemanticsObject:mockSemanticsObject];
+  OCMStub([mockSemanticsObject accessibilityActivate]).andReturn(YES);
+  OCMStub([mockSemanticsObject accessibilityScroll:UIAccessibilityScrollDirectionRight])
+      .andReturn(NO);
+  OCMStub([mockSemanticsObject accessibilityPerformEscape]).andReturn(YES);
+
+  XCTAssertTrue([switchObj accessibilityActivate]);
+  OCMVerify([mockSemanticsObject accessibilityActivate]);
+
+  [switchObj accessibilityIncrement];
+  OCMVerify([mockSemanticsObject accessibilityIncrement]);
+
+  [switchObj accessibilityDecrement];
+  OCMVerify([mockSemanticsObject accessibilityDecrement]);
+
+  XCTAssertFalse([switchObj accessibilityScroll:UIAccessibilityScrollDirectionRight]);
+  OCMVerify([mockSemanticsObject accessibilityScroll:UIAccessibilityScrollDirectionRight]);
+
+  XCTAssertTrue([switchObj accessibilityPerformEscape]);
+  OCMVerify([mockSemanticsObject accessibilityPerformEscape]);
+
+  [switchObj accessibilityElementDidBecomeFocused];
+  OCMVerify([mockSemanticsObject accessibilityElementDidBecomeFocused]);
+
+  [switchObj accessibilityElementDidLoseFocus];
+  OCMVerify([mockSemanticsObject accessibilityElementDidLoseFocus]);
 }
 
 @end

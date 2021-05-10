@@ -740,7 +740,11 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
            @"Expected a FlutterTextRange for range (got %@).", [range class]);
   NSRange textRange = ((FlutterTextRange*)range).range;
   NSAssert(textRange.location != NSNotFound, @"Expected a valid text range.");
-  return [self.text substringWithRange:textRange];
+  // Sanitize the range to prevent going out of bounds.
+  int location = MIN(textRange.location, self.text.length);
+  int length = MIN(self.text.length - location, textRange.length);
+  NSRange safeRange = NSMakeRange(location, length);
+  return [self.text substringWithRange:safeRange];
 }
 
 // Replace the text within the specified range with the given text,
@@ -1231,12 +1235,36 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 @end
 
 @interface FlutterTextInputPlugin ()
+- (void)enableActiveViewAccessibility;
+@end
+
+@interface FlutterTimerProxy : NSObject
+@property(nonatomic, assign) FlutterTextInputPlugin* target;
+@end
+
+@implementation FlutterTimerProxy
+
++ (instancetype)proxyWithTarget:(FlutterTextInputPlugin*)target {
+  FlutterTimerProxy* proxy = [[self new] autorelease];
+  if (proxy) {
+    proxy.target = target;
+  }
+  return proxy;
+}
+
+- (void)enableActiveViewAccessibility {
+  [self.target enableActiveViewAccessibility];
+}
+
+@end
+
+@interface FlutterTextInputPlugin ()
 @property(nonatomic, strong) FlutterTextInputView* reusableInputView;
 
 // The current password-autofillable input fields that have yet to be saved.
 @property(nonatomic, readonly)
     NSMutableDictionary<NSString*, FlutterTextInputView*>* autofillContext;
-@property(nonatomic, assign) FlutterTextInputView* activeView;
+@property(nonatomic, strong) FlutterTextInputView* activeView;
 @property(nonatomic, strong) FlutterTextInputViewAccessibilityHider* inputHider;
 @end
 
@@ -1253,7 +1281,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     _reusableInputView = [[FlutterTextInputView alloc] init];
     _reusableInputView.secureTextEntry = NO;
     _autofillContext = [[NSMutableDictionary alloc] init];
-    _activeView = _reusableInputView;
+    _activeView = [_reusableInputView retain];
     _inputHider = [[FlutterTextInputViewAccessibilityHider alloc] init];
   }
 
@@ -1262,7 +1290,9 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 
 - (void)dealloc {
   [self hideTextInput];
+  _activeView.textInputDelegate = nil;
   [_reusableInputView release];
+  [_activeView release];
   [_inputHider release];
   [_autofillContext release];
   [super dealloc];
@@ -1339,15 +1369,15 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   if (!_enableFlutterTextInputViewAccessibilityTimer) {
     _enableFlutterTextInputViewAccessibilityTimer =
         [[NSTimer scheduledTimerWithTimeInterval:kUITextInputAccessibilityEnablingDelaySeconds
-                                          target:self
-                                        selector:@selector(enableActiveViewAccessibility:)
+                                          target:[FlutterTimerProxy proxyWithTarget:self]
+                                        selector:@selector(enableActiveViewAccessibility)
                                         userInfo:nil
                                          repeats:NO] retain];
   }
   [_activeView becomeFirstResponder];
 }
 
-- (void)enableActiveViewAccessibility:(NSTimer*)time {
+- (void)enableActiveViewAccessibility {
   if (_activeView.isFirstResponder) {
     _activeView.accessibilityEnabled = YES;
   }
@@ -1386,19 +1416,19 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   [self changeInputViewsAutofillVisibility:NO];
   switch (autofillTypeOf(configuration)) {
     case FlutterAutofillTypeNone:
-      _activeView = [self updateAndShowReusableInputView:configuration];
+      self.activeView = [self updateAndShowReusableInputView:configuration];
       break;
     case FlutterAutofillTypeRegular:
       // If the group does not involve password autofill, only install the
       // input view that's being focused.
-      _activeView = [self updateAndShowAutofillViews:nil
-                                        focusedField:configuration
-                                   isPasswordRelated:NO];
+      self.activeView = [self updateAndShowAutofillViews:nil
+                                            focusedField:configuration
+                                       isPasswordRelated:NO];
       break;
     case FlutterAutofillTypePassword:
-      _activeView = [self updateAndShowAutofillViews:configuration[kAssociatedAutofillFields]
-                                        focusedField:configuration
-                                   isPasswordRelated:YES];
+      self.activeView = [self updateAndShowAutofillViews:configuration[kAssociatedAutofillFields]
+                                            focusedField:configuration
+                                       isPasswordRelated:YES];
       break;
   }
 

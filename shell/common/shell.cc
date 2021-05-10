@@ -372,7 +372,6 @@ Shell::Shell(DartVMRef vm,
       vm_(std::move(vm)),
       is_gpu_disabled_sync_switch_(new fml::SyncSwitch(is_gpu_disabled)),
       volatile_path_tracker_(std::move(volatile_path_tracker)),
-      pending_draw_semaphore_(1),
       weak_factory_gpu_(nullptr),
       weak_factory_(this) {
   FML_CHECK(vm_) << "Must have access to VM to create a shell.";
@@ -950,16 +949,16 @@ void Shell::OnPlatformViewSetViewportMetrics(const ViewportMetrics& metrics) {
 
 // |PlatformView::Delegate|
 void Shell::OnPlatformViewDispatchPlatformMessage(
-    fml::RefPtr<PlatformMessage> message) {
+    std::unique_ptr<PlatformMessage> message) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
-  task_runners_.GetUITaskRunner()->PostTask(
-      [engine = engine_->GetWeakPtr(), message = std::move(message)] {
+  task_runners_.GetUITaskRunner()->PostTask(fml::MakeCopyable(
+      [engine = engine_->GetWeakPtr(), message = std::move(message)]() mutable {
         if (engine) {
           engine->DispatchPlatformMessage(std::move(message));
         }
-      });
+      }));
 }
 
 // |PlatformView::Delegate|
@@ -1139,13 +1138,16 @@ void Shell::OnAnimatorNotifyIdle(int64_t deadline) {
 }
 
 // |Animator::Delegate|
-void Shell::OnAnimatorDraw(std::shared_ptr<LayerTreeHolder> layer_tree_holder,
-                           fml::TimePoint frame_target_time) {
+void Shell::OnAnimatorDraw(
+    fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline,
+    std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) {
   FML_DCHECK(is_setup_);
 
   // record the target time for use by rasterizer.
   {
     std::scoped_lock time_recorder_lock(time_recorder_mutex_);
+    const fml::TimePoint frame_target_time =
+        frame_timings_recorder->GetVsyncTargetTime();
     if (!latest_frame_target_time_) {
       latest_frame_target_time_ = frame_target_time;
     } else if (latest_frame_target_time_ < frame_target_time) {
@@ -1159,41 +1161,38 @@ void Shell::OnAnimatorDraw(std::shared_ptr<LayerTreeHolder> layer_tree_holder,
            tree.frame_size() != expected_frame_size_;
   };
 
-  if (!pending_draw_semaphore_.TryWait()) {
-    // Multiple calls to OnAnimatorDraw will still result in a
-    // single request to the Rasterizer::Draw.
-    return;
-  }
-
-  task_runners_.GetRasterTaskRunner()->PostTask(
-      [&pending_draw_semaphore = pending_draw_semaphore_,
-       &waiting_for_first_frame = waiting_for_first_frame_,
+  task_runners_.GetRasterTaskRunner()->PostTask(fml::MakeCopyable(
+      [&waiting_for_first_frame = waiting_for_first_frame_,
        &waiting_for_first_frame_condition = waiting_for_first_frame_condition_,
-       rasterizer = rasterizer_->GetWeakPtr(),
+       rasterizer = rasterizer_->GetWeakPtr(), pipeline = std::move(pipeline),
        discard_callback = std::move(discard_callback),
-       layer_tree_holder = std::move(layer_tree_holder)]() {
+       frame_timings_recorder = std::move(frame_timings_recorder)]() mutable {
         if (rasterizer) {
-          rasterizer->Draw(std::move(layer_tree_holder),
+          rasterizer->Draw(std::move(frame_timings_recorder), pipeline,
                            std::move(discard_callback));
+
           if (waiting_for_first_frame.load()) {
             waiting_for_first_frame.store(false);
             waiting_for_first_frame_condition.notify_all();
           }
         }
-        pending_draw_semaphore.Signal();
-      });
+      }));
 }
 
 // |Animator::Delegate|
-void Shell::OnAnimatorDrawLastLayerTree() {
+void Shell::OnAnimatorDrawLastLayerTree(
+    std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) {
   FML_DCHECK(is_setup_);
 
-  task_runners_.GetRasterTaskRunner()->PostTask(
-      [rasterizer = rasterizer_->GetWeakPtr()]() {
+  auto task = fml::MakeCopyable(
+      [rasterizer = rasterizer_->GetWeakPtr(),
+       frame_timings_recorder = std::move(frame_timings_recorder)]() mutable {
         if (rasterizer) {
-          rasterizer->DrawLastLayerTree();
+          rasterizer->DrawLastLayerTree(std::move(frame_timings_recorder));
         }
       });
+
+  task_runners_.GetRasterTaskRunner()->PostTask(task);
 }
 
 // |Engine::Delegate|
@@ -1213,7 +1212,7 @@ void Shell::OnEngineUpdateSemantics(SemanticsNodeUpdates update,
 
 // |Engine::Delegate|
 void Shell::OnEngineHandlePlatformMessage(
-    fml::RefPtr<PlatformMessage> message) {
+    std::unique_ptr<PlatformMessage> message) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
 
@@ -1223,14 +1222,15 @@ void Shell::OnEngineHandlePlatformMessage(
   }
 
   task_runners_.GetPlatformTaskRunner()->PostTask(
-      [view = platform_view_->GetWeakPtr(), message = std::move(message)]() {
+      fml::MakeCopyable([view = platform_view_->GetWeakPtr(),
+                         message = std::move(message)]() mutable {
         if (view) {
           view->HandlePlatformMessage(std::move(message));
         }
-      });
+      }));
 }
 
-void Shell::HandleEngineSkiaMessage(fml::RefPtr<PlatformMessage> message) {
+void Shell::HandleEngineSkiaMessage(std::unique_ptr<PlatformMessage> message) {
   const auto& data = message->data();
 
   rapidjson::Document document;
@@ -1339,7 +1339,12 @@ void Shell::UpdateAssetResolverByType(
 
 // |Engine::Delegate|
 void Shell::RequestDartDeferredLibrary(intptr_t loading_unit_id) {
-  platform_view_->RequestDartDeferredLibrary(loading_unit_id);
+  task_runners_.GetPlatformTaskRunner()->PostTask(
+      [view = platform_view_->GetWeakPtr(), loading_unit_id] {
+        if (view) {
+          view->RequestDartDeferredLibrary(loading_unit_id);
+        }
+      });
 }
 
 void Shell::ReportTimings() {
@@ -1767,10 +1772,16 @@ fml::Status Shell::WaitForFirstFrame(fml::TimeDelta timeout) {
                        "because it is responsible for generating the frame.");
   }
 
+  // Check for overflow.
+  auto now = std::chrono::steady_clock::now();
+  auto max_duration = std::chrono::steady_clock::time_point::max() - now;
+  auto desired_duration = std::chrono::milliseconds(timeout.ToMilliseconds());
+  auto duration =
+      now + (desired_duration > max_duration ? max_duration : desired_duration);
+
   std::unique_lock<std::mutex> lock(waiting_for_first_frame_mutex_);
-  bool success = waiting_for_first_frame_condition_.wait_for(
-      lock, std::chrono::milliseconds(timeout.ToMilliseconds()),
-      [&waiting_for_first_frame = waiting_for_first_frame_] {
+  bool success = waiting_for_first_frame_condition_.wait_until(
+      lock, duration, [&waiting_for_first_frame = waiting_for_first_frame_] {
         return !waiting_for_first_frame.load();
       });
   if (success) {
@@ -1802,22 +1813,51 @@ bool Shell::ReloadSystemFonts() {
   rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
   document.Accept(writer);
   std::string message = buffer.GetString();
-  fml::RefPtr<PlatformMessage> fontsChangeMessage =
-      fml::MakeRefCounted<flutter::PlatformMessage>(
+  std::unique_ptr<PlatformMessage> fontsChangeMessage =
+      std::make_unique<flutter::PlatformMessage>(
           kSystemChannel, std::vector<uint8_t>(message.begin(), message.end()),
           nullptr);
 
-  OnPlatformViewDispatchPlatformMessage(fontsChangeMessage);
+  OnPlatformViewDispatchPlatformMessage(std::move(fontsChangeMessage));
   return true;
 }
 
-std::shared_ptr<fml::SyncSwitch> Shell::GetIsGpuDisabledSyncSwitch() const {
+std::shared_ptr<const fml::SyncSwitch> Shell::GetIsGpuDisabledSyncSwitch()
+    const {
   return is_gpu_disabled_sync_switch_;
+}
+
+void Shell::SetGpuAvailability(GpuAvailability availability) {
+  switch (availability) {
+    case GpuAvailability::kAvailable:
+      is_gpu_disabled_sync_switch_->SetSwitch(false);
+      return;
+    case GpuAvailability::kFlushAndMakeUnavailable: {
+      fml::AutoResetWaitableEvent latch;
+      fml::TaskRunner::RunNowOrPostTask(
+          task_runners_.GetIOTaskRunner(),
+          [io_manager = io_manager_.get(), &latch]() {
+            io_manager->GetSkiaUnrefQueue()->Drain();
+            latch.Signal();
+          });
+      latch.Wait();
+    }
+      // FALLTHROUGH
+    case GpuAvailability::kUnavailable:
+      is_gpu_disabled_sync_switch_->SetSwitch(true);
+      return;
+    default:
+      FML_DCHECK(false);
+  }
 }
 
 void Shell::OnDisplayUpdates(DisplayUpdateType update_type,
                              std::vector<Display> displays) {
   display_manager_->HandleDisplayUpdates(update_type, displays);
+}
+
+fml::TimePoint Shell::GetCurrentTimePoint() {
+  return fml::TimePoint::Now();
 }
 
 }  // namespace flutter

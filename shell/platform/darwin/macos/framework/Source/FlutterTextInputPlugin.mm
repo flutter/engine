@@ -21,6 +21,8 @@ static NSString* const kShowMethod = @"TextInput.show";
 static NSString* const kHideMethod = @"TextInput.hide";
 static NSString* const kClearClientMethod = @"TextInput.clearClient";
 static NSString* const kSetEditingStateMethod = @"TextInput.setEditingState";
+static NSString* const kSetEditableSizeAndTransform = @"TextInput.setEditableSizeAndTransform";
+static NSString* const kSetCaretRect = @"TextInput.setCaretRect";
 static NSString* const kUpdateEditStateResponseMethod = @"TextInputClient.updateEditingState";
 static NSString* const kPerformAction = @"TextInputClient.performAction";
 static NSString* const kMultilineInputType = @"TextInputType.multiline";
@@ -39,6 +41,7 @@ static NSString* const kSelectionIsDirectionalKey = @"selectionIsDirectional";
 static NSString* const kComposingBaseKey = @"composingBase";
 static NSString* const kComposingExtentKey = @"composingExtent";
 static NSString* const kTextKey = @"text";
+static NSString* const kTransformKey = @"transform";
 
 /**
  * The affinity of the current cursor position. If the cursor is at a position representing
@@ -86,6 +89,18 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
 @property(nonatomic, weak) FlutterViewController* flutterViewController;
 
 /**
+ * Whether the text input is shown in the view.
+ *
+ * Defaults to TRUE on startup.
+ */
+@property(nonatomic) BOOL shown;
+
+/**
+ * The current state of the keyboard and pressed keys.
+ */
+@property(nonatomic) uint64_t previouslyPressedFlags;
+
+/**
  * The affinity for the current cursor position.
  */
 @property FlutterTextAffinity textAffinity;
@@ -125,20 +140,38 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
    * The currently active text input model.
    */
   std::unique_ptr<flutter::TextInputModel> _activeModel;
+
+  /**
+   * Transform for current the editable. Used to determine position of accent selection menu.
+   */
+  CATransform3D _editableTransform;
+
+  /**
+   * Current position of caret in local (editable) coordinates.
+   */
+  CGRect _caretRect;
 }
 
 - (instancetype)initWithViewController:(FlutterViewController*)viewController {
   self = [super init];
   if (self != nil) {
-    _flutterViewController = viewController;
     _channel = [FlutterMethodChannel methodChannelWithName:kTextInputChannel
                                            binaryMessenger:viewController.engine.binaryMessenger
                                                      codec:[FlutterJSONMethodCodec sharedInstance]];
+    _shown = FALSE;
     __weak FlutterTextInputPlugin* weakSelf = self;
     [_channel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
       [weakSelf handleMethodCall:call result:result];
     }];
     _textInputContext = [[NSTextInputContext alloc] initWithClient:self];
+    _previouslyPressedFlags = 0;
+
+    _flutterViewController = viewController;
+
+    // Initialize with the zero matrix which is not
+    // an affine transform.
+    _editableTransform = CATransform3D();
+    _caretRect = CGRectNull;
   }
   return self;
 }
@@ -169,10 +202,10 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
       _activeModel = std::make_unique<flutter::TextInputModel>();
     }
   } else if ([method isEqualToString:kShowMethod]) {
-    [self.flutterViewController addKeyResponder:self];
+    _shown = TRUE;
     [_textInputContext activate];
   } else if ([method isEqualToString:kHideMethod]) {
-    [self.flutterViewController removeKeyResponder:self];
+    _shown = FALSE;
     [_textInputContext deactivate];
   } else if ([method isEqualToString:kClearClientMethod]) {
     _clientID = nil;
@@ -187,10 +220,48 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
     // engine since it sent this update, and needs to now be made to match the
     // engine's version of the state.
     [self updateEditState];
+  } else if ([method isEqualToString:kSetEditableSizeAndTransform]) {
+    NSDictionary* state = call.arguments;
+    [self setEditableTransform:state[kTransformKey]];
+  } else if ([method isEqualToString:kSetCaretRect]) {
+    NSDictionary* rect = call.arguments;
+    [self updateCaretRect:rect];
   } else {
     handled = NO;
   }
   result(handled ? nil : FlutterMethodNotImplemented);
+}
+
+- (void)setEditableTransform:(NSArray*)matrix {
+  CATransform3D* transform = &_editableTransform;
+
+  transform->m11 = [matrix[0] doubleValue];
+  transform->m12 = [matrix[1] doubleValue];
+  transform->m13 = [matrix[2] doubleValue];
+  transform->m14 = [matrix[3] doubleValue];
+
+  transform->m21 = [matrix[4] doubleValue];
+  transform->m22 = [matrix[5] doubleValue];
+  transform->m23 = [matrix[6] doubleValue];
+  transform->m24 = [matrix[7] doubleValue];
+
+  transform->m31 = [matrix[8] doubleValue];
+  transform->m32 = [matrix[9] doubleValue];
+  transform->m33 = [matrix[10] doubleValue];
+  transform->m34 = [matrix[11] doubleValue];
+
+  transform->m41 = [matrix[12] doubleValue];
+  transform->m42 = [matrix[13] doubleValue];
+  transform->m43 = [matrix[14] doubleValue];
+  transform->m44 = [matrix[15] doubleValue];
+}
+
+- (void)updateCaretRect:(NSDictionary*)dictionary {
+  NSAssert(dictionary[@"x"] != nil && dictionary[@"y"] != nil && dictionary[@"width"] != nil &&
+               dictionary[@"height"] != nil,
+           @"Expected a dictionary representing a CGRect, got %@", dictionary);
+  _caretRect = CGRectMake([dictionary[@"x"] doubleValue], [dictionary[@"y"] doubleValue],
+                          [dictionary[@"width"] doubleValue], [dictionary[@"height"] doubleValue]);
 }
 
 - (void)setEditingState:(NSDictionary*)state {
@@ -245,7 +316,7 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
 }
 
 #pragma mark -
-#pragma mark FlutterIntermediateKeyResponder
+#pragma mark FlutterKeySecondaryResponder
 
 /**
  * Handles key down events received from the view controller, responding TRUE if
@@ -257,7 +328,15 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
  * mouse events. Additionally, processing both keyUp and keyDown results in duplicate
  * processing of the same keys. So for now, limit processing to just handleKeyDown.
  */
-- (BOOL)handleKeyDown:(NSEvent*)event {
+- (BOOL)handleKeyEvent:(NSEvent*)event {
+  if (event.type == NSEventTypeKeyUp ||
+      (event.type == NSEventTypeFlagsChanged && event.modifierFlags < _previouslyPressedFlags)) {
+    return NO;
+  }
+  _previouslyPressedFlags = event.modifierFlags;
+  if (!_shown) {
+    return NO;
+  }
   return [_textInputContext handleEvent:event];
 }
 
@@ -335,7 +414,7 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
 }
 
 - (void)unmarkText {
-  if (_activeModel != nullptr) {
+  if (_activeModel == nullptr) {
     return;
   }
   _activeModel->CommitComposing();
@@ -382,9 +461,20 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
 }
 
 - (NSRect)firstRectForCharacterRange:(NSRange)range actualRange:(NSRangePointer)actualRange {
-  // TODO: Implement.
-  // Note: This function can't easily be implemented under the system-message architecture.
-  return CGRectZero;
+  // This only determines position of caret instead of any arbitrary range, but it's enough
+  // to properly position accent selection popup
+  if (CATransform3DIsAffine(_editableTransform) && !CGRectEqualToRect(_caretRect, CGRectNull)) {
+    CGRect rect =
+        CGRectApplyAffineTransform(_caretRect, CATransform3DGetAffineTransform(_editableTransform));
+
+    // convert to window coordinates
+    rect = [self.flutterViewController.view convertRect:rect toView:nil];
+
+    // convert to screen coordinates
+    return [self.flutterViewController.view.window convertRectToScreen:rect];
+  } else {
+    return CGRectZero;
+  }
 }
 
 - (NSUInteger)characterIndexForPoint:(NSPoint)point {

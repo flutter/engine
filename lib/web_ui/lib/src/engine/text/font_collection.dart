@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of engine;
 
 const String _ahemFontFamily = 'Ahem';
@@ -29,8 +28,7 @@ class FontCollection {
       byteData = await assetManager.load('FontManifest.json');
     } on AssetManagerException catch (e) {
       if (e.httpStatus == 404) {
-        html.window.console
-            .warn('Font manifest does not exist at `${e.url}` – ignoring.');
+        printWarning('Font manifest does not exist at `${e.url}` – ignoring.');
         return;
       } else {
         rethrow;
@@ -50,7 +48,8 @@ class FontCollection {
       _assetFontManager = _PolyfillFontManager();
     }
 
-    for (Map<String, dynamic> fontFamily in fontManifest.cast<Map<String, dynamic>>()) {
+    for (Map<String, dynamic> fontFamily
+        in fontManifest.cast<Map<String, dynamic>>()) {
       final String? family = fontFamily['family'];
       final List<dynamic> fontAssets = fontFamily['fonts'];
 
@@ -78,8 +77,8 @@ class FontCollection {
     _testFontManager = FontManager();
     _testFontManager!.registerAsset(
         _ahemFontFamily, 'url($_ahemFontUrl)', const <String, String>{});
-    _testFontManager!.registerAsset(
-        _robotoFontFamily, 'url($_robotoTestFontUrl)', const <String, String>{});
+    _testFontManager!.registerAsset(_robotoFontFamily,
+        'url($_robotoTestFontUrl)', const <String, String>{});
   }
 
   /// Returns a [Future] that completes when the registered fonts are loaded
@@ -178,14 +177,22 @@ class FontManager {
     try {
       final html.FontFace fontFace = html.FontFace(family, asset, descriptors);
       _fontLoadingFutures.add(fontFace.load().then((_) {
-        html.document.fonts!.add(fontFace);
+        // We could do:
+        // ```
+        // html.document.fonts!.add(fontFace);
+        // ```
+        // But dart:html expects the return value to be non-null, and Firefox
+        // returns null. This causes the app to crash in Firefox with a null
+        // check exception.
+        //
+        // TODO(mdebbar): Revert this once the dart:html type is fixed.
+        //                https://github.com/dart-lang/sdk/issues/45676
+        js_util.callMethod(html.document.fonts!, 'add', [fontFace]);
       }, onError: (dynamic e) {
-        html.window.console
-            .warn('Error while trying to load font family "$family":\n$e');
+        printWarning('Error while trying to load font family "$family":\n$e');
       }));
     } catch (e) {
-      html.window.console
-          .warn('Error while loading font family "$family":\n$e');
+      printWarning('Error while loading font family "$family":\n$e');
     }
   }
 
@@ -241,8 +248,8 @@ class _PolyfillFontManager extends FontManager {
     paragraph.style.position = 'absolute';
     paragraph.style.visibility = 'hidden';
     paragraph.style.fontSize = '72px';
-    final String fallbackFontName = browserEngine == BrowserEngine.ie11 ?
-      'Times New Roman' : 'sans-serif';
+    final String fallbackFontName =
+        browserEngine == BrowserEngine.ie11 ? 'Times New Roman' : 'sans-serif';
     paragraph.style.fontFamily = fallbackFontName;
     if (descriptors['style'] != null) {
       paragraph.style.fontStyle = descriptors['style'];
@@ -309,5 +316,8 @@ class _PolyfillFontManager extends FontManager {
   }
 }
 
-final bool supportsFontLoadingApi = js_util.hasProperty(html.window, 'FontFace');
-final bool supportsFontsClearApi = js_util.hasProperty(html.document, 'fonts') && js_util.hasProperty(html.document.fonts!, 'clear');
+final bool supportsFontLoadingApi =
+    js_util.hasProperty(html.window, 'FontFace');
+final bool supportsFontsClearApi =
+    js_util.hasProperty(html.document, 'fonts') &&
+        js_util.hasProperty(html.document.fonts!, 'clear');

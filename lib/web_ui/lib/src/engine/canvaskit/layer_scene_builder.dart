@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of engine;
 
 class LayerScene implements ui.Scene {
@@ -99,15 +98,19 @@ class LayerSceneBuilder implements ui.SceneBuilder {
   }
 
   @override
-  BackdropFilterEngineLayer? pushBackdropFilter(
+  BackdropFilterEngineLayer pushBackdropFilter(
     ui.ImageFilter filter, {
+    ui.BlendMode blendMode = ui.BlendMode.srcOver,
     ui.EngineLayer? oldLayer,
   }) {
-    return pushLayer<BackdropFilterEngineLayer>(BackdropFilterEngineLayer(filter));
+    return pushLayer<BackdropFilterEngineLayer>(BackdropFilterEngineLayer(
+      filter,
+      blendMode,
+    ));
   }
 
   @override
-  ClipPathEngineLayer? pushClipPath(
+  ClipPathEngineLayer pushClipPath(
     ui.Path path, {
     ui.Clip clipBehavior = ui.Clip.antiAlias,
     ui.EngineLayer? oldLayer,
@@ -116,7 +119,7 @@ class LayerSceneBuilder implements ui.SceneBuilder {
   }
 
   @override
-  ClipRRectEngineLayer? pushClipRRect(
+  ClipRRectEngineLayer pushClipRRect(
     ui.RRect rrect, {
     ui.Clip? clipBehavior,
     ui.EngineLayer? oldLayer,
@@ -125,7 +128,7 @@ class LayerSceneBuilder implements ui.SceneBuilder {
   }
 
   @override
-  ClipRectEngineLayer? pushClipRect(
+  ClipRectEngineLayer pushClipRect(
     ui.Rect rect, {
     ui.Clip clipBehavior = ui.Clip.antiAlias,
     ui.EngineLayer? oldLayer,
@@ -134,7 +137,7 @@ class LayerSceneBuilder implements ui.SceneBuilder {
   }
 
   @override
-  ColorFilterEngineLayer? pushColorFilter(
+  ColorFilterEngineLayer pushColorFilter(
     ui.ColorFilter filter, {
     ui.ColorFilterEngineLayer? oldLayer,
   }) {
@@ -142,7 +145,7 @@ class LayerSceneBuilder implements ui.SceneBuilder {
     return pushLayer<ColorFilterEngineLayer>(ColorFilterEngineLayer(filter));
   }
 
-  ImageFilterEngineLayer? pushImageFilter(
+  ImageFilterEngineLayer pushImageFilter(
     ui.ImageFilter filter, {
     ui.ImageFilterEngineLayer? oldLayer,
   }) {
@@ -192,13 +195,14 @@ class LayerSceneBuilder implements ui.SceneBuilder {
     ui.Rect maskRect,
     ui.BlendMode blendMode, {
     ui.EngineLayer? oldLayer,
+    ui.FilterQuality filterQuality = ui.FilterQuality.low,
   }) {
     return pushLayer<ShaderMaskEngineLayer>(ShaderMaskEngineLayer(
-        shader, maskRect, blendMode));
+        shader, maskRect, blendMode, filterQuality));
   }
 
   @override
-  TransformEngineLayer? pushTransform(
+  TransformEngineLayer pushTransform(
     Float64List matrix4, {
     ui.EngineLayer? oldLayer,
   }) {

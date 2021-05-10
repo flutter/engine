@@ -211,6 +211,24 @@ FLUTTER_ASSERT_ARC
   XCTAssertEqual(range.length, 2);
 }
 
+- (void)testTextInRange {
+  NSDictionary* config = self.mutableTemplateCopy;
+  [config setValue:@{@"name" : @"TextInputType.url"} forKey:@"inputType"];
+  [self setClientId:123 configuration:config];
+  NSArray<FlutterTextInputView*>* inputFields = self.installedInputViews;
+  FlutterTextInputView* inputView = inputFields[0];
+
+  [inputView insertText:@"test"];
+
+  UITextRange* range = [FlutterTextRange rangeWithNSRange:NSMakeRange(0, 20)];
+  NSString* substring = [inputView textInRange:range];
+  XCTAssertEqual(substring.length, 4);
+
+  range = [FlutterTextRange rangeWithNSRange:NSMakeRange(10, 20)];
+  substring = [inputView textInRange:range];
+  XCTAssertEqual(substring.length, 0);
+}
+
 - (void)testNoZombies {
   // Regression test for https://github.com/flutter/flutter/issues/62501.
   FlutterSecureTextInputView* passwordView = [[FlutterSecureTextInputView alloc] init];
@@ -220,6 +238,18 @@ FLUTTER_ASSERT_ARC
     [passwordView.textField description];
   }
   XCTAssert([[passwordView.textField description] containsString:@"TextField"]);
+}
+
+- (void)testInputViewCrash {
+  FlutterTextInputView* activeView = nil;
+  @autoreleasepool {
+    FlutterTextInputPlugin* inputPlugin = [FlutterTextInputPlugin new];
+    activeView = inputPlugin.activeView;
+    FlutterEngine* flutterEngine = [[FlutterEngine alloc] init];
+    activeView.textInputDelegate = (id<FlutterTextInputDelegate>)flutterEngine;
+  }
+  XCTAssert(!activeView.textInputDelegate);
+  [activeView updateEditingState];
 }
 
 - (void)ensureOnlyActiveViewCanBecomeFirstResponder {
@@ -863,6 +893,32 @@ FLUTTER_ASSERT_ARC
   range = [self getLineRangeFromTokenizer:tokenizer atIndex:32];
   XCTAssertEqual(range.range.location, 12u);
   XCTAssertEqual(range.range.length, 20u);
+}
+
+- (void)testFlutterTextInputPluginRetainsFlutterTextInputView {
+  FlutterTextInputPlugin* myInputPlugin;
+  myInputPlugin = [[FlutterTextInputPlugin alloc] init];
+  myInputPlugin.textInputDelegate = engine;
+  __weak UIView* activeView;
+  @autoreleasepool {
+    FlutterMethodCall* setClientCall = [FlutterMethodCall
+        methodCallWithMethodName:@"TextInput.setClient"
+                       arguments:@[
+                         [NSNumber numberWithInt:123], self.mutablePasswordTemplateCopy
+                       ]];
+    [myInputPlugin handleMethodCall:setClientCall
+                             result:^(id _Nullable result){
+                             }];
+    activeView = myInputPlugin.textInputView;
+    FlutterMethodCall* hideCall = [FlutterMethodCall methodCallWithMethodName:@"TextInput.hide"
+                                                                    arguments:@[]];
+    [myInputPlugin handleMethodCall:hideCall
+                             result:^(id _Nullable result){
+                             }];
+    XCTAssertNotNil(activeView);
+  }
+  // This assert proves the myInputPlugin.textInputView is not deallocated.
+  XCTAssertNotNil(activeView);
 }
 
 @end

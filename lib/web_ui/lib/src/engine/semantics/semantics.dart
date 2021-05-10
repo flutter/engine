@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of engine;
 
 /// Set this flag to `true` to cause the engine to visualize the semantics tree
@@ -1153,7 +1152,7 @@ class EngineSemanticsOwner {
 
   /// Declares that the [child] must be attached to the [parent].
   ///
-  /// Attachments take precendence over detachments (see [_detachObject]). This
+  /// Attachments take precedence over detachments (see [_detachObject]). This
   /// allows the same node to be detached from one parent in the tree and
   /// reattached to another parent.
   void _attachObject({required SemanticsObject parent, required SemanticsObject child}) {
@@ -1472,10 +1471,7 @@ class EngineSemanticsOwner {
   /// Updates the semantics tree from data in the [uiUpdate].
   void updateSemantics(ui.SemanticsUpdate uiUpdate) {
     if (!_semanticsEnabled) {
-      // If we're receiving a semantics update from the framework, it means the
-      // developer enabled it programmatically, so we enable it in the engine
-      // too.
-      semanticsEnabled = true;
+      return;
     }
 
     final SemanticsUpdate update = uiUpdate as SemanticsUpdate;

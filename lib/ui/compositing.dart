@@ -283,7 +283,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// {@endtemplate}
   ///
   /// See [pop] for details about the operation stack.
-  TransformEngineLayer? pushTransform(
+  TransformEngineLayer pushTransform(
     Float64List matrix4, {
     TransformEngineLayer? oldLayer,
   }) {
@@ -308,7 +308,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// {@macro dart.ui.sceneBuilder.oldLayerVsRetained}
   ///
   /// See [pop] for details about the operation stack.
-  OffsetEngineLayer? pushOffset(
+  OffsetEngineLayer pushOffset(
     double dx,
     double dy, {
     OffsetEngineLayer? oldLayer,
@@ -334,12 +334,12 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// See [pop] for details about the operation stack, and [Clip] for different clip modes.
   /// By default, the clip will be anti-aliased (clip = [Clip.antiAlias]).
-  ClipRectEngineLayer? pushClipRect(
+  ClipRectEngineLayer pushClipRect(
     Rect rect, {
     Clip clipBehavior = Clip.antiAlias,
     ClipRectEngineLayer? oldLayer,
   }) {
-    assert(clipBehavior != null); // ignore: unnecessary_null_comparison
+    assert(clipBehavior != null);
     assert(clipBehavior != Clip.none);
     assert(_debugCheckCanBeUsedAsOldLayer(oldLayer, 'pushClipRect'));
     final EngineLayer engineLayer = EngineLayer._();
@@ -363,12 +363,12 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// See [pop] for details about the operation stack, and [Clip] for different clip modes.
   /// By default, the clip will be anti-aliased (clip = [Clip.antiAlias]).
-  ClipRRectEngineLayer? pushClipRRect(
+  ClipRRectEngineLayer pushClipRRect(
     RRect rrect, {
     Clip clipBehavior = Clip.antiAlias,
     ClipRRectEngineLayer? oldLayer,
   }) {
-    assert(clipBehavior != null); // ignore: unnecessary_null_comparison
+    assert(clipBehavior != null);
     assert(clipBehavior != Clip.none);
     assert(_debugCheckCanBeUsedAsOldLayer(oldLayer, 'pushClipRRect'));
     final EngineLayer engineLayer = EngineLayer._();
@@ -391,12 +391,12 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// See [pop] for details about the operation stack. See [Clip] for different clip modes.
   /// By default, the clip will be anti-aliased (clip = [Clip.antiAlias]).
-  ClipPathEngineLayer? pushClipPath(
+  ClipPathEngineLayer pushClipPath(
     Path path, {
     Clip clipBehavior = Clip.antiAlias,
     ClipPathEngineLayer? oldLayer,
   }) {
-    assert(clipBehavior != null); // ignore: unnecessary_null_comparison
+    assert(clipBehavior != null);
     assert(clipBehavior != Clip.none);
     assert(_debugCheckCanBeUsedAsOldLayer(oldLayer, 'pushClipPath'));
     final EngineLayer engineLayer = EngineLayer._();
@@ -421,7 +421,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// {@macro dart.ui.sceneBuilder.oldLayerVsRetained}
   ///
   /// See [pop] for details about the operation stack.
-  OpacityEngineLayer? pushOpacity(
+  OpacityEngineLayer pushOpacity(
     int alpha, {
     Offset? offset = Offset.zero,
     OpacityEngineLayer? oldLayer,
@@ -447,14 +447,14 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// {@macro dart.ui.sceneBuilder.oldLayerVsRetained}
   ///
   /// See [pop] for details about the operation stack.
-  ColorFilterEngineLayer? pushColorFilter(
+  ColorFilterEngineLayer pushColorFilter(
     ColorFilter filter, {
     ColorFilterEngineLayer? oldLayer,
   }) {
-    assert(filter != null); // ignore: unnecessary_null_comparison
+    assert(filter != null);
     assert(_debugCheckCanBeUsedAsOldLayer(oldLayer, 'pushColorFilter'));
     final _ColorFilter nativeFilter = filter._toNativeColorFilter()!;
-    assert(nativeFilter != null); // ignore: unnecessary_null_comparison
+    assert(nativeFilter != null);
     final EngineLayer engineLayer = EngineLayer._();
     _pushColorFilter(engineLayer, nativeFilter, oldLayer?._nativeLayer);
     final ColorFilterEngineLayer layer = ColorFilterEngineLayer._(engineLayer);
@@ -475,14 +475,14 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// {@macro dart.ui.sceneBuilder.oldLayerVsRetained}
   ///
   /// See [pop] for details about the operation stack.
-  ImageFilterEngineLayer? pushImageFilter(
+  ImageFilterEngineLayer pushImageFilter(
     ImageFilter filter, {
     ImageFilterEngineLayer? oldLayer,
   }) {
-    assert(filter != null); // ignore: unnecessary_null_comparison
+    assert(filter != null);
     assert(_debugCheckCanBeUsedAsOldLayer(oldLayer, 'pushImageFilter'));
     final _ImageFilter nativeFilter = filter._toNativeImageFilter();
-    assert(nativeFilter != null); // ignore: unnecessary_null_comparison
+    assert(nativeFilter != null);
     final EngineLayer engineLayer = EngineLayer._();
     _pushImageFilter(engineLayer, nativeFilter, oldLayer?._nativeLayer);
     final ImageFilterEngineLayer layer = ImageFilterEngineLayer._(engineLayer);
@@ -495,27 +495,29 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
 
   /// Pushes a backdrop filter operation onto the operation stack.
   ///
-  /// The given filter is applied to the current contents of the scene prior to
-  /// rasterizing the given objects.
+  /// The given filter is applied to the current contents of the scene as far back as
+  /// the most recent save layer and rendered back to the scene using the indicated
+  /// [blendMode] prior to rasterizing the child layers.
   ///
   /// {@macro dart.ui.sceneBuilder.oldLayer}
   ///
   /// {@macro dart.ui.sceneBuilder.oldLayerVsRetained}
   ///
   /// See [pop] for details about the operation stack.
-  BackdropFilterEngineLayer? pushBackdropFilter(
+  BackdropFilterEngineLayer pushBackdropFilter(
     ImageFilter filter, {
+    BlendMode blendMode = BlendMode.srcOver,
     BackdropFilterEngineLayer? oldLayer,
   }) {
     assert(_debugCheckCanBeUsedAsOldLayer(oldLayer, 'pushBackdropFilter'));
     final EngineLayer engineLayer = EngineLayer._();
-    _pushBackdropFilter(engineLayer, filter._toNativeImageFilter(), oldLayer?._nativeLayer);
+    _pushBackdropFilter(engineLayer, filter._toNativeImageFilter(), blendMode.index, oldLayer?._nativeLayer);
     final BackdropFilterEngineLayer layer = BackdropFilterEngineLayer._(engineLayer);
     assert(_debugPushLayer(layer));
     return layer;
   }
 
-  void _pushBackdropFilter(EngineLayer outEngineLayer, _ImageFilter filter, EngineLayer? oldLayer)
+  void _pushBackdropFilter(EngineLayer outEngineLayer, _ImageFilter filter, int blendMode, EngineLayer? oldLayer)
       native 'SceneBuilder_pushBackdropFilter';
 
   /// Pushes a shader mask operation onto the operation stack.
@@ -528,11 +530,12 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// {@macro dart.ui.sceneBuilder.oldLayerVsRetained}
   ///
   /// See [pop] for details about the operation stack.
-  ShaderMaskEngineLayer? pushShaderMask(
+  ShaderMaskEngineLayer pushShaderMask(
     Shader shader,
     Rect maskRect,
     BlendMode blendMode, {
     ShaderMaskEngineLayer? oldLayer,
+    FilterQuality filterQuality = FilterQuality.low,
   }) {
     assert(_debugCheckCanBeUsedAsOldLayer(oldLayer, 'pushShaderMask'));
     final EngineLayer engineLayer = EngineLayer._();
@@ -544,6 +547,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
       maskRect.top,
       maskRect.bottom,
       blendMode.index,
+      filterQuality.index,
       oldLayer?._nativeLayer,
     );
     final ShaderMaskEngineLayer layer = ShaderMaskEngineLayer._(engineLayer);
@@ -559,6 +563,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
       double maskRectTop,
       double maskRectBottom,
       int blendMode,
+      int filterQualityIndex,
       EngineLayer? oldLayer) native 'SceneBuilder_pushShaderMask';
 
   /// Pushes a physical layer operation for an arbitrary shape onto the
@@ -577,8 +582,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// {@macro dart.ui.sceneBuilder.oldLayerVsRetained}
   ///
   /// See [pop] for details about the operation stack, and [Clip] for different clip modes.
-  // ignore: deprecated_member_use
-  PhysicalShapeEngineLayer? pushPhysicalShape({
+  PhysicalShapeEngineLayer pushPhysicalShape({
     required Path path,
     required double elevation,
     required Color color,
@@ -727,7 +731,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
     bool freeze = false,
     FilterQuality filterQuality = FilterQuality.low,
   }) {
-    assert(offset != null, 'Offset argument was null'); // ignore: unnecessary_null_comparison
+    assert(offset != null, 'Offset argument was null');
     _addTexture(offset.dx, offset.dy, width, height, textureId, freeze, filterQuality.index);
   }
 
@@ -756,7 +760,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
     double width = 0.0,
     double height = 0.0,
   }) {
-    assert(offset != null, 'Offset argument was null'); // ignore: unnecessary_null_comparison
+    assert(offset != null, 'Offset argument was null');
     _addPlatformView(offset.dx, offset.dy, width, height, viewId);
   }
 

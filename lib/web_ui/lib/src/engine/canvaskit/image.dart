@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of engine;
 
 /// Instantiates a [ui.Codec] backed by an `SkAnimatedImage` from Skia.
@@ -180,7 +179,7 @@ class CkImage implements ui.Image, StackTraceDebugger {
         colorSpace: SkColorSpaceSRGB,
       );
       if (originalBytes == null) {
-        html.window.console.warn('Unable to encode image to bytes. We will not '
+        printWarning('Unable to encode image to bytes. We will not '
             'be able to resurrect it once it has been garbage collected.');
         return;
       }

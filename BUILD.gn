@@ -21,16 +21,18 @@ config("config") {
     }
   }
 
+  defines = []
+
   # This define is transitional and will be removed after the embedder API
   # transition is complete.
   #
-  # TODO(bugs.fuchsia.dev/54041): Remove when no longer neccesary.
+  # TODO(bugs.fuchsia.dev/54041): Remove when no longer necessary.
   if (is_fuchsia && flutter_enable_legacy_fuchsia_embedder) {
-    defines = [ "LEGACY_FUCHSIA_EMBEDDER" ]
+    defines += [ "LEGACY_FUCHSIA_EMBEDDER" ]
   }
 
   if (is_debug) {
-    defines = [ "FLUTTER_ENABLE_DIFF_CONTEXT" ]
+    defines += [ "FLUTTER_ENABLE_DIFF_CONTEXT" ]
   }
 }
 
@@ -52,8 +54,8 @@ group("flutter") {
 
   # Flutter SDK artifacts should only be built when either doing host builds, or
   # for cross-compiled desktop targets.
-  build_engine_artifacts =
-      current_toolchain == host_toolchain || (is_linux && !is_chromeos)
+  build_engine_artifacts = current_toolchain == host_toolchain ||
+                           (is_linux && !is_chromeos) || is_mac
 
   # If enbaled, compile the SDK / snapshot.
   if (!is_fuchsia) {
@@ -103,6 +105,7 @@ group("flutter") {
       "//flutter/flow:flow_unittests",
       "//flutter/fml:fml_unittests",
       "//flutter/lib/ui:ui_unittests",
+      "//flutter/runtime:no_dart_plugin_registrant_unittests",
       "//flutter/runtime:runtime_unittests",
       "//flutter/shell/common:shell_unittests",
       "//flutter/shell/platform/embedder:embedder_proctable_unittests",
@@ -112,8 +115,8 @@ group("flutter") {
       "//flutter/third_party/txt:txt_unittests",
     ]
 
-    # The accessibility library only supports Mac for now.
-    if (is_mac) {
+    # The accessibility library only supports Mac and Windows at the moment.
+    if (is_mac || is_win) {
       public_deps +=
           [ "//flutter/third_party/accessibility:accessibility_unittests" ]
     }

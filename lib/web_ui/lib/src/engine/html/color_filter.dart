@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of engine;
 
 /// A surface that applies an [ColorFilter] to its children.
@@ -60,14 +59,18 @@ class PersistedColorFilter extends PersistedContainerSurface
       childContainer?.style.visibility = 'visible';
       return;
     }
-
-    if (engineValue is! _CkBlendModeColorFilter) {
+    if (engineValue is _CkBlendModeColorFilter) {
+      _applyBlendModeFilter(engineValue);
+    } else if (engineValue is _CkMatrixColorFilter) {
+      _applyMatrixColorFilter(engineValue);
+    } else {
       childContainer?.style.visibility = 'visible';
-      return;
     }
+  }
 
-    ui.Color filterColor = engineValue.color;
-    ui.BlendMode colorFilterBlendMode = engineValue.blendMode;
+  void _applyBlendModeFilter(_CkBlendModeColorFilter colorFilter) {
+    ui.Color filterColor = colorFilter.color;
+    ui.BlendMode colorFilterBlendMode = colorFilter.blendMode;
     html.CssStyleDeclaration style = rootElement!.style;
     switch (colorFilterBlendMode) {
       case ui.BlendMode.clear:
@@ -124,7 +127,16 @@ class PersistedColorFilter extends PersistedContainerSurface
           colorFilterBlendMode == ui.BlendMode.modulate) {
         style.backgroundColor = colorToCssString(filterColor);
       }
-      return;
+    }
+  }
+
+  void _applyMatrixColorFilter(_CkMatrixColorFilter colorFilter) {
+    String? svgFilter = svgFilterFromColorMatrix(colorFilter.matrix);
+    if (svgFilter != null) {
+      _filterElement =
+          html.Element.html(svgFilter, treeSanitizer: _NullTreeSanitizer());
+      rootElement!.append(_filterElement!);
+      rootElement!.style.filter = 'url(#_fcf${_filterIdCounter})';
     }
   }
 
@@ -148,6 +160,9 @@ String? svgFilterFromBlendMode(
       break;
     case ui.BlendMode.srcOut:
       svgFilter = _srcOutColorFilterToSvg(filterColor);
+      break;
+    case ui.BlendMode.dstATop:
+      svgFilter = _dstATopColorFilterToSvg(filterColor);
       break;
     case ui.BlendMode.xor:
       svgFilter = _xorColorFilterToSvg(filterColor);
@@ -199,7 +214,6 @@ String? svgFilterFromBlendMode(
       break;
     case ui.BlendMode.src:
     case ui.BlendMode.dst:
-    case ui.BlendMode.dstATop:
     case ui.BlendMode.dstIn:
     case ui.BlendMode.dstOut:
     case ui.BlendMode.dstOver:
@@ -212,6 +226,23 @@ String? svgFilterFromBlendMode(
       break;
   }
   return svgFilter;
+}
+
+String? svgFilterFromColorMatrix(List<double> matrix) {
+  _filterIdCounter += 1;
+  final StringBuffer sbMatrix = StringBuffer();
+  assert(matrix.length == 20);
+  for (int i = 0; i < 20; i++) {
+    if (i != 0) {
+      sbMatrix.write(' ');
+    }
+    sbMatrix.write(matrix[i]);
+  }
+  return '$kSvgResourceHeader'
+      '<filter id="_fcf$_filterIdCounter" '
+      'filterUnits="objectBoundingBox" x="0%" y="0%" width="100%" height="100%">'
+      '<feColorMatrix values="$sbMatrix" result="comp"/>'
+      '</filter></svg>';
 }
 
 int _filterIdCounter = 0;
@@ -242,6 +273,20 @@ String _srcInColorFilterToSvg(ui.Color? color) {
       '</feFlood>'
       '<feComposite in="flood" in2="destalpha" '
       'operator="arithmetic" k1="1" k2="0" k3="0" k4="0" result="comp">'
+      '</feComposite>'
+      '</filter></svg>';
+}
+
+/// The destination that overlaps the source is composited with the source and
+/// replaces the destination. dst-atop	CR = CB*αB*αA+CA*αA*(1-αB)	αR=αA
+String _dstATopColorFilterToSvg(ui.Color? color) {
+  _filterIdCounter += 1;
+  return '$kSvgResourceHeader'
+      '<filter id="_fcf$_filterIdCounter" '
+      'filterUnits="objectBoundingBox" x="0%" y="0%" width="100%" height="100%">'
+      '<feFlood flood-color="${colorToCssString(color)}" flood-opacity="1" result="flood">'
+      '</feFlood>'
+      '<feComposite in="SourceGraphic" in2="flood" operator="atop" result="comp">'
       '</feComposite>'
       '</filter></svg>';
 }
