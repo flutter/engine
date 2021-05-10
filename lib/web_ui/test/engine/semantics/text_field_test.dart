@@ -233,10 +233,20 @@ void testMain() {
 
       // Blur the element without telling the framework.
       strategy.activeDomElement.blur();
+      expect(html.document.activeElement, html.document.body);
 
       // The input will have focus after editing state is set and semantics updated.
       strategy.setEditingState(EditingState(text: 'foo'));
-      expect(html.document.activeElement, html.document.body);
+
+      // NOTE: at this point some browsers, e.g. some versions of Safari will
+      //       have set the focus on the editing element as a result of setting
+      //       the test selection range. Other browsers require an explicit call
+      //       to `element.focus()` for the element to acquire focus. So far,
+      //       this discrepancy hasn't caused issues, so we're not checking for
+      //       any particular focus state between setEditingState and
+      //       createTextFieldSemantics. However, this is something for us to
+      //       keep in mind in case this causes issues in the future.
+
       createTextFieldSemantics(
         value: 'hello',
         isFocused: true,
@@ -245,10 +255,7 @@ void testMain() {
 
       strategy.disable();
       semantics().semanticsEnabled = false;
-
-      // TODO(yjbanov): this test passes locally but fails on LUCI
-      //                https://github.com/flutter/flutter/issues/82207
-    }, skip: browserEngine == BrowserEngine.webkit);
+    });
 
     test('Works in multi-line mode', () {
       semantics()
