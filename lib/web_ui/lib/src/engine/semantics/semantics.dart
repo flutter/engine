@@ -270,8 +270,8 @@ class SemanticsObject {
   }
 
   /// See [ui.SemanticsUpdateBuilder.updateNode].
-  int? get flags => _flags;
-  int? _flags;
+  int get flags => _flags;
+  int _flags = 0;
 
   /// Whether the [flags] field has been updated but has not been applied to the
   /// DOM yet.
@@ -584,7 +584,7 @@ class SemanticsObject {
   SemanticsObject? _parent;
 
   /// Whether this node currently has a given [SemanticsFlag].
-  bool hasFlag(ui.SemanticsFlag flag) => _flags! & flag.index != 0;
+  bool hasFlag(ui.SemanticsFlag flag) => _flags & flag.index != 0;
 
   /// Whether [actions] contains the given action.
   bool hasAction(ui.SemanticsAction action) => (_actions! & action.index) != 0;
@@ -785,15 +785,24 @@ class SemanticsObject {
   /// > A map literal is ordered: iterating over the keys and/or values of the maps always happens in the order the keys appeared in the source code.
   final Map<Role, RoleManager?> _roleManagers = <Role, RoleManager?>{};
 
+  /// Returns the role manager for the given [role].
+  ///
+  /// If a role manager does not exist for the given role, returns null.
+  RoleManager? debugRoleManagerFor(Role role) => _roleManagers[role];
+
   /// Detects the roles that this semantics object corresponds to and manages
   /// the lifecycles of [SemanticsObjectRole] objects.
   void _updateRoles() {
-    _updateRole(Role.labelAndValue, (hasLabel || hasValue) && !isVisualOnly);
+    _updateRole(Role.labelAndValue, (hasLabel || hasValue) && !isTextField && !isVisualOnly);
     _updateRole(Role.textField, isTextField);
-    _updateRole(
-        Role.tappable,
-        hasAction(ui.SemanticsAction.tap) ||
-            hasFlag(ui.SemanticsFlag.isButton));
+
+    bool shouldUseTappableRole =
+      (hasAction(ui.SemanticsAction.tap) || hasFlag(ui.SemanticsFlag.isButton)) &&
+      // Text fields manage their own focus/tap interactions. We don't need the
+      // tappable role manager. It only confuses AT.
+      !isTextField;
+
+    _updateRole(Role.tappable, shouldUseTappableRole);
     _updateRole(Role.incrementable, isIncrementable);
     _updateRole(Role.scrollable,
         isVerticalScrollContainer || isHorizontalScrollContainer);
@@ -1145,7 +1154,7 @@ class EngineSemanticsOwner {
     _instance = null;
   }
 
-  final Map<int?, SemanticsObject?> _semanticsTree = <int?, SemanticsObject?>{};
+  final Map<int, SemanticsObject> _semanticsTree = <int, SemanticsObject>{};
 
   /// Map [SemanticsObject.id] to parent [SemanticsObject] it was attached to
   /// this frame.
@@ -1222,8 +1231,8 @@ class EngineSemanticsOwner {
   /// Returns the entire semantics tree for testing.
   ///
   /// Works only in debug mode.
-  Map<int?, SemanticsObject?>? get debugSemanticsTree {
-    Map<int?, SemanticsObject?>? result;
+  Map<int, SemanticsObject>? get debugSemanticsTree {
+    Map<int, SemanticsObject>? result;
     assert(() {
       result = _semanticsTree;
       return true;
