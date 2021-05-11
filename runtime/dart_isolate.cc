@@ -652,7 +652,8 @@ bool DartIsolate::LoadKernel(std::shared_ptr<const fml::Mapping> mapping,
             bool last_piece = i + 1 == buffers.size();
             const std::shared_ptr<const fml::Mapping>& buffer = buffers.at(i);
             if (!isolate->PrepareForRunningFromKernel(buffer,
-                /*child_isolate=*/true, last_piece)) {
+                                                      /*child_isolate=*/true,
+                                                      last_piece)) {
               return false;
             }
           }
