@@ -226,6 +226,29 @@ static void fl_keyboard_manager_dispose(GObject* object) {
 
 /* Implement FlKeyboardManager */
 
+// This is an exact copy of g_ptr_array_find_with_equal_func.  Somehow CI
+// reports that can not find symbol g_ptr_array_find_with_equal_func, despite
+// the fact that it runs well locally.
+gboolean g_ptr_array_find_with_equal_func1(GPtrArray *haystack,
+                                          gconstpointer needle,
+                                          GEqualFunc equal_func,
+                                          guint *index_) {
+  guint i;
+  g_return_val_if_fail (haystack != NULL, FALSE);
+  if (equal_func == NULL)
+    equal_func = g_direct_equal;
+  for (i = 0; i < haystack->len; i++) {
+    if (equal_func(g_ptr_array_index(haystack, i), needle)) {
+      if (index_ != NULL) {
+        *index_ = i;
+      }
+      return TRUE;
+    }
+  }
+
+  return FALSE;
+}
+
 // Compare a #FlKeyboardPendingEvent with the given sequence_id. The needle
 // should be a pointer to uint64_t sequence_id.
 static gboolean compare_pending_by_sequence_id(
@@ -251,7 +274,7 @@ static gboolean compare_pending_by_hash(gconstpointer pending,
 static bool fl_keyboard_manager_remove_redispatched(FlKeyboardManager* self,
                                                     uint64_t hash) {
   guint result_index;
-  gboolean found = g_ptr_array_find_with_equal_func(
+  gboolean found = g_ptr_array_find_with_equal_func1(
       self->pending_redispatches, static_cast<const uint64_t*>(&hash),
       compare_pending_by_hash, &result_index);
   if (found) {
@@ -274,7 +297,7 @@ static void responder_handle_event_callback(bool handled,
   FlKeyboardManager* self = user_data->manager;
 
   guint result_index = -1;
-  gboolean found = g_ptr_array_find_with_equal_func(
+  gboolean found = g_ptr_array_find_with_equal_func1(
       self->pending_responds, &user_data->sequence_id,
       compare_pending_by_sequence_id, &result_index);
   g_return_if_fail(found);
