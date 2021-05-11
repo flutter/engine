@@ -4989,9 +4989,10 @@ class _SkiaCanvas extends NativeFieldWrapperClass2 implements Canvas {
 
     final Int32List? colorBuffer = (colors == null || colors.isEmpty) ? null : _encodeColorList(colors);
     final Float32List? cullRectBuffer = cullRect?._value32;
+    final int qualityIndex = paint.filterQuality.index;
 
     _drawAtlas(
-      paint._objects, paint._data, atlas._image, rstTransformBuffer, rectBuffer,
+      paint._objects, paint._data, qualityIndex, atlas._image, rstTransformBuffer, rectBuffer,
       colorBuffer, (blendMode ?? BlendMode.src).index, cullRectBuffer
     );
   }
@@ -5018,14 +5019,17 @@ class _SkiaCanvas extends NativeFieldWrapperClass2 implements Canvas {
     if (colors != null && colors.length * 4 != rectCount)
       throw ArgumentError('If non-null, "colors" length must be one fourth the length of "rstTransforms" and "rects".');
 
+    final int qualityIndex = paint.filterQuality.index;
+
     _drawAtlas(
-      paint._objects, paint._data, atlas._image, rstTransforms, rects,
+      paint._objects, paint._data, qualityIndex, atlas._image, rstTransforms, rects,
       colors, (blendMode ?? BlendMode.src).index, cullRect?._value32
     );
   }
 
   void _drawAtlas(List<dynamic>? paintObjects,
                   ByteData paintData,
+                  int filterQualityIndex,
                   _Image atlas,
                   Float32List rstTransforms,
                   Float32List rects,
