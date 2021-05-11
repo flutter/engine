@@ -39,6 +39,8 @@ sk_sp<GrDirectContext> ShellIOManager::CreateCompatibleResourceLoadingContext(
   // ES2 shading language when the ES3 external image extension is missing.
   options.fPreferExternalImagesOverES3 = true;
 
+  options.fReduceOpsTaskSplitting = GrContextOptions::Enable::kYes;
+
 #if !OS_FUCHSIA
   if (auto context = GrDirectContext::MakeGL(gl_interface, options)) {
     // Do not cache textures created by the image decoder.  These textures

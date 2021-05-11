@@ -119,7 +119,9 @@ bool VulkanWindow::CreateSkiaGrContext() {
     return false;
   }
 
-  sk_sp<GrDirectContext> context = GrDirectContext::MakeVulkan(backend_context);
+  GrContextOptions options;
+  options.fReduceOpsTaskSplitting = GrContextOptions::Enable::kYes;
+  sk_sp<GrDirectContext> context = GrDirectContext::MakeVulkan(backend_context, options);
 
   if (context == nullptr) {
     return false;
