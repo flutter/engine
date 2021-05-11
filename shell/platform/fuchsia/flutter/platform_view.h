@@ -14,9 +14,11 @@
 
 #include <map>
 #include <set>
+#include <unordered_map>
 
 #include "flow/embedded_views.h"
 #include "flutter/fml/macros.h"
+#include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/time/time_delta.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/platform/fuchsia/flutter/fuchsia_external_view_embedder.h"
@@ -27,9 +29,9 @@
 namespace flutter_runner {
 
 using OnEnableWireframe = fit::function<void(bool)>;
-using OnCreateView = fit::function<void(int64_t, bool, bool)>;
-using OnUpdateView = fit::function<void(int64_t, bool, bool)>;
-using OnDestroyView = fit::function<void(int64_t)>;
+using OnCreateView = fit::function<void(int64_t, ViewIdCallback, bool, bool)>;
+using OnUpdateView = fit::function<void(int64_t, SkRect, bool, bool)>;
+using OnDestroyView = fit::function<void(int64_t, ViewIdCallback)>;
 using OnCreateSurface = fit::function<std::unique_ptr<flutter::Surface>()>;
 
 // PlatformView is the per-engine component residing on the platform thread that
@@ -107,9 +109,13 @@ class PlatformView final : public flutter::PlatformView,
   void OnScenicError(std::string error) override;
   void OnScenicEvent(std::vector<fuchsia::ui::scenic::Event> events) override;
 
-  void OnChildViewConnected(scenic::ResourceId view_holder_id);
-  void OnChildViewDisconnected(scenic::ResourceId view_holder_id);
-  void OnChildViewStateChanged(scenic::ResourceId view_holder_id, bool state);
+  // ViewHolder event handlers.  These return false if the ViewHolder
+  // corresponding to `view_holder_id` could not be found and the evnt was
+  // unhandled.
+  bool OnChildViewConnected(scenic::ResourceId view_holder_id);
+  bool OnChildViewDisconnected(scenic::ResourceId view_holder_id);
+  bool OnChildViewStateChanged(scenic::ResourceId view_holder_id,
+                               bool is_rendering);
 
   bool OnHandlePointerEvent(const fuchsia::ui::input::PointerEvent& pointer);
 
@@ -133,7 +139,7 @@ class PlatformView final : public flutter::PlatformView,
 
   // |flutter::PlatformView|
   void HandlePlatformMessage(
-      fml::RefPtr<flutter::PlatformMessage> message) override;
+      std::unique_ptr<flutter::PlatformMessage> message) override;
 
   // |flutter::PlatformView|
   void UpdateSemantics(
@@ -144,19 +150,19 @@ class PlatformView final : public flutter::PlatformView,
   // being used, but it is necessary to handle accessibility messages
   // that are sent by Flutter when semantics is enabled.
   void HandleAccessibilityChannelPlatformMessage(
-      fml::RefPtr<flutter::PlatformMessage> message);
+      std::unique_ptr<flutter::PlatformMessage> message);
 
   // Channel handler for kFlutterPlatformChannel
   void HandleFlutterPlatformChannelPlatformMessage(
-      fml::RefPtr<flutter::PlatformMessage> message);
+      std::unique_ptr<flutter::PlatformMessage> message);
 
   // Channel handler for kTextInputChannel
   void HandleFlutterTextInputChannelPlatformMessage(
-      fml::RefPtr<flutter::PlatformMessage> message);
+      std::unique_ptr<flutter::PlatformMessage> message);
 
   // Channel handler for kPlatformViewsChannel.
   void HandleFlutterPlatformViewsChannelPlatformMessage(
-      fml::RefPtr<flutter::PlatformMessage> message);
+      std::unique_ptr<flutter::PlatformMessage> message);
 
   const std::string debug_label_;
   // TODO(MI4-2490): remove once ViewRefControl is passed to Scenic and kept
@@ -191,16 +197,20 @@ class PlatformView final : public flutter::PlatformView,
 
   fuchsia::sys::ServiceProviderPtr parent_environment_service_provider_;
 
+  // child_view_ids_ maintains a persistent mapping from Scenic ResourceId's to
+  // flutter view ids, which are really zx_handle_t of ViewHolderToken.
+  std::unordered_map<scenic::ResourceId, zx_handle_t> child_view_ids_;
+
   // last_text_state_ is the last state of the text input as reported by the IME
   // or initialized by Flutter. We set it to null if Flutter doesn't want any
   // input, since then there is no text input state at all.
   std::unique_ptr<fuchsia::ui::input::TextInputState> last_text_state_;
 
   std::set<int> down_pointers_;
-  std::map<
-      std::string /* channel */,
-      fit::function<void(
-          fml::RefPtr<flutter::PlatformMessage> /* message */)> /* handler */>
+  std::map<std::string /* channel */,
+           fit::function<void(
+               std::unique_ptr<
+                   flutter::PlatformMessage> /* message */)> /* handler */>
       platform_message_handlers_;
   // These are the channels that aren't registered and have been notified as
   // such. Notifying via logs multiple times results in log-spam. See:
@@ -216,6 +226,8 @@ class PlatformView final : public flutter::PlatformView,
 
   // The keyboard translation for fuchsia.ui.input3.KeyEvent.
   Keyboard keyboard_;
+
+  fml::WeakPtrFactory<PlatformView> weak_factory_;  // Must be the last member.
 
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformView);
 };

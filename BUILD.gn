@@ -21,16 +21,18 @@ config("config") {
     }
   }
 
+  defines = []
+
   # This define is transitional and will be removed after the embedder API
   # transition is complete.
   #
   # TODO(bugs.fuchsia.dev/54041): Remove when no longer necessary.
   if (is_fuchsia && flutter_enable_legacy_fuchsia_embedder) {
-    defines = [ "LEGACY_FUCHSIA_EMBEDDER" ]
+    defines += [ "LEGACY_FUCHSIA_EMBEDDER" ]
   }
 
   if (is_debug) {
-    defines = [ "FLUTTER_ENABLE_DIFF_CONTEXT" ]
+    defines += [ "FLUTTER_ENABLE_DIFF_CONTEXT" ]
   }
 }
 
@@ -52,8 +54,8 @@ group("flutter") {
 
   # Flutter SDK artifacts should only be built when either doing host builds, or
   # for cross-compiled desktop targets.
-  build_engine_artifacts =
-      current_toolchain == host_toolchain || (is_linux && !is_chromeos)
+  build_engine_artifacts = current_toolchain == host_toolchain ||
+                           (is_linux && !is_chromeos) || is_mac
 
   # If enbaled, compile the SDK / snapshot.
   if (!is_fuchsia) {

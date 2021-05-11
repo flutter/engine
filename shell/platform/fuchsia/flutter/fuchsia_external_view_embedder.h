@@ -6,6 +6,7 @@
 #define FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_FUCHSIA_EXTERNAL_VIEW_EMBEDDER_H_
 
 #include <fuchsia/ui/views/cpp/fidl.h>
+#include <lib/ui/scenic/cpp/id.h>
 #include <lib/ui/scenic/cpp/resources.h>
 #include <lib/ui/scenic/cpp/view_ref_pair.h>
 
@@ -22,6 +23,7 @@
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
 #include "third_party/skia/include/core/SkPoint.h"
+#include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 
@@ -29,6 +31,8 @@
 #include "vulkan_surface_producer.h"
 
 namespace flutter_runner {
+
+using ViewIdCallback = std::function<void(scenic::ResourceId)>;
 
 // This class orchestrates interaction with the Scenic compositor on Fuchsia. It
 // ensures that flutter content and platform view content are both rendered
@@ -89,9 +93,12 @@ class FuchsiaExternalViewEmbedder final : public flutter::ExternalViewEmbedder {
   // |SetViewProperties| doesn't manipulate the view directly -- it sets pending
   // properties for the next |UpdateView| call.
   void EnableWireframe(bool enable);
-  void CreateView(int64_t view_id);
-  void DestroyView(int64_t view_id);
-  void SetViewProperties(int64_t view_id, bool hit_testable, bool focusable);
+  void CreateView(int64_t view_id, ViewIdCallback on_view_bound);
+  void DestroyView(int64_t view_id, ViewIdCallback on_view_unbound);
+  void SetViewProperties(int64_t view_id,
+                         const SkRect& occlusion_hint,
+                         bool hit_testable,
+                         bool focusable);
 
  private:
   // Reset state for a new frame.
@@ -121,13 +128,15 @@ class FuchsiaExternalViewEmbedder final : public flutter::ExternalViewEmbedder {
     SkPoint offset = SkPoint::Make(0.f, 0.f);
     SkSize scale = SkSize::MakeEmpty();
     SkSize size = SkSize::MakeEmpty();
+    SkRect occlusion_hint = SkRect::MakeEmpty();
     float elevation = 0.f;
     float opacity = 1.f;
-    bool hit_testable = false;
-    bool focusable = false;
+    bool hit_testable = true;
+    bool focusable = true;
 
-    bool pending_hit_testable = false;
-    bool pending_focusable = false;
+    SkRect pending_occlusion_hint = SkRect::MakeEmpty();
+    bool pending_hit_testable = true;
+    bool pending_focusable = true;
   };
 
   struct ScenicLayer {

@@ -203,13 +203,13 @@ Engine::RunStatus Engine::Run(RunConfiguration configuration) {
 
   auto service_id = runtime_controller_->GetRootIsolateServiceID();
   if (service_id.has_value()) {
-    fml::RefPtr<PlatformMessage> service_id_message =
-        fml::MakeRefCounted<flutter::PlatformMessage>(
+    std::unique_ptr<PlatformMessage> service_id_message =
+        std::make_unique<flutter::PlatformMessage>(
             kIsolateChannel,
             std::vector<uint8_t>(service_id.value().begin(),
                                  service_id.value().end()),
             nullptr);
-    HandlePlatformMessage(service_id_message);
+    HandlePlatformMessage(std::move(service_id_message));
   }
 
   return Engine::RunStatus::Success;
@@ -226,15 +226,26 @@ void Engine::ReportTimings(std::vector<int64_t> timings) {
 }
 
 void Engine::HintFreed(size_t size) {
-  hint_freed_bytes_since_last_idle_ += size;
+  hint_freed_bytes_since_last_call_ += size;
 }
 
 void Engine::NotifyIdle(int64_t deadline) {
   auto trace_event = std::to_string(deadline - Dart_TimelineGetMicros());
   TRACE_EVENT1("flutter", "Engine::NotifyIdle", "deadline_now_delta",
                trace_event.c_str());
-  runtime_controller_->NotifyIdle(deadline, hint_freed_bytes_since_last_idle_);
-  hint_freed_bytes_since_last_idle_ = 0;
+  // Avoid asking the RuntimeController to call Dart_HintFreed more than once
+  // every 5 seconds.
+  // This is to avoid GCs happening too frequently e.g. when an animated GIF is
+  // playing and disposing of an image every frame.
+  fml::TimePoint now = delegate_.GetCurrentTimePoint();
+  fml::TimeDelta delta = now - last_hint_freed_call_time_;
+  size_t hint_freed_bytes = 0;
+  if (delta.ToMilliseconds() > 5000 && hint_freed_bytes_since_last_call_ > 0) {
+    hint_freed_bytes = hint_freed_bytes_since_last_call_;
+    hint_freed_bytes_since_last_call_ = 0;
+    last_hint_freed_call_time_ = now;
+  }
+  runtime_controller_->NotifyIdle(deadline, hint_freed_bytes);
 }
 
 std::optional<uint32_t> Engine::GetUIIsolateReturnCode() {
@@ -285,7 +296,7 @@ void Engine::SetViewportMetrics(const ViewportMetrics& metrics) {
   }
 }
 
-void Engine::DispatchPlatformMessage(fml::RefPtr<PlatformMessage> message) {
+void Engine::DispatchPlatformMessage(std::unique_ptr<PlatformMessage> message) {
   std::string channel = message->channel();
   if (channel == kLifecycleChannel) {
     if (HandleLifecyclePlatformMessage(message.get())) {
@@ -338,7 +349,7 @@ bool Engine::HandleLifecyclePlatformMessage(PlatformMessage* message) {
 }
 
 bool Engine::HandleNavigationPlatformMessage(
-    fml::RefPtr<PlatformMessage> message) {
+    std::unique_ptr<PlatformMessage> message) {
   const auto& data = message->data();
 
   rapidjson::Document document;
@@ -477,7 +488,7 @@ void Engine::UpdateSemantics(SemanticsNodeUpdates update,
   delegate_.OnEngineUpdateSemantics(std::move(update), std::move(actions));
 }
 
-void Engine::HandlePlatformMessage(fml::RefPtr<PlatformMessage> message) {
+void Engine::HandlePlatformMessage(std::unique_ptr<PlatformMessage> message) {
   if (message->channel() == kAssetChannel) {
     HandleAssetPlatformMessage(std::move(message));
   } else {
@@ -520,7 +531,8 @@ void Engine::ScheduleSecondaryVsyncCallback(uintptr_t id,
   animator_->ScheduleSecondaryVsyncCallback(id, callback);
 }
 
-void Engine::HandleAssetPlatformMessage(fml::RefPtr<PlatformMessage> message) {
+void Engine::HandleAssetPlatformMessage(
+    std::unique_ptr<PlatformMessage> message) {
   fml::RefPtr<PlatformMessageResponse> response = message->response();
   if (!response) {
     return;
