@@ -708,6 +708,8 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// Adds a [Picture] to the scene.
   ///
   /// The picture is rasterized at the given offset.
+  ///
+  /// {@macro dart.ui.sceneBuilder.oldLayer}
   PictureEngineLayer addPicture(
     Offset offset,
     Picture picture, {

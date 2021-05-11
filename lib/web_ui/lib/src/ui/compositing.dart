@@ -31,6 +31,8 @@ abstract class ShaderMaskEngineLayer implements EngineLayer {}
 
 abstract class PhysicalShapeEngineLayer implements EngineLayer {}
 
+// TODO(yjbanov): Incorporate into DOM diffing algorithm.
+// https://github.com/flutter/flutter/issues/82287
 abstract class PictureEngineLayer implements EngineLayer {}
 
 abstract class SceneBuilder {
