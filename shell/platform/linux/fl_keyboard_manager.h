@@ -21,7 +21,7 @@ typedef void (*FlKeyboardManagerRedispatcher)(const GdkEvent* event);
 
 G_BEGIN_DECLS
 
-#define FL_TYPE_KEYBOARD_MANAGER fl_keyboard_manager_get_type
+#define FL_TYPE_KEYBOARD_MANAGER fl_keyboard_manager_get_type()
 G_DECLARE_FINAL_TYPE(FlKeyboardManager,
                      fl_keyboard_manager,
                      FL,
