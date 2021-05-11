@@ -12,11 +12,7 @@ namespace flutter {
 namespace testing {
 
 static sk_sp<SkData> LoadValidImageFixture() {
-  // Load the fixture with fml mappings.
-  auto fixtures_directory =
-      fml::OpenDirectory(GetFixturesPath(), false, fml::FilePermission::kRead);
-  auto fixture_mapping = fml::FileMapping::CreateReadOnly(
-      fixtures_directory, "DashInNooglerHat.jpg");
+  auto fixture_mapping = OpenFixtureAsMapping("DashInNooglerHat.jpg");
 
   // Remap to sk_sp<SkData>.
   SkData::ReleaseProc on_release = [](const void* ptr, void* context) -> void {
@@ -25,7 +21,10 @@ static sk_sp<SkData> LoadValidImageFixture() {
   auto data = SkData::MakeWithProc(fixture_mapping->GetMapping(),
                                    fixture_mapping->GetSize(), on_release,
                                    fixture_mapping.get());
-  fixture_mapping.release();
+
+  if (data) {
+    fixture_mapping.release();
+  }
 
   return data;
 }
@@ -35,15 +34,15 @@ TEST_F(ShellTest, CreateCompatibleReturnsBuiltinImageGeneratorForValidImage) {
 
   // Fetch the generator and query for basic info
   ImageGeneratorRegistry registry;
-  auto result = registry.createCompatible(data);
-  auto info = result->getInfo();
+  auto result = registry.CreateCompatibleGenerator(data);
+  auto info = result->GetInfo();
   ASSERT_EQ(info.width(), 3024);
   ASSERT_EQ(info.height(), 4032);
 }
 
 TEST_F(ShellTest, CreateCompatibleReturnsNullptrForInvalidImage) {
   ImageGeneratorRegistry registry;
-  auto result = registry.createCompatible(SkData::MakeEmpty());
+  auto result = registry.CreateCompatibleGenerator(SkData::MakeEmpty());
   ASSERT_EQ(result, nullptr);
 }
 
@@ -55,13 +54,13 @@ class FakeImageGenerator : public ImageGenerator {
                                 SkColorType::kRGBA_8888_SkColorType,
                                 SkAlphaType::kOpaque_SkAlphaType)){};
   ~FakeImageGenerator() = default;
-  const SkImageInfo& getInfo() const { return info_; }
+  const SkImageInfo& GetInfo() const { return info_; }
 
-  bool getPixels(const SkImageInfo& info, void* pixels, size_t rowBytes) const {
+  bool GetPixels(const SkImageInfo& info, void* pixels, size_t rowBytes) const {
     return false;
   };
 
-  SkISize getScaledDimensions(float scale) {
+  SkISize GetScaledDimensions(float scale) {
     return SkISize::Make(info_.width(), info_.height());
   }
 
@@ -73,31 +72,31 @@ TEST_F(ShellTest, PositivePriorityTakesPrecedentOverDefaultGenerators) {
   ImageGeneratorRegistry registry;
 
   const int fakeWidth = 1337;
-  registry.add(
+  registry.AddFactory(
       [fakeWidth](sk_sp<SkData> buffer) {
         return std::make_unique<FakeImageGenerator>(fakeWidth);
       },
       1);
 
   // Fetch the generator and query for basic info.
-  auto result = registry.createCompatible(LoadValidImageFixture());
-  ASSERT_EQ(result->getInfo().width(), fakeWidth);
+  auto result = registry.CreateCompatibleGenerator(LoadValidImageFixture());
+  ASSERT_EQ(result->GetInfo().width(), fakeWidth);
 }
 
 TEST_F(ShellTest, DefaultGeneratorsTakePrecedentOverNegativePriority) {
   ImageGeneratorRegistry registry;
 
-  registry.add(
+  registry.AddFactory(
       [](sk_sp<SkData> buffer) {
         return std::make_unique<FakeImageGenerator>(1337);
       },
       -1);
 
   // Fetch the generator and query for basic info.
-  auto result = registry.createCompatible(LoadValidImageFixture());
+  auto result = registry.CreateCompatibleGenerator(LoadValidImageFixture());
   // If the real width of the image pops out, then the default generator was
   // returned rather than the fake one.
-  ASSERT_EQ(result->getInfo().width(), 3024);
+  ASSERT_EQ(result->GetInfo().width(), 3024);
 }
 
 }  // namespace testing

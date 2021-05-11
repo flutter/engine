@@ -24,29 +24,30 @@ class ImageGeneratorRegistry {
 
   ImageGeneratorRegistry();
 
-  ~ImageGeneratorRegistry() = default;
+  ~ImageGeneratorRegistry();
 
-  void add(ImageGeneratorFactory factory, int32_t priority);
+  void AddFactory(ImageGeneratorFactory factory, int32_t priority);
 
   /// Walks the list of image generator builders in descending priority order
   /// until a compatible SkImageGenerator is able to be built. If no compatible
   /// image generator could be produced, `std::unique_ptr(nullptr)` is returned.
-  std::unique_ptr<ImageGenerator> createCompatible(sk_sp<SkData> buffer);
+  std::unique_ptr<ImageGenerator> CreateCompatibleGenerator(
+      sk_sp<SkData> buffer);
 
   fml::WeakPtr<ImageGeneratorRegistry> GetWeakPtr() const;
 
  private:
-  struct PrioritizedFactory_ {
+  struct PrioritizedFactory {
     ImageGeneratorFactory callback;
 
-    int32_t priority;
+    int32_t priority = 0;
 
     // Order by descending priority.
-    inline bool operator<(const PrioritizedFactory_& other) const {
+    constexpr bool operator<(const PrioritizedFactory& other) const {
       return priority > other.priority;
     }
   };
-  std::vector<PrioritizedFactory_> image_generator_factories_;
+  std::vector<PrioritizedFactory> image_generator_factories_;
   fml::WeakPtrFactory<ImageGeneratorRegistry> weak_factory_;
 };
 

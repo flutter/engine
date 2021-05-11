@@ -17,17 +17,17 @@
 namespace flutter {
 
 ImageGeneratorRegistry::ImageGeneratorRegistry() : weak_factory_(this) {
-  add(
+  AddFactory(
       [](sk_sp<SkData> buffer) {
-        return BuiltinSkiaCodecImageGenerator::makeFromData(buffer);
+        return BuiltinSkiaCodecImageGenerator::MakeFromData(buffer);
       },
       0);
 
 #ifdef OS_MACOSX
-  add(
+  AddFactory(
       [](sk_sp<SkData> buffer) {
         auto generator = SkImageGeneratorCG::MakeFromEncodedCG(buffer);
-        return BuiltinSkiaImageGenerator::makeFromGenerator(
+        return BuiltinSkiaImageGenerator::MakeFromGenerator(
             std::move(generator));
       },
       0);
@@ -42,15 +42,17 @@ ImageGeneratorRegistry::ImageGeneratorRegistry() : weak_factory_(this) {
 #endif
 }
 
-void ImageGeneratorRegistry::add(ImageGeneratorFactory factory,
-                                 int32_t priority) {
+ImageGeneratorRegistry::~ImageGeneratorRegistry() = default;
+
+void ImageGeneratorRegistry::AddFactory(ImageGeneratorFactory factory,
+                                        int32_t priority) {
   image_generator_factories_.push_back({factory, priority});
   std::stable_sort(image_generator_factories_.begin(),
                    image_generator_factories_.end());
 }
 
-std::unique_ptr<ImageGenerator> ImageGeneratorRegistry::createCompatible(
-    sk_sp<SkData> buffer) {
+std::unique_ptr<ImageGenerator>
+ImageGeneratorRegistry::CreateCompatibleGenerator(sk_sp<SkData> buffer) {
   for (auto& factory : image_generator_factories_) {
     std::unique_ptr<ImageGenerator> result = factory.callback(buffer);
     if (result) {
