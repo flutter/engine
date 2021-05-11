@@ -230,11 +230,11 @@ static void fl_keyboard_manager_dispose(GObject* object) {
 // reports that can not find symbol g_ptr_array_find_with_equal_func, despite
 // the fact that it runs well locally.
 gboolean g_ptr_array_find_with_equal_func1(GPtrArray *haystack,
-                                          gconstpointer needle,
-                                          GEqualFunc equal_func,
-                                          guint *index_) {
+                                           gconstpointer needle,
+                                           GEqualFunc equal_func,
+                                           guint *index_) {
   guint i;
-  g_return_val_if_fail (haystack != NULL, FALSE);
+  g_return_val_if_fail(haystack != NULL, FALSE);
   if (equal_func == NULL)
     equal_func = g_direct_equal;
   for (i = 0; i < haystack->len; i++) {
