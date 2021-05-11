@@ -16,7 +16,7 @@ late CanvasKit canvasKit;
 /// static APIs.
 ///
 /// See, e.g. [SkPaint].
-/// 
+///
 /// This also acts as a cache of an initialized CanvasKit instance. We can use
 /// this, for example, to perform a hot restart without needing to redownload
 /// and reinitialized CanvasKit.
