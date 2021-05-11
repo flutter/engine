@@ -84,7 +84,7 @@ void AndroidExternalViewEmbedder::SubmitFrame(
     return;
   }
 
-  std::unordered_map<int64_t, std::list<SkRect>> overlay_layers;
+  std::unordered_map<int64_t, SkRect> overlay_layers;
   std::unordered_map<int64_t, sk_sp<SkPicture>> pictures;
   SkCanvas* background_canvas = frame->SkiaCanvas();
   auto current_frame_view_count = composition_order_.size();
@@ -101,10 +101,8 @@ void AndroidExternalViewEmbedder::SubmitFrame(
     FML_CHECK(picture);
     pictures.insert({view_id, picture});
 
-    overlay_layers.insert({view_id, {}});
-
     sk_sp<RTree> rtree = view_rtrees_.at(view_id);
-    SkRect joined_rect;
+    SkRect joined_rect = SkRect::MakeEmpty();
 
     // Determinate if Flutter UI intersects with any of the previous
     // platform views stacked by z position.
@@ -128,6 +126,10 @@ void AndroidExternalViewEmbedder::SubmitFrame(
       }
     }
 
+    if (joined_rect.isEmpty()) {
+      continue;
+    }
+
     // Subpixels in the platform may not align with the canvas subpixels.
     //
     // To workaround it, round the floating point bounds and make the rect
@@ -135,7 +137,7 @@ void AndroidExternalViewEmbedder::SubmitFrame(
     //
     // For example, {0.3, 0.5, 3.1, 4.7} becomes {0, 0, 4, 5}.
     joined_rect.set(joined_rect.roundOut());
-    overlay_layers.at(view_id).push_back(joined_rect);
+    overlay_layers.insert({view_id, joined_rect});
     // Clip the background canvas, so it doesn't contain any of the pixels
     // drawn on the overlay layer.
     background_canvas->clipRect(joined_rect, SkClipOp::kDifference);
@@ -166,16 +168,15 @@ void AndroidExternalViewEmbedder::SubmitFrame(
         params.sizePoints().height() * device_pixel_ratio_,
         params.mutatorsStack()  //
     );
-    for (const SkRect& overlay_rect : overlay_layers.at(view_id)) {
-      std::unique_ptr<SurfaceFrame> frame =
-          CreateSurfaceIfNeeded(context,               //
-                                view_id,               //
-                                pictures.at(view_id),  //
-                                overlay_rect           //
-          );
-      if (should_submit_current_frame) {
-        frame->Submit();
-      }
+    const SkRect& overlay_rect = overlay_layers.at(view_id);
+    std::unique_ptr<SurfaceFrame> frame =
+        CreateSurfaceIfNeeded(context,               //
+                              view_id,               //
+                              pictures.at(view_id),  //
+                              overlay_rect           //
+        );
+    if (should_submit_current_frame) {
+      frame->Submit();
     }
   }
 }
