@@ -24,6 +24,7 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
@@ -488,10 +489,14 @@ public class FlutterActivity extends Activity
       Bundle metaData = getMetaData();
       int splashScreenId = metaData != null ? metaData.getInt(SPLASH_SCREEN_META_DATA_KEY) : 0;
       return splashScreenId != 0
-          ? Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP
+          ? Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
               ? getResources().getDrawable(splashScreenId, getTheme())
               : getResources().getDrawable(splashScreenId)
           : null;
+    } catch (Resources.NotFoundException e) {
+      Log.w(TAG, "Splash screen not found. Ensure the drawable exists and that it's valid."
+              + " This can also occur if the xml has unresolved theme references.");
+      return null;
     } catch (PackageManager.NameNotFoundException e) {
       // This is never expected to happen.
       return null;
