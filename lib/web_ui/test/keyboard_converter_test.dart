@@ -283,9 +283,9 @@ void testMain() {
     });
 
     // The absolute values of the following logical keys are not guaranteed.
-    const int kLogicalAltE = 0x410800070008;
-    const int kLogicalAltU = 0x410800070018;
-    const int kLogicalAltShiftE = 0x610800070008;
+    const int kLogicalAltE = 0x400800070008;
+    const int kLogicalAltU = 0x400800070018;
+    const int kLogicalAltShiftE = 0x600800070008;
     // The values must be distinguishable.
     expect(kLogicalAltE, isNot(equals(kLogicalAltU)));
     expect(kLogicalAltE, isNot(equals(kLogicalAltShiftE)));
