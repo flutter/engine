@@ -53,6 +53,12 @@ void MessageLoopLinux::Run() {
     int epoll_result = FML_HANDLE_EINTR(
         ::epoll_wait(epoll_fd_.get(), &event, 1, -1 /* timeout */));
 
+    // epoll_wait can be interrupted by signal handler before the timeout
+    // expires
+    if (epoll_result == -1 && errno == EINTR) {
+      continue;
+    }
+
     // Errors are fatal.
     if (event.events & (EPOLLERR | EPOLLHUP)) {
       running_ = false;
