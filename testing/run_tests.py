@@ -124,6 +124,7 @@ def RunCCTests(build_dir, filter):
   ]
   shuffle_flags = non_repeatable_shuffle_flags + [
     "--gtest_repeat=2",
+    "--gmock_verbose=info",
   ]
 
   RunEngineExecutable(build_dir, 'client_wrapper_glfw_unittests', filter, shuffle_flags)
