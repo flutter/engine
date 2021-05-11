@@ -1710,8 +1710,8 @@ class HybridTextEditing {
   late final DefaultTextEditingStrategy strategy =
     debugTextEditingStrategyOverride ??
     (EngineSemanticsOwner.instance.semanticsEnabled
-      ? SemanticsTextEditingStrategy.ensureInitialized(textEditing)
-      : createDefaultTextEditingStrategy(textEditing));
+      ? SemanticsTextEditingStrategy.ensureInitialized(this)
+      : createDefaultTextEditingStrategy(this));
 
   void acceptCommand(TextInputCommand command, ui.VoidCallback callback) {
     if (_debugPrintTextInputCommands) {

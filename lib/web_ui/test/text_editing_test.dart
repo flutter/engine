@@ -556,6 +556,7 @@ void testMain() {
 
       checkInputEditingState(
           textEditing.strategy.domElement, 'abcd', 2, 3);
+      expect(textEditing.isEditing, isTrue);
 
       // DOM element is blurred.
       textEditing.strategy.domElement.blur();
@@ -579,7 +580,7 @@ void testMain() {
       }
     },
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
-        skip: (browserEngine == BrowserEngine.edge));
+        skip: browserEngine == BrowserEngine.edge);
 
     test('finishAutofillContext closes connection no autofill element',
         () async {
