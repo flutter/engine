@@ -12,7 +12,7 @@ class HtmlViewEmbedder {
   HtmlViewEmbedder._();
 
   /// The maximum number of overlay surfaces that can be live at once.
-  static const int maximumOverlaySurfaces = 4;
+  static const int maximumOverlaySurfaces = 8;
 
   /// A shared backup surface to use as an overlay once we have run out of
   /// surfaces.
