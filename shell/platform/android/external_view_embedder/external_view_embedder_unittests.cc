@@ -517,18 +517,16 @@ TEST(AndroidExternalViewEmbedder, SubmitFrame__overlayComposition) {
   EXPECT_CALL(*jni_mock, FlutterViewBeginFrame());
   embedder->BeginFrame(frame_size, nullptr, 1.5, raster_thread_merger);
 
-  {
-    // Add first Android view.
-    SkMatrix matrix;
-    MutatorsStack stack;
-    stack.PushTransform(SkMatrix::Translate(0, 0));
+  // Add first Android view.
+  SkMatrix matrix1;
+  MutatorsStack stack1;
+  stack1.PushTransform(SkMatrix::Translate(0, 0));
 
-    embedder->PrerollCompositeEmbeddedView(
-        0, std::make_unique<EmbeddedViewParams>(matrix, SkSize::Make(200, 200),
-                                                stack));
-    EXPECT_CALL(*jni_mock, FlutterViewOnDisplayPlatformView(0, 0, 0, 200, 200,
-                                                            300, 300, stack));
-  }
+  embedder->PrerollCompositeEmbeddedView(
+      0, std::make_unique<EmbeddedViewParams>(matrix1, SkSize::Make(200, 200),
+                                              stack1));
+  EXPECT_CALL(*jni_mock, FlutterViewOnDisplayPlatformView(0, 0, 0, 200, 200,
+                                                          300, 300, stack1));
 
   auto rect_paint = SkPaint();
   rect_paint.setColor(SkColors::kCyan);
@@ -538,18 +536,17 @@ TEST(AndroidExternalViewEmbedder, SubmitFrame__overlayComposition) {
   embedder->CompositeEmbeddedView(0)->drawRect(
       SkRect::MakeXYWH(25, 25, 50, 150), rect_paint);
 
-  {
-    // Add second Android view.
-    SkMatrix matrix;
-    MutatorsStack stack;
-    stack.PushTransform(SkMatrix::Translate(0, 100));
+  // Add second Android view.
+  SkMatrix matrix2;
+  MutatorsStack stack2;
+  stack2.PushTransform(SkMatrix::Translate(0, 100));
 
-    embedder->PrerollCompositeEmbeddedView(
-        1, std::make_unique<EmbeddedViewParams>(matrix, SkSize::Make(100, 100),
-                                                stack));
-    EXPECT_CALL(*jni_mock, FlutterViewOnDisplayPlatformView(1, 0, 0, 100, 100,
-                                                            150, 150, stack));
-  }
+  embedder->PrerollCompositeEmbeddedView(
+      1, std::make_unique<EmbeddedViewParams>(matrix2, SkSize::Make(100, 100),
+                                              stack2));
+  EXPECT_CALL(*jni_mock, FlutterViewOnDisplayPlatformView(1, 0, 0, 100, 100,
+                                                          150, 150, stack2));
+
   // This simulates Flutter UI that intersects with the first and second Android
   // views.
   embedder->CompositeEmbeddedView(1)->drawRect(SkRect::MakeXYWH(25, 25, 50, 50),
@@ -571,6 +568,9 @@ TEST(AndroidExternalViewEmbedder, SubmitFrame__overlayComposition) {
       });
 
   embedder->SubmitFrame(gr_context.get(), std::move(surface_frame), nullptr);
+
+  EXPECT_CALL(*jni_mock, FlutterViewEndFrame());
+  embedder->EndFrame(/*should_resubmit_frame=*/false, raster_thread_merger);
 }
 
 TEST(AndroidExternalViewEmbedder, DoesNotCallJNIPlatformThreadOnlyMethods) {
