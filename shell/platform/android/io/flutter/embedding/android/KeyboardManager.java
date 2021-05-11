@@ -9,7 +9,6 @@ import android.view.View;
 import androidx.annotation.NonNull;
 import io.flutter.Log;
 import io.flutter.embedding.android.KeyboardManager.Responder.OnKeyEventHandledCallback;
-import io.flutter.embedding.engine.systemchannels.KeyEventChannel;
 import io.flutter.plugin.editing.TextInputPlugin;
 import java.util.HashSet;
 
@@ -37,9 +36,9 @@ import java.util.HashSet;
  *       <p>When a new {@link KeyEvent} is received, {@link KeyboardManager} calls the {@link
  *       Responder#handleEvent(KeyEvent, OnKeyEventHandledCallback)} method on its {@link
  *       Responder}s. Each {@link Responder} must call the supplied {@link
- *       OnKeyEventHandledCallback} exactly once, when it has decided wether to handle the key event
- *       callback. More than one {@link Responder} is allowed to reply true and handle the same
- *       {@link KeyEvent}.
+ *       OnKeyEventHandledCallback} exactly once, when it has decided whether to handle the key
+ *       event callback. More than one {@link Responder} is allowed to reply true and handle the
+ *       same {@link KeyEvent}.
  *       <p>Typically a {@link KeyboardManager} uses a {@link KeyChannelResponder} as its only
  *       {@link Responder}.
  *   <li>{@link TextInputPlugin}: if every {@link Responder} has replied false to a {@link
@@ -81,14 +80,6 @@ public class KeyboardManager {
     this.view = view;
     this.textInputPlugin = textInputPlugin;
     this.responders = responders;
-  }
-
-  KeyboardManager(
-      View view, @NonNull TextInputPlugin textInputPlugin, KeyEventChannel keyEventChannel) {
-    this(
-        view,
-        textInputPlugin,
-        new KeyboardManager.Responder[] {new KeyChannelResponder(keyEventChannel)});
   }
 
   /**

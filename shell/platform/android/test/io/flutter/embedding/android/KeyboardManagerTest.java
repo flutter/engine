@@ -80,7 +80,11 @@ public class KeyboardManagerTest {
     when(mockRootView.dispatchKeyEvent(any(KeyEvent.class)))
         .thenAnswer(
             invocation -> mockView.dispatchKeyEvent((KeyEvent) invocation.getArguments()[0]));
-    keyboardManager = new KeyboardManager(mockView, mockTextInputPlugin, mockKeyEventChannel);
+    keyboardManager =
+        new KeyboardManager(
+            mockView,
+            mockTextInputPlugin,
+            new Responder[] {new KeyChannelResponder(flutterEngine.getKeyEventChannel())});
   }
 
   // Tests start
