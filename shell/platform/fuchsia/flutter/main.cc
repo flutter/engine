@@ -24,8 +24,11 @@ int main(int argc, char const* argv[]) {
 
   // We inject the 'vm' node into the dart vm so that it can add any inspect
   // data that it needs to the inspect tree.
-  dart::SetDartVmNode(std::make_unique<inspect::Node>(
-      dart_utils::RootInspectNode::CreateRootChild("vm")));
+  auto vm_node = std::make_unique<inspect::Node>(dart_utils::RootInspectNode::CreateRootChild("vm"));
+  vm_node->CreateString(
+    dart_utils::VMServiceObject::kPortDirName, dart_utils::VMServiceObject::kPortDir,
+    dart_utils::RootInspectNode::GetInspector());
+  dart::SetDartVmNode(std::move(vm_node));
 
   std::unique_ptr<trace::TraceProviderWithFdio> provider;
   {

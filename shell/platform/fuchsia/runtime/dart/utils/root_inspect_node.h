@@ -25,12 +25,15 @@ class RootInspectNode {
 
  public:
   // Initializes the underlying component inspector. Must be invoked at least
-  // once before calling CreateRootChild().
+  // once before calling CreateRootChild() or GetInspector().
   static void Initialize(sys::ComponentContext* context);
 
   // Creates an inspect node which is a child of the component's root inspect
   // node with the provided |name|.
   static inspect::Node CreateRootChild(const std::string& name);
+
+  // Exposes the underlying component inspector.
+  static inspect::Inspector* GetInspector();
 
  private:
   static std::unique_ptr<sys::ComponentInspector> inspector_;

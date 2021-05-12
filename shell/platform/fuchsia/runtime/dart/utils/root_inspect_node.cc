@@ -21,4 +21,9 @@ inspect::Node RootInspectNode::CreateRootChild(const std::string& name) {
   return inspector_->inspector()->GetRoot().CreateChild(name);
 }
 
+inspect::Inspector* RootInspectNode::GetInspector() {
+  std::lock_guard<std::mutex> lock(mutex_);
+  return inspector_->inspector();
+}
+
 }  // namespace dart_utils
