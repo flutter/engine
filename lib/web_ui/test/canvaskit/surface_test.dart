@@ -70,7 +70,7 @@ void testMain() {
     });
 
     test(
-      'Surface creates new context when WebGL context is lost',
+      'Surface creates new context when WebGL context is restored',
       () async {
         final Surface surface = Surface(HtmlViewEmbedder.instance);
         expect(surface.debugForceNewContext, isTrue);
@@ -95,10 +95,20 @@ void testMain() {
 
         // Pump a timer to allow the "lose context" event to propagate.
         await Future<void>.delayed(Duration.zero);
+        // We don't create a new GL context until the context is restored.
+        expect(surface.debugContextLost, isTrue);
+        expect(ctx.isContextLost(), isTrue);
+
+        // Emulate WebGL context restoration.
+        loseContextExtension.restoreContext();
+
+        // Pump a timer to allow the "restore context" event to propagate.
+        await Future<void>.delayed(Duration.zero);
         expect(surface.debugForceNewContext, isTrue);
+
         final CkSurface afterContextLost =
             surface.acquireFrame(ui.Size(9, 19)).skiaSurface;
-        // A new cotext is created.
+        // A new context is created.
         expect(afterContextLost, isNot(same(before)));
       },
       // Firefox doesn't have the WEBGL_lose_context extension.

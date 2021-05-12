@@ -44,6 +44,9 @@ class Surface {
   bool _forceNewContext = true;
   bool get debugForceNewContext => _forceNewContext;
 
+  bool _contextLost = false;
+  bool get debugContextLost => _contextLost;
+
   SkGrContext? _grContext;
   int? _skiaCacheBytes;
 
@@ -162,11 +165,21 @@ class Surface {
 
   void _contextRestoredListener(html.Event event) {
     print('Flutter: restoring WebGL context.');
+    assert(
+        _contextLost,
+        'Received "webglcontextrestored" event but never received '
+        'a "webglcontextlost" event.');
     _forceNewContext = true;
     // Force the framework to rerender the frame.
     EnginePlatformDispatcher.instance.invokeOnMetricsChanged();
     event.stopPropagation();
     event.preventDefault();
+  }
+
+  void _contextLostListener(html.Event event) {
+    _contextLost = true;
+    event.preventDefault();
+    dispose();
   }
 
   /// This function is expensive.
@@ -178,6 +191,11 @@ class Surface {
     this.htmlCanvas?.removeEventListener(
           'webglcontextrestored',
           _contextRestoredListener,
+          false,
+        );
+    this.htmlCanvas?.removeEventListener(
+          'webglcontextlost',
+          _contextLostListener,
           false,
         );
 
@@ -200,11 +218,17 @@ class Surface {
     //
     // See also: https://www.khronos.org/webgl/wiki/HandlingContextLost
     htmlCanvas.addEventListener(
+      'webglcontextlost',
+      _contextLostListener,
+      false,
+    );
+    htmlCanvas.addEventListener(
       'webglcontextrestored',
       _contextRestoredListener,
       false,
     );
     _forceNewContext = false;
+    _contextLost = false;
 
     htmlElement.append(htmlCanvas);
 
