@@ -46,8 +46,7 @@ class SurfaceVertices implements ui.Vertices {
     this.colors,
     this.indices,
   })  : assert(mode != null), // ignore: unnecessary_null_comparison
-        assert(positions != null) {
-    // ignore: unnecessary_null_comparison
+        assert(positions != null) { // ignore: unnecessary_null_comparison
     initWebGl();
   }
 
