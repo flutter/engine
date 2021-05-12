@@ -56,11 +56,13 @@ class FakeImageGenerator : public ImageGenerator {
   ~FakeImageGenerator() = default;
   const SkImageInfo& GetInfo() const { return info_; }
 
-  bool GetPixels(const SkImageInfo& info, void* pixels, size_t rowBytes) const {
+  bool GetPixels(const SkImageInfo& info,
+                 void* pixels,
+                 size_t row_bytes) const {
     return false;
   };
 
-  SkISize GetScaledDimensions(float scale) {
+  SkISize GetScaledDimensions(float scale) const {
     return SkISize::Make(info_.width(), info_.height());
   }
 
@@ -71,16 +73,16 @@ class FakeImageGenerator : public ImageGenerator {
 TEST_F(ShellTest, PositivePriorityTakesPrecedentOverDefaultGenerators) {
   ImageGeneratorRegistry registry;
 
-  const int fakeWidth = 1337;
+  const int fake_width = 1337;
   registry.AddFactory(
-      [fakeWidth](sk_sp<SkData> buffer) {
-        return std::make_unique<FakeImageGenerator>(fakeWidth);
+      [fake_width](sk_sp<SkData> buffer) {
+        return std::make_unique<FakeImageGenerator>(fake_width);
       },
       1);
 
   // Fetch the generator and query for basic info.
   auto result = registry.CreateCompatibleGenerator(LoadValidImageFixture());
-  ASSERT_EQ(result->GetInfo().width(), fakeWidth);
+  ASSERT_EQ(result->GetInfo().width(), fake_width);
 }
 
 TEST_F(ShellTest, DefaultGeneratorsTakePrecedentOverNegativePriority) {

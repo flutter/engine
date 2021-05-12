@@ -14,9 +14,10 @@
 
 namespace flutter {
 
-/// Keeps a priority-ordered registry of image generator builders to be used
-/// when decoding images. This object must be created, accessed, and collected
-/// on the UI thread (typically the engine or its runtime controller).
+/// @brief Keeps a priority-ordered registry of image generator builders to be
+///        used when decoding images. This object must be created, accessed, and
+///        collected on the UI thread (typically the engine or its runtime
+///        controller).
 class ImageGeneratorRegistry {
  public:
   using ImageGeneratorFactory =

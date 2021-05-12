@@ -20,11 +20,12 @@ const SkImageInfo& BuiltinSkiaImageGenerator::GetInfo() const {
 
 bool BuiltinSkiaImageGenerator::GetPixels(const SkImageInfo& info,
                                           void* pixels,
-                                          size_t rowBytes) const {
-  return generator_->getPixels(info, pixels, rowBytes);
+                                          size_t row_bytes) const {
+  return generator_->getPixels(info, pixels, row_bytes);
 }
 
-SkISize BuiltinSkiaImageGenerator::GetScaledDimensions(float desiredScale) {
+SkISize BuiltinSkiaImageGenerator::GetScaledDimensions(
+    float desired_scale) const {
   return generator_->getInfo().dimensions();
 }
 
@@ -54,13 +55,13 @@ const SkImageInfo& BuiltinSkiaCodecImageGenerator::GetInfo() const {
 
 bool BuiltinSkiaCodecImageGenerator::GetPixels(const SkImageInfo& info,
                                                void* pixels,
-                                               size_t rowBytes) const {
-  return codec_generator_->getPixels(info, pixels, rowBytes);
+                                               size_t row_bytes) const {
+  return codec_generator_->getPixels(info, pixels, row_bytes);
 }
 
 SkISize BuiltinSkiaCodecImageGenerator::GetScaledDimensions(
-    float desiredScale) {
-  return codec_generator_->getScaledDimensions(desiredScale);
+    float desired_scale) const {
+  return codec_generator_->getScaledDimensions(desired_scale);
 }
 
 std::unique_ptr<ImageGenerator> BuiltinSkiaCodecImageGenerator::MakeFromData(
