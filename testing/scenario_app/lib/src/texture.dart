@@ -10,7 +10,7 @@ import 'package:scenario_app/src/scenarios.dart';
 import 'channel_util.dart';
 import 'scenario.dart';
 
-/// TODO: Docs
+/// Displays a platform texture with the given width and height.
 class DisplayTexture extends Scenario {
   /// Creates the DisplayTexture scenario.
   ///
