@@ -26,7 +26,7 @@ gboolean fl_texture_populate(FlTexture* self,
   uint32_t target = 0, name = 0;
   if (!FL_TEXTURE_GET_CLASS(self)->populate(self, &target, &name, &width,
                                             &height, error)) {
-    return false;
+    return FALSE;
   }
 
   opengl_texture->target = target;
