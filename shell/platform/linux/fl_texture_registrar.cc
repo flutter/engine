@@ -66,7 +66,7 @@ fl_texture_registrar_register_texture(FlTextureRegistrar* self,
                       g_object_ref(texture));
 
   if (self->engine == nullptr) {
-    return 0;
+    return id;
   }
 
   fl_engine_register_external_texture(self->engine, id);
