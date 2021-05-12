@@ -78,8 +78,11 @@ public abstract class TestActivity extends TestableFlutterActivity {
       test.put("name", "animated_color_square");
     }
     test.put("use_android_view", launchIntent.getBooleanExtra("use_android_view", false));
+    getScenarioParams(test);
     channel.invokeMethod("set_scenario", test);
   }
+
+  protected void getScenarioParams(Map<String, Object> args) {}
 
   protected void writeTimelineData(@Nullable Uri logFile) {
     if (logFile == null) {
