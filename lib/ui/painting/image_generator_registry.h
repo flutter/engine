@@ -27,11 +27,27 @@ class ImageGeneratorRegistry {
 
   ~ImageGeneratorRegistry();
 
+  /// @brief      Install a new factory for image generators
+  /// @param[in]  factory   Callback that produces `ImageGenerator`s for
+  ///                       compatible input data.
+  /// @param[in]  priority  The priority used to determine the order in which
+  ///                       factories are tried. Higher values mean higher
+  ///                       priority. The built-in Skia codecs are installed at
+  ///                       priority 0.
+  /// @see        `CreateCompatibleGenerator`
   void AddFactory(ImageGeneratorFactory factory, int32_t priority);
 
-  /// Walks the list of image generator builders in descending priority order
-  /// until a compatible SkImageGenerator is able to be built. If no compatible
-  /// image generator could be produced, `std::unique_ptr(nullptr)` is returned.
+  /// @brief      Walks the list of image generator builders in descending
+  ///             priority order until a compatible `ImageGenerator` is able to
+  ///             be built. This method is safe to perform on the UI thread, as
+  ///             checking for `ImageGenerator` compatibility is expected to be
+  ///             a lightweight operation. The returned `ImageGenerator` can
+  ///             then be used to fully decode the image on e.g. the IO thread.
+  /// @param[in]  buffer  The raw encoded image data.
+  /// @return     An `ImageGenerator` that is compatible with the input buffer.
+  ///             If no compatible `ImageGenerator` type was found, then
+  ///             `std::unique_ptr<ImageGenerator>(nullptr)` is returned.
+  /// @see        `ImageGenerator`
   std::unique_ptr<ImageGenerator> CreateCompatibleGenerator(
       sk_sp<SkData> buffer);
 
