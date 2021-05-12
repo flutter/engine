@@ -160,7 +160,7 @@ class Surface {
       ..height = '${logicalHeight}px';
   }
 
-  void _contextLostListener(html.Event event) {
+  void _contextRestoredListener(html.Event event) {
     print('Flutter: restoring WebGL context.');
     _forceNewContext = true;
     // Force the framework to rerender the frame.
@@ -175,11 +175,11 @@ class Surface {
   CkSurface _createNewSurface(ui.Size physicalSize) {
     // Clear the container, if it's not empty. We're going to create a new <canvas>.
     this.htmlCanvas?.remove();
-    //this.htmlCanvas?.removeEventListener(
-    //      'webglcontextlost',
-    //      _contextLostListener,
-    //      false,
-    //    );
+    this.htmlCanvas?.removeEventListener(
+          'webglcontextrestored',
+          _contextRestoredListener,
+          false,
+        );
 
     // If `physicalSize` is not precise, use a slightly bigger canvas. This way
     // we ensure that the rendred picture covers the entire browser window.
@@ -199,11 +199,11 @@ class Surface {
     // notification. When we receive this notification we force a new context.
     //
     // See also: https://www.khronos.org/webgl/wiki/HandlingContextLost
-    //htmlCanvas.addEventListener(
-    //  'webglcontextlost',
-    //  _contextLostListener,
-    //  false,
-    //);
+    htmlCanvas.addEventListener(
+      'webglcontextrestored',
+      _contextRestoredListener,
+      false,
+    );
     _forceNewContext = false;
 
     htmlElement.append(htmlCanvas);
