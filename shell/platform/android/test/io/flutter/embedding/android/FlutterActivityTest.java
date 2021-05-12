@@ -12,10 +12,14 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.robolectric.Shadows.shadowOf;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -307,6 +311,53 @@ public class FlutterActivityTest {
     // and once by the default FlutterActivity.configureFlutterEngine implementation.
     // Test that it doesn't happen.
     assertEquals(1, registeredEngines.size());
+  }
+
+  @Test
+  public void itDoesNotCrashWhenSplashScreenMetadataIsNotDefined() {
+    Intent intent = FlutterActivity.createDefaultIntent(RuntimeEnvironment.application);
+    ActivityController<FlutterActivity> activityController =
+        Robolectric.buildActivity(FlutterActivity.class, intent);
+    FlutterActivity flutterActivity = activityController.get();
+
+    // We never supplied the metadata to the robolectric activity info so it doesn't exist.
+    SplashScreen splashScreen = flutterActivity.provideSplashScreen();
+    // It should quietly return a null and not crash.
+    assertNull(splashScreen);
+  }
+
+  @Test
+  public void itDoesNotCrashWhenSplashScreenDrawableIsNotFound() {
+    Intent intent = FlutterActivity.createDefaultIntent(RuntimeEnvironment.application);
+    ActivityController<FlutterActivity> activityController =
+        Robolectric.buildActivity(FlutterActivity.class, intent);
+    FlutterActivity flutterActivity = activityController.get();
+
+    // We supply a metadata to the Flutter activity but the value of the metadata references a
+    // drawable ID that does not exist.
+    ResolveInfo resolveInfo = new ResolveInfo();
+    resolveInfo.activityInfo = new ActivityInfo();
+    resolveInfo.activityInfo.name = flutterActivity.getComponentName().getClassName();
+    resolveInfo.activityInfo.applicationInfo = new ApplicationInfo();
+    resolveInfo.activityInfo.applicationInfo.packageName =
+        RuntimeEnvironment.application.getPackageName();
+    resolveInfo.activityInfo.metaData = new Bundle();
+    // 1234 is an arbitrary value that is an invalid drawable ID.
+    resolveInfo.activityInfo.metaData.putInt(
+        FlutterActivityLaunchConfigs.SPLASH_SCREEN_META_DATA_KEY, 1234);
+    shadowOf(RuntimeEnvironment.application.getPackageManager())
+        .addResolveInfoForIntent(intent, resolveInfo);
+    shadowOf(RuntimeEnvironment.application.getPackageManager())
+        .addOrUpdateActivity(resolveInfo.activityInfo);
+    shadowOf(RuntimeEnvironment.application.getPackageManager())
+        .addActivityIfNotPresent(flutterActivity.getComponentName());
+
+    // Trying to build a splash screen off of this invalid data should not crash.
+    // This also covers a scenario where the xml resource corresponding to the given
+    // drawable id fails to parse.
+    SplashScreen splashScreen = flutterActivity.provideSplashScreen();
+    // It should quietly return a null.
+    assertNull(splashScreen);
   }
 
   static class FlutterActivityWithProvidedEngine extends FlutterActivity {

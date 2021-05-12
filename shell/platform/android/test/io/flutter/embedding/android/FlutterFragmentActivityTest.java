@@ -4,14 +4,19 @@ import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.HANDLE_D
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
+import static org.robolectric.Shadows.shadowOf;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.os.Bundle;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
@@ -30,6 +35,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.RuntimeEnvironment;
+import org.robolectric.android.controller.ActivityController;
 import org.robolectric.annotation.Config;
 
 @Config(manifest = Config.NONE)
@@ -217,6 +224,53 @@ public class FlutterFragmentActivityTest {
     // The framework would have recreated a new fragment but the fragment activity wouldn't have
     // created a new one again.
     assertEquals(0, activity.numberOfEnginesCreated);
+  }
+  
+  @Test
+  public void itDoesNotCrashWhenSplashScreenMetadataIsNotDefined() {
+    Intent intent = FlutterFragmentActivity.createDefaultIntent(RuntimeEnvironment.application);
+    ActivityController<FlutterFragmentActivity> activityController =
+        Robolectric.buildActivity(FlutterFragmentActivity.class, intent);
+    FlutterFragmentActivity fragmentActivity = activityController.get();
+
+    // We never supplied the resource key to robolectric so it doesn't exist.
+    SplashScreen splashScreen = fragmentActivity.provideSplashScreen();
+    // It should quietly return a null and not crash.
+    assertNull(splashScreen);
+  }
+
+  @Test
+  public void itDoesNotCrashWhenSplashScreenDrawableIsNotFound() {
+    Intent intent = FlutterFragmentActivity.createDefaultIntent(RuntimeEnvironment.application);
+    ActivityController<FlutterFragmentActivity> activityController =
+        Robolectric.buildActivity(FlutterFragmentActivity.class, intent);
+    FlutterFragmentActivity fragmentActivity = activityController.get();
+
+    // We supply a metadata to the Flutter fragment activity but the value of the metadata
+    // references a drawable ID that does not exist.
+    ResolveInfo resolveInfo = new ResolveInfo();
+    resolveInfo.activityInfo = new ActivityInfo();
+    resolveInfo.activityInfo.name = fragmentActivity.getComponentName().getClassName();
+    resolveInfo.activityInfo.applicationInfo = new ApplicationInfo();
+    resolveInfo.activityInfo.applicationInfo.packageName =
+        RuntimeEnvironment.application.getPackageName();
+    resolveInfo.activityInfo.metaData = new Bundle();
+    // 1234 is an arbitrary value that is an invalid drawable ID.
+    resolveInfo.activityInfo.metaData.putInt(
+        FlutterActivityLaunchConfigs.SPLASH_SCREEN_META_DATA_KEY, 1234);
+    shadowOf(RuntimeEnvironment.application.getPackageManager())
+        .addResolveInfoForIntent(intent, resolveInfo);
+    shadowOf(RuntimeEnvironment.application.getPackageManager())
+        .addOrUpdateActivity(resolveInfo.activityInfo);
+    shadowOf(RuntimeEnvironment.application.getPackageManager())
+        .addActivityIfNotPresent(fragmentActivity.getComponentName());
+
+    // Trying to build a splash screen off of this invalid data should not crash.
+    // This also covers a scenario where the xml resource corresponding to the given
+    // drawable id fails to parse.
+    SplashScreen splashScreen = fragmentActivity.provideSplashScreen();
+    // It should quietly return a null.
+    assertNull(splashScreen);
   }
 
   static class FlutterFragmentActivityWithProvidedEngine extends FlutterFragmentActivity {
