@@ -1515,6 +1515,7 @@ FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_method_call.
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_method_channel.h
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_method_codec.h
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_method_response.h
+FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_pixel_buffer_texture.h
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_plugin_registrar.h
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_plugin_registry.h
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_standard_message_codec.h
