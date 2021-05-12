@@ -18,10 +18,7 @@ import 'dart:async';
 import 'dart:collection'
     // Some of these names are used in services/buffers.dart for example.
     // ignore: unused_shown_name
-    show
-        IterableBase,
-        DoubleLinkedQueue,
-        DoubleLinkedQueueEntry;
+    show ListBase, IterableBase, DoubleLinkedQueue, DoubleLinkedQueueEntry;
 import 'dart:convert' hide Codec;
 import 'dart:developer' as developer;
 import 'dart:html' as html;
