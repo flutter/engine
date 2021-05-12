@@ -78,8 +78,11 @@ public class TestActivity extends TestableFlutterActivity {
     Map<String, Object> test = new HashMap<>(2);
     test.put("name", launchIntent.getStringExtra("scenario"));
     test.put("use_android_view", launchIntent.getBooleanExtra("use_android_view", false));
+    getScenarioParams(test);
     channel.invokeMethod("set_scenario", test);
   }
+
+  protected void getScenarioParams(Map<String, Object> args) {}
 
   private void writeTimelineData(Uri logFile) {
     if (logFile == null) {
