@@ -32,8 +32,11 @@ class ImageGeneratorRegistry {
   ///                       compatible input data.
   /// @param[in]  priority  The priority used to determine the order in which
   ///                       factories are tried. Higher values mean higher
-  ///                       priority. The built-in Skia codecs are installed at
-  ///                       priority 0.
+  ///                       priority. The built-in Skia decoders are installed
+  ///                       at priority 0, and so a priority > 0 takes precedent
+  ///                       over the builtin decoders. When multiple decoders
+  ///                       are added with the same priority, those which are
+  ///                       added earlier take precedent.
   /// @see        `CreateCompatibleGenerator`
   void AddFactory(ImageGeneratorFactory factory, int32_t priority);
 
@@ -58,9 +61,17 @@ class ImageGeneratorRegistry {
     ImageGeneratorFactory callback;
 
     int32_t priority = 0;
+    // Used as a fallback priority comparison when equal.
+    size_t ascending_nonce = 0;
 
     // Order by descending priority.
     constexpr bool operator<(const PrioritizedFactory& other) const {
+      // When priorities are equal, use the order by which the factories were
+      // registered.
+      if (priority == other.priority) {
+        return ascending_nonce < other.ascending_nonce;
+      }
+      // Order by descending priority.
       return priority > other.priority;
     }
   };

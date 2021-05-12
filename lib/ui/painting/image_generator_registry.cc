@@ -4,6 +4,7 @@
 
 #include <algorithm>
 
+#include "flutter/fml/trace_event.h"
 #include "flutter/lib/ui/painting/image_generator_registry.h"
 #include "third_party/skia/include/codec/SkCodec.h"
 #include "third_party/skia/include/core/SkImageGenerator.h"
@@ -46,7 +47,7 @@ ImageGeneratorRegistry::~ImageGeneratorRegistry() = default;
 
 void ImageGeneratorRegistry::AddFactory(ImageGeneratorFactory factory,
                                         int32_t priority) {
-  image_generator_factories_.push_back({factory, priority});
+  image_generator_factories_.push_back({factory, priority, fml::tracing::TraceNonce()});
   std::stable_sort(image_generator_factories_.begin(),
                    image_generator_factories_.end());
 }
