@@ -466,8 +466,6 @@ $_glassPaneTagName * {
     });
     _glassPaneShadow = glassPaneElementShadowRoot;
 
-    // _glassPaneElementShadowRoot = glassPaneElementShadowRoot;
-
     bodyElement.append(glassPaneElement);
 
     final html.StyleElement shadowRootStyleElement = html.StyleElement();

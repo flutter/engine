@@ -41,6 +41,9 @@ void testMain() {
         expect(contentManager.knowsViewId(viewId), isFalse);
 
         contentManager.registerFactory(viewType, (int id) => html.DivElement());
+
+        expect(contentManager.knowsViewId(viewId), isFalse);
+
         contentManager.renderContent(viewType, viewId, null);
 
         expect(contentManager.knowsViewId(viewId), isTrue);
@@ -97,9 +100,9 @@ void testMain() {
 
       test('returns cached instances of already-rendered slots', () async {
         final html.Element firstSlot = contentManager.renderSlot(viewId);
-        final html.Element sameSlot = contentManager.renderSlot(viewId);
+        final html.Element otherSlot = contentManager.renderSlot(viewId);
 
-        expect(firstSlot, sameSlot);
+        expect(firstSlot, same(otherSlot));
       });
     });
 
@@ -160,10 +163,10 @@ void testMain() {
       test('returns cached instances of already-rendered content', () async {
         final html.Element firstRender =
             contentManager.renderContent(viewType, viewId, null);
-        final html.Element renderAgain =
+        final html.Element anotherRender =
             contentManager.renderContent(viewType, viewId, null);
 
-        expect(firstRender, renderAgain);
+        expect(firstRender, same(anotherRender));
       });
     });
   });

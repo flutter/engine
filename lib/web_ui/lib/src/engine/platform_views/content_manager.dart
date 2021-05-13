@@ -4,8 +4,6 @@
 
 part of engine;
 
-// import 'dart:html' as html;
-
 /// A function which takes a unique `id` and some `params` and creates an HTML element.
 ///
 /// This is made available to end-users through dart:ui in web.
@@ -164,7 +162,10 @@ class PlatformViewManager {
       // Note there's also no getContent(viewId) function anymore, to prevent
       // from later modifications too.
       if (content.style.height.isEmpty) {
-        printWarning('Height of Platform View type: [$viewType] may not be set. Defaulting to `height: 100%`.\nSet `style.height` to any appropriate value to stop this message.');
+        printWarning('Height of Platform View type: [$viewType] may not be set.'
+            ' Defaulting to `height: 100%`.\n'
+            'Set `style.height` to any appropriate value to stop this message.');
+
         content.style.height = '100%';
       }
 
