@@ -736,7 +736,7 @@ class TestCommand extends Command<bool> with ArgUtils {
       '-DFLUTTER_WEB_AUTO_DETECT=false',
       '-DFLUTTER_WEB_USE_SKIA=${input.forCanvasKit}',
 
-      '-O0',
+      '-O2',
       '-o',
       targetFileName, // target path.
       '${input.path.relativeToWebUi}', // current path.
