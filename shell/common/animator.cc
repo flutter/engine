@@ -49,7 +49,10 @@ Animator::Animator(Delegate& delegate,
       weak_factory_(this) {
 }
 
-Animator::~Animator() = default;
+Animator::~Animator() {
+  // Remove all queued layer trees to ensure that Skia objects are unreffed.
+  layer_tree_pipeline_->Clear();
+}
 
 void Animator::Stop() {
   paused_ = true;

@@ -151,6 +151,12 @@ class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
 
     {
       std::scoped_lock lock(queue_mutex_);
+
+      if (queue_.empty()) {
+        // Items were removed from queue in Clear after available_ was
+        // signalled.
+        return PipelineConsumeResult::NoneAvailable;
+      }
       std::tie(resource, trace_id) = std::move(queue_.front());
       queue_.pop_front();
       items_count = queue_.size();
@@ -169,6 +175,12 @@ class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
 
     return items_count > 0 ? PipelineConsumeResult::MoreAvailable
                            : PipelineConsumeResult::Done;
+  }
+
+  /// Remove all items from the queue.
+  void Clear() {
+    std::scoped_lock lock(queue_mutex_);
+    queue_.clear();
   }
 
  private:
