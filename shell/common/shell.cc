@@ -68,16 +68,6 @@ std::unique_ptr<Engine> CreateEngine(
                                   volatile_path_tracker);
 }
 
-void Tokenize(const std::string& input,
-              std::vector<std::string>* results,
-              char delimiter) {
-  std::istringstream ss(input);
-  std::string token;
-  while (std::getline(ss, token, delimiter)) {
-    results->push_back(token);
-  }
-}
-
 // Though there can be multiple shells, some settings apply to all components in
 // the process. These have to be set up before the shell or any of its
 // sub-components can be initialized. In a perfect world, this would be empty.
@@ -103,13 +93,11 @@ void PerformInitializationTasks(Settings& settings) {
         [](const char* message) { FML_LOG(ERROR) << message; });
 
     if (settings.trace_skia) {
-      InitSkiaEventTracer(settings.trace_skia);
+      InitSkiaEventTracer(settings.trace_skia, settings.trace_skia_allowlist);
     }
 
     if (!settings.trace_allowlist.empty()) {
-      std::vector<std::string> prefixes;
-      Tokenize(settings.trace_allowlist, &prefixes, ',');
-      fml::tracing::TraceSetAllowlist(prefixes);
+      fml::tracing::TraceSetAllowlist(settings.trace_allowlist);
     }
 
     if (!settings.skia_deterministic_rendering_on_cpu) {
@@ -998,16 +986,17 @@ void Shell::OnPlatformViewDispatchKeyDataPacket(
 // |PlatformView::Delegate|
 void Shell::OnPlatformViewDispatchSemanticsAction(int32_t id,
                                                   SemanticsAction action,
-                                                  std::vector<uint8_t> args) {
+                                                  fml::MallocMapping args) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
   task_runners_.GetUITaskRunner()->PostTask(
-      [engine = engine_->GetWeakPtr(), id, action, args = std::move(args)] {
+      fml::MakeCopyable([engine = engine_->GetWeakPtr(), id, action,
+                         args = std::move(args)]() mutable {
         if (engine) {
           engine->DispatchSemanticsAction(id, action, std::move(args));
         }
-      });
+      }));
 }
 
 // |PlatformView::Delegate|
@@ -1234,7 +1223,8 @@ void Shell::HandleEngineSkiaMessage(std::unique_ptr<PlatformMessage> message) {
   const auto& data = message->data();
 
   rapidjson::Document document;
-  document.Parse(reinterpret_cast<const char*>(data.data()), data.size());
+  document.Parse(reinterpret_cast<const char*>(data.GetMapping()),
+                 data.GetSize());
   if (document.HasParseError() || !document.IsObject())
     return;
   auto root = document.GetObject();
@@ -1815,8 +1805,8 @@ bool Shell::ReloadSystemFonts() {
   std::string message = buffer.GetString();
   std::unique_ptr<PlatformMessage> fontsChangeMessage =
       std::make_unique<flutter::PlatformMessage>(
-          kSystemChannel, std::vector<uint8_t>(message.begin(), message.end()),
-          nullptr);
+          kSystemChannel,
+          fml::MallocMapping::Copy(message.c_str(), message.length()), nullptr);
 
   OnPlatformViewDispatchPlatformMessage(std::move(fontsChangeMessage));
   return true;
