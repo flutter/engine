@@ -59,16 +59,16 @@ class PersistedColorFilter extends PersistedContainerSurface
       childContainer?.style.visibility = 'visible';
       return;
     }
-    if (engineValue is _CkBlendModeColorFilter) {
+    if (engineValue is CkBlendModeColorFilter) {
       _applyBlendModeFilter(engineValue);
-    } else if (engineValue is _CkMatrixColorFilter) {
+    } else if (engineValue is CkMatrixColorFilter) {
       _applyMatrixColorFilter(engineValue);
     } else {
       childContainer?.style.visibility = 'visible';
     }
   }
 
-  void _applyBlendModeFilter(_CkBlendModeColorFilter colorFilter) {
+  void _applyBlendModeFilter(CkBlendModeColorFilter colorFilter) {
     ui.Color filterColor = colorFilter.color;
     ui.BlendMode colorFilterBlendMode = colorFilter.blendMode;
     html.CssStyleDeclaration style = rootElement!.style;
@@ -130,7 +130,7 @@ class PersistedColorFilter extends PersistedContainerSurface
     }
   }
 
-  void _applyMatrixColorFilter(_CkMatrixColorFilter colorFilter) {
+  void _applyMatrixColorFilter(CkMatrixColorFilter colorFilter) {
     String? svgFilter = svgFilterFromColorMatrix(colorFilter.matrix);
     if (svgFilter != null) {
       _filterElement =

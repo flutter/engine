@@ -630,12 +630,12 @@ class BitmapCanvas extends EngineCanvas {
     final EngineColorFilter? colorFilter =
         paint.colorFilter as EngineColorFilter?;
     html.HtmlElement imgElement;
-    if (colorFilter is _CkBlendModeColorFilter) {
-      imgElement = _createImageElementWithBlend(image,
-          colorFilter.color, colorFilter.blendMode, paint);
-    } else if (colorFilter is _CkMatrixColorFilter) {
+    if (colorFilter is CkBlendModeColorFilter) {
+      imgElement = _createImageElementWithBlend(
+          image, colorFilter.color, colorFilter.blendMode, paint);
+    } else if (colorFilter is CkMatrixColorFilter) {
       imgElement = _createImageElementWithSvgColorMatrixFilter(
-          image, colorFilter.matrix , paint);
+          image, colorFilter.matrix, paint);
     } else {
       // No Blending, create an image by cloning original loaded image.
       imgElement = _reuseOrCreateImage(htmlImage);
@@ -665,8 +665,8 @@ class BitmapCanvas extends EngineCanvas {
     return imgElement;
   }
 
-  html.HtmlElement _createImageElementWithBlend(HtmlImage image,
-      ui.Color color, ui.BlendMode blendMode, SurfacePaintData paint) {
+  html.HtmlElement _createImageElementWithBlend(HtmlImage image, ui.Color color,
+      ui.BlendMode blendMode, SurfacePaintData paint) {
     switch (blendMode) {
       case ui.BlendMode.colorBurn:
       case ui.BlendMode.colorDodge:
@@ -685,8 +685,7 @@ class BitmapCanvas extends EngineCanvas {
         return _createImageElementWithSvgBlendFilter(
             image, color, blendMode, paint);
       default:
-        return _createBackgroundImageWithBlend(
-            image, color, blendMode, paint);
+        return _createBackgroundImageWithBlend(image, color, blendMode, paint);
     }
   }
 
@@ -840,13 +839,11 @@ class BitmapCanvas extends EngineCanvas {
 
   // Creates an image element and an svg color matrix filter to apply on the element.
   html.HtmlElement _createImageElementWithSvgColorMatrixFilter(
-      HtmlImage image,
-      List<double> matrix,
-      SurfacePaintData paint) {
+      HtmlImage image, List<double> matrix, SurfacePaintData paint) {
     // For srcIn blendMode, we use an svg filter to apply to image element.
     String? svgFilter = svgFilterFromColorMatrix(matrix);
     final html.Element filterElement =
-    html.Element.html(svgFilter, treeSanitizer: _NullTreeSanitizer());
+        html.Element.html(svgFilter, treeSanitizer: _NullTreeSanitizer());
     rootElement.append(filterElement);
     _children.add(filterElement);
     final html.HtmlElement imgElement = _reuseOrCreateImage(image);
@@ -968,7 +965,8 @@ class BitmapCanvas extends EngineCanvas {
     final Int32List? colors = vertices.colors;
     final ui.VertexMode mode = vertices.mode;
     html.CanvasRenderingContext2D? ctx = _canvasPool.context;
-    if (colors == null && paint.style != ui.PaintingStyle.fill &&
+    if (colors == null &&
+        paint.style != ui.PaintingStyle.fill &&
         paint.shader == null) {
       final Float32List positions = mode == ui.VertexMode.triangles
           ? vertices.positions

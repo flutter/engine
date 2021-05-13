@@ -1,8 +1,18 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+@JS()
+library canvaskit_initialization;
 
-part of engine;
+import 'dart:async';
+import 'dart:html' as html;
+import 'dart:js' as js;
+
+import 'package:js/js.dart';
+import 'package:ui/src/engine.dart' show isDesktop, kProfileMode, domRenderer;
+
+import 'canvaskit_api.dart';
+import 'fonts.dart';
 
 /// A JavaScript entrypoint that allows developer to set rendering backend
 /// at runtime before launching the application.

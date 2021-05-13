@@ -2,7 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import 'package:ui/src/engine.dart'
+    show kProfilePrerollFrame, kProfileApplyFrame, timeAction, Matrix4;
+import 'package:ui/ui.dart' as ui;
+
+import 'canvas.dart';
+import 'embedded_views.dart';
+import 'layer.dart';
+import 'n_way_canvas.dart';
+import 'picture_recorder.dart';
+import 'raster_cache.dart';
 
 /// A tree of [Layer]s that, together with a [Size] compose a frame.
 class LayerTree {
@@ -38,7 +47,7 @@ class LayerTree {
   void paint(Frame frame, {bool ignoreRasterCache = false}) {
     final CkNWayCanvas internalNodesCanvas = CkNWayCanvas();
     internalNodesCanvas.addCanvas(frame.canvas);
-    final List<CkCanvas?> overlayCanvases =
+    final List<CkCanvas> overlayCanvases =
         frame.viewEmbedder!.getCurrentCanvases();
     for (int i = 0; i < overlayCanvases.length; i++) {
       internalNodesCanvas.addCanvas(overlayCanvases[i]);

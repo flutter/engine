@@ -2,7 +2,27 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import 'dart:html' as html;
+import 'dart:typed_data';
+
+import 'package:ui/src/engine.dart'
+    show
+        assertionsEnabled,
+        float64ListToCssTransform,
+        kSvgResourceHeader,
+        listEquals,
+        window,
+        Matrix4,
+        MethodCall,
+        MethodCodec,
+        StandardMethodCodec;
+import 'package:ui/ui.dart' as ui;
+
+import 'canvas.dart';
+import 'initialization.dart';
+import 'path.dart';
+import 'picture_recorder.dart';
+import 'surface.dart';
 
 /// This composites HTML views into the [ui.Scene].
 class HtmlViewEmbedder {
@@ -130,11 +150,11 @@ class HtmlViewEmbedder {
     callback(codec.encodeSuccessEnvelope(null));
   }
 
-  List<CkCanvas?> getCurrentCanvases() {
-    final List<CkCanvas?> canvases = <CkCanvas?>[];
+  List<CkCanvas> getCurrentCanvases() {
+    final List<CkCanvas> canvases = <CkCanvas>[];
     for (int i = 0; i < _compositionOrder.length; i++) {
       final int viewId = _compositionOrder[i];
-      canvases.add(_pictureRecorders[viewId]!.recordingCanvas);
+      canvases.add(_pictureRecorders[viewId]!.recordingCanvas!);
     }
     return canvases;
   }
@@ -304,7 +324,8 @@ class HtmlViewEmbedder {
     // pixels, so scale down the head element to match the logical resolution.
     final double scale = window.devicePixelRatio;
     final double inverseScale = 1 / scale;
-    final Matrix4 scaleMatrix = Matrix4.diagonal3Values(inverseScale, inverseScale, 1);
+    final Matrix4 scaleMatrix =
+        Matrix4.diagonal3Values(inverseScale, inverseScale, 1);
     headTransform = scaleMatrix.multiplied(headTransform);
     head.style.transform = float64ListToCssTransform(headTransform.storage);
   }
@@ -341,8 +362,7 @@ class HtmlViewEmbedder {
     for (int i = 0; i < _compositionOrder.length; i++) {
       int viewId = _compositionOrder[i];
       _ensureOverlayInitialized(viewId);
-      final SurfaceFrame frame =
-          _overlays[viewId]!.acquireFrame(_frameSize);
+      final SurfaceFrame frame = _overlays[viewId]!.acquireFrame(_frameSize);
       final CkCanvas canvas = frame.skiaCanvas;
       canvas.drawPicture(
         _pictureRecorders[viewId]!.endRecording(),
@@ -350,7 +370,7 @@ class HtmlViewEmbedder {
       frame.submit();
     }
     _pictureRecorders.clear();
-    if (_listEquals(_compositionOrder, _activeCompositionOrder)) {
+    if (listEquals(_compositionOrder, _activeCompositionOrder)) {
       _compositionOrder.clear();
       return;
     }
@@ -628,11 +648,16 @@ class MutatorsStack extends Iterable<Mutator> {
       return true;
     }
     return other is MutatorsStack &&
-        _listEquals<Mutator>(other._mutators, _mutators);
+        listEquals<Mutator>(other._mutators, _mutators);
   }
 
   int get hashCode => ui.hashList(_mutators);
 
   @override
   Iterator<Mutator> get iterator => _mutators.reversed.iterator;
+}
+
+class _NullTreeSanitizer implements html.NodeTreeSanitizer {
+  @override
+  void sanitizeTree(html.Node node) {}
 }
