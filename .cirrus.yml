@@ -36,7 +36,7 @@ task:
       compile_host_script: |
         cd $ENGINE_PATH/src
         ./flutter/tools/gn --unoptimized --full-dart-sdk
-        ninja -C out/host_debug_unopt -j 20
+        ninja -C out/host_debug_unopt
       fetch_framework_script: |
         mkdir -p $FRAMEWORK_PATH
         cd $FRAMEWORK_PATH
