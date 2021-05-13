@@ -5,25 +5,25 @@
 #include "flutter/shell/platform/linux/fl_key_event.h"
 
 static void dispose_gdk_event(gpointer target) {
-  dispose_gdk_event(reinterpret_cast<GdkEvent*>(target));
+  gdk_event_free(reinterpret_cast<GdkEvent*>(target));
 }
 
-FlKeyEvent* fl_key_event_new_from_gdk_event(GdkEventKey* event) {
-  g_return_val_if_fail(event != nullptr, nullptr);
-  GdkEventType type = gdk_event_get_event_type(event);
-  g_return_val_if_fail(type == GDK_KEY_PRESS || type == GDK_KEY_RELEASE, nullptr);
-  bool valid = true;
+FlKeyEvent* fl_key_event_new_from_gdk_event(GdkEvent* raw_event) {
+  g_return_val_if_fail(raw_event != nullptr, nullptr);
+  GdkEventKey* event = reinterpret_cast<GdkEventKey*>(raw_event);
+  GdkEventType type = event->type;
+  g_return_val_if_fail(type == GDK_KEY_PRESS || type == GDK_KEY_RELEASE,
+                       nullptr);
   FlKeyEvent* result = g_new(FlKeyEvent, 1);
 
-  result->time = gdk_event_get_time(event);
+  result->time = event->time;
   result->is_press = type == GDK_KEY_PRESS;
-  valid = valid && gdk_event_get_keycode(event, &result->keycode);
-  valid = valid && gdk_event_get_keyval(event, &result->keyval);
-  valid = valid && gdk_event_get_state(event, &result->state);
+  result->keycode = event->hardware_keycode;
+  result->keyval = event->keyval;
+  result->state = event->state;
   result->origin = event;
   result->dispose_origin = dispose_gdk_event;
 
-  g_return_val_if_fail(valid, nullptr);
   return result;
 }
 

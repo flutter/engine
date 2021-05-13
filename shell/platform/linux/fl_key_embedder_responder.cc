@@ -715,7 +715,7 @@ static void fl_key_embedder_responder_handle_event(
   const uint64_t logical_key =
       event_to_logical_key(event, self->keyval_to_logical_key);
   const double timestamp = event_to_timestamp(event);
-  const bool is_down_event = event->type == GDK_KEY_PRESS;
+  const bool is_down_event = event->is_press;
 
   SyncStateLoopContext sync_pressed_state_context;
   sync_pressed_state_context.self = self;

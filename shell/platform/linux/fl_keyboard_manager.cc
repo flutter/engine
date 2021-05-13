@@ -71,7 +71,10 @@ static uint64_t fl_keyboard_manager_get_event_hash(FlKeyEvent* event) {
   // can be derived solely from the event data itself, so that we can identify
   // whether or not we have seen this event already.
   return (event->time & 0xffffffff) |
-         (static_cast<uint64_t>(event->type) & 0xffff) << 32 |
+         (static_cast<uint64_t>(event->is_press ? GDK_KEY_PRESS
+                                                : GDK_KEY_RELEASE) &
+          0xffff)
+             << 32 |
          (static_cast<uint64_t>(event->keycode) & 0xffff) << 48;
 }
 
@@ -211,9 +214,11 @@ static void fl_keyboard_manager_dispose(GObject* object) {
   if (self->text_input_plugin != nullptr)
     g_clear_object(&self->text_input_plugin);
   g_ptr_array_free(self->responder_list, TRUE);
-  g_ptr_array_set_free_func(self->pending_responds, fl_key_event_destroy_notify);
+  g_ptr_array_set_free_func(self->pending_responds,
+                            fl_key_event_destroy_notify);
   g_ptr_array_free(self->pending_responds, TRUE);
-  g_ptr_array_set_free_func(self->pending_redispatches, fl_key_event_destroy_notify);
+  g_ptr_array_set_free_func(self->pending_redispatches,
+                            fl_key_event_destroy_notify);
   g_ptr_array_free(self->pending_redispatches, TRUE);
 
   G_OBJECT_CLASS(fl_keyboard_manager_parent_class)->dispose(object);
@@ -318,7 +323,7 @@ static void responder_handle_event_callback(bool handled,
     }
     if (should_redispatch) {
       g_ptr_array_add(self->pending_redispatches, pending);
-      self->redispatch_callback(pending->event->origin);
+      self->redispatch_callback(pending->event);
     } else {
       fl_key_event_destroy_notify(pending);
     }

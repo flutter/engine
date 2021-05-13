@@ -244,13 +244,13 @@ static void fl_key_channel_responder_handle_event(
   static bool num_lock_pressed = FALSE;
   switch (event->keyval) {
     case GDK_KEY_Num_Lock:
-      num_lock_pressed = event->type == GDK_KEY_PRESS;
+      num_lock_pressed = event->is_press;
       break;
     case GDK_KEY_Caps_Lock:
-      caps_lock_pressed = event->type == GDK_KEY_PRESS;
+      caps_lock_pressed = event->is_press;
       break;
     case GDK_KEY_Shift_Lock:
-      shift_lock_pressed = event->type == GDK_KEY_PRESS;
+      shift_lock_pressed = event->is_press;
       break;
   }
 

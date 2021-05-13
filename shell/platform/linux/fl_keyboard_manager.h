@@ -16,11 +16,8 @@
  *
  * The signature for a callback with which a #FlKeyboardManager redispatches
  * key events that are not handled by anyone.
- *
- * The #gdk_event is an opaque pointer. It will be GdkEvent* in actual
- * applications, or a dummy pointer in unit tests.
  **/
-typedef void (*FlKeyboardManagerRedispatcher)(const gpointer gdk_event);
+typedef void (*FlKeyboardManagerRedispatcher)(FlKeyEvent* event);
 
 G_BEGIN_DECLS
 
@@ -63,7 +60,8 @@ G_DECLARE_FINAL_TYPE(FlKeyboardManager,
  * @text_input_plugin: the #FlTextInputPlugin to send key events to if the
  * framework doesn't handle them.
  * @redispatch_callback: how the events should be sent if no processing
- * objects handle the event. Typically #gdk_event_put.
+ * objects handle the event. Typically a function that calls #gdk_event_put
+ * on #FlKeyEvent::origin.
  *
  * Create a new #FlKeyboardManager. The text input plugin must be specified
  * now, while the responders should be added later with

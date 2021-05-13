@@ -7,7 +7,7 @@
 
 #include <gdk/gdk.h>
 
-typedef void FlKeyEventDisposeOrigin(gpointer);
+typedef void (*FlKeyEventDisposeOrigin)(gpointer);
 
 /**
  * FlKeyEvent:
@@ -26,7 +26,7 @@ typedef struct _FlKeyEvent {
   // Keyval.
   guint keyval;
   // Modifier state.
-  GdkModifierType state;
+  int state;
   // String, null-terminated.
   //
   // Can be nullptr.
@@ -45,8 +45,8 @@ typedef struct _FlKeyEvent {
 
 /**
  * fl_key_event_new_from_gdk_event:
- * @event: the #GdkEvent this #FlKeyEvent is based on. The #event be a #GdkEventKey,
- * and will be destroyed by #fl_key_event_dispose.
+ * @event: the #GdkEvent this #FlKeyEvent is based on. The #event be a
+ * #GdkEventKey, and will be destroyed by #fl_key_event_dispose.
  *
  * Create a new #FlKeyEvent based on a #GdkEventKey.
  *
