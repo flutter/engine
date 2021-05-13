@@ -488,7 +488,7 @@ static void fl_text_input_plugin_dispose(GObject* object) {
 // Implements FlTextInputPlugin::filter_keypress.
 static gboolean fl_text_input_plugin_filter_keypress_default(
     FlTextInputPlugin* self,
-    GdkEventKey* event) {
+    FlKeyEvent* event) {
   g_return_val_if_fail(FL_IS_TEXT_INPUT_PLUGIN(self), false);
 
   FlTextInputPluginPrivate* priv = static_cast<FlTextInputPluginPrivate*>(
@@ -498,7 +498,7 @@ static gboolean fl_text_input_plugin_filter_keypress_default(
     return FALSE;
   }
 
-  if (gtk_im_context_filter_keypress(priv->im_context, event)) {
+  if (gtk_im_context_filter_keypress(priv->im_context, reinterpret_cast<GdkKeyEvent*>(event->origin))) {
     return TRUE;
   }
 
@@ -506,7 +506,7 @@ static gboolean fl_text_input_plugin_filter_keypress_default(
   gboolean do_action = FALSE;
   // Handle navigation keys.
   gboolean changed = FALSE;
-  if (event->type == GDK_KEY_PRESS) {
+  if (event->is_press) {
     switch (event->keyval) {
       case GDK_KEY_End:
       case GDK_KEY_KP_End:
@@ -612,7 +612,7 @@ FlTextInputPlugin* fl_text_input_plugin_new(FlBinaryMessenger* messenger,
 // Filters the a keypress given to the plugin through the plugin's
 // filter_keypress callback.
 gboolean fl_text_input_plugin_filter_keypress(FlTextInputPlugin* self,
-                                              GdkEventKey* event) {
+                                              FlKeyEvent* event) {
   g_return_val_if_fail(FL_IS_TEXT_INPUT_PLUGIN(self), FALSE);
   if (FL_TEXT_INPUT_PLUGIN_GET_CLASS(self)->filter_keypress) {
     return FL_TEXT_INPUT_PLUGIN_GET_CLASS(self)->filter_keypress(self, event);

@@ -12,12 +12,15 @@
 
 /**
  * FlKeyboardManagerRedispatcher:
- * @event: the event to dispatch.
+ * @event: the pointer to the event to dispatch.
  *
  * The signature for a callback with which a #FlKeyboardManager redispatches
  * key events that are not handled by anyone.
+ *
+ * The #gdk_event is an opaque pointer. It will be GdkEvent* in actual
+ * applications, or a dummy pointer in unit tests.
  **/
-typedef void (*FlKeyboardManagerRedispatcher)(const GdkEvent* event);
+typedef void (*FlKeyboardManagerRedispatcher)(const gpointer gdk_event);
 
 G_BEGIN_DECLS
 
@@ -86,13 +89,14 @@ void fl_keyboard_manager_add_responder(FlKeyboardManager* manager,
 /**
  * fl_keyboard_manager_handle_event:
  * @manager: the #FlKeyboardManager self.
- * @event: the event to be dispatched.
+ * @event: the event to be dispatched. This event will be managed and
+ * released by #FlKeyboardManager.
  *
  * Add a new #FlKeyResponder to the #FlKeyboardManager. Responders added
  * earlier will receive events earlier.
  */
 gboolean fl_keyboard_manager_handle_event(FlKeyboardManager* manager,
-                                          GdkEventKey* event);
+                                          FlKeyEvent* event);
 
 /**
  * fl_keyboard_manager_is_state_clear:

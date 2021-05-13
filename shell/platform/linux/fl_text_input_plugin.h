@@ -7,6 +7,7 @@
 
 #include <gdk/gdk.h>
 
+#include "flutter/shell/platform/linux/fl_key_event.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_binary_messenger.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_view.h"
 
@@ -31,7 +32,7 @@ struct _FlTextInputPluginClass {
   /**
    * Virtual method called to filter a keypress.
    */
-  gboolean (*filter_keypress)(FlTextInputPlugin* self, GdkEventKey* event);
+  gboolean (*filter_keypress)(FlTextInputPlugin* self, FlKeyEvent* event);
 };
 
 /**
@@ -50,14 +51,14 @@ FlTextInputPlugin* fl_text_input_plugin_new(FlBinaryMessenger* messenger,
 /**
  * fl_text_input_plugin_filter_keypress
  * @plugin: an #FlTextInputPlugin.
- * @event: a #GdkEventKey
+ * @event: a #FlKeyEvent
  *
  * Process a Gdk key event.
  *
  * Returns: %TRUE if the event was used.
  */
 gboolean fl_text_input_plugin_filter_keypress(FlTextInputPlugin* plugin,
-                                              GdkEventKey* event);
+                                              FlKeyEvent* event);
 
 G_END_DECLS
 

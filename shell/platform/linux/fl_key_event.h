@@ -7,6 +7,8 @@
 
 #include <gdk/gdk.h>
 
+typedef void FlKeyEventDisposeOrigin(gpointer);
+
 /**
  * FlKeyEvent:
  * A struct that stores information from GdkEvent.
@@ -25,16 +27,26 @@ typedef struct _FlKeyEvent {
   guint keyval;
   // Modifier state.
   GdkModifierType state;
-  // The original event.
+  // String, null-terminated.
   //
+  // Can be nullptr.
+  const char* string;
+  // Length of #string (without the terminating \0).
+  size_t length;
+  // An opaque pointer to the original event.
+  //
+  // This is used when dispatching.
   // For native events, this is #GdkEvent pointer.
   // For unit tests, this is a dummy pointer.
   gpointer origin;
+  // A callback to free #origin, called when #FlKeyEvent is disposed.
+  FlKeyEventDisposeOrigin dispose_origin;
 } FlKeyEvent;
 
 /**
  * fl_key_event_new_from_gdk_event:
- * @event: the #GdkEvent this #FlKeyEvent is based on. Must be a #GdkEventKey.
+ * @event: the #GdkEvent this #FlKeyEvent is based on. The #event be a #GdkEventKey,
+ * and will be destroyed by #fl_key_event_dispose.
  *
  * Create a new #FlKeyEvent based on a #GdkEventKey.
  *
@@ -50,8 +62,8 @@ FlKeyEvent* fl_key_event_new_from_gdk_event(GdkEvent* event);
  *
  * Returns: a cloned #FlKeyEvent. Must be freed with #free (or #g_free).
  */
-FlKeyEvent* fl_key_event_copy(FlKeyEvent* source);
+void fl_key_event_dispose(FlKeyEvent* event);
 
-G_END_DECLS
+void fl_key_event_destroy_notify(gpointer event);
 
 #endif  // FLUTTER_SHELL_PLATFORM_LINUX_FL_KEY_EVENT_H_

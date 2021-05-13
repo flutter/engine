@@ -114,7 +114,7 @@ G_DEFINE_TYPE_WITH_CODE(
 
 static void fl_key_channel_responder_handle_event(
     FlKeyResponder* responder,
-    GdkEventKey* event,
+    FlKeyEvent* event,
     FlKeyResponderAsyncCallback callback,
     gpointer user_data);
 
@@ -200,26 +200,15 @@ FlKeyChannelResponder* fl_key_channel_responder_new(
 // Sends a key event to the framework.
 static void fl_key_channel_responder_handle_event(
     FlKeyResponder* responder,
-    GdkEventKey* event,
+    FlKeyEvent* event,
     FlKeyResponderAsyncCallback callback,
     gpointer user_data) {
   FlKeyChannelResponder* self = FL_KEY_CHANNEL_RESPONDER(responder);
   g_return_if_fail(event != nullptr);
   g_return_if_fail(callback != nullptr);
 
-  const gchar* type;
-  switch (event->type) {
-    case GDK_KEY_PRESS:
-      type = kTypeValueDown;
-      break;
-    case GDK_KEY_RELEASE:
-      type = kTypeValueUp;
-      break;
-    default:
-      return;
-  }
-
-  int64_t scan_code = event->hardware_keycode;
+  const gchar* type = event->is_press ? kTypeValueDown : kTypeValueUp;
+  int64_t scan_code = event->keycode;
   int64_t unicode_scarlar_values = gdk_keyval_to_unicode(event->keyval);
 
   // For most modifier keys, GTK keeps track of the "pressed" state of the

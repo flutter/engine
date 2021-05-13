@@ -12,6 +12,7 @@
 #include "flutter/shell/platform/linux/fl_engine_private.h"
 #include "flutter/shell/platform/linux/fl_key_channel_responder.h"
 #include "flutter/shell/platform/linux/fl_key_embedder_responder.h"
+#include "flutter/shell/platform/linux/fl_key_event.h"
 #include "flutter/shell/platform/linux/fl_keyboard_manager.h"
 #include "flutter/shell/platform/linux/fl_mouse_cursor_plugin.h"
 #include "flutter/shell/platform/linux/fl_platform_plugin.h"
@@ -157,6 +158,8 @@ static void fl_view_plugin_registry_iface_init(
   iface->get_registrar_for_plugin = fl_view_get_registrar_for_plugin;
 }
 
+static void redispatch_key_event(const gpointer* raw_event);
+
 static gboolean event_box_button_release_event(GtkWidget* widget,
                                                GdkEventButton* event,
                                                FlView* view);
@@ -185,7 +188,7 @@ static void fl_view_constructed(GObject* object) {
   FlBinaryMessenger* messenger = fl_engine_get_binary_messenger(self->engine);
   self->accessibility_plugin = fl_accessibility_plugin_new(self);
   self->keyboard_manager = fl_keyboard_manager_new(
-      fl_text_input_plugin_new(messenger, self), gdk_event_put);
+      fl_text_input_plugin_new(messenger, self), redispatch_key_event);
   // The embedder responder must be added before the channel responder.
   fl_keyboard_manager_add_responder(
       self->keyboard_manager,
@@ -509,14 +512,16 @@ static gboolean event_box_motion_notify_event(GtkWidget* widget,
 static gboolean fl_view_key_press_event(GtkWidget* widget, GdkEventKey* event) {
   FlView* self = FL_VIEW(widget);
 
-  return fl_keyboard_manager_handle_event(self->keyboard_manager, event);
+  return fl_keyboard_manager_handle_event(self->keyboard_manager,
+    fl_key_event_new_from_gdk_event(gdk_event_copy(event)));
 }
 
 // Implements GtkWidget::key_release_event.
 static gboolean fl_view_key_release_event(GtkWidget* widget,
                                           GdkEventKey* event) {
   FlView* self = FL_VIEW(widget);
-  return fl_keyboard_manager_handle_event(self->keyboard_manager, event);
+  return fl_keyboard_manager_handle_event(self->keyboard_manager,
+    fl_key_event_new_from_gdk_event(gdk_event_copy(event)));
 }
 
 static void fl_view_put(FlView* self,
@@ -741,4 +746,11 @@ void fl_view_end_frame(FlView* view) {
   gtk_container_forall(GTK_CONTAINER(view), fl_view_reorder_forall, &data);
 
   gtk_widget_queue_draw(GTK_WIDGET(view));
+}
+
+static void redispatch_key_event(const gpointer* raw_event) {
+  const GdkEvent* event = reinterpret_cast<const GdkEvent*>(raw_event);
+  GdkEventType type = gdk_event_get_event_type(event);
+  g_return_if_fail(type == GDK_KEY_PRESS || type == GDK_KEY_RELEASE);
+  gdk_event_put(event);
 }

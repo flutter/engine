@@ -28,13 +28,13 @@ static uint64_t lookup_hash_table(GHashTable* table, uint64_t key) {
       g_hash_table_lookup(table, uint64_to_gpointer(key)));
 }
 
-static uint64_t event_to_physical_key(const GdkEventKey* event,
+static uint64_t event_to_physical_key(const FlKeyEvent* event,
                                       GHashTable* table) {
-  uint64_t record = lookup_hash_table(table, event->hardware_keycode);
+  uint64_t record = lookup_hash_table(table, event->keycode);
   if (record != 0) {
     return record;
   }
-  return kGtkKeyIdPlane | event->hardware_keycode;
+  return kGtkKeyIdPlane | event->keycode;
 }
 
 static uint64_t to_lower(uint64_t n) {
@@ -219,7 +219,7 @@ G_DEFINE_TYPE_WITH_CODE(
 
 static void fl_key_embedder_responder_handle_event(
     FlKeyResponder* responder,
-    GdkEventKey* event,
+    FlKeyEvent* event,
     FlKeyResponderAsyncCallback callback,
     gpointer user_data);
 
@@ -308,7 +308,7 @@ FlKeyEmbedderResponder* fl_key_embedder_responder_new(FlEngine* engine) {
 
 /* Implement FlKeyEmbedderUserData */
 
-static uint64_t event_to_logical_key(const GdkEventKey* event,
+static uint64_t event_to_logical_key(const FlKeyEvent* event,
                                      GHashTable* table) {
   guint keyval = event->keyval;
   uint64_t record = lookup_hash_table(table, keyval);
@@ -323,13 +323,13 @@ static uint64_t event_to_logical_key(const GdkEventKey* event,
   return kGtkKeyIdPlane | keyval;
 }
 
-static uint64_t event_to_timestamp(const GdkEventKey* event) {
+static uint64_t event_to_timestamp(const FlKeyEvent* event) {
   return kMicrosecondsPerMillisecond * (double)event->time;
 }
 
 // Returns a newly accocated UTF-8 string from event->keyval that must be
 // freed later with g_free().
-static char* event_to_character(const GdkEventKey* event) {
+static char* event_to_character(const FlKeyEvent* event) {
   gunichar unicodeChar = gdk_keyval_to_unicode(event->keyval);
   glong items_written;
   gchar* result = g_ucs4_to_utf8(&unicodeChar, 1, NULL, &items_written, NULL);
@@ -702,7 +702,7 @@ static void synchronize_lock_states_loop_body(gpointer key,
 // Sends a key event to the framework.
 static void fl_key_embedder_responder_handle_event(
     FlKeyResponder* responder,
-    GdkEventKey* event,
+    FlKeyEvent* event,
     FlKeyResponderAsyncCallback callback,
     gpointer user_data) {
   FlKeyEmbedderResponder* self = FL_KEY_EMBEDDER_RESPONDER(responder);

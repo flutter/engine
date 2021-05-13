@@ -9,7 +9,7 @@ G_DEFINE_INTERFACE(FlKeyResponder, fl_key_responder, G_TYPE_OBJECT)
 static void fl_key_responder_default_init(FlKeyResponderInterface* iface) {}
 
 void fl_key_responder_handle_event(FlKeyResponder* self,
-                                   GdkEventKey* event,
+                                   FlKeyEvent* event,
                                    FlKeyResponderAsyncCallback callback,
                                    gpointer user_data) {
   g_return_if_fail(FL_IS_KEY_RESPONDER(self));

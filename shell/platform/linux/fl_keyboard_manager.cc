@@ -25,10 +25,10 @@ G_DECLARE_FINAL_TYPE(FlKeyboardPendingEvent,
 struct _FlKeyboardPendingEvent {
   GObject parent_instance;
 
-  // A clone of the target event.
+  // The target event.
   //
   // This is freed by #FlKeyboardPendingEvent.
-  GdkEventKey* event;
+  FlKeyEvent* event;
 
   // Self-incrementing ID attached to an event sent to the framework.
   //
@@ -63,39 +63,34 @@ static void fl_keyboard_pending_event_class_init(
 
 static void fl_keyboard_pending_event_init(FlKeyboardPendingEvent* self) {}
 
-// Calculates a unique ID for a given GdkEventKey object to use for
+// Calculates a unique ID for a given FlKeyEvent object to use for
 // identification of responses from the framework.
-static uint64_t fl_keyboard_manager_get_event_hash(GdkEventKey* event) {
+static uint64_t fl_keyboard_manager_get_event_hash(FlKeyEvent* event) {
   // Combine the event timestamp, the type of event, and the hardware keycode
   // (scan code) of the event to come up with a unique id for this event that
   // can be derived solely from the event data itself, so that we can identify
   // whether or not we have seen this event already.
   return (event->time & 0xffffffff) |
          (static_cast<uint64_t>(event->type) & 0xffff) << 32 |
-         (static_cast<uint64_t>(event->hardware_keycode) & 0xffff) << 48;
+         (static_cast<uint64_t>(event->keycode) & 0xffff) << 48;
 }
 
 // Create a new FlKeyboardPendingEvent by providing the target event,
 // the sequence ID, and the number of responders that will reply.
-FlKeyboardPendingEvent* fl_keyboard_pending_event_new(GdkEventKey* event,
+//
+// This will acquire the ownership of the event.
+FlKeyboardPendingEvent* fl_keyboard_pending_event_new(FlKeyEvent* event,
                                                       uint64_t sequence_id,
                                                       size_t to_reply) {
   FlKeyboardPendingEvent* self = FL_KEYBOARD_PENDING_EVENT(
       g_object_new(fl_keyboard_pending_event_get_type(), nullptr));
 
-  FL_KEYBOARD_PENDING_EVENT(self);
-
-  // Copy the event to preserve refcounts for referenced values (mainly the
-  // window).
-  GdkEventKey* event_copy = reinterpret_cast<GdkEventKey*>(
-      gdk_event_copy(reinterpret_cast<GdkEvent*>(event)));
-  FlKeyboardPendingEvent* self2 = FL_KEYBOARD_PENDING_EVENT(self);
-  self->event = event_copy;
+  self->event = event;
   self->sequence_id = sequence_id;
   self->unreplied = to_reply;
   self->any_handled = false;
   self->hash = fl_keyboard_manager_get_event_hash(event);
-  return self2;
+  return self;
 }
 
 /* Declare and define FlKeyboardManagerUserData */
@@ -125,7 +120,7 @@ namespace {
 
 // Context variables for the foreach call used to dispatch events to responders.
 typedef struct {
-  GdkEventKey* event;
+  FlKeyEvent* event;
   FlKeyboardManagerUserData* user_data;
 } DispatchToResponderLoopContext;
 
@@ -216,9 +211,9 @@ static void fl_keyboard_manager_dispose(GObject* object) {
   if (self->text_input_plugin != nullptr)
     g_clear_object(&self->text_input_plugin);
   g_ptr_array_free(self->responder_list, TRUE);
-  g_ptr_array_set_free_func(self->pending_responds, g_object_unref);
+  g_ptr_array_set_free_func(self->pending_responds, fl_key_event_destroy_notify);
   g_ptr_array_free(self->pending_responds, TRUE);
-  g_ptr_array_set_free_func(self->pending_redispatches, g_object_unref);
+  g_ptr_array_set_free_func(self->pending_redispatches, fl_key_event_destroy_notify);
   g_ptr_array_free(self->pending_redispatches, TRUE);
 
   G_OBJECT_CLASS(fl_keyboard_manager_parent_class)->dispose(object);
@@ -281,7 +276,7 @@ static bool fl_keyboard_manager_remove_redispatched(FlKeyboardManager* self,
     gpointer removed =
         g_ptr_array_remove_index_fast(self->pending_redispatches, result_index);
     g_return_val_if_fail(removed != nullptr, TRUE);
-    g_object_unref(removed);
+    fl_key_event_destroy_notify(removed);
     return TRUE;
   } else {
     return FALSE;
@@ -323,9 +318,9 @@ static void responder_handle_event_callback(bool handled,
     }
     if (should_redispatch) {
       g_ptr_array_add(self->pending_redispatches, pending);
-      self->redispatch_callback(reinterpret_cast<GdkEvent*>(pending->event));
+      self->redispatch_callback(pending->event->origin);
     } else {
-      g_object_unref(pending);
+      fl_key_event_destroy_notify(pending);
     }
   }
 }
@@ -373,7 +368,7 @@ static void dispatch_to_responder(gpointer responder_data,
 }
 
 gboolean fl_keyboard_manager_handle_event(FlKeyboardManager* self,
-                                          GdkEventKey* event) {
+                                          FlKeyEvent* event) {
   g_return_val_if_fail(FL_IS_KEYBOARD_MANAGER(self), FALSE);
   g_return_val_if_fail(event != nullptr, FALSE);
 

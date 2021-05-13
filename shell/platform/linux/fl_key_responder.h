@@ -9,6 +9,7 @@
 #include <cinttypes>
 
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_binary_messenger.h"
+#include "flutter/shell/platform/linux/public/flutter_linux/fl_key_event.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_value.h"
 
 G_BEGIN_DECLS
@@ -51,7 +52,7 @@ struct _FlKeyResponderInterface {
    * The implementation of #fl_key_responder_handle_event.
    */
   void (*handle_event)(FlKeyResponder* responder,
-                       GdkEventKey* event,
+                       FlKeyEvent* event,
                        FlKeyResponderAsyncCallback callback,
                        gpointer user_data);
 };
@@ -59,7 +60,8 @@ struct _FlKeyResponderInterface {
 /**
  * fl_key_responder_handle_event:
  * @responder: the #FlKeyResponder self.
- * @event: the event to be handled. Must not be null.
+ * @event: the event to be handled. Must not be null. The object is managed
+ * by callee and must not be assumed available after this function.
  * @callback: the callback to report the result. It should be called exactly
  * once. Must not be null.
  * @user_data: a value that will be sent back in the callback. Can be null.
@@ -70,7 +72,7 @@ struct _FlKeyResponderInterface {
  * `fl_key_responder_handle_event` or during it.
  */
 void fl_key_responder_handle_event(FlKeyResponder* responder,
-                                   GdkEventKey* event,
+                                   FlKeyEvent* event,
                                    FlKeyResponderAsyncCallback callback,
                                    gpointer user_data);
 
