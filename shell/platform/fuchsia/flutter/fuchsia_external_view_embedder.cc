@@ -303,26 +303,32 @@ void FuchsiaExternalViewEmbedder::SubmitFrame(
           view_holder.hit_testable = view_holder.pending_hit_testable;
         }
 
-        // Set size and focusable.
+        // Set size, occlusion hint, and focusable.
         //
         // Scenic rejects `SetViewProperties` calls with a zero size.
         if (!view_size.isEmpty() &&
             (view_size != view_holder.size ||
+             view_holder.pending_occlusion_hint != view_holder.occlusion_hint ||
              view_holder.pending_focusable != view_holder.focusable)) {
+          view_holder.size = view_size;
+          view_holder.occlusion_hint = view_holder.pending_occlusion_hint;
+          view_holder.focusable = view_holder.pending_focusable;
           view_holder.view_holder.SetViewProperties({
               .bounding_box =
                   {
                       .min = {.x = 0.f, .y = 0.f, .z = -1000.f},
-                      .max = {.x = view_size.fWidth,
-                              .y = view_size.fHeight,
+                      .max = {.x = view_holder.size.fWidth,
+                              .y = view_holder.size.fHeight,
                               .z = 0.f},
                   },
-              .inset_from_min = {.x = 0.f, .y = 0.f, .z = 0.f},
-              .inset_from_max = {.x = 0.f, .y = 0.f, .z = 0.f},
-              .focus_change = view_holder.pending_focusable,
+              .inset_from_min = {.x = view_holder.occlusion_hint.fLeft,
+                                 .y = view_holder.occlusion_hint.fTop,
+                                 .z = 0.f},
+              .inset_from_max = {.x = view_holder.occlusion_hint.fRight,
+                                 .y = view_holder.occlusion_hint.fBottom,
+                                 .z = 0.f},
+              .focus_change = view_holder.focusable,
           });
-          view_holder.size = view_size;
-          view_holder.focusable = view_holder.pending_focusable;
         }
 
         // Attach the ScenicView to the main scene graph.
@@ -382,41 +388,44 @@ void FuchsiaExternalViewEmbedder::SubmitFrame(
         // Scenic currently lacks an API to enable rendering of alpha channel;
         // Flutter Embedder also lacks an API to detect if a layer has alpha or
         // not. Alpha channels are only rendered if there is a OpacityNode
-        // higher in the tree with opacity != 1. For now, always assume t he
-        // layer has alpha and clamp to a infinitesimally smaller value than 1.
+        // higher in the tree with opacity != 1. For now, assume any layer
+        // beyond the first has alpha and clamp to a infinitesimally smaller
+        // value than 1.  The first layer retains an opacity of 1 to avoid
+        // blending with anything underneath.
         //
         // This does not cause visual problems in practice, but probably has
         // performance implications.
-        auto& scenic_layer = scenic_layers_[scenic_layer_index];
-        auto& scenic_rect = found_rects->second[rect_index];
+        const SkAlpha layer_opacity =
+            first_layer ? SK_AlphaOPAQUE : SK_AlphaOPAQUE - 1;
         const float layer_elevation =
             kScenicZElevationBetweenLayers * scenic_layer_index +
             embedded_views_height;
+        auto& scenic_layer = scenic_layers_[scenic_layer_index];
+        auto& scenic_rect = found_rects->second[rect_index];
         scenic_layer.shape_node.SetLabel("Flutter::Layer");
         scenic_layer.shape_node.SetShape(scenic_rect);
         scenic_layer.shape_node.SetTranslation(
             layer->second.surface_size.width() * 0.5f,
             layer->second.surface_size.height() * 0.5f, -layer_elevation);
         scenic_layer.material.SetColor(SK_AlphaOPAQUE, SK_AlphaOPAQUE,
-                                       SK_AlphaOPAQUE, SK_AlphaOPAQUE - 1);
+                                       SK_AlphaOPAQUE, layer_opacity);
         scenic_layer.material.SetTexture(surface_image_id);
 
         // Only the first (i.e. the bottom-most) layer should receive input.
         // TODO: Workaround for invisible overlays stealing input. Remove when
         // the underlying bug is fixed.
-        if (first_layer) {
-          scenic_layer.shape_node.SetHitTestBehavior(
-              fuchsia::ui::gfx::HitTestBehavior::kDefault);
-        } else {
-          scenic_layer.shape_node.SetHitTestBehavior(
-              fuchsia::ui::gfx::HitTestBehavior::kSuppress);
-        }
-        first_layer = false;
+        const fuchsia::ui::gfx::HitTestBehavior layer_hit_test_behavior =
+            first_layer ? fuchsia::ui::gfx::HitTestBehavior::kDefault
+                        : fuchsia::ui::gfx::HitTestBehavior::kSuppress;
+        scenic_layer.shape_node.SetHitTestBehavior(layer_hit_test_behavior);
 
         // Attach the ScenicLayer to the main scene graph.
         layer_tree_node_.AddChild(scenic_layer.shape_node);
 
-        // Account for the ScenicLayer's height when positioning the next layer.
+        // Reset for the next pass:
+        //  +The next layer will not be the first layer.
+        //  +Account for the current layer's height when positioning the next.
+        first_layer = false;
         scenic_layer_index++;
       }
     }
@@ -509,13 +518,16 @@ void FuchsiaExternalViewEmbedder::DestroyView(int64_t view_id,
   on_view_unbound(resource_id);
 }
 
-void FuchsiaExternalViewEmbedder::SetViewProperties(int64_t view_id,
-                                                    bool hit_testable,
-                                                    bool focusable) {
+void FuchsiaExternalViewEmbedder::SetViewProperties(
+    int64_t view_id,
+    const SkRect& occlusion_hint,
+    bool hit_testable,
+    bool focusable) {
   auto found = scenic_views_.find(view_id);
   FML_DCHECK(found != scenic_views_.end());
   auto& view_holder = found->second;
 
+  view_holder.pending_occlusion_hint = occlusion_hint;
   view_holder.pending_hit_testable = hit_testable;
   view_holder.pending_focusable = focusable;
 }
