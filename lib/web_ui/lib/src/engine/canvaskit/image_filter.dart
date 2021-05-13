@@ -109,7 +109,9 @@ class _CkBlurImageFilter extends CkImageFilter {
 
   @override
   bool operator ==(Object other) {
-    if (runtimeType != other.runtimeType) return false;
+    if (runtimeType != other.runtimeType) {
+      return false;
+    }
     return other is _CkBlurImageFilter &&
         other.sigmaX == sigmaX &&
         other.sigmaY == sigmaY &&

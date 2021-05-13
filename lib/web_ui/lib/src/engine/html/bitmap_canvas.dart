@@ -826,7 +826,7 @@ class BitmapCanvas extends EngineCanvas {
     String? svgFilter =
         svgFilterFromBlendMode(filterColor, colorFilterBlendMode);
     final html.Element filterElement =
-        html.Element.html(svgFilter, treeSanitizer: _NullTreeSanitizer());
+        html.Element.html(svgFilter, treeSanitizer: NullTreeSanitizer());
     rootElement.append(filterElement);
     _children.add(filterElement);
     final html.HtmlElement imgElement = _reuseOrCreateImage(image);
@@ -843,7 +843,7 @@ class BitmapCanvas extends EngineCanvas {
     // For srcIn blendMode, we use an svg filter to apply to image element.
     String? svgFilter = svgFilterFromColorMatrix(matrix);
     final html.Element filterElement =
-        html.Element.html(svgFilter, treeSanitizer: _NullTreeSanitizer());
+        html.Element.html(svgFilter, treeSanitizer: NullTreeSanitizer());
     rootElement.append(filterElement);
     _children.add(filterElement);
     final html.HtmlElement imgElement = _reuseOrCreateImage(image);
@@ -1238,7 +1238,7 @@ List<html.Element> _clipContent(List<_SaveClipEntry> clipStack,
         String svgClipPath =
             createSvgClipDef(curElement as html.HtmlElement, entry.path!);
         final html.Element clipElement =
-            html.Element.html(svgClipPath, treeSanitizer: _NullTreeSanitizer());
+            html.Element.html(svgClipPath, treeSanitizer: NullTreeSanitizer());
         clipDefs.add(clipElement);
       }
     }

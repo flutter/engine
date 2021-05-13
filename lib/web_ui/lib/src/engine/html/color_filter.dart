@@ -119,7 +119,7 @@ class PersistedColorFilter extends PersistedContainerSurface
         svgFilterFromBlendMode(filterColor, colorFilterBlendMode);
     if (svgFilter != null) {
       _filterElement =
-          html.Element.html(svgFilter, treeSanitizer: _NullTreeSanitizer());
+          html.Element.html(svgFilter, treeSanitizer: NullTreeSanitizer());
       rootElement!.append(_filterElement!);
       rootElement!.style.filter = 'url(#_fcf${_filterIdCounter})';
       if (colorFilterBlendMode == ui.BlendMode.saturation ||
@@ -134,7 +134,7 @@ class PersistedColorFilter extends PersistedContainerSurface
     String? svgFilter = svgFilterFromColorMatrix(colorFilter.matrix);
     if (svgFilter != null) {
       _filterElement =
-          html.Element.html(svgFilter, treeSanitizer: _NullTreeSanitizer());
+          html.Element.html(svgFilter, treeSanitizer: NullTreeSanitizer());
       rootElement!.append(_filterElement!);
       rootElement!.style.filter = 'url(#_fcf${_filterIdCounter})';
     }

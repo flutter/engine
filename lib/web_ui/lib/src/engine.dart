@@ -151,12 +151,14 @@ export 'engine/vector_math.dart';
 import 'engine/web_experiments.dart';
 export 'engine/web_experiments.dart';
 
+import 'engine/canvaskit/canvas.dart';
 export 'engine/canvaskit/canvas.dart';
-
-export 'engine/canvaskit/canvaskit_canvas.dart';
 
 import 'engine/canvaskit/canvaskit_api.dart';
 export 'engine/canvaskit/canvaskit_api.dart';
+
+import 'engine/canvaskit/canvaskit_canvas.dart';
+export 'engine/canvaskit/canvaskit_canvas.dart';
 
 import 'engine/canvaskit/color_filter.dart';
 export 'engine/canvaskit/color_filter.dart';
@@ -164,17 +166,22 @@ export 'engine/canvaskit/color_filter.dart';
 import 'engine/canvaskit/embedded_views.dart';
 export 'engine/canvaskit/embedded_views.dart';
 
+import 'engine/canvaskit/fonts.dart';
 export 'engine/canvaskit/fonts.dart';
 
+import 'engine/canvaskit/font_fallbacks.dart';
 export 'engine/canvaskit/font_fallbacks.dart';
 
+import 'engine/canvaskit/image.dart';
 export 'engine/canvaskit/image.dart';
 
+import 'engine/canvaskit/image_filter.dart';
 export 'engine/canvaskit/image_filter.dart';
 
 import 'engine/canvaskit/initialization.dart';
 export 'engine/canvaskit/initialization.dart';
 
+import 'engine/canvaskit/interval_tree.dart';
 export 'engine/canvaskit/interval_tree.dart';
 
 import 'engine/canvaskit/layer.dart';
@@ -183,43 +190,53 @@ export 'engine/canvaskit/layer.dart';
 import 'engine/canvaskit/layer_scene_builder.dart';
 export 'engine/canvaskit/layer_scene_builder.dart';
 
+import 'engine/canvaskit/layer_tree.dart';
 export 'engine/canvaskit/layer_tree.dart';
 
+import 'engine/canvaskit/mask_filter.dart';
 export 'engine/canvaskit/mask_filter.dart';
 
+import 'engine/canvaskit/n_way_canvas.dart';
 export 'engine/canvaskit/n_way_canvas.dart';
 
-export 'engine/canvaskit/path.dart';
-
+import 'engine/canvaskit/painting.dart';
 export 'engine/canvaskit/painting.dart';
 
+import 'engine/canvaskit/path.dart';
+export 'engine/canvaskit/path.dart';
+
+import 'engine/canvaskit/path_metrics.dart';
 export 'engine/canvaskit/path_metrics.dart';
 
+import 'engine/canvaskit/picture.dart';
 export 'engine/canvaskit/picture.dart';
 
+import 'engine/canvaskit/picture_recorder.dart';
 export 'engine/canvaskit/picture_recorder.dart';
-
-export 'engine/canvaskit/platform_message.dart';
-
-export 'engine/canvaskit/raster_cache.dart';
 
 import 'engine/canvaskit/rasterizer.dart';
 export 'engine/canvaskit/rasterizer.dart';
 
+import 'engine/canvaskit/raster_cache.dart';
+export 'engine/canvaskit/raster_cache.dart';
+
+import 'engine/canvaskit/shader.dart';
 export 'engine/canvaskit/shader.dart';
 
+import 'engine/canvaskit/skia_object_cache.dart';
 export 'engine/canvaskit/skia_object_cache.dart';
 
 import 'engine/canvaskit/surface.dart';
 export 'engine/canvaskit/surface.dart';
 
+import 'engine/canvaskit/text.dart';
 export 'engine/canvaskit/text.dart';
 
+import 'engine/canvaskit/util.dart';
 export 'engine/canvaskit/util.dart';
 
+import 'engine/canvaskit/vertices.dart';
 export 'engine/canvaskit/vertices.dart';
-
-export 'engine/canvaskit/viewport_metrics.dart';
 
 part 'engine/assets.dart';
 part 'engine/html/bitmap_canvas.dart';
@@ -416,7 +433,7 @@ void _addUrlStrategyListener() {
   });
 }
 
-class _NullTreeSanitizer implements html.NodeTreeSanitizer {
+class NullTreeSanitizer implements html.NodeTreeSanitizer {
   @override
   void sanitizeTree(html.Node node) {}
 }

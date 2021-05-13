@@ -5,10 +5,9 @@
 import 'dart:typed_data';
 
 import 'package:meta/meta.dart';
-import 'package:ui/src/engine.dart'
-    show assertionsEnabled, listEquals, printWarning;
 import 'package:ui/ui.dart' as ui;
 
+import '../util.dart';
 import 'canvaskit_api.dart';
 import 'font_fallbacks.dart';
 import 'initialization.dart';

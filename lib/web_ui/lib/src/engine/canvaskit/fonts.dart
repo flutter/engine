@@ -6,9 +6,9 @@ import 'dart:convert';
 import 'dart:html' as html;
 import 'dart:typed_data';
 
-import 'package:ui/src/engine.dart'
-    show printWarning, AssetManager, AssetManagerException;
+import 'package:ui/src/engine.dart' show AssetManager, AssetManagerException;
 
+import '../util.dart';
 import 'canvaskit_api.dart';
 import 'font_fallbacks.dart';
 

@@ -20,7 +20,7 @@ import 'fonts.dart';
 external String? get requestedRendererType;
 
 /// Whether to use CanvasKit as the rendering backend.
-bool get useCanvasKit => _autoDetect ? _detectRenderer() : _useSkia;
+bool get useCanvasKit => flutterWebAutoDetect ? _detectRenderer() : _useSkia;
 
 /// Returns true if CanvasKit is used.
 ///
@@ -38,7 +38,7 @@ bool _detectRenderer() {
 ///
 /// Using flutter tools option "--web-render=auto" or not specifying one
 /// would set the value to true. Otherwise, it would be false.
-const bool _autoDetect =
+const bool flutterWebAutoDetect =
     bool.fromEnvironment('FLUTTER_WEB_AUTO_DETECT', defaultValue: true);
 
 /// Enable the Skia-based rendering backend.

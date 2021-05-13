@@ -5,10 +5,10 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:ui/src/engine.dart'
-    show assertionsEnabled, offsetIsValid, validateColorStops, matrix4IsValid;
 import 'package:ui/ui.dart' as ui;
 
+import '../util.dart';
+import '../validators.dart';
 import 'canvaskit_api.dart';
 import 'image.dart';
 import 'initialization.dart';

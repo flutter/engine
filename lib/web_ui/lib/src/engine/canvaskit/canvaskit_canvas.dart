@@ -4,8 +4,7 @@
 
 import 'dart:typed_data';
 
-import 'package:ui/src/engine.dart'
-    show offsetIsValid, rectIsValid, rrectIsValid, toMatrix32;
+import 'package:ui/src/engine.dart' show toMatrix32;
 import 'package:ui/ui.dart' as ui;
 
 import 'canvas.dart';
@@ -17,6 +16,8 @@ import 'picture.dart';
 import 'picture_recorder.dart';
 import 'text.dart';
 import 'vertices.dart';
+
+import '../validators.dart';
 
 /// An implementation of [ui.Canvas] that is backed by a CanvasKit canvas.
 class CanvasKitCanvas implements ui.Canvas {

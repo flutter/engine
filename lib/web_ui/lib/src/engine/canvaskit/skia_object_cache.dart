@@ -5,10 +5,10 @@
 import 'dart:collection';
 
 import 'package:meta/meta.dart';
-import 'package:ui/src/engine.dart'
-    show assertionsEnabled, EnginePlatformDispatcher, Instrumentation;
+import '../../engine.dart' show EnginePlatformDispatcher, Instrumentation;
 
 import 'canvaskit_api.dart';
+import '../util.dart';
 
 /// A cache of Skia objects whose memory Flutter manages.
 ///
