@@ -67,8 +67,7 @@ class GradientSweep extends EngineGradient {
     NormalizedGradient normalizedGradient =
         NormalizedGradient(colors, stops: colorStops);
 
-    GlProgram glProgram = gl.cacheProgram(
-        VertexShaders.writeBaseVertexShader(),
+    GlProgram glProgram = gl.cacheProgram(VertexShaders.writeBaseVertexShader(),
         _createSweepFragmentShader(normalizedGradient, tileMode));
     gl.useProgram(glProgram);
 
@@ -234,8 +233,7 @@ class GradientLinear extends EngineGradient {
     NormalizedGradient normalizedGradient =
         NormalizedGradient(colors, stops: colorStops);
 
-    GlProgram glProgram = gl.cacheProgram(
-        VertexShaders.writeBaseVertexShader(),
+    GlProgram glProgram = gl.cacheProgram(VertexShaders.writeBaseVertexShader(),
         _createLinearFragmentShader(normalizedGradient, tileMode));
     gl.useProgram(glProgram);
 

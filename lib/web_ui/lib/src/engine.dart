@@ -41,7 +41,6 @@ export 'engine/browser_detection.dart';
 import 'engine/html_image_codec.dart';
 export 'engine/html_image_codec.dart';
 
-import 'engine/html/offscreen_canvas.dart';
 export 'engine/html/offscreen_canvas.dart';
 
 import 'engine/html/painting.dart';
@@ -77,19 +76,21 @@ export 'engine/html/path/path_windings.dart';
 import 'engine/html/path/tangent.dart';
 export 'engine/html/path/tangent.dart';
 
-// import 'engine/html/shaders/normalized_gradient.dart';
+import 'engine/html/render_vertices.dart';
+export 'engine/html/render_vertices.dart';
+
+import 'engine/html/shaders/image_shader.dart';
+export 'engine/html/shaders/image_shader.dart';
+
 export 'engine/html/shaders/normalized_gradient.dart';
 
 import 'engine/html/shaders/shader.dart';
 export 'engine/html/shaders/shader.dart';
 
-// import 'engine/html/shaders/shader_builder.dart';
 export 'engine/html/shaders/shader_builder.dart';
 
-// import 'engine/html/shaders/vertex_shaders.dart';
 export 'engine/html/shaders/vertex_shaders.dart';
 
-import 'engine/html/shaders/webgl_context.dart';
 export 'engine/html/shaders/webgl_context.dart';
 
 import 'engine/mouse_cursor.dart';
@@ -210,7 +211,7 @@ part 'engine/canvaskit/viewport_metrics.dart';
 part 'engine/canvas_pool.dart';
 part 'engine/clipboard.dart';
 part 'engine/color_filter.dart';
-part 'engine/dom_canvas.dart';
+part 'engine/html/dom_canvas.dart';
 part 'engine/dom_renderer.dart';
 part 'engine/engine_canvas.dart';
 part 'engine/font_change_util.dart';
@@ -273,14 +274,13 @@ part 'engine/window.dart';
 
 // The mode the app is running in.
 // Keep these in sync with the same constants on the framework-side under foundation/constants.dart.
-const bool kReleaseMode = bool.fromEnvironment('dart.vm.product', defaultValue: false);
-const bool kProfileMode = bool.fromEnvironment('dart.vm.profile', defaultValue: false);
+const bool kReleaseMode =
+    bool.fromEnvironment('dart.vm.product', defaultValue: false);
+const bool kProfileMode =
+    bool.fromEnvironment('dart.vm.profile', defaultValue: false);
 const bool kDebugMode = !kReleaseMode && !kProfileMode;
-String get buildMode => kReleaseMode
-  ? 'release'
-  : kProfileMode
-    ? 'profile'
-    : 'debug';
+String get buildMode =>
+    kReleaseMode ? 'release' : kProfileMode ? 'profile' : 'debug';
 
 /// A benchmark metric that includes frame-related computations prior to
 /// submitting layer and picture operations to the underlying renderer, such as
