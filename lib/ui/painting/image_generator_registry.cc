@@ -47,9 +47,8 @@ ImageGeneratorRegistry::~ImageGeneratorRegistry() = default;
 
 void ImageGeneratorRegistry::AddFactory(ImageGeneratorFactory factory,
                                         int32_t priority) {
-  image_generator_factories_.push_back({factory, priority, fml::tracing::TraceNonce()});
-  std::stable_sort(image_generator_factories_.begin(),
-                   image_generator_factories_.end());
+  image_generator_factories_.insert(
+      {factory, priority, fml::tracing::TraceNonce()});
 }
 
 std::unique_ptr<ImageGenerator>

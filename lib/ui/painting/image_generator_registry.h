@@ -6,7 +6,7 @@
 #define FLUTTER_LIB_UI_PAINTING_IMAGE_GENERATOR_REGISTRY_H_
 
 #include <functional>
-#include <vector>
+#include <set>
 
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/memory/weak_ptr.h"
@@ -63,19 +63,23 @@ class ImageGeneratorRegistry {
     int32_t priority = 0;
     // Used as a fallback priority comparison when equal.
     size_t ascending_nonce = 0;
+  };
 
-    // Order by descending priority.
-    constexpr bool operator<(const PrioritizedFactory& other) const {
-      // When priorities are equal, use the order by which the factories were
-      // registered.
-      if (priority == other.priority) {
-        return ascending_nonce < other.ascending_nonce;
+  struct Compare {
+    constexpr bool operator()(const PrioritizedFactory& lhs,
+                              const PrioritizedFactory& rhs) const {
+      // When priorities are equal, factories registered earlier take
+      // precedent.
+      if (lhs.priority == rhs.priority) {
+        return lhs.ascending_nonce < rhs.ascending_nonce;
       }
       // Order by descending priority.
-      return priority > other.priority;
+      return lhs.priority > rhs.priority;
     }
   };
-  std::vector<PrioritizedFactory> image_generator_factories_;
+
+  using FactorySet = std::set<PrioritizedFactory, Compare>;
+  FactorySet image_generator_factories_;
   fml::WeakPtrFactory<ImageGeneratorRegistry> weak_factory_;
 };
 
