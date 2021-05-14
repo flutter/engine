@@ -44,14 +44,16 @@ class FontWeight {
     w900
   ];
   static FontWeight? lerp(FontWeight? a, FontWeight? b, double t) {
+    assert(t != null); // ignore: unnecessary_null_comparison
     if (a == null && b == null) {
       return null;
     }
     return values[engine.clampInt(
-        lerpDouble(a?.index ?? normal.index, b?.index ?? normal.index, t)!
-            .round(),
-        0,
-        8)];
+      lerpDouble(a?.index ?? normal.index, b?.index ?? normal.index, t)!
+          .round(),
+      0,
+      8,
+    )];
   }
 
   @override
