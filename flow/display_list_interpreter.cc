@@ -13,17 +13,21 @@
 
 namespace flutter {
 
+#ifndef NDEBUG
+
 #define CANVAS_OP_TAKE_STRING(name, arg) #name,
 const std::vector<std::string> DisplayListInterpreter::opNames = {
     FOR_EACH_CANVAS_OP(CANVAS_OP_TAKE_STRING)  //
 };
+
+#endif  // NDEBUG
 
 #define CANVAS_OP_TAKE_ARGS(name, args) CANVAS_OP_ARGS_##args,
 const std::vector<uint32_t> DisplayListInterpreter::opArguments = {
     FOR_EACH_CANVAS_OP(CANVAS_OP_TAKE_ARGS)  //
 };
 
-DisplayListInterpreter::DisplayListInterpreter(DisplayListData data)
+DisplayListInterpreter::DisplayListInterpreter(const DisplayListData& data)
     : ops_vector_(data.ops_vector),
       data_vector_(data.data_vector),
       ref_vector_(data.ref_vector) {}
@@ -36,17 +40,19 @@ DisplayListInterpreter::DisplayListInterpreter(
       data_vector_(std::move(data_vector)),
       ref_vector_(std::move(ref_vector)) {}
 
+#ifndef NDEBUG
+
 void DisplayListInterpreter::Describe() {
   Iterator it(this);
-  FML_LOG(ERROR) << "Starting ops: " << (it.ops_end - it.ops)
-                 << ", data: " << (it.data_end - it.data)
-                 << ", refs: " << (it.refs_end - it.refs);
+  FML_LOG(INFO) << "Starting ops: " << (it.ops_end - it.ops)
+                << ", data: " << (it.data_end - it.data)
+                << ", refs: " << (it.refs_end - it.refs);
   while (it.HasOp()) {
-    FML_LOG(ERROR) << DescribeOneOp(it);
+    FML_LOG(INFO) << DescribeOneOp(it);
   }
-  FML_LOG(ERROR) << "Remaining ops: " << (it.ops_end - it.ops)
-                 << ", data: " << (it.data_end - it.data)
-                 << ", refs: " << (it.refs_end - it.refs);
+  FML_LOG(INFO) << "Remaining ops: " << (it.ops_end - it.ops)
+                << ", data: " << (it.data_end - it.data)
+                << ", refs: " << (it.refs_end - it.refs);
 }
 
 std::string DisplayListInterpreter::DescribeNextOp(const Iterator& it) {
@@ -73,7 +79,7 @@ std::string DisplayListInterpreter::DescribeOneOp(Iterator& it) {
         static_cast<CanvasOpArg>(arg_types & CANVAS_OP_ARG_MASK);
     switch (arg_type) {
       case empty:
-        // This should never happen
+        FML_DCHECK(false);
         ss << "?none?";
         break;
       case scalar:
@@ -160,6 +166,8 @@ std::string DisplayListInterpreter::DescribeOneOp(Iterator& it) {
   return ss.str();
 }
 
+#endif  // NDEBUG
+
 // clang-format off
 constexpr float invert_colors[20] = {
   -1.0,    0,    0, 1.0, 0,
@@ -194,20 +202,12 @@ void DisplayListInterpreter::Rasterize(SkCanvas* canvas) {
   int entrySaveCount = canvas->getSaveCount();
   Iterator it(this);
   while (it.HasOp()) {
-    FML_LOG(INFO) << DescribeNextOp(it);
     switch (it.GetOp()) { FOR_EACH_CANVAS_OP(CANVAS_OP_DISPATCH_OP) }
   }
-  if (it.ops != it.ops_end || it.data != it.data_end ||
-      it.refs != it.refs_end || canvas->getSaveCount() != entrySaveCount) {
-    FML_LOG(ERROR) << "Starting ops: " << ops_vector_->size()
-                   << ", data: " << data_vector_->size()
-                   << ", refs: " << ref_vector_->size();
-    FML_LOG(ERROR) << "Remaining ops: " << (it.ops_end - it.ops)
-                   << ", data: " << (it.data_end - it.data)
-                   << ", refs: " << (it.refs_end - it.refs)
-                   << ", save count delta: "
-                   << (canvas->getSaveCount() - entrySaveCount);
-  }
+  FML_DCHECK(it.ops == it.ops_end);
+  FML_DCHECK(it.data == it.data_end);
+  FML_DCHECK(it.refs == it.refs_end);
+  FML_DCHECK(canvas->getSaveCount() == entrySaveCount);
 }
 
 #define CANVAS_OP_DEFINE_OP(name)                                        \
@@ -240,7 +240,7 @@ CANVAS_OP_DEFINE_OP(clearColorFilter) {
   context.paint.setColorFilter(makeColorFilter(context));
 }
 CANVAS_OP_DEFINE_OP(setColorFilter) {
-  context.colorFilter = it.GetColorFilter();
+  context.colorFilter = it.GetColorFilterRef();
   context.paint.setColorFilter(makeColorFilter(context));
 }
 
@@ -280,7 +280,7 @@ CANVAS_OP_DEFINE_OP(clearShader) {
   context.paint.setShader(nullptr);
 }
 CANVAS_OP_DEFINE_OP(setShader) {
-  context.paint.setShader(it.GetShader());
+  context.paint.setShader(it.GetShaderRef());
 }
 
 #define CANVAS_MASK_DEFINE_OP(type)                                    \
@@ -301,7 +301,7 @@ CANVAS_OP_DEFINE_OP(clearImageFilter) {
   context.paint.setImageFilter(nullptr);
 }
 CANVAS_OP_DEFINE_OP(setImageFilter) {
-  context.paint.setImageFilter(it.GetImageFilter());
+  context.paint.setImageFilter(it.GetImageFilterRef());
 }
 
 const SkSamplingOptions DisplayListInterpreter::NearestSampling =
@@ -457,13 +457,13 @@ CANVAS_OP_DEFINE_OP(drawVertices) {
 }
 
 CANVAS_OP_DEFINE_OP(drawImage) {
-  sk_sp<SkImage> image = it.GetImage();
+  const SkImage* image = it.GetImage();
   SkPoint point = it.GetPoint();
   context.canvas->drawImage(image, point.fX, point.fY, context.sampling,
                             &context.paint);
 }
 CANVAS_OP_DEFINE_OP(drawImageRect) {
-  sk_sp<SkImage> image = it.GetImage();
+  const SkImage* image = it.GetImage();
   SkRect src = it.GetRect();
   SkRect dst = it.GetRect();
   context.canvas->drawImageRect(image, src, dst, context.sampling,
@@ -471,16 +471,15 @@ CANVAS_OP_DEFINE_OP(drawImageRect) {
                                 SkCanvas::kFast_SrcRectConstraint);
 }
 CANVAS_OP_DEFINE_OP(drawImageNine) {
-  sk_sp<SkImage> image = it.GetImage();
+  const SkImage* image = it.GetImage();
   SkRect center = it.GetRect();
   SkRect dst = it.GetRect();
-  context.canvas->drawImageNine(image.get(), center.round(), dst,
-                                context.filterMode);
+  context.canvas->drawImageNine(image, center.round(), dst, context.filterMode);
 }
 
 #define CANVAS_OP_DEFINE_ATLAS(op_type, has_colors, has_rect)           \
   CANVAS_OP_DEFINE_OP(op_type) {                                        \
-    sk_sp<SkImage> image = it.GetImage();                               \
+    const SkImage* image = it.GetImage();                               \
     SkBlendMode blendMode = it.GetBlendMode();                          \
     SkScalar* rst_ptr;                                                  \
     int nrstscalars = it.GetFloatList(&rst_ptr);                        \
@@ -504,7 +503,7 @@ CANVAS_OP_DEFINE_OP(drawImageNine) {
       return;                                                           \
     }                                                                   \
     context.canvas->drawAtlas(                                          \
-        image.get(), reinterpret_cast<const SkRSXform*>(rst_ptr),       \
+        image, reinterpret_cast<const SkRSXform*>(rst_ptr),             \
         reinterpret_cast<const SkRect*>(rect_ptr),                      \
         reinterpret_cast<const SkColor*>(clr_ptr), numrects, blendMode, \
         context.sampling, pCullRect, &context.paint);                   \

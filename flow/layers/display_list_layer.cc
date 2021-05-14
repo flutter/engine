@@ -29,6 +29,7 @@ DisplayListLayer::DisplayListLayer(
 
 #ifdef FLUTTER_ENABLE_DIFF_CONTEXT
 
+// TODO(flar) Implement display list comparisons and ::IsReplacing method
 void DisplayListLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
   auto* prev = static_cast<const DisplayListLayer*>(old_layer);
@@ -47,64 +48,6 @@ void DisplayListLayer::Diff(DiffContext* context, const Layer* old_layer) {
   context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
 }
 
-// bool DisplayListLayer::Compare(DiffContext::Statistics& statistics,
-//                            const PictureLayer* l1,
-//                            const PictureLayer* l2) {
-//   const auto& pic1 = l1->picture_.get();
-//   const auto& pic2 = l2->picture_.get();
-//   if (pic1.get() == pic2.get()) {
-//     statistics.AddSameInstancePicture();
-//     return true;
-//   }
-//   auto op_cnt_1 = pic1->approximateOpCount();
-//   auto op_cnt_2 = pic2->approximateOpCount();
-//   if (op_cnt_1 != op_cnt_2 || pic1->cullRect() != pic2->cullRect()) {
-//     statistics.AddNewPicture();
-//     return false;
-//   }
-
-//   if (op_cnt_1 > 10) {
-//     statistics.AddPictureTooComplexToCompare();
-//     return false;
-//   }
-
-//   statistics.AddDeepComparePicture();
-
-//   // TODO(knopp) we don't actually need the data; this could be done without
-//   // allocations by implementing stream that calculates SHA hash and
-//   // comparing those hashes
-//   auto d1 = l1->SerializedPicture();
-//   auto d2 = l2->SerializedPicture();
-//   auto res = d1->equals(d2.get());
-//   if (res) {
-//     statistics.AddDifferentInstanceButEqualPicture();
-//   } else {
-//     statistics.AddNewPicture();
-//   }
-//   return res;
-// }
-
-// sk_sp<SkData> PictureLayer::SerializedPicture() const {
-//   if (!cached_serialized_picture_) {
-//     SkSerialProcs procs = {
-//         nullptr,
-//         nullptr,
-//         [](SkImage* i, void* ctx) {
-//           auto id = i->uniqueID();
-//           return SkData::MakeWithCopy(&id, sizeof(id));
-//         },
-//         nullptr,
-//         [](SkTypeface* tf, void* ctx) {
-//           auto id = tf->uniqueID();
-//           return SkData::MakeWithCopy(&id, sizeof(id));
-//         },
-//         nullptr,
-//     };
-//     cached_serialized_picture_ = picture_.get()->serialize(&procs);
-//   }
-//   return cached_serialized_picture_;
-// }
-
 #endif  // FLUTTER_ENABLE_DIFF_CONTEXT
 
 void DisplayListLayer::Preroll(PrerollContext* context,
@@ -115,45 +58,14 @@ void DisplayListLayer::Preroll(PrerollContext* context,
   CheckForChildLayerBelow(context);
 #endif
 
-  //   if (auto* cache = context->raster_cache) {
-  //     TRACE_EVENT0("flutter", "DisplayListLayer::RasterCache (Preroll)");
+  // TODO(flar): implement DisplayList raster caching
 
-  //     SkMatrix ctm = matrix;
-  //     ctm.preTranslate(offset_.x(), offset_.y());
-  // #ifndef SUPPORT_FRACTIONAL_TRANSLATION
-  //     ctm = RasterCache::GetIntegralTransCTM(ctm);
-  // #endif
-  //     cache->Prepare(context->gr_context, sk_picture, ctm,
-  //                    context->dst_color_space, is_complex_, will_change_);
-  //   }
-
-  // FML_LOG(ERROR) << "display list cull rect is ["
-  //   << cull_rect_.left() << ", "
-  //   << cull_rect_.top() << ", "
-  //   << cull_rect_.right() << ", "
-  //   << cull_rect_.bottom() << "]";
-  // FML_LOG(ERROR) << "display list draw rect is ["
-  //   << draw_rect_.left() << ", "
-  //   << draw_rect_.top() << ", "
-  //   << draw_rect_.right() << ", "
-  //   << draw_rect_.bottom() << "]";
   SkRect bounds = draw_rect_;
   if (true || bounds.intersect(cull_rect_)) {
     bounds.offset(offset_.x(), offset_.y());
   } else {
     bounds.setEmpty();
   }
-  // FML_LOG(ERROR) << "display list paint bounds is ["
-  //   << bounds.left() << ", "
-  //   << bounds.top() << ", "
-  //   << bounds.right() << ", "
-  //   << bounds.bottom() << "] "
-  //   << ops_vector_.size() << " ops";
-  // if (bounds.isEmpty()) {
-  //   FML_LOG(ERROR) << "Contents of empty display list:";
-  //   DisplayListInterpreter interpreter(ops_vector_, data_vector_);
-  //   interpreter.Describe();
-  // }
   set_paint_bounds(bounds);
 }
 
@@ -168,18 +80,8 @@ void DisplayListLayer::Paint(PaintContext& context) const {
       context.leaf_nodes_canvas->getTotalMatrix()));
 #endif
 
-  //   if (context.raster_cache &&
-  //       context.raster_cache->Draw(*picture(), *context.leaf_nodes_canvas)) {
-  //     TRACE_EVENT_INSTANT0("flutter", "raster cache hit");
-  //     return;
-  //   }
+  // TODO(flar): implement DisplayList raster caching
 
-  // FML_LOG(ERROR) << "painting ["
-  //   << paint_bounds().left() << ", "
-  //   << paint_bounds().top() << ", "
-  //   << paint_bounds().right() << ", "
-  //   << paint_bounds().bottom() << "] "
-  //   << ops_vector_.size() << " ops";
   DisplayListInterpreter interpreter(ops_vector_, data_vector_, ref_vector_);
   interpreter.Rasterize(context.leaf_nodes_canvas);
 

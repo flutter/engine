@@ -5236,7 +5236,7 @@ class _MatrixTransform {
     return x * myx + y * myy + myt;
   }
 
-  void mul(double mxx, double mxy, double mxt, double myx, double myy, double myt) {
+  void multiply(double mxx, double mxy, double mxt, double myx, double myy, double myt) {
     final double mxxNew = this.mxx * mxx + this.mxy * myx;
     final double mxyNew = this.mxx * mxy + this.mxy * myy;
     final double mxtNew = this.mxx * mxt + this.mxy * myt + this.mxt;
@@ -5252,23 +5252,23 @@ class _MatrixTransform {
   }
 
   void translate(double tx, double ty) {
-    mul(1.0, 0.0, tx,
-        0.0, 1.0, ty);
+    multiply(1.0, 0.0, tx,
+             0.0, 1.0, ty);
   }
 
   void scale(double sx, double sy) {
-    mul(sx, 0.0, 0.0,
-        0.0, sy, 0.0);
+    multiply(sx, 0.0, 0.0,
+             0.0, sy, 0.0);
   }
 
   void rotate(double radians) {
-    mul(math.cos(radians), -math.sin(radians), 0.0,
-        math.sin(radians), math.cos(radians), 0.0);
+    multiply(math.cos(radians), -math.sin(radians), 0.0,
+             math.sin(radians), math.cos(radians), 0.0);
   }
 
   void skew(double sx, double sy) {
-    mul(1.0, sx, 0.0,
-        sy, 1.0, 0.0);
+    multiply(1.0, sx, 0.0,
+             sy, 1.0, 0.0);
   }
 }
 
@@ -5319,10 +5319,10 @@ class _DisplayListCanvas implements Canvas {
       : _recorder = recorder,
         _cullRect = cullRect ?? Rect.largest,
         _accumulator = _BoundsAccumulator(),
-        _ops = _emptyOps, _numOps = 0,
-        _data = _emptyData, _numData = 0,
+        _ops = _emptyOps, _opCount = 0,
+        _data = _emptyData, _dataCount = 0,
         _dataInts = _emptyInts, _dataFloats = _emptyFloats,
-        _objData = <Object>[],
+        _nativeRefs = <NativeFieldWrapperClass2>[],
         _ctm = _MatrixTransform._identity(),
         _ctmStack = <_MatrixTransform>[] {
     recorder._canvas = this;
@@ -5334,18 +5334,18 @@ class _DisplayListCanvas implements Canvas {
   static ByteData _cachedData = _emptyData;
   static Uint32List _emptyInts = _emptyData.buffer.asUint32List();
   static Float32List _emptyFloats = _emptyData.buffer.asFloat32List();
-  static List<Object> _deadObjects = List<Object>.empty(growable: false);
+  static List<NativeFieldWrapperClass2> _deadObjects = List<NativeFieldWrapperClass2>.empty(growable: false);
 
   _DisplayListPictureRecorder? _recorder;
   Rect _cullRect;
   _BoundsAccumulator _accumulator;
-  int _numOps;
+  int _opCount;
   Uint8List _ops;
-  int _numData;
+  int _dataCount;
   ByteData _data;
   late Uint32List _dataInts;
   late Float32List _dataFloats;
-  List<Object> _objData;
+  List<NativeFieldWrapperClass2> _nativeRefs;
   _MatrixTransform _ctm;
   List<_MatrixTransform> _ctmStack;
 
@@ -5361,8 +5361,8 @@ class _DisplayListCanvas implements Canvas {
     _data = _emptyData;
     _dataInts = _emptyInts;
     _dataFloats = _emptyFloats;
-    _numOps = _numData = 0;
-    _objData = _deadObjects;
+    _opCount = _dataCount = 0;
+    _nativeRefs = _deadObjects;
   }
 
   Rect get _drawBounds => _accumulator.bounds;
@@ -5389,7 +5389,7 @@ class _DisplayListCanvas implements Canvas {
   }
 
   void _addOp(_CanvasOp op, int dataNeeded) {
-    if (_numOps >= _ops.length) {
+    if (_opCount >= _ops.length) {
       if (_recorder == null)
         throw StateError('Attempting to render to disposed Canvas');
       final int newSize = _newSize(_ops.length, _minOpsSize, _maxOpsGrow, 1);
@@ -5400,10 +5400,10 @@ class _DisplayListCanvas implements Canvas {
       } else {
         newOps = Uint8List(_newSize(_ops.length, _minOpsSize, _maxOpsGrow, 1));
       }
-      newOps.setRange(0, _numOps, _ops);
+      newOps.setRange(0, _opCount, _ops);
       _ops = newOps;
     }
-    if (_numData + dataNeeded >= _dataInts.length) {
+    if (_dataCount + dataNeeded >= _dataInts.length) {
       final int newSize = 4 * _newSize(_dataInts.length, _minDataSize, _maxDataGrow, dataNeeded);
       final ByteData newData;
       if (newSize <= _cachedData.lengthInBytes / 4) {
@@ -5413,127 +5413,133 @@ class _DisplayListCanvas implements Canvas {
         newData = ByteData(4 * _newSize(_dataInts.length, _minDataSize, _maxDataGrow, dataNeeded));
       }
       final Uint32List newInts = newData.buffer.asUint32List();
-      newInts.setRange(0, _numData, _dataInts);
+      newInts.setRange(0, _dataCount, _dataInts);
       _data = newData;
       _dataInts = newInts;
       _dataFloats = newData.buffer.asFloat32List();
     }
-    assert(_numOps < _ops.length);
-    _ops[_numOps++] = op.index;
+    assert(_opCount < _ops.length);
+    _ops[_opCount++] = op.index;
   }
 
   void _addInt(int value) {
-    assert(_numData < _dataInts.length);
-    _dataInts[_numData++] = value;
+    assert(_dataCount < _dataInts.length);
+    _dataInts[_dataCount++] = value;
   }
 
   void _addScalar(double value) {
-    assert(_numData < _dataFloats.length);
-    _dataFloats[_numData++] = value;
+    assert(_dataCount < _dataFloats.length);
+    _dataFloats[_dataCount++] = value;
   }
 
   void _addScalar2(double v1, double v2) {
-    assert(_numData + 2 <= _dataFloats.length);
-    _dataFloats[_numData++] = v1;
-    _dataFloats[_numData++] = v2;
+    assert(_dataCount + 2 <= _dataFloats.length);
+    _dataFloats[_dataCount++] = v1;
+    _dataFloats[_dataCount++] = v2;
   }
 
   void _addScalar3(double v1, double v2, double v3) {
-    assert(_numData + 3 <= _dataFloats.length);
-    _dataFloats[_numData++] = v1;
-    _dataFloats[_numData++] = v2;
-    _dataFloats[_numData++] = v3;
+    assert(_dataCount + 3 <= _dataFloats.length);
+    _dataFloats[_dataCount++] = v1;
+    _dataFloats[_dataCount++] = v2;
+    _dataFloats[_dataCount++] = v3;
   }
 
   static const int _nOffsetData = 2;
   void _addOffset(Offset offset) {
-    assert(_numData + _nOffsetData <= _dataFloats.length);
-    _dataFloats[_numData++] = offset.dx;
-    _dataFloats[_numData++] = offset.dy;
+    assert(_dataCount + _nOffsetData <= _dataFloats.length);
+    _dataFloats[_dataCount++] = offset.dx;
+    _dataFloats[_dataCount++] = offset.dy;
   }
 
   static const int _nRectData = 4;
   void _addRect(Rect r) {
-    assert(_numData + _nRectData <= _dataFloats.length);
-    _dataFloats[_numData++] = r.left;
-    _dataFloats[_numData++] = r.top;
-    _dataFloats[_numData++] = r.right;
-    _dataFloats[_numData++] = r.bottom;
+    assert(_dataCount + _nRectData <= _dataFloats.length);
+    _dataFloats[_dataCount++] = r.left;
+    _dataFloats[_dataCount++] = r.top;
+    _dataFloats[_dataCount++] = r.right;
+    _dataFloats[_dataCount++] = r.bottom;
   }
 
   static const int _nRoundRectData = 12;
   void _addRRect(RRect rrect) {
-    assert(_numData + _nRoundRectData <= _dataFloats.length);
-    _dataFloats[_numData++] = rrect.left;
-    _dataFloats[_numData++] = rrect.top;
-    _dataFloats[_numData++] = rrect.right;
-    _dataFloats[_numData++] = rrect.bottom;
+    assert(_dataCount + _nRoundRectData <= _dataFloats.length);
+    _dataFloats[_dataCount++] = rrect.left;
+    _dataFloats[_dataCount++] = rrect.top;
+    _dataFloats[_dataCount++] = rrect.right;
+    _dataFloats[_dataCount++] = rrect.bottom;
     // SkRRect Radii order is UL, UR, LR, LL as per SkRRect::Corner indices
-    _dataFloats[_numData++] = rrect.tlRadiusX;
-    _dataFloats[_numData++] = rrect.tlRadiusY;
-    _dataFloats[_numData++] = rrect.trRadiusX;
-    _dataFloats[_numData++] = rrect.trRadiusY;
-    _dataFloats[_numData++] = rrect.brRadiusX;
-    _dataFloats[_numData++] = rrect.brRadiusY;
-    _dataFloats[_numData++] = rrect.blRadiusX;
-    _dataFloats[_numData++] = rrect.blRadiusY;
+    _dataFloats[_dataCount++] = rrect.tlRadiusX;
+    _dataFloats[_dataCount++] = rrect.tlRadiusY;
+    _dataFloats[_dataCount++] = rrect.trRadiusX;
+    _dataFloats[_dataCount++] = rrect.trRadiusY;
+    _dataFloats[_dataCount++] = rrect.brRadiusX;
+    _dataFloats[_dataCount++] = rrect.brRadiusY;
+    _dataFloats[_dataCount++] = rrect.blRadiusX;
+    _dataFloats[_dataCount++] = rrect.blRadiusY;
   }
 
   void _addInt32List(Int32List data) {
     final int len = data.length;
-    assert(_numData + len + 1 <= _dataInts.length);
-    _dataInts[_numData++] = len;
-    _dataInts.setRange(_numData, _numData + len, data);
-    _numData += len;
+    assert(_dataCount + len + 1 <= _dataInts.length);
+    _dataInts[_dataCount++] = len;
+    _dataInts.setRange(_dataCount, _dataCount + len, data);
+    _dataCount += len;
   }
 
   void _addFloat32List(Float32List data) {
     final int len = data.length;
-    assert(_numData + len + 1 <= _dataFloats.length);
-    _dataInts[_numData++] = len;
-    _dataFloats.setRange(_numData, _numData + len, data);
-    _numData += len;
+    assert(_dataCount + len + 1 <= _dataFloats.length);
+    _dataInts[_dataCount++] = len;
+    _dataFloats.setRange(_dataCount, _dataCount + len, data);
+    _dataCount += len;
   }
 
   void _addImageData(Image image) {
-    _objData.add(image._image);
+    _nativeRefs.add(image._image);
   }
 
   void _addPathData(Path path) {
-    _objData.add(path);
+    _nativeRefs.add(path);
   }
 
   void _addVertices(Vertices vertices) {
-    _objData.add(vertices);
+    _nativeRefs.add(vertices);
   }
 
   void _addSkPicture(_SkiaPicture picture) {
-    _objData.add(picture);
+    _nativeRefs.add(picture);
   }
 
   void _addPicture(_DisplayListPicture picture) {
-    _objData.add(picture);
+    _nativeRefs.add(picture);
   }
 
   void _addShader(Shader shader) {
-    _objData.add(shader);
+    _nativeRefs.add(shader);
   }
 
   void _addColorFilter(_ColorFilter filter) {
-    _objData.add(filter);
+    _nativeRefs.add(filter);
   }
 
   void _addImageFilter(_ImageFilter filter) {
-    _objData.add(filter);
+    _nativeRefs.add(filter);
   }
 
   void _addPointToBounds(double ux, double uy) {
     _accumulator.accumulate(_ctm.transformX(ux, uy), _ctm.transformY(ux, uy));
   }
 
+  void _addStrokedPointToBounds(double ux, double uy) {
+    final double pad = _currentStrokeWidth * 0.5;
+    _addPointToBounds(ux - pad, uy - pad);
+    _addPointToBounds(ux + pad, uy + pad);
+  }
+
   void _addLTRBToBounds(double l, double t, double r, double b, [ bool? isStroke ]) {
-    isStroke ??= _curPaintStyle == PaintingStyle.stroke;
-    final double pad = isStroke ? _curStrokeWidth : 0;
+    isStroke ??= _currentPaintStyle == PaintingStyle.stroke;
+    final double pad = isStroke ? _currentStrokeWidth * 0.5 : 0;
     _addPointToBounds(l - pad, t - pad);
     _addPointToBounds(r + pad, b + pad);
     if (_ctm.isNotRectilinear) {
@@ -5616,8 +5622,8 @@ class _DisplayListCanvas implements Canvas {
       _addScalar3(matrix4[1], matrix4[5], matrix4[13]);
       _addScalar3(matrix4[3], matrix4[7], matrix4[15]);
     }
-    _ctm.mul(matrix4[0], matrix4[4], matrix4[12],
-             matrix4[1], matrix4[5], matrix4[13]);
+    _ctm.multiply(matrix4[0], matrix4[4], matrix4[12],
+                  matrix4[1], matrix4[5], matrix4[13]);
   }
 
   @override
@@ -5649,23 +5655,32 @@ class _DisplayListCanvas implements Canvas {
     _addPathData(path);
   }
 
-  // These fields track the SkPaint defaults in SkPaint::SkPaint()
-  Color _curColor = const Color(0xFF000000);
-  double _curStrokeWidth = 0.0;
-  double _curMiterLimit = 4.0;
-  bool _curAA = false;
-  bool _curDither = false;
-  bool _curInvertColors = false;
-  StrokeCap _curStrokeCap = StrokeCap.butt;
-  StrokeJoin _curStrokeJoin = StrokeJoin.miter;
-  PaintingStyle _curPaintStyle = PaintingStyle.fill;
-  FilterQuality _curFilterQuality = FilterQuality.none;
-  BlendMode _curBlendMode = BlendMode.srcOver;
-  Shader? _curShader;
-  ColorFilter? _curColorFilter;
-  MaskFilter? _curMaskFilter;
-  ImageFilter? _curImageFilter;
+  // These values were originally derived from the SkPaint constructor defaults
+  // but now are their own spec for backwards compatibility.
+  //
+  // Rather than pass down a Paint object with each call, or repeating all relevant
+  // Paint attributes with each call, we instead maintain a concept of "the most
+  // recent attributes synchronized through the byte stream (referred to here as
+  // the "current" value of the attribute). If any operation depends on an attribute
+  // value that is not the same as the most recent value that was synchronized
+  // through the byte stream, we send along the new value and record it in these fields.
+  Color _currentColor = const Color(0xFF000000);
+  double _currentStrokeWidth = 0.0;
+  double _currentMiterLimit = 4.0;
+  bool _currentAA = false;
+  bool _currentDither = false;
+  bool _currentInvertColors = false;
+  StrokeCap _currentStrokeCap = StrokeCap.butt;
+  StrokeJoin _currentStrokeJoin = StrokeJoin.miter;
+  PaintingStyle _currentPaintStyle = PaintingStyle.fill;
+  FilterQuality _currentFilterQuality = FilterQuality.none;
+  BlendMode _currentBlendMode = BlendMode.srcOver;
+  Shader? _currentShader;
+  ColorFilter? _currentColorFilter;
+  MaskFilter? _currentMaskFilter;
+  ImageFilter? _currentImageFilter;
 
+  // Mask bits for the various attributes that might be needed for a given operation.
   static const int _aaNeeded            = 1 << 0;
   static const int _colorNeeded         = 1 << 1;
   static const int _blendNeeded         = 1 << 2;
@@ -5679,6 +5694,10 @@ class _DisplayListCanvas implements Canvas {
   static const int _maskFilterNeeded    = 1 << 10;
   static const int _ditherNeeded        = 1 << 11;
 
+  // Combinations of the above mask bits that are common to typical "draw" calls.
+  // Note that the _strokeStyle is handled conditionally during synchronization
+  // if the _paintStyle attribute value is synchronized. It can also be manually
+  // specified for operations that will be always stroking, like [drawLine].
   static const int _paintMask = _aaNeeded | _colorNeeded | _blendNeeded | _invertColorsNeeded
                               | _colorFilterNeeded | _shaderNeeded | _ditherNeeded | _imageFilterNeeded;
   static const int _drawMask = _paintMask | _paintStyleNeeded | _maskFilterNeeded;
@@ -5713,62 +5732,62 @@ class _DisplayListCanvas implements Canvas {
   ];
 
   void _updatePaintData(Paint paint, int dataNeeded) {
-    if ((dataNeeded & _aaNeeded) != 0 && _curAA != paint.isAntiAlias) {
-      _curAA = paint.isAntiAlias;
-      _addOp(_curAA ? _CanvasOp.setAA : _CanvasOp.clearAA, 0);
+    if ((dataNeeded & _aaNeeded) != 0 && _currentAA != paint.isAntiAlias) {
+      _currentAA = paint.isAntiAlias;
+      _addOp(_currentAA ? _CanvasOp.setAA : _CanvasOp.clearAA, 0);
     }
-    if ((dataNeeded & _ditherNeeded) != 0 && _curDither != paint._dither) {
-      _curDither = paint._dither;
-      _addOp(_curDither ? _CanvasOp.setDither : _CanvasOp.clearDither, 0);
+    if ((dataNeeded & _ditherNeeded) != 0 && _currentDither != paint._dither) {
+      _currentDither = paint._dither;
+      _addOp(_currentDither ? _CanvasOp.setDither : _CanvasOp.clearDither, 0);
     }
-    if ((dataNeeded & _colorNeeded) != 0 && _curColor != paint.color) {
-      _curColor = paint.color;
+    if ((dataNeeded & _colorNeeded) != 0 && _currentColor != paint.color) {
+      _currentColor = paint.color;
       _addOp(_CanvasOp.setColor, 1);
-      _addInt(_curColor.value);
+      _addInt(_currentColor.value);
     }
-    if ((dataNeeded & _blendNeeded) != 0 && _curBlendMode != paint.blendMode) {
-      _curBlendMode = paint.blendMode;
+    if ((dataNeeded & _blendNeeded) != 0 && _currentBlendMode != paint.blendMode) {
+      _currentBlendMode = paint.blendMode;
       _addOp(_CanvasOp.setBlendMode, 1);
-      _addInt(_curBlendMode.index);
+      _addInt(_currentBlendMode.index);
     }
-    if ((dataNeeded & _invertColorsNeeded) != 0 && _curInvertColors != paint.invertColors) {
-      _curInvertColors = paint.invertColors;
-      _addOp(_curInvertColors ? _CanvasOp.setInvertColors : _CanvasOp.clearInvertColors, 0);
+    if ((dataNeeded & _invertColorsNeeded) != 0 && _currentInvertColors != paint.invertColors) {
+      _currentInvertColors = paint.invertColors;
+      _addOp(_currentInvertColors ? _CanvasOp.setInvertColors : _CanvasOp.clearInvertColors, 0);
     }
     if ((dataNeeded & _paintStyleNeeded) != 0) {
-      if (_curPaintStyle != paint.style) {
-        _curPaintStyle = paint.style;
-        _addOp(_curPaintStyle == PaintingStyle.fill ? _CanvasOp.setFillStyle : _CanvasOp.setStrokeStyle, 0);
+      if (_currentPaintStyle != paint.style) {
+        _currentPaintStyle = paint.style;
+        _addOp(_currentPaintStyle == PaintingStyle.fill ? _CanvasOp.setFillStyle : _CanvasOp.setStrokeStyle, 0);
       }
-      if (_curPaintStyle == PaintingStyle.stroke) {
+      if (_currentPaintStyle == PaintingStyle.stroke) {
         dataNeeded |= _strokeStyleNeeded;
       }
     }
     if ((dataNeeded & _strokeStyleNeeded) != 0) {
-      if (_curStrokeWidth != paint.strokeWidth) {
-        _curStrokeWidth = paint.strokeWidth;
+      if (_currentStrokeWidth != paint.strokeWidth) {
+        _currentStrokeWidth = paint.strokeWidth;
         _addOp(_CanvasOp.setStrokeWidth, 1);
-        _addScalar(_curStrokeWidth);
+        _addScalar(_currentStrokeWidth);
       }
-      if (_curStrokeCap != paint.strokeCap) {
-        _curStrokeCap = paint.strokeCap;
-        _addOp(_strokeCapOps[_curStrokeCap.index], 0);
+      if (_currentStrokeCap != paint.strokeCap) {
+        _currentStrokeCap = paint.strokeCap;
+        _addOp(_strokeCapOps[_currentStrokeCap.index], 0);
       }
-      if (_curStrokeJoin != paint.strokeJoin) {
-        _curStrokeJoin = paint.strokeJoin;
-        _addOp(_strokeJoinOps[_curStrokeJoin.index], 0);
+      if (_currentStrokeJoin != paint.strokeJoin) {
+        _currentStrokeJoin = paint.strokeJoin;
+        _addOp(_strokeJoinOps[_currentStrokeJoin.index], 0);
       }
-      if (_curMiterLimit != paint.strokeMiterLimit) {
-        _curMiterLimit = paint.strokeMiterLimit;
+      if (_currentMiterLimit != paint.strokeMiterLimit) {
+        _currentMiterLimit = paint.strokeMiterLimit;
         _addOp(_CanvasOp.setMiterLimit, 1);
-        _addScalar(_curMiterLimit);
+        _addScalar(_currentMiterLimit);
       }
     }
-    if ((dataNeeded & _filterQualityNeeded) != 0 && _curFilterQuality != paint.filterQuality) {
-      _curFilterQuality = paint.filterQuality;
-      _addOp(_filterQualityOps[_curFilterQuality.index], 0);
+    if ((dataNeeded & _filterQualityNeeded) != 0 && _currentFilterQuality != paint.filterQuality) {
+      _currentFilterQuality = paint.filterQuality;
+      _addOp(_filterQualityOps[_currentFilterQuality.index], 0);
     }
-    if ((dataNeeded & _shaderNeeded) != 0 && _curShader != paint.shader) {
+    if ((dataNeeded & _shaderNeeded) != 0 && _currentShader != paint.shader) {
       final Shader? shader = paint.shader;
       if (shader == null) {
         _addOp(_CanvasOp.clearShader, 0);
@@ -5776,9 +5795,9 @@ class _DisplayListCanvas implements Canvas {
         _addOp(_CanvasOp.setShader, 0);
         _addShader(shader);
       }
-      _curShader = paint.shader;
+      _currentShader = paint.shader;
     }
-    if ((dataNeeded & _colorFilterNeeded) != 0 && _curColorFilter != paint.colorFilter) {
+    if ((dataNeeded & _colorFilterNeeded) != 0 && _currentColorFilter != paint.colorFilter) {
       final _ColorFilter? filter = paint.colorFilter?._toNativeColorFilter();
       if (filter == null) {
         _addOp(_CanvasOp.clearColorFilter, 0);
@@ -5786,9 +5805,9 @@ class _DisplayListCanvas implements Canvas {
         _addOp(_CanvasOp.setColorFilter, 0);
         _addColorFilter(filter);
       }
-      _curColorFilter = paint.colorFilter;
+      _currentColorFilter = paint.colorFilter;
     }
-    if ((dataNeeded & _imageFilterNeeded) != 0 && _curImageFilter != paint.imageFilter) {
+    if ((dataNeeded & _imageFilterNeeded) != 0 && _currentImageFilter != paint.imageFilter) {
       final _ImageFilter? filter = paint.imageFilter?._toNativeImageFilter();
       if (filter == null) {
         _addOp(_CanvasOp.clearImageFilter, 0);
@@ -5796,9 +5815,9 @@ class _DisplayListCanvas implements Canvas {
         _addOp(_CanvasOp.setImageFilter, 0);
         _addImageFilter(filter);
       }
-      _curImageFilter = paint.imageFilter;
+      _currentImageFilter = paint.imageFilter;
     }
-    if ((dataNeeded & _maskFilterNeeded) != 0 && _curMaskFilter != paint.maskFilter) {
+    if ((dataNeeded & _maskFilterNeeded) != 0 && _currentMaskFilter != paint.maskFilter) {
       final MaskFilter? filter = paint.maskFilter;
       if (filter == null) {
         _addOp(_CanvasOp.clearMaskFilter, 0);
@@ -5806,7 +5825,7 @@ class _DisplayListCanvas implements Canvas {
         _addOp(_maskFilterOps[filter._style.index], 1);
         _addScalar(filter._sigma);
       }
-      _curMaskFilter = paint.maskFilter;
+      _currentMaskFilter = paint.maskFilter;
     }
   }
 
@@ -5829,7 +5848,8 @@ class _DisplayListCanvas implements Canvas {
     _addOp(_CanvasOp.drawLine, 2 * _nOffsetData);
     _addOffset(p1);
     _addOffset(p2);
-    _addBounds(Rect.fromPoints(p1, p2), true);
+    _addStrokedPointToBounds(p1.dx, p1.dy);
+    _addStrokedPointToBounds(p2.dx, p2.dy);
   }
 
   @override
@@ -5902,11 +5922,11 @@ class _DisplayListCanvas implements Canvas {
   void drawPoints(PointMode pointMode, List<Offset> points, Paint paint) {
     _updatePaintData(paint, _strokeMask);
     _addOp(_pointOps[pointMode.index], points.length * 2 + 1);
-    _dataInts[_numData++] = points.length * 2;
+    _dataInts[_dataCount++] = points.length * 2;
     final _BoundsAccumulator ptBounds = _BoundsAccumulator();
     for (final Offset pt in points) {
-      _dataFloats[_numData++] = pt.dx;
-      _dataFloats[_numData++] = pt.dy;
+      _dataFloats[_dataCount++] = pt.dx;
+      _dataFloats[_dataCount++] = pt.dy;
       ptBounds.accumulate(pt.dx, pt.dy);
     }
     _addBounds(ptBounds.bounds, true);
@@ -6013,12 +6033,12 @@ class _DisplayListCanvas implements Canvas {
     _addImageData(atlas);
     _addInt((blendMode ?? BlendMode.src).index);
 
-    _dataInts[_numData++] = rectCount * 4;
-    int rstBase = _numData;
-    _numData += rectCount * 4;
-    _dataInts[_numData++] = rectCount * 4;
-    int rectBase = _numData;
-    _numData += rectCount * 4;
+    _dataInts[_dataCount++] = rectCount * 4;
+    int rstBase = _dataCount;
+    _dataCount += rectCount * 4;
+    _dataInts[_dataCount++] = rectCount * 4;
+    int rectBase = _dataCount;
+    _dataCount += rectCount * 4;
     final _BoundsAccumulator rstBounds = _BoundsAccumulator();
     for (int i = 0; i < rectCount; i++) {
       final RSTransform rstTransform = transforms[i];
@@ -6035,9 +6055,9 @@ class _DisplayListCanvas implements Canvas {
       rstBounds.accumulateBounds(rect, rstTransform);
     }
     if (colors != null && colors.isNotEmpty) {
-      _dataInts[_numData++] = rectCount;
+      _dataInts[_dataCount++] = rectCount;
       for (int i = 0; i < rectCount; i++) {
-        _dataInts[_numData++] = colors[i].value;
+        _dataInts[_dataCount++] = colors[i].value;
       }
     }
     if (cullRect != null)
@@ -6208,9 +6228,9 @@ class _DisplayListPictureRecorder implements PictureRecorder {
     final Picture picture = _DisplayListPicture._(
       canvas._cullRect,
       canvas._drawBounds,
-      canvas._ops, canvas._numOps,
-      canvas._data, canvas._numData,
-      canvas._objData,
+      canvas._ops, canvas._opCount,
+      canvas._data, canvas._dataCount,
+      canvas._nativeRefs,
     );
     canvas._dispose();
     return picture;

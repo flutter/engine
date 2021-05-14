@@ -209,7 +209,7 @@ class DisplayListRefHolder {
 
 class DisplayListInterpreter {
  public:
-  DisplayListInterpreter(DisplayListData data);
+  DisplayListInterpreter(const DisplayListData& data);
 
   DisplayListInterpreter(
       std::shared_ptr<std::vector<uint8_t>> ops,
@@ -218,9 +218,12 @@ class DisplayListInterpreter {
 
   void Rasterize(SkCanvas* canvas);
 
+#ifndef NDEBUG
   void Describe();
 
   static const std::vector<std::string> opNames;
+#endif
+
   static const std::vector<uint32_t> opArguments;
 
   static const SkSamplingOptions NearestSampling;
@@ -290,31 +293,32 @@ class DisplayListInterpreter {
       return rrect;
     }
 
-    uint32_t GetIntList(uint32_t** int_ptr) {
+    uint32_t GetIntList(uint32_t** uint32_list_ptr) {
       uint32_t len = GetUint32();
-      *int_ptr = (uint32_t*)&*data;
+      *uint32_list_ptr = reinterpret_cast<uint32_t*>(&*data);
       skipData(len);
       return len;
     }
 
-    uint32_t GetFloatList(SkScalar** flt_ptr) {
+    uint32_t GetFloatList(SkScalar** scalar_list_ptr) {
       uint32_t len = GetUint32();
-      *flt_ptr = &*data;
+      *scalar_list_ptr = reinterpret_cast<SkScalar*>(&*data);
       skipData(len);
       return len;
     }
 
-    const sk_sp<SkColorFilter> GetColorFilter() {
+    const sk_sp<SkColorFilter> GetColorFilterRef() {
       return (refs++)->colorFilter;
     }
-    const sk_sp<SkImageFilter> GetImageFilter() {
+    const sk_sp<SkImageFilter> GetImageFilterRef() {
       return (refs++)->imageFilter;
     }
-    const sk_sp<SkImage> GetImage() { return (refs++)->image; }
-    const sk_sp<SkVertices> GetVertices() { return (refs++)->vertices; }
-    const sk_sp<SkShader> GetShader() { return (refs++)->shader; }
-    const sk_sp<SkPicture> GetSkPicture() { return (refs++)->picture; }
-    const DisplayListData GetDisplayList() { return (refs++)->displayList; }
+    const sk_sp<SkShader> GetShaderRef() { return (refs++)->shader; }
+
+    const SkImage* GetImage() { return (refs++)->image.get(); }
+    const SkVertices* GetVertices() { return (refs++)->vertices.get(); }
+    const SkPicture* GetSkPicture() { return (refs++)->picture.get(); }
+    const DisplayListData& GetDisplayList() { return (refs++)->displayList; }
     void GetPath(SkPath& path) {
       SkData* data = (refs++)->pathData.get();
       path.readFromMemory(data->data(), data->size());
@@ -344,8 +348,10 @@ class DisplayListInterpreter {
 
   FOR_EACH_CANVAS_OP(CANVAS_OP_DECLARE_OP)
 
+#ifndef NDEBUG
   std::string DescribeNextOp(const Iterator& it);
   std::string DescribeOneOp(Iterator& it);
+#endif
 };
 
 }  // namespace flutter
