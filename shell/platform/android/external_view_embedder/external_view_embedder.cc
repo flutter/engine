@@ -168,12 +168,16 @@ void AndroidExternalViewEmbedder::SubmitFrame(
         params.sizePoints().height() * device_pixel_ratio_,
         params.mutatorsStack()  //
     );
-    const SkRect& overlay_rect = overlay_layers.at(view_id);
+    std::unordered_map<int64_t, SkRect>::const_iterator overlay =
+        overlay_layers.find(view_id);
+    if (overlay == overlay_layers.end()) {
+      continue;
+    }
     std::unique_ptr<SurfaceFrame> frame =
         CreateSurfaceIfNeeded(context,               //
                               view_id,               //
                               pictures.at(view_id),  //
-                              overlay_rect           //
+                              overlay->second        //
         );
     if (should_submit_current_frame) {
       frame->Submit();
