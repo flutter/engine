@@ -6,6 +6,7 @@
 
 #include <cstring>
 
+#include "flutter/shell/platform/linux/testing/mock_text_input_plugin.h"
 #include "gtest/gtest.h"
 
 #define FL_KEY_EVENT(target) reinterpret_cast<FlKeyEvent*>(target)
@@ -98,6 +99,15 @@ static void respond_true(FlKeyResponderAsyncCallback callback,
 static void respond_false(FlKeyResponderAsyncCallback callback,
                           gpointer user_data) {
   callback(false, user_data);
+}
+
+static gboolean filter_keypress_returns_true(FlTextInputPlugin* self, FlKeyEvent* event) {
+  return TRUE;
+}
+
+static gboolean filter_keypress_returns_false(FlTextInputPlugin* self,
+                                              FlKeyEvent* event) {
+  return FALSE;
 }
 
 static void fl_key_mock_responder_iface_init(FlKeyResponderInterface* iface);
@@ -425,6 +435,64 @@ TEST(FlKeyboardManagerTest, WithTwoAsyncDelegates) {
   g_ptr_array_clear(call_records);
 
   g_ptr_array_clear(redispatched_events());
+}
+
+TEST(FlKeyboardManagerTest, TextInputPluginReturnsFalse) {
+  GPtrArray* call_records = g_ptr_array_new_with_free_func(g_object_unref);
+
+  gboolean manager_handled = false;
+  // The text input plugin doesn't handle events.
+  g_autoptr(FlMockTextInputPlugin) text_input_plugin =
+      fl_mock_text_input_plugin_new(filter_keypress_returns_false);
+  g_autoptr(FlKeyboardManager) manager = fl_keyboard_manager_new(
+      FL_TEXT_INPUT_PLUGIN(text_input_plugin), store_redispatched_event);
+
+  // The responder never handles events.
+  FlKeyMockResponder* responder = fl_key_mock_responder_new(call_records, 1);
+  fl_keyboard_manager_add_responder(manager, FL_KEY_RESPONDER(responder));
+  responder->callback_handler = respond_false;
+
+  // Dispatch a key event.
+  manager_handled = fl_keyboard_manager_handle_event(
+      manager,
+      fl_key_event_new_by_mock(true, GDK_KEY_a, kKeyCodeKeyA, 0, false));
+  EXPECT_EQ(manager_handled, true);
+  // The event was redispatched because no one handles it.
+  EXPECT_EQ(redispatched_events()->len, 1u);
+
+  // Resolve redispatched event.
+  manager_handled = fl_keyboard_manager_handle_event(
+      manager, FL_KEY_EVENT(g_ptr_array_index(redispatched_events(), 0)));
+  EXPECT_EQ(manager_handled, false);
+
+  g_ptr_array_clear(redispatched_events());
+  EXPECT_TRUE(fl_keyboard_manager_is_state_clear(manager));
+}
+
+TEST(FlKeyboardManagerTest, TextInputPluginReturnsTrue) {
+  GPtrArray* call_records = g_ptr_array_new_with_free_func(g_object_unref);
+
+  gboolean manager_handled = false;
+  // The text input plugin handles events.
+  g_autoptr(FlMockTextInputPlugin) text_input_plugin =
+      fl_mock_text_input_plugin_new(filter_keypress_returns_true);
+  g_autoptr(FlKeyboardManager) manager = fl_keyboard_manager_new(
+      FL_TEXT_INPUT_PLUGIN(text_input_plugin), store_redispatched_event);
+
+  // The responder never handles events.
+  FlKeyMockResponder* responder = fl_key_mock_responder_new(call_records, 1);
+  fl_keyboard_manager_add_responder(manager, FL_KEY_RESPONDER(responder));
+  responder->callback_handler = respond_false;
+
+  // Dispatch a key event.
+  manager_handled = fl_keyboard_manager_handle_event(
+      manager,
+      fl_key_event_new_by_mock(true, GDK_KEY_a, kKeyCodeKeyA, 0, false));
+  EXPECT_EQ(manager_handled, true);
+  // The event was not redispatched because text input plugin handles it.
+  EXPECT_EQ(redispatched_events()->len, 0u);
+
+  EXPECT_TRUE(fl_keyboard_manager_is_state_clear(manager));
 }
 
 }  // namespace
