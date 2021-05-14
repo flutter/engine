@@ -868,9 +868,9 @@ TEST(FlKeyEmbedderResponderTest, IgnoreDuplicateDownEvent) {
   invoke_record_callback_and_verify(record, TRUE, &user_data);
   g_ptr_array_clear(g_call_records);
 
-  // Press KeyA again (with different logical key, not necessarily but for
-  // coverage).
-  g_expected_handled = true;
+  // Press KeyA again (with different logical key, which is not necessari but
+  // for coverage).
+  g_expected_handled = true;  // The ignored event is always handled.
   fl_key_responder_handle_event(
       responder,
       fl_key_event_new_by_mock(102, kPress, GDK_KEY_q, kKeyCodeKeyA, 0,
@@ -903,7 +903,7 @@ TEST(FlKeyEmbedderResponderTest, IgnoreAbruptUpEvent) {
   int user_data = 123;  // Arbitrary user data
 
   // Release KeyA before it was even pressed.
-  g_expected_handled = true;
+  g_expected_handled = true;  // The ignored event is always handled.
   fl_key_responder_handle_event(
       responder,
       fl_key_event_new_by_mock(103, kRelease, GDK_KEY_q, kKeyCodeKeyA, 0,
@@ -1461,7 +1461,8 @@ TEST(FlKeyEmbedderResponderTest, SynthesizationOccursOnIgnoredEvents) {
   // The NumLock is desynchronized by being enabled, and Control is pressed.
   guint state = GDK_MOD2_MASK | GDK_CONTROL_MASK;
 
-  // Send a KeyA up event, which will be ignored
+  // Send a KeyA up event, which will be ignored.
+  g_expected_handled = true;  // The ignored event is always handled.
   fl_key_responder_handle_event(
       responder,
       fl_key_event_new_by_mock(101, kRelease, GDK_KEY_a, kKeyCodeKeyA, state,
