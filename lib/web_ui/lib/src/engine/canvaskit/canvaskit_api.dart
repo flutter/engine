@@ -1683,6 +1683,7 @@ class SkTextStyleProperties {
   external set letterSpacing(double? value);
   external set wordSpacing(double? value);
   external set heightMultiplier(double? value);
+  external set halfLeading(bool? value);
   external set locale(String? value);
   external set fontFamilies(List<String>? value);
   external set fontStyle(SkFontStyle? value);
@@ -1697,6 +1698,7 @@ class SkStrutStyleProperties {
   external set fontStyle(SkFontStyle? value);
   external set fontSize(double? value);
   external set heightMultiplier(double? value);
+  external set halfLeading(bool? value);
   external set leading(double? value);
   external set strutEnabled(bool? value);
   external set forceStrutHeight(bool? value);

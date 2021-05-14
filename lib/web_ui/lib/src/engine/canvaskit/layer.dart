@@ -433,7 +433,7 @@ class ShaderMaskEngineLayer extends ContainerLayer
 }
 
 /// A layer containing a [Picture].
-class PictureLayer extends Layer implements ui.PictureEngineLayer {
+class PictureLayer extends Layer {
   /// The picture to paint into the canvas.
   final CkPicture picture;
 

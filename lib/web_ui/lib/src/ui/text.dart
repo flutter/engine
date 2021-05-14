@@ -322,6 +322,7 @@ abstract class TextStyle {
         letterSpacing: letterSpacing,
         wordSpacing: wordSpacing,
         height: height,
+        leadingDistribution: leadingDistribution,
         locale: locale,
         background: background as engine.CkPaint?,
         foreground: foreground as engine.CkPaint?,
