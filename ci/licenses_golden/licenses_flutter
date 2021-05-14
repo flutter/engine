@@ -173,6 +173,7 @@ FILE: ../../../flutter/fml/macros.h
 FILE: ../../../flutter/fml/make_copyable.h
 FILE: ../../../flutter/fml/mapping.cc
 FILE: ../../../flutter/fml/mapping.h
+FILE: ../../../flutter/fml/mapping_unittests.cc
 FILE: ../../../flutter/fml/memory/ref_counted.h
 FILE: ../../../flutter/fml/memory/ref_counted_internal.h
 FILE: ../../../flutter/fml/memory/ref_counted_unittest.cc
@@ -1265,11 +1266,14 @@ FILE: ../../../flutter/shell/platform/fuchsia/dart-pkg/fuchsia/lib/fuchsia.dart
 FILE: ../../../flutter/shell/platform/fuchsia/dart-pkg/fuchsia/sdk_ext/fuchsia.cc
 FILE: ../../../flutter/shell/platform/fuchsia/dart-pkg/fuchsia/sdk_ext/fuchsia.h
 FILE: ../../../flutter/shell/platform/fuchsia/dart-pkg/zircon/lib/src/handle.dart
+FILE: ../../../flutter/shell/platform/fuchsia/dart-pkg/zircon/lib/src/handle_disposition.dart
 FILE: ../../../flutter/shell/platform/fuchsia/dart-pkg/zircon/lib/src/handle_waiter.dart
 FILE: ../../../flutter/shell/platform/fuchsia/dart-pkg/zircon/lib/src/system.dart
 FILE: ../../../flutter/shell/platform/fuchsia/dart-pkg/zircon/lib/zircon.dart
 FILE: ../../../flutter/shell/platform/fuchsia/dart-pkg/zircon/sdk_ext/handle.cc
 FILE: ../../../flutter/shell/platform/fuchsia/dart-pkg/zircon/sdk_ext/handle.h
+FILE: ../../../flutter/shell/platform/fuchsia/dart-pkg/zircon/sdk_ext/handle_disposition.cc
+FILE: ../../../flutter/shell/platform/fuchsia/dart-pkg/zircon/sdk_ext/handle_disposition.h
 FILE: ../../../flutter/shell/platform/fuchsia/dart-pkg/zircon/sdk_ext/handle_waiter.cc
 FILE: ../../../flutter/shell/platform/fuchsia/dart-pkg/zircon/sdk_ext/handle_waiter.h
 FILE: ../../../flutter/shell/platform/fuchsia/dart-pkg/zircon/sdk_ext/natives.cc
@@ -1314,6 +1318,8 @@ FILE: ../../../flutter/shell/platform/fuchsia/flutter/component.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/component_unittest.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/compositor_context.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/compositor_context.h
+FILE: ../../../flutter/shell/platform/fuchsia/flutter/default_session_connection.cc
+FILE: ../../../flutter/shell/platform/fuchsia/flutter/default_session_connection.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/engine.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/engine.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/flutter_runner_fakes.h
@@ -1354,8 +1360,6 @@ FILE: ../../../flutter/shell/platform/fuchsia/flutter/runner.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/runner.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/runner_tzdata_unittest.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/runner_unittest.cc
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/session_connection.cc
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/session_connection.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/surface.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/surface.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/task_observers.cc
