@@ -1663,6 +1663,14 @@ class _RepositoryPkgDirectory extends _RepositoryDirectory {
   _RepositoryPkgDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
   @override
+  bool shouldRecurse(fs.IoNode entry) {
+    return entry.name != 'archive'  // contains nothing that ends up in the binary executable
+      && entry.name != 'file'
+      && entry.name != 'platform'
+      && entry.name != 'process';
+  }
+
+  @override
   _RepositoryDirectory createSubdirectory(fs.Directory entry) {
     if (entry.name == 'when')
       return _RepositoryPkgWhenDirectory(this, entry);
