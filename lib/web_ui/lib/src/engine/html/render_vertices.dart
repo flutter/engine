@@ -102,10 +102,7 @@ abstract class GlRenderer {
 /// that don't use Vertices WebGlRenderer will be removed from release binary.
 class _WebGlRenderer implements GlRenderer {
 
-  /// Cached vertex shader reused by [drawVertices] and gradients.
-  static String? _textureVertexShader;
-
-  static void _setupVertexTransforms(
+  static void setupVertexTransforms(
       GlContext gl,
       GlProgram glProgram,
       double offsetX,
@@ -128,7 +125,7 @@ class _WebGlRenderer implements GlRenderer {
     gl.setUniform4f(shift, -1, 1, 0, 0);
   }
 
-  static void _setupTextureScalar(
+  static void setupTextureScalar(
       GlContext gl, GlProgram glProgram, double sx, double sy) {
     Object scalar = gl.getUniformLocation(glProgram.program, 'u_texscale');
     gl.setUniform2f(scalar, sx, sy);
@@ -194,10 +191,10 @@ class _WebGlRenderer implements GlRenderer {
 
     final String vertexShader = imageShader == null
         ? VertexShaders.writeBaseVertexShader()
-        : writeTextureVertexShader();
+        : VertexShaders.writeTextureVertexShader();
     final String fragmentShader = imageShader == null
         ? _writeVerticesFragmentShader()
-        : _writeVerticesTextureFragmentShader(
+        : FragmentShaders.writeTextureFragmentShader(
             isWebGl2, imageShader.tileModeX, imageShader.tileModeY);
 
     GlContext gl =
@@ -209,13 +206,13 @@ class _WebGlRenderer implements GlRenderer {
     Object? positionAttributeLocation =
         gl.getAttributeLocation(glProgram.program, 'position');
 
-    _setupVertexTransforms(gl, glProgram, offsetX, offsetY,
+    setupVertexTransforms(gl, glProgram, offsetX, offsetY,
         widthInPixels.toDouble(), heightInPixels.toDouble(), transform);
 
     if (imageShader != null) {
       /// To map from vertex position to texture coordinate in 0..1 range,
       /// we setup scalar to be used in vertex shader.
-      _setupTextureScalar(
+      setupTextureScalar(
           gl,
           glProgram,
           1.0 / imageShader.image.width.toDouble(),
@@ -340,9 +337,6 @@ class _WebGlRenderer implements GlRenderer {
     context.restore();
   }
 
-  static final Uint16List _vertexIndicesForRect =
-      Uint16List.fromList(<int>[0, 1, 2, 2, 3, 0]);
-
   /// Renders a rectangle using given program into an image resource.
   ///
   /// Browsers that support OffscreenCanvas and the transferToImageBitmap api
@@ -435,7 +429,7 @@ class _WebGlRenderer implements GlRenderer {
 
     Object? indexBuffer = gl.createBuffer();
     gl.bindElementArrayBuffer(indexBuffer);
-    gl.bufferElementData(_vertexIndicesForRect, gl.kStaticDraw);
+    gl.bufferElementData(VertexShaders.vertexIndicesForRect, gl.kStaticDraw);
 
     if (gl.containsUniform(glProgram.program, 'u_resolution')) {
       Object uRes = gl.getUniformLocation(glProgram.program, 'u_resolution');
@@ -447,26 +441,7 @@ class _WebGlRenderer implements GlRenderer {
     gl.viewport(0, 0, widthInPixels.toDouble(), heightInPixels.toDouble());
 
     gl.drawElements(
-        gl.kTriangles, _vertexIndicesForRect.length, gl.kUnsignedShort);
-  }
-
-  static String writeTextureVertexShader() {
-    if (_textureVertexShader == null) {
-      ShaderBuilder builder = ShaderBuilder(webGLVersion);
-      builder.addIn(ShaderType.kVec4, name: 'position');
-      builder.addUniform(ShaderType.kMat4, name: 'u_ctransform');
-      builder.addUniform(ShaderType.kVec4, name: 'u_scale');
-      builder.addUniform(ShaderType.kVec2, name: 'u_texscale');
-      builder.addUniform(ShaderType.kVec4, name: 'u_shift');
-      builder.addOut(ShaderType.kVec2, name: 'v_texcoord');
-      ShaderMethod method = builder.addMethod('main');
-      method.addStatement(
-          'gl_Position = ((u_ctransform * position) * u_scale) + u_shift;');
-      method.addStatement('v_texcoord = vec2(position.x * u_texscale.x, '
-          '(position.y * u_texscale.y));');
-      _textureVertexShader = builder.build();
-    }
-    return _textureVertexShader!;
+        gl.kTriangles, VertexShaders.vertexIndicesForRect.length, gl.kUnsignedShort);
   }
 
   /// This fragment shader enables Int32List of colors to be passed directly
@@ -484,34 +459,6 @@ class _WebGlRenderer implements GlRenderer {
     builder.addIn(ShaderType.kVec4, name: 'v_color');
     ShaderMethod method = builder.addMethod('main');
     method.addStatement('${builder.fragmentColor.name} = v_color;');
-    return builder.build();
-  }
-
-  String _writeVerticesTextureFragmentShader(
-      bool isWebGl2, ui.TileMode? tileModeX, ui.TileMode? tileModeY) {
-    ShaderBuilder builder = ShaderBuilder.fragment(webGLVersion);
-    builder.floatPrecision = ShaderPrecision.kMedium;
-    builder.addIn(ShaderType.kVec2, name: 'v_texcoord');
-    builder.addUniform(ShaderType.kSampler2D, name: 'u_texture');
-    ShaderMethod method = builder.addMethod('main');
-    if (isWebGl2 ||
-        tileModeX == null ||
-        tileModeY == null ||
-        (tileModeX == ui.TileMode.clamp && tileModeY == ui.TileMode.clamp)) {
-      method.addStatement('${builder.fragmentColor.name} = '
-          '${builder.texture2DFunction}(u_texture, v_texcoord);');
-    } else {
-      // Repeat and mirror are not supported for webgl1. Write code to
-      // adjust texture coordinate.
-      //
-      // This will write u and v floats, clamp/repeat and mirror the value and
-      // pass it to sampler.
-      method.addTileStatements('v_texcoord.x', 'u', tileModeX);
-      method.addTileStatements('v_texcoord.y', 'v', tileModeY);
-      method.addStatement('vec2 uv = vec2(u, v);');
-      method.addStatement('${builder.fragmentColor.name} = '
-          '${builder.texture2DFunction}(u_texture, uv);');
-    }
     return builder.build();
   }
 

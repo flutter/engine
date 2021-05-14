@@ -96,6 +96,11 @@ void testMain() async {
     await testImageShader(
         TileMode.mirror, TileMode.mirror, 'image_shader_mirror');
   });
+
+  test('Should draw with clamp repeat imageshader.', () async {
+    await testImageShader(
+        TileMode.clamp, TileMode.repeated, 'image_shader_clamp_repeat');
+  });
 }
 
 HtmlImage createTestImage() {
