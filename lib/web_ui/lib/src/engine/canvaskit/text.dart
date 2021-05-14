@@ -86,13 +86,8 @@ class CkParagraphStyle implements ui.ParagraphStyle {
     return skTextStyle;
   }
 
-<<<<<<< HEAD
-  static SkStrutStyleProperties toSkStrutStyleProperties(ui.StrutStyle value) {
-    CkStrutStyle style = value as CkStrutStyle;
-=======
   static SkStrutStyleProperties toSkStrutStyleProperties(ui.StrutStyle value, ui.TextHeightBehavior? paragraphHeightBehavior) {
-    EngineStrutStyle style = value as EngineStrutStyle;
->>>>>>> master
+    CkStrutStyle style = value as CkStrutStyle;
     final SkStrutStyleProperties skStrutStyle = SkStrutStyleProperties();
     skStrutStyle.fontFamilies =
         _getEffectiveFontFamilies(style._fontFamily, style._fontFamilyFallback);
