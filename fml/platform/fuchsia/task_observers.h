@@ -7,7 +7,7 @@
 
 #include <lib/fit/function.h>
 
-namespace flutter_runner {
+namespace fml {
 
 void ExecuteAfterTaskObservers();
 
@@ -16,6 +16,6 @@ void CurrentMessageLoopAddAfterTaskObserver(intptr_t key,
 
 void CurrentMessageLoopRemoveAfterTaskObserver(intptr_t key);
 
-}  // namespace flutter_runner
+}  // namespace fml
 
 #endif  // FLUTTER_SHELL_PLATFORM_FUCHSIA_TASK_OBSERVERS_H_

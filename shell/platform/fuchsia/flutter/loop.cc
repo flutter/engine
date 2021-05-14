@@ -7,14 +7,14 @@
 #include <lib/async-loop/loop.h>
 #include <lib/async/default.h>
 
-#include "task_observers.h"
+#include "flutter/fml/platform/fuchsia/task_observers.h"
 
 namespace flutter_runner {
 
 namespace {
 
 static void LoopEpilogue(async_loop_t*, void*) {
-  ExecuteAfterTaskObservers();
+  fml::ExecuteAfterTaskObservers();
 }
 
 constexpr async_loop_config_t kAttachedLoopConfig = {
