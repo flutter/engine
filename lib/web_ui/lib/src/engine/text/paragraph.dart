@@ -37,16 +37,7 @@ class EngineLineMetrics implements ui.LineMetrics {
     required this.widthWithTrailingSpaces,
     required this.left,
     required this.lineNumber,
-  })  : assert(displayText != null), // ignore: unnecessary_null_comparison
-        assert(startIndex != null), // ignore: unnecessary_null_comparison
-        assert(endIndex != null), // ignore: unnecessary_null_comparison
-        assert(endIndexWithoutNewlines !=
-            null), // ignore: unnecessary_null_comparison
-        assert(hardBreak != null), // ignore: unnecessary_null_comparison
-        assert(width != null), // ignore: unnecessary_null_comparison
-        assert(left != null), // ignore: unnecessary_null_comparison
-        assert(lineNumber != null &&
-            lineNumber >= 0), // ignore: unnecessary_null_comparison
+  })  : assert(lineNumber >= 0),
         ellipsis = null,
         ascent = double.infinity,
         descent = double.infinity,

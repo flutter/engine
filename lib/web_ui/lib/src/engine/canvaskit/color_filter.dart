@@ -95,7 +95,9 @@ class CkBlendModeColorFilter extends CkColorFilter {
 
   @override
   bool operator ==(Object other) {
-    if (runtimeType != other.runtimeType) return false;
+    if (runtimeType != other.runtimeType) {
+      return false;
+    }
     return other is CkBlendModeColorFilter &&
         other.color == color &&
         other.blendMode == blendMode;
@@ -114,7 +116,9 @@ class CkMatrixColorFilter extends CkColorFilter {
   SkColorFilter _initRawColorFilter() {
     assert(this.matrix.length == 20, 'Color Matrix must have 20 entries.');
     final List<double> matrix = this.matrix;
-    if (matrix is Float32List) return canvasKit.ColorFilter.MakeMatrix(matrix);
+    if (matrix is Float32List) {
+      return canvasKit.ColorFilter.MakeMatrix(matrix);
+    }
     final Float32List float32Matrix = Float32List(20);
     for (int i = 0; i < 20; i++) {
       float32Matrix[i] = matrix[i];

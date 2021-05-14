@@ -446,6 +446,9 @@ class SkiaObjects {
     if (_addedCleanupCallback) {
       return;
     }
+    // This method is @visibleForTesting but we're getting a warning about
+    // using a @visibleForTesting member.
+    // ignore: invalid_use_of_visible_for_testing_member
     EnginePlatformDispatcher.instance.rasterizer!
         .addPostFrameCallback(postFrameCleanUp);
     _addedCleanupCallback = true;

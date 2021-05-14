@@ -44,8 +44,9 @@ class FontWeight {
     w900
   ];
   static FontWeight? lerp(FontWeight? a, FontWeight? b, double t) {
-    assert(t != null); // ignore: unnecessary_null_comparison
-    if (a == null && b == null) return null;
+    if (a == null && b == null) {
+      return null;
+    }
     return values[engine.clampInt(
         lerpDouble(a?.index ?? normal.index, b?.index ?? normal.index, t)!
             .round(),
@@ -161,7 +162,9 @@ class FontFeature {
 
   @override
   bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType) return false;
+    if (other.runtimeType != runtimeType) {
+      return false;
+    }
     return other is FontFeature &&
         other.feature == feature &&
         other.value == value;
@@ -258,7 +261,9 @@ class TextHeightBehavior {
 
   @override
   bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType) return false;
+    if (other.runtimeType != runtimeType) {
+      return false;
+    }
     return other is TextHeightBehavior &&
         other.applyHeightToFirstAscent == applyHeightToFirstAscent &&
         other.applyHeightToLastDescent == applyHeightToLastDescent &&
@@ -570,12 +575,10 @@ class TextRange {
   const TextRange({
     required this.start,
     required this.end,
-  })  : assert(start != null &&
-            start >= -1), // ignore: unnecessary_null_comparison
-        assert(end != null && end >= -1); // ignore: unnecessary_null_comparison
+  })  : assert(start >= -1),
+        assert(end >= -1);
   const TextRange.collapsed(int offset)
-      : assert(offset != null &&
-            offset >= -1), // ignore: unnecessary_null_comparison
+      : assert(offset >= -1),
         start = offset,
         end = offset;
   static const TextRange empty = TextRange(start: -1, end: -1);
