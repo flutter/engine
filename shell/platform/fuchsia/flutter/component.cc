@@ -27,6 +27,7 @@
 #include <sstream>
 
 #include "flutter/fml/mapping.h"
+#include "flutter/fml/platform/fuchsia/task_observers.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/fml/unique_fd.h"
 #include "flutter/runtime/dart_vm_lifecycle.h"
@@ -37,7 +38,6 @@
 #include "runtime/dart/utils/tempfs.h"
 #include "runtime/dart/utils/vmo.h"
 
-#include "task_observers.h"
 #include "task_runner_adapter.h"
 
 // TODO(kaushikiska): Use these constants from ::llcpp::fuchsia::io
@@ -491,11 +491,11 @@ Application::Application(
   settings_.leak_vm = false;
 
   settings_.task_observer_add =
-      std::bind(&CurrentMessageLoopAddAfterTaskObserver, std::placeholders::_1,
+      std::bind(&fml::CurrentMessageLoopAddAfterTaskObserver, std::placeholders::_1,
                 std::placeholders::_2);
 
   settings_.task_observer_remove = std::bind(
-      &CurrentMessageLoopRemoveAfterTaskObserver, std::placeholders::_1);
+      &fml::CurrentMessageLoopRemoveAfterTaskObserver, std::placeholders::_1);
 
   settings_.log_message_callback = [](const std::string& tag,
                                       const std::string& message) {

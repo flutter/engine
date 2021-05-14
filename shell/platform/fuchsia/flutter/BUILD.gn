@@ -76,8 +76,6 @@ template("runner_sources") {
       "runner.h",
       "surface.cc",
       "surface.h",
-      "task_observers.cc",
-      "task_observers.h",
       "task_runner_adapter.cc",
       "task_runner_adapter.h",
       "thread.cc",
