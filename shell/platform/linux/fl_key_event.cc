@@ -33,7 +33,3 @@ void fl_key_event_dispose(FlKeyEvent* event) {
   }
   g_free(event);
 }
-
-void fl_key_event_destroy_notify(gpointer event) {
-  fl_key_event_dispose(reinterpret_cast<FlKeyEvent*>(event));
-}

@@ -9,7 +9,14 @@
 
 typedef struct _FlKeyEvent FlKeyEvent;
 
-typedef void (*FlKeyEventDispose)(FlKeyEvent*);
+/**
+ * FlKeyEventDispose:
+ * @self: the self pointer to dispose.
+ *
+ * The signature for a callback with which a #FlKeyEvent performs
+ * before being freed.
+ **/
+typedef void (*FlKeyEventDispose)(FlKeyEvent* self);
 
 /**
  * FlKeyEvent:
@@ -37,38 +44,32 @@ typedef struct _FlKeyEvent {
   size_t length;
   // An opaque pointer to the original event.
   //
-  // This is used when dispatching.
-  // For native events, this is #GdkEvent pointer.
-  // For unit tests, this is a dummy pointer.
+  // This is used when dispatching.  For native events, this is #GdkEvent
+  // pointer.  For unit tests, this is a dummy pointer.
   gpointer origin;
-  // A callback to free this #FlKeyEvent.
+  // Extra steps before freeing this #FlKeyEvent.
   //
-  // If #dispose is nullptr, nothing will be performed when this event
-  // is no longer needed.
+  // Usually a function that frees origin. Can be nullptr.
   FlKeyEventDispose dispose;
 } FlKeyEvent;
 
 /**
  * fl_key_event_new_from_gdk_event:
- * @event: the #GdkEvent this #FlKeyEvent is based on. The #event be a
+ * @event: the #GdkEvent this #FlKeyEvent is based on. The #event must be a
  * #GdkEventKey, and will be destroyed by #fl_key_event_dispose.
  *
- * Create a new #FlKeyEvent based on a #GdkEventKey.
+ * Create a new #FlKeyEvent based on a #GdkEvent.
  *
- * Returns: a new #FlKeyEvent. Must be freed with #free (or #g_free).
+ * Returns: a new #FlKeyEvent. Must be freed with #fl_key_event_dispose.
  */
 FlKeyEvent* fl_key_event_new_from_gdk_event(GdkEvent* event);
 
 /**
- * fl_key_event_copy:
- * @source: the source to copy from.
+ * fl_key_event_dispose:
+ * @event: the event to dispose.
  *
- * Allocates a new event with all properties shallow copied from source.
- *
- * Returns: a cloned #FlKeyEvent. Must be freed with #free (or #g_free).
+ * Properly disposes the content of #event and then the pointer.
  */
 void fl_key_event_dispose(FlKeyEvent* event);
-
-void fl_key_event_destroy_notify(gpointer event);
 
 #endif  // FLUTTER_SHELL_PLATFORM_LINUX_FL_KEY_EVENT_H_

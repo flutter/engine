@@ -118,19 +118,25 @@ static void fl_key_mock_responder_iface_init(FlKeyResponderInterface* iface) {
   iface->handle_event = fl_key_mock_responder_handle_event;
 }
 
+// Return a newly allocated #FlKeyEvent that is a clone to the given #event
+// but with #origin and #dispose set to 0.
+static FlKeyEvent* fl_key_event_clone_information_only(FlKeyEvent* event) {
+  FlKeyEvent* new_event = g_new(FlKeyEvent, 1);
+  *new_event = *event;
+  new_event->origin = nullptr;
+  new_event->dispose = nullptr;
+  return new_event;
+}
 static void fl_key_mock_responder_handle_event(
     FlKeyResponder* responder,
     FlKeyEvent* event,
     FlKeyResponderAsyncCallback callback,
     gpointer user_data) {
   FlKeyMockResponder* self = FL_KEY_MOCK_RESPONDER(responder);
-  FlKeyEvent* new_event = g_new(FlKeyEvent, 1);
-  *new_event = *event;
-  new_event->origin = new_event; // Arbitrary value.
-  new_event->dispose = nullptr;
   g_ptr_array_add(self->call_records,
                   FL_KEYBOARD_CALL_RECORD(fl_keyboard_call_record_new(
-                      self, new_event, callback, user_data)));
+                      self, fl_key_event_clone_information_only(event),
+                      callback, user_data)));
   self->callback_handler(callback, user_data);
 }
 
@@ -158,9 +164,13 @@ static gpointer g_ptr_array_last(GPtrArray* array) {
   return g_ptr_array_index(array, array->len - 1);
 }
 
-static void fl_key_event_new_by_mock(FlKeyEvent* event) {
+static void fl_key_event_free_by_mock(FlKeyEvent* event) {
   g_free(event->origin);
 }
+// Create a new #FlKeyEvent with the given information.
+//
+// The #origin will be another #FlKeyEvent with the exact information,
+// so that it can be used to redispatch, and is freed by #dispose.
 static FlKeyEvent* fl_key_event_new_by_mock(bool is_press,
                                             guint keyval,
                                             guint16 keycode,
@@ -174,18 +184,15 @@ static FlKeyEvent* fl_key_event_new_by_mock(bool is_press,
   event->length = 0;
   event->string = nullptr;
   event->keycode = keycode;
-  FlKeyEvent* origin_event = g_new(FlKeyEvent, 1);
-  *origin_event = *event;
-  origin_event->origin = origin_event; // Arbitrary value.
-  origin_event->dispose = nullptr;
+  FlKeyEvent* origin_event = fl_key_event_clone_information_only(event);
   event->origin = origin_event;
-  event->dispose = fl_key_event_new_by_mock;
+  event->dispose = fl_key_event_free_by_mock;
   return event;
 }
 
 namespace {
-// A global variable to store redispatched #FlKeyEvent. It is a global variable so
-// that it can be used in a function without user_data.
+// A global variable to store redispatched #FlKeyEvent. It is a global variable
+// so that it can be used in a function without user_data.
 //
 // This array does not free elements upon removal.
 GPtrArray* _g_redispatched_events;
@@ -210,31 +217,23 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithAsyncResponds) {
   gboolean manager_handled = false;
   g_autoptr(FlKeyboardManager) manager =
       fl_keyboard_manager_new(nullptr, store_redispatched_event);
-  printf("x1\n");
-  fflush(stdout);
   fl_keyboard_manager_add_responder(
       manager, FL_KEY_RESPONDER(fl_key_mock_responder_new(call_records, 1)));
 
   /// Test 1: One event that is handled by the framework
 
   // Dispatch a key event
-  printf("x2\n");
-  fflush(stdout);
   manager_handled = fl_keyboard_manager_handle_event(
       manager,
       fl_key_event_new_by_mock(true, GDK_KEY_a, kKeyCodeKeyA, 0x10, false));
   EXPECT_EQ(manager_handled, true);
   EXPECT_EQ(redispatched_events()->len, 0u);
   EXPECT_EQ(call_records->len, 1u);
-  printf("x3\n");
-  fflush(stdout);
   record = FL_KEYBOARD_CALL_RECORD(g_ptr_array_index(call_records, 0));
   EXPECT_EQ(record->responder->delegate_id, 1);
   EXPECT_EQ(record->event->keyval, 0x61u);
   EXPECT_EQ(record->event->keycode, 0x26u);
 
-  printf("x4\n");
-  fflush(stdout);
   record->callback(true, record->user_data);
   EXPECT_EQ(redispatched_events()->len, 0u);
 
@@ -242,8 +241,6 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithAsyncResponds) {
   g_ptr_array_clear(call_records);
 
   /// Test 2: Two events that are unhandled by the framework
-  printf("x5\n");
-  fflush(stdout);
   manager_handled = fl_keyboard_manager_handle_event(
       manager,
       fl_key_event_new_by_mock(true, GDK_KEY_a, kKeyCodeKeyA, 0x10, false));
@@ -256,7 +253,6 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithAsyncResponds) {
   EXPECT_EQ(record->event->keycode, 0x26u);
 
   // Dispatch another key event
-  printf("x6\n");
   manager_handled = fl_keyboard_manager_handle_event(
       manager,
       fl_key_event_new_by_mock(true, GDK_KEY_b, kKeyCodeKeyB, 0x10, false));
@@ -267,7 +263,6 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithAsyncResponds) {
   EXPECT_EQ(record->responder->delegate_id, 1);
   EXPECT_EQ(record->event->keyval, 0x62u);
   EXPECT_EQ(record->event->keycode, 0x38u);
-  printf("x7\n");fflush(stdout);
 
   // Resolve the second event first to test out-of-order response
   record = FL_KEYBOARD_CALL_RECORD(g_ptr_array_index(call_records, 1));
@@ -284,11 +279,9 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithAsyncResponds) {
   g_ptr_array_clear(call_records);
 
   // Resolve redispatches
-  printf("x8\n");fflush(stdout);
   manager_handled = fl_keyboard_manager_handle_event(
       manager, FL_KEY_EVENT(g_ptr_array_index(redispatched_events(), 0)));
   EXPECT_EQ(manager_handled, false);
-  printf("x8.1\n");fflush(stdout);
   manager_handled = fl_keyboard_manager_handle_event(
       manager, FL_KEY_EVENT(g_ptr_array_index(redispatched_events(), 1)));
   EXPECT_EQ(manager_handled, false);
@@ -299,7 +292,6 @@ TEST(FlKeyboardManagerTest, SingleDelegateWithAsyncResponds) {
 
   /// Test 3: Dispatch the same event again to ensure that prevention from
   /// redispatching only works once.
-  printf("x9\n");fflush(stdout);
   manager_handled = fl_keyboard_manager_handle_event(
       manager,
       fl_key_event_new_by_mock(true, GDK_KEY_a, kKeyCodeKeyA, 0x10, false));
