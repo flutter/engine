@@ -101,7 +101,8 @@ static void respond_false(FlKeyResponderAsyncCallback callback,
   callback(false, user_data);
 }
 
-static gboolean filter_keypress_returns_true(FlTextInputPlugin* self, FlKeyEvent* event) {
+static gboolean filter_keypress_returns_true(FlTextInputPlugin* self,
+                                             FlKeyEvent* event) {
   return TRUE;
 }
 
