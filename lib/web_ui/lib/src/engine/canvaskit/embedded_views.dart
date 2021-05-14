@@ -3,13 +3,11 @@
 // found in the LICENSE file.
 
 import 'dart:html' as html;
-import 'dart:typed_data';
 
-import 'package:ui/src/engine.dart' show window, NullTreeSanitizer;
+import 'package:ui/src/engine.dart' show window, NullTreeSanitizer, platformViewManager;
 import 'package:ui/ui.dart' as ui;
 
 import '../html/path_to_svg_clip.dart';
-import '../services.dart';
 import '../util.dart';
 import '../vector_math.dart';
 import 'canvas.dart';
