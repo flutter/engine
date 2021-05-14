@@ -158,7 +158,7 @@ static void fl_view_plugin_registry_iface_init(
   iface->get_registrar_for_plugin = fl_view_get_registrar_for_plugin;
 }
 
-static void redispatch_key_event_by_gtk(FlKeyEvent* event);
+static void redispatch_key_event_by_gtk(gpointer gdk_event);
 
 static gboolean text_input_im_filter_by_gtk(GtkIMContext* im_context,
                                             gpointer gdk_event);
@@ -754,8 +754,8 @@ void fl_view_end_frame(FlView* view) {
   gtk_widget_queue_draw(GTK_WIDGET(view));
 }
 
-static void redispatch_key_event_by_gtk(FlKeyEvent* event) {
-  GdkEvent* gdk_event = reinterpret_cast<GdkEvent*>(event->origin);
+static void redispatch_key_event_by_gtk(gpointer raw_event) {
+  GdkEvent* gdk_event = reinterpret_cast<GdkEvent*>(raw_event);
   GdkEventType type = gdk_event->type;
   g_return_if_fail(type == GDK_KEY_PRESS || type == GDK_KEY_RELEASE);
   gdk_event_put(gdk_event);

@@ -7,7 +7,9 @@
 
 #include <gdk/gdk.h>
 
-typedef void (*FlKeyEventDisposeOrigin)(gpointer);
+typedef struct _FlKeyEvent FlKeyEvent;
+
+typedef void (*FlKeyEventDispose)(FlKeyEvent*);
 
 /**
  * FlKeyEvent:
@@ -39,8 +41,11 @@ typedef struct _FlKeyEvent {
   // For native events, this is #GdkEvent pointer.
   // For unit tests, this is a dummy pointer.
   gpointer origin;
-  // A callback to free #origin, called when #FlKeyEvent is disposed.
-  FlKeyEventDisposeOrigin dispose_origin;
+  // A callback to free this #FlKeyEvent.
+  //
+  // If #dispose is nullptr, nothing will be performed when this event
+  // is no longer needed.
+  FlKeyEventDispose dispose;
 } FlKeyEvent;
 
 /**

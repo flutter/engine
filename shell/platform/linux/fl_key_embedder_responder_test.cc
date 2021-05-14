@@ -130,7 +130,7 @@ static FlKeyEvent* fl_key_event_new_by_mock(guint32 time_in_milliseconds,
   _g_key_event.string = nullptr;
   _g_key_event.keycode = keycode;
   _g_key_event.origin = &_origin_event;
-  _g_key_event.dispose_origin = nullptr;
+  _g_key_event.dispose = nullptr;
   return &_g_key_event;
 }
 

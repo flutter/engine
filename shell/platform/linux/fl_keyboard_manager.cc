@@ -52,7 +52,7 @@ static void fl_keyboard_pending_event_dispose(GObject* object) {
   g_return_if_fail(FL_IS_KEYBOARD_PENDING_EVENT(object));
 
   FlKeyboardPendingEvent* self = FL_KEYBOARD_PENDING_EVENT(object);
-  g_clear_pointer(&self->event, gdk_event_free);
+  fl_key_event_dispose(self->event);
   G_OBJECT_CLASS(fl_keyboard_pending_event_parent_class)->dispose(object);
 }
 
@@ -278,10 +278,11 @@ static bool fl_keyboard_manager_remove_redispatched(FlKeyboardManager* self,
       self->pending_redispatches, static_cast<const uint64_t*>(&hash),
       compare_pending_by_hash, &result_index);
   if (found) {
-    gpointer removed =
-        g_ptr_array_remove_index_fast(self->pending_redispatches, result_index);
+    FlKeyboardPendingEvent* removed =
+        FL_KEYBOARD_PENDING_EVENT(g_ptr_array_remove_index_fast(
+            self->pending_redispatches, result_index));
     g_return_val_if_fail(removed != nullptr, TRUE);
-    fl_key_event_destroy_notify(removed);
+    g_object_unref(removed);
     return TRUE;
   } else {
     return FALSE;
@@ -309,11 +310,19 @@ static void responder_handle_event_callback(bool handled,
   pending->any_handled = pending->any_handled || handled;
   // All responders have replied.
   if (pending->unreplied == 0) {
+    printf("5\n");
+    fflush(stdout);
     g_object_unref(user_data_ptr);
-    g_ptr_array_remove_index_fast(self->pending_responds, result_index);
+    printf("6\n");
+    fflush(stdout);
+    gpointer removed =
+        g_ptr_array_remove_index_fast(self->pending_responds, result_index);
+    g_return_if_fail(removed == pending);
     bool should_redispatch = false;
     if (!pending->any_handled) {
       // If no responders have handled, send it to text plugin.
+      printf("7\n");
+      fflush(stdout);
       if (self->text_input_plugin == nullptr ||
           !fl_text_input_plugin_filter_keypress(self->text_input_plugin,
                                                 pending->event)) {
@@ -321,11 +330,19 @@ static void responder_handle_event_callback(bool handled,
         should_redispatch = true;
       }
     }
+    printf("8 should %d\n", should_redispatch);
+    fflush(stdout);
     if (should_redispatch) {
       g_ptr_array_add(self->pending_redispatches, pending);
-      self->redispatch_callback(pending->event);
+      printf("9\n");
+      fflush(stdout);
+      self->redispatch_callback(pending->event->origin);
+      printf("10\n");
+      fflush(stdout);
     } else {
-      fl_key_event_destroy_notify(pending);
+      g_object_unref(pending);
+      printf("11\n");
+      fflush(stdout);
     }
   }
 }

@@ -17,7 +17,7 @@
  * The signature for a callback with which a #FlKeyboardManager redispatches
  * key events that are not handled by anyone.
  **/
-typedef void (*FlKeyboardManagerRedispatcher)(FlKeyEvent* event);
+typedef void (*FlKeyboardManagerRedispatcher)(gpointer event);
 
 G_BEGIN_DECLS
 
