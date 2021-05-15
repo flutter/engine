@@ -232,9 +232,6 @@ static void fl_key_channel_responder_handle_event(
   // does modifier key syncing in the framework, and will turn on/off these keys
   // as being "pressed" whenever the lock is on, which breaks a lot of
   // interactions (for example, if shift-lock is on, tab traversal is broken).
-  //
-  // TODO(gspencergoog): get rid of this tracked state when we are tracking the
-  // state of all keys and sending sync/cancel events when focus is gained/lost.
 
   // Remove lock states from state mask.
   guint state = event->state & ~(GDK_LOCK_MASK | GDK_MOD2_MASK);
