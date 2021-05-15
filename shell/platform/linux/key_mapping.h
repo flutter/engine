@@ -7,6 +7,7 @@
 
 #include <gdk/gdk.h>
 #include <cinttypes>
+#include <map>
 
 inline uint64_t gpointer_to_uint64(gpointer pointer) {
   return pointer == nullptr ? 0 : reinterpret_cast<uint64_t>(pointer);
@@ -16,13 +17,11 @@ inline gpointer uint64_to_gpointer(uint64_t number) {
   return reinterpret_cast<gpointer>(number);
 }
 
-// Initialize a hashtable that maps XKB specific key code values to
-// Flutter's physical key code values.
-void initialize_xkb_to_physical_key(GHashTable* table);
+// Maps XKB specific key code values to Flutter's physical key code values.
+extern std::map<uint64_t, uint64_t> xkb_to_physical_key_map;
 
-// Initialize a hashtable that maps GDK keyval values to
-// Flutter's logical key code values.
-void initialize_gtk_keyval_to_logical_key(GHashTable* table);
+// Maps GDK keyval values to Flutter's logical key code values.
+extern std::map<uint64_t, uint64_t> gtk_keyval_to_logical_key_map;
 
 void initialize_modifier_bit_to_checked_keys(GHashTable* table);
 

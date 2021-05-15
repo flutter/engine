@@ -28,15 +28,6 @@ static uint64_t lookup_hash_table(GHashTable* table, uint64_t key) {
       g_hash_table_lookup(table, uint64_to_gpointer(key)));
 }
 
-static uint64_t event_to_physical_key(const FlKeyEvent* event,
-                                      GHashTable* table) {
-  uint64_t record = lookup_hash_table(table, event->keycode);
-  if (record != 0) {
-    return record;
-  }
-  return kGtkKeyIdPlane | event->keycode;
-}
-
 static uint64_t to_lower(uint64_t n) {
   constexpr uint64_t lower_a = 0x61;
   constexpr uint64_t upper_a = 0x41;
@@ -169,18 +160,6 @@ struct _FlKeyEmbedderResponder {
   // For more information, see #update_caps_lock_state_logic_inferrence.
   StateLogicInferrence caps_lock_state_logic_inferrence;
 
-  // A static map from XKB code to Flutter's physical key code.
-  //
-  // Both keys and values are directly stored uint64s.  This table is freed by
-  // the responder.
-  GHashTable* xkb_to_physical_key;
-
-  // A static map from GTK keyval to Flutter's logical key code
-  //
-  // Both keys and values are directly stored uint64s.  This table is freed by
-  // the responder.
-  GHashTable* keyval_to_logical_key;
-
   // A static map from GTK modifier bits to #FlKeyEmbedderCheckedKey to
   // configure the modifier keys that needs to be tracked and kept synchronous
   // on.
@@ -242,8 +221,6 @@ static void fl_key_embedder_responder_dispose(GObject* object) {
   FlKeyEmbedderResponder* self = FL_KEY_EMBEDDER_RESPONDER(object);
 
   g_clear_pointer(&self->pressing_records, g_hash_table_unref);
-  g_clear_pointer(&self->xkb_to_physical_key, g_hash_table_unref);
-  g_clear_pointer(&self->keyval_to_logical_key, g_hash_table_unref);
   g_clear_pointer(&self->modifier_bit_to_checked_keys, g_hash_table_unref);
   g_clear_pointer(&self->lock_bit_to_checked_keys, g_hash_table_unref);
 
@@ -283,12 +260,6 @@ FlKeyEmbedderResponder* fl_key_embedder_responder_new(FlEngine* engine) {
   self->lock_records = 0;
   self->caps_lock_state_logic_inferrence = kStateLogicUndecided;
 
-  self->xkb_to_physical_key = g_hash_table_new(g_direct_hash, g_direct_equal);
-  initialize_xkb_to_physical_key(self->xkb_to_physical_key);
-
-  self->keyval_to_logical_key = g_hash_table_new(g_direct_hash, g_direct_equal);
-  initialize_gtk_keyval_to_logical_key(self->keyval_to_logical_key);
-
   self->modifier_bit_to_checked_keys =
       g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, g_free);
   initialize_modifier_bit_to_checked_keys(self->modifier_bit_to_checked_keys);
@@ -308,12 +279,19 @@ FlKeyEmbedderResponder* fl_key_embedder_responder_new(FlEngine* engine) {
 
 /* Implement FlKeyEmbedderUserData */
 
-static uint64_t event_to_logical_key(const FlKeyEvent* event,
-                                     GHashTable* table) {
+static uint64_t event_to_physical_key(const FlKeyEvent* event) {
+  auto found = xkb_to_physical_key_map[event->keycode];
+  if (found != xkb_to_physical_key_map.end()) {
+    return found->second;
+  }
+  return kGtkKeyIdPlane | event->keycode;
+}
+
+static uint64_t event_to_logical_key(const FlKeyEvent* event) {
   guint keyval = event->keyval;
-  uint64_t record = lookup_hash_table(table, keyval);
-  if (record != 0) {
-    return record;
+  auto found = gtk_keyval_to_logical_key_map[keyval];
+  if (found != gtk_keyval_to_logical_key_map.end()) {
+    return found->second;
   }
   // EASCII range
   if (keyval < 256) {
@@ -710,10 +688,8 @@ static void fl_key_embedder_responder_handle_event(
   g_return_if_fail(event != nullptr);
   g_return_if_fail(callback != nullptr);
 
-  const uint64_t physical_key =
-      event_to_physical_key(event, self->xkb_to_physical_key);
-  const uint64_t logical_key =
-      event_to_logical_key(event, self->keyval_to_logical_key);
+  const uint64_t physical_key = event_to_physical_key(event);
+  const uint64_t logical_key = event_to_logical_key(event);
   const double timestamp = event_to_timestamp(event);
   const bool is_down_event = event->is_press;
 
