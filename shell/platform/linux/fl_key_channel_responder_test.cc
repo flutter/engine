@@ -37,7 +37,7 @@ static int _origin_event;
 static FlKeyEvent _g_key_event;
 }  // namespace
 
-// Clone #string onto the heap.
+// Clone string onto the heap.
 //
 // If #string is nullptr, returns nullptr.  Otherwise, the returned pointer must
 // be freed with g_free. The #out_length must not be nullptr, and is used to
