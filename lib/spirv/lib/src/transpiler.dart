@@ -542,11 +542,11 @@ class _Transpiler {
     src.writeln('const $typeName $id = true;');
   }
 
-    void opConstantFalse() {
+  void opConstantFalse() {
     final int type = readWord();
     final String id = resolveName(readWord());
     final String typeName = resolveType(type);
-    src.writeln('const $typeName $id = true;');
+    src.writeln('const $typeName $id = false;');
   }
 
   void opConstant() {
