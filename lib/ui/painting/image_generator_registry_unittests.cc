@@ -56,15 +56,23 @@ class FakeImageGenerator : public ImageGenerator {
   ~FakeImageGenerator() = default;
   const SkImageInfo& GetInfo() const { return info_; }
 
-  bool GetPixels(const SkImageInfo& info,
-                 void* pixels,
-                 size_t row_bytes) const {
-    return false;
-  };
+  uint GetFrameCount() const { return 1; }
+
+  const ImageGenerator::FrameInfo GetFrameInfo(uint frame_index) const {
+    return {std::nullopt, 0, SkCodecAnimation::DisposalMethod::kKeep};
+  }
 
   SkISize GetScaledDimensions(float scale) const {
     return SkISize::Make(info_.width(), info_.height());
   }
+
+  bool GetPixels(const SkImageInfo& info,
+                 void* pixels,
+                 size_t row_bytes,
+                 uint frame_index,
+                 std::optional<uint> prior_frame) const {
+    return false;
+  };
 
  private:
   SkImageInfo info_;

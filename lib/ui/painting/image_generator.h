@@ -12,14 +12,28 @@
 namespace flutter {
 
 /// @brief  The minimal interface necessary for defining a decoder that can be
-///         used for single-frame image decoding. Image generators can
-///         optionally support decoding into a subscaled buffer.
-///         Implementers of `ImageGenerator` regularly keep internal state which
-///         is not thread safe, and so aliasing and parallel access should never
-///         be done with `ImageGenerator`s.
+///         used for both single and multi-frame image decoding. Image
+///         generators can also optionally support decoding into a subscaled
+///         buffer. Implementers of `ImageGenerator` regularly keep internal
+///         state which is not thread safe, and so aliasing and parallel access
+///         should never be done with `ImageGenerator`s.
 /// @see    `ImageGenerator::GetScaledDimensions`
 class ImageGenerator {
  public:
+  /// @brief  Info about a single frame in the context of a multi-frame image,
+  ///         useful for animation and blending.
+  struct FrameInfo {
+    /// The frame index of the frame that, if any, this frame needs to be
+    /// blended with.
+    std::optional<uint> required_frame;
+
+    /// Number of milliseconds to show this frame.
+    uint duration;
+
+    /// How this frame should be modified before decoding the next one.
+    SkCodecAnimation::DisposalMethod disposal_method;
+  };
+
   virtual ~ImageGenerator();
 
   /// @brief   Returns basic information about the contents of the encoded
@@ -31,25 +45,24 @@ class ImageGenerator {
   ///          long synchronous tasks.
   virtual const SkImageInfo& GetInfo() const = 0;
 
-  /// @brief      Decode the image into a given buffer.
-  /// @param[in]  info       The desired size and color info of the decoded
-  ///                        image to be returned. The implementation of
-  ///                        `GetScaledDimensions` determines which sizes are
-  ///                        supported by the image decoder.
-  /// @param[in]  pixels     The location where the raw decoded image data
-  ///                        should be written.
-  /// @param[in]  row_bytes  The total number of bytes that should make up a
-  ///                        single row of decoded image data
-  ///                        (i.e. width * bytes_per_pixel).
-  /// @return     True if the image was successfully decoded.
-  /// @note       This method performs potentially long synchronous work, and so
-  ///             it should never be executed on the UI thread. Image decoders
-  ///             do not require GPU acceleration, and so threads without a GPU
-  ///             context may also be used.
-  /// @see        `GetScaledDimensions`
-  virtual bool GetPixels(const SkImageInfo& info,
-                         void* pixels,
-                         size_t row_bytes) const = 0;
+  /// @brief   Get the number of frames that the encoded image stores. This
+  ///          method is always expected to be called before `GetFrameInfo`, as
+  ///          the underlying image decoder may interpret frame information that
+  ///          is then used when calling `GetFrameInfo`.
+  /// @return  The number of frames that the encoded image stores. This will
+  ///          always be 1 for single-frame images.
+  virtual uint GetFrameCount() const = 0;
+
+  /// @brief      Get information about a single frame in the context of a
+  ///             multi-frame image, useful for animation and frame blending.
+  ///             This method should only ever be called after `GetFrameCount`
+  ///             has been called. This information is nonsensical for
+  ///             single-frame images.
+  /// @param[in]  frame_index  The index of the frame to get information about.
+  /// @return     Information about the given frame. If the image is
+  ///             single-frame, a default result is returned.
+  /// @see        `GetFrameCount`
+  virtual const FrameInfo GetFrameInfo(uint frame_index) const = 0;
 
   /// @brief      Given a scale value, find the closest image size that can be
   ///             used for efficiently decoding the image. If subpixel image
@@ -62,6 +75,38 @@ class ImageGenerator {
   ///             for supported sizes.
   /// @see        `GetPixels`
   virtual SkISize GetScaledDimensions(float scale) const = 0;
+
+  /// @brief      Decode the image into a given buffer.
+  /// @param[in]  info         The desired size and color info of the decoded
+  ///                          image to be returned. The implementation of
+  ///                          `GetScaledDimensions` determines which sizes are
+  ///                          supported by the image decoder.
+  /// @param[in]  pixels       The location where the raw decoded image data
+  ///                          should be written.
+  /// @param[in]  row_bytes    The total number of bytes that should make up a
+  ///                          single row of decoded image data
+  ///                          (i.e. width * bytes_per_pixel).
+  /// @param[in]  frame_index  Which frame to decode. This is only useful for
+  ///                          multi-frame images.
+  /// @param[in]  prior_frame  Optional frame index parameter for multi-frame
+  ///                          images which specifies the previous frame that
+  ///                          should be use for blending. This hints to the
+  ///                          decoder that it should use a previously cached
+  ///                          frame instead of decoding dependency frame(s).
+  ///                          If an empty value is supplied, the decoder should
+  ///                          decode any necessary frames first.
+  /// @return     True if the image was successfully decoded.
+  /// @note       This method performs potentially long synchronous work, and so
+  ///             it should never be executed on the UI thread. Image decoders
+  ///             do not require GPU acceleration, and so threads without a GPU
+  ///             context may also be used.
+  /// @see        `GetScaledDimensions`
+  virtual bool GetPixels(
+      const SkImageInfo& info,
+      void* pixels,
+      size_t row_bytes,
+      uint frame_index = 0,
+      std::optional<uint> prior_frame = std::nullopt) const = 0;
 };
 
 class BuiltinSkiaImageGenerator : public ImageGenerator {
@@ -74,12 +119,20 @@ class BuiltinSkiaImageGenerator : public ImageGenerator {
   const SkImageInfo& GetInfo() const override;
 
   // |ImageGenerator|
-  bool GetPixels(const SkImageInfo& info,
-                 void* pixels,
-                 size_t row_bytes) const override;
+  uint GetFrameCount() const override;
+
+  // |ImageGenerator|
+  const ImageGenerator::FrameInfo GetFrameInfo(uint frame_index) const override;
 
   // |ImageGenerator|
   SkISize GetScaledDimensions(float desired_scale) const override;
+
+  // |ImageGenerator|
+  bool GetPixels(const SkImageInfo& info,
+                 void* pixels,
+                 size_t row_bytes,
+                 uint frame_index = 0,
+                 std::optional<uint> prior_frame = std::nullopt) const override;
 
   static std::unique_ptr<ImageGenerator> MakeFromGenerator(
       std::unique_ptr<SkImageGenerator> generator);
@@ -101,12 +154,20 @@ class BuiltinSkiaCodecImageGenerator : public ImageGenerator {
   const SkImageInfo& GetInfo() const override;
 
   // |ImageGenerator|
-  bool GetPixels(const SkImageInfo& info,
-                 void* pixels,
-                 size_t row_bytes) const override;
+  uint GetFrameCount() const override;
+
+  // |ImageGenerator|
+  const ImageGenerator::FrameInfo GetFrameInfo(uint frame_index) const override;
 
   // |ImageGenerator|
   SkISize GetScaledDimensions(float desired_scale) const override;
+
+  // |ImageGenerator|
+  bool GetPixels(const SkImageInfo& info,
+                 void* pixels,
+                 size_t row_bytes,
+                 uint frame_index = 0,
+                 std::optional<uint> prior_frame = std::nullopt) const override;
 
   static std::unique_ptr<ImageGenerator> MakeFromData(sk_sp<SkData> data);
 
