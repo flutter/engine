@@ -36,6 +36,14 @@ const int _decorationLocation = 30;
 // Explicitly supported builtin types
 const int _builtinFragCoord = 15;
 
+// Ignored ops that have no semantic impact
+const int _opSource = 3;
+const int _opSourceExtension = 4;
+const int _opName = 5;
+const int _opSource = 6;
+const int _opSource = 7;
+const int _opSource = 8;
+
 // Supported instructions
 const int _opExtInstImport = 11;
 const int _opExtInst = 12;
@@ -51,6 +59,8 @@ const int _opTypeVector = 23;
 const int _opTypeMatrix = 24;
 const int _opTypePointer = 32;
 const int _opTypeFunction = 33;
+const int _opConstantTrue = 41;
+const int _opConstantFalse = 42;
 const int _opConstant = 43;
 const int _opConstantComposite = 44;
 const int _opFunction = 54;

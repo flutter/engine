@@ -1,8 +1,8 @@
 // Copyright 2021 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
 // @dart = 2.12
+
 part of spirv;
 
 /// The name of the fragment-coordinate parameter when generating SkSL.
@@ -93,6 +93,10 @@ class _Transpiler {
   /// The ID of the shader's entry point.
   /// See [opEntryPoint].
   int entryPoint = 0;
+
+  /// The ID of a 32-bit int type.
+  /// See [opTypeInt].
+  int intType = 0;
 
   /// The ID of a 32-bit float type.
   /// See [opTypeFloat].
@@ -258,6 +262,9 @@ class _Transpiler {
       case _opTypeBool:
         opTypeBool();
         break;
+      case _opTypeInt:
+        opTypeInt();
+        break;
       case _opTypeFloat:
         opTypeFloat();
         break;
@@ -272,6 +279,12 @@ class _Transpiler {
         break;
       case _opTypeFunction:
         opTypeFunction();
+        break;
+      case _opConstantTrue:
+        opConstantTrue();
+        break;
+      case _opConstantFalse:
+        opConstantFalse();
         break;
       case _opConstant:
         opConstant();
@@ -352,8 +365,16 @@ class _Transpiler {
       case _opReturnValue:
         opReturnValue();
         break;
+      // Ignored ops with no semantic impact
+      case _opSource:
+      case _opSourceExtension:
+      case _opName:
+      case _opMemberName:
+      case _opString:
+      case _opLine:
+        break;
       default:
-        throw failure('Not a supported op.');
+        throw failure('op: $currentOp is not a supported op.');
     }
     position = nextPosition;
   }
@@ -419,6 +440,16 @@ class _Transpiler {
 
   void opTypeBool() {
     types[readWord()] = _Type._bool;
+  }
+
+    void opTypeInt() {
+    final int id = readWord();
+    types[id] = _Type._int;
+    intType = id;
+    final int width = readWord();
+    if (width != 32) {
+      throw failure('int width must be 32');
+    }
   }
 
   void opTypeFloat() {
@@ -502,6 +533,20 @@ class _Transpiler {
       params[i] = readWord();
     }
     functionTypes[id] = _FunctionType(returnType, params);
+  }
+
+  void opConstantTrue() {
+    final int type = readWord();
+    final String id = resolveName(readWord());
+    final String typeName = resolveType(type);
+    src.writeln('const $typeName $id = true;');
+  }
+
+    void opConstantFalse() {
+    final int type = readWord();
+    final String id = resolveName(readWord());
+    final String typeName = resolveType(type);
+    src.writeln('const $typeName $id = true;');
   }
 
   void opConstant() {
