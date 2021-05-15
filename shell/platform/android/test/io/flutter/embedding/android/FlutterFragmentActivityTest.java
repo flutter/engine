@@ -225,7 +225,7 @@ public class FlutterFragmentActivityTest {
     // created a new one again.
     assertEquals(0, activity.numberOfEnginesCreated);
   }
-  
+
   @Test
   public void itDoesNotCrashWhenSplashScreenMetadataIsNotDefined() {
     Intent intent = FlutterFragmentActivity.createDefaultIntent(RuntimeEnvironment.application);
