@@ -280,7 +280,7 @@ FlKeyEmbedderResponder* fl_key_embedder_responder_new(FlEngine* engine) {
 /* Implement FlKeyEmbedderUserData */
 
 static uint64_t event_to_physical_key(const FlKeyEvent* event) {
-  auto found = xkb_to_physical_key_map[event->keycode];
+  auto found = xkb_to_physical_key_map.find(event->keycode);
   if (found != xkb_to_physical_key_map.end()) {
     return found->second;
   }
@@ -289,7 +289,7 @@ static uint64_t event_to_physical_key(const FlKeyEvent* event) {
 
 static uint64_t event_to_logical_key(const FlKeyEvent* event) {
   guint keyval = event->keyval;
-  auto found = gtk_keyval_to_logical_key_map[keyval];
+  auto found = gtk_keyval_to_logical_key_map.find(keyval);
   if (found != gtk_keyval_to_logical_key_map.end()) {
     return found->second;
   }

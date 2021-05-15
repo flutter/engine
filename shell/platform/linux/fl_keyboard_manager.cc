@@ -70,10 +70,10 @@ static uint64_t fl_keyboard_manager_get_event_hash(FlKeyEvent* event) {
   // (scan code) of the event to come up with a unique id for this event that
   // can be derived solely from the event data itself, so that we can identify
   // whether or not we have seen this event already.
-  guint64 type = static_cast<uint64_t>(event->is_press ? GDK_KEY_PRESS : GDK_KEY_RELEASE);
+  guint64 type =
+      static_cast<uint64_t>(event->is_press ? GDK_KEY_PRESS : GDK_KEY_RELEASE);
   guint64 keycode = static_cast<uint64_t>(event->keycode);
-  return (event->time & 0xffffffff) |
-         ((type & 0xffff) << 32) |
+  return (event->time & 0xffffffff) | ((type & 0xffff) << 32) |
          ((keycode & 0xffff) << 48);
 }
 
