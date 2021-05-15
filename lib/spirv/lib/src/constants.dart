@@ -40,9 +40,9 @@ const int _builtinFragCoord = 15;
 const int _opSource = 3;
 const int _opSourceExtension = 4;
 const int _opName = 5;
-const int _opSource = 6;
-const int _opSource = 7;
-const int _opSource = 8;
+const int _opMemberName = 6;
+const int _opString = 7;
+const int _opLine = 8;
 
 // Supported instructions
 const int _opExtInstImport = 11;
