@@ -494,7 +494,8 @@ public class FlutterActivity extends Activity
               : getResources().getDrawable(splashScreenId)
           : null;
     } catch (Resources.NotFoundException e) {
-      Log.w(TAG,
+      Log.w(
+          TAG,
           "Splash screen not found. Ensure the drawable exists and that it's valid."
               + " This can also occur if the xml has unresolved theme references.");
       return null;
