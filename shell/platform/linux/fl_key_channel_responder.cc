@@ -175,10 +175,10 @@ static void fl_key_channel_responder_class_init(
 static void fl_key_channel_responder_init(FlKeyChannelResponder* self) {}
 
 // Creates a new FlKeyChannelResponder instance, with a messenger used to send
-// messages to the framework, and an FlTextInputPlugin that is used to handle key events
-// that the framework doesn't handle. Mainly for testing purposes, it also takes
-// an optional callback to call when a response is received, and an optional
-// channel name to use when sending messages.
+// messages to the framework, and an FlTextInputPlugin that is used to handle
+// key events that the framework doesn't handle. Mainly for testing purposes, it
+// also takes an optional callback to call when a response is received, and an
+// optional channel name to use when sending messages.
 FlKeyChannelResponder* fl_key_channel_responder_new(
     FlBinaryMessenger* messenger,
     FlKeyChannelResponderMock* mock) {
