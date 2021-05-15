@@ -24,6 +24,7 @@ ImageGeneratorRegistry::ImageGeneratorRegistry() : weak_factory_(this) {
       },
       0);
 
+  // todo(bdero): https://github.com/flutter/flutter/issues/82603
 #ifdef OS_MACOSX
   AddFactory(
       [](sk_sp<SkData> buffer) {
