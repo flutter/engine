@@ -374,7 +374,7 @@ class _Transpiler {
       case _opLine:
         break;
       default:
-        throw failure('op: $currentOp is not a supported op.');
+        throw failure('$currentOp is not a supported op.');
     }
     position = nextPosition;
   }
