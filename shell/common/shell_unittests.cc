@@ -701,9 +701,12 @@ TEST_F(ShellTest,
   auto end_frame_callback =
       [&](bool should_resubmit_frame,
           fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
-        ASSERT_TRUE(raster_thread_merger.get() != nullptr);
-        ASSERT_TRUE(should_resubmit_frame);
-        end_frame_called = true;
+        // The asserts below are only valid until DestroyShell is called
+        if (!end_frame_called) {
+          ASSERT_TRUE(raster_thread_merger.get() != nullptr);
+          ASSERT_TRUE(should_resubmit_frame);
+          end_frame_called = true;
+        }
         end_frame_latch.Signal();
       };
   auto external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
