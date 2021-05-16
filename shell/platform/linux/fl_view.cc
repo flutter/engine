@@ -51,6 +51,8 @@ struct _FlView {
 
   GList* children_list;
   GList* pending_children_list;
+
+  gboolean pointer_inside;
 };
 
 typedef struct _FlViewChild {
@@ -173,6 +175,10 @@ static gboolean event_box_motion_notify_event(GtkWidget* widget,
                                               GdkEventMotion* event,
                                               FlView* view);
 
+static gboolean event_box_leave_notify_event(GtkWidget* widget,
+                                             GdkEventCrossing* event,
+                                             FlView* view);
+
 static void fl_view_constructed(GObject* object) {
   FlView* self = FL_VIEW(object);
 
@@ -206,6 +212,8 @@ static void fl_view_constructed(GObject* object) {
                    G_CALLBACK(event_box_scroll_event), self);
   g_signal_connect(self->event_box, "motion-notify-event",
                    G_CALLBACK(event_box_motion_notify_event), self);
+  g_signal_connect(self->event_box, "leave-notify-event",
+                   G_CALLBACK(event_box_leave_notify_event), self);
 }
 
 static void fl_view_set_property(GObject* object,
@@ -491,11 +499,32 @@ static gboolean event_box_motion_notify_event(GtkWidget* widget,
     return FALSE;
   }
 
+  view->pointer_inside = true;
+
   gint scale_factor = gtk_widget_get_scale_factor(GTK_WIDGET(view));
   fl_engine_send_mouse_pointer_event(
       view->engine, view->button_state != 0 ? kMove : kHover,
       event->time * kMicrosecondsPerMillisecond, event->x * scale_factor,
       event->y * scale_factor, 0, 0, view->button_state);
+
+  return TRUE;
+}
+
+static gboolean event_box_leave_notify_event(GtkWidget* widget,
+                                             GdkEventCrossing* event,
+                                             FlView* view) {
+  if (view->engine == nullptr) {
+    return FALSE;
+  }
+
+  if (view->pointer_inside) {
+    gint scale_factor = gtk_widget_get_scale_factor(GTK_WIDGET(view));
+    fl_engine_send_mouse_pointer_event(
+        view->engine, kRemove, event->time * kMicrosecondsPerMillisecond,
+        event->x * scale_factor, event->y * scale_factor, 0, 0,
+        view->button_state);
+    view->pointer_inside = false;
+  }
 
   return TRUE;
 }
