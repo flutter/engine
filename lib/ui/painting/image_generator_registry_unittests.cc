@@ -56,9 +56,9 @@ class FakeImageGenerator : public ImageGenerator {
   ~FakeImageGenerator() = default;
   const SkImageInfo& GetInfo() const { return info_; }
 
-  uint GetFrameCount() const { return 1; }
+  unsigned int GetFrameCount() const { return 1; }
 
-  const ImageGenerator::FrameInfo GetFrameInfo(uint frame_index) const {
+  const ImageGenerator::FrameInfo GetFrameInfo(unsigned int frame_index) const {
     return {std::nullopt, 0, SkCodecAnimation::DisposalMethod::kKeep};
   }
 
@@ -69,8 +69,8 @@ class FakeImageGenerator : public ImageGenerator {
   bool GetPixels(const SkImageInfo& info,
                  void* pixels,
                  size_t row_bytes,
-                 uint frame_index,
-                 std::optional<uint> prior_frame) const {
+                 unsigned int frame_index,
+                 std::optional<unsigned int> prior_frame) const {
     return false;
   };
 

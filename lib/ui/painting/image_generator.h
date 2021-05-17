@@ -25,10 +25,10 @@ class ImageGenerator {
   struct FrameInfo {
     /// The frame index of the frame that, if any, this frame needs to be
     /// blended with.
-    std::optional<uint> required_frame;
+    std::optional<unsigned int> required_frame;
 
     /// Number of milliseconds to show this frame.
-    uint duration;
+    unsigned int duration;
 
     /// How this frame should be modified before decoding the next one.
     SkCodecAnimation::DisposalMethod disposal_method;
@@ -51,7 +51,7 @@ class ImageGenerator {
   ///          is then used when calling `GetFrameInfo`.
   /// @return  The number of frames that the encoded image stores. This will
   ///          always be 1 for single-frame images.
-  virtual uint GetFrameCount() const = 0;
+  virtual unsigned int GetFrameCount() const = 0;
 
   /// @brief      Get information about a single frame in the context of a
   ///             multi-frame image, useful for animation and frame blending.
@@ -62,7 +62,7 @@ class ImageGenerator {
   /// @return     Information about the given frame. If the image is
   ///             single-frame, a default result is returned.
   /// @see        `GetFrameCount`
-  virtual const FrameInfo GetFrameInfo(uint frame_index) const = 0;
+  virtual const FrameInfo GetFrameInfo(unsigned int frame_index) const = 0;
 
   /// @brief      Given a scale value, find the closest image size that can be
   ///             used for efficiently decoding the image. If subpixel image
@@ -105,8 +105,8 @@ class ImageGenerator {
       const SkImageInfo& info,
       void* pixels,
       size_t row_bytes,
-      uint frame_index = 0,
-      std::optional<uint> prior_frame = std::nullopt) const = 0;
+      unsigned int frame_index = 0,
+      std::optional<unsigned int> prior_frame = std::nullopt) const = 0;
 };
 
 class BuiltinSkiaImageGenerator : public ImageGenerator {
@@ -119,20 +119,22 @@ class BuiltinSkiaImageGenerator : public ImageGenerator {
   const SkImageInfo& GetInfo() const override;
 
   // |ImageGenerator|
-  uint GetFrameCount() const override;
+  unsigned int GetFrameCount() const override;
 
   // |ImageGenerator|
-  const ImageGenerator::FrameInfo GetFrameInfo(uint frame_index) const override;
+  const ImageGenerator::FrameInfo GetFrameInfo(
+      unsigned int frame_index) const override;
 
   // |ImageGenerator|
   SkISize GetScaledDimensions(float desired_scale) const override;
 
   // |ImageGenerator|
-  bool GetPixels(const SkImageInfo& info,
-                 void* pixels,
-                 size_t row_bytes,
-                 uint frame_index = 0,
-                 std::optional<uint> prior_frame = std::nullopt) const override;
+  bool GetPixels(
+      const SkImageInfo& info,
+      void* pixels,
+      size_t row_bytes,
+      unsigned int frame_index = 0,
+      std::optional<unsigned int> prior_frame = std::nullopt) const override;
 
   static std::unique_ptr<ImageGenerator> MakeFromGenerator(
       std::unique_ptr<SkImageGenerator> generator);
@@ -154,20 +156,22 @@ class BuiltinSkiaCodecImageGenerator : public ImageGenerator {
   const SkImageInfo& GetInfo() const override;
 
   // |ImageGenerator|
-  uint GetFrameCount() const override;
+  unsigned int GetFrameCount() const override;
 
   // |ImageGenerator|
-  const ImageGenerator::FrameInfo GetFrameInfo(uint frame_index) const override;
+  const ImageGenerator::FrameInfo GetFrameInfo(
+      unsigned int frame_index) const override;
 
   // |ImageGenerator|
   SkISize GetScaledDimensions(float desired_scale) const override;
 
   // |ImageGenerator|
-  bool GetPixels(const SkImageInfo& info,
-                 void* pixels,
-                 size_t row_bytes,
-                 uint frame_index = 0,
-                 std::optional<uint> prior_frame = std::nullopt) const override;
+  bool GetPixels(
+      const SkImageInfo& info,
+      void* pixels,
+      size_t row_bytes,
+      unsigned int frame_index = 0,
+      std::optional<unsigned int> prior_frame = std::nullopt) const override;
 
   static std::unique_ptr<ImageGenerator> MakeFromData(sk_sp<SkData> data);
 

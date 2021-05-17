@@ -18,12 +18,12 @@ const SkImageInfo& BuiltinSkiaImageGenerator::GetInfo() const {
   return generator_->getInfo();
 }
 
-uint BuiltinSkiaImageGenerator::GetFrameCount() const {
+unsigned int BuiltinSkiaImageGenerator::GetFrameCount() const {
   return 1;
 }
 
 const ImageGenerator::FrameInfo BuiltinSkiaImageGenerator::GetFrameInfo(
-    uint frame_index) const {
+    unsigned int frame_index) const {
   return {.required_frame = std::nullopt,
           .duration = 0,
           .disposal_method = SkCodecAnimation::DisposalMethod::kKeep};
@@ -38,8 +38,8 @@ bool BuiltinSkiaImageGenerator::GetPixels(
     const SkImageInfo& info,
     void* pixels,
     size_t row_bytes,
-    uint frame_index,
-    std::optional<uint> prior_frame) const {
+    unsigned int frame_index,
+    std::optional<unsigned int> prior_frame) const {
   return generator_->getPixels(info, pixels, row_bytes);
 }
 
@@ -67,19 +67,20 @@ const SkImageInfo& BuiltinSkiaCodecImageGenerator::GetInfo() const {
   return codec_generator_->getInfo();
 }
 
-uint BuiltinSkiaCodecImageGenerator::GetFrameCount() const {
+unsigned int BuiltinSkiaCodecImageGenerator::GetFrameCount() const {
   return codec_generator_->getFrameCount();
 }
 
 const ImageGenerator::FrameInfo BuiltinSkiaCodecImageGenerator::GetFrameInfo(
-    uint frame_index) const {
+    unsigned int frame_index) const {
   SkCodec::FrameInfo info;
   codec_generator_->getFrameInfo(frame_index, &info);
-  return {.required_frame = info.fRequiredFrame == SkCodec::kNoFrame
-                                ? std::nullopt
-                                : std::optional<uint>(info.fRequiredFrame),
-          .duration = static_cast<uint>(info.fDuration),
-          .disposal_method = info.fDisposalMethod};
+  return {
+      .required_frame = info.fRequiredFrame == SkCodec::kNoFrame
+                            ? std::nullopt
+                            : std::optional<unsigned int>(info.fRequiredFrame),
+      .duration = static_cast<unsigned int>(info.fDuration),
+      .disposal_method = info.fDisposalMethod};
 }
 
 SkISize BuiltinSkiaCodecImageGenerator::GetScaledDimensions(
@@ -91,8 +92,8 @@ bool BuiltinSkiaCodecImageGenerator::GetPixels(
     const SkImageInfo& info,
     void* pixels,
     size_t row_bytes,
-    uint frame_index,
-    std::optional<uint> prior_frame) const {
+    unsigned int frame_index,
+    std::optional<unsigned int> prior_frame) const {
   SkCodec::Options options;
   options.fFrameIndex = frame_index;
   if (prior_frame.has_value()) {
