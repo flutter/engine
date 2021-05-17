@@ -221,8 +221,10 @@ static void fl_key_embedder_responder_dispose(GObject* object) {
   FlKeyEmbedderResponder* self = FL_KEY_EMBEDDER_RESPONDER(object);
 
   g_clear_pointer(&self->pressing_records, g_hash_table_unref);
+  g_clear_pointer(&self->mapping_records, g_hash_table_unref);
   g_clear_pointer(&self->modifier_bit_to_checked_keys, g_hash_table_unref);
   g_clear_pointer(&self->lock_bit_to_checked_keys, g_hash_table_unref);
+  g_clear_pointer(&self->logical_key_to_lock_bit, g_hash_table_unref);
 
   G_OBJECT_CLASS(fl_key_embedder_responder_parent_class)->dispose(object);
 }
