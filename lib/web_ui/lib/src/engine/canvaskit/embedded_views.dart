@@ -2,7 +2,21 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import 'dart:html' as html;
+import 'dart:typed_data';
+
+import 'package:ui/src/engine.dart' show window, NullTreeSanitizer;
+import 'package:ui/ui.dart' as ui;
+
+import '../html/path_to_svg_clip.dart';
+import '../services.dart';
+import '../util.dart';
+import '../vector_math.dart';
+import 'canvas.dart';
+import 'initialization.dart';
+import 'path.dart';
+import 'picture_recorder.dart';
+import 'surface.dart';
 
 /// This composites HTML views into the [ui.Scene].
 class HtmlViewEmbedder {
@@ -307,7 +321,7 @@ class HtmlViewEmbedder {
               '<clipPath id="svgClip$_clipPathCount">'
               '<path d="${path.toSvgString()}">'
               '</path></clipPath>',
-              treeSanitizer: _NullTreeSanitizer(),
+              treeSanitizer: NullTreeSanitizer(),
             );
             pathDefs.append(newClipPath);
             clipView.style.clipPath = 'url(#svgClip$_clipPathCount)';
@@ -321,7 +335,7 @@ class HtmlViewEmbedder {
               '<clipPath id="svgClip$_clipPathCount">'
               '<path d="${path.toSvgString()}">'
               '</path></clipPath>',
-              treeSanitizer: _NullTreeSanitizer(),
+              treeSanitizer: NullTreeSanitizer(),
             );
             pathDefs.append(newClipPath);
             clipView.style.clipPath = 'url(#svgClip$_clipPathCount)';
@@ -370,7 +384,7 @@ class HtmlViewEmbedder {
     }
     _svgPathDefs = html.Element.html(
       '$kSvgResourceHeader<defs id="sk_path_defs"></defs></svg>',
-      treeSanitizer: _NullTreeSanitizer(),
+      treeSanitizer: NullTreeSanitizer(),
     );
     skiaSceneHost!.append(_svgPathDefs!);
   }
@@ -406,7 +420,7 @@ class HtmlViewEmbedder {
     }
     _pictureRecorders.clear();
     _backupPictureRecorder = null;
-    if (_listEquals(_compositionOrder, _activeCompositionOrder)) {
+    if (listEquals(_compositionOrder, _activeCompositionOrder)) {
       _compositionOrder.clear();
       return;
     }
@@ -753,7 +767,7 @@ class MutatorsStack extends Iterable<Mutator> {
       return true;
     }
     return other is MutatorsStack &&
-        _listEquals<Mutator>(other._mutators, _mutators);
+        listEquals<Mutator>(other._mutators, _mutators);
   }
 
   int get hashCode => ui.hashList(_mutators);

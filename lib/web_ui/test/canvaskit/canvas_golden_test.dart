@@ -396,7 +396,10 @@ void testMain() {
     });
 
     test('text styles - leading distribution', () async {
-      await testTextStyle('half leading', height: 20, fontSize: 10, leadingDistribution: ui.TextLeadingDistribution.even);
+      await testTextStyle('half leading',
+          height: 20,
+          fontSize: 10,
+          leadingDistribution: ui.TextLeadingDistribution.even);
       await testTextStyle(
         'half leading inherited from paragraph',
         height: 20,
