@@ -9,7 +9,7 @@ part of engine;
 /// This is made available to end-users through dart:ui in web.
 typedef ParameterizedPlatformViewFactory = html.Element Function(
   int viewId, {
-  Map<dynamic, dynamic>? params,
+  Object? params,
 });
 /// A function which takes a unique `id` and creates an HTML element.
 ///
@@ -135,7 +135,7 @@ class PlatformViewManager {
   html.Element renderContent(
     String viewType,
     int viewId,
-    Map<dynamic, dynamic>? params,
+    Object? params,
   ) {
     assert(knowsViewType(viewType),
         'Attempted to render contents of unregistered viewType: $viewType');
@@ -151,7 +151,6 @@ class PlatformViewManager {
       late html.Element content;
 
       if (factoryFunction is ParameterizedPlatformViewFactory) {
-        // TODO: Determine `params` better, maybe it needs to be a subset?
         content = factoryFunction(viewId, params: params);
       } else {
         content = factoryFunction(viewId);
