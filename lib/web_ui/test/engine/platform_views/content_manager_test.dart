@@ -90,7 +90,8 @@ void testMain() {
         contentManager.registerFactory(anotherViewType, (int id) {
           return html.DivElement()
             ..setAttribute('data-viewId', '$id')
-            ..style.height = 'auto';
+            ..style.height = 'auto'
+            ..style.width = '55%';
         });
       });
 
@@ -111,6 +112,7 @@ void testMain() {
 
         final html.Element userContent = content.querySelector('div')!;
         expect(userContent.style.height, '100%');
+        expect(userContent.style.width, '100%');
       });
 
       test('slot property has the same value as createPlatformViewSlot', () async {
@@ -124,12 +126,13 @@ void testMain() {
                 'The slot attribute of the rendered content must match the name attribute of the SLOT of a given viewId');
       });
 
-      test('do not modify style.height if passed by the user (anotherViewType)',
+      test('do not modify style.height / style.width if passed by the user (anotherViewType)',
           () async {
         final html.Element content =
             contentManager.renderContent(anotherViewType, viewId, null);
         final html.Element userContent = content.querySelector('div')!;
         expect(userContent.style.height, 'auto');
+        expect(userContent.style.width, '55%');
       });
 
       test('returns cached instances of already-rendered content', () async {

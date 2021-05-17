@@ -114,17 +114,7 @@ class PlatformViewManager {
         content = factoryFunction(viewId);
       }
 
-      // Scrutinize closely any other modifications to `content`.
-      // We shouldn't modify users' returned `content` if at all possible.
-      // Note there's also no getContent(viewId) function anymore, to prevent
-      // from later modifications too.
-      if (content.style.height.isEmpty) {
-        printWarning('Height of Platform View type: [$viewType] may not be set.'
-            ' Defaulting to `height: 100%`.\n'
-            'Set `style.height` to any appropriate value to stop this message.');
-
-        content.style.height = '100%';
-      }
+      _ensureContentCorrectlySized(content, viewType);
 
       return wrapper..append(content);
     });
@@ -137,5 +127,29 @@ class PlatformViewManager {
   void clearPlatformView(int viewId) {
     // Remove from our cache, and then from the DOM...
     _contents.remove(viewId)?.remove();
+  }
+
+  /// Attempt to ensure that the contents of the user-supplied DOM element will
+  /// fill the space allocated for this platform view by the framework.
+  void _ensureContentCorrectlySized(html.Element content, String viewType) {
+    // Scrutinize closely any other modifications to `content`.
+    // We shouldn't modify users' returned `content` if at all possible.
+    // Note there's also no getContent(viewId) function anymore, to prevent
+    // from later modifications too.
+    if (content.style.height.isEmpty) {
+      printWarning('Height of Platform View type: [$viewType] may not be set.'
+          ' Defaulting to `height: 100%`.\n'
+          'Set `style.height` to any appropriate value to stop this message.');
+
+      content.style.height = '100%';
+    }
+
+    if (content.style.width.isEmpty) {
+      printWarning('Width of Platform View type: [$viewType] may not be set.'
+          ' Defaulting to `width: 100%`.\n'
+          'Set `style.width` to any appropriate value to stop this message.');
+
+      content.style.width = '100%';
+    }
   }
 }
