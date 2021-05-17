@@ -4,9 +4,16 @@
 
 #include "flutter/shell/platform/linux/fl_key_event.h"
 
+#define TRACE(x) \
+  printf("before "#x"\n");fflush(stdout); \
+  x \
+  printf("after "#x"\n");fflush(stdout);
+
 static void dispose_origin_from_gdk_event(gpointer origin) {
   g_return_if_fail(origin != nullptr);
+  TRACE(
   gdk_event_free(reinterpret_cast<GdkEvent*>(origin));
+  );
 }
 
 static char* clone_string(const char* source) {
@@ -41,12 +48,18 @@ FlKeyEvent* fl_key_event_new_from_gdk_event(GdkEvent* raw_event) {
 
 void fl_key_event_dispose(FlKeyEvent* event) {
   if (event->string != nullptr) {
+    TRACE(
     g_free(const_cast<char*>(event->string));
+    );
   }
   if (event->dispose_origin != nullptr) {
+    TRACE(
     event->dispose_origin(event->origin);
+    );
   }
+  TRACE(
   g_free(event);
+  );
 }
 
 FlKeyEvent* fl_key_event_clone(const FlKeyEvent* event) {
