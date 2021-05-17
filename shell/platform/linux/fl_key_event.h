@@ -7,16 +7,14 @@
 
 #include <gdk/gdk.h>
 
-typedef struct _FlKeyEvent FlKeyEvent;
-
 /**
  * FlKeyEventDispose:
- * @self: the self pointer to dispose.
+ * @origin: the #FlKeyEvent::origin to dispose.
  *
- * The signature for a callback with which a #FlKeyEvent performs
- * before being freed.
+ * The signature for #FlKeyEvent::dispose_origin, which
+ * frees #FlKeyEvent::origin.
  **/
-typedef void (*FlKeyEventDispose)(FlKeyEvent* self);
+typedef void (*FlKeyEventDisposeOrigin)(gpointer origin);
 
 /**
  * FlKeyEvent:
@@ -40,17 +38,15 @@ typedef struct _FlKeyEvent {
   //
   // Can be nullptr.
   const char* string;
-  // Length of #string (without the terminating \0).
-  size_t length;
   // An opaque pointer to the original event.
   //
   // This is used when dispatching.  For native events, this is #GdkEvent
   // pointer.  For unit tests, this is a dummy pointer.
   gpointer origin;
-  // Extra steps before freeing this #FlKeyEvent.
+  // A callback to free #origin, called in #fl_key_event_dispose.
   //
-  // Usually a function that frees origin. Can be nullptr.
-  FlKeyEventDispose dispose;
+  // Can be nullptr.
+  FlKeyEventDisposeOrigin dispose_origin;
 } FlKeyEvent;
 
 /**
@@ -71,5 +67,7 @@ FlKeyEvent* fl_key_event_new_from_gdk_event(GdkEvent* event);
  * Properly disposes the content of #event and then the pointer.
  */
 void fl_key_event_dispose(FlKeyEvent* event);
+
+FlKeyEvent* fl_key_event_clone(const FlKeyEvent* source);
 
 #endif  // FLUTTER_SHELL_PLATFORM_LINUX_FL_KEY_EVENT_H_

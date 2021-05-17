@@ -29,31 +29,21 @@ static void responder_callback(bool handled, gpointer user_data) {
   g_main_loop_quit(static_cast<GMainLoop*>(user_data));
 }
 
-namespace {
-// A dummy object, whose pointer will be used as _g_key_event->origin.
-static int _origin_event;
-// A global variable to store new event. It is a global variable so that it can
-// be returned by key_event_new for easy use.
-static FlKeyEvent _g_key_event;
-}  // namespace
-
 // Clone string onto the heap.
 //
 // If #string is nullptr, returns nullptr.  Otherwise, the returned pointer must
-// be freed with g_free. The #out_length must not be nullptr, and is used to
-// store the length of the string.
-static char* clone_string(const char* string, size_t* out_length) {
+// be freed with g_free.
+static char* clone_string(const char* string) {
   if (string == nullptr) {
-    *out_length = 0;
     return nullptr;
   }
   size_t len = strlen(string);
   char* result = g_new(char, len + 1);
   strcpy(result, string);
-  *out_length = len;
   return result;
 }
 
+// Create a new #FlKeyEvent with the given information.
 static FlKeyEvent* fl_key_event_new_by_mock(guint32 time_in_milliseconds,
                                             bool is_press,
                                             guint keyval,
@@ -61,18 +51,16 @@ static FlKeyEvent* fl_key_event_new_by_mock(guint32 time_in_milliseconds,
                                             int state,
                                             const char* string,
                                             gboolean is_modifier) {
-  if (_g_key_event.string != nullptr) {
-    g_free(const_cast<char*>(_g_key_event.string));
-  }
-  _g_key_event.is_press = is_press;
-  _g_key_event.time = time_in_milliseconds;
-  _g_key_event.state = state;
-  _g_key_event.keyval = keyval;
-  _g_key_event.string = clone_string(string, &_g_key_event.length);
-  _g_key_event.keycode = keycode;
-  _g_key_event.origin = &_origin_event;
-  _g_key_event.dispose = nullptr;
-  return &_g_key_event;
+  FlKeyEvent* event = g_new(FlKeyEvent, 1);
+  event->is_press = is_press;
+  event->time = time_in_milliseconds;
+  event->state = state;
+  event->keyval = keyval;
+  event->string = clone_string(string);
+  event->keycode = keycode;
+  event->origin = nullptr;
+  event->dispose_origin = nullptr;
+  return event;
 }
 
 // Test sending a letter "A";

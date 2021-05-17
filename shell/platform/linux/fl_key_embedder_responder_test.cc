@@ -72,8 +72,7 @@ static void fl_key_embedder_call_record_dispose(GObject* object) {
 
   FlKeyEmbedderCallRecord* self = FL_KEY_EMBEDDER_CALL_RECORD(object);
   if (self->event != nullptr) {
-    g_free(const_cast<char*>(self->event->character));
-    g_free(self->event);
+    fl_key_event_dispose(self->event);
   }
   G_OBJECT_CLASS(fl_key_embedder_call_record_parent_class)->dispose(object);
 }
@@ -93,45 +92,30 @@ static FlKeyEmbedderCallRecord* fl_key_embedder_call_record_new(
   FlKeyEmbedderCallRecord* self = FL_KEY_EMBEDDER_CALL_RECORD(
       g_object_new(fl_key_embedder_call_record_get_type(), nullptr));
 
-  FlutterKeyEvent* clone_event = g_new(FlutterKeyEvent, 1);
-  *clone_event = *event;
-  if (event->character != nullptr) {
-    size_t character_length = strlen(event->character);
-    char* clone_character = g_new(char, character_length + 1);
-    strcpy(clone_character, event->character);
-    clone_event->character = clone_character;
-  }
-  self->event = clone_event;
+  self->event = fl_key_event_clone(event);
   self->callback = callback;
   self->user_data = user_data;
 
   return self;
 }
 
-namespace {
-// A dummy object, whose pointer will be used as _g_key_event->origin.
-static int _origin_event;
-// A global variable to store new event. It is a global variable so that it can
-// be returned by key_event_new for easy use.
-FlKeyEvent _g_key_event;
-}  // namespace
-
+// Create a new #FlKeyEvent with the given information.
 static FlKeyEvent* fl_key_event_new_by_mock(guint32 time_in_milliseconds,
                                             bool is_press,
                                             guint keyval,
                                             guint16 keycode,
                                             int state,
                                             gboolean is_modifier) {
-  _g_key_event.is_press = is_press;
-  _g_key_event.time = time_in_milliseconds;
-  _g_key_event.state = state;
-  _g_key_event.keyval = keyval;
-  _g_key_event.length = 0;
-  _g_key_event.string = nullptr;
-  _g_key_event.keycode = keycode;
-  _g_key_event.origin = &_origin_event;
-  _g_key_event.dispose = nullptr;
-  return &_g_key_event;
+  FlKeyEvent* event = g_new(FlKeyEvent, 1);
+  event->is_press = is_press;
+  event->time = time_in_milliseconds;
+  event->state = state;
+  event->keyval = keyval;
+  event->string = nullptr;
+  event->keycode = keycode;
+  event->origin = nullptr;
+  event->dispose_origin = nullptr;
+  return event;
 }
 
 static gboolean g_expected_handled;
@@ -154,6 +138,12 @@ namespace {
 GPtrArray* g_call_records;
 }
 
+static FlKeyEvent* fl_key_event_clone(FlKeyEvent* event) {
+  FlKeyEvent* new_event = g_new(FlKeyEvent, 1);
+  *new_event = *event;
+  return new_event;
+}
+
 static FlEngine* make_mock_engine_with_records() {
   FlEngine* engine = make_mock_engine();
   FlutterEngineProcTable* embedder_api = fl_engine_get_embedder_api(engine);
@@ -161,7 +151,7 @@ static FlEngine* make_mock_engine_with_records() {
                                   FlutterKeyEventCallback callback,
                                   void* user_data) {
     g_ptr_array_add(g_call_records, fl_key_embedder_call_record_new(
-                                        event, callback, user_data));
+                                        fl_key_event_clone(event), callback, user_data));
 
     return kSuccess;
   };

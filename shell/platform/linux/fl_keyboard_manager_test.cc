@@ -132,10 +132,9 @@ static void fl_key_mock_responder_iface_init(FlKeyResponderInterface* iface) {
 // Return a newly allocated #FlKeyEvent that is a clone to the given #event
 // but with #origin and #dispose set to 0.
 static FlKeyEvent* fl_key_event_clone_information_only(FlKeyEvent* event) {
-  FlKeyEvent* new_event = g_new(FlKeyEvent, 1);
-  *new_event = *event;
+  FlKeyEvent* new_event = fl_key_event_clone(event);
   new_event->origin = nullptr;
-  new_event->dispose = nullptr;
+  new_event->dispose_origin = nullptr;
   return new_event;
 }
 static void fl_key_mock_responder_handle_event(
@@ -175,8 +174,8 @@ static gpointer g_ptr_array_last(GPtrArray* array) {
   return g_ptr_array_index(array, array->len - 1);
 }
 
-static void fl_key_event_free_by_mock(FlKeyEvent* event) {
-  g_free(event->origin);
+static void fl_key_event_free_origin_by_mock(gpointer origin) {
+  g_free(origin);
 }
 // Create a new #FlKeyEvent with the given information.
 //
@@ -192,12 +191,11 @@ static FlKeyEvent* fl_key_event_new_by_mock(bool is_press,
   event->time = 0;
   event->state = state;
   event->keyval = keyval;
-  event->length = 0;
   event->string = nullptr;
   event->keycode = keycode;
   FlKeyEvent* origin_event = fl_key_event_clone_information_only(event);
   event->origin = origin_event;
-  event->dispose = fl_key_event_free_by_mock;
+  event->dispose_origin = fl_key_event_free_origin_by_mock;
   return event;
 }
 
