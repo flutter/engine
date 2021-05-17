@@ -111,6 +111,8 @@ Future<int> starter(
   frontend.ProgramTransformer transformer,
 }) async {
   ArgResults options;
+  // TODO(https://github.com/dart-lang/sdk/issues/46022): Remove handling of
+  // --delete-tostring-package-uri option after it is added to Dart SDK.
   final bool handleDeleteToString =
       !frontend.argParser.options.containsKey('delete-tostring-package-uri');
   if (handleDeleteToString) {
