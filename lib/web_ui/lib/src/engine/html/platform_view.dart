@@ -16,7 +16,7 @@ class PersistedPlatformView extends PersistedLeafSurface {
 
   @override
   html.Element createElement() {
-    return platformViewManager.renderSlot(viewId);
+    return createPlatformViewSlot(viewId);
   }
 
   @override

@@ -250,6 +250,7 @@ part 'engine/platform_dispatcher.dart';
 part 'engine/platform_views.dart';
 part 'engine/platform_views/content_manager.dart';
 part 'engine/platform_views/message_handler.dart';
+part 'engine/platform_views/slots.dart';
 part 'engine/profiler.dart';
 part 'engine/rrect_renderer.dart';
 part 'engine/semantics/accessibility.dart';

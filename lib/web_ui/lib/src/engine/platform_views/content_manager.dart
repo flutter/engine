@@ -18,29 +18,24 @@ typedef PlatformViewFactory = html.Element Function(int viewId);
 
 /// This class handles the lifecycle of Platform Views in the DOM of a Flutter Web App.
 ///
-/// There are three important parts of Platform Views that this class manages:
+/// There are three important parts of Platform Views. This class manages two of
+/// them:
 ///
 /// * `factories`: The functions used to render the contents of any given Platform
 /// View by its `viewType`.
 /// * `contents`: The result [html.Element] of calling a `factory` function.
-/// * `slots`: A special HTML tag that will be used by the framework to "reveal"
-/// the `contents` of a Platform View.
 ///
-/// This class keeps a registry of `factories`, `slots` and `contents` so the
-/// framework can CRUD Platform Views as needed, regardless of the rendering backend.
+/// The third part is `slots`, which are created on demand by the
+/// [createPlatformViewSlot] function.
+///
+/// This class keeps a registry of `factories`, `contents` so the framework can
+/// CRUD Platform Views as needed, regardless of the rendering backend.
 class PlatformViewManager {
   // The factory functions, indexed by the viewType
   final Map<String, Function> _factories = {};
 
-  // The references to <slot> tags, indexed by their framework-given ID.
-  final Map<int, html.Element> _slots = {};
-
   // The references to content tags, indexed by their framework-given ID.
   final Map<int, html.Element> _contents = {};
-
-  String _getSlotName(int viewId) {
-    return 'flt-pv-slot-$viewId';
-  }
 
   /// Returns `true` if the passed in `viewType` has been registered before.
   ///
@@ -74,43 +69,6 @@ class PlatformViewManager {
     return true;
   }
 
-  /// Creates the HTML markup for the `slot` of a Platform View.
-  ///
-  /// The result of this call is cached in the `_slots` Map, so it can be accessed
-  /// later for CRUD operations.
-  ///
-  /// The resulting DOM for a `slot` looks like this:
-  ///
-  /// ```html
-  /// <flt-platform-view-slot style="...">
-  ///   <slot name="..." />
-  /// </flt-platform-view-slot>
-  /// ```
-  ///
-  /// The inner `SLOT` tag is standard HTML to reveal an element that is rendered
-  /// elsewhere in the DOM. Its `name` attribute must match the value of the `slot`
-  /// attribute of the contents being revealed (see [renderContent].)
-  ///
-  /// The outer `flt-platform-view-slot` tag is a simple wrapper that the framework
-  /// can position/style as needed.
-  ///
-  /// (When the framework accesses a `slot`, it's really accessing its wrapper
-  /// `flt-platform-view-slot` tag)
-  html.Element renderSlot(int viewId) {
-    final String slotName = _getSlotName(viewId);
-
-    return _slots.putIfAbsent(viewId, () {
-      final html.Element wrapper = html.document
-          .createElement('flt-platform-view-slot')
-          ..style.pointerEvents = 'auto';
-
-      final html.Element slot = html.document.createElement('slot')
-        ..setAttribute('name', slotName);
-
-      return wrapper..append(slot);
-    });
-  }
-
   /// Creates the HTML markup for the `contents` of a Platform View.
   ///
   /// The result of this call is cached in the `_contents` Map. This is only
@@ -140,7 +98,7 @@ class PlatformViewManager {
     assert(knowsViewType(viewType),
         'Attempted to render contents of unregistered viewType: $viewType');
 
-    final String slotName = _getSlotName(viewId);
+    final String slotName = getPlatformViewSlotName(viewId);
 
     return _contents.putIfAbsent(viewId, () {
       final html.Element wrapper = html.document
@@ -174,11 +132,10 @@ class PlatformViewManager {
 
   /// Removes a PlatformView by its `viewId` from the manager, and from the DOM.
   ///
-  /// Once a view has been cleared, calls to [getSlot] or [knowsViewId] will fail,
-  /// as if it had never been rendered before.
+  /// Once a view has been cleared, calls [knowsViewId] will fail, as if it had
+  /// never been rendered before.
   void clearPlatformView(int viewId) {
     // Remove from our cache, and then from the DOM...
-    _slots.remove(viewId)?.remove();
     _contents.remove(viewId)?.remove();
   }
 }

@@ -78,34 +78,6 @@ void testMain() {
       });
     });
 
-    group('renderSlot', () {
-      test(
-          'can render slot, even for views that might have never been rendered before',
-          () async {
-        final html.Element slot = contentManager.renderSlot(viewId);
-        expect(slot, isNotNull);
-        expect(slot.querySelector('slot'), isNotNull);
-      });
-
-      test('rendered markup contains required attributes', () async {
-        final html.Element slot = contentManager.renderSlot(viewId);
-        expect(slot.style.pointerEvents, 'auto',
-            reason:
-                'Should re-enable pointer events for the contents of the view.');
-        final html.Element innerSlot = slot.querySelector('slot')!;
-        expect(innerSlot.getAttribute('name'), contains('$viewId'),
-            reason:
-                'The name attribute of the inner SLOT tag must refer to the viewId.');
-      });
-
-      test('returns cached instances of already-rendered slots', () async {
-        final html.Element firstSlot = contentManager.renderSlot(viewId);
-        final html.Element otherSlot = contentManager.renderSlot(viewId);
-
-        expect(firstSlot, same(otherSlot));
-      });
-    });
-
     group('renderContent', () {
       final String unregisteredViewType = 'unregisteredForTest';
       final String anotherViewType = 'anotherViewType';
@@ -141,10 +113,10 @@ void testMain() {
         expect(userContent.style.height, '100%');
       });
 
-      test('slot property has the same value as renderSlot', () async {
+      test('slot property has the same value as createPlatformViewSlot', () async {
         final html.Element content =
             contentManager.renderContent(viewType, viewId, null);
-        final html.Element slot = contentManager.renderSlot(viewId);
+        final html.Element slot = createPlatformViewSlot(viewId);
         final html.Element innerSlot = slot.querySelector('slot')!;
 
         expect(content.getAttribute('slot'), innerSlot.getAttribute('name'),

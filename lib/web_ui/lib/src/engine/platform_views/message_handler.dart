@@ -4,6 +4,10 @@
 
 part of engine;
 
+/// The signature for a callback for a Platform Message. From the `ui` package.
+/// Copied here so there's no circular dependencies.
+typedef _PlatformMessageResponseCallback = void Function(ByteData? data);
+
 /// A function that handle a newly created [html.Element] with the contents of a
 /// platform view with a unique [int] id.
 typedef PlatformViewContentHandler = void Function(html.Element);
@@ -56,7 +60,7 @@ class PlatformViewMessageHandler {
   /// In case of error, this will `callback` with an error envelope describing the error.
   void _createPlatformView(
     MethodCall methodCall,
-    ui.PlatformMessageResponseCallback callback,
+    _PlatformMessageResponseCallback callback,
   ) {
     final Map<dynamic, dynamic> args = methodCall.arguments;
     final int viewId = args['id'];
@@ -107,7 +111,7 @@ class PlatformViewMessageHandler {
   /// This function should always `callback` with an empty success envelope.
   void _disposePlatformView(
     MethodCall methodCall,
-    ui.PlatformMessageResponseCallback callback,
+    _PlatformMessageResponseCallback callback,
   ) {
     final int viewId = methodCall.arguments;
 
@@ -125,7 +129,7 @@ class PlatformViewMessageHandler {
   /// * `dispose`: See [_disposePlatformView]
   void handlePlatformViewCall(
     ByteData? data,
-    ui.PlatformMessageResponseCallback callback,
+    _PlatformMessageResponseCallback callback,
   ) {
     final MethodCall decoded = _codec.decodeMethodCall(data);
     switch (decoded.method) {

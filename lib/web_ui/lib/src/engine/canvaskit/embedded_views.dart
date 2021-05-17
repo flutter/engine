@@ -4,7 +4,7 @@
 
 import 'dart:html' as html;
 
-import 'package:ui/src/engine.dart' show window, NullTreeSanitizer, platformViewManager;
+import 'package:ui/src/engine.dart' show window, NullTreeSanitizer, platformViewManager, createPlatformViewSlot;
 import 'package:ui/ui.dart' as ui;
 
 import '../html/path_to_svg_clip.dart';
@@ -102,7 +102,7 @@ class HtmlViewEmbedder {
 
   void _compositeWithParams(int viewId, EmbeddedViewParams params) {
     // See [PlatformViewManager] for more info about PlatformView `slot` and `content`.
-    final html.Element slot = platformViewManager.renderSlot(viewId);
+    final html.Element slot = createPlatformViewSlot(viewId);
 
     // We haven't seen this viewId yet, let's cache its root for clips/transforms.
     if (!_rootViews.containsKey(viewId)) {
