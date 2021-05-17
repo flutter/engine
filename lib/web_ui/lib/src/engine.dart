@@ -105,31 +105,6 @@ export 'engine/navigation/js_url_strategy.dart';
 import 'engine/navigation/url_strategy.dart';
 export 'engine/navigation/url_strategy.dart';
 
-// import 'engine/html/offscreen_canvas.dart';
-export 'engine/html/offscreen_canvas.dart';
-
-// import 'engine/html/shaders/shader.dart';
-export 'engine/html/shaders/shader.dart';
-
-// import 'engine/html/shaders/shader_builder.dart';
-export 'engine/html/shaders/shader_builder.dart';
-
-import 'engine/html/shaders/image_shader.dart';
-export 'engine/html/shaders/image_shader.dart';
-
-// import 'engine/html/shaders/vertex_shaders.dart';
-export 'engine/html/shaders/vertex_shaders.dart';
-
-// import 'engine/html/shaders/webgl_context.dart';
-export 'engine/html/shaders/webgl_context.dart';
-
-import 'engine/html/render_vertices.dart';
-export 'engine/html/render_vertices.dart';
-
-// This import is intentionally commented out because the analyzer says it's unused.
-// import 'engine/html/shaders/normalized_gradient.dart';
-export 'engine/html/shaders/normalized_gradient.dart';
-
 import 'engine/plugins.dart';
 export 'engine/plugins.dart';
 
@@ -159,9 +134,6 @@ export 'engine/shadow.dart';
 
 import 'engine/test_embedding.dart';
 export 'engine/test_embedding.dart';
-
-// import 'engine/ulps.dart';
-// export 'engine/ulps.dart';
 
 import 'engine/util.dart';
 export 'engine/util.dart';

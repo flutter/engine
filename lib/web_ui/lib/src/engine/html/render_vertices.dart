@@ -101,49 +101,6 @@ abstract class GlRenderer {
 /// This class gets instantiated on demand by Vertices constructor. For apps
 /// that don't use Vertices WebGlRenderer will be removed from release binary.
 class _WebGlRenderer implements GlRenderer {
-
-  static void setupVertexTransforms(
-      GlContext gl,
-      GlProgram glProgram,
-      double offsetX,
-      double offsetY,
-      double widthInPixels,
-      double heightInPixels,
-      Matrix4 transform) {
-    Object transformUniform =
-        gl.getUniformLocation(glProgram.program, 'u_ctransform');
-    Matrix4 transformAtOffset = transform.clone()
-      ..translate(-offsetX, -offsetY);
-    gl.setUniformMatrix4fv(transformUniform, false, transformAtOffset.storage);
-
-    // Set uniform to scale 0..width/height pixels coordinates to -1..1
-    // clipspace range and flip the Y axis.
-    Object resolution = gl.getUniformLocation(glProgram.program, 'u_scale');
-    gl.setUniform4f(resolution, 2.0 / widthInPixels.toDouble(),
-        -2.0 / heightInPixels.toDouble(), 1, 1);
-    Object shift = gl.getUniformLocation(glProgram.program, 'u_shift');
-    gl.setUniform4f(shift, -1, 1, 0, 0);
-  }
-
-  static void setupTextureScalar(
-      GlContext gl, GlProgram glProgram, double sx, double sy) {
-    Object scalar = gl.getUniformLocation(glProgram.program, 'u_texscale');
-    gl.setUniform2f(scalar, sx, sy);
-  }
-
-  static dynamic _tileModeToGlWrapping(GlContext gl, ui.TileMode tileMode) {
-    switch (tileMode) {
-      case ui.TileMode.clamp:
-        return gl.kClampToEdge;
-      case ui.TileMode.decal:
-        return gl.kClampToEdge;
-      case ui.TileMode.mirror:
-        return gl.kMirroredRepeat;
-      case ui.TileMode.repeated:
-        return gl.kRepeat;
-    }
-  }
-
   @override
   void drawVertices(
       html.CanvasRenderingContext2D? context,
@@ -156,10 +113,11 @@ class _WebGlRenderer implements GlRenderer {
     // Compute bounds of vertices.
     final Float32List positions = vertices.positions;
     ui.Rect bounds = _computeVerticesBounds(positions, transform);
-    double minValueX = bounds.left;
-    double minValueY = bounds.top;
-    double maxValueX = bounds.right;
-    double maxValueY = bounds.bottom;
+    final double dpr = ui.window.devicePixelRatio;
+    double minValueX = bounds.left * dpr;
+    double minValueY = bounds.top * dpr;
+    double maxValueX = bounds.right * dpr;
+    double maxValueY = bounds.bottom * dpr;
     double offsetX = 0;
     double offsetY = 0;
     int widthInPixels = canvasWidthInPixels;
@@ -238,7 +196,8 @@ class _WebGlRenderer implements GlRenderer {
     gl.enableVertexAttribArray(positionAttributeLocation);
     // Bind buffer as position buffer and transfer data.
     gl.bindArrayBuffer(positionsBuffer);
-    gl.bufferData(positions, gl.kStaticDraw);
+    bufferVertexData(gl, positions, ui.window.devicePixelRatio);
+
     // Setup data format for attribute.
     js_util.callMethod(gl.glContext, 'vertexAttribPointer', <dynamic>[
       positionAttributeLocation,
@@ -291,10 +250,10 @@ class _WebGlRenderer implements GlRenderer {
         // Texture REPEAT and MIRROR is only supported in WebGL 2, for
         // WebGL 1.0 we let shader compute correct uv coordinates.
         gl.texParameteri(gl.kTexture2D, gl.kTextureWrapS,
-            _tileModeToGlWrapping(gl, imageShader.tileModeX));
+            tileModeToGlWrapping(gl, imageShader.tileModeX));
 
         gl.texParameteri(gl.kTexture2D, gl.kTextureWrapT,
-            _tileModeToGlWrapping(gl, imageShader.tileModeY));
+            tileModeToGlWrapping(gl, imageShader.tileModeY));
 
         // Mipmapping saves your texture in different resolutions
         // so the graphics card can choose which resolution is optimal

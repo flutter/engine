@@ -18,12 +18,13 @@ import 'webgl_context.dart';
 
 class EngineImageShader implements ui.ImageShader {
   EngineImageShader(ui.Image image, this.tileModeX, this.tileModeY,
-      this.matrix4, this.filterQuality)
-      : this.image = image as HtmlImage;
+      Float64List matrix4, this.filterQuality)
+      : this.image = image as HtmlImage,
+        this.matrix4 = Float32List.fromList(matrix4);
 
   final ui.TileMode tileModeX;
   final ui.TileMode tileModeY;
-  final Float64List matrix4;
+  final Float32List matrix4;
   final ui.FilterQuality? filterQuality;
   final HtmlImage image;
 
@@ -123,77 +124,168 @@ class EngineImageShader implements ui.ImageShader {
   }
 
   /// Creates an image with tiled/transformed images.
-  html.CanvasPattern _createGlShader(html.CanvasRenderingContext2D? ctx,
+  html.CanvasPattern _createGlShader(html.CanvasRenderingContext2D? context,
       ui.Rect? shaderBounds, double density) {
     assert(shaderBounds != null);
-    int widthInPixels = shaderBounds!.width.ceil();
-    int heightInPixels = shaderBounds.height.ceil();
+    final Matrix4 transform = Matrix4.fromFloat32List(matrix4);
+    final double dpr = ui.window.devicePixelRatio;
+
+    // Compute bounds of vertices.
+    //ui.Rect bounds = _computeVerticesBounds(positions, transform);
+    ui.Rect bounds = shaderBounds!;
+    double minValueX = bounds.left * dpr;
+    double minValueY = bounds.top * dpr;
+    double maxValueX = bounds.right * dpr;
+    double maxValueY = bounds.bottom * dpr;
+    double offsetX = 0;
+    double offsetY = 0;
+    int widthInPixels = maxValueX.ceil();
+    int heightInPixels = maxValueY.ceil();
+    // If vertices fall outside the bitmap area, cull.
+    assert(maxValueX > 0 && maxValueY > 0);
+    assert(!(minValueX > widthInPixels || minValueY > heightInPixels));
+
+    // If Vertices are is smaller than hosting canvas, allocate minimal
+    // offscreen canvas to reduce readPixels data size.
+    if ((maxValueX - minValueX) < widthInPixels &&
+        (maxValueY - minValueY) < heightInPixels) {
+      widthInPixels = maxValueX.ceil() - minValueX.floor();
+      heightInPixels = maxValueY.ceil() - minValueY.floor();
+      offsetX = minValueX.floor().toDouble();
+      offsetY = minValueY.floor().toDouble();
+    }
+
+    // int widthInPixels = (shaderBounds!.width * dpr).ceil();
+    // int heightInPixels = (shaderBounds.height * dpr).ceil();
     assert(widthInPixels > 0 && heightInPixels > 0);
 
     /// Render tiles into a bitmap and create a canvas pattern.
     final bool isWebGl2 = webGLVersion == WebGLVersion.webgl2;
 
-    final EngineImageShader? imageShader =
-    paint.shader == null ? null : paint.shader as EngineImageShader;
-
-    final String vertexShader = imageShader == null
-        ? VertexShaders.writeBaseVertexShader()
-        : VertexShaders.writeTextureVertexShader();
-    final String fragmentShader = imageShader == null
-        ? _writeVerticesFragmentShader()
-        : FragmentShaders.writeTextureFragmentShader(
-        isWebGl2, imageShader.tileModeX, imageShader.tileModeY);
+    final String vertexShader = VertexShaders.writeTextureVertexShader();
+    final String fragmentShader = FragmentShaders.writeTextureFragmentShader(
+        isWebGl2, tileModeX, tileModeY);
 
     GlContext gl =
-    GlContextCache.createGlContext(widthInPixels, heightInPixels)!;
+        GlContextCache.createGlContext(widthInPixels, heightInPixels)!;
 
     GlProgram glProgram = gl.cacheProgram(vertexShader, fragmentShader);
     gl.useProgram(glProgram);
 
+    final Float32List vertices = Float32List(12);
+    vertices[0] = shaderBounds.left * dpr;
+    vertices[1] = shaderBounds.top * dpr;
+    vertices[2] = shaderBounds.right * dpr;
+    vertices[3] = shaderBounds.top * dpr;
+    vertices[4] = shaderBounds.right * dpr;
+    vertices[5] = shaderBounds.bottom * dpr;
+    vertices[6] = shaderBounds.right * dpr;
+    vertices[7] = shaderBounds.bottom * dpr;
+    vertices[8] = shaderBounds.left * dpr;
+    vertices[9] = shaderBounds.bottom * dpr;
+    vertices[10] = shaderBounds.left * dpr;
+    vertices[11] = shaderBounds.top * dpr;
+
     Object? positionAttributeLocation =
-    gl.getAttributeLocation(glProgram.program, 'position');
+        gl.getAttributeLocation(glProgram.program, 'position');
 
     setupVertexTransforms(gl, glProgram, offsetX, offsetY,
-        widthInPixels.toDouble(), heightInPixels.toDouble(), transform);
+        widthInPixels.toDouble(), heightInPixels.toDouble(), Matrix4.fromFloat32List(matrix4));
 
-    if (imageShader != null) {
-      /// To map from vertex position to texture coordinate in 0..1 range,
-      /// we setup scalar to be used in vertex shader.
-      setupTextureScalar(
-          gl,
-          glProgram,
-          1.0 / imageShader.image.width.toDouble(),
-          1.0 / imageShader.image.height.toDouble());
-    }
-
-    final Float32List vertices = Float32List(8);
-    vertices[0] = left;
-    vertices[1] = top;
-    vertices[2] = right;
-    vertices[3] = top;
-    vertices[4] = right;
-    vertices[5] = bottom;
-    vertices[6] = left;
-    vertices[7] = bottom;
+    /// To map from vertex position to texture coordinate in 0..1 range,
+    /// we setup scalar to be used in vertex shader.
+    setupTextureScalar(
+        gl,
+        glProgram,
+        1.0 / image.width.toDouble(),
+        1.0 / image.height.toDouble());
 
     // Setup geometry.
+    //
+    // Create buffer for vertex coordinates.
     Object positionsBuffer = gl.createBuffer()!;
     assert(positionsBuffer != null); // ignore: unnecessary_null_comparison
+
+    Object? vao;
+    if (isWebGl2) {
+      // Create a vertex array object.
+      vao = gl.createVertexArray();
+      // Set vertex array object as active one.
+      gl.bindVertexArray(vao!);
+    }
+
+    // Turn on position attribute.
+    gl.enableVertexAttribArray(positionAttributeLocation);
+    // Bind buffer as position buffer and transfer data.
     gl.bindArrayBuffer(positionsBuffer);
-    gl.bufferData(vertices, gl.kStaticDraw);
-    // Point an attribute to the currently bound vertex buffer object.
-    js_util.callMethod(gl.glContext, 'vertexAttribPointer',
-        <dynamic>[0, 2, gl.kFloat, false, 0, 0]);
-    gl.enableVertexAttribArray(0);
+    bufferVertexData(gl, vertices, ui.window.devicePixelRatio);
 
+    // Setup data format for attribute.
+    js_util.callMethod(gl.glContext, 'vertexAttribPointer', <dynamic>[
+      positionAttributeLocation,
+      2,
+      gl.kFloat,
+      false,
+      0,
+      0,
+    ]);
+
+    final int vertexCount = vertices.length ~/ 2;
+
+    // Copy image it to the texture.
+    Object? texture = gl.createTexture();
+    // Texture units are a global array of references to the textures.
+    // By setting activeTexture, we associate the bound texture to a unit.
+    // Every time we call a texture function such as texImage2D with a target
+    // like TEXTURE_2D, it looks up texture by using the currently active
+    // unit.
+    // In our case we have a single texture unit 0.
+    gl.activeTexture(gl.kTexture0);
+    gl.bindTexture(gl.kTexture2D, texture);
+
+    gl.texImage2D(gl.kTexture2D, 0, gl.kRGBA, gl.kRGBA, gl.kUnsignedByte,
+        image.imgElement);
+
+    if (isWebGl2) {
+      // Texture REPEAT and MIRROR is only supported in WebGL 2, for
+      // WebGL 1.0 we let shader compute correct uv coordinates.
+      gl.texParameteri(gl.kTexture2D, gl.kTextureWrapS,
+          tileModeToGlWrapping(gl, tileModeX));
+
+      gl.texParameteri(gl.kTexture2D, gl.kTextureWrapT,
+          tileModeToGlWrapping(gl, tileModeY));
+
+      // Mipmapping saves your texture in different resolutions
+      // so the graphics card can choose which resolution is optimal
+      // without artifacts.
+      gl.generateMipmap(gl.kTexture2D);
+    } else {
+      // For webgl1, if a texture is not mipmap complete, then the return
+      // value of a texel fetch is (0, 0, 0, 1), so we have to set
+      // minifying function to filter.
+      // See https://www.khronos.org/registry/webgl/specs/1.0.0/#5.13.8.
+      gl.texParameteri(gl.kTexture2D, gl.kTextureWrapS, gl.kClampToEdge);
+      gl.texParameteri(gl.kTexture2D, gl.kTextureWrapT, gl.kClampToEdge);
+      gl.texParameteri(gl.kTexture2D, gl.kTextureMinFilter, gl.kLinear);
+    }
+
+    // Finally render triangles.
     gl.clear();
-    gl.viewport(0, 0, widthInPixels.toDouble(), heightInPixels.toDouble());
-    gl.drawElements(
-        gl.kTriangles, VertexShaders.vertexIndicesForRect.length, gl.kUnsignedShort);
 
-    Object? image = gl.readPatternData();
+    gl.drawTriangles(vertexCount, ui.VertexMode.triangles);
+
+    if (vao != null) {
+      gl.unbindVertexArray();
+    }
+
+    context!.save();
+    context.resetTransform();
+    gl.drawImage(context, offsetX, offsetY);
+    context.restore();
+
+    Object? bitmapImage = gl.readPatternData();
     gl.bindArrayBuffer(null);
     gl.bindElementArrayBuffer(null);
-    return ctx!.createPattern(image!, 'no-repeat')!;
+    return context.createPattern(bitmapImage!, 'no-repeat')!;
   }
 }
