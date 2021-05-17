@@ -115,7 +115,8 @@ void _testEngineSemanticsOwner() {
     expect(semantics().semanticsEnabled, false);
 
     final html.Element placeholder =
-        html.document.querySelectorAll('flt-semantics-placeholder').single;
+        appShadowRoot.querySelector('flt-semantics-placeholder');
+
     expect(placeholder.isConnected, true);
 
     // Sending a semantics update should auto-enable engine semantics.
