@@ -111,13 +111,18 @@ Future<int> starter(
   frontend.ProgramTransformer transformer,
 }) async {
   ArgResults options;
-  frontend.argParser.addMultiOption(
-    'delete-tostring-package-uri',
-    help: 'Replaces implementations of `toString` with `super.toString()` for '
+  final bool handleDeleteToString =
+      !frontend.argParser.options.containsKey('delete-tostring-package-uri');
+  if (handleDeleteToString) {
+    frontend.argParser.addMultiOption(
+      'delete-tostring-package-uri',
+      help:
+          'Replaces implementations of `toString` with `super.toString()` for '
           'specified package',
-    valueHelp: 'dart:ui',
-    defaultsTo: const <String>[],
-  );
+      valueHelp: 'dart:ui',
+      defaultsTo: const <String>[],
+    );
+  }
   try {
     options = frontend.argParser.parse(args);
   } catch (error) {
@@ -126,7 +131,8 @@ Future<int> starter(
     return 1;
   }
 
-  final Set<String> deleteToStringPackageUris = (options['delete-tostring-package-uri'] as List<String>).toSet();
+  final Set<String> deleteToStringPackageUris =
+      (options['delete-tostring-package-uri'] as List<String>).toSet();
 
   if (options['train'] as bool) {
     if (!options.rest.isNotEmpty) {
@@ -150,7 +156,9 @@ Future<int> starter(
         ]);
         compiler ??= _FlutterFrontendCompiler(
           output,
-          transformer: frontend.ToStringTransformer(null, deleteToStringPackageUris),
+          transformer: handleDeleteToString
+              ? frontend.ToStringTransformer(null, deleteToStringPackageUris)
+              : null,
         );
 
         await compiler.compile(input, options);
@@ -170,7 +178,9 @@ Future<int> starter(
   }
 
   compiler ??= _FlutterFrontendCompiler(output,
-      transformer: frontend.ToStringTransformer(transformer, deleteToStringPackageUris),
+      transformer: handleDeleteToString
+          ? frontend.ToStringTransformer(transformer, deleteToStringPackageUris)
+          : null,
       useDebuggerModuleNames: options['debugger-module-names'] as bool,
       emitDebugMetadata: options['experimental-emit-debug-metadata'] as bool,
       unsafePackageSerialization:
