@@ -20,8 +20,13 @@ typedef void (*FlKeyEventDisposeOrigin)(gpointer origin);
  * FlKeyEvent:
  * A struct that stores information from GdkEvent.
  *
- * GDK will stop supporting creating GdkEvent since 4.0. This struct
- * is used so that Flutter can create an event object in unittests.
+ * This is a class only used within the GTK embedding, created by
+ * FlView and consumed by FlKeyboardManager. It is not sent to
+ * the embedder.
+ *
+ * This object contains information from GdkEvent as well as an origin event
+ * object, so that Flutter can create an event object in unit tests even after
+ * migrating to GDK 4.0 which stops supporting creating GdkEvent.
  */
 typedef struct _FlKeyEvent {
   // Time in milliseconds.

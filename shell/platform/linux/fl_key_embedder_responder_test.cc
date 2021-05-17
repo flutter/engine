@@ -108,23 +108,33 @@ static FlKeyEmbedderCallRecord* fl_key_embedder_call_record_new(
   return self;
 }
 
+namespace {
+// A global variable to store new event. It is a global variable so that it can
+// be returned by #fl_key_event_new_by_mock for easy use.
+FlKeyEvent _g_key_event;
+}  // namespace
+
 // Create a new #FlKeyEvent with the given information.
+//
+// This event is passed to #fl_key_responder_handle_event,
+// which assumes that the event is managed by callee.
+// Therefore #fl_key_event_new_by_mock doesn't need to
+// dynamically allocate, but reuses the same global object.
 static FlKeyEvent* fl_key_event_new_by_mock(guint32 time_in_milliseconds,
                                             bool is_press,
                                             guint keyval,
                                             guint16 keycode,
                                             int state,
                                             gboolean is_modifier) {
-  FlKeyEvent* event = g_new(FlKeyEvent, 1);
-  event->is_press = is_press;
-  event->time = time_in_milliseconds;
-  event->state = state;
-  event->keyval = keyval;
-  event->string = nullptr;
-  event->keycode = keycode;
-  event->origin = nullptr;
-  event->dispose_origin = nullptr;
-  return event;
+  _g_key_event.is_press = is_press;
+  _g_key_event.time = time_in_milliseconds;
+  _g_key_event.state = state;
+  _g_key_event.keyval = keyval;
+  _g_key_event.string = nullptr;
+  _g_key_event.keycode = keycode;
+  _g_key_event.origin = nullptr;
+  _g_key_event.dispose_origin = nullptr;
+  return &_g_key_event;
 }
 
 static gboolean g_expected_handled;
