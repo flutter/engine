@@ -131,10 +131,12 @@ class _CkBlurImageFilter extends CkImageFilter {
 }
 
 class _CkMatrixImageFilter extends CkImageFilter {
-  _CkMatrixImageFilter({ required this.matrix, required this.filterQuality }) : super._();
+  _CkMatrixImageFilter({ required Float64List matrix, required this.filterQuality })
+      : this.matrix = Float64List.fromList(matrix),
+        super._();
 
-  Float64List matrix;
-  ui.FilterQuality filterQuality;
+  final Float64List matrix;
+  final ui.FilterQuality filterQuality;
 
   SkImageFilter _initSkiaObject() {
     return canvasKit.ImageFilter.MakeMatrixTransform(

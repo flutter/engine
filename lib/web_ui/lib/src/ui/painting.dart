@@ -399,8 +399,8 @@ class ImageFilter {
     if (engine.useCanvasKit) {
       return engine.CkImageFilter.blur(sigmaX: sigmaX, sigmaY: sigmaY, tileMode: tileMode);
     }
-    // TODO(flutter_web): implement BlendMode.
-    return engine.EngineImageFilter.blur(sigmaX: sigmaX, sigmaY: sigmaY);
+    // TODO(flutter_web): implement TileMode.
+    return engine.EngineImageFilter.blur(sigmaX: sigmaX, sigmaY: sigmaY, tileMode: tileMode);
   }
 
   factory ImageFilter.matrix(Float64List matrix4, {FilterQuality filterQuality = FilterQuality.low}) {
@@ -410,7 +410,7 @@ class ImageFilter {
       return engine.CkImageFilter.matrix(matrix: matrix4, filterQuality: filterQuality);
     }
     // TODO(flutter_web): implement FilterQuality.
-    return engine.EngineImageFilter.matrix(matrix: matrix4);
+    return engine.EngineImageFilter.matrix(matrix: matrix4, filterQuality: filterQuality);
   }
 
   ImageFilter.compose({required ImageFilter outer, required ImageFilter inner}) {
