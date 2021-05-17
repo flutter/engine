@@ -34,10 +34,10 @@ ImageGeneratorRegistry::ImageGeneratorRegistry() : weak_factory_(this) {
       },
       0);
 #elif OS_WIN
-  add(
+  AddFactory(
       [](sk_sp<SkData> buffer) {
         auto generator = SkImageGeneratorWIC::MakeFromEncodedWIC(buffer);
-        return BuiltinSkiaImageGenerator::makeFromGenerator(
+        return BuiltinSkiaImageGenerator::MakeFromGenerator(
             std::move(generator));
       },
       0);
