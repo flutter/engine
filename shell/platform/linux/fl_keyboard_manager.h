@@ -58,7 +58,8 @@ G_DECLARE_FINAL_TYPE(FlKeyboardManager,
 /**
  * fl_keyboard_manager_new:
  * @text_input_plugin: the #FlTextInputPlugin to send key events to if the
- * framework doesn't handle them.
+ * framework doesn't handle them. This object will be managed and freed by
+ * #FlKeyboardManager.
  * @redispatch_callback: how the events should be sent if no processing
  * objects handle the event. Typically a function that calls #gdk_event_put
  * on #FlKeyEvent::origin.

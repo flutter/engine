@@ -4,18 +4,19 @@
 
 #include "flutter/shell/platform/linux/fl_key_event.h"
 
-static void dispose_from_gdk_event(FlKeyEvent* event) {
-  gdk_event_free(reinterpret_cast<GdkEvent*>(event->origin));
+static void dispose_origin_from_gdk_event(gpointer origin) {
+  g_return_if_fail(origin != nullptr);
+  gdk_event_free(reinterpret_cast<GdkEvent*>(origin));
 }
 
-static const char* clone_string(char* source) {
+static char* clone_string(const char* source) {
   if (source == nullptr) {
     return nullptr;
   }
-  size_t character_length = strlen(event->character);
-  char* clone_character = g_new(char, character_length + 1);
-  strcpy(clone_character, event->character);
-  return clone_character;
+  size_t length = strlen(source);
+  char* result = g_new(char, length + 1);
+  strcpy(result, source);
+  return result;
 }
 
 FlKeyEvent* fl_key_event_new_from_gdk_event(GdkEvent* raw_event) {
@@ -33,7 +34,7 @@ FlKeyEvent* fl_key_event_new_from_gdk_event(GdkEvent* raw_event) {
   result->state = event->state;
   result->string = clone_string(event->string);
   result->origin = event;
-  result->dispose = dispose_from_gdk_event;
+  result->dispose_origin = dispose_origin_from_gdk_event;
 
   return result;
 }

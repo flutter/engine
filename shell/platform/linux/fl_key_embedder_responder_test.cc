@@ -72,7 +72,8 @@ static void fl_key_embedder_call_record_dispose(GObject* object) {
 
   FlKeyEmbedderCallRecord* self = FL_KEY_EMBEDDER_CALL_RECORD(object);
   if (self->event != nullptr) {
-    fl_key_event_dispose(self->event);
+    g_free(const_cast<char*>(self->event->character));
+    g_free(self->event);
   }
   G_OBJECT_CLASS(fl_key_embedder_call_record_parent_class)->dispose(object);
 }
@@ -92,7 +93,15 @@ static FlKeyEmbedderCallRecord* fl_key_embedder_call_record_new(
   FlKeyEmbedderCallRecord* self = FL_KEY_EMBEDDER_CALL_RECORD(
       g_object_new(fl_key_embedder_call_record_get_type(), nullptr));
 
-  self->event = fl_key_event_clone(event);
+  FlutterKeyEvent* clone_event = g_new(FlutterKeyEvent, 1);
+  *clone_event = *event;
+  if (event->character != nullptr) {
+    size_t character_length = strlen(event->character);
+    char* clone_character = g_new(char, character_length + 1);
+    strcpy(clone_character, event->character);
+    clone_event->character = clone_character;
+  }
+  self->event = clone_event;
   self->callback = callback;
   self->user_data = user_data;
 
@@ -144,7 +153,8 @@ static FlEngine* make_mock_engine_with_records() {
   embedder_api->SendKeyEvent = [](auto engine, const FlutterKeyEvent* event,
                                   FlutterKeyEventCallback callback,
                                   void* user_data) {
-    g_ptr_array_add(g_call_records, fl_key_embedder_call_record_new(event, callback, user_data));
+    g_ptr_array_add(g_call_records, fl_key_embedder_call_record_new(
+                                        event, callback, user_data));
 
     return kSuccess;
   };

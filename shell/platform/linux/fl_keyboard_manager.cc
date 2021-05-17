@@ -314,16 +314,10 @@ static void responder_handle_event_callback(bool handled,
     gpointer removed =
         g_ptr_array_remove_index_fast(self->pending_responds, result_index);
     g_return_if_fail(removed == pending);
-    bool should_redispatch = false;
-    if (!pending->any_handled) {
-      // If no responders have handled, send it to text plugin.
-      if (self->text_input_plugin == nullptr ||
-          !fl_text_input_plugin_filter_keypress(self->text_input_plugin,
-                                                pending->event)) {
-        // If text plugin doesn't handle either, redispatch.
-        should_redispatch = true;
-      }
-    }
+    bool should_redispatch =
+        !pending->any_handled && (self->text_input_plugin == nullptr ||
+                                  !fl_text_input_plugin_filter_keypress(
+                                      self->text_input_plugin, pending->event));
     if (should_redispatch) {
       g_ptr_array_add(self->pending_redispatches, pending);
       self->redispatch_callback(pending->event->origin);
