@@ -2,11 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:typed_data';
+
 import 'package:ui/ui.dart' as ui;
 
 import 'canvaskit_api.dart';
 import 'color_filter.dart';
 import 'skia_object_cache.dart';
+import '../util.dart';
 
 /// An [ImageFilter] that can create a managed skia [SkImageFilter] object.
 ///
@@ -152,7 +155,7 @@ class _CkMatrixImageFilter extends CkImageFilter {
       return false;
     return other is _CkMatrixImageFilter
         && other.filterQuality == filterQuality
-        && _listEquals<double>(other.matrix, matrix);
+        && listEquals<double>(other.matrix, matrix);
   }
 
   @override

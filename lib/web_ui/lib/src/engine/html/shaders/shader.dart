@@ -675,8 +675,8 @@ abstract class EngineImageFilter implements ui.ImageFilter {
 
   EngineImageFilter._();
 
-  String get _filterAttribute => '';
-  String get _transformAttribute => '';
+  String get filterAttribute => '';
+  String get transformAttribute => '';
 }
 
 class _BlurEngineImageFilter extends EngineImageFilter {
@@ -687,7 +687,7 @@ class _BlurEngineImageFilter extends EngineImageFilter {
   final ui.TileMode tileMode;
 
   // TODO(flutter_web): implement TileMode.
-  String get _filterAttribute => _imageFilterToCss(this);
+  String get filterAttribute => blurSigmasToCssString(sigmaX, sigmaY);
 
   @override
   bool operator ==(Object other) {
@@ -717,7 +717,7 @@ class _MatrixEngineImageFilter extends EngineImageFilter {
   final ui.FilterQuality filterQuality;
 
   // TODO(flutter_web): implement FilterQuality.
-  String get _transformAttribute => float64ListToCssTransform(webMatrix);
+  String get transformAttribute => float64ListToCssTransform(webMatrix);
 
   @override
   bool operator ==(Object other) {
@@ -725,7 +725,7 @@ class _MatrixEngineImageFilter extends EngineImageFilter {
       return false;
     return other is _MatrixEngineImageFilter
         && other.filterQuality == filterQuality
-        && _listEquals<double>(other.webMatrix, webMatrix);
+        && listEquals<double>(other.webMatrix, webMatrix);
   }
 
   @override

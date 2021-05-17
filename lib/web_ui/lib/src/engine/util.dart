@@ -552,3 +552,10 @@ bool listEquals<T>(List<T>? a, List<T>? b) {
   }
   return true;
 }
+
+// HTML only supports a single radius, but Flutter ImageFilter supports separate
+// horizontal and vertical radii. The best approximation we can provide is to
+// average the two radii together for a single compromise value.
+String blurSigmasToCssString(double sigmaX, double sigmaY) {
+  return 'blur(${(sigmaX + sigmaY) * 0.5}px)';
+}

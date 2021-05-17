@@ -18,8 +18,8 @@ class PersistedImageFilter extends PersistedContainerSurface
 
   @override
   void apply() {
-    rootElement!.style.filter = (filter as EngineImageFilter)._filterAttribute;
-    rootElement!.style.transform = (filter as EngineImageFilter)._transformAttribute;
+    rootElement!.style.filter = (filter as EngineImageFilter).filterAttribute;
+    rootElement!.style.transform = (filter as EngineImageFilter).transformAttribute;
   }
 
   @override
