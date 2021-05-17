@@ -499,7 +499,7 @@ static gboolean event_box_motion_notify_event(GtkWidget* widget,
     return FALSE;
   }
 
-  view->pointer_inside = true;
+  view->pointer_inside = TRUE;
 
   gint scale_factor = gtk_widget_get_scale_factor(GTK_WIDGET(view));
   fl_engine_send_mouse_pointer_event(
@@ -517,13 +517,16 @@ static gboolean event_box_leave_notify_event(GtkWidget* widget,
     return FALSE;
   }
 
-  if (view->pointer_inside) {
+  // Don't remove pointer while button is down; In case of dragging outside of
+  // window with mouse grab active Gtk will send another leave notify on
+  // release.
+  if (view->pointer_inside && view->button_state == 0) {
     gint scale_factor = gtk_widget_get_scale_factor(GTK_WIDGET(view));
     fl_engine_send_mouse_pointer_event(
         view->engine, kRemove, event->time * kMicrosecondsPerMillisecond,
         event->x * scale_factor, event->y * scale_factor, 0, 0,
         view->button_state);
-    view->pointer_inside = false;
+    view->pointer_inside = FALSE;
   }
 
   return TRUE;
