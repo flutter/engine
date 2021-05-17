@@ -326,13 +326,10 @@ static char* event_to_character(const FlKeyEvent* event) {
 static void handle_response(bool handled, gpointer user_data) {
   g_autoptr(FlKeyEmbedderUserData) data = FL_KEY_EMBEDDER_USER_DATA(user_data);
 
+  g_return_if_fail(data->callback != nullptr);
+
   // Return if the weak pointer has been destroyed.
   if (data->responder == nullptr) {
-    return;
-  }
-
-  // Return if callback is not requested (happens for synthesized events).
-  if (data->callback == nullptr) {
     return;
   }
 
