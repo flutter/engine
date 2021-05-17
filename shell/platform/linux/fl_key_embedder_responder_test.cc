@@ -138,20 +138,13 @@ namespace {
 GPtrArray* g_call_records;
 }
 
-static FlKeyEvent* fl_key_event_clone(FlKeyEvent* event) {
-  FlKeyEvent* new_event = g_new(FlKeyEvent, 1);
-  *new_event = *event;
-  return new_event;
-}
-
 static FlEngine* make_mock_engine_with_records() {
   FlEngine* engine = make_mock_engine();
   FlutterEngineProcTable* embedder_api = fl_engine_get_embedder_api(engine);
   embedder_api->SendKeyEvent = [](auto engine, const FlutterKeyEvent* event,
                                   FlutterKeyEventCallback callback,
                                   void* user_data) {
-    g_ptr_array_add(g_call_records, fl_key_embedder_call_record_new(
-                                        fl_key_event_clone(event), callback, user_data));
+    g_ptr_array_add(g_call_records, fl_key_embedder_call_record_new(event, callback, user_data));
 
     return kSuccess;
   };
