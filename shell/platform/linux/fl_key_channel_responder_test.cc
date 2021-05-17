@@ -62,17 +62,17 @@ static FlKeyEvent* fl_key_event_new_by_mock(guint32 time_in_milliseconds,
                                             int state,
                                             const char* string,
                                             gboolean is_modifier) {
-  if (_g_key_event->string != nullptr) {
-    g_free(_g_key_event->string);
+  if (_g_key_event.string != nullptr) {
+    g_free(const_cast<char*>(_g_key_event.string));
   }
-  _g_key_event->is_press = is_press;
-  _g_key_event->time = time_in_milliseconds;
-  _g_key_event->state = state;
-  _g_key_event->keyval = keyval;
-  _g_key_event->string = clone_string(string);
-  _g_key_event->keycode = keycode;
-  _g_key_event->origin = nullptr;
-  _g_key_event->dispose_origin = nullptr;
+  _g_key_event.is_press = is_press;
+  _g_key_event.time = time_in_milliseconds;
+  _g_key_event.state = state;
+  _g_key_event.keyval = keyval;
+  _g_key_event.string = clone_string(string);
+  _g_key_event.keycode = keycode;
+  _g_key_event.origin = nullptr;
+  _g_key_event.dispose_origin = nullptr;
   return &_g_key_event;
 }
 
