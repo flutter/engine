@@ -235,7 +235,7 @@ void Function(Uri) _getValidateIfConnectionIsAllowedClosure(bool mayInsecurelyCo
         return;
       }
       throw UnsupportedError(
-        "Non-https connection '$uri' is not supported by the platform. "
-        "Refer to https://flutter.dev/docs/release/breaking-changes/network-policy-ios-android.");
+        'Non-https connection "$uri" is not supported by the platform. '
+        'Refer to https://flutter.dev/docs/release/breaking-changes/network-policy-ios-android.');
     };
 }
