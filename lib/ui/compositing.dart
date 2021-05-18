@@ -61,6 +61,11 @@ abstract class _EngineLayerWrapper implements EngineLayer {
 
   EngineLayer _nativeLayer;
 
+  @override
+  void dispose() {
+    _nativeLayer.dispose();
+  }
+
   // Children of this layer.
   //
   // Null if this layer has no children. This field is populated only in debug

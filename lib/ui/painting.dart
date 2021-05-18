@@ -2233,6 +2233,10 @@ class EngineLayer extends NativeFieldWrapperClass2 {
   /// or extended directly.
   @pragma('vm:entry-point')
   EngineLayer._();
+
+  /// Release the resources used by this object. The object is no longer usable
+  /// after this method is called.
+  void dispose() native 'EngineLayer_dispose';
 }
 
 /// A complex, one-dimensional subset of a plane.

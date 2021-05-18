@@ -37,6 +37,9 @@ abstract class Layer implements ui.EngineLayer {
 
   /// Paint this layer into the scene.
   void paint(PaintContext paintContext);
+
+  @mustCallSuper
+  void dispose() {}
 }
 
 /// A context shared by all layers during the preroll pass.
@@ -146,6 +149,15 @@ abstract class ContainerLayer extends Layer {
       }
     }
   }
+
+  @override
+  void dispose() {
+    for (final Layer layer in _layers) {
+      layer.dispose();
+    }
+    _layers.clear();
+    super.dispose();
+  }
 }
 
 /// The top-most layer in the layer tree.
@@ -180,6 +192,9 @@ class BackdropFilterEngineLayer extends ContainerLayer
     paintChildren(context);
     context.internalNodesCanvas.restore();
   }
+
+  // TODO(dnfield): dispose of the _filter
+  // https://github.com/flutter/flutter/issues/82832
 }
 
 /// A layer that clips its child layers by a given [Path].
@@ -397,6 +412,9 @@ class ImageFilterEngineLayer extends ContainerLayer
     paintChildren(paintContext);
     paintContext.internalNodesCanvas.restore();
   }
+
+  // TODO(dnfield): dispose of the _filter
+  // https://github.com/flutter/flutter/issues/82832
 }
 
 class ShaderMaskEngineLayer extends ContainerLayer
@@ -430,6 +448,9 @@ class ShaderMaskEngineLayer extends ContainerLayer
 
     paintContext.internalNodesCanvas.restore();
   }
+
+  // TODO(dnfield): dispose of the shader
+  // https://github.com/flutter/flutter/issues/82832
 }
 
 /// A layer containing a [Picture].
@@ -463,6 +484,12 @@ class PictureLayer extends Layer {
 
     paintContext.leafNodesCanvas!.drawPicture(picture);
     paintContext.leafNodesCanvas!.restore();
+  }
+
+  @override
+  void dispose() {
+    picture.dispose();
+    super.dispose();
   }
 }
 

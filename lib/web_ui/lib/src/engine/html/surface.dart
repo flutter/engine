@@ -471,6 +471,12 @@ abstract class PersistedSurface implements ui.EngineLayer {
     state = PersistedSurfaceState.released;
   }
 
+  @override
+  @mustCallSuper
+  void dispose() {
+    discard();
+  }
+
   @mustCallSuper
   void debugValidate(List<String> validationErrors) {
     if (rootElement == null) {
