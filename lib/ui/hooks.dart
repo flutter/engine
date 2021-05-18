@@ -224,3 +224,18 @@ void _invoke3<A1, A2, A3>(void Function(A1 a1, A2 a2, A3 a3)? callback, Zone zon
     });
   }
 }
+
+@pragma('vm:entry-point')
+// ignore: unused_element
+void Function(Uri) _getValidateIfConnectionIsAllowedClosure(bool mayInsecurelyConnectToAllDomains) {
+  return (Uri uri) {
+      if (mayInsecurelyConnectToAllDomains ||
+          uri.isScheme('https') ||
+          Zone.current[#dart.library.io.allow_http] == true) {
+        return;
+      }
+      throw UnsupportedError(
+        "Non-https connection '$uri' is not supported by the platform. "
+        "Refer to https://flutter.dev/docs/release/breaking-changes/network-policy-ios-android.");
+    };
+}
