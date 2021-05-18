@@ -12,6 +12,7 @@
 #include "flutter/shell/platform/linux/fl_key_embedder_responder_private.h"
 #include "flutter/shell/platform/linux/key_mapping.h"
 
+#if 0
 #define TRACE(x) \
   printf("before "#x"\n");fflush(stdout); \
   x \
@@ -20,6 +21,12 @@
   printf("before "#x" "#i"\n");fflush(stdout); \
   x \
   printf("after "#x" "#i"\n");fflush(stdout);
+#else
+#define TRACE(x) \
+  x
+#define TRACEI(x, i) \
+  x
+#endif
 
 // The code prefix for unrecognized keys that are unique to Gtk, generated from
 // platform-specific codes.
@@ -373,7 +380,9 @@ static void synthesize_simple_event(FlKeyEmbedderResponder* self,
   out_event.logical = logical;
   out_event.character = nullptr;
   out_event.synthesized = true;
-  fl_engine_send_key_event(self->engine, &out_event, nullptr, nullptr);
+  if (self->engine != nullptr) {
+    fl_engine_send_key_event(self->engine, &out_event, nullptr, nullptr);
+  }
 }
 
 namespace {
@@ -775,9 +784,12 @@ static void fl_key_embedder_responder_handle_event(
   if (is_down_event) {
     update_mapping_record(self, physical_key, logical_key);
   }
-  FlKeyEmbedderUserData* response_data =
-      fl_key_embedder_user_data_new(self, callback, user_data);
-
-  fl_engine_send_key_event(self->engine, &out_event, handle_response,
-                           response_data);
+  if (self->engine != nullptr) {
+    FlKeyEmbedderUserData* response_data =
+        fl_key_embedder_user_data_new(self, callback, user_data);
+    fl_engine_send_key_event(self->engine, &out_event, handle_response,
+                            response_data);
+  } else {
+    callback(true, user_data);
+  }
 }

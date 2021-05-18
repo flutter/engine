@@ -11,6 +11,7 @@
 #include "flutter/shell/platform/linux/fl_engine_private.h"
 #include "flutter/shell/platform/linux/testing/fl_test.h"
 
+#if 0
 #define TRACE(x) \
   printf("before "#x"\n");fflush(stdout); \
   x \
@@ -19,6 +20,12 @@
   printf("before "#x" "#i"\n");fflush(stdout); \
   x \
   printf("after "#x" "#i"\n");fflush(stdout);
+#else
+#define TRACE(x) \
+  x
+#define TRACEI(x, i) \
+  x
+#endif
 
 namespace {
 constexpr gboolean kRelease = FALSE;

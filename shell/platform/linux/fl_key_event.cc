@@ -4,10 +4,15 @@
 
 #include "flutter/shell/platform/linux/fl_key_event.h"
 
+#if 0
 #define TRACE(x) \
   printf("before "#x"\n");fflush(stdout); \
   x \
   printf("after "#x"\n");fflush(stdout);
+#else
+#define TRACE(x) \
+  x
+#endif
 
 static void dispose_origin_from_gdk_event(gpointer origin) {
   g_return_if_fail(origin != nullptr);
