@@ -11,7 +11,7 @@
 #include "flutter/shell/platform/linux/fl_engine_private.h"
 #include "flutter/shell/platform/linux/testing/fl_test.h"
 
-#if 0
+#if 1
 #define TRACE(x)              \
   printf("before " #x "\n");  \
   fflush(stdout);             \

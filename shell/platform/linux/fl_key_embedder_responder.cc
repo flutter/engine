@@ -12,7 +12,7 @@
 #include "flutter/shell/platform/linux/fl_key_embedder_responder_private.h"
 #include "flutter/shell/platform/linux/key_mapping.h"
 
-#if 0
+#if 1
 #define TRACE(x)              \
   printf("before " #x "\n");  \
   fflush(stdout);             \
