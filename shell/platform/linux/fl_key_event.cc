@@ -4,7 +4,7 @@
 
 #include "flutter/shell/platform/linux/fl_key_event.h"
 
-#if 1
+#if 0
 #define TRACE(x)              \
   printf("before " #x "\n");  \
   fflush(stdout);             \
