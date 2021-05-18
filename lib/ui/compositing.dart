@@ -63,12 +63,12 @@ abstract class _EngineLayerWrapper implements EngineLayer {
 
   @override
   void dispose() {
-    assert(_nativeLayer != null);
+    assert(_nativeLayer != null, 'Object disposed');
+    _nativeLayer!.dispose();
     assert(() {
       _nativeLayer = null;
       return true;
     }());
-    _nativeLayer!.dispose();
   }
 
   // Children of this layer.
