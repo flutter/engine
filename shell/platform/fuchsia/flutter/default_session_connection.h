@@ -67,18 +67,7 @@ class DefaultSessionConnection final : public flutter::SessionWrapper {
   // |SessionWrapper|
   void Present() override;
 
-  /*
-  // |SessionConnection|
-  void InitializeVsyncWaiterCallback(VsyncWaiterCallback callback) override;
-
-  // |SessionConnection|
-  bool CanRequestNewFrames() override {
-    return frames_in_flight_ < kMaxFramesInFlight;
-  }
-  */
-
   void AwaitVsync(FireCallbackCallback callback);
-
   void AwaitVsyncForSecondaryCallback(FireCallbackCallback callback);
 
  private:
@@ -111,9 +100,7 @@ class DefaultSessionConnection final : public flutter::SessionWrapper {
   fml::TimeDelta vsync_offset_;
 
   int frames_in_flight_ = 0;
-
   int frames_in_flight_allowed_ = 0;
-
   bool present_session_pending_ = false;
 
   // This is the last Vsync we submitted as the frame_target_time to

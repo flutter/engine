@@ -20,12 +20,12 @@
 namespace flutter_runner {
 
 VsyncWaiter::VsyncWaiter(
-    AwaitVsyncCallback await_vsync,
-    AwaitVsyncForSecondaryCallbackCallback await_vsync_for_secondary_callback,
+    AwaitVsyncCallback await_vsync_callback,
+    AwaitVsyncForSecondaryCallbackCallback await_vsync_for_secondary_callback_callback,
     flutter::TaskRunners task_runners)
     : flutter::VsyncWaiter(task_runners),
-      await_vsync_(await_vsync),
-      await_vsync_for_secondary_callback_(await_vsync_for_secondary_callback),
+      await_vsync_callback_(await_vsync_callback),
+      await_vsync_for_secondary_callback_callback_(await_vsync_for_secondary_callback_callback),
       weak_factory_ui_(nullptr),
       weak_factory_(this) {
   fire_callback_callback_ = [this](fml::TimePoint frame_start,
@@ -45,27 +45,6 @@ VsyncWaiter::VsyncWaiter(
             std::make_unique<fml::WeakPtrFactory<VsyncWaiter>>(this);
       }));
 
-  // Initialize the callback that will run every time the SessionConnection
-  // receives one or more frame presented events on Vsync.
-  /*
-  session_connection_->InitializeVsyncWaiterCallback([this]() {
-    task_runners_.GetUITaskRunner()->PostTask([&weak_factory_ui =
-                                                   this->weak_factory_ui_] {
-      if (!weak_factory_ui) {
-        FML_LOG(WARNING) << "WeakPtrFactory for VsyncWaiter is null, likely "
-                            "due to the VsyncWaiter being destroyed.";
-        return;
-      }
-
-      auto self = weak_factory_ui->GetWeakPtr();
-      if (self) {
-        self->OnVsync();
-      }
-    });
-  });
-
-  */
-
   FML_LOG(INFO) << "CRASH: VsyncWaiter init";
 }
 
@@ -84,53 +63,14 @@ VsyncWaiter::~VsyncWaiter() {
 // This function is called when the Animator wishes to schedule a new frame.
 void VsyncWaiter::AwaitVSync() {
   // FML_LOG(INFO) << "CRASH: VsyncWaiter::AwaitVsync";
-  await_vsync_(fire_callback_callback_);
+  await_vsync_callback_(fire_callback_callback_);
 }
 
 // This function is called when the Animator wants to know about the next vsync,
 // but not for frame scheduling purposes.
 void VsyncWaiter::AwaitVSyncForSecondaryCallback() {
   // FML_LOG(INFO) << "CRASH: VsyncWaiter::AwaitVsyncForSecondaryCallback";
-  await_vsync_for_secondary_callback_(fire_callback_callback_);
-  //
-  //
-  // session_connection_->AwaitVsyncForSecondaryCallback();
-
-  // FlutterFrameTimes times =
-  // GetTargetTimesHelper(/*secondary_callback=*/true);
-  // FireCallback(times.frame_start, times.frame_target, false);
+  await_vsync_for_secondary_callback_callback_(fire_callback_callback_);
 }
-
-/*
-// Postcondition: Either a frame is scheduled or frame_request_pending_ is set
-// to true, meaning we will attempt to schedule a frame on the next |OnVsync|.
-void VsyncWaiter::FireCallbackMaybe() {
-  TRACE_DURATION("flutter", "FireCallbackMaybe");
-
-  if (session_connection_->CanRequestNewFrames()) {
-    FlutterFrameTimes times =
-        GetTargetTimesHelper(secondary_callback=false);
-
-    last_targetted_vsync_ = times.frame_target;
-    frame_request_pending_ = false;
-
-    FireCallback(times.frame_start, times.frame_target, false);
-  } else {
-    frame_request_pending_ = true;
-  }
-}
-
-// This function is called when the SessionConnection signals us to let us know
-// that one or more frames Flutter has produced have been displayed. Note that
-// in practice this will be called several milliseconds after vsync, due to
-// CPU contention.
-void VsyncWaiter::OnVsync() {
-  TRACE_DURATION("flutter", "VsyncWaiter::OnVsync");
-
-  if (frame_request_pending_) {
-    FireCallbackMaybe();
-  }
-}
-*/
 
 }  // namespace flutter_runner

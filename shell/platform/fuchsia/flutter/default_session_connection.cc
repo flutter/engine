@@ -71,7 +71,7 @@ FlutterFrameTimes DefaultSessionConnection::GetTargetTimes(
   // Useful knowledge for analyzing traces.
   fml::TimePoint previous_vsync = next_vsync - vsync_interval;
   TRACE_DURATION(
-      "flutter", "VsyncWaiter::GetTargetTimes", "previous_vsync(ms)",
+      "flutter", "DefaultSessionConnection::GetTargetTimes", "previous_vsync(ms)",
       previous_vsync.ToEpochDelta().ToMilliseconds(), "last_targetted(ms)",
       last_targetted_vsync.ToEpochDelta().ToMilliseconds(), "now(ms)",
       fml::TimePoint::Now().ToEpochDelta().ToMilliseconds(), "next_vsync(ms))",
@@ -328,6 +328,7 @@ void DefaultSessionConnection::PresentSession() {
 }
 
 void DefaultSessionConnection::AwaitVsync(FireCallbackCallback callback) {
+  TRACE_DURATION("flutter", "DefaultSessionConnection::AwaitVsync");
   // FML_LOG(INFO) << "CRASH:: DSC::AwaitVsync";
   fire_callback_ = callback;
 
@@ -336,6 +337,7 @@ void DefaultSessionConnection::AwaitVsync(FireCallbackCallback callback) {
 
 void DefaultSessionConnection::AwaitVsyncForSecondaryCallback(
     FireCallbackCallback callback) {
+  TRACE_DURATION("flutter", "DefaultSessionConnection::AwaitVsyncForSecondaryCallback");
   // FML_LOG(INFO) << "CRASH:: DSC::AwaitVsyncForSecondaryCallback";
   fire_callback_ = callback;
 
