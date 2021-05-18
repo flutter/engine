@@ -473,9 +473,7 @@ abstract class PersistedSurface implements ui.EngineLayer {
 
   @override
   @mustCallSuper
-  void dispose() {
-    discard();
-  }
+  void dispose() {}
 
   @mustCallSuper
   void debugValidate(List<String> validationErrors) {

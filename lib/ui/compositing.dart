@@ -61,8 +61,15 @@ abstract class _EngineLayerWrapper implements EngineLayer {
 
   EngineLayer _nativeLayer;
 
+  bool _debugDisposed = false;
+
   @override
   void dispose() {
+    assert(!_debugDisposed);
+    assert(() {
+      _debugDisposed = true;
+      return true;
+    }());
     _nativeLayer.dispose();
   }
 
@@ -235,6 +242,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
       if (layer == null) {
         return true;
       }
+      assert(!layer._debugDisposed);
       layer._debugCheckNotUsedAsOldLayer();
       assert(_debugCheckUsedOnce(layer, 'oldLayer in $methodName'));
       layer._debugWasUsedAsOldLayer = true;
