@@ -710,8 +710,8 @@ TEST(FlKeyEmbedderResponderTest, TapLetterKeysBetweenCapsLockEvents) {
 TEST(FlKeyEmbedderResponderTest, TapLetterKeysBetweenCapsLockEventsReversed) {
   EXPECT_EQ(g_call_records, nullptr);
   g_call_records = g_ptr_array_new_with_free_func(g_object_unref);
-  FlEngine* engine = make_mock_engine_with_records();
-  FlKeyResponder* responder =
+  g_autoptr(FlEngine) engine = make_mock_engine_with_records();
+  g_autoptr(FlKeyResponder) responder =
       FL_KEY_RESPONDER(fl_key_embedder_responder_new(engine));
   int user_data = 123;  // Arbitrary user data
 
@@ -862,8 +862,6 @@ TEST(FlKeyEmbedderResponderTest, TapLetterKeysBetweenCapsLockEventsReversed) {
   TRACEI(g_ptr_array_clear(g_call_records);, 8);
 
   clear_g_call_records();
-  TRACE(g_object_unref(engine););
-  TRACE(g_object_unref(responder););
 }
 
 TEST(FlKeyEmbedderResponderTest, IgnoreDuplicateDownEvent) {
@@ -918,8 +916,8 @@ TEST(FlKeyEmbedderResponderTest, IgnoreDuplicateDownEvent) {
 TEST(FlKeyEmbedderResponderTest, IgnoreAbruptUpEvent) {
   EXPECT_EQ(g_call_records, nullptr);
   g_call_records = g_ptr_array_new_with_free_func(g_object_unref);
-  FlEngine* engine = make_mock_engine_with_records();
-  FlKeyResponder* responder =
+  g_autoptr(FlEngine) engine = make_mock_engine_with_records();
+  g_autoptr(FlKeyResponder) responder =
       FL_KEY_RESPONDER(fl_key_embedder_responder_new(engine));
   int user_data = 123;  // Arbitrary user data
 
@@ -934,9 +932,6 @@ TEST(FlKeyEmbedderResponderTest, IgnoreAbruptUpEvent) {
   EXPECT_EQ(g_call_records->len, 0u);
 
   clear_g_call_records();
-
-  TRACE(g_object_unref(engine););
-  TRACE(g_object_unref(responder););
 }
 
 // Test if missed modifier keys can be detected and synthesized with state
@@ -1274,8 +1269,8 @@ TEST(FlKeyEmbedderResponderTest,
 TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncLockModeOnNonSelfEvents) {
   EXPECT_EQ(g_call_records, nullptr);
   g_call_records = g_ptr_array_new_with_free_func(g_object_unref);
-  FlEngine* engine = make_mock_engine_with_records();
-  FlKeyResponder* responder =
+  g_autoptr(FlEngine) engine = make_mock_engine_with_records();
+  g_autoptr(FlKeyResponder) responder =
       FL_KEY_RESPONDER(fl_key_embedder_responder_new(engine));
   int user_data = 123;  // Arbitrary user data
 
@@ -1369,9 +1364,6 @@ TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncLockModeOnNonSelfEvents) {
   EXPECT_EQ(g_call_records->len, 0u);
 
   clear_g_call_records();
-
-  TRACE(g_object_unref(engine););
-  TRACE(g_object_unref(responder););
 }
 
 // Test if missed lock keys can be detected and synthesized with state
@@ -1379,8 +1371,8 @@ TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncLockModeOnNonSelfEvents) {
 TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncLockModeOnSelfEvents) {
   EXPECT_EQ(g_call_records, nullptr);
   g_call_records = g_ptr_array_new_with_free_func(g_object_unref);
-  FlEngine* engine = make_mock_engine_with_records();
-  FlKeyResponder* responder =
+  g_autoptr(FlEngine) engine = make_mock_engine_with_records();
+  g_autoptr(FlKeyResponder) responder =
       FL_KEY_RESPONDER(fl_key_embedder_responder_new(engine));
   int user_data = 123;  // Arbitrary user data
 
@@ -1471,9 +1463,6 @@ TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncLockModeOnSelfEvents) {
   TRACEI(g_ptr_array_clear(g_call_records);, 2);
 
   clear_g_call_records();
-
-  TRACE(g_object_unref(engine););
-  TRACE(g_object_unref(responder););
 }
 
 // Ensures that even if the primary event is ignored (due to duplicate
