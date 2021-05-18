@@ -158,7 +158,7 @@ void Rasterizer::DrawLastLayerTree(
 
 void Rasterizer::Draw(
     std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder,
-    fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline,
+    std::shared_ptr<Pipeline<flutter::LayerTree>> pipeline,
     LayerTreeDiscardCallback discardCallback) {
   TRACE_EVENT0("flutter", "GPURasterizer::Draw");
   if (raster_thread_merger_ &&
