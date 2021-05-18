@@ -27,6 +27,11 @@ void testMain() {
       window.debugOverrideDevicePixelRatio(1);
     });
 
+    tearDown(() {
+      EnginePlatformDispatcher.instance.rasterizer?.surface.viewEmbedder
+          .debugCleanupSvgClipPaths();
+    });
+
     test('embeds interactive platform views', () async {
       ui.platformViewRegistry.registerViewFactory(
         'test-platform-view',

@@ -39,8 +39,6 @@ void setUpCanvasKitTest() {
     testCollector.cleanUpAfterTest();
     debugResetBrowserSupportsFinalizationRegistry();
     OverlayCache.instance.debugClear();
-    EnginePlatformDispatcher.instance.rasterizer?.surface.viewEmbedder
-        .debugCleanupSvgClipPaths();
   });
 
   tearDownAll(() {
