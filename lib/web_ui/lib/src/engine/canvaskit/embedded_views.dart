@@ -301,6 +301,9 @@ class HtmlViewEmbedder {
               treeSanitizer: NullTreeSanitizer(),
             );
             pathDefs.append(newClipPath);
+            // Store the id of the node instead of [newClipPath] directly. For
+            // some reason, calling `newClipPath.remove()` doesn't remove it
+            // from the DOM.
             _svgClipDefs.putIfAbsent(viewId, () => <String>[]).add(clipId);
             clipView.style.clipPath = 'url(#$clipId)';
           } else if (mutator.path != null) {
@@ -317,6 +320,9 @@ class HtmlViewEmbedder {
               treeSanitizer: NullTreeSanitizer(),
             );
             pathDefs.append(newClipPath);
+            // Store the id of the node instead of [newClipPath] directly. For
+            // some reason, calling `newClipPath.remove()` doesn't remove it
+            // from the DOM.
             _svgClipDefs.putIfAbsent(viewId, () => <String>[]).add(clipId);
             clipView.style.clipPath = 'url(#$clipId)';
           }
