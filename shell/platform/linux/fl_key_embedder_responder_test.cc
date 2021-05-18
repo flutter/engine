@@ -200,6 +200,8 @@ static void clear_g_call_records() {
 
 // Basic key presses
 TEST(FlKeyEmbedderResponderTest, SendKeyEvent) {
+  printf("New test\n");
+  fflush(stdout);
   EXPECT_EQ(g_call_records, nullptr);
   g_call_records = g_ptr_array_new_with_free_func(g_object_unref);
   FlEngine* engine = make_mock_engine_with_records();
@@ -300,6 +302,8 @@ TEST(FlKeyEmbedderResponderTest, SendKeyEvent) {
 
 // Press Shift, key A, then release Shift, key A.
 TEST(FlKeyEmbedderResponderTest, PressShiftDuringLetterKeyTap) {
+  printf("New test\n");
+  fflush(stdout);
   EXPECT_EQ(g_call_records, nullptr);
   g_call_records = g_ptr_array_new_with_free_func(g_object_unref);
   FlEngine* engine = make_mock_engine_with_records();
@@ -395,6 +399,8 @@ TEST(FlKeyEmbedderResponderTest, PressShiftDuringLetterKeyTap) {
 // test-worthy because the keyval for the numpad key will change before and
 // after the NumLock tap, which should not alter the resulting logical key.
 TEST(FlKeyEmbedderResponderTest, TapNumPadKeysBetweenNumLockEvents) {
+  printf("New test\n");
+  fflush(stdout);
   EXPECT_EQ(g_call_records, nullptr);
   g_call_records = g_ptr_array_new_with_free_func(g_object_unref);
   FlEngine* engine = make_mock_engine_with_records();
@@ -558,6 +564,8 @@ TEST(FlKeyEmbedderResponderTest, TapNumPadKeysBetweenNumLockEvents) {
 // This tests interaction between lock keys and non-lock keys in cases that do
 // not have events missed.
 TEST(FlKeyEmbedderResponderTest, TapLetterKeysBetweenCapsLockEvents) {
+  printf("New test\n");
+  fflush(stdout);
   EXPECT_EQ(g_call_records, nullptr);
   g_call_records = g_ptr_array_new_with_free_func(g_object_unref);
   FlEngine* engine = make_mock_engine_with_records();
@@ -721,6 +729,8 @@ TEST(FlKeyEmbedderResponderTest, TapLetterKeysBetweenCapsLockEvents) {
 //
 // This happens when using a Chrome remote desktop on MacOS.
 TEST(FlKeyEmbedderResponderTest, TapLetterKeysBetweenCapsLockEventsReversed) {
+  printf("New test\n");
+  fflush(stdout);
   EXPECT_EQ(g_call_records, nullptr);
   g_call_records = g_ptr_array_new_with_free_func(g_object_unref);
   FlEngine* engine = make_mock_engine_with_records();
@@ -880,6 +890,8 @@ TEST(FlKeyEmbedderResponderTest, TapLetterKeysBetweenCapsLockEventsReversed) {
 }
 
 TEST(FlKeyEmbedderResponderTest, IgnoreDuplicateDownEvent) {
+  printf("New test\n");
+  fflush(stdout);
   EXPECT_EQ(g_call_records, nullptr);
   g_call_records = g_ptr_array_new_with_free_func(g_object_unref);
   FlEngine* engine = make_mock_engine_with_records();
@@ -931,6 +943,8 @@ TEST(FlKeyEmbedderResponderTest, IgnoreDuplicateDownEvent) {
 }
 
 TEST(FlKeyEmbedderResponderTest, IgnoreAbruptUpEvent) {
+  printf("New test\n");
+  fflush(stdout);
   EXPECT_EQ(g_call_records, nullptr);
   g_call_records = g_ptr_array_new_with_free_func(g_object_unref);
   FlEngine* engine = make_mock_engine_with_records();
@@ -956,6 +970,8 @@ TEST(FlKeyEmbedderResponderTest, IgnoreAbruptUpEvent) {
 // Test if missed modifier keys can be detected and synthesized with state
 // information upon events that are for this modifier key.
 TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncPressingStateOnSelfEvents) {
+  printf("New test\n");
+  fflush(stdout);
   EXPECT_EQ(g_call_records, nullptr);
   g_call_records = g_ptr_array_new_with_free_func(g_object_unref);
   FlEngine* engine = make_mock_engine_with_records();
@@ -1089,6 +1105,8 @@ TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncPressingStateOnSelfEvents) {
 // information upon events that are not for this modifier key.
 TEST(FlKeyEmbedderResponderTest,
      SynthesizeForDesyncPressingStateOnNonSelfEvents) {
+  printf("New test\n");
+  fflush(stdout);
   EXPECT_EQ(g_call_records, nullptr);
   g_call_records = g_ptr_array_new_with_free_func(g_object_unref);
   FlEngine* engine = make_mock_engine_with_records();
@@ -1222,6 +1240,8 @@ TEST(FlKeyEmbedderResponderTest,
 // information upon events that do not have the standard key mapping.
 TEST(FlKeyEmbedderResponderTest,
      SynthesizeForDesyncPressingStateOnRemappedEvents) {
+  printf("New test\n");
+  fflush(stdout);
   EXPECT_EQ(g_call_records, nullptr);
   g_call_records = g_ptr_array_new_with_free_func(g_object_unref);
   FlEngine* engine = make_mock_engine_with_records();
@@ -1292,6 +1312,8 @@ TEST(FlKeyEmbedderResponderTest,
 // Test if missed lock keys can be detected and synthesized with state
 // information upon events that are not for this modifier key.
 TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncLockModeOnNonSelfEvents) {
+  printf("New test\n");
+  fflush(stdout);
   EXPECT_EQ(g_call_records, nullptr);
   g_call_records = g_ptr_array_new_with_free_func(g_object_unref);
   FlEngine* engine = make_mock_engine_with_records();
@@ -1396,6 +1418,8 @@ TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncLockModeOnNonSelfEvents) {
 // Test if missed lock keys can be detected and synthesized with state
 // information upon events that are for this modifier key.
 TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncLockModeOnSelfEvents) {
+  printf("New test\n");
+  fflush(stdout);
   EXPECT_EQ(g_call_records, nullptr);
   g_call_records = g_ptr_array_new_with_free_func(g_object_unref);
   FlEngine* engine = make_mock_engine_with_records();
@@ -1497,6 +1521,8 @@ TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncLockModeOnSelfEvents) {
 // Ensures that even if the primary event is ignored (due to duplicate
 // key up or down events), key synthesization is still performed.
 TEST(FlKeyEmbedderResponderTest, SynthesizationOccursOnIgnoredEvents) {
+  printf("New test\n");
+  fflush(stdout);
   EXPECT_EQ(g_call_records, nullptr);
   g_call_records = g_ptr_array_new_with_free_func(g_object_unref);
   FlEngine* engine = make_mock_engine_with_records();
