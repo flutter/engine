@@ -175,7 +175,9 @@ GPtrArray* g_call_records;
 
 static FlEngine* make_mock_engine_with_records() {
   FlEngine* engine = make_mock_engine();
+  printf("After mock engine\n");
   FlutterEngineProcTable* embedder_api = fl_engine_get_embedder_api(engine);
+  printf("After get API\n");
   embedder_api->SendKeyEvent = [](auto engine, const FlutterKeyEvent* event,
                                   FlutterKeyEventCallback callback,
                                   void* user_data) {
@@ -207,6 +209,7 @@ TEST(FlKeyEmbedderResponderTest, SendKeyEvent) {
   FlEngine* engine = make_mock_engine_with_records();
   FlKeyResponder* responder =
       FL_KEY_RESPONDER(fl_key_embedder_responder_new(engine));
+  printf("After create responder\n");
   int user_data = 123;  // Arbitrary user data
 
   FlKeyEmbedderCallRecord* record;
@@ -309,6 +312,7 @@ TEST(FlKeyEmbedderResponderTest, PressShiftDuringLetterKeyTap) {
   FlEngine* engine = make_mock_engine_with_records();
   FlKeyResponder* responder =
       FL_KEY_RESPONDER(fl_key_embedder_responder_new(engine));
+  printf("After create responder\n");
   int user_data = 123;  // Arbitrary user data
 
   FlKeyEmbedderCallRecord* record;
@@ -406,6 +410,7 @@ TEST(FlKeyEmbedderResponderTest, TapNumPadKeysBetweenNumLockEvents) {
   FlEngine* engine = make_mock_engine_with_records();
   FlKeyResponder* responder =
       FL_KEY_RESPONDER(fl_key_embedder_responder_new(engine));
+  printf("After create responder\n");
   int user_data = 123;  // Arbitrary user data
 
   FlKeyEmbedderCallRecord* record;
@@ -571,6 +576,7 @@ TEST(FlKeyEmbedderResponderTest, TapLetterKeysBetweenCapsLockEvents) {
   FlEngine* engine = make_mock_engine_with_records();
   FlKeyResponder* responder =
       FL_KEY_RESPONDER(fl_key_embedder_responder_new(engine));
+  printf("After create responder\n");
   int user_data = 123;  // Arbitrary user data
 
   FlKeyEmbedderCallRecord* record;
@@ -736,6 +742,7 @@ TEST(FlKeyEmbedderResponderTest, TapLetterKeysBetweenCapsLockEventsReversed) {
   FlEngine* engine = make_mock_engine_with_records();
   FlKeyResponder* responder =
       FL_KEY_RESPONDER(fl_key_embedder_responder_new(engine));
+  printf("After create responder\n");
   int user_data = 123;  // Arbitrary user data
 
   FlKeyEmbedderCallRecord* record;
@@ -897,6 +904,7 @@ TEST(FlKeyEmbedderResponderTest, IgnoreDuplicateDownEvent) {
   FlEngine* engine = make_mock_engine_with_records();
   FlKeyResponder* responder =
       FL_KEY_RESPONDER(fl_key_embedder_responder_new(engine));
+  printf("After create responder\n");
   int user_data = 123;  // Arbitrary user data
 
   FlKeyEmbedderCallRecord* record;
@@ -950,6 +958,7 @@ TEST(FlKeyEmbedderResponderTest, IgnoreAbruptUpEvent) {
   FlEngine* engine = make_mock_engine_with_records();
   FlKeyResponder* responder =
       FL_KEY_RESPONDER(fl_key_embedder_responder_new(engine));
+  printf("After create responder\n");
   int user_data = 123;  // Arbitrary user data
 
   // Release KeyA before it was even pressed.
@@ -977,6 +986,7 @@ TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncPressingStateOnSelfEvents) {
   FlEngine* engine = make_mock_engine_with_records();
   FlKeyResponder* responder =
       FL_KEY_RESPONDER(fl_key_embedder_responder_new(engine));
+  printf("After create responder\n");
   int user_data = 123;  // Arbitrary user data
 
   FlKeyEmbedderCallRecord* record;
@@ -1112,6 +1122,7 @@ TEST(FlKeyEmbedderResponderTest,
   FlEngine* engine = make_mock_engine_with_records();
   FlKeyResponder* responder =
       FL_KEY_RESPONDER(fl_key_embedder_responder_new(engine));
+  printf("After create responder\n");
   int user_data = 123;  // Arbitrary user data
 
   FlKeyEmbedderCallRecord* record;
@@ -1247,6 +1258,7 @@ TEST(FlKeyEmbedderResponderTest,
   FlEngine* engine = make_mock_engine_with_records();
   FlKeyResponder* responder =
       FL_KEY_RESPONDER(fl_key_embedder_responder_new(engine));
+  printf("After create responder\n");
   int user_data = 123;  // Arbitrary user data
 
   FlKeyEmbedderCallRecord* record;
@@ -1319,6 +1331,7 @@ TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncLockModeOnNonSelfEvents) {
   FlEngine* engine = make_mock_engine_with_records();
   FlKeyResponder* responder =
       FL_KEY_RESPONDER(fl_key_embedder_responder_new(engine));
+  printf("After create responder\n");
   int user_data = 123;  // Arbitrary user data
 
   FlKeyEmbedderCallRecord* record;
@@ -1425,6 +1438,7 @@ TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncLockModeOnSelfEvents) {
   FlEngine* engine = make_mock_engine_with_records();
   FlKeyResponder* responder =
       FL_KEY_RESPONDER(fl_key_embedder_responder_new(engine));
+  printf("After create responder\n");
   int user_data = 123;  // Arbitrary user data
 
   FlKeyEmbedderCallRecord* record;
@@ -1528,6 +1542,7 @@ TEST(FlKeyEmbedderResponderTest, SynthesizationOccursOnIgnoredEvents) {
   FlEngine* engine = make_mock_engine_with_records();
   FlKeyResponder* responder =
       FL_KEY_RESPONDER(fl_key_embedder_responder_new(engine));
+  printf("After create responder\n");
   int user_data = 123;  // Arbitrary user data
 
   FlKeyEmbedderCallRecord* record;
