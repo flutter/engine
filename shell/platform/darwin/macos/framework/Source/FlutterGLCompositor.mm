@@ -114,33 +114,4 @@ bool FlutterGLCompositor::Present(const FlutterLayer** layers, size_t layers_cou
   return present_callback_();
 }
 
-void FlutterGLCompositor::StartFrame() {
-  // First reset all the state.
-  ca_layer_count_ = 0;
-
-  // First remove all CALayers from the superlayer.
-  for (auto const& ca_layer_kvp : ca_layer_map_) {
-    [ca_layer_kvp.second removeFromSuperlayer];
-  }
-
-  // Reset layer map.
-  ca_layer_map_.clear();
-
-  frame_started_ = true;
-}
-
-size_t FlutterGLCompositor::CreateCALayer() {
-  if (!view_controller_) {
-    return 0;
-  }
-
-  // FlutterGLCompositor manages the lifecycle of content layers.
-  // The id for a CALayer starts at 0 and increments by 1 for
-  // any given frame.
-  CALayer* content_layer = [[CALayer alloc] init];
-  [view_controller_.flutterView.layer addSublayer:content_layer];
-  ca_layer_map_[ca_layer_count_] = content_layer;
-  return ca_layer_count_++;
-}
-
 }  // namespace flutter

@@ -316,11 +316,6 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 }
 
 - (FlutterCompositor*)createFlutterCompositor {
-  // When rendering with metal do not support platform views.
-  if ([FlutterRenderingBackend renderUsingMetal]) {
-    return nil;
-  }
-
   // TODO(richardjcai): Add support for creating a FlutterCompositor
   // with a nil _viewController for headless engines.
   // https://github.com/flutter/flutter/issues/71606
@@ -328,11 +323,29 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     return nil;
   }
 
-  FlutterOpenGLRenderer* openGLRenderer = reinterpret_cast<FlutterOpenGLRenderer*>(_renderer);
-  [openGLRenderer.openGLContext makeCurrentContext];
+  __weak FlutterEngine* weakSelf = self;
 
-  _macOSCompositor =
-      std::make_unique<flutter::FlutterGLCompositor>(_viewController, openGLRenderer.openGLContext);
+  if ([FlutterRenderingBackend renderUsingMetal]) {
+    FlutterMetalRenderer* metalRenderer = reinterpret_cast<FlutterMetalRenderer*>(_renderer);
+    _macOSCompositor =
+        std::make_unique<flutter::FlutterMetalCompositor>(_viewController, metalRenderer.device);
+    _macOSCompositor->SetPresentCallback([weakSelf]() {
+      FlutterMetalRenderer* metalRenderer =
+          reinterpret_cast<FlutterMetalRenderer*>(weakSelf.renderer);
+      return [metalRenderer present:0 /*=textureID*/];
+    });
+  } else {
+    FlutterOpenGLRenderer* openGLRenderer = reinterpret_cast<FlutterOpenGLRenderer*>(_renderer);
+    [openGLRenderer.openGLContext makeCurrentContext];
+    _macOSCompositor = std::make_unique<flutter::FlutterGLCompositor>(_viewController,
+                                                                      openGLRenderer.openGLContext);
+
+    _macOSCompositor->SetPresentCallback([weakSelf]() {
+      FlutterOpenGLRenderer* openGLRenderer =
+          reinterpret_cast<FlutterOpenGLRenderer*>(weakSelf.renderer);
+      return [openGLRenderer glPresent];
+    });
+  }
 
   _compositor = {};
   _compositor.struct_size = sizeof(FlutterCompositor);
@@ -342,14 +355,14 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
                                                  FlutterBackingStore* backing_store_out,   //
                                                  void* user_data                           //
                                               ) {
-    return reinterpret_cast<flutter::FlutterGLCompositor*>(user_data)->CreateBackingStore(
+    return reinterpret_cast<flutter::FlutterCompositor*>(user_data)->CreateBackingStore(
         config, backing_store_out);
   };
 
   _compositor.collect_backing_store_callback = [](const FlutterBackingStore* backing_store,  //
                                                   void* user_data                            //
                                                ) {
-    return reinterpret_cast<flutter::FlutterGLCompositor*>(user_data)->CollectBackingStore(
+    return reinterpret_cast<flutter::FlutterCompositor*>(user_data)->CollectBackingStore(
         backing_store);
   };
 
@@ -357,16 +370,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
                                            size_t layers_count,          //
                                            void* user_data               //
                                         ) {
-    return reinterpret_cast<flutter::FlutterGLCompositor*>(user_data)->Present(layers,
-                                                                               layers_count);
+    return reinterpret_cast<flutter::FlutterCompositor*>(user_data)->Present(layers, layers_count);
   };
-
-  __weak FlutterEngine* weakSelf = self;
-  _macOSCompositor->SetPresentCallback([weakSelf]() {
-    FlutterOpenGLRenderer* openGLRenderer =
-        reinterpret_cast<FlutterOpenGLRenderer*>(weakSelf.renderer);
-    return [openGLRenderer glPresent];
-  });
 
   _compositor.avoid_backing_store_cache = true;
 

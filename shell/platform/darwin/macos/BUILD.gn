@@ -89,6 +89,8 @@ source_set("flutter_framework_source") {
     "framework/Source/FlutterMetalCompositor.mm",
     "framework/Source/FlutterMetalRenderer.h",
     "framework/Source/FlutterMetalRenderer.mm",
+    "framework/Source/FlutterMetalTextureProvider.h",
+    "framework/Source/FlutterMetalTextureProvider.mm",
     "framework/Source/FlutterMouseCursorPlugin.h",
     "framework/Source/FlutterMouseCursorPlugin.mm",
     "framework/Source/FlutterOpenGLRenderer.h",

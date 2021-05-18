@@ -15,7 +15,7 @@
 @interface FlutterBackingStoreData : NSObject
 
 - (nullable instancetype)initWithLayerId:(size_t)layerId
-                              fbProvider:(nonnull FlutterFrameBufferProvider*)fbProvider
+                              fbProvider:(nullable FlutterFrameBufferProvider*)fbProvider
                          ioSurfaceHolder:(nonnull FlutterIOSurfaceHolder*)ioSurfaceHolder;
 
 /**
@@ -24,9 +24,10 @@
 @property(nonatomic, readonly) size_t layerId;
 
 /**
- * Provides the fbo for rendering the layer.
+ * Provides the fbo for rendering the layer. May be nil if the backingstore is backed
+ * by a Metal texture.
  */
-@property(nonnull, nonatomic, readonly) FlutterFrameBufferProvider* frameBufferProvider;
+@property(nullable, nonatomic, readonly) FlutterFrameBufferProvider* frameBufferProvider;
 
 /**
  * Contains the IOSurfaceRef with the layer contents.

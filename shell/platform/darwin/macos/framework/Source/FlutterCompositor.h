@@ -6,6 +6,7 @@
 #define FLUTTER_COMPOSITOR_H_
 
 #include <functional>
+#include <map>
 
 #include "flutter/fml/macros.h"
 #include "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
@@ -52,8 +53,29 @@ class FlutterCompositor {
 
  protected:
   __weak const FlutterViewController* view_controller_;
-
   PresentCallback present_callback_;
+
+  // frame_started_ keeps track of if a layer has been
+  // created for the frame.
+  bool frame_started_ = false;
+
+  // Count for how many CALayers have been created for a frame.
+  // Resets when a frame is finished.
+  // ca_layer_count_ is also used as a layerId.
+  size_t ca_layer_count_ = 0;
+
+  // Maps a layer_id (size_t) to a CALayer.
+  // The layer_id starts at 0 for a given frame
+  // and increments by 1 for each new CALayer.
+  std::map<size_t, CALayer*> ca_layer_map_;
+
+  // Set frame_started_ to true and reset all layer state.
+  void StartFrame();
+
+  // Creates a CALayer and adds it to ca_layer_map_ and increments
+  // ca_layer_count_; Returns the key value (size_t) for the layer in
+  // ca_layer_map_.
+  size_t CreateCALayer();
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterCompositor);
 };
