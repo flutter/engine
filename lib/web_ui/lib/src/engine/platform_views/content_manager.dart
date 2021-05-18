@@ -46,7 +46,7 @@ class PlatformViewManager {
 
   /// Returns `true` if the passed in `viewId` has been rendered (and not disposed) before.
   ///
-  /// See [renderContent] and [renderSlot] to understand how platform views are
+  /// See [renderContent] and [createPlatformViewSlot] to understand how platform views are
   /// rendered.
   bool knowsViewId(int viewId) {
     return _contents.containsKey(viewId);

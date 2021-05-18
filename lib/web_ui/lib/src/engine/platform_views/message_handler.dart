@@ -26,9 +26,8 @@ typedef PlatformViewContentHandler = void Function(html.Element);
 /// function (passed from the outside) will decide where in the DOM to inject
 /// said content.
 ///
-/// The rendering/compositing of Platform Views will have access to the other "half"
-/// of the Platform View: the `slot`, through the shared `contentManager` object,
-/// through its [PlatformViewManager.renderSlot] method.
+/// The rendering/compositing of Platform Views can create the other "half" of a
+/// Platform View: the `slot`, through the [createPlatformViewSlot] method.
 ///
 /// When a Platform View is disposed of, it is removed from the cache (and DOM)
 /// directly by the `contentManager`. The canvaskit rendering backend needs to do

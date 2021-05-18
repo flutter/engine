@@ -4,7 +4,7 @@
 
 part of engine;
 
-/// Returns the name of a Slot from its viewId.
+/// Returns the name of a slot from its `viewId`.
 ///
 /// This is used by the [renderContent] function of the [PlatformViewManager]
 /// class, and the [createPlatformViewSlot] method below, to keep the slot name
