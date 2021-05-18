@@ -65,7 +65,7 @@ abstract class _EngineLayerWrapper implements EngineLayer {
   void dispose() {
     assert(_nativeLayer != null);
     assert(() {
-      _nativeLayer = null;;
+      _nativeLayer = null;
       return true;
     }());
     _nativeLayer!.dispose();
