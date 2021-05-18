@@ -758,7 +758,7 @@ static void fl_key_embedder_responder_handle_event(
     FlKeyEmbedderUserData* response_data =
         fl_key_embedder_user_data_new(self, callback, user_data);
     fl_engine_send_key_event(self->engine, &out_event, handle_response,
-                            response_data);
+                             response_data);
   } else {
     callback(true, user_data);
   }
