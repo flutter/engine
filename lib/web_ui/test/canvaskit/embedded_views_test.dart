@@ -5,11 +5,10 @@
 import 'dart:async';
 import 'dart:html' as html;
 
-import 'package:ui/src/engine.dart';
-import 'package:ui/ui.dart' as ui;
-
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
+import 'package:ui/src/engine.dart';
+import 'package:ui/ui.dart' as ui;
 
 import 'common.dart';
 
@@ -186,7 +185,7 @@ void testMain() {
     });
 
     test('renders overlays on top of platform views', () async {
-      expect(OverlayCache.instance.debugLength, 0);
+      expect(SurfaceFactory.instance.debugLength, 0);
       final CkPicture testPicture =
           paintPicture(ui.Rect.fromLTRB(0, 0, 10, 10), (CkCanvas canvas) {
         canvas.drawCircle(ui.Offset(5, 5), 5, CkPaint());
@@ -225,7 +224,7 @@ void testMain() {
       //   Expect: main canvas plus platform view overlays; empty cache.
       renderTestScene(viewCount: HtmlViewEmbedder.maximumOverlaySurfaces);
       expect(countCanvases(), HtmlViewEmbedder.maximumOverlaySurfaces + 1);
-      expect(OverlayCache.instance.debugLength, 0);
+      expect(SurfaceFactory.instance.debugLength, 0);
 
       // Frame 2:
       //   Render: zero platform views.
@@ -233,7 +232,7 @@ void testMain() {
       await Future<void>.delayed(Duration.zero);
       renderTestScene(viewCount: 0);
       expect(countCanvases(), 1);
-      expect(OverlayCache.instance.debugLength, 8);
+      expect(SurfaceFactory.instance.debugLength, 8);
 
       // Frame 3:
       //   Render: less than cache size platform views.
@@ -241,7 +240,7 @@ void testMain() {
       await Future<void>.delayed(Duration.zero);
       renderTestScene(viewCount: HtmlViewEmbedder.maximumOverlaySurfaces - 2);
       expect(countCanvases(), HtmlViewEmbedder.maximumOverlaySurfaces - 1);
-      expect(OverlayCache.instance.debugLength, 2);
+      expect(SurfaceFactory.instance.debugLength, 2);
 
       // Frame 4:
       //   Render: more platform views than max cache size.
@@ -250,7 +249,7 @@ void testMain() {
       await Future<void>.delayed(Duration.zero);
       renderTestScene(viewCount: HtmlViewEmbedder.maximumOverlaySurfaces * 2);
       expect(countCanvases(), HtmlViewEmbedder.maximumOverlaySurfaces + 2);
-      expect(OverlayCache.instance.debugLength, 0);
+      expect(SurfaceFactory.instance.debugLength, 0);
 
       // Frame 5:
       //   Render: zero platform views.
@@ -258,7 +257,7 @@ void testMain() {
       await Future<void>.delayed(Duration.zero);
       renderTestScene(viewCount: 0);
       expect(countCanvases(), 1);
-      expect(OverlayCache.instance.debugLength, 8);
+      expect(SurfaceFactory.instance.debugLength, 8);
 
       // Frame 6:
       //   Render: deleted platform views.
