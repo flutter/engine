@@ -179,9 +179,10 @@ static FlEngine* make_mock_engine_with_records() {
   embedder_api->SendKeyEvent = [](auto engine, const FlutterKeyEvent* event,
                                   FlutterKeyEventCallback callback,
                                   void* user_data) {
-    g_ptr_array_add(g_call_records, fl_key_embedder_call_record_new(
-                                        event, callback, user_data));
-
+    if (g_call_records != nullptr) {
+      g_ptr_array_add(g_call_records, fl_key_embedder_call_record_new(
+                                          event, callback, user_data));
+    }
     return kSuccess;
   };
 
