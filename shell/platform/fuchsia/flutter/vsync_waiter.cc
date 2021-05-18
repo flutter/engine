@@ -45,8 +45,6 @@ VsyncWaiter::VsyncWaiter(AwaitVsyncCallback await_vsync_callback,
         this->weak_factory_ui_ =
             std::make_unique<fml::WeakPtrFactory<VsyncWaiter>>(this);
       }));
-
-  FML_LOG(INFO) << "CRASH: VsyncWaiter init";
 }
 
 VsyncWaiter::~VsyncWaiter() {
@@ -61,16 +59,11 @@ VsyncWaiter::~VsyncWaiter() {
   ui_latch.Wait();
 }
 
-// This function is called when the Animator wishes to schedule a new frame.
 void VsyncWaiter::AwaitVSync() {
-  // FML_LOG(INFO) << "CRASH: VsyncWaiter::AwaitVsync";
   await_vsync_callback_(fire_callback_callback_);
 }
 
-// This function is called when the Animator wants to know about the next vsync,
-// but not for frame scheduling purposes.
 void VsyncWaiter::AwaitVSyncForSecondaryCallback() {
-  // FML_LOG(INFO) << "CRASH: VsyncWaiter::AwaitVsyncForSecondaryCallback";
   await_vsync_for_secondary_callback_callback_(fire_callback_callback_);
 }
 
