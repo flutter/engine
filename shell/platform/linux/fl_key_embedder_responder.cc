@@ -13,19 +13,19 @@
 #include "flutter/shell/platform/linux/key_mapping.h"
 
 #if 0
-#define TRACE(x) \
-  printf("before "#x"\n");fflush(stdout); \
-  x \
-  printf("after "#x"\n");fflush(stdout);
-#define TRACEI(x, i) \
-  printf("before "#x" "#i"\n");fflush(stdout); \
-  x \
-  printf("after "#x" "#i"\n");fflush(stdout);
+#define TRACE(x)              \
+  printf("before " #x "\n");  \
+  fflush(stdout);             \
+  x printf("after " #x "\n"); \
+  fflush(stdout);
+#define TRACEI(x, i)                 \
+  printf("before " #x " " #i "\n");  \
+  fflush(stdout);                    \
+  x printf("after " #x " " #i "\n"); \
+  fflush(stdout);
 #else
-#define TRACE(x) \
-  x
-#define TRACEI(x, i) \
-  x
+#define TRACE(x) x
+#define TRACEI(x, i) x
 #endif
 
 // The code prefix for unrecognized keys that are unique to Gtk, generated from
@@ -104,11 +104,9 @@ static void fl_key_embedder_user_data_dispose(GObject* object) {
   g_return_if_fail(FL_IS_KEY_EMBEDDER_USER_DATA(object));
   FlKeyEmbedderUserData* self = FL_KEY_EMBEDDER_USER_DATA(object);
   if (self->responder != nullptr) {
-    TRACE(
-    g_object_remove_weak_pointer(
-        G_OBJECT(self->responder),
-        reinterpret_cast<gpointer*>(&(self->responder)));
-    );
+    TRACE(g_object_remove_weak_pointer(
+              G_OBJECT(self->responder),
+              reinterpret_cast<gpointer*>(&(self->responder))););
     self->responder = nullptr;
   }
 }
@@ -238,25 +236,15 @@ static void fl_key_embedder_responder_init(FlKeyEmbedderResponder* self) {}
 static void fl_key_embedder_responder_dispose(GObject* object) {
   FlKeyEmbedderResponder* self = FL_KEY_EMBEDDER_RESPONDER(object);
 
-  TRACE(
-  g_clear_pointer(&self->pressing_records, g_hash_table_unref);
-  );
-  TRACE(
-  g_clear_pointer(&self->mapping_records, g_hash_table_unref);
-  );
-  TRACE(
-  g_clear_pointer(&self->modifier_bit_to_checked_keys, g_hash_table_unref);
-  );
-  TRACE(
-  g_clear_pointer(&self->lock_bit_to_checked_keys, g_hash_table_unref);
-  );
-  TRACE(
-  g_clear_pointer(&self->logical_key_to_lock_bit, g_hash_table_unref);
-  );
+  TRACE(g_clear_pointer(&self->pressing_records, g_hash_table_unref););
+  TRACE(g_clear_pointer(&self->mapping_records, g_hash_table_unref););
+  TRACE(g_clear_pointer(&self->modifier_bit_to_checked_keys,
+                        g_hash_table_unref););
+  TRACE(g_clear_pointer(&self->lock_bit_to_checked_keys, g_hash_table_unref););
+  TRACE(g_clear_pointer(&self->logical_key_to_lock_bit, g_hash_table_unref););
 
   TRACE(
-  G_OBJECT_CLASS(fl_key_embedder_responder_parent_class)->dispose(object);
-  );
+      G_OBJECT_CLASS(fl_key_embedder_responder_parent_class)->dispose(object););
 }
 
 // Fill in #logical_key_to_lock_bit by associating a logical key with
@@ -788,7 +776,7 @@ static void fl_key_embedder_responder_handle_event(
     FlKeyEmbedderUserData* response_data =
         fl_key_embedder_user_data_new(self, callback, user_data);
     fl_engine_send_key_event(self->engine, &out_event, handle_response,
-                            response_data);
+                             response_data);
   } else {
     callback(true, user_data);
   }

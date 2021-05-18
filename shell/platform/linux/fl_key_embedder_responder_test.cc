@@ -12,19 +12,19 @@
 #include "flutter/shell/platform/linux/testing/fl_test.h"
 
 #if 0
-#define TRACE(x) \
-  printf("before "#x"\n");fflush(stdout); \
-  x \
-  printf("after "#x"\n");fflush(stdout);
-#define TRACEI(x, i) \
-  printf("before "#x" "#i"\n");fflush(stdout); \
-  x \
-  printf("after "#x" "#i"\n");fflush(stdout);
+#define TRACE(x)              \
+  printf("before " #x "\n");  \
+  fflush(stdout);             \
+  x printf("after " #x "\n"); \
+  fflush(stdout);
+#define TRACEI(x, i)                 \
+  printf("before " #x " " #i "\n");  \
+  fflush(stdout);                    \
+  x printf("after " #x " " #i "\n"); \
+  fflush(stdout);
 #else
-#define TRACE(x) \
-  x
-#define TRACEI(x, i) \
-  x
+#define TRACE(x) x
+#define TRACEI(x, i) x
 #endif
 
 namespace {
@@ -59,9 +59,7 @@ constexpr uint64_t kLogicalCapsLock = 0x1000000104;
 }  // namespace
 
 static void g_ptr_array_clear(GPtrArray* array) {
-  TRACE(
-  g_ptr_array_remove_range(array, 0, array->len);
-  );
+  TRACE(g_ptr_array_remove_range(array, 0, array->len););
 }
 
 G_DECLARE_FINAL_TYPE(FlKeyEmbedderCallRecord,
@@ -90,12 +88,8 @@ static void fl_key_embedder_call_record_dispose(GObject* object) {
 
   FlKeyEmbedderCallRecord* self = FL_KEY_EMBEDDER_CALL_RECORD(object);
   if (self->event != nullptr) {
-    TRACE(
-    g_free(const_cast<char*>(self->event->character));
-    );
-    TRACE(
-    g_free(self->event);
-    );
+    TRACE(g_free(const_cast<char*>(self->event->character)););
+    TRACE(g_free(self->event););
   }
   G_OBJECT_CLASS(fl_key_embedder_call_record_parent_class)->dispose(object);
 }
@@ -195,9 +189,7 @@ static FlEngine* make_mock_engine_with_records() {
 }
 
 static void clear_g_call_records() {
-  TRACE(
-  g_ptr_array_free(g_call_records, TRUE);
-  );
+  TRACE(g_ptr_array_free(g_call_records, TRUE););
   g_call_records = nullptr;
 }
 
@@ -741,9 +733,7 @@ TEST(FlKeyEmbedderResponderTest, TapLetterKeysBetweenCapsLockEventsReversed) {
   EXPECT_EQ(record->event->synthesized, false);
 
   invoke_record_callback_and_verify(record, TRUE, &user_data);
-  TRACEI(
-  g_ptr_array_clear(g_call_records);
-  ,1);
+  TRACEI(g_ptr_array_clear(g_call_records);, 1);
 
   // Press CapsLock (stage 0 -> 1)
   fl_key_responder_handle_event(
@@ -761,9 +751,7 @@ TEST(FlKeyEmbedderResponderTest, TapLetterKeysBetweenCapsLockEventsReversed) {
   EXPECT_EQ(record->event->synthesized, false);
 
   invoke_record_callback_and_verify(record, TRUE, &user_data);
-  TRACEI(
-  g_ptr_array_clear(g_call_records);
-  ,2);
+  TRACEI(g_ptr_array_clear(g_call_records);, 2);
 
   // Release CapsLock (stage 1 -> 2)
   fl_key_responder_handle_event(
@@ -781,9 +769,7 @@ TEST(FlKeyEmbedderResponderTest, TapLetterKeysBetweenCapsLockEventsReversed) {
   EXPECT_EQ(record->event->synthesized, false);
 
   invoke_record_callback_and_verify(record, TRUE, &user_data);
-  TRACEI(
-  g_ptr_array_clear(g_call_records);
-  ,3);
+  TRACEI(g_ptr_array_clear(g_call_records);, 3);
 
   // Release key A (stage 2)
   fl_key_responder_handle_event(
@@ -801,9 +787,7 @@ TEST(FlKeyEmbedderResponderTest, TapLetterKeysBetweenCapsLockEventsReversed) {
   EXPECT_EQ(record->event->synthesized, false);
 
   invoke_record_callback_and_verify(record, TRUE, &user_data);
-  TRACEI(
-  g_ptr_array_clear(g_call_records);
-  ,4);
+  TRACEI(g_ptr_array_clear(g_call_records);, 4);
 
   // Press key A (stage 2)
   fl_key_responder_handle_event(
@@ -821,9 +805,7 @@ TEST(FlKeyEmbedderResponderTest, TapLetterKeysBetweenCapsLockEventsReversed) {
   EXPECT_EQ(record->event->synthesized, false);
 
   invoke_record_callback_and_verify(record, TRUE, &user_data);
-  TRACEI(
-  g_ptr_array_clear(g_call_records);
-  ,5);
+  TRACEI(g_ptr_array_clear(g_call_records);, 5);
 
   // Press CapsLock (stage 2 -> 3)
   fl_key_responder_handle_event(
@@ -841,9 +823,7 @@ TEST(FlKeyEmbedderResponderTest, TapLetterKeysBetweenCapsLockEventsReversed) {
   EXPECT_EQ(record->event->synthesized, false);
 
   invoke_record_callback_and_verify(record, TRUE, &user_data);
-  TRACEI(
-  g_ptr_array_clear(g_call_records);
-  ,6);
+  TRACEI(g_ptr_array_clear(g_call_records);, 6);
 
   // Release CapsLock (stage 3 -> 0)
   fl_key_responder_handle_event(
@@ -861,9 +841,7 @@ TEST(FlKeyEmbedderResponderTest, TapLetterKeysBetweenCapsLockEventsReversed) {
   EXPECT_EQ(record->event->synthesized, false);
 
   invoke_record_callback_and_verify(record, TRUE, &user_data);
-  TRACEI(
-  g_ptr_array_clear(g_call_records);
-  ,7);
+  TRACEI(g_ptr_array_clear(g_call_records);, 7);
 
   // Release key A (stage 0)
   fl_key_responder_handle_event(
@@ -881,9 +859,7 @@ TEST(FlKeyEmbedderResponderTest, TapLetterKeysBetweenCapsLockEventsReversed) {
   EXPECT_EQ(record->event->synthesized, false);
 
   invoke_record_callback_and_verify(record, TRUE, &user_data);
-  TRACEI(
-  g_ptr_array_clear(g_call_records);
-  ,8);
+  TRACEI(g_ptr_array_clear(g_call_records);, 8);
 
   clear_g_call_records();
   TRACE(g_object_unref(engine););
@@ -1333,9 +1309,7 @@ TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncLockModeOnNonSelfEvents) {
   EXPECT_EQ(record->event->synthesized, false);
 
   invoke_record_callback_and_verify(record, TRUE, &user_data);
-  TRACEI(
-  g_ptr_array_clear(g_call_records);
-  ,1);
+  TRACEI(g_ptr_array_clear(g_call_records);, 1);
 
   // The NumLock is desynchronized by being disabled.
   state = 0;
@@ -1381,9 +1355,7 @@ TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncLockModeOnNonSelfEvents) {
   EXPECT_EQ(record->event->synthesized, false);
 
   invoke_record_callback_and_verify(record, TRUE, &user_data);
-  TRACEI(
-  g_ptr_array_clear(g_call_records);
-  ,2);
+  TRACEI(g_ptr_array_clear(g_call_records);, 2);
 
   // Release NumLock. Since the previous event should have synthesized NumLock
   // to be released, this should result in no events.
@@ -1450,9 +1422,7 @@ TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncLockModeOnSelfEvents) {
   EXPECT_EQ(record->event->synthesized, false);
 
   invoke_record_callback_and_verify(record, TRUE, &user_data);
-  TRACEI(
-  g_ptr_array_clear(g_call_records);
-  ,1);
+  TRACEI(g_ptr_array_clear(g_call_records);, 1);
 
   // The NumLock is desynchronized by being enabled in a press event.
   state = GDK_MOD2_MASK;
@@ -1498,9 +1468,7 @@ TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncLockModeOnSelfEvents) {
   EXPECT_EQ(record->event->synthesized, false);
 
   invoke_record_callback_and_verify(record, TRUE, &user_data);
-  TRACEI(
-  g_ptr_array_clear(g_call_records);
-  ,2);
+  TRACEI(g_ptr_array_clear(g_call_records);, 2);
 
   clear_g_call_records();
 
