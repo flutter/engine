@@ -26,4 +26,21 @@ TEST(FlutterMetalCompositorTest, TestPresent) {
   ASSERT_TRUE(flag);
 }
 
+TEST(FlutterMetalCompositorTest, TestCreate) {
+  id mockViewController = CreateMockViewController(nil);
+
+  std::unique_ptr<flutter::FlutterMetalCompositor> macos_compositor =
+      std::make_unique<FlutterMetalCompositor>(mockViewController, nullptr);
+
+  FlutterBackingStore backing_store;
+  FlutterBackingStoreConfig config;
+  config.struct_size = sizeof(FlutterBackingStoreConfig);
+  config.size.width = 800;
+  config.size.height = 600;
+  macos_compositor->CreateBackingStore(&config, &backing_store);
+
+  ASSERT_EQ(backing_store.type, kFlutterBackingStoreTypeMetal);
+  ASSERT_NE(backing_store.metal.texture.texture, nil);
+}
+
 }  // flutter::testing
