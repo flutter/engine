@@ -17,9 +17,9 @@
   fflush(stdout);             \
   x printf("after " #x "\n"); \
   fflush(stdout);
-#define TRACEI(x, i)                 \
+#define TRACEI(x, i)                       \
   printf("before " #x " %d\n", __LINE__);  \
-  fflush(stdout);                    \
+  fflush(stdout);                          \
   x printf("after " #x " %d\n", __LINE__); \
   fflush(stdout);
 #else
@@ -289,8 +289,8 @@ TEST(FlKeyEmbedderResponderTest, SendKeyEvent) {
   TRACEI(g_ptr_array_clear(g_call_records);, 4);
 
   clear_g_call_records();
-  TRACE(g_object_unref(engine));
-  TRACE(g_object_unref(responder));
+  TRACE(g_object_unref(engine););
+  TRACE(g_object_unref(responder););
 }
 
 // Press Shift, key A, then release Shift, key A.
@@ -377,8 +377,8 @@ TEST(FlKeyEmbedderResponderTest, PressShiftDuringLetterKeyTap) {
   TRACEI(g_ptr_array_clear(g_call_records);, 1);
 
   clear_g_call_records();
-  TRACE(g_object_unref(engine));
-  TRACE(g_object_unref(responder));
+  TRACE(g_object_unref(engine););
+  TRACE(g_object_unref(responder););
 }
 
 // Press or release Numpad 1 between presses/releases of NumLock.
@@ -544,8 +544,8 @@ TEST(FlKeyEmbedderResponderTest, TapNumPadKeysBetweenNumLockEvents) {
   TRACEI(g_ptr_array_clear(g_call_records);, 1);
 
   clear_g_call_records();
-  TRACE(g_object_unref(engine));
-  TRACE(g_object_unref(responder));
+  TRACE(g_object_unref(engine););
+  TRACE(g_object_unref(responder););
 }
 
 // Press or release letter key between presses/releases of CapsLock.
@@ -707,8 +707,8 @@ TEST(FlKeyEmbedderResponderTest, TapLetterKeysBetweenCapsLockEvents) {
   TRACEI(g_ptr_array_clear(g_call_records);, 1);
 
   clear_g_call_records();
-  TRACE(g_object_unref(engine));
-  TRACE(g_object_unref(responder));
+  TRACE(g_object_unref(engine););
+  TRACE(g_object_unref(responder););
 }
 
 // Press or release letter key between presses/releases of CapsLock, on
@@ -870,8 +870,8 @@ TEST(FlKeyEmbedderResponderTest, TapLetterKeysBetweenCapsLockEventsReversed) {
   TRACEI(g_ptr_array_clear(g_call_records);, 8);
 
   clear_g_call_records();
-  TRACE(g_object_unref(engine));
-  TRACE(g_object_unref(responder));
+  TRACE(g_object_unref(engine););
+  TRACE(g_object_unref(responder););
 }
 
 TEST(FlKeyEmbedderResponderTest, IgnoreDuplicateDownEvent) {
@@ -921,8 +921,8 @@ TEST(FlKeyEmbedderResponderTest, IgnoreDuplicateDownEvent) {
   TRACEI(g_ptr_array_clear(g_call_records);, 1);
 
   clear_g_call_records();
-  TRACE(g_object_unref(engine));
-  TRACE(g_object_unref(responder));
+  TRACE(g_object_unref(engine););
+  TRACE(g_object_unref(responder););
 }
 
 TEST(FlKeyEmbedderResponderTest, IgnoreAbruptUpEvent) {
@@ -944,8 +944,8 @@ TEST(FlKeyEmbedderResponderTest, IgnoreAbruptUpEvent) {
   EXPECT_EQ(g_call_records->len, 0u);
 
   clear_g_call_records();
-  TRACE(g_object_unref(engine));
-  TRACE(g_object_unref(responder));
+  TRACE(g_object_unref(engine););
+  TRACE(g_object_unref(responder););
 }
 
 // Test if missed modifier keys can be detected and synthesized with state
@@ -1076,8 +1076,8 @@ TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncPressingStateOnSelfEvents) {
   TRACEI(g_ptr_array_clear(g_call_records);, 1);
 
   clear_g_call_records();
-  TRACE(g_object_unref(engine));
-  TRACE(g_object_unref(responder));
+  TRACE(g_object_unref(engine););
+  TRACE(g_object_unref(responder););
 }
 
 // Test if missed modifier keys can be detected and synthesized with state
@@ -1209,8 +1209,8 @@ TEST(FlKeyEmbedderResponderTest,
   TRACEI(g_ptr_array_clear(g_call_records);, 1);
 
   clear_g_call_records();
-  TRACE(g_object_unref(engine));
-  TRACE(g_object_unref(responder));
+  TRACE(g_object_unref(engine););
+  TRACE(g_object_unref(responder););
 }
 
 // Test if missed modifier keys can be detected and synthesized with state
@@ -1280,8 +1280,8 @@ TEST(FlKeyEmbedderResponderTest,
   TRACEI(g_ptr_array_clear(g_call_records);, 1);
 
   clear_g_call_records();
-  TRACE(g_object_unref(engine));
-  TRACE(g_object_unref(responder));
+  TRACE(g_object_unref(engine););
+  TRACE(g_object_unref(responder););
 }
 
 // Test if missed lock keys can be detected and synthesized with state
@@ -1384,8 +1384,8 @@ TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncLockModeOnNonSelfEvents) {
   EXPECT_EQ(g_call_records->len, 0u);
 
   clear_g_call_records();
-  TRACE(g_object_unref(engine));
-  TRACE(g_object_unref(responder));
+  TRACE(g_object_unref(engine););
+  TRACE(g_object_unref(responder););
 }
 
 // Test if missed lock keys can be detected and synthesized with state
@@ -1485,8 +1485,8 @@ TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncLockModeOnSelfEvents) {
   TRACEI(g_ptr_array_clear(g_call_records);, 2);
 
   clear_g_call_records();
-  TRACE(g_object_unref(engine));
-  TRACE(g_object_unref(responder));
+  TRACE(g_object_unref(engine););
+  TRACE(g_object_unref(responder););
 }
 
 // Ensures that even if the primary event is ignored (due to duplicate
@@ -1532,6 +1532,6 @@ TEST(FlKeyEmbedderResponderTest, SynthesizationOccursOnIgnoredEvents) {
   TRACEI(g_ptr_array_clear(g_call_records);, 1);
 
   clear_g_call_records();
-  TRACE(g_object_unref(engine));
-  TRACE(g_object_unref(responder));
+  TRACE(g_object_unref(engine););
+  TRACE(g_object_unref(responder););
 }
