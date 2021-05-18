@@ -38,7 +38,6 @@ abstract class Layer implements ui.EngineLayer {
   /// Paint this layer into the scene.
   void paint(PaintContext paintContext);
 
-  @mustCallSuper
   void dispose() {}
 }
 

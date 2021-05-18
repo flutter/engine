@@ -67,11 +67,11 @@ void testMain() {
       });
       sceneBuilder.addPicture(ui.Offset.zero, picture);
 
-      expect(picture.didDelete(), false);
+      expect(picture.rawSkiaObject, isNotNull);
       expect(layer.debugLayers.length, 1);
       layer.dispose();
       expect(layer.debugLayers, isEmpty);
-      expect(picture.didDelete(), true);
+      expect(picture.rawSkiaObject, isNull);
     });
     // TODO: https://github.com/flutter/flutter/issues/60040
   }, skip: isIosSafari);
