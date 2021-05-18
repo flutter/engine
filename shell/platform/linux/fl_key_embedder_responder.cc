@@ -79,7 +79,6 @@ G_DECLARE_FINAL_TYPE(FlKeyEmbedderUserData,
 struct _FlKeyEmbedderUserData {
   GObject parent_instance;
 
-  FlKeyEmbedderResponder* responder;
   FlKeyResponderAsyncCallback callback;
   gpointer user_data;
 };
@@ -96,31 +95,20 @@ static void fl_key_embedder_user_data_class_init(
 static void fl_key_embedder_user_data_init(FlKeyEmbedderUserData* self) {}
 
 static void fl_key_embedder_user_data_dispose(GObject* object) {
+  // The following line suppresses a warning for unused function
+  // FL_IS_KEY_EMBEDDER_USER_DATA.
   g_return_if_fail(FL_IS_KEY_EMBEDDER_USER_DATA(object));
-  FlKeyEmbedderUserData* self = FL_KEY_EMBEDDER_USER_DATA(object);
-  if (self->responder != nullptr) {
-    g_object_remove_weak_pointer(
-        G_OBJECT(self->responder),
-        reinterpret_cast<gpointer*>(&(self->responder)));
-    self->responder = nullptr;
-  }
 }
 
 // Creates a new FlKeyChannelUserData private class with all information.
 //
 // The callback and the user_data might be nullptr.
 static FlKeyEmbedderUserData* fl_key_embedder_user_data_new(
-    FlKeyEmbedderResponder* responder,
     FlKeyResponderAsyncCallback callback,
     gpointer user_data) {
   FlKeyEmbedderUserData* self = FL_KEY_EMBEDDER_USER_DATA(
       g_object_new(FL_TYPE_EMBEDDER_USER_DATA, nullptr));
 
-  self->responder = responder;
-  // Add a weak pointer so we can know if the key event responder disappeared
-  // while the framework was responding.
-  g_object_add_weak_pointer(G_OBJECT(responder),
-                            reinterpret_cast<gpointer*>(&(self->responder)));
   self->callback = callback;
   self->user_data = user_data;
   return self;
@@ -338,11 +326,6 @@ static void handle_response(bool handled, gpointer user_data) {
   g_autoptr(FlKeyEmbedderUserData) data = FL_KEY_EMBEDDER_USER_DATA(user_data);
 
   g_return_if_fail(data->callback != nullptr);
-
-  // Return if the weak pointer has been destroyed.
-  if (data->responder == nullptr) {
-    return;
-  }
 
   data->callback(handled, data->user_data);
 }
@@ -767,7 +750,7 @@ static void fl_key_embedder_responder_handle_event(
   }
   if (self->engine != nullptr) {
     FlKeyEmbedderUserData* response_data =
-        fl_key_embedder_user_data_new(self, callback, user_data);
+        fl_key_embedder_user_data_new(callback, user_data);
     TRACE(fl_engine_send_key_event(self->engine, &out_event, handle_response,
                                    response_data));
   } else {
