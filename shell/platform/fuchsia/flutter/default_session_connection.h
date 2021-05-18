@@ -14,7 +14,6 @@
 #include "flutter/fml/closure.h"
 #include "flutter/fml/macros.h"
 
-#include "session_connection.h"
 #include "vsync_waiter.h"
 
 #include <mutex>
@@ -69,6 +68,7 @@ class DefaultSessionConnection final : public flutter::SessionWrapper {
   // |SessionWrapper|
   void Present() override;
 
+  // Used to implement VsyncWaiter functionality.
   void AwaitVsync(FireCallbackCallback callback);
   void AwaitVsyncForSecondaryCallback(FireCallbackCallback callback);
 
@@ -106,7 +106,7 @@ class DefaultSessionConnection final : public flutter::SessionWrapper {
   bool present_session_pending_ = false;
 
   ////// Flutter Animator logic.
-  
+
   std::mutex mutex_;
 
   // This is the last Vsync we submitted as the frame_target_time to

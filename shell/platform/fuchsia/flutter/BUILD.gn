@@ -451,13 +451,11 @@ executable("flutter_runner_unittests") {
     "flutter_runner_fakes.h",
     "fuchsia_intl_unittest.cc",
     "keyboard_unittest.cc",
-    #"platform_view_unittest.cc",
+    "platform_view_unittest.cc",
     "runner_unittest.cc",
     "tests/engine_unittests.cc",
-    "tests/fake_session_connection.h",
     "tests/flutter_runner_product_configuration_unittests.cc",
     "tests/vsync_recorder_unittests.cc",
-    #"tests/vsync_waiter_unittests.cc",
   ]
 
   # This is needed for //third_party/googletest for linking zircon symbols.
@@ -513,7 +511,7 @@ executable("flutter_runner_scenic_unittests") {
 
   output_name = "flutter_runner_scenic_tests"
 
-  sources = [ #"tests/default_session_connection_unittests.cc"
+  sources = [ "tests/default_session_connection_unittests.cc"
 ]
 
   # This is needed for //third_party/googletest for linking zircon symbols.

@@ -258,18 +258,18 @@ class PlatformViewBuilder {
     EXPECT_EQ(false, built_)
         << "Build() was already called, this buider is good for one use only.";
     built_ = true;
-    return PlatformView(delegate_, debug_label_, std::move(view_ref_),
-                        task_runners_, runner_services_,
-                        std::move(parent_environment_service_provider_),
-                        std::move(session_listener_request_),
-                        std::move(focuser_), std::move(keyboard_listener_),
-                        std::move(on_session_listener_error_callback_),
-                        std::move(wireframe_enabled_callback_),
-                        std::move(on_create_view_callback_),
-                        std::move(on_update_view_callback_),
-                        std::move(on_destroy_view_callback_),
-                        std::move(on_create_surface_callback_), view_embedder_,
-                        std::move(vsync_offset_), nullptr);
+    return PlatformView(
+        delegate_, debug_label_, std::move(view_ref_), task_runners_,
+        runner_services_, std::move(parent_environment_service_provider_),
+        std::move(session_listener_request_), std::move(focuser_),
+        std::move(keyboard_listener_),
+        std::move(on_session_listener_error_callback_),
+        std::move(wireframe_enabled_callback_),
+        std::move(on_create_view_callback_),
+        std::move(on_update_view_callback_),
+        std::move(on_destroy_view_callback_),
+        std::move(on_create_surface_callback_), view_embedder_, [](auto...) {},
+        [](auto...) {});
   }
 
  private:

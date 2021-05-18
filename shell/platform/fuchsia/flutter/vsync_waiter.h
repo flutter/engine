@@ -14,8 +14,6 @@
 #include "flutter/shell/common/vsync_waiter.h"
 #include "flutter_runner_product_configuration.h"
 
-#include "session_connection.h"
-
 namespace flutter_runner {
 
 using FireCallbackCallback =
@@ -28,10 +26,10 @@ using AwaitVsyncForSecondaryCallbackCallback =
 
 class VsyncWaiter final : public flutter::VsyncWaiter {
  public:
-  VsyncWaiter(
-      AwaitVsyncCallback await_vsync_callback,
-      AwaitVsyncForSecondaryCallbackCallback await_vsync_for_secondary_callback_callback,
-      flutter::TaskRunners task_runners);
+  VsyncWaiter(AwaitVsyncCallback await_vsync_callback,
+              AwaitVsyncForSecondaryCallbackCallback
+                  await_vsync_for_secondary_callback_callback,
+              flutter::TaskRunners task_runners);
 
   ~VsyncWaiter() override;
 
@@ -45,7 +43,8 @@ class VsyncWaiter final : public flutter::VsyncWaiter {
   FireCallbackCallback fire_callback_callback_;
 
   AwaitVsyncCallback await_vsync_callback_;
-  AwaitVsyncForSecondaryCallbackCallback await_vsync_for_secondary_callback_callback_;
+  AwaitVsyncForSecondaryCallbackCallback
+      await_vsync_for_secondary_callback_callback_;
 
   std::unique_ptr<fml::WeakPtrFactory<VsyncWaiter>> weak_factory_ui_;
   fml::WeakPtrFactory<VsyncWaiter> weak_factory_;

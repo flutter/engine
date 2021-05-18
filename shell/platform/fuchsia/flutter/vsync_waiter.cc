@@ -19,13 +19,14 @@
 
 namespace flutter_runner {
 
-VsyncWaiter::VsyncWaiter(
-    AwaitVsyncCallback await_vsync_callback,
-    AwaitVsyncForSecondaryCallbackCallback await_vsync_for_secondary_callback_callback,
-    flutter::TaskRunners task_runners)
+VsyncWaiter::VsyncWaiter(AwaitVsyncCallback await_vsync_callback,
+                         AwaitVsyncForSecondaryCallbackCallback
+                             await_vsync_for_secondary_callback_callback,
+                         flutter::TaskRunners task_runners)
     : flutter::VsyncWaiter(task_runners),
       await_vsync_callback_(await_vsync_callback),
-      await_vsync_for_secondary_callback_callback_(await_vsync_for_secondary_callback_callback),
+      await_vsync_for_secondary_callback_callback_(
+          await_vsync_for_secondary_callback_callback),
       weak_factory_ui_(nullptr),
       weak_factory_(this) {
   fire_callback_callback_ = [this](fml::TimePoint frame_start,

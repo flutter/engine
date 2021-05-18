@@ -260,10 +260,10 @@ void Animator::RequestFrame(bool regenerate_layer_tree) {
       return;
     }
     TRACE_EVENT_ASYNC_BEGIN0("flutter", "Frame Request Pending", frame_number);
-  int num = frame_number; 
-  std::string numa = std::to_string(num);
-  auto numab = numa.c_str();
-  TRACE_EVENT_INSTANT1("flutter", "TRACE_BEGIN", "number", numab);
+    int num = frame_number;
+    std::string numa = std::to_string(num);
+    auto numab = numa.c_str();
+    TRACE_EVENT_INSTANT1("flutter", "TRACE_BEGIN", "number", numab);
     self->AwaitVSync();
   });
   frame_scheduled_ = true;

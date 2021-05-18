@@ -71,8 +71,9 @@ FlutterFrameTimes DefaultSessionConnection::GetTargetTimes(
   // Useful knowledge for analyzing traces.
   fml::TimePoint previous_vsync = next_vsync - vsync_interval;
   TRACE_DURATION(
-      "flutter", "DefaultSessionConnection::GetTargetTimes", "previous_vsync(ms)",
-      previous_vsync.ToEpochDelta().ToMilliseconds(), "last_targetted(ms)",
+      "flutter", "DefaultSessionConnection::GetTargetTimes",
+      "previous_vsync(ms)", previous_vsync.ToEpochDelta().ToMilliseconds(),
+      "last_targetted(ms)",
       last_targetted_vsync.ToEpochDelta().ToMilliseconds(), "now(ms)",
       fml::TimePoint::Now().ToEpochDelta().ToMilliseconds(), "next_vsync(ms))",
       next_vsync.ToEpochDelta().ToMilliseconds(), "frame_start_time(ms)",
@@ -341,7 +342,8 @@ void DefaultSessionConnection::AwaitVsync(FireCallbackCallback callback) {
 void DefaultSessionConnection::AwaitVsyncForSecondaryCallback(
     FireCallbackCallback callback) {
   std::lock_guard<std::mutex> lock(mutex_);
-  TRACE_DURATION("flutter", "DefaultSessionConnection::AwaitVsyncForSecondaryCallback");
+  TRACE_DURATION("flutter",
+                 "DefaultSessionConnection::AwaitVsyncForSecondaryCallback");
   fire_callback_ = callback;
 
   FlutterFrameTimes times = GetTargetTimesHelper(/*secondary_callback=*/true);
