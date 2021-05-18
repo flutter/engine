@@ -83,6 +83,34 @@ FlutterFrameTimes DefaultSessionConnection::GetTargetTimes(
   return {frame_start_time, frame_end_time};
 }
 
+fml::TimePoint DefaultSessionConnection::CalculateNextLatchPoint(
+    fml::TimePoint present_requested_time,
+    fml::TimePoint now,
+    fml::TimePoint last_latch_point_targeted,
+    fml::TimeDelta flutter_frame_build_time,
+    fml::TimeDelta vsync_interval,
+    std::deque<std::pair<fml::TimePoint, fml::TimePoint>>&
+        future_presentation_infos) {
+  // The minimum latch point is the largest of:
+  // Now
+  // When we expect the Flutter work for the frame to be completed
+  // The last latch point targeted
+  fml::TimePoint minimum_latch_point_to_target =
+      std::max(std::max(now, present_requested_time + flutter_frame_build_time),
+               last_latch_point_targeted);
+
+  for (auto& info : future_presentation_infos) {
+    fml::TimePoint latch_point = info.first;
+
+    if (latch_point >= minimum_latch_point_to_target) {
+      return latch_point;
+    }
+  }
+
+  // We could not find a suitable latch point in the list given to us from
+  // Scenic, so aim for the smallest safe value.
+  return minimum_latch_point_to_target;
+}
 /// Returns the system time at which the next frame is likely to be presented.
 ///
 /// Consider the following scenarios, where in both the
@@ -239,33 +267,23 @@ void DefaultSessionConnection::Present() {
   }
 }
 
-fml::TimePoint DefaultSessionConnection::CalculateNextLatchPoint(
-    fml::TimePoint present_requested_time,
-    fml::TimePoint now,
-    fml::TimePoint last_latch_point_targeted,
-    fml::TimeDelta flutter_frame_build_time,
-    fml::TimeDelta vsync_interval,
-    std::deque<std::pair<fml::TimePoint, fml::TimePoint>>&
-        future_presentation_infos) {
-  // The minimum latch point is the largest of:
-  // Now
-  // When we expect the Flutter work for the frame to be completed
-  // The last latch point targeted
-  fml::TimePoint minimum_latch_point_to_target =
-      std::max(std::max(now, present_requested_time + flutter_frame_build_time),
-               last_latch_point_targeted);
+void DefaultSessionConnection::AwaitVsync(FireCallbackCallback callback) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  TRACE_DURATION("flutter", "DefaultSessionConnection::AwaitVsync");
+  fire_callback_ = callback;
 
-  for (auto& info : future_presentation_infos) {
-    fml::TimePoint latch_point = info.first;
+  FireCallbackMaybe();
+}
 
-    if (latch_point >= minimum_latch_point_to_target) {
-      return latch_point;
-    }
-  }
+void DefaultSessionConnection::AwaitVsyncForSecondaryCallback(
+    FireCallbackCallback callback) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  TRACE_DURATION("flutter",
+                 "DefaultSessionConnection::AwaitVsyncForSecondaryCallback");
+  fire_callback_ = callback;
 
-  // We could not find a suitable latch point in the list given to us from
-  // Scenic, so aim for the smallest safe value.
-  return minimum_latch_point_to_target;
+  FlutterFrameTimes times = GetTargetTimesHelper(/*secondary_callback=*/true);
+  fire_callback_(times.frame_start, times.frame_target);
 }
 
 void DefaultSessionConnection::PresentSession() {
@@ -329,25 +347,6 @@ void DefaultSessionConnection::PresentSession() {
         VsyncRecorder::GetInstance().UpdateNextPresentationInfo(
             std::move(info));
       });
-}
-
-void DefaultSessionConnection::AwaitVsync(FireCallbackCallback callback) {
-  std::lock_guard<std::mutex> lock(mutex_);
-  TRACE_DURATION("flutter", "DefaultSessionConnection::AwaitVsync");
-  fire_callback_ = callback;
-
-  FireCallbackMaybe();
-}
-
-void DefaultSessionConnection::AwaitVsyncForSecondaryCallback(
-    FireCallbackCallback callback) {
-  std::lock_guard<std::mutex> lock(mutex_);
-  TRACE_DURATION("flutter",
-                 "DefaultSessionConnection::AwaitVsyncForSecondaryCallback");
-  fire_callback_ = callback;
-
-  FlutterFrameTimes times = GetTargetTimesHelper(/*secondary_callback=*/true);
-  fire_callback_(times.frame_start, times.frame_target);
 }
 
 // Postcondition: Either a frame is scheduled or fire_callback_request_pending_

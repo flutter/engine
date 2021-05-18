@@ -511,8 +511,7 @@ executable("flutter_runner_scenic_unittests") {
 
   output_name = "flutter_runner_scenic_tests"
 
-  sources = [ "tests/default_session_connection_unittests.cc"
-]
+  sources = [ "tests/default_session_connection_unittests.cc" ]
 
   # This is needed for //third_party/googletest for linking zircon symbols.
   libs = [ "//fuchsia/sdk/$host_os/arch/$target_cpu/sysroot/lib/libzircon.so" ]

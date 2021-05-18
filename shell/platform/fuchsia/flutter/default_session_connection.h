@@ -32,6 +32,12 @@ struct FlutterFrameTimes {
 // maintaining the Scenic session connection and presenting node updates.
 class DefaultSessionConnection final : public flutter::SessionWrapper {
  public:
+  static FlutterFrameTimes GetTargetTimes(fml::TimeDelta vsync_offset,
+                                          fml::TimeDelta vsync_interval,
+                                          fml::TimePoint last_targetted_vsync,
+                                          fml::TimePoint now,
+                                          fml::TimePoint next_vsync);
+
   static fml::TimePoint CalculateNextLatchPoint(
       fml::TimePoint present_requested_time,
       fml::TimePoint now,
@@ -40,12 +46,6 @@ class DefaultSessionConnection final : public flutter::SessionWrapper {
       fml::TimeDelta vsync_interval,
       std::deque<std::pair<fml::TimePoint, fml::TimePoint>>&
           future_presentation_infos);
-
-  static FlutterFrameTimes GetTargetTimes(fml::TimeDelta vsync_offset,
-                                          fml::TimeDelta vsync_interval,
-                                          fml::TimePoint last_targetted_vsync,
-                                          fml::TimePoint now,
-                                          fml::TimePoint next_vsync);
 
   static fml::TimePoint SnapToNextPhase(
       const fml::TimePoint now,
@@ -73,6 +73,12 @@ class DefaultSessionConnection final : public flutter::SessionWrapper {
   void AwaitVsyncForSecondaryCallback(FireCallbackCallback callback);
 
  private:
+  void PresentSession();
+
+  void FireCallbackMaybe();
+
+  FlutterFrameTimes GetTargetTimesHelper(bool secondary_callback);
+
   scenic::Session session_wrapper_;
 
   on_frame_presented_event on_frame_presented_callback_;
@@ -119,11 +125,6 @@ class DefaultSessionConnection final : public flutter::SessionWrapper {
   bool fire_callback_request_pending_ = false;
 
   FireCallbackCallback fire_callback_;
-
-  void PresentSession();
-
-  void FireCallbackMaybe();
-  FlutterFrameTimes GetTargetTimesHelper(bool secondary_callback);
 
   FML_DISALLOW_COPY_AND_ASSIGN(DefaultSessionConnection);
 };
