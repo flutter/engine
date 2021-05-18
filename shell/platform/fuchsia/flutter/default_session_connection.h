@@ -17,6 +17,8 @@
 #include "session_connection.h"
 #include "vsync_waiter.h"
 
+#include <mutex>
+
 namespace flutter_runner {
 
 using on_frame_presented_event =
@@ -102,6 +104,10 @@ class DefaultSessionConnection final : public flutter::SessionWrapper {
   int frames_in_flight_ = 0;
   int frames_in_flight_allowed_ = 0;
   bool present_session_pending_ = false;
+
+  ////// Flutter Animator logic.
+  
+  std::mutex mutex_;
 
   // This is the last Vsync we submitted as the frame_target_time to
   // FireCallback(). This value should be strictly increasing in order to

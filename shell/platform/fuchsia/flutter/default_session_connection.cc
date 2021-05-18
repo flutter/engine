@@ -182,6 +182,7 @@ DefaultSessionConnection::DefaultSessionConnection(
         }
 
         if (fire_callback_request_pending_) {
+          std::lock_guard<std::mutex> lock(mutex_);
           FireCallbackMaybe();
         }
       }  // callback
@@ -328,6 +329,7 @@ void DefaultSessionConnection::PresentSession() {
 }
 
 void DefaultSessionConnection::AwaitVsync(FireCallbackCallback callback) {
+  std::lock_guard<std::mutex> lock(mutex_);
   TRACE_DURATION("flutter", "DefaultSessionConnection::AwaitVsync");
   // FML_LOG(INFO) << "CRASH:: DSC::AwaitVsync";
   fire_callback_ = callback;
@@ -337,6 +339,7 @@ void DefaultSessionConnection::AwaitVsync(FireCallbackCallback callback) {
 
 void DefaultSessionConnection::AwaitVsyncForSecondaryCallback(
     FireCallbackCallback callback) {
+  std::lock_guard<std::mutex> lock(mutex_);
   TRACE_DURATION("flutter", "DefaultSessionConnection::AwaitVsyncForSecondaryCallback");
   // FML_LOG(INFO) << "CRASH:: DSC::AwaitVsyncForSecondaryCallback";
   fire_callback_ = callback;

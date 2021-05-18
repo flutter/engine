@@ -9,6 +9,7 @@
 #include "flutter/fml/trace_event.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
 
+#include <string>
 namespace flutter {
 
 namespace {
@@ -102,6 +103,10 @@ void Animator::BeginFrame(
     std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) {
   TRACE_EVENT_ASYNC_END0("flutter", "Frame Request Pending",
                          frame_timings_recorder->GetFrameNumber());
+  int num = frame_timings_recorder->GetFrameNumber();
+  std::string numa = std::to_string(num);
+  auto numab = numa.c_str();
+  TRACE_EVENT_INSTANT1("flutter", "TRACE_END", "number", numab);
 
   frame_timings_recorder_ = std::move(frame_timings_recorder);
   frame_timings_recorder_->RecordBuildStart(fml::TimePoint::Now());
@@ -255,6 +260,10 @@ void Animator::RequestFrame(bool regenerate_layer_tree) {
       return;
     }
     TRACE_EVENT_ASYNC_BEGIN0("flutter", "Frame Request Pending", frame_number);
+  int num = frame_number; 
+  std::string numa = std::to_string(num);
+  auto numab = numa.c_str();
+  TRACE_EVENT_INSTANT1("flutter", "TRACE_BEGIN", "number", numab);
     self->AwaitVSync();
   });
   frame_scheduled_ = true;
