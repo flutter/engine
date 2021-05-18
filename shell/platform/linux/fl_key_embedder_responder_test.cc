@@ -18,9 +18,9 @@
   x printf("after " #x "\n"); \
   fflush(stdout);
 #define TRACEI(x, i)                 \
-  printf("before " #x " " __LINE__ "\n");  \
+  printf("before " #x " %d\n", __LINE__);  \
   fflush(stdout);                    \
-  x printf("after " #x " " __LINE__  "\n"); \
+  x printf("after " #x " %d\n", __LINE__); \
   fflush(stdout);
 #else
 #define TRACE(x) x
