@@ -157,7 +157,7 @@ source_set("ui") {
       "compositing/scene_host.h",
     ]
 
-    deps += [
+    public_deps += [
       "$fuchsia_sdk_root/pkg:async-cpp",
       "//flutter/shell/platform/fuchsia/dart-pkg/fuchsia",
       "//flutter/shell/platform/fuchsia/dart-pkg/zircon",
