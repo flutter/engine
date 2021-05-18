@@ -18,27 +18,21 @@
 
 namespace flutter_runner {
 
-struct FlutterFrameTimes {
-  fml::TimePoint frame_start;
-  fml::TimePoint frame_target;
-};
+using FireCallbackCallback =
+    std::function<void(fml::TimePoint, fml::TimePoint)>;
+
+using AwaitVsyncCallback = std::function<void(FireCallbackCallback)>;
+
+using AwaitVsyncForSecondaryCallbackCallback =
+    std::function<void(FireCallbackCallback)>;
 
 class VsyncWaiter final : public flutter::VsyncWaiter {
  public:
-  static FlutterFrameTimes GetTargetTimes(fml::TimeDelta vsync_offset,
-                                          fml::TimeDelta vsync_interval,
-                                          fml::TimePoint last_targetted_vsync,
-                                          fml::TimePoint now,
-                                          fml::TimePoint next_vsync);
-
-  static fml::TimePoint SnapToNextPhase(
-      const fml::TimePoint now,
-      const fml::TimePoint last_frame_presentation_time,
-      const fml::TimeDelta presentation_interval);
-
-  VsyncWaiter(std::shared_ptr<SessionConnection> session_connection,
-              flutter::TaskRunners task_runners,
-              fml::TimeDelta vsync_offset);
+  VsyncWaiter(
+      AwaitVsyncCallback await_vsync,
+      AwaitVsyncForSecondaryCallbackCallback await_vsync_for_secondary_callback,
+      flutter::TaskRunners task_runners);
+  // fml::TimeDelta vsync_offset);
 
   ~VsyncWaiter() override;
 
@@ -49,25 +43,25 @@ class VsyncWaiter final : public flutter::VsyncWaiter {
   // |flutter::VsyncWaiter|
   void AwaitVSyncForSecondaryCallback() override;
 
-  void FireCallbackMaybe();
-  void OnVsync();
+  // void FireCallbackMaybe();
+  //  void OnVsync();
+  FireCallbackCallback fire_callback_callback_;
 
-  FlutterFrameTimes GetTargetTimesHelper(bool secondary_callback);
-
-  std::shared_ptr<SessionConnection> session_connection_;
+  AwaitVsyncCallback await_vsync_;
+  AwaitVsyncForSecondaryCallbackCallback await_vsync_for_secondary_callback_;
 
   // This is the offset from vsync that Flutter should wake up at to begin work
   // on the next frame.
-  fml::TimeDelta vsync_offset_;
+  // fml::TimeDelta vsync_offset_;
 
   // This is the last Vsync we submitted as the frame_target_time to
   // FireCallback(). This value should be strictly increasing in order to
   // guarantee that animation code that relies on target vsyncs works correctly,
   // and that Flutter is not producing multiple frames in a small interval.
-  fml::TimePoint last_targetted_vsync_;
+  // fml::TimePoint last_targetted_vsync_;
 
   // This is true iff AwaitVSync() was called but we could not schedule a frame.
-  bool frame_request_pending_ = false;
+  // bool frame_request_pending_ = false;
 
   std::unique_ptr<fml::WeakPtrFactory<VsyncWaiter>> weak_factory_ui_;
   fml::WeakPtrFactory<VsyncWaiter> weak_factory_;

@@ -25,6 +25,7 @@
 #include "platform_view.h"
 #include "surface.h"
 #include "task_runner_adapter.h"
+#include "vsync_waiter.h"
 
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
 #include "compositor_context.h"  // nogncheck
@@ -134,11 +135,12 @@ Engine::Engine(Delegate& delegate,
        view_token = std::move(view_token),
        view_ref_pair = std::move(view_ref_pair),
        max_frames_in_flight = product_config.get_max_frames_in_flight(),
-       &view_embedder_latch]() mutable {
+       &view_embedder_latch,
+       vsync_offset = product_config.get_vsync_offset()]() mutable {
         session_connection_ = std::make_shared<DefaultSessionConnection>(
             thread_label_, std::move(session),
             std::move(session_error_callback), [](auto) {},
-            max_frames_in_flight);
+            max_frames_in_flight, vsync_offset);
         surface_producer_.emplace(session_connection_->get());
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
         if (use_legacy_renderer_) {
@@ -228,8 +230,8 @@ Engine::Engine(Delegate& delegate,
   // Setup the callback that will instantiate the platform view.
   flutter::Shell::CreateCallback<flutter::PlatformView>
       on_create_platform_view = fml::MakeCopyable(
-          [this, debug_label = thread_label_,
-           view_ref = std::move(platform_view_ref), runner_services,
+          [debug_label = thread_label_, view_ref = std::move(platform_view_ref),
+           runner_services,
            parent_environment_service_provider =
                std::move(parent_environment_service_provider),
            session_listener_request = std::move(session_listener_request),
@@ -243,9 +245,15 @@ Engine::Engine(Delegate& delegate,
            on_destroy_view_callback = std::move(on_destroy_view_callback),
            on_create_surface_callback = std::move(on_create_surface_callback),
            external_view_embedder = GetExternalViewEmbedder(),
-           vsync_offset = product_config.get_vsync_offset(),
-           keyboard_listener_request = std::move(keyboard_listener_request)](
-              flutter::Shell& shell) mutable {
+           keyboard_listener_request = std::move(keyboard_listener_request),
+           await_vsync_callback =
+               [this](FireCallbackCallback cb) {
+                 session_connection_->AwaitVsync(cb);
+               },
+           await_vsync_for_secondary_callback_callback =
+               [this](FireCallbackCallback cb) {
+                 session_connection_->AwaitVsyncForSecondaryCallback(cb);
+               }](flutter::Shell& shell) mutable {
             return std::make_unique<flutter_runner::PlatformView>(
                 shell,                   // delegate
                 debug_label,             // debug label
@@ -263,10 +271,10 @@ Engine::Engine(Delegate& delegate,
                 std::move(on_create_view_callback),
                 std::move(on_update_view_callback),
                 std::move(on_destroy_view_callback),
-                std::move(on_create_surface_callback),
-                external_view_embedder,   // external view embedder
-                std::move(vsync_offset),  // vsync offset
-                session_connection_);
+                std::move(on_create_surface_callback), external_view_embedder,
+                // Callbacks for VsyncWaiter to call into SessionConnection.
+                await_vsync_callback,
+                await_vsync_for_secondary_callback_callback);
           });
 
   // Setup the callback that will instantiate the rasterizer.

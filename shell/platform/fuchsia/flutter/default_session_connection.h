@@ -15,17 +15,21 @@
 #include "flutter/fml/macros.h"
 
 #include "session_connection.h"
+#include "vsync_waiter.h"
 
 namespace flutter_runner {
 
 using on_frame_presented_event =
     std::function<void(fuchsia::scenic::scheduling::FramePresentedInfo)>;
 
+struct FlutterFrameTimes {
+  fml::TimePoint frame_start;
+  fml::TimePoint frame_target;
+};
+
 // The component residing on the raster thread that is responsible for
 // maintaining the Scenic session connection and presenting node updates.
-class DefaultSessionConnection final
-    : public flutter::SessionWrapper,
-      public flutter_runner::SessionConnection {
+class DefaultSessionConnection final : public flutter::SessionWrapper {
  public:
   static fml::TimePoint CalculateNextLatchPoint(
       fml::TimePoint present_requested_time,
@@ -36,12 +40,24 @@ class DefaultSessionConnection final
       std::deque<std::pair<fml::TimePoint, fml::TimePoint>>&
           future_presentation_infos);
 
+  static FlutterFrameTimes GetTargetTimes(fml::TimeDelta vsync_offset,
+                                          fml::TimeDelta vsync_interval,
+                                          fml::TimePoint last_targetted_vsync,
+                                          fml::TimePoint now,
+                                          fml::TimePoint next_vsync);
+
+  static fml::TimePoint SnapToNextPhase(
+      const fml::TimePoint now,
+      const fml::TimePoint last_frame_presentation_time,
+      const fml::TimeDelta presentation_interval);
+
   DefaultSessionConnection(
       std::string debug_label,
       fidl::InterfaceHandle<fuchsia::ui::scenic::Session> session,
       fml::closure session_error_callback,
       on_frame_presented_event on_frame_presented_callback,
-      uint64_t max_frames_in_flight);
+      uint64_t max_frames_in_flight,
+      fml::TimeDelta vsync_offset);
 
   ~DefaultSessionConnection();
 
@@ -51,6 +67,7 @@ class DefaultSessionConnection final
   // |SessionWrapper|
   void Present() override;
 
+  /*
   // |SessionConnection|
   void InitializeVsyncWaiterCallback(VsyncWaiterCallback callback) override;
 
@@ -58,13 +75,16 @@ class DefaultSessionConnection final
   bool CanRequestNewFrames() override {
     return frames_in_flight_ < kMaxFramesInFlight;
   }
+  */
+
+  void AwaitVsync(FireCallbackCallback callback);
+
+  void AwaitVsyncForSecondaryCallback(FireCallbackCallback callback);
 
  private:
   scenic::Session session_wrapper_;
 
   on_frame_presented_event on_frame_presented_callback_;
-
-  zx_handle_t vsync_event_handle_;
 
   fml::TimePoint last_latch_point_targeted_ =
       fml::TimePoint::FromEpochDelta(fml::TimeDelta::Zero());
@@ -88,18 +108,29 @@ class DefaultSessionConnection final
   // outstanding at any time. This is equivalent to how many times it has
   // called Present2() before receiving an OnFramePresented() event.
   const int kMaxFramesInFlight;
+  fml::TimeDelta vsync_offset_;
+
   int frames_in_flight_ = 0;
 
   int frames_in_flight_allowed_ = 0;
 
   bool present_session_pending_ = false;
 
-  bool vsync_waiter_initialized_ = false;
-  VsyncWaiterCallback vsync_waiter_callback_;
+  // This is the last Vsync we submitted as the frame_target_time to
+  // FireCallback(). This value should be strictly increasing in order to
+  // guarantee that animation code that relies on target vsyncs works correctly,
+  // and that Flutter is not producing multiple frames in a small interval.
+  fml::TimePoint last_targetted_vsync_;
+
+  // This is true iff AwaitVSync() was called but we could not schedule a frame.
+  bool fire_callback_request_pending_ = false;
+
+  FireCallbackCallback fire_callback_;
 
   void PresentSession();
 
-  static void ToggleSignal(zx_handle_t handle, bool raise);
+  void FireCallbackMaybe();
+  FlutterFrameTimes GetTargetTimesHelper(bool secondary_callback);
 
   FML_DISALLOW_COPY_AND_ASSIGN(DefaultSessionConnection);
 };
