@@ -200,7 +200,7 @@ class HtmlViewEmbedder {
       );
       _rootViews[viewId] = newPlatformViewRoot;
     }
-    _applyMutators(params.mutators, platformView);
+    _applyMutators(params.mutators, platformView, viewId);
   }
 
   int _countClips(MutatorsStack mutators) {
@@ -246,11 +246,26 @@ class HtmlViewEmbedder {
     return head;
   }
 
-  void _applyMutators(MutatorsStack mutators, html.Element embeddedView) {
+  /// Clean up the old SVG clip definitions, as this platform view is about to
+  /// be recomposited.
+  void _cleanUpClipDefs(int viewId) {
+    if (_svgClipDefs.containsKey(viewId)) {
+      final html.Element clipDefs =
+          _svgPathDefs!.querySelector('#sk_path_defs')!;
+      for (String id in _svgClipDefs[viewId]!) {
+        clipDefs.querySelector('#$id')?.remove();
+      }
+      _svgClipDefs[viewId]!.clear();
+    }
+  }
+
+  void _applyMutators(
+      MutatorsStack mutators, html.Element embeddedView, int viewId) {
     html.Element head = embeddedView;
     Matrix4 headTransform = Matrix4.identity();
     double embeddedOpacity = 1.0;
     _resetAnchor(head);
+    _cleanUpClipDefs(viewId);
 
     for (final Mutator mutator in mutators) {
       switch (mutator.type) {
@@ -278,28 +293,32 @@ class HtmlViewEmbedder {
             html.Element pathDefs =
                 _svgPathDefs!.querySelector('#sk_path_defs')!;
             _clipPathCount += 1;
+            final String clipId = 'svgClip$_clipPathCount';
             html.Node newClipPath = html.DocumentFragment.svg(
-              '<clipPath id="svgClip$_clipPathCount">'
+              '<clipPath id="$clipId">'
               '<path d="${path.toSvgString()}">'
               '</path></clipPath>',
               treeSanitizer: NullTreeSanitizer(),
             );
             pathDefs.append(newClipPath);
-            clipView.style.clipPath = 'url(#svgClip$_clipPathCount)';
+            _svgClipDefs.putIfAbsent(viewId, () => <String>[]).add(clipId);
+            clipView.style.clipPath = 'url(#$clipId)';
           } else if (mutator.path != null) {
             final CkPath path = mutator.path as CkPath;
             _ensureSvgPathDefs();
             html.Element pathDefs =
                 _svgPathDefs!.querySelector('#sk_path_defs')!;
             _clipPathCount += 1;
+            final String clipId = 'svgClip$_clipPathCount';
             html.Node newClipPath = html.DocumentFragment.svg(
-              '<clipPath id="svgClip$_clipPathCount">'
+              '<clipPath id="$clipId">'
               '<path d="${path.toSvgString()}">'
               '</path></clipPath>',
               treeSanitizer: NullTreeSanitizer(),
             );
             pathDefs.append(newClipPath);
-            clipView.style.clipPath = 'url(#svgClip$_clipPathCount)';
+            _svgClipDefs.putIfAbsent(viewId, () => <String>[]).add(clipId);
+            clipView.style.clipPath = 'url(#$clipId)';
           }
           _resetAnchor(clipView);
           head = clipView;
@@ -336,6 +355,9 @@ class HtmlViewEmbedder {
   int _clipPathCount = 0;
 
   html.Element? _svgPathDefs;
+
+  /// The nodes containing the SVG clip definitions needed to clip this view.
+  Map<int, List<String>> _svgClipDefs = <int, List<String>>{};
 
   /// Ensures we add a container of SVG path defs to the DOM so they can
   /// be referred to in clip-path: url(#blah).
@@ -424,6 +446,8 @@ class HtmlViewEmbedder {
       _currentCompositionParams.remove(viewId);
       _clipCount.remove(viewId);
       _viewsToRecomposite.remove(viewId);
+      _cleanUpClipDefs(viewId);
+      _svgClipDefs.remove(viewId);
     }
     _viewsToDispose.clear();
   }
@@ -451,6 +475,14 @@ class HtmlViewEmbedder {
     }
 
     _overlays[viewId] = overlay;
+  }
+
+  /// Deletes SVG clip paths, useful for tests.
+  void debugCleanupSvgClipPaths() {
+    _svgPathDefs?.children.single.children.forEach((element) {
+      element.remove();
+    });
+    _svgClipDefs.clear();
   }
 }
 
