@@ -232,7 +232,7 @@ void Function(Uri) _getHttpConnectionHookClosure(bool mayInsecurelyConnectToAllD
       if (mayInsecurelyConnectToAllDomains || uri.isScheme('https')) {
         return;
       }
-      final zoneOverride = Zone.current[#flutter.io.allow_http];
+      final dynamic zoneOverride = Zone.current[#flutter.io.allow_http];
       if (zoneOverride == true) {
         return;
       }
