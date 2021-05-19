@@ -46,9 +46,8 @@ void DartIO::InitForIsolate(bool may_insecurely_connect_to_all_domains,
   FML_CHECK(!LogIfError(http_connection_hook_closure));
   Dart_Handle http_lib = Dart_LookupLibrary(ToDart("dart:_http"));
   FML_CHECK(!LogIfError(http_lib));
-  Dart_Handle set_http_connection_hook_result =
-      Dart_SetField(http_lib, ToDart("_httpConnectionHook"),
-                    http_connection_hook_closure);
+  Dart_Handle set_http_connection_hook_result = Dart_SetField(
+      http_lib, ToDart("_httpConnectionHook"), http_connection_hook_closure);
   FML_CHECK(!LogIfError(set_http_connection_hook_result));
 }
 
