@@ -227,11 +227,13 @@ void _invoke3<A1, A2, A3>(void Function(A1 a1, A2 a2, A3 a3)? callback, Zone zon
 
 @pragma('vm:entry-point')
 // ignore: unused_element
-void Function(Uri) _getValidateIfConnectionIsAllowedClosure(bool mayInsecurelyConnectToAllDomains) {
+void Function(Uri) _getHttpConnectionHookClosure(bool mayInsecurelyConnectToAllDomains) {
   return (Uri uri) {
-      if (mayInsecurelyConnectToAllDomains ||
-          uri.isScheme('https') ||
-          Zone.current[#dart.library.io.allow_http] == true) {
+      if (mayInsecurelyConnectToAllDomains || uri.isScheme('https')) {
+        return;
+      }
+      final zoneOverride = Zone.current[#flutter.io.allow_http];
+      if (zoneOverride == true) {
         return;
       }
       throw UnsupportedError(
