@@ -35,6 +35,7 @@ RuntimeController::RuntimeController(
     const EngineContext& p_engine_context)
     : client_(p_client),
       vm_(p_vm),
+      isolate_snapshot_(p_isolate_snapshot),
       idle_notification_callback_(p_idle_notification_callback),
       platform_data_(std::move(p_platform_data)),
       isolate_create_callback_(p_isolate_create_callback),
