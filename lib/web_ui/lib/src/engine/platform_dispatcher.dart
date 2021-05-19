@@ -450,8 +450,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
       case 'flutter/platform_views':
         if (useCanvasKit) {
-          rasterizer!.surface.viewEmbedder
-              .handlePlatformViewCall(data, callback);
+          HtmlViewEmbedder.instance.handlePlatformViewCall(data, callback);
         } else {
           ui.handlePlatformViewCall(data!, callback!);
         }
@@ -920,8 +919,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   String? _defaultRouteName;
 
   @visibleForTesting
-  late Rasterizer? rasterizer =
-      useCanvasKit ? Rasterizer(Surface(HtmlViewEmbedder.instance)) : null;
+  late Rasterizer? rasterizer = useCanvasKit ? Rasterizer() : null;
 
   /// In Flutter, platform messages are exchanged between threads so the
   /// messages and responses have to be exchanged asynchronously. We simulate

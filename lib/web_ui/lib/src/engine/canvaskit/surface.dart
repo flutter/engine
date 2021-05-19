@@ -45,7 +45,7 @@ class SurfaceFrame {
 /// successive frames if they are the same size. Otherwise, a new [CkSurface] is
 /// created.
 class Surface {
-  Surface(this.viewEmbedder);
+  Surface();
 
   CkSurface? _surface;
 
@@ -90,10 +90,6 @@ class Surface {
   }
 
   bool _addedToScene = false;
-
-  /// The default view embedder. Coordinates embedding platform views and
-  /// overlaying subsequent draw operations on top.
-  final HtmlViewEmbedder viewEmbedder;
 
   /// Acquire a frame of the given [size] containing a drawable canvas.
   ///

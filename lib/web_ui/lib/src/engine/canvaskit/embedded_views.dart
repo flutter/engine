@@ -488,16 +488,7 @@ class HtmlViewEmbedder {
   void _releaseOverlay(int viewId) {
     if (_overlays[viewId] != null) {
       Surface overlay = _overlays[viewId]!;
-      if (overlay == _backupSurface) {
-        _viewsUsingBackupSurface.remove(viewId);
-        if (_viewsUsingBackupSurface.isEmpty) {
-          _backupSurface!.htmlElement.remove();
-          _backupSurface!.dispose();
-          _backupSurface = null;
-        }
-      } else {
-        SurfaceFactory.instance.releaseOverlay(overlay);
-      }
+      SurfaceFactory.instance.releaseSurface(overlay);
       _overlays.remove(viewId);
     }
   }
@@ -514,29 +505,11 @@ class HtmlViewEmbedder {
     _viewsUsingBackupSurface.remove(viewId);
 
     // Try reusing a cached overlay created for another platform view.
-    overlay = SurfaceFactory.instance.reserveOverlay(this) ??
-        SurfaceFactory.instance.createOverlay(this);
-
-    if (overlay == null) {
-      if (_backupSurface == null) {
-        assert(_viewsUsingBackupSurface.isEmpty);
-        if (assertionsEnabled) {
-          if (!_warnedAboutTooManyOverlays) {
-            html.window.console
-                .warn('Flutter was unable to create enough overlay surfaces. '
-                    'This is usually caused by too many platform views being '
-                    'displayed at once. '
-                    'You may experience incorrect rendering.');
-            _warnedAboutTooManyOverlays = true;
-          }
-        }
-        _backupSurface = Surface(this);
-      }
-      overlay = _backupSurface;
+    overlay = SurfaceFactory.instance.getSurface();
+    if (overlay == SurfaceFactory.instance.backupSurface) {
       _viewsUsingBackupSurface.add(viewId);
     }
-
-    _overlays[viewId] = overlay!;
+    _overlays[viewId] = overlay;
   }
 
   void debugClear() {

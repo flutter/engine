@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'package:meta/meta.dart';
+import 'package:ui/src/engine.dart';
+
 import 'embedded_views.dart';
 import 'surface.dart';
 
@@ -11,65 +14,100 @@ class SurfaceFactory {
   static final SurfaceFactory instance =
       SurfaceFactory(HtmlViewEmbedder.maximumOverlaySurfaces);
 
-  SurfaceFactory(this.maximumSize);
+  SurfaceFactory(this.maximumSurfaces)
+      : assert(maximumSurfaces >= 2,
+            'The maximum number of surfaces must be at least 2');
 
-  /// The cache will not grow beyond this size.
-  final int maximumSize;
+  /// The base surface to paint on. This is the default surface which will be
+  /// painted to. If there are no platform views, then this surface will receive
+  /// all painting commands.
+  final Surface baseSurface = Surface();
 
-  /// The number of surfaces which have been created by this cache.
-  ///
-  /// Calls to [createOverlay] will only return non-null if this cache hasn't
-  int _surfacesCreated = 0;
+  /// The shared backup surface
+  final Surface backupSurface = Surface();
 
-  /// Cached surfaces, available for reuse.
+  /// The maximum number of surfaces which can be live at once.
+  final int maximumSurfaces;
+
+  /// Surfaces created by this factory which are currently in use.
+  final List<Surface> _liveSurfaces = <Surface>[];
+
+  /// Surfaces created by this factory which are no longer in use. These can be
+  /// reused.
   final List<Surface> _cache = <Surface>[];
+
+  /// The number of surfaces which have been created by this factory.
+  int get _surfaceCount => _liveSurfaces.length + _cache.length + 2;
+
+  /// The number of surfaces created by this factory. Used for testing.
+  @visibleForTesting
+  int get debugSurfaceCount => _surfaceCount;
 
   /// Returns the list of cached surfaces.
   ///
   /// Useful in tests.
   List<Surface> get debugCachedSurfaces => _cache;
 
-  /// Creates a new overlay, unless this cache has already created [maximumSize]
-  /// overlays.
-  Surface? createOverlay(HtmlViewEmbedder viewEmbedder) {
-    if (_surfacesCreated < maximumSize) {
-      _surfacesCreated++;
-      return Surface(viewEmbedder);
-    }
-    return null;
-  }
+  /// Whether or not we have already emitted a warning about creating too many
+  /// surfaces.
+  bool _warnedAboutTooManySurfaces = false;
 
-  /// Reserves an overlay from the cache.
+  /// Gets a [Surface] which is ready to paint to.
   ///
-  /// If the maximum number of overlays have already been reserved, this returns
-  /// [null].
-  Surface? reserveOverlay(HtmlViewEmbedder viewEmbedder) {
-    if (_cache.isEmpty) {
-      return null;
-    }
-    return _cache.removeLast();
-  }
-
-  /// Returns an overlay back to the cache.
-  ///
-  /// If the cache is full, the overlay is deleted.
-  void releaseOverlay(Surface overlay) {
-    overlay.htmlElement.remove();
-    if (_cache.length < maximumSize) {
-      _cache.add(overlay);
+  /// If there are available surfaces in the cache, then this will return one of
+  /// them. If this factory hasn't yet created [maximumSurfaces] surfaces, then a
+  /// new one will be created. If this factory has already created [maximumSurfaces]
+  /// surfaces, then this will return a backup surface which will be returned by
+  /// all subsequent calls to [getSurface] until some surfaces have been
+  /// released with [releaseSurface].
+  Surface getSurface() {
+    if (_cache.isNotEmpty) {
+      final surface = _cache.removeLast();
+      _liveSurfaces.add(surface);
+      return surface;
+    } else if (debugSurfaceCount < maximumSurfaces) {
+      final surface = Surface();
+      _liveSurfaces.add(surface);
+      return surface;
     } else {
-      _surfacesCreated--;
-      overlay.dispose();
+      if (!_warnedAboutTooManySurfaces) {
+        _warnedAboutTooManySurfaces = true;
+        printWarning('Flutter was unable to create enough overlay surfaces. '
+            'This is usually caused by too many platform views being '
+            'displayed at once. '
+            'You may experience incorrect rendering.');
+      }
+      return backupSurface;
     }
   }
 
-  int get debugLength => _cache.length;
-
-  void debugClear() {
-    for (final Surface overlay in _cache) {
-      overlay.dispose();
+  /// Signals that a surface is no longer being used. It can be reused.
+  void releaseSurface(Surface surface) {
+    if (surface == backupSurface) {
+      // Releasing the backup surface does nothing.
+      return;
     }
+    assert(surface != baseSurface, 'Attempting to release the base surface');
+    assert(
+        _liveSurfaces.contains(surface),
+        'Attempting to release a Surface which '
+        'was not created by this factory');
+    surface.htmlElement.remove();
+    _liveSurfaces.remove(surface);
+    _cache.add(surface);
+  }
+
+  /// Dispose all surfaces created by this factory. Used in tests.
+  void debugClear() {
+    baseSurface.dispose();
+    backupSurface.dispose();
+    for (final Surface surface in _cache) {
+      surface.dispose();
+    }
+    for (final Surface surface in _liveSurfaces) {
+      surface.dispose();
+    }
+    _liveSurfaces.clear();
     _cache.clear();
-    _surfacesCreated = 0;
   }
 }
