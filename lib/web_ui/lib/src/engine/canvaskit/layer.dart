@@ -38,6 +38,8 @@ abstract class Layer implements ui.EngineLayer {
   /// Paint this layer into the scene.
   void paint(PaintContext paintContext);
 
+  // TODO(dnfield): Implement ui.EngineLayer.dispose for CanvasKit.
+  // https://github.com/flutter/flutter/issues/82878
   void dispose() {}
 }
 
@@ -147,15 +149,6 @@ abstract class ContainerLayer extends Layer {
         layer.paint(context);
       }
     }
-  }
-
-  @override
-  void dispose() {
-    for (final Layer layer in _layers) {
-      layer.dispose();
-    }
-    _layers.clear();
-    super.dispose();
   }
 }
 
@@ -447,9 +440,6 @@ class ShaderMaskEngineLayer extends ContainerLayer
 
     paintContext.internalNodesCanvas.restore();
   }
-
-  // TODO(dnfield): dispose of the shader
-  // https://github.com/flutter/flutter/issues/82832
 }
 
 /// A layer containing a [Picture].
@@ -483,12 +473,6 @@ class PictureLayer extends Layer {
 
     paintContext.leafNodesCanvas!.drawPicture(picture);
     paintContext.leafNodesCanvas!.restore();
-  }
-
-  @override
-  void dispose() {
-    picture.dispose();
-    super.dispose();
   }
 }
 

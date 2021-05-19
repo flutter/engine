@@ -56,23 +56,6 @@ void testMain() {
       LayerSceneBuilder().addPicture(ui.Offset.zero, recorder.endRecording());
     });
 
-    test('disposing a ContainerLayer disposes its children', () async {
-      final LayerSceneBuilder sceneBuilder = LayerSceneBuilder();
-      final OffsetEngineLayer layer = sceneBuilder.pushOffset(0, 0);
-
-      final CkPicture picture =
-          paintPicture(ui.Rect.fromLTRB(0, 0, 60, 60), (CkCanvas canvas) {
-        canvas.drawRect(ui.Rect.fromLTRB(0, 0, 60, 60),
-            CkPaint()..style = ui.PaintingStyle.fill);
-      });
-      sceneBuilder.addPicture(ui.Offset.zero, picture);
-
-      expect(picture.rawSkiaObject, isNotNull);
-      expect(layer.debugLayers.length, 1);
-      layer.dispose();
-      expect(layer.debugLayers, isEmpty);
-      expect(picture.rawSkiaObject, isNull);
-    });
     // TODO: https://github.com/flutter/flutter/issues/60040
   }, skip: isIosSafari);
 }
