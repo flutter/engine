@@ -10,6 +10,9 @@ import 'package:args/command_runner.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
 import 'package:pool/pool.dart';
+
+// TODO(yjbanov): remove hacks when this is fixed:
+//                https://github.com/dart-lang/test/issues/1521
 import 'package:test_api/src/backend/live_test.dart'
     as hack;
 import 'package:test_api/src/backend/group.dart'
@@ -880,10 +883,10 @@ class TestFailureException implements Exception {}
 /// fail.
 class NameOnlyReporter implements hack.Reporter {
   NameOnlyReporter(hack.Engine testEngine) {
-    testEngine.onTestStarted.listen(_printTest);
+    testEngine.onTestStarted.listen(_printTestName);
   }
 
-  void _printTest(hack.LiveTest test) {
+  void _printTestName(hack.LiveTest test) {
     print('Running ${test.groups.map((hack.Group group) => group.name).join(' ')} ${test.individualName}');
   }
 
