@@ -1,4 +1,4 @@
-Signature: c9d0378ff3292a0a3bb6b9c8be34eaa0
+Signature: 4e55262a75b2acb0c49695da813e6903
 
 UNUSED LICENSES:
 
@@ -1594,7 +1594,6 @@ FILE: ../../../third_party/skia/samplecode/SampleSlides.cpp
 FILE: ../../../third_party/skia/samplecode/SampleStrokePath.cpp
 FILE: ../../../third_party/skia/samplecode/SampleStrokeRect.cpp
 FILE: ../../../third_party/skia/samplecode/SampleTextBox.cpp
-FILE: ../../../third_party/skia/samplecode/SampleTextEffects.cpp
 FILE: ../../../third_party/skia/samplecode/SampleVertices.cpp
 FILE: ../../../third_party/skia/samplecode/SampleWritePixels.cpp
 FILE: ../../../third_party/skia/samplecode/SampleXfermodesBlur.cpp
@@ -4698,7 +4697,6 @@ FILE: ../../../third_party/skia/docs/examples/Path_addPoly_2.cpp
 FILE: ../../../third_party/skia/docs/examples/Path_addRRect.cpp
 FILE: ../../../third_party/skia/docs/examples/Path_addRRect_2.cpp
 FILE: ../../../third_party/skia/docs/examples/Path_addRect.cpp
-FILE: ../../../third_party/skia/docs/examples/Path_addRect_2.cpp
 FILE: ../../../third_party/skia/docs/examples/Path_addRect_3.cpp
 FILE: ../../../third_party/skia/docs/examples/Path_addRoundRect.cpp
 FILE: ../../../third_party/skia/docs/examples/Path_addRoundRect_2.cpp
@@ -5336,7 +5334,6 @@ FILE: ../../../third_party/skia/docs/examples/alphaimage_shader_colorfilter.cpp
 FILE: ../../../third_party/skia/docs/examples/backdrop_blur_with_rrect_clip.cpp
 FILE: ../../../third_party/skia/docs/examples/bezier_curves.cpp
 FILE: ../../../third_party/skia/docs/examples/blur4444.cpp
-FILE: ../../../third_party/skia/docs/examples/blur_alpha_img.cpp
 FILE: ../../../third_party/skia/docs/examples/blurbug.cpp
 FILE: ../../../third_party/skia/docs/examples/bug5252.cpp
 FILE: ../../../third_party/skia/docs/examples/bug583299.cpp
@@ -5345,7 +5342,6 @@ FILE: ../../../third_party/skia/docs/examples/bug7573.cpp
 FILE: ../../../third_party/skia/docs/examples/bug7573_1.cpp
 FILE: ../../../third_party/skia/docs/examples/bug767834.cpp
 FILE: ../../../third_party/skia/docs/examples/bugoftheday.cpp
-FILE: ../../../third_party/skia/docs/examples/checker_board.cpp
 FILE: ../../../third_party/skia/docs/examples/color_filter_vs_colorFilterImageFilter_saveLayer.cpp
 FILE: ../../../third_party/skia/docs/examples/compose_path.cpp
 FILE: ../../../third_party/skia/docs/examples/convex_overstroke_linear_approx_curve.cpp
@@ -5432,11 +5428,8 @@ FILE: ../../../third_party/skia/docs/examples/skpaint_compose_shader.cpp
 FILE: ../../../third_party/skia/docs/examples/skpaint_corner_path_effects.cpp
 FILE: ../../../third_party/skia/docs/examples/skpaint_dash_path_effect.cpp
 FILE: ../../../third_party/skia/docs/examples/skpaint_discrete_path_effect.cpp
-FILE: ../../../third_party/skia/docs/examples/skpaint_line_2d_path_effect.cpp
 FILE: ../../../third_party/skia/docs/examples/skpaint_matrix_color_filter.cpp
 FILE: ../../../third_party/skia/docs/examples/skpaint_mix.cpp
-FILE: ../../../third_party/skia/docs/examples/skpaint_path_1d_path_effect.cpp
-FILE: ../../../third_party/skia/docs/examples/skpaint_path_2d_path_effect.cpp
 FILE: ../../../third_party/skia/docs/examples/skpaint_perlin.cpp
 FILE: ../../../third_party/skia/docs/examples/skpaint_radial.cpp
 FILE: ../../../third_party/skia/docs/examples/skpaint_shader.cpp
@@ -6109,8 +6102,6 @@ FILE: ../../../third_party/skia/include/core/SkString.h
 FILE: ../../../third_party/skia/include/core/SkTime.h
 FILE: ../../../third_party/skia/include/core/SkTypeface.h
 FILE: ../../../third_party/skia/include/core/SkTypes.h
-FILE: ../../../third_party/skia/include/effects/Sk1DPathEffect.h
-FILE: ../../../third_party/skia/include/effects/Sk2DPathEffect.h
 FILE: ../../../third_party/skia/include/effects/SkBlurMaskFilter.h
 FILE: ../../../third_party/skia/include/effects/SkCornerPathEffect.h
 FILE: ../../../third_party/skia/include/effects/SkDashPathEffect.h
@@ -6197,8 +6188,6 @@ FILE: ../../../third_party/skia/src/core/SkUtils.cpp
 FILE: ../../../third_party/skia/src/core/SkUtils.h
 FILE: ../../../third_party/skia/src/core/SkXfermode.cpp
 FILE: ../../../third_party/skia/src/core/SkXfermodePriv.h
-FILE: ../../../third_party/skia/src/effects/Sk1DPathEffect.cpp
-FILE: ../../../third_party/skia/src/effects/Sk2DPathEffect.cpp
 FILE: ../../../third_party/skia/src/effects/SkCornerPathEffect.cpp
 FILE: ../../../third_party/skia/src/effects/SkDashPathEffect.cpp
 FILE: ../../../third_party/skia/src/effects/SkDiscretePathEffect.cpp
