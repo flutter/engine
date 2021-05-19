@@ -27,6 +27,16 @@ static int TimePointToInt(fml::TimePoint time) {
   return time.ToEpochDelta().ToNanoseconds();
 }
 
+static fuchsia::scenic::scheduling::PresentationInfo CreatePresentationInfo(
+    zx_time_t latch_point,
+    zx_time_t presentation_time) {
+  fuchsia::scenic::scheduling::PresentationInfo info;
+
+  info.set_latch_point(latch_point);
+  info.set_presentation_time(presentation_time);
+  return info;
+}
+
 class DefaultSessionConnectionTest : public ::testing::Test {
  public:
   void SetUp() override {
@@ -803,4 +813,72 @@ TEST(GetTargetTimesTest, ScheduleMultipleTimes_WithDelayedWakeups) {
     last_targetted_vsync = target_times.frame_target;
   }
 }
+// static fuchsia::scenic::scheduling::PresentationInfo UpdatePresentationInfo(
+//   fuchsia::scenic::scheduling::FuturePresentationTimes future_info,
+//   fuchsia::scenic::scheduling::PresentationInfo& presentation_info);
+
+TEST(UpdatePresentationInfoTest, SingleUpdate) {
+  std::vector<fuchsia::scenic::scheduling::PresentationInfo>
+      future_presentations = {};
+
+  // Update the |vsync_info|.
+  future_presentations.push_back(
+      CreatePresentationInfo(/*latch_point=*/5, /*presentation_time=*/10));
+
+  fuchsia::scenic::scheduling::FuturePresentationTimes future_info;
+  future_info.future_presentations = std::move(future_presentations);
+  future_info.remaining_presents_in_flight_allowed = 1;
+
+  fuchsia::scenic::scheduling::PresentationInfo presentation_info;
+  presentation_info.set_presentation_time(0);
+
+  fuchsia::scenic::scheduling::PresentationInfo new_presentation_info =
+      flutter_runner::DefaultSessionConnection::UpdatePresentationInfo(
+          std::move(future_info), presentation_info);
+
+  EXPECT_EQ(new_presentation_info.presentation_time(), 10);
+}
+
+TEST(UpdatePresentationInfoTest, MultipleUpdates) {
+  std::vector<fuchsia::scenic::scheduling::PresentationInfo>
+      future_presentations = {};
+
+  // Update the |vsync_info|.
+  future_presentations.push_back(
+      CreatePresentationInfo(/*latch_point=*/15, /*presentation_time=*/20));
+  future_presentations.push_back(
+      CreatePresentationInfo(/*latch_point=*/25, /*presentation_time=*/30));
+  fuchsia::scenic::scheduling::FuturePresentationTimes future_info;
+  future_info.future_presentations = std::move(future_presentations);
+  future_info.remaining_presents_in_flight_allowed = 1;
+
+  fuchsia::scenic::scheduling::PresentationInfo presentation_info;
+  presentation_info.set_presentation_time(0);
+
+  fuchsia::scenic::scheduling::PresentationInfo new_presentation_info =
+      flutter_runner::DefaultSessionConnection::UpdatePresentationInfo(
+          std::move(future_info), presentation_info);
+
+  EXPECT_EQ(new_presentation_info.presentation_time(), 20);
+
+  // Clear and re-try with more future times!
+  future_presentations.clear();
+  future_presentations.push_back(
+      CreatePresentationInfo(/*latch_point=*/15, /*presentation_time=*/20));
+  future_presentations.push_back(
+      CreatePresentationInfo(/*latch_point=*/25, /*presentation_time=*/30));
+  future_presentations.push_back(
+      CreatePresentationInfo(/*latch_point=*/35, /*presentation_time=*/40));
+  future_presentations.push_back(
+      CreatePresentationInfo(/*latch_point=*/45, /*presentation_time=*/50));
+  future_info.future_presentations = std::move(future_presentations);
+  future_info.remaining_presents_in_flight_allowed = 1;
+
+  new_presentation_info =
+      flutter_runner::DefaultSessionConnection::UpdatePresentationInfo(
+          std::move(future_info), new_presentation_info);
+
+  EXPECT_EQ(new_presentation_info.presentation_time(), 30);
+}
+
 }  // namespace flutter_runner_test

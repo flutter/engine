@@ -62,6 +62,16 @@ class DefaultSessionConnection final : public flutter::SessionWrapper {
       const fml::TimePoint last_frame_presentation_time,
       const fml::TimeDelta presentation_interval);
 
+  // Update the next Vsync info to |next_presentation_info_|. This is expected
+  // to be called in |scenic::Session::Present2| immedaite callbacks with the
+  // presentation info provided by Scenic.  Only the next vsync
+  // information will be saved (in order to handle edge cases involving
+  // multiple Scenic sessions in the same process). This function is safe to
+  // call from any thread.
+  static fuchsia::scenic::scheduling::PresentationInfo UpdatePresentationInfo(
+      fuchsia::scenic::scheduling::FuturePresentationTimes future_info,
+      fuchsia::scenic::scheduling::PresentationInfo& presentation_info);
+
   DefaultSessionConnection(
       std::string debug_label,
       fidl::InterfaceHandle<fuchsia::ui::scenic::Session> session,
@@ -142,15 +152,6 @@ class DefaultSessionConnection final : public flutter::SessionWrapper {
   FireCallbackCallback fire_callback_;
 
   // VsyncRecorder logic.
-
-  // Update the next Vsync info to |next_presentation_info_|. This is expected
-  // to be called in |scenic::Session::Present2| immedaite callbacks with the
-  // presentation info provided by Scenic.  Only the next vsync
-  // information will be saved (in order to handle edge cases involving
-  // multiple Scenic sessions in the same process). This function is safe to
-  // call from any thread.
-  void UpdateNextPresentationInfo(
-      fuchsia::scenic::scheduling::FuturePresentationTimes info);
 
   VsyncInfo GetCurrentVsyncInfo() const;
 

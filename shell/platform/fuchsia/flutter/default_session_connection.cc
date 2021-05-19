@@ -179,6 +179,8 @@ DefaultSessionConnection::DefaultSessionConnection(
       on_frame_presented_callback_(std::move(on_frame_presented_callback)),
       kMaxFramesInFlight(max_frames_in_flight),
       vsync_offset_(vsync_offset) {
+  next_presentation_info_.set_presentation_time(0);
+
   session_wrapper_.set_error_handler(
       [callback = session_error_callback](zx_status_t status) { callback(); });
 
@@ -229,7 +231,8 @@ DefaultSessionConnection::DefaultSessionConnection(
         // If Scenic alloted us 0 frames to begin with, we should fail here.
         FML_CHECK(frames_in_flight_allowed_ > 0);
 
-        UpdateNextPresentationInfo(std::move(info));
+        next_presentation_info_ =
+            UpdatePresentationInfo(std::move(info), next_presentation_info_);
 
         initialized_ = true;
 
@@ -342,7 +345,8 @@ void DefaultSessionConnection::PresentSession() {
         }
 
         frames_in_flight_allowed_ = info.remaining_presents_in_flight_allowed;
-        UpdateNextPresentationInfo(std::move(info));
+        next_presentation_info_ =
+            UpdatePresentationInfo(std::move(info), next_presentation_info_);
       });
 }
 
@@ -386,18 +390,27 @@ FlutterFrameTimes DefaultSessionConnection::GetTargetTimesHelper(
                         last_targetted_vsync, now, next_vsync);
 }
 
-void DefaultSessionConnection::UpdateNextPresentationInfo(
-    fuchsia::scenic::scheduling::FuturePresentationTimes info) {
-  auto next_time = next_presentation_info_.presentation_time();
+fuchsia::scenic::scheduling::PresentationInfo
+
+DefaultSessionConnection::UpdatePresentationInfo(
+    fuchsia::scenic::scheduling::FuturePresentationTimes future_info,
+    fuchsia::scenic::scheduling::PresentationInfo& presentation_info) {
+  fuchsia::scenic::scheduling::PresentationInfo new_presentation_info;
+  new_presentation_info.set_presentation_time(
+      presentation_info.presentation_time());
+
+  auto next_time = presentation_info.presentation_time();
   // Get the earliest vsync time that is after our recorded |presentation_time|.
-  for (auto& presentation_info : info.future_presentations) {
+  for (auto& presentation_info : future_info.future_presentations) {
     auto current_time = presentation_info.presentation_time();
 
     if (current_time > next_time) {
-      next_presentation_info_.set_presentation_time(current_time);
-      return;
+      new_presentation_info.set_presentation_time(current_time);
+      return new_presentation_info;
     }
   }
+
+  return new_presentation_info;
 }
 
 VsyncInfo DefaultSessionConnection::GetCurrentVsyncInfo() const {
