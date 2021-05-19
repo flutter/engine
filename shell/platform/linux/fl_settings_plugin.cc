@@ -138,8 +138,12 @@ FlSettingsPlugin* fl_settings_plugin_new(FlBinaryMessenger* messenger) {
       FL_SETTINGS_PLUGIN(g_object_new(fl_settings_plugin_get_type(), nullptr));
 
   g_autoptr(FlJsonMessageCodec) codec = fl_json_message_codec_new();
+  printf("plugin init: before channel\n");
+  fflush(stdout);
   self->channel = fl_basic_message_channel_new(messenger, kChannelName,
                                                FL_MESSAGE_CODEC(codec));
+  printf("plugin init: before connections\n");
+  fflush(stdout);
   self->connections = g_array_new(FALSE, FALSE, sizeof(gulong));
 
   return self;
@@ -149,12 +153,18 @@ void fl_settings_plugin_start(FlSettingsPlugin* self) {
   g_return_if_fail(FL_IS_SETTINGS_PLUGIN(self));
 
   // If we are on GNOME, get settings from GSettings.
+  printf("plugin start: before source\n");
+  fflush(stdout);
   GSettingsSchemaSource* source = g_settings_schema_source_get_default();
   if (source != nullptr) {
+    printf("plugin start: before schema\n");
+    fflush(stdout);
     g_autoptr(GSettingsSchema) schema =
         g_settings_schema_source_lookup(source, kDesktopInterfaceSchema, FALSE);
     if (schema != nullptr) {
       self->interface_settings = g_settings_new_full(schema, nullptr, nullptr);
+      printf("plugin start: before new connections\n");
+      fflush(stdout);
       gulong new_connections[] = {
           g_signal_connect_object(
               self->interface_settings, "changed::text-scaling-factor",
@@ -166,6 +176,8 @@ void fl_settings_plugin_start(FlSettingsPlugin* self) {
               self->interface_settings, "changed::gtk-theme",
               G_CALLBACK(update_settings), self, G_CONNECT_SWAPPED),
       };
+      printf("plugin start: after new connections\n");
+      fflush(stdout);
       g_array_append_vals(self->connections, new_connections,
                           sizeof(new_connections) / sizeof(gulong));
     }

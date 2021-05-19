@@ -465,6 +465,8 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
   printf("engine start: fl_settings_plugin_new\n");
   fflush(stdout);
   self->settings_plugin = fl_settings_plugin_new(self->binary_messenger);
+  printf("engine start: fl_settings_plugin_start\n");
+  fflush(stdout);
   fl_settings_plugin_start(self->settings_plugin);
 
   printf("engine start: UpdateSemanticsEnabled\n");
