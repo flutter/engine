@@ -632,6 +632,8 @@ FILE: ../../../flutter/runtime/dart_vm_lifecycle.h
 FILE: ../../../flutter/runtime/dart_vm_unittests.cc
 FILE: ../../../flutter/runtime/embedder_resources.cc
 FILE: ../../../flutter/runtime/embedder_resources.h
+FILE: ../../../flutter/runtime/engine_context.cc
+FILE: ../../../flutter/runtime/engine_context.h
 FILE: ../../../flutter/runtime/fixtures/no_dart_plugin_registrant_test.dart
 FILE: ../../../flutter/runtime/fixtures/runtime_test.dart
 FILE: ../../../flutter/runtime/fixtures/split_lib_test.dart

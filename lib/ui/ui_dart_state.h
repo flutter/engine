@@ -21,6 +21,7 @@
 #include "flutter/lib/ui/painting/image_decoder.h"
 #include "flutter/lib/ui/snapshot_delegate.h"
 #include "flutter/lib/ui/volatile_path_tracker.h"
+#include "flutter/runtime/engine_context.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 #include "third_party/tonic/dart_microtask_queue.h"
@@ -102,24 +103,15 @@ class UIDartState : public tonic::DartState {
   };
 
  protected:
-  UIDartState(TaskRunners task_runners,
-              TaskObserverAdd add_callback,
+  UIDartState(TaskObserverAdd add_callback,
               TaskObserverRemove remove_callback,
-              fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
-              fml::WeakPtr<HintFreedDelegate> hint_freed_delegate,
-              fml::WeakPtr<IOManager> io_manager,
-              fml::RefPtr<SkiaUnrefQueue> skia_unref_queue,
-              fml::WeakPtr<ImageDecoder> image_decoder,
-              fml::WeakPtr<ImageGeneratorRegistry> image_generator_registry,
-              std::string advisory_script_uri,
-              std::string advisory_script_entrypoint,
               std::string logger_prefix,
               UnhandledExceptionCallback unhandled_exception_callback,
               LogMessageCallback log_message_callback,
               std::shared_ptr<IsolateNameServer> isolate_name_server,
               bool is_root_isolate_,
-              std::shared_ptr<VolatilePathTracker> volatile_path_tracker,
-              bool enable_skparagraph);
+              bool enable_skparagraph,
+              const EngineContext& engine_context);
 
   ~UIDartState() override;
 
@@ -133,18 +125,8 @@ class UIDartState : public tonic::DartState {
  private:
   void DidSetIsolate() override;
 
-  const TaskRunners task_runners_;
   const TaskObserverAdd add_callback_;
   const TaskObserverRemove remove_callback_;
-  fml::WeakPtr<SnapshotDelegate> snapshot_delegate_;
-  fml::WeakPtr<HintFreedDelegate> hint_freed_delegate_;
-  fml::WeakPtr<IOManager> io_manager_;
-  fml::RefPtr<SkiaUnrefQueue> skia_unref_queue_;
-  fml::WeakPtr<ImageDecoder> image_decoder_;
-  fml::WeakPtr<ImageGeneratorRegistry> image_generator_registry_;
-  std::shared_ptr<VolatilePathTracker> volatile_path_tracker_;
-  const std::string advisory_script_uri_;
-  const std::string advisory_script_entrypoint_;
   const std::string logger_prefix_;
   Dart_Port main_port_ = ILLEGAL_PORT;
   const bool is_root_isolate_;
@@ -155,6 +137,7 @@ class UIDartState : public tonic::DartState {
   LogMessageCallback log_message_callback_;
   const std::shared_ptr<IsolateNameServer> isolate_name_server_;
   const bool enable_skparagraph_;
+  EngineContext engine_context_;
 
   void AddOrRemoveTaskObserver(bool add);
 };

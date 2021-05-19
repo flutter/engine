@@ -21,6 +21,8 @@ TaskRunners::TaskRunners(std::string label,
 
 TaskRunners::TaskRunners(const TaskRunners& other) = default;
 
+TaskRunners& TaskRunners::operator=(const TaskRunners& other) = default;
+
 TaskRunners::~TaskRunners() = default;
 
 const std::string& TaskRunners::GetLabel() const {
