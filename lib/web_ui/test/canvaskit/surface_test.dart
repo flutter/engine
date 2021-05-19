@@ -20,7 +20,7 @@ void testMain() {
     setUpCanvasKitTest();
 
     test('Surface allocates canvases efficiently', () {
-      final Surface surface = Surface(HtmlViewEmbedder.instance);
+      final Surface surface = Surface();
       final CkSurface original =
           surface.acquireFrame(ui.Size(9, 19)).skiaSurface;
 
@@ -72,7 +72,7 @@ void testMain() {
     test(
       'Surface creates new context when WebGL context is restored',
       () async {
-        final Surface surface = Surface(HtmlViewEmbedder.instance);
+        final Surface surface = Surface();
         expect(surface.debugForceNewContext, isTrue);
         final CkSurface before =
             surface.acquireFrame(ui.Size(9, 19)).skiaSurface;
@@ -117,7 +117,7 @@ void testMain() {
 
     // Regression test for https://github.com/flutter/flutter/issues/75286
     test('updates canvas logical size when device-pixel ratio changes', () {
-      final Surface surface = Surface(HtmlViewEmbedder.instance);
+      final Surface surface = Surface();
       final CkSurface original =
           surface.acquireFrame(ui.Size(10, 16)).skiaSurface;
 

@@ -29,24 +29,12 @@ class HtmlViewEmbedder {
   /// The maximum number of overlay surfaces that can be live at once.
   static const int maximumOverlaySurfaces = 8;
 
-  /// A shared backup surface to use as an overlay once we have run out of
-  /// surfaces.
-  ///
-  /// If there are more platform views than [maximumSize], then eventually we
-  /// will run out of overlays and all platform views will send their canvas
-  /// painting commands to a shared overlay. This could cause fidelity issues if
-  /// there are interleaving paint operations which overlap platform views.
-  Surface? _backupSurface;
-
   /// The picture recorder shared by all platform views which paint to the
   /// backup surface.
   CkPictureRecorder? _backupPictureRecorder;
 
   /// The set of platform views using the backup surface.
   final Set<int> _viewsUsingBackupSurface = <int>{};
-
-  /// Whether or not this embedder has already warned about too many overlays.
-  bool _warnedAboutTooManyOverlays = false;
 
   /// A picture recorder associated with a view id.
   ///
@@ -397,7 +385,8 @@ class HtmlViewEmbedder {
     for (int i = 0; i < _compositionOrder.length; i++) {
       int viewId = _compositionOrder[i];
       if (_viewsUsingBackupSurface.contains(viewId)) {
-        _backupFrame ??= _backupSurface!.acquireFrame(_frameSize);
+        _backupFrame ??=
+            SurfaceFactory.instance.backupSurface.acquireFrame(_frameSize);
         // Only draw the picture to the backup surface once, on the last
         // platform view.
         if (i == _compositionOrder.length - 1) {
@@ -513,9 +502,6 @@ class HtmlViewEmbedder {
   }
 
   void debugClear() {
-    _backupSurface?.dispose();
-    _backupSurface?.htmlElement.remove();
-    _backupSurface = null;
     _backupPictureRecorder?.endRecording();
     _backupPictureRecorder = null;
     _viewsUsingBackupSurface.clear();

@@ -11,7 +11,6 @@ import '../browser_detection.dart';
 import '../util.dart';
 import 'canvas.dart';
 import 'canvaskit_api.dart';
-import 'embedded_views.dart';
 import 'initialization.dart';
 import 'util.dart';
 

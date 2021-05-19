@@ -43,10 +43,10 @@ class SurfaceFactory {
   @visibleForTesting
   int get debugSurfaceCount => _surfaceCount;
 
-  /// Returns the list of cached surfaces.
+  /// Returns the number of cached surfaces.
   ///
   /// Useful in tests.
-  List<Surface> get debugCachedSurfaces => _cache;
+  int get debugCacheSize => _cache.length;
 
   /// Whether or not we have already emitted a warning about creating too many
   /// surfaces.
@@ -99,8 +99,6 @@ class SurfaceFactory {
 
   /// Dispose all surfaces created by this factory. Used in tests.
   void debugClear() {
-    baseSurface.dispose();
-    backupSurface.dispose();
     for (final Surface surface in _cache) {
       surface.dispose();
     }
