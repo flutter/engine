@@ -7,7 +7,6 @@
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/trace_event.h"
 
-#include "vsync_recorder.h"
 #include "vsync_waiter.h"
 
 namespace flutter_runner {
@@ -200,8 +199,8 @@ DefaultSessionConnection::DefaultSessionConnection(
                        num_presents_handled);
         FML_DCHECK(frames_in_flight_ >= 0);
 
-        VsyncRecorder::GetInstance().UpdateFramePresentedInfo(
-            zx::time(info.actual_presentation_time));
+        last_presentation_time_ = fml::TimePoint::FromEpochDelta(
+            fml::TimeDelta::FromNanoseconds(info.actual_presentation_time));
 
         // Call the client-provided callback once we are done using |info|.
         on_frame_presented_callback_(std::move(info));
@@ -230,8 +229,7 @@ DefaultSessionConnection::DefaultSessionConnection(
         // If Scenic alloted us 0 frames to begin with, we should fail here.
         FML_CHECK(frames_in_flight_allowed_ > 0);
 
-        VsyncRecorder::GetInstance().UpdateNextPresentationInfo(
-            std::move(info));
+        UpdateNextPresentationInfo(std::move(info));
 
         initialized_ = true;
 
@@ -314,7 +312,7 @@ void DefaultSessionConnection::PresentSession() {
   // tasks.
 
   fml::TimeDelta presentation_interval =
-      VsyncRecorder::GetInstance().GetCurrentVsyncInfo().presentation_interval;
+      GetCurrentVsyncInfo().presentation_interval;
 
   fml::TimePoint next_latch_point = CalculateNextLatchPoint(
       fml::TimePoint::Now(), present_requested_time_,
@@ -344,8 +342,7 @@ void DefaultSessionConnection::PresentSession() {
         }
 
         frames_in_flight_allowed_ = info.remaining_presents_in_flight_allowed;
-        VsyncRecorder::GetInstance().UpdateNextPresentationInfo(
-            std::move(info));
+        UpdateNextPresentationInfo(std::move(info));
       });
 }
 
@@ -373,13 +370,11 @@ void DefaultSessionConnection::FireCallbackMaybe() {
 FlutterFrameTimes DefaultSessionConnection::GetTargetTimesHelper(
     bool secondary_callback) {
   fml::TimeDelta presentation_interval =
-      VsyncRecorder::GetInstance().GetCurrentVsyncInfo().presentation_interval;
+      GetCurrentVsyncInfo().presentation_interval;
 
-  fml::TimePoint next_vsync =
-      VsyncRecorder::GetInstance().GetCurrentVsyncInfo().presentation_time;
+  fml::TimePoint next_vsync = GetCurrentVsyncInfo().presentation_time;
   fml::TimePoint now = fml::TimePoint::Now();
-  fml::TimePoint last_presentation_time =
-      VsyncRecorder::GetInstance().GetLastPresentationTime();
+  fml::TimePoint last_presentation_time = last_presentation_time_;
   if (next_vsync <= now) {
     next_vsync =
         SnapToNextPhase(now, last_presentation_time, presentation_interval);
@@ -389,6 +384,26 @@ FlutterFrameTimes DefaultSessionConnection::GetTargetTimesHelper(
       secondary_callback ? fml::TimePoint::Min() : last_targetted_vsync_;
   return GetTargetTimes(vsync_offset_, presentation_interval,
                         last_targetted_vsync, now, next_vsync);
+}
+
+void DefaultSessionConnection::UpdateNextPresentationInfo(
+    fuchsia::scenic::scheduling::FuturePresentationTimes info) {
+  auto next_time = next_presentation_info_.presentation_time();
+  // Get the earliest vsync time that is after our recorded |presentation_time|.
+  for (auto& presentation_info : info.future_presentations) {
+    auto current_time = presentation_info.presentation_time();
+
+    if (current_time > next_time) {
+      next_presentation_info_.set_presentation_time(current_time);
+      return;
+    }
+  }
+}
+
+VsyncInfo DefaultSessionConnection::GetCurrentVsyncInfo() const {
+  return {fml::TimePoint::FromEpochDelta(fml::TimeDelta::FromNanoseconds(
+              next_presentation_info_.presentation_time())),
+          kDefaultPresentationInterval};
 }
 
 }  // namespace flutter_runner

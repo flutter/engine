@@ -28,6 +28,16 @@ struct FlutterFrameTimes {
   fml::TimePoint frame_target;
 };
 
+struct VsyncInfo {
+  fml::TimePoint presentation_time;
+  fml::TimeDelta presentation_interval;
+};
+
+// Assume a 60hz refresh rate before we have enough past
+// |fuchsia::scenic::scheduling::PresentationInfo|s to calculate it ourselves.
+static constexpr fml::TimeDelta kDefaultPresentationInterval =
+    fml::TimeDelta::FromSecondsF(1.0 / 60.0);
+
 // The component residing on the raster thread that is responsible for
 // maintaining the Scenic session connection and presenting node updates.
 class DefaultSessionConnection final : public flutter::SessionWrapper {
@@ -111,8 +121,11 @@ class DefaultSessionConnection final : public flutter::SessionWrapper {
   int frames_in_flight_allowed_ = 0;
   bool present_session_pending_ = false;
 
-  ////// Flutter Animator logic.
+  // Flutter framework pipeline logic.
 
+  // The following fields can be accessed from both the raster and UI threads,
+  // so guard them with this mutex. If performance dictates, this could probably
+  // be made lock-free, but it's much easier to reason about with this mutex.
   std::mutex mutex_;
 
   // This is the last Vsync we submitted as the frame_target_time to
@@ -124,7 +137,25 @@ class DefaultSessionConnection final : public flutter::SessionWrapper {
   // This is true iff AwaitVSync() was called but we could not schedule a frame.
   bool fire_callback_request_pending_ = false;
 
+  // The callback passed in from VsyncWaiter which eventually runs on the UI
+  // thread.
   FireCallbackCallback fire_callback_;
+
+  // VsyncRecorder logic.
+
+  // Update the next Vsync info to |next_presentation_info_|. This is expected
+  // to be called in |scenic::Session::Present2| immedaite callbacks with the
+  // presentation info provided by Scenic.  Only the next vsync
+  // information will be saved (in order to handle edge cases involving
+  // multiple Scenic sessions in the same process). This function is safe to
+  // call from any thread.
+  void UpdateNextPresentationInfo(
+      fuchsia::scenic::scheduling::FuturePresentationTimes info);
+
+  VsyncInfo GetCurrentVsyncInfo() const;
+
+  fuchsia::scenic::scheduling::PresentationInfo next_presentation_info_;
+  fml::TimePoint last_presentation_time_ = fml::TimePoint::Now();
 
   FML_DISALLOW_COPY_AND_ASSIGN(DefaultSessionConnection);
 };
