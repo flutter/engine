@@ -199,11 +199,11 @@ if (enable_unittests) {
     public_configs = [ "//flutter:export_dynamic_symbols" ]
 
     sources = [
+      "compositing/scene_builder_unittests.cc",
       "painting/image_dispose_unittests.cc",
       "painting/image_encoding_unittests.cc",
       "painting/image_generator_registry_unittests.cc",
       "painting/path_unittests.cc",
-      "painting/scene_builder_unittests.cc",
       "painting/vertices_unittests.cc",
       "window/platform_configuration_unittests.cc",
       "window/pointer_data_packet_converter_unittests.cc",
