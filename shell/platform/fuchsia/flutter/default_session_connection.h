@@ -44,7 +44,7 @@ class DefaultSessionConnection final : public flutter::SessionWrapper {
  public:
   static FlutterFrameTimes GetTargetTimes(fml::TimeDelta vsync_offset,
                                           fml::TimeDelta vsync_interval,
-                                          fml::TimePoint last_targetted_vsync,
+                                          fml::TimePoint last_targeted_vsync,
                                           fml::TimePoint now,
                                           fml::TimePoint next_vsync);
 
@@ -142,7 +142,7 @@ class DefaultSessionConnection final : public flutter::SessionWrapper {
   // FireCallback(). This value should be strictly increasing in order to
   // guarantee that animation code that relies on target vsyncs works correctly,
   // and that Flutter is not producing multiple frames in a small interval.
-  fml::TimePoint last_targetted_vsync_;
+  fml::TimePoint last_targeted_vsync_;
 
   // This is true iff AwaitVSync() was called but we could not schedule a frame.
   bool fire_callback_request_pending_ = false;

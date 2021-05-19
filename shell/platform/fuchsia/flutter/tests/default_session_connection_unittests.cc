@@ -650,13 +650,13 @@ TEST(SnapToNextPhaseTest, SnapAfterNowMultiJumpAccountForCeils) {
 TEST(GetTargetTimesTest, ScheduleForNextVsync) {
   const fml::TimeDelta vsync_offset = TimeDeltaFromInt(0);
   const fml::TimeDelta vsync_interval = TimeDeltaFromInt(10);
-  const fml::TimePoint last_targetted_vsync = TimePointFromInt(10);
+  const fml::TimePoint last_targeted_vsync = TimePointFromInt(10);
   const fml::TimePoint now = TimePointFromInt(9);
   const fml::TimePoint next_vsync = TimePointFromInt(10);
 
   const auto target_times =
       flutter_runner::DefaultSessionConnection::GetTargetTimes(
-          vsync_offset, vsync_interval, last_targetted_vsync, now, next_vsync);
+          vsync_offset, vsync_interval, last_targeted_vsync, now, next_vsync);
 
   EXPECT_EQ(TimePointToInt(target_times.frame_start), 10);
   EXPECT_EQ(TimePointToInt(target_times.frame_target), 20);
@@ -665,13 +665,13 @@ TEST(GetTargetTimesTest, ScheduleForNextVsync) {
 TEST(GetTargetTimesTest, ScheduleForCurrentVsync_DueToOffset) {
   const fml::TimeDelta vsync_offset = TimeDeltaFromInt(3);
   const fml::TimeDelta vsync_interval = TimeDeltaFromInt(10);
-  const fml::TimePoint last_targetted_vsync = TimePointFromInt(0);
+  const fml::TimePoint last_targeted_vsync = TimePointFromInt(0);
   const fml::TimePoint now = TimePointFromInt(6);
   const fml::TimePoint next_vsync = TimePointFromInt(10);
 
   const auto target_times =
       flutter_runner::DefaultSessionConnection::GetTargetTimes(
-          vsync_offset, vsync_interval, last_targetted_vsync, now, next_vsync);
+          vsync_offset, vsync_interval, last_targeted_vsync, now, next_vsync);
 
   EXPECT_EQ(TimePointToInt(target_times.frame_start), 7);
   EXPECT_EQ(TimePointToInt(target_times.frame_target), 10);
@@ -680,13 +680,13 @@ TEST(GetTargetTimesTest, ScheduleForCurrentVsync_DueToOffset) {
 TEST(GetTargetTimesTest, ScheduleForFollowingVsync_BecauseOfNow) {
   const fml::TimeDelta vsync_offset = TimeDeltaFromInt(0);
   const fml::TimeDelta vsync_interval = TimeDeltaFromInt(10);
-  const fml::TimePoint last_targetted_vsync = TimePointFromInt(10);
+  const fml::TimePoint last_targeted_vsync = TimePointFromInt(10);
   const fml::TimePoint now = TimePointFromInt(15);
   const fml::TimePoint next_vsync = TimePointFromInt(10);
 
   const auto target_times =
       flutter_runner::DefaultSessionConnection::GetTargetTimes(
-          vsync_offset, vsync_interval, last_targetted_vsync, now, next_vsync);
+          vsync_offset, vsync_interval, last_targeted_vsync, now, next_vsync);
 
   EXPECT_EQ(TimePointToInt(target_times.frame_start), 20);
   EXPECT_EQ(TimePointToInt(target_times.frame_target), 30);
@@ -695,13 +695,13 @@ TEST(GetTargetTimesTest, ScheduleForFollowingVsync_BecauseOfNow) {
 TEST(GetTargetTimesTest, ScheduleForFollowingVsync_BecauseOfTargettedTime) {
   const fml::TimeDelta vsync_offset = TimeDeltaFromInt(0);
   const fml::TimeDelta vsync_interval = TimeDeltaFromInt(10);
-  const fml::TimePoint last_targetted_vsync = TimePointFromInt(20);
+  const fml::TimePoint last_targeted_vsync = TimePointFromInt(20);
   const fml::TimePoint now = TimePointFromInt(9);
   const fml::TimePoint next_vsync = TimePointFromInt(10);
 
   const auto target_times =
       flutter_runner::DefaultSessionConnection::GetTargetTimes(
-          vsync_offset, vsync_interval, last_targetted_vsync, now, next_vsync);
+          vsync_offset, vsync_interval, last_targeted_vsync, now, next_vsync);
 
   EXPECT_EQ(TimePointToInt(target_times.frame_start), 20);
   EXPECT_EQ(TimePointToInt(target_times.frame_target), 30);
@@ -710,13 +710,13 @@ TEST(GetTargetTimesTest, ScheduleForFollowingVsync_BecauseOfTargettedTime) {
 TEST(GetTargetTimesTest, ScheduleForDistantVsync_BecauseOfTargettedTime) {
   const fml::TimeDelta vsync_offset = TimeDeltaFromInt(0);
   const fml::TimeDelta vsync_interval = TimeDeltaFromInt(10);
-  const fml::TimePoint last_targetted_vsync = TimePointFromInt(60);
+  const fml::TimePoint last_targeted_vsync = TimePointFromInt(60);
   const fml::TimePoint now = TimePointFromInt(9);
   const fml::TimePoint next_vsync = TimePointFromInt(10);
 
   const auto target_times =
       flutter_runner::DefaultSessionConnection::GetTargetTimes(
-          vsync_offset, vsync_interval, last_targetted_vsync, now, next_vsync);
+          vsync_offset, vsync_interval, last_targeted_vsync, now, next_vsync);
 
   EXPECT_EQ(TimePointToInt(target_times.frame_start), 60);
   EXPECT_EQ(TimePointToInt(target_times.frame_target), 70);
@@ -728,13 +728,13 @@ TEST(GetTargetTimesTest, ScheduleForFollowingVsync_WithSlightVsyncDrift) {
 
   // Even though it appears as if the next vsync is at time 40, we should still
   // present at time 50.
-  const fml::TimePoint last_targetted_vsync = TimePointFromInt(37);
+  const fml::TimePoint last_targeted_vsync = TimePointFromInt(37);
   const fml::TimePoint now = TimePointFromInt(9);
   const fml::TimePoint next_vsync = TimePointFromInt(10);
 
   const auto target_times =
       flutter_runner::DefaultSessionConnection::GetTargetTimes(
-          vsync_offset, vsync_interval, last_targetted_vsync, now, next_vsync);
+          vsync_offset, vsync_interval, last_targeted_vsync, now, next_vsync);
 
   EXPECT_EQ(TimePointToInt(target_times.frame_start), 40);
   EXPECT_EQ(TimePointToInt(target_times.frame_target), 50);
@@ -743,13 +743,13 @@ TEST(GetTargetTimesTest, ScheduleForFollowingVsync_WithSlightVsyncDrift) {
 TEST(GetTargetTimesTest, ScheduleForAnOffsetFromVsync) {
   const fml::TimeDelta vsync_offset = TimeDeltaFromInt(4);
   const fml::TimeDelta vsync_interval = TimeDeltaFromInt(10);
-  const fml::TimePoint last_targetted_vsync = TimePointFromInt(10);
+  const fml::TimePoint last_targeted_vsync = TimePointFromInt(10);
   const fml::TimePoint now = TimePointFromInt(9);
   const fml::TimePoint next_vsync = TimePointFromInt(10);
 
   const auto target_times =
       flutter_runner::DefaultSessionConnection::GetTargetTimes(
-          vsync_offset, vsync_interval, last_targetted_vsync, now, next_vsync);
+          vsync_offset, vsync_interval, last_targeted_vsync, now, next_vsync);
 
   EXPECT_EQ(TimePointToInt(target_times.frame_start), 16);
   EXPECT_EQ(TimePointToInt(target_times.frame_target), 20);
@@ -759,15 +759,14 @@ TEST(GetTargetTimesTest, ScheduleMultipleTimes) {
   const fml::TimeDelta vsync_offset = TimeDeltaFromInt(0);
   const fml::TimeDelta vsync_interval = TimeDeltaFromInt(10);
 
-  fml::TimePoint last_targetted_vsync = TimePointFromInt(0);
+  fml::TimePoint last_targeted_vsync = TimePointFromInt(0);
   fml::TimePoint now = TimePointFromInt(5);
   fml::TimePoint next_vsync = TimePointFromInt(10);
 
   for (int i = 0; i < 100; ++i) {
     const auto target_times =
         flutter_runner::DefaultSessionConnection::GetTargetTimes(
-            vsync_offset, vsync_interval, last_targetted_vsync, now,
-            next_vsync);
+            vsync_offset, vsync_interval, last_targeted_vsync, now, next_vsync);
 
     EXPECT_EQ(TimePointToInt(target_times.frame_start), 10 * (i + 1));
     EXPECT_EQ(TimePointToInt(target_times.frame_target), 10 * (i + 2));
@@ -775,7 +774,7 @@ TEST(GetTargetTimesTest, ScheduleMultipleTimes) {
     // Simulate the passage of time.
     now = now + vsync_interval;
     next_vsync = next_vsync + vsync_interval;
-    last_targetted_vsync = target_times.frame_target;
+    last_targeted_vsync = target_times.frame_target;
   }
 }
 
@@ -787,19 +786,18 @@ TEST(GetTargetTimesTest, ScheduleMultipleTimes_WithDelayedWakeups) {
   const fml::TimeDelta vsync_offset = TimeDeltaFromInt(0);
   const fml::TimeDelta vsync_interval = TimeDeltaFromInt(10);
 
-  fml::TimePoint last_targetted_vsync = TimePointFromInt(0);
+  fml::TimePoint last_targeted_vsync = TimePointFromInt(0);
   fml::TimePoint now = TimePointFromInt(5);
   fml::TimePoint next_vsync = TimePointFromInt(10);
 
   for (int i = 0; i < 100; ++i) {
     const auto target_times =
         flutter_runner::DefaultSessionConnection::GetTargetTimes(
-            vsync_offset, vsync_interval, last_targetted_vsync, now,
-            next_vsync);
+            vsync_offset, vsync_interval, last_targeted_vsync, now, next_vsync);
 
     const auto target_times_delay =
         flutter_runner::DefaultSessionConnection::GetTargetTimes(
-            vsync_offset, vsync_interval, last_targetted_vsync,
+            vsync_offset, vsync_interval, last_targeted_vsync,
             now + TimeDeltaFromInt(i % 5), next_vsync);
 
     EXPECT_EQ(TimePointToInt(target_times.frame_start),
@@ -810,7 +808,7 @@ TEST(GetTargetTimesTest, ScheduleMultipleTimes_WithDelayedWakeups) {
     // Simulate the passage of time.
     now = now + vsync_interval;
     next_vsync = next_vsync + vsync_interval;
-    last_targetted_vsync = target_times.frame_target;
+    last_targeted_vsync = target_times.frame_target;
   }
 }
 // static fuchsia::scenic::scheduling::PresentationInfo UpdatePresentationInfo(

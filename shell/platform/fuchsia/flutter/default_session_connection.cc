@@ -29,7 +29,7 @@ namespace flutter_runner {
 // |vsync_interval| - the interval between vsyncs. Would be 16.6ms for a 60Hz
 // display.
 //
-// |last_targetted_vsync| - the last vsync targetted, which is usually the
+// |last_targeted_vsync| - the last vsync targeted, which is usually the
 // frame_end_time returned from the last invocation of this function
 //
 // |now| - the current time
@@ -39,7 +39,7 @@ namespace flutter_runner {
 FlutterFrameTimes DefaultSessionConnection::GetTargetTimes(
     fml::TimeDelta vsync_offset,
     fml::TimeDelta vsync_interval,
-    fml::TimePoint last_targetted_vsync,
+    fml::TimePoint last_targeted_vsync,
     fml::TimePoint now,
     fml::TimePoint next_vsync) {
   FML_DCHECK(vsync_offset <= vsync_interval);
@@ -61,7 +61,7 @@ FlutterFrameTimes DefaultSessionConnection::GetTargetTimes(
   fml::TimePoint frame_end_time = next_vsync;
 
   // Advance to next available slot, keeping in mind the two invariants.
-  while (frame_end_time < (last_targetted_vsync + (vsync_interval / 2)) ||
+  while (frame_end_time < (last_targeted_vsync + (vsync_interval / 2)) ||
          frame_start_time < now) {
     frame_start_time = frame_start_time + vsync_interval;
     frame_end_time = frame_end_time + vsync_interval;
@@ -72,12 +72,11 @@ FlutterFrameTimes DefaultSessionConnection::GetTargetTimes(
   TRACE_DURATION(
       "flutter", "DefaultSessionConnection::GetTargetTimes",
       "previous_vsync(ms)", previous_vsync.ToEpochDelta().ToMilliseconds(),
-      "last_targetted(ms)",
-      last_targetted_vsync.ToEpochDelta().ToMilliseconds(), "now(ms)",
-      fml::TimePoint::Now().ToEpochDelta().ToMilliseconds(), "next_vsync(ms))",
-      next_vsync.ToEpochDelta().ToMilliseconds(), "frame_start_time(ms)",
-      frame_start_time.ToEpochDelta().ToMilliseconds(), "frame_end_time(ms)",
-      frame_end_time.ToEpochDelta().ToMilliseconds());
+      "last_targeted(ms)", last_targeted_vsync.ToEpochDelta().ToMilliseconds(),
+      "now(ms)", fml::TimePoint::Now().ToEpochDelta().ToMilliseconds(),
+      "next_vsync(ms))", next_vsync.ToEpochDelta().ToMilliseconds(),
+      "frame_start_time(ms)", frame_start_time.ToEpochDelta().ToMilliseconds(),
+      "frame_end_time(ms)", frame_end_time.ToEpochDelta().ToMilliseconds());
 
   return {frame_start_time, frame_end_time};
 }
@@ -360,7 +359,7 @@ void DefaultSessionConnection::FireCallbackMaybe() {
     FlutterFrameTimes times =
         GetTargetTimesHelper(/*secondary_callback=*/false);
 
-    last_targetted_vsync_ = times.frame_target;
+    last_targeted_vsync_ = times.frame_target;
     fire_callback_request_pending_ = false;
 
     fire_callback_(times.frame_start, times.frame_target);
@@ -384,10 +383,10 @@ FlutterFrameTimes DefaultSessionConnection::GetTargetTimesHelper(
         SnapToNextPhase(now, last_presentation_time, presentation_interval);
   }
 
-  fml::TimePoint last_targetted_vsync =
-      secondary_callback ? fml::TimePoint::Min() : last_targetted_vsync_;
+  fml::TimePoint last_targeted_vsync =
+      secondary_callback ? fml::TimePoint::Min() : last_targeted_vsync_;
   return GetTargetTimes(vsync_offset_, presentation_interval,
-                        last_targetted_vsync, now, next_vsync);
+                        last_targeted_vsync, now, next_vsync);
 }
 
 fuchsia::scenic::scheduling::PresentationInfo
