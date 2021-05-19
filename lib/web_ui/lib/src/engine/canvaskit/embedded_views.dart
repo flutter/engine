@@ -252,8 +252,15 @@ class HtmlViewEmbedder {
     if (_svgClipDefs.containsKey(viewId)) {
       final html.Element clipDefs =
           _svgPathDefs!.querySelector('#sk_path_defs')!;
-      for (String id in _svgClipDefs[viewId]!) {
-        clipDefs.querySelector('#$id')?.remove();
+      final List<html.Element> nodesToRemove = <html.Element>[];
+      final Set<String> oldDefs = _svgClipDefs[viewId]!;
+      for (html.Element child in clipDefs.children) {
+        if (oldDefs.contains(child.id)) {
+          nodesToRemove.add(child);
+        }
+      }
+      for (html.Element node in nodesToRemove) {
+        node.remove();
       }
       _svgClipDefs[viewId]!.clear();
     }
@@ -304,7 +311,7 @@ class HtmlViewEmbedder {
             // Store the id of the node instead of [newClipPath] directly. For
             // some reason, calling `newClipPath.remove()` doesn't remove it
             // from the DOM.
-            _svgClipDefs.putIfAbsent(viewId, () => <String>[]).add(clipId);
+            _svgClipDefs.putIfAbsent(viewId, () => <String>{}).add(clipId);
             clipView.style.clipPath = 'url(#$clipId)';
           } else if (mutator.path != null) {
             final CkPath path = mutator.path as CkPath;
@@ -323,7 +330,7 @@ class HtmlViewEmbedder {
             // Store the id of the node instead of [newClipPath] directly. For
             // some reason, calling `newClipPath.remove()` doesn't remove it
             // from the DOM.
-            _svgClipDefs.putIfAbsent(viewId, () => <String>[]).add(clipId);
+            _svgClipDefs.putIfAbsent(viewId, () => <String>{}).add(clipId);
             clipView.style.clipPath = 'url(#$clipId)';
           }
           _resetAnchor(clipView);
@@ -363,7 +370,7 @@ class HtmlViewEmbedder {
   html.Element? _svgPathDefs;
 
   /// The nodes containing the SVG clip definitions needed to clip this view.
-  Map<int, List<String>> _svgClipDefs = <int, List<String>>{};
+  Map<int, Set<String>> _svgClipDefs = <int, Set<String>>{};
 
   /// Ensures we add a container of SVG path defs to the DOM so they can
   /// be referred to in clip-path: url(#blah).
