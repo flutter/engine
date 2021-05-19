@@ -66,7 +66,7 @@ class DefaultSessionConnectionTest : public ::testing::Test {
   thrd_t fidl_thread_;
 };
 
-TEST_F(DefaultSessionConnectionTest, SimplePresentTest) {
+TEST_F(DefaultSessionConnectionTest, SimplePresent) {
   fml::closure on_session_error_callback = []() { FML_CHECK(false); };
 
   uint64_t num_presents_handled = 0;
@@ -88,7 +88,7 @@ TEST_F(DefaultSessionConnectionTest, SimplePresentTest) {
   EXPECT_GT(num_presents_handled, 0u);
 }
 
-TEST_F(DefaultSessionConnectionTest, BatchedPresentTest) {
+TEST_F(DefaultSessionConnectionTest, BatchedPresent) {
   fml::closure on_session_error_callback = []() { FML_CHECK(false); };
 
   uint64_t num_presents_handled = 0;
@@ -110,6 +110,126 @@ TEST_F(DefaultSessionConnectionTest, BatchedPresentTest) {
   }
 
   EXPECT_GT(num_presents_handled, 0u);
+}
+
+TEST_F(DefaultSessionConnectionTest, AwaitVsync) {
+  fml::closure on_session_error_callback = []() { FML_CHECK(false); };
+
+  uint64_t num_presents_handled = 0;
+  on_frame_presented_event on_frame_presented_callback =
+      [&num_presents_handled](
+          fuchsia::scenic::scheduling::FramePresentedInfo info) {
+        num_presents_handled += info.presentation_infos.size();
+      };
+
+  flutter_runner::DefaultSessionConnection session_connection(
+      "debug label", std::move(session_), on_session_error_callback,
+      on_frame_presented_callback, 3, fml::TimeDelta::FromSeconds(0));
+
+  uint64_t await_vsyncs_handled = 0;
+
+  for (int i = 0; i < 5; ++i) {
+    session_connection.Present();
+    session_connection.AwaitVsync(
+        [&await_vsyncs_handled](auto...) { await_vsyncs_handled++; });
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+  }
+
+  EXPECT_GT(num_presents_handled, 0u);
+  EXPECT_GT(await_vsyncs_handled, 0u);
+}
+
+TEST_F(DefaultSessionConnectionTest, EnsureBackpressureForAwaitVsync) {
+  fml::closure on_session_error_callback = []() { FML_CHECK(false); };
+
+  uint64_t num_presents_handled = 0;
+  on_frame_presented_event on_frame_presented_callback =
+      [&num_presents_handled](
+          fuchsia::scenic::scheduling::FramePresentedInfo info) {
+        num_presents_handled += info.presentation_infos.size();
+      };
+
+  flutter_runner::DefaultSessionConnection session_connection(
+      "debug label", std::move(session_), on_session_error_callback,
+      on_frame_presented_callback, 0, fml::TimeDelta::FromSeconds(0));
+
+  uint64_t await_vsyncs_handled = 0;
+
+  for (int i = 0; i < 5; ++i) {
+    session_connection.Present();
+    session_connection.AwaitVsync(
+        [&await_vsyncs_handled](auto...) { await_vsyncs_handled++; });
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+  }
+
+  EXPECT_EQ(num_presents_handled, 1u);
+  EXPECT_EQ(await_vsyncs_handled, 0u);
+}
+
+TEST_F(DefaultSessionConnectionTest, SecondaryCallbackShouldFireRegardless) {
+  fml::closure on_session_error_callback = []() { FML_CHECK(false); };
+
+  uint64_t num_presents_handled = 0;
+  on_frame_presented_event on_frame_presented_callback =
+      [&num_presents_handled](
+          fuchsia::scenic::scheduling::FramePresentedInfo info) {
+        num_presents_handled += info.presentation_infos.size();
+      };
+
+  flutter_runner::DefaultSessionConnection session_connection(
+      "debug label", std::move(session_), on_session_error_callback,
+      on_frame_presented_callback, 0, fml::TimeDelta::FromSeconds(0));
+
+  // We're going to expect *only* secondary callbacks to be triggered.
+  uint64_t await_vsyncs_handled = 0;
+  uint64_t await_vsync_for_secondary_callbacks_handled = 0;
+
+  for (int i = 0; i < 5; ++i) {
+    session_connection.Present();
+    session_connection.AwaitVsync(
+        [&await_vsyncs_handled](auto...) { await_vsyncs_handled++; });
+    session_connection.AwaitVsyncForSecondaryCallback(
+        [&await_vsync_for_secondary_callbacks_handled](auto...) {
+          await_vsync_for_secondary_callbacks_handled++;
+        });
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+  }
+
+  EXPECT_EQ(num_presents_handled, 1u);
+  EXPECT_EQ(await_vsyncs_handled, 0u);
+  EXPECT_GT(await_vsync_for_secondary_callbacks_handled, 0u);
+}
+
+TEST_F(DefaultSessionConnectionTest, AwaitVsyncBackpressureRelief) {
+  fml::closure on_session_error_callback = []() { FML_CHECK(false); };
+
+  uint64_t num_presents_handled = 0;
+  on_frame_presented_event on_frame_presented_callback =
+      [&num_presents_handled](
+          fuchsia::scenic::scheduling::FramePresentedInfo info) {
+        num_presents_handled += info.presentation_infos.size();
+      };
+
+  flutter_runner::DefaultSessionConnection session_connection(
+      "debug label", std::move(session_), on_session_error_callback,
+      on_frame_presented_callback, 1, fml::TimeDelta::FromSeconds(0));
+
+  uint64_t await_vsyncs_handled = 0;
+
+  // Max out our present budget.
+  for (int i = 0; i < 5; ++i) {
+    session_connection.Present();
+  }
+
+  // AwaitVsyncs().
+  for (int i = 0; i < 5; ++i) {
+    session_connection.AwaitVsync(
+        [&await_vsyncs_handled](auto...) { await_vsyncs_handled++; });
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+  }
+
+  EXPECT_GT(num_presents_handled, 0u);
+  EXPECT_GT(await_vsyncs_handled, 0u);
 }
 
 // The first set of tests has an empty |future_presentation_infos| passed in.
