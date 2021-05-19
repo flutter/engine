@@ -353,8 +353,6 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
 
   self->task_runner = fl_task_runner_new(self);
 
-  printf("engine start: before config\n");
-  fflush(stdout);
   FlutterRendererConfig config = {};
   config.type = kOpenGL;
   config.open_gl.struct_size = sizeof(FlutterOpenGLRendererConfig);
@@ -365,8 +363,6 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
   config.open_gl.present = fl_engine_gl_present;
   config.open_gl.make_resource_current = fl_engine_gl_make_resource_current;
 
-  printf("engine start: platform_task_runner\n");
-  fflush(stdout);
   FlutterTaskRunnerDescription platform_task_runner = {};
   platform_task_runner.struct_size = sizeof(FlutterTaskRunnerDescription);
   platform_task_runner.user_data = self;
@@ -375,15 +371,11 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
   platform_task_runner.post_task_callback = fl_engine_post_task;
   platform_task_runner.identifier = kPlatformTaskRunnerIdentifier;
 
-  printf("engine start: custom_task_runners\n");
-  fflush(stdout);
   FlutterCustomTaskRunners custom_task_runners = {};
   custom_task_runners.struct_size = sizeof(FlutterCustomTaskRunners);
   custom_task_runners.platform_task_runner = &platform_task_runner;
   custom_task_runners.render_task_runner = &platform_task_runner;
 
-  printf("engine start: command_line_args\n");
-  fflush(stdout);
   g_autoptr(GPtrArray) command_line_args =
       fl_dart_project_get_switches(self->project);
   // FlutterProjectArgs expects a full argv, so when processing it for flags
@@ -391,8 +383,6 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
   // so that all switches are used.
   g_ptr_array_insert(command_line_args, 0, g_strdup("flutter"));
 
-  printf("engine start: dart_entrypoint_args\n");
-  fflush(stdout);
   gchar** dart_entrypoint_args =
       fl_dart_project_get_dart_entrypoint_arguments(self->project);
 
@@ -412,8 +402,6 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
   args.dart_entrypoint_argv =
       reinterpret_cast<const char* const*>(dart_entrypoint_args);
 
-  printf("engine start: compositor\n");
-  fflush(stdout);
   FlutterCompositor compositor = {};
   compositor.struct_size = sizeof(FlutterCompositor);
   compositor.user_data = self->renderer;
@@ -424,8 +412,6 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
   compositor.present_layers_callback = compositor_present_layers_callback;
   args.compositor = &compositor;
 
-  printf("engine start: RunsAOTCompiledDartCode\n");
-  fflush(stdout);
   if (self->embedder_api.RunsAOTCompiledDartCode()) {
     FlutterEngineAOTDataSource source = {};
     source.type = kFlutterEngineAOTDataSourceTypeElfPath;
@@ -439,8 +425,6 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
     args.aot_data = self->aot_data;
   }
 
-  printf("engine start: Initialize\n");
-  fflush(stdout);
   FlutterEngineResult result = self->embedder_api.Initialize(
       FLUTTER_ENGINE_VERSION, &config, &args, self, &self->engine);
   if (result != kSuccess) {
@@ -449,8 +433,6 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
     return FALSE;
   }
 
-  printf("engine start: RunInitialized\n");
-  fflush(stdout);
   result = self->embedder_api.RunInitialized(self->engine);
   if (result != kSuccess) {
     g_set_error(error, fl_engine_error_quark(), FL_ENGINE_ERROR_FAILED,
@@ -458,19 +440,11 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
     return FALSE;
   }
 
-  printf("engine start: setup_locales\n");
-  fflush(stdout);
   setup_locales(self);
 
-  printf("engine start: fl_settings_plugin_new\n");
-  fflush(stdout);
   self->settings_plugin = fl_settings_plugin_new(self->binary_messenger);
-  printf("engine start: fl_settings_plugin_start\n");
-  fflush(stdout);
   fl_settings_plugin_start(self->settings_plugin);
 
-  printf("engine start: UpdateSemanticsEnabled\n");
-  fflush(stdout);
   result = self->embedder_api.UpdateSemanticsEnabled(self->engine, TRUE);
   if (result != kSuccess)
     g_warning("Failed to enable accessibility features on Flutter engine");

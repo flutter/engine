@@ -49,24 +49,12 @@ gchar* bytes_to_hex_string(GBytes* bytes) {
 }
 
 FlEngine* make_mock_engine() {
-  printf("mock engine: before project\n");
-  fflush(stdout);
   g_autoptr(FlDartProject) project = fl_dart_project_new();
-  printf("mock engine: before renderer\n");
-  fflush(stdout);
   g_autoptr(FlMockRenderer) renderer = fl_mock_renderer_new();
-  printf("mock engine: before engine\n");
-  fflush(stdout);
   g_autoptr(FlEngine) engine = fl_engine_new(project, FL_RENDERER(renderer));
   g_autoptr(GError) engine_error = nullptr;
-  printf("mock engine: before engine start\n");
-  fflush(stdout);
   EXPECT_TRUE(fl_engine_start(engine, &engine_error));
-  printf("mock engine: after engine start\n");
-  fflush(stdout);
   EXPECT_EQ(engine_error, nullptr);
 
-  printf("mock engine: before return\n");
-  fflush(stdout);
   return static_cast<FlEngine*>(g_object_ref(engine));
 }
