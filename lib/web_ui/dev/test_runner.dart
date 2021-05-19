@@ -883,8 +883,6 @@ class NameOnlyReporter implements hack.Reporter {
     testEngine.onTestStarted.listen(_printTest);
   }
 
-  hack.Engine testEngine;
-
   void _printTest(hack.LiveTest test) {
     print('Running ${test.groups.map((hack.Group group) => group.name).join(' ')} ${test.individualName}');
   }
