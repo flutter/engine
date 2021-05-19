@@ -162,6 +162,8 @@ void fl_settings_plugin_start(FlSettingsPlugin* self) {
     g_autoptr(GSettingsSchema) schema =
         g_settings_schema_source_lookup(source, kDesktopInterfaceSchema, FALSE);
     if (schema != nullptr) {
+      printf("plugin start: before g_settings_new_full\n");
+      fflush(stdout);
       self->interface_settings = g_settings_new_full(schema, nullptr, nullptr);
       printf("plugin start: before new connections\n");
       fflush(stdout);
@@ -183,5 +185,7 @@ void fl_settings_plugin_start(FlSettingsPlugin* self) {
     }
   }
 
+  printf("plugin start: before update_settings\n");
+  fflush(stdout);
   update_settings(self);
 }
