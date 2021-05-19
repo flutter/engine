@@ -278,7 +278,8 @@ TEST(FlKeyEmbedderResponderTest, SendKeyEvent) {
   // The current implementation is because `responder` must be unreferenced
   // after `engine`, otherwise crash will *consistantly* occur on CI even if
   // everything passes locally.  This is a strange bug I've tried to track for
-  // dozens of hours in vain.
+  // dozens of hours in vain.  It shouldn't affect real application anyway,
+  // since it seems to appear only during the "reboot" of the engine.
   g_object_unref(engine);
   g_object_unref(responder);
 }
