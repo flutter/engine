@@ -2,7 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import 'dart:typed_data';
+
+import 'package:ui/src/engine.dart' show toMatrix32, Matrix4;
+import 'package:ui/ui.dart' as ui;
+
+import 'layer.dart';
+import 'layer_tree.dart';
+import 'picture.dart';
+import 'path.dart';
 
 class LayerScene implements ui.Scene {
   final LayerTree layerTree;
@@ -45,21 +53,14 @@ class LayerSceneBuilder implements ui.SceneBuilder {
   }
 
   @override
-  ui.PictureEngineLayer addPicture(
+  void addPicture(
     ui.Offset offset,
     ui.Picture picture, {
     bool isComplexHint = false,
     bool willChangeHint = false,
-    ui.PictureEngineLayer? oldLayer,
   }) {
-    final PictureLayer layer = PictureLayer(
-      picture as CkPicture,
-      offset,
-      isComplexHint,
-      willChangeHint,
-    );
-    currentLayer.add(layer);
-    return layer;
+    currentLayer.add(PictureLayer(
+        picture as CkPicture, offset, isComplexHint, willChangeHint));
   }
 
   @override
@@ -122,7 +123,8 @@ class LayerSceneBuilder implements ui.SceneBuilder {
     ui.Clip clipBehavior = ui.Clip.antiAlias,
     ui.EngineLayer? oldLayer,
   }) {
-    return pushLayer<ClipPathEngineLayer>(ClipPathEngineLayer(path as CkPath, clipBehavior));
+    return pushLayer<ClipPathEngineLayer>(
+        ClipPathEngineLayer(path as CkPath, clipBehavior));
   }
 
   @override
@@ -131,7 +133,8 @@ class LayerSceneBuilder implements ui.SceneBuilder {
     ui.Clip? clipBehavior,
     ui.EngineLayer? oldLayer,
   }) {
-    return pushLayer<ClipRRectEngineLayer>(ClipRRectEngineLayer(rrect, clipBehavior));
+    return pushLayer<ClipRRectEngineLayer>(
+        ClipRRectEngineLayer(rrect, clipBehavior));
   }
 
   @override
@@ -140,7 +143,8 @@ class LayerSceneBuilder implements ui.SceneBuilder {
     ui.Clip clipBehavior = ui.Clip.antiAlias,
     ui.EngineLayer? oldLayer,
   }) {
-    return pushLayer<ClipRectEngineLayer>(ClipRectEngineLayer(rect, clipBehavior));
+    return pushLayer<ClipRectEngineLayer>(
+        ClipRectEngineLayer(rect, clipBehavior));
   }
 
   @override
@@ -204,8 +208,8 @@ class LayerSceneBuilder implements ui.SceneBuilder {
     ui.EngineLayer? oldLayer,
     ui.FilterQuality filterQuality = ui.FilterQuality.low,
   }) {
-    return pushLayer<ShaderMaskEngineLayer>(ShaderMaskEngineLayer(
-        shader, maskRect, blendMode, filterQuality));
+    return pushLayer<ShaderMaskEngineLayer>(
+        ShaderMaskEngineLayer(shader, maskRect, blendMode, filterQuality));
   }
 
   @override

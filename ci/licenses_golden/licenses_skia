@@ -1,4 +1,4 @@
-Signature: 9ee0cd232637989f2544b304030577e1
+Signature: c9d0378ff3292a0a3bb6b9c8be34eaa0
 
 UNUSED LICENSES:
 
@@ -1020,14 +1020,14 @@ FILE: ../../../third_party/skia/experimental/sktext/src/Wrapper.h
 FILE: ../../../third_party/skia/experimental/tskit/.eslintignore
 FILE: ../../../third_party/skia/experimental/tskit/.eslintrc.js
 FILE: ../../../third_party/skia/experimental/tskit/bindings/core.d.ts
-FILE: ../../../third_party/skia/experimental/tskit/bindings/core.ts
 FILE: ../../../third_party/skia/experimental/tskit/bindings/embind.d.ts
 FILE: ../../../third_party/skia/experimental/tskit/bindings/extension.d.ts
-FILE: ../../../third_party/skia/experimental/tskit/bindings/extension.ts
-FILE: ../../../third_party/skia/experimental/tskit/bindings/load.ts
-FILE: ../../../third_party/skia/experimental/tskit/bindings/memory.ts
-FILE: ../../../third_party/skia/experimental/tskit/bindings/public_api.d.ts
 FILE: ../../../third_party/skia/experimental/tskit/build/externs.js
+FILE: ../../../third_party/skia/experimental/tskit/interface/core.ts
+FILE: ../../../third_party/skia/experimental/tskit/interface/extension.ts
+FILE: ../../../third_party/skia/experimental/tskit/interface/load.ts
+FILE: ../../../third_party/skia/experimental/tskit/interface/memory.ts
+FILE: ../../../third_party/skia/experimental/tskit/interface/public_api.d.ts
 FILE: ../../../third_party/skia/experimental/tskit/npm_build/example.html
 FILE: ../../../third_party/skia/experimental/tskit/npm_build/types/index.d.ts
 FILE: ../../../third_party/skia/experimental/tskit/package-lock.json
@@ -3959,9 +3959,12 @@ FILE: ../../../third_party/skia/modules/androidkit/src/Matrix.cpp
 FILE: ../../../third_party/skia/modules/androidkit/src/Paint.cpp
 FILE: ../../../third_party/skia/modules/androidkit/src/RuntimeShaderBuilder.cpp
 FILE: ../../../third_party/skia/modules/androidkit/src/Shader.cpp
+FILE: ../../../third_party/skia/modules/androidkit/src/SkottieAnimation.cpp
 FILE: ../../../third_party/skia/modules/androidkit/src/Surface.cpp
+FILE: ../../../third_party/skia/modules/androidkit/src/Surface.h
 FILE: ../../../third_party/skia/modules/androidkit/src/SurfaceThread.cpp
 FILE: ../../../third_party/skia/modules/androidkit/src/SurfaceThread.h
+FILE: ../../../third_party/skia/modules/androidkit/src/Utils.h
 FILE: ../../../third_party/skia/modules/skottie/src/effects/FractalNoiseEffect.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/effects/SphereEffect.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/effects/ThresholdEffect.cpp
@@ -3980,6 +3983,7 @@ FILE: ../../../third_party/skia/src/gpu/GrThreadSafePipelineBuilder.cpp
 FILE: ../../../third_party/skia/src/gpu/GrThreadSafePipelineBuilder.h
 FILE: ../../../third_party/skia/src/gpu/mock/GrMockRenderTask.h
 FILE: ../../../third_party/skia/src/gpu/mock/GrMockSurfaceProxy.h
+FILE: ../../../third_party/skia/src/gpu/tessellate/GrCullTest.h
 FILE: ../../../third_party/skia/src/utils/SkOrderedFontMgr.cpp
 ----------------------------------------------------------------------------------------------------
 Copyright 2021 Google Inc.
@@ -5133,7 +5137,7 @@ FILE: ../../../third_party/skia/modules/skplaintexteditor/src/shape.h
 FILE: ../../../third_party/skia/modules/skplaintexteditor/src/stringslice.cpp
 FILE: ../../../third_party/skia/modules/skplaintexteditor/src/word_boundaries.cpp
 FILE: ../../../third_party/skia/modules/skplaintexteditor/src/word_boundaries.h
-FILE: ../../../third_party/skia/samplecode/SampleTessellatedWedge.cpp
+FILE: ../../../third_party/skia/samplecode/SamplePathTessellators.cpp
 FILE: ../../../third_party/skia/src/core/SkMalloc.cpp
 FILE: ../../../third_party/skia/src/core/SkPixelRefPriv.h
 FILE: ../../../third_party/skia/src/core/SkTextBlobTrace.cpp
@@ -5469,10 +5473,14 @@ FILE: ../../../third_party/skia/src/gpu/tessellate/GrFillPathShader.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathShader.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrStrokeHardwareTessellator.cpp
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrStrokeHardwareTessellator.h
+FILE: ../../../third_party/skia/src/gpu/tessellate/GrStrokeInstancedShaderImpl.cpp
+FILE: ../../../third_party/skia/src/gpu/tessellate/GrStrokeInstancedShaderImpl.h
+FILE: ../../../third_party/skia/src/gpu/tessellate/GrStrokeShader.cpp
+FILE: ../../../third_party/skia/src/gpu/tessellate/GrStrokeShader.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrStrokeTessellateOp.cpp
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrStrokeTessellateOp.h
-FILE: ../../../third_party/skia/src/gpu/tessellate/GrStrokeTessellateShader.cpp
-FILE: ../../../third_party/skia/src/gpu/tessellate/GrStrokeTessellateShader.h
+FILE: ../../../third_party/skia/src/gpu/tessellate/GrStrokeTessellationShaderImpl.cpp
+FILE: ../../../third_party/skia/src/gpu/tessellate/GrStrokeTessellationShaderImpl.h
 FILE: ../../../third_party/skia/src/opts/SkVM_opts.h
 FILE: ../../../third_party/skia/src/sksl/SkSLAnalysis.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLModifiersPool.h
@@ -5536,6 +5544,7 @@ FILE: ../../../third_party/skia/src/gpu/tessellate/GrStrokeFixedCountTessellator
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrStrokeFixedCountTessellator.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrStrokeTessellator.h
 FILE: ../../../third_party/skia/src/sksl/SkSLMangler.cpp
+FILE: ../../../third_party/skia/src/sksl/SkSLParsedModule.h
 FILE: ../../../third_party/skia/src/sksl/dsl/DSLBlock.cpp
 FILE: ../../../third_party/skia/src/sksl/dsl/DSLCase.cpp
 FILE: ../../../third_party/skia/src/sksl/dsl/DSLFunction.cpp
@@ -5544,6 +5553,7 @@ FILE: ../../../third_party/skia/src/sksl/dsl/DSLRuntimeEffects.cpp
 FILE: ../../../third_party/skia/src/sksl/dsl/DSLStatement.cpp
 FILE: ../../../third_party/skia/src/sksl/dsl/priv/DSLFPs.cpp
 FILE: ../../../third_party/skia/src/sksl/dsl/priv/DSLFPs.h
+FILE: ../../../third_party/skia/src/sksl/dsl/priv/DSL_priv.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLFunctionDeclaration.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLVariable.cpp
 ----------------------------------------------------------------------------------------------------
@@ -5759,6 +5769,43 @@ met:
   * Neither the name of the copyright holder nor the names of its
     contributors may be used to endorse or promote products derived
     from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: skia
+ORIGIN: ../../../third_party/skia/experimental/tskit/go/gen_types/gen_types.go + ../../../LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/skia/experimental/tskit/go/gen_types/gen_types.go
+FILE: ../../../third_party/skia/experimental/tskit/go/gen_types/gen_types_test.go
+FILE: ../../../third_party/skia/infra/bots/gen_tasks_logic/skpbench_flags.go
+----------------------------------------------------------------------------------------------------
+Copyright 2021 The Chromium Authors. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * Neither the name of Google Inc. nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -6631,41 +6678,6 @@ FILE: ../../../third_party/skia/infra/bots/gen_tasks.go
 FILE: ../../../third_party/skia/infra/bots/gen_tasks_logic/gen_tasks_logic.go
 ----------------------------------------------------------------------------------------------------
 Copyright 2016 The Chromium Authors. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-   * Redistributions of source code must retain the above copyright
-notice, this list of conditions and the following disclaimer.
-   * Redistributions in binary form must reproduce the above
-copyright notice, this list of conditions and the following disclaimer
-in the documentation and/or other materials provided with the
-distribution.
-   * Neither the name of Google Inc. nor the names of its
-contributors may be used to endorse or promote products derived from
-this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: skia
-ORIGIN: ../../../third_party/skia/infra/bots/gen_tasks_logic/skpbench_flags.go + ../../../LICENSE
-TYPE: LicenseType.bsd
-FILE: ../../../third_party/skia/infra/bots/gen_tasks_logic/skpbench_flags.go
-----------------------------------------------------------------------------------------------------
-Copyright 2021 The Chromium Authors. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are

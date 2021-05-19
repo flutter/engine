@@ -359,12 +359,11 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   ///
   /// The picture is rasterized at the given offset.
   @override
-  ui.PictureEngineLayer addPicture(
+  void addPicture(
     ui.Offset offset,
     ui.Picture picture, {
     bool isComplexHint = false,
     bool willChangeHint = false,
-    ui.PictureEngineLayer? oldLayer,
   }) {
     int hints = 0;
     if (isComplexHint) {
@@ -373,14 +372,8 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     if (willChangeHint) {
       hints |= 2;
     }
-    final PersistedPicture layer = PersistedPicture(
-      offset.dx,
-      offset.dy,
-      picture as EnginePicture,
-      hints,
-    );
-    _addSurface(layer);
-    return layer;
+    _addSurface(PersistedPicture(
+        offset.dx, offset.dy, picture as EnginePicture, hints));
   }
 
   /// Adds a backend texture to the scene.
@@ -588,11 +581,4 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   ) {
     throw UnimplementedError();
   }
-}
-
-// HTML only supports a single radius, but Flutter ImageFilter supports separate
-// horizontal and vertical radii. The best approximation we can provide is to
-// average the two radii together for a single compromise value.
-String _imageFilterToCss(EngineImageFilter filter) {
-  return 'blur(${(filter.sigmaX + filter.sigmaY) / 2}px)';
 }
