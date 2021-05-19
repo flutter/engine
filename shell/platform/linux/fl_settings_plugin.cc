@@ -88,18 +88,28 @@ static void update_settings(FlSettingsPlugin* self) {
   gboolean always_use_24hr = FALSE;
   const gchar* platform_brightness = kPlatformBrightnessLight;
 
+  printf("update_settings: before interface_settings\n");
+  fflush(stdout);
   if (self->interface_settings != nullptr) {
+    printf("update_settings: before kDesktopTextScalingFactorKey\n");
+    fflush(stdout);
     scaling_factor = g_settings_get_double(self->interface_settings,
                                            kDesktopTextScalingFactorKey);
+    printf("update_settings: before kDesktopClockFormatKey\n");
+    fflush(stdout);
     g_autofree gchar* clock_format =
         g_settings_get_string(self->interface_settings, kDesktopClockFormatKey);
     always_use_24hr = g_strcmp0(clock_format, kClockFormat24Hour) == 0;
   }
 
+  printf("update_settings: before is_dark_theme\n");
+  fflush(stdout);
   if (is_dark_theme()) {
     platform_brightness = kPlatformBrightnessDark;
   }
 
+  printf("update_settings: before setting values\n");
+  fflush(stdout);
   g_autoptr(FlValue) message = fl_value_new_map();
   fl_value_set_string_take(message, kTextScaleFactorKey,
                            fl_value_new_float(scaling_factor));
@@ -107,6 +117,8 @@ static void update_settings(FlSettingsPlugin* self) {
                            fl_value_new_bool(always_use_24hr));
   fl_value_set_string_take(message, kPlatformBrightnessKey,
                            fl_value_new_string(platform_brightness));
+  printf("update_settings: before sending values\n");
+  fflush(stdout);
   fl_basic_message_channel_send(self->channel, message, nullptr, nullptr,
                                 nullptr);
 }
