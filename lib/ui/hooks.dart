@@ -226,8 +226,12 @@ void _invoke3<A1, A2, A3>(void Function(A1 a1, A2 a2, A3 a3)? callback, Zone zon
 }
 
 bool _isLoopback(String host) {
-  if (host.isEmpty) return false;
-  if ("localhost" == host) return true;
+  if (host.isEmpty) {
+    return false;
+  }
+  if ('localhost' == host) {
+    return true;
+  }
   try {
     return InternetAddress(host).isLoopback;
   } on ArgumentError {

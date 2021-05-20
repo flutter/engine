@@ -81,6 +81,6 @@ main() {
       await bindServerAndTest("::1", (httpClient, uri) async {
         await httpClient.getUrl(uri);
       });
-    }    
+    }
   });
 }
