@@ -66,7 +66,7 @@ static void fl_key_event_pair_dispose(GObject* object) {
   g_return_if_fail(FL_IS_KEY_EVENT_PAIR(object));
 
   FlKeyEventPair* self = FL_KEY_EVENT_PAIR(object);
-  g_clear_pointer(&self->event, gdk_event_free);
+  g_clear_pointer(reinterpret_cast<GdkEvent**>(&self->event), gdk_event_free);
   G_OBJECT_CLASS(fl_key_event_pair_parent_class)->dispose(object);
 }
 
