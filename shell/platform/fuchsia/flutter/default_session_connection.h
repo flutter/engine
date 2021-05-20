@@ -99,6 +99,8 @@ class DefaultSessionConnection final : public flutter::SessionWrapper {
 
   FlutterFrameTimes GetTargetTimesHelper(bool secondary_callback);
 
+  VsyncInfo GetCurrentVsyncInfo() const;
+
   scenic::Session session_wrapper_;
 
   on_frame_presented_event on_frame_presented_callback_;
@@ -125,11 +127,18 @@ class DefaultSessionConnection final : public flutter::SessionWrapper {
   // outstanding at any time. This is equivalent to how many times it has
   // called Present2() before receiving an OnFramePresented() event.
   const int kMaxFramesInFlight;
-  fml::TimeDelta vsync_offset_;
 
   int frames_in_flight_ = 0;
   int frames_in_flight_allowed_ = 0;
   bool present_session_pending_ = false;
+
+  // The time from vsync that the Flutter animator should begin its frames. This
+  // is non-zero so that Flutter and Scenic compete less for CPU and GPU time.
+  fml::TimeDelta vsync_offset_;
+
+  // Variables for recording past and future vsync info, as reported by Scenic.
+  fml::TimePoint last_presentation_time_ = fml::TimePoint::Now();
+  fuchsia::scenic::scheduling::PresentationInfo next_presentation_info_;
 
   // Flutter framework pipeline logic.
 
@@ -150,13 +159,6 @@ class DefaultSessionConnection final : public flutter::SessionWrapper {
   // The callback passed in from VsyncWaiter which eventually runs on the UI
   // thread.
   FireCallbackCallback fire_callback_;
-
-  // VsyncRecorder logic.
-
-  VsyncInfo GetCurrentVsyncInfo() const;
-
-  fuchsia::scenic::scheduling::PresentationInfo next_presentation_info_;
-  fml::TimePoint last_presentation_time_ = fml::TimePoint::Now();
 
   FML_DISALLOW_COPY_AND_ASSIGN(DefaultSessionConnection);
 };
