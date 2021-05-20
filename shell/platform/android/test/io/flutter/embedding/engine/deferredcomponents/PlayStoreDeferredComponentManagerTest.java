@@ -315,6 +315,6 @@ public class PlayStoreDeferredComponentManagerTest {
     bundle.putString(PlayStoreDeferredComponentManager.MAPPING_KEY, "");
     Context spyContext = createSpyContext(bundle);
     TestPlayStoreDeferredComponentManager playStoreManager =
-            new TestPlayStoreDeferredComponentManager(spyContext, jni);
+        new TestPlayStoreDeferredComponentManager(spyContext, jni);
   }
 }
