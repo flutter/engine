@@ -154,6 +154,7 @@ void fl_clipping_view_reset(FlClippingView* self,
                             GdkRectangle* geometry,
                             GPtrArray* mutations) {
   g_return_if_fail(FL_IS_CLIPPING_VIEW(self));
+  g_return_if_fail(mutations != nullptr);
 
   GtkWidget* old_child = gtk_bin_get_child(GTK_BIN(self));
   if (old_child != child) {
@@ -168,14 +169,12 @@ void fl_clipping_view_reset(FlClippingView* self,
   g_clear_pointer(&self->mutations, g_ptr_array_unref);
   self->mutations = g_ptr_array_ref(mutations);
 
-  if (mutations) {
-    for (guint i = 0; i < mutations->len; i++) {
-      FlutterPlatformViewMutation* mutation =
-          reinterpret_cast<FlutterPlatformViewMutation*>(
-              self->mutations->pdata[i]);
-      if (mutation->type == kFlutterPlatformViewMutationTypeOpacity) {
-        gtk_widget_set_opacity(child, mutation->opacity);
-      }
+  for (guint i = 0; i < mutations->len; i++) {
+    FlutterPlatformViewMutation* mutation =
+        reinterpret_cast<FlutterPlatformViewMutation*>(
+            self->mutations->pdata[i]);
+    if (mutation->type == kFlutterPlatformViewMutationTypeOpacity) {
+      gtk_widget_set_opacity(child, mutation->opacity);
     }
   }
 }

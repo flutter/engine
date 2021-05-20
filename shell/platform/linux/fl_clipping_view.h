@@ -36,7 +36,7 @@ GtkWidget* fl_clipping_view_new();
 /**
  * fl_clipping_view_reset:
  * @clipping_view: an #FlClippingView.
- * @child: (transfer-none): widget to apply mutators.
+ * @child: widget to apply mutators.
  * @geometry: geometry of widget.
  * @mutations: the clipping mutations to be applied.
  *
