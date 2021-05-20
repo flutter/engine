@@ -7,25 +7,24 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:test/test.dart';
+import 'package:litetest/litetest.dart';
 
 import 'http_disallow_http_connections_test.dart';
-import 'test_util.dart';
 
-main() {
+void main() {
   test('Normal HTTP request succeeds', () async {
-    final host = await getLocalHostIP();
-    await bindServerAndTest(host, (httpClient, uri) async {
+    final String host = await getLocalHostIP();
+    await bindServerAndTest(host, (HttpClient httpClient, Uri uri) async {
       await httpClient.getUrl(uri);
     });
   });
 
   test('We can ban HTTP explicitly.', () async {
-    final host = await getLocalHostIP();
-    await bindServerAndTest(host, (httpClient, uri) async {
-      await asyncExpectThrows<UnsupportedError>(
+    final String host = await getLocalHostIP();
+    await bindServerAndTest(host, (HttpClient httpClient, Uri uri) async {
+      asyncExpectThrows<UnsupportedError>(
           () async => runZoned(() => httpClient.getUrl(uri),
-            zoneValues: {#flutter.io.allow_http: false}));
+            zoneValues: <dynamic, dynamic>{#flutter.io.allow_http: false}));
     });
   });
 }
