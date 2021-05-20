@@ -17,7 +17,21 @@ struct _FlGestureHelper {
 
 G_DEFINE_TYPE(FlGestureHelper, fl_gesture_helper, G_TYPE_OBJECT)
 
-static void fl_gesture_helper_class_init(FlGestureHelperClass* klass) {}
+static void fl_gesture_helper_dispose(GObject* object) {
+  FlGestureHelper* self = FL_GESTURE_HELPER(object);
+
+  g_list_free_full(self->event_list, free_event);
+  self->event_list = nullptr;
+
+  g_clear_object(&self->grabbed_widget);
+  g_clear_object(&self->hover_widget);
+
+  G_OBJECT_CLASS(fl_gesture_helper_parent_class)->dispose(object);
+}
+
+static void fl_gesture_helper_class_init(FlGestureHelperClass* klass) {
+  G_OBJECT_CLASS(klass)->dispose = fl_gesture_helper_dispose;
+}
 
 static void fl_gesture_helper_init(FlGestureHelper* self) {}
 
