@@ -17,11 +17,11 @@ AutoIsolateShutdown::~AutoIsolateShutdown() {
     Shutdown();
   }
   fml::AutoResetWaitableEvent latch;
-  fml::TaskRunner::RunNowOrPostTask(runner_,
-                                    [isolate = std::move(isolate_), &latch]() {
-                                      // Delete isolate on thread.
-                                      latch.Signal();
-                                    });
+  fml::TaskRunner::RunNowOrPostTask(runner_, [this, &latch]() {
+    // Delete isolate on thread.
+    isolate_.reset();
+    latch.Signal();
+  });
   latch.Wait();
 }
 
@@ -130,6 +130,7 @@ std::unique_ptr<AutoIsolateShutdown> RunDartCodeInIsolateOnUITaskRunner(
           io_manager,                          // io manager
           {},                                  // unref queue
           {},                                  // image decoder
+          {},                                  // image generator registry
           "main.dart",                         // advisory uri
           entrypoint.c_str(),                  // advisory entrypoint
           DartIsolate::Flags{},                // flags

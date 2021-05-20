@@ -48,6 +48,9 @@ class DomRenderer {
   html.ScriptElement? get canvasKitScript => _canvasKitScript;
   html.ScriptElement? _canvasKitScript;
 
+  Future<void>? get canvasKitLoaded => _canvasKitLoaded;
+  Future<void>? _canvasKitLoaded;
+
   /// The element that contains the [sceneElement].
   ///
   /// This element is created and inserted in the HTML DOM once. It is never
@@ -92,8 +95,8 @@ class DomRenderer {
   /// This getter calls the `hasFocus` method of the `Document` interface.
   /// See for more details:
   /// https://developer.mozilla.org/en-US/docs/Web/API/Document/hasFocus
-  bool? get windowHasFocus =>
-      js_util.callMethod(html.document, 'hasFocus', <dynamic>[]);
+  bool get windowHasFocus =>
+      js_util.callMethod(html.document, 'hasFocus', <dynamic>[]) ?? false;
 
   void _setupHotRestart() {
     // This persists across hot restarts to clear stale DOM.
@@ -363,7 +366,7 @@ flt-glass-pane * {
     setElementAttribute(
       bodyElement,
       'flt-renderer',
-      '${useCanvasKit ? 'canvaskit' : 'html'} (${_autoDetect ? 'auto-selected' : 'requested explicitly'})',
+      '${useCanvasKit ? 'canvaskit' : 'html'} (${flutterWebAutoDetect ? 'auto-selected' : 'requested explicitly'})',
     );
     setElementAttribute(bodyElement, 'flt-build-mode', buildMode);
 
@@ -441,7 +444,8 @@ flt-glass-pane * {
 
     _sceneHostElement = createElement('flt-scene-host');
 
-    final html.Element semanticsHostElement = createElement('flt-semantics-host');
+    final html.Element semanticsHostElement =
+        createElement('flt-semantics-host');
     semanticsHostElement.style
       ..position = 'absolute'
       ..transformOrigin = '0 0 0';
@@ -480,11 +484,11 @@ flt-glass-pane * {
     setElementAttribute(_sceneHostElement!, 'aria-hidden', 'true');
 
     if (html.window.visualViewport == null && isWebKit) {
-      // Safari sometimes gives us bogus innerWidth/innerHeight values when the
-      // page loads. When it changes the values to correct ones it does not
-      // notify of the change via `onResize`. As a workaround, we set up a
-      // temporary periodic timer that polls innerWidth and triggers the
-      // resizeListener so that the framework can react to the change.
+      // Older Safari versions sometimes give us bogus innerWidth/innerHeight
+      // values when the page loads. When it changes the values to correct ones
+      // it does not notify of the change via `onResize`. As a workaround, we
+      // set up a temporary periodic timer that polls innerWidth and triggers
+      // the resizeListener so that the framework can react to the change.
       //
       // Safari 13 has implemented visualViewport API so it doesn't need this
       // timer.
@@ -509,10 +513,20 @@ flt-glass-pane * {
       });
     }
 
-    if (useCanvasKit) {
+    // Only reset CanvasKit if it's not already available.
+    if (useCanvasKit && windowFlutterCanvasKit == null) {
       _canvasKitScript?.remove();
       _canvasKitScript = html.ScriptElement();
       _canvasKitScript!.src = canvasKitJavaScriptBindingsUrl;
+
+      Completer<void> canvasKitLoadCompleter = Completer<void>();
+      _canvasKitLoaded = canvasKitLoadCompleter.future;
+
+      late StreamSubscription<html.Event> loadSubscription;
+      loadSubscription = _canvasKitScript!.onLoad.listen((_) {
+        loadSubscription.cancel();
+        canvasKitLoadCompleter.complete(true);
+      });
 
       // TODO(hterkelsen): Rather than this monkey-patch hack, we should
       // build CanvasKit ourselves. See:
@@ -591,7 +605,8 @@ flt-glass-pane * {
   /// logical pixels. To compensate, we inject an inverse scale at the root
   /// level.
   void updateSemanticsScreenProperties() {
-    _semanticsHostElement!.style.transform = 'scale(${1 / html.window.devicePixelRatio})';
+    _semanticsHostElement!.style.transform =
+        'scale(${1 / html.window.devicePixelRatio})';
   }
 
   /// Called immediately after browser window metrics change.
@@ -606,12 +621,12 @@ flt-glass-pane * {
   void _metricsDidChange(html.Event? event) {
     updateSemanticsScreenProperties();
     if (isMobile && !window.isRotation() && textEditing.isEditing) {
-      window.computeOnScreenKeyboardInsets();
+      window.computeOnScreenKeyboardInsets(true);
       EnginePlatformDispatcher.instance.invokeOnMetricsChanged();
     } else {
       window._computePhysicalSize();
       // When physical size changes this value has to be recalculated.
-      window.computeOnScreenKeyboardInsets();
+      window.computeOnScreenKeyboardInsets(false);
       EnginePlatformDispatcher.instance.invokeOnMetricsChanged();
     }
   }

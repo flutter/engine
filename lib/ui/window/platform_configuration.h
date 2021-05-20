@@ -87,7 +87,8 @@ class PlatformConfigurationClient {
   /// @param[in]  message  The message from the Flutter application to send to
   ///                      the underlying platform.
   ///
-  virtual void HandlePlatformMessage(fml::RefPtr<PlatformMessage> message) = 0;
+  virtual void HandlePlatformMessage(
+      std::unique_ptr<PlatformMessage> message) = 0;
 
   //--------------------------------------------------------------------------
   /// @brief      Returns the current collection of fonts available on the
@@ -309,7 +310,7 @@ class PlatformConfiguration final {
   /// @param[in]  message  The message sent from the embedder to the Dart
   ///                      application.
   ///
-  void DispatchPlatformMessage(fml::RefPtr<PlatformMessage> message);
+  void DispatchPlatformMessage(std::unique_ptr<PlatformMessage> message);
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the framework that the embedder encountered an
@@ -324,7 +325,7 @@ class PlatformConfiguration final {
   ///
   void DispatchSemanticsAction(int32_t id,
                                SemanticsAction action,
-                               std::vector<uint8_t> args);
+                               fml::MallocMapping args);
 
   //----------------------------------------------------------------------------
   /// @brief      Registers a callback to be invoked when the framework has

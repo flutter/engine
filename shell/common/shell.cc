@@ -68,16 +68,6 @@ std::unique_ptr<Engine> CreateEngine(
                                   volatile_path_tracker);
 }
 
-void Tokenize(const std::string& input,
-              std::vector<std::string>* results,
-              char delimiter) {
-  std::istringstream ss(input);
-  std::string token;
-  while (std::getline(ss, token, delimiter)) {
-    results->push_back(token);
-  }
-}
-
 // Though there can be multiple shells, some settings apply to all components in
 // the process. These have to be set up before the shell or any of its
 // sub-components can be initialized. In a perfect world, this would be empty.
@@ -103,13 +93,11 @@ void PerformInitializationTasks(Settings& settings) {
         [](const char* message) { FML_LOG(ERROR) << message; });
 
     if (settings.trace_skia) {
-      InitSkiaEventTracer(settings.trace_skia);
+      InitSkiaEventTracer(settings.trace_skia, settings.trace_skia_allowlist);
     }
 
     if (!settings.trace_allowlist.empty()) {
-      std::vector<std::string> prefixes;
-      Tokenize(settings.trace_allowlist, &prefixes, ',');
-      fml::tracing::TraceSetAllowlist(prefixes);
+      fml::tracing::TraceSetAllowlist(settings.trace_allowlist);
     }
 
     if (!settings.skia_deterministic_rendering_on_cpu) {
@@ -949,16 +937,16 @@ void Shell::OnPlatformViewSetViewportMetrics(const ViewportMetrics& metrics) {
 
 // |PlatformView::Delegate|
 void Shell::OnPlatformViewDispatchPlatformMessage(
-    fml::RefPtr<PlatformMessage> message) {
+    std::unique_ptr<PlatformMessage> message) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
-  task_runners_.GetUITaskRunner()->PostTask(
-      [engine = engine_->GetWeakPtr(), message = std::move(message)] {
+  task_runners_.GetUITaskRunner()->PostTask(fml::MakeCopyable(
+      [engine = engine_->GetWeakPtr(), message = std::move(message)]() mutable {
         if (engine) {
           engine->DispatchPlatformMessage(std::move(message));
         }
-      });
+      }));
 }
 
 // |PlatformView::Delegate|
@@ -998,16 +986,17 @@ void Shell::OnPlatformViewDispatchKeyDataPacket(
 // |PlatformView::Delegate|
 void Shell::OnPlatformViewDispatchSemanticsAction(int32_t id,
                                                   SemanticsAction action,
-                                                  std::vector<uint8_t> args) {
+                                                  fml::MallocMapping args) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
   task_runners_.GetUITaskRunner()->PostTask(
-      [engine = engine_->GetWeakPtr(), id, action, args = std::move(args)] {
+      fml::MakeCopyable([engine = engine_->GetWeakPtr(), id, action,
+                         args = std::move(args)]() mutable {
         if (engine) {
           engine->DispatchSemanticsAction(id, action, std::move(args));
         }
-      });
+      }));
 }
 
 // |PlatformView::Delegate|
@@ -1138,13 +1127,16 @@ void Shell::OnAnimatorNotifyIdle(int64_t deadline) {
 }
 
 // |Animator::Delegate|
-void Shell::OnAnimatorDraw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline,
-                           fml::TimePoint frame_target_time) {
+void Shell::OnAnimatorDraw(
+    std::shared_ptr<Pipeline<flutter::LayerTree>> pipeline,
+    std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) {
   FML_DCHECK(is_setup_);
 
   // record the target time for use by rasterizer.
   {
     std::scoped_lock time_recorder_lock(time_recorder_mutex_);
+    const fml::TimePoint frame_target_time =
+        frame_timings_recorder->GetVsyncTargetTime();
     if (!latest_frame_target_time_) {
       latest_frame_target_time_ = frame_target_time;
     } else if (latest_frame_target_time_ < frame_target_time) {
@@ -1158,32 +1150,42 @@ void Shell::OnAnimatorDraw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline,
            tree.frame_size() != expected_frame_size_;
   };
 
-  task_runners_.GetRasterTaskRunner()->PostTask(
+  task_runners_.GetRasterTaskRunner()->PostTask(fml::MakeCopyable(
       [&waiting_for_first_frame = waiting_for_first_frame_,
        &waiting_for_first_frame_condition = waiting_for_first_frame_condition_,
-       rasterizer = rasterizer_->GetWeakPtr(), pipeline = std::move(pipeline),
-       discard_callback = std::move(discard_callback)]() {
+       rasterizer = rasterizer_->GetWeakPtr(),
+       weak_pipeline = std::weak_ptr<Pipeline<LayerTree>>(pipeline),
+       discard_callback = std::move(discard_callback),
+       frame_timings_recorder = std::move(frame_timings_recorder)]() mutable {
         if (rasterizer) {
-          rasterizer->Draw(pipeline, std::move(discard_callback));
+          std::shared_ptr<Pipeline<LayerTree>> pipeline = weak_pipeline.lock();
+          if (pipeline) {
+            rasterizer->Draw(std::move(frame_timings_recorder),
+                             std::move(pipeline), std::move(discard_callback));
+          }
 
           if (waiting_for_first_frame.load()) {
             waiting_for_first_frame.store(false);
             waiting_for_first_frame_condition.notify_all();
           }
         }
-      });
+      }));
 }
 
 // |Animator::Delegate|
-void Shell::OnAnimatorDrawLastLayerTree() {
+void Shell::OnAnimatorDrawLastLayerTree(
+    std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) {
   FML_DCHECK(is_setup_);
 
-  task_runners_.GetRasterTaskRunner()->PostTask(
-      [rasterizer = rasterizer_->GetWeakPtr()]() {
+  auto task = fml::MakeCopyable(
+      [rasterizer = rasterizer_->GetWeakPtr(),
+       frame_timings_recorder = std::move(frame_timings_recorder)]() mutable {
         if (rasterizer) {
-          rasterizer->DrawLastLayerTree();
+          rasterizer->DrawLastLayerTree(std::move(frame_timings_recorder));
         }
       });
+
+  task_runners_.GetRasterTaskRunner()->PostTask(task);
 }
 
 // |Engine::Delegate|
@@ -1203,7 +1205,7 @@ void Shell::OnEngineUpdateSemantics(SemanticsNodeUpdates update,
 
 // |Engine::Delegate|
 void Shell::OnEngineHandlePlatformMessage(
-    fml::RefPtr<PlatformMessage> message) {
+    std::unique_ptr<PlatformMessage> message) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
 
@@ -1213,18 +1215,20 @@ void Shell::OnEngineHandlePlatformMessage(
   }
 
   task_runners_.GetPlatformTaskRunner()->PostTask(
-      [view = platform_view_->GetWeakPtr(), message = std::move(message)]() {
+      fml::MakeCopyable([view = platform_view_->GetWeakPtr(),
+                         message = std::move(message)]() mutable {
         if (view) {
           view->HandlePlatformMessage(std::move(message));
         }
-      });
+      }));
 }
 
-void Shell::HandleEngineSkiaMessage(fml::RefPtr<PlatformMessage> message) {
+void Shell::HandleEngineSkiaMessage(std::unique_ptr<PlatformMessage> message) {
   const auto& data = message->data();
 
   rapidjson::Document document;
-  document.Parse(reinterpret_cast<const char*>(data.data()), data.size());
+  document.Parse(reinterpret_cast<const char*>(data.GetMapping()),
+                 data.GetSize());
   if (document.HasParseError() || !document.IsObject())
     return;
   auto root = document.GetObject();
@@ -1353,8 +1357,8 @@ void Shell::ReportTimings() {
 size_t Shell::UnreportedFramesCount() const {
   // Check that this is running on the raster thread to avoid race conditions.
   FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
-  FML_DCHECK(unreported_timings_.size() % FrameTiming::kCount == 0);
-  return unreported_timings_.size() / FrameTiming::kCount;
+  FML_DCHECK(unreported_timings_.size() % (FrameTiming::kCount + 1) == 0);
+  return unreported_timings_.size() / (FrameTiming::kCount + 1);
 }
 
 void Shell::OnFrameRasterized(const FrameTiming& timing) {
@@ -1375,6 +1379,7 @@ void Shell::OnFrameRasterized(const FrameTiming& timing) {
     unreported_timings_.push_back(
         timing.Get(phase).ToEpochDelta().ToMicroseconds());
   }
+  unreported_timings_.push_back(timing.GetFrameNumber());
 
   // In tests using iPhone 6S with profile mode, sending a batch of 1 frame or a
   // batch of 100 frames have roughly the same cost of less than 0.1ms. Sending
@@ -1803,12 +1808,12 @@ bool Shell::ReloadSystemFonts() {
   rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
   document.Accept(writer);
   std::string message = buffer.GetString();
-  fml::RefPtr<PlatformMessage> fontsChangeMessage =
-      fml::MakeRefCounted<flutter::PlatformMessage>(
-          kSystemChannel, std::vector<uint8_t>(message.begin(), message.end()),
-          nullptr);
+  std::unique_ptr<PlatformMessage> fontsChangeMessage =
+      std::make_unique<flutter::PlatformMessage>(
+          kSystemChannel,
+          fml::MallocMapping::Copy(message.c_str(), message.length()), nullptr);
 
-  OnPlatformViewDispatchPlatformMessage(fontsChangeMessage);
+  OnPlatformViewDispatchPlatformMessage(std::move(fontsChangeMessage));
   return true;
 }
 

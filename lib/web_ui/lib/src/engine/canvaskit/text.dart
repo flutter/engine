@@ -2,7 +2,18 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import 'dart:typed_data';
+
+import 'package:meta/meta.dart';
+import 'package:ui/ui.dart' as ui;
+
+import '../util.dart';
+import 'canvaskit_api.dart';
+import 'font_fallbacks.dart';
+import 'initialization.dart';
+import 'painting.dart';
+import 'skia_object_cache.dart';
+import 'util.dart';
 
 @immutable
 class CkParagraphStyle implements ui.ParagraphStyle {
@@ -37,6 +48,7 @@ class CkParagraphStyle implements ui.ParagraphStyle {
         _fontFamily = fontFamily,
         _fontSize = fontSize,
         _height = height,
+        _leadingDistribution = textHeightBehavior?.leadingDistribution,
         _fontWeight = fontWeight,
         _fontStyle = fontStyle;
 
@@ -47,6 +59,7 @@ class CkParagraphStyle implements ui.ParagraphStyle {
   final double? _height;
   final ui.FontWeight? _fontWeight;
   final ui.FontStyle? _fontStyle;
+  final ui.TextLeadingDistribution? _leadingDistribution;
 
   static SkTextStyleProperties toSkTextStyleProperties(
     String? fontFamily,
@@ -73,8 +86,8 @@ class CkParagraphStyle implements ui.ParagraphStyle {
     return skTextStyle;
   }
 
-  static SkStrutStyleProperties toSkStrutStyleProperties(ui.StrutStyle value) {
-    EngineStrutStyle style = value as EngineStrutStyle;
+  static SkStrutStyleProperties toSkStrutStyleProperties(ui.StrutStyle value, ui.TextHeightBehavior? paragraphHeightBehavior) {
+    CkStrutStyle style = value as CkStrutStyle;
     final SkStrutStyleProperties skStrutStyle = SkStrutStyleProperties();
     skStrutStyle.fontFamilies =
         _getEffectiveFontFamilies(style._fontFamily, style._fontFamilyFallback);
@@ -85,6 +98,18 @@ class CkParagraphStyle implements ui.ParagraphStyle {
 
     if (style._height != null) {
       skStrutStyle.heightMultiplier = style._height;
+    }
+
+    final ui.TextLeadingDistribution? effectiveLeadingDistribution = style._leadingDistribution ?? paragraphHeightBehavior?.leadingDistribution;
+    switch (effectiveLeadingDistribution) {
+      case null:
+        break;
+      case ui.TextLeadingDistribution.even:
+        skStrutStyle.halfLeading = true;
+        break;
+      case ui.TextLeadingDistribution.proportional:
+        skStrutStyle.halfLeading = false;
+        break;
     }
 
     if (style._leading != null) {
@@ -147,7 +172,7 @@ class CkParagraphStyle implements ui.ParagraphStyle {
     }
 
     if (strutStyle != null) {
-      properties.strutStyle = toSkStrutStyleProperties(strutStyle);
+      properties.strutStyle = toSkStrutStyleProperties(strutStyle, textHeightBehavior);
     }
 
     properties.textStyle = toSkTextStyleProperties(
@@ -161,6 +186,7 @@ class CkParagraphStyle implements ui.ParagraphStyle {
       fontFamily: _fontFamily,
       fontSize: _fontSize,
       height: _height,
+      leadingDistribution: _leadingDistribution,
       fontWeight: _fontWeight,
       fontStyle: _fontStyle,
     );
@@ -184,6 +210,7 @@ class CkTextStyle implements ui.TextStyle {
     double? letterSpacing,
     double? wordSpacing,
     double? height,
+    ui.TextLeadingDistribution? leadingDistribution,
     ui.Locale? locale,
     CkPaint? background,
     CkPaint? foreground,
@@ -205,6 +232,7 @@ class CkTextStyle implements ui.TextStyle {
       letterSpacing,
       wordSpacing,
       height,
+      leadingDistribution,
       locale,
       background,
       foreground,
@@ -228,6 +256,7 @@ class CkTextStyle implements ui.TextStyle {
     this.letterSpacing,
     this.wordSpacing,
     this.height,
+    this.leadingDistribution,
     this.locale,
     this.background,
     this.foreground,
@@ -249,6 +278,7 @@ class CkTextStyle implements ui.TextStyle {
   final double? letterSpacing;
   final double? wordSpacing;
   final double? height;
+  final ui.TextLeadingDistribution? leadingDistribution;
   final ui.Locale? locale;
   final CkPaint? background;
   final CkPaint? foreground;
@@ -275,6 +305,7 @@ class CkTextStyle implements ui.TextStyle {
       letterSpacing: other.letterSpacing ?? letterSpacing,
       wordSpacing: other.wordSpacing ?? wordSpacing,
       height: other.height ?? height,
+      leadingDistribution: other.leadingDistribution ?? leadingDistribution,
       locale: other.locale ?? locale,
       background: other.background ?? background,
       foreground: other.foreground ?? foreground,
@@ -367,6 +398,17 @@ class CkTextStyle implements ui.TextStyle {
       properties.heightMultiplier = height;
     }
 
+    switch (leadingDistribution) {
+      case null:
+        break;
+      case ui.TextLeadingDistribution.even:
+        properties.halfLeading = true;
+        break;
+      case ui.TextLeadingDistribution.proportional:
+        properties.halfLeading = false;
+        break;
+    }
+
     if (locale != null) {
       properties.locale = locale.toLanguageTag();
     }
@@ -406,6 +448,69 @@ class CkTextStyle implements ui.TextStyle {
 
     return canvasKit.TextStyle(properties);
   }();
+}
+
+class CkStrutStyle implements ui.StrutStyle {
+  CkStrutStyle({
+    String? fontFamily,
+    List<String>? fontFamilyFallback,
+    double? fontSize,
+    double? height,
+    //TODO(LongCatIsLooong): implement leadingDistribution.
+    ui.TextLeadingDistribution? leadingDistribution,
+    double? leading,
+    ui.FontWeight? fontWeight,
+    ui.FontStyle? fontStyle,
+    bool? forceStrutHeight,
+  })  : _fontFamily = fontFamily,
+        _fontFamilyFallback = fontFamilyFallback,
+        _fontSize = fontSize,
+        _height = height,
+        _leadingDistribution = leadingDistribution,
+        _leading = leading,
+        _fontWeight = fontWeight,
+        _fontStyle = fontStyle,
+        _forceStrutHeight = forceStrutHeight;
+
+  final String? _fontFamily;
+  final List<String>? _fontFamilyFallback;
+  final double? _fontSize;
+  final double? _height;
+  final double? _leading;
+  final ui.FontWeight? _fontWeight;
+  final ui.FontStyle? _fontStyle;
+  final bool? _forceStrutHeight;
+  final ui.TextLeadingDistribution? _leadingDistribution;
+
+  @override
+  bool operator ==(Object other) {
+    if (other.runtimeType != runtimeType) {
+      return false;
+    }
+    return other is CkStrutStyle &&
+        other._fontFamily == _fontFamily &&
+        other._fontSize == _fontSize &&
+        other._height == _height &&
+        other._leading == _leading &&
+        other._leadingDistribution == _leadingDistribution &&
+        other._fontWeight == _fontWeight &&
+        other._fontStyle == _fontStyle &&
+        other._forceStrutHeight == _forceStrutHeight &&
+        listEquals<String>(other._fontFamilyFallback, _fontFamilyFallback);
+  }
+
+  @override
+  int get hashCode => ui.hashValues(
+        _fontFamily,
+        _fontFamilyFallback,
+        _fontSize,
+        _height,
+        _leading,
+        _leadingDistribution,
+        _fontWeight,
+        _fontStyle,
+        _forceStrutHeight,
+      );
 }
 
 SkFontStyle toSkFontStyle(ui.FontWeight? fontWeight, ui.FontStyle? fontStyle) {

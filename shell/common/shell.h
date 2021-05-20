@@ -481,7 +481,7 @@ class Shell final : public PlatformView::Delegate,
 
   // |PlatformView::Delegate|
   void OnPlatformViewDispatchPlatformMessage(
-      fml::RefPtr<PlatformMessage> message) override;
+      std::unique_ptr<PlatformMessage> message) override;
 
   // |PlatformView::Delegate|
   void OnPlatformViewDispatchPointerDataPacket(
@@ -493,10 +493,9 @@ class Shell final : public PlatformView::Delegate,
       std::function<void(bool /* handled */)> callback) override;
 
   // |PlatformView::Delegate|
-  void OnPlatformViewDispatchSemanticsAction(
-      int32_t id,
-      SemanticsAction action,
-      std::vector<uint8_t> args) override;
+  void OnPlatformViewDispatchSemanticsAction(int32_t id,
+                                             SemanticsAction action,
+                                             fml::MallocMapping args) override;
 
   // |PlatformView::Delegate|
   void OnPlatformViewSetSemanticsEnabled(bool enabled) override;
@@ -539,11 +538,13 @@ class Shell final : public PlatformView::Delegate,
   void OnAnimatorNotifyIdle(int64_t deadline) override;
 
   // |Animator::Delegate|
-  void OnAnimatorDraw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline,
-                      fml::TimePoint frame_target_time) override;
+  void OnAnimatorDraw(
+      std::shared_ptr<Pipeline<flutter::LayerTree>> pipeline,
+      std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) override;
 
   // |Animator::Delegate|
-  void OnAnimatorDrawLastLayerTree() override;
+  void OnAnimatorDrawLastLayerTree(
+      std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) override;
 
   // |Engine::Delegate|
   void OnEngineUpdateSemantics(
@@ -552,9 +553,9 @@ class Shell final : public PlatformView::Delegate,
 
   // |Engine::Delegate|
   void OnEngineHandlePlatformMessage(
-      fml::RefPtr<PlatformMessage> message) override;
+      std::unique_ptr<PlatformMessage> message) override;
 
-  void HandleEngineSkiaMessage(fml::RefPtr<PlatformMessage> message);
+  void HandleEngineSkiaMessage(std::unique_ptr<PlatformMessage> message);
 
   // |Engine::Delegate|
   void OnPreEngineRestart() override;

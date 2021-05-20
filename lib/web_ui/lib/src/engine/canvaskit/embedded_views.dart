@@ -2,7 +2,21 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import 'dart:html' as html;
+import 'dart:typed_data';
+
+import 'package:ui/src/engine.dart' show window, NullTreeSanitizer;
+import 'package:ui/ui.dart' as ui;
+
+import '../html/path_to_svg_clip.dart';
+import '../services.dart';
+import '../util.dart';
+import '../vector_math.dart';
+import 'canvas.dart';
+import 'initialization.dart';
+import 'path.dart';
+import 'picture_recorder.dart';
+import 'surface.dart';
 
 /// This composites HTML views into the [ui.Scene].
 class HtmlViewEmbedder {
@@ -130,11 +144,11 @@ class HtmlViewEmbedder {
     callback(codec.encodeSuccessEnvelope(null));
   }
 
-  List<CkCanvas?> getCurrentCanvases() {
-    final List<CkCanvas?> canvases = <CkCanvas?>[];
+  List<CkCanvas> getCurrentCanvases() {
+    final List<CkCanvas> canvases = <CkCanvas>[];
     for (int i = 0; i < _compositionOrder.length; i++) {
       final int viewId = _compositionOrder[i];
-      canvases.add(_pictureRecorders[viewId]!.recordingCanvas);
+      canvases.add(_pictureRecorders[viewId]!.recordingCanvas!);
     }
     return canvases;
   }
@@ -186,7 +200,7 @@ class HtmlViewEmbedder {
       );
       _rootViews[viewId] = newPlatformViewRoot;
     }
-    _applyMutators(params.mutators, platformView);
+    _applyMutators(params.mutators, platformView, viewId);
   }
 
   int _countClips(MutatorsStack mutators) {
@@ -232,11 +246,33 @@ class HtmlViewEmbedder {
     return head;
   }
 
-  void _applyMutators(MutatorsStack mutators, html.Element embeddedView) {
+  /// Clean up the old SVG clip definitions, as this platform view is about to
+  /// be recomposited.
+  void _cleanUpClipDefs(int viewId) {
+    if (_svgClipDefs.containsKey(viewId)) {
+      final html.Element clipDefs =
+          _svgPathDefs!.querySelector('#sk_path_defs')!;
+      final List<html.Element> nodesToRemove = <html.Element>[];
+      final Set<String> oldDefs = _svgClipDefs[viewId]!;
+      for (html.Element child in clipDefs.children) {
+        if (oldDefs.contains(child.id)) {
+          nodesToRemove.add(child);
+        }
+      }
+      for (html.Element node in nodesToRemove) {
+        node.remove();
+      }
+      _svgClipDefs[viewId]!.clear();
+    }
+  }
+
+  void _applyMutators(
+      MutatorsStack mutators, html.Element embeddedView, int viewId) {
     html.Element head = embeddedView;
     Matrix4 headTransform = Matrix4.identity();
     double embeddedOpacity = 1.0;
     _resetAnchor(head);
+    _cleanUpClipDefs(viewId);
 
     for (final Mutator mutator in mutators) {
       switch (mutator.type) {
@@ -264,28 +300,38 @@ class HtmlViewEmbedder {
             html.Element pathDefs =
                 _svgPathDefs!.querySelector('#sk_path_defs')!;
             _clipPathCount += 1;
+            final String clipId = 'svgClip$_clipPathCount';
             html.Node newClipPath = html.DocumentFragment.svg(
-              '<clipPath id="svgClip$_clipPathCount">'
+              '<clipPath id="$clipId">'
               '<path d="${path.toSvgString()}">'
               '</path></clipPath>',
-              treeSanitizer: _NullTreeSanitizer(),
+              treeSanitizer: NullTreeSanitizer(),
             );
             pathDefs.append(newClipPath);
-            clipView.style.clipPath = 'url(#svgClip$_clipPathCount)';
+            // Store the id of the node instead of [newClipPath] directly. For
+            // some reason, calling `newClipPath.remove()` doesn't remove it
+            // from the DOM.
+            _svgClipDefs.putIfAbsent(viewId, () => <String>{}).add(clipId);
+            clipView.style.clipPath = 'url(#$clipId)';
           } else if (mutator.path != null) {
             final CkPath path = mutator.path as CkPath;
             _ensureSvgPathDefs();
             html.Element pathDefs =
                 _svgPathDefs!.querySelector('#sk_path_defs')!;
             _clipPathCount += 1;
+            final String clipId = 'svgClip$_clipPathCount';
             html.Node newClipPath = html.DocumentFragment.svg(
-              '<clipPath id="svgClip$_clipPathCount">'
+              '<clipPath id="$clipId">'
               '<path d="${path.toSvgString()}">'
               '</path></clipPath>',
-              treeSanitizer: _NullTreeSanitizer(),
+              treeSanitizer: NullTreeSanitizer(),
             );
             pathDefs.append(newClipPath);
-            clipView.style.clipPath = 'url(#svgClip$_clipPathCount)';
+            // Store the id of the node instead of [newClipPath] directly. For
+            // some reason, calling `newClipPath.remove()` doesn't remove it
+            // from the DOM.
+            _svgClipDefs.putIfAbsent(viewId, () => <String>{}).add(clipId);
+            clipView.style.clipPath = 'url(#$clipId)';
           }
           _resetAnchor(clipView);
           head = clipView;
@@ -304,7 +350,8 @@ class HtmlViewEmbedder {
     // pixels, so scale down the head element to match the logical resolution.
     final double scale = window.devicePixelRatio;
     final double inverseScale = 1 / scale;
-    final Matrix4 scaleMatrix = Matrix4.diagonal3Values(inverseScale, inverseScale, 1);
+    final Matrix4 scaleMatrix =
+        Matrix4.diagonal3Values(inverseScale, inverseScale, 1);
     headTransform = scaleMatrix.multiplied(headTransform);
     head.style.transform = float64ListToCssTransform(headTransform.storage);
   }
@@ -322,6 +369,9 @@ class HtmlViewEmbedder {
 
   html.Element? _svgPathDefs;
 
+  /// The nodes containing the SVG clip definitions needed to clip this view.
+  Map<int, Set<String>> _svgClipDefs = <int, Set<String>>{};
+
   /// Ensures we add a container of SVG path defs to the DOM so they can
   /// be referred to in clip-path: url(#blah).
   void _ensureSvgPathDefs() {
@@ -330,7 +380,7 @@ class HtmlViewEmbedder {
     }
     _svgPathDefs = html.Element.html(
       '$kSvgResourceHeader<defs id="sk_path_defs"></defs></svg>',
-      treeSanitizer: _NullTreeSanitizer(),
+      treeSanitizer: NullTreeSanitizer(),
     );
     skiaSceneHost!.append(_svgPathDefs!);
   }
@@ -341,8 +391,7 @@ class HtmlViewEmbedder {
     for (int i = 0; i < _compositionOrder.length; i++) {
       int viewId = _compositionOrder[i];
       _ensureOverlayInitialized(viewId);
-      final SurfaceFrame frame =
-          _overlays[viewId]!.acquireFrame(_frameSize);
+      final SurfaceFrame frame = _overlays[viewId]!.acquireFrame(_frameSize);
       final CkCanvas canvas = frame.skiaCanvas;
       canvas.drawPicture(
         _pictureRecorders[viewId]!.endRecording(),
@@ -350,7 +399,7 @@ class HtmlViewEmbedder {
       frame.submit();
     }
     _pictureRecorders.clear();
-    if (_listEquals(_compositionOrder, _activeCompositionOrder)) {
+    if (listEquals(_compositionOrder, _activeCompositionOrder)) {
       _compositionOrder.clear();
       return;
     }
@@ -410,6 +459,8 @@ class HtmlViewEmbedder {
       _currentCompositionParams.remove(viewId);
       _clipCount.remove(viewId);
       _viewsToRecomposite.remove(viewId);
+      _cleanUpClipDefs(viewId);
+      _svgClipDefs.remove(viewId);
     }
     _viewsToDispose.clear();
   }
@@ -437,6 +488,14 @@ class HtmlViewEmbedder {
     }
 
     _overlays[viewId] = overlay;
+  }
+
+  /// Deletes SVG clip paths, useful for tests.
+  void debugCleanupSvgClipPaths() {
+    _svgPathDefs?.children.single.children.forEach((element) {
+      element.remove();
+    });
+    _svgClipDefs.clear();
   }
 }
 
@@ -628,7 +687,7 @@ class MutatorsStack extends Iterable<Mutator> {
       return true;
     }
     return other is MutatorsStack &&
-        _listEquals<Mutator>(other._mutators, _mutators);
+        listEquals<Mutator>(other._mutators, _mutators);
   }
 
   int get hashCode => ui.hashList(_mutators);
