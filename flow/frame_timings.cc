@@ -5,16 +5,24 @@
 #include "flutter/flow/frame_timings.h"
 
 #include <memory>
+#include <sstream>
 
 #include "flutter/common/settings.h"
 #include "flutter/fml/logging.h"
 
 namespace flutter {
 
-std::atomic_int FrameTimingsRecorder::frame_number_gen_ = {1};
+std::atomic<uint64_t> FrameTimingsRecorder::frame_number_gen_ = {1};
+
+static std::string ToString(uint64_t val) {
+  std::stringstream stream;
+  stream << val;
+  return stream.str();
+}
 
 FrameTimingsRecorder::FrameTimingsRecorder()
-    : frame_number_(frame_number_gen_++) {}
+    : frame_number_(frame_number_gen_++),
+      frame_number_trace_arg_val_(ToString(frame_number_)) {}
 
 FrameTimingsRecorder::~FrameTimingsRecorder() = default;
 
@@ -101,6 +109,7 @@ FrameTiming FrameTimingsRecorder::RecordRasterEnd(fml::TimePoint raster_end) {
   timing.Set(FrameTiming::kBuildFinish, build_end_);
   timing.Set(FrameTiming::kRasterStart, raster_start_);
   timing.Set(FrameTiming::kRasterFinish, raster_end_);
+  timing.SetFrameNumber(GetFrameNumber());
   return timing;
 }
 
@@ -137,6 +146,10 @@ std::unique_ptr<FrameTimingsRecorder> FrameTimingsRecorder::CloneUntil(
 
 uint64_t FrameTimingsRecorder::GetFrameNumber() const {
   return frame_number_;
+}
+
+const char* FrameTimingsRecorder::GetFrameNumberTraceArg() const {
+  return frame_number_trace_arg_val_.c_str();
 }
 
 }  // namespace flutter

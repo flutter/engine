@@ -11,7 +11,17 @@ import 'dart:io';
 
 import 'package:test/test.dart';
 
-import 'test_util.dart';
+/// Asserts that `callback` throws an [ArgumentError].
+void asyncExpectThrows<T>(Function callback) async {
+  bool threw = false;
+  try {
+    await callback();
+  } catch (e) {
+    expect(e is T, true);
+    threw = true;
+  }
+  expect(threw, true);
+}
 
 Future<String> getLocalHostIP() async {
   final interfaces = await NetworkInterface.list(
@@ -32,36 +42,7 @@ Future<void> bindServerAndTest(String serverHost,
   }
 }
 
-// Future<void> testWithLoopback() async {
-//   await testBanHttp("127.0.0.1", (httpClient, uri) async {
-//     await asyncTest(
-//         () => httpClient.getUrl(Uri.parse('http://localhost:${uri.port}')));
-//     await asyncTest(
-//         () => httpClient.getUrl(Uri.parse('http://127.0.0.1:${uri.port}')));
-//   });
-// }
-
-// Future<void> testWithIPv6() async {
-//   if (await supportsIPV6()) {
-//     await testBanHttp("::1", (httpClient, uri) async {
-//       await asyncTest(() => httpClient.getUrl(uri));
-//     });
-//   }
-// }
-
-// Future<void> testWithHTTPS() async {
-//   await testBanHttp(await getLocalHostIP(), (httpClient, uri) async {
-//     asyncExpectThrows(
-//         () => httpClient.getUrl(Uri(
-//               scheme: 'https',
-//               host: uri.host,
-//               port: uri.port,
-//             )),
-//         (e) => e is SocketException || e is HandshakeException);
-//   });
-// }
-
-/// Returns whether this computer supports binding to IPv6 addresses.
+/// Answers the question whether this computer supports binding to IPv6 addresses.
 Future<bool> _supportsIPv6() async {
   try {
     var socket = await ServerSocket.bind(InternetAddress.loopbackIPv6, 0);
