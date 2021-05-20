@@ -105,8 +105,14 @@ static FlMethodResponse* platform_views_create(FlPlatformViewsPlugin* self,
     g_autoptr(GBytes) bytes =
         g_bytes_new_static(creation_params_bytes, creation_params_length);
 
-    GError* error = nullptr;
+    g_autoptr(GError) error = nullptr;
     creation_params = fl_message_codec_decode_message(codec, bytes, &error);
+    if (!creation_params) {
+      g_warning("Failed to decode creation params, error message: %s",
+                error->message);
+      return FL_METHOD_RESPONSE(fl_method_error_response_new(
+          kBadArgumentsError, "Creation params cannot be parsed", nullptr));
+    }
   }
 
   platform_view = fl_platform_view_factory_create_platform_view(
