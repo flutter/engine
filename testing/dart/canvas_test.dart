@@ -9,10 +9,9 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui';
 
+import 'package:image/image.dart' as dart_image;
+import 'package:litetest/litetest.dart';
 import 'package:path/path.dart' as path;
-import 'package:test/test.dart';
-
-import 'test_util.dart';
 
 typedef CanvasCallback = void Function(Canvas canvas);
 
