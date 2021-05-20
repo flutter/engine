@@ -45,7 +45,7 @@ public class PlayStoreDeferredComponentManager implements DeferredComponentManag
   private static final String TAG = "PlayStoreDeferredComponentManager";
 
   public static final String MAPPING_KEY =
-      DeferredComponentManager.class.getName() + ".loadingUnitMapping";
+      "io.flutter.embedding.engine.deferredcomponents.DeferredComponentManager.loadingUnitMapping";
 
   private @NonNull SplitInstallManager splitInstallManager;
   private @Nullable FlutterJNI flutterJNI;
@@ -257,7 +257,6 @@ public class PlayStoreDeferredComponentManager implements DeferredComponentManag
   // string, indicating it is included in the base module and no dynamic
   // feature modules need to be downloaded.
   private void initLoadingUnitMappingToComponentNames() {
-    String mappingKey = DeferredComponentManager.class.getName() + ".loadingUnitMapping";
     ApplicationInfo applicationInfo = getApplicationInfo();
     if (applicationInfo != null) {
       Bundle metaData = applicationInfo.metaData;
@@ -269,7 +268,7 @@ public class PlayStoreDeferredComponentManager implements DeferredComponentManag
               "No loading unit to dynamic feature module name found. Ensure '"
                   + MAPPING_KEY
                   + "' is defined in the base module's AndroidManifest.");
-        } else {
+        } else if (!rawStringMapping.isBlank()){
           for (String entry : rawMappingString.split(",")) {
             // Split with -1 param to include empty string following trailing ":"
             String[] splitEntry = entry.split(":", -1);
