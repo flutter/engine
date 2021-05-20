@@ -1997,4 +1997,9 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   }
 }
 
+- (void)resetViewController {
+  _viewController = nil;
+  _hasScribbleInteraction = false;
+}
+
 @end

@@ -314,6 +314,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
       platform_view->SetOwnerViewController({});
     }
   }
+  [_textInputPlugin.get() resetViewController];
   _viewController.reset();
 }
 

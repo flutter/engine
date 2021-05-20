@@ -57,6 +57,7 @@
  * correct element
  */
 - (void)setupIndirectScribbleInteraction;
+- (void)resetViewController;
 
 @end
 
