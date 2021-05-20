@@ -1154,10 +1154,6 @@ void _canvasTests() {
     canvas.translate(4, 5);
   });
 
-  test('flush', () {
-    canvas.flush();
-  });
-
   test('drawPicture', () {
     final SkPictureRecorder otherRecorder = SkPictureRecorder();
     final SkCanvas otherCanvas =
