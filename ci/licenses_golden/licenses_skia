@@ -1,4 +1,4 @@
-Signature: 8673c3ce0414e4fdcb867474b54be507
+Signature: fa54b2c73515e713ddee41ef263011a8
 
 UNUSED LICENSES:
 
@@ -1594,7 +1594,6 @@ FILE: ../../../third_party/skia/samplecode/SampleSlides.cpp
 FILE: ../../../third_party/skia/samplecode/SampleStrokePath.cpp
 FILE: ../../../third_party/skia/samplecode/SampleStrokeRect.cpp
 FILE: ../../../third_party/skia/samplecode/SampleTextBox.cpp
-FILE: ../../../third_party/skia/samplecode/SampleTextEffects.cpp
 FILE: ../../../third_party/skia/samplecode/SampleVertices.cpp
 FILE: ../../../third_party/skia/samplecode/SampleWritePixels.cpp
 FILE: ../../../third_party/skia/samplecode/SampleXfermodesBlur.cpp
@@ -3955,6 +3954,7 @@ FILE: ../../../third_party/skia/include/private/GrMtlTypesPriv.h
 FILE: ../../../third_party/skia/include/utils/SkOrderedFontMgr.h
 FILE: ../../../third_party/skia/modules/androidkit/src/AndroidKit.cpp
 FILE: ../../../third_party/skia/modules/androidkit/src/Canvas.cpp
+FILE: ../../../third_party/skia/modules/androidkit/src/Image.cpp
 FILE: ../../../third_party/skia/modules/androidkit/src/Matrix.cpp
 FILE: ../../../third_party/skia/modules/androidkit/src/Paint.cpp
 FILE: ../../../third_party/skia/modules/androidkit/src/RuntimeShaderBuilder.cpp
