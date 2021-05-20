@@ -778,7 +778,7 @@ class SkAnimatedImage {
   /// Returns duration in milliseconds.
   external int getRepetitionCount();
   external int decodeNextFrame();
-  external SkImage getCurrentFrame();
+  external SkImage makeImageAtCurrentFrame();
   external int width();
   external int height();
 
