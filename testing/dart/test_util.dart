@@ -49,3 +49,15 @@ void expectArgumentError(Function callback) {
   expect(threw, true);
 }
 
+/// Asserts that `callback` throws an [ArgumentError].
+void asyncExpectThrows<T>(Function callback) async {
+  bool threw = false;
+  try {
+    await callback();
+  } catch (e) {
+    expect(e is T, true);
+    threw = true;
+  }
+  expect(threw, true);
+}
+
