@@ -6,7 +6,6 @@ environment:
 dependencies:
   test: 1.16.8
   path: 1.8.0
-  image: 3.0.2
   vm_service: 6.2.0
 
 dependency_overrides:
