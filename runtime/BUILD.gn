@@ -35,21 +35,6 @@ group("libdart") {
   }
 }
 
-source_set("engine_context") {
-  sources = [
-    "engine_context.cc",
-    "engine_context.h",
-  ]
-
-  deps = [
-    "//flutter/common",
-    "//flutter/flow:flow",
-    "//flutter/fml",
-    "//third_party/dart/runtime:dart_api",
-    "//third_party/skia",
-  ]
-}
-
 source_set("runtime") {
   sources = [
     "dart_isolate.cc",
@@ -102,7 +87,6 @@ source_set("runtime") {
     "//flutter/fml",
     "//flutter/lib/io",
     "//flutter/lib/ui",
-    "//flutter/runtime:engine_context",
     "//flutter/third_party/tonic",
     "//flutter/third_party/txt",
     "//third_party/dart/runtime:dart_api",

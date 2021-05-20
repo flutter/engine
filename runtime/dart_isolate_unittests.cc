@@ -51,9 +51,9 @@ TEST_F(DartIsolateTest, RootIsolateCreationAndShutdown) {
   auto isolate_configuration =
       IsolateConfiguration::InferFromSettings(settings);
 
-  EngineContext engine_context(std::move(task_runners));
-  engine_context.advisory_script_uri = "main.dart";
-  engine_context.advisory_script_entrypoint = "main";
+  UIDartState::Context context(std::move(task_runners));
+  context.advisory_script_uri = "main.dart";
+  context.advisory_script_entrypoint = "main";
   auto weak_isolate = DartIsolate::CreateRunningRootIsolate(
       vm_data->GetSettings(),              // settings
       vm_data->GetIsolateSnapshot(),       // isolate snapshot
@@ -64,7 +64,7 @@ TEST_F(DartIsolateTest, RootIsolateCreationAndShutdown) {
       "main",                              // dart entrypoint
       std::nullopt,                        // dart entrypoint library
       std::move(isolate_configuration),    // isolate configuration
-      std::move(engine_context)            // engine context
+      std::move(context)                   // engine context
   );
   auto root_isolate = weak_isolate.lock();
   ASSERT_TRUE(root_isolate);
@@ -89,9 +89,9 @@ TEST_F(DartIsolateTest, SpawnIsolate) {
   auto isolate_configuration =
       IsolateConfiguration::InferFromSettings(settings);
 
-  EngineContext engine_context(std::move(task_runners));
-  engine_context.advisory_script_uri = "main.dart";
-  engine_context.advisory_script_entrypoint = "main";
+  UIDartState::Context context(std::move(task_runners));
+  context.advisory_script_uri = "main.dart";
+  context.advisory_script_entrypoint = "main";
   auto weak_isolate = DartIsolate::CreateRunningRootIsolate(
       vm_data->GetSettings(),              // settings
       vm_data->GetIsolateSnapshot(),       // isolate snapshot
@@ -102,7 +102,7 @@ TEST_F(DartIsolateTest, SpawnIsolate) {
       "main",                              // dart entrypoint
       std::nullopt,                        // dart entrypoint library
       std::move(isolate_configuration),    // isolate configuration
-      std::move(engine_context)            // engine context
+      std::move(context)                   // engine context
   );
   auto root_isolate = weak_isolate.lock();
   ASSERT_TRUE(root_isolate);
@@ -163,9 +163,9 @@ TEST_F(DartIsolateTest, IsolateShutdownCallbackIsInIsolateScope) {
   auto isolate_configuration =
       IsolateConfiguration::InferFromSettings(settings);
 
-  EngineContext engine_context(std::move(task_runners));
-  engine_context.advisory_script_uri = "main.dart";
-  engine_context.advisory_script_entrypoint = "main";
+  UIDartState::Context context(std::move(task_runners));
+  context.advisory_script_uri = "main.dart";
+  context.advisory_script_entrypoint = "main";
   auto weak_isolate = DartIsolate::CreateRunningRootIsolate(
       vm_data->GetSettings(),              // settings
       vm_data->GetIsolateSnapshot(),       // isolate snapshot
@@ -176,7 +176,7 @@ TEST_F(DartIsolateTest, IsolateShutdownCallbackIsInIsolateScope) {
       "main",                              // dart entrypoint
       std::nullopt,                        // dart entrypoint library
       std::move(isolate_configuration),    // isolate configuration
-      std::move(engine_context)            // engine context
+      std::move(context)                   // engine context
   );
   auto root_isolate = weak_isolate.lock();
   ASSERT_TRUE(root_isolate);
@@ -418,9 +418,9 @@ TEST_F(DartIsolateTest, CanCreateServiceIsolate) {
   auto isolate_configuration =
       IsolateConfiguration::InferFromSettings(settings);
 
-  EngineContext engine_context(std::move(task_runners));
-  engine_context.advisory_script_uri = "main.dart";
-  engine_context.advisory_script_entrypoint = "main";
+  UIDartState::Context context(std::move(task_runners));
+  context.advisory_script_uri = "main.dart";
+  context.advisory_script_entrypoint = "main";
   auto weak_isolate = DartIsolate::CreateRunningRootIsolate(
       vm_data->GetSettings(),              // settings
       vm_data->GetIsolateSnapshot(),       // isolate snapshot
@@ -431,7 +431,7 @@ TEST_F(DartIsolateTest, CanCreateServiceIsolate) {
       "main",                              // dart entrypoint
       std::nullopt,                        // dart entrypoint library
       std::move(isolate_configuration),    // isolate configuration
-      std::move(engine_context)            // engine context
+      std::move(context)                   // engine context
   );
 
   auto root_isolate = weak_isolate.lock();
@@ -516,9 +516,9 @@ TEST_F(DartIsolateTest, InvalidLoadingUnitFails) {
   auto isolate_configuration =
       IsolateConfiguration::InferFromSettings(settings);
 
-  EngineContext engine_context(std::move(task_runners));
-  engine_context.advisory_script_uri = "main.dart";
-  engine_context.advisory_script_entrypoint = "main";
+  UIDartState::Context context(std::move(task_runners));
+  context.advisory_script_uri = "main.dart";
+  context.advisory_script_entrypoint = "main";
   auto weak_isolate = DartIsolate::CreateRunningRootIsolate(
       vm_data->GetSettings(),              // settings
       vm_data->GetIsolateSnapshot(),       // isolate snapshot
@@ -529,7 +529,7 @@ TEST_F(DartIsolateTest, InvalidLoadingUnitFails) {
       "main",                              // dart entrypoint
       std::nullopt,                        // dart entrypoint library
       std::move(isolate_configuration),    // isolate configuration
-      std::move(engine_context)            // engine context
+      std::move(context)                   // engine context
   );
 
   auto root_isolate = weak_isolate.lock();

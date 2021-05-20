@@ -95,7 +95,7 @@ Engine::Engine(Delegate& delegate,
       settings_.isolate_create_callback,     // isolate create callback
       settings_.isolate_shutdown_callback,   // isolate shutdown callback
       settings_.persistent_isolate_data,     // persistent isolate data
-      EngineContext{
+      UIDartState::Context{
           task_runners_,                           // task runners
           std::move(snapshot_delegate),            // snapshot delegate
           GetWeakPtr(),                            // hint freed delegate

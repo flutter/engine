@@ -119,10 +119,10 @@ std::unique_ptr<AutoIsolateShutdown> RunDartCodeInIsolateOnUITaskRunner(
   auto isolate_configuration =
       IsolateConfiguration::InferFromSettings(settings);
 
-  EngineContext engine_context(std::move(task_runners));
-  engine_context.io_manager = io_manager;
-  engine_context.advisory_script_uri = "main.dart";
-  engine_context.advisory_script_entrypoint = entrypoint.c_str();
+  UIDartState::Context context(std::move(task_runners));
+  context.io_manager = io_manager;
+  context.advisory_script_uri = "main.dart";
+  context.advisory_script_entrypoint = entrypoint.c_str();
 
   auto isolate =
       DartIsolate::CreateRunningRootIsolate(
@@ -135,7 +135,7 @@ std::unique_ptr<AutoIsolateShutdown> RunDartCodeInIsolateOnUITaskRunner(
           entrypoint,                          // entrypoint
           std::nullopt,                        // library
           std::move(isolate_configuration),    // isolate configuration
-          engine_context                       // engine context
+          context                              // engine context
           )
           .lock();
 

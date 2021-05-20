@@ -24,6 +24,31 @@ using tonic::ToDart;
 
 namespace flutter {
 
+UIDartState::Context::Context(const TaskRunners& task_runners)
+    : task_runners(task_runners) {}
+
+UIDartState::Context::Context(
+    const TaskRunners& task_runners,
+    fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
+    fml::WeakPtr<HintFreedDelegate> hint_freed_delegate,
+    fml::WeakPtr<IOManager> io_manager,
+    fml::RefPtr<SkiaUnrefQueue> unref_queue,
+    fml::WeakPtr<ImageDecoder> image_decoder,
+    fml::WeakPtr<ImageGeneratorRegistry> image_generator_registry,
+    std::string advisory_script_uri,
+    std::string advisory_script_entrypoint,
+    std::shared_ptr<VolatilePathTracker> volatile_path_tracker)
+    : task_runners(task_runners),
+      snapshot_delegate(snapshot_delegate),
+      hint_freed_delegate(hint_freed_delegate),
+      io_manager(io_manager),
+      unref_queue(unref_queue),
+      image_decoder(image_decoder),
+      image_generator_registry(image_generator_registry),
+      advisory_script_uri(advisory_script_uri),
+      advisory_script_entrypoint(advisory_script_entrypoint),
+      volatile_path_tracker(volatile_path_tracker) {}
+
 UIDartState::UIDartState(
     TaskObserverAdd add_callback,
     TaskObserverRemove remove_callback,
@@ -33,7 +58,7 @@ UIDartState::UIDartState(
     std::shared_ptr<IsolateNameServer> isolate_name_server,
     bool is_root_isolate,
     bool enable_skparagraph,
-    const EngineContext& engine_context)
+    const UIDartState::Context& context)
     : add_callback_(std::move(add_callback)),
       remove_callback_(std::move(remove_callback)),
       logger_prefix_(std::move(logger_prefix)),
@@ -42,7 +67,7 @@ UIDartState::UIDartState(
       log_message_callback_(log_message_callback),
       isolate_name_server_(std::move(isolate_name_server)),
       enable_skparagraph_(enable_skparagraph),
-      engine_context_(std::move(engine_context)) {
+      context_(std::move(context)) {
   AddOrRemoveTaskObserver(true /* add */);
 }
 
@@ -51,19 +76,19 @@ UIDartState::~UIDartState() {
 }
 
 const std::string& UIDartState::GetAdvisoryScriptURI() const {
-  return engine_context_.advisory_script_uri;
+  return context_.advisory_script_uri;
 }
 
 const std::string& UIDartState::GetAdvisoryScriptEntrypoint() const {
-  return engine_context_.advisory_script_entrypoint;
+  return context_.advisory_script_entrypoint;
 }
 
 void UIDartState::DidSetIsolate() {
   main_port_ = Dart_GetMainPortId();
   std::ostringstream debug_name;
   // main.dart$main-1234
-  debug_name << engine_context_.advisory_script_uri << "$"
-             << engine_context_.advisory_script_entrypoint << "-" << main_port_;
+  debug_name << context_.advisory_script_uri << "$"
+             << context_.advisory_script_entrypoint << "-" << main_port_;
   SetDebugName(debug_name.str());
 }
 
@@ -96,20 +121,20 @@ void UIDartState::SetPlatformConfiguration(
 }
 
 const TaskRunners& UIDartState::GetTaskRunners() const {
-  return engine_context_.task_runners;
+  return context_.task_runners;
 }
 
 fml::WeakPtr<IOManager> UIDartState::GetIOManager() const {
-  return engine_context_.io_manager;
+  return context_.io_manager;
 }
 
 fml::RefPtr<flutter::SkiaUnrefQueue> UIDartState::GetSkiaUnrefQueue() const {
-  return engine_context_.unref_queue;
+  return context_.unref_queue;
 }
 
 std::shared_ptr<VolatilePathTracker> UIDartState::GetVolatilePathTracker()
     const {
-  return engine_context_.volatile_path_tracker;
+  return context_.volatile_path_tracker;
 }
 
 void UIDartState::ScheduleMicrotask(Dart_Handle closure) {
@@ -125,7 +150,7 @@ void UIDartState::FlushMicrotasksNow() {
 }
 
 void UIDartState::AddOrRemoveTaskObserver(bool add) {
-  auto task_runner = engine_context_.task_runners.GetUITaskRunner();
+  auto task_runner = context_.task_runners.GetUITaskRunner();
   if (!task_runner) {
     // This may happen in case the isolate has no thread affinity (for example,
     // the service isolate).
@@ -141,27 +166,27 @@ void UIDartState::AddOrRemoveTaskObserver(bool add) {
 }
 
 fml::WeakPtr<SnapshotDelegate> UIDartState::GetSnapshotDelegate() const {
-  return engine_context_.snapshot_delegate;
+  return context_.snapshot_delegate;
 }
 
 fml::WeakPtr<HintFreedDelegate> UIDartState::GetHintFreedDelegate() const {
-  return engine_context_.hint_freed_delegate;
+  return context_.hint_freed_delegate;
 }
 
 fml::WeakPtr<GrDirectContext> UIDartState::GetResourceContext() const {
-  if (!engine_context_.io_manager) {
+  if (!context_.io_manager) {
     return {};
   }
-  return engine_context_.io_manager->GetResourceContext();
+  return context_.io_manager->GetResourceContext();
 }
 
 fml::WeakPtr<ImageDecoder> UIDartState::GetImageDecoder() const {
-  return engine_context_.image_decoder;
+  return context_.image_decoder;
 }
 
 fml::WeakPtr<ImageGeneratorRegistry> UIDartState::GetImageGeneratorRegistry()
     const {
-  return engine_context_.image_generator_registry;
+  return context_.image_generator_registry;
 }
 
 std::shared_ptr<IsolateNameServer> UIDartState::GetIsolateNameServer() const {

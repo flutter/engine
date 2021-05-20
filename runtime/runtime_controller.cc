@@ -19,7 +19,7 @@ namespace flutter {
 
 RuntimeController::RuntimeController(RuntimeDelegate& p_client,
                                      TaskRunners task_runners)
-    : client_(p_client), vm_(nullptr), engine_context_(task_runners) {}
+    : client_(p_client), vm_(nullptr), context_(task_runners) {}
 
 RuntimeController::RuntimeController(
     RuntimeDelegate& p_client,
@@ -30,7 +30,7 @@ RuntimeController::RuntimeController(
     const fml::closure& p_isolate_create_callback,
     const fml::closure& p_isolate_shutdown_callback,
     std::shared_ptr<const fml::Mapping> p_persistent_isolate_data,
-    const EngineContext& p_engine_context)
+    const UIDartState::Context& p_context)
     : client_(p_client),
       vm_(p_vm),
       isolate_snapshot_(p_isolate_snapshot),
@@ -39,7 +39,7 @@ RuntimeController::RuntimeController(
       isolate_create_callback_(p_isolate_create_callback),
       isolate_shutdown_callback_(p_isolate_shutdown_callback),
       persistent_isolate_data_(std::move(p_persistent_isolate_data)),
-      engine_context_(p_engine_context) {}
+      context_(p_context) {}
 
 std::unique_ptr<RuntimeController> RuntimeController::Spawn(
     RuntimeDelegate& p_client,
@@ -58,7 +58,7 @@ std::unique_ptr<RuntimeController> RuntimeController::Spawn(
                                           p_isolate_create_callback,     //
                                           p_isolate_shutdown_callback,   //
                                           p_persistent_isolate_data,     //
-                                          engine_context_);              //
+                                          context_);                     //
   result->spawning_isolate_ = root_isolate_;
   return result;
 }
@@ -93,7 +93,7 @@ std::unique_ptr<RuntimeController> RuntimeController::Clone() const {
                                              isolate_create_callback_,     //
                                              isolate_shutdown_callback_,   //
                                              persistent_isolate_data_,     //
-                                             engine_context_               //
+                                             context_                      //
   );
 }
 
@@ -376,7 +376,7 @@ bool RuntimeController::LaunchRootIsolate(
           dart_entrypoint,                                //
           dart_entrypoint_library,                        //
           std::move(isolate_configuration),               //
-          engine_context_,                                //
+          context_,                                       //
           spawning_isolate_.lock().get())                 //
           .lock();
 

@@ -28,9 +28,9 @@ TEST_F(DartState, IsShuttingDown) {
   auto isolate_configuration =
       IsolateConfiguration::InferFromSettings(settings);
 
-  EngineContext engine_context(std::move(task_runners));
-  engine_context.advisory_script_uri = "main.dart";
-  engine_context.advisory_script_entrypoint = "main";
+  UIDartState::Context context(std::move(task_runners));
+  context.advisory_script_uri = "main.dart";
+  context.advisory_script_entrypoint = "main";
   auto weak_isolate = DartIsolate::CreateRunningRootIsolate(
       vm_data->GetSettings(),              // settings
       vm_data->GetIsolateSnapshot(),       // isolate snapshot
@@ -41,7 +41,7 @@ TEST_F(DartState, IsShuttingDown) {
       "main",                              // dart entrypoint
       std::nullopt,                        // dart entrypoint library
       std::move(isolate_configuration),    // isolate configuration
-      std::move(engine_context)            // engine context
+      std::move(context)                   // engine context
   );
   auto root_isolate = weak_isolate.lock();
   ASSERT_TRUE(root_isolate);

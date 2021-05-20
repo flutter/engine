@@ -20,7 +20,6 @@
 #include "flutter/lib/ui/window/platform_configuration.h"
 #include "flutter/lib/ui/window/pointer_data_packet.h"
 #include "flutter/runtime/dart_vm.h"
-#include "flutter/runtime/engine_context.h"
 #include "flutter/runtime/platform_data.h"
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
@@ -75,7 +74,7 @@ class RuntimeController : public PlatformConfigurationClient {
   /// @param[in]  persistent_isolate_data     Unstructured persistent read-only
   ///                                         data that the root isolate can
   ///                                         access in a synchronous manner.
-  /// @param[in]  engine_context              Engine-owned state which is
+  /// @param[in]  context              Engine-owned state which is
   ///                                         accessed by the root dart isolate.
   ///
   RuntimeController(
@@ -87,7 +86,7 @@ class RuntimeController : public PlatformConfigurationClient {
       const fml::closure& isolate_create_callback,
       const fml::closure& isolate_shutdown_callback,
       std::shared_ptr<const fml::Mapping> p_persistent_isolate_data,
-      const EngineContext& engine_context);
+      const UIDartState::Context& context);
 
   //----------------------------------------------------------------------------
   /// @brief      Create a RuntimeController that shares as many resources as
@@ -538,7 +537,7 @@ class RuntimeController : public PlatformConfigurationClient {
   // |PlatformConfigurationClient|
   void RequestDartDeferredLibrary(intptr_t loading_unit_id) override;
   const fml::WeakPtr<IOManager>& GetIOManager() const {
-    return engine_context_.io_manager;
+    return context_.io_manager;
   }
 
   virtual DartVM* GetDartVM() const { return vm_; }
@@ -550,11 +549,11 @@ class RuntimeController : public PlatformConfigurationClient {
   const PlatformData& GetPlatformData() const { return platform_data_; }
 
   const fml::RefPtr<SkiaUnrefQueue>& GetSkiaUnrefQueue() const {
-    return engine_context_.unref_queue;
+    return context_.unref_queue;
   }
 
   const fml::WeakPtr<SnapshotDelegate>& GetSnapshotDelegate() const {
-    return engine_context_.snapshot_delegate;
+    return context_.snapshot_delegate;
   }
 
  protected:
@@ -587,7 +586,7 @@ class RuntimeController : public PlatformConfigurationClient {
   const fml::closure isolate_create_callback_;
   const fml::closure isolate_shutdown_callback_;
   std::shared_ptr<const fml::Mapping> persistent_isolate_data_;
-  EngineContext engine_context_;
+  UIDartState::Context context_;
 
   PlatformConfiguration* GetPlatformConfigurationIfAvailable();
 

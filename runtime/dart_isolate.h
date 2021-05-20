@@ -21,7 +21,6 @@
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "flutter/lib/ui/window/platform_configuration.h"
 #include "flutter/runtime/dart_snapshot.h"
-#include "flutter/runtime/engine_context.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 #include "third_party/tonic/dart_state.h"
 
@@ -188,7 +187,7 @@ class DartIsolate : public UIDartState {
   ///                                         isolate is still running at this
   ///                                         point and an isolate scope is
   ///                                         current.
-  /// @param[in]  engine_context              Engine-owned state which is
+  /// @param[in]  context              Engine-owned state which is
   ///                                         accessed by the root dart isolate.
   /// @param[in]  spawning_isolate            The isolate that is spawning the
   ///                                         new isolate. See also
@@ -209,7 +208,7 @@ class DartIsolate : public UIDartState {
       std::optional<std::string> dart_entrypoint,
       std::optional<std::string> dart_entrypoint_library,
       std::unique_ptr<IsolateConfiguration> isolate_configration,
-      const EngineContext& engine_context,
+      const UIDartState::Context& context,
       const DartIsolate* spawning_isolate = nullptr);
 
   //----------------------------------------------------------------------------
@@ -433,12 +432,12 @@ class DartIsolate : public UIDartState {
       Flags flags,
       const fml::closure& isolate_create_callback,
       const fml::closure& isolate_shutdown_callback,
-      const EngineContext& engine_context,
+      const UIDartState::Context& context,
       const DartIsolate* spawning_isolate = nullptr);
 
   DartIsolate(const Settings& settings,
               bool is_root_isolate,
-              const EngineContext& engine_context);
+              const UIDartState::Context& context);
 
   [[nodiscard]] bool Initialize(Dart_Isolate isolate);
 

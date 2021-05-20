@@ -92,26 +92,26 @@ std::weak_ptr<DartIsolate> DartIsolate::SpawnIsolate(
     std::optional<std::string> dart_entrypoint_library,
     std::unique_ptr<IsolateConfiguration> isolate_configration) const {
   return CreateRunningRootIsolate(
-      settings,                                    //
-      GetIsolateGroupData().GetIsolateSnapshot(),  //
-      std::move(platform_configuration),           //
-      flags,                                       //
-      isolate_create_callback,                     //
-      isolate_shutdown_callback,                   //
-      dart_entrypoint,                             //
-      dart_entrypoint_library,                     //
-      std::move(isolate_configration),             //
-      EngineContext{GetTaskRunners(),              //
-                    snapshot_delegate,             //
-                    hint_freed_delegate,           //
-                    GetIOManager(),                //
-                    GetSkiaUnrefQueue(),           //
-                    GetImageDecoder(),             //
-                    GetImageGeneratorRegistry(),   //
-                    advisory_script_uri,           //
-                    advisory_script_entrypoint,    //
-                    GetVolatilePathTracker()},     //
-      this                                         //
+      settings,                                          //
+      GetIsolateGroupData().GetIsolateSnapshot(),        //
+      std::move(platform_configuration),                 //
+      flags,                                             //
+      isolate_create_callback,                           //
+      isolate_shutdown_callback,                         //
+      dart_entrypoint,                                   //
+      dart_entrypoint_library,                           //
+      std::move(isolate_configration),                   //
+      UIDartState::Context{GetTaskRunners(),             //
+                           snapshot_delegate,            //
+                           hint_freed_delegate,          //
+                           GetIOManager(),               //
+                           GetSkiaUnrefQueue(),          //
+                           GetImageDecoder(),            //
+                           GetImageGeneratorRegistry(),  //
+                           advisory_script_uri,          //
+                           advisory_script_entrypoint,   //
+                           GetVolatilePathTracker()},    //
+      this                                               //
   );
 }
 
@@ -125,7 +125,7 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRunningRootIsolate(
     std::optional<std::string> dart_entrypoint,
     std::optional<std::string> dart_entrypoint_library,
     std::unique_ptr<IsolateConfiguration> isolate_configration,
-    const EngineContext& engine_context,
+    const UIDartState::Context& context,
     const DartIsolate* spawning_isolate) {
   if (!isolate_snapshot) {
     FML_LOG(ERROR) << "Invalid isolate snapshot.";
@@ -146,7 +146,7 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRunningRootIsolate(
                                    isolate_flags,                      //
                                    isolate_create_callback,            //
                                    isolate_shutdown_callback,          //
-                                   engine_context,                     //
+                                   context,                            //
                                    spawning_isolate                    //
                                    )
                      .lock();
@@ -217,7 +217,7 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
     Flags flags,
     const fml::closure& isolate_create_callback,
     const fml::closure& isolate_shutdown_callback,
-    const EngineContext& engine_context,
+    const UIDartState::Context& context,
     const DartIsolate* spawning_isolate) {
   TRACE_EVENT0("flutter", "DartIsolate::CreateRootIsolate");
 
@@ -226,20 +226,20 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
   auto isolate_group_data =
       std::make_unique<std::shared_ptr<DartIsolateGroupData>>(
           std::shared_ptr<DartIsolateGroupData>(new DartIsolateGroupData(
-              settings,                                   // settings
-              std::move(isolate_snapshot),                // isolate snapshot
-              engine_context.advisory_script_uri,         // advisory URI
-              engine_context.advisory_script_entrypoint,  // advisory entrypoint
-              nullptr,                   // child isolate preparer
-              isolate_create_callback,   // isolate create callback
-              isolate_shutdown_callback  // isolate shutdown callback
+              settings,                            // settings
+              std::move(isolate_snapshot),         // isolate snapshot
+              context.advisory_script_uri,         // advisory URI
+              context.advisory_script_entrypoint,  // advisory entrypoint
+              nullptr,                             // child isolate preparer
+              isolate_create_callback,             // isolate create callback
+              isolate_shutdown_callback            // isolate shutdown callback
               )));
 
   auto isolate_data = std::make_unique<std::shared_ptr<DartIsolate>>(
       std::shared_ptr<DartIsolate>(new DartIsolate(
-          settings,                  // settings
-          true,                      // is_root_isolate
-          std::move(engine_context)  // engine_context
+          settings,           // settings
+          true,               // is_root_isolate
+          std::move(context)  // context
           )));
 
   DartErrorString error;
@@ -302,7 +302,7 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
 
 DartIsolate::DartIsolate(const Settings& settings,
                          bool is_root_isolate,
-                         const EngineContext& engine_context)
+                         const UIDartState::Context& context)
     : UIDartState(settings.task_observer_add,
                   settings.task_observer_remove,
                   settings.log_tag,
@@ -311,7 +311,7 @@ DartIsolate::DartIsolate(const Settings& settings,
                   DartVMRef::GetIsolateNameServer(),
                   is_root_isolate,
                   settings.enable_skparagraph,
-                  std::move(engine_context)),
+                  std::move(context)),
       may_insecurely_connect_to_all_domains_(
           settings.may_insecurely_connect_to_all_domains),
       domain_network_policy_(settings.domain_network_policy) {
@@ -821,11 +821,11 @@ Dart_Isolate DartIsolate::DartCreateAndStartServiceIsolate(
       vm_data->GetIsolateSnapshot()->IsNullSafetyEnabled(nullptr);
 #endif
 
-  EngineContext engine_context(
+  UIDartState::Context context(
       TaskRunners("io.flutter." DART_VM_SERVICE_ISOLATE_NAME, nullptr, nullptr,
                   nullptr, nullptr));
-  engine_context.advisory_script_uri = DART_VM_SERVICE_ISOLATE_NAME;
-  engine_context.advisory_script_entrypoint = DART_VM_SERVICE_ISOLATE_NAME;
+  context.advisory_script_uri = DART_VM_SERVICE_ISOLATE_NAME;
+  context.advisory_script_entrypoint = DART_VM_SERVICE_ISOLATE_NAME;
   std::weak_ptr<DartIsolate> weak_service_isolate =
       DartIsolate::CreateRootIsolate(vm_data->GetSettings(),         //
                                      vm_data->GetIsolateSnapshot(),  //
@@ -833,7 +833,7 @@ Dart_Isolate DartIsolate::DartCreateAndStartServiceIsolate(
                                      DartIsolate::Flags{flags},      //
                                      nullptr,                        //
                                      nullptr,                        //
-                                     engine_context);                //
+                                     context);                       //
 
   std::shared_ptr<DartIsolate> service_isolate = weak_service_isolate.lock();
   if (!service_isolate) {
@@ -940,14 +940,14 @@ Dart_Isolate DartIsolate::DartIsolateGroupCreateCallback(
                                 /* ui= */ nullptr,
                                 /* io= */ nullptr);
 
-  EngineContext engine_context(null_task_runners);
-  engine_context.advisory_script_uri = advisory_script_uri;
-  engine_context.advisory_script_entrypoint = advisory_script_entrypoint;
+  UIDartState::Context context(null_task_runners);
+  context.advisory_script_uri = advisory_script_uri;
+  context.advisory_script_entrypoint = advisory_script_entrypoint;
   auto isolate_data = std::make_unique<std::shared_ptr<DartIsolate>>(
       std::shared_ptr<DartIsolate>(
           new DartIsolate((*isolate_group_data)->GetSettings(),  // settings
-                          false,              // is_root_isolate
-                          engine_context)));  // engine_context
+                          false,       // is_root_isolate
+                          context)));  // context
 
   Dart_Isolate vm_isolate = CreateDartIsolateGroup(
       std::move(isolate_group_data), std::move(isolate_data), flags, error,
@@ -992,16 +992,15 @@ bool DartIsolate::DartIsolateInitializeCallback(void** child_callback_data,
                                 /* ui= */ nullptr,
                                 /* io= */ nullptr);
 
-  EngineContext engine_context(null_task_runners);
-  engine_context.advisory_script_uri =
-      (*isolate_group_data)->GetAdvisoryScriptURI();
-  engine_context.advisory_script_entrypoint =
+  UIDartState::Context context(null_task_runners);
+  context.advisory_script_uri = (*isolate_group_data)->GetAdvisoryScriptURI();
+  context.advisory_script_entrypoint =
       (*isolate_group_data)->GetAdvisoryScriptEntrypoint();
   auto embedder_isolate = std::make_unique<std::shared_ptr<DartIsolate>>(
       std::shared_ptr<DartIsolate>(
           new DartIsolate((*isolate_group_data)->GetSettings(),  // settings
-                          false,              // is_root_isolate
-                          engine_context)));  // engine_context
+                          false,       // is_root_isolate
+                          context)));  // context
 
   // root isolate should have been created via CreateRootIsolate
   if (!InitializeIsolate(*embedder_isolate, isolate, error)) {
