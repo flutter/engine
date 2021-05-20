@@ -51,8 +51,7 @@ TEST_F(DartIsolateTest, RootIsolateCreationAndShutdown) {
   auto isolate_configuration =
       IsolateConfiguration::InferFromSettings(settings);
 
-  EngineContext engine_context;
-  engine_context.task_runners = std::move(task_runners);
+  EngineContext engine_context(std::move(task_runners));
   engine_context.advisory_script_uri = "main.dart";
   engine_context.advisory_script_entrypoint = "main";
   auto weak_isolate = DartIsolate::CreateRunningRootIsolate(
@@ -90,8 +89,7 @@ TEST_F(DartIsolateTest, SpawnIsolate) {
   auto isolate_configuration =
       IsolateConfiguration::InferFromSettings(settings);
 
-  EngineContext engine_context;
-  engine_context.task_runners = std::move(task_runners);
+  EngineContext engine_context(std::move(task_runners));
   engine_context.advisory_script_uri = "main.dart";
   engine_context.advisory_script_entrypoint = "main";
   auto weak_isolate = DartIsolate::CreateRunningRootIsolate(
@@ -165,8 +163,7 @@ TEST_F(DartIsolateTest, IsolateShutdownCallbackIsInIsolateScope) {
   auto isolate_configuration =
       IsolateConfiguration::InferFromSettings(settings);
 
-  EngineContext engine_context;
-  engine_context.task_runners = std::move(task_runners);
+  EngineContext engine_context(std::move(task_runners));
   engine_context.advisory_script_uri = "main.dart";
   engine_context.advisory_script_entrypoint = "main";
   auto weak_isolate = DartIsolate::CreateRunningRootIsolate(
@@ -421,8 +418,7 @@ TEST_F(DartIsolateTest, CanCreateServiceIsolate) {
   auto isolate_configuration =
       IsolateConfiguration::InferFromSettings(settings);
 
-  EngineContext engine_context;
-  engine_context.task_runners = std::move(task_runners);
+  EngineContext engine_context(std::move(task_runners));
   engine_context.advisory_script_uri = "main.dart";
   engine_context.advisory_script_entrypoint = "main";
   auto weak_isolate = DartIsolate::CreateRunningRootIsolate(
@@ -520,8 +516,7 @@ TEST_F(DartIsolateTest, InvalidLoadingUnitFails) {
   auto isolate_configuration =
       IsolateConfiguration::InferFromSettings(settings);
 
-  EngineContext engine_context;
-  engine_context.task_runners = std::move(task_runners);
+  EngineContext engine_context(std::move(task_runners));
   engine_context.advisory_script_uri = "main.dart";
   engine_context.advisory_script_entrypoint = "main";
   auto weak_isolate = DartIsolate::CreateRunningRootIsolate(

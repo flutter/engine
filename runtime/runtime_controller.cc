@@ -19,9 +19,7 @@ namespace flutter {
 
 RuntimeController::RuntimeController(RuntimeDelegate& p_client,
                                      TaskRunners task_runners)
-    : client_(p_client), vm_(nullptr) {
-  engine_context_.task_runners = task_runners;
-}
+    : client_(p_client), vm_(nullptr), engine_context_(task_runners) {}
 
 RuntimeController::RuntimeController(
     RuntimeDelegate& p_client,

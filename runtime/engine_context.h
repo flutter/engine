@@ -30,9 +30,9 @@ class VolatilePathTracker;
 /// @brief  The subset of engine-owned state which is passed through the
 ///         runtime controller and accessible via the UIDartState.
 struct EngineContext {
-  EngineContext();
+  EngineContext(const TaskRunners& task_runners);
 
-  EngineContext(TaskRunners task_runners,
+  EngineContext(const TaskRunners& task_runners,
                 fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
                 fml::WeakPtr<HintFreedDelegate> hint_freed_delegate,
                 fml::WeakPtr<IOManager> io_manager,
@@ -46,7 +46,7 @@ struct EngineContext {
   /// The task runners used by the shell hosting this runtime controller. This
   /// may be used by the isolate to scheduled asynchronous texture uploads or
   /// post tasks to the platform task runner.
-  TaskRunners task_runners;
+  const TaskRunners task_runners;
 
   /// The snapshot delegate used by the
   /// isolate to gather raster snapshots

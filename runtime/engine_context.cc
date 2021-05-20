@@ -8,15 +8,11 @@
 
 namespace flutter {
 
-EngineContext::EngineContext()
-    : task_runners("io.flutter." DART_VM_SERVICE_ISOLATE_NAME,
-                   nullptr,
-                   nullptr,
-                   nullptr,
-                   nullptr) {}
+EngineContext::EngineContext(const TaskRunners& task_runners)
+    : task_runners(task_runners) {}
 
 EngineContext::EngineContext(
-    TaskRunners task_runners,
+    const TaskRunners& task_runners,
     fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
     fml::WeakPtr<HintFreedDelegate> hint_freed_delegate,
     fml::WeakPtr<IOManager> io_manager,

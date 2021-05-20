@@ -821,7 +821,9 @@ Dart_Isolate DartIsolate::DartCreateAndStartServiceIsolate(
       vm_data->GetIsolateSnapshot()->IsNullSafetyEnabled(nullptr);
 #endif
 
-  EngineContext engine_context;
+  EngineContext engine_context(
+      TaskRunners("io.flutter." DART_VM_SERVICE_ISOLATE_NAME, nullptr, nullptr,
+                  nullptr, nullptr));
   engine_context.advisory_script_uri = DART_VM_SERVICE_ISOLATE_NAME;
   engine_context.advisory_script_entrypoint = DART_VM_SERVICE_ISOLATE_NAME;
   std::weak_ptr<DartIsolate> weak_service_isolate =
@@ -938,8 +940,7 @@ Dart_Isolate DartIsolate::DartIsolateGroupCreateCallback(
                                 /* ui= */ nullptr,
                                 /* io= */ nullptr);
 
-  EngineContext engine_context;
-  engine_context.task_runners = null_task_runners;
+  EngineContext engine_context(null_task_runners);
   engine_context.advisory_script_uri = advisory_script_uri;
   engine_context.advisory_script_entrypoint = advisory_script_entrypoint;
   auto isolate_data = std::make_unique<std::shared_ptr<DartIsolate>>(
@@ -991,8 +992,7 @@ bool DartIsolate::DartIsolateInitializeCallback(void** child_callback_data,
                                 /* ui= */ nullptr,
                                 /* io= */ nullptr);
 
-  EngineContext engine_context;
-  engine_context.task_runners = null_task_runners;
+  EngineContext engine_context(null_task_runners);
   engine_context.advisory_script_uri =
       (*isolate_group_data)->GetAdvisoryScriptURI();
   engine_context.advisory_script_entrypoint =

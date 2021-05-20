@@ -22,8 +22,6 @@ class TaskRunners {
 
   TaskRunners(const TaskRunners& other);
 
-  TaskRunners& operator=(const TaskRunners& other);
-
   ~TaskRunners();
 
   const std::string& GetLabel() const;
@@ -39,7 +37,7 @@ class TaskRunners {
   bool IsValid() const;
 
  private:
-  std::string label_;
+  const std::string label_;
   fml::RefPtr<fml::TaskRunner> platform_;
   fml::RefPtr<fml::TaskRunner> raster_;
   fml::RefPtr<fml::TaskRunner> ui_;

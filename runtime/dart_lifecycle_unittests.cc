@@ -55,8 +55,7 @@ static std::shared_ptr<DartIsolate> CreateAndRunRootIsolate(
   auto isolate_configuration =
       IsolateConfiguration::InferFromSettings(settings);
 
-  EngineContext engine_context;
-  engine_context.task_runners = runners;
+  EngineContext engine_context(runners);
   engine_context.advisory_script_uri = "main.dart";
   engine_context.advisory_script_entrypoint = entrypoint.c_str();
   auto isolate =
