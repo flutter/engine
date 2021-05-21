@@ -39,7 +39,6 @@ void setUpCanvasKitTest() {
   tearDown(() {
     testCollector.cleanUpAfterTest();
     debugResetBrowserSupportsFinalizationRegistry();
-    HtmlViewEmbedder.instance.debugClear();
     SurfaceFactory.instance.debugClear();
   });
 
@@ -135,13 +134,15 @@ class TestCollector implements Collector {
             return identical(
                 completedCollection.deletable, collection.deletable);
           });
-          fail('Attempted to collect an object that was previously collected.\n'
-              'The object was registered for finalization here:\n'
-              '${collection.stackTrace}\n\n'
-              'The first collection was requested here:\n'
-              '${firstCollection.stackTrace}\n\n'
-              'The second collection was requested here:\n'
-              '${collection.stackTrace}');
+          fail(
+            'Attempted to collect an object that was previously collected.\n'
+            'The object was registered for finalization here:\n'
+            '${collection.stackTrace}\n\n'
+            'The first collection was requested here:\n'
+            '${firstCollection.stackTrace}\n\n'
+            'The second collection was requested here:\n'
+            '${collection.stackTrace}',
+          );
         }
       } else {
         _collectedRegistrations.add(activeRegistration);

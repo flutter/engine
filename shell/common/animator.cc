@@ -29,12 +29,12 @@ Animator::Animator(Delegate& delegate,
       waiter_(std::move(waiter)),
       dart_frame_deadline_(0),
 #if SHELL_ENABLE_METAL
-      layer_tree_pipeline_(fml::MakeRefCounted<LayerTreePipeline>(2)),
+      layer_tree_pipeline_(std::make_shared<LayerTreePipeline>(2)),
 #else   // SHELL_ENABLE_METAL
       // TODO(dnfield): We should remove this logic and set the pipeline depth
       // back to 2 in this case. See
       // https://github.com/flutter/engine/pull/9132 for discussion.
-      layer_tree_pipeline_(fml::MakeRefCounted<LayerTreePipeline>(
+      layer_tree_pipeline_(std::make_shared<LayerTreePipeline>(
           task_runners.GetPlatformTaskRunner() ==
                   task_runners.GetRasterTaskRunner()
               ? 1
@@ -101,7 +101,8 @@ static int64_t FxlToDartOrEarlier(fml::TimePoint time) {
 void Animator::BeginFrame(
     std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) {
   TRACE_EVENT_ASYNC_END0("flutter", "Frame Request Pending",
-                         frame_timings_recorder->GetFrameNumber());
+                         frame_request_number_);
+  frame_request_number_++;
 
   frame_timings_recorder_ = std::move(frame_timings_recorder);
   frame_timings_recorder_->RecordBuildStart(fml::TimePoint::Now());
@@ -129,6 +130,7 @@ void Animator::BeginFrame(
       // If we still don't have valid continuation, the pipeline is currently
       // full because the consumer is being too slow. Try again at the next
       // frame interval.
+      TRACE_EVENT0("flutter", "PipelineFull");
       RequestFrame();
       return;
     }
@@ -246,19 +248,16 @@ void Animator::RequestFrame(bool regenerate_layer_tree) {
   // started an expensive operation right after posting this message however.
   // To support that, we need edge triggered wakes on VSync.
 
-  uint64_t frame_number = 0;
-  if (frame_timings_recorder_) {
-    frame_number = frame_timings_recorder_->GetFrameNumber();
-  }
-
-  task_runners_.GetUITaskRunner()->PostTask([self = weak_factory_.GetWeakPtr(),
-                                             frame_number = frame_number]() {
-    if (!self) {
-      return;
-    }
-    TRACE_EVENT_ASYNC_BEGIN0("flutter", "Frame Request Pending", frame_number);
-    self->AwaitVSync();
-  });
+  task_runners_.GetUITaskRunner()->PostTask(
+      [self = weak_factory_.GetWeakPtr(),
+       frame_request_number = frame_request_number_]() {
+        if (!self) {
+          return;
+        }
+        TRACE_EVENT_ASYNC_BEGIN0("flutter", "Frame Request Pending",
+                                 frame_request_number);
+        self->AwaitVSync();
+      });
   frame_scheduled_ = true;
 }
 

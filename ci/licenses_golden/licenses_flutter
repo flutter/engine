@@ -543,6 +543,9 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/onscreen_logging.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/picture.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/platform_dispatcher.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/platform_views.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/platform_views/content_manager.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/platform_views/message_handler.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/platform_views/slots.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/plugins.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/pointer_binding.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/pointer_converter.dart
@@ -1374,11 +1377,8 @@ FILE: ../../../flutter/shell/platform/fuchsia/flutter/task_runner_adapter.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/thread.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/thread.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/unique_fdio_ns.h
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/vsync_recorder.cc
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/vsync_recorder.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/vsync_waiter.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/vsync_waiter.h
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/vsync_waiter_unittests.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/vulkan_surface.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/vulkan_surface.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/vulkan_surface_pool.cc
@@ -1612,6 +1612,8 @@ FILE: ../../../flutter/shell/platform/windows/text_input_plugin.cc
 FILE: ../../../flutter/shell/platform/windows/text_input_plugin.h
 FILE: ../../../flutter/shell/platform/windows/text_input_plugin_delegate.h
 FILE: ../../../flutter/shell/platform/windows/text_input_plugin_unittest.cc
+FILE: ../../../flutter/shell/platform/windows/uwptool_commands.cc
+FILE: ../../../flutter/shell/platform/windows/uwptool_commands.h
 FILE: ../../../flutter/shell/platform/windows/uwptool_main.cc
 FILE: ../../../flutter/shell/platform/windows/uwptool_utils.cc
 FILE: ../../../flutter/shell/platform/windows/uwptool_utils.h
