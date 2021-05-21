@@ -25,7 +25,10 @@ class HtmlViewEmbedder {
   HtmlViewEmbedder._();
 
   /// The maximum number of overlay surfaces that can be live at once.
-  static const int maximumOverlaySurfaces = 8;
+  static const int maximumOverlaySurfaces = const int.fromEnvironment(
+    'FLUTTER_WEB_MAXIMUM_OVERLAYS',
+    defaultValue: 8,
+  );
 
   /// The picture recorder shared by all platform views which paint to the
   /// backup surface.
@@ -438,6 +441,9 @@ class HtmlViewEmbedder {
         assert(_viewsUsingBackupSurface.contains(viewId));
         _viewsUsingBackupSurface.remove(viewId);
         _overlays.remove(viewId);
+        // If no views use the backup surface, then we can release it. This
+        // happens when the number of live platform views drops below the
+        // maximum overlay surfaces, so the backup surface is no longer needed.
         if (_viewsUsingBackupSurface.isEmpty) {
           SurfaceFactory.instance.releaseSurface(overlay);
         }
