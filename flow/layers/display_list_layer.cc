@@ -5,7 +5,6 @@
 #include "flutter/flow/layers/display_list_layer.h"
 
 #include "flutter/flow/display_list_interpreter.h"
-#include "third_party/tonic/typed_data/dart_byte_data.h"
 
 namespace flutter {
 
