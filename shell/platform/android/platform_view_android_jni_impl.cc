@@ -836,7 +836,8 @@ bool RegisterApi(JNIEnv* env) {
   }
 
   g_handle_platform_message_response_method = env->GetMethodID(
-      g_flutter_jni_class->obj(), "handlePlatformMessageResponse", "(ILjava/nio/ByteBuffer;)V");
+      g_flutter_jni_class->obj(), "handlePlatformMessageResponse",
+      "(ILjava/nio/ByteBuffer;)V");
 
   if (g_handle_platform_message_response_method == nullptr) {
     FML_LOG(ERROR) << "Could not locate handlePlatformMessageResponse method";

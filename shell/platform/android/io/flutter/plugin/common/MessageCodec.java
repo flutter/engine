@@ -26,8 +26,8 @@ public interface MessageCodec<T> {
   /**
    * Decodes the specified message from binary.
    *
-   * <p><b>Warning:</b> The ByteBuffer may be `direct`.  Do not retain references to
-   * the ByteBuffer without checking `ByteBuffer.isDirect()`.  See also:
+   * <p><b>Warning:</b> The ByteBuffer may be `direct`. Do not retain references to the ByteBuffer
+   * without checking `ByteBuffer.isDirect()`. See also:
    * https://docs.oracle.com/javase/7/docs/api/java/nio/ByteBuffer.html
    *
    * @param message the {@link ByteBuffer} message, possibly null.
