@@ -77,6 +77,12 @@ class _Transpiler {
   /// ID mapped to ID. Used by [OpLoad].
   final Map<int, int> alias = <int, int>{};
 
+  /// Set of IDs for constant true values.
+  final Set<int> constantTrues = <int>{};
+
+  /// Set of IDs for constant false values.
+  final Set<int> constantFalses = <int>{};
+
   /// The current word-index in the SPIR-V buffer.
   int position = 0;
 
@@ -182,6 +188,12 @@ class _Transpiler {
       return _mainFunctionName;
     } else if (id == fragCoord && target != TargetLanguage.sksl) {
       return _glslFragCoord;
+    }
+    if (constantTrues.contains(id)) {
+      return 'true';
+    }
+    if (constantFalses.contains(id)) {
+      return 'false';
     }
     return 'i$id';
   }
@@ -442,7 +454,7 @@ class _Transpiler {
     types[readWord()] = _Type._bool;
   }
 
-    void opTypeInt() {
+  void opTypeInt() {
     final int id = readWord();
     types[id] = _Type._int;
     intType = id;
@@ -538,15 +550,13 @@ class _Transpiler {
   void opConstantTrue() {
     final int type = readWord();
     final String id = resolveName(readWord());
-    final String typeName = resolveType(type);
-    src.writeln('const $typeName $id = true;');
+    constantTrues.add(id);
   }
 
   void opConstantFalse() {
     final int type = readWord();
     final String id = resolveName(readWord());
-    final String typeName = resolveType(type);
-    src.writeln('const $typeName $id = false;');
+    constantFalses.add(id);
   }
 
   void opConstant() {
@@ -628,7 +638,7 @@ class _Transpiler {
 
     final int type = readWord();
     final int id = readWord();
-    final String decl = resolveType(type) + ' ' + resolveName(id);
+    final String decl = '${resolveType(type)} ${resolveName(id)}';
     out.write(decl);
     src.write(decl);
     declaredParams++;
@@ -806,7 +816,7 @@ class _Transpiler {
 
   void opLabel() {
     out.writeln('{');
-    indent = indent + '  ';
+    indent += '  ';
     if (target == TargetLanguage.sksl && currentFunction == entryPoint) {
       final String ind = indent;
       if (fragCoord > 0) {
@@ -825,12 +835,12 @@ class _Transpiler {
     if (currentFunction == entryPoint) {
       return;
     }
-    out.writeln(indent + 'return;');
+    out.writeln('{$indent}return;');
   }
 
   void opReturnValue() {
     final String name = resolveName(readWord());
-    out.writeln(indent + 'return $name;');
+    out.writeln('{$indent}return $name;');
   }
 
   void parseOperatorInst(String op) {
