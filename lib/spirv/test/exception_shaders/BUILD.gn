@@ -1,18 +1,7 @@
-# Copyright 2021 The Flutter Authors. All rights reserved.
+# Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 import("//flutter/testing/testing.gni")
-<<<<<<< HEAD
-
-if (enable_unittests) {
-  action_foreach("spirv_compile_exception_shaders") {
-    script = "assemble.py"
-    
-    deps = [
-      "//third_party/swiftshader/third_party/SPIRV-Tools:spirv-as",
-    ],
-    
-=======
 import("//build/compiled_action.gni")
 
 if (enable_unittests) {
