@@ -549,15 +549,14 @@ class _Transpiler {
   }
 
   void opConstantTrue() {
-    // Type note needed.
+    // Skip type operand.
     position++;
     constantTrue =resolveName(readWord()));
   }
 
   void opConstantFalse() {
-    // Type note needed.
+    // Skip type operand.
     position++;
-    final int type = readWord();
     constantFalses.add(resolveName(readWord()));
   }
 
