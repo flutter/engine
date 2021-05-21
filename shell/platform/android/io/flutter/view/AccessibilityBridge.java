@@ -1486,7 +1486,6 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
 
     Set<SemanticsNode> visitedObjects = new HashSet<>();
     SemanticsNode rootObject = getRootSemanticsNode();
-
     List<SemanticsNode> newRoutes = new ArrayList<>();
     if (rootObject != null) {
       final float[] identity = new float[16];
