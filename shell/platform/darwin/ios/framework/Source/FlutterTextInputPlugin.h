@@ -56,7 +56,7 @@
  * These are used by the UIIndirectScribbleInteractionDelegate methods to handle focusing on the
  * correct element
  */
-- (void)setupIndirectScribbleInteraction;
+- (void)setupIndirectScribbleInteraction:(FlutterViewController*)viewController;
 - (void)resetViewController;
 
 @end

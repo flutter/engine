@@ -289,8 +289,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
 - (void)attachView {
   self.iosPlatformView->attachView();
-  _textInputPlugin.get().viewController = [self viewController];
-  [_textInputPlugin.get() setupIndirectScribbleInteraction];
+  [_textInputPlugin.get() setupIndirectScribbleInteraction:[self viewController]];
 }
 
 - (void)setFlutterViewControllerWillDeallocObserver:(id<NSObject>)observer {
@@ -474,8 +473,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
   _textInputPlugin.reset([[FlutterTextInputPlugin alloc] init]);
   _textInputPlugin.get().textInputDelegate = self;
-  _textInputPlugin.get().viewController = [self viewController];
-  [_textInputPlugin.get() setupIndirectScribbleInteraction];
+  [_textInputPlugin.get() setupIndirectScribbleInteraction:[self viewController]];
 
   _platformPlugin.reset([[FlutterPlatformPlugin alloc] initWithEngine:[self getWeakPtr]]);
 

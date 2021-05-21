@@ -1549,7 +1549,6 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 
 @implementation FlutterTextInputPlugin {
   NSTimer* _enableFlutterTextInputViewAccessibilityTimer;
-  BOOL _hasScribbleInteraction;
   NSMutableDictionary<UIScribbleElementIdentifier, NSValue*>* _scribbleElements;
 }
 
@@ -1982,24 +1981,23 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 
 #pragma mark - Methods related to Scribble support
 
-- (void)setupIndirectScribbleInteraction {
-  if (_hasScribbleInteraction) {
-    return;
-  }
-  if (@available(iOS 14.0, *)) {
-    UIView* parentView = _viewController.view;
-    if (parentView != nil) {
-      _hasScribbleInteraction = true;
-      UIIndirectScribbleInteraction* _scribbleInteraction = [[[UIIndirectScribbleInteraction alloc]
-          initWithDelegate:(id<UIIndirectScribbleInteractionDelegate>)self] autorelease];
-      [parentView addInteraction:_scribbleInteraction];
+- (void)setupIndirectScribbleInteraction:(FlutterViewController*)viewController {
+  if (_viewController != viewController) {
+    if (@available(iOS 14.0, *)) {
+      UIView* parentView = viewController.view;
+      if (parentView != nil) {
+        UIIndirectScribbleInteraction* _scribbleInteraction =
+            [[[UIIndirectScribbleInteraction alloc]
+                initWithDelegate:(id<UIIndirectScribbleInteractionDelegate>)self] autorelease];
+        [parentView addInteraction:_scribbleInteraction];
+      }
     }
   }
+  _viewController = viewController;
 }
 
 - (void)resetViewController {
   _viewController = nil;
-  _hasScribbleInteraction = false;
 }
 
 @end
