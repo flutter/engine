@@ -1,6 +1,7 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+
 // @dart = 2.12
 
 part of spirv;
@@ -77,11 +78,11 @@ class _Transpiler {
   /// ID mapped to ID. Used by [OpLoad].
   final Map<int, int> alias = <int, int>{};
 
-  /// Set of IDs for constant true values.
-  final Set<int> constantTrues = <int>{};
+  /// The ID for a constant true value.
+  int constantTrue = 0;
 
-  /// Set of IDs for constant false values.
-  final Set<int> constantFalses = <int>{};
+  /// The ID for a constant false value.
+  int constantFalse = 0;
 
   /// The current word-index in the SPIR-V buffer.
   int position = 0;
@@ -189,10 +190,10 @@ class _Transpiler {
     } else if (id == fragCoord && target != TargetLanguage.sksl) {
       return _glslFragCoord;
     }
-    if (constantTrues.contains(id)) {
+    if (constantTrue == id) {
       return 'true';
     }
-    if (constantFalses.contains(id)) {
+    if (constantFalse == id) {
       return 'false';
     }
     return 'i$id';
@@ -548,15 +549,16 @@ class _Transpiler {
   }
 
   void opConstantTrue() {
-    final int type = readWord();
-    final String id = resolveName(readWord());
-    constantTrues.add(id);
+    // Type note needed.
+    position++;
+    constantTrue =resolveName(readWord()));
   }
 
   void opConstantFalse() {
+    // Type note needed.
+    position++;
     final int type = readWord();
-    final String id = resolveName(readWord());
-    constantFalses.add(id);
+    constantFalses.add(resolveName(readWord()));
   }
 
   void opConstant() {
