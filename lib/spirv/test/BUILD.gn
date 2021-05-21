@@ -5,13 +5,9 @@ import("//flutter/testing/testing.gni")
 
 if (enable_unittests) {
   executable("spirv_assembler") {
-    sources = [
-      "spirv_assembler.cc",
-    ]
+    sources = [ "spirv_assembler.cc" ]
 
-    configs += [
-      "//third_party/swiftshader_flutter:spvtools_public_config",
-    ]
+    configs += [ "//third_party/swiftshader_flutter:spvtools_public_config" ]
 
     deps = [
       "//third_party/swiftshader_flutter:spvtools",

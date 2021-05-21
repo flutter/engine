@@ -1,8 +1,8 @@
 # Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
-import("//flutter/testing/testing.gni")
 import("//build/compiled_action.gni")
+import("//flutter/testing/testing.gni")
 
 if (enable_unittests) {
   compiled_action_foreach("spirv_compile_exception_shaders") {
@@ -27,9 +27,7 @@ if (enable_unittests) {
       "unsupported_vector_type.spvasm",
     ]
 
-    outputs = [
-      "$target_gen_dir/{{source_name_part}}.spv"
-    ]
+    outputs = [ "$target_gen_dir/{{source_name_part}}.spv" ]
 
     args = [
       "{{source}}",
