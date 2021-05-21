@@ -39,10 +39,6 @@ Exception tests are compiled to the `spirv_unittests` target. These tests rely o
 
 These tests can be run alone by executing `./spirv_unittests` in the build-output directory.
 
-Steps for adding a new exception test: 
-
-1. Add a new file
-
 ## Pixel Tests
 
 Pixel test are not yet checked in, and should run as part of unit-testing for each implementation of `dart:ui`. These tests aim to validate the correctness of transpilation to each target language. Each shader should render the color green #00FF00 for a correct transpilation, and any other color for failure. They will be a combination of `.spvasm` files and more-readable GLSL files that are compiled to SPIR-V via `glslang`, provided by the SwiftShader dependency. Information for pixel tests will be expanded in a follow-up PR.
