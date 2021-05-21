@@ -79,9 +79,11 @@ class _Transpiler {
   final Map<int, int> alias = <int, int>{};
 
   /// The ID for a constant true value.
+  /// See [opConstantTrue].
   int constantTrue = 0;
 
   /// The ID for a constant false value.
+  /// See [opConstantFalse].
   int constantFalse = 0;
 
   /// The current word-index in the SPIR-V buffer.
@@ -190,10 +192,10 @@ class _Transpiler {
     } else if (id == fragCoord && target != TargetLanguage.sksl) {
       return _glslFragCoord;
     }
-    if (constantTrue == id) {
+    if (id == constantTrue) {
       return 'true';
     }
-    if (constantFalse == id) {
+    if (id == constantFalse) {
       return 'false';
     }
     return 'i$id';
