@@ -8,7 +8,7 @@ import 'dart:typed_data';
 
 import 'package:spirv/spirv.dart' as spirv;
 import 'package:path/path.dart' as path;
-import 'package:test/test.dart';
+import 'package:litetest/litetest.dart';
 
 const List<spirv.TargetLanguage> targets = <spirv.TargetLanguage>[
   spirv.TargetLanguage.sksl,

@@ -33,7 +33,7 @@ class MockAccessibilityBridge : public AccessibilityBridgeIos {
   }
   void DispatchSemanticsAction(int32_t id,
                                SemanticsAction action,
-                               std::vector<uint8_t> args) override {
+                               fml::MallocMapping args) override {
     SemanticsActionObservation observation(id, action);
     observations.push_back(observation);
   }
@@ -98,6 +98,29 @@ class MockAccessibilityBridge : public AccessibilityBridgeIos {
   FlutterSemanticsObject* object = [[FlutterSemanticsObject alloc] initWithBridge:bridge uid:0];
   [object setSemanticsNode:&node];
   XCTAssertEqual([object accessibilityTraits], UIAccessibilityTraitStaticText);
+}
+
+- (void)testNodeWithImplicitScrollIsAnAccessibilityElementWhenItisHidden {
+  fml::WeakPtrFactory<flutter::AccessibilityBridgeIos> factory(
+      new flutter::MockAccessibilityBridge());
+  fml::WeakPtr<flutter::AccessibilityBridgeIos> bridge = factory.GetWeakPtr();
+  flutter::SemanticsNode node;
+  node.flags = static_cast<int32_t>(flutter::SemanticsFlags::kHasImplicitScrolling) |
+               static_cast<int32_t>(flutter::SemanticsFlags::kIsHidden);
+  FlutterSemanticsObject* object = [[FlutterSemanticsObject alloc] initWithBridge:bridge uid:0];
+  [object setSemanticsNode:&node];
+  XCTAssertEqual(object.isAccessibilityElement, YES);
+}
+
+- (void)testNodeWithImplicitScrollIsNotAnAccessibilityElementWhenItisNotHidden {
+  fml::WeakPtrFactory<flutter::AccessibilityBridgeIos> factory(
+      new flutter::MockAccessibilityBridge());
+  fml::WeakPtr<flutter::AccessibilityBridgeIos> bridge = factory.GetWeakPtr();
+  flutter::SemanticsNode node;
+  node.flags = static_cast<int32_t>(flutter::SemanticsFlags::kHasImplicitScrolling);
+  FlutterSemanticsObject* object = [[FlutterSemanticsObject alloc] initWithBridge:bridge uid:0];
+  [object setSemanticsNode:&node];
+  XCTAssertEqual(object.isAccessibilityElement, NO);
 }
 
 - (void)testIntresetingSemanticsObjectWithLabelHasStaticTextTrait {

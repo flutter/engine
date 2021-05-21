@@ -1,4 +1,4 @@
-// Copyright 2021 The Flutter Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 // @dart = 2.12
@@ -21,7 +21,6 @@ const int _memoryModelGLSL450 = 1;
 // Supported capabilities
 const int _capabilityMatrix = 0;
 const int _capabilityShader = 1;
-const int _capabilityLinkage = 2;
 
 // Supported storage classes
 const int _storageClassUniformConstant = 0;
@@ -53,7 +52,6 @@ const int _opExecutionMode = 16;
 const int _opCapability = 17;
 const int _opTypeVoid = 19;
 const int _opTypeBool = 20;
-const int _opTypeInt = 21;
 const int _opTypeFloat = 22;
 const int _opTypeVector = 23;
 const int _opTypeMatrix = 24;

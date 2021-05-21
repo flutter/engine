@@ -1,4 +1,4 @@
-Signature: c891c1c363198aaedbd437f556167633
+Signature: 2fc1ffae8b15ddcf91a59c46625defdb
 
 UNUSED LICENSES:
 
@@ -9238,6 +9238,46 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: dart
+LIBRARY: double-conversion
+LIBRARY: icu
+ORIGIN: ../../../third_party/dart/benchmarks/Richards/dart/Richards.dart
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/dart/benchmarks/Richards/dart/Richards.dart
+FILE: ../../../third_party/dart/benchmarks/Richards/dart2/Richards.dart
+FILE: ../../../third_party/dart/benchmarks/Richards/javascript/Richards.js
+FILE: ../../../third_party/dart/runtime/third_party/double-conversion/src/cached-powers.cc
+FILE: ../../../third_party/icu/source/i18n/double-conversion-cached-powers.cpp
+----------------------------------------------------------------------------------------------------
+Copyright 2006-2008 the V8 project authors. All rights reserved.
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+    * Neither the name of Google Inc. nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: dart
 ORIGIN: ../../../third_party/dart/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/dart/.gitconfig
@@ -9563,7 +9603,6 @@ FILE: ../../../third_party/dart/sdk/lib/html/html_common/conversions_dart2js.dar
 FILE: ../../../third_party/dart/sdk/lib/html/html_common/html_common.dart
 FILE: ../../../third_party/dart/sdk/lib/libraries.json
 FILE: ../../../third_party/dart/sdk/lib/vmservice_libraries.json
-FILE: ../../../third_party/dart/third_party/7zip.tar.gz.sha1
 FILE: ../../../third_party/dart/third_party/clang.tar.gz.sha1
 ----------------------------------------------------------------------------------------------------
 Copyright 2012, the Dart project authors.
@@ -9972,6 +10011,7 @@ FILE: ../../../third_party/dart/samples_2/ffi/async/async_test.dart
 FILE: ../../../third_party/dart/samples_2/ffi/async/sample_async_callback.dart
 FILE: ../../../third_party/dart/samples_2/ffi/async/sample_native_port_call.dart
 FILE: ../../../third_party/dart/samples_2/ffi/sample_ffi_functions_callbacks_closures.dart
+FILE: ../../../third_party/dart/sdk/lib/_http/embedder_config.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/patch/js_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/js_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/ffi_struct_patch.dart
@@ -10519,7 +10559,6 @@ FILE: ../../../third_party/dart/runtime/observatory_2/lib/cli.dart
 FILE: ../../../third_party/dart/runtime/observatory_2/lib/debugger.dart
 FILE: ../../../third_party/dart/runtime/observatory_2/lib/sample_profile.dart
 FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/allocation_profile/allocation_profile.dart
-FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/app/analytics.dart
 FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/cli/command.dart
 FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/debugger/debugger.dart
 FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/debugger/debugger_location.dart
@@ -11842,7 +11881,11 @@ LIBRARY: dart
 ORIGIN: ../../../third_party/dart/runtime/bin/utils.cc + ../../../third_party/dart/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/dart/runtime/bin/utils.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/compiler_timings.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/compiler_timings.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/range.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/relocation_test.cc
+FILE: ../../../third_party/dart/runtime/vm/heap/safepoint_test.cc
 FILE: ../../../third_party/dart/runtime/vm/pending_deopts.cc
 FILE: ../../../third_party/dart/runtime/vm/pending_deopts.h
 FILE: ../../../third_party/dart/runtime/vm/virtual_memory_compressed.cc
@@ -11852,6 +11895,7 @@ FILE: ../../../third_party/dart/samples_2/ffi/resource_management/utf8_helpers.d
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/late_helper.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/ffi_allocation_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/ffi/allocation.dart
+FILE: ../../../third_party/dart/sdk/lib/ffi/union.dart
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2021, the Dart project authors.  Please see the AUTHORS file
 for details. All rights reserved.
@@ -12231,42 +12275,6 @@ FILE: ../../../third_party/icu/source/i18n/double-conversion-strtod.h
 FILE: ../../../third_party/icu/source/i18n/double-conversion-utils.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2010 the V8 project authors. All rights reserved.
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the following
-      disclaimer in the documentation and/or other materials provided
-      with the distribution.
-    * Neither the name of Google Inc. nor the names of its
-      contributors may be used to endorse or promote products derived
-      from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: double-conversion
-LIBRARY: icu
-ORIGIN: ../../../third_party/dart/runtime/third_party/double-conversion/src/cached-powers.cc
-TYPE: LicenseType.bsd
-FILE: ../../../third_party/dart/runtime/third_party/double-conversion/src/cached-powers.cc
-FILE: ../../../third_party/icu/source/i18n/double-conversion-cached-powers.cpp
-----------------------------------------------------------------------------------------------------
-Copyright 2006-2008 the V8 project authors. All rights reserved.
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
 met:
@@ -16746,26 +16754,17 @@ FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
-FILE: ../../../third_party/icu/patches/back_patch_fa_unit_to_67.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
 FILE: ../../../third_party/icu/patches/configure.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
-FILE: ../../../third_party/icu/patches/fixCFI.patch
-FILE: ../../../third_party/icu/patches/formatted_string_builder.patch
+FILE: ../../../third_party/icu/patches/fuchsia.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
 FILE: ../../../third_party/icu/patches/iso2022jp.patch
 FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
-FILE: ../../../third_party/icu/patches/listformatmemread.patch
-FILE: ../../../third_party/icu/patches/loc.patch
-FILE: ../../../third_party/icu/patches/loc2.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/regex_minMatchLength.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
-FILE: ../../../third_party/icu/patches/setkeywordvalue.patch
-FILE: ../../../third_party/icu/patches/wintz.patch
-FILE: ../../../third_party/icu/patches/wintz2.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-implicithan.icu
@@ -16881,26 +16880,17 @@ FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
-FILE: ../../../third_party/icu/patches/back_patch_fa_unit_to_67.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
 FILE: ../../../third_party/icu/patches/configure.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
-FILE: ../../../third_party/icu/patches/fixCFI.patch
-FILE: ../../../third_party/icu/patches/formatted_string_builder.patch
+FILE: ../../../third_party/icu/patches/fuchsia.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
 FILE: ../../../third_party/icu/patches/iso2022jp.patch
 FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
-FILE: ../../../third_party/icu/patches/listformatmemread.patch
-FILE: ../../../third_party/icu/patches/loc.patch
-FILE: ../../../third_party/icu/patches/loc2.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/regex_minMatchLength.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
-FILE: ../../../third_party/icu/patches/setkeywordvalue.patch
-FILE: ../../../third_party/icu/patches/wintz.patch
-FILE: ../../../third_party/icu/patches/wintz2.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-implicithan.icu
@@ -17021,26 +17011,17 @@ FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
-FILE: ../../../third_party/icu/patches/back_patch_fa_unit_to_67.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
 FILE: ../../../third_party/icu/patches/configure.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
-FILE: ../../../third_party/icu/patches/fixCFI.patch
-FILE: ../../../third_party/icu/patches/formatted_string_builder.patch
+FILE: ../../../third_party/icu/patches/fuchsia.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
 FILE: ../../../third_party/icu/patches/iso2022jp.patch
 FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
-FILE: ../../../third_party/icu/patches/listformatmemread.patch
-FILE: ../../../third_party/icu/patches/loc.patch
-FILE: ../../../third_party/icu/patches/loc2.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/regex_minMatchLength.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
-FILE: ../../../third_party/icu/patches/setkeywordvalue.patch
-FILE: ../../../third_party/icu/patches/wintz.patch
-FILE: ../../../third_party/icu/patches/wintz2.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-implicithan.icu
@@ -17160,26 +17141,17 @@ FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
-FILE: ../../../third_party/icu/patches/back_patch_fa_unit_to_67.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
 FILE: ../../../third_party/icu/patches/configure.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
-FILE: ../../../third_party/icu/patches/fixCFI.patch
-FILE: ../../../third_party/icu/patches/formatted_string_builder.patch
+FILE: ../../../third_party/icu/patches/fuchsia.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
 FILE: ../../../third_party/icu/patches/iso2022jp.patch
 FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
-FILE: ../../../third_party/icu/patches/listformatmemread.patch
-FILE: ../../../third_party/icu/patches/loc.patch
-FILE: ../../../third_party/icu/patches/loc2.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/regex_minMatchLength.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
-FILE: ../../../third_party/icu/patches/setkeywordvalue.patch
-FILE: ../../../third_party/icu/patches/wintz.patch
-FILE: ../../../third_party/icu/patches/wintz2.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-implicithan.icu
@@ -17305,26 +17277,17 @@ FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
-FILE: ../../../third_party/icu/patches/back_patch_fa_unit_to_67.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
 FILE: ../../../third_party/icu/patches/configure.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
-FILE: ../../../third_party/icu/patches/fixCFI.patch
-FILE: ../../../third_party/icu/patches/formatted_string_builder.patch
+FILE: ../../../third_party/icu/patches/fuchsia.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
 FILE: ../../../third_party/icu/patches/iso2022jp.patch
 FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
-FILE: ../../../third_party/icu/patches/listformatmemread.patch
-FILE: ../../../third_party/icu/patches/loc.patch
-FILE: ../../../third_party/icu/patches/loc2.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/regex_minMatchLength.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
-FILE: ../../../third_party/icu/patches/setkeywordvalue.patch
-FILE: ../../../third_party/icu/patches/wintz.patch
-FILE: ../../../third_party/icu/patches/wintz2.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-implicithan.icu
@@ -17449,26 +17412,17 @@ FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
-FILE: ../../../third_party/icu/patches/back_patch_fa_unit_to_67.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
 FILE: ../../../third_party/icu/patches/configure.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
-FILE: ../../../third_party/icu/patches/fixCFI.patch
-FILE: ../../../third_party/icu/patches/formatted_string_builder.patch
+FILE: ../../../third_party/icu/patches/fuchsia.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
 FILE: ../../../third_party/icu/patches/iso2022jp.patch
 FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
-FILE: ../../../third_party/icu/patches/listformatmemread.patch
-FILE: ../../../third_party/icu/patches/loc.patch
-FILE: ../../../third_party/icu/patches/loc2.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/regex_minMatchLength.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
-FILE: ../../../third_party/icu/patches/setkeywordvalue.patch
-FILE: ../../../third_party/icu/patches/wintz.patch
-FILE: ../../../third_party/icu/patches/wintz2.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-implicithan.icu
@@ -17589,26 +17543,17 @@ FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
-FILE: ../../../third_party/icu/patches/back_patch_fa_unit_to_67.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
 FILE: ../../../third_party/icu/patches/configure.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
-FILE: ../../../third_party/icu/patches/fixCFI.patch
-FILE: ../../../third_party/icu/patches/formatted_string_builder.patch
+FILE: ../../../third_party/icu/patches/fuchsia.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
 FILE: ../../../third_party/icu/patches/iso2022jp.patch
 FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
-FILE: ../../../third_party/icu/patches/listformatmemread.patch
-FILE: ../../../third_party/icu/patches/loc.patch
-FILE: ../../../third_party/icu/patches/loc2.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/regex_minMatchLength.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
-FILE: ../../../third_party/icu/patches/setkeywordvalue.patch
-FILE: ../../../third_party/icu/patches/wintz.patch
-FILE: ../../../third_party/icu/patches/wintz2.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-implicithan.icu
@@ -17728,26 +17673,17 @@ FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
-FILE: ../../../third_party/icu/patches/back_patch_fa_unit_to_67.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
 FILE: ../../../third_party/icu/patches/configure.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
-FILE: ../../../third_party/icu/patches/fixCFI.patch
-FILE: ../../../third_party/icu/patches/formatted_string_builder.patch
+FILE: ../../../third_party/icu/patches/fuchsia.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
 FILE: ../../../third_party/icu/patches/iso2022jp.patch
 FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
-FILE: ../../../third_party/icu/patches/listformatmemread.patch
-FILE: ../../../third_party/icu/patches/loc.patch
-FILE: ../../../third_party/icu/patches/loc2.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/regex_minMatchLength.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
-FILE: ../../../third_party/icu/patches/setkeywordvalue.patch
-FILE: ../../../third_party/icu/patches/wintz.patch
-FILE: ../../../third_party/icu/patches/wintz2.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-implicithan.icu
@@ -17840,26 +17776,17 @@ FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
-FILE: ../../../third_party/icu/patches/back_patch_fa_unit_to_67.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
 FILE: ../../../third_party/icu/patches/configure.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
-FILE: ../../../third_party/icu/patches/fixCFI.patch
-FILE: ../../../third_party/icu/patches/formatted_string_builder.patch
+FILE: ../../../third_party/icu/patches/fuchsia.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
 FILE: ../../../third_party/icu/patches/iso2022jp.patch
 FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
-FILE: ../../../third_party/icu/patches/listformatmemread.patch
-FILE: ../../../third_party/icu/patches/loc.patch
-FILE: ../../../third_party/icu/patches/loc2.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/regex_minMatchLength.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
-FILE: ../../../third_party/icu/patches/setkeywordvalue.patch
-FILE: ../../../third_party/icu/patches/wintz.patch
-FILE: ../../../third_party/icu/patches/wintz2.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-implicithan.icu
@@ -18019,26 +17946,17 @@ FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
-FILE: ../../../third_party/icu/patches/back_patch_fa_unit_to_67.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
 FILE: ../../../third_party/icu/patches/configure.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
-FILE: ../../../third_party/icu/patches/fixCFI.patch
-FILE: ../../../third_party/icu/patches/formatted_string_builder.patch
+FILE: ../../../third_party/icu/patches/fuchsia.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
 FILE: ../../../third_party/icu/patches/iso2022jp.patch
 FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
-FILE: ../../../third_party/icu/patches/listformatmemread.patch
-FILE: ../../../third_party/icu/patches/loc.patch
-FILE: ../../../third_party/icu/patches/loc2.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/regex_minMatchLength.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
-FILE: ../../../third_party/icu/patches/setkeywordvalue.patch
-FILE: ../../../third_party/icu/patches/wintz.patch
-FILE: ../../../third_party/icu/patches/wintz2.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-implicithan.icu

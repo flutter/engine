@@ -2,7 +2,18 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import 'dart:html' as html;
+
+import 'package:ui/src/engine.dart' show window, EnginePlatformDispatcher;
+import 'package:ui/ui.dart' as ui;
+
+import '../browser_detection.dart';
+import '../util.dart';
+import 'canvas.dart';
+import 'canvaskit_api.dart';
+import 'embedded_views.dart';
+import 'initialization.dart';
+import 'util.dart';
 
 typedef SubmitCallback = bool Function(SurfaceFrame, CkCanvas);
 
@@ -210,7 +221,7 @@ class Surface {
         SkWebGLContextOptions(
           // Default to no anti-aliasing. Paint commands can be explicitly
           // anti-aliased by setting their `Paint` object's `antialias` property.
-          anitalias: 0,
+          antialias: 0,
           majorVersion: webGLVersion,
         ),
       );

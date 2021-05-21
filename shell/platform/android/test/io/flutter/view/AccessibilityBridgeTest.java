@@ -10,6 +10,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
@@ -74,6 +75,41 @@ public class AccessibilityBridgeTest {
 
     assertEquals(nodeInfo.getContentDescription(), null);
     assertEquals(nodeInfo.getText(), "Hello, World");
+  }
+
+  @Test
+  public void itTakesGlobalCoordinatesOfFlutterViewIntoAccount() {
+    AccessibilityViewEmbedder mockViewEmbedder = mock(AccessibilityViewEmbedder.class);
+    AccessibilityManager mockManager = mock(AccessibilityManager.class);
+    View mockRootView = mock(View.class);
+    Context context = mock(Context.class);
+    when(mockRootView.getContext()).thenReturn(context);
+    final int position = 88;
+    // The getBoundsInScreen() in createAccessibilityNodeInfo() needs View.getLocationOnScreen()
+    doAnswer(
+            invocation -> {
+              int[] outLocation = (int[]) invocation.getArguments()[0];
+              outLocation[0] = position;
+              outLocation[1] = position;
+              return null;
+            })
+        .when(mockRootView)
+        .getLocationOnScreen(any(int[].class));
+
+    when(context.getPackageName()).thenReturn("test");
+    AccessibilityBridge accessibilityBridge =
+        setUpBridge(mockRootView, mockManager, mockViewEmbedder);
+
+    TestSemanticsNode testSemanticsNode = new TestSemanticsNode();
+    TestSemanticsUpdate testSemanticsUpdate = testSemanticsNode.toUpdate();
+
+    accessibilityBridge.updateSemantics(testSemanticsUpdate.buffer, testSemanticsUpdate.strings);
+    AccessibilityNodeInfo nodeInfo = accessibilityBridge.createAccessibilityNodeInfo(0);
+
+    Rect outBoundsInScreen = new Rect();
+    nodeInfo.getBoundsInScreen(outBoundsInScreen);
+    assertEquals(position, outBoundsInScreen.left);
+    assertEquals(position, outBoundsInScreen.top);
   }
 
   @Test
@@ -829,6 +865,88 @@ public class AccessibilityBridgeTest {
     assertNotNull(result);
     assertEquals(result.getChildCount(), 1);
     assertEquals(result.getClassName(), "android.view.View");
+  }
+
+  @Test
+  public void itMakesPlatformViewImportantForAccessibility() {
+    PlatformViewsAccessibilityDelegate accessibilityDelegate =
+        mock(PlatformViewsAccessibilityDelegate.class);
+
+    Context context = RuntimeEnvironment.application.getApplicationContext();
+    View rootAccessibilityView = new View(context);
+    AccessibilityViewEmbedder accessibilityViewEmbedder = mock(AccessibilityViewEmbedder.class);
+    AccessibilityBridge accessibilityBridge =
+        setUpBridge(
+            rootAccessibilityView,
+            /*accessibilityChannel=*/ null,
+            /*accessibilityManager=*/ null,
+            /*contentResolver=*/ null,
+            accessibilityViewEmbedder,
+            accessibilityDelegate);
+
+    TestSemanticsNode root = new TestSemanticsNode();
+    root.id = 0;
+
+    TestSemanticsNode platformView = new TestSemanticsNode();
+    platformView.id = 1;
+    platformView.platformViewId = 1;
+    root.addChild(platformView);
+
+    View embeddedView = mock(View.class);
+    when(accessibilityDelegate.getPlatformViewById(1)).thenReturn(embeddedView);
+    when(accessibilityDelegate.usesVirtualDisplay(1)).thenReturn(false);
+
+    TestSemanticsUpdate testSemanticsRootUpdate = root.toUpdate();
+    accessibilityBridge.updateSemantics(
+        testSemanticsRootUpdate.buffer, testSemanticsRootUpdate.strings);
+
+    verify(embeddedView).setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_AUTO);
+  }
+
+  @Test
+  public void itMakesPlatformViewNoImportantForAccessibility() {
+    PlatformViewsAccessibilityDelegate accessibilityDelegate =
+        mock(PlatformViewsAccessibilityDelegate.class);
+
+    Context context = RuntimeEnvironment.application.getApplicationContext();
+    View rootAccessibilityView = new View(context);
+    AccessibilityViewEmbedder accessibilityViewEmbedder = mock(AccessibilityViewEmbedder.class);
+    AccessibilityBridge accessibilityBridge =
+        setUpBridge(
+            rootAccessibilityView,
+            /*accessibilityChannel=*/ null,
+            /*accessibilityManager=*/ null,
+            /*contentResolver=*/ null,
+            accessibilityViewEmbedder,
+            accessibilityDelegate);
+
+    TestSemanticsNode rootWithPlatformView = new TestSemanticsNode();
+    rootWithPlatformView.id = 0;
+
+    TestSemanticsNode platformView = new TestSemanticsNode();
+    platformView.id = 1;
+    platformView.platformViewId = 1;
+    rootWithPlatformView.addChild(platformView);
+
+    View embeddedView = mock(View.class);
+    when(accessibilityDelegate.getPlatformViewById(1)).thenReturn(embeddedView);
+    when(accessibilityDelegate.usesVirtualDisplay(1)).thenReturn(false);
+
+    TestSemanticsUpdate testSemanticsRootWithPlatformViewUpdate = rootWithPlatformView.toUpdate();
+    accessibilityBridge.updateSemantics(
+        testSemanticsRootWithPlatformViewUpdate.buffer,
+        testSemanticsRootWithPlatformViewUpdate.strings);
+
+    TestSemanticsNode rootWithoutPlatformView = new TestSemanticsNode();
+    rootWithoutPlatformView.id = 0;
+    TestSemanticsUpdate testSemanticsRootWithoutPlatformViewUpdate =
+        rootWithoutPlatformView.toUpdate();
+    accessibilityBridge.updateSemantics(
+        testSemanticsRootWithoutPlatformViewUpdate.buffer,
+        testSemanticsRootWithoutPlatformViewUpdate.strings);
+
+    verify(embeddedView)
+        .setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
   }
 
   @Test

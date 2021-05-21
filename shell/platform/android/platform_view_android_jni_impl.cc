@@ -1094,7 +1094,7 @@ PlatformViewAndroidJNIImpl::PlatformViewAndroidJNIImpl(
 PlatformViewAndroidJNIImpl::~PlatformViewAndroidJNIImpl() = default;
 
 void PlatformViewAndroidJNIImpl::FlutterViewHandlePlatformMessage(
-    fml::RefPtr<flutter::PlatformMessage> message,
+    std::unique_ptr<flutter::PlatformMessage> message,
     int responseId) {
   JNIEnv* env = fml::jni::AttachCurrentThread();
 
@@ -1108,10 +1108,10 @@ void PlatformViewAndroidJNIImpl::FlutterViewHandlePlatformMessage(
 
   if (message->hasData()) {
     fml::jni::ScopedJavaLocalRef<jbyteArray> message_array(
-        env, env->NewByteArray(message->data().size()));
+        env, env->NewByteArray(message->data().GetSize()));
     env->SetByteArrayRegion(
-        message_array.obj(), 0, message->data().size(),
-        reinterpret_cast<const jbyte*>(message->data().data()));
+        message_array.obj(), 0, message->data().GetSize(),
+        reinterpret_cast<const jbyte*>(message->data().GetMapping()));
     env->CallVoidMethod(java_object.obj(), g_handle_platform_message_method,
                         java_channel.obj(), message_array.obj(), responseId);
   } else {

@@ -2,7 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import 'dart:math' as math;
+import 'dart:typed_data';
+
+import 'package:ui/ui.dart' as ui;
+
+import '../util.dart';
+import '../validators.dart';
+import 'canvaskit_api.dart';
+import 'image.dart';
+import 'initialization.dart';
+import 'skia_object_cache.dart';
 
 abstract class CkShader extends ManagedSkiaObject<SkShader>
     implements ui.Shader {
@@ -17,14 +27,14 @@ abstract class CkShader extends ManagedSkiaObject<SkShader>
 class CkGradientSweep extends CkShader implements ui.Gradient {
   CkGradientSweep(this.center, this.colors, this.colorStops, this.tileMode,
       this.startAngle, this.endAngle, this.matrix4)
-      : assert(_offsetIsValid(center)),
+      : assert(offsetIsValid(center)),
         assert(colors != null), // ignore: unnecessary_null_comparison
         assert(tileMode != null), // ignore: unnecessary_null_comparison
         assert(startAngle != null), // ignore: unnecessary_null_comparison
         assert(endAngle != null), // ignore: unnecessary_null_comparison
         assert(startAngle < endAngle),
-        assert(matrix4 == null || _matrix4IsValid(matrix4)) {
-    _validateColorStops(colors, colorStops);
+        assert(matrix4 == null || matrix4IsValid(matrix4)) {
+    validateColorStops(colors, colorStops);
   }
 
   final ui.Offset center;
@@ -65,14 +75,14 @@ class CkGradientLinear extends CkShader implements ui.Gradient {
     this.colorStops,
     this.tileMode,
     Float32List? matrix,
-  )   : assert(_offsetIsValid(from)),
-        assert(_offsetIsValid(to)),
+  )   : assert(offsetIsValid(from)),
+        assert(offsetIsValid(to)),
         assert(colors != null), // ignore: unnecessary_null_comparison
         assert(tileMode != null), // ignore: unnecessary_null_comparison
         this.matrix4 = matrix {
     if (assertionsEnabled) {
-      assert(matrix4 == null || _matrix4IsValid(matrix4!));
-      _validateColorStops(colors, colorStops);
+      assert(matrix4 == null || matrix4IsValid(matrix4!));
+      validateColorStops(colors, colorStops);
     }
   }
 
@@ -165,7 +175,8 @@ class CkGradientConical extends CkShader implements ui.Gradient {
 }
 
 class CkImageShader extends CkShader implements ui.ImageShader {
-  CkImageShader(ui.Image image, this.tileModeX, this.tileModeY, this.matrix4, this.filterQuality)
+  CkImageShader(ui.Image image, this.tileModeX, this.tileModeY, this.matrix4,
+      this.filterQuality)
       : _image = image as CkImage;
 
   final ui.TileMode tileModeX;

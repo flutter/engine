@@ -56,8 +56,8 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
     return urlStrategy;
   }
 
-  BrowserHistory? _browserHistory;
-  bool _usingRouter = false;
+  BrowserHistory? _browserHistory; // Must be either SingleEntryBrowserHistory or MultiEntriesBrowserHistory.
+
   Future<void> _useSingleEntryBrowserHistory() async {
     if (_browserHistory is SingleEntryBrowserHistory) {
       return;
@@ -95,7 +95,6 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
   }) async {
     // Prevent any further customization of URL strategy.
     _isUrlStrategySet = true;
-    _usingRouter = false;
     await _browserHistory?.tearDown();
     if (useSingle) {
       _browserHistory = SingleEntryBrowserHistory(urlStrategy: strategy);
@@ -108,35 +107,25 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
     await _browserHistory?.tearDown();
     _browserHistory = null;
     // Reset the globals too.
-    _usingRouter = false;
     _isUrlStrategySet = false;
     _customUrlStrategy = null;
   }
 
-  Future<bool> handleNavigationMessage(
-      ByteData? data,
-      ) async {
+  Future<bool> handleNavigationMessage(ByteData? data) async {
     final MethodCall decoded = JSONMethodCodec().decodeMethodCall(data);
     final Map<String, dynamic> arguments = decoded.arguments;
-
     switch (decoded.method) {
-      case 'routeUpdated':
-        if (!_usingRouter) {
-          await _useSingleEntryBrowserHistory();
-          browserHistory.setRouteName(arguments['routeName']);
-        } else {
-          assert(
-            false,
-            'Receives old navigator update in a router application. '
-            'This can happen if you use non-router versions of MaterialApp/'
-            'CupertinoApp/WidgetsApp together with the router versions of them.'
-          );
-          return false;
-        }
+      case 'selectMultiEntryHistory':
+        await _useMultiEntryBrowserHistory();
+        return true;
+      case 'selectSingleEntryHistory':
+        await _useSingleEntryBrowserHistory();
+        return true;
+      case 'routeUpdated': // deprecated
+        await _useSingleEntryBrowserHistory();
+        browserHistory.setRouteName(arguments['routeName']);
         return true;
       case 'routeInformationUpdated':
-        await _useMultiEntryBrowserHistory();
-        _usingRouter = true;
         browserHistory.setRouteName(
           arguments['location'],
           state: arguments['state'],
@@ -181,9 +170,25 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
       double windowInnerWidth;
       double windowInnerHeight;
       final html.VisualViewport? viewport = html.window.visualViewport;
+
       if (viewport != null) {
-        windowInnerWidth = viewport.width!.toDouble() * devicePixelRatio;
-        windowInnerHeight = viewport.height!.toDouble() * devicePixelRatio;
+        if (operatingSystem == OperatingSystem.iOs) {
+          /// Chrome on iOS reports incorrect viewport.height when app
+          /// starts in portrait orientation and the phone is rotated to
+          /// landscape.
+          ///
+          /// We instead use documentElement clientWidth/Height to read
+          /// accurate physical size. VisualViewport api is only used during
+          /// text editing to make sure inset is correctly reported to
+          /// framework.
+          final double docWidth = html.document.documentElement!.clientWidth.toDouble();
+          final double docHeight = html.document.documentElement!.clientHeight.toDouble();
+          windowInnerWidth = docWidth * devicePixelRatio;
+          windowInnerHeight = docHeight * devicePixelRatio;
+        } else {
+          windowInnerWidth = viewport.width!.toDouble() * devicePixelRatio;
+          windowInnerHeight = viewport.height!.toDouble() * devicePixelRatio;
+        }
       } else {
         windowInnerWidth = html.window.innerWidth! * devicePixelRatio;
         windowInnerHeight = html.window.innerHeight! * devicePixelRatio;
@@ -195,11 +200,15 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
     }
   }
 
-  void computeOnScreenKeyboardInsets() {
+  void computeOnScreenKeyboardInsets(bool isEditingOnMobile) {
     double windowInnerHeight;
     final html.VisualViewport? viewport = html.window.visualViewport;
     if (viewport != null) {
-      windowInnerHeight = viewport.height!.toDouble() * devicePixelRatio;
+      if (operatingSystem == OperatingSystem.iOs && !isEditingOnMobile) {
+        windowInnerHeight = html.document.documentElement!.clientHeight * devicePixelRatio;
+      } else {
+        windowInnerHeight = viewport.height!.toDouble() * devicePixelRatio;
+      }
     } else {
       windowInnerHeight = html.window.innerHeight! * devicePixelRatio;
     }

@@ -30,7 +30,7 @@ class AccessibilityBridgeMacDelegate : public AccessibilityBridge::Accessibility
   // |AccessibilityBridge::AccessibilityBridgeDelegate|
   void DispatchAccessibilityAction(AccessibilityNodeId target,
                                    FlutterSemanticsAction action,
-                                   const std::vector<uint8_t>& data) override;
+                                   fml::MallocMapping data) override;
 
   // |AccessibilityBridge::AccessibilityBridgeDelegate|
   std::unique_ptr<FlutterPlatformNodeDelegate> CreateFlutterPlatformNodeDelegate() override;
@@ -48,8 +48,8 @@ class AccessibilityBridgeMacDelegate : public AccessibilityBridge::Accessibility
   ///             accessibility notification system.
   /// @param[in]  native_node       The event target, must not be nil.
   /// @param[in]  mac_notification  The event name, must not be nil.
-  void DispatchMacOSNotification(gfx::NativeViewAccessible native_node,
-                                 NSAccessibilityNotificationName mac_notification);
+  virtual void DispatchMacOSNotification(gfx::NativeViewAccessible native_node,
+                                         NSAccessibilityNotificationName mac_notification);
 
   //---------------------------------------------------------------------------
   /// @brief      Posts the given event against the given node with the

@@ -31,6 +31,11 @@
 namespace flutter_runner::testing {
 namespace {
 
+std::string ToString(const fml::Mapping& mapping) {
+  return std::string(mapping.GetMapping(),
+                     mapping.GetMapping() + mapping.GetSize());
+}
+
 class MockExternalViewEmbedder : public flutter::ExternalViewEmbedder {
  public:
   SkCanvas* GetRootCanvas() override { return nullptr; }
@@ -59,8 +64,17 @@ class MockExternalViewEmbedder : public flutter::ExternalViewEmbedder {
 
 class MockPlatformViewDelegate : public flutter::PlatformView::Delegate {
  public:
+  void Reset() {
+    message_ = nullptr;
+    metrics_ = flutter::ViewportMetrics{};
+    semantics_features_ = 0;
+    semantics_enabled_ = false;
+  }
+
   // |flutter::PlatformView::Delegate|
   void OnPlatformViewCreated(std::unique_ptr<flutter::Surface> surface) {
+    ASSERT_EQ(surface_.get(), nullptr);
+
     surface_ = std::move(surface);
   }
   // |flutter::PlatformView::Delegate|
@@ -74,7 +88,7 @@ class MockPlatformViewDelegate : public flutter::PlatformView::Delegate {
   }
   // |flutter::PlatformView::Delegate|
   void OnPlatformViewDispatchPlatformMessage(
-      fml::RefPtr<flutter::PlatformMessage> message) {
+      std::unique_ptr<flutter::PlatformMessage> message) {
     message_ = std::move(message);
   }
   // |flutter::PlatformView::Delegate|
@@ -87,7 +101,7 @@ class MockPlatformViewDelegate : public flutter::PlatformView::Delegate {
   // |flutter::PlatformView::Delegate|
   void OnPlatformViewDispatchSemanticsAction(int32_t id,
                                              flutter::SemanticsAction action,
-                                             std::vector<uint8_t> args) {}
+                                             fml::MallocMapping args) {}
   // |flutter::PlatformView::Delegate|
   void OnPlatformViewSetSemanticsEnabled(bool enabled) {
     semantics_enabled_ = enabled;
@@ -130,7 +144,7 @@ class MockPlatformViewDelegate : public flutter::PlatformView::Delegate {
 
  private:
   std::unique_ptr<flutter::Surface> surface_;
-  fml::RefPtr<flutter::PlatformMessage> message_;
+  std::unique_ptr<flutter::PlatformMessage> message_;
   flutter::ViewportMetrics metrics_;
   int32_t semantics_features_ = 0;
   bool semantics_enabled_ = false;
@@ -244,18 +258,18 @@ class PlatformViewBuilder {
     EXPECT_EQ(false, built_)
         << "Build() was already called, this buider is good for one use only.";
     built_ = true;
-    return PlatformView(delegate_, debug_label_, std::move(view_ref_),
-                        task_runners_, runner_services_,
-                        std::move(parent_environment_service_provider_),
-                        std::move(session_listener_request_),
-                        std::move(focuser_), std::move(keyboard_listener_),
-                        std::move(on_session_listener_error_callback_),
-                        std::move(wireframe_enabled_callback_),
-                        std::move(on_create_view_callback_),
-                        std::move(on_update_view_callback_),
-                        std::move(on_destroy_view_callback_),
-                        std::move(on_create_surface_callback_), view_embedder_,
-                        std::move(vsync_offset_), vsync_event_handle_);
+    return PlatformView(
+        delegate_, debug_label_, std::move(view_ref_), task_runners_,
+        runner_services_, std::move(parent_environment_service_provider_),
+        std::move(session_listener_request_), std::move(focuser_),
+        std::move(keyboard_listener_),
+        std::move(on_session_listener_error_callback_),
+        std::move(wireframe_enabled_callback_),
+        std::move(on_create_view_callback_),
+        std::move(on_update_view_callback_),
+        std::move(on_destroy_view_callback_),
+        std::move(on_create_surface_callback_), view_embedder_, [](auto...) {},
+        [](auto...) {});
   }
 
  private:
@@ -286,7 +300,6 @@ class PlatformViewBuilder {
   OnCreateSurface on_create_surface_callback_{nullptr};
   std::shared_ptr<flutter::ExternalViewEmbedder> view_embedder_{nullptr};
   fml::TimeDelta vsync_offset_{fml::TimeDelta::Zero()};
-  zx_handle_t vsync_event_handle_{ZX_HANDLE_INVALID};
 };
 
 }  // namespace
@@ -547,7 +560,7 @@ TEST_F(PlatformViewTests, EnableWireframeTest) {
 
   // Cast platform_view to its base view so we can have access to the public
   // "HandlePlatformMessage" function.
-  auto base_view = dynamic_cast<flutter::PlatformView*>(&platform_view);
+  auto base_view = static_cast<flutter::PlatformView*>(&platform_view);
   EXPECT_TRUE(base_view);
 
   // JSON for the message to be passed into the PlatformView.
@@ -559,12 +572,11 @@ TEST_F(PlatformViewTests, EnableWireframeTest) {
       "    }"
       "}";
 
-  fml::RefPtr<flutter::PlatformMessage> message =
-      fml::MakeRefCounted<flutter::PlatformMessage>(
-          "flutter/platform_views",
-          std::vector<uint8_t>(txt, txt + sizeof(txt)),
+  std::unique_ptr<flutter::PlatformMessage> message =
+      std::make_unique<flutter::PlatformMessage>(
+          "flutter/platform_views", fml::MallocMapping::Copy(txt, sizeof(txt)),
           fml::RefPtr<flutter::PlatformMessageResponse>());
-  base_view->HandlePlatformMessage(message);
+  base_view->HandlePlatformMessage(std::move(message));
 
   RunLoopUntilIdle();
 
@@ -577,15 +589,25 @@ TEST_F(PlatformViewTests, CreateViewTest) {
   sys::testing::ServiceDirectoryProvider services_provider(dispatcher());
   MockPlatformViewDelegate delegate;
   flutter::TaskRunners task_runners =
-      flutter::TaskRunners("test_runners", nullptr, nullptr, nullptr, nullptr);
+      flutter::TaskRunners("test_runners",  // label
+                           flutter_runner::CreateFMLTaskRunner(
+                               async_get_default_dispatcher()),  // platform
+                           nullptr,                              // raster
+                           nullptr,                              // ui
+                           nullptr                               // io
+      );
 
   // Test wireframe callback function. If the message sent to the platform
   // view was properly handled and parsed, this function should be called,
   // setting |wireframe_enabled| to true.
-  int64_t create_view_called = false;
+  bool create_view_called = false;
   auto CreateViewCallback = [&create_view_called](
-                                int64_t view_id, bool hit_testable,
-                                bool focusable) { create_view_called = true; };
+                                int64_t view_id,
+                                flutter_runner::ViewIdCallback on_view_bound,
+                                bool hit_testable, bool focusable) {
+    create_view_called = true;
+    on_view_bound(0);
+  };
 
   flutter_runner::PlatformView platform_view =
       PlatformViewBuilder(delegate, std::move(task_runners),
@@ -595,7 +617,7 @@ TEST_F(PlatformViewTests, CreateViewTest) {
 
   // Cast platform_view to its base view so we can have access to the public
   // "HandlePlatformMessage" function.
-  auto base_view = dynamic_cast<flutter::PlatformView*>(&platform_view);
+  auto base_view = static_cast<flutter::PlatformView*>(&platform_view);
   EXPECT_TRUE(base_view);
 
   // JSON for the message to be passed into the PlatformView.
@@ -609,12 +631,11 @@ TEST_F(PlatformViewTests, CreateViewTest) {
       "    }"
       "}";
 
-  fml::RefPtr<flutter::PlatformMessage> message =
-      fml::MakeRefCounted<flutter::PlatformMessage>(
-          "flutter/platform_views",
-          std::vector<uint8_t>(txt, txt + sizeof(txt)),
+  std::unique_ptr<flutter::PlatformMessage> message =
+      std::make_unique<flutter::PlatformMessage>(
+          "flutter/platform_views", fml::MallocMapping::Copy(txt, sizeof(txt)),
           fml::RefPtr<flutter::PlatformMessageResponse>());
-  base_view->HandlePlatformMessage(message);
+  base_view->HandlePlatformMessage(std::move(message));
 
   RunLoopUntilIdle();
 
@@ -629,13 +650,17 @@ TEST_F(PlatformViewTests, UpdateViewTest) {
   flutter::TaskRunners task_runners =
       flutter::TaskRunners("test_runners", nullptr, nullptr, nullptr, nullptr);
 
-  // Test wireframe callback function. If the message sent to the platform
-  // view was properly handled and parsed, this function should be called,
-  // setting |wireframe_enabled| to true.
-  int64_t update_view_called = false;
-  auto UpdateViewCallback = [&update_view_called](
-                                int64_t view_id, bool hit_testable,
-                                bool focusable) { update_view_called = true; };
+  std::optional<SkRect> occlusion_hint_for_test;
+  std::optional<bool> hit_testable_for_test;
+  std::optional<bool> focusable_for_test;
+  auto UpdateViewCallback = [&occlusion_hint_for_test, &hit_testable_for_test,
+                             &focusable_for_test](
+                                int64_t view_id, SkRect occlusion_hint,
+                                bool hit_testable, bool focusable) {
+    occlusion_hint_for_test = occlusion_hint;
+    hit_testable_for_test = hit_testable;
+    focusable_for_test = focusable;
+  };
 
   flutter_runner::PlatformView platform_view =
       PlatformViewBuilder(delegate, std::move(task_runners),
@@ -645,11 +670,11 @@ TEST_F(PlatformViewTests, UpdateViewTest) {
 
   // Cast platform_view to its base view so we can have access to the public
   // "HandlePlatformMessage" function.
-  auto base_view = dynamic_cast<flutter::PlatformView*>(&platform_view);
+  auto base_view = static_cast<flutter::PlatformView*>(&platform_view);
   EXPECT_TRUE(base_view);
 
-  // JSON for the message to be passed into the PlatformView.
-  const uint8_t txt[] =
+  // Send a basic message.
+  const uint8_t json[] =
       "{"
       "    \"method\":\"View.update\","
       "    \"args\": {"
@@ -658,17 +683,81 @@ TEST_F(PlatformViewTests, UpdateViewTest) {
       "       \"focusable\":true"
       "    }"
       "}";
-
-  fml::RefPtr<flutter::PlatformMessage> message =
-      fml::MakeRefCounted<flutter::PlatformMessage>(
+  std::unique_ptr<flutter::PlatformMessage> message =
+      std::make_unique<flutter::PlatformMessage>(
           "flutter/platform_views",
-          std::vector<uint8_t>(txt, txt + sizeof(txt)),
+          fml::MallocMapping::Copy(json, sizeof(json)),
           fml::RefPtr<flutter::PlatformMessageResponse>());
-  base_view->HandlePlatformMessage(message);
+  base_view->HandlePlatformMessage(std::move(message));
 
   RunLoopUntilIdle();
+  ASSERT_TRUE(occlusion_hint_for_test.has_value());
+  ASSERT_TRUE(hit_testable_for_test.has_value());
+  ASSERT_TRUE(focusable_for_test.has_value());
+  EXPECT_EQ(occlusion_hint_for_test.value(), SkRect::MakeEmpty());
+  EXPECT_EQ(hit_testable_for_test.value(), true);
+  EXPECT_EQ(focusable_for_test.value(), true);
 
-  EXPECT_TRUE(update_view_called);
+  // Reset for the next message.
+  occlusion_hint_for_test.reset();
+  hit_testable_for_test.reset();
+  focusable_for_test.reset();
+
+  // Send another basic message.
+  const uint8_t json_false[] =
+      "{"
+      "    \"method\":\"View.update\","
+      "    \"args\": {"
+      "       \"viewId\":42,"
+      "       \"hitTestable\":false,"
+      "       \"focusable\":false"
+      "    }"
+      "}";
+  std::unique_ptr<flutter::PlatformMessage> message_false =
+      std::make_unique<flutter::PlatformMessage>(
+          "flutter/platform_views",
+          fml::MallocMapping::Copy(json_false, sizeof(json_false)),
+          fml::RefPtr<flutter::PlatformMessageResponse>());
+  base_view->HandlePlatformMessage(std::move(message_false));
+  RunLoopUntilIdle();
+  ASSERT_TRUE(occlusion_hint_for_test.has_value());
+  ASSERT_TRUE(hit_testable_for_test.has_value());
+  ASSERT_TRUE(focusable_for_test.has_value());
+  EXPECT_EQ(occlusion_hint_for_test.value(), SkRect::MakeEmpty());
+  EXPECT_EQ(hit_testable_for_test.value(), false);
+  EXPECT_EQ(focusable_for_test.value(), false);
+
+  // Reset for the next message.
+  occlusion_hint_for_test.reset();
+  hit_testable_for_test.reset();
+  focusable_for_test.reset();
+
+  // Send a message including an occlusion hint.
+  const uint8_t json_occlusion_hint[] =
+      "{"
+      "    \"method\":\"View.update\","
+      "    \"args\": {"
+      "       \"viewId\":42,"
+      "       \"hitTestable\":true,"
+      "       \"focusable\":true,"
+      "       \"viewOcclusionHintLTRB\":[0.1,0.2,0.3,0.4]"
+      "    }"
+      "}";
+  std::unique_ptr<flutter::PlatformMessage> message_occlusion_hint =
+      std::make_unique<flutter::PlatformMessage>(
+          "flutter/platform_views",
+          fml::MallocMapping::Copy(json_occlusion_hint,
+                                   sizeof(json_occlusion_hint)),
+          fml::RefPtr<flutter::PlatformMessageResponse>());
+  base_view->HandlePlatformMessage(std::move(message_occlusion_hint));
+  RunLoopUntilIdle();
+  ASSERT_TRUE(occlusion_hint_for_test.has_value());
+  ASSERT_TRUE(hit_testable_for_test.has_value());
+  ASSERT_TRUE(focusable_for_test.has_value());
+  EXPECT_EQ(occlusion_hint_for_test.value(),
+            SkRect::MakeLTRB(0.1, 0.2, 0.3, 0.4));
+  EXPECT_EQ(hit_testable_for_test.value(), true);
+  EXPECT_EQ(focusable_for_test.value(), true);
 }
 
 // This test makes sure that the PlatformView forwards messages on the
@@ -677,15 +766,24 @@ TEST_F(PlatformViewTests, DestroyViewTest) {
   sys::testing::ServiceDirectoryProvider services_provider(dispatcher());
   MockPlatformViewDelegate delegate;
   flutter::TaskRunners task_runners =
-      flutter::TaskRunners("test_runners", nullptr, nullptr, nullptr, nullptr);
+      flutter::TaskRunners("test_runners",  // label
+                           flutter_runner::CreateFMLTaskRunner(
+                               async_get_default_dispatcher()),  // platform
+                           nullptr,                              // raster
+                           nullptr,                              // ui
+                           nullptr                               // io
+      );
 
   // Test wireframe callback function. If the message sent to the platform
   // view was properly handled and parsed, this function should be called,
   // setting |wireframe_enabled| to true.
-  int64_t destroy_view_called = false;
-  auto DestroyViewCallback = [&destroy_view_called](int64_t view_id) {
-    destroy_view_called = true;
-  };
+  bool destroy_view_called = false;
+  auto DestroyViewCallback =
+      [&destroy_view_called](int64_t view_id,
+                             flutter_runner::ViewIdCallback on_view_unbound) {
+        destroy_view_called = true;
+        on_view_unbound(0);
+      };
 
   flutter_runner::PlatformView platform_view =
       PlatformViewBuilder(delegate, std::move(task_runners),
@@ -695,7 +793,7 @@ TEST_F(PlatformViewTests, DestroyViewTest) {
 
   // Cast platform_view to its base view so we can have access to the public
   // "HandlePlatformMessage" function.
-  auto base_view = dynamic_cast<flutter::PlatformView*>(&platform_view);
+  auto base_view = static_cast<flutter::PlatformView*>(&platform_view);
   EXPECT_TRUE(base_view);
 
   // JSON for the message to be passed into the PlatformView.
@@ -707,12 +805,11 @@ TEST_F(PlatformViewTests, DestroyViewTest) {
       "    }"
       "}";
 
-  fml::RefPtr<flutter::PlatformMessage> message =
-      fml::MakeRefCounted<flutter::PlatformMessage>(
-          "flutter/platform_views",
-          std::vector<uint8_t>(txt, txt + sizeof(txt)),
+  std::unique_ptr<flutter::PlatformMessage> message =
+      std::make_unique<flutter::PlatformMessage>(
+          "flutter/platform_views", fml::MallocMapping::Copy(txt, sizeof(txt)),
           fml::RefPtr<flutter::PlatformMessageResponse>());
-  base_view->HandlePlatformMessage(message);
+  base_view->HandlePlatformMessage(std::move(message));
 
   RunLoopUntilIdle();
 
@@ -723,61 +820,114 @@ TEST_F(PlatformViewTests, DestroyViewTest) {
 // "flutter/platform_views" channel for ViewConnected, ViewDisconnected, and
 // ViewStateChanged events.
 TEST_F(PlatformViewTests, ViewEventsTest) {
+  constexpr int64_t kViewId = 33;
+  constexpr scenic::ResourceId kViewHolderId = 42;
   MockPlatformViewDelegate delegate;
 
   fuchsia::ui::scenic::SessionListenerPtr session_listener;
   std::vector<fuchsia::ui::scenic::Event> events;
   sys::testing::ServiceDirectoryProvider services_provider(dispatcher());
+  flutter::TaskRunners task_runners =
+      flutter::TaskRunners("test_runners",  // label
+                           flutter_runner::CreateFMLTaskRunner(
+                               async_get_default_dispatcher()),  // platform
+                           flutter_runner::CreateFMLTaskRunner(
+                               async_get_default_dispatcher()),  // raster
+                           flutter_runner::CreateFMLTaskRunner(
+                               async_get_default_dispatcher()),  // ui
+                           nullptr                               // io
+      );
 
-  flutter::TaskRunners task_runners = flutter::TaskRunners(
-      "test_runners", nullptr, nullptr,
-      flutter_runner::CreateFMLTaskRunner(async_get_default_dispatcher()),
-      nullptr);
+  auto on_create_view = [kViewId](int64_t view_id,
+                                  flutter_runner::ViewIdCallback on_view_bound,
+                                  bool hit_testable, bool focusable) {
+    ASSERT_EQ(view_id, kViewId);
+    on_view_bound(kViewHolderId);
+  };
 
   flutter_runner::PlatformView platform_view =
       PlatformViewBuilder(delegate, std::move(task_runners),
                           services_provider.service_directory())
           .SetSessionListenerRequest(session_listener.NewRequest())
+          .SetCreateViewCallback(on_create_view)
           .Build();
+  RunLoopUntilIdle();
+  ASSERT_EQ(delegate.message(), nullptr);
 
+  // Create initial view for testing.
+  std::ostringstream create_view_message;
+  create_view_message << "{"
+                      << "  \"method\":\"View.create\","
+                      << "  \"args\":{"
+                      << "    \"viewId\":" << kViewId << ","
+                      << "    \"hitTestable\":true,"
+                      << "    \"focusable\":true"
+                      << "  }"
+                      << "}";
+  std::string create_view_call = create_view_message.str();
+  static_cast<flutter::PlatformView*>(&platform_view)
+      ->HandlePlatformMessage(std::make_unique<flutter::PlatformMessage>(
+          "flutter/platform_views",
+          fml::MallocMapping::Copy(create_view_call.c_str(),
+                                   create_view_call.size()),
+          fml::RefPtr<flutter::PlatformMessageResponse>()));
   RunLoopUntilIdle();
 
   // ViewConnected event.
+  delegate.Reset();
   events.clear();
   events.emplace_back(fuchsia::ui::scenic::Event::WithGfx(
       fuchsia::ui::gfx::Event::WithViewConnected(
           fuchsia::ui::gfx::ViewConnectedEvent{
-              .view_holder_id = 0,
+              .view_holder_id = kViewHolderId,
           })));
   session_listener->OnScenicEvent(std::move(events));
   RunLoopUntilIdle();
 
-  auto data = delegate.message()->data();
-  auto call = std::string(data.begin(), data.end());
-  std::string expected = "{\"method\":\"View.viewConnected\",\"args\":null}";
-  EXPECT_EQ(expected, call);
+  flutter::PlatformMessage* view_connected_msg = delegate.message();
+  ASSERT_NE(view_connected_msg, nullptr);
+  std::ostringstream view_connected_expected_out;
+  view_connected_expected_out
+      << "{"
+      << "\"method\":\"View.viewConnected\","
+      << "\"args\":{"
+      << "  \"viewId\":" << kViewId  // ViewHolderToken handle
+      << "  }"
+      << "}";
+  EXPECT_EQ(view_connected_expected_out.str(),
+            ToString(view_connected_msg->data()));
 
   // ViewDisconnected event.
+  delegate.Reset();
   events.clear();
   events.emplace_back(fuchsia::ui::scenic::Event::WithGfx(
       fuchsia::ui::gfx::Event::WithViewDisconnected(
           fuchsia::ui::gfx::ViewDisconnectedEvent{
-              .view_holder_id = 0,
+              .view_holder_id = kViewHolderId,
           })));
   session_listener->OnScenicEvent(std::move(events));
   RunLoopUntilIdle();
 
-  data = delegate.message()->data();
-  call = std::string(data.begin(), data.end());
-  expected = "{\"method\":\"View.viewDisconnected\",\"args\":null}";
-  EXPECT_EQ(expected, call);
+  flutter::PlatformMessage* view_disconnected_msg = delegate.message();
+  ASSERT_NE(view_disconnected_msg, nullptr);
+  std::ostringstream view_disconnected_expected_out;
+  view_disconnected_expected_out
+      << "{"
+      << "\"method\":\"View.viewDisconnected\","
+      << "\"args\":{"
+      << "  \"viewId\":" << kViewId  // ViewHolderToken handle
+      << "  }"
+      << "}";
+  EXPECT_EQ(view_disconnected_expected_out.str(),
+            ToString(view_disconnected_msg->data()));
 
   // ViewStateChanged event.
+  delegate.Reset();
   events.clear();
   events.emplace_back(fuchsia::ui::scenic::Event::WithGfx(
       fuchsia::ui::gfx::Event::WithViewStateChanged(
           fuchsia::ui::gfx::ViewStateChangedEvent{
-              .view_holder_id = 0,
+              .view_holder_id = kViewHolderId,
               .state =
                   fuchsia::ui::gfx::ViewState{
                       .is_rendering = true,
@@ -786,10 +936,20 @@ TEST_F(PlatformViewTests, ViewEventsTest) {
   session_listener->OnScenicEvent(std::move(events));
   RunLoopUntilIdle();
 
-  data = delegate.message()->data();
-  call = std::string(data.begin(), data.end());
-  expected = "{\"method\":\"View.viewStateChanged\",\"args\":{\"state\":true}}";
-  EXPECT_EQ(expected, call);
+  flutter::PlatformMessage* view_state_changed_msg = delegate.message();
+  ASSERT_NE(view_state_changed_msg, nullptr);
+  std::ostringstream view_state_changed_expected_out;
+  view_state_changed_expected_out
+      << "{"
+      << "\"method\":\"View.viewStateChanged\","
+      << "\"args\":{"
+      << "  \"viewId\":" << kViewId << ","  // ViewHolderToken
+      << "  \"is_rendering\":true,"         // IsViewRendering
+      << "  \"state\":true"                 // IsViewRendering
+      << "  }"
+      << "}";
+  EXPECT_EQ(view_state_changed_expected_out.str(),
+            ToString(view_state_changed_msg->data()));
 }
 
 // This test makes sure that the PlatformView forwards messages on the
@@ -812,7 +972,7 @@ TEST_F(PlatformViewTests, RequestFocusTest) {
 
   // Cast platform_view to its base view so we can have access to the public
   // "HandlePlatformMessage" function.
-  auto base_view = dynamic_cast<flutter::PlatformView*>(&platform_view);
+  auto base_view = static_cast<flutter::PlatformView*>(&platform_view);
   EXPECT_TRUE(base_view);
 
   // This "Mock" ViewRef serves as the target for the RequestFocus operation.
@@ -841,17 +1001,16 @@ TEST_F(PlatformViewTests, RequestFocusTest) {
   EXPECT_CALL(*response, Complete(::testing::_))
       .WillOnce(::testing::Invoke(&data_arg, &DataArg::Complete));
 
-  fml::RefPtr<flutter::PlatformMessage> message =
-      fml::MakeRefCounted<flutter::PlatformMessage>(
+  std::unique_ptr<flutter::PlatformMessage> message =
+      std::make_unique<flutter::PlatformMessage>(
           "flutter/platform_views",
-          std::vector<uint8_t>(buff, buff + sizeof(buff)), response);
-  base_view->HandlePlatformMessage(message);
+          fml::MallocMapping::Copy(buff, sizeof(buff)), response);
+  base_view->HandlePlatformMessage(std::move(message));
 
   RunLoopUntilIdle();
 
   EXPECT_TRUE(mock_focuser.request_focus_called());
-  auto result = std::string((const char*)data_arg.data->GetMapping(),
-                            data_arg.data->GetSize());
+  auto result = ToString(*data_arg.data);
   EXPECT_EQ(std::string("[0]"), result);
 }
 
@@ -875,7 +1034,7 @@ TEST_F(PlatformViewTests, RequestFocusFailTest) {
 
   // Cast platform_view to its base view so we can have access to the public
   // "HandlePlatformMessage" function.
-  auto base_view = dynamic_cast<flutter::PlatformView*>(&platform_view);
+  auto base_view = static_cast<flutter::PlatformView*>(&platform_view);
   EXPECT_TRUE(base_view);
 
   // This "Mock" ViewRef serves as the target for the RequestFocus operation.
@@ -904,17 +1063,16 @@ TEST_F(PlatformViewTests, RequestFocusFailTest) {
   EXPECT_CALL(*response, Complete(::testing::_))
       .WillOnce(::testing::Invoke(&data_arg, &DataArg::Complete));
 
-  fml::RefPtr<flutter::PlatformMessage> message =
-      fml::MakeRefCounted<flutter::PlatformMessage>(
+  std::unique_ptr<flutter::PlatformMessage> message =
+      std::make_unique<flutter::PlatformMessage>(
           "flutter/platform_views",
-          std::vector<uint8_t>(buff, buff + sizeof(buff)), response);
-  base_view->HandlePlatformMessage(message);
+          fml::MallocMapping::Copy(buff, sizeof(buff)), response);
+  base_view->HandlePlatformMessage(std::move(message));
 
   RunLoopUntilIdle();
 
   EXPECT_TRUE(mock_focuser.request_focus_called());
-  auto result = std::string((const char*)data_arg.data->GetMapping(),
-                            data_arg.data->GetSize());
+  auto result = ToString(*data_arg.data);
   std::ostringstream out;
   out << "["
       << static_cast<std::underlying_type_t<fuchsia::ui::views::Error>>(
@@ -999,8 +1157,8 @@ TEST_F(PlatformViewTests, OnKeyEvent) {
           key_event_status = status;
         });
     RunLoopUntilIdle();
-    const std::vector<uint8_t> data = delegate.message()->data();
-    const std::string message = std::string(data.begin(), data.end());
+    const fml::MallocMapping data = delegate.message()->releaseData();
+    const std::string message = ToString(data);
 
     EXPECT_EQ(event.expected_platform_message, message);
     EXPECT_EQ(key_event_status, event.expected_key_event_status);

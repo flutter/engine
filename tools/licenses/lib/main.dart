@@ -1663,6 +1663,19 @@ class _RepositoryPkgDirectory extends _RepositoryDirectory {
   _RepositoryPkgDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
   @override
+  bool shouldRecurse(fs.IoNode entry) {
+    return entry.name != 'archive'  // contains nothing that ends up in the binary executable
+      && entry.name != 'equatable'
+      && entry.name != 'file'
+      && entry.name != 'flutter_packages'
+      && entry.name != 'gcloud'
+      && entry.name != 'googleapis'
+      && entry.name != 'platform'
+      && entry.name != 'process'
+      && entry.name != 'vector_math';
+  }
+
+  @override
   _RepositoryDirectory createSubdirectory(fs.Directory entry) {
     if (entry.name == 'when')
       return _RepositoryPkgWhenDirectory(this, entry);
@@ -2016,7 +2029,8 @@ class _RepositoryDartThirdPartyDirectory extends _RepositoryGenericThirdPartyDir
 
   @override
   bool shouldRecurse(fs.IoNode entry) {
-    return entry.name != 'drt_resources' // test materials
+    return entry.name != 'devtools' // not linked in
+        && entry.name != 'drt_resources' // test materials
         && entry.name != 'firefox_jsshell' // testing tool for dart2js
         && entry.name != 'd8' // testing tool for dart2js
         && entry.name != 'pkg'

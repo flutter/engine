@@ -399,14 +399,18 @@ class ImageFilter {
     if (engine.useCanvasKit) {
       return engine.CkImageFilter.blur(sigmaX: sigmaX, sigmaY: sigmaY, tileMode: tileMode);
     }
-    return engine.EngineImageFilter.blur(sigmaX: sigmaX, sigmaY: sigmaY);
+    // TODO(flutter_web): implement TileMode.
+    return engine.EngineImageFilter.blur(sigmaX: sigmaX, sigmaY: sigmaY, tileMode: tileMode);
   }
 
-  ImageFilter.matrix(Float64List matrix4, {FilterQuality filterQuality = FilterQuality.low}) {
-    // TODO(flutter_web): add implementation.
-    throw UnimplementedError('ImageFilter.matrix not implemented for web platform.');
-    //    if (matrix4.length != 16)
-    //      throw ArgumentError('"matrix4" must have 16 entries.');
+  factory ImageFilter.matrix(Float64List matrix4, {FilterQuality filterQuality = FilterQuality.low}) {
+    if (matrix4.length != 16)
+      throw ArgumentError('"matrix4" must have 16 entries.');
+    if (engine.useCanvasKit) {
+      return engine.CkImageFilter.matrix(matrix: matrix4, filterQuality: filterQuality);
+    }
+    // TODO(flutter_web): implement FilterQuality.
+    return engine.EngineImageFilter.matrix(matrix: matrix4, filterQuality: filterQuality);
   }
 
   ImageFilter.compose({required ImageFilter outer, required ImageFilter inner}) {
@@ -614,7 +618,7 @@ class Shadow {
   // See SkBlurMask::ConvertRadiusToSigma().
   // <https://github.com/google/skia/blob/bb5b77db51d2e149ee66db284903572a5aac09be/src/effects/SkBlurMask.cpp#L23>
   static double convertRadiusToSigma(double radius) {
-    return radius * 0.57735 + 0.5;
+    return radius > 0 ? radius * 0.57735 + 0.5 : 0;
   }
 
   double get blurSigma => convertRadiusToSigma(blurRadius);
@@ -693,12 +697,9 @@ class Shadow {
 class ImageShader extends Shader {
   factory ImageShader(Image image, TileMode tmx, TileMode tmy, Float64List matrix4, {
     FilterQuality? filterQuality,
-  }) {
-    if (engine.useCanvasKit) {
-      return engine.CkImageShader(image, tmx, tmy, matrix4, filterQuality);
-    }
-    throw UnsupportedError('ImageShader not implemented for web platform.');
-  }
+  }) => engine.useCanvasKit
+      ? engine.CkImageShader(image, tmx, tmy, matrix4, filterQuality)
+      : engine.EngineImageShader(image, tmx, tmy, matrix4, filterQuality);
 }
 
 class ImmutableBuffer {

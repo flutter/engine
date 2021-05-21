@@ -469,9 +469,6 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
 
   if (!surface) {
     FML_LOG(ERROR) << "Could not wrap embedder supplied render texture.";
-    if (texture->destruction_callback) {
-      texture->destruction_callback(texture->user_data);
-    }
     return nullptr;
   }
 
@@ -514,9 +511,6 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
 
   if (!surface) {
     FML_LOG(ERROR) << "Could not wrap embedder supplied frame-buffer.";
-    if (framebuffer->destruction_callback) {
-      framebuffer->destruction_callback(framebuffer->user_data);
-    }
     return nullptr;
   }
   return surface;
@@ -563,6 +557,51 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
     return nullptr;
   }
   return surface;
+}
+
+static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
+    GrDirectContext* context,
+    const FlutterBackingStoreConfig& config,
+    const FlutterMetalBackingStore* metal) {
+#ifdef SHELL_ENABLE_METAL
+  GrMtlTextureInfo texture_info;
+  if (!metal->texture.texture) {
+    FML_LOG(ERROR) << "Embedder supplied null Metal texture.";
+    return nullptr;
+  }
+  sk_cf_obj<FlutterMetalTextureHandle> mtl_texture;
+  mtl_texture.retain(metal->texture.texture);
+  texture_info.fTexture = mtl_texture;
+  GrBackendTexture backend_texture(config.size.width,   //
+                                   config.size.height,  //
+                                   GrMipMapped::kNo,    //
+                                   texture_info         //
+  );
+
+  SkSurfaceProps surface_properties(0, kUnknown_SkPixelGeometry);
+
+  auto surface = SkSurface::MakeFromBackendTexture(
+      context,                   // context
+      backend_texture,           // back-end texture
+      kTopLeft_GrSurfaceOrigin,  // surface origin
+      1,                         // sample count
+      kBGRA_8888_SkColorType,    // color type
+      nullptr,                   // color space
+      &surface_properties,       // surface properties
+      static_cast<SkSurface::TextureReleaseProc>(
+          metal->texture.destruction_callback),  // release proc
+      metal->texture.user_data                   // release context
+  );
+
+  if (!surface) {
+    FML_LOG(ERROR) << "Could not wrap embedder supplied Metal render texture.";
+    return nullptr;
+  }
+
+  return surface;
+#else
+  return nullptr;
+#endif
 }
 
 static std::unique_ptr<flutter::EmbedderRenderTarget>
@@ -621,6 +660,10 @@ CreateEmbedderRenderTarget(const FlutterCompositor* compositor,
     case kFlutterBackingStoreTypeSoftware:
       render_surface = MakeSkSurfaceFromBackingStore(context, config,
                                                      &backing_store.software);
+      break;
+    case kFlutterBackingStoreTypeMetal:
+      render_surface =
+          MakeSkSurfaceFromBackingStore(context, config, &backing_store.metal);
       break;
   };
 
@@ -681,7 +724,7 @@ InferExternalViewEmbedderFromArgs(const FlutterCompositor* compositor) {
 }
 
 struct _FlutterPlatformMessageResponseHandle {
-  fml::RefPtr<flutter::PlatformMessage> message;
+  std::unique_ptr<flutter::PlatformMessage> message;
 };
 
 struct LoadedElfDeleter {
@@ -1056,13 +1099,13 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
   if (SAFE_ACCESS(args, platform_message_callback, nullptr) != nullptr) {
     platform_message_response_callback =
         [ptr = args->platform_message_callback,
-         user_data](fml::RefPtr<flutter::PlatformMessage> message) {
+         user_data](std::unique_ptr<flutter::PlatformMessage> message) {
           auto handle = new FlutterPlatformMessageResponseHandle();
           const FlutterPlatformMessage incoming_message = {
               sizeof(FlutterPlatformMessage),  // struct_size
               message->channel().c_str(),      // channel
-              message->data().data(),          // message
-              message->data().size(),          // message_size
+              message->data().GetMapping(),    // message
+              message->data().GetSize(),       // message_size
               handle,                          // response_handle
           };
           handle->message = std::move(message);
@@ -1587,15 +1630,14 @@ FlutterEngineResult FlutterEngineSendPlatformMessage(
     response = response_handle->message->response();
   }
 
-  fml::RefPtr<flutter::PlatformMessage> message;
+  std::unique_ptr<flutter::PlatformMessage> message;
   if (message_size == 0) {
-    message = fml::MakeRefCounted<flutter::PlatformMessage>(
+    message = std::make_unique<flutter::PlatformMessage>(
         flutter_message->channel, response);
   } else {
-    message = fml::MakeRefCounted<flutter::PlatformMessage>(
+    message = std::make_unique<flutter::PlatformMessage>(
         flutter_message->channel,
-        std::vector<uint8_t>(message_data, message_data + message_size),
-        response);
+        fml::MallocMapping::Copy(message_data, message_size), response);
   }
 
   return reinterpret_cast<flutter::EmbedderEngine*>(engine)
@@ -1631,7 +1673,7 @@ FlutterEngineResult FlutterPlatformMessageCreateResponseHandle(
 
   auto handle = new FlutterPlatformMessageResponseHandle();
 
-  handle->message = fml::MakeRefCounted<flutter::PlatformMessage>(
+  handle->message = std::make_unique<flutter::PlatformMessage>(
       "",  // The channel is empty and unused as the response handle is going
            // to referenced directly in the |FlutterEngineSendPlatformMessage|
            // with the container message discarded.
@@ -1786,7 +1828,7 @@ FlutterEngineResult FlutterEngineDispatchSemanticsAction(
   if (!reinterpret_cast<flutter::EmbedderEngine*>(engine)
            ->DispatchSemanticsAction(
                id, engine_action,
-               std::vector<uint8_t>({data, data + data_length}))) {
+               fml::MallocMapping::Copy(data, data_length))) {
     return LOG_EMBEDDER_ERROR(kInternalInconsistency,
                               "Could not dispatch semantics action.");
   }
@@ -1909,10 +1951,11 @@ static bool DispatchJSONPlatformMessage(FLUTTER_API_SYMBOL(FlutterEngine)
     return false;
   }
 
-  auto platform_message = fml::MakeRefCounted<flutter::PlatformMessage>(
-      channel_name.c_str(),                                       // channel
-      std::vector<uint8_t>{message, message + buffer.GetSize()},  // message
-      nullptr                                                     // response
+  auto platform_message = std::make_unique<flutter::PlatformMessage>(
+      channel_name.c_str(),  // channel
+      fml::MallocMapping::Copy(message,
+                               buffer.GetSize()),  // message
+      nullptr                                      // response
   );
 
   return reinterpret_cast<flutter::EmbedderEngine*>(engine)

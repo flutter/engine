@@ -12,7 +12,10 @@ class DomRenderer {
 
     reset();
 
-    TextMeasurementService.initialize(rulerCacheCapacity: 10);
+    TextMeasurementService.initialize(
+      rulerCacheCapacity: 10,
+      root: _glassPaneShadow!,
+    );
 
     assert(() {
       _setupHotRestart();
@@ -25,6 +28,9 @@ class DomRenderer {
   static const int vibrateMediumImpact = 20;
   static const int vibrateHeavyImpact = 30;
   static const int vibrateSelectionClick = 10;
+
+  // The tag name for the root view of the flutter app (glass-pane)
+  static const String _glassPaneTagName = 'flt-glass-pane';
 
   /// Fires when browser language preferences change.
   static const html.EventStreamProvider<html.Event> languageChangeEvent =
@@ -47,6 +53,9 @@ class DomRenderer {
   /// [useCanvasKit] is set to true.
   html.ScriptElement? get canvasKitScript => _canvasKitScript;
   html.ScriptElement? _canvasKitScript;
+
+  Future<void>? get canvasKitLoaded => _canvasKitLoaded;
+  Future<void>? _canvasKitLoaded;
 
   /// The element that contains the [sceneElement].
   ///
@@ -92,8 +101,8 @@ class DomRenderer {
   /// This getter calls the `hasFocus` method of the `Document` interface.
   /// See for more details:
   /// https://developer.mozilla.org/en-US/docs/Web/API/Document/hasFocus
-  bool? get windowHasFocus =>
-      js_util.callMethod(html.document, 'hasFocus', <dynamic>[]);
+  bool get windowHasFocus =>
+      js_util.callMethod(html.document, 'hasFocus', <dynamic>[]) ?? false;
 
   void _setupHotRestart() {
     // This persists across hot restarts to clear stale DOM.
@@ -150,6 +159,10 @@ class DomRenderer {
   /// if they are not handled by semantics.
   html.Element? get glassPaneElement => _glassPaneElement;
   html.Element? _glassPaneElement;
+
+  /// The ShadowRoot of the [glassPaneElement].
+  html.ShadowRoot? get glassPaneShadow => _glassPaneShadow;
+  html.ShadowRoot? _glassPaneShadow;
 
   final html.Element rootElement = html.document.body!;
 
@@ -249,11 +262,8 @@ class DomRenderer {
   static const String defaultCssFont =
       '$defaultFontStyle $defaultFontWeight ${defaultFontSize}px $defaultFontFamily';
 
-  void reset() {
-    _styleElement?.remove();
-    _styleElement = html.StyleElement();
-    html.document.head!.append(_styleElement!);
-    final html.CssStyleSheet sheet = _styleElement!.sheet as html.CssStyleSheet;
+  // Applies the required global CSS to an incoming [html.CssStyleSheet] `sheet`.
+  void _applyCssRulesToSheet(html.CssStyleSheet sheet) {
     final bool isWebKit = browserEngine == BrowserEngine.webkit;
     final bool isFirefox = browserEngine == BrowserEngine.firefox;
     // TODO(butterfly): use more efficient CSS selectors; descendant selectors
@@ -338,7 +348,7 @@ flt-semantics [contentEditable="true"] {
     // on using gray background. This CSS rule disables that.
     if (isWebKit) {
       sheet.insertRule('''
-flt-glass-pane * {
+$_glassPaneTagName * {
   -webkit-tap-highlight-color: transparent;
 }
 ''', sheet.cssRules.length);
@@ -357,13 +367,23 @@ flt-glass-pane * {
 }
 ''', sheet.cssRules.length);
     }
+  }
+
+  void reset() {
+    final bool isWebKit = browserEngine == BrowserEngine.webkit;
+
+    _styleElement?.remove();
+    _styleElement = html.StyleElement();
+    html.document.head!.append(_styleElement!);
+    final html.CssStyleSheet sheet = _styleElement!.sheet as html.CssStyleSheet;
+    _applyCssRulesToSheet(sheet);
 
     final html.BodyElement bodyElement = html.document.body!;
 
     setElementAttribute(
       bodyElement,
       'flt-renderer',
-      '${useCanvasKit ? 'canvaskit' : 'html'} (${_autoDetect ? 'auto-selected' : 'requested explicitly'})',
+      '${useCanvasKit ? 'canvaskit' : 'html'} (${flutterWebAutoDetect ? 'auto-selected' : 'requested explicitly'})',
     );
     setElementAttribute(bodyElement, 'flt-build-mode', buildMode);
 
@@ -429,7 +449,7 @@ flt-glass-pane * {
     // IMPORTANT: the glass pane element must come after the scene element in the DOM node list so
     //            it can intercept input events.
     _glassPaneElement?.remove();
-    final html.Element glassPaneElement = createElement('flt-glass-pane');
+    final html.Element glassPaneElement = createElement(_glassPaneTagName);
     _glassPaneElement = glassPaneElement;
     glassPaneElement.style
       ..position = 'absolute'
@@ -437,33 +457,46 @@ flt-glass-pane * {
       ..right = '0'
       ..bottom = '0'
       ..left = '0';
+
+    // Create a Shadow Root under the glass panel, and attach everything there,
+    // instead of directly underneath the glass panel.
+    final html.ShadowRoot glassPaneElementShadowRoot = glassPaneElement.attachShadow(<String, String>{
+      'mode': 'open',
+      'delegatesFocus': 'true',
+    });
+    _glassPaneShadow = glassPaneElementShadowRoot;
+
     bodyElement.append(glassPaneElement);
 
-    _sceneHostElement = createElement('flt-scene-host');
+    final html.StyleElement shadowRootStyleElement = html.StyleElement();
+    // The shadowRootStyleElement must be appended to the DOM, or its `sheet` will be null later...
+    glassPaneElementShadowRoot.append(shadowRootStyleElement);
 
-    final html.Element semanticsHostElement = createElement('flt-semantics-host');
+    final html.CssStyleSheet shadowRootStyleSheet = shadowRootStyleElement.sheet as html.CssStyleSheet;
+    _applyCssRulesToSheet(shadowRootStyleSheet); // TODO: Apply only rules for the shadow root
+
+    // Don't allow the scene to receive pointer events.
+    _sceneHostElement = createElement('flt-scene-host')
+      ..style
+        .pointerEvents = 'none';
+
+    final html.Element semanticsHostElement =
+        createElement('flt-semantics-host');
     semanticsHostElement.style
       ..position = 'absolute'
       ..transformOrigin = '0 0 0';
     _semanticsHostElement = semanticsHostElement;
     updateSemanticsScreenProperties();
-    glassPaneElement.append(semanticsHostElement);
 
-    // Don't allow the scene to receive pointer events.
-    _sceneHostElement!.style.pointerEvents = 'none';
-
-    glassPaneElement.append(_sceneHostElement!);
-
-    final html.Element _accesibilityPlaceholder = EngineSemanticsOwner
+    final html.Element _accessibilityPlaceholder = EngineSemanticsOwner
         .instance.semanticsHelper
         .prepareAccessibilityPlaceholder();
 
-    // Insert the semantics placeholder after the scene host. For all widgets
-    // in the scene, except for platform widgets, the scene host will pass the
-    // pointer events through to the semantics tree. However, for platform
-    // views, the pointer events will not pass through, and will be handled
-    // by the platform view.
-    glassPaneElement.insertBefore(_accesibilityPlaceholder, _sceneHostElement);
+    glassPaneElementShadowRoot.nodes.addAll([
+      semanticsHostElement,
+      _accessibilityPlaceholder,
+      _sceneHostElement!,
+    ]);
 
     // When debugging semantics, make the scene semi-transparent so that the
     // semantics tree is visible.
@@ -480,11 +513,11 @@ flt-glass-pane * {
     setElementAttribute(_sceneHostElement!, 'aria-hidden', 'true');
 
     if (html.window.visualViewport == null && isWebKit) {
-      // Safari sometimes gives us bogus innerWidth/innerHeight values when the
-      // page loads. When it changes the values to correct ones it does not
-      // notify of the change via `onResize`. As a workaround, we set up a
-      // temporary periodic timer that polls innerWidth and triggers the
-      // resizeListener so that the framework can react to the change.
+      // Older Safari versions sometimes give us bogus innerWidth/innerHeight
+      // values when the page loads. When it changes the values to correct ones
+      // it does not notify of the change via `onResize`. As a workaround, we
+      // set up a temporary periodic timer that polls innerWidth and triggers
+      // the resizeListener so that the framework can react to the change.
       //
       // Safari 13 has implemented visualViewport API so it doesn't need this
       // timer.
@@ -509,10 +542,20 @@ flt-glass-pane * {
       });
     }
 
-    if (useCanvasKit) {
+    // Only reset CanvasKit if it's not already available.
+    if (useCanvasKit && windowFlutterCanvasKit == null) {
       _canvasKitScript?.remove();
       _canvasKitScript = html.ScriptElement();
       _canvasKitScript!.src = canvasKitJavaScriptBindingsUrl;
+
+      Completer<void> canvasKitLoadCompleter = Completer<void>();
+      _canvasKitLoaded = canvasKitLoadCompleter.future;
+
+      late StreamSubscription<html.Event> loadSubscription;
+      loadSubscription = _canvasKitScript!.onLoad.listen((_) {
+        loadSubscription.cancel();
+        canvasKitLoadCompleter.complete(true);
+      });
 
       // TODO(hterkelsen): Rather than this monkey-patch hack, we should
       // build CanvasKit ourselves. See:
@@ -591,7 +634,8 @@ flt-glass-pane * {
   /// logical pixels. To compensate, we inject an inverse scale at the root
   /// level.
   void updateSemanticsScreenProperties() {
-    _semanticsHostElement!.style.transform = 'scale(${1 / html.window.devicePixelRatio})';
+    _semanticsHostElement!.style.transform =
+        'scale(${1 / html.window.devicePixelRatio})';
   }
 
   /// Called immediately after browser window metrics change.
@@ -606,12 +650,12 @@ flt-glass-pane * {
   void _metricsDidChange(html.Event? event) {
     updateSemanticsScreenProperties();
     if (isMobile && !window.isRotation() && textEditing.isEditing) {
-      window.computeOnScreenKeyboardInsets();
+      window.computeOnScreenKeyboardInsets(true);
       EnginePlatformDispatcher.instance.invokeOnMetricsChanged();
     } else {
       window._computePhysicalSize();
       // When physical size changes this value has to be recalculated.
-      window.computeOnScreenKeyboardInsets();
+      window.computeOnScreenKeyboardInsets(false);
       EnginePlatformDispatcher.instance.invokeOnMetricsChanged();
     }
   }
