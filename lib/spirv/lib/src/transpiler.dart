@@ -679,6 +679,11 @@ class _Transpiler {
     final String name = resolveName(readWord());
     final String base = resolveName(readWord());
 
+    // opAccessChain currently only supports indexed access.
+    // Once struct support is added, this will need to be updated.
+    // Currently, structs will be caught before this method is called,
+    // since using the instruction to define a struct type will throw
+    // an exception.
     out.write('$indent$type $name = $base');
     final int count = nextPosition - position;
     for (int i = 0; i < count; i++) {
