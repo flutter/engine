@@ -83,11 +83,12 @@ class SurfaceFactory {
 
   /// Signals that a surface is no longer being used. It can be reused.
   void releaseSurface(Surface surface) {
+    assert(surface != baseSurface, 'Attempting to release the base surface');
     if (surface == backupSurface) {
-      // Releasing the backup surface does nothing.
+      // If it's the backup surface, just remove it from the DOM.
+      surface.htmlElement.remove();
       return;
     }
-    assert(surface != baseSurface, 'Attempting to release the base surface');
     assert(
         _liveSurfaces.contains(surface),
         'Attempting to release a Surface which '
@@ -95,6 +96,17 @@ class SurfaceFactory {
     surface.htmlElement.remove();
     _liveSurfaces.remove(surface);
     _cache.add(surface);
+  }
+
+  /// Returns [true] if [surface] is currently live.
+  bool isLive(Surface surface) {
+    if (surface == baseSurface ||
+        surface == backupSurface ||
+        _liveSurfaces.contains(surface)) {
+      return true;
+    }
+    assert(_cache.contains(surface));
+    return false;
   }
 
   /// Dispose all surfaces created by this factory. Used in tests.

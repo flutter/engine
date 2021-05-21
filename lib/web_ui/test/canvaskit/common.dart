@@ -39,6 +39,7 @@ void setUpCanvasKitTest() {
   tearDown(() {
     testCollector.cleanUpAfterTest();
     debugResetBrowserSupportsFinalizationRegistry();
+    HtmlViewEmbedder.instance.debugClear();
     SurfaceFactory.instance.debugClear();
   });
 

@@ -26,10 +26,6 @@ void testMain() {
       window.debugOverrideDevicePixelRatio(1);
     });
 
-    tearDown(() {
-      HtmlViewEmbedder.instance.debugCleanupSvgClipPaths();
-    });
-
     test('embeds interactive platform views', () async {
       ui.platformViewRegistry.registerViewFactory(
         'test-platform-view',
@@ -253,7 +249,10 @@ void testMain() {
       await Future<void>.delayed(Duration.zero);
       renderTestScene(viewCount: 0);
       expect(countCanvases(), 1);
-      expect(SurfaceFactory.instance.debugCacheSize, 8);
+      // The cache contains all the surfaces except the base surface and the
+      // backup surface.
+      expect(SurfaceFactory.instance.debugCacheSize,
+          HtmlViewEmbedder.maximumOverlaySurfaces - 2);
 
       // Frame 3:
       //   Render: less than cache size platform views.
@@ -261,7 +260,7 @@ void testMain() {
       await Future<void>.delayed(Duration.zero);
       renderTestScene(viewCount: HtmlViewEmbedder.maximumOverlaySurfaces - 2);
       expect(countCanvases(), HtmlViewEmbedder.maximumOverlaySurfaces - 1);
-      expect(SurfaceFactory.instance.debugCacheSize, 2);
+      expect(SurfaceFactory.instance.debugCacheSize, 0);
 
       // Frame 4:
       //   Render: more platform views than max cache size.
@@ -269,7 +268,7 @@ void testMain() {
       //           cache empty (everything reused).
       await Future<void>.delayed(Duration.zero);
       renderTestScene(viewCount: HtmlViewEmbedder.maximumOverlaySurfaces * 2);
-      expect(countCanvases(), HtmlViewEmbedder.maximumOverlaySurfaces + 2);
+      expect(countCanvases(), HtmlViewEmbedder.maximumOverlaySurfaces);
       expect(SurfaceFactory.instance.debugCacheSize, 0);
 
       // Frame 5:
@@ -278,7 +277,8 @@ void testMain() {
       await Future<void>.delayed(Duration.zero);
       renderTestScene(viewCount: 0);
       expect(countCanvases(), 1);
-      expect(SurfaceFactory.instance.debugCacheSize, 8);
+      expect(SurfaceFactory.instance.debugCacheSize,
+          HtmlViewEmbedder.maximumOverlaySurfaces - 2);
 
       // Frame 6:
       //   Render: deleted platform views.

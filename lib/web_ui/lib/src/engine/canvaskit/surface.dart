@@ -12,6 +12,7 @@ import '../util.dart';
 import 'canvas.dart';
 import 'canvaskit_api.dart';
 import 'initialization.dart';
+import 'surface_factory.dart';
 import 'util.dart';
 
 typedef SubmitCallback = bool Function(SurfaceFrame, CkCanvas);
@@ -175,7 +176,7 @@ class Surface {
         _contextLost,
         'Received "webglcontextrestored" event but never received '
         'a "webglcontextlost" event.');
-    _forceNewContext = true;
+    _contextLost = false;
     // Force the framework to rerender the frame.
     EnginePlatformDispatcher.instance.invokeOnMetricsChanged();
     event.stopPropagation();
@@ -183,9 +184,18 @@ class Surface {
   }
 
   void _contextLostListener(html.Event event) {
+    if (event.target != this.htmlCanvas) {
+      // This is the context lost event for the old HTML canvas. Ignore it.
+      return;
+    }
+    final SurfaceFactory factory = SurfaceFactory.instance;
     _contextLost = true;
-    event.preventDefault();
-    dispose();
+    if (factory.isLive(this)) {
+      _forceNewContext = true;
+      event.preventDefault();
+    } else {
+      dispose();
+    }
   }
 
   /// This function is expensive.
@@ -193,7 +203,6 @@ class Surface {
   /// It's better to reuse surface if possible.
   CkSurface _createNewSurface(ui.Size physicalSize) {
     // Clear the container, if it's not empty. We're going to create a new <canvas>.
-    this.htmlCanvas?.remove();
     this.htmlCanvas?.removeEventListener(
           'webglcontextrestored',
           _contextRestoredListener,
@@ -204,6 +213,7 @@ class Surface {
           _contextLostListener,
           false,
         );
+    this.htmlCanvas?.remove();
 
     // If `physicalSize` is not precise, use a slightly bigger canvas. This way
     // we ensure that the rendred picture covers the entire browser window.
@@ -312,6 +322,10 @@ class Surface {
   }
 
   void dispose() {
+    htmlCanvas?.removeEventListener(
+        'webglcontextlost', _contextLostListener, false);
+    htmlCanvas?.removeEventListener(
+        'webglcontextrestored', _contextRestoredListener, false);
     htmlElement.remove();
     _surface?.dispose();
   }
@@ -326,6 +340,7 @@ class CkSurface {
   CkSurface(this._surface, this._grContext, this._glContext);
 
   CkCanvas getCanvas() {
+    assert(!_isDisposed, 'Attempting to use the canvas of a disposed surface');
     return CkCanvas(_surface.getCanvas());
   }
 

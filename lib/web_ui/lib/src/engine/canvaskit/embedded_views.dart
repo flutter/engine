@@ -4,8 +4,7 @@
 
 import 'dart:html' as html;
 
-import 'package:ui/src/engine.dart'
-    show window, NullTreeSanitizer, platformViewManager, createPlatformViewSlot;
+import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
 import '../html/path_to_svg_clip.dart';
@@ -421,8 +420,8 @@ class HtmlViewEmbedder {
   void disposeViews(Set<int> viewsToDispose) {
     for (final int viewId in viewsToDispose) {
       // Remove viewId from the _viewClipChains Map, and then from the DOM.
-      ViewClipChain clipChain = _viewClipChains.remove(viewId)!;
-      clipChain.root.remove();
+      ViewClipChain? clipChain = _viewClipChains.remove(viewId);
+      clipChain?.root.remove();
       // More cleanup
       _releaseOverlay(viewId);
       _currentCompositionParams.remove(viewId);
@@ -435,8 +434,17 @@ class HtmlViewEmbedder {
   void _releaseOverlay(int viewId) {
     if (_overlays[viewId] != null) {
       Surface overlay = _overlays[viewId]!;
-      SurfaceFactory.instance.releaseSurface(overlay);
-      _overlays.remove(viewId);
+      if (overlay == SurfaceFactory.instance.backupSurface) {
+        assert(_viewsUsingBackupSurface.contains(viewId));
+        _viewsUsingBackupSurface.remove(viewId);
+        _overlays.remove(viewId);
+        if (_viewsUsingBackupSurface.isEmpty) {
+          SurfaceFactory.instance.releaseSurface(overlay);
+        }
+      } else {
+        SurfaceFactory.instance.releaseSurface(overlay);
+        _overlays.remove(viewId);
+      }
     }
   }
 
@@ -465,6 +473,24 @@ class HtmlViewEmbedder {
       element.remove();
     });
     _svgClipDefs.clear();
+  }
+
+  /// Clears the state of this view embedder. Used in tests.
+  void debugClear() {
+    final Set<int> allViews = platformViewManager.debugClear();
+    disposeViews(allViews);
+    _backupPictureRecorder?.endRecording();
+    _backupPictureRecorder = null;
+    _viewsUsingBackupSurface.clear();
+    _pictureRecorders.clear();
+    _currentCompositionParams.clear();
+    debugCleanupSvgClipPaths();
+    _currentCompositionParams.clear();
+    _viewClipChains.clear();
+    _overlays.clear();
+    _viewsToRecomposite.clear();
+    _activeCompositionOrder.clear();
+    _compositionOrder.clear();
   }
 }
 
