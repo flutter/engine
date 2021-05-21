@@ -498,6 +498,11 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
                 accessibilityFocusedSemanticsNode, o -> o.hasFlag(Flag.HAS_IMPLICIT_SCROLLING)));
   }
 
+  @VisibleForTesting
+  public AccessibilityNodeInfo obtainAccessibilityNodeInfo(View rootView, int virtualViewId) {
+    return AccessibilityNodeInfo.obtain(rootView, virtualViewId);
+  }
+
   /**
    * Returns {@link AccessibilityNodeInfo} for the view corresponding to the given {@code
    * virtualViewId}.
@@ -566,7 +571,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     }
 
     AccessibilityNodeInfo result =
-        AccessibilityNodeInfo.obtain(rootAccessibilityView, virtualViewId);
+        obtainAccessibilityNodeInfo(rootAccessibilityView, virtualViewId);
     // Work around for https://github.com/flutter/flutter/issues/2101
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
       result.setViewIdResourceName("");
@@ -682,6 +687,11 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         Log.e(TAG, "Semantics node id does not equal ROOT_NODE_ID.");
       }
       result.setParent(rootAccessibilityView);
+    }
+
+    if (semanticsNode.previousNodeId != -1
+        && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
+      result.setTraversalAfter(rootAccessibilityView, semanticsNode.previousNodeId);
     }
 
     Rect bounds = semanticsNode.getGlobalRect();
@@ -1476,6 +1486,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
 
     Set<SemanticsNode> visitedObjects = new HashSet<>();
     SemanticsNode rootObject = getRootSemanticsNode();
+
     List<SemanticsNode> newRoutes = new ArrayList<>();
     if (rootObject != null) {
       final float[] identity = new float[16];
@@ -2070,6 +2081,8 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     private String decreasedValue;
     private String hint;
 
+    private int previousNodeId = -1;
+
     // See Flutter's {@code SemanticsNode#textDirection}.
     private TextDirection textDirection;
 
@@ -2455,7 +2468,10 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         }
       }
 
+      int previousNodeId = -1;
       for (SemanticsNode child : childrenInTraversalOrder) {
+        child.previousNodeId = previousNodeId;
+        previousNodeId = child.id;
         child.updateRecursively(globalTransform, visitedObjects, forceUpdate);
       }
     }
