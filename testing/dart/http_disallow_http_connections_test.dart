@@ -11,7 +11,7 @@ import 'dart:io';
 
 import 'package:litetest/litetest.dart';
 
-/// Asserts that `callback` throws an [ArgumentError].
+/// Asserts that `callback` throws an exception of type `T`.
 Future<void> asyncExpectThrows<T>(Function callback) async {
   bool threw = false;
   try {
