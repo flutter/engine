@@ -101,7 +101,10 @@ public final class BasicMessageChannel<T> {
    */
   @UiThread
   public void setMessageHandler(@Nullable final MessageHandler<T> handler) {
-    messenger.setMessageHandler(name, handler == null ? null : new IncomingMessageHandler(handler));
+    messenger.setMessageHandler(
+        name,
+        handler == null ? null : new IncomingMessageHandler(handler),
+        codec.wantsDirectByteBufferForDecoding());
   }
 
   /**

@@ -303,4 +303,17 @@ std::optional<RunConfiguration> AndroidShellHolder::BuildRunConfiguration(
   }
   return config;
 }
+
+void AndroidShellHolder::ClearDirectByteBufferDecodingPreference(
+    const std::string& channel) {
+  jni_facade_->ClearDirectByteBufferDecodingPreference(channel);
+}
+
+void AndroidShellHolder::SetDirectByteBufferDecodingPreference(
+    const std::string& channel,
+    bool wants_direct_byte_buffer_for_decoding) {
+  jni_facade_->SetDirectByteBufferDecodingPreference(
+      channel, wants_direct_byte_buffer_for_decoding);
+}
+
 }  // namespace flutter

@@ -96,6 +96,12 @@ class AndroidShellHolder {
 
   void NotifyLowMemoryWarning();
 
+  void ClearDirectByteBufferDecodingPreference(const std::string& channel);
+
+  void SetDirectByteBufferDecodingPreference(
+      const std::string& channel,
+      bool wants_direct_byte_buffer_for_decoding);
+
  private:
   const flutter::Settings settings_;
   const std::shared_ptr<PlatformViewAndroidJNI> jni_facade_;

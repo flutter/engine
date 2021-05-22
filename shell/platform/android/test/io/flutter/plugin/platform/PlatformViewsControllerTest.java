@@ -758,6 +758,13 @@ public class PlatformViewsControllerTest {
     public static SparseArray<ByteBuffer> getResponses() {
       return replies;
     }
+
+    @Implementation
+    public void clearDirectByteBufferDecodingPreference(String channel) {}
+
+    @Implementation
+    public void setDirectByteBufferDecodingPreference(
+        String channel, boolean wantsDirectByteBufferForDecoding) {}
   }
 
   @Implements(SurfaceView.class)

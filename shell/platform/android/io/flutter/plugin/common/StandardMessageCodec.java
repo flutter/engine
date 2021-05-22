@@ -64,6 +64,11 @@ public class StandardMessageCodec implements MessageCodec<Object> {
   public static final StandardMessageCodec INSTANCE = new StandardMessageCodec();
 
   @Override
+  public boolean wantsDirectByteBufferForDecoding() {
+    return true;
+  }
+
+  @Override
   public ByteBuffer encodeMessage(Object message) {
     if (message == null) {
       return null;

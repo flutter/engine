@@ -21,6 +21,11 @@ public final class StringCodec implements MessageCodec<String> {
   private StringCodec() {}
 
   @Override
+  public boolean wantsDirectByteBufferForDecoding() {
+    return true;
+  }
+
+  @Override
   public ByteBuffer encodeMessage(String message) {
     if (message == null) {
       return null;

@@ -4,6 +4,7 @@
 
 package io.flutter.plugin.common;
 
+import android.annotation.SuppressLint;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
@@ -50,6 +51,12 @@ public interface BinaryMessenger {
   @UiThread
   void send(@NonNull String channel, @Nullable ByteBuffer message, @Nullable BinaryReply callback);
 
+  @UiThread
+  @SuppressLint("NewApi")
+  default void setMessageHandler(@NonNull String channel, @Nullable BinaryMessageHandler handler) {
+    setMessageHandler(channel, handler, true);
+  }
+
   /**
    * Registers a handler to be invoked when the Flutter application sends a message to its host
    * platform.
@@ -64,7 +71,10 @@ public interface BinaryMessenger {
    * @param handler a {@link BinaryMessageHandler} to be invoked on incoming messages, or null.
    */
   @UiThread
-  void setMessageHandler(@NonNull String channel, @Nullable BinaryMessageHandler handler);
+  void setMessageHandler(
+      @NonNull String channel,
+      @Nullable BinaryMessageHandler handler,
+      boolean wantsDirectByteBufferForDecoding);
 
   /** Handler for incoming binary messages from Flutter. */
   interface BinaryMessageHandler {

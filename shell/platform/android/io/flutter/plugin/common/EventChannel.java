@@ -84,7 +84,9 @@ public final class EventChannel {
   @UiThread
   public void setStreamHandler(final StreamHandler handler) {
     messenger.setMessageHandler(
-        name, handler == null ? null : new IncomingStreamRequestHandler(handler));
+        name,
+        handler == null ? null : new IncomingStreamRequestHandler(handler),
+        /*wantsDirectByteBufferForDecoding=*/ true);
   }
 
   /**

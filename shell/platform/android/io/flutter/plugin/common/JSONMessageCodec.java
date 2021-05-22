@@ -28,6 +28,11 @@ public final class JSONMessageCodec implements MessageCodec<Object> {
   private JSONMessageCodec() {}
 
   @Override
+  public boolean wantsDirectByteBufferForDecoding() {
+    return true;
+  }
+
+  @Override
   public ByteBuffer encodeMessage(Object message) {
     if (message == null) {
       return null;

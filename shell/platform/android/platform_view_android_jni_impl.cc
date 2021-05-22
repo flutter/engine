@@ -85,6 +85,8 @@ static jmethodID g_long_constructor = nullptr;
 
 static jmethodID g_handle_platform_message_method = nullptr;
 
+static jmethodID g_handle_indirect_platform_message_method = nullptr;
+
 static jmethodID g_handle_platform_message_response_method = nullptr;
 
 static jmethodID g_update_semantics_method = nullptr;
@@ -487,6 +489,26 @@ static void UnregisterTexture(JNIEnv* env,
       static_cast<int64_t>(texture_id));
 }
 
+static void ClearDirectByteBufferDecodingPreference(JNIEnv* env,
+                                                    jobject jcaller,
+                                                    jlong shell_holder,
+                                                    jstring jchannel) {
+  auto channel = fml::jni::JavaStringToString(env, jchannel);
+  ANDROID_SHELL_HOLDER->ClearDirectByteBufferDecodingPreference(channel);
+}
+
+static void SetDirectByteBufferDecodingPreference(
+    JNIEnv* env,
+    jobject jcaller,
+    jlong shell_holder,
+    jstring jchannel,
+    jboolean wants_direct_byte_buffer_for_decoding) {
+  auto channel = fml::jni::JavaStringToString(env, jchannel);
+  ANDROID_SHELL_HOLDER->SetDirectByteBufferDecodingPreference(
+      channel,  //
+      wants_direct_byte_buffer_for_decoding);
+}
+
 static void InvokePlatformMessageResponseCallback(JNIEnv* env,
                                                   jobject jcaller,
                                                   jlong shell_holder,
@@ -651,6 +673,18 @@ bool RegisterApi(JNIEnv* env) {
           .name = "nativeDispatchPlatformMessage",
           .signature = "(JLjava/lang/String;Ljava/nio/ByteBuffer;II)V",
           .fnPtr = reinterpret_cast<void*>(&DispatchPlatformMessage),
+      },
+      {
+          .name = "nativeClearDirectByteBufferDecodingPreference",
+          .signature = "(JLjava/lang/String;)V",
+          .fnPtr =
+              reinterpret_cast<void*>(&ClearDirectByteBufferDecodingPreference),
+      },
+      {
+          .name = "nativeSetDirectByteBufferDecodingPreference",
+          .signature = "(JLjava/lang/String;I)V",
+          .fnPtr =
+              reinterpret_cast<void*>(&SetDirectByteBufferDecodingPreference),
       },
       {
           .name = "nativeInvokePlatformMessageResponseCallback",
@@ -823,6 +857,15 @@ bool RegisterApi(JNIEnv* env) {
                                               "valueOf", "(J)Ljava/lang/Long;");
   if (g_long_constructor == nullptr) {
     FML_LOG(ERROR) << "Could not locate Long's constructor";
+    return false;
+  }
+
+  g_handle_indirect_platform_message_method = env->GetMethodID(
+      g_flutter_jni_class->obj(), "handleIndirectPlatformMessage",
+      "(Ljava/lang/String;Ljava/nio/ByteBuffer;I)V");
+
+  if (g_handle_indirect_platform_message_method == nullptr) {
+    FML_LOG(ERROR) << "Could not locate handleIndirectPlatformMessage method";
     return false;
   }
 
@@ -1094,6 +1137,21 @@ PlatformViewAndroidJNIImpl::PlatformViewAndroidJNIImpl(
 
 PlatformViewAndroidJNIImpl::~PlatformViewAndroidJNIImpl() = default;
 
+void PlatformViewAndroidJNIImpl::ClearDirectByteBufferDecodingPreference(
+    const std::string& channel) {
+  channels_with_indirect_byte_buffer_decoding_.erase(channel);
+}
+
+void PlatformViewAndroidJNIImpl::SetDirectByteBufferDecodingPreference(
+    const std::string& channel,
+    bool wants_direct_byte_buffer_for_decoding) {
+  if (wants_direct_byte_buffer_for_decoding) {
+    channels_with_indirect_byte_buffer_decoding_.erase(channel);
+  } else {
+    channels_with_indirect_byte_buffer_decoding_.emplace(std::move(channel));
+  }
+}
+
 void PlatformViewAndroidJNIImpl::FlutterViewHandlePlatformMessage(
     std::unique_ptr<flutter::PlatformMessage> message,
     int responseId) {
@@ -1112,8 +1170,16 @@ void PlatformViewAndroidJNIImpl::FlutterViewHandlePlatformMessage(
         env, env->NewDirectByteBuffer(
                  const_cast<uint8_t*>(message->data().GetMapping()),
                  message->data().GetSize()));
-    env->CallVoidMethod(java_object.obj(), g_handle_platform_message_method,
-                        java_channel.obj(), message_array.obj(), responseId);
+    if (!channels_with_indirect_byte_buffer_decoding_.empty() &&
+        channels_with_indirect_byte_buffer_decoding_.find(message->channel()) !=
+            channels_with_indirect_byte_buffer_decoding_.end()) {
+      env->CallVoidMethod(java_object.obj(), g_handle_platform_message_method,
+                          java_channel.obj(), message_array.obj(), responseId);
+    } else {
+      env->CallVoidMethod(java_object.obj(),
+                          g_handle_indirect_platform_message_method,
+                          java_channel.obj(), message_array.obj(), responseId);
+    }
   } else {
     env->CallVoidMethod(java_object.obj(), g_handle_platform_message_method,
                         java_channel.obj(), nullptr, responseId);

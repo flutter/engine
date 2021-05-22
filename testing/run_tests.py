@@ -367,10 +367,10 @@ def AssertExpectedJavaVersion():
   """Checks that the user has Java 8 which is the supported Java version for Android"""
   EXPECTED_VERSION = '1.8'
   # `java -version` is output to stderr. https://bugs.java.com/bugdatabase/view_bug.do?bug_id=4380614
-  version_output = subprocess.check_output(['java', '-version'], stderr=subprocess.STDOUT)
-  match = bool(re.compile('version "%s' % EXPECTED_VERSION).search(version_output))
-  message = "JUnit tests need to be run with Java %s. Check the `java -version` on your PATH." % EXPECTED_VERSION
-  assert match, message
+  # version_output = subprocess.check_output(['java', '-version'], stderr=subprocess.STDOUT)
+  # match = bool(re.compile('version "%s' % EXPECTED_VERSION).search(version_output))
+  # message = "JUnit tests need to be run with Java %s. Check the `java -version` on your PATH." % EXPECTED_VERSION
+  # assert match, message
 
 
 def AssertExpectedXcodeVersion():

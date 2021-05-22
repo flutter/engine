@@ -13,6 +13,15 @@ import java.nio.ByteBuffer;
  * <p>Both operations throw {@link IllegalArgumentException}, if conversion fails.
  */
 public interface MessageCodec<T> {
+
+  /**
+   * Controls the ByteBuffer parameter for `decodeMessage`.
+   *
+   * @return true if the MessageCodec wants the ByteBuffer parameter to decodeMessage to be a direct
+   *     ByteBuffer.
+   */
+  boolean wantsDirectByteBufferForDecoding();
+
   /**
    * Encodes the specified message into binary.
    *
@@ -26,9 +35,9 @@ public interface MessageCodec<T> {
   /**
    * Decodes the specified message from binary.
    *
-   * <p><b>Warning:</b> The ByteBuffer may be `direct`. Do not retain references to the ByteBuffer
-   * without checking `ByteBuffer.isDirect()`. See also:
-   * https://docs.oracle.com/javase/7/docs/api/java/nio/ByteBuffer.html
+   * <p><b>Warning:</b> The ByteBuffer may be `direct` if `wantsDirectByteBufferForDecoding` returns
+   * `true. Do not retain references to the ByteBuffer without checking `ByteBuffer.isDirect()`. See
+   * also: https://docs.oracle.com/javase/7/docs/api/java/nio/ByteBuffer.html
    *
    * @param message the {@link ByteBuffer} message, possibly null.
    * @return a T value representation of the bytes between the given buffer's current position and
