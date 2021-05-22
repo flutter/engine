@@ -204,10 +204,9 @@ TEST_F(ImageDecoderFixtureTest, ValidImageResultsInSuccess) {
     ASSERT_TRUE(data);
     ASSERT_GE(data->size(), 0u);
 
-    auto dart_state = UIDartState::Current();
-    auto registry = dart_state->GetImageGeneratorRegistry();
+    ImageGeneratorRegistry registry;
     std::unique_ptr<ImageGenerator> generator =
-        registry->CreateCompatibleGenerator(data);
+        registry.CreateCompatibleGenerator(data);
     ASSERT_TRUE(generator);
 
     auto descriptor = fml::MakeRefCounted<ImageDescriptor>(
@@ -262,10 +261,9 @@ TEST_F(ImageDecoderFixtureTest, ExifDataIsRespectedOnDecode) {
     ASSERT_TRUE(data);
     ASSERT_GE(data->size(), 0u);
 
-    auto dart_state = UIDartState::Current();
-    auto registry = dart_state->GetImageGeneratorRegistry();
+    ImageGeneratorRegistry registry;
     std::unique_ptr<ImageGenerator> generator =
-        registry->CreateCompatibleGenerator(data);
+        registry.CreateCompatibleGenerator(data);
     ASSERT_TRUE(generator);
 
     auto descriptor = fml::MakeRefCounted<ImageDescriptor>(
@@ -322,10 +320,9 @@ TEST_F(ImageDecoderFixtureTest, CanDecodeWithoutAGPUContext) {
     ASSERT_TRUE(data);
     ASSERT_GE(data->size(), 0u);
 
-    auto dart_state = UIDartState::Current();
-    auto registry = dart_state->GetImageGeneratorRegistry();
+    ImageGeneratorRegistry registry;
     std::unique_ptr<ImageGenerator> generator =
-        registry->CreateCompatibleGenerator(data);
+        registry.CreateCompatibleGenerator(data);
     ASSERT_TRUE(generator);
 
     auto descriptor = fml::MakeRefCounted<ImageDescriptor>(
@@ -398,10 +395,9 @@ TEST_F(ImageDecoderFixtureTest, CanDecodeWithResizes) {
       ASSERT_TRUE(data);
       ASSERT_GE(data->size(), 0u);
 
-      auto dart_state = UIDartState::Current();
-      auto registry = dart_state->GetImageGeneratorRegistry();
+      ImageGeneratorRegistry registry;
       std::unique_ptr<ImageGenerator> generator =
-          registry->CreateCompatibleGenerator(data);
+          registry.CreateCompatibleGenerator(data);
       ASSERT_TRUE(generator);
 
       auto descriptor = fml::MakeRefCounted<ImageDescriptor>(
@@ -546,11 +542,10 @@ TEST(ImageDecoderTest,
   ASSERT_TRUE(gif_mapping);
   ASSERT_TRUE(webp_mapping);
 
-  auto dart_state = UIDartState::Current();
-  auto registry = dart_state->GetImageGeneratorRegistry();
+  ImageGeneratorRegistry registry;
 
-  auto gif_generator = registry->CreateCompatibleGenerator(gif_mapping);
-  auto webp_generator = registry->CreateCompatibleGenerator(webp_mapping);
+  auto gif_generator = registry.CreateCompatibleGenerator(gif_mapping);
+  auto webp_generator = registry.CreateCompatibleGenerator(webp_mapping);
 
   ASSERT_TRUE(gif_generator);
   ASSERT_TRUE(webp_generator);
@@ -567,10 +562,9 @@ TEST(ImageDecoderTest, VerifySimpleDecoding) {
   ASSERT_TRUE(image != nullptr);
   ASSERT_EQ(SkISize::Make(600, 200), image->dimensions());
 
-  auto dart_state = UIDartState::Current();
-  auto registry = dart_state->GetImageGeneratorRegistry();
+  ImageGeneratorRegistry registry;
   std::unique_ptr<ImageGenerator> generator =
-      registry->CreateCompatibleGenerator(data);
+      registry.CreateCompatibleGenerator(data);
   ASSERT_TRUE(generator);
 
   auto descriptor = fml::MakeRefCounted<ImageDescriptor>(std::move(data),
@@ -585,10 +579,9 @@ TEST(ImageDecoderTest, VerifySimpleDecoding) {
 TEST(ImageDecoderTest, VerifySubpixelDecodingPreservesExifOrientation) {
   auto data = OpenFixtureAsSkData("Horizontal.jpg");
 
-  auto dart_state = UIDartState::Current();
-  auto registry = dart_state->GetImageGeneratorRegistry();
+  ImageGeneratorRegistry registry;
   std::unique_ptr<ImageGenerator> generator =
-      registry->CreateCompatibleGenerator(data);
+      registry.CreateCompatibleGenerator(data);
   ASSERT_TRUE(generator);
   auto descriptor =
       fml::MakeRefCounted<ImageDescriptor>(data, std::move(generator));
@@ -638,10 +631,9 @@ TEST_F(ImageDecoderFixtureTest,
 
   ASSERT_TRUE(gif_mapping);
 
-  auto dart_state = UIDartState::Current();
-  auto registry = dart_state->GetImageGeneratorRegistry();
+  ImageGeneratorRegistry registry;
   std::unique_ptr<ImageGenerator> gif_generator =
-      registry->CreateCompatibleGenerator(gif_mapping);
+      registry.CreateCompatibleGenerator(gif_mapping);
   ASSERT_TRUE(gif_generator);
 
   TaskRunners runners(GetCurrentTestName(),         // label
