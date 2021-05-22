@@ -352,18 +352,19 @@ class HtmlViewEmbedder {
   }
 
   void submitFrame() {
-    SurfaceFrame? _backupFrame;
+    bool _paintedBackupSurface = false;
     for (int i = 0; i < _compositionOrder.length; i++) {
       int viewId = _compositionOrder[i];
       if (_viewsUsingBackupSurface.contains(viewId)) {
-        _backupFrame ??=
-            SurfaceFactory.instance.backupSurface.acquireFrame(_frameSize);
-        // Only draw the picture to the backup surface once, on the last
-        // platform view.
-        if (i == _compositionOrder.length - 1) {
-          _backupFrame.skiaCanvas
-              .drawPicture(_pictureRecorders[viewId]!.endRecording());
-          _backupFrame.submit();
+        // Only draw the picture to the backup surface once.
+        if (!_paintedBackupSurface) {
+          SurfaceFrame backupFrame =
+              SurfaceFactory.instance.backupSurface.acquireFrame(_frameSize);
+          backupFrame.skiaCanvas
+              .drawPicture(_backupPictureRecorder!.endRecording());
+          _backupPictureRecorder = null;
+          backupFrame.submit();
+          _paintedBackupSurface = true;
         }
       } else {
         final SurfaceFrame frame = _overlays[viewId]!.acquireFrame(_frameSize);
@@ -375,7 +376,6 @@ class HtmlViewEmbedder {
       }
     }
     _pictureRecorders.clear();
-    _backupPictureRecorder = null;
     if (listEquals(_compositionOrder, _activeCompositionOrder)) {
       _compositionOrder.clear();
       return;
