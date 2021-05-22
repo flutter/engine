@@ -22,6 +22,10 @@ unsigned int BuiltinSkiaImageGenerator::GetFrameCount() const {
   return 1;
 }
 
+int BuiltinSkiaImageGenerator::GetRepetitionCount() const {
+  return 0;
+}
+
 const ImageGenerator::FrameInfo BuiltinSkiaImageGenerator::GetFrameInfo(
     unsigned int frame_index) const {
   return {.required_frame = std::nullopt,
@@ -69,6 +73,10 @@ const SkImageInfo& BuiltinSkiaCodecImageGenerator::GetInfo() const {
 
 unsigned int BuiltinSkiaCodecImageGenerator::GetFrameCount() const {
   return codec_generator_->getFrameCount();
+}
+
+int BuiltinSkiaCodecImageGenerator::GetRepetitionCount() const {
+  return codec_generator_->getRepetitionCount();
 }
 
 const ImageGenerator::FrameInfo BuiltinSkiaCodecImageGenerator::GetFrameInfo(

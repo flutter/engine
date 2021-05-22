@@ -16,7 +16,6 @@
 #include "flutter/testing/test_dart_native_resolver.h"
 #include "flutter/testing/test_gl_surface.h"
 #include "flutter/testing/testing.h"
-#include "third_party/skia/include/codec/SkCodec.h"
 
 namespace flutter {
 namespace testing {
@@ -165,8 +164,8 @@ TEST_F(ImageDecoderFixtureTest, InvalidImageResultsError) {
     ASSERT_FALSE(data);
 
     fml::RefPtr<ImageDescriptor> image_descriptor =
-        fml::MakeRefCounted<ImageDescriptor>(std::move(data),
-                                             std::unique_ptr<SkCodec>(nullptr));
+        fml::MakeRefCounted<ImageDescriptor>(
+            std::move(data), std::unique_ptr<ImageGenerator>(nullptr));
 
     ImageDecoder::ImageResult callback = [&](SkiaGPUObject<SkImage> image) {
       ASSERT_TRUE(runners.GetUITaskRunner()->RunsTasksOnCurrentThread());
@@ -205,11 +204,14 @@ TEST_F(ImageDecoderFixtureTest, ValidImageResultsInSuccess) {
     ASSERT_TRUE(data);
     ASSERT_GE(data->size(), 0u);
 
-    std::unique_ptr<SkCodec> codec = SkCodec::MakeFromData(data);
-    ASSERT_TRUE(codec);
+    auto dart_state = UIDartState::Current();
+    auto registry = dart_state->GetImageGeneratorRegistry();
+    std::unique_ptr<ImageGenerator> generator =
+        registry->CreateCompatibleGenerator(data);
+    ASSERT_TRUE(generator);
 
-    auto descriptor =
-        fml::MakeRefCounted<ImageDescriptor>(std::move(data), std::move(codec));
+    auto descriptor = fml::MakeRefCounted<ImageDescriptor>(
+        std::move(data), std::move(generator));
 
     ImageDecoder::ImageResult callback = [&](SkiaGPUObject<SkImage> image) {
       ASSERT_TRUE(runners.GetUITaskRunner()->RunsTasksOnCurrentThread());
@@ -260,11 +262,14 @@ TEST_F(ImageDecoderFixtureTest, ExifDataIsRespectedOnDecode) {
     ASSERT_TRUE(data);
     ASSERT_GE(data->size(), 0u);
 
-    std::unique_ptr<SkCodec> codec = SkCodec::MakeFromData(data);
-    ASSERT_TRUE(codec);
+    auto dart_state = UIDartState::Current();
+    auto registry = dart_state->GetImageGeneratorRegistry();
+    std::unique_ptr<ImageGenerator> generator =
+        registry->CreateCompatibleGenerator(data);
+    ASSERT_TRUE(generator);
 
-    auto descriptor =
-        fml::MakeRefCounted<ImageDescriptor>(std::move(data), std::move(codec));
+    auto descriptor = fml::MakeRefCounted<ImageDescriptor>(
+        std::move(data), std::move(generator));
 
     ImageDecoder::ImageResult callback = [&](SkiaGPUObject<SkImage> image) {
       ASSERT_TRUE(runners.GetUITaskRunner()->RunsTasksOnCurrentThread());
@@ -317,11 +322,14 @@ TEST_F(ImageDecoderFixtureTest, CanDecodeWithoutAGPUContext) {
     ASSERT_TRUE(data);
     ASSERT_GE(data->size(), 0u);
 
-    std::unique_ptr<SkCodec> codec = SkCodec::MakeFromData(data);
-    ASSERT_TRUE(codec);
+    auto dart_state = UIDartState::Current();
+    auto registry = dart_state->GetImageGeneratorRegistry();
+    std::unique_ptr<ImageGenerator> generator =
+        registry->CreateCompatibleGenerator(data);
+    ASSERT_TRUE(generator);
 
-    auto descriptor =
-        fml::MakeRefCounted<ImageDescriptor>(std::move(data), std::move(codec));
+    auto descriptor = fml::MakeRefCounted<ImageDescriptor>(
+        std::move(data), std::move(generator));
 
     ImageDecoder::ImageResult callback = [&](SkiaGPUObject<SkImage> image) {
       ASSERT_TRUE(runners.GetUITaskRunner()->RunsTasksOnCurrentThread());
@@ -390,11 +398,14 @@ TEST_F(ImageDecoderFixtureTest, CanDecodeWithResizes) {
       ASSERT_TRUE(data);
       ASSERT_GE(data->size(), 0u);
 
-      std::unique_ptr<SkCodec> codec = SkCodec::MakeFromData(data);
-      ASSERT_TRUE(codec);
+      auto dart_state = UIDartState::Current();
+      auto registry = dart_state->GetImageGeneratorRegistry();
+      std::unique_ptr<ImageGenerator> generator =
+          registry->CreateCompatibleGenerator(data);
+      ASSERT_TRUE(generator);
 
-      auto descriptor = fml::MakeRefCounted<ImageDescriptor>(std::move(data),
-                                                             std::move(codec));
+      auto descriptor = fml::MakeRefCounted<ImageDescriptor>(
+          std::move(data), std::move(generator));
 
       ImageDecoder::ImageResult callback = [&](SkiaGPUObject<SkImage> image) {
         ASSERT_TRUE(runners.GetUITaskRunner()->RunsTasksOnCurrentThread());
@@ -535,16 +546,19 @@ TEST(ImageDecoderTest,
   ASSERT_TRUE(gif_mapping);
   ASSERT_TRUE(webp_mapping);
 
-  auto gif_codec = SkCodec::MakeFromData(gif_mapping);
-  auto webp_codec = SkCodec::MakeFromData(webp_mapping);
+  auto dart_state = UIDartState::Current();
+  auto registry = dart_state->GetImageGeneratorRegistry();
 
-  ASSERT_TRUE(gif_codec);
-  ASSERT_TRUE(webp_codec);
+  auto gif_generator = registry->CreateCompatibleGenerator(gif_mapping);
+  auto webp_generator = registry->CreateCompatibleGenerator(webp_mapping);
+
+  ASSERT_TRUE(gif_generator);
+  ASSERT_TRUE(webp_generator);
 
   // Both fixtures have a loop count of 2 which should lead to the repeat count
   // of 1
-  ASSERT_EQ(gif_codec->getRepetitionCount(), 1);
-  ASSERT_EQ(webp_codec->getRepetitionCount(), 1);
+  ASSERT_EQ(gif_generator->GetRepetitionCount(), 1);
+  ASSERT_EQ(webp_generator->GetRepetitionCount(), 1);
 }
 
 TEST(ImageDecoderTest, VerifySimpleDecoding) {
@@ -553,10 +567,14 @@ TEST(ImageDecoderTest, VerifySimpleDecoding) {
   ASSERT_TRUE(image != nullptr);
   ASSERT_EQ(SkISize::Make(600, 200), image->dimensions());
 
-  auto codec = SkCodec::MakeFromData(data);
-  ASSERT_TRUE(codec);
-  auto descriptor =
-      fml::MakeRefCounted<ImageDescriptor>(std::move(data), std::move(codec));
+  auto dart_state = UIDartState::Current();
+  auto registry = dart_state->GetImageGeneratorRegistry();
+  std::unique_ptr<ImageGenerator> generator =
+      registry->CreateCompatibleGenerator(data);
+  ASSERT_TRUE(generator);
+
+  auto descriptor = fml::MakeRefCounted<ImageDescriptor>(std::move(data),
+                                                         std::move(generator));
 
   ASSERT_EQ(ImageFromCompressedData(descriptor.get(), 6, 2,
                                     fml::tracing::TraceFlow(""))
@@ -566,10 +584,14 @@ TEST(ImageDecoderTest, VerifySimpleDecoding) {
 
 TEST(ImageDecoderTest, VerifySubpixelDecodingPreservesExifOrientation) {
   auto data = OpenFixtureAsSkData("Horizontal.jpg");
-  auto codec = SkCodec::MakeFromData(data);
-  ASSERT_TRUE(codec);
+
+  auto dart_state = UIDartState::Current();
+  auto registry = dart_state->GetImageGeneratorRegistry();
+  std::unique_ptr<ImageGenerator> generator =
+      registry->CreateCompatibleGenerator(data);
+  ASSERT_TRUE(generator);
   auto descriptor =
-      fml::MakeRefCounted<ImageDescriptor>(data, std::move(codec));
+      fml::MakeRefCounted<ImageDescriptor>(data, std::move(generator));
 
   auto image = SkImage::MakeFromEncoded(data);
   ASSERT_TRUE(image != nullptr);
@@ -616,10 +638,11 @@ TEST_F(ImageDecoderFixtureTest,
 
   ASSERT_TRUE(gif_mapping);
 
-  auto gif_codec = std::shared_ptr<SkCodecImageGenerator>(
-      static_cast<SkCodecImageGenerator*>(
-          SkCodecImageGenerator::MakeFromEncodedCodec(gif_mapping).release()));
-  ASSERT_TRUE(gif_codec);
+  auto dart_state = UIDartState::Current();
+  auto registry = dart_state->GetImageGeneratorRegistry();
+  std::unique_ptr<ImageGenerator> gif_generator =
+      registry->CreateCompatibleGenerator(gif_mapping);
+  ASSERT_TRUE(gif_generator);
 
   TaskRunners runners(GetCurrentTestName(),         // label
                       CreateNewThread("platform"),  // platform
@@ -662,7 +685,7 @@ TEST_F(ImageDecoderFixtureTest,
         return false;
       }
 
-      codec = fml::MakeRefCounted<MultiFrameCodec>(std::move(gif_codec));
+      codec = fml::MakeRefCounted<MultiFrameCodec>(std::move(gif_generator));
       codec->getNextFrame(closure);
       codec = nullptr;
       isolate_latch.Signal();

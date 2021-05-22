@@ -5,9 +5,10 @@
 #ifndef FLUTTER_LIB_UI_PAINTING_IMAGE_GENERATOR_H_
 #define FLUTTER_LIB_UI_PAINTING_IMAGE_GENERATOR_H_
 
+#include <optional>
 #include "flutter/fml/macros.h"
-#include "flutter/lib/ui/painting/codec.h"
 #include "third_party/skia/include/core/SkImageInfo.h"
+#include "third_party/skia/src/codec/SkCodecImageGenerator.h"
 
 namespace flutter {
 
@@ -52,6 +53,15 @@ class ImageGenerator {
   /// @return  The number of frames that the encoded image stores. This will
   ///          always be 1 for single-frame images.
   virtual unsigned int GetFrameCount() const = 0;
+
+  /// @brief  Return the number of times to repeat, if this image is animated.
+  ///         This number does not include the first play through of each frame.
+  ///         For example, a repetition count of 4 means that each frame is
+  ///         played 5 timesand then the animation stops.
+  /// @return The number of times to repeat (not counting the first play
+  ///         through). For still (non-animated) image decoders, 0 is returned.
+  ///         For animated images that should repeat forever, -1 is returned.
+  virtual int GetRepetitionCount() const = 0;
 
   /// @brief      Get information about a single frame in the context of a
   ///             multi-frame image, useful for animation and frame blending.
@@ -122,6 +132,9 @@ class BuiltinSkiaImageGenerator : public ImageGenerator {
   unsigned int GetFrameCount() const override;
 
   // |ImageGenerator|
+  int GetRepetitionCount() const override;
+
+  // |ImageGenerator|
   const ImageGenerator::FrameInfo GetFrameInfo(
       unsigned int frame_index) const override;
 
@@ -157,6 +170,9 @@ class BuiltinSkiaCodecImageGenerator : public ImageGenerator {
 
   // |ImageGenerator|
   unsigned int GetFrameCount() const override;
+
+  // |ImageGenerator|
+  int GetRepetitionCount() const override;
 
   // |ImageGenerator|
   const ImageGenerator::FrameInfo GetFrameInfo(
