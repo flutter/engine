@@ -150,6 +150,9 @@ def to_gn_args(args):
     if args.unoptimized:
       # There is no point in enabling LTO in unoptimized builds.
       enable_lto = False
+      # Do not generate app-jit snapshots for the Dart SDK or kernel-service
+      gn_args['dart_snapshot_kind'] = 'kernel'
+      gn_args['create_kernel_service_snapshot'] = False
 
     if not sys.platform.startswith('win'):
       # The GN arg is not available in the windows toolchain.
