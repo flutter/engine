@@ -5923,13 +5923,13 @@ class _DisplayListCanvas implements Canvas {
     _updatePaintData(paint, _strokeMask);
     _addOp(_pointOps[pointMode.index], points.length * 2 + 1);
     _dataInts[_dataCount++] = points.length * 2;
-    final _BoundsAccumulator ptBounds = _BoundsAccumulator();
+    final _BoundsAccumulator pointBounds = _BoundsAccumulator();
     for (final Offset pt in points) {
       _dataFloats[_dataCount++] = pt.dx;
       _dataFloats[_dataCount++] = pt.dy;
-      ptBounds.accumulate(pt.dx, pt.dy);
+      pointBounds.accumulate(pt.dx, pt.dy);
     }
-    _addBounds(ptBounds.bounds, true);
+    _addBounds(pointBounds.bounds, true);
   }
 
   static const List<_CanvasOp> _pointOps = <_CanvasOp>[
@@ -5943,11 +5943,11 @@ class _DisplayListCanvas implements Canvas {
     _updatePaintData(paint, _strokeMask);
     _addOp(_pointOps[pointMode.index], points.length + 1);
     _addFloat32List(points);
-    final _BoundsAccumulator ptBounds = _BoundsAccumulator();
+    final _BoundsAccumulator pointBounds = _BoundsAccumulator();
     for (int i = 0; i + 1 < points.length; i += 2) {
-      ptBounds.accumulate(points[i], points[i + 1]);
+      pointBounds.accumulate(points[i], points[i + 1]);
     }
-    _addBounds(ptBounds.bounds, true);
+    _addBounds(pointBounds.bounds, true);
   }
 
   @override
@@ -6159,15 +6159,15 @@ class _DisplayListPicture extends NativeFieldWrapperClass2 implements Picture {
                         Rect drawBounds,
                         Uint8List ops, int numOps,
                         ByteData data, int numDataBytes,
-                        List<Object> objects)
+                        List<NativeFieldWrapperClass2> nativeRefs)
       : _cullRect = cullRect,
         _drawBounds = drawBounds,
         _ops = ops,
         _data = data,
-        _objData = objects {
-    _constructor(ops, numOps, data, numDataBytes, objects);
+        _nativeRefs = nativeRefs {
+    _constructor(ops, numOps, data, numDataBytes, nativeRefs);
   }
-  void _constructor(Uint8List ops, int numOps, ByteData data, int dataBytes, List<Object> objects) native 'DisplayList_constructor';
+  void _constructor(Uint8List ops, int numOps, ByteData data, int dataBytes, List<NativeFieldWrapperClass2> objects) native 'DisplayList_constructor';
 
   @override
   Future<Image> toImage(int width, int height) {
@@ -6175,8 +6175,8 @@ class _DisplayListPicture extends NativeFieldWrapperClass2 implements Picture {
       throw Exception('Invalid image dimensions.');
     final Uint8List? ops = _ops;
     final ByteData? data = _data;
-    final List<Object>? objects = _objData;
-    if (ops == null || data == null || objects == null)
+    final List<Object>? nativeRefs = _nativeRefs;
+    if (ops == null || data == null || nativeRefs == null)
       throw UnimplementedError('toImage called on disposed Picture');
     return _futurize(
           (_Callback<Image?> callback) => _toImage(width, height, (_Image? image) {
@@ -6198,14 +6198,14 @@ class _DisplayListPicture extends NativeFieldWrapperClass2 implements Picture {
     _drawBounds = null;
     _ops = null;
     _data = null;
-    _objData = null;
+    _nativeRefs = null;
   }
 
   Rect? _cullRect;
   Rect? _drawBounds;
   Uint8List? _ops;
   ByteData? _data;
-  List<Object>? _objData;
+  List<NativeFieldWrapperClass2>? _nativeRefs;
 
   @override
   int get approximateBytesUsed => (_ops?.lengthInBytes ?? 0) + (_data?.lengthInBytes ?? 0);

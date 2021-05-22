@@ -39,6 +39,18 @@ void DisplayList::RegisterNatives(tonic::DartLibraryNatives* natives) {
        FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
 }
 
+#define DISPLAY_LIST_GRAB_OBJECT(holder_field, type, accessor)                 \
+  do {                                                                         \
+    if (obj_index >= numObjects) {                                             \
+      FML_LOG(ERROR) << "DisplayList constructor passed too few objects.";     \
+      return fml::MakeRefCounted<DisplayList>();                               \
+    }                                                                          \
+    DisplayListRefHolder holder;                                               \
+    holder.holder_field =                                                      \
+        tonic::DartConverter<type*>::FromDart(objects[obj_index++])->accessor; \
+    ref_vector->emplace_back(holder);                                          \
+  } while (0)
+
 fml::RefPtr<DisplayList> DisplayList::Create(tonic::Uint8List& ops,
                                              int numOps,
                                              tonic::DartByteData& data,
@@ -47,14 +59,12 @@ fml::RefPtr<DisplayList> DisplayList::Create(tonic::Uint8List& ops,
   if (numOps < 0 || numOps > ops.num_elements() || numData < 0 ||
       (data.length_in_bytes() % sizeof(float)) != 0 ||
       numData > (int)(data.length_in_bytes() / sizeof(float))) {
-    Dart_ThrowException(
-        tonic::ToDart("DisplayList constructor called with bad list lengths."));
-    return nullptr;
+    FML_LOG(ERROR) << "DisplayList constructor called with bad list lengths.";
+    return fml::MakeRefCounted<DisplayList>();
   }
   if (Dart_IsNull(objList) || !Dart_IsList(objList)) {
-    Dart_ThrowException(
-        tonic::ToDart("DisplayList constructor called with bad object array."));
-    return nullptr;
+    FML_LOG(ERROR) << "DisplayList constructor called with bad object array.";
+    return fml::MakeRefCounted<DisplayList>();
   }
 
   const uint8_t* ops_ptr = ops.data();
@@ -68,8 +78,11 @@ fml::RefPtr<DisplayList> DisplayList::Create(tonic::Uint8List& ops,
   intptr_t numObjects = 0;
   Dart_ListLength(objList, &numObjects);
   Dart_Handle objects[numObjects];
-  if (Dart_IsError(Dart_ListGetRange(objList, 0, numObjects, objects))) {
-    return nullptr;
+  Dart_Handle result = Dart_ListGetRange(objList, 0, numObjects, objects);
+  if (Dart_IsError(result)) {
+    FML_LOG(ERROR) << "Dart Error: " << ::Dart_GetError(result);
+    Dart_PropagateError(result);
+    return fml::MakeRefCounted<DisplayList>();
   }
 
   std::shared_ptr<std::vector<DisplayListRefHolder>> ref_vector =
@@ -97,68 +110,35 @@ fml::RefPtr<DisplayList> DisplayList::Create(tonic::Uint8List& ops,
          args >>= CANVAS_OP_ARG_SHIFT) {
       switch (static_cast<CanvasOpArg>(args & CANVAS_OP_ARG_MASK)) {
         case color_filter: {
-          DisplayListRefHolder holder;
-          holder.colorFilter =
-              tonic::DartConverter<ColorFilter*>::FromDart(objects[obj_index++])
-                  ->filter();
-          ref_vector->emplace_back(holder);
+          DISPLAY_LIST_GRAB_OBJECT(colorFilter, ColorFilter, filter());
           break;
         }
         case image_filter: {
-          DisplayListRefHolder holder;
-          holder.imageFilter =
-              tonic::DartConverter<ImageFilter*>::FromDart(objects[obj_index++])
-                  ->filter();
-          ref_vector->emplace_back(holder);
+          DISPLAY_LIST_GRAB_OBJECT(imageFilter, ImageFilter, filter());
           break;
         }
         case display_list: {
-          DisplayListRefHolder holder;
-          holder.displayList =
-              tonic::DartConverter<DisplayList*>::FromDart(objects[obj_index++])
-                  ->data();
-          ref_vector->emplace_back(holder);
+          DISPLAY_LIST_GRAB_OBJECT(displayList, DisplayList, data());
           break;
         }
         case path: {
-          DisplayListRefHolder holder;
-          holder.pathData =
-              tonic::DartConverter<CanvasPath*>::FromDart(objects[obj_index++])
-                  ->path()
-                  .serialize();
-          ref_vector->emplace_back(holder);
+          DISPLAY_LIST_GRAB_OBJECT(pathData, CanvasPath, path().serialize());
           break;
         }
         case shader: {
-          DisplayListRefHolder holder;
-          holder.shader =
-              tonic::DartConverter<Shader*>::FromDart(objects[obj_index++])
-                  ->shader(sampling);
-          ref_vector->emplace_back(holder);
+          DISPLAY_LIST_GRAB_OBJECT(shader, Shader, shader(sampling));
           break;
         }
         case image: {
-          DisplayListRefHolder holder;
-          holder.image =
-              tonic::DartConverter<CanvasImage*>::FromDart(objects[obj_index++])
-                  ->image();
-          ref_vector->emplace_back(holder);
+          DISPLAY_LIST_GRAB_OBJECT(image, CanvasImage, image());
           break;
         }
         case skpicture: {
-          DisplayListRefHolder holder;
-          holder.picture =
-              tonic::DartConverter<Picture*>::FromDart(objects[obj_index++])
-                  ->picture();
-          ref_vector->emplace_back(holder);
+          DISPLAY_LIST_GRAB_OBJECT(picture, Picture, picture());
           break;
         }
         case vertices: {
-          DisplayListRefHolder holder;
-          holder.vertices =
-              tonic::DartConverter<Vertices*>::FromDart(objects[obj_index++])
-                  ->vertices();
-          ref_vector->emplace_back(holder);
+          DISPLAY_LIST_GRAB_OBJECT(vertices, Vertices, vertices());
           break;
         }
         case empty:
@@ -177,9 +157,8 @@ fml::RefPtr<DisplayList> DisplayList::Create(tonic::Uint8List& ops,
     }
   }
   if (obj_index != numObjects) {
-    FML_LOG(ERROR) << "Bad number of objects: " << obj_index
-                   << " != " << numObjects;
-    return nullptr;
+    FML_LOG(ERROR) << "DisplayList constructor passed too many objects.";
+    return fml::MakeRefCounted<DisplayList>();
   }
 
   return fml::MakeRefCounted<DisplayList>(
@@ -193,6 +172,11 @@ DisplayList::DisplayList(
     : ops_vector_(ops_vector),
       data_vector_(data_vector),
       ref_vector_(ref_vector) {}
+
+DisplayList::DisplayList()
+    : ops_vector_(std::make_shared<std::vector<uint8_t>>()),
+      data_vector_(std::make_shared<std::vector<float>>()),
+      ref_vector_(std::make_shared<std::vector<DisplayListRefHolder>>()) {}
 
 DisplayList::~DisplayList() = default;
 

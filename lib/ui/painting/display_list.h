@@ -62,11 +62,11 @@ class DisplayList : public RefCountedDartWrappable<DisplayList> {
   }
 
  private:
-  explicit DisplayList(
-      std::shared_ptr<std::vector<uint8_t>> ops_vector,
-      std::shared_ptr<std::vector<float>> data_vector,
-      std::shared_ptr<std::vector<DisplayListRefHolder>> ref_vector);
-  // explicit DisplayList();
+  DisplayList(std::shared_ptr<std::vector<uint8_t>> ops_vector,
+              std::shared_ptr<std::vector<float>> data_vector,
+              std::shared_ptr<std::vector<DisplayListRefHolder>> ref_vector);
+
+  DisplayList();
 
   std::shared_ptr<std::vector<uint8_t>> ops_vector_;
   std::shared_ptr<std::vector<float>> data_vector_;
