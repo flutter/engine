@@ -145,7 +145,8 @@ void MultiFrameCodec::State::GetNextFrameAndInvokeCallback(
   if (skImage) {
     image = CanvasImage::Create();
     image->set_image({skImage, std::move(unref_queue)});
-    ImageGenerator::FrameInfo frameInfo = generator_->GetFrameInfo(nextFrameIndex_);
+    ImageGenerator::FrameInfo frameInfo =
+        generator_->GetFrameInfo(nextFrameIndex_);
     duration = frameInfo.duration;
   }
   nextFrameIndex_ = (nextFrameIndex_ + 1) % frameCount_;

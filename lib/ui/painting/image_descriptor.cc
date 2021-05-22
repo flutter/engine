@@ -50,7 +50,7 @@ ImageDescriptor::ImageDescriptor(sk_sp<SkData> buffer,
 ImageDescriptor::ImageDescriptor(sk_sp<SkData> buffer,
                                  std::unique_ptr<ImageGenerator> generator)
     : buffer_(std::move(buffer)),
-      generator_(nullptr),
+      generator_(std::move(generator)),
       image_info_(CreateImageInfo()),
       row_bytes_(std::nullopt) {}
 
@@ -128,7 +128,7 @@ void ImageDescriptor::instantiateCodec(Dart_Handle codec_handle,
                                        int target_width,
                                        int target_height) {
   fml::RefPtr<Codec> ui_codec;
-  if (generator_->GetFrameCount() == 1) {
+  if (!generator_ || generator_->GetFrameCount() == 1) {
     ui_codec = fml::MakeRefCounted<SingleFrameCodec>(
         static_cast<fml::RefPtr<ImageDescriptor>>(this), target_width,
         target_height);
