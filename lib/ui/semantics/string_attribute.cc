@@ -62,4 +62,8 @@ void NativeStringAttribute::initLocaleStringAttribute(
   native_string_attribute->attribute_ = locale_attribute;
 }
 
+const StringAttributePtr NativeStringAttribute::GetAttribute() const {
+  return attribute_;
+}
+
 }  // namespace flutter

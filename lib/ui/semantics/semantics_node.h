@@ -13,7 +13,7 @@
 #include "third_party/skia/include/core/SkM44.h"
 #include "third_party/skia/include/core/SkRect.h"
 
-#include "flutter/lib/ui/semantics/attributed_string.h"
+#include "flutter/lib/ui/semantics/string_attribute.h"
 
 namespace flutter {
 

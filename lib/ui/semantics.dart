@@ -641,77 +641,6 @@ class SemanticsFlag {
   }
 }
 
-/// A string that carries a list of [StringAttribute]s.
-class AttributedString extends NativeFieldWrapperClass2 {
-  /// Creates a attributed string.
-  ///
-  /// The [TextRange] in the [attributes] must be inside the length of the
-  /// [string].
-  ///
-  /// The [attributes] must not be changed after the attributed string is
-  /// created.
-  AttributedString(
-    this.string, {
-    this.attributes = const <StringAttribute>[],
-  }) : assert(() {
-         for (final StringAttribute attribute in attributes) {
-           assert(
-             string.length >= attribute.range.start &&
-             string.length >= attribute.range.end,
-             'The range in $attribute is outside of the string $string',
-           );
-         }
-         return true;
-       }()) {
-    _initAttributedString(this, string, attributes);
-  }
-
-  /// The plain string stored in the attributed string.
-  final String string;
-
-  /// The attributes this string carries.
-  ///
-  /// The list must not be modified after this string is created.
-  final List<StringAttribute> attributes;
-
-  void _initAttributedString(
-    AttributedString instance,
-    String string,
-    List<StringAttribute> attributes,
-  ) native 'AttributedString_initAttributedString';
-
-  @override
-  AttributedString operator +(AttributedString other) {
-    if (string.isEmpty) {
-      return other;
-    }
-    if (other.string.isEmpty) {
-      return this;
-    }
-
-    // None of the strings is empty.
-    String newString = string + other.string;
-    List<StringAttribute> newAttributes = List<StringAttribute>.from(attributes);
-    if (other.attributes.isNotEmpty) {
-      int offset = string.length;
-      for (final StringAttribute attribute in other.attributes) {
-        final TextRange newRange = TextRange(
-          start: attribute.range.start + offset,
-          end: attribute.range.end + offset,
-        );
-        final StringAttribute offsetedAttribute = attribute._copy(range: newRange);
-        newAttributes.add(offsetedAttribute);
-      }
-    }
-    return AttributedString(newString, attributes: newAttributes);
-  }
-
-  @override
-  String toString() {
-    return 'AttributedString(\'$string\', attributes: $attributes)';
-  }
-}
-
 // When adding a new StringAttribute, the classes in these files must be
 // updated as well.
 //  * engine/src/flutter/lib/web_ui/lib/src/ui/semantics.dart
@@ -736,7 +665,8 @@ abstract class StringAttribute extends NativeFieldWrapperClass2 {
   // The range of the text to which this attribute applies.
   final TextRange range;
 
-  StringAttribute _copy({required TextRange range});
+  // Returns a copy of this atttribute with the given range.
+  StringAttribute copy({required TextRange range});
 }
 
 /// A string attribute that causes the assistive technologies, e.g. VoiceOver,
@@ -762,7 +692,8 @@ class SpellOutStringAttribute extends StringAttribute {
     int end,
   ) native 'NativeStringAttribute_initSpellOutStringAttribute';
 
-  StringAttribute _copy({required TextRange range}) {
+  @override
+  StringAttribute copy({required TextRange range}) {
     return SpellOutStringAttribute(range: range);
   }
 
@@ -801,7 +732,8 @@ class LocaleStringAttribute extends StringAttribute {
     String locale,
   ) native 'NativeStringAttribute_initLocaleStringAttribute';
 
-  StringAttribute _copy({required TextRange range}) {
+  @override
+  StringAttribute copy({required TextRange range}) {
     return LocaleStringAttribute(range: range, locale: locale);
   }
 
@@ -912,39 +844,27 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     required double elevation,
     required double thickness,
     required Rect rect,
-    // TODO(chunhtai): removes non attributed string parameters when framework pr is merged.
-    // https://github.com/flutter/flutter/issues/79318
-    String? label,
-    AttributedString? attributedLabel,
-    String? value,
-    AttributedString? attributedValue,
-    String? increasedValue,
-    AttributedString? attributedIncreasedValue,
-    String? decreasedValue,
-    AttributedString? attributedDecreasedValue,
-    String? hint,
-    AttributedString? attributedHint,
+    required String label,
+    List<StringAttribute>? labelAttributes,
+    required String value,
+    List<StringAttribute>? valueAttributes,
+    required String increasedValue,
+    List<StringAttribute>? increasedValueAttributes,
+    required String decreasedValue,
+    List<StringAttribute>? decreasedValueAttributes,
+    required String hint,
+    List<StringAttribute>? hintAttributes,
     TextDirection? textDirection,
     required Float64List transform,
     required Int32List childrenInTraversalOrder,
     required Int32List childrenInHitTestOrder,
     required Int32List additionalActions,
   }) {
-    assert((label != null) != (attributedLabel != null));
-    assert((value != null) != (attributedValue != null));
-    assert((increasedValue != null) != (attributedIncreasedValue != null));
-    assert((decreasedValue != null) != (attributedDecreasedValue != null));
-    assert((hint != null) != (attributedHint != null));
     assert(_matrix4IsValid(transform));
     assert(
       scrollChildren == 0 || scrollChildren == null || (scrollChildren > 0 && childrenInHitTestOrder != null),
       'If a node has scrollChildren, it must have childrenInHitTestOrder',
     );
-    attributedLabel = attributedLabel ?? AttributedString(label!);
-    attributedValue = attributedValue ?? AttributedString(value!);
-    attributedIncreasedValue = attributedIncreasedValue ?? AttributedString(increasedValue!);
-    attributedDecreasedValue = attributedDecreasedValue ?? AttributedString(decreasedValue!);
-    attributedHint = attributedHint ?? AttributedString(hint!);
     _updateNode(
       id,
       flags,
@@ -965,11 +885,16 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
       rect.bottom,
       elevation,
       thickness,
-      attributedLabel,
-      attributedValue,
-      attributedIncreasedValue,
-      attributedDecreasedValue,
-      attributedHint,
+      label,
+      labelAttributes,
+      value,
+      valueAttributes,
+      increasedValue,
+      increasedValueAttributes,
+      decreasedValue,
+      decreasedValueAttributes,
+      hint,
+      hintAttributes,
       textDirection != null ? textDirection.index + 1 : 0,
       transform,
       childrenInTraversalOrder,
@@ -997,11 +922,16 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     double bottom,
     double elevation,
     double thickness,
-    AttributedString attributedLabel,
-    AttributedString attributedValue,
-    AttributedString attributedIncreasedValue,
-    AttributedString attributedDecreasedValue,
-    AttributedString attributedHint,
+    String label,
+    List<StringAttribute>? labelAttributes,
+    String value,
+    List<StringAttribute>? valueAttributes,
+    String increasedValue,
+    List<StringAttribute>? increasedValueAttributes,
+    String decreasedValue,
+    List<StringAttribute>? decreasedValueAttributes,
+    String hint,
+    List<StringAttribute>? hintAttributes,
     int textDirection,
     Float64List transform,
     Int32List childrenInTraversalOrder,

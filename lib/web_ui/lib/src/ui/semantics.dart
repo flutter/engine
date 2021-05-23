@@ -275,60 +275,11 @@ class SemanticsFlag {
   }
 }
 
-class AttributedString {
-  AttributedString(
-    this.string, {
-    this.attributes = const <StringAttribute>[],
-  }) : assert(() {
-         for (final StringAttribute attribute in attributes) {
-           assert(
-             string.length >= attribute.range.start &&
-             string.length >= attribute.range.end,
-             'The range in $attribute is outside of the string $string',
-           );
-         }
-         return true;
-       }());
-
-  final String string;
-  final List<StringAttribute> attributes;
-
-  AttributedString operator +(AttributedString other) {
-    if (string.isEmpty) {
-      return other;
-    }
-    if (other.string.isEmpty) {
-      return this;
-    }
-
-    // None of the strings is empty.
-    String newString = string + other.string;
-    List<StringAttribute> newAttributes = List<StringAttribute>.from(attributes);
-    if (other.attributes.isNotEmpty) {
-      int offset = string.length;
-      for (final StringAttribute attribute in other.attributes) {
-        final TextRange newRange = TextRange(
-          start: attribute.range.start + offset,
-          end: attribute.range.end + offset,
-        );
-        final StringAttribute offsetedAttribute = attribute._copy(range: newRange);
-        newAttributes.add(offsetedAttribute);
-      }
-    }
-    return AttributedString(newString, attributes: newAttributes);
-  }
-
-  @override
-  String toString() {
-    return 'AttributedString(\'$string\', attributes: $attributes)';
-  }
-}
-
 
 // When adding a new StringAttributeType, the classes in these file must be
 // updated as well.
 //  * engine/src/flutter/lib/ui/semantics.dart
-//  * engine/src/flutter/lib/ui/semantics/attributed_string.h
+//  * engine/src/flutter/lib/ui/semantics/string_attribute.h
 //  * engine/src/flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java
 
 abstract class StringAttribute {
@@ -338,7 +289,7 @@ abstract class StringAttribute {
 
   final TextRange range;
 
-  StringAttribute _copy({required TextRange range});
+  StringAttribute copy({required TextRange range});
 }
 
 class SpellOutStringAttribute extends StringAttribute {
@@ -347,7 +298,7 @@ class SpellOutStringAttribute extends StringAttribute {
   }) : super._(range: range);
 
   @override
-  StringAttribute _copy({required TextRange range}) {
+  StringAttribute copy({required TextRange range}) {
     return SpellOutStringAttribute(range: range);
   }
 
@@ -366,7 +317,7 @@ class LocaleStringAttribute extends StringAttribute {
   final Locale locale;
 
   @override
-  StringAttribute _copy({required TextRange range}) {
+  StringAttribute copy({required TextRange range}) {
     return LocaleStringAttribute(range: range, locale: this.locale);
   }
 
@@ -397,36 +348,24 @@ class SemanticsUpdateBuilder {
     required double elevation,
     required double thickness,
     required Rect rect,
-    // TODO(chunhtai): removes non attributed string parameters when framework pr is merged.
-    // https://github.com/flutter/flutter/issues/79318
-    String? label,
-    AttributedString? attributedLabel,
-    String? value,
-    AttributedString? attributedValue,
-    String? increasedValue,
-    AttributedString? attributedIncreasedValue,
-    String? decreasedValue,
-    AttributedString? attributedDecreasedValue,
-    String? hint,
-    AttributedString? attributedHint,
+    required String label,
+    List<StringAttribute>? labelAttributes,
+    required String value,
+    List<StringAttribute>? valueAttributes,
+    required String increasedValue,
+    List<StringAttribute>? increasedValueAttributes,
+    required String decreasedValue,
+    List<StringAttribute>? decreasedValueAttributes,
+    required String hint,
+    List<StringAttribute>? hintAttributes,
     TextDirection? textDirection,
     required Float64List transform,
     required Int32List childrenInTraversalOrder,
     required Int32List childrenInHitTestOrder,
     required Int32List additionalActions,
   }) {
-    assert((label != null) != (attributedLabel != null));
-    assert((value != null) != (attributedValue != null));
-    assert((increasedValue != null) != (attributedIncreasedValue != null));
-    assert((decreasedValue != null) != (attributedDecreasedValue != null));
-    assert((hint != null) != (attributedHint != null));
     if (transform.length != 16)
       throw ArgumentError('transform argument must have 16 entries.');
-    attributedLabel = attributedLabel ?? AttributedString(label!);
-    attributedValue = attributedValue ?? AttributedString(value!);
-    attributedIncreasedValue = attributedIncreasedValue ?? AttributedString(increasedValue!);
-    attributedDecreasedValue = attributedDecreasedValue ?? AttributedString(decreasedValue!);
-    attributedHint = attributedHint ?? AttributedString(hint!);
     _nodeUpdates.add(engine.SemanticsNodeUpdate(
       id: id,
       flags: flags,
@@ -441,11 +380,16 @@ class SemanticsUpdateBuilder {
       scrollExtentMax: scrollExtentMax,
       scrollExtentMin: scrollExtentMin,
       rect: rect,
-      attributedLabel: attributedLabel,
-      attributedValue: attributedValue,
-      attributedIncreasedValue: attributedIncreasedValue,
-      attributedDecreasedValue: attributedDecreasedValue,
-      attributedHint: attributedHint,
+      label: label,
+      labelAttributes: labelAttributes,
+      value: value,
+      valueAttributes: valueAttributes,
+      increasedValue: increasedValue,
+      increasedValueAttributes: increasedValueAttributes,
+      decreasedValue: decreasedValue,
+      decreasedValueAttributes: decreasedValueAttributes,
+      hint: hint,
+      hintAttributes: hintAttributes,
       textDirection: textDirection,
       transform: engine.toMatrix32(transform),
       elevation: elevation,

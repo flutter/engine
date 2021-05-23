@@ -10,11 +10,16 @@
 
 namespace flutter {
 
-class AttributedString;
 struct StringAttribute;
 
 using StringAttributePtr = std::shared_ptr<flutter::StringAttribute>;
 using StringAttributes = std::vector<StringAttributePtr>;
+
+// When adding a new StringAttributeType, the classes in these file must be
+// updated as well.
+//  * engine/src/flutter/lib/ui/semantics.dart
+//  * engine/src/flutter/lib/web_ui/lib/src/ui/semantics.dart
+//  * engine/src/flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java
 
 enum class StringAttributeType : int32_t {
   kSpellOut,
@@ -66,13 +71,15 @@ class NativeStringAttribute
                                         int32_t end,
                                         std::string locale);
 
+  //----------------------------------------------------------------------------
+  /// Returns the c++ representataion of StringAttribute.
+  const StringAttributePtr GetAttribute() const;
+
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
  private:
   NativeStringAttribute();
   StringAttributePtr attribute_;
-
-  friend class AttributedString;
 };
 
 }  // namespace flutter

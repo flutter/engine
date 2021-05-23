@@ -38,20 +38,14 @@ TEST_F(SemanticsUpdateBuilderTest, CanHandleAttributedStrings) {
     ASSERT_EQ(node.valueAttributes[0]->end, 3);
     ASSERT_EQ(node.valueAttributes[0]->type, StringAttributeType::kSpellOut);
 
-    ASSERT_EQ(node.hint, "hintFragment1hintFragment2hintFragment3");
-    ASSERT_EQ(node.hintAttributes.size(), (size_t)3);
+    ASSERT_EQ(node.hint, "hint");
+    ASSERT_EQ(node.hintAttributes.size(), (size_t)1);
     ASSERT_EQ(node.hintAttributes[0]->start, 0);
     ASSERT_EQ(node.hintAttributes[0]->end, 1);
     ASSERT_EQ(node.hintAttributes[0]->type, StringAttributeType::kLocale);
     auto local_attribute =
         std::static_pointer_cast<LocaleStringAttribute>(node.hintAttributes[0]);
     ASSERT_EQ(local_attribute->locale, "en-MX");
-    ASSERT_EQ(node.hintAttributes[1]->start, 16);
-    ASSERT_EQ(node.hintAttributes[1]->end, 19);
-    ASSERT_EQ(node.hintAttributes[1]->type, StringAttributeType::kSpellOut);
-    ASSERT_EQ(node.hintAttributes[2]->start, 26);
-    ASSERT_EQ(node.hintAttributes[2]->end, 32);
-    ASSERT_EQ(node.hintAttributes[2]->type, StringAttributeType::kSpellOut);
 
     ASSERT_EQ(node.increasedValue, "increasedValue");
     ASSERT_EQ(node.increasedValueAttributes.size(), (size_t)1);
