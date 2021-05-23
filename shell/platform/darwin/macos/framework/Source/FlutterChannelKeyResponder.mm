@@ -54,7 +54,7 @@
         type = @"keydown";
       } else {
         // ignore duplicate modifiers; This can happen in situations like switching
-        // between application window when MacOS only sends the up event to new window.
+        // between application windows when MacOS only sends the up event to new window.
         return;
       }
       break;
