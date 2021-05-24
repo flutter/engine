@@ -445,6 +445,9 @@ deps = {
   'src/third_party/pkg/process_runner':
   Var('github_git') + '/google/process_runner.git' + '@' + 'd632ea0bfd814d779fcc53a361ed33eaf3620a0b', # 4.0.1
 
+  'src/third_party/pkg/quiver':
+  Var('github_git') + '/google/quiver-dart.git' + '@' + 'c212da3e18e6113eab4150ef6f1b6770795eb4a3', # 2.0.5
+
   'src/third_party/pkg/vector_math':
   Var('github_git') + '/google/vector_math.dart.git' + '@' + 'v2.1.0',
 
@@ -588,14 +591,14 @@ deps = {
     'dep_type': 'cipd',
   },
 
-   # Get the SDK from https://chrome-infra-packages.appspot.com/p/fuchsia/sdk/core at the 'latest' tag
+   # Get the GN SDK from https://chrome-infra-packages.appspot.com/p/fuchsia/sdk/gn at the 'latest' tag
    # Get the toolchain from https://chrome-infra-packages.appspot.com/p/fuchsia/clang at the 'goma' tag
 
    'src/fuchsia/sdk/mac': {
      'packages': [
        {
-        'package': 'fuchsia/sdk/core/mac-amd64',
-        'version': 'ntgCqOS4mdbnM5l73QyVj7-rC4ZneCrlPpBNY1ffwm8C'
+        'package': 'fuchsia/sdk/gn/mac-amd64',
+        'version': 'A9vidXntPqY2keWQe8GNDTXwGf8om82ZrBohePeQRc4C'
        }
      ],
      'condition': 'host_os == "mac"',
@@ -604,8 +607,8 @@ deps = {
    'src/fuchsia/sdk/linux': {
      'packages': [
        {
-        'package': 'fuchsia/sdk/core/linux-amd64',
-        'version': 'TqViQQzJo0Oh3-NywHXK7x13jbWL_eIP3eMYyhTBJx4C'
+        'package': 'fuchsia/sdk/gn/linux-amd64',
+        'version': 'txywQ_B3OXNAJQaFw6oFApUx_r5hM88i1jGUnM0WRWAC'
        }
      ],
      'condition': 'host_os == "linux"',
