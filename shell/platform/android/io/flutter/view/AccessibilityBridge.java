@@ -2080,6 +2080,17 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     private String decreasedValue;
     private String hint;
 
+    // The id of the sibling node that is before this node in traversal
+    // order.
+    //
+    // The child order alone does not guarantee the TalkBack focus traversal
+    // order. The AccessibilityNodeInfo.setTraversalAfter must be called with
+    // its previous sibling to determine the focus traversal order.
+    //
+    // This property is updated in AccessibilityBridge.updateRecursively,
+    // which is called at the end of every semantics update, and it is used in
+    // AccessibilityBridge.createAccessibilityNodeInfo to set the "traversal
+    // after" of this node.
     private int previousNodeId = -1;
 
     // See Flutter's {@code SemanticsNode#textDirection}.
