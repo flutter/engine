@@ -172,12 +172,16 @@ public class FlutterImageView extends View implements RenderSurface {
     // or some special Android devices so the calls to `invalidate()` queued up
     // until the device produces a new frame.
     // 3. While the engine will also stop producing frames, there is a race condition.
-    final Image newImage = imageReader.acquireLatestImage();
-    if (newImage != null) {
-      // Only close current image after acquiring valid new image
-      closeCurrentImage();
-      currentImage = newImage;
-      invalidate();
+    try {
+      final Image newImage = imageReader.acquireLatestImage();
+      if (newImage != null) {
+        // Only close current image after acquiring valid new image
+        closeCurrentImage();
+        currentImage = newImage;
+        invalidate();
+      }
+    }catch (IllegalStateException illegalStateException){
+        //fix Galaxy A7, Galaxy s3 Android 4.4.4 os IllegalStateException.
     }
     return newImage != null;
   }
