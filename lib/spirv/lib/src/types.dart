@@ -31,83 +31,44 @@ class _FunctionType {
 String _typeName(_Type t, TargetLanguage target) {
   switch (target) {
     case TargetLanguage.sksl:
-      return _skslTypeName(t);
+      return _skslTypeNames[t]!;
     default:
-      return _glslTypeName(t);
+      return _glslTypeNames[t]!;
   }
 }
 
-String _skslTypeName(_Type t) {
-  switch (t) {
-    case _Type._void:
-      return 'void';
-    case _Type._bool:
-      return 'bool';
-    case _Type._int:
-      return 'int';
-    case _Type.float:
-      return 'float';
-    case _Type.float2:
-      return 'float2';
-    case _Type.float3:
-      return 'float3';
-    case _Type.float4:
-      return 'float4';
-    case _Type.float2x2:
-      return 'float2x2';
-    case _Type.float3x3:
-      return 'float3x3';
-    case _Type.float4x4:
-      return 'float4x4';
-    default:
-      throw TypeError();
-  }
-}
+const Map<_Type, String> _skslTypeNames = <_Type, String>{
+  _Type._void: 'void',
+  _Type._bool: 'bool',
+  _Type._int: 'int',
+  _Type.float: 'float',
+  _Type.float2: 'float2',
+  _Type.float3: 'float3',
+  _Type.float4: 'float4',
+  _Type.float2x2: 'float2x2',
+  _Type.float3x3: 'float3x3',
+  _Type.float4x4: 'float4x4',
+};
 
-String _glslTypeName(_Type t) {
-  switch (t) {
-    case _Type._void:
-      return 'void';
-    case _Type._bool:
-      return 'bool';
-    case _Type._int:
-      return 'int';
-    case _Type.float:
-      return 'float';
-    case _Type.float2:
-      return 'vec2';
-    case _Type.float3:
-      return 'vec3';
-    case _Type.float4:
-      return 'vec4';
-    case _Type.float2x2:
-      return 'mat2';
-    case _Type.float3x3:
-      return 'mat3';
-    case _Type.float4x4:
-      return 'mat4';
-    default:
-      throw TypeError();
-  }
-}
+const Map<_Type, String> _glslTypeNames = <_Type, String>{
+  _Type._void: 'void',
+  _Type._bool: 'bool',
+  _Type._int: 'int',
+  _Type.float: 'float',
+  _Type.float2: 'vec2',
+  _Type.float3: 'vec3 ',
+  _Type.float4: 'vec4',
+  _Type.float2x2: 'mat2',
+  _Type.float3x3: 'mat3',
+  _Type.float4x4: 'mat4',
+};
 
-int _typeFloatCount(_Type t) {
-  switch (t) {
-    case _Type.float:
-      return 1;
-    case _Type.float2:
-      return 2;
-    case _Type.float3:
-      return 3;
-    case _Type.float4:
-      return 4;
-    case _Type.float2x2:
-      return 4;
-    case _Type.float3x3:
-      return 9;
-    case _Type.float4x4:
-      return 16;
-    default:
-      throw TypeError();
-  }
-}
+const Map<_Type, int> _typeFloatCounts = <_Type, int>{
+  _Type.float: 1,
+  _Type.float2: 2,
+  _Type.float3: 3,
+  _Type.float4: 4,
+  _Type.float2x2: 4,
+  _Type.float3x3: 9,
+  _Type.float4x4: 16,
+};

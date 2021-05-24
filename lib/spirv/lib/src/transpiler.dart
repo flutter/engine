@@ -643,7 +643,7 @@ class _Transpiler {
         if (t == null) {
           throw failure('$typeId is not a defined type');
         }
-        uniformFloatCount += _typeFloatCount(t);
+        uniformFloatCount += _typeFloatCounts[t]!;
         return;
       case _storageClassInput:
         return;
@@ -817,112 +817,12 @@ class _Transpiler {
 
   void parseGLSLInst(int id, int type) {
     final int inst = readWord();
-    switch (inst) {
-      case _glslStd450Trunc:
-        parseGLSLOp(id, type, 'trunc', 1);
-        return;
-      case _glslStd450FAbs:
-        parseGLSLOp(id, type, 'abs', 1);
-        return;
-      case _glslStd450FSign:
-        parseGLSLOp(id, type, 'sign', 1);
-        return;
-      case _glslStd450Floor:
-        parseGLSLOp(id, type, 'floor', 1);
-        return;
-      case _glslStd450Ceil:
-        parseGLSLOp(id, type, 'ceil', 1);
-        return;
-      case _glslStd450Fract:
-        parseGLSLOp(id, type, 'fract', 1);
-        return;
-      case _glslStd450Radians:
-        parseGLSLOp(id, type, 'radians', 1);
-        return;
-      case _glslStd450Degrees:
-        parseGLSLOp(id, type, 'degrees', 1);
-        return;
-      case _glslStd450Sin:
-        parseGLSLOp(id, type, 'sin', 1);
-        return;
-      case _glslStd450Cos:
-        parseGLSLOp(id, type, 'cos', 1);
-        return;
-      case _glslStd450Tan:
-        parseGLSLOp(id, type, 'tan', 1);
-        return;
-      case _glslStd450Asin:
-        parseGLSLOp(id, type, 'asin', 1);
-        return;
-      case _glslStd450Acos:
-        parseGLSLOp(id, type, 'acos', 1);
-        return;
-      case _glslStd450Atan:
-        parseGLSLOp(id, type, 'atan', 1);
-        return;
-      case _glslStd450Atan2:
-        parseGLSLOp(id, type, 'atan2', 2);
-        return;
-      case _glslStd450Pow:
-        parseGLSLOp(id, type, 'pow', 2);
-        return;
-      case _glslStd450Exp:
-        parseGLSLOp(id, type, 'exp', 1);
-        return;
-      case _glslStd450Log:
-        parseGLSLOp(id, type, 'log', 1);
-        return;
-      case _glslStd450Exp2:
-        parseGLSLOp(id, type, 'exp2', 1);
-        return;
-      case _glslStd450Log2:
-        parseGLSLOp(id, type, 'log2', 1);
-        return;
-      case _glslStd450Sqrt:
-        parseGLSLOp(id, type, 'sqrt', 1);
-        return;
-      case _glslStd450InverseSqrt:
-        parseGLSLOp(id, type, 'inversesqrt', 1);
-        return;
-      case _glslStd450FMin:
-        parseGLSLOp(id, type, 'min', 2);
-        return;
-      case _glslStd450FMax:
-        parseGLSLOp(id, type, 'max', 2);
-        return;
-      case _glslStd450FClamp:
-        parseGLSLOp(id, type, 'clamp', 3);
-        return;
-      case _glslStd450FMix:
-        parseGLSLOp(id, type, 'mix', 3);
-        return;
-      case _glslStd450Step:
-        parseGLSLOp(id, type, 'step', 2);
-        return;
-      case _glslStd450SmoothStep:
-        parseGLSLOp(id, type, 'smoothstep', 3);
-        return;
-      case _glslStd450Length:
-        parseGLSLOp(id, type, 'length', 1);
-        return;
-      case _glslStd450Distance:
-        parseGLSLOp(id, type, 'distance', 2);
-        return;
-      case _glslStd450Cross:
-        parseGLSLOp(id, type, 'cross', 2);
-        return;
-      case _glslStd450Normalize:
-        parseGLSLOp(id, type, 'normalize', 1);
-        return;
-      case _glslStd450FaceForward:
-        parseGLSLOp(id, type, 'faceforward', 3);
-        return;
-      case _glslStd450Reflect:
-        parseGLSLOp(id, type, 'reflect', 2);
-        return;
-      default:
-        throw failure('$id is not a supported GLSL instruction.');
+    final String? opName = _glslStd450OpNames[inst];
+    if (opName == null) {
+      throw failure('$id is not a supported GLSL instruction.');
     }
+    final int argc = _glslStd450OpArgc[inst]!;
+    parseGLSLOp(id, type, opName, argc);
   }
 
   void parseGLSLOp(int id, int type, String name, int argCount) {
