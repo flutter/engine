@@ -1,0 +1,73 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+assert(is_fuchsia)
+
+import("//build/fuchsia/sdk.gni")
+import("//flutter/tools/fuchsia/fuchsia_archive.gni")
+
+group("tests") {
+  testonly = true
+  deps = [
+    ":flutter_scenic_embedder_test",
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/embedder/child-view",
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/embedder/parent-view",
+  ]
+}
+
+executable("flutter_scenic_embedder_test_bin") {
+  testonly = true
+
+  output_name = "flutter_scenic_embedder_test"
+
+  sources = [
+    "flutter-scenic-embedder-test.cc",
+    "flutter-scenic-embedder-test.h",
+  ]
+
+  # This is needed for //third_party/googletest for linking zircon symbols.
+  libs = [ "$fuchsia_sdk_path/arch/$target_cpu/sysroot/lib/libzircon.so" ]
+
+  include_dirs = [ "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing" ]
+
+  public_deps = [ "//third_party/googletest:gtest" ]
+
+  # The use of these dependencies is temporary and will be moved behind the
+  # embedder API.
+  flutter_deps = [
+    "//flutter/lib/ui",
+    "//third_party/dart/runtime:libdart_jit",
+    "//third_party/dart/runtime/platform:libdart_platform_jit",
+  ]
+
+  deps = [
+           "$fuchsia_sdk_root/fidl:fuchsia.sys",
+           "$fuchsia_sdk_root/fidl:fuchsia.ui.app",
+           "$fuchsia_sdk_root/fidl:fuchsia.ui.input",
+           "$fuchsia_sdk_root/fidl:fuchsia.ui.policy",
+           "$fuchsia_sdk_root/fidl:fuchsia.ui.scenic",
+           "$fuchsia_sdk_root/pkg:fit",
+           "$fuchsia_sdk_root/pkg:sys_cpp",
+           "$fuchsia_sdk_root/pkg:sys_cpp_testing",
+           "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/src/lib/ui/base_view",
+           "$fuchsia_sdk_root/pkg:scenic_cpp",
+           "//third_party/googletest:gtest_main",
+           "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/src/ui/testing/views",
+           "$fuchsia_sdk_root/pkg:zx",
+           "$fuchsia_sdk_root/pkg:async-loop-cpp",
+           "$fuchsia_sdk_root/pkg:async-loop-default",
+         ] + flutter_deps
+}
+
+fuchsia_test_archive("flutter_scenic_embedder_test") {
+  deps = [
+    ":flutter_scenic_embedder_test_bin",
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/embedder/child-view",
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/embedder/parent-view",
+  ]
+
+  binary = "$target_name"
+
+  cmx_file = rebase_path("meta/$target_name.cmx")
+}

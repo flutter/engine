@@ -1,0 +1,20 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//build/fuchsia/sdk.gni")
+import("//flutter/tools/fuchsia/dart/dart_library.gni")
+import("//flutter/tools/fuchsia/flutter/flutter_component.gni")
+
+dart_library("lib") {
+  package_name = "child-view"
+  sources = [ "main.dart" ]
+
+  deps = []
+}
+
+flutter_component("child-view") {
+  manifest = "meta/child_view.cmx"
+  main_package = "child-view"
+  deps = [ ":lib" ]
+}
