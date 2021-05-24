@@ -25,6 +25,7 @@
 #include "platform_view.h"
 #include "surface.h"
 #include "task_runner_adapter.h"
+#include "vsync_waiter.h"
 
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
 #include "compositor_context.h"  // nogncheck
@@ -76,10 +77,6 @@ Engine::Engine(Delegate& delegate,
 #endif
       intercept_all_input_(product_config.get_intercept_all_input()),
       weak_factory_(this) {
-  if (zx::event::create(0, &vsync_event_) != ZX_OK) {
-    FML_DLOG(ERROR) << "Could not create the vsync event.";
-    return;
-  }
 
   // Get the task runners from the managed threads. The current thread will be
   // used as the "platform" thread.
@@ -105,6 +102,8 @@ Engine::Engine(Delegate& delegate,
   // refs are not copyable, and multiple consumers need view refs.
   fuchsia::ui::views::ViewRef platform_view_ref;
   view_ref_pair.view_ref.Clone(&platform_view_ref);
+  fuchsia::ui::views::ViewRef accessibility_bridge_view_ref;
+  view_ref_pair.view_ref.Clone(&accessibility_bridge_view_ref);
   fuchsia::ui::views::ViewRef isolate_view_ref;
   view_ref_pair.view_ref.Clone(&isolate_view_ref);
   // Input3 keyboard listener registration requires a ViewRef as an event
@@ -138,18 +137,19 @@ Engine::Engine(Delegate& delegate,
        view_token = std::move(view_token),
        view_ref_pair = std::move(view_ref_pair),
        max_frames_in_flight = product_config.get_max_frames_in_flight(),
-       vsync_handle = vsync_event_.get(), &view_embedder_latch]() mutable {
-        session_connection_.emplace(
+       &view_embedder_latch,
+       vsync_offset = product_config.get_vsync_offset()]() mutable {
+        session_connection_ = std::make_shared<DefaultSessionConnection>(
             thread_label_, std::move(session),
-            std::move(session_error_callback), [](auto) {}, vsync_handle,
-            max_frames_in_flight);
+            std::move(session_error_callback), [](auto) {},
+            max_frames_in_flight, vsync_offset);
         surface_producer_.emplace(session_connection_->get());
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
         if (use_legacy_renderer_) {
           legacy_external_view_embedder_ =
               std::make_shared<flutter::SceneUpdateContext>(
                   thread_label_, std::move(view_token),
-                  std::move(view_ref_pair), session_connection_.value(),
+                  std::move(view_ref_pair), *(session_connection_.get()),
                   intercept_all_input_);
         } else
 #endif
@@ -157,7 +157,7 @@ Engine::Engine(Delegate& delegate,
           external_view_embedder_ =
               std::make_shared<FuchsiaExternalViewEmbedder>(
                   thread_label_, std::move(view_token),
-                  std::move(view_ref_pair), session_connection_.value(),
+                  std::move(view_ref_pair), *session_connection_.get(),
                   surface_producer_.value(), intercept_all_input_);
         }
         view_embedder_latch.Signal();
@@ -172,6 +172,30 @@ Engine::Engine(Delegate& delegate,
       parent_environment_service_provider;
   environment->GetServices(parent_environment_service_provider.NewRequest());
   environment.Unbind();
+
+  AccessibilityBridge::SetSemanticsEnabledCallback
+      set_semantics_enabled_callback = [this](bool enabled) {
+        auto platform_view = shell_->GetPlatformView();
+
+        if (platform_view) {
+          platform_view->SetSemanticsEnabled(enabled);
+        }
+      };
+
+  AccessibilityBridge::DispatchSemanticsActionCallback
+      dispatch_semantics_action_callback =
+          [this](int32_t node_id, flutter::SemanticsAction action) {
+            auto platform_view = shell_->GetPlatformView();
+
+            if (platform_view) {
+              platform_view->DispatchSemanticsAction(node_id, action, {});
+            }
+          };
+
+  accessibility_bridge_ = std::make_unique<AccessibilityBridge>(
+      std::move(set_semantics_enabled_callback),
+      std::move(dispatch_semantics_action_callback), svc,
+      std::move(accessibility_bridge_view_ref));
 
   OnEnableWireframe on_enable_wireframe_callback = std::bind(
       &Engine::DebugWireframeSettingsChanged, this, std::placeholders::_1);
@@ -229,6 +253,16 @@ Engine::Engine(Delegate& delegate,
   keyboard_svc_->AddListener(std::move(keyboard_view_ref),
                              keyboard_listener.Bind(), [] {});
 
+  OnSemanticsNodeUpdate on_semantics_node_update_callback =
+      [this](flutter::SemanticsNodeUpdates updates, float pixel_ratio) {
+        accessibility_bridge_->AddSemanticsNodeUpdate(updates, pixel_ratio);
+      };
+
+  OnRequestAnnounce on_request_announce_callback =
+      [this](const std::string& message) {
+        accessibility_bridge_->RequestAnnounce(message);
+      };
+
   // Setup the callback that will instantiate the platform view.
   flutter::Shell::CreateCallback<flutter::PlatformView>
       on_create_platform_view = fml::MakeCopyable(
@@ -246,11 +280,20 @@ Engine::Engine(Delegate& delegate,
            on_update_view_callback = std::move(on_update_view_callback),
            on_destroy_view_callback = std::move(on_destroy_view_callback),
            on_create_surface_callback = std::move(on_create_surface_callback),
+           on_semantics_node_update_callback =
+               std::move(on_semantics_node_update_callback),
+           on_request_announce_callback =
+               std::move(on_request_announce_callback),
            external_view_embedder = GetExternalViewEmbedder(),
-           vsync_offset = product_config.get_vsync_offset(),
-           vsync_handle = vsync_event_.get(),
-           keyboard_listener_request = std::move(keyboard_listener_request)](
-              flutter::Shell& shell) mutable {
+           keyboard_listener_request = std::move(keyboard_listener_request),
+           await_vsync_callback =
+               [this](FireCallbackCallback cb) {
+                 session_connection_->AwaitVsync(cb);
+               },
+           await_vsync_for_secondary_callback_callback =
+               [this](FireCallbackCallback cb) {
+                 session_connection_->AwaitVsyncForSecondaryCallback(cb);
+               }](flutter::Shell& shell) mutable {
             return std::make_unique<flutter_runner::PlatformView>(
                 shell,                   // delegate
                 debug_label,             // debug label
@@ -269,9 +312,11 @@ Engine::Engine(Delegate& delegate,
                 std::move(on_update_view_callback),
                 std::move(on_destroy_view_callback),
                 std::move(on_create_surface_callback),
-                external_view_embedder,   // external view embedder
-                std::move(vsync_offset),  // vsync offset
-                vsync_handle);
+                std::move(on_semantics_node_update_callback),
+                std::move(on_request_announce_callback), external_view_embedder,
+                // Callbacks for VsyncWaiter to call into SessionConnection.
+                await_vsync_callback,
+                await_vsync_for_secondary_callback_callback);
           });
 
   // Setup the callback that will instantiate the rasterizer.
@@ -295,7 +340,7 @@ Engine::Engine(Delegate& delegate,
 
       auto compositor_context =
           std::make_unique<flutter_runner::CompositorContext>(
-              session_connection_.value(), surface_producer_.value(),
+              *(session_connection_.get()), surface_producer_.value(),
               legacy_external_view_embedder_);
       return std::make_unique<flutter::Rasterizer>(
           shell, std::move(compositor_context));

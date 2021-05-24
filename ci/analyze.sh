@@ -64,6 +64,12 @@ analyze \
   --options "$FLUTTER_DIR/analysis_options.yaml" \
   "$SRC_DIR/out/host_debug_unopt/gen/sky/bindings/dart_ui/ui.dart"
 
+echo "Analyzing ci/"
+analyze \
+  --packages="$FLUTTER_DIR/ci/.dart_tool/package_config.json" \
+  --options "$FLUTTER_DIR/analysis_options.yaml" \
+  "$FLUTTER_DIR/ci"
+
 echo "Analyzing flutter_frontend_server..."
 analyze \
   --packages="$FLUTTER_DIR/flutter_frontend_server/.dart_tool/package_config.json" \
@@ -71,27 +77,50 @@ analyze \
   "$FLUTTER_DIR/flutter_frontend_server"
 
 echo "Analyzing tools/licenses..."
-(cd "$FLUTTER_DIR/tools/licenses" && "$PUB" get)
 analyze \
   --packages="$FLUTTER_DIR/tools/licenses/.dart_tool/package_config.json" \
   --options "$FLUTTER_DIR/tools/licenses/analysis_options.yaml" \
   "$FLUTTER_DIR/tools/licenses"
 
+echo "Analyzing testing/litetest"
+analyze \
+  --packages="$FLUTTER_DIR/testing/litetest/.dart_tool/package_config.json" \
+  --options "$FLUTTER_DIR/analysis_options.yaml" \
+  "$FLUTTER_DIR/testing/litetest"
+
+echo "Analyzing testing/benchmark"
+analyze \
+  --packages="$FLUTTER_DIR/testing/benchmark/.dart_tool/package_config.json" \
+  --options "$FLUTTER_DIR/analysis_options.yaml" \
+  "$FLUTTER_DIR/testing/benchmark"
+
+echo "Analyzing testing/smoke_test_failure"
+analyze \
+  --packages="$FLUTTER_DIR/testing/smoke_test_failure/.dart_tool/package_config.json" \
+  --options "$FLUTTER_DIR/analysis_options.yaml" \
+  "$FLUTTER_DIR/testing/smoke_test_failure"
+
 echo "Analyzing testing/dart..."
 "$FLUTTER_DIR/tools/gn" --unoptimized
 autoninja -C "$SRC_DIR/out/host_debug_unopt" sky_engine sky_services
-(cd "$FLUTTER_DIR/testing/dart" && "$PUB" get)
+(cd "$FLUTTER_DIR/testing/dart" && "$PUB" get --offline)
 analyze \
   --packages="$FLUTTER_DIR/testing/dart/.dart_tool/package_config.json" \
   --options "$FLUTTER_DIR/analysis_options.yaml" \
   "$FLUTTER_DIR/testing/dart"
 
 echo "Analyzing testing/scenario_app..."
-(cd "$FLUTTER_DIR/testing/scenario_app" && "$PUB" get)
+(cd "$FLUTTER_DIR/testing/scenario_app" && "$PUB" get --offline)
 analyze \
   --packages="$FLUTTER_DIR/testing/scenario_app/.dart_tool/package_config.json" \
   --options "$FLUTTER_DIR/analysis_options.yaml" \
   "$FLUTTER_DIR/testing/scenario_app"
+
+echo "Analyzing testing/symbols..."
+analyze \
+  --packages="$FLUTTER_DIR/testing/symbols/.dart_tool/package_config.json" \
+  --options "$FLUTTER_DIR/analysis_options.yaml" \
+  "$FLUTTER_DIR/testing/symbols"
 
 # Check that dart libraries conform.
 echo "Checking web_ui api conformance..."

@@ -359,6 +359,11 @@ FILE: ../../../flutter/lib/ui/painting/image_encoding.h
 FILE: ../../../flutter/lib/ui/painting/image_encoding_unittests.cc
 FILE: ../../../flutter/lib/ui/painting/image_filter.cc
 FILE: ../../../flutter/lib/ui/painting/image_filter.h
+FILE: ../../../flutter/lib/ui/painting/image_generator.cc
+FILE: ../../../flutter/lib/ui/painting/image_generator.h
+FILE: ../../../flutter/lib/ui/painting/image_generator_registry.cc
+FILE: ../../../flutter/lib/ui/painting/image_generator_registry.h
+FILE: ../../../flutter/lib/ui/painting/image_generator_registry_unittests.cc
 FILE: ../../../flutter/lib/ui/painting/image_shader.cc
 FILE: ../../../flutter/lib/ui/painting/image_shader.h
 FILE: ../../../flutter/lib/ui/painting/immutable_buffer.cc
@@ -538,6 +543,9 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/onscreen_logging.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/picture.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/platform_dispatcher.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/platform_views.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/platform_views/content_manager.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/platform_views/message_handler.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/platform_views/slots.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/plugins.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/pointer_binding.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/pointer_converter.dart
@@ -1369,11 +1377,8 @@ FILE: ../../../flutter/shell/platform/fuchsia/flutter/task_runner_adapter.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/thread.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/thread.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/unique_fdio_ns.h
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/vsync_recorder.cc
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/vsync_recorder.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/vsync_waiter.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/vsync_waiter.h
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/vsync_waiter_unittests.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/vulkan_surface.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/vulkan_surface.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/vulkan_surface_pool.cc
@@ -1381,6 +1386,9 @@ FILE: ../../../flutter/shell/platform/fuchsia/flutter/vulkan_surface_pool.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/vulkan_surface_producer.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/vulkan_surface_producer.h
 FILE: ../../../flutter/shell/platform/fuchsia/runtime/dart/profiler_symbols/dart_profiler_symbols.dart
+FILE: ../../../flutter/shell/platform/fuchsia/runtime/dart/utils/build_info.h
+FILE: ../../../flutter/shell/platform/fuchsia/runtime/dart/utils/build_info_in.cc
+FILE: ../../../flutter/shell/platform/fuchsia/runtime/dart/utils/build_info_unittests.cc
 FILE: ../../../flutter/shell/platform/fuchsia/runtime/dart/utils/files.cc
 FILE: ../../../flutter/shell/platform/fuchsia/runtime/dart/utils/files.h
 FILE: ../../../flutter/shell/platform/fuchsia/runtime/dart/utils/handle_exception.cc
@@ -1607,6 +1615,8 @@ FILE: ../../../flutter/shell/platform/windows/text_input_plugin.cc
 FILE: ../../../flutter/shell/platform/windows/text_input_plugin.h
 FILE: ../../../flutter/shell/platform/windows/text_input_plugin_delegate.h
 FILE: ../../../flutter/shell/platform/windows/text_input_plugin_unittest.cc
+FILE: ../../../flutter/shell/platform/windows/uwptool_commands.cc
+FILE: ../../../flutter/shell/platform/windows/uwptool_commands.h
 FILE: ../../../flutter/shell/platform/windows/uwptool_main.cc
 FILE: ../../../flutter/shell/platform/windows/uwptool_utils.cc
 FILE: ../../../flutter/shell/platform/windows/uwptool_utils.h

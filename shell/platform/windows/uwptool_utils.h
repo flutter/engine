@@ -14,9 +14,13 @@ namespace flutter {
 // A UWP application.
 class Application {
  public:
-  explicit Application(const std::wstring_view package_name,
-                       const std::wstring_view package_family,
-                       const std::wstring_view package_full_name);
+  Application(const std::wstring_view package_name,
+              const std::wstring_view package_family,
+              const std::wstring_view package_full_name)
+      : package_name_(package_name),
+        package_family_(package_family),
+        package_full_name_(package_full_name) {}
+
   Application(const Application& other) = default;
   Application& operator=(const Application& other) = default;
 
@@ -39,16 +43,6 @@ class Application {
   // package name, publisher, architecture and version information.
   std::wstring GetPackageFullName() const { return package_full_name_; }
 
-  // Launches the application with the specified list of launch arguments.
-  //
-  // Returns the process ID on success, or -1 on failure.
-  int Launch(const std::wstring_view args);
-
-  // Uninstalls the application.
-  //
-  // Returns true on success.
-  bool Uninstall();
-
  private:
   std::wstring package_name_;
   std::wstring package_family_;
@@ -70,6 +64,30 @@ class ApplicationStore {
   // Returns all installed applications with the specified family name.
   std::vector<Application> GetApps(
       const std::wstring_view package_family) const;
+
+  // Installs the specified application.
+  //
+  // Installs the application located at package_uri with the specified
+  // dependencies.
+  bool Install(const std::wstring_view package_uri,
+               const std::vector<std::wstring>& dependency_uris);
+
+  // Uninstalls all application packages in the specified package family.
+  //
+  // Returns true on success.
+  bool Uninstall(const std::wstring_view package_family);
+
+  // Launches the application with the specified list of launch arguments.
+  //
+  // Returns the process ID on success, or -1 on failure.
+  int Launch(const std::wstring_view package_family,
+             const std::wstring_view args);
+
+ private:
+  // Uninstalls the specified application package.
+  //
+  // Returns true on success.
+  bool UninstallPackage(const std::wstring_view package_full_name);
 };
 
 }  // namespace flutter

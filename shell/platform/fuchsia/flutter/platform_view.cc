@@ -72,9 +72,12 @@ PlatformView::PlatformView(
     OnUpdateView on_update_view_callback,
     OnDestroyView on_destroy_view_callback,
     OnCreateSurface on_create_surface_callback,
+    OnSemanticsNodeUpdate on_semantics_node_update_callback,
+    OnRequestAnnounce on_request_announce_callback,
     std::shared_ptr<flutter::ExternalViewEmbedder> external_view_embedder,
-    fml::TimeDelta vsync_offset,
-    zx_handle_t vsync_event_handle)
+    AwaitVsyncCallback await_vsync_callback,
+    AwaitVsyncForSecondaryCallbackCallback
+        await_vsync_for_secondary_callback_callback)
     : flutter::PlatformView(delegate, std::move(task_runners)),
       debug_label_(std::move(debug_label)),
       view_ref_(std::move(view_ref)),
@@ -87,11 +90,15 @@ PlatformView::PlatformView(
       on_update_view_callback_(std::move(on_update_view_callback)),
       on_destroy_view_callback_(std::move(on_destroy_view_callback)),
       on_create_surface_callback_(std::move(on_create_surface_callback)),
+      on_semantics_node_update_callback_(
+          std::move(on_semantics_node_update_callback)),
+      on_request_announce_callback_(std::move(on_request_announce_callback)),
       external_view_embedder_(external_view_embedder),
       ime_client_(this),
-      vsync_offset_(std::move(vsync_offset)),
-      vsync_event_handle_(vsync_event_handle),
       keyboard_listener_binding_(this, std::move(keyboard_listener_request)),
+      await_vsync_callback_(await_vsync_callback),
+      await_vsync_for_secondary_callback_callback_(
+          await_vsync_for_secondary_callback_callback),
       weak_factory_(this) {
   // Register all error handlers.
   SetInterfaceErrorHandler(session_listener_binding_, "SessionListener");
@@ -111,11 +118,6 @@ PlatformView::PlatformView(
 
   // Finally! Register the native platform message handlers.
   RegisterPlatformMessageHandlers();
-
-  fuchsia::ui::views::ViewRef accessibility_view_ref;
-  view_ref_.Clone(&accessibility_view_ref);
-  accessibility_bridge_ = std::make_unique<AccessibilityBridge>(
-      *this, runner_services, std::move(accessibility_view_ref));
 }
 
 PlatformView::~PlatformView() = default;
@@ -692,7 +694,8 @@ void PlatformView::DeactivateIme() {
 // |flutter::PlatformView|
 std::unique_ptr<flutter::VsyncWaiter> PlatformView::CreateVSyncWaiter() {
   return std::make_unique<flutter_runner::VsyncWaiter>(
-      debug_label_, vsync_event_handle_, task_runners_, vsync_offset_);
+      await_vsync_callback_, await_vsync_for_secondary_callback_callback_,
+      task_runners_);
 }
 
 // |flutter::PlatformView|
@@ -731,7 +734,6 @@ void PlatformView::HandlePlatformMessage(
 }
 
 // |flutter::PlatformView|
-// |flutter_runner::AccessibilityBridge::Delegate|
 void PlatformView::SetSemanticsEnabled(bool enabled) {
   flutter::PlatformView::SetSemanticsEnabled(enabled);
   if (enabled) {
@@ -743,20 +745,13 @@ void PlatformView::SetSemanticsEnabled(bool enabled) {
 }
 
 // |flutter::PlatformView|
-// |flutter_runner::AccessibilityBridge::Delegate|
-void PlatformView::DispatchSemanticsAction(int32_t node_id,
-                                           flutter::SemanticsAction action) {
-  flutter::PlatformView::DispatchSemanticsAction(node_id, action, {});
-}
-
-// |flutter::PlatformView|
 void PlatformView::UpdateSemantics(
     flutter::SemanticsNodeUpdates update,
     flutter::CustomAccessibilityActionUpdates actions) {
   const float pixel_ratio =
       view_pixel_ratio_.has_value() ? *view_pixel_ratio_ : 0.f;
 
-  accessibility_bridge_->AddSemanticsNodeUpdate(update, pixel_ratio);
+  on_semantics_node_update_callback_(update, pixel_ratio);
 }
 
 // Channel handler for kAccessibilityChannel
@@ -779,7 +774,7 @@ void PlatformView::HandleAccessibilityChannelPlatformMessage(
     std::string text =
         std::get<std::string>(data_map.at(flutter::EncodableValue("message")));
 
-    accessibility_bridge_->RequestAnnounce(text);
+    on_request_announce_callback_(text);
   }
 
   message->response()->CompleteEmpty();
@@ -1011,7 +1006,7 @@ void PlatformView::HandleFlutterPlatformViewsChannelPlatformMessage(
     }
 
     SkRect view_occlusion_hint_raw = SkRect::MakeEmpty();
-    auto view_occlusion_hint = args.FindMember("");
+    auto view_occlusion_hint = args.FindMember("viewOcclusionHintLTRB");
     if (view_occlusion_hint != args.MemberEnd()) {
       if (view_occlusion_hint->value.IsArray()) {
         const auto& view_occlusion_hint_array =

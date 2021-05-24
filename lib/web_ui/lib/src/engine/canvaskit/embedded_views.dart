@@ -2,7 +2,19 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import 'dart:html' as html;
+
+import 'package:ui/src/engine.dart' show window, NullTreeSanitizer, platformViewManager, createPlatformViewSlot;
+import 'package:ui/ui.dart' as ui;
+
+import '../html/path_to_svg_clip.dart';
+import '../util.dart';
+import '../vector_math.dart';
+import 'canvas.dart';
+import 'initialization.dart';
+import 'path.dart';
+import 'picture_recorder.dart';
+import 'surface.dart';
 
 /// This composites HTML views into the [ui.Scene].
 class HtmlViewEmbedder {
@@ -23,11 +35,13 @@ class HtmlViewEmbedder {
   final Map<int, EmbeddedViewParams> _currentCompositionParams =
       <int, EmbeddedViewParams>{};
 
-  /// The HTML element associated with the given view id.
-  final Map<int?, html.Element> _views = <int?, html.Element>{};
-
-  /// The root view in the stack of mutator elements for the view id.
-  final Map<int?, html.Element?> _rootViews = <int?, html.Element?>{};
+  /// The clip chain for a view Id.
+  ///
+  /// This contains:
+  /// * The root view in the stack of mutator elements for the view id.
+  /// * The slot view in the stack (what shows the actual platform view contents).
+  /// * The number of clipping elements used last time the view was composited.
+  final Map<int, ViewClipChain> _viewClipChains = <int, ViewClipChain>{};
 
   /// Surfaces used to draw on top of platform views, keyed by platform view ID.
   ///
@@ -37,17 +51,11 @@ class HtmlViewEmbedder {
   /// The views that need to be recomposited into the scene on the next frame.
   final Set<int> _viewsToRecomposite = <int>{};
 
-  /// The views that need to be disposed of on the next frame.
-  final Set<int> _viewsToDispose = <int>{};
-
   /// The list of view ids that should be composited, in order.
   List<int> _compositionOrder = <int>[];
 
   /// The most recent composition order.
   List<int> _activeCompositionOrder = <int>[];
-
-  /// The number of clipping elements used last time the view was composited.
-  Map<int, int> _clipCount = <int, int>{};
 
   /// The size of the frame, in physical pixels.
   ui.Size _frameSize = ui.window.physicalSize;
@@ -60,81 +68,11 @@ class HtmlViewEmbedder {
     _frameSize = size;
   }
 
-  void handlePlatformViewCall(
-    ByteData? data,
-    ui.PlatformMessageResponseCallback? callback,
-  ) {
-    const MethodCodec codec = StandardMethodCodec();
-    final MethodCall decoded = codec.decodeMethodCall(data);
-
-    switch (decoded.method) {
-      case 'create':
-        _create(decoded, callback);
-        return;
-      case 'dispose':
-        _dispose(decoded, callback!);
-        return;
-    }
-    callback!(null);
-  }
-
-  void _create(
-      MethodCall methodCall, ui.PlatformMessageResponseCallback? callback) {
-    final Map<dynamic, dynamic> args = methodCall.arguments;
-    final int? viewId = args['id'];
-    final String? viewType = args['viewType'];
-    const MethodCodec codec = StandardMethodCodec();
-
-    if (_views[viewId] != null) {
-      callback!(codec.encodeErrorEnvelope(
-        code: 'recreating_view',
-        message: 'trying to create an already created view',
-        details: 'view id: $viewId',
-      ));
-      return;
-    }
-
-    final ui.PlatformViewFactory? factory =
-        ui.platformViewRegistry.registeredFactories[viewType];
-    if (factory == null) {
-      callback!(codec.encodeErrorEnvelope(
-        code: 'unregistered_view_type',
-        message: 'trying to create a view with an unregistered type',
-        details: 'unregistered view type: $viewType',
-      ));
-      return;
-    }
-
-    // TODO(het): Support creation parameters.
-    html.Element embeddedView = factory(viewId!);
-    _views[viewId] = embeddedView;
-
-    _rootViews[viewId] = embeddedView;
-
-    callback!(codec.encodeSuccessEnvelope(null));
-  }
-
-  void _dispose(
-      MethodCall methodCall, ui.PlatformMessageResponseCallback callback) {
-    final int? viewId = methodCall.arguments;
-    const MethodCodec codec = StandardMethodCodec();
-    if (viewId == null || !_views.containsKey(viewId)) {
-      callback(codec.encodeErrorEnvelope(
-        code: 'unknown_view',
-        message: 'trying to dispose an unknown view',
-        details: 'view id: $viewId',
-      ));
-      return;
-    }
-    _viewsToDispose.add(viewId);
-    callback(codec.encodeSuccessEnvelope(null));
-  }
-
-  List<CkCanvas?> getCurrentCanvases() {
-    final List<CkCanvas?> canvases = <CkCanvas?>[];
+  List<CkCanvas> getCurrentCanvases() {
+    final List<CkCanvas> canvases = <CkCanvas>[];
     for (int i = 0; i < _compositionOrder.length; i++) {
       final int viewId = _compositionOrder[i];
-      canvases.add(_pictureRecorders[viewId]!.recordingCanvas);
+      canvases.add(_pictureRecorders[viewId]!.recordingCanvas!);
     }
     return canvases;
   }
@@ -165,28 +103,39 @@ class HtmlViewEmbedder {
   }
 
   void _compositeWithParams(int viewId, EmbeddedViewParams params) {
-    final html.Element platformView = _views[viewId]!;
-    platformView.style.width = '${params.size.width}px';
-    platformView.style.height = '${params.size.height}px';
-    platformView.style.position = 'absolute';
+    // If we haven't seen this viewId yet, cache it for clips/transforms.
+    ViewClipChain clipChain = _viewClipChains.putIfAbsent(viewId, () {
+      return ViewClipChain(view: createPlatformViewSlot(viewId));
+    });
 
-    // <flt-scene-host> disables pointer events. Reenable them here because the
-    // underlying platform view would want to handle the pointer events.
-    platformView.style.pointerEvents = 'auto';
+    html.Element slot = clipChain.slot;
 
+    // See `apply()` in the PersistedPlatformView class for the HTML version
+    // of this code.
+    slot.style
+        ..width = '${params.size.width}px'
+        ..height = '${params.size.height}px'
+        ..position = 'absolute';
+
+    // Recompute the position in the DOM of the `slot` element...
     final int currentClippingCount = _countClips(params.mutators);
-    final int? previousClippingCount = _clipCount[viewId];
+    final int previousClippingCount = clipChain.clipCount;
     if (currentClippingCount != previousClippingCount) {
-      _clipCount[viewId] = currentClippingCount;
-      html.Element oldPlatformViewRoot = _rootViews[viewId]!;
-      html.Element? newPlatformViewRoot = _reconstructClipViewsChain(
+      html.Element oldPlatformViewRoot = clipChain.root;
+      html.Element newPlatformViewRoot = _reconstructClipViewsChain(
         currentClippingCount,
-        platformView,
+        slot,
         oldPlatformViewRoot,
       );
-      _rootViews[viewId] = newPlatformViewRoot;
+      // Store the updated root element, and clip count
+      clipChain.updateClipChain(
+        root: newPlatformViewRoot,
+        clipCount: currentClippingCount,
+      );
     }
-    _applyMutators(params.mutators, platformView);
+
+    // Apply mutators to the slot
+    _applyMutators(params.mutators, slot, viewId);
   }
 
   int _countClips(MutatorsStack mutators) {
@@ -199,7 +148,7 @@ class HtmlViewEmbedder {
     return clipCount;
   }
 
-  html.Element? _reconstructClipViewsChain(
+  html.Element _reconstructClipViewsChain(
     int numClips,
     html.Element platformView,
     html.Element headClipView,
@@ -232,11 +181,33 @@ class HtmlViewEmbedder {
     return head;
   }
 
-  void _applyMutators(MutatorsStack mutators, html.Element embeddedView) {
+  /// Clean up the old SVG clip definitions, as this platform view is about to
+  /// be recomposited.
+  void _cleanUpClipDefs(int viewId) {
+    if (_svgClipDefs.containsKey(viewId)) {
+      final html.Element clipDefs =
+          _svgPathDefs!.querySelector('#sk_path_defs')!;
+      final List<html.Element> nodesToRemove = <html.Element>[];
+      final Set<String> oldDefs = _svgClipDefs[viewId]!;
+      for (html.Element child in clipDefs.children) {
+        if (oldDefs.contains(child.id)) {
+          nodesToRemove.add(child);
+        }
+      }
+      for (html.Element node in nodesToRemove) {
+        node.remove();
+      }
+      _svgClipDefs[viewId]!.clear();
+    }
+  }
+
+  void _applyMutators(
+      MutatorsStack mutators, html.Element embeddedView, int viewId) {
     html.Element head = embeddedView;
     Matrix4 headTransform = Matrix4.identity();
     double embeddedOpacity = 1.0;
     _resetAnchor(head);
+    _cleanUpClipDefs(viewId);
 
     for (final Mutator mutator in mutators) {
       switch (mutator.type) {
@@ -264,28 +235,38 @@ class HtmlViewEmbedder {
             html.Element pathDefs =
                 _svgPathDefs!.querySelector('#sk_path_defs')!;
             _clipPathCount += 1;
+            final String clipId = 'svgClip$_clipPathCount';
             html.Node newClipPath = html.DocumentFragment.svg(
-              '<clipPath id="svgClip$_clipPathCount">'
+              '<clipPath id="$clipId">'
               '<path d="${path.toSvgString()}">'
               '</path></clipPath>',
-              treeSanitizer: _NullTreeSanitizer(),
+              treeSanitizer: NullTreeSanitizer(),
             );
             pathDefs.append(newClipPath);
-            clipView.style.clipPath = 'url(#svgClip$_clipPathCount)';
+            // Store the id of the node instead of [newClipPath] directly. For
+            // some reason, calling `newClipPath.remove()` doesn't remove it
+            // from the DOM.
+            _svgClipDefs.putIfAbsent(viewId, () => <String>{}).add(clipId);
+            clipView.style.clipPath = 'url(#$clipId)';
           } else if (mutator.path != null) {
             final CkPath path = mutator.path as CkPath;
             _ensureSvgPathDefs();
             html.Element pathDefs =
                 _svgPathDefs!.querySelector('#sk_path_defs')!;
             _clipPathCount += 1;
+            final String clipId = 'svgClip$_clipPathCount';
             html.Node newClipPath = html.DocumentFragment.svg(
-              '<clipPath id="svgClip$_clipPathCount">'
+              '<clipPath id="$clipId">'
               '<path d="${path.toSvgString()}">'
               '</path></clipPath>',
-              treeSanitizer: _NullTreeSanitizer(),
+              treeSanitizer: NullTreeSanitizer(),
             );
             pathDefs.append(newClipPath);
-            clipView.style.clipPath = 'url(#svgClip$_clipPathCount)';
+            // Store the id of the node instead of [newClipPath] directly. For
+            // some reason, calling `newClipPath.remove()` doesn't remove it
+            // from the DOM.
+            _svgClipDefs.putIfAbsent(viewId, () => <String>{}).add(clipId);
+            clipView.style.clipPath = 'url(#$clipId)';
           }
           _resetAnchor(clipView);
           head = clipView;
@@ -304,7 +285,8 @@ class HtmlViewEmbedder {
     // pixels, so scale down the head element to match the logical resolution.
     final double scale = window.devicePixelRatio;
     final double inverseScale = 1 / scale;
-    final Matrix4 scaleMatrix = Matrix4.diagonal3Values(inverseScale, inverseScale, 1);
+    final Matrix4 scaleMatrix =
+        Matrix4.diagonal3Values(inverseScale, inverseScale, 1);
     headTransform = scaleMatrix.multiplied(headTransform);
     head.style.transform = float64ListToCssTransform(headTransform.storage);
   }
@@ -322,6 +304,9 @@ class HtmlViewEmbedder {
 
   html.Element? _svgPathDefs;
 
+  /// The nodes containing the SVG clip definitions needed to clip this view.
+  Map<int, Set<String>> _svgClipDefs = <int, Set<String>>{};
+
   /// Ensures we add a container of SVG path defs to the DOM so they can
   /// be referred to in clip-path: url(#blah).
   void _ensureSvgPathDefs() {
@@ -330,19 +315,16 @@ class HtmlViewEmbedder {
     }
     _svgPathDefs = html.Element.html(
       '$kSvgResourceHeader<defs id="sk_path_defs"></defs></svg>',
-      treeSanitizer: _NullTreeSanitizer(),
+      treeSanitizer: NullTreeSanitizer(),
     );
     skiaSceneHost!.append(_svgPathDefs!);
   }
 
   void submitFrame() {
-    disposeViews();
-
     for (int i = 0; i < _compositionOrder.length; i++) {
       int viewId = _compositionOrder[i];
       _ensureOverlayInitialized(viewId);
-      final SurfaceFrame frame =
-          _overlays[viewId]!.acquireFrame(_frameSize);
+      final SurfaceFrame frame = _overlays[viewId]!.acquireFrame(_frameSize);
       final CkCanvas canvas = frame.skiaCanvas;
       canvas.drawPicture(
         _pictureRecorders[viewId]!.endRecording(),
@@ -350,7 +332,7 @@ class HtmlViewEmbedder {
       frame.submit();
     }
     _pictureRecorders.clear();
-    if (_listEquals(_compositionOrder, _activeCompositionOrder)) {
+    if (listEquals(_compositionOrder, _activeCompositionOrder)) {
       _compositionOrder.clear();
       return;
     }
@@ -363,7 +345,7 @@ class HtmlViewEmbedder {
       int viewId = _compositionOrder[i];
 
       if (assertionsEnabled) {
-        if (!_views.containsKey(viewId)) {
+        if (!platformViewManager.knowsViewId(viewId)) {
           debugInvalidViewIds ??= <int>[];
           debugInvalidViewIds.add(viewId);
           continue;
@@ -371,7 +353,7 @@ class HtmlViewEmbedder {
       }
 
       unusedViews.remove(viewId);
-      html.Element platformViewRoot = _rootViews[viewId]!;
+      html.Element platformViewRoot = _viewClipChains[viewId]!.root;
       html.Element overlay = _overlays[viewId]!.htmlElement;
       platformViewRoot.remove();
       skiaSceneHost!.append(platformViewRoot);
@@ -379,12 +361,10 @@ class HtmlViewEmbedder {
       skiaSceneHost!.append(overlay);
       _activeCompositionOrder.add(viewId);
     }
+
     _compositionOrder.clear();
 
-    for (final int unusedViewId in unusedViews) {
-      _releaseOverlay(unusedViewId);
-      _rootViews[unusedViewId]?.remove();
-    }
+    disposeViews(unusedViews);
 
     if (assertionsEnabled) {
       if (debugInvalidViewIds != null && debugInvalidViewIds.isNotEmpty) {
@@ -396,22 +376,18 @@ class HtmlViewEmbedder {
     }
   }
 
-  void disposeViews() {
-    if (_viewsToDispose.isEmpty) {
-      return;
-    }
-
-    for (final int viewId in _viewsToDispose) {
-      final html.Element rootView = _rootViews[viewId]!;
-      rootView.remove();
-      _views.remove(viewId);
-      _rootViews.remove(viewId);
+  void disposeViews(Set<int> viewsToDispose) {
+    for (final int viewId in viewsToDispose) {
+      // Remove viewId from the _viewClipChains Map, and then from the DOM.
+      ViewClipChain clipChain = _viewClipChains.remove(viewId)!;
+      clipChain.root.remove();
+      // More cleanup
       _releaseOverlay(viewId);
       _currentCompositionParams.remove(viewId);
-      _clipCount.remove(viewId);
       _viewsToRecomposite.remove(viewId);
+      _cleanUpClipDefs(viewId);
+      _svgClipDefs.remove(viewId);
     }
-    _viewsToDispose.clear();
   }
 
   void _releaseOverlay(int viewId) {
@@ -437,6 +413,37 @@ class HtmlViewEmbedder {
     }
 
     _overlays[viewId] = overlay;
+  }
+
+  /// Deletes SVG clip paths, useful for tests.
+  void debugCleanupSvgClipPaths() {
+    _svgPathDefs?.children.single.children.forEach((element) {
+      element.remove();
+    });
+    _svgClipDefs.clear();
+  }
+}
+
+/// Represents a Clip Chain (for a view).
+///
+/// Objects of this class contain:
+/// * The root view in the stack of mutator elements for the view id.
+/// * The slot view in the stack (the actual contents of the platform view).
+/// * The number of clipping elements used last time the view was composited.
+class ViewClipChain {
+  html.Element _root;
+  html.Element _slot;
+  int _clipCount = -1;
+
+  ViewClipChain({required html.Element view}) : this._root = view, this._slot = view;
+
+  html.Element get root => _root;
+  html.Element get slot => _slot;
+  int get clipCount => _clipCount;
+
+  void updateClipChain({required html.Element root, required int clipCount}) {
+    _root = root;
+    _clipCount = clipCount;
   }
 }
 
@@ -628,7 +635,7 @@ class MutatorsStack extends Iterable<Mutator> {
       return true;
     }
     return other is MutatorsStack &&
-        _listEquals<Mutator>(other._mutators, _mutators);
+        listEquals<Mutator>(other._mutators, _mutators);
   }
 
   int get hashCode => ui.hashList(_mutators);

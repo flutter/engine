@@ -6,8 +6,17 @@
 ///
 /// Prefer keeping the original CanvasKit names so it is easier to locate
 /// the API behind these bindings in the Skia source code.
+@JS()
+library canvaskit_api;
 
-part of engine;
+import 'dart:async';
+import 'dart:html' as html;
+import 'dart:js' as js;
+import 'dart:typed_data';
+
+import 'package:js/js.dart';
+import 'package:ui/src/engine.dart';
+import 'package:ui/ui.dart' as ui;
 
 /// Entrypoint into the CanvasKit API.
 late CanvasKit canvasKit;
@@ -769,7 +778,7 @@ class SkAnimatedImage {
   /// Returns duration in milliseconds.
   external int getRepetitionCount();
   external int decodeNextFrame();
-  external SkImage getCurrentFrame();
+  external SkImage makeImageAtCurrentFrame();
   external int width();
   external int height();
 
@@ -1514,7 +1523,6 @@ class SkCanvas {
   external void skew(double x, double y);
   external void concat(Float32List matrix);
   external void translate(double x, double y);
-  external void flush();
   external void drawPicture(SkPicture picture);
   external void drawParagraph(
     SkParagraph paragraph,
