@@ -297,7 +297,11 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
   return (([self node].flags & flutter::kScrollableSemanticsFlags) != 0 &&
           ([self node].flags & static_cast<int32_t>(flutter::SemanticsFlags::kIsHidden)) != 0) ||
          ![self node].label.empty() || ![self node].value.empty() || ![self node].hint.empty() ||
-         ([self node].actions & ~flutter::kScrollableSemanticsActions) != 0;
+         // We moves custom actions check to the next line because the custom action bit also
+         // includes override actions.
+         ([self node].actions &
+          ~(flutter::kScrollableSemanticsActions | flutter::kCustomSemanticsActions)) != 0 ||
+         [self.accessibilityCustomActions count] > 0;
 }
 
 - (void)collectRoutes:(NSMutableArray<SemanticsObject*>*)edges {
@@ -313,6 +317,11 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 - (BOOL)onCustomAccessibilityAction:(FlutterCustomAccessibilityAction*)action {
   if (![self node].HasAction(flutter::SemanticsAction::kCustomAction))
     return NO;
+  if (action.overrideActionId != -1) {
+    [self bridge]->DispatchSemanticsAction(
+        [self uid], static_cast<flutter::SemanticsAction>(action.overrideActionId));
+    return YES;
+  }
   int32_t action_id = action.uid;
   std::vector<uint8_t> args;
   args.push_back(3);  // type=int32.

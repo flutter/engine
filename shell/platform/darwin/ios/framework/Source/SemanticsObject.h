@@ -60,6 +60,11 @@ constexpr int32_t kRootNodeId = 0;
 @property(nonatomic, strong) NSArray<SemanticsObject*>* children;
 
 /**
+ * Accessibility actions for this object
+ */
+@property(nonatomic, strong) NSArray<FlutterCustomAccessibilityAction*>* customSemanticsActions;
+
+/**
  * Used if this SemanticsObject is for a platform view.
  */
 @property(strong, nonatomic) FlutterPlatformViewSemanticsContainer* platformViewSemanticsContainer;
@@ -112,6 +117,13 @@ constexpr int32_t kRootNodeId = 0;
  * The uid of the action defined by the flutter application.
  */
 @property(nonatomic) int32_t uid;
+
+/**
+ * The semantics action the custom action overrides.
+ *
+ * If this custom action does not override any existing semantics action, this should be -1
+ */
+@property(nonatomic) int32_t overrideActionId;
 
 @end
 

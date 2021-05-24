@@ -50,6 +50,9 @@ const int kScrollableSemanticsActions =
     static_cast<int32_t>(SemanticsAction::kScrollUp) |
     static_cast<int32_t>(SemanticsAction::kScrollDown);
 
+const int kCustomSemanticsActions =
+    static_cast<int32_t>(SemanticsAction::kCustomAction);
+
 /// C/C++ representation of `SemanticsFlags` defined in
 /// `lib/ui/semantics.dart`.
 ///\warning This must match the `SemanticsFlags` enum in

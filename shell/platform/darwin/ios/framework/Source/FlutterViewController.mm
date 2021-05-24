@@ -1228,7 +1228,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   platformView->SetSemanticsEnabled(true);
   platformView->SetAccessibilityFeatures(flags);
 #else
-  bool enabled = UIAccessibilityIsVoiceOverRunning() || UIAccessibilityIsSwitchControlRunning();
+  _switchControlEnabled = UIAccessibilityIsSwitchControlRunning();
+  bool enabled = _switchControlEnabled || UIAccessibilityIsVoiceOverRunning();
   if (enabled)
     flags |= static_cast<int32_t>(flutter::AccessibilityFeatureFlag::kAccessibleNavigation);
   platformView->SetSemanticsEnabled(enabled || UIAccessibilityIsSpeakScreenEnabled());

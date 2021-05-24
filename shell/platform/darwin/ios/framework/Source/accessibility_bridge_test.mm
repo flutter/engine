@@ -1265,4 +1265,90 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   OCMVerify([messenger cleanupConnection:connection]);
   [engine stopMocking];
 }
+
+- (void)testCustomActionOverrides {
+  flutter::MockDelegate mock_delegate;
+  auto thread_task_runner = CreateNewThread("AccessibilityBridgeTest");
+  flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
+                               /*platform=*/thread_task_runner,
+                               /*raster=*/thread_task_runner,
+                               /*ui=*/thread_task_runner,
+                               /*io=*/thread_task_runner);
+  auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
+      /*delegate=*/mock_delegate,
+      /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
+      /*platform_views_controller=*/nil,
+      /*task_runners=*/runners);
+  id mockFlutterView = OCMClassMock([FlutterView class]);
+  id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
+  OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
+  std::string label = "some label";
+
+  __block auto bridge =
+      std::make_unique<flutter::AccessibilityBridge>(/*view_controller=*/mockFlutterViewController,
+                                                     /*platform_view=*/platform_view.get(),
+                                                     /*platform_views_controller=*/nil);
+
+  OCMExpect(
+      [mockFlutterView setAccessibilityElements:[OCMArg checkWithBlock:^BOOL(NSArray* value) {
+                         SemanticsObjectContainer* container = value[0];
+                         SemanticsObject* root = container.semanticsObject;
+                         if (![root.accessibilityLabel isEqual:@"root"])
+                           return NO;
+                         // An action override should not present in the
+                         // original object.
+                         if ([root.accessibilityCustomActions count] != 0)
+                           return NO;
+                         SemanticsObject* node1 = root.children[0];
+                         if (![node1.accessibilityLabel isEqual:@"node 1"])
+                           return NO;
+                         FlutterCustomAccessibilityAction* firstAction =
+                             (FlutterCustomAccessibilityAction*)node1.accessibilityCustomActions[0];
+                         if (firstAction.uid != 14)
+                           return NO;
+                         if (![firstAction.name isEqual:@"some action"])
+                           return NO;
+                         if (firstAction.target != node1)
+                           return NO;
+                         FlutterCustomAccessibilityAction* secondAction =
+                             (FlutterCustomAccessibilityAction*)node1.accessibilityCustomActions[1];
+                         if (secondAction.uid != 13)
+                           return NO;
+                         if (![secondAction.name isEqual:@"some override"])
+                           return NO;
+                         // An inherited action override should targets
+                         // the original object.
+                         if (secondAction.target != root)
+                           return NO;
+                         return YES;
+                       }]]);
+
+  flutter::SemanticsNodeUpdates nodes;
+  flutter::SemanticsNode root_node;
+  root_node.id = kRootNodeId;
+  root_node.label = "root";
+  root_node.customAccessibilityActions = {13};
+  root_node.childrenInTraversalOrder = {1};
+  root_node.childrenInHitTestOrder = {1};
+  nodes[kRootNodeId] = root_node;
+  flutter::SemanticsNode node1;
+  node1.id = 1;
+  node1.label = "node 1";
+  node1.customAccessibilityActions = {14};
+  nodes[node1.id] = node1;
+
+  flutter::CustomAccessibilityActionUpdates actions;
+  flutter::CustomAccessibilityAction override_action;
+  override_action.id = 13;
+  override_action.overrideId = 16;
+  override_action.label = "some override";
+  actions[13] = override_action;
+  flutter::CustomAccessibilityAction regular_action;
+  regular_action.id = 14;
+  regular_action.label = "some action";
+  actions[14] = regular_action;
+  bridge->UpdateSemantics(/*nodes=*/nodes, /*actions=*/actions);
+  OCMVerifyAll(mockFlutterView);
+}
+
 @end

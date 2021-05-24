@@ -104,26 +104,43 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
       [newChildren addObject:child];
     }
     object.children = newChildren;
+    action_overrides_of_semantics_objects_.erase([object uid]);
+
     if (node.customAccessibilityActions.size() > 0) {
       NSMutableArray<FlutterCustomAccessibilityAction*>* accessibilityCustomActions =
           [[[NSMutableArray alloc] init] autorelease];
+      std::vector<FlutterCustomAccessibilityAction*> action_overrides;
       for (int32_t action_id : node.customAccessibilityActions) {
         flutter::CustomAccessibilityAction& action = actions_[action_id];
-        if (action.overrideId != -1) {
-          // iOS does not support overriding standard actions, so we ignore any
-          // custom actions that have an override id provided.
+        if (action.label.empty())
           continue;
-        }
         NSString* label = @(action.label.data());
         SEL selector = @selector(onCustomAccessibilityAction:);
         FlutterCustomAccessibilityAction* customAction =
             [[[FlutterCustomAccessibilityAction alloc] initWithName:label
                                                              target:object
                                                            selector:selector] autorelease];
-        customAction.uid = action_id;
-        [accessibilityCustomActions addObject:customAction];
+
+        if (action.overrideId == -1) {
+          customAction.uid = action_id;
+          customAction.overrideActionId = -1;
+          [accessibilityCustomActions addObject:customAction];
+        } else if (view_controller_.switchControlEnabled) {
+          // Action overrides are meant to make scrolling action shows up in the context menu
+          // when the SwitchControl is enabled.
+          customAction.uid = action_id;
+          customAction.overrideActionId = action.overrideId;
+          action_overrides.push_back(customAction);
+        }
       }
-      object.accessibilityCustomActions = accessibilityCustomActions;
+      // The accessibilityCustomActions of the object will be set in the
+      // MarkAttendanceAndSetCustomActions.
+      if ([accessibilityCustomActions count] > 0)
+        object.customSemanticsActions = accessibilityCustomActions;
+      if (!action_overrides.empty())
+        // The action overrides will be apply to its descendants and will not be
+        // added to this semantics object.
+        action_overrides_of_semantics_objects_[[object uid]] = action_overrides;
     }
 
     if (object.node.IsPlatformViewNode()) {
@@ -201,9 +218,15 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
   }
 
   NSMutableArray<NSNumber*>* doomed_uids = [NSMutableArray arrayWithArray:[objects_.get() allKeys]];
-  if (root)
-    VisitObjectsRecursivelyAndRemove(root, doomed_uids);
+  if (root) {
+    std::unordered_map<int32_t, FlutterCustomAccessibilityAction*> initial_overrides;
+    MarkAttendanceAndSetCustomActions(root, doomed_uids, initial_overrides);
+  }
   [objects_ removeObjectsForKeys:doomed_uids];
+
+  for (NSNumber* uid in doomed_uids) {
+    action_overrides_of_semantics_objects_.erase([uid intValue]);
+  }
 
   if (!ios_delegate_->IsFlutterViewControllerPresentingModalViewController(view_controller_)) {
     layoutChanged = layoutChanged || [doomed_uids count] > 0;
@@ -297,11 +320,38 @@ SemanticsObject* AccessibilityBridge::GetOrCreateObject(int32_t uid,
   return object;
 }
 
-void AccessibilityBridge::VisitObjectsRecursivelyAndRemove(SemanticsObject* object,
-                                                           NSMutableArray<NSNumber*>* doomed_uids) {
+void AccessibilityBridge::MarkAttendanceAndSetCustomActions(
+    SemanticsObject* object,
+    NSMutableArray<NSNumber*>* doomed_uids,
+    std::unordered_map<int32_t, FlutterCustomAccessibilityAction*> inherited_action_overrides) {
   [doomed_uids removeObject:@(object.uid)];
+
+  if (!inherited_action_overrides.empty()) {
+    NSMutableArray<FlutterCustomAccessibilityAction*>* inheritedAccessibilityCustomActions;
+    if (object.customSemanticsActions) {
+      inheritedAccessibilityCustomActions =
+          [[object.customSemanticsActions mutableCopy] autorelease];
+    } else {
+      inheritedAccessibilityCustomActions = [[[NSMutableArray alloc] init] autorelease];
+    }
+    for (auto override : inherited_action_overrides) {
+      [inheritedAccessibilityCustomActions addObject:override.second];
+    }
+    object.accessibilityCustomActions = inheritedAccessibilityCustomActions;
+  } else {
+    object.accessibilityCustomActions = object.customSemanticsActions;
+  }
+  if (action_overrides_of_semantics_objects_.find(object.uid) !=
+      action_overrides_of_semantics_objects_.end()) {
+    std::vector<FlutterCustomAccessibilityAction*> overrides =
+        action_overrides_of_semantics_objects_[object.uid];
+    for (FlutterCustomAccessibilityAction* override : overrides) {
+      inherited_action_overrides[override.uid] = override;
+    }
+  }
+
   for (SemanticsObject* child in [object children])
-    VisitObjectsRecursivelyAndRemove(child, doomed_uids);
+    MarkAttendanceAndSetCustomActions(child, doomed_uids, inherited_action_overrides);
 }
 
 SemanticsObject* AccessibilityBridge::FindNextFocusableIfNecessary() {

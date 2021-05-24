@@ -84,8 +84,10 @@ class AccessibilityBridge final : public AccessibilityBridgeIos {
   //
   // If the parent is nil, this function use the root SemanticsObject as the parent.
   SemanticsObject* FindFirstFocusable(SemanticsObject* parent);
-  void VisitObjectsRecursivelyAndRemove(SemanticsObject* object,
-                                        NSMutableArray<NSNumber*>* doomed_uids);
+  void MarkAttendanceAndSetCustomActions(
+      SemanticsObject* object,
+      NSMutableArray<NSNumber*>* doomed_uids,
+      std::unordered_map<int32_t, FlutterCustomAccessibilityAction*> inherited_overrides);
   void HandleEvent(NSDictionary<NSString*, id>* annotatedEvent);
 
   FlutterViewController* view_controller_;
@@ -100,6 +102,8 @@ class AccessibilityBridge final : public AccessibilityBridgeIos {
   fml::WeakPtrFactory<AccessibilityBridge> weak_factory_;
   int32_t previous_route_id_;
   std::unordered_map<int32_t, flutter::CustomAccessibilityAction> actions_;
+  std::unordered_map<int32_t, std::vector<FlutterCustomAccessibilityAction*>>
+      action_overrides_of_semantics_objects_;
   std::vector<int32_t> previous_routes_;
   std::unique_ptr<IosDelegate> ios_delegate_;
 
