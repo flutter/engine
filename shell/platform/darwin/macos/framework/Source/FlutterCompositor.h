@@ -51,11 +51,7 @@ class FlutterCompositor {
   // PresentCallback is called at the end of the Present function.
   void SetPresentCallback(const PresentCallback& present_callback);
 
-  typedef enum {
-      kStarted,
-      kPresenting,
-      kEnded
-  } FrameStatus;
+  typedef enum { kStarted, kPresenting, kEnded } FrameStatus;
 
  protected:
   __weak const FlutterViewController* view_controller_;
@@ -80,8 +76,8 @@ class FlutterCompositor {
   // A list of the active CALayer objects for the frame that need to be removed.
   std::list<CALayer*> active_ca_layers_;
 
-  // Callback set by the embedder to be called when the layer tree has been correctly
-  // set up for this frame.
+  // Callback set by the embedder to be called when the layer tree has been
+  // correctly set up for this frame.
   PresentCallback present_callback_;
 
   // Current frame status.
