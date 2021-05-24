@@ -44,7 +44,6 @@ TEST(FlutterMetalCompositorTest, TestCreate) {
   id<MTLTexture> texture = (__bridge id<MTLTexture>)backing_store.metal.texture.texture;
   ASSERT_EQ(texture.width, 800ul);
   ASSERT_EQ(texture.height, 600ul);
-
 }
 
 }  // flutter::testing
