@@ -41,6 +41,10 @@ TEST(FlutterMetalCompositorTest, TestCreate) {
 
   ASSERT_EQ(backing_store.type, kFlutterBackingStoreTypeMetal);
   ASSERT_NE(backing_store.metal.texture.texture, nil);
+  id<MTLTexture> texture = (__bridge id<MTLTexture>)backing_store.metal.texture.texture;
+  ASSERT_EQ(texture.width, 800ul);
+  ASSERT_EQ(texture.height, 600ul);
+
 }
 
 }  // flutter::testing
