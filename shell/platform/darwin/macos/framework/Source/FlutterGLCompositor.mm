@@ -31,7 +31,7 @@ bool FlutterGLCompositor::CreateBackingStore(const FlutterBackingStoreConfig* co
 
   CGSize size = CGSizeMake(config->size.width, config->size.height);
 
-  if (!frame_started_) {
+  if (GetFrameStatus() != FrameStatus::kStarted) {
     StartFrame();
     // If the backing store is for the first layer, return the fbo for the
     // FlutterView.
@@ -75,6 +75,8 @@ bool FlutterGLCompositor::CollectBackingStore(const FlutterBackingStore* backing
 }
 
 bool FlutterGLCompositor::Present(const FlutterLayer** layers, size_t layers_count) {
+  SetFrameStatus(FrameStatus::kPresenting);
+
   for (size_t i = 0; i < layers_count; ++i) {
     const auto* layer = layers[i];
     FlutterBackingStore* backing_store = const_cast<FlutterBackingStore*>(layer->backing_store);
@@ -99,10 +101,8 @@ bool FlutterGLCompositor::Present(const FlutterLayer** layers, size_t layers_cou
         break;
     };
   }
-  // The frame has been presented, prepare FlutterGLCompositor to
-  // render a new frame.
-  frame_started_ = false;
-  return present_callback_();
+
+  return EndFrame();
 }
 
 }  // namespace flutter

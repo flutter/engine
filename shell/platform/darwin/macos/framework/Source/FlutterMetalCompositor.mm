@@ -25,7 +25,7 @@ bool FlutterMetalCompositor::CreateBackingStore(const FlutterBackingStoreConfig*
   backing_store_out->metal.struct_size = sizeof(FlutterMetalBackingStore);
   backing_store_out->metal.texture.struct_size = sizeof(FlutterMetalTexture);
 
-  if (!frame_started_) {
+  if (GetFrameStatus() != FrameStatus::kStarted) {
     StartFrame();
     // If the backing store is for the first layer, return the MTLTexture for the
     // FlutterView.
@@ -74,6 +74,8 @@ bool FlutterMetalCompositor::CollectBackingStore(const FlutterBackingStore* back
 }
 
 bool FlutterMetalCompositor::Present(const FlutterLayer** layers, size_t layers_count) {
+  SetFrameStatus(FrameStatus::kPresenting);
+
   for (size_t i = 0; i < layers_count; ++i) {
     const auto* layer = layers[i];
     FlutterBackingStore* backing_store = const_cast<FlutterBackingStore*>(layer->backing_store);
@@ -95,10 +97,7 @@ bool FlutterMetalCompositor::Present(const FlutterLayer** layers, size_t layers_
     };
   }
 
-  // The frame has been presented, prepare FlutterMetalCompositor to
-  // render a new frame.
-  frame_started_ = false;
-  return present_callback_();
+  return EndFrame();
 }
 
 }  // namespace flutter

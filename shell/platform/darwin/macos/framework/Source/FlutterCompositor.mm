@@ -24,18 +24,27 @@ void FlutterCompositor::StartFrame() {
     [layer removeFromSuperlayer];
   }
 
-  // Reset layer map.
+  // Reset active layers.
   active_ca_layers_.clear();
+  SetFrameStatus(FrameStatus::kStarted);
+}
 
-  frame_started_ = true;
+bool FlutterCompositor::EndFrame() {
+  bool status = present_callback_();
+  SetFrameStatus(FrameStatus::kEnded);
+  return status;
+}
+
+void FlutterCompositor::SetFrameStatus(FlutterCompositor::FrameStatus frame_status) {
+  frame_status_ = frame_status;
+}
+
+FlutterCompositor::FrameStatus FlutterCompositor::GetFrameStatus() {
+  return frame_status_;
 }
 
 void FlutterCompositor::InsertCALayerForIOSurface(const IOSurfaceRef& io_surface,
                                                   CATransform3D transform) {
-  if (!view_controller_) {
-    return;
-  }
-
   // FlutterCompositor manages the lifecycle of CALayers.
   CALayer* content_layer = [[CALayer alloc] init];
   content_layer.transform = transform;
