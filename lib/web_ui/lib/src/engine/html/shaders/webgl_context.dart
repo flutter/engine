@@ -511,10 +511,10 @@ void setupVertexTransforms(
   gl.setUniform4f(shift, -1, 1, 0, 0);
 }
 
-void setupTextureScalar(
-    GlContext gl, GlProgram glProgram, double sx, double sy) {
-  Object scalar = gl.getUniformLocation(glProgram.program, 'u_texscale');
-  gl.setUniform2f(scalar, sx, sy);
+void setupTextureTransform(
+    GlContext gl, GlProgram glProgram, double offsetx, double offsety, double sx, double sy) {
+  Object scalar = gl.getUniformLocation(glProgram.program, 'u_textransform');
+  gl.setUniform4f(scalar, sx, sy, offsetx, offsety);
 }
 
 void bufferVertexData(GlContext gl, Float32List positions,

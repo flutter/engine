@@ -170,9 +170,11 @@ class _WebGlRenderer implements GlRenderer {
     if (imageShader != null) {
       /// To map from vertex position to texture coordinate in 0..1 range,
       /// we setup scalar to be used in vertex shader.
-      setupTextureScalar(
+      setupTextureTransform(
           gl,
           glProgram,
+          0.0,
+          0.0,
           1.0 / imageShader.image.width.toDouble(),
           1.0 / imageShader.image.height.toDouble());
     }

@@ -55,14 +55,14 @@ class VertexShaders {
       builder.addIn(ShaderType.kVec4, name: 'position');
       builder.addUniform(ShaderType.kMat4, name: 'u_ctransform');
       builder.addUniform(ShaderType.kVec4, name: 'u_scale');
-      builder.addUniform(ShaderType.kVec2, name: 'u_texscale');
+      builder.addUniform(ShaderType.kVec4, name: 'u_textransform');
       builder.addUniform(ShaderType.kVec4, name: 'u_shift');
       builder.addOut(ShaderType.kVec2, name: 'v_texcoord');
       ShaderMethod method = builder.addMethod('main');
       method.addStatement(
           'gl_Position = ((u_ctransform * position) * u_scale) + u_shift;');
-      method.addStatement('v_texcoord = vec2(position.x * u_texscale.x, '
-          '(position.y * u_texscale.y));');
+      method.addStatement('v_texcoord = vec2((u_textransform.z + position.x) * u_textransform.x, '
+          '((u_textransform.w + position.y) * u_textransform.y));');
       _textureVertexShader = builder.build();
     }
     return _textureVertexShader!;

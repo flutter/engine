@@ -35,11 +35,11 @@ void testMain() async {
 
     /// Circle.
     rc.drawCircle(shaderRect.center, shaderRect.width / 2, paint);
-    shaderRect = shaderRect.translate(100, 0);
+    shaderRect = shaderRect.translate(110, 0);
 
     /// Oval.
     rc.drawOval(Rect.fromLTWH(shaderRect.left, shaderRect.top, shaderRect.width, shaderRect.height / 2), paint);
-    shaderRect = shaderRect.translate(-200, 120);
+    shaderRect = shaderRect.translate(-210, 120);
 
     /// Path.
     Path path = Path()
@@ -52,7 +52,7 @@ void testMain() async {
 
     /// RRect.
     rc.drawRRect(RRect.fromRectXY(shaderRect, 10, 20), paint);
-    shaderRect = shaderRect.translate(100, 0);
+    shaderRect = shaderRect.translate(110, 0);
 
     /// DRRect.
     rc.drawDRRect(RRect.fromRectXY(shaderRect, 20, 30),
@@ -65,16 +65,18 @@ void testMain() async {
       TileMode tmx, TileMode tmy, String fileName) async {
     final RecordingCanvas rc =
         RecordingCanvas(const Rect.fromLTRB(0, 0, screenWidth, screenHeight));
-    Rect shaderRect = const Rect.fromLTRB(20, 20, 100, 100);
+    //Rect shaderRect = const Rect.fromLTRB(20, 20, 100, 100);
+    Rect shaderRect = const Rect.fromLTRB(0, 0, 100, 100);
     final SurfacePaint paint = Paint() as SurfacePaint;
     paint.shader =
-        ImageShader(testImage, tmx, tmy, Matrix4.identity().toFloat64());
+        ImageShader(testImage, tmx, tmy, Matrix4.identity().toFloat64()
+            , filterQuality: FilterQuality.high);
 
     _drawShapes(rc, paint, shaderRect);
 
     expect(rc.renderStrategy.hasArbitraryPaint, isTrue);
     await canvasScreenshot(rc, fileName,
-        region: screenRect, write: true, maxDiffRatePercent: 0.01);
+        region: screenRect, maxDiffRatePercent: 0.01);
   }
 
   test('Should draw with tiled imageshader.', () async {
@@ -97,9 +99,18 @@ void testMain() async {
         TileMode.mirror, TileMode.mirror, 'image_shader_mirror');
   });
 
-  test('Should draw with clamp repeat imageshader.', () async {
+  test('Should draw with horizontal clamp imageshader.', () async {
     await testImageShader(
-        TileMode.clamp, TileMode.repeated, 'image_shader_clamp_repeat');
+        TileMode.clamp, TileMode.repeated, 'image_shader_clamp_horiz');
+  });
+
+  test('Should draw with vertical clamp imageshader.', () async {
+    await testImageShader(
+        TileMode.repeated, TileMode.clamp, 'image_shader_clamp_vertical');
+  });
+  test('Should draw with clamp imageshader.', () async {
+    await testImageShader(
+        TileMode.clamp, TileMode.clamp, 'image_shader_clamp');
   });
 }
 
