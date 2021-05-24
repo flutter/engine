@@ -58,7 +58,7 @@ class FakeImageGenerator : public ImageGenerator {
 
   unsigned int GetFrameCount() const { return 1; }
 
-  int GetRepetitionCount() const { return 0; }
+  unsigned int GetPlayCount() const { return 1; }
 
   const ImageGenerator::FrameInfo GetFrameInfo(unsigned int frame_index) const {
     return {std::nullopt, 0, SkCodecAnimation::DisposalMethod::kKeep};

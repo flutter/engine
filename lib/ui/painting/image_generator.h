@@ -21,6 +21,10 @@ namespace flutter {
 /// @see    `ImageGenerator::GetScaledDimensions`
 class ImageGenerator {
  public:
+  /// Frame count value to denote infinite looping.
+  const static unsigned int kInfinitePlayCount =
+      std::numeric_limits<unsigned int>::max();
+
   /// @brief  Info about a single frame in the context of a multi-frame image,
   ///         useful for animation and blending.
   struct FrameInfo {
@@ -54,14 +58,13 @@ class ImageGenerator {
   ///          always be 1 for single-frame images.
   virtual unsigned int GetFrameCount() const = 0;
 
-  /// @brief  Return the number of times to repeat, if this image is animated.
-  ///         This number does not include the first play through of each frame.
-  ///         For example, a repetition count of 4 means that each frame is
-  ///         played 5 timesand then the animation stops.
-  /// @return The number of times to repeat (not counting the first play
-  ///         through). For still (non-animated) image decoders, 0 is returned.
-  ///         For animated images that should repeat forever, -1 is returned.
-  virtual int GetRepetitionCount() const = 0;
+  /// @brief  The number of times an animated image should play through before
+  ///         playback stops.
+  /// @return If this image is animated, the number of times the animation
+  ///         should play through is returned, otherwise it'll just return 1.
+  ///         If the animation should loop forever, `kInfinitePlayCount` is
+  ///         returned.
+  virtual unsigned int GetPlayCount() const = 0;
 
   /// @brief      Get information about a single frame in the context of a
   ///             multi-frame image, useful for animation and frame blending.
@@ -132,7 +135,7 @@ class BuiltinSkiaImageGenerator : public ImageGenerator {
   unsigned int GetFrameCount() const override;
 
   // |ImageGenerator|
-  int GetRepetitionCount() const override;
+  unsigned int GetPlayCount() const override;
 
   // |ImageGenerator|
   const ImageGenerator::FrameInfo GetFrameInfo(
@@ -172,7 +175,7 @@ class BuiltinSkiaCodecImageGenerator : public ImageGenerator {
   unsigned int GetFrameCount() const override;
 
   // |ImageGenerator|
-  int GetRepetitionCount() const override;
+  unsigned int GetPlayCount() const override;
 
   // |ImageGenerator|
   const ImageGenerator::FrameInfo GetFrameInfo(

@@ -20,7 +20,10 @@ MultiFrameCodec::~MultiFrameCodec() = default;
 MultiFrameCodec::State::State(std::shared_ptr<ImageGenerator> generator)
     : generator_(std::move(generator)),
       frameCount_(generator_->GetFrameCount()),
-      repetitionCount_(generator_->GetRepetitionCount()),
+      repetitionCount_(generator_->GetPlayCount() ==
+                               ImageGenerator::kInfinitePlayCount
+                           ? -1
+                           : generator_->GetPlayCount() - 1),
       nextFrameIndex_(0) {}
 
 static void InvokeNextFrameCallback(

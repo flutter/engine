@@ -22,8 +22,8 @@ unsigned int BuiltinSkiaImageGenerator::GetFrameCount() const {
   return 1;
 }
 
-int BuiltinSkiaImageGenerator::GetRepetitionCount() const {
-  return 0;
+unsigned int BuiltinSkiaImageGenerator::GetPlayCount() const {
+  return 1;
 }
 
 const ImageGenerator::FrameInfo BuiltinSkiaImageGenerator::GetFrameInfo(
@@ -75,8 +75,9 @@ unsigned int BuiltinSkiaCodecImageGenerator::GetFrameCount() const {
   return codec_generator_->getFrameCount();
 }
 
-int BuiltinSkiaCodecImageGenerator::GetRepetitionCount() const {
-  return codec_generator_->getRepetitionCount();
+unsigned int BuiltinSkiaCodecImageGenerator::GetPlayCount() const {
+  auto repetition_count = codec_generator_->getRepetitionCount();
+  return repetition_count < 0 ? kInfinitePlayCount : repetition_count + 1;
 }
 
 const ImageGenerator::FrameInfo BuiltinSkiaCodecImageGenerator::GetFrameInfo(

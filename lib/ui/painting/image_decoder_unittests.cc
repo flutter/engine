@@ -550,10 +550,9 @@ TEST(ImageDecoderTest,
   ASSERT_TRUE(gif_generator);
   ASSERT_TRUE(webp_generator);
 
-  // Both fixtures have a loop count of 2 which should lead to the repeat count
-  // of 1
-  ASSERT_EQ(gif_generator->GetRepetitionCount(), 1);
-  ASSERT_EQ(webp_generator->GetRepetitionCount(), 1);
+  // Both fixtures have a loop count of 2.
+  ASSERT_EQ(gif_generator->GetPlayCount(), static_cast<unsigned int>(2));
+  ASSERT_EQ(webp_generator->GetPlayCount(), static_cast<unsigned int>(2));
 }
 
 TEST(ImageDecoderTest, VerifySimpleDecoding) {
