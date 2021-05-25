@@ -4,7 +4,9 @@ import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.plugin.common.BinaryMessenger;
@@ -61,7 +63,19 @@ public class DartMessengerTest {
     final String channel = "foo";
     final BinaryMessenger.BinaryMessageHandler handler = (byteBuffer, reply) -> {};
     messenger.setMessageHandler(channel, handler, true);
-    verify(fakeFlutterJni).setDirectByteBufferDecodingPreference(channel, true);
+    verify(fakeFlutterJni, never())
+        .setDirectByteBufferDecodingPreference(Mockito.anyString(), Mockito.anyBoolean());
+  }
+
+  @Test
+  public void setsIndirectByteBuffer() {
+    final FlutterJNI fakeFlutterJni = mock(FlutterJNI.class);
+    final DartMessenger messenger = new DartMessenger(fakeFlutterJni);
+    final String channel = "foo";
+    final BinaryMessenger.BinaryMessageHandler handler = (byteBuffer, reply) -> {};
+    when(fakeFlutterJni.isAttached()).thenReturn(true);
+    messenger.setMessageHandler(channel, handler, false);
+    verify(fakeFlutterJni).setDirectByteBufferDecodingPreference(channel, false);
   }
 
   @Test
