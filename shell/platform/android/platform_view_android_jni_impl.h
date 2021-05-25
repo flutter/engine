@@ -5,8 +5,6 @@
 #ifndef FLUTTER_SHELL_PLATFORM_ANDROID_PLATFORM_VIEW_ANDROID_JNI_IMPL_H_
 #define FLUTTER_SHELL_PLATFORM_ANDROID_PLATFORM_VIEW_ANDROID_JNI_IMPL_H_
 
-#include <set>
-
 #include "flutter/fml/platform/android/jni_weak_ref.h"
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
 
@@ -84,17 +82,9 @@ class PlatformViewAndroidJNIImpl final : public PlatformViewAndroidJNI {
 
   bool RequestDartDeferredLibrary(int loading_unit_id) override;
 
-  void ClearDirectByteBufferDecodingPreference(
-      const std::string& channel) override;
-
-  void SetDirectByteBufferDecodingPreference(
-      const std::string& channel,
-      bool wants_direct_byte_buffer_for_decoding) override;
-
  private:
   // Reference to FlutterJNI object.
   const fml::jni::JavaObjectWeakGlobalRef java_object_;
-  std::set<std::string> channels_with_indirect_byte_buffer_decoding_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformViewAndroidJNIImpl);
 };

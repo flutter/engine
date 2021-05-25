@@ -26,7 +26,7 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
   private static final String TAG = "DartMessenger";
 
   @NonNull private final FlutterJNI flutterJNI;
-  @NonNull private final Map<String, BinaryMessenger.BinaryMessageHandler> messageHandlers;
+  @NonNull private final Map<String, Handler> messageHandlers;
   @NonNull private final Map<Integer, BinaryMessenger.BinaryReply> pendingReplies;
   private int nextReplyId = 1;
 
@@ -36,6 +36,17 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
     this.pendingReplies = new HashMap<>();
   }
 
+  private static class Handler {
+    public final BinaryMessenger.BinaryMessageHandler binaryMessageHandler;
+    public final boolean wantsDirectByteBufferForDecoding;
+
+    Handler(
+        BinaryMessenger.BinaryMessageHandler handler, boolean wantsDirectByteBufferForDecoding) {
+      this.binaryMessageHandler = handler;
+      this.wantsDirectByteBufferForDecoding = wantsDirectByteBufferForDecoding;
+    }
+  }
+
   @Override
   public void setMessageHandler(
       @NonNull String channel,
@@ -43,18 +54,10 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
       boolean wantsDirectByteBufferForDecoding) {
     if (handler == null) {
       Log.v(TAG, "Removing handler for channel '" + channel + "'");
-      flutterJNI.clearDirectByteBufferDecodingPreference(channel);
       messageHandlers.remove(channel);
     } else {
       Log.v(TAG, "Setting handler for channel '" + channel + "'");
-      if (!wantsDirectByteBufferForDecoding) {
-        if (!this.flutterJNI.isAttached()) {
-          throw new IllegalStateException(
-              "Only direct ByteBuffers are supported for channels whose message handlers are setup before jni is attached.");
-        }
-        flutterJNI.setDirectByteBufferDecodingPreference(channel, wantsDirectByteBufferForDecoding);
-      }
-      messageHandlers.put(channel, handler);
+      messageHandlers.put(channel, new Handler(handler, wantsDirectByteBufferForDecoding));
     }
   }
 
@@ -87,11 +90,23 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
   public void handleMessageFromDart(
       @NonNull final String channel, @Nullable ByteBuffer message, final int replyId) {
     Log.v(TAG, "Received message from Dart over channel '" + channel + "'");
-    BinaryMessenger.BinaryMessageHandler handler = messageHandlers.get(channel);
+    Handler handler = messageHandlers.get(channel);
     if (handler != null) {
       try {
         Log.v(TAG, "Deferring to registered handler to process message.");
-        handler.onMessage(message, new Reply(flutterJNI, replyId));
+        ByteBuffer messageWithDirectness;
+        if (handler.wantsDirectByteBufferForDecoding) {
+          messageWithDirectness = message;
+        } else if (message != null) {
+          ByteBuffer indirectByteBuffer = ByteBuffer.allocate(message.capacity());
+          indirectByteBuffer.put(message);
+          indirectByteBuffer.rewind();
+          messageWithDirectness = indirectByteBuffer;
+        } else {
+          messageWithDirectness = null;
+        }
+        handler.binaryMessageHandler.onMessage(
+            messageWithDirectness, new Reply(flutterJNI, replyId));
       } catch (Exception ex) {
         Log.e(TAG, "Uncaught exception in binary message listener", ex);
         flutterJNI.invokePlatformMessageEmptyResponseCallback(replyId);

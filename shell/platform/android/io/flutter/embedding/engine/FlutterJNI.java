@@ -822,32 +822,6 @@ public class FlutterJNI {
     // (https://github.com/flutter/flutter/issues/25391)
   }
 
-  @SuppressWarnings("unused")
-  @VisibleForTesting
-  public void handleIndirectPlatformMessage(
-      @NonNull final String channel, ByteBuffer message, final int replyId) {
-    ByteBuffer indirectByteBuffer = ByteBuffer.allocate(message.capacity());
-    indirectByteBuffer.put(message);
-    indirectByteBuffer.rewind();
-    handlePlatformMessage(channel, indirectByteBuffer, replyId);
-  }
-
-  private native void nativeClearDirectByteBufferDecodingPreference(
-      long nativeShellHolderId, String channel);
-
-  public void clearDirectByteBufferDecodingPreference(@NonNull String channel) {
-    nativeClearDirectByteBufferDecodingPreference(nativeShellHolderId, channel);
-  }
-
-  private native void nativeSetDirectByteBufferDecodingPreference(
-      long nativeShellHolderId, String channel, boolean wantsDirectByteBufferForDecoding);
-
-  public void setDirectByteBufferDecodingPreference(
-      @NonNull String channel, boolean wantsDirectByteBufferForDecoding) {
-    nativeSetDirectByteBufferDecodingPreference(
-        nativeShellHolderId, channel, wantsDirectByteBufferForDecoding);
-  }
-
   // Called by native to respond to a platform message that we sent.
   // TODO(mattcarroll): determine if reply is nonull or nullable
   @SuppressWarnings("unused")

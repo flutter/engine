@@ -101,16 +101,6 @@ class JNIMock final : public PlatformViewAndroidJNI {
               RequestDartDeferredLibrary,
               (int loading_unit_id),
               (override));
-
-  MOCK_METHOD(void,
-              ClearDirectByteBufferDecodingPreference,
-              (const std::string& channel),
-              (override));
-
-  MOCK_METHOD(void,
-              SetDirectByteBufferDecodingPreference,
-              (const std::string&, bool),
-              (override));
 };
 
 }  // namespace flutter

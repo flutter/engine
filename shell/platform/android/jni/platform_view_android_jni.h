@@ -197,13 +197,6 @@ class PlatformViewAndroidJNI {
   virtual double GetDisplayRefreshRate() = 0;
 
   virtual bool RequestDartDeferredLibrary(int loading_unit_id) = 0;
-
-  virtual void ClearDirectByteBufferDecodingPreference(
-      const std::string& channel) = 0;
-
-  virtual void SetDirectByteBufferDecodingPreference(
-      const std::string& channel,
-      bool wants_direct_byte_buffer_for_decoding) = 0;
 };
 
 }  // namespace flutter

@@ -4,12 +4,8 @@ import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import io.flutter.embedding.engine.FlutterJNI;
-import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.BinaryMessenger.BinaryMessageHandler;
 import java.nio.ByteBuffer;
 import org.junit.Test;
@@ -54,36 +50,5 @@ public class DartMessengerTest {
     assertNotNull(reportingHandler.latestException);
     assertTrue(reportingHandler.latestException instanceof AssertionError);
     currentThread.setUncaughtExceptionHandler(savedHandler);
-  }
-
-  @Test
-  public void setsDirectByteBuffer() {
-    final FlutterJNI fakeFlutterJni = mock(FlutterJNI.class);
-    final DartMessenger messenger = new DartMessenger(fakeFlutterJni);
-    final String channel = "foo";
-    final BinaryMessenger.BinaryMessageHandler handler = (byteBuffer, reply) -> {};
-    messenger.setMessageHandler(channel, handler, true);
-    verify(fakeFlutterJni, never())
-        .setDirectByteBufferDecodingPreference(Mockito.anyString(), Mockito.anyBoolean());
-  }
-
-  @Test
-  public void setsIndirectByteBuffer() {
-    final FlutterJNI fakeFlutterJni = mock(FlutterJNI.class);
-    final DartMessenger messenger = new DartMessenger(fakeFlutterJni);
-    final String channel = "foo";
-    final BinaryMessenger.BinaryMessageHandler handler = (byteBuffer, reply) -> {};
-    when(fakeFlutterJni.isAttached()).thenReturn(true);
-    messenger.setMessageHandler(channel, handler, false);
-    verify(fakeFlutterJni).setDirectByteBufferDecodingPreference(channel, false);
-  }
-
-  @Test
-  public void clearsDirectByteBuffer() {
-    final FlutterJNI fakeFlutterJni = mock(FlutterJNI.class);
-    final DartMessenger messenger = new DartMessenger(fakeFlutterJni);
-    final String channel = "foo";
-    messenger.setMessageHandler(channel, null, true);
-    verify(fakeFlutterJni).clearDirectByteBufferDecodingPreference(channel);
   }
 }
