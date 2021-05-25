@@ -31,11 +31,6 @@ static void fl_mock_text_input_plugin_class_init(
 
 static void fl_mock_text_input_plugin_init(FlMockTextInputPlugin* self) {}
 
-// static gboolean text_input_im_filter_by_mock(GtkIMContext* im_context,
-// gpointer gdk_event) {
-//   return true;
-// }
-
 // Creates a mock text_input_plugin
 FlMockTextInputPlugin* fl_mock_text_input_plugin_new(
     gboolean (*filter_keypress)(FlTextInputPlugin* self, FlKeyEvent* event)) {
