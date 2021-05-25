@@ -47,7 +47,9 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
       messageHandlers.remove(channel);
     } else {
       Log.v(TAG, "Setting handler for channel '" + channel + "'");
-      flutterJNI.setDirectByteBufferDecodingPreference(channel, wantsDirectByteBufferForDecoding);
+      if (!wantsDirectByteBufferForDecoding) {
+        flutterJNI.setDirectByteBufferDecodingPreference(channel, wantsDirectByteBufferForDecoding);
+      }
       messageHandlers.put(channel, handler);
     }
   }

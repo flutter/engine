@@ -682,7 +682,7 @@ bool RegisterApi(JNIEnv* env) {
       },
       {
           .name = "nativeSetDirectByteBufferDecodingPreference",
-          .signature = "(JLjava/lang/String;I)V",
+          .signature = "(JLjava/lang/String;Z)V",
           .fnPtr =
               reinterpret_cast<void*>(&SetDirectByteBufferDecodingPreference),
       },
