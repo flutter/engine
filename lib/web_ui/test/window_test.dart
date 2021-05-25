@@ -105,6 +105,27 @@ void testMain() {
     await check<MultiEntriesBrowserHistory>('routeInformationUpdated', <String, dynamic>{'location': '/bar'}); // does not change mode
   });
 
+  test('handleNavigationMessage throws for route update methods called with null arguments',
+      () async {
+    expect(() async {
+      await window.handleNavigationMessage(
+        JSONMethodCodec().encodeMethodCall(MethodCall(
+          'routeUpdated',
+          null, // boom
+        ))
+      );
+    }, throwsAssertionError);
+
+    expect(() async {
+      await window.handleNavigationMessage(
+        JSONMethodCodec().encodeMethodCall(MethodCall(
+          'routeInformationUpdated',
+          null, // boom
+        ))
+      );
+    }, throwsAssertionError);
+  });
+
   test('should not throw when using nav1 and nav2 together',
       () async {
     await window.debugInitializeHistory(TestUrlStrategy.fromEntry(
