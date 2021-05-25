@@ -4,8 +4,10 @@ import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 import io.flutter.embedding.engine.FlutterJNI;
+import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.BinaryMessenger.BinaryMessageHandler;
 import java.nio.ByteBuffer;
 import org.junit.Test;
@@ -50,5 +52,24 @@ public class DartMessengerTest {
     assertNotNull(reportingHandler.latestException);
     assertTrue(reportingHandler.latestException instanceof AssertionError);
     currentThread.setUncaughtExceptionHandler(savedHandler);
+  }
+
+  @Test
+  public void setsDirectByteBuffer() {
+    final FlutterJNI fakeFlutterJni = mock(FlutterJNI.class);
+    final DartMessenger messenger = new DartMessenger(fakeFlutterJni);
+    final String channel = "foo";
+    final BinaryMessenger.BinaryMessageHandler handler = (byteBuffer, reply) -> {};
+    messenger.setMessageHandler(channel, handler, true);
+    verify(fakeFlutterJni).setDirectByteBufferDecodingPreference(channel, true);
+  }
+
+  @Test
+  public void clearsDirectByteBuffer() {
+    final FlutterJNI fakeFlutterJni = mock(FlutterJNI.class);
+    final DartMessenger messenger = new DartMessenger(fakeFlutterJni);
+    final String channel = "foo";
+    messenger.setMessageHandler(channel, null, true);
+    verify(fakeFlutterJni).clearDirectByteBufferDecodingPreference(channel);
   }
 }
