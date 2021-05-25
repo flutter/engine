@@ -328,7 +328,7 @@ deps = {
 
   'src/third_party/dart/third_party/pkg/web_socket_channel':
    Var('dart_git') + '/web_socket_channel.git@6448ce532445a8a458fa191d9346df071ae0acad',
-  
+
   'src/third_party/dart/third_party/pkg/webdev':
    Var('dart_git') + '/webdev.git' + '@' + Var('dart_webdev_rev'),
 
