@@ -82,7 +82,7 @@ void testMain() {
     ), useSingle: false);
     expect(window.browserHistory, isA<MultiEntriesBrowserHistory>());
 
-    Future<void> check<T>(String method, Map<String, Object?> arguments) async {
+    Future<void> check<T>(String method, dynamic arguments) async {
       callback = Completer<void>();
       window.sendPlatformMessage(
         'flutter/navigation',
@@ -93,6 +93,10 @@ void testMain() {
       expect(window.browserHistory, isA<T>());
     }
 
+    // These may be initialized as `null`
+    // See https://github.com/flutter/flutter/issues/83158#issuecomment-847483010
+    await check<SingleEntryBrowserHistory>('selectSingleEntryHistory', null); // -> single
+    await check<MultiEntriesBrowserHistory>('selectMultiEntryHistory', null); // -> multi
     await check<SingleEntryBrowserHistory>('selectSingleEntryHistory', <String, dynamic>{}); // -> single
     await check<MultiEntriesBrowserHistory>('selectMultiEntryHistory', <String, dynamic>{}); // -> multi
     await check<SingleEntryBrowserHistory>('routeUpdated', <String, dynamic>{'routeName': '/bar'}); // -> single
