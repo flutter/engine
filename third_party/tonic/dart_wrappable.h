@@ -64,17 +64,6 @@ class DartWrappable {
  private:
   static void FinalizeDartWrapper(void* isolate_callback_data, void* peer);
 
-#if !FLUTTER_RELEASE
-  void DebugSetWrapperInfo() {
-    debug_name_ = std::string("dart:") + GetDartWrapperInfo().library_name +
-                  "::" + GetDartWrapperInfo().interface_name;
-    allocation_size_ = GetDartWrapperInfo().size_in_bytes;
-  }
-  std::string debug_name_;
-  uint64_t allocation_size_ = -1;
-  bool disposed_ = false;
-#endif  // !FLUTTER_RELEASE
-
   DartWeakPersistentValue dart_wrapper_;
 
   TONIC_DISALLOW_COPY_AND_ASSIGN(DartWrappable);

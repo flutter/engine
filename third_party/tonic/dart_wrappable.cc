@@ -12,19 +12,11 @@
 namespace tonic {
 
 DartWrappable::~DartWrappable() {
-// Calls the destructor of dart_wrapper_ to delete WeakPersistentHandle.
-#if !FLUTTER_RELEASE
-  if (!disposed_) {
-    Log("Failed to dispose a %s (%lu)", debug_name_.c_str(), allocation_size_);
-  }
-#endif
+  // Calls the destructor of dart_wrapper_ to delete WeakPersistentHandle.
 }
 
 // TODO(dnfield): Delete this. https://github.com/flutter/flutter/issues/50997
 Dart_Handle DartWrappable::CreateDartWrapper(DartState* dart_state) {
-#if !FLUTTER_RELEASE
-  DebugSetWrapperInfo();
-#endif  // !FLUTTER_RELEASE
   if (!dart_wrapper_.is_empty()) {
     // Any previously given out wrapper must have been GCed.
     TONIC_DCHECK(Dart_IsNull(dart_wrapper_.Get()));
@@ -56,9 +48,6 @@ Dart_Handle DartWrappable::CreateDartWrapper(DartState* dart_state) {
 }
 
 void DartWrappable::AssociateWithDartWrapper(Dart_Handle wrapper) {
-#if !FLUTTER_RELEASE
-  DebugSetWrapperInfo();
-#endif  // !FLUTTER_RELEASE
   if (!dart_wrapper_.is_empty()) {
     // Any previously given out wrapper must have been GCed.
     TONIC_DCHECK(Dart_IsNull(dart_wrapper_.Get()));
@@ -82,9 +71,6 @@ void DartWrappable::AssociateWithDartWrapper(Dart_Handle wrapper) {
 }
 
 void DartWrappable::ClearDartWrapper() {
-#if !FLUTTER_RELEASE
-  disposed_ = true;
-#endif  // !FLUTTER_RELEASE
   TONIC_DCHECK(!dart_wrapper_.is_empty());
   Dart_Handle wrapper = dart_wrapper_.Get();
   TONIC_CHECK(!LogIfError(Dart_SetNativeInstanceField(wrapper, kPeerIndex, 0)));
@@ -97,6 +83,14 @@ void DartWrappable::ClearDartWrapper() {
 void DartWrappable::FinalizeDartWrapper(void* isolate_callback_data,
                                         void* peer) {
   DartWrappable* wrappable = reinterpret_cast<DartWrappable*>(peer);
+#if !FLUTTER_RELEASE
+  if (!wrappable->dart_wrapper_.is_empty()) {
+    const DartWrapperInfo& info = wrappable->GetDartWrapperInfo();
+    Log("Failed to dispose a dart:%s::%s (%lu)", info.library_name,
+        info.interface_name, wrappable->GetAllocationSize());
+  }
+#endif
+
   wrappable->ReleaseDartWrappableReference();  // Balanced in CreateDartWrapper.
 }
 
