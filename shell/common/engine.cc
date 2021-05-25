@@ -296,7 +296,9 @@ void Engine::SetViewportMetrics(const ViewportMetrics& metrics) {
   bool dimensions_changed =
       viewport_metrics_.physical_height != metrics.physical_height ||
       viewport_metrics_.physical_width != metrics.physical_width ||
-      viewport_metrics_.device_pixel_ratio != metrics.device_pixel_ratio;
+      viewport_metrics_.device_pixel_ratio != metrics.device_pixel_ratio ||
+      viewport_metrics_.physical_view_inset_bottom !=
+          metrics.physical_view_inset_bottom;
   viewport_metrics_ = metrics;
   runtime_controller_->SetViewportMetrics(viewport_metrics_);
   if (animator_) {

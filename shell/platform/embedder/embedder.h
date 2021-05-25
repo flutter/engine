@@ -461,6 +461,8 @@ typedef struct {
   size_t height;
   /// Scale factor for the physical screen.
   double pixel_ratio;
+  /// Bottom inset of window.
+  double physical_view_inset_bottom;
 } FlutterWindowMetricsEvent;
 
 /// The phase of the pointer event.
