@@ -17,6 +17,7 @@ public interface MessageCodec<T> {
   /**
    * Controls the ByteBuffer parameter for `decodeMessage`.
    *
+   * @see MessageCodec.decodeMessage
    * @return true if the MessageCodec wants the ByteBuffer parameter to decodeMessage to be a direct
    *     ByteBuffer.
    */
@@ -36,8 +37,10 @@ public interface MessageCodec<T> {
    * Decodes the specified message from binary.
    *
    * <p><b>Warning:</b> The ByteBuffer may be `direct` if `wantsDirectByteBufferForDecoding` returns
-   * `true. Do not retain references to the ByteBuffer without checking `ByteBuffer.isDirect()`. See
-   * also: https://docs.oracle.com/javase/7/docs/api/java/nio/ByteBuffer.html
+   * `true`. If the ByteBuffer is direct it won't be valid beyond this call and may lead to crashes
+   * if used beyond this call. If you want to retain a copy of the data; disable the direct
+   * ByteBuffer or make a copy of the data in your `decodeMessage`. See also:
+   * https://docs.oracle.com/javase/7/docs/api/java/nio/ByteBuffer.html
    *
    * @param message the {@link ByteBuffer} message, possibly null.
    * @return a T value representation of the bytes between the given buffer's current position and

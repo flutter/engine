@@ -18,7 +18,11 @@ import java.nio.ByteBuffer;
 public final class BinaryCodec implements MessageCodec<ByteBuffer> {
   // This codec must match the Dart codec of the same name in package flutter/services.
   public static final BinaryCodec INSTANCE = new BinaryCodec();
-  /** A BinaryCodec that calls decodeMessage with direct ByteBuffers for better performance. */
+  /**
+   * A BinaryCodec that calls `decodeMessage` with direct ByteBuffers for better performance.
+   *
+   * @see BinaryCodec.BinaryCodec(boolean)
+   */
   public static final BinaryCodec INSTANCE_DIRECT = new BinaryCodec(true);
 
   private final boolean wantsDirectByteBufferForDecoding;
@@ -27,6 +31,15 @@ public final class BinaryCodec implements MessageCodec<ByteBuffer> {
     this.wantsDirectByteBufferForDecoding = false;
   }
 
+  /**
+   * A constructor for BinaryCodec.
+   *
+   * @param wantsDirectByteBufferForDecoding `true` means that Flutter will send direct ByteBuffers
+   *     to `decodeMessage`. Direct ByteBuffers will have better performance but will be invalid
+   *     beyond the scope of the `decodeMessage` call. `false` means Flutter will copy the encoded
+   *     message to Java's memory, so the ByteBuffer will be valid beyond the decodeMessage call, at
+   *     the cost of a copy.
+   */
   private BinaryCodec(boolean wantsDirectByteBufferForDecoding) {
     this.wantsDirectByteBufferForDecoding = wantsDirectByteBufferForDecoding;
   }
