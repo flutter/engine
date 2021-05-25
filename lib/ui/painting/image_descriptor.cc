@@ -33,10 +33,8 @@ void ImageDescriptor::RegisterNatives(tonic::DartLibraryNatives* natives) {
 }
 
 const SkImageInfo ImageDescriptor::CreateImageInfo() const {
-  if (generator_) {
-    return generator_->GetInfo();
-  }
-  return SkImageInfo::MakeUnknown();
+  FML_DCHECK(generator_);
+  return generator_->GetInfo();
 }
 
 ImageDescriptor::ImageDescriptor(sk_sp<SkData> buffer,
@@ -78,7 +76,9 @@ void ImageDescriptor::initEncoded(Dart_NativeArguments args) {
 
   if (!registry) {
     Dart_SetReturnValue(
-        args, tonic::ToDart("Image generator registry not available"));
+        args, tonic::ToDart("Failed to access the internal image decoder "
+                            "registry on this isolate. Please file a bug on "
+                            "https://github.com/flutter/flutter/issues."));
     return;
   }
 
