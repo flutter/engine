@@ -1148,7 +1148,7 @@ void PlatformViewAndroidJNIImpl::SetDirectByteBufferDecodingPreference(
   if (wants_direct_byte_buffer_for_decoding) {
     channels_with_indirect_byte_buffer_decoding_.erase(channel);
   } else {
-    channels_with_indirect_byte_buffer_decoding_.emplace(std::move(channel));
+    channels_with_indirect_byte_buffer_decoding_.insert(channel);
   }
 }
 
