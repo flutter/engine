@@ -21,7 +21,8 @@ public class SpawnedEngineActivity extends TestActivity {
 
     secondEngine
         .getDartExecutor()
-        .setMessageHandler("take_screenshot", (byteBuffer, binaryReply) -> notifyFlutterRendered());
+        .setMessageHandler(
+            "take_screenshot", (byteBuffer, binaryReply) -> notifyFlutterRendered(), true);
 
     return secondEngine;
   }

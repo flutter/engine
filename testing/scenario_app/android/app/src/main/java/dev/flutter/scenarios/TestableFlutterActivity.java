@@ -17,7 +17,8 @@ public class TestableFlutterActivity extends FlutterActivity {
     super.configureFlutterEngine(flutterEngine);
     flutterEngine
         .getDartExecutor()
-        .setMessageHandler("take_screenshot", (byteBuffer, binaryReply) -> notifyFlutterRendered());
+        .setMessageHandler(
+            "take_screenshot", (byteBuffer, binaryReply) -> notifyFlutterRendered(), true);
   }
 
   protected void notifyFlutterRendered() {
