@@ -1170,8 +1170,8 @@ void PlatformViewAndroidJNIImpl::FlutterViewHandlePlatformMessage(
         env, env->NewDirectByteBuffer(
                  const_cast<uint8_t*>(message->data().GetMapping()),
                  message->data().GetSize()));
-    if (!channels_with_indirect_byte_buffer_decoding_.empty() &&
-        channels_with_indirect_byte_buffer_decoding_.find(message->channel()) !=
+    if (channels_with_indirect_byte_buffer_decoding_.empty() ||
+        channels_with_indirect_byte_buffer_decoding_.find(message->channel()) ==
             channels_with_indirect_byte_buffer_decoding_.end()) {
       env->CallVoidMethod(java_object.obj(), g_handle_platform_message_method,
                           java_channel.obj(), message_array.obj(), responseId);

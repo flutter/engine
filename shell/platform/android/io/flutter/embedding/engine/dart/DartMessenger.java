@@ -48,6 +48,10 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
     } else {
       Log.v(TAG, "Setting handler for channel '" + channel + "'");
       if (!wantsDirectByteBufferForDecoding) {
+        if (!this.flutterJNI.isAttached()) {
+          throw new IllegalStateException(
+              "Only direct ByteBuffers are supported for channels whose message handlers are setup before jni is attached.");
+        }
         flutterJNI.setDirectByteBufferDecodingPreference(channel, wantsDirectByteBufferForDecoding);
       }
       messageHandlers.put(channel, handler);
