@@ -32,6 +32,7 @@ import org.robolectric.annotation.Config;
 
 @Config(manifest = Config.NONE)
 @RunWith(RobolectricTestRunner.class)
+@TargetApi(21)
 public class PlayStoreDeferredComponentManagerTest {
   private class TestFlutterJNI extends FlutterJNI {
     public int loadDartDeferredLibraryCalled = 0;
