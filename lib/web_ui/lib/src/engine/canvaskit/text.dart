@@ -524,7 +524,18 @@ SkFontStyle toSkFontStyle(ui.FontWeight? fontWeight, ui.FontStyle? fontStyle) {
   return style;
 }
 
-class CkParagraph implements ui.Paragraph {
+/// The CanvasKit implementation of [ui.Paragraph].
+///
+/// This class does not use [ManagedSkiaObject] because it requires that its
+/// memory is reclaimed synchronously. This protects our memory usage from
+/// blowing up if within a single frame the framework needs to layout a lot of
+/// paragraphs. One common use-case is `ListView.builder`, which needs to layout
+/// more of its content than it actually renders to compute the scroll position.
+/// More generally, this protects from the pattern of laying out a lot of text
+/// while painting a small subset of it. To achieve this a
+/// [SynchronousSkiaObjectCache] is used that limits the number of live laid out
+/// paragraphs at any point in time within or outside the frame.
+class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
   CkParagraph(
       this._skParagraph, this._paragraphStyle, this._paragraphCommands);
 
@@ -551,6 +562,7 @@ class CkParagraph implements ui.Paragraph {
   /// is deleted.
   ui.ParagraphConstraints? _lastLayoutConstraints;
 
+  @override
   SkParagraph get skiaObject => _ensureInitialized(_lastLayoutConstraints!);
 
   SkParagraph _ensureInitialized(ui.ParagraphConstraints constraints) {
@@ -609,8 +621,42 @@ class CkParagraph implements ui.Paragraph {
     return paragraph;
   }
 
-  void dispose() {
+  // Caches laid out paragraphs and synchronously reclaims memory if there's
+  // memory pressure.
+  //
+  // On May 26, 2021, 500 seemed like a reasonable number to pick for the cache
+  // size. At the time a single laid out SkParagraph used 100KB of memory. So,
+  // 500 items in the cache is roughly 50MB of memory, which is not too high,
+  // while at the same time enough for most use-cases.
+  //
+  // TODO(yjbanov): this strategy is not sufficient for the use-case where a
+  //                lot of paragraphs are laid out _and_ rendered. To support
+  //                this use-case without blowing up memory usage we need this:
+  //                https://github.com/flutter/flutter/issues/81224
+  static SynchronousSkiaObjectCache _paragraphCache = SynchronousSkiaObjectCache(500);
+
+  /// Marks this paragraph as eligible for GC.
+  ///
+  /// Puts this paragraph in a [SynchronousSkiaObjectCache], which will delete it
+  /// if there memory pressure to do so. This protects our memory usage from
+  /// blowing up if within a single frame the framework needs to layout a lot of
+  /// paragraphs. One common use-case is `ListView.builder`, which needs to layout
+  /// more of its content than it actually renders to compute the scroll position.
+  void release() {
+    // If the paragraph is already in the cache, just mark it as most recently
+    // used. Otherwise, add to cache.
+    if (!_paragraphCache.markUsed(this)) {
+      _paragraphCache.add(this);
+    }
+  }
+
+  @override
+  void delete() {
     _skParagraph!.delete();
+  }
+
+  @override
+  void didDelete() {
     _skParagraph = null;
   }
 
@@ -713,7 +759,10 @@ class CkParagraph implements ui.Paragraph {
       return;
     }
     _ensureInitialized(constraints);
-    dispose();
+
+    // See class-level and _paragraphCache doc comments for why we're releasing
+    // the paragraph immediately after layout.
+    release();
   }
 
   @override
