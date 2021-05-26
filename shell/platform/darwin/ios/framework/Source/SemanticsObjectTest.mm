@@ -254,9 +254,10 @@ class MockAccessibilityBridge : public AccessibilityBridgeIos {
 
 - (void)testFlutterSwitchSemanticsObjectMatchesUISwitch {
   fml::WeakPtrFactory<flutter::MockAccessibilityBridge> factory(
-    new flutter::MockAccessibilityBridge());
+      new flutter::MockAccessibilityBridge());
   fml::WeakPtr<flutter::MockAccessibilityBridge> bridge = factory.GetWeakPtr();
-  FlutterSwitchSemanticsObject* object = [[FlutterSwitchSemanticsObject alloc] initWithBridge:bridge uid:1];
+  FlutterSwitchSemanticsObject* object = [[FlutterSwitchSemanticsObject alloc] initWithBridge:bridge
+                                                                                          uid:1];
 
   // Handle initial setting of node with header.
   flutter::SemanticsNode node;
