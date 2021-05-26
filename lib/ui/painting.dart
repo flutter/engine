@@ -3719,6 +3719,78 @@ class Gradient extends Shader {
   }
 }
 
+/// A shader (as used by [Paint.shader]) that runs provided SPIR-V code.
+/// 
+/// When initializing or updating the [floatUniforms], the length of float
+/// uniforms must match the total number of floats defined as uniforms in,
+/// the shader. They will be updated in the order that they are defined.
+/// 
+/// For example, if there are 3 uniforms: 1 of type float, 1 type float2/vec2,
+/// and 1 of type vec3/float3, then the length of [floatUniforms] must be 6.
+/// The uniforms could be updated as follows:
+/// 
+/// ```
+///   // GLSL fragment shader.
+///   uniform float a;
+///   uniform vec2 b;
+///   uniform vec3 c;
+/// 
+///   // Dart code to update uniforms.
+///   shader.update(floatUniforms: Float32List.fromList(1, 2, 3, 4, 5, 6));
+/// 
+///   // Results of shader uniforms.
+///   a: 1
+///   b: [2, 3]
+///   c: [4, 5, 6]
+/// ```
+class FragmentShader extends Shader {
+  @pragma('vm:entry-point')
+  /// Creates a fragment shader from SPIR-V byte data as an input.
+  /// 
+  /// The [floatUniforms] can be passed optionally to initialize the
+  /// shader's uniforms. If they are not initially set, they will default
+  /// to 0. They can later be updated by invoking the [update] method.
+  FragmentShader({
+    required ByteBuffer spirv,
+    Float32List? floatUniforms,
+    // TODO(clocksmith): Add `List<Shader> children` as a ? parameter.
+  }) :
+    super._() {
+      _constructor();
+      final spv.TranspileResult result = spv.transpile(spirv, spv.TargetLanguage.sksl);
+      _uniformFloatCount = result.uniformFloatCount;
+      _init(result.src);
+      // TODO(clocksmith): Pass children here.
+      update(floatUniforms: floatUniforms ?? Float32List(_uniformFloatCount));
+    }
+
+  late final int _uniformFloatCount;
+      
+  void _constructor() native 'FragmentShader_constructor';
+  void _init(String sksl) native 'FragmentShader_init';
+
+  /// Updates the uniform values that are supplied to the [FragmentShader]
+  /// and refreshes the shader.
+  /// 
+  /// The length of float uniforms must match the total number of
+  /// floats defined as uniforms in the shader. They will be updated
+  /// in the order that they are defined.
+  /// 
+  /// See [FragmentShader] for more information on passing uniforms.
+  void update({
+    required Float32List floatUniforms,
+    // TODO(clocksmith): Add `List<Shader> children` as a paramter.
+    // TODO(clocksmith): Change both params to ? and assert that
+    // at least one is non null.
+  }) {
+    assert(floatUniforms.length == _uniformFloatCount);
+    _update(floatUniforms);
+  }
+
+  // TODO(clocksmith): Add `List<Shader> children` as a paramter.
+  void _update(Float32List floatUniforms) native 'FragmentShader_update';
+}
+
 /// A shader (as used by [Paint.shader]) that tiles an image.
 class ImageShader extends Shader {
   /// Creates an image-tiling shader. The first argument specifies the image to
