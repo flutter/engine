@@ -107,6 +107,11 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
         }
         handler.binaryMessageHandler.onMessage(
             messageWithDirectness, new Reply(flutterJNI, replyId));
+        if (messageWithDirectness != null && messageWithDirectness.isDirect()) {
+          // This ensures that if a user retains an instance to the ByteBuffer and it happens to
+          // be direct they will get a deterministic error.
+          messageWithDirectness.limit(0);
+        }
       } catch (Exception ex) {
         Log.e(TAG, "Uncaught exception in binary message listener", ex);
         flutterJNI.invokePlatformMessageEmptyResponseCallback(replyId);
