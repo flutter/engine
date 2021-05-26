@@ -82,7 +82,7 @@ void testMain() {
     ), useSingle: false);
     expect(window.browserHistory, isA<MultiEntriesBrowserHistory>());
 
-    Future<void> check<T>(String method, dynamic arguments) async {
+    Future<void> check<T>(String method, Object? arguments) async {
       callback = Completer<void>();
       window.sendPlatformMessage(
         'flutter/navigation',
