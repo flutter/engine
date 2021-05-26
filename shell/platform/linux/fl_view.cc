@@ -6,13 +6,19 @@
 
 #include "flutter/shell/platform/linux/fl_view_private.h"
 
+#include <algorithm>
 #include <cstring>
+#include <map>
+#include <vector>
 
 #include "flutter/shell/platform/linux/fl_accessibility_plugin.h"
+#include "flutter/shell/platform/linux/fl_clipping_view.h"
 #include "flutter/shell/platform/linux/fl_engine_private.h"
+#include "flutter/shell/platform/linux/fl_gesture_helper.h"
 #include "flutter/shell/platform/linux/fl_key_event_plugin.h"
 #include "flutter/shell/platform/linux/fl_mouse_cursor_plugin.h"
 #include "flutter/shell/platform/linux/fl_platform_plugin.h"
+#include "flutter/shell/platform/linux/fl_platform_views_plugin.h"
 #include "flutter/shell/platform/linux/fl_plugin_registrar_private.h"
 #include "flutter/shell/platform/linux/fl_renderer_gl.h"
 #include "flutter/shell/platform/linux/fl_text_input_plugin.h"
@@ -43,23 +49,28 @@ struct _FlView {
   FlMouseCursorPlugin* mouse_cursor_plugin;
   FlPlatformPlugin* platform_plugin;
   FlTextInputPlugin* text_input_plugin;
+  FlPlatformViewsPlugin* platform_views_plugin;
+
+  FlGestureHelper* gesture_helper;
 
   GList* gl_area_list;
   GList* used_area_list;
 
+  // FlClippingView keyed by GtkWidget
+  GHashTable* current_clipping_views;
+  // FlClippingView keyed by GtkWidget
+  GHashTable* last_clipping_views;
+
   GtkWidget* event_box;
 
+  // GtkWidgets currently on screen.
   GList* children_list;
+  // GtkWidgets on screen in next frame.
   GList* pending_children_list;
 
   // Tracks whether mouse pointer is inside the view.
   gboolean pointer_inside;
 };
-
-typedef struct _FlViewChild {
-  GtkWidget* widget;
-  GdkRectangle geometry;
-} FlViewChild;
 
 enum { PROP_FLUTTER_PROJECT = 1, PROP_LAST };
 
@@ -189,6 +200,8 @@ static void fl_view_constructed(GObject* object) {
 
   self->renderer = FL_RENDERER(fl_renderer_gl_new());
   self->engine = fl_engine_new(self->project, self->renderer);
+  self->gesture_helper = fl_gesture_helper_new();
+
   fl_engine_set_update_semantics_node_handler(
       self->engine, fl_view_update_semantics_node_cb, self, nullptr);
 
@@ -200,6 +213,13 @@ static void fl_view_constructed(GObject* object) {
       fl_key_event_plugin_new(messenger, self->text_input_plugin);
   self->mouse_cursor_plugin = fl_mouse_cursor_plugin_new(messenger, self);
   self->platform_plugin = fl_platform_plugin_new(messenger);
+  self->platform_views_plugin =
+      fl_platform_views_plugin_new(messenger, self->gesture_helper);
+
+  self->current_clipping_views = g_hash_table_new_full(
+      g_direct_hash, g_direct_equal, nullptr, g_object_unref);
+  self->last_clipping_views = g_hash_table_new_full(
+      g_direct_hash, g_direct_equal, nullptr, g_object_unref);
 
   self->event_box = gtk_event_box_new();
   gtk_widget_set_parent(self->event_box, GTK_WIDGET(self));
@@ -284,8 +304,15 @@ static void fl_view_dispose(GObject* object) {
   g_clear_object(&self->mouse_cursor_plugin);
   g_clear_object(&self->platform_plugin);
   g_clear_object(&self->text_input_plugin);
+  g_clear_object(&self->platform_views_plugin);
+  g_clear_object(&self->gesture_helper);
   g_list_free_full(self->gl_area_list, g_object_unref);
   self->gl_area_list = nullptr;
+
+  g_clear_pointer(&self->children_list, g_list_free);
+  g_clear_pointer(&self->pending_children_list, g_list_free);
+  g_clear_pointer(&self->current_clipping_views, g_hash_table_unref);
+  g_clear_pointer(&self->last_clipping_views, g_hash_table_unref);
 
   G_OBJECT_CLASS(fl_view_parent_class)->dispose(object);
 }
@@ -327,52 +354,6 @@ static void fl_view_realize(GtkWidget* widget) {
   }
 }
 
-static void fl_view_get_preferred_width(GtkWidget* widget,
-                                        gint* minimum,
-                                        gint* natural) {
-  FlView* self = FL_VIEW(widget);
-  gint child_min, child_nat;
-
-  *minimum = 0;
-  *natural = 0;
-
-  for (GList* iterator = self->children_list; iterator;
-       iterator = iterator->next) {
-    FlViewChild* child = reinterpret_cast<FlViewChild*>(iterator->data);
-
-    if (!gtk_widget_get_visible(child->widget))
-      continue;
-
-    gtk_widget_get_preferred_width(child->widget, &child_min, &child_nat);
-
-    *minimum = MAX(*minimum, child->geometry.x + child_min);
-    *natural = MAX(*natural, child->geometry.x + child_nat);
-  }
-}
-
-static void fl_view_get_preferred_height(GtkWidget* widget,
-                                         gint* minimum,
-                                         gint* natural) {
-  FlView* self = FL_VIEW(widget);
-  gint child_min, child_nat;
-
-  *minimum = 0;
-  *natural = 0;
-
-  for (GList* iterator = self->children_list; iterator;
-       iterator = iterator->next) {
-    FlViewChild* child = reinterpret_cast<FlViewChild*>(iterator->data);
-
-    if (!gtk_widget_get_visible(child->widget))
-      continue;
-
-    gtk_widget_get_preferred_height(child->widget, &child_min, &child_nat);
-
-    *minimum = MAX(*minimum, child->geometry.y + child_min);
-    *natural = MAX(*natural, child->geometry.y + child_nat);
-  }
-}
-
 // Implements GtkWidget::size-allocate.
 static void fl_view_size_allocate(GtkWidget* widget,
                                   GtkAllocation* allocation) {
@@ -387,35 +368,29 @@ static void fl_view_size_allocate(GtkWidget* widget,
                              allocation->height);
   }
 
-  for (GList* iterator = self->children_list; iterator;
-       iterator = iterator->next) {
-    FlViewChild* child = reinterpret_cast<FlViewChild*>(iterator->data);
-    if (!gtk_widget_get_visible(child->widget))
-      continue;
-
-    GtkAllocation child_allocation = child->geometry;
-    GtkRequisition child_requisition;
-    gtk_widget_get_preferred_size(child->widget, &child_requisition, NULL);
-
-    if (!gtk_widget_get_has_window(widget)) {
-      child_allocation.x += allocation->x;
-      child_allocation.y += allocation->y;
-    }
-
-    if (child_allocation.width == 0 && child_allocation.height == 0) {
-      child_allocation.width = allocation->width;
-      child_allocation.height = allocation->height;
-    }
-
-    gtk_widget_size_allocate(child->widget, &child_allocation);
-  }
-
-  GtkAllocation event_box_allocation = {
+  GtkAllocation default_child_allocation = {
       .x = 0,
       .y = 0,
       .width = allocation->width,
       .height = allocation->height,
   };
+
+  for (GList* iterator = self->children_list; iterator;
+       iterator = iterator->next) {
+    GtkWidget* child = reinterpret_cast<GtkWidget*>(iterator->data);
+    if (!gtk_widget_get_visible(child))
+      continue;
+
+    GtkAllocation child_allocation = default_child_allocation;
+    if (!gtk_widget_get_has_window(widget)) {
+      child_allocation.x += allocation->x;
+      child_allocation.y += allocation->y;
+    }
+
+    gtk_widget_size_allocate(child, &child_allocation);
+  }
+
+  GtkAllocation event_box_allocation = default_child_allocation;
   if (!gtk_widget_get_has_window(self->event_box)) {
     event_box_allocation.x += allocation->x;
     event_box_allocation.y += allocation->y;
@@ -450,6 +425,9 @@ static gboolean event_box_button_press_event(GtkWidget* widget,
     return FALSE;
   }
 
+  fl_gesture_helper_button_press(view->gesture_helper,
+                                 reinterpret_cast<GdkEvent*>(event));
+
   if (!gtk_widget_has_focus(GTK_WIDGET(view))) {
     gtk_widget_grab_focus(GTK_WIDGET(view));
   }
@@ -460,6 +438,8 @@ static gboolean event_box_button_press_event(GtkWidget* widget,
 static gboolean event_box_button_release_event(GtkWidget* widget,
                                                GdkEventButton* event,
                                                FlView* view) {
+  fl_gesture_helper_button_release(view->gesture_helper,
+                                   reinterpret_cast<GdkEvent*>(event));
   return fl_view_send_pointer_button_event(view, event);
 }
 
@@ -482,6 +462,9 @@ static gboolean event_box_scroll_event(GtkWidget* widget,
     // https://github.com/flutter/flutter/issues/73823
     return FALSE;
   }
+
+  fl_gesture_helper_scroll(view->gesture_helper,
+                           reinterpret_cast<GdkEvent*>(event));
 
   // The multiplier is taken from the Chromium source
   // (ui/events/x/events_x_utils.cc).
@@ -523,6 +506,9 @@ static gboolean event_box_motion_notify_event(GtkWidget* widget,
   }
 
   check_pointer_inside(view, reinterpret_cast<GdkEvent*>(event));
+
+  fl_gesture_helper_button_motion(view->gesture_helper,
+                                  reinterpret_cast<GdkEvent*>(event));
 
   gint scale_factor = gtk_widget_get_scale_factor(GTK_WIDGET(view));
   fl_engine_send_mouse_pointer_event(
@@ -582,39 +568,24 @@ static gboolean fl_view_key_release_event(GtkWidget* widget,
   return fl_key_event_plugin_send_key_event(self->key_event_plugin, event);
 }
 
-static void fl_view_put(FlView* self,
-                        GtkWidget* widget,
-                        GdkRectangle* geometry) {
-  FlViewChild* child = g_new(FlViewChild, 1);
-  child->widget = widget;
-  child->geometry = *geometry;
-
+static void fl_view_put(FlView* self, GtkWidget* widget) {
   gtk_widget_set_parent(widget, GTK_WIDGET(self));
-  self->children_list = g_list_append(self->children_list, child);
+  self->children_list = g_list_append(self->children_list, widget);
 }
 
 static void fl_view_add(GtkContainer* container, GtkWidget* widget) {
-  GdkRectangle geometry = {
-      .x = 0,
-      .y = 0,
-      .width = 0,
-      .height = 0,
-  };
-  fl_view_put(FL_VIEW(container), widget, &geometry);
+  fl_view_put(FL_VIEW(container), widget);
 }
 
 static void fl_view_remove(GtkContainer* container, GtkWidget* widget) {
   FlView* self = FL_VIEW(container);
   for (GList* iterator = self->children_list; iterator;
        iterator = iterator->next) {
-    FlViewChild* child = reinterpret_cast<FlViewChild*>(iterator->data);
-    if (child->widget == widget) {
-      g_object_ref(widget);
+    GtkWidget* child = reinterpret_cast<GtkWidget*>(iterator->data);
+    if (child == widget) {
+      g_object_ref(widget);  // children_list does not own widgets.
       gtk_widget_unparent(widget);
-      self->children_list = g_list_remove_link(self->children_list, iterator);
-      g_list_free(iterator);
-      g_free(child);
-
+      self->children_list = g_list_delete_link(self->children_list, iterator);
       break;
     }
   }
@@ -631,8 +602,8 @@ static void fl_view_forall(GtkContainer* container,
   FlView* self = FL_VIEW(container);
   for (GList* iterator = self->children_list; iterator;
        iterator = iterator->next) {
-    FlViewChild* child = reinterpret_cast<FlViewChild*>(iterator->data);
-    (*callback)(child->widget, callback_data);
+    GtkWidget* child = reinterpret_cast<GtkWidget*>(iterator->data);
+    (*callback)(child, callback_data);
   }
 
   if (include_internals) {
@@ -666,8 +637,6 @@ static void fl_view_class_init(FlViewClass* klass) {
 
   GtkWidgetClass* widget_class = GTK_WIDGET_CLASS(klass);
   widget_class->realize = fl_view_realize;
-  widget_class->get_preferred_width = fl_view_get_preferred_width;
-  widget_class->get_preferred_height = fl_view_get_preferred_height;
   widget_class->size_allocate = fl_view_size_allocate;
   widget_class->key_press_event = fl_view_key_press_event;
   widget_class->key_release_event = fl_view_key_release_event;
@@ -706,25 +675,20 @@ G_MODULE_EXPORT FlEngine* fl_view_get_engine(FlView* view) {
   return view->engine;
 }
 
+FlPlatformViewsPlugin* fl_view_get_platform_views_plugin(FlView* self) {
+  g_return_val_if_fail(FL_IS_VIEW(self), FALSE);
+  return self->platform_views_plugin;
+}
+
 void fl_view_begin_frame(FlView* view) {
   g_return_if_fail(FL_IS_VIEW(view));
   FlView* self = FL_VIEW(view);
 
   self->used_area_list = self->gl_area_list;
-  g_list_free_full(self->pending_children_list, g_free);
-  self->pending_children_list = nullptr;
+  g_clear_pointer(&self->pending_children_list, g_list_free);
 }
 
-static void fl_view_add_pending_child(FlView* self,
-                                      GtkWidget* widget,
-                                      GdkRectangle* geometry) {
-  FlViewChild* child = g_new(FlViewChild, 1);
-  child->widget = widget;
-  if (geometry)
-    child->geometry = *geometry;
-  else
-    child->geometry = {0, 0, 0, 0};
-
+static void fl_view_add_pending_child(FlView* self, GtkWidget* child) {
   self->pending_children_list =
       g_list_append(self->pending_children_list, child);
 }
@@ -744,64 +708,65 @@ void fl_view_add_gl_area(FlView* view,
   }
 
   gtk_widget_show(GTK_WIDGET(area));
-  fl_view_add_pending_child(view, GTK_WIDGET(area), nullptr);
+  fl_view_add_pending_child(view, GTK_WIDGET(area));
   fl_gl_area_queue_render(area, texture);
 }
 
 void fl_view_add_widget(FlView* view,
                         GtkWidget* widget,
-                        GdkRectangle* geometry) {
-  gtk_widget_show(widget);
-  fl_view_add_pending_child(view, widget, geometry);
-}
-
-GList* find_child(GList* list, GtkWidget* widget) {
-  for (GList* i = list; i; i = i->next) {
-    FlViewChild* child = reinterpret_cast<FlViewChild*>(i->data);
-    if (child && child->widget == widget)
-      return i;
+                        GdkRectangle* geometry,
+                        GPtrArray* mutations) {
+  FlClippingView* clipping_view;
+  if (g_hash_table_contains(view->last_clipping_views, widget)) {
+    clipping_view = reinterpret_cast<FlClippingView*>(
+        g_hash_table_lookup(view->last_clipping_views, widget));
+    g_hash_table_steal(view->last_clipping_views, widget);
+  } else {
+    clipping_view = FL_CLIPPING_VIEW(fl_clipping_view_new());
   }
-  return nullptr;
+  g_hash_table_insert(view->current_clipping_views, widget, clipping_view);
+  fl_clipping_view_reset(clipping_view, widget, geometry, mutations);
+
+  gtk_widget_show_all(GTK_WIDGET(clipping_view));
+  fl_view_add_pending_child(view, GTK_WIDGET(clipping_view));
 }
 
-void fl_view_end_frame(FlView* view) {
-  for (GList* pending_child = view->pending_children_list; pending_child;
+void fl_view_end_frame(FlView* self) {
+  for (GList* pending_child = self->pending_children_list; pending_child;
        pending_child = pending_child->next) {
-    FlViewChild* pending_view_child =
-        reinterpret_cast<FlViewChild*>(pending_child->data);
-    GList* child = find_child(view->children_list, pending_view_child->widget);
-
+    GtkWidget* pending_view_child =
+        reinterpret_cast<GtkWidget*>(pending_child->data);
+    GList* child = g_list_find(self->children_list, pending_view_child);
     if (child) {
       // existing child
-      g_free(child->data);
-      child->data = nullptr;
+      // We remove existing children in children_list, so children_list will
+      // finally contains all children to be removed.
+      self->children_list = g_list_delete_link(self->children_list, child);
     } else {
       // newly added child
-      gtk_widget_set_parent(pending_view_child->widget, GTK_WIDGET(view));
+      gtk_widget_set_parent(pending_view_child, GTK_WIDGET(self));
     }
   }
 
-  for (GList* child = view->children_list; child; child = child->next) {
-    FlViewChild* view_child = reinterpret_cast<FlViewChild*>(child->data);
-    if (view_child) {
-      // removed child
-      g_object_ref(view_child->widget);
-      gtk_widget_unparent(view_child->widget);
-      g_free(view_child);
-      child->data = nullptr;
-    }
+  for (GList* child = self->children_list; child; child = child->next) {
+    GtkWidget* view_child = reinterpret_cast<GtkWidget*>(child->data);
+    // removed child
+    g_object_ref(view_child);
+    gtk_widget_unparent(view_child);
   }
 
-  g_list_free(view->children_list);
-  view->children_list = view->pending_children_list;
-  view->pending_children_list = nullptr;
+  g_clear_pointer(&self->children_list, g_list_free);
+  std::swap(self->children_list, self->pending_children_list);
+
+  g_hash_table_remove_all(self->last_clipping_views);
+  std::swap(self->last_clipping_views, self->current_clipping_views);
 
   struct _ReorderData data = {
-      .parent_window = gtk_widget_get_window(GTK_WIDGET(view)),
+      .parent_window = gtk_widget_get_window(GTK_WIDGET(self)),
       .last_window = nullptr,
   };
 
-  gtk_container_forall(GTK_CONTAINER(view), fl_view_reorder_forall, &data);
+  gtk_container_forall(GTK_CONTAINER(self), fl_view_reorder_forall, &data);
 
-  gtk_widget_queue_draw(GTK_WIDGET(view));
+  gtk_widget_queue_draw(GTK_WIDGET(self));
 }

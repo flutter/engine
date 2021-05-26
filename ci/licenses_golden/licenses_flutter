@@ -1451,6 +1451,8 @@ FILE: ../../../flutter/shell/platform/linux/fl_binary_codec_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_binary_messenger.cc
 FILE: ../../../flutter/shell/platform/linux/fl_binary_messenger_private.h
 FILE: ../../../flutter/shell/platform/linux/fl_binary_messenger_test.cc
+FILE: ../../../flutter/shell/platform/linux/fl_clipping_view.cc
+FILE: ../../../flutter/shell/platform/linux/fl_clipping_view.h
 FILE: ../../../flutter/shell/platform/linux/fl_dart_project.cc
 FILE: ../../../flutter/shell/platform/linux/fl_dart_project_private.h
 FILE: ../../../flutter/shell/platform/linux/fl_dart_project_test.cc
@@ -1459,6 +1461,8 @@ FILE: ../../../flutter/shell/platform/linux/fl_engine_private.h
 FILE: ../../../flutter/shell/platform/linux/fl_engine_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_event_channel.cc
 FILE: ../../../flutter/shell/platform/linux/fl_event_channel_test.cc
+FILE: ../../../flutter/shell/platform/linux/fl_gesture_helper.cc
+FILE: ../../../flutter/shell/platform/linux/fl_gesture_helper.h
 FILE: ../../../flutter/shell/platform/linux/fl_gl_area.cc
 FILE: ../../../flutter/shell/platform/linux/fl_gl_area.h
 FILE: ../../../flutter/shell/platform/linux/fl_json_message_codec.cc
@@ -1485,6 +1489,11 @@ FILE: ../../../flutter/shell/platform/linux/fl_mouse_cursor_plugin.cc
 FILE: ../../../flutter/shell/platform/linux/fl_mouse_cursor_plugin.h
 FILE: ../../../flutter/shell/platform/linux/fl_platform_plugin.cc
 FILE: ../../../flutter/shell/platform/linux/fl_platform_plugin.h
+FILE: ../../../flutter/shell/platform/linux/fl_platform_views.cc
+FILE: ../../../flutter/shell/platform/linux/fl_platform_views_plugin.cc
+FILE: ../../../flutter/shell/platform/linux/fl_platform_views_plugin.h
+FILE: ../../../flutter/shell/platform/linux/fl_platform_views_plugin_test.cc
+FILE: ../../../flutter/shell/platform/linux/fl_platform_views_private.h
 FILE: ../../../flutter/shell/platform/linux/fl_plugin_registrar.cc
 FILE: ../../../flutter/shell/platform/linux/fl_plugin_registrar_private.h
 FILE: ../../../flutter/shell/platform/linux/fl_plugin_registry.cc
@@ -1526,6 +1535,7 @@ FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_method_call.
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_method_channel.h
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_method_codec.h
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_method_response.h
+FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_platform_views.h
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_plugin_registrar.h
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_plugin_registry.h
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_standard_message_codec.h

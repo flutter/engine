@@ -54,15 +54,6 @@ struct _FlRendererClass {
                               GError** error);
 
   /**
-   * Virtual method called when Flutter needs OpenGL proc address.
-   * @renderer: an #FlRenderer.
-   * @name: proc name.
-   *
-   * Returns: OpenGL proc address.
-   */
-  void* (*get_proc_address)();
-
-  /**
    * Virtual method called when Flutter needs a backing store for a specific
    * #FlutterLayer.
    * @renderer: an #FlRenderer.
