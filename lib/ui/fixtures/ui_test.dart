@@ -10,6 +10,23 @@ import 'dart:ui';
 void main() {}
 
 @pragma('vm:entry-point')
+Future<void> createSingleFrameCodec() async {
+  final ImmutableBuffer buffer = await ImmutableBuffer.fromUint8List(Uint8List.fromList(List<int>.filled(4, 100)));
+  final ImageDescriptor descriptor = ImageDescriptor.raw(
+    buffer,
+    width: 1,
+    height: 1,
+    pixelFormat: PixelFormat.rgba8888,
+  );
+  final Codec codec = await descriptor.instantiateCodec();
+  _validateCodec(codec);
+  codec.dispose();
+  descriptor.dispose();
+  buffer.dispose();
+}
+void _validateCodec(Codec codec) native 'ValidateCodec';
+
+@pragma('vm:entry-point')
 void createVertices() {
   const int uint16max = 65535;
 
