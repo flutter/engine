@@ -421,9 +421,7 @@ class SemanticsObject {
   String? get label => _label;
   String? _label;
 
-  /// The String attributes carried by the [label].
-  ///
-  /// The list content must not be changed.
+  /// See [ui.SemanticsUpdateBuilder.updateNode]
   List<ui.StringAttribute>? get labelAttributes => _labelAttributes;
   List<ui.StringAttribute>? _labelAttributes;
 
@@ -443,9 +441,7 @@ class SemanticsObject {
   String? get hint => _hint;
   String? _hint;
 
-  /// The String attributes carried by the [hint].
-  ///
-  /// The list content must not be changed.
+  /// See [ui.SemanticsUpdateBuilder.updateNode]
   List<ui.StringAttribute>? get hintAttributes => _hintAttributes;
   List<ui.StringAttribute>? _hintAttributes;
 
@@ -462,9 +458,7 @@ class SemanticsObject {
   String? get value => _value;
   String? _value;
 
-  /// The String attributes carried by the [value].
-  ///
-  /// The list content must not be changed.
+  /// See [ui.SemanticsUpdateBuilder.updateNode]
   List<ui.StringAttribute>? get valueAttributes => _valueAttributes;
   List<ui.StringAttribute>? _valueAttributes;
 
@@ -484,9 +478,7 @@ class SemanticsObject {
   String? get increasedValue => _increasedValue;
   String? _increasedValue;
 
-  /// The String attributes carried by the [increasedValue].
-  ///
-  /// The list content must not be changed.
+  /// See [ui.SemanticsUpdateBuilder.updateNode]
   List<ui.StringAttribute>? get increasedValueAttributes => _increasedValueAttributes;
   List<ui.StringAttribute>? _increasedValueAttributes;
 
@@ -503,9 +495,7 @@ class SemanticsObject {
   String? get decreasedValue => _decreasedValue;
   String? _decreasedValue;
 
-  /// The String attributes carried by the [decreasedValue].
-  ///
-  /// The list content must not be changed.
+  /// See [ui.SemanticsUpdateBuilder.updateNode]
   List<ui.StringAttribute>? get decreasedValueAttributes => _decreasedValueAttributes;
   List<ui.StringAttribute>? _decreasedValueAttributes;
 

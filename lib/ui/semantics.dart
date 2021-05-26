@@ -788,6 +788,12 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   /// string describes what result an action performed on this node has. The
   /// reading direction of all these strings is given by `textDirection`.
   ///
+  /// The `labelAttirbutes`, `valueAttirbutes`, `hintAttributes`,
+  /// `increasedValueAttirbutes`, and `decreasedValueAttributes` are the lists of
+  /// [StringAttribute] carried by the `label`, `value`, `hint`, `increasedValue`,
+  /// and `decreasedValue` respectively. Their contents must not be changed during
+  /// the semantics update.
+  ///
   /// The fields `textSelectionBase` and `textSelectionExtent` describe the
   /// currently selected text within `value`. A value of -1 indicates no
   /// current text selection base or extent.
