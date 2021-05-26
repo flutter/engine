@@ -432,7 +432,8 @@ public class PlayStoreDeferredComponentManager implements DeferredComponentManag
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
       // The initial installed apks are provided by `sourceDirs` in ApplicationInfo.
       // The jniLibs we want are in the splits not the baseDir. These
-      // APKs are only searched as a fallback.
+      // APKs are only searched as a fallback, as base libs generally do not need
+      // to be fully path referenced.
       for (String path : context.getApplicationInfo().splitSourceDirs) {
         searchFiles.add(new File(path));
       }
