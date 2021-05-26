@@ -107,11 +107,4 @@ Dart_Handle SingleFrameCodec::getNextFrame(Dart_Handle callback_handle) {
   return Dart_Null();
 }
 
-size_t SingleFrameCodec::GetAllocationSize() const {
-  const auto& data_size = descriptor_->GetAllocationSize();
-  const auto frame_byte_size =
-      cached_image_ ? cached_image_->GetAllocationSize() : 0;
-  return data_size + frame_byte_size + sizeof(this);
-}
-
 }  // namespace flutter
