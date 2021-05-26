@@ -23,8 +23,10 @@ Future<void> createSingleFrameCodec() async {
   codec.dispose();
   descriptor.dispose();
   buffer.dispose();
+  _finish();
 }
 void _validateCodec(Codec codec) native 'ValidateCodec';
+void _finish() native 'Finish';
 
 @pragma('vm:entry-point')
 void createVertices() {
