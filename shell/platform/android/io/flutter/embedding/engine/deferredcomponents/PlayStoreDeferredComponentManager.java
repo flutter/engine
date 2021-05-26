@@ -425,18 +425,29 @@ public class PlayStoreDeferredComponentManager implements DeferredComponentManag
     List<String> apkPaths = new ArrayList<>();
     // If not found in APKs, we check in extracted native libs for the lib directly.
     List<String> soPaths = new ArrayList<>();
+
     Queue<File> searchFiles = new LinkedList<>();
+    // Downloaded modules are stored here
     searchFiles.add(context.getFilesDir());
+    // The initial installed apks are provided by `sourceDirs` in ApplicationInfo.
+    // The jniLibs we want are in the splits not the baseDir. These
+    // APKs are only searched as a fallback.
+    for (String path : context.getApplicationInfo().splitSourceDirs) {
+      searchFiles.add(new File(path));
+    }
+
     while (!searchFiles.isEmpty()) {
       File file = searchFiles.remove();
-      if (file != null && file.isDirectory()) {
+      if (file != null && file.isDirectory() && file.listFiles() != null) {
         for (File f : file.listFiles()) {
           searchFiles.add(f);
         }
         continue;
       }
       String name = file.getName();
-      if (name.endsWith(".apk") && name.startsWith(componentName) && name.contains(pathAbi)) {
+      if (name.endsWith(".apk")
+          && (name.startsWith(componentName) || name.startsWith("split_config"))
+          && name.contains(pathAbi)) {
         apkPaths.add(file.getAbsolutePath());
         continue;
       }
@@ -459,7 +470,7 @@ public class PlayStoreDeferredComponentManager implements DeferredComponentManag
     }
 
     flutterJNI.loadDartDeferredLibrary(
-        loadingUnitId, searchPaths.toArray(new String[apkPaths.size()]));
+        loadingUnitId, searchPaths.toArray(new String[searchPaths.size()]));
   }
 
   public boolean uninstallDeferredComponent(int loadingUnitId, String componentName) {
