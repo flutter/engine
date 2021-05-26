@@ -102,6 +102,8 @@ Engine::Engine(Delegate& delegate,
   // refs are not copyable, and multiple consumers need view refs.
   fuchsia::ui::views::ViewRef platform_view_ref;
   view_ref_pair.view_ref.Clone(&platform_view_ref);
+  fuchsia::ui::views::ViewRef accessibility_bridge_view_ref;
+  view_ref_pair.view_ref.Clone(&accessibility_bridge_view_ref);
   fuchsia::ui::views::ViewRef isolate_view_ref;
   view_ref_pair.view_ref.Clone(&isolate_view_ref);
   // Input3 keyboard listener registration requires a ViewRef as an event
@@ -171,12 +173,36 @@ Engine::Engine(Delegate& delegate,
   environment->GetServices(parent_environment_service_provider.NewRequest());
   environment.Unbind();
 
+  AccessibilityBridge::SetSemanticsEnabledCallback
+      set_semantics_enabled_callback = [this](bool enabled) {
+        auto platform_view = shell_->GetPlatformView();
+
+        if (platform_view) {
+          platform_view->SetSemanticsEnabled(enabled);
+        }
+      };
+
+  AccessibilityBridge::DispatchSemanticsActionCallback
+      dispatch_semantics_action_callback =
+          [this](int32_t node_id, flutter::SemanticsAction action) {
+            auto platform_view = shell_->GetPlatformView();
+
+            if (platform_view) {
+              platform_view->DispatchSemanticsAction(node_id, action, {});
+            }
+          };
+
+  accessibility_bridge_ = std::make_unique<AccessibilityBridge>(
+      std::move(set_semantics_enabled_callback),
+      std::move(dispatch_semantics_action_callback), svc,
+      std::move(accessibility_bridge_view_ref));
+
   OnEnableWireframe on_enable_wireframe_callback = std::bind(
       &Engine::DebugWireframeSettingsChanged, this, std::placeholders::_1);
 
   OnCreateView on_create_view_callback = std::bind(
       &Engine::CreateView, this, std::placeholders::_1, std::placeholders::_2,
-      std::placeholders::_3, std::placeholders::_4);
+      std::placeholders::_3, std::placeholders::_4, std::placeholders::_5);
 
   OnUpdateView on_update_view_callback = std::bind(
       &Engine::UpdateView, this, std::placeholders::_1, std::placeholders::_2,
@@ -227,6 +253,16 @@ Engine::Engine(Delegate& delegate,
   keyboard_svc_->AddListener(std::move(keyboard_view_ref),
                              keyboard_listener.Bind(), [] {});
 
+  OnSemanticsNodeUpdate on_semantics_node_update_callback =
+      [this](flutter::SemanticsNodeUpdates updates, float pixel_ratio) {
+        accessibility_bridge_->AddSemanticsNodeUpdate(updates, pixel_ratio);
+      };
+
+  OnRequestAnnounce on_request_announce_callback =
+      [this](const std::string& message) {
+        accessibility_bridge_->RequestAnnounce(message);
+      };
+
   // Setup the callback that will instantiate the platform view.
   flutter::Shell::CreateCallback<flutter::PlatformView>
       on_create_platform_view = fml::MakeCopyable(
@@ -244,6 +280,10 @@ Engine::Engine(Delegate& delegate,
            on_update_view_callback = std::move(on_update_view_callback),
            on_destroy_view_callback = std::move(on_destroy_view_callback),
            on_create_surface_callback = std::move(on_create_surface_callback),
+           on_semantics_node_update_callback =
+               std::move(on_semantics_node_update_callback),
+           on_request_announce_callback =
+               std::move(on_request_announce_callback),
            external_view_embedder = GetExternalViewEmbedder(),
            keyboard_listener_request = std::move(keyboard_listener_request),
            await_vsync_callback =
@@ -271,7 +311,9 @@ Engine::Engine(Delegate& delegate,
                 std::move(on_create_view_callback),
                 std::move(on_update_view_callback),
                 std::move(on_destroy_view_callback),
-                std::move(on_create_surface_callback), external_view_embedder,
+                std::move(on_create_surface_callback),
+                std::move(on_semantics_node_update_callback),
+                std::move(on_request_announce_callback), external_view_embedder,
                 // Callbacks for VsyncWaiter to call into SessionConnection.
                 await_vsync_callback,
                 await_vsync_for_secondary_callback_callback);
@@ -584,6 +626,7 @@ void Engine::DebugWireframeSettingsChanged(bool enabled) {
 }
 
 void Engine::CreateView(int64_t view_id,
+                        ViewCallback on_view_created,
                         ViewIdCallback on_view_bound,
                         bool hit_testable,
                         bool focusable) {
@@ -591,18 +634,20 @@ void Engine::CreateView(int64_t view_id,
 
   shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask(
       [this, view_id, hit_testable, focusable,
+       on_view_created = std::move(on_view_created),
        on_view_bound = std::move(on_view_bound)]() {
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
         if (use_legacy_renderer_) {
           FML_CHECK(legacy_external_view_embedder_);
           legacy_external_view_embedder_->CreateView(
-              view_id, std::move(on_view_bound), hit_testable, focusable);
+              view_id, std::move(on_view_created), std::move(on_view_bound),
+              hit_testable, focusable);
         } else
 #endif
         {
           FML_CHECK(external_view_embedder_);
-          external_view_embedder_->CreateView(view_id,
-                                              std::move(on_view_bound));
+          external_view_embedder_->CreateView(
+              view_id, std::move(on_view_created), std::move(on_view_bound));
           external_view_embedder_->SetViewProperties(
               view_id, SkRect::MakeEmpty(), hit_testable, focusable);
         }
