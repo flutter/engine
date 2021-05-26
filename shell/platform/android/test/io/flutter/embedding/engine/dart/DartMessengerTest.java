@@ -1,11 +1,14 @@
 package io.flutter.embedding.engine.dart;
 
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 
 import io.flutter.embedding.engine.FlutterJNI;
+import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.BinaryMessenger.BinaryMessageHandler;
 import java.nio.ByteBuffer;
 import org.junit.Test;
@@ -50,5 +53,75 @@ public class DartMessengerTest {
     assertNotNull(reportingHandler.latestException);
     assertTrue(reportingHandler.latestException instanceof AssertionError);
     currentThread.setUncaughtExceptionHandler(savedHandler);
+  }
+
+  @Test
+  public void givesIndirectByteBuffer() {
+    // Setup test.
+    final FlutterJNI fakeFlutterJni = mock(FlutterJNI.class);
+    final DartMessenger messenger = new DartMessenger(fakeFlutterJni);
+    final String channel = "foobar";
+    final boolean[] wasDirect = {true};
+    final BinaryMessenger.BinaryMessageHandler handler =
+        (message, reply) -> {
+          wasDirect[0] = message.isDirect();
+        };
+    messenger.setMessageHandler(channel, handler, /*wantsDirectByteBufferForDecoding=*/ false);
+    final ByteBuffer message = ByteBuffer.allocateDirect(4 * 2);
+    message.rewind();
+    message.putChar('a');
+    message.putChar('b');
+    message.putChar('c');
+    message.putChar('d');
+    messenger.handleMessageFromDart(channel, message, /*replyId=*/ 123);
+    assertFalse(wasDirect[0]);
+  }
+
+  @Test
+  public void givesDirectByteBuffer() {
+    // Setup test.
+    final FlutterJNI fakeFlutterJni = mock(FlutterJNI.class);
+    final DartMessenger messenger = new DartMessenger(fakeFlutterJni);
+    final String channel = "foobar";
+    final boolean[] wasDirect = {false};
+    final BinaryMessenger.BinaryMessageHandler handler =
+        (message, reply) -> {
+          wasDirect[0] = message.isDirect();
+        };
+    messenger.setMessageHandler(channel, handler, /*wantsDirectByteBufferForDecoding=*/ true);
+    final ByteBuffer message = ByteBuffer.allocateDirect(4 * 2);
+    message.rewind();
+    message.putChar('a');
+    message.putChar('b');
+    message.putChar('c');
+    message.putChar('d');
+    messenger.handleMessageFromDart(channel, message, /*replyId=*/ 123);
+    assertTrue(wasDirect[0]);
+  }
+
+  @Test
+  public void directByteBufferLimitZeroAfterUsage() {
+    // Setup test.
+    final FlutterJNI fakeFlutterJni = mock(FlutterJNI.class);
+    final DartMessenger messenger = new DartMessenger(fakeFlutterJni);
+    final String channel = "foobar";
+    final ByteBuffer[] byteBuffers = {null};
+    final int bufferSize = 4 * 2;
+    final BinaryMessenger.BinaryMessageHandler handler =
+        (message, reply) -> {
+          byteBuffers[0] = message;
+          assertEquals(bufferSize, byteBuffers[0].limit());
+        };
+    messenger.setMessageHandler(channel, handler, /*wantsDirectByteBufferForDecoding=*/ true);
+    final ByteBuffer message = ByteBuffer.allocateDirect(bufferSize);
+    message.rewind();
+    message.putChar('a');
+    message.putChar('b');
+    message.putChar('c');
+    message.putChar('d');
+    messenger.handleMessageFromDart(channel, message, /*replyId=*/ 123);
+    assertNotNull(byteBuffers[0]);
+    assertTrue(byteBuffers[0].isDirect());
+    assertEquals(0, byteBuffers[0].limit());
   }
 }
