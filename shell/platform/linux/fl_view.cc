@@ -13,6 +13,7 @@
 #include "flutter/shell/platform/linux/fl_key_event_plugin.h"
 #include "flutter/shell/platform/linux/fl_mouse_cursor_plugin.h"
 #include "flutter/shell/platform/linux/fl_platform_plugin.h"
+#include "flutter/shell/platform/linux/fl_platform_views_plugin.h"
 #include "flutter/shell/platform/linux/fl_plugin_registrar_private.h"
 #include "flutter/shell/platform/linux/fl_renderer_gl.h"
 #include "flutter/shell/platform/linux/fl_text_input_plugin.h"
@@ -43,13 +44,16 @@ struct _FlView {
   FlMouseCursorPlugin* mouse_cursor_plugin;
   FlPlatformPlugin* platform_plugin;
   FlTextInputPlugin* text_input_plugin;
+  FlPlatformViewsPlugin* platform_views_plugin;
 
   GList* gl_area_list;
   GList* used_area_list;
 
   GtkWidget* event_box;
 
+  // GtkWidgets currently on screen.
   GList* children_list;
+  // GtkWidgets on screen in next frame.
   GList* pending_children_list;
 
   // Tracks whether mouse pointer is inside the view.
@@ -200,6 +204,7 @@ static void fl_view_constructed(GObject* object) {
       fl_key_event_plugin_new(messenger, self->text_input_plugin);
   self->mouse_cursor_plugin = fl_mouse_cursor_plugin_new(messenger, self);
   self->platform_plugin = fl_platform_plugin_new(messenger);
+  self->platform_views_plugin = fl_platform_views_plugin_new(messenger);
 
   self->event_box = gtk_event_box_new();
   gtk_widget_set_parent(self->event_box, GTK_WIDGET(self));
@@ -284,6 +289,7 @@ static void fl_view_dispose(GObject* object) {
   g_clear_object(&self->mouse_cursor_plugin);
   g_clear_object(&self->platform_plugin);
   g_clear_object(&self->text_input_plugin);
+  g_clear_object(&self->platform_views_plugin);
   g_list_free_full(self->gl_area_list, g_object_unref);
   self->gl_area_list = nullptr;
 
@@ -704,6 +710,11 @@ G_MODULE_EXPORT FlView* fl_view_new(FlDartProject* project) {
 G_MODULE_EXPORT FlEngine* fl_view_get_engine(FlView* view) {
   g_return_val_if_fail(FL_IS_VIEW(view), nullptr);
   return view->engine;
+}
+
+FlPlatformViewsPlugin* fl_view_get_platform_views_plugin(FlView* self) {
+  g_return_val_if_fail(FL_IS_VIEW(self), FALSE);
+  return self->platform_views_plugin;
 }
 
 void fl_view_begin_frame(FlView* view) {

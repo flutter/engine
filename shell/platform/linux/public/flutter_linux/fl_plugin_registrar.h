@@ -12,6 +12,7 @@
 #include <glib-object.h>
 
 #include "fl_binary_messenger.h"
+#include "fl_platform_views.h"
 #include "fl_view.h"
 
 G_BEGIN_DECLS
@@ -48,6 +49,22 @@ FlBinaryMessenger* fl_plugin_registrar_get_messenger(
  * Returns: (allow-none): an #FlView or %NULL if running in headless mode.
  */
 FlView* fl_plugin_registrar_get_view(FlPluginRegistrar* registrar);
+
+/**
+ * fl_plugin_registrar_register_view_factory:
+ * @registrar: an #FlPluginRegistrar.
+ * @factory: the view factory that will be registered.
+ * @view_type: A unique identifier for the factory. The Dart code of the Flutter
+ *             app can use this identifier to request creation of a #GtkWidget
+ *             by the registered factory.
+ *
+ * Registers a #FlPlatformViewFactory for creation of platform views.
+ * Plugins can expose a GtkWidget for embedding in Flutter apps by registering a
+ * view factory.
+ */
+void fl_plugin_registrar_register_view_factory(FlPluginRegistrar* registrar,
+                                               FlPlatformViewFactory* factory,
+                                               const gchar* view_type);
 
 G_END_DECLS
 
