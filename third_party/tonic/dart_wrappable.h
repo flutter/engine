@@ -13,7 +13,11 @@
 #include "tonic/dart_wrapper_info.h"
 #include "tonic/logging/dart_error.h"
 
+#include <mutex>
 #include <type_traits>
+#include <vector>
+
+#define TONIC_REPORT_DISPOSE_FAILURES !FLUTTER_RELEASE
 
 namespace tonic {
 
@@ -54,6 +58,32 @@ class DartWrappable {
     return dart_wrapper_.value();
   }
 
+#if TONIC_REPORT_DISPOSE_FAILURES
+  enum class AdditionalInfoType {
+    kUtf8String,
+    kPng,
+    kSkPicture,
+  };
+
+  struct AdditionalInfo {
+    AdditionalInfoType type;
+    std::vector<uint8_t> data;
+  };
+
+  struct UndisposedObjectInfo {
+    const char* class_name;
+    size_t allocation_size;
+    std::unique_ptr<AdditionalInfo> info;
+  };
+
+  static std::mutex undisposed_objects_mutex;
+  static std::vector<UndisposedObjectInfo> undisposed_objects;
+
+  // Called by FinalizeDartWrapper if the object has not disposed.
+  // Subclasses may serialize and return data
+  virtual std::unique_ptr<AdditionalInfo> GetAdditionalInfo();
+
+#endif  // TONIC_REPORT_DISPOSE_FAILURES
  protected:
   virtual ~DartWrappable();
 

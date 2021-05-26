@@ -15,6 +15,10 @@ DartWrappable::~DartWrappable() {
   // Calls the destructor of dart_wrapper_ to delete WeakPersistentHandle.
 }
 
+std::mutex DartWrappable::undisposed_objects_mutex;
+std::vector<DartWrappable::UndisposedObjectInfo>
+    DartWrappable::undisposed_objects;
+
 // TODO(dnfield): Delete this. https://github.com/flutter/flutter/issues/50997
 Dart_Handle DartWrappable::CreateDartWrapper(DartState* dart_state) {
   if (!dart_wrapper_.is_empty()) {
@@ -80,9 +84,29 @@ void DartWrappable::ClearDartWrapper() {
   this->ReleaseDartWrappableReference();
 }
 
+#if TONIC_REPORT_DISPOSE_FAILURES
+std::unique_ptr<DartWrappable::AdditionalInfo>
+DartWrappable::GetAdditionalInfo() {
+  return nullptr;
+}
+#endif  // TONIC_REPORT_DISPOSE_FAILURES
+
 void DartWrappable::FinalizeDartWrapper(void* isolate_callback_data,
                                         void* peer) {
   DartWrappable* wrappable = reinterpret_cast<DartWrappable*>(peer);
+
+#if TONIC_REPORT_DISPOSE_FAILURES
+  if (!wrappable->dart_wrapper_.is_empty()) {
+    const DartWrapperInfo& info = wrappable->GetDartWrapperInfo();
+    std::scoped_lock lock(undisposed_objects_mutex);
+    undisposed_objects.push_back({
+        info.interface_name,
+        wrappable->GetAllocationSize(),
+        wrappable->GetAdditionalInfo(),
+    });
+  }
+#endif  // TONIC_REPORT_DISPOSE_FAILURES
+
   wrappable->ReleaseDartWrappableReference();  // Balanced in CreateDartWrapper.
 }
 

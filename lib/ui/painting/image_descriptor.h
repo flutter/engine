@@ -104,9 +104,9 @@ class ImageDescriptor : public RefCountedDartWrappable<ImageDescriptor> {
   bool get_pixels(const SkPixmap& pixmap) const;
 
   void dispose() {
-    ClearDartWrapper();
     generator_.reset();
     platform_image_generator_.reset();
+    ClearDartWrapper();
   }
 
   size_t GetAllocationSize() const override {
