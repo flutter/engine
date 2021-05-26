@@ -144,6 +144,37 @@ TEST_F(ImageDecoderFixtureTest, CanCreateImageDecoder) {
   latch.Wait();
 }
 
+/// An Image generator that pretends it can't recognize the data it was given.
+class UnknownImageGenerator : public ImageGenerator {
+ public:
+  UnknownImageGenerator() : info_(SkImageInfo::MakeUnknown()){};
+  ~UnknownImageGenerator() = default;
+  const SkImageInfo& GetInfo() const { return info_; }
+
+  unsigned int GetFrameCount() const { return 1; }
+
+  unsigned int GetPlayCount() const { return 1; }
+
+  const ImageGenerator::FrameInfo GetFrameInfo(unsigned int frame_index) const {
+    return {std::nullopt, 0, SkCodecAnimation::DisposalMethod::kKeep};
+  }
+
+  SkISize GetScaledDimensions(float scale) const {
+    return SkISize::Make(info_.width(), info_.height());
+  }
+
+  bool GetPixels(const SkImageInfo& info,
+                 void* pixels,
+                 size_t row_bytes,
+                 unsigned int frame_index,
+                 std::optional<unsigned int> prior_frame) const {
+    return false;
+  };
+
+ private:
+  SkImageInfo info_;
+};
+
 TEST_F(ImageDecoderFixtureTest, InvalidImageResultsError) {
   auto loop = fml::ConcurrentMessageLoop::Create();
   auto thread_task_runner = CreateNewThread();
@@ -165,7 +196,7 @@ TEST_F(ImageDecoderFixtureTest, InvalidImageResultsError) {
 
     fml::RefPtr<ImageDescriptor> image_descriptor =
         fml::MakeRefCounted<ImageDescriptor>(
-            std::move(data), std::unique_ptr<ImageGenerator>(nullptr));
+            std::move(data), std::make_unique<UnknownImageGenerator>());
 
     ImageDecoder::ImageResult callback = [&](SkiaGPUObject<SkImage> image) {
       ASSERT_TRUE(runners.GetUITaskRunner()->RunsTasksOnCurrentThread());
