@@ -429,11 +429,13 @@ public class PlayStoreDeferredComponentManager implements DeferredComponentManag
     Queue<File> searchFiles = new LinkedList<>();
     // Downloaded modules are stored here
     searchFiles.add(context.getFilesDir());
-    // The initial installed apks are provided by `sourceDirs` in ApplicationInfo.
-    // The jniLibs we want are in the splits not the baseDir. These
-    // APKs are only searched as a fallback.
-    for (String path : context.getApplicationInfo().splitSourceDirs) {
-      searchFiles.add(new File(path));
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+      // The initial installed apks are provided by `sourceDirs` in ApplicationInfo.
+      // The jniLibs we want are in the splits not the baseDir. These
+      // APKs are only searched as a fallback.
+      for (String path : context.getApplicationInfo().splitSourceDirs) {
+        searchFiles.add(new File(path));
+      }
     }
 
     while (!searchFiles.isEmpty()) {
