@@ -268,7 +268,7 @@ public class AccessibilityBridgeTest {
     node2.label = "node2";
     root.children.add(node2);
     TestSemanticsUpdate testSemanticsUpdate = root.toUpdate();
-    accessibilityBridge.updateSemantics(testSemanticsUpdate.buffer, testSemanticsUpdate.strings);
+    testSemanticsUpdate.sendUpdateToBridge(accessibilityBridge);
 
     AccessibilityBridge spyAccessibilityBridge = spy(accessibilityBridge);
     AccessibilityNodeInfo mockNodeInfo2 = mock(AccessibilityNodeInfo.class);
