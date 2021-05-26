@@ -19,7 +19,7 @@ namespace testing {
 TEST_F(ShellTest, SingleFrameCodecAccuratelyReportsSize) {
   auto message_latch = std::make_shared<fml::AutoResetWaitableEvent>();
 
-  auto validate_codec = [message_latch](Dart_NativeArguments args) {
+  auto validate_codec = [](Dart_NativeArguments args) {
     auto handle = Dart_GetNativeArgument(args, 0);
     intptr_t peer = 0;
     Dart_Handle result = Dart_GetNativeInstanceField(
@@ -27,6 +27,8 @@ TEST_F(ShellTest, SingleFrameCodecAccuratelyReportsSize) {
     ASSERT_FALSE(Dart_IsError(result));
     SingleFrameCodec* codec = reinterpret_cast<SingleFrameCodec*>(peer);
     ASSERT_EQ(codec->GetAllocationSize(), sizeof(SingleFrameCodec));
+  };
+  auto finish = [message_latch](Dart_NativeArguments args) {
     message_latch->Signal();
   };
 
@@ -39,6 +41,7 @@ TEST_F(ShellTest, SingleFrameCodecAccuratelyReportsSize) {
   );
 
   AddNativeCallback("ValidateCodec", CREATE_NATIVE_ENTRY(validate_codec));
+  AddNativeCallback("Finish", CREATE_NATIVE_ENTRY(finish));
 
   std::unique_ptr<Shell> shell =
       CreateShell(std::move(settings), std::move(task_runners));
