@@ -7,12 +7,10 @@ import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui';
 
-import '../ui.dart';
-
 void main() {}
 
 @pragma('vm:entry-point')
-Future<void> createCodec() async {
+Future<void> createSingleFrameCodec() async {
   final ImmutableBuffer buffer = await ImmutableBuffer.fromUint8List(Uint8List.fromList(List<int>.filled(4, 100)));
   final ImageDescriptor descriptor = ImageDescriptor.raw(
     buffer,
