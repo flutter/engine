@@ -53,6 +53,8 @@ class MultiFrameCodec : public Codec {
     // The index of the last decoded required frame.
     int lastRequiredFrameIndex_ = -1;
 
+    int64_t totalDecodeTime_ = 0;  // in microseconds
+
     sk_sp<SkImage> GetNextFrameImage(
         fml::WeakPtr<GrDirectContext> resourceContext);
 

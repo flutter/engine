@@ -139,6 +139,7 @@ void MultiFrameCodec::State::GetNextFrameAndInvokeCallback(
     fml::RefPtr<flutter::SkiaUnrefQueue> unref_queue,
     size_t trace_id) {
   fml::RefPtr<CanvasImage> image = nullptr;
+  auto start_stamp = fml::TimePoint::Now();
   int duration = 0;
   sk_sp<SkImage> skImage = GetNextFrameImage(resourceContext);
   if (skImage) {
@@ -147,6 +148,8 @@ void MultiFrameCodec::State::GetNextFrameAndInvokeCallback(
     SkCodec::FrameInfo skFrameInfo{0};
     generator_->getFrameInfo(nextFrameIndex_, &skFrameInfo);
     duration = skFrameInfo.fDuration;
+    totalDecodeTime_ += (fml::TimePoint::Now() - start_stamp).ToMicroseconds();
+    image->setResourceDecodeTime(totalDecodeTime_);
   }
   nextFrameIndex_ = (nextFrameIndex_ + 1) % frameCount_;
 
