@@ -88,29 +88,29 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
 
   @Override
   public void handleMessageFromDart(
-      @NonNull final String channel, @Nullable ByteBuffer message, final int replyId) {
+      @NonNull final String channel, @Nullable ByteBuffer rawMessage, final int replyId) {
     Log.v(TAG, "Received message from Dart over channel '" + channel + "'");
     Handler handler = messageHandlers.get(channel);
     if (handler != null) {
       try {
         Log.v(TAG, "Deferring to registered handler to process message.");
-        ByteBuffer messageWithDirectness;
+        ByteBuffer message;
         if (handler.wantsDirectByteBufferForDecoding) {
-          messageWithDirectness = message;
-        } else if (message != null) {
-          ByteBuffer indirectByteBuffer = ByteBuffer.allocate(message.capacity());
-          indirectByteBuffer.put(message);
+          message = rawMessage;
+        } else if (rawMessage != null) {
+          ByteBuffer indirectByteBuffer = ByteBuffer.allocate(rawMessage.capacity());
+          indirectByteBuffer.put(rawMessage);
           indirectByteBuffer.rewind();
-          messageWithDirectness = indirectByteBuffer;
+          message = indirectByteBuffer;
         } else {
-          messageWithDirectness = null;
+          message = null;
         }
         handler.binaryMessageHandler.onMessage(
-            messageWithDirectness, new Reply(flutterJNI, replyId));
-        if (messageWithDirectness != null && messageWithDirectness.isDirect()) {
+          message, new Reply(flutterJNI, replyId));
+        if (message != null && message.isDirect()) {
           // This ensures that if a user retains an instance to the ByteBuffer and it happens to
           // be direct they will get a deterministic error.
-          messageWithDirectness.limit(0);
+          message.limit(0);
         }
       } catch (Exception ex) {
         Log.e(TAG, "Uncaught exception in binary message listener", ex);
