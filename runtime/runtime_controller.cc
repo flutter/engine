@@ -187,6 +187,13 @@ bool RuntimeController::BeginFrame(fml::TimePoint frame_time) {
 }
 
 bool RuntimeController::ReportTimings(std::vector<int64_t> timings) {
+  {
+    std::scoped_lock lock(tonic::DartWrappable::undisposed_objects_mutex);
+    for (const auto& object : tonic::DartWrappable::undisposed_objects) {
+      FML_DLOG(ERROR) << "Object! " << object.class_name;
+    }
+    tonic::DartWrappable::undisposed_objects.clear();
+  }
   if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
     platform_configuration->ReportTimings(std::move(timings));
     return true;
