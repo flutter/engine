@@ -240,6 +240,30 @@ public class PlayStoreDeferredComponentManagerTest {
   }
 
   @Test
+  public void searchPathsSearchesSplitConfig() throws NameNotFoundException {
+    TestFlutterJNI jni = new TestFlutterJNI();
+    Context spyContext = createSpyContext(null);
+    doReturn(null).when(spyContext).getAssets();
+    String apkTestPath = "test/path/split_config.armeabi_v7a.apk";
+    doReturn(new File(apkTestPath)).when(spyContext).getFilesDir();
+    TestPlayStoreDeferredComponentManager playStoreManager =
+        new TestPlayStoreDeferredComponentManager(spyContext, jni);
+    jni.setDeferredComponentManager(playStoreManager);
+
+    assertEquals(jni.loadingUnitId, 0);
+
+    playStoreManager.installDeferredComponent(123, "TestModuleName");
+    assertEquals(jni.loadDartDeferredLibraryCalled, 1);
+    assertEquals(jni.updateAssetManagerCalled, 1);
+    assertEquals(jni.deferredComponentInstallFailureCalled, 0);
+
+    assertEquals(jni.searchPaths[0], "libapp.so-123.part.so");
+    assertTrue(jni.searchPaths[1].endsWith(apkTestPath + "!lib/armeabi-v7a/libapp.so-123.part.so"));
+    assertEquals(jni.searchPaths.length, 2);
+    assertEquals(jni.loadingUnitId, 123);
+  }
+
+  @Test
   public void invalidSearchPathsAreIgnored() throws NameNotFoundException {
     TestFlutterJNI jni = new TestFlutterJNI();
     Context spyContext = createSpyContext(null);

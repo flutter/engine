@@ -1314,10 +1314,12 @@ void Shell::LoadDartDeferredLibrary(
     std::unique_ptr<const fml::Mapping> snapshot_data,
     std::unique_ptr<const fml::Mapping> snapshot_instructions) {
   task_runners_.GetUITaskRunner()->PostTask(fml::MakeCopyable(
-      [engine = engine_->GetWeakPtr(), loading_unit_id, data = std::move(snapshot_data), instructions = std::move(snapshot_instructions)]() mutable {
+      [engine = engine_->GetWeakPtr(), loading_unit_id,
+       data = std::move(snapshot_data),
+       instructions = std::move(snapshot_instructions)]() mutable {
         if (engine) {
           engine->LoadDartDeferredLibrary(loading_unit_id, std::move(data),
-                                           std::move(instructions));
+                                          std::move(instructions));
         }
       }));
 }
