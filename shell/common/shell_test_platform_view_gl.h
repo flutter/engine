@@ -23,8 +23,10 @@ class ShellTestPlatformViewGL : public ShellTestPlatformView,
                           std::shared_ptr<ShellTestExternalViewEmbedder>
                               shell_test_external_view_embedder);
 
+  // |ShellTestPlatformView|
   virtual ~ShellTestPlatformViewGL() override;
 
+  // |ShellTestPlatformView|
   virtual void SimulateVSync() override;
 
  private:
@@ -39,6 +41,9 @@ class ShellTestPlatformViewGL : public ShellTestPlatformView,
 
   // |PlatformView|
   std::unique_ptr<Surface> CreateRenderingSurface() override;
+
+  // |PlatformView|
+  std::shared_ptr<ExternalViewEmbedder> CreateExternalViewEmbedder() override;
 
   // |PlatformView|
   std::unique_ptr<VsyncWaiter> CreateVSyncWaiter() override;
@@ -60,9 +65,6 @@ class ShellTestPlatformViewGL : public ShellTestPlatformView,
 
   // |GPUSurfaceGLDelegate|
   GLProcResolver GetGLProcResolver() const override;
-
-  // |GPUSurfaceGLDelegate|
-  ExternalViewEmbedder* GetExternalViewEmbedder() override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ShellTestPlatformViewGL);
 };

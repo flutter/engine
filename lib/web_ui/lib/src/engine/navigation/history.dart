@@ -2,8 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
-part of engine;
+import 'dart:html' as html;
+
+import 'package:ui/src/engine.dart' show EnginePlatformDispatcher;
+import 'package:ui/ui.dart' as ui;
+
+import '../services/message_codec.dart';
+import '../services/message_codecs.dart';
+import 'url_strategy.dart';
 
 /// An abstract class that provides the API for [EngineWindow] to delegate its
 /// navigating events.
@@ -151,17 +157,15 @@ class MultiEntriesBrowserHistory extends BrowserHistory {
           currentPath);
     }
     _lastSeenSerialCount = _currentSerialCount;
-    if (window._onPlatformMessage != null) {
-      window.invokeOnPlatformMessage(
-        'flutter/navigation',
-        const JSONMethodCodec().encodeMethodCall(
-            MethodCall('pushRouteInformation', <dynamic, dynamic>{
-          'location': currentPath,
-          'state': event.state?['state'],
-        })),
-        (_) {},
-      );
-    }
+    EnginePlatformDispatcher.instance.invokeOnPlatformMessage(
+      'flutter/navigation',
+      const JSONMethodCodec().encodeMethodCall(
+          MethodCall('pushRouteInformation', <dynamic, dynamic>{
+        'location': currentPath,
+        'state': event.state?['state'],
+      })),
+      (_) {},
+    );
   }
 
   @override
@@ -219,8 +223,8 @@ class SingleEntryBrowserHistory extends BrowserHistory {
     if (!_isFlutterEntry(html.window.history.state)) {
       // An entry may not have come from Flutter, for example, when the user
       // refreshes the page. They land directly on the "flutter" entry, so
-      // there's no need to setup the "origin" and "flutter" entries, we can
-      // safely assume they are already setup.
+      // there's no need to set up the "origin" and "flutter" entries, we can
+      // safely assume they are already set up.
       _setupOriginEntry(strategy);
       _setupFlutterEntry(strategy, replace: false, path: path);
     }
@@ -272,13 +276,11 @@ class SingleEntryBrowserHistory extends BrowserHistory {
       _setupFlutterEntry(urlStrategy!);
 
       // 2. Send a 'popRoute' platform message so the app can handle it accordingly.
-      if (window._onPlatformMessage != null) {
-        window.invokeOnPlatformMessage(
-          'flutter/navigation',
-          const JSONMethodCodec().encodeMethodCall(_popRouteMethodCall),
-          (_) {},
-        );
-      }
+      EnginePlatformDispatcher.instance.invokeOnPlatformMessage(
+        'flutter/navigation',
+        const JSONMethodCodec().encodeMethodCall(_popRouteMethodCall),
+        (_) {},
+      );
     } else if (_isFlutterEntry(event.state)) {
       // We get into this scenario when the user changes the url manually. It
       // causes a new entry to be pushed on top of our "flutter" one. When this
@@ -291,15 +293,13 @@ class SingleEntryBrowserHistory extends BrowserHistory {
       _userProvidedRouteName = null;
 
       // Send a 'pushRoute' platform message so the app handles it accordingly.
-      if (window._onPlatformMessage != null) {
-        window.invokeOnPlatformMessage(
-          'flutter/navigation',
-          const JSONMethodCodec().encodeMethodCall(
-            MethodCall('pushRoute', newRouteName),
-          ),
-          (_) {},
-        );
-      }
+      EnginePlatformDispatcher.instance.invokeOnPlatformMessage(
+        'flutter/navigation',
+        const JSONMethodCodec().encodeMethodCall(
+          MethodCall('pushRoute', newRouteName),
+        ),
+        (_) {},
+      );
     } else {
       // The user has pushed a new entry on top of our flutter entry. This could
       // happen when the user modifies the hash part of the url directly, for

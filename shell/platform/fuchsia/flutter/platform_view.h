@@ -5,28 +5,39 @@
 #ifndef FLUTTER_SHELL_PLATFORM_FUCHSIA_PLATFORM_VIEW_H_
 #define FLUTTER_SHELL_PLATFORM_FUCHSIA_PLATFORM_VIEW_H_
 
+#include <fuchsia/sys/cpp/fidl.h>
 #include <fuchsia/ui/input/cpp/fidl.h>
+#include <fuchsia/ui/input3/cpp/fidl.h>
 #include <fuchsia/ui/scenic/cpp/fidl.h>
 #include <lib/fidl/cpp/binding.h>
 #include <lib/fit/function.h>
+#include <lib/sys/cpp/service_directory.h>
 #include <lib/ui/scenic/cpp/id.h>
 
 #include <map>
 #include <set>
+#include <unordered_map>
 
+#include "flow/embedded_views.h"
 #include "flutter/fml/macros.h"
+#include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/time/time_delta.h"
 #include "flutter/shell/common/platform_view.h"
-
-#include "accessibility_bridge.h"
+#include "flutter/shell/platform/fuchsia/flutter/fuchsia_external_view_embedder.h"
+#include "flutter/shell/platform/fuchsia/flutter/keyboard.h"
+#include "flutter/shell/platform/fuchsia/flutter/vsync_waiter.h"
 
 namespace flutter_runner {
 
 using OnEnableWireframe = fit::function<void(bool)>;
-using OnCreateView = fit::function<void(int64_t, bool, bool)>;
-using OnUpdateView = fit::function<void(int64_t, bool, bool)>;
-using OnDestroyView = fit::function<void(int64_t)>;
+using OnCreateView =
+    fit::function<void(int64_t, ViewCallback, ViewIdCallback, bool, bool)>;
+using OnUpdateView = fit::function<void(int64_t, SkRect, bool, bool)>;
+using OnDestroyView = fit::function<void(int64_t, ViewIdCallback)>;
 using OnCreateSurface = fit::function<std::unique_ptr<flutter::Surface>()>;
+using OnSemanticsNodeUpdate =
+    fit::function<void(flutter::SemanticsNodeUpdates, float)>;
+using OnRequestAnnounce = fit::function<void(std::string)>;
 
 // PlatformView is the per-engine component residing on the platform thread that
 // is responsible for all platform specific integrations -- particularly
@@ -41,8 +52,8 @@ using OnCreateSurface = fit::function<std::unique_ptr<flutter::Surface>()>;
 // does *not* actually own the Session itself; that is owned by the
 // FuchsiaExternalViewEmbedder on the raster thread.
 class PlatformView final : public flutter::PlatformView,
-                           public AccessibilityBridge::Delegate,
                            private fuchsia::ui::scenic::SessionListener,
+                           private fuchsia::ui::input3::KeyboardListener,
                            private fuchsia::ui::input::InputMethodEditorClient {
  public:
   PlatformView(flutter::PlatformView::Delegate& delegate,
@@ -55,30 +66,38 @@ class PlatformView final : public flutter::PlatformView,
                fidl::InterfaceRequest<fuchsia::ui::scenic::SessionListener>
                    session_listener_request,
                fidl::InterfaceHandle<fuchsia::ui::views::Focuser> focuser,
+               fidl::InterfaceRequest<fuchsia::ui::input3::KeyboardListener>
+                   keyboard_listener,
                fit::closure on_session_listener_error_callback,
                OnEnableWireframe wireframe_enabled_callback,
                OnCreateView on_create_view_callback,
                OnUpdateView on_update_view_callback,
                OnDestroyView on_destroy_view_callback,
                OnCreateSurface on_create_surface_callback,
-               fml::TimeDelta vsync_offset,
-               zx_handle_t vsync_event_handle);
+               OnSemanticsNodeUpdate on_semantics_node_update_callback,
+               OnRequestAnnounce on_request_announce_callback,
+               std::shared_ptr<flutter::ExternalViewEmbedder> view_embedder,
+               AwaitVsyncCallback await_vsync_callback,
+               AwaitVsyncForSecondaryCallbackCallback
+                   await_vsync_for_secondary_callback_callback);
 
   ~PlatformView();
 
   // |flutter::PlatformView|
-  // |flutter_runner::AccessibilityBridge::Delegate|
   void SetSemanticsEnabled(bool enabled) override;
 
-  // |flutter_runner::AccessibilityBridge::Delegate|
-  void DispatchSemanticsAction(int32_t node_id,
-                               flutter::SemanticsAction action) override;
-
-  // |PlatformView|
-  flutter::PointerDataDispatcherMaker GetDispatcherMaker() override;
+  // |flutter::PlatformView|
+  std::shared_ptr<flutter::ExternalViewEmbedder> CreateExternalViewEmbedder()
+      override;
 
  private:
   void RegisterPlatformMessageHandlers();
+
+  // |fuchsia.ui.input3.KeyboardListener|
+  // Called by the embedder every time there is a key event to process.
+  void OnKeyEvent(fuchsia::ui::input3::KeyEvent key_event,
+                  fuchsia::ui::input3::KeyboardListener::OnKeyEventCallback
+                      callback) override;
 
   // |fuchsia::ui::input::InputMethodEditorClient|
   void DidUpdateState(
@@ -92,13 +111,15 @@ class PlatformView final : public flutter::PlatformView,
   void OnScenicError(std::string error) override;
   void OnScenicEvent(std::vector<fuchsia::ui::scenic::Event> events) override;
 
-  void OnChildViewConnected(scenic::ResourceId view_holder_id);
-  void OnChildViewDisconnected(scenic::ResourceId view_holder_id);
-  void OnChildViewStateChanged(scenic::ResourceId view_holder_id, bool state);
+  // ViewHolder event handlers.  These return false if the ViewHolder
+  // corresponding to `view_holder_id` could not be found and the evnt was
+  // unhandled.
+  bool OnChildViewConnected(scenic::ResourceId view_holder_id);
+  bool OnChildViewDisconnected(scenic::ResourceId view_holder_id);
+  bool OnChildViewStateChanged(scenic::ResourceId view_holder_id,
+                               bool is_rendering);
 
   bool OnHandlePointerEvent(const fuchsia::ui::input::PointerEvent& pointer);
-
-  bool OnHandleKeyboardEvent(const fuchsia::ui::input::KeyboardEvent& keyboard);
 
   bool OnHandleFocusEvent(const fuchsia::ui::input::FocusEvent& focus);
 
@@ -120,7 +141,7 @@ class PlatformView final : public flutter::PlatformView,
 
   // |flutter::PlatformView|
   void HandlePlatformMessage(
-      fml::RefPtr<flutter::PlatformMessage> message) override;
+      std::unique_ptr<flutter::PlatformMessage> message) override;
 
   // |flutter::PlatformView|
   void UpdateSemantics(
@@ -131,26 +152,25 @@ class PlatformView final : public flutter::PlatformView,
   // being used, but it is necessary to handle accessibility messages
   // that are sent by Flutter when semantics is enabled.
   void HandleAccessibilityChannelPlatformMessage(
-      fml::RefPtr<flutter::PlatformMessage> message);
+      std::unique_ptr<flutter::PlatformMessage> message);
 
   // Channel handler for kFlutterPlatformChannel
   void HandleFlutterPlatformChannelPlatformMessage(
-      fml::RefPtr<flutter::PlatformMessage> message);
+      std::unique_ptr<flutter::PlatformMessage> message);
 
   // Channel handler for kTextInputChannel
   void HandleFlutterTextInputChannelPlatformMessage(
-      fml::RefPtr<flutter::PlatformMessage> message);
+      std::unique_ptr<flutter::PlatformMessage> message);
 
   // Channel handler for kPlatformViewsChannel.
   void HandleFlutterPlatformViewsChannelPlatformMessage(
-      fml::RefPtr<flutter::PlatformMessage> message);
+      std::unique_ptr<flutter::PlatformMessage> message);
 
   const std::string debug_label_;
   // TODO(MI4-2490): remove once ViewRefControl is passed to Scenic and kept
   // alive there
   const fuchsia::ui::views::ViewRef view_ref_;
   fuchsia::ui::views::FocuserPtr focuser_;
-  std::unique_ptr<AccessibilityBridge> accessibility_bridge_;
 
   // Logical size and logical->physical ratio.  These are optional to provide
   // an "unset" state during program startup, before Scenic has sent any
@@ -170,6 +190,12 @@ class PlatformView final : public flutter::PlatformView,
   OnDestroyView on_destroy_view_callback_;
   OnCreateSurface on_create_surface_callback_;
 
+  // Accessibility handlers:
+  OnSemanticsNodeUpdate on_semantics_node_update_callback_;
+  OnRequestAnnounce on_request_announce_callback_;
+
+  std::shared_ptr<flutter::ExternalViewEmbedder> external_view_embedder_;
+
   int current_text_input_client_ = 0;
   fidl::Binding<fuchsia::ui::input::InputMethodEditorClient> ime_client_;
   fuchsia::ui::input::InputMethodEditorPtr ime_;
@@ -177,24 +203,38 @@ class PlatformView final : public flutter::PlatformView,
 
   fuchsia::sys::ServiceProviderPtr parent_environment_service_provider_;
 
+  // child_view_ids_ maintains a persistent mapping from Scenic ResourceId's to
+  // flutter view ids, which are really zx_handle_t of ViewHolderToken.
+  std::unordered_map<scenic::ResourceId, zx_handle_t> child_view_ids_;
+
   // last_text_state_ is the last state of the text input as reported by the IME
   // or initialized by Flutter. We set it to null if Flutter doesn't want any
   // input, since then there is no text input state at all.
   std::unique_ptr<fuchsia::ui::input::TextInputState> last_text_state_;
 
   std::set<int> down_pointers_;
-  std::map<
-      std::string /* channel */,
-      fit::function<void(
-          fml::RefPtr<flutter::PlatformMessage> /* message */)> /* handler */>
+  std::map<std::string /* channel */,
+           fit::function<void(
+               std::unique_ptr<
+                   flutter::PlatformMessage> /* message */)> /* handler */>
       platform_message_handlers_;
   // These are the channels that aren't registered and have been notified as
   // such. Notifying via logs multiple times results in log-spam. See:
   // https://github.com/flutter/flutter/issues/55966
   std::set<std::string /* channel */> unregistered_channels_;
 
-  fml::TimeDelta vsync_offset_;
-  zx_handle_t vsync_event_handle_ = 0;
+  // The registered binding for serving the keyboard listener server endpoint.
+  fidl::Binding<fuchsia::ui::input3::KeyboardListener>
+      keyboard_listener_binding_;
+
+  // The keyboard translation for fuchsia.ui.input3.KeyEvent.
+  Keyboard keyboard_;
+
+  AwaitVsyncCallback await_vsync_callback_;
+  AwaitVsyncForSecondaryCallbackCallback
+      await_vsync_for_secondary_callback_callback_;
+
+  fml::WeakPtrFactory<PlatformView> weak_factory_;  // Must be the last member.
 
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformView);
 };

@@ -28,7 +28,8 @@ class RuntimeDelegate {
   virtual void UpdateSemantics(SemanticsNodeUpdates update,
                                CustomAccessibilityActionUpdates actions) = 0;
 
-  virtual void HandlePlatformMessage(fml::RefPtr<PlatformMessage> message) = 0;
+  virtual void HandlePlatformMessage(
+      std::unique_ptr<PlatformMessage> message) = 0;
 
   virtual FontCollection& GetFontCollection() = 0;
 
@@ -42,6 +43,8 @@ class RuntimeDelegate {
   virtual std::unique_ptr<std::vector<std::string>>
   ComputePlatformResolvedLocale(
       const std::vector<std::string>& supported_locale_data) = 0;
+
+  virtual void RequestDartDeferredLibrary(intptr_t loading_unit_id) = 0;
 
  protected:
   virtual ~RuntimeDelegate();

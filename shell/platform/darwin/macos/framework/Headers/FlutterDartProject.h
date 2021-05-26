@@ -14,7 +14,7 @@
  *
  * TODO(stuartmorgan): Align API with FlutterDartProject, and combine.
  */
-FLUTTER_EXPORT
+FLUTTER_DARWIN_EXPORT
 @interface FlutterDartProject : NSObject
 
 /**
@@ -35,6 +35,16 @@ FLUTTER_EXPORT
  * Deprecated: This function is temporary and will be removed in a future release.
  */
 @property(nonatomic) bool enableMirrors;
+
+/**
+ * An NSArray of NSStrings to be passed as command line arguments to the Dart entrypoint.
+ *
+ * If this is not explicitly set, this will default to the contents of
+ * [NSProcessInfo arguments], without the binary name.
+ *
+ * Set this to nil to pass no arguments to the Dart entrypoint.
+ */
+@property(nonatomic, nullable) NSArray<NSString*>* dartEntrypointArguments;
 
 @end
 

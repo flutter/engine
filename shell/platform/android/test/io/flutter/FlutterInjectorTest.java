@@ -6,9 +6,10 @@ package io.flutter;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
 
+import io.flutter.embedding.engine.deferredcomponents.PlayStoreDeferredComponentManager;
 import io.flutter.embedding.engine.loader.FlutterLoader;
 import org.junit.Before;
 import org.junit.Test;
@@ -22,6 +23,7 @@ import org.robolectric.annotation.Config;
 @RunWith(RobolectricTestRunner.class)
 public class FlutterInjectorTest {
   @Mock FlutterLoader mockFlutterLoader;
+  @Mock PlayStoreDeferredComponentManager mockDeferredComponentManager;
 
   @Before
   public void setUp() {
@@ -35,7 +37,7 @@ public class FlutterInjectorTest {
     // Implicitly builds when first accessed.
     FlutterInjector injector = FlutterInjector.instance();
     assertNotNull(injector.flutterLoader());
-    assertTrue(injector.shouldLoadNative());
+    assertNull(injector.deferredComponentManager());
   }
 
   @Test
@@ -44,7 +46,16 @@ public class FlutterInjectorTest {
         new FlutterInjector.Builder().setFlutterLoader(mockFlutterLoader).build());
     FlutterInjector injector = FlutterInjector.instance();
     assertEquals(injector.flutterLoader(), mockFlutterLoader);
-    assertTrue(injector.shouldLoadNative());
+  }
+
+  @Test
+  public void canInjectDeferredComponentManager() {
+    FlutterInjector.setInstance(
+        new FlutterInjector.Builder()
+            .setDeferredComponentManager(mockDeferredComponentManager)
+            .build());
+    FlutterInjector injector = FlutterInjector.instance();
+    assertEquals(injector.deferredComponentManager(), mockDeferredComponentManager);
   }
 
   @Test()

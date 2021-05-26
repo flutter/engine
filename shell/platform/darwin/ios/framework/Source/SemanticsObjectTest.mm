@@ -33,13 +33,15 @@ class MockAccessibilityBridge : public AccessibilityBridgeIos {
   }
   void DispatchSemanticsAction(int32_t id,
                                SemanticsAction action,
-                               std::vector<uint8_t> args) override {
+                               fml::MallocMapping args) override {
     SemanticsActionObservation observation(id, action);
     observations.push_back(observation);
   }
   void AccessibilityObjectDidBecomeFocused(int32_t id) override {}
   void AccessibilityObjectDidLoseFocus(int32_t id) override {}
-  FlutterPlatformViewsController* GetPlatformViewsController() const override { return nil; }
+  std::shared_ptr<FlutterPlatformViewsController> GetPlatformViewsController() const override {
+    return nil;
+  }
   std::vector<SemanticsActionObservation> observations;
 
  private:
@@ -85,6 +87,77 @@ class MockAccessibilityBridge : public AccessibilityBridgeIos {
   XCTAssertNil(child1.parent);
   XCTAssertEqual(parent, child2.parent);
   XCTAssertEqualObjects(parent.children, @[ child2 ]);
+}
+
+- (void)testPlainSemanticsObjectWithLabelHasStaticTextTrait {
+  fml::WeakPtrFactory<flutter::AccessibilityBridgeIos> factory(
+      new flutter::MockAccessibilityBridge());
+  fml::WeakPtr<flutter::AccessibilityBridgeIos> bridge = factory.GetWeakPtr();
+  flutter::SemanticsNode node;
+  node.label = "foo";
+  FlutterSemanticsObject* object = [[FlutterSemanticsObject alloc] initWithBridge:bridge uid:0];
+  [object setSemanticsNode:&node];
+  XCTAssertEqual([object accessibilityTraits], UIAccessibilityTraitStaticText);
+}
+
+- (void)testNodeWithImplicitScrollIsAnAccessibilityElementWhenItisHidden {
+  fml::WeakPtrFactory<flutter::AccessibilityBridgeIos> factory(
+      new flutter::MockAccessibilityBridge());
+  fml::WeakPtr<flutter::AccessibilityBridgeIos> bridge = factory.GetWeakPtr();
+  flutter::SemanticsNode node;
+  node.flags = static_cast<int32_t>(flutter::SemanticsFlags::kHasImplicitScrolling) |
+               static_cast<int32_t>(flutter::SemanticsFlags::kIsHidden);
+  FlutterSemanticsObject* object = [[FlutterSemanticsObject alloc] initWithBridge:bridge uid:0];
+  [object setSemanticsNode:&node];
+  XCTAssertEqual(object.isAccessibilityElement, YES);
+}
+
+- (void)testNodeWithImplicitScrollIsNotAnAccessibilityElementWhenItisNotHidden {
+  fml::WeakPtrFactory<flutter::AccessibilityBridgeIos> factory(
+      new flutter::MockAccessibilityBridge());
+  fml::WeakPtr<flutter::AccessibilityBridgeIos> bridge = factory.GetWeakPtr();
+  flutter::SemanticsNode node;
+  node.flags = static_cast<int32_t>(flutter::SemanticsFlags::kHasImplicitScrolling);
+  FlutterSemanticsObject* object = [[FlutterSemanticsObject alloc] initWithBridge:bridge uid:0];
+  [object setSemanticsNode:&node];
+  XCTAssertEqual(object.isAccessibilityElement, NO);
+}
+
+- (void)testIntresetingSemanticsObjectWithLabelHasStaticTextTrait {
+  fml::WeakPtrFactory<flutter::AccessibilityBridgeIos> factory(
+      new flutter::MockAccessibilityBridge());
+  fml::WeakPtr<flutter::AccessibilityBridgeIos> bridge = factory.GetWeakPtr();
+  flutter::SemanticsNode node;
+  node.label = "foo";
+  FlutterSemanticsObject* object = [[FlutterSemanticsObject alloc] initWithBridge:bridge uid:0];
+  SemanticsObject* child1 = [[SemanticsObject alloc] initWithBridge:bridge uid:1];
+  object.children = @[ child1 ];
+  [object setSemanticsNode:&node];
+  XCTAssertEqual([object accessibilityTraits], UIAccessibilityTraitNone);
+}
+
+- (void)testIntresetingSemanticsObjectWithLabelHasStaticTextTrait1 {
+  fml::WeakPtrFactory<flutter::AccessibilityBridgeIos> factory(
+      new flutter::MockAccessibilityBridge());
+  fml::WeakPtr<flutter::AccessibilityBridgeIos> bridge = factory.GetWeakPtr();
+  flutter::SemanticsNode node;
+  node.label = "foo";
+  node.flags = static_cast<int32_t>(flutter::SemanticsFlags::kIsTextField);
+  FlutterSemanticsObject* object = [[FlutterSemanticsObject alloc] initWithBridge:bridge uid:0];
+  [object setSemanticsNode:&node];
+  XCTAssertEqual([object accessibilityTraits], UIAccessibilityTraitNone);
+}
+
+- (void)testIntresetingSemanticsObjectWithLabelHasStaticTextTrait2 {
+  fml::WeakPtrFactory<flutter::AccessibilityBridgeIos> factory(
+      new flutter::MockAccessibilityBridge());
+  fml::WeakPtr<flutter::AccessibilityBridgeIos> bridge = factory.GetWeakPtr();
+  flutter::SemanticsNode node;
+  node.label = "foo";
+  node.flags = static_cast<int32_t>(flutter::SemanticsFlags::kIsButton);
+  FlutterSemanticsObject* object = [[FlutterSemanticsObject alloc] initWithBridge:bridge uid:0];
+  [object setSemanticsNode:&node];
+  XCTAssertEqual([object accessibilityTraits], UIAccessibilityTraitButton);
 }
 
 - (void)testShouldTriggerAnnouncement {
@@ -165,6 +238,49 @@ class MockAccessibilityBridge : public AccessibilityBridgeIos {
   XCTAssertTrue(bridge->observations.size() == 1);
   XCTAssertTrue(bridge->observations[0].id == 1);
   XCTAssertTrue(bridge->observations[0].action == flutter::SemanticsAction::kShowOnScreen);
+}
+
+- (void)testSemanticsObjectAndPlatformViewSemanticsContainerDontHaveRetainCycle {
+  fml::WeakPtrFactory<flutter::MockAccessibilityBridge> factory(
+      new flutter::MockAccessibilityBridge());
+  fml::WeakPtr<flutter::MockAccessibilityBridge> bridge = factory.GetWeakPtr();
+  SemanticsObject* object = [[SemanticsObject alloc] initWithBridge:bridge uid:1];
+  object.platformViewSemanticsContainer =
+      [[FlutterPlatformViewSemanticsContainer alloc] initWithSemanticsObject:object];
+  __weak SemanticsObject* weakObject = object;
+  object = nil;
+  XCTAssertNil(weakObject);
+}
+
+- (void)testFlutterSwitchSemanticsObjectForwardsCalls {
+  SemanticsObject* mockSemanticsObject = OCMClassMock([SemanticsObject class]);
+  FlutterSwitchSemanticsObject* switchObj =
+      [[FlutterSwitchSemanticsObject alloc] initWithSemanticsObject:mockSemanticsObject];
+  OCMStub([mockSemanticsObject accessibilityActivate]).andReturn(YES);
+  OCMStub([mockSemanticsObject accessibilityScroll:UIAccessibilityScrollDirectionRight])
+      .andReturn(NO);
+  OCMStub([mockSemanticsObject accessibilityPerformEscape]).andReturn(YES);
+
+  XCTAssertTrue([switchObj accessibilityActivate]);
+  OCMVerify([mockSemanticsObject accessibilityActivate]);
+
+  [switchObj accessibilityIncrement];
+  OCMVerify([mockSemanticsObject accessibilityIncrement]);
+
+  [switchObj accessibilityDecrement];
+  OCMVerify([mockSemanticsObject accessibilityDecrement]);
+
+  XCTAssertFalse([switchObj accessibilityScroll:UIAccessibilityScrollDirectionRight]);
+  OCMVerify([mockSemanticsObject accessibilityScroll:UIAccessibilityScrollDirectionRight]);
+
+  XCTAssertTrue([switchObj accessibilityPerformEscape]);
+  OCMVerify([mockSemanticsObject accessibilityPerformEscape]);
+
+  [switchObj accessibilityElementDidBecomeFocused];
+  OCMVerify([mockSemanticsObject accessibilityElementDidBecomeFocused]);
+
+  [switchObj accessibilityElementDidLoseFocus];
+  OCMVerify([mockSemanticsObject accessibilityElementDidLoseFocus]);
 }
 
 @end

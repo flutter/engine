@@ -2,8 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
-part of engine;
+import 'dart:async';
+import 'dart:html' as html;
+import 'dart:typed_data';
+import 'dart:js_util' as js_util;
+
+import 'package:ui/ui.dart' as ui;
+
+import 'browser_detection.dart';
+import 'util.dart';
 
 final bool _supportsDecode = js_util.getProperty(
         js_util.getProperty(
@@ -39,10 +46,20 @@ class HtmlCodec implements ui.Codec {
       js_util.setProperty(imgElement, 'decoding', 'async');
       imgElement.decode().then((dynamic _) {
         chunkCallback?.call(100, 100);
+        int naturalWidth = imgElement.naturalWidth;
+        int naturalHeight = imgElement.naturalHeight;
+        // Workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=700533.
+        if (naturalWidth == 0 && naturalHeight == 0 && (
+            browserEngine == BrowserEngine.firefox ||
+                browserEngine == BrowserEngine.ie11)) {
+          const int kDefaultImageSizeFallback = 300;
+          naturalWidth = kDefaultImageSizeFallback;
+          naturalHeight = kDefaultImageSizeFallback;
+        }
         final HtmlImage image = HtmlImage(
           imgElement,
-          imgElement.naturalWidth,
-          imgElement.naturalHeight,
+          naturalWidth,
+          naturalHeight,
         );
         completer.complete(SingleFrameInfo(image));
       }).catchError((dynamic e) {
@@ -116,11 +133,24 @@ class HtmlImage implements ui.Image {
   bool _requiresClone = false;
   HtmlImage(this.imgElement, this.width, this.height);
 
+  bool _disposed = false;
   @override
   void dispose() {
     // Do nothing. The codec that owns this image should take care of
     // releasing the object url.
+    if (assertionsEnabled) {
+      _disposed = true;
+    }
   }
+
+  @override
+  bool get debugDisposed {
+    if (assertionsEnabled) {
+      return _disposed;
+    }
+    return throw StateError('Image.debugDisposed is only available when asserts are enabled.');
+  }
+
 
   @override
   ui.Image clone() => this;

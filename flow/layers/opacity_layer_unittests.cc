@@ -34,11 +34,11 @@ TEST_F(OpacityLayerTest, PaintingEmptyLayerDies) {
   layer->Preroll(preroll_context(), SkMatrix());
   EXPECT_EQ(mock_layer->paint_bounds(), SkPath().getBounds());
   EXPECT_EQ(layer->paint_bounds(), mock_layer->paint_bounds());
-  EXPECT_FALSE(mock_layer->needs_painting());
-  EXPECT_FALSE(layer->needs_painting());
+  EXPECT_FALSE(mock_layer->needs_painting(paint_context()));
+  EXPECT_FALSE(layer->needs_painting(paint_context()));
 
   EXPECT_DEATH_IF_SUPPORTED(layer->Paint(paint_context()),
-                            "needs_painting\\(\\)");
+                            "needs_painting\\(context\\)");
 }
 
 TEST_F(OpacityLayerTest, PaintBeforePreollDies) {
@@ -50,9 +50,26 @@ TEST_F(OpacityLayerTest, PaintBeforePreollDies) {
   layer->Add(mock_layer);
 
   EXPECT_DEATH_IF_SUPPORTED(layer->Paint(paint_context()),
-                            "needs_painting\\(\\)");
+                            "needs_painting\\(context\\)");
 }
 #endif
+
+TEST_F(OpacityLayerTest, TranslateChildren) {
+  SkPath child_path1;
+  child_path1.addRect(10.0f, 10.0f, 20.0f, 20.f);
+  SkPaint child_paint1(SkColors::kGray);
+  auto layer = std::make_shared<OpacityLayer>(0.5, SkPoint::Make(10, 10));
+  auto mock_layer1 = std::make_shared<MockLayer>(child_path1, child_paint1);
+  layer->Add(mock_layer1);
+
+  auto initial_transform = SkMatrix::Scale(2.0, 2.0);
+  layer->Preroll(preroll_context(), initial_transform);
+
+  SkRect layer_bounds = mock_layer1->paint_bounds();
+  mock_layer1->parent_matrix().mapRect(&layer_bounds);
+
+  EXPECT_EQ(layer_bounds, SkRect::MakeXYWH(40, 40, 20, 20));
+}
 
 TEST_F(OpacityLayerTest, ChildIsCached) {
   const SkAlpha alpha_half = 255 / 2;
@@ -139,8 +156,8 @@ TEST_F(OpacityLayerTest, FullyOpaque) {
   layer->Preroll(preroll_context(), initial_transform);
   EXPECT_EQ(mock_layer->paint_bounds(), child_path.getBounds());
   EXPECT_EQ(layer->paint_bounds(), expected_layer_bounds);
-  EXPECT_TRUE(mock_layer->needs_painting());
-  EXPECT_TRUE(layer->needs_painting());
+  EXPECT_TRUE(mock_layer->needs_painting(paint_context()));
+  EXPECT_TRUE(layer->needs_painting(paint_context()));
   EXPECT_EQ(mock_layer->parent_matrix(),
             SkMatrix::Concat(initial_transform, layer_transform));
   EXPECT_EQ(mock_layer->parent_mutators(),
@@ -152,10 +169,11 @@ TEST_F(OpacityLayerTest, FullyOpaque) {
       .roundOut(&opacity_bounds);
   auto expected_draw_calls = std::vector(
       {MockCanvas::DrawCall{0, MockCanvas::SaveData{1}},
-       MockCanvas::DrawCall{1, MockCanvas::ConcatMatrixData{layer_transform}},
+       MockCanvas::DrawCall{
+           1, MockCanvas::ConcatMatrixData{SkM44(layer_transform)}},
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
        MockCanvas::DrawCall{
-           1, MockCanvas::SetMatrixData{integral_layer_transform}},
+           1, MockCanvas::SetMatrixData{SkM44(integral_layer_transform)}},
 #endif
        MockCanvas::DrawCall{
            1, MockCanvas::SaveLayerData{opacity_bounds, opacity_paint, nullptr,
@@ -189,8 +207,8 @@ TEST_F(OpacityLayerTest, FullyTransparent) {
   layer->Preroll(preroll_context(), initial_transform);
   EXPECT_EQ(mock_layer->paint_bounds(), child_path.getBounds());
   EXPECT_EQ(layer->paint_bounds(), expected_layer_bounds);
-  EXPECT_TRUE(mock_layer->needs_painting());
-  EXPECT_TRUE(layer->needs_painting());
+  EXPECT_TRUE(mock_layer->needs_painting(paint_context()));
+  EXPECT_TRUE(layer->needs_painting(paint_context()));
   EXPECT_EQ(mock_layer->parent_matrix(),
             SkMatrix::Concat(initial_transform, layer_transform));
   EXPECT_EQ(
@@ -199,17 +217,16 @@ TEST_F(OpacityLayerTest, FullyTransparent) {
 
   auto expected_draw_calls = std::vector(
       {MockCanvas::DrawCall{0, MockCanvas::SaveData{1}},
-       MockCanvas::DrawCall{1, MockCanvas::ConcatMatrixData{layer_transform}},
+       MockCanvas::DrawCall{
+           1, MockCanvas::ConcatMatrixData{SkM44(layer_transform)}},
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
        MockCanvas::DrawCall{
-           1, MockCanvas::SetMatrixData{integral_layer_transform}},
+           1, MockCanvas::SetMatrixData{SkM44(integral_layer_transform)}},
 #endif
        MockCanvas::DrawCall{1, MockCanvas::SaveData{2}},
        MockCanvas::DrawCall{
            2, MockCanvas::ClipRectData{kEmptyRect, SkClipOp::kIntersect,
                                        MockCanvas::kHard_ClipEdgeStyle}},
-       MockCanvas::DrawCall{2,
-                            MockCanvas::DrawPathData{child_path, child_paint}},
        MockCanvas::DrawCall{2, MockCanvas::RestoreData{1}},
        MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}});
   layer->Paint(paint_context());
@@ -237,8 +254,8 @@ TEST_F(OpacityLayerTest, HalfTransparent) {
   layer->Preroll(preroll_context(), initial_transform);
   EXPECT_EQ(mock_layer->paint_bounds(), child_path.getBounds());
   EXPECT_EQ(layer->paint_bounds(), expected_layer_bounds);
-  EXPECT_TRUE(mock_layer->needs_painting());
-  EXPECT_TRUE(layer->needs_painting());
+  EXPECT_TRUE(mock_layer->needs_painting(paint_context()));
+  EXPECT_TRUE(layer->needs_painting(paint_context()));
   EXPECT_EQ(mock_layer->parent_matrix(),
             SkMatrix::Concat(initial_transform, layer_transform));
   EXPECT_EQ(mock_layer->parent_mutators(),
@@ -251,10 +268,11 @@ TEST_F(OpacityLayerTest, HalfTransparent) {
       .roundOut(&opacity_bounds);
   auto expected_draw_calls = std::vector(
       {MockCanvas::DrawCall{0, MockCanvas::SaveData{1}},
-       MockCanvas::DrawCall{1, MockCanvas::ConcatMatrixData{layer_transform}},
+       MockCanvas::DrawCall{
+           1, MockCanvas::ConcatMatrixData{SkM44(layer_transform)}},
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
        MockCanvas::DrawCall{
-           1, MockCanvas::SetMatrixData{integral_layer_transform}},
+           1, MockCanvas::SetMatrixData{SkM44(integral_layer_transform)}},
 #endif
        MockCanvas::DrawCall{
            1, MockCanvas::SaveLayerData{opacity_bounds, opacity_paint, nullptr,
@@ -312,11 +330,11 @@ TEST_F(OpacityLayerTest, Nested) {
   EXPECT_EQ(mock_layer3->paint_bounds(), child3_path.getBounds());
   EXPECT_EQ(layer1->paint_bounds(), expected_layer1_bounds);
   EXPECT_EQ(layer2->paint_bounds(), expected_layer2_bounds);
-  EXPECT_TRUE(mock_layer1->needs_painting());
-  EXPECT_TRUE(mock_layer2->needs_painting());
-  EXPECT_TRUE(mock_layer3->needs_painting());
-  EXPECT_TRUE(layer1->needs_painting());
-  EXPECT_TRUE(layer2->needs_painting());
+  EXPECT_TRUE(mock_layer1->needs_painting(paint_context()));
+  EXPECT_TRUE(mock_layer2->needs_painting(paint_context()));
+  EXPECT_TRUE(mock_layer3->needs_painting(paint_context()));
+  EXPECT_TRUE(layer1->needs_painting(paint_context()));
+  EXPECT_TRUE(layer2->needs_painting(paint_context()));
   EXPECT_EQ(mock_layer1->parent_matrix(),
             SkMatrix::Concat(initial_transform, layer1_transform));
   //   EXPECT_EQ(mock_layer1->parent_mutators(),
@@ -344,10 +362,11 @@ TEST_F(OpacityLayerTest, Nested) {
       .roundOut(&opacity2_bounds);
   auto expected_draw_calls = std::vector(
       {MockCanvas::DrawCall{0, MockCanvas::SaveData{1}},
-       MockCanvas::DrawCall{1, MockCanvas::ConcatMatrixData{layer1_transform}},
+       MockCanvas::DrawCall{
+           1, MockCanvas::ConcatMatrixData{SkM44(layer1_transform)}},
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
        MockCanvas::DrawCall{
-           1, MockCanvas::SetMatrixData{integral_layer1_transform}},
+           1, MockCanvas::SetMatrixData{SkM44(integral_layer1_transform)}},
 #endif
        MockCanvas::DrawCall{
            1, MockCanvas::SaveLayerData{opacity1_bounds, opacity1_paint,
@@ -355,10 +374,11 @@ TEST_F(OpacityLayerTest, Nested) {
        MockCanvas::DrawCall{
            2, MockCanvas::DrawPathData{child1_path, child1_paint}},
        MockCanvas::DrawCall{2, MockCanvas::SaveData{3}},
-       MockCanvas::DrawCall{3, MockCanvas::ConcatMatrixData{layer2_transform}},
+       MockCanvas::DrawCall{
+           3, MockCanvas::ConcatMatrixData{SkM44(layer2_transform)}},
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
        MockCanvas::DrawCall{
-           3, MockCanvas::SetMatrixData{integral_layer2_transform}},
+           3, MockCanvas::SetMatrixData{SkM44(integral_layer2_transform)}},
 #endif
        MockCanvas::DrawCall{
            3, MockCanvas::SaveLayerData{opacity2_bounds, opacity2_paint,

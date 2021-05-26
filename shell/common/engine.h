@@ -11,13 +11,16 @@
 #include "flutter/assets/asset_manager.h"
 #include "flutter/common/task_runners.h"
 #include "flutter/fml/macros.h"
+#include "flutter/fml/mapping.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/lib/ui/hint_freed_delegate.h"
 #include "flutter/lib/ui/painting/image_decoder.h"
+#include "flutter/lib/ui/painting/image_generator_registry.h"
 #include "flutter/lib/ui/semantics/custom_accessibility_action.h"
 #include "flutter/lib/ui/semantics/semantics_node.h"
 #include "flutter/lib/ui/snapshot_delegate.h"
 #include "flutter/lib/ui/text/font_collection.h"
+#include "flutter/lib/ui/volatile_path_tracker.h"
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
 #include "flutter/runtime/dart_vm.h"
@@ -113,7 +116,8 @@ class Engine final : public RuntimeDelegate,
     ///
     /// * AOT assets give to JIT/DBC mode VM's and vice-versa.
     /// * The assets could not be found in the asset manager. Callers must make
-    ///   sure their run configuration asset managers have been correctly setup.
+    ///   sure their run configuration asset managers have been correctly set
+    ///   up.
     /// * The assets themselves were corrupt or invalid. Callers must make sure
     ///   their asset delivery mechanisms are sound.
     /// * The application entry-point or the root library of the entry-point
@@ -175,7 +179,7 @@ class Engine final : public RuntimeDelegate,
     ///                      the underlying platform.
     ///
     virtual void OnEngineHandlePlatformMessage(
-        fml::RefPtr<PlatformMessage> message) = 0;
+        std::unique_ptr<PlatformMessage> message) = 0;
 
     //--------------------------------------------------------------------------
     /// @brief      Notifies the delegate that the root isolate of the
@@ -202,13 +206,14 @@ class Engine final : public RuntimeDelegate,
     /// @brief      Notifies the shell of the name of the root isolate and its
     ///             port when that isolate is launched, restarted (in the
     ///             cold-restart scenario) or the application itself updates the
-    ///             name of the root isolate (via `Window.setIsolateDebugName`
-    ///             in `window.dart`). The name of the isolate is meaningless to
-    ///             the engine but is used in instrumentation and tooling.
-    ///             Currently, this information is to update the service
-    ///             protocol list of available root isolates running in the VM
-    ///             and their names so that the appropriate isolate can be
-    ///             selected in the tools for debugging and instrumentation.
+    ///             name of the root isolate (via
+    ///             `PlatformDispatcher.setIsolateDebugName` in
+    ///             `platform_dispatcher.dart`). The name of the isolate is
+    ///             meaningless to the engine but is used in instrumentation and
+    ///             tooling. Currently, this information is to update the
+    ///             service protocol list of available root isolates running in
+    ///             the VM and their names so that the appropriate isolate can
+    ///             be selected in the tools for debugging and instrumentation.
     ///
     /// @param[in]  isolate_name  The isolate name
     /// @param[in]  isolate_port  The isolate port
@@ -259,6 +264,33 @@ class Engine final : public RuntimeDelegate,
     virtual std::unique_ptr<std::vector<std::string>>
     ComputePlatformResolvedLocale(
         const std::vector<std::string>& supported_locale_data) = 0;
+
+    //--------------------------------------------------------------------------
+    /// @brief      Invoked when the Dart VM requests that a deferred library
+    ///             be loaded. Notifies the engine that the deferred library
+    ///             identified by the specified loading unit id should be
+    ///             downloaded and loaded into the Dart VM via
+    ///             `LoadDartDeferredLibrary`
+    ///
+    ///             Upon encountering errors or otherwise failing to load a
+    ///             loading unit with the specified id, the failure should be
+    ///             directly reported to dart by calling
+    ///             `LoadDartDeferredLibraryFailure` to ensure the waiting dart
+    ///             future completes with an error.
+    ///
+    /// @param[in]  loading_unit_id  The unique id of the deferred library's
+    ///                              loading unit. This id is to be passed
+    ///                              back into LoadDartDeferredLibrary
+    ///                              in order to identify which deferred
+    ///                              library to load.
+    ///
+    virtual void RequestDartDeferredLibrary(intptr_t loading_unit_id) = 0;
+
+    //--------------------------------------------------------------------------
+    /// @brief      Returns the current fml::TimePoint.
+    ///             This method is primarily provided to allow tests to control
+    ///             Any methods that rely on advancing the clock.
+    virtual fml::TimePoint GetCurrentTimePoint() = 0;
   };
 
   //----------------------------------------------------------------------------
@@ -273,6 +305,7 @@ class Engine final : public RuntimeDelegate,
          Settings settings,
          std::unique_ptr<Animator> animator,
          fml::WeakPtr<IOManager> io_manager,
+         const std::shared_ptr<FontCollection>& font_collection,
          std::unique_ptr<RuntimeController> runtime_controller);
 
   //----------------------------------------------------------------------------
@@ -322,12 +355,30 @@ class Engine final : public RuntimeDelegate,
          DartVM& vm,
          fml::RefPtr<const DartSnapshot> isolate_snapshot,
          TaskRunners task_runners,
-         const PlatformData platform_data,
+         const PlatformData& platform_data,
          Settings settings,
          std::unique_ptr<Animator> animator,
          fml::WeakPtr<IOManager> io_manager,
          fml::RefPtr<SkiaUnrefQueue> unref_queue,
-         fml::WeakPtr<SnapshotDelegate> snapshot_delegate);
+         fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
+         std::shared_ptr<VolatilePathTracker> volatile_path_tracker);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Create a Engine that shares as many resources as
+  ///             possible with the calling Engine such that together
+  ///             they occupy less memory and be created faster.
+  /// @details    This method ultimately calls DartIsolate::SpawnIsolate to make
+  ///             sure resources are shared.  This should only be called on
+  ///             running Engines.
+  /// @return     A new Engine with a running isolate.
+  /// @see        Engine::Engine
+  /// @see        DartIsolate::SpawnIsolate
+  ///
+  std::unique_ptr<Engine> Spawn(
+      Delegate& delegate,
+      const PointerDataDispatcherMaker& dispatcher_maker,
+      Settings settings,
+      std::unique_ptr<Animator> animator) const;
 
   //----------------------------------------------------------------------------
   /// @brief      Destroys the engine engine. Called by the shell on the UI task
@@ -420,9 +471,9 @@ class Engine final : public RuntimeDelegate,
   ///             The frame time given as the argument indicates the point at
   ///             which the current frame interval began. It is very slightly
   ///             (because of scheduling overhead) in the past. If a new layer
-  ///             tree is not produced and given to the GPU task runner within
-  ///             one frame interval from this point, the Flutter application
-  ///             will jank.
+  ///             tree is not produced and given to the raster task runner
+  ///             within one frame interval from this point, the Flutter
+  ///             application will jank.
   ///
   ///             If a root isolate is running, this method calls the
   ///             `::_beginFrame` method in `hooks.dart`. If a root isolate is
@@ -504,13 +555,13 @@ class Engine final : public RuntimeDelegate,
   /// @brief      Dart code cannot fully measure the time it takes for a
   ///             specific frame to be rendered. This is because Dart code only
   ///             runs on the UI task runner. That is only a small part of the
-  ///             overall frame workload. The GPU task runner frame workload is
-  ///             executed on a thread where Dart code cannot run (and hence
+  ///             overall frame workload. The raster task runner frame workload
+  ///             is executed on a thread where Dart code cannot run (and hence
   ///             instrument). Besides, due to the pipelined nature of rendering
   ///             in Flutter, there may be multiple frame workloads being
   ///             processed at any given time. However, for non-Timeline based
   ///             profiling, it is useful for trace collection and processing to
-  ///             happen in Dart. To do this, the GPU task runner frame
+  ///             happen in Dart. To do this, the raster task runner frame
   ///             workloads need to be instrumented separately. After a set
   ///             number of these profiles have been gathered, they need to be
   ///             reported back to Dart code. The shell reports this extra
@@ -552,8 +603,8 @@ class Engine final : public RuntimeDelegate,
   ///             "main.dart", the entrypoint is "main" and the port name
   ///             "1234". Once launched, the isolate may re-christen itself
   ///             using a name it selects via `setIsolateDebugName` in
-  ///             `window.dart`. This name is purely advisory and only used by
-  ///             instrumentation and reporting purposes.
+  ///             `platform_dispatcher.dart`. This name is purely advisory and
+  ///             only used by instrumentation and reporting purposes.
   ///
   /// @return     The debug name of the root isolate.
   ///
@@ -608,14 +659,9 @@ class Engine final : public RuntimeDelegate,
   ///
   /// @see        `UIIsolateHasLivePorts`
   ///
-  //  TODO(chinmaygarde): Use std::optional instead of the pair now that it is
-  //  available.
+  /// @return     The return code (if specified) by the isolate.
   ///
-  /// @return     A pair containing a boolean value indicating if the isolate
-  ///             set a "return value" and that value if present. When the first
-  ///             item of the pair is false, second item is meaningless.
-  ///
-  std::pair<bool, uint32_t> GetUIIsolateReturnCode();
+  std::optional<uint32_t> GetUIIsolateReturnCode();
 
   //----------------------------------------------------------------------------
   /// @brief      Indicates to the Flutter application that it has obtained a
@@ -667,7 +713,7 @@ class Engine final : public RuntimeDelegate,
   /// @param[in]  message  The message sent from the embedder to the Dart
   ///                      application.
   ///
-  void DispatchPlatformMessage(fml::RefPtr<PlatformMessage> message);
+  void DispatchPlatformMessage(std::unique_ptr<PlatformMessage> message);
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the engine that the embedder has sent it a pointer
@@ -691,6 +737,21 @@ class Engine final : public RuntimeDelegate,
                                  uint64_t trace_flow_id);
 
   //----------------------------------------------------------------------------
+  /// @brief      Notifies the engine that the embedder has sent it a key data
+  ///             packet. A key data packet contains one key event. This call
+  ///             originates in the platform view and the shell has forwarded
+  ///             the same to the engine on the UI task runner here. The engine
+  ///             will decide whether to handle this event, and send the
+  ///             result using `callback`, which will be called exactly once.
+  ///
+  /// @param[in]  packet    The key data packet.
+  /// @param[in]  callback  Called when the framework has decided whether
+  ///                       to handle this key data.
+  ///
+  void DispatchKeyDataPacket(std::unique_ptr<KeyDataPacket> packet,
+                             KeyDataResponse callback);
+
+  //----------------------------------------------------------------------------
   /// @brief      Notifies the engine that the embedder encountered an
   ///             accessibility related action on the specified node. This call
   ///             originates on the platform view and has been forwarded to the
@@ -703,7 +764,7 @@ class Engine final : public RuntimeDelegate,
   ///
   void DispatchSemanticsAction(int id,
                                SemanticsAction action,
-                               std::vector<uint8_t> args);
+                               fml::MallocMapping args);
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the engine that the embedder has expressed an opinion
@@ -751,7 +812,8 @@ class Engine final : public RuntimeDelegate,
                         uint64_t trace_flow_id) override;
 
   // |PointerDataDispatcher::Delegate|
-  void ScheduleSecondaryVsyncCallback(const fml::closure& callback) override;
+  void ScheduleSecondaryVsyncCallback(uintptr_t id,
+                                      const fml::closure& callback) override;
 
   //----------------------------------------------------------------------------
   /// @brief      Get the last Entrypoint that was used in the RunConfiguration
@@ -771,6 +833,75 @@ class Engine final : public RuntimeDelegate,
   ///
   const std::string& InitialRoute() const { return initial_route_; }
 
+  //--------------------------------------------------------------------------
+  /// @brief      Loads the Dart shared library into the Dart VM. When the
+  ///             Dart library is loaded successfully, the Dart future
+  ///             returned by the originating loadLibrary() call completes.
+  ///
+  ///             The Dart compiler may generate separate shared libraries
+  ///             files called 'loading units' when libraries are imported
+  ///             as deferred. Each of these shared libraries are identified
+  ///             by a unique loading unit id. Callers should open and resolve
+  ///             a SymbolMapping from the shared library. The Mappings should
+  ///             be moved into this method, as ownership will be assumed by the
+  ///             dart root isolate after successful loading and released after
+  ///             shutdown of the root isolate. The loading unit may not be
+  ///             used after isolate shutdown. If loading fails, the mappings
+  ///             will be released.
+  ///
+  ///             This method is paired with a RequestDartDeferredLibrary
+  ///             invocation that provides the embedder with the loading unit id
+  ///             of the deferred library to load.
+  ///
+  ///
+  /// @param[in]  loading_unit_id  The unique id of the deferred library's
+  ///                              loading unit, as passed in by
+  ///                              RequestDartDeferredLibrary.
+  ///
+  /// @param[in]  snapshot_data    Dart snapshot data of the loading unit's
+  ///                              shared library.
+  ///
+  /// @param[in]  snapshot_data    Dart snapshot instructions of the loading
+  ///                              unit's shared library.
+  ///
+  void LoadDartDeferredLibrary(
+      intptr_t loading_unit_id,
+      std::unique_ptr<const fml::Mapping> snapshot_data,
+      std::unique_ptr<const fml::Mapping> snapshot_instructions);
+
+  //--------------------------------------------------------------------------
+  /// @brief      Indicates to the dart VM that the request to load a deferred
+  ///             library with the specified loading unit id has failed.
+  ///
+  ///             The dart future returned by the initiating loadLibrary() call
+  ///             will complete with an error.
+  ///
+  /// @param[in]  loading_unit_id  The unique id of the deferred library's
+  ///                              loading unit, as passed in by
+  ///                              RequestDartDeferredLibrary.
+  ///
+  /// @param[in]  error_message    The error message that will appear in the
+  ///                              dart Future.
+  ///
+  /// @param[in]  transient        A transient error is a failure due to
+  ///                              temporary conditions such as no network.
+  ///                              Transient errors allow the dart VM to
+  ///                              re-request the same deferred library and
+  ///                              and loading_unit_id again. Non-transient
+  ///                              errors are permanent and attempts to
+  ///                              re-request the library will instantly
+  ///                              complete with an error.
+  void LoadDartDeferredLibraryError(intptr_t loading_unit_id,
+                                    const std::string error_message,
+                                    bool transient);
+
+  //--------------------------------------------------------------------------
+  /// @brief      Accessor for the RuntimeController.
+  ///
+  const RuntimeController* GetRuntimeController() const {
+    return runtime_controller_.get();
+  }
+
  private:
   Engine::Delegate& delegate_;
   const Settings settings_;
@@ -789,10 +920,12 @@ class Engine final : public RuntimeDelegate,
   std::shared_ptr<AssetManager> asset_manager_;
   bool activity_running_;
   bool have_surface_;
-  FontCollection font_collection_;
+  std::shared_ptr<FontCollection> font_collection_;
   ImageDecoder image_decoder_;
+  ImageGeneratorRegistry image_generator_registry_;
   TaskRunners task_runners_;
-  size_t hint_freed_bytes_since_last_idle_ = 0;
+  size_t hint_freed_bytes_since_last_call_ = 0;
+  fml::TimePoint last_hint_freed_call_time_;
   fml::WeakPtrFactory<Engine> weak_factory_;
 
   // |RuntimeDelegate|
@@ -806,7 +939,7 @@ class Engine final : public RuntimeDelegate,
                        CustomAccessibilityActionUpdates actions) override;
 
   // |RuntimeDelegate|
-  void HandlePlatformMessage(fml::RefPtr<PlatformMessage> message) override;
+  void HandlePlatformMessage(std::unique_ptr<PlatformMessage> message) override;
 
   // |RuntimeDelegate|
   void OnRootIsolateCreated() override;
@@ -819,6 +952,9 @@ class Engine final : public RuntimeDelegate,
   std::unique_ptr<std::vector<std::string>> ComputePlatformResolvedLocale(
       const std::vector<std::string>& supported_locale_data) override;
 
+  // |RuntimeDelegate|
+  void RequestDartDeferredLibrary(intptr_t loading_unit_id) override;
+
   void SetNeedsReportTimings(bool value) override;
 
   void StopAnimator();
@@ -827,17 +963,16 @@ class Engine final : public RuntimeDelegate,
 
   bool HandleLifecyclePlatformMessage(PlatformMessage* message);
 
-  bool HandleNavigationPlatformMessage(fml::RefPtr<PlatformMessage> message);
+  bool HandleNavigationPlatformMessage(
+      std::unique_ptr<PlatformMessage> message);
 
   bool HandleLocalizationPlatformMessage(PlatformMessage* message);
 
   void HandleSettingsPlatformMessage(PlatformMessage* message);
 
-  void HandleAssetPlatformMessage(fml::RefPtr<PlatformMessage> message);
+  void HandleAssetPlatformMessage(std::unique_ptr<PlatformMessage> message);
 
   bool GetAssetAsBuffer(const std::string& name, std::vector<uint8_t>* data);
-
-  RunStatus PrepareAndLaunchIsolate(RunConfiguration configuration);
 
   friend class testing::ShellTest;
 

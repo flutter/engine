@@ -8,8 +8,8 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui';
 
+import 'package:litetest/litetest.dart';
 import 'package:path/path.dart' as path;
-import 'package:test/test.dart';
 
 void main() {
   bool assertsEnabled = false;
@@ -196,7 +196,7 @@ class BlackSquare {
       targetWidth: targetWidth,
       allowUpscaling: allowUpscaling,
     );
-    return await imageCompleter.future;
+    return imageCompleter.future;
   }
 
   final int width;
@@ -207,5 +207,5 @@ class BlackSquare {
 Future<Uint8List> readFile(String fileName) async {
   final File file =
       File(path.join('flutter', 'testing', 'resources', fileName));
-  return await file.readAsBytes();
+  return file.readAsBytes();
 }

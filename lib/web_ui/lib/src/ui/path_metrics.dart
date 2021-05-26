@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
 part of ui;
 
 abstract class PathMetrics extends collection.IterableBase<PathMetric> {
@@ -22,7 +21,7 @@ abstract class PathMetric {
   double get length;
   int get contourIndex;
   Tangent? getTangentForOffset(double distance);
-  Path? extractPath(double start, double end, {bool startWithMoveTo = true});
+  Path extractPath(double start, double end, {bool startWithMoveTo = true});
   bool get isClosed;
 }
 

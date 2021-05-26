@@ -72,6 +72,10 @@ typedef enum {
 typedef enum {
   kOpenGL,
   kSoftware,
+  /// Metal is only supported on Darwin platforms (macOS / iOS).
+  /// iOS version >= 10.0 (device), 13.0 (simulator)
+  /// macOS version >= 10.14
+  kMetal,
 } FlutterRendererType;
 
 /// Additional accessibility features that may be enabled by the platform.
@@ -206,6 +210,10 @@ typedef enum {
   kFlutterSemanticsFlagIsFocusable = 1 << 21,
   /// Whether the semantics node represents a link.
   kFlutterSemanticsFlagIsLink = 1 << 22,
+  /// Whether the semantics node represents a slider.
+  kFlutterSemanticsFlagIsSlider = 1 << 23,
+  /// Whether the semantics node represents a keyboard key.
+  kFlutterSemanticsFlagIsKeyboardKey = 1 << 24,
 } FlutterSemanticsFlag;
 
 typedef enum {
@@ -434,6 +442,104 @@ typedef struct {
   BoolPresentInfoCallback present_with_info;
 } FlutterOpenGLRendererConfig;
 
+/// Alias for id<MTLDevice>.
+typedef const void* FlutterMetalDeviceHandle;
+
+/// Alias for id<MTLCommandQueue>.
+typedef const void* FlutterMetalCommandQueueHandle;
+
+/// Alias for id<MTLTexture>.
+typedef const void* FlutterMetalTextureHandle;
+
+/// Pixel format for the external texture.
+typedef enum {
+  kYUVA,
+  kRGBA,
+} FlutterMetalExternalTexturePixelFormat;
+
+typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterMetalExternalTexture).
+  size_t struct_size;
+  /// Height of the texture.
+  size_t width;
+  /// Height of the texture.
+  size_t height;
+  /// The pixel format type of the external.
+  FlutterMetalExternalTexturePixelFormat pixel_format;
+  /// Represents the size of the `textures` array.
+  size_t num_textures;
+  /// Supported textures are YUVA and RGBA, in case of YUVA we expect 2 texture
+  /// handles to be provided by the embedder, Y first and UV next. In case of
+  /// RGBA only one should be passed.
+  /// These are individually aliases for id<MTLTexture>. These textures are
+  /// retained by the engine for the period of the composition. Once these
+  /// textures have been unregistered via the
+  /// `FlutterEngineUnregisterExternalTexture`, the embedder has to release
+  /// these textures.
+  FlutterMetalTextureHandle* textures;
+} FlutterMetalExternalTexture;
+
+/// Callback to provide an external texture for a given texture_id.
+/// See: external_texture_frame_callback.
+typedef bool (*FlutterMetalTextureFrameCallback)(
+    void* /* user data */,
+    int64_t /* texture identifier */,
+    size_t /* width */,
+    size_t /* height */,
+    FlutterMetalExternalTexture* /* texture out */);
+
+typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterMetalTexture).
+  size_t struct_size;
+  /// Embedder provided unique identifier to the texture buffer. Given that the
+  /// `texture` handle is passed to the engine to render to, the texture buffer
+  /// is itseld owned by the embedder. This `texture_id` is then also given to
+  /// the embedder in the present callback.
+  int64_t texture_id;
+  /// Handle to the MTLTexture that is owned by the embedder. Engine will render
+  /// the frame into this texture.
+  FlutterMetalTextureHandle texture;
+  /// A baton that is not interpreted by the engine in any way. It will be given
+  /// back to the embedder in the destruction callback below. Embedder resources
+  /// may be associated with this baton.
+  void* user_data;
+  /// The callback invoked by the engine when it no longer needs this backing
+  /// store.
+  VoidCallback destruction_callback;
+} FlutterMetalTexture;
+
+/// Callback for when a metal texture is requested.
+typedef FlutterMetalTexture (*FlutterMetalTextureCallback)(
+    void* /* user data */,
+    const FlutterFrameInfo* /* frame info */);
+
+/// Callback for when a metal texture is presented. The texture_id here
+/// corresponds to the texture_id provided by the embedder in the
+/// `FlutterMetalTextureCallback` callback.
+typedef bool (*FlutterMetalPresentCallback)(
+    void* /* user data */,
+    const FlutterMetalTexture* /* texture */);
+
+typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterMetalRendererConfig).
+  size_t struct_size;
+  /// Alias for id<MTLDevice>.
+  FlutterMetalDeviceHandle device;
+  /// Alias for id<MTLCommandQueue>.
+  FlutterMetalCommandQueueHandle present_command_queue;
+  /// The callback that gets invoked when the engine requests the embedder for a
+  /// texture to render to.
+  FlutterMetalTextureCallback get_next_drawable_callback;
+  /// The callback presented to the embedder to present a fully populated metal
+  /// texture to the user.
+  FlutterMetalPresentCallback present_drawable_callback;
+  /// When the embedder specifies that a texture has a frame available, the
+  /// engine will call this method (on an internal engine managed thread) so
+  /// that external texture details can be supplied to the engine for subsequent
+  /// composition.
+  FlutterMetalTextureFrameCallback external_texture_frame_callback;
+} FlutterMetalRendererConfig;
+
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterSoftwareRendererConfig).
   size_t struct_size;
@@ -449,6 +555,7 @@ typedef struct {
   union {
     FlutterOpenGLRendererConfig open_gl;
     FlutterSoftwareRendererConfig software;
+    FlutterMetalRendererConfig metal;
   };
 } FlutterRendererConfig;
 
@@ -461,6 +568,10 @@ typedef struct {
   size_t height;
   /// Scale factor for the physical screen.
   double pixel_ratio;
+  /// Horizontal physical location of the left side of the window on the screen.
+  size_t left;
+  /// Vertical physical location of the top of the window on the screen.
+  size_t top;
   /// Bottom inset of window.
   double physical_view_inset_bottom;
 } FlutterWindowMetricsEvent;
@@ -505,6 +616,7 @@ typedef enum {
 typedef enum {
   kFlutterPointerDeviceKindMouse = 1,
   kFlutterPointerDeviceKindTouch,
+  kFlutterPointerDeviceKindStylus,
 } FlutterPointerDeviceKind;
 
 /// Flags for the `buttons` field of `FlutterPointerEvent` when `device_kind`
@@ -554,6 +666,66 @@ typedef struct {
   /// The buttons currently pressed, if any.
   int64_t buttons;
 } FlutterPointerEvent;
+
+typedef enum {
+  kFlutterKeyEventTypeUp = 1,
+  kFlutterKeyEventTypeDown,
+  kFlutterKeyEventTypeRepeat,
+} FlutterKeyEventType;
+
+/// A structure to represent a key event.
+///
+/// Sending `FlutterKeyEvent` via `FlutterEngineSendKeyEvent` results in a
+/// corresponding `FlutterKeyEvent` to be dispatched in the framework. It is
+/// embedder's responsibility to ensure the regularity of sent events, since the
+/// framework only performs simple one-to-one mapping. The events must conform
+/// the following rules:
+///
+///  * Each key press sequence shall consist of one key down event (`kind` being
+///    `kFlutterKeyEventTypeDown`), zero or more repeat events, and one key up
+///    event, representing a physical key button being pressed, held, and
+///    released.
+///  * All events throughout a key press sequence shall have the same `physical`
+///    and `logical`. Having different `character`s is allowed.
+typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterKeyEvent).
+  size_t struct_size;
+  /// The timestamp at which the key event was generated. The timestamp should
+  /// be specified in microseconds and the clock should be the same as that used
+  /// by `FlutterEngineGetCurrentTime`.
+  double timestamp;
+  /// The event kind.
+  FlutterKeyEventType type;
+  /// The USB HID code for the physical key of the event.
+  ///
+  /// For the full definition and list of pre-defined physical keys, see
+  /// `PhysicalKeyboardKey` from the framework.
+  uint64_t physical;
+  /// The key ID for the logical key of this event.
+  ///
+  /// For the full definition and a list of pre-defined logical keys, see
+  /// `LogicalKeyboardKey` from the framework.
+  uint64_t logical;
+  /// Null-terminated character input from the event. Can be null. Ignored for
+  /// up events.
+  const char* character;
+  /// True if this event does not correspond to a native event.
+  ///
+  /// The embedder is likely to skip events and/or construct new events that do
+  /// not correspond to any native events in order to conform the regularity
+  /// of events (as documented in `FlutterKeyEvent`). An example is when a key
+  /// up is missed due to loss of window focus, on a platform that provides
+  /// query to key pressing status, the embedder might realize that the key has
+  /// been released at the next key event, and should construct a synthesized up
+  /// event immediately before the actual event.
+  ///
+  /// An event being synthesized means that the `timestamp` might greatly
+  /// deviate from the actual time when the event occurs physically.
+  bool synthesized;
+} FlutterKeyEvent;
+
+typedef void (*FlutterKeyEventCallback)(bool /* handled */,
+                                        void* /* user_data */);
 
 struct _FlutterPlatformMessageResponseHandle;
 typedef struct _FlutterPlatformMessageResponseHandle
@@ -785,6 +957,17 @@ typedef struct {
   VoidCallback destruction_callback;
 } FlutterSoftwareBackingStore;
 
+typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterMetalBackingStore).
+  size_t struct_size;
+  union {
+    // A Metal texture for Flutter to render into. Ownership is not transferred
+    // to Flutter; the texture is CFRetained on successfully being passed in and
+    // CFReleased when no longer used.
+    FlutterMetalTexture texture;
+  };
+} FlutterMetalBackingStore;
+
 typedef enum {
   /// Indicates that the Flutter application requested that an opacity be
   /// applied to the platform view.
@@ -842,6 +1025,8 @@ typedef enum {
   kFlutterBackingStoreTypeOpenGL,
   /// Specified an software allocation for Flutter to render into using the CPU.
   kFlutterBackingStoreTypeSoftware,
+  /// Specifies a Metal backing store. This is backed by a Metal texture.
+  kFlutterBackingStoreTypeMetal,
 } FlutterBackingStoreType;
 
 typedef struct {
@@ -861,6 +1046,8 @@ typedef struct {
     FlutterOpenGLBackingStore open_gl;
     /// The description of the software backing store.
     FlutterSoftwareBackingStore software;
+    // The description of the Metal backing store.
+    FlutterMetalBackingStore metal;
   };
 } FlutterBackingStore;
 
@@ -935,6 +1122,8 @@ typedef struct {
   /// Callback invoked by the engine to composite the contents of each layer
   /// onto the screen.
   FlutterLayersPresentCallback present_layers_callback;
+  /// Avoid caching backing stores provided by this compositor.
+  bool avoid_backing_store_cache;
 } FlutterCompositor;
 
 typedef struct {
@@ -961,6 +1150,14 @@ typedef struct {
   const char* variant_code;
 } FlutterLocale;
 
+/// Callback that returns the system locale.
+///
+/// Embedders that implement this callback should return the `FlutterLocale`
+/// from the `supported_locales` list that most closely matches the
+/// user/device's preferred locale.
+///
+/// This callback does not currently provide the user_data baton.
+/// https://github.com/flutter/flutter/issues/79826
 typedef const FlutterLocale* (*FlutterComputePlatformResolvedLocaleCallback)(
     const FlutterLocale** /* supported_locales*/,
     size_t /* Number of locales*/);
@@ -983,7 +1180,7 @@ typedef struct {
   bool single_display;
 
   /// This represents the refresh period in frames per second. This value may be
-  /// zero if the device is not running or unavaliable or unknown.
+  /// zero if the device is not running or unavailable or unknown.
   double refresh_rate;
 } FlutterEngineDisplay;
 
@@ -998,22 +1195,6 @@ typedef enum {
   kFlutterEngineDisplaysUpdateTypeStartup,
   kFlutterEngineDisplaysUpdateTypeCount,
 } FlutterEngineDisplaysUpdateType;
-
-//------------------------------------------------------------------------------
-/// @brief    Posts updates corresponding to display changes to a running engine
-///           instance.
-///
-/// @param[in] update_type      The type of update pushed to the engine.
-/// @param[in] displays         The displays affected by this update.
-/// @param[in] display_count    Size of the displays array, must be at least 1.
-///
-/// @return the result of the call made to the engine.
-///
-FlutterEngineResult FlutterEngineNotifyDisplayUpdate(
-    FLUTTER_API_SYMBOL(FlutterEngine) engine,
-    FlutterEngineDisplaysUpdateType update_type,
-    const FlutterEngineDisplay* displays,
-    size_t display_count);
 
 typedef int64_t FlutterEngineDartPort;
 
@@ -1128,41 +1309,20 @@ typedef struct {
   };
 } FlutterEngineAOTDataSource;
 
+// Logging callback for Dart application messages.
+//
+// The `tag` parameter contains a null-terminated string containing a logging
+// tag or component name that can be used to identify system log messages from
+// the app. The `message` parameter contains a null-terminated string
+// containing the message to be logged. `user_data` is a user data baton passed
+// in `FlutterEngineRun`.
+typedef void (*FlutterLogMessageCallback)(const char* /* tag */,
+                                          const char* /* message */,
+                                          void* /* user_data */);
+
 /// An opaque object that describes the AOT data that can be used to launch a
 /// FlutterEngine instance in AOT mode.
 typedef struct _FlutterEngineAOTData* FlutterEngineAOTData;
-
-//------------------------------------------------------------------------------
-/// @brief      Creates the necessary data structures to launch a Flutter Dart
-///             application in AOT mode. The data may only be collected after
-///             all FlutterEngine instances launched using this data have been
-///             terminated.
-///
-/// @param[in]  source    The source of the AOT data.
-/// @param[out] data_out  The AOT data on success. Unchanged on failure.
-///
-/// @return     Returns if the AOT data could be successfully resolved.
-///
-FLUTTER_EXPORT
-FlutterEngineResult FlutterEngineCreateAOTData(
-    const FlutterEngineAOTDataSource* source,
-    FlutterEngineAOTData* data_out);
-
-//------------------------------------------------------------------------------
-/// @brief      Collects the AOT data.
-///
-/// @warning    The embedder must ensure that this call is made only after all
-///             FlutterEngine instances launched using this data have been
-///             terminated, and that all of those instances were launched with
-///             the FlutterProjectArgs::shutdown_dart_vm_when_done flag set to
-///             true.
-///
-/// @param[in]  data   The data to collect.
-///
-/// @return     Returns if the AOT data was successfully collected.
-///
-FLUTTER_EXPORT
-FlutterEngineResult FlutterEngineCollectAOTData(FlutterEngineAOTData data);
 
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterProjectArgs).
@@ -1383,7 +1543,55 @@ typedef struct {
   /// `FlutterProjectArgs`.
   const char* const* dart_entrypoint_argv;
 
+  // Logging callback for Dart application messages.
+  //
+  // This callback is used by embedder to log print messages from the running
+  // Flutter application. This callback is made on an internal engine managed
+  // thread and embedders must re-thread if necessary. Performing blocking calls
+  // in this callback may introduce application jank.
+  FlutterLogMessageCallback log_message_callback;
+
+  // A tag string associated with application log messages.
+  //
+  // A log message tag string that can be used convey application, subsystem,
+  // or component name to embedder's logger. This string will be passed to to
+  // callbacks on `log_message_callback`. Defaults to "flutter" if unspecified.
+  const char* log_tag;
 } FlutterProjectArgs;
+
+#ifndef FLUTTER_ENGINE_NO_PROTOTYPES
+
+//------------------------------------------------------------------------------
+/// @brief      Creates the necessary data structures to launch a Flutter Dart
+///             application in AOT mode. The data may only be collected after
+///             all FlutterEngine instances launched using this data have been
+///             terminated.
+///
+/// @param[in]  source    The source of the AOT data.
+/// @param[out] data_out  The AOT data on success. Unchanged on failure.
+///
+/// @return     Returns if the AOT data could be successfully resolved.
+///
+FLUTTER_EXPORT
+FlutterEngineResult FlutterEngineCreateAOTData(
+    const FlutterEngineAOTDataSource* source,
+    FlutterEngineAOTData* data_out);
+
+//------------------------------------------------------------------------------
+/// @brief      Collects the AOT data.
+///
+/// @warning    The embedder must ensure that this call is made only after all
+///             FlutterEngine instances launched using this data have been
+///             terminated, and that all of those instances were launched with
+///             the FlutterProjectArgs::shutdown_dart_vm_when_done flag set to
+///             true.
+///
+/// @param[in]  data   The data to collect.
+///
+/// @return     Returns if the AOT data was successfully collected.
+///
+FLUTTER_EXPORT
+FlutterEngineResult FlutterEngineCollectAOTData(FlutterEngineAOTData data);
 
 //------------------------------------------------------------------------------
 /// @brief      Initialize and run a Flutter engine instance and return a handle
@@ -1504,6 +1712,32 @@ FlutterEngineResult FlutterEngineSendPointerEvent(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
     const FlutterPointerEvent* events,
     size_t events_count);
+
+//------------------------------------------------------------------------------
+/// @brief      Sends a key event to the engine. The framework will decide
+///             whether to handle this event in a synchronous fashion, although
+///             due to technical limitation, the result is always reported
+///             asynchronously. The `callback` is guaranteed to be called
+///             exactly once.
+///
+/// @param[in]  engine         A running engine instance.
+/// @param[in]  event          The event data to be sent. This function will no
+///                            longer access `event` after returning.
+/// @param[in]  callback       The callback invoked by the engine when the
+///                            Flutter application has decided whether it
+///                            handles this event. Accepts nullptr.
+/// @param[in]  user_data      The context associated with the callback. The
+///                            exact same value will used to invoke `callback`.
+///                            Accepts nullptr.
+///
+/// @return     The result of the call.
+///
+FLUTTER_EXPORT
+FlutterEngineResult FlutterEngineSendKeyEvent(FLUTTER_API_SYMBOL(FlutterEngine)
+                                                  engine,
+                                              const FlutterKeyEvent* event,
+                                              FlutterKeyEventCallback callback,
+                                              void* user_data);
 
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineSendPlatformMessage(
@@ -1967,6 +2201,197 @@ FlutterEngineResult FlutterEnginePostCallbackOnAllNativeThreads(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
     FlutterNativeThreadCallback callback,
     void* user_data);
+
+//------------------------------------------------------------------------------
+/// @brief    Posts updates corresponding to display changes to a running engine
+///           instance.
+///
+/// @param[in] update_type      The type of update pushed to the engine.
+/// @param[in] displays         The displays affected by this update.
+/// @param[in] display_count    Size of the displays array, must be at least 1.
+///
+/// @return the result of the call made to the engine.
+///
+FLUTTER_EXPORT
+FlutterEngineResult FlutterEngineNotifyDisplayUpdate(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    FlutterEngineDisplaysUpdateType update_type,
+    const FlutterEngineDisplay* displays,
+    size_t display_count);
+
+#endif  // !FLUTTER_ENGINE_NO_PROTOTYPES
+
+// Typedefs for the function pointers in FlutterEngineProcTable.
+typedef FlutterEngineResult (*FlutterEngineCreateAOTDataFnPtr)(
+    const FlutterEngineAOTDataSource* source,
+    FlutterEngineAOTData* data_out);
+typedef FlutterEngineResult (*FlutterEngineCollectAOTDataFnPtr)(
+    FlutterEngineAOTData data);
+typedef FlutterEngineResult (*FlutterEngineRunFnPtr)(
+    size_t version,
+    const FlutterRendererConfig* config,
+    const FlutterProjectArgs* args,
+    void* user_data,
+    FLUTTER_API_SYMBOL(FlutterEngine) * engine_out);
+typedef FlutterEngineResult (*FlutterEngineShutdownFnPtr)(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine);
+typedef FlutterEngineResult (*FlutterEngineInitializeFnPtr)(
+    size_t version,
+    const FlutterRendererConfig* config,
+    const FlutterProjectArgs* args,
+    void* user_data,
+    FLUTTER_API_SYMBOL(FlutterEngine) * engine_out);
+typedef FlutterEngineResult (*FlutterEngineDeinitializeFnPtr)(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine);
+typedef FlutterEngineResult (*FlutterEngineRunInitializedFnPtr)(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine);
+typedef FlutterEngineResult (*FlutterEngineSendWindowMetricsEventFnPtr)(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    const FlutterWindowMetricsEvent* event);
+typedef FlutterEngineResult (*FlutterEngineSendPointerEventFnPtr)(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    const FlutterPointerEvent* events,
+    size_t events_count);
+typedef FlutterEngineResult (*FlutterEngineSendKeyEventFnPtr)(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    const FlutterKeyEvent* event,
+    FlutterKeyEventCallback callback,
+    void* user_data);
+typedef FlutterEngineResult (*FlutterEngineSendPlatformMessageFnPtr)(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    const FlutterPlatformMessage* message);
+typedef FlutterEngineResult (
+    *FlutterEnginePlatformMessageCreateResponseHandleFnPtr)(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    FlutterDataCallback data_callback,
+    void* user_data,
+    FlutterPlatformMessageResponseHandle** response_out);
+typedef FlutterEngineResult (
+    *FlutterEnginePlatformMessageReleaseResponseHandleFnPtr)(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    FlutterPlatformMessageResponseHandle* response);
+typedef FlutterEngineResult (*FlutterEngineSendPlatformMessageResponseFnPtr)(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    const FlutterPlatformMessageResponseHandle* handle,
+    const uint8_t* data,
+    size_t data_length);
+typedef FlutterEngineResult (*FlutterEngineRegisterExternalTextureFnPtr)(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    int64_t texture_identifier);
+typedef FlutterEngineResult (*FlutterEngineUnregisterExternalTextureFnPtr)(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    int64_t texture_identifier);
+typedef FlutterEngineResult (
+    *FlutterEngineMarkExternalTextureFrameAvailableFnPtr)(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    int64_t texture_identifier);
+typedef FlutterEngineResult (*FlutterEngineUpdateSemanticsEnabledFnPtr)(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    bool enabled);
+typedef FlutterEngineResult (*FlutterEngineUpdateAccessibilityFeaturesFnPtr)(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    FlutterAccessibilityFeature features);
+typedef FlutterEngineResult (*FlutterEngineDispatchSemanticsActionFnPtr)(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    uint64_t id,
+    FlutterSemanticsAction action,
+    const uint8_t* data,
+    size_t data_length);
+typedef FlutterEngineResult (*FlutterEngineOnVsyncFnPtr)(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    intptr_t baton,
+    uint64_t frame_start_time_nanos,
+    uint64_t frame_target_time_nanos);
+typedef FlutterEngineResult (*FlutterEngineReloadSystemFontsFnPtr)(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine);
+typedef void (*FlutterEngineTraceEventDurationBeginFnPtr)(const char* name);
+typedef void (*FlutterEngineTraceEventDurationEndFnPtr)(const char* name);
+typedef void (*FlutterEngineTraceEventInstantFnPtr)(const char* name);
+typedef FlutterEngineResult (*FlutterEnginePostRenderThreadTaskFnPtr)(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    VoidCallback callback,
+    void* callback_data);
+typedef uint64_t (*FlutterEngineGetCurrentTimeFnPtr)();
+typedef FlutterEngineResult (*FlutterEngineRunTaskFnPtr)(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    const FlutterTask* task);
+typedef FlutterEngineResult (*FlutterEngineUpdateLocalesFnPtr)(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    const FlutterLocale** locales,
+    size_t locales_count);
+typedef bool (*FlutterEngineRunsAOTCompiledDartCodeFnPtr)(void);
+typedef FlutterEngineResult (*FlutterEnginePostDartObjectFnPtr)(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    FlutterEngineDartPort port,
+    const FlutterEngineDartObject* object);
+typedef FlutterEngineResult (*FlutterEngineNotifyLowMemoryWarningFnPtr)(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine);
+typedef FlutterEngineResult (*FlutterEnginePostCallbackOnAllNativeThreadsFnPtr)(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    FlutterNativeThreadCallback callback,
+    void* user_data);
+typedef FlutterEngineResult (*FlutterEngineNotifyDisplayUpdateFnPtr)(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    FlutterEngineDisplaysUpdateType update_type,
+    const FlutterEngineDisplay* displays,
+    size_t display_count);
+
+/// Function-pointer-based versions of the APIs above.
+typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterEngineProcs).
+  size_t struct_size;
+
+  FlutterEngineCreateAOTDataFnPtr CreateAOTData;
+  FlutterEngineCollectAOTDataFnPtr CollectAOTData;
+  FlutterEngineRunFnPtr Run;
+  FlutterEngineShutdownFnPtr Shutdown;
+  FlutterEngineInitializeFnPtr Initialize;
+  FlutterEngineDeinitializeFnPtr Deinitialize;
+  FlutterEngineRunInitializedFnPtr RunInitialized;
+  FlutterEngineSendWindowMetricsEventFnPtr SendWindowMetricsEvent;
+  FlutterEngineSendPointerEventFnPtr SendPointerEvent;
+  FlutterEngineSendKeyEventFnPtr SendKeyEvent;
+  FlutterEngineSendPlatformMessageFnPtr SendPlatformMessage;
+  FlutterEnginePlatformMessageCreateResponseHandleFnPtr
+      PlatformMessageCreateResponseHandle;
+  FlutterEnginePlatformMessageReleaseResponseHandleFnPtr
+      PlatformMessageReleaseResponseHandle;
+  FlutterEngineSendPlatformMessageResponseFnPtr SendPlatformMessageResponse;
+  FlutterEngineRegisterExternalTextureFnPtr RegisterExternalTexture;
+  FlutterEngineUnregisterExternalTextureFnPtr UnregisterExternalTexture;
+  FlutterEngineMarkExternalTextureFrameAvailableFnPtr
+      MarkExternalTextureFrameAvailable;
+  FlutterEngineUpdateSemanticsEnabledFnPtr UpdateSemanticsEnabled;
+  FlutterEngineUpdateAccessibilityFeaturesFnPtr UpdateAccessibilityFeatures;
+  FlutterEngineDispatchSemanticsActionFnPtr DispatchSemanticsAction;
+  FlutterEngineOnVsyncFnPtr OnVsync;
+  FlutterEngineReloadSystemFontsFnPtr ReloadSystemFonts;
+  FlutterEngineTraceEventDurationBeginFnPtr TraceEventDurationBegin;
+  FlutterEngineTraceEventDurationEndFnPtr TraceEventDurationEnd;
+  FlutterEngineTraceEventInstantFnPtr TraceEventInstant;
+  FlutterEnginePostRenderThreadTaskFnPtr PostRenderThreadTask;
+  FlutterEngineGetCurrentTimeFnPtr GetCurrentTime;
+  FlutterEngineRunTaskFnPtr RunTask;
+  FlutterEngineUpdateLocalesFnPtr UpdateLocales;
+  FlutterEngineRunsAOTCompiledDartCodeFnPtr RunsAOTCompiledDartCode;
+  FlutterEnginePostDartObjectFnPtr PostDartObject;
+  FlutterEngineNotifyLowMemoryWarningFnPtr NotifyLowMemoryWarning;
+  FlutterEnginePostCallbackOnAllNativeThreadsFnPtr
+      PostCallbackOnAllNativeThreads;
+  FlutterEngineNotifyDisplayUpdateFnPtr NotifyDisplayUpdate;
+} FlutterEngineProcTable;
+
+//------------------------------------------------------------------------------
+/// @brief      Gets the table of engine function pointers.
+///
+/// @param[out] table   The table to fill with pointers. This should be
+///                     zero-initialized, except for struct_size.
+///
+/// @return     Returns whether the table was successfully populated.
+///
+FLUTTER_EXPORT
+FlutterEngineResult FlutterEngineGetProcAddresses(
+    FlutterEngineProcTable* table);
 
 #if defined(__cplusplus)
 }  // extern "C"

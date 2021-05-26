@@ -27,6 +27,7 @@ void PlatformViewLayer::Preroll(PrerollContext* context,
     return;
   }
   context->has_platform_view = true;
+  set_subtree_has_platform_view(true);
   std::unique_ptr<EmbeddedViewParams> params =
       std::make_unique<EmbeddedViewParams>(matrix, size_,
                                            context->mutators_stack);
@@ -47,10 +48,11 @@ void PlatformViewLayer::Paint(PaintContext& context) const {
 }
 
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
-void PlatformViewLayer::UpdateScene(SceneUpdateContext& context) {
+void PlatformViewLayer::UpdateScene(
+    std::shared_ptr<SceneUpdateContext> context) {
   TRACE_EVENT0("flutter", "PlatformViewLayer::UpdateScene");
   FML_DCHECK(needs_system_composite());
-  context.UpdateView(view_id_, offset_, size_);
+  context->UpdateView(view_id_, offset_, size_);
 }
 #endif
 

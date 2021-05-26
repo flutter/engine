@@ -1,5 +1,6 @@
 package io.flutter.embedding.android;
 
+import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.HANDLE_DEEPLINKING_META_DATA_KEY;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -7,20 +8,29 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.lifecycle.DefaultLifecycleObserver;
+import androidx.lifecycle.LifecycleOwner;
+import io.flutter.FlutterInjector;
 import io.flutter.embedding.android.FlutterActivityLaunchConfigs.BackgroundMode;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterEngineCache;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.loader.FlutterLoader;
+import io.flutter.embedding.engine.plugins.FlutterPlugin;
+import io.flutter.embedding.engine.plugins.activity.ActivityAware;
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding.OnSaveInstanceStateListener;
 import io.flutter.plugins.GeneratedPluginRegistrant;
 import java.util.List;
 import org.junit.After;
@@ -39,11 +49,18 @@ public class FlutterActivityTest {
   @Before
   public void setUp() {
     GeneratedPluginRegistrant.clearRegisteredEngines();
+    FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
+    when(mockFlutterJNI.isAttached()).thenReturn(true);
+    FlutterJNI.Factory mockFlutterJNIFactory = mock(FlutterJNI.Factory.class);
+    when(mockFlutterJNIFactory.provideFlutterJNI()).thenReturn(mockFlutterJNI);
+    FlutterInjector.setInstance(
+        new FlutterInjector.Builder().setFlutterJNIFactory(mockFlutterJNIFactory).build());
   }
 
   @After
   public void tearDown() {
     GeneratedPluginRegistrant.clearRegisteredEngines();
+    FlutterInjector.reset();
   }
 
   @Test
@@ -117,6 +134,58 @@ public class FlutterActivityTest {
   }
 
   @Test
+  public void itReturnsValueFromMetaDataWhenCallsShouldHandleDeepLinkingCase1()
+      throws PackageManager.NameNotFoundException {
+    Intent intent =
+        FlutterActivity.withNewEngine()
+            .backgroundMode(BackgroundMode.transparent)
+            .build(RuntimeEnvironment.application);
+    ActivityController<FlutterActivity> activityController =
+        Robolectric.buildActivity(FlutterActivity.class, intent);
+    FlutterActivity flutterActivity = activityController.get();
+    Bundle bundle = new Bundle();
+    bundle.putBoolean(HANDLE_DEEPLINKING_META_DATA_KEY, true);
+    FlutterActivity spyFlutterActivity = spy(flutterActivity);
+    when(spyFlutterActivity.getMetaData()).thenReturn(bundle);
+    assertTrue(spyFlutterActivity.shouldHandleDeeplinking());
+  }
+
+  @Test
+  public void itReturnsValueFromMetaDataWhenCallsShouldHandleDeepLinkingCase2()
+      throws PackageManager.NameNotFoundException {
+    Intent intent =
+        FlutterActivity.withNewEngine()
+            .backgroundMode(BackgroundMode.transparent)
+            .build(RuntimeEnvironment.application);
+    ActivityController<FlutterActivity> activityController =
+        Robolectric.buildActivity(FlutterActivity.class, intent);
+    FlutterActivity flutterActivity = activityController.get();
+    Bundle bundle = new Bundle();
+    bundle.putBoolean(HANDLE_DEEPLINKING_META_DATA_KEY, false);
+    FlutterActivity spyFlutterActivity = spy(flutterActivity);
+    when(spyFlutterActivity.getMetaData()).thenReturn(bundle);
+    assertFalse(spyFlutterActivity.shouldHandleDeeplinking());
+  }
+
+  @Test
+  public void itReturnsValueFromMetaDataWhenCallsShouldHandleDeepLinkingCase3()
+      throws PackageManager.NameNotFoundException {
+    Intent intent =
+        FlutterActivity.withNewEngine()
+            .backgroundMode(BackgroundMode.transparent)
+            .build(RuntimeEnvironment.application);
+    ActivityController<FlutterActivity> activityController =
+        Robolectric.buildActivity(FlutterActivity.class, intent);
+    FlutterActivity flutterActivity = activityController.get();
+    // Creates an empty bundle.
+    Bundle bundle = new Bundle();
+    FlutterActivity spyFlutterActivity = spy(flutterActivity);
+    when(spyFlutterActivity.getMetaData()).thenReturn(bundle);
+    // Empty bundle should return false.
+    assertFalse(spyFlutterActivity.shouldHandleDeeplinking());
+  }
+
+  @Test
   public void itCreatesCachedEngineIntentThatDoesNotDestroyTheEngine() {
     Intent intent =
         FlutterActivity.withCachedEngine("my_cached_engine")
@@ -150,12 +219,14 @@ public class FlutterActivityTest {
 
   @Test
   public void itRegistersPluginsAtConfigurationTime() {
-    FlutterActivity activity =
-        Robolectric.buildActivity(FlutterActivityWithProvidedEngine.class).get();
-    activity.onCreate(null);
+    Intent intent = FlutterActivity.createDefaultIntent(RuntimeEnvironment.application);
+    ActivityController<FlutterActivity> activityController =
+        Robolectric.buildActivity(FlutterActivity.class, intent);
+    FlutterActivity activity = activityController.get();
 
-    assertTrue(GeneratedPluginRegistrant.getRegisteredEngines().isEmpty());
-    activity.configureFlutterEngine(activity.getFlutterEngine());
+    // This calls onAttach on FlutterActivityAndFragmentDelegate and subsequently
+    // configureFlutterEngine which registers the plugins.
+    activity.onCreate(null);
 
     List<FlutterEngine> registeredEngines = GeneratedPluginRegistrant.getRegisteredEngines();
     assertEquals(1, registeredEngines.size());
@@ -188,12 +259,54 @@ public class FlutterActivityTest {
     verify(mockDelegate, times(1)).onDetach();
 
     flutterActivity.onStop();
-    flutterActivity.onDestroy();
-
     verify(mockDelegate, never()).onStop();
+
+    // Simulate the disconnected activity resuming again.
+    flutterActivity.onStart();
+    flutterActivity.onResume();
+    // Shouldn't send more events to the delegates as before and shouldn't crash.
+    verify(mockDelegate, times(1)).onStart();
+    verify(mockDelegate, times(1)).onResume();
+
+    flutterActivity.onDestroy();
     // 1 time same as before.
     verify(mockDelegate, times(1)).onDestroyView();
     verify(mockDelegate, times(1)).onDetach();
+  }
+
+  @Test
+  public void itRestoresPluginStateBeforePluginOnCreate() {
+    FlutterLoader mockFlutterLoader = mock(FlutterLoader.class);
+    FlutterJNI mockFlutterJni = mock(FlutterJNI.class);
+    when(mockFlutterJni.isAttached()).thenReturn(true);
+    FlutterEngine cachedEngine =
+        new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni);
+    FakeFlutterPlugin fakeFlutterPlugin = new FakeFlutterPlugin();
+    cachedEngine.getPlugins().add(fakeFlutterPlugin);
+    FlutterEngineCache.getInstance().put("my_cached_engine", cachedEngine);
+
+    Intent intent =
+        FlutterActivity.withCachedEngine("my_cached_engine").build(RuntimeEnvironment.application);
+    Robolectric.buildActivity(FlutterActivity.class, intent).setup();
+    assertTrue(
+        "Expected FakeFlutterPlugin onCreateCalled to be true", fakeFlutterPlugin.onCreateCalled);
+  }
+
+  @Test
+  public void itDoesNotRegisterPluginsTwiceWhenUsingACachedEngine() {
+    Intent intent =
+        new Intent(RuntimeEnvironment.application, FlutterActivityWithProvidedEngine.class);
+    ActivityController<FlutterActivityWithProvidedEngine> activityController =
+        Robolectric.buildActivity(FlutterActivityWithProvidedEngine.class, intent);
+    activityController.create();
+    FlutterActivityWithProvidedEngine flutterActivity = activityController.get();
+    flutterActivity.configureFlutterEngine(flutterActivity.getFlutterEngine());
+
+    List<FlutterEngine> registeredEngines = GeneratedPluginRegistrant.getRegisteredEngines();
+    // This might cause the plugins to be registered twice, once by the FlutterEngine constructor,
+    // and once by the default FlutterActivity.configureFlutterEngine implementation.
+    // Test that it doesn't happen.
+    assertEquals(1, registeredEngines.size());
   }
 
   static class FlutterActivityWithProvidedEngine extends FlutterActivity {
@@ -207,22 +320,79 @@ public class FlutterActivityTest {
     @Override
     public FlutterEngine provideFlutterEngine(@NonNull Context context) {
       FlutterJNI flutterJNI = mock(FlutterJNI.class);
+      FlutterLoader flutterLoader = mock(FlutterLoader.class);
       when(flutterJNI.isAttached()).thenReturn(true);
+      when(flutterLoader.automaticallyRegisterPlugins()).thenReturn(true);
 
-      return new FlutterEngine(
-          context, mock(FlutterLoader.class), flutterJNI, new String[] {}, false);
+      return new FlutterEngine(context, flutterLoader, flutterJNI, new String[] {}, true);
     }
   }
 
   // This is just a compile time check to ensure that it's possible for FlutterActivity subclasses
   // to provide their own intent builders which builds their own runtime types.
   static class FlutterActivityWithIntentBuilders extends FlutterActivity {
+
     public static NewEngineIntentBuilder withNewEngine() {
       return new NewEngineIntentBuilder(FlutterActivityWithIntentBuilders.class);
     }
 
     public static CachedEngineIntentBuilder withCachedEngine(@NonNull String cachedEngineId) {
       return new CachedEngineIntentBuilder(FlutterActivityWithIntentBuilders.class, cachedEngineId);
+    }
+  }
+
+  private static final class FakeFlutterPlugin
+      implements FlutterPlugin,
+          ActivityAware,
+          OnSaveInstanceStateListener,
+          DefaultLifecycleObserver {
+
+    private ActivityPluginBinding activityPluginBinding;
+    private boolean stateRestored = false;
+    private boolean onCreateCalled = false;
+
+    @Override
+    public void onAttachedToEngine(@NonNull FlutterPluginBinding binding) {}
+
+    @Override
+    public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {}
+
+    @Override
+    public void onAttachedToActivity(@NonNull ActivityPluginBinding binding) {
+      activityPluginBinding = binding;
+      binding.addOnSaveStateListener(this);
+      ((FlutterActivity) binding.getActivity()).getLifecycle().addObserver(this);
+    }
+
+    @Override
+    public void onDetachedFromActivityForConfigChanges() {
+      onDetachedFromActivity();
+    }
+
+    @Override
+    public void onReattachedToActivityForConfigChanges(@NonNull ActivityPluginBinding binding) {
+      onAttachedToActivity(binding);
+    }
+
+    @Override
+    public void onDetachedFromActivity() {
+      ((FlutterActivity) activityPluginBinding.getActivity()).getLifecycle().removeObserver(this);
+      activityPluginBinding.removeOnSaveStateListener(this);
+      activityPluginBinding = null;
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle bundle) {}
+
+    @Override
+    public void onRestoreInstanceState(@Nullable Bundle bundle) {
+      stateRestored = true;
+    }
+
+    @Override
+    public void onCreate(@NonNull LifecycleOwner lifecycleOwner) {
+      assertTrue("State was restored before onCreate", stateRestored);
+      onCreateCalled = true;
     }
   }
 }

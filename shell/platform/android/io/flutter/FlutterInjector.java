@@ -4,8 +4,11 @@
 
 package io.flutter;
 
-import android.support.annotation.NonNull;
-import android.support.annotation.VisibleForTesting;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
+import io.flutter.embedding.engine.FlutterJNI;
+import io.flutter.embedding.engine.deferredcomponents.DeferredComponentManager;
 import io.flutter.embedding.engine.loader.FlutterLoader;
 
 /**
@@ -62,22 +65,18 @@ public final class FlutterInjector {
     instance = null;
   }
 
-  private FlutterInjector(boolean shouldLoadNative, @NonNull FlutterLoader flutterLoader) {
-    this.shouldLoadNative = shouldLoadNative;
+  private FlutterInjector(
+      @NonNull FlutterLoader flutterLoader,
+      @Nullable DeferredComponentManager deferredComponentManager,
+      @NonNull FlutterJNI.Factory flutterJniFactory) {
     this.flutterLoader = flutterLoader;
+    this.deferredComponentManager = deferredComponentManager;
+    this.flutterJniFactory = flutterJniFactory;
   }
 
-  private boolean shouldLoadNative;
   private FlutterLoader flutterLoader;
-
-  /**
-   * Returns whether the Flutter Android engine embedding should load the native C++ engine.
-   *
-   * <p>Useful for testing since JVM tests via Robolectric can't load native libraries.
-   */
-  public boolean shouldLoadNative() {
-    return shouldLoadNative;
-  }
+  private DeferredComponentManager deferredComponentManager;
+  private FlutterJNI.Factory flutterJniFactory;
 
   /** Returns the {@link FlutterLoader} instance to use for the Flutter Android engine embedding. */
   @NonNull
@@ -86,27 +85,29 @@ public final class FlutterInjector {
   }
 
   /**
+   * Returns the {@link DeferredComponentManager} instance to use for the Flutter Android engine
+   * embedding.
+   */
+  @Nullable
+  public DeferredComponentManager deferredComponentManager() {
+    return deferredComponentManager;
+  }
+
+  @NonNull
+  public FlutterJNI.Factory getFlutterJNIFactory() {
+    return flutterJniFactory;
+  }
+
+  /**
    * Builder used to supply a custom FlutterInjector instance to {@link
    * FlutterInjector#setInstance(FlutterInjector)}.
    *
-   * <p>Non-overriden values have reasonable defaults.
+   * <p>Non-overridden values have reasonable defaults.
    */
   public static final class Builder {
-
-    private boolean shouldLoadNative = true;
-    /**
-     * Sets whether the Flutter Android engine embedding should load the native C++ engine.
-     *
-     * <p>Useful for testing since JVM tests via Robolectric can't load native libraries.
-     *
-     * <p>Defaults to true.
-     */
-    public Builder setShouldLoadNative(boolean shouldLoadNative) {
-      this.shouldLoadNative = shouldLoadNative;
-      return this;
-    }
-
     private FlutterLoader flutterLoader;
+    private DeferredComponentManager deferredComponentManager;
+    private FlutterJNI.Factory flutterJniFactory;
     /**
      * Sets a {@link FlutterLoader} override.
      *
@@ -117,10 +118,26 @@ public final class FlutterInjector {
       return this;
     }
 
+    public Builder setDeferredComponentManager(
+        @Nullable DeferredComponentManager deferredComponentManager) {
+      this.deferredComponentManager = deferredComponentManager;
+      return this;
+    }
+
+    public Builder setFlutterJNIFactory(@NonNull FlutterJNI.Factory factory) {
+      this.flutterJniFactory = factory;
+      return this;
+    }
+
     private void fillDefaults() {
-      if (flutterLoader == null) {
-        flutterLoader = new FlutterLoader();
+      if (flutterJniFactory == null) {
+        flutterJniFactory = new FlutterJNI.Factory();
       }
+
+      if (flutterLoader == null) {
+        flutterLoader = new FlutterLoader(flutterJniFactory.provideFlutterJNI());
+      }
+      // DeferredComponentManager's intended default is null.
     }
 
     /**
@@ -130,8 +147,7 @@ public final class FlutterInjector {
     public FlutterInjector build() {
       fillDefaults();
 
-      System.out.println("should load native is " + shouldLoadNative);
-      return new FlutterInjector(shouldLoadNative, flutterLoader);
+      return new FlutterInjector(flutterLoader, deferredComponentManager, flutterJniFactory);
     }
   }
 }

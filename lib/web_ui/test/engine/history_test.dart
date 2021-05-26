@@ -2,17 +2,19 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 @TestOn('!safari')
 // TODO(nurhan): https://github.com/flutter/flutter/issues/51169
 
 import 'dart:async';
 import 'dart:html' as html;
-import 'dart:typed_data';
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
-import 'package:ui/src/engine.dart';
+import 'package:ui/src/engine.dart' show window;
+import 'package:ui/src/engine/browser_detection.dart';
+import 'package:ui/src/engine/navigation.dart';
+import 'package:ui/src/engine/services.dart';
+import 'package:ui/src/engine/test_embedding.dart';
 
 import '../spy.dart';
 
@@ -32,8 +34,6 @@ const Map<String, bool> flutterState = <String, bool>{'flutter': true};
 
 const MethodCodec codec = JSONMethodCodec();
 
-void emptyCallback(ByteData date) {}
-
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
@@ -48,7 +48,7 @@ void testMain() {
 
     tearDown(() async {
       spy.tearDown();
-      await window.debugResetHistory();
+      await window.resetHistory();
     });
 
     test('basic setup works', () async {
@@ -60,7 +60,7 @@ void testMain() {
       // There should be two entries: origin and flutter.
       expect(strategy.history, hasLength(2));
 
-      // The origin entry is setup but its path should remain unchanged.
+      // The origin entry is set up but its path should remain unchanged.
       final TestHistoryEntry originEntry = strategy.history[0];
       expect(originEntry.state, _wrapOriginState('initial state'));
       expect(originEntry.url, '/initial');
@@ -262,7 +262,7 @@ void testMain() {
 
     tearDown(() async {
       spy.tearDown();
-      await window.debugResetHistory();
+      await window.resetHistory();
     });
 
     test('basic setup works', () async {
@@ -282,7 +282,7 @@ void testMain() {
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50836
         skip: browserEngine == BrowserEngine.edge);
 
-    test('browser back button push route infromation correctly', () async {
+    test('browser back button push route information correctly', () async {
       final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
         TestHistoryEntry('initial state', null, '/home'),
       );
@@ -292,7 +292,7 @@ void testMain() {
       expect(strategy.history, hasLength(1));
       expect(strategy.currentEntry.state, _tagStateWithSerialCount('initial state', 0));
       expect(strategy.currentEntry.url, '/home');
-      await routeInfomrationUpdated('/page1', 'page1 state');
+      await routeInformationUpdated('/page1', 'page1 state');
       // Should have two history entries now.
       expect(strategy.history, hasLength(2));
       expect(strategy.currentEntryIndex, 1);
@@ -329,8 +329,8 @@ void testMain() {
       );
       await window.debugInitializeHistory(strategy, useSingle: false);
 
-      await routeInfomrationUpdated('/page1', 'page1 state');
-      await routeInfomrationUpdated('/page2', 'page2 state');
+      await routeInformationUpdated('/page1', 'page1 state');
+      await routeInformationUpdated('/page2', 'page2 state');
 
       // Make sure we are on page2.
       expect(strategy.history, hasLength(3));
@@ -426,8 +426,8 @@ void testMain() {
       );
       await window.debugInitializeHistory(strategy, useSingle: false);
 
-      await routeInfomrationUpdated('/page1', 'page1 state');
-      await routeInfomrationUpdated('/page2', 'page2 state');
+      await routeInformationUpdated('/page1', 'page1 state');
+      await routeInformationUpdated('/page2', 'page2 state');
 
       // Make sure we are on page2.
       expect(strategy.history, hasLength(3));
@@ -474,14 +474,14 @@ void testMain() {
   });
 
   group('$HashUrlStrategy', () {
-    TestPlatformLocation location;
+    late TestPlatformLocation location;
 
     setUp(() {
       location = TestPlatformLocation();
     });
 
     tearDown(() {
-      location = null;
+      location = TestPlatformLocation();
     });
 
     test('leading slash is optional', () {
@@ -522,7 +522,7 @@ Future<void> routeUpdated(String routeName) {
   return completer.future;
 }
 
-Future<void> routeInfomrationUpdated(String location, dynamic state) {
+Future<void> routeInformationUpdated(String location, dynamic state) {
   final Completer<void> completer = Completer<void>();
   window.sendPlatformMessage(
     'flutter/navigation',
@@ -547,10 +547,14 @@ Future<void> systemNavigatorPop() {
 
 /// A mock implementation of [PlatformLocation] that doesn't access the browser.
 class TestPlatformLocation extends PlatformLocation {
-  String pathname;
-  String search;
-  String hash;
+  String? hash;
   dynamic state;
+
+  @override
+  String get pathname => throw UnimplementedError();
+
+  @override
+  String get search => throw UnimplementedError();
 
   @override
   void addPopStateListener(html.EventListener fn) {

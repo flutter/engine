@@ -16,14 +16,14 @@ namespace flutter_runner {
 class Surface final : public flutter::Surface {
  public:
   Surface(std::string debug_label,
-          flutter::ExternalViewEmbedder* view_embedder,
+          std::shared_ptr<flutter::ExternalViewEmbedder> view_embedder,
           GrDirectContext* gr_context);
 
   ~Surface() override;
 
  private:
   const std::string debug_label_;
-  flutter::ExternalViewEmbedder* view_embedder_;
+  std::shared_ptr<flutter::ExternalViewEmbedder> view_embedder_;
   GrDirectContext* gr_context_;
 
   // |flutter::Surface|
@@ -38,9 +38,6 @@ class Surface final : public flutter::Surface {
 
   // |flutter::Surface|
   SkMatrix GetRootTransformation() const override;
-
-  // |flutter::Surface|
-  flutter::ExternalViewEmbedder* GetExternalViewEmbedder() override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(Surface);
 };

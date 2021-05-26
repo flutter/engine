@@ -15,7 +15,7 @@ import 'package:test/test.dart';
 import '../../matchers.dart';
 
 const MethodCodec codec = StandardMethodCodec();
-final EngineWindow window = EngineWindow();
+final EngineSingletonFlutterWindow window = EngineSingletonFlutterWindow(0, EnginePlatformDispatcher.instance);
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -65,6 +65,15 @@ void testMain() {
       test('returns false when other view is not a PlatformView', () {
         final anyView = PersistedOpacity(null, 1, Offset(0, 0))..build();
         expect(view.canUpdateAsMatch(anyView), isFalse);
+      });
+    });
+
+    group('createElement', () {
+      test('creates slot element that can receive pointer events', () {
+        final element = view.createElement();
+
+        expect(element.tagName, equalsIgnoringCase('flt-platform-view-slot'));
+        expect(element.style.pointerEvents, 'auto');
       });
     });
   });

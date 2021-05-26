@@ -2,8 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
-part of engine;
+import 'package:ui/ui.dart' as ui;
+
+import 'canvaskit_api.dart';
+import 'color_filter.dart';
+import 'image_filter.dart';
+import 'mask_filter.dart';
+import 'shader.dart';
+import 'skia_object_cache.dart';
 
 /// The implementation of [ui.Paint] used by the CanvasKit backend.
 ///
@@ -124,7 +130,7 @@ class CkPaint extends ManagedSkiaObject<SkPaint> implements ui.Paint {
       return;
     }
     _shader = value as CkShader?;
-    skiaObject.setShader(_shader?.skiaObject);
+    skiaObject.setShader(_shader?.withQuality(_filterQuality));
   }
 
   CkShader? _shader;
@@ -159,26 +165,29 @@ class CkPaint extends ManagedSkiaObject<SkPaint> implements ui.Paint {
       return;
     }
     _filterQuality = value;
+    skiaObject.setShader(_shader?.withQuality(value));
     skiaObject.setFilterQuality(toSkFilterQuality(value));
   }
 
   ui.FilterQuality _filterQuality = ui.FilterQuality.none;
 
   @override
-  ui.ColorFilter? get colorFilter => _colorFilter;
+  ui.ColorFilter? get colorFilter => _managedColorFilter?.ckColorFilter;
   @override
   set colorFilter(ui.ColorFilter? value) {
-    if (_colorFilter == value) {
+    if (colorFilter == value) {
       return;
     }
-    final EngineColorFilter? engineValue = value as EngineColorFilter?;
-    _colorFilter = engineValue;
-    _ckColorFilter = engineValue?._toCkColorFilter();
-    skiaObject.setColorFilter(_ckColorFilter?.skiaObject);
+
+    if (value == null) {
+      _managedColorFilter = null;
+    } else {
+      _managedColorFilter = ManagedSkColorFilter(value as CkColorFilter);
+    }
+    skiaObject.setColorFilter(_managedColorFilter?.skiaObject);
   }
 
-  EngineColorFilter? _colorFilter;
-  CkColorFilter? _ckColorFilter;
+  ManagedSkColorFilter? _managedColorFilter;
 
   @override
   double get strokeMiterLimit => _strokeMiterLimit;
@@ -200,11 +209,14 @@ class CkPaint extends ManagedSkiaObject<SkPaint> implements ui.Paint {
     if (_imageFilter == value) {
       return;
     }
-    _imageFilter = value as CkImageFilter?;
-    skiaObject.setImageFilter(_imageFilter?.skiaObject);
+
+    _imageFilter = value as CkManagedSkImageFilterConvertible?;
+    _managedImageFilter = _imageFilter?.imageFilter;
+    skiaObject.setImageFilter(_managedImageFilter?.skiaObject);
   }
 
-  CkImageFilter? _imageFilter;
+  CkManagedSkImageFilterConvertible? _imageFilter;
+  ManagedSkiaObject<SkImageFilter>? _managedImageFilter;
 
   @override
   SkPaint createDefault() {
@@ -222,11 +234,14 @@ class CkPaint extends ManagedSkiaObject<SkPaint> implements ui.Paint {
     paint.setStrokeWidth(_strokeWidth);
     paint.setAntiAlias(_isAntiAlias);
     paint.setColorInt(_color.value);
-    paint.setShader(_shader?.skiaObject);
+    paint.setShader(_shader?.withQuality(_filterQuality));
     paint.setMaskFilter(_ckMaskFilter?.skiaObject);
-    paint.setColorFilter(_ckColorFilter?.skiaObject);
-    paint.setImageFilter(_imageFilter?.skiaObject);
+    paint.setColorFilter(_managedColorFilter?.skiaObject);
+    paint.setImageFilter(_managedImageFilter?.skiaObject);
     paint.setFilterQuality(toSkFilterQuality(_filterQuality));
+    paint.setStrokeCap(toSkStrokeCap(_strokeCap));
+    paint.setStrokeJoin(toSkStrokeJoin(_strokeJoin));
+    paint.setStrokeMiter(_strokeMiterLimit);
     return paint;
   }
 

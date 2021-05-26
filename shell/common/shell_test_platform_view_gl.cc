@@ -28,6 +28,7 @@ std::unique_ptr<VsyncWaiter> ShellTestPlatformViewGL::CreateVSyncWaiter() {
   return create_vsync_waiter_();
 }
 
+// |ShellTestPlatformView|
 void ShellTestPlatformViewGL::SimulateVSync() {
   vsync_clock_->SimulateVSync();
 }
@@ -35,6 +36,12 @@ void ShellTestPlatformViewGL::SimulateVSync() {
 // |PlatformView|
 std::unique_ptr<Surface> ShellTestPlatformViewGL::CreateRenderingSurface() {
   return std::make_unique<GPUSurfaceGL>(this, true);
+}
+
+// |PlatformView|
+std::shared_ptr<ExternalViewEmbedder>
+ShellTestPlatformViewGL::CreateExternalViewEmbedder() {
+  return shell_test_external_view_embedder_;
 }
 
 // |PlatformView|
@@ -71,11 +78,6 @@ ShellTestPlatformViewGL::GetGLProcResolver() const {
   return [surface = &gl_surface_](const char* name) -> void* {
     return surface->GetProcAddress(name);
   };
-}
-
-// |GPUSurfaceGLDelegate|
-ExternalViewEmbedder* ShellTestPlatformViewGL::GetExternalViewEmbedder() {
-  return shell_test_external_view_embedder_.get();
 }
 
 }  // namespace testing

@@ -18,9 +18,12 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterRestorationPlugin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
 #import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
+
+extern NSString* const FlutterEngineWillDealloc;
 
 @interface FlutterEngine () <FlutterViewEngineDelegate>
 
@@ -38,8 +41,9 @@
                                  base64Encode:(bool)base64Encode;
 
 - (FlutterPlatformPlugin*)platformPlugin;
-- (flutter::FlutterPlatformViewsController*)platformViewsController;
+- (std::shared_ptr<flutter::FlutterPlatformViewsController>&)platformViewsController;
 - (FlutterTextInputPlugin*)textInputPlugin;
+- (FlutterRestorationPlugin*)restorationPlugin;
 - (void)launchEngine:(NSString*)entrypoint libraryURI:(NSString*)libraryOrNil;
 - (BOOL)createShell:(NSString*)entrypoint
          libraryURI:(NSString*)libraryOrNil
@@ -47,6 +51,17 @@
 - (void)attachView;
 - (void)notifyLowMemory;
 - (flutter::PlatformViewIOS*)iosPlatformView;
+
+- (void)waitForFirstFrame:(NSTimeInterval)timeout callback:(void (^)(BOOL didTimeout))callback;
+
+/**
+ * Creates one running FlutterEngine from another, sharing components between them.
+ *
+ * This results in a faster creation time and a smaller memory footprint engine.
+ * This should only be called on a FlutterEngine that is running.
+ */
+- (FlutterEngine*)spawnWithEntrypoint:(/*nullable*/ NSString*)entrypoint
+                           libraryURI:(/*nullable*/ NSString*)libraryURI;
 
 @end
 

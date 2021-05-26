@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'dart:html' as html;
 import 'dart:typed_data';
 
@@ -20,10 +19,10 @@ void main() {
 void testMain() async {
   final Rect region = Rect.fromLTWH(0, 0, 400, 600);
 
-  BitmapCanvas canvas;
+  late BitmapCanvas canvas;
 
   setUp(() {
-    canvas = BitmapCanvas(region);
+    canvas = BitmapCanvas(region, RenderStrategy());
   });
 
   tearDown(() {
@@ -56,7 +55,28 @@ void testMain() async {
     ]);
     canvas.drawPoints(PointMode.polygon, points3, paint);
 
-    html.document.body.append(canvas.rootElement);
+    html.document.body!.append(canvas.rootElement);
     await matchGoldenFile('canvas_draw_points.png', region: region);
+  });
+
+  test('Should draw points with strokeWidth', () async {
+    final SurfacePaintData nullStrokePaint =
+      SurfacePaintData()..color = Color(0xffff0000);
+    canvas.drawPoints(PointMode.lines, Float32List.fromList([
+      30.0, 20.0, 200.0, 20.0]), nullStrokePaint);
+    final SurfacePaintData strokePaint1 = SurfacePaintData()
+      ..strokeWidth = 1.0
+      ..color = Color(0xff0000ff);
+    canvas.drawPoints(PointMode.lines, Float32List.fromList([
+      30.0, 30.0, 200.0, 30.0]), strokePaint1);
+    final SurfacePaintData strokePaint3 = SurfacePaintData()
+      ..strokeWidth = 3.0
+      ..color = Color(0xff00a000);
+    canvas.drawPoints(PointMode.lines, Float32List.fromList([
+      30.0, 40.0, 200.0, 40.0]), strokePaint3);
+    canvas.drawPoints(PointMode.points, Float32List.fromList([
+      30.0, 50.0, 40.0, 50.0, 50.0, 50.0]), strokePaint3);
+    html.document.body!.append(canvas.rootElement);
+    await matchGoldenFile('canvas_draw_points_stroke.png', region: region);
   });
 }

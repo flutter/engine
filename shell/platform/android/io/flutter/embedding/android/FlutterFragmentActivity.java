@@ -12,6 +12,7 @@ import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.EXTRA_BA
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.EXTRA_CACHED_ENGINE_ID;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.EXTRA_DESTROY_ENGINE_WITH_ACTIVITY;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.EXTRA_INITIAL_ROUTE;
+import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.HANDLE_DEEPLINKING_META_DATA_KEY;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.INITIAL_ROUTE_META_DATA_KEY;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.NORMAL_THEME_META_DATA_KEY;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.SPLASH_SCREEN_META_DATA_KEY;
@@ -33,6 +34,7 @@ import android.view.WindowManager;
 import android.widget.FrameLayout;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
 import io.flutter.Log;
@@ -239,6 +241,10 @@ public class FlutterFragmentActivity extends FragmentActivity
   @Override
   protected void onCreate(@Nullable Bundle savedInstanceState) {
     switchLaunchThemeForNormalTheme();
+    // Get an existing fragment reference first before onCreate since onCreate would re-attach
+    // existing fragments. This would cause FlutterFragment to reference the host activity which
+    // should be aware of its child fragment.
+    flutterFragment = retrieveExistingFlutterFragmentIfPossible();
 
     super.onCreate(savedInstanceState);
 
@@ -279,10 +285,9 @@ public class FlutterFragmentActivity extends FragmentActivity
    */
   private void switchLaunchThemeForNormalTheme() {
     try {
-      ActivityInfo activityInfo =
-          getPackageManager().getActivityInfo(getComponentName(), PackageManager.GET_META_DATA);
-      if (activityInfo.metaData != null) {
-        int normalThemeRID = activityInfo.metaData.getInt(NORMAL_THEME_META_DATA_KEY, -1);
+      Bundle metaData = getMetaData();
+      if (metaData != null) {
+        int normalThemeRID = metaData.getInt(NORMAL_THEME_META_DATA_KEY, -1);
         if (normalThemeRID != -1) {
           setTheme(normalThemeRID);
         }
@@ -318,11 +323,9 @@ public class FlutterFragmentActivity extends FragmentActivity
   @SuppressWarnings("deprecation")
   private Drawable getSplashScreenFromManifest() {
     try {
-      ActivityInfo activityInfo =
-          getPackageManager().getActivityInfo(getComponentName(), PackageManager.GET_META_DATA);
-      Bundle metadata = activityInfo.metaData;
+      Bundle metaData = getMetaData();
       Integer splashScreenId =
-          metadata != null ? metadata.getInt(SPLASH_SCREEN_META_DATA_KEY) : null;
+          metaData != null ? metaData.getInt(SPLASH_SCREEN_META_DATA_KEY) : null;
       return splashScreenId != null
           ? Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP
               ? getResources().getDrawable(splashScreenId, getTheme())
@@ -359,7 +362,7 @@ public class FlutterFragmentActivity extends FragmentActivity
    */
   @NonNull
   private View createFragmentContainer() {
-    FrameLayout container = new FrameLayout(this);
+    FrameLayout container = provideRootLayout(this);
     container.setId(FRAGMENT_CONTAINER_ID);
     container.setLayoutParams(
         new ViewGroup.LayoutParams(
@@ -368,20 +371,36 @@ public class FlutterFragmentActivity extends FragmentActivity
   }
 
   /**
+   * Retrieves the previously created {@link FlutterFragment} if possible.
+   *
+   * <p>If the activity is recreated, an existing {@link FlutterFragment} may already exist. Retain
+   * a reference to that {@link FlutterFragment} in the {@code #flutterFragment} field and avoid
+   * re-creating another {@link FlutterFragment}.
+   */
+  @VisibleForTesting
+  FlutterFragment retrieveExistingFlutterFragmentIfPossible() {
+    FragmentManager fragmentManager = getSupportFragmentManager();
+    return (FlutterFragment) fragmentManager.findFragmentByTag(TAG_FLUTTER_FRAGMENT);
+  }
+
+  /**
    * Ensure that a {@link FlutterFragment} is attached to this {@code FlutterFragmentActivity}.
    *
    * <p>If no {@link FlutterFragment} exists in this {@code FlutterFragmentActivity}, then a {@link
-   * FlutterFragment} is created and added. If a {@link FlutterFragment} does exist in this {@code
-   * FlutterFragmentActivity}, then a reference to that {@link FlutterFragment} is retained in
-   * {@code #flutterFragment}.
+   * FlutterFragment} is created and added.
    */
   private void ensureFlutterFragmentCreated() {
-    FragmentManager fragmentManager = getSupportFragmentManager();
-    flutterFragment = (FlutterFragment) fragmentManager.findFragmentByTag(TAG_FLUTTER_FRAGMENT);
+    if (flutterFragment == null) {
+      // If both activity and fragment have been destroyed, the activity restore may have
+      // already recreated a new instance of the fragment again via the FragmentActivity.onCreate
+      // and the FragmentManager.
+      flutterFragment = retrieveExistingFlutterFragmentIfPossible();
+    }
     if (flutterFragment == null) {
       // No FlutterFragment exists yet. This must be the initial Activity creation. We will create
       // and add a new FlutterFragment to this Activity.
       flutterFragment = createFlutterFragment();
+      FragmentManager fragmentManager = getSupportFragmentManager();
       fragmentManager
           .beginTransaction()
           .add(FRAGMENT_CONTAINER_ID, flutterFragment, TAG_FLUTTER_FRAGMENT)
@@ -423,6 +442,7 @@ public class FlutterFragmentActivity extends FragmentActivity
       return FlutterFragment.withCachedEngine(getCachedEngineId())
           .renderMode(renderMode)
           .transparencyMode(transparencyMode)
+          .handleDeeplinking(shouldHandleDeeplinking())
           .shouldAttachEngineToActivity(shouldAttachEngineToActivity())
           .destroyEngineWithFragment(shouldDestroyEngineWithHost())
           .build();
@@ -450,6 +470,7 @@ public class FlutterFragmentActivity extends FragmentActivity
           .initialRoute(getInitialRoute())
           .appBundlePath(getAppBundlePath())
           .flutterShellArgs(FlutterShellArgs.fromIntent(getIntent()))
+          .handleDeeplinking(shouldHandleDeeplinking())
           .renderMode(renderMode)
           .transparencyMode(transparencyMode)
           .shouldAttachEngineToActivity(shouldAttachEngineToActivity())
@@ -545,6 +566,26 @@ public class FlutterFragmentActivity extends FragmentActivity
     return true;
   }
 
+  /**
+   * Whether to handle the deeplinking from the {@code Intent} automatically if the {@code
+   * getInitialRoute} returns null.
+   *
+   * <p>The default implementation looks {@code <meta-data>} called {@link
+   * FlutterActivityLaunchConfigs#HANDLE_DEEPLINKING_META_DATA_KEY} within the Android manifest
+   * definition for this {@code FlutterFragmentActivity}.
+   */
+  @VisibleForTesting
+  protected boolean shouldHandleDeeplinking() {
+    try {
+      Bundle metaData = getMetaData();
+      boolean shouldHandleDeeplinking =
+          metaData != null ? metaData.getBoolean(HANDLE_DEEPLINKING_META_DATA_KEY) : false;
+      return shouldHandleDeeplinking;
+    } catch (PackageManager.NameNotFoundException e) {
+      return false;
+    }
+  }
+
   /** Hook for subclasses to easily provide a custom {@code FlutterEngine}. */
   @Nullable
   @Override
@@ -559,12 +600,21 @@ public class FlutterFragmentActivity extends FragmentActivity
    * <p>This method is called after {@link #provideFlutterEngine(Context)}.
    *
    * <p>All plugins listed in the app's pubspec are registered in the base implementation of this
-   * method. To avoid automatic plugin registration, override this method without invoking super().
-   * To keep automatic plugin registration and further configure the flutterEngine, override this
-   * method, invoke super(), and then configure the flutterEngine as desired.
+   * method unless the FlutterEngine for this activity was externally created. To avoid the
+   * automatic plugin registration for implicitly created FlutterEngines, override this method
+   * without invoking super(). To keep automatic plugin registration and further configure the
+   * FlutterEngine, override this method, invoke super(), and then configure the FlutterEngine as
+   * desired.
    */
   @Override
   public void configureFlutterEngine(@NonNull FlutterEngine flutterEngine) {
+    if (flutterFragment != null && flutterFragment.isFlutterEngineInjected()) {
+      // If the FlutterEngine was explicitly built and injected into this FlutterActivity, the
+      // builder should explicitly decide whether to automatically register plugins via the
+      // FlutterEngine's construction parameter or via the AndroidManifest metadata.
+      return;
+    }
+
     GeneratedPluginRegister.registerGeneratedPlugins(flutterEngine);
   }
 
@@ -608,6 +658,14 @@ public class FlutterFragmentActivity extends FragmentActivity
     return null;
   }
 
+  /** Retrieves the meta data specified in the AndroidManifest.xml. */
+  @Nullable
+  protected Bundle getMetaData() throws PackageManager.NameNotFoundException {
+    ActivityInfo activityInfo =
+        getPackageManager().getActivityInfo(getComponentName(), PackageManager.GET_META_DATA);
+    return activityInfo.metaData;
+  }
+
   /**
    * The Dart entrypoint that will be executed as soon as the Dart snapshot is loaded.
    *
@@ -620,11 +678,9 @@ public class FlutterFragmentActivity extends FragmentActivity
   @NonNull
   public String getDartEntrypointFunctionName() {
     try {
-      ActivityInfo activityInfo =
-          getPackageManager().getActivityInfo(getComponentName(), PackageManager.GET_META_DATA);
-      Bundle metadata = activityInfo.metaData;
+      Bundle metaData = getMetaData();
       String desiredDartEntrypoint =
-          metadata != null ? metadata.getString(DART_ENTRYPOINT_META_DATA_KEY) : null;
+          metaData != null ? metaData.getString(DART_ENTRYPOINT_META_DATA_KEY) : null;
       return desiredDartEntrypoint != null ? desiredDartEntrypoint : DEFAULT_DART_ENTRYPOINT;
     } catch (PackageManager.NameNotFoundException e) {
       return DEFAULT_DART_ENTRYPOINT;
@@ -651,22 +707,22 @@ public class FlutterFragmentActivity extends FragmentActivity
    * have control over the incoming {@code Intent}.
    *
    * <p>Subclasses may override this method to directly control the initial route.
+   *
+   * <p>If this method returns null and the {@code shouldHandleDeeplinking} returns true, the
+   * initial route is derived from the {@code Intent} through the Intent.getData() instead.
    */
-  @NonNull
   protected String getInitialRoute() {
     if (getIntent().hasExtra(EXTRA_INITIAL_ROUTE)) {
       return getIntent().getStringExtra(EXTRA_INITIAL_ROUTE);
     }
 
     try {
-      ActivityInfo activityInfo =
-          getPackageManager().getActivityInfo(getComponentName(), PackageManager.GET_META_DATA);
-      Bundle metadata = activityInfo.metaData;
+      Bundle metaData = getMetaData();
       String desiredInitialRoute =
-          metadata != null ? metadata.getString(INITIAL_ROUTE_META_DATA_KEY) : null;
-      return desiredInitialRoute != null ? desiredInitialRoute : DEFAULT_INITIAL_ROUTE;
+          metaData != null ? metaData.getString(INITIAL_ROUTE_META_DATA_KEY) : null;
+      return desiredInitialRoute;
     } catch (PackageManager.NameNotFoundException e) {
-      return DEFAULT_INITIAL_ROUTE;
+      return null;
     }
   }
 
@@ -713,5 +769,11 @@ public class FlutterFragmentActivity extends FragmentActivity
    */
   private boolean isDebuggable() {
     return (getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+  }
+
+  /** Returns a {@link FrameLayout} that is used as the content view of this activity. */
+  @NonNull
+  protected FrameLayout provideRootLayout(Context context) {
+    return new FrameLayout(context);
   }
 }

@@ -243,9 +243,18 @@ abstract class License implements Comparable<License> {
     LicenseType type = LicenseType.unknown;
     switch (url) {
       case 'Apache:2.0':
+      case 'Apache-2.0':  // SPDX ID
       case 'http://www.apache.org/licenses/LICENSE-2.0':
       case 'https://www.apache.org/licenses/LICENSE-2.0':
+      // If we start seeing more OR options, we can parse them out and write
+      // a generic utility to pick according so some ranking; for now just
+      // hard-code a choice for this option set.
+      case 'Apache-2.0 OR MIT':  // SPDX ID
         body = system.File('data/apache-license-2.0').readAsStringSync();
+        type = LicenseType.apache;
+        break;
+      case 'Apache-2.0 WITH LLVM-exception':  // SPDX ID
+        body = system.File('data/apache-license-2.0-with-llvm-exception').readAsStringSync();
         type = LicenseType.apache;
         break;
       case 'https://developers.google.com/open-source/licenses/bsd':
@@ -291,6 +300,7 @@ abstract class License implements Comparable<License> {
         body = system.File('data/mozilla-2.0').readAsStringSync();
         type = LicenseType.mpl;
         break;
+      case 'MIT':  // SPDX ID
       case 'http://opensource.org/licenses/MIT':
       case 'https://opensource.org/licenses/MIT':
       case 'http://opensource->org/licenses/MIT': // i don't even
@@ -575,7 +585,7 @@ _SplitLicense _splitLicense(String body, { bool verifyResults = true }) {
   if (!lines.moveNext())
     throw 'tried to split empty license';
   int end = 0;
-  while (true) { // ignore: literal_only_boolean_expressions
+  while (true) {
     final String line = lines.current.value;
     if (line == 'Author:' ||
         line == 'This code is derived from software contributed to Berkeley by' ||

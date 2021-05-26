@@ -39,7 +39,7 @@ fi
 
 if [[ ! -d "$DEVICE_TOOLS" ]]; then
   echo "Directory $DEVICE_TOOLS not found."
-  ehco "Second argument must specify the device out directory containing gen_snapshot (e.g. android_debug_unopt_x64)."
+  echo "Second argument must specify the device out directory containing gen_snapshot (e.g. android_debug_unopt_x64)."
   exit 1
 fi
 
@@ -47,7 +47,7 @@ PUB="$HOST_TOOLS/dart-sdk/bin/pub"
 PUB_VERSION="$("$PUB" --version)"
 echo "Using Pub $PUB_VERSION from $PUB"
 
-"$PUB" get
+"$PUB" get --offline
 
 echo "Using dart from $HOST_TOOLS, gen_snapshot from $DEVICE_TOOLS."
 

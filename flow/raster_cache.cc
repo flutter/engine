@@ -32,7 +32,8 @@ void RasterCacheResult::draw(SkCanvas& canvas, const SkPaint* paint) const {
       std::abs(bounds.size().width() - image_->dimensions().width()) <= 1 &&
       std::abs(bounds.size().height() - image_->dimensions().height()) <= 1);
   canvas.resetMatrix();
-  canvas.drawImage(image_, bounds.fLeft, bounds.fTop, paint);
+  canvas.drawImage(image_, bounds.fLeft, bounds.fTop, SkSamplingOptions(),
+                   paint);
 }
 
 RasterCache::RasterCache(size_t access_threshold,
@@ -158,6 +159,7 @@ std::unique_ptr<RasterCacheResult> RasterCache::RasterizeLayer(
         SkISize canvas_size = canvas->getBaseLayerSize();
         SkNWayCanvas internal_nodes_canvas(canvas_size.width(),
                                            canvas_size.height());
+        internal_nodes_canvas.setMatrix(canvas->getTotalMatrix());
         internal_nodes_canvas.addCanvas(canvas);
         Layer::PaintContext paintContext = {
             /* internal_nodes_canvas= */ static_cast<SkCanvas*>(
@@ -171,7 +173,7 @@ std::unique_ptr<RasterCacheResult> RasterCache::RasterizeLayer(
             context->has_platform_view ? nullptr : context->raster_cache,
             context->checkerboard_offscreen_layers,
             context->frame_device_pixel_ratio};
-        if (layer->needs_painting()) {
+        if (layer->needs_painting(paintContext)) {
           layer->Paint(paintContext);
         }
       });

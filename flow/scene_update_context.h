@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "flutter/flow/embedded_views.h"
+#include "flutter/flow/view_holder.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
 #include "third_party/skia/include/core/SkRect.h"
@@ -46,15 +47,15 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
  public:
   class Entity {
    public:
-    Entity(SceneUpdateContext& context);
+    Entity(std::shared_ptr<SceneUpdateContext> context);
     virtual ~Entity();
 
-    SceneUpdateContext& context() { return context_; }
+    std::shared_ptr<SceneUpdateContext> context() { return context_; }
     scenic::EntityNode& entity_node() { return entity_node_; }
     virtual scenic::ContainerNode& embedder_node() { return entity_node_; }
 
    private:
-    SceneUpdateContext& context_;
+    std::shared_ptr<SceneUpdateContext> context_;
     Entity* const previous_entity_;
 
     scenic::EntityNode entity_node_;
@@ -62,8 +63,9 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
 
   class Transform : public Entity {
    public:
-    Transform(SceneUpdateContext& context, const SkMatrix& transform);
-    Transform(SceneUpdateContext& context,
+    Transform(std::shared_ptr<SceneUpdateContext> context,
+              const SkMatrix& transform);
+    Transform(std::shared_ptr<SceneUpdateContext> context,
               float scale_x,
               float scale_y,
               float scale_z);
@@ -79,7 +81,7 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
     // When layer is not nullptr, the frame is associated with a layer subtree
     // rooted with that layer. The frame may then create a surface that will be
     // retained for that layer.
-    Frame(SceneUpdateContext& context,
+    Frame(std::shared_ptr<SceneUpdateContext> context,
           const SkRRect& rrect,
           SkColor color,
           SkAlpha opacity,
@@ -104,7 +106,8 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
 
   class Clip : public Entity {
    public:
-    Clip(SceneUpdateContext& context, const SkRect& shape_bounds);
+    Clip(std::shared_ptr<SceneUpdateContext> context,
+         const SkRect& shape_bounds);
     ~Clip() = default;
   };
 
@@ -117,13 +120,14 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
     std::vector<Layer*> layers;
   };
 
+  using ViewCallback = std::function<void()>;
+
   SceneUpdateContext(std::string debug_label,
                      fuchsia::ui::views::ViewToken view_token,
                      scenic::ViewRefPair view_ref_pair,
-                     SessionWrapper& session);
+                     SessionWrapper& session,
+                     bool intercept_all_input = false);
   ~SceneUpdateContext() = default;
-
-  scenic::ContainerNode& root_node() { return root_node_; }
 
   // The cumulative alpha value based on all the parent OpacityLayers.
   void set_alphaf(float alpha) { alpha_ = alpha; }
@@ -136,7 +140,7 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
   void EnableWireframe(bool enable);
 
   // Reset state for a new frame.
-  void Reset();
+  void Reset(const SkISize& frame_size, float device_pixel_ratio);
 
   // |ExternalViewEmbedder|
   SkCanvas* GetRootCanvas() override { return nullptr; }
@@ -166,9 +170,18 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
     return nullptr;
   }
 
-  void CreateView(int64_t view_id, bool hit_testable, bool focusable);
-  void UpdateView(int64_t view_id, bool hit_testable, bool focusable);
-  void DestroyView(int64_t view_id);
+  // View manipulation.
+  void CreateView(int64_t view_id,
+                  ViewCallback on_view_created,
+                  ViewHolder::ViewIdCallback on_view_bound,
+                  bool hit_testable,
+                  bool focusable);
+  void DestroyView(int64_t view_id,
+                   ViewHolder::ViewIdCallback on_view_destroyed);
+  void UpdateView(int64_t view_id,
+                  const SkRect& view_occlusion_hint,
+                  bool hit_testable,
+                  bool focusable);
   void UpdateView(int64_t view_id,
                   const SkPoint& offset,
                   const SkSize& size,
@@ -185,7 +198,9 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
   SessionWrapper& session_;
 
   scenic::View root_view_;
-  scenic::EntityNode root_node_;
+  scenic::EntityNode metrics_node_;
+  scenic::EntityNode layer_tree_node_;
+  std::optional<scenic::ShapeNode> input_interceptor_node_;
 
   std::vector<PaintTask> paint_tasks_;
 

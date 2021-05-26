@@ -63,7 +63,9 @@ class ShellTestExternalViewEmbedder final : public ExternalViewEmbedder {
 
   // |ExternalViewEmbedder|
   void SubmitFrame(GrDirectContext* context,
-                   std::unique_ptr<SurfaceFrame> frame) override;
+                   std::unique_ptr<SurfaceFrame> frame,
+                   const std::shared_ptr<const fml::SyncSwitch>&
+                       gpu_disable_sync_switch) override;
 
   // |ExternalViewEmbedder|
   void EndFrame(

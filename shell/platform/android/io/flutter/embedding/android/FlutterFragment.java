@@ -5,12 +5,14 @@
 package io.flutter.embedding.android;
 
 import android.app.Activity;
+import android.content.ComponentCallbacks2;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -35,11 +37,13 @@ import io.flutter.plugin.platform.PlatformPlugin;
  *   <li>{@link #onRequestPermissionsResult(int, String[], int[])} ()}
  *   <li>{@link #onNewIntent(Intent)} ()}
  *   <li>{@link #onUserLeaveHint()}
- *   <li>{@link #onTrimMemory(int)}
  * </ol>
  *
- * Additionally, when starting an {@code Activity} for a result from this {@code Fragment}, be sure
- * to invoke {@link Fragment#startActivityForResult(Intent, int)} rather than {@link
+ * {@link #onBackPressed()} does not need to be called through if the fragment is constructed by one
+ * of the builders with {@code shouldAutomaticallyHandleOnBackPressed(true)}.
+ *
+ * <p>Additionally, when starting an {@code Activity} for a result from this {@code Fragment}, be
+ * sure to invoke {@link Fragment#startActivityForResult(Intent, int)} rather than {@link
  * android.app.Activity#startActivityForResult(Intent, int)}. If the {@code Activity} version of the
  * method is invoked then this {@code Fragment} will never receive its {@link
  * Fragment#onActivityResult(int, int, Intent)} callback.
@@ -81,13 +85,16 @@ import io.flutter.plugin.platform.PlatformPlugin;
  * FlutterView}. Using a {@link FlutterView} requires forwarding some calls from an {@code
  * Activity}, as well as forwarding lifecycle calls from an {@code Activity} or a {@code Fragment}.
  */
-public class FlutterFragment extends Fragment implements FlutterActivityAndFragmentDelegate.Host {
+public class FlutterFragment extends Fragment
+    implements FlutterActivityAndFragmentDelegate.Host, ComponentCallbacks2 {
   private static final String TAG = "FlutterFragment";
 
   /** The Dart entrypoint method name that is executed upon initialization. */
   protected static final String ARG_DART_ENTRYPOINT = "dart_entrypoint";
   /** Initial Flutter route that is rendered in a Navigator widget. */
   protected static final String ARG_INITIAL_ROUTE = "initial_route";
+  /** Whether the activity delegate should handle the deeplinking request. */
+  protected static final String ARG_HANDLE_DEEPLINKING = "handle_deeplinking";
   /** Path to Flutter's Dart code. */
   protected static final String ARG_APP_BUNDLE_PATH = "app_bundle_path";
   /** Flutter shell arguments. */
@@ -117,6 +124,12 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
    * when this fragment is created and destroyed.
    */
   protected static final String ARG_ENABLE_STATE_RESTORATION = "enable_state_restoration";
+  /**
+   * True if the fragment should receive {@link #onBackPressed()} events automatically, without
+   * requiring an explicit activity call through.
+   */
+  protected static final String ARG_SHOULD_AUTOMATICALLY_HANDLE_ON_BACK_PRESSED =
+      "should_automatically_handle_on_back_pressed";
 
   /**
    * Creates a {@code FlutterFragment} with a default configuration.
@@ -185,11 +198,13 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
     private final Class<? extends FlutterFragment> fragmentClass;
     private String dartEntrypoint = "main";
     private String initialRoute = "/";
+    private boolean handleDeeplinking = false;
     private String appBundlePath = null;
     private FlutterShellArgs shellArgs = null;
     private RenderMode renderMode = RenderMode.surface;
     private TransparencyMode transparencyMode = TransparencyMode.transparent;
     private boolean shouldAttachEngineToActivity = true;
+    private boolean shouldAutomaticallyHandleOnBackPressed = false;
 
     /**
      * Constructs a {@code NewEngineFragmentBuilder} that is configured to construct an instance of
@@ -221,6 +236,16 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
     @NonNull
     public NewEngineFragmentBuilder initialRoute(@NonNull String initialRoute) {
       this.initialRoute = initialRoute;
+      return this;
+    }
+
+    /**
+     * Whether to handle the deeplinking from the {@code Intent} automatically if the {@code
+     * getInitialRoute} returns null.
+     */
+    @NonNull
+    public NewEngineFragmentBuilder handleDeeplinking(@NonNull Boolean handleDeeplinking) {
+      this.handleDeeplinking = handleDeeplinking;
       return this;
     }
 
@@ -307,6 +332,28 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
     }
 
     /**
+     * Whether or not this {@code FlutterFragment} should automatically receive {@link
+     * #onBackPressed()} events, rather than requiring an explicit activity call through. Disabled
+     * by default.
+     *
+     * <p>When enabled, the activity will automatically dispatch back-press events to the fragment's
+     * {@link OnBackPressedCallback}, instead of requiring the activity to manually call {@link
+     * #onBackPressed()} in client code. If enabled, do <b>not</b> invoke {@link #onBackPressed()}
+     * manually.
+     *
+     * <p>This behavior relies on the implementation of {@link #popSystemNavigator()}. It's not
+     * recommended to override that method when enabling this attribute, but if you do, you should
+     * always fall back to calling {@code super.popSystemNavigator()} when not relying on custom
+     * behavior.
+     */
+    @NonNull
+    public NewEngineFragmentBuilder shouldAutomaticallyHandleOnBackPressed(
+        boolean shouldAutomaticallyHandleOnBackPressed) {
+      this.shouldAutomaticallyHandleOnBackPressed = shouldAutomaticallyHandleOnBackPressed;
+      return this;
+    }
+
+    /**
      * Creates a {@link Bundle} of arguments that are assigned to the new {@code FlutterFragment}.
      *
      * <p>Subclasses should override this method to add new properties to the {@link Bundle}.
@@ -316,6 +363,7 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
     protected Bundle createArgs() {
       Bundle args = new Bundle();
       args.putString(ARG_INITIAL_ROUTE, initialRoute);
+      args.putBoolean(ARG_HANDLE_DEEPLINKING, handleDeeplinking);
       args.putString(ARG_APP_BUNDLE_PATH, appBundlePath);
       args.putString(ARG_DART_ENTRYPOINT, dartEntrypoint);
       // TODO(mattcarroll): determine if we should have an explicit FlutterTestFragment instead of
@@ -331,6 +379,8 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
           transparencyMode != null ? transparencyMode.name() : TransparencyMode.transparent.name());
       args.putBoolean(ARG_SHOULD_ATTACH_ENGINE_TO_ACTIVITY, shouldAttachEngineToActivity);
       args.putBoolean(ARG_DESTROY_ENGINE_WITH_FRAGMENT, true);
+      args.putBoolean(
+          ARG_SHOULD_AUTOMATICALLY_HANDLE_ON_BACK_PRESSED, shouldAutomaticallyHandleOnBackPressed);
       return args;
     }
 
@@ -409,15 +459,17 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
     private final Class<? extends FlutterFragment> fragmentClass;
     private final String engineId;
     private boolean destroyEngineWithFragment = false;
+    private boolean handleDeeplinking = false;
     private RenderMode renderMode = RenderMode.surface;
     private TransparencyMode transparencyMode = TransparencyMode.transparent;
     private boolean shouldAttachEngineToActivity = true;
+    private boolean shouldAutomaticallyHandleOnBackPressed = false;
 
     private CachedEngineFragmentBuilder(@NonNull String engineId) {
       this(FlutterFragment.class, engineId);
     }
 
-    protected CachedEngineFragmentBuilder(
+    public CachedEngineFragmentBuilder(
         @NonNull Class<? extends FlutterFragment> subclass, @NonNull String engineId) {
       this.fragmentClass = subclass;
       this.engineId = engineId;
@@ -457,6 +509,16 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
     public CachedEngineFragmentBuilder transparencyMode(
         @NonNull TransparencyMode transparencyMode) {
       this.transparencyMode = transparencyMode;
+      return this;
+    }
+
+    /**
+     * Whether to handle the deeplinking from the {@code Intent} automatically if the {@code
+     * getInitialRoute} returns null.
+     */
+    @NonNull
+    public CachedEngineFragmentBuilder handleDeeplinking(@NonNull Boolean handleDeeplinking) {
+      this.handleDeeplinking = handleDeeplinking;
       return this;
     }
 
@@ -502,6 +564,28 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
     }
 
     /**
+     * Whether or not this {@code FlutterFragment} should automatically receive {@link
+     * #onBackPressed()} events, rather than requiring an explicit activity call through. Disabled
+     * by default.
+     *
+     * <p>When enabled, the activity will automatically dispatch back-press events to the fragment's
+     * {@link OnBackPressedCallback}, instead of requiring the activity to manually call {@link
+     * #onBackPressed()} in client code. If enabled, do <b>not</b> invoke {@link #onBackPressed()}
+     * manually.
+     *
+     * <p>Enabling this behavior relies on explicit behavior in {@link #popSystemNavigator()}. It's
+     * not recommended to override that method when enabling this attribute, but if you do, you
+     * should always fall back to calling {@code super.popSystemNavigator()} when not relying on
+     * custom behavior.
+     */
+    @NonNull
+    public CachedEngineFragmentBuilder shouldAutomaticallyHandleOnBackPressed(
+        boolean shouldAutomaticallyHandleOnBackPressed) {
+      this.shouldAutomaticallyHandleOnBackPressed = shouldAutomaticallyHandleOnBackPressed;
+      return this;
+    }
+
+    /**
      * Creates a {@link Bundle} of arguments that are assigned to the new {@code FlutterFragment}.
      *
      * <p>Subclasses should override this method to add new properties to the {@link Bundle}.
@@ -512,6 +596,7 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
       Bundle args = new Bundle();
       args.putString(ARG_CACHED_ENGINE_ID, engineId);
       args.putBoolean(ARG_DESTROY_ENGINE_WITH_FRAGMENT, destroyEngineWithFragment);
+      args.putBoolean(ARG_HANDLE_DEEPLINKING, handleDeeplinking);
       args.putString(
           ARG_FLUTTERVIEW_RENDER_MODE,
           renderMode != null ? renderMode.name() : RenderMode.surface.name());
@@ -519,6 +604,8 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
           ARG_FLUTTERVIEW_TRANSPARENCY_MODE,
           transparencyMode != null ? transparencyMode.name() : TransparencyMode.transparent.name());
       args.putBoolean(ARG_SHOULD_ATTACH_ENGINE_TO_ACTIVITY, shouldAttachEngineToActivity);
+      args.putBoolean(
+          ARG_SHOULD_AUTOMATICALLY_HANDLE_ON_BACK_PRESSED, shouldAutomaticallyHandleOnBackPressed);
       return args;
     }
 
@@ -554,6 +641,14 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   // implementation for details about why it exists.
   @VisibleForTesting /* package */ FlutterActivityAndFragmentDelegate delegate;
 
+  private final OnBackPressedCallback onBackPressedCallback =
+      new OnBackPressedCallback(true) {
+        @Override
+        public void handleOnBackPressed() {
+          onBackPressed();
+        }
+      };
+
   public FlutterFragment() {
     // Ensure that we at least have an empty Bundle of arguments so that we don't
     // need to continually check for null arguments before grabbing one.
@@ -580,6 +675,15 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
     super.onAttach(context);
     delegate = new FlutterActivityAndFragmentDelegate(this);
     delegate.onAttach(context);
+    if (getArguments().getBoolean(ARG_SHOULD_AUTOMATICALLY_HANDLE_ON_BACK_PRESSED, false)) {
+      requireActivity().getOnBackPressedDispatcher().addCallback(this, onBackPressedCallback);
+    }
+  }
+
+  @Override
+  public void onCreate(@Nullable Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    delegate.onRestoreInstanceState(savedInstanceState);
   }
 
   @Nullable
@@ -590,21 +694,19 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   }
 
   @Override
-  public void onActivityCreated(@Nullable Bundle savedInstanceState) {
-    super.onActivityCreated(savedInstanceState);
-    delegate.onActivityCreated(savedInstanceState);
-  }
-
-  @Override
   public void onStart() {
     super.onStart();
-    delegate.onStart();
+    if (stillAttachedForEvent("onStart")) {
+      delegate.onStart();
+    }
   }
 
   @Override
   public void onResume() {
     super.onResume();
-    delegate.onResume();
+    if (stillAttachedForEvent("onResume")) {
+      delegate.onResume();
+    }
   }
 
   // TODO(mattcarroll): determine why this can't be in onResume(). Comment reason, or move if
@@ -617,7 +719,9 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   @Override
   public void onPause() {
     super.onPause();
-    delegate.onPause();
+    if (stillAttachedForEvent("onPause")) {
+      delegate.onPause();
+    }
   }
 
   @Override
@@ -646,7 +750,7 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
 
   @Override
   public void detachFromFlutterEngine() {
-    Log.v(
+    Log.w(
         TAG,
         "FlutterFragment "
             + this
@@ -711,6 +815,9 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   /**
    * The hardware back button was pressed.
    *
+   * <p>If the fragment uses {@code shouldAutomaticallyHandleOnBackPressed(true)}, this method
+   * should not be called through. It will be called automatically instead.
+   *
    * <p>See {@link android.app.Activity#onBackPressed()}
    */
   @ActivityCallThrough
@@ -759,7 +866,7 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
    *
    * @param level level
    */
-  @ActivityCallThrough
+  @Override
   public void onTrimMemory(int level) {
     if (stillAttachedForEvent("onTrimMemory")) {
       delegate.onTrimMemory(level);
@@ -801,6 +908,14 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   @Override
   public String getCachedEngineId() {
     return getArguments().getString(ARG_CACHED_ENGINE_ID, null);
+  }
+
+  /**
+   * Returns true a {@code FlutterEngine} was explicitly created and injected into the {@code
+   * FlutterFragment} rather than one that was created implicitly in the {@code FlutterFragment}.
+   */
+  /* package */ boolean isFlutterEngineInjected() {
+    return delegate.isFlutterEngineFromHost();
   }
 
   /**
@@ -958,7 +1073,7 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   public PlatformPlugin providePlatformPlugin(
       @Nullable Activity activity, @NonNull FlutterEngine flutterEngine) {
     if (activity != null) {
-      return new PlatformPlugin(getActivity(), flutterEngine.getPlatformChannel());
+      return new PlatformPlugin(getActivity(), flutterEngine.getPlatformChannel(), this);
     } else {
       return null;
     }
@@ -1014,6 +1129,15 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   @Override
   public boolean shouldAttachEngineToActivity() {
     return getArguments().getBoolean(ARG_SHOULD_ATTACH_ENGINE_TO_ACTIVITY);
+  }
+
+  /**
+   * Whether to handle the deeplinking from the {@code Intent} automatically if the {@code
+   * getInitialRoute} returns null.
+   */
+  @Override
+  public boolean shouldHandleDeeplinking() {
+    return getArguments().getBoolean(ARG_HANDLE_DEEPLINKING);
   }
 
   @Override
@@ -1075,9 +1199,35 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
     return true;
   }
 
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Avoid overriding this method when using {@code
+   * shouldAutomaticallyHandleOnBackPressed(true)}. If you do, you must always {@code return
+   * super.popSystemNavigator()} rather than {@code return false}. Otherwise the navigation behavior
+   * will recurse infinitely between this method and {@link #onBackPressed()}, breaking navigation.
+   */
+  @Override
+  public boolean popSystemNavigator() {
+    if (getArguments().getBoolean(ARG_SHOULD_AUTOMATICALLY_HANDLE_ON_BACK_PRESSED, false)) {
+      FragmentActivity activity = getActivity();
+      if (activity != null) {
+        // Unless we disable the callback, the dispatcher call will trigger it. This will then
+        // trigger the fragment's onBackPressed() implementation, which will call through to the
+        // dart side and likely call back through to this method, creating an infinite call loop.
+        onBackPressedCallback.setEnabled(false);
+        activity.getOnBackPressedDispatcher().onBackPressed();
+        onBackPressedCallback.setEnabled(true);
+        return true;
+      }
+    }
+    // Hook for subclass. No-op if returns false.
+    return false;
+  }
+
   private boolean stillAttachedForEvent(String event) {
     if (delegate == null) {
-      Log.v(TAG, "FlutterFragment " + hashCode() + " " + event + " called after release.");
+      Log.w(TAG, "FlutterFragment " + hashCode() + " " + event + " called after release.");
       return false;
     }
     return true;

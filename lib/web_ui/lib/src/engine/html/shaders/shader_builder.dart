@@ -2,8 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
-part of engine;
+import 'package:ui/ui.dart' as ui;
+
+import '../../browser_detection.dart';
+import '../../util.dart';
 
 /// Creates shader program for target webgl version.
 ///
@@ -58,7 +60,7 @@ class ShaderBuilder {
   ShaderDeclaration? _fragmentColorDeclaration;
 
   ShaderBuilder(this.version) : isWebGl2 = version == WebGLVersion.webgl2,
-    _isFragmentShader = false;
+        _isFragmentShader = false;
 
   ShaderBuilder.fragment(this.version) :
         isWebGl2 = version == WebGLVersion.webgl2,
@@ -230,6 +232,8 @@ class ShaderBuilder {
   String _precisionToString(int precision) => precision == ShaderPrecision.kLow
       ? 'lowp'
       : precision == ShaderPrecision.kMedium ? 'mediump' : 'highp';
+
+  String get texture2DFunction => isWebGl2 ? 'texture' : 'texture2D';
 }
 
 class ShaderMethod {
@@ -238,9 +242,53 @@ class ShaderMethod {
   final String returnType = 'void';
   final String name;
   final List<String> _statements = [];
+  int _indentLevel = 1;
+
+  void indent() {
+    ++_indentLevel;
+  }
+
+  void unindent() {
+    assert(_indentLevel != 1);
+    --_indentLevel;
+  }
 
   void addStatement(String statement) {
-    _statements.add(statement);
+    if (assertionsEnabled) {
+      _statements.add('  ' * _indentLevel + statement);
+    } else {
+      _statements.add(statement);
+    }
+  }
+
+  /// Adds statements to compute tiling in 0..1 coordinate space.
+  ///
+  /// For clamp we simply assign source value to destination.
+  ///
+  /// For repeat, we use fractional part of source value.
+  ///   float destination = fract(source);
+  ///
+  /// For mirror, we repeat every 2 units, by scaling and measuring distance
+  /// from floor.
+  ///   float destination = 1.0 - source;
+  ///   destination = abs((destination - 2.0 * floor(destination * 0.5)) - 1.0);
+  void addTileStatements(String source, String destination,
+      ui.TileMode tileMode) {
+    switch(tileMode) {
+      case ui.TileMode.repeated:
+        addStatement('float $destination = fract($source);');
+        break;
+      case ui.TileMode.mirror:
+        addStatement('float $destination = ($source - 1.0);');
+        addStatement(
+            '$destination = '
+            'abs(($destination - 2.0 * floor($destination * 0.5)) - 1.0);');
+        break;
+      case ui.TileMode.clamp:
+      case ui.TileMode.decal:
+        addStatement('float $destination = $source;');
+        break;
+    }
   }
 
   void write(StringBuffer buffer) {
@@ -250,14 +298,6 @@ class ShaderMethod {
     }
     buffer.writeln('}');
   }
-}
-
-/// html webgl version qualifier constants.
-abstract class WebGLVersion {
-  // WebGL 1.0 is based on OpenGL ES 2.0 / GLSL 1.00
-  static const int webgl1 = 1;
-  // WebGL 2.0 is based on OpenGL ES 3.0 / GLSL 3.00
-  static const int webgl2 = 2;
 }
 
 /// WebGl Shader data types.

@@ -2,8 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
-part of engine;
+import 'dart:async';
+import 'dart:html' as html;
+import 'dart:js_util' as js_util;
+import 'dart:typed_data';
+import 'dart:math' as math;
+
+import 'package:ui/ui.dart' as ui;
+
+import 'browser_detection.dart';
+import 'vector_math.dart';
 
 /// Generic callback signature, used by [_futurize].
 typedef Callback<T> = void Function(T result);
@@ -73,7 +81,7 @@ void setElementTransform(html.Element element, Float32List matrix4) {
 /// See also:
 ///  * https://github.com/flutter/flutter/issues/32274
 ///  * https://bugs.chromium.org/p/chromium/issues/detail?id=1040222
-String float64ListToCssTransform(Float32List matrix) {
+String float64ListToCssTransform(List<double> matrix) {
   assert(matrix.length == 16);
   final TransformKind transformKind = transformKindOf(matrix);
   if (transformKind == TransformKind.transform2d) {
@@ -105,14 +113,14 @@ enum TransformKind {
 }
 
 /// Detects the kind of transform the [matrix] performs.
-TransformKind transformKindOf(Float32List matrix) {
+TransformKind transformKindOf(List<double> matrix) {
   assert(matrix.length == 16);
-  final Float32List m = matrix;
+  final List<double> m = matrix;
 
   // If matrix contains scaling, rotation, z translation or
   // perspective transform, it is not considered simple.
-  final bool isSimple2dTransform =
-      m[15] == 1.0 &&  // start reading from the last element to eliminate range checks in subsequent reads.
+  final bool isSimple2dTransform = m[15] ==
+          1.0 && // start reading from the last element to eliminate range checks in subsequent reads.
       m[14] == 0.0 && // z translation is NOT simple
       // m[13] - y translation is simple
       // m[12] - x translation is simple
@@ -126,8 +134,8 @@ TransformKind transformKindOf(Float32List matrix) {
       // m[4] - 2D rotation is simple
       m[3] == 0.0 &&
       m[2] == 0.0;
-      // m[1] - 2D rotation is simple
-      // m[0] - scale x is simple
+  // m[1] - 2D rotation is simple
+  // m[0] - scale x is simple
 
   if (!isSimple2dTransform) {
     return TransformKind.complex;
@@ -136,8 +144,7 @@ TransformKind transformKindOf(Float32List matrix) {
   // From this point on we're sure the transform is 2D, but we don't know if
   // it's identity or not. To check, we need to look at the remaining elements
   // that were not checked above.
-  final bool isIdentityTransform =
-      m[0] == 1.0 &&
+  final bool isIdentityTransform = m[0] == 1.0 &&
       m[1] == 0.0 &&
       m[4] == 0.0 &&
       m[5] == 1.0 &&
@@ -164,15 +171,15 @@ bool isIdentityFloat32ListTransform(Float32List matrix) {
 /// permitted. However, it is inefficient to construct a matrix for an identity
 /// transform. Consider removing the CSS `transform` property from elements
 /// that apply identity transform.
-String float64ListToCssTransform2d(Float32List matrix) {
-  assert (transformKindOf(matrix) != TransformKind.complex);
+String float64ListToCssTransform2d(List<double> matrix) {
+  assert(transformKindOf(matrix) != TransformKind.complex);
   return 'matrix(${matrix[0]},${matrix[1]},${matrix[4]},${matrix[5]},${matrix[12]},${matrix[13]})';
 }
 
 /// Converts [matrix] to a 3D CSS transform value.
-String float64ListToCssTransform3d(Float32List matrix) {
+String float64ListToCssTransform3d(List<double> matrix) {
   assert(matrix.length == 16);
-  final Float32List m = matrix;
+  final List<double> m = matrix;
   if (m[0] == 1.0 &&
       m[1] == 0.0 &&
       m[2] == 0.0 &&
@@ -279,10 +286,32 @@ void transformLTRB(Matrix4 transform, Float32List ltrb) {
 
   _tempPointMatrix.multiplyTranspose(transform);
 
-  ltrb[0] = math.min(math.min(math.min(_tempPointData[0], _tempPointData[1]), _tempPointData[2]), _tempPointData[3]);
-  ltrb[1] = math.min(math.min(math.min(_tempPointData[4], _tempPointData[5]), _tempPointData[6]), _tempPointData[7]);
-  ltrb[2] = math.max(math.max(math.max(_tempPointData[0], _tempPointData[1]), _tempPointData[2]), _tempPointData[3]);
-  ltrb[3] = math.max(math.max(math.max(_tempPointData[4], _tempPointData[5]), _tempPointData[6]), _tempPointData[7]);
+  // Handle non-homogenous matrices.
+  double w = transform[15];
+  if (w == 0.0) {
+    w = 1.0;
+  }
+
+  ltrb[0] = math.min(
+          math.min(math.min(_tempPointData[0], _tempPointData[1]),
+              _tempPointData[2]),
+          _tempPointData[3]) /
+      w;
+  ltrb[1] = math.min(
+          math.min(math.min(_tempPointData[4], _tempPointData[5]),
+              _tempPointData[6]),
+          _tempPointData[7]) /
+      w;
+  ltrb[2] = math.max(
+          math.max(math.max(_tempPointData[0], _tempPointData[1]),
+              _tempPointData[2]),
+          _tempPointData[3]) /
+      w;
+  ltrb[3] = math.max(
+          math.max(math.max(_tempPointData[4], _tempPointData[5]),
+              _tempPointData[6]),
+          _tempPointData[7]) /
+      w;
 }
 
 /// Returns true if [rect] contains every point that is also contained by the
@@ -295,33 +324,6 @@ bool rectContainsOther(ui.Rect rect, ui.Rect other) {
       rect.top <= other.top &&
       rect.right >= other.right &&
       rect.bottom >= other.bottom;
-}
-
-/// Counter used for generating clip path id inside an svg <defs> tag.
-int _clipIdCounter = 0;
-
-/// Converts Path to svg element that contains a clip-path definition.
-///
-/// Calling this method updates [_clipIdCounter]. The HTML id of the generated
-/// clip is set to "svgClip${_clipIdCounter}", e.g. "svgClip123".
-String _pathToSvgClipPath(ui.Path path,
-    {double offsetX = 0,
-    double offsetY = 0,
-    double scaleX = 1.0,
-    double scaleY = 1.0}) {
-  _clipIdCounter += 1;
-  final StringBuffer sb = StringBuffer();
-  sb.write('<svg width="0" height="0" '
-      'style="position:absolute">');
-  sb.write('<defs>');
-
-  final String clipId = 'svgClip$_clipIdCounter';
-  sb.write('<clipPath id=$clipId clipPathUnits="objectBoundingBox">');
-
-  sb.write('<path transform="scale($scaleX, $scaleY)" fill="#FFFFFF" d="');
-  pathToSvg(path as SurfacePath, sb, offsetX: offsetX, offsetY: offsetY);
-  sb.write('"></path></clipPath></defs></svg');
-  return sb.toString();
 }
 
 /// Converts color to a css compatible attribute value.
@@ -388,7 +390,7 @@ String colorComponentsToCssString(int r, int g, int b, int a) {
 /// We need this in [BitmapCanvas] and [RecordingCanvas] to swallow this
 /// Firefox exception without interfering with others (potentially useful
 /// for the programmer).
-bool _isNsErrorFailureException(dynamic e) {
+bool isNsErrorFailureException(dynamic e) {
   return js_util.getProperty(e, 'name') == 'NS_ERROR_FAILURE';
 }
 
@@ -420,10 +422,11 @@ const Set<String> _genericFontFamilies = <String>{
 ///
 /// For iOS, default to -apple-system, where it should be available, otherwise
 /// default to Arial. BlinkMacSystemFont is used for Chrome on iOS.
-final String _fallbackFontFamily = _isMacOrIOS ?
-    '-apple-system, BlinkMacSystemFont' : 'Arial';
+final String _fallbackFontFamily =
+    isMacOrIOS ? '-apple-system, BlinkMacSystemFont' : 'Arial';
 
-bool get _isMacOrIOS => operatingSystem == OperatingSystem.iOs ||
+bool get isMacOrIOS =>
+    operatingSystem == OperatingSystem.iOs ||
     operatingSystem == OperatingSystem.macOs;
 
 /// Create a font-family string appropriate for CSS.
@@ -434,13 +437,15 @@ String? canonicalizeFontFamily(String? fontFamily) {
   if (_genericFontFamilies.contains(fontFamily)) {
     return fontFamily;
   }
-  if (_isMacOrIOS) {
+  if (isMacOrIOS) {
     // Unlike Safari, Chrome on iOS does not correctly fallback to cupertino
     // on sans-serif.
     // Map to San Francisco Text/Display fonts, use -apple-system,
     // BlinkMacSystemFont.
-    if (fontFamily == '.SF Pro Text' || fontFamily == '.SF Pro Display' ||
-        fontFamily == '.SF UI Text' || fontFamily == '.SF UI Display') {
+    if (fontFamily == '.SF Pro Text' ||
+        fontFamily == '.SF Pro Display' ||
+        fontFamily == '.SF UI Text' ||
+        fontFamily == '.SF UI Display') {
       return _fallbackFontFamily;
     }
   }
@@ -474,39 +479,22 @@ void applyWebkitClipFix(html.Element? containerElement) {
   }
 }
 
-final ByteData? _fontChangeMessage = JSONMessageCodec().encodeMessage(<String, dynamic>{'type': 'fontsChange'});
-
-// Font load callbacks will typically arrive in sequence, we want to prevent
-// sendFontChangeMessage of causing multiple synchronous rebuilds.
-// This flag ensures we properly schedule a single call to framework.
-bool _fontChangeScheduled = false;
-
-FutureOr<void> sendFontChangeMessage() async {
-  if (window._onPlatformMessage != null)
-    if (!_fontChangeScheduled) {
-      _fontChangeScheduled = true;
-      // Batch updates into next animationframe.
-      html.window.requestAnimationFrame((num _) {
-        _fontChangeScheduled = false;
-        window.invokeOnPlatformMessage(
-          'flutter/system',
-          _fontChangeMessage,
-              (_) {},
-        );
-      });
-    }
-}
-
 // Stores matrix in a form that allows zero allocation transforms.
-class _FastMatrix64 {
-  final Float64List matrix;
+class FastMatrix32 {
+  final Float32List matrix;
   double transformedX = 0, transformedY = 0;
-  _FastMatrix64(this.matrix);
+  FastMatrix32(this.matrix);
 
   void transform(double x, double y) {
     transformedX = matrix[12] + (matrix[0] * x) + (matrix[4] * y);
     transformedY = matrix[13] + (matrix[1] * x) + (matrix[5] * y);
   }
+
+  String debugToString() =>
+      '${matrix[0].toStringAsFixed(3)}, ${matrix[4].toStringAsFixed(3)}, ${matrix[8].toStringAsFixed(3)}, ${matrix[12].toStringAsFixed(3)}\n'
+      '${matrix[1].toStringAsFixed(3)}, ${matrix[5].toStringAsFixed(3)}, ${matrix[9].toStringAsFixed(3)}, ${matrix[13].toStringAsFixed(3)}\n'
+      '${matrix[2].toStringAsFixed(3)}, ${matrix[6].toStringAsFixed(3)}, ${matrix[10].toStringAsFixed(3)}, ${matrix[14].toStringAsFixed(3)}\n'
+      '${matrix[3].toStringAsFixed(3)}, ${matrix[7].toStringAsFixed(3)}, ${matrix[11].toStringAsFixed(3)}, ${matrix[15].toStringAsFixed(3)}\n';
 }
 
 /// Roughly the inverse of [ui.Shadow.convertRadiusToSigma].
@@ -528,31 +516,6 @@ bool isUnsoundNull(dynamic object) {
   return object == null;
 }
 
-bool _offsetIsValid(ui.Offset offset) {
-  assert(offset != null, 'Offset argument was null.'); // ignore: unnecessary_null_comparison
-  assert(!offset.dx.isNaN && !offset.dy.isNaN,
-      'Offset argument contained a NaN value.');
-  return true;
-}
-
-bool _matrix4IsValid(Float32List matrix4) {
-  assert(matrix4 != null, 'Matrix4 argument was null.'); // ignore: unnecessary_null_comparison
-  assert(matrix4.length == 16, 'Matrix4 must have 16 entries.');
-  return true;
-}
-
-void _validateColorStops(List<ui.Color> colors, List<double>? colorStops) {
-  if (colorStops == null) {
-    if (colors.length != 2)
-      throw ArgumentError(
-          '"colors" must have length 2 if "colorStops" is omitted.');
-  } else {
-    if (colors.length != colorStops.length)
-      throw ArgumentError(
-          '"colors" and "colorStops" arguments must have equal length.');
-  }
-}
-
 int clampInt(int value, int min, int max) {
   assert(min <= max);
   if (value < min) {
@@ -562,4 +525,37 @@ int clampInt(int value, int min, int max) {
   } else {
     return value;
   }
+}
+
+/// Prints a warning message to the console.
+///
+/// This function can be overridden in tests. This could be useful, for example,
+/// to verify that warnings are printed under certain circumstances.
+void Function(String) printWarning = html.window.console.warn;
+
+/// Determines if lists [a] and [b] are deep equivalent.
+///
+/// Returns true if the lists are both null, or if they are both non-null, have
+/// the same length, and contain the same elements in the same order. Returns
+/// false otherwise.
+bool listEquals<T>(List<T>? a, List<T>? b) {
+  if (a == null) {
+    return b == null;
+  }
+  if (b == null || a.length != b.length) {
+    return false;
+  }
+  for (int index = 0; index < a.length; index += 1) {
+    if (a[index] != b[index]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// HTML only supports a single radius, but Flutter ImageFilter supports separate
+// horizontal and vertical radii. The best approximation we can provide is to
+// average the two radii together for a single compromise value.
+String blurSigmasToCssString(double sigmaX, double sigmaY) {
+  return 'blur(${(sigmaX + sigmaY) * 0.5}px)';
 }

@@ -11,19 +11,8 @@
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_basic_message_channel.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_method_channel.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_standard_method_codec.h"
+#include "flutter/shell/platform/linux/testing/fl_test.h"
 #include "flutter/shell/platform/linux/testing/mock_renderer.h"
-
-// Creates a mock engine that responds to platform messages.
-static FlEngine* make_mock_engine() {
-  g_autoptr(FlDartProject) project = fl_dart_project_new();
-  g_autoptr(FlMockRenderer) renderer = fl_mock_renderer_new();
-  g_autoptr(FlEngine) engine = fl_engine_new(project, FL_RENDERER(renderer));
-  g_autoptr(GError) engine_error = nullptr;
-  EXPECT_TRUE(fl_engine_start(engine, &engine_error));
-  EXPECT_EQ(engine_error, nullptr);
-
-  return static_cast<FlEngine*>(g_object_ref(engine));
-}
 
 // Called when when the method call response is received in the InvokeMethod
 // test.
@@ -499,7 +488,7 @@ static GBytes* test_method_codec_encode_error_envelope(FlMethodCodec* codec,
   return nullptr;
 }
 
-// Implements FlMethodCodec::encode_decode_reponse.
+// Implements FlMethodCodec::encode_decode_response.
 static FlMethodResponse* test_method_codec_decode_response(FlMethodCodec* codec,
                                                            GBytes* message,
                                                            GError** error) {
@@ -542,7 +531,7 @@ static void method_call_success_error_cb(FlMethodChannel* channel,
       fl_method_call_respond_success(method_call, result, &response_error));
   EXPECT_NE(response_error, nullptr);
 
-  // Respond to stop a warning occuring about not responding.
+  // Respond to stop a warning occurring about not responding.
   fl_method_call_respond_not_implemented(method_call, nullptr);
 
   g_main_loop_quit(static_cast<GMainLoop*>(user_data));
@@ -584,7 +573,7 @@ static void method_call_error_error_cb(FlMethodChannel* channel,
                                             details, &response_error));
   EXPECT_NE(response_error, nullptr);
 
-  // Respond to stop a warning occuring about not responding.
+  // Respond to stop a warning occurring about not responding.
   fl_method_call_respond_not_implemented(method_call, nullptr);
 
   g_main_loop_quit(static_cast<GMainLoop*>(user_data));

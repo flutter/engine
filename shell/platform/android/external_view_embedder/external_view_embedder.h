@@ -30,7 +30,7 @@ namespace flutter {
 class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
  public:
   AndroidExternalViewEmbedder(
-      std::shared_ptr<AndroidContext> android_context,
+      const AndroidContext& android_context,
       std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
       std::shared_ptr<AndroidSurfaceFactory> surface_factory);
 
@@ -47,7 +47,9 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
 
   // |ExternalViewEmbedder|
   void SubmitFrame(GrDirectContext* context,
-                   std::unique_ptr<SurfaceFrame> frame) override;
+                   std::unique_ptr<SurfaceFrame> frame,
+                   const std::shared_ptr<const fml::SyncSwitch>&
+                       gpu_disable_sync_switch) override;
 
   // |ExternalViewEmbedder|
   PostPrerollResult PostPrerollAction(
@@ -78,8 +80,6 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
   SkRect GetViewRect(int view_id) const;
 
  private:
-  static const int kMaxLayerAllocations = 2;
-
   // The number of frames the rasterizer task runner will continue
   // to run on the platform thread after no platform view is rendered.
   //
@@ -88,7 +88,7 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
   static const int kDefaultMergedLeaseDuration = 10;
 
   // Provides metadata to the Android surfaces.
-  const std::shared_ptr<AndroidContext> android_context_;
+  const AndroidContext& android_context_;
 
   // Allows to call methods in Java.
   const std::shared_ptr<PlatformViewAndroidJNI> jni_facade_;

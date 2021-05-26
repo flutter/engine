@@ -1,7 +1,6 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-// FLUTTER_NOLINT
 
 #define FML_USED_ON_EMBEDDER
 
@@ -15,10 +14,13 @@
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/message_loop.h"
+#include "flutter/fml/message_loop_task_queues.h"
 #include "flutter/fml/paths.h"
 #include "flutter/fml/synchronization/count_down_latch.h"
 #include "flutter/fml/synchronization/waitable_event.h"
+#include "flutter/fml/task_source.h"
 #include "flutter/fml/thread.h"
+#include "flutter/lib/ui/painting/image.h"
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/shell/platform/embedder/tests/embedder_assertions.h"
 #include "flutter/shell/platform/embedder/tests/embedder_config_builder.h"
@@ -37,7 +39,7 @@ using EmbedderTest = testing::EmbedderTest;
 
 TEST_F(EmbedderTest, CanCreateOpenGLRenderingEngine) {
   EmbedderConfigBuilder builder(
-      GetEmbedderContext(ContextType::kOpenGLContext));
+      GetEmbedderContext(EmbedderTestContextType::kOpenGLContext));
   builder.SetOpenGLRendererConfig(SkISize::Make(1, 1));
   auto engine = builder.LaunchEngine();
   ASSERT_TRUE(engine.is_valid());
@@ -50,7 +52,7 @@ TEST_F(EmbedderTest, CanCreateOpenGLRenderingEngine) {
 ///
 TEST_F(EmbedderTest,
        MustPreventEngineLaunchWhenRequiredCompositorArgsAreAbsent) {
-  auto& context = GetEmbedderContext(ContextType::kSoftwareContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(1, 1));
   builder.SetCompositor();
@@ -66,7 +68,7 @@ TEST_F(EmbedderTest,
 /// complete OpenGL textures.
 ///
 TEST_F(EmbedderTest, CompositorMustBeAbleToRenderToOpenGLFramebuffer) {
-  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
@@ -157,7 +159,7 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderToOpenGLFramebuffer) {
 /// Layers in a hierarchy containing a platform view should not be cached. The
 /// other layers in the hierarchy should be, however.
 TEST_F(EmbedderTest, RasterCacheDisabledWithPlatformViews) {
-  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
@@ -261,7 +263,7 @@ TEST_F(EmbedderTest, RasterCacheDisabledWithPlatformViews) {
 /// The RasterCache should normally be enabled.
 ///
 TEST_F(EmbedderTest, RasterCacheEnabled) {
-  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
@@ -332,7 +334,7 @@ TEST_F(EmbedderTest, RasterCacheEnabled) {
 /// the individual layers are OpenGL textures.
 ///
 TEST_F(EmbedderTest, CompositorMustBeAbleToRenderToOpenGLTexture) {
-  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
@@ -424,7 +426,7 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderToOpenGLTexture) {
 /// individual layers are software buffers.
 ///
 TEST_F(EmbedderTest, CompositorMustBeAbleToRenderToSoftwareBuffer) {
-  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
@@ -515,7 +517,7 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderToSoftwareBuffer) {
 /// Test the layer structure and pixels rendered when using a custom compositor.
 ///
 TEST_F(EmbedderTest, CompositorMustBeAbleToRenderKnownScene) {
-  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
@@ -686,7 +688,7 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderKnownScene) {
 /// thread merging mechanism must not interfere with the custom compositor.
 ///
 TEST_F(EmbedderTest, CustomCompositorMustWorkWithCustomTaskRunner) {
-  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
 
@@ -811,7 +813,7 @@ TEST_F(EmbedderTest, CustomCompositorMustWorkWithCustomTaskRunner) {
 /// and a single layer.
 ///
 TEST_F(EmbedderTest, CompositorMustBeAbleToRenderWithRootLayerOnly) {
-  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
@@ -878,7 +880,7 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderWithRootLayerOnly) {
 /// and ensure that a redundant layer is not added.
 ///
 TEST_F(EmbedderTest, CompositorMustBeAbleToRenderWithPlatformLayerOnBottom) {
-  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
@@ -991,7 +993,7 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderWithPlatformLayerOnBottom) {
 ///
 TEST_F(EmbedderTest,
        CompositorMustBeAbleToRenderKnownSceneWithRootSurfaceTransformation) {
-  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(600, 800));
@@ -1165,14 +1167,14 @@ TEST_F(EmbedderTest,
 }
 
 TEST_F(EmbedderTest, CanRenderSceneWithoutCustomCompositor) {
-  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
 
   builder.SetDartEntrypoint("can_render_scene_without_custom_compositor");
   builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
 
-  auto renderered_scene = context.GetNextSceneImage();
+  auto rendered_scene = context.GetNextSceneImage();
 
   auto engine = builder.LaunchEngine();
   ASSERT_TRUE(engine.is_valid());
@@ -1187,11 +1189,11 @@ TEST_F(EmbedderTest, CanRenderSceneWithoutCustomCompositor) {
             kSuccess);
 
   ASSERT_TRUE(ImageMatchesFixture("scene_without_custom_compositor.png",
-                                  renderered_scene));
+                                  rendered_scene));
 }
 
 TEST_F(EmbedderTest, CanRenderSceneWithoutCustomCompositorWithTransformation) {
-  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   const auto root_surface_transformation =
       SkMatrix().preTranslate(0, 800).preRotate(-90, 0, 0);
@@ -1203,7 +1205,7 @@ TEST_F(EmbedderTest, CanRenderSceneWithoutCustomCompositorWithTransformation) {
   builder.SetDartEntrypoint("can_render_scene_without_custom_compositor");
   builder.SetOpenGLRendererConfig(SkISize::Make(600, 800));
 
-  auto renderered_scene = context.GetNextSceneImage();
+  auto rendered_scene = context.GetNextSceneImage();
 
   auto engine = builder.LaunchEngine();
   ASSERT_TRUE(engine.is_valid());
@@ -1220,18 +1222,18 @@ TEST_F(EmbedderTest, CanRenderSceneWithoutCustomCompositorWithTransformation) {
             kSuccess);
 
   ASSERT_TRUE(ImageMatchesFixture(
-      "scene_without_custom_compositor_with_xform.png", renderered_scene));
+      "scene_without_custom_compositor_with_xform.png", rendered_scene));
 }
 
 TEST_F(EmbedderTest, CanRenderGradientWithoutCompositor) {
-  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
 
   builder.SetDartEntrypoint("render_gradient");
   builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
 
-  auto renderered_scene = context.GetNextSceneImage();
+  auto rendered_scene = context.GetNextSceneImage();
 
   auto engine = builder.LaunchEngine();
   ASSERT_TRUE(engine.is_valid());
@@ -1245,11 +1247,11 @@ TEST_F(EmbedderTest, CanRenderGradientWithoutCompositor) {
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 
-  ASSERT_TRUE(ImageMatchesFixture("gradient.png", renderered_scene));
+  ASSERT_TRUE(ImageMatchesFixture("gradient.png", rendered_scene));
 }
 
 TEST_F(EmbedderTest, CanRenderGradientWithoutCompositorWithXform) {
-  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   const auto root_surface_transformation =
       SkMatrix().preTranslate(0, 800).preRotate(-90, 0, 0);
@@ -1263,7 +1265,7 @@ TEST_F(EmbedderTest, CanRenderGradientWithoutCompositorWithXform) {
   builder.SetDartEntrypoint("render_gradient");
   builder.SetOpenGLRendererConfig(surface_size);
 
-  auto renderered_scene = context.GetNextSceneImage();
+  auto rendered_scene = context.GetNextSceneImage();
 
   auto engine = builder.LaunchEngine();
   ASSERT_TRUE(engine.is_valid());
@@ -1278,11 +1280,11 @@ TEST_F(EmbedderTest, CanRenderGradientWithoutCompositorWithXform) {
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 
-  ASSERT_TRUE(ImageMatchesFixture("gradient_xform.png", renderered_scene));
+  ASSERT_TRUE(ImageMatchesFixture("gradient_xform.png", rendered_scene));
 }
 
 TEST_F(EmbedderTest, CanRenderGradientWithCompositor) {
-  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
 
@@ -1292,7 +1294,7 @@ TEST_F(EmbedderTest, CanRenderGradientWithCompositor) {
   builder.SetRenderTargetType(
       EmbedderTestBackingStoreProducer::RenderTargetType::kOpenGLFramebuffer);
 
-  auto renderered_scene = context.GetNextSceneImage();
+  auto rendered_scene = context.GetNextSceneImage();
 
   auto engine = builder.LaunchEngine();
   ASSERT_TRUE(engine.is_valid());
@@ -1306,11 +1308,11 @@ TEST_F(EmbedderTest, CanRenderGradientWithCompositor) {
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 
-  ASSERT_TRUE(ImageMatchesFixture("gradient.png", renderered_scene));
+  ASSERT_TRUE(ImageMatchesFixture("gradient.png", rendered_scene));
 }
 
 TEST_F(EmbedderTest, CanRenderGradientWithCompositorWithXform) {
-  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   // This must match the transformation provided in the
   // |CanRenderGradientWithoutCompositorWithXform| test to ensure that
@@ -1328,7 +1330,7 @@ TEST_F(EmbedderTest, CanRenderGradientWithCompositorWithXform) {
   builder.SetRenderTargetType(
       EmbedderTestBackingStoreProducer::RenderTargetType::kOpenGLFramebuffer);
 
-  auto renderered_scene = context.GetNextSceneImage();
+  auto rendered_scene = context.GetNextSceneImage();
 
   auto engine = builder.LaunchEngine();
   ASSERT_TRUE(engine.is_valid());
@@ -1343,11 +1345,11 @@ TEST_F(EmbedderTest, CanRenderGradientWithCompositorWithXform) {
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 
-  ASSERT_TRUE(ImageMatchesFixture("gradient_xform.png", renderered_scene));
+  ASSERT_TRUE(ImageMatchesFixture("gradient_xform.png", rendered_scene));
 }
 
 TEST_F(EmbedderTest, CanRenderGradientWithCompositorOnNonRootLayer) {
-  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
 
@@ -1434,7 +1436,7 @@ TEST_F(EmbedderTest, CanRenderGradientWithCompositorOnNonRootLayer) {
         return surface->makeImageSnapshot();
       });
 
-  auto renderered_scene = context.GetNextSceneImage();
+  auto rendered_scene = context.GetNextSceneImage();
 
   auto engine = builder.LaunchEngine();
   ASSERT_TRUE(engine.is_valid());
@@ -1448,11 +1450,11 @@ TEST_F(EmbedderTest, CanRenderGradientWithCompositorOnNonRootLayer) {
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 
-  ASSERT_TRUE(ImageMatchesFixture("gradient.png", renderered_scene));
+  ASSERT_TRUE(ImageMatchesFixture("gradient.png", rendered_scene));
 }
 
 TEST_F(EmbedderTest, CanRenderGradientWithCompositorOnNonRootLayerWithXform) {
-  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   // This must match the transformation provided in the
   // |CanRenderGradientWithoutCompositorWithXform| test to ensure that
@@ -1547,7 +1549,7 @@ TEST_F(EmbedderTest, CanRenderGradientWithCompositorOnNonRootLayerWithXform) {
         return surface->makeImageSnapshot();
       });
 
-  auto renderered_scene = context.GetNextSceneImage();
+  auto rendered_scene = context.GetNextSceneImage();
 
   auto engine = builder.LaunchEngine();
   ASSERT_TRUE(engine.is_valid());
@@ -1562,11 +1564,11 @@ TEST_F(EmbedderTest, CanRenderGradientWithCompositorOnNonRootLayerWithXform) {
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 
-  ASSERT_TRUE(ImageMatchesFixture("gradient_xform.png", renderered_scene));
+  ASSERT_TRUE(ImageMatchesFixture("gradient_xform.png", rendered_scene));
 }
 
 TEST_F(EmbedderTest, VerifyB141980393) {
-  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
 
@@ -1687,7 +1689,7 @@ TEST_F(EmbedderTest, CanCreateEmbedderWithCustomRenderTaskRunner) {
         }
       });
   EmbedderConfigBuilder builder(
-      GetEmbedderContext(ContextType::kOpenGLContext));
+      GetEmbedderContext(EmbedderTestContextType::kOpenGLContext));
   builder.SetDartEntrypoint("can_render_scene_without_custom_compositor");
   builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
   builder.SetRenderTaskRunner(
@@ -1746,7 +1748,7 @@ TEST_F(EmbedderTest,
 
   platform_task_runner->PostTask([&]() {
     EmbedderConfigBuilder builder(
-        GetEmbedderContext(ContextType::kOpenGLContext));
+        GetEmbedderContext(EmbedderTestContextType::kOpenGLContext));
     builder.SetDartEntrypoint("can_render_scene_without_custom_compositor");
     builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
     builder.SetRenderTaskRunner(
@@ -1800,7 +1802,7 @@ TEST_F(EmbedderTest,
 
 TEST_F(EmbedderTest,
        CompositorMustBeAbleToRenderKnownScenePixelRatioOnSurface) {
-  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
@@ -1812,7 +1814,7 @@ TEST_F(EmbedderTest,
 
   fml::CountDownLatch latch(1);
 
-  auto renderered_scene = context.GetNextSceneImage();
+  auto rendered_scene = context.GetNextSceneImage();
 
   context.GetCompositor().SetNextPresentCallback(
       [&](const FlutterLayer** layers, size_t layers_count) {
@@ -1885,13 +1887,13 @@ TEST_F(EmbedderTest,
 
   latch.Wait();
 
-  ASSERT_TRUE(ImageMatchesFixture("dpr_noxform.png", renderered_scene));
+  ASSERT_TRUE(ImageMatchesFixture("dpr_noxform.png", rendered_scene));
 }
 
 TEST_F(
     EmbedderTest,
     CompositorMustBeAbleToRenderKnownScenePixelRatioOnSurfaceWithRootSurfaceXformation) {
-  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(600, 800));
@@ -1906,7 +1908,7 @@ TEST_F(
 
   context.SetRootSurfaceTransformation(root_surface_transformation);
 
-  auto renderered_scene = context.GetNextSceneImage();
+  auto rendered_scene = context.GetNextSceneImage();
   fml::CountDownLatch latch(1);
 
   context.GetCompositor().SetNextPresentCallback(
@@ -1980,12 +1982,12 @@ TEST_F(
 
   latch.Wait();
 
-  ASSERT_TRUE(ImageMatchesFixture("dpr_xform.png", renderered_scene));
+  ASSERT_TRUE(ImageMatchesFixture("dpr_xform.png", rendered_scene));
 }
 
 TEST_F(EmbedderTest,
        PushingMutlipleFramesSetsUpNewRecordingCanvasWithCustomCompositor) {
-  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(600, 1024));
@@ -2027,7 +2029,7 @@ TEST_F(EmbedderTest,
 
 TEST_F(EmbedderTest,
        PushingMutlipleFramesSetsUpNewRecordingCanvasWithoutCustomCompositor) {
-  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(600, 1024));
@@ -2064,7 +2066,7 @@ TEST_F(EmbedderTest,
 }
 
 TEST_F(EmbedderTest, PlatformViewMutatorsAreValid) {
-  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
@@ -2160,7 +2162,7 @@ TEST_F(EmbedderTest, PlatformViewMutatorsAreValid) {
 }
 
 TEST_F(EmbedderTest, PlatformViewMutatorsAreValidWithPixelRatio) {
-  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
@@ -2257,7 +2259,7 @@ TEST_F(EmbedderTest, PlatformViewMutatorsAreValidWithPixelRatio) {
 
 TEST_F(EmbedderTest,
        PlatformViewMutatorsAreValidWithPixelRatioAndRootSurfaceTransformation) {
-  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
@@ -2359,7 +2361,7 @@ TEST_F(EmbedderTest,
 }
 
 TEST_F(EmbedderTest, EmptySceneIsAcceptable) {
-  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
@@ -2385,7 +2387,7 @@ TEST_F(EmbedderTest, EmptySceneIsAcceptable) {
 }
 
 TEST_F(EmbedderTest, SceneWithNoRootContainerIsAcceptable) {
-  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
@@ -2415,7 +2417,7 @@ TEST_F(EmbedderTest, SceneWithNoRootContainerIsAcceptable) {
 // Verifies that https://skia-review.googlesource.com/c/skia/+/259174 is pulled
 // into the engine.
 TEST_F(EmbedderTest, ArcEndCapsAreDrawnCorrectly) {
-  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(800, 1024));
@@ -2449,7 +2451,7 @@ TEST_F(EmbedderTest, ArcEndCapsAreDrawnCorrectly) {
 }
 
 TEST_F(EmbedderTest, ClipsAreCorrectlyCalculated) {
-  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(400, 300));
@@ -2494,7 +2496,7 @@ TEST_F(EmbedderTest, ClipsAreCorrectlyCalculated) {
               [&](const auto& mutation) {
                 FlutterRect clip = mutation.clip_rect;
 
-                // The test is only setup to supply one clip. Make sure it is
+                // The test is only set up to supply one clip. Make sure it is
                 // the one we expect.
                 const auto rect_to_compare =
                     SkRect::MakeLTRB(10.0, 10.0, 390, 290);
@@ -2528,7 +2530,7 @@ TEST_F(EmbedderTest, ClipsAreCorrectlyCalculated) {
 }
 
 TEST_F(EmbedderTest, ComplexClipsAreCorrectlyCalculated) {
-  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(1024, 600));
@@ -2602,8 +2604,8 @@ TEST_F(EmbedderTest, ComplexClipsAreCorrectlyCalculated) {
 
   FlutterWindowMetricsEvent event = {};
   event.struct_size = sizeof(event);
-  event.width = 400;
-  event.height = 300;
+  event.width = 1024;
+  event.height = 600;
   event.pixel_ratio = 1.0;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
@@ -2612,7 +2614,7 @@ TEST_F(EmbedderTest, ComplexClipsAreCorrectlyCalculated) {
 }
 
 TEST_F(EmbedderTest, ObjectsCanBePostedViaPorts) {
-  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(800, 1024));
   builder.SetDartEntrypoint("objects_can_be_posted");
@@ -2811,7 +2813,7 @@ TEST_F(EmbedderTest, ObjectsCanBePostedViaPorts) {
 }
 
 TEST_F(EmbedderTest, CompositorCanPostZeroLayersForPresentation) {
-  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(300, 200));
@@ -2844,7 +2846,7 @@ TEST_F(EmbedderTest, CompositorCanPostZeroLayersForPresentation) {
 }
 
 TEST_F(EmbedderTest, CompositorCanPostOnlyPlatformViews) {
-  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(300, 200));
@@ -2907,7 +2909,7 @@ TEST_F(EmbedderTest, CompositorCanPostOnlyPlatformViews) {
 }
 
 TEST_F(EmbedderTest, CompositorRenderTargetsAreRecycled) {
-  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(300, 200));
@@ -2952,7 +2954,7 @@ TEST_F(EmbedderTest, CompositorRenderTargetsAreRecycled) {
 }
 
 TEST_F(EmbedderTest, CompositorRenderTargetsAreInStableOrder) {
-  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(300, 200));
@@ -3021,7 +3023,7 @@ TEST_F(EmbedderTest, CompositorRenderTargetsAreInStableOrder) {
 }
 
 TEST_F(EmbedderTest, FrameInfoContainsValidWidthAndHeight) {
-  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(600, 1024));
@@ -3064,7 +3066,7 @@ TEST_F(EmbedderTest, FrameInfoContainsValidWidthAndHeight) {
 }
 
 TEST_F(EmbedderTest, MustNotRunWithBothFBOCallbacksSet) {
-  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(600, 1024));
@@ -3075,7 +3077,7 @@ TEST_F(EmbedderTest, MustNotRunWithBothFBOCallbacksSet) {
 }
 
 TEST_F(EmbedderTest, MustNotRunWithBothPresentCallbacksSet) {
-  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(600, 1024));
@@ -3086,7 +3088,7 @@ TEST_F(EmbedderTest, MustNotRunWithBothPresentCallbacksSet) {
 }
 
 TEST_F(EmbedderTest, PresentInfoContainsValidFBOId) {
-  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(600, 1024));
@@ -3129,7 +3131,7 @@ TEST_F(EmbedderTest, PresentInfoContainsValidFBOId) {
 }
 
 TEST_F(EmbedderTest, SetSingleDisplayConfigurationWithDisplayId) {
-  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
@@ -3171,7 +3173,7 @@ TEST_F(EmbedderTest, SetSingleDisplayConfigurationWithDisplayId) {
 }
 
 TEST_F(EmbedderTest, SetSingleDisplayConfigurationWithoutDisplayId) {
-  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
@@ -3213,7 +3215,7 @@ TEST_F(EmbedderTest, SetSingleDisplayConfigurationWithoutDisplayId) {
 }
 
 TEST_F(EmbedderTest, SetValidMultiDisplayConfiguration) {
-  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
@@ -3262,7 +3264,7 @@ TEST_F(EmbedderTest, SetValidMultiDisplayConfiguration) {
 }
 
 TEST_F(EmbedderTest, MultipleDisplaysWithSingleDisplayTrueIsInvalid) {
-  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
@@ -3308,7 +3310,7 @@ TEST_F(EmbedderTest, MultipleDisplaysWithSingleDisplayTrueIsInvalid) {
 }
 
 TEST_F(EmbedderTest, MultipleDisplaysWithSameDisplayIdIsInvalid) {
-  auto& context = GetEmbedderContext(ContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   EmbedderConfigBuilder builder(context);
   builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
@@ -3350,6 +3352,268 @@ TEST_F(EmbedderTest, MultipleDisplaysWithSameDisplayIdIsInvalid) {
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 
+  latch.Wait();
+}
+
+TEST_F(EmbedderTest, CompositorRenderTargetsNotRecycledWhenAvoidsCacheSet) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+
+  EmbedderConfigBuilder builder(context);
+  builder.SetOpenGLRendererConfig(SkISize::Make(300, 200));
+  builder.SetCompositor(/*avoid_backing_store_cache=*/true);
+  builder.SetDartEntrypoint("render_targets_are_recycled");
+  builder.SetRenderTargetType(
+      EmbedderTestBackingStoreProducer::RenderTargetType::kOpenGLTexture);
+
+  const unsigned num_frames = 8;
+  const unsigned num_engine_layers = 10;
+  const unsigned num_backing_stores = num_frames * num_engine_layers;
+  fml::CountDownLatch latch(1 + num_frames);  // 1 for native test signal.
+
+  context.AddNativeCallback("SignalNativeTest",
+                            CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+                              latch.CountDown();
+                            }));
+
+  context.GetCompositor().SetPresentCallback(
+      [&](const FlutterLayer** layers, size_t layers_count) {
+        ASSERT_EQ(layers_count, 20u);
+        latch.CountDown();
+      },
+      /*one_shot=*/false);
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+
+  FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(event);
+  event.width = 300;
+  event.height = 200;
+  event.pixel_ratio = 1.0;
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+            kSuccess);
+
+  latch.Wait();
+
+  ASSERT_EQ(context.GetCompositor().GetBackingStoresCreatedCount(),
+            num_backing_stores);
+  // Killing the engine should collect all the frames.
+  engine.reset();
+  ASSERT_EQ(context.GetCompositor().GetPendingBackingStoresCount(), 0u);
+}
+
+TEST_F(EmbedderTest, SnapshotRenderTargetScalesDownToDriverMax) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+
+  EmbedderConfigBuilder builder(context);
+  builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
+  builder.SetCompositor();
+
+  auto max_size = context.GetCompositor().GetGrContext()->maxRenderTargetSize();
+
+  context.AddIsolateCreateCallback([&]() {
+    Dart_Handle snapshot_large_scene = Dart_GetField(
+        Dart_RootLibrary(), tonic::ToDart("snapshot_large_scene"));
+    tonic::DartInvoke(snapshot_large_scene, {tonic::ToDart<int64_t>(max_size)});
+  });
+
+  fml::AutoResetWaitableEvent latch;
+  context.AddNativeCallback(
+      "SnapshotsCallback", CREATE_NATIVE_ENTRY(([&](Dart_NativeArguments args) {
+        auto get_arg = [&args](int index) {
+          Dart_Handle dart_image = Dart_GetNativeArgument(args, index);
+          Dart_Handle internal_image =
+              Dart_GetField(dart_image, tonic::ToDart("_image"));
+          return tonic::DartConverter<flutter::CanvasImage*>::FromDart(
+              internal_image);
+        };
+
+        CanvasImage* big_image = get_arg(0);
+        ASSERT_EQ(big_image->width(), max_size);
+        ASSERT_EQ(big_image->height(), max_size / 2);
+
+        CanvasImage* small_image = get_arg(1);
+        ASSERT_TRUE(ImageMatchesFixture("snapshot_large_scene.png",
+                                        small_image->image()));
+
+        latch.Signal();
+      })));
+
+  UniqueEngine engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+
+  latch.Wait();
+}
+
+TEST_F(EmbedderTest, ObjectsPostedViaPortsServicedOnSecondaryTaskHeap) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetOpenGLRendererConfig(SkISize::Make(800, 1024));
+  builder.SetDartEntrypoint("objects_can_be_posted");
+
+  // Synchronously acquire the send port from the Dart end. We will be using
+  // this to send message. The Dart end will just echo those messages back to us
+  // for inspection.
+  FlutterEngineDartPort port = 0;
+  fml::AutoResetWaitableEvent event;
+  context.AddNativeCallback("SignalNativeCount",
+                            CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+                              port = tonic::DartConverter<int64_t>::FromDart(
+                                  Dart_GetNativeArgument(args, 0));
+                              event.Signal();
+                            }));
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+  event.Wait();
+  ASSERT_NE(port, 0);
+
+  using Trampoline = std::function<void(Dart_Handle message)>;
+  Trampoline trampoline;
+
+  context.AddNativeCallback("SendObjectToNativeCode",
+                            CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+                              FML_CHECK(trampoline);
+                              auto trampoline_copy = trampoline;
+                              trampoline = nullptr;
+                              trampoline_copy(Dart_GetNativeArgument(args, 0));
+                            }));
+
+  // Send a boolean value and assert that it's received by the right heap.
+  {
+    FlutterEngineDartObject object = {};
+    object.type = kFlutterEngineDartObjectTypeBool;
+    object.bool_value = true;
+    trampoline = [&](Dart_Handle handle) {
+      ASSERT_TRUE(tonic::DartConverter<bool>::FromDart(handle));
+      auto task_grade = fml::MessageLoopTaskQueues::GetCurrentTaskSourceGrade();
+      EXPECT_EQ(task_grade, fml::TaskSourceGrade::kDartMicroTasks);
+      event.Signal();
+    };
+    ASSERT_EQ(FlutterEnginePostDartObject(engine.get(), port, &object),
+              kSuccess);
+    event.Wait();
+  }
+}
+
+TEST_F(EmbedderTest, CreateInvalidBackingstoreOpenGLTexture) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
+  builder.SetCompositor();
+  builder.SetRenderTargetType(
+      EmbedderTestBackingStoreProducer::RenderTargetType::kOpenGLTexture);
+  builder.SetDartEntrypoint("invalid_backingstore");
+
+  class TestCollectOnce {
+   public:
+    // Collect() should only be called once
+    void Collect() {
+      ASSERT_FALSE(collected_);
+      collected_ = true;
+    }
+
+   private:
+    bool collected_ = false;
+  };
+  fml::AutoResetWaitableEvent latch;
+
+  builder.GetCompositor().create_backing_store_callback =
+      [](const FlutterBackingStoreConfig* config,  //
+         FlutterBackingStore* backing_store_out,   //
+         void* user_data                           //
+      ) {
+        backing_store_out->type = kFlutterBackingStoreTypeOpenGL;
+        // Deliberately set this to be invalid
+        backing_store_out->user_data = nullptr;
+        backing_store_out->open_gl.type = kFlutterOpenGLTargetTypeTexture;
+        backing_store_out->open_gl.texture.target = 0;
+        backing_store_out->open_gl.texture.name = 0;
+        backing_store_out->open_gl.texture.format = 0;
+        backing_store_out->open_gl.texture.user_data = new TestCollectOnce();
+        backing_store_out->open_gl.texture.destruction_callback =
+            [](void* user_data) {
+              reinterpret_cast<TestCollectOnce*>(user_data)->Collect();
+            };
+        return true;
+      };
+
+  context.AddNativeCallback(
+      "SignalNativeTest",
+      CREATE_NATIVE_ENTRY(
+          [&latch](Dart_NativeArguments args) { latch.Signal(); }));
+
+  auto engine = builder.LaunchEngine();
+
+  // Send a window metrics events so frames may be scheduled.
+  FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(event);
+  event.width = 800;
+  event.height = 600;
+  event.pixel_ratio = 1.0;
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+            kSuccess);
+  ASSERT_TRUE(engine.is_valid());
+  latch.Wait();
+}
+
+TEST_F(EmbedderTest, CreateInvalidBackingstoreOpenGLFramebuffer) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
+  builder.SetCompositor();
+  builder.SetRenderTargetType(
+      EmbedderTestBackingStoreProducer::RenderTargetType::kOpenGLFramebuffer);
+  builder.SetDartEntrypoint("invalid_backingstore");
+
+  class TestCollectOnce {
+   public:
+    // Collect() should only be called once
+    void Collect() {
+      ASSERT_FALSE(collected_);
+      collected_ = true;
+    }
+
+   private:
+    bool collected_ = false;
+  };
+  fml::AutoResetWaitableEvent latch;
+
+  builder.GetCompositor().create_backing_store_callback =
+      [](const FlutterBackingStoreConfig* config,  //
+         FlutterBackingStore* backing_store_out,   //
+         void* user_data                           //
+      ) {
+        backing_store_out->type = kFlutterBackingStoreTypeOpenGL;
+        // Deliberately set this to be invalid
+        backing_store_out->user_data = nullptr;
+        backing_store_out->open_gl.type = kFlutterOpenGLTargetTypeFramebuffer;
+        backing_store_out->open_gl.framebuffer.target = 0;
+        backing_store_out->open_gl.framebuffer.name = 0;
+        backing_store_out->open_gl.framebuffer.user_data =
+            new TestCollectOnce();
+        backing_store_out->open_gl.framebuffer.destruction_callback =
+            [](void* user_data) {
+              reinterpret_cast<TestCollectOnce*>(user_data)->Collect();
+            };
+        return true;
+      };
+
+  context.AddNativeCallback(
+      "SignalNativeTest",
+      CREATE_NATIVE_ENTRY(
+          [&latch](Dart_NativeArguments args) { latch.Signal(); }));
+
+  auto engine = builder.LaunchEngine();
+
+  // Send a window metrics events so frames may be scheduled.
+  FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(event);
+  event.width = 800;
+  event.height = 600;
+  event.pixel_ratio = 1.0;
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+            kSuccess);
+  ASSERT_TRUE(engine.is_valid());
   latch.Wait();
 }
 

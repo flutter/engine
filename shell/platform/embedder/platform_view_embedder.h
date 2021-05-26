@@ -7,6 +7,7 @@
 
 #include <functional>
 
+#include "flow/embedded_views.h"
 #include "flutter/fml/macros.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/platform/embedder/embedder.h"
@@ -18,6 +19,10 @@
 #include "flutter/shell/platform/embedder/embedder_surface_gl.h"
 #endif
 
+#ifdef SHELL_ENABLE_METAL
+#include "flutter/shell/platform/embedder/embedder_surface_metal.h"
+#endif
+
 namespace flutter {
 
 class PlatformViewEmbedder final : public PlatformView {
@@ -27,7 +32,7 @@ class PlatformViewEmbedder final : public PlatformView {
   using UpdateSemanticsCustomActionsCallback =
       std::function<void(flutter::CustomAccessibilityActionUpdates actions)>;
   using PlatformMessageResponseCallback =
-      std::function<void(fml::RefPtr<flutter::PlatformMessage>)>;
+      std::function<void(std::unique_ptr<PlatformMessage>)>;
   using ComputePlatformResolvedLocaleCallback =
       std::function<std::unique_ptr<std::vector<std::string>>(
           const std::vector<std::string>& supported_locale_data)>;
@@ -49,7 +54,7 @@ class PlatformViewEmbedder final : public PlatformView {
       flutter::TaskRunners task_runners,
       EmbedderSurfaceSoftware::SoftwareDispatchTable software_dispatch_table,
       PlatformDispatchTable platform_dispatch_table,
-      std::unique_ptr<EmbedderExternalViewEmbedder> external_view_embedder);
+      std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder);
 
 #ifdef SHELL_ENABLE_GL
   // Creates a platform view that sets up an OpenGL rasterizer.
@@ -59,7 +64,17 @@ class PlatformViewEmbedder final : public PlatformView {
       EmbedderSurfaceGL::GLDispatchTable gl_dispatch_table,
       bool fbo_reset_after_present,
       PlatformDispatchTable platform_dispatch_table,
-      std::unique_ptr<EmbedderExternalViewEmbedder> external_view_embedder);
+      std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder);
+#endif
+
+#ifdef SHELL_ENABLE_METAL
+  // Creates a platform view that sets up an metal rasterizer.
+  PlatformViewEmbedder(
+      PlatformView::Delegate& delegate,
+      flutter::TaskRunners task_runners,
+      std::unique_ptr<EmbedderSurfaceMetal> embedder_surface,
+      PlatformDispatchTable platform_dispatch_table,
+      std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder);
 #endif
 
   ~PlatformViewEmbedder() override;
@@ -70,15 +85,18 @@ class PlatformViewEmbedder final : public PlatformView {
       flutter::CustomAccessibilityActionUpdates actions) override;
 
   // |PlatformView|
-  void HandlePlatformMessage(
-      fml::RefPtr<flutter::PlatformMessage> message) override;
+  void HandlePlatformMessage(std::unique_ptr<PlatformMessage> message) override;
 
  private:
+  std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder_;
   std::unique_ptr<EmbedderSurface> embedder_surface_;
   PlatformDispatchTable platform_dispatch_table_;
 
   // |PlatformView|
   std::unique_ptr<Surface> CreateRenderingSurface() override;
+
+  // |PlatformView|
+  std::shared_ptr<ExternalViewEmbedder> CreateExternalViewEmbedder() override;
 
   // |PlatformView|
   sk_sp<GrDirectContext> CreateResourceContext() const override;

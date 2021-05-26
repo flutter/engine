@@ -14,7 +14,7 @@
 namespace flutter_runner {
 
 Surface::Surface(std::string debug_label,
-                 flutter::ExternalViewEmbedder* view_embedder,
+                 std::shared_ptr<flutter::ExternalViewEmbedder> view_embedder,
                  GrDirectContext* gr_context)
     : debug_label_(std::move(debug_label)),
       view_embedder_(view_embedder),
@@ -49,11 +49,6 @@ SkMatrix Surface::GetRootTransformation() const {
   SkMatrix matrix;
   matrix.reset();
   return matrix;
-}
-
-// |flutter::GetViewEmbedder|
-flutter::ExternalViewEmbedder* Surface::GetExternalViewEmbedder() {
-  return view_embedder_;
 }
 
 }  // namespace flutter_runner

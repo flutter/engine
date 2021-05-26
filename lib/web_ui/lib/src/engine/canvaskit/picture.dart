@@ -2,21 +2,31 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
-part of engine;
+import 'package:ui/ui.dart' as ui;
 
-class CkPicture implements ui.Picture {
-  final SkiaObject<SkPicture> skiaObject;
+import 'canvas.dart';
+import 'canvaskit_api.dart';
+import 'image.dart';
+import 'skia_object_cache.dart';
+
+class CkPicture extends ManagedSkiaObject<SkPicture> implements ui.Picture {
   final ui.Rect? cullRect;
+  final CkPictureSnapshot? _snapshot;
 
-  CkPicture(SkPicture picture, this.cullRect)
-      : skiaObject = SkPictureSkiaObject(picture);
+  CkPicture(SkPicture picture, this.cullRect, this._snapshot) : super(picture) {
+    assert(
+      browserSupportsFinalizationRegistry && _snapshot == null ||
+          _snapshot != null,
+      'If the browser does not support FinalizationRegistry (WeakRef), then we must have a picture snapshot to be able to resurrect it.',
+    );
+  }
 
   @override
   int get approximateBytesUsed => 0;
 
   @override
   void dispose() {
+    _snapshot?.dispose();
     skiaObject.delete();
   }
 
@@ -24,18 +34,28 @@ class CkPicture implements ui.Picture {
   Future<ui.Image> toImage(int width, int height) async {
     final SkSurface skSurface = canvasKit.MakeSurface(width, height);
     final SkCanvas skCanvas = skSurface.getCanvas();
-    skCanvas.drawPicture(skiaObject.skiaObject);
+    skCanvas.drawPicture(skiaObject);
     final SkImage skImage = skSurface.makeImageSnapshot();
     skSurface.dispose();
     return CkImage(skImage);
   }
-}
 
-class SkPictureSkiaObject extends OneShotSkiaObject<SkPicture> {
-  SkPictureSkiaObject(SkPicture picture) : super(picture);
+  @override
+  bool get isResurrectionExpensive => true;
+
+  @override
+  SkPicture createDefault() {
+    // The default object is supplied in the constructor.
+    throw StateError('Unreachable code');
+  }
+
+  @override
+  SkPicture resurrect() {
+    return _snapshot!.toPicture();
+  }
 
   @override
   void delete() {
-    rawSkiaObject.delete();
+    rawSkiaObject?.delete();
   }
 }

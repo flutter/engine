@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
 
+// @dart = 2.12
 part of dart.ui;
 
 /// How the pointer has changed since the last report.
@@ -306,7 +306,7 @@ class PointerData {
 /// A sequence of reports about the state of pointers.
 class PointerDataPacket {
   /// Creates a packet of pointer data reports.
-  const PointerDataPacket({ this.data = const <PointerData>[] }) : assert(data != null); // ignore: unnecessary_null_comparison
+  const PointerDataPacket({ this.data = const <PointerData>[] }) : assert(data != null);
 
   /// Data about the individual pointers in this packet.
   ///

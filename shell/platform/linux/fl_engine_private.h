@@ -9,6 +9,7 @@
 
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/linux/fl_renderer.h"
+#include "flutter/shell/platform/linux/fl_task_runner.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_dart_project.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_engine.h"
 
@@ -45,6 +46,19 @@ typedef gboolean (*FlEnginePlatformMessageHandler)(
     gpointer user_data);
 
 /**
+ * FlEngineUpdateSemanticsNodeHandler:
+ * @engine: an #FlEngine.
+ * @node: semantic node information.
+ * @user_data: (closure): data provided when registering this handler.
+ *
+ * Function called when semantics node updates are received.
+ */
+typedef void (*FlEngineUpdateSemanticsNodeHandler)(
+    FlEngine* engine,
+    const FlutterSemanticsNode* node,
+    gpointer user_data);
+
+/**
  * fl_engine_new:
  * @project: an #FlDartProject.
  * @renderer: an #FlRenderer.
@@ -56,6 +70,16 @@ typedef gboolean (*FlEnginePlatformMessageHandler)(
 FlEngine* fl_engine_new(FlDartProject* project, FlRenderer* renderer);
 
 /**
+ * fl_engine_get_embedder_api:
+ * @engine: an #FlEngine.
+ *
+ * Gets the embedder API proc table, allowing modificiations for unit testing.
+ *
+ * Returns: a mutable pointer to the embedder API proc table.
+ */
+FlutterEngineProcTable* fl_engine_get_embedder_api(FlEngine* engine);
+
+/**
  * fl_engine_set_platform_message_handler:
  * @engine: an #FlEngine.
  * @handler: function to call when a platform message is received.
@@ -63,7 +87,7 @@ FlEngine* fl_engine_new(FlDartProject* project, FlRenderer* renderer);
  * @destroy_notify: (allow-none): a function which gets called to free
  * @user_data, or %NULL.
  *
- * Registers the function called when a platform message is reveived. Call
+ * Registers the function called when a platform message is received. Call
  * fl_engine_send_platform_message_response() with the response to this message.
  * Ownership of #FlutterPlatformMessageResponseHandle is
  * transferred to the caller, and the message must be responded to to avoid
@@ -72,6 +96,22 @@ FlEngine* fl_engine_new(FlDartProject* project, FlRenderer* renderer);
 void fl_engine_set_platform_message_handler(
     FlEngine* engine,
     FlEnginePlatformMessageHandler handler,
+    gpointer user_data,
+    GDestroyNotify destroy_notify);
+
+/**
+ * fl_engine_set_update_semantics_node_handler:
+ * @engine: an #FlEngine.
+ * @handler: function to call when a semantics node update is received.
+ * @user_data: (closure): user data to pass to @handler.
+ * @destroy_notify: (allow-none): a function which gets called to free
+ * @user_data, or %NULL.
+ *
+ * Registers the function called when a semantics node update is reveived.
+ */
+void fl_engine_set_update_semantics_node_handler(
+    FlEngine* engine,
+    FlEngineUpdateSemanticsNodeHandler handler,
     gpointer user_data,
     GDestroyNotify destroy_notify);
 
@@ -124,6 +164,26 @@ void fl_engine_send_mouse_pointer_event(FlEngine* engine,
                                         int64_t buttons);
 
 /**
+ * fl_engine_send_key_event:
+ */
+void fl_engine_send_key_event(FlEngine* engine,
+                              const FlutterKeyEvent* event,
+                              FlutterKeyEventCallback callback,
+                              void* user_data);
+
+/**
+ * fl_engine_dispatch_semantics_action:
+ * @engine: an #FlEngine.
+ * @id: the semantics action identifier.
+ * @action: the action being dispatched.
+ * @data: (allow-none): data associated with the action.
+ */
+void fl_engine_dispatch_semantics_action(FlEngine* engine,
+                                         uint64_t id,
+                                         FlutterSemanticsAction action,
+                                         GBytes* data);
+
+/**
  * fl_engine_send_platform_message_response:
  * @engine: an #FlEngine.
  * @handle: handle that was provided in #FlEnginePlatformMessageHandler.
@@ -174,6 +234,24 @@ void fl_engine_send_platform_message(FlEngine* engine,
 GBytes* fl_engine_send_platform_message_finish(FlEngine* engine,
                                                GAsyncResult* result,
                                                GError** error);
+
+/**
+ * fl_engine_get_task_runner:
+ * @engine: an #FlEngine.
+ * @result: a #FlTaskRunner.
+ *
+ * Returns: task runner responsible for scheduling Flutter tasks.
+ */
+FlTaskRunner* fl_engine_get_task_runner(FlEngine* engine);
+
+/**
+ * fl_engine_execute_task:
+ * @engine: an #FlEngine.
+ * @task: a #FlutterTask to execute.
+ *
+ * Executes given Flutter task.
+ */
+void fl_engine_execute_task(FlEngine* engine, FlutterTask* task);
 
 G_END_DECLS
 

@@ -7,7 +7,7 @@
 
 #include <GLES/gl.h>
 
-#include "flutter/flow/texture.h"
+#include "flutter/common/graphics/texture.h"
 #include "flutter/fml/platform/android/jni_weak_ref.h"
 #include "flutter/shell/platform/android/platform_view_android_jni_impl.h"
 
@@ -26,7 +26,7 @@ class AndroidExternalTextureGL : public flutter::Texture {
              const SkRect& bounds,
              bool freeze,
              GrDirectContext* context,
-             SkFilterQuality filter_quality) override;
+             const SkSamplingOptions& sampling) override;
 
   void OnGrContextCreated() override;
 

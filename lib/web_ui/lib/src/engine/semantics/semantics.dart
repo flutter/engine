@@ -2,14 +2,23 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
 part of engine;
 
 /// Set this flag to `true` to cause the engine to visualize the semantics tree
-/// on the screen.
+/// on the screen for debugging.
 ///
-/// This is useful for debugging.
-const bool _debugShowSemanticsNodes = false;
+/// This only works in profile and release modes. Debug mode does not support
+/// passing compile-time constants.
+///
+/// Example:
+///
+/// ```
+/// flutter run -d chrome --profile --dart-define=FLUTTER_WEB_DEBUG_SHOW_SEMANTICS=true
+/// ```
+const bool _debugShowSemanticsNodes = bool.fromEnvironment(
+  'FLUTTER_WEB_DEBUG_SHOW_SEMANTICS',
+  defaultValue: false,
+);
 
 /// Contains updates for the semantics tree.
 ///
@@ -233,15 +242,17 @@ class SemanticsObject {
   /// Creates a semantics tree node with the given [id] and [owner].
   SemanticsObject(this.id, this.owner) {
     // DOM nodes created for semantics objects are positioned absolutely using
-    // transforms. We use a transparent color instead of "visibility:hidden" or
-    // "display:none" so that a screen reader does not ignore these elements.
+    // transforms.
     element.style.position = 'absolute';
 
     // The root node has some properties that other nodes do not.
-    if (id == 0) {
+    if (id == 0 && !_debugShowSemanticsNodes) {
       // Make all semantics transparent. We use `filter` instead of `opacity`
       // attribute because `filter` is stronger. `opacity` does not apply to
       // some elements, particularly on iOS, such as the slider thumb and track.
+      //
+      // We use transparency instead of "visibility:hidden" or "display:none"
+      // so that a screen reader does not ignore these elements.
       element.style.filter = 'opacity(0%)';
 
       // Make text explicitly transparent to signal to the browser that no
@@ -249,17 +260,17 @@ class SemanticsObject {
       element.style.color = 'rgba(0,0,0,0)';
     }
 
+    // Make semantic elements visible for debugging by outlining them using a
+    // green border. We do not use `border` attribute because it affects layout
+    // (`outline` does not).
     if (_debugShowSemanticsNodes) {
-      element.style
-        ..filter = 'opacity(90%)'
-        ..outline = '1px solid green'
-        ..color = 'purple';
+      element.style.outline = '1px solid green';
     }
   }
 
   /// See [ui.SemanticsUpdateBuilder.updateNode].
-  int? get flags => _flags;
-  int? _flags;
+  int get flags => _flags;
+  int _flags = 0;
 
   /// Whether the [flags] field has been updated but has not been applied to the
   /// DOM yet.
@@ -572,7 +583,7 @@ class SemanticsObject {
   SemanticsObject? _parent;
 
   /// Whether this node currently has a given [SemanticsFlag].
-  bool hasFlag(ui.SemanticsFlag flag) => _flags! & flag.index != 0;
+  bool hasFlag(ui.SemanticsFlag flag) => _flags & flag.index != 0;
 
   /// Whether [actions] contains the given action.
   bool hasAction(ui.SemanticsAction action) => (_actions! & action.index) != 0;
@@ -581,6 +592,8 @@ class SemanticsObject {
   bool get isVerticalScrollContainer =>
       hasAction(ui.SemanticsAction.scrollDown) ||
       hasAction(ui.SemanticsAction.scrollUp);
+
+  bool get hasFocus => hasFlag(ui.SemanticsFlag.isFocused);
 
   /// Whether this object represents a hotizontally scrollable area.
   bool get isHorizontalScrollContainer =>
@@ -771,15 +784,24 @@ class SemanticsObject {
   /// > A map literal is ordered: iterating over the keys and/or values of the maps always happens in the order the keys appeared in the source code.
   final Map<Role, RoleManager?> _roleManagers = <Role, RoleManager?>{};
 
+  /// Returns the role manager for the given [role].
+  ///
+  /// If a role manager does not exist for the given role, returns null.
+  RoleManager? debugRoleManagerFor(Role role) => _roleManagers[role];
+
   /// Detects the roles that this semantics object corresponds to and manages
   /// the lifecycles of [SemanticsObjectRole] objects.
   void _updateRoles() {
-    _updateRole(Role.labelAndValue, (hasLabel || hasValue) && !isVisualOnly);
+    _updateRole(Role.labelAndValue, (hasLabel || hasValue) && !isTextField && !isVisualOnly);
     _updateRole(Role.textField, isTextField);
-    _updateRole(
-        Role.tappable,
-        hasAction(ui.SemanticsAction.tap) ||
-            hasFlag(ui.SemanticsFlag.isButton));
+
+    bool shouldUseTappableRole =
+      (hasAction(ui.SemanticsAction.tap) || hasFlag(ui.SemanticsFlag.isButton)) &&
+      // Text fields manage their own focus/tap interactions. We don't need the
+      // tappable role manager. It only confuses AT.
+      !isTextField;
+
+    _updateRole(Role.tappable, shouldUseTappableRole);
     _updateRole(Role.incrementable, isIncrementable);
     _updateRole(Role.scrollable,
         isVerticalScrollContainer || isHorizontalScrollContainer);
@@ -851,13 +873,9 @@ class SemanticsObject {
         hasIdentityTransform &&
         verticalContainerAdjustment == 0.0 &&
         horizontalContainerAdjustment == 0.0) {
-      element.style
-        ..removeProperty('transform-origin')
-        ..removeProperty('transform');
+      _clearSemanticElementTransform(element);
       if (containerElement != null) {
-        containerElement.style
-          ..removeProperty('transform-origin')
-          ..removeProperty('transform');
+        _clearSemanticElementTransform(containerElement);
       }
       return;
     }
@@ -877,7 +895,7 @@ class SemanticsObject {
         effectiveTransformIsIdentity = effectiveTransform.isIdentity();
       }
     } else if (!hasIdentityTransform) {
-      effectiveTransform = Matrix4.fromFloat32List(transform!);
+      effectiveTransform = Matrix4.fromFloat32List(transform);
       effectiveTransformIsIdentity = false;
     }
 
@@ -886,9 +904,7 @@ class SemanticsObject {
         ..transformOrigin = '0 0 0'
         ..transform = matrix4ToCssTransform(effectiveTransform);
     } else {
-      element.style
-        ..removeProperty('transform-origin')
-        ..removeProperty('transform');
+      _clearSemanticElementTransform(element);
     }
 
     if (containerElement != null) {
@@ -898,13 +914,33 @@ class SemanticsObject {
         final double translateX = -_rect!.left + horizontalContainerAdjustment;
         final double translateY = -_rect!.top + verticalContainerAdjustment;
         containerElement.style
-          ..transformOrigin = '0 0 0'
-          ..transform = 'translate(${translateX}px, ${translateY}px)';
+          ..top = '${translateY}px'
+          ..left = '${translateX}px';
       } else {
-        containerElement.style
-          ..removeProperty('transform-origin')
-          ..removeProperty('transform');
+        _clearSemanticElementTransform(containerElement);
       }
+    }
+  }
+
+  /// Clears the transform on a semantic element as if an identity transform is
+  /// applied.
+  ///
+  /// On macOS and iOS, VoiceOver requires `left=0; top=0` value to correctly
+  /// handle traversal order.
+  ///
+  /// See https://github.com/flutter/flutter/issues/73347.
+  static void _clearSemanticElementTransform(html.Element element) {
+    element.style
+      ..removeProperty('transform-origin')
+      ..removeProperty('transform');
+    if (isMacOrIOS) {
+      element.style
+        ..top = '0px'
+        ..left = '0px';
+    } else {
+      element.style
+        ..removeProperty('top')
+        ..removeProperty('left');
     }
   }
 
@@ -1117,7 +1153,7 @@ class EngineSemanticsOwner {
     _instance = null;
   }
 
-  final Map<int?, SemanticsObject?> _semanticsTree = <int?, SemanticsObject?>{};
+  final Map<int, SemanticsObject> _semanticsTree = <int, SemanticsObject>{};
 
   /// Map [SemanticsObject.id] to parent [SemanticsObject] it was attached to
   /// this frame.
@@ -1125,7 +1161,7 @@ class EngineSemanticsOwner {
 
   /// Declares that the [child] must be attached to the [parent].
   ///
-  /// Attachments take precendence over detachments (see [_detachObject]). This
+  /// Attachments take precedence over detachments (see [_detachObject]). This
   /// allows the same node to be detached from one parent in the tree and
   /// reattached to another parent.
   void _attachObject({required SemanticsObject parent, required SemanticsObject child}) {
@@ -1194,8 +1230,8 @@ class EngineSemanticsOwner {
   /// Returns the entire semantics tree for testing.
   ///
   /// Works only in debug mode.
-  Map<int?, SemanticsObject?>? get debugSemanticsTree {
-    Map<int?, SemanticsObject?>? result;
+  Map<int, SemanticsObject>? get debugSemanticsTree {
+    Map<int, SemanticsObject>? result;
     assert(() {
       result = _semanticsTree;
       return true;
@@ -1218,11 +1254,11 @@ class EngineSemanticsOwner {
 
   final SemanticsHelper semanticsHelper = SemanticsHelper();
 
-  /// Whether the user has requested that [updateSemantics] be called when
-  /// the semantic contents of window changes.
+  /// Whether the user has requested that [updateSemantics] be called when the
+  /// semantic contents of window changes.
   ///
-  /// The [ui.Window.onSemanticsEnabledChanged] callback is called whenever this
-  /// value changes.
+  /// The [ui.PlatformDispatcher.onSemanticsEnabledChanged] callback is called
+  /// whenever this value changes.
   ///
   /// This is separate from accessibility [mode], which controls how gestures
   /// are interpreted when this value is true.
@@ -1252,9 +1288,12 @@ class EngineSemanticsOwner {
       _rootSemanticsElement = null;
       _gestureModeClock?.datetime = null;
     }
-
-    if (window._onSemanticsEnabledChanged != null) {
-      window.invokeOnSemanticsEnabledChanged();
+    if (_semanticsEnabled != EnginePlatformDispatcher.instance.semanticsEnabled) {
+      EnginePlatformDispatcher.instance._configuration =
+        EnginePlatformDispatcher.instance._configuration.copyWith(semanticsEnabled: _semanticsEnabled);
+      if (EnginePlatformDispatcher.instance._onSemanticsEnabledChanged != null) {
+        EnginePlatformDispatcher.instance.invokeOnSemanticsEnabledChanged();
+      }
     }
   }
 
@@ -1441,7 +1480,18 @@ class EngineSemanticsOwner {
   /// Updates the semantics tree from data in the [uiUpdate].
   void updateSemantics(ui.SemanticsUpdate uiUpdate) {
     if (!_semanticsEnabled) {
-      return;
+      if (ui.debugEmulateFlutterTesterEnvironment) {
+        // Running Flutter widget tests in a fake environment. Don't enable
+        // engine semantics. Test semantics trees violate invariants in ways
+        // production implementation isn't built to handle. For example, tests
+        // routinely reset semantics node IDs, which is messing up the update
+        // process.
+        return;
+      } else {
+        // Running a real app. Auto-enable engine semantics.
+        semanticsHelper.dispose(); // placeholder no longer needed
+        semanticsEnabled = true;
+      }
     }
 
     final SemanticsUpdate update = uiUpdate as SemanticsUpdate;
@@ -1453,19 +1503,7 @@ class EngineSemanticsOwner {
     if (_rootSemanticsElement == null) {
       final SemanticsObject root = _semanticsTree[0]!;
       _rootSemanticsElement = root.element;
-      // We render semantics inside the glasspane for proper focus and event
-      // handling. If semantics is behind the glasspane, the phone will disable
-      // focusing by touch, only by tabbing around the UI. If semantics is in
-      // front of glasspane, then DOM event won't bubble up to the glasspane so
-      // it can forward events to the framework.
-      //
-      // We insert the semantics root before the scene host. For all widgets
-      // in the scene, except for platform widgets, the scene host will pass the
-      // pointer events through to the semantics tree. However, for platform
-      // views, the pointer events will not pass through, and will be handled
-      // by the platform view.
-      domRenderer.glassPaneElement!
-          .insertBefore(_rootSemanticsElement!, domRenderer.sceneHostElement);
+      domRenderer.semanticsHostElement!.append(root.element);
     }
 
     _finalizeTree();

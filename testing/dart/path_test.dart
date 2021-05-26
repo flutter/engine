@@ -6,7 +6,7 @@
 import 'dart:typed_data' show Float64List;
 import 'dart:ui';
 
-import 'package:test/test.dart';
+import 'package:litetest/litetest.dart';
 
 void main() {
   test('path getBounds', () {
@@ -76,6 +76,14 @@ void main() {
 
     p1.lineTo(10.0, 30.0);
     expect(p1.getBounds().bottom, equals(p2.getBounds().bottom + 10));
+  });
+
+  test('shift tests', () {
+    const Rect bounds = Rect.fromLTRB(0.0, 0.0, 10.0, 10.0);
+    final Path p = Path()..addRect(bounds);
+    expect(p.getBounds(), equals(bounds));
+    final Path shifted = p.shift(const Offset(10, 10));
+    expect(shifted.getBounds(), equals(const Rect.fromLTRB(10, 10, 20, 20)));
   });
 
   test('transformation tests', () {

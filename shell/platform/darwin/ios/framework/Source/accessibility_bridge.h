@@ -51,7 +51,7 @@ class AccessibilityBridge final : public AccessibilityBridgeIos {
 
   AccessibilityBridge(FlutterViewController* view_controller,
                       PlatformViewIOS* platform_view,
-                      FlutterPlatformViewsController* platform_views_controller,
+                      std::shared_ptr<FlutterPlatformViewsController> platform_views_controller,
                       std::unique_ptr<IosDelegate> ios_delegate = nullptr);
   ~AccessibilityBridge();
 
@@ -60,7 +60,7 @@ class AccessibilityBridge final : public AccessibilityBridgeIos {
   void DispatchSemanticsAction(int32_t id, flutter::SemanticsAction action) override;
   void DispatchSemanticsAction(int32_t id,
                                flutter::SemanticsAction action,
-                               std::vector<uint8_t> args) override;
+                               fml::MallocMapping args) override;
   void AccessibilityObjectDidBecomeFocused(int32_t id) override;
   void AccessibilityObjectDidLoseFocus(int32_t id) override;
 
@@ -70,7 +70,7 @@ class AccessibilityBridge final : public AccessibilityBridgeIos {
 
   fml::WeakPtr<AccessibilityBridge> GetWeakPtr();
 
-  FlutterPlatformViewsController* GetPlatformViewsController() const override {
+  std::shared_ptr<FlutterPlatformViewsController> GetPlatformViewsController() const override {
     return platform_views_controller_;
   };
 
@@ -78,14 +78,19 @@ class AccessibilityBridge final : public AccessibilityBridgeIos {
 
  private:
   SemanticsObject* GetOrCreateObject(int32_t id, flutter::SemanticsNodeUpdates& updates);
-  SemanticsObject* FindFirstFocusable(SemanticsObject* object);
+  SemanticsObject* FindNextFocusableIfNecessary();
+  // Finds the first focusable SemanticsObject rooted at the parent. This includes the parent itself
+  // if it is a focusable SemanticsObject.
+  //
+  // If the parent is nil, this function use the root SemanticsObject as the parent.
+  SemanticsObject* FindFirstFocusable(SemanticsObject* parent);
   void VisitObjectsRecursivelyAndRemove(SemanticsObject* object,
                                         NSMutableArray<NSNumber*>* doomed_uids);
   void HandleEvent(NSDictionary<NSString*, id>* annotatedEvent);
 
   FlutterViewController* view_controller_;
   PlatformViewIOS* platform_view_;
-  FlutterPlatformViewsController* platform_views_controller_;
+  const std::shared_ptr<FlutterPlatformViewsController> platform_views_controller_;
   // If the this id is kSemanticObjectIdInvalid, it means either nothing has
   // been focused or the focus is currently outside of the flutter application
   // (i.e. the status bar or keyboard)

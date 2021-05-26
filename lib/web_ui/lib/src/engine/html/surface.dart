@@ -2,10 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+/// When `true` prints statistics about what happened to the surface tree when
+
 part of engine;
 
-/// When `true` prints statistics about what happened to the surface tree when
 /// it was composited.
 ///
 /// Also paints an on-screen overlay with the numbers visualized as a timeline.
@@ -33,21 +33,24 @@ const double _kScreenPixelRatioWarningThreshold = 6.0;
 /// Performs any outstanding painting work enqueued by [PersistedPicture]s.
 void commitScene(PersistedScene scene) {
   if (_paintQueue.isNotEmpty) {
-    if (_paintQueue.length > 1) {
-      // Sort paint requests in decreasing canvas size order. Paint requests
-      // attempt to reuse canvases. For efficiency we want the biggest pictures
-      // to find canvases before the smaller ones claim them.
-      _paintQueue.sort((_PaintRequest a, _PaintRequest b) {
-        final double aSize = a.canvasSize.height * a.canvasSize.width;
-        final double bSize = b.canvasSize.height * b.canvasSize.width;
-        return bSize.compareTo(aSize);
-      });
-    }
+    try {
+      if (_paintQueue.length > 1) {
+        // Sort paint requests in decreasing canvas size order. Paint requests
+        // attempt to reuse canvases. For efficiency we want the biggest pictures
+        // to find canvases before the smaller ones claim them.
+        _paintQueue.sort((_PaintRequest a, _PaintRequest b) {
+          final double aSize = a.canvasSize.height * a.canvasSize.width;
+          final double bSize = b.canvasSize.height * b.canvasSize.width;
+          return bSize.compareTo(aSize);
+        });
+      }
 
-    for (_PaintRequest request in _paintQueue) {
-      request.paintCallback();
+      for (_PaintRequest request in _paintQueue) {
+        request.paintCallback();
+      }
+    } finally {
+      _paintQueue = <_PaintRequest>[];
     }
-    _paintQueue = <_PaintRequest>[];
   }
 
   // After the update the retained surfaces are back to active.
@@ -75,10 +78,10 @@ void commitScene(PersistedScene scene) {
     return true;
   }());
 
-  for (int i = 0; i < _frameReferences.length; i++) {
-    _frameReferences[i].value = null;
+  for (int i = 0; i < frameReferences.length; i++) {
+    frameReferences[i].value = null;
   }
-  _frameReferences = <FrameReference<dynamic>>[];
+  frameReferences = <FrameReference<dynamic>>[];
 
   if (_debugExplainSurfaceStats) {
     _surfaceStats = <PersistedSurface, _DebugSurfaceStats>{};
@@ -185,7 +188,7 @@ bool debugAssertSurfaceState(
 abstract class PersistedSurface implements ui.EngineLayer {
   /// Creates a persisted surface.
   PersistedSurface(PersistedSurface? oldLayer)
-    : _oldLayer = FrameReference<PersistedSurface>(
+      : _oldLayer = FrameReference<PersistedSurface>(
             oldLayer != null && oldLayer.isActive ? oldLayer : null);
 
   /// The surface that is being updated using this surface.
@@ -344,18 +347,19 @@ abstract class PersistedSurface implements ui.EngineLayer {
   /// such as on the very first frame.
   @mustCallSuper
   void build() {
-    if (rootElement != null) {
-      try {
-        throw '';
-      } catch (_, stack) {
-        print(
-            'Attempted to build a $runtimeType, but it already has an HTML element ${rootElement!.tagName}.');
-        print(stack.toString().split('\n').take(20).join('\n'));
+    if (assertionsEnabled) {
+      final html.Element? existingElement = rootElement;
+      if (existingElement != null) {
+        throw PersistedSurfaceException(
+          this,
+          'Attempted to build a $runtimeType, but it already has an HTML '
+          'element ${existingElement.tagName}.',
+        );
       }
     }
-    assert(rootElement == null);
     assert(debugAssertSurfaceState(this, PersistedSurfaceState.created));
     rootElement = createElement();
+    assert(rootElement != null);
     applyWebkitClipFix(rootElement);
     if (_debugExplainSurfaceStats) {
       _surfaceStatsFor(this).allocatedDomNodeCount++;
@@ -377,7 +381,8 @@ abstract class PersistedSurface implements ui.EngineLayer {
         PersistedSurfaceState.pendingUpdate));
     assert(() {
       if (oldSurface.isPendingUpdate) {
-        final PersistedContainerSurface self = this as PersistedContainerSurface;
+        final PersistedContainerSurface self =
+            this as PersistedContainerSurface;
         assert(identical(self.oldLayer, oldSurface));
       }
       return true;
@@ -565,7 +570,8 @@ abstract class PersistedSurface implements ui.EngineLayer {
     buffer.writeln('>');
     debugPrintChildren(buffer, indent);
     if (rootElement != null) {
-      buffer.writeln('${'  ' * indent}</${rootElement!.tagName.toLowerCase()}>');
+      buffer
+          .writeln('${'  ' * indent}</${rootElement!.tagName.toLowerCase()}>');
     } else {
       buffer.writeln('${'  ' * indent}</$runtimeType>');
     }
@@ -770,7 +776,8 @@ abstract class PersistedContainerSurface extends PersistedSurface {
             newChild, PersistedSurfaceState.pendingRetention));
       } else if (newChild is PersistedContainerSurface &&
           newChild.oldLayer != null) {
-        final PersistedContainerSurface oldLayer = newChild.oldLayer as PersistedContainerSurface;
+        final PersistedContainerSurface oldLayer =
+            newChild.oldLayer as PersistedContainerSurface;
         assert(debugAssertSurfaceState(
             oldLayer, PersistedSurfaceState.pendingUpdate));
         newChild.update(oldLayer);
@@ -834,7 +841,8 @@ abstract class PersistedContainerSurface extends PersistedSurface {
       assert(newChild.rootElement == null);
       assert(newChild.oldLayer!.rootElement != null);
 
-      final PersistedContainerSurface oldLayer = newChild.oldLayer as PersistedContainerSurface;
+      final PersistedContainerSurface oldLayer =
+          newChild.oldLayer as PersistedContainerSurface;
 
       // Move the HTML node if necessary.
       if (oldLayer.rootElement!.parent != childContainer) {
@@ -933,7 +941,8 @@ abstract class PersistedContainerSurface extends PersistedSurface {
             newChild, PersistedSurfaceState.pendingRetention));
       } else if (newChild is PersistedContainerSurface &&
           newChild.oldLayer != null) {
-        final PersistedContainerSurface oldLayer = newChild.oldLayer as PersistedContainerSurface;
+        final PersistedContainerSurface oldLayer =
+            newChild.oldLayer as PersistedContainerSurface;
         isReparenting = oldLayer.rootElement!.parent != containerElement;
         matchedOldChild = oldLayer;
         assert(debugAssertSurfaceState(
@@ -947,7 +956,8 @@ abstract class PersistedContainerSurface extends PersistedSurface {
         if (matchedOldChild != null) {
           assert(debugAssertSurfaceState(
               matchedOldChild, PersistedSurfaceState.active));
-          isReparenting = matchedOldChild.rootElement!.parent != containerElement;
+          isReparenting =
+              matchedOldChild.rootElement!.parent != containerElement;
           newChild.update(matchedOldChild);
           assert(debugAssertSurfaceState(
               matchedOldChild, PersistedSurfaceState.released));
@@ -1015,7 +1025,8 @@ abstract class PersistedContainerSurface extends PersistedSurface {
   /// Performs the minimum number of DOM moves necessary to put all children in
   /// the right place in the DOM.
   void _insertChildDomNodes(List<int>? indexMapNew, List<int> indexMapOld) {
-    final List<int?> stationaryIndices = longestIncreasingSubsequence(indexMapOld);
+    final List<int?> stationaryIndices =
+        longestIncreasingSubsequence(indexMapOld);
 
     // Convert to stationary new indices
     for (int i = 0; i < stationaryIndices.length; i++) {
@@ -1026,9 +1037,11 @@ abstract class PersistedContainerSurface extends PersistedSurface {
     final html.Element? containerElement = childContainer;
     for (int i = _children.length - 1; i >= 0; i -= 1) {
       final int indexInNew = indexMapNew!.indexOf(i);
-      final bool isStationary = indexInNew != -1 && stationaryIndices.contains(i);
+      final bool isStationary =
+          indexInNew != -1 && stationaryIndices.contains(i);
       final PersistedSurface child = _children[i];
-      final html.HtmlElement childElement = child.rootElement as html.HtmlElement;
+      final html.HtmlElement childElement =
+          child.rootElement as html.HtmlElement;
       assert(childElement != null); // ignore: unnecessary_null_comparison
       if (!isStationary) {
         if (refNode == null) {
@@ -1088,7 +1101,7 @@ abstract class PersistedContainerSurface extends PersistedSurface {
       for (int indexInOld = 0; indexInOld < oldChildCount; indexInOld += 1) {
         final PersistedSurface? oldChild = oldChildren[indexInOld];
         final bool childAlreadyClaimed = oldChild == null;
-        if (childAlreadyClaimed || !newChild.canUpdateAsMatch(oldChild!)) {
+        if (childAlreadyClaimed || !newChild.canUpdateAsMatch(oldChild)) {
           continue;
         }
         allMatches.add(_PersistedSurfaceMatch(

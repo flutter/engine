@@ -2,8 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
-part of engine;
+import 'dart:typed_data';
+import 'dart:js_util' as js_util;
+import 'dart:math' as math;
+
+import 'package:ui/ui.dart' as ui;
+
+import '../../util.dart';
+import 'path_utils.dart';
 
 /// Stores the path verbs, points and conic weights.
 ///
@@ -42,7 +48,9 @@ class PathRef {
   static const int kInitialPointsCapacity = 8;
   static const int kInitialVerbsCapacity = 8;
 
+  /// Bounds of points that define path.
   ui.Rect? fBounds;
+  /// Computed tight bounds of path (may exclude curve control points).
   ui.Rect? cachedBounds;
   int _fPointsCapacity = 0;
   int _fPointsLength = 0;
@@ -82,7 +90,7 @@ class PathRef {
   /// points,verbs and weights arrays. If original path is mutated by adding
   /// more verbs, this copy only returns path at the time of copy and shares
   /// typed arrays of original path.
-  PathRef._shallowCopy(PathRef ref)
+  PathRef.shallowCopy(PathRef ref)
       : _fPoints = ref._fPoints,
         _fVerbs = ref._fVerbs {
     _fVerbsCapacity = ref._fVerbsCapacity;
@@ -125,6 +133,10 @@ class PathRef {
     return ui.Offset(_fPoints[index * 2], _fPoints[index * 2 + 1]);
   }
 
+  double pointXAt(int index) => _fPoints[index * 2];
+
+  double pointYAt(int index) => _fPoints[index * 2 + 1];
+
   double atWeight(int index) {
     return _conicWeights![index];
   }
@@ -154,7 +166,16 @@ class PathRef {
   int get isRRect => fIsRRect ? fRRectOrOvalStartIdx : -1;
   int get isRect => fIsRect ? fRRectOrOvalStartIdx : -1;
   ui.RRect? getRRect() => fIsRRect ? _getRRect() : null;
-  ui.Rect? getRect() => fIsRect ? _getRect() : null;
+  ui.Rect? getRect() {
+    /// Use _detectRect() for detection if explicitly addRect was used (fIsRect) or
+    /// it is a potential due to moveTo + 3 lineTo verbs.
+    if (fIsRect) {
+      return ui.Rect.fromLTRB(
+          atPoint(0).dx, atPoint(0).dy, atPoint(1).dx, atPoint(2).dy);
+    } else {
+      return _fVerbsLength == 4 ? _detectRect() : null;
+    }
+  }
   bool get isRectCCW => fRRectOrOvalIsCCW;
 
   bool get hasComputedBounds => !fBoundsIsDirty;
@@ -171,9 +192,49 @@ class PathRef {
   }
 
   /// Reconstructs Rect from path commands.
-  ui.Rect _getRect() {
-    return ui.Rect.fromLTRB(
-        atPoint(0).dx, atPoint(0).dy, atPoint(1).dx, atPoint(2).dy);
+  ///
+  /// Detects clockwise starting with horizontal line.
+  ui.Rect? _detectRect() {
+    assert(_fVerbs[0] == SPath.kMoveVerb);
+    final double x0 = atPoint(0).dx;
+    final double y0 = atPoint(0).dy;
+    final double x1 = atPoint(1).dx;
+    final double y1 = atPoint(1).dy;
+    if (_fVerbs[1] != SPath.kLineVerb || y1 != y0) {
+      return null;
+    }
+    final double width = x1 - x0;
+    final double x2 = atPoint(2).dx;
+    final double y2 = atPoint(2).dy;
+    if (_fVerbs[2] != SPath.kLineVerb || x2 != x1) {
+      return null;
+    }
+    final double height = y2 - y1;
+    final double x3 = atPoint(3).dx;
+    final double y3 = atPoint(3).dy;
+    if (_fVerbs[3] != SPath.kLineVerb || y3 != y2) {
+      return null;
+    }
+    if ((x2 - x3) != width || (y3 - y0) != height) {
+      return null;
+    }
+    return ui.Rect.fromLTWH(x0, y0, width, height);
+  }
+
+  /// Returns horizontal/vertical line bounds or null if not a line.
+  ui.Rect? getStraightLine() {
+    if (_fVerbsLength != 2 || _fVerbs[0] != SPath.kMoveVerb ||
+        _fVerbs[1] != SPath.kLineVerb) {
+      return null;
+    }
+    final double x0 = _fPoints[0];
+    final double y0 = _fPoints[1];
+    final double x1 = _fPoints[2];
+    final double y1 = _fPoints[3];
+    if (y0 == y1 || x0 == x1) {
+      return ui.Rect.fromLTRB(x0, y0, x1, y1);
+    }
+    return null;
   }
 
   /// Reconstructs RRect from path commands.
@@ -216,11 +277,11 @@ class PathRef {
           dy = vector1_0y.abs();
         }
         if (assertionsEnabled) {
-          final int checkCornerIndex = _nearlyEqual(controlPx, bounds.left)
-              ? (_nearlyEqual(controlPy, bounds.top)
+          final int checkCornerIndex = SPath.nearlyEqual(controlPx, bounds.left)
+              ? (SPath.nearlyEqual(controlPy, bounds.top)
                   ? _Corner.kUpperLeft
                   : _Corner.kLowerLeft)
-              : (_nearlyEqual(controlPy, bounds.top)
+              : (SPath.nearlyEqual(controlPy, bounds.top)
                   ? _Corner.kUpperRight
                   : _Corner.kLowerRight);
           assert(checkCornerIndex == cornerIndex);
@@ -415,7 +476,7 @@ class PathRef {
     _conicWeightsLength = newLength;
   }
 
-  void _append(PathRef source) {
+  void append(PathRef source) {
     final int pointCount = source.countPoints();
     final int curLength = _fPointsLength;
     final int newPointCount = curLength + pointCount;
@@ -730,6 +791,7 @@ class PathRef {
     fIsRRect = false;
     fIsRect = false;
     cachedBounds = null;
+    fBoundsIsDirty = true;
   }
 
   void setIsOval(bool isOval, bool isCCW, int start) {

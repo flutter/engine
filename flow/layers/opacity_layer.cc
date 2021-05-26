@@ -12,12 +12,30 @@ namespace flutter {
 OpacityLayer::OpacityLayer(SkAlpha alpha, const SkPoint& offset)
     : alpha_(alpha), offset_(offset) {}
 
+#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
+
+void OpacityLayer::Diff(DiffContext* context, const Layer* old_layer) {
+  DiffContext::AutoSubtreeRestore subtree(context);
+  auto* prev = static_cast<const OpacityLayer*>(old_layer);
+  if (!context->IsSubtreeDirty()) {
+    FML_DCHECK(prev);
+    if (alpha_ != prev->alpha_ || offset_ != prev->offset_) {
+      context->MarkSubtreeDirty(context->GetOldLayerPaintRegion(old_layer));
+    }
+  }
+  context->PushTransform(SkMatrix::Translate(offset_.fX, offset_.fY));
+  DiffChildren(context, prev);
+  context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
+}
+
+#endif  // FLUTTER_ENABLE_DIFF_CONTEXT
+
 void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "OpacityLayer::Preroll");
   FML_DCHECK(!GetChildContainer()->layers().empty());  // We can't be a leaf.
 
   SkMatrix child_matrix = matrix;
-  child_matrix.postTranslate(offset_.fX, offset_.fY);
+  child_matrix.preTranslate(offset_.fX, offset_.fY);
 
   // Similar to what's done in TransformLayer::Preroll, we have to apply the
   // reverse transformation to the cull rect to properly cull child layers.
@@ -46,7 +64,7 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 
 void OpacityLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "OpacityLayer::Paint");
-  FML_DCHECK(needs_painting());
+  FML_DCHECK(needs_painting(context));
 
   SkPaint paint;
   paint.setAlpha(alpha_);
@@ -85,11 +103,11 @@ void OpacityLayer::Paint(PaintContext& context) const {
 
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
 
-void OpacityLayer::UpdateScene(SceneUpdateContext& context) {
-  float saved_alpha = context.alphaf();
-  context.set_alphaf(context.alphaf() * (alpha_ / 255.f));
+void OpacityLayer::UpdateScene(std::shared_ptr<SceneUpdateContext> context) {
+  float saved_alpha = context->alphaf();
+  context->set_alphaf(context->alphaf() * (alpha_ / 255.f));
   ContainerLayer::UpdateScene(context);
-  context.set_alphaf(saved_alpha);
+  context->set_alphaf(saved_alpha);
 }
 
 #endif

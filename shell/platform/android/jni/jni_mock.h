@@ -18,7 +18,8 @@ class JNIMock final : public PlatformViewAndroidJNI {
  public:
   MOCK_METHOD(void,
               FlutterViewHandlePlatformMessage,
-              (fml::RefPtr<flutter::PlatformMessage> message, int responseId),
+              (std::unique_ptr<flutter::PlatformMessage> message,
+               int responseId),
               (override));
 
   MOCK_METHOD(void,
@@ -95,6 +96,11 @@ class JNIMock final : public PlatformViewAndroidJNI {
               (override));
 
   MOCK_METHOD(double, GetDisplayRefreshRate, (), (override));
+
+  MOCK_METHOD(bool,
+              RequestDartDeferredLibrary,
+              (int loading_unit_id),
+              (override));
 };
 
 }  // namespace flutter

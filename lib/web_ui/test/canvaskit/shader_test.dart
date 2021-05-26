@@ -19,9 +19,7 @@ void main() {
 
 void testMain() {
   group('CanvasKit shaders', () {
-    setUpAll(() async {
-      await ui.webOnlyInitializePlatform();
-    });
+    setUpCanvasKitTest();
 
     test('Sweep gradient', () {
       final CkGradientSweep gradient = ui.Gradient.sweep(
@@ -64,7 +62,7 @@ void testMain() {
     });
 
     test('Image shader', () {
-      final SkImage skImage = canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage).getCurrentFrame();
+      final SkImage skImage = canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage).makeImageAtCurrentFrame();
       final CkImage image = CkImage(skImage);
       final CkImageShader imageShader = ui.ImageShader(
         image,

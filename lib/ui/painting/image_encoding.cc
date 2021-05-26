@@ -35,9 +35,7 @@ enum ImageByteFormat {
   kPNG,
 };
 
-void FinalizeSkData(void* isolate_callback_data,
-                    Dart_WeakPersistentHandle handle,
-                    void* peer) {
+void FinalizeSkData(void* isolate_callback_data, void* peer) {
   SkData* buffer = reinterpret_cast<SkData*>(peer);
   buffer->unref();
 }
@@ -174,7 +172,7 @@ sk_sp<SkData> CopyImageByteData(sk_sp<SkImage> raster_image,
                         color_type, kPremul_SkAlphaType, nullptr));
 
   if (!surface) {
-    FML_LOG(ERROR) << "Could not setup the surface for swizzle.";
+    FML_LOG(ERROR) << "Could not set up the surface for swizzle.";
     return nullptr;
   }
 

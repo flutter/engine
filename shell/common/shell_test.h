@@ -9,15 +9,16 @@
 
 #include <memory>
 
+#include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/common/settings.h"
 #include "flutter/flow/layers/container_layer.h"
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/time/time_point.h"
 #include "flutter/lib/ui/window/platform_message.h"
-#include "flutter/shell/common/persistent_cache.h"
 #include "flutter/shell/common/run_configuration.h"
 #include "flutter/shell/common/shell_test_external_view_embedder.h"
+#include "flutter/shell/common/shell_test_platform_view.h"
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/shell/common/vsync_waiters_test.h"
 #include "flutter/testing/elf_loader.h"
@@ -39,7 +40,10 @@ class ShellTest : public FixtureTest {
       TaskRunners task_runners,
       bool simulate_vsync = false,
       std::shared_ptr<ShellTestExternalViewEmbedder>
-          shell_test_external_view_embedder = nullptr);
+          shell_test_external_view_embedder = nullptr,
+      bool is_gpu_disabled = false,
+      ShellTestPlatformView::BackendType rendering_backend =
+          ShellTestPlatformView::BackendType::kDefaultBackend);
   void DestroyShell(std::unique_ptr<Shell> shell);
   void DestroyShell(std::unique_ptr<Shell> shell, TaskRunners task_runners);
   TaskRunners GetTaskRunnersForFixture();
@@ -47,7 +51,7 @@ class ShellTest : public FixtureTest {
   fml::TimePoint GetLatestFrameTargetTime(Shell* shell) const;
 
   void SendEnginePlatformMessage(Shell* shell,
-                                 fml::RefPtr<PlatformMessage> message);
+                                 std::unique_ptr<PlatformMessage> message);
 
   static void PlatformViewNotifyCreated(
       Shell* shell);  // This creates the surface
