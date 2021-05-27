@@ -1571,6 +1571,9 @@ void testMain() {
       showKeyboard(inputType: 'url');
       expect(getEditingInputMode(), 'url');
 
+      showKeyboard(inputType: 'none');
+      expect(getEditingInputMode(), 'none');
+
       hideKeyboard();
     });
 
@@ -1602,6 +1605,9 @@ void testMain() {
 
         showKeyboard(inputType: 'url');
         expect(getEditingInputMode(), 'url');
+
+        showKeyboard(inputType: 'none');
+        expect(getEditingInputMode(), 'none');
 
         hideKeyboard();
       }
