@@ -21,9 +21,7 @@ executable("tonic_unittests") {
   ]
 
   if (is_win) {
-    libs = [
-      "bcrypt.lib",
-    ]
+    libs = [ "bcrypt.lib" ]
   }
 
   public_deps = [

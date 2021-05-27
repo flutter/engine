@@ -194,9 +194,7 @@ if (enable_unittests) {
     }
 
     if (is_win) {
-      libs = [
-        "bcrypt.lib",
-      ]
+      libs = [ "bcrypt.lib" ]
     }
 
     public_configs = [ "//flutter:config" ]

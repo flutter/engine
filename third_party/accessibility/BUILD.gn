@@ -83,9 +83,7 @@ if (enable_unittests) {
           "base/win/scoped_variant_unittest.cc",
         ]
 
-        libs = [
-          "bcrypt.lib",
-        ]
+        libs = [ "bcrypt.lib" ]
       }
 
       sources += [
