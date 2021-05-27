@@ -20,6 +20,12 @@ executable("tonic_unittests") {
     "dart_weak_persistent_handle_unittest.cc",
   ]
 
+  if (is_win) {
+    libs = [
+      "bcrypt.lib",
+    ]
+  }
+
   public_deps = [
     ":tonic_fixtures",
     "//flutter/runtime:libdart",

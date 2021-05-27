@@ -201,6 +201,12 @@ if (enable_unittests) {
       "tests/embedder_unittests_util.cc",
     ]
 
+    if (is_win) {
+      libs = [
+        "bcrypt.lib",
+      ]
+    }
+
     deps = [
       ":embedder",
       ":embedder_gpu_configuration",
@@ -254,7 +260,10 @@ if (enable_unittests) {
 
     defines = [ "FLUTTER_ENGINE_NO_PROTOTYPES" ]
     if (is_win) {
-      libs = [ "psapi.lib" ]
+      libs = [
+        "psapi.lib",
+        "bcrypt.lib",
+      ]
     }
 
     deps = [
@@ -279,6 +288,12 @@ shared_library("flutter_engine_library") {
 
   if (is_mac && !embedder_for_target) {
     ldflags = [ "-Wl,-install_name,@rpath/FlutterEmbedder.framework/$_framework_binary_subpath" ]
+  }
+
+  if (is_win) {
+    libs = [
+      "bcrypt.lib",
+    ]
   }
 
   deps = [ ":embedder" ]

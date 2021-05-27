@@ -119,6 +119,12 @@ if (enable_unittests) {
       "type_conversions_unittests.cc",
     ]
 
+    if (is_win) {
+      libs = [
+        "bcrypt.lib",
+      ]
+    }
+
     public_configs = [ "//flutter:export_dynamic_symbols" ]
 
     public_deps = [
@@ -146,6 +152,12 @@ if (enable_unittests) {
     testonly = true
 
     sources = [ "no_dart_plugin_registrant_unittests.cc" ]
+
+    if (is_win) {
+      libs = [
+        "bcrypt.lib",
+      ]
+    }
 
     public_configs = [ "//flutter:export_dynamic_symbols" ]
 

@@ -258,6 +258,12 @@ if (enable_unittests) {
       "skp_shader_warmup_unittests.cc",
     ]
 
+    if (is_win) {
+      libs = [
+        "bcrypt.lib",
+      ]
+    }
+
     deps = [
       ":shell_test_fixture_sources",
       ":shell_unittests_fixtures",

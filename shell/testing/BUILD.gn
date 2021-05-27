@@ -15,6 +15,7 @@ executable("testing") {
   sources = [ "tester_main.cc" ]
   if (is_win) {
     libs = [
+      "bcrypt.lib",
       "psapi.lib",
       "user32.lib",
       "FontSub.lib",

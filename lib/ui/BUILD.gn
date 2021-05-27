@@ -208,6 +208,12 @@ if (enable_unittests) {
       "window/pointer_data_packet_converter_unittests.cc",
     ]
 
+    if (is_win) {
+      libs = [
+        "bcrypt.lib",
+      ]
+    }
+
     deps = [
       ":ui",
       ":ui_unittests_fixtures",

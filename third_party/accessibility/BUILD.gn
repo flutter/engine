@@ -82,6 +82,10 @@ if (enable_unittests) {
           "base/win/scoped_safearray_unittest.cc",
           "base/win/scoped_variant_unittest.cc",
         ]
+
+        libs = [
+          "bcrypt.lib",
+        ]
       }
 
       sources += [
