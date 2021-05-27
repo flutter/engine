@@ -97,6 +97,7 @@ public class PlayStoreDeferredComponentManagerTest {
     when(packageManager.getApplicationInfo(any(String.class), any(int.class)))
         .thenReturn(applicationInfo);
     doReturn(packageManager).when(spyContext).getPackageManager();
+    doReturn(applicationInfo).when(spyContext).getApplicationInfo();
     return spyContext;
   }
 
