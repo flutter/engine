@@ -427,8 +427,8 @@ Shell::~Shell() {
 
   fml::TaskRunner::RunNowOrPostTask(
       task_runners_.GetUITaskRunner(),
-      fml::MakeCopyable([engine = std::move(engine_), &ui_latch]() mutable {
-        engine.reset();
+      fml::MakeCopyable([this, &ui_latch]() mutable {
+        engine_.reset();
         ui_latch.Signal();
       }));
   ui_latch.Wait();
@@ -1313,8 +1313,15 @@ void Shell::LoadDartDeferredLibrary(
     intptr_t loading_unit_id,
     std::unique_ptr<const fml::Mapping> snapshot_data,
     std::unique_ptr<const fml::Mapping> snapshot_instructions) {
-  engine_->LoadDartDeferredLibrary(loading_unit_id, std::move(snapshot_data),
-                                   std::move(snapshot_instructions));
+  task_runners_.GetUITaskRunner()->PostTask(fml::MakeCopyable(
+      [engine = engine_->GetWeakPtr(), loading_unit_id,
+       data = std::move(snapshot_data),
+       instructions = std::move(snapshot_instructions)]() mutable {
+        if (engine) {
+          engine->LoadDartDeferredLibrary(loading_unit_id, std::move(data),
+                                          std::move(instructions));
+        }
+      }));
 }
 
 void Shell::LoadDartDeferredLibraryError(intptr_t loading_unit_id,
