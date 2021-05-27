@@ -209,7 +209,7 @@ class CkCanvas {
       offset.dx,
       offset.dy,
     );
-    paragraph.release();
+    paragraph.markUsed();
   }
 
   void drawPath(CkPath path, CkPaint paint) {
@@ -1089,7 +1089,7 @@ class CkDrawParagraphCommand extends CkPaintCommand {
       offset.dx,
       offset.dy,
     );
-    paragraph.release();
+    paragraph.markUsed();
   }
 }
 

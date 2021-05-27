@@ -125,6 +125,10 @@ class SynchronousSkiaObjectCache {
   /// [maximumSize], then the least recently used objects are evicted and
   /// deleted.
   void add(SkiaObject object) {
+    assert(
+      !_itemMap.containsKey(object),
+      'Cannot add object. Object is already in the cache: $object',
+    );
     _itemQueue.addFirst(object);
     _itemMap[object] = _itemQueue.firstEntry()!;
     _enforceCacheLimit();
@@ -379,13 +383,13 @@ class SkiaObjectBox<R extends StackTraceDebugger, T extends Object>
 
   /// If asserts are enabled, the [StackTrace]s representing when a reference
   /// was created.
-  List<StackTrace>? debugGetStackTraces() {
+  List<StackTrace> debugGetStackTraces() {
     if (assertionsEnabled) {
       return debugReferrers
           .map<StackTrace>((R referrer) => referrer.debugStackTrace)
           .toList();
     }
-    return null;
+    throw UnsupportedError('');
   }
 
   /// The Skia object whose lifecycle is being managed.

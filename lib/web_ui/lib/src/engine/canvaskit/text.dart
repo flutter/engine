@@ -635,14 +635,14 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
   //                https://github.com/flutter/flutter/issues/81224
   static SynchronousSkiaObjectCache _paragraphCache = SynchronousSkiaObjectCache(500);
 
-  /// Marks this paragraph as eligible for GC.
+  /// Marks this paragraph as having been used this frame.
   ///
   /// Puts this paragraph in a [SynchronousSkiaObjectCache], which will delete it
-  /// if there memory pressure to do so. This protects our memory usage from
+  /// if there's memory pressure to do so. This protects our memory usage from
   /// blowing up if within a single frame the framework needs to layout a lot of
   /// paragraphs. One common use-case is `ListView.builder`, which needs to layout
   /// more of its content than it actually renders to compute the scroll position.
-  void release() {
+  void markUsed() {
     // If the paragraph is already in the cache, just mark it as most recently
     // used. Otherwise, add to cache.
     if (!_paragraphCache.markUsed(this)) {
@@ -708,7 +708,7 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
     }
 
     final SkParagraph paragraph = _ensureInitialized(_lastLayoutConstraints!);
-    final List<Float32List> skRects = paragraph.getRectsForRange(
+    final List<List<double>> skRects = paragraph.getRectsForRange(
       start,
       end,
       toSkRectHeightStyle(boxHeightStyle),
@@ -718,7 +718,7 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
     return skRectsToTextBoxes(skRects);
   }
 
-  List<ui.TextBox> skRectsToTextBoxes(List<Float32List> skRects) {
+  List<ui.TextBox> skRectsToTextBoxes(List<dynamic> skRects) {
     List<ui.TextBox> result = <ui.TextBox>[];
 
     for (int i = 0; i < skRects.length; i++) {
@@ -762,7 +762,7 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
 
     // See class-level and _paragraphCache doc comments for why we're releasing
     // the paragraph immediately after layout.
-    release();
+    markUsed();
   }
 
   @override
