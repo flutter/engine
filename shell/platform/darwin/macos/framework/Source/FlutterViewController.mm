@@ -360,8 +360,8 @@ static void CommonInit(FlutterViewController* controller) {
 
 - (void)configureTrackingArea {
   if (_mouseTrackingMode != FlutterMouseTrackingModeNone && self.view) {
-    NSTrackingAreaOptions options =
-        NSTrackingMouseEnteredAndExited | NSTrackingMouseMoved | NSTrackingInVisibleRect;
+    NSTrackingAreaOptions options = NSTrackingMouseEnteredAndExited | NSTrackingMouseMoved |
+                                    NSTrackingInVisibleRect | NSTrackingEnabledDuringMouseDrag;
     switch (_mouseTrackingMode) {
       case FlutterMouseTrackingModeInKeyWindow:
         options |= NSTrackingActiveInKeyWindow;
@@ -612,6 +612,7 @@ static void CommonInit(FlutterViewController* controller) {
 }
 
 - (void)mouseEntered:(NSEvent*)event {
+  _mouseState.has_pending_exit = false;
   [self dispatchMouseEvent:event phase:kAdd];
 }
 
