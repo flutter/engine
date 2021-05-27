@@ -124,6 +124,7 @@ source_set("flutter_windows_source") {
     ]
 
     libs = [
+      "bcrypt.lib",
       "dwmapi.lib",
       "imm32.lib",
     ]
