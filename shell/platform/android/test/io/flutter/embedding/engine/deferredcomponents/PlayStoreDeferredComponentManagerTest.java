@@ -91,7 +91,8 @@ public class PlayStoreDeferredComponentManagerTest {
     PackageManager packageManager = mock(PackageManager.class);
     ApplicationInfo applicationInfo = mock(ApplicationInfo.class);
     applicationInfo.metaData = metadata;
-    applicationInfo.splitSourceDirs = {"some.invalid.apk"};
+    applicationInfo.splitSourceDirs = new String[1];
+    applicationInfo.splitSourceDirs[0] = "some.invalid.apk";
     when(packageManager.getApplicationInfo(any(String.class), any(int.class)))
         .thenReturn(applicationInfo);
     doReturn(packageManager).when(spyContext).getPackageManager();

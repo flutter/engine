@@ -448,6 +448,8 @@ public class PlayStoreDeferredComponentManager implements DeferredComponentManag
         continue;
       }
       String name = file.getName();
+      // Special case for "split_config" since android base module non-master apks are
+      // initially installed with the "split_config" prefix/name.
       if (name.endsWith(".apk")
           && (name.startsWith(componentName) || name.startsWith("split_config"))
           && name.contains(pathAbi)) {
