@@ -59,10 +59,7 @@ public class DartExecutor implements BinaryMessenger {
     this.flutterJNI = flutterJNI;
     this.assetManager = assetManager;
     this.dartMessenger = new DartMessenger(flutterJNI);
-    dartMessenger.setMessageHandler(
-        "flutter/isolate",
-        isolateChannelMessageHandler,
-        /*wantsDirectByteBufferForDecoding=*/ true);
+    dartMessenger.setMessageHandler("flutter/isolate", isolateChannelMessageHandler);
     this.binaryMessenger = new DefaultBinaryMessenger(dartMessenger);
     // The JNI might already be attached if coming from a spawned engine. If so, correctly report
     // that this DartExecutor is already running.
@@ -195,10 +192,8 @@ public class DartExecutor implements BinaryMessenger {
   @Override
   @UiThread
   public void setMessageHandler(
-      @NonNull String channel,
-      @Nullable BinaryMessenger.BinaryMessageHandler handler,
-      boolean wantsDirectByteBufferForDecoding) {
-    binaryMessenger.setMessageHandler(channel, handler, wantsDirectByteBufferForDecoding);
+      @NonNull String channel, @Nullable BinaryMessenger.BinaryMessageHandler handler) {
+    binaryMessenger.setMessageHandler(channel, handler);
   }
   // ------ END BinaryMessenger -----
 
@@ -418,10 +413,8 @@ public class DartExecutor implements BinaryMessenger {
     @Override
     @UiThread
     public void setMessageHandler(
-        @NonNull String channel,
-        @Nullable BinaryMessenger.BinaryMessageHandler handler,
-        boolean wantsDirectByteBufferForDecoding) {
-      messenger.setMessageHandler(channel, handler, wantsDirectByteBufferForDecoding);
+        @NonNull String channel, @Nullable BinaryMessenger.BinaryMessageHandler handler) {
+      messenger.setMessageHandler(channel, handler);
     }
   }
 }

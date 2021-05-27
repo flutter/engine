@@ -62,14 +62,9 @@ public interface BinaryMessenger {
    *
    * @param channel the name {@link String} of the channel.
    * @param handler a {@link BinaryMessageHandler} to be invoked on incoming messages, or null.
-   * @param wantsDirectByteBufferForDecoding pass in `true` to make the ByteBuffer parameter to the
-   *     `BinaryMessageHandler` a direct ByteBuffer.
    */
   @UiThread
-  void setMessageHandler(
-      @NonNull String channel,
-      @Nullable BinaryMessageHandler handler,
-      boolean wantsDirectByteBufferForDecoding);
+  void setMessageHandler(@NonNull String channel, @Nullable BinaryMessageHandler handler);
 
   /** Handler for incoming binary messages from Flutter. */
   interface BinaryMessageHandler {

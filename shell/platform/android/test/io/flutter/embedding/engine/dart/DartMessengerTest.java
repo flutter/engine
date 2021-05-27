@@ -48,33 +48,11 @@ public class DartMessengerTest {
         .when(throwingHandler)
         .onMessage(any(ByteBuffer.class), any(DartMessenger.Reply.class));
 
-    messenger.setMessageHandler("test", throwingHandler, true);
+    messenger.setMessageHandler("test", throwingHandler);
     messenger.handleMessageFromDart("test", ByteBuffer.allocate(0), 0);
     assertNotNull(reportingHandler.latestException);
     assertTrue(reportingHandler.latestException instanceof AssertionError);
     currentThread.setUncaughtExceptionHandler(savedHandler);
-  }
-
-  @Test
-  public void givesIndirectByteBuffer() {
-    // Setup test.
-    final FlutterJNI fakeFlutterJni = mock(FlutterJNI.class);
-    final DartMessenger messenger = new DartMessenger(fakeFlutterJni);
-    final String channel = "foobar";
-    final boolean[] wasDirect = {true};
-    final BinaryMessenger.BinaryMessageHandler handler =
-        (message, reply) -> {
-          wasDirect[0] = message.isDirect();
-        };
-    messenger.setMessageHandler(channel, handler, /*wantsDirectByteBufferForDecoding=*/ false);
-    final ByteBuffer message = ByteBuffer.allocateDirect(4 * 2);
-    message.rewind();
-    message.putChar('a');
-    message.putChar('b');
-    message.putChar('c');
-    message.putChar('d');
-    messenger.handleMessageFromDart(channel, message, /*replyId=*/ 123);
-    assertFalse(wasDirect[0]);
   }
 
   @Test
@@ -88,7 +66,7 @@ public class DartMessengerTest {
         (message, reply) -> {
           wasDirect[0] = message.isDirect();
         };
-    messenger.setMessageHandler(channel, handler, /*wantsDirectByteBufferForDecoding=*/ true);
+    messenger.setMessageHandler(channel, handler);
     final ByteBuffer message = ByteBuffer.allocateDirect(4 * 2);
     message.rewind();
     message.putChar('a');
@@ -112,7 +90,7 @@ public class DartMessengerTest {
           byteBuffers[0] = message;
           assertEquals(bufferSize, byteBuffers[0].limit());
         };
-    messenger.setMessageHandler(channel, handler, /*wantsDirectByteBufferForDecoding=*/ true);
+    messenger.setMessageHandler(channel, handler);
     final ByteBuffer message = ByteBuffer.allocateDirect(bufferSize);
     message.rewind();
     message.putChar('a');

@@ -25,28 +25,23 @@ public final class BinaryCodec implements MessageCodec<ByteBuffer> {
    */
   public static final BinaryCodec INSTANCE_DIRECT = new BinaryCodec(true);
 
-  private final boolean wantsDirectByteBufferForDecoding;
+  private final boolean returnsDirectByteBufferFromDecoding;
 
   private BinaryCodec() {
-    this.wantsDirectByteBufferForDecoding = false;
+    this.returnsDirectByteBufferFromDecoding = false;
   }
 
   /**
    * A constructor for BinaryCodec.
    *
-   * @param wantsDirectByteBufferForDecoding `true` means that Flutter will send direct ByteBuffers
-   *     to `decodeMessage`. Direct ByteBuffers will have better performance but will be invalid
+   * @param returnsDirectByteBufferFromDecoding `true` means that the Codec will return direct ByteBuffers
+   *     from `decodeMessage`. Direct ByteBuffers will have better performance but will be invalid
    *     beyond the scope of the `decodeMessage` call. `false` means Flutter will copy the encoded
    *     message to Java's memory, so the ByteBuffer will be valid beyond the decodeMessage call, at
    *     the cost of a copy.
    */
-  private BinaryCodec(boolean wantsDirectByteBufferForDecoding) {
-    this.wantsDirectByteBufferForDecoding = wantsDirectByteBufferForDecoding;
-  }
-
-  @Override
-  public boolean wantsDirectByteBufferForDecoding() {
-    return wantsDirectByteBufferForDecoding;
+  private BinaryCodec(boolean returnsDirectByteBufferFromDecoding) {
+    this.returnsDirectByteBufferFromDecoding = returnsDirectByteBufferFromDecoding;
   }
 
   @Override
@@ -56,6 +51,13 @@ public final class BinaryCodec implements MessageCodec<ByteBuffer> {
 
   @Override
   public ByteBuffer decodeMessage(ByteBuffer message) {
-    return message;
+    if (returnsDirectByteBufferFromDecoding) {
+      return message;
+    } else {
+      ByteBuffer result = ByteBuffer.allocate(message.capacity());
+      result.put(message);
+      result.rewind();
+      return result;
+    }
   }
 }

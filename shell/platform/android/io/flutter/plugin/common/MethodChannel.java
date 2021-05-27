@@ -117,9 +117,7 @@ public class MethodChannel {
   @UiThread
   public void setMethodCallHandler(final @Nullable MethodCallHandler handler) {
     messenger.setMessageHandler(
-        name,
-        handler == null ? null : new IncomingMethodCallHandler(handler),
-        /*wantsDirectByteBufferForDecoding=*/ true);
+        name, handler == null ? null : new IncomingMethodCallHandler(handler));
   }
 
   /**

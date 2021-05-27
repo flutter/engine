@@ -16,11 +16,6 @@ public final class TextPlatformViewFactory extends PlatformViewFactory {
   TextPlatformViewFactory() {
     super(
         new MessageCodec<Object>() {
-          @Override
-          public boolean wantsDirectByteBufferForDecoding() {
-            return true;
-          }
-
           @Nullable
           @Override
           public ByteBuffer encodeMessage(@Nullable Object o) {

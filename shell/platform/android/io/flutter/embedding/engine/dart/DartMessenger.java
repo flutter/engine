@@ -26,7 +26,7 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
   private static final String TAG = "DartMessenger";
 
   @NonNull private final FlutterJNI flutterJNI;
-  @NonNull private final Map<String, Handler> messageHandlers;
+  @NonNull private final Map<String, BinaryMessenger.BinaryMessageHandler> messageHandlers;
   @NonNull private final Map<Integer, BinaryMessenger.BinaryReply> pendingReplies;
   private int nextReplyId = 1;
 
@@ -36,28 +36,15 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
     this.pendingReplies = new HashMap<>();
   }
 
-  private static class Handler {
-    public final BinaryMessenger.BinaryMessageHandler binaryMessageHandler;
-    public final boolean wantsDirectByteBufferForDecoding;
-
-    Handler(
-        BinaryMessenger.BinaryMessageHandler handler, boolean wantsDirectByteBufferForDecoding) {
-      this.binaryMessageHandler = handler;
-      this.wantsDirectByteBufferForDecoding = wantsDirectByteBufferForDecoding;
-    }
-  }
-
   @Override
   public void setMessageHandler(
-      @NonNull String channel,
-      @Nullable BinaryMessenger.BinaryMessageHandler handler,
-      boolean wantsDirectByteBufferForDecoding) {
+      @NonNull String channel, @Nullable BinaryMessenger.BinaryMessageHandler handler) {
     if (handler == null) {
       Log.v(TAG, "Removing handler for channel '" + channel + "'");
       messageHandlers.remove(channel);
     } else {
       Log.v(TAG, "Setting handler for channel '" + channel + "'");
-      messageHandlers.put(channel, new Handler(handler, wantsDirectByteBufferForDecoding));
+      messageHandlers.put(channel, handler);
     }
   }
 
@@ -88,24 +75,13 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
 
   @Override
   public void handleMessageFromDart(
-      @NonNull final String channel, @Nullable ByteBuffer rawMessage, final int replyId) {
+      @NonNull final String channel, @Nullable ByteBuffer message, final int replyId) {
     Log.v(TAG, "Received message from Dart over channel '" + channel + "'");
-    Handler handler = messageHandlers.get(channel);
+    BinaryMessenger.BinaryMessageHandler handler = messageHandlers.get(channel);
     if (handler != null) {
       try {
         Log.v(TAG, "Deferring to registered handler to process message.");
-        ByteBuffer message;
-        if (handler.wantsDirectByteBufferForDecoding) {
-          message = rawMessage;
-        } else if (rawMessage != null) {
-          ByteBuffer indirectByteBuffer = ByteBuffer.allocate(rawMessage.capacity());
-          indirectByteBuffer.put(rawMessage);
-          indirectByteBuffer.rewind();
-          message = indirectByteBuffer;
-        } else {
-          message = null;
-        }
-        handler.binaryMessageHandler.onMessage(message, new Reply(flutterJNI, replyId));
+        handler.onMessage(message, new Reply(flutterJNI, replyId));
         if (message != null && message.isDirect()) {
           // This ensures that if a user retains an instance to the ByteBuffer and it happens to
           // be direct they will get a deterministic error.

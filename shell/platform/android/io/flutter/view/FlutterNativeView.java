@@ -140,11 +140,8 @@ public class FlutterNativeView implements BinaryMessenger {
 
   @Override
   @UiThread
-  public void setMessageHandler(
-      String channel, BinaryMessageHandler handler, boolean wantsDirectByteBufferForDecoding) {
-    dartExecutor
-        .getBinaryMessenger()
-        .setMessageHandler(channel, handler, wantsDirectByteBufferForDecoding);
+  public void setMessageHandler(String channel, BinaryMessageHandler handler) {
+    dartExecutor.getBinaryMessenger().setMessageHandler(channel, handler);
   }
 
   /*package*/ FlutterJNI getFlutterJNI() {

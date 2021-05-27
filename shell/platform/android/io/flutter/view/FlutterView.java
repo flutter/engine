@@ -863,9 +863,8 @@ public class FlutterView extends SurfaceView
 
   @Override
   @UiThread
-  public void setMessageHandler(
-      String channel, BinaryMessageHandler handler, boolean wantsDirectByteBufferForDecoding) {
-    mNativeView.setMessageHandler(channel, handler, wantsDirectByteBufferForDecoding);
+  public void setMessageHandler(String channel, BinaryMessageHandler handler) {
+    mNativeView.setMessageHandler(channel, handler);
   }
 
   /** Listener will be called on the Android UI thread once when Flutter renders the first frame. */

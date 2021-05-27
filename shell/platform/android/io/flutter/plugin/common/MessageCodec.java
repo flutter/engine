@@ -13,16 +13,6 @@ import java.nio.ByteBuffer;
  * <p>Both operations throw {@link IllegalArgumentException}, if conversion fails.
  */
 public interface MessageCodec<T> {
-
-  /**
-   * Controls the ByteBuffer parameter for `decodeMessage`.
-   *
-   * @see MessageCodec.decodeMessage
-   * @return true if the MessageCodec wants the ByteBuffer parameter to decodeMessage to be a direct
-   *     ByteBuffer.
-   */
-  boolean wantsDirectByteBufferForDecoding();
-
   /**
    * Encodes the specified message into binary.
    *
