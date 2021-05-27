@@ -42,7 +42,7 @@ class EngineImageShader implements ui.ImageShader {
           _tileModeToHtmlRepeatAttribute(tileX, tileY))!;
     } else {
       initWebGl();
-      return _createGlShader(context, shaderBounds, density);
+      return _createGlShader(context, shaderBounds!, density);
     }
   }
 
@@ -63,7 +63,7 @@ class EngineImageShader implements ui.ImageShader {
         : (repeatY ? 'repeat-y' : 'no-repeat');
   }
 
-  /// Tiles the image and returns as image or canvas element to be used as
+  /// Tiles the image and returns an image or canvas element to be used as
   /// source for a repeated pattern.
   ///
   /// Other alternative was to create a webgl shader for the area and
@@ -125,8 +125,7 @@ class EngineImageShader implements ui.ImageShader {
 
   /// Creates an image with tiled/transformed images.
   html.CanvasPattern _createGlShader(html.CanvasRenderingContext2D? context,
-      ui.Rect? shaderBounds, double density) {
-    assert(shaderBounds != null);
+      ui.Rect shaderBounds, double density) {
     final Matrix4 transform = Matrix4.fromFloat32List(matrix4);
     final double dpr = ui.window.devicePixelRatio;
 
@@ -151,7 +150,8 @@ class EngineImageShader implements ui.ImageShader {
     GlProgram glProgram = gl.cacheProgram(vertexShader, fragmentShader);
     gl.useProgram(glProgram);
 
-    final Float32List vertices = Float32List(12);
+    const int vertexCount = 6;
+    final Float32List vertices = Float32List(vertexCount * 2);
     ui.Rect vRect = shaderBounds.translate(-shaderBounds.left, -shaderBounds.top);
     vertices[0] = vRect.left;
     vertices[1] = vRect.top;
@@ -214,9 +214,7 @@ class EngineImageShader implements ui.ImageShader {
       0,
     ]);
 
-    final int vertexCount = vertices.length ~/ 2;
-
-    /// Copy image it to the texture.
+    /// Copy image to the texture.
     Object? texture = gl.createTexture();
     /// Texture units are a global array of references to the textures.
     /// By setting activeTexture, we associate the bound texture to a unit.
