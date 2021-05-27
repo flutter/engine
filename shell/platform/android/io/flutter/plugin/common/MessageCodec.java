@@ -26,11 +26,9 @@ public interface MessageCodec<T> {
   /**
    * Decodes the specified message from binary.
    *
-   * <p><b>Warning:</b> The ByteBuffer may be `direct` if `wantsDirectByteBufferForDecoding` returns
-   * `true`. If the ByteBuffer is direct it won't be valid beyond this call and will lead to a
-   * `BufferUnderflowException` if accessed. If you want to retain a copy of the data; disable the
-   * direct ByteBuffer or make a copy of the data in your `decodeMessage`. See also:
-   * https://docs.oracle.com/javase/7/docs/api/java/nio/ByteBuffer.html
+   * <p><b>Warning:</b> The ByteBuffer is "direct" and it won't be valid beyond this call. Storing
+   * the ByteBuffer and using it later and will lead to a {@code java.nio.BufferUnderflowException}.
+   * If you want to retain the data you'll need to copy it.
    *
    * @param message the {@link ByteBuffer} message, possibly null.
    * @return a T value representation of the bytes between the given buffer's current position and
