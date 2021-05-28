@@ -129,7 +129,7 @@ class EngineImageShader implements ui.ImageShader {
     final Matrix4 transform = Matrix4.fromFloat32List(matrix4);
     final double dpr = ui.window.devicePixelRatio;
 
-    int widthInPixels = (shaderBounds!.width * dpr).ceil();
+    int widthInPixels = (shaderBounds.width * dpr).ceil();
     int heightInPixels = (shaderBounds.height * dpr).ceil();
 
     assert(widthInPixels > 0 && heightInPixels > 0);
