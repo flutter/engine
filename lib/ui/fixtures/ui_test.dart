@@ -20,6 +20,8 @@ Future<void> createSingleFrameCodec() async {
   );
   final Codec codec = await descriptor.instantiateCodec();
   _validateCodec(codec);
+  await codec.getNextFrame();
+  _validateCodec(codec);
   codec.dispose();
   descriptor.dispose();
   buffer.dispose();
