@@ -612,8 +612,11 @@ static void CommonInit(FlutterViewController* controller) {
 }
 
 - (void)mouseEntered:(NSEvent*)event {
-  _mouseState.has_pending_exit = false;
-  [self dispatchMouseEvent:event phase:kAdd];
+  if (_mouseState.has_pending_exit) {
+    _mouseState.has_pending_exit = false;
+  } else {
+    [self dispatchMouseEvent:event phase:kAdd];
+  }
 }
 
 - (void)mouseExited:(NSEvent*)event {
