@@ -501,9 +501,10 @@ FLUTTER_ASSERT_ARC
 #pragma mark - Floating Cursor - Tests
 
 - (void)testInputViewsHaveUIInteractions {
-  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
-  NSLog(@"UIInteractions: %@", inputView.interactions);
-  XCTAssertGreaterThan(inputView.interactions.count, 0);
+  if (@available(iOS 13.0, *)) {
+    FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
+    XCTAssertGreaterThan(inputView.interactions.count, 0);
+  }
 }
 
 - (void)testBoundsForFloatingCursor {
