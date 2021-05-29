@@ -498,6 +498,52 @@ FLUTTER_ASSERT_ARC
   XCTAssertTrue(CGRectEqualToRect(kInvalidFirstRect, [inputView firstRectForRange:range]));
 }
 
+#pragma mark - Floating Cursor - Tests
+
+- (void)testInputViewsHaveUIInteractions {
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
+  NSLog(@"UIInteractions: %@", inputView.interactions);
+  XCTAssertGreaterThan(inputView.interactions.count, 0);
+}
+
+- (void)testBoundsForFloatingCursor {
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
+
+  CGRect initialBounds = inputView.bounds;
+  // Make sure the initial bounds.size is not as large.
+  XCTAssertLessThan(inputView.bounds.size.width, 100);
+  XCTAssertLessThan(inputView.bounds.size.height, 100);
+
+  [inputView beginFloatingCursorAtPoint:CGPointMake(123, 321)];
+  CGRect bounds = inputView.bounds;
+  XCTAssertGreaterThan(bounds.size.width, 1000);
+  XCTAssertGreaterThan(bounds.size.height, 1000);
+
+  // Verify the caret is centered.
+  XCTAssertEqual(
+      CGRectGetMidX(bounds),
+      CGRectGetMidX([inputView caretRectForPosition:[FlutterTextPosition positionWithIndex:1235]]));
+  XCTAssertEqual(
+      CGRectGetMidY(bounds),
+      CGRectGetMidY([inputView caretRectForPosition:[FlutterTextPosition positionWithIndex:4567]]));
+
+  [inputView updateFloatingCursorAtPoint:CGPointMake(456, 654)];
+  bounds = inputView.bounds;
+  XCTAssertGreaterThan(bounds.size.width, 1000);
+  XCTAssertGreaterThan(bounds.size.height, 1000);
+
+  // Verify the caret is centered.
+  XCTAssertEqual(
+      CGRectGetMidX(bounds),
+      CGRectGetMidX([inputView caretRectForPosition:[FlutterTextPosition positionWithIndex:21]]));
+  XCTAssertEqual(
+      CGRectGetMidY(bounds),
+      CGRectGetMidY([inputView caretRectForPosition:[FlutterTextPosition positionWithIndex:42]]));
+
+  [inputView endFloatingCursor];
+  XCTAssertTrue(CGRectEqualToRect(initialBounds, inputView.bounds));
+}
+
 #pragma mark - Autofill - Utilities
 
 - (NSMutableDictionary*)mutablePasswordTemplateCopy {

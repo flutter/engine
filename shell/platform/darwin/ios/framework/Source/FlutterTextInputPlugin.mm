@@ -22,6 +22,18 @@ static constexpr double kUITextInputAccessibilityEnablingDelaySeconds = 0.5;
 // returns kInvalidFirstRect, iOS will not show the IME candidates view.
 const CGRect kInvalidFirstRect = {{-1, -1}, {9999, 9999}};
 
+// The `bounds` value a FlutterTextInputView returns when the floating cursor
+// is activated in that view.
+//
+// DO NOT use extremely large values (such as CGFloat_MAX) in this rect, for that
+// will significantly reduce the precision of the floating cursor's coordinates.
+//
+// It is recommended for this CGRect to be roughly centered at caretRectForPosition
+// (which currently always return CGRectZero), so the initial floating cursor will
+// be placed at (0, 0).
+// See the comments in beginFloatingCursorAtPoint and caretRectForPosition.
+const CGRect kSpacePanBounds = {{-2500, -2500}, {5000, 5000}};
+
 #pragma mark - TextInputConfiguration Field Names
 static NSString* const kSecureTextEntry = @"obscureText";
 static NSString* const kKeyboardType = @"inputType";
@@ -505,6 +517,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   const char* _selectionAffinity;
   FlutterTextRange* _selectedTextRange;
   CGRect _cachedFirstRect;
+  bool _isFloatingCursorActive;
 }
 
 @synthesize tokenizer = _tokenizer;
@@ -524,6 +537,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     // Initialize with the zero matrix which is not
     // an affine transform.
     _editableTransform = CATransform3D();
+    _isFloatingCursorActive = false;
 
     // UITextInputTraits
     _autocapitalizationType = UITextAutocapitalizationTypeSentences;
@@ -538,6 +552,16 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     if (@available(iOS 11.0, *)) {
       _smartQuotesType = UITextSmartQuotesTypeYes;
       _smartDashesType = UITextSmartDashesTypeYes;
+    }
+
+    // This makes sure UITextSelectionView.interactionAssistant is not nil so
+    // UITextSelectionView has access to this view (and its bounds). Otherwise
+    // floating cursor breaks: https://github.com/flutter/flutter/issues/70267.
+    if (@available(iOS 13.0, *)) {
+      UITextInteraction* interaction =
+          [UITextInteraction textInteractionForMode:UITextInteractionModeEditable];
+      interaction.textInput = self;
+      [self addInteraction:interaction];
     }
   }
 
@@ -1071,7 +1095,21 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 
 - (CGRect)caretRectForPosition:(UITextPosition*)position {
   // TODO(cbracken) Implement.
+
+  // As of iOS 14.4, this call is used by iOS's
+  // _UIKeyboardTextSelectionController to determine the position
+  // of the floating cursor when the user force touches the space
+  // bar to initiate floating cursor.
+  //
+  // It is recommended to return a value that's roughly the
+  // center of kSpacePanBounds to make sure the floating cursor
+  // has ample space in all directions and does not hit kSpacePanBounds.
+  // See the comments in beginFloatingCursorAtPoint.
   return CGRectZero;
+}
+
+- (CGRect)bounds {
+  return _isFloatingCursorActive ? kSpacePanBounds : super.bounds;
 }
 
 - (UITextPosition*)closestPositionToPoint:(CGPoint)point {
@@ -1097,18 +1135,47 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 }
 
 - (void)beginFloatingCursorAtPoint:(CGPoint)point {
+  // For "beginFloatingCursorAtPoint" and "updateFloatingCursorAtPoint", "point" is roughly:
+  //
+  // CGPoint(
+  //   width >= 0 ? point.x.clamp(boundingBox.left, boundingBox.right) : point.x,
+  //   height >= 0 ? point.y.clamp(boundingBox.top, boundingBox.bottom) : point.y,
+  // )
+  //   where
+  //     point = keyboardPanGestureRecognizer.translationInView(textInputView) +
+  //     caretRectForPosition boundingBox = self.convertRect(bounds, fromView:textInputView) bounds
+  //     = self._selectionClipRect ?? self.bounds
+  //
+  // It's tricky to provide accurate "bounds" and "caretRectForPosition" so it's preferred to bypass
+  // the clamping and implement the same clamping logic in the framework where we have easy access
+  // to the bounding box of the input field and the caret location.
+  //
+  // The current implementation returns kSpacePanBounds for "bounds" when "_isFloatingCursorActive"
+  // is true. kSpacePanBounds centers "caretRectForPosition" so the floating cursor has enough
+  // clearance in all directions to move around.
+  //
+  // It seems impossible to use a negative "width" or "height", as the "convertRect"
+  // call always turns a CGRect's negative dimensions into non-negative values, e.g.,
+  // (1, 2, -3, -4) would become (-2, -2, 3, 4).
+  NSAssert(!_isFloatingCursorActive, @"Another floating cursor is currently active.");
+  _isFloatingCursorActive = true;
   [_textInputDelegate updateFloatingCursor:FlutterFloatingCursorDragStateStart
                                 withClient:_textInputClient
                               withPosition:@{@"X" : @(point.x), @"Y" : @(point.y)}];
 }
 
 - (void)updateFloatingCursorAtPoint:(CGPoint)point {
+  NSAssert(_isFloatingCursorActive,
+           @"updateFloatingCursorAtPoint is called without an active floating cursor.");
   [_textInputDelegate updateFloatingCursor:FlutterFloatingCursorDragStateUpdate
                                 withClient:_textInputClient
                               withPosition:@{@"X" : @(point.x), @"Y" : @(point.y)}];
 }
 
 - (void)endFloatingCursor {
+  NSAssert(_isFloatingCursorActive,
+           @"endFloatingCursor is called without an active floating cursor.");
+  _isFloatingCursorActive = false;
   [_textInputDelegate updateFloatingCursor:FlutterFloatingCursorDragStateEnd
                                 withClient:_textInputClient
                               withPosition:@{@"X" : @(0), @"Y" : @(0)}];
