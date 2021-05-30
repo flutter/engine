@@ -1,13 +1,20 @@
 package io.flutter.embedding.engine.mutatorsstack;
 
+import static android.view.View.OnFocusChangeListener;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Path;
 import android.view.MotionEvent;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.widget.FrameLayout;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import io.flutter.embedding.android.AndroidTouchProcessor;
 
 /**
@@ -31,17 +38,46 @@ public class FlutterMutatorView extends FrameLayout {
   public FlutterMutatorView(
       @NonNull Context context,
       float screenDensity,
-      @NonNull AndroidTouchProcessor androidTouchProcessor) {
+      @Nullable AndroidTouchProcessor androidTouchProcessor,
+      @Nullable OnFocusChangeListener focusListener) {
     super(context, null);
     this.screenDensity = screenDensity;
     this.androidTouchProcessor = androidTouchProcessor;
+
+    final View mutatorView = this;
+    this.getViewTreeObserver()
+        .addOnGlobalFocusChangeListener(
+            new ViewTreeObserver.OnGlobalFocusChangeListener() {
+              @Override
+              public void onGlobalFocusChanged(View oldFocus, View newFocus) {
+                focusListener.onFocusChange(mutatorView, childHasFocus(mutatorView));
+              }
+            });
+  }
+
+  /** Returns true if the current view or any descendant view has focus. */
+  @VisibleForTesting
+  public boolean childHasFocus(@Nullable View root) {
+    if (root == null) {
+      return false;
+    }
+    if (root.hasFocus()) {
+      return true;
+    }
+    if (root instanceof ViewGroup) {
+      final ViewGroup viewGroup = (ViewGroup) root;
+      for (int idx = 0; idx < viewGroup.getChildCount(); idx++) {
+        if (childHasFocus(viewGroup.getChildAt(idx))) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   /** Initialize the FlutterMutatorView. */
   public FlutterMutatorView(@NonNull Context context) {
-    super(context, null);
-    this.screenDensity = 1;
-    this.androidTouchProcessor = null;
+    this(context, 1, /* androidTouchProcessor=*/ null, /*onFocusChangeListener=*/ null);
   }
 
   /**

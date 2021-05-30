@@ -82,8 +82,15 @@ public class TextInputChannel {
               result.success(null);
               break;
             case "TextInput.setPlatformViewClient":
-              final int id = (int) args;
-              textInputMethodHandler.setPlatformViewClient(id);
+              try {
+                final JSONObject arguments = (JSONObject) args;
+                final int platformViewId = arguments.getInt("platformViewId");
+                final boolean usesVirtualDisplay = arguments.getBoolean("usesVirtualDisplay");
+                textInputMethodHandler.setPlatformViewClient(platformViewId, usesVirtualDisplay);
+                result.success(null);
+              } catch (JSONException exception) {
+                result.error("error", exception.getMessage(), null);
+              }
               break;
             case "TextInput.setEditingState":
               try {
@@ -360,8 +367,9 @@ public class TextInputChannel {
      * different client is set.
      *
      * @param id the ID of the platform view to be set as a text input client.
+     * @param usesVirtualDisplay Whether the platform view uses a virtual display.
      */
-    void setPlatformViewClient(int id);
+    void setPlatformViewClient(int id, boolean usesVirtualDisplay);
 
     /**
      * Sets the size and the transform matrix of the current text input client.
