@@ -37,7 +37,10 @@ class EventChannel {
   EventChannel(BinaryMessenger* messenger,
                const std::string& name,
                const MethodCodec<T>* codec)
-      : messenger_(messenger), name_(name), codec_(codec) {}
+      : messenger_(messenger),
+        name_(name),
+        codec_(codec),
+        is_listening_(false) {}
   ~EventChannel() = default;
 
   // Prevent copying.
