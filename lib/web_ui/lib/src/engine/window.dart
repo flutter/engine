@@ -56,8 +56,8 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
     return urlStrategy;
   }
 
-  BrowserHistory? _browserHistory;
-  bool _usingRouter = false;
+  BrowserHistory? _browserHistory; // Must be either SingleEntryBrowserHistory or MultiEntriesBrowserHistory.
+
   Future<void> _useSingleEntryBrowserHistory() async {
     if (_browserHistory is SingleEntryBrowserHistory) {
       return;
@@ -95,7 +95,6 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
   }) async {
     // Prevent any further customization of URL strategy.
     _isUrlStrategySet = true;
-    _usingRouter = false;
     await _browserHistory?.tearDown();
     if (useSingle) {
       _browserHistory = SingleEntryBrowserHistory(urlStrategy: strategy);
@@ -108,38 +107,32 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
     await _browserHistory?.tearDown();
     _browserHistory = null;
     // Reset the globals too.
-    _usingRouter = false;
     _isUrlStrategySet = false;
     _customUrlStrategy = null;
   }
 
-  Future<bool> handleNavigationMessage(
-      ByteData? data,
-      ) async {
+  Future<bool> handleNavigationMessage(ByteData? data) async {
     final MethodCall decoded = JSONMethodCodec().decodeMethodCall(data);
-    final Map<String, dynamic> arguments = decoded.arguments;
-
+    final Map<String, dynamic>? arguments = decoded.arguments;
     switch (decoded.method) {
-      case 'routeUpdated':
-        if (!_usingRouter) {
-          await _useSingleEntryBrowserHistory();
-          browserHistory.setRouteName(arguments['routeName']);
-        } else {
-          assert(
-            false,
-            'Receives old navigator update in a router application. '
-            'This can happen if you use non-router versions of MaterialApp/'
-            'CupertinoApp/WidgetsApp together with the router versions of them.'
-          );
-          return false;
-        }
+      case 'selectMultiEntryHistory':
+        await _useMultiEntryBrowserHistory();
+        return true;
+      case 'selectSingleEntryHistory':
+        await _useSingleEntryBrowserHistory();
+        return true;
+      // the following cases assert that arguments are not null
+      case 'routeUpdated': // deprecated
+        assert(arguments != null);
+        await _useSingleEntryBrowserHistory();
+        browserHistory.setRouteName(arguments!['routeName']);
         return true;
       case 'routeInformationUpdated':
-        await _useMultiEntryBrowserHistory();
-        _usingRouter = true;
+        assert(arguments != null);
         browserHistory.setRouteName(
-          arguments['location'],
+          arguments!['location'],
           state: arguments['state'],
+          replace: arguments['replace'] ?? false,
         );
         return true;
     }

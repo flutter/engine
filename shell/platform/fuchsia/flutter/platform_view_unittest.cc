@@ -258,18 +258,20 @@ class PlatformViewBuilder {
     EXPECT_EQ(false, built_)
         << "Build() was already called, this buider is good for one use only.";
     built_ = true;
-    return PlatformView(delegate_, debug_label_, std::move(view_ref_),
-                        task_runners_, runner_services_,
-                        std::move(parent_environment_service_provider_),
-                        std::move(session_listener_request_),
-                        std::move(focuser_), std::move(keyboard_listener_),
-                        std::move(on_session_listener_error_callback_),
-                        std::move(wireframe_enabled_callback_),
-                        std::move(on_create_view_callback_),
-                        std::move(on_update_view_callback_),
-                        std::move(on_destroy_view_callback_),
-                        std::move(on_create_surface_callback_), view_embedder_,
-                        std::move(vsync_offset_), vsync_event_handle_);
+    return PlatformView(
+        delegate_, debug_label_, std::move(view_ref_), task_runners_,
+        runner_services_, std::move(parent_environment_service_provider_),
+        std::move(session_listener_request_), std::move(focuser_),
+        std::move(keyboard_listener_),
+        std::move(on_session_listener_error_callback_),
+        std::move(wireframe_enabled_callback_),
+        std::move(on_create_view_callback_),
+        std::move(on_update_view_callback_),
+        std::move(on_destroy_view_callback_),
+        std::move(on_create_surface_callback_),
+        std::move(on_semantics_node_update_callback_),
+        std::move(on_request_announce_callback_), view_embedder_,
+        [](auto...) {}, [](auto...) {});
   }
 
  private:
@@ -298,9 +300,10 @@ class PlatformViewBuilder {
   OnUpdateView on_update_view_callback_{nullptr};
   OnDestroyView on_destroy_view_callback_{nullptr};
   OnCreateSurface on_create_surface_callback_{nullptr};
+  OnSemanticsNodeUpdate on_semantics_node_update_callback_{nullptr};
+  OnRequestAnnounce on_request_announce_callback_{nullptr};
   std::shared_ptr<flutter::ExternalViewEmbedder> view_embedder_{nullptr};
   fml::TimeDelta vsync_offset_{fml::TimeDelta::Zero()};
-  zx_handle_t vsync_event_handle_{ZX_HANDLE_INVALID};
 };
 
 }  // namespace
@@ -604,9 +607,11 @@ TEST_F(PlatformViewTests, CreateViewTest) {
   bool create_view_called = false;
   auto CreateViewCallback = [&create_view_called](
                                 int64_t view_id,
+                                flutter_runner::ViewCallback on_view_created,
                                 flutter_runner::ViewIdCallback on_view_bound,
                                 bool hit_testable, bool focusable) {
     create_view_called = true;
+    on_view_created();
     on_view_bound(0);
   };
 
@@ -840,9 +845,11 @@ TEST_F(PlatformViewTests, ViewEventsTest) {
       );
 
   auto on_create_view = [kViewId](int64_t view_id,
+                                  flutter_runner::ViewCallback on_view_created,
                                   flutter_runner::ViewIdCallback on_view_bound,
                                   bool hit_testable, bool focusable) {
     ASSERT_EQ(view_id, kViewId);
+    on_view_created();
     on_view_bound(kViewHolderId);
   };
 

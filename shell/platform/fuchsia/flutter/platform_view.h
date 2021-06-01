@@ -5,11 +5,13 @@
 #ifndef FLUTTER_SHELL_PLATFORM_FUCHSIA_PLATFORM_VIEW_H_
 #define FLUTTER_SHELL_PLATFORM_FUCHSIA_PLATFORM_VIEW_H_
 
+#include <fuchsia/sys/cpp/fidl.h>
 #include <fuchsia/ui/input/cpp/fidl.h>
 #include <fuchsia/ui/input3/cpp/fidl.h>
 #include <fuchsia/ui/scenic/cpp/fidl.h>
 #include <lib/fidl/cpp/binding.h>
 #include <lib/fit/function.h>
+#include <lib/sys/cpp/service_directory.h>
 #include <lib/ui/scenic/cpp/id.h>
 
 #include <map>
@@ -23,16 +25,19 @@
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/platform/fuchsia/flutter/fuchsia_external_view_embedder.h"
 #include "flutter/shell/platform/fuchsia/flutter/keyboard.h"
-
-#include "accessibility_bridge.h"
+#include "flutter/shell/platform/fuchsia/flutter/vsync_waiter.h"
 
 namespace flutter_runner {
 
 using OnEnableWireframe = fit::function<void(bool)>;
-using OnCreateView = fit::function<void(int64_t, ViewIdCallback, bool, bool)>;
+using OnCreateView =
+    fit::function<void(int64_t, ViewCallback, ViewIdCallback, bool, bool)>;
 using OnUpdateView = fit::function<void(int64_t, SkRect, bool, bool)>;
 using OnDestroyView = fit::function<void(int64_t, ViewIdCallback)>;
 using OnCreateSurface = fit::function<std::unique_ptr<flutter::Surface>()>;
+using OnSemanticsNodeUpdate =
+    fit::function<void(flutter::SemanticsNodeUpdates, float)>;
+using OnRequestAnnounce = fit::function<void(std::string)>;
 
 // PlatformView is the per-engine component residing on the platform thread that
 // is responsible for all platform specific integrations -- particularly
@@ -47,7 +52,6 @@ using OnCreateSurface = fit::function<std::unique_ptr<flutter::Surface>()>;
 // does *not* actually own the Session itself; that is owned by the
 // FuchsiaExternalViewEmbedder on the raster thread.
 class PlatformView final : public flutter::PlatformView,
-                           public AccessibilityBridge::Delegate,
                            private fuchsia::ui::scenic::SessionListener,
                            private fuchsia::ui::input3::KeyboardListener,
                            private fuchsia::ui::input::InputMethodEditorClient {
@@ -70,19 +74,17 @@ class PlatformView final : public flutter::PlatformView,
                OnUpdateView on_update_view_callback,
                OnDestroyView on_destroy_view_callback,
                OnCreateSurface on_create_surface_callback,
+               OnSemanticsNodeUpdate on_semantics_node_update_callback,
+               OnRequestAnnounce on_request_announce_callback,
                std::shared_ptr<flutter::ExternalViewEmbedder> view_embedder,
-               fml::TimeDelta vsync_offset,
-               zx_handle_t vsync_event_handle);
+               AwaitVsyncCallback await_vsync_callback,
+               AwaitVsyncForSecondaryCallbackCallback
+                   await_vsync_for_secondary_callback_callback);
 
   ~PlatformView();
 
   // |flutter::PlatformView|
-  // |flutter_runner::AccessibilityBridge::Delegate|
   void SetSemanticsEnabled(bool enabled) override;
-
-  // |flutter_runner::AccessibilityBridge::Delegate|
-  void DispatchSemanticsAction(int32_t node_id,
-                               flutter::SemanticsAction action) override;
 
   // |flutter::PlatformView|
   std::shared_ptr<flutter::ExternalViewEmbedder> CreateExternalViewEmbedder()
@@ -169,7 +171,6 @@ class PlatformView final : public flutter::PlatformView,
   // alive there
   const fuchsia::ui::views::ViewRef view_ref_;
   fuchsia::ui::views::FocuserPtr focuser_;
-  std::unique_ptr<AccessibilityBridge> accessibility_bridge_;
 
   // Logical size and logical->physical ratio.  These are optional to provide
   // an "unset" state during program startup, before Scenic has sent any
@@ -188,6 +189,11 @@ class PlatformView final : public flutter::PlatformView,
   OnUpdateView on_update_view_callback_;
   OnDestroyView on_destroy_view_callback_;
   OnCreateSurface on_create_surface_callback_;
+
+  // Accessibility handlers:
+  OnSemanticsNodeUpdate on_semantics_node_update_callback_;
+  OnRequestAnnounce on_request_announce_callback_;
+
   std::shared_ptr<flutter::ExternalViewEmbedder> external_view_embedder_;
 
   int current_text_input_client_ = 0;
@@ -217,15 +223,16 @@ class PlatformView final : public flutter::PlatformView,
   // https://github.com/flutter/flutter/issues/55966
   std::set<std::string /* channel */> unregistered_channels_;
 
-  fml::TimeDelta vsync_offset_;
-  zx_handle_t vsync_event_handle_ = 0;
-
   // The registered binding for serving the keyboard listener server endpoint.
   fidl::Binding<fuchsia::ui::input3::KeyboardListener>
       keyboard_listener_binding_;
 
   // The keyboard translation for fuchsia.ui.input3.KeyEvent.
   Keyboard keyboard_;
+
+  AwaitVsyncCallback await_vsync_callback_;
+  AwaitVsyncForSecondaryCallbackCallback
+      await_vsync_for_secondary_callback_callback_;
 
   fml::WeakPtrFactory<PlatformView> weak_factory_;  // Must be the last member.
 
