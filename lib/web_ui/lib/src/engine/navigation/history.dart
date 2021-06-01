@@ -63,10 +63,10 @@ abstract class BrowserHistory {
   Object? get currentState => urlStrategy?.getState();
 
   /// Update the url with the given `routeName` and `state`.
-  /// 
-  /// If the `replace` is false, the caller wants to push a new route name
-  /// on top of the existing one; otherwise, the caller wants to replace
-  /// the current route name with the new one.
+  ///
+  /// If `replace` is false, the caller wants to push a new `routeName` and
+  /// `state` on top of the existing ones; otherwise, the caller wants to replace
+  /// the current `routeName` and `state` with the new ones.
   void setRouteName(String? routeName, {Object? state, bool replace = false});
 
   /// A callback method to handle browser backward or forward buttons.
