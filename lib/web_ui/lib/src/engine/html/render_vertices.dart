@@ -197,7 +197,7 @@ class _WebGlRenderer implements GlRenderer {
     gl.enableVertexAttribArray(positionAttributeLocation);
     // Bind buffer as position buffer and transfer data.
     gl.bindArrayBuffer(positionsBuffer);
-    bufferVertexData(gl, positions, ui.window.devicePixelRatio);
+    bufferVertexData(gl, positions, 1.0);
 
     // Setup data format for attribute.
     js_util.callMethod(gl.glContext, 'vertexAttribPointer', <dynamic>[
