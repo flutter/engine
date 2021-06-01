@@ -58,6 +58,21 @@ class Surface {
   bool _contextLost = false;
   bool get debugContextLost => _contextLost;
 
+  /// A cached copy of the most recently created `webglcontextlost` listener.
+  ///
+  /// We must cache this function because each time we access the tear-off it
+  /// creates a new object, meaning we won't be able to remove this listener
+  /// later.
+  void Function(html.Event)? _cachedContextLostListener;
+
+  /// A cached copy of the most recently created `webglcontextrestored`
+  /// listener.
+  ///
+  /// We must cache this function because each time we access the tear-off it
+  /// creates a new object, meaning we won't be able to remove this listener
+  /// later.
+  void Function(html.Event)? _cachedContextRestoredListener;
+
   SkGrContext? _grContext;
   int? _skiaCacheBytes;
 
@@ -183,10 +198,8 @@ class Surface {
   }
 
   void _contextLostListener(html.Event event) {
-    if (event.target != this.htmlCanvas) {
-      // This is the context lost event for the old HTML canvas. Ignore it.
-      return;
-    }
+    assert(event.target == this.htmlCanvas,
+        'Received a context lost event for a disposed canvas');
     final SurfaceFactory factory = SurfaceFactory.instance;
     _contextLost = true;
     if (factory.isLive(this)) {
@@ -202,17 +215,21 @@ class Surface {
   /// It's better to reuse surface if possible.
   CkSurface _createNewSurface(ui.Size physicalSize) {
     // Clear the container, if it's not empty. We're going to create a new <canvas>.
-    this.htmlCanvas?.removeEventListener(
-          'webglcontextrestored',
-          _contextRestoredListener,
-          false,
-        );
-    this.htmlCanvas?.removeEventListener(
-          'webglcontextlost',
-          _contextLostListener,
-          false,
-        );
-    this.htmlCanvas?.remove();
+    if (this.htmlCanvas != null) {
+      this.htmlCanvas!.removeEventListener(
+            'webglcontextrestored',
+            _cachedContextRestoredListener,
+            false,
+          );
+      this.htmlCanvas!.removeEventListener(
+            'webglcontextlost',
+            _cachedContextLostListener,
+            false,
+          );
+      this.htmlCanvas!.remove();
+      _cachedContextRestoredListener = null;
+      _cachedContextLostListener = null;
+    }
 
     // If `physicalSize` is not precise, use a slightly bigger canvas. This way
     // we ensure that the rendred picture covers the entire browser window.
@@ -232,14 +249,16 @@ class Surface {
     // notification. When we receive this notification we force a new context.
     //
     // See also: https://www.khronos.org/webgl/wiki/HandlingContextLost
+    _cachedContextRestoredListener = _contextRestoredListener;
+    _cachedContextLostListener = _contextLostListener;
     htmlCanvas.addEventListener(
       'webglcontextlost',
-      _contextLostListener,
+      _cachedContextLostListener,
       false,
     );
     htmlCanvas.addEventListener(
       'webglcontextrestored',
-      _contextRestoredListener,
+      _cachedContextRestoredListener,
       false,
     );
     _forceNewContext = false;
@@ -322,9 +341,11 @@ class Surface {
 
   void dispose() {
     htmlCanvas?.removeEventListener(
-        'webglcontextlost', _contextLostListener, false);
+        'webglcontextlost', _cachedContextLostListener, false);
     htmlCanvas?.removeEventListener(
-        'webglcontextrestored', _contextRestoredListener, false);
+        'webglcontextrestored', _cachedContextRestoredListener, false);
+    _cachedContextLostListener = null;
+    _cachedContextRestoredListener = null;
     htmlElement.remove();
     _surface?.dispose();
   }

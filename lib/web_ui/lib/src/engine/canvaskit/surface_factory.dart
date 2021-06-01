@@ -99,6 +99,8 @@ class SurfaceFactory {
   }
 
   /// Returns [true] if [surface] is currently live.
+  ///
+  /// The base surface and backup surface always count as live.
   bool isLive(Surface surface) {
     if (surface == baseSurface ||
         surface == backupSurface ||
