@@ -81,7 +81,7 @@ FLUTTER_ASSERT_ARC
 - (void)tearDown {
   [[[[textInputPlugin textInputView] superview] subviews]
       makeObjectsPerformSelector:@selector(removeFromSuperview)];
-
+  [engine stopMocking];
   [super tearDown];
 }
 
