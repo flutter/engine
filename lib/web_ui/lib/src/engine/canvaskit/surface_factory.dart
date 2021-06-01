@@ -98,9 +98,12 @@ class SurfaceFactory {
     _cache.add(surface);
   }
 
-  /// Returns [true] if [surface] is currently live.
+  /// Returns [true] if [surface] is currently being used to paint content.
   ///
   /// The base surface and backup surface always count as live.
+  ///
+  /// If a surface is not live, then it must be in the cache and ready to be
+  /// reused.
   bool isLive(Surface surface) {
     if (surface == baseSurface ||
         surface == backupSurface ||

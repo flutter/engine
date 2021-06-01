@@ -452,10 +452,11 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
       case 'flutter/platform_views':
         _platformViewMessageHandler ??= PlatformViewMessageHandler(
-            contentManager: platformViewManager,
-            contentHandler: (html.Element content) {
-              domRenderer.glassPaneElement!.append(content);
-            });
+          contentManager: platformViewManager,
+          contentHandler: (html.Element content) {
+            domRenderer.glassPaneElement!.append(content);
+          },
+        );
         _platformViewMessageHandler!.handlePlatformViewCall(data, callback!);
         return;
 
