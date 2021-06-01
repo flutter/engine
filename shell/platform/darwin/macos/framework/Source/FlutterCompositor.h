@@ -51,11 +51,20 @@ class FlutterCompositor {
   // PresentCallback is called at the end of the Present function.
   void SetPresentCallback(const PresentCallback& present_callback);
 
+  // Denotes the current status of the frame being composited.
+  // Started: A new frame has begun and we have cleared the old layer tree
+  //          and are now creating backingstore(s) for the embedder to use.
+  // Presenting: the embedder has finished rendering into the provided
+  //             backingstore(s) and we are creating the layer tree for the
+  //             system compositor to present with.
+  // Ended: The frame has been presented and we are no longer processing
+  //        it.
   typedef enum { kStarted, kPresenting, kEnded } FrameStatus;
 
  protected:
   __weak const FlutterViewController* view_controller_;
 
+  // Gets and sets the FrameStatus for the current frame.
   void SetFrameStatus(FrameStatus frame_status);
   FrameStatus GetFrameStatus();
 
