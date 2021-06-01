@@ -28,6 +28,7 @@ TEST(FlutterMetalCompositorTest, TestPresent) {
 
 TEST(FlutterMetalCompositorTest, TestCreate) {
   id mockViewController = CreateMockViewController(nil);
+  [mockViewController loadView];
 
   std::unique_ptr<flutter::FlutterMetalCompositor> macos_compositor =
       std::make_unique<FlutterMetalCompositor>(mockViewController, nullptr);
@@ -48,6 +49,7 @@ TEST(FlutterMetalCompositorTest, TestCreate) {
 
 TEST(FlutterMetalCompositorTest, TestCompositing) {
   id mockViewController = CreateMockViewController(nil);
+  [mockViewController loadView];
 
   std::unique_ptr<flutter::FlutterMetalCompositor> macos_compositor =
       std::make_unique<FlutterMetalCompositor>(mockViewController, nullptr);
