@@ -171,7 +171,6 @@ class Surface {
   }
 
   void _contextRestoredListener(html.Event event) {
-    print('Flutter: restoring WebGL context.');
     assert(
         _contextLost,
         'Received "webglcontextrestored" event but never received '

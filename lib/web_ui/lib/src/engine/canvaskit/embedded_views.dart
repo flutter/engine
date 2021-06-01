@@ -352,19 +352,19 @@ class HtmlViewEmbedder {
   }
 
   void submitFrame() {
-    bool _paintedBackupSurface = false;
+    bool _didPaintBackupSurface = false;
     for (int i = 0; i < _compositionOrder.length; i++) {
       int viewId = _compositionOrder[i];
       if (_viewsUsingBackupSurface.contains(viewId)) {
         // Only draw the picture to the backup surface once.
-        if (!_paintedBackupSurface) {
+        if (!_didPaintBackupSurface) {
           SurfaceFrame backupFrame =
               SurfaceFactory.instance.backupSurface.acquireFrame(_frameSize);
           backupFrame.skiaCanvas
               .drawPicture(_backupPictureRecorder!.endRecording());
           _backupPictureRecorder = null;
           backupFrame.submit();
-          _paintedBackupSurface = true;
+          _didPaintBackupSurface = true;
         }
       } else {
         final SurfaceFrame frame = _overlays[viewId]!.acquireFrame(_frameSize);
@@ -461,9 +461,11 @@ class HtmlViewEmbedder {
       return;
     }
 
-    // If this view was using the backup surface, try using a surface from the
-    // cache before falling back on the backup surface again.
-    _viewsUsingBackupSurface.remove(viewId);
+    // If this view was using the backup surface, try to release the backup
+    // surface and see if a non-backup surface became available.
+    if (_viewsUsingBackupSurface.contains(viewId)) {
+      _releaseOverlay(viewId);
+    }
 
     // Try reusing a cached overlay created for another platform view.
     overlay = SurfaceFactory.instance.getSurface();
