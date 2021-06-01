@@ -350,12 +350,13 @@ TEST(FlutterEngine, Compositor) {
   id engine = [[FlutterEngine alloc] initWithName:@"test" project:project];
 
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:project];
-  viewController.view.frame = CGRectMake(0, 0, 800, 600);
+  [viewController loadView];
+  viewController.flutterView.frame = CGRectMake(0, 0, 800, 600);
   [engine setViewController:viewController];
 
   EXPECT_TRUE([engine runWithEntrypoint:@"can_composite_platform_views"]);
 
-  id mockFlutterView = OCMPartialMock(viewController.view);
+  id mockFlutterView = OCMPartialMock(viewController.flutterView);
   OCMExpect([mockFlutterView present]);
 
   @try {
@@ -365,7 +366,7 @@ TEST(FlutterEngine, Compositor) {
     return false;
   }
 
-  CALayer* rootLayer = viewController.view.layer;
+  CALayer* rootLayer = viewController.flutterView.layer;
 
   // There are three layers total - the root layer and two sublayers.
   // This test will need to be updated when PlatformViews are supported, as
