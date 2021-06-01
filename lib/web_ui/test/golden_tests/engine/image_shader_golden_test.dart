@@ -63,7 +63,7 @@ void testMain() async {
 
   Future<void> testImageShader(
       TileMode tmx, TileMode tmy, String fileName,
-      double maxDiffRatePercent) async {
+      {double maxDiffRatePercent = 0.0}) async {
     final RecordingCanvas rc =
         RecordingCanvas(const Rect.fromLTRB(0, 0, screenWidth, screenHeight));
     //Rect shaderRect = const Rect.fromLTRB(20, 20, 100, 100);

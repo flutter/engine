@@ -113,7 +113,6 @@ class _WebGlRenderer implements GlRenderer {
     // Compute bounds of vertices.
     final Float32List positions = vertices.positions;
     ui.Rect bounds = _computeVerticesBounds(positions, transform);
-    final double dpr = ui.window.devicePixelRatio;
     double minValueX = bounds.left;
     double minValueY = bounds.top;
     double maxValueX = bounds.right;
