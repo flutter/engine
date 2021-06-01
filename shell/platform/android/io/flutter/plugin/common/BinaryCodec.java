@@ -4,6 +4,7 @@
 
 package io.flutter.plugin.common;
 
+import androidx.annotation.Nullable;
 import java.nio.ByteBuffer;
 
 /**
@@ -45,13 +46,15 @@ public final class BinaryCodec implements MessageCodec<ByteBuffer> {
   }
 
   @Override
-  public ByteBuffer encodeMessage(ByteBuffer message) {
+  public ByteBuffer encodeMessage(@Nullable ByteBuffer message) {
     return message;
   }
 
   @Override
-  public ByteBuffer decodeMessage(ByteBuffer message) {
-    if (returnsDirectByteBufferFromDecoding) {
+  public ByteBuffer decodeMessage(@Nullable ByteBuffer message) {
+    if (message == null) {
+      return message;
+    } else if (returnsDirectByteBufferFromDecoding) {
       return message;
     } else {
       ByteBuffer result = ByteBuffer.allocate(message.capacity());
