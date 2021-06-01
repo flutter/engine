@@ -62,9 +62,9 @@ abstract class BrowserHistory {
   /// The state of the current location of the user's browser.
   Object? get currentState => urlStrategy?.getState();
 
-  /// Update the url with the given [routeName] and [state].
+  /// Update the url with the given `routeName` and `state`.
   /// 
-  /// If the [replace] is false, the caller wants to push a new route name
+  /// If the `replace` is false, the caller wants to push a new route name
   /// on top of the existing one; otherwise, the caller wants to replace
   /// the current route name with the new one.
   void setRouteName(String? routeName, {Object? state, bool replace = false});
