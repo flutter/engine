@@ -258,7 +258,7 @@ FLUTTER_ASSERT_ARC
   [self setClientId:123 configuration:config];
   FlutterTextInputView* currentView = textInputPlugin.activeView;
   [self setClientId:456 configuration:config];
-  
+
   XCTAssertNotNil(currentView);
   XCTAssertNotNil(textInputPlugin.activeView);
   XCTAssertNotEqual(currentView, textInputPlugin.activeView);
