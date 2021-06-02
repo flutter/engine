@@ -40,6 +40,7 @@ _captureRootLayer(SceneBuilder sceneBuilder) native 'CaptureRootLayer';
 _validateLayerTreeCounts() native 'ValidateLayerTreeCounts';
 _validateEngineLayerDispose() native 'ValidateEngineLayerDispose';
 
+@pragma('vm:entry-point')
 Future<void> createSingleFrameCodec() async {
   final ImmutableBuffer buffer = await ImmutableBuffer.fromUint8List(Uint8List.fromList(List<int>.filled(4, 100)));
   final ImageDescriptor descriptor = ImageDescriptor.raw(
