@@ -253,6 +253,17 @@ FLUTTER_ASSERT_ARC
   [activeView updateEditingState];
 }
 
+- (void)testDoNotReuseInputViews {
+  NSDictionary* config = self.mutableTemplateCopy;
+  [self setClientId:123 configuration:config];
+  FlutterTextInputView* currentView = textInputPlugin.activeView;
+  [self setClientId:456 configuration:config];
+  
+  XCTAssertNotNil(currentView);
+  XCTAssertNotNil(textInputPlugin.activeView);
+  XCTAssertNotEqual(currentView, textInputPlugin.activeView);
+}
+
 - (void)testNoDanglingEnginePointer {
   NSDictionary* config = self.mutableTemplateCopy;
   [self setClientId:123 configuration:config];
