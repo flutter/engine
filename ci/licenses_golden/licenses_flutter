@@ -313,6 +313,7 @@ FILE: ../../../flutter/lib/ui/compositing/scene.cc
 FILE: ../../../flutter/lib/ui/compositing/scene.h
 FILE: ../../../flutter/lib/ui/compositing/scene_builder.cc
 FILE: ../../../flutter/lib/ui/compositing/scene_builder.h
+FILE: ../../../flutter/lib/ui/compositing/scene_builder_unittests.cc
 FILE: ../../../flutter/lib/ui/compositing/scene_host.cc
 FILE: ../../../flutter/lib/ui/compositing/scene_host.h
 FILE: ../../../flutter/lib/ui/dart_runtime_hooks.cc
@@ -411,6 +412,9 @@ FILE: ../../../flutter/lib/ui/semantics/semantics_update.cc
 FILE: ../../../flutter/lib/ui/semantics/semantics_update.h
 FILE: ../../../flutter/lib/ui/semantics/semantics_update_builder.cc
 FILE: ../../../flutter/lib/ui/semantics/semantics_update_builder.h
+FILE: ../../../flutter/lib/ui/semantics/semantics_update_builder_unittests.cc
+FILE: ../../../flutter/lib/ui/semantics/string_attribute.cc
+FILE: ../../../flutter/lib/ui/semantics/string_attribute.h
 FILE: ../../../flutter/lib/ui/snapshot_delegate.h
 FILE: ../../../flutter/lib/ui/text.dart
 FILE: ../../../flutter/lib/ui/text/asset_manager_font_provider.cc
@@ -1198,6 +1202,9 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterSurfa
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputPlugin.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputPlugin.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputPluginTest.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputSemanticsObject.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputSemanticsObject.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputSemanticsObjectTest.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextureRegistrar.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextureRegistrar.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h
