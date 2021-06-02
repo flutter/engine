@@ -505,6 +505,9 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   const char* _selectionAffinity;
   FlutterTextRange* _selectedTextRange;
   CGRect _cachedFirstRect;
+  // The view has reached end of life, and is no longer
+  // allowed to access its textInputDelegate.
+  BOOL _decommissioned;
 }
 
 @synthesize tokenizer = _tokenizer;
@@ -535,6 +538,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     _returnKeyType = UIReturnKeyDone;
     _secureTextEntry = NO;
     _accessibilityEnabled = NO;
+    _decommissioned = NO;
     if (@available(iOS 11.0, *)) {
       _smartQuotesType = UITextSmartQuotesTypeYes;
       _smartDashesType = UITextSmartDashesTypeYes;
@@ -545,6 +549,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 }
 
 - (void)configureWithDictionary:(NSDictionary*)configuration {
+  NSAssert(!_decommissioned, @"Attempt to reuse a decommissioned view, for %@", configuration);
   NSDictionary* inputType = configuration[kKeyboardType];
   NSString* keyboardAppearance = configuration[kKeyboardAppearance];
   NSDictionary* autofill = configuration[kAutofillProperties];
@@ -594,6 +599,23 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 
 - (UITextContentType)textContentType {
   return _textContentType;
+}
+
+- (id<FlutterTextInputDelegate>)textInputDelegate {
+  return _decommissioned ? nil : _textInputDelegate;
+}
+
+// Declares that the view has reached end of life, and
+// is no longer allowed to access its textInputDelegate.
+//
+// UIKit may retain this view (even after it's been removed
+// from the view hierarchy) so that it may outlive the plugin/engine
+// and _textInputDelegate will be a dangling pointer.
+
+// The text input plugin needs to call decommision to prevent that
+// from happening.
+- (void)decommision {
+  _decommissioned = YES;
 }
 
 - (void)dealloc {
@@ -778,7 +800,8 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 
 - (BOOL)shouldChangeTextInRange:(UITextRange*)range replacementText:(NSString*)text {
   if (self.returnKeyType == UIReturnKeyDefault && [text isEqualToString:@"\n"]) {
-    [_textInputDelegate performAction:FlutterTextInputActionNewline withClient:_textInputClient];
+    [self.textInputDelegate performAction:FlutterTextInputActionNewline
+                               withClient:_textInputClient];
     return YES;
   }
 
@@ -819,7 +842,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
         break;
     }
 
-    [_textInputDelegate performAction:action withClient:_textInputClient];
+    [self.textInputDelegate performAction:action withClient:_textInputClient];
     return NO;
   }
 
@@ -1062,9 +1085,9 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     return _cachedFirstRect;
   }
 
-  [_textInputDelegate showAutocorrectionPromptRectForStart:start
-                                                       end:end
-                                                withClient:_textInputClient];
+  [self.textInputDelegate showAutocorrectionPromptRectForStart:start
+                                                           end:end
+                                                    withClient:_textInputClient];
   // TODO(cbracken) Implement.
   return CGRectZero;
 }
@@ -1097,21 +1120,21 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 }
 
 - (void)beginFloatingCursorAtPoint:(CGPoint)point {
-  [_textInputDelegate updateFloatingCursor:FlutterFloatingCursorDragStateStart
-                                withClient:_textInputClient
-                              withPosition:@{@"X" : @(point.x), @"Y" : @(point.y)}];
+  [self.textInputDelegate updateFloatingCursor:FlutterFloatingCursorDragStateStart
+                                    withClient:_textInputClient
+                                  withPosition:@{@"X" : @(point.x), @"Y" : @(point.y)}];
 }
 
 - (void)updateFloatingCursorAtPoint:(CGPoint)point {
-  [_textInputDelegate updateFloatingCursor:FlutterFloatingCursorDragStateUpdate
-                                withClient:_textInputClient
-                              withPosition:@{@"X" : @(point.x), @"Y" : @(point.y)}];
+  [self.textInputDelegate updateFloatingCursor:FlutterFloatingCursorDragStateUpdate
+                                    withClient:_textInputClient
+                                  withPosition:@{@"X" : @(point.x), @"Y" : @(point.y)}];
 }
 
 - (void)endFloatingCursor {
-  [_textInputDelegate updateFloatingCursor:FlutterFloatingCursorDragStateEnd
-                                withClient:_textInputClient
-                              withPosition:@{@"X" : @(0), @"Y" : @(0)}];
+  [self.textInputDelegate updateFloatingCursor:FlutterFloatingCursorDragStateEnd
+                                    withClient:_textInputClient
+                                  withPosition:@{@"X" : @(0), @"Y" : @(0)}];
 }
 
 #pragma mark - UIKeyInput Overrides
@@ -1139,9 +1162,11 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   };
 
   if (_textInputClient == 0 && _autofillId != nil) {
-    [_textInputDelegate updateEditingClient:_textInputClient withState:state withTag:_autofillId];
+    [self.textInputDelegate updateEditingClient:_textInputClient
+                                      withState:state
+                                        withTag:_autofillId];
   } else {
-    [_textInputDelegate updateEditingClient:_textInputClient withState:state];
+    [self.textInputDelegate updateEditingClient:_textInputClient withState:state];
   }
 }
 
@@ -1259,8 +1284,6 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 @end
 
 @interface FlutterTextInputPlugin ()
-@property(nonatomic, strong) FlutterTextInputView* reusableInputView;
-
 // The current password-autofillable input fields that have yet to be saved.
 @property(nonatomic, readonly)
     NSMutableDictionary<NSString*, FlutterTextInputView*>* autofillContext;
@@ -1278,11 +1301,11 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   self = [super init];
 
   if (self) {
-    _reusableInputView = [[FlutterTextInputView alloc] init];
-    _reusableInputView.secureTextEntry = NO;
     _autofillContext = [[NSMutableDictionary alloc] init];
-    _activeView = [_reusableInputView retain];
     _inputHider = [[FlutterTextInputViewAccessibilityHider alloc] init];
+    // Initialize activeView with a dummy view to keep tests
+    // passing.
+    _activeView = [[FlutterTextInputView alloc] init];
   }
 
   return self;
@@ -1291,7 +1314,6 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 - (void)dealloc {
   [self hideTextInput];
   _activeView.textInputDelegate = nil;
-  [_reusableInputView release];
   [_activeView release];
   [_inputHider release];
   [_autofillContext release];
@@ -1398,14 +1420,14 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   if (saveEntries) {
     // Make all the input fields in the autofill context visible,
     // then remove them to trigger autofill save.
-    [self cleanUpViewHierarchy:YES clearText:YES];
+    [self cleanUpViewHierarchy:YES clearText:YES decommisionOnly:NO];
     [_autofillContext removeAllObjects];
     [self changeInputViewsAutofillVisibility:YES];
   } else {
     [_autofillContext removeAllObjects];
   }
 
-  [self cleanUpViewHierarchy:YES clearText:!saveEntries];
+  [self cleanUpViewHierarchy:YES clearText:!saveEntries decommisionOnly:NO];
   [self addToInputParentViewIfNeeded:_activeView];
 }
 
@@ -1414,9 +1436,11 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   // Hide all input views from autofill, only make those in the new configuration visible
   // to autofill.
   [self changeInputViewsAutofillVisibility:NO];
+
+  // Update the current active view.
   switch (autofillTypeOf(configuration)) {
     case FlutterAutofillTypeNone:
-      self.activeView = [self updateAndShowReusableInputView:configuration];
+      self.activeView = [self createInputViewWith:configuration];
       break;
     case FlutterAutofillTypeRegular:
       // If the group does not involve password autofill, only install the
@@ -1431,10 +1455,11 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
                                        isPasswordRelated:YES];
       break;
   }
-
   [_activeView setTextInputClient:client];
   [_activeView reloadInputViews];
 
+  // Decommission all views that will soon be removed.
+  [self cleanUpViewHierarchy:NO clearText:YES decommisionOnly:YES];
   // Clean up views that no longer need to be in the view hierarchy, according to
   // the current autofill context. The "garbage" input views are already made
   // invisible to autofill and they can't `becomeFirstResponder`, we only remove
@@ -1451,17 +1476,17 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 // hints. This method re-configures and reuses an existing instance of input field
 // instead of creating a new one.
 // Also updates the current autofill context.
-- (FlutterTextInputView*)updateAndShowReusableInputView:(NSDictionary*)configuration {
+- (FlutterTextInputView*)createInputViewWith:(NSDictionary*)configuration {
   // It's possible that the configuration of this non-autofillable input view has
   // an autofill configuration without hints. If it does, remove it from the context.
   NSString* autofillId = autofillIdFromDictionary(configuration);
   if (autofillId) {
     [_autofillContext removeObjectForKey:autofillId];
   }
-
-  [_reusableInputView configureWithDictionary:configuration];
-  [self addToInputParentViewIfNeeded:_reusableInputView];
-  _reusableInputView.textInputDelegate = _textInputDelegate;
+  FlutterTextInputView* newView = [[FlutterTextInputView alloc] init];
+  [newView configureWithDictionary:configuration];
+  [self addToInputParentViewIfNeeded:newView];
+  newView.textInputDelegate = _textInputDelegate;
 
   for (NSDictionary* field in configuration[kAssociatedAutofillFields]) {
     NSString* autofillId = autofillIdFromDictionary(field);
@@ -1469,7 +1494,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
       [_autofillContext removeObjectForKey:autofillId];
     }
   }
-  return _reusableInputView;
+  return [newView autorelease];
 }
 
 - (FlutterTextInputView*)updateAndShowAutofillViews:(NSArray*)fields
@@ -1551,7 +1576,9 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 // context. May remove the active view too if includeActiveView is YES.
 // When clearText is YES, the text on the input fields will be set to empty before
 // they are removed from the view hierarchy, to avoid triggering autofill save.
-- (void)cleanUpViewHierarchy:(BOOL)includeActiveView clearText:(BOOL)clearText {
+- (void)cleanUpViewHierarchy:(BOOL)includeActiveView
+                   clearText:(BOOL)clearText
+             decommisionOnly:(BOOL)decommisionOnly {
   for (UIView* view in self.textInputViews) {
     if ([view isKindOfClass:[FlutterTextInputView class]] &&
         (includeActiveView || view != _activeView)) {
@@ -1560,14 +1587,17 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
         if (clearText) {
           [inputView replaceRangeLocal:NSMakeRange(0, inputView.text.length) withText:@""];
         }
-        [view removeFromSuperview];
+        [inputView decommision];
+        if (!decommisionOnly) {
+          [inputView removeFromSuperview];
+        }
       }
     }
   }
 }
 
 - (void)collectGarbageInputViews {
-  [self cleanUpViewHierarchy:NO clearText:YES];
+  [self cleanUpViewHierarchy:NO clearText:YES decommisionOnly:NO];
 }
 
 // Changes the visibility of every FlutterTextInputView currently in the
@@ -1582,7 +1612,12 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 }
 
 // Resets the client id of every FlutterTextInputView in the view hierarchy
-// to 0. Called when a new text input connection will be established.
+// to 0.
+// Called before establishing a new text input connection.
+// For views in the current autofill context, they need to
+// stay in the view hierachy but should not be allowed to
+// send messages (other than autofill related ones) to the
+// framework.
 - (void)resetAllClientIds {
   for (UIView* view in self.textInputViews) {
     if ([view isKindOfClass:[FlutterTextInputView class]]) {

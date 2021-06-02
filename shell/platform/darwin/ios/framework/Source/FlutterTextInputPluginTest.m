@@ -19,6 +19,7 @@ FLUTTER_ASSERT_ARC
 - (void)setTextInputState:(NSDictionary*)state;
 - (void)setMarkedRect:(CGRect)markedRect;
 - (void)updateEditingState;
+- (void)decommisson;
 - (BOOL)isVisibleToAutofill;
 
 @end
@@ -250,6 +251,23 @@ FLUTTER_ASSERT_ARC
   }
   XCTAssert(!activeView.textInputDelegate);
   [activeView updateEditingState];
+}
+
+- (void)testNoDanglingEnginePointer {
+  NSDictionary* config = self.mutableTemplateCopy;
+  [self setClientId:123 configuration:config];
+
+  // We'll hold onto the current view and try to access the engine
+  // after changing the active view.
+  FlutterTextInputView* currentView = textInputPlugin.activeView;
+  [self setClientId:456 configuration:config];
+  XCTAssertNotNil(currentView);
+  XCTAssertNotNil(textInputPlugin.activeView);
+  XCTAssertNotEqual(currentView, textInputPlugin.activeView);
+
+  // Verify that the view can no longer access the engine
+  // instance.
+  XCTAssertNil(currentView.textInputDelegate);
 }
 
 - (void)ensureOnlyActiveViewCanBecomeFirstResponder {
@@ -673,7 +691,6 @@ FLUTTER_ASSERT_ARC
   [self ensureOnlyActiveViewCanBecomeFirstResponder];
 
   [self commitAutofillContextAndVerify];
-  XCTAssertNotEqual(textInputPlugin.textInputView, textInputPlugin.reusableInputView);
   [self ensureOnlyActiveViewCanBecomeFirstResponder];
 
   // Install the password field again.
@@ -689,14 +706,12 @@ FLUTTER_ASSERT_ARC
   [self ensureOnlyActiveViewCanBecomeFirstResponder];
 
   [self commitAutofillContextAndVerify];
-  XCTAssertNotEqual(textInputPlugin.textInputView, textInputPlugin.reusableInputView);
   [self ensureOnlyActiveViewCanBecomeFirstResponder];
 
   // Now switch to an input field that does not autofill.
   [self setClientId:125 configuration:self.mutableTemplateCopy];
 
   XCTAssertEqual(self.viewsVisibleToAutofill.count, 0);
-  XCTAssertEqual(textInputPlugin.textInputView, textInputPlugin.reusableInputView);
   // The active view should still be installed so it doesn't get
   // deallocated.
 
@@ -706,7 +721,6 @@ FLUTTER_ASSERT_ARC
   [self ensureOnlyActiveViewCanBecomeFirstResponder];
 
   [self commitAutofillContextAndVerify];
-  XCTAssertEqual(textInputPlugin.textInputView, textInputPlugin.reusableInputView);
   [self ensureOnlyActiveViewCanBecomeFirstResponder];
 }
 
