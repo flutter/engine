@@ -609,11 +609,11 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 // is no longer allowed to access its textInputDelegate.
 //
 // UIKit may retain this view (even after it's been removed
-// from the view hierarchy) so that it may outlive the plugin/engine
-// and _textInputDelegate will be a dangling pointer.
+// from the view hierarchy) so that it may outlive the plugin/engine,
+// in which case _textInputDelegate will become a dangling pointer.
 
-// The text input plugin needs to call decommision to prevent that
-// from happening.
+// The text input plugin needs to call decommision when it should
+// not have access to its FlutterTextInputDelegate any more.
 - (void)decommision {
   _decommissioned = YES;
 }
@@ -1472,10 +1472,11 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   [self performSelector:@selector(collectGarbageInputViews) withObject:nil afterDelay:0.1];
 }
 
-// Updates and shows an input field that is not password related and has no autofill
-// hints. This method re-configures and reuses an existing instance of input field
-// instead of creating a new one.
-// Also updates the current autofill context.
+// Creates and shows an input field that is not password related and has no autofill
+// hints. This method returns a new FlutterTextInputView instance when called, since
+// UIKit uses the identity of `UITextInput` instances (or the identity of the input
+// views) to decide whether the IME's internal states should be reset. See:
+// https://github.com/flutter/flutter/issues/79031 .
 - (FlutterTextInputView*)createInputViewWith:(NSDictionary*)configuration {
   // It's possible that the configuration of this non-autofillable input view has
   // an autofill configuration without hints. If it does, remove it from the context.
