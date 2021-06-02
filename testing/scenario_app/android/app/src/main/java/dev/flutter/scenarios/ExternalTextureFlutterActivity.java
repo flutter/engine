@@ -196,7 +196,12 @@ public class ExternalTextureFlutterActivity extends TestActivity {
               canvas.getWidth(),
               canvas.getHeight(),
               new int[] {
-                0xFF00FFFF, 0xFFFF00FF, 0xFFFFFF00,
+                // Cyan (#00FFFF)
+                0xFF00FFFF,
+                // Magenta (#FF00FF)
+                0xFFFF00FF,
+                // Yellow (#FFFF00)
+                0xFFFFFF00,
               },
               null,
               TileMode.REPEAT));

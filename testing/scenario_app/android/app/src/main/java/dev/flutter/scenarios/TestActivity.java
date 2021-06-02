@@ -82,6 +82,11 @@ public class TestActivity extends TestableFlutterActivity {
     channel.invokeMethod("set_scenario", test);
   }
 
+  /**
+   * Populates test-specific parameters that are sent to the Dart test scenario.
+   *
+   * @param args The map of test arguments
+   */
   protected void getScenarioParams(Map<String, Object> args) {}
 
   private void writeTimelineData(Uri logFile) {
