@@ -64,6 +64,18 @@ analyze \
   --options "$FLUTTER_DIR/analysis_options.yaml" \
   "$SRC_DIR/out/host_debug_unopt/gen/sky/bindings/dart_ui/ui.dart"
 
+echo "Analyzing spirv library..."
+analyze \
+  --packages="$FLUTTER_DIR/lib/spirv/.dart_tool/package_config.json" \
+  --options "$FLUTTER_DIR/analysis_options.yaml" \
+  "$FLUTTER_DIR/lib/spirv"
+
+echo "Analyzing ci/"
+analyze \
+  --packages="$FLUTTER_DIR/ci/.dart_tool/package_config.json" \
+  --options "$FLUTTER_DIR/analysis_options.yaml" \
+  "$FLUTTER_DIR/ci"
+
 echo "Analyzing flutter_frontend_server..."
 analyze \
   --packages="$FLUTTER_DIR/flutter_frontend_server/.dart_tool/package_config.json" \
@@ -81,6 +93,12 @@ analyze \
   --packages="$FLUTTER_DIR/testing/litetest/.dart_tool/package_config.json" \
   --options "$FLUTTER_DIR/analysis_options.yaml" \
   "$FLUTTER_DIR/testing/litetest"
+
+echo "Analyzing testing/benchmark"
+analyze \
+  --packages="$FLUTTER_DIR/testing/benchmark/.dart_tool/package_config.json" \
+  --options "$FLUTTER_DIR/analysis_options.yaml" \
+  "$FLUTTER_DIR/testing/benchmark"
 
 echo "Analyzing testing/smoke_test_failure"
 analyze \

@@ -15,7 +15,9 @@ import subprocess
 import sys
 
 ALL_PACKAGES = [
+  os.path.join("src", "flutter", "ci"),
   os.path.join("src", "flutter", "flutter_frontend_server"),
+  os.path.join("src", "flutter", "testing", "benchmark"),
   os.path.join("src", "flutter", "testing", "litetest"),
   os.path.join("src", "flutter", "testing", "smoke_test_failure"),
   os.path.join("src", "flutter", "testing", "symbols"),
@@ -30,7 +32,7 @@ def FetchPackage(pub, package):
     subprocess.check_output(pub, cwd=package, stderr=subprocess.STDOUT)
   except subprocess.CalledProcessError as err:
     print("'%s' failed in '%s' with status %d:\n%s" %
-          (' '.join(cmd), cwd, err.returncode, err.output))
+          (' '.join(pub), package, err.returncode, err.output))
     return 1
   return 0
 

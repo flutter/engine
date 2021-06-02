@@ -259,6 +259,11 @@ def RunDartTest(build_dir, test_packages, dart_file, verbose_dart_snapshot, mult
   if not enable_observatory:
     command_args.append('--disable-observatory')
 
+  dart_file_contents = open(dart_file, 'r')
+  custom_options = re.findall("// FlutterTesterOptions=(.*)", dart_file_contents.read())
+  dart_file_contents.close()
+  command_args.extend(custom_options)
+
   command_args += [
     '--use-test-fonts',
     kernel_file_output
@@ -271,7 +276,7 @@ def RunDartTest(build_dir, test_packages, dart_file, verbose_dart_snapshot, mult
     threading = 'single-threaded'
 
   print("Running test '%s' using 'flutter_tester' (%s)" % (kernel_file_name, threading))
-  forbidden_output = [] if 'unopt' in build_dir else ['[ERROR']
+  forbidden_output = [] if 'unopt' in build_dir or expect_failure else ['[ERROR']
   RunEngineExecutable(build_dir, 'flutter_tester', None, command_args,
                       forbidden_output=forbidden_output, expect_failure=expect_failure)
 
@@ -520,6 +525,21 @@ def RunLitetestTests(build_dir):
       cwd=test_dir)
 
 
+def RunBenchmarkTests(build_dir):
+  test_dir = os.path.join(buildroot_dir, 'flutter', 'testing', 'benchmark')
+  dart_tests = glob.glob('%s/test/*_test.dart' % test_dir)
+  for dart_test_file in dart_tests:
+    opts = [
+      '--disable-dart-dev',
+      dart_test_file]
+    RunEngineExecutable(
+      build_dir,
+      os.path.join('dart-sdk', 'bin', 'dart'),
+      None,
+      flags=opts,
+      cwd=test_dir)
+
+
 def main():
   parser = argparse.ArgumentParser()
 
@@ -560,10 +580,10 @@ def main():
     assert not IsWindows(), "Dart tests can't be run on windows. https://github.com/flutter/flutter/issues/36301."
     dart_filter = args.dart_filter.split(',') if args.dart_filter else None
     RunDartSmokeTest(build_dir, args.verbose_dart_snapshot)
+    RunLitetestTests(build_dir)
     RunDartTests(build_dir, dart_filter, args.verbose_dart_snapshot)
     RunConstFinderTests(build_dir)
     RunFrontEndServerTests(build_dir)
-    RunLitetestTests(build_dir)
 
   if 'java' in types:
     assert not IsWindows(), "Android engine files can't be compiled on Windows."
@@ -579,6 +599,7 @@ def main():
 
   # https://github.com/flutter/flutter/issues/36300
   if 'benchmarks' in types and not IsWindows():
+    RunBenchmarkTests(build_dir)
     RunEngineBenchmarks(build_dir, engine_filter)
 
   if ('engine' in types or 'font-subset' in types) and args.variant != 'host_release':
