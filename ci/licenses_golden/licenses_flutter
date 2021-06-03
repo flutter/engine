@@ -313,6 +313,7 @@ FILE: ../../../flutter/lib/ui/compositing/scene.cc
 FILE: ../../../flutter/lib/ui/compositing/scene.h
 FILE: ../../../flutter/lib/ui/compositing/scene_builder.cc
 FILE: ../../../flutter/lib/ui/compositing/scene_builder.h
+FILE: ../../../flutter/lib/ui/compositing/scene_builder_unittests.cc
 FILE: ../../../flutter/lib/ui/compositing/scene_host.cc
 FILE: ../../../flutter/lib/ui/compositing/scene_host.h
 FILE: ../../../flutter/lib/ui/dart_runtime_hooks.cc
@@ -411,6 +412,9 @@ FILE: ../../../flutter/lib/ui/semantics/semantics_update.cc
 FILE: ../../../flutter/lib/ui/semantics/semantics_update.h
 FILE: ../../../flutter/lib/ui/semantics/semantics_update_builder.cc
 FILE: ../../../flutter/lib/ui/semantics/semantics_update_builder.h
+FILE: ../../../flutter/lib/ui/semantics/semantics_update_builder_unittests.cc
+FILE: ../../../flutter/lib/ui/semantics/string_attribute.cc
+FILE: ../../../flutter/lib/ui/semantics/string_attribute.h
 FILE: ../../../flutter/lib/ui/snapshot_delegate.h
 FILE: ../../../flutter/lib/ui/text.dart
 FILE: ../../../flutter/lib/ui/text/asset_manager_font_provider.cc
@@ -486,6 +490,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/rasterizer.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/shader.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/skia_object_cache.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/surface.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/surface_factory.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/text.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/util.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/vertices.dart
@@ -1174,7 +1179,6 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterKeybo
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMacOSExternalTexture.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalCompositor.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalCompositor.mm
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalCompositorUnittests.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRendererTest.mm
