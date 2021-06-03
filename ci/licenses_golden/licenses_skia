@@ -1,4 +1,4 @@
-Signature: 406cc20dd4046feacac50c2dffade74e
+Signature: 5b77cd74ab26a7580e7bd94776109c1b
 
 UNUSED LICENSES:
 
@@ -635,6 +635,8 @@ FILE: ../../../third_party/skia/demos.skia.org/demos/sampling_types/index.html
 FILE: ../../../third_party/skia/demos.skia.org/demos/textedit/index.html
 FILE: ../../../third_party/skia/demos.skia.org/demos/textedit/spiralshader.js
 FILE: ../../../third_party/skia/demos.skia.org/demos/textedit/textapi_utils.js
+FILE: ../../../third_party/skia/demos.skia.org/demos/textures/index.html
+FILE: ../../../third_party/skia/demos.skia.org/demos/textures/testimg.png
 FILE: ../../../third_party/skia/demos.skia.org/demos/up_scaling/index.html
 FILE: ../../../third_party/skia/demos.skia.org/demos/web_worker/index.html
 FILE: ../../../third_party/skia/demos.skia.org/demos/web_worker/main.js
@@ -3944,9 +3946,6 @@ FILE: ../../../third_party/skia/src/gpu/ops/GrSmallPathShapeData.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrDrawAtlasPathOp.cpp
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrDrawAtlasPathOp.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrMiddleOutPolygonTriangulator.h
-FILE: ../../../third_party/skia/src/gpu/tessellate/GrMidpointContourParser.h
-FILE: ../../../third_party/skia/src/gpu/tessellate/GrStrokeIndirectTessellator.cpp
-FILE: ../../../third_party/skia/src/gpu/tessellate/GrStrokeIndirectTessellator.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrStrokeIterator.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrVectorXform.h
 FILE: ../../../third_party/skia/src/gpu/text/GrSDFTControl.cpp
@@ -5266,6 +5265,7 @@ FILE: ../../../third_party/skia/src/gpu/GrWritePixelsRenderTask.cpp
 FILE: ../../../third_party/skia/src/gpu/GrWritePixelsRenderTask.h
 FILE: ../../../third_party/skia/src/gpu/GrYUVATextureProxies.cpp
 FILE: ../../../third_party/skia/src/gpu/GrYUVATextureProxies.h
+FILE: ../../../third_party/skia/src/gpu/SkBaseGpuDevice.cpp
 FILE: ../../../third_party/skia/src/gpu/SkBaseGpuDevice.h
 FILE: ../../../third_party/skia/src/gpu/SkGpuDevice_nga.cpp
 FILE: ../../../third_party/skia/src/gpu/SkGpuDevice_nga.h
@@ -5785,10 +5785,15 @@ FILE: ../../../third_party/skia/include/sksl/DSLRuntimeEffects.h
 FILE: ../../../third_party/skia/include/sksl/DSLStatement.h
 FILE: ../../../third_party/skia/include/sksl/DSLWrapper.h
 FILE: ../../../third_party/skia/src/gpu/GrVertexChunkArray.h
+FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathCurveTessellator.cpp
+FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathCurveTessellator.h
+FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathIndirectTessellator.cpp
+FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathIndirectTessellator.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathStencilFillOp.cpp
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathStencilFillOp.h
-FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathTessellator.cpp
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathTessellator.h
+FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathWedgeTessellator.cpp
+FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathWedgeTessellator.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrStrokeFixedCountTessellator.cpp
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrStrokeFixedCountTessellator.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrStrokeTessellator.h
