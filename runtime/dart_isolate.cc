@@ -422,23 +422,34 @@ void DartIsolate::SetMessageHandlingTaskRunner(
 
   message_handling_task_runner_ = runner;
 
-  message_handler().Initialize([runner](std::function<void()> task) {
+  auto weak_isolate = GetWeakIsolatePtr();
+  message_handler().Initialize(
+      [weak_isolate, runner](std::function<void()> task) {
+
 #ifdef OS_FUCHSIA
-    runner->PostTask([task = std::move(task)]() {
-      TRACE_EVENT0("flutter", "DartIsolate::HandleMessage");
-      task();
-    });
-#else
-    auto task_queues = fml::MessageLoopTaskQueues::GetInstance();
-    task_queues->RegisterTask(
-        runner->GetTaskQueueId(),
-        [task = std::move(task)]() {
+        runner->PostTask([weak_isolate, task = std::move(task)]() {
+          auto isolate = weak_isolate.lock();
+          if (!isolate || isolate->GetPhase() == Phase::Shutdown) {
+            return;
+          }
           TRACE_EVENT0("flutter", "DartIsolate::HandleMessage");
           task();
-        },
-        fml::TimePoint::Now(), fml::TaskSourceGrade::kDartMicroTasks);
+        });
+#else
+        auto task_queues = fml::MessageLoopTaskQueues::GetInstance();
+        task_queues->RegisterTask(
+            runner->GetTaskQueueId(),
+            [weak_isolate, task = std::move(task)]() {
+              auto isolate = weak_isolate.lock();
+              if (!isolate || isolate->GetPhase() == Phase::Shutdown) {
+                return;
+              }
+              TRACE_EVENT0("flutter", "DartIsolate::HandleMessage");
+              task();
+            },
+            fml::TimePoint::Now(), fml::TaskSourceGrade::kDartMicroTasks);
 #endif
-  });
+      });
 }
 
 // Updating thread names here does not change the underlying OS thread names.
