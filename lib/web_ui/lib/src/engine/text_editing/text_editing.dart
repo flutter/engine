@@ -1552,7 +1552,7 @@ class TextEditingChannel {
       ByteData? data, ui.PlatformMessageResponseCallback? callback) {
     const JSONMethodCodec codec = JSONMethodCodec();
     final MethodCall call = codec.decodeMethodCall(data);
-    late final TextInputCommand command;
+    final TextInputCommand command;
     switch (call.method) {
       case 'TextInput.setClient':
         command = TextInputSetClient(
