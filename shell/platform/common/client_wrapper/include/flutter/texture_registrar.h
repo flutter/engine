@@ -42,10 +42,50 @@ class PixelBufferTexture {
   const CopyBufferCallback copy_buffer_callback_;
 };
 
+// A gpu buffer texture.
+class GpuBufferTexture {
+ public:
+  // A callback used for retrieving gpu buffers.
+  typedef std::function<const FlutterDesktopGpuBuffer*(size_t width,
+                                                       size_t height)>
+      ObtainGpuBufferCallback;
+
+  typedef std::function<void(void* buffer)> DestructGpuBufferCallback;
+
+  // Creates a gpu buffer texture that uses the provided |obtain_buffer_cb| to
+  // retrieve the buffer.
+  // As the callback is usually invoked from the render thread, the callee must
+  // take care of proper synchronization. It also needs to be ensured that the
+  // returned buffer isn't released prior to unregistering this texture.
+  GpuBufferTexture(ObtainGpuBufferCallback obtain_buffer_callback,
+                   DestructGpuBufferCallback destruction_callback)
+      : obtain_gpu_buffer_callback_(obtain_buffer_callback),
+        destruct_gpu_buffer_callback_(destruction_callback),
+        buffer_(nullptr) {}
+
+  // Returns the callback-provided FlutterDesktopGpuBuffer that contains the
+  // actual gpu buffer pointer. The intended surface size is specified by
+  // |width| and |height|.
+  const FlutterDesktopGpuBuffer* ObtainGpuBuffer(size_t width, size_t height) {
+    const FlutterDesktopGpuBuffer* flutter_buffer =
+        obtain_gpu_buffer_callback_(width, height);
+    if (flutter_buffer) {
+      buffer_ = const_cast<void*>(flutter_buffer->buffer);
+    }
+    return flutter_buffer;
+  }
+
+  void Destruct() { destruct_gpu_buffer_callback_(buffer_); }
+
+ private:
+  const ObtainGpuBufferCallback obtain_gpu_buffer_callback_;
+  const DestructGpuBufferCallback destruct_gpu_buffer_callback_;
+  void* buffer_;
+};
+
 // The available texture variants.
-// Only PixelBufferTexture is currently implemented.
-// Other variants are expected to be added in the future.
-typedef std::variant<PixelBufferTexture> TextureVariant;
+// Only PixelBufferTexture and GpuBufferTexture are currently implemented.
+typedef std::variant<PixelBufferTexture, GpuBufferTexture> TextureVariant;
 
 // An object keeping track of external textures.
 //

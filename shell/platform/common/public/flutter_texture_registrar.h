@@ -23,7 +23,9 @@ typedef struct FlutterDesktopTextureRegistrar*
 // Additional types may be added in the future.
 typedef enum {
   // A Pixel buffer-based texture.
-  kFlutterDesktopPixelBufferTexture
+  kFlutterDesktopPixelBufferTexture,
+  // A Gpu buffer-based texture.
+  kFlutterDesktopGpuBufferTexture
 } FlutterDesktopTextureType;
 
 // An image buffer object.
@@ -35,6 +37,16 @@ typedef struct {
   // Height of the pixel buffer.
   size_t height;
 } FlutterDesktopPixelBuffer;
+
+// An image buffer object.
+typedef struct {
+  // The gpu data buffer.
+  const void* buffer;
+  // Width of the gpu buffer.
+  size_t width;
+  // Height of the gpu buffer.
+  size_t height;
+} FlutterDesktopGpuBuffer;
 
 // The pixel buffer copy callback definition provided to
 // the Flutter engine to copy the texture.
@@ -50,6 +62,13 @@ typedef const FlutterDesktopPixelBuffer* (
                                                size_t height,
                                                void* user_data);
 
+typedef const FlutterDesktopGpuBuffer* (
+    *FlutterDesktopGpuBufferTextureCallback)(size_t width,
+                                             size_t height,
+                                             void* user_data);
+
+typedef void (*FlutterDesktopGpuBufferDestructionCallback)(void* user_data);
+
 // An object used to configure pixel buffer textures.
 typedef struct {
   // The callback used by the engine to copy the pixel buffer object.
@@ -58,10 +77,21 @@ typedef struct {
   void* user_data;
 } FlutterDesktopPixelBufferTextureConfig;
 
+// An object used to configure GPU buffer textures.
+typedef struct {
+  // The callback used by the engine to obtain the GPU buffer object.
+  FlutterDesktopGpuBufferTextureCallback callback;
+  // The callback used by the engine to destruct the GPU buffer object.
+  FlutterDesktopGpuBufferDestructionCallback destruction_callback;
+  // Opaque data that will get passed to the provided |callback|.
+  void* user_data;
+} FlutterDesktopGPUBufferTextureConfig;
+
 typedef struct {
   FlutterDesktopTextureType type;
   union {
     FlutterDesktopPixelBufferTextureConfig pixel_buffer_config;
+    FlutterDesktopGPUBufferTextureConfig gpu_buffer_config;
   };
 } FlutterDesktopTextureInfo;
 

@@ -172,6 +172,26 @@ int64_t TextureRegistrarImpl::RegisterTexture(TextureVariant* texture) {
     int64_t texture_id = FlutterDesktopTextureRegistrarRegisterExternalTexture(
         texture_registrar_ref_, &info);
     return texture_id;
+  } else if (auto gpu_buffer_texture = std::get_if<GpuBufferTexture>(texture)) {
+    FlutterDesktopTextureInfo info = {};
+    info.type = kFlutterDesktopGpuBufferTexture;
+    info.gpu_buffer_config.user_data = gpu_buffer_texture;
+    info.gpu_buffer_config.callback =
+        [](size_t width, size_t height,
+           void* user_data) -> const FlutterDesktopGpuBuffer* {
+      auto texture = static_cast<GpuBufferTexture*>(user_data);
+      auto buffer = texture->ObtainGpuBuffer(width, height);
+      return buffer;
+    };
+
+    info.gpu_buffer_config.destruction_callback = [](void* user_data) -> void {
+      auto texture = static_cast<GpuBufferTexture*>(user_data);
+      texture->Destruct();
+    };
+
+    int64_t texture_id = FlutterDesktopTextureRegistrarRegisterExternalTexture(
+        texture_registrar_ref_, &info);
+    return texture_id;
   }
 
   std::cerr << "Attempting to register unknown texture variant." << std::endl;
