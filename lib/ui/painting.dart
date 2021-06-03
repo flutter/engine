@@ -3722,7 +3722,7 @@ class Gradient extends Shader {
 /// A shader (as used by [Paint.shader]) that runs provided SPIR-V code.
 /// 
 /// When initializing or updating the [floatUniforms], the length of float
-/// uniforms must match the total number of floats defined as uniforms in,
+/// uniforms must match the total number of floats defined as uniforms in
 /// the shader. They will be updated in the order that they are defined.
 /// 
 /// For example, if there are 3 uniforms: 1 of type float, 1 type float2/vec2,
@@ -3730,13 +3730,13 @@ class Gradient extends Shader {
 /// The uniforms could be updated as follows:
 /// 
 /// ```
-///   // GLSL fragment shader.
+///   // Example fragment shader uniforms.
 ///   uniform float a;
 ///   uniform vec2 b;
 ///   uniform vec3 c;
 /// 
 ///   // Dart code to update uniforms.
-///   shader.update(floatUniforms: Float32List.fromList(1, 2, 3, 4, 5, 6));
+///   shader.update(floatUniforms: Float32List.fromList([1, 2, 3, 4, 5, 6]));
 /// 
 ///   // Results of shader uniforms.
 ///   a: 1
@@ -3787,7 +3787,7 @@ class FragmentShader extends Shader {
     _update(floatUniforms);
   }
 
-  // TODO(clocksmith): Add `List<Shader> children` as a paramter.
+  // TODO(clocksmith): Add `List<Shader> children` as a parameter.
   void _update(Float32List floatUniforms) native 'FragmentShader_update';
 }
 
