@@ -211,10 +211,10 @@ public class PlatformPlugin {
 
   private void setSystemChromeEnabledSystemUIMode(PlatformChannel.SystemUiMode systemUiMode) {
     int enabledOverlays =
-            DEFAULT_SYSTEM_UI
-                    | View.SYSTEM_UI_FLAG_FULLSCREEN
-                    | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                    | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
+        DEFAULT_SYSTEM_UI
+            | View.SYSTEM_UI_FLAG_FULLSCREEN
+            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
 
     if (systemUiMode == PlatformChannel.SystemUiMode.LEAN_BACK && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
       // LEAN BACK
@@ -300,10 +300,10 @@ public class PlatformPlugin {
     // Start by assuming we want to hide all system overlays (like an immersive
     // game).
     int enabledOverlays =
-            DEFAULT_SYSTEM_UI
-                    | View.SYSTEM_UI_FLAG_FULLSCREEN
-                    | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                    | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
+        DEFAULT_SYSTEM_UI
+            | View.SYSTEM_UI_FLAG_FULLSCREEN
+            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
 
     // The SYSTEM_UI_FLAG_IMMERSIVE_STICKY flag was introduced in API 19, so we
     // apply it

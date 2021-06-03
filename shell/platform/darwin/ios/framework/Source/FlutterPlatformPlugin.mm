@@ -187,8 +187,8 @@ using namespace flutter;
   // to be able to modify this on the fly. The key used is
   // UIViewControllerBasedStatusBarAppearance
   [UIApplication sharedApplication].statusBarHidden =
-      ![mode isEqualToString:@"SystemUiMode.edge_to_edge"];
-  if ([mode isEqualToString:@"SystemUiMode.edge_to_edge"]) {
+      ![mode isEqualToString:@"SystemUiMode.edgeToEdge"];
+  if ([mode isEqualToString:@"SystemUiMode.edgeToEdge"]) {
     [[NSNotificationCenter defaultCenter]
         postNotificationName:FlutterViewControllerShowHomeIndicator
                       object:nil];

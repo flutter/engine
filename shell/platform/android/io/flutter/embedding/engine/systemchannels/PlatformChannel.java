@@ -617,10 +617,10 @@ public class PlatformChannel {
    * The set of Android system fullscreen modes as perceived by the Flutter application.
    */
   public enum SystemUiMode {
-    LEAN_BACK("SystemUiMode.lean_back"),
+    LEAN_BACK("SystemUiMode.leanBack"),
     IMMERSIVE("SystemUiMode.immersive"),
-    IMMERSIVE_STICKY("SystemUiMode.immersive_sticky"),
-    EDGE_TO_EDGE("SystemUiMode.edge_to_edge");
+    IMMERSIVE_STICKY("SystemUiMode.immersiveSticky"),
+    EDGE_TO_EDGE("SystemUiMode.edgeToEdge");
 
     @NonNull
     static SystemUiMode fromValue(@NonNull String encodedName) throws NoSuchFieldException {
