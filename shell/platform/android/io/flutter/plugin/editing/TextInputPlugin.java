@@ -249,6 +249,8 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
       return textType;
     } else if (type.type == TextInputChannel.TextInputType.PHONE) {
       return InputType.TYPE_CLASS_PHONE;
+    } else if (type.type == TextInputChannel.TextInputType.NONE) {
+      return InputType.TYPE_NULL;
     }
 
     int textType = InputType.TYPE_CLASS_TEXT;
@@ -363,8 +365,12 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
   }
 
   private void showTextInput(View view) {
-    view.requestFocus();
-    mImm.showSoftInput(view, 0);
+    if (configuration.inputType.type != TextInputChannel.TextInputType.NONE) {
+      view.requestFocus();
+      mImm.showSoftInput(view, 0);
+    } else {
+      hideTextInput(view);
+    }
   }
 
   private void hideTextInput(View view) {
