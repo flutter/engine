@@ -2233,6 +2233,20 @@ class EngineLayer extends NativeFieldWrapperClass2 {
   /// or extended directly.
   @pragma('vm:entry-point')
   EngineLayer._();
+
+  /// Release the resources used by this object. The object is no longer usable
+  /// after this method is called.
+  ///
+  /// EngineLayers indirectly retain platform specific graphics resources. Some
+  /// of these resources, such as images, may be memory intensive. It is
+  /// important to dispose of EngineLayer objects that will no longer be used as
+  /// soon as possible to avoid retaining these resources until the next
+  /// garbage collection.
+  ///
+  /// Once this EngineLayer is disposed, it is no longer eligible for use as a
+  /// retained layer, and must not be passed as an `oldLayer` to any of the
+  /// [SceneBuilder] methods which accept that parameter.
+  void dispose() native 'EngineLayer_dispose';
 }
 
 /// A complex, one-dimensional subset of a plane.
@@ -3470,6 +3484,9 @@ enum TileMode {
   ///
   /// An image filter will substitute transparent black for any sample it must read from
   /// outside its source image.
+  ///
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/tile_mode_decal_linear.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/tile_mode_decal_radial.png)
   decal,
 }
 
@@ -5010,7 +5027,7 @@ class Shadow {
   // See SkBlurMask::ConvertRadiusToSigma().
   // <https://github.com/google/skia/blob/bb5b77db51d2e149ee66db284903572a5aac09be/src/effects/SkBlurMask.cpp#L23>
   static double convertRadiusToSigma(double radius) {
-    return radius * 0.57735 + 0.5;
+    return radius > 0 ? radius * 0.57735 + 0.5 : 0;
   }
 
   /// The [blurRadius] in sigmas instead of logical pixels.
@@ -5147,8 +5164,9 @@ class Shadow {
         shadowsData.setFloat32(_kYOffset + shadowOffset,
           shadow.offset.dy, _kFakeHostEndian);
 
+        final double blurSigma = Shadow.convertRadiusToSigma(shadow.blurRadius);
         shadowsData.setFloat32(_kBlurOffset + shadowOffset,
-          shadow.blurRadius, _kFakeHostEndian);
+          blurSigma, _kFakeHostEndian);
       }
     }
 

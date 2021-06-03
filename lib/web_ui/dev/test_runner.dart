@@ -10,7 +10,20 @@ import 'package:args/command_runner.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
 import 'package:pool/pool.dart';
+
+// TODO(yjbanov): remove hacks when this is fixed:
+//                https://github.com/dart-lang/test/issues/1521
+import 'package:test_api/src/backend/live_test.dart'
+    as hack;
+import 'package:test_api/src/backend/group.dart'
+    as hack;
+import 'package:test_core/src/runner/configuration/reporters.dart'
+    as hack;
+import 'package:test_core/src/runner/engine.dart'
+    as hack;
 import 'package:test_core/src/runner/hack_register_platform.dart'
+    as hack;
+import 'package:test_core/src/runner/reporter.dart'
     as hack;
 import 'package:test_api/src/backend/runtime.dart';
 import 'package:test_core/src/executable.dart'
@@ -294,13 +307,6 @@ class TestCommand extends Command<bool> with ArgUtils {
   Future<bool> runUnitTests() async {
     _copyTestFontsIntoWebUi();
     await _buildHostPage();
-    if (io.Platform.isWindows) {
-      // On Dart 2.7 or greater, it gives an error for not
-      // recognized "pub" version and asks for "pub" get.
-      // See: https://github.com/dart-lang/sdk/issues/39738
-      await _runPubGet();
-    }
-
     await _prepare();
     await _buildTargets();
 
@@ -636,21 +642,6 @@ class TestCommand extends Command<bool> with ArgUtils {
     }
   }
 
-  Future<void> _runPubGet() async {
-    final int exitCode = await runProcess(
-      environment.pubExecutable,
-      <String>[
-        'get',
-      ],
-      workingDirectory: environment.webUiRootDir.path,
-    );
-
-    if (exitCode != 0) {
-      throw ToolException(
-          'Failed to run pub get. Exited with exit code $exitCode');
-    }
-  }
-
   Future<void> _buildHostPage() async {
     final String hostDartPath = path.join('lib', 'static', 'host.dart');
     final io.File hostDartFile = io.File(path.join(
@@ -792,12 +783,24 @@ class TestCommand extends Command<bool> with ArgUtils {
       ...<String>['-r', 'compact'],
       '--concurrency=$concurrency',
       if (isDebug) '--pause-after-load',
+      // Don't pollute logs with output from tests that are expected to fail.
+      if (expectFailure)
+        '--reporter=name-only',
       '--platform=${SupportedBrowsers.instance.supportedBrowserToPlatform[browser]}',
       '--precompiled=${environment.webUiRootDir.path}/build',
       SupportedBrowsers.instance.browserToConfiguration[browser],
       '--',
       ...testFiles.map((f) => f.relativeToWebUi).toList(),
     ];
+
+    if (expectFailure) {
+      hack.registerReporter(
+        'name-only',
+        hack.ReporterDetails(
+        'Prints the name of the test, but suppresses all other test output.',
+        (_, hack.Engine engine, __) => NameOnlyReporter(engine)),
+      );
+    }
 
     hack.registerPlatformPlugin(<Runtime>[
       SupportedBrowsers.instance.supportedBrowsersToRuntimes[browser]
@@ -823,6 +826,7 @@ class TestCommand extends Command<bool> with ArgUtils {
     if (expectFailure) {
       if (io.exitCode != 0) {
         // It failed, as expected.
+        print('Test successfully failed, as expected.');
         io.exitCode = 0;
       } else {
         io.stderr.writeln(
@@ -872,3 +876,23 @@ class TestBuildInput {
 }
 
 class TestFailureException implements Exception {}
+
+/// Prints the name of the test, but suppresses all other test output.
+///
+/// This is useful to prevent pollution of logs by tests that are expected to
+/// fail.
+class NameOnlyReporter implements hack.Reporter {
+  NameOnlyReporter(hack.Engine testEngine) {
+    testEngine.onTestStarted.listen(_printTestName);
+  }
+
+  void _printTestName(hack.LiveTest test) {
+    print('Running ${test.groups.map((hack.Group group) => group.name).join(' ')} ${test.individualName}');
+  }
+
+  @override
+  void pause() {}
+
+  @override
+  void resume() {}
+}

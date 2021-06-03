@@ -57,9 +57,19 @@ class Scene extends NativeFieldWrapperClass2 {
 // passed as `oldLayer` to `pushTransform`. This is achieved by having one
 // concrete subclass of this class per push method.
 abstract class _EngineLayerWrapper implements EngineLayer {
-  _EngineLayerWrapper._(this._nativeLayer);
+  _EngineLayerWrapper._(EngineLayer nativeLayer) : _nativeLayer = nativeLayer;
 
-  EngineLayer _nativeLayer;
+  EngineLayer? _nativeLayer;
+
+  @override
+  void dispose() {
+    assert(_nativeLayer != null, 'Object disposed');
+    _nativeLayer!.dispose();
+    assert(() {
+      _nativeLayer = null;
+      return true;
+    }());
+  }
 
   // Children of this layer.
   //
@@ -230,6 +240,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
       if (layer == null) {
         return true;
       }
+      assert(layer._nativeLayer != null, 'Object disposed');
       layer._debugCheckNotUsedAsOldLayer();
       assert(_debugCheckUsedOnce(layer, 'oldLayer in $methodName'));
       layer._debugWasUsedAsOldLayer = true;
@@ -283,7 +294,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// {@endtemplate}
   ///
   /// See [pop] for details about the operation stack.
-  TransformEngineLayer? pushTransform(
+  TransformEngineLayer pushTransform(
     Float64List matrix4, {
     TransformEngineLayer? oldLayer,
   }) {
@@ -308,7 +319,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// {@macro dart.ui.sceneBuilder.oldLayerVsRetained}
   ///
   /// See [pop] for details about the operation stack.
-  OffsetEngineLayer? pushOffset(
+  OffsetEngineLayer pushOffset(
     double dx,
     double dy, {
     OffsetEngineLayer? oldLayer,
@@ -334,7 +345,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// See [pop] for details about the operation stack, and [Clip] for different clip modes.
   /// By default, the clip will be anti-aliased (clip = [Clip.antiAlias]).
-  ClipRectEngineLayer? pushClipRect(
+  ClipRectEngineLayer pushClipRect(
     Rect rect, {
     Clip clipBehavior = Clip.antiAlias,
     ClipRectEngineLayer? oldLayer,
@@ -363,7 +374,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// See [pop] for details about the operation stack, and [Clip] for different clip modes.
   /// By default, the clip will be anti-aliased (clip = [Clip.antiAlias]).
-  ClipRRectEngineLayer? pushClipRRect(
+  ClipRRectEngineLayer pushClipRRect(
     RRect rrect, {
     Clip clipBehavior = Clip.antiAlias,
     ClipRRectEngineLayer? oldLayer,
@@ -391,7 +402,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// See [pop] for details about the operation stack. See [Clip] for different clip modes.
   /// By default, the clip will be anti-aliased (clip = [Clip.antiAlias]).
-  ClipPathEngineLayer? pushClipPath(
+  ClipPathEngineLayer pushClipPath(
     Path path, {
     Clip clipBehavior = Clip.antiAlias,
     ClipPathEngineLayer? oldLayer,
@@ -421,7 +432,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// {@macro dart.ui.sceneBuilder.oldLayerVsRetained}
   ///
   /// See [pop] for details about the operation stack.
-  OpacityEngineLayer? pushOpacity(
+  OpacityEngineLayer pushOpacity(
     int alpha, {
     Offset? offset = Offset.zero,
     OpacityEngineLayer? oldLayer,
@@ -447,7 +458,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// {@macro dart.ui.sceneBuilder.oldLayerVsRetained}
   ///
   /// See [pop] for details about the operation stack.
-  ColorFilterEngineLayer? pushColorFilter(
+  ColorFilterEngineLayer pushColorFilter(
     ColorFilter filter, {
     ColorFilterEngineLayer? oldLayer,
   }) {
@@ -475,7 +486,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// {@macro dart.ui.sceneBuilder.oldLayerVsRetained}
   ///
   /// See [pop] for details about the operation stack.
-  ImageFilterEngineLayer? pushImageFilter(
+  ImageFilterEngineLayer pushImageFilter(
     ImageFilter filter, {
     ImageFilterEngineLayer? oldLayer,
   }) {
@@ -504,7 +515,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// {@macro dart.ui.sceneBuilder.oldLayerVsRetained}
   ///
   /// See [pop] for details about the operation stack.
-  BackdropFilterEngineLayer? pushBackdropFilter(
+  BackdropFilterEngineLayer pushBackdropFilter(
     ImageFilter filter, {
     BlendMode blendMode = BlendMode.srcOver,
     BackdropFilterEngineLayer? oldLayer,
@@ -530,7 +541,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// {@macro dart.ui.sceneBuilder.oldLayerVsRetained}
   ///
   /// See [pop] for details about the operation stack.
-  ShaderMaskEngineLayer? pushShaderMask(
+  ShaderMaskEngineLayer pushShaderMask(
     Shader shader,
     Rect maskRect,
     BlendMode blendMode, {
@@ -582,7 +593,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// {@macro dart.ui.sceneBuilder.oldLayerVsRetained}
   ///
   /// See [pop] for details about the operation stack, and [Clip] for different clip modes.
-  PhysicalShapeEngineLayer? pushPhysicalShape({
+  PhysicalShapeEngineLayer pushPhysicalShape({
     required Path path,
     required double elevation,
     required Color color,
@@ -638,6 +649,8 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
     assert(() {
       final _EngineLayerWrapper layer = retainedLayer as _EngineLayerWrapper;
 
+      assert(layer._nativeLayer != null);
+
       void recursivelyCheckChildrenUsedOnce(_EngineLayerWrapper parentLayer) {
         _debugCheckUsedOnce(parentLayer, 'retained layer');
         parentLayer._debugCheckNotUsedAsOldLayer();
@@ -655,7 +668,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
     }());
 
     final _EngineLayerWrapper wrapper = retainedLayer as _EngineLayerWrapper;
-    _addRetained(wrapper._nativeLayer);
+    _addRetained(wrapper._nativeLayer!);
   }
 
   void _addRetained(EngineLayer retainedLayer) native 'SceneBuilder_addRetained';

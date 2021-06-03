@@ -1,7 +1,9 @@
 package io.flutter.plugin.common;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
+import android.text.SpannableString;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import org.junit.Test;
@@ -28,6 +30,7 @@ public class StandardMessageCodecTest {
   private static final byte DOUBLE_ARRAY = 11;
   private static final byte LIST = 12;
   private static final byte MAP = 13;
+  private static final byte FLOAT_ARRAY = 14;
 
   @Test
   public void itEncodesNullLiterals() {
@@ -92,5 +95,31 @@ public class StandardMessageCodecTest {
     expected.put(new byte[] {LIST, 2, TRUE, FALSE});
     expected.flip();
     assertEquals(expected, message);
+  }
+
+  @Test
+  public void itEncodesFloatArrays() {
+    StandardMessageCodec codec = new StandardMessageCodec();
+
+    float[] expectedValues = new float[] {1.0f, 2.2f, 5.3f};
+
+    ByteBuffer message = codec.encodeMessage(expectedValues);
+    message.flip();
+
+    float[] values = (float[]) codec.decodeMessage(message);
+    assertArrayEquals(expectedValues, values, 0.01f);
+  }
+
+  @Test
+  public void itEncodesCharSequences() {
+    StandardMessageCodec codec = new StandardMessageCodec();
+
+    CharSequence cs = new SpannableString("hello world");
+
+    ByteBuffer message = codec.encodeMessage(cs);
+    message.flip();
+
+    String value = (String) codec.decodeMessage(message);
+    assertEquals(value, "hello world");
   }
 }

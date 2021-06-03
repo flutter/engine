@@ -92,14 +92,14 @@ class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::De
   void OnPlatformViewDestroyed() override {}
   void OnPlatformViewSetNextFrameCallback(const fml::closure& closure) override {}
   void OnPlatformViewSetViewportMetrics(const ViewportMetrics& metrics) override {}
-  void OnPlatformViewDispatchPlatformMessage(fml::RefPtr<PlatformMessage> message) override {}
+  void OnPlatformViewDispatchPlatformMessage(std::unique_ptr<PlatformMessage> message) override {}
   void OnPlatformViewDispatchPointerDataPacket(std::unique_ptr<PointerDataPacket> packet) override {
   }
   void OnPlatformViewDispatchKeyDataPacket(std::unique_ptr<KeyDataPacket> packet,
                                            std::function<void(bool)> callback) override {}
   void OnPlatformViewDispatchSemanticsAction(int32_t id,
                                              SemanticsAction action,
-                                             std::vector<uint8_t> args) override {}
+                                             fml::MallocMapping args) override {}
   void OnPlatformViewSetSemanticsEnabled(bool enabled) override {}
   void OnPlatformViewSetAccessibilityFeatures(int32_t flags) override {}
   void OnPlatformViewRegisterTexture(std::shared_ptr<Texture> texture) override {}

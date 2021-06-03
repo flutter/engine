@@ -314,6 +314,8 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     };
   }
 
+  PlatformViewMessageHandler? _platformViewMessageHandler;
+
   void _sendPlatformMessage(
     String name,
     ByteData? data,
@@ -449,12 +451,13 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         return;
 
       case 'flutter/platform_views':
-        if (useCanvasKit) {
-          rasterizer!.surface.viewEmbedder
-              .handlePlatformViewCall(data, callback);
-        } else {
-          ui.handlePlatformViewCall(data!, callback!);
-        }
+        _platformViewMessageHandler ??= PlatformViewMessageHandler(
+          contentManager: platformViewManager,
+          contentHandler: (html.Element content) {
+            domRenderer.glassPaneElement!.append(content);
+          },
+        );
+        _platformViewMessageHandler!.handlePlatformViewCall(data, callback!);
         return;
 
       case 'flutter/accessibility':
@@ -920,8 +923,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   String? _defaultRouteName;
 
   @visibleForTesting
-  late Rasterizer? rasterizer =
-      useCanvasKit ? Rasterizer(Surface(HtmlViewEmbedder())) : null;
+  late Rasterizer? rasterizer = useCanvasKit ? Rasterizer() : null;
 
   /// In Flutter, platform messages are exchanged between threads so the
   /// messages and responses have to be exchanged asynchronously. We simulate

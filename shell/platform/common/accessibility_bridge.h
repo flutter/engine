@@ -7,6 +7,7 @@
 
 #include <unordered_map>
 
+#include "flutter/fml/mapping.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 
 #include "flutter/third_party/accessibility/ax/ax_event_generator.h"
@@ -86,10 +87,9 @@ class AccessibilityBridge
     /// @param[in]  action              The generated flutter semantics action.
     /// @param[in]  data                Additional data associated with the
     ///                                 action.
-    virtual void DispatchAccessibilityAction(
-        AccessibilityNodeId target,
-        FlutterSemanticsAction action,
-        const std::vector<uint8_t>& data) = 0;
+    virtual void DispatchAccessibilityAction(AccessibilityNodeId target,
+                                             FlutterSemanticsAction action,
+                                             fml::MallocMapping data) = 0;
 
     //---------------------------------------------------------------------------
     /// @brief      Creates a platform specific FlutterPlatformNodeDelegate.
@@ -97,7 +97,7 @@ class AccessibilityBridge
     ///             by accessibility bridge whenever a new AXNode is created in
     ///             AXTree. Each platform needs to implement this method in
     ///             order to inject its subclass into the accessibility bridge.
-    virtual std::unique_ptr<FlutterPlatformNodeDelegate>
+    virtual std::shared_ptr<FlutterPlatformNodeDelegate>
     CreateFlutterPlatformNodeDelegate() = 0;
   };
   //-----------------------------------------------------------------------------
@@ -162,6 +162,11 @@ class AccessibilityBridge
   ///             case one may decide to handle an event differently based on
   ///             all pending events.
   const std::vector<ui::AXEventGenerator::TargetedEvent> GetPendingEvents();
+
+  //------------------------------------------------------------------------------
+  /// @brief      Update the AccessibilityBridgeDelegate stored in the
+  ///             accessibility bridge to a new one.
+  void UpdateDelegate(std::unique_ptr<AccessibilityBridgeDelegate> delegate);
 
  private:
   // See FlutterSemanticsNode in embedder.h
@@ -277,7 +282,7 @@ class AccessibilityBridge
   // |FlutterPlatformNodeDelegate::OwnerBridge|
   void DispatchAccessibilityAction(AccessibilityNodeId target,
                                    FlutterSemanticsAction action,
-                                   std::vector<uint8_t> data) override;
+                                   fml::MallocMapping data) override;
 
   // |FlutterPlatformNodeDelegate::OwnerBridge|
   gfx::RectF RelativeToGlobalBounds(const ui::AXNode* node,

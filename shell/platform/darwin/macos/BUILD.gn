@@ -85,6 +85,8 @@ source_set("flutter_framework_source") {
     "framework/Source/FlutterKeyboardManager.mm",
     "framework/Source/FlutterMacOSExternalTexture.h",
     "framework/Source/FlutterMacOSExternalTexture.h",
+    "framework/Source/FlutterMetalCompositor.h",
+    "framework/Source/FlutterMetalCompositor.mm",
     "framework/Source/FlutterMetalRenderer.h",
     "framework/Source/FlutterMetalRenderer.mm",
     "framework/Source/FlutterMouseCursorPlugin.h",
@@ -104,6 +106,8 @@ source_set("flutter_framework_source") {
     "framework/Source/FlutterSurfaceManager.mm",
     "framework/Source/FlutterTextInputPlugin.h",
     "framework/Source/FlutterTextInputPlugin.mm",
+    "framework/Source/FlutterTextInputSemanticsObject.h",
+    "framework/Source/FlutterTextInputSemanticsObject.mm",
     "framework/Source/FlutterTextureRegistrar.h",
     "framework/Source/FlutterTextureRegistrar.mm",
     "framework/Source/FlutterView.h",
@@ -167,6 +171,7 @@ executable("flutter_desktop_darwin_unittests") {
   testonly = true
 
   sources = [
+    "framework/Source/AccessibilityBridgeMacDelegateTest.mm",
     "framework/Source/FlutterChannelKeyResponderUnittests.mm",
     "framework/Source/FlutterEmbedderExternalTextureUnittests.mm",
     "framework/Source/FlutterEmbedderKeyResponderUnittests.mm",
@@ -178,6 +183,7 @@ executable("flutter_desktop_darwin_unittests") {
     "framework/Source/FlutterOpenGLRendererTest.mm",
     "framework/Source/FlutterPlatformNodeDelegateMacTest.mm",
     "framework/Source/FlutterTextInputPluginTest.mm",
+    "framework/Source/FlutterTextInputSemanticsObjectTest.mm",
     "framework/Source/FlutterViewControllerTest.mm",
     "framework/Source/FlutterViewControllerTestUtils.h",
     "framework/Source/FlutterViewControllerTestUtils.mm",

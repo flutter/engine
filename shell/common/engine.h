@@ -15,6 +15,7 @@
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/lib/ui/hint_freed_delegate.h"
 #include "flutter/lib/ui/painting/image_decoder.h"
+#include "flutter/lib/ui/painting/image_generator_registry.h"
 #include "flutter/lib/ui/semantics/custom_accessibility_action.h"
 #include "flutter/lib/ui/semantics/semantics_node.h"
 #include "flutter/lib/ui/snapshot_delegate.h"
@@ -178,7 +179,7 @@ class Engine final : public RuntimeDelegate,
     ///                      the underlying platform.
     ///
     virtual void OnEngineHandlePlatformMessage(
-        fml::RefPtr<PlatformMessage> message) = 0;
+        std::unique_ptr<PlatformMessage> message) = 0;
 
     //--------------------------------------------------------------------------
     /// @brief      Notifies the delegate that the root isolate of the
@@ -284,6 +285,12 @@ class Engine final : public RuntimeDelegate,
     ///                              library to load.
     ///
     virtual void RequestDartDeferredLibrary(intptr_t loading_unit_id) = 0;
+
+    //--------------------------------------------------------------------------
+    /// @brief      Returns the current fml::TimePoint.
+    ///             This method is primarily provided to allow tests to control
+    ///             Any methods that rely on advancing the clock.
+    virtual fml::TimePoint GetCurrentTimePoint() = 0;
   };
 
   //----------------------------------------------------------------------------
@@ -706,7 +713,7 @@ class Engine final : public RuntimeDelegate,
   /// @param[in]  message  The message sent from the embedder to the Dart
   ///                      application.
   ///
-  void DispatchPlatformMessage(fml::RefPtr<PlatformMessage> message);
+  void DispatchPlatformMessage(std::unique_ptr<PlatformMessage> message);
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the engine that the embedder has sent it a pointer
@@ -757,7 +764,7 @@ class Engine final : public RuntimeDelegate,
   ///
   void DispatchSemanticsAction(int id,
                                SemanticsAction action,
-                               std::vector<uint8_t> args);
+                               fml::MallocMapping args);
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the engine that the embedder has expressed an opinion
@@ -915,8 +922,10 @@ class Engine final : public RuntimeDelegate,
   bool have_surface_;
   std::shared_ptr<FontCollection> font_collection_;
   ImageDecoder image_decoder_;
+  ImageGeneratorRegistry image_generator_registry_;
   TaskRunners task_runners_;
-  size_t hint_freed_bytes_since_last_idle_ = 0;
+  size_t hint_freed_bytes_since_last_call_ = 0;
+  fml::TimePoint last_hint_freed_call_time_;
   fml::WeakPtrFactory<Engine> weak_factory_;
 
   // |RuntimeDelegate|
@@ -930,7 +939,7 @@ class Engine final : public RuntimeDelegate,
                        CustomAccessibilityActionUpdates actions) override;
 
   // |RuntimeDelegate|
-  void HandlePlatformMessage(fml::RefPtr<PlatformMessage> message) override;
+  void HandlePlatformMessage(std::unique_ptr<PlatformMessage> message) override;
 
   // |RuntimeDelegate|
   void OnRootIsolateCreated() override;
@@ -954,13 +963,14 @@ class Engine final : public RuntimeDelegate,
 
   bool HandleLifecyclePlatformMessage(PlatformMessage* message);
 
-  bool HandleNavigationPlatformMessage(fml::RefPtr<PlatformMessage> message);
+  bool HandleNavigationPlatformMessage(
+      std::unique_ptr<PlatformMessage> message);
 
   bool HandleLocalizationPlatformMessage(PlatformMessage* message);
 
   void HandleSettingsPlatformMessage(PlatformMessage* message);
 
-  void HandleAssetPlatformMessage(fml::RefPtr<PlatformMessage> message);
+  void HandleAssetPlatformMessage(std::unique_ptr<PlatformMessage> message);
 
   bool GetAssetAsBuffer(const std::string& name, std::vector<uint8_t>* data);
 

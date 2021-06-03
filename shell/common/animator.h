@@ -8,6 +8,7 @@
 #include <deque>
 
 #include "flutter/common/task_runners.h"
+#include "flutter/flow/frame_timings.h"
 #include "flutter/fml/memory/ref_ptr.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/synchronization/semaphore.h"
@@ -35,10 +36,11 @@ class Animator final {
     virtual void OnAnimatorNotifyIdle(int64_t deadline) = 0;
 
     virtual void OnAnimatorDraw(
-        fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline,
-        fml::TimePoint frame_target_time) = 0;
+        std::shared_ptr<Pipeline<flutter::LayerTree>> pipeline,
+        std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) = 0;
 
-    virtual void OnAnimatorDrawLastLayerTree() = 0;
+    virtual void OnAnimatorDrawLastLayerTree(
+        std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) = 0;
   };
 
   Animator(Delegate& delegate,
@@ -83,11 +85,12 @@ class Animator final {
  private:
   using LayerTreePipeline = Pipeline<flutter::LayerTree>;
 
-  void BeginFrame(fml::TimePoint frame_start_time,
-                  fml::TimePoint frame_target_time);
+  void BeginFrame(std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder);
 
   bool CanReuseLastLayerTree();
-  void DrawLastLayerTree();
+
+  void DrawLastLayerTree(
+      std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder);
 
   void AwaitVSync();
 
@@ -100,14 +103,12 @@ class Animator final {
   TaskRunners task_runners_;
   std::shared_ptr<VsyncWaiter> waiter_;
 
-  fml::TimePoint last_frame_begin_time_;
-  fml::TimePoint last_vsync_start_time_;
-  fml::TimePoint last_frame_target_time_;
+  std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder_;
+  uint64_t frame_request_number_ = 1;
   int64_t dart_frame_deadline_;
-  fml::RefPtr<LayerTreePipeline> layer_tree_pipeline_;
+  std::shared_ptr<LayerTreePipeline> layer_tree_pipeline_;
   fml::Semaphore pending_frame_semaphore_;
   LayerTreePipeline::ProducerContinuation producer_continuation_;
-  int64_t frame_number_;
   bool paused_;
   bool regenerate_layer_tree_;
   bool frame_scheduled_;

@@ -7,7 +7,7 @@ import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui';
 
-import 'package:test/test.dart';
+import 'package:litetest/litetest.dart';
 
 void main() {
   test('window.sendPlatformMessage preserves callback zone', () {
@@ -27,9 +27,10 @@ void main() {
       buildStart: 1000,
       buildFinish: 8000,
       rasterStart: 9000,
-      rasterFinish: 19500
+      rasterFinish: 19500,
+      frameNumber: 23,
     );
-    expect(timing.toString(), 'FrameTiming(buildDuration: 7.0ms, rasterDuration: 10.5ms, vsyncOverhead: 0.5ms, totalSpan: 19.0ms)');
+    expect(timing.toString(), 'FrameTiming(buildDuration: 7.0ms, rasterDuration: 10.5ms, vsyncOverhead: 0.5ms, totalSpan: 19.0ms, frameNumber: 23)');
   });
 
   test('computePlatformResolvedLocale basic', () {

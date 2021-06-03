@@ -189,7 +189,7 @@ class RecordingCanvas {
       } catch (e) {
         // commands should never fail, but...
         // https://bugzilla.mozilla.org/show_bug.cgi?id=941146
-        if (!_isNsErrorFailureException(e)) {
+        if (!isNsErrorFailureException(e)) {
           rethrow;
         }
       }
@@ -321,6 +321,8 @@ class RecordingCanvas {
 
   void drawLine(ui.Offset p1, ui.Offset p2, SurfacePaint paint) {
     assert(!_recordingEnded);
+    assert(paint.shader == null || paint.shader is! EngineImageShader,
+        'ImageShader not supported yet');
     final double paintSpread = math.max(_getPaintSpread(paint), 1.0);
     final PaintDrawLine command = PaintDrawLine(p1, p2, paint.paintData);
     // TODO(yjbanov): This can be optimized. Currently we create a box around
@@ -344,6 +346,8 @@ class RecordingCanvas {
 
   void drawPaint(SurfacePaint paint) {
     assert(!_recordingEnded);
+    assert(paint.shader == null || paint.shader is! EngineImageShader,
+        'ImageShader not supported yet');
     renderStrategy.hasArbitraryPaint = true;
     _didDraw = true;
     final PaintDrawPaint command = PaintDrawPaint(paint.paintData);
@@ -510,6 +514,8 @@ class RecordingCanvas {
 
   void drawImage(ui.Image image, ui.Offset offset, SurfacePaint paint) {
     assert(!_recordingEnded);
+    assert(paint.shader == null || paint.shader is! EngineImageShader,
+        'ImageShader not supported yet');
     renderStrategy.hasArbitraryPaint = true;
     renderStrategy.hasImageElements = true;
     _didDraw = true;
@@ -547,6 +553,8 @@ class RecordingCanvas {
   void drawImageRect(
       ui.Image image, ui.Rect src, ui.Rect dst, SurfacePaint paint) {
     assert(!_recordingEnded);
+    assert(paint.shader == null || paint.shader is! EngineImageShader,
+        'ImageShader not supported yet');
     renderStrategy.hasArbitraryPaint = true;
     renderStrategy.hasImageElements = true;
     _didDraw = true;
@@ -603,7 +611,7 @@ class RecordingCanvas {
     _didDraw = true;
     final PaintDrawVertices command =
         PaintDrawVertices(vertices, blendMode, paint.paintData);
-    _growPaintBoundsByPoints(vertices._positions, 0, paint, command);
+    _growPaintBoundsByPoints(vertices.positions, 0, paint, command);
     _commands.add(command);
   }
 

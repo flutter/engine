@@ -9,6 +9,7 @@
 
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/linux/fl_renderer.h"
+#include "flutter/shell/platform/linux/fl_task_runner.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_dart_project.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_engine.h"
 
@@ -163,6 +164,14 @@ void fl_engine_send_mouse_pointer_event(FlEngine* engine,
                                         int64_t buttons);
 
 /**
+ * fl_engine_send_key_event:
+ */
+void fl_engine_send_key_event(FlEngine* engine,
+                              const FlutterKeyEvent* event,
+                              FlutterKeyEventCallback callback,
+                              void* user_data);
+
+/**
  * fl_engine_dispatch_semantics_action:
  * @engine: an #FlEngine.
  * @id: the semantics action identifier.
@@ -225,6 +234,24 @@ void fl_engine_send_platform_message(FlEngine* engine,
 GBytes* fl_engine_send_platform_message_finish(FlEngine* engine,
                                                GAsyncResult* result,
                                                GError** error);
+
+/**
+ * fl_engine_get_task_runner:
+ * @engine: an #FlEngine.
+ * @result: a #FlTaskRunner.
+ *
+ * Returns: task runner responsible for scheduling Flutter tasks.
+ */
+FlTaskRunner* fl_engine_get_task_runner(FlEngine* engine);
+
+/**
+ * fl_engine_execute_task:
+ * @engine: an #FlEngine.
+ * @task: a #FlutterTask to execute.
+ *
+ * Executes given Flutter task.
+ */
+void fl_engine_execute_task(FlEngine* engine, FlutterTask* task);
 
 G_END_DECLS
 
