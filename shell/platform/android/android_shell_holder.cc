@@ -20,6 +20,7 @@
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/platform/android/jni_util.h"
+#include "flutter/lib/ui/painting/image_generator_registry.h"
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/run_configuration.h"
 #include "flutter/shell/common/thread_host.h"
@@ -135,6 +136,8 @@ AndroidShellHolder::AndroidShellHolder(
         FML_LOG(ERROR) << "Failed to set Workers task runner priority";
       }
     });
+
+    shell_->RegisterImageDecoder()
   }
 
   platform_view_ = weak_platform_view;
