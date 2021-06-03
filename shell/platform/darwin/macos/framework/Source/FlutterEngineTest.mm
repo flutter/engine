@@ -2,8 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#import <OCMock/OCMock.h>
-
+#include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/shell/platform/common/accessibility_bridge.h"
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterAppDelegate.h"
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
@@ -13,10 +12,6 @@
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
 #include "flutter/testing/testing.h"
-
-@interface FlutterEngineTestObjC : NSObject
-- (bool)testCompositor;
-@end
 
 namespace flutter::testing {
 
@@ -335,19 +330,11 @@ TEST(FlutterEngine, ResetsAccessibilityBridgeWhenSetsNewViewController) {
 }
 
 TEST(FlutterEngine, Compositor) {
-  ASSERT_TRUE([[FlutterEngineTestObjC alloc] testCompositor]);
-}
-
-}  // namespace flutter::testing
-
-@implementation FlutterEngineTestObjC
-
-- (bool)testCompositor {
   NSString* fixtures = @(flutter::testing::GetFixturesPath());
   FlutterDartProject* project = [[FlutterDartProject alloc]
       initWithAssetsPath:fixtures
              ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
-  id engine = [[FlutterEngine alloc] initWithName:@"test" project:project];
+  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"test" project:project];
 
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:project];
   [viewController loadView];
@@ -356,15 +343,14 @@ TEST(FlutterEngine, Compositor) {
 
   EXPECT_TRUE([engine runWithEntrypoint:@"can_composite_platform_views"]);
 
-  id mockFlutterView = OCMPartialMock(viewController.flutterView);
-  OCMExpect([mockFlutterView present]);
-
-  @try {
-    OCMVerifyAllWithDelay(  // NOLINT(google-objc-avoid-throwing-exception)
-        mockFlutterView, 5);
-  } @catch (...) {
-    return false;
-  }
+  // Latch to ensure the entire layer tree has been generated and presented.
+  fml::AutoResetWaitableEvent latch;
+  auto compositor = engine.macOSCompositor;
+  compositor->SetPresentCallback([&]() {
+    latch.Signal();
+    return true;
+  });
+  latch.Wait();
 
   CALayer* rootLayer = viewController.flutterView.layer;
 
@@ -376,7 +362,6 @@ TEST(FlutterEngine, Compositor) {
   // TODO(gw280): add support for screenshot tests in this test harness
 
   [engine shutDownEngine];
-  return true;
 }
 
-@end
+}  // namespace flutter::testing

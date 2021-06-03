@@ -429,6 +429,10 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   return _embedderAPI;
 }
 
+- (flutter::FlutterCompositor*)macOSCompositor {
+  return _macOSCompositor.get();
+}
+
 - (std::weak_ptr<flutter::AccessibilityBridge>)accessibilityBridge {
   return _bridge;
 }
