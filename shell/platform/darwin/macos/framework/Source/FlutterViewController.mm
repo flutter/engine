@@ -396,7 +396,7 @@ static void CommonInit(FlutterViewController* controller) {
 }
 
 - (void)configureTrackingArea {
-  if (![self viewLoaded]) {
+  if (!self.viewLoaded) {
     return;
   }
   if (_mouseTrackingMode != FlutterMouseTrackingModeNone && self.flutterView) {
