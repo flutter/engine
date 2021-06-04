@@ -609,10 +609,13 @@ public class FlutterJNI {
    */
   @SuppressWarnings("unused")
   @UiThread
-  private void updateSemantics(@NonNull ByteBuffer buffer, @NonNull String[] strings) {
+  private void updateSemantics(
+      @NonNull ByteBuffer buffer,
+      @NonNull String[] strings,
+      @NonNull ByteBuffer[] stringAttributeArgs) {
     ensureRunningOnMainThread();
     if (accessibilityDelegate != null) {
-      accessibilityDelegate.updateSemantics(buffer, strings);
+      accessibilityDelegate.updateSemantics(buffer, strings, stringAttributeArgs);
     }
     // TODO(mattcarroll): log dropped messages when in debug mode
     // (https://github.com/flutter/flutter/issues/25391)
@@ -814,7 +817,7 @@ public class FlutterJNI {
   @SuppressWarnings("unused")
   @VisibleForTesting
   public void handlePlatformMessage(
-      @NonNull final String channel, byte[] message, final int replyId) {
+      @NonNull final String channel, ByteBuffer message, final int replyId) {
     if (platformMessageHandler != null) {
       platformMessageHandler.handleMessageFromDart(channel, message, replyId);
     }
@@ -825,7 +828,7 @@ public class FlutterJNI {
   // Called by native to respond to a platform message that we sent.
   // TODO(mattcarroll): determine if reply is nonull or nullable
   @SuppressWarnings("unused")
-  private void handlePlatformMessageResponse(int replyId, byte[] reply) {
+  private void handlePlatformMessageResponse(int replyId, ByteBuffer reply) {
     if (platformMessageHandler != null) {
       platformMessageHandler.handlePlatformMessageResponse(replyId, reply);
     }
@@ -902,8 +905,11 @@ public class FlutterJNI {
   // TODO(mattcarroll): differentiate between channel responses and platform responses.
   @UiThread
   public void invokePlatformMessageResponseCallback(
-      int responseId, @Nullable ByteBuffer message, int position) {
+      int responseId, @NonNull ByteBuffer message, int position) {
     ensureRunningOnMainThread();
+    if (!message.isDirect()) {
+      throw new IllegalArgumentException("Expected a direct ByteBuffer.");
+    }
     if (isAttached()) {
       nativeInvokePlatformMessageResponseCallback(
           nativeShellHolderId, responseId, message, position);
@@ -1253,7 +1259,10 @@ public class FlutterJNI {
      * <p>Implementers are expected to maintain an Android-side cache of Flutter's semantics tree.
      * This method provides updates from Flutter for the Android-side semantics tree cache.
      */
-    void updateSemantics(@NonNull ByteBuffer buffer, @NonNull String[] strings);
+    void updateSemantics(
+        @NonNull ByteBuffer buffer,
+        @NonNull String[] strings,
+        @NonNull ByteBuffer[] stringAttributeArgs);
   }
 
   public interface AsyncWaitForVsyncDelegate {

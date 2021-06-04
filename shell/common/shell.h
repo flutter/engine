@@ -493,10 +493,9 @@ class Shell final : public PlatformView::Delegate,
       std::function<void(bool /* handled */)> callback) override;
 
   // |PlatformView::Delegate|
-  void OnPlatformViewDispatchSemanticsAction(
-      int32_t id,
-      SemanticsAction action,
-      std::vector<uint8_t> args) override;
+  void OnPlatformViewDispatchSemanticsAction(int32_t id,
+                                             SemanticsAction action,
+                                             fml::MallocMapping args) override;
 
   // |PlatformView::Delegate|
   void OnPlatformViewSetSemanticsEnabled(bool enabled) override;
@@ -540,7 +539,7 @@ class Shell final : public PlatformView::Delegate,
 
   // |Animator::Delegate|
   void OnAnimatorDraw(
-      fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline,
+      std::shared_ptr<Pipeline<flutter::LayerTree>> pipeline,
       std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) override;
 
   // |Animator::Delegate|

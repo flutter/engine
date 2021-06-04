@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("//build/config/android/config.gni")
+import("//build/toolchain/clang.gni")
 import("//flutter/build/zip_bundle.gni")
 import("//flutter/common/config.gni")
 import("//flutter/shell/config.gni")
@@ -488,6 +489,7 @@ action("robolectric_tests") {
     "test/io/flutter/embedding/engine/systemchannels/PlatformChannelTest.java",
     "test/io/flutter/embedding/engine/systemchannels/RestorationChannelTest.java",
     "test/io/flutter/external/FlutterLaunchTests.java",
+    "test/io/flutter/plugin/common/BinaryCodecTest.java",
     "test/io/flutter/plugin/common/StandardMessageCodecTest.java",
     "test/io/flutter/plugin/common/StandardMethodCodecTest.java",
     "test/io/flutter/plugin/editing/InputConnectionAdaptorTest.java",

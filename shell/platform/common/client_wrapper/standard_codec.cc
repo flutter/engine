@@ -41,6 +41,7 @@ enum class EncodedType {
   kFloat64List,
   kList,
   kMap,
+  kFloat32List,
 };
 
 // Returns the encoded type that should be written when serializing |value|.
@@ -70,6 +71,8 @@ EncodedType EncodedTypeForValue(const EncodableValue& value) {
       return EncodedType::kList;
     case 11:
       return EncodedType::kMap;
+    case 13:
+      return EncodedType::kFloat32List;
   }
   assert(false);
   return EncodedType::kNull;
@@ -155,6 +158,10 @@ void StandardCodecSerializer::WriteValue(const EncodableValue& value,
           << "Unhandled custom type in StandardCodecSerializer::WriteValue. "
           << "Custom types require codec extensions." << std::endl;
       break;
+    case 13: {
+      WriteVector(std::get<std::vector<float>>(value), stream);
+      break;
+    }
   }
 }
 
@@ -209,6 +216,9 @@ EncodableValue StandardCodecSerializer::ReadValueOfType(
         map_value.emplace(std::move(key), std::move(value));
       }
       return EncodableValue(map_value);
+    }
+    case EncodedType::kFloat32List: {
+      return ReadVector<float>(stream);
     }
   }
   std::cerr << "Unknown type in StandardCodecSerializer::ReadValueOfType: "
