@@ -187,6 +187,7 @@ class MultiEntriesBrowserHistory extends BrowserHistory {
     }
     _isDisposed = true;
     _unsubscribe();
+
     // Restores the html browser history.
     assert(_hasSerialCount(currentState));
     int backCount = _currentSerialCount;
