@@ -2055,12 +2055,10 @@ Future<Codec> instantiateImageCodec(
     }
   }
   buffer.dispose();
-  final Future<Codec> codec = descriptor.instantiateCodec(
+  return descriptor.instantiateCodec(
     targetWidth: targetWidth,
     targetHeight: targetHeight,
   );
-  descriptor.dispose();
-  return codec;
 }
 
 /// Loads a single image frame from a byte array into an [Image] object.
