@@ -5178,6 +5178,9 @@ class Shadow {
 }
 
 /// A handle to a read-only byte buffer that is managed by the engine.
+///
+/// The create of this object is responsible for calling [dispose] when it is
+/// no longer needed. However,
 class ImmutableBuffer extends NativeFieldWrapperClass2 {
   ImmutableBuffer._(this.length);
 
@@ -5194,9 +5197,39 @@ class ImmutableBuffer extends NativeFieldWrapperClass2 {
   /// The length, in bytes, of the underlying data.
   final int length;
 
+  bool _debugDisposed = false;
+
+  /// Whether [dispose] has been called.
+  ///
+  /// This must only be used when asserts are enabled. Otherwise, it will throw.
+  bool get debugDisposed {
+    late bool disposed;
+    assert(() {
+      disposed = _debugDisposed;
+      return true;
+    }());
+    return disposed;
+  }
+
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.
-  void dispose() native 'ImmutableBuffer_dispose';
+  ///
+  /// The underlying memory allocated by this object will be retained beyond
+  /// this call if it is still needed by another object that has not been
+  /// disposed. For example, an [ImageDescriptor] that has not been disposed
+  /// may still retain a reference to the memory from this buffer even if it
+  /// has been disposed. Freeing that memory requires disposing all resources
+  /// that may still hold it.
+  void dispose() {
+    assert(() {
+      assert(!_debugDisposed);
+      _debugDisposed = true;
+      return true;
+    }());
+    _dispose();
+  }
+
+  void _dispose() native 'ImmutableBuffer_dispose';
 }
 
 /// A descriptor of data that can be turned into an [Image] via a [Codec].
