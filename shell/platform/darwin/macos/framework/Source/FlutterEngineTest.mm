@@ -13,6 +13,16 @@
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
 #include "flutter/testing/testing.h"
 
+@interface FlutterEngine (Test)
+/**
+ * The FlutterCompositor object currently in use by the FlutterEngine. This is
+ * either a FlutterOpenGLCompositor or a FlutterMetalCompositor.
+ *
+ * May be nil if the compositor has not been initialized yet.
+ */
+@property(nonatomic, readonly, nullable) flutter::FlutterCompositor* macOSCompositor;
+@end
+
 namespace flutter::testing {
 
 namespace {

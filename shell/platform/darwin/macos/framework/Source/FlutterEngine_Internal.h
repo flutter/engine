@@ -33,14 +33,6 @@
 @property(nonatomic, readonly) std::weak_ptr<flutter::AccessibilityBridge> accessibilityBridge;
 
 /**
- * The FlutterCompositor object currently in use by the FlutterEngine. This is
- * either a FlutterOpenGLCompositor or a FlutterMetalCompositor.
- *
- * May be nil if the compositor has not been initialized yet.
- */
-@property(nonatomic, readonly, nullable) flutter::FlutterCompositor* macOSCompositor;
-
-/**
  * True if the semantics is enabled. The Flutter framework starts sending
  * semantics update through the embedder as soon as it is set to YES.
  */

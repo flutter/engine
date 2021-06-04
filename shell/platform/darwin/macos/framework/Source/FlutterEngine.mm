@@ -429,10 +429,6 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   return _embedderAPI;
 }
 
-- (flutter::FlutterCompositor*)macOSCompositor {
-  return _macOSCompositor.get();
-}
-
 - (std::weak_ptr<flutter::AccessibilityBridge>)accessibilityBridge {
   return _bridge;
 }
@@ -731,6 +727,11 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, targetTime - engine_time),
                    dispatch_get_main_queue(), worker);
   }
+}
+
+// Getter used by test harness, only exposed through the FlutterEngine(Test) category
+- (flutter::FlutterCompositor*)macOSCompositor {
+  return _macOSCompositor.get();
 }
 
 @end
