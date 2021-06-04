@@ -229,6 +229,8 @@ FILE: ../../../flutter/fml/platform/darwin/string_range_sanitization_unittests.m
 FILE: ../../../flutter/fml/platform/fuchsia/message_loop_fuchsia.cc
 FILE: ../../../flutter/fml/platform/fuchsia/message_loop_fuchsia.h
 FILE: ../../../flutter/fml/platform/fuchsia/paths_fuchsia.cc
+FILE: ../../../flutter/fml/platform/fuchsia/task_observers.cc
+FILE: ../../../flutter/fml/platform/fuchsia/task_observers.h
 FILE: ../../../flutter/fml/platform/linux/message_loop_linux.cc
 FILE: ../../../flutter/fml/platform/linux/message_loop_linux.h
 FILE: ../../../flutter/fml/platform/linux/paths_linux.cc
@@ -313,6 +315,7 @@ FILE: ../../../flutter/lib/ui/compositing/scene.cc
 FILE: ../../../flutter/lib/ui/compositing/scene.h
 FILE: ../../../flutter/lib/ui/compositing/scene_builder.cc
 FILE: ../../../flutter/lib/ui/compositing/scene_builder.h
+FILE: ../../../flutter/lib/ui/compositing/scene_builder_unittests.cc
 FILE: ../../../flutter/lib/ui/compositing/scene_host.cc
 FILE: ../../../flutter/lib/ui/compositing/scene_host.h
 FILE: ../../../flutter/lib/ui/dart_runtime_hooks.cc
@@ -411,6 +414,9 @@ FILE: ../../../flutter/lib/ui/semantics/semantics_update.cc
 FILE: ../../../flutter/lib/ui/semantics/semantics_update.h
 FILE: ../../../flutter/lib/ui/semantics/semantics_update_builder.cc
 FILE: ../../../flutter/lib/ui/semantics/semantics_update_builder.h
+FILE: ../../../flutter/lib/ui/semantics/semantics_update_builder_unittests.cc
+FILE: ../../../flutter/lib/ui/semantics/string_attribute.cc
+FILE: ../../../flutter/lib/ui/semantics/string_attribute.h
 FILE: ../../../flutter/lib/ui/snapshot_delegate.h
 FILE: ../../../flutter/lib/ui/text.dart
 FILE: ../../../flutter/lib/ui/text/asset_manager_font_provider.cc
@@ -486,6 +492,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/rasterizer.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/shader.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/skia_object_cache.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/surface.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/surface_factory.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/text.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/util.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/vertices.dart
@@ -1198,6 +1205,9 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterSurfa
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputPlugin.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputPlugin.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputPluginTest.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputSemanticsObject.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputSemanticsObject.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputSemanticsObjectTest.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextureRegistrar.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextureRegistrar.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h
@@ -1325,7 +1335,6 @@ FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/vmservice/meta/vmservi
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/accessibility_bridge.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/accessibility_bridge.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/accessibility_bridge_unittest.cc
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/collect_traces.dart
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/component.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/component.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/component_unittest.cc
@@ -1352,8 +1361,6 @@ FILE: ../../../flutter/shell/platform/fuchsia/flutter/keyboard.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/keyboard.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/keyboard_unittest.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/logging.h
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/loop.cc
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/loop.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/main.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/aot_product_runtime
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/aot_runtime
@@ -1375,12 +1382,8 @@ FILE: ../../../flutter/shell/platform/fuchsia/flutter/runner_tzdata_unittest.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/runner_unittest.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/surface.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/surface.h
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/task_observers.cc
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/task_observers.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/task_runner_adapter.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/task_runner_adapter.h
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/thread.cc
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/thread.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/unique_fdio_ns.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/vsync_waiter.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/vsync_waiter.h

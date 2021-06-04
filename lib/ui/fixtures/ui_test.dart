@@ -10,6 +10,37 @@ import 'dart:ui';
 void main() {}
 
 @pragma('vm:entry-point')
+void validateSceneBuilderAndScene() {
+  final SceneBuilder builder = SceneBuilder();
+  builder.pushOffset(10, 10);
+  _validateBuilderHasLayers(builder);
+  final Scene scene = builder.build();
+  _validateBuilderHasNoLayers();
+  _captureScene(scene);
+  scene.dispose();
+  _validateSceneHasNoLayers();
+}
+_validateBuilderHasLayers(SceneBuilder builder) native 'ValidateBuilderHasLayers';
+_validateBuilderHasNoLayers() native 'ValidateBuilderHasNoLayers';
+_captureScene(Scene scene) native 'CaptureScene';
+_validateSceneHasNoLayers() native 'ValidateSceneHasNoLayers';
+
+@pragma('vm:entry-point')
+void validateEngineLayerDispose() {
+  final SceneBuilder builder = SceneBuilder();
+  final EngineLayer layer = builder.pushOffset(10, 10);
+  _captureRootLayer(builder);
+  final Scene scene = builder.build();
+  scene.dispose();
+  _validateLayerTreeCounts();
+  layer.dispose();
+  _validateEngineLayerDispose();
+}
+_captureRootLayer(SceneBuilder sceneBuilder) native 'CaptureRootLayer';
+_validateLayerTreeCounts() native 'ValidateLayerTreeCounts';
+_validateEngineLayerDispose() native 'ValidateEngineLayerDispose';
+
+@pragma('vm:entry-point')
 Future<void> createSingleFrameCodec() async {
   final ImmutableBuffer buffer = await ImmutableBuffer.fromUint8List(Uint8List.fromList(List<int>.filled(4, 100)));
   final ImageDescriptor descriptor = ImageDescriptor.raw(
@@ -57,6 +88,97 @@ void createVertices() {
   _validateVertices(vertices);
 }
 void _validateVertices(Vertices vertices) native 'ValidateVertices';
+
+@pragma('vm:entry-point')
+void sendSemanticsUpdate() {
+  final SemanticsUpdateBuilder builder = SemanticsUpdateBuilder();
+  final String label = "label";
+  final List<StringAttribute> labelAttributes = <StringAttribute> [
+    SpellOutStringAttribute(range: TextRange(start: 1, end: 2)),
+  ];
+
+  final String value = "value";
+  final List<StringAttribute> valueAttributes = <StringAttribute> [
+    SpellOutStringAttribute(range: TextRange(start: 2, end: 3)),
+  ];
+
+  final String increasedValue = "increasedValue";
+  final List<StringAttribute> increasedValueAttributes = <StringAttribute> [
+    SpellOutStringAttribute(range: TextRange(start: 4, end: 5)),
+  ];
+
+  final String decreasedValue = "decreasedValue";
+  final List<StringAttribute> decreasedValueAttributes = <StringAttribute> [
+    SpellOutStringAttribute(range: TextRange(start: 5, end: 6)),
+  ];
+
+  final String hint = "hint";
+  final List<StringAttribute> hintAttributes = <StringAttribute> [
+    LocaleStringAttribute(
+      locale: Locale('en', 'MX'), range: TextRange(start: 0, end: 1),
+    ),
+  ];
+
+  final Float64List transform = Float64List(16);
+  final Int32List childrenInTraversalOrder = Int32List(0);
+  final Int32List childrenInHitTestOrder = Int32List(0);
+  final Int32List additionalActions = Int32List(0);
+  transform[0] = 1;
+  transform[1] = 0;
+  transform[2] = 0;
+  transform[3] = 0;
+
+  transform[4] = 0;
+  transform[5] = 1;
+  transform[6] = 0;
+  transform[7] = 0;
+
+  transform[8] = 0;
+  transform[9] = 0;
+  transform[10] = 1;
+  transform[11] = 0;
+
+  transform[12] = 0;
+  transform[13] = 0;
+  transform[14] = 0;
+  transform[15] = 0;
+  builder.updateNode(
+    id: 0,
+    flags: 0,
+    actions: 0,
+    maxValueLength: 0,
+    currentValueLength: 0,
+    textSelectionBase: -1,
+    textSelectionExtent: -1,
+    platformViewId: -1,
+    scrollChildren: 0,
+    scrollIndex: 0,
+    scrollPosition: 0,
+    scrollExtentMax: 0,
+    scrollExtentMin: 0,
+    rect: Rect.fromLTRB(0, 0, 10, 10),
+    elevation: 0,
+    thickness: 0,
+    label: label,
+    labelAttributes: labelAttributes,
+    value: value,
+    valueAttributes: valueAttributes,
+    increasedValue: increasedValue,
+    increasedValueAttributes: increasedValueAttributes,
+    decreasedValue: decreasedValue,
+    decreasedValueAttributes: decreasedValueAttributes,
+    hint: hint,
+    hintAttributes: hintAttributes,
+    textDirection: TextDirection.ltr,
+    transform: transform,
+    childrenInTraversalOrder: childrenInTraversalOrder,
+    childrenInHitTestOrder: childrenInHitTestOrder,
+    additionalActions: additionalActions
+  );
+  _semanticsUpdate(builder.build());
+}
+
+void _semanticsUpdate(SemanticsUpdate update) native 'SemanticsUpdate';
 
 @pragma('vm:entry-point')
 void createPath() {

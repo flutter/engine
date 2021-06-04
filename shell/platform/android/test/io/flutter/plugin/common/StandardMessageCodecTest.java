@@ -2,7 +2,10 @@ package io.flutter.plugin.common;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
+import android.text.SpannableString;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import org.junit.Test;
@@ -107,5 +110,38 @@ public class StandardMessageCodecTest {
 
     float[] values = (float[]) codec.decodeMessage(message);
     assertArrayEquals(expectedValues, values, 0.01f);
+  }
+
+  @Test
+  public void itEncodesCharSequences() {
+    StandardMessageCodec codec = new StandardMessageCodec();
+
+    CharSequence cs = new SpannableString("hello world");
+
+    ByteBuffer message = codec.encodeMessage(cs);
+    message.flip();
+
+    String value = (String) codec.decodeMessage(message);
+    assertEquals(value, "hello world");
+  }
+
+  private static class NotEncodable {
+    @Override
+    public String toString() {
+      return "not encodable";
+    }
+  }
+
+  @Test
+  public void errorHasType() {
+    StandardMessageCodec codec = new StandardMessageCodec();
+    NotEncodable notEncodable = new NotEncodable();
+    Exception exception =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> {
+              codec.encodeMessage(notEncodable);
+            });
+    assertTrue(exception.getMessage().contains("NotEncodable"));
   }
 }
