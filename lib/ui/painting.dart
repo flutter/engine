@@ -5191,8 +5191,8 @@ class Shadow {
 
 /// A handle to a read-only byte buffer that is managed by the engine.
 ///
-/// The create of this object is responsible for calling [dispose] when it is
-/// no longer needed. However,
+/// The creator of this object is responsible for calling [dispose] when it is
+/// no longer needed.
 class ImmutableBuffer extends NativeFieldWrapperClass2 {
   ImmutableBuffer._(this.length);
 
