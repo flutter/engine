@@ -176,6 +176,17 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
 
   SemanticsObject* root = objects_.get()[@(kRootNodeId)];
 
+  NSMutableArray<NSNumber*>* doomed_uids = [NSMutableArray arrayWithArray:[objects_.get() allKeys]];
+  if (root) {
+    std::unordered_map<int32_t, FlutterCustomAccessibilityAction*> initial_overrides;
+    MarkAttendanceAndSetCustomActions(root, doomed_uids, initial_overrides);
+  }
+  [objects_ removeObjectsForKeys:doomed_uids];
+
+  for (NSNumber* uid in doomed_uids) {
+    action_overrides_of_semantics_objects_.erase([uid intValue]);
+  }
+
   bool routeChanged = false;
   SemanticsObject* lastAdded = nil;
 
@@ -215,17 +226,6 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
     }
   } else {
     view_controller_.view.accessibilityElements = nil;
-  }
-
-  NSMutableArray<NSNumber*>* doomed_uids = [NSMutableArray arrayWithArray:[objects_.get() allKeys]];
-  if (root) {
-    std::unordered_map<int32_t, FlutterCustomAccessibilityAction*> initial_overrides;
-    MarkAttendanceAndSetCustomActions(root, doomed_uids, initial_overrides);
-  }
-  [objects_ removeObjectsForKeys:doomed_uids];
-
-  for (NSNumber* uid in doomed_uids) {
-    action_overrides_of_semantics_objects_.erase([uid intValue]);
   }
 
   if (!ios_delegate_->IsFlutterViewControllerPresentingModalViewController(view_controller_)) {

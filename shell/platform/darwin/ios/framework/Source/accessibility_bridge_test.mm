@@ -9,6 +9,7 @@
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlatformViews.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge.h"
 #import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
@@ -1282,7 +1283,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   id mockFlutterView = OCMClassMock([FlutterView class]);
   id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
   OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
-  std::string label = "some label";
+  OCMStub([mockFlutterViewController switchControlEnabled]).andReturn(YES);
 
   __block auto bridge =
       std::make_unique<flutter::AccessibilityBridge>(/*view_controller=*/mockFlutterViewController,
@@ -1293,33 +1294,42 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       [mockFlutterView setAccessibilityElements:[OCMArg checkWithBlock:^BOOL(NSArray* value) {
                          SemanticsObjectContainer* container = value[0];
                          SemanticsObject* root = container.semanticsObject;
-                         if (![root.accessibilityLabel isEqual:@"root"])
+                         if (![root.accessibilityLabel isEqual:@"root"]) {
                            return NO;
+                         }
                          // An action override should not present in the
                          // original object.
-                         if ([root.accessibilityCustomActions count] != 0)
+                         if ([root.accessibilityCustomActions count] != 0) {
                            return NO;
+                         }
                          SemanticsObject* node1 = root.children[0];
-                         if (![node1.accessibilityLabel isEqual:@"node 1"])
+                         if (![node1.accessibilityLabel isEqual:@"node 1"]) {
                            return NO;
+                         }
                          FlutterCustomAccessibilityAction* firstAction =
                              (FlutterCustomAccessibilityAction*)node1.accessibilityCustomActions[0];
-                         if (firstAction.uid != 14)
+                         if (firstAction.uid != 14) {
                            return NO;
-                         if (![firstAction.name isEqual:@"some action"])
+                         }
+                         if (![firstAction.name isEqual:@"some action"]) {
                            return NO;
-                         if (firstAction.target != node1)
+                         }
+                         if (firstAction.target != node1) {
                            return NO;
+                         }
                          FlutterCustomAccessibilityAction* secondAction =
                              (FlutterCustomAccessibilityAction*)node1.accessibilityCustomActions[1];
-                         if (secondAction.uid != 13)
+                         if (secondAction.uid != 13) {
                            return NO;
-                         if (![secondAction.name isEqual:@"some override"])
+                         }
+                         if (![secondAction.name isEqual:@"some override"]) {
                            return NO;
+                         }
                          // An inherited action override should targets
                          // the original object.
-                         if (secondAction.target != root)
+                         if (secondAction.target != root) {
                            return NO;
+                         }
                          return YES;
                        }]]);
 
