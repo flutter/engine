@@ -2054,10 +2054,13 @@ Future<Codec> instantiateImageCodec(
       targetHeight = descriptor.height;
     }
   }
-  return descriptor.instantiateCodec(
+  buffer.dispose();
+  final Future<Codec> codec = descriptor.instantiateCodec(
     targetWidth: targetWidth,
     targetHeight: targetHeight,
   );
+  descriptor.dispose();
+  return codec;
 }
 
 /// Loads a single image frame from a byte array into an [Image] object.
@@ -2141,8 +2144,17 @@ void decodeImageFromPixels(
           targetWidth: targetWidth,
           targetHeight: targetHeight,
         )
-        .then((Codec codec) => codec.getNextFrame())
-        .then((FrameInfo frameInfo) => callback(frameInfo.image));
+        .then((Codec codec) {
+          final Future<FrameInfo> frameInfo = codec.getNextFrame();
+          codec.dispose();
+          return frameInfo;
+        })
+        .then((FrameInfo frameInfo) {
+          buffer.dispose();
+          descriptor.dispose();
+
+          return callback(frameInfo.image);
+        });
   });
 }
 
