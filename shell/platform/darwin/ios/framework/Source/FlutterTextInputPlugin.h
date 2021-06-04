@@ -14,7 +14,8 @@
 @interface FlutterTextInputPlugin : NSObject
 
 @property(nonatomic, assign) id<FlutterTextInputDelegate> textInputDelegate;
-@property(nonatomic, assign) FlutterViewController* viewController;
+@property(nonatomic, readonly) FlutterViewController* viewController;
+@property(nonatomic, assign) NSMutableDictionary<UIScribbleElementIdentifier, NSValue*>* scribbleElements;
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
 
 /**
@@ -153,6 +154,7 @@ FLUTTER_DARWIN_EXPORT
 @property(nonatomic, assign) FlutterViewController* viewController;
 @property(nonatomic) BOOL scribbleFocusing;
 @property(nonatomic) BOOL scribbleFocused;
+@property(nonatomic, assign) NSArray* selectionRects;
 
 @end
 #endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTERTEXTINPUTPLUGIN_H_

@@ -323,6 +323,34 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   return FlutterAutofillTypeNone;
 }
 
+static BOOL isPositionCloserToPoint(CGPoint point,
+                                    CGRect position,
+                                    CGRect otherPosition,
+                                    BOOL checkRightBoundary) {
+  CGPoint pointForPosition =
+      CGPointMake(position.origin.x + (checkRightBoundary ? position.size.width : 0),
+                  position.origin.y + position.size.height * 0.5);
+  float yDist = fabs(pointForPosition.y - point.y);
+  float xDist = fabs(pointForPosition.x - point.x);
+
+  CGPoint pointForOtherPosition =
+      CGPointMake(otherPosition.origin.x + (checkRightBoundary ? position.size.width : 0),
+                  otherPosition.origin.y + otherPosition.size.height * 0.5);
+  float yDistOther = fabs(pointForOtherPosition.y - point.y);
+  float xDistOther = fabs(pointForOtherPosition.x - point.x);
+
+  BOOL isCloserVertically = yDist < yDistOther - 1;
+  BOOL isEqualVertically = yDist >= yDistOther - 1 && yDist <= yDistOther + 1;
+  BOOL isAboveBottomOfLine = point.y <= position.origin.y + position.size.height;
+  BOOL isCloserHorizontally = xDist < xDistOther;
+  BOOL isBelowBottomOfLine = point.y > position.origin.y + position.size.height;
+  BOOL isFartherToRight =
+      position.origin.x + (checkRightBoundary ? position.size.width : 0) > otherPosition.origin.x;
+  return (isCloserVertically ||
+          (isEqualVertically && ((isAboveBottomOfLine && isCloserHorizontally) ||
+                                 (isBelowBottomOfLine && isFartherToRight))));
+}
+
 #pragma mark - FlutterTextPosition
 
 @implementation FlutterTextPosition
@@ -490,8 +518,8 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 @implementation FlutterTextPlaceholder
 
 - (NSArray<UITextSelectionRect*>*)rects {
-  // Returning anything other than an empty array here seems to cause PencilKit to enter an infinite
-  // loop of allocating placeholders until the app crashes
+  // Returning anything other than an empty array here seems to cause PencilKit to enter an
+  // infinite loop of allocating placeholders until the app crashes
   return @[];
 }
 
@@ -557,12 +585,12 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   const char* _selectionAffinity;
   FlutterTextRange* _selectedTextRange;
   CGRect _cachedFirstRect;
-  NSArray* _selectionRects;
   BOOL _scribbleInProgress;
   BOOL _hasPlaceholder;
 }
 
 @synthesize tokenizer = _tokenizer;
+@synthesize selectionRects = _selectionRects;
 
 - (instancetype)init {
   self = [super init];
@@ -1150,12 +1178,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   NSMutableArray* rectsAsRect = [[NSMutableArray alloc] initWithCapacity:[rects count]];
   for (NSUInteger i = 0; i < [rects count]; i++) {
     NSArray* rect = rects[i];
-    [rectsAsRect addObject:@[
-      [NSNumber numberWithFloat:[rect[0] floatValue]],
-      [NSNumber numberWithFloat:[rect[1] floatValue]],
-      [NSNumber numberWithFloat:[rect[2] floatValue]],
-      [NSNumber numberWithFloat:[rect[3] floatValue]], [NSNumber numberWithInt:[rect[4] intValue]]
-    ]];
+    [rectsAsRect addObject:rect];
   }
   _selectionRects = rectsAsRect;
 }
@@ -1224,6 +1247,9 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 
 - (UITextPosition*)closestPositionToPoint:(CGPoint)point {
   if ([_selectionRects count] == 0) {
+    NSAssert([_selectedTextRange.start isKindOfClass:[FlutterTextPosition class]],
+             @"Expected a FlutterTextPosition for position (got %@).",
+             [_selectedTextRange.start class]);
     NSUInteger currentIndex = ((FlutterTextPosition*)_selectedTextRange.start).index;
     return [FlutterTextPosition positionWithIndex:currentIndex];
   }
@@ -1235,6 +1261,10 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 }
 
 - (NSArray*)selectionRectsForRange:(UITextRange*)range {
+  NSAssert([range.start isKindOfClass:[FlutterTextPosition class]],
+           @"Expected a FlutterTextPosition for range.start (got %@).", [range.start class]);
+  NSAssert([range.end isKindOfClass:[FlutterTextPosition class]],
+           @"Expected a FlutterTextPosition for range.end (got %@).", [range.end class]);
   NSUInteger start = ((FlutterTextPosition*)range.start).index;
   NSUInteger end = ((FlutterTextPosition*)range.end).index;
   NSMutableArray* rects = [[NSMutableArray alloc] init];
@@ -1263,32 +1293,24 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 }
 
 - (UITextPosition*)closestPositionToPoint:(CGPoint)point withinRange:(UITextRange*)range {
+  NSAssert([range.start isKindOfClass:[FlutterTextPosition class]],
+           @"Expected a FlutterTextPosition for range.start (got %@).", [range.start class]);
+  NSAssert([range.end isKindOfClass:[FlutterTextPosition class]],
+           @"Expected a FlutterTextPosition for range.end (got %@).", [range.end class]);
   NSUInteger start = ((FlutterTextPosition*)range.start).index;
   NSUInteger end = ((FlutterTextPosition*)range.end).index;
 
   NSUInteger _closestIndex = 0;
   CGRect _closestRect = CGRectZero;
   NSUInteger _closestPosition = 0;
-  float _closestY = 0;
-  float _closestX = 0;
   for (NSUInteger i = 0; i < [_selectionRects count]; i++) {
     NSUInteger position = [_selectionRects[i][4] unsignedIntegerValue];
     if (position >= start && position <= end) {
       CGRect rect =
           CGRectMake([_selectionRects[i][0] floatValue], [_selectionRects[i][1] floatValue],
                      [_selectionRects[i][2] floatValue], [_selectionRects[i][3] floatValue]);
-      CGPoint pointForComparison =
-          CGPointMake(rect.origin.x, rect.origin.y + rect.size.height * 0.5);
-      float yDist = abs(pointForComparison.y - point.y);
-      float xDist = abs(pointForComparison.x - point.x);
-      if (_closestIndex == 0 ||
-          (yDist < _closestY - 1 ||
-           (yDist >= _closestY - 1 && yDist <= _closestY + 1 &&
-            ((point.y <= rect.origin.y + rect.size.height && xDist < _closestX) ||
-             (point.y > rect.origin.y + rect.size.height &&
-              rect.origin.x > _closestRect.origin.x))))) {
-        _closestY = yDist;
-        _closestX = xDist;
+      BOOL isFirst = _closestIndex == 0;
+      if (isFirst || isPositionCloserToPoint(point, rect, _closestRect, NO)) {
         _closestIndex = i;
         _closestRect = rect;
         _closestPosition = position;
@@ -1296,9 +1318,8 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     }
   }
 
-  FlutterTextRange* textRange = [[FlutterTextRange
-      rangeWithNSRange:fml::RangeForCharactersInRange(self.text, NSMakeRange(0, self.text.length))]
-      copy];
+  FlutterTextRange* textRange = [FlutterTextRange
+      rangeWithNSRange:fml::RangeForCharactersInRange(self.text, NSMakeRange(0, self.text.length))];
 
   if ([_selectionRects count] > 0 && textRange.range.length == end) {
     NSUInteger i = [_selectionRects count] - 1;
@@ -1307,17 +1328,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
       CGRect rect =
           CGRectMake([_selectionRects[i][0] floatValue], [_selectionRects[i][1] floatValue],
                      [_selectionRects[i][2] floatValue], [_selectionRects[i][3] floatValue]);
-      CGPoint pointForComparison =
-          CGPointMake(rect.origin.x + rect.size.width, rect.origin.y + rect.size.height * 0.5);
-      float yDist = abs(pointForComparison.y - point.y);
-      float xDist = abs(pointForComparison.x - point.x);
-      if (yDist < _closestY - 1 ||
-          (yDist >= _closestY - 1 && yDist <= _closestY + 1 &&
-           ((point.y <= rect.origin.y + rect.size.height && xDist < _closestX) ||
-            (point.y > rect.origin.y + rect.size.height &&
-             rect.origin.x + rect.size.width > _closestRect.origin.x)))) {
-        _closestY = yDist;
-        _closestX = xDist;
+      if (isPositionCloserToPoint(point, rect, _closestRect, YES)) {
         _closestIndex = [_selectionRects count];
         _closestPosition = position;
       }
@@ -1425,7 +1436,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 - (UITextPlaceholder*)insertTextPlaceholderWithSize:(CGSize)size {
   [_textInputDelegate insertTextPlaceholderWithSize:size withClient:_textInputClient];
   _hasPlaceholder = YES;
-  return [[FlutterTextPlaceholder alloc] init];
+  return [[[FlutterTextPlaceholder alloc] init] autorelease];
 }
 
 - (void)removeTextPlaceholder:(UITextPlaceholder*)textPlaceholder {
@@ -1549,11 +1560,11 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 
 @implementation FlutterTextInputPlugin {
   NSTimer* _enableFlutterTextInputViewAccessibilityTimer;
-  NSMutableDictionary<UIScribbleElementIdentifier, NSValue*>* _scribbleElements;
 }
 
 @synthesize textInputDelegate = _textInputDelegate;
 @synthesize viewController = _viewController;
+@synthesize scribbleElements = _scribbleElements;
 
 - (instancetype)init {
   self = [super init];
@@ -1577,6 +1588,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   [_activeView release];
   [_inputHider release];
   [_autofillContext release];
+  [_scribbleElements release];
   [super dealloc];
 }
 
@@ -1631,9 +1643,11 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   [_activeView setEditableTransform:dictionary[@"transform"]];
   // TODO(fbcouch): only do this on iPadOS?
   // This is necessary to set up where the scribble interactable element will be
-  _activeView.frame =
-      CGRectMake([dictionary[@"transform"][12] intValue], [dictionary[@"transform"][13] intValue],
-                 [dictionary[@"width"] intValue], [dictionary[@"height"] intValue]);
+  int leftIndex = 12;
+  int topIndex = 13;
+  _activeView.frame = CGRectMake([dictionary[@"transform"][leftIndex] intValue],
+                                 [dictionary[@"transform"][topIndex] intValue],
+                                 [dictionary[@"width"] intValue], [dictionary[@"height"] intValue]);
 }
 
 - (void)updateMarkedRect:(NSDictionary*)dictionary {

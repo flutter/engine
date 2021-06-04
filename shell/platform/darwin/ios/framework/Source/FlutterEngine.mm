@@ -289,7 +289,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
 - (void)attachView {
   self.iosPlatformView->attachView();
-  [_textInputPlugin.get() setupIndirectScribbleInteraction:[self viewController]];
+  [_textInputPlugin.get() setupIndirectScribbleInteraction:self.viewController];
 }
 
 - (void)setFlutterViewControllerWillDeallocObserver:(id<NSObject>)observer {
@@ -473,7 +473,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
   _textInputPlugin.reset([[FlutterTextInputPlugin alloc] init]);
   _textInputPlugin.get().textInputDelegate = self;
-  [_textInputPlugin.get() setupIndirectScribbleInteraction:[self viewController]];
+  [_textInputPlugin.get() setupIndirectScribbleInteraction:self.viewController];
 
   _platformPlugin.reset([[FlutterPlatformPlugin alloc] initWithEngine:[self getWeakPtr]]);
 
@@ -776,7 +776,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
             result:callback];
 }
 
-- (void)requestElementsInRect:(CGRect)rect result:(id)callback {
+- (void)requestElementsInRect:(CGRect)rect result:(FlutterResult)callback {
   [_textInputChannel.get()
       invokeMethod:@"TextInputClient.requestElementsInRect"
          arguments:@[ @(rect.origin.x), @(rect.origin.y), @(rect.size.width), @(rect.size.height) ]
