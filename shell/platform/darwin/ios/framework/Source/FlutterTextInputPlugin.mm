@@ -1420,14 +1420,14 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   if (saveEntries) {
     // Make all the input fields in the autofill context visible,
     // then remove them to trigger autofill save.
-    [self cleanUpViewHierarchy:YES clearText:YES decommisionOnly:NO];
+    [self cleanUpViewHierarchy:YES clearText:YES delayRemoval:NO];
     [_autofillContext removeAllObjects];
     [self changeInputViewsAutofillVisibility:YES];
   } else {
     [_autofillContext removeAllObjects];
   }
 
-  [self cleanUpViewHierarchy:YES clearText:!saveEntries decommisionOnly:NO];
+  [self cleanUpViewHierarchy:YES clearText:!saveEntries delayRemoval:NO];
   [self addToInputParentViewIfNeeded:_activeView];
 }
 
@@ -1458,18 +1458,17 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   [_activeView setTextInputClient:client];
   [_activeView reloadInputViews];
 
-  // Decommission all views that will soon be removed.
-  [self cleanUpViewHierarchy:NO clearText:YES decommisionOnly:YES];
   // Clean up views that no longer need to be in the view hierarchy, according to
   // the current autofill context. The "garbage" input views are already made
   // invisible to autofill and they can't `becomeFirstResponder`, we only remove
   // them to free up resources and reduce the number of input views in the view
   // hierarchy.
   //
-  // This is scheduled on the runloop and delayed by 0.1s so we don't remove the
+  // The garbage views are decommissioned immediately, but the removeFromSuperview
+  // call is scheduled on the runloop and delayed by 0.1s so we don't remove the
   // text fields immediately (which seems to make the keyboard flicker).
   // See: https://github.com/flutter/flutter/issues/64628.
-  [self performSelector:@selector(collectGarbageInputViews) withObject:nil afterDelay:0.1];
+  [self cleanUpViewHierarchy:NO clearText:YES delayRemoval:YES];
 }
 
 // Creates and shows an input field that is not password related and has no autofill
@@ -1573,13 +1572,21 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   return _inputHider.subviews;
 }
 
-// Removes every installed input field, unless it's in the current autofill
-// context. May remove the active view too if includeActiveView is YES.
+// Decommisions (See the "decommision" method on FlutterTextInputView) and removes
+// every installed input field, unless it's in the current autofill context.
+//
+// The active view will be decommisioned and removed from its superview too, if
+// includeActiveView is YES.
 // When clearText is YES, the text on the input fields will be set to empty before
 // they are removed from the view hierarchy, to avoid triggering autofill save.
+// If delayRemoval is true, removeFromSuperview will be scheduled on the runloop and
+// will be delayed by 0.1s so we don't remove the text fields immediately (which seems
+// to make the keyboard flicker).
+// See: https://github.com/flutter/flutter/issues/64628.
+
 - (void)cleanUpViewHierarchy:(BOOL)includeActiveView
                    clearText:(BOOL)clearText
-             decommisionOnly:(BOOL)decommisionOnly {
+                delayRemoval:(BOOL)delayRemoval {
   for (UIView* view in self.textInputViews) {
     if ([view isKindOfClass:[FlutterTextInputView class]] &&
         (includeActiveView || view != _activeView)) {
@@ -1589,16 +1596,14 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
           [inputView replaceRangeLocal:NSMakeRange(0, inputView.text.length) withText:@""];
         }
         [inputView decommision];
-        if (!decommisionOnly) {
+        if (delayRemoval) {
+          [inputView performSelector:@selector(removeFromSuperview) withObject:nil afterDelay:0.1];
+        } else {
           [inputView removeFromSuperview];
         }
       }
     }
   }
-}
-
-- (void)collectGarbageInputViews {
-  [self cleanUpViewHierarchy:NO clearText:YES decommisionOnly:NO];
 }
 
 // Changes the visibility of every FlutterTextInputView currently in the
