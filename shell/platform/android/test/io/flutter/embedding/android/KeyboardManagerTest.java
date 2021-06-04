@@ -14,7 +14,7 @@ import android.annotation.TargetApi;
 import android.view.KeyEvent;
 import android.view.View;
 import androidx.annotation.NonNull;
-import io.flutter.embedding.android.KeyboardManager.PrimaryResponder;
+import io.flutter.embedding.android.KeyboardManager.Responder;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.systemchannels.KeyEventChannel;
@@ -33,7 +33,7 @@ import org.robolectric.annotation.Config;
 @RunWith(RobolectricTestRunner.class)
 @TargetApi(28)
 public class KeyboardManagerTest {
-  static class FakeResponder implements PrimaryResponder {
+  static class FakeResponder implements Responder {
     KeyEvent mLastKeyEvent;
     OnKeyEventHandledCallback mLastKeyEventHandledCallback;
 
@@ -84,7 +84,7 @@ public class KeyboardManagerTest {
         new KeyboardManager(
             mockView,
             mockTextInputPlugin,
-            new Responder[] {new KeyChannelResponder(flutterEngine.getKeyEventChannel())});
+            new Responder[] {new KeyChannelResponder(mockKeyEventChannel)});
   }
 
   // Tests start
@@ -94,7 +94,7 @@ public class KeyboardManagerTest {
     final FakeResponder fakeResponder = new FakeResponder();
     keyboardManager =
         new KeyboardManager(
-            mockView, mockTextInputPlugin, new KeyboardManager.PrimaryResponder[] {fakeResponder});
+            mockView, mockTextInputPlugin, new KeyboardManager.Responder[] {fakeResponder});
     final KeyEvent keyEvent = new FakeKeyEvent(KeyEvent.ACTION_DOWN, 65);
     final boolean result = keyboardManager.handleEvent(keyEvent);
 
@@ -111,7 +111,7 @@ public class KeyboardManagerTest {
     final FakeResponder fakeResponder = new FakeResponder();
     keyboardManager =
         new KeyboardManager(
-            mockView, mockTextInputPlugin, new KeyboardManager.PrimaryResponder[] {fakeResponder});
+            mockView, mockTextInputPlugin, new KeyboardManager.Responder[] {fakeResponder});
     final KeyEvent keyEvent = new FakeKeyEvent(KeyEvent.ACTION_DOWN, 65);
     final boolean result = keyboardManager.handleEvent(keyEvent);
 
@@ -131,10 +131,9 @@ public class KeyboardManagerTest {
   }
 
   @Test
-  public void zeroPrimaryRespondersTest() {
+  public void zeroRespondersTest() {
     keyboardManager =
-        new KeyboardManager(
-            mockView, mockTextInputPlugin, new KeyboardManager.PrimaryResponder[] {});
+        new KeyboardManager(mockView, mockTextInputPlugin, new KeyboardManager.Responder[] {});
     final KeyEvent keyEvent = new FakeKeyEvent(KeyEvent.ACTION_DOWN, 65);
     final boolean result = keyboardManager.handleEvent(keyEvent);
     assertEquals(true, result);
@@ -144,14 +143,14 @@ public class KeyboardManagerTest {
   }
 
   @Test
-  public void multiplePrimaryRespondersTest() {
+  public void multipleRespondersTest() {
     final FakeResponder fakeResponder1 = new FakeResponder();
     final FakeResponder fakeResponder2 = new FakeResponder();
     keyboardManager =
         new KeyboardManager(
             mockView,
             mockTextInputPlugin,
-            new KeyboardManager.PrimaryResponder[] {fakeResponder1, fakeResponder2});
+            new KeyboardManager.Responder[] {fakeResponder1, fakeResponder2});
     final KeyEvent keyEvent = new FakeKeyEvent(KeyEvent.ACTION_DOWN, 65);
     final boolean result = keyboardManager.handleEvent(keyEvent);
 
@@ -169,14 +168,14 @@ public class KeyboardManagerTest {
   }
 
   @Test
-  public void multiplePrimaryRespondersTest2() {
+  public void multipleRespondersTest2() {
     final FakeResponder fakeResponder1 = new FakeResponder();
     final FakeResponder fakeResponder2 = new FakeResponder();
     keyboardManager =
         new KeyboardManager(
             mockView,
             mockTextInputPlugin,
-            new KeyboardManager.PrimaryResponder[] {fakeResponder1, fakeResponder2});
+            new KeyboardManager.Responder[] {fakeResponder1, fakeResponder2});
     final KeyEvent keyEvent = new FakeKeyEvent(KeyEvent.ACTION_DOWN, 65);
     final boolean result = keyboardManager.handleEvent(keyEvent);
 
@@ -188,14 +187,14 @@ public class KeyboardManagerTest {
   }
 
   @Test
-  public void multiplePrimaryRespondersTest3() {
+  public void multipleRespondersTest3() {
     final FakeResponder fakeResponder1 = new FakeResponder();
     final FakeResponder fakeResponder2 = new FakeResponder();
     keyboardManager =
         new KeyboardManager(
             mockView,
             mockTextInputPlugin,
-            new KeyboardManager.PrimaryResponder[] {fakeResponder1, fakeResponder2});
+            new KeyboardManager.Responder[] {fakeResponder1, fakeResponder2});
     final KeyEvent keyEvent = new FakeKeyEvent(KeyEvent.ACTION_DOWN, 65);
     final boolean result = keyboardManager.handleEvent(keyEvent);
 
@@ -217,9 +216,7 @@ public class KeyboardManagerTest {
     keyboardManager =
         spy(
             new KeyboardManager(
-                mockView,
-                mockTextInputPlugin,
-                new KeyboardManager.PrimaryResponder[] {fakeResponder}));
+                mockView, mockTextInputPlugin, new KeyboardManager.Responder[] {fakeResponder}));
     final KeyEvent keyEvent = new FakeKeyEvent(KeyEvent.ACTION_DOWN, 65);
     final boolean result = keyboardManager.handleEvent(keyEvent);
 
@@ -251,9 +248,7 @@ public class KeyboardManagerTest {
     keyboardManager =
         spy(
             new KeyboardManager(
-                mockView,
-                mockTextInputPlugin,
-                new KeyboardManager.PrimaryResponder[] {fakeResponder}));
+                mockView, mockTextInputPlugin, new KeyboardManager.Responder[] {fakeResponder}));
     final KeyEvent keyEvent = new FakeKeyEvent(KeyEvent.ACTION_DOWN, 65);
     final boolean result = keyboardManager.handleEvent(keyEvent);
 
@@ -280,9 +275,7 @@ public class KeyboardManagerTest {
     keyboardManager =
         spy(
             new KeyboardManager(
-                mockView,
-                mockTextInputPlugin,
-                new KeyboardManager.PrimaryResponder[] {fakeResponder}));
+                mockView, mockTextInputPlugin, new KeyboardManager.Responder[] {fakeResponder}));
     final KeyEvent keyEvent = new FakeKeyEvent(KeyEvent.ACTION_DOWN, 65);
     final boolean result = keyboardManager.handleEvent(keyEvent);
 

@@ -980,7 +980,9 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
         new KeyboardManager(
             this,
             textInputPlugin,
-            new Responder[] {new KeyChannelResponder(flutterEngine.getKeyEventChannel())});
+            new KeyChannelResponder[] {
+              new KeyChannelResponder(flutterEngine.getKeyEventChannel())
+            });
     androidTouchProcessor =
         new AndroidTouchProcessor(this.flutterEngine.getRenderer(), /*trackMotionEvents=*/ false);
     accessibilityBridge =
