@@ -210,7 +210,8 @@ public class TextInputPluginTest {
         .updateEditingState(anyInt(), any(), anyInt(), anyInt(), anyInt(), anyInt());
 
     InputConnectionAdaptor inputConnectionAdaptor =
-        (InputConnectionAdaptor) textInputPlugin.createInputConnection(testView, outAttrs);
+        (InputConnectionAdaptor)
+            textInputPlugin.createInputConnection(testView, mock(KeyboardManager.class), outAttrs);
 
     inputConnectionAdaptor.beginBatchEdit();
     verify(textInputChannel, times(0))
@@ -376,7 +377,9 @@ public class TextInputPluginTest {
     textInputPlugin.setTextInputEditingState(
         testView, new TextInputChannel.TextEditState("", 0, 0, -1, -1));
     assertEquals(1, testImm.getRestartCount(testView));
-    InputConnection connection = textInputPlugin.createInputConnection(testView, new EditorInfo());
+    InputConnection connection =
+        textInputPlugin.createInputConnection(
+            testView, mock(KeyboardManager.class), new EditorInfo());
     connection.setComposingText("POWERRRRR", 1);
 
     textInputPlugin.setTextInputEditingState(
@@ -521,7 +524,9 @@ public class TextInputPluginTest {
     assertEquals("flutter/textinput", channelCaptor.getValue());
     verifyMethodCall(bufferCaptor.getValue(), "TextInputClient.requestExistingInputState", null);
     InputConnectionAdaptor connection =
-        (InputConnectionAdaptor) textInputPlugin.createInputConnection(testView, new EditorInfo());
+        (InputConnectionAdaptor)
+            textInputPlugin.createInputConnection(
+                testView, mock(KeyboardManager.class), new EditorInfo());
 
     connection.handleKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER));
     verify(dartExecutor, times(2))
@@ -586,7 +591,9 @@ public class TextInputPluginTest {
     // There's a pending restart since we initialized the text input client. Flush that now.
     textInputPlugin.setTextInputEditingState(
         testView, new TextInputChannel.TextEditState("text", 0, 0, -1, -1));
-    InputConnection connection = textInputPlugin.createInputConnection(testView, new EditorInfo());
+    InputConnection connection =
+        textInputPlugin.createInputConnection(
+            testView, mock(KeyboardManager.class), new EditorInfo());
 
     connection.requestCursorUpdates(
         InputConnection.CURSOR_UPDATE_MONITOR | InputConnection.CURSOR_UPDATE_IMMEDIATE);

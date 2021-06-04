@@ -166,7 +166,7 @@ public class KeyboardManager {
       onUnhandled(keyEvent);
     }
 
-    return !isRedispatchedEvent;
+    return true;
   }
 
   public void destroy() {

@@ -43,6 +43,7 @@ import androidx.annotation.UiThread;
 import io.flutter.Log;
 import io.flutter.app.FlutterPluginRegistry;
 import io.flutter.embedding.android.AndroidTouchProcessor;
+import io.flutter.embedding.android.KeyChannelResponder;
 import io.flutter.embedding.android.KeyboardManager;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
@@ -231,7 +232,6 @@ public class FlutterView extends SurfaceView
     mKeyboardManager =
         new KeyboardManager(
             this, mTextInputPlugin, new Responder[] {new KeyChannelResponder(keyEventChannel)});
-    mTextInputPlugin.setKeyboardManager(mKeyboardManager);
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
       mMouseCursorPlugin = new MouseCursorPlugin(this, new MouseCursorChannel(dartExecutor));
@@ -446,7 +446,7 @@ public class FlutterView extends SurfaceView
 
   @Override
   public InputConnection onCreateInputConnection(EditorInfo outAttrs) {
-    return mTextInputPlugin.createInputConnection(this, outAttrs);
+    return mTextInputPlugin.createInputConnection(this, mKeyboardManager, outAttrs);
   }
 
   @Override

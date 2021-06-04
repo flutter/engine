@@ -47,7 +47,7 @@ class InputConnectionAdaptor extends BaseInputConnection
   private InputMethodManager mImm;
   private final Layout mLayout;
   private FlutterTextUtils flutterTextUtils;
-  private final KeyboardManager mKeyboardManager;
+  private final KeyboardManager keyboardManager;
 
   @SuppressWarnings("deprecation")
   public InputConnectionAdaptor(
@@ -65,7 +65,7 @@ class InputConnectionAdaptor extends BaseInputConnection
     mEditable = editable;
     mEditable.addEditingStateListener(this);
     mEditorInfo = editorInfo;
-    mKeyboardManager = keyboardManager;
+    this.keyboardManager = keyboardManager;
     this.flutterTextUtils = new FlutterTextUtils(flutterJNI);
     // We create a dummy Layout with max width so that the selection
     // shifting acts as if all text were in one line.
@@ -290,7 +290,7 @@ class InputConnectionAdaptor extends BaseInputConnection
   // occur, and need a chance to be handled by the framework.
   @Override
   public boolean sendKeyEvent(KeyEvent event) {
-    return mKeyboardManager.handleEvent(event);
+    return keyboardManager.handleEvent(event);
   }
 
   public boolean handleKeyEvent(KeyEvent event) {

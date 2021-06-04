@@ -705,7 +705,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
       return super.onCreateInputConnection(outAttrs);
     }
 
-    return textInputPlugin.createInputConnection(this, outAttrs);
+    return textInputPlugin.createInputConnection(this, keyboardManager, outAttrs);
   }
 
   /**
@@ -979,7 +979,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     keyboardManager =
         new KeyboardManager(
             this,
-            mTextInputPlugin,
+            textInputPlugin,
             new Responder[] {new KeyChannelResponder(flutterEngine.getKeyEventChannel())});
     androidTouchProcessor =
         new AndroidTouchProcessor(this.flutterEngine.getRenderer(), /*trackMotionEvents=*/ false);
