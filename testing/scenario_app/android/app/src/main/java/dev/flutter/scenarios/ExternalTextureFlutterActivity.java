@@ -46,6 +46,8 @@ public class ExternalTextureFlutterActivity extends TestActivity {
   private static final int SURFACE_HEIGHT = 256;
 
   private SurfaceRenderer surfaceViewRenderer, flutterRenderer;
+
+  // Latch used to ensure both SurfaceRenderers produce a frame before taking a screenshot.
   private final CountDownLatch firstFrameLatch = new CountDownLatch(2);
 
   private long textureId = 0;
@@ -172,6 +174,9 @@ public class ExternalTextureFlutterActivity extends TestActivity {
     void destroy();
   }
 
+  /**
+   * Paints a simple gradient onto the attached Surface.
+   */
   private static class CanvasSurfaceRenderer implements SurfaceRenderer {
     private Surface surface;
     private CountDownLatch onFirstFrame;
@@ -218,6 +223,9 @@ public class ExternalTextureFlutterActivity extends TestActivity {
     public void destroy() {}
   }
 
+  /**
+   * Decodes a sample video into the attached Surface.
+   */
   @RequiresApi(VERSION_CODES.LOLLIPOP)
   private static class MediaSurfaceRenderer implements SurfaceRenderer {
     private final Supplier<MediaExtractor> extractorSupplier;
@@ -262,6 +270,7 @@ public class ExternalTextureFlutterActivity extends TestActivity {
         codec.configure(format, surface, null, 0);
         codec.start();
 
+        // Track 0 is always the video track, since the sample video doesn't contain audio.
         extractor.selectTrack(0);
 
         MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
@@ -269,6 +278,8 @@ public class ExternalTextureFlutterActivity extends TestActivity {
         long startTimeNs = System.nanoTime();
 
         while (true) {
+          // Move samples (video frames) from the extractor into the decoder, as long as we haven't
+          // consumed all samples.
           if (!seenEOS) {
             int inputBufferIndex = codec.dequeueInputBuffer(-1);
             ByteBuffer inputBuffer = codec.getInputBuffer(inputBufferIndex);
@@ -284,6 +295,8 @@ public class ExternalTextureFlutterActivity extends TestActivity {
             }
           }
 
+          // Then consume decoded video frames from the decoder. These frames are automatically
+          // pushed to the attached Surface, so this schedules them for present.
           int outputBufferIndex = codec.dequeueOutputBuffer(bufferInfo, 10000);
           boolean lastBuffer = (bufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0;
           if (outputBufferIndex >= 0) {
@@ -298,6 +311,8 @@ public class ExternalTextureFlutterActivity extends TestActivity {
             }
           }
 
+          // Once we present the last frame, mark this renderer as no longer producing frames and
+          // exit the loop.
           if (lastBuffer) {
             atomicCanProduceFrames.set(false);
             break;
@@ -327,6 +342,10 @@ public class ExternalTextureFlutterActivity extends TestActivity {
     }
   }
 
+  /**
+   * Takes frames from the inner SurfaceRenderer and feeds it through an ImageReader and
+   * ImageWriter pair.
+   */
   @RequiresApi(VERSION_CODES.M)
   private static class ImageSurfaceRenderer implements SurfaceRenderer {
     private final SurfaceRenderer inner;
