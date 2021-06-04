@@ -19,7 +19,6 @@ FLUTTER_ASSERT_ARC
 - (void)setTextInputState:(NSDictionary*)state;
 - (void)setMarkedRect:(CGRect)markedRect;
 - (void)updateEditingState;
-- (void)decommisson;
 - (BOOL)isVisibleToAutofill;
 
 @end

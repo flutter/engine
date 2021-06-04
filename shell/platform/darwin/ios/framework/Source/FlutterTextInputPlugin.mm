@@ -636,9 +636,9 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 // from the view hierarchy) so that it may outlive the plugin/engine,
 // in which case _textInputDelegate will become a dangling pointer.
 
-// The text input plugin needs to call decommision when it should
+// The text input plugin needs to call decommission when it should
 // not have access to its FlutterTextInputDelegate any more.
-- (void)decommision {
+- (void)decommission {
   _decommissioned = YES;
 }
 
@@ -1477,7 +1477,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   [self removeEnableFlutterTextInputViewAccessibilityTimer];
   _activeView.accessibilityEnabled = NO;
   [_activeView resignFirstResponder];
-  [_activeView decommision];
+  [_activeView decommission];
   [_activeView removeFromSuperview];
   [_inputHider removeFromSuperview];
 }
@@ -1640,10 +1640,10 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   return _inputHider.subviews;
 }
 
-// Decommisions (See the "decommision" method on FlutterTextInputView) and removes
+// Decommissions (See the "decommission" method on FlutterTextInputView) and removes
 // every installed input field, unless it's in the current autofill context.
 //
-// The active view will be decommisioned and removed from its superview too, if
+// The active view will be decommissioned and removed from its superview too, if
 // includeActiveView is YES.
 // When clearText is YES, the text on the input fields will be set to empty before
 // they are removed from the view hierarchy, to avoid triggering autofill save.
@@ -1663,7 +1663,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
         if (clearText) {
           [inputView replaceRangeLocal:NSMakeRange(0, inputView.text.length) withText:@""];
         }
-        [inputView decommision];
+        [inputView decommission];
         if (delayRemoval) {
           [inputView performSelector:@selector(removeFromSuperview) withObject:nil afterDelay:0.1];
         } else {
