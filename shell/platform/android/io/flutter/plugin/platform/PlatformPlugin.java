@@ -216,39 +216,44 @@ public class PlatformPlugin {
             | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
             | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
 
-    if (systemUiMode == PlatformChannel.SystemUiMode.LEAN_BACK && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+    if (systemUiMode == PlatformChannel.SystemUiMode.LEAN_BACK
+        && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
       // LEAN BACK
       // Available starting at SDK 16
       // Should not show overlays, tap to reveal overlays, needs onChange callback
-      // When the overlays come in on tap, the app does not recieve the gesture and does not know the system overlay
-      // has changed. The overlays cannot be dismissed, so adding the callback support will allow users to restore
-      // the system ui and dismiss the overlays.
+      // When the overlays come in on tap, the app does not recieve the gesture and does not know
+      // the system overlay has changed. The overlays cannot be dismissed, so adding the callback
+      // support will allow users to restore the system ui and dismiss the overlays.
       // Not compatible with top/bottom overlays enabled.
-      enabledOverlays = View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+      enabledOverlays =
+          View.SYSTEM_UI_FLAG_LAYOUT_STABLE
               | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
               | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
               | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
               | View.SYSTEM_UI_FLAG_FULLSCREEN;
-    } else if (systemUiMode == PlatformChannel.SystemUiMode.IMMERSIVE && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+    } else if (systemUiMode == PlatformChannel.SystemUiMode.IMMERSIVE
+        && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
       // IMMERSIVE
       // Available starting at 19
       // Should not show overlays, swipe from edges to revela overlays, needs onChange callback
-      // When the overlays come in on swipe, the app does not receive the gesture and does not know the system overlay
-      // has changed. The overlays cannot be dismissed, so adding callback support will allow users to restore the
-      // system ui and dismiss the overlays.
+      // When the overlays come in on swipe, the app does not receive the gesture and does not know
+      // the system overlay has changed. The overlays cannot be dismissed, so adding callback
+      // support will allow users to restore the system ui and dismiss the overlays.
       // Not compatible with top/bottom overlays enabled.
-      enabledOverlays = View.SYSTEM_UI_FLAG_IMMERSIVE
+      enabledOverlays =
+          View.SYSTEM_UI_FLAG_IMMERSIVE
               | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
               | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
               | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
               | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
               | View.SYSTEM_UI_FLAG_FULLSCREEN;
-    } else if (systemUiMode == PlatformChannel.SystemUiMode.IMMERSIVE_STICKY && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+    } else if (systemUiMode == PlatformChannel.SystemUiMode.IMMERSIVE_STICKY
+        && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
       // STICKY IMMERSIVE
       // Available starting at 19
-      // Should not show overlays, swipe from edges to reveal overlays. The app will also receive the swipe gesture.
-      // The overlays cannot be dismissed, so adding callback support will allow users to restore the
-      // system ui and dismiss the overlays.
+      // Should not show overlays, swipe from edges to reveal overlays. The app will also receive
+      // the swipe gesture. The overlays cannot be dismissed, so adding callback support will
+      // allow users to restore the system ui and dismiss the overlays.
       // Not compatible with top/bottom overlays enabled.
       enabledOverlays = View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
               | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
@@ -256,11 +261,12 @@ public class PlatformPlugin {
               | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
               | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
               | View.SYSTEM_UI_FLAG_FULLSCREEN;
-    } else if (systemUiMode == PlatformChannel.SystemUiMode.EDGE_TO_EDGE && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+    } else if (systemUiMode == PlatformChannel.SystemUiMode.EDGE_TO_EDGE
+        && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
       // EDGE TO EDGE
       // Available starting at 16
-      // SDK 29 and up will apply a translucent body scrim behind 2/3 button navigation bars to ensure contrast with
-      // buttons on the nav bar.
+      // SDK 29 and up will apply a translucent body scrim behind 2/3 button navigation bars
+      // to ensure contrast with buttons on the nav bar.
       // SDK 28 and lower will support a transparent 2/3 button navigation bar.
       // Overlays should be included and not removed.
       enabledOverlays = View.SYSTEM_UI_FLAG_LAYOUT_STABLE
@@ -269,27 +275,30 @@ public class PlatformPlugin {
     }
 
     // Set up a listener to notify the framework when the system ui has changed.
-    // TODO(Piinks): Document this heavily. E2E would not be a relevant use case for this callback functionality.
+    // TODO(Piinks): Document this heavily. E2E would not be a relevant use case for this
+    //  callback functionality.
     View decorView = activity.getWindow().getDecorView();
-    decorView.setOnSystemUiVisibilityChangeListener
-            (new View.OnSystemUiVisibilityChangeListener() {
-              @Override
-              public void onSystemUiVisibilityChange(int visibility) {
-                if ((visibility & View.SYSTEM_UI_FLAG_FULLSCREEN) == 0) {
-                  // The system bars are visible. Make any desired adjustments to your UI, such as
-                  // showing the action bar or other navigational controls.
-                  // Another common action is to set a timer to dismiss the system bars and restore
-                  // the fullscreen mode that was perviously enabled.
-                  // TODO(Piinks): Wire up callback to the framework
-                  System.out.println("No longer in fullscreen");
-                } else {
-                  // The system bars are NOT visible. Make any desired adjustments to your UI, such
-                  // as hiding the action bar or other navigational controls.
-                  // TODO(Piinks): Wire up callback to the framework
-                  System.out.println("Fullscreen");
-                }
-              }
-            });
+    decorView.setOnSystemUiVisibilityChangeListener(
+        new View.OnSystemUiVisibilityChangeListener() {
+          @Override
+          public void onSystemUiVisibilityChange(int visibility) {
+            if ((visibility & View.SYSTEM_UI_FLAG_FULLSCREEN) == 0) {
+              // The system bars are visible. Make any desired adjustments to
+              // your UI, such as showing the action bar or other navigational
+              // controls. Another common action is to set a timer to dismiss
+              // the system bars and restore the fullscreen mode that was
+              // previously enabled.
+              // TODO(Piinks): Wire up callback to the framework
+              System.out.println("Engine says: No longer in fullscreen");
+            } else {
+              // The system bars are NOT visible. Make any desired adjustments
+              // to your UI, such as hiding the action bar or other
+              // navigational controls.
+              // TODO(Piinks): Wire up callback to the framework
+              System.out.println("Engine says: Fullscreen");
+            }
+          }
+        });
 
     mEnabledOverlays = enabledOverlays;
     updateSystemUiOverlays();
@@ -357,8 +366,10 @@ public class PlatformPlugin {
     // SYSTEM STATUS BAR -------------------------------------------------------------------
     // You can't change the color of the system status bar until SDK 21.
     // If transparent, SDK 29 and higher may apply a translucent scrim behind the bar to ensure
-    // proper contrast. This can be overridden with SystemChromeStyle.systemStatusBarContrastEnforced.
-    if (systemChromeStyle.statusBarColor != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+    // proper contrast. This can be overridden with
+    // SystemChromeStyle.systemStatusBarContrastEnforced.
+    if (systemChromeStyle.statusBarColor != null
+        && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
       window.setStatusBarColor(systemChromeStyle.statusBarColor);
     }
     // You can't change the color of the status icons until SDK 23.
@@ -382,13 +393,16 @@ public class PlatformPlugin {
 
     // SYSTEM NAVIGATION BAR --------------------------------------------------------------
     // You can't change the color of the system navigation bar until SDK 21.
-    // If transparent, SDK 29 and higher may apply a translucent scrim behind 2/3 button navigation bars to ensure
-    // proper contrast. This can be overridden with SystemChromeStyle.systemNavigationBarContrastEnforced.
-    if (systemChromeStyle.systemNavigationBarColor != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+    // If transparent, SDK 29 and higher may apply a translucent scrim behind 2/3 button navigation
+    // bars to ensure proper contrast. This can be overridden with
+    // SystemChromeStyle.systemNavigationBarContrastEnforced.
+    if (systemChromeStyle.systemNavigationBarColor != null
+        && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
       window.setNavigationBarColor(systemChromeStyle.systemNavigationBarColor);
     }
     // You can't change the color of the navigation buttons until SDK 26.
-    if (systemChromeStyle.systemNavigationBarIconBrightness != null && Build.VERSION.SDK_INT >= 26) {
+    if (systemChromeStyle.systemNavigationBarIconBrightness != null
+        && Build.VERSION.SDK_INT >= 26) {
       switch (systemChromeStyle.systemNavigationBarIconBrightness) {
         case DARK:
           // View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR

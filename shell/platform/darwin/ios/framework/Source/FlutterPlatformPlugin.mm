@@ -179,9 +179,9 @@ using namespace flutter;
   }
 }
 
-- (void)setSystemChromeEnabledSystemUIOverlays:(NSString*)mode {
-  // Checks if the top status bar should be visible, reflected by edge to edge setting. This platform ignores all
-  // other system ui modes.
+- (void)setSystemChromeEnabledSystemUIMode:(NSString*)mode {
+  // Checks if the top status bar should be visible, reflected by edge to edge setting. This
+  // platform ignores all other system ui modes.
 
   // We opt out of view controller based status bar visibility since we want
   // to be able to modify this on the fly. The key used is
