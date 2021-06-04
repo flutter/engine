@@ -91,6 +91,11 @@ public class PlatformPlugin {
         }
 
         @Override
+        public void setSystemUIChangeListener() {
+          setSystemChromeChangeListener();
+        }
+
+        @Override
         public void restoreSystemUiOverlays() {
           restoreSystemChromeSystemUIOverlays();
         }
@@ -209,6 +214,32 @@ public class PlatformPlugin {
     }
   }
 
+  private void setSystemChromeChangeListener() {
+    // Set up a listener to notify the framework when the system ui has changed.
+    // TODO(Piinks): Document this heavily. E2E would not be a relevant use case for this
+    //  callback functionality.
+    View decorView = activity.getWindow().getDecorView();
+    decorView.setOnSystemUiVisibilityChangeListener(
+        new View.OnSystemUiVisibilityChangeListener() {
+          @Override
+          public void onSystemUiVisibilityChange(int visibility) {
+            if ((visibility & View.SYSTEM_UI_FLAG_FULLSCREEN) == 0) {
+              // The system bars are visible. Make any desired adjustments to
+              // your UI, such as showing the action bar or other navigational
+              // controls. Another common action is to set a timer to dismiss
+              // the system bars and restore the fullscreen mode that was
+              // previously enabled.
+              platformChannel.systemChromeChanged(false);
+            } else {
+              // The system bars are NOT visible. Make any desired adjustments
+              // to your UI, such as hiding the action bar or other
+              // navigational controls.
+              platformChannel.systemChromeChanged(true);
+            }
+          }
+        });
+  }
+
   private void setSystemChromeEnabledSystemUIMode(PlatformChannel.SystemUiMode systemUiMode) {
     int enabledOverlays =
         DEFAULT_SYSTEM_UI
@@ -275,32 +306,6 @@ public class PlatformPlugin {
               | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
               | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
     }
-
-    // Set up a listener to notify the framework when the system ui has changed.
-    // TODO(Piinks): Document this heavily. E2E would not be a relevant use case for this
-    //  callback functionality.
-    View decorView = activity.getWindow().getDecorView();
-    decorView.setOnSystemUiVisibilityChangeListener(
-        new View.OnSystemUiVisibilityChangeListener() {
-          @Override
-          public void onSystemUiVisibilityChange(int visibility) {
-            if ((visibility & View.SYSTEM_UI_FLAG_FULLSCREEN) == 0) {
-              // The system bars are visible. Make any desired adjustments to
-              // your UI, such as showing the action bar or other navigational
-              // controls. Another common action is to set a timer to dismiss
-              // the system bars and restore the fullscreen mode that was
-              // previously enabled.
-              // TODO(Piinks): Wire up callback to the framework
-              System.out.println("Engine says: No longer in fullscreen");
-            } else {
-              // The system bars are NOT visible. Make any desired adjustments
-              // to your UI, such as hiding the action bar or other
-              // navigational controls.
-              // TODO(Piinks): Wire up callback to the framework
-              System.out.println("Engine says: Fullscreen");
-            }
-          }
-        });
 
     mEnabledOverlays = enabledOverlays;
     updateSystemUiOverlays();

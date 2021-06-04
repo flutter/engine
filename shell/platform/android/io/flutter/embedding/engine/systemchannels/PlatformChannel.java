@@ -14,6 +14,7 @@ import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -114,6 +115,10 @@ public class PlatformChannel {
                   result.error("error", exception.getMessage(), null);
                 }
                 break;
+              case "SystemChrome.setSystemUIChangeListener":
+                platformMessageHandler.setSystemUIChangeListener();
+                result.success(null);
+                break;
               case "SystemChrome.restoreSystemUIOverlays":
                 platformMessageHandler.restoreSystemUiOverlays();
                 result.success(null);
@@ -204,6 +209,12 @@ public class PlatformChannel {
    */
   public void setPlatformMessageHandler(@Nullable PlatformMessageHandler platformMessageHandler) {
     this.platformMessageHandler = platformMessageHandler;
+  }
+
+  /** Informs Flutter of a change in the SystemUI overlays. */
+  public void systemChromeChanged(boolean overlaysAreVisible) {
+    Log.v(TAG, "Sending 'systemUIChange' message.");
+    channel.invokeMethod("SystemChrome.systemUIChange", Arrays.asList(overlaysAreVisible));
   }
 
   // TODO(mattcarroll): add support for IntDef annotations, then add @ScreenOrientation
@@ -470,8 +481,10 @@ public class PlatformChannel {
      * full viewport. This full screen experience does not hide status bars. These status bars can
      * be set to transparent, making the buttons and icons hover over the fullscreen application.
      */
-    // TODO(Piinks): add callback for system Ui change
     void showSystemUiMode(@NonNull SystemUiMode mode);
+
+    /** TODO(Piinks): Docs */
+    void setSystemUIChangeListener();
 
     /**
      * The Flutter application would like to restore the visibility of system overlays to the last
