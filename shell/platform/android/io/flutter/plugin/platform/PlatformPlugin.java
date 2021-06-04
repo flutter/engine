@@ -255,7 +255,8 @@ public class PlatformPlugin {
       // the swipe gesture. The overlays cannot be dismissed, so adding callback support will
       // allow users to restore the system ui and dismiss the overlays.
       // Not compatible with top/bottom overlays enabled.
-      enabledOverlays = View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+      enabledOverlays =
+          View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
               | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
               | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
               | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
@@ -269,7 +270,8 @@ public class PlatformPlugin {
       // to ensure contrast with buttons on the nav bar.
       // SDK 28 and lower will support a transparent 2/3 button navigation bar.
       // Overlays should be included and not removed.
-      enabledOverlays = View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+      enabledOverlays =
+          View.SYSTEM_UI_FLAG_LAYOUT_STABLE
               | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
               | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
     }
@@ -421,10 +423,12 @@ public class PlatformPlugin {
     }
 
     // You can't override the enforced contrast for a transparent navigation bar until SDK 29.
-    // This overrides the translucent scrim that may be placed behind 2/3 button navigation bars on SDK 29+ to ensure
-    // contrast is appropriate when using full screen layout modes like Edge to Edge.
+    // This overrides the translucent scrim that may be placed behind 2/3 button navigation bars on
+    // SDK 29+ to ensure contrast is appropriate when using full screen layout modes like
+    // Edge to Edge.
     if (!systemChromeStyle.systemNavigationBarContrastEnforced && Build.VERSION.SDK_INT >= 29) {
-      window.setNavigationBarContrastEnforced(systemChromeStyle.systemNavigationBarContrastEnforced);
+      window.setNavigationBarContrastEnforced(
+          systemChromeStyle.systemNavigationBarContrastEnforced);
     }
 
     view.setSystemUiVisibility(flags);

@@ -328,13 +328,13 @@ public class PlatformChannel {
   /**
    * Decodes an object of JSON-encoded mode to a {@link SystemUiMode}.
    *
-   * @throws JSONException if {@code encodedSystemUiMode} does not contain expected keys and
-   *     value types.
+   * @throws JSONException if {@code encodedSystemUiMode} does not contain expected keys and value
+   *     types.
    * @throws NoSuchFieldException if any of the given encoded mode name is invalid.
    */
   @NonNull
   private SystemUiMode decodeSystemUiMode(@NonNull String encodedSystemUiMode)
-          throws JSONException, NoSuchFieldException {
+      throws JSONException, NoSuchFieldException {
     SystemUiMode mode = SystemUiMode.fromValue(encodedSystemUiMode);
     switch (mode) {
       case LEAN_BACK:
@@ -377,7 +377,7 @@ public class PlatformChannel {
 
     if (!encodedStyle.isNull("statusBarIconBrightness")) {
       statusBarIconBrightness =
-              Brightness.fromValue(encodedStyle.getString("statusBarIconBrightness"));
+          Brightness.fromValue(encodedStyle.getString("statusBarIconBrightness"));
     }
 
     if (!encodedStyle.isNull("systemStatusBarContrastEnforced")) {
@@ -398,7 +398,8 @@ public class PlatformChannel {
     }
 
     if (!encodedStyle.isNull("systemNavigationBarContrastEnforced")) {
-      systemNavigationBarContrastEnforced = encodedStyle.getBoolean("systemNavigationBarContrastEnforced");
+      systemNavigationBarContrastEnforced =
+          encodedStyle.getBoolean("systemNavigationBarContrastEnforced");
     }
 
     return new SystemChromeStyle(
@@ -450,32 +451,35 @@ public class PlatformChannel {
     void showSystemOverlays(@NonNull List<SystemUiOverlay> overlays);
 
     /**
-     * The Flutter application would like the Android system to display the given {@code mode}, or manually configured
-     * {@code overlays}.
+     * The Flutter application would like the Android system to display the given {@code mode}, or
+     * manually configured {@code overlays}.
      *
-     * <p>{@link SystemUiMode#LEAN_BACK} refers to a fullscreen experience that restores system bars upon tapping
-     * anywhere in the application. This tap gesture is not received by the application.
+     * <p>{@link SystemUiMode#LEAN_BACK} refers to a fullscreen experience that restores system bars
+     * upon tapping anywhere in the application. This tap gesture is not received by the
+     * application.
      *
-     * <p>{@link SystemUiMode#IMMERSIVE} refers to a fullscreen experience that restores system bars upon swiping from
-     * the edge of the viewport. This swipe gesture is not recived by the application.
+     * <p>{@link SystemUiMode#IMMERSIVE} refers to a fullscreen experience that restores system bars
+     * upon swiping from the edge of the viewport. This swipe gesture is not recived by the
+     * application.
      *
-     * <p>{@link SystemUiMode#IMMERSIVE_STICKY} refers to a fullscreen experience that restores system bars upon swiping
-     * from the edge of the viewport. This swipe gesture is received by the application, in contrast to
-     * {@link SystemUiMode#IMMERSIVE}.
+     * <p>{@link SystemUiMode#IMMERSIVE_STICKY} refers to a fullscreen experience that restores
+     * system bars upon swiping from the edge of the viewport. This swipe gesture is received by the
+     * application, in contrast to {@link SystemUiMode#IMMERSIVE}.
      *
-     * <p>{@link SystemUiMode#EDGE_TO_EDGE} refers to a layout configuration that will consume the full viewport. This
-     * full screen experience does not hide status bars. These status bars can be set to transparent, making the buttons
-     * and icons hover over the fullscreen application.
+     * <p>{@link SystemUiMode#EDGE_TO_EDGE} refers to a layout configuration that will consume the
+     * full viewport. This full screen experience does not hide status bars. These status bars can
+     * be set to transparent, making the buttons and icons hover over the fullscreen application.
      */
     // TODO(Piinks): add callback for system Ui change
     void showSystemUiMode(@NonNull SystemUiMode mode);
 
     /**
      * The Flutter application would like to restore the visibility of system overlays to the last
-     * set of overlays sent via {@link #showSystemOverlays(List)} or {@link #showSystemUiMode(SystemUiMode, List)}.
+     * set of overlays sent via {@link #showSystemOverlays(List)} or {@link
+     * #showSystemUiMode(SystemUiMode, List)}.
      *
-     * <p>If {@link #showSystemOverlays(List)} or {@link #showSystemUiMode(SystemUiMode, List)} has yet to be called,
-     * then a default system overlay appearance is desired:
+     * <p>If {@link #showSystemOverlays(List)} or {@link #showSystemUiMode(SystemUiMode, List)} has
+     * yet to be called, then a default system overlay appearance is desired:
      *
      * <p>{@code View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN }
      */
@@ -613,9 +617,7 @@ public class PlatformChannel {
     }
   }
 
-  /**
-   * The set of Android system fullscreen modes as perceived by the Flutter application.
-   */
+  /** The set of Android system fullscreen modes as perceived by the Flutter application. */
   public enum SystemUiMode {
     LEAN_BACK("SystemUiMode.leanBack"),
     IMMERSIVE("SystemUiMode.immersive"),
