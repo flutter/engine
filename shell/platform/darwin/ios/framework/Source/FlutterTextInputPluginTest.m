@@ -57,7 +57,9 @@ FLUTTER_ASSERT_ARC
 @property(nonatomic, readonly)
     NSMutableDictionary<NSString*, FlutterTextInputView*>* autofillContext;
 
-- (void)collectGarbageInputViews;
+- (void)cleanUpViewHierarchy:(BOOL)includeActiveView
+                   clearText:(BOOL)clearText
+                delayRemoval:(BOOL)delayRemoval;
 - (NSArray<UIView*>*)textInputViews;
 @end
 
@@ -595,7 +597,7 @@ FLUTTER_ASSERT_ARC
 
   XCTAssertEqual(textInputPlugin.autofillContext.count, 2);
 
-  [textInputPlugin collectGarbageInputViews];
+  [textInputPlugin cleanUpViewHierarchy:NO clearText:YES delayRemoval:NO];
   XCTAssertEqual(self.installedInputViews.count, 2);
   XCTAssertEqual(textInputPlugin.textInputView, textInputPlugin.autofillContext[@"field1"]);
   [self ensureOnlyActiveViewCanBecomeFirstResponder];
@@ -618,7 +620,7 @@ FLUTTER_ASSERT_ARC
   XCTAssertEqual(self.viewsVisibleToAutofill.count, 2);
   XCTAssertEqual(textInputPlugin.autofillContext.count, 3);
 
-  [textInputPlugin collectGarbageInputViews];
+  [textInputPlugin cleanUpViewHierarchy:NO clearText:YES delayRemoval:NO];
   XCTAssertEqual(self.installedInputViews.count, 3);
   XCTAssertEqual(textInputPlugin.textInputView, textInputPlugin.autofillContext[@"field1"]);
   [self ensureOnlyActiveViewCanBecomeFirstResponder];
@@ -638,7 +640,7 @@ FLUTTER_ASSERT_ARC
   XCTAssertEqual(self.viewsVisibleToAutofill.count, 1);
   XCTAssertEqual(textInputPlugin.autofillContext.count, 3);
 
-  [textInputPlugin collectGarbageInputViews];
+  [textInputPlugin cleanUpViewHierarchy:NO clearText:YES delayRemoval:NO];
   XCTAssertEqual(self.installedInputViews.count, 4);
 
   // Old autofill input fields are still installed and reused.
@@ -657,7 +659,7 @@ FLUTTER_ASSERT_ARC
   XCTAssertEqual(self.viewsVisibleToAutofill.count, 1);
   XCTAssertEqual(textInputPlugin.autofillContext.count, 3);
 
-  [textInputPlugin collectGarbageInputViews];
+  [textInputPlugin cleanUpViewHierarchy:NO clearText:YES delayRemoval:NO];
   XCTAssertEqual(self.installedInputViews.count, 4);
 
   // Old autofill input fields are still installed and reused.
@@ -710,7 +712,7 @@ FLUTTER_ASSERT_ARC
   [self setClientId:124 configuration:field3];
   XCTAssertEqual(self.viewsVisibleToAutofill.count, 1);
 
-  [textInputPlugin collectGarbageInputViews];
+  [textInputPlugin cleanUpViewHierarchy:NO clearText:YES delayRemoval:NO];
   XCTAssertEqual(self.installedInputViews.count, 3);
   XCTAssertEqual(textInputPlugin.autofillContext.count, 2);
   XCTAssertNotEqual(textInputPlugin.textInputView, nil);
@@ -726,7 +728,7 @@ FLUTTER_ASSERT_ARC
   // The active view should still be installed so it doesn't get
   // deallocated.
 
-  [textInputPlugin collectGarbageInputViews];
+  [textInputPlugin cleanUpViewHierarchy:NO clearText:YES delayRemoval:NO];
   XCTAssertEqual(self.installedInputViews.count, 1);
   XCTAssertEqual(textInputPlugin.autofillContext.count, 0);
   [self ensureOnlyActiveViewCanBecomeFirstResponder];
@@ -823,7 +825,7 @@ FLUTTER_ASSERT_ARC
 
   XCTAssertEqual(self.installedInputViews.count, 2);
 
-  [textInputPlugin collectGarbageInputViews];
+  [textInputPlugin cleanUpViewHierarchy:NO clearText:YES delayRemoval:NO];
   XCTAssertEqual(self.installedInputViews.count, 1);
 
   // Verify the old input view is properly cleaned up.
