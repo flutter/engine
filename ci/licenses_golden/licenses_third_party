@@ -1,4 +1,4 @@
-Signature: d739988a51405dcceb420fbcb2c804c1
+Signature: 37865a59d8d9a16fc15128f777ee68ea
 
 UNUSED LICENSES:
 
@@ -9901,8 +9901,16 @@ FILE: ../../../third_party/dart/benchmarks/MapLookup/dart2/maps.dart
 FILE: ../../../third_party/dart/benchmarks/MapLookup/generate_maps.dart
 FILE: ../../../third_party/dart/benchmarks/SDKArtifactSizes/dart/SDKArtifactSizes.dart
 FILE: ../../../third_party/dart/benchmarks/SDKArtifactSizes/dart2/SDKArtifactSizes.dart
+FILE: ../../../third_party/dart/benchmarks/StringPool/dart/StringPool.dart
+FILE: ../../../third_party/dart/benchmarks/StringPool/dart/StringPool100.dart
+FILE: ../../../third_party/dart/benchmarks/StringPool/dart/version1a.dart
+FILE: ../../../third_party/dart/benchmarks/StringPool/dart/version1b.dart
+FILE: ../../../third_party/dart/benchmarks/StringPool/dart/version2.dart
+FILE: ../../../third_party/dart/benchmarks/StringPool/dart2/StringPool.dart
+FILE: ../../../third_party/dart/benchmarks/StringPool/dart2/StringPool100.dart
 FILE: ../../../third_party/dart/runtime/bin/abstract_socket_test.cc
 FILE: ../../../third_party/dart/runtime/bin/utils.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/asm_intrinsifier_test.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/compiler_timings.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/compiler_timings.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/range.h

@@ -27,7 +27,6 @@
 #include "flutter_runner_product_configuration.h"
 #include "fuchsia_external_view_embedder.h"
 #include "isolate_configurator.h"
-#include "thread.h"
 #include "vulkan_surface_producer.h"
 
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
@@ -73,7 +72,7 @@ class Engine final {
   Delegate& delegate_;
 
   const std::string thread_label_;
-  std::array<Thread, 3> threads_;
+  std::array<fml::Thread, 3> threads_;
 
   std::shared_ptr<DefaultSessionConnection> session_connection_;
   std::optional<VulkanSurfaceProducer> surface_producer_;
@@ -97,9 +96,15 @@ class Engine final {
 
   fml::WeakPtrFactory<Engine> weak_factory_;
 
-  static void WarmupSkps(fml::BasicTaskRunner* concurrent_task_runner,
-                         fml::BasicTaskRunner* raster_task_runner,
-                         VulkanSurfaceProducer& surface_producer);
+  static void WarmupSkps(
+      fml::BasicTaskRunner* concurrent_task_runner,
+      fml::BasicTaskRunner* raster_task_runner,
+      VulkanSurfaceProducer& surface_producer,
+      uint64_t width,
+      uint64_t height,
+      std::shared_ptr<flutter::AssetManager> asset_manager,
+      std::optional<const std::vector<std::string>> skp_names,
+      std::optional<std::function<void(uint32_t)>> completion_callback);
 
   void OnMainIsolateStart();
 
