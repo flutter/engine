@@ -85,7 +85,8 @@ public class TextInputChannel {
               try {
                 final JSONObject arguments = (JSONObject) args;
                 final int platformViewId = arguments.getInt("platformViewId");
-                final boolean usesVirtualDisplay = arguments.getBoolean("usesVirtualDisplay");
+                final boolean usesVirtualDisplay =
+                    arguments.optBoolean("usesVirtualDisplay", false);
                 textInputMethodHandler.setPlatformViewClient(platformViewId, usesVirtualDisplay);
                 result.success(null);
               } catch (JSONException exception) {
