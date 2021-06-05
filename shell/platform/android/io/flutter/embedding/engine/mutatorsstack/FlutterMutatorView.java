@@ -44,15 +44,17 @@ public class FlutterMutatorView extends FrameLayout {
     this.screenDensity = screenDensity;
     this.androidTouchProcessor = androidTouchProcessor;
 
-    final View mutatorView = this;
-    this.getViewTreeObserver()
-        .addOnGlobalFocusChangeListener(
-            new ViewTreeObserver.OnGlobalFocusChangeListener() {
-              @Override
-              public void onGlobalFocusChanged(View oldFocus, View newFocus) {
-                focusListener.onFocusChange(mutatorView, childHasFocus(mutatorView));
-              }
-            });
+    if (focusListener != null) {
+      final View mutatorView = this;
+      this.getViewTreeObserver()
+          .addOnGlobalFocusChangeListener(
+              new ViewTreeObserver.OnGlobalFocusChangeListener() {
+                @Override
+                public void onGlobalFocusChanged(View oldFocus, View newFocus) {
+                  focusListener.onFocusChange(mutatorView, childHasFocus(mutatorView));
+                }
+              });
+    }
   }
 
   /** Returns true if the current view or any descendant view has focus. */

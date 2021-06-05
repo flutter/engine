@@ -21,7 +21,7 @@ public class FlutterMutatorViewTest {
   public void canDragViews() {
     final AndroidTouchProcessor touchProcessor = mock(AndroidTouchProcessor.class);
     final FlutterMutatorView view =
-        new FlutterMutatorView(RuntimeEnvironment.systemContext, 1.0f, touchProcessor);
+        new FlutterMutatorView(RuntimeEnvironment.systemContext, 1.0f, touchProcessor, null);
     final FlutterMutatorsStack mutatorStack = mock(FlutterMutatorsStack.class);
 
     assertTrue(view.onInterceptTouchEvent(mock(MotionEvent.class)));
