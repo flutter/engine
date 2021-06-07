@@ -38,28 +38,25 @@ public class FlutterMutatorView extends FrameLayout {
   public FlutterMutatorView(
       @NonNull Context context,
       float screenDensity,
-      @Nullable AndroidTouchProcessor androidTouchProcessor,
-      @Nullable OnFocusChangeListener focusListener) {
+      @Nullable AndroidTouchProcessor androidTouchProcessor) {
     super(context, null);
     this.screenDensity = screenDensity;
     this.androidTouchProcessor = androidTouchProcessor;
-
-    if (focusListener != null) {
-      final View mutatorView = this;
-      this.getViewTreeObserver()
-          .addOnGlobalFocusChangeListener(
-              new ViewTreeObserver.OnGlobalFocusChangeListener() {
-                @Override
-                public void onGlobalFocusChanged(View oldFocus, View newFocus) {
-                  focusListener.onFocusChange(mutatorView, childHasFocus(mutatorView));
-                }
-              });
-    }
   }
 
-  /** Returns true if the current view or any descendant view has focus. */
+  /** Initialize the FlutterMutatorView. */
+  public FlutterMutatorView(@NonNull Context context) {
+    this(context, 1, /* androidTouchProcessor=*/ null);
+  }
+
+  /**
+   * Determines if the current view or any descendant view has focus.
+   *
+   * @param root the root view.
+   * @return true if the current view or any descendant view has focus.
+   */
   @VisibleForTesting
-  public boolean childHasFocus(@Nullable View root) {
+  public static boolean childHasFocus(@Nullable View root) {
     if (root == null) {
       return false;
     }
@@ -77,9 +74,24 @@ public class FlutterMutatorView extends FrameLayout {
     return false;
   }
 
-  /** Initialize the FlutterMutatorView. */
-  public FlutterMutatorView(@NonNull Context context) {
-    this(context, 1, /* androidTouchProcessor=*/ null, /*onFocusChangeListener=*/ null);
+  /**
+   * Adds a focus change listener that notifies when the current view or any of its descendant views
+   * have received focus.
+   *
+   * @param focusListener The focus listener.
+   */
+  public void addOnFocusChangeListener(@NonNull OnFocusChangeListener focusListener) {
+    final View mutatorView = this;
+    final ViewTreeObserver observer = this.getViewTreeObserver();
+    if (observer.isAlive()) {
+      observer.addOnGlobalFocusChangeListener(
+          new ViewTreeObserver.OnGlobalFocusChangeListener() {
+            @Override
+            public void onGlobalFocusChanged(View oldFocus, View newFocus) {
+              focusListener.onFocusChange(mutatorView, childHasFocus(mutatorView));
+            }
+          });
+    }
   }
 
   /**

@@ -550,10 +550,10 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
       // framework.
       FRAMEWORK_CLIENT,
       // InputConnection is managed by an embedded platform view that is backed by a virtual
-      // display.
+      // display (VD).
       VD_PLATFORM_VIEW,
       // InputConnection is managed by an embedded platform view that is embeded in the Android view
-      // hierarchy.
+      // hierarchy, and uses hybrid composition (HC).
       HC_PLATFORM_VIEW,
     }
 

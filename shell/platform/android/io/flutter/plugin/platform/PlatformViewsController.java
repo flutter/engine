@@ -736,16 +736,16 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     }
     final FlutterMutatorView parentView =
         new FlutterMutatorView(
-            context,
-            context.getResources().getDisplayMetrics().density,
-            androidTouchProcessor,
-            (view, hasFocus) -> {
-              if (hasFocus) {
-                platformViewsChannel.invokeViewFocused(viewId);
-              } else {
-                textInputPlugin.clearPlatformViewClient(viewId);
-              }
-            });
+            context, context.getResources().getDisplayMetrics().density, androidTouchProcessor);
+
+    parentView.addOnFocusChangeListener(
+        (view, hasFocus) -> {
+          if (hasFocus) {
+            platformViewsChannel.invokeViewFocused(viewId);
+          } else {
+            textInputPlugin.clearPlatformViewClient(viewId);
+          }
+        });
 
     platformViewParent.put(viewId, parentView);
     parentView.addView(platformView.getView());
