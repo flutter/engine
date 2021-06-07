@@ -181,4 +181,18 @@ public class FlutterMutatorViewTest {
     focusListenerCaptor.getValue().onGlobalFocusChanged(null, null);
     verify(focusListener).onFocusChange(view, false);
   }
+
+  @Test
+  public void focusChangeListener_viewTreeObserverIsAliveFalseDoesNotThrow() {
+    final FlutterMutatorView view =
+        new FlutterMutatorView(RuntimeEnvironment.systemContext) {
+          @Override
+          public ViewTreeObserver getViewTreeObserver() {
+            final ViewTreeObserver viewTreeObserver = mock(ViewTreeObserver.class);
+            when(viewTreeObserver.isAlive()).thenReturn(false);
+            return viewTreeObserver;
+          }
+        };
+    view.addOnFocusChangeListener(mock(OnFocusChangeListener.class));
+  }
 }
