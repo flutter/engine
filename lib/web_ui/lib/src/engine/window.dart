@@ -124,11 +124,9 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
     bool result = false;
     try {
       result = await callback();
-    } catch (err) {
+    } finally {
       completer.complete();
-      rethrow;
     }
-    completer.complete();
     return result;
   }
 
