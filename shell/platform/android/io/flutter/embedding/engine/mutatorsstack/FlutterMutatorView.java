@@ -52,8 +52,8 @@ public class FlutterMutatorView extends FrameLayout {
   /**
    * Determines if the current view or any descendant view has focus.
    *
-   * @param root the root view.
-   * @return true if the current view or any descendant view has focus.
+   * @param root The root view.
+   * @return True if the current view or any descendant view has focus.
    */
   @VisibleForTesting
   public static boolean childHasFocus(@Nullable View root) {

@@ -377,6 +377,13 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
   private void hideTextInput(View view) {
     notifyViewExited();
     if (inputTarget.type != InputTarget.Type.HC_PLATFORM_VIEW) {
+      // Note: When a virtual display is used, there's a race condition may lead to us hiding
+      // the keyboard here just after a platform view has shown it.
+      // This can only potentially happen when switching focus from a Flutter text field to a
+      // platform
+      // view's text
+      // field(by text field here I mean anything that keeps the keyboard open).
+      // See: https://github.com/flutter/flutter/issues/34169
       mImm.hideSoftInputFromWindow(view.getApplicationWindowToken(), 0);
     }
   }
