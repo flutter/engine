@@ -396,9 +396,11 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
                 callback, codec.encodeSuccessEnvelope(true));
             return;
           case 'SystemChrome.setApplicationSwitcherDescription':
-            final Map<String, dynamic> arguments = decoded.arguments;
-            domRenderer.setTitle(arguments['label']);
-            domRenderer.setThemeColor(ui.Color(arguments['primaryColor']));
+            final Map<String, Object> arguments = decoded.arguments;
+            final String label = arguments['label'] as String? ?? '';
+            final int primaryColor = arguments['primaryColor'] as int? ?? 0;
+            domRenderer.setTitle(label);
+            domRenderer.setThemeColor(ui.Color(primaryColor));
             _replyToPlatformMessage(
                 callback, codec.encodeSuccessEnvelope(true));
             return;
