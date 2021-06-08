@@ -216,8 +216,6 @@ public class PlatformPlugin {
 
   private void setSystemChromeChangeListener() {
     // Set up a listener to notify the framework when the system ui has changed.
-    // TODO(Piinks): Document this heavily. E2E would not be a relevant use case for this
-    //  callback functionality.
     View decorView = activity.getWindow().getDecorView();
     decorView.setOnSystemUiVisibilityChangeListener(
         new View.OnSystemUiVisibilityChangeListener() {

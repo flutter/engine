@@ -116,7 +116,7 @@ public class PlatformChannel {
                 }
                 break;
               case "SystemChrome.setSystemUIChangeListener":
-                platformMessageHandler.setSystemUIChangeListener();
+                platformMessageHandler.setSystemUiChangeListener();
                 result.success(null);
                 break;
               case "SystemChrome.restoreSystemUIOverlays":
@@ -483,8 +483,14 @@ public class PlatformChannel {
      */
     void showSystemUiMode(@NonNull SystemUiMode mode);
 
-    /** TODO(Piinks): Docs */
-    void setSystemUIChangeListener();
+    /**
+     * The Flutter application would like the Android system to notify the framework when the system
+     * ui visibility has changed.
+     *
+     * This is relevant when using {@link SystemUiMode}s for fullscreen applications, from
+     * which the system overlays can appear or disappear based on user input.
+     */
+    void setSystemUiChangeListener();
 
     /**
      * The Flutter application would like to restore the visibility of system overlays to the last
