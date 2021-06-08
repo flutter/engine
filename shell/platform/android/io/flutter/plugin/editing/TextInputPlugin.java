@@ -433,7 +433,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
       // to reset their internal states.
       mRestartInputPending = composingChanged(mLastKnownFrameworkTextEditingState, state);
       if (mRestartInputPending) {
-        Log.i(TAG, "Composing region changed by the framework. Restarting the IME");
+        Log.i(TAG, "Composing region changed by the framework. Restarting the input method.");
       }
     }
 
