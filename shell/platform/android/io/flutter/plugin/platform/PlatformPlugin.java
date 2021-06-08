@@ -91,7 +91,7 @@ public class PlatformPlugin {
         }
 
         @Override
-        public void setSystemUIChangeListener() {
+        public void setSystemUiChangeListener() {
           setSystemChromeChangeListener();
         }
 
