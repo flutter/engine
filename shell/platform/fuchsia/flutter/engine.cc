@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#define FML_USED_ON_EMBEDDER
+
 #include "engine.h"
 
 #include <lib/async/cpp/task.h>
@@ -10,6 +12,7 @@
 #include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/common/task_runners.h"
 #include "flutter/fml/make_copyable.h"
+#include "flutter/fml/message_loop.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/fml/task_runner.h"
 #include "flutter/runtime/dart_vm_lifecycle.h"
@@ -24,7 +27,6 @@
 #include "fuchsia_intl.h"
 #include "platform_view.h"
 #include "surface.h"
-#include "task_runner_adapter.h"
 #include "vsync_waiter.h"
 
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
@@ -80,12 +82,15 @@ Engine::Engine(Delegate& delegate,
 
   // Get the task runners from the managed threads. The current thread will be
   // used as the "platform" thread.
+  fml::RefPtr<fml::TaskRunner> platform_task_runner =
+      fml::MessageLoop::GetCurrent().GetTaskRunner();
+
   const flutter::TaskRunners task_runners(
-      thread_label_,  // Dart thread labels
-      CreateFMLTaskRunner(async_get_default_dispatcher()),  // platform
-      CreateFMLTaskRunner(threads_[0].dispatcher()),        // raster
-      CreateFMLTaskRunner(threads_[1].dispatcher()),        // ui
-      CreateFMLTaskRunner(threads_[2].dispatcher())         // io
+      thread_label_,                // Dart thread labels
+      platform_task_runner,         // platform
+      threads_[0].GetTaskRunner(),  // raster
+      threads_[1].GetTaskRunner(),  // ui
+      threads_[2].GetTaskRunner()   // io
   );
   UpdateNativeThreadLabelNames(thread_label_, task_runners);
 
@@ -120,10 +125,9 @@ Engine::Engine(Delegate& delegate,
   // This handles the fidl error callback when the Session connection is
   // broken. The SessionListener interface also has an OnError method, which is
   // invoked on the platform thread (in PlatformView).
-  fml::closure session_error_callback = [dispatcher =
-                                             async_get_default_dispatcher(),
+  fml::closure session_error_callback = [task_runner = platform_task_runner,
                                          weak = weak_factory_.GetWeakPtr()]() {
-    async::PostTask(dispatcher, [weak]() {
+    task_runner->PostTask([weak]() {
       if (weak) {
         weak->Terminate();
       }
@@ -221,9 +225,9 @@ Engine::Engine(Delegate& delegate,
   // platform thread when that happens. The Session itself should also be
   // disconnected when this happens, and it will also attempt to terminate.
   fit::closure on_session_listener_error_callback =
-      [dispatcher = async_get_default_dispatcher(),
+      [task_runner = platform_task_runner,
        weak = weak_factory_.GetWeakPtr()]() {
-        async::PostTask(dispatcher, [weak]() {
+        task_runner->PostTask([weak]() {
           if (weak) {
             weak->Terminate();
           }
@@ -512,9 +516,6 @@ Engine::Engine(Delegate& delegate,
 Engine::~Engine() {
   shell_.reset();
   for (auto& thread : threads_) {
-    thread.Quit();
-  }
-  for (auto& thread : threads_) {
     thread.Join();
   }
 }
@@ -537,53 +538,6 @@ std::optional<uint32_t> Engine::GetEngineReturnCode() const {
   return code;
 }
 
-static void CreateCompilationTrace(Dart_Isolate isolate) {
-  Dart_EnterIsolate(isolate);
-
-  {
-    Dart_EnterScope();
-    uint8_t* trace = nullptr;
-    intptr_t trace_length = 0;
-    Dart_Handle result = Dart_SaveCompilationTrace(&trace, &trace_length);
-    tonic::LogIfError(result);
-
-    for (intptr_t start = 0; start < trace_length;) {
-      intptr_t end = start;
-      while ((end < trace_length) && trace[end] != '\n')
-        end++;
-
-      std::string line(reinterpret_cast<char*>(&trace[start]), end - start);
-      FML_LOG(INFO) << "compilation-trace: " << line;
-
-      start = end + 1;
-    }
-
-    Dart_ExitScope();
-  }
-
-  // Re-enter Dart scope to release the compilation trace's memory.
-
-  {
-    Dart_EnterScope();
-    uint8_t* feedback = nullptr;
-    intptr_t feedback_length = 0;
-    Dart_Handle result = Dart_SaveTypeFeedback(&feedback, &feedback_length);
-    tonic::LogIfError(result);
-    const std::string kTypeFeedbackFile = "/data/dart_type_feedback.bin";
-    if (dart_utils::WriteFile(kTypeFeedbackFile,
-                              reinterpret_cast<const char*>(feedback),
-                              feedback_length)) {
-      FML_LOG(INFO) << "Dart type feedback written to " << kTypeFeedbackFile;
-    } else {
-      FML_LOG(ERROR) << "Could not write Dart type feedback to "
-                     << kTypeFeedbackFile;
-    }
-    Dart_ExitScope();
-  }
-
-  Dart_ExitIsolate();
-}
-
 void Engine::OnMainIsolateStart() {
   if (!isolate_configurator_ ||
       !isolate_configurator_->ConfigureCurrentIsolate()) {
@@ -592,20 +546,6 @@ void Engine::OnMainIsolateStart() {
   }
   FML_DLOG(INFO) << "Main isolate for engine '" << thread_label_
                  << "' was started.";
-
-  const intptr_t kCompilationTraceDelayInSeconds = 0;
-  if (kCompilationTraceDelayInSeconds != 0) {
-    Dart_Isolate isolate = Dart_CurrentIsolate();
-    FML_CHECK(isolate);
-    shell_->GetTaskRunners().GetUITaskRunner()->PostDelayedTask(
-        [engine = shell_->GetEngine(), isolate]() {
-          if (!engine) {
-            return;
-          }
-          CreateCompilationTrace(isolate);
-        },
-        fml::TimeDelta::FromSeconds(kCompilationTraceDelayInSeconds));
-  }
 }
 
 void Engine::OnMainIsolateShutdown() {

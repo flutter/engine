@@ -229,6 +229,8 @@ FILE: ../../../flutter/fml/platform/darwin/string_range_sanitization_unittests.m
 FILE: ../../../flutter/fml/platform/fuchsia/message_loop_fuchsia.cc
 FILE: ../../../flutter/fml/platform/fuchsia/message_loop_fuchsia.h
 FILE: ../../../flutter/fml/platform/fuchsia/paths_fuchsia.cc
+FILE: ../../../flutter/fml/platform/fuchsia/task_observers.cc
+FILE: ../../../flutter/fml/platform/fuchsia/task_observers.h
 FILE: ../../../flutter/fml/platform/linux/message_loop_linux.cc
 FILE: ../../../flutter/fml/platform/linux/message_loop_linux.h
 FILE: ../../../flutter/fml/platform/linux/paths_linux.cc
@@ -781,7 +783,6 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterApplication.
 FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterFragmentActivity.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterPlayStoreSplitApplication.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterPluginRegistry.java
-FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/AndroidKeyProcessor.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/AndroidTouchProcessor.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/DrawableSplashScreen.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/ExclusiveAppComponent.java
@@ -797,6 +798,8 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/Flutt
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterSurfaceView.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterTextureView.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterView.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/KeyChannelResponder.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/KeyboardManager.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/MotionEventTracker.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/RenderMode.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/SplashScreen.java
@@ -1179,6 +1182,7 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterKeybo
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMacOSExternalTexture.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalCompositor.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalCompositor.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalCompositorUnittests.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRendererTest.mm
@@ -1333,7 +1337,6 @@ FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/vmservice/meta/vmservi
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/accessibility_bridge.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/accessibility_bridge.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/accessibility_bridge_unittest.cc
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/collect_traces.dart
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/component.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/component.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/component_unittest.cc
@@ -1360,8 +1363,6 @@ FILE: ../../../flutter/shell/platform/fuchsia/flutter/keyboard.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/keyboard.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/keyboard_unittest.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/logging.h
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/loop.cc
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/loop.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/main.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/aot_product_runtime
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/aot_runtime
@@ -1383,12 +1384,8 @@ FILE: ../../../flutter/shell/platform/fuchsia/flutter/runner_tzdata_unittest.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/runner_unittest.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/surface.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/surface.h
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/task_observers.cc
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/task_observers.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/task_runner_adapter.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/task_runner_adapter.h
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/thread.cc
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/thread.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/unique_fdio_ns.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/vsync_waiter.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/vsync_waiter.h
