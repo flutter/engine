@@ -258,6 +258,11 @@ static SemanticsObject* CreateObject(const flutter::SemanticsNode& node,
   } else if (node.HasFlag(flutter::SemanticsFlags::kHasToggledState) ||
              node.HasFlag(flutter::SemanticsFlags::kHasCheckedState)) {
     return [[[FlutterSwitchSemanticsObject alloc] initWithBridge:weak_ptr uid:node.id] autorelease];
+  } else if (node.HasFlag(flutter::SemanticsFlags::kHasImplicitScrolling)) {
+    SemanticsObject* delegateObject =
+        [[[FlutterSemanticsObject alloc] initWithBridge:weak_ptr uid:node.id] autorelease];
+    return (SemanticsObject*)[[[FlutterScrollSemanticsObject alloc]
+        initWithSemanticsObject:delegateObject] autorelease];
   } else {
     return [[[FlutterSemanticsObject alloc] initWithBridge:weak_ptr uid:node.id] autorelease];
   }
@@ -299,6 +304,7 @@ SemanticsObject* AccessibilityBridge::GetOrCreateObject(int32_t uid,
 
 void AccessibilityBridge::VisitObjectsRecursivelyAndRemove(SemanticsObject* object,
                                                            NSMutableArray<NSNumber*>* doomed_uids) {
+  [object accessibilityBridgeDidFinishUpdate];
   [doomed_uids removeObject:@(object.uid)];
   for (SemanticsObject* child in [object children])
     VisitObjectsRecursivelyAndRemove(child, doomed_uids);
