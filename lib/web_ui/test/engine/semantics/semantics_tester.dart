@@ -19,9 +19,9 @@ import '../../matchers.dart';
 /// normal flutter app used to be html.document, but now that the app is wrapped
 /// in a Shadow DOM, that's not the case anymore.)
 ///
-/// [ShadowRootOrDocument] is an interface that lets us use a [html.ShadowRoot]
+/// [HostNode] is an interface that lets us use a [html.ShadowRoot]
 /// or a [html.Document] interchangeably as `appShadowRoot`.
-ShadowRootOrDocument get appShadowRoot => domRenderer.glassPaneShadow!;
+HostNode get appShadowRoot => domRenderer.glassPaneShadow!;
 
 /// CSS style applied to the root of the semantics tree.
 // TODO(yjbanov): this should be handled internally by [expectSemanticsTree].

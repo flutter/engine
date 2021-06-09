@@ -30,7 +30,7 @@ void _emptyCallback(dynamic _) {}
 ///
 /// This is something similar to [html.Document]. Currently, it's a [html.ShadowRoot].
 @visibleForTesting
-ShadowRootOrDocument get defaultTextEditingRoot => domRenderer.glassPaneShadow!;
+HostNode get defaultTextEditingRoot => domRenderer.glassPaneShadow!;
 
 /// These style attributes are constant throughout the life time of an input
 /// element.

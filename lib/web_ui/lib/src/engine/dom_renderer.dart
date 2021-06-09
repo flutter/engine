@@ -161,8 +161,8 @@ class DomRenderer {
   html.Element? _glassPaneElement;
 
   /// The ShadowRoot of the [glassPaneElement].
-  ShadowRootOrDocument? get glassPaneShadow => _glassPaneShadow;
-  ShadowRootOrDocument? _glassPaneShadow;
+  HostNode? get glassPaneShadow => _glassPaneShadow;
+  HostNode? _glassPaneShadow;
 
   final html.Element rootElement = html.document.body!;
 
@@ -458,14 +458,14 @@ $_glassPaneTagName * {
       ..bottom = '0'
       ..left = '0';
 
-    // Create a Shadow Root under the glass panel, and attach everything there,
-    // instead of directly underneath the glass panel.
-    final MaybeShadowRoot glassPaneElementShadowRoot = MaybeShadowRoot(glassPaneElement);
+    // Create a [HostNode] under the glass pane element, and attach everything
+    // there, instead of directly underneath the glass panel.
+    final HostNode glassPaneElementShadowRoot = _createHostNode(glassPaneElement);
     _glassPaneShadow = glassPaneElementShadowRoot;
 
     bodyElement.append(glassPaneElement);
 
-    if (glassPaneElementShadowRoot.isShadowDom) {
+    if (glassPaneElementShadowRoot is ShadowDomHostNode) {
       final html.StyleElement shadowRootStyleElement = html.StyleElement();
       // The shadowRootStyleElement must be appended to the DOM, or its `sheet` will be null later...
       glassPaneElementShadowRoot.append(shadowRootStyleElement);
@@ -627,6 +627,17 @@ $_glassPaneTagName * {
     _localeSubscription =
         languageChangeEvent.forTarget(html.window).listen(_languageDidChange);
     EnginePlatformDispatcher.instance._updateLocales();
+  }
+
+  // Creates a [HostNode] into a `root` [html.Element].
+  HostNode _createHostNode(html.Element root) {
+    // maybe if (js_util.hasProperty(root, 'attachShadow')) ?
+    try {
+      return ShadowDomHostNode(root);
+    } catch(e) {
+      // Something weird happened creating the ShadowDom, fallback to Element.
+      return ElementHostNode(root);
+    }
   }
 
   /// The framework specifies semantics in physical pixels, but CSS uses
