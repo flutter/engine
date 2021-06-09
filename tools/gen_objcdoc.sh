@@ -12,11 +12,25 @@ if [[ ! -f "$FLUTTER_UMBRELLA_HEADER" ]]
       exit 1
 fi
 
-if [[ $# -eq 0 ]]
+
+# If the script is running from within LUCI we use the LUCI_WORKDIR, if not we force the caller of the script
+# to pass an output directory as the first parameter.
+OUTPUT_DIR=""
+
+if [[ -z $LUCI_CI ]]
   then
-      echo "Error: Argument specifying output directory required."
-      exit 1
+    if [[ $# -eq 0 ]]
+      then
+        echo "Error: Argument specifying output directory required."
+        exit 1
+    else
+      OUTPUT_DIR=$1
+    fi
+else 
+  OUTPUT_DIR="$LUCI_WORKDIR/objectc_docs"
 fi
+
+
 
 # If GEM_HOME is set, prefer using its copy of jazzy.
 # LUCI will put jazzy here instead of on the path.
@@ -39,7 +53,7 @@ jazzy \
   --xcodebuild-arguments --objc,"$FLUTTER_UMBRELLA_HEADER",--,-x,objective-c,-isysroot,"$(xcrun --show-sdk-path --sdk iphonesimulator)",-I,"$(pwd)"\
   --module Flutter\
   --root-url https://api.flutter.dev/objc/\
-  --output "$1"
+  --output "$OUTPUT_DIR"
 
 EXPECTED_CLASSES="FlutterAppDelegate.html
 FlutterBasicMessageChannel.html
@@ -62,7 +76,7 @@ FlutterStandardTypedData.html
 FlutterStandardWriter.html
 FlutterViewController.html"
 
-ACTUAL_CLASSES=$(ls "$1/Classes" | sort)
+ACTUAL_CLASSES=$(ls "$OUTPUT_DIR/Classes" | sort)
 
 if [[ $EXPECTED_CLASSES != $ACTUAL_CLASSES ]]; then
   echo "Expected classes did not match actual classes"
