@@ -14,7 +14,7 @@ class DomRenderer {
 
     TextMeasurementService.initialize(
       rulerCacheCapacity: 10,
-      root: _glassPaneShadow!,
+      root: _glassPaneShadow!.node,
     );
 
     assert(() {
@@ -161,8 +161,8 @@ class DomRenderer {
   html.Element? _glassPaneElement;
 
   /// The ShadowRoot of the [glassPaneElement].
-  html.ShadowRoot? get glassPaneShadow => _glassPaneShadow;
-  html.ShadowRoot? _glassPaneShadow;
+  ShadowRootOrDocument? get glassPaneShadow => _glassPaneShadow;
+  ShadowRootOrDocument? _glassPaneShadow;
 
   final html.Element rootElement = html.document.body!;
 
@@ -460,20 +460,19 @@ $_glassPaneTagName * {
 
     // Create a Shadow Root under the glass panel, and attach everything there,
     // instead of directly underneath the glass panel.
-    final html.ShadowRoot glassPaneElementShadowRoot = glassPaneElement.attachShadow(<String, String>{
-      'mode': 'open',
-      'delegatesFocus': 'true',
-    });
+    final MaybeShadowRoot glassPaneElementShadowRoot = MaybeShadowRoot(glassPaneElement);
     _glassPaneShadow = glassPaneElementShadowRoot;
 
     bodyElement.append(glassPaneElement);
 
-    final html.StyleElement shadowRootStyleElement = html.StyleElement();
-    // The shadowRootStyleElement must be appended to the DOM, or its `sheet` will be null later...
-    glassPaneElementShadowRoot.append(shadowRootStyleElement);
+    if (glassPaneElementShadowRoot.isShadowDom) {
+      final html.StyleElement shadowRootStyleElement = html.StyleElement();
+      // The shadowRootStyleElement must be appended to the DOM, or its `sheet` will be null later...
+      glassPaneElementShadowRoot.append(shadowRootStyleElement);
 
-    final html.CssStyleSheet shadowRootStyleSheet = shadowRootStyleElement.sheet as html.CssStyleSheet;
-    _applyCssRulesToSheet(shadowRootStyleSheet); // TODO: Apply only rules for the shadow root
+      final html.CssStyleSheet shadowRootStyleSheet = shadowRootStyleElement.sheet as html.CssStyleSheet;
+      _applyCssRulesToSheet(shadowRootStyleSheet); // TODO: Apply only rules for the shadow root
+    }
 
     // Don't allow the scene to receive pointer events.
     _sceneHostElement = createElement('flt-scene-host')

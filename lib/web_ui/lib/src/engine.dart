@@ -245,6 +245,7 @@ part 'engine/html/transform.dart';
 part 'engine/keyboard_binding.dart';
 part 'engine/keyboard.dart';
 part 'engine/key_map.dart';
+part 'engine/maybe_shadow_root.dart';
 part 'engine/onscreen_logging.dart';
 part 'engine/picture.dart';
 part 'engine/platform_dispatcher.dart';
