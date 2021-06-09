@@ -157,6 +157,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 - (void)dealloc {
   [_semanticsObject release];
   _container.get().semanticsObject = nil;
+  [self removeFromSuperview];
   [super dealloc];
 }
 
@@ -182,6 +183,25 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   [self setContentSize:[self contentSizeInternal]];
   [self setContentOffset:[self contentOffsetInternal] animated:NO];
 }
+
+- (void)setChildren:(NSArray<SemanticsObject*>*)children {
+  [_semanticsObject setChildren:children];
+  // The children's parent is pointing to _semanticsObject, need to manually
+  // set it this object.
+  for (SemanticsObject* child in _semanticsObject.children) {
+    [child setParent:(SemanticsObject*)self];
+  }
+}
+
+- (id)accessibilityContainer {
+  if (_container == nil)
+    _container.reset([[SemanticsObjectContainer alloc]
+        initWithSemanticsObject:(SemanticsObject*)self
+                         bridge:[_semanticsObject bridge]]);
+  return _container.get();
+}
+
+// private methods
 
 - (CGSize)contentSizeInternal {
   CGRect result;
@@ -213,23 +233,6 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
     result = origin;
   }
   return CGPointMake(result.x - origin.x, result.y - origin.y);
-}
-
-- (void)setChildren:(NSArray<SemanticsObject*>*)children {
-  [_semanticsObject setChildren:children];
-  // The children's parent is pointing to _semanticsObject, need to manually
-  // set it this object.
-  for (SemanticsObject* child in _semanticsObject.children) {
-    [child setParent:(SemanticsObject*)self];
-  }
-}
-
-- (id)accessibilityContainer {
-  if (_container == nil)
-    _container.reset([[SemanticsObjectContainer alloc]
-        initWithSemanticsObject:(SemanticsObject*)self
-                         bridge:[_semanticsObject bridge]]);
-  return _container.get();
 }
 
 // The following methods are explicitly forwarded to the wrapped SemanticsObject because the
