@@ -16,30 +16,45 @@ void testMain() {
   group('CanvasKit text', () {
     setUpCanvasKitTest();
 
-    test("doesn't crash when using static text styles", () {
-      ui.ParagraphBuilder builder =
-          ui.ParagraphBuilder(StaticTestStyles.staticParagraphStyle);
-      builder.pushStyle(StaticTestStyles.staticTestStyle);
-      builder.addText('test');
-      builder.pushStyle(StaticTestStyles.staticTestStyle);
-      final ui.Paragraph paragraph = builder.build();
+    test("doesn't crash when using shadows", () {
+      final ui.TextStyle textStyleWithShadows = ui.TextStyle(
+        fontSize: 16,
+        shadows: <ui.Shadow>[
+          ui.Shadow(
+            color: ui.Color.fromARGB(255, 0, 0, 0),
+            blurRadius: 3.0,
+            offset: ui.Offset(3.0, 3.0),
+          ),
+          ui.Shadow(
+            color: ui.Color.fromARGB(255, 0, 0, 0),
+            blurRadius: 3.0,
+            offset: ui.Offset(-3.0, 3.0),
+          ),
+          ui.Shadow(
+            color: ui.Color.fromARGB(255, 0, 0, 0),
+            blurRadius: 3.0,
+            offset: ui.Offset(3.0, -3.0),
+          ),
+          ui.Shadow(
+            color: ui.Color.fromARGB(255, 0, 0, 0),
+            blurRadius: 3.0,
+            offset: ui.Offset(-3.0, -3.0),
+          ),
+        ],
+        fontFamily: 'Roboto',
+      );
 
-      ui.ParagraphBuilder builder2 =
-          ui.ParagraphBuilder(StaticTestStyles.staticParagraphStyle);
-      builder2.pushStyle(StaticTestStyles.staticTestStyle);
-      builder2.addText('test');
-      builder2.pushStyle(StaticTestStyles.staticTestStyle);
-      final ui.Paragraph paragraph2 = builder2.build();
+      for (int i = 0; i < 10; i++) {
+        ui.ParagraphBuilder builder =
+            ui.ParagraphBuilder(ui.ParagraphStyle(fontSize: 16));
+        builder.pushStyle(textStyleWithShadows);
+        builder.addText('test');
+        final ui.Paragraph paragraph = builder.build();
+        expect(paragraph, isNotNull);
+      }
     });
-  }, skip: isIosSafari);
-}
-
-class StaticTestStyles {
-  static ui.ParagraphStyle staticParagraphStyle =
-      ui.ParagraphStyle(fontSize: 16);
-
-  static ui.TextStyle staticTestStyle =
-      ui.TextStyle(fontSize: 16, color: staticTestBlue);
-
-  static ui.Color staticTestBlue = ui.Color.fromARGB(255, 0, 0, 255);
+    // This test fails with "memory access out of bounds"
+    // See https://github.com/flutter/flutter/issues/80140
+    // Unskip this once this fix lands: https://skia-review.googlesource.com/c/skia/+/416687
+  }, skip: true);
 }
