@@ -1,4 +1,4 @@
-Signature: c4593cf69d4e4553b243822594805864
+Signature: 07bfa8f2dc4492a5753f6a1023db74f5
 
 UNUSED LICENSES:
 
@@ -1082,6 +1082,7 @@ FILE: ../../../third_party/skia/src/sksl/generated/sksl_geom.dehydrated.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_gpu.dehydrated.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_interp.dehydrated.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_public.dehydrated.sksl
+FILE: ../../../third_party/skia/src/sksl/generated/sksl_rt_blend.dehydrated.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_rt_colorfilter.dehydrated.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_rt_shader.dehydrated.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_runtime.dehydrated.sksl
@@ -1092,6 +1093,7 @@ FILE: ../../../third_party/skia/src/sksl/sksl_frag.sksl
 FILE: ../../../third_party/skia/src/sksl/sksl_geom.sksl
 FILE: ../../../third_party/skia/src/sksl/sksl_gpu.sksl
 FILE: ../../../third_party/skia/src/sksl/sksl_public.sksl
+FILE: ../../../third_party/skia/src/sksl/sksl_rt_blend.sksl
 FILE: ../../../third_party/skia/src/sksl/sksl_rt_colorfilter.sksl
 FILE: ../../../third_party/skia/src/sksl/sksl_rt_shader.sksl
 FILE: ../../../third_party/skia/src/sksl/sksl_vert.sksl
@@ -3119,7 +3121,6 @@ FILE: ../../../third_party/skia/src/gpu/effects/GrAARectEffect.fp
 FILE: ../../../third_party/skia/src/gpu/effects/GrAlphaThresholdFragmentProcessor.fp
 FILE: ../../../third_party/skia/src/gpu/effects/GrCircleBlurFragmentProcessor.fp
 FILE: ../../../third_party/skia/src/gpu/effects/GrConfigConversionEffect.fp
-FILE: ../../../third_party/skia/src/gpu/effects/GrMagnifierEffect.fp
 FILE: ../../../third_party/skia/src/gpu/effects/GrRRectBlurEffect.fp
 FILE: ../../../third_party/skia/src/gpu/effects/GrRectBlurEffect.fp
 FILE: ../../../third_party/skia/src/gpu/effects/GrSkSLFP.cpp
@@ -3134,8 +3135,6 @@ FILE: ../../../third_party/skia/src/gpu/effects/generated/GrCircleBlurFragmentPr
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrCircleBlurFragmentProcessor.h
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrConfigConversionEffect.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrConfigConversionEffect.h
-FILE: ../../../third_party/skia/src/gpu/effects/generated/GrMagnifierEffect.cpp
-FILE: ../../../third_party/skia/src/gpu/effects/generated/GrMagnifierEffect.h
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrRRectBlurEffect.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrRRectBlurEffect.h
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrRectBlurEffect.cpp
@@ -5782,10 +5781,8 @@ FILE: ../../../third_party/skia/src/core/SkStringView.cpp
 FILE: ../../../third_party/skia/src/gpu/GrVertexChunkArray.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathCurveTessellator.cpp
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathCurveTessellator.h
-FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathIndirectTessellator.cpp
-FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathIndirectTessellator.h
-FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathStencilFillOp.cpp
-FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathStencilFillOp.h
+FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathStencilCoverOp.cpp
+FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathStencilCoverOp.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathTessellator.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathWedgeTessellator.cpp
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathWedgeTessellator.h
