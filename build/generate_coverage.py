@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
@@ -75,7 +75,7 @@ def main():
 
     RemoveIfExists(raw_profile)
 
-    print "Running test %s to gather profile." % os.path.basename(absolute_test_path)
+    print("Running test %s to gather profile." % os.path.basename(absolute_test_path))
 
     subprocess.check_call([absolute_test_path], env={
       "LLVM_PROFILE_FILE":  raw_profile

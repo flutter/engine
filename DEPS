@@ -98,7 +98,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + '3ae5da28db8cb028e21150f7472d0938fba2e057',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + '532f9135a298230cb99441c1ec2e214f336841f9',
 
    # Fuchsia compatibility
    #
@@ -626,6 +626,10 @@ hooks = [
     # This clobbers when necessary (based on get_landmines.py). It must be the
     # first hook so that other things that get/generate into the output
     # directory will not subsequently be clobbered.
+    #
+    # TODO(cbracken): Migrate to python3 once
+    # depot_tools/win_toolchain/get_toolchain_if_necessary.py
+    # is migrated to Python 3.
     'name': 'landmines',
     'pattern': '.',
     'action': [
@@ -635,6 +639,9 @@ hooks = [
   },
   {
     # Update the Windows toolchain if necessary.
+    # TODO(cbracken): Migrate to python3 once
+    # depot_tools/win_toolchain/get_toolchain_if_necessary.py
+    # is migrated to Python 3.
     'name': 'win_toolchain',
     'condition': 'download_windows_deps',
     'pattern': '.',
@@ -646,7 +653,7 @@ hooks = [
     'name': 'remove_stale_pyc_files',
     'pattern': 'src/tools/.*\\.py',
     'action': [
-        'python',
+        'python3',
         'src/tools/remove_stale_pyc_files.py',
         'src/tools',
     ],
@@ -656,7 +663,7 @@ hooks = [
     'pattern': '.',
     'condition': 'download_windows_deps',
     'action': [
-      'python',
+      'python3',
       'src/flutter/tools/dia_dll.py',
     ],
   },
@@ -665,7 +672,7 @@ hooks = [
     'pattern': '.',
     'condition': 'download_linux_deps',
     'action': [
-      'python',
+      'python3',
       'src/build/linux/sysroot_scripts/install-sysroot.py',
       '--arch=x64'],
   },
@@ -674,7 +681,7 @@ hooks = [
     'pattern': '.',
     'condition': 'download_linux_deps',
     'action': [
-      'python',
+      'python3',
       'src/build/linux/sysroot_scripts/install-sysroot.py',
       '--arch=arm64'],
   },
@@ -682,7 +689,7 @@ hooks = [
     'name': 'pub get --offline',
     'pattern': '.',
     'action': [
-      'python',
+      'python3',
       'src/flutter/tools/pub_get_offline.py',
     ]
   },

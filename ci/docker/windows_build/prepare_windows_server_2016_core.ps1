@@ -64,5 +64,5 @@ curl https://raw.githubusercontent.com/flutter/engine/master/ci/docker/build/eng
 #   cd c:/flutter/engine
 #   gclient sync
 #   cd src
-#   python flutter/tools/gn
+#   python3 flutter/tools/gn
 #   ninja -C out/host_debug

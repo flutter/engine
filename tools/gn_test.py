@@ -1,6 +1,9 @@
+#!/usr/bin/env python3
+#
 # Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+
 import unittest
 
 import os
@@ -12,7 +15,7 @@ gn = imp.load_source('gn', os.path.join(SKY_TOOLS, 'gn'))
 class GNTestCase(unittest.TestCase):
     def _expect_build_dir(self, arg_list, expected_build_dir):
         args = gn.parse_args(['gn'] + arg_list)
-        self.assertEquals(gn.get_out_dir(args), expected_build_dir)
+        self.assertEqual(gn.get_out_dir(args), expected_build_dir)
 
     def test_get_out_dir(self):
         self._expect_build_dir(['--debug'], 'out/Debug')
@@ -28,8 +31,8 @@ class GNTestCase(unittest.TestCase):
 
     def test_to_gn_args(self):
         # This would not necessarily be true on a 32-bit machine?
-        self.assertEquals(self._gn_args(['--ios', '--simulator'])['target_cpu'], 'x64')
-        self.assertEquals(self._gn_args(['--ios'])['target_cpu'], 'arm')
+        self.assertEqual(self._gn_args(['--ios', '--simulator'])['target_cpu'], 'x64')
+        self.assertEqual(self._gn_args(['--ios'])['target_cpu'], 'arm')
 
 
 if __name__ == '__main__':
