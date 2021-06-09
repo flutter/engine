@@ -15,6 +15,13 @@ class ContainerLayer : public Layer {
  public:
   ContainerLayer();
 
+#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
+
+  void Diff(DiffContext* context, const Layer* old_layer) override;
+  void PreservePaintRegion(DiffContext* context) override;
+
+#endif  // FLUTTER_ENABLE_DIFF_CONTEXT
+
   virtual void Add(std::shared_ptr<Layer> layer);
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
@@ -27,6 +34,12 @@ class ContainerLayer : public Layer {
   const std::vector<std::shared_ptr<Layer>>& layers() const { return layers_; }
 
  protected:
+#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
+
+  void DiffChildren(DiffContext* context, const ContainerLayer* old_layer);
+
+#endif  // FLUTTER_ENABLE_DIFF_CONTEXT
+
   void PrerollChildren(PrerollContext* context,
                        const SkMatrix& child_matrix,
                        SkRect* child_paint_bounds);
@@ -43,7 +56,7 @@ class ContainerLayer : public Layer {
   // 2. The context does not have a valid raster cache.
   // 3. The layer's paint bounds does not intersect with the cull rect.
   //
-  // We make this a static function instead of a member function that directy
+  // We make this a static function instead of a member function that directly
   // uses the "this" pointer as the layer because we sometimes need to raster
   // cache a child layer and one can't access its child's protected method.
   static void TryToPrepareRasterCache(PrerollContext* context,
@@ -100,6 +113,8 @@ class ContainerLayer : public Layer {
 class MergedContainerLayer : public ContainerLayer {
  public:
   MergedContainerLayer();
+
+  void AssignOldLayer(Layer* old_layer) override;
 
   void Add(std::shared_ptr<Layer> layer) override;
 

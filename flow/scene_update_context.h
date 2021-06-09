@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "flutter/flow/embedded_views.h"
+#include "flutter/flow/view_holder.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
 #include "third_party/skia/include/core/SkRect.h"
@@ -119,6 +120,8 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
     std::vector<Layer*> layers;
   };
 
+  using ViewCallback = std::function<void()>;
+
   SceneUpdateContext(std::string debug_label,
                      fuchsia::ui::views::ViewToken view_token,
                      scenic::ViewRefPair view_ref_pair,
@@ -167,9 +170,18 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
     return nullptr;
   }
 
-  void CreateView(int64_t view_id, bool hit_testable, bool focusable);
-  void UpdateView(int64_t view_id, bool hit_testable, bool focusable);
-  void DestroyView(int64_t view_id);
+  // View manipulation.
+  void CreateView(int64_t view_id,
+                  ViewCallback on_view_created,
+                  ViewHolder::ViewIdCallback on_view_bound,
+                  bool hit_testable,
+                  bool focusable);
+  void DestroyView(int64_t view_id,
+                   ViewHolder::ViewIdCallback on_view_destroyed);
+  void UpdateView(int64_t view_id,
+                  const SkRect& view_occlusion_hint,
+                  bool hit_testable,
+                  bool focusable);
   void UpdateView(int64_t view_id,
                   const SkPoint& offset,
                   const SkSize& size,

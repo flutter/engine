@@ -18,7 +18,7 @@
 
 #define LOG_AND_RETURN(cond, msg) \
   if (cond) {                     \
-    FML_DLOG(ERROR) << msg;       \
+    FML_LOG(ERROR) << msg;        \
     return false;                 \
   }
 
@@ -27,19 +27,12 @@ namespace flutter_runner {
 namespace {
 
 constexpr SkColorType kSkiaColorType = kRGBA_8888_SkColorType;
-constexpr fuchsia::sysmem::PixelFormatType kSysmemPixelFormat =
-    fuchsia::sysmem::PixelFormatType::R8G8B8A8;
 constexpr VkFormat kVulkanFormat = VK_FORMAT_R8G8B8A8_UNORM;
 constexpr VkImageCreateFlags kVulkanImageCreateFlags = 0;
 // TODO: We should only keep usages that are actually required by Skia.
 constexpr VkImageUsageFlags kVkImageUsage =
     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
     VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-constexpr uint32_t kSysmemImageUsage =
-    fuchsia::sysmem::VULKAN_IMAGE_USAGE_COLOR_ATTACHMENT |
-    fuchsia::sysmem::VULKAN_IMAGE_USAGE_TRANSFER_DST |
-    fuchsia::sysmem::VULKAN_IMAGE_USAGE_TRANSFER_SRC |
-    fuchsia::sysmem::VULKAN_IMAGE_USAGE_SAMPLED;
 
 }  // namespace
 
@@ -48,8 +41,8 @@ bool VulkanSurface::CreateVulkanImage(vulkan::VulkanProvider& vulkan_provider,
                                       VulkanImage* out_vulkan_image) {
   TRACE_EVENT0("flutter", "CreateVulkanImage");
 
-  FML_DCHECK(!size.isEmpty());
-  FML_DCHECK(out_vulkan_image != nullptr);
+  FML_CHECK(!size.isEmpty());
+  FML_CHECK(out_vulkan_image != nullptr);
 
   out_vulkan_image->vk_collection_image_create_info = {
       .sType = VK_STRUCTURE_TYPE_BUFFER_COLLECTION_IMAGE_CREATE_INFO_FUCHSIA,
@@ -114,19 +107,18 @@ VulkanSurface::VulkanSurface(
     scenic::Session* session,
     const SkISize& size,
     uint32_t buffer_id)
-    : vulkan_provider_(vulkan_provider),
-      session_(session),
-      buffer_id_(buffer_id),
-      wait_(this) {
-  FML_DCHECK(session_);
+    : vulkan_provider_(vulkan_provider), session_(session), wait_(this) {
+  FML_CHECK(session_ != nullptr);
+  FML_CHECK(context != nullptr);
 
-  if (!AllocateDeviceMemory(sysmem_allocator, std::move(context), size)) {
-    FML_DLOG(INFO) << "Could not allocate device memory.";
+  if (!AllocateDeviceMemory(sysmem_allocator, std::move(context), size,
+                            buffer_id)) {
+    FML_LOG(ERROR) << "VulkanSurface: Could not allocate device memory.";
     return;
   }
 
   if (!CreateFences()) {
-    FML_DLOG(INFO) << "Could not create signal fences.";
+    FML_LOG(ERROR) << "VulkanSurface: Could not create signal fences.";
     return;
   }
 
@@ -142,6 +134,12 @@ VulkanSurface::VulkanSurface(
 }
 
 VulkanSurface::~VulkanSurface() {
+  if (image_id_) {
+    session_->Enqueue(scenic::NewReleaseResourceCmd(image_id_));
+  }
+  if (buffer_id_) {
+    session_->DeregisterBufferCollection(buffer_id_);
+  }
   wait_.Cancel();
   wait_.set_object(ZX_HANDLE_INVALID);
 }
@@ -166,7 +164,7 @@ vulkan::VulkanHandle<VkSemaphore> VulkanSurface::SemaphoreFromEvent(
   zx::event semaphore_event;
   zx_status_t status = event.duplicate(ZX_RIGHT_SAME_RIGHTS, &semaphore_event);
   if (status != ZX_OK) {
-    FML_DLOG(ERROR) << "failed to duplicate semaphore event";
+    FML_LOG(ERROR) << "VulkanSurface: Failed to duplicate semaphore event";
     return vulkan::VulkanHandle<VkSemaphore>();
   }
 
@@ -207,16 +205,18 @@ vulkan::VulkanHandle<VkSemaphore> VulkanSurface::SemaphoreFromEvent(
 
 bool VulkanSurface::CreateFences() {
   if (zx::event::create(0, &acquire_event_) != ZX_OK) {
+    FML_LOG(ERROR) << "VulkanSurface: Failed to create acquire event";
     return false;
   }
 
   acquire_semaphore_ = SemaphoreFromEvent(acquire_event_);
   if (!acquire_semaphore_) {
-    FML_DLOG(ERROR) << "failed to create acquire semaphore";
+    FML_LOG(ERROR) << "VulkanSurface: Failed to create acquire semaphore";
     return false;
   }
 
   if (zx::event::create(0, &release_event_) != ZX_OK) {
+    FML_LOG(ERROR) << "VulkanSurface: Failed to create release event";
     return false;
   }
 
@@ -228,74 +228,61 @@ bool VulkanSurface::CreateFences() {
 bool VulkanSurface::AllocateDeviceMemory(
     fuchsia::sysmem::AllocatorSyncPtr& sysmem_allocator,
     sk_sp<GrDirectContext> context,
-    const SkISize& size) {
+    const SkISize& size,
+    uint32_t buffer_id) {
   if (size.isEmpty()) {
     return false;
   }
 
-  fuchsia::sysmem::BufferCollectionTokenSyncPtr local_token;
-  zx_status_t status =
-      sysmem_allocator->AllocateSharedCollection(local_token.NewRequest());
-  LOG_AND_RETURN(status != ZX_OK, "Failed to allocate collection");
-  fuchsia::sysmem::BufferCollectionTokenSyncPtr scenic_token;
-  status = local_token->Duplicate(std::numeric_limits<uint32_t>::max(),
-                                  scenic_token.NewRequest());
-  LOG_AND_RETURN(status != ZX_OK, "Failed to duplicate token");
-  status = local_token->Sync();
-  LOG_AND_RETURN(status != ZX_OK, "Failed to sync token");
   fuchsia::sysmem::BufferCollectionTokenSyncPtr vulkan_token;
-  status = local_token->Duplicate(std::numeric_limits<uint32_t>::max(),
-                                  vulkan_token.NewRequest());
-  LOG_AND_RETURN(status != ZX_OK, "Failed to duplicate token");
-  status = local_token->Sync();
-  LOG_AND_RETURN(status != ZX_OK, "Failed to sync token");
+  zx_status_t status =
+      sysmem_allocator->AllocateSharedCollection(vulkan_token.NewRequest());
+  LOG_AND_RETURN(status != ZX_OK,
+                 "VulkanSurface: Failed to allocate collection");
+  fuchsia::sysmem::BufferCollectionTokenSyncPtr scenic_token;
+  status = vulkan_token->Duplicate(std::numeric_limits<uint32_t>::max(),
+                                   scenic_token.NewRequest());
+  LOG_AND_RETURN(status != ZX_OK,
+                 "VulkanSurface: Failed to duplicate collection token");
+  status = vulkan_token->Sync();
+  LOG_AND_RETURN(status != ZX_OK,
+                 "VulkanSurface: Failed to sync collection token");
 
-  session_->RegisterBufferCollection(buffer_id_, std::move(scenic_token));
-
-  fuchsia::sysmem::BufferCollectionSyncPtr buffer_collection;
-  status = sysmem_allocator->BindSharedCollection(
-      std::move(local_token), buffer_collection.NewRequest());
-  LOG_AND_RETURN(status != ZX_OK, "Failed to bind collection");
-
-  fuchsia::sysmem::BufferCollectionConstraints constraints;
-  constraints.min_buffer_count = 1;
-  constraints.usage.vulkan = kSysmemImageUsage;
-
-  constraints.image_format_constraints_count = 1;
-  fuchsia::sysmem::ImageFormatConstraints& image_constraints =
-      constraints.image_format_constraints[0];
-  image_constraints = fuchsia::sysmem::ImageFormatConstraints();
-  image_constraints.min_coded_width = size.width();
-  image_constraints.min_coded_height = size.height();
-  image_constraints.max_coded_width = size.width();
-  image_constraints.max_coded_height = size.height();
-  image_constraints.min_bytes_per_row = 0;
-  image_constraints.pixel_format.type = kSysmemPixelFormat;
-  image_constraints.color_spaces_count = 1;
-  image_constraints.color_space[0].type = fuchsia::sysmem::ColorSpaceType::SRGB;
-
-  status = buffer_collection->SetConstraints(true, constraints);
-  LOG_AND_RETURN(status != ZX_OK, "Failed to set constraints");
+  session_->RegisterBufferCollection(buffer_id, std::move(scenic_token));
+  buffer_id_ = buffer_id;
 
   VkBufferCollectionCreateInfoFUCHSIA import_info;
   import_info.collectionToken = vulkan_token.Unbind().TakeChannel().release();
+  VkBufferCollectionFUCHSIA collection;
   if (VK_CALL_LOG_ERROR(vulkan_provider_.vk().CreateBufferCollectionFUCHSIA(
-          vulkan_provider_.vk_device(), &import_info, nullptr, &collection_)) !=
+          vulkan_provider_.vk_device(), &import_info, nullptr, &collection)) !=
       VK_SUCCESS) {
     return false;
   }
 
+  collection_ = {collection, [&vulkan_provider = vulkan_provider_](
+                                 VkBufferCollectionFUCHSIA collection) {
+                   vulkan_provider.vk().DestroyBufferCollectionFUCHSIA(
+                       vulkan_provider.vk_device(), collection, nullptr);
+                 }};
+
   VulkanImage vulkan_image;
   LOG_AND_RETURN(!CreateVulkanImage(vulkan_provider_, size, &vulkan_image),
-                 "Failed to create VkImage");
-
-  status = buffer_collection->Close();
-  LOG_AND_RETURN(status != ZX_OK, "Failed to close collection");
+                 "VulkanSurface: Failed to create VkImage");
 
   vulkan_image_ = std::move(vulkan_image);
   const VkMemoryRequirements& memory_requirements =
       vulkan_image_.vk_memory_requirements;
   VkImageCreateInfo& image_create_info = vulkan_image_.vk_image_create_info;
+
+  VkBufferCollectionPropertiesFUCHSIA properties = {
+      .sType = VK_STRUCTURE_TYPE_BUFFER_COLLECTION_PROPERTIES_FUCHSIA};
+  if (VK_CALL_LOG_ERROR(
+          vulkan_provider_.vk().GetBufferCollectionPropertiesFUCHSIA(
+              vulkan_provider_.vk_device(), collection_, &properties)) !=
+      VK_SUCCESS) {
+    return false;
+  }
 
   VkImportMemoryBufferCollectionFUCHSIA import_memory_info = {
       .sType = VK_STRUCTURE_TYPE_IMPORT_MEMORY_BUFFER_COLLECTION_FUCHSIA,
@@ -303,7 +290,7 @@ bool VulkanSurface::AllocateDeviceMemory(
       .collection = collection_,
       .index = 0,
   };
-  auto bits = memory_requirements.memoryTypeBits;
+  auto bits = memory_requirements.memoryTypeBits & properties.memoryTypeBits;
   FML_DCHECK(bits != 0);
   VkMemoryAllocateInfo allocation_info = {
       .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
@@ -347,9 +334,7 @@ bool VulkanSurface::SetupSkiaSurface(sk_sp<GrDirectContext> context,
                                      SkColorType color_type,
                                      const VkImageCreateInfo& image_create_info,
                                      const VkMemoryRequirements& memory_reqs) {
-  if (context == nullptr) {
-    return false;
-  }
+  FML_CHECK(context != nullptr);
 
   GrVkAlloc alloc;
   alloc.fMemory = vk_memory_;
@@ -427,7 +412,7 @@ bool VulkanSurface::FlushSessionAcquireAndReleaseEvents() {
 
 void VulkanSurface::SignalWritesFinished(
     const std::function<void(void)>& on_writes_committed) {
-  FML_DCHECK(on_writes_committed);
+  FML_CHECK(on_writes_committed);
 
   if (!valid_) {
     on_writes_committed();

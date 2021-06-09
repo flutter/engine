@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
+// @dart = 2.9
 @TestOn('chrome || safari || firefox')
 
 import 'dart:async';
@@ -17,7 +17,7 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
-import '../../matchers.dart';
+import 'semantics_tester.dart';
 
 DateTime _testTime = DateTime(2018, 12, 17);
 
@@ -27,13 +27,8 @@ void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
-String rootSemanticStyle = '';
-
 void testMain() {
   setUp(() {
-    rootSemanticStyle = browserEngine != BrowserEngine.edge
-        ? 'filter: opacity(0%); color: rgba(0, 0, 0, 0)' :
-        'color: rgba(0, 0, 0, 0); filter: opacity(0%)';
     EngineSemanticsOwner.debugResetSemantics();
   });
 
@@ -88,23 +83,51 @@ void _testEngineSemanticsOwner() {
     expect(semantics().mode, AccessibilityMode.unknown);
   });
 
-  test('auto-enables semantics', () async {
+  test('placeholder enables semantics', () async {
     domRenderer.reset(); // triggers `autoEnableOnTap` to be called
     expect(semantics().semanticsEnabled, false);
 
     // Synthesize a click on the placeholder.
     final html.Element placeholder =
-        html.document.querySelectorAll('flt-semantics-placeholder').single;
+        appShadowRoot.querySelector('flt-semantics-placeholder');
+
+    expect(placeholder.isConnected, true);
+
     final html.Rectangle<num> rect = placeholder.getBoundingClientRect();
     placeholder.dispatchEvent(html.MouseEvent(
       'click',
       clientX: (rect.left + (rect.right - rect.left) / 2).floor(),
       clientY: (rect.top + (rect.bottom - rect.top) / 2).floor(),
     ));
-    while (!semantics().semanticsEnabled) {
-      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+    // On mobile semantics is enabled asynchronously.
+    if (isMobile) {
+      while (placeholder.isConnected) {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      }
     }
     expect(semantics().semanticsEnabled, true);
+    expect(placeholder.isConnected, false);
+  });
+
+  test('auto-enables semantics', () async {
+    domRenderer.reset(); // triggers `autoEnableOnTap` to be called
+    expect(semantics().semanticsEnabled, false);
+
+    final html.Element placeholder =
+        appShadowRoot.querySelector('flt-semantics-placeholder');
+
+    expect(placeholder.isConnected, true);
+
+    // Sending a semantics update should auto-enable engine semantics.
+    final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
+    updateNode(builder, id: 0);
+    semantics().updateSemantics(builder.build());
+
+    expect(semantics().semanticsEnabled, true);
+
+    // The placeholder should be removed
+    expect(placeholder.isConnected, false);
   });
 
   void renderLabel(String label) {
@@ -334,21 +357,25 @@ void _testContainer() {
 </sem>''');
 
     final html.Element parentElement =
-        html.document.querySelector('flt-semantics');
+        appShadowRoot.querySelector('flt-semantics');
     final html.Element container =
-        html.document.querySelector('flt-semantics-container');
+        appShadowRoot.querySelector('flt-semantics-container');
 
-    if (operatingSystem == OperatingSystem.macOs) {
-      expect(parentElement.style.transform, 'translate(0px, 0px)');
-      expect(parentElement.style.transformOrigin, '0px 0px 0px');
-      expect(container.style.transform, 'translate(0px, 0px)');
-      expect(container.style.transformOrigin, '0px 0px 0px');
+    if (isMacOrIOS) {
+      expect(parentElement.style.top, '0px');
+      expect(parentElement.style.left, '0px');
+      expect(container.style.top, '0px');
+      expect(container.style.left, '0px');
     } else {
-      expect(parentElement.style.transform, '');
-      expect(parentElement.style.transformOrigin, '');
-      expect(container.style.transform, '');
-      expect(container.style.transformOrigin, '');
+      expect(parentElement.style.top, '');
+      expect(parentElement.style.left, '');
+      expect(container.style.top, '');
+      expect(container.style.left, '');
     }
+    expect(parentElement.style.transform, '');
+    expect(parentElement.style.transformOrigin, '');
+    expect(container.style.transform, '');
+    expect(container.style.transformOrigin, '');
     semantics().semanticsEnabled = false;
   });
 
@@ -378,21 +405,14 @@ void _testContainer() {
 </sem>''');
 
     final html.Element parentElement =
-        html.document.querySelector('flt-semantics');
+        appShadowRoot.querySelector('flt-semantics');
     final html.Element container =
-        html.document.querySelector('flt-semantics-container');
+        appShadowRoot.querySelector('flt-semantics-container');
 
-    if (isDesktop) {
-      expect(parentElement.style.transform, 'matrix(1, 0, 0, 1, 10, 10)');
-      expect(parentElement.style.transformOrigin, '0px 0px 0px');
-      expect(container.style.transform, 'translate(-10px, -10px)');
-      expect(container.style.transformOrigin, '0px 0px 0px');
-    } else {
-      expect(parentElement.style.top, '20px');
-      expect(parentElement.style.left, '20px');
-      expect(container.style.top, '-10px');
-      expect(container.style.left, '-10px');
-    }
+    expect(parentElement.style.transform, 'matrix(1, 0, 0, 1, 10, 10)');
+    expect(parentElement.style.transformOrigin, '0px 0px 0px');
+    expect(container.style.top, '-10px');
+    expect(container.style.left, '-10px');
     semantics().semanticsEnabled = false;
   });
 
@@ -429,24 +449,28 @@ void _testContainer() {
   </sem-c>
 </sem>''');
     }
+
     final html.Element parentElement =
-        html.document.querySelector('flt-semantics');
+        appShadowRoot.querySelector('flt-semantics');
     final html.Element container =
-        html.document.querySelector('flt-semantics-container');
-    if (operatingSystem == OperatingSystem.macOs ||
-        operatingSystem == OperatingSystem.iOs) {
-      if (isDesktop) {
-        expect(parentElement.style.transform, 'translate(0px, 0px)');
-        expect(parentElement.style.transformOrigin, '0px 0px 0px');
-        expect(container.style.transform, 'translate(0px, 0px)');
-        expect(container.style.transformOrigin, '0px 0px 0px');
-      } else {
-        expect(parentElement.style.top, '0px');
-        expect(parentElement.style.left, '0px');
-        expect(container.style.top, '0px');
-        expect(container.style.left, '0px');
-      }
+        appShadowRoot.querySelector('flt-semantics-container');
+
+    if (isMacOrIOS) {
+      expect(parentElement.style.top, '0px');
+      expect(parentElement.style.left, '0px');
+      expect(container.style.top, '0px');
+      expect(container.style.left, '0px');
+    } else {
+      expect(parentElement.style.top, '');
+      expect(parentElement.style.left, '');
+      expect(container.style.top, '');
+      expect(container.style.left, '');
     }
+    expect(parentElement.style.transform, '');
+    expect(parentElement.style.transformOrigin, '');
+    expect(container.style.transform, '');
+    expect(container.style.transformOrigin, '');
+
     semantics().semanticsEnabled = false;
   });
 }
@@ -785,8 +809,7 @@ void _testIncrementables() {
   <input aria-valuenow="1" aria-valuetext="d" aria-valuemax="2" aria-valuemin="1">
 </sem>''');
 
-    final html.InputElement input =
-        html.document.querySelectorAll('input').single;
+    final html.InputElement input = appShadowRoot.querySelector('input');
     input.value = '2';
     input.dispatchEvent(html.Event('change'));
 
@@ -820,8 +843,7 @@ void _testIncrementables() {
   <input aria-valuenow="1" aria-valuetext="d" aria-valuemax="1" aria-valuemin="0">
 </sem>''');
 
-    final html.InputElement input =
-        html.document.querySelectorAll('input').single;
+    final html.InputElement input = appShadowRoot.querySelector('input');
     input.value = '0';
     input.dispatchEvent(html.Event('change'));
 
@@ -914,20 +936,19 @@ void _testTextField() {
 
     semantics().updateSemantics(builder.build());
 
-    final html.Element textField = html.document
-        .querySelectorAll('input[data-semantics-role="text-field"]')
-        .single;
+    final html.Element textField =
+        appShadowRoot.querySelector('input[data-semantics-role="text-field"]');
 
-    expect(html.document.activeElement, isNot(textField));
+    expect(appShadowRoot.activeElement, isNot(textField));
 
     textField.focus();
 
-    expect(html.document.activeElement, textField);
+    expect(appShadowRoot.activeElement, textField);
     expect(await logger.idLog.first, 0);
     expect(await logger.actionLog.first, ui.SemanticsAction.tap);
 
     semantics().semanticsEnabled = false;
-  },  // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
+  }, // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
       // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
       // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
       skip: (browserEngine != BrowserEngine.blink));
@@ -1199,23 +1220,22 @@ void _testTappable() {
       ..debugOverrideTimestampFunction(() => _testTime)
       ..semanticsEnabled = true;
 
-    final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
-    updateNode(
-      builder,
+    final SemanticsTester tester = SemanticsTester(semantics());
+    tester.updateNode(
       id: 0,
-      actions: 0 | ui.SemanticsAction.tap.index,
-      flags: 0 |
-          ui.SemanticsFlag.hasEnabledState.index |
-          ui.SemanticsFlag.isEnabled.index |
-          ui.SemanticsFlag.isButton.index,
-      transform: Matrix4.identity().toFloat64(),
+      hasTap: true,
+      hasEnabledState: true,
+      isEnabled: true,
+      isButton: true,
       rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
     );
+    tester.apply();
 
-    semantics().updateSemantics(builder.build());
     expectSemanticsTree('''
 <sem role="button" style="$rootSemanticStyle"></sem>
 ''');
+
+    expect(tester.getSemanticsObject(0).element.tabIndex, 0);
 
     semantics().semanticsEnabled = false;
   },
@@ -1418,53 +1438,9 @@ void _testLiveRegion() {
   });
 }
 
-void expectSemanticsTree(String semanticsHtml) {
-  expect(
-    canonicalizeHtml(html.document.querySelector('flt-semantics').outerHtml),
-    canonicalizeHtml(semanticsHtml),
-  );
-}
-
-html.Element findScrollable() {
-  return html.document.querySelectorAll('flt-semantics').firstWhere(
-        (html.Element element) =>
-            element.style.overflow == 'hidden' ||
-            element.style.overflowY == 'scroll' ||
-            element.style.overflowX == 'scroll',
-        orElse: () => null,
-      );
-}
-
-class SemanticsActionLogger {
-  StreamController<int> idLogController;
-  StreamController<ui.SemanticsAction> actionLogController;
-  Stream<int> idLog;
-  Stream<ui.SemanticsAction> actionLog;
-
-  SemanticsActionLogger() {
-    idLogController = StreamController<int>();
-    actionLogController = StreamController<ui.SemanticsAction>();
-    idLog = idLogController.stream.asBroadcastStream();
-    actionLog = actionLogController.stream.asBroadcastStream();
-
-    // The browser kicks us out of the test zone when the browser event happens.
-    // We memorize the test zone so we can call expect when the callback is
-    // fired.
-    final Zone testZone = Zone.current;
-
-    ui.window.onSemanticsAction =
-        (int id, ui.SemanticsAction action, ByteData args) {
-      idLogController.add(id);
-      actionLogController.add(action);
-      testZone.run(() {
-        expect(args, null);
-      });
-    };
-  }
-}
-
 /// A facade in front of [ui.SemanticsUpdateBuilder.updateNode] that
 /// supplies default values for semantics attributes.
+// TODO(yjbanov): move this to TestSemanticsBuilder
 void updateNode(
   ui.SemanticsUpdateBuilder builder, {
   int id = 0,

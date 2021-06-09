@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of engine;
 
 String _buildCssFontString({
@@ -361,7 +360,7 @@ class TextDimensions {
     _invalidateBoundsCache();
   }
 
-  /// Appends element and probe to hostElement that is setup for a specific
+  /// Appends element and probe to hostElement that is set up for a specific
   /// TextStyle.
   void appendToHost(html.HtmlElement hostElement) {
     hostElement.append(_element);

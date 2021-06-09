@@ -5,16 +5,16 @@
 #import "ax_platform_node_mac.h"
 
 #import <Cocoa/Cocoa.h>
-#include <stddef.h>
+
+#include <cstddef>
 
 #include "ax/ax_action_data.h"
 #include "ax/ax_node_data.h"
 #include "ax/ax_role_properties.h"
-#include "base/no_destructor.h"
-#import "gfx/mac/coordinate_conversion.h"
-
 #include "ax_platform_node.h"
 #include "ax_platform_node_delegate.h"
+#include "base/no_destructor.h"
+#import "gfx/mac/coordinate_conversion.h"
 
 namespace {
 
@@ -600,8 +600,19 @@ bool AlsoUseShowMenuActionForDefaultAction(const ui::AXNodeData& data) {
   if (role == ax::mojom::Role::kTab)
     return [self AXSelectedInternal];
 
-  if (ui::IsNameExposedInAXValueForRole(role))
+  if (ui::IsNameExposedInAXValueForRole(role)) {
+    if (role == ax::mojom::Role::kStaticText) {
+      // Static texts may store their texts in the value attributes. For
+      // example, the selectable text stores its text in value instead of
+      // name.
+      NSString* value = [self getName];
+      if (value.length == 0) {
+        value = [self getStringAttribute:ax::mojom::StringAttribute::kValue];
+      }
+      return value;
+    }
     return [self getName];
+  }
 
   if (_node->IsPlatformCheckable()) {
     // Mixed checkbox state not currently supported in views, but could be.
@@ -693,13 +704,13 @@ bool AlsoUseShowMenuActionForDefaultAction(const ui::AXNodeData& data) {
 }
 
 - (NSValue*)AXSelectedTextRangeInternal {
-  // Selection might not be supported. Return (NSRange){0,0} in that case.
-  int start = 0, end = 0;
-  if (_node->IsPlainTextField()) {
-    start = _node->GetIntAttribute(ax::mojom::IntAttribute::kTextSelStart);
-    end = _node->GetIntAttribute(ax::mojom::IntAttribute::kTextSelEnd);
-  }
+  int start = _node->GetIntAttribute(ax::mojom::IntAttribute::kTextSelStart);
+  int end = _node->GetIntAttribute(ax::mojom::IntAttribute::kTextSelEnd);
+  NSAssert((start >= 0 && end >= 0) || (start == -1 && end == -1), @"selection is invalid");
 
+  if (start == -1 && end == -1) {
+    return [NSValue valueWithRange:{NSNotFound, 0}];
+  }
   // NSRange cannot represent the direction the text was selected in.
   return [NSValue valueWithRange:{static_cast<NSUInteger>(std::min(start, end)),
                                   static_cast<NSUInteger>(abs(end - start))}];

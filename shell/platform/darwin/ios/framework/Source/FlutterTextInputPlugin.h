@@ -44,6 +44,10 @@
 
 @end
 
+/** A tokenizer used by `FlutterTextInputView` to customize string parsing. */
+@interface FlutterTokenizer : UITextInputStringTokenizer
+@end
+
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
 FLUTTER_DARWIN_EXPORT
 #endif
@@ -71,6 +75,7 @@ FLUTTER_DARWIN_EXPORT
 @property(nonatomic, copy) UITextContentType textContentType API_AVAILABLE(ios(10.0));
 
 @property(nonatomic, assign) id<FlutterTextInputDelegate> textInputDelegate;
+@property(nonatomic, assign) UIAccessibilityElement* backingTextInputAccessibilityObject;
 
 @end
 #endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTERTEXTINPUTPLUGIN_H_

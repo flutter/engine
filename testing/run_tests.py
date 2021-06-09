@@ -20,10 +20,10 @@ out_dir = os.path.join(buildroot_dir, 'out')
 golden_dir = os.path.join(buildroot_dir, 'flutter', 'testing', 'resources')
 fonts_dir = os.path.join(buildroot_dir, 'flutter', 'third_party', 'txt', 'third_party', 'fonts')
 roboto_font_path = os.path.join(fonts_dir, 'Roboto-Regular.ttf')
-dart_tests_dir = os.path.join(buildroot_dir, 'flutter', 'testing', 'dart',)
 font_subset_dir = os.path.join(buildroot_dir, 'flutter', 'tools', 'font-subset')
 
 fml_unittests_filter = '--gtest_filter=-*TimeSensitiveTest*'
+
 
 def PrintDivider(char='='):
   print '\n'
@@ -31,20 +31,42 @@ def PrintDivider(char='='):
     print(''.join([char for _ in xrange(80)]))
   print '\n'
 
-def RunCmd(cmd, **kwargs):
+
+def RunCmd(cmd, forbidden_output=[], expect_failure=False, **kwargs):
   command_string = ' '.join(cmd)
 
   PrintDivider('>')
   print 'Running command "%s"' % command_string
 
   start_time = time.time()
-  process = subprocess.Popen(cmd, stdout=sys.stdout, stderr=sys.stderr, **kwargs)
-  process.communicate()
+  stdout_pipe = sys.stdout if not forbidden_output else subprocess.PIPE
+  stderr_pipe = sys.stderr if not forbidden_output else subprocess.PIPE
+  process = subprocess.Popen(cmd, stdout=stdout_pipe, stderr=stderr_pipe, **kwargs)
+  stdout, stderr = process.communicate()
   end_time = time.time()
 
-  if process.returncode != 0:
+  if process.returncode != 0 and not expect_failure:
     PrintDivider('!')
-    raise Exception('Command "%s" exited with code %d' % (command_string, process.returncode))
+
+    print('Failed Command:\n\n%s\n\nExit Code: %d\n' % (command_string, process.returncode))
+
+    if stdout:
+      print('STDOUT: \n%s' % stdout)
+
+    if stderr:
+      print('STDERR: \n%s' % stderr)
+
+    PrintDivider('!')
+
+    raise Exception('Command "%s" exited with code %d.' % (command_string, process.returncode))
+
+  if stdout or stderr:
+    print(stdout)
+    print(stderr)
+
+  for forbidden_string in forbidden_output:
+    if (stdout and forbidden_string in stdout) or (stderr and forbidden_string in stderr):
+      raise Exception('command "%s" contained forbidden string %s' % (command_string, forbidden_string))
 
   PrintDivider('<')
   print 'Command run successfully in %.2f seconds: %s' % (end_time - start_time, command_string)
@@ -65,6 +87,7 @@ def IsWindows():
 def ExecutableSuffix():
   return '.exe' if IsWindows() else ''
 
+
 def FindExecutablePath(path):
   if os.path.exists(path):
     return path
@@ -81,7 +104,8 @@ def FindExecutablePath(path):
   raise Exception('Executable %s does not exist!' % path)
 
 
-def RunEngineExecutable(build_dir, executable_name, filter, flags=[], cwd=buildroot_dir):
+def RunEngineExecutable(build_dir, executable_name, filter, flags=[],
+                        cwd=buildroot_dir, forbidden_output=[], expect_failure=False):
   if filter is not None and executable_name not in filter:
     print('Skipping %s due to filter.' % executable_name)
     return
@@ -91,7 +115,7 @@ def RunEngineExecutable(build_dir, executable_name, filter, flags=[], cwd=buildr
   print('Running %s in %s' % (executable_name, cwd))
   test_command = [ executable ] + flags
   print(' '.join(test_command))
-  RunCmd(test_command, cwd=cwd)
+  RunCmd(test_command, cwd=cwd, forbidden_output=forbidden_output, expect_failure=expect_failure)
 
 
 def RunCCTests(build_dir, filter):
@@ -181,14 +205,12 @@ def RunEngineBenchmarks(build_dir, filter):
     RunEngineExecutable(build_dir, 'txt_benchmarks', filter)
 
 
-
-def SnapshotTest(build_dir, dart_file, kernel_file_output, verbose_dart_snapshot):
+def SnapshotTest(build_dir, test_packages, dart_file, kernel_file_output, verbose_dart_snapshot):
   print("Generating snapshot for test %s" % dart_file)
 
   dart = os.path.join(build_dir, 'dart-sdk', 'bin', 'dart')
   frontend_server = os.path.join(build_dir, 'gen', 'frontend_server.dart.snapshot')
   flutter_patched_sdk = os.path.join(build_dir, 'flutter_patched_sdk')
-  test_packages = os.path.join(dart_tests_dir, '.packages')
 
   assert os.path.exists(dart)
   assert os.path.exists(frontend_server)
@@ -197,6 +219,7 @@ def SnapshotTest(build_dir, dart_file, kernel_file_output, verbose_dart_snapshot
 
   snapshot_command = [
     dart,
+    '--disable-dart-dev',
     frontend_server,
     '--enable-experiment=non-nullable',
     '--no-sound-null-safety',
@@ -225,14 +248,23 @@ def SnapshotTest(build_dir, dart_file, kernel_file_output, verbose_dart_snapshot
   assert os.path.exists(kernel_file_output)
 
 
-def RunDartTest(build_dir, dart_file, verbose_dart_snapshot, multithreaded):
+def RunDartTest(build_dir, test_packages, dart_file, verbose_dart_snapshot, multithreaded,
+                enable_observatory=False, expect_failure=False):
   kernel_file_name = os.path.basename(dart_file) + '.kernel.dill'
   kernel_file_output = os.path.join(out_dir, kernel_file_name)
 
-  SnapshotTest(build_dir, dart_file, kernel_file_output, verbose_dart_snapshot)
+  SnapshotTest(build_dir, test_packages, dart_file, kernel_file_output, verbose_dart_snapshot)
 
-  command_args = [
-    '--disable-observatory',
+  command_args = []
+  if not enable_observatory:
+    command_args.append('--disable-observatory')
+
+  dart_file_contents = open(dart_file, 'r')
+  custom_options = re.findall("// FlutterTesterOptions=(.*)", dart_file_contents.read())
+  dart_file_contents.close()
+  command_args.extend(custom_options)
+
+  command_args += [
     '--use-test-fonts',
     kernel_file_output
   ]
@@ -244,23 +276,16 @@ def RunDartTest(build_dir, dart_file, verbose_dart_snapshot, multithreaded):
     threading = 'single-threaded'
 
   print("Running test '%s' using 'flutter_tester' (%s)" % (kernel_file_name, threading))
-  RunEngineExecutable(build_dir, 'flutter_tester', None, command_args)
-
-def RunPubGet(build_dir, directory):
-  print("Running 'pub get' in the tests directory %s" % dart_tests_dir)
-
-  pub_get_command = [
-    os.path.join(build_dir, 'dart-sdk', 'bin', 'pub'),
-    'get'
-  ]
-  RunCmd(pub_get_command, cwd=directory)
+  forbidden_output = [] if 'unopt' in build_dir or expect_failure else ['[ERROR']
+  RunEngineExecutable(build_dir, 'flutter_tester', None, command_args,
+                      forbidden_output=forbidden_output, expect_failure=expect_failure)
 
 
 def EnsureDebugUnoptSkyPackagesAreBuilt():
   variant_out_dir = os.path.join(out_dir, 'host_debug_unopt')
 
   ninja_command = [
-    'autoninja',
+    'ninja',
     '-C',
     variant_out_dir,
     'flutter/sky/packages'
@@ -282,6 +307,7 @@ def EnsureDebugUnoptSkyPackagesAreBuilt():
 
   RunCmd(gn_command, cwd=buildroot_dir)
   RunCmd(ninja_command, cwd=buildroot_dir)
+
 
 def EnsureJavaTestsAreBuilt(android_out_dir):
   """Builds the engine variant and the test jar containing the JUnit tests"""
@@ -310,6 +336,7 @@ def EnsureJavaTestsAreBuilt(android_out_dir):
   ]
   RunCmd(gn_command, cwd=buildroot_dir)
   RunCmd(ninja_command, cwd=buildroot_dir)
+
 
 def EnsureIosTestsAreBuilt(ios_out_dir):
   """Builds the engine variant and the test dylib containing the XCTests"""
@@ -340,6 +367,7 @@ def EnsureIosTestsAreBuilt(ios_out_dir):
   RunCmd(gn_command, cwd=buildroot_dir)
   RunCmd(ninja_command, cwd=buildroot_dir)
 
+
 def AssertExpectedJavaVersion():
   """Checks that the user has Java 8 which is the supported Java version for Android"""
   EXPECTED_VERSION = '1.8'
@@ -349,6 +377,7 @@ def AssertExpectedJavaVersion():
   message = "JUnit tests need to be run with Java %s. Check the `java -version` on your PATH." % EXPECTED_VERSION
   assert match, message
 
+
 def AssertExpectedXcodeVersion():
   """Checks that the user has a recent version of Xcode installed"""
   EXPECTED_MAJOR_VERSION = ['11', '12']
@@ -356,6 +385,7 @@ def AssertExpectedXcodeVersion():
   match = re.match("Xcode (\d+)", version_output)
   message = "Xcode must be installed to run the iOS embedding unit tests"
   assert match.group(1) in EXPECTED_MAJOR_VERSION, message
+
 
 def RunJavaTests(filter, android_variant='android_debug_unopt'):
   """Runs the Java JUnit unit tests for the Android embedding"""
@@ -384,6 +414,7 @@ def RunJavaTests(filter, android_variant='android_debug_unopt'):
 
   RunCmd(command)
 
+
 def RunObjcTests(ios_variant='ios_debug_sim_unopt'):
   """Runs Objective-C XCTest unit tests for the iOS embedding"""
   AssertExpectedXcodeVersion()
@@ -407,23 +438,49 @@ def RunObjcTests(ios_variant='ios_debug_sim_unopt'):
   RunCmd(command, cwd=ios_unit_test_dir, shell=True)
 
 def RunDartTests(build_dir, filter, verbose_dart_snapshot):
+  dart_tests_dir = os.path.join(buildroot_dir, 'flutter', 'testing', 'dart',)
+
   # This one is a bit messy. The pubspec.yaml at flutter/testing/dart/pubspec.yaml
   # has dependencies that are hardcoded to point to the sky packages at host_debug_unopt/
   # Before running Dart tests, make sure to run just that target (NOT the whole engine)
   EnsureDebugUnoptSkyPackagesAreBuilt()
 
   # Now that we have the Sky packages at the hardcoded location, run `pub get`.
-  RunEngineExecutable(build_dir, os.path.join('dart-sdk', 'bin', 'pub'), None, flags=['get'], cwd=dart_tests_dir)
+  RunEngineExecutable(
+    build_dir,
+    os.path.join('dart-sdk', 'bin', 'pub'),
+    None,
+    flags=['get', '--offline'],
+    cwd=dart_tests_dir,
+  )
 
+  dart_observatory_tests = glob.glob('%s/observatory/*_test.dart' % dart_tests_dir)
   dart_tests = glob.glob('%s/*_test.dart' % dart_tests_dir)
+  test_packages = os.path.join(dart_tests_dir, '.packages')
+
+  if 'release' not in build_dir:
+    for dart_test_file in dart_observatory_tests:
+      if filter is not None and os.path.basename(dart_test_file) not in filter:
+        print("Skipping %s due to filter." % dart_test_file)
+      else:
+        print("Testing dart file %s with observatory enabled" % dart_test_file)
+        RunDartTest(build_dir, test_packages, dart_test_file, verbose_dart_snapshot, True, True)
+        RunDartTest(build_dir, test_packages, dart_test_file, verbose_dart_snapshot, False, True)
 
   for dart_test_file in dart_tests:
     if filter is not None and os.path.basename(dart_test_file) not in filter:
       print("Skipping %s due to filter." % dart_test_file)
     else:
       print("Testing dart file %s" % dart_test_file)
-      RunDartTest(build_dir, dart_test_file, verbose_dart_snapshot, True)
-      RunDartTest(build_dir, dart_test_file, verbose_dart_snapshot, False)
+      RunDartTest(build_dir, test_packages, dart_test_file, verbose_dart_snapshot, True)
+      RunDartTest(build_dir, test_packages, dart_test_file, verbose_dart_snapshot, False)
+
+
+def RunDartSmokeTest(build_dir, verbose_dart_snapshot):
+  smoke_test = os.path.join(buildroot_dir, "flutter", "testing", "smoke_test_failure", "fail_test.dart")
+  test_packages = os.path.join(buildroot_dir, "flutter", "testing", "smoke_test_failure", ".packages")
+  RunDartTest(build_dir, test_packages, smoke_test, verbose_dart_snapshot, True, expect_failure=True)
+  RunDartTest(build_dir, test_packages, smoke_test, verbose_dart_snapshot, False, expect_failure=True)
 
 
 def RunFrontEndServerTests(build_dir):
@@ -431,6 +488,7 @@ def RunFrontEndServerTests(build_dir):
   dart_tests = glob.glob('%s/test/*_test.dart' % test_dir)
   for dart_test_file in dart_tests:
     opts = [
+      '--disable-dart-dev',
       dart_test_file,
       os.path.join(build_dir, 'gen', 'frontend_server.dart.snapshot'),
       os.path.join(build_dir, 'flutter_patched_sdk')]
@@ -445,10 +503,42 @@ def RunFrontEndServerTests(build_dir):
 def RunConstFinderTests(build_dir):
   test_dir = os.path.join(buildroot_dir, 'flutter', 'tools', 'const_finder', 'test')
   opts = [
+    '--disable-dart-dev',
     os.path.join(test_dir, 'const_finder_test.dart'),
     os.path.join(build_dir, 'gen', 'frontend_server.dart.snapshot'),
     os.path.join(build_dir, 'flutter_patched_sdk')]
   RunEngineExecutable(build_dir, os.path.join('dart-sdk', 'bin', 'dart'), None, flags=opts, cwd=test_dir)
+
+
+def RunLitetestTests(build_dir):
+  test_dir = os.path.join(buildroot_dir, 'flutter', 'testing', 'litetest')
+  dart_tests = glob.glob('%s/test/*_test.dart' % test_dir)
+  for dart_test_file in dart_tests:
+    opts = [
+      '--disable-dart-dev',
+      dart_test_file]
+    RunEngineExecutable(
+      build_dir,
+      os.path.join('dart-sdk', 'bin', 'dart'),
+      None,
+      flags=opts,
+      cwd=test_dir)
+
+
+def RunBenchmarkTests(build_dir):
+  test_dir = os.path.join(buildroot_dir, 'flutter', 'testing', 'benchmark')
+  dart_tests = glob.glob('%s/test/*_test.dart' % test_dir)
+  for dart_test_file in dart_tests:
+    opts = [
+      '--disable-dart-dev',
+      dart_test_file]
+    RunEngineExecutable(
+      build_dir,
+      os.path.join('dart-sdk', 'bin', 'dart'),
+      None,
+      flags=opts,
+      cwd=test_dir)
+
 
 def main():
   parser = argparse.ArgumentParser()
@@ -489,6 +579,8 @@ def main():
   if 'dart' in types:
     assert not IsWindows(), "Dart tests can't be run on windows. https://github.com/flutter/flutter/issues/36301."
     dart_filter = args.dart_filter.split(',') if args.dart_filter else None
+    RunDartSmokeTest(build_dir, args.verbose_dart_snapshot)
+    RunLitetestTests(build_dir)
     RunDartTests(build_dir, dart_filter, args.verbose_dart_snapshot)
     RunConstFinderTests(build_dir)
     RunFrontEndServerTests(build_dir)
@@ -507,6 +599,7 @@ def main():
 
   # https://github.com/flutter/flutter/issues/36300
   if 'benchmarks' in types and not IsWindows():
+    RunBenchmarkTests(build_dir)
     RunEngineBenchmarks(build_dir, engine_filter)
 
   if ('engine' in types or 'font-subset' in types) and args.variant != 'host_release':

@@ -2,8 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'package:ui/ui.dart' as ui;
 
 const bool _debugLogPointerConverter = false;
 
@@ -18,8 +17,6 @@ class _PointerState {
     _pointerCount += 1;
     _pointer = _pointerCount;
   }
-
-  bool down = false;
 
   double x;
   double y;
@@ -240,8 +237,9 @@ class PointerDataConverter {
     double scrollDeltaY = 0.0,
   }) {
     if (_debugLogPointerConverter) {
-      print('>> device=$device change = $change buttons = $buttons');
+      print('>> device=$device change=$change buttons=$buttons');
     }
+    final bool isDown = buttons != 0;
     assert(change != null); // ignore: unnecessary_null_comparison
     if (signalKind == null ||
       signalKind == ui.PointerSignalKind.none) {
@@ -281,9 +279,8 @@ class PointerDataConverter {
           break;
         case ui.PointerChange.hover:
           final bool alreadyAdded = _pointers.containsKey(device);
-          final _PointerState state = _ensureStateForPointer(
-            device, physicalX, physicalY);
-          assert(!state.down);
+          _ensureStateForPointer(device, physicalX, physicalY);
+          assert(!isDown);
           if (!alreadyAdded) {
             // Synthesizes an add pointer data.
             result.add(
@@ -348,7 +345,7 @@ class PointerDataConverter {
           final bool alreadyAdded = _pointers.containsKey(device);
           final _PointerState state = _ensureStateForPointer(
             device, physicalX, physicalY);
-          assert(!state.down);
+          assert(isDown);
           state.startNewPointer();
           if (!alreadyAdded) {
             // Synthesizes an add pointer data.
@@ -412,7 +409,6 @@ class PointerDataConverter {
               )
             );
           }
-          state.down = true;
           result.add(
             _generateCompletePointerData(
               timeStamp: timeStamp,
@@ -445,8 +441,7 @@ class PointerDataConverter {
           break;
         case ui.PointerChange.move:
           assert(_pointers.containsKey(device));
-          final _PointerState state = _pointers[device]!;
-          assert(state.down);
+          assert(isDown);
           result.add(
             _generateCompletePointerData(
               timeStamp: timeStamp,
@@ -481,7 +476,7 @@ class PointerDataConverter {
         case ui.PointerChange.cancel:
           assert(_pointers.containsKey(device));
           final _PointerState state = _pointers[device]!;
-          assert(state.down);
+          assert(!isDown);
           // Cancel events can have different coordinates due to various
           // reasons (window lost focus which is accompanied by window
           // movement, or PointerEvent simply always gives 0). Instead of
@@ -522,7 +517,6 @@ class PointerDataConverter {
               )
             );
           }
-          state.down = false;
           result.add(
             _generateCompletePointerData(
               timeStamp: timeStamp,
@@ -588,7 +582,7 @@ class PointerDataConverter {
         case ui.PointerChange.remove:
           assert(_pointers.containsKey(device));
           final _PointerState state = _pointers[device]!;
-          assert(!state.down);
+          assert(!isDown);
           result.add(
             _generateCompletePointerData(
               timeStamp: timeStamp,
@@ -624,8 +618,7 @@ class PointerDataConverter {
       switch (signalKind) {
         case ui.PointerSignalKind.scroll:
           final bool alreadyAdded = _pointers.containsKey(device);
-          final _PointerState state = _ensureStateForPointer(
-            device, physicalX, physicalY);
+          _ensureStateForPointer(device, physicalX, physicalY);
           if (!alreadyAdded) {
             // Synthesizes an add pointer data.
             result.add(
@@ -661,7 +654,7 @@ class PointerDataConverter {
             // before sending the scroll event, if necessary, so that clients
             // don't have to worry about native ordering of hover and scroll
             // events.
-            if (state.down) {
+            if (isDown) {
               result.add(
                 _synthesizePointerData(
                   timeStamp: timeStamp,

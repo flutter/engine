@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of ui;
 
 abstract class FlutterView {
@@ -32,8 +31,8 @@ abstract class SingletonFlutterWindow extends FlutterWindow {
     platformDispatcher.onMetricsChanged = callback;
   }
 
-  Locale? get locale => platformDispatcher.locale;
-  List<Locale>? get locales => platformDispatcher.locales;
+  Locale get locale => platformDispatcher.locale;
+  List<Locale> get locales => platformDispatcher.locales;
 
   Locale? computePlatformResolvedLocale(List<Locale> supportedLocales) {
     return platformDispatcher.computePlatformResolvedLocale(supportedLocales);
@@ -79,6 +78,11 @@ abstract class SingletonFlutterWindow extends FlutterWindow {
   PointerDataPacketCallback? get onPointerDataPacket => platformDispatcher.onPointerDataPacket;
   set onPointerDataPacket(PointerDataPacketCallback? callback) {
     platformDispatcher.onPointerDataPacket = callback;
+  }
+
+  KeyDataCallback? get onKeyData => platformDispatcher.onKeyData;
+  set onKeyData(KeyDataCallback? callback) {
+    platformDispatcher.onKeyData = callback;
   }
 
   String get defaultRouteName => platformDispatcher.defaultRouteName;

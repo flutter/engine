@@ -186,6 +186,7 @@ source_set("ios_test_flutter_mrc") {
     "framework/Source/FlutterEngineTest_mrc.mm",
     "framework/Source/FlutterPlatformPluginTest.mm",
     "framework/Source/FlutterPlatformViewsTest.mm",
+    "framework/Source/FlutterViewTest.mm",
     "framework/Source/accessibility_bridge_test.mm",
   ]
   deps = [
@@ -266,6 +267,24 @@ copy("copy_dylib") {
 
   sources = [ "$root_out_dir/libFlutter.dylib" ]
   outputs = [ "$_flutter_framework_dir/Flutter" ]
+
+  deps = [ ":create_flutter_framework_dylib" ]
+}
+
+copy("copy_asan_runtime_dylib") {
+  visibility = [ ":*" ]
+
+  _libclang_base_path =
+      "//buildtools/mac-x64/clang/lib/clang/13.0.0/lib/darwin/"
+
+  if (defined(use_ios_simulator) && use_ios_simulator) {
+    _dylib_name = "libclang_rt.asan_iossim_dynamic.dylib"
+  } else {
+    _dylib_name = "libclang_rt.asan_ios_dynamic.dylib"
+  }
+
+  sources = [ "$_libclang_base_path/$_dylib_name" ]
+  outputs = [ "$root_out_dir/$_dylib_name" ]
 
   deps = [ ":create_flutter_framework_dylib" ]
 }
@@ -351,6 +370,10 @@ group("universal_flutter_framework") {
     ":copy_framework_podspec",
     ":copy_license",
   ]
+
+  if (is_asan) {
+    deps += [ ":copy_asan_runtime_dylib" ]
+  }
 }
 
 action("flutter_framework") {

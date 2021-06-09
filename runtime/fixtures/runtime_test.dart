@@ -118,20 +118,25 @@ void testCanConvertListOfInts(List<int> args){
 bool didCallRegistrantBeforeEntrypoint = false;
 
 // Test the Dart plugin registrant.
-// _registerPlugins requires the entrypoint annotation, so the compiler doesn't tree shake it.
 @pragma('vm:entry-point')
-void _registerPlugins() { // ignore: unused_element
-  if (didCallRegistrantBeforeEntrypoint) {
-    throw '_registerPlugins is being called twice';
+class _PluginRegistrant {
+
+  @pragma('vm:entry-point')
+  static void register() {
+    if (didCallRegistrantBeforeEntrypoint) {
+      throw '_registerPlugins is being called twice';
+    }
+    didCallRegistrantBeforeEntrypoint = true;
   }
-  didCallRegistrantBeforeEntrypoint = true;
+
 }
+
 
 @pragma('vm:entry-point')
 void mainForPluginRegistrantTest() { // ignore: unused_element
   if (didCallRegistrantBeforeEntrypoint) {
-    passMessage('_registerPlugins was called');
+    passMessage('_PluginRegistrant.register() was called');
   } else {
-    passMessage('_registerPlugins was not called');
+    passMessage('_PluginRegistrant.register() was not called');
   }
 }

@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of ui;
 
 class SemanticsAction {
@@ -29,6 +28,7 @@ class SemanticsAction {
   static const int _kDismissIndex = 1 << 18;
   static const int _kMoveCursorForwardByWordIndex = 1 << 19;
   static const int _kMoveCursorBackwardByWordIndex = 1 << 20;
+  static const int _kSetText = 1 << 21;
   final int index;
   static const SemanticsAction tap = SemanticsAction._(_kTapIndex);
   static const SemanticsAction longPress = SemanticsAction._(_kLongPressIndex);
@@ -57,6 +57,7 @@ class SemanticsAction {
       SemanticsAction._(_kMoveCursorForwardByWordIndex);
   static const SemanticsAction moveCursorBackwardByWord =
       SemanticsAction._(_kMoveCursorBackwardByWordIndex);
+  static const SemanticsAction setText = SemanticsAction._(_kSetText);
   static const Map<int, SemanticsAction> values = <int, SemanticsAction>{
     _kTapIndex: tap,
     _kLongPressIndex: longPress,
@@ -79,6 +80,7 @@ class SemanticsAction {
     _kDismissIndex: dismiss,
     _kMoveCursorForwardByWordIndex: moveCursorForwardByWord,
     _kMoveCursorBackwardByWordIndex: moveCursorBackwardByWord,
+    _kSetText: setText,
   };
 
   @override
@@ -126,6 +128,8 @@ class SemanticsAction {
         return 'SemanticsAction.moveCursorForwardByWord';
       case _kMoveCursorBackwardByWordIndex:
         return 'SemanticsAction.moveCursorBackwardByWord';
+      case _kSetText:
+        return 'SemanticsAction.setText';
     }
     assert(false, 'Unhandled index: $index');
     return '';
@@ -157,6 +161,7 @@ class SemanticsFlag {
   static const int _kIsFocusableIndex = 1 << 21;
   static const int _kIsLinkIndex = 1 << 22;
   static const int _kIsSliderIndex = 1 << 23;
+  static const int _kIsKeyboardKeyIndex = 1 << 24;
 
   const SemanticsFlag._(this.index) : assert(index != null); // ignore: unnecessary_null_comparison
   final int index;
@@ -184,6 +189,7 @@ class SemanticsFlag {
   static const SemanticsFlag hasImplicitScrolling = SemanticsFlag._(_kHasImplicitScrollingIndex);
   static const SemanticsFlag isMultiline = SemanticsFlag._(_kIsMultilineIndex);
   static const SemanticsFlag isSlider = SemanticsFlag._(_kIsSliderIndex);
+  static const SemanticsFlag isKeyboardKey = SemanticsFlag._(_kIsKeyboardKeyIndex);
   static const Map<int, SemanticsFlag> values = <int, SemanticsFlag>{
     _kHasCheckedStateIndex: hasCheckedState,
     _kIsCheckedIndex: isChecked,
@@ -209,6 +215,7 @@ class SemanticsFlag {
     _kHasImplicitScrollingIndex: hasImplicitScrolling,
     _kIsMultilineIndex: isMultiline,
     _kIsReadOnlyIndex: isReadOnly,
+    _kIsKeyboardKeyIndex: isKeyboardKey,
   };
 
   @override
@@ -260,9 +267,63 @@ class SemanticsFlag {
         return 'SemanticsFlag.isMultiline';
       case _kIsReadOnlyIndex:
         return 'SemanticsFlag.isReadOnly';
+      case _kIsKeyboardKeyIndex:
+        return 'SemanticsFlag.isKeyboardKey';
     }
     assert(false, 'Unhandled index: $index');
     return '';
+  }
+}
+
+
+// When adding a new StringAttributeType, the classes in these file must be
+// updated as well.
+//  * engine/src/flutter/lib/ui/semantics.dart
+//  * engine/src/flutter/lib/ui/semantics/string_attribute.h
+//  * engine/src/flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java
+
+abstract class StringAttribute {
+  StringAttribute._({
+    required this.range,
+  });
+
+  final TextRange range;
+
+  StringAttribute copy({required TextRange range});
+}
+
+class SpellOutStringAttribute extends StringAttribute {
+  SpellOutStringAttribute({
+    required TextRange range,
+  }) : super._(range: range);
+
+  @override
+  StringAttribute copy({required TextRange range}) {
+    return SpellOutStringAttribute(range: range);
+  }
+
+  @override
+  String toString() {
+    return 'SpellOutStringAttribute(range: $range)';
+  }
+}
+
+class LocaleStringAttribute extends StringAttribute {
+  LocaleStringAttribute({
+    required TextRange range,
+    required this.locale,
+  }) : super._(range: range);
+
+  final Locale locale;
+
+  @override
+  StringAttribute copy({required TextRange range}) {
+    return LocaleStringAttribute(range: range, locale: this.locale);
+  }
+
+  @override
+  String toString() {
+    return 'LocaleStringAttribute(range: $range, locale: ${locale.toLanguageTag()})';
   }
 }
 
@@ -288,10 +349,15 @@ class SemanticsUpdateBuilder {
     required double thickness,
     required Rect rect,
     required String label,
-    required String hint,
+    List<StringAttribute>? labelAttributes,
     required String value,
+    List<StringAttribute>? valueAttributes,
     required String increasedValue,
+    List<StringAttribute>? increasedValueAttributes,
     required String decreasedValue,
+    List<StringAttribute>? decreasedValueAttributes,
+    required String hint,
+    List<StringAttribute>? hintAttributes,
     TextDirection? textDirection,
     required Float64List transform,
     required Int32List childrenInTraversalOrder,
@@ -315,10 +381,15 @@ class SemanticsUpdateBuilder {
       scrollExtentMin: scrollExtentMin,
       rect: rect,
       label: label,
-      hint: hint,
+      labelAttributes: labelAttributes,
       value: value,
+      valueAttributes: valueAttributes,
       increasedValue: increasedValue,
+      increasedValueAttributes: increasedValueAttributes,
       decreasedValue: decreasedValue,
+      decreasedValueAttributes: decreasedValueAttributes,
+      hint: hint,
+      hintAttributes: hintAttributes,
       textDirection: textDirection,
       transform: engine.toMatrix32(transform),
       elevation: elevation,

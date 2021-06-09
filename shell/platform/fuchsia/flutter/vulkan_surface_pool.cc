@@ -5,6 +5,7 @@
 #include "vulkan_surface_pool.h"
 
 #include <lib/fdio/directory.h>
+#include <lib/zx/process.h>
 
 #include <algorithm>
 #include <string>
@@ -14,15 +15,33 @@
 
 namespace flutter_runner {
 
+static std::string GetCurrentProcessName() {
+  char name[ZX_MAX_NAME_LEN];
+  zx_status_t status =
+      zx::process::self()->get_property(ZX_PROP_NAME, name, sizeof(name));
+  return status == ZX_OK ? std::string(name) : std::string();
+}
+
+static zx_koid_t GetCurrentProcessId() {
+  zx_info_handle_basic_t info;
+  zx_status_t status = zx::process::self()->get_info(
+      ZX_INFO_HANDLE_BASIC, &info, sizeof(info), nullptr, nullptr);
+  return status == ZX_OK ? info.koid : ZX_KOID_INVALID;
+}
+
 VulkanSurfacePool::VulkanSurfacePool(vulkan::VulkanProvider& vulkan_provider,
                                      sk_sp<GrDirectContext> context,
                                      scenic::Session* scenic_session)
     : vulkan_provider_(vulkan_provider),
       context_(std::move(context)),
       scenic_session_(scenic_session) {
+  FML_CHECK(context_ != nullptr);
+
   zx_status_t status = fdio_service_connect(
       "/svc/fuchsia.sysmem.Allocator",
       sysmem_allocator_.NewRequest().TakeChannel().release());
+  sysmem_allocator_->SetDebugClientInfo(GetCurrentProcessName(),
+                                        GetCurrentProcessId());
   FML_DCHECK(status != ZX_OK);
 }
 
@@ -33,12 +52,13 @@ std::unique_ptr<VulkanSurface> VulkanSurfacePool::AcquireSurface(
   auto surface = GetCachedOrCreateSurface(size);
 
   if (surface == nullptr) {
-    FML_DLOG(ERROR) << "Could not acquire surface";
+    FML_LOG(ERROR) << "VulkanSurfaceProducer: Could not acquire surface";
     return nullptr;
   }
 
   if (!surface->FlushSessionAcquireAndReleaseEvents()) {
-    FML_DLOG(ERROR) << "Could not flush acquire/release events for buffer.";
+    FML_LOG(ERROR) << "VulkanSurfaceProducer: Could not flush acquire/release "
+                      "events for buffer.";
     return nullptr;
   }
 
@@ -100,6 +120,7 @@ std::unique_ptr<VulkanSurface> VulkanSurfacePool::CreateSurface(
       vulkan_provider_, sysmem_allocator_, context_, scenic_session_, size,
       buffer_id_++);
   if (!surface->IsValid()) {
+    FML_LOG(ERROR) << "VulkanSurfaceProducer: Created surface is invalid";
     return nullptr;
   }
   trace_surfaces_created_++;
@@ -172,7 +193,8 @@ void VulkanSurfacePool::AgeAndCollectOldBuffers() {
     if (new_surface != nullptr) {
       available_surfaces_.push_back(std::move(new_surface));
     } else {
-      FML_DLOG(ERROR) << "Failed to create a new shrunk surface";
+      FML_LOG(ERROR)
+          << "VulkanSurfaceProducer: Failed to create a new shrunk surface";
     }
   }
 
@@ -199,7 +221,8 @@ void VulkanSurfacePool::ShrinkToFit() {
     if (surface != nullptr) {
       available_surfaces_.push_back(std::move(surface));
     } else {
-      FML_DLOG(ERROR) << "Failed to create resized surface";
+      FML_LOG(ERROR)
+          << "VulkanSurfaceProducer: Failed to create resized surface";
     }
   }
 

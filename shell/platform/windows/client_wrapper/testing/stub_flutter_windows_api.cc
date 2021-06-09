@@ -64,6 +64,9 @@ FlutterDesktopViewRef FlutterDesktopViewControllerGetView(
   return reinterpret_cast<FlutterDesktopViewRef>(1);
 }
 
+void FlutterDesktopViewControllerForceRedraw(
+    FlutterDesktopViewControllerRef controller) {}
+
 bool FlutterDesktopViewControllerHandleTopLevelWindowProc(
     FlutterDesktopViewControllerRef controller,
     HWND hwnd,
@@ -79,9 +82,9 @@ bool FlutterDesktopViewControllerHandleTopLevelWindowProc(
 }
 
 FlutterDesktopEngineRef FlutterDesktopEngineCreate(
-    const FlutterDesktopEngineProperties& engine_properties) {
+    const FlutterDesktopEngineProperties* engine_properties) {
   if (s_stub_implementation) {
-    return s_stub_implementation->EngineCreate(engine_properties);
+    return s_stub_implementation->EngineCreate(*engine_properties);
   }
   return nullptr;
 }

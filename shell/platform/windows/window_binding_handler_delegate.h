@@ -5,7 +5,7 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_WINDOW_BINDING_HANDLER_DELEGATE_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_WINDOW_BINDING_HANDLER_DELEGATE_H_
 
-#include "flutter/shell/platform/common/cpp/geometry.h"
+#include "flutter/shell/platform/common/geometry.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 
 namespace flutter {
@@ -19,23 +19,27 @@ class WindowBindingHandlerDelegate {
 
   // Notifies delegate that backing window mouse has moved.
   // Typically called by currently configured WindowBindingHandler
-  virtual void OnPointerMove(double x, double y) = 0;
+  virtual void OnPointerMove(double x,
+                             double y,
+                             FlutterPointerDeviceKind device_kind) = 0;
 
   // Notifies delegate that backing window mouse pointer button has been
   // pressed. Typically called by currently configured WindowBindingHandler
   virtual void OnPointerDown(double x,
                              double y,
+                             FlutterPointerDeviceKind device_kind,
                              FlutterPointerMouseButtons button) = 0;
 
   // Notifies delegate that backing window mouse pointer button has been
   // released. Typically called by currently configured WindowBindingHandler
   virtual void OnPointerUp(double x,
                            double y,
+                           FlutterPointerDeviceKind device_kind,
                            FlutterPointerMouseButtons button) = 0;
 
   // Notifies delegate that backing window mouse pointer has left the window.
   // Typically called by currently configured WindowBindingHandler
-  virtual void OnPointerLeave() = 0;
+  virtual void OnPointerLeave(FlutterPointerDeviceKind device_kind) = 0;
 
   // Notifies delegate that backing window has received text.
   // Typically called by currently configured WindowBindingHandler
@@ -50,13 +54,21 @@ class WindowBindingHandlerDelegate {
                      int scancode,
                      int action,
                      char32_t character,
-                     bool extended) = 0;
+                     bool extended,
+                     bool was_down) = 0;
 
   // Notifies the delegate that IME composing mode has begun.
   //
   // Triggered when the user begins editing composing text using a multi-step
   // input method such as in CJK text input.
   virtual void OnComposeBegin() = 0;
+
+  // Notifies the delegate that IME composing region have been committed.
+  //
+  // Triggered when the user commits the current composing text while using a
+  // multi-step input method such as in CJK text input. Composing continues with
+  // the next keypress.
+  virtual void OnComposeCommit() = 0;
 
   // Notifies the delegate that IME composing mode has ended.
   //

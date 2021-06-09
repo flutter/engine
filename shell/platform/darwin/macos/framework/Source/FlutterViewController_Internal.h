@@ -4,7 +4,8 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterViewController.h"
 
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterIntermediateKeyResponder.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeySecondaryResponder.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputPlugin.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 
 @interface FlutterViewController ()
@@ -18,15 +19,9 @@
 @property(nonatomic, readonly, nonnull) NSPasteboard* pasteboard;
 
 /**
- * Adds an intermediate responder for keyboard events. Key up and key down events are forwarded to
- * all added responders, and they either handle the keys or not.
+ * The text input plugin that handles text editing state for text fields.
  */
-- (void)addKeyResponder:(nonnull FlutterIntermediateKeyResponder*)responder;
-
-/**
- * Removes an intermediate responder for keyboard events.
- */
-- (void)removeKeyResponder:(nonnull FlutterIntermediateKeyResponder*)responder;
+@property(nonatomic, readonly, nonnull) FlutterTextInputPlugin* textInputPlugin;
 
 /**
  * Initializes this FlutterViewController with the specified `FlutterEngine`.
@@ -40,4 +35,10 @@
 - (nonnull instancetype)initWithEngine:(nonnull FlutterEngine*)engine
                                nibName:(nullable NSString*)nibName
                                 bundle:(nullable NSBundle*)nibBundle NS_DESIGNATED_INITIALIZER;
+
+@end
+
+// Private methods made visible for testing
+@interface FlutterViewController (TestMethods)
+- (void)onAccessibilityStatusChanged:(nonnull NSNotification*)notification;
 @end

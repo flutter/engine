@@ -2,8 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'dart:html' as html;
+
+import 'package:ui/src/engine.dart' show EnginePlatformDispatcher;
+import 'package:ui/ui.dart' as ui;
+
+import '../services/message_codec.dart';
+import '../services/message_codecs.dart';
+import 'url_strategy.dart';
 
 /// An abstract class that provides the API for [EngineWindow] to delegate its
 /// navigating events.
@@ -56,8 +62,12 @@ abstract class BrowserHistory {
   /// The state of the current location of the user's browser.
   Object? get currentState => urlStrategy?.getState();
 
-  /// Update the url with the given [routeName] and [state].
-  void setRouteName(String? routeName, {Object? state});
+  /// Update the url with the given `routeName` and `state`.
+  ///
+  /// If `replace` is false, the caller wants to push a new `routeName` and
+  /// `state` on top of the existing ones; otherwise, the caller wants to replace
+  /// the current `routeName` and `state` with the new ones.
+  void setRouteName(String? routeName, {Object? state, bool replace = false});
 
   /// A callback method to handle browser backward or forward buttons.
   ///
@@ -125,15 +135,23 @@ class MultiEntriesBrowserHistory extends BrowserHistory {
   }
 
   @override
-  void setRouteName(String? routeName, {Object? state}) {
+  void setRouteName(String? routeName, {Object? state, bool replace = false}) {
     if (urlStrategy != null) {
       assert(routeName != null);
-      _lastSeenSerialCount += 1;
-      urlStrategy!.pushState(
-        _tagWithSerialCount(state, _lastSeenSerialCount),
-        'flutter',
-        routeName!,
-      );
+      if (replace) {
+        urlStrategy!.replaceState(
+          _tagWithSerialCount(state, _lastSeenSerialCount),
+          'flutter',
+          routeName!,
+        );
+      } else {
+        _lastSeenSerialCount += 1;
+        urlStrategy!.pushState(
+          _tagWithSerialCount(state, _lastSeenSerialCount),
+          'flutter',
+          routeName!,
+        );
+      }
     }
   }
 
@@ -217,8 +235,8 @@ class SingleEntryBrowserHistory extends BrowserHistory {
     if (!_isFlutterEntry(html.window.history.state)) {
       // An entry may not have come from Flutter, for example, when the user
       // refreshes the page. They land directly on the "flutter" entry, so
-      // there's no need to setup the "origin" and "flutter" entries, we can
-      // safely assume they are already setup.
+      // there's no need to set up the "origin" and "flutter" entries, we can
+      // safely assume they are already set up.
       _setupOriginEntry(strategy);
       _setupFlutterEntry(strategy, replace: false, path: path);
     }
@@ -257,7 +275,7 @@ class SingleEntryBrowserHistory extends BrowserHistory {
   }
 
   @override
-  void setRouteName(String? routeName, {Object? state}) {
+  void setRouteName(String? routeName, {Object? state, bool replace = false}) {
     if (urlStrategy != null) {
       _setupFlutterEntry(urlStrategy!, replace: true, path: routeName);
     }

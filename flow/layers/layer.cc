@@ -12,7 +12,9 @@ namespace flutter {
 Layer::Layer()
     : paint_bounds_(SkRect::MakeEmpty()),
       unique_id_(NextUniqueID()),
-      needs_system_composite_(false) {}
+      original_layer_id_(unique_id_),
+      needs_system_composite_(false),
+      subtree_has_platform_view_(false) {}
 
 Layer::~Layer() = default;
 

@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of engine;
 
 /// A paragraph made up of a flat list of text spans and placeholders.
@@ -128,20 +127,13 @@ class CanvasParagraph implements EngineParagraph {
     return domElement.clone(true) as html.HtmlElement;
   }
 
-  double _getParagraphAlignOffset() {
-    final EngineLineMetrics? longestLine = _layoutService.longestLine;
-    if (longestLine != null) {
-      return longestLine.left;
-    }
-    return 0.0;
-  }
-
   html.HtmlElement _createDomElement() {
     final html.HtmlElement rootElement =
         domRenderer.createElement('p') as html.HtmlElement;
 
     // 1. Set paragraph-level styles.
-    _applyParagraphStyleToElement(element: rootElement, style: paragraphStyle);
+    _applyNecessaryParagraphStyles(element: rootElement, style: paragraphStyle);
+    _applySpanStylesToParagraph(element: rootElement, spans: spans);
     final html.CssStyleDeclaration cssStyle = rootElement.style;
     cssStyle
       ..position = 'absolute'
@@ -149,9 +141,13 @@ class CanvasParagraph implements EngineParagraph {
       // to insert our own <BR> breaks based on layout results.
       ..whiteSpace = 'pre';
 
-    final double alignOffset = _getParagraphAlignOffset();
-    if (alignOffset != 0.0) {
-      cssStyle.marginLeft = '${alignOffset}px';
+    if (width > longestLine) {
+      // In this case, we set the width so that the CSS text-align property
+      // works correctly.
+      // When `longestLine` is >= `paragraph.width` that means the DOM element
+      // will automatically size itself to fit the longest line, so there's no
+      // need to set an explicit width.
+      cssStyle.width = '${width}px';
     }
 
     if (paragraphStyle._maxLines != null || paragraphStyle._ellipsis != null) {
@@ -160,18 +156,11 @@ class CanvasParagraph implements EngineParagraph {
         ..height = '${height}px';
     }
 
-    if (paragraphStyle._ellipsis != null &&
-        (paragraphStyle._maxLines == null || paragraphStyle._maxLines == 1)) {
-      cssStyle
-        ..width = '${width}px'
-        ..overflowX = 'hidden'
-        ..textOverflow = 'ellipsis';
-    }
-
     // 2. Append all spans to the paragraph.
 
     ParagraphSpan? span;
-    late html.HtmlElement element;
+
+    html.HtmlElement element = rootElement;
     final List<EngineLineMetrics> lines = computeLineMetrics();
 
     for (int i = 0; i < lines.length; i++) {
@@ -180,7 +169,8 @@ class CanvasParagraph implements EngineParagraph {
         domRenderer.append(element, domRenderer.createElement('br'));
       }
 
-      for (final RangeBox box in lines[i].boxes!) {
+      final EngineLineMetrics line = lines[i];
+      for (final RangeBox box in line.boxes!) {
         if (box is SpanBox) {
           if (box.span != span) {
             span = box.span;
@@ -205,6 +195,11 @@ class CanvasParagraph implements EngineParagraph {
         } else {
           throw UnimplementedError('Unknown box type: ${box.runtimeType}');
         }
+      }
+
+      final String? ellipsis = line.ellipsis;
+      if (ellipsis != null) {
+        domRenderer.appendText(element, ellipsis);
       }
     }
 
@@ -242,14 +237,82 @@ class CanvasParagraph implements EngineParagraph {
 
   @override
   ui.TextRange getLineBoundary(ui.TextPosition position) {
-    // TODO(mdebbar): After layout, line metrics should be available and can be
-    // used to determine the line boundary of the given `position`.
-    return ui.TextRange.empty;
+    final int index = position.offset;
+    final List<EngineLineMetrics> lines = computeLineMetrics();
+
+    int i;
+    for (i = 0; i < lines.length - 1; i++) {
+      final EngineLineMetrics line = lines[i];
+      if (index >= line.startIndex && index < line.endIndex) {
+        break;
+      }
+    }
+
+    final EngineLineMetrics line = lines[i];
+    return ui.TextRange(start: line.startIndex, end: line.endIndex);
   }
 
   @override
   List<EngineLineMetrics> computeLineMetrics() {
     return _layoutService.lines;
+  }
+}
+
+/// Applies a paragraph [style] to an [element], translating the properties to
+/// their corresponding CSS equivalents.
+///
+/// As opposed to [_applyParagraphStyleToElement], this method only applies
+/// styles that are necessary at the paragraph level. Other styles (e.g. font
+/// size) are always applied at the span level so they aren't needed at the
+/// paragraph level.
+void _applyNecessaryParagraphStyles({
+  required html.HtmlElement element,
+  required EngineParagraphStyle style,
+}) {
+  final html.CssStyleDeclaration cssStyle = element.style;
+
+  if (style._textAlign != null) {
+    cssStyle.textAlign = textAlignToCssValue(
+        style._textAlign, style._textDirection ?? ui.TextDirection.ltr);
+  }
+  if (style._lineHeight != null) {
+    cssStyle.lineHeight = '${style._lineHeight}';
+  }
+  if (style._textDirection != null) {
+    cssStyle.direction = _textDirectionToCss(style._textDirection);
+  }
+}
+
+/// Applies some span-level style to a paragraph [element].
+///
+/// For example, it looks for the greatest font size among spans, and applies it
+/// to the paragraph. While this seems to have no effect, it prevents the
+/// paragraph from inheriting its font size from the body tag, which leads to
+/// incorrect vertical alignment of spans.
+void _applySpanStylesToParagraph({
+  required html.HtmlElement element,
+  required List<ParagraphSpan> spans,
+}) {
+  double fontSize = 0.0;
+  String? fontFamily;
+  for (final ParagraphSpan span in spans) {
+    if (span is FlatTextSpan) {
+      final double? spanFontSize = span.style._fontSize;
+      if (spanFontSize != null && spanFontSize > fontSize) {
+        fontSize = spanFontSize;
+        if (span.style._isFontFamilyProvided) {
+          fontFamily = span.style._effectiveFontFamily;
+        }
+      }
+    }
+  }
+
+  final html.CssStyleDeclaration cssStyle = element.style;
+  if (fontSize != 0.0) {
+    cssStyle.fontSize = '${fontSize}px';
+  }
+  if (fontFamily != null) {
+    cssStyle.fontFamily = canonicalizeFontFamily(fontFamily);
   }
 }
 
@@ -372,7 +435,7 @@ abstract class StyleNode {
     return style;
   }
 
-  ui.Color get _color;
+  ui.Color? get _color;
   ui.TextDecoration? get _decoration;
   ui.Color? get _decorationColor;
   ui.TextDecorationStyle? get _decorationStyle;
@@ -408,7 +471,7 @@ class ChildStyleNode extends StyleNode {
   // property isn't defined, go to the parent node.
 
   @override
-  ui.Color get _color => style._color ?? parent._color;
+  ui.Color? get _color => style._color ?? (_foreground == null ? parent._color : null);
 
   @override
   ui.TextDecoration? get _decoration => style._decoration ?? parent._decoration;

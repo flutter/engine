@@ -49,15 +49,12 @@ class LayerTree {
   const SkISize& frame_size() const { return frame_size_; }
   float device_pixel_ratio() const { return device_pixel_ratio_; }
 
-  void RecordBuildTime(fml::TimePoint vsync_start,
-                       fml::TimePoint build_start,
-                       fml::TimePoint target_time);
-  fml::TimePoint vsync_start() const { return vsync_start_; }
-  fml::TimeDelta vsync_overhead() const { return build_start_ - vsync_start_; }
-  fml::TimePoint build_start() const { return build_start_; }
-  fml::TimePoint build_finish() const { return build_finish_; }
-  fml::TimeDelta build_time() const { return build_finish_ - build_start_; }
-  fml::TimePoint target_time() const { return target_time_; }
+#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
+
+  const PaintRegionMap& paint_region_map() const { return paint_region_map_; }
+  PaintRegionMap& paint_region_map() { return paint_region_map_; }
+
+#endif  // FLUTTER_ENABLE_DIFF_CONTEXT
 
   // The number of frame intervals missed after which the compositor must
   // trace the rasterized picture to a trace file. Specify 0 to disable all
@@ -80,15 +77,15 @@ class LayerTree {
 
  private:
   std::shared_ptr<Layer> root_layer_;
-  fml::TimePoint vsync_start_;
-  fml::TimePoint build_start_;
-  fml::TimePoint build_finish_;
-  fml::TimePoint target_time_;
   SkISize frame_size_ = SkISize::MakeEmpty();  // Physical pixels.
   const float device_pixel_ratio_;  // Logical / Physical pixels ratio.
   uint32_t rasterizer_tracing_threshold_;
   bool checkerboard_raster_cache_images_;
   bool checkerboard_offscreen_layers_;
+
+#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
+  PaintRegionMap paint_region_map_;
+#endif  //  FLUTTER_ENABLE_DIFF_CONTEXT
 
   FML_DISALLOW_COPY_AND_ASSIGN(LayerTree);
 };

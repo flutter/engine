@@ -14,29 +14,28 @@
 
 namespace flutter {
 
-class PlatformMessage : public fml::RefCountedThreadSafe<PlatformMessage> {
-  FML_FRIEND_REF_COUNTED_THREAD_SAFE(PlatformMessage);
-  FML_FRIEND_MAKE_REF_COUNTED(PlatformMessage);
-
+class PlatformMessage {
  public:
+  PlatformMessage(std::string channel,
+                  fml::MallocMapping data,
+                  fml::RefPtr<PlatformMessageResponse> response);
+  PlatformMessage(std::string channel,
+                  fml::RefPtr<PlatformMessageResponse> response);
+  ~PlatformMessage();
+
   const std::string& channel() const { return channel_; }
-  const std::vector<uint8_t>& data() const { return data_; }
+  const fml::MallocMapping& data() const { return data_; }
   bool hasData() { return hasData_; }
 
   const fml::RefPtr<PlatformMessageResponse>& response() const {
     return response_;
   }
 
- private:
-  PlatformMessage(std::string channel,
-                  std::vector<uint8_t> data,
-                  fml::RefPtr<PlatformMessageResponse> response);
-  PlatformMessage(std::string channel,
-                  fml::RefPtr<PlatformMessageResponse> response);
-  ~PlatformMessage();
+  fml::MallocMapping releaseData() { return std::move(data_); }
 
+ private:
   std::string channel_;
-  std::vector<uint8_t> data_;
+  fml::MallocMapping data_;
   bool hasData_;
   fml::RefPtr<PlatformMessageResponse> response_;
 };

@@ -2,8 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'dart:html' as html;
+import 'dart:js' as js;
+import 'dart:js_util' as js_util;
+import 'dart:math' as math;
+
+import 'package:meta/meta.dart';
+import 'package:ui/src/engine.dart';
+import 'package:ui/ui.dart' as ui;
 
 /// Set this flag to true to see all the fired events in the console.
 const bool _debugLogPointerEvents = false;
@@ -415,41 +421,43 @@ class _ButtonSanitizer {
     );
   }
 
-  _SanitizedDetails? sanitizeUpEvent() {
+  _SanitizedDetails? sanitizeMissingRightClickUp({required int buttons}) {
+    final int newPressedButtons = _htmlButtonsToFlutterButtons(buttons);
+    // This could happen when RMB is clicked and released but no pointerup
+    // event was received because context menu was shown.
+    if (_pressedButtons != 0 && newPressedButtons == 0) {
+      _pressedButtons = 0;
+      return _SanitizedDetails(
+        change: ui.PointerChange.up,
+        buttons: _pressedButtons,
+      );
+    }
+    return null;
+  }
+
+  _SanitizedDetails? sanitizeUpEvent({required int? buttons}) {
     // The pointer could have been released by a `pointerout` event, in which
     // case `pointerup` should have no effect.
     if (_pressedButtons == 0) {
       return null;
     }
-    _pressedButtons = 0;
-    return _SanitizedDetails(
-      change: ui.PointerChange.up,
-      buttons: _pressedButtons,
-    );
-  }
 
-  _SanitizedDetails? sanitizeUpEventWithButtons({required int buttons}) {
-    final int newPressedButtons = _htmlButtonsToFlutterButtons(buttons);
-    // This could happen when the context menu is active and the user clicks
-    // RMB somewhere else. The browser sends a down event with `buttons:0`.
-    //
-    // In this case, we keep the old `buttons` value so we don't confuse the
-    // framework.
-    if (_pressedButtons != 0 && newPressedButtons == 0) {
+    _pressedButtons = _htmlButtonsToFlutterButtons(buttons ?? 0);
+
+    if (_pressedButtons == 0) {
+      // All buttons have been released.
+      return _SanitizedDetails(
+        change: ui.PointerChange.up,
+        buttons: _pressedButtons,
+      );
+    } else {
+      // There are still some unreleased buttons, we shouldn't send an up event
+      // yet. Instead we send a move event to update the position of the pointer.
       return _SanitizedDetails(
         change: ui.PointerChange.move,
         buttons: _pressedButtons,
       );
     }
-
-    _pressedButtons = newPressedButtons;
-
-    return _SanitizedDetails(
-      change: _pressedButtons == 0
-          ? ui.PointerChange.hover
-          : ui.PointerChange.move,
-      buttons: _pressedButtons,
-     );
   }
 
   _SanitizedDetails sanitizeCancelEvent() {
@@ -462,7 +470,6 @@ class _ButtonSanitizer {
 }
 
 typedef _PointerEventListener = dynamic Function(html.PointerEvent event);
-const int kContextMenuButton = 2;
 
 /// Adapter class to be used with browsers that support native pointer events.
 ///
@@ -509,63 +516,54 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
   @override
   void setup() {
     _addPointerEventListener('pointerdown', (html.PointerEvent event) {
-      final int device = event.pointerId!;
+      final int device = _getPointerId(event);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
       final _ButtonSanitizer sanitizer = _ensureSanitizer(device);
-      if (event.button == kContextMenuButton) {
-        _handleMissingRightMouseUpEvent(sanitizer,
-            sanitizer._pressedButtons,
-            sanitizer._pressedButtons & ~kContextMenuButton,
-            event,
-            pointerData);
+      final _SanitizedDetails? up =
+          sanitizer.sanitizeMissingRightClickUp(buttons: event.buttons!);
+      if (up != null) {
+        _convertEventsToPointerData(data: pointerData, event: event, details: up);
       }
-      final _SanitizedDetails details =
+      final _SanitizedDetails down =
         sanitizer.sanitizeDownEvent(
           button: event.button,
           buttons: event.buttons!,
         );
-      _convertEventsToPointerData(data: pointerData, event: event, details: details);
+      _convertEventsToPointerData(data: pointerData, event: event, details: down);
       _callback(pointerData);
     });
 
     _addPointerEventListener('pointermove', (html.PointerEvent event) {
-      final int device = event.pointerId!;
+      final int device = _getPointerId(event);
       final _ButtonSanitizer sanitizer = _ensureSanitizer(device);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      final int buttonsBeforeEvent = sanitizer._pressedButtons;
-      final Iterable<_SanitizedDetails> detailsList = _expandEvents(event).map(
-        (html.PointerEvent expandedEvent) {
-          return sanitizer.sanitizeMoveEvent(buttons: expandedEvent.buttons!);
-        },
-      );
-      _handleMissingRightMouseUpEvent(
-          sanitizer,
-          buttonsBeforeEvent,
-          (sanitizer._inferDownFlutterButtons(event.button, event.buttons!)
-              & kContextMenuButton),
-          event,
-          pointerData);
-      for (_SanitizedDetails details in detailsList) {
-        _convertEventsToPointerData(data: pointerData, event: event, details: details);
+      final List<html.PointerEvent> expandedEvents = _expandEvents(event);
+      for (final html.PointerEvent event in expandedEvents) {
+        final _SanitizedDetails? up = sanitizer.sanitizeMissingRightClickUp(buttons: event.buttons!);
+        if (up != null) {
+          _convertEventsToPointerData(data: pointerData, event: event, details: up);
+        }
+        final _SanitizedDetails move = sanitizer.sanitizeMoveEvent(buttons: event.buttons!);
+        _convertEventsToPointerData(data: pointerData, event: event, details: move);
       }
       _callback(pointerData);
     }, acceptOutsideGlasspane: true);
 
     _addPointerEventListener('pointerup', (html.PointerEvent event) {
-      final int device = event.pointerId!;
+      final int device = _getPointerId(event);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      final _SanitizedDetails? details = _getSanitizer(device).sanitizeUpEvent();
+      final _SanitizedDetails? details = _getSanitizer(device).sanitizeUpEvent(buttons: event.buttons);
       _removePointerIfUnhoverable(event);
       if (details != null) {
         _convertEventsToPointerData(data: pointerData, event: event, details: details);
+        _callback(pointerData);
       }
-      _callback(pointerData);
     }, acceptOutsideGlasspane: true);
 
     // A browser fires cancel event if it concludes the pointer will no longer
     // be able to generate events (example: device is deactivated)
     _addPointerEventListener('pointercancel', (html.PointerEvent event) {
-      final int device = event.pointerId!;
+      final int device = _getPointerId(event);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
       final _SanitizedDetails details = _getSanitizer(device).sanitizeCancelEvent();
       _removePointerIfUnhoverable(event);
@@ -576,39 +574,6 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     _addWheelEventListener((html.Event event) {
       _handleWheelEvent(event);
     });
-  }
-
-  // Handle special case where right mouse button no longer is pressed.
-  // We need to synthesize right mouse up, otherwise drag gesture will fail
-  // to complete or multiple RMB down events will lead to wrong state.
-  void _handleMissingRightMouseUpEvent(_ButtonSanitizer sanitizer,
-      int buttonsBeforeEvent, int buttonsAfterEvent, html.PointerEvent event,
-      List<ui.PointerData> pointerData) {
-    if ((buttonsBeforeEvent & kContextMenuButton) != 0 &&
-        buttonsAfterEvent == 0) {
-      final ui.PointerDeviceKind kind =
-          _pointerTypeToDeviceKind(event.pointerType!);
-      final int device = kind == ui.PointerDeviceKind.mouse
-          ? _mouseDeviceId : event.pointerId!;
-      final double tilt = _computeHighestTilt(event);
-      final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
-      sanitizer._pressedButtons &= ~kContextMenuButton;
-      _pointerDataConverter.convert(
-        pointerData,
-        change: ui.PointerChange.up,
-        timeStamp: timeStamp,
-        kind: kind,
-        signalKind: ui.PointerSignalKind.none,
-        device: device,
-        physicalX: event.client.x.toDouble() * ui.window.devicePixelRatio,
-        physicalY: event.client.y.toDouble() * ui.window.devicePixelRatio,
-        buttons: sanitizer._pressedButtons,
-        pressure: event.pressure as double,
-        pressureMin: 0.0,
-        pressureMax: 1.0,
-        tilt: tilt,
-      );
-    }
   }
 
   // For each event that is de-coalesced from `event` and described in
@@ -622,10 +587,6 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     assert(event != null); // ignore: unnecessary_null_comparison
     assert(details != null); // ignore: unnecessary_null_comparison
     final ui.PointerDeviceKind kind = _pointerTypeToDeviceKind(event.pointerType!);
-    // We force `device: _mouseDeviceId` on mouse pointers because Wheel events
-    // might come before any PointerEvents, and since wheel events don't contain
-    // pointerId we always assign `device: _mouseDeviceId` to them.
-    final int device = kind == ui.PointerDeviceKind.mouse ? _mouseDeviceId : event.pointerId!;
     final double tilt = _computeHighestTilt(event);
     final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
     _pointerDataConverter.convert(
@@ -634,7 +595,7 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
       timeStamp: timeStamp,
       kind: kind,
       signalKind: ui.PointerSignalKind.none,
-      device: device,
+      device: _getPointerId(event),
       physicalX: event.client.x.toDouble() * ui.window.devicePixelRatio,
       physicalY: event.client.y.toDouble() * ui.window.devicePixelRatio,
       buttons: details.buttons,
@@ -671,6 +632,14 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
       default:
         return ui.PointerDeviceKind.unknown;
     }
+  }
+
+  int _getPointerId(html.PointerEvent event) {
+    // We force `device: _mouseDeviceId` on mouse pointers because Wheel events
+    // might come before any PointerEvents, and since wheel events don't contain
+    // pointerId we always assign `device: _mouseDeviceId` to them.
+    final ui.PointerDeviceKind kind = _pointerTypeToDeviceKind(event.pointerType!);
+    return kind == ui.PointerDeviceKind.mouse ? _mouseDeviceId : event.pointerId!;
   }
 
   /// Tilt angle is -90 to + 90. Take maximum deflection and convert to radians.
@@ -852,12 +821,10 @@ class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
   void setup() {
     _addMouseEventListener('mousedown', (html.MouseEvent event) {
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      if (event.button == kContextMenuButton) {
-        _handleMissingRightMouseUpEvent(_sanitizer,
-            _sanitizer._pressedButtons,
-            _sanitizer._pressedButtons & ~kContextMenuButton,
-            event,
-            pointerData);
+      final _SanitizedDetails? up =
+          _sanitizer.sanitizeMissingRightClickUp(buttons: event.buttons!);
+      if (up != null) {
+        _convertEventsToPointerData(data: pointerData, event: event, details: up);
       }
       final _SanitizedDetails sanitizedDetails =
         _sanitizer.sanitizeDownEvent(
@@ -870,58 +837,27 @@ class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
 
     _addMouseEventListener('mousemove', (html.MouseEvent event) {
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      final int buttonsBeforeEvent = _sanitizer._pressedButtons;
-      _handleMissingRightMouseUpEvent(
-          _sanitizer,
-          buttonsBeforeEvent,
-          (_sanitizer._inferDownFlutterButtons(event.button, event.buttons!)
-          & kContextMenuButton),
-          event,
-          pointerData);
-      final _SanitizedDetails sanitizedDetails = _sanitizer.sanitizeMoveEvent(buttons: event.buttons!);
-      _convertEventsToPointerData(data: pointerData, event: event, details: sanitizedDetails);
+      final _SanitizedDetails? up = _sanitizer.sanitizeMissingRightClickUp(buttons: event.buttons!);
+      if (up != null) {
+        _convertEventsToPointerData(data: pointerData, event: event, details: up);
+      }
+      final _SanitizedDetails move = _sanitizer.sanitizeMoveEvent(buttons: event.buttons!);
+      _convertEventsToPointerData(data: pointerData, event: event, details: move);
       _callback(pointerData);
     }, acceptOutsideGlasspane: true);
 
     _addMouseEventListener('mouseup', (html.MouseEvent event) {
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      final bool isEndOfDrag = event.buttons == 0;
-      final _SanitizedDetails sanitizedDetails = isEndOfDrag ?
-        _sanitizer.sanitizeUpEvent()! :
-        _sanitizer.sanitizeUpEventWithButtons(buttons: event.buttons!)!;
-      _convertEventsToPointerData(data: pointerData, event: event, details: sanitizedDetails);
-      _callback(pointerData);
+      final _SanitizedDetails? sanitizedDetails = _sanitizer.sanitizeUpEvent(buttons: event.buttons);
+      if (sanitizedDetails != null) {
+        _convertEventsToPointerData(data: pointerData, event: event, details: sanitizedDetails);
+        _callback(pointerData);
+      }
     }, acceptOutsideGlasspane: true);
 
     _addWheelEventListener((html.Event event) {
       _handleWheelEvent(event);
     });
-  }
-
-  // Handle special case where right mouse button no longer is pressed.
-  // We need to synthesize right mouse up, otherwise drag gesture will fail
-  // to complete or multiple RMB down events will lead to wrong state.
-  void _handleMissingRightMouseUpEvent(_ButtonSanitizer sanitizer,
-      int buttonsBeforeEvent, int buttonsAfterEvent, html.MouseEvent event,
-      List<ui.PointerData> pointerData) {
-    if ((buttonsBeforeEvent & kContextMenuButton) != 0 &&
-        buttonsAfterEvent == 0) {
-      sanitizer._pressedButtons &= ~2;
-      _pointerDataConverter.convert(
-        pointerData,
-        change: ui.PointerChange.up,
-        timeStamp: _BaseAdapter._eventTimeStampToDuration(event.timeStamp!),
-        kind: ui.PointerDeviceKind.mouse,
-        signalKind: ui.PointerSignalKind.none,
-        device: _mouseDeviceId,
-        physicalX: event.client.x.toDouble() * ui.window.devicePixelRatio,
-        physicalY: event.client.y.toDouble() * ui.window.devicePixelRatio,
-        buttons: _sanitizer._pressedButtons,
-        pressure: 1.0,
-        pressureMin: 0.0,
-        pressureMax: 1.0,
-      );
-    }
   }
 
   // For each event that is de-coalesced from `event` and described in

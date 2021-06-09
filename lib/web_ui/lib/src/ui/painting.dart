@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of ui;
 
 // ignore: unused_element, Used in Shader assert.
@@ -278,10 +277,14 @@ abstract class Gradient extends Shader {
     List<double>? colorStops,
     TileMode tileMode = TileMode.clamp,
     Float64List? matrix4,
-  ]) => engine.useCanvasKit
-    ? engine.CkGradientLinear(from, to, colors, colorStops, tileMode, matrix4)
-    : engine.GradientLinear(from, to, colors, colorStops, tileMode,
-        matrix4 == null ? null : engine.toMatrix32(matrix4));
+  ]) {
+    Float32List? matrix = matrix4 == null ? null : engine.toMatrix32(matrix4);
+    return engine.useCanvasKit
+        ? engine.CkGradientLinear(
+        from, to, colors, colorStops, tileMode, matrix)
+        : engine.GradientLinear(from, to, colors, colorStops, tileMode, matrix);
+  }
+
   factory Gradient.radial(
     Offset center,
     double radius,
@@ -385,8 +388,6 @@ class MaskFilter {
 }
 
 enum FilterQuality {
-  // This list comes from Skia's SkFilterQuality.h and the values (order) should
-  // be kept in sync.
   none,
   low,
   medium,
@@ -398,14 +399,18 @@ class ImageFilter {
     if (engine.useCanvasKit) {
       return engine.CkImageFilter.blur(sigmaX: sigmaX, sigmaY: sigmaY, tileMode: tileMode);
     }
-    return engine.EngineImageFilter.blur(sigmaX: sigmaX, sigmaY: sigmaY);
+    // TODO(flutter_web): implement TileMode.
+    return engine.EngineImageFilter.blur(sigmaX: sigmaX, sigmaY: sigmaY, tileMode: tileMode);
   }
 
-  ImageFilter.matrix(Float64List matrix4, {FilterQuality filterQuality = FilterQuality.low}) {
-    // TODO(flutter_web): add implementation.
-    throw UnimplementedError('ImageFilter.matrix not implemented for web platform.');
-    //    if (matrix4.length != 16)
-    //      throw ArgumentError('"matrix4" must have 16 entries.');
+  factory ImageFilter.matrix(Float64List matrix4, {FilterQuality filterQuality = FilterQuality.low}) {
+    if (matrix4.length != 16)
+      throw ArgumentError('"matrix4" must have 16 entries.');
+    if (engine.useCanvasKit) {
+      return engine.CkImageFilter.matrix(matrix: matrix4, filterQuality: filterQuality);
+    }
+    // TODO(flutter_web): implement FilterQuality.
+    return engine.EngineImageFilter.matrix(matrix: matrix4, filterQuality: filterQuality);
   }
 
   ImageFilter.compose({required ImageFilter outer, required ImageFilter inner}) {
@@ -613,7 +618,7 @@ class Shadow {
   // See SkBlurMask::ConvertRadiusToSigma().
   // <https://github.com/google/skia/blob/bb5b77db51d2e149ee66db284903572a5aac09be/src/effects/SkBlurMask.cpp#L23>
   static double convertRadiusToSigma(double radius) {
-    return radius * 0.57735 + 0.5;
+    return radius > 0 ? radius * 0.57735 + 0.5 : 0;
   }
 
   double get blurSigma => convertRadiusToSigma(blurRadius);
@@ -690,12 +695,11 @@ class Shadow {
 }
 
 class ImageShader extends Shader {
-  factory ImageShader(Image image, TileMode tmx, TileMode tmy, Float64List matrix4) {
-    if (engine.useCanvasKit) {
-      return engine.CkImageShader(image, tmx, tmy, matrix4);
-    }
-    throw UnsupportedError('ImageShader not implemented for web platform.');
-  }
+  factory ImageShader(Image image, TileMode tmx, TileMode tmy, Float64List matrix4, {
+    FilterQuality? filterQuality,
+  }) => engine.useCanvasKit
+      ? engine.CkImageShader(image, tmx, tmy, matrix4, filterQuality)
+      : engine.EngineImageShader(image, tmx, tmy, matrix4, filterQuality);
 }
 
 class ImmutableBuffer {
@@ -708,6 +712,15 @@ class ImmutableBuffer {
 
   Uint8List? _list;
   final int length;
+
+  bool get debugDisposed {
+    late bool disposed;
+    assert(() {
+      disposed = _list == null;
+      return true;
+    }());
+    return disposed;
+  }
   void dispose() => _list = null;
 }
 

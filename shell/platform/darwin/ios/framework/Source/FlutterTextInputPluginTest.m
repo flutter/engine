@@ -20,6 +20,30 @@ FLUTTER_ASSERT_ARC
 - (void)setMarkedRect:(CGRect)markedRect;
 - (void)updateEditingState;
 - (BOOL)isVisibleToAutofill;
+
+@end
+
+@interface FlutterTextInputViewSpy : FlutterTextInputView
+@property(nonatomic, assign) UIAccessibilityNotifications receivedNotification;
+@property(nonatomic, assign) id receivedNotificationTarget;
+@property(nonatomic, assign) BOOL isAccessibilityFocused;
+
+- (void)postAccessibilityNotification:(UIAccessibilityNotifications)notification target:(id)target;
+
+@end
+
+@implementation FlutterTextInputViewSpy {
+}
+
+- (void)postAccessibilityNotification:(UIAccessibilityNotifications)notification target:(id)target {
+  self.receivedNotification = notification;
+  self.receivedNotificationTarget = target;
+}
+
+- (BOOL)accessibilityElementIsFocused {
+  return _isAccessibilityFocused;
+}
+
 @end
 
 @interface FlutterSecureTextInputView : FlutterTextInputView
@@ -27,13 +51,14 @@ FLUTTER_ASSERT_ARC
 @end
 
 @interface FlutterTextInputPlugin ()
-@property(nonatomic, strong) FlutterTextInputView* reusableInputView;
 @property(nonatomic, assign) FlutterTextInputView* activeView;
 @property(nonatomic, readonly)
     NSMutableDictionary<NSString*, FlutterTextInputView*>* autofillContext;
 
-- (void)collectGarbageInputViews;
-- (UIView*)textInputParentView;
+- (void)cleanUpViewHierarchy:(BOOL)includeActiveView
+                   clearText:(BOOL)clearText
+                delayRemoval:(BOOL)delayRemoval;
+- (NSArray<UIView*>*)textInputViews;
 @end
 
 @interface FlutterTextInputPluginTest : XCTestCase
@@ -55,10 +80,11 @@ FLUTTER_ASSERT_ARC
 }
 
 - (void)tearDown {
-  [engine stopMocking];
+  [textInputPlugin.autofillContext removeAllObjects];
+  [textInputPlugin cleanUpViewHierarchy:YES clearText:YES delayRemoval:NO];
   [[[[textInputPlugin textInputView] superview] subviews]
       makeObjectsPerformSelector:@selector(removeFromSuperview)];
-
+  [engine stopMocking];
   [super tearDown];
 }
 
@@ -66,6 +92,22 @@ FLUTTER_ASSERT_ARC
   FlutterMethodCall* setClientCall =
       [FlutterMethodCall methodCallWithMethodName:@"TextInput.setClient"
                                         arguments:@[ [NSNumber numberWithInt:clientId], config ]];
+  [textInputPlugin handleMethodCall:setClientCall
+                             result:^(id _Nullable result){
+                             }];
+}
+
+- (void)setTextInputShow {
+  FlutterMethodCall* setClientCall = [FlutterMethodCall methodCallWithMethodName:@"TextInput.show"
+                                                                       arguments:@[]];
+  [textInputPlugin handleMethodCall:setClientCall
+                             result:^(id _Nullable result){
+                             }];
+}
+
+- (void)setTextInputHide {
+  FlutterMethodCall* setClientCall = [FlutterMethodCall methodCallWithMethodName:@"TextInput.hide"
+                                                                       arguments:@[]];
   [textInputPlugin handleMethodCall:setClientCall
                              result:^(id _Nullable result){
                              }];
@@ -88,9 +130,19 @@ FLUTTER_ASSERT_ARC
 }
 
 - (NSArray<FlutterTextInputView*>*)installedInputViews {
-  return [textInputPlugin.textInputParentView.subviews
+  return (NSArray<FlutterTextInputView*>*)[textInputPlugin.textInputViews
       filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"self isKindOfClass: %@",
                                                                    [FlutterTextInputView class]]];
+}
+
+- (FlutterTextRange*)getLineRangeFromTokenizer:(id<UITextInputTokenizer>)tokenizer
+                                       atIndex:(NSInteger)index {
+  UITextRange* range =
+      [tokenizer rangeEnclosingPosition:[FlutterTextPosition positionWithIndex:index]
+                        withGranularity:UITextGranularityLine
+                            inDirection:UITextLayoutDirectionRight];
+  XCTAssertTrue([range isKindOfClass:[FlutterTextRange class]]);
+  return (FlutterTextRange*)range;
 }
 
 #pragma mark - Tests
@@ -161,6 +213,24 @@ FLUTTER_ASSERT_ARC
   XCTAssertEqual(range.length, 2);
 }
 
+- (void)testTextInRange {
+  NSDictionary* config = self.mutableTemplateCopy;
+  [config setValue:@{@"name" : @"TextInputType.url"} forKey:@"inputType"];
+  [self setClientId:123 configuration:config];
+  NSArray<FlutterTextInputView*>* inputFields = self.installedInputViews;
+  FlutterTextInputView* inputView = inputFields[0];
+
+  [inputView insertText:@"test"];
+
+  UITextRange* range = [FlutterTextRange rangeWithNSRange:NSMakeRange(0, 20)];
+  NSString* substring = [inputView textInRange:range];
+  XCTAssertEqual(substring.length, 4);
+
+  range = [FlutterTextRange rangeWithNSRange:NSMakeRange(10, 20)];
+  substring = [inputView textInRange:range];
+  XCTAssertEqual(substring.length, 0);
+}
+
 - (void)testNoZombies {
   // Regression test for https://github.com/flutter/flutter/issues/62501.
   FlutterSecureTextInputView* passwordView = [[FlutterSecureTextInputView alloc] init];
@@ -170,6 +240,46 @@ FLUTTER_ASSERT_ARC
     [passwordView.textField description];
   }
   XCTAssert([[passwordView.textField description] containsString:@"TextField"]);
+}
+
+- (void)testInputViewCrash {
+  FlutterTextInputView* activeView = nil;
+  @autoreleasepool {
+    FlutterTextInputPlugin* inputPlugin = [FlutterTextInputPlugin new];
+    activeView = inputPlugin.activeView;
+    FlutterEngine* flutterEngine = [[FlutterEngine alloc] init];
+    activeView.textInputDelegate = (id<FlutterTextInputDelegate>)flutterEngine;
+  }
+  XCTAssert(!activeView.textInputDelegate);
+  [activeView updateEditingState];
+}
+
+- (void)testDoNotReuseInputViews {
+  NSDictionary* config = self.mutableTemplateCopy;
+  [self setClientId:123 configuration:config];
+  FlutterTextInputView* currentView = textInputPlugin.activeView;
+  [self setClientId:456 configuration:config];
+
+  XCTAssertNotNil(currentView);
+  XCTAssertNotNil(textInputPlugin.activeView);
+  XCTAssertNotEqual(currentView, textInputPlugin.activeView);
+}
+
+- (void)testNoDanglingEnginePointer {
+  NSDictionary* config = self.mutableTemplateCopy;
+  [self setClientId:123 configuration:config];
+
+  // We'll hold onto the current view and try to access the engine
+  // after changing the active view.
+  FlutterTextInputView* currentView = textInputPlugin.activeView;
+  [self setClientId:456 configuration:config];
+  XCTAssertNotNil(currentView);
+  XCTAssertNotNil(textInputPlugin.activeView);
+  XCTAssertNotEqual(currentView, textInputPlugin.activeView);
+
+  // Verify that the view can no longer access the engine
+  // instance.
+  XCTAssertNil(currentView.textInputDelegate);
 }
 
 - (void)ensureOnlyActiveViewCanBecomeFirstResponder {
@@ -418,6 +528,53 @@ FLUTTER_ASSERT_ARC
   XCTAssertTrue(CGRectEqualToRect(kInvalidFirstRect, [inputView firstRectForRange:range]));
 }
 
+#pragma mark - Floating Cursor - Tests
+
+- (void)testInputViewsHaveUIInteractions {
+  if (@available(iOS 13.0, *)) {
+    FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
+    XCTAssertGreaterThan(inputView.interactions.count, 0);
+  }
+}
+
+- (void)testBoundsForFloatingCursor {
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
+
+  CGRect initialBounds = inputView.bounds;
+  // Make sure the initial bounds.size is not as large.
+  XCTAssertLessThan(inputView.bounds.size.width, 100);
+  XCTAssertLessThan(inputView.bounds.size.height, 100);
+
+  [inputView beginFloatingCursorAtPoint:CGPointMake(123, 321)];
+  CGRect bounds = inputView.bounds;
+  XCTAssertGreaterThan(bounds.size.width, 1000);
+  XCTAssertGreaterThan(bounds.size.height, 1000);
+
+  // Verify the caret is centered.
+  XCTAssertEqual(
+      CGRectGetMidX(bounds),
+      CGRectGetMidX([inputView caretRectForPosition:[FlutterTextPosition positionWithIndex:1235]]));
+  XCTAssertEqual(
+      CGRectGetMidY(bounds),
+      CGRectGetMidY([inputView caretRectForPosition:[FlutterTextPosition positionWithIndex:4567]]));
+
+  [inputView updateFloatingCursorAtPoint:CGPointMake(456, 654)];
+  bounds = inputView.bounds;
+  XCTAssertGreaterThan(bounds.size.width, 1000);
+  XCTAssertGreaterThan(bounds.size.height, 1000);
+
+  // Verify the caret is centered.
+  XCTAssertEqual(
+      CGRectGetMidX(bounds),
+      CGRectGetMidX([inputView caretRectForPosition:[FlutterTextPosition positionWithIndex:21]]));
+  XCTAssertEqual(
+      CGRectGetMidY(bounds),
+      CGRectGetMidY([inputView caretRectForPosition:[FlutterTextPosition positionWithIndex:42]]));
+
+  [inputView endFloatingCursor];
+  XCTAssertTrue(CGRectEqualToRect(initialBounds, inputView.bounds));
+}
+
 #pragma mark - Autofill - Utilities
 
 - (NSMutableDictionary*)mutablePasswordTemplateCopy {
@@ -486,7 +643,7 @@ FLUTTER_ASSERT_ARC
 
   XCTAssertEqual(textInputPlugin.autofillContext.count, 2);
 
-  [textInputPlugin collectGarbageInputViews];
+  [textInputPlugin cleanUpViewHierarchy:NO clearText:YES delayRemoval:NO];
   XCTAssertEqual(self.installedInputViews.count, 2);
   XCTAssertEqual(textInputPlugin.textInputView, textInputPlugin.autofillContext[@"field1"]);
   [self ensureOnlyActiveViewCanBecomeFirstResponder];
@@ -509,7 +666,7 @@ FLUTTER_ASSERT_ARC
   XCTAssertEqual(self.viewsVisibleToAutofill.count, 2);
   XCTAssertEqual(textInputPlugin.autofillContext.count, 3);
 
-  [textInputPlugin collectGarbageInputViews];
+  [textInputPlugin cleanUpViewHierarchy:NO clearText:YES delayRemoval:NO];
   XCTAssertEqual(self.installedInputViews.count, 3);
   XCTAssertEqual(textInputPlugin.textInputView, textInputPlugin.autofillContext[@"field1"]);
   [self ensureOnlyActiveViewCanBecomeFirstResponder];
@@ -529,7 +686,7 @@ FLUTTER_ASSERT_ARC
   XCTAssertEqual(self.viewsVisibleToAutofill.count, 1);
   XCTAssertEqual(textInputPlugin.autofillContext.count, 3);
 
-  [textInputPlugin collectGarbageInputViews];
+  [textInputPlugin cleanUpViewHierarchy:NO clearText:YES delayRemoval:NO];
   XCTAssertEqual(self.installedInputViews.count, 4);
 
   // Old autofill input fields are still installed and reused.
@@ -548,7 +705,7 @@ FLUTTER_ASSERT_ARC
   XCTAssertEqual(self.viewsVisibleToAutofill.count, 1);
   XCTAssertEqual(textInputPlugin.autofillContext.count, 3);
 
-  [textInputPlugin collectGarbageInputViews];
+  [textInputPlugin cleanUpViewHierarchy:NO clearText:YES delayRemoval:NO];
   XCTAssertEqual(self.installedInputViews.count, 4);
 
   // Old autofill input fields are still installed and reused.
@@ -593,7 +750,6 @@ FLUTTER_ASSERT_ARC
   [self ensureOnlyActiveViewCanBecomeFirstResponder];
 
   [self commitAutofillContextAndVerify];
-  XCTAssertNotEqual(textInputPlugin.textInputView, textInputPlugin.reusableInputView);
   [self ensureOnlyActiveViewCanBecomeFirstResponder];
 
   // Install the password field again.
@@ -602,31 +758,28 @@ FLUTTER_ASSERT_ARC
   [self setClientId:124 configuration:field3];
   XCTAssertEqual(self.viewsVisibleToAutofill.count, 1);
 
-  [textInputPlugin collectGarbageInputViews];
+  [textInputPlugin cleanUpViewHierarchy:NO clearText:YES delayRemoval:NO];
   XCTAssertEqual(self.installedInputViews.count, 3);
   XCTAssertEqual(textInputPlugin.autofillContext.count, 2);
   XCTAssertNotEqual(textInputPlugin.textInputView, nil);
   [self ensureOnlyActiveViewCanBecomeFirstResponder];
 
   [self commitAutofillContextAndVerify];
-  XCTAssertNotEqual(textInputPlugin.textInputView, textInputPlugin.reusableInputView);
   [self ensureOnlyActiveViewCanBecomeFirstResponder];
 
   // Now switch to an input field that does not autofill.
   [self setClientId:125 configuration:self.mutableTemplateCopy];
 
   XCTAssertEqual(self.viewsVisibleToAutofill.count, 0);
-  XCTAssertEqual(textInputPlugin.textInputView, textInputPlugin.reusableInputView);
   // The active view should still be installed so it doesn't get
   // deallocated.
 
-  [textInputPlugin collectGarbageInputViews];
+  [textInputPlugin cleanUpViewHierarchy:NO clearText:YES delayRemoval:NO];
   XCTAssertEqual(self.installedInputViews.count, 1);
   XCTAssertEqual(textInputPlugin.autofillContext.count, 0);
   [self ensureOnlyActiveViewCanBecomeFirstResponder];
 
   [self commitAutofillContextAndVerify];
-  XCTAssertEqual(textInputPlugin.textInputView, textInputPlugin.reusableInputView);
   [self ensureOnlyActiveViewCanBecomeFirstResponder];
 }
 
@@ -718,7 +871,7 @@ FLUTTER_ASSERT_ARC
 
   XCTAssertEqual(self.installedInputViews.count, 2);
 
-  [textInputPlugin collectGarbageInputViews];
+  [textInputPlugin cleanUpViewHierarchy:NO clearText:YES delayRemoval:NO];
   XCTAssertEqual(self.installedInputViews.count, 1);
 
   // Verify the old input view is properly cleaned up.
@@ -741,6 +894,104 @@ FLUTTER_ASSERT_ARC
   XCTAssertEqual(self.installedInputViews.count, 2);
 
   [self commitAutofillContextAndVerify];
+}
+
+#pragma mark - Accessibility - Tests
+
+- (void)testUITextInputAccessibilityNotHiddenWhenShowed {
+  // Send show text input method call.
+  [self setTextInputShow];
+  // Find all the FlutterTextInputViews we created.
+  NSArray<FlutterTextInputView*>* inputFields = self.installedInputViews;
+
+  // The input view should not be hidden.
+  XCTAssertEqual([inputFields count], 1u);
+
+  // Send hide text input method call.
+  [self setTextInputHide];
+
+  inputFields = self.installedInputViews;
+
+  // The input view should be hidden.
+  XCTAssertEqual([inputFields count], 0u);
+}
+
+- (void)testFlutterTextInputViewDirectFocusToBackingTextInput {
+  FlutterTextInputViewSpy* inputView = [[FlutterTextInputViewSpy alloc] init];
+  inputView.textInputDelegate = engine;
+  UIView* container = [[UIView alloc] init];
+  UIAccessibilityElement* backing =
+      [[UIAccessibilityElement alloc] initWithAccessibilityContainer:container];
+  inputView.backingTextInputAccessibilityObject = backing;
+  // Simulate accessibility focus.
+  inputView.isAccessibilityFocused = YES;
+  [inputView accessibilityElementDidBecomeFocused];
+
+  XCTAssertEqual(inputView.receivedNotification, UIAccessibilityScreenChangedNotification);
+  XCTAssertEqual(inputView.receivedNotificationTarget, backing);
+}
+
+- (void)testFlutterTokenizerCanParseLines {
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
+  inputView.textInputDelegate = engine;
+  id<UITextInputTokenizer> tokenizer = [inputView tokenizer];
+
+  // The tokenizer returns zero range When text is empty.
+  FlutterTextRange* range = [self getLineRangeFromTokenizer:tokenizer atIndex:0];
+  XCTAssertEqual(range.range.location, 0u);
+  XCTAssertEqual(range.range.length, 0u);
+
+  [inputView insertText:@"how are you\nI am fine, Thank you"];
+
+  range = [self getLineRangeFromTokenizer:tokenizer atIndex:0];
+  XCTAssertEqual(range.range.location, 0u);
+  XCTAssertEqual(range.range.length, 11u);
+
+  range = [self getLineRangeFromTokenizer:tokenizer atIndex:2];
+  XCTAssertEqual(range.range.location, 0u);
+  XCTAssertEqual(range.range.length, 11u);
+
+  range = [self getLineRangeFromTokenizer:tokenizer atIndex:11];
+  XCTAssertEqual(range.range.location, 0u);
+  XCTAssertEqual(range.range.length, 11u);
+
+  range = [self getLineRangeFromTokenizer:tokenizer atIndex:12];
+  XCTAssertEqual(range.range.location, 12u);
+  XCTAssertEqual(range.range.length, 20u);
+
+  range = [self getLineRangeFromTokenizer:tokenizer atIndex:15];
+  XCTAssertEqual(range.range.location, 12u);
+  XCTAssertEqual(range.range.length, 20u);
+
+  range = [self getLineRangeFromTokenizer:tokenizer atIndex:32];
+  XCTAssertEqual(range.range.location, 12u);
+  XCTAssertEqual(range.range.length, 20u);
+}
+
+- (void)testFlutterTextInputPluginRetainsFlutterTextInputView {
+  FlutterTextInputPlugin* myInputPlugin;
+  myInputPlugin = [[FlutterTextInputPlugin alloc] init];
+  myInputPlugin.textInputDelegate = engine;
+  __weak UIView* activeView;
+  @autoreleasepool {
+    FlutterMethodCall* setClientCall = [FlutterMethodCall
+        methodCallWithMethodName:@"TextInput.setClient"
+                       arguments:@[
+                         [NSNumber numberWithInt:123], self.mutablePasswordTemplateCopy
+                       ]];
+    [myInputPlugin handleMethodCall:setClientCall
+                             result:^(id _Nullable result){
+                             }];
+    activeView = myInputPlugin.textInputView;
+    FlutterMethodCall* hideCall = [FlutterMethodCall methodCallWithMethodName:@"TextInput.hide"
+                                                                    arguments:@[]];
+    [myInputPlugin handleMethodCall:hideCall
+                             result:^(id _Nullable result){
+                             }];
+    XCTAssertNotNil(activeView);
+  }
+  // This assert proves the myInputPlugin.textInputView is not deallocated.
+  XCTAssertNotNil(activeView);
 }
 
 @end

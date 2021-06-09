@@ -300,6 +300,7 @@ abstract class License implements Comparable<License> {
         body = system.File('data/mozilla-2.0').readAsStringSync();
         type = LicenseType.mpl;
         break;
+      case 'MIT':  // SPDX ID
       case 'http://opensource.org/licenses/MIT':
       case 'https://opensource.org/licenses/MIT':
       case 'http://opensource->org/licenses/MIT': // i don't even
@@ -584,7 +585,7 @@ _SplitLicense _splitLicense(String body, { bool verifyResults = true }) {
   if (!lines.moveNext())
     throw 'tried to split empty license';
   int end = 0;
-  while (true) { // ignore: literal_only_boolean_expressions
+  while (true) {
     final String line = lines.current.value;
     if (line == 'Author:' ||
         line == 'This code is derived from software contributed to Berkeley by' ||

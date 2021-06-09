@@ -53,6 +53,8 @@ template("runner_sources") {
       "accessibility_bridge.h",
       "component.cc",
       "component.h",
+      "default_session_connection.cc",
+      "default_session_connection.h",
       "engine.cc",
       "engine.h",
       "flutter_runner_product_configuration.cc",
@@ -66,25 +68,15 @@ template("runner_sources") {
       "keyboard.cc",
       "keyboard.h",
       "logging.h",
-      "loop.cc",
-      "loop.h",
       "platform_view.cc",
       "platform_view.h",
       "runner.cc",
       "runner.h",
-      "session_connection.cc",
-      "session_connection.h",
       "surface.cc",
       "surface.h",
-      "task_observers.cc",
-      "task_observers.h",
       "task_runner_adapter.cc",
       "task_runner_adapter.h",
-      "thread.cc",
-      "thread.h",
       "unique_fdio_ns.h",
-      "vsync_recorder.cc",
-      "vsync_recorder.h",
       "vsync_waiter.cc",
       "vsync_waiter.h",
       "vulkan_surface.cc",
@@ -111,7 +103,7 @@ template("runner_sources") {
       "//flutter/lib/ui",
       "//flutter/runtime",
       "//flutter/shell/common",
-      "//flutter/shell/platform/common/cpp/client_wrapper:client_wrapper",
+      "//flutter/shell/platform/common/client_wrapper:client_wrapper",
     ]
     flutter_deps = [
       ":fuchsia_gpu_configuration",
@@ -124,6 +116,7 @@ template("runner_sources") {
     public_deps = [
                     "$fuchsia_sdk_root/pkg:scenic_cpp",
                     "$fuchsia_sdk_root/pkg:sys_cpp",
+                    "$fuchsia_sdk_root/pkg:sys_inspect_cpp",
                     "//flutter/shell/platform/fuchsia/runtime/dart/utils",
                   ] + flutter_public_deps
 
@@ -454,12 +447,10 @@ executable("flutter_runner_unittests") {
     "runner_unittest.cc",
     "tests/engine_unittests.cc",
     "tests/flutter_runner_product_configuration_unittests.cc",
-    "tests/vsync_recorder_unittests.cc",
-    "vsync_waiter_unittests.cc",
   ]
 
   # This is needed for //third_party/googletest for linking zircon symbols.
-  libs = [ "//fuchsia/sdk/$host_os/arch/$target_cpu/sysroot/lib/libzircon.so" ]
+  libs = [ "$fuchsia_sdk_path/arch/$target_cpu/sysroot/lib/libzircon.so" ]
 
   # The use of these dependencies is temporary and will be moved behind the
   # embedder API.
@@ -489,7 +480,7 @@ executable("flutter_runner_tzdata_unittests") {
   sources = [ "runner_tzdata_unittest.cc" ]
 
   # This is needed for //third_party/googletest for linking zircon symbols.
-  libs = [ "//fuchsia/sdk/$host_os/arch/$target_cpu/sysroot/lib/libzircon.so" ]
+  libs = [ "$fuchsia_sdk_path/arch/$target_cpu/sysroot/lib/libzircon.so" ]
 
   # The use of these dependencies is temporary and will be moved behind the
   # embedder API.
@@ -511,10 +502,10 @@ executable("flutter_runner_scenic_unittests") {
 
   output_name = "flutter_runner_scenic_tests"
 
-  sources = [ "tests/session_connection_unittests.cc" ]
+  sources = [ "tests/default_session_connection_unittests.cc" ]
 
   # This is needed for //third_party/googletest for linking zircon symbols.
-  libs = [ "//fuchsia/sdk/$host_os/arch/$target_cpu/sysroot/lib/libzircon.so" ]
+  libs = [ "$fuchsia_sdk_path/arch/$target_cpu/sysroot/lib/libzircon.so" ]
 
   # The use of these dependencies is temporary and will be moved behind the
   # embedder API.
@@ -835,6 +826,10 @@ fuchsia_test_archive("embedder_tests") {
       dest = "assets/scene_without_custom_compositor_with_xform.png"
     },
     {
+      path = "$root_gen_dir/flutter/shell/platform/embedder/assets/snapshot_large_scene.png"
+      dest = "assets/snapshot_large_scene.png"
+    },
+    {
       path = "$root_gen_dir/flutter/shell/platform/embedder/assets/verifyb143464703.png"
       dest = "assets/verifyb143464703.png"
     },
@@ -845,12 +840,21 @@ fuchsia_test_archive("embedder_tests") {
   ]
 }
 
+fuchsia_test_archive("dart_utils_tests") {
+  deps = [
+    "//flutter/shell/platform/fuchsia/runtime/dart/utils:dart_utils_unittests",
+  ]
+
+  binary = "dart_utils_unittests"
+}
+
 # When adding a new dep here, please also ensure the dep is added to
 # testing/fuchsia/run_tests.sh and testing/fuchsia/test_fars
 group("tests") {
   testonly = true
 
   deps = [
+    ":dart_utils_tests",
     ":embedder_tests",
     ":flow_tests",
     ":flutter_runner_scenic_tests",

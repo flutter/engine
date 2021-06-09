@@ -4,12 +4,9 @@
 
 #include "ax_tree.h"
 
-#include <stddef.h>
-#include <stdint.h>
-
+#include <cstddef>
+#include <cstdint>
 #include <memory>
-
-#include "gtest/gtest.h"
 
 #include "ax_enum_util.h"
 #include "ax_node.h"
@@ -18,6 +15,7 @@
 #include "ax_tree_id.h"
 #include "ax_tree_observer.h"
 #include "base/string_utils.h"
+#include "gtest/gtest.h"
 #include "test_ax_tree_manager.h"
 
 // Helper macro for testing selection values and maintain
@@ -1770,7 +1768,7 @@ TEST(AXTreeTest, ReverseRelationsDoNotKeepGrowing) {
     }
   }
 
-  // Note: 10 is arbitary, the idea here is just that we mutated the tree
+  // Note: 10 is arbitrary, the idea here is just that we mutated the tree
   // 1000 times, so if we have fewer than 10 entries in the maps / sets then
   // the map isn't growing / leaking. Same below.
   EXPECT_LT(map_key_count, 10U);

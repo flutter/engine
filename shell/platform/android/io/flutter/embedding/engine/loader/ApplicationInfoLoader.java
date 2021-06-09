@@ -9,7 +9,6 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.res.XmlResourceParser;
 import android.os.Bundle;
-import android.security.NetworkSecurityPolicy;
 import androidx.annotation.NonNull;
 import java.io.IOException;
 import org.json.JSONArray;
@@ -27,6 +26,8 @@ public final class ApplicationInfoLoader {
   public static final String PUBLIC_FLUTTER_ASSETS_DIR_KEY =
       FlutterLoader.class.getName() + '.' + FlutterLoader.FLUTTER_ASSETS_DIR_KEY;
   public static final String NETWORK_POLICY_METADATA_KEY = "io.flutter.network-policy";
+  public static final String PUBLIC_AUTOMATICALLY_REGISTER_PLUGINS_METADATA_KEY =
+      "io.flutter." + FlutterLoader.AUTOMATICALLY_REGISTER_PLUGINS_KEY;
 
   @NonNull
   private static ApplicationInfo getApplicationInfo(@NonNull Context applicationContext) {
@@ -44,6 +45,13 @@ public final class ApplicationInfoLoader {
       return null;
     }
     return metadata.getString(key, null);
+  }
+
+  private static boolean getBoolean(Bundle metadata, String key, boolean defaultValue) {
+    if (metadata == null) {
+      return defaultValue;
+    }
+    return metadata.getBoolean(key, defaultValue);
   }
 
   private static String getNetworkPolicy(ApplicationInfo appInfo, Context context) {
@@ -137,12 +145,6 @@ public final class ApplicationInfoLoader {
   @NonNull
   public static FlutterApplicationInfo load(@NonNull Context applicationContext) {
     ApplicationInfo appInfo = getApplicationInfo(applicationContext);
-    // Prior to API 23, cleartext traffic is allowed.
-    boolean clearTextPermitted = true;
-    if (android.os.Build.VERSION.SDK_INT >= 23) {
-      clearTextPermitted = NetworkSecurityPolicy.getInstance().isCleartextTrafficPermitted();
-    }
-
     return new FlutterApplicationInfo(
         getString(appInfo.metaData, PUBLIC_AOT_SHARED_LIBRARY_NAME),
         getString(appInfo.metaData, PUBLIC_VM_SNAPSHOT_DATA_KEY),
@@ -150,6 +152,6 @@ public final class ApplicationInfoLoader {
         getString(appInfo.metaData, PUBLIC_FLUTTER_ASSETS_DIR_KEY),
         getNetworkPolicy(appInfo, applicationContext),
         appInfo.nativeLibraryDir,
-        clearTextPermitted);
+        getBoolean(appInfo.metaData, PUBLIC_AUTOMATICALLY_REGISTER_PLUGINS_METADATA_KEY, true));
   }
 }

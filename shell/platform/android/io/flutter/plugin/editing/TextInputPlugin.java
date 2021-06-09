@@ -9,10 +9,10 @@ import android.content.Context;
 import android.graphics.Rect;
 import android.os.Build;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.text.Editable;
 import android.text.InputType;
 import android.util.SparseArray;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewStructure;
 import android.view.WindowInsets;
@@ -22,12 +22,11 @@ import android.view.autofill.AutofillValue;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
-import android.view.inputmethod.InputMethodSubtype;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import io.flutter.Log;
-import io.flutter.embedding.android.AndroidKeyProcessor;
+import io.flutter.embedding.android.KeyboardManager;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel.TextEditState;
 import io.flutter.plugin.platform.PlatformViewsController;
@@ -49,9 +48,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
   @Nullable private InputConnection lastInputConnection;
   @NonNull private PlatformViewsController platformViewsController;
   @Nullable private Rect lastClientRect;
-  private final boolean restartAlwaysRequired;
   private ImeSyncDeferringInsetsCallback imeSyncCallback;
-  private AndroidKeyProcessor keyProcessor;
 
   // Initialize the "last seen" text editing values to a non-null value.
   private TextEditState mLastKnownFrameworkTextEditingState;
@@ -76,7 +73,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     }
 
     // Sets up syncing ime insets with the framework, allowing
-    // the Flutter view to grow and shrink to accomodate Android
+    // the Flutter view to grow and shrink to accommodate Android
     // controlled keyboard animations.
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
       int mask = 0;
@@ -161,7 +158,6 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
 
     this.platformViewsController = platformViewsController;
     this.platformViewsController.attachTextInputPlugin(this);
-    restartAlwaysRequired = isRestartAlwaysRequired();
   }
 
   @NonNull
@@ -177,15 +173,6 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
   @VisibleForTesting
   ImeSyncDeferringInsetsCallback getImeSyncCallback() {
     return imeSyncCallback;
-  }
-
-  @NonNull
-  public AndroidKeyProcessor getKeyEventProcessor() {
-    return keyProcessor;
-  }
-
-  public void setKeyEventProcessor(AndroidKeyProcessor processor) {
-    keyProcessor = processor;
   }
 
   /**
@@ -290,7 +277,8 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     return textType;
   }
 
-  public InputConnection createInputConnection(View view, EditorInfo outAttrs) {
+  public InputConnection createInputConnection(
+      View view, KeyboardManager keyboardManager, EditorInfo outAttrs) {
     if (inputTarget.type == InputTarget.Type.NO_TARGET) {
       lastInputConnection = null;
       return null;
@@ -334,7 +322,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
 
     InputConnectionAdaptor connection =
         new InputConnectionAdaptor(
-            view, inputTarget.id, textInputChannel, keyProcessor, mEditable, outAttrs);
+            view, inputTarget.id, textInputChannel, keyboardManager, mEditable, outAttrs);
     outAttrs.initialSelStart = mEditable.getSelectionStart();
     outAttrs.initialSelEnd = mEditable.getSelectionEnd();
 
@@ -417,14 +405,45 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     mRestartInputPending = false;
   }
 
+  private static boolean composingChanged(
+      TextInputChannel.TextEditState before, TextInputChannel.TextEditState after) {
+    final int composingRegionLength = before.composingEnd - before.composingStart;
+    if (composingRegionLength != after.composingEnd - after.composingStart) {
+      return true;
+    }
+    for (int index = 0; index < composingRegionLength; index++) {
+      if (before.text.charAt(index + before.composingStart)
+          != after.text.charAt(index + after.composingStart)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // Called by the text input channel to update the text input plugin with the
+  // latest TextEditState from the framework.
   @VisibleForTesting
   void setTextInputEditingState(View view, TextInputChannel.TextEditState state) {
+    if (!mRestartInputPending
+        && mLastKnownFrameworkTextEditingState != null
+        && mLastKnownFrameworkTextEditingState.hasComposing()) {
+      // Also restart input if the framework (or the developer) decides to
+      // change the composing region by itself (which is discouraged). Many IMEs
+      // don't expect editors to commit composing text, so a restart is needed
+      // to reset their internal states.
+      mRestartInputPending = composingChanged(mLastKnownFrameworkTextEditingState, state);
+      if (mRestartInputPending) {
+        Log.w(
+            TAG,
+            "Changing the content within the the composing region may cause the input method to behave strangely, and is therefore discouraged. See https://github.com/flutter/flutter/issues/78827 for more details");
+      }
+    }
+
     mLastKnownFrameworkTextEditingState = state;
     mEditable.setEditingState(state);
 
-    // Restart if there is a pending restart or the device requires a force restart
-    // (see isRestartAlwaysRequired). Restarting will also update the selection.
-    if (restartAlwaysRequired || mRestartInputPending) {
+    // Restart if needed. Restarting will also update the selection.
+    if (mRestartInputPending) {
       mImm.restartInput(view);
       mRestartInputPending = false;
     }
@@ -472,32 +491,6 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
             (int) (minMax[2] * density),
             (int) Math.ceil(minMax[1] * density),
             (int) Math.ceil(minMax[3] * density));
-  }
-
-  // Samsung's Korean keyboard has a bug where it always attempts to combine characters based on
-  // its internal state, ignoring if and when the cursor is moved programmatically. The same bug
-  // also causes non-korean keyboards to occasionally duplicate text when tapping in the middle
-  // of existing text to edit it.
-  //
-  // Fully restarting the IMM works around this because it flushes the keyboard's internal state
-  // and stops it from trying to incorrectly combine characters. However this also has some
-  // negative performance implications, so we don't want to apply this workaround in every case.
-  @SuppressLint("NewApi") // New API guard is inline, the linter can't see it.
-  @SuppressWarnings("deprecation")
-  private boolean isRestartAlwaysRequired() {
-    InputMethodSubtype subtype = mImm.getCurrentInputMethodSubtype();
-    // Impacted devices all shipped with Android Lollipop or newer.
-    if (subtype == null
-        || Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP
-        || !Build.MANUFACTURER.equals("samsung")) {
-      return false;
-    }
-    String keyboardName =
-        Settings.Secure.getString(
-            mView.getContext().getContentResolver(), Settings.Secure.DEFAULT_INPUT_METHOD);
-    // The Samsung keyboard is called "com.sec.android.inputmethod/.SamsungKeypad" but look
-    // for "Samsung" just in case Samsung changes the name of the keyboard.
-    return keyboardName.contains("Samsung");
   }
 
   @VisibleForTesting
@@ -556,6 +549,23 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     int id;
   }
 
+  // -------- Start: KeyboardManager Synchronous Responder -------
+  public boolean handleKeyEvent(KeyEvent keyEvent) {
+    if (!getInputMethodManager().isAcceptingText() || lastInputConnection == null) {
+      return false;
+    }
+
+    // Send the KeyEvent as an IME KeyEvent. If the input connection is an
+    // InputConnectionAdaptor then call its handleKeyEvent method (because
+    // this method will be called by the keyboard manager, and
+    // InputConnectionAdaptor#sendKeyEvent forwards the key event back to the
+    // keyboard manager).
+    return (lastInputConnection instanceof InputConnectionAdaptor)
+        ? ((InputConnectionAdaptor) lastInputConnection).handleKeyEvent(keyEvent)
+        : lastInputConnection.sendKeyEvent(keyEvent);
+  }
+  // -------- End: KeyboardManager Synchronous Responder -------
+
   // -------- Start: ListenableEditingState watcher implementation -------
 
   @Override
@@ -570,15 +580,14 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     final int selectionEnd = mEditable.getSelectionEnd();
     final int composingStart = mEditable.getComposingStart();
     final int composingEnd = mEditable.getComposingEnd();
-    // Framework needs to sent value first.
     final boolean skipFrameworkUpdate =
+        // The framework needs to send its editing state first.
         mLastKnownFrameworkTextEditingState == null
             || (mEditable.toString().equals(mLastKnownFrameworkTextEditingState.text)
                 && selectionStart == mLastKnownFrameworkTextEditingState.selectionStart
                 && selectionEnd == mLastKnownFrameworkTextEditingState.selectionEnd
                 && composingStart == mLastKnownFrameworkTextEditingState.composingStart
                 && composingEnd == mLastKnownFrameworkTextEditingState.composingEnd);
-    // Skip if we're currently setting
     if (!skipFrameworkUpdate) {
       Log.v(TAG, "send EditingState to flutter: " + mEditable.toString());
       textInputChannel.updateEditingState(
@@ -599,7 +608,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
   // -------- Start: Autofill -------
   // ### Setup and provide the initial text values and hints.
   //
-  // The TextInputConfiguration used to setup the current client is also used for populating
+  // The TextInputConfiguration used to set up the current client is also used for populating
   // "AutofillVirtualStructure" when requested by the autofill manager (AFM), See
   // #onProvideAutofillVirtualStructure.
   //
@@ -752,11 +761,14 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
       final TextInputChannel.TextEditState newState =
           new TextInputChannel.TextEditState(value, value.length(), value.length(), -1, -1);
 
-      // The value of the currently focused text field needs to be updated.
       if (autofill.uniqueIdentifier.equals(currentAutofill.uniqueIdentifier)) {
-        setTextInputEditingState(mView, newState);
+        // Autofilling the current client is the same as handling user input
+        // from the virtual keyboard. Setting the editable to newState and an
+        // update will be sent to the framework.
+        mEditable.setEditingState(newState);
+      } else {
+        editingValues.put(autofill.uniqueIdentifier, newState);
       }
-      editingValues.put(autofill.uniqueIdentifier, newState);
     }
 
     textInputChannel.updateEditingStateWithTag(inputTarget.id, editingValues);

@@ -3,16 +3,14 @@
 // found in the LICENSE file.
 
 // @dart = 2.6
+
 import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui';
-import 'package:image/image.dart' as dart_image;
 
+import 'package:litetest/litetest.dart';
 import 'package:path/path.dart' as path;
-import 'package:test/test.dart';
-
-import 'test_util.dart';
 
 typedef CanvasCallback = void Function(Canvas canvas);
 
@@ -47,7 +45,7 @@ void testNoCrashes() {
     final RRect rrect = RRect.fromRectAndCorners(rect);
     const Offset offset = Offset(double.nan, double.nan);
     final Path path = Path();
-    const Color color = Color(0);
+    const Color color = Color(0x00000000);
     final Paragraph paragraph = ParagraphBuilder(ParagraphStyle()).build();
 
     final PictureRecorder recorder = PictureRecorder();
@@ -146,12 +144,9 @@ Future<bool> fuzzyGoldenImageCompare(
   }
 
   if (!areEqual) {
-    final ByteData pngData = await image.toByteData();
-    final ByteBuffer buffer = pngData.buffer;
-    final dart_image.Image png = dart_image.Image.fromBytes(
-        image.width, image.height, buffer.asUint8List());
+    final ByteData pngData = await image.toByteData(format: ImageByteFormat.png);
     final String outPath = path.join(imagesPath, 'found_' + goldenImageName);
-    File(outPath)..writeAsBytesSync(dart_image.encodePng(png));
+    File(outPath).writeAsBytesSync(pngData.buffer.asUint8List());
     print('wrote: ' + outPath);
   }
   return areEqual;
@@ -226,7 +221,7 @@ void main() {
     final Canvas canvas = Canvas(recorder);
     const Rect rect = Rect.fromLTWH(0, 0, 100, 100);
     final RSTransform transform = RSTransform(1, 0, 0, 0);
-    const Color color = Color(0);
+    const Color color = Color(0x00000000);
     final Paint paint = Paint();
     canvas.drawAtlas(image, <RSTransform>[transform], <Rect>[rect], <Color>[color], BlendMode.src, rect, paint);
     canvas.drawAtlas(image, <RSTransform>[transform], <Rect>[rect], <Color>[color], BlendMode.src, null, paint);
@@ -249,7 +244,7 @@ void main() {
     final Canvas canvas = Canvas(recorder);
     const Rect rect = Rect.fromLTWH(0, 0, 100, 100);
     final RSTransform transform = RSTransform(1, 0, 0, 0);
-    const Color color = Color(0);
+    const Color color = Color(0x00000000);
     final Paint paint = Paint();
     canvas.drawAtlas(image, <RSTransform>[transform], <Rect>[rect], <Color>[color], BlendMode.src, rect, paint);
     canvas.drawAtlas(image, <RSTransform>[transform, transform], <Rect>[rect, rect], <Color>[color, color], BlendMode.src, rect, paint);

@@ -2,8 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'dart:convert';
+import 'dart:html' as html;
+import 'dart:typed_data';
+
+import 'package:ui/src/engine.dart' show AssetManager, AssetManagerException;
+
+import '../util.dart';
+import 'canvaskit_api.dart';
+import 'font_fallbacks.dart';
 
 // This URL was found by using the Google Fonts Developer API to find the URL
 // for Roboto. The API warns that this URL is not stable. In order to update
@@ -16,21 +23,14 @@ const String _robotoUrl =
 /// Manages the fonts used in the Skia-based backend.
 class SkiaFontCollection {
   /// Fonts that have been registered but haven't been loaded yet.
-  final List<Future<_RegisteredFont?>> _unloadedFonts =
-      <Future<_RegisteredFont?>>[];
+  final List<Future<RegisteredFont?>> _unloadedFonts =
+      <Future<RegisteredFont?>>[];
 
   /// Fonts which have been registered and loaded.
-  final List<_RegisteredFont> _registeredFonts = <_RegisteredFont>[];
-
-  /// Fallback fonts which have been registered and loaded.
-  final List<_RegisteredFont> _registeredFallbackFonts = <_RegisteredFont>[];
+  final List<RegisteredFont> _registeredFonts = <RegisteredFont>[];
 
   final Map<String, List<SkTypeface>> familyToTypefaceMap =
       <String, List<SkTypeface>>{};
-
-  final List<String> globalFontFallbacks = <String>['Roboto'];
-
-  final Map<String, int> _fontFallbackCounts = <String, int>{};
 
   Future<void> ensureFontsLoaded() async {
     await _loadFonts();
@@ -49,7 +49,7 @@ class SkiaFontCollection {
           .add(font.typeface);
     }
 
-    for (var font in _registeredFallbackFonts) {
+    for (var font in FontFallbackData.instance.registeredFallbackFonts) {
       fontProvider!.registerFont(font.bytes, font.family);
       familyToTypefaceMap
           .putIfAbsent(font.family, () => <SkTypeface>[])
@@ -63,9 +63,8 @@ class SkiaFontCollection {
     if (_unloadedFonts.isEmpty) {
       return;
     }
-    final List<_RegisteredFont?> loadedFonts =
-        await Future.wait(_unloadedFonts);
-    for (_RegisteredFont? font in loadedFonts) {
+    final List<RegisteredFont?> loadedFonts = await Future.wait(_unloadedFonts);
+    for (RegisteredFont? font in loadedFonts) {
       if (font != null) {
         _registeredFonts.add(font);
       }
@@ -77,14 +76,20 @@ class SkiaFontCollection {
     if (fontFamily == null) {
       fontFamily = _readActualFamilyName(list);
       if (fontFamily == null) {
-        html.window.console
-            .warn('Failed to read font family name. Aborting font load.');
+        printWarning('Failed to read font family name. Aborting font load.');
         return;
       }
     }
 
-    _registeredFonts.add(_RegisteredFont(list, fontFamily));
-    await ensureFontsLoaded();
+    final SkTypeface? typeface =
+        canvasKit.FontMgr.RefDefault().MakeTypefaceFromData(list);
+    if (typeface != null) {
+      _registeredFonts.add(RegisteredFont(list, fontFamily, typeface));
+      await ensureFontsLoaded();
+    } else {
+      printWarning('Failed to parse font family "$fontFamily"');
+      return;
+    }
   }
 
   Future<void> registerFonts(AssetManager assetManager) async {
@@ -94,8 +99,7 @@ class SkiaFontCollection {
       byteData = await assetManager.load('FontManifest.json');
     } on AssetManagerException catch (e) {
       if (e.httpStatus == 404) {
-        html.window.console
-            .warn('Font manifest does not exist at `${e.url}` – ignoring.');
+        printWarning('Font manifest does not exist at `${e.url}` – ignoring.');
         return;
       } else {
         rethrow;
@@ -137,27 +141,26 @@ class SkiaFontCollection {
     }
   }
 
-  Future<_RegisteredFont?> _registerFont(String url, String family) async {
+  Future<RegisteredFont?> _registerFont(String url, String family) async {
     ByteBuffer buffer;
     try {
       buffer = await html.window.fetch(url).then(_getArrayBuffer);
     } catch (e) {
-      html.window.console.warn('Failed to load font $family at $url');
-      html.window.console.warn(e);
+      printWarning('Failed to load font $family at $url');
+      printWarning(e.toString());
       return null;
     }
 
     final Uint8List bytes = buffer.asUint8List();
-    return _RegisteredFont(bytes, family);
-  }
-
-  void registerFallbackFont(String family, Uint8List bytes) {
-    _fontFallbackCounts.putIfAbsent(family, () => 0);
-    int fontFallbackTag = _fontFallbackCounts[family]!;
-    _fontFallbackCounts[family] = _fontFallbackCounts[family]! + 1;
-    String countedFamily = '$family $fontFallbackTag';
-    _registeredFallbackFonts.add(_RegisteredFont(bytes, countedFamily));
-    globalFontFallbacks.add(countedFamily);
+    SkTypeface? typeface =
+        canvasKit.FontMgr.RefDefault().MakeTypefaceFromData(bytes);
+    if (typeface != null) {
+      return RegisteredFont(bytes, family, typeface);
+    } else {
+      printWarning('Failed to load font $family at $url');
+      printWarning('Verify that $url contains a valid font.');
+      return null;
+    }
   }
 
   String? _readActualFamilyName(Uint8List bytes) {
@@ -174,20 +177,12 @@ class SkiaFontCollection {
         .then<ByteBuffer>((dynamic x) => x as ByteBuffer);
   }
 
-  /// Resets the fallback fonts. Used for tests.
-  void debugResetFallbackFonts() {
-    _registeredFallbackFonts.clear();
-    globalFontFallbacks.clear();
-    globalFontFallbacks.add('Roboto');
-    _fontFallbackCounts.clear();
-  }
-
   SkFontMgr? skFontMgr;
   TypefaceFontProvider? fontProvider;
 }
 
 /// Represents a font that has been registered.
-class _RegisteredFont {
+class RegisteredFont {
   /// The font family name for this font.
   final String family;
 
@@ -199,7 +194,9 @@ class _RegisteredFont {
   /// This is used to determine which code points are supported by this font.
   final SkTypeface typeface;
 
-  _RegisteredFont(this.bytes, this.family)
-      : this.typeface =
-            canvasKit.FontMgr.RefDefault().MakeTypefaceFromData(bytes);
+  RegisteredFont(this.bytes, this.family, this.typeface) {
+    // This is a hack which causes Skia to cache the decoded font.
+    SkFont skFont = SkFont(typeface);
+    skFont.getGlyphBounds([0], null, null);
+  }
 }

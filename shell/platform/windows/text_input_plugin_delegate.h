@@ -5,14 +5,15 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_TEXT_INPUT_PLUGIN_DELEGATE_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_TEXT_INPUT_PLUGIN_DELEGATE_H_
 
-#include "flutter/shell/platform/common/cpp/geometry.h"
+#include "flutter/shell/platform/common/geometry.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 
 namespace flutter {
 
 class TextInputPluginDelegate {
  public:
-  // Notifies delegate that the cursor position has changed.
+  // Notifies the delegate of the updated the cursor rect in Flutter root view
+  // coordinates.
   virtual void OnCursorRectUpdated(const Rect& rect) = 0;
 };
 

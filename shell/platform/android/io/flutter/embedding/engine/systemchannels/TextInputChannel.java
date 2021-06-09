@@ -157,7 +157,7 @@ public class TextInputChannel {
   /**
    * Instructs Flutter to reattach the last active text input client, if any.
    *
-   * <p>This is necessary when the view heirarchy has been detached and reattached to a {@link
+   * <p>This is necessary when the view hierarchy has been detached and reattached to a {@link
    * FlutterEngine}, as the engine may have kept alive a text editing client on the Dart side.
    */
   public void requestExistingInputState() {
@@ -734,6 +734,16 @@ public class TextInputChannel {
       this.selectionEnd = selectionEnd;
       this.composingStart = composingStart;
       this.composingEnd = composingEnd;
+    }
+
+    public boolean hasSelection() {
+      // When selectionStart == -1, it's guaranteed that selectionEnd will also
+      // be -1.
+      return selectionStart >= 0;
+    }
+
+    public boolean hasComposing() {
+      return composingStart >= 0 && composingEnd > composingStart;
     }
   }
 }

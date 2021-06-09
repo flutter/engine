@@ -84,7 +84,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
   fml::scoped_nsobject<FlutterEngine> _engine;
 
   // We keep a separate reference to this and create it ahead of time because we want to be able to
-  // setup a shell along with its platform view before the view has to appear.
+  // set up a shell along with its platform view before the view has to appear.
   fml::scoped_nsobject<FlutterView> _flutterView;
   fml::scoped_nsobject<UIView> _splashScreenView;
   fml::ScopedBlock<void (^)(void)> _flutterViewRenderedCallback;
@@ -95,7 +95,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
   BOOL _viewOpaque;
   BOOL _engineNeedsLaunch;
   fml::scoped_nsobject<NSMutableSet<NSNumber*>> _ongoingTouches;
-  // This scroll view is a workaround to accomodate iOS 13 and higher.  There isn't a way to get
+  // This scroll view is a workaround to accommodate iOS 13 and higher.  There isn't a way to get
   // touches on the status bar to trigger scrolling to the top of a scroll view.  We place a
   // UIScrollView with height zero and a content offset so we can get those events. See also:
   // https://github.com/flutter/flutter/issues/35050
@@ -743,12 +743,12 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 
 - (void)applicationWillResignActive:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationWillResignActive");
-  [self surfaceUpdated:NO];
   [self goToApplicationLifecycle:@"AppLifecycleState.inactive"];
 }
 
 - (void)applicationDidEnterBackground:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationDidEnterBackground");
+  [self surfaceUpdated:NO];
   [self goToApplicationLifecycle:@"AppLifecycleState.paused"];
 }
 
@@ -947,6 +947,11 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   [self dispatchTouches:touches pointerDataChangeOverride:nullptr];
 }
 
+- (void)forceTouchesCancelled:(NSSet*)touches {
+  flutter::PointerData::Change cancel = flutter::PointerData::Change::kCancel;
+  [self dispatchTouches:touches pointerDataChangeOverride:&cancel];
+}
+
 #pragma mark - Handle view resizing
 
 - (void)updateViewportMetrics {
@@ -1091,26 +1096,33 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   }
 }
 
-- (void)pressesBegan:(NSSet<UIPress*>*)presses withEvent:(UIEvent*)event API_AVAILABLE(ios(9.0)) {
+- (void)pressesBegan:(NSSet<UIPress*>*)presses
+           withEvent:(UIPressesEvent*)event API_AVAILABLE(ios(9.0)) {
+  [super pressesBegan:presses withEvent:event];
   if (@available(iOS 13.4, *)) {
     [self dispatchPresses:presses];
   }
 }
 
-- (void)pressesChanged:(NSSet<UIPress*>*)presses withEvent:(UIEvent*)event API_AVAILABLE(ios(9.0)) {
+- (void)pressesChanged:(NSSet<UIPress*>*)presses
+             withEvent:(UIPressesEvent*)event API_AVAILABLE(ios(9.0)) {
+  [super pressesChanged:presses withEvent:event];
   if (@available(iOS 13.4, *)) {
     [self dispatchPresses:presses];
   }
 }
 
-- (void)pressesEnded:(NSSet<UIPress*>*)presses withEvent:(UIEvent*)event API_AVAILABLE(ios(9.0)) {
+- (void)pressesEnded:(NSSet<UIPress*>*)presses
+           withEvent:(UIPressesEvent*)event API_AVAILABLE(ios(9.0)) {
+  [super pressesEnded:presses withEvent:event];
   if (@available(iOS 13.4, *)) {
     [self dispatchPresses:presses];
   }
 }
 
 - (void)pressesCancelled:(NSSet<UIPress*>*)presses
-               withEvent:(UIEvent*)event API_AVAILABLE(ios(9.0)) {
+               withEvent:(UIPressesEvent*)event API_AVAILABLE(ios(9.0)) {
+  [super pressesCancelled:presses withEvent:event];
   if (@available(iOS 13.4, *)) {
     [self dispatchPresses:presses];
   }

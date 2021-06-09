@@ -90,20 +90,32 @@ SceneBuilder::SceneBuilder() {
 SceneBuilder::~SceneBuilder() = default;
 
 void SceneBuilder::pushTransform(Dart_Handle layer_handle,
-                                 tonic::Float64List& matrix4) {
+                                 tonic::Float64List& matrix4,
+                                 fml::RefPtr<EngineLayer> oldLayer) {
   SkMatrix sk_matrix = ToSkMatrix(matrix4);
   auto layer = std::make_shared<flutter::TransformLayer>(sk_matrix);
   PushLayer(layer);
   // matrix4 has to be released before we can return another Dart object
   matrix4.Release();
   EngineLayer::MakeRetained(layer_handle, layer);
+
+  if (oldLayer && oldLayer->Layer()) {
+    layer->AssignOldLayer(oldLayer->Layer().get());
+  }
 }
 
-void SceneBuilder::pushOffset(Dart_Handle layer_handle, double dx, double dy) {
+void SceneBuilder::pushOffset(Dart_Handle layer_handle,
+                              double dx,
+                              double dy,
+                              fml::RefPtr<EngineLayer> oldLayer) {
   SkMatrix sk_matrix = SkMatrix::Translate(dx, dy);
   auto layer = std::make_shared<flutter::TransformLayer>(sk_matrix);
   PushLayer(layer);
   EngineLayer::MakeRetained(layer_handle, layer);
+
+  if (oldLayer && oldLayer->Layer()) {
+    layer->AssignOldLayer(oldLayer->Layer().get());
+  }
 }
 
 void SceneBuilder::pushClipRect(Dart_Handle layer_handle,
@@ -111,67 +123,104 @@ void SceneBuilder::pushClipRect(Dart_Handle layer_handle,
                                 double right,
                                 double top,
                                 double bottom,
-                                int clipBehavior) {
+                                int clipBehavior,
+                                fml::RefPtr<EngineLayer> oldLayer) {
   SkRect clipRect = SkRect::MakeLTRB(left, top, right, bottom);
   flutter::Clip clip_behavior = static_cast<flutter::Clip>(clipBehavior);
   auto layer =
       std::make_shared<flutter::ClipRectLayer>(clipRect, clip_behavior);
   PushLayer(layer);
   EngineLayer::MakeRetained(layer_handle, layer);
+
+  if (oldLayer && oldLayer->Layer()) {
+    layer->AssignOldLayer(oldLayer->Layer().get());
+  }
 }
 
 void SceneBuilder::pushClipRRect(Dart_Handle layer_handle,
                                  const RRect& rrect,
-                                 int clipBehavior) {
+                                 int clipBehavior,
+                                 fml::RefPtr<EngineLayer> oldLayer) {
   flutter::Clip clip_behavior = static_cast<flutter::Clip>(clipBehavior);
   auto layer =
       std::make_shared<flutter::ClipRRectLayer>(rrect.sk_rrect, clip_behavior);
   PushLayer(layer);
   EngineLayer::MakeRetained(layer_handle, layer);
+
+  if (oldLayer && oldLayer->Layer()) {
+    layer->AssignOldLayer(oldLayer->Layer().get());
+  }
 }
 
 void SceneBuilder::pushClipPath(Dart_Handle layer_handle,
                                 const CanvasPath* path,
-                                int clipBehavior) {
+                                int clipBehavior,
+                                fml::RefPtr<EngineLayer> oldLayer) {
   flutter::Clip clip_behavior = static_cast<flutter::Clip>(clipBehavior);
   FML_DCHECK(clip_behavior != flutter::Clip::none);
   auto layer =
       std::make_shared<flutter::ClipPathLayer>(path->path(), clip_behavior);
   PushLayer(layer);
   EngineLayer::MakeRetained(layer_handle, layer);
+
+  if (oldLayer && oldLayer->Layer()) {
+    layer->AssignOldLayer(oldLayer->Layer().get());
+  }
 }
 
 void SceneBuilder::pushOpacity(Dart_Handle layer_handle,
                                int alpha,
                                double dx,
-                               double dy) {
+                               double dy,
+                               fml::RefPtr<EngineLayer> oldLayer) {
   auto layer =
       std::make_shared<flutter::OpacityLayer>(alpha, SkPoint::Make(dx, dy));
   PushLayer(layer);
   EngineLayer::MakeRetained(layer_handle, layer);
+
+  if (oldLayer && oldLayer->Layer()) {
+    layer->AssignOldLayer(oldLayer->Layer().get());
+  }
 }
 
 void SceneBuilder::pushColorFilter(Dart_Handle layer_handle,
-                                   const ColorFilter* color_filter) {
+                                   const ColorFilter* color_filter,
+                                   fml::RefPtr<EngineLayer> oldLayer) {
   auto layer =
       std::make_shared<flutter::ColorFilterLayer>(color_filter->filter());
   PushLayer(layer);
   EngineLayer::MakeRetained(layer_handle, layer);
+
+  if (oldLayer && oldLayer->Layer()) {
+    layer->AssignOldLayer(oldLayer->Layer().get());
+  }
 }
 
 void SceneBuilder::pushImageFilter(Dart_Handle layer_handle,
-                                   const ImageFilter* image_filter) {
+                                   const ImageFilter* image_filter,
+                                   fml::RefPtr<EngineLayer> oldLayer) {
   auto layer =
       std::make_shared<flutter::ImageFilterLayer>(image_filter->filter());
   PushLayer(layer);
   EngineLayer::MakeRetained(layer_handle, layer);
+
+  if (oldLayer && oldLayer->Layer()) {
+    layer->AssignOldLayer(oldLayer->Layer().get());
+  }
 }
 
 void SceneBuilder::pushBackdropFilter(Dart_Handle layer_handle,
-                                      ImageFilter* filter) {
-  auto layer = std::make_shared<flutter::BackdropFilterLayer>(filter->filter());
+                                      ImageFilter* filter,
+                                      int blendMode,
+                                      fml::RefPtr<EngineLayer> oldLayer) {
+  auto layer = std::make_shared<flutter::BackdropFilterLayer>(
+      filter->filter(), static_cast<SkBlendMode>(blendMode));
   PushLayer(layer);
   EngineLayer::MakeRetained(layer_handle, layer);
+
+  if (oldLayer && oldLayer->Layer()) {
+    layer->AssignOldLayer(oldLayer->Layer().get());
+  }
 }
 
 void SceneBuilder::pushShaderMask(Dart_Handle layer_handle,
@@ -180,13 +229,20 @@ void SceneBuilder::pushShaderMask(Dart_Handle layer_handle,
                                   double maskRectRight,
                                   double maskRectTop,
                                   double maskRectBottom,
-                                  int blendMode) {
+                                  int blendMode,
+                                  int filterQualityIndex,
+                                  fml::RefPtr<EngineLayer> oldLayer) {
   SkRect rect = SkRect::MakeLTRB(maskRectLeft, maskRectTop, maskRectRight,
                                  maskRectBottom);
+  auto sampling = ImageFilter::SamplingFromIndex(filterQualityIndex);
   auto layer = std::make_shared<flutter::ShaderMaskLayer>(
-      shader->shader(), rect, static_cast<SkBlendMode>(blendMode));
+      shader->shader(sampling), rect, static_cast<SkBlendMode>(blendMode));
   PushLayer(layer);
   EngineLayer::MakeRetained(layer_handle, layer);
+
+  if (oldLayer && oldLayer->Layer()) {
+    layer->AssignOldLayer(oldLayer->Layer().get());
+  }
 }
 
 void SceneBuilder::pushPhysicalShape(Dart_Handle layer_handle,
@@ -194,13 +250,18 @@ void SceneBuilder::pushPhysicalShape(Dart_Handle layer_handle,
                                      double elevation,
                                      int color,
                                      int shadow_color,
-                                     int clipBehavior) {
+                                     int clipBehavior,
+                                     fml::RefPtr<EngineLayer> oldLayer) {
   auto layer = std::make_shared<flutter::PhysicalShapeLayer>(
       static_cast<SkColor>(color), static_cast<SkColor>(shadow_color),
       static_cast<float>(elevation), path->path(),
       static_cast<flutter::Clip>(clipBehavior));
   PushLayer(layer);
   EngineLayer::MakeRetained(layer_handle, layer);
+
+  if (oldLayer && oldLayer->Layer()) {
+    layer->AssignOldLayer(oldLayer->Layer().get());
+  }
 }
 
 void SceneBuilder::addRetained(fml::RefPtr<EngineLayer> retainedLayer) {
@@ -215,12 +276,9 @@ void SceneBuilder::addPicture(double dx,
                               double dy,
                               Picture* picture,
                               int hints) {
-  SkPoint offset = SkPoint::Make(dx, dy);
-  SkRect pictureRect = picture->picture()->cullRect();
-  pictureRect.offset(offset.x(), offset.y());
   auto layer = std::make_unique<flutter::PictureLayer>(
-      offset, UIDartState::CreateGPUObject(picture->picture()), !!(hints & 1),
-      !!(hints & 2));
+      SkPoint::Make(dx, dy), UIDartState::CreateGPUObject(picture->picture()),
+      !!(hints & 1), !!(hints & 2));
   AddLayer(std::move(layer));
 }
 
@@ -230,10 +288,11 @@ void SceneBuilder::addTexture(double dx,
                               double height,
                               int64_t textureId,
                               bool freeze,
-                              int filterQuality) {
+                              int filterQualityIndex) {
+  auto sampling = ImageFilter::SamplingFromIndex(filterQualityIndex);
   auto layer = std::make_unique<flutter::TextureLayer>(
       SkPoint::Make(dx, dy), SkSize::Make(width, height), textureId, freeze,
-      static_cast<SkFilterQuality>(filterQuality));
+      sampling);
   AddLayer(std::move(layer));
 }
 
@@ -288,9 +347,10 @@ void SceneBuilder::setCheckerboardOffscreenLayers(bool checkerboard) {
 void SceneBuilder::build(Dart_Handle scene_handle) {
   FML_DCHECK(layer_stack_.size() >= 1);
 
-  Scene::create(scene_handle, layer_stack_[0], rasterizer_tracing_threshold_,
-                checkerboard_raster_cache_images_,
-                checkerboard_offscreen_layers_);
+  Scene::create(
+      scene_handle, std::move(layer_stack_[0]), rasterizer_tracing_threshold_,
+      checkerboard_raster_cache_images_, checkerboard_offscreen_layers_);
+  layer_stack_.clear();
   ClearDartWrapper();  // may delete this object.
 }
 

@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of engine;
 
 /// Various types of line breaks as defined by the Unicode spec.
@@ -186,7 +185,7 @@ LineBreakResult nextLineBreak(String text, int index, {int? maxEnd}) {
   /// The index of the last character that wasn't a new line.
   int lastNonNewlineIndex = index;
 
-  // When the text/line starts with SP, we should treat the begining of text/line
+  // When the text/line starts with SP, we should treat the beginning of text/line
   // as if it were a WJ (word joiner).
   if (curr == LineCharProperty.SP) {
     baseOfSpaceSequence = LineCharProperty.WJ;

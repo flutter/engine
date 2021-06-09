@@ -2,8 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'dart:async';
+import 'dart:html' as html;
+import 'dart:typed_data';
+
+import 'package:ui/src/engine.dart' show WebOnlyImageCodecChunkCallback;
+import 'package:ui/ui.dart' as ui;
+
+import '../util.dart';
+import 'canvaskit_api.dart';
+import 'skia_object_cache.dart';
 
 /// Instantiates a [ui.Codec] backed by an `SkAnimatedImage` from Skia.
 ui.Codec skiaInstantiateImageCodec(Uint8List list,
@@ -93,6 +101,11 @@ class CkAnimatedImage extends ManagedSkiaObject<SkAnimatedImage>
 
   final String src;
   final Uint8List _bytes;
+  int _frameCount = 0;
+  int _repetitionCount = -1;
+
+  /// The index to the next frame to be decoded.
+  int _nextFrameIndex = 0;
 
   @override
   SkAnimatedImage createDefault() {
@@ -104,11 +117,23 @@ class CkAnimatedImage extends ManagedSkiaObject<SkAnimatedImage>
         'Image source: $src',
       );
     }
+
+    _frameCount = animatedImage.getFrameCount();
+    _repetitionCount = animatedImage.getRepetitionCount();
+
+    // If the object has been deleted then resurrected, it may already have
+    // iterated over some frames. We need to skip over them.
+    for (int i = 0; i < _nextFrameIndex; i++) {
+      animatedImage.decodeNextFrame();
+    }
     return animatedImage;
   }
 
   @override
   SkAnimatedImage resurrect() => createDefault();
+
+  @override
+  bool get isResurrectionExpensive => true;
 
   @override
   void delete() {
@@ -136,13 +161,13 @@ class CkAnimatedImage extends ManagedSkiaObject<SkAnimatedImage>
   @override
   int get frameCount {
     assert(_debugCheckIsNotDisposed());
-    return skiaObject.getFrameCount();
+    return _frameCount;
   }
 
   @override
   int get repetitionCount {
     assert(_debugCheckIsNotDisposed());
-    return skiaObject.getRepetitionCount();
+    return _repetitionCount;
   }
 
   @override
@@ -150,7 +175,8 @@ class CkAnimatedImage extends ManagedSkiaObject<SkAnimatedImage>
     assert(_debugCheckIsNotDisposed());
     final int durationMillis = skiaObject.decodeNextFrame();
     final Duration duration = Duration(milliseconds: durationMillis);
-    final CkImage image = CkImage(skiaObject.getCurrentFrame());
+    final CkImage image = CkImage(skiaObject.makeImageAtCurrentFrame());
+    _nextFrameIndex = (_nextFrameIndex + 1) % _frameCount;
     return Future<ui.FrameInfo>.value(AnimatedImageFrameInfo(duration, image));
   }
 }
@@ -172,13 +198,18 @@ class CkImage implements ui.Image, StackTraceDebugger {
       // IMPORTANT: the alphaType, colorType, and colorSpace passed to
       // _encodeImage and to canvasKit.MakeImage must be the same. Otherwise
       // Skia will misinterpret the pixels and corrupt the image.
-      final ByteData originalBytes = _encodeImage(
+      final ByteData? originalBytes = _encodeImage(
         skImage: skImage,
         format: ui.ImageByteFormat.rawRgba,
         alphaType: canvasKit.AlphaType.Premul,
         colorType: canvasKit.ColorType.RGBA_8888,
         colorSpace: SkColorSpaceSRGB,
       );
+      if (originalBytes == null) {
+        printWarning('Unable to encode image to bytes. We will not '
+            'be able to resurrect it once it has been garbage collected.');
+        return;
+      }
       final int originalWidth = skImage.width();
       final int originalHeight = skImage.height();
       box = SkiaObjectBox<CkImage, SkImage>.resurrectable(this, skImage, () {
@@ -276,23 +307,28 @@ class CkImage implements ui.Image, StackTraceDebugger {
     ui.ImageByteFormat format = ui.ImageByteFormat.rawRgba,
   }) {
     assert(_debugCheckIsNotDisposed());
-    return Future<ByteData>.value(_encodeImage(
+    ByteData? data = _encodeImage(
       skImage: skImage,
       format: format,
       alphaType: canvasKit.AlphaType.Premul,
       colorType: canvasKit.ColorType.RGBA_8888,
       colorSpace: SkColorSpaceSRGB,
-    ));
+    );
+    if (data == null) {
+      return Future<ByteData>.error('Failed to encode the image into bytes.');
+    } else {
+      return Future<ByteData>.value(data);
+    }
   }
 
-  static ByteData _encodeImage({
+  static ByteData? _encodeImage({
     required SkImage skImage,
     required ui.ImageByteFormat format,
     required SkAlphaType alphaType,
     required SkColorType colorType,
     required ColorSpace colorSpace,
   }) {
-    Uint8List bytes;
+    Uint8List? bytes;
 
     if (format == ui.ImageByteFormat.rawRgba) {
       final SkImageInfo imageInfo = SkImageInfo(
@@ -304,13 +340,10 @@ class CkImage implements ui.Image, StackTraceDebugger {
       );
       bytes = skImage.readPixels(0, 0, imageInfo);
     } else {
-      final SkData skData = skImage.encodeToData(); //defaults to PNG 100%
-      // make a copy that we can return
-      bytes = Uint8List.fromList(canvasKit.getDataBytes(skData));
-      skData.delete();
+      bytes = skImage.encodeToBytes(); //defaults to PNG 100%
     }
 
-    return bytes.buffer.asByteData(0, bytes.length);
+    return bytes?.buffer.asByteData(0, bytes.length);
   }
 
   @override

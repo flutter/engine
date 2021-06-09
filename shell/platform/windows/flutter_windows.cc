@@ -15,9 +15,9 @@
 #include <memory>
 #include <vector>
 
-#include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/plugin_registrar.h"
-#include "flutter/shell/platform/common/cpp/incoming_message_dispatcher.h"
-#include "flutter/shell/platform/common/cpp/path_utils.h"
+#include "flutter/shell/platform/common/client_wrapper/include/flutter/plugin_registrar.h"
+#include "flutter/shell/platform/common/incoming_message_dispatcher.h"
+#include "flutter/shell/platform/common/path_utils.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/windows/flutter_project_bundle.h"
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
@@ -76,9 +76,14 @@ FlutterDesktopViewRef FlutterDesktopViewControllerGetView(
   return HandleForView(controller->view.get());
 }
 
+void FlutterDesktopViewControllerForceRedraw(
+    FlutterDesktopViewControllerRef controller) {
+  controller->view->ForceRedraw();
+}
+
 FlutterDesktopEngineRef FlutterDesktopEngineCreate(
-    const FlutterDesktopEngineProperties& engine_properties) {
-  flutter::FlutterProjectBundle project(engine_properties);
+    const FlutterDesktopEngineProperties* engine_properties) {
+  flutter::FlutterProjectBundle project(*engine_properties);
   auto engine = std::make_unique<flutter::FlutterWindowsEngine>(project);
   return HandleForEngine(engine.release());
 }
@@ -123,9 +128,20 @@ FlutterDesktopTextureRegistrarRef FlutterDesktopEngineGetTextureRegistrar(
       EngineFromHandle(engine)->texture_registrar());
 }
 
-HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef view) {
-  return std::get<HWND>(*ViewFromHandle(view)->GetRenderTarget());
+#ifdef WINUWP
+ABI::Windows::ApplicationModel::Core::CoreApplicationView*
+FlutterDesktopViewGetCoreApplicationView(FlutterDesktopViewRef view) {
+  return static_cast<
+      ABI::Windows::ApplicationModel::Core::CoreApplicationView*>(
+      winrt::get_abi(ViewFromHandle(view)->GetPlatformWindow()));
 }
+#endif
+
+#ifndef WINUWP
+HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef view) {
+  return ViewFromHandle(view)->GetPlatformWindow();
+}
+#endif
 
 FlutterDesktopViewRef FlutterDesktopPluginRegistrarGetView(
     FlutterDesktopPluginRegistrarRef registrar) {
@@ -143,7 +159,7 @@ void FlutterDesktopResyncOutputStreams() {
   std::ios::sync_with_stdio();
 }
 
-// Implementations of common/cpp/ API methods.
+// Implementations of common/ API methods.
 
 FlutterDesktopMessengerRef FlutterDesktopPluginRegistrarGetMessenger(
     FlutterDesktopPluginRegistrarRef registrar) {

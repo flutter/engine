@@ -10,16 +10,17 @@ namespace flutter {
 static constexpr double kControllerScrollMultiplier = 3;
 
 FlutterWindowWinUWP::FlutterWindowWinUWP(
-    ABI::Windows::UI::Core::CoreWindow* window) {
-  winrt::Windows::UI::Core::CoreWindow cw{nullptr};
-  winrt::copy_from_abi(cw, window);
-  window_ = cw;
+    ABI::Windows::ApplicationModel::Core::CoreApplicationView*
+        applicationview) {
+  winrt::Windows::ApplicationModel::Core::CoreApplicationView cav{nullptr};
+  winrt::copy_from_abi(cav, applicationview);
+
+  application_view_ = cav;
+  window_ = application_view_.CoreWindow();
 
   SetEventHandlers();
-  ConfigureXboxSpecific();
 
-  current_display_info_ = winrt::Windows::Graphics::Display::
-      DisplayInformation::GetForCurrentView();
+  display_helper_ = std::make_unique<DisplayHelperWinUWP>();
 }
 
 WindowsRenderTarget FlutterWindowWinUWP::GetRenderTarget() {
@@ -31,23 +32,25 @@ WindowsRenderTarget FlutterWindowWinUWP::GetRenderTarget() {
   visual_tree_root_ = compositor_.CreateContainerVisual();
   target_.Root(visual_tree_root_);
 
-  cursor_visual_ = CreateCursorVisual();
-
   render_target_ = compositor_.CreateSpriteVisual();
-  if (running_on_xbox_) {
-    render_target_.Offset(
-        {xbox_overscan_x_offset_, xbox_overscan_y_offset_, 1.0});
-  } else {
-    render_target_.Offset({1.0, 1.0, 1.0});
+  render_target_.Offset({display_helper_->GetRenderTargetXOffset(),
+                         display_helper_->GetRenderTargetYOffset(), 1.0});
+  if (!display_helper_->IsRunningOnLargeScreenDevice()) {
     ApplyInverseDpiScalingTransform();
   }
   visual_tree_root_.Children().InsertAtBottom(render_target_);
-
-  WindowBoundsWinUWP bounds = GetBounds(current_display_info_, true);
+  game_pad_cursor_ = std::make_unique<GamepadCursorWinUWP>(
+      binding_handler_delegate_, display_helper_.get(), window_, compositor_,
+      visual_tree_root_.Children());
+  WindowBoundsWinUWP bounds = display_helper_->GetPhysicalBounds();
 
   render_target_.Size({bounds.width, bounds.height});
   return WindowsRenderTarget(render_target_);
 #endif
+}
+
+PlatformWindow FlutterWindowWinUWP::GetPlatformWindow() {
+  return application_view_;
 }
 
 void FlutterWindowWinUWP::ApplyInverseDpiScalingTransform() {
@@ -58,7 +61,7 @@ void FlutterWindowWinUWP::ApplyInverseDpiScalingTransform() {
 }
 
 PhysicalWindowBounds FlutterWindowWinUWP::GetPhysicalWindowBounds() {
-  WindowBoundsWinUWP bounds = GetBounds(current_display_info_, true);
+  WindowBoundsWinUWP bounds = display_helper_->GetPhysicalBounds();
   return {static_cast<size_t>(bounds.width),
           static_cast<size_t>(bounds.height)};
 }
@@ -68,53 +71,11 @@ void FlutterWindowWinUWP::UpdateFlutterCursor(const std::string& cursor_name) {
   // https://github.com/flutter/flutter/issues/70199
 }
 
-void FlutterWindowWinUWP::UpdateCursorRect(const Rect& rect) {
+void FlutterWindowWinUWP::OnCursorRectUpdated(const Rect& rect) {
   // TODO(cbracken): Implement IMM candidate window positioning.
 }
 
 void FlutterWindowWinUWP::OnWindowResized() {}
-
-float FlutterWindowWinUWP::GetDpiScale() {
-  auto disp = winrt::Windows::Graphics::Display::DisplayInformation::
-      GetForCurrentView();
-
-  return GetDpiScale(disp);
-}
-
-WindowBoundsWinUWP FlutterWindowWinUWP::GetBounds(
-    winrt::Windows::Graphics::Display::DisplayInformation const& disp,
-    bool physical) {
-  winrt::Windows::UI::ViewManagement::ApplicationView app_view =
-      winrt::Windows::UI::ViewManagement::ApplicationView::GetForCurrentView();
-  winrt::Windows::Foundation::Rect bounds = app_view.VisibleBounds();
-  if (running_on_xbox_) {
-    return {bounds.Width + (bounds.X), bounds.Height + (bounds.Y)};
-  }
-
-  if (physical) {
-    // Return the height in physical pixels
-    return {bounds.Width * static_cast<float>(disp.RawPixelsPerViewPixel()),
-            bounds.Height * static_cast<float>(disp.RawPixelsPerViewPixel())};
-  }
-
-  return {bounds.Width, bounds.Height};
-}
-
-float FlutterWindowWinUWP::GetDpiScale(
-    winrt::Windows::Graphics::Display::DisplayInformation const& disp) {
-  double raw_per_view = disp.RawPixelsPerViewPixel();
-
-  // TODO(clarkezone): ensure DPI handling is correct:
-  // because XBOX has display scaling off, logicalDpi retuns 96 which is
-  // incorrect check if raw_per_view is more acurate.
-  // Also confirm if it is necessary to use this workaround on 10X
-  // https://github.com/flutter/flutter/issues/70198
-
-  if (running_on_xbox_) {
-    return 1.5;
-  }
-  return static_cast<float>(raw_per_view);
-}
 
 FlutterWindowWinUWP::~FlutterWindowWinUWP() {}
 
@@ -152,29 +113,8 @@ void FlutterWindowWinUWP::SetEventHandlers() {
   display.DpiChanged({this, &FlutterWindowWinUWP::OnDpiChanged});
 }
 
-void FlutterWindowWinUWP::ConfigureXboxSpecific() {
-  running_on_xbox_ =
-      winrt::Windows::System::Profile::AnalyticsInfo::VersionInfo()
-          .DeviceFamily() == L"Windows.Xbox";
-
-  if (running_on_xbox_) {
-    bool result =
-        winrt::Windows::UI::ViewManagement::ApplicationView::GetForCurrentView()
-            .SetDesiredBoundsMode(winrt::Windows::UI::ViewManagement::
-                                      ApplicationViewBoundsMode::UseCoreWindow);
-    if (!result) {
-      OutputDebugString(L"Couldn't set bounds mode.");
-    }
-
-    winrt::Windows::UI::ViewManagement::ApplicationView app_view = winrt::
-        Windows::UI::ViewManagement::ApplicationView::GetForCurrentView();
-    winrt::Windows::Foundation::Rect bounds = app_view.VisibleBounds();
-
-    // the offset /2 represents how much off-screan the core window is
-    // positioned unclear why disabling overscan doesn't correct this
-    xbox_overscan_x_offset_ = bounds.X / 2;
-    xbox_overscan_y_offset_ = bounds.Y / 2;
-  }
+float FlutterWindowWinUWP::GetDpiScale() {
+  return display_helper_->GetDpiScale();
 }
 
 void FlutterWindowWinUWP::OnDpiChanged(
@@ -182,7 +122,7 @@ void FlutterWindowWinUWP::OnDpiChanged(
     winrt::Windows::Foundation::IInspectable const&) {
   ApplyInverseDpiScalingTransform();
 
-  WindowBoundsWinUWP bounds = GetBounds(current_display_info_, true);
+  WindowBoundsWinUWP bounds = display_helper_->GetPhysicalBounds();
 
   binding_handler_delegate_->OnWindowSizeChanged(
       static_cast<size_t>(bounds.width), static_cast<size_t>(bounds.height));
@@ -193,9 +133,11 @@ void FlutterWindowWinUWP::OnPointerPressed(
     winrt::Windows::UI::Core::PointerEventArgs const& args) {
   double x = GetPosX(args);
   double y = GetPosY(args);
+  FlutterPointerDeviceKind device_kind = GetPointerDeviceKind(args);
 
   binding_handler_delegate_->OnPointerDown(
-      x, y, FlutterPointerMouseButtons::kFlutterPointerButtonMousePrimary);
+      x, y, device_kind,
+      FlutterPointerMouseButtons::kFlutterPointerButtonMousePrimary);
 }
 
 void FlutterWindowWinUWP::OnPointerReleased(
@@ -203,9 +145,11 @@ void FlutterWindowWinUWP::OnPointerReleased(
     winrt::Windows::UI::Core::PointerEventArgs const& args) {
   double x = GetPosX(args);
   double y = GetPosY(args);
+  FlutterPointerDeviceKind device_kind = GetPointerDeviceKind(args);
 
   binding_handler_delegate_->OnPointerUp(
-      x, y, FlutterPointerMouseButtons::kFlutterPointerButtonMousePrimary);
+      x, y, device_kind,
+      FlutterPointerMouseButtons::kFlutterPointerButtonMousePrimary);
 }
 
 void FlutterWindowWinUWP::OnPointerMoved(
@@ -213,8 +157,9 @@ void FlutterWindowWinUWP::OnPointerMoved(
     winrt::Windows::UI::Core::PointerEventArgs const& args) {
   double x = GetPosX(args);
   double y = GetPosY(args);
+  FlutterPointerDeviceKind device_kind = GetPointerDeviceKind(args);
 
-  binding_handler_delegate_->OnPointerMove(x, y);
+  binding_handler_delegate_->OnPointerMove(x, y, device_kind);
 }
 
 void FlutterWindowWinUWP::OnPointerWheelChanged(
@@ -230,30 +175,46 @@ double FlutterWindowWinUWP::GetPosX(
     winrt::Windows::UI::Core::PointerEventArgs const& args) {
   const double inverse_dpi_scale = GetDpiScale();
 
-  return (args.CurrentPoint().Position().X - xbox_overscan_x_offset_) *
+  return (args.CurrentPoint().Position().X -
+          display_helper_->GetRenderTargetXOffset()) *
          inverse_dpi_scale;
 }
 
 double FlutterWindowWinUWP::GetPosY(
     winrt::Windows::UI::Core::PointerEventArgs const& args) {
   const double inverse_dpi_scale = GetDpiScale();
-  return static_cast<double>(
-      (args.CurrentPoint().Position().Y - xbox_overscan_y_offset_) *
-      inverse_dpi_scale);
+  return static_cast<double>((args.CurrentPoint().Position().Y -
+                              display_helper_->GetRenderTargetYOffset()) *
+                             inverse_dpi_scale);
+}
+
+FlutterPointerDeviceKind FlutterWindowWinUWP::GetPointerDeviceKind(
+    winrt::Windows::UI::Core::PointerEventArgs const& args) {
+  switch (args.CurrentPoint().PointerDevice().PointerDeviceType()) {
+    case winrt::Windows::Devices::Input::PointerDeviceType::Mouse:
+      return kFlutterPointerDeviceKindMouse;
+    case winrt::Windows::Devices::Input::PointerDeviceType::Pen:
+      return kFlutterPointerDeviceKindStylus;
+    case winrt::Windows::Devices::Input::PointerDeviceType::Touch:
+      return kFlutterPointerDeviceKindTouch;
+  }
+  return kFlutterPointerDeviceKindMouse;
 }
 
 void FlutterWindowWinUWP::OnBoundsChanged(
     winrt::Windows::UI::ViewManagement::ApplicationView const& app_view,
     winrt::Windows::Foundation::IInspectable const&) {
-#ifndef USECOREWINDOW
   if (binding_handler_delegate_) {
-    auto bounds = GetBounds(current_display_info_, true);
+    auto bounds = display_helper_->GetPhysicalBounds();
 
     binding_handler_delegate_->OnWindowSizeChanged(
         static_cast<size_t>(bounds.width), static_cast<size_t>(bounds.height));
+#ifndef USECOREWINDOW
+
     render_target_.Size({bounds.width, bounds.height});
-  }
+
 #endif
+  }
 }
 
 void FlutterWindowWinUWP::OnKeyUp(
@@ -266,9 +227,10 @@ void FlutterWindowWinUWP::OnKeyUp(
   auto status = args.KeyStatus();
   unsigned int scancode = status.ScanCode;
   int key = static_cast<int>(args.VirtualKey());
-  char32_t chararacter = static_cast<char32_t>(key | 32);
   int action = 0x0101;
-  binding_handler_delegate_->OnKey(key, scancode, action, chararacter, false);
+  binding_handler_delegate_->OnKey(key, scancode, action, 0,
+                                   status.IsExtendedKey /* extended */,
+                                   status.WasKeyDown /* was_down */);
 }
 
 void FlutterWindowWinUWP::OnKeyDown(
@@ -281,9 +243,10 @@ void FlutterWindowWinUWP::OnKeyDown(
   auto status = args.KeyStatus();
   unsigned int scancode = status.ScanCode;
   int key = static_cast<int>(args.VirtualKey());
-  char32_t chararacter = static_cast<char32_t>(key | 32);
   int action = 0x0100;
-  binding_handler_delegate_->OnKey(key, scancode, action, chararacter, false);
+  binding_handler_delegate_->OnKey(key, scancode, action, 0,
+                                   status.IsExtendedKey /* extended */,
+                                   status.WasKeyDown /* was_down */);
 }
 
 void FlutterWindowWinUWP::OnCharacterReceived(
@@ -297,41 +260,11 @@ void FlutterWindowWinUWP::OnCharacterReceived(
   }
 }
 
-winrt::Windows::UI::Composition::Visual
-FlutterWindowWinUWP::CreateCursorVisual() {
-  auto container = compositor_.CreateContainerVisual();
-  container.Offset(
-      {window_.Bounds().Width / 2, window_.Bounds().Height / 2, 1.0});
-
-  // size of the simulated mouse cursor
-  const float size = 30;
-  auto cursor_visual = compositor_.CreateShapeVisual();
-  cursor_visual.Size({size, size});
-
-  // compensate for overscan in cursor visual
-  cursor_visual.Offset({xbox_overscan_x_offset_, xbox_overscan_y_offset_, 1.0});
-
-  winrt::Windows::UI::Composition::CompositionEllipseGeometry circle =
-      compositor_.CreateEllipseGeometry();
-  circle.Radius({size / 2, size / 2});
-
-  auto circleshape = compositor_.CreateSpriteShape(circle);
-  circleshape.FillBrush(
-      compositor_.CreateColorBrush(winrt::Windows::UI::Colors::Black()));
-  circleshape.Offset({size / 2, size / 2});
-
-  cursor_visual.Shapes().Append(circleshape);
-
-  winrt::Windows::UI::Composition::Visual visual =
-      cursor_visual.as<winrt::Windows::UI::Composition::Visual>();
-
-  visual.CompositeMode(winrt::Windows::UI::Composition::
-                           CompositionCompositeMode::DestinationInvert);
-
-  visual.AnchorPoint({0.5, 0.5});
-  container.Children().InsertAtTop(visual);
-
-  return container;
+bool FlutterWindowWinUWP::OnBitmapSurfaceUpdated(const void* allocation,
+                                                 size_t row_bytes,
+                                                 size_t height) {
+  // TODO(gw280): Support software rendering fallback on UWP
+  return false;
 }
 
 }  // namespace flutter

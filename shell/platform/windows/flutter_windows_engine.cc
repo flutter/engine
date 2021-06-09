@@ -8,10 +8,10 @@
 #include <iostream>
 #include <sstream>
 
-#include "flutter/shell/platform/common/cpp/client_wrapper/binary_messenger_impl.h"
-#include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/basic_message_channel.h"
-#include "flutter/shell/platform/common/cpp/json_message_codec.h"
-#include "flutter/shell/platform/common/cpp/path_utils.h"
+#include "flutter/shell/platform/common/client_wrapper/binary_messenger_impl.h"
+#include "flutter/shell/platform/common/client_wrapper/include/flutter/basic_message_channel.h"
+#include "flutter/shell/platform/common/json_message_codec.h"
+#include "flutter/shell/platform/common/path_utils.h"
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
 #include "flutter/shell/platform/windows/string_conversion.h"
 #include "flutter/shell/platform/windows/system_utils.h"
@@ -23,9 +23,10 @@ namespace flutter {
 namespace {
 
 // Creates and returns a FlutterRendererConfig that renders to the view (if any)
-// of a FlutterWindowsEngine, which should be the user_data received by the
-// render callbacks.
-FlutterRendererConfig GetRendererConfig() {
+// of a FlutterWindowsEngine, using OpenGL (via ANGLE).
+// The user_data received by the render callbacks refers to the
+// FlutterWindowsEngine.
+FlutterRendererConfig GetOpenGLRendererConfig() {
   FlutterRendererConfig config = {};
   config.type = kOpenGL;
   config.open_gl.struct_size = sizeof(config.open_gl);
@@ -81,6 +82,27 @@ FlutterRendererConfig GetRendererConfig() {
     }
     return host->texture_registrar()->PopulateTexture(texture_id, width, height,
                                                       texture);
+  };
+  return config;
+}
+
+// Creates and returns a FlutterRendererConfig that renders to the view (if any)
+// of a FlutterWindowsEngine, using software rasterization.
+// The user_data received by the render callbacks refers to the
+// FlutterWindowsEngine.
+FlutterRendererConfig GetSoftwareRendererConfig() {
+  FlutterRendererConfig config = {};
+  config.type = kSoftware;
+  config.software.struct_size = sizeof(config.software);
+  config.software.surface_present_callback = [](void* user_data,
+                                                const void* allocation,
+                                                size_t row_bytes,
+                                                size_t height) {
+    auto host = static_cast<FlutterWindowsEngine*>(user_data);
+    if (!host->view()) {
+      return false;
+    }
+    return host->view()->PresentSoftwareBitmap(allocation, row_bytes, height);
   };
   return config;
 }
@@ -143,9 +165,10 @@ FlutterWindowsEngine::FlutterWindowsEngine(const FlutterProjectBundle& project)
   message_dispatcher_ =
       std::make_unique<IncomingMessageDispatcher>(messenger_.get());
   texture_registrar_ = std::make_unique<FlutterWindowsTextureRegistrar>(this);
+  surface_manager_ = AngleSurfaceManager::Create();
 #ifndef WINUWP
   window_proc_delegate_manager_ =
-      std::make_unique<Win32WindowProcDelegateManager>();
+      std::make_unique<WindowProcDelegateManagerWin32>();
 #endif
 
   // Set up internal channels.
@@ -159,6 +182,11 @@ FlutterWindowsEngine::FlutterWindowsEngine(const FlutterProjectBundle& project)
 
 FlutterWindowsEngine::~FlutterWindowsEngine() {
   Stop();
+}
+
+void FlutterWindowsEngine::SetSwitches(
+    const std::vector<std::string>& switches) {
+  project_->SetSwitches(switches);
 }
 
 bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
@@ -236,7 +264,9 @@ bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
     args.custom_dart_entrypoint = entrypoint;
   }
 
-  FlutterRendererConfig renderer_config = GetRendererConfig();
+  FlutterRendererConfig renderer_config = surface_manager_
+                                              ? GetOpenGLRendererConfig()
+                                              : GetSoftwareRendererConfig();
 
   auto result = embedder_api_.Run(FLUTTER_ENGINE_VERSION, &renderer_config,
                                   &args, this, &engine_);
@@ -287,6 +317,14 @@ void FlutterWindowsEngine::SendWindowMetricsEvent(
 void FlutterWindowsEngine::SendPointerEvent(const FlutterPointerEvent& event) {
   if (engine_) {
     embedder_api_.SendPointerEvent(engine_, &event, 1);
+  }
+}
+
+void FlutterWindowsEngine::SendKeyEvent(const FlutterKeyEvent& event,
+                                        FlutterKeyEventCallback callback,
+                                        void* user_data) {
+  if (engine_) {
+    embedder_api_.SendKeyEvent(engine_, &event, callback, user_data);
   }
 }
 

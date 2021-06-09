@@ -279,6 +279,8 @@ import java.util.Arrays;
     } else {
       FlutterTextureView flutterTextureView = new FlutterTextureView(host.getActivity());
 
+      flutterTextureView.setOpaque(host.getTransparencyMode() == TransparencyMode.opaque);
+
       // Allow our host to customize FlutterSurfaceView, if desired.
       host.onFlutterTextureViewCreated(flutterTextureView);
 
@@ -400,7 +402,7 @@ import java.util.Arrays;
       Uri data = intent.getData();
       if (data != null && !data.getPath().isEmpty()) {
         String pathAndQuery = data.getPath();
-        if (!data.getQuery().isEmpty()) {
+        if (data.getQuery() != null && !data.getQuery().isEmpty()) {
           pathAndQuery += "?" + data.getQuery();
         }
         return pathAndQuery;

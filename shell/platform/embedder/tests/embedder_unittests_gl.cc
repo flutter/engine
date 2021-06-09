@@ -14,10 +14,13 @@
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/message_loop.h"
+#include "flutter/fml/message_loop_task_queues.h"
 #include "flutter/fml/paths.h"
 #include "flutter/fml/synchronization/count_down_latch.h"
 #include "flutter/fml/synchronization/waitable_event.h"
+#include "flutter/fml/task_source.h"
 #include "flutter/fml/thread.h"
+#include "flutter/lib/ui/painting/image.h"
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/shell/platform/embedder/tests/embedder_assertions.h"
 #include "flutter/shell/platform/embedder/tests/embedder_config_builder.h"
@@ -2493,7 +2496,7 @@ TEST_F(EmbedderTest, ClipsAreCorrectlyCalculated) {
               [&](const auto& mutation) {
                 FlutterRect clip = mutation.clip_rect;
 
-                // The test is only setup to supply one clip. Make sure it is
+                // The test is only set up to supply one clip. Make sure it is
                 // the one we expect.
                 const auto rect_to_compare =
                     SkRect::MakeLTRB(10.0, 10.0, 390, 290);
@@ -3397,6 +3400,221 @@ TEST_F(EmbedderTest, CompositorRenderTargetsNotRecycledWhenAvoidsCacheSet) {
   // Killing the engine should collect all the frames.
   engine.reset();
   ASSERT_EQ(context.GetCompositor().GetPendingBackingStoresCount(), 0u);
+}
+
+TEST_F(EmbedderTest, SnapshotRenderTargetScalesDownToDriverMax) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+
+  EmbedderConfigBuilder builder(context);
+  builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
+  builder.SetCompositor();
+
+  auto max_size = context.GetCompositor().GetGrContext()->maxRenderTargetSize();
+
+  context.AddIsolateCreateCallback([&]() {
+    Dart_Handle snapshot_large_scene = Dart_GetField(
+        Dart_RootLibrary(), tonic::ToDart("snapshot_large_scene"));
+    tonic::DartInvoke(snapshot_large_scene, {tonic::ToDart<int64_t>(max_size)});
+  });
+
+  fml::AutoResetWaitableEvent latch;
+  context.AddNativeCallback(
+      "SnapshotsCallback", CREATE_NATIVE_ENTRY(([&](Dart_NativeArguments args) {
+        auto get_arg = [&args](int index) {
+          Dart_Handle dart_image = Dart_GetNativeArgument(args, index);
+          Dart_Handle internal_image =
+              Dart_GetField(dart_image, tonic::ToDart("_image"));
+          return tonic::DartConverter<flutter::CanvasImage*>::FromDart(
+              internal_image);
+        };
+
+        CanvasImage* big_image = get_arg(0);
+        ASSERT_EQ(big_image->width(), max_size);
+        ASSERT_EQ(big_image->height(), max_size / 2);
+
+        CanvasImage* small_image = get_arg(1);
+        ASSERT_TRUE(ImageMatchesFixture("snapshot_large_scene.png",
+                                        small_image->image()));
+
+        latch.Signal();
+      })));
+
+  UniqueEngine engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+
+  latch.Wait();
+}
+
+TEST_F(EmbedderTest, ObjectsPostedViaPortsServicedOnSecondaryTaskHeap) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetOpenGLRendererConfig(SkISize::Make(800, 1024));
+  builder.SetDartEntrypoint("objects_can_be_posted");
+
+  // Synchronously acquire the send port from the Dart end. We will be using
+  // this to send message. The Dart end will just echo those messages back to us
+  // for inspection.
+  FlutterEngineDartPort port = 0;
+  fml::AutoResetWaitableEvent event;
+  context.AddNativeCallback("SignalNativeCount",
+                            CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+                              port = tonic::DartConverter<int64_t>::FromDart(
+                                  Dart_GetNativeArgument(args, 0));
+                              event.Signal();
+                            }));
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+  event.Wait();
+  ASSERT_NE(port, 0);
+
+  using Trampoline = std::function<void(Dart_Handle message)>;
+  Trampoline trampoline;
+
+  context.AddNativeCallback("SendObjectToNativeCode",
+                            CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+                              FML_CHECK(trampoline);
+                              auto trampoline_copy = trampoline;
+                              trampoline = nullptr;
+                              trampoline_copy(Dart_GetNativeArgument(args, 0));
+                            }));
+
+  // Send a boolean value and assert that it's received by the right heap.
+  {
+    FlutterEngineDartObject object = {};
+    object.type = kFlutterEngineDartObjectTypeBool;
+    object.bool_value = true;
+    trampoline = [&](Dart_Handle handle) {
+      ASSERT_TRUE(tonic::DartConverter<bool>::FromDart(handle));
+      auto task_grade = fml::MessageLoopTaskQueues::GetCurrentTaskSourceGrade();
+      EXPECT_EQ(task_grade, fml::TaskSourceGrade::kDartMicroTasks);
+      event.Signal();
+    };
+    ASSERT_EQ(FlutterEnginePostDartObject(engine.get(), port, &object),
+              kSuccess);
+    event.Wait();
+  }
+}
+
+TEST_F(EmbedderTest, CreateInvalidBackingstoreOpenGLTexture) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
+  builder.SetCompositor();
+  builder.SetRenderTargetType(
+      EmbedderTestBackingStoreProducer::RenderTargetType::kOpenGLTexture);
+  builder.SetDartEntrypoint("invalid_backingstore");
+
+  class TestCollectOnce {
+   public:
+    // Collect() should only be called once
+    void Collect() {
+      ASSERT_FALSE(collected_);
+      collected_ = true;
+    }
+
+   private:
+    bool collected_ = false;
+  };
+  fml::AutoResetWaitableEvent latch;
+
+  builder.GetCompositor().create_backing_store_callback =
+      [](const FlutterBackingStoreConfig* config,  //
+         FlutterBackingStore* backing_store_out,   //
+         void* user_data                           //
+      ) {
+        backing_store_out->type = kFlutterBackingStoreTypeOpenGL;
+        // Deliberately set this to be invalid
+        backing_store_out->user_data = nullptr;
+        backing_store_out->open_gl.type = kFlutterOpenGLTargetTypeTexture;
+        backing_store_out->open_gl.texture.target = 0;
+        backing_store_out->open_gl.texture.name = 0;
+        backing_store_out->open_gl.texture.format = 0;
+        backing_store_out->open_gl.texture.user_data = new TestCollectOnce();
+        backing_store_out->open_gl.texture.destruction_callback =
+            [](void* user_data) {
+              reinterpret_cast<TestCollectOnce*>(user_data)->Collect();
+            };
+        return true;
+      };
+
+  context.AddNativeCallback(
+      "SignalNativeTest",
+      CREATE_NATIVE_ENTRY(
+          [&latch](Dart_NativeArguments args) { latch.Signal(); }));
+
+  auto engine = builder.LaunchEngine();
+
+  // Send a window metrics events so frames may be scheduled.
+  FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(event);
+  event.width = 800;
+  event.height = 600;
+  event.pixel_ratio = 1.0;
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+            kSuccess);
+  ASSERT_TRUE(engine.is_valid());
+  latch.Wait();
+}
+
+TEST_F(EmbedderTest, CreateInvalidBackingstoreOpenGLFramebuffer) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
+  builder.SetCompositor();
+  builder.SetRenderTargetType(
+      EmbedderTestBackingStoreProducer::RenderTargetType::kOpenGLFramebuffer);
+  builder.SetDartEntrypoint("invalid_backingstore");
+
+  class TestCollectOnce {
+   public:
+    // Collect() should only be called once
+    void Collect() {
+      ASSERT_FALSE(collected_);
+      collected_ = true;
+    }
+
+   private:
+    bool collected_ = false;
+  };
+  fml::AutoResetWaitableEvent latch;
+
+  builder.GetCompositor().create_backing_store_callback =
+      [](const FlutterBackingStoreConfig* config,  //
+         FlutterBackingStore* backing_store_out,   //
+         void* user_data                           //
+      ) {
+        backing_store_out->type = kFlutterBackingStoreTypeOpenGL;
+        // Deliberately set this to be invalid
+        backing_store_out->user_data = nullptr;
+        backing_store_out->open_gl.type = kFlutterOpenGLTargetTypeFramebuffer;
+        backing_store_out->open_gl.framebuffer.target = 0;
+        backing_store_out->open_gl.framebuffer.name = 0;
+        backing_store_out->open_gl.framebuffer.user_data =
+            new TestCollectOnce();
+        backing_store_out->open_gl.framebuffer.destruction_callback =
+            [](void* user_data) {
+              reinterpret_cast<TestCollectOnce*>(user_data)->Collect();
+            };
+        return true;
+      };
+
+  context.AddNativeCallback(
+      "SignalNativeTest",
+      CREATE_NATIVE_ENTRY(
+          [&latch](Dart_NativeArguments args) { latch.Signal(); }));
+
+  auto engine = builder.LaunchEngine();
+
+  // Send a window metrics events so frames may be scheduled.
+  FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(event);
+  event.width = 800;
+  event.height = 600;
+  event.pixel_ratio = 1.0;
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+            kSuccess);
+  ASSERT_TRUE(engine.is_valid());
+  latch.Wait();
 }
 
 }  // namespace testing

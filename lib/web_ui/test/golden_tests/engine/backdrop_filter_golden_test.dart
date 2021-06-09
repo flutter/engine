@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'dart:html' as html;
 
 import 'package:test/bootstrap/browser.dart';
@@ -56,9 +55,9 @@ void testMain() async {
     builder.pop();
     builder.pop();
 
-    html.document.body.append(builder
+    html.document.body!.append(builder
         .build()
-        .webOnlyRootElement);
+        .webOnlyRootElement!);
 
     await matchGoldenFile('backdrop_filter_clip.png', region: region,
         maxDiffRatePercent: 0.8);
@@ -107,49 +106,81 @@ void testMain() async {
     builder2.pop();
     builder2.pop();
 
-    html.document.body.append(builder2
+    html.document.body!.append(builder2
         .build()
-        .webOnlyRootElement);
+        .webOnlyRootElement!);
 
     await matchGoldenFile('backdrop_filter_clip_moved.png', region: region,
       maxDiffRatePercent: 0.8);
   });
+
+  // The blur filter should be applied to the background inside the clip even
+  // though there are no children of the backdrop filter.
+  test('Background should blur even if child does not paint', () async {
+    final Rect region = Rect.fromLTWH(0, 0, 190, 130);
+
+    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
+    final Picture backgroundPicture = _drawBackground(region);
+    builder.addPicture(Offset.zero, backgroundPicture);
+
+    builder.pushClipRect(
+      const Rect.fromLTRB(10, 10, 180, 120),
+    );
+    final Picture circles1 = _drawTestPictureWithCircles(region, 30, 30);
+    builder.addPicture(Offset.zero, circles1);
+
+    builder.pushClipRect(
+      const Rect.fromLTRB(60, 10, 180, 120),
+    );
+    builder.pushBackdropFilter(ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+        oldLayer: null);
+    builder.pop();
+    builder.pop();
+    builder.pop();
+
+    html.document.body!.append(builder
+        .build()
+        .webOnlyRootElement!);
+
+    await matchGoldenFile('backdrop_filter_no_child_rendering.png', region: region,
+        maxDiffRatePercent: 0.8);
+  });
 }
 
 Picture _drawTestPictureWithCircles(Rect region, double offsetX, double offsetY) {
-  final EnginePictureRecorder recorder = PictureRecorder();
+  final EnginePictureRecorder recorder = PictureRecorder() as EnginePictureRecorder;
   final RecordingCanvas canvas =
   recorder.beginRecording(region);
   canvas.drawCircle(
-      Offset(offsetX + 10, offsetY + 10), 10, Paint()..style = PaintingStyle.fill);
+      Offset(offsetX + 10, offsetY + 10), 10, SurfacePaint()..style = PaintingStyle.fill);
   canvas.drawCircle(
       Offset(offsetX + 60, offsetY + 10),
       10,
-      Paint()
+      SurfacePaint()
         ..style = PaintingStyle.fill
         ..color = const Color.fromRGBO(255, 0, 0, 1));
   canvas.drawCircle(
       Offset(offsetX + 10, offsetY + 60),
       10,
-      Paint()
+      SurfacePaint()
         ..style = PaintingStyle.fill
         ..color = const Color.fromRGBO(0, 255, 0, 1));
   canvas.drawCircle(
       Offset(offsetX + 60, offsetY + 60),
       10,
-      Paint()
+      SurfacePaint()
         ..style = PaintingStyle.fill
         ..color = const Color.fromRGBO(0, 0, 255, 1));
   return recorder.endRecording();
 }
 
 Picture _drawBackground(Rect region) {
-  final EnginePictureRecorder recorder = PictureRecorder();
+  final EnginePictureRecorder recorder = PictureRecorder() as EnginePictureRecorder;
   final RecordingCanvas canvas =
   recorder.beginRecording(region);
   canvas.drawRect(
       region.deflate(8.0),
-      Paint()
+      SurfacePaint()
         ..style = PaintingStyle.fill
         ..color = Color(0xFFE0FFE0)
       );

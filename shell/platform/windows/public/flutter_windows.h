@@ -14,6 +14,7 @@
 #include "flutter_plugin_registrar.h"
 
 #ifdef WINUWP
+#include <windows.applicationmodel.activation.h>
 #include <windows.ui.core.h>
 #endif
 
@@ -45,7 +46,7 @@ typedef struct {
   // containing the executable.
   const wchar_t* icu_data_path;
 
-  // The path to the AOT libary file for your application, if any.
+  // The path to the AOT library file for your application, if any.
   // This can either be an absolute path or a path relative to the directory
   // containing the executable. This can be nullptr for a non-AOT build, as
   // it will be ignored in that case.
@@ -57,6 +58,7 @@ typedef struct {
   // Array of Dart entrypoint arguments. This is deep copied during the call
   // to FlutterDesktopEngineCreate.
   const char** dart_entrypoint_argv;
+
 } FlutterDesktopEngineProperties;
 
 // ========== View Controller ==========
@@ -75,11 +77,12 @@ typedef struct {
 // FlutterDesktopViewControllerDestroy. Returns a null pointer in the event of
 // an error.
 #ifdef WINUWP
-// The CoreWindow implementation accepts a pointer to the host CoreWindow
-// and view hookup is performed in the construction path.
+// The CoreApplicationView implementation accepts a pointer to the host
+// CoreApplicationView and view hookup is performed in the construction path.
 FLUTTER_EXPORT FlutterDesktopViewControllerRef
-FlutterDesktopViewControllerCreateFromCoreWindow(
-    ABI::Windows::UI::Core::CoreWindow* window,
+FlutterDesktopViewControllerCreateFromCoreApplicationView(
+    ABI::Windows::ApplicationModel::Core::CoreApplicationView* window,
+    ABI::Windows::ApplicationModel::Activation::IActivatedEventArgs* args,
     FlutterDesktopEngineRef engine);
 #else  //! WINUWP
 // The Win32 implementation accepts width, height
@@ -107,6 +110,10 @@ FLUTTER_EXPORT FlutterDesktopEngineRef FlutterDesktopViewControllerGetEngine(
 FLUTTER_EXPORT FlutterDesktopViewRef
 FlutterDesktopViewControllerGetView(FlutterDesktopViewControllerRef controller);
 
+// Requests new frame from engine and repaints the view
+FLUTTER_EXPORT void FlutterDesktopViewControllerForceRedraw(
+    FlutterDesktopViewControllerRef controller);
+
 #ifndef WINUWP
 // Allows the Flutter engine and any interested plugins an opportunity to
 // handle the given message.
@@ -127,9 +134,10 @@ FLUTTER_EXPORT bool FlutterDesktopViewControllerHandleTopLevelWindowProc(
 // Creates a Flutter engine with the given properties.
 //
 // The caller owns the returned reference, and is responsible for calling
-// FlutterDesktopEngineDestroy.
+// FlutterDesktopEngineDestroy. The lifetime of |engine_properties| is required
+// to extend only until the end of this call.
 FLUTTER_EXPORT FlutterDesktopEngineRef FlutterDesktopEngineCreate(
-    const FlutterDesktopEngineProperties& engine_properties);
+    const FlutterDesktopEngineProperties* engine_properties);
 
 // Shuts down and destroys the given engine instance. Returns true if the
 // shutdown was successful, or if the engine was not running.
@@ -150,6 +158,9 @@ FLUTTER_EXPORT bool FlutterDesktopEngineRun(FlutterDesktopEngineRef engine,
                                             const char* entry_point);
 
 #ifndef WINUWP
+// DEPRECATED: This is no longer necessary to call, Flutter will take care of
+// processing engine messages transparently through DispatchMessage.
+//
 // Processes any pending events in the Flutter engine, and returns the
 // number of nanoseconds until the next scheduled event (or max, if none).
 //
@@ -181,7 +192,12 @@ FlutterDesktopEngineGetTextureRegistrar(
 
 // ========== View ==========
 
-#ifndef WINUWP
+#ifdef WINUWP
+// Return backing CoreApplicationView for manipulation of CoreWindow and
+// CoreTitleBar in host application.
+FLUTTER_EXPORT ABI::Windows::ApplicationModel::Core::CoreApplicationView*
+FlutterDesktopViewGetCoreApplicationView(FlutterDesktopViewRef view);
+#else
 // Return backing HWND for manipulation in host application.
 FLUTTER_EXPORT HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef view);
 #endif

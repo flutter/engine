@@ -9,7 +9,7 @@
 #include <cstdint>
 #include <iostream>
 
-#include "flutter/shell/platform/common/cpp/json_method_codec.h"
+#include "flutter/shell/platform/common/json_method_codec.h"
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
 
 static constexpr char kSetEditingStateMethod[] = "TextInput.setEditingState";
@@ -66,7 +66,8 @@ bool TextInputPlugin::KeyboardHook(FlutterWindowsView* view,
                                    int scancode,
                                    int action,
                                    char32_t character,
-                                   bool extended) {
+                                   bool extended,
+                                   bool was_down) {
   if (active_model_ == nullptr) {
     return false;
   }
@@ -103,11 +104,25 @@ TextInputPlugin::TextInputPlugin(flutter::BinaryMessenger* messenger,
 TextInputPlugin::~TextInputPlugin() = default;
 
 void TextInputPlugin::ComposeBeginHook() {
+  if (active_model_ == nullptr) {
+    return;
+  }
   active_model_->BeginComposing();
   SendStateUpdate(*active_model_);
 }
 
+void TextInputPlugin::ComposeCommitHook() {
+  if (active_model_ == nullptr) {
+    return;
+  }
+  active_model_->CommitComposing();
+  SendStateUpdate(*active_model_);
+}
+
 void TextInputPlugin::ComposeEndHook() {
+  if (active_model_ == nullptr) {
+    return;
+  }
   active_model_->CommitComposing();
   active_model_->EndComposing();
   SendStateUpdate(*active_model_);
@@ -115,6 +130,9 @@ void TextInputPlugin::ComposeEndHook() {
 
 void TextInputPlugin::ComposeChangeHook(const std::u16string& text,
                                         int cursor_pos) {
+  if (active_model_ == nullptr) {
+    return;
+  }
   active_model_->AddText(text);
   cursor_pos += active_model_->composing_range().base();
   active_model_->UpdateComposingText(text);

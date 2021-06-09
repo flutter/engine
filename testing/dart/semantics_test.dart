@@ -4,12 +4,13 @@
 
 // @dart = 2.6
 import 'dart:ui';
-import 'package:test/test.dart' hide TypeMatcher, isInstanceOf;
+
+import 'package:litetest/litetest.dart';
 
 /// Verifies Semantics flags and actions.
 void main() {
   // This must match the number of flags in lib/ui/semantics.dart
-  const int numSemanticsFlags = 24;
+  const int numSemanticsFlags = 25;
   test('SemanticsFlag.values refers to all flags.', () async {
     expect(SemanticsFlag.values.length, equals(numSemanticsFlags));
     for (int index = 0; index < numSemanticsFlags; ++index) {
@@ -20,7 +21,7 @@ void main() {
   });
 
   // This must match the number of actions in lib/ui/semantics.dart
-  const int numSemanticsActions = 21;
+  const int numSemanticsActions = 22;
   test('SemanticsAction.values refers to all actions.', () async {
     expect(SemanticsAction.values.length, equals(numSemanticsActions));
     for (int index = 0; index < numSemanticsActions; ++index) {

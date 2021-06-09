@@ -282,6 +282,7 @@ public class FlutterJNI {
 
   @NonNull private final Looper mainLooper; // cached to avoid synchronization on repeat access.
 
+  // Prefer using the FlutterJNI.Factory so it's easier to test.
   public FlutterJNI() {
     // We cache the main looper so that we can ensure calls are made on the main thread
     // without consistently paying the synchronization cost of getMainLooper().
@@ -340,7 +341,7 @@ public class FlutterJNI {
     FlutterJNI spawnedJNI =
         nativeSpawn(nativeShellHolderId, entrypointFunctionName, pathToEntrypointFunction);
     Preconditions.checkState(
-        spawnedJNI.nativeShellHolderId != null && spawnedJNI.nativeShellHolderId > 0,
+        spawnedJNI.nativeShellHolderId != null && spawnedJNI.nativeShellHolderId != 0,
         "Failed to spawn new JNI connected shell from existing shell.");
 
     return spawnedJNI;
@@ -357,11 +358,11 @@ public class FlutterJNI {
    *
    * <p>This method must not be invoked if {@code FlutterJNI} is not already attached to native.
    *
-   * <p>Invoking this method will result in the release of all native-side resources that were setup
-   * during {@link #attachToNative(boolean)} or {@link #spawn(String, String)}, or accumulated
+   * <p>Invoking this method will result in the release of all native-side resources that were set
+   * up during {@link #attachToNative(boolean)} or {@link #spawn(String, String)}, or accumulated
    * thereafter.
    *
-   * <p>It is permissable to re-attach this instance to native after detaching it from native.
+   * <p>It is permissible to re-attach this instance to native after detaching it from native.
    */
   @UiThread
   public void detachFromNativeAndReleaseResources() {
@@ -608,10 +609,13 @@ public class FlutterJNI {
    */
   @SuppressWarnings("unused")
   @UiThread
-  private void updateSemantics(@NonNull ByteBuffer buffer, @NonNull String[] strings) {
+  private void updateSemantics(
+      @NonNull ByteBuffer buffer,
+      @NonNull String[] strings,
+      @NonNull ByteBuffer[] stringAttributeArgs) {
     ensureRunningOnMainThread();
     if (accessibilityDelegate != null) {
-      accessibilityDelegate.updateSemantics(buffer, strings);
+      accessibilityDelegate.updateSemantics(buffer, strings, stringAttributeArgs);
     }
     // TODO(mattcarroll): log dropped messages when in debug mode
     // (https://github.com/flutter/flutter/issues/25391)
@@ -813,7 +817,7 @@ public class FlutterJNI {
   @SuppressWarnings("unused")
   @VisibleForTesting
   public void handlePlatformMessage(
-      @NonNull final String channel, byte[] message, final int replyId) {
+      @NonNull final String channel, ByteBuffer message, final int replyId) {
     if (platformMessageHandler != null) {
       platformMessageHandler.handleMessageFromDart(channel, message, replyId);
     }
@@ -824,7 +828,7 @@ public class FlutterJNI {
   // Called by native to respond to a platform message that we sent.
   // TODO(mattcarroll): determine if reply is nonull or nullable
   @SuppressWarnings("unused")
-  private void handlePlatformMessageResponse(int replyId, byte[] reply) {
+  private void handlePlatformMessageResponse(int replyId, ByteBuffer reply) {
     if (platformMessageHandler != null) {
       platformMessageHandler.handlePlatformMessageResponse(replyId, reply);
     }
@@ -901,8 +905,11 @@ public class FlutterJNI {
   // TODO(mattcarroll): differentiate between channel responses and platform responses.
   @UiThread
   public void invokePlatformMessageResponseCallback(
-      int responseId, @Nullable ByteBuffer message, int position) {
+      int responseId, @NonNull ByteBuffer message, int position) {
     ensureRunningOnMainThread();
+    if (!message.isDirect()) {
+      throw new IllegalArgumentException("Expected a direct ByteBuffer.");
+    }
     if (isAttached()) {
       nativeInvokePlatformMessageResponseCallback(
           nativeShellHolderId, responseId, message, position);
@@ -1113,8 +1120,8 @@ public class FlutterJNI {
    * @param searchPaths An array of paths in which to look for valid dart shared libraries. This
    *     supports paths within zipped apks as long as the apks are not compressed using the
    *     `path/to/apk.apk!path/inside/apk/lib.so` format. Paths will be tried first to last and ends
-   *     when a library is sucessfully found. When the found library is invalid, no additional paths
-   *     will be attempted.
+   *     when a library is successfully found. When the found library is invalid, no additional
+   *     paths will be attempted.
    */
   @UiThread
   public void loadDartDeferredLibrary(int loadingUnitId, @NonNull String[] searchPaths) {
@@ -1252,10 +1259,24 @@ public class FlutterJNI {
      * <p>Implementers are expected to maintain an Android-side cache of Flutter's semantics tree.
      * This method provides updates from Flutter for the Android-side semantics tree cache.
      */
-    void updateSemantics(@NonNull ByteBuffer buffer, @NonNull String[] strings);
+    void updateSemantics(
+        @NonNull ByteBuffer buffer,
+        @NonNull String[] strings,
+        @NonNull ByteBuffer[] stringAttributeArgs);
   }
 
   public interface AsyncWaitForVsyncDelegate {
     void asyncWaitForVsync(final long cookie);
+  }
+
+  /**
+   * A factory for creating {@code FlutterJNI} instances. Useful for FlutterJNI injections during
+   * tests.
+   */
+  public static class Factory {
+    /** @return a {@link FlutterJNI} instance. */
+    public FlutterJNI provideFlutterJNI() {
+      return new FlutterJNI();
+    }
   }
 }

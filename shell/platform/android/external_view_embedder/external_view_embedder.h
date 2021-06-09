@@ -46,10 +46,10 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
   std::vector<SkCanvas*> GetCurrentCanvases() override;
 
   // |ExternalViewEmbedder|
-  void SubmitFrame(
-      GrDirectContext* context,
-      std::unique_ptr<SurfaceFrame> frame,
-      const std::shared_ptr<fml::SyncSwitch>& gpu_disable_sync_switch) override;
+  void SubmitFrame(GrDirectContext* context,
+                   std::unique_ptr<SurfaceFrame> frame,
+                   const std::shared_ptr<const fml::SyncSwitch>&
+                       gpu_disable_sync_switch) override;
 
   // |ExternalViewEmbedder|
   PostPrerollResult PostPrerollAction(
@@ -80,8 +80,6 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
   SkRect GetViewRect(int view_id) const;
 
  private:
-  static const int kMaxLayerAllocations = 2;
-
   // The number of frames the rasterizer task runner will continue
   // to run on the platform thread after no platform view is rendered.
   //

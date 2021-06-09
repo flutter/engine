@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/lib/ui/painting/canvas.h"
+#include "flutter/lib/ui/painting/image_filter.h"
 
 #include <cmath>
 
@@ -315,7 +316,8 @@ void Canvas::drawImage(const CanvasImage* image,
                        double x,
                        double y,
                        const Paint& paint,
-                       const PaintData& paint_data) {
+                       const PaintData& paint_data,
+                       int filterQualityIndex) {
   if (!canvas_) {
     return;
   }
@@ -324,7 +326,8 @@ void Canvas::drawImage(const CanvasImage* image,
         ToDart("Canvas.drawImage called with non-genuine Image."));
     return;
   }
-  canvas_->drawImage(image->image(), x, y, paint.paint());
+  auto sampling = ImageFilter::SamplingFromIndex(filterQualityIndex);
+  canvas_->drawImage(image->image(), x, y, sampling, paint.paint());
 }
 
 void Canvas::drawImageRect(const CanvasImage* image,
@@ -337,7 +340,8 @@ void Canvas::drawImageRect(const CanvasImage* image,
                            double dst_right,
                            double dst_bottom,
                            const Paint& paint,
-                           const PaintData& paint_data) {
+                           const PaintData& paint_data,
+                           int filterQualityIndex) {
   if (!canvas_) {
     return;
   }
@@ -348,20 +352,9 @@ void Canvas::drawImageRect(const CanvasImage* image,
   }
   SkRect src = SkRect::MakeLTRB(src_left, src_top, src_right, src_bottom);
   SkRect dst = SkRect::MakeLTRB(dst_left, dst_top, dst_right, dst_bottom);
-  canvas_->drawImageRect(image->image(), src, dst, paint.paint(),
+  auto sampling = ImageFilter::SamplingFromIndex(filterQualityIndex);
+  canvas_->drawImageRect(image->image(), src, dst, sampling, paint.paint(),
                          SkCanvas::kFast_SrcRectConstraint);
-}
-
-static SkFilterMode paint_to_filter(const SkPaint* paint) {
-  return paint && (paint->getFilterQuality() != kNone_SkFilterQuality)
-             ? SkFilterMode::kLinear
-             : SkFilterMode::kNearest;
-}
-
-static SkSamplingOptions paint_to_sampling(const SkPaint* paint) {
-  return SkSamplingOptions(
-      paint ? paint->getFilterQuality() : kNone_SkFilterQuality,
-      SkSamplingOptions::kMedium_asMipmapLinear);
 }
 
 void Canvas::drawImageNine(const CanvasImage* image,
@@ -374,7 +367,8 @@ void Canvas::drawImageNine(const CanvasImage* image,
                            double dst_right,
                            double dst_bottom,
                            const Paint& paint,
-                           const PaintData& paint_data) {
+                           const PaintData& paint_data,
+                           int bitmapSamplingIndex) {
   if (!canvas_) {
     return;
   }
@@ -388,8 +382,7 @@ void Canvas::drawImageNine(const CanvasImage* image,
   SkIRect icenter;
   center.round(&icenter);
   SkRect dst = SkRect::MakeLTRB(dst_left, dst_top, dst_right, dst_bottom);
-  // TODO: add filtering to public API, since paint's quality is deprecated
-  SkFilterMode filter = paint_to_filter(paint.paint());
+  auto filter = ImageFilter::FilterModeFromIndex(bitmapSamplingIndex);
   canvas_->drawImageNine(image->image().get(), icenter, dst, filter,
                          paint.paint());
 }
@@ -440,6 +433,7 @@ void Canvas::drawVertices(const Vertices* vertices,
 
 void Canvas::drawAtlas(const Paint& paint,
                        const PaintData& paint_data,
+                       int filterQualityIndex,
                        CanvasImage* atlas,
                        const tonic::Float32List& transforms,
                        const tonic::Float32List& rects,
@@ -463,8 +457,7 @@ void Canvas::drawAtlas(const Paint& paint,
   static_assert(sizeof(SkRect) == sizeof(float) * 4,
                 "SkRect doesn't use floats.");
 
-  // TODO: add filtering to public API, since paint's quality is deprecated
-  SkSamplingOptions sampling = paint_to_sampling(paint.paint());
+  auto sampling = ImageFilter::SamplingFromIndex(filterQualityIndex);
 
   canvas_->drawAtlas(
       skImage.get(), reinterpret_cast<const SkRSXform*>(transforms.data()),

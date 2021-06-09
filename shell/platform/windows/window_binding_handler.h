@@ -10,12 +10,13 @@
 #include <string>
 #include <variant>
 
-#include "flutter/shell/platform/common/cpp/geometry.h"
+#include "flutter/shell/platform/common/geometry.h"
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
 #include "flutter/shell/platform/windows/window_binding_handler_delegate.h"
 
 #ifdef WINUWP
-#include <winrt/Windows.UI.Composition.h>
+#include <third_party/cppwinrt/generated/winrt/Windows.ApplicationModel.Activation.h>
+#include <third_party/cppwinrt/generated/winrt/Windows.UI.Composition.h>
 #endif
 
 namespace flutter {
@@ -28,6 +29,16 @@ struct PhysicalWindowBounds {
   size_t height;
 };
 
+// Type representing an underlying platform window.
+#ifdef WINUWP
+using PlatformWindow =
+    winrt::Windows::ApplicationModel::Core::CoreApplicationView;
+#else
+using PlatformWindow = HWND;
+#endif
+
+// Type representing a platform object that can be accepted by the Angle
+// rendering layer to bind to and render pixels into.
 #ifdef WINUWP
 using WindowsRenderTarget =
     std::variant<winrt::Windows::UI::Composition::SpriteVisual,
@@ -46,9 +57,13 @@ class WindowBindingHandler {
   // such as key presses, mouse position updates etc.
   virtual void SetView(WindowBindingHandlerDelegate* view) = 0;
 
-  // Returns a valid WindowsRenderTarget representing the backing
-  // window.
+  // Returns a valid WindowsRenderTarget representing the platform object that
+  // rendering can be bound to by ANGLE rendering backend.
   virtual WindowsRenderTarget GetRenderTarget() = 0;
+
+  // Returns a valid PlatformWindow representing the backing
+  // window.
+  virtual PlatformWindow GetPlatformWindow() = 0;
 
   // Returns the scale factor for the backing window.
   virtual float GetDpiScale() = 0;
@@ -63,8 +78,16 @@ class WindowBindingHandler {
   // content. See mouse_cursor.dart for the values and meanings of cursor_name.
   virtual void UpdateFlutterCursor(const std::string& cursor_name) = 0;
 
-  // Sets the cursor rect in root view coordinates.
-  virtual void UpdateCursorRect(const Rect& rect) = 0;
+  // Invoked when the cursor/composing rect has been updated in the framework.
+  virtual void OnCursorRectUpdated(const Rect& rect) = 0;
+
+  // Invoked when the Embedder provides us with new bitmap data for the contents
+  // of this Flutter view.
+  //
+  // Returns whether the surface was successfully updated or not.
+  virtual bool OnBitmapSurfaceUpdated(const void* allocation,
+                                      size_t row_bytes,
+                                      size_t height) = 0;
 };
 
 }  // namespace flutter
