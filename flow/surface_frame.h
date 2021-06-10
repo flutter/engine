@@ -29,7 +29,8 @@ class SurfaceFrame {
 
     // This is area of framebuffer that lags behind the front buffer. When doing
     // partial redraw, this area must be repainted alongside with any additional
-    // area; If not set, entire frame must be repainted
+    // area; If the vector is empty, entire frame must be repainted. If there
+    // was no change, the vector should contain an empty SKIRect.
     std::vector<SkIRect> existing_damage;
 
     // Specifies the minimum alignment for outermost clip rect. Some devices
