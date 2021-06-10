@@ -250,6 +250,12 @@ class BrowserPlatform extends PlatformPlugin {
     return shelf.Response.notFound('Not found.');
   }
 
+  void _checkNotClosed() {
+    if (_closed) {
+      throw StateError('Cannot load test suite. Test platform is closed.');
+    }
+  }
+
   /// Loads the test suite at [path] on the platform [platform].
   ///
   /// This will start a browser to load the suite if one isn't already running.
@@ -257,9 +263,7 @@ class BrowserPlatform extends PlatformPlugin {
   @override
   Future<RunnerSuite> load(String path, SuitePlatform platform,
       SuiteConfiguration suiteConfig, Object message) async {
-    if (_closed) {
-      throw StateError('Cannot load test suite. Test platform is closed.');
-    }
+    _checkNotClosed();
     if (suiteConfig.precompiledPath == null) {
       throw Exception('This test platform only supports precompiled JS.');
     }
@@ -269,23 +273,32 @@ class BrowserPlatform extends PlatformPlugin {
     if (!browser.isBrowser) {
       throw ArgumentError('$browser is not a browser.');
     }
+    _checkNotClosed();
 
     final Uri suiteUrl = url.resolveUri(
         p.toUri(p.withoutExtension(p.relative(path, from: _root)) + '.html'));
+    _checkNotClosed();
 
-    final BrowserManager browserManager = await _browserManagerFor(browser);
-    return await browserManager.load(path, suiteUrl, suiteConfig, message);
+    final BrowserManager? browserManager = await _browserManagerFor(browser);
+    if (browserManager == null) {
+      throw StateError('Failed to initialize browser manager for ${browser.name}');
+    }
+    _checkNotClosed();
+
+    final RunnerSuite suite = await browserManager.load(path, suiteUrl, suiteConfig, message);
+    _checkNotClosed();
+    return suite;
   }
 
   StreamChannel loadChannel(String path, SuitePlatform platform) =>
       throw UnimplementedError();
 
-  Future<BrowserManager>? _browserManager;
+  Future<BrowserManager?>? _browserManager;
 
   /// Returns the [BrowserManager] for [runtime], which should be a browser.
   ///
   /// If no browser manager is running yet, starts one.
-  Future<BrowserManager> _browserManagerFor(Runtime browser) {
+  Future<BrowserManager?> _browserManagerFor(Runtime browser) {
     if (_browserManager != null) {
       return _browserManager!;
     }
@@ -300,8 +313,12 @@ class BrowserPlatform extends PlatformPlugin {
       'debug': _config.pauseAfterLoad.toString()
     });
 
-    final Future<BrowserManager> future = BrowserManager.start(browser, hostUrl, completer.future,
+    final Future<BrowserManager?> future = BrowserManager.start(browser, hostUrl, completer.future,
         debug: _config.pauseAfterLoad);
+
+    // Store null values for browsers that error out so we know not to load them
+    // again.
+    _browserManager = future.catchError((dynamic _) => null);
 
     return future;
   }
@@ -312,8 +329,8 @@ class BrowserPlatform extends PlatformPlugin {
   /// loaded, they'll just spawn new browsers.
   Future<void> closeEphemeral() async {
     if (_browserManager != null) {
-      final BrowserManager result = await _browserManager!;
-      await result.close();
+      final BrowserManager? result = await _browserManager!;
+      await result?.close();
     }
   }
 
@@ -326,8 +343,8 @@ class BrowserPlatform extends PlatformPlugin {
       final List<Future<void>> futures = <Future<void>>[];
       futures.add(Future<void>.microtask(() async {
         if (_browserManager != null) {
-          final BrowserManager result = await _browserManager!;
-          await result.close();
+          final BrowserManager? result = await _browserManager!;
+          await result?.close();
         }
       }));
       futures.add(_server.close());
@@ -516,7 +533,7 @@ class BrowserManager {
   ///
   /// Returns the browser manager, or throws an [Exception] if a
   /// connection fails to be established.
-  static Future<BrowserManager> start(
+  static Future<BrowserManager?> start(
       Runtime runtime, Uri url, Future<WebSocketChannel> future,
       {bool debug = false}) {
     var browser = _newBrowser(url, runtime, debug: debug);
