@@ -249,8 +249,8 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 }
 
 // The following methods are explicitly forwarded to the wrapped SemanticsObject because the
-// forwarding logic above doesn't apply to them since they are also implemented in the UISwitch
-// class, the base class.
+// forwarding logic above doesn't apply to them since they are also implemented in the
+// UIScrollView class, the base class.
 
 - (BOOL)accessibilityActivate {
   return [_semanticsObject accessibilityActivate];
