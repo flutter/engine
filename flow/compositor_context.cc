@@ -84,8 +84,7 @@ RasterStatus CompositorContext::ScopedFrame::Raster(
                         frame_damage->prev_layer_tree
                             ? frame_damage->prev_layer_tree->paint_region_map()
                             : empty_paint_region_map);
-    context.PushCullRect(SkRect::MakeIWH(layer_tree.frame_size().width(),
-                                         layer_tree.frame_size().height()));
+    context.PushCullRect(clip_rect);
 
     {
       DiffContext::AutoSubtreeRestore subtree(&context);
