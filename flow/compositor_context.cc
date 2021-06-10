@@ -76,7 +76,7 @@ RasterStatus CompositorContext::ScopedFrame::Raster(
   SkRect clip_rect = SkRect::MakeIWH(layer_tree.frame_size().width(),
                                      layer_tree.frame_size().height());
 
-  if (frame_damage) {
+  if (frame_damage && layer_tree.root_layer()) {
     PaintRegionMap empty_paint_region_map;
     DiffContext context(layer_tree.frame_size(),
                         layer_tree.device_pixel_ratio(),
@@ -120,11 +120,12 @@ RasterStatus CompositorContext::ScopedFrame::Raster(
   }
 
   SkAutoCanvasRestore restore(canvas(), true);
-  canvas()->clipRect(clip_rect);
 
   // Clearing canvas after preroll reduces one render target switch when preroll
   // paints some raster cache.
   if (canvas()) {
+    canvas()->clipRect(clip_rect);
+
     if (needs_save_layer) {
       FML_LOG(INFO) << "Using SaveLayer to protect non-readback surface";
       SkRect bounds = SkRect::Make(layer_tree.frame_size());
