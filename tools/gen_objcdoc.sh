@@ -24,10 +24,9 @@ if [[ -z $LUCI_CI ]]; then
   else
     OUTPUT_DIR=$1
   fi
-else 
+else
   OUTPUT_DIR="$LUCI_WORKDIR/objectc_docs"
 fi
-
 
 # If GEM_HOME is set, prefer using its copy of jazzy.
 # LUCI will put jazzy here instead of on the path.
