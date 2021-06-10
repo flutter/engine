@@ -368,7 +368,8 @@ public class TextInputChannel {
      * different client is set.
      *
      * @param id the ID of the platform view to be set as a text input client.
-     * @param usesVirtualDisplay Whether the platform view uses a virtual display.
+     * @param usesVirtualDisplay True if the platform view uses a virtual display, false if it uses
+     *     hybrid composition.
      */
     void setPlatformViewClient(int id, boolean usesVirtualDisplay);
 
