@@ -5,6 +5,8 @@
 
 # Generates objc docs for Flutter iOS libraries.
 
+set -e
+
 FLUTTER_UMBRELLA_HEADER=$(find ../out -maxdepth 4 -type f -name Flutter.h | grep 'ios_' | head -n 1)
 if [[ ! -f "$FLUTTER_UMBRELLA_HEADER" ]]
   then
@@ -17,12 +19,12 @@ fi
 # to pass an output directory as the first parameter.
 OUTPUT_DIR=""
 
-if [[ -z $LUCI_CI ]]; then
+if [[ -z "$LUCI_CI" ]]; then
   if [[ $# -eq 0 ]]; then
     echo "Error: Argument specifying output directory required."
     exit 1
   else
-    OUTPUT_DIR=$1
+    OUTPUT_DIR="$1"
   fi
 else
   OUTPUT_DIR="$LUCI_WORKDIR/objectc_docs"
