@@ -139,7 +139,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 
 @end  // FlutterSwitchSemanticsObject
 
-@implementation FlutterScrollSemanticsObject {
+@implementation FlutterScrollableSemanticsObject {
   SemanticsObject* _semanticsObject;
   fml::scoped_nsobject<SemanticsObjectContainer> _container;
 }
@@ -147,7 +147,6 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 - (instancetype)initWithSemanticsObject:(SemanticsObject*)semanticsObject {
   self = [super init];
   if (self) {
-    self.isAccessibilityElement = YES;
     _semanticsObject = [semanticsObject retain];
     [semanticsObject.bridge->view() addSubview:self];
   }
@@ -179,9 +178,24 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 }
 
 - (void)accessibilityBridgeDidFinishUpdate {
+  // In order to make iOS think this UIScrollView is scrollable, the following
+  // requirements must be true.
+  // 1. contentSize must be bigger than the frame size.
+  // 2. The scrollable isAccessibilityElement must return YES
+  //
+  // Once the requirements are met, the iOS uses contentOffset to determine
+  // what scroll actions are available. e.g. If the view scrolls vertically and
+  // contentOffset is 0.0, only the scroll down action is available.
   [self setFrame:[_semanticsObject accessibilityFrame]];
   [self setContentSize:[self contentSizeInternal]];
   [self setContentOffset:[self contentOffsetInternal] animated:NO];
+  if (self.contentSize.width > self.frame.size.width ||
+      self.contentSize.height > self.frame.size.height) {
+    self.isAccessibilityElement = YES;
+  } else {
+    self.isAccessibilityElement = NO;
+    ;
+  }
 }
 
 - (void)setChildren:(NSArray<SemanticsObject*>*)children {
@@ -205,17 +219,15 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 
 - (CGSize)contentSizeInternal {
   CGRect result;
+  const SkRect& rect = _semanticsObject.node.rect;
   if (_semanticsObject.node.actions & flutter::kVerticalScrollSemanticsActions) {
-    result =
-        CGRectMake(0, 0, _semanticsObject.node.rect.width(),
-                   _semanticsObject.node.rect.height() + _semanticsObject.node.scrollExtentMax);
+    result = CGRectMake(rect.x(), rect.y(), rect.width(),
+                        rect.height() + _semanticsObject.node.scrollExtentMax);
   } else if (_semanticsObject.node.actions & flutter::kHorizontalScrollSemanticsActions) {
-    result =
-        CGRectMake(0, 0, _semanticsObject.node.rect.width() + _semanticsObject.node.scrollExtentMax,
-                   _semanticsObject.node.rect.height());
+    result = CGRectMake(rect.x(), rect.y(), rect.width() + _semanticsObject.node.scrollExtentMax,
+                        rect.height());
   } else {
-    result =
-        CGRectMake(0, 0, _semanticsObject.node.rect.width(), _semanticsObject.node.rect.height());
+    result = CGRectMake(rect.x(), rect.y(), rect.width(), rect.height());
   }
   return ConvertRectToGlobal(_semanticsObject, result).size;
 }
@@ -223,12 +235,13 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 - (CGPoint)contentOffsetInternal {
   CGPoint result;
   CGPoint origin = self.frame.origin;
+  const SkRect& rect = _semanticsObject.node.rect;
   if (_semanticsObject.node.actions & flutter::kVerticalScrollSemanticsActions) {
-    result = ConvertPointToGlobal(_semanticsObject,
-                                  CGPointMake(0, _semanticsObject.node.scrollPosition));
+    result = ConvertPointToGlobal(
+        _semanticsObject, CGPointMake(rect.x(), rect.y() + _semanticsObject.node.scrollPosition));
   } else if (_semanticsObject.node.actions & flutter::kHorizontalScrollSemanticsActions) {
-    result = ConvertPointToGlobal(_semanticsObject,
-                                  CGPointMake(_semanticsObject.node.scrollPosition, 0));
+    result = ConvertPointToGlobal(
+        _semanticsObject, CGPointMake(rect.x() + _semanticsObject.node.scrollPosition, rect.y()));
   } else {
     result = origin;
   }
@@ -266,7 +279,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 - (void)accessibilityElementDidLoseFocus {
   [_semanticsObject accessibilityElementDidLoseFocus];
 }
-@end  // FlutterScrollSemanticsObject
+@end  // FlutterScrollableSemanticsObject
 
 @implementation FlutterCustomAccessibilityAction {
 }

@@ -261,7 +261,7 @@ static SemanticsObject* CreateObject(const flutter::SemanticsNode& node,
   } else if (node.HasFlag(flutter::SemanticsFlags::kHasImplicitScrolling)) {
     SemanticsObject* delegateObject =
         [[[FlutterSemanticsObject alloc] initWithBridge:weak_ptr uid:node.id] autorelease];
-    return (SemanticsObject*)[[[FlutterScrollSemanticsObject alloc]
+    return (SemanticsObject*)[[[FlutterScrollableSemanticsObject alloc]
         initWithSemanticsObject:delegateObject] autorelease];
   } else {
     return [[[FlutterSemanticsObject alloc] initWithBridge:weak_ptr uid:node.id] autorelease];

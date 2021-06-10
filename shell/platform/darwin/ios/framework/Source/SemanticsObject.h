@@ -172,7 +172,7 @@ constexpr int32_t kRootNodeId = 0;
 
 /// The semantics object for scrollable. This class creates an UIScrollView to interact with the
 /// iOS.
-@interface FlutterScrollSemanticsObject : UIScrollView
+@interface FlutterScrollableSemanticsObject : UIScrollView
 
 - (instancetype)initWithSemanticsObject:(SemanticsObject*)semanticsObject;
 - (void)accessibilityBridgeDidFinishUpdate;
