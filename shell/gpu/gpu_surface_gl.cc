@@ -263,8 +263,7 @@ bool GPUSurfaceGL::PresentSurface(SkCanvas* canvas, const SurfaceFrame& frame) {
     onscreen_surface_->getCanvas()->flush();
   }
 
-  if (!delegate_->GLContextPresent(fbo_id_,
-                                   frame.submit_info().frame_damage)) {
+  if (!delegate_->GLContextPresent(fbo_id_, frame.submit_info().frame_damage)) {
     return false;
   }
 
