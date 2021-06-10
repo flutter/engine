@@ -23,11 +23,11 @@ if [[ -z $LUCI_CI ]]
       then
         echo "Error: Argument specifying output directory required."
         exit 1
-      else
+    else
         OUTPUT_DIR=$1
     fi
-  else 
-    OUTPUT_DIR="$LUCI_WORKDIR/objectc_docs"
+else 
+  OUTPUT_DIR="$LUCI_WORKDIR/objectc_docs"
 fi
 
 
