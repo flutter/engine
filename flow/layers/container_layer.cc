@@ -175,7 +175,7 @@ void ContainerLayer::TryToPrepareRasterCache(PrerollContext* context,
       context->raster_cache &&
       SkRect::Intersects(context->cull_rect, layer->paint_bounds())) {
     context->raster_cache->Prepare(context, layer, matrix);
-  } else {
+  } else if (context->raster_cache) {
     // Don't evict raster cache entry during partial repaint
     context->raster_cache->Touch(layer, matrix);
   }
