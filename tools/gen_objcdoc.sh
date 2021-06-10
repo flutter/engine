@@ -17,15 +17,13 @@ fi
 # to pass an output directory as the first parameter.
 OUTPUT_DIR=""
 
-if [[ -z $LUCI_CI ]]
-  then
-    if [[ $# -eq 0 ]]
-      then
-        echo "Error: Argument specifying output directory required."
-        exit 1
-    else
-        OUTPUT_DIR=$1
-    fi
+if [[ -z $LUCI_CI ]]; then
+  if [[ $# -eq 0 ]]; then
+    echo "Error: Argument specifying output directory required."
+    exit 1
+  else
+    OUTPUT_DIR=$1
+  fi
 else 
   OUTPUT_DIR="$LUCI_WORKDIR/objectc_docs"
 fi
