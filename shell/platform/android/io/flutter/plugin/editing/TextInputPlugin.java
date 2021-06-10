@@ -102,7 +102,11 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
 
           @Override
           public void hide() {
-            hideTextInput(mView);
+            if (inputTarget.type == InputTarget.Type.HC_PLATFORM_VIEW) {
+              notifyViewExited();
+            } else {
+              hideTextInput(mView);
+            }
           }
 
           @Override
@@ -376,16 +380,13 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
 
   private void hideTextInput(View view) {
     notifyViewExited();
-    if (inputTarget.type != InputTarget.Type.HC_PLATFORM_VIEW) {
-      // Note: When a virtual display is used, there's a race condition may lead to us hiding
-      // the keyboard here just after a platform view has shown it.
-      // This can only potentially happen when switching focus from a Flutter text field to a
-      // platform
-      // view's text
-      // field(by text field here I mean anything that keeps the keyboard open).
-      // See: https://github.com/flutter/flutter/issues/34169
-      mImm.hideSoftInputFromWindow(view.getApplicationWindowToken(), 0);
-    }
+    // Note: when a virtual display is used, a race condition may lead to us hiding the keyboard
+    // here just after a platform view has shown it.
+    // This can only potentially happen when switching focus from a Flutter text field to a platform
+    // view's text
+    // field(by text field here I mean anything that keeps the keyboard open).
+    // See: https://github.com/flutter/flutter/issues/34169
+    mImm.hideSoftInputFromWindow(view.getApplicationWindowToken(), 0);
   }
 
   @VisibleForTesting
@@ -416,8 +417,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
       // We need to make sure that the Flutter view is focused so that no imm operations get short
       // circuited.
       // Not asking for focus here specifically manifested in a but on API 28 devices where the
-      // platform view's
-      // request to show a keyboard was ignored.
+      // platform view's request to show a keyboard was ignored.
       mView.requestFocus();
       inputTarget = new InputTarget(InputTarget.Type.VD_PLATFORM_VIEW, platformViewId);
       mImm.restartInput(mView);
