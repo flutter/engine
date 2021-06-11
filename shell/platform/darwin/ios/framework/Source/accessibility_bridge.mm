@@ -200,10 +200,15 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
     view_controller_.view.accessibilityElements = nil;
   }
 
-  NSMutableArray<NSNumber*>* doomed_uids = [NSMutableArray arrayWithArray:[objects_.get() allKeys]];
-  if (root)
+  NSMutableArray<NSNumber*>* doomed_uids = [NSMutableArray arrayWithArray:[objects_ allKeys]];
+  if (root) {
     VisitObjectsRecursivelyAndRemove(root, doomed_uids);
+  }
   [objects_ removeObjectsForKeys:doomed_uids];
+
+  for (SemanticsObject* object in [objects_ allValues]) {
+    [object accessibilityBridgeDidFinishUpdate];
+  }
 
   if (!ios_delegate_->IsFlutterViewControllerPresentingModalViewController(view_controller_)) {
     layoutChanged = layoutChanged || [doomed_uids count] > 0;
@@ -304,7 +309,6 @@ SemanticsObject* AccessibilityBridge::GetOrCreateObject(int32_t uid,
 
 void AccessibilityBridge::VisitObjectsRecursivelyAndRemove(SemanticsObject* object,
                                                            NSMutableArray<NSNumber*>* doomed_uids) {
-  [object accessibilityBridgeDidFinishUpdate];
   [doomed_uids removeObject:@(object.uid)];
   for (SemanticsObject* child in [object children])
     VisitObjectsRecursivelyAndRemove(child, doomed_uids);

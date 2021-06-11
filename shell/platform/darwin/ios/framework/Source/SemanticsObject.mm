@@ -42,15 +42,15 @@ SkM44 GetGlobalTransform(SemanticsObject* reference) {
   return globalTransform;
 }
 
-void ApplyTransform(SkPoint& point, const SkM44& transform) {
+SkPoint ApplyTransform(SkPoint& point, const SkM44& transform) {
   SkV4 vector = transform.map(point.x(), point.y(), 0, 1);
-  point.set(vector.x / vector.w, vector.y / vector.w);
+  return SkPoint::Make(vector.x / vector.w, vector.y / vector.w);
 }
 
 CGPoint ConvertPointToGlobal(SemanticsObject* reference, CGPoint local_point) {
   SkM44 globalTransform = GetGlobalTransform(reference);
   SkPoint point = SkPoint::Make(local_point.x, local_point.y);
-  ApplyTransform(point, globalTransform);
+  point = ApplyTransform(point, globalTransform);
   // `rect` is in the physical pixel coordinate system. iOS expects the accessibility frame in
   // the logical pixel coordinate system. Therefore, we divide by the `scale` (pixel ratio) to
   // convert.
@@ -71,9 +71,10 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
                     local_rect.origin.y + local_rect.size.height)  // bottom left
   };
   for (auto& point : quad) {
-    ApplyTransform(point, globalTransform);
+    point = ApplyTransform(point, globalTransform);
   }
   SkRect rect;
+  NSCAssert(rect.setBoundsCheck(quad, 4), @"Transformed points can't form a rect");
   rect.setBounds(quad, 4);
 
   // `rect` is in the physical pixel coordinate system. iOS expects the accessibility frame in
@@ -139,22 +140,24 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 
 @end  // FlutterSwitchSemanticsObject
 
+@interface FlutterScrollableSemanticsObject ()
+@property(nonatomic, strong) SemanticsObject* semanticsObject;
+@end
+
 @implementation FlutterScrollableSemanticsObject {
-  SemanticsObject* _semanticsObject;
   fml::scoped_nsobject<SemanticsObjectContainer> _container;
 }
 
 - (instancetype)initWithSemanticsObject:(SemanticsObject*)semanticsObject {
-  self = [super init];
+  self = [super initWithFrame:CGRectZero];
   if (self) {
-    _semanticsObject = [semanticsObject retain];
+    self.semanticsObject = semanticsObject;
     [semanticsObject.bridge->view() addSubview:self];
   }
   return self;
 }
 
 - (void)dealloc {
-  [_semanticsObject release];
   _container.get().semanticsObject = nil;
   [self removeFromSuperview];
   [super dealloc];
@@ -203,15 +206,16 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   // The children's parent is pointing to _semanticsObject, need to manually
   // set it this object.
   for (SemanticsObject* child in _semanticsObject.children) {
-    [child setParent:(SemanticsObject*)self];
+    child.parent = (SemanticsObject*)self;
   }
 }
 
 - (id)accessibilityContainer {
-  if (_container == nil)
+  if (_container == nil) {
     _container.reset([[SemanticsObjectContainer alloc]
         initWithSemanticsObject:(SemanticsObject*)self
                          bridge:[_semanticsObject bridge]]);
+  }
   return _container.get();
 }
 
@@ -285,9 +289,6 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 }
 @end
 
-@interface SemanticsObject ()
-@end
-
 @implementation SemanticsObject {
   fml::scoped_nsobject<SemanticsObjectContainer> _container;
   NSMutableArray<SemanticsObject*>* _children;
@@ -325,7 +326,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 
 - (void)dealloc {
   for (SemanticsObject* child in _children) {
-    [child setParent:nil];
+    child.parent = nil;
   }
   [_children removeAllObjects];
   [_children release];
@@ -339,12 +340,12 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 
 - (void)setChildren:(NSArray<SemanticsObject*>*)children {
   for (SemanticsObject* child in _children) {
-    [child setParent:nil];
+    child.parent = nil;
   }
   [_children release];
   _children = [[NSMutableArray alloc] initWithArray:children];
   for (SemanticsObject* child in _children) {
-    [child setParent:self];
+    child.parent = self;
   }
 }
 
@@ -404,8 +405,8 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 
 - (void)replaceChildAtIndex:(NSInteger)index withChild:(SemanticsObject*)child {
   SemanticsObject* oldChild = _children[index];
-  [oldChild setParent:nil];
-  [child setParent:self];
+  oldChild.parent = nil;
+  child.parent = self;
   [_children replaceObjectAtIndex:index withObject:child];
 }
 
@@ -430,10 +431,6 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 }
 
 #pragma mark - Semantic object private method
-
-- (void)setParent:(SemanticsObject*)parent {
-  _parent = parent;
-}
 
 - (NSAttributedString*)createAttributedStringFromString:(NSString*)string
                                          withAttributes:
