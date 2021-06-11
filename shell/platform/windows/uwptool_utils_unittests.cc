@@ -20,15 +20,30 @@ namespace testing {
 
 // Verify that at least one Microsoft app (e.g. Microsoft.WindowsCalculator) is
 // installed and can be found.
-TEST(ApplicationStore, GetInstalledApplications) {
-  ApplicationStore app_store;
-  std::vector<Application> apps = app_store.GetInstalledApplications();
+TEST(ApplicationStore, GetApps) {
+  ApplicationStore store;
+  std::vector<Application> apps = store.GetApps();
   EXPECT_FALSE(apps.empty());
 
   auto ms_pos = std::find_if(apps.begin(), apps.end(), [](const auto& app) {
-    return app.GetPackageId().rfind(L"Microsoft.", 0);
+    return app.GetPackageFamily().rfind(L"Microsoft.", 0);
   });
   EXPECT_TRUE(ms_pos != apps.end());
+}
+
+// Verify that we can look up an app by family name.
+TEST(ApplicationStore, GetAppsByPackageFamily) {
+  ApplicationStore store;
+  std::vector<Application> all_apps = store.GetApps();
+  EXPECT_FALSE(all_apps.empty());
+
+  Application app = all_apps[0];
+  std::vector<Application> found_apps = store.GetApps(app.GetPackageFamily());
+  ASSERT_FALSE(found_apps.empty());
+  for (const Application& found_app : found_apps) {
+    EXPECT_EQ(found_app.GetPackageName(), app.GetPackageName());
+    EXPECT_EQ(found_app.GetPackageFamily(), app.GetPackageFamily());
+  }
 }
 
 }  // namespace testing

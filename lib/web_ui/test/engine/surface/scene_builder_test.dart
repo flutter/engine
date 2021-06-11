@@ -12,7 +12,6 @@ import 'dart:js_util' as js_util;
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
-import 'package:ui/src/engine/html_image_codec.dart';
 import 'package:ui/ui.dart' hide window;
 
 
@@ -496,7 +495,6 @@ void testMain() {
     // Renders a `string` by breaking it up into individual characters and
     // rendering each character into its own layer.
     Future<void> testCase(String string, String description, { int deletions = 0, int additions = 0, int moves = 0 }) {
-      print('Testing "$string" - $description');
       final Set<html.Node> actualDeletions = <html.Node>{};
       final Set<html.Node> actualAdditions = <html.Node>{};
 
@@ -614,8 +612,8 @@ void testMain() {
     html.CanvasElement canvas2 = contentAfterScale.querySelector('canvas');
     // Although we are drawing same picture, due to scaling the new canvas
     // should have fewer pixels.
-    expect(canvas2.width < unscaledWidth, true);
-    expect(canvas2.height < unscaledHeight, true);
+    expect(canvas2.width < unscaledWidth, isTrue);
+    expect(canvas2.height < unscaledHeight, isTrue);
   });
 
   test('Canvas should allocate more pixels when zoomed in', () async {
@@ -646,8 +644,8 @@ void testMain() {
     html.CanvasElement canvas2 = contentAfterScale.querySelector('canvas');
     // Although we are drawing same picture, due to scaling the new canvas
     // should have more pixels.
-    expect(canvas2.width > unscaledWidth, true);
-    expect(canvas2.height > unscaledHeight, true);
+    expect(canvas2.width > unscaledWidth, isTrue);
+    expect(canvas2.height > unscaledHeight, isTrue);
   });
 
   test('Should recycle canvas once', () async {

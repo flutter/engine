@@ -5,11 +5,10 @@
 import 'dart:async';
 import 'dart:html' as html;
 
-import 'package:ui/src/engine.dart';
-import 'package:ui/ui.dart' as ui;
-
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
+import 'package:ui/src/engine.dart';
+import 'package:ui/ui.dart' as ui;
 
 import 'common.dart';
 
@@ -20,7 +19,7 @@ void main() {
 }
 
 void testMain() {
-  group('HtmlViewEmbedder', () {
+  group('$HtmlViewEmbedder', () {
     setUpCanvasKitTest();
 
     setUp(() {
@@ -40,14 +39,25 @@ void testMain() {
       sb.pushOffset(0, 0);
       sb.addPlatformView(0, width: 10, height: 10);
       dispatcher.rasterizer!.draw(sb.build().layerTree);
-      expect(
-        domRenderer.sceneElement!
-            .querySelectorAll('#view-0')
-            .single
-            .style
-            .pointerEvents,
-        'auto',
-      );
+
+      // The platform view is now split in two parts. The contents live
+      // as a child of the glassPane, and the slot lives in the glassPane
+      // shadow root. The slot is the one that has pointer events auto.
+      final contents = domRenderer.glassPaneElement!.querySelector('#view-0')!;
+      final slot = domRenderer.sceneElement!.querySelector('slot')!;
+      final contentsHost = contents.parent!;
+      final slotHost = slot.parent!;
+
+      expect(contents, isNotNull,
+          reason: 'The view from the factory is injected in the DOM.');
+
+      expect(contentsHost.tagName, equalsIgnoringCase('flt-platform-view'));
+      expect(slotHost.tagName, equalsIgnoringCase('flt-platform-view-slot'));
+
+      expect(slotHost.style.pointerEvents, 'auto',
+          reason: 'The slot reenables pointer events.');
+      expect(contentsHost.getAttribute('slot'), slot.getAttribute('name'),
+          reason: 'The contents and slot are correctly related.');
     });
 
     test('clips platform views with RRects', () async {
@@ -64,6 +74,7 @@ void testMain() {
       sb.pushClipRRect(ui.RRect.fromLTRBR(0, 0, 10, 10, ui.Radius.circular(3)));
       sb.addPlatformView(0, width: 10, height: 10);
       dispatcher.rasterizer!.draw(sb.build().layerTree);
+
       expect(
         domRenderer.sceneElement!.querySelectorAll('#sk_path_defs').single,
         isNotNull,
@@ -104,12 +115,13 @@ void testMain() {
       sb.pushOffset(3, 3);
       sb.addPlatformView(0, width: 10, height: 10);
       dispatcher.rasterizer!.draw(sb.build().layerTree);
+
+      // Transformations happen on the slot element.
+      final html.Element slotHost =
+          domRenderer.sceneElement!.querySelector('flt-platform-view-slot')!;
+
       expect(
-        domRenderer.sceneElement!
-            .querySelectorAll('#view-0')
-            .single
-            .style
-            .transform,
+        slotHost.style.transform,
         // We should apply the scale matrix first, then the offset matrix.
         // So the translate should be 515 (5 * 100 + 5 * 3), and not
         // 503 (5 * 100 + 3).
@@ -122,7 +134,7 @@ void testMain() {
     List<String> getTransformChain(html.Element viewHost) {
       final List<String> chain = <String>[];
       html.Element? element = viewHost;
-      while(element != null && element.tagName.toLowerCase() != 'flt-scene') {
+      while (element != null && element.tagName.toLowerCase() != 'flt-scene') {
         chain.add(element.style.transform);
         element = element.parent;
       }
@@ -145,12 +157,13 @@ void testMain() {
       sb.pushOffset(3, 3);
       sb.addPlatformView(0, width: 10, height: 10);
       dispatcher.rasterizer!.draw(sb.build().layerTree);
-      final html.Element viewHost = domRenderer.sceneElement!
-        .querySelectorAll('#view-0')
-        .single;
+
+      // Transformations happen on the slot element.
+      final html.Element slotHost =
+          domRenderer.sceneElement!.querySelector('flt-platform-view-slot')!;
 
       expect(
-        getTransformChain(viewHost),
+        getTransformChain(slotHost),
         <String>['matrix(0.25, 0, 0, 0.25, 1.5, 1.5)'],
       );
     });
@@ -173,12 +186,13 @@ void testMain() {
       sb.pushOffset(9, 9);
       sb.addPlatformView(0, width: 10, height: 10);
       dispatcher.rasterizer!.draw(sb.build().layerTree);
-      final html.Element viewHost = domRenderer.sceneElement!
-        .querySelectorAll('#view-0')
-        .single;
+
+      // Transformations happen on the slot element.
+      final html.Element slotHost =
+          domRenderer.sceneElement!.querySelector('flt-platform-view-slot')!;
 
       expect(
-        getTransformChain(viewHost),
+        getTransformChain(slotHost),
         <String>[
           'matrix(1, 0, 0, 1, 9, 9)',
           'matrix(1, 0, 0, 1, 6, 6)',
@@ -188,17 +202,15 @@ void testMain() {
     });
 
     test('renders overlays on top of platform views', () async {
-      expect(OverlayCache.instance.debugLength, 0);
-      final CkPicture testPicture = paintPicture(
-        ui.Rect.fromLTRB(0, 0, 10, 10),
-        (CkCanvas canvas) {
-          canvas.drawCircle(ui.Offset(5, 5), 5, CkPaint());
-        }
-      );
+      expect(SurfaceFactory.instance.debugCacheSize, 0);
+      final CkPicture testPicture =
+          paintPicture(ui.Rect.fromLTRB(0, 0, 10, 10), (CkCanvas canvas) {
+        canvas.drawCircle(ui.Offset(5, 5), 5, CkPaint());
+      });
 
       // Initialize all platform views to be used in the test.
       final List<int> platformViewIds = <int>[];
-      for (int i = 0; i < OverlayCache.kDefaultCacheSize * 2; i++) {
+      for (int i = 0; i < HtmlViewEmbedder.maximumOverlaySurfaces * 2; i++) {
         ui.platformViewRegistry.registerViewFactory(
           'test-platform-view',
           (viewId) => html.DivElement()..id = 'view-$i',
@@ -210,7 +222,7 @@ void testMain() {
       final EnginePlatformDispatcher dispatcher =
           ui.window.platformDispatcher as EnginePlatformDispatcher;
 
-      void renderTestScene({ required int viewCount }) {
+      void renderTestScene({required int viewCount}) {
         LayerSceneBuilder sb = LayerSceneBuilder();
         sb.pushOffset(0, 0);
         for (int i = 0; i < viewCount; i++) {
@@ -227,9 +239,9 @@ void testMain() {
       // Frame 1:
       //   Render: up to cache size platform views.
       //   Expect: main canvas plus platform view overlays; empty cache.
-      renderTestScene(viewCount: OverlayCache.kDefaultCacheSize);
-      expect(countCanvases(), OverlayCache.kDefaultCacheSize + 1);
-      expect(OverlayCache.instance.debugLength, 0);
+      renderTestScene(viewCount: HtmlViewEmbedder.maximumOverlaySurfaces);
+      expect(countCanvases(), HtmlViewEmbedder.maximumOverlaySurfaces);
+      expect(SurfaceFactory.instance.debugCacheSize, 0);
 
       // Frame 2:
       //   Render: zero platform views.
@@ -237,23 +249,27 @@ void testMain() {
       await Future<void>.delayed(Duration.zero);
       renderTestScene(viewCount: 0);
       expect(countCanvases(), 1);
-      expect(OverlayCache.instance.debugLength, 5);
+      // The cache contains all the surfaces except the base surface and the
+      // backup surface.
+      expect(SurfaceFactory.instance.debugCacheSize,
+          HtmlViewEmbedder.maximumOverlaySurfaces - 2);
 
       // Frame 3:
       //   Render: less than cache size platform views.
       //   Expect: overlays reused; cache shrinks.
       await Future<void>.delayed(Duration.zero);
-      renderTestScene(viewCount: OverlayCache.kDefaultCacheSize - 2);
-      expect(countCanvases(), OverlayCache.kDefaultCacheSize - 1);
-      expect(OverlayCache.instance.debugLength, 2);
+      renderTestScene(viewCount: HtmlViewEmbedder.maximumOverlaySurfaces - 2);
+      expect(countCanvases(), HtmlViewEmbedder.maximumOverlaySurfaces - 1);
+      expect(SurfaceFactory.instance.debugCacheSize, 0);
 
       // Frame 4:
       //   Render: more platform views than max cache size.
-      //   Expect: cache empty (everything reused).
+      //   Expect: main canvas, backup overlay, maximum overlays;
+      //           cache empty (everything reused).
       await Future<void>.delayed(Duration.zero);
-      renderTestScene(viewCount: OverlayCache.kDefaultCacheSize * 2);
-      expect(countCanvases(), OverlayCache.kDefaultCacheSize * 2 + 1);
-      expect(OverlayCache.instance.debugLength, 0);
+      renderTestScene(viewCount: HtmlViewEmbedder.maximumOverlaySurfaces * 2);
+      expect(countCanvases(), HtmlViewEmbedder.maximumOverlaySurfaces);
+      expect(SurfaceFactory.instance.debugCacheSize, 0);
 
       // Frame 5:
       //   Render: zero platform views.
@@ -261,7 +277,8 @@ void testMain() {
       await Future<void>.delayed(Duration.zero);
       renderTestScene(viewCount: 0);
       expect(countCanvases(), 1);
-      expect(OverlayCache.instance.debugLength, 5);
+      expect(SurfaceFactory.instance.debugCacheSize,
+          HtmlViewEmbedder.maximumOverlaySurfaces - 2);
 
       // Frame 6:
       //   Render: deleted platform views.
@@ -286,7 +303,7 @@ void testMain() {
       } on AssertionError catch (error) {
         expect(
           error.toString(),
-          'Assertion failed: "Cannot render platform views: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9. These views have not been created, or they have been deleted."',
+          'Assertion failed: "Cannot render platform views: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15. These views have not been created, or they have been deleted."',
         );
       }
 
@@ -313,8 +330,12 @@ void testMain() {
       dispatcher.rasterizer!.draw(sb.build().layerTree);
 
       expect(
-        domRenderer.sceneElement!.querySelectorAll('#view-0'),
-        hasLength(1),
+        domRenderer.sceneElement!.querySelector('flt-platform-view-slot'),
+        isNotNull,
+      );
+      expect(
+        domRenderer.glassPaneElement!.querySelector('flt-platform-view'),
+        isNotNull,
       );
 
       await _disposePlatformView(0);
@@ -324,8 +345,12 @@ void testMain() {
       dispatcher.rasterizer!.draw(sb.build().layerTree);
 
       expect(
-        domRenderer.sceneElement!.querySelectorAll('#view-0'),
-        hasLength(0),
+        domRenderer.sceneElement!.querySelector('flt-platform-view-slot'),
+        isNull,
+      );
+      expect(
+        domRenderer.glassPaneElement!.querySelector('flt-platform-view'),
+        isNull,
       );
     });
 
@@ -345,8 +370,12 @@ void testMain() {
       dispatcher.rasterizer!.draw(sb.build().layerTree);
 
       expect(
-        domRenderer.sceneElement!.querySelectorAll('#view-0'),
-        hasLength(1),
+        domRenderer.sceneElement!.querySelector('flt-platform-view-slot'),
+        isNotNull,
+      );
+      expect(
+        domRenderer.glassPaneElement!.querySelector('flt-platform-view'),
+        isNotNull,
       );
 
       // Render a frame without a platform view, but also without disposing of
@@ -356,9 +385,53 @@ void testMain() {
       dispatcher.rasterizer!.draw(sb.build().layerTree);
 
       expect(
-        domRenderer.sceneElement!.querySelectorAll('#view-0'),
-        hasLength(0),
+        domRenderer.sceneElement!.querySelector('flt-platform-view-slot'),
+        isNull,
       );
+      // The actual contents of the platform view are kept in the dom, until
+      // it's actually disposed of!
+      expect(
+        domRenderer.glassPaneElement!.querySelector('flt-platform-view'),
+        isNotNull,
+      );
+    });
+
+    test(
+        'removes old SVG clip definitions from the DOM when the view is recomposited',
+        () async {
+      ui.platformViewRegistry.registerViewFactory(
+        'test-platform-view',
+        (viewId) => html.DivElement()..id = 'test-view',
+      );
+      await _createPlatformView(0, 'test-platform-view');
+
+      final EnginePlatformDispatcher dispatcher =
+          ui.window.platformDispatcher as EnginePlatformDispatcher;
+
+      void renderTestScene() {
+        LayerSceneBuilder sb = LayerSceneBuilder();
+        sb.pushOffset(0, 0);
+        sb.pushClipRRect(
+            ui.RRect.fromLTRBR(0, 0, 10, 10, ui.Radius.circular(3)));
+        sb.addPlatformView(0, width: 10, height: 10);
+        dispatcher.rasterizer!.draw(sb.build().layerTree);
+      }
+
+      final html.Node skPathDefs =
+          domRenderer.sceneElement!.querySelector('#sk_path_defs')!;
+
+      expect(skPathDefs.childNodes, hasLength(0));
+
+      renderTestScene();
+      expect(skPathDefs.childNodes, hasLength(1));
+
+      await Future<void>.delayed(Duration.zero);
+      renderTestScene();
+      expect(skPathDefs.childNodes, hasLength(1));
+
+      await Future<void>.delayed(Duration.zero);
+      renderTestScene();
+      expect(skPathDefs.childNodes, hasLength(1));
     });
     // TODO: https://github.com/flutter/flutter/issues/60040
   }, skip: isIosSafari);

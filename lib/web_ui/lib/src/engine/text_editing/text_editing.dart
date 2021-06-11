@@ -26,6 +26,12 @@ const String transparentTextEditingClass = 'transparentTextEditing';
 
 void _emptyCallback(dynamic _) {}
 
+/// The default root that hosts all DOM required for text editing when a11y is not enabled.
+///
+/// This is something similar to [html.Document]. Currently, it's a [html.ShadowRoot].
+@visibleForTesting
+html.ShadowRoot get defaultTextEditingRoot => domRenderer.glassPaneShadow!;
+
 /// These style attributes are constant throughout the life time of an input
 /// element.
 ///
@@ -232,7 +238,7 @@ class EngineAutofillForm {
 
   void placeForm(html.HtmlElement mainTextEditingElement) {
     formElement.append(mainTextEditingElement);
-    domRenderer.glassPaneElement!.append(formElement);
+    defaultTextEditingRoot.append(formElement);
   }
 
   void storeForm() {
@@ -832,7 +838,7 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
       // DOM later, when the first location information arrived.
       // Otherwise, on Blink based Desktop browsers, the autofill menu appears
       // on top left of the screen.
-      domRenderer.glassPaneElement!.append(activeDomElement);
+      defaultTextEditingRoot.append(activeDomElement);
       _appendedToForm = false;
     }
 
@@ -1207,7 +1213,7 @@ class AndroidTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     if (hasAutofillGroup) {
       placeForm();
     } else {
-      domRenderer.glassPaneElement!.append(activeDomElement);
+      defaultTextEditingRoot.append(activeDomElement);
     }
     inputConfig.textCapitalization.setAutocapitalizeAttribute(activeDomElement);
   }
@@ -1481,6 +1487,14 @@ class TextInputSetCaretRect extends TextInputCommand {
   }
 }
 
+class TextInputRequestAutofill extends TextInputCommand {
+  const TextInputRequestAutofill();
+
+  void run(HybridTextEditing textEditing) {
+    // No-op: not supported on this platform.
+  }
+}
+
 class TextInputFinishAutofillContext extends TextInputCommand {
   TextInputFinishAutofillContext({
     required this.saveForm,
@@ -1538,7 +1552,7 @@ class TextEditingChannel {
       ByteData? data, ui.PlatformMessageResponseCallback? callback) {
     const JSONMethodCodec codec = JSONMethodCodec();
     final MethodCall call = codec.decodeMethodCall(data);
-    late final TextInputCommand command;
+    final TextInputCommand command;
     switch (call.method) {
       case 'TextInput.setClient':
         command = TextInputSetClient(
@@ -1589,6 +1603,7 @@ class TextEditingChannel {
         // There's no API to request autofill on the web. Instead we let the
         // browser show autofill options automatically, if available. We
         // therefore simply ignore this message.
+        command = const TextInputRequestAutofill();
         break;
 
       case 'TextInput.finishAutofillContext':

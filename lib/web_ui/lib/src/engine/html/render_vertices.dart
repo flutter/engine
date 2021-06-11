@@ -2,41 +2,51 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import 'dart:html' as html;
+import 'dart:js_util' as js_util;
+import 'dart:math' as math;
+import 'dart:typed_data';
 
-_GlRenderer? _glRenderer;
+import 'package:ui/ui.dart' as ui;
+
+import '../browser_detection.dart';
+import '../util.dart';
+import '../vector_math.dart';
+import 'painting.dart';
+import 'shaders/image_shader.dart';
+import 'shaders/shader_builder.dart';
+import 'shaders/normalized_gradient.dart';
+import 'shaders/vertex_shaders.dart';
+import 'shaders/webgl_context.dart';
+
+GlRenderer? glRenderer;
 
 class SurfaceVertices implements ui.Vertices {
-  final ui.VertexMode _mode;
-  final Float32List _positions;
-  final Int32List? _colors;
-  final Uint16List? _indices; // ignore: unused_field
+  final ui.VertexMode mode;
+  final Float32List positions;
+  final Int32List? colors;
+  final Uint16List? indices; // ignore: unused_field
 
   SurfaceVertices(
-    ui.VertexMode mode,
+    this.mode,
     List<ui.Offset> positions, {
     List<ui.Color>? colors,
     List<int>? indices,
   })  : assert(mode != null), // ignore: unnecessary_null_comparison
         assert(positions != null), // ignore: unnecessary_null_comparison
-        _mode = mode,
-        _colors = colors != null ? _int32ListFromColors(colors) : null,
-        _indices = indices != null ? Uint16List.fromList(indices) : null,
-        _positions = offsetListToFloat32List(positions) {
+        this.colors = colors != null ? _int32ListFromColors(colors) : null,
+        this.indices = indices != null ? Uint16List.fromList(indices) : null,
+        this.positions = offsetListToFloat32List(positions) {
     initWebGl();
   }
 
   SurfaceVertices.raw(
-    ui.VertexMode mode,
-    Float32List positions, {
-    Int32List? colors,
-    Uint16List? indices,
+    this.mode,
+    this.positions, {
+    this.colors,
+    this.indices,
   })  : assert(mode != null), // ignore: unnecessary_null_comparison
-        assert(positions != null), // ignore: unnecessary_null_comparison
-        _mode = mode,
-        _positions = positions,
-        _colors = colors,
-        _indices = indices {
+        assert(positions != null) { // ignore: unnecessary_null_comparison
     initWebGl();
   }
 
@@ -54,15 +64,15 @@ class SurfaceVertices implements ui.Vertices {
 /// Used to treeshake WebGlRenderer when user doesn't create Vertices object
 /// to use the API.
 void initWebGl() {
-  _glRenderer ??= _WebGlRenderer();
+  glRenderer ??= _WebGlRenderer();
 }
 
 void disposeWebGl() {
   GlContextCache.dispose();
-  _glRenderer = null;
+  glRenderer = null;
 }
 
-abstract class _GlRenderer {
+abstract class GlRenderer {
   void drawVertices(
       html.CanvasRenderingContext2D? context,
       int canvasWidthInPixels,
@@ -75,8 +85,13 @@ abstract class _GlRenderer {
   Object? drawRect(ui.Rect targetRect, GlContext gl, GlProgram glProgram,
       NormalizedGradient gradient, int widthInPixels, int heightInPixels);
 
-  String drawRectToImageUrl(ui.Rect targetRect, GlContext gl, GlProgram glProgram,
-      NormalizedGradient gradient, int widthInPixels, int heightInPixels);
+  String drawRectToImageUrl(
+      ui.Rect targetRect,
+      GlContext gl,
+      GlProgram glProgram,
+      NormalizedGradient gradient,
+      int widthInPixels,
+      int heightInPixels);
 
   void drawHairline(html.CanvasRenderingContext2D? _ctx, Float32List positions);
 }
@@ -85,48 +100,7 @@ abstract class _GlRenderer {
 ///
 /// This class gets instantiated on demand by Vertices constructor. For apps
 /// that don't use Vertices WebGlRenderer will be removed from release binary.
-class _WebGlRenderer implements _GlRenderer {
-
-  /// Cached vertex shader reused by [drawVertices] and gradients.
-  static String? _textureVertexShader;
-
-  static void _setupVertexTransforms(GlContext gl, GlProgram glProgram,
-      double offsetX, double offsetY, double widthInPixels,
-      double heightInPixels, Matrix4 transform) {
-    Object transformUniform = gl.getUniformLocation(glProgram.program,
-        'u_ctransform');
-    Matrix4 transformAtOffset = transform.clone()
-      ..translate(-offsetX, -offsetY);
-    gl.setUniformMatrix4fv(transformUniform, false, transformAtOffset.storage);
-
-    // Set uniform to scale 0..width/height pixels coordinates to -1..1
-    // clipspace range and flip the Y axis.
-    Object resolution = gl.getUniformLocation(glProgram.program, 'u_scale');
-    gl.setUniform4f(resolution, 2.0 / widthInPixels.toDouble(),
-        -2.0 / heightInPixels.toDouble(), 1, 1);
-    Object shift = gl.getUniformLocation(glProgram.program, 'u_shift');
-    gl.setUniform4f(shift, -1, 1, 0, 0);
-  }
-
-  static void _setupTextureScalar(GlContext gl, GlProgram glProgram,
-      double sx, double sy) {
-    Object scalar = gl.getUniformLocation(glProgram.program, 'u_texscale');
-    gl.setUniform2f(scalar, sx, sy);
-  }
-
-  static dynamic _tileModeToGlWrapping(GlContext gl, ui.TileMode tileMode) {
-    switch(tileMode) {
-      case ui.TileMode.clamp:
-        return gl.kClampToEdge;
-      case ui.TileMode.decal:
-        return gl.kClampToEdge;
-      case ui.TileMode.mirror:
-        return gl.kMirroredRepeat;
-      case ui.TileMode.repeated:
-        return gl.kRepeat;
-    }
-  }
-
+class _WebGlRenderer implements GlRenderer {
   @override
   void drawVertices(
       html.CanvasRenderingContext2D? context,
@@ -136,9 +110,8 @@ class _WebGlRenderer implements _GlRenderer {
       SurfaceVertices vertices,
       ui.BlendMode blendMode,
       SurfacePaintData paint) {
-
     // Compute bounds of vertices.
-    final Float32List positions = vertices._positions;
+    final Float32List positions = vertices.positions;
     ui.Rect bounds = _computeVerticesBounds(positions, transform);
     double minValueX = bounds.left;
     double minValueY = bounds.top;
@@ -170,17 +143,19 @@ class _WebGlRenderer implements _GlRenderer {
 
     final bool isWebGl2 = webGLVersion == WebGLVersion.webgl2;
 
-    final EngineImageShader? imageShader = paint.shader == null ? null
-        : paint.shader as EngineImageShader;
+    final EngineImageShader? imageShader =
+        paint.shader == null ? null : paint.shader as EngineImageShader;
 
     final String vertexShader = imageShader == null
-        ? VertexShaders.writeBaseVertexShader() : writeTextureVertexShader();
+        ? VertexShaders.writeBaseVertexShader()
+        : VertexShaders.writeTextureVertexShader();
     final String fragmentShader = imageShader == null
         ? _writeVerticesFragmentShader()
-        : _writeVerticesTextureFragmentShader(isWebGl2,
-        imageShader.tileModeX, imageShader.tileModeY);
+        : FragmentShaders.writeTextureFragmentShader(
+            isWebGl2, imageShader.tileModeX, imageShader.tileModeY);
 
-    GlContext gl = GlContextCache.createGlContext(widthInPixels, heightInPixels)!;
+    GlContext gl =
+        GlContextCache.createGlContext(widthInPixels, heightInPixels)!;
 
     GlProgram glProgram = gl.cacheProgram(vertexShader, fragmentShader);
     gl.useProgram(glProgram);
@@ -188,15 +163,19 @@ class _WebGlRenderer implements _GlRenderer {
     Object? positionAttributeLocation =
         gl.getAttributeLocation(glProgram.program, 'position');
 
-    _setupVertexTransforms(gl, glProgram, offsetX, offsetY,
-        widthInPixels.toDouble(), heightInPixels.toDouble(),
-        transform);
+    setupVertexTransforms(gl, glProgram, offsetX, offsetY,
+        widthInPixels.toDouble(), heightInPixels.toDouble(), transform);
 
     if (imageShader != null) {
       /// To map from vertex position to texture coordinate in 0..1 range,
       /// we setup scalar to be used in vertex shader.
-      _setupTextureScalar(gl, glProgram, 1.0 / imageShader._image.width.toDouble(),
-          1.0 / imageShader._image.height.toDouble());
+      setupTextureTransform(
+          gl,
+          glProgram,
+          0.0,
+          0.0,
+          1.0 / imageShader.image.width.toDouble(),
+          1.0 / imageShader.image.height.toDouble());
     }
 
     // Setup geometry.
@@ -218,11 +197,16 @@ class _WebGlRenderer implements _GlRenderer {
     gl.enableVertexAttribArray(positionAttributeLocation);
     // Bind buffer as position buffer and transfer data.
     gl.bindArrayBuffer(positionsBuffer);
-    gl.bufferData(positions, gl.kStaticDraw);
+    bufferVertexData(gl, positions, 1.0);
+
     // Setup data format for attribute.
-    js_util.callMethod(
-        gl.glContext, 'vertexAttribPointer', <dynamic>[
-      positionAttributeLocation, 2, gl.kFloat, false, 0, 0,
+    js_util.callMethod(gl.glContext, 'vertexAttribPointer', <dynamic>[
+      positionAttributeLocation,
+      2,
+      gl.kFloat,
+      false,
+      0,
+      0,
     ]);
 
     final int vertexCount = positions.length ~/ 2;
@@ -234,7 +218,7 @@ class _WebGlRenderer implements _GlRenderer {
       gl.bindArrayBuffer(colorsBuffer);
 
       // Buffer kBGRA_8888.
-      if (vertices._colors == null) {
+      if (vertices.colors == null) {
         final ui.Color color = paint.color ?? ui.Color(0xFF000000);
         Uint32List vertexColors = Uint32List(vertexCount);
         for (int i = 0; i < vertexCount; i++) {
@@ -242,7 +226,7 @@ class _WebGlRenderer implements _GlRenderer {
         }
         gl.bufferData(vertexColors, gl.kStaticDraw);
       } else {
-        gl.bufferData(vertices._colors, gl.kStaticDraw);
+        gl.bufferData(vertices.colors, gl.kStaticDraw);
       }
       Object colorLoc = gl.getAttributeLocation(glProgram.program, 'color');
       js_util.callMethod(gl.glContext, 'vertexAttribPointer',
@@ -260,23 +244,17 @@ class _WebGlRenderer implements _GlRenderer {
       gl.activeTexture(gl.kTexture0);
       gl.bindTexture(gl.kTexture2D, texture);
 
-      gl.texImage2D(
-          gl.kTexture2D,
-          0,
-          gl.kRGBA,
-          gl.kRGBA,
-          gl.kUnsignedByte,
-          imageShader._image.imgElement
-      );
+      gl.texImage2D(gl.kTexture2D, 0, gl.kRGBA, gl.kRGBA, gl.kUnsignedByte,
+          imageShader.image.imgElement);
 
       if (isWebGl2) {
         // Texture REPEAT and MIRROR is only supported in WebGL 2, for
         // WebGL 1.0 we let shader compute correct uv coordinates.
         gl.texParameteri(gl.kTexture2D, gl.kTextureWrapS,
-            _tileModeToGlWrapping(gl, imageShader.tileModeX));
+            tileModeToGlWrapping(gl, imageShader.tileModeX));
 
         gl.texParameteri(gl.kTexture2D, gl.kTextureWrapT,
-            _tileModeToGlWrapping(gl, imageShader.tileModeY));
+            tileModeToGlWrapping(gl, imageShader.tileModeY));
 
         // Mipmapping saves your texture in different resolutions
         // so the graphics card can choose which resolution is optimal
@@ -287,10 +265,8 @@ class _WebGlRenderer implements _GlRenderer {
         // value of a texel fetch is (0, 0, 0, 1), so we have to set
         // minifying function to filter.
         // See https://www.khronos.org/registry/webgl/specs/1.0.0/#5.13.8.
-        gl.texParameteri(gl.kTexture2D, gl.kTextureWrapS,
-            gl.kClampToEdge);
-        gl.texParameteri(gl.kTexture2D, gl.kTextureWrapT,
-            gl.kClampToEdge);
+        gl.texParameteri(gl.kTexture2D, gl.kTextureWrapS, gl.kClampToEdge);
+        gl.texParameteri(gl.kTexture2D, gl.kTextureWrapT, gl.kClampToEdge);
         gl.texParameteri(gl.kTexture2D, gl.kTextureMinFilter, gl.kLinear);
       }
     }
@@ -298,9 +274,9 @@ class _WebGlRenderer implements _GlRenderer {
     // Finally render triangles.
     gl.clear();
 
-    final Uint16List ?indices = vertices._indices;
+    final Uint16List? indices = vertices.indices;
     if (indices == null) {
-      gl.drawTriangles(vertexCount, vertices._mode);
+      gl.drawTriangles(vertexCount, vertices.mode);
     } else {
       /// If indices are specified to use shared vertices to reduce vertex
       /// data transfer, use drawElements to map from vertex indices to
@@ -321,19 +297,14 @@ class _WebGlRenderer implements _GlRenderer {
     context.restore();
   }
 
-  static final Uint16List _vertexIndicesForRect = Uint16List.fromList(
-      <int>[
-        0, 1, 2, 2, 3, 0
-      ]
-  );
-
   /// Renders a rectangle using given program into an image resource.
   ///
   /// Browsers that support OffscreenCanvas and the transferToImageBitmap api
   /// will return ImageBitmap, otherwise will return CanvasElement.
   Object? drawRect(ui.Rect targetRect, GlContext gl, GlProgram glProgram,
       NormalizedGradient gradient, int widthInPixels, int heightInPixels) {
-    drawRectToGl(targetRect, gl, glProgram, gradient, widthInPixels, heightInPixels);
+    drawRectToGl(
+        targetRect, gl, glProgram, gradient, widthInPixels, heightInPixels);
     Object? image = gl.readPatternData();
     gl.bindArrayBuffer(null);
     gl.bindElementArrayBuffer(null);
@@ -342,9 +313,15 @@ class _WebGlRenderer implements _GlRenderer {
 
   /// Renders a rectangle using given program into an image resource and returns
   /// url.
-  String drawRectToImageUrl(ui.Rect targetRect, GlContext gl, GlProgram glProgram,
-      NormalizedGradient gradient, int widthInPixels, int heightInPixels) {
-    drawRectToGl(targetRect, gl, glProgram, gradient, widthInPixels, heightInPixels);
+  String drawRectToImageUrl(
+      ui.Rect targetRect,
+      GlContext gl,
+      GlProgram glProgram,
+      NormalizedGradient gradient,
+      int widthInPixels,
+      int heightInPixels) {
+    drawRectToGl(
+        targetRect, gl, glProgram, gradient, widthInPixels, heightInPixels);
     final String imageUrl = gl.toImageUrl();
     // Cleanup buffers.
     gl.bindArrayBuffer(null);
@@ -373,8 +350,8 @@ class _WebGlRenderer implements _GlRenderer {
     vertices[6] = left;
     vertices[7] = bottom;
 
-    Object transformUniform = gl.getUniformLocation(
-        glProgram.program, 'u_ctransform');
+    Object transformUniform =
+        gl.getUniformLocation(glProgram.program, 'u_ctransform');
     gl.setUniformMatrix4fv(transformUniform, false, Matrix4.identity().storage);
 
     // Set uniform to scale 0..width/height pixels coordinates to -1..1
@@ -391,8 +368,7 @@ class _WebGlRenderer implements _GlRenderer {
     gl.bindArrayBuffer(positionsBuffer);
     gl.bufferData(vertices, gl.kStaticDraw);
     // Point an attribute to the currently bound vertex buffer object.
-    js_util.callMethod(
-        gl.glContext, 'vertexAttribPointer',
+    js_util.callMethod(gl.glContext, 'vertexAttribPointer',
         <dynamic>[0, 2, gl.kFloat, false, 0, 0]);
     gl.enableVertexAttribArray(0);
 
@@ -401,7 +377,10 @@ class _WebGlRenderer implements _GlRenderer {
     gl.bindArrayBuffer(colorsBuffer);
     // Buffer kBGRA_8888.
     final Int32List colors = Int32List.fromList(<int>[
-      0xFF00FF00, 0xFF0000FF, 0xFFFFFF00, 0xFF00FFFF,
+      0xFF00FF00,
+      0xFF0000FF,
+      0xFFFFFF00,
+      0xFF00FFFF,
     ]);
     gl.bufferData(colors, gl.kStaticDraw);
     js_util.callMethod(gl.glContext, 'vertexAttribPointer',
@@ -410,7 +389,7 @@ class _WebGlRenderer implements _GlRenderer {
 
     Object? indexBuffer = gl.createBuffer();
     gl.bindElementArrayBuffer(indexBuffer);
-    gl.bufferElementData(_vertexIndicesForRect, gl.kStaticDraw);
+    gl.bufferElementData(VertexShaders.vertexIndicesForRect, gl.kStaticDraw);
 
     if (gl.containsUniform(glProgram.program, 'u_resolution')) {
       Object uRes = gl.getUniformLocation(glProgram.program, 'u_resolution');
@@ -421,27 +400,8 @@ class _WebGlRenderer implements _GlRenderer {
     gl.clear();
     gl.viewport(0, 0, widthInPixels.toDouble(), heightInPixels.toDouble());
 
-    gl.drawElements(gl.kTriangles, _vertexIndicesForRect.length, gl.kUnsignedShort);
-  }
-
-   static String writeTextureVertexShader() {
-    if (_textureVertexShader == null) {
-      ShaderBuilder builder = ShaderBuilder(webGLVersion);
-      builder.addIn(ShaderType.kVec4, name: 'position');
-      builder.addUniform(ShaderType.kMat4, name: 'u_ctransform');
-      builder.addUniform(ShaderType.kVec4, name: 'u_scale');
-      builder.addUniform(ShaderType.kVec2, name: 'u_texscale');
-      builder.addUniform(ShaderType.kVec4, name: 'u_shift');
-      builder.addOut(ShaderType.kVec2, name: 'v_texcoord');
-      ShaderMethod method = builder.addMethod('main');
-      method.addStatement(
-          'gl_Position = ((u_ctransform * position) * u_scale) + u_shift;');
-      method.addStatement(
-          'v_texcoord = vec2(position.x * u_texscale.x, '
-          '(position.y * u_texscale.y));');
-      _textureVertexShader = builder.build();
-    }
-    return _textureVertexShader!;
+    gl.drawElements(
+        gl.kTriangles, VertexShaders.vertexIndicesForRect.length, gl.kUnsignedShort);
   }
 
   /// This fragment shader enables Int32List of colors to be passed directly
@@ -456,41 +416,15 @@ class _WebGlRenderer implements _GlRenderer {
   String _writeVerticesFragmentShader() {
     ShaderBuilder builder = ShaderBuilder.fragment(webGLVersion);
     builder.floatPrecision = ShaderPrecision.kMedium;
-    builder.addIn(ShaderType.kVec4, name:'v_color');
+    builder.addIn(ShaderType.kVec4, name: 'v_color');
     ShaderMethod method = builder.addMethod('main');
     method.addStatement('${builder.fragmentColor.name} = v_color;');
     return builder.build();
   }
 
-  String _writeVerticesTextureFragmentShader(bool isWebGl2,
-      ui.TileMode? tileModeX, ui.TileMode? tileModeY) {
-    ShaderBuilder builder = ShaderBuilder.fragment(webGLVersion);
-    builder.floatPrecision = ShaderPrecision.kMedium;
-    builder.addIn(ShaderType.kVec2, name:'v_texcoord');
-    builder.addUniform(ShaderType.kSampler2D, name: 'u_texture');
-    ShaderMethod method = builder.addMethod('main');
-    if (isWebGl2
-        || tileModeX == null || tileModeY == null
-        || (tileModeX == ui.TileMode.clamp && tileModeY == ui.TileMode.clamp)) {
-      method.addStatement('${builder.fragmentColor.name} = '
-          '${builder.texture2DFunction}(u_texture, v_texcoord);');
-    } else {
-      // Repeat and mirror are not supported for webgl1. Write code to
-      // adjust texture coordinate.
-      //
-      // This will write u and v floats, clamp/repeat and mirror the value and
-      // pass it to sampler.
-      method.addTileStatements('v_texcoord.x', 'u', tileModeX);
-      method.addTileStatements('v_texcoord.y', 'v', tileModeY);
-      method.addStatement('vec2 uv = vec2(u, v);');
-      method.addStatement('${builder.fragmentColor.name} = '
-          '${builder.texture2DFunction}(u_texture, uv);');
-    }
-    return builder.build();
-  }
-
   @override
-  void drawHairline(html.CanvasRenderingContext2D? _ctx, Float32List positions) {
+  void drawHairline(
+      html.CanvasRenderingContext2D? _ctx, Float32List positions) {
     assert(positions != null); // ignore: unnecessary_null_comparison
     final int pointCount = positions.length ~/ 2;
     _ctx!.lineWidth = 1.0;
@@ -563,8 +497,8 @@ ui.Rect _transformBounds(
       math.max(y0, math.max(y1, math.max(y2, y3))));
 }
 
-// Converts from [VertexMode] triangleFan and triangleStrip to triangles.
-Float32List _convertVertexPositions(ui.VertexMode mode, Float32List positions) {
+/// Converts from [VertexMode] triangleFan and triangleStrip to triangles.
+Float32List convertVertexPositions(ui.VertexMode mode, Float32List positions) {
   assert(mode != ui.VertexMode.triangles);
   if (mode == ui.VertexMode.triangleFan) {
     final int coordinateCount = positions.length ~/ 2;

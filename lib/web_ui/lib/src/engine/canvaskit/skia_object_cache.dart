@@ -2,7 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import 'dart:collection';
+
+import 'package:meta/meta.dart';
+import '../../engine.dart' show EnginePlatformDispatcher, Instrumentation;
+
+import 'canvaskit_api.dart';
+import '../util.dart';
 
 /// A cache of Skia objects whose memory Flutter manages.
 ///
@@ -73,6 +79,85 @@ class SkiaObjectCache {
   void resize() {
     final int itemsToDelete = maximumSize ~/ 2;
     for (int i = 0; i < itemsToDelete; i++) {
+      final SkiaObject oldObject = _itemQueue.removeLast();
+      _itemMap.remove(oldObject);
+      oldObject.delete();
+      oldObject.didDelete();
+    }
+  }
+}
+
+/// Like [SkiaObjectCache] but enforces the [maximumSize] of the cache
+/// synchronously instead of waiting until a post-frame callback.
+class SynchronousSkiaObjectCache {
+  /// This cache will never exceed this limit, even temporarily.
+  final int maximumSize;
+
+  /// A doubly linked list of the objects in the cache.
+  ///
+  /// This makes it fast to move a recently used object to the front.
+  final DoubleLinkedQueue<SkiaObject> _itemQueue;
+
+  /// A map of objects to their associated node in the [_itemQueue].
+  ///
+  /// This makes it fast to find the node in the queue when we need to
+  /// move the object to the front of the queue.
+  final Map<SkiaObject, DoubleLinkedQueueEntry<SkiaObject>> _itemMap;
+
+  SynchronousSkiaObjectCache(this.maximumSize)
+      : _itemQueue = DoubleLinkedQueue<SkiaObject>(),
+        _itemMap = <SkiaObject, DoubleLinkedQueueEntry<SkiaObject>>{};
+
+  /// The number of objects in the cache.
+  int get length => _itemQueue.length;
+
+  /// Whether or not [object] is in the cache.
+  ///
+  /// This is only for testing.
+  @visibleForTesting
+  bool debugContains(SkiaObject object) {
+    return _itemMap.containsKey(object);
+  }
+
+  /// Adds [object] to the cache.
+  ///
+  /// If adding [object] causes the total size of the cache to exceed
+  /// [maximumSize], then the least recently used objects are evicted and
+  /// deleted.
+  void add(SkiaObject object) {
+    assert(
+      !_itemMap.containsKey(object),
+      'Cannot add object. Object is already in the cache: $object',
+    );
+    _itemQueue.addFirst(object);
+    _itemMap[object] = _itemQueue.firstEntry()!;
+    _enforceCacheLimit();
+  }
+
+  /// Marks the [object] as most recently used.
+  ///
+  /// If [object] is in the cache returns true. If the object is not in
+  /// the cache, for example, because it was never added or because it was
+  /// evicted as a result of the app reaching the cache limit, returns false.
+  bool markUsed(SkiaObject object) {
+    final DoubleLinkedQueueEntry<SkiaObject>? item = _itemMap[object];
+
+    if (item == null) {
+      return false;
+    }
+
+    item.remove();
+    _itemQueue.addFirst(object);
+    _itemMap[object] = _itemQueue.firstEntry()!;
+    return true;
+  }
+
+  /// Ensures the cache does not exceed [maximumSize], evicting objects if
+  /// necessary.
+  ///
+  /// Calls `delete` and `didDelete` on objects evicted from the cache.
+  void _enforceCacheLimit() {
+    while (_itemQueue.length > maximumSize) {
       final SkiaObject oldObject = _itemQueue.removeLast();
       _itemMap.remove(oldObject);
       oldObject.delete();
@@ -248,7 +333,8 @@ typedef Resurrector<T> = T Function();
 /// prior to being deleted permanently. A temporary deletion may effectively
 /// be permanent if this object is garbage collected. This is safe because a
 /// temporarily deleted object has no C++ resources to collect.
-class SkiaObjectBox<R extends StackTraceDebugger, T extends Object> extends SkiaObject<T> {
+class SkiaObjectBox<R extends StackTraceDebugger, T extends Object>
+    extends SkiaObject<T> {
   /// Creates an object box that's memory-managed using [SkFinalizationRegistry].
   ///
   /// This constructor must only be used if [browserSupportsFinalizationRegistry] is true.
@@ -261,19 +347,20 @@ class SkiaObjectBox<R extends StackTraceDebugger, T extends Object> extends Skia
   /// Creates an object box that's memory-managed using a [Resurrector].
   ///
   /// This constructor must only be used if [browserSupportsFinalizationRegistry] is false.
-  SkiaObjectBox.resurrectable(R debugReferrer, T initialValue, this._resurrector) {
+  SkiaObjectBox.resurrectable(
+      R debugReferrer, T initialValue, this._resurrector) {
     assert(!browserSupportsFinalizationRegistry);
     _initialize(debugReferrer, initialValue);
-    SkiaObjects.manageExpensive(this);
-  }
-
-  void _initialize(R debugReferrer, T initialValue) {
-    _update(initialValue);
     if (Instrumentation.enabled) {
       Instrumentation.instance.incrementCounter(
         '${_skDeletable?.constructor.name} created',
       );
     }
+    SkiaObjects.manageExpensive(this);
+  }
+
+  void _initialize(R debugReferrer, T initialValue) {
+    _update(initialValue);
     if (assertionsEnabled) {
       debugReferrers.add(debugReferrer);
     }
@@ -296,13 +383,13 @@ class SkiaObjectBox<R extends StackTraceDebugger, T extends Object> extends Skia
 
   /// If asserts are enabled, the [StackTrace]s representing when a reference
   /// was created.
-  List<StackTrace>? debugGetStackTraces() {
+  List<StackTrace> debugGetStackTraces() {
     if (assertionsEnabled) {
       return debugReferrers
           .map<StackTrace>((R referrer) => referrer.debugStackTrace)
           .toList();
     }
-    return null;
+    throw UnsupportedError('');
   }
 
   /// The Skia object whose lifecycle is being managed.
@@ -362,14 +449,16 @@ class SkiaObjectBox<R extends StackTraceDebugger, T extends Object> extends Skia
 
   /// Whether the underlying [rawSkiaObject] has been deleted, but it may still
   /// be resurrected (see [SkiaObjectBox.resurrectable]).
-  bool get isDeletedTemporarily => rawSkiaObject == null && !_isDeletedPermanently;
+  bool get isDeletedTemporarily =>
+      rawSkiaObject == null && !_isDeletedPermanently;
 
   /// Increases the reference count of this box because a new object began
   /// sharing ownership of the underlying [skiaObject].
   ///
   /// Clones must be [dispose]d when finished.
   void ref(R debugReferrer) {
-    assert(!_isDeletedPermanently, 'Cannot increment ref count on a deleted handle.');
+    assert(!_isDeletedPermanently,
+        'Cannot increment ref count on a deleted handle.');
     assert(_refCount > 0);
     assert(
       debugReferrers.add(debugReferrer),
@@ -386,7 +475,8 @@ class SkiaObjectBox<R extends StackTraceDebugger, T extends Object> extends Skia
   /// If this causes the reference count to drop to zero, deletes the
   /// [skObject].
   void unref(R debugReferrer) {
-    assert(!_isDeletedPermanently, 'Attempted to unref an already deleted Skia object.');
+    assert(!_isDeletedPermanently,
+        'Attempted to unref an already deleted Skia object.');
     assert(
       debugReferrers.remove(debugReferrer),
       'Attempted to decrement ref count by the same referrer more than once.',
@@ -435,7 +525,11 @@ class SkiaObjects {
     if (_addedCleanupCallback) {
       return;
     }
-    EnginePlatformDispatcher.instance.rasterizer!.addPostFrameCallback(postFrameCleanUp);
+    // This method is @visibleForTesting but we're getting a warning about
+    // using a @visibleForTesting member.
+    // ignore: invalid_use_of_visible_for_testing_member
+    EnginePlatformDispatcher.instance.rasterizer!
+        .addPostFrameCallback(postFrameCleanUp);
     _addedCleanupCallback = true;
   }
 

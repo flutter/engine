@@ -81,7 +81,7 @@ void setElementTransform(html.Element element, Float32List matrix4) {
 /// See also:
 ///  * https://github.com/flutter/flutter/issues/32274
 ///  * https://bugs.chromium.org/p/chromium/issues/detail?id=1040222
-String float64ListToCssTransform(Float32List matrix) {
+String float64ListToCssTransform(List<double> matrix) {
   assert(matrix.length == 16);
   final TransformKind transformKind = transformKindOf(matrix);
   if (transformKind == TransformKind.transform2d) {
@@ -113,9 +113,9 @@ enum TransformKind {
 }
 
 /// Detects the kind of transform the [matrix] performs.
-TransformKind transformKindOf(Float32List matrix) {
+TransformKind transformKindOf(List<double> matrix) {
   assert(matrix.length == 16);
-  final Float32List m = matrix;
+  final List<double> m = matrix;
 
   // If matrix contains scaling, rotation, z translation or
   // perspective transform, it is not considered simple.
@@ -171,15 +171,15 @@ bool isIdentityFloat32ListTransform(Float32List matrix) {
 /// permitted. However, it is inefficient to construct a matrix for an identity
 /// transform. Consider removing the CSS `transform` property from elements
 /// that apply identity transform.
-String float64ListToCssTransform2d(Float32List matrix) {
+String float64ListToCssTransform2d(List<double> matrix) {
   assert(transformKindOf(matrix) != TransformKind.complex);
   return 'matrix(${matrix[0]},${matrix[1]},${matrix[4]},${matrix[5]},${matrix[12]},${matrix[13]})';
 }
 
 /// Converts [matrix] to a 3D CSS transform value.
-String float64ListToCssTransform3d(Float32List matrix) {
+String float64ListToCssTransform3d(List<double> matrix) {
   assert(matrix.length == 16);
-  final Float32List m = matrix;
+  final List<double> m = matrix;
   if (m[0] == 1.0 &&
       m[1] == 0.0 &&
       m[2] == 0.0 &&
@@ -293,21 +293,25 @@ void transformLTRB(Matrix4 transform, Float32List ltrb) {
   }
 
   ltrb[0] = math.min(
-      math.min(
-          math.min(_tempPointData[0], _tempPointData[1]), _tempPointData[2]),
-      _tempPointData[3]) / w;
+          math.min(math.min(_tempPointData[0], _tempPointData[1]),
+              _tempPointData[2]),
+          _tempPointData[3]) /
+      w;
   ltrb[1] = math.min(
-      math.min(
-          math.min(_tempPointData[4], _tempPointData[5]), _tempPointData[6]),
-      _tempPointData[7]) / w;
+          math.min(math.min(_tempPointData[4], _tempPointData[5]),
+              _tempPointData[6]),
+          _tempPointData[7]) /
+      w;
   ltrb[2] = math.max(
-      math.max(
-          math.max(_tempPointData[0], _tempPointData[1]), _tempPointData[2]),
-      _tempPointData[3]) / w;
+          math.max(math.max(_tempPointData[0], _tempPointData[1]),
+              _tempPointData[2]),
+          _tempPointData[3]) /
+      w;
   ltrb[3] = math.max(
-      math.max(
-          math.max(_tempPointData[4], _tempPointData[5]), _tempPointData[6]),
-      _tempPointData[7]) / w;
+          math.max(math.max(_tempPointData[4], _tempPointData[5]),
+              _tempPointData[6]),
+          _tempPointData[7]) /
+      w;
 }
 
 /// Returns true if [rect] contains every point that is also contained by the
@@ -528,3 +532,30 @@ int clampInt(int value, int min, int max) {
 /// This function can be overridden in tests. This could be useful, for example,
 /// to verify that warnings are printed under certain circumstances.
 void Function(String) printWarning = html.window.console.warn;
+
+/// Determines if lists [a] and [b] are deep equivalent.
+///
+/// Returns true if the lists are both null, or if they are both non-null, have
+/// the same length, and contain the same elements in the same order. Returns
+/// false otherwise.
+bool listEquals<T>(List<T>? a, List<T>? b) {
+  if (a == null) {
+    return b == null;
+  }
+  if (b == null || a.length != b.length) {
+    return false;
+  }
+  for (int index = 0; index < a.length; index += 1) {
+    if (a[index] != b[index]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// HTML only supports a single radius, but Flutter ImageFilter supports separate
+// horizontal and vertical radii. The best approximation we can provide is to
+// average the two radii together for a single compromise value.
+String blurSigmasToCssString(double sigmaX, double sigmaY) {
+  return 'blur(${(sigmaX + sigmaY) * 0.5}px)';
+}
