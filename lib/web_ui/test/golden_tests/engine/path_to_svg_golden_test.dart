@@ -191,7 +191,7 @@ html.Element pathToSvgElement(Path path, Paint paint, bool enableFill) {
       'width="${bounds.right}" height="${bounds.bottom}">');
   sb.write('<path ');
   if (paint.style == PaintingStyle.stroke ||
-      (paint.strokeWidth != null && paint.strokeWidth != 0.0)) {
+      paint.strokeWidth != 0.0) {
     sb.write('stroke="${colorToCssString(paint.color)}" ');
     sb.write('stroke-width="${paint.strokeWidth}" ');
     if (!enableFill) {
