@@ -74,32 +74,6 @@ abstract class HostNode {
   List<html.Node> querySelectorAll(String selectors);
 }
 
-/// A partial [HostNode] implementation, backed by a [html.Node].
-///
-/// The implementation is partial (abstract) because Nodes alone can't implement
-/// the complete functionality.
-///
-/// The late property `_node` must be set in the extender's constructor.
-abstract class NodeHostNode implements HostNode {
-  late html.Node _node;
-
-  @override
-  html.Node append(html.Node node) {
-    return _node.append(node);
-  }
-
-  @override
-  bool contains(html.Node? other) {
-    return _node.contains(other);
-  }
-
-  @override
-  html.Node get node => _node;
-
-  @override
-  List<html.Node> get nodes => _node.nodes;
-}
-
 /// A [HostNode] implementation, backed by a [html.ShadowRoot].
 ///
 /// This is the preferred flutter implementation, but it might not be supported
@@ -108,12 +82,12 @@ abstract class NodeHostNode implements HostNode {
 /// The constructor might throw when calling `attachShadow`, if ShadowDOM is not
 /// supported in the current environment. In this case, a fallback [ElementHostNode]
 /// should be created instead.
-class ShadowDomHostNode extends NodeHostNode {
+class ShadowDomHostNode implements HostNode {
   late html.ShadowRoot _shadow;
 
   /// Build a HostNode by attaching a [html.ShadowRoot] to the `root` element.
   ShadowDomHostNode(html.Element root) {
-    _shadow = _node = root.attachShadow(<String, String>{
+    _shadow = root.attachShadow(<String, String>{
       'mode': 'open',
       'delegatesFocus': 'true',
     });
@@ -131,18 +105,36 @@ class ShadowDomHostNode extends NodeHostNode {
   List<html.Node> querySelectorAll(String selectors) {
     return _shadow.querySelectorAll(selectors);
   }
+
+  @override
+  html.Node append(html.Node node) {
+    return _shadow.append(node);
+  }
+
+  @override
+  bool contains(html.Node? other) {
+    return _shadow.contains(other);
+  }
+
+  @override
+  // TODO: implement node
+  html.Node get node => _shadow;
+
+  @override
+  // TODO: implement nodes
+  List<html.Node> get nodes => _shadow.nodes;
 }
 
 /// A [HostNode] implementation, backed by a [html.Element].
 ///
 /// This is a fallback implementation, in case [ShadowDomHostNode] fails when
 /// being constructed.
-class ElementHostNode extends NodeHostNode {
+class ElementHostNode implements HostNode {
   late html.Element _element;
 
   /// Build a HostNode by attaching a child [html.Element] to the `root` element.
   ElementHostNode(html.Element root) {
-    _element = _node = html.document.createElement('flt-shadow-dom-fallback');
+    _element = html.document.createElement('flt-element-host-node');
     root.append(_element);
   }
 
@@ -158,4 +150,22 @@ class ElementHostNode extends NodeHostNode {
   List<html.Node> querySelectorAll(String selectors) {
     return _element.querySelectorAll(selectors);
   }
+
+  @override
+  html.Node append(html.Node node) {
+    return _element.append(node);
+  }
+
+  @override
+  bool contains(html.Node? other) {
+    return _element.contains(other);
+  }
+
+  @override
+  // TODO: implement node
+  html.Node get node => _element;
+
+  @override
+  // TODO: implement nodes
+  List<html.Node> get nodes => _element.nodes;
 }
