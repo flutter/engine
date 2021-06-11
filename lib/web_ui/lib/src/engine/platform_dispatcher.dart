@@ -457,7 +457,6 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         _platformViewMessageHandler ??= PlatformViewMessageHandler(
           contentManager: platformViewManager,
           contentHandler: (html.Element content) {
-            // TODO: Prevent append if domRenderer.glassPaneShadow is! ShadowDomHostNode?
             domRenderer.glassPaneElement!.append(content);
           },
         );
