@@ -719,10 +719,8 @@ void applyGlobalCssRulesToSheet(html.CssStyleSheet sheet, {
 }) {
   final bool isWebKit = browserEngine == BrowserEngine.webkit;
   final bool isFirefox = browserEngine == BrowserEngine.firefox;
-  // TODO(butterfly): use more efficient CSS selectors; descendant selectors
-  //                  are slow. More info:
-  //
-  //                  https://csswizardry.com/2011/09/writing-efficient-css-selectors/
+  // TODO(web): use more efficient CSS selectors; descendant selectors are slow.
+  // More info: https://csswizardry.com/2011/09/writing-efficient-css-selectors
 
   // This undoes browser's default layout attributes for paragraphs. We
   // compute paragraph layout ourselves.
