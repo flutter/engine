@@ -89,6 +89,11 @@ class ShadowDomHostNode implements HostNode {
   ///
   /// This also calls [applyGlobalCssRulesToSheet], defined in dom_renderer.
   ShadowDomHostNode(html.Element root) {
+    assert(
+      root.isConnected ?? true,
+      'The `root` of a ShadowDomHostNode must be connected to the Document object or a ShadowRoot.',
+    );
+
     _shadow = root.attachShadow(<String, String>{
       'mode': 'open',
       'delegatesFocus': 'true',
@@ -99,7 +104,8 @@ class ShadowDomHostNode implements HostNode {
     _shadow.append(shadowRootStyleElement);
 
     // TODO: Apply only rules for the shadow root
-    applyGlobalCssRulesToSheet(shadowRootStyleElement.sheet as html.CssStyleSheet, 
+    applyGlobalCssRulesToSheet(
+      shadowRootStyleElement.sheet as html.CssStyleSheet,
       browserEngine: browserEngine,
       hasAutofillOverlay: browserHasAutofillOverlay(),
     );

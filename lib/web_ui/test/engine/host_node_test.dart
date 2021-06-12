@@ -26,6 +26,13 @@ void testMain() {
       expect(hostNode.node, rootNode.shadowRoot);
     });
 
+    test('Attaches a stylesheet to the shadow root', () {
+      final html.Element firstChild =
+          (hostNode.node as html.ShadowRoot).children.first;
+
+      expect(firstChild.tagName, equalsIgnoringCase('style'));
+    });
+
     _runDomTests(hostNode);
   });
 
@@ -67,7 +74,8 @@ void _runDomTests(HostNode hostNode) {
     });
 
     test('.contains and .append', () {
-      final html.Element another = html.document.createElement('div')..id = 'another';
+      final html.Element another = html.document.createElement('div')
+        ..id = 'another';
 
       expect(hostNode.contains(target), isTrue);
       expect(hostNode.contains(another), isFalse);
@@ -85,4 +93,3 @@ void _runDomTests(HostNode hostNode) {
     });
   });
 }
-
