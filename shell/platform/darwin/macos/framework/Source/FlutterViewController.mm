@@ -213,6 +213,13 @@ struct MouseState {
   return @[ _flutterView ];
 }
 
+/**
+ * Declares that the view uses a flipped coordinate system, consistent with Flutter conventions.
+ */
+- (BOOL)isFlipped {
+  return true;
+}
+
 @end
 
 #pragma mark - FlutterViewController implementation.
