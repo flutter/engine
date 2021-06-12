@@ -129,11 +129,9 @@ class ShadowDomHostNode implements HostNode {
   }
 
   @override
-  // TODO: implement node
   html.Node get node => _shadow;
 
   @override
-  // TODO: implement nodes
   List<html.Node> get nodes => _shadow.nodes;
 }
 
@@ -174,10 +172,8 @@ class ElementHostNode implements HostNode {
   }
 
   @override
-  // TODO: implement node
   html.Node get node => _element;
 
   @override
-  // TODO: implement nodes
   List<html.Node> get nodes => _element.nodes;
 }
