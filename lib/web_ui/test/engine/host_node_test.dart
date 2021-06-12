@@ -15,6 +15,7 @@ void main() {
 
 void testMain() {
   final html.Element rootNode = html.document.createElement('div');
+  html.document.body!.append(rootNode);
 
   group('ShadowDomHostNode', () {
     final HostNode hostNode = ShadowDomHostNode(rootNode);

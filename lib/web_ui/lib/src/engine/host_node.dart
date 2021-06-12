@@ -86,11 +86,23 @@ class ShadowDomHostNode implements HostNode {
   late html.ShadowRoot _shadow;
 
   /// Build a HostNode by attaching a [html.ShadowRoot] to the `root` element.
+  ///
+  /// This also calls [applyGlobalCssRulesToSheet], defined in dom_renderer.
   ShadowDomHostNode(html.Element root) {
     _shadow = root.attachShadow(<String, String>{
       'mode': 'open',
       'delegatesFocus': 'true',
     });
+
+    final html.StyleElement shadowRootStyleElement = html.StyleElement();
+    // The shadowRootStyleElement must be appended to the DOM, or its `sheet` will be null later.
+    _shadow.append(shadowRootStyleElement);
+
+    // TODO: Apply only rules for the shadow root
+    applyGlobalCssRulesToSheet(shadowRootStyleElement.sheet as html.CssStyleSheet, 
+      browserEngine: browserEngine,
+      hasAutofillOverlay: browserHasAutofillOverlay(),
+    );
   }
 
   @override
