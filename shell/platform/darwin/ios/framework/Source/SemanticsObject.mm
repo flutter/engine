@@ -151,7 +151,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 - (instancetype)initWithSemanticsObject:(SemanticsObject*)semanticsObject {
   self = [super initWithFrame:CGRectZero];
   if (self) {
-    self.semanticsObject = semanticsObject;
+    _semanticsObject = [semanticsObject retain];
     [semanticsObject.bridge->view() addSubview:self];
   }
   return self;
@@ -159,6 +159,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 
 - (void)dealloc {
   _container.get().semanticsObject = nil;
+  [_semanticsObject release];
   [self removeFromSuperview];
   [super dealloc];
 }
@@ -289,6 +290,11 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 }
 @end
 
+@interface SemanticsObject ()
+/** Should only be called in conjunction with setting child/parent relationship. */
+- (void)privateSetParent:(SemanticsObject*)parent;
+@end
+
 @implementation SemanticsObject {
   fml::scoped_nsobject<SemanticsObjectContainer> _container;
   NSMutableArray<SemanticsObject*>* _children;
@@ -326,7 +332,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 
 - (void)dealloc {
   for (SemanticsObject* child in _children) {
-    child.parent = nil;
+    [child privateSetParent:nil];
   }
   [_children removeAllObjects];
   [_children release];
@@ -340,12 +346,12 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 
 - (void)setChildren:(NSArray<SemanticsObject*>*)children {
   for (SemanticsObject* child in _children) {
-    child.parent = nil;
+    [child privateSetParent:nil];
   }
   [_children release];
   _children = [[NSMutableArray alloc] initWithArray:children];
   for (SemanticsObject* child in _children) {
-    child.parent = self;
+    [child privateSetParent:self];
   }
 }
 
@@ -405,8 +411,8 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 
 - (void)replaceChildAtIndex:(NSInteger)index withChild:(SemanticsObject*)child {
   SemanticsObject* oldChild = _children[index];
-  oldChild.parent = nil;
-  child.parent = self;
+  [oldChild privateSetParent:nil];
+  [child privateSetParent:self];
   [_children replaceObjectAtIndex:index withObject:child];
 }
 
@@ -431,6 +437,10 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 }
 
 #pragma mark - Semantic object private method
+
+- (void)privateSetParent:(SemanticsObject*)parent {
+  _parent = parent;
+}
 
 - (NSAttributedString*)createAttributedStringFromString:(NSString*)string
                                          withAttributes:
