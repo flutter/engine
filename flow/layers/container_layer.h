@@ -117,12 +117,12 @@ class MergedContainerLayer : public ContainerLayer {
 
   void Add(std::shared_ptr<Layer> layer) override;
 
- protected:
 #ifdef FLUTTER_ENABLE_DIFF_CONTEXT
   void DiffChildren(DiffContext* context,
                     const ContainerLayer* old_layer) override;
 #endif
 
+ protected:
   /**
    * @brief Returns the ContainerLayer used to hold all of the children of the
    * MergedContainerLayer. Note that this may not be the best layer to use
