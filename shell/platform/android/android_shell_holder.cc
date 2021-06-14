@@ -19,13 +19,16 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/message_loop.h"
+#include "flutter/fml/native_library.h"
 #include "flutter/fml/platform/android/jni_util.h"
 #include "flutter/lib/ui/painting/image_generator_registry.h"
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/run_configuration.h"
 #include "flutter/shell/common/thread_host.h"
+#include "flutter/shell/platform/android/android_image_generator.h"
 #include "flutter/shell/platform/android/context/android_context.h"
 #include "flutter/shell/platform/android/platform_view_android.h"
+#include "third_party/skia/include/ports/SkImageGeneratorNDK.h"
 
 namespace flutter {
 
@@ -137,8 +140,26 @@ AndroidShellHolder::AndroidShellHolder(
       }
     });
 
-    shell_->RegisterImageDecoder()
+#if defined(__ANDROID_API__) && __ANDROID_API__ >= 28
+    if (IsNDKImageDecoderAvailable()) {
+      shell_->RegisterImageDecoder(
+          [](sk_sp<SkData> buffer) {
+            auto generator = SkImageGeneratorNDK::MakeFromEncodeNDK(buffer);
+            return BuiltinSkiaImageGenerator::MakeFromGenerator(
+                std::move(generator));
+          },
+          -1);
+      FLM_LOG(INFO) << "Registered NDK image decoder (API level 30+)";
+    } else {
+      shell->RegisterImageDecoder(
+          [runner = task_runners.GetIOTaskRunner()](sk_sp<SkData> buffer) {
+            return AndroidImageGenerator::MakeFromData(buffer, runner);
+          },
+          -1);
+      FLM_LOG(INFO) << "Registered SDK image decoder (API level 28+)";
+    }
   }
+#endif
 
   platform_view_ = weak_platform_view;
   FML_DCHECK(platform_view_);
@@ -306,4 +327,14 @@ std::optional<RunConfiguration> AndroidShellHolder::BuildRunConfiguration(
   }
   return config;
 }
+
+bool AndroidShellHolder::IsNDKImageDecoderAvailable() {
+  auto jni_graphics = fml::NativeLibrary::Create("libjnigraphics.so");
+  if (!jni_graphics) {
+    return false;
+  }
+
+  return !!jni_graphics->ResolveSymbol("AImageDecoder_decodeImage");
+}
+
 }  // namespace flutter
