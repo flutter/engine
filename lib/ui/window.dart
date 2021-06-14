@@ -446,6 +446,11 @@ class SingletonFlutterWindow extends FlutterWindow {
   /// [Brightness.light].
   Brightness get platformBrightness => platformDispatcher.platformBrightness;
 
+  /// The setting indicating the system font of the host platform.
+  ///
+  /// {@macro dart.ui.window.accessorForwardWarning}
+  String? get systemFontFamily => platformDispatcher.systemFontFamily;
+
   /// A callback that is invoked whenever [platformBrightness] changes value.
   ///
   /// {@macro dart.ui.window.accessorForwardWarning}
