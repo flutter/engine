@@ -149,7 +149,7 @@ class UnknownImageGenerator : public ImageGenerator {
  public:
   UnknownImageGenerator() : info_(SkImageInfo::MakeUnknown()){};
   ~UnknownImageGenerator() = default;
-  const SkImageInfo& GetInfo() const { return info_; }
+  const SkImageInfo& GetInfo() { return info_; }
 
   unsigned int GetFrameCount() const { return 1; }
 
@@ -159,7 +159,7 @@ class UnknownImageGenerator : public ImageGenerator {
     return {std::nullopt, 0, SkCodecAnimation::DisposalMethod::kKeep};
   }
 
-  SkISize GetScaledDimensions(float scale) const {
+  SkISize GetScaledDimensions(float scale) {
     return SkISize::Make(info_.width(), info_.height());
   }
 
@@ -167,7 +167,7 @@ class UnknownImageGenerator : public ImageGenerator {
                  void* pixels,
                  size_t row_bytes,
                  unsigned int frame_index,
-                 std::optional<unsigned int> prior_frame) const {
+                 std::optional<unsigned int> prior_frame) {
     return false;
   };
 
