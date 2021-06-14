@@ -925,6 +925,9 @@ FLUTTER_ASSERT_ARC
 
 - (void)testInitialActiveViewCantAccessTextInputDelegate {
   textInputPlugin.activeView.textInputDelegate = engine;
+  // Before the framework sends the first text input configuration,
+  // the dummy "activeView" we use should never have access to
+  // its textInputDelegate.
   XCTAssertNil(textInputPlugin.activeView.textInputDelegate);
 }
 
