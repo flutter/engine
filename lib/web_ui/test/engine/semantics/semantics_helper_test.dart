@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 import 'dart:html' as html;
 
 import 'package:test/bootstrap/browser.dart';
@@ -58,7 +57,7 @@ void testMain() {
       bool shouldForwardToFramework =
           desktopSemanticsEnabler.tryEnableSemantics(event);
 
-      expect(shouldForwardToFramework, true);
+      expect(shouldForwardToFramework, isTrue);
 
       // Pointer events are not defined in webkit.
       if (browserEngine != BrowserEngine.webkit) {
@@ -66,7 +65,7 @@ void testMain() {
         shouldForwardToFramework =
             desktopSemanticsEnabler.tryEnableSemantics(event);
 
-        expect(shouldForwardToFramework, true);
+        expect(shouldForwardToFramework, isTrue);
       }
     });
 
@@ -79,7 +78,7 @@ void testMain() {
       bool shouldForwardToFramework =
           desktopSemanticsEnabler.tryEnableSemantics(event);
 
-      expect(shouldForwardToFramework, false);
+      expect(shouldForwardToFramework, isFalse);
     });
 
     test('disposes of the placeholder', () {
@@ -134,7 +133,7 @@ void testMain() {
         bool shouldForwardToFramework =
             mobileSemanticsEnabler.tryEnableSemantics(event);
 
-        expect(shouldForwardToFramework, true);
+        expect(shouldForwardToFramework, isTrue);
       });
 
       test('Enables semantics when receiving a relevant event', () {
