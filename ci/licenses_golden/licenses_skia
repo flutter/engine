@@ -1,4 +1,4 @@
-Signature: 07bfa8f2dc4492a5753f6a1023db74f5
+Signature: 3c3a090306d7e7b42b8543a5eae2f874
 
 UNUSED LICENSES:
 
@@ -670,6 +670,8 @@ FILE: ../../../third_party/skia/experimental/skottiekit/postamble.js
 FILE: ../../../third_party/skia/experimental/skottiekit/preamble.js
 FILE: ../../../third_party/skia/experimental/skottiekit/release.js
 FILE: ../../../third_party/skia/experimental/skottiekit/skottiekit/package.json
+FILE: ../../../third_party/skia/experimental/sktext/editor/Editor.cpp
+FILE: ../../../third_party/skia/experimental/sktext/editor/Editor.h
 FILE: ../../../third_party/skia/experimental/sktext/include/Layout.h
 FILE: ../../../third_party/skia/experimental/sktext/include/Text.h
 FILE: ../../../third_party/skia/experimental/sktext/include/Types.h
@@ -2071,6 +2073,7 @@ FILE: ../../../third_party/skia/gm/patheffects.cpp
 FILE: ../../../third_party/skia/gm/pathinterior.cpp
 FILE: ../../../third_party/skia/gm/rrect.cpp
 FILE: ../../../third_party/skia/gm/rrects.cpp
+FILE: ../../../third_party/skia/gm/runtimeimagefilter.cpp
 FILE: ../../../third_party/skia/gm/samplerstress.cpp
 FILE: ../../../third_party/skia/gm/simpleaaclip.cpp
 FILE: ../../../third_party/skia/gm/srcmode.cpp
@@ -5152,6 +5155,7 @@ FILE: ../../../third_party/skia/docs/examples/Typeface_Methods.cpp
 FILE: ../../../third_party/skia/docs/examples/Xor.cpp
 FILE: ../../../third_party/skia/docs/examples/incomplete.cpp
 FILE: ../../../third_party/skia/experimental/minimal_ios_mtl_skia_app/main.mm
+FILE: ../../../third_party/skia/experimental/sktext/editor/App.cpp
 FILE: ../../../third_party/skia/experimental/xform/SkShape.cpp
 FILE: ../../../third_party/skia/experimental/xform/SkShape.h
 FILE: ../../../third_party/skia/experimental/xform/SkXform.cpp
@@ -5245,8 +5249,11 @@ FILE: ../../../third_party/skia/gm/particles.cpp
 FILE: ../../../third_party/skia/gm/runtimeeffectimage.cpp
 FILE: ../../../third_party/skia/include/gpu/gl/egl/GrGLMakeEGLInterface.h
 FILE: ../../../third_party/skia/include/gpu/gl/glx/GrGLMakeGLXInterface.h
+FILE: ../../../third_party/skia/include/sksl/DSLSymbols.h
 FILE: ../../../third_party/skia/modules/canvaskit/paragraph_bindings_gen.cpp
 FILE: ../../../third_party/skia/src/core/SkYUVAInfoLocation.h
+FILE: ../../../third_party/skia/src/effects/imagefilters/SkRuntimeImageFilter.cpp
+FILE: ../../../third_party/skia/src/effects/imagefilters/SkRuntimeImageFilter.h
 FILE: ../../../third_party/skia/src/gpu/GrDstProxyView.h
 FILE: ../../../third_party/skia/src/gpu/GrInnerFanTriangulator.h
 FILE: ../../../third_party/skia/src/gpu/GrPersistentCacheUtils.cpp
@@ -5764,6 +5771,7 @@ FILE: ../../../third_party/skia/experimental/ngatoy/Fake.cpp
 FILE: ../../../third_party/skia/experimental/ngatoy/Fake.h
 FILE: ../../../third_party/skia/experimental/ngatoy/SortKey.h
 FILE: ../../../third_party/skia/experimental/ngatoy/ngatoy.cpp
+FILE: ../../../third_party/skia/experimental/ngatoy/ngatypes.h
 FILE: ../../../third_party/skia/gm/destcolor.cpp
 FILE: ../../../third_party/skia/gm/dsl_processor_test.cpp
 FILE: ../../../third_party/skia/include/core/SkStringView.h
@@ -5783,6 +5791,8 @@ FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathCurveTessellator.cpp
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathCurveTessellator.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathStencilCoverOp.cpp
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathStencilCoverOp.h
+FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathTessellateOp.cpp
+FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathTessellateOp.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathTessellator.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathWedgeTessellator.cpp
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathWedgeTessellator.h
@@ -5797,6 +5807,7 @@ FILE: ../../../third_party/skia/src/sksl/dsl/DSLFunction.cpp
 FILE: ../../../third_party/skia/src/sksl/dsl/DSLLayout.cpp
 FILE: ../../../third_party/skia/src/sksl/dsl/DSLRuntimeEffects.cpp
 FILE: ../../../third_party/skia/src/sksl/dsl/DSLStatement.cpp
+FILE: ../../../third_party/skia/src/sksl/dsl/DSLSymbols.cpp
 FILE: ../../../third_party/skia/src/sksl/dsl/priv/DSLFPs.cpp
 FILE: ../../../third_party/skia/src/sksl/dsl/priv/DSLFPs.h
 FILE: ../../../third_party/skia/src/sksl/dsl/priv/DSL_priv.h
