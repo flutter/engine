@@ -291,8 +291,12 @@ Future<void> _onBeginFrameDone() native 'OnBeginFrameDone';
 @pragma('vm:entry-point')
 void hooksTests() {
   void test(String name, VoidCallback testFunction) {
-    print(name);
-    testFunction();
+    try {
+      testFunction();
+    } catch (e) {
+      print('Test "$name" failed!');
+      rethrow;
+    }
   }
 
   void expectEquals(Object? value, Object? expected) {
