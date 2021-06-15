@@ -320,9 +320,9 @@ def EnsureJavaTestsAreBuilt(android_out_dir):
 
   # Attempt running Ninja if the out directory exists.
   # We don't want to blow away any custom GN args the caller may have already set.
-  if os.path.exists(android_out_dir):
-    RunCmd(ninja_command, cwd=buildroot_dir)
-    return
+  #if os.path.exists(android_out_dir):
+  #  RunCmd(ninja_command, cwd=buildroot_dir)
+  #  return
 
   assert android_out_dir != "out/android_debug_unopt", "%s doesn't exist. Run GN to generate the directory first" % android_out_dir
 
