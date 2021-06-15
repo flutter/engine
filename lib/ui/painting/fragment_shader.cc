@@ -1,4 +1,4 @@
-// Copyright 2020 The Flutter Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -23,11 +23,18 @@ static void FragmentShader_constructor(Dart_NativeArguments args) {
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, FragmentShader);
 
-#define FOR_EACH_BINDING(V)          \
+#define FOR_EACH_BINDING(V) \
   V(FragmentShader, init)   \
   V(FragmentShader, update)
 
 FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
+
+void FragmentShader::RegisterNatives(tonic::DartLibraryNatives* natives) {
+  natives->Register(
+      {{"FragmentShader_constructor", FragmentShader_constructor, 1, true},
+       FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
+}
+
 
 sk_sp<SkShader> FragmentShader::shader(SkSamplingOptions sampling) {
   return shader_;
@@ -66,17 +73,11 @@ void FragmentShader::update(const tonic::Float32List& uniforms, Dart_Handle chil
       false);
 }
 
-void FragmentShader::RegisterNatives(tonic::DartLibraryNatives* natives) {
-  natives->Register(
-      {{"FragmentShader_constructor", FragmentShader_constructor, 1, true},
-       FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
-}
-
 fml::RefPtr<FragmentShader> FragmentShader::Create() {
   return fml::MakeRefCounted<FragmentShader>();
 }
 
-FragmentShader::FragmentShader() {}
+FragmentShader::FragmentShader() = default;
 
 FragmentShader::~FragmentShader() = default;
 
