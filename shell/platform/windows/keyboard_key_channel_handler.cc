@@ -32,6 +32,9 @@ static constexpr char kKeyDown[] = "keydown";
 // emitting a warning on the console about unhandled events.
 static constexpr int kMaxPendingEvents = 1000;
 
+// Chromium uses this bit in scancode to mark "extended" keys.
+static constexpr int kScancodeExtended = 0xe000;
+
 // Re-definition of the modifiers for compatibility with the Flutter framework.
 // These have to be in sync with the framework's RawKeyEventDataWindows
 // modifiers definition.
@@ -119,7 +122,7 @@ void KeyboardKeyChannelHandler::KeyboardHook(
   rapidjson::Document event(rapidjson::kObjectType);
   auto& allocator = event.GetAllocator();
   event.AddMember(kKeyCodeKey, key, allocator);
-  event.AddMember(kScanCodeKey, scancode, allocator);
+  event.AddMember(kScanCodeKey, scancode | (extended ? kScancodeExtended : 0), allocator);
   event.AddMember(kCharacterCodePointKey, character, allocator);
   event.AddMember(kKeyMapKey, kWindowsKeyMap, allocator);
   event.AddMember(kModifiersKey, GetModsForKeyState(), allocator);
