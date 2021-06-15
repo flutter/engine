@@ -253,6 +253,13 @@ static UITextContentType ToUITextContentType(NSArray<NSString*>* hints) {
   return hints[0];
 }
 
+static BOOL isKeyboardEnabled(NSDictionary* type) {
+  NSString* inputType = type[@"name"];
+  if ([inputType isEqualToString:@"TextInputType.none"])
+    return NO;
+  return YES;
+}
+
 // Retrieves the autofillId from an input field's configuration. Returns
 // nil if the field is nil and the input field is not a password field.
 static NSString* autofillIdFromDictionary(NSDictionary* dictionary) {
@@ -508,6 +515,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 @property(nonatomic, assign) CGRect markedRect;
 @property(nonatomic) BOOL isVisibleToAutofill;
 @property(nonatomic, assign) BOOL accessibilityEnabled;
+@property(nonatomic, assign) BOOL keyboardEnabled;
 
 - (void)setEditableTransform:(NSArray*)matrix;
 @end
@@ -549,6 +557,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     _enablesReturnKeyAutomatically = NO;
     _keyboardAppearance = UIKeyboardAppearanceDefault;
     _keyboardType = UIKeyboardTypeDefault;
+    _keyboardEnabled = YES;
     _returnKeyType = UIReturnKeyDone;
     _secureTextEntry = NO;
     _accessibilityEnabled = NO;
@@ -580,6 +589,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 
   self.secureTextEntry = [configuration[kSecureTextEntry] boolValue];
   self.keyboardType = ToUIKeyboardType(inputType);
+  self.keyboardEnabled = isKeyboardEnabled(inputType);
   self.returnKeyType = ToUIReturnKeyType(configuration[kInputAction]);
   self.autocapitalizationType = ToUITextAutoCapitalizationType(configuration);
 
@@ -1451,6 +1461,10 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 }
 
 - (void)showTextInput {
+  if (!_activeView.keyboardEnabled) {
+    [self hideTextInput];
+    return;
+  }
   _activeView.textInputDelegate = _textInputDelegate;
   [self addToInputParentViewIfNeeded:_activeView];
   // Adds a delay to prevent the text view from receiving accessibility
