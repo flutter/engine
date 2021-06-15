@@ -307,7 +307,7 @@ def EnsureDebugUnoptSkyPackagesAreBuilt():
 
   #RunCmd(gn_command, cwd=buildroot_dir)
   #RunCmd(ninja_command, cwd=buildroot_dir)
-  assert android_out_dir != "out/host_debug_unopt", "%s doesn't exist. Run GN to generate the directory first" % variant_out_dir
+  assert os.path.exists(variant_out_dir), "%s doesn't exist. Run GN to generate the directory first" % variant_out_dir
 
 
 def EnsureJavaTestsAreBuilt(android_out_dir):
