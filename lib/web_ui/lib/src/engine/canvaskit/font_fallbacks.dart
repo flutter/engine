@@ -7,7 +7,7 @@ import 'dart:convert';
 import 'dart:html' as html;
 import 'dart:typed_data';
 
-import 'package:ui/src/engine.dart' show sendFontChangeMessage;
+import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
 import '../util.dart';
@@ -70,7 +70,14 @@ class FontFallbackData {
 
   final Map<String, int> fontFallbackCounts = <String, int>{};
 
-  final Map<String, Set<int>> _codeUnitsToCheck = <String, Set<int>>{};
+  /// A list of code units to check against the global fallback fonts.
+  final Set<int> _codeUnitsToCheckAgainstFallbackFonts = <int>{};
+
+  /// This is [true] if we have scheduled a check for missing code units.
+  ///
+  /// We only do this once a frame, since checking if a font supports certain
+  /// code units is very expensive.
+  bool _scheduledCodeUnitCheck = false;
 
   /// Determines if the given [text] contains any code points which are not
   /// supported by the current set of fonts.
@@ -97,7 +104,9 @@ class FontFallbackData {
     // of our global fallback fonts. We cache the set of code units covered by
     // the global fallback fonts since this set is growing monotonically over
     // the lifetime of the app.
-    if (_checkIfGlobalFallbacksSupport(codeUnits)) {
+    codeUnits.removeWhere(
+        (int codeUnit) => knownCoveredCodeUnits.contains(codeUnit));
+    if (codeUnits.isEmpty) {
       return;
     }
 
@@ -110,18 +119,17 @@ class FontFallbackData {
       return;
     }
 
-    List<SkTypeface> typefaces = <SkTypeface>[];
+    List<SkFont> fonts = <SkFont>[];
     for (var font in fontFamilies) {
-      List<SkTypeface>? typefacesForFamily =
-          skiaFontCollection.familyToTypefaceMap[font];
+      List<SkFont>? typefacesForFamily =
+          skiaFontCollection.familyToFontMap[font];
       if (typefacesForFamily != null) {
-        typefaces.addAll(typefacesForFamily);
+        fonts.addAll(typefacesForFamily);
       }
     }
     List<bool> codeUnitsSupported = List<bool>.filled(codeUnits.length, false);
     String testString = String.fromCharCodes(codeUnits);
-    for (SkTypeface typeface in typefaces) {
-      SkFont font = SkFont(typeface);
+    for (SkFont font in fonts) {
       Uint8List glyphs = font.getGlyphIDs(testString);
       assert(glyphs.length == codeUnitsSupported.length);
       for (int i = 0; i < glyphs.length; i++) {
@@ -136,7 +144,13 @@ class FontFallbackData {
           missingCodeUnits.add(codeUnits[i]);
         }
       }
-      findFontsForMissingCodeunits(missingCodeUnits);
+      _codeUnitsToCheckAgainstFallbackFonts.addAll(missingCodeUnits);
+      if (!_scheduledCodeUnitCheck) {
+        _scheduledCodeUnitCheck = true;
+        // ignore: invalid_use_of_visible_for_testing_member
+        EnginePlatformDispatcher.instance.rasterizer!
+            .addPostFrameCallback(_ensureFallbackFonts);
+      }
     }
   }
 
@@ -145,44 +159,30 @@ class FontFallbackData {
     return codepoint < 32 || (codepoint > 127 && codepoint < 160);
   }
 
-  /// Returns `true` if every code unit in [codeUnits] is covered by a global
-  /// fallback font.
-  ///
-  /// Calling this method has 2 side effects:
-  ///   1. Updating the cache of known covered code units in the
-  ///      [FontFallbackData] instance.
-  ///   2. Removing known covered code units from [codeUnits]. When the list
-  ///      is used again in [_ensureFontsSupportText] it will only contain code
-  ///      units which aren't already known to be covered.
-  bool _checkIfGlobalFallbacksSupport(List<int> codeUnits) {
-    final FontFallbackData fallbackData = FontFallbackData.instance;
-    codeUnits.removeWhere((int codeUnit) =>
-        fallbackData.knownCoveredCodeUnits.contains(codeUnit));
-    if (codeUnits.isEmpty) {
-      return true;
-    }
-
+  /// Checks
+  void _ensureFallbackFonts() {
+    _scheduledCodeUnitCheck = false;
     // We don't know if the remaining code units are covered by our fallback
     // fonts. Check them and update the cache.
+    List<int> codeUnits = _codeUnitsToCheckAgainstFallbackFonts.toList();
+    _codeUnitsToCheckAgainstFallbackFonts.clear();
     List<bool> codeUnitsSupported = List<bool>.filled(codeUnits.length, false);
     String testString = String.fromCharCodes(codeUnits);
 
-    for (String font in fallbackData.globalFontFallbacks) {
-      List<SkTypeface>? typefacesForFamily =
-          skiaFontCollection.familyToTypefaceMap[font];
-      if (typefacesForFamily == null) {
+    for (String font in globalFontFallbacks) {
+      List<SkFont>? fontsForFamily = skiaFontCollection.familyToFontMap[font];
+      if (fontsForFamily == null) {
         printWarning('A fallback font was registered but we '
             'cannot retrieve the typeface for it.');
         continue;
       }
-      for (SkTypeface typeface in typefacesForFamily) {
-        SkFont font = SkFont(typeface);
+      for (SkFont font in fontsForFamily) {
         Uint8List glyphs = font.getGlyphIDs(testString);
         assert(glyphs.length == codeUnitsSupported.length);
         for (int i = 0; i < glyphs.length; i++) {
           bool codeUnitSupported = glyphs[i] != 0;
           if (codeUnitSupported) {
-            fallbackData.knownCoveredCodeUnits.add(codeUnits[i]);
+            knownCoveredCodeUnits.add(codeUnits[i]);
           }
           codeUnitsSupported[i] |=
               codeUnitSupported || _isControlCode(codeUnits[i]);
@@ -200,21 +200,19 @@ class FontFallbackData {
       }
 
       if (!keepGoing) {
-        // Every code unit is supported, clear [codeUnits] and return `true`.
-        codeUnits.clear();
-        return true;
+        return;
       }
     }
 
     // If we reached here, then there are some code units which aren't covered
     // by the global fallback fonts. Remove the ones which were covered and
-    // return false.
+    // try to find fallback fonts which cover them.
     for (int i = codeUnits.length - 1; i >= 0; i--) {
       if (codeUnitsSupported[i]) {
         codeUnits.removeAt(i);
       }
     }
-    return false;
+    findFontsForMissingCodeunits(codeUnits);
   }
 
   /// Returns `true` if every code unit in [codeUnits] is known to not have any
@@ -223,9 +221,8 @@ class FontFallbackData {
   /// This method has a side effect of removing every code unit from [codeUnits]
   /// which is known not to have a fallback font which covers it.
   bool _checkIfNoFallbackFontSupports(List<int> codeUnits) {
-    final FontFallbackData fallbackData = FontFallbackData.instance;
-    codeUnits.removeWhere((int codeUnit) =>
-        fallbackData.codeUnitsWithNoKnownFont.contains(codeUnit));
+    codeUnits.removeWhere(
+        (int codeUnit) => codeUnitsWithNoKnownFont.contains(codeUnit));
     return codeUnits.isEmpty;
   }
 
