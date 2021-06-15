@@ -8,8 +8,8 @@
 #include "flutter/shell/platform/common/json_message_codec.h"
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
-#include "flutter/shell/platform/windows/flutter_windows_view.h"
 #include "flutter/shell/platform/windows/flutter_windows_texture_registrar.h"
+#include "flutter/shell/platform/windows/flutter_windows_view.h"
 #include "flutter/shell/platform/windows/testing/engine_modifier.h"
 #include "flutter/shell/platform/windows/testing/mock_window_binding_handler.h"
 
@@ -85,7 +85,9 @@ std::unique_ptr<FlutterWindowsEngine> GetTestEngine() {
 
   // This mock handles key events sent through the embedder API,
   // and records it in `key_event_logs`.
-  modifier.embedder_api().SendKeyEvent = [](FLUTTER_API_SYMBOL(FlutterEngine) engine, const FlutterKeyEvent* event, FlutterKeyEventCallback callback, void* user_data) {
+  modifier.embedder_api().SendKeyEvent =
+      [](FLUTTER_API_SYMBOL(FlutterEngine) engine, const FlutterKeyEvent* event,
+         FlutterKeyEventCallback callback, void* user_data) {
         key_event_logs.push_back(kKeyEventFromEmbedder);
         if (callback != nullptr) {
           callback(test_response, user_data);
@@ -116,16 +118,22 @@ std::unique_ptr<FlutterWindowsEngine> GetTestEngine() {
   // The following mocks allows RunWithEntrypoint to be run, which creates a
   // non-empty FlutterEngine and enables SendKeyEvent.
 
-  modifier.embedder_api().Run = [](
-                size_t version, const FlutterRendererConfig* config,
-                const FlutterProjectArgs* args, void* user_data,
-                FLUTTER_API_SYMBOL(FlutterEngine) * engine_out) {
+  modifier.embedder_api().Run =
+      [](size_t version, const FlutterRendererConfig* config,
+         const FlutterProjectArgs* args, void* user_data,
+         FLUTTER_API_SYMBOL(FlutterEngine) * engine_out) {
         *engine_out = reinterpret_cast<FLUTTER_API_SYMBOL(FlutterEngine)>(1);
 
         return kSuccess;
       };
-  modifier.embedder_api().UpdateLocales = [](auto engine, const FlutterLocale** locales, size_t locales_count) { return kSuccess; };
-  modifier.embedder_api().SendWindowMetricsEvent = [](auto engine, const FlutterWindowMetricsEvent* event) { return kSuccess; };
+  modifier.embedder_api().UpdateLocales =
+      [](auto engine, const FlutterLocale** locales, size_t locales_count) {
+        return kSuccess;
+      };
+  modifier.embedder_api().SendWindowMetricsEvent =
+      [](auto engine, const FlutterWindowMetricsEvent* event) {
+        return kSuccess;
+      };
   modifier.embedder_api().Shutdown = [](auto engine) { return kSuccess; };
 
   engine->RunWithEntrypoint(nullptr);

@@ -122,7 +122,8 @@ void KeyboardKeyChannelHandler::KeyboardHook(
   rapidjson::Document event(rapidjson::kObjectType);
   auto& allocator = event.GetAllocator();
   event.AddMember(kKeyCodeKey, key, allocator);
-  event.AddMember(kScanCodeKey, scancode | (extended ? kScancodeExtended : 0), allocator);
+  event.AddMember(kScanCodeKey, scancode | (extended ? kScancodeExtended : 0),
+                  allocator);
   event.AddMember(kCharacterCodePointKey, character, allocator);
   event.AddMember(kKeyMapKey, kWindowsKeyMap, allocator);
   event.AddMember(kModifiersKey, GetModsForKeyState(), allocator);
