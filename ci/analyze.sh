@@ -106,7 +106,6 @@ analyze \
   "$FLUTTER_DIR/testing/smoke_test_failure"
 
 echo "Analyzing testing/dart..."
-"$FLUTTER_DIR/tools/gn" --unoptimized
 (cd "$FLUTTER_DIR/testing/dart" && "$PUB" get --offline)
 analyze \
   --packages="$FLUTTER_DIR/testing/dart/.dart_tool/package_config.json" \
