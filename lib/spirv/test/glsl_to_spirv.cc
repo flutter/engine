@@ -8,7 +8,7 @@
 #include <iostream>
 #include <vector>
 
-#include "third_party/swiftshader/third_party/SPIRV-Tools/include/spirv-tools/libspirv.hpp"
+#include "third_party/shaderc/libshaderc/include/shaderc/shaderc.hpp"
 
 
 namespace fs = std::filesystem;
@@ -34,23 +34,28 @@ int main(int argc, const char* argv[]) {
   input.read(buf.data(), size);
   input.close();
 
-  spvtools::SpirvTools tools(SPV_ENV_UNIVERSAL_1_0);
-  std::vector<uint32_t> assembled_spirv;
-  if (!tools.Assemble(buf.data(), size, &assembled_spirv)) {
-    std::cerr << "Failed to assemble " << argv[1] << std::endl;
-    return -1;
-  }
+  shaderc::Compiler compiler();
+  shaderc::SpvCompilationResult result = compiler->CompileGlslToSpv(
+    buf.data(),
+    shaderc_glsl_default_fragment_shader,
+    argv[1]);
+  
+  std::vector<uint32_t> spirv = result.cbegin();
+  // if (!compiler.Com(buf.data(), size, &spirv)) {
+  //   std::cerr << "Failed to assemble " << argv[1] << std::endl;
+  //   return -1;
+  // }
 
-  std::fstream output;
-  output.open(argv[2], std::fstream::out | std::fstream::trunc);
-  if (!output.is_open()) {
-    output.close();
-    std::cerr << "failed to open output file" << std::endl;
-    std::abort();
-  }
+  // std::fstream output;
+  // output.open(argv[2], std::fstream::out | std::fstream::trunc);
+  // if (!output.is_open()) {
+  //   output.close();
+  //   std::cerr << "failed to open output file" << std::endl;
+  //   std::abort();
+  // }
 
-  output.write(reinterpret_cast<const char*>(assembled_spirv.data()),
-               sizeof(uint32_t) * assembled_spirv.size());
-  output.close();
+  // output.write(reinterpret_cast<const char*>(assembled_spirv.data()),
+  //              sizeof(uint32_t) * assembled_spirv.size());
+  // output.close();
   return 0;
 }

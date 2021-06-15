@@ -13,6 +13,7 @@
 namespace fs = std::filesystem;
 
 int main(int argc, const char* argv[]) {
+  std::cerr << "argv[0]" << argv[0] << "argv[1]" << argv[1] << "argv[1]" << argv[2] << std::endl;
   if (argc != 3) {
     std::cerr << "Invalid argument count." << std::endl;
     return -1;
