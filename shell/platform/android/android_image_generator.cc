@@ -164,7 +164,8 @@ std::unique_ptr<ImageGenerator> AndroidImageGenerator::MakeFromData(
     fml::RefPtr<fml::TaskRunner> task_runner) {
   auto* generator = new AndroidImageGenerator(std::move(data));
 
-  TaskRunner::RunNowOrPostTask([generator]() { generator->DecodeImage(); });
+  fml::TaskRunner::RunNowOrPostTask(
+      task_runner, [generator]() { generator->DecodeImage(); });
 
   if (generator->IsValidImageData()) {
     return std::unique_ptr<AndroidImageGenerator>(generator);

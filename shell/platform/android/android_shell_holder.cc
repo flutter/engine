@@ -140,26 +140,24 @@ AndroidShellHolder::AndroidShellHolder(
       }
     });
 
-#if defined(__ANDROID_API__) && __ANDROID_API__ >= 28
     if (IsNDKImageDecoderAvailable()) {
       shell_->RegisterImageDecoder(
           [](sk_sp<SkData> buffer) {
-            auto generator = SkImageGeneratorNDK::MakeFromEncodeNDK(buffer);
+            auto generator = SkImageGeneratorNDK::MakeFromEncodedNDK(buffer);
             return BuiltinSkiaImageGenerator::MakeFromGenerator(
                 std::move(generator));
           },
           -1);
-      FLM_LOG(INFO) << "Registered NDK image decoder (API level 30+)";
+      FML_DLOG(INFO) << "Registered NDK image decoder (API level 30+)";
     } else {
-      shell->RegisterImageDecoder(
+      shell_->RegisterImageDecoder(
           [runner = task_runners.GetIOTaskRunner()](sk_sp<SkData> buffer) {
             return AndroidImageGenerator::MakeFromData(buffer, runner);
           },
           -1);
-      FLM_LOG(INFO) << "Registered SDK image decoder (API level 28+)";
+      FML_DLOG(INFO) << "Registered SDK image decoder (API level 28+)";
     }
   }
-#endif
 
   platform_view_ = weak_platform_view;
   FML_DCHECK(platform_view_);

@@ -411,7 +411,7 @@ public class FlutterJNI {
     flutterUiDisplayListeners.remove(listener);
   }
 
-  native void nativeImageHeaderCallback(long imageGeneratorPointer, int width, int height);
+  public static native void nativeImageHeaderCallback(long imageGeneratorPointer, int width, int height);
 
   /**
    * Called by native as a fallback method of image decoding. There are other ways to decode images
