@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
@@ -56,6 +56,7 @@ def RunCmd(cmd, codepoints, fail=False):
     stdout=subprocess.PIPE,
     stdin=subprocess.PIPE,
     stderr=subprocess.PIPE,
+    universal_newlines=True,
     cwd=SRC_DIR
   )
   stdout_data, stderr_data = p.communicate(input=' '.join(codepoints))

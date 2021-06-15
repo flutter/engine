@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
@@ -102,7 +102,7 @@ def main():
       raise
 
   if not os.path.exists(dbg_prefix_base):
-    print 'Unable to create directory: %s.' % dbg_prefix_base
+    print('Unable to create directory: %s.' % dbg_prefix_base)
     return 1
 
   dbg_suffix = ''
