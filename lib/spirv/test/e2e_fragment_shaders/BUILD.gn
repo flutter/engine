@@ -4,21 +4,21 @@
 import("//build/compiled_action.gni")
 import("//flutter/testing/testing.gni")
 
-if (enable_unittests) {
-  compiled_action_foreach("spirv_compile_glsl_single_op_shaders") {
-    tool = "//flutter/lib/spirv/test:glsl_to_spirv"
+# if (enable_unittests) {
+#   compiled_action_foreach("spirv_compile_glsl_single_op_shaders") {
+#     tool = "//flutter/lib/spirv/test:glsl_to_spirv"
 
-    sources = [
-      "op_type_bool.glsl",
-      "op_type_float.glsl",
-      "op_type_void.glsl"
-    ]
+#     sources = [
+#       "op_type_bool.glsl",
+#       "op_type_float.glsl",
+#       "op_type_void.glsl"
+#     ]
 
-    outputs = [ "$target_gen_dir/{{source_name_part}}.spv" ]
+#     outputs = [ "$target_gen_dir/{{source_name_part}}.spv" ]
 
-    args = [
-      "{{source}}",
-      rebase_path(target_gen_dir, root_build_dir) + "/{{source_name_part}}.spv",
-    ]
-  }
-}
+#     args = [
+#       "{{source}}",
+#       rebase_path(target_gen_dir, root_build_dir) + "/{{source_name_part}}.spv",
+#     ]
+#   }
+# }

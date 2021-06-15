@@ -7,6 +7,7 @@ import argparse
 import subprocess
 
 def main():
+<<<<<<< HEAD:lib/spirv/test/e2e_fragment_shaders/assemble.py
   parser = argparse.ArgumentParser()
   parser.add_argument(
       'input',
@@ -24,6 +25,26 @@ def main():
     args.output,
     args.input,
   ])
+=======
+  # parser = argparse.ArgumentParser()
+  # parser.add_argument(
+  #     'input',
+  #     type=pathlib.Path,
+  #     required=True,
+  #     help='path to input SPIR-V assembly file')
+  # parser.add_argument(
+  #     'output',
+  #     type=pathlib.Path,
+  #     required=True,
+  #     help='path to output SPIR-V binary file')
+  # args = parser.parse_args()
+  # subprocess.run([
+  #   'spirv-as',
+  #   '-o',
+  #   args.output,
+  #   args.input,
+  # ])
+>>>>>>> testing shaderc:lib/spirv/test/exception_shaders/assemble.py
 
 if __name__ == '__main__':
   main()

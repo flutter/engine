@@ -15,13 +15,13 @@ if (enable_unittests) {
     ]
   }
 
-  # executable("glsl_to_spirv") {
-  #   sources = [ "glsl_to_spirv.cc" ]
+  executable("glsl_to_spirv") {
+    sources = [ "glsl_to_spirv.cc" ]
 
-  #   configs += [ "//third_party/shaderc_flutter:shaderc_util_config" ]
+    configs += [ "//third_party/shaderc_flutter:shaderc_util_config" ]
 
-  #   deps = [
-  #     "//third_party/shaderc_flutter",
-  #   ]
-  # }
+    deps = [
+      "//third_party/shaderc_flutter",
+    ]
+  }
 }
