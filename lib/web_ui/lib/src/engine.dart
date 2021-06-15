@@ -204,8 +204,9 @@ export 'engine/canvaskit/shader.dart';
 
 export 'engine/canvaskit/skia_object_cache.dart';
 
-import 'engine/canvaskit/surface.dart';
 export 'engine/canvaskit/surface.dart';
+
+export 'engine/canvaskit/surface_factory.dart';
 
 export 'engine/canvaskit/text.dart';
 
@@ -223,6 +224,7 @@ part 'engine/dom_renderer.dart';
 part 'engine/engine_canvas.dart';
 part 'engine/font_change_util.dart';
 part 'engine/frame_reference.dart';
+part 'engine/host_node.dart';
 part 'engine/html/backdrop_filter.dart';
 part 'engine/html/canvas.dart';
 part 'engine/html/clip.dart';

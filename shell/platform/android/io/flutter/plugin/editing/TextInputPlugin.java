@@ -12,6 +12,7 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.InputType;
 import android.util.SparseArray;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewStructure;
 import android.view.WindowInsets;
@@ -25,7 +26,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import io.flutter.Log;
-import io.flutter.embedding.android.AndroidKeyProcessor;
+import io.flutter.embedding.android.KeyboardManager;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel.TextEditState;
 import io.flutter.plugin.platform.PlatformViewsController;
@@ -48,7 +49,6 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
   @NonNull private PlatformViewsController platformViewsController;
   @Nullable private Rect lastClientRect;
   private ImeSyncDeferringInsetsCallback imeSyncCallback;
-  private AndroidKeyProcessor keyProcessor;
 
   // Initialize the "last seen" text editing values to a non-null value.
   private TextEditState mLastKnownFrameworkTextEditingState;
@@ -102,7 +102,11 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
 
           @Override
           public void hide() {
-            hideTextInput(mView);
+            if (inputTarget.type == InputTarget.Type.HC_PLATFORM_VIEW) {
+              notifyViewExited();
+            } else {
+              hideTextInput(mView);
+            }
           }
 
           @Override
@@ -129,8 +133,8 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
           }
 
           @Override
-          public void setPlatformViewClient(int platformViewId) {
-            setPlatformViewTextInputClient(platformViewId);
+          public void setPlatformViewClient(int platformViewId, boolean usesVirtualDisplay) {
+            setPlatformViewTextInputClient(platformViewId, usesVirtualDisplay);
           }
 
           @Override
@@ -175,15 +179,6 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     return imeSyncCallback;
   }
 
-  @NonNull
-  public AndroidKeyProcessor getKeyEventProcessor() {
-    return keyProcessor;
-  }
-
-  public void setKeyEventProcessor(AndroidKeyProcessor processor) {
-    keyProcessor = processor;
-  }
-
   /**
    * Use the current platform view input connection until unlockPlatformViewInputConnection is
    * called.
@@ -198,7 +193,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
    * display to another.
    */
   public void lockPlatformViewInputConnection() {
-    if (inputTarget.type == InputTarget.Type.PLATFORM_VIEW) {
+    if (inputTarget.type == InputTarget.Type.VD_PLATFORM_VIEW) {
       isInputConnectionLocked = true;
     }
   }
@@ -286,13 +281,18 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     return textType;
   }
 
-  public InputConnection createInputConnection(View view, EditorInfo outAttrs) {
+  public InputConnection createInputConnection(
+      View view, KeyboardManager keyboardManager, EditorInfo outAttrs) {
     if (inputTarget.type == InputTarget.Type.NO_TARGET) {
       lastInputConnection = null;
       return null;
     }
 
-    if (inputTarget.type == InputTarget.Type.PLATFORM_VIEW) {
+    if (inputTarget.type == InputTarget.Type.HC_PLATFORM_VIEW) {
+      return null;
+    }
+
+    if (inputTarget.type == InputTarget.Type.VD_PLATFORM_VIEW) {
       if (isInputConnectionLocked) {
         return lastInputConnection;
       }
@@ -330,7 +330,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
 
     InputConnectionAdaptor connection =
         new InputConnectionAdaptor(
-            view, inputTarget.id, textInputChannel, keyProcessor, mEditable, outAttrs);
+            view, inputTarget.id, textInputChannel, keyboardManager, mEditable, outAttrs);
     outAttrs.initialSelStart = mEditable.getSelectionStart();
     outAttrs.initialSelEnd = mEditable.getSelectionEnd();
 
@@ -350,9 +350,12 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
    * input connection.
    */
   public void clearPlatformViewClient(int platformViewId) {
-    if (inputTarget.type == InputTarget.Type.PLATFORM_VIEW && inputTarget.id == platformViewId) {
+    if ((inputTarget.type == InputTarget.Type.VD_PLATFORM_VIEW
+            || inputTarget.type == InputTarget.Type.HC_PLATFORM_VIEW)
+        && inputTarget.id == platformViewId) {
       inputTarget = new InputTarget(InputTarget.Type.NO_TARGET, 0);
-      hideTextInput(mView);
+      notifyViewExited();
+      mImm.hideSoftInputFromWindow(mView.getApplicationWindowToken(), 0);
       mImm.restartInput(mView);
       mRestartInputPending = false;
     }
@@ -369,8 +372,8 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
 
   private void hideTextInput(View view) {
     notifyViewExited();
-    // Note: a race condition may lead to us hiding the keyboard here just after a platform view has
-    // shown it.
+    // Note: when a virtual display is used, a race condition may lead to us hiding the keyboard
+    // here just after a platform view has shown it.
     // This can only potentially happen when switching focus from a Flutter text field to a platform
     // view's text
     // field(by text field here I mean anything that keeps the keyboard open).
@@ -401,16 +404,20 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     mEditable.addEditingStateListener(this);
   }
 
-  private void setPlatformViewTextInputClient(int platformViewId) {
-    // We need to make sure that the Flutter view is focused so that no imm operations get short
-    // circuited.
-    // Not asking for focus here specifically manifested in a but on API 28 devices where the
-    // platform view's
-    // request to show a keyboard was ignored.
-    mView.requestFocus();
-    inputTarget = new InputTarget(InputTarget.Type.PLATFORM_VIEW, platformViewId);
-    mImm.restartInput(mView);
-    mRestartInputPending = false;
+  private void setPlatformViewTextInputClient(int platformViewId, boolean usesVirtualDisplay) {
+    if (usesVirtualDisplay) {
+      // We need to make sure that the Flutter view is focused so that no imm operations get short
+      // circuited.
+      // Not asking for focus here specifically manifested in a but on API 28 devices where the
+      // platform view's request to show a keyboard was ignored.
+      mView.requestFocus();
+      inputTarget = new InputTarget(InputTarget.Type.VD_PLATFORM_VIEW, platformViewId);
+      mImm.restartInput(mView);
+      mRestartInputPending = false;
+    } else {
+      inputTarget = new InputTarget(InputTarget.Type.HC_PLATFORM_VIEW, platformViewId);
+      lastInputConnection = null;
+    }
   }
 
   private static boolean composingChanged(
@@ -441,9 +448,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
       // to reset their internal states.
       mRestartInputPending = composingChanged(mLastKnownFrameworkTextEditingState, state);
       if (mRestartInputPending) {
-        Log.w(
-            TAG,
-            "Changing the content within the the composing region may cause the input method to behave strangely, and is therefore discouraged. See https://github.com/flutter/flutter/issues/78827 for more details");
+        Log.i(TAG, "Composing region changed by the framework. Restarting the input method.");
       }
     }
 
@@ -503,7 +508,8 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
 
   @VisibleForTesting
   void clearTextInputClient() {
-    if (inputTarget.type == InputTarget.Type.PLATFORM_VIEW) {
+    if (inputTarget.type == InputTarget.Type.VD_PLATFORM_VIEW) {
+      // This only applies to platform views that use a virtual display.
       // Focus changes in the framework tree have no guarantees on the order focus nodes are
       // notified. A node
       // that lost focus may be notified before or after a node that gained focus.
@@ -540,8 +546,12 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
       // InputConnection is managed by the TextInputPlugin, and events are forwarded to the Flutter
       // framework.
       FRAMEWORK_CLIENT,
-      // InputConnection is managed by an embedded platform view.
-      PLATFORM_VIEW
+      // InputConnection is managed by an embedded platform view that is backed by a virtual
+      // display (VD).
+      VD_PLATFORM_VIEW,
+      // InputConnection is managed by an embedded platform view that is embeded in the Android view
+      // hierarchy, and uses hybrid composition (HC).
+      HC_PLATFORM_VIEW,
     }
 
     public InputTarget(@NonNull Type type, int id) {
@@ -556,6 +566,23 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     // For platform views this is the platform view's ID.
     int id;
   }
+
+  // -------- Start: KeyboardManager Synchronous Responder -------
+  public boolean handleKeyEvent(KeyEvent keyEvent) {
+    if (!getInputMethodManager().isAcceptingText() || lastInputConnection == null) {
+      return false;
+    }
+
+    // Send the KeyEvent as an IME KeyEvent. If the input connection is an
+    // InputConnectionAdaptor then call its handleKeyEvent method (because
+    // this method will be called by the keyboard manager, and
+    // InputConnectionAdaptor#sendKeyEvent forwards the key event back to the
+    // keyboard manager).
+    return (lastInputConnection instanceof InputConnectionAdaptor)
+        ? ((InputConnectionAdaptor) lastInputConnection).handleKeyEvent(keyEvent)
+        : lastInputConnection.sendKeyEvent(keyEvent);
+  }
+  // -------- End: KeyboardManager Synchronous Responder -------
 
   // -------- Start: ListenableEditingState watcher implementation -------
 

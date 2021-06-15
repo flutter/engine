@@ -30,8 +30,16 @@ targets:
     builder: Linux Fuchsia FEMU
     scheduler: luci
 
+  - name: Linux Framework Smoke Tests
+    builder: Linux Framework Smoke Tests
+    scheduler: luci
+
   - name: Linux Host Engine
     builder: Linux Host Engine
+    scheduler: luci
+
+  - name: Linux Unopt
+    builder: Linux Unopt
     scheduler: luci
 
   - name: Linux Arm Host Engine
@@ -74,6 +82,10 @@ targets:
     builder: Mac Host Engine
     scheduler: luci
 
+  - name: Mac Unopt
+    builder: Mac Unopt
+    scheduler: luci
+
   - name: Mac iOS Engine
     builder: Mac iOS Engine
     scheduler: luci
@@ -96,6 +108,10 @@ targets:
 
   - name: Windows Host Engine
     builder: Windows Host Engine
+    scheduler: luci
+
+  - name: Windows Unopt
+    builder: Windows Unopt
     scheduler: luci
 
   - name: Windows UWP Engine

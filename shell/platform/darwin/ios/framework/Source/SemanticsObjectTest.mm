@@ -10,6 +10,8 @@
 
 FLUTTER_ASSERT_ARC
 
+const CGRect kScreenSize = CGRectMake(0, 0, 600, 800);
+
 namespace flutter {
 namespace {
 
@@ -24,7 +26,11 @@ class SemanticsActionObservation {
 
 class MockAccessibilityBridge : public AccessibilityBridgeIos {
  public:
-  MockAccessibilityBridge() : observations({}) { view_ = [[UIView alloc] init]; }
+  MockAccessibilityBridge() : observations({}) {
+    view_ = [[UIView alloc] initWithFrame:kScreenSize];
+    window_ = [[UIWindow alloc] initWithFrame:kScreenSize];
+    [window_ addSubview:view_];
+  }
   UIView* view() const override { return view_; }
   UIView<UITextInput>* textInputView() override { return nil; }
   void DispatchSemanticsAction(int32_t id, SemanticsAction action) override {
@@ -46,6 +52,7 @@ class MockAccessibilityBridge : public AccessibilityBridgeIos {
 
  private:
   UIView* view_;
+  UIWindow* window_;
 };
 }  // namespace
 }  // namespace flutter
@@ -160,6 +167,161 @@ class MockAccessibilityBridge : public AccessibilityBridgeIos {
   XCTAssertEqual([object accessibilityTraits], UIAccessibilityTraitButton);
 }
 
+- (void)testVerticalFlutterScrollableSemanticsObject {
+  fml::WeakPtrFactory<flutter::AccessibilityBridgeIos> factory(
+      new flutter::MockAccessibilityBridge());
+  fml::WeakPtr<flutter::AccessibilityBridgeIos> bridge = factory.GetWeakPtr();
+
+  float transformScale = 0.5f;
+  float screenScale = [[bridge->view() window] screen].scale;
+  float effectivelyScale = transformScale / screenScale;
+  float x = 10;
+  float y = 10;
+  float w = 100;
+  float h = 200;
+  float scrollExtentMax = 500.0;
+  float scrollPosition = 150.0;
+
+  flutter::SemanticsNode node;
+  node.flags = static_cast<int32_t>(flutter::SemanticsFlags::kHasImplicitScrolling);
+  node.actions = flutter::kVerticalScrollSemanticsActions;
+  node.rect = SkRect::MakeXYWH(x, y, w, h);
+  node.scrollExtentMax = scrollExtentMax;
+  node.scrollPosition = scrollPosition;
+  node.transform = {
+      transformScale, 0, 0, 0, 0, transformScale, 0, 0, 0, 0, transformScale, 0, 0, 0, 0, 1.0};
+  FlutterSemanticsObject* delegate = [[FlutterSemanticsObject alloc] initWithBridge:bridge uid:0];
+  FlutterScrollableSemanticsObject* scrollable =
+      [[FlutterScrollableSemanticsObject alloc] initWithSemanticsObject:delegate];
+  SemanticsObject* scrollable_object = static_cast<SemanticsObject*>(scrollable);
+  [scrollable_object setSemanticsNode:&node];
+  [scrollable_object accessibilityBridgeDidFinishUpdate];
+  XCTAssertTrue(
+      CGRectEqualToRect(scrollable.frame, CGRectMake(x * effectivelyScale, y * effectivelyScale,
+                                                     w * effectivelyScale, h * effectivelyScale)));
+  XCTAssertTrue(CGSizeEqualToSize(
+      scrollable.contentSize,
+      CGSizeMake(w * effectivelyScale, (h + scrollExtentMax) * effectivelyScale)));
+  XCTAssertTrue(CGPointEqualToPoint(scrollable.contentOffset,
+                                    CGPointMake(0, scrollPosition * effectivelyScale)));
+}
+
+- (void)testHorizontalFlutterScrollableSemanticsObject {
+  fml::WeakPtrFactory<flutter::AccessibilityBridgeIos> factory(
+      new flutter::MockAccessibilityBridge());
+  fml::WeakPtr<flutter::AccessibilityBridgeIos> bridge = factory.GetWeakPtr();
+
+  float transformScale = 0.5f;
+  float screenScale = [[bridge->view() window] screen].scale;
+  float effectivelyScale = transformScale / screenScale;
+  float x = 10;
+  float y = 10;
+  float w = 100;
+  float h = 200;
+  float scrollExtentMax = 500.0;
+  float scrollPosition = 150.0;
+
+  flutter::SemanticsNode node;
+  node.flags = static_cast<int32_t>(flutter::SemanticsFlags::kHasImplicitScrolling);
+  node.actions = flutter::kHorizontalScrollSemanticsActions;
+  node.rect = SkRect::MakeXYWH(x, y, w, h);
+  node.scrollExtentMax = scrollExtentMax;
+  node.scrollPosition = scrollPosition;
+  node.transform = {
+      transformScale, 0, 0, 0, 0, transformScale, 0, 0, 0, 0, transformScale, 0, 0, 0, 0, 1.0};
+  FlutterSemanticsObject* delegate = [[FlutterSemanticsObject alloc] initWithBridge:bridge uid:0];
+  FlutterScrollableSemanticsObject* scrollable =
+      [[FlutterScrollableSemanticsObject alloc] initWithSemanticsObject:delegate];
+  SemanticsObject* scrollable_object = static_cast<SemanticsObject*>(scrollable);
+  [scrollable_object setSemanticsNode:&node];
+  [scrollable_object accessibilityBridgeDidFinishUpdate];
+  XCTAssertTrue(
+      CGRectEqualToRect(scrollable.frame, CGRectMake(x * effectivelyScale, y * effectivelyScale,
+                                                     w * effectivelyScale, h * effectivelyScale)));
+  XCTAssertTrue(CGSizeEqualToSize(
+      scrollable.contentSize,
+      CGSizeMake((w + scrollExtentMax) * effectivelyScale, h * effectivelyScale)));
+  XCTAssertTrue(CGPointEqualToPoint(scrollable.contentOffset,
+                                    CGPointMake(scrollPosition * effectivelyScale, 0)));
+}
+
+- (void)testFlutterScrollableSemanticsObjectIsNotHittestable {
+  fml::WeakPtrFactory<flutter::AccessibilityBridgeIos> factory(
+      new flutter::MockAccessibilityBridge());
+  fml::WeakPtr<flutter::AccessibilityBridgeIos> bridge = factory.GetWeakPtr();
+
+  flutter::SemanticsNode node;
+  node.flags = static_cast<int32_t>(flutter::SemanticsFlags::kHasImplicitScrolling);
+  node.actions = flutter::kHorizontalScrollSemanticsActions;
+  node.rect = SkRect::MakeXYWH(0, 0, 100, 200);
+  node.scrollExtentMax = 100.0;
+  node.scrollPosition = 0.0;
+
+  FlutterSemanticsObject* delegate = [[FlutterSemanticsObject alloc] initWithBridge:bridge uid:0];
+  FlutterScrollableSemanticsObject* scrollable =
+      [[FlutterScrollableSemanticsObject alloc] initWithSemanticsObject:delegate];
+  SemanticsObject* scrollable_object = static_cast<SemanticsObject*>(scrollable);
+  [scrollable_object setSemanticsNode:&node];
+  [scrollable_object accessibilityBridgeDidFinishUpdate];
+  XCTAssertEqual([scrollable hitTest:CGPointMake(10, 10) withEvent:nil], nil);
+}
+
+- (void)testSemanticsObjectBuildsAttributedString {
+  fml::WeakPtrFactory<flutter::AccessibilityBridgeIos> factory(
+      new flutter::MockAccessibilityBridge());
+  fml::WeakPtr<flutter::AccessibilityBridgeIos> bridge = factory.GetWeakPtr();
+  flutter::SemanticsNode node;
+  node.label = "label";
+  std::shared_ptr<flutter::SpellOutStringAttribute> attribute =
+      std::make_shared<flutter::SpellOutStringAttribute>();
+  attribute->start = 1;
+  attribute->end = 2;
+  attribute->type = flutter::StringAttributeType::kSpellOut;
+  node.labelAttributes.push_back(attribute);
+  node.value = "value";
+  attribute = std::make_shared<flutter::SpellOutStringAttribute>();
+  attribute->start = 2;
+  attribute->end = 3;
+  attribute->type = flutter::StringAttributeType::kSpellOut;
+  node.valueAttributes.push_back(attribute);
+  node.hint = "hint";
+  std::shared_ptr<flutter::LocaleStringAttribute> local_attribute =
+      std::make_shared<flutter::LocaleStringAttribute>();
+  local_attribute->start = 3;
+  local_attribute->end = 4;
+  local_attribute->type = flutter::StringAttributeType::kLocale;
+  local_attribute->locale = "en-MX";
+  node.hintAttributes.push_back(local_attribute);
+  FlutterSemanticsObject* object = [[FlutterSemanticsObject alloc] initWithBridge:bridge uid:0];
+  [object setSemanticsNode:&node];
+  NSMutableAttributedString* expectedAttributedLabel =
+      [[NSMutableAttributedString alloc] initWithString:@"label"];
+  NSDictionary* attributeDict = @{
+    UIAccessibilitySpeechAttributeSpellOut : @YES,
+  };
+  [expectedAttributedLabel setAttributes:attributeDict range:NSMakeRange(1, 1)];
+  XCTAssertTrue(
+      [object.accessibilityAttributedLabel isEqualToAttributedString:expectedAttributedLabel]);
+
+  NSMutableAttributedString* expectedAttributedValue =
+      [[NSMutableAttributedString alloc] initWithString:@"value"];
+  attributeDict = @{
+    UIAccessibilitySpeechAttributeSpellOut : @YES,
+  };
+  [expectedAttributedValue setAttributes:attributeDict range:NSMakeRange(2, 1)];
+  XCTAssertTrue(
+      [object.accessibilityAttributedValue isEqualToAttributedString:expectedAttributedValue]);
+
+  NSMutableAttributedString* expectedAttributedHint =
+      [[NSMutableAttributedString alloc] initWithString:@"hint"];
+  attributeDict = @{
+    UIAccessibilitySpeechAttributeLanguage : @"en-MX",
+  };
+  [expectedAttributedHint setAttributes:attributeDict range:NSMakeRange(3, 1)];
+  XCTAssertTrue(
+      [object.accessibilityAttributedHint isEqualToAttributedString:expectedAttributedHint]);
+}
+
 - (void)testShouldTriggerAnnouncement {
   fml::WeakPtrFactory<flutter::AccessibilityBridgeIos> factory(
       new flutter::MockAccessibilityBridge());
@@ -252,35 +414,36 @@ class MockAccessibilityBridge : public AccessibilityBridgeIos {
   XCTAssertNil(weakObject);
 }
 
-- (void)testFlutterSwitchSemanticsObjectForwardsCalls {
-  SemanticsObject* mockSemanticsObject = OCMClassMock([SemanticsObject class]);
-  FlutterSwitchSemanticsObject* switchObj =
-      [[FlutterSwitchSemanticsObject alloc] initWithSemanticsObject:mockSemanticsObject];
-  OCMStub([mockSemanticsObject accessibilityActivate]).andReturn(YES);
-  OCMStub([mockSemanticsObject accessibilityScroll:UIAccessibilityScrollDirectionRight])
-      .andReturn(NO);
-  OCMStub([mockSemanticsObject accessibilityPerformEscape]).andReturn(YES);
+- (void)testFlutterSwitchSemanticsObjectMatchesUISwitch {
+  fml::WeakPtrFactory<flutter::MockAccessibilityBridge> factory(
+      new flutter::MockAccessibilityBridge());
+  fml::WeakPtr<flutter::MockAccessibilityBridge> bridge = factory.GetWeakPtr();
+  FlutterSwitchSemanticsObject* object = [[FlutterSwitchSemanticsObject alloc] initWithBridge:bridge
+                                                                                          uid:1];
 
-  XCTAssertTrue([switchObj accessibilityActivate]);
-  OCMVerify([mockSemanticsObject accessibilityActivate]);
+  // Handle initial setting of node with header.
+  flutter::SemanticsNode node;
+  node.flags = static_cast<int32_t>(flutter::SemanticsFlags::kHasToggledState) |
+               static_cast<int32_t>(flutter::SemanticsFlags::kIsToggled);
+  node.label = "foo";
+  [object setSemanticsNode:&node];
+  // Create ab real UISwitch to compare the FlutterSwitchSemanticsObject with.
+  UISwitch* nativeSwitch = [[UISwitch alloc] init];
+  nativeSwitch.on = YES;
 
-  [switchObj accessibilityIncrement];
-  OCMVerify([mockSemanticsObject accessibilityIncrement]);
+  XCTAssertEqual(object.accessibilityTraits, nativeSwitch.accessibilityTraits);
+  XCTAssertEqual(object.accessibilityValue, nativeSwitch.accessibilityValue);
 
-  [switchObj accessibilityDecrement];
-  OCMVerify([mockSemanticsObject accessibilityDecrement]);
+  // Set the toggled to false;
+  flutter::SemanticsNode update;
+  update.flags = static_cast<int32_t>(flutter::SemanticsFlags::kHasToggledState);
+  update.label = "foo";
+  [object setSemanticsNode:&update];
 
-  XCTAssertFalse([switchObj accessibilityScroll:UIAccessibilityScrollDirectionRight]);
-  OCMVerify([mockSemanticsObject accessibilityScroll:UIAccessibilityScrollDirectionRight]);
+  nativeSwitch.on = NO;
 
-  XCTAssertTrue([switchObj accessibilityPerformEscape]);
-  OCMVerify([mockSemanticsObject accessibilityPerformEscape]);
-
-  [switchObj accessibilityElementDidBecomeFocused];
-  OCMVerify([mockSemanticsObject accessibilityElementDidBecomeFocused]);
-
-  [switchObj accessibilityElementDidLoseFocus];
-  OCMVerify([mockSemanticsObject accessibilityElementDidLoseFocus]);
+  XCTAssertEqual(object.accessibilityTraits, nativeSwitch.accessibilityTraits);
+  XCTAssertEqual(object.accessibilityValue, nativeSwitch.accessibilityValue);
 }
 
 @end

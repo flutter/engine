@@ -55,6 +55,7 @@ void main() {
       expect(pair.first.koid, duplicate.koid);
     });
 
+    // TODO(fxbug.dev/77599): Simplify once zx_object_get_info is available.
     test('reduced rights', () {
       // Set up handle.
       final HandleResult vmo = System.vmoCreate(2);
@@ -123,6 +124,7 @@ void main() {
       expect(koid, replaced.koid);
     });
 
+    // TODO(fxbug.dev/77599): Simplify once zx_object_get_info is available.
     test('reduced rights', () {
       // Set up handle.
       final HandleResult vmo = System.vmoCreate(2);
@@ -150,5 +152,17 @@ void main() {
       expect(readResult.bytes.lengthInBytes, equals(2));
       expect(readResult.bytesAsUTF8String(), equals('\x00\x00'));
     });
+  });
+
+  test('cache koid and invalidate', () {
+    final HandleResult vmo = System.vmoCreate(0);
+    expect(vmo.status, equals(ZX.OK));
+    int originalKoid = vmo.handle.koid;
+    expect(originalKoid, isNot(equals(ZX.KOID_INVALID)));
+    // Cached koid should be same value.
+    expect(originalKoid, equals(vmo.handle.koid));
+    vmo.handle.close();
+    // koid should be invalidated.
+    expect(vmo.handle.koid, equals(ZX.KOID_INVALID));
   });
 }

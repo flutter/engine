@@ -130,8 +130,6 @@ FILE: ../../../flutter/flow/surface_frame.h
 FILE: ../../../flutter/flow/texture_unittests.cc
 FILE: ../../../flutter/flow/view_holder.cc
 FILE: ../../../flutter/flow/view_holder.h
-FILE: ../../../flutter/flutter_frontend_server/bin/starter.dart
-FILE: ../../../flutter/flutter_frontend_server/lib/server.dart
 FILE: ../../../flutter/fml/ascii_trie.cc
 FILE: ../../../flutter/fml/ascii_trie.h
 FILE: ../../../flutter/fml/ascii_trie_unittests.cc
@@ -313,6 +311,7 @@ FILE: ../../../flutter/lib/ui/compositing/scene.cc
 FILE: ../../../flutter/lib/ui/compositing/scene.h
 FILE: ../../../flutter/lib/ui/compositing/scene_builder.cc
 FILE: ../../../flutter/lib/ui/compositing/scene_builder.h
+FILE: ../../../flutter/lib/ui/compositing/scene_builder_unittests.cc
 FILE: ../../../flutter/lib/ui/compositing/scene_host.cc
 FILE: ../../../flutter/lib/ui/compositing/scene_host.h
 FILE: ../../../flutter/lib/ui/dart_runtime_hooks.cc
@@ -393,6 +392,7 @@ FILE: ../../../flutter/lib/ui/painting/shader.cc
 FILE: ../../../flutter/lib/ui/painting/shader.h
 FILE: ../../../flutter/lib/ui/painting/single_frame_codec.cc
 FILE: ../../../flutter/lib/ui/painting/single_frame_codec.h
+FILE: ../../../flutter/lib/ui/painting/single_frame_codec_unittests.cc
 FILE: ../../../flutter/lib/ui/painting/vertices.cc
 FILE: ../../../flutter/lib/ui/painting/vertices.h
 FILE: ../../../flutter/lib/ui/painting/vertices_unittests.cc
@@ -410,6 +410,9 @@ FILE: ../../../flutter/lib/ui/semantics/semantics_update.cc
 FILE: ../../../flutter/lib/ui/semantics/semantics_update.h
 FILE: ../../../flutter/lib/ui/semantics/semantics_update_builder.cc
 FILE: ../../../flutter/lib/ui/semantics/semantics_update_builder.h
+FILE: ../../../flutter/lib/ui/semantics/semantics_update_builder_unittests.cc
+FILE: ../../../flutter/lib/ui/semantics/string_attribute.cc
+FILE: ../../../flutter/lib/ui/semantics/string_attribute.h
 FILE: ../../../flutter/lib/ui/snapshot_delegate.h
 FILE: ../../../flutter/lib/ui/text.dart
 FILE: ../../../flutter/lib/ui/text/asset_manager_font_provider.cc
@@ -485,6 +488,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/rasterizer.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/shader.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/skia_object_cache.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/surface.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/surface_factory.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/text.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/util.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/vertices.dart
@@ -495,6 +499,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/dom_renderer.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/engine_canvas.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/font_change_util.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/frame_reference.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/host_node.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/backdrop_filter.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/bitmap_canvas.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/canvas.dart
@@ -775,7 +780,6 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterApplication.
 FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterFragmentActivity.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterPlayStoreSplitApplication.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterPluginRegistry.java
-FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/AndroidKeyProcessor.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/AndroidTouchProcessor.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/DrawableSplashScreen.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/ExclusiveAppComponent.java
@@ -791,6 +795,8 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/Flutt
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterSurfaceView.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterTextureView.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterView.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/KeyChannelResponder.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/KeyboardManager.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/MotionEventTracker.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/RenderMode.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/SplashScreen.java
@@ -1153,6 +1159,8 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEmbed
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEmbedderKeyResponderUnittests.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEngineTest.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEngineTestUtils.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEngineTestUtils.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureGL.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureGL.mm
@@ -1173,6 +1181,7 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterKeybo
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMacOSExternalTexture.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalCompositor.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalCompositor.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalCompositorUnittests.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRendererTest.mm
@@ -1197,6 +1206,9 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterSurfa
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputPlugin.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputPlugin.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputPluginTest.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputSemanticsObject.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputSemanticsObject.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputSemanticsObjectTest.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextureRegistrar.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextureRegistrar.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h
@@ -1324,7 +1336,6 @@ FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/vmservice/meta/vmservi
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/accessibility_bridge.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/accessibility_bridge.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/accessibility_bridge_unittest.cc
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/collect_traces.dart
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/component.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/component.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/component_unittest.cc
@@ -1465,10 +1476,20 @@ FILE: ../../../flutter/shell/platform/linux/fl_json_message_codec.cc
 FILE: ../../../flutter/shell/platform/linux/fl_json_message_codec_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_json_method_codec.cc
 FILE: ../../../flutter/shell/platform/linux/fl_json_method_codec_test.cc
-FILE: ../../../flutter/shell/platform/linux/fl_key_event_plugin.cc
-FILE: ../../../flutter/shell/platform/linux/fl_key_event_plugin.h
-FILE: ../../../flutter/shell/platform/linux/fl_key_event_plugin_private.h
-FILE: ../../../flutter/shell/platform/linux/fl_key_event_plugin_test.cc
+FILE: ../../../flutter/shell/platform/linux/fl_key_channel_responder.cc
+FILE: ../../../flutter/shell/platform/linux/fl_key_channel_responder.h
+FILE: ../../../flutter/shell/platform/linux/fl_key_channel_responder_test.cc
+FILE: ../../../flutter/shell/platform/linux/fl_key_embedder_responder.cc
+FILE: ../../../flutter/shell/platform/linux/fl_key_embedder_responder.h
+FILE: ../../../flutter/shell/platform/linux/fl_key_embedder_responder_private.h
+FILE: ../../../flutter/shell/platform/linux/fl_key_embedder_responder_test.cc
+FILE: ../../../flutter/shell/platform/linux/fl_key_event.cc
+FILE: ../../../flutter/shell/platform/linux/fl_key_event.h
+FILE: ../../../flutter/shell/platform/linux/fl_key_responder.cc
+FILE: ../../../flutter/shell/platform/linux/fl_key_responder.h
+FILE: ../../../flutter/shell/platform/linux/fl_keyboard_manager.cc
+FILE: ../../../flutter/shell/platform/linux/fl_keyboard_manager.h
+FILE: ../../../flutter/shell/platform/linux/fl_keyboard_manager_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_message_codec.cc
 FILE: ../../../flutter/shell/platform/linux/fl_message_codec_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_method_call.cc
@@ -1513,6 +1534,8 @@ FILE: ../../../flutter/shell/platform/linux/fl_view.cc
 FILE: ../../../flutter/shell/platform/linux/fl_view_accessible.cc
 FILE: ../../../flutter/shell/platform/linux/fl_view_accessible.h
 FILE: ../../../flutter/shell/platform/linux/fl_view_private.h
+FILE: ../../../flutter/shell/platform/linux/key_mapping.cc
+FILE: ../../../flutter/shell/platform/linux/key_mapping.h
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_basic_message_channel.h
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_binary_codec.h
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_binary_messenger.h
@@ -1759,12 +1782,6 @@ FILE: ../../../flutter/vulkan/vulkan_utilities.cc
 FILE: ../../../flutter/vulkan/vulkan_utilities.h
 FILE: ../../../flutter/vulkan/vulkan_window.cc
 FILE: ../../../flutter/vulkan/vulkan_window.h
-FILE: ../../../flutter/web_sdk/libraries.json
-FILE: ../../../flutter/web_sdk/sdk_rewriter.dart
-FILE: ../../../flutter/web_sdk/web_test_utils/lib/environment.dart
-FILE: ../../../flutter/web_sdk/web_test_utils/lib/exceptions.dart
-FILE: ../../../flutter/web_sdk/web_test_utils/lib/goldens.dart
-FILE: ../../../flutter/web_sdk/web_test_utils/lib/image_compare.dart
 ----------------------------------------------------------------------------------------------------
 Copyright 2013 The Flutter Authors. All rights reserved.
 
