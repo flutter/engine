@@ -29,7 +29,7 @@ JNIEXPORT jint JNI_OnLoad(JavaVM* vm, void* reserved) {
   FML_CHECK(result);
 
   // Register AndroidImageDecoder.
-  result = flutter::AndroidImageDecoder::Register(env);
+  result = flutter::AndroidImageGenerator::Register(env);
   FML_CHECK(result);
 
   return JNI_VERSION_1_4;
