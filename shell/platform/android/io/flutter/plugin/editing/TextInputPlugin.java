@@ -364,8 +364,15 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     mImm.sendAppPrivateCommand(mView, action, data);
   }
 
+  private boolean canShowTextInput() {
+    if (configuration == null || configuration.inputType == null) {
+      return true;
+    }
+    return configuration.inputType.type != TextInputChannel.TextInputType.NONE;
+  }
+
   private void showTextInput(View view) {
-    if (configuration.inputType.type != TextInputChannel.TextInputType.NONE) {
+    if (canShowTextInput()) {
       view.requestFocus();
       mImm.showSoftInput(view, 0);
     } else {
@@ -388,7 +395,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
   void setTextInputClient(int client, TextInputChannel.Configuration configuration) {
     // Call notifyViewExited on the previous field.
     notifyViewExited();
-    if (configuration.inputType.type != TextInputChannel.TextInputType.NONE) {
+    if (canShowTextInput()) {
       inputTarget = new InputTarget(InputTarget.Type.FRAMEWORK_CLIENT, client);
     } else {
       inputTarget = new InputTarget(InputTarget.Type.NO_TARGET, client);
