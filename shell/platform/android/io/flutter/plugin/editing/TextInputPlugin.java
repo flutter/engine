@@ -388,7 +388,11 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
   void setTextInputClient(int client, TextInputChannel.Configuration configuration) {
     // Call notifyViewExited on the previous field.
     notifyViewExited();
-    inputTarget = new InputTarget(InputTarget.Type.FRAMEWORK_CLIENT, client);
+    if (configuration.inputType.type != TextInputChannel.TextInputType.NONE) {
+      inputTarget = new InputTarget(InputTarget.Type.FRAMEWORK_CLIENT, client);
+    } else {
+      inputTarget = new InputTarget(InputTarget.Type.NO_TARGET, client);
+    }
 
     if (mEditable != null) {
       mEditable.removeEditingStateListener(this);
