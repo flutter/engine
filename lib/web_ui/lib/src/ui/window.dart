@@ -104,8 +104,8 @@ abstract class SingletonFlutterWindow extends FlutterWindow {
 
   FrameData get frameData => const FrameData._();
 
-  VoidCallback? get onFrameDataUpdated => null;
-  set onFrameDataUpdated(VoidCallback? callback) {}
+  VoidCallback? get onFrameDataChanged => null;
+  set onFrameDataChanged(VoidCallback? callback) {}
 
   AccessibilityFeatures get accessibilityFeatures => platformDispatcher.accessibilityFeatures;
 
