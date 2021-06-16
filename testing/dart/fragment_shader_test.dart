@@ -73,21 +73,21 @@ void main() {
   //   expect(toFloat(renderedBytes.getUint8(3)), closeTo(1.0, epsilon));
   // });
 
-  // test('supported ops produce the correct renders', () async {
-  //   await for (final Uint8List spirvBytes in singleOpShaders()) {
-  //     final FragmentShader shader = FragmentShader(spirv: spirvBytes.buffer);
-  //     final PictureRecorder recorder = PictureRecorder();
-  //     final Canvas canvas = Canvas(recorder);
-  //     final Paint paint = Paint()..shader = shader;
-  //     canvas.drawPaint(paint);
-  //     final Picture picture = recorder.endRecording();
-  //     final Image image = await picture.toImage(100, 100);
-  //     final ByteData renderedBytes = await image.toByteData();
-  //     for (final int color in renderedBytes.buffer.asInt32List()) {
-  //       expect(color, 0x00FF00FF);
-  //     }
-  //   }
-  // });
+  test('supported ops produce the correct renders', () async {
+    await for (final Uint8List spirvBytes in singleOpShaders()) {
+      final FragmentShader shader = FragmentShader(spirv: spirvBytes.buffer);
+      final PictureRecorder recorder = PictureRecorder();
+      final Canvas canvas = Canvas(recorder);
+      final Paint paint = Paint()..shader = shader;
+      canvas.drawPaint(paint);
+      final Picture picture = recorder.endRecording();
+      final Image image = await picture.toImage(100, 100);
+      final ByteData renderedBytes = await image.toByteData();
+      for (final int color in renderedBytes.buffer.asInt32List()) {
+        expect(color, 0x00FF00FF);
+      }
+    }
+  });
 
 }
 
