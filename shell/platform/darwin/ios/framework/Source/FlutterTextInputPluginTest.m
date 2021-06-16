@@ -14,6 +14,7 @@ FLUTTER_ASSERT_ARC
 
 @interface FlutterTextInputView ()
 @property(nonatomic, copy) NSString* autofillId;
+@property(nonatomic, assign) BOOL keyboardEnabled;
 
 - (void)setEditableTransform:(NSArray*)matrix;
 - (void)setTextInputState:(NSDictionary*)state;
@@ -192,6 +193,22 @@ FLUTTER_ASSERT_ARC
 
   // Verify keyboardType is set to the value specified in config.
   XCTAssertEqual(inputView.keyboardType, UIKeyboardTypeURL);
+  XCTAssertEqual(inputView.keyboardEnabled, YES);
+}
+
+- (void)testKeyboardDisabled {
+  NSDictionary* config = self.mutableTemplateCopy;
+  [config setValue:@{@"name" : @"TextInputType.none"} forKey:@"inputType"];
+  [self setClientId:123 configuration:config];
+
+  // Find all the FlutterTextInputViews we created.
+  NSArray<FlutterTextInputView*>* inputFields = self.installedInputViews;
+
+  FlutterTextInputView* inputView = inputFields[0];
+
+  // Verify keyboardType is set to the value specified in config.
+  XCTAssertEqual(inputView.keyboardType, UIKeyboardTypeDefault);
+  XCTAssertEqual(inputView.keyboardEnabled, NO);
 }
 
 - (void)testAutocorrectionPromptRectAppears {
