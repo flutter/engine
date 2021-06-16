@@ -1319,6 +1319,8 @@ typedef PictureGenerator = CkPicture Function();
 Future<CkPicture> generatePictureWhenFontsStable(
     PictureGenerator generator) async {
   CkPicture picture = generator();
+  // Fallback fonts start downloading as a post-frame callback.
+  EnginePlatformDispatcher.instance.rasterizer!.debugRunPostFrameCallbacks();
   // Font downloading begins asynchronously so we inject a timer before checking the download queue.
   await Future<void>.delayed(Duration.zero);
   while (notoDownloadQueue.isPending ||
