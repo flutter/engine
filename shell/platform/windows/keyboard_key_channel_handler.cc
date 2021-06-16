@@ -32,7 +32,12 @@ static constexpr char kKeyDown[] = "keydown";
 // emitting a warning on the console about unhandled events.
 static constexpr int kMaxPendingEvents = 1000;
 
-// Chromium uses this bit in scancode to mark "extended" keys.
+// The bit for a scancode indicating the key is extended.
+//
+// Win32 defines some keys to be "extended", such as ShiftRight, which shares
+// the same scancode as its non-extended counterpart, such as ShiftLeft.  In
+// Chromium's scancode table, from which Flutter's physical key list is
+// derived, these keys are marked with this bit.
 static constexpr int kScancodeExtended = 0xe000;
 
 // Re-definition of the modifiers for compatibility with the Flutter framework.
