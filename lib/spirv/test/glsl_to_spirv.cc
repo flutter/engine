@@ -34,10 +34,13 @@ int main(int argc, const char* argv[]) {
   input.close();
 
   shaderc::Compiler compiler;
+  shaderc::CompileOptions options;
+  options.SetOptimizationLevel(shaderc_optimization_level_performance);
   shaderc::SpvCompilationResult result = compiler.CompileGlslToSpv(
     buf.data(),
     shaderc_glsl_default_fragment_shader,
-    argv[1]);
+    argv[1],
+    options);
   
   if (result.GetCompilationStatus() != shaderc_compilation_status_success) {
     std::cerr << "Failed to transpile: " + result.GetErrorMessage() << argv[1] << std::endl;
