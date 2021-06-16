@@ -33,8 +33,25 @@
 - (void)flutterViewAccessibilityDidCall;
 @end
 
-@interface FlutterView : UIView
+@class FlutterView;
 
+@protocol FlutterViewTouchDelegate <NSObject>
+- (void)flutterView:(FlutterView*)flutterView
+       touchesBegan:(NSSet*)touches
+          withEvent:(UIEvent*)event;
+- (void)flutterView:(FlutterView*)flutterView
+       touchesMoved:(NSSet*)touches
+          withEvent:(UIEvent*)event;
+- (void)flutterView:(FlutterView*)flutterView
+       touchesEnded:(NSSet*)touches
+          withEvent:(UIEvent*)event;
+- (void)flutterView:(FlutterView*)flutterView
+    touchesCancelled:(NSSet*)touches
+           withEvent:(UIEvent*)event;
+@end
+
+@interface FlutterView : UIView
+@property(nonatomic, assign) NSObject<FlutterViewTouchDelegate>* touchDelegate;
 - (instancetype)init NS_UNAVAILABLE;
 + (instancetype)new NS_UNAVAILABLE;
 - (instancetype)initWithFrame:(CGRect)frame NS_UNAVAILABLE;

@@ -59,7 +59,9 @@ typedef struct MouseState {
 // This is left a FlutterBinaryMessenger privately for now to give people a chance to notice the
 // change. Unfortunately unless you have Werror turned on, incompatible pointers as arguments are
 // just a warning.
-@interface FlutterViewController () <FlutterBinaryMessenger, UIScrollViewDelegate>
+@interface FlutterViewController () <FlutterBinaryMessenger,
+                                     UIScrollViewDelegate,
+                                     FlutterViewTouchDelegate>
 @property(nonatomic, readwrite, getter=isDisplayingFlutterUI) BOOL displayingFlutterUI;
 @property(nonatomic, assign) BOOL isHomeIndicatorHidden;
 @property(nonatomic, assign) BOOL isPresentingViewControllerAnimating;
@@ -127,6 +129,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
     _engine.reset([engine retain]);
     _engineNeedsLaunch = NO;
     _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine opaque:self.isViewOpaque]);
+    _flutterView.get().touchDelegate = self;
     _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
     _ongoingTouches.reset([[NSMutableSet alloc] init]);
 
@@ -202,6 +205,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
   _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
   _engine = std::move(engine);
   _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine opaque:self.isViewOpaque]);
+  _flutterView.get().touchDelegate = self;
   [_engine.get() createShell:nil libraryURI:nil initialRoute:initialRoute];
   _engineNeedsLaunch = YES;
   _ongoingTouches.reset([[NSMutableSet alloc] init]);
@@ -931,19 +935,27 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   [_engine.get() dispatchPointerDataPacket:std::move(packet)];
 }
 
-- (void)touchesBegan:(NSSet*)touches withEvent:(UIEvent*)event {
+- (void)flutterView:(FlutterView*)flutterView
+       touchesBegan:(NSSet*)touches
+          withEvent:(UIEvent*)event {
   [self dispatchTouches:touches pointerDataChangeOverride:nullptr];
 }
 
-- (void)touchesMoved:(NSSet*)touches withEvent:(UIEvent*)event {
+- (void)flutterView:(FlutterView*)flutterView
+       touchesMoved:(NSSet*)touches
+          withEvent:(UIEvent*)event {
   [self dispatchTouches:touches pointerDataChangeOverride:nullptr];
 }
 
-- (void)touchesEnded:(NSSet*)touches withEvent:(UIEvent*)event {
+- (void)flutterView:(FlutterView*)flutterView
+       touchesEnded:(NSSet*)touches
+          withEvent:(UIEvent*)event {
   [self dispatchTouches:touches pointerDataChangeOverride:nullptr];
 }
 
-- (void)touchesCancelled:(NSSet*)touches withEvent:(UIEvent*)event {
+- (void)flutterView:(FlutterView*)flutterView
+    touchesCancelled:(NSSet*)touches
+           withEvent:(UIEvent*)event {
   [self dispatchTouches:touches pointerDataChangeOverride:nullptr];
 }
 
