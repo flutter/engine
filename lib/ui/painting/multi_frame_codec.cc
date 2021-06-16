@@ -152,7 +152,9 @@ void MultiFrameCodec::State::GetNextFrameAndInvokeCallback(
         generator_->GetFrameInfo(nextFrameIndex_);
     duration = frameInfo.duration;
   }
-  nextFrameIndex_ = (nextFrameIndex_ + 1) % frameCount_;
+  if (frameCount_ > 0) {
+    nextFrameIndex_ = (nextFrameIndex_ + 1) % frameCount_;
+  }
 
   ui_task_runner->PostTask(fml::MakeCopyable([callback = std::move(callback),
                                               image = std::move(image),
