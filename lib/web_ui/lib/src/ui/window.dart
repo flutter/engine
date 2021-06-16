@@ -250,5 +250,7 @@ SingletonFlutterWindow get window => engine.window;
 class FrameData {
   const FrameData._({this.frameNumber = -1});
 
+  const FrameData.webOnly() : frameNumber = -1;
+
   final int frameNumber;
 }
