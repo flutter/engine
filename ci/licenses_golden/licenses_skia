@@ -1,4 +1,4 @@
-Signature: d310e4b4920888c5efcd8e798ab0ae66
+Signature: 64388cb906c68d919dd907f378e79503
 
 UNUSED LICENSES:
 
@@ -5249,10 +5249,12 @@ FILE: ../../../third_party/skia/gm/crbug_1177833.cpp
 FILE: ../../../third_party/skia/gm/lazytiling.cpp
 FILE: ../../../third_party/skia/gm/particles.cpp
 FILE: ../../../third_party/skia/gm/runtimeeffectimage.cpp
+FILE: ../../../third_party/skia/include/core/SkBlender.h
 FILE: ../../../third_party/skia/include/gpu/gl/egl/GrGLMakeEGLInterface.h
 FILE: ../../../third_party/skia/include/gpu/gl/glx/GrGLMakeGLXInterface.h
 FILE: ../../../third_party/skia/include/sksl/DSLSymbols.h
 FILE: ../../../third_party/skia/modules/canvaskit/paragraph_bindings_gen.cpp
+FILE: ../../../third_party/skia/src/core/SkBlenderBase.h
 FILE: ../../../third_party/skia/src/core/SkYUVAInfoLocation.h
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkRuntimeImageFilter.cpp
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkRuntimeImageFilter.h
