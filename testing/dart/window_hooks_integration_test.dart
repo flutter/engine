@@ -46,14 +46,16 @@ void main() {
   SemanticsActionCallback? originalOnSemanticsAction;
   PlatformMessageCallback? originalOnPlatformMessage;
   VoidCallback? originalOnTextScaleFactorChanged;
+  VoidCallback? originalFrameDataChanged;
 
-    Object? oldWindowId;
-    double? oldDevicePixelRatio;
-    Rect? oldGeometry;
+  Object? oldWindowId;
+  double? oldDevicePixelRatio;
+  Rect? oldGeometry;
+  FrameData? oldFrameData;
 
-    WindowPadding? oldPadding;
-    WindowPadding? oldInsets;
-    WindowPadding? oldSystemGestureInsets;
+  WindowPadding? oldPadding;
+  WindowPadding? oldInsets;
+  WindowPadding? oldSystemGestureInsets;
 
   void setUp() {
     PlatformDispatcher.instance._viewConfigurations.clear();
@@ -66,6 +68,7 @@ void main() {
     oldPadding = window.viewPadding;
     oldInsets = window.viewInsets;
     oldSystemGestureInsets = window.systemGestureInsets;
+    oldFrameData = window.frameData;
 
     originalOnMetricsChanged = window.onMetricsChanged;
     originalOnLocaleChanged = window.onLocaleChanged;
@@ -77,6 +80,7 @@ void main() {
     originalOnSemanticsAction = window.onSemanticsAction;
     originalOnPlatformMessage = window.onPlatformMessage;
     originalOnTextScaleFactorChanged = window.onTextScaleFactorChanged;
+    originalFrameDataChanged = window.onFrameDataChanged;
   }
 
     tearDown() {
@@ -108,6 +112,7 @@ void main() {
       window.onSemanticsAction = originalOnSemanticsAction;
       window.onPlatformMessage = originalOnPlatformMessage;
       window.onTextScaleFactorChanged = originalOnTextScaleFactorChanged;
+      window.onFrameDataChanged = originalFrameDataChanged;
   }
 
   void test(String description, void Function() testFunction) {
@@ -340,6 +345,25 @@ void main() {
     expectNotEquals(runZone, null);
     expectIdentical(runZone, innerZone);
     expectEquals(name, 'testName');
+  });
+
+  test('onFrameDataChanged preserves callback zone', () {
+    late Zone innerZone;
+    late Zone runZone;
+    late int frameNumber;
+
+    runZoned(() {
+      innerZone = Zone.current;
+      window.onFrameDataChanged = () {
+        runZone = Zone.current;
+        frameNumber = window.frameData.frameNumber;
+      };
+    });
+
+    _beginFrame(0, 2);
+    expectNotEquals(runZone, null);
+    expectIdentical(runZone, innerZone);
+    expectEquals(frameNumber, 2);
   });
 
   test('onTextScaleFactorChanged preserves callback zone', () {
