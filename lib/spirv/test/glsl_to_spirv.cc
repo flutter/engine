@@ -36,6 +36,7 @@ int main(int argc, const char* argv[]) {
   shaderc::Compiler compiler;
   shaderc::CompileOptions options;
   options.SetOptimizationLevel(shaderc_optimization_level_performance);
+  options.SetTargetEnvironment(shaderc_target_env_opengl, 0);
   shaderc::SpvCompilationResult result = compiler.CompileGlslToSpv(
     buf.data(),
     shaderc_glsl_default_fragment_shader,
