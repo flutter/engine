@@ -37,10 +37,7 @@ class EventChannel {
   EventChannel(BinaryMessenger* messenger,
                const std::string& name,
                const MethodCodec<T>* codec)
-      : messenger_(messenger),
-        name_(name),
-        codec_(codec),
-        is_listening_(false) {}
+      : messenger_(messenger), name_(name), codec_(codec) {}
   ~EventChannel() = default;
 
   // Prevent copying.
@@ -168,7 +165,7 @@ class EventChannel {
   BinaryMessenger* messenger_;
   const std::string name_;
   const MethodCodec<T>* codec_;
-  bool is_listening_;
+  bool is_listening_ = false;
 };
 
 }  // namespace flutter
