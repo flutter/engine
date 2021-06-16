@@ -191,7 +191,8 @@ FLUTTER_ASSERT_ARC
 
   FlutterTextInputView* inputView = inputFields[0];
 
-  // Verify keyboardType is set to the value specified in config.
+  // Verify keyboardType and keyboardEnabled are set as appropriate for the input
+  // type specified in config.
   XCTAssertEqual(inputView.keyboardType, UIKeyboardTypeURL);
   XCTAssertEqual(inputView.keyboardEnabled, YES);
 }
@@ -206,7 +207,8 @@ FLUTTER_ASSERT_ARC
 
   FlutterTextInputView* inputView = inputFields[0];
 
-  // Verify keyboardType is set to the value specified in config.
+  // Verify keyboardType and keyboardEnabled are set as appropriate for the input
+  // type specified in config.
   XCTAssertEqual(inputView.keyboardType, UIKeyboardTypeDefault);
   XCTAssertEqual(inputView.keyboardEnabled, NO);
 }
