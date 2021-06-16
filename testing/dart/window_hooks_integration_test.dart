@@ -225,7 +225,7 @@ void main() {
       };
     });
 
-    _beginFrame(1234);
+    _beginFrame(1234, 0);
     expectNotEquals(runZone, null);
     expectIdentical(runZone, innerZone);
     expectEquals(start, const Duration(microseconds: 1234));
