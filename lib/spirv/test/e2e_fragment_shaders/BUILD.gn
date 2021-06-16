@@ -11,10 +11,10 @@ if (enable_unittests) {
     sources = [
       "op_type_bool.glsl",
       "op_type_float.glsl",
-      "op_type_function.glsl",
-      "op_type_matrix.glsl",
+      # "op_type_function.glsl",
+      # "op_type_matrix.glsl",
       "op_type_void.glsl",
-      "op_type_vector.glsl",
+      # "op_type_vector.glsl",
     ]
 
     outputs = [ "$target_gen_dir/{{source_name_part}}.spv" ]

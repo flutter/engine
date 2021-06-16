@@ -10,7 +10,6 @@
 
 #include "third_party/shaderc/libshaderc/include/shaderc/shaderc.hpp"
 
-
 namespace fs = std::filesystem;
 
 int main(int argc, const char* argv[]) {
@@ -40,7 +39,7 @@ int main(int argc, const char* argv[]) {
     shaderc_glsl_default_fragment_shader,
     argv[1]);
   
-  if (result.GetCompilationStatus() != shaderc_compilation_status_success)
+  if (result.GetCompilationStatus() != shaderc_compilation_status_success) {
     std::cerr << "Failed to transpile: " + result.GetErrorMessage() << argv[1] << std::endl;
     return -1;
   }
@@ -49,6 +48,7 @@ int main(int argc, const char* argv[]) {
 
   std::fstream output;
   output.open(argv[2], std::fstream::out | std::fstream::trunc);
+
   if (!output.is_open()) {
     output.close();
     std::cerr << "failed to open output file" << std::endl;
