@@ -366,7 +366,8 @@ uint64_t PlatformConfiguration::RegisterKeyDataResponse(
   return response_id;
 }
 
-void PlatformConfiguration::BeginFrame(fml::TimePoint frameTime, uint64_t frame_number) {
+void PlatformConfiguration::BeginFrame(fml::TimePoint frameTime,
+                                       uint64_t frame_number) {
   std::shared_ptr<tonic::DartState> dart_state =
       begin_frame_.dart_state().lock();
   if (!dart_state) {

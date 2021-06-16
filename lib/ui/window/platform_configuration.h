@@ -365,8 +365,9 @@ class PlatformConfiguration final {
   ///                         physics simulations, etc..
   ///
   /// @param[in]  frame_number The frame number recorded by the animator. Used
-  ///                          by the framework to associate frame specific debug
-  ///                          information with frame timings and timeline events.
+  ///                          by the framework to associate frame specific
+  ///                          debug information with frame timings and timeline
+  ///                          events.
   ///
   void BeginFrame(fml::TimePoint frame_time, uint64_t frame_number);
 

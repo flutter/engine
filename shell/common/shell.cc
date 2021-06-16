@@ -1101,7 +1101,8 @@ void Shell::OnPlatformViewSetNextFrameCallback(const fml::closure& closure) {
 }
 
 // |Animator::Delegate|
-void Shell::OnAnimatorBeginFrame(fml::TimePoint frame_target_time, uint64_t frame_number) {
+void Shell::OnAnimatorBeginFrame(fml::TimePoint frame_target_time,
+                                 uint64_t frame_number) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
 
