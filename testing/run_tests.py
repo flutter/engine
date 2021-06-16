@@ -294,7 +294,7 @@ def EnsureJavaTestsAreBuilt(android_out_dir):
 
 def EnsureIosTestsAreBuilt(ios_out_dir):
   """Builds the engine variant and the test dylib containing the XCTests"""
-  tmp_out_dir = os.path.exists(out_dir, ios_out_dir)
+  tmp_out_dir = os.path.join(out_dir, ios_out_dir)
   assert os.path.exists(tmp_out_dir), "%s doesn't exist. Run GN to generate the directory first" % ios_out_dir
 
 
