@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:collection' show LinkedHashSet;
 import 'dart:convert';
 import 'dart:html' as html;
 import 'dart:typed_data';
@@ -71,7 +72,7 @@ class FontFallbackData {
   final Map<String, int> fontFallbackCounts = <String, int>{};
 
   /// A list of code units to check against the global fallback fonts.
-  final Set<int> _codeUnitsToCheckAgainstFallbackFonts = <int>{};
+  final Set<int> _codeUnitsToCheckAgainstFallbackFonts = LinkedHashSet<int>();
 
   /// This is [true] if we have scheduled a check for missing code units.
   ///
@@ -159,7 +160,9 @@ class FontFallbackData {
     return codepoint < 32 || (codepoint > 127 && codepoint < 160);
   }
 
-  /// Checks
+  /// Checks the missing code units against the current set of fallback fonts
+  /// and starts downloading new fallback fonts if the current set can't cover
+  /// the code units.
   void _ensureFallbackFonts() {
     _scheduledCodeUnitCheck = false;
     // We don't know if the remaining code units are covered by our fallback

@@ -1328,6 +1328,7 @@ Future<CkPicture> generatePictureWhenFontsStable(
     await notoDownloadQueue.debugWhenIdle();
     await notoDownloadQueue.downloader.debugWhenIdle();
     picture = generator();
+    EnginePlatformDispatcher.instance.rasterizer!.debugRunPostFrameCallbacks();
     // Dummy timer for the same reason as above.
     await Future<void>.delayed(Duration.zero);
   }
