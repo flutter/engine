@@ -28,7 +28,6 @@
 #include "flutter/shell/platform/android/android_image_generator.h"
 #include "flutter/shell/platform/android/context/android_context.h"
 #include "flutter/shell/platform/android/platform_view_android.h"
-#include "third_party/skia/include/ports/SkImageGeneratorNDK.h"
 
 namespace flutter {
 
@@ -140,23 +139,12 @@ AndroidShellHolder::AndroidShellHolder(
       }
     });
 
-    if (IsNDKImageDecoderAvailable()) {
-      shell_->RegisterImageDecoder(
-          [](sk_sp<SkData> buffer) {
-            auto generator = SkImageGeneratorNDK::MakeFromEncodedNDK(buffer);
-            return BuiltinSkiaImageGenerator::MakeFromGenerator(
-                std::move(generator));
-          },
-          -1);
-      FML_DLOG(INFO) << "Registered NDK image decoder (API level 30+)";
-    } else {
-      shell_->RegisterImageDecoder(
-          [runner = task_runners.GetIOTaskRunner()](sk_sp<SkData> buffer) {
-            return AndroidImageGenerator::MakeFromData(buffer, runner);
-          },
-          -1);
-      FML_DLOG(INFO) << "Registered SDK image decoder (API level 28+)";
-    }
+    shell_->RegisterImageDecoder(
+        [runner = task_runners.GetIOTaskRunner()](sk_sp<SkData> buffer) {
+          return AndroidImageGenerator::MakeFromData(buffer, runner);
+        },
+        -1);
+    FML_DLOG(INFO) << "Registered SDK image decoder (API level 28+)";
   }
 
   platform_view_ = weak_platform_view;
