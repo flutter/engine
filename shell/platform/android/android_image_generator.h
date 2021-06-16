@@ -51,7 +51,7 @@ class AndroidImageGenerator : public ImageGenerator {
 
  private:
   sk_sp<SkData> data_;
-  sk_sp<SkData> decoded_data_;
+  sk_sp<SkData> software_decoded_data_;
 
   SkImageInfo image_info_;
 

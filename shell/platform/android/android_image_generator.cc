@@ -2,6 +2,7 @@
 #include "flutter/shell/platform/android/android_image_generator.h"
 
 #include <android/bitmap.h>
+#include <android/hardware_buffer.h>
 
 #include "flutter/fml/platform/android/jni_util.h"
 
@@ -67,7 +68,7 @@ bool AndroidImageGenerator::GetPixels(const SkImageInfo& info,
   // produce an `SkImage` direcly from an `AHardwareBuffer`, but
   // `AndroidBitmap_getHardwareBuffer` and `Bitmap.getHardwareBuffer` are only
   // available in API 30+ and 31+ respectively.
-  memcpy(pixels, decoded_data_->data(), decoded_data_->size());
+  memcpy(pixels, software_decoded_data_->data(), software_decoded_data_->size());
   return true;
 }
 
@@ -121,7 +122,7 @@ void AndroidImageGenerator::DoDecodeImage() {
     AndroidBitmap_unlockPixels(env, bitmap->obj());
   };
 
-  decoded_data_ = SkData::MakeWithProc(
+  software_decoded_data_ = SkData::MakeWithProc(
       pixel_lock, info.width * info.height * sizeof(uint32_t), on_release,
       bitmap);
 }
