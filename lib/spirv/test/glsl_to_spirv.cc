@@ -40,7 +40,7 @@ int main(int argc, const char* argv[]) {
     shaderc_glsl_default_fragment_shader,
     argv[1]);
   
-  std::vector<uint32_t> spirv = result.cbegin();
+  // std::vector<uint32_t> spirv = result.cbegin();
   // if (!compiler.Com(buf.data(), size, &spirv)) {
   //   std::cerr << "Failed to assemble " << argv[1] << std::endl;
   //   return -1;
