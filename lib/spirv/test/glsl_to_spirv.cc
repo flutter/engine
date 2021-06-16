@@ -34,28 +34,29 @@ int main(int argc, const char* argv[]) {
   input.read(buf.data(), size);
   input.close();
 
-  shaderc::Compiler compiler();
-  shaderc::SpvCompilationResult result = compiler->CompileGlslToSpv(
+  shaderc::Compiler compiler;
+  shaderc::SpvCompilationResult result = compiler.CompileGlslToSpv(
     buf.data(),
     shaderc_glsl_default_fragment_shader,
     argv[1]);
   
-  // std::vector<uint32_t> spirv = result.cbegin();
-  // if (!compiler.Com(buf.data(), size, &spirv)) {
-  //   std::cerr << "Failed to assemble " << argv[1] << std::endl;
-  //   return -1;
-  // }
+  if (result.GetCompilationStatus() != shaderc_compilation_status_success)
+    std::cerr << "Failed to transpile: " + result.GetErrorMessage() << argv[1] << std::endl;
+    return -1;
+  }
 
-  // std::fstream output;
-  // output.open(argv[2], std::fstream::out | std::fstream::trunc);
-  // if (!output.is_open()) {
-  //   output.close();
-  //   std::cerr << "failed to open output file" << std::endl;
-  //   std::abort();
-  // }
+  std::vector<uint32_t> spirv = std::vector<uint32_t>(result.cbegin(), result.cend());
 
-  // output.write(reinterpret_cast<const char*>(assembled_spirv.data()),
-  //              sizeof(uint32_t) * assembled_spirv.size());
-  // output.close();
+  std::fstream output;
+  output.open(argv[2], std::fstream::out | std::fstream::trunc);
+  if (!output.is_open()) {
+    output.close();
+    std::cerr << "failed to open output file" << std::endl;
+    std::abort();
+  }
+
+  output.write(reinterpret_cast<const char*>(spirv.data()),
+               sizeof(uint32_t) * spirv.size());
+  output.close();
   return 0;
 }
