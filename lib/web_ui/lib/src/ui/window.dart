@@ -102,6 +102,11 @@ abstract class SingletonFlutterWindow extends FlutterWindow {
     platformDispatcher.onSemanticsAction = callback;
   }
 
+  FrameData get frameData => const FrameData._();
+
+  VoidCallback? get onFrameDataUpdated => null;
+  set onFrameDataUpdated(VoidCallback? callback) {}
+
   AccessibilityFeatures get accessibilityFeatures => platformDispatcher.accessibilityFeatures;
 
   VoidCallback? get onAccessibilityFeaturesChanged =>
@@ -241,3 +246,9 @@ class IsolateNameServer {
 }
 
 SingletonFlutterWindow get window => engine.window;
+
+class FrameData {
+  const FrameData._({this.frameNumber = -1});
+
+  final int frameNumber;
+}
