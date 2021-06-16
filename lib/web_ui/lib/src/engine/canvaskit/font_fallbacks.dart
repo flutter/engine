@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:collection' show LinkedHashSet;
 import 'dart:convert';
 import 'dart:html' as html;
 import 'dart:typed_data';
@@ -72,7 +71,7 @@ class FontFallbackData {
   final Map<String, int> fontFallbackCounts = <String, int>{};
 
   /// A list of code units to check against the global fallback fonts.
-  final Set<int> _codeUnitsToCheckAgainstFallbackFonts = LinkedHashSet<int>();
+  final Set<int> _codeUnitsToCheckAgainstFallbackFonts = <int>{};
 
   /// This is [true] if we have scheduled a check for missing code units.
   ///
