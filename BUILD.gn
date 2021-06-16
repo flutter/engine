@@ -132,6 +132,7 @@ group("flutter") {
       "//flutter/flow:flow_unittests",
       "//flutter/fml:fml_unittests",
       "//flutter/lib/spirv/test/exception_shaders:spirv_compile_exception_shaders",
+      "//flutter/lib/spirv/test/e2e_fragment_shaders:spirv_compile_glsl_single_op_shaders",
       "//flutter/lib/ui:ui_unittests",
       "//flutter/runtime:no_dart_plugin_registrant_unittests",
       "//flutter/runtime:runtime_unittests",
