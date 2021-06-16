@@ -8,6 +8,25 @@ namespace flutter {
 
 ImageGenerator::~ImageGenerator() = default;
 
+sk_sp<SkImage> ImageGenerator::GetImage() {
+  SkImageInfo info = GetInfo();
+
+  SkBitmap bitmap;
+  if (!bitmap.tryAllocPixels(info)) {
+    FML_DLOG(ERROR) << "Failed to allocate memory for bitmap of size "
+                    << info.computeMinByteSize() << "B";
+    return nullptr;
+  }
+
+  const auto& pixmap = bitmap.pixmap();
+  if (!GetPixels(pixmap.info(), pixmap.writable_addr(), pixmap.rowBytes())) {
+    FML_DLOG(ERROR) << "Failed to get pixels for image.";
+    return nullptr;
+  }
+  bitmap.setImmutable();
+  return SkImage::MakeFromBitmap(bitmap);
+}
+
 BuiltinSkiaImageGenerator::~BuiltinSkiaImageGenerator() = default;
 
 BuiltinSkiaImageGenerator::BuiltinSkiaImageGenerator(

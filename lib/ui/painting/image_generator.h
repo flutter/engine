@@ -89,7 +89,9 @@ class ImageGenerator {
   /// @see        `GetPixels`
   virtual SkISize GetScaledDimensions(float scale) = 0;
 
-  /// @brief      Decode the image into a given buffer.
+  /// @brief      Decode the image into a given buffer. This method is currently
+  ///             always used for sub-pixel image decoding. For full-sized still
+  ///             images, `GetImage` is always attempted first.
   /// @param[in]  info         The desired size and color info of the decoded
   ///                          image to be returned. The implementation of
   ///                          `GetScaledDimensions` determines which sizes are
@@ -120,6 +122,11 @@ class ImageGenerator {
       size_t row_bytes,
       unsigned int frame_index = 0,
       std::optional<unsigned int> prior_frame = std::nullopt) = 0;
+
+  /// @brief   Creates an `SkImage` based on the current `ImageInfo` of this
+  ///          `ImageGenerator`.
+  /// @return  A new `SkImage` containing the decoded image data.
+  sk_sp<SkImage> GetImage();
 };
 
 class BuiltinSkiaImageGenerator : public ImageGenerator {
