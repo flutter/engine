@@ -1,4 +1,4 @@
-Signature: d310e4b4920888c5efcd8e798ab0ae66
+Signature: f733f38cac177bc72d261e17074dbccc
 
 UNUSED LICENSES:
 
@@ -4000,6 +4000,8 @@ FILE: ../../../third_party/skia/modules/androidkit/src/Image.cpp
 FILE: ../../../third_party/skia/modules/androidkit/src/ImageFilter.cpp
 FILE: ../../../third_party/skia/modules/androidkit/src/Matrix.cpp
 FILE: ../../../third_party/skia/modules/androidkit/src/Paint.cpp
+FILE: ../../../third_party/skia/modules/androidkit/src/Path.cpp
+FILE: ../../../third_party/skia/modules/androidkit/src/PathBuilder.cpp
 FILE: ../../../third_party/skia/modules/androidkit/src/RuntimeShaderBuilder.cpp
 FILE: ../../../third_party/skia/modules/androidkit/src/Shader.cpp
 FILE: ../../../third_party/skia/modules/androidkit/src/SkottieAnimation.cpp
@@ -4637,7 +4639,6 @@ FILE: ../../../third_party/skia/docs/examples/Paint_getFillPath_2.cpp
 FILE: ../../../third_party/skia/docs/examples/Paint_getFlags.cpp
 FILE: ../../../third_party/skia/docs/examples/Paint_getFontMetrics.cpp
 FILE: ../../../third_party/skia/docs/examples/Paint_getFontSpacing.cpp
-FILE: ../../../third_party/skia/docs/examples/Paint_getHash.cpp
 FILE: ../../../third_party/skia/docs/examples/Paint_getHinting.cpp
 FILE: ../../../third_party/skia/docs/examples/Paint_getImageFilter.cpp
 FILE: ../../../third_party/skia/docs/examples/Paint_getMaskFilter.cpp
@@ -5249,10 +5250,12 @@ FILE: ../../../third_party/skia/gm/crbug_1177833.cpp
 FILE: ../../../third_party/skia/gm/lazytiling.cpp
 FILE: ../../../third_party/skia/gm/particles.cpp
 FILE: ../../../third_party/skia/gm/runtimeeffectimage.cpp
+FILE: ../../../third_party/skia/include/core/SkBlender.h
 FILE: ../../../third_party/skia/include/gpu/gl/egl/GrGLMakeEGLInterface.h
 FILE: ../../../third_party/skia/include/gpu/gl/glx/GrGLMakeGLXInterface.h
 FILE: ../../../third_party/skia/include/sksl/DSLSymbols.h
 FILE: ../../../third_party/skia/modules/canvaskit/paragraph_bindings_gen.cpp
+FILE: ../../../third_party/skia/src/core/SkBlenderBase.h
 FILE: ../../../third_party/skia/src/core/SkYUVAInfoLocation.h
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkRuntimeImageFilter.cpp
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkRuntimeImageFilter.h
