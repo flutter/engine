@@ -43,12 +43,14 @@ sk_sp<SkShader> FragmentShader::shader(SkSamplingOptions sampling) {
 void FragmentShader::init(std::string sksl) {
   SkRuntimeEffect::Result result = SkRuntimeEffect::MakeForShader(SkString(sksl));
   runtime_effect_ = result.effect;
-  if (runtime_effect_ != nullptr) {
+  if (runtime_effect_ == nullptr) {
     Dart_Handle err = Dart_ThrowException(tonic::ToDart(
         std::string("Invalid SkSL:\n") + sksl.c_str() +
         std::string("\nSkSL Error:\n") + result.errorText.c_str()));
     if (err) {
       FML_DLOG(ERROR) << Dart_GetError(err);
+    } else {
+      FML_DLOG(ERROR) << std::string("SkSL:\n") + sksl.c_str();
     }
     return;
   }
@@ -62,7 +64,7 @@ void FragmentShader::init(std::string sksl) {
 //   for (size_t i = 0; i < shaders.size(); i++) {
 //     children_sk[i] = shaders[i]->shader(SkSamplingOptions(SkFilterQuality::kHigh_SkFilterQuality));
 //   }
-void FragmentShader::update(const tonic::Float32List& uniforms, Dart_Handle children) {
+void FragmentShader::update(const tonic::Float32List& uniforms) {
   shader_ = runtime_effect_->makeShader(
       SkData::MakeWithCopy(
           uniforms.data(),
