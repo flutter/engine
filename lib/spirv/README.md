@@ -39,7 +39,7 @@ These tests rely on the `.spvasm` (SPIR-V Assembly)  and `.glsl` files contained
 
 ## Pixel Tests
 
-Pixel test are not yet checked in, and should run as part of unit-testing for each implementation of `dart:ui`. These tests aim to validate the correctness of transpilation to each target language. Each shader should render the color green #00FF00 for a correct transpilation, and any other color for failure. They will be a combination of `.spvasm` files and more-readable GLSL files that are compiled to SPIR-V via `glslang`, provided by the SwiftShader dependency. Information for pixel tests will be expanded in a follow-up PR.
+Pixel test are not yet checked in, and should run as part of unit-testing for each implementation of `dart:ui`. These tests aim to validate the correctness of transpilation to each target language. Each shader should render the color green #00FF00FF for a correct transpilation, and any other color for failure. They will be a combination of `.spvasm` files and more-readable GLSL files that are compiled to SPIR-V via `glslang`, provided by the SwiftShader dependency. Information for pixel tests will be expanded in a follow-up PR.
 
 These tests will be able to be run alone by executing `./ui_unittests` in the build-output directory.
 
