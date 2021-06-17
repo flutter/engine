@@ -9,6 +9,8 @@
 
 namespace {
 
+constexpr float kScrollExtentMaxForInf = 1000;
+
 flutter::SemanticsAction GetSemanticsActionForScrollDirection(
     UIAccessibilityScrollDirection direction) {
   // To describe the vertical scroll direction, UIAccessibilityScrollDirection uses the
@@ -198,7 +200,6 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
     self.isAccessibilityElement = YES;
   } else {
     self.isAccessibilityElement = NO;
-    ;
   }
 }
 
@@ -223,17 +224,28 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 // private methods
 
 - (CGSize)contentSizeInternal {
-  CGRect result;
   const SkRect& rect = _semanticsObject.node.rect;
+  float x, y, width, height;
+  float scrollExtentMax = _semanticsObject.node.scrollExtentMax == INFINITY
+                              ? kScrollExtentMaxForInf + _semanticsObject.node.scrollPosition
+                              : _semanticsObject.node.scrollExtentMax;
   if (_semanticsObject.node.actions & flutter::kVerticalScrollSemanticsActions) {
-    result = CGRectMake(rect.x(), rect.y(), rect.width(),
-                        rect.height() + _semanticsObject.node.scrollExtentMax);
+    x = rect.x();
+    y = rect.y();
+    width = rect.width();
+    height = rect.height() + scrollExtentMax;
   } else if (_semanticsObject.node.actions & flutter::kHorizontalScrollSemanticsActions) {
-    result = CGRectMake(rect.x(), rect.y(), rect.width() + _semanticsObject.node.scrollExtentMax,
-                        rect.height());
+    x = rect.x();
+    y = rect.y();
+    width = rect.width() + scrollExtentMax;
+    height = rect.height();
   } else {
-    result = CGRectMake(rect.x(), rect.y(), rect.width(), rect.height());
+    x = rect.x();
+    y = rect.y();
+    width = rect.width();
+    height = rect.height();
   }
+  CGRect result = CGRectMake(x, y, width, height);
   return ConvertRectToGlobal(_semanticsObject, result).size;
 }
 
