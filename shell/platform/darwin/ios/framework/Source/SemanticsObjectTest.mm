@@ -279,7 +279,8 @@ class MockAccessibilityBridge : public AccessibilityBridgeIos {
                                                      w * effectivelyScale, h * effectivelyScale)));
   XCTAssertTrue(CGSizeEqualToSize(
       scrollable.contentSize,
-      CGSizeMake(w * effectivelyScale, (h + 1000 + scrollPosition) * effectivelyScale)));
+      CGSizeMake(w * effectivelyScale,
+                 (h + kScrollExtentMaxForInf + scrollPosition) * effectivelyScale)));
   XCTAssertTrue(CGPointEqualToPoint(scrollable.contentOffset,
                                     CGPointMake(0, scrollPosition * effectivelyScale)));
 }
