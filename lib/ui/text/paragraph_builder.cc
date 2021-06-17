@@ -133,6 +133,9 @@ const int sHeightMask = 1 << sHeightIndex;
 const int sLeadingMask = 1 << sLeadingIndex;
 const int sForceStrutHeightMask = 1 << sForceStrutHeightIndex;
 
+// Unicode replacement character
+const char16_t kReplacementCharacter = 0xFFFD;
+
 }  // namespace
 
 static void ParagraphBuilder_constructor(Dart_NativeArguments args) {
@@ -499,11 +502,12 @@ Dart_Handle ParagraphBuilder::addText(const std::u16string& text) {
   const UChar* text_ptr = reinterpret_cast<const UChar*>(text.data());
   UErrorCode error_code = U_ZERO_ERROR;
   u_strToUTF8(nullptr, 0, nullptr, text_ptr, text.size(), &error_code);
-  if (error_code != U_BUFFER_OVERFLOW_ERROR) {
-    return tonic::ToDart("string is not well-formed UTF-16");
+  if (error_code == U_BUFFER_OVERFLOW_ERROR) {
+    m_paragraphBuilder->AddText(text);
+  } else {
+    FML_LOG(ERROR) << "addText: string is not well-formed UTF-16";
+    m_paragraphBuilder->AddText(std::u16string(1, kReplacementCharacter));
   }
-
-  m_paragraphBuilder->AddText(text);
 
   return Dart_Null();
 }
