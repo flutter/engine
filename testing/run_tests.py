@@ -283,19 +283,36 @@ def RunDartTest(build_dir, test_packages, dart_file, verbose_dart_snapshot, mult
 
 def EnsureDebugUnoptSkyPackagesAreBuilt():
   variant_out_dir = os.path.join(out_dir, 'host_debug_unopt')
-  assert os.path.exists(variant_out_dir), "%s doesn't exist. Run GN to generate the directory first" % variant_out_dir
+  message = []
+  message.append('gn --runtime-mode debug --unopt --no-lto')
+  message.append('ninja -C %s flutter/sky/packages' % variant_out_dir)
+  ])
+  assert (
+          os.path.exists(variant_out_dir),
+          "%s doesn't exist. Please run the following commands: \n%s" % (variant_out_dir, '\n'.join(message))
+         )
 
 
 def EnsureJavaTestsAreBuilt(android_out_dir):
   """Builds the engine variant and the test jar containing the JUnit tests"""
   tmp_out_dir = os.path.join(out_dir, android_out_dir)
-  assert os.path.exists(tmp_out_dir), "%s doesn't exist. Run GN to generate the directory first" % android_out_dir
+  message.append('gn --android --unoptimized --runtime-mode=debug --no-lto')
+  message.append('ninja -C %s flutter/shell/platform/android:robolectric_tests' % android_out_dir)
+  assert (
+          os.path.exists(tmp_out_dir),
+          "%s doesn't exist. Please run the following commands: \n%s" % (android_out_dir, '\n'.join(message))
+         )
 
 
 def EnsureIosTestsAreBuilt(ios_out_dir):
   """Builds the engine variant and the test dylib containing the XCTests"""
   tmp_out_dir = os.path.join(out_dir, ios_out_dir)
-  assert os.path.exists(tmp_out_dir), "%s doesn't exist. Run GN to generate the directory first" % ios_out_dir
+  message.append('gn --ios --unoptimized --runtime-mode=debug --no-lto --simulator')
+  message.append('autoninja -C %s ios_test_flutter' % ios_out_dir)
+  assert (
+          os.path.exists(tmp_out_dir),
+          "%s doesn't exist. Please run the following commands: \n%s" % (ios_out_dir, '\n'.join(message))
+         )
 
 
 def AssertExpectedJavaVersion():
