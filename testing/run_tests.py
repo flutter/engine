@@ -289,7 +289,6 @@ def EnsureDebugUnoptSkyPackagesAreBuilt():
   final_message = '%s doesn\'t exist. Please run the following commands: \n%s' % (
       variant_out_dir, '\n'.join(message))
   assert os.path.exists(variant_out_dir), final_message
-         
 
 
 def EnsureJavaTestsAreBuilt(android_out_dir):
