@@ -286,11 +286,10 @@ def EnsureDebugUnoptSkyPackagesAreBuilt():
   message = []
   message.append('gn --runtime-mode debug --unopt --no-lto')
   message.append('ninja -C %s flutter/sky/packages' % variant_out_dir)
-  ])
-  assert (
-          os.path.exists(variant_out_dir),
-          "%s doesn't exist. Please run the following commands: \n%s" % (variant_out_dir, '\n'.join(message))
-         )
+  final_message = '%s doesn\'t exist. Please run the following commands: \n%s' % (
+      variant_out_dir, '\n'.join(message))
+  assert os.path.exists(variant_out_dir), final_message
+         
 
 
 def EnsureJavaTestsAreBuilt(android_out_dir):
@@ -298,10 +297,9 @@ def EnsureJavaTestsAreBuilt(android_out_dir):
   tmp_out_dir = os.path.join(out_dir, android_out_dir)
   message.append('gn --android --unoptimized --runtime-mode=debug --no-lto')
   message.append('ninja -C %s flutter/shell/platform/android:robolectric_tests' % android_out_dir)
-  assert (
-          os.path.exists(tmp_out_dir),
-          "%s doesn't exist. Please run the following commands: \n%s" % (android_out_dir, '\n'.join(message))
-         )
+  final_message = '%s doesn\'t exist. Please run the following commands: \n%s' % (
+      android_out_dir, '\n'.join(message))
+  assert os.path.exists(tmp_out_dir), final_message
 
 
 def EnsureIosTestsAreBuilt(ios_out_dir):
@@ -309,10 +307,9 @@ def EnsureIosTestsAreBuilt(ios_out_dir):
   tmp_out_dir = os.path.join(out_dir, ios_out_dir)
   message.append('gn --ios --unoptimized --runtime-mode=debug --no-lto --simulator')
   message.append('autoninja -C %s ios_test_flutter' % ios_out_dir)
-  assert (
-          os.path.exists(tmp_out_dir),
-          "%s doesn't exist. Please run the following commands: \n%s" % (ios_out_dir, '\n'.join(message))
-         )
+  final_message = '%s doesn\'t exist. Please run the following commands: \n%s' % (
+      ios_out_dir, '\n'.join(message))
+  assert os.path.exists(tmp_out_dir), final_message
 
 
 def AssertExpectedJavaVersion():
