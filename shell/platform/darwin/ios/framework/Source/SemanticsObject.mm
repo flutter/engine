@@ -198,7 +198,6 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
     self.isAccessibilityElement = YES;
   } else {
     self.isAccessibilityElement = NO;
-    ;
   }
 }
 
@@ -225,12 +224,13 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 - (CGSize)contentSizeInternal {
   CGRect result;
   const SkRect& rect = _semanticsObject.node.rect;
+  float scrollExtentMax = isfinite(_semanticsObject.node.scrollExtentMax)
+                              ? _semanticsObject.node.scrollExtentMax
+                              : kScrollExtentMaxForInf + _semanticsObject.node.scrollPosition;
   if (_semanticsObject.node.actions & flutter::kVerticalScrollSemanticsActions) {
-    result = CGRectMake(rect.x(), rect.y(), rect.width(),
-                        rect.height() + _semanticsObject.node.scrollExtentMax);
+    result = CGRectMake(rect.x(), rect.y(), rect.width(), rect.height() + scrollExtentMax);
   } else if (_semanticsObject.node.actions & flutter::kHorizontalScrollSemanticsActions) {
-    result = CGRectMake(rect.x(), rect.y(), rect.width() + _semanticsObject.node.scrollExtentMax,
-                        rect.height());
+    result = CGRectMake(rect.x(), rect.y(), rect.width() + scrollExtentMax, rect.height());
   } else {
     result = CGRectMake(rect.x(), rect.y(), rect.width(), rect.height());
   }
