@@ -85,9 +85,6 @@ class FontFallbackData {
     // TODO(hterkelsen): Make this faster for the common case where the text
     // is supported by the given fonts.
 
-    // A list of unique code units in the text.
-    final List<int> codeUnits = text.runes.toSet().toList();
-
     // If the text is ASCII, then skip this check.
     bool isAscii = true;
     for (int i = 0; i < text.length; i++) {
@@ -100,24 +97,25 @@ class FontFallbackData {
       return;
     }
 
-    // First, check if every code unit in the text is known to be covered by one
-    // of our global fallback fonts. We cache the set of code units covered by
-    // the global fallback fonts since this set is growing monotonically over
-    // the lifetime of the app.
-    codeUnits.removeWhere(
-        (int codeUnit) => knownCoveredCodeUnits.contains(codeUnit));
-    if (codeUnits.isEmpty) {
+    // We have a cache of code units which are known to be covered by at least
+    // one of our fallback fonts, and a cache of code units which are known not
+    // to be covered by any fallback font. From the given text, construct a set
+    // of code units which need to be checked.
+    final Set<int> runesToCheck = <int>{};
+    for (final int rune in text.runes) {
+      // Filter out code units which ASCII, known to be covered, or known not
+      // to be covered.
+      if (!(rune < 160 ||
+          knownCoveredCodeUnits.contains(rune) ||
+          codeUnitsWithNoKnownFont.contains(rune))) {
+        runesToCheck.add(rune);
+      }
+    }
+    if (runesToCheck.isEmpty) {
       return;
     }
 
-    // Next, check if all of the remaining code units are ones which are known
-    // to have no global font fallback. This means we know of no font we can
-    // download which will cover the remaining code units. In this case we can
-    // just skip the checks below, since we know there's nothing we can do to
-    // cover the code units.
-    if (_checkIfNoFallbackFontSupports(codeUnits)) {
-      return;
-    }
+    final List<int> codeUnits = runesToCheck.toList();
 
     List<SkFont> fonts = <SkFont>[];
     for (var font in fontFamilies) {
@@ -217,17 +215,6 @@ class FontFallbackData {
     findFontsForMissingCodeunits(codeUnits);
   }
 
-  /// Returns `true` if every code unit in [codeUnits] is known to not have any
-  /// fallback font which can cover it.
-  ///
-  /// This method has a side effect of removing every code unit from [codeUnits]
-  /// which is known not to have a fallback font which covers it.
-  bool _checkIfNoFallbackFontSupports(List<int> codeUnits) {
-    codeUnits.removeWhere(
-        (int codeUnit) => codeUnitsWithNoKnownFont.contains(codeUnit));
-    return codeUnits.isEmpty;
-  }
-
   void registerFallbackFont(String family, Uint8List bytes) {
     final SkTypeface? typeface =
         canvasKit.FontMgr.RefDefault().MakeTypefaceFromData(bytes);
@@ -247,11 +234,6 @@ class FontFallbackData {
 Future<void> findFontsForMissingCodeunits(List<int> codeUnits) async {
   final FontFallbackData data = FontFallbackData.instance;
 
-  // If all of the code units are known to have no Noto Font which covers them,
-  // then just give up. We have already logged a warning.
-  if (codeUnits.every((u) => data.codeUnitsWithNoKnownFont.contains(u))) {
-    return;
-  }
   Set<NotoFont> fonts = <NotoFont>{};
   Set<int> coveredCodeUnits = <int>{};
   Set<int> missingCodeUnits = <int>{};
