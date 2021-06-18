@@ -294,6 +294,7 @@ def EnsureDebugUnoptSkyPackagesAreBuilt():
 def EnsureJavaTestsAreBuilt(android_out_dir):
   """Builds the engine variant and the test jar containing the JUnit tests"""
   tmp_out_dir = os.path.join(out_dir, android_out_dir)
+  message = []
   message.append('gn --android --unoptimized --runtime-mode=debug --no-lto')
   message.append('ninja -C %s flutter/shell/platform/android:robolectric_tests' % android_out_dir)
   final_message = '%s doesn\'t exist. Please run the following commands: \n%s' % (
@@ -304,6 +305,7 @@ def EnsureJavaTestsAreBuilt(android_out_dir):
 def EnsureIosTestsAreBuilt(ios_out_dir):
   """Builds the engine variant and the test dylib containing the XCTests"""
   tmp_out_dir = os.path.join(out_dir, ios_out_dir)
+  message = []
   message.append('gn --ios --unoptimized --runtime-mode=debug --no-lto --simulator')
   message.append('autoninja -C %s ios_test_flutter' % ios_out_dir)
   final_message = '%s doesn\'t exist. Please run the following commands: \n%s' % (
