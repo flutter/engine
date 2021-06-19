@@ -737,7 +737,8 @@ struct LoadedElfDeleter {
 
 using UniqueLoadedElf = std::unique_ptr<Dart_LoadedElf, LoadedElfDeleter>;
 
-struct _FlutterEngineAOTData {
+struct _FlutterEngineAOTData
+    : public fml::RefCountedThreadSafe<_FlutterEngineAOTData> {
   UniqueLoadedElf loaded_elf = nullptr;
   const uint8_t* vm_snapshot_data = nullptr;
   const uint8_t* vm_snapshot_instrs = nullptr;
@@ -764,7 +765,7 @@ FlutterEngineResult FlutterEngineCreateAOTData(
                                   "Invalid ELF path specified.");
       }
 
-      auto aot_data = std::make_unique<_FlutterEngineAOTData>();
+      auto aot_data = fml::MakeRefCounted<_FlutterEngineAOTData>();
       const char* error = nullptr;
 
 #if OS_FUCHSIA
@@ -789,7 +790,9 @@ FlutterEngineResult FlutterEngineCreateAOTData(
 
       aot_data->loaded_elf.reset(loaded_elf);
 
-      *data_out = aot_data.release();
+      // Will be released in FlutterEngineCollectAOTData.
+      aot_data->AddRef();
+      *data_out = aot_data.get();
       return kSuccess;
     }
   }
@@ -806,28 +809,39 @@ FlutterEngineResult FlutterEngineCollectAOTData(FlutterEngineAOTData data) {
   }
 
   // Created in a unique pointer in `FlutterEngineCreateAOTData`.
-  delete data;
+  data->Release();
   return kSuccess;
 }
 
 void PopulateSnapshotMappingCallbacks(
     const FlutterProjectArgs* args,
     flutter::Settings& settings) {  // NOLINT(google-runtime-references)
-  // There are no ownership concerns here as all mappings are owned by the
-  // embedder and not the engine.
-  auto make_mapping_callback = [](const uint8_t* mapping, size_t size) {
-    return [mapping, size]() {
-      return std::make_unique<fml::NonOwnedMapping>(mapping, size);
-    };
-  };
 
   if (flutter::DartVM::IsRunningPrecompiledCode()) {
+    // There are no ownership concerns here as all mappings are owned by the
+    // embedder and not the engine.
+    auto make_mapping_callback = [](const uint8_t* mapping, size_t size) {
+      return [mapping, size]() {
+        return std::make_unique<fml::NonOwnedMapping>(mapping, size);
+      };
+    };
+
     if (SAFE_ACCESS(args, aot_data, nullptr) != nullptr) {
+      auto ref = fml::Ref(args->aot_data);
+
+      // If creating VM, let VM hold on to VM snapshot data.
+      auto make_mapping_callback_vm = [ref](const uint8_t* mapping,
+                                            size_t size) {
+        return [mapping, size, ref]() {
+          return std::make_unique<fml::NonOwnedMapping>(mapping, size);
+        };
+      };
+
       settings.vm_snapshot_data =
-          make_mapping_callback(args->aot_data->vm_snapshot_data, 0);
+          make_mapping_callback_vm(args->aot_data->vm_snapshot_data, 0);
 
       settings.vm_snapshot_instr =
-          make_mapping_callback(args->aot_data->vm_snapshot_instrs, 0);
+          make_mapping_callback_vm(args->aot_data->vm_snapshot_instrs, 0);
 
       settings.isolate_snapshot_data =
           make_mapping_callback(args->aot_data->vm_isolate_data, 0);
