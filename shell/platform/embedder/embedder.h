@@ -730,7 +730,20 @@ typedef struct {
   bool synthesized;
 } FlutterKeyEvent;
 
-typedef void (*FlutterKeyEventCallback)(bool /* handled */,
+typedef struct {
+  size_t struct_size;
+  size_t num_events;
+  const FlutterKeyEvent* events;
+  size_t raw_event_size;
+  const uint8_t* raw_event;
+} FlutterKeyMessage;
+
+typedef enum {
+  kFlutterKeyMessageResultEventsHandled = 1 << 0,
+  kFlutterKeyMessageResultRawEventHandled = 1 << 1,
+} FlutterKeyMessageResult;
+
+typedef void (*FlutterKeyMessageCallback)(int /* result */,
                                         void* /* user_data */);
 
 struct _FlutterPlatformMessageResponseHandle;
@@ -1739,10 +1752,10 @@ FlutterEngineResult FlutterEngineSendPointerEvent(
 /// @return     The result of the call.
 ///
 FLUTTER_EXPORT
-FlutterEngineResult FlutterEngineSendKeyEvent(FLUTTER_API_SYMBOL(FlutterEngine)
+FlutterEngineResult FlutterEngineSendKeyMessage(FLUTTER_API_SYMBOL(FlutterEngine)
                                                   engine,
-                                              const FlutterKeyEvent* event,
-                                              FlutterKeyEventCallback callback,
+                                              const FlutterKeyMessage* packet,
+                                              FlutterKeyMessageCallback callback,
                                               void* user_data);
 
 FLUTTER_EXPORT
@@ -2258,10 +2271,10 @@ typedef FlutterEngineResult (*FlutterEngineSendPointerEventFnPtr)(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
     const FlutterPointerEvent* events,
     size_t events_count);
-typedef FlutterEngineResult (*FlutterEngineSendKeyEventFnPtr)(
+typedef FlutterEngineResult (*FlutterEngineSendKeyMessageFnPtr)(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
-    const FlutterKeyEvent* event,
-    FlutterKeyEventCallback callback,
+    const FlutterKeyMessage* message,
+    FlutterKeyMessageCallback callback,
     void* user_data);
 typedef FlutterEngineResult (*FlutterEngineSendPlatformMessageFnPtr)(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,

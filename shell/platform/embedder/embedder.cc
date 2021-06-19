@@ -1584,9 +1584,9 @@ static inline flutter::KeyEventType MapKeyEventType(
   return flutter::KeyEventType::kUp;
 }
 
-FlutterEngineResult FlutterEngineSendKeyEvent(FLUTTER_API_SYMBOL(FlutterEngine)
+FlutterEngineResult FlutterEngineSendKeyMessage(FLUTTER_API_SYMBOL(FlutterEngine)
                                                   engine,
-                                              const FlutterKeyEvent* event,
+                                              const FlutterKeyMessage* message,
                                               FlutterKeyEventCallback callback,
                                               void* user_data) {
   if (engine == nullptr) {
@@ -1597,18 +1597,48 @@ FlutterEngineResult FlutterEngineSendKeyEvent(FLUTTER_API_SYMBOL(FlutterEngine)
     return LOG_EMBEDDER_ERROR(kInvalidArguments, "Invalid key event.");
   }
 
-  const char* character = SAFE_ACCESS(event, character, nullptr);
+  // It is asserted that at most one event can be non-synthesized, and only
+  // that event may have a non-null character (or may also be null).  This
+  // invariable is tracked by the following 2 variables, and will cause this
+  // function to return kInvalidArguments if broken.
+  bool found_nonsynthesized_event = false;
+  const char* message_character = nullptr;
 
-  flutter::KeyData key_data;
-  key_data.Clear();
-  key_data.timestamp = (uint64_t)SAFE_ACCESS(event, timestamp, 0);
-  key_data.type = MapKeyEventType(
-      SAFE_ACCESS(event, type, FlutterKeyEventType::kFlutterKeyEventTypeUp));
-  key_data.physical = SAFE_ACCESS(event, physical, 0);
-  key_data.logical = SAFE_ACCESS(event, logical, 0);
-  key_data.synthesized = SAFE_ACCESS(event, synthesized, false);
+  const FlutterKeyEvent* events = SAFE_ACCESS(message, events, nullptr);
+  const size_t num_events = events == nullptr ? 0 : SAFE_ACCESS(message, num_events, 0);
 
-  auto packet = std::make_unique<flutter::KeyDataPacket>(key_data, character);
+  flutter::KeyData key_data[num_events];
+  for (size_t event_index = 0; event_index < num_events; event_index += 1) {
+    FlutterKeyEvent* event = &message->events[event_index];
+    flutter::KeyData* data = &key_data[event_index];
+    key_data->Clear();
+    key_data->timestamp = (uint64_t)SAFE_ACCESS(event, timestamp, 0);
+    key_data->type = MapKeyEventType(
+        SAFE_ACCESS(event, type, FlutterKeyEventType::kFlutterKeyEventTypeUp));
+    key_data->physical = SAFE_ACCESS(event, physical, 0);
+    key_data->logical = SAFE_ACCESS(event, logical, 0);
+    key_data->synthesized = SAFE_ACCESS(event, synthesized, false);
+    if (!key_data->synthesized) {
+      if (found_nonsynthesized_event) {
+        return kInvalidArguments;
+      } else {
+        found_nonsynthesized_event = true;
+        message_character = SAFE_ACCESS(event, character, nullptr);
+      }
+    } else {
+      if (SAFE_ACCESS(event, character, nullptr) != nullptr) {
+        return kInvalidArguments;
+      }
+    }
+  }
+
+  const uint8_t* raw_event = SAFE_ACCESS(message, raw_event, false);
+  const size_t raw_event_size = SAFE_ACCESS(message, raw_event_size, 0);
+  if (raw_event == nullptr || raw_event_size == 0) {
+    return kInvalidArguments;
+  }
+  auto packet = std::make_unique<flutter::KeyDataPacket>(
+    key_data, num_events, message_character, raw_event, raw_event_size);
 
   auto response = [callback, user_data](bool handled) {
     if (callback != nullptr)
