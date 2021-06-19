@@ -817,15 +817,15 @@ void PopulateSnapshotMappingCallbacks(
     const FlutterProjectArgs* args,
     flutter::Settings& settings) {  // NOLINT(google-runtime-references)
 
-  if (flutter::DartVM::IsRunningPrecompiledCode()) {
-    // There are no ownership concerns here as all mappings are owned by the
-    // embedder and not the engine.
-    auto make_mapping_callback = [](const uint8_t* mapping, size_t size) {
-      return [mapping, size]() {
-        return std::make_unique<fml::NonOwnedMapping>(mapping, size);
-      };
+  // There are no ownership concerns here as all mappings are owned by the
+  // embedder and not the engine.
+  auto make_mapping_callback = [](const uint8_t* mapping, size_t size) {
+    return [mapping, size]() {
+      return std::make_unique<fml::NonOwnedMapping>(mapping, size);
     };
+  };
 
+  if (flutter::DartVM::IsRunningPrecompiledCode()) {
     if (SAFE_ACCESS(args, aot_data, nullptr) != nullptr) {
       auto ref = fml::Ref(args->aot_data);
 
