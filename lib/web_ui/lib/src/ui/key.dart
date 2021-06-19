@@ -19,9 +19,9 @@ enum KeyEventType {
 }
 
 /// Information about a key event.
-class KeyData {
+class KeyDatum {
   /// Creates an object that represents a key event.
-  const KeyData({
+  const KeyDatum({
     required this.timeStamp,
     required this.type,
     required this.physical,
@@ -79,7 +79,7 @@ class KeyData {
   final bool synthesized;
 
   @override
-  String toString() => 'KeyData(type: ${_typeToString(type)}, physical: 0x${physical.toRadixString(16)}, '
+  String toString() => 'KeyDatum(type: ${_typeToString(type)}, physical: 0x${physical.toRadixString(16)}, '
     'logical: 0x${logical.toRadixString(16)}, character: $character)';
 
   /// Returns a complete textual description of the information in this object.

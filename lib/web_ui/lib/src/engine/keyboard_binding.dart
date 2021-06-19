@@ -66,7 +66,7 @@ const int _kDeadKeyShift = 0x200000000000;
 const int _kDeadKeyAlt = 0x400000000000;
 const int _kDeadKeyMeta = 0x800000000000;
 
-typedef DispatchKeyData = bool Function(ui.KeyData data);
+typedef DispatchKeyData = bool Function(ui.KeyDatum data);
 
 /// Converts a floating number timestamp (in milliseconds) to a [Duration] by
 /// splitting it into two integer components: milliseconds + microseconds.
@@ -120,7 +120,7 @@ class KeyboardBinding {
     });
     _listeners.clear();
   }
-  bool _onKeyData(ui.KeyData data) {
+  bool _onKeyData(ui.KeyDatum data) {
     bool? result;
     // This callback is designed to be invoked synchronously. This is enforced
     // by `result`, which starts null and is asserted non-null when returned.
@@ -151,7 +151,7 @@ class AsyncKeyboardDispatching {
     this.callback,
   });
 
-  final ui.KeyData keyData;
+  final ui.KeyDatum keyData;
   final _VoidCallback? callback;
 }
 
@@ -177,7 +177,7 @@ class FlutterHtmlKeyboardEvent {
   void preventDefault() => _event.preventDefault();
 }
 
-// Reads [html.KeyboardEvent], then [dispatches ui.KeyData] accordingly.
+// Reads [html.KeyboardEvent], then [dispatches ui.KeyDatum] accordingly.
 //
 // The events are read through [handleEvent], and dispatched through the
 // [dispatchKeyData] as given in the constructor. Some key data might be
@@ -268,7 +268,7 @@ class KeyboardConverter {
   //
   // Returns a callback that cancels the schedule. Disposal of
   // `KeyBoardConverter` also cancels the shedule automatically.
-  _VoidCallback _scheduleAsyncEvent(Duration duration, ValueGetter<ui.KeyData> getData, _VoidCallback callback) {
+  _VoidCallback _scheduleAsyncEvent(Duration duration, ValueGetter<ui.KeyDatum> getData, _VoidCallback callback) {
     bool canceled = false;
     Future<void>.delayed(duration).then<void>((_) {
       if (!canceled && !_disposed) {
@@ -294,7 +294,7 @@ class KeyboardConverter {
   void _startGuardingKey(int physicalKey, int logicalKey, Duration currentTimeStamp) {
     final _VoidCallback cancelingCallback = _scheduleAsyncEvent(
       _keydownCancelDuration,
-      () => ui.KeyData(
+      () => ui.KeyDatum(
         timeStamp: currentTimeStamp + _keydownCancelDuration,
         type: ui.KeyEventType.up,
         physical: physicalKey,
@@ -363,7 +363,7 @@ class KeyboardConverter {
 
       _scheduleAsyncEvent(
         Duration.zero,
-        () => ui.KeyData(
+        () => ui.KeyDatum(
           timeStamp: timeStamp,
           type: ui.KeyEventType.up,
           physical: physicalKey,
@@ -440,7 +440,7 @@ class KeyboardConverter {
           if (logicalRecord != logicalKey)
             return false;
 
-          dispatchKeyData(ui.KeyData(
+          dispatchKeyData(ui.KeyDatum(
             timeStamp: timeStamp,
             type: ui.KeyEventType.up,
             physical: physicalKey,
@@ -463,7 +463,7 @@ class KeyboardConverter {
       }
     }
 
-    final ui.KeyData keyData = ui.KeyData(
+    final ui.KeyDatum keyData = ui.KeyDatum(
       timeStamp: timeStamp,
       type: type,
       physical: physicalKey,

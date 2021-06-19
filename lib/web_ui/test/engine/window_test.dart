@@ -149,7 +149,7 @@ void testMain() {
   });
 
   test('invokeOnKeyData returns normally when onKeyData is null', () {
-    final ui.KeyData keyData = ui.KeyData(
+    final ui.KeyDatum keyData = ui.KeyDatum(
       timeStamp: Duration(milliseconds: 1),
       type: ui.KeyEventType.repeat,
       physical: kPhysicalKeyA,
@@ -179,7 +179,7 @@ void testMain() {
       expect(window.onKeyData, same(onKeyData));
     });
 
-    final ui.KeyData keyData = ui.KeyData(
+    final ui.KeyDatum keyData = ui.KeyDatum(
       timeStamp: Duration(milliseconds: 1),
       type: ui.KeyEventType.repeat,
       physical: kPhysicalKeyA,

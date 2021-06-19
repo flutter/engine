@@ -44,8 +44,8 @@ void main() {
 
 void testMain() {
   test('Single key press, repeat, and release', () {
-    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
-    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+    final List<ui.KeyDatum> keyDataList = <ui.KeyDatum>[];
+    final KeyboardConverter converter = KeyboardConverter((ui.KeyDatum key) {
       keyDataList.add(key);
       // Only handle down events
       return key.type == ui.KeyEventType.down;
@@ -108,8 +108,8 @@ void testMain() {
   });
 
   test('Release modifier during a repeated sequence', () {
-    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
-    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+    final List<ui.KeyDatum> keyDataList = <ui.KeyDatum>[];
+    final KeyboardConverter converter = KeyboardConverter((ui.KeyDatum key) {
       keyDataList.add(key);
       // Only handle down events
       return key.type == ui.KeyEventType.down;
@@ -196,8 +196,8 @@ void testMain() {
   });
 
   test('Distinguish between left and right modifiers', () {
-    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
-    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+    final List<ui.KeyDatum> keyDataList = <ui.KeyDatum>[];
+    final KeyboardConverter converter = KeyboardConverter((ui.KeyDatum key) {
       keyDataList.add(key);
       return true;
     });
@@ -236,8 +236,8 @@ void testMain() {
   });
 
   test('Distinguish between normal and numpad digits', () {
-    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
-    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+    final List<ui.KeyDatum> keyDataList = <ui.KeyDatum>[];
+    final KeyboardConverter converter = KeyboardConverter((ui.KeyDatum key) {
       keyDataList.add(key);
       return true;
     });
@@ -276,8 +276,8 @@ void testMain() {
   });
 
   test('Dead keys are distinguishable', () {
-    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
-    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+    final List<ui.KeyDatum> keyDataList = <ui.KeyDatum>[];
+    final KeyboardConverter converter = KeyboardConverter((ui.KeyDatum key) {
       keyDataList.add(key);
       return true;
     });
@@ -350,8 +350,8 @@ void testMain() {
   });
 
   test('Duplicate down is ignored', () {
-    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
-    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+    final List<ui.KeyDatum> keyDataList = <ui.KeyDatum>[];
+    final KeyboardConverter converter = KeyboardConverter((ui.KeyDatum key) {
       keyDataList.add(key);
       return true;
     });
@@ -386,8 +386,8 @@ void testMain() {
   });
 
   test('Duplicate ups are skipped', () {
-    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
-    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+    final List<ui.KeyDatum> keyDataList = <ui.KeyDatum>[];
+    final KeyboardConverter converter = KeyboardConverter((ui.KeyDatum key) {
       keyDataList.add(key);
       return true;
     });
@@ -403,8 +403,8 @@ void testMain() {
   });
 
   test('Conflict from multiple keyboards do not crash', () {
-    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
-    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+    final List<ui.KeyDatum> keyDataList = <ui.KeyDatum>[];
+    final KeyboardConverter converter = KeyboardConverter((ui.KeyDatum key) {
       keyDataList.add(key);
       return true;
     });
@@ -441,8 +441,8 @@ void testMain() {
   });
 
   testFakeAsync('CapsLock down synthesizes an immediate cancel on macOS', (FakeAsync async) {
-    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
-    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+    final List<ui.KeyDatum> keyDataList = <ui.KeyDatum>[];
+    final KeyboardConverter converter = KeyboardConverter((ui.KeyDatum key) {
       keyDataList.add(key);
       return true;
     }, onMacOs: true);
@@ -521,8 +521,8 @@ void testMain() {
   });
 
   testFakeAsync('CapsLock behaves normally on non-macOS', (FakeAsync async) {
-    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
-    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+    final List<ui.KeyDatum> keyDataList = <ui.KeyDatum>[];
+    final KeyboardConverter converter = KeyboardConverter((ui.KeyDatum key) {
       keyDataList.add(key);
       return true;
     }, onMacOs: false);
@@ -571,8 +571,8 @@ void testMain() {
   });
 
   testFakeAsync('Key guards: key down events are guarded', (FakeAsync async) {
-    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
-    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+    final List<ui.KeyDatum> keyDataList = <ui.KeyDatum>[];
+    final KeyboardConverter converter = KeyboardConverter((ui.KeyDatum key) {
       keyDataList.add(key);
       return true;
     });
@@ -635,8 +635,8 @@ void testMain() {
   });
 
   testFakeAsync('Key guards: key repeated down events refreshes guards', (FakeAsync async) {
-    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
-    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+    final List<ui.KeyDatum> keyDataList = <ui.KeyDatum>[];
+    final KeyboardConverter converter = KeyboardConverter((ui.KeyDatum key) {
       keyDataList.add(key);
       return true;
     });
@@ -698,8 +698,8 @@ void testMain() {
   });
 
   testFakeAsync('Key guards: cleared by keyups', (FakeAsync async) {
-    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
-    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+    final List<ui.KeyDatum> keyDataList = <ui.KeyDatum>[];
+    final KeyboardConverter converter = KeyboardConverter((ui.KeyDatum key) {
       keyDataList.add(key);
       return true;
     });
@@ -755,8 +755,8 @@ void testMain() {
   });
 
   testFakeAsync('Lock flags of other keys', (FakeAsync async) {
-    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
-    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+    final List<ui.KeyDatum> keyDataList = <ui.KeyDatum>[];
+    final KeyboardConverter converter = KeyboardConverter((ui.KeyDatum key) {
       keyDataList.add(key);
       return true;
     }, onMacOs: false);
@@ -802,8 +802,8 @@ void testMain() {
   });
 
   test('Deduce modifier key up from modifier field', () {
-    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
-    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+    final List<ui.KeyDatum> keyDataList = <ui.KeyDatum>[];
+    final KeyboardConverter converter = KeyboardConverter((ui.KeyDatum key) {
       keyDataList.add(key);
       return true;
     }, onMacOs: false);
@@ -940,7 +940,7 @@ const kNumlLock = 0x2;
 const kScrollLock = 0x4;
 
 void expectKeyData(
-  ui.KeyData target, {
+  ui.KeyDatum target, {
   required ui.KeyEventType type,
   required int physical,
   required int logical,

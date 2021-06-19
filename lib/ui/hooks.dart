@@ -98,8 +98,8 @@ void _dispatchPointerDataPacket(ByteData packet) {
 
 @pragma('vm:entry-point')
 // ignore: unused_element
-void _dispatchKeyData(ByteData packet, int responseId) {
-  PlatformDispatcher.instance._dispatchKeyData(packet, responseId);
+void _dispatchKeyDataMessage(ByteData packet, int responseId) {
+  PlatformDispatcher.instance._dispatchKeyDataMessage(packet, responseId);
 }
 
 @pragma('vm:entry-point')

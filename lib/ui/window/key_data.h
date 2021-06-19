@@ -29,15 +29,16 @@ enum class KeyEventType : int64_t {
 //
 // This structure is unpacked by hooks.dart.
 struct alignas(8) KeyData {
+  // True if the event does not correspond to a native event.
+  //
+  // The value is 1 for true, and 0 for false. This field is placed first
+  // because it guides how other fields are parsed.
+  uint64_t synthesized;
   // Timestamp in microseconds from an arbitrary and consistent start point
   uint64_t timestamp;
   KeyEventType type;
   uint64_t physical;
   uint64_t logical;
-  // True if the event does not correspond to a native event.
-  //
-  // The value is 1 for true, and 0 for false.
-  uint64_t synthesized;
 
   // Sets all contents of `Keydata` to 0.
   void Clear();

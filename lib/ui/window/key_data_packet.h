@@ -51,7 +51,7 @@ class KeyDataPacket {
   // | CharDataSize |
   // |   CharData   |
   // | RawEventSize |
-  // |   RawEvent   |
+  // | RawEventData |
 
   std::vector<uint8_t> data_;
 };

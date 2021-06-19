@@ -45,10 +45,10 @@ KeyDataPacket::KeyDataPacket(
   const uint64_t num_events_64 = num_events;
   const uint64_t char_size_64 = char_size;
   const uint64_t raw_event_size_64 = raw_event_size;
-  position = copy(position, &num_events_64, sizeof(num_events_64));
-  position = copy(position, events, num_events * sizeof(KeyData));
   position = copy(position, &char_size_64, sizeof(char_size_64));
   position = copy(position, character, char_size);
+  position = copy(position, &num_events_64, sizeof(num_events_64));
+  position = copy(position, events, num_events * sizeof(KeyData));
   position = copy(position, &raw_event_size_64, sizeof(raw_event_size_64));
   position = copy(position, raw_event, sizeof(raw_event_size_64));
   if (position != data_.data() + data_size) {

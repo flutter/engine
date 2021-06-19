@@ -198,7 +198,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
   /// Engine code should use this method instead of the callback directly.
   /// Otherwise zones won't work properly.
-  void invokeOnKeyData(ui.KeyData data, _KeyDataResponseCallback callback) {
+  void invokeOnKeyData(ui.KeyDatum data, _KeyDataResponseCallback callback) {
     final ui.KeyDataCallback? onKeyData = _onKeyData;
     if (onKeyData != null) {
       invoke(

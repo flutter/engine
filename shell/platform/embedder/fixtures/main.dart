@@ -522,7 +522,7 @@ int _serializeKeyEventType(KeyEventType change) {
 // Echo the event data with `_echoKeyEvent`, and returns synthesized as handled.
 @pragma('vm:entry-point')
 void key_data_echo() async {
-  PlatformDispatcher.instance.onKeyData = (KeyData data) {
+  PlatformDispatcher.instance.onKeyData = (KeyDatum data) {
     _echoKeyEvent(
       _serializeKeyEventType(data.type),
       data.timeStamp.inMicroseconds,
