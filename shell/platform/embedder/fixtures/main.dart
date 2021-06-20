@@ -935,3 +935,35 @@ void invalid_backingstore() {
   };
   PlatformDispatcher.instance.scheduleFrame();
 }
+
+void drawSolidColor(Color c) {
+  PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
+    final SceneBuilder builder = SceneBuilder();
+    builder.pushOffset(0.0, 0.0);
+    builder.addPicture(
+      Offset.zero,
+      CreateColoredBox(
+        c,
+        PlatformDispatcher.instance.views.first.physicalSize
+      )
+    );
+    builder.pop();
+    PlatformDispatcher.instance.views.first.render(builder.build());
+  };
+  PlatformDispatcher.instance.scheduleFrame();
+}
+
+@pragma('vm:entry-point')
+void draw_solid_red() {
+  drawSolidColor(const Color.fromARGB(255, 255, 0, 0));
+}
+
+@pragma('vm:entry-point')
+void draw_solid_green() {
+  drawSolidColor(const Color.fromARGB(255, 0, 255, 0));
+}
+
+@pragma('vm:entry-point')
+void draw_solid_blue() {
+  drawSolidColor(const Color.fromARGB(255, 0, 0, 255));
+}
