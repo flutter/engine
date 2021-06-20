@@ -18,9 +18,11 @@ namespace testing {
 
 EmbedderTestBackingStoreProducer::EmbedderTestBackingStoreProducer(
     sk_sp<GrDirectContext> context,
-    RenderTargetType type)
+    RenderTargetType type,
+    FlutterSoftwarePixelFormat software_pixfmt)
     : context_(context),
-      type_(type)
+      type_(type),
+      software_pixfmt_(software_pixfmt)
 #ifdef SHELL_ENABLE_METAL
       ,
       test_metal_context_(std::make_unique<TestMetalContext>())
@@ -30,6 +32,13 @@ EmbedderTestBackingStoreProducer::EmbedderTestBackingStoreProducer(
       test_vulkan_context_(nullptr)
 #endif
 {
+  if (type == RenderTargetType::kSoftwareBuffer
+      && software_pixfmt_ != kNative32) {
+    FML_LOG(ERROR) << "Expected pixel format to be the default (kNative32) when"
+      "backing store producer should produce deprecated v1 software backing "
+      "stores.";
+    assert(false);
+  };
 }
 
 EmbedderTestBackingStoreProducer::~EmbedderTestBackingStoreProducer() = default;
@@ -40,6 +49,8 @@ bool EmbedderTestBackingStoreProducer::Create(
   switch (type_) {
     case RenderTargetType::kSoftwareBuffer:
       return CreateSoftware(config, renderer_out);
+    case RenderTargetType::kSoftwareBuffer2:
+      return CreateSoftware2(config, renderer_out);
 #ifdef SHELL_ENABLE_GL
     case RenderTargetType::kOpenGLTexture:
       return CreateTexture(config, renderer_out);
@@ -195,6 +206,60 @@ bool EmbedderTestBackingStoreProducer::CreateSoftware(
   backing_store_out->software.destruction_callback = [](void* user_data) {
     reinterpret_cast<SkSurface*>(user_data)->unref();
   };
+
+  return true;
+}
+
+bool EmbedderTestBackingStoreProducer::CreateSoftware2(
+    const FlutterBackingStoreConfig* config,
+    FlutterBackingStore* backing_store_out) {
+  SkColorType color_type;
+  if (software_pixfmt_ == kNative32) {
+    color_type = kN32_SkColorType;
+  } else {
+    color_type = (SkColorType) software_pixfmt_;
+  }
+
+  auto alpha_type = SkColorTypeIsAlwaysOpaque(color_type)
+    ? kOpaque_SkAlphaType
+    : kPremul_SkAlphaType;
+
+  auto surface = SkSurface::MakeRaster(
+    SkImageInfo::Make(
+      SkISize::Make(config->size.width, config->size.height),
+      SkColorInfo(
+        color_type,
+        alpha_type,
+        SkColorSpace::MakeSRGB()
+      )
+    )
+  );
+  if (!surface) {
+    FML_LOG(ERROR)
+        << "Could not create the render target for compositor layer.";
+    return false;
+  }
+
+  SkPixmap pixmap;
+  if (!surface->peekPixels(&pixmap)) {
+    FML_LOG(ERROR) << "Could not peek pixels of pixmap.";
+    return false;
+  }
+
+  backing_store_out->type = kFlutterBackingStoreTypeSoftware2;
+  backing_store_out->user_data = surface.get();
+  backing_store_out->software2.struct_size = sizeof(FlutterSoftwareBackingStore2);
+  backing_store_out->software2.user_data = surface.get();
+  backing_store_out->software2.allocation = pixmap.writable_addr();
+  backing_store_out->software2.row_bytes = pixmap.rowBytes();
+  backing_store_out->software2.height = pixmap.height();
+  // The balancing unref is in the destruction callback.
+  surface->ref();
+  backing_store_out->software2.user_data = surface.get();
+  backing_store_out->software2.destruction_callback = [](void* user_data) {
+    reinterpret_cast<SkSurface*>(user_data)->unref();
+  };
+  backing_store_out->software2.pixel_format = software_pixfmt_;
 
   return true;
 }

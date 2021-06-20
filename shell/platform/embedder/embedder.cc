@@ -651,10 +651,31 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
 #endif
 }
 
+static inline SkColorType getSkColorType(FlutterSoftwarePixelFormat pixfmt) {
+  if (pixfmt == kNative32) {
+    return kN32_SkColorType;
+  } else {
+    return (SkColorType) pixfmt;
+  }
+}
+
+static inline SkColorInfo getSkColorInfo(FlutterSoftwarePixelFormat pixfmt) {
+  auto ct = getSkColorType(pixfmt);
+  auto at = SkColorTypeIsAlwaysOpaque(ct)
+    ? kOpaque_SkAlphaType
+    : kPremul_SkAlphaType;
+
+  return SkColorInfo(
+    ct,
+    at,
+    SkColorSpace::MakeSRGB()
+  );
+}
+
 static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
-    GrDirectContext* context,
-    const FlutterBackingStoreConfig& config,
-    const FlutterSoftwareBackingStore* software) {
+    GrDirectContext *context,
+    const FlutterBackingStoreConfig &config,
+    const FlutterSoftwareBackingStore *software) {
   const auto image_info =
       SkImageInfo::MakeN32Premul(config.size.width, config.size.height);
 
@@ -691,6 +712,48 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
   }
   if (surface) {
     captures.release();  // Skia has assumed ownership of the struct.
+  }
+  return surface;
+}
+
+static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
+    GrDirectContext* context,
+    const FlutterBackingStoreConfig& config,
+    const FlutterSoftwareBackingStore2* software) {
+  const auto image_info = SkImageInfo::Make(
+      SkISize::Make(config.size.width, config.size.height),
+      getSkColorInfo(software->pixel_format)
+    );
+
+  struct Captures {
+    VoidCallback destruction_callback;
+    void* user_data;
+  };
+  auto captures = std::make_unique<Captures>();
+  captures->destruction_callback = software->destruction_callback;
+  captures->user_data = software->user_data;
+  auto release_proc = [](void* pixels, void* context) {
+    auto captures = reinterpret_cast<Captures*>(context);
+    if (captures->destruction_callback) {
+      captures->destruction_callback(captures->user_data);
+    }
+  };
+
+  auto surface = SkSurface::MakeRasterDirectReleaseProc(
+      image_info,                               // image info
+      const_cast<void*>(software->allocation),  // pixels
+      software->row_bytes,                      // row bytes
+      release_proc,                             // release proc
+      captures.release()                        // release context
+  );
+
+  if (!surface) {
+    FML_LOG(ERROR)
+        << "Could not wrap embedder supplied software render buffer.";
+    if (software->destruction_callback) {
+      software->destruction_callback(software->user_data);
+    }
+    return nullptr;
   }
   return surface;
 }
@@ -851,6 +914,10 @@ CreateEmbedderRenderTarget(const FlutterCompositor* compositor,
     case kFlutterBackingStoreTypeSoftware:
       render_surface = MakeSkSurfaceFromBackingStore(context, config,
                                                      &backing_store.software);
+      break;
+    case kFlutterBackingStoreTypeSoftware2:
+      render_surface = MakeSkSurfaceFromBackingStore(context, config,
+                                                     &backing_store.software2);
       break;
     case kFlutterBackingStoreTypeMetal:
       render_surface =

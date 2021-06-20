@@ -284,6 +284,47 @@ typedef enum {
   kFlutterOpenGLTargetTypeFramebuffer,
 } FlutterOpenGLTargetType;
 
+/// A pixel format to be used for software rendering.
+///
+/// A single pixel always stored as a POT number of bytes. (so in practice
+/// either 1, 2, 4, 8, 16 bytes per pixel)
+///
+/// Each pixel format in this list is documented with an example on how to get
+/// the color components from the pixel value. For example, you can get the
+/// pixel value for a RGB565 formatted buffer like this:
+///   uint16_t p = ((const uint16_t*) allocation)[row_bytes * y / bpp + x];
+typedef enum {
+  /// pixel with 8 bit alpha value.
+  kAlpha8 = 1,
+
+  /// pixel with 5 bits red, 6 bits green, 5 bits blue, in 16-bit word.
+  ///   r = p & 0x3F; g = (p>>5) & 0x3F; b = p>>11;
+  kRGB565,
+
+  /// pixel with 4 bits for alpha, red, green, blue; in 16-bit word.
+  ///   r = p & 0xF;  g = (p>>4) & 0xF;  b = (p>>8) & 0xF;   a = p>>12;
+  kRGBA4444,
+
+  /// pixel with 8 bits for red, green, blue, alpha; in 32-bit word.
+  ///   r = p & 0xFF; g = (p>>8) & 0xFF; b = (p>>16) & 0xFF; a = p>>24;
+  kRGBA8888,
+
+  /// pixel with 8 bits for red, green and blue and 8 unused bits.
+  ///   r = p & 0xFF; g = (p>>8) & 0xFF; b = (p>>16) & 0xFF;
+  kRGBX8888,
+
+  /// pixel with 8 bits for red, green, blue and alpha.
+  ///   r = (p>>16) & 0xFF; g = (p>>8) & 0xFF; b = b & 0xFF; a = p>>24;
+  kBGRA8888,
+
+  kRGBA1010102, // 10 bits for red, green, blue; 2 bits for alpha; in 32-bit word
+  kBGRA1010102, // 10 bits for blue, green, red; 2 bits for alpha; in 32-bit word
+  kRGBX1010102, // pixel with 10 bits each for red, green, blue; in 32-bit word
+  kBGRX1010102, // pixel with 10 bits each for blue, green, red; in 32-bit word
+  kGray8,       // pixel with 8 bit grayscale value; in 8-bit word
+  kNative32,    // either kBGRA8888 or kRGBA8888 depending on CPU endianess
+} FlutterSoftwarePixelFormat;
+
 typedef struct {
   /// Target texture of the active texture unit (example GL_TEXTURE_2D or
   /// GL_TEXTURE_RECTANGLE).
@@ -1121,6 +1162,27 @@ typedef struct {
 } FlutterSoftwareBackingStore;
 
 typedef struct {
+  size_t struct_size;
+  /// A pointer to the raw bytes of the allocation described by this software
+  /// backing store.
+  const void* allocation;
+  /// The number of bytes in a single row of the allocation.
+  size_t row_bytes;
+  /// The number of rows in the allocation.
+  size_t height;
+  /// A baton that is not interpreted by the engine in any way. It will be given
+  /// back to the embedder in the destruction callback below. Embedder resources
+  /// may be associated with this baton.
+  void* user_data;
+  /// The callback invoked by the engine when it no longer needs this backing
+  /// store.
+  VoidCallback destruction_callback;
+  /// The pixel format that the engine should use to render into the allocation.
+  /// In most cases, kR
+  FlutterSoftwarePixelFormat pixel_format;
+} FlutterSoftwareBackingStore2;
+
+typedef struct {
   /// The size of this struct. Must be sizeof(FlutterMetalBackingStore).
   size_t struct_size;
   union {
@@ -1211,6 +1273,9 @@ typedef enum {
   kFlutterBackingStoreTypeMetal,
   /// Specifies a Vulkan backing store. This is backed by a Vulkan VkImage.
   kFlutterBackingStoreTypeVulkan,
+  /// Specifies a allocation that the engine should render into using
+  /// software rendering.
+  kFlutterBackingStoreTypeSoftware2,
 } FlutterBackingStoreType;
 
 typedef struct {
@@ -1230,6 +1295,8 @@ typedef struct {
     FlutterOpenGLBackingStore open_gl;
     /// The description of the software backing store.
     FlutterSoftwareBackingStore software;
+    /// The description of the software backing store.
+    FlutterSoftwareBackingStore2 software2;
     // The description of the Metal backing store.
     FlutterMetalBackingStore metal;
     // The description of the Vulkan backing store.
