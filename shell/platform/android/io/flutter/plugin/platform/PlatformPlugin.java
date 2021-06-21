@@ -264,7 +264,7 @@ public class PlatformPlugin {
         && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
       // IMMERSIVE
       // Available starting at 19
-      // Should not show overlays, swipe from edges to revela overlays, needs onChange callback
+      // Should not show overlays, swipe from edges to reveal overlays, needs onChange callback
       // When the overlays come in on swipe, the app does not receive the gesture and does not know
       // the system overlay has changed. The overlays cannot be dismissed, so adding callback
       // support will allow users to restore the system ui and dismiss the overlays.
