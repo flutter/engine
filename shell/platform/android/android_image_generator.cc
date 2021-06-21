@@ -68,7 +68,8 @@ bool AndroidImageGenerator::GetPixels(const SkImageInfo& info,
   // produce an `SkImage` direcly from an `AHardwareBuffer`, but
   // `AndroidBitmap_getHardwareBuffer` and `Bitmap.getHardwareBuffer` are only
   // available in API 30+ and 31+ respectively.
-  memcpy(pixels, software_decoded_data_->data(), software_decoded_data_->size());
+  memcpy(pixels, software_decoded_data_->data(),
+         software_decoded_data_->size());
   return true;
 }
 
