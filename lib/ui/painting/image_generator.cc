@@ -4,6 +4,8 @@
 
 #include "flutter/lib/ui/painting/image_generator.h"
 
+#include "flutter/fml/logging.h"
+
 namespace flutter {
 
 ImageGenerator::~ImageGenerator() = default;
