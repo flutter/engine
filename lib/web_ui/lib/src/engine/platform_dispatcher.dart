@@ -397,8 +397,11 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
             return;
           case 'SystemChrome.setApplicationSwitcherDescription':
             final Map<String, dynamic> arguments = decoded.arguments;
-            domRenderer.setTitle(arguments['label']);
-            domRenderer.setThemeColor(ui.Color(arguments['primaryColor']));
+            // TODO: Find more appropriate defaults? Or noop when values are null?
+            final String label = arguments['label'] as String? ?? '';
+            final int primaryColor = arguments['primaryColor'] as int? ?? 0xFF000000;
+            domRenderer.setTitle(label);
+            domRenderer.setThemeColor(ui.Color(primaryColor));
             _replyToPlatformMessage(
                 callback, codec.encodeSuccessEnvelope(true));
             return;

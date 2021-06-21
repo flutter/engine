@@ -130,8 +130,6 @@ FILE: ../../../flutter/flow/surface_frame.h
 FILE: ../../../flutter/flow/texture_unittests.cc
 FILE: ../../../flutter/flow/view_holder.cc
 FILE: ../../../flutter/flow/view_holder.h
-FILE: ../../../flutter/flutter_frontend_server/bin/starter.dart
-FILE: ../../../flutter/flutter_frontend_server/lib/server.dart
 FILE: ../../../flutter/fml/ascii_trie.cc
 FILE: ../../../flutter/fml/ascii_trie.h
 FILE: ../../../flutter/fml/ascii_trie_unittests.cc
@@ -229,8 +227,6 @@ FILE: ../../../flutter/fml/platform/darwin/string_range_sanitization_unittests.m
 FILE: ../../../flutter/fml/platform/fuchsia/message_loop_fuchsia.cc
 FILE: ../../../flutter/fml/platform/fuchsia/message_loop_fuchsia.h
 FILE: ../../../flutter/fml/platform/fuchsia/paths_fuchsia.cc
-FILE: ../../../flutter/fml/platform/fuchsia/task_observers.cc
-FILE: ../../../flutter/fml/platform/fuchsia/task_observers.h
 FILE: ../../../flutter/fml/platform/linux/message_loop_linux.cc
 FILE: ../../../flutter/fml/platform/linux/message_loop_linux.h
 FILE: ../../../flutter/fml/platform/linux/paths_linux.cc
@@ -333,6 +329,7 @@ FILE: ../../../flutter/lib/ui/geometry.dart
 FILE: ../../../flutter/lib/ui/hash_codes.dart
 FILE: ../../../flutter/lib/ui/hint_freed_delegate.h
 FILE: ../../../flutter/lib/ui/hooks.dart
+FILE: ../../../flutter/lib/ui/hooks_unittests.cc
 FILE: ../../../flutter/lib/ui/io_manager.h
 FILE: ../../../flutter/lib/ui/isolate_name_server.dart
 FILE: ../../../flutter/lib/ui/isolate_name_server/isolate_name_server.cc
@@ -503,6 +500,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/dom_renderer.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/engine_canvas.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/font_change_util.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/frame_reference.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/host_node.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/backdrop_filter.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/bitmap_canvas.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/canvas.dart
@@ -1162,6 +1160,8 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEmbed
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEmbedderKeyResponderUnittests.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEngineTest.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEngineTestUtils.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEngineTestUtils.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureGL.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureGL.mm
@@ -1363,6 +1363,8 @@ FILE: ../../../flutter/shell/platform/fuchsia/flutter/keyboard.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/keyboard.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/keyboard_unittest.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/logging.h
+FILE: ../../../flutter/shell/platform/fuchsia/flutter/loop.cc
+FILE: ../../../flutter/shell/platform/fuchsia/flutter/loop.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/main.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/aot_product_runtime
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/aot_runtime
@@ -1384,8 +1386,12 @@ FILE: ../../../flutter/shell/platform/fuchsia/flutter/runner_tzdata_unittest.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/runner_unittest.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/surface.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/surface.h
+FILE: ../../../flutter/shell/platform/fuchsia/flutter/task_observers.cc
+FILE: ../../../flutter/shell/platform/fuchsia/flutter/task_observers.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/task_runner_adapter.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/task_runner_adapter.h
+FILE: ../../../flutter/shell/platform/fuchsia/flutter/thread.cc
+FILE: ../../../flutter/shell/platform/fuchsia/flutter/thread.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/unique_fdio_ns.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/vsync_waiter.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/vsync_waiter.h
@@ -1593,6 +1599,7 @@ FILE: ../../../flutter/shell/platform/windows/flutter_windows_texture_registrar.
 FILE: ../../../flutter/shell/platform/windows/flutter_windows_texture_registrar_unittests.cc
 FILE: ../../../flutter/shell/platform/windows/flutter_windows_view.cc
 FILE: ../../../flutter/shell/platform/windows/flutter_windows_view.h
+FILE: ../../../flutter/shell/platform/windows/flutter_windows_view_unittests.cc
 FILE: ../../../flutter/shell/platform/windows/flutter_windows_win32.cc
 FILE: ../../../flutter/shell/platform/windows/flutter_windows_winuwp.cc
 FILE: ../../../flutter/shell/platform/windows/game_pad_cursor_winuwp.cc
@@ -1776,12 +1783,6 @@ FILE: ../../../flutter/vulkan/vulkan_utilities.cc
 FILE: ../../../flutter/vulkan/vulkan_utilities.h
 FILE: ../../../flutter/vulkan/vulkan_window.cc
 FILE: ../../../flutter/vulkan/vulkan_window.h
-FILE: ../../../flutter/web_sdk/libraries.json
-FILE: ../../../flutter/web_sdk/sdk_rewriter.dart
-FILE: ../../../flutter/web_sdk/web_test_utils/lib/environment.dart
-FILE: ../../../flutter/web_sdk/web_test_utils/lib/exceptions.dart
-FILE: ../../../flutter/web_sdk/web_test_utils/lib/goldens.dart
-FILE: ../../../flutter/web_sdk/web_test_utils/lib/image_compare.dart
 ----------------------------------------------------------------------------------------------------
 Copyright 2013 The Flutter Authors. All rights reserved.
 

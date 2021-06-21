@@ -1,4 +1,4 @@
-Signature: df77f9b758c907187966f6783f787268
+Signature: c9c4a18a78b577a64eac6e4676612e2c
 
 UNUSED LICENSES:
 
@@ -9428,6 +9428,20 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct128byte
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct128bytesx1/x64_linux.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct128bytesx1/x64_macos.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct128bytesx1/x64_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct12bytesFloatx6/arm64_android.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct12bytesFloatx6/arm64_ios.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct12bytesFloatx6/arm64_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct12bytesFloatx6/arm64_macos.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct12bytesFloatx6/arm_android.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct12bytesFloatx6/arm_ios.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct12bytesFloatx6/arm_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct12bytesFloatx6/ia32_android.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct12bytesFloatx6/ia32_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct12bytesFloatx6/ia32_win.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct12bytesFloatx6/x64_ios.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct12bytesFloatx6/x64_linux.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct12bytesFloatx6/x64_macos.expect
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct12bytesFloatx6/x64_win.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct16bytesHomogenousx10/arm64_android.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct16bytesHomogenousx10/arm64_ios.expect
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/unit_tests/struct16bytesHomogenousx10/arm64_linux.expect
@@ -9797,7 +9811,6 @@ FILE: ../../../third_party/dart/runtime/vm/thread_state.cc
 FILE: ../../../third_party/dart/runtime/vm/thread_state.h
 FILE: ../../../third_party/dart/samples/ffi/coordinate.dart
 FILE: ../../../third_party/dart/samples/ffi/dylib_utils.dart
-FILE: ../../../third_party/dart/samples/ffi/resource_management/arena.dart
 FILE: ../../../third_party/dart/samples/ffi/resource_management/arena_isolate_shutdown_sample.dart
 FILE: ../../../third_party/dart/samples/ffi/resource_management/arena_sample.dart
 FILE: ../../../third_party/dart/samples/ffi/resource_management/arena_zoned_sample.dart
@@ -9819,11 +9832,9 @@ FILE: ../../../third_party/dart/samples/ffi/sqlite/lib/src/bindings/signatures.d
 FILE: ../../../third_party/dart/samples/ffi/sqlite/lib/src/bindings/types.dart
 FILE: ../../../third_party/dart/samples/ffi/sqlite/lib/src/collections/closable_iterator.dart
 FILE: ../../../third_party/dart/samples/ffi/sqlite/lib/src/database.dart
-FILE: ../../../third_party/dart/samples/ffi/sqlite/lib/src/ffi/arena.dart
 FILE: ../../../third_party/dart/samples/ffi/sqlite/lib/src/ffi/dylib_utils.dart
 FILE: ../../../third_party/dart/samples_2/ffi/coordinate.dart
 FILE: ../../../third_party/dart/samples_2/ffi/dylib_utils.dart
-FILE: ../../../third_party/dart/samples_2/ffi/resource_management/arena.dart
 FILE: ../../../third_party/dart/samples_2/ffi/resource_management/arena_isolate_shutdown_sample.dart
 FILE: ../../../third_party/dart/samples_2/ffi/resource_management/arena_sample.dart
 FILE: ../../../third_party/dart/samples_2/ffi/resource_management/arena_zoned_sample.dart
@@ -9845,7 +9856,6 @@ FILE: ../../../third_party/dart/samples_2/ffi/sqlite/lib/src/bindings/signatures
 FILE: ../../../third_party/dart/samples_2/ffi/sqlite/lib/src/bindings/types.dart
 FILE: ../../../third_party/dart/samples_2/ffi/sqlite/lib/src/collections/closable_iterator.dart
 FILE: ../../../third_party/dart/samples_2/ffi/sqlite/lib/src/database.dart
-FILE: ../../../third_party/dart/samples_2/ffi/sqlite/lib/src/ffi/arena.dart
 FILE: ../../../third_party/dart/samples_2/ffi/sqlite/lib/src/ffi/dylib_utils.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/rti.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/shared/recipe_syntax.dart
@@ -9901,6 +9911,8 @@ FILE: ../../../third_party/dart/benchmarks/MapLookup/dart2/maps.dart
 FILE: ../../../third_party/dart/benchmarks/MapLookup/generate_maps.dart
 FILE: ../../../third_party/dart/benchmarks/SDKArtifactSizes/dart/SDKArtifactSizes.dart
 FILE: ../../../third_party/dart/benchmarks/SDKArtifactSizes/dart2/SDKArtifactSizes.dart
+FILE: ../../../third_party/dart/benchmarks/SendPort/dart/SendPort.dart
+FILE: ../../../third_party/dart/benchmarks/SendPort/dart2/SendPort.dart
 FILE: ../../../third_party/dart/benchmarks/StringPool/dart/StringPool.dart
 FILE: ../../../third_party/dart/benchmarks/StringPool/dart/StringPool100.dart
 FILE: ../../../third_party/dart/benchmarks/StringPool/dart/version1a.dart
@@ -9920,9 +9932,7 @@ FILE: ../../../third_party/dart/runtime/vm/pending_deopts.cc
 FILE: ../../../third_party/dart/runtime/vm/pending_deopts.h
 FILE: ../../../third_party/dart/runtime/vm/virtual_memory_compressed.cc
 FILE: ../../../third_party/dart/runtime/vm/virtual_memory_compressed.h
-FILE: ../../../third_party/dart/samples/ffi/resource_management/arena_test.dart
 FILE: ../../../third_party/dart/samples/ffi/resource_management/utf8_helpers.dart
-FILE: ../../../third_party/dart/samples_2/ffi/resource_management/arena_test.dart
 FILE: ../../../third_party/dart/samples_2/ffi/resource_management/utf8_helpers.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/late_helper.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/ffi_allocation_patch.dart
@@ -10689,8 +10699,6 @@ FILE: ../../../third_party/dart/runtime/vm/thread_registry.cc
 FILE: ../../../third_party/dart/runtime/vm/thread_registry.h
 FILE: ../../../third_party/dart/runtime/vm/timeline.cc
 FILE: ../../../third_party/dart/runtime/vm/timeline.h
-FILE: ../../../third_party/dart/runtime/vm/timeline_analysis.cc
-FILE: ../../../third_party/dart/runtime/vm/timeline_analysis.h
 FILE: ../../../third_party/dart/runtime/vm/timeline_test.cc
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/patch/developer_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/classes.dart

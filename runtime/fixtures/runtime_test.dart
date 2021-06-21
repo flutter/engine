@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart=2.10
-
 import 'dart:async';
 import 'dart:isolate';
 import 'dart:ui';
@@ -50,11 +48,6 @@ void notifyNative() native 'NotifyNative';
 
 @pragma('vm:entry-point')
 void testIsolateShutdown() {  }
-
-@pragma('vm:entry-point')
-void testCanSaveCompilationTrace() {
-  notifyResult(saveCompilationTrace().isNotEmpty);
-}
 
 void notifyResult(bool success) native 'NotifyNative';
 void passMessage(String message) native 'PassMessage';
