@@ -2,8 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-library splitlib;
+// @dart = 2.12
 
-int splitAdd(int i, int j) {
-  return i + j;
+import 'package:githooks/githooks.dart';
+
+Future<int> main(List<String> args) async {
+  return run(args);
 }
