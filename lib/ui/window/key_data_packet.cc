@@ -12,7 +12,7 @@ namespace flutter {
 
 // Copies `size_in_bytes` bytes of data from `source` into `dest`, and returns
 // the position in destination immdiately after.
-static uint8_t* copy(uint8_t* dest, uint8_t* source, size_t size_in_bytes) {
+static uint8_t* copy(uint8_t* dest, const void* source, size_t size_in_bytes) {
   if (size_in_bytes != 0) {
     memcpy(dest, source, size_in_bytes);
   }
@@ -20,8 +20,8 @@ static uint8_t* copy(uint8_t* dest, uint8_t* source, size_t size_in_bytes) {
 }
 
 KeyDataPacket::KeyDataPacket(
-    size_t num_events,
     const KeyData* events,
+    size_t num_events,
     const char* character,
     const uint8_t* raw_event,
     size_t raw_event_size) {

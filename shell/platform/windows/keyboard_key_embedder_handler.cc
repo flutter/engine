@@ -58,9 +58,8 @@ constexpr SHORT kStateMaskPressed = 0x80;
 }  // namespace
 
 KeyboardKeyEmbedderHandler::KeyboardKeyEmbedderHandler(
-    SendEvent send_event,
     GetKeyStateHandler get_key_state)
-    : sendEvent_(send_event), get_key_state_(get_key_state), response_id_(1) {
+    : get_key_state_(get_key_state) {
   InitCriticalKeys();
 }
 
@@ -128,23 +127,6 @@ uint64_t KeyboardKeyEmbedderHandler::getLogicalKey(int key,
   }
 }
 
-// Returns true if this key is a special key that Flutter must not redispatch.
-//
-// This is a temporary solution to
-// https://github.com/flutter/flutter/issues/81674, and forces ShiftRight
-// KeyDown event to not be redispatched regardless of the framework's response.
-//
-// If a ShiftRight KeyDown event is not handled by the framework and is
-// redispatched, Win32 will not send its following KeyUp event and keeps
-// recording ShiftRight as being pressed.
-static bool IsEventThatMustNotRedispatch(int virtual_key, bool was_down) {
-#ifdef WINUWP
-  return false;
-#else
-  return virtual_key == VK_RSHIFT && !was_down;
-#endif
-}
-
 void KeyboardKeyEmbedderHandler::KeyboardHook(
     int key,
     int scancode,
@@ -152,7 +134,7 @@ void KeyboardKeyEmbedderHandler::KeyboardHook(
     char32_t character,
     bool extended,
     bool was_down,
-    std::function<void(bool)> callback) {
+    KeyboardKeyHandler::KeyMessageBuilder& message) {
   const uint64_t physical_key = getPhysicalKey(scancode, extended);
   const uint64_t logical_key = getLogicalKey(key, extended, scancode);
   assert(action == WM_KEYDOWN || action == WM_KEYUP);
@@ -186,7 +168,7 @@ void KeyboardKeyEmbedderHandler::KeyboardHook(
         // as a currently pressed one, usually indicating multiple keyboards are
         // pressing keys with the same physical key, or the up event was lost
         // during a loss of focus. The down event is ignored.
-        callback(true);
+        message.handled = true;
         return;
       }
     } else {
@@ -202,7 +184,7 @@ void KeyboardKeyEmbedderHandler::KeyboardHook(
       // The physical key has been released before. It might indicate a missed
       // event due to loss of focus, or multiple keyboards pressed keys with the
       // same physical key. Ignore the up event.
-      callback(true);
+      message.handled = true;
       return;
     } else {
       // A normal up event.
@@ -216,7 +198,7 @@ void KeyboardKeyEmbedderHandler::KeyboardHook(
   }
 
   UpdateLastSeenCritialKey(key, physical_key, result_logical_key);
-  SynchronizeCritialToggledStates(type == kFlutterKeyEventTypeDown ? key : 0);
+  SynchronizeCritialToggledStates(type == kFlutterKeyEventTypeDown ? key : 0, message.events);
 
   if (next_has_record) {
     pressingRecords_[physical_key] = next_logical_record;
@@ -224,52 +206,29 @@ void KeyboardKeyEmbedderHandler::KeyboardHook(
     pressingRecords_.erase(last_logical_record_iter);
   }
 
-  SynchronizeCritialPressedStates();
+  SynchronizeCritialPressedStates(message.events);
 
   if (result_logical_key == VK_PROCESSKEY) {
     // VK_PROCESSKEY means that the key press is used by an IME. These key
     // presses are considered handled and not sent to Flutter. These events must
     // be filtered by result_logical_key because the key up event of such
     // presses uses the "original" logical key.
-    callback(true);
+    message.handled = true;
     return;
   }
 
-  FlutterKeyEvent key_data{
-      .struct_size = sizeof(FlutterKeyEvent),
-      .timestamp = static_cast<double>(
-          std::chrono::duration_cast<std::chrono::microseconds>(
-              std::chrono::high_resolution_clock::now().time_since_epoch())
-              .count()),
-      .type = type,
-      .physical = physical_key,
-      .logical = result_logical_key,
-      .character = character_bytes,
-      .synthesized = false,
-  };
-  const bool must_not_redispatch = IsEventThatMustNotRedispatch(key, was_down);
-
-  response_id_ += 1;
-  uint64_t response_id = response_id_;
-  PendingResponse pending{
-      .callback =
-          [this, callback = std::move(callback), must_not_redispatch](
-              bool handled, uint64_t response_id) {
-            auto found = pending_responses_.find(response_id);
-            if (found != pending_responses_.end()) {
-              pending_responses_.erase(found);
-            }
-            if (must_not_redispatch) {
-              handled = true;
-            }
-            callback(handled);
-          },
-      .response_id = response_id,
-  };
-  auto pending_ptr = std::make_unique<PendingResponse>(std::move(pending));
-  pending_responses_[response_id] = std::move(pending_ptr);
-  sendEvent_(key_data, KeyboardKeyEmbedderHandler::HandleResponse,
-             reinterpret_cast<void*>(pending_responses_[response_id].get()));
+  message.events.push_back(FlutterKeyEvent {
+    .struct_size = sizeof(FlutterKeyEvent),
+    .timestamp = static_cast<double>(
+        std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::high_resolution_clock::now().time_since_epoch())
+            .count()),
+    .type = type,
+    .physical = physical_key,
+    .logical = result_logical_key,
+    .character = character_bytes,
+    .synthesized = false,
+  });
 }
 
 void KeyboardKeyEmbedderHandler::UpdateLastSeenCritialKey(
@@ -284,7 +243,7 @@ void KeyboardKeyEmbedderHandler::UpdateLastSeenCritialKey(
 }
 
 void KeyboardKeyEmbedderHandler::SynchronizeCritialToggledStates(
-    int toggle_virtual_key) {
+    int toggle_virtual_key, std::vector<FlutterKeyEvent>& events) {
   // TODO(dkwingsmt) consider adding support for synchronizing key state for UWP
   // https://github.com/flutter/flutter/issues/70202
 #ifdef WINUWP
@@ -311,18 +270,18 @@ void KeyboardKeyEmbedderHandler::SynchronizeCritialToggledStates(
         // If the key is pressed, release it first.
         if (pressingRecords_.find(key_info.physical_key) !=
             pressingRecords_.end()) {
-          sendEvent_(SynthesizeSimpleEvent(
+          events.push_back(SynthesizeSimpleEvent(
                          kFlutterKeyEventTypeUp, key_info.physical_key,
-                         key_info.logical_key, empty_character),
-                     nullptr, nullptr);
+                         key_info.logical_key, empty_character)
+                     );
         } else {
           // This key will always be pressed in the following synthesized event.
           pressingRecords_[key_info.physical_key] = key_info.logical_key;
         }
-        sendEvent_(SynthesizeSimpleEvent(kFlutterKeyEventTypeDown,
+        events.push_back(SynthesizeSimpleEvent(kFlutterKeyEventTypeDown,
                                          key_info.physical_key,
-                                         key_info.logical_key, empty_character),
-                   nullptr, nullptr);
+                                         key_info.logical_key, empty_character)
+                   );
       }
       key_info.toggled_on = should_toggled;
     }
@@ -330,7 +289,7 @@ void KeyboardKeyEmbedderHandler::SynchronizeCritialToggledStates(
 #endif
 }
 
-void KeyboardKeyEmbedderHandler::SynchronizeCritialPressedStates() {
+void KeyboardKeyEmbedderHandler::SynchronizeCritialPressedStates(std::vector<FlutterKeyEvent>& events) {
   // TODO(dkwingsmt) consider adding support for synchronizing key state for UWP
   // https://github.com/flutter/flutter/issues/70202
 #ifdef WINUWP
@@ -356,22 +315,16 @@ void KeyboardKeyEmbedderHandler::SynchronizeCritialPressedStates() {
           pressingRecords_.erase(recorded_pressed_iter);
         }
         const char* empty_character = "";
-        sendEvent_(
+        events.push_back(
             SynthesizeSimpleEvent(should_pressed ? kFlutterKeyEventTypeDown
                                                  : kFlutterKeyEventTypeUp,
                                   key_info.physical_key, key_info.logical_key,
-                                  empty_character),
-            nullptr, nullptr);
+                                  empty_character)
+            );
       }
     }
   }
 #endif
-}
-
-void KeyboardKeyEmbedderHandler::HandleResponse(bool handled, void* user_data) {
-  PendingResponse* pending = reinterpret_cast<PendingResponse*>(user_data);
-  auto callback = std::move(pending->callback);
-  callback(handled, pending->response_id);
 }
 
 void KeyboardKeyEmbedderHandler::InitCriticalKeys() {

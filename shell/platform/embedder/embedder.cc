@@ -1587,14 +1587,14 @@ static inline flutter::KeyEventType MapKeyEventType(
 FlutterEngineResult FlutterEngineSendKeyMessage(FLUTTER_API_SYMBOL(FlutterEngine)
                                                   engine,
                                               const FlutterKeyMessage* message,
-                                              FlutterKeyEventCallback callback,
+                                              FlutterKeyMessageCallback callback,
                                               void* user_data) {
   if (engine == nullptr) {
     return LOG_EMBEDDER_ERROR(kInvalidArguments, "Engine handle was invalid.");
   }
 
-  if (event == nullptr) {
-    return LOG_EMBEDDER_ERROR(kInvalidArguments, "Invalid key event.");
+  if (message == nullptr) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments, "Invalid key message.");
   }
 
   // It is asserted that at most one event can be non-synthesized, and only
@@ -1609,7 +1609,7 @@ FlutterEngineResult FlutterEngineSendKeyMessage(FLUTTER_API_SYMBOL(FlutterEngine
 
   flutter::KeyData key_data[num_events];
   for (size_t event_index = 0; event_index < num_events; event_index += 1) {
-    FlutterKeyEvent* event = &message->events[event_index];
+    const FlutterKeyEvent* event = &message->events[event_index];
     flutter::KeyData* data = &key_data[event_index];
     key_data->Clear();
     key_data->timestamp = (uint64_t)SAFE_ACCESS(event, timestamp, 0);
@@ -1632,13 +1632,13 @@ FlutterEngineResult FlutterEngineSendKeyMessage(FLUTTER_API_SYMBOL(FlutterEngine
     }
   }
 
-  const uint8_t* raw_event = SAFE_ACCESS(message, raw_event, false);
+  const uint8_t* raw_event = SAFE_ACCESS(message, raw_event, nullptr);
   const size_t raw_event_size = SAFE_ACCESS(message, raw_event_size, 0);
   if (raw_event == nullptr || raw_event_size == 0) {
     return kInvalidArguments;
   }
   auto packet = std::make_unique<flutter::KeyDataPacket>(
-    key_data, num_events, message_character, raw_event, raw_event_size);
+    static_cast<flutter::KeyData*>(key_data), num_events, message_character, raw_event, raw_event_size);
 
   auto response = [callback, user_data](bool handled) {
     if (callback != nullptr)
@@ -2327,7 +2327,7 @@ FlutterEngineResult FlutterEngineGetProcAddresses(
   SET_PROC(RunInitialized, FlutterEngineRunInitialized);
   SET_PROC(SendWindowMetricsEvent, FlutterEngineSendWindowMetricsEvent);
   SET_PROC(SendPointerEvent, FlutterEngineSendPointerEvent);
-  SET_PROC(SendKeyEvent, FlutterEngineSendKeyEvent);
+  SET_PROC(SendKeyMessage, FlutterEngineSendKeyMessage);
   SET_PROC(SendPlatformMessage, FlutterEngineSendPlatformMessage);
   SET_PROC(PlatformMessageCreateResponseHandle,
            FlutterPlatformMessageCreateResponseHandle);

@@ -738,12 +738,7 @@ typedef struct {
   const uint8_t* raw_event;
 } FlutterKeyMessage;
 
-typedef enum {
-  kFlutterKeyMessageResultEventsHandled = 1 << 0,
-  kFlutterKeyMessageResultRawEventHandled = 1 << 1,
-} FlutterKeyMessageResult;
-
-typedef void (*FlutterKeyMessageCallback)(int /* result */,
+typedef void (*FlutterKeyMessageCallback)(bool /* result */,
                                         void* /* user_data */);
 
 struct _FlutterPlatformMessageResponseHandle;
@@ -1754,7 +1749,7 @@ FlutterEngineResult FlutterEngineSendPointerEvent(
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineSendKeyMessage(FLUTTER_API_SYMBOL(FlutterEngine)
                                                   engine,
-                                              const FlutterKeyMessage* packet,
+                                              const FlutterKeyMessage* message,
                                               FlutterKeyMessageCallback callback,
                                               void* user_data);
 
@@ -2369,7 +2364,7 @@ typedef struct {
   FlutterEngineRunInitializedFnPtr RunInitialized;
   FlutterEngineSendWindowMetricsEventFnPtr SendWindowMetricsEvent;
   FlutterEngineSendPointerEventFnPtr SendPointerEvent;
-  FlutterEngineSendKeyEventFnPtr SendKeyEvent;
+  FlutterEngineSendKeyMessageFnPtr SendKeyMessage;
   FlutterEngineSendPlatformMessageFnPtr SendPlatformMessage;
   FlutterEnginePlatformMessageCreateResponseHandleFnPtr
       PlatformMessageCreateResponseHandle;

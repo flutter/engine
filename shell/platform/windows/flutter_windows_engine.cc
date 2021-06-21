@@ -320,11 +320,11 @@ void FlutterWindowsEngine::SendPointerEvent(const FlutterPointerEvent& event) {
   }
 }
 
-void FlutterWindowsEngine::SendKeyEvent(const FlutterKeyEvent& event,
-                                        FlutterKeyEventCallback callback,
+void FlutterWindowsEngine::SendKeyMessage(const FlutterKeyMessage& message,
+                                        FlutterKeyMessageCallback callback,
                                         void* user_data) {
   if (engine_) {
-    embedder_api_.SendKeyEvent(engine_, &event, callback, user_data);
+    embedder_api_.SendKeyMessage(engine_, &message, callback, user_data);
   }
 }
 

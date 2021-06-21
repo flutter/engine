@@ -8,6 +8,7 @@
 
 #include <iostream>
 
+#include "rapidjson/document.h"
 #include "flutter/shell/platform/common/json_message_codec.h"
 
 namespace flutter {
@@ -105,13 +106,7 @@ int GetModsForKeyState() {
 
 }  // namespace
 
-KeyboardKeyChannelHandler::KeyboardKeyChannelHandler(
-    flutter::BinaryMessenger* messenger)
-    : channel_(
-          std::make_unique<flutter::BasicMessageChannel<rapidjson::Document>>(
-              messenger,
-              kChannelName,
-              &flutter::JsonMessageCodec::GetInstance())) {}
+KeyboardKeyChannelHandler::KeyboardKeyChannelHandler() {}
 
 KeyboardKeyChannelHandler::~KeyboardKeyChannelHandler() = default;
 
@@ -122,7 +117,7 @@ void KeyboardKeyChannelHandler::KeyboardHook(
     char32_t character,
     bool extended,
     bool was_down,
-    std::function<void(bool)> callback) {
+    KeyboardKeyHandler::KeyMessageBuilder& builder) {
   // TODO: Translate to a cross-platform key code system rather than passing
   // the native key code.
   rapidjson::Document event(rapidjson::kObjectType);
@@ -143,16 +138,11 @@ void KeyboardKeyChannelHandler::KeyboardHook(
       break;
     default:
       std::cerr << "Unknown key event action: " << action << std::endl;
-      callback(false);
       return;
   }
-  channel_->Send(event, [callback = std::move(callback)](const uint8_t* reply,
-                                                         size_t reply_size) {
-    auto decoded = flutter::JsonMessageCodec::GetInstance().DecodeMessage(
-        reply, reply_size);
-    bool handled = (*decoded)[kHandledKey].GetBool();
-    callback(handled);
-  });
+  std::unique_ptr<std::vector<uint8_t>> raw_message =
+    flutter::JsonMessageCodec::GetInstance().EncodeMessage(event);
+  builder.raw_event.swap(*raw_message);
 }
 
 }  // namespace flutter

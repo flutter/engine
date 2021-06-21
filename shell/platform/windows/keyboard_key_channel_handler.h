@@ -9,10 +9,7 @@
 #include <memory>
 #include <string>
 
-#include "flutter/shell/platform/common/client_wrapper/include/flutter/basic_message_channel.h"
-#include "flutter/shell/platform/common/client_wrapper/include/flutter/binary_messenger.h"
 #include "flutter/shell/platform/windows/keyboard_key_handler.h"
-#include "rapidjson/document.h"
 
 namespace flutter {
 
@@ -23,9 +20,8 @@ namespace flutter {
 class KeyboardKeyChannelHandler
     : public KeyboardKeyHandler::KeyboardKeyHandlerDelegate {
  public:
-  // Create a |KeyboardKeyChannelHandler| by specifying the messenger
-  // through which the events are sent.
-  explicit KeyboardKeyChannelHandler(flutter::BinaryMessenger* messenger);
+  // Create a |KeyboardKeyChannelHandler|.
+  KeyboardKeyChannelHandler();
 
   ~KeyboardKeyChannelHandler();
 
@@ -36,11 +32,7 @@ class KeyboardKeyChannelHandler
                     char32_t character,
                     bool extended,
                     bool was_down,
-                    std::function<void(bool)> callback);
-
- private:
-  // The Flutter system channel for key event messages.
-  std::unique_ptr<flutter::BasicMessageChannel<rapidjson::Document>> channel_;
+                    KeyboardKeyHandler::KeyMessageBuilder& builder) override;
 };
 
 }  // namespace flutter

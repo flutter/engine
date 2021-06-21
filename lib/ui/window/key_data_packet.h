@@ -29,8 +29,8 @@ class KeyDataPacket {
   // The created packet may not be valid. Check validity with `valid`.  Failing
   // the validity check indicates a kInternalInconsistency error.
   KeyDataPacket(
-    size_t num_events,
     const KeyData* events,
+    size_t num_events,
     const char* character,
     const uint8_t* raw_event,
     size_t raw_event_size);

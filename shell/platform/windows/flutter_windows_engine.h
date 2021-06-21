@@ -106,8 +106,8 @@ class FlutterWindowsEngine {
   void SendPointerEvent(const FlutterPointerEvent& event);
 
   // Informs the engine of an incoming key event.
-  void SendKeyEvent(const FlutterKeyEvent& event,
-                    FlutterKeyEventCallback callback,
+  void SendKeyMessage(const FlutterKeyMessage& event,
+                    FlutterKeyMessageCallback callback,
                     void* user_data);
 
   // Sends the given message to the engine, calling |reply| with |user_data|

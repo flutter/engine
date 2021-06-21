@@ -18,13 +18,29 @@ namespace {
 // emitting a warning on the console about unhandled events.
 static constexpr int kMaxPendingEvents = 1000;
 
+// Returns true if this key is a special key that Flutter must not redispatch.
+//
+// This is a temporary solution to
+// https://github.com/flutter/flutter/issues/81674, and forces ShiftRight
+// KeyDown event to not be redispatched regardless of the framework's response.
+//
+// If a ShiftRight KeyDown event is not handled by the framework and is
+// redispatched, Win32 will not send its following KeyUp event and keeps
+// recording ShiftRight as being pressed.
+static bool IsEventThatMustNotRedispatch(int virtual_key, bool was_down) {
+#ifdef WINUWP
+  return false;
+#else
+  return virtual_key == VK_RSHIFT && !was_down;
+#endif
+}
 }  // namespace
 
 KeyboardKeyHandler::KeyboardKeyHandlerDelegate::~KeyboardKeyHandlerDelegate() =
     default;
 
-KeyboardKeyHandler::KeyboardKeyHandler(EventRedispatcher redispatch_event)
-    : redispatch_event_(redispatch_event), last_sequence_id_(1) {}
+KeyboardKeyHandler::KeyboardKeyHandler(SendKeyMessage send_message, EventRedispatcher redispatch_event)
+    : send_message_(send_message), redispatch_event_(redispatch_event), last_sequence_id_(1) {}
 
 KeyboardKeyHandler::~KeyboardKeyHandler() = default;
 
@@ -83,6 +99,7 @@ bool KeyboardKeyHandler::KeyboardHook(FlutterWindowsView* view,
                                       bool was_down) {
   std::unique_ptr<PendingEvent> incoming =
       std::make_unique<PendingEvent>(PendingEvent{
+          .owner = this,
           .key = static_cast<uint32_t>(key),
           .scancode = static_cast<uint8_t>(scancode),
           .action = static_cast<uint32_t>(action),
@@ -91,15 +108,20 @@ bool KeyboardKeyHandler::KeyboardHook(FlutterWindowsView* view,
           .was_down = was_down,
       });
   incoming->hash = ComputeEventHash(*incoming);
+  // Store the raw pointer as the user_data.
+  PendingEvent* raw_incoming = incoming.get();
 
   if (RemoveRedispatchedEvent(*incoming)) {
     return false;
   }
 
-  uint64_t sequence_id = ++last_sequence_id_;
-  incoming->sequence_id = sequence_id;
-  incoming->unreplied = delegates_.size();
-  incoming->any_handled = false;
+  KeyMessageBuilder builder {
+    .handled = false,
+  };
+  for (const auto& delegate : delegates_) {
+    delegate->KeyboardHook(key, scancode, action, character, extended, was_down, builder);
+  }
+  incoming->force_handled = builder.handled;
 
   if (pending_responds_.size() > kMaxPendingEvents) {
     std::cerr
@@ -109,18 +131,14 @@ bool KeyboardKeyHandler::KeyboardHook(FlutterWindowsView* view,
   }
   pending_responds_.push_back(std::move(incoming));
 
-  for (const auto& delegate : delegates_) {
-    delegate->KeyboardHook(key, scancode, action, character, extended, was_down,
-                           [sequence_id, this](bool handled) {
-                             ResolvePendingEvent(sequence_id, handled);
-                           });
-  }
-
-  // |ResolvePendingEvent| might trigger redispatching synchronously,
-  // which might occur before |KeyboardHook| is returned. This won't
-  // make events out of order though, because |KeyboardHook| will always
-  // return true at this time, preventing this event from affecting
-  // others.
+  FlutterKeyMessage message {
+    .struct_size = sizeof(FlutterKeyMessage),
+    .num_events = builder.events.size(),
+    .events = builder.events.data(),
+    .raw_event_size = builder.raw_event.size(),
+    .raw_event = builder.raw_event.data(),
+  };
+  send_message_(message, HandleEmbedderResult, raw_incoming);
 
   return true;
 }
@@ -136,23 +154,16 @@ bool KeyboardKeyHandler::RemoveRedispatchedEvent(const PendingEvent& incoming) {
   return false;
 }
 
-void KeyboardKeyHandler::ResolvePendingEvent(uint64_t sequence_id,
-                                             bool handled) {
+void KeyboardKeyHandler::ResolvePendingEvent(PendingEvent* pending,
+                                             bool handled_by_response) {
   // Find the pending event
   for (auto iter = pending_responds_.begin(); iter != pending_responds_.end();
        ++iter) {
-    if ((*iter)->sequence_id == sequence_id) {
-      PendingEvent& event = **iter;
-      event.any_handled = event.any_handled || handled;
-      event.unreplied -= 1;
-      assert(event.unreplied >= 0);
-      // If all delegates have replied, redispatch if no one handled.
-      if (event.unreplied == 0) {
-        auto event_ptr = std::move(*iter);
-        pending_responds_.erase(iter);
-        if (!event_ptr->any_handled) {
-          RedispatchEvent(std::move(event_ptr));
-        }
+    if (iter->get() == pending) {
+      pending_responds_.erase(iter);
+      bool handled = handled_by_response || pending->force_handled;
+      if (!handled && !IsEventThatMustNotRedispatch(pending->key, pending->was_down)) {
+        RedispatchEvent(std::move(*iter));
       }
       // Return here; |iter| can't do ++ after erase.
       return;
@@ -185,6 +196,14 @@ uint64_t KeyboardKeyHandler::ComputeEventHash(const PendingEvent& event) {
   return event.scancode | (((event.action == WM_KEYUP ? KEYEVENTF_KEYUP : 0x0) |
                             (event.extended ? KEYEVENTF_EXTENDEDKEY : 0x0))
                            << 16);
+}
+
+void KeyboardKeyHandler::HandleEmbedderResult(bool result, void* user_data) {
+  PendingEvent* pending = reinterpret_cast<PendingEvent*>(user_data);
+  KeyboardKeyHandler* owner = pending->owner;
+  if (owner != nullptr) {
+    owner->ResolvePendingEvent(pending, result);
+  }
 }
 
 }  // namespace flutter

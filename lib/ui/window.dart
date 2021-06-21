@@ -560,9 +560,9 @@ class SingletonFlutterWindow extends FlutterWindow {
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
-  KeyDataCallback? get onKeyData => platformDispatcher.onKeyData;
-  set onKeyData(KeyDataCallback? callback) {
-    platformDispatcher.onKeyData = callback;
+  KeyDataMessageCallback? get onKeyDataMessage => platformDispatcher.onKeyDataMessage;
+  set onKeyDataMessage(KeyDataMessageCallback? callback) {
+    platformDispatcher.onKeyDataMessage = callback;
   }
 
   /// The route or path that the embedder requested when the application was

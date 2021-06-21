@@ -15,8 +15,6 @@
 
 namespace flutter {
 
-namespace {}  // namespace
-
 // A delegate of |KeyboardKeyHandler| that handles events by sending
 // converted |FlutterKeyEvent|s through the embedder API.
 //
@@ -24,41 +22,27 @@ namespace {}  // namespace
 class KeyboardKeyEmbedderHandler
     : public KeyboardKeyHandler::KeyboardKeyHandlerDelegate {
  public:
-  using SendEvent = std::function<void(const FlutterKeyEvent& /* event */,
-                                       FlutterKeyEventCallback /* callback */,
-                                       void* /* user_data */)>;
   using GetKeyStateHandler = std::function<SHORT(int /* nVirtKey */)>;
 
   // Build a KeyboardKeyEmbedderHandler.
   //
-  // Use `send_event` to define how the class should dispatch converted
-  // flutter events, as well as how to receive the response, to the engine. It's
-  // typically FlutterWindowsEngine::SendKeyEvent. The 2nd and 3rd parameter
-  // of the SendEvent call might be nullptr.
-  //
   // Use `get_key_state` to define how the class should get a reliable result of
   // the state for a virtual key. It's typically Win32's GetKeyState, but can
   // also be nullptr (for UWP).
-  explicit KeyboardKeyEmbedderHandler(SendEvent send_event,
-                                      GetKeyStateHandler get_key_state);
+  explicit KeyboardKeyEmbedderHandler(GetKeyStateHandler get_key_state);
 
   virtual ~KeyboardKeyEmbedderHandler();
 
-  // |KeyboardHandlerBase|
+  // |KeyboardKeyHandler::KeyboardKeyHandlerDelegate|
   void KeyboardHook(int key,
                     int scancode,
                     int action,
                     char32_t character,
                     bool extended,
                     bool was_down,
-                    std::function<void(bool)> callback) override;
+                    KeyboardKeyHandler::KeyMessageBuilder& builder) override;
 
  private:
-  struct PendingResponse {
-    std::function<void(bool, uint64_t)> callback;
-    uint64_t response_id;
-  };
-
   // The information for a virtual key that's important enough that its
   // state is checked after every event.
   struct CriticalKey {
@@ -87,24 +71,16 @@ class KeyboardKeyEmbedderHandler
                                 uint64_t logical_key);
   // Check each key's state from |get_key_state_| and synthesize events
   // if their toggling states have been desynchronized.
-  void SynchronizeCritialToggledStates(int this_virtual_key);
+  void SynchronizeCritialToggledStates(int this_virtual_key, std::vector<FlutterKeyEvent>& events);
   // Check each key's state from |get_key_state_| and synthesize events
   // if their pressing states have been desynchronized.
-  void SynchronizeCritialPressedStates();
+  void SynchronizeCritialPressedStates(std::vector<FlutterKeyEvent>& events);
 
-  std::function<void(const FlutterKeyEvent&, FlutterKeyEventCallback, void*)>
-      sendEvent_;
   GetKeyStateHandler get_key_state_;
 
   // A map from physical keys to logical keys, each entry indicating a pressed
   // key.
   std::map<uint64_t, uint64_t> pressingRecords_;
-  // Information for key events that have been sent to the framework but yet
-  // to receive the response. Indexed by response IDs.
-  std::map<uint64_t, std::unique_ptr<PendingResponse>> pending_responses_;
-  // A self-incrementing integer, used as the ID for the next entry for
-  // |pending_responses_|.
-  uint64_t response_id_;
 
   // Important keys whose states are checked and guaranteed synchronized
   // on every key event.
@@ -115,7 +91,6 @@ class KeyboardKeyEmbedderHandler
 
   static uint64_t getPhysicalKey(int scancode, bool extended);
   static uint64_t getLogicalKey(int key, bool extended, int scancode);
-  static void HandleResponse(bool handled, void* user_data);
   static void ConvertUtf32ToUtf8_(char* out, char32_t ch);
   static FlutterKeyEvent SynthesizeSimpleEvent(FlutterKeyEventType type,
                                                uint64_t physical,

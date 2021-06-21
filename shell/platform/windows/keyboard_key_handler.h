@@ -7,10 +7,12 @@
 
 #include <deque>
 #include <memory>
+#include <vector>
 #include <string>
 
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/basic_message_channel.h"
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/binary_messenger.h"
+#include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/windows/keyboard_handler_base.h"
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
 #include "rapidjson/document.h"
@@ -34,6 +36,12 @@ class FlutterWindowsView;
 // of the RawKeyEvent system.
 class KeyboardKeyHandler : public KeyboardHandlerBase {
  public:
+  struct KeyMessageBuilder {
+    bool handled;
+    std::vector<FlutterKeyEvent> events;
+    std::vector<uint8_t> raw_event;
+  };
+
   // An interface for concrete definition of how to asynchronously handle key
   // events.
   class KeyboardKeyHandlerDelegate {
@@ -48,11 +56,14 @@ class KeyboardKeyHandler : public KeyboardHandlerBase {
                               char32_t character,
                               bool extended,
                               bool was_down,
-                              std::function<void(bool)> callback) = 0;
+                              KeyMessageBuilder& message) = 0;
 
     virtual ~KeyboardKeyHandlerDelegate();
   };
 
+  using SendKeyMessage = std::function<void(const FlutterKeyMessage& /* message */,
+                                       FlutterKeyMessageCallback /* callback */,
+                                       void* /* user_data */)>;
   using EventRedispatcher =
       std::function<UINT(UINT cInputs, LPINPUT pInputs, int cbSize)>;
 
@@ -60,7 +71,8 @@ class KeyboardKeyHandler : public KeyboardHandlerBase {
   //
   // The |redispatch_event| is typically |SendInput|, but can also be nullptr
   // (for UWP).
-  explicit KeyboardKeyHandler(EventRedispatcher redispatch_event);
+  KeyboardKeyHandler(SendKeyMessage send_message,
+    EventRedispatcher redispatch_event);
 
   ~KeyboardKeyHandler();
 
@@ -121,6 +133,8 @@ class KeyboardKeyHandler : public KeyboardHandlerBase {
 
  private:
   struct PendingEvent {
+    KeyboardKeyHandler* owner;
+
     uint32_t key;
     uint8_t scancode;
     uint32_t action;
@@ -128,16 +142,11 @@ class KeyboardKeyHandler : public KeyboardHandlerBase {
     bool extended;
     bool was_down;
 
-    // Self-incrementing ID attached to an event sent to the framework.
-    uint64_t sequence_id;
-    // The number of delegates that haven't replied.
-    size_t unreplied;
-    // Whether any replied delegates reported true (handled).
-    bool any_handled;
-
     // A value calculated out of critical event information that can be used
     // to identify redispatched events.
     uint64_t hash;
+
+    bool force_handled;
   };
 
   // Find an event in the redispatch list that matches the given one.
@@ -146,7 +155,7 @@ class KeyboardKeyHandler : public KeyboardHandlerBase {
   // redispatch list, and returns true. Otherwise, returns false;
   bool RemoveRedispatchedEvent(const PendingEvent& incoming);
   void RedispatchEvent(std::unique_ptr<PendingEvent> event);
-  void ResolvePendingEvent(uint64_t sequence_id, bool handled);
+  void ResolvePendingEvent(PendingEvent* pending, bool handled);
 
   std::vector<std::unique_ptr<KeyboardKeyHandlerDelegate>> delegates_;
 
@@ -164,6 +173,9 @@ class KeyboardKeyHandler : public KeyboardHandlerBase {
   // The callback used to redispatch synthesized events.
   EventRedispatcher redispatch_event_;
 
+  // The callback used to send a key event message to the framework.
+  SendKeyMessage send_message_;
+
   // Calculate a hash based on event data for fast comparison for a redispatched
   // event.
   //
@@ -180,6 +192,8 @@ class KeyboardKeyHandler : public KeyboardHandlerBase {
   // key codes, setting timestamps, etc.), it's not clear that the redispatched
   // events would have the same checksums.
   static uint64_t ComputeEventHash(const PendingEvent& event);
+
+  static void HandleEmbedderResult(bool result, void* user_data);
 };
 
 }  // namespace flutter
