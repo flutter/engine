@@ -598,9 +598,8 @@ public class TextInputPluginTest {
 
   @Test
   public void inputConnection_textInputTypeNone() {
-    FlutterJNI mockFlutterJni = mock(FlutterJNI.class);
     View testView = new View(RuntimeEnvironment.application);
-    DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJni, mock(AssetManager.class)));
+    DartExecutor dartExecutor = mock(DartExecutor.class);
     TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
     TextInputPlugin textInputPlugin =
         new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
@@ -616,9 +615,6 @@ public class TextInputPluginTest {
             null,
             null,
             null));
-    // There's a pending restart since we initialized the text input client. Flush that now.
-    textInputPlugin.setTextInputEditingState(
-        testView, new TextInputChannel.TextEditState("", 0, 0, -1, -1));
 
     InputConnection connection = textInputPlugin.createInputConnection(testView, new EditorInfo());
     assertEquals(connection, null);
