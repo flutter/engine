@@ -1,96 +1,15 @@
+# Adapted from $FUCHSIA_DIR/build/dart/BUILD.gn
+
 # Copyright 2017 The Fuchsia Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//build/dart/toolchain.gni")
-import("//build/python/python_binary.gni")
-import("//build/python/python_host_test.gni")
-import("//build/toolchain/basic_toolchain.gni")
-import("//build/toolchain/concurrent_jobs.gni")
-
-declare_args() {
-  # Maximum number of Dart processes to run in parallel.
-  #
-  # Dart analyzer uses a lot of memory which may cause issues when building
-  # with many parallel jobs e.g. when using goma. To avoid out-of-memory
-  # errors we explicitly reduce the number of jobs.
-  concurrent_dart_jobs = default_concurrent_jobs.dart
-}
+import("//flutter/tools/fuchsia/dart/toolchain.gni")
+import("//flutter/tools/fuchsia/python/python_binary.gni")
+import("//flutter/tools/fuchsia/toolchain/basic_toolchain.gni")
 
 python_binary("gen_dart_package_config") {
   main_source = "gen_dart_package_config.py"
-  deps = [ "//third_party/pyyaml:yaml" ]
-}
-
-python_binary("run_analysis") {
-  main_source = "run_analysis.py"
-  deps = [ "//third_party/pyyaml:yaml" ]
-}
-
-python_binary("gen_meta_file") {
-  main_source = "sdk/gen_meta_file.py"
-  deps = [ "//third_party/pyyaml:yaml" ]
-}
-
-# TODO(fxb/58062): Delete after all packages are migrated away from dart_app
-# and flutter_app.
-group("deprecated_dart_app_allowlist") {
-  #  ________  _________  ________  ________
-  # |\   ____\|\___   ___\\   __  \|\   __  \
-  # \ \  \___|\|___ \  \_\ \  \|\  \ \  \|\  \
-  #  \ \_____  \   \ \  \ \ \  \\\  \ \   ____\
-  #   \|____|\  \   \ \  \ \ \  \\\  \ \  \___|
-  #     ____\_\  \   \ \__\ \ \_______\ \__\
-  #    |\_________\   \|__|  \|_______|\|__|
-  #    \|_________|
-  # This is an allowlist of packages that have not migrated to use dart_component.
-  # This is only intended to be used as a temporary allowlist. Do not add to this list.
-  allowlist = [
-    "//examples/dart/fuchsia_modular/fibonacci_agent:fibonacci-agent",
-    "//examples/diagnostics/inspect/codelab/dart/client:bin",
-    "//examples/diagnostics/inspect/codelab/dart/fizzbuzz:bin",
-    "//examples/diagnostics/inspect/codelab/dart/part_1:bin",
-    "//examples/diagnostics/inspect/codelab/dart/part_2:bin",
-    "//examples/diagnostics/inspect/codelab/dart/part_3:bin",
-    "//examples/diagnostics/inspect/codelab/dart/part_4:bin",
-    "//examples/diagnostics/inspect/codelab/dart/part_5:bin",
-    "//examples/fidl/dart/client:echo-dart-client",
-    "//examples/fidl/dart/request_pipelining/client:echo-launcher-dart-client",
-    "//examples/fidl/dart/request_pipelining/server:echo-launcher-dart-server",
-    "//examples/fidl/dart/server:echo-dart-server",
-    "//sdk/dart/fuchsia_inspect/test/integration:dart-inspect-vmo-test-writer",
-    "//sdk/dart/fuchsia_inspect/test/validator_puppet:dart-inspect-validator-puppet",
-    "//sdk/dart/fuchsia_services/test_support:fuchsia-services-foo-test-server",
-    "//src/diagnostics/validator/logs/encoding/puppet/dart:log-validator-dart-puppet",
-    "//src/lib/diagnostics/inspect/dart/bench:dart-inspect-benchmarks",
-    "//src/tests/intl/timestamp-server-dart:timestamp-server-dart",
-  ]
-
-  visibility = []
-  foreach(target, allowlist) {
-    visibility += [
-      target,
-      target + "_manifest_dist",
-      target + "_manifest_dist_generate",
-      target + "_component_manifests",
-    ]
-  }
-}
-
-# Copies the patched SDK files for the dart runner
-copy("platform_files") {
-  sources = [
-    "//prebuilt/third_party/flutter/$target_cpu/release/aot/dart_runner_patched_sdk/platform_strong.dill",
-    "//prebuilt/third_party/flutter/$target_cpu/release/aot/dart_runner_patched_sdk/platform_strong.dill.d",
-    "//prebuilt/third_party/flutter/$target_cpu/release/aot/dart_runner_patched_sdk/vm_outline_strong.dill",
-  ]
-  outputs = [ "$root_out_dir/dart_runner_patched_sdk/{{source_file_part}}" ]
-}
-
-if (current_toolchain == dart_toolchain) {
-  pool("dart_pool") {
-    depth = concurrent_dart_jobs
-  }
 }
 
 if (current_toolchain == default_toolchain) {
@@ -100,18 +19,4 @@ if (current_toolchain == default_toolchain) {
   basic_toolchain("dartlang") {
     expected_label = dart_toolchain
   }
-}
-
-python_host_test("gen_reference_docs_test") {
-  main_source = "gen_reference_docs_test.py"
-  sources = [ "gen_reference_docs.py" ]
-  libraries = [ "//third_party/pyyaml:yaml" ]
-}
-
-group("tests") {
-  testonly = true
-  deps = [
-    ":gen_reference_docs_test($host_toolchain)",
-    "tests",
-  ]
 }

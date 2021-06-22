@@ -1,25 +1,10 @@
+# Adapted from $FUCHSIA_DIR/build/dart/dart.gni
+
 # Copyright 2018 The Fuchsia Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-declare_args() {
-  # Directory containing prebuilt Dart SDK.
-  # This must have in its `bin/` subdirectory `gen_snapshot.OS-CPU` binaries.
-  prebuilt_dart_sdk = "//prebuilt/third_party/dart/${host_platform}"
-}
+# TODO(richkadel): Reconcile this file/path with the pre-existing `dart.gni`
+# imported below.
 
-prebuilt_dart = "${prebuilt_dart_sdk}/bin/dart"
-prebuilt_gen_snapshot =
-    "${prebuilt_dart_sdk}/bin/gen_snapshot.${current_os}-${current_cpu}"
-prebuilt_gen_snapshot_product =
-    "${prebuilt_dart_sdk}/bin/gen_snapshot_product.${current_os}-${current_cpu}"
-
-dart_sdk = "${prebuilt_dart_sdk}"
-dart_sdk_deps = []
-
-gen_snapshot = prebuilt_gen_snapshot
-gen_snapshot_product = prebuilt_gen_snapshot_product
-
-# This variable is currently used in //topaz. It can be removed when the reference
-# is removed from that repository
-gen_snapshot_deps = []
+import("//flutter/tools/fuchsia/dart.gni")

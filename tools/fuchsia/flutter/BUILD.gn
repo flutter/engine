@@ -1,57 +1,64 @@
+# Adapted from $FUCHSIA_DIR/build/flutter/BUILD.gn
+
 # Copyright 2020 The Fuchsia Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-# TODO(fxb/58062): Delete after all packages are migrated away from dart_app
-# and flutter_app.
-group("deprecated_flutter_app_allowlist") {
-  #  ________  _________  ________  ________
-  # |\   ____\|\___   ___\\   __  \|\   __  \
-  # \ \  \___|\|___ \  \_\ \  \|\  \ \  \|\  \
-  #  \ \_____  \   \ \  \ \ \  \\\  \ \   ____\
-  #   \|____|\  \   \ \  \ \ \  \\\  \ \  \___|
-  #     ____\_\  \   \ \__\ \ \_______\ \__\
-  #    |\_________\   \|__|  \|_______|\|__|
-  #    \|_________|
-  # This is an allowlist of packages that have not migrated to use flutter_component.
-  # This is only intended to be used as a temporary allowlist. Do not add to this list.
-  allowlist = [
-    "//examples/dart/fuchsia_inspect_flutter/torus15:torus15-flutter",
-    "//examples/dart/fuchsia_modular/multilevel_mod:multilevel-mod",
-    "//examples/dart/fuchsia_modular/slider_mod:slider-mod",
-    "//examples/dart/fuchsia_webview_flutter/webview_mod:webview-mod",
-    "//examples/diagnostics/inspect/dart/inspect_mod:inspect-mod",
-    "//sdk/dart/fuchsia_inspect/test/inspect_flutter_integration_tester:inspect-flutter-integration-tester",
-    "//src/experiences/benchmarks/bin/button_flutter:button-flutter",
-    "//src/experiences/benchmarks/bin/clockface_flutter:clockface-flutter",
-    "//src/experiences/benchmarks/bin/gamma_flutter:gamma-flutter",
-    "//src/experiences/benchmarks/bin/scroll_flutter:scroll-flutter",
-    "//src/experiences/session_shells/ermine/shell:ermine",
-    "//src/ui/tests/integration_flutter_tests/embedder/child-view:child-view",
-    "//src/ui/tests/integration_flutter_tests/embedder/parent-view:parent-view",
-    "//src/ui/tests/integration_input_tests/touch/one-flutter:one-flutter",
-    "//src/tests/intl/timestamp-server-dart:timestamp-server-flutter",
-    "//vendor/google/connectivity/management/router_manager_app:router-manager-app",
-    "//vendor/google/factory/fctui:fctui",
-  ]
+# # TODO(fxb/58062): Delete after all packages are migrated away from dart_app
+# # and flutter_app.
+# group("deprecated_flutter_app_allowlist") {
+#   #  ________  _________  ________  ________
+#   # |\   ____\|\___   ___\\   __  \|\   __  \
+#   # \ \  \___|\|___ \  \_\ \  \|\  \ \  \|\  \
+#   #  \ \_____  \   \ \  \ \ \  \\\  \ \   ____\
+#   #   \|____|\  \   \ \  \ \ \  \\\  \ \  \___|
+#   #     ____\_\  \   \ \__\ \ \_______\ \__\
+#   #    |\_________\   \|__|  \|_______|\|__|
+#   #    \|_________|
+#   # This is an allowlist of packages that have not migrated to use flutter_component.
+#   # This is only intended to be used as a temporary allowlist. Do not add to this list.
+#   allowlist = [
+#     "//examples/dart/fuchsia_inspect_flutter/torus15:torus15-flutter",
+#     "//examples/dart/fuchsia_modular/multilevel_mod:multilevel-mod",
+#     "//examples/dart/fuchsia_modular/slider_mod:slider-mod",
+#     "//examples/dart/fuchsia_webview_flutter/webview_mod:webview-mod",
+#     "//examples/diagnostics/inspect/dart/inspect_mod:inspect-mod",
+#     "//sdk/dart/fuchsia_inspect/test/inspect_flutter_integration_tester:inspect-flutter-integration-tester",
+#     "//src/experiences/benchmarks/bin/button_flutter:button-flutter",
+#     "//src/experiences/benchmarks/bin/clockface_flutter:clockface-flutter",
+#     "//src/experiences/benchmarks/bin/gamma_flutter:gamma-flutter",
+#     "//src/experiences/benchmarks/bin/scroll_flutter:scroll-flutter",
+#     "//src/experiences/session_shells/ermine/shell:ermine",
+#     "//src/ui/tests/integration_flutter_tests/embedder/child-view:child-view",
+#     "//src/ui/tests/integration_flutter_tests/embedder/parent-view:parent-view",
+#     "//src/ui/tests/integration_input_tests/touch/one-flutter:one-flutter",
+#     "//src/tests/intl/timestamp-server-dart:timestamp-server-flutter",
+#     "//vendor/google/connectivity/management/router_manager_app:router-manager-app",
+#     "//vendor/google/factory/fctui:fctui",
+#   ]
 
-  visibility = []
-  foreach(target, allowlist) {
-    visibility += [
-      target,
-      target + "_manifest_dist",
-      target + "_manifest_dist_generate",
-      target + "_component_manifests",
-    ]
-  }
-}
+#   visibility = []
+#   foreach(target, allowlist) {
+#     visibility += [
+#       target,
+#       target + "_manifest_dist",
+#       target + "_manifest_dist_generate",
+#       target + "_component_manifests",
+#     ]
+#   }
+# }
 
-# Copies the patched SDK files for the flutter runner
-copy("platform_files") {
-  sources = [
-    "//prebuilt/third_party/flutter/$target_cpu/release/aot/flutter_runner_patched_sdk/platform_strong.dill",
-    "//prebuilt/third_party/flutter/$target_cpu/release/aot/flutter_runner_patched_sdk/platform_strong.dill.d",
-    "//prebuilt/third_party/flutter/$target_cpu/release/aot/flutter_runner_patched_sdk/vm_outline_strong.dill",
-  ]
-  outputs = [ "$root_out_dir/flutter_runner_patched_sdk/{{source_file_part}}" ]
-}
+####
+# NOTE(richkadel): We don't want these `:platform_files` from the SDK.
+# Instead, we want: //shell/platform/fuchsia/flutter/kernel:kernel_platform_files
+
+# # Copies the patched SDK files for the flutter runner
+# copy("platform_files") {
+#   sources = [
+#     # "//prebuilt/third_party/flutter/$target_cpu/release/aot/flutter_runner_patched_sdk/platform_strong.dill",
+#     # "//prebuilt/third_party/flutter/$target_cpu/release/aot/flutter_runner_patched_sdk/platform_strong.dill.d",
+#     # "//prebuilt/third_party/flutter/$target_cpu/release/aot/flutter_runner_patched_sdk/vm_outline_strong.dill",
+#     "//fuchsia/sdk/$target_cpu/tools/dart_prebuilts/flutter_runner/platform_strong.dill"
+#   ]
+#   outputs = [ "$root_out_dir/flutter_runner_patched_sdk/{{source_file_part}}" ]
+# }

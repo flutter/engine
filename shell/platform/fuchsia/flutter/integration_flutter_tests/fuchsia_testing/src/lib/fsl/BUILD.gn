@@ -1,49 +1,54 @@
+# Adapted from $FUCHSIA_DIR/src/lib/fsl/BUILD.gn
+
 # Copyright 2016 The Fuchsia Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//build/components.gni")
+import("//build/fuchsia/sdk.gni")
+# import("//build/components.gni")
 
 static_library("fsl") {
   output_name = "fsl"
 
   public_deps = [
-    "//src/lib/fsl/handles",
-    "//src/lib/fsl/io",
-    "//src/lib/fsl/socket",
-    "//src/lib/fsl/tasks",
-    "//src/lib/fsl/types",
-    "//src/lib/fsl/vmo",
+    # "//src/lib/fsl/handles",
+    # "//src/lib/fsl/io",
+    # "//src/lib/fsl/socket",
+    # "//src/lib/fsl/tasks",
+    # "//src/lib/fsl/types",
+
+    # "//src/lib/fsl/vmo",
+    "vmo",
   ]
 }
 
-executable("fsl_unittests") {
-  testonly = true
+# executable("fsl_unittests") {
+#   testonly = true
 
-  sources = [
-    "handles/object_info_unittest.cc",
-    "io/redirection_unittest.cc",
-    "socket/blocking_drain_unittest.cc",
-    "socket/files_unittest.cc",
-    "socket/socket_drainer_unittest.cc",
-    "socket/strings_unittest.cc",
-    "tasks/fd_waiter_unittest.cc",
-    "types/type_converters_unittest.cc",
-    "vmo/file_unittest.cc",
-    "vmo/shared_vmo_unittest.cc",
-    "vmo/strings_unittest.cc",
-    "vmo/vector_unittest.cc",
-  ]
+#   sources = [
+#     "handles/object_info_unittest.cc",
+#     "io/redirection_unittest.cc",
+#     "socket/blocking_drain_unittest.cc",
+#     "socket/files_unittest.cc",
+#     "socket/socket_drainer_unittest.cc",
+#     "socket/strings_unittest.cc",
+#     "tasks/fd_waiter_unittest.cc",
+#     "types/type_converters_unittest.cc",
+#     "vmo/file_unittest.cc",
+#     "vmo/shared_vmo_unittest.cc",
+#     "vmo/strings_unittest.cc",
+#     "vmo/vector_unittest.cc",
+#   ]
 
-  deps = [
-    ":fsl",
-    "//garnet/public/lib/gtest",
-    "//src/lib/fxl/test:gtest_main",
-    "//third_party/googletest:gtest",
-  ]
-}
+#   deps = [
+#     ":fsl",
+#     "//garnet/public/lib/gtest",
+#     "//src/lib/fxl/test:gtest_main",
+#     "//third_party/googletest:gtest",
+#   ]
+# }
 
-fuchsia_unittest_package("fsl_tests") {
-  manifest = "meta/fsl_unittests.cmx"
-  deps = [ ":fsl_unittests" ]
-}
+# fuchsia_unittest_package("fsl_tests") {
+#   manifest = "meta/fsl_unittests.cmx"
+#   deps = [ ":fsl_unittests" ]
+# }

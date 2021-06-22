@@ -1,11 +1,15 @@
+# Adapted from $FUCHSIA_DIR/build/flutter/flutter_component.gni
+
 # Copyright 2020 The Fuchsia Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//build/dart/dart.gni")
-import("//build/dart/dart_library.gni")
-import("//build/flutter/config.gni")
-import("//build/flutter/internal/flutter_dart_component.gni")
+# ./build/module_args/dart.gni
+# ./flutter/tools/fuchsia/dart/dart.gni
+import("//flutter/tools/fuchsia/dart/dart.gni")
+import("//flutter/tools/fuchsia/dart/dart_library.gni")
+import("//flutter/tools/fuchsia/flutter/config.gni")
+import("//flutter/tools/fuchsia/flutter/internal/flutter_dart_component.gni")
 
 # Defines a Flutter component which can be used in a fuchsia package
 #
@@ -81,7 +85,7 @@ import("//build/flutter/internal/flutter_dart_component.gni")
 #
 #   build_cfg (optional)
 #     Specifies the parameters for building the component.
-#     See //build/flutter/flutter_build_config.gni for predefined configs.
+#     See //flutter/tools/fuchsia/flutter/flutter_build_config.gni for predefined configs.
 #
 #  deps
 #  testonly
@@ -132,7 +136,8 @@ template("flutter_component") {
     main_dart = _main_dart
     main_package = _main_package
 
-    generate_asset_manifest = true
+    # requires `flutter_tools` from the `flutter` repo
+    # generate_asset_manifest = true
 
     build_cfg = _build_cfg
   }

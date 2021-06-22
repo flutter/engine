@@ -1,5 +1,10 @@
-# `flutter embedder tests`
+<!--
+Adapted from $FUCHSIA_DIR/src/ui/tests/integration_flutter_tests/embedder/README.md
 
+TODO(richkadel): Update this README after migrating to flutter
+-->
+
+# `flutter embedder tests`
 
 To run the tests
 

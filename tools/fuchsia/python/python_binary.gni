@@ -1,6 +1,10 @@
+# Adapted from $FUCHSIA_DIR/build/python/python_binary.gni
+
 # Copyright 2021 The Fuchsia Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+
+import("//flutter/tools/python/python3_action.gni")
 
 # Defines a Python binary.
 #
@@ -64,7 +68,8 @@ template("python_binary") {
     walk_keys = [ "library_info_barrier" ]
   }
 
-  action(target_name) {
+  # action(target_name) {
+  python3_action(target_name) {
     forward_variables_from(invoker,
                            [
                              "testonly",
@@ -98,7 +103,7 @@ template("python_binary") {
       _main_callable = invoker.main_callable
     }
 
-    script = "//build/python/package_python_binary.py"
+    script = "//flutter/tools/fuchsia/python/package_python_binary.py"
     depfile = "${target_out_dir}/${target_name}.d"
     args = [ "--sources" ] + rebase_path(sources, root_build_dir) + [
              "--target_name",

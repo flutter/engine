@@ -2,22 +2,24 @@
     "facets": {
         "fuchsia.test": {
             "system-services": [
-                "fuchsia.scheduler.ProfileProvider"
+                "fuchsia.scheduler.ProfileProvider",
+                "fuchsia.sysmem.Allocator",
+                "fuchsia.vulkan.loader.Loader"
             ]
         }
     },
-    "include": [
-        "sdk/lib/diagnostics/syslog/client.shard.cmx",
-        "src/lib/vulkan/test-application-container.shard.cmx"
-    ],
     "program": {
         "binary": "test/flutter-embedder-test"
     },
     "sandbox": {
         "services": [
+            "fuchsia.logger.LogSink",
             "fuchsia.sys.Environment",
             "fuchsia.sys.Launcher",
-            "fuchsia.sys.Loader"
+            "fuchsia.sys.Loader",
+            "fuchsia.sysmem.Allocator",
+            "fuchsia.tracing.provider.Registry",
+            "fuchsia.vulkan.loader.Loader"
         ]
     }
 }

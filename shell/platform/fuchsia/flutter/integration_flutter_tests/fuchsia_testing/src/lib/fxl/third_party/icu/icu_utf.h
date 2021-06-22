@@ -1,3 +1,5 @@
+// Adapted from $FUCHSIA_DIR/src/lib/fxl/third_party/icu/icu_utf.h
+
 /*
 *******************************************************************************
 *

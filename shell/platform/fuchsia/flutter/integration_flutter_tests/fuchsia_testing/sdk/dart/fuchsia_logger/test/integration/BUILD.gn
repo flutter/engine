@@ -1,25 +1,29 @@
+# Adapted from $FUCHSIA_DIR/sdk/dart/fuchsia_logger/test/integration/BUILD.gn
+
 # Copyright 2020 The Fuchsia Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//build/components.gni")
-import("//build/dart/dart_test_component.gni")
-import("//build/dart/fidl_move.gni")
+# TODO(richkadel): fuchsia tests currently disabled
 
-dart_test_component("integration-test-component") {
-  component_name = "fuchsia-logger-integration-tests"
-  manifest = "meta/fuchsia-logger-integration-tests.cmx"
-  sources = [ "log_integration.dart" ]
+# import("//build/components.gni")
+# import("//build/dart/dart_test_component.gni")
+# import("//build/dart/fidl_move.gni")
 
-  deps = [
-    "//sdk/dart/fidl",
-    "//sdk/dart/fuchsia_logger",
-    "//sdk/dart/fuchsia_services",
-    "//sdk/fidl/fuchsia.logger",
-    "//third_party/dart-pkg/pub/test",
-  ]
-}
+# dart_test_component("integration-test-component") {
+#   component_name = "fuchsia-logger-integration-tests"
+#   manifest = "meta/fuchsia-logger-integration-tests.cmx"
+#   sources = [ "log_integration.dart" ]
 
-fuchsia_test_package("fuchsia-logger-integration-tests") {
-  test_components = [ ":integration-test-component" ]
-}
+#   deps = [
+#     "//sdk/dart/fidl",
+#     "//sdk/dart/fuchsia_logger",
+#     "//sdk/dart/fuchsia_services",
+#     "//sdk/fidl/fuchsia.logger",
+#     "//third_party/dart/third_party/pkg/test",
+#   ]
+# }
+
+# fuchsia_test_package("fuchsia-logger-integration-tests") {
+#   test_components = [ ":integration-test-component" ]
+# }

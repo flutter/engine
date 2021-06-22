@@ -1,41 +1,45 @@
+# Adapted from $FUCHSIA_DIR/sdk/lib/sys/cpp/testing/BUILD.gn
+
 # Copyright 2019 The Fuchsia Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//build/cpp/sdk_source_set.gni")
+import("//build/fuchsia/sdk.gni")
 
-sdk_source_set("unit") {
-  testonly = true
+# import("//build/cpp/sdk_source_set.gni")
 
-  category = "partner"
+# sdk_source_set("unit") {
+#   testonly = true
 
-  sdk_name = "sys_cpp_testing"
+#   category = "partner"
 
-  include_base = "//sdk"
+#   sdk_name = "sys_cpp_testing"
 
-  sources = [
-    "component_context_provider.cc",
-    "component_context_provider.h",
-    "fake_component.cc",
-    "fake_component.h",
-    "fake_launcher.cc",
-    "fake_launcher.h",
-    "service_directory_provider.cc",
-    "service_directory_provider.h",
-  ]
+#   include_base = "//sdk"
 
-  public_deps = [
-    "//sdk/fidl/fuchsia.io",
-    "//sdk/lib/fit",
-    "//sdk/lib/sys/cpp",
-    "//sdk/lib/vfs/cpp",
-    "//zircon/public/lib/zx",
-  ]
+#   sources = [
+#     "component_context_provider.cc",
+#     "component_context_provider.h",
+#     "fake_component.cc",
+#     "fake_component.h",
+#     "fake_launcher.cc",
+#     "fake_launcher.h",
+#     "service_directory_provider.cc",
+#     "service_directory_provider.h",
+#   ]
 
-  deps = [ "//sdk/lib/fdio" ]
+#   public_deps = [
+#     "//sdk/fidl/fuchsia.io",
+#     "//sdk/lib/fit",
+#     "//sdk/lib/sys/cpp",
+#     "//sdk/lib/vfs/cpp",
+#     "//zircon/public/lib/zx",
+#   ]
 
-  public_configs = [ "//sdk/config" ]
-}
+#   deps = [ "//sdk/lib/fdio" ]
+
+#   public_configs = [ "//sdk/config" ]
+# }
 
 source_set("integration") {
   testonly = true
@@ -48,10 +52,17 @@ source_set("integration") {
   public_deps = [
     ":enclosing_environment",
     ":realm_builder",
-    "//garnet/public/lib/gtest",
+    # "//garnet/public/lib/gtest",
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/lib/gtest",
   ]
 
-  public_configs = [ "//sdk/config" ]
+  include_dirs = [
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing",
+#    "//fuchsia/sdk/linux/pkg/async-loop/include",
+#    "//fuchsia/sdk/linux/pkg/async-loop-cpp/include",
+#    "//fuchsia/sdk/linux/pkg/async-loop-default/include",
+#    "//third_party/googletest/googletest/include",
+  ]
 }
 
 source_set("enclosing_environment") {
@@ -67,20 +78,29 @@ source_set("enclosing_environment") {
   ]
 
   deps = [
-    "//sdk/fidl/fuchsia.debugdata",
-    "//sdk/lib/sys/cpp/testing/environment_delegating_runner:bin",
+    # fuchsia.debugdata FIDL is not in the SDK
+    # "$fuchsia_sdk_root/fidl:fuchsia.debugdata",
+
+    # "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/lib/sys/cpp/testing/environment_delegating_runner:bin",
+
+    "environment_delegating_runner:bin",
     "//third_party/rapidjson",
   ]
 
-  public_configs = [ "//sdk/config" ]
+  # public_configs = [ "$fuchsia_sdk_root/config" ]
+  include_dirs = [
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing",
+#    "//fuchsia/sdk/linux/pkg/async-loop/include",
+#    "//fuchsia/sdk/linux/pkg/async-loop-cpp/include",
+#    "//fuchsia/sdk/linux/pkg/async-loop-default/include",
+#    "//third_party/googletest/googletest/include",
+  ]
 
   public_deps = [
-    "//sdk/fidl/fuchsia.sys",
-    "//sdk/lib/fidl/cpp",
-    "//sdk/lib/sys/cpp",
-    "//sdk/lib/vfs/cpp",
-    "//sdk/lib/vfs/cpp",
-    "//zircon/system/ulib/async-default",
+    "$fuchsia_sdk_root/fidl:fuchsia.sys",
+    "$fuchsia_sdk_root/pkg:fidl_cpp",
+    "$fuchsia_sdk_root/pkg:sys_cpp",
+    "$fuchsia_sdk_root/pkg:vfs_cpp",
   ]
 }
 
@@ -97,6 +117,14 @@ source_set("realm_builder") {
 
   public_deps = [
     # This is needed to ensure that realm_builder.h header is found by .cc ???
-    "//sdk/lib/sys/cpp",
+    "$fuchsia_sdk_root/pkg:sys_cpp",
+  ]
+
+  include_dirs = [
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing",
+#    "//fuchsia/sdk/linux/pkg/async-loop/include",
+#    "//fuchsia/sdk/linux/pkg/async-loop-cpp/include",
+#    "//fuchsia/sdk/linux/pkg/async-loop-default/include",
+#    "//third_party/googletest/googletest/include",
   ]
 }

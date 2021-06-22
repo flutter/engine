@@ -1,66 +1,60 @@
+# Adapted from $FUCHSIA_DIR/build/fidl/BUILD.gn
+
 # Copyright 2018 The Fuchsia Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//build/fidl/toolchain.gni")
-import("//build/json/validate_json.gni")
-import("//build/toolchain/basic_toolchain.gni")
+import("//flutter/tools/fuchsia/fidl/toolchain.gni")
+# import("//flutter/tools/fuchsia/json/validate_json.gni")
+import("//flutter/tools/fuchsia/toolchain/basic_toolchain.gni")
+import("//flutter/tools/fuchsia/fidl/fidl.gni")
+import("//build/fuchsia/sdk.gni")
 
 # A toolchain dedicated to processing FIDL libraries.
 # The only targets in this toolchain are action() targets, so it
 # has no real tools.  But every toolchain needs stamp and copy.
-basic_toolchain("fidling") {
-  expected_label = fidl_toolchain
+if (current_toolchain == default_toolchain) {
+  basic_toolchain("fidling") {
+    expected_label = fidl_toolchain
+  }
 }
 
-# A generated file that lists all of the .fidl.json files.
-generated_file("all_fidl_json") {
-  testonly = true
-  deps = [ "//:default" ]
+template("from_fuchsia_sdk_meta") {
+  assert(defined(invoker.meta), "The meta.json file path must be specified.")
 
-  outputs = [ "$root_build_dir/all_fidl_json.txt" ]
-  data_keys = [ "fidl_json" ]
+  meta_json = read_file(invoker.meta, "json")
+
+  foreach(part, meta_json.parts) {
+    part_meta_json = {
+    }
+
+    part_meta = part.meta
+    part_meta_rebased = "$fuchsia_sdk_path/$part_meta"
+
+    part_meta_json = read_file(part_meta_rebased, "json")
+    subtarget_name = part_meta_json.name
+
+    if (part.type == "fidl_library") {
+          fidl(subtarget_name) {
+            sources = []
+            foreach (source, part_meta_json.sources) {
+              sources += [ "$fuchsia_sdk_path/$source" ]
+            }
+            public_deps = []
+            foreach (dep, part_meta_json.deps) {
+              public_deps += [ ":$dep" ]
+            }
+          }
+    }
+  }
+
+  group(target_name) {
+  }
 }
 
-# Generates a fidl_project.json file.
-# fidl_project.json is a declarative file that lists FIDL libraries and their
-# constituent files, dependencies, and build artifacts. It is used by the FIDL
-# LSP Language Server to compile FIDL libraries.
-action("gen_fidl_project") {
-  testonly = true
-  script = "//scripts/generate-fidl-project.py"
-  deps = [ "//:generated_sources" ]
-
-  inputs = [ "$root_build_dir/generated_sources.json" ]
-  outputs = [ "$root_build_dir/fidl_project.json" ]
-
-  args = [
-    rebase_path("//"),
-    rebase_path("$root_build_dir/generated_sources.json"),
-    rebase_path("$root_build_dir/fidl_project.json"),
-  ]
+if (current_toolchain != default_toolchain) {
+  from_fuchsia_sdk_meta("fidl") {
+    meta = "$fuchsia_sdk_path/meta/manifest.json"
+  }
 }
 
-validate_json("validate_fidl_project_json") {
-  testonly = true
-  data = "$root_build_dir/fidl_project.json"
-  schema = "//scripts/fidl_project_schema.json"
-  deps = [ ":gen_fidl_project" ]
-}
-
-normalize_test_stamp = "$target_gen_dir/normalize_unittest.stamp"
-action("normalize_unittest") {
-  testonly = true
-  script = "normalize_unittest.py"
-  inputs = [ "normalize.py" ]
-  outputs = [ normalize_test_stamp ]
-  args = [
-    "--stamp",
-    rebase_path(normalize_test_stamp),
-  ]
-}
-
-group("tests") {
-  testonly = true
-  deps = [ ":normalize_unittest" ]
-}

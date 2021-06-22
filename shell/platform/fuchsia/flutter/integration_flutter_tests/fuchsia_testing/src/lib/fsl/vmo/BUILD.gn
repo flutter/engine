@@ -1,9 +1,13 @@
+# Adapted from $FUCHSIA_DIR/src/lib/fsl/vmo/BUILD.gn
+
 # Copyright 2016 The Fuchsia Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//build/fuchsia/sdk.gni")
+
 source_set("vmo") {
-  visibility = [ "//src/lib/fsl/*" ]
+  # visibility = [ "//src/lib/fsl/*" ]
 
   sources = [
     "file.cc",
@@ -17,18 +21,24 @@ source_set("vmo") {
     "vmo.cc",
   ]
 
-  deps = [ "//sdk/lib/fdio" ]
-
-  public_deps = [
-    "//sdk/fidl/fuchsia.mem",
-    "//src/lib/files",
-    "//src/lib/fxl:memory",
-    "//zircon/public/lib/fbl",
-    "//zircon/public/lib/zx",
+  include_dirs = [
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing",
   ]
 
-  public_configs = [ "//garnet/public:config" ]
+  deps = [
+    "$fuchsia_sdk_root/pkg:fdio",
+  ]
+
+  public_deps = [
+    "$fuchsia_sdk_root/fidl:fuchsia.mem",
+    "$fuchsia_sdk_root/pkg:zx",
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/src/lib/files",
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/src/lib/fxl:memory",
+    # "//zircon/public/lib/fbl",
+  ]
+
+  # public_configs = [ "//garnet/public:config" ]
 
   # TODO(fxbug.dev/58162): delete the below and fix compiler warnings
-  configs += [ "//build/config:Wno-conversion" ]
+  # configs += [ "//build/config:Wno-conversion" ]
 }

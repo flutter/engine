@@ -1,8 +1,10 @@
+# Adapted from $FUCHSIA_DIR/build/dart/config.gni
+
 # Copyright 2020 The Fuchsia Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//build/dart/dart_build_config.gni")
+import("//flutter/tools/fuchsia/dart/dart_build_config.gni")
 
 declare_args() {
   # Forces all Dart apps to build in product mode which is a

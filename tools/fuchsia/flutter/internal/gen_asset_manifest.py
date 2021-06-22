@@ -1,3 +1,5 @@
+# Adapted from $FUCHSIA_DIR/build/flutter/internal/gen_asset_manifest.py
+
 #!/usr/bin/env python3.8
 # Copyright 2020 The Chromium Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be

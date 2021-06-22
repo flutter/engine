@@ -1,3 +1,5 @@
+# Adapted from $FUCHSIA_DIR/build/dart/gen_dart_package_config.py
+
 #!/usr/bin/env python3.8
 # Copyright 2020 The Fuchsia Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
@@ -99,6 +101,8 @@ def collect_packages(items, relative_to):
 
 
 def main():
+    # TODO(richkadel): Are there unused flags and features that should be
+    # removed?
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         '--input', help='Path to original package_config', required=True)

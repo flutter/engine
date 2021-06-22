@@ -1,15 +1,23 @@
+# Adapted from $FUCHSIA_DIR/src/lib/fxl/BUILD.gn
+
 # Copyright 2016 The Fuchsia Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//build/fuchsia/sdk.gni")
+
 source_set("common") {
-  visibility = [
-    ":*",
-    "//src/lib/files:*",
-    "//src/lib/fsl/handles:*",
-    "//src/lib/fsl/io:*",
-    "//src/lib/fsl/socket:*",
-    "//src/lib/fsl/tasks:*",
+  # visibility = [
+  #   ":*",
+  #   "//src/lib/files:*",
+  #   "//src/lib/fsl/handles:*",
+  #   "//src/lib/fsl/io:*",
+  #   "//src/lib/fsl/socket:*",
+  #   "//src/lib/fsl/tasks:*",
+  # ]
+
+  include_dirs = [
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing",
   ]
 
   sources = [
@@ -20,12 +28,12 @@ source_set("common") {
 }
 
 source_set("memory") {
-  visibility = [
-    ":*",
-    "//src/lib/files:*",
-    "//src/lib/fsl/io:*",
-    "//src/lib/fsl/vmo:*",
-  ]
+  # visibility = [
+  #   ":*",
+  #   "//src/lib/files:*",
+  #   "//src/lib/fsl/io:*",
+  #   "//src/lib/fsl/vmo:*",
+  # ]
 
   sources = [
     "memory/ref_counted.h",
@@ -38,9 +46,14 @@ source_set("memory") {
     "memory/weak_ptr_internal.h",
   ]
 
+  include_dirs = [
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing",
+  ]
+
   public_deps = [
     ":common",
-    "//sdk/lib/syslog/cpp",
+    # "$fuchsia_sdk_root/pkg:syslog",
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/lib/syslog/cpp",
   ]
 }
 
@@ -51,15 +64,20 @@ source_set("third_party") {
     "third_party/icu/icu_utf.cc",
     "third_party/icu/icu_utf.h",
   ]
-  configs += [ "//build/config:Wno-implicit-fallthrough" ]
+
+  include_dirs = [
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing",
+  ]
+
+  # configs += [ "//build/config:Wno-implicit-fallthrough" ]
 }
 
 source_set("strings") {
-  visibility = [
-    ":*",
-    "//src/lib/files:*",
-    "//src/lib/uuid:*",
-  ]
+  # visibility = [
+  #   ":*",
+  #   "//src/lib/files:*",
+  #   "//src/lib/uuid:*",
+  # ]
 
   sources = [
     "strings/ascii.cc",
@@ -81,97 +99,102 @@ source_set("strings") {
     "strings/utf_codecs.h",
   ]
 
+  include_dirs = [
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing",
+  ]
+
   public_deps = [
     ":common",
     ":third_party",
-    "//sdk/lib/syslog/cpp",
+    # "$fuchsia_sdk_root/pkg:syslog",
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/lib/syslog/cpp",
   ]
 }
 
-source_set("functional") {
-  visibility = [ ":*" ]
+# source_set("functional") {
+#   visibility = [ ":*" ]
 
-  sources = [
-    "functional/apply.h",
-    "functional/cancelable_callback.h",
-  ]
+#   sources = [
+#     "functional/apply.h",
+#     "functional/cancelable_callback.h",
+#   ]
 
-  public_deps = [
-    ":common",
-    ":memory",
-    "//sdk/lib/syslog/cpp",
-  ]
-}
+#   public_deps = [
+#     ":common",
+#     ":memory",
+#     "//sdk/lib/syslog/cpp",
+#   ]
+# }
 
-static_library("fxl") {
-  sources = [
-    "command_line.cc",
-    "command_line.h",
-    "log_settings_command_line.cc",
-    "log_settings_command_line.h",
-    "observer_list.h",
-  ]
+# static_library("fxl") {
+#   sources = [
+#     "command_line.cc",
+#     "command_line.h",
+#     "log_settings_command_line.cc",
+#     "log_settings_command_line.h",
+#     "observer_list.h",
+#   ]
 
-  public_deps = [
-    ":common",
-    ":functional",
-    ":memory",
-    ":strings",
-    "//sdk/lib/fit",
-    "//sdk/lib/syslog/cpp",
-    "//src/lib/files",
-  ]
-}
+#   public_deps = [
+#     ":common",
+#     ":functional",
+#     ":memory",
+#     ":strings",
+#     "//sdk/lib/fit",
+#     "//sdk/lib/syslog/cpp",
+#     "//src/lib/files",
+#   ]
+# }
 
-executable("fxl_unittests") {
-  testonly = true
+# executable("fxl_unittests") {
+#   testonly = true
 
-  sources = [
-    "//src/lib/fxl/log_settings_command_line_unittest.cc",
-    "command_line_unittest.cc",
-    "functional/apply_unittest.cc",
-    "functional/cancelable_callback_unittest.cc",
-    "memory/ref_counted_unittest.cc",
-    "memory/weak_ptr_unittest.cc",
-    "observer_list_unittest.cc",
-    "strings/ascii_unittest.cc",
-    "strings/concatenate_unittest.cc",
-    "strings/join_strings_unittest.cc",
-    "strings/split_string_unittest.cc",
-    "strings/string_number_conversions_unittest.cc",
-    "strings/string_printf_unittest.cc",
-    "strings/substitute_unittest.cc",
-    "strings/trim_unittest.cc",
-    "synchronization/thread_annotations_unittest.cc",
-    "test/test_settings_unittest.cc",
-  ]
+#   sources = [
+#     "//src/lib/fxl/log_settings_command_line_unittest.cc",
+#     "command_line_unittest.cc",
+#     "functional/apply_unittest.cc",
+#     "functional/cancelable_callback_unittest.cc",
+#     "memory/ref_counted_unittest.cc",
+#     "memory/weak_ptr_unittest.cc",
+#     "observer_list_unittest.cc",
+#     "strings/ascii_unittest.cc",
+#     "strings/concatenate_unittest.cc",
+#     "strings/join_strings_unittest.cc",
+#     "strings/split_string_unittest.cc",
+#     "strings/string_number_conversions_unittest.cc",
+#     "strings/string_printf_unittest.cc",
+#     "strings/substitute_unittest.cc",
+#     "strings/trim_unittest.cc",
+#     "synchronization/thread_annotations_unittest.cc",
+#     "test/test_settings_unittest.cc",
+#   ]
 
-  deps = [
-    ":fxl",
-    "test:gtest_main",
-    "test:test_settings",
-    "//sdk/lib/syslog/cpp",
-    "//src/lib/files",
-    "//third_party/googletest:gmock",
-    "//third_party/googletest:gtest",
-  ]
-}
+#   deps = [
+#     ":fxl",
+#     "test:gtest_main",
+#     "test:test_settings",
+#     "//sdk/lib/syslog/cpp",
+#     "//src/lib/files",
+#     "//third_party/googletest:gmock",
+#     "//third_party/googletest:gtest",
+#   ]
+# }
 
-if (is_fuchsia) {
-  import("//build/components.gni")
+# if (is_fuchsia) {
+#   import("//build/components.gni")
 
-  fuchsia_unittest_package("fxl_tests") {
-    manifest = "meta/fxl_unittests.cmx"
-    deps = [ ":fxl_unittests" ]
-    test_specs = {
-      log_settings = {
-        max_severity = "FATAL"
-      }
-    }
-  }
+#   fuchsia_unittest_package("fxl_tests") {
+#     manifest = "meta/fxl_unittests.cmx"
+#     deps = [ ":fxl_unittests" ]
+#     test_specs = {
+#       log_settings = {
+#         max_severity = "FATAL"
+#       }
+#     }
+#   }
 
-  group("tests") {
-    testonly = true
-    deps = [ ":fxl_tests" ]
-  }
-}
+#   group("tests") {
+#     testonly = true
+#     deps = [ ":fxl_tests" ]
+#   }
+# }

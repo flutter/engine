@@ -1,3 +1,5 @@
+// Adapted from $FUCHSIA_DIR/sdk/dart/fuchsia_logger/lib/src/internal/_stdout_log_writer.dart
+
 // Copyright 2018 The Fuchsia Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
