@@ -52,7 +52,7 @@ void testMain() {
       EnginePlatformDispatcher.instance.rasterizer!
           .draw(builder.build().layerTree);
       await matchGoldenFile('canvaskit_backdropfilter_blur_edges.png',
-          region: region, write: true);
+          region: region);
     });
     // TODO: https://github.com/flutter/flutter/issues/60040
     // TODO: https://github.com/flutter/flutter/issues/71520

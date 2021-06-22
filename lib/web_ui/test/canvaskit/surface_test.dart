@@ -18,55 +18,8 @@ void main() {
 void testMain() {
   group('CanvasKit', () {
     setUpCanvasKitTest();
-
-    test('Surface allocates canvases efficiently', () {
-      final Surface surface = SurfaceFactory.instance.getSurface();
-      final CkSurface original =
-          surface.acquireFrame(ui.Size(9, 19)).skiaSurface;
-
-      // Expect exact requested dimensions.
-      expect(original.width(), 9);
-      expect(original.height(), 19);
-      expect(surface.htmlCanvas!.style.width, '9px');
-      expect(surface.htmlCanvas!.style.height, '19px');
-
-      // Shrinking reuses the existing surface straight-up.
-      final CkSurface shrunk = surface.acquireFrame(ui.Size(5, 15)).skiaSurface;
-      expect(shrunk, same(original));
-      expect(surface.htmlCanvas!.style.width, '9px');
-      expect(surface.htmlCanvas!.style.height, '19px');
-
-      // The first increase will allocate a new surface, but will overallocate
-      // by 40% to accommodate future increases.
-      final CkSurface firstIncrease =
-          surface.acquireFrame(ui.Size(10, 20)).skiaSurface;
-      expect(firstIncrease, isNot(same(original)));
-
-      // Expect overallocated dimensions
-      expect(firstIncrease.width(), 14);
-      expect(firstIncrease.height(), 28);
-      expect(surface.htmlCanvas!.style.width, '14px');
-      expect(surface.htmlCanvas!.style.height, '28px');
-
-      // Subsequent increases within 40% reuse the old surface.
-      final CkSurface secondIncrease =
-          surface.acquireFrame(ui.Size(11, 22)).skiaSurface;
-      expect(secondIncrease, same(firstIncrease));
-
-      // Increases beyond the 40% limit will cause a new allocation.
-      final CkSurface huge = surface.acquireFrame(ui.Size(20, 40)).skiaSurface;
-      expect(huge, isNot(same(firstIncrease)));
-
-      // Also over-allocated
-      expect(huge.width(), 28);
-      expect(huge.height(), 56);
-      expect(surface.htmlCanvas!.style.width, '28px');
-      expect(surface.htmlCanvas!.style.height, '56px');
-
-      // Shrink again. Reuse the last allocated surface.
-      final CkSurface shrunk2 =
-          surface.acquireFrame(ui.Size(5, 15)).skiaSurface;
-      expect(shrunk2, same(huge));
+    setUp(() {
+      window.debugOverrideDevicePixelRatio(1.0);
     });
 
     test(
