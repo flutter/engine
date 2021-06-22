@@ -38,7 +38,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * This class is owned by the {@link FlutterEngine} and its role is to managed its connections with
+ * This class is owned by the {@link io.flutter.embedding.engine.FlutterEngine} and its role is to managed its connections with
  * Android App Components and Flutter plugins.
  *
  * <p>It enforces the {0|1}:1 relationship between activity and engine, and propagates the app
@@ -700,8 +700,8 @@ import java.util.Set;
     }
 
     /**
-     * Invoked by the {@link FlutterEngine} that owns this {@code ActivityPluginBinding} when its
-     * associated {@link Activity} has its {@code onRequestPermissionsResult(...)} method invoked.
+     * Invoked by the {@link io.flutter.embedding.engine.FlutterEngine} that owns this {@code ActivityPluginBinding} when its
+     * associated {@link android.app.Activity} has its {@code onRequestPermissionsResult(...)} method invoked.
      */
     boolean onRequestPermissionsResult(
         int requestCode, @NonNull String[] permissions, @NonNull int[] grantResult) {
@@ -728,8 +728,8 @@ import java.util.Set;
     }
 
     /**
-     * Invoked by the {@link FlutterEngine} that owns this {@code ActivityPluginBinding} when its
-     * associated {@link Activity} has its {@code onActivityResult(...)} method invoked.
+     * Invoked by the {@link io.flutter.embedding.engine.FlutterEngine} that owns this {@code ActivityPluginBinding} when its
+     * associated {@link android.app.Activity} has its {@code onActivityResult(...)} method invoked.
      */
     boolean onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
       boolean didConsumeResult = false;
@@ -754,8 +754,8 @@ import java.util.Set;
     }
 
     /**
-     * Invoked by the {@link FlutterEngine} that owns this {@code ActivityPluginBinding} when its
-     * associated {@link Activity} has its {@code onNewIntent(...)} method invoked.
+     * Invoked by the {@link io.flutter.embedding.engine.FlutterEngine} that owns this {@code ActivityPluginBinding} when its
+     * associated {@link android.app.Activity} has its {@code onNewIntent(...)} method invoked.
      */
     void onNewIntent(@Nullable Intent intent) {
       for (io.flutter.plugin.common.PluginRegistry.NewIntentListener listener :
@@ -787,8 +787,8 @@ import java.util.Set;
     }
 
     /**
-     * Invoked by the {@link FlutterEngine} that owns this {@code ActivityPluginBinding} when its
-     * associated {@link Activity} has its {@code onUserLeaveHint()} method invoked.
+     * Invoked by the {@link io.flutter.embedding.engine.FlutterEngine} that owns this {@code ActivityPluginBinding} when its
+     * associated {@link android.app.Activity} has its {@code onUserLeaveHint()} method invoked.
      */
     void onUserLeaveHint() {
       for (io.flutter.plugin.common.PluginRegistry.UserLeaveHintListener listener :
@@ -798,8 +798,8 @@ import java.util.Set;
     }
 
     /**
-     * Invoked by the {@link FlutterEngine} that owns this {@code ActivityPluginBinding} when its
-     * associated {@link Activity} or {@code Fragment} has its {@code onSaveInstanceState(Bundle)}
+     * Invoked by the {@link io.flutter.embedding.engine.FlutterEngine} that owns this {@code ActivityPluginBinding} when its
+     * associated {@link android.app.Activity} or {@code Fragment} has its {@code onSaveInstanceState(Bundle)}
      * method invoked.
      */
     void onSaveInstanceState(@NonNull Bundle bundle) {
@@ -809,8 +809,8 @@ import java.util.Set;
     }
 
     /**
-     * Invoked by the {@link FlutterEngine} that owns this {@code ActivityPluginBinding} when its
-     * associated {@link Activity} or {@code Fragment} has its {@code onCreate(Bundle)} method
+     * Invoked by the {@link io.flutter.embedding.engine.FlutterEngine} that owns this {@code ActivityPluginBinding} when its
+     * associated {@link android.app.Activity} or {@code Fragment} has its {@code onCreate(Bundle)} method
      * invoked.
      */
     void onRestoreInstanceState(@Nullable Bundle bundle) {

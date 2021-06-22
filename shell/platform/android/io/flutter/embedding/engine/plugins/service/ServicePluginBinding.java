@@ -12,7 +12,7 @@ import androidx.annotation.Nullable;
 public interface ServicePluginBinding {
 
   /**
-   * Returns the {@link Service} that is currently attached to the {@link FlutterEngine} that owns
+   * Returns the {@link Service} that is currently attached to the {@link io.flutter.embedding.engine.FlutterEngine} that owns
    * this {@code ServicePluginBinding}.
    */
   @NonNull
@@ -39,7 +39,7 @@ public interface ServicePluginBinding {
 
   /**
    * Removes the given {@code listener}, which was previously added with {@link
-   * #addOnModeChangeListener(OnModeChangeListener)}.
+   * #addOnModeChangeListener(ServiceAware.OnModeChangeListener)}.
    */
   void removeOnModeChangeListener(@NonNull ServiceAware.OnModeChangeListener listener);
 }

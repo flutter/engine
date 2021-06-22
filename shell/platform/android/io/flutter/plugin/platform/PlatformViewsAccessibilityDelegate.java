@@ -17,8 +17,6 @@ public interface PlatformViewsAccessibilityDelegate {
 
   /**
    * Returns true if the platform view uses virtual displays.
-   *
-   * @hide
    */
   boolean usesVirtualDisplay(Integer id);
 

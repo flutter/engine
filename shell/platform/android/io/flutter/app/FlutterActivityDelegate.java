@@ -35,7 +35,7 @@ import io.flutter.view.FlutterView;
 import java.util.ArrayList;
 
 /**
- * Deprecated class that performs the actual work of tying Android {@link Activity} instances to
+ * Deprecated class that performs the actual work of tying Android {@link android.app.Activity} instances to
  * Flutter.
  *
  * <p>This exists as a dedicated class (as opposed to being integrated directly into {@link
@@ -84,6 +84,8 @@ public final class FlutterActivityDelegate
     /**
      * Hook for subclasses to indicate that the {@code FlutterNativeView} returned by {@link
      * #createFlutterNativeView()} should not be destroyed when this activity is destroyed.
+     *
+     * @return Whether the FlutterNativeView is retained.
      */
     boolean retainFlutterNativeView();
   }

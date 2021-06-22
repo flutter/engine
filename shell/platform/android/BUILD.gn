@@ -599,6 +599,8 @@ action("gen_android_javadoc") {
     "--third-party",
     rebase_path("//third_party"),
   ]
+
+  deps = [ ":gen_android_build_config_java" ]
 }
 
 zip_bundle("android_javadoc") {

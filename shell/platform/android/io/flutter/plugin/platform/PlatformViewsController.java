@@ -714,7 +714,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    * Initializes a platform view and adds it to the view hierarchy.
    *
    * @param viewId The view ID.
-   * @hide
+   * This member is not intended for public use, and is only visible for testing.
    */
   @VisibleForTesting
   void initializePlatformViewIfNeeded(int viewId) {
@@ -767,7 +767,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    * @param viewWidth The original width of the platform view before applying the mutator stack.
    * @param viewHeight The original height of the platform view before applying the mutator stack.
    * @param mutatorsStack The mutator stack.
-   * @hide
+   * This member is not intended for public use, and is only visible for testing.
    */
   public void onDisplayPlatformView(
       int viewId,
@@ -804,7 +804,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    * @param y The top position relative to {@code FlutterView}.
    * @param width The width of the surface.
    * @param height The height of the surface.
-   * @hide
+   * This member is not intended for public use, and is only visible for testing.
    */
   public void onDisplayOverlaySurface(int id, int x, int y, int width, int height) {
     if (overlayLayerViews.get(id) == null) {
@@ -834,7 +834,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   /**
    * Called by {@code FlutterJNI} when the Flutter frame was submitted.
    *
-   * @hide
+   * This member is not intended for public use, and is only visible for testing.
    */
   public void onEndFrame() {
     final FlutterView view = (FlutterView) flutterView;
@@ -909,7 +909,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    *
    * @param imageView The surface that displays the overlay.
    * @return Wrapper object that provides the layer id and the surface.
-   * @hide
+   * This member is not intended for public use, and is only visible for testing.
    */
   @VisibleForTesting
   @TargetApi(19)
@@ -924,7 +924,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    *
    * <p>This method is invoked by {@code FlutterJNI} only.
    *
-   * @hide
+   * This member is not intended for public use, and is only visible for testing.
    */
   @TargetApi(19)
   public FlutterOverlaySurface createOverlaySurface() {
@@ -947,7 +947,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    *
    * <p>This method is used only internally by {@code FlutterJNI}.
    *
-   * @hide
+   * This member is not intended for public use, and is only visible for testing.
    */
   public void destroyOverlaySurfaces() {
     for (int i = 0; i < overlayLayerViews.size(); i++) {

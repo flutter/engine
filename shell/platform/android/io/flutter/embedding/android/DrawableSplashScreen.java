@@ -39,7 +39,7 @@ public final class DrawableSplashScreen implements SplashScreen {
    * <p>
    *
    * @param drawable The {@code Drawable} to be displayed as a splash screen.
-   * @param scaleType The {@link ImageView.ScaleType} to be applied to the {@code Drawable} when the
+   * @param scaleType The {@link android.widget.ImageView.ScaleType} to be applied to the {@code Drawable} when the
    *     {@code Drawable} is displayed full-screen.
    */
   public DrawableSplashScreen(

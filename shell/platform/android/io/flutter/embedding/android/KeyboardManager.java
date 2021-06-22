@@ -16,7 +16,7 @@ import java.util.HashSet;
  * A class to process {@link KeyEvent}s dispatched to a {@link FlutterView}, either from a hardware
  * keyboard or an IME event.
  *
- * <p>A class that sends Android {@link KeyEvent} to the a list of {@link Responder}s, and
+ * <p>A class that sends Android {@link KeyEvent} to the a list of {@link KeyboardManager.Responder}s, and
  * re-dispatches those not handled by the primary responders.
  *
  * <p>Flutter uses asynchronous event handling to avoid blocking the UI thread, but Android requires
@@ -30,19 +30,19 @@ import java.util.HashSet;
  * types of responders (in the listed order):
  *
  * <ul>
- *   <li>{@link Responder}s: An immutable list of key responders in a {@link KeyboardManager} that
- *       each implements the {@link Responder} interface. A {@link Responder} is a key responder
+ *   <li>{@link KeyboardManager.Responder}s: An immutable list of key responders in a {@link KeyboardManager} that
+ *       each implements the {@link KeyboardManager.Responder} interface. A {@link KeyboardManager.Responder} is a key responder
  *       that's capable of handling {@link KeyEvent}s asynchronously.
  *       <p>When a new {@link KeyEvent} is received, {@link KeyboardManager} calls the {@link
- *       Responder#handleEvent(KeyEvent, OnKeyEventHandledCallback)} method on its {@link
- *       Responder}s. Each {@link Responder} must call the supplied {@link
+ *       KeyboardManager.Responder#handleEvent(KeyEvent, OnKeyEventHandledCallback)} method on its {@link
+ *       KeyboardManager.Responder}s. Each {@link KeyboardManager.Responder} must call the supplied {@link
  *       OnKeyEventHandledCallback} exactly once, when it has decided whether to handle the key
- *       event callback. More than one {@link Responder} is allowed to reply true and handle the
+ *       event callback. More than one {@link KeyboardManager.Responder} is allowed to reply true and handle the
  *       same {@link KeyEvent}.
  *       <p>Typically a {@link KeyboardManager} uses a {@link KeyChannelResponder} as its only
- *       {@link Responder}.
- *   <li>{@link TextInputPlugin}: if every {@link Responder} has replied false to a {@link
- *       KeyEvent}, or if the {@link KeyboardManager} has zero {@link Responder}s, the {@link
+ *       {@link KeyboardManager.Responder}.
+ *   <li>{@link TextInputPlugin}: if every {@link KeyboardManager.Responder} has replied false to a {@link
+ *       KeyEvent}, or if the {@link KeyboardManager} has zero {@link KeyboardManager.Responder}s, the {@link
  *       KeyEvent} will be sent to the currently focused editable text field in {@link
  *       TextInputPlugin}, if any.
  *   <li><b>"Redispatch"</b>: if there's no currently focused text field in {@link TextInputPlugin},
@@ -56,10 +56,10 @@ public class KeyboardManager {
   private static final String TAG = "KeyboardManager";
 
   /**
-   * Constructor for {@link KeyboardManager} that takes a list of {@link Responder}s.
+   * Constructor for {@link KeyboardManager} that takes a list of {@link KeyboardManager.Responder}s.
    *
    * <p>The view is used as the destination to send the synthesized key to. This means that the the
-   * next thing in the focus chain will get the event when the {@link Responder}s return false from
+   * next thing in the focus chain will get the event when the {@link KeyboardManager.Responder}s return false from
    * onKeyDown/onKeyUp.
    *
    * <p>It is possible that that in the middle of the async round trip, the focus chain could
@@ -73,7 +73,7 @@ public class KeyboardManager {
    * @param textInputPlugin a plugin, which, if set, is given key events before the framework is,
    *     and if it has a valid input connection and is accepting text, then it will handle the event
    *     and the framework will not receive it.
-   * @param responders the {@link Responder}s new {@link KeyEvent}s will be first dispatched to.
+   * @param responders the {@link KeyboardManager.Responder}s new {@link KeyEvent}s will be first dispatched to.
    */
   public KeyboardManager(
       View view, @NonNull TextInputPlugin textInputPlugin, Responder[] responders) {
@@ -108,7 +108,7 @@ public class KeyboardManager {
      *
      * @param keyEvent the new {@link KeyEvent} this {@link Responder} may be interested in.
      * @param onKeyEventHandledCallback the method to call when this {@link Responder} has decided
-     *     whether to handle the {@link keyEvent}.
+     *     whether to handle the {@link KeyEvent}.
      */
     void handleEvent(
         @NonNull KeyEvent keyEvent, @NonNull OnKeyEventHandledCallback onKeyEventHandledCallback);

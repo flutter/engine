@@ -10,7 +10,7 @@ import androidx.annotation.NonNull;
 import io.flutter.embedding.engine.systemchannels.KeyEventChannel;
 
 /**
- * A {@link Responder} of {@link KeyboardManager} that handles events by sending the raw information
+ * A {@link KeyboardManager.Responder} of {@link KeyboardManager} that handles events by sending the raw information
  * through the method channel.
  *
  * <p>This class corresponds to the RawKeyboard API in the framework.
