@@ -371,7 +371,8 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     return configuration.inputType.type != TextInputChannel.TextInputType.NONE;
   }
 
-  private void showTextInput(View view) {
+  @VisibleForTesting
+  void showTextInput(View view) {
     if (canShowTextInput()) {
       view.requestFocus();
       mImm.showSoftInput(view, 0);
