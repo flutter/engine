@@ -596,6 +596,34 @@ public class TextInputPluginTest {
     assertEquals(0, testImm.getLastCursorAnchorInfo().getComposingText().length());
   }
 
+  @Test
+  public void inputConnection_textInputTypeNone() {
+    FlutterJNI mockFlutterJni = mock(FlutterJNI.class);
+    View testView = new View(RuntimeEnvironment.application);
+    DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJni, mock(AssetManager.class)));
+    TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
+    TextInputPlugin textInputPlugin =
+        new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
+    textInputPlugin.setTextInputClient(
+        0,
+        new TextInputChannel.Configuration(
+            false,
+            false,
+            true,
+            TextInputChannel.TextCapitalization.NONE,
+            new TextInputChannel.InputType(TextInputChannel.TextInputType.NONE, false, false),
+            null,
+            null,
+            null,
+            null));
+    // There's a pending restart since we initialized the text input client. Flush that now.
+    textInputPlugin.setTextInputEditingState(
+        testView, new TextInputChannel.TextEditState("", 0, 0, -1, -1));
+
+    InputConnection connection = textInputPlugin.createInputConnection(testView, new EditorInfo());
+    assertEquals(connection, null);
+  }
+
   // -------- Start: Autofill Tests -------
   @Test
   public void autofill_onProvideVirtualViewStructure() {

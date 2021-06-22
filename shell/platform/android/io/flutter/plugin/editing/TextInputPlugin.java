@@ -395,6 +395,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
   void setTextInputClient(int client, TextInputChannel.Configuration configuration) {
     // Call notifyViewExited on the previous field.
     notifyViewExited();
+    this.configuration = configuration;
     if (canShowTextInput()) {
       inputTarget = new InputTarget(InputTarget.Type.FRAMEWORK_CLIENT, client);
     } else {
@@ -407,7 +408,6 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     mEditable =
         new ListenableEditingState(
             configuration.autofill != null ? configuration.autofill.editState : null, mView);
-    this.configuration = configuration;
     updateAutofillConfigurationIfNeeded(configuration);
 
     // setTextInputClient will be followed by a call to setTextInputEditingState.
