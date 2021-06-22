@@ -4,18 +4,14 @@
 
 import 'dart:collection';
 
-import 'package:kernel/kernel.dart' hide MapEntry;
-import 'package:meta/meta.dart';
+import 'package:kernel/kernel.dart';
 
 class _ConstVisitor extends RecursiveVisitor<void> {
   _ConstVisitor(
     this.kernelFilePath,
     this.classLibraryUri,
     this.className,
-  )  : assert(kernelFilePath != null),
-       assert(classLibraryUri != null),
-       assert(className != null),
-       _visitedInstances = <String>{},
+  )  : _visitedInstances = <String>{},
        constantInstances = <Map<String, dynamic>>[],
        nonConstantLocations = <Map<String, dynamic>>[];
 
@@ -35,8 +31,7 @@ class _ConstVisitor extends RecursiveVisitor<void> {
   // A cache of previously evaluated classes.
   static Map<Class, bool> _classHeirarchyCache = <Class, bool>{};
   bool _matches(Class node) {
-    assert(node != null);
-    final bool result = _classHeirarchyCache[node];
+    final bool? result = _classHeirarchyCache[node];
     if (result != null) {
       return result;
     }
@@ -44,7 +39,7 @@ class _ConstVisitor extends RecursiveVisitor<void> {
         && node.enclosingLibrary.importUri.toString() == classLibraryUri;
     _classHeirarchyCache[node] = exactMatch
         || node.supers.any((Supertype supertype) => _matches(supertype.classNode));
-    return _classHeirarchyCache[node];
+    return _classHeirarchyCache[node]!;
   }
 
   // Avoid visiting the same constant more than once.
@@ -64,12 +59,13 @@ class _ConstVisitor extends RecursiveVisitor<void> {
 
   @override
   void visitConstructorInvocation(ConstructorInvocation node) {
-    final Class parentClass = node.target.parent as Class;
+    final Class parentClass = node.target.parent! as Class;
     if (_matches(parentClass)) {
+      assert(node.location != null);
       nonConstantLocations.add(<String, dynamic>{
-        'file': node.location.file.toString(),
-        'line': node.location.line,
-        'column': node.location.column,
+        'file': node.location!.file.toString(),
+        'line': node.location!.line,
+        'column': node.location!.column,
       });
     }
     super.visitConstructorInvocation(node);
@@ -82,7 +78,7 @@ class _ConstVisitor extends RecursiveVisitor<void> {
       return;
     }
     final Map<String, dynamic> instance = <String, dynamic>{};
-    for (MapEntry<Reference, Constant> kvp in node.fieldValues.entries) {
+    for (final MapEntry<Reference, Constant> kvp in node.fieldValues.entries) {
       if (kvp.value is! PrimitiveConstant<dynamic>) {
         continue;
       }
@@ -102,9 +98,9 @@ class ConstFinder {
   ///
   /// The `kernelFilePath` is the path to a dill (kernel) file to process.
   ConstFinder({
-    @required String kernelFilePath,
-    @required String classLibraryUri,
-    @required String className,
+    required String kernelFilePath,
+    required String classLibraryUri,
+    required String className,
   })  : _visitor = _ConstVisitor(
                     kernelFilePath,
                     classLibraryUri,
@@ -116,7 +112,7 @@ class ConstFinder {
   /// Finds all instances
   Map<String, dynamic> findInstances() {
     _visitor._visitedInstances.clear();
-    for (Library library in loadComponentFromBinary(_visitor.kernelFilePath).libraries) {
+    for (final Library library in loadComponentFromBinary(_visitor.kernelFilePath).libraries) {
       library.visitChildren(_visitor);
     }
     return <String, dynamic>{
