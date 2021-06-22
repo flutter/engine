@@ -1,0 +1,102 @@
+# Copyright 2019 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//build/cpp/sdk_source_set.gni")
+
+sdk_source_set("unit") {
+  testonly = true
+
+  category = "partner"
+
+  sdk_name = "sys_cpp_testing"
+
+  include_base = "//sdk"
+
+  sources = [
+    "component_context_provider.cc",
+    "component_context_provider.h",
+    "fake_component.cc",
+    "fake_component.h",
+    "fake_launcher.cc",
+    "fake_launcher.h",
+    "service_directory_provider.cc",
+    "service_directory_provider.h",
+  ]
+
+  public_deps = [
+    "//sdk/fidl/fuchsia.io",
+    "//sdk/lib/fit",
+    "//sdk/lib/sys/cpp",
+    "//sdk/lib/vfs/cpp",
+    "//zircon/public/lib/zx",
+  ]
+
+  deps = [ "//sdk/lib/fdio" ]
+
+  public_configs = [ "//sdk/config" ]
+}
+
+source_set("integration") {
+  testonly = true
+
+  sources = [
+    "test_with_environment.cc",
+    "test_with_environment.h",
+  ]
+
+  public_deps = [
+    ":enclosing_environment",
+    ":realm_builder",
+    "//garnet/public/lib/gtest",
+  ]
+
+  public_configs = [ "//sdk/config" ]
+}
+
+source_set("enclosing_environment") {
+  testonly = true
+
+  sources = [
+    "component_interceptor.cc",
+    "component_interceptor.h",
+    "enclosing_environment.cc",
+    "enclosing_environment.h",
+    "launcher_impl.cc",
+    "launcher_impl.h",
+  ]
+
+  deps = [
+    "//sdk/fidl/fuchsia.debugdata",
+    "//sdk/lib/sys/cpp/testing/environment_delegating_runner:bin",
+    "//third_party/rapidjson",
+  ]
+
+  public_configs = [ "//sdk/config" ]
+
+  public_deps = [
+    "//sdk/fidl/fuchsia.sys",
+    "//sdk/lib/fidl/cpp",
+    "//sdk/lib/sys/cpp",
+    "//sdk/lib/vfs/cpp",
+    "//sdk/lib/vfs/cpp",
+    "//zircon/system/ulib/async-default",
+  ]
+}
+
+# Temporarily house RealmBuiler in its own source_set until it's ready to
+# be published in SDK. When the library is ready for public consumption, it'll
+# be moved to the "unit" package above.
+source_set("realm_builder") {
+  testonly = true
+
+  sources = [
+    "realm_builder.cc",
+    "realm_builder.h",
+  ]
+
+  public_deps = [
+    # This is needed to ensure that realm_builder.h header is found by .cc ???
+    "//sdk/lib/sys/cpp",
+  ]
+}

@@ -1,0 +1,72 @@
+# Copyright 2016 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//build/components.gni")
+
+group("loop_fixture") {
+  testonly = true
+
+  public_deps = [ ":gtest" ]
+}
+
+# Deprecated - new targets should instead depend on:
+# //src/lib/testing/loop_fixture
+source_set("gtest") {
+  testonly = true
+
+  sources = [
+    "real_loop.cc",
+    "real_loop.h",
+    "real_loop_fixture.h",
+    "test_loop.cc",
+    "test_loop.h",
+    "test_loop_fixture.h",
+  ]
+
+  deps = [ "//zircon/public/lib/async-cpp" ]
+
+  public_deps = [
+    "//sdk/lib/fit",
+    "//sdk/lib/stdcompat",
+    "//src/lib/fxl",
+    "//third_party/googletest:gtest",
+    "//zircon/public/lib/zx",
+    "//zircon/system/ulib/async:async-cpp",
+    "//zircon/system/ulib/async-loop:async-loop-cpp",
+    "//zircon/system/ulib/async-loop:async-loop-default",
+    "//zircon/system/ulib/async-testing",
+  ]
+
+  public_configs = [ "//garnet/public:config" ]
+}
+
+executable("loop_fixture_unittests") {
+  testonly = true
+
+  sources = [
+    "real_loop_fixture_unittest.cc",
+    "test_loop_fixture_unittest.cc",
+  ]
+
+  deps = [
+    ":loop_fixture",
+    "//sdk/lib/fit-promise",
+    "//src/lib/fxl",
+    "//src/lib/fxl/test:gtest_main",
+    "//src/lib/fxl/test:test_settings",
+    "//third_party/googletest:gmock",
+    "//zircon/public/lib/async-cpp",
+    "//zircon/system/ulib/async-default",
+  ]
+}
+
+fuchsia_unittest_package("loop_fixture_tests") {
+  deps = [ ":loop_fixture_unittests" ]
+}
+
+group("tests") {
+  testonly = true
+
+  deps = [ ":loop_fixture_tests" ]
+}

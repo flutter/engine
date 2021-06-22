@@ -1,0 +1,13 @@
+{
+    "program": {
+        "data": "data/child-view"
+    },
+    "sandbox": {
+        "services": [
+            "fuchsia.fonts.Provider",
+            "fuchsia.sys.Environment",
+            "fuchsia.ui.input.ImeService",
+            "fuchsia.ui.scenic.Scenic"
+        ]
+    }
+}

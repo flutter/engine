@@ -1,0 +1,142 @@
+# Copyright 2018 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//build/compiled_action.gni")
+import("//build/dart/dart_library.gni")
+import("//build/dart/toolchain.gni")
+import("//build/fidl/toolchain.gni")
+import("//build/sdk/sdk_atom_alias.gni")
+
+# Generates some Dart bindings for a FIDL library.
+#
+# The parameters for this template are defined in //build/fidl/fidl.gni. The
+# relevant parameters in this template are:
+#   - name;
+#   - sdk_category.
+
+template("fidl_dart") {
+  assert(current_toolchain == dart_toolchain,
+         "This template can only be used in the $dart_toolchain toolchain.")
+
+  not_needed(invoker, [ "sources" ])
+
+  main_target_name = target_name
+  generation_target_name = "${target_name}_dart_generate"
+
+  library_name = target_name
+  root_dir = "$target_gen_dir/${library_name}_package"
+  if (defined(invoker.name)) {
+    library_name = invoker.name
+    root_dir = "$target_gen_dir/${target_name}_${library_name}_package"
+  }
+  bindings_dir = "$root_dir/lib"
+  async_bindings_file = "$bindings_dir/fidl_async.dart"
+  test_bindings_file = "$bindings_dir/fidl_test.dart"
+
+  fidl_target_gen_dir =
+      get_label_info(":bogus($fidl_toolchain)", "target_gen_dir")
+  json_representation = "$fidl_target_gen_dir/$target_name.fidl.json"
+
+  compiled_action(generation_target_name) {
+    visibility = [
+      ":*",
+      "//tools/fidl/fidlgen_dart:*",
+    ]
+
+    tool = "//tools/fidl/fidlgen_dart"
+
+    inputs = [ json_representation ]
+
+    outputs = [
+      async_bindings_file,
+      test_bindings_file,
+    ]
+
+    args = [
+      "--json",
+      rebase_path(json_representation, root_build_dir),
+      "--output-async",
+      rebase_path(async_bindings_file, root_build_dir),
+      "--output-test",
+      rebase_path(test_bindings_file, root_build_dir),
+    ]
+
+    # Don't run the formatter if we are using a custom-built Dart SDK in a
+    # cross-build.
+    deps = [ ":$main_target_name($fidl_toolchain)" ]
+    if (host_cpu == target_cpu) {
+      args += [
+        "--dartfmt",
+        rebase_path("$dart_sdk/bin/dartfmt"),
+      ]
+      deps += dart_sdk_deps
+    }
+    forward_variables_from(invoker, [ "testonly" ])
+
+    metadata = {
+      generated_sources = rebase_path(outputs, root_build_dir)
+    }
+  }
+
+  copy_pubspec_target_name = "${target_name}_dart_pubspec"
+  copy_options_target_name = "${target_name}_dart_options"
+
+  copy(copy_pubspec_target_name) {
+    sources = [ "//build/dart/empty_pubspec.yaml" ]
+
+    outputs = [ "$root_dir/pubspec.yaml" ]
+  }
+
+  copy(copy_options_target_name) {
+    sources = [ "//topaz/tools/analysis_options.yaml" ]
+
+    outputs = [ "$root_dir/analysis_options.yaml" ]
+  }
+
+  dart_library(main_target_name) {
+    forward_variables_from(invoker,
+                           [
+                             "testonly",
+                             "visibility",
+                           ])
+
+    package_root = root_dir
+
+    package_name = "fidl_" + string_replace(library_name, ".", "_")
+
+    null_safe = true
+
+    sources = [
+      rebase_path(async_bindings_file, bindings_dir),
+      rebase_path(test_bindings_file, bindings_dir),
+    ]
+
+    deps = [
+      ":$copy_options_target_name",
+      ":$copy_pubspec_target_name",
+      ":$generation_target_name",
+      "//sdk/dart/fidl",
+      "//sdk/dart/zircon",
+      "//third_party/dart-pkg/pub/meta",
+    ]
+
+    if (defined(invoker.public_deps)) {
+      deps += invoker.public_deps
+    }
+
+    # invoker.deps are the non_fidl_deps passed in to the fidl() rule
+    if (defined(invoker.deps)) {
+      deps += invoker.deps
+    }
+  }
+
+  if (defined(invoker.sdk_category) && invoker.sdk_category != "excluded") {
+    # Instead of depending on the generated bindings, set up a dependency on the
+    # original library.
+    sdk_target_name = "${main_target_name}_sdk"
+    sdk_atom_alias(sdk_target_name) {
+      atom = ":$sdk_target_name($fidl_toolchain)"
+    }
+  }
+}

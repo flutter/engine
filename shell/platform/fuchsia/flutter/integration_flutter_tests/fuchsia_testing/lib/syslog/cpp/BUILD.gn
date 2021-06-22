@@ -1,0 +1,294 @@
+# Copyright 2020 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//build/components.gni")
+import("//build/cpp/sdk_shared_library.gni")
+import("//build/cpp/sdk_source_set.gni")
+import("//build/cpp/sdk_static_library.gni")
+import("//build/fuzzing/fuzzer.gni")
+import("//build/test.gni")
+
+sdk_source_set("cpp") {
+  # TODO(fxbug.dev/59937): Remove when Mac links OK against this.
+  if ((current_toolchain == "//build/toolchain:host_x64" && host_os == "mac") ||
+      (current_toolchain == "//build/toolchain:host_arm64" &&
+       host_os == "mac")) {
+    build_as_static = true
+  }
+
+  # Keep internal for now until the API stabilizes.
+  category = "internal"
+
+  sdk_name = "syslog_cpp"
+
+  include_base = "//sdk"
+
+  sources = [
+    "log_level.h",
+    "log_settings.cc",
+    "log_settings.h",
+    "logging_backend.h",
+    "macros.cc",
+    "macros.h",
+  ]
+
+  public_deps = [ "//sdk/lib/fit" ]
+
+  public_configs = [ "//sdk/config" ]
+}
+
+# Needed to export macros without relying on a specific backend
+# otherwise libraries can't include macros.h
+sdk_source_set("cpp-macros") {
+  # TODO(fxbug.dev/59937): Remove when Mac links OK against this.
+  if ((current_toolchain == "//build/toolchain:host_x64" && host_os == "mac") ||
+      (current_toolchain == "//build/toolchain:host_arm64" &&
+       host_os == "mac")) {
+    build_as_static = true
+  }
+
+  # Keep internal for now until the API stabilizes.
+  category = "internal"
+
+  sdk_name = "syslog_cpp"
+
+  include_base = "//sdk"
+
+  sources = [
+    "log_level.h",
+    "log_settings.h",
+    "logging_backend.h",
+    "macros.h",
+  ]
+
+  public_deps = [ "//sdk/lib/fit" ]
+
+  public_configs = [ "//sdk/config" ]
+}
+
+sdk_source_set("backend_host") {
+  # TODO(fxbug.dev/59937): Remove when Mac links OK against this.
+  if ((current_toolchain == "//build/toolchain:host_x64" && host_os == "mac") ||
+      (current_toolchain == "//build/toolchain:host_arm64" &&
+       host_os == "mac")) {
+    build_as_static = true
+  }
+
+  # Keep internal for now until the API stabilizes.
+  category = "internal"
+
+  sdk_name = "syslog_cpp_backend_host"
+
+  include_base = "//sdk"
+
+  sources = [
+    "logging_backend_host.cc",
+    "logging_backend_shared.cc",
+  ]
+
+  deps = [ ":cpp" ]
+
+  public_configs = [ "//sdk/config" ]
+}
+
+sdk_source_set("backend_legacy") {
+  # Keep internal for now until the API stabilizes.
+  category = "internal"
+
+  sdk_name = "syslog_cpp_backend_legacy"
+
+  include_base = "//sdk"
+
+  if (is_fuchsia) {
+    public_deps = [
+      ":backend_fuchsia_lib",
+      "//zircon/public/lib/zx",
+      "//zircon/system/ulib/syslog",
+    ]
+  } else {
+    public_deps = [ ":backend_host" ]
+  }
+}
+
+sdk_shared_library("backend_fuchsia_globals") {
+  category = "internal"
+
+  sources = [
+    "logging_backend_fuchsia_globals.cc",
+    "logging_backend_fuchsia_globals.h",
+  ]
+
+  deps = [ "//src/zircon/lib/zircon" ]
+}
+
+sdk_static_library("backend_fuchsia_lib_rust") {
+  # Keep internal for now until the API stabilizes.
+  category = "internal"
+
+  sdk_name = "syslog_cpp_backend_fuchsia_lib_rust"
+
+  include_base = "//sdk"
+
+  sources = [
+    "logging_backend_fuchsia.cc",
+    "logging_backend_fuchsia_globals.h",
+    "logging_backend_shared.cc",
+  ]
+
+  deps = [
+    ":backend_fuchsia_globals",
+    ":cpp",
+    "//sdk/fidl/fuchsia.diagnostics.stream",
+    "//sdk/fidl/fuchsia.logger:fuchsia.logger",
+    "//sdk/lib/fdio",
+    "//sdk/lib/stdcompat",
+    "//sdk/lib/syslog/streams/cpp:streams-encoder",
+  ]
+
+  data_deps = [ "//sdk/lib/diagnostics/syslog:client_includes" ]
+
+  public_configs = [ "//sdk/config" ]
+
+  libcxx_linkage = "static"
+}
+
+sdk_source_set("backend_fuchsia_lib") {
+  # Keep internal for now until the API stabilizes.
+  category = "internal"
+
+  sdk_name = "syslog_cpp_backend_fuchsia_lib"
+
+  include_base = "//sdk"
+
+  sources = [
+    "fx_log_api.cc",
+    "logging_backend_fuchsia.cc",
+    "logging_backend_fuchsia_globals.h",
+    "logging_backend_shared.cc",
+  ]
+
+  deps = [
+    ":backend_fuchsia_globals",
+    ":cpp",
+    "//sdk/fidl/fuchsia.diagnostics.stream",
+    "//sdk/fidl/fuchsia.logger:fuchsia.logger",
+    "//sdk/lib/fdio",
+    "//sdk/lib/stdcompat",
+    "//sdk/lib/syslog/streams/cpp:streams-encoder",
+    "//zircon/system/ulib/syslog",
+  ]
+
+  data_deps = [ "//sdk/lib/diagnostics/syslog:client_includes" ]
+
+  public_configs = [ "//sdk/config" ]
+}
+
+sdk_source_set("backend_fuchsia_compat") {
+  # Keep internal for now until the API stabilizes.
+  category = "internal"
+
+  sdk_name = "syslog_cpp_backend_fuchsia_compat_lib"
+
+  include_base = "//sdk"
+
+  sources = [
+    "fx_log_api_null.cc",
+    "logging_backend_fuchsia.cc",
+    "logging_backend_fuchsia_globals.h",
+    "logging_backend_shared.cc",
+  ]
+
+  deps = [
+    ":backend_fuchsia_globals",
+    ":cpp-macros",
+    "//sdk/fidl/fuchsia.diagnostics.stream",
+    "//sdk/fidl/fuchsia.logger:fuchsia.logger",
+    "//sdk/lib/fdio",
+    "//sdk/lib/fit",
+    "//sdk/lib/stdcompat",
+    "//sdk/lib/syslog/streams/cpp:streams-encoder",
+  ]
+
+  data_deps = [ "//sdk/lib/diagnostics/syslog:client_includes" ]
+
+  configs += [ "//build/config/fuchsia:static_cpp_standard_library" ]
+
+  public_configs = [ "//sdk/config" ]
+}
+
+sdk_source_set("backend") {
+  # Keep internal for now until the API stabilizes.
+  category = "internal"
+
+  sdk_name = "syslog_cpp_backend"
+
+  if (is_fuchsia) {
+    public_deps = [ ":backend_fuchsia_lib" ]
+  } else {
+    public_deps = [ ":backend_host" ]
+  }
+}
+
+# TODO(fxbug.dev/62157) switch to test() template when host tests fixed
+executable("logging_cpp_unittests") {
+  testonly = true
+  sources = [
+    "log_settings_unittest.cc",
+    "logging_unittest.cc",
+  ]
+
+  deps = [
+    ":backend_legacy",
+    ":cpp",
+    "//src/lib/fxl",
+    "//src/lib/fxl/test:gtest_main",
+    "//third_party/googletest:gmock",
+    "//third_party/googletest:gtest",
+  ]
+}
+
+executable("logging_cpp_unittests_structured") {
+  testonly = true
+  sources = [ "log_structure_unittest.cc" ]
+
+  deps = [
+    ":backend",
+    ":cpp",
+    "//src/lib/files",
+    "//third_party/googletest:gtest",
+    "//third_party/googletest:gtest_main",
+  ]
+}
+
+fuchsia_unittest_component("logging-cpp-unittests") {
+  manifest = "meta/logging_cpp_unittests.cmx"
+  deps = [ ":logging_cpp_unittests" ]
+}
+
+fuchsia_unittest_component("logging-cpp-unittests-structured") {
+  manifest = "meta/logging_cpp_unittests_structured.cmx"
+  deps = [ ":logging_cpp_unittests_structured" ]
+}
+
+fuchsia_test_package("logging-cpp-tests") {
+  test_components = [
+    ":logging-cpp-unittests",
+    ":logging-cpp-unittests-structured",
+  ]
+  test_specs = {
+    log_settings = {
+      max_severity = "FATAL"
+    }
+  }
+}
+
+group("tests") {
+  testonly = true
+  deps = [
+    ":logging-cpp-tests",
+
+    # Refer to the README.md for instructions on host tests
+    ":logging_cpp_unittests($host_toolchain)",
+  ]
+}

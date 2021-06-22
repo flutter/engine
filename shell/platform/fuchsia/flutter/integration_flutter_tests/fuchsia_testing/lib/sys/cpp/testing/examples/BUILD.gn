@@ -1,0 +1,23 @@
+# Copyright 2018 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//build/components.gni")
+
+executable("component_context_provider_example_bin") {
+  testonly = true
+  output_name = "component_context_provider_example_test"
+
+  sources = [ "component_context_provider_example.cc" ]
+
+  deps = [
+    "//garnet/examples/fidl/echo_client_cpp:lib",
+    "//garnet/public/lib/gtest",
+    "//sdk/lib/sys/cpp/testing:unit",
+    "//src/lib/fxl/test:gtest_main",
+  ]
+}
+
+fuchsia_unittest_package("component_context_provider_example_test") {
+  deps = [ ":component_context_provider_example_bin" ]
+}

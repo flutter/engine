@@ -1,0 +1,57 @@
+# Copyright 2018 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//build/components.gni")
+
+executable("fake_echo_app") {
+  testonly = true
+  output_name = "fake_echo_app"
+
+  sources = [
+    "fake_echo.cc",
+    "fake_echo.h",
+  ]
+
+  deps = [
+    "//sdk/lib/sys/cpp",
+    "//src/testing/fidl:placeholders",
+    "//zircon/system/ulib/async-loop:async-loop-cpp",
+    "//zircon/system/ulib/async-loop:async-loop-default",
+  ]
+}
+
+executable("test_with_environment_example_test_bin") {
+  testonly = true
+  output_name = "test_with_environment_example_test"
+
+  sources = [
+    "fake_echo.h",
+    "test_with_environment_example_test.cc",
+  ]
+
+  deps = [
+    "//sdk/fidl/fuchsia.sys",
+    "//sdk/lib/sys/cpp/testing:integration",
+    "//src/lib/fxl/test:gtest_main",
+    "//src/testing/fidl:placeholders",
+  ]
+}
+
+fuchsia_component("fake_echo_app_component") {
+  testonly = true
+  component_name = "fake_echo_app"
+  manifest = "meta/fake_echo_app.cmx"
+  deps = [ ":fake_echo_app" ]
+}
+
+fuchsia_test_component("test_with_environment_example_component") {
+  component_name = "test_with_environment_example"
+  manifest = "meta/test_with_environment_example_test.cmx"
+  deps = [ ":test_with_environment_example_test_bin" ]
+}
+
+fuchsia_test_package("test_with_environment_example_test") {
+  test_components = [ ":test_with_environment_example_component" ]
+  deps = [ ":fake_echo_app_component" ]
+}

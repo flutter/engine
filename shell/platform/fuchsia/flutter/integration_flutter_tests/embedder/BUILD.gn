@@ -1,0 +1,71 @@
+# Copyright 2020 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//build/config.gni")
+import("//build/test.gni")
+import("//build/test/test_package.gni")
+
+group("tests") {
+  testonly = true
+  deps = [
+    ":flutter-embedder-test",
+
+    # The deps below are necessary on minimal product configs.
+    "//src/graphics/bin/vulkan_loader",
+
+    # TODO(fxbug.dev/24643): remove
+    "//src/ui/bin/ime:ime_service",
+    "//src/ui/bin/root_presenter",
+    "//src/ui/scenic",
+    "//src/ui/tests/integration_flutter_tests/embedder/child-view",
+    "//src/ui/tests/integration_flutter_tests/embedder/parent-view",
+  ]
+}
+
+test_package("flutter-embedder-test") {
+  deps = [ ":flutter-embedder-test-bin" ]
+
+  tests = [
+    {
+      log_settings = {
+        max_severity = "ERROR"
+      }
+      name = "flutter-embedder-test"
+      environments = [ nuc_env ]
+    },
+  ]
+
+  data_deps = [
+    "//src/ui/scenic",
+    "//src/ui/tests/integration_flutter_tests/embedder/child-view",
+    "//src/ui/tests/integration_flutter_tests/embedder/parent-view",
+  ]
+}
+
+test("flutter-embedder-test-bin") {
+  sources = [
+    "flutter-embedder-test.cc",
+    "flutter-embedder-test.h",
+  ]
+  output_name = "flutter-embedder-test"
+  deps = [
+    "//garnet/public/lib/gtest",
+    "//sdk/fidl/fuchsia.sys",
+    "//sdk/fidl/fuchsia.ui.app",
+    "//sdk/fidl/fuchsia.ui.input",
+    "//sdk/fidl/fuchsia.ui.policy",
+    "//sdk/fidl/fuchsia.ui.scenic",
+    "//sdk/lib/fit",
+    "//sdk/lib/sys/cpp",
+    "//sdk/lib/sys/cpp/testing:integration",
+    "//sdk/lib/ui/scenic/cpp",
+    "//src/lib/fxl",
+    "//src/lib/fxl/test:gtest_main",
+    "//src/ui/testing/views",
+    "//third_party/googletest:gtest",
+    "//zircon/public/lib/zx",
+    "//zircon/system/ulib/async-loop:async-loop-cpp",
+    "//zircon/system/ulib/async-loop:async-loop-default",
+  ]
+}

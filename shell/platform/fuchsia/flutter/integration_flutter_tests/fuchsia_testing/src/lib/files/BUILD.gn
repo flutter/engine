@@ -1,0 +1,75 @@
+# Copyright 2016 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+source_set("files") {
+  sources = [
+    "directory.cc",
+    "directory.h",
+    "eintr_wrapper.h",
+    "file.cc",
+    "file.h",
+    "file_descriptor.cc",
+    "file_descriptor.h",
+    "glob.cc",
+    "glob.h",
+    "path.cc",
+    "path.h",
+    "scoped_temp_dir.cc",
+    "scoped_temp_dir.h",
+  ]
+
+  public_deps = [
+    "//src/lib/fxl:strings",
+    "//zircon/system/ulib/fbl",
+  ]
+
+  deps = [
+    "//sdk/lib/fit",
+    "//src/lib/fxl:memory",
+  ]
+  configs += [
+    # TODO(fxbug.dev/58162): delete the below and fix compiler warnings
+    "//build/config:Wno-conversion",
+  ]
+}
+
+executable("files_unittests") {
+  testonly = true
+
+  sources = [
+    "directory_unittest.cc",
+    "file_descriptor_unittest.cc",
+    "file_unittest.cc",
+    "glob_unittest.cc",
+    "path_unittest.cc",
+    "scoped_temp_dir_unittest.cc",
+  ]
+
+  deps = [
+    ":files",
+    "//sdk/lib/syslog/cpp",
+    "//src/lib/fxl:common",
+    "//src/lib/fxl:strings",
+    "//src/lib/fxl/test:gtest_main",
+    "//third_party/googletest:gmock",
+    "//third_party/googletest:gtest",
+  ]
+
+  # TODO(fxbug.dev/58162): delete the below and fix compiler warnings
+  configs += [ "//build/config:Wno-conversion" ]
+}
+
+if (is_fuchsia) {
+  import("//build/components.gni")
+
+  fuchsia_unittest_package("files-tests") {
+    manifest = "meta/files_unittests.cmx"
+    deps = [ ":files_unittests" ]
+  }
+
+  group("tests") {
+    testonly = true
+    deps = [ ":files-tests" ]
+  }
+}

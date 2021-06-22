@@ -1,0 +1,497 @@
+# Copyright 2018 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//build/compiled_action.gni")
+import("//build/fidl/linting_exceptions.gni")
+import("//build/fidl/toolchain.gni")
+import("//build/json/validate_json.gni")
+import("//build/sdk/sdk_atom.gni")
+
+declare_args() {
+  # Whether libraries under //vendor should be linted.
+  vendor_linting = false
+}
+
+# Generates some representation of a FIDL library that's consumable by Language
+# bindings generators.
+#
+# The parameters for this template are defined in //build/fidl/fidl.gni. The
+# relevant parameters in this template are:
+#   - api;
+#   - name;
+#   - sdk_category;
+#   - sources.
+#   - experimental_api_summary
+#
+#   should_lint (optional, boolean)
+#     If set to false, the linting step is skipped.
+
+template("fidl_library") {
+  assert(
+      current_toolchain == fidl_toolchain,
+      "This template can only be used in the FIDL toolchain $fidl_toolchain.")
+
+  assert(defined(invoker.sources), "A FIDL library requires some sources.")
+
+  library_name = target_name
+  if (defined(invoker.name)) {
+    library_name = invoker.name
+  }
+
+  experimental_flags = []
+  if (defined(invoker.experimental_flags)) {
+    experimental_flags = invoker.experimental_flags
+  }
+
+  # TODO(fxbug.dev/68952): Setting generate_api_summary to false makes the
+  # generation optional in case of an emergency.  Once the tool is stabilized,
+  # make this unconditional.
+  generate_api_summary = true
+  if (defined(invoker.experimental_api_summary) || generate_api_summary) {
+    generate_api_summary =
+        generate_api_summary || invoker.experimental_api_summary
+    summarization_target_name = "${target_name}_api_summarize"
+    summarization_target_name_json = "${target_name}_api_summarize_json"
+  }
+
+  response_file = "$target_gen_dir/$target_name.args"
+  fidl_stem = "$target_gen_dir/$target_name.fidl"
+  json_representation = "$fidl_stem.json"
+  c_stem =
+      target_name + "/c/" + string_replace(library_name, ".", "/") + "/c/fidl"
+  c_client = "$target_gen_dir/$c_stem.client.c"
+  c_header = "$target_gen_dir/$c_stem.h"
+  c_server = "$target_gen_dir/$c_stem.server.c"
+  coding_tables = "$fidl_stem.tables.c"
+  lint_stamp_file = "$target_gen_dir/$target_name.linted"
+  fidlc_depfile_path = "$target_gen_dir/$target_name.d"
+
+  main_target_name = target_name
+  response_file_target_name = "${target_name}_response_file"
+  compilation_target_name = "${target_name}_compile"
+  verification_target_name = "${target_name}_verify"
+  lint_target_name = "${target_name}_lint"
+
+  # Only artifacts that have various associated FIDL generated targets.
+  fidl_deps = []
+
+  # Artifacts other than FIDL, that are also dependencies.
+  non_fidl_deps = []
+
+  if (defined(invoker.non_fidl_deps)) {
+    non_fidl_deps += invoker.non_fidl_deps
+  }
+
+  if (defined(invoker.deps)) {
+    fidl_deps += invoker.deps - non_fidl_deps
+  }
+  if (defined(invoker.public_deps)) {
+    fidl_deps += invoker.public_deps
+  }
+
+  action(response_file_target_name) {
+    visibility = [ ":*" ]
+
+    script = "//build/fidl/gen_response_file.py"
+
+    forward_variables_from(invoker,
+                           [
+                             "deps",
+                             "public_deps",
+                             "sources",
+                             "testonly",
+                           ])
+
+    libraries = "$target_gen_dir/$main_target_name.libraries"
+
+    outputs = [
+      response_file,
+      libraries,
+    ]
+
+    args = [
+             "--out-response-file",
+             rebase_path(response_file, root_build_dir),
+             "--out-libraries",
+             rebase_path(libraries, root_build_dir),
+             "--json",
+             rebase_path(json_representation, root_build_dir),
+             "--deprecated-fuchsia-only-c-client",
+             rebase_path(c_client, root_build_dir),
+             "--deprecated-fuchsia-only-c-header",
+             rebase_path(c_header, root_build_dir),
+             "--deprecated-fuchsia-only-c-server",
+             rebase_path(c_server, root_build_dir),
+             "--tables",
+             rebase_path(coding_tables, root_build_dir),
+             "--name",
+             library_name,
+             "--depfile",
+             rebase_path(fidlc_depfile_path, root_build_dir),
+             "--sources",
+           ] + rebase_path(sources, root_build_dir)
+
+    foreach(flag, experimental_flags) {
+      args += [
+        "--experimental-flag",
+        flag,
+      ]
+    }
+
+    if (fidl_deps != []) {
+      dep_libraries = []
+
+      foreach(dep, fidl_deps) {
+        gen_dir = get_label_info(dep, "target_gen_dir")
+        name = get_label_info(dep, "name")
+        dep_libraries += [ "$gen_dir/$name.libraries" ]
+      }
+
+      inputs = dep_libraries
+
+      args += [ "--dep-libraries" ] + rebase_path(dep_libraries, root_build_dir)
+    }
+  }
+
+  action(lint_target_name) {
+    visibility = [ ":*" ]
+
+    script = "//build/fidl/run_and_gen_stamp.sh"
+
+    forward_variables_from(invoker,
+                           [
+                             "sources",
+                             "testonly",
+                           ])
+
+    # run_and_gen_stamp.sh runs this tool, and touches lint_stamp_file if successful
+    tool_with_no_output = "//tools/fidl/fidlc:fidl-lint"
+
+    # Construct the host toolchain version of the tool.
+    host_tool = "${tool_with_no_output}($host_toolchain)"
+
+    # Get the path to the executable.
+    if (!defined(tool_output_name)) {
+      tool_output_name = get_label_info(host_tool, "name")
+    }
+    tool_out_dir = get_label_info(host_tool, "root_out_dir")
+    host_executable = "$tool_out_dir/$tool_output_name"
+
+    deps = [ host_tool ] + non_fidl_deps
+
+    # Add the executable itself as an input.
+    inputs = [ host_executable ]
+
+    outputs = [ lint_stamp_file ]
+
+    should_lint = !defined(invoker.should_lint) || invoker.should_lint
+
+    # unlinted_libraries defined in linting_exceptions.gni
+    foreach(library, unlinted_libraries) {
+      if (library == library_name) {
+        should_lint = false
+      }
+    }
+
+    full_label = get_label_info(":bogus", "label_no_toolchain")
+    in_vendor = string_replace(full_label, "//vendor", "") != full_label
+    if (in_vendor && !vendor_linting) {
+      # Disable lints for libraries under //vendor.
+      # TODO(fxbug.dev/36800): remove this exception.
+      should_lint = false
+    }
+
+    fidl_to_lint = []
+    if (should_lint) {
+      foreach(source, sources) {
+        if (string_replace(source, ".test.", "") == source) {
+          # Don't automatically lint test.fidl and test.<various>.fidl files
+          fidl_to_lint += [ rebase_path(source, root_build_dir) ]
+        }
+      }
+    }
+
+    args = [ rebase_path(lint_stamp_file, root_build_dir) ]
+    if (fidl_to_lint == []) {
+      args += [ ":" ]  # NOOP - Nothing to lint, but touch the stamp file
+    } else {
+      args += [ rebase_path(host_executable, root_build_dir) ]
+
+      excluded_checks = []
+      if (defined(invoker.excluded_checks)) {
+        excluded_checks = invoker.excluded_checks
+      }
+
+      if (excluded_checks != []) {
+        # Add path to fidl-lint executable, and --must-find-excluded-checks option, so fidl-lint will
+        # return an error if any excluded check is no longer required. Excluded checks are only
+        # allowed if the target |fidl_to_lint| files still violate those checks. After updating
+        # the FIDL files to resolve a lint error, remove the check-id from the list of excluded
+        # checks in the fidl() target to prevent the same lint errors from creeping back in, in
+        # the future.
+        args += [ "--must-find-excluded-checks" ]
+
+        foreach(excluded_check, excluded_checks) {
+          args += [
+            "-e",
+            excluded_check,
+          ]
+        }
+      }
+
+      args += fidl_to_lint
+    }
+  }
+
+  if (generate_api_summary) {
+    # Generates the FIDL API summary files based on the FIDL IR generated
+    # by fidlc.
+    fidl_api_summarize_tool = "//tools/fidl/fidl_api_summarize"
+    summary_file = "${target_gen_dir}/${target_name}.api_summary"
+    compiled_action(summarization_target_name) {
+      forward_variables_from(invoker, [ "testonly" ])
+
+      visibility = [ ":*" ]
+
+      tool = fidl_api_summarize_tool
+      args = [
+        "--fidl-ir-file",
+        rebase_path(json_representation),
+        "--output-file",
+        rebase_path(summary_file),
+      ]
+
+      inputs = [ json_representation ]
+
+      outputs = [ summary_file ]
+
+      deps = [ ":$compilation_target_name" ]
+    }
+
+    summary_file_json = "${summary_file}.json"
+    compiled_action(summarization_target_name_json) {
+      forward_variables_from(invoker, [ "testonly" ])
+
+      visibility = [ ":*" ]
+
+      tool = fidl_api_summarize_tool
+      args = [
+        "--format",
+        "json",
+        "--fidl-ir-file",
+        rebase_path(json_representation),
+        "--output-file",
+        rebase_path(summary_file_json),
+      ]
+
+      inputs = [ json_representation ]
+
+      outputs = [ summary_file_json ]
+
+      deps = [ ":$compilation_target_name" ]
+    }
+  }  # generate_api_summary
+
+  compiled_action(compilation_target_name) {
+    forward_variables_from(invoker,
+                           [
+                             "sources",
+                             "testonly",
+                           ])
+
+    visibility = [ ":*" ]
+
+    tool = "//tools/fidl/fidlc:fidlc"
+
+    inputs = [ response_file ]
+
+    depfile = fidlc_depfile_path
+
+    outputs = [
+      c_client,
+      c_header,
+      c_server,
+      coding_tables,
+      json_representation,
+    ]
+
+    args = [ "@" + rebase_path(response_file, root_build_dir) ]
+
+    deps = [
+             ":$lint_target_name",
+             ":$response_file_target_name",
+           ] + non_fidl_deps
+  }
+
+  validate_json(verification_target_name) {
+    forward_variables_from(invoker, [ "testonly" ])
+    visibility = [ ":*" ]
+    data = json_representation
+    schema = "//tools/fidl/fidlc/schema.json"
+    deps = [ ":$compilation_target_name" ]
+  }
+
+  group(main_target_name) {
+    forward_variables_from(invoker,
+                           [
+                             "testonly",
+                             "visibility",
+                             "response_file",
+                           ])
+
+    # Metadata to allow us to query all FIDL IR files.
+    metadata = {
+      fidl_json = [ rebase_path(json_representation, root_build_dir) ]
+      generated_sources = fidl_json
+    }
+
+    public_deps = [
+      ":$compilation_target_name",
+      ":$lint_target_name",
+      ":$response_file_target_name",
+    ]
+
+    deps = [ ":$verification_target_name" ]
+    if (generate_api_summary) {
+      deps += [
+        ":${summarization_target_name_json}",
+        ":${summarization_target_name}",
+      ]
+    }
+  }
+
+  if (defined(invoker.sdk_category) && invoker.sdk_category != "excluded") {
+    sdk_category = invoker.sdk_category
+    if (sdk_category == "partner" || sdk_category == "public") {
+      api_reference = "$library_name.api"
+      if (defined(invoker.api)) {
+        api_reference = invoker.api
+      }
+    }
+
+    # Process sources.
+    file_base = "fidl/$library_name"
+    all_files = []
+    sdk_sources = []
+    foreach(source, invoker.sources) {
+      relative_source = rebase_path(source, ".")
+      if (string_replace(relative_source, "..", "bogus") != relative_source) {
+        # If the source file is not within the same directory, just use the file
+        # name.
+        relative_source = get_path_info(source, "file")
+      }
+      destination = "$file_base/$relative_source"
+      sdk_sources += [ destination ]
+      all_files += [
+        {
+          source = rebase_path(source)
+          dest = destination
+        },
+      ]
+    }
+
+    # Identify metadata for dependencies.
+    sdk_metas = []
+    sdk_deps = []
+    foreach(dep, fidl_deps) {
+      full_label = get_label_info(dep, "label_no_toolchain")
+      sdk_dep = "${full_label}_sdk"
+      sdk_deps += [ sdk_dep ]
+      gen_dir = get_label_info(sdk_dep, "target_gen_dir")
+      name = get_label_info(sdk_dep, "name")
+      sdk_metas += [ rebase_path("$gen_dir/$name.meta.json") ]
+    }
+
+    # Generate the library metadata.
+    meta_file = "$target_gen_dir/${target_name}.sdk_meta.json"
+    meta_target_name = "${target_name}_meta"
+
+    action(meta_target_name) {
+      script = "//build/fidl/gen_sdk_meta.py"
+
+      inputs = sdk_metas
+
+      outputs = [ meta_file ]
+
+      args = [
+               "--out",
+               rebase_path(meta_file),
+               "--name",
+               library_name,
+               "--root",
+               file_base,
+               "--specs",
+             ] + sdk_metas + [ "--sources" ] + sdk_sources
+
+      deps = sdk_deps
+    }
+
+    api_normalize_target_name = "${target_name}_normalize"
+    normalized_file = "$target_gen_dir/${target_name}.normalized"
+    to_normalize = []
+    foreach(file, all_files) {
+      to_normalize += [ file.source ]
+    }
+    action(api_normalize_target_name) {
+      script = "//build/fidl/normalize.py"
+      inputs = to_normalize
+      outputs = [ normalized_file ]
+
+      args = [
+               "--out",
+               rebase_path(normalized_file),
+               "--files",
+             ] + to_normalize
+    }
+
+    sdk_atom("${target_name}_sdk") {
+      id = "sdk://fidl/$library_name"
+
+      category = sdk_category
+
+      if (defined(api_reference)) {
+        api = api_reference
+
+        api_contents = [
+          {
+            source = normalized_file
+            if (generate_api_summary) {
+              source = summary_file
+            }
+            dest = "fidl/$library_name"
+          },
+        ]
+      }
+
+      meta = {
+        source = meta_file
+        dest = "$file_base/meta.json"
+        schema = "fidl_library"
+      }
+
+      files = all_files
+
+      # Metadata to allow us to query all FIDL IR and source files.
+      metadata = {
+        fidl_json = [ rebase_path(json_representation, root_build_dir) ]
+        generated_sources = fidl_json
+      }
+
+      non_sdk_deps = [
+        ":$api_normalize_target_name",
+        ":$compilation_target_name",
+        ":$meta_target_name",
+      ]
+      if (generate_api_summary) {
+        non_sdk_deps += [ ":${summarization_target_name}" ]
+      }
+
+      deps = []
+      foreach(dep, fidl_deps) {
+        label = get_label_info(dep, "label_no_toolchain")
+        deps += [ "${label}_sdk" ]
+      }
+    }
+  }
+}
