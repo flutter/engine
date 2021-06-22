@@ -517,22 +517,22 @@ int _serializeKeyEventType(KeyEventType change) {
   }
 }
 
-// Echo the event data with `_echoKeyEvent`, and returns synthesized as handled.
-@pragma('vm:entry-point')
-void key_data_echo() async {
-  PlatformDispatcher.instance.onKeyData = (KeyDatum data) {
-    _echoKeyEvent(
-      _serializeKeyEventType(data.type),
-      data.timeStamp.inMicroseconds,
-      data.physical,
-      data.logical,
-      data.character == null ? 0 : data.character!.codeUnitAt(0),
-      data.synthesized,
-    );
-    return data.synthesized;
-  };
-  signalNativeTest();
-}
+// // Echo the event data with `_echoKeyEvent`, and returns synthesized as handled.
+// @pragma('vm:entry-point')
+// void key_data_echo() async {
+//   PlatformDispatcher.instance.onKeyData = (KeyDatum data) {
+//     _echoKeyEvent(
+//       _serializeKeyEventType(data.type),
+//       data.timeStamp.inMicroseconds,
+//       data.physical,
+//       data.logical,
+//       data.character == null ? 0 : data.character!.codeUnitAt(0),
+//       data.synthesized,
+//     );
+//     return data.synthesized;
+//   };
+//   signalNativeTest();
+// }
 
 @pragma('vm:entry-point')
 void render_gradient() {
