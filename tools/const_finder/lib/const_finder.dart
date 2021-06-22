@@ -37,9 +37,10 @@ class _ConstVisitor extends RecursiveVisitor<void> {
     }
     final bool exactMatch = node.name == className
         && node.enclosingLibrary.importUri.toString() == classLibraryUri;
-    _classHeirarchyCache[node] = exactMatch
+    final bool match = exactMatch
         || node.supers.any((Supertype supertype) => _matches(supertype.classNode));
-    return _classHeirarchyCache[node]!;
+    _classHeirarchyCache[node] = match;
+    return match;
   }
 
   // Avoid visiting the same constant more than once.
@@ -62,10 +63,11 @@ class _ConstVisitor extends RecursiveVisitor<void> {
     final Class parentClass = node.target.parent! as Class;
     if (_matches(parentClass)) {
       assert(node.location != null);
+      final Location location = node.location!;
       nonConstantLocations.add(<String, dynamic>{
-        'file': node.location!.file.toString(),
-        'line': node.location!.line,
-        'column': node.location!.column,
+        'file': location.file.toString(),
+        'line': location.line,
+        'column': location.column,
       });
     }
     super.visitConstructorInvocation(node);
