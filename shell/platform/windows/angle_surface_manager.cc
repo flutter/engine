@@ -323,11 +323,7 @@ bool AngleSurfaceManager::MakeResourceCurrent() {
 }
 
 EGLBoolean AngleSurfaceManager::SwapBuffers() {
-  if (surface_width_ > 0 && surface_height_ > 0) {
-    return (eglSwapBuffers(egl_display_, render_surface_));
-  } else {
-    return EGL_TRUE;
-  }
+  return (eglSwapBuffers(egl_display_, render_surface_));
 }
 
 }  // namespace flutter
