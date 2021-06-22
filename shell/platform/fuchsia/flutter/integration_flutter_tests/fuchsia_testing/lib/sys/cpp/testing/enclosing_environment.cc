@@ -1,8 +1,11 @@
+// Adapted from $FUCHSIA_DIR/sdk/lib/sys/cpp/testing/enclosing_environment.cc
+
 // Copyright 2018 The Fuchsia Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <fuchsia/debugdata/cpp/fidl.h>
+// debugdata is not in the SDK (May 2021)
+// #include <fuchsia/debugdata/cpp/fidl.h>
 #include <fuchsia/io/cpp/fidl.h>
 #include <fuchsia/sys/cpp/fidl.h>
 #include <lib/fidl/cpp/clone.h>
@@ -35,11 +38,12 @@ EnvironmentServices::EnvironmentServices(const fuchsia::sys::EnvironmentPtr& par
     AllowParentService(fuchsia::sys::Loader::Name_);
   }
 
-  if (parent_overrides.debug_data_service_) {
-    AddSharedService(parent_overrides.debug_data_service_, fuchsia::debugdata::DebugData::Name_);
-  } else {
-    AllowParentService(fuchsia::debugdata::DebugData::Name_);
-  }
+  // TODO(richkadel): debugdata is not in the SDK (May 2021)
+  // if (parent_overrides.debug_data_service_) {
+  //   AddSharedService(parent_overrides.debug_data_service_, fuchsia::debugdata::DebugData::Name_);
+  // } else {
+  //   AllowParentService(fuchsia::debugdata::DebugData::Name_);
+  // }
 }
 
 // static

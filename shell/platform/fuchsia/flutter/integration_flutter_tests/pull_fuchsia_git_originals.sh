@@ -1,3 +1,25 @@
+# This bash script was used to recreate the specific versions of files copied
+# from `fuchsia.git` (the Fuchsia open source repository). It was committed to
+# the PR flutter/engine#26880 that enables building fuchsia integration tests
+# in the Flutter `engine` repo.
+
+# TODO(richkadel): remove this file from the final version of the PR.
+
+# Note, the git commit hashes correspond to `fuchsia.git` commits. These commits
+# can be made accessible by adding `fuchsia` as an additional remote, from the
+# `flutter/engine` repo.
+
+cd "${FLUTTER_DIR}/engine/src"
+git -C flutter remote add -f fuchsia https://fuchsia.googlesource.com/fuchsia
+git -C flutter remote update   # I’m not certain this is necessary, but it’s not a no-op
+
+# TIP: With the above git remote configuration, you can also compare individual
+# files in the `flutter/engine` repo with their fuchsia original source, using,
+# for example, VS Code:
+#
+# $ timeout 2 git -C flutter difftool -y -x 'code --wait --diff' \
+#     remotes/fuchsia/main:build/dart/BUILD.gn tools/fuchsia/dart/BUILD.gn
+
 mkdir -p shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/lib/fostr/fidl/fuchsia.ui.gfx && git cat-file blob d95c71ea30776d886659610ffcc946790964fc6e:garnet/public/lib/fostr/fidl/fuchsia.ui.gfx/amendments.json > shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/lib/fostr/fidl/fuchsia.ui.gfx/amendments.json || return $?
 mkdir -p shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/lib/sys/cpp/testing/environment_delegating_runner/meta && git cat-file blob d95c71ea30776d886659610ffcc946790964fc6e:sdk/lib/sys/cpp/testing/environment_delegating_runner/meta/environment_delegating_runner.cmx > shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/lib/sys/cpp/testing/environment_delegating_runner/meta/environment_delegating_runner.cmx || return $?
 mkdir -p shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/lib/sys/cpp/testing/examples/test_with_environment/meta && git cat-file blob d95c71ea30776d886659610ffcc946790964fc6e:sdk/lib/sys/cpp/testing/examples/test_with_environment/meta/fake_echo_app.cmx > shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/lib/sys/cpp/testing/examples/test_with_environment/meta/fake_echo_app.cmx || return $?

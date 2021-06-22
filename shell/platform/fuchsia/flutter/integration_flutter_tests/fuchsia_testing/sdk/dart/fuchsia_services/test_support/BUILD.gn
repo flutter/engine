@@ -1,39 +1,43 @@
+# Adapted from $FUCHSIA_DIR/sdk/dart/fuchsia_services/test_support/BUILD.gn
+
 # Copyright 2018 The Fuchsia Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//build/dart/dart_app.gni")
-import("//build/dart/fidl_move.gni")
-import("//build/fidl/fidl.gni")
+# TODO(richkadel): fuchsia tests currently disabled
 
-fidl("test-foo-fidl") {
-  # TODO(fxb/35879): Remove lint exclusions by fixing known FIDL lint violations in this target
-  excluded_checks = [
-    "disallowed-library-name-component",
-    "invalid-case-for-decl-name",
-    "string-bounds-not-specified",
-  ]
+# import("//build/dart/dart_app.gni")
+# import("//build/dart/fidl_move.gni")
+# import("//build/fidl/fidl.gni")
 
-  name = "test.fuchsia.service.foo"
+# fidl("test-foo-fidl") {
+#   # TODO(fxb/35879): Remove lint exclusions by fixing known FIDL lint violations in this target
+#   excluded_checks = [
+#     "disallowed-library-name-component",
+#     "invalid-case-for-decl-name",
+#     "string-bounds-not-specified",
+#   ]
 
-  sources = [ "fidl/foo.fidl" ]
-}
+#   name = "test.fuchsia.service.foo"
 
-# The foo test server used for integration testing
-dart_app("fuchsia-services-foo-test-server") {
-  main_dart = "lib/main.dart"
+#   sources = [ "fidl/foo.fidl" ]
+# }
 
-  meta = [
-    {
-      path = rebase_path("meta/fuchsia-services-foo-test-server.cmx")
-      dest = "fuchsia-services-foo-test-server.cmx"
-    },
-  ]
+# # The foo test server used for integration testing
+# dart_app("fuchsia-services-foo-test-server") {
+#   main_dart = "lib/main.dart"
 
-  sources = [ "main.dart" ]
-  deps = [
-    ":test-foo-fidl",
-    "//sdk/dart/fidl",
-    "//sdk/dart/fuchsia_services",
-  ]
-}
+#   meta = [
+#     {
+#       path = rebase_path("meta/fuchsia-services-foo-test-server.cmx")
+#       dest = "fuchsia-services-foo-test-server.cmx"
+#     },
+#   ]
+
+#   sources = [ "main.dart" ]
+#   deps = [
+#     ":test-foo-fidl",
+#     "//sdk/dart/fidl",
+#     "//sdk/dart/fuchsia_services",
+#   ]
+# }

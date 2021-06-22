@@ -1,13 +1,27 @@
+# Adapted from $FUCHSIA_DIR/sdk/lib/sys/cpp/testing/environment_delegating_runner/BUILD.gn
+
 # Copyright 2019 The Fuchsia Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//build/components.gni")
+import("//build/fuchsia/sdk.gni")
+import("//flutter/tools/fuchsia/fuchsia_archive.gni")
 
-fuchsia_package_with_single_component("environment_delegating_runner") {
+fuchsia_archive("environment_delegating_runner") {
   testonly = true
-  manifest = "meta/environment_delegating_runner.cmx"
+
   deps = [ ":bin" ]
+
+  binary = "$target_name"
+
+  meta_dir = "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/lib/sys/cpp/testing/environment_delegating_runner/meta"
+
+  meta = [
+    {
+      path = rebase_path("meta/$target_name.cmx")
+      dest = "$target_name.cmx"
+    },
+  ]
 }
 
 executable("bin") {
@@ -16,11 +30,18 @@ executable("bin") {
 
   sources = [ "environment_delegating_runner.cc" ]
 
+  libs = [
+    # This is needed for //third_party/googletest for linking zircon symbols.
+    "//fuchsia/sdk/$host_os/arch/$target_cpu/sysroot/lib/libzircon.so",
+    # TODO(richkadel): Confirm if this libzircon.so setting is needed here
+  ]
+
   deps = [
-    "//sdk/fidl/fuchsia.sys",
-    "//sdk/lib/fidl/cpp",
-    "//sdk/lib/sys/cpp",
-    "//zircon/system/ulib/async-loop:async-loop-cpp",
-    "//zircon/system/ulib/async-loop:async-loop-default",
+    "$fuchsia_sdk_root/fidl:fuchsia.sys",
+    "$fuchsia_sdk_root/pkg:fidl_cpp",
+    "$fuchsia_sdk_root/pkg:sys_cpp",
+    "$fuchsia_sdk_root/pkg:async-loop-cpp",
+    "$fuchsia_sdk_root/pkg:async-loop-default",
+    "$fuchsia_sdk_root/pkg:zx",
   ]
 }

@@ -1,8 +1,11 @@
+// Adapted from $FUCHSIA_DIR/src/ui/tests/integration_flutter_tests/embedder/flutter-embedder-test.cc
+
 // Copyright 2020 The Fuchsia Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "src/ui/tests/integration_flutter_tests/embedder/flutter-embedder-test.h"
+//#include "flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/embedder/flutter-embedder-test.h"
+#include "flutter-embedder-test.h"
 
 namespace flutter_embedder_test {
 
@@ -31,7 +34,10 @@ const std::vector<std::pair<const char*, const char*>> GetInjectedServices() {
       "fuchsia-pkg://fuchsia.com/fonts#meta/fonts.cmx"
     },{
       "fuchsia.hardware.display.Provider",
-      "fuchsia-pkg://fuchsia.com/fake-hardware-display-controller-provider#meta/hdcp.cmx"
+      //////
+      // DO NOT CHECK THIS IN
+      //////
+      "fuchsia-pkg://fuchsia.com/hardware-display-controller-provider#meta/hdcp.cmx"
     },{
       "fuchsia.intl.PropertyProvider",
       "fuchsia-pkg://fuchsia.com/intl_property_manager#meta/intl_property_manager.cmx"

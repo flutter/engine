@@ -1,18 +1,16 @@
+# Adapted from $FUCHSIA_DIR/sdk/dart/fuchsia_logger/BUILD.gn
+
 # Copyright 2018 The Fuchsia Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//build/dart/dart_library.gni")
-import("//build/dart/fidl_move.gni")
-import("//build/dart/test.gni")
+import("//build/fuchsia/sdk.gni")
+import("//flutter/tools/fuchsia/dart/dart_library.gni")
+# import("//build/dart/test.gni")
 
 dart_library("fuchsia_logger") {
   package_name = "fuchsia_logger"
   null_safe = true
-
-  sdk_category = "partner"
-
-  source_dir = "lib"
 
   sources = [
     "logger.dart",
@@ -24,30 +22,30 @@ dart_library("fuchsia_logger") {
   ]
 
   deps = [
-    "//sdk/dart/fuchsia_services",
-    "//sdk/dart/zircon",
-    "//sdk/fidl/fuchsia.logger",
-    "//third_party/dart-pkg/pub/collection",
-    "//third_party/dart-pkg/pub/logging",
-    "//third_party/dart-pkg/pub/meta",
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/sdk/dart/fuchsia_services",
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/sdk/dart/zircon",
+    "//flutter/tools/fuchsia/fidl:fuchsia.logger",
+    "//third_party/dart/third_party/pkg/collection",
+    "//third_party/dart/third_party/pkg/logging",
+    "//third_party/dart/pkg/meta",
   ]
 }
 
-# Runs these tests using:
-#   fx run-host-tests fuchsia_logger_package_unittests
-dart_test("fuchsia_logger_package_unittests") {
-  sources = [
-    "internal/log_message_test.dart",
-    "internal/log_writer_test.dart",
-    "internal/stdout_log_writer_test.dart",
-  ]
+# # Runs these tests using:
+# #   fx run-host-tests fuchsia_logger_package_unittests
+# dart_test("fuchsia_logger_package_unittests") {
+#   sources = [
+#     "internal/log_message_test.dart",
+#     "internal/log_writer_test.dart",
+#     "internal/stdout_log_writer_test.dart",
+#   ]
 
-  deps = [
-    ":fuchsia_logger",
-    "//sdk/dart/zircon",
-    "//sdk/fidl/fuchsia.logger",
-    "//third_party/dart-pkg/pub/logging",
-    "//third_party/dart-pkg/pub/mockito",
-    "//third_party/dart-pkg/pub/test",
-  ]
-}
+#   deps = [
+#     ":fuchsia_logger",
+#     "//sdk/dart/zircon",
+#     "//sdk/fidl/fuchsia.logger",
+#     "//third_party/dart-pkg/pub/logging",
+#     "//third_party/dart-pkg/pub/mockito",
+#     "//third_party/dart-pkg/pub/test",
+#   ]
+# }

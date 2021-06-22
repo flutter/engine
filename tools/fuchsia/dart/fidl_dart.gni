@@ -1,19 +1,21 @@
+# Adapted from $FUCHSIA_DIR/build/dart/fidl_dart.gni
+
 # Copyright 2018 The Fuchsia Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//build/compiled_action.gni")
-import("//build/dart/dart_library.gni")
-import("//build/dart/toolchain.gni")
-import("//build/fidl/toolchain.gni")
-import("//build/sdk/sdk_atom_alias.gni")
+import("//flutter/tools/fuchsia/executable_action.gni")
+import("//flutter/tools/fuchsia/dart/dart_library.gni")
+import("//flutter/tools/fuchsia/dart/toolchain.gni")
+import("//flutter/tools/fuchsia/fidl/toolchain.gni")
+import("//build/fuchsia/sdk.gni")
+import("//flutter/tools/fuchsia/fidl/fidl.gni")
 
 # Generates some Dart bindings for a FIDL library.
 #
-# The parameters for this template are defined in //build/fidl/fidl.gni. The
+# The parameters for this template are defined in //flutter/tools/fuchsia/fidl/fidl.gni. The
 # relevant parameters in this template are:
 #   - name;
-#   - sdk_category.
 
 template("fidl_dart") {
   assert(current_toolchain == dart_toolchain,
@@ -38,13 +40,12 @@ template("fidl_dart") {
       get_label_info(":bogus($fidl_toolchain)", "target_gen_dir")
   json_representation = "$fidl_target_gen_dir/$target_name.fidl.json"
 
-  compiled_action(generation_target_name) {
+  executable_action(generation_target_name) {
     visibility = [
       ":*",
-      "//tools/fidl/fidlgen_dart:*",
     ]
 
-    tool = "//tools/fidl/fidlgen_dart"
+    tool = "${fuchsia_sdk_path}/tools/fidlgen_dart"
 
     inputs = [ json_representation ]
 
@@ -62,36 +63,10 @@ template("fidl_dart") {
       rebase_path(test_bindings_file, root_build_dir),
     ]
 
-    # Don't run the formatter if we are using a custom-built Dart SDK in a
-    # cross-build.
-    deps = [ ":$main_target_name($fidl_toolchain)" ]
-    if (host_cpu == target_cpu) {
-      args += [
-        "--dartfmt",
-        rebase_path("$dart_sdk/bin/dartfmt"),
-      ]
-      deps += dart_sdk_deps
-    }
+    deps = [
+      ":$main_target_name($fidl_toolchain)"
+    ]
     forward_variables_from(invoker, [ "testonly" ])
-
-    metadata = {
-      generated_sources = rebase_path(outputs, root_build_dir)
-    }
-  }
-
-  copy_pubspec_target_name = "${target_name}_dart_pubspec"
-  copy_options_target_name = "${target_name}_dart_options"
-
-  copy(copy_pubspec_target_name) {
-    sources = [ "//build/dart/empty_pubspec.yaml" ]
-
-    outputs = [ "$root_dir/pubspec.yaml" ]
-  }
-
-  copy(copy_options_target_name) {
-    sources = [ "//topaz/tools/analysis_options.yaml" ]
-
-    outputs = [ "$root_dir/analysis_options.yaml" ]
   }
 
   dart_library(main_target_name) {
@@ -113,12 +88,7 @@ template("fidl_dart") {
     ]
 
     deps = [
-      ":$copy_options_target_name",
-      ":$copy_pubspec_target_name",
       ":$generation_target_name",
-      "//sdk/dart/fidl",
-      "//sdk/dart/zircon",
-      "//third_party/dart-pkg/pub/meta",
     ]
 
     if (defined(invoker.public_deps)) {
@@ -128,15 +98,6 @@ template("fidl_dart") {
     # invoker.deps are the non_fidl_deps passed in to the fidl() rule
     if (defined(invoker.deps)) {
       deps += invoker.deps
-    }
-  }
-
-  if (defined(invoker.sdk_category) && invoker.sdk_category != "excluded") {
-    # Instead of depending on the generated bindings, set up a dependency on the
-    # original library.
-    sdk_target_name = "${main_target_name}_sdk"
-    sdk_atom_alias(sdk_target_name) {
-      atom = ":$sdk_target_name($fidl_toolchain)"
     }
   }
 }

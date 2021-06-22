@@ -1,3 +1,5 @@
+# Adapted from $FUCHSIA_DIR/build/flutter/flutter_build_config.gni
+
 # Copyright 2020 The Fuchsia Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
@@ -9,8 +11,8 @@
 # Builds the component in a non-product JIT build. This will
 # launch the vm service in the runner.
 flutter_debug_build_cfg = {
-  runtime_meta = "//build/flutter/meta/jit_runtime"
-  runner_dep = "//src/flutter:flutter_jit_runner"
+  runtime_meta = "//flutter/shell/platform/fuchsia/flutter/meta/jit_runtime"
+  runner_dep = "//flutter/shell/platform/fuchsia/flutter:jit"
   platform_name = "flutter_runner"
   is_aot = false
   is_product = false
@@ -22,8 +24,8 @@ flutter_debug_build_cfg = {
 # This configuration is not compatible with a --release build since the
 # profile aot runner is built without asserts.
 flutter_aot_debug_build_cfg = {
-  runtime_meta = "//build/flutter/meta/aot_runtime"
-  runner_dep = "//src/flutter:flutter_aot_runner"
+  runtime_meta = "//flutter/shell/platform/fuchsia/flutter/meta/aot_runtime"
+  runner_dep = "//flutter/shell/platform/fuchsia/flutter:aot"
   platform_name = "flutter_runner"
   is_aot = true
   is_product = false
@@ -33,8 +35,8 @@ flutter_aot_debug_build_cfg = {
 # Builds the component in a non-product AOT build. This will
 # launch the vm service in the runner.
 flutter_profile_build_cfg = {
-  runtime_meta = "//build/flutter/meta/aot_runtime"  # profile runner
-  runner_dep = "//src/flutter:flutter_aot_runner"
+  runtime_meta = "//flutter/shell/platform/fuchsia/flutter/meta/aot_runtime"  # profile runner
+  runner_dep = "//flutter/shell/platform/fuchsia/flutter:aot"
   platform_name = "flutter_runner"
   is_aot = true
   is_product = false
@@ -44,8 +46,8 @@ flutter_profile_build_cfg = {
 # Builds the component in a product AOT build. This will
 # not launch the vm service in the runner.
 flutter_release_build_cfg = {
-  runtime_meta = "//build/flutter/meta/aot_product_runtime"
-  runner_dep = "//src/flutter:flutter_aot_product_runner"
+  runtime_meta = "//flutter/shell/platform/fuchsia/flutter/meta/aot_product_runtime"
+  runner_dep = "//flutter/shell/platform/fuchsia/flutter:aot_product"
   platform_name = "flutter_runner"
   is_aot = true
   is_product = true

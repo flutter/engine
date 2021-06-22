@@ -1,10 +1,14 @@
+# Adapted from $FUCHSIA_DIR/build/dart/dart_tool.gni
+
 # Copyright 2017 The Fuchsia Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//build/dart/dart_library.gni")
-import("//build/dart/dart_package_config.gni")
-import("//build/dart/toolchain.gni")
+import("//flutter/tools/fuchsia/dart/dart_library.gni")
+import("//flutter/tools/fuchsia/dart/dart_package_config.gni")
+import("//flutter/tools/fuchsia/dart/toolchain.gni")
+
+import("//flutter/tools/fuchsia/python/python3_action.gni")
 
 # Wraps a dart snapshot in a script to be invoked by dart
 #
@@ -33,14 +37,14 @@ template("_dart_snapshot_invocation") {
   }
 
   # Builds a convenience script to invoke the app.
-  action(target_name) {
+  python3_action(target_name) {
     forward_variables_from(invoker,
                            [
                              "testonly",
                              "deps",
                            ])
 
-    script = "//build/dart/gen_app_invocation.py"
+    script = "//flutter/tools/fuchsia/dart/gen_app_invocation.py"
 
     app_path = "$root_out_dir/dart-tools/$app_name"
     dart_binary = invoker.dart
@@ -131,9 +135,6 @@ template("dart_tool") {
     #   //garnet/public/foo/bar --> foo.bar
     # Strip public directories.
     full_dir = get_label_info(":$dart_library_target_name", "dir")
-    foreach(sdk_dir, sdk_dirs) {
-      full_dir = string_replace(full_dir, "$sdk_dir/", "")
-    }
     package_name = full_dir
     package_name = string_replace(package_name, "//", "")
     package_name = string_replace(package_name, "/", ".")
@@ -195,7 +196,7 @@ template("dart_tool") {
   }
 
   dart_binary = prebuilt_dart
-  sdk_deps = []
+  sdk_deps = [] # TODO(richkadel): Is this ever used (set to anything else?)
 
   snapshot_path = "$target_gen_dir/${target_name}.snapshot"
 
@@ -223,7 +224,7 @@ template("dart_tool") {
   # The main advantage of snapshotting is that it sets up source dependencies
   # via a depfile so that a Dart app gets properly rebuilt when one of its
   # sources is modified.
-  action(snapshot_target_name) {
+  python3_action(snapshot_target_name) {
     if (defined(invoker.testonly)) {
       testonly = invoker.testonly
     }
@@ -234,7 +235,7 @@ template("dart_tool") {
 
     # Dart writes absolute paths to depfiles, convert them to relative.
     # See more information in https://fxbug.dev/75451.
-    script = "//build/depfile_path_to_relative.py"
+    script = "//flutter/tools/fuchsia/depfile_path_to_relative.py"
 
     main_uri = rebase_path(invoker.main_dart, root_build_dir)
 

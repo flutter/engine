@@ -1,9 +1,13 @@
+# Adapted from $FUCHSIA_DIR/garnet/public/lib/gtest/BUILD.gn
+
 # Copyright 2019 The Fuchsia Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
 # Do not use this target directly, instead depend on //src/lib/testing/loop_fixture.
 group("gtest") {
-  public_deps = [ "//src/lib/testing/loop_fixture" ]
+  public_deps = [
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/src/lib/testing/loop_fixture"
+  ]
   testonly = true
 }

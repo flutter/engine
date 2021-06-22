@@ -1,8 +1,14 @@
+# Adapted from $FUCHSIA_DIR/src/lib/testing/loop_fixture/BUILD.gn
+
 # Copyright 2016 The Fuchsia Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//build/components.gni")
+import("//build/fuchsia/sdk.gni")
+# import("//build/components.gni")
+# TODO(richkadel): replace components.gni and re-enable the unit test
+# package above, possibly using:
+# import("//flutter/tools/fuchsia/fuchsia_archive.gni")
 
 group("loop_fixture") {
   testonly = true
@@ -24,49 +30,52 @@ source_set("gtest") {
     "test_loop_fixture.h",
   ]
 
-  deps = [ "//zircon/public/lib/async-cpp" ]
-
-  public_deps = [
-    "//sdk/lib/fit",
-    "//sdk/lib/stdcompat",
-    "//src/lib/fxl",
-    "//third_party/googletest:gtest",
-    "//zircon/public/lib/zx",
-    "//zircon/system/ulib/async:async-cpp",
-    "//zircon/system/ulib/async-loop:async-loop-cpp",
-    "//zircon/system/ulib/async-loop:async-loop-default",
-    "//zircon/system/ulib/async-testing",
-  ]
-
-  public_configs = [ "//garnet/public:config" ]
-}
-
-executable("loop_fixture_unittests") {
-  testonly = true
-
-  sources = [
-    "real_loop_fixture_unittest.cc",
-    "test_loop_fixture_unittest.cc",
+  include_dirs = [
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing",
   ]
 
   deps = [
-    ":loop_fixture",
-    "//sdk/lib/fit-promise",
-    "//src/lib/fxl",
-    "//src/lib/fxl/test:gtest_main",
-    "//src/lib/fxl/test:test_settings",
-    "//third_party/googletest:gmock",
-    "//zircon/public/lib/async-cpp",
-    "//zircon/system/ulib/async-default",
+    "$fuchsia_sdk_root/pkg:async-cpp",
+  ]
+
+  public_deps = [
+    "$fuchsia_sdk_root/pkg:fit",
+    "$fuchsia_sdk_root/pkg:stdcompat",
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/src/lib/fxl:common",
+    "//third_party/googletest:gtest",
+    "$fuchsia_sdk_root/pkg:zx",
+    "$fuchsia_sdk_root/pkg:async-loop-cpp",
+    "$fuchsia_sdk_root/pkg:async-loop-default",
+    "$fuchsia_sdk_root/pkg:async-testing",
   ]
 }
 
-fuchsia_unittest_package("loop_fixture_tests") {
-  deps = [ ":loop_fixture_unittests" ]
-}
+# executable("loop_fixture_unittests") {
+#   testonly = true
 
-group("tests") {
-  testonly = true
+#   sources = [
+#     "real_loop_fixture_unittest.cc",
+#     "test_loop_fixture_unittest.cc",
+#   ]
 
-  deps = [ ":loop_fixture_tests" ]
-}
+#   deps = [
+#     ":loop_fixture",
+#     "$fuchsia_sdk_root/pkg:fit-promise",
+#     "//src/lib/fxl",
+#     "//src/lib/fxl/test:gtest_main",
+#     "//src/lib/fxl/test:test_settings",
+#     "//third_party/googletest:gmock",
+#     "//zircon/public/lib/async-cpp",
+#     "//zircon/system/ulib/async-default",
+#   ]
+# }
+
+# fuchsia_unittest_package("loop_fixture_tests") {
+#   deps = [ ":loop_fixture_unittests" ]
+# }
+
+# group("tests") {
+#   testonly = true
+
+#   deps = [ ":loop_fixture_tests" ]
+# }

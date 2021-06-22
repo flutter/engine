@@ -1,3 +1,7 @@
+<!--
+Adapted from $FUCHSIA_DIR/src/lib/fsl/README.md
+-->
+
 # Fuchsia System Library.
 
 A library containing C++ utilities for working with Fuchsia.

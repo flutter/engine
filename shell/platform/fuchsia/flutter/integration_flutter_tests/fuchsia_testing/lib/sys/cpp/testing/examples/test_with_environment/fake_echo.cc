@@ -1,3 +1,5 @@
+// Adapted from $FUCHSIA_DIR/sdk/lib/sys/cpp/testing/examples/test_with_environment/fake_echo.cc
+
 // Copyright 2018 The Fuchsia Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.

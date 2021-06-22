@@ -864,6 +864,7 @@ group("tests") {
   testonly = true
 
   deps = [
+    "integration_flutter_tests",
     ":dart_utils_tests",
     ":embedder_tests",
     ":flow_tests",

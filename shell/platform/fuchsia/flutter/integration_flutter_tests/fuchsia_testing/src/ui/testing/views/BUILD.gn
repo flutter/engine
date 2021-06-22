@@ -1,8 +1,11 @@
+# Adapted from $FUCHSIA_DIR/src/ui/testing/views/BUILD.gn
+
 # Copyright 2019 The Fuchsia Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//build/components.gni")
+import("//build/fuchsia/sdk.gni")
+# import("//build/components.gni")
 
 source_set("views") {
   testonly = true
@@ -23,57 +26,62 @@ source_set("views") {
     "test_view.h",
   ]
 
+  include_dirs = [
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing",
+  ]
+
   public_deps = [
-    "//sdk/fidl/fuchsia.ui.scenic",
-    "//sdk/lib/ui/scenic/cpp",
-    "//src/lib/ui/base_view",
+    "$fuchsia_sdk_root/fidl:fuchsia.ui.scenic",
+    "$fuchsia_sdk_root/pkg:scenic_cpp",
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/src/lib/ui/base_view",
   ]
 
   deps = [
-    "//garnet/public/lib/fostr/fidl/fuchsia.ui.gfx",
-    "//src/lib/fsl",
-    "//src/lib/fxl",
+    "$fuchsia_sdk_root/fidl:fuchsia.ui.gfx",
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/src/lib/fsl",
+    # "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/src/lib/fxl",
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/src/lib/fxl:strings",
   ]
 }
 
-executable("test_views_app") {
-  testonly = true
+# executable("test_views_app") {
+#   testonly = true
 
-  sources = [ "app.cc" ]
+#   sources = [ "app.cc" ]
 
-  deps = [
-    ":views",
-    "//sdk/lib/fidl/cpp",
-    "//sdk/lib/ui/scenic/cpp",
-    "//src/lib/fxl",
-    "//zircon/system/ulib/async-loop",
-    "//zircon/system/ulib/async-loop:async-loop-default",
-  ]
-}
+#   deps = [
+#     ":views",
+#     "//sdk/lib/fidl/cpp",
+#     "//sdk/lib/ui/scenic/cpp",
+#     "//src/lib/fxl",
+#     "//zircon/system/ulib/async-loop",
+#     "//zircon/system/ulib/async-loop:async-loop-default",
+#   ]
+# }
 
-fuchsia_component("background_view") {
-  testonly = true
-  manifest = "meta/background_view.cmx"
-  deps = [ ":test_views_app" ]
-}
+# fuchsia_component("background_view") {
+#   testonly = true
+#   manifest = "meta/background_view.cmx"
+#   deps = [ ":test_views_app" ]
+# }
 
-fuchsia_component("coordinate_test_view") {
-  testonly = true
-  manifest = "meta/coordinate_test_view.cmx"
-  deps = [ ":test_views_app" ]
-}
+# fuchsia_component("coordinate_test_view") {
+#   testonly = true
+#   manifest = "meta/coordinate_test_view.cmx"
+#   deps = [ ":test_views_app" ]
+# }
 
-fuchsia_component("rotated_square_view") {
-  testonly = true
-  manifest = "meta/rotated_square_view.cmx"
-  deps = [ ":test_views_app" ]
-}
+# fuchsia_component("rotated_square_view") {
+#   testonly = true
+#   manifest = "meta/rotated_square_view.cmx"
+#   deps = [ ":test_views_app" ]
+# }
 
-fuchsia_package("test_views") {
-  testonly = true
-  deps = [
-    ":background_view",
-    ":coordinate_test_view",
-    ":rotated_square_view",
-  ]
-}
+# fuchsia_package("test_views") {
+#   testonly = true
+#   deps = [
+#     ":background_view",
+#     ":coordinate_test_view",
+#     ":rotated_square_view",
+#   ]
+# }

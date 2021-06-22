@@ -1,9 +1,11 @@
+# Adapted from $FUCHSIA_DIR/build/dart/kernel/BUILD.gn
+
 # Copyright 2020 The Fuchsia Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//build/dart/dart_tool.gni")
+import("//flutter/tools/fuchsia/dart/dart_tool.gni")
 
 dart_prebuilt_tool("gen_kernel") {
-  snapshot = "//prebuilt/third_party/dart/$host_os-$host_cpu/bin/snapshots/gen_kernel.dart.snapshot"
+  snapshot = "//third_party/dart/pkg/vm/bin/gen_kernel.dart"
 }

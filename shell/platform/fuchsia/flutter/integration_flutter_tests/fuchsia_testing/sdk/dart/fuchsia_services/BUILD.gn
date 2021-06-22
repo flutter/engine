@@ -1,20 +1,22 @@
+# Adapted from $FUCHSIA_DIR/sdk/dart/fuchsia_services/BUILD.gn
+
 # Copyright 2018 The Fuchsia Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//build/components.gni")
-import("//build/dart/dart_app.gni")
-import("//build/dart/dart_library.gni")
-import("//build/dart/dart_test_component.gni")
-import("//build/dart/fidl_move.gni")
-import("//build/flutter/test.gni")
-import("//build/testing/environments.gni")
+import("//build/fuchsia/sdk.gni")
+
+# import("//build/components.gni")
+# import("//build/dart/dart_app.gni")
+import("//flutter/tools/fuchsia/dart/dart_library.gni")
+# import("//build/dart/dart_test_component.gni")
+# import("//build/dart/fidl_move.gni")
+# import("//build/flutter/test.gni")
+# import("//build/testing/environments.gni")
 
 dart_library("fuchsia_services") {
   package_name = "fuchsia_services"
   null_safe = true
-
-  sdk_category = "partner"
 
   sources = [
     "services.dart",
@@ -25,68 +27,70 @@ dart_library("fuchsia_services") {
   ]
 
   deps = [
-    "//sdk/dart/fidl",
-    "//sdk/dart/fuchsia",
-    "//sdk/dart/fuchsia_vfs",
-    "//sdk/dart/zircon",
-    "//sdk/fidl/fuchsia.io",
-    "//sdk/fidl/fuchsia.sys",
-    "//third_party/dart-pkg/pub/meta",
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/sdk/dart/fidl",
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/sdk/dart/fuchsia",
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/sdk/dart/fuchsia_vfs",
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/sdk/dart/zircon",
+    #"$fuchsia_sdk_root/fidl:fuchsia.io",
+    #"$fuchsia_sdk_root/fidl:fuchsia.sys",
+    "//flutter/tools/fuchsia/fidl:fuchsia.io",
+    "//flutter/tools/fuchsia/fidl:fuchsia.sys",
+    "//third_party/dart/pkg/meta",
   ]
 }
 
-flutter_test("fuchsia_services_package_unittests") {
-  sources = [ "service_provider_impl_test.dart" ]
+# flutter_test("fuchsia_services_package_unittests") {
+#   sources = [ "service_provider_impl_test.dart" ]
 
-  deps = [
-    ":fuchsia_services",
-    "//sdk/fidl/fuchsia.io",
-    "//third_party/dart-pkg/pub/test",
-  ]
-}
+#   deps = [
+#     ":fuchsia_services",
+#     "//sdk/fidl/fuchsia.io",
+#     "//third_party/dart-pkg/pub/test",
+#   ]
+# }
 
-# fx test fuchsia-pkg://fuchsia.com/fuchsia-services-integration-tests#meta/fuchsia-services-integration-tests.cmx
-dart_test_component("integration-test-component") {
-  component_name = "fuchsia-services-integration-tests"
-  manifest = "meta/fuchsia-services-integration-tests.cmx"
-  sources = [
-    "component_context_test.dart",
-    "incoming_test.dart",
-    "launch_flow_test.dart",
-    "outgoing_test.dart",
-    "service_provider_impl_test.dart",
-  ]
+# # fx test fuchsia-pkg://fuchsia.com/fuchsia-services-integration-tests#meta/fuchsia-services-integration-tests.cmx
+# dart_test_component("integration-test-component") {
+#   component_name = "fuchsia-services-integration-tests"
+#   manifest = "meta/fuchsia-services-integration-tests.cmx"
+#   sources = [
+#     "component_context_test.dart",
+#     "incoming_test.dart",
+#     "launch_flow_test.dart",
+#     "outgoing_test.dart",
+#     "service_provider_impl_test.dart",
+#   ]
 
-  deps = [
-    ":fuchsia_services",
-    "test_support:test-foo-fidl",
-    "//sdk/dart/fidl",
-    "//sdk/dart/fuchsia_vfs",
-    "//sdk/dart/zircon",
-    "//sdk/fidl/fuchsia.io",
-    "//sdk/fidl/fuchsia.sys",
-    "//third_party/dart-pkg/pub/test",
-  ]
-}
+#   deps = [
+#     ":fuchsia_services",
+#     "test_support:test-foo-fidl",
+#     "//sdk/dart/fidl",
+#     "//sdk/dart/fuchsia_vfs",
+#     "//sdk/dart/zircon",
+#     "//sdk/fidl/fuchsia.io",
+#     "//sdk/fidl/fuchsia.sys",
+#     "//third_party/dart-pkg/pub/test",
+#   ]
+# }
 
-fuchsia_test_package("fuchsia-services-integration-tests") {
-  test_components = [ ":integration-test-component" ]
-}
+# fuchsia_test_package("fuchsia-services-integration-tests") {
+#   test_components = [ ":integration-test-component" ]
+# }
 
-group("tests") {
-  testonly = true
-  deps = [
-    ":integration_tests",
-    ":unit_tests",
-  ]
-}
+# group("tests") {
+#   testonly = true
+#   deps = [
+#     ":integration_tests",
+#     ":unit_tests",
+#   ]
+# }
 
-group("integration_tests") {
-  testonly = true
-  deps = [ ":fuchsia-services-integration-tests" ]
-}
+# group("integration_tests") {
+#   testonly = true
+#   deps = [ ":fuchsia-services-integration-tests" ]
+# }
 
-group("unit_tests") {
-  testonly = true
-  deps = [ ":fuchsia_services_package_unittests" ]
-}
+# group("unit_tests") {
+#   testonly = true
+#   deps = [ ":fuchsia_services_package_unittests" ]
+# }

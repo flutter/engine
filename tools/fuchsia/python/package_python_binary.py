@@ -1,5 +1,7 @@
+# Adapted from $FUCHSIA_DIR/build/python/package_python_binary.py
+
 #!/usr/bin/env python3.8
-"""Creats a Python zip archive for the input main source."""
+"""Creates a Python zip archive for the input main source."""
 
 # Copyright 2021 The Fuchsia Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
@@ -11,7 +13,6 @@ import os
 import shutil
 import sys
 import zipapp
-
 
 def main():
     parser = argparse.ArgumentParser(
