@@ -1,0 +1,21 @@
+{
+    "program": {
+        "data": "data/fuchsia-services-integration-tests"
+    },
+    "sandbox": {
+        "services": [
+            "fuchsia.cobalt.LoggerFactory",
+            "fuchsia.fonts.Provider",
+            "fuchsia.logger.LogSink",
+            "fuchsia.modular.ComponentContext",
+            "fuchsia.modular.ModuleContext",
+            "fuchsia.netstack.Netstack",
+            "fuchsia.sys.Environment",
+            "fuchsia.sys.Launcher",
+            "fuchsia.testing.runner.TestRunner",
+            "fuchsia.ui.input.ImeService",
+            "fuchsia.ui.policy.Presenter",
+            "fuchsia.ui.scenic.Scenic"
+        ]
+    }
+}

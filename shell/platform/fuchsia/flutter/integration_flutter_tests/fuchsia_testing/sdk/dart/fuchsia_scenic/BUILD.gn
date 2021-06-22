@@ -1,0 +1,27 @@
+# Copyright 2018 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//build/dart/dart_library.gni")
+import("//build/dart/fidl_move.gni")
+
+dart_library("fuchsia_scenic") {
+  package_name = "fuchsia_scenic"
+  null_safe = true
+
+  sdk_category = "partner"
+
+  source_dir = "lib"
+
+  sources = [
+    "src/scenic_context.dart",
+    "src/view_token_pair.dart",
+    "views.dart",
+  ]
+
+  deps = [
+    "//sdk/dart/fuchsia",
+    "//sdk/dart/zircon",
+    "//sdk/fidl/fuchsia.ui.views",
+  ]
+}

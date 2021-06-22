@@ -1,0 +1,79 @@
+# Copyright 2019 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//build/components.gni")
+
+source_set("views") {
+  testonly = true
+
+  sources = [
+    "background_view.cc",
+    "background_view.h",
+    "color.cc",
+    "color.h",
+    "coordinate_test_view.cc",
+    "coordinate_test_view.h",
+    "embedder_view.cc",
+    "embedder_view.h",
+    "opacity_view.cc",
+    "opacity_view.h",
+    "rotated_square_view.cc",
+    "rotated_square_view.h",
+    "test_view.h",
+  ]
+
+  public_deps = [
+    "//sdk/fidl/fuchsia.ui.scenic",
+    "//sdk/lib/ui/scenic/cpp",
+    "//src/lib/ui/base_view",
+  ]
+
+  deps = [
+    "//garnet/public/lib/fostr/fidl/fuchsia.ui.gfx",
+    "//src/lib/fsl",
+    "//src/lib/fxl",
+  ]
+}
+
+executable("test_views_app") {
+  testonly = true
+
+  sources = [ "app.cc" ]
+
+  deps = [
+    ":views",
+    "//sdk/lib/fidl/cpp",
+    "//sdk/lib/ui/scenic/cpp",
+    "//src/lib/fxl",
+    "//zircon/system/ulib/async-loop",
+    "//zircon/system/ulib/async-loop:async-loop-default",
+  ]
+}
+
+fuchsia_component("background_view") {
+  testonly = true
+  manifest = "meta/background_view.cmx"
+  deps = [ ":test_views_app" ]
+}
+
+fuchsia_component("coordinate_test_view") {
+  testonly = true
+  manifest = "meta/coordinate_test_view.cmx"
+  deps = [ ":test_views_app" ]
+}
+
+fuchsia_component("rotated_square_view") {
+  testonly = true
+  manifest = "meta/rotated_square_view.cmx"
+  deps = [ ":test_views_app" ]
+}
+
+fuchsia_package("test_views") {
+  testonly = true
+  deps = [
+    ":background_view",
+    ":coordinate_test_view",
+    ":rotated_square_view",
+  ]
+}

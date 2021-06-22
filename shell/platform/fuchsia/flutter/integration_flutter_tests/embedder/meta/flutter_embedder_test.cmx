@@ -1,0 +1,23 @@
+{
+    "facets": {
+        "fuchsia.test": {
+            "system-services": [
+                "fuchsia.scheduler.ProfileProvider"
+            ]
+        }
+    },
+    "include": [
+        "sdk/lib/diagnostics/syslog/client.shard.cmx",
+        "src/lib/vulkan/test-application-container.shard.cmx"
+    ],
+    "program": {
+        "binary": "test/flutter-embedder-test"
+    },
+    "sandbox": {
+        "services": [
+            "fuchsia.sys.Environment",
+            "fuchsia.sys.Launcher",
+            "fuchsia.sys.Loader"
+        ]
+    }
+}
