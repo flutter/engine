@@ -143,8 +143,8 @@ class Surface {
     final ui.Size? previousSize = _currentSize;
     if (!_forceNewContext &&
         previousSize != null &&
-        size.width <= previousSize.width &&
-        size.height <= previousSize.height) {
+        size.width == previousSize.width &&
+        size.height == previousSize.height) {
       // The existing surface is still reusable.
       if (window.devicePixelRatio != _currentDevicePixelRatio) {
         _updateLogicalHtmlCanvasSize();
@@ -153,13 +153,7 @@ class Surface {
     }
 
     _currentDevicePixelRatio = window.devicePixelRatio;
-    _currentSize = _currentSize == null
-        // First frame. Allocate a canvas of the exact size as the window. The
-        // window is frequently never resized, particularly on mobile, so using
-        // the exact size is most optimal.
-        ? size
-        // The window is growing. Overallocate to prevent frequent reallocations.
-        : size * 1.4;
+    _currentSize = size;
 
     _surface?.dispose();
     _surface = null;
