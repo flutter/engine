@@ -1,4 +1,4 @@
-Signature: 858fe0847f4f8bb090add63589972f9b
+Signature: feaef27d894c62f911bcd1da59b10131
 
 UNUSED LICENSES:
 
@@ -5231,8 +5231,6 @@ FILE: ../../../third_party/skia/include/gpu/gl/glx/GrGLMakeGLXInterface.h
 FILE: ../../../third_party/skia/include/sksl/DSLSymbols.h
 FILE: ../../../third_party/skia/modules/canvaskit/paragraph_bindings_gen.cpp
 FILE: ../../../third_party/skia/src/core/SkBlenderBase.h
-FILE: ../../../third_party/skia/src/core/SkMatrixInvert.cpp
-FILE: ../../../third_party/skia/src/core/SkMatrixInvert.h
 FILE: ../../../third_party/skia/src/core/SkYUVAInfoLocation.h
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkRuntimeImageFilter.cpp
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkRuntimeImageFilter.h
