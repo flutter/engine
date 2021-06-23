@@ -17,6 +17,7 @@ def main():
   parser.add_argument('--android-source-root', type=str, default=ANDROID_SRC_ROOT)
   parser.add_argument('--build-config-path', type=str)
   parser.add_argument('--third-party', type=str, default='third_party')
+  parser.add_argument('--quiet', default=False, action='store_true')
   args = parser.parse_args()
 
   if not os.path.exists(args.android_source_root):
@@ -64,9 +65,17 @@ def main():
     '-d', args.out_dir,
     '-link', 'https://developer.android.com/reference/',
   ] + packages
-  print(' '.join(command))
 
-  return subprocess.call(command)
+  if not args.quiet:
+    print(' '.join(command))
+
+  try:
+    subprocess.check_output(command, stderr=subprocess.STDOUT)
+    if not args.quiet:
+      print(output)
+  except subprocess.CalledProcessError as e:
+    print(e.output)
+    return e.returncode
 
 
 if __name__ == '__main__':

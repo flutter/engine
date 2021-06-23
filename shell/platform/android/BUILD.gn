@@ -597,6 +597,7 @@ action("gen_android_javadoc") {
     rebase_path(target_gen_dir),
     "--third-party",
     rebase_path("//third_party"),
+    "--quiet",
   ]
 
   deps = [ ":gen_android_build_config_java" ]
