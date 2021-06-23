@@ -976,7 +976,7 @@ public class FlutterActivity extends Activity
    * shouldAttachEngineToActivity} is true, then this {@code FlutterActivity} will connect its {@link
    * io.flutter.embedding.engine.FlutterEngine} to itself, along with any plugins that are
    * registered with that {@link io.flutter.embedding.engine.FlutterEngine}. This allows plugins to
-   * access the {@code Activity}, as well as receive {@code Activity}-specific calls, e.g., {@link
+   * access the {@code Activity}, as well as receive {@code Activity}-specific calls, e.g. {@link
    * Activity#onNewIntent(Intent)}. If {@code shouldAttachEngineToActivity} is false, then this
    * {@code FlutterActivity} will not automatically manage the connection between its {@link
    * FlutterEngine} and itself. In this case, plugins will not be offered a reference to an {@code
