@@ -5,10 +5,6 @@
 # found in the LICENSE file.
 
 import("//build/fuchsia/sdk.gni")
-# import("//build/components.gni")
-# TODO(richkadel): replace components.gni and re-enable the unit test
-# package above, possibly using:
-# import("//flutter/tools/fuchsia/fuchsia_archive.gni")
 
 group("loop_fixture") {
   testonly = true
@@ -16,6 +12,7 @@ group("loop_fixture") {
   public_deps = [ ":gtest" ]
 }
 
+# TODO(richkadel): Update this comment. What makes sense in flutter/engine?
 # Deprecated - new targets should instead depend on:
 # //src/lib/testing/loop_fixture
 source_set("gtest") {
@@ -49,33 +46,3 @@ source_set("gtest") {
     "$fuchsia_sdk_root/pkg:async-testing",
   ]
 }
-
-# executable("loop_fixture_unittests") {
-#   testonly = true
-
-#   sources = [
-#     "real_loop_fixture_unittest.cc",
-#     "test_loop_fixture_unittest.cc",
-#   ]
-
-#   deps = [
-#     ":loop_fixture",
-#     "$fuchsia_sdk_root/pkg:fit-promise",
-#     "//src/lib/fxl",
-#     "//src/lib/fxl/test:gtest_main",
-#     "//src/lib/fxl/test:test_settings",
-#     "//third_party/googletest:gmock",
-#     "//zircon/public/lib/async-cpp",
-#     "//zircon/system/ulib/async-default",
-#   ]
-# }
-
-# fuchsia_unittest_package("loop_fixture_tests") {
-#   deps = [ ":loop_fixture_unittests" ]
-# }
-
-# group("tests") {
-#   testonly = true
-
-#   deps = [ ":loop_fixture_tests" ]
-# }

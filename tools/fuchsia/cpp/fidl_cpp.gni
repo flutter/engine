@@ -9,14 +9,6 @@ import("//flutter/tools/fuchsia/config/clang/clang.gni")
 import("//flutter/tools/fuchsia/fidl/toolchain.gni")
 import("//flutter/tools/fuchsia/fidl/fidl.gni")
 
-# # Define the include patterns for various binding flavors.
-# # Includes will be of the form <my/library/{output-stem}.h>
-# _llcpp_output_stem = "llcpp/fidl"
-# _hlcpp_output_stem = "cpp/fidl"
-# _natural_types_output_stem = "cpp/natural_types"
-# _unified_cpp_output_stem = "cpp/fidl_v2"
-# _libfuzzer_output_stem = "cpp/libfuzzer"
-
 template("_fidl_cpp_codegen_impl") {
   generation_target_name = "${target_name}_generate"
   fidl_target_name = invoker.fidl_target_name
@@ -58,24 +50,7 @@ template("_fidl_cpp_codegen_impl") {
     forward_variables_from(invoker,
                            [
                              "testonly",
-                            #  "generates_test_base_header",
-                            #  "generates_decoder_encoders",
-                            #  "additional_includes_natural_types",
-                            #  "additional_includes_hlcpp_bindings",
-                            #  "additional_includes_wire_bindings",
                            ])
-    # if (!defined(generates_decoder_encoders)) {
-    #   generates_decoder_encoders = false
-    # }
-    # if (!defined(additional_includes_natural_types)) {
-    #   additional_includes_natural_types = false
-    # }
-    # if (!defined(additional_includes_hlcpp_bindings)) {
-    #   additional_includes_hlcpp_bindings = false
-    # }
-    # if (!defined(additional_includes_wire_bindings)) {
-    #   additional_includes_wire_bindings = false
-    # }
 
     visibility = generation_visibility
 
@@ -88,10 +63,6 @@ template("_fidl_cpp_codegen_impl") {
       rebase_path(json_representation, root_build_dir),
       "--include-base",
       rebase_path(include_base, root_build_dir),
-      # "--include-stem",
-      # invoker.output_stem,
-      # "--clang-format-path",
-      # rebase_path("${clang_prefix}/clang-format", "", root_build_dir),
     ]
 
     header_file = "${file_stem}.h"
@@ -106,54 +77,6 @@ template("_fidl_cpp_codegen_impl") {
       "--source",
       rebase_path(source_file, root_build_dir),
     ]
-
-    # if (generates_test_base_header) {
-    #   test_base_file = "${file_stem}_test_base.h"
-    #   outputs += [ test_base_file ]
-    #   args += [
-    #     "--test-base",
-    #     rebase_path(test_base_file, root_build_dir),
-    #   ]
-    # }
-    # if (generates_decoder_encoders) {
-    #   decoder_encoder_header_file = "${file_stem}_decode_encode.h"
-    #   decoder_encoder_source_file = "${file_stem}_decode_encode.cc"
-    #   outputs += [
-    #     decoder_encoder_header_file,
-    #     decoder_encoder_source_file,
-    #   ]
-    #   args += [
-    #     "--decoder-encoder-header",
-    #     rebase_path(decoder_encoder_header_file, root_build_dir),
-    #     "--decoder-encoder-source",
-    #     rebase_path(decoder_encoder_source_file, root_build_dir),
-    #   ]
-    # }
-
-    # # test base header is omitted when only generating domain objects.
-    # if (experimental_split_generation_domain_objects) {
-    #   assert(!generates_test_base_header)
-    #   args += [ "--experimental-split-generation-domain-objects" ]
-    # }
-
-    # if (additional_includes_natural_types) {
-    #   args += [
-    #     "--natural-domain-objects-include-stem",
-    #     _natural_types_output_stem,
-    #   ]
-    # }
-    # if (additional_includes_hlcpp_bindings) {
-    #   args += [
-    #     "--hlcpp-bindings-include-stem",
-    #     _hlcpp_output_stem,
-    #   ]
-    # }
-    # if (additional_includes_wire_bindings) {
-    #   args += [
-    #     "--wire-bindings-include-stem",
-    #     _llcpp_output_stem,
-    #   ]
-    # }
 
     deps = [ ":$fidl_target_name($fidl_toolchain)" ]
 
@@ -465,7 +388,6 @@ template("fidl_cpp_family") {
     forward_variables_from(common_options, "*")
     output_stem = _natural_types_output_stem
     bindings_flavor = "cpp_natural_types"
-    # fidlgen_tool = "//tools/fidl/fidlgen_hlcpp"
     fidlgen_tool = "fidlgen_hlcpp"
     experimental_split_generation_domain_objects = true
     generates_test_base_header = false
@@ -525,7 +447,6 @@ template("fidl_cpp_family") {
       forward_variables_from(common_options, "*")
       output_stem = _llcpp_output_stem
       bindings_flavor = "llcpp"
-      # fidlgen_tool = "//tools/fidl/fidlgen_llcpp"
       fidlgen_tool = "fidlgen_llcpp"
       generates_test_base_header = true
     }
@@ -557,7 +478,6 @@ template("fidl_cpp_family") {
       forward_variables_from(common_options, "*")
       output_stem = _unified_cpp_output_stem
       bindings_flavor = "cpp"
-      # fidlgen_tool = "//tools/fidl/fidlgen_cpp"
       fidlgen_tool = "fidlgen_cpp"
       generates_test_base_header = false
       additional_includes_natural_types = true
@@ -590,7 +510,6 @@ template("fidl_cpp_family") {
     forward_variables_from(common_options, "*")
     output_stem = _libfuzzer_output_stem
     bindings_flavor = "libfuzzer"
-    # fidlgen_tool = "//tools/fidl/fidlgen_libfuzzer"
     fidlgen_tool = "fidlgen_libfuzzer"
     generates_test_base_header = false
 

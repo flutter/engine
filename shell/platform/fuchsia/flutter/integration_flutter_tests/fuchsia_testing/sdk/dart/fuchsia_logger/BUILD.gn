@@ -6,7 +6,6 @@
 
 import("//build/fuchsia/sdk.gni")
 import("//flutter/tools/fuchsia/dart/dart_library.gni")
-# import("//build/dart/test.gni")
 
 dart_library("fuchsia_logger") {
   package_name = "fuchsia_logger"
@@ -30,22 +29,3 @@ dart_library("fuchsia_logger") {
     "//third_party/dart/pkg/meta",
   ]
 }
-
-# # Runs these tests using:
-# #   fx run-host-tests fuchsia_logger_package_unittests
-# dart_test("fuchsia_logger_package_unittests") {
-#   sources = [
-#     "internal/log_message_test.dart",
-#     "internal/log_writer_test.dart",
-#     "internal/stdout_log_writer_test.dart",
-#   ]
-
-#   deps = [
-#     ":fuchsia_logger",
-#     "//sdk/dart/zircon",
-#     "//sdk/fidl/fuchsia.logger",
-#     "//third_party/dart-pkg/pub/logging",
-#     "//third_party/dart-pkg/pub/mockito",
-#     "//third_party/dart-pkg/pub/test",
-#   ]
-# }

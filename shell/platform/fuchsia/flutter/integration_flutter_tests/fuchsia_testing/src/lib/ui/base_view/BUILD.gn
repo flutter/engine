@@ -5,7 +5,6 @@
 # found in the LICENSE file.
 
 import("//build/fuchsia/sdk.gni")
-# import("//build/components.gni")
 
 source_set("base_view") {
   sources = [
@@ -32,7 +31,6 @@ source_set("base_view") {
     "$fuchsia_sdk_root/fidl:fuchsia.ui.views",
 
     "$fuchsia_sdk_root/pkg:sys_cpp",
-    # "$fuchsia_sdk_root/pkg:syslog",
     "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/lib/syslog/cpp",
     "$fuchsia_sdk_root/pkg:scenic_cpp",
 
@@ -45,44 +43,3 @@ source_set("base_view") {
     "$fuchsia_sdk_root/pkg:trace",
   ]
 }
-
-# executable("base_view_unittest") {
-#   testonly = true
-
-#   sources = [ "base_view_unittest.cc" ]
-
-#   deps = [
-#     ":base_view",
-#     "//sdk/lib/sys/cpp/testing:unit",
-#     "//src/lib/fxl/test:gtest_main",
-#     "//src/lib/testing/loop_fixture",
-#     "//third_party/googletest:gmock",
-#   ]
-# }
-
-# executable("math_unittest") {
-#   testonly = true
-
-#   sources = [ "math_unittest.cc" ]
-
-#   deps = [
-#     ":base_view",
-#     "//src/lib/fxl/test:gtest_main",
-#     "//third_party/googletest:gtest",
-#   ]
-# }
-
-# fuchsia_unittest_component("base_view_unittest_component") {
-#   deps = [ ":base_view_unittest" ]
-# }
-
-# fuchsia_unittest_component("math_unittest_component") {
-#   deps = [ ":math_unittest" ]
-# }
-
-# fuchsia_test_package("base_view_unittests") {
-#   test_components = [
-#     ":base_view_unittest_component",
-#     ":math_unittest_component",
-#   ]
-# }

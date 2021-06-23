@@ -5,7 +5,6 @@
 # found in the LICENSE file.
 
 import("//flutter/tools/fuchsia/fidl/toolchain.gni")
-# import("//flutter/tools/fuchsia/json/validate_json.gni")
 import("//flutter/tools/fuchsia/toolchain/basic_toolchain.gni")
 import("//flutter/tools/fuchsia/fidl/fidl.gni")
 import("//build/fuchsia/sdk.gni")

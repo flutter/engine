@@ -196,7 +196,7 @@ template("dart_tool") {
   }
 
   dart_binary = prebuilt_dart
-  sdk_deps = [] # TODO(richkadel): Is this ever used (set to anything else?)
+  sdk_deps = []
 
   snapshot_path = "$target_gen_dir/${target_name}.snapshot"
 

@@ -86,12 +86,6 @@ template("fidl_library") {
              rebase_path(libraries, root_build_dir),
              "--json",
              rebase_path(json_representation, root_build_dir),
-            #  "--deprecated-fuchsia-only-c-client",
-            #  rebase_path(c_client, root_build_dir),
-            #  "--deprecated-fuchsia-only-c-header",
-            #  rebase_path(c_header, root_build_dir),
-            #  "--deprecated-fuchsia-only-c-server",
-            #  rebase_path(c_server, root_build_dir),
              "--tables",
              rebase_path(coding_tables, root_build_dir),
              "--name",
@@ -127,9 +121,6 @@ template("fidl_library") {
     inputs = [ response_file ]
 
     outputs = [
-      # c_client,
-      # c_header,
-      # c_server,
       coding_tables,
       json_representation,
     ]
