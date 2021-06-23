@@ -70,12 +70,14 @@ def main():
     print(' '.join(command))
 
   try:
-    subprocess.check_output(command, stderr=subprocess.STDOUT)
+    output = subprocess.check_output(command, stderr=subprocess.STDOUT)
     if not args.quiet:
       print(output)
   except subprocess.CalledProcessError as e:
     print(e.output)
     return e.returncode
+
+  return 0
 
 
 if __name__ == '__main__':
