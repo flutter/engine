@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
-
 import 'package:quiver/testing/async.dart';
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
@@ -66,7 +64,7 @@ void testMain() {
       logical: kLogicalKeyA,
       character: 'a',
     );
-    expect(preventedDefault, true);
+    expect(preventedDefault, isTrue);
     preventedDefault = false;
 
     converter.handleEvent(keyRepeatedDownEvent('KeyA', 'a')
@@ -80,7 +78,7 @@ void testMain() {
       logical: kLogicalKeyA,
       character: 'a',
     );
-    expect(preventedDefault, false);
+    expect(preventedDefault, isFalse);
 
     converter.handleEvent(keyRepeatedDownEvent('KeyA', 'a')
       ..timeStamp = 1500
@@ -93,7 +91,7 @@ void testMain() {
       logical: kLogicalKeyA,
       character: 'a',
     );
-    expect(preventedDefault, false);
+    expect(preventedDefault, isFalse);
 
     converter.handleEvent(keyUpEvent('KeyA', 'a')
       ..timeStamp = 2000.5
@@ -106,7 +104,7 @@ void testMain() {
       logical: kLogicalKeyA,
       character: null,
     );
-    expect(preventedDefault, false);
+    expect(preventedDefault, isFalse);
   });
 
   test('Release modifier during a repeated sequence', () {
@@ -128,7 +126,7 @@ void testMain() {
       logical: kLogicalShiftLeft,
       character: null,
     );
-    expect(preventedDefault, true);
+    expect(preventedDefault, isTrue);
     preventedDefault = false;
 
     converter.handleEvent(keyDownEvent('KeyA', 'A', kShift)
@@ -140,7 +138,7 @@ void testMain() {
       logical: kLogicalKeyA,
       character: 'A',
     );
-    expect(preventedDefault, true);
+    expect(preventedDefault, isTrue);
     preventedDefault = false;
 
     converter.handleEvent(keyRepeatedDownEvent('KeyA', 'A', kShift)
@@ -152,7 +150,7 @@ void testMain() {
       logical: kLogicalKeyA,
       character: 'A',
     );
-    expect(preventedDefault, false);
+    expect(preventedDefault, isFalse);
 
     converter.handleEvent(keyUpEvent('ShiftLeft', 'Shift', 0, kLocationLeft)
       ..onPreventDefault = onPreventDefault
@@ -163,7 +161,7 @@ void testMain() {
       logical: kLogicalShiftLeft,
       character: null,
     );
-    expect(preventedDefault, false);
+    expect(preventedDefault, isFalse);
 
     converter.handleEvent(keyRepeatedDownEvent('KeyA', 'a')
       ..onPreventDefault = onPreventDefault
@@ -174,7 +172,7 @@ void testMain() {
       logical: kLogicalKeyA,
       character: 'a',
     );
-    expect(preventedDefault, false);
+    expect(preventedDefault, isFalse);
 
     converter.handleEvent(keyRepeatedDownEvent('KeyA', 'a')
       ..onPreventDefault = onPreventDefault
@@ -185,7 +183,7 @@ void testMain() {
       logical: kLogicalKeyA,
       character: 'a',
     );
-    expect(preventedDefault, false);
+    expect(preventedDefault, isFalse);
 
     converter.handleEvent(keyUpEvent('KeyA', 'a'));
     expectKeyData(keyDataList.last,
@@ -194,7 +192,7 @@ void testMain() {
       logical: kLogicalKeyA,
       character: null,
     );
-    expect(preventedDefault, false);
+    expect(preventedDefault, isFalse);
   });
 
   test('Distinguish between left and right modifiers', () {
@@ -363,7 +361,7 @@ void testMain() {
     converter.handleEvent(keyDownEvent('ShiftLeft', 'Shift', kShift, kLocationLeft)
       ..onPreventDefault = onPreventDefault
     );
-    expect(preventedDefault, true);
+    expect(preventedDefault, isTrue);
     preventedDefault = false;
     // A KeyUp of ShiftLeft is missed due to loss of focus.
 
@@ -372,7 +370,7 @@ void testMain() {
       ..onPreventDefault = onPreventDefault
     );
     expect(keyDataList, isEmpty);
-    expect(preventedDefault, false);
+    expect(preventedDefault, isFalse);
 
     converter.handleEvent(keyUpEvent('ShiftLeft', 'Shift', 0, kLocationLeft)
       ..onPreventDefault = onPreventDefault
@@ -384,7 +382,7 @@ void testMain() {
       logical: kLogicalShiftLeft,
       character: null,
     );
-    expect(preventedDefault, true);
+    expect(preventedDefault, isTrue);
   });
 
   test('Duplicate ups are skipped', () {
@@ -401,7 +399,7 @@ void testMain() {
       ..onPreventDefault = onPreventDefault
     );
     expect(keyDataList, isEmpty);
-    expect(preventedDefault, false);
+    expect(preventedDefault, isFalse);
   });
 
   test('Conflict from multiple keyboards do not crash', () {
@@ -462,7 +460,7 @@ void testMain() {
       logical: kLogicalCapsLock,
       character: null,
     );
-    expect(preventedDefault, true);
+    expect(preventedDefault, isTrue);
     keyDataList.clear();
     preventedDefault = false;
 
@@ -475,7 +473,7 @@ void testMain() {
       character: null,
       synthesized: true,
     );
-    expect(preventedDefault, false);
+    expect(preventedDefault, isFalse);
     keyDataList.clear();
 
     converter.handleEvent(keyUpEvent('CapsLock', 'CapsLock')
@@ -488,7 +486,7 @@ void testMain() {
       logical: kLogicalCapsLock,
       character: null,
     );
-    expect(preventedDefault, true);
+    expect(preventedDefault, isTrue);
     keyDataList.clear();
     preventedDefault = false;
 
@@ -501,7 +499,7 @@ void testMain() {
       character: null,
       synthesized: true,
     );
-    expect(preventedDefault, false);
+    expect(preventedDefault, isFalse);
     keyDataList.clear();
 
     // Another key down works

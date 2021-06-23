@@ -2,11 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 
 import 'dart:math' as math;
-import 'package:test/bootstrap/browser.dart'; // ignore: import_of_legacy_library_into_null_safe
-import 'package:test/test.dart'; // ignore: import_of_legacy_library_into_null_safe
+import 'package:test/bootstrap/browser.dart';
+import 'package:test/test.dart';
 import 'package:ui/ui.dart' hide window;
 import 'package:ui/src/engine.dart';
 
@@ -19,38 +18,38 @@ void testMain() {
   group('Convexity', () {
     test('Empty path should be convex', () {
       final SurfacePath path = SurfacePath();
-      expect(path.isConvex, true);
+      expect(path.isConvex, isTrue);
     });
 
     test('Circle should be convex', () {
       final SurfacePath path = SurfacePath();
       path.addOval(Rect.fromLTRB(0, 0, 20, 20));
-      expect(path.isConvex, true);
+      expect(path.isConvex, isTrue);
       // 2nd circle.
       path.addOval(Rect.fromLTRB(0, 0, 20, 20));
-      expect(path.isConvex, false);
+      expect(path.isConvex, isFalse);
     });
 
     test('addRect should be convex', () {
       SurfacePath path = SurfacePath();
       path.addRect(Rect.fromLTRB(0, 0, 20, 20));
-      assert(path.isConvex, true);
+      expect(path.isConvex, isTrue);
 
       path = SurfacePath();
       path.addRectWithDirection(
           Rect.fromLTRB(0, 0, 20, 20), SPathDirection.kCW, 0);
-      assert(path.isConvex, true);
+      expect(path.isConvex, isTrue);
 
       path = SurfacePath();
       path.addRectWithDirection(
           Rect.fromLTRB(0, 0, 20, 20), SPathDirection.kCCW, 0);
-      assert(path.isConvex, true);
+      expect(path.isConvex, isTrue);
     });
 
     test('Quad should be convex', () {
       final SurfacePath path = SurfacePath();
       path.quadraticBezierTo(100, 100, 50, 50);
-      expect(path.isConvex, true);
+      expect(path.isConvex, isTrue);
     });
 
     test('moveto/lineto convexity', () {
@@ -435,9 +434,9 @@ void testMain() {
       path.quadraticBezierTo(0.0, 200.0, 0.0, 100.0);
       path.quadraticBezierTo(0.0, 0.0, 100.0, 0.0);
       path.close();
-      expect(path.contains(Offset(100, 20)), true);
-      expect(path.contains(Offset(100, 120)), true);
-      expect(path.contains(Offset(100, -10)), false);
+      expect(path.contains(Offset(100, 20)), isTrue);
+      expect(path.contains(Offset(100, 120)), isTrue);
+      expect(path.contains(Offset(100, -10)), isFalse);
     });
   });
 }

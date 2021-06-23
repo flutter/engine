@@ -14,6 +14,7 @@
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/basic_message_channel.h"
 #include "flutter/shell/platform/common/incoming_message_dispatcher.h"
 #include "flutter/shell/platform/embedder/embedder.h"
+#include "flutter/shell/platform/windows/angle_surface_manager.h"
 #include "flutter/shell/platform/windows/flutter_project_bundle.h"
 #include "flutter/shell/platform/windows/flutter_windows_texture_registrar.h"
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
@@ -73,6 +74,9 @@ class FlutterWindowsEngine {
   void SetPluginRegistrarDestructionCallback(
       FlutterDesktopOnPluginRegistrarDestroyed callback);
 
+  // Sets switches member to the given switches.
+  void SetSwitches(const std::vector<std::string>& switches);
+
   FlutterDesktopMessengerRef messenger() { return messenger_.get(); }
 
   IncomingMessageDispatcher* message_dispatcher() {
@@ -84,6 +88,10 @@ class FlutterWindowsEngine {
   FlutterWindowsTextureRegistrar* texture_registrar() {
     return texture_registrar_.get();
   }
+
+  // The ANGLE surface manager object. If this is nullptr, then we are
+  // rendering using software instead of OpenGL.
+  AngleSurfaceManager* surface_manager() { return surface_manager_.get(); }
 
 #ifndef WINUWP
   WindowProcDelegateManagerWin32* window_proc_delegate_manager() {
@@ -103,7 +111,7 @@ class FlutterWindowsEngine {
                     void* user_data);
 
   // Sends the given message to the engine, calling |reply| with |user_data|
-  // when a reponse is received from the engine if they are non-null.
+  // when a response is received from the engine if they are non-null.
   bool SendPlatformMessage(const char* channel,
                            const uint8_t* message,
                            const size_t message_size,
@@ -135,7 +143,7 @@ class FlutterWindowsEngine {
 
  private:
   // Allows swapping out embedder_api_ calls in tests.
-  friend class EngineEmbedderApiModifier;
+  friend class EngineModifier;
 
   // Sends system settings (e.g., locale) to the engine.
   //
@@ -173,6 +181,11 @@ class FlutterWindowsEngine {
 
   // The texture registrar.
   std::unique_ptr<FlutterWindowsTextureRegistrar> texture_registrar_;
+
+  // An object used for intializing Angle and creating / destroying render
+  // surfaces. Surface creation functionality requires a valid render_target.
+  // May be nullptr if ANGLE failed to initialize.
+  std::unique_ptr<AngleSurfaceManager> surface_manager_;
 
   // The MethodChannel used for communication with the Flutter engine.
   std::unique_ptr<BasicMessageChannel<rapidjson::Document>> settings_channel_;

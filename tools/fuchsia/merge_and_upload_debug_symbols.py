@@ -23,7 +23,7 @@ def IsLinux():
 
 
 # out_dir here is of the format "/b/s/w/ir/k/recipe_cleanup/tmpIbWDdp"
-# we need to palce the cipd definition in this directory.
+# we need to place the cipd definition in this directory.
 def GetPackagingDir(out_dir):
   return os.path.abspath(out_dir)
 
@@ -83,7 +83,7 @@ def ProcessCIPDPackage(upload, cipd_yaml, engine_version, out_dir, target_arch):
   if upload and IsLinux() and not already_exists:
     command = [
         'cipd', 'create', '-pkg-def', cipd_yaml, '-ref', 'latest', '-tag',
-        tag,
+        tag, '-verification-timeout', '10m0s',
     ]
   else:
     command = [

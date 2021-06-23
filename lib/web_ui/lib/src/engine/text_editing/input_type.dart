@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of engine;
 
 /// Various types of inputs used in text fields.
@@ -26,11 +25,16 @@ abstract class EngineInputType {
         return url;
       case 'TextInputType.multiline':
         return multiline;
+      case 'TextInputType.none':
+        return none;
       case 'TextInputType.text':
       default:
         return text;
     }
   }
+
+  /// No text input.
+  static const NoTextInputType none = NoTextInputType();
 
   /// Single-line text input type.
   static const TextInputType text = TextInputType();
@@ -77,10 +81,19 @@ abstract class EngineInputType {
     // Only apply `inputmode` in mobile browsers so that the right virtual
     // keyboard shows up.
     if (operatingSystem == OperatingSystem.iOs ||
-        operatingSystem == OperatingSystem.android) {
+        operatingSystem == OperatingSystem.android ||
+        inputmodeAttribute == EngineInputType.none.inputmodeAttribute) {
       domElement.setAttribute('inputmode', inputmodeAttribute!);
     }
   }
+}
+
+/// No text input.
+class NoTextInputType extends EngineInputType {
+  const NoTextInputType();
+
+  @override
+  final String inputmodeAttribute = 'none';
 }
 
 /// Single-line text input type.
@@ -104,7 +117,7 @@ class NumberInputType extends EngineInputType {
 /// Decimal input type.
 ///
 /// Input keyboard with containing the digits 0–9 and a decimal separator.
-/// Seperator can be `.`, `,` depending on the locale.
+/// Separator can be `.`, `,` depending on the locale.
 class DecimalInputType extends EngineInputType {
   const DecimalInputType();
 

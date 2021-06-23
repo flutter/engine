@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of engine;
 
 /// A surface that applies a shader to its children.
@@ -23,12 +22,14 @@ class PersistedShaderMask extends PersistedContainerSurface
     this.shader,
     this.maskRect,
     this.blendMode,
+    this.filterQuality,
   ) : super(oldLayer);
 
   html.Element? _childContainer;
   final ui.Shader shader;
   final ui.Rect maskRect;
   final ui.BlendMode blendMode;
+  final ui.FilterQuality filterQuality;
   html.Element? _shaderElement;
   static int activeShaderMaskCount = 0;
   final bool isWebKit = browserEngine == BrowserEngine.webkit;
@@ -148,7 +149,7 @@ class PersistedShaderMask extends PersistedContainerSurface
           imageUrl, blendModeTemp, maskRect.width, maskRect.height)!;
 
       _shaderElement =
-          html.Element.html(code, treeSanitizer: _NullTreeSanitizer());
+          html.Element.html(code, treeSanitizer: NullTreeSanitizer());
       if (isWebKit) {
         _childContainer!.style.filter = 'url(#_fmf${_maskFilterIdCounter}';
       } else {

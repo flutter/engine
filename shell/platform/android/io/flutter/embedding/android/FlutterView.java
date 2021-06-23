@@ -20,6 +20,7 @@ import android.view.MotionEvent;
 import android.view.PointerIcon;
 import android.view.Surface;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.ViewStructure;
 import android.view.WindowInsets;
 import android.view.WindowManager;
@@ -51,6 +52,8 @@ import io.flutter.plugin.localization.LocalizationPlugin;
 import io.flutter.plugin.mouse.MouseCursorPlugin;
 import io.flutter.plugin.platform.PlatformViewsController;
 import io.flutter.view.AccessibilityBridge;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -59,7 +62,8 @@ import java.util.Set;
 /**
  * Displays a Flutter UI on an Android device.
  *
- * <p>A {@code FlutterView}'s UI is painted by a corresponding {@link FlutterEngine}.
+ * <p>A {@code FlutterView}'s UI is painted by a corresponding {@link
+ * io.flutter.embedding.engine.FlutterEngine}.
  *
  * <p>A {@code FlutterView} can operate in 2 different {@link
  * io.flutter.embedding.android.RenderMode}s:
@@ -110,7 +114,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   @Nullable private MouseCursorPlugin mouseCursorPlugin;
   @Nullable private TextInputPlugin textInputPlugin;
   @Nullable private LocalizationPlugin localizationPlugin;
-  @Nullable private AndroidKeyProcessor androidKeyProcessor;
+  @Nullable private KeyboardManager keyboardManager;
   @Nullable private AndroidTouchProcessor androidTouchProcessor;
   @Nullable private AccessibilityBridge accessibilityBridge;
 
@@ -352,13 +356,13 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   }
 
   /**
-   * Returns true if an attached {@link FlutterEngine} has rendered at least 1 frame to this {@code
-   * FlutterView}.
+   * Returns true if an attached {@link io.flutter.embedding.engine.FlutterEngine} has rendered at
+   * least 1 frame to this {@code FlutterView}.
    *
-   * <p>Returns false if no {@link FlutterEngine} is attached.
+   * <p>Returns false if no {@link io.flutter.embedding.engine.FlutterEngine} is attached.
    *
-   * <p>This flag is specific to a given {@link FlutterEngine}. The following hypothetical timeline
-   * demonstrates how this flag changes over time.
+   * <p>This flag is specific to a given {@link io.flutter.embedding.engine.FlutterEngine}. The
+   * following hypothetical timeline demonstrates how this flag changes over time.
    *
    * <ol>
    *   <li>{@code flutterEngineA} is attached to this {@code FlutterView}: returns false
@@ -607,8 +611,8 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
    * these insets. Therefore, this method calculates the viewport metrics that Flutter should use
    * and then sends those metrics to Flutter.
    *
-   * <p>This callback is not present in API < 20, which means lower API devices will see the wider
-   * than expected padding when the status and navigation bars are hidden.
+   * <p>This callback is not present in API &lt; 20, which means lower API devices will see the
+   * wider than expected padding when the status and navigation bars are hidden.
    */
   @Override
   @TargetApi(20)
@@ -814,7 +818,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
       return super.onCreateInputConnection(outAttrs);
     }
 
-    return textInputPlugin.createInputConnection(this, outAttrs);
+    return textInputPlugin.createInputConnection(this, keyboardManager, outAttrs);
   }
 
   /**
@@ -839,7 +843,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
    * D-pad button. It is generally not invoked when a virtual software keyboard is used, though a
    * software keyboard may choose to invoke this method in some situations.
    *
-   * <p>{@link KeyEvent}s are sent from Android to Flutter. {@link AndroidKeyProcessor} may do some
+   * <p>{@link KeyEvent}s are sent from Android to Flutter. {@link KeyboardManager} may do some
    * additional work with the given {@link KeyEvent}, e.g., combine this {@code keyCode} with the
    * previous {@code keyCode} to generate a unicode combined character.
    */
@@ -856,7 +860,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     // superclass. The key processor will typically handle all events except
     // those where it has re-dispatched the event after receiving a reply from
     // the framework that the framework did not handle it.
-    return (isAttachedToFlutterEngine() && androidKeyProcessor.onKeyEvent(event))
+    return (isAttachedToFlutterEngine() && keyboardManager.handleEvent(event))
         || super.dispatchKeyEvent(event);
   }
 
@@ -938,6 +942,85 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     }
   }
 
+  /**
+   * Prior to Android Q, it's impossible to add real views as descendants of virtual nodes. This
+   * breaks accessibility when an Android view is embedded in a Flutter app.
+   *
+   * <p>This method overrides a hidden method in {@code ViewGroup} to workaround this limitation.
+   * This solution is derivated from Jetpack Compose, and can be found in the Android source code as
+   * well.
+   *
+   * <p>This workaround finds the descendant {@code View} that matches the provided accessibility
+   * id.
+   *
+   * @param accessibilityId The view accessibility id.
+   * @return The view matching the accessibility id if any.
+   */
+  @SuppressLint("PrivateApi")
+  public View findViewByAccessibilityIdTraversal(int accessibilityId) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+      return findViewByAccessibilityIdRootedAtCurrentView(accessibilityId, this);
+    }
+    // Android Q or later doesn't call this method.
+    //
+    // However, since this is implementation detail, a future version of Android might call
+    // this method again, fallback to calling the This member is not intended for public use, and is
+    // only visible for testing. method as expected by ViewGroup.
+    Method findViewByAccessibilityIdTraversalMethod;
+    try {
+      findViewByAccessibilityIdTraversalMethod =
+          View.class.getDeclaredMethod("findViewByAccessibilityIdTraversal", int.class);
+    } catch (NoSuchMethodException exception) {
+      return null;
+    }
+    findViewByAccessibilityIdTraversalMethod.setAccessible(true);
+    try {
+      return (View) findViewByAccessibilityIdTraversalMethod.invoke(this, accessibilityId);
+    } catch (IllegalAccessException exception) {
+      return null;
+    } catch (InvocationTargetException exception) {
+      return null;
+    }
+  }
+
+  /**
+   * Finds the descendant view that matches the provided accessibility id.
+   *
+   * @param accessibilityId The view accessibility id.
+   * @param currentView The root view.
+   * @return A descendant of currentView or currentView itself.
+   */
+  @SuppressLint("PrivateApi")
+  private View findViewByAccessibilityIdRootedAtCurrentView(int accessibilityId, View currentView) {
+    Method getAccessibilityViewIdMethod;
+    try {
+      getAccessibilityViewIdMethod = View.class.getDeclaredMethod("getAccessibilityViewId");
+    } catch (NoSuchMethodException exception) {
+      return null;
+    }
+    getAccessibilityViewIdMethod.setAccessible(true);
+    try {
+      if (getAccessibilityViewIdMethod.invoke(currentView).equals(accessibilityId)) {
+        return currentView;
+      }
+    } catch (IllegalAccessException exception) {
+      return null;
+    } catch (InvocationTargetException exception) {
+      return null;
+    }
+    if (currentView instanceof ViewGroup) {
+      for (int i = 0; i < ((ViewGroup) currentView).getChildCount(); i++) {
+        View view =
+            findViewByAccessibilityIdRootedAtCurrentView(
+                accessibilityId, ((ViewGroup) currentView).getChildAt(i));
+        if (view != null) {
+          return view;
+        }
+      }
+    }
+    return null;
+  }
+
   // TODO(mattcarroll): Confer with Ian as to why we need this method. Delete if possible, otherwise
   // add comments.
   private void resetWillNotDraw(boolean isAccessibilityEnabled, boolean isTouchExplorationEnabled) {
@@ -960,12 +1043,13 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   // -------- End: Mouse ---------
 
   /**
-   * Connects this {@code FlutterView} to the given {@link FlutterEngine}.
+   * Connects this {@code FlutterView} to the given {@link
+   * io.flutter.embedding.engine.FlutterEngine}.
    *
    * <p>This {@code FlutterView} will begin rendering the UI painted by the given {@link
    * FlutterEngine}. This {@code FlutterView} will also begin forwarding interaction events from
-   * this {@code FlutterView} to the given {@link FlutterEngine}, e.g., user touch events,
-   * accessibility events, keyboard events, and others.
+   * this {@code FlutterView} to the given {@link io.flutter.embedding.engine.FlutterEngine}, e.g.,
+   * user touch events, accessibility events, keyboard events, and others.
    *
    * <p>See {@link #detachFromFlutterEngine()} for information on how to detach from a {@link
    * FlutterEngine}.
@@ -1006,8 +1090,14 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
             this.flutterEngine.getTextInputChannel(),
             this.flutterEngine.getPlatformViewsController());
     localizationPlugin = this.flutterEngine.getLocalizationPlugin();
-    androidKeyProcessor =
-        new AndroidKeyProcessor(this, this.flutterEngine.getKeyEventChannel(), textInputPlugin);
+
+    keyboardManager =
+        new KeyboardManager(
+            this,
+            textInputPlugin,
+            new KeyChannelResponder[] {
+              new KeyChannelResponder(flutterEngine.getKeyEventChannel())
+            });
     androidTouchProcessor =
         new AndroidTouchProcessor(this.flutterEngine.getRenderer(), /*trackMotionEvents=*/ false);
     accessibilityBridge =
@@ -1055,11 +1145,12 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   }
 
   /**
-   * Disconnects this {@code FlutterView} from a previously attached {@link FlutterEngine}.
+   * Disconnects this {@code FlutterView} from a previously attached {@link
+   * io.flutter.embedding.engine.FlutterEngine}.
    *
    * <p>This {@code FlutterView} will clear its UI and stop forwarding all events to the
-   * previously-attached {@link FlutterEngine}. This includes touch events, accessibility events,
-   * keyboard events, and others.
+   * previously-attached {@link io.flutter.embedding.engine.FlutterEngine}. This includes touch
+   * events, accessibility events, keyboard events, and others.
    *
    * <p>See {@link #attachToFlutterEngine(FlutterEngine)} for information on how to attach a {@link
    * FlutterEngine}.
@@ -1091,8 +1182,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     // TODO(mattcarroll): once this is proven to work, move this line ot TextInputPlugin
     textInputPlugin.getInputMethodManager().restartInput(this);
     textInputPlugin.destroy();
-
-    androidKeyProcessor.destroy();
+    keyboardManager.destroy();
 
     if (mouseCursorPlugin != null) {
       mouseCursorPlugin.destroy();
@@ -1205,7 +1295,10 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     return false;
   }
 
-  /** Returns true if this {@code FlutterView} is currently attached to a {@link FlutterEngine}. */
+  /**
+   * Returns true if this {@code FlutterView} is currently attached to a {@link
+   * io.flutter.embedding.engine.FlutterEngine}.
+   */
   @VisibleForTesting
   public boolean isAttachedToFlutterEngine() {
     return flutterEngine != null
@@ -1213,8 +1306,9 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   }
 
   /**
-   * Returns the {@link FlutterEngine} to which this {@code FlutterView} is currently attached, or
-   * null if this {@code FlutterView} is not currently attached to a {@link FlutterEngine}.
+   * Returns the {@link io.flutter.embedding.engine.FlutterEngine} to which this {@code FlutterView}
+   * is currently attached, or null if this {@code FlutterView} is not currently attached to a
+   * {@link io.flutter.embedding.engine.FlutterEngine}.
    */
   @VisibleForTesting
   @Nullable
@@ -1224,7 +1318,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
 
   /**
    * Adds a {@link FlutterEngineAttachmentListener}, which is notified whenever this {@code
-   * FlutterView} attached to/detaches from a {@link FlutterEngine}.
+   * FlutterView} attached to/detaches from a {@link io.flutter.embedding.engine.FlutterEngine}.
    */
   @VisibleForTesting
   public void addFlutterEngineAttachmentListener(
@@ -1370,8 +1464,8 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   }
 
   /**
-   * Listener that is notified when a {@link FlutterEngine} is attached to/detached from a given
-   * {@code FlutterView}.
+   * Listener that is notified when a {@link io.flutter.embedding.engine.FlutterEngine} is attached
+   * to/detached from a given {@code FlutterView}.
    */
   @VisibleForTesting
   public interface FlutterEngineAttachmentListener {
@@ -1379,8 +1473,8 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     void onFlutterEngineAttachedToFlutterView(@NonNull FlutterEngine engine);
 
     /**
-     * A previously attached {@link FlutterEngine} has been detached from the associated {@code
-     * FlutterView}.
+     * A previously attached {@link io.flutter.embedding.engine.FlutterEngine} has been detached
+     * from the associated {@code FlutterView}.
      */
     void onFlutterEngineDetachedFromFlutterView();
   }

@@ -2,8 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'dart:js' as js;
+
+import 'package:ui/src/engine.dart' show registerHotRestartListener;
 
 /// A bag of all experiment flags in the web engine.
 ///
@@ -57,7 +58,7 @@ class WebExperiments {
   }
 
   /// Used to enable/disable experimental flags in the web engine.
-  void updateExperiment(String name, bool enabled) {
+  void updateExperiment(String name, bool? enabled) {
     switch (name) {
       case 'useCanvasText':
         useCanvasText = enabled;

@@ -2,8 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+@JS()
+library js_url_strategy;
+
+import 'dart:html' as html;
+
+import 'package:js/js.dart';
+import 'package:ui/ui.dart' as ui;
 
 typedef _PathGetter = String Function();
 

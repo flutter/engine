@@ -453,6 +453,46 @@ TEST_F(EmbedderTest, InvalidPlatformMessages) {
 }
 
 //------------------------------------------------------------------------------
+/// Tests that setting a custom log callback works as expected and defaults to
+/// using tag "flutter".
+TEST_F(EmbedderTest, CanSetCustomLogMessageCallback) {
+  fml::AutoResetWaitableEvent callback_latch;
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetDartEntrypoint("custom_logger");
+  builder.SetSoftwareRendererConfig();
+  context.SetLogMessageCallback(
+      [&callback_latch](const char* tag, const char* message) {
+        EXPECT_EQ(std::string(tag), "flutter");
+        EXPECT_EQ(std::string(message), "hello world");
+        callback_latch.Signal();
+      });
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+  callback_latch.Wait();
+}
+
+//------------------------------------------------------------------------------
+/// Tests that setting a custom log tag works.
+TEST_F(EmbedderTest, CanSetCustomLogTag) {
+  fml::AutoResetWaitableEvent callback_latch;
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetDartEntrypoint("custom_logger");
+  builder.SetSoftwareRendererConfig();
+  builder.SetLogTag("butterfly");
+  context.SetLogMessageCallback(
+      [&callback_latch](const char* tag, const char* message) {
+        EXPECT_EQ(std::string(tag), "butterfly");
+        EXPECT_EQ(std::string(message), "hello world");
+        callback_latch.Signal();
+      });
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+  callback_latch.Wait();
+}
+
+//------------------------------------------------------------------------------
 /// Asserts behavior of FlutterProjectArgs::shutdown_dart_vm_when_done (which is
 /// set to true by default in these unit-tests).
 ///
@@ -685,6 +725,10 @@ TEST_F(EmbedderTest,
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
+  event.physical_view_inset_top = 0.0;
+  event.physical_view_inset_right = 0.0;
+  event.physical_view_inset_bottom = 0.0;
+  event.physical_view_inset_left = 0.0;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
@@ -740,12 +784,16 @@ TEST_F(EmbedderTest, CaDeinitializeAnEngine) {
   // It is ok to deinitialize an engine multiple times.
   ASSERT_EQ(FlutterEngineDeinitialize(engine.get()), kSuccess);
 
-  // Sending events to a deinitalized engine fails.
+  // Sending events to a deinitialized engine fails.
   FlutterWindowMetricsEvent event = {};
   event.struct_size = sizeof(event);
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
+  event.physical_view_inset_top = 0.0;
+  event.physical_view_inset_right = 0.0;
+  event.physical_view_inset_bottom = 0.0;
+  event.physical_view_inset_left = 0.0;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kInvalidArguments);
   engine.reset();
@@ -944,6 +992,10 @@ TEST_F(EmbedderTest, VerifyB143464703WithSoftwareBackend) {
   event.width = 1024;
   event.height = 600;
   event.pixel_ratio = 1.0;
+  event.physical_view_inset_top = 0.0;
+  event.physical_view_inset_right = 0.0;
+  event.physical_view_inset_bottom = 0.0;
+  event.physical_view_inset_left = 0.0;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
@@ -1154,7 +1206,7 @@ TEST_F(EmbedderTest, CanCreateAndCollectAValidElfSource) {
   ASSERT_EQ(FlutterEngineCollectAOTData(data_out), kSuccess);
 
   const auto elf_path =
-      fml::paths::JoinPaths({GetFixturesPath(), kAOTAppELFFileName});
+      fml::paths::JoinPaths({GetFixturesPath(), kDefaultAOTAppELFFileName});
 
   data_in.type = kFlutterEngineAOTDataSourceTypeElfPath;
   data_in.elf_path = elf_path.c_str();
@@ -1189,6 +1241,49 @@ TEST_F(EmbedderTest, CanLaunchAndShutdownWithAValidElfSource) {
   // Wait for the root isolate to launch.
   latch.Wait();
   engine.reset();
+}
+
+TEST_F(EmbedderTest, InvalidFlutterWindowMetricsEvent) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetSoftwareRendererConfig();
+  auto engine = builder.LaunchEngine();
+
+  ASSERT_TRUE(engine.is_valid());
+
+  FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(event);
+  event.width = 800;
+  event.height = 600;
+  event.pixel_ratio = 0.0;
+  event.physical_view_inset_top = 0.0;
+  event.physical_view_inset_right = 0.0;
+  event.physical_view_inset_bottom = 0.0;
+  event.physical_view_inset_left = 0.0;
+
+  // Pixel ratio must be positive.
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+            kInvalidArguments);
+
+  event.pixel_ratio = 1.0;
+  event.physical_view_inset_top = -1.0;
+  event.physical_view_inset_right = -1.0;
+  event.physical_view_inset_bottom = -1.0;
+  event.physical_view_inset_left = -1.0;
+
+  // Physical view insets must be non-negative.
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+            kInvalidArguments);
+
+  event.physical_view_inset_top = 700;
+  event.physical_view_inset_right = 900;
+  event.physical_view_inset_bottom = 700;
+  event.physical_view_inset_left = 900;
+
+  // Top/bottom insets cannot be greater than height.
+  // Left/right insets cannot be greater than width.
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+            kInvalidArguments);
 }
 
 //------------------------------------------------------------------------------

@@ -337,6 +337,11 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
         @Override
         public void clearFocus(int viewId) {
+          final PlatformView platformView = platformViews.get(viewId);
+          if (platformView != null) {
+            platformView.getView().clearFocus();
+            return;
+          }
           ensureValidAndroidVersion(Build.VERSION_CODES.KITKAT_WATCH);
           View view = vdControllers.get(viewId).getView();
           view.clearFocus();
@@ -458,6 +463,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     if (platformViewsChannel != null) {
       platformViewsChannel.setPlatformViewsHandler(null);
     }
+    destroyOverlaySurfaces();
     platformViewsChannel = null;
     context = null;
     textureRegistry = null;
@@ -485,6 +491,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    * the previously attached {@code View}.
    */
   public void detachFromView() {
+    destroyOverlaySurfaces();
     this.flutterView = null;
 
     // Inform all existing platform views that they are no longer associated with
@@ -703,6 +710,12 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     }
   }
 
+  /**
+   * Initializes a platform view and adds it to the view hierarchy.
+   *
+   * @param viewId The view ID. This member is not intended for public use, and is only visible for
+   *     testing.
+   */
   @VisibleForTesting
   void initializePlatformViewIfNeeded(int viewId) {
     final PlatformView platformView = platformViews.get(viewId);
@@ -724,6 +737,16 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     final FlutterMutatorView parentView =
         new FlutterMutatorView(
             context, context.getResources().getDisplayMetrics().density, androidTouchProcessor);
+
+    parentView.addOnFocusChangeListener(
+        (view, hasFocus) -> {
+          if (hasFocus) {
+            platformViewsChannel.invokeViewFocused(viewId);
+          } else {
+            textInputPlugin.clearPlatformViewClient(viewId);
+          }
+        });
+
     platformViewParent.put(viewId, parentView);
     parentView.addView(platformView.getView());
     ((FlutterView) flutterView).addView(parentView);
@@ -733,6 +756,19 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     androidTouchProcessor = new AndroidTouchProcessor(flutterRenderer, /*trackMotionEvents=*/ true);
   }
 
+  /**
+   * Called when a platform view id displayed in the current frame.
+   *
+   * @param viewId The ID of the platform view.
+   * @param x The left position relative to {@code FlutterView}.
+   * @param y The top position relative to {@code FlutterView}.
+   * @param width The width of the platform view.
+   * @param height The height of the platform view.
+   * @param viewWidth The original width of the platform view before applying the mutator stack.
+   * @param viewHeight The original height of the platform view before applying the mutator stack.
+   * @param mutatorsStack The mutator stack. This member is not intended for public use, and is only
+   *     visible for testing.
+   */
   public void onDisplayPlatformView(
       int viewId,
       int x,
@@ -760,7 +796,20 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     currentFrameUsedPlatformViewIds.add(viewId);
   }
 
+  /**
+   * Called when an overlay surface is displayed in the current frame.
+   *
+   * @param id The ID of the surface.
+   * @param x The left position relative to {@code FlutterView}.
+   * @param y The top position relative to {@code FlutterView}.
+   * @param width The width of the surface.
+   * @param height The height of the surface. This member is not intended for public use, and is
+   *     only visible for testing.
+   */
   public void onDisplayOverlaySurface(int id, int x, int y, int width, int height) {
+    if (overlayLayerViews.get(id) == null) {
+      throw new IllegalStateException("The overlay surface (id:" + id + ") doesn't exist");
+    }
     initializeRootImageViewIfNeeded();
 
     final FlutterImageView overlayView = overlayLayerViews.get(id);
@@ -782,6 +831,11 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     currentFrameUsedPlatformViewIds.clear();
   }
 
+  /**
+   * Called by {@code FlutterJNI} when the Flutter frame was submitted.
+   *
+   * <p>This member is not intended for public use, and is only visible for testing.
+   */
   public void onEndFrame() {
     final FlutterView view = (FlutterView) flutterView;
     // If there are no platform views in the current frame,
@@ -850,6 +904,13 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     }
   }
 
+  /**
+   * Creates and tracks the overlay surface.
+   *
+   * @param imageView The surface that displays the overlay.
+   * @return Wrapper object that provides the layer id and the surface. This member is not intended
+   *     for public use, and is only visible for testing.
+   */
   @VisibleForTesting
   @TargetApi(19)
   public FlutterOverlaySurface createOverlaySurface(@NonNull FlutterImageView imageView) {
@@ -858,6 +919,13 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     return new FlutterOverlaySurface(id, imageView.getSurface());
   }
 
+  /**
+   * Creates an overlay surface while the Flutter view is rendered by {@code FlutterImageView}.
+   *
+   * <p>This method is invoked by {@code FlutterJNI} only.
+   *
+   * <p>This member is not intended for public use, and is only visible for testing.
+   */
   @TargetApi(19)
   public FlutterOverlaySurface createOverlaySurface() {
     // Overlay surfaces have the same size as the background surface.
@@ -874,12 +942,21 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
             FlutterImageView.SurfaceKind.overlay));
   }
 
+  /**
+   * Destroys the overlay surfaces and removes them from the view hierarchy.
+   *
+   * <p>This method is used only internally by {@code FlutterJNI}.
+   *
+   * <p>This member is not intended for public use, and is only visible for testing.
+   */
   public void destroyOverlaySurfaces() {
     for (int i = 0; i < overlayLayerViews.size(); i++) {
       int overlayId = overlayLayerViews.keyAt(i);
       FlutterImageView overlayView = overlayLayerViews.valueAt(i);
       overlayView.detachFromRenderer();
-      ((FlutterView) flutterView).removeView(overlayView);
+      if (flutterView != null) {
+        ((FlutterView) flutterView).removeView(overlayView);
+      }
     }
     overlayLayerViews.clear();
   }

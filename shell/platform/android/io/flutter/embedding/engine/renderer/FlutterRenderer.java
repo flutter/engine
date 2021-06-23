@@ -429,13 +429,13 @@ public class FlutterRenderer implements TextureRegistry {
 
     /**
      * A fold in the flexible screen without a physical gap. Corresponds to {@link
-     * androidx.window.DisplayFeature.TYPE_FOLD}
+     * androidx.window.FoldingFeature#TYPE_FOLD}
      */
     FOLD(1),
 
     /**
      * A physical separation with a hinge that allows two display panels to fold. Corresponds to
-     * {@link androidx.window.DisplayFeature.TYPE_HINGE}
+     * {@link androidx.window.FoldingFeature#TYPE_HINGE}
      */
     HINGE(2),
 
@@ -463,14 +463,14 @@ public class FlutterRenderer implements TextureRegistry {
 
     /**
      * The foldable device is completely open. The screen space that is presented to the user is
-     * flat. Corresponds to {@link androidx.window.FoldingFeature.STATE_FLAT}
+     * flat. Corresponds to {@link androidx.window.FoldingFeature#STATE_FLAT}
      */
     POSTURE_FLAT(1),
 
     /**
      * The foldable device's hinge is in an intermediate position between opened and closed state.
      * There is a non-flat angle between parts of the flexible screen or between physical screen
-     * panels. Corresponds to {@link androidx.window.FoldingFeature.STATE_HALF_OPENED}
+     * panels. Corresponds to {@link androidx.window.FoldingFeature#STATE_HALF_OPENED}
      */
     POSTURE_HALF_OPENED(2);
 

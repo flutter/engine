@@ -15,6 +15,7 @@
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/lib/ui/hint_freed_delegate.h"
 #include "flutter/lib/ui/painting/image_decoder.h"
+#include "flutter/lib/ui/painting/image_generator_registry.h"
 #include "flutter/lib/ui/semantics/custom_accessibility_action.h"
 #include "flutter/lib/ui/semantics/semantics_node.h"
 #include "flutter/lib/ui/snapshot_delegate.h"
@@ -178,7 +179,7 @@ class Engine final : public RuntimeDelegate,
     ///                      the underlying platform.
     ///
     virtual void OnEngineHandlePlatformMessage(
-        fml::RefPtr<PlatformMessage> message) = 0;
+        std::unique_ptr<PlatformMessage> message) = 0;
 
     //--------------------------------------------------------------------------
     /// @brief      Notifies the delegate that the root isolate of the
@@ -284,6 +285,12 @@ class Engine final : public RuntimeDelegate,
     ///                              library to load.
     ///
     virtual void RequestDartDeferredLibrary(intptr_t loading_unit_id) = 0;
+
+    //--------------------------------------------------------------------------
+    /// @brief      Returns the current fml::TimePoint.
+    ///             This method is primarily provided to allow tests to control
+    ///             Any methods that rely on advancing the clock.
+    virtual fml::TimePoint GetCurrentTimePoint() = 0;
   };
 
   //----------------------------------------------------------------------------
@@ -477,18 +484,25 @@ class Engine final : public RuntimeDelegate,
   ///             will cause the jank in the Flutter application:
   ///             * The time taken by this method to create a layer-tree exceeds
   ///               on frame interval (for example, 16.66 ms on a 60Hz display).
-  ///             * A new layer-tree produced by this method replaces a stale
-  ///               layer tree in `LayerTreeHolder`. See:
-  ///               `LayerTreeHolder::ReplaceIfNewer`. This could happen if
-  ///               rasterizer takes more than one frame interval to rasterize a
-  ///               layer tree. This would cause some frames to be skipped and
-  ///               could result in perceptible jank.
+  ///             * The time take by this method to generate a new layer-tree
+  ///               causes the current layer-tree pipeline depth to change. To
+  ///               illustrate this point, note that maximum pipeline depth used
+  ///               by layer tree in the engine is 2. If both the UI and GPU
+  ///               task runner tasks finish within one frame interval, the
+  ///               pipeline depth is one. If the UI thread happens to be
+  ///               working on a frame when the raster thread is still not done
+  ///               with the previous frame, the pipeline depth is 2. When the
+  ///               pipeline depth changes from 1 to 2, animations and UI
+  ///               interactions that cause the generation of the new layer tree
+  ///               appropriate for (frame_time + one frame interval) will
+  ///               actually end up at (frame_time + two frame intervals). This
+  ///               is not what code running on the UI thread expected would
+  ///               happen. This causes perceptible jank.
   ///
   /// @param[in]  frame_time  The point at which the current frame interval
   ///                         began. May be used by animation interpolators,
   ///                         physics simulations, etc..
   ///
-  /// @see         `LayerTreeHolder::ReplaceIfNewer`
   void BeginFrame(fml::TimePoint frame_time);
 
   // |HintFreedDelegate|
@@ -699,7 +713,7 @@ class Engine final : public RuntimeDelegate,
   /// @param[in]  message  The message sent from the embedder to the Dart
   ///                      application.
   ///
-  void DispatchPlatformMessage(fml::RefPtr<PlatformMessage> message);
+  void DispatchPlatformMessage(std::unique_ptr<PlatformMessage> message);
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the engine that the embedder has sent it a pointer
@@ -750,7 +764,7 @@ class Engine final : public RuntimeDelegate,
   ///
   void DispatchSemanticsAction(int id,
                                SemanticsAction action,
-                               std::vector<uint8_t> args);
+                               fml::MallocMapping args);
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the engine that the embedder has expressed an opinion
@@ -908,8 +922,10 @@ class Engine final : public RuntimeDelegate,
   bool have_surface_;
   std::shared_ptr<FontCollection> font_collection_;
   ImageDecoder image_decoder_;
+  ImageGeneratorRegistry image_generator_registry_;
   TaskRunners task_runners_;
-  size_t hint_freed_bytes_since_last_idle_ = 0;
+  size_t hint_freed_bytes_since_last_call_ = 0;
+  fml::TimePoint last_hint_freed_call_time_;
   fml::WeakPtrFactory<Engine> weak_factory_;
 
   // |RuntimeDelegate|
@@ -923,7 +939,7 @@ class Engine final : public RuntimeDelegate,
                        CustomAccessibilityActionUpdates actions) override;
 
   // |RuntimeDelegate|
-  void HandlePlatformMessage(fml::RefPtr<PlatformMessage> message) override;
+  void HandlePlatformMessage(std::unique_ptr<PlatformMessage> message) override;
 
   // |RuntimeDelegate|
   void OnRootIsolateCreated() override;
@@ -947,13 +963,14 @@ class Engine final : public RuntimeDelegate,
 
   bool HandleLifecyclePlatformMessage(PlatformMessage* message);
 
-  bool HandleNavigationPlatformMessage(fml::RefPtr<PlatformMessage> message);
+  bool HandleNavigationPlatformMessage(
+      std::unique_ptr<PlatformMessage> message);
 
   bool HandleLocalizationPlatformMessage(PlatformMessage* message);
 
   void HandleSettingsPlatformMessage(PlatformMessage* message);
 
-  void HandleAssetPlatformMessage(fml::RefPtr<PlatformMessage> message);
+  void HandleAssetPlatformMessage(std::unique_ptr<PlatformMessage> message);
 
   bool GetAssetAsBuffer(const std::string& name, std::vector<uint8_t>* data);
 

@@ -10,12 +10,14 @@
 
 #include "flutter/shell/platform/linux/fl_accessibility_plugin.h"
 #include "flutter/shell/platform/linux/fl_engine_private.h"
-#include "flutter/shell/platform/linux/fl_key_event_plugin.h"
+#include "flutter/shell/platform/linux/fl_key_channel_responder.h"
+#include "flutter/shell/platform/linux/fl_key_embedder_responder.h"
+#include "flutter/shell/platform/linux/fl_key_event.h"
+#include "flutter/shell/platform/linux/fl_keyboard_manager.h"
 #include "flutter/shell/platform/linux/fl_mouse_cursor_plugin.h"
 #include "flutter/shell/platform/linux/fl_platform_plugin.h"
 #include "flutter/shell/platform/linux/fl_plugin_registrar_private.h"
 #include "flutter/shell/platform/linux/fl_renderer_gl.h"
-#include "flutter/shell/platform/linux/fl_text_input_plugin.h"
 #include "flutter/shell/platform/linux/fl_view_accessible.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_engine.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_plugin_registry.h"
@@ -39,10 +41,9 @@ struct _FlView {
 
   // Flutter system channel handlers.
   FlAccessibilityPlugin* accessibility_plugin;
-  FlKeyEventPlugin* key_event_plugin;
+  FlKeyboardManager* keyboard_manager;
   FlMouseCursorPlugin* mouse_cursor_plugin;
   FlPlatformPlugin* platform_plugin;
-  FlTextInputPlugin* text_input_plugin;
 
   GList* gl_area_list;
   GList* used_area_list;
@@ -51,6 +52,9 @@ struct _FlView {
 
   GList* children_list;
   GList* pending_children_list;
+
+  // Tracks whether mouse pointer is inside the view.
+  gboolean pointer_inside;
 };
 
 typedef struct _FlViewChild {
@@ -137,6 +141,9 @@ static void fl_view_geometry_changed(FlView* self) {
   fl_engine_send_window_metrics_event(
       self->engine, allocation.width * scale_factor,
       allocation.height * scale_factor, scale_factor);
+
+  fl_renderer_wait_for_frame(self->renderer, allocation.width * scale_factor,
+                             allocation.height * scale_factor);
 }
 
 // Implements FlPluginRegistry::get_registrar_for_plugin.
@@ -154,6 +161,11 @@ static void fl_view_plugin_registry_iface_init(
   iface->get_registrar_for_plugin = fl_view_get_registrar_for_plugin;
 }
 
+static void redispatch_key_event_by_gtk(gpointer gdk_event);
+
+static gboolean text_input_im_filter_by_gtk(GtkIMContext* im_context,
+                                            gpointer gdk_event);
+
 static gboolean event_box_button_release_event(GtkWidget* widget,
                                                GdkEventButton* event,
                                                FlView* view);
@@ -170,6 +182,14 @@ static gboolean event_box_motion_notify_event(GtkWidget* widget,
                                               GdkEventMotion* event,
                                               FlView* view);
 
+static gboolean event_box_enter_notify_event(GtkWidget* widget,
+                                             GdkEventCrossing* event,
+                                             FlView* view);
+
+static gboolean event_box_leave_notify_event(GtkWidget* widget,
+                                             GdkEventCrossing* event,
+                                             FlView* view);
+
 static void fl_view_constructed(GObject* object) {
   FlView* self = FL_VIEW(object);
 
@@ -181,9 +201,16 @@ static void fl_view_constructed(GObject* object) {
   // Create system channel handlers.
   FlBinaryMessenger* messenger = fl_engine_get_binary_messenger(self->engine);
   self->accessibility_plugin = fl_accessibility_plugin_new(self);
-  self->text_input_plugin = fl_text_input_plugin_new(messenger, self);
-  self->key_event_plugin =
-      fl_key_event_plugin_new(messenger, self->text_input_plugin);
+  self->keyboard_manager = fl_keyboard_manager_new(
+      fl_text_input_plugin_new(messenger, self, text_input_im_filter_by_gtk),
+      redispatch_key_event_by_gtk);
+  // The embedder responder must be added before the channel responder.
+  fl_keyboard_manager_add_responder(
+      self->keyboard_manager,
+      FL_KEY_RESPONDER(fl_key_embedder_responder_new(self->engine)));
+  fl_keyboard_manager_add_responder(
+      self->keyboard_manager,
+      FL_KEY_RESPONDER(fl_key_channel_responder_new(messenger)));
   self->mouse_cursor_plugin = fl_mouse_cursor_plugin_new(messenger, self);
   self->platform_plugin = fl_platform_plugin_new(messenger);
 
@@ -203,6 +230,10 @@ static void fl_view_constructed(GObject* object) {
                    G_CALLBACK(event_box_scroll_event), self);
   g_signal_connect(self->event_box, "motion-notify-event",
                    G_CALLBACK(event_box_motion_notify_event), self);
+  g_signal_connect(self->event_box, "enter-notify-event",
+                   G_CALLBACK(event_box_enter_notify_event), self);
+  g_signal_connect(self->event_box, "leave-notify-event",
+                   G_CALLBACK(event_box_leave_notify_event), self);
 }
 
 static void fl_view_set_property(GObject* object,
@@ -262,10 +293,9 @@ static void fl_view_dispose(GObject* object) {
   g_clear_object(&self->renderer);
   g_clear_object(&self->engine);
   g_clear_object(&self->accessibility_plugin);
-  g_clear_object(&self->key_event_plugin);
+  g_clear_object(&self->keyboard_manager);
   g_clear_object(&self->mouse_cursor_plugin);
   g_clear_object(&self->platform_plugin);
-  g_clear_object(&self->text_input_plugin);
   g_list_free_full(self->gl_area_list, g_object_unref);
   self->gl_area_list = nullptr;
 
@@ -481,12 +511,30 @@ static gboolean event_box_scroll_event(GtkWidget* widget,
   return TRUE;
 }
 
+static void check_pointer_inside(FlView* view, GdkEvent* event) {
+  if (!view->pointer_inside) {
+    view->pointer_inside = TRUE;
+
+    gdouble x, y;
+    if (gdk_event_get_coords(event, &x, &y)) {
+      gint scale_factor = gtk_widget_get_scale_factor(GTK_WIDGET(view));
+
+      fl_engine_send_mouse_pointer_event(
+          view->engine, kAdd,
+          gdk_event_get_time(event) * kMicrosecondsPerMillisecond,
+          x * scale_factor, y * scale_factor, 0, 0, view->button_state);
+    }
+  }
+}
+
 static gboolean event_box_motion_notify_event(GtkWidget* widget,
                                               GdkEventMotion* event,
                                               FlView* view) {
   if (view->engine == nullptr) {
     return FALSE;
   }
+
+  check_pointer_inside(view, reinterpret_cast<GdkEvent*>(event));
 
   gint scale_factor = gtk_widget_get_scale_factor(GTK_WIDGET(view));
   fl_engine_send_mouse_pointer_event(
@@ -497,19 +545,56 @@ static gboolean event_box_motion_notify_event(GtkWidget* widget,
   return TRUE;
 }
 
+static gboolean event_box_enter_notify_event(GtkWidget* widget,
+                                             GdkEventCrossing* event,
+                                             FlView* view) {
+  if (view->engine == nullptr) {
+    return FALSE;
+  }
+
+  check_pointer_inside(view, reinterpret_cast<GdkEvent*>(event));
+
+  return TRUE;
+}
+
+static gboolean event_box_leave_notify_event(GtkWidget* widget,
+                                             GdkEventCrossing* event,
+                                             FlView* view) {
+  if (view->engine == nullptr) {
+    return FALSE;
+  }
+
+  // Don't remove pointer while button is down; In case of dragging outside of
+  // window with mouse grab active Gtk will send another leave notify on
+  // release.
+  if (view->pointer_inside && view->button_state == 0) {
+    gint scale_factor = gtk_widget_get_scale_factor(GTK_WIDGET(view));
+    fl_engine_send_mouse_pointer_event(
+        view->engine, kRemove, event->time * kMicrosecondsPerMillisecond,
+        event->x * scale_factor, event->y * scale_factor, 0, 0,
+        view->button_state);
+    view->pointer_inside = FALSE;
+  }
+
+  return TRUE;
+}
+
 // Implements GtkWidget::key_press_event.
 static gboolean fl_view_key_press_event(GtkWidget* widget, GdkEventKey* event) {
   FlView* self = FL_VIEW(widget);
 
-  return fl_key_event_plugin_send_key_event(self->key_event_plugin, event);
+  return fl_keyboard_manager_handle_event(
+      self->keyboard_manager, fl_key_event_new_from_gdk_event(gdk_event_copy(
+                                  reinterpret_cast<GdkEvent*>(event))));
 }
 
 // Implements GtkWidget::key_release_event.
 static gboolean fl_view_key_release_event(GtkWidget* widget,
                                           GdkEventKey* event) {
   FlView* self = FL_VIEW(widget);
-
-  return fl_key_event_plugin_send_key_event(self->key_event_plugin, event);
+  return fl_keyboard_manager_handle_event(
+      self->keyboard_manager, fl_key_event_new_from_gdk_event(gdk_event_copy(
+                                  reinterpret_cast<GdkEvent*>(event))));
 }
 
 static void fl_view_put(FlView* self,
@@ -734,4 +819,19 @@ void fl_view_end_frame(FlView* view) {
   gtk_container_forall(GTK_CONTAINER(view), fl_view_reorder_forall, &data);
 
   gtk_widget_queue_draw(GTK_WIDGET(view));
+}
+
+static void redispatch_key_event_by_gtk(gpointer raw_event) {
+  GdkEvent* gdk_event = reinterpret_cast<GdkEvent*>(raw_event);
+  GdkEventType type = gdk_event->type;
+  g_return_if_fail(type == GDK_KEY_PRESS || type == GDK_KEY_RELEASE);
+  gdk_event_put(gdk_event);
+}
+
+static gboolean text_input_im_filter_by_gtk(GtkIMContext* im_context,
+                                            gpointer gdk_event) {
+  GdkEventKey* event = reinterpret_cast<GdkEventKey*>(gdk_event);
+  GdkEventType type = event->type;
+  g_return_val_if_fail(type == GDK_KEY_PRESS || type == GDK_KEY_RELEASE, false);
+  return gtk_im_context_filter_keypress(im_context, event);
 }

@@ -2,8 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'dart:typed_data';
+
+import 'package:ui/ui.dart' as ui;
 
 bool rectIsValid(ui.Rect rect) {
   assert(rect != null, 'Rect argument was null.'); // ignore: unnecessary_null_comparison
@@ -45,4 +46,17 @@ bool radiusIsValid(ui.Radius radius) {
   assert(!radius.x.isNaN && !radius.y.isNaN,
       'Radius argument contained a NaN value.');
   return true;
+}
+
+/// Validates color and color stops used for a gradient.
+void validateColorStops(List<ui.Color> colors, List<double>? colorStops) {
+  if (colorStops == null) {
+    if (colors.length != 2)
+      throw ArgumentError(
+          '"colors" must have length 2 if "colorStops" is omitted.');
+  } else {
+    if (colors.length != colorStops.length)
+      throw ArgumentError(
+          '"colors" and "colorStops" arguments must have equal length.');
+  }
 }

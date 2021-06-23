@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of engine;
 
 /// Listens to HTML "click" gestures detected by the browser.
@@ -20,6 +19,10 @@ class Tappable extends RoleManager {
   @override
   void update() {
     final html.Element element = semanticsObject.element;
+
+    // "tab-index=0" is used to allow keyboard traversal of non-form elements.
+    // See also: https://developer.mozilla.org/en-US/docs/Web/Accessibility/Keyboard-navigable_JavaScript_widgets
+    element.tabIndex = 0;
 
     semanticsObject.setAriaRole(
         'button', semanticsObject.hasFlag(ui.SemanticsFlag.isButton));
@@ -48,6 +51,11 @@ class Tappable extends RoleManager {
       } else {
         _stopListening();
       }
+    }
+
+    // Request focus so that the AT shifts a11y focus to this node.
+    if (semanticsObject.isFlagsDirty && semanticsObject.hasFocus) {
+      element.focus();
     }
   }
 

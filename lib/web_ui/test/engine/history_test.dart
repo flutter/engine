@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 @TestOn('!safari')
 // TODO(nurhan): https://github.com/flutter/flutter/issues/51169
 
@@ -11,7 +10,11 @@ import 'dart:html' as html;
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
-import 'package:ui/src/engine.dart';
+import 'package:ui/src/engine.dart' show window;
+import 'package:ui/src/engine/browser_detection.dart';
+import 'package:ui/src/engine/navigation.dart';
+import 'package:ui/src/engine/services.dart';
+import 'package:ui/src/engine/test_embedding.dart';
 
 import '../spy.dart';
 
@@ -279,7 +282,7 @@ void testMain() {
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50836
         skip: browserEngine == BrowserEngine.edge);
 
-    test('browser back button push route infromation correctly', () async {
+    test('browser back button push route information correctly', () async {
       final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
         TestHistoryEntry('initial state', null, '/home'),
       );

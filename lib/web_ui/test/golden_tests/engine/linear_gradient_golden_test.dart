@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'dart:math' as math;
 
 import 'package:test/bootstrap/browser.dart';
@@ -31,7 +30,7 @@ void testMain() async {
     final RecordingCanvas rc =
         RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
     Rect shaderRect = const Rect.fromLTRB(50, 50, 300, 300);
-    final Paint paint = Paint()..shader = Gradient.linear(
+    final SurfacePaint paint = SurfacePaint()..shader = Gradient.linear(
         Offset(shaderRect.left, shaderRect.top),
         Offset(shaderRect.right, shaderRect.bottom),
         [Color(0xFFcfdfd2), Color(0xFF042a85)]);
@@ -49,17 +48,22 @@ void testMain() async {
     double yOffset = 0;
     for (double angle in angles) {
       final Rect shaderRect = Rect.fromLTWH(50, 50 + yOffset, 100, 100);
-      final Paint paint = Paint()
+      Matrix4 matrix = Matrix4.identity();
+      matrix.translate(shaderRect.left, shaderRect.top);
+      matrix.multiply(Matrix4
+          .rotationZ((angle / 180) * math.pi));
+      Matrix4 post = Matrix4.identity();
+      post.translate(-shaderRect.left, -shaderRect.top);
+      matrix.multiply(post);
+      final SurfacePaint paint = SurfacePaint()
         ..shader = Gradient.linear(
             Offset(shaderRect.left, shaderRect.top),
             Offset(shaderRect.right, shaderRect.bottom),
             [Color(0xFFFF0000), Color(0xFF042a85)],
             null,
             TileMode.clamp,
-            Matrix4
-                .rotationZ((angle / 180) * math.pi)
-                .toFloat64());
-      rc.drawRect(shaderRect, Paint()
+            matrix.toFloat64());
+      rc.drawRect(shaderRect, SurfacePaint()
         ..color = Color(0xFF000000));
       rc.drawOval(shaderRect, paint);
       yOffset += 120;
@@ -75,7 +79,7 @@ void testMain() async {
     final RecordingCanvas rc =
         RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
     Rect shaderRect = const Rect.fromLTRB(50, 50, 300, 300);
-    final Paint paint = Paint()..shader = Gradient.linear(
+    final SurfacePaint paint = SurfacePaint()..shader = Gradient.linear(
         Offset(shaderRect.left, shaderRect.top),
         Offset(shaderRect.right, shaderRect.bottom),
         [Color(0xFFcfdfd2), Color(0xFF042a85)]);
@@ -93,7 +97,7 @@ void testMain() async {
     double yOffset = 0;
     for (double angle in angles) {
       final Rect shaderRect = Rect.fromLTWH(50, 50 + yOffset, 100, 100);
-      final Paint paint = Paint()
+      final SurfacePaint paint = SurfacePaint()
         ..shader = Gradient.linear(
             Offset(shaderRect.left, shaderRect.top),
             Offset(shaderRect.left + shaderRect.width / 2, shaderRect.top),
@@ -103,7 +107,7 @@ void testMain() async {
             Matrix4
                 .rotationZ((angle / 180) * math.pi)
                 .toFloat64());
-      rc.drawRect(shaderRect, Paint()
+      rc.drawRect(shaderRect, SurfacePaint()
         ..color = Color(0xFF000000));
       rc.drawOval(shaderRect, paint);
       yOffset += 120;
@@ -120,7 +124,7 @@ void testMain() async {
     double yOffset = 0;
     for (double angle in angles) {
       final Rect shaderRect = Rect.fromLTWH(50, 50 + yOffset, 100, 100);
-      final Paint paint = Paint()
+      final SurfacePaint paint = SurfacePaint()
         ..shader = Gradient.linear(
             Offset(shaderRect.left, shaderRect.top),
             Offset(shaderRect.left + shaderRect.width / 2, shaderRect.top),
@@ -130,7 +134,7 @@ void testMain() async {
             Matrix4
                 .rotationZ((angle / 180) * math.pi)
                 .toFloat64());
-      rc.drawRect(shaderRect, Paint()
+      rc.drawRect(shaderRect, SurfacePaint()
         ..color = Color(0xFF000000));
       rc.drawOval(shaderRect, paint);
       yOffset += 120;

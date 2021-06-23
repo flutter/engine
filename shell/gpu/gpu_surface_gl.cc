@@ -61,6 +61,9 @@ sk_sp<GrDirectContext> GPUSurfaceGL::MakeGLContext(
   // TODO(goderbauer): remove option when skbug.com/7523 is fixed.
   // A similar work-around is also used in shell/common/io_manager.cc.
   options.fDisableGpuYUVConversion = true;
+
+  options.fReduceOpsTaskSplitting = GrContextOptions::Enable::kNo;
+
   auto context = GrDirectContext::MakeGL(delegate->GetGLInterface(), options);
 
   if (!context) {
@@ -70,14 +73,7 @@ sk_sp<GrDirectContext> GPUSurfaceGL::MakeGLContext(
 
   context->setResourceCacheLimits(kGrCacheMaxCount, kGrCacheMaxByteSize);
 
-  std::vector<PersistentCache::SkSLCache> caches =
-      PersistentCache::GetCacheForProcess()->LoadSkSLs();
-  int compiled_count = 0;
-  for (const auto& cache : caches) {
-    compiled_count += context->precompileShader(*cache.first, *cache.second);
-  }
-  FML_LOG(INFO) << "Found " << caches.size() << " SkSL shaders; precompiled "
-                << compiled_count;
+  PersistentCache::GetCacheForProcess()->PrecompileKnownSkSLs(context.get());
 
   return context;
 }

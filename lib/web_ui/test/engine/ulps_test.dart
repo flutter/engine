@@ -3,9 +3,9 @@
 // found in the LICENSE file.
 
 import 'dart:typed_data';
-import 'package:test/bootstrap/browser.dart'; // ignore: import_of_legacy_library_into_null_safe
-import 'package:test/test.dart'; // ignore: import_of_legacy_library_into_null_safe
-import 'package:ui/src/engine.dart';
+import 'package:test/bootstrap/browser.dart';
+import 'package:test/test.dart';
+import 'package:ui/src/engine/ulps.dart';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -57,37 +57,37 @@ void testMain() {
       final double a = 1.1;
       int aBits = floatAs2sCompliment(a);
       double b = twosComplimentAsFloat(aBits + 1);
-      expect(almostEqualUlps(a, b), true);
+      expect(almostEqualUlps(a, b), isTrue);
       b = twosComplimentAsFloat(aBits + 15);
-      expect(almostEqualUlps(a, b), true);
+      expect(almostEqualUlps(a, b), isTrue);
       b = twosComplimentAsFloat(aBits + 16);
-      expect(almostEqualUlps(a, b), false);
+      expect(almostEqualUlps(a, b), isFalse);
 
       // Test between variant of equalUlps.
       b = twosComplimentAsFloat(aBits + 1);
-      expect(almostBequalUlps(a, b), true);
+      expect(almostBequalUlps(a, b), isTrue);
       b = twosComplimentAsFloat(aBits + 1);
-      expect(almostBequalUlps(a, b), true);
+      expect(almostBequalUlps(a, b), isTrue);
       b = twosComplimentAsFloat(aBits + 2);
-      expect(almostBequalUlps(a, b), false);
+      expect(almostBequalUlps(a, b), isFalse);
     });
 
     test('Should compare 2 coordinates based on ulps', () {
       double a = 1.1;
       int aBits = floatAs2sCompliment(a);
       double b = twosComplimentAsFloat(aBits + 1);
-      expect(approximatelyEqual(5.0, a, 5.0, b), true);
+      expect(approximatelyEqual(5.0, a, 5.0, b), isTrue);
       b = twosComplimentAsFloat(aBits + 16);
-      expect(approximatelyEqual(5.0, a, 5.0, b), true);
+      expect(approximatelyEqual(5.0, a, 5.0, b), isTrue);
 
       // Increase magnitude which should start checking with ulps rather than
       // fltEpsilon.
       a = 3000000.1;
       aBits = floatAs2sCompliment(a);
       b = twosComplimentAsFloat(aBits + 1);
-      expect(approximatelyEqual(5.0, a, 5.0, b), true);
+      expect(approximatelyEqual(5.0, a, 5.0, b), isTrue);
       b = twosComplimentAsFloat(aBits + 16);
-      expect(approximatelyEqual(5.0, a, 5.0, b), false);
+      expect(approximatelyEqual(5.0, a, 5.0, b), isFalse);
     });
   });
 }

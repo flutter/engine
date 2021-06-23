@@ -69,8 +69,8 @@ source_set("common") {
     "display_manager.h",
     "engine.cc",
     "engine.h",
-    "layer_tree_holder.cc",
-    "layer_tree_holder.h",
+    "pipeline.cc",
+    "pipeline.h",
     "platform_view.cc",
     "platform_view.h",
     "pointer_data_dispatcher.cc",
@@ -232,6 +232,15 @@ if (enable_unittests) {
 
       public_deps += [ "//flutter/vulkan" ]
     }
+
+    if (test_enable_metal) {
+      sources += [
+        "shell_test_platform_view_metal.h",
+        "shell_test_platform_view_metal.mm",
+      ]
+
+      public_deps += [ "//flutter/shell/platform/darwin/graphics" ]
+    }
   }
 
   shell_host_executable("shell_unittests") {
@@ -242,8 +251,8 @@ if (enable_unittests) {
       "canvas_spy_unittests.cc",
       "engine_unittests.cc",
       "input_events_unittests.cc",
-      "layer_tree_holder_unittests.cc",
       "persistent_cache_unittests.cc",
+      "pipeline_unittests.cc",
       "rasterizer_unittests.cc",
       "shell_unittests.cc",
       "skp_shader_warmup_unittests.cc",

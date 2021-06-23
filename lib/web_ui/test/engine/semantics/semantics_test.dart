@@ -2,14 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 @TestOn('chrome || safari || firefox')
 
 import 'dart:async';
 import 'dart:html' as html;
 import 'dart:typed_data';
 
-import 'package:mockito/mockito.dart';
 import 'package:quiver/testing/async.dart';
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
@@ -17,7 +15,7 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
-import '../../matchers.dart';
+import 'semantics_tester.dart';
 
 DateTime _testTime = DateTime(2018, 12, 17);
 
@@ -27,13 +25,8 @@ void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
-String rootSemanticStyle = '';
-
 void testMain() {
   setUp(() {
-    rootSemanticStyle = browserEngine != BrowserEngine.edge
-        ? 'filter: opacity(0%); color: rgba(0, 0, 0, 0)' :
-        'color: rgba(0, 0, 0, 0); filter: opacity(0%)';
     EngineSemanticsOwner.debugResetSemantics();
   });
 
@@ -81,30 +74,58 @@ void _testEngineSemanticsOwner() {
   });
 
   test('semantics is off by default', () {
-    expect(semantics().semanticsEnabled, false);
+    expect(semantics().semanticsEnabled, isFalse);
   });
 
   test('default mode is "unknown"', () {
     expect(semantics().mode, AccessibilityMode.unknown);
   });
 
-  test('auto-enables semantics', () async {
+  test('placeholder enables semantics', () async {
     domRenderer.reset(); // triggers `autoEnableOnTap` to be called
-    expect(semantics().semanticsEnabled, false);
+    expect(semantics().semanticsEnabled, isFalse);
 
     // Synthesize a click on the placeholder.
     final html.Element placeholder =
-        html.document.querySelectorAll('flt-semantics-placeholder').single;
+        appHostNode.querySelector('flt-semantics-placeholder')!;
+
+    expect(placeholder.isConnected, isTrue);
+
     final html.Rectangle<num> rect = placeholder.getBoundingClientRect();
     placeholder.dispatchEvent(html.MouseEvent(
       'click',
       clientX: (rect.left + (rect.right - rect.left) / 2).floor(),
       clientY: (rect.top + (rect.bottom - rect.top) / 2).floor(),
     ));
-    while (!semantics().semanticsEnabled) {
-      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+    // On mobile semantics is enabled asynchronously.
+    if (isMobile) {
+      while (placeholder.isConnected!) {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      }
     }
-    expect(semantics().semanticsEnabled, true);
+    expect(semantics().semanticsEnabled, isTrue);
+    expect(placeholder.isConnected, isFalse);
+  });
+
+  test('auto-enables semantics', () async {
+    domRenderer.reset(); // triggers `autoEnableOnTap` to be called
+    expect(semantics().semanticsEnabled, isFalse);
+
+    final html.Element placeholder =
+        appHostNode.querySelector('flt-semantics-placeholder')!;
+
+    expect(placeholder.isConnected, isTrue);
+
+    // Sending a semantics update should auto-enable engine semantics.
+    final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
+    updateNode(builder, id: 0);
+    semantics().updateSemantics(builder.build());
+
+    expect(semantics().semanticsEnabled, isTrue);
+
+    // The placeholder should be removed
+    expect(placeholder.isConnected, isFalse);
   });
 
   void renderLabel(String label) {
@@ -137,12 +158,12 @@ void _testEngineSemanticsOwner() {
     // Create
     renderLabel('Hello');
 
-    final Map<int, SemanticsObject> tree = semantics().debugSemanticsTree;
+    final Map<int, SemanticsObject> tree = semantics().debugSemanticsTree!;
     expect(tree.length, 2);
-    expect(tree[0].id, 0);
-    expect(tree[0].element.tagName.toLowerCase(), 'flt-semantics');
-    expect(tree[1].id, 1);
-    expect(tree[1].label, 'Hello');
+    expect(tree[0]!.id, 0);
+    expect(tree[0]!.element.tagName.toLowerCase(), 'flt-semantics');
+    expect(tree[1]!.id, 1);
+    expect(tree[1]!.label, 'Hello');
 
     expectSemanticsTree('''
 <sem style="$rootSemanticStyle">
@@ -189,7 +210,7 @@ void _testEngineSemanticsOwner() {
 
   test('accepts standalone browser gestures', () {
     semantics().semanticsEnabled = true;
-    expect(semantics().shouldAcceptBrowserGesture('click'), true);
+    expect(semantics().shouldAcceptBrowserGesture('click'), isTrue);
     semantics().semanticsEnabled = false;
   });
 
@@ -198,13 +219,13 @@ void _testEngineSemanticsOwner() {
       semantics()
         ..debugOverrideTimestampFunction(fakeAsync.getClock(_testTime).now)
         ..semanticsEnabled = true;
-      expect(semantics().shouldAcceptBrowserGesture('click'), true);
+      expect(semantics().shouldAcceptBrowserGesture('click'), isTrue);
       semantics().receiveGlobalEvent(html.Event('pointermove'));
-      expect(semantics().shouldAcceptBrowserGesture('click'), false);
+      expect(semantics().shouldAcceptBrowserGesture('click'), isFalse);
 
       // After 1 second of inactivity a browser gestures counts as standalone.
       fakeAsync.elapse(const Duration(seconds: 1));
-      expect(semantics().shouldAcceptBrowserGesture('click'), true);
+      expect(semantics().shouldAcceptBrowserGesture('click'), isTrue);
       semantics().semanticsEnabled = false;
     });
   });
@@ -216,21 +237,48 @@ void _testEngineSemanticsOwner() {
     semantics().receiveGlobalEvent(pointerEvent);
 
     // Verify the interactions.
-    verify(mockSemanticsEnabler.shouldEnableSemantics(pointerEvent));
+    expect(
+      mockSemanticsEnabler.shouldEnableSemanticsEvents,
+      [pointerEvent],
+    );
   });
 
-  test('Forward events to framewors if shouldEnableSemantics', () {
+  test('forwards events to framework if shouldEnableSemantics returns true', () {
     final MockSemanticsEnabler mockSemanticsEnabler = MockSemanticsEnabler();
     semantics().semanticsHelper.semanticsEnabler = mockSemanticsEnabler;
     final html.Event pointerEvent = html.Event('pointermove');
-    when(mockSemanticsEnabler.shouldEnableSemantics(pointerEvent))
-        .thenReturn(true);
-
+    mockSemanticsEnabler.shouldEnableSemanticsReturnValue = true;
     expect(semantics().receiveGlobalEvent(pointerEvent), isTrue);
   });
 }
 
-class MockSemanticsEnabler extends Mock implements SemanticsEnabler {}
+class MockSemanticsEnabler implements SemanticsEnabler {
+  @override
+  void dispose() {
+  }
+
+  @override
+  bool get isWaitingToEnableSemantics => throw UnimplementedError();
+
+  @override
+  html.Element prepareAccessibilityPlaceholder() {
+    throw UnimplementedError();
+  }
+
+  bool shouldEnableSemanticsReturnValue = false;
+  final List<html.Event> shouldEnableSemanticsEvents = <html.Event>[];
+
+  @override
+  bool shouldEnableSemantics(html.Event event) {
+    shouldEnableSemanticsEvents.add(event);
+    return shouldEnableSemanticsReturnValue;
+  }
+
+  @override
+  bool tryEnableSemantics(html.Event event) {
+    throw UnimplementedError();
+  }
+}
 
 void _testHeader() {
   test('renders heading role for headers', () {
@@ -334,9 +382,9 @@ void _testContainer() {
 </sem>''');
 
     final html.Element parentElement =
-        html.document.querySelector('flt-semantics');
+        appHostNode.querySelector('flt-semantics')!;
     final html.Element container =
-        html.document.querySelector('flt-semantics-container');
+        appHostNode.querySelector('flt-semantics-container')!;
 
     if (isMacOrIOS) {
       expect(parentElement.style.top, '0px');
@@ -382,9 +430,9 @@ void _testContainer() {
 </sem>''');
 
     final html.Element parentElement =
-        html.document.querySelector('flt-semantics');
+        appHostNode.querySelector('flt-semantics')!;
     final html.Element container =
-        html.document.querySelector('flt-semantics-container');
+        appHostNode.querySelector('flt-semantics-container')!;
 
     expect(parentElement.style.transform, 'matrix(1, 0, 0, 1, 10, 10)');
     expect(parentElement.style.transformOrigin, '0px 0px 0px');
@@ -426,10 +474,12 @@ void _testContainer() {
   </sem-c>
 </sem>''');
     }
+
     final html.Element parentElement =
-        html.document.querySelector('flt-semantics');
+        appHostNode.querySelector('flt-semantics')!;
     final html.Element container =
-        html.document.querySelector('flt-semantics-container');
+        appHostNode.querySelector('flt-semantics-container')!;
+
     if (isMacOrIOS) {
       expect(parentElement.style.top, '0px');
       expect(parentElement.style.left, '0px');
@@ -499,12 +549,12 @@ void _testVerticalScrolling() {
   </sem-c>
 </sem>''');
 
-    final html.Element scrollable = findScrollable();
+    final html.Element? scrollable = findScrollable();
     expect(scrollable, isNotNull);
 
     // When there's less content than the available size the neutral scrollTop
     // is 0.
-    expect(scrollable.scrollTop, 0);
+    expect(scrollable!.scrollTop, 0);
 
     semantics().semanticsEnabled = false;
   });
@@ -523,7 +573,7 @@ void _testVerticalScrolling() {
     final Zone testZone = Zone.current;
 
     ui.window.onSemanticsAction =
-        (int id, ui.SemanticsAction action, ByteData args) {
+        (int id, ui.SemanticsAction action, ByteData? args) {
       idLogController.add(id);
       actionLogController.add(action);
       testZone.run(() {
@@ -569,7 +619,7 @@ void _testVerticalScrolling() {
   </sem-c>
 </sem>''');
 
-    final html.Element scrollable = findScrollable();
+    final html.Element? scrollable = findScrollable();
     expect(scrollable, isNotNull);
 
     // When there's more content than the available size the neutral scrollTop
@@ -582,7 +632,7 @@ void _testVerticalScrolling() {
       browserMaxScrollDiff = 1;
     }
 
-    expect(scrollable.scrollTop >= (10 - browserMaxScrollDiff), isTrue);
+    expect(scrollable!.scrollTop >= (10 - browserMaxScrollDiff), isTrue);
 
     scrollable.scrollTop = 20;
     expect(scrollable.scrollTop, 20);
@@ -651,12 +701,12 @@ void _testHorizontalScrolling() {
   </sem-c>
 </sem>''');
 
-    final html.Element scrollable = findScrollable();
+    final html.Element? scrollable = findScrollable();
     expect(scrollable, isNotNull);
 
     // When there's less content than the available size the neutral
     // scrollLeft is 0.
-    expect(scrollable.scrollLeft, 0);
+    expect(scrollable!.scrollLeft, 0);
 
     semantics().semanticsEnabled = false;
   });
@@ -702,7 +752,7 @@ void _testHorizontalScrolling() {
   </sem-c>
 </sem>''');
 
-    final html.Element scrollable = findScrollable();
+    final html.Element? scrollable = findScrollable();
     expect(scrollable, isNotNull);
 
     // When there's more content than the available size the neutral scrollTop
@@ -714,7 +764,7 @@ void _testHorizontalScrolling() {
         operatingSystem == OperatingSystem.macOs) {
       browserMaxScrollDiff = 1;
     }
-    expect(scrollable.scrollLeft >= (10 - browserMaxScrollDiff), isTrue);
+    expect(scrollable!.scrollLeft >= (10 - browserMaxScrollDiff), isTrue);
 
     scrollable.scrollLeft = 20;
     expect(scrollable.scrollLeft, 20);
@@ -784,8 +834,7 @@ void _testIncrementables() {
   <input aria-valuenow="1" aria-valuetext="d" aria-valuemax="2" aria-valuemin="1">
 </sem>''');
 
-    final html.InputElement input =
-        html.document.querySelectorAll('input').single;
+    final html.InputElement input = appHostNode.querySelector('input') as html.InputElement;
     input.value = '2';
     input.dispatchEvent(html.Event('change'));
 
@@ -819,8 +868,7 @@ void _testIncrementables() {
   <input aria-valuenow="1" aria-valuetext="d" aria-valuemax="1" aria-valuemin="0">
 </sem>''');
 
-    final html.InputElement input =
-        html.document.querySelectorAll('input').single;
+    final html.InputElement input = appHostNode.querySelector('input') as html.InputElement;
     input.value = '0';
     input.dispatchEvent(html.Event('change'));
 
@@ -913,20 +961,19 @@ void _testTextField() {
 
     semantics().updateSemantics(builder.build());
 
-    final html.Element textField = html.document
-        .querySelectorAll('input[data-semantics-role="text-field"]')
-        .single;
+    final html.Element textField =
+        appHostNode.querySelector('input[data-semantics-role="text-field"]')!;
 
-    expect(html.document.activeElement, isNot(textField));
+    expect(appHostNode.activeElement, isNot(textField));
 
     textField.focus();
 
-    expect(html.document.activeElement, textField);
+    expect(appHostNode.activeElement, textField);
     expect(await logger.idLog.first, 0);
     expect(await logger.actionLog.first, ui.SemanticsAction.tap);
 
     semantics().semanticsEnabled = false;
-  },  // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
+  }, // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
       // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
       // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
       skip: (browserEngine != BrowserEngine.blink));
@@ -1198,23 +1245,22 @@ void _testTappable() {
       ..debugOverrideTimestampFunction(() => _testTime)
       ..semanticsEnabled = true;
 
-    final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
-    updateNode(
-      builder,
+    final SemanticsTester tester = SemanticsTester(semantics());
+    tester.updateNode(
       id: 0,
-      actions: 0 | ui.SemanticsAction.tap.index,
-      flags: 0 |
-          ui.SemanticsFlag.hasEnabledState.index |
-          ui.SemanticsFlag.isEnabled.index |
-          ui.SemanticsFlag.isButton.index,
-      transform: Matrix4.identity().toFloat64(),
+      hasTap: true,
+      hasEnabledState: true,
+      isEnabled: true,
+      isButton: true,
       rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
     );
+    tester.apply();
 
-    semantics().updateSemantics(builder.build());
     expectSemanticsTree('''
 <sem role="button" style="$rootSemanticStyle"></sem>
 ''');
+
+    expect(tester.getSemanticsObject(0).element.tabIndex, 0);
 
     semantics().semanticsEnabled = false;
   },
@@ -1417,53 +1463,9 @@ void _testLiveRegion() {
   });
 }
 
-void expectSemanticsTree(String semanticsHtml) {
-  expect(
-    canonicalizeHtml(html.document.querySelector('flt-semantics').outerHtml),
-    canonicalizeHtml(semanticsHtml),
-  );
-}
-
-html.Element findScrollable() {
-  return html.document.querySelectorAll('flt-semantics').firstWhere(
-        (html.Element element) =>
-            element.style.overflow == 'hidden' ||
-            element.style.overflowY == 'scroll' ||
-            element.style.overflowX == 'scroll',
-        orElse: () => null,
-      );
-}
-
-class SemanticsActionLogger {
-  StreamController<int> idLogController;
-  StreamController<ui.SemanticsAction> actionLogController;
-  Stream<int> idLog;
-  Stream<ui.SemanticsAction> actionLog;
-
-  SemanticsActionLogger() {
-    idLogController = StreamController<int>();
-    actionLogController = StreamController<ui.SemanticsAction>();
-    idLog = idLogController.stream.asBroadcastStream();
-    actionLog = actionLogController.stream.asBroadcastStream();
-
-    // The browser kicks us out of the test zone when the browser event happens.
-    // We memorize the test zone so we can call expect when the callback is
-    // fired.
-    final Zone testZone = Zone.current;
-
-    ui.window.onSemanticsAction =
-        (int id, ui.SemanticsAction action, ByteData args) {
-      idLogController.add(id);
-      actionLogController.add(action);
-      testZone.run(() {
-        expect(args, null);
-      });
-    };
-  }
-}
-
 /// A facade in front of [ui.SemanticsUpdateBuilder.updateNode] that
 /// supplies default values for semantics attributes.
+// TODO(yjbanov): move this to TestSemanticsBuilder
 void updateNode(
   ui.SemanticsUpdateBuilder builder, {
   int id = 0,
@@ -1488,10 +1490,10 @@ void updateNode(
   String increasedValue = '',
   String decreasedValue = '',
   ui.TextDirection textDirection = ui.TextDirection.ltr,
-  Float64List transform,
-  Int32List childrenInTraversalOrder,
-  Int32List childrenInHitTestOrder,
-  Int32List additionalActions,
+  Float64List? transform,
+  Int32List? childrenInTraversalOrder,
+  Int32List? childrenInHitTestOrder,
+  Int32List? additionalActions,
 }) {
   transform ??= Float64List.fromList(Matrix4.identity().storage);
   childrenInTraversalOrder ??= Int32List(0);

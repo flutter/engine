@@ -76,7 +76,8 @@ public class FlutterFragmentActivity extends FragmentActivity
   /**
    * Creates an {@link FlutterFragmentActivity.NewEngineIntentBuilder}, which can be used to
    * configure an {@link Intent} to launch a {@code FlutterFragmentActivity} that internally creates
-   * a new {@link FlutterEngine} using the desired Dart entrypoint, initial route, etc.
+   * a new {@link io.flutter.embedding.engine.FlutterEngine} using the desired Dart entrypoint,
+   * initial route, etc.
    */
   @NonNull
   public static NewEngineIntentBuilder withNewEngine() {
@@ -85,7 +86,7 @@ public class FlutterFragmentActivity extends FragmentActivity
 
   /**
    * Builder to create an {@code Intent} that launches a {@code FlutterFragmentActivity} with a new
-   * {@link FlutterEngine} and the desired configuration.
+   * {@link io.flutter.embedding.engine.FlutterEngine} and the desired configuration.
    */
   public static class NewEngineIntentBuilder {
     private final Class<? extends FlutterFragmentActivity> activityClass;
@@ -164,7 +165,7 @@ public class FlutterFragmentActivity extends FragmentActivity
 
   /**
    * Builder to create an {@code Intent} that launches a {@code FlutterFragmentActivity} with an
-   * existing {@link FlutterEngine} that is cached in {@link
+   * existing {@link io.flutter.embedding.engine.FlutterEngine} that is cached in {@link
    * io.flutter.embedding.engine.FlutterEngineCache}.
    */
   public static class CachedEngineIntentBuilder {
@@ -178,9 +179,9 @@ public class FlutterFragmentActivity extends FragmentActivity
      * {@code FlutterFragmentActivity}.
      *
      * <p>Subclasses of {@code FlutterFragmentActivity} should provide their own static version of
-     * {@link #withCachedEngine()}, which returns an instance of {@code CachedEngineIntentBuilder}
-     * constructed with a {@code Class} reference to the {@code FlutterFragmentActivity} subclass,
-     * e.g.:
+     * {@link #withCachedEngine(String)}, which returns an instance of {@code
+     * CachedEngineIntentBuilder} constructed with a {@code Class} reference to the {@code
+     * FlutterFragmentActivity} subclass, e.g.:
      *
      * <p>{@code return new CachedEngineIntentBuilder(MyFlutterActivity.class, engineId); }
      */
@@ -191,8 +192,8 @@ public class FlutterFragmentActivity extends FragmentActivity
     }
 
     /**
-     * Returns true if the cached {@link FlutterEngine} should be destroyed and removed from the
-     * cache when this {@code FlutterFragmentActivity} is destroyed.
+     * Returns true if the cached {@link io.flutter.embedding.engine.FlutterEngine} should be
+     * destroyed and removed from the cache when this {@code FlutterFragmentActivity} is destroyed.
      *
      * <p>The default value is {@code false}.
      */
@@ -241,6 +242,10 @@ public class FlutterFragmentActivity extends FragmentActivity
   @Override
   protected void onCreate(@Nullable Bundle savedInstanceState) {
     switchLaunchThemeForNormalTheme();
+    // Get an existing fragment reference first before onCreate since onCreate would re-attach
+    // existing fragments. This would cause FlutterFragment to reference the host activity which
+    // should be aware of its child fragment.
+    flutterFragment = retrieveExistingFlutterFragmentIfPossible();
 
     super.onCreate(savedInstanceState);
 
@@ -367,20 +372,36 @@ public class FlutterFragmentActivity extends FragmentActivity
   }
 
   /**
+   * Retrieves the previously created {@link FlutterFragment} if possible.
+   *
+   * <p>If the activity is recreated, an existing {@link FlutterFragment} may already exist. Retain
+   * a reference to that {@link FlutterFragment} in the {@code #flutterFragment} field and avoid
+   * re-creating another {@link FlutterFragment}.
+   */
+  @VisibleForTesting
+  FlutterFragment retrieveExistingFlutterFragmentIfPossible() {
+    FragmentManager fragmentManager = getSupportFragmentManager();
+    return (FlutterFragment) fragmentManager.findFragmentByTag(TAG_FLUTTER_FRAGMENT);
+  }
+
+  /**
    * Ensure that a {@link FlutterFragment} is attached to this {@code FlutterFragmentActivity}.
    *
    * <p>If no {@link FlutterFragment} exists in this {@code FlutterFragmentActivity}, then a {@link
-   * FlutterFragment} is created and added. If a {@link FlutterFragment} does exist in this {@code
-   * FlutterFragmentActivity}, then a reference to that {@link FlutterFragment} is retained in
-   * {@code #flutterFragment}.
+   * FlutterFragment} is created and added.
    */
   private void ensureFlutterFragmentCreated() {
-    FragmentManager fragmentManager = getSupportFragmentManager();
-    flutterFragment = (FlutterFragment) fragmentManager.findFragmentByTag(TAG_FLUTTER_FRAGMENT);
+    if (flutterFragment == null) {
+      // If both activity and fragment have been destroyed, the activity restore may have
+      // already recreated a new instance of the fragment again via the FragmentActivity.onCreate
+      // and the FragmentManager.
+      flutterFragment = retrieveExistingFlutterFragmentIfPossible();
+    }
     if (flutterFragment == null) {
       // No FlutterFragment exists yet. This must be the initial Activity creation. We will create
       // and add a new FlutterFragment to this Activity.
       flutterFragment = createFlutterFragment();
+      FragmentManager fragmentManager = getSupportFragmentManager();
       fragmentManager
           .beginTransaction()
           .add(FRAGMENT_CONTAINER_ID, flutterFragment, TAG_FLUTTER_FRAGMENT)
@@ -516,13 +537,13 @@ public class FlutterFragmentActivity extends FragmentActivity
   }
 
   /**
-   * Returns false if the {@link FlutterEngine} backing this {@code FlutterFragmentActivity} should
-   * outlive this {@code FlutterFragmentActivity}, or true to be destroyed when the {@code
-   * FlutterFragmentActivity} is destroyed.
+   * Returns false if the {@link io.flutter.embedding.engine.FlutterEngine} backing this {@code
+   * FlutterFragmentActivity} should outlive this {@code FlutterFragmentActivity}, or true to be
+   * destroyed when the {@code FlutterFragmentActivity} is destroyed.
    *
    * <p>The default value is {@code true} in cases where {@code FlutterFragmentActivity} created its
-   * own {@link FlutterEngine}, and {@code false} in cases where a cached {@link FlutterEngine} was
-   * provided.
+   * own {@link io.flutter.embedding.engine.FlutterEngine}, and {@code false} in cases where a
+   * cached {@link io.flutter.embedding.engine.FlutterEngine} was provided.
    */
   public boolean shouldDestroyEngineWithHost() {
     return getIntent().getBooleanExtra(EXTRA_DESTROY_ENGINE_WITH_ACTIVITY, false);
@@ -530,7 +551,8 @@ public class FlutterFragmentActivity extends FragmentActivity
 
   /**
    * Hook for subclasses to control whether or not the {@link FlutterFragment} within this {@code
-   * Activity} automatically attaches its {@link FlutterEngine} to this {@code Activity}.
+   * Activity} automatically attaches its {@link io.flutter.embedding.engine.FlutterEngine} to this
+   * {@code Activity}.
    *
    * <p>For an explanation of why this control exists, see {@link
    * FlutterFragment.NewEngineFragmentBuilder#shouldAttachEngineToActivity()}.
@@ -580,12 +602,21 @@ public class FlutterFragmentActivity extends FragmentActivity
    * <p>This method is called after {@link #provideFlutterEngine(Context)}.
    *
    * <p>All plugins listed in the app's pubspec are registered in the base implementation of this
-   * method. To avoid automatic plugin registration, override this method without invoking super().
-   * To keep automatic plugin registration and further configure the flutterEngine, override this
-   * method, invoke super(), and then configure the flutterEngine as desired.
+   * method unless the FlutterEngine for this activity was externally created. To avoid the
+   * automatic plugin registration for implicitly created FlutterEngines, override this method
+   * without invoking super(). To keep automatic plugin registration and further configure the
+   * FlutterEngine, override this method, invoke super(), and then configure the FlutterEngine as
+   * desired.
    */
   @Override
   public void configureFlutterEngine(@NonNull FlutterEngine flutterEngine) {
+    if (flutterFragment != null && flutterFragment.isFlutterEngineInjected()) {
+      // If the FlutterEngine was explicitly built and injected into this FlutterActivity, the
+      // builder should explicitly decide whether to automatically register plugins via the
+      // FlutterEngine's construction parameter or via the AndroidManifest metadata.
+      return;
+    }
+
     GeneratedPluginRegister.registerGeneratedPlugins(flutterEngine);
   }
 
@@ -609,7 +640,7 @@ public class FlutterFragmentActivity extends FragmentActivity
    * path.
    *
    * <p>When otherwise unspecified, the value is null, which defaults to the app bundle path defined
-   * in {@link FlutterLoader#findAppBundlePath()}.
+   * in {@link io.flutter.embedding.engine.loader.FlutterLoader#findAppBundlePath()}.
    *
    * <p>Subclasses may override this method to return a custom app bundle path.
    */
@@ -698,9 +729,10 @@ public class FlutterFragmentActivity extends FragmentActivity
   }
 
   /**
-   * Returns the ID of a statically cached {@link FlutterEngine} to use within this {@code
-   * FlutterFragmentActivity}, or {@code null} if this {@code FlutterFragmentActivity} does not want
-   * to use a cached {@link FlutterEngine}.
+   * Returns the ID of a statically cached {@link io.flutter.embedding.engine.FlutterEngine} to use
+   * within this {@code FlutterFragmentActivity}, or {@code null} if this {@code
+   * FlutterFragmentActivity} does not want to use a cached {@link
+   * io.flutter.embedding.engine.FlutterEngine}.
    */
   @Nullable
   protected String getCachedEngineId() {
@@ -725,7 +757,7 @@ public class FlutterFragmentActivity extends FragmentActivity
    * FlutterFragmentActivity}.
    *
    * <p>That is, {@link RenderMode#surface} if {@link FlutterFragmentActivity#getBackgroundMode()}
-   * is {@link BackgroundMode.opaque} or {@link RenderMode#texture} otherwise.
+   * is {@link BackgroundMode#opaque} or {@link RenderMode#texture} otherwise.
    */
   @NonNull
   protected RenderMode getRenderMode() {

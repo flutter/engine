@@ -30,6 +30,12 @@ void checkEncodeDecode(id value) {
     ASSERT_TRUE([value isEqual:decoded]);
 }
 
+TEST(FlutterStandardCodec, CanDecodeZeroLength) {
+  FlutterStandardMessageCodec* codec = [FlutterStandardMessageCodec sharedInstance];
+  id decoded = [codec decode:[NSData data]];
+  ASSERT_TRUE(decoded == nil);
+}
+
 TEST(FlutterStandardCodec, CanEncodeAndDecodeNil) {
   checkEncodeDecode(nil, nil);
 }
@@ -167,6 +173,13 @@ TEST(FlutterStandardCodec, CanEncodeAndDecodeInt64Array) {
   uint8_t bytes[8] = {0xBA, 0x5E, 0xBA, 0x11, 0xff, 0xff, 0xff, 0xff};
   NSData* data = [NSData dataWithBytes:bytes length:8];
   FlutterStandardTypedData* value = [FlutterStandardTypedData typedDataWithInt64:data];
+  checkEncodeDecode(value);
+}
+
+TEST(FlutterStandardCodec, CanEncodeAndDecodeFloat32Array) {
+  uint8_t bytes[8] = {0xd8, 0x0f, 0x49, 0x40, 0x00, 0x00, 0x7a, 0x44};
+  NSData* data = [NSData dataWithBytes:bytes length:8];
+  FlutterStandardTypedData* value = [FlutterStandardTypedData typedDataWithFloat32:data];
   checkEncodeDecode(value);
 }
 

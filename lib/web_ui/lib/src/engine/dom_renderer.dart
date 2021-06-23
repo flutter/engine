@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of engine;
 
 class DomRenderer {
@@ -13,7 +12,10 @@ class DomRenderer {
 
     reset();
 
-    TextMeasurementService.initialize(rulerCacheCapacity: 10);
+    TextMeasurementService.initialize(
+      rulerCacheCapacity: 10,
+      root: _glassPaneShadow!.node,
+    );
 
     assert(() {
       _setupHotRestart();
@@ -26,6 +28,9 @@ class DomRenderer {
   static const int vibrateMediumImpact = 20;
   static const int vibrateHeavyImpact = 30;
   static const int vibrateSelectionClick = 10;
+
+  // The tag name for the root view of the flutter app (glass-pane)
+  static const String _glassPaneTagName = 'flt-glass-pane';
 
   /// Fires when browser language preferences change.
   static const html.EventStreamProvider<html.Event> languageChangeEvent =
@@ -48,6 +53,9 @@ class DomRenderer {
   /// [useCanvasKit] is set to true.
   html.ScriptElement? get canvasKitScript => _canvasKitScript;
   html.ScriptElement? _canvasKitScript;
+
+  Future<void>? get canvasKitLoaded => _canvasKitLoaded;
+  Future<void>? _canvasKitLoaded;
 
   /// The element that contains the [sceneElement].
   ///
@@ -79,7 +87,7 @@ class DomRenderer {
   html.Element? get sceneElement => _sceneElement;
   html.Element? _sceneElement;
 
-  /// This is state persistant across hot restarts that indicates what
+  /// This is state persistent across hot restarts that indicates what
   /// to clear.  We delay removal of old visible state to make the
   /// transition appear smooth.
   static const String _staleHotRestartStore = '__flutter_state';
@@ -93,8 +101,8 @@ class DomRenderer {
   /// This getter calls the `hasFocus` method of the `Document` interface.
   /// See for more details:
   /// https://developer.mozilla.org/en-US/docs/Web/API/Document/hasFocus
-  bool? get windowHasFocus =>
-      js_util.callMethod(html.document, 'hasFocus', <dynamic>[]);
+  bool get windowHasFocus =>
+      js_util.callMethod(html.document, 'hasFocus', <dynamic>[]) ?? false;
 
   void _setupHotRestart() {
     // This persists across hot restarts to clear stale DOM.
@@ -151,6 +159,10 @@ class DomRenderer {
   /// if they are not handled by semantics.
   html.Element? get glassPaneElement => _glassPaneElement;
   html.Element? _glassPaneElement;
+
+  /// The [HostNode] of the [glassPaneElement], which contains the whole Flutter app.
+  HostNode? get glassPaneShadow => _glassPaneShadow;
+  HostNode? _glassPaneShadow;
 
   final html.Element rootElement = html.document.body!;
 
@@ -251,120 +263,23 @@ class DomRenderer {
       '$defaultFontStyle $defaultFontWeight ${defaultFontSize}px $defaultFontFamily';
 
   void reset() {
+    final bool isWebKit = browserEngine == BrowserEngine.webkit;
+
     _styleElement?.remove();
     _styleElement = html.StyleElement();
     html.document.head!.append(_styleElement!);
     final html.CssStyleSheet sheet = _styleElement!.sheet as html.CssStyleSheet;
-    final bool isWebKit = browserEngine == BrowserEngine.webkit;
-    final bool isFirefox = browserEngine == BrowserEngine.firefox;
-    // TODO(butterfly): use more efficient CSS selectors; descendant selectors
-    //                  are slow. More info:
-    //
-    //                  https://csswizardry.com/2011/09/writing-efficient-css-selectors/
-
-    // This undoes browser's default layout attributes for paragraphs. We
-    // compute paragraph layout ourselves.
-    if (isFirefox) {
-      // For firefox set line-height, otherwise textx at same font-size will
-      // measure differently in ruler.
-      sheet.insertRule(
-          'flt-ruler-host p, flt-scene p '
-          '{ margin: 0; line-height: 100%;}',
-          sheet.cssRules.length);
-    } else {
-      sheet.insertRule(
-          'flt-ruler-host p, flt-scene p '
-          '{ margin: 0; }',
-          sheet.cssRules.length);
-    }
-
-    // This undoes browser's default painting and layout attributes of range
-    // input, which is used in semantics.
-    sheet.insertRule('''
-flt-semantics input[type=range] {
-  appearance: none;
-  -webkit-appearance: none;
-  width: 100%;
-  position: absolute;
-  border: none;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-}''', sheet.cssRules.length);
-
-    if (isWebKit) {
-      sheet.insertRule(
-          'flt-semantics input[type=range]::-webkit-slider-thumb {'
-          '  -webkit-appearance: none;'
-          '}',
-          sheet.cssRules.length);
-    }
-
-    if (isFirefox) {
-      sheet.insertRule(
-          'input::-moz-selection {'
-          '  background-color: transparent;'
-          '}',
-          sheet.cssRules.length);
-      sheet.insertRule(
-          'textarea::-moz-selection {'
-          '  background-color: transparent;'
-          '}',
-          sheet.cssRules.length);
-    } else {
-      // On iOS, the invisible semantic text field has a visible cursor and
-      // selection highlight. The following 2 CSS rules force everything to be
-      // transparent.
-      sheet.insertRule(
-          'input::selection {'
-          '  background-color: transparent;'
-          '}',
-          sheet.cssRules.length);
-      sheet.insertRule(
-          'textarea::selection {'
-          '  background-color: transparent;'
-          '}',
-          sheet.cssRules.length);
-    }
-    sheet.insertRule('''
-flt-semantics input,
-flt-semantics textarea,
-flt-semantics [contentEditable="true"] {
-  caret-color: transparent;
-}
-''', sheet.cssRules.length);
-
-    // By default on iOS, Safari would highlight the element that's being tapped
-    // on using gray background. This CSS rule disables that.
-    if (isWebKit) {
-      sheet.insertRule('''
-flt-glass-pane * {
-  -webkit-tap-highlight-color: transparent;
-}
-''', sheet.cssRules.length);
-    }
-
-    // This css prevents an autofill overlay brought by the browser during
-    // text field autofill by delaying the transition effect.
-    // See: https://github.com/flutter/flutter/issues/61132.
-    if (browserHasAutofillOverlay()) {
-      sheet.insertRule('''
-.transparentTextEditing:-webkit-autofill,
-.transparentTextEditing:-webkit-autofill:hover,
-.transparentTextEditing:-webkit-autofill:focus,
-.transparentTextEditing:-webkit-autofill:active {
-    -webkit-transition-delay: 99999s;
-}
-''', sheet.cssRules.length);
-    }
+    applyGlobalCssRulesToSheet(sheet,
+      browserEngine: browserEngine,
+      hasAutofillOverlay: browserHasAutofillOverlay(),
+    );
 
     final html.BodyElement bodyElement = html.document.body!;
 
     setElementAttribute(
       bodyElement,
       'flt-renderer',
-      '${useCanvasKit ? 'canvaskit' : 'html'} (${_autoDetect ? 'auto-selected' : 'requested explicitly'})',
+      '${useCanvasKit ? 'canvaskit' : 'html'} (${flutterWebAutoDetect ? 'auto-selected' : 'requested explicitly'})',
     );
     setElementAttribute(bodyElement, 'flt-build-mode', buildMode);
 
@@ -430,7 +345,7 @@ flt-glass-pane * {
     // IMPORTANT: the glass pane element must come after the scene element in the DOM node list so
     //            it can intercept input events.
     _glassPaneElement?.remove();
-    final html.Element glassPaneElement = createElement('flt-glass-pane');
+    final html.Element glassPaneElement = createElement(_glassPaneTagName);
     _glassPaneElement = glassPaneElement;
     glassPaneElement.style
       ..position = 'absolute'
@@ -438,33 +353,37 @@ flt-glass-pane * {
       ..right = '0'
       ..bottom = '0'
       ..left = '0';
+
+    // This must be appended to the body, so we can create a host node properly.
     bodyElement.append(glassPaneElement);
 
-    _sceneHostElement = createElement('flt-scene-host');
+    // Create a [HostNode] under the glass pane element, and attach everything
+    // there, instead of directly underneath the glass panel.
+    final HostNode glassPaneElementHostNode = _createHostNode(glassPaneElement);
+    _glassPaneShadow = glassPaneElementHostNode;
 
-    final html.Element semanticsHostElement = createElement('flt-semantics-host');
+    // Don't allow the scene to receive pointer events.
+    _sceneHostElement = createElement('flt-scene-host')
+      ..style
+        .pointerEvents = 'none';
+
+    final html.Element semanticsHostElement =
+        createElement('flt-semantics-host');
     semanticsHostElement.style
       ..position = 'absolute'
       ..transformOrigin = '0 0 0';
     _semanticsHostElement = semanticsHostElement;
     updateSemanticsScreenProperties();
-    glassPaneElement.append(semanticsHostElement);
 
-    // Don't allow the scene to receive pointer events.
-    _sceneHostElement!.style.pointerEvents = 'none';
-
-    glassPaneElement.append(_sceneHostElement!);
-
-    final html.Element _accesibilityPlaceholder = EngineSemanticsOwner
+    final html.Element _accessibilityPlaceholder = EngineSemanticsOwner
         .instance.semanticsHelper
         .prepareAccessibilityPlaceholder();
 
-    // Insert the semantics placeholder after the scene host. For all widgets
-    // in the scene, except for platform widgets, the scene host will pass the
-    // pointer events through to the semantics tree. However, for platform
-    // views, the pointer events will not pass through, and will be handled
-    // by the platform view.
-    glassPaneElement.insertBefore(_accesibilityPlaceholder, _sceneHostElement);
+    glassPaneElementHostNode.nodes.addAll([
+      semanticsHostElement,
+      _accessibilityPlaceholder,
+      _sceneHostElement!,
+    ]);
 
     // When debugging semantics, make the scene semi-transparent so that the
     // semantics tree is visible.
@@ -481,11 +400,11 @@ flt-glass-pane * {
     setElementAttribute(_sceneHostElement!, 'aria-hidden', 'true');
 
     if (html.window.visualViewport == null && isWebKit) {
-      // Safari sometimes gives us bogus innerWidth/innerHeight values when the
-      // page loads. When it changes the values to correct ones it does not
-      // notify of the change via `onResize`. As a workaround, we set up a
-      // temporary periodic timer that polls innerWidth and triggers the
-      // resizeListener so that the framework can react to the change.
+      // Older Safari versions sometimes give us bogus innerWidth/innerHeight
+      // values when the page loads. When it changes the values to correct ones
+      // it does not notify of the change via `onResize`. As a workaround, we
+      // set up a temporary periodic timer that polls innerWidth and triggers
+      // the resizeListener so that the framework can react to the change.
       //
       // Safari 13 has implemented visualViewport API so it doesn't need this
       // timer.
@@ -510,10 +429,20 @@ flt-glass-pane * {
       });
     }
 
-    if (useCanvasKit) {
+    // Only reset CanvasKit if it's not already available.
+    if (useCanvasKit && windowFlutterCanvasKit == null) {
       _canvasKitScript?.remove();
       _canvasKitScript = html.ScriptElement();
       _canvasKitScript!.src = canvasKitJavaScriptBindingsUrl;
+
+      Completer<void> canvasKitLoadCompleter = Completer<void>();
+      _canvasKitLoaded = canvasKitLoadCompleter.future;
+
+      late StreamSubscription<html.Event> loadSubscription;
+      loadSubscription = _canvasKitScript!.onLoad.listen((_) {
+        loadSubscription.cancel();
+        canvasKitLoadCompleter.complete(true);
+      });
 
       // TODO(hterkelsen): Rather than this monkey-patch hack, we should
       // build CanvasKit ourselves. See:
@@ -588,11 +517,22 @@ flt-glass-pane * {
     EnginePlatformDispatcher.instance._updateLocales();
   }
 
+  // Creates a [HostNode] into a `root` [html.Element].
+  HostNode _createHostNode(html.Element root) {
+    if (js_util.getProperty(root, 'attachShadow') != null) {
+      return ShadowDomHostNode(root);
+    } else {
+      // attachShadow not available, fall back to ElementHostNode.
+      return ElementHostNode(root);
+    }
+  }
+
   /// The framework specifies semantics in physical pixels, but CSS uses
   /// logical pixels. To compensate, we inject an inverse scale at the root
   /// level.
   void updateSemanticsScreenProperties() {
-    _semanticsHostElement!.style.transform = 'scale(${1 / html.window.devicePixelRatio})';
+    _semanticsHostElement!.style.transform =
+        'scale(${1 / html.window.devicePixelRatio})';
   }
 
   /// Called immediately after browser window metrics change.
@@ -607,12 +547,12 @@ flt-glass-pane * {
   void _metricsDidChange(html.Event? event) {
     updateSemanticsScreenProperties();
     if (isMobile && !window.isRotation() && textEditing.isEditing) {
-      window.computeOnScreenKeyboardInsets();
+      window.computeOnScreenKeyboardInsets(true);
       EnginePlatformDispatcher.instance.invokeOnMetricsChanged();
     } else {
       window._computePhysicalSize();
       // When physical size changes this value has to be recalculated.
-      window.computeOnScreenKeyboardInsets();
+      window.computeOnScreenKeyboardInsets(false);
       EnginePlatformDispatcher.instance.invokeOnMetricsChanged();
     }
   }
@@ -684,12 +624,12 @@ flt-glass-pane * {
   /// defer to the operating system default.
   ///
   /// See w3c screen api: https://www.w3.org/TR/screen-orientation/
-  Future<bool> setPreferredOrientation(List<dynamic>? orientations) {
+  Future<bool> setPreferredOrientation(List<dynamic> orientations) {
     final html.Screen screen = html.window.screen!;
     if (!_unsafeIsNull(screen)) {
       final html.ScreenOrientation? screenOrientation = screen.orientation;
       if (!_unsafeIsNull(screenOrientation)) {
-        if (orientations!.isEmpty) {
+        if (orientations.isEmpty) {
           screenOrientation!.unlock();
           return Future.value(true);
         } else {
@@ -717,7 +657,7 @@ flt-glass-pane * {
   }
 
   // Converts device orientation to w3c OrientationLockType enum.
-  static String? _deviceOrientationToLockType(String deviceOrientation) {
+  static String? _deviceOrientationToLockType(String? deviceOrientation) {
     switch (deviceOrientation) {
       case 'DeviceOrientation.portraitUp':
         return orientationLockTypePortraitPrimary;
@@ -770,6 +710,117 @@ flt-glass-pane * {
   void debugRichTextLayout() => _debugFrameStatistics!.richTextLayouts++;
   void debugPlainTextLayout() => _debugFrameStatistics!.plainTextLayouts++;
 }
+
+// Applies the required global CSS to an incoming [html.CssStyleSheet] `sheet`.
+void applyGlobalCssRulesToSheet(html.CssStyleSheet sheet, {
+  required BrowserEngine browserEngine,
+  required bool hasAutofillOverlay,
+  String glassPaneTagName = DomRenderer._glassPaneTagName,
+}) {
+  final bool isWebKit = browserEngine == BrowserEngine.webkit;
+  final bool isFirefox = browserEngine == BrowserEngine.firefox;
+  // TODO(web): use more efficient CSS selectors; descendant selectors are slow.
+  // More info: https://csswizardry.com/2011/09/writing-efficient-css-selectors
+
+  // This undoes browser's default layout attributes for paragraphs. We
+  // compute paragraph layout ourselves.
+  if (isFirefox) {
+    // For firefox set line-height, otherwise textx at same font-size will
+    // measure differently in ruler.
+    sheet.insertRule(
+        'flt-ruler-host p, flt-scene p '
+        '{ margin: 0; line-height: 100%;}',
+        sheet.cssRules.length);
+  } else {
+    sheet.insertRule(
+        'flt-ruler-host p, flt-scene p '
+        '{ margin: 0; }',
+        sheet.cssRules.length);
+  }
+
+  // This undoes browser's default painting and layout attributes of range
+  // input, which is used in semantics.
+  sheet.insertRule('''
+flt-semantics input[type=range] {
+appearance: none;
+-webkit-appearance: none;
+width: 100%;
+position: absolute;
+border: none;
+top: 0;
+right: 0;
+bottom: 0;
+left: 0;
+}''', sheet.cssRules.length);
+
+  if (isWebKit) {
+    sheet.insertRule(
+        'flt-semantics input[type=range]::-webkit-slider-thumb {'
+        '  -webkit-appearance: none;'
+        '}',
+        sheet.cssRules.length);
+  }
+
+  if (isFirefox) {
+    sheet.insertRule(
+        'input::-moz-selection {'
+        '  background-color: transparent;'
+        '}',
+        sheet.cssRules.length);
+    sheet.insertRule(
+        'textarea::-moz-selection {'
+        '  background-color: transparent;'
+        '}',
+        sheet.cssRules.length);
+  } else {
+    // On iOS, the invisible semantic text field has a visible cursor and
+    // selection highlight. The following 2 CSS rules force everything to be
+    // transparent.
+    sheet.insertRule(
+        'input::selection {'
+        '  background-color: transparent;'
+        '}',
+        sheet.cssRules.length);
+    sheet.insertRule(
+        'textarea::selection {'
+        '  background-color: transparent;'
+        '}',
+        sheet.cssRules.length);
+  }
+  sheet.insertRule('''
+flt-semantics input,
+flt-semantics textarea,
+flt-semantics [contentEditable="true"] {
+caret-color: transparent;
+}
+''', sheet.cssRules.length);
+
+  // By default on iOS, Safari would highlight the element that's being tapped
+  // on using gray background. This CSS rule disables that.
+  if (isWebKit) {
+    sheet.insertRule('''
+$glassPaneTagName * {
+-webkit-tap-highlight-color: transparent;
+}
+''', sheet.cssRules.length);
+  }
+
+  // This css prevents an autofill overlay brought by the browser during
+  // text field autofill by delaying the transition effect.
+  // See: https://github.com/flutter/flutter/issues/61132.
+  if (browserHasAutofillOverlay()) {
+    sheet.insertRule('''
+.transparentTextEditing:-webkit-autofill,
+.transparentTextEditing:-webkit-autofill:hover,
+.transparentTextEditing:-webkit-autofill:focus,
+.transparentTextEditing:-webkit-autofill:active {
+  -webkit-transition-delay: 99999s;
+}
+''', sheet.cssRules.length);
+  }
+}
+
+
 
 /// Miscellaneous statistics collecting during a single frame's execution.
 ///

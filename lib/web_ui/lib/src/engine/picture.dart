@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
 part of engine;
 
 /// An implementation of [ui.PictureRecorder] backed by a [RecordingCanvas].
@@ -24,7 +23,7 @@ class EnginePictureRecorder implements ui.PictureRecorder {
   bool get isRecording => _isRecording;
 
   @override
-  ui.Picture endRecording() {
+  EnginePicture endRecording() {
     if (!_isRecording) {
       // The mobile version returns an empty picture in this case. To match the
       // behavior we produce a blank picture too.

@@ -15,6 +15,10 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.Settings;
+import android.text.SpannableString;
+import android.text.TextUtils;
+import android.text.style.LocaleSpan;
+import android.text.style.TtsSpan;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowInsets;
@@ -33,7 +37,10 @@ import io.flutter.plugin.platform.PlatformViewsAccessibilityDelegate;
 import io.flutter.util.Predicate;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.Charset;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Bridge between Android's OS accessibility system and Flutter's accessibility system.
@@ -49,7 +56,7 @@ import java.util.*;
  *       View#onInitializeAccessibilityNodeInfo(AccessibilityNodeInfo)}. The {@link
  *       #rootAccessibilityView} is expected to notify the {@code AccessibilityBridge} of relevant
  *       interactions: {@link #onAccessibilityHoverEvent(MotionEvent)}, {@link #reset()}, {@link
- *       #updateSemantics(ByteBuffer, String[])}, and {@link
+ *       #updateSemantics(ByteBuffer, String[], ByteBuffer[])}, and {@link
  *       #updateCustomAccessibilityActions(ByteBuffer, String[])}
  *   <li>An {@link AccessibilityChannel} that is connected to the running Flutter app.
  *   <li>Android's {@link AccessibilityManager} to query and listen for accessibility settings.
@@ -270,9 +277,13 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
 
         /** Flutter's semantics tree has changed. Update our Android-side cache. */
         @Override
-        public void updateSemantics(ByteBuffer buffer, String[] strings) {
+        public void updateSemantics(
+            ByteBuffer buffer, String[] strings, ByteBuffer[] stringAttributeArgs) {
           buffer.order(ByteOrder.LITTLE_ENDIAN);
-          AccessibilityBridge.this.updateSemantics(buffer, strings);
+          for (ByteBuffer args : stringAttributeArgs) {
+            args.order(ByteOrder.LITTLE_ENDIAN);
+          }
+          AccessibilityBridge.this.updateSemantics(buffer, strings, stringAttributeArgs);
         }
       };
 
@@ -496,6 +507,11 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
                 accessibilityFocusedSemanticsNode, o -> o.hasFlag(Flag.HAS_IMPLICIT_SCROLLING)));
   }
 
+  @VisibleForTesting
+  public AccessibilityNodeInfo obtainAccessibilityNodeInfo(View rootView, int virtualViewId) {
+    return AccessibilityNodeInfo.obtain(rootView, virtualViewId);
+  }
+
   /**
    * Returns {@link AccessibilityNodeInfo} for the view corresponding to the given {@code
    * virtualViewId}.
@@ -521,7 +537,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
    */
   @Override
   @SuppressWarnings("deprecation")
-  // Supressing Lint warning for new API, as we are version guarding all calls to newer APIs
+  // Suppressing Lint warning for new API, as we are version guarding all calls to newer APIs
   @SuppressLint("NewApi")
   public AccessibilityNodeInfo createAccessibilityNodeInfo(int virtualViewId) {
     if (virtualViewId >= MIN_ENGINE_GENERATED_NODE_ID) {
@@ -550,7 +566,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     //
     // In this case, register the accessibility node in the view embedder,
     // so the accessibility tree can be mirrored as a subtree of the Flutter accessibility tree.
-    // This is in constrast to hybrid composition where the embeded view is in the view hiearchy,
+    // This is in constrast to hybrid composition where the embedded view is in the view hiearchy,
     // so it doesn't need to be mirrored.
     //
     // See the case down below for how hybrid composition is handled.
@@ -564,7 +580,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     }
 
     AccessibilityNodeInfo result =
-        AccessibilityNodeInfo.obtain(rootAccessibilityView, virtualViewId);
+        obtainAccessibilityNodeInfo(rootAccessibilityView, virtualViewId);
     // Work around for https://github.com/flutter/flutter/issues/2101
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
       result.setViewIdResourceName("");
@@ -633,8 +649,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     }
 
     // These are non-ops on older devices. Attempting to interact with the text will cause Talkback
-    // to read the
-    // contents of the text box instead.
+    // to read the contents of the text box instead.
     if (Build.VERSION.SDK_INT > Build.VERSION_CODES.JELLY_BEAN_MR2) {
       if (semanticsNode.hasAction(Action.SET_SELECTION)) {
         result.addAction(AccessibilityNodeInfo.ACTION_SET_SELECTION);
@@ -647,6 +662,13 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       }
       if (semanticsNode.hasAction(Action.PASTE)) {
         result.addAction(AccessibilityNodeInfo.ACTION_PASTE);
+      }
+    }
+
+    // Set text API isn't available until API 21.
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+      if (semanticsNode.hasAction(Action.SET_TEXT)) {
+        result.addAction(AccessibilityNodeInfo.ACTION_SET_TEXT);
       }
     }
 
@@ -676,6 +698,11 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       result.setParent(rootAccessibilityView);
     }
 
+    if (semanticsNode.previousNodeId != -1
+        && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
+      result.setTraversalAfter(rootAccessibilityView, semanticsNode.previousNodeId);
+    }
+
     Rect bounds = semanticsNode.getGlobalRect();
     if (semanticsNode.parent != null) {
       Rect parentBounds = semanticsNode.parent.getGlobalRect();
@@ -685,7 +712,8 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     } else {
       result.setBoundsInParent(bounds);
     }
-    result.setBoundsInScreen(bounds);
+    final Rect boundsInScreen = getBoundsInScreen(bounds);
+    result.setBoundsInScreen(boundsInScreen);
     result.setVisibleToUser(true);
     result.setEnabled(
         !semanticsNode.hasFlag(Flag.HAS_ENABLED_STATE) || semanticsNode.hasFlag(Flag.IS_ENABLED));
@@ -791,7 +819,10 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     if (semanticsNode.hasFlag(Flag.IS_TEXT_FIELD)) {
       result.setText(semanticsNode.getValueLabelHint());
     } else if (!semanticsNode.hasFlag(Flag.SCOPES_ROUTE)) {
-      result.setContentDescription(semanticsNode.getValueLabelHint());
+      CharSequence content = semanticsNode.getValueLabelHint();
+      if (content != null) {
+        result.setContentDescription(content);
+      }
     }
 
     boolean hasCheckedState = semanticsNode.hasFlag(Flag.HAS_CHECKED_STATE);
@@ -844,7 +875,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         View embeddedView =
             platformViewsAccessibilityDelegate.getPlatformViewById(child.platformViewId);
 
-        // Add the embeded view as a child of the current accessibility node if it's using
+        // Add the embedded view as a child of the current accessibility node if it's using
         // hybrid composition.
         //
         // In this case, the view is in the Activity's view hierarchy, so it doesn't need to be
@@ -859,6 +890,20 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       result.addChild(rootAccessibilityView, child.id);
     }
     return result;
+  }
+
+  /**
+   * Get the bounds in screen with root FlutterView's offset.
+   *
+   * @param bounds the bounds in FlutterView
+   * @return the bounds with offset
+   */
+  private Rect getBoundsInScreen(Rect bounds) {
+    Rect boundsInScreen = new Rect(bounds);
+    int[] locationOnScreen = new int[2];
+    rootAccessibilityView.getLocationOnScreen(locationOnScreen);
+    boundsInScreen.offset(locationOnScreen[0], locationOnScreen[1]);
+    return boundsInScreen;
   }
 
   /**
@@ -918,6 +963,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
             accessibilityChannel.dispatchSemanticsAction(virtualViewId, Action.SCROLL_LEFT);
           } else if (semanticsNode.hasAction(Action.INCREASE)) {
             semanticsNode.value = semanticsNode.increasedValue;
+            semanticsNode.valueAttributes = semanticsNode.increasedValueAttributes;
             // Event causes Android to read out the updated value.
             sendAccessibilityEvent(virtualViewId, AccessibilityEvent.TYPE_VIEW_SELECTED);
             accessibilityChannel.dispatchSemanticsAction(virtualViewId, Action.INCREASE);
@@ -935,6 +981,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
             accessibilityChannel.dispatchSemanticsAction(virtualViewId, Action.SCROLL_RIGHT);
           } else if (semanticsNode.hasAction(Action.DECREASE)) {
             semanticsNode.value = semanticsNode.decreasedValue;
+            semanticsNode.valueAttributes = semanticsNode.decreasedValueAttributes;
             // Event causes Android to read out the updated value.
             sendAccessibilityEvent(virtualViewId, AccessibilityEvent.TYPE_VIEW_SELECTED);
             accessibilityChannel.dispatchSemanticsAction(virtualViewId, Action.DECREASE);
@@ -1034,6 +1081,12 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
           }
           accessibilityChannel.dispatchSemanticsAction(
               virtualViewId, Action.SET_SELECTION, selection);
+          // The voice access expects the semantics node to update immediately. We update the
+          // semantics node based on prediction. If the result is incorrect, it will be updated in
+          // the next frame.
+          SemanticsNode node = flutterSemanticsTree.get(virtualViewId);
+          node.textSelectionBase = selection.get("base");
+          node.textSelectionExtent = selection.get("extent");
           return true;
         }
       case AccessibilityNodeInfo.ACTION_COPY:
@@ -1064,7 +1117,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
           if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
             return false;
           }
-          return performSetText(virtualViewId, arguments);
+          return performSetText(semanticsNode, virtualViewId, arguments);
         }
       default:
         // might be a custom accessibility accessibilityAction.
@@ -1094,6 +1147,9 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         arguments.getInt(AccessibilityNodeInfo.ACTION_ARGUMENT_MOVEMENT_GRANULARITY_INT);
     final boolean extendSelection =
         arguments.getBoolean(AccessibilityNodeInfo.ACTION_ARGUMENT_EXTEND_SELECTION_BOOLEAN);
+    // The voice access expects the semantics node to update immediately. We update the semantics
+    // node based on prediction. If the result is incorrect, it will be updated in the next frame.
+    predictCursorMovement(semanticsNode, granularity, forward, extendSelection);
     switch (granularity) {
       case AccessibilityNodeInfo.MOVEMENT_GRANULARITY_CHARACTER:
         {
@@ -1121,8 +1177,81 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
           return true;
         }
         break;
+      case AccessibilityNodeInfo.MOVEMENT_GRANULARITY_LINE:
+      case AccessibilityNodeInfo.MOVEMENT_GRANULARITY_PARAGRAPH:
+      case AccessibilityNodeInfo.MOVEMENT_GRANULARITY_PAGE:
+        return true;
     }
     return false;
+  }
+
+  private void predictCursorMovement(
+      @NonNull SemanticsNode node, int granularity, boolean forward, boolean extendSelection) {
+    if (node.textSelectionExtent < 0 || node.textSelectionBase < 0) {
+      return;
+    }
+
+    switch (granularity) {
+      case AccessibilityNodeInfo.MOVEMENT_GRANULARITY_CHARACTER:
+        if (forward && node.textSelectionExtent < node.value.length()) {
+          node.textSelectionExtent += 1;
+        } else if (!forward && node.textSelectionExtent > 0) {
+          node.textSelectionExtent -= 1;
+        }
+        break;
+      case AccessibilityNodeInfo.MOVEMENT_GRANULARITY_WORD:
+        if (forward && node.textSelectionExtent < node.value.length()) {
+          Pattern pattern = Pattern.compile("\\p{L}(\\b)");
+          Matcher result = pattern.matcher(node.value.substring(node.textSelectionExtent));
+          // we discard the first result because we want to find the "next" word
+          result.find();
+          if (result.find()) {
+            node.textSelectionExtent += result.start(1);
+          } else {
+            node.textSelectionExtent = node.value.length();
+          }
+        } else if (!forward && node.textSelectionExtent > 0) {
+          // Finds last beginning of the word boundary.
+          Pattern pattern = Pattern.compile("(?s:.*)(\\b)\\p{L}");
+          Matcher result = pattern.matcher(node.value.substring(0, node.textSelectionExtent));
+          if (result.find()) {
+            node.textSelectionExtent = result.start(1);
+          }
+        }
+        break;
+      case AccessibilityNodeInfo.MOVEMENT_GRANULARITY_LINE:
+        if (forward && node.textSelectionExtent < node.value.length()) {
+          // Finds the next new line.
+          Pattern pattern = Pattern.compile("(?!^)(\\n)");
+          Matcher result = pattern.matcher(node.value.substring(node.textSelectionExtent));
+          if (result.find()) {
+            node.textSelectionExtent += result.start(1);
+          } else {
+            node.textSelectionExtent = node.value.length();
+          }
+        } else if (!forward && node.textSelectionExtent > 0) {
+          // Finds the last new line.
+          Pattern pattern = Pattern.compile("(?s:.*)(\\n)");
+          Matcher result = pattern.matcher(node.value.substring(0, node.textSelectionExtent));
+          if (result.find()) {
+            node.textSelectionExtent = result.start(1);
+          } else {
+            node.textSelectionExtent = 0;
+          }
+        }
+        break;
+      case AccessibilityNodeInfo.MOVEMENT_GRANULARITY_PARAGRAPH:
+      case AccessibilityNodeInfo.MOVEMENT_GRANULARITY_PAGE:
+        if (forward) {
+          node.textSelectionExtent = node.value.length();
+        } else {
+          node.textSelectionExtent = 0;
+        }
+        break;
+    }
+    if (!extendSelection) {
+      node.textSelectionBase = node.textSelectionExtent;
+    }
   }
 
   /**
@@ -1131,13 +1260,16 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
    */
   @TargetApi(21)
   @RequiresApi(21)
-  private boolean performSetText(int virtualViewId, @NonNull Bundle arguments) {
+  private boolean performSetText(SemanticsNode node, int virtualViewId, @NonNull Bundle arguments) {
     String newText = "";
     if (arguments != null
         && arguments.containsKey(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE)) {
       newText = arguments.getString(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE);
     }
     accessibilityChannel.dispatchSemanticsAction(virtualViewId, Action.SET_TEXT, newText);
+    // The voice access expects the semantics node to update immediately. We update the semantics
+    // node based on prediction. If the result is incorrect, it will be updated in the next frame.
+    node.value = newText;
     return true;
   }
 
@@ -1341,12 +1473,15 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
    * buffer is encoded by PlatformViewAndroid::UpdateSemantics, and the decode logic must be kept in
    * sync with that method's encoding logic.
    */
-  void updateSemantics(@NonNull ByteBuffer buffer, @NonNull String[] strings) {
+  void updateSemantics(
+      @NonNull ByteBuffer buffer,
+      @NonNull String[] strings,
+      @NonNull ByteBuffer[] stringAttributeArgs) {
     ArrayList<SemanticsNode> updated = new ArrayList<>();
     while (buffer.hasRemaining()) {
       int id = buffer.getInt();
       SemanticsNode semanticsNode = getOrCreateSemanticsNode(id);
-      semanticsNode.updateWith(buffer, strings);
+      semanticsNode.updateWith(buffer, strings, stringAttributeArgs);
       if (semanticsNode.hasFlag(Flag.IS_HIDDEN)) {
         continue;
       }
@@ -1355,6 +1490,14 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       }
       if (semanticsNode.hadPreviousConfig) {
         updated.add(semanticsNode);
+      }
+      if (semanticsNode.platformViewId != -1
+          && !platformViewsAccessibilityDelegate.usesVirtualDisplay(semanticsNode.platformViewId)) {
+        View embeddedView =
+            platformViewsAccessibilityDelegate.getPlatformViewById(semanticsNode.platformViewId);
+        if (embeddedView != null) {
+          embeddedView.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_AUTO);
+        }
       }
     }
 
@@ -1683,6 +1826,8 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
    * Hook called just before a {@link SemanticsNode} is removed from the Android cache of Flutter's
    * semantics tree.
    */
+  @TargetApi(19)
+  @RequiresApi(19)
   private void willRemoveSemanticsNode(SemanticsNode semanticsNodeToBeRemoved) {
     if (BuildConfig.DEBUG) {
       if (!flutterSemanticsTree.containsKey(semanticsNodeToBeRemoved.id)) {
@@ -1709,6 +1854,18 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
           embeddedAccessibilityFocusedNodeId,
           AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED);
       embeddedAccessibilityFocusedNodeId = null;
+    }
+
+    if (semanticsNodeToBeRemoved.platformViewId != -1
+        && !platformViewsAccessibilityDelegate.usesVirtualDisplay(
+            semanticsNodeToBeRemoved.platformViewId)) {
+      View embeddedView =
+          platformViewsAccessibilityDelegate.getPlatformViewById(
+              semanticsNodeToBeRemoved.platformViewId);
+      if (embeddedView != null) {
+        embeddedView.setImportantForAccessibility(
+            View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
+      }
     }
 
     if (accessibilityFocusedSemanticsNode == semanticsNodeToBeRemoved) {
@@ -1817,7 +1974,9 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     // IS_MULTILINE(1 << 19);
     IS_READ_ONLY(1 << 20),
     IS_FOCUSABLE(1 << 21),
-    IS_LINK(1 << 22);
+    IS_LINK(1 << 22),
+    IS_SLIDER(1 << 23),
+    IS_KEYBOARD_KEY(1 << 24);
 
     final int value;
 
@@ -1897,6 +2056,29 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     private String hint;
   }
 
+  // When adding a new StringAttributeType, the classes in these file must be
+  // updated as well.
+  //  * engine/src/flutter/lib/ui/semantics.dart
+  //  * engine/src/flutter/lib/web_ui/lib/src/ui/semantics.dart
+  //  * engine/src/flutter/lib/ui/semantics/string_attribute.h
+
+  private enum StringAttributeType {
+    SPELLOUT,
+    LOCALE,
+  }
+
+  private static class StringAttribute {
+    int start;
+    int end;
+    StringAttributeType type;
+  }
+
+  private static class SpellOutStringAttribute extends StringAttribute {}
+
+  private static class LocaleStringAttribute extends StringAttribute {
+    String locale;
+  }
+
   /**
    * Flutter {@code SemanticsNode} represented in Java/Android.
    *
@@ -1933,10 +2115,28 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     private float scrollExtentMax;
     private float scrollExtentMin;
     private String label;
+    private List<StringAttribute> labelAttributes;
     private String value;
+    private List<StringAttribute> valueAttributes;
     private String increasedValue;
+    private List<StringAttribute> increasedValueAttributes;
     private String decreasedValue;
+    private List<StringAttribute> decreasedValueAttributes;
     private String hint;
+    private List<StringAttribute> hintAttributes;
+
+    // The id of the sibling node that is before this node in traversal
+    // order.
+    //
+    // The child order alone does not guarantee the TalkBack focus traversal
+    // order. The AccessibilityNodeInfo.setTraversalAfter must be called with
+    // its previous sibling to determine the focus traversal order.
+    //
+    // This property is updated in AccessibilityBridge.updateRecursively,
+    // which is called at the end of every semantics update, and it is used in
+    // AccessibilityBridge.createAccessibilityNodeInfo to set the "traversal
+    // after" of this node.
+    private int previousNodeId = -1;
 
     // See Flutter's {@code SemanticsNode#textDirection}.
     private TextDirection textDirection;
@@ -2074,7 +2274,10 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       }
     }
 
-    private void updateWith(@NonNull ByteBuffer buffer, @NonNull String[] strings) {
+    private void updateWith(
+        @NonNull ByteBuffer buffer,
+        @NonNull String[] strings,
+        @NonNull ByteBuffer[] stringAttributeArgs) {
       hadPreviousConfig = true;
       previousValue = value;
       previousLabel = label;
@@ -2102,17 +2305,27 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       int stringIndex = buffer.getInt();
       label = stringIndex == -1 ? null : strings[stringIndex];
 
+      labelAttributes = getStringAttributesFromBuffer(buffer, stringAttributeArgs);
+
       stringIndex = buffer.getInt();
       value = stringIndex == -1 ? null : strings[stringIndex];
+
+      valueAttributes = getStringAttributesFromBuffer(buffer, stringAttributeArgs);
 
       stringIndex = buffer.getInt();
       increasedValue = stringIndex == -1 ? null : strings[stringIndex];
 
+      increasedValueAttributes = getStringAttributesFromBuffer(buffer, stringAttributeArgs);
+
       stringIndex = buffer.getInt();
       decreasedValue = stringIndex == -1 ? null : strings[stringIndex];
 
+      decreasedValueAttributes = getStringAttributesFromBuffer(buffer, stringAttributeArgs);
+
       stringIndex = buffer.getInt();
       hint = stringIndex == -1 ? null : strings[stringIndex];
+
+      hintAttributes = getStringAttributesFromBuffer(buffer, stringAttributeArgs);
 
       textDirection = TextDirection.fromInt(buffer.getInt());
 
@@ -2170,6 +2383,48 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
           customAccessibilityActions.add(action);
         }
       }
+    }
+
+    private List<StringAttribute> getStringAttributesFromBuffer(
+        @NonNull ByteBuffer buffer, @NonNull ByteBuffer[] stringAttributeArgs) {
+      final int attributesCount = buffer.getInt();
+      if (attributesCount == -1) {
+        return null;
+      }
+      final List<StringAttribute> result = new ArrayList<>(attributesCount);
+      for (int i = 0; i < attributesCount; ++i) {
+        final int start = buffer.getInt();
+        final int end = buffer.getInt();
+        final StringAttributeType type = StringAttributeType.values()[buffer.getInt()];
+        switch (type) {
+          case SPELLOUT:
+            {
+              // Pops the -1 size.
+              buffer.getInt();
+              SpellOutStringAttribute attribute = new SpellOutStringAttribute();
+              attribute.start = start;
+              attribute.end = end;
+              attribute.type = type;
+              result.add(attribute);
+              break;
+            }
+          case LOCALE:
+            {
+              final int argsIndex = buffer.getInt();
+              final ByteBuffer args = stringAttributeArgs[argsIndex];
+              LocaleStringAttribute attribute = new LocaleStringAttribute();
+              attribute.start = start;
+              attribute.end = end;
+              attribute.type = type;
+              attribute.locale = Charset.forName("UTF-8").decode(args).toString();
+              result.add(attribute);
+              break;
+            }
+          default:
+            break;
+        }
+      }
+      return result;
     }
 
     private void ensureInverseTransform() {
@@ -2323,7 +2578,10 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         }
       }
 
+      int previousNodeId = -1;
       for (SemanticsNode child : childrenInTraversalOrder) {
+        child.previousNodeId = previousNodeId;
+        previousNodeId = child.id;
         child.updateRecursively(globalTransform, visitedObjects, forceUpdate);
       }
     }
@@ -2345,16 +2603,59 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       return Math.max(a, Math.max(b, Math.max(c, d)));
     }
 
-    private String getValueLabelHint() {
-      StringBuilder sb = new StringBuilder();
-      String[] array = {value, label, hint};
-      for (String word : array) {
+    private CharSequence getValueLabelHint() {
+      CharSequence[] array;
+      if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+        array = new CharSequence[] {value, label, hint};
+      } else {
+        array =
+            new CharSequence[] {
+              createSpannableString(value, valueAttributes),
+              createSpannableString(label, labelAttributes),
+              createSpannableString(hint, hintAttributes),
+            };
+      }
+      CharSequence result = null;
+      for (CharSequence word : array) {
         if (word != null && word.length() > 0) {
-          if (sb.length() > 0) sb.append(", ");
-          sb.append(word);
+          if (result == null || result.length() == 0) {
+            result = word;
+          } else {
+            result = TextUtils.concat(result, ", ", word);
+          }
         }
       }
-      return sb.length() > 0 ? sb.toString() : null;
+      return result;
+    }
+
+    @TargetApi(21)
+    @RequiresApi(21)
+    private SpannableString createSpannableString(String string, List<StringAttribute> attributes) {
+      if (string == null) {
+        return null;
+      }
+      final SpannableString spannableString = new SpannableString(string);
+      if (attributes != null) {
+        for (StringAttribute attribute : attributes) {
+          switch (attribute.type) {
+            case SPELLOUT:
+              {
+                final TtsSpan ttsSpan = new TtsSpan.Builder(TtsSpan.TYPE_VERBATIM).build();
+                spannableString.setSpan(ttsSpan, attribute.start, attribute.end, 0);
+                break;
+              }
+            case LOCALE:
+              {
+                LocaleStringAttribute localeAttribute = (LocaleStringAttribute) attribute;
+                Locale locale = Locale.forLanguageTag(localeAttribute.locale);
+                final LocaleSpan localeSpan = new LocaleSpan(locale);
+                spannableString.setSpan(localeSpan, attribute.start, attribute.end, 0);
+                break;
+              }
+          }
+        }
+      }
+      return spannableString;
     }
   }
 

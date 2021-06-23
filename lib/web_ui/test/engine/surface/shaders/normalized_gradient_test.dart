@@ -2,10 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
-import 'package:ui/src/engine.dart';
+import 'package:ui/src/engine/html/shaders/normalized_gradient.dart';
 import 'package:ui/ui.dart' as ui hide window;
 
 void main() {

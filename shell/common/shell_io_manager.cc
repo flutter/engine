@@ -39,6 +39,10 @@ sk_sp<GrDirectContext> ShellIOManager::CreateCompatibleResourceLoadingContext(
   // ES2 shading language when the ES3 external image extension is missing.
   options.fPreferExternalImagesOverES3 = true;
 
+  // Enabling this flag can increase VRAM consumption. Turn it off until
+  // further notice.
+  options.fReduceOpsTaskSplitting = GrContextOptions::Enable::kNo;
+
 #if !OS_FUCHSIA
   if (auto context = GrDirectContext::MakeGL(gl_interface, options)) {
     // Do not cache textures created by the image decoder.  These textures
@@ -53,7 +57,7 @@ sk_sp<GrDirectContext> ShellIOManager::CreateCompatibleResourceLoadingContext(
 
 ShellIOManager::ShellIOManager(
     sk_sp<GrDirectContext> resource_context,
-    std::shared_ptr<fml::SyncSwitch> is_gpu_disabled_sync_switch,
+    std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch,
     fml::RefPtr<fml::TaskRunner> unref_queue_task_runner)
     : resource_context_(std::move(resource_context)),
       resource_context_weak_factory_(
@@ -125,7 +129,8 @@ fml::WeakPtr<IOManager> ShellIOManager::GetWeakIOManager() const {
 }
 
 // |IOManager|
-std::shared_ptr<fml::SyncSwitch> ShellIOManager::GetIsGpuDisabledSyncSwitch() {
+std::shared_ptr<const fml::SyncSwitch>
+ShellIOManager::GetIsGpuDisabledSyncSwitch() {
   return is_gpu_disabled_sync_switch_;
 }
 

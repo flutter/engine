@@ -125,6 +125,7 @@ void _checkNonConsts() {
     <String, dynamic>{
       'constantInstances': <dynamic>[
         <String, dynamic>{'stringValue': '1', 'intValue': 1, 'targetValue': null},
+        <String, dynamic>{'stringValue': '4', 'intValue': 4, 'targetValue': null},
         <String, dynamic>{'stringValue': '6', 'intValue': 6, 'targetValue': null},
         <String, dynamic>{'stringValue': '8', 'intValue': 8, 'targetValue': null},
         <String, dynamic>{'stringValue': '10', 'intValue': 10, 'targetValue': null},
@@ -139,17 +140,17 @@ void _checkNonConsts() {
         },
         <String, dynamic>{
           'file': 'file://$fixtures/lib/consts_and_non.dart',
-          'line': 17,
+          'line': 16,
+          'column': 26,
+        },
+        <String, dynamic>{
+          'file': 'file://$fixtures/lib/consts_and_non.dart',
+          'line': 16,
           'column': 41,
         },
         <String, dynamic>{
           'file': 'file://$fixtures/lib/consts_and_non.dart',
           'line': 17,
-          'column': 26,
-        },
-        <String, dynamic>{
-          'file': 'file://$fixtures/lib/consts_and_non.dart',
-          'line': 19,
           'column': 26,
         },
         <String, dynamic>{

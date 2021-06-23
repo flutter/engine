@@ -39,13 +39,8 @@ source_set("flutter_windows_headers") {
 
   public_deps = [ "//flutter/shell/platform/common:common_cpp_library_headers" ]
 
-  if (target_os == "winuwp") {
-    configs +=
-        [ "//flutter/shell/platform/common:desktop_library_implementation" ]
-  } else {
-    configs +=
-        [ "//flutter/shell/platform/common:desktop_library_implementation" ]
-  }
+  configs +=
+      [ "//flutter/shell/platform/common:desktop_library_implementation" ]
 
   public_configs =
       [ "//flutter/shell/platform/common:relative_flutter_library_headers" ]
@@ -79,8 +74,6 @@ source_set("flutter_windows_source") {
     "keyboard_key_handler.h",
     "platform_handler.cc",
     "platform_handler.h",
-    "string_conversion.cc",
-    "string_conversion.h",
     "system_utils.h",
     "task_runner.h",
     "text_input_plugin.cc",
@@ -93,9 +86,15 @@ source_set("flutter_windows_source") {
   # Target-specific sources.
   if (target_os == "winuwp") {
     sources += [
+      "display_helper_winuwp.cc",
+      "display_helper_winuwp.h",
       "flutter_window_winuwp.cc",
       "flutter_window_winuwp.h",
       "flutter_windows_winuwp.cc",
+      "game_pad_cursor_winuwp.cc",
+      "game_pad_cursor_winuwp.h",
+      "game_pad_winuwp.cc",
+      "game_pad_winuwp.h",
       "platform_handler_winuwp.cc",
       "platform_handler_winuwp.h",
       "system_utils_winuwp.cc",
@@ -142,10 +141,16 @@ source_set("flutter_windows_source") {
 
   public_configs = [ ":relative_angle_headers" ]
 
-  defines = [
-    "FLUTTER_ENGINE_NO_PROTOTYPES",
-    "USECOREWINDOW",
-  ]
+  if (target_os == "winuwp") {
+    defines = [
+      "_SILENCE_CLANG_COROUTINE_MESSAGE",
+      "FLUTTER_ENGINE_NO_PROTOTYPES",
+    ]
+  } else {
+    defines = [ "FLUTTER_ENGINE_NO_PROTOTYPES" ]
+  }
+
+  public_deps = [ ":string_conversion" ]
 
   deps = [
     ":flutter_windows_headers",
@@ -155,6 +160,7 @@ source_set("flutter_windows_source") {
     "//flutter/shell/platform/common/client_wrapper:client_wrapper",
     "//flutter/shell/platform/embedder:embedder_as_internal_library",
     "//flutter/shell/platform/windows/client_wrapper:client_wrapper_windows",
+    "//flutter/third_party/accessibility",
     "//third_party/angle:libEGL_static",  # the order of libEGL_static and
                                           # libGLESv2_static is important.. if
                                           # reversed, will cause a linker error
@@ -163,6 +169,18 @@ source_set("flutter_windows_source") {
     "//third_party/angle:libGLESv2_static",
     "//third_party/rapidjson",
   ]
+}
+
+# String encoding conversion utilities.
+source_set("string_conversion") {
+  sources = [
+    "string_conversion.cc",
+    "string_conversion.h",
+  ]
+
+  if (target_os == "winuwp") {
+    cflags = [ "/EHsc" ]
+  }
 }
 
 copy("publish_headers_windows") {
@@ -205,11 +223,12 @@ executable("flutter_windows_unittests") {
     # "flutter_windows_engine_unittests.cc", //TODO failing to send / receive platform message get plugins working first.  Blocked on https://github.com/flutter/flutter/issues/74155
     "string_conversion_unittests.cc",
     "system_utils_unittests.cc",
-    "testing/engine_embedder_api_modifier.h",
+    "testing/engine_modifier.h",
   ]
 
   # Target-specific sources.
   if (target_os == "winuwp") {
+    sources += [ "uwptool_utils_unittests.cc" ]
     # TODO(clarkezone) add UWP tests
     # https://github.com/flutter/flutter/issues/70197
   } else {
@@ -220,6 +239,7 @@ executable("flutter_windows_unittests") {
       "flutter_window_win32_unittests.cc",
       "flutter_windows_engine_unittests.cc",
       "flutter_windows_texture_registrar_unittests.cc",
+      "flutter_windows_view_unittests.cc",
       "keyboard_key_channel_handler_unittests.cc",
       "keyboard_key_embedder_handler_unittests.cc",
       "keyboard_key_handler_unittests.cc",
@@ -247,6 +267,10 @@ executable("flutter_windows_unittests") {
     "//flutter/testing",
     "//third_party/rapidjson",
   ]
+
+  if (target_os == "winuwp") {
+    deps += [ ":uwptool_utils" ]
+  }
 }
 
 shared_library("flutter_windows_glfw") {
@@ -269,6 +293,7 @@ group("windows") {
     deps = [
       ":flutter_windows_winuwp",
       ":publish_headers_windows",
+      ":uwptool",
       "//flutter/shell/platform/windows/client_wrapper:publish_wrapper_windows",
     ]
   } else {
@@ -282,4 +307,42 @@ group("windows") {
   if (build_glfw_shell) {
     deps += [ ":windows_glfw" ]
   }
+}
+
+# uwptool utilities.
+source_set("uwptool_utils") {
+  if (target_os == "winuwp") {
+    configs += [ ":cppwinrt_defs" ]
+    cflags = [ "/EHsc" ]
+  }
+
+  sources = [
+    "uwptool_commands.cc",
+    "uwptool_commands.h",
+    "uwptool_utils.cc",
+    "uwptool_utils.h",
+  ]
+
+  deps = [ ":string_conversion" ]
+}
+
+# Command-line tool used by the flutter tool that serves a similar purpose to
+# adb for Android or libimobiledevice for iOS apps. Supports installing,
+# uninstalling, launching apps.
+executable("uwptool") {
+  if (target_os == "winuwp") {
+    configs += [ ":cppwinrt_defs" ]
+    cflags = [ "/EHsc" ]
+    libs = [
+      "windowsapp.lib",
+      "user32.lib",
+    ]
+  }
+
+  sources = [ "uwptool_main.cc" ]
+  deps = [
+    ":string_conversion",
+    ":uwptool_utils",
+    "//flutter/fml:command_line",
+  ]
 }

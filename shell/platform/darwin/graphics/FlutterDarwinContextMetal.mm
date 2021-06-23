@@ -18,6 +18,7 @@ static GrContextOptions CreateMetalGrContextOptions() {
   }
   flutter::PersistentCache::MarkStrategySet();
   options.fPersistentCache = flutter::PersistentCache::GetCacheForProcess();
+  options.fReduceOpsTaskSplitting = GrContextOptions::Enable::kNo;
   return options;
 }
 
@@ -59,6 +60,9 @@ static GrContextOptions CreateMetalGrContextOptions() {
       return nil;
     }
 
+    // The devices are in the same "sharegroup" because they share the same device and command
+    // queues for now. When the resource context gets its own transfer queue, this will have to be
+    // refactored.
     _mainContext = [self createGrContext];
     _resourceContext = [self createGrContext];
 
@@ -76,6 +80,12 @@ static GrContextOptions CreateMetalGrContextOptions() {
   auto contextOptions = CreateMetalGrContextOptions();
   id<MTLDevice> device = _device;
   id<MTLCommandQueue> commandQueue = _commandQueue;
+  return [FlutterDarwinContextMetal createGrContext:device commandQueue:commandQueue];
+}
+
++ (sk_sp<GrDirectContext>)createGrContext:(id<MTLDevice>)device
+                             commandQueue:(id<MTLCommandQueue>)commandQueue {
+  auto contextOptions = CreateMetalGrContextOptions();
   // Skia expect arguments to `MakeMetal` transfer ownership of the reference in for release later
   // when the GrDirectContext is collected.
   return GrDirectContext::MakeMetal((__bridge_retained void*)device,

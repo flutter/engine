@@ -22,14 +22,14 @@ class MockDelegate : public PlatformView::Delegate {
   void OnPlatformViewDestroyed() override {}
   void OnPlatformViewSetNextFrameCallback(const fml::closure& closure) override {}
   void OnPlatformViewSetViewportMetrics(const ViewportMetrics& metrics) override {}
-  void OnPlatformViewDispatchPlatformMessage(fml::RefPtr<PlatformMessage> message) override {}
+  void OnPlatformViewDispatchPlatformMessage(std::unique_ptr<PlatformMessage> message) override {}
   void OnPlatformViewDispatchPointerDataPacket(std::unique_ptr<PointerDataPacket> packet) override {
   }
   void OnPlatformViewDispatchKeyDataPacket(std::unique_ptr<KeyDataPacket> packet,
                                            std::function<void(bool)> callback) override {}
   void OnPlatformViewDispatchSemanticsAction(int32_t id,
                                              SemanticsAction action,
-                                             std::vector<uint8_t> args) override {}
+                                             fml::MallocMapping args) override {}
   void OnPlatformViewSetSemanticsEnabled(bool enabled) override {}
   void OnPlatformViewSetAccessibilityFeatures(int32_t flags) override {}
   void OnPlatformViewRegisterTexture(std::shared_ptr<Texture> texture) override {}
@@ -87,17 +87,24 @@ class MockDelegate : public PlatformView::Delegate {
   OCMVerify([mockEngine notifyLowMemory]);
   OCMReject([mockEngine notifyLowMemory]);
 
+  XCTNSNotificationExpectation* memoryExpectation = [[XCTNSNotificationExpectation alloc]
+      initWithName:UIApplicationDidReceiveMemoryWarningNotification];
   [[NSNotificationCenter defaultCenter]
       postNotificationName:UIApplicationDidReceiveMemoryWarningNotification
                     object:nil];
+  [self waitForExpectations:@[ memoryExpectation ] timeout:5.0];
   OCMVerify([mockEngine notifyLowMemory]);
   OCMReject([mockEngine notifyLowMemory]);
 
+  XCTNSNotificationExpectation* backgroundExpectation = [[XCTNSNotificationExpectation alloc]
+      initWithName:UIApplicationDidEnterBackgroundNotification];
   [[NSNotificationCenter defaultCenter]
       postNotificationName:UIApplicationDidEnterBackgroundNotification
                     object:nil];
+  [self waitForExpectations:@[ backgroundExpectation ] timeout:5.0];
 
   OCMVerify([mockEngine notifyLowMemory]);
+  [mockEngine stopMocking];
 }
 
 @end

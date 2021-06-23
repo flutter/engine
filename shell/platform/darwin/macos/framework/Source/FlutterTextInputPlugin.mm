@@ -11,6 +11,8 @@
 
 #include "flutter/shell/platform/common/text_input_model.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterCodecs.h"
+#import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterAppDelegate.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputSemanticsObject.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
 
 static NSString* const kTextInputChannel = @"flutter/textinput";
@@ -21,6 +23,8 @@ static NSString* const kShowMethod = @"TextInput.show";
 static NSString* const kHideMethod = @"TextInput.hide";
 static NSString* const kClearClientMethod = @"TextInput.clearClient";
 static NSString* const kSetEditingStateMethod = @"TextInput.setEditingState";
+static NSString* const kSetEditableSizeAndTransform = @"TextInput.setEditableSizeAndTransform";
+static NSString* const kSetCaretRect = @"TextInput.setCaretRect";
 static NSString* const kUpdateEditStateResponseMethod = @"TextInputClient.updateEditingState";
 static NSString* const kPerformAction = @"TextInputClient.performAction";
 static NSString* const kMultilineInputType = @"TextInputType.multiline";
@@ -39,6 +43,7 @@ static NSString* const kSelectionIsDirectionalKey = @"selectionIsDirectional";
 static NSString* const kComposingBaseKey = @"composingBase";
 static NSString* const kComposingExtentKey = @"composingExtent";
 static NSString* const kTextKey = @"text";
+static NSString* const kTransformKey = @"transform";
 
 /**
  * The affinity of the current cursor position. If the cursor is at a position representing
@@ -68,7 +73,7 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
 /**
  * Private properties of FlutterTextInputPlugin.
  */
-@interface FlutterTextInputPlugin () <NSTextInputClient>
+@interface FlutterTextInputPlugin ()
 
 /**
  * A text input context, representing a connection to the Cocoa text input system.
@@ -130,6 +135,20 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
  */
 - (void)setEditingState:(NSDictionary*)state;
 
+/**
+ * Informs the Flutter framework of changes to the text input model's state.
+ */
+- (void)updateEditState;
+
+/**
+ * Updates the stringValue and selectedRange that stored in the NSTextView interface
+ * that this plugin inherits from.
+ *
+ * If there is a FlutterTextField uses this plugin as its field editor, this method
+ * will update the stringValue and selectedRange through the API of the FlutterTextField.
+ */
+- (void)updateTextAndSelection;
+
 @end
 
 @implementation FlutterTextInputPlugin {
@@ -137,23 +156,58 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
    * The currently active text input model.
    */
   std::unique_ptr<flutter::TextInputModel> _activeModel;
+
+  /**
+   * Transform for current the editable. Used to determine position of accent selection menu.
+   */
+  CATransform3D _editableTransform;
+
+  /**
+   * Current position of caret in local (editable) coordinates.
+   */
+  CGRect _caretRect;
 }
 
 - (instancetype)initWithViewController:(FlutterViewController*)viewController {
-  self = [super init];
+  // The view needs a non-zero frame.
+  self = [super initWithFrame:NSMakeRect(0, 0, 1, 1)];
   if (self != nil) {
+    _flutterViewController = viewController;
     _channel = [FlutterMethodChannel methodChannelWithName:kTextInputChannel
                                            binaryMessenger:viewController.engine.binaryMessenger
                                                      codec:[FlutterJSONMethodCodec sharedInstance]];
     _shown = FALSE;
-    __weak FlutterTextInputPlugin* weakSelf = self;
+    // NSTextView does not support _weak reference, so this class has to
+    // use __unsafe_unretained and manage the reference by itself.
+    //
+    // Since the dealloc removes the handler, the pointer should
+    // be valid if the handler is ever called.
+    __unsafe_unretained FlutterTextInputPlugin* unsafeSelf = self;
     [_channel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
-      [weakSelf handleMethodCall:call result:result];
+      [unsafeSelf handleMethodCall:call result:result];
     }];
     _textInputContext = [[NSTextInputContext alloc] initWithClient:self];
     _previouslyPressedFlags = 0;
+
+    _flutterViewController = viewController;
+
+    // Initialize with the zero matrix which is not
+    // an affine transform.
+    _editableTransform = CATransform3D();
+    _caretRect = CGRectNull;
   }
   return self;
+}
+
+- (BOOL)isFirstResponder {
+  if (!self.flutterViewController.viewLoaded) {
+    return false;
+  }
+  return [self.flutterViewController.view.window firstResponder] == self;
+}
+
+- (void)dealloc {
+  [_channel setMethodCallHandler:nil];
 }
 
 #pragma mark - Private
@@ -200,10 +254,48 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
     // engine since it sent this update, and needs to now be made to match the
     // engine's version of the state.
     [self updateEditState];
+  } else if ([method isEqualToString:kSetEditableSizeAndTransform]) {
+    NSDictionary* state = call.arguments;
+    [self setEditableTransform:state[kTransformKey]];
+  } else if ([method isEqualToString:kSetCaretRect]) {
+    NSDictionary* rect = call.arguments;
+    [self updateCaretRect:rect];
   } else {
     handled = NO;
   }
   result(handled ? nil : FlutterMethodNotImplemented);
+}
+
+- (void)setEditableTransform:(NSArray*)matrix {
+  CATransform3D* transform = &_editableTransform;
+
+  transform->m11 = [matrix[0] doubleValue];
+  transform->m12 = [matrix[1] doubleValue];
+  transform->m13 = [matrix[2] doubleValue];
+  transform->m14 = [matrix[3] doubleValue];
+
+  transform->m21 = [matrix[4] doubleValue];
+  transform->m22 = [matrix[5] doubleValue];
+  transform->m23 = [matrix[6] doubleValue];
+  transform->m24 = [matrix[7] doubleValue];
+
+  transform->m31 = [matrix[8] doubleValue];
+  transform->m32 = [matrix[9] doubleValue];
+  transform->m33 = [matrix[10] doubleValue];
+  transform->m34 = [matrix[11] doubleValue];
+
+  transform->m41 = [matrix[12] doubleValue];
+  transform->m42 = [matrix[13] doubleValue];
+  transform->m43 = [matrix[14] doubleValue];
+  transform->m44 = [matrix[15] doubleValue];
+}
+
+- (void)updateCaretRect:(NSDictionary*)dictionary {
+  NSAssert(dictionary[@"x"] != nil && dictionary[@"y"] != nil && dictionary[@"width"] != nil &&
+               dictionary[@"height"] != nil,
+           @"Expected a dictionary representing a CGRect, got %@", dictionary);
+  _caretRect = CGRectMake([dictionary[@"x"] doubleValue], [dictionary[@"y"] doubleValue],
+                          [dictionary[@"width"] doubleValue], [dictionary[@"height"] doubleValue]);
 }
 
 - (void)setEditingState:(NSDictionary*)state {
@@ -227,11 +319,10 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
       state[kComposingBaseKey], state[kComposingExtentKey], _activeModel->composing_range());
   size_t cursor_offset = selected_range.base() - composing_range.start();
   _activeModel->SetComposingRange(composing_range, cursor_offset);
+  [_client becomeFirstResponder];
+  [self updateTextAndSelection];
 }
 
-/**
- * Informs the Flutter framework of changes to the text input model's state.
- */
 - (void)updateEditState {
   if (_activeModel == nullptr) {
     return;
@@ -255,6 +346,25 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   };
 
   [_channel invokeMethod:kUpdateEditStateResponseMethod arguments:@[ self.clientID, state ]];
+  [self updateTextAndSelection];
+}
+
+- (void)updateTextAndSelection {
+  NSAssert(_activeModel != nullptr, @"Flutter text model must not be null.");
+  NSString* text = @(_activeModel->GetText().data());
+  int start = _activeModel->selection().base();
+  int extend = _activeModel->selection().extent();
+  NSRange selection = NSMakeRange(MIN(start, extend), ABS(start - extend));
+  // There may be a native text field client if VoiceOver is on.
+  // In this case, this plugin has to update text and selection through
+  // the client in order for VoiceOver to announce the text editing
+  // properly.
+  if (_client) {
+    [_client updateString:text withSelection:selection];
+  } else {
+    self.string = text;
+    [self setSelectedRange:selection];
+  }
 }
 
 #pragma mark -
@@ -283,6 +393,69 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
 }
 
 #pragma mark -
+#pragma mark NSResponder
+
+- (void)keyDown:(NSEvent*)event {
+  [self.flutterViewController keyDown:event];
+}
+
+- (void)keyUp:(NSEvent*)event {
+  [self.flutterViewController keyUp:event];
+}
+
+- (BOOL)performKeyEquivalent:(NSEvent*)event {
+  return [self.flutterViewController performKeyEquivalent:event];
+}
+
+- (void)flagsChanged:(NSEvent*)event {
+  [self.flutterViewController flagsChanged:event];
+}
+
+- (void)mouseDown:(NSEvent*)event {
+  [self.flutterViewController mouseDown:event];
+}
+
+- (void)mouseUp:(NSEvent*)event {
+  [self.flutterViewController mouseUp:event];
+}
+
+- (void)mouseDragged:(NSEvent*)event {
+  [self.flutterViewController mouseDragged:event];
+}
+
+- (void)rightMouseDown:(NSEvent*)event {
+  [self.flutterViewController rightMouseDown:event];
+}
+
+- (void)rightMouseUp:(NSEvent*)event {
+  [self.flutterViewController rightMouseUp:event];
+}
+
+- (void)rightMouseDragged:(NSEvent*)event {
+  [self.flutterViewController rightMouseDragged:event];
+}
+
+- (void)otherMouseDown:(NSEvent*)event {
+  [self.flutterViewController otherMouseDown:event];
+}
+
+- (void)otherMouseUp:(NSEvent*)event {
+  [self.flutterViewController otherMouseUp:event];
+}
+
+- (void)otherMouseDragged:(NSEvent*)event {
+  [self.flutterViewController otherMouseDragged:event];
+}
+
+- (void)mouseMoved:(NSEvent*)event {
+  [self.flutterViewController mouseMoved:event];
+}
+
+- (void)scrollWheel:(NSEvent*)event {
+  [self.flutterViewController scrollWheel:event];
+}
+
+#pragma mark -
 #pragma mark NSTextInputClient
 
 - (void)insertText:(id)string replacementRange:(NSRange)range {
@@ -293,8 +466,7 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   if (range.location != NSNotFound) {
     // The selected range can actually have negative numbers, since it can start
     // at the end of the range if the user selected the text going backwards.
-    // NSRange uses NSUIntegers, however, so we have to cast them to know if the
-    // selection is reversed or not.
+    // Cast to a signed type to determine whether or not the selection is reversed.
     long signedLength = static_cast<long>(range.length);
     long location = range.location;
     long textLength = _activeModel->text_range().end();
@@ -356,20 +528,12 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
 }
 
 - (void)unmarkText {
-  if (_activeModel != nullptr) {
+  if (_activeModel == nullptr) {
     return;
   }
   _activeModel->CommitComposing();
   _activeModel->EndComposing();
   [self updateEditState];
-}
-
-- (NSRange)selectedRange {
-  if (_activeModel == nullptr) {
-    return NSMakeRange(NSNotFound, 0);
-  }
-  return NSMakeRange(_activeModel->selection().base(),
-                     _activeModel->selection().extent() - _activeModel->selection().base());
 }
 
 - (NSRange)markedRange {
@@ -403,9 +567,23 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
 }
 
 - (NSRect)firstRectForCharacterRange:(NSRange)range actualRange:(NSRangePointer)actualRange {
-  // TODO: Implement.
-  // Note: This function can't easily be implemented under the system-message architecture.
-  return CGRectZero;
+  if (!self.flutterViewController.viewLoaded) {
+    return CGRectZero;
+  }
+  // This only determines position of caret instead of any arbitrary range, but it's enough
+  // to properly position accent selection popup
+  if (CATransform3DIsAffine(_editableTransform) && !CGRectEqualToRect(_caretRect, CGRectNull)) {
+    CGRect rect =
+        CGRectApplyAffineTransform(_caretRect, CATransform3DGetAffineTransform(_editableTransform));
+
+    // convert to window coordinates
+    rect = [self.flutterViewController.flutterView convertRect:rect toView:nil];
+
+    // convert to screen coordinates
+    return [self.flutterViewController.flutterView.window convertRectToScreen:rect];
+  } else {
+    return CGRectZero;
+  }
 }
 
 - (NSUInteger)characterIndexForPoint:(NSPoint)point {

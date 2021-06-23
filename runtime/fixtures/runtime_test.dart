@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart=2.10
-
 import 'dart:async';
 import 'dart:isolate';
 import 'dart:ui';
@@ -50,11 +48,6 @@ void notifyNative() native 'NotifyNative';
 
 @pragma('vm:entry-point')
 void testIsolateShutdown() {  }
-
-@pragma('vm:entry-point')
-void testCanSaveCompilationTrace() {
-  notifyResult(saveCompilationTrace().isNotEmpty);
-}
 
 void notifyResult(bool success) native 'NotifyNative';
 void passMessage(String message) native 'PassMessage';
@@ -118,20 +111,25 @@ void testCanConvertListOfInts(List<int> args){
 bool didCallRegistrantBeforeEntrypoint = false;
 
 // Test the Dart plugin registrant.
-// _registerPlugins requires the entrypoint annotation, so the compiler doesn't tree shake it.
 @pragma('vm:entry-point')
-void _registerPlugins() { // ignore: unused_element
-  if (didCallRegistrantBeforeEntrypoint) {
-    throw '_registerPlugins is being called twice';
+class _PluginRegistrant {
+
+  @pragma('vm:entry-point')
+  static void register() {
+    if (didCallRegistrantBeforeEntrypoint) {
+      throw '_registerPlugins is being called twice';
+    }
+    didCallRegistrantBeforeEntrypoint = true;
   }
-  didCallRegistrantBeforeEntrypoint = true;
+
 }
+
 
 @pragma('vm:entry-point')
 void mainForPluginRegistrantTest() { // ignore: unused_element
   if (didCallRegistrantBeforeEntrypoint) {
-    passMessage('_registerPlugins was called');
+    passMessage('_PluginRegistrant.register() was called');
   } else {
-    passMessage('_registerPlugins was not called');
+    passMessage('_PluginRegistrant.register() was not called');
   }
 }

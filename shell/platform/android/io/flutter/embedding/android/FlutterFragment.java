@@ -5,12 +5,14 @@
 package io.flutter.embedding.android;
 
 import android.app.Activity;
+import android.content.ComponentCallbacks2;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -35,11 +37,13 @@ import io.flutter.plugin.platform.PlatformPlugin;
  *   <li>{@link #onRequestPermissionsResult(int, String[], int[])} ()}
  *   <li>{@link #onNewIntent(Intent)} ()}
  *   <li>{@link #onUserLeaveHint()}
- *   <li>{@link #onTrimMemory(int)}
  * </ol>
  *
- * Additionally, when starting an {@code Activity} for a result from this {@code Fragment}, be sure
- * to invoke {@link Fragment#startActivityForResult(Intent, int)} rather than {@link
+ * {@link #onBackPressed()} does not need to be called through if the fragment is constructed by one
+ * of the builders with {@code shouldAutomaticallyHandleOnBackPressed(true)}.
+ *
+ * <p>Additionally, when starting an {@code Activity} for a result from this {@code Fragment}, be
+ * sure to invoke {@link Fragment#startActivityForResult(Intent, int)} rather than {@link
  * android.app.Activity#startActivityForResult(Intent, int)}. If the {@code Activity} version of the
  * method is invoked then this {@code Fragment} will never receive its {@link
  * Fragment#onActivityResult(int, int, Intent)} callback.
@@ -47,24 +51,30 @@ import io.flutter.plugin.platform.PlatformPlugin;
  * <p>If convenient, consider using a {@link FlutterActivity} instead of a {@code FlutterFragment}
  * to avoid the work of forwarding calls.
  *
- * <p>{@code FlutterFragment} supports the use of an existing, cached {@link FlutterEngine}. To use
- * a cached {@link FlutterEngine}, ensure that the {@link FlutterEngine} is stored in {@link
- * FlutterEngineCache} and then use {@link #withCachedEngine(String)} to build a {@code
- * FlutterFragment} with the cached {@link FlutterEngine}'s ID.
+ * <p>{@code FlutterFragment} supports the use of an existing, cached {@link
+ * io.flutter.embedding.engine.FlutterEngine}. To use a cached {@link
+ * io.flutter.embedding.engine.FlutterEngine}, ensure that the {@link
+ * io.flutter.embedding.engine.FlutterEngine} is stored in {@link
+ * io.flutter.embedding.engine.FlutterEngineCache} and then use {@link #withCachedEngine(String)} to
+ * build a {@code FlutterFragment} with the cached {@link
+ * io.flutter.embedding.engine.FlutterEngine}'s ID.
  *
- * <p>It is generally recommended to use a cached {@link FlutterEngine} to avoid a momentary delay
- * when initializing a new {@link FlutterEngine}. The two exceptions to using a cached {@link
+ * <p>It is generally recommended to use a cached {@link io.flutter.embedding.engine.FlutterEngine}
+ * to avoid a momentary delay when initializing a new {@link
+ * io.flutter.embedding.engine.FlutterEngine}. The two exceptions to using a cached {@link
  * FlutterEngine} are:
  *
  * <p>
  *
  * <ul>
  *   <li>When {@code FlutterFragment} is in the first {@code Activity} displayed by the app, because
- *       pre-warming a {@link FlutterEngine} would have no impact in this situation.
+ *       pre-warming a {@link io.flutter.embedding.engine.FlutterEngine} would have no impact in
+ *       this situation.
  *   <li>When you are unsure when/if you will need to display a Flutter experience.
  * </ul>
  *
- * <p>The following illustrates how to pre-warm and cache a {@link FlutterEngine}:
+ * <p>The following illustrates how to pre-warm and cache a {@link
+ * io.flutter.embedding.engine.FlutterEngine}:
  *
  * <pre>{@code
  * // Create and pre-warm a FlutterEngine.
@@ -81,7 +91,8 @@ import io.flutter.plugin.platform.PlatformPlugin;
  * FlutterView}. Using a {@link FlutterView} requires forwarding some calls from an {@code
  * Activity}, as well as forwarding lifecycle calls from an {@code Activity} or a {@code Fragment}.
  */
-public class FlutterFragment extends Fragment implements FlutterActivityAndFragmentDelegate.Host {
+public class FlutterFragment extends Fragment
+    implements FlutterActivityAndFragmentDelegate.Host, ComponentCallbacks2 {
   private static final String TAG = "FlutterFragment";
 
   /** The Dart entrypoint method name that is executed upon initialization. */
@@ -104,14 +115,16 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   protected static final String ARG_SHOULD_ATTACH_ENGINE_TO_ACTIVITY =
       "should_attach_engine_to_activity";
   /**
-   * The ID of a {@link FlutterEngine} cached in {@link FlutterEngineCache} that will be used within
-   * the created {@code FlutterFragment}.
+   * The ID of a {@link io.flutter.embedding.engine.FlutterEngine} cached in {@link
+   * io.flutter.embedding.engine.FlutterEngineCache} that will be used within the created {@code
+   * FlutterFragment}.
    */
   protected static final String ARG_CACHED_ENGINE_ID = "cached_engine_id";
   /**
-   * True if the {@link FlutterEngine} in the created {@code FlutterFragment} should be destroyed
-   * when the {@code FlutterFragment} is destroyed, false if the {@link FlutterEngine} should
-   * outlive the {@code FlutterFragment}.
+   * True if the {@link io.flutter.embedding.engine.FlutterEngine} in the created {@code
+   * FlutterFragment} should be destroyed when the {@code FlutterFragment} is destroyed, false if
+   * the {@link io.flutter.embedding.engine.FlutterEngine} should outlive the {@code
+   * FlutterFragment}.
    */
   protected static final String ARG_DESTROY_ENGINE_WITH_FRAGMENT = "destroy_engine_with_fragment";
   /**
@@ -119,12 +132,19 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
    * when this fragment is created and destroyed.
    */
   protected static final String ARG_ENABLE_STATE_RESTORATION = "enable_state_restoration";
+  /**
+   * True if the fragment should receive {@link #onBackPressed()} events automatically, without
+   * requiring an explicit activity call through.
+   */
+  protected static final String ARG_SHOULD_AUTOMATICALLY_HANDLE_ON_BACK_PRESSED =
+      "should_automatically_handle_on_back_pressed";
 
   /**
    * Creates a {@code FlutterFragment} with a default configuration.
    *
-   * <p>{@code FlutterFragment}'s default configuration creates a new {@link FlutterEngine} within
-   * the {@code FlutterFragment} and uses the following settings:
+   * <p>{@code FlutterFragment}'s default configuration creates a new {@link
+   * io.flutter.embedding.engine.FlutterEngine} within the {@code FlutterFragment} and uses the
+   * following settings:
    *
    * <ul>
    *   <li>Dart entrypoint: "main"
@@ -133,10 +153,11 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
    *   <li>Transparency mode: transparent
    * </ul>
    *
-   * <p>To use a new {@link FlutterEngine} with different settings, use {@link #withNewEngine()}.
+   * <p>To use a new {@link io.flutter.embedding.engine.FlutterEngine} with different settings, use
+   * {@link #withNewEngine()}.
    *
-   * <p>To use a cached {@link FlutterEngine} instead of creating a new one, use {@link
-   * #withCachedEngine(String)}.
+   * <p>To use a cached {@link io.flutter.embedding.engine.FlutterEngine} instead of creating a new
+   * one, use {@link #withCachedEngine(String)}.
    */
   @NonNull
   public static FlutterFragment createDefault() {
@@ -145,7 +166,7 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
 
   /**
    * Returns a {@link NewEngineFragmentBuilder} to create a {@code FlutterFragment} with a new
-   * {@link FlutterEngine} and a desired engine configuration.
+   * {@link io.flutter.embedding.engine.FlutterEngine} and a desired engine configuration.
    */
   @NonNull
   public static NewEngineFragmentBuilder withNewEngine() {
@@ -193,6 +214,7 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
     private RenderMode renderMode = RenderMode.surface;
     private TransparencyMode transparencyMode = TransparencyMode.transparent;
     private boolean shouldAttachEngineToActivity = true;
+    private boolean shouldAutomaticallyHandleOnBackPressed = false;
 
     /**
      * Constructs a {@code NewEngineFragmentBuilder} that is configured to construct an instance of
@@ -239,7 +261,8 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
 
     /**
      * The path to the app bundle which contains the Dart app to execute. Null when unspecified,
-     * which defaults to {@link FlutterLoader#findAppBundlePath()}
+     * which defaults to {@link
+     * io.flutter.embedding.engine.loader.FlutterLoader#findAppBundlePath()}
      */
     @NonNull
     public NewEngineFragmentBuilder appBundlePath(@NonNull String appBundlePath) {
@@ -280,42 +303,67 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
 
     /**
      * Whether or not this {@code FlutterFragment} should automatically attach its {@code Activity}
-     * as a control surface for its {@link FlutterEngine}.
+     * as a control surface for its {@link io.flutter.embedding.engine.FlutterEngine}.
      *
      * <p>Control surfaces are used to provide Android resources and lifecycle events to plugins
-     * that are attached to the {@link FlutterEngine}. If {@code shouldAttachEngineToActivity} is
-     * true then this {@code FlutterFragment} will connect its {@link FlutterEngine} to the
-     * surrounding {@code Activity}, along with any plugins that are registered with that {@link
-     * FlutterEngine}. This allows plugins to access the {@code Activity}, as well as receive {@code
-     * Activity}-specific calls, e.g., {@link android.app.Activity#onNewIntent(Intent)}. If {@code
-     * shouldAttachEngineToActivity} is false, then this {@code FlutterFragment} will not
-     * automatically manage the connection between its {@link FlutterEngine} and the surrounding
-     * {@code Activity}. The {@code Activity} will need to be manually connected to this {@code
-     * FlutterFragment}'s {@link FlutterEngine} by the app developer. See {@link
+     * that are attached to the {@link io.flutter.embedding.engine.FlutterEngine}. If {@code
+     * shouldAttachEngineToActivity} is true then this {@code FlutterFragment} will connect its
+     * {@link io.flutter.embedding.engine.FlutterEngine} to the surrounding {@code Activity}, along
+     * with any plugins that are registered with that {@link FlutterEngine}. This allows plugins to
+     * access the {@code Activity}, as well as receive {@code Activity}-specific calls, e.g., {@link
+     * android.app.Activity#onNewIntent(Intent)}. If {@code shouldAttachEngineToActivity} is false,
+     * then this {@code FlutterFragment} will not automatically manage the connection between its
+     * {@link io.flutter.embedding.engine.FlutterEngine} and the surrounding {@code Activity}. The
+     * {@code Activity} will need to be manually connected to this {@code FlutterFragment}'s {@link
+     * io.flutter.embedding.engine.FlutterEngine} by the app developer. See {@link
      * FlutterEngine#getActivityControlSurface()}.
      *
      * <p>One reason that a developer might choose to manually manage the relationship between the
-     * {@code Activity} and {@link FlutterEngine} is if the developer wants to move the {@link
-     * FlutterEngine} somewhere else. For example, a developer might want the {@link FlutterEngine}
-     * to outlive the surrounding {@code Activity} so that it can be used later in a different
-     * {@code Activity}. To accomplish this, the {@link FlutterEngine} will need to be disconnected
-     * from the surrounding {@code Activity} at an unusual time, preventing this {@code
-     * FlutterFragment} from correctly managing the relationship between the {@link FlutterEngine}
-     * and the surrounding {@code Activity}.
+     * {@code Activity} and {@link io.flutter.embedding.engine.FlutterEngine} is if the developer
+     * wants to move the {@link FlutterEngine} somewhere else. For example, a developer might want
+     * the {@link io.flutter.embedding.engine.FlutterEngine} to outlive the surrounding {@code
+     * Activity} so that it can be used later in a different {@code Activity}. To accomplish this,
+     * the {@link io.flutter.embedding.engine.FlutterEngine} will need to be disconnected from the
+     * surrounding {@code Activity} at an unusual time, preventing this {@code FlutterFragment} from
+     * correctly managing the relationship between the {@link
+     * io.flutter.embedding.engine.FlutterEngine} and the surrounding {@code Activity}.
      *
      * <p>Another reason that a developer might choose to manually manage the relationship between
-     * the {@code Activity} and {@link FlutterEngine} is if the developer wants to prevent, or
-     * explicitly control when the {@link FlutterEngine}'s plugins have access to the surrounding
-     * {@code Activity}. For example, imagine that this {@code FlutterFragment} only takes up part
-     * of the screen and the app developer wants to ensure that none of the Flutter plugins are able
-     * to manipulate the surrounding {@code Activity}. In this case, the developer would not want
-     * the {@link FlutterEngine} to have access to the {@code Activity}, which can be accomplished
-     * by setting {@code shouldAttachEngineToActivity} to {@code false}.
+     * the {@code Activity} and {@link io.flutter.embedding.engine.FlutterEngine} is if the
+     * developer wants to prevent, or explicitly control when the {@link
+     * io.flutter.embedding.engine.FlutterEngine}'s plugins have access to the surrounding {@code
+     * Activity}. For example, imagine that this {@code FlutterFragment} only takes up part of the
+     * screen and the app developer wants to ensure that none of the Flutter plugins are able to
+     * manipulate the surrounding {@code Activity}. In this case, the developer would not want the
+     * {@link io.flutter.embedding.engine.FlutterEngine} to have access to the {@code Activity},
+     * which can be accomplished by setting {@code shouldAttachEngineToActivity} to {@code false}.
      */
     @NonNull
     public NewEngineFragmentBuilder shouldAttachEngineToActivity(
         boolean shouldAttachEngineToActivity) {
       this.shouldAttachEngineToActivity = shouldAttachEngineToActivity;
+      return this;
+    }
+
+    /**
+     * Whether or not this {@code FlutterFragment} should automatically receive {@link
+     * #onBackPressed()} events, rather than requiring an explicit activity call through. Disabled
+     * by default.
+     *
+     * <p>When enabled, the activity will automatically dispatch back-press events to the fragment's
+     * {@link OnBackPressedCallback}, instead of requiring the activity to manually call {@link
+     * #onBackPressed()} in client code. If enabled, do <b>not</b> invoke {@link #onBackPressed()}
+     * manually.
+     *
+     * <p>This behavior relies on the implementation of {@link #popSystemNavigator()}. It's not
+     * recommended to override that method when enabling this attribute, but if you do, you should
+     * always fall back to calling {@code super.popSystemNavigator()} when not relying on custom
+     * behavior.
+     */
+    @NonNull
+    public NewEngineFragmentBuilder shouldAutomaticallyHandleOnBackPressed(
+        boolean shouldAutomaticallyHandleOnBackPressed) {
+      this.shouldAutomaticallyHandleOnBackPressed = shouldAutomaticallyHandleOnBackPressed;
       return this;
     }
 
@@ -345,6 +393,8 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
           transparencyMode != null ? transparencyMode.name() : TransparencyMode.transparent.name());
       args.putBoolean(ARG_SHOULD_ATTACH_ENGINE_TO_ACTIVITY, shouldAttachEngineToActivity);
       args.putBoolean(ARG_DESTROY_ENGINE_WITH_FRAGMENT, true);
+      args.putBoolean(
+          ARG_SHOULD_AUTOMATICALLY_HANDLE_ON_BACK_PRESSED, shouldAutomaticallyHandleOnBackPressed);
       return args;
     }
 
@@ -377,14 +427,16 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
 
   /**
    * Returns a {@link CachedEngineFragmentBuilder} to create a {@code FlutterFragment} with a cached
-   * {@link FlutterEngine} in {@link FlutterEngineCache}.
+   * {@link io.flutter.embedding.engine.FlutterEngine} in {@link
+   * io.flutter.embedding.engine.FlutterEngineCache}.
    *
    * <p>An {@code IllegalStateException} will be thrown during the lifecycle of the {@code
-   * FlutterFragment} if a cached {@link FlutterEngine} is requested but does not exist in the
-   * cache.
+   * FlutterFragment} if a cached {@link io.flutter.embedding.engine.FlutterEngine} is requested but
+   * does not exist in the cache.
    *
-   * <p>To create a {@code FlutterFragment} that uses a new {@link FlutterEngine}, use {@link
-   * #createDefault()} or {@link #withNewEngine()}.
+   * <p>To create a {@code FlutterFragment} that uses a new {@link
+   * io.flutter.embedding.engine.FlutterEngine}, use {@link #createDefault()} or {@link
+   * #withNewEngine()}.
    */
   @NonNull
   public static CachedEngineFragmentBuilder withCachedEngine(@NonNull String engineId) {
@@ -392,8 +444,9 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   }
 
   /**
-   * Builder that creates a new {@code FlutterFragment} that uses a cached {@link FlutterEngine}
-   * with {@code arguments} that correspond to the values set on this {@code Builder}.
+   * Builder that creates a new {@code FlutterFragment} that uses a cached {@link
+   * io.flutter.embedding.engine.FlutterEngine} with {@code arguments} that correspond to the values
+   * set on this {@code Builder}.
    *
    * <p>Subclasses of {@code FlutterFragment} that do not introduce any new arguments can use this
    * {@code Builder} to construct instances of the subclass without subclassing this {@code
@@ -427,6 +480,7 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
     private RenderMode renderMode = RenderMode.surface;
     private TransparencyMode transparencyMode = TransparencyMode.transparent;
     private boolean shouldAttachEngineToActivity = true;
+    private boolean shouldAutomaticallyHandleOnBackPressed = false;
 
     private CachedEngineFragmentBuilder(@NonNull String engineId) {
       this(FlutterFragment.class, engineId);
@@ -439,9 +493,9 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
     }
 
     /**
-     * Pass {@code true} to destroy the cached {@link FlutterEngine} when this {@code
-     * FlutterFragment} is destroyed, or {@code false} for the cached {@link FlutterEngine} to
-     * outlive this {@code FlutterFragment}.
+     * Pass {@code true} to destroy the cached {@link io.flutter.embedding.engine.FlutterEngine}
+     * when this {@code FlutterFragment} is destroyed, or {@code false} for the cached {@link
+     * io.flutter.embedding.engine.FlutterEngine} to outlive this {@code FlutterFragment}.
      */
     @NonNull
     public CachedEngineFragmentBuilder destroyEngineWithFragment(
@@ -487,42 +541,67 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
 
     /**
      * Whether or not this {@code FlutterFragment} should automatically attach its {@code Activity}
-     * as a control surface for its {@link FlutterEngine}.
+     * as a control surface for its {@link io.flutter.embedding.engine.FlutterEngine}.
      *
      * <p>Control surfaces are used to provide Android resources and lifecycle events to plugins
-     * that are attached to the {@link FlutterEngine}. If {@code shouldAttachEngineToActivity} is
-     * true then this {@code FlutterFragment} will connect its {@link FlutterEngine} to the
-     * surrounding {@code Activity}, along with any plugins that are registered with that {@link
-     * FlutterEngine}. This allows plugins to access the {@code Activity}, as well as receive {@code
-     * Activity}-specific calls, e.g., {@link android.app.Activity#onNewIntent(Intent)}. If {@code
-     * shouldAttachEngineToActivity} is false, then this {@code FlutterFragment} will not
-     * automatically manage the connection between its {@link FlutterEngine} and the surrounding
-     * {@code Activity}. The {@code Activity} will need to be manually connected to this {@code
-     * FlutterFragment}'s {@link FlutterEngine} by the app developer. See {@link
+     * that are attached to the {@link io.flutter.embedding.engine.FlutterEngine}. If {@code
+     * shouldAttachEngineToActivity} is true then this {@code FlutterFragment} will connect its
+     * {@link io.flutter.embedding.engine.FlutterEngine} to the surrounding {@code Activity}, along
+     * with any plugins that are registered with that {@link FlutterEngine}. This allows plugins to
+     * access the {@code Activity}, as well as receive {@code Activity}-specific calls, e.g., {@link
+     * android.app.Activity#onNewIntent(Intent)}. If {@code shouldAttachEngineToActivity} is false,
+     * then this {@code FlutterFragment} will not automatically manage the connection between its
+     * {@link io.flutter.embedding.engine.FlutterEngine} and the surrounding {@code Activity}. The
+     * {@code Activity} will need to be manually connected to this {@code FlutterFragment}'s {@link
+     * io.flutter.embedding.engine.FlutterEngine} by the app developer. See {@link
      * FlutterEngine#getActivityControlSurface()}.
      *
      * <p>One reason that a developer might choose to manually manage the relationship between the
-     * {@code Activity} and {@link FlutterEngine} is if the developer wants to move the {@link
-     * FlutterEngine} somewhere else. For example, a developer might want the {@link FlutterEngine}
-     * to outlive the surrounding {@code Activity} so that it can be used later in a different
-     * {@code Activity}. To accomplish this, the {@link FlutterEngine} will need to be disconnected
-     * from the surrounding {@code Activity} at an unusual time, preventing this {@code
-     * FlutterFragment} from correctly managing the relationship between the {@link FlutterEngine}
-     * and the surrounding {@code Activity}.
+     * {@code Activity} and {@link io.flutter.embedding.engine.FlutterEngine} is if the developer
+     * wants to move the {@link FlutterEngine} somewhere else. For example, a developer might want
+     * the {@link io.flutter.embedding.engine.FlutterEngine} to outlive the surrounding {@code
+     * Activity} so that it can be used later in a different {@code Activity}. To accomplish this,
+     * the {@link io.flutter.embedding.engine.FlutterEngine} will need to be disconnected from the
+     * surrounding {@code Activity} at an unusual time, preventing this {@code FlutterFragment} from
+     * correctly managing the relationship between the {@link
+     * io.flutter.embedding.engine.FlutterEngine} and the surrounding {@code Activity}.
      *
      * <p>Another reason that a developer might choose to manually manage the relationship between
-     * the {@code Activity} and {@link FlutterEngine} is if the developer wants to prevent, or
-     * explicitly control when the {@link FlutterEngine}'s plugins have access to the surrounding
-     * {@code Activity}. For example, imagine that this {@code FlutterFragment} only takes up part
-     * of the screen and the app developer wants to ensure that none of the Flutter plugins are able
-     * to manipulate the surrounding {@code Activity}. In this case, the developer would not want
-     * the {@link FlutterEngine} to have access to the {@code Activity}, which can be accomplished
-     * by setting {@code shouldAttachEngineToActivity} to {@code false}.
+     * the {@code Activity} and {@link io.flutter.embedding.engine.FlutterEngine} is if the
+     * developer wants to prevent, or explicitly control when the {@link
+     * io.flutter.embedding.engine.FlutterEngine}'s plugins have access to the surrounding {@code
+     * Activity}. For example, imagine that this {@code FlutterFragment} only takes up part of the
+     * screen and the app developer wants to ensure that none of the Flutter plugins are able to
+     * manipulate the surrounding {@code Activity}. In this case, the developer would not want the
+     * {@link io.flutter.embedding.engine.FlutterEngine} to have access to the {@code Activity},
+     * which can be accomplished by setting {@code shouldAttachEngineToActivity} to {@code false}.
      */
     @NonNull
     public CachedEngineFragmentBuilder shouldAttachEngineToActivity(
         boolean shouldAttachEngineToActivity) {
       this.shouldAttachEngineToActivity = shouldAttachEngineToActivity;
+      return this;
+    }
+
+    /**
+     * Whether or not this {@code FlutterFragment} should automatically receive {@link
+     * #onBackPressed()} events, rather than requiring an explicit activity call through. Disabled
+     * by default.
+     *
+     * <p>When enabled, the activity will automatically dispatch back-press events to the fragment's
+     * {@link OnBackPressedCallback}, instead of requiring the activity to manually call {@link
+     * #onBackPressed()} in client code. If enabled, do <b>not</b> invoke {@link #onBackPressed()}
+     * manually.
+     *
+     * <p>Enabling this behavior relies on explicit behavior in {@link #popSystemNavigator()}. It's
+     * not recommended to override that method when enabling this attribute, but if you do, you
+     * should always fall back to calling {@code super.popSystemNavigator()} when not relying on
+     * custom behavior.
+     */
+    @NonNull
+    public CachedEngineFragmentBuilder shouldAutomaticallyHandleOnBackPressed(
+        boolean shouldAutomaticallyHandleOnBackPressed) {
+      this.shouldAutomaticallyHandleOnBackPressed = shouldAutomaticallyHandleOnBackPressed;
       return this;
     }
 
@@ -545,6 +624,8 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
           ARG_FLUTTERVIEW_TRANSPARENCY_MODE,
           transparencyMode != null ? transparencyMode.name() : TransparencyMode.transparent.name());
       args.putBoolean(ARG_SHOULD_ATTACH_ENGINE_TO_ACTIVITY, shouldAttachEngineToActivity);
+      args.putBoolean(
+          ARG_SHOULD_AUTOMATICALLY_HANDLE_ON_BACK_PRESSED, shouldAutomaticallyHandleOnBackPressed);
       return args;
     }
 
@@ -580,6 +661,14 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   // implementation for details about why it exists.
   @VisibleForTesting /* package */ FlutterActivityAndFragmentDelegate delegate;
 
+  private final OnBackPressedCallback onBackPressedCallback =
+      new OnBackPressedCallback(true) {
+        @Override
+        public void handleOnBackPressed() {
+          onBackPressed();
+        }
+      };
+
   public FlutterFragment() {
     // Ensure that we at least have an empty Bundle of arguments so that we don't
     // need to continually check for null arguments before grabbing one.
@@ -606,6 +695,9 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
     super.onAttach(context);
     delegate = new FlutterActivityAndFragmentDelegate(this);
     delegate.onAttach(context);
+    if (getArguments().getBoolean(ARG_SHOULD_AUTOMATICALLY_HANDLE_ON_BACK_PRESSED, false)) {
+      requireActivity().getOnBackPressedDispatcher().addCallback(this, onBackPressedCallback);
+    }
   }
 
   @Override
@@ -743,6 +835,9 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   /**
    * The hardware back button was pressed.
    *
+   * <p>If the fragment uses {@code shouldAutomaticallyHandleOnBackPressed(true)}, this method
+   * should not be called through. It will be called automatically instead.
+   *
    * <p>See {@link android.app.Activity#onBackPressed()}
    */
   @ActivityCallThrough
@@ -791,7 +886,7 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
    *
    * @param level level
    */
-  @ActivityCallThrough
+  @Override
   public void onTrimMemory(int level) {
     if (stillAttachedForEvent("onTrimMemory")) {
       delegate.onTrimMemory(level);
@@ -825,9 +920,9 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   }
 
   /**
-   * Returns the ID of a statically cached {@link FlutterEngine} to use within this {@code
-   * FlutterFragment}, or {@code null} if this {@code FlutterFragment} does not want to use a cached
-   * {@link FlutterEngine}.
+   * Returns the ID of a statically cached {@link io.flutter.embedding.engine.FlutterEngine} to use
+   * within this {@code FlutterFragment}, or {@code null} if this {@code FlutterFragment} does not
+   * want to use a cached {@link io.flutter.embedding.engine.FlutterEngine}.
    */
   @Nullable
   @Override
@@ -836,11 +931,19 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   }
 
   /**
-   * Returns false if the {@link FlutterEngine} within this {@code FlutterFragment} should outlive
-   * the {@code FlutterFragment}, itself.
+   * Returns true a {@code FlutterEngine} was explicitly created and injected into the {@code
+   * FlutterFragment} rather than one that was created implicitly in the {@code FlutterFragment}.
+   */
+  /* package */ boolean isFlutterEngineInjected() {
+    return delegate.isFlutterEngineFromHost();
+  }
+
+  /**
+   * Returns false if the {@link io.flutter.embedding.engine.FlutterEngine} within this {@code
+   * FlutterFragment} should outlive the {@code FlutterFragment}, itself.
    *
-   * <p>Defaults to true if no custom {@link FlutterEngine is provided}, false if a custom {@link
-   * FlutterEngine} is provided.
+   * <p>Defaults to true if no custom {@link io.flutter.embedding.engine.FlutterEngine is provided},
+   * false if a custom {@link FlutterEngine} is provided.
    */
   @Override
   public boolean shouldDestroyEngineWithHost() {
@@ -875,7 +978,7 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
    * snapshots.
    *
    * <p>When unspecified, the value is null, which defaults to the app bundle path defined in {@link
-   * FlutterLoader#findAppBundlePath()}.
+   * io.flutter.embedding.engine.loader.FlutterLoader#findAppBundlePath()}.
    *
    * <p>Used by this {@code FlutterFragment}'s {@link FlutterActivityAndFragmentDelegate.Host}
    */
@@ -944,18 +1047,22 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   }
 
   /**
-   * Hook for subclasses to return a {@link FlutterEngine} with whatever configuration is desired.
+   * Hook for subclasses to return a {@link io.flutter.embedding.engine.FlutterEngine} with whatever
+   * configuration is desired.
    *
    * <p>By default this method defers to this {@code FlutterFragment}'s surrounding {@code
-   * Activity}, if that {@code Activity} implements {@link FlutterEngineProvider}. If this method is
-   * overridden, the surrounding {@code Activity} will no longer be given an opportunity to provide
-   * a {@link FlutterEngine}, unless the subclass explicitly implements that behavior.
+   * Activity}, if that {@code Activity} implements {@link
+   * io.flutter.embedding.android.FlutterEngineProvider}. If this method is overridden, the
+   * surrounding {@code Activity} will no longer be given an opportunity to provide a {@link
+   * io.flutter.embedding.engine.FlutterEngine}, unless the subclass explicitly implements that
+   * behavior.
    *
-   * <p>Consider returning a cached {@link FlutterEngine} instance from this method to avoid the
-   * typical warm-up time that a new {@link FlutterEngine} instance requires.
+   * <p>Consider returning a cached {@link io.flutter.embedding.engine.FlutterEngine} instance from
+   * this method to avoid the typical warm-up time that a new {@link
+   * io.flutter.embedding.engine.FlutterEngine} instance requires.
    *
-   * <p>If null is returned then a new default {@link FlutterEngine} will be created to back this
-   * {@code FlutterFragment}.
+   * <p>If null is returned then a new default {@link io.flutter.embedding.engine.FlutterEngine}
+   * will be created to back this {@code FlutterFragment}.
    *
    * <p>Used by this {@code FlutterFragment}'s {@link FlutterActivityAndFragmentDelegate.Host}
    */
@@ -977,8 +1084,8 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   }
 
   /**
-   * Hook for subclasses to obtain a reference to the {@link FlutterEngine} that is owned by this
-   * {@code FlutterActivity}.
+   * Hook for subclasses to obtain a reference to the {@link
+   * io.flutter.embedding.engine.FlutterEngine} that is owned by this {@code FlutterActivity}.
    */
   @Nullable
   public FlutterEngine getFlutterEngine() {
@@ -997,10 +1104,11 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   }
 
   /**
-   * Configures a {@link FlutterEngine} after its creation.
+   * Configures a {@link io.flutter.embedding.engine.FlutterEngine} after its creation.
    *
    * <p>This method is called after {@link #provideFlutterEngine(Context)}, and after the given
-   * {@link FlutterEngine} has been attached to the owning {@code FragmentActivity}. See {@link
+   * {@link io.flutter.embedding.engine.FlutterEngine} has been attached to the owning {@code
+   * FragmentActivity}. See {@link
    * io.flutter.embedding.engine.plugins.activity.ActivityControlSurface#attachToActivity(
    * ExclusiveAppComponent, Lifecycle)}.
    *
@@ -1010,8 +1118,8 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
    * the time that this method is invoked.
    *
    * <p>The default behavior of this method is to defer to the owning {@code FragmentActivity} as a
-   * {@link FlutterEngineConfigurator}. Subclasses can override this method if the subclass needs to
-   * override the {@code FragmentActivity}'s behavior, or add to it.
+   * {@link io.flutter.embedding.android.FlutterEngineConfigurator}. Subclasses can override this
+   * method if the subclass needs to override the {@code FragmentActivity}'s behavior, or add to it.
    *
    * <p>Used by this {@code FlutterFragment}'s {@link FlutterActivityAndFragmentDelegate.Host}
    */
@@ -1116,8 +1224,28 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
     return true;
   }
 
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Avoid overriding this method when using {@code
+   * shouldAutomaticallyHandleOnBackPressed(true)}. If you do, you must always {@code return
+   * super.popSystemNavigator()} rather than {@code return false}. Otherwise the navigation behavior
+   * will recurse infinitely between this method and {@link #onBackPressed()}, breaking navigation.
+   */
   @Override
   public boolean popSystemNavigator() {
+    if (getArguments().getBoolean(ARG_SHOULD_AUTOMATICALLY_HANDLE_ON_BACK_PRESSED, false)) {
+      FragmentActivity activity = getActivity();
+      if (activity != null) {
+        // Unless we disable the callback, the dispatcher call will trigger it. This will then
+        // trigger the fragment's onBackPressed() implementation, which will call through to the
+        // dart side and likely call back through to this method, creating an infinite call loop.
+        onBackPressedCallback.setEnabled(false);
+        activity.getOnBackPressedDispatcher().onBackPressed();
+        onBackPressedCallback.setEnabled(true);
+        return true;
+      }
+    }
     // Hook for subclass. No-op if returns false.
     return false;
   }

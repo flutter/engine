@@ -211,8 +211,10 @@ void SceneBuilder::pushImageFilter(Dart_Handle layer_handle,
 
 void SceneBuilder::pushBackdropFilter(Dart_Handle layer_handle,
                                       ImageFilter* filter,
+                                      int blendMode,
                                       fml::RefPtr<EngineLayer> oldLayer) {
-  auto layer = std::make_shared<flutter::BackdropFilterLayer>(filter->filter());
+  auto layer = std::make_shared<flutter::BackdropFilterLayer>(
+      filter->filter(), static_cast<SkBlendMode>(blendMode));
   PushLayer(layer);
   EngineLayer::MakeRetained(layer_handle, layer);
 
@@ -228,13 +230,13 @@ void SceneBuilder::pushShaderMask(Dart_Handle layer_handle,
                                   double maskRectTop,
                                   double maskRectBottom,
                                   int blendMode,
+                                  int filterQualityIndex,
                                   fml::RefPtr<EngineLayer> oldLayer) {
   SkRect rect = SkRect::MakeLTRB(maskRectLeft, maskRectTop, maskRectRight,
                                  maskRectBottom);
-  // TODO: Quality come from the caller
-  SkFilterQuality quality = kLow_SkFilterQuality;
+  auto sampling = ImageFilter::SamplingFromIndex(filterQualityIndex);
   auto layer = std::make_shared<flutter::ShaderMaskLayer>(
-      shader->shader(quality), rect, static_cast<SkBlendMode>(blendMode));
+      shader->shader(sampling), rect, static_cast<SkBlendMode>(blendMode));
   PushLayer(layer);
   EngineLayer::MakeRetained(layer_handle, layer);
 
@@ -286,10 +288,8 @@ void SceneBuilder::addTexture(double dx,
                               double height,
                               int64_t textureId,
                               bool freeze,
-                              int filterQuality) {
-  // TODO: take sampling directly from caller: filter-quality is deprecated
-  auto sampling = SkSamplingOptions(static_cast<SkFilterQuality>(filterQuality),
-                                    SkSamplingOptions::kMedium_asMipmapLinear);
+                              int filterQualityIndex) {
+  auto sampling = ImageFilter::SamplingFromIndex(filterQualityIndex);
   auto layer = std::make_unique<flutter::TextureLayer>(
       SkPoint::Make(dx, dy), SkSize::Make(width, height), textureId, freeze,
       sampling);
@@ -347,9 +347,10 @@ void SceneBuilder::setCheckerboardOffscreenLayers(bool checkerboard) {
 void SceneBuilder::build(Dart_Handle scene_handle) {
   FML_DCHECK(layer_stack_.size() >= 1);
 
-  Scene::create(scene_handle, layer_stack_[0], rasterizer_tracing_threshold_,
-                checkerboard_raster_cache_images_,
-                checkerboard_offscreen_layers_);
+  Scene::create(
+      scene_handle, std::move(layer_stack_[0]), rasterizer_tracing_threshold_,
+      checkerboard_raster_cache_images_, checkerboard_offscreen_layers_);
+  layer_stack_.clear();
   ClearDartWrapper();  // may delete this object.
 }
 

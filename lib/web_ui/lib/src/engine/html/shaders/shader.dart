@@ -2,8 +2,26 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'dart:html' as html;
+import 'dart:math' as math;
+import 'dart:typed_data';
+
+import 'package:ui/ui.dart' as ui;
+
+import 'normalized_gradient.dart';
+import 'shader_builder.dart';
+import 'vertex_shaders.dart';
+import 'webgl_context.dart';
+import '../offscreen_canvas.dart';
+import '../path/path_utils.dart';
+import '../render_vertices.dart';
+import '../../browser_detection.dart';
+import '../../validators.dart';
+import '../../vector_math.dart';
+import '../../util.dart';
+
+const double kFltEpsilon = 1.19209290E-07; // == 1 / (2 ^ 23)
+const double kFltEpsilonSquared = 1.19209290E-07 * 1.19209290E-07;
 
 abstract class EngineGradient implements ui.Gradient {
   /// Hidden constructor to prevent subclassing.
@@ -21,14 +39,14 @@ abstract class EngineGradient implements ui.Gradient {
 class GradientSweep extends EngineGradient {
   GradientSweep(this.center, this.colors, this.colorStops, this.tileMode,
       this.startAngle, this.endAngle, this.matrix4)
-      : assert(_offsetIsValid(center)),
+      : assert(offsetIsValid(center)),
         assert(colors != null), // ignore: unnecessary_null_comparison
         assert(tileMode != null), // ignore: unnecessary_null_comparison
         assert(startAngle != null), // ignore: unnecessary_null_comparison
         assert(endAngle != null), // ignore: unnecessary_null_comparison
         assert(startAngle < endAngle),
         super._() {
-    _validateColorStops(colors, colorStops);
+    validateColorStops(colors, colorStops);
   }
 
   @override
@@ -41,20 +59,17 @@ class GradientSweep extends EngineGradient {
 
     initWebGl();
     // Render gradient into a bitmap and create a canvas pattern.
-    _OffScreenCanvas offScreenCanvas =
-        _OffScreenCanvas(widthInPixels, heightInPixels);
-    _GlContext gl = _OffScreenCanvas.supported
-        ? _GlContext.fromOffscreenCanvas(offScreenCanvas._canvas!)
-        : _GlContext.fromCanvas(
-            offScreenCanvas._glCanvas!, webGLVersion == WebGLVersion.webgl1);
+    OffScreenCanvas offScreenCanvas =
+        OffScreenCanvas(widthInPixels, heightInPixels);
+    GlContext gl = GlContext(offScreenCanvas);
     gl.setViewportSize(widthInPixels, heightInPixels);
 
     NormalizedGradient normalizedGradient =
         NormalizedGradient(colors, stops: colorStops);
 
-    _GlProgram glProgram = gl.useAndCacheProgram(
-        _WebGlRenderer.writeBaseVertexShader(),
+    GlProgram glProgram = gl.cacheProgram(VertexShaders.writeBaseVertexShader(),
         _createSweepFragmentShader(normalizedGradient, tileMode));
+    gl.useProgram(glProgram);
 
     Object tileOffset =
         gl.getUniformLocation(glProgram.program, 'u_tile_offset');
@@ -71,7 +86,7 @@ class GradientSweep extends EngineGradient {
       gl.setUniformMatrix4fv(gradientMatrix, false, matrix4!);
     }
     if (createDataUrl) {
-      return _glRenderer!.drawRectToImageUrl(
+      return glRenderer!.drawRectToImageUrl(
           ui.Rect.fromLTWH(0, 0, shaderBounds.width, shaderBounds.height),
           gl,
           glProgram,
@@ -79,7 +94,7 @@ class GradientSweep extends EngineGradient {
           widthInPixels,
           heightInPixels);
     } else {
-      return _glRenderer!.drawRect(
+      return glRenderer!.drawRect(
           ui.Rect.fromLTWH(0, 0, shaderBounds.width, shaderBounds.height),
           gl,
           glProgram,
@@ -143,14 +158,14 @@ class GradientLinear extends EngineGradient {
     this.colorStops,
     this.tileMode,
     Float32List? matrix,
-  )   : assert(_offsetIsValid(from)),
-        assert(_offsetIsValid(to)),
+  )   : assert(offsetIsValid(from)),
+        assert(offsetIsValid(to)),
         assert(colors != null), // ignore: unnecessary_null_comparison
         assert(tileMode != null), // ignore: unnecessary_null_comparison
-        this.matrix4 = matrix == null ? null : _FastMatrix32(matrix),
+        this.matrix4 = matrix == null ? null : FastMatrix32(matrix),
         super._() {
     if (assertionsEnabled) {
-      _validateColorStops(colors, colorStops);
+      validateColorStops(colors, colorStops);
     }
   }
 
@@ -159,7 +174,7 @@ class GradientLinear extends EngineGradient {
   final List<ui.Color> colors;
   final List<double>? colorStops;
   final ui.TileMode tileMode;
-  final _FastMatrix32? matrix4;
+  final FastMatrix32? matrix4;
 
   @override
   Object createPaintStyle(html.CanvasRenderingContext2D? ctx,
@@ -173,13 +188,16 @@ class GradientLinear extends EngineGradient {
 
   html.CanvasGradient _createCanvasGradient(html.CanvasRenderingContext2D? ctx,
       ui.Rect? shaderBounds, double density) {
-    _FastMatrix32? matrix4 = this.matrix4;
+    FastMatrix32? matrix4 = this.matrix4;
     html.CanvasGradient gradient;
     final double offsetX = shaderBounds!.left;
     final double offsetY = shaderBounds.top;
     if (matrix4 != null) {
-      final centerX = (from.dx + to.dx) / 2.0;
-      final centerY = (from.dy + to.dy) / 2.0;
+      // The matrix is relative to shaderBounds so we shift center by
+      // shaderBounds top-left origin.
+      final centerX = (from.dx + to.dx) / 2.0 - shaderBounds.left;
+      final centerY = (from.dy + to.dy) / 2.0 - shaderBounds.top;
+
       matrix4.transform(from.dx - centerX, from.dy - centerY);
       final double fromX = matrix4.transformedX + centerX;
       final double fromY = matrix4.transformedY + centerY;
@@ -188,7 +206,7 @@ class GradientLinear extends EngineGradient {
           fromX - offsetX,
           fromY - offsetY,
           matrix4.transformedX + centerX - offsetX,
-          matrix4.transformedY - offsetY + centerY);
+          matrix4.transformedY + centerY - offsetY);
     } else {
       gradient = ctx!.createLinearGradient(from.dx - offsetX, from.dy - offsetY,
           to.dx - offsetX, to.dy - offsetY);
@@ -207,20 +225,17 @@ class GradientLinear extends EngineGradient {
     assert(widthInPixels > 0 && heightInPixels > 0);
     initWebGl();
     // Render gradient into a bitmap and create a canvas pattern.
-    _OffScreenCanvas offScreenCanvas =
-        _OffScreenCanvas(widthInPixels, heightInPixels);
-    _GlContext gl = _OffScreenCanvas.supported
-        ? _GlContext.fromOffscreenCanvas(offScreenCanvas._canvas!)
-        : _GlContext.fromCanvas(
-            offScreenCanvas._glCanvas!, webGLVersion == WebGLVersion.webgl1);
+    OffScreenCanvas offScreenCanvas =
+        OffScreenCanvas(widthInPixels, heightInPixels);
+    GlContext gl = GlContext(offScreenCanvas);
     gl.setViewportSize(widthInPixels, heightInPixels);
 
     NormalizedGradient normalizedGradient =
         NormalizedGradient(colors, stops: colorStops);
 
-    _GlProgram glProgram = gl.useAndCacheProgram(
-        _WebGlRenderer.writeBaseVertexShader(),
+    GlProgram glProgram = gl.cacheProgram(VertexShaders.writeBaseVertexShader(),
         _createLinearFragmentShader(normalizedGradient, tileMode));
+    gl.useProgram(glProgram);
 
     // Setup from/to uniforms.
     //
@@ -303,7 +318,7 @@ class GradientLinear extends EngineGradient {
     gl.setUniform2f(uRes, widthInPixels.toDouble(), heightInPixels.toDouble());
 
     if (createDataUrl) {
-      return _glRenderer!.drawRectToImageUrl(
+      return glRenderer!.drawRectToImageUrl(
         ui.Rect.fromLTWH(0, 0, shaderBounds.width,
             shaderBounds.height) /* !! shaderBounds */,
         gl,
@@ -313,7 +328,7 @@ class GradientLinear extends EngineGradient {
         heightInPixels,
       );
     } else {
-      return _glRenderer!.drawRect(
+      return glRenderer!.drawRect(
         ui.Rect.fromLTWH(0, 0, shaderBounds.width,
             shaderBounds.height) /* !! shaderBounds */,
         gl,
@@ -372,8 +387,9 @@ void _addColorStopsToCanvasGradient(html.CanvasGradient gradient,
     gradient.addColorStop(1 - offset, colorToCssString(colors[1])!);
   } else {
     for (int i = 0; i < colors.length; i++) {
+      final double colorStop = colorStops[i].clamp(0.0, 1.0);
       gradient.addColorStop(
-          colorStops[i] * scale + offset, colorToCssString(colors[i])!);
+          colorStop * scale + offset, colorToCssString(colors[i])!);
     }
   }
   if (isDecal) {
@@ -421,7 +437,7 @@ String _writeSharedGradientShader(ShaderBuilder builder, ShaderMethod method,
       probeName = 'tiled_st';
       break;
   }
-  _writeUnrolledBinarySearch(method, 0, gradient.thresholdCount - 1,
+  writeUnrolledBinarySearch(method, 0, gradient.thresholdCount - 1,
       probe: probeName,
       sourcePrefix: 'threshold',
       biasName: 'bias',
@@ -477,21 +493,19 @@ class GradientRadial extends EngineGradient {
 
     initWebGl();
     // Render gradient into a bitmap and create a canvas pattern.
-    _OffScreenCanvas offScreenCanvas =
-        _OffScreenCanvas(widthInPixels, heightInPixels);
-    _GlContext gl = _OffScreenCanvas.supported
-        ? _GlContext.fromOffscreenCanvas(offScreenCanvas._canvas!)
-        : _GlContext.fromCanvas(
-            offScreenCanvas._glCanvas!, webGLVersion == WebGLVersion.webgl1);
+    OffScreenCanvas offScreenCanvas =
+        OffScreenCanvas(widthInPixels, heightInPixels);
+    GlContext gl = GlContext(offScreenCanvas);
     gl.setViewportSize(widthInPixels, heightInPixels);
 
     NormalizedGradient normalizedGradient =
         NormalizedGradient(colors, stops: colorStops);
 
-    _GlProgram glProgram = gl.useAndCacheProgram(
-        _WebGlRenderer.writeBaseVertexShader(),
+    GlProgram glProgram = gl.cacheProgram(
+        VertexShaders.writeBaseVertexShader(),
         _createRadialFragmentShader(
             normalizedGradient, shaderBounds, tileMode));
+    gl.useProgram(glProgram);
 
     Object tileOffset =
         gl.getUniformLocation(glProgram.program, 'u_tile_offset');
@@ -509,7 +523,7 @@ class GradientRadial extends EngineGradient {
         matrix4 == null ? Matrix4.identity().storage : matrix4!);
 
     if (createDataUrl) {
-      return _glRenderer!.drawRectToImageUrl(
+      return glRenderer!.drawRectToImageUrl(
           ui.Rect.fromLTWH(0, 0, shaderBounds.width, shaderBounds.height),
           gl,
           glProgram,
@@ -517,7 +531,7 @@ class GradientRadial extends EngineGradient {
           widthInPixels,
           heightInPixels);
     } else {
-      return _glRenderer!.drawRect(
+      return glRenderer!.drawRect(
           ui.Rect.fromLTWH(0, 0, shaderBounds.width, shaderBounds.height),
           gl,
           glProgram,
@@ -647,25 +661,79 @@ class GradientConical extends GradientRadial {
 
 /// Backend implementation of [ui.ImageFilter].
 ///
-/// Currently only `blur` is supported.
-class EngineImageFilter implements ui.ImageFilter {
-  EngineImageFilter.blur({this.sigmaX = 0.0, this.sigmaY = 0.0});
+/// Currently only `blur` and `matrix` are supported.
+abstract class EngineImageFilter implements ui.ImageFilter {
+  factory EngineImageFilter.blur({
+    required double sigmaX,
+    required double sigmaY,
+    required ui.TileMode tileMode,
+  }) = _BlurEngineImageFilter;
+
+  factory EngineImageFilter.matrix({
+    required Float64List matrix,
+    required ui.FilterQuality filterQuality,
+  }) = _MatrixEngineImageFilter;
+
+  EngineImageFilter._();
+
+  String get filterAttribute => '';
+  String get transformAttribute => '';
+}
+
+class _BlurEngineImageFilter extends EngineImageFilter {
+  _BlurEngineImageFilter({ this.sigmaX = 0.0, this.sigmaY = 0.0, this.tileMode = ui.TileMode.clamp }) : super._();
 
   final double sigmaX;
   final double sigmaY;
+  final ui.TileMode tileMode;
+
+  // TODO(flutter_web): implement TileMode.
+  String get filterAttribute => blurSigmasToCssString(sigmaX, sigmaY);
 
   @override
   bool operator ==(Object other) {
-    return other is EngineImageFilter &&
+    if (other.runtimeType != runtimeType)
+      return false;
+    return other is _BlurEngineImageFilter &&
+        other.tileMode == tileMode &&
         other.sigmaX == sigmaX &&
         other.sigmaY == sigmaY;
   }
 
   @override
-  int get hashCode => ui.hashValues(sigmaX, sigmaY);
+  int get hashCode => ui.hashValues(sigmaX, sigmaY, tileMode);
 
   @override
   String toString() {
-    return 'ImageFilter.blur($sigmaX, $sigmaY)';
+    return 'ImageFilter.blur($sigmaX, $sigmaY, $tileMode)';
+  }
+}
+
+class _MatrixEngineImageFilter extends EngineImageFilter {
+  _MatrixEngineImageFilter({ required Float64List matrix, required this.filterQuality })
+      : webMatrix = Float64List.fromList(matrix),
+        super._();
+
+  final Float64List webMatrix;
+  final ui.FilterQuality filterQuality;
+
+  // TODO(flutter_web): implement FilterQuality.
+  String get transformAttribute => float64ListToCssTransform(webMatrix);
+
+  @override
+  bool operator ==(Object other) {
+    if (other.runtimeType != runtimeType)
+      return false;
+    return other is _MatrixEngineImageFilter
+        && other.filterQuality == filterQuality
+        && listEquals<double>(other.webMatrix, webMatrix);
+  }
+
+  @override
+  int get hashCode => ui.hashValues(ui.hashList(webMatrix), filterQuality);
+
+  @override
+  String toString() {
+    return 'ImageFilter.matrix($webMatrix, $filterQuality)';
   }
 }
