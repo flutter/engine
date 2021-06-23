@@ -53,10 +53,11 @@ TEST(FrameTimingsRecorderTest, RecordRasterTimes) {
   const auto raster_start = fml::TimePoint::Now();
   const auto raster_end = raster_start + fml::TimeDelta::FromMillisecondsF(16);
   recorder->RecordRasterStart(raster_start);
-  recorder->RecordRasterEnd(raster_end);
+  const auto timing = recorder->RecordRasterEnd(raster_end);
 
   ASSERT_EQ(raster_start, recorder->GetRasterStartTime());
   ASSERT_EQ(raster_end, recorder->GetRasterEndTime());
+  ASSERT_EQ(recorder->GetFrameNumber(), timing.GetFrameNumber());
 }
 
 // Windows and Fuchsia don't allow testing with killed by signal.
@@ -86,6 +87,34 @@ TEST(FrameTimingsRecorderTest, ThrowWhenRecordRasterBeforeBuildEnd) {
 }
 
 #endif
+
+TEST(FrameTimingsRecorderTest, RecordersHaveUniqueFrameNumbers) {
+  auto recorder1 = std::make_unique<FrameTimingsRecorder>();
+  auto recorder2 = std::make_unique<FrameTimingsRecorder>();
+
+  ASSERT_TRUE(recorder2->GetFrameNumber() > recorder1->GetFrameNumber());
+}
+
+TEST(FrameTimingsRecorderTest, ClonedHasSameFrameNumber) {
+  auto recorder = std::make_unique<FrameTimingsRecorder>();
+
+  const auto now = fml::TimePoint::Now();
+  recorder->RecordVsync(now, now);
+
+  auto cloned = recorder->CloneUntil(FrameTimingsRecorder::State::kVsync);
+  ASSERT_EQ(recorder->GetFrameNumber(), cloned->GetFrameNumber());
+}
+
+TEST(FrameTimingsRecorderTest, FrameNumberTraceArgIsValid) {
+  auto recorder = std::make_unique<FrameTimingsRecorder>();
+
+  char buff[50];
+  sprintf(buff, "%d", static_cast<int>(recorder->GetFrameNumber()));
+  std::string actual_arg = buff;
+  std::string expected_arg = recorder->GetFrameNumberTraceArg();
+
+  ASSERT_EQ(actual_arg, expected_arg);
+}
 
 }  // namespace testing
 }  // namespace flutter

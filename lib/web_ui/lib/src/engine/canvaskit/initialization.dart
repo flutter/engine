@@ -1,8 +1,18 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+@JS()
+library canvaskit_initialization;
 
-part of engine;
+import 'dart:async';
+import 'dart:html' as html;
+import 'dart:js' as js;
+
+import 'package:js/js.dart';
+import 'package:ui/src/engine.dart' show isDesktop, kProfileMode, domRenderer;
+
+import 'canvaskit_api.dart';
+import 'fonts.dart';
 
 /// A JavaScript entrypoint that allows developer to set rendering backend
 /// at runtime before launching the application.
@@ -10,7 +20,7 @@ part of engine;
 external String? get requestedRendererType;
 
 /// Whether to use CanvasKit as the rendering backend.
-bool get useCanvasKit => _autoDetect ? _detectRenderer() : _useSkia;
+bool get useCanvasKit => flutterWebAutoDetect ? _detectRenderer() : _useSkia;
 
 /// Returns true if CanvasKit is used.
 ///
@@ -28,7 +38,7 @@ bool _detectRenderer() {
 ///
 /// Using flutter tools option "--web-render=auto" or not specifying one
 /// would set the value to true. Otherwise, it would be false.
-const bool _autoDetect =
+const bool flutterWebAutoDetect =
     bool.fromEnvironment('FLUTTER_WEB_AUTO_DETECT', defaultValue: true);
 
 /// Enable the Skia-based rendering backend.
@@ -74,7 +84,7 @@ const bool canvasKitForceCpuOnly = bool.fromEnvironment(
 /// NPM, update this URL to `https://unpkg.com/canvaskit-wasm@0.34.0/bin/`.
 const String canvasKitBaseUrl = String.fromEnvironment(
   'FLUTTER_WEB_CANVASKIT_URL',
-  defaultValue: 'https://unpkg.com/canvaskit-wasm@0.26.0/bin/',
+  defaultValue: 'https://unpkg.com/canvaskit-wasm@0.27.0/bin/',
 );
 final String canvasKitBuildUrl =
     canvasKitBaseUrl + (kProfileMode ? 'profiling/' : '');
@@ -87,20 +97,23 @@ String canvasKitWasmModuleUrl(String file) => canvasKitBuildUrl + file;
 /// This calls `CanvasKitInit` and assigns the global [canvasKit] object.
 Future<void> initializeCanvasKit() {
   final Completer<void> canvasKitCompleter = Completer<void>();
-  late StreamSubscription<html.Event> loadSubscription;
-  loadSubscription = domRenderer.canvasKitScript!.onLoad.listen((_) {
-    loadSubscription.cancel();
-    final CanvasKitInitPromise canvasKitInitPromise =
-        CanvasKitInit(CanvasKitInitOptions(
-      locateFile: js.allowInterop(
-          (String file, String unusedBase) => canvasKitWasmModuleUrl(file)),
-    ));
-    canvasKitInitPromise.then(js.allowInterop((CanvasKit ck) {
-      canvasKit = ck;
-      windowFlutterCanvasKit = canvasKit;
-      canvasKitCompleter.complete();
-    }));
-  });
+  if (windowFlutterCanvasKit != null) {
+    canvasKit = windowFlutterCanvasKit!;
+    canvasKitCompleter.complete();
+  } else {
+    domRenderer.canvasKitLoaded!.then((_) {
+      final CanvasKitInitPromise canvasKitInitPromise =
+          CanvasKitInit(CanvasKitInitOptions(
+        locateFile: js.allowInterop(
+            (String file, String unusedBase) => canvasKitWasmModuleUrl(file)),
+      ));
+      canvasKitInitPromise.then(js.allowInterop((CanvasKit ck) {
+        canvasKit = ck;
+        windowFlutterCanvasKit = canvasKit;
+        canvasKitCompleter.complete();
+      }));
+    });
+  }
 
   /// Add a Skia scene host.
   skiaSceneHost = html.Element.tag('flt-scene');

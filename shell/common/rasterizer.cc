@@ -75,11 +75,17 @@ fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> Rasterizer::GetSnapshotDelegate()
 
 void Rasterizer::Setup(std::unique_ptr<Surface> surface) {
   surface_ = std::move(surface);
+
   if (max_cache_bytes_.has_value()) {
     SetResourceCacheMaxBytes(max_cache_bytes_.value(),
                              user_override_resource_cache_bytes_);
   }
-  compositor_context_->OnGrContextCreated();
+
+  auto context_switch = surface_->MakeRenderContextCurrent();
+  if (context_switch->GetResult()) {
+    compositor_context_->OnGrContextCreated();
+  }
+
   if (external_view_embedder_ &&
       external_view_embedder_->SupportsDynamicThreadMerging() &&
       !raster_thread_merger_) {
@@ -101,7 +107,12 @@ void Rasterizer::Setup(std::unique_ptr<Surface> surface) {
 }
 
 void Rasterizer::Teardown() {
-  compositor_context_->OnGrContextDestroyed();
+  auto context_switch =
+      surface_ ? surface_->MakeRenderContextCurrent() : nullptr;
+  if (context_switch && context_switch->GetResult()) {
+    compositor_context_->OnGrContextDestroyed();
+  }
+
   surface_.reset();
   last_layer_tree_.reset();
 
@@ -137,6 +148,10 @@ void Rasterizer::NotifyLowMemoryWarning() const {
         << "Rasterizer::NotifyLowMemoryWarning called with no GrContext.";
     return;
   }
+  auto context_switch = surface_->MakeRenderContextCurrent();
+  if (!context_switch->GetResult()) {
+    return;
+  }
   context->performDeferredCleanup(std::chrono::milliseconds(0));
 }
 
@@ -158,9 +173,10 @@ void Rasterizer::DrawLastLayerTree(
 
 void Rasterizer::Draw(
     std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder,
-    fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline,
+    std::shared_ptr<Pipeline<flutter::LayerTree>> pipeline,
     LayerTreeDiscardCallback discardCallback) {
-  TRACE_EVENT0("flutter", "GPURasterizer::Draw");
+  TRACE_EVENT_WITH_FRAME_NUMBER(frame_timings_recorder, "flutter",
+                                "GPURasterizer::Draw");
   if (raster_thread_merger_ &&
       !raster_thread_merger_->IsOnRasterizingThread()) {
     // we yield and let this frame be serviced on the right thread.
@@ -720,6 +736,11 @@ void Rasterizer::SetResourceCacheMaxBytes(size_t max_bytes, bool from_user) {
 
   GrDirectContext* context = surface_->GetContext();
   if (context) {
+    auto context_switch = surface_->MakeRenderContextCurrent();
+    if (!context_switch->GetResult()) {
+      return;
+    }
+
     int max_resources;
     context->getResourceCacheLimits(&max_resources, nullptr);
     context->setResourceCacheLimits(max_resources, max_bytes);

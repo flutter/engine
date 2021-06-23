@@ -36,7 +36,7 @@ class Animator final {
     virtual void OnAnimatorNotifyIdle(int64_t deadline) = 0;
 
     virtual void OnAnimatorDraw(
-        fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline,
+        std::shared_ptr<Pipeline<flutter::LayerTree>> pipeline,
         std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) = 0;
 
     virtual void OnAnimatorDrawLastLayerTree(
@@ -104,11 +104,11 @@ class Animator final {
   std::shared_ptr<VsyncWaiter> waiter_;
 
   std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder_;
+  uint64_t frame_request_number_ = 1;
   int64_t dart_frame_deadline_;
-  fml::RefPtr<LayerTreePipeline> layer_tree_pipeline_;
+  std::shared_ptr<LayerTreePipeline> layer_tree_pipeline_;
   fml::Semaphore pending_frame_semaphore_;
   LayerTreePipeline::ProducerContinuation producer_continuation_;
-  int64_t frame_number_;
   bool paused_;
   bool regenerate_layer_tree_;
   bool frame_scheduled_;

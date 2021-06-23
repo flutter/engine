@@ -21,11 +21,12 @@
 #include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
 #include "flutter/shell/common/shell.h"
+#include "flutter/shell/platform/fuchsia/flutter/accessibility_bridge.h"
 
+#include "default_session_connection.h"
 #include "flutter_runner_product_configuration.h"
 #include "fuchsia_external_view_embedder.h"
 #include "isolate_configurator.h"
-#include "session_connection.h"
 #include "thread.h"
 #include "vulkan_surface_producer.h"
 
@@ -74,7 +75,7 @@ class Engine final {
   const std::string thread_label_;
   std::array<Thread, 3> threads_;
 
-  std::optional<SessionConnection> session_connection_;
+  std::shared_ptr<DefaultSessionConnection> session_connection_;
   std::optional<VulkanSurfaceProducer> surface_producer_;
   std::shared_ptr<FuchsiaExternalViewEmbedder> external_view_embedder_;
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
@@ -83,6 +84,7 @@ class Engine final {
 
   std::unique_ptr<IsolateConfigurator> isolate_configurator_;
   std::unique_ptr<flutter::Shell> shell_;
+  std::unique_ptr<AccessibilityBridge> accessibility_bridge_;
 
   fuchsia::intl::PropertyProviderPtr intl_property_provider_;
 
@@ -95,9 +97,15 @@ class Engine final {
 
   fml::WeakPtrFactory<Engine> weak_factory_;
 
-  static void WarmupSkps(fml::BasicTaskRunner* concurrent_task_runner,
-                         fml::BasicTaskRunner* raster_task_runner,
-                         VulkanSurfaceProducer& surface_producer);
+  static void WarmupSkps(
+      fml::BasicTaskRunner* concurrent_task_runner,
+      fml::BasicTaskRunner* raster_task_runner,
+      VulkanSurfaceProducer& surface_producer,
+      uint64_t width,
+      uint64_t height,
+      std::shared_ptr<flutter::AssetManager> asset_manager,
+      std::optional<const std::vector<std::string>> skp_names,
+      std::optional<std::function<void(uint32_t)>> completion_callback);
 
   void OnMainIsolateStart();
 
@@ -107,6 +115,7 @@ class Engine final {
 
   void DebugWireframeSettingsChanged(bool enabled);
   void CreateView(int64_t view_id,
+                  ViewCallback on_view_created,
                   ViewIdCallback on_view_bound,
                   bool hit_testable,
                   bool focusable);

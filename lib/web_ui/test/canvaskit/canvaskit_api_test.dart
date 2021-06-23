@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'dart:typed_data';
 
 import 'package:test/bootstrap/browser.dart';
@@ -286,13 +285,13 @@ void _vertexModeTests() {
 void _imageTests() {
   test('MakeAnimatedImageFromEncoded makes a non-animated image', () {
     final SkAnimatedImage nonAnimated =
-        canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage);
+        canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!;
     expect(nonAnimated.getFrameCount(), 1);
     expect(nonAnimated.getRepetitionCount(), 0);
     expect(nonAnimated.width(), 1);
     expect(nonAnimated.height(), 1);
 
-    final SkImage frame = nonAnimated.getCurrentFrame();
+    final SkImage frame = nonAnimated.makeImageAtCurrentFrame();
     expect(frame.width(), 1);
     expect(frame.height(), 1);
 
@@ -311,13 +310,13 @@ void _imageTests() {
 
   test('MakeAnimatedImageFromEncoded makes an animated image', () {
     final SkAnimatedImage animated =
-        canvasKit.MakeAnimatedImageFromEncoded(kAnimatedGif);
+        canvasKit.MakeAnimatedImageFromEncoded(kAnimatedGif)!;
     expect(animated.getFrameCount(), 3);
     expect(animated.getRepetitionCount(), -1); // animates forever
     expect(animated.width(), 1);
     expect(animated.height(), 1);
     for (int i = 0; i < 100; i++) {
-      final SkImage frame = animated.getCurrentFrame();
+      final SkImage frame = animated.makeImageAtCurrentFrame();
       expect(frame.width(), 1);
       expect(frame.height(), 1);
       expect(animated.decodeNextFrame(), 100);
@@ -621,7 +620,7 @@ SkPath _testClosedSkPath() {
 }
 
 void _pathTests() {
-  SkPath path;
+  late SkPath path;
 
   setUp(() {
     path = SkPath();
@@ -706,8 +705,8 @@ void _pathTests() {
 
   test('contains', () {
     final SkPath testPath = _testClosedSkPath();
-    expect(testPath.contains(15, 15), true);
-    expect(testPath.contains(100, 100), false);
+    expect(testPath.contains(15, 15), isTrue);
+    expect(testPath.contains(100, 100), isFalse);
   });
 
   test('cubicTo', () {
@@ -778,8 +777,8 @@ void _pathTests() {
   });
 
   test('isEmpty', () {
-    expect(SkPath().isEmpty(), true);
-    expect(_testClosedSkPath().isEmpty(), false);
+    expect(SkPath().isEmpty(), isTrue);
+    expect(_testClosedSkPath().isEmpty(), isFalse);
   });
 
   test('copy', () {
@@ -798,12 +797,12 @@ void _pathTests() {
   test('SkContourMeasureIter/SkContourMeasure', () {
     final SkContourMeasureIter iter =
         SkContourMeasureIter(_testClosedSkPath(), false, 1.0);
-    final SkContourMeasure measure1 = iter.next();
+    final SkContourMeasure measure1 = iter.next()!;
     expect(measure1.length(), 40);
     expect(measure1.getPosTan(5), Float32List.fromList(<double>[15, 10, 1, 0]));
     expect(
         measure1.getPosTan(15), Float32List.fromList(<double>[20, 15, 0, 1]));
-    expect(measure1.isClosed(), true);
+    expect(measure1.isClosed(), isTrue);
 
     // Starting with a box path:
     //
@@ -829,7 +828,7 @@ void _pathTests() {
     final SkPath segment = measure1.getSegment(5, 15, true);
     expect(fromSkRect(segment.getBounds()), ui.Rect.fromLTRB(15, 10, 20, 15));
 
-    final SkContourMeasure measure2 = iter.next();
+    final SkContourMeasure? measure2 = iter.next();
     expect(measure2, isNull);
   });
 
@@ -867,8 +866,8 @@ void _skVerticesTests() {
 }
 
 void _canvasTests() {
-  SkPictureRecorder recorder;
-  SkCanvas canvas;
+  late SkPictureRecorder recorder;
+  late SkCanvas canvas;
 
   setUp(() {
     recorder = SkPictureRecorder();
@@ -954,9 +953,9 @@ void _canvasTests() {
 
   test('drawAtlas', () {
     final SkAnimatedImage image =
-        canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage);
+        canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!;
     canvas.drawAtlas(
-      image.getCurrentFrame(),
+      image.makeImageAtCurrentFrame(),
       Float32List.fromList([0, 0, 1, 1]),
       Float32List.fromList([1, 0, 2, 3]),
       SkPaint(),
@@ -983,9 +982,9 @@ void _canvasTests() {
 
   test('drawImageOptions', () {
     final SkAnimatedImage image =
-        canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage);
+        canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!;
     canvas.drawImageOptions(
-      image.getCurrentFrame(),
+      image.makeImageAtCurrentFrame(),
       10,
       20,
       canvasKit.FilterMode.Linear,
@@ -996,9 +995,9 @@ void _canvasTests() {
 
   test('drawImageCubic', () {
     final SkAnimatedImage image =
-        canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage);
+        canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!;
     canvas.drawImageCubic(
-      image.getCurrentFrame(),
+      image.makeImageAtCurrentFrame(),
       10,
       20,
       0.3,
@@ -1009,9 +1008,9 @@ void _canvasTests() {
 
   test('drawImageRectOptions', () {
     final SkAnimatedImage image =
-        canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage);
+        canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!;
     canvas.drawImageRectOptions(
-      image.getCurrentFrame(),
+      image.makeImageAtCurrentFrame(),
       Float32List.fromList([0, 0, 1, 1]),
       Float32List.fromList([0, 0, 1, 1]),
       canvasKit.FilterMode.Linear,
@@ -1022,9 +1021,9 @@ void _canvasTests() {
 
   test('drawImageRectCubic', () {
     final SkAnimatedImage image =
-        canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage);
+        canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!;
     canvas.drawImageRectCubic(
-      image.getCurrentFrame(),
+      image.makeImageAtCurrentFrame(),
       Float32List.fromList([0, 0, 1, 1]),
       Float32List.fromList([0, 0, 1, 1]),
       0.3,
@@ -1035,9 +1034,9 @@ void _canvasTests() {
 
   test('drawImageNine', () {
     final SkAnimatedImage image =
-        canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage);
+        canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!;
     canvas.drawImageNine(
-      image.getCurrentFrame(),
+      image.makeImageAtCurrentFrame(),
       Float32List.fromList([0, 0, 1, 1]),
       Float32List.fromList([0, 0, 1, 1]),
       canvasKit.FilterMode.Linear,
@@ -1154,10 +1153,6 @@ void _canvasTests() {
     canvas.translate(4, 5);
   });
 
-  test('flush', () {
-    canvas.flush();
-  });
-
   test('drawPicture', () {
     final SkPictureRecorder otherRecorder = SkPictureRecorder();
     final SkCanvas otherCanvas =
@@ -1194,7 +1189,7 @@ void _canvasTests() {
     );
     final CkPicture picture =
         CkPicture(otherRecorder.finishRecordingAsPicture(), null, null);
-    final CkImage image = await picture.toImage(1, 1);
+    final CkImage image = (await picture.toImage(1, 1)) as CkImage;
     final ByteData rawData =
         await image.toByteData(format: ui.ImageByteFormat.rawRgba);
     expect(rawData.lengthInBytes, greaterThan(0));
@@ -1289,6 +1284,7 @@ void _paragraphTests() {
       ..letterSpacing = 5
       ..wordSpacing = 10
       ..heightMultiplier = 2.5
+      ..halfLeading = true
       ..locale = 'en_CA'
       ..fontFamilies = <String>['Roboto', 'serif']
       ..fontStyle = (SkFontStyle()
@@ -1310,6 +1306,7 @@ void _paragraphTests() {
         ..weight = canvasKit.FontWeight.Bold)
       ..fontSize = 23
       ..heightMultiplier = 5
+      ..halfLeading = true
       ..leading = 6
       ..strutEnabled = true
       ..forceStrutHeight = false;
@@ -1338,11 +1335,13 @@ void _paragraphTests() {
         SkPaint());
     builder.addText('!');
     builder.pop();
+    builder.pushStyle(canvasKit.TextStyle(SkTextStyleProperties()..halfLeading = true));
+    builder.pop();
     final SkParagraph paragraph = builder.build();
     paragraph.layout(55);
     expect(paragraph.getAlphabeticBaseline(),
         within<double>(distance: 0.5, from: 20.7));
-    expect(paragraph.didExceedMaxLines(), false);
+    expect(paragraph.didExceedMaxLines(), isFalse);
     expect(paragraph.getHeight(), 25);
     expect(paragraph.getIdeographicBaseline(),
         within<double>(distance: 0.5, from: 25));
@@ -1360,7 +1359,7 @@ void _paragraphTests() {
     final SkLineMetrics lineMetrics = paragraph.getLineMetrics().single;
     expect(lineMetrics.ascent, within<double>(distance: 0.5, from: 20.7));
     expect(lineMetrics.descent, within<double>(distance: 0.2, from: 4.3));
-    expect(lineMetrics.isHardBreak, true);
+    expect(lineMetrics.isHardBreak, isTrue);
     expect(lineMetrics.baseline, within<double>(distance: 0.5, from: 20.7));
     expect(lineMetrics.height, 25);
     expect(lineMetrics.left, 2.5);

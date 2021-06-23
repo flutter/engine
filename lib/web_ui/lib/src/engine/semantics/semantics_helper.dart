@@ -51,6 +51,15 @@ class SemanticsHelper {
   html.Element prepareAccessibilityPlaceholder() {
     return _semanticsEnabler.prepareAccessibilityPlaceholder();
   }
+
+  /// Stops waiting for the user to enable semantics and removes the
+  /// placeholder.
+  ///
+  /// This is used when semantics is enabled programmatically and therefore the
+  /// placehodler is no longer needed.
+  void dispose() {
+    _semanticsEnabler.dispose();
+  }
 }
 
 @visibleForTesting
@@ -92,33 +101,23 @@ abstract class SemanticsEnabler {
   ///
   /// If not they are sent to framework as normal events.
   bool get isWaitingToEnableSemantics;
+
+  /// Stops waiting for the user to enable semantics and removes the placeholder.
+  void dispose();
 }
 
+/// The desktop semantics enabler uses a simpler strategy compared to mobile.
+///
+/// A placeholder element is created completely outside the view and is not
+/// reachable via touch or mouse. Assistive technology can still find it either
+/// using keyboard shortcuts or via next/previous touch gesture (for touch
+/// screens). This simplification removes the need for pointer event
+/// disambiguation or timers. The placeholder simply waits for a click event
+/// and enables semantics.
 @visibleForTesting
 class DesktopSemanticsEnabler extends SemanticsEnabler {
-  /// We do not immediately enable semantics when the user requests it, but
-  /// instead wait for a short period of time before doing it. This is because
-  /// the request comes as an event targeted on the [_semanticsPlaceholder].
-  /// This event, depending on the browser, comes as a burst of events.
-  /// For example, Safari on MacOS sends "pointerup", "pointerdown". So during a
-  /// short time period we consume all events and prevent forwarding to the
-  /// framework. Otherwise, the events will be interpreted twice, once as a
-  /// request to activate semantics, and a second time by Flutter's gesture
-  /// recognizers.
-  @visibleForTesting
-  Timer? semanticsActivationTimer;
-
   /// A temporary placeholder used to capture a request to activate semantics.
   html.Element? _semanticsPlaceholder;
-
-  /// The number of events we processed that could potentially activate
-  /// semantics.
-  int semanticsActivationAttempts = 0;
-
-  /// Instructs [_tryEnableSemantics] to remove [_semanticsPlaceholder].
-  ///
-  /// The placeholder is removed upon any next event.
-  bool _schedulePlaceholderRemoval = false;
 
   /// Whether we are waiting for the user to enable semantics.
   @override
@@ -126,10 +125,10 @@ class DesktopSemanticsEnabler extends SemanticsEnabler {
 
   @override
   bool tryEnableSemantics(html.Event event) {
-    if (_schedulePlaceholderRemoval) {
-      _semanticsPlaceholder!.remove();
-      _semanticsPlaceholder = null;
-      semanticsActivationTimer = null;
+    // Semantics may be enabled programmatically. If there's a race between that
+    // and the DOM event, we may end up here while there's no longer a placeholder
+    // to work with.
+    if (!isWaitingToEnableSemantics) {
       return true;
     }
 
@@ -154,37 +153,17 @@ class DesktopSemanticsEnabler extends SemanticsEnabler {
       return true;
     }
 
-    semanticsActivationAttempts += 1;
-    if (semanticsActivationAttempts >= kMaxSemanticsActivationAttempts) {
-      // We have received multiple user events, none of which resulted in
-      // semantics activation. This is a signal that the user is not interested
-      // in semantics, and so we will stop waiting for it.
-      _schedulePlaceholderRemoval = true;
-      return true;
-    }
-
-    if (semanticsActivationTimer != null) {
-      // We are in a waiting period to activate a timer. While the timer is
-      // active we should consume events pertaining to semantics activation.
-      // Otherwise the event will also be interpreted by the framework and
-      // potentially result in activating a gesture in the app.
-      return false;
-    }
-
     // Check for the event target.
     final bool enableConditionPassed = (event.target == _semanticsPlaceholder);
 
-    if (enableConditionPassed) {
-      assert(semanticsActivationTimer == null);
-      semanticsActivationTimer = Timer(_periodToConsumeEvents, () {
-        EngineSemanticsOwner.instance.semanticsEnabled = true;
-        _schedulePlaceholderRemoval = true;
-      });
-      return false;
+    if (!enableConditionPassed) {
+      // This was not a semantics activating event; forward as normal.
+      return true;
     }
 
-    // This was not a semantics activating event; forward as normal.
-    return true;
+    EngineSemanticsOwner.instance.semanticsEnabled = true;
+    dispose();
+    return false;
   }
 
   @override
@@ -199,7 +178,7 @@ class DesktopSemanticsEnabler extends SemanticsEnabler {
 
     // Adding roles to semantics placeholder. 'aria-live' will make sure that
     // the content is announced to the assistive technology user as soon as the
-    // page receives focus. 'tab-index' makes sure the button is the first
+    // page receives focus. 'tabindex' makes sure the button is the first
     // target of tab. 'aria-label' is used to define the placeholder message
     // to the assistive technology user.
     placeholder
@@ -207,6 +186,8 @@ class DesktopSemanticsEnabler extends SemanticsEnabler {
       ..setAttribute('aria-live', 'true')
       ..setAttribute('tabindex', '0')
       ..setAttribute('aria-label', placeholderMessage);
+
+    // The placeholder sits just outside the window so only AT can reach it.
     placeholder.style
       ..position = 'absolute'
       ..left = '-1px'
@@ -214,6 +195,12 @@ class DesktopSemanticsEnabler extends SemanticsEnabler {
       ..width = '1px'
       ..height = '1px';
     return placeholder;
+  }
+
+  @override
+  void dispose() {
+    _semanticsPlaceholder?.remove();
+    _semanticsPlaceholder = null;
   }
 }
 
@@ -254,6 +241,13 @@ class MobileSemanticsEnabler extends SemanticsEnabler {
 
   @override
   bool tryEnableSemantics(html.Event event) {
+    // Semantics may be enabled programmatically. If there's a race between that
+    // and the DOM event, we may end up here while there's no longer a placeholder
+    // to work with.
+    if (!isWaitingToEnableSemantics) {
+      return true;
+    }
+
     if (_schedulePlaceholderRemoval) {
       // The event type can also be click for VoiceOver.
       final bool removeNow = (browserEngine != BrowserEngine.webkit ||
@@ -261,9 +255,7 @@ class MobileSemanticsEnabler extends SemanticsEnabler {
           event.type == 'pointerup' ||
           event.type == 'click');
       if (removeNow) {
-        _semanticsPlaceholder!.remove();
-        _semanticsPlaceholder = null;
-        semanticsActivationTimer = null;
+        dispose();
       }
       return true;
     }
@@ -307,72 +299,63 @@ class MobileSemanticsEnabler extends SemanticsEnabler {
       return false;
     }
 
-    // In Chrome the debouncing works well enough to detect accessibility
-    // request.
-    final bool blinkEnableConditionPassed =
-        (browserEngine == BrowserEngine.blink ||
-            browserEngine == BrowserEngine.samsung) &&
-        EngineSemanticsOwner.instance.gestureMode ==
-            GestureMode.browserGestures;
+    // Look at where exactly (within 1 pixel) the event landed. If it landed
+    // exactly in the middle of the placeholder we interpret it as a signal
+    // to enable accessibility. This is because when VoiceOver and TalkBack
+    // generate a tap it lands it in the middle of the focused element. This
+    // method is a bit flawed in that a user's finger could theoretically land
+    // in the middle of the element too. However, the chance of that happening
+    // is very small. Even low-end phones typically have >2 million pixels
+    // (e.g. Moto G4). It is very unlikely that a user will land their finger
+    // exactly in the middle. In the worst case an unlucky user would
+    // accidentally enable accessibility and the app will be slightly slower
+    // than normal, but the app will continue functioning as normal. Our
+    // semantics tree is designed to not interfere with Flutter's gesture
+    // detection.
+    bool enableConditionPassed = false;
+    html.Point<num> activationPoint;
 
-    // In Safari debouncing doesn't work. Instead we look at where exactly
-    // (within 1 pixel) the event landed. If it landed exactly in the middle of
-    // the placeholder we interpret it as a signal to enable accessibility. This
-    // is because when VoiceOver generates a tap it lands it in the middle of
-    // the focused element. This method is a bit flawed in that a user's finger
-    // could theoretically land in the middle of the element too. However, the
-    // chance of that happening is very small. Even low-end phones typically
-    // have >2 million pixels (e.g. Moto G4). It is very unlikely that a user
-    // will land their finger exactly in the middle. In the worst case an
-    // unlucky user would accidentally enable accessibility and the app will be
-    // slightly slower than normal, but the app will continue functioning as
-    // normal. Our semantics tree is designed to not interfere with Flutter's
-    // gesture detection.
-    bool safariEnableConditionPassed = false;
-    if (browserEngine == BrowserEngine.webkit) {
-      html.Point<num> activationPoint;
-
-      switch (event.type) {
-        case 'click':
-          final html.MouseEvent click = event as html.MouseEvent;
-          activationPoint = click.offset;
-          break;
-        case 'touchstart':
-        case 'touchend':
-          final html.TouchEvent touch = event as html.TouchEvent;
-          activationPoint = touch.changedTouches!.first.client;
-          break;
-        case 'pointerdown':
-        case 'pointerup':
-          final html.PointerEvent touch = event as html.PointerEvent;
-          activationPoint = new html.Point(touch.client.x, touch.client.y);
-          break;
-        default:
-          // The event is not relevant, forward to framework as normal.
-          return true;
-      }
-
-      final html.Rectangle<num> activatingElementRect =
-          domRenderer.glassPaneElement!.getBoundingClientRect();
-      final double midX = (activatingElementRect.left +
-              (activatingElementRect.right - activatingElementRect.left) / 2)
-          .toDouble();
-      final double midY = (activatingElementRect.top +
-              (activatingElementRect.bottom - activatingElementRect.top) / 2)
-          .toDouble();
-      final double deltaX = activationPoint.x.toDouble() - midX;
-      final double deltaY = activationPoint.y.toDouble() - midY;
-      final double deltaSquared = deltaX * deltaX + deltaY * deltaY;
-      if (deltaSquared < 1.0) {
-        safariEnableConditionPassed = true;
-      }
+    switch (event.type) {
+      case 'click':
+        final html.MouseEvent click = event as html.MouseEvent;
+        activationPoint = click.offset;
+        break;
+      case 'touchstart':
+      case 'touchend':
+        final html.TouchEvent touch = event as html.TouchEvent;
+        activationPoint = touch.changedTouches!.first.client;
+        break;
+      case 'pointerdown':
+      case 'pointerup':
+        final html.PointerEvent touch = event as html.PointerEvent;
+        activationPoint = new html.Point(touch.client.x, touch.client.y);
+        break;
+      default:
+        // The event is not relevant, forward to framework as normal.
+        return true;
     }
 
-    if (blinkEnableConditionPassed || safariEnableConditionPassed) {
+    final html.Rectangle<num> activatingElementRect =
+        _semanticsPlaceholder!.getBoundingClientRect();
+    final double midX = (activatingElementRect.left +
+            (activatingElementRect.right - activatingElementRect.left) / 2)
+        .toDouble();
+    final double midY = (activatingElementRect.top +
+            (activatingElementRect.bottom - activatingElementRect.top) / 2)
+        .toDouble();
+    final double deltaX = activationPoint.x.toDouble() - midX;
+    final double deltaY = activationPoint.y.toDouble() - midY;
+    final double deltaSquared = deltaX * deltaX + deltaY * deltaY;
+    if (deltaSquared < 1.0) {
+      enableConditionPassed = true;
+    }
+
+    if (enableConditionPassed) {
       assert(semanticsActivationTimer == null);
+      _schedulePlaceholderRemoval = true;
       semanticsActivationTimer = Timer(_periodToConsumeEvents, () {
+        dispose();
         EngineSemanticsOwner.instance.semanticsEnabled = true;
-        _schedulePlaceholderRemoval = true;
       });
       return false;
     }
@@ -402,5 +385,12 @@ class MobileSemanticsEnabler extends SemanticsEnabler {
       ..bottom = '0';
 
     return placeholder;
+  }
+
+  @override
+  void dispose() {
+    _semanticsPlaceholder?.remove();
+    _semanticsPlaceholder = null;
+    semanticsActivationTimer = null;
   }
 }

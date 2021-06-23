@@ -87,14 +87,14 @@ void FlutterWindowsView::RegisterKeyboardHandlers(
 #endif
   auto key_handler =
       std::make_unique<flutter::KeyboardKeyHandler>(redispatch_event);
-  key_handler->AddDelegate(
-      std::make_unique<KeyboardKeyChannelHandler>(messenger));
   key_handler->AddDelegate(std::make_unique<KeyboardKeyEmbedderHandler>(
       [this](const FlutterKeyEvent& event, FlutterKeyEventCallback callback,
              void* user_data) {
         return engine_->SendKeyEvent(event, callback, user_data);
       },
       get_key_state));
+  key_handler->AddDelegate(
+      std::make_unique<KeyboardKeyChannelHandler>(messenger));
   AddKeyboardHandler(std::move(key_handler));
   AddKeyboardHandler(
       std::make_unique<flutter::TextInputPlugin>(messenger, this));
@@ -485,6 +485,10 @@ void FlutterWindowsView::DestroyRenderSurface() {
 
 WindowsRenderTarget* FlutterWindowsView::GetRenderTarget() const {
   return render_target_.get();
+}
+
+PlatformWindow FlutterWindowsView::GetPlatformWindow() const {
+  return binding_handler_->GetPlatformWindow();
 }
 
 FlutterWindowsEngine* FlutterWindowsView::GetEngine() {

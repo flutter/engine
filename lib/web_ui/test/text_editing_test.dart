@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'dart:async';
 import 'dart:html';
 import 'dart:js_util' as js_util;
@@ -13,7 +12,6 @@ import 'package:test/test.dart';
 
 import 'package:ui/src/engine.dart' hide window;
 
-import 'matchers.dart';
 import 'spy.dart';
 
 /// The `keyCode` of the "Enter" key.
@@ -24,9 +22,9 @@ const MethodCodec codec = JSONMethodCodec();
 /// Add unit tests for [FirefoxTextEditingStrategy].
 /// TODO(nurhan): https://github.com/flutter/flutter/issues/46891
 
-DefaultTextEditingStrategy editingElement;
-EditingState lastEditingState;
-String lastInputAction;
+DefaultTextEditingStrategy? editingStrategy;
+EditingState? lastEditingState;
+String? lastInputAction;
 
 final InputConfiguration singlelineConfig = InputConfiguration(
   inputType: EngineInputType.text,
@@ -41,11 +39,11 @@ final InputConfiguration multilineConfig = InputConfiguration(
 final Map<String, dynamic> flutterMultilineConfig =
     createFlutterConfig('multiline');
 
-void trackEditingState(EditingState editingState) {
+void trackEditingState(EditingState? editingState) {
   lastEditingState = editingState;
 }
 
-void trackInputAction(String inputAction) {
+void trackInputAction(String? inputAction) {
   lastInputAction = inputAction;
 }
 
@@ -57,18 +55,21 @@ void testMain() {
   tearDown(() {
     lastEditingState = null;
     lastInputAction = null;
-    cleanTextEditingElement();
+    cleanTextEditingStrategy();
     cleanTestFlags();
     clearBackUpDomElementIfExists();
   });
 
   group('$GloballyPositionedTextEditingStrategy', () {
-    HybridTextEditing testTextEditing;
+    late HybridTextEditing testTextEditing;
 
     setUp(() {
       testTextEditing = HybridTextEditing();
-      editingElement = GloballyPositionedTextEditingStrategy(testTextEditing);
-      testTextEditing.useCustomEditableElement(editingElement);
+      editingStrategy = GloballyPositionedTextEditingStrategy(testTextEditing);
+      testTextEditing.debugTextEditingStrategyOverride = editingStrategy;
+      testTextEditing.configuration = singlelineConfig;
+      // Ensure the glass-pane and its shadow root exist.
+      domRenderer.reset();
     });
 
     test('Creates element when enabled and removes it when disabled', () {
@@ -78,103 +79,116 @@ void testMain() {
       );
       // The focus initially is on the body.
       expect(document.activeElement, document.body);
+      expect(defaultTextEditingRoot.activeElement, null);
 
-      editingElement.enable(
+      editingStrategy!.enable(
         singlelineConfig,
         onChange: trackEditingState,
         onAction: trackInputAction,
       );
+
       expect(
-        document.getElementsByTagName('input'),
+        defaultTextEditingRoot.querySelectorAll('input'),
         hasLength(1),
       );
-      final InputElement input = document.getElementsByTagName('input')[0];
+      final Element input = defaultTextEditingRoot.querySelector('input')!;
       // Now the editing element should have focus.
-      expect(document.activeElement, input);
-      expect(editingElement.domElement, input);
+
+      expect(document.activeElement, domRenderer.glassPaneElement);
+      expect(defaultTextEditingRoot.activeElement, input);
+
+      expect(editingStrategy!.domElement, input);
       expect(input.getAttribute('type'), null);
 
-      // Input is appended to the glass pane.
-      expect(domRenderer.glassPaneElement.contains(editingElement.domElement),
-          isTrue);
+      // Input is appended to the right point of the DOM.
+      expect(defaultTextEditingRoot.contains(editingStrategy!.domElement), isTrue);
 
-      editingElement.disable();
+      editingStrategy!.disable();
       expect(
-        document.getElementsByTagName('input'),
+        defaultTextEditingRoot.querySelectorAll('input'),
         hasLength(0),
       );
       // The focus is back to the body.
       expect(document.activeElement, document.body);
+      expect(defaultTextEditingRoot.activeElement, null);
     });
 
     test('Respects read-only config', () {
-      final InputConfiguration config = InputConfiguration(readOnly: true);
-      editingElement.enable(
+      final InputConfiguration config = InputConfiguration(
+        readOnly: true,
+      );
+      editingStrategy!.enable(
         config,
         onChange: trackEditingState,
         onAction: trackInputAction,
       );
-      expect(document.getElementsByTagName('input'), hasLength(1));
-      final InputElement input = document.getElementsByTagName('input')[0];
-      expect(editingElement.domElement, input);
+      expect(defaultTextEditingRoot.querySelectorAll('input'), hasLength(1));
+      final Element input = defaultTextEditingRoot.querySelector('input')!;
+      expect(editingStrategy!.domElement, input);
       expect(input.getAttribute('readonly'), 'readonly');
 
-      editingElement.disable();
+      editingStrategy!.disable();
     });
 
     test('Knows how to create password fields', () {
-      final InputConfiguration config = InputConfiguration(obscureText: true);
-      editingElement.enable(
+      final InputConfiguration config = InputConfiguration(
+        obscureText: true,
+      );
+      editingStrategy!.enable(
         config,
         onChange: trackEditingState,
         onAction: trackInputAction,
       );
-      expect(document.getElementsByTagName('input'), hasLength(1));
-      final InputElement input = document.getElementsByTagName('input')[0];
-      expect(editingElement.domElement, input);
+      expect(defaultTextEditingRoot.querySelectorAll('input'), hasLength(1));
+      final Element input = defaultTextEditingRoot.querySelector('input')!;
+      expect(editingStrategy!.domElement, input);
       expect(input.getAttribute('type'), 'password');
 
-      editingElement.disable();
+      editingStrategy!.disable();
     });
 
     test('Knows to turn autocorrect off', () {
-      final InputConfiguration config = InputConfiguration(autocorrect: false);
-      editingElement.enable(
+      final InputConfiguration config = InputConfiguration(
+        autocorrect: false,
+      );
+      editingStrategy!.enable(
         config,
         onChange: trackEditingState,
         onAction: trackInputAction,
       );
-      expect(document.getElementsByTagName('input'), hasLength(1));
-      final InputElement input = document.getElementsByTagName('input')[0];
-      expect(editingElement.domElement, input);
+      expect(defaultTextEditingRoot.querySelectorAll('input'), hasLength(1));
+      final Element input = defaultTextEditingRoot.querySelector('input')!;
+      expect(editingStrategy!.domElement, input);
       expect(input.getAttribute('autocorrect'), 'off');
 
-      editingElement.disable();
+      editingStrategy!.disable();
     });
 
     test('Knows to turn autocorrect on', () {
-      final InputConfiguration config = InputConfiguration(autocorrect: true);
-      editingElement.enable(
+      final InputConfiguration config = InputConfiguration(
+        autocorrect: true,
+      );
+      editingStrategy!.enable(
         config,
         onChange: trackEditingState,
         onAction: trackInputAction,
       );
-      expect(document.getElementsByTagName('input'), hasLength(1));
-      final InputElement input = document.getElementsByTagName('input')[0];
-      expect(editingElement.domElement, input);
+      expect(defaultTextEditingRoot.querySelectorAll('input'), hasLength(1));
+      final Element input = defaultTextEditingRoot.querySelector('input')!;
+      expect(editingStrategy!.domElement, input);
       expect(input.getAttribute('autocorrect'), 'on');
 
-      editingElement.disable();
+      editingStrategy!.disable();
     });
 
     test('Can read editing state correctly', () {
-      editingElement.enable(
+      editingStrategy!.enable(
         singlelineConfig,
         onChange: trackEditingState,
         onAction: trackInputAction,
       );
 
-      final InputElement input = editingElement.domElement;
+      final InputElement input = editingStrategy!.domElement as InputElement;
       input.value = 'foo bar';
       input.dispatchEvent(Event.eventType('Event', 'input'));
       expect(
@@ -194,15 +208,15 @@ void testMain() {
     });
 
     test('Can set editing state correctly', () {
-      editingElement.enable(
+      editingStrategy!.enable(
         singlelineConfig,
         onChange: trackEditingState,
         onAction: trackInputAction,
       );
-      editingElement.setEditingState(
+      editingStrategy!.setEditingState(
           EditingState(text: 'foo bar baz', baseOffset: 2, extentOffset: 7));
 
-      checkInputEditingState(editingElement.domElement, 'foo bar baz', 2, 7);
+      checkInputEditingState(editingStrategy!.domElement!, 'foo bar baz', 2, 7);
 
       // There should be no input action.
       expect(lastInputAction, isNull);
@@ -211,23 +225,23 @@ void testMain() {
     test('Multi-line mode also works', () {
       // The textarea element is created lazily.
       expect(document.getElementsByTagName('textarea'), hasLength(0));
-      editingElement.enable(
+      editingStrategy!.enable(
         multilineConfig,
         onChange: trackEditingState,
         onAction: trackInputAction,
       );
-      expect(document.getElementsByTagName('textarea'), hasLength(1));
+      expect(defaultTextEditingRoot.querySelectorAll('textarea'), hasLength(1));
 
       final TextAreaElement textarea =
-          document.getElementsByTagName('textarea')[0];
+          defaultTextEditingRoot.querySelector('textarea') as TextAreaElement;
       // Now the textarea should have focus.
-      expect(document.activeElement, textarea);
-      expect(editingElement.domElement, textarea);
+      expect(defaultTextEditingRoot.activeElement, textarea);
+      expect(editingStrategy!.domElement, textarea);
 
       textarea.value = 'foo\nbar';
       textarea.dispatchEvent(Event.eventType('Event', 'input'));
       textarea.setSelectionRange(4, 6);
-      textarea.dispatchEvent(Event.eventType('Event', 'selectionchange'));
+      document.dispatchEvent(Event.eventType('Event', 'selectionchange'));
       // Can read textarea state correctly (and preserves new lines).
       expect(
         lastEditingState,
@@ -235,15 +249,15 @@ void testMain() {
       );
 
       // Can set textarea state correctly (and preserves new lines).
-      editingElement.setEditingState(
+      editingStrategy!.setEditingState(
           EditingState(text: 'bar\nbaz', baseOffset: 2, extentOffset: 7));
       checkTextAreaEditingState(textarea, 'bar\nbaz', 2, 7);
 
-      editingElement.disable();
+      editingStrategy!.disable();
       // The textarea should be cleaned up.
-      expect(document.getElementsByTagName('textarea'), hasLength(0));
+      expect(defaultTextEditingRoot.querySelectorAll('textarea'), hasLength(0));
       // The focus is back to the body.
-      expect(document.activeElement, document.body);
+      expect(defaultTextEditingRoot.activeElement, null);
 
       // There should be no input action.
       expect(lastInputAction, isNull);
@@ -255,41 +269,42 @@ void testMain() {
       expect(document.getElementsByTagName('textarea'), hasLength(0));
 
       // Use single-line config and expect an `<input>` to be created.
-      editingElement.enable(
+      editingStrategy!.enable(
         singlelineConfig,
         onChange: trackEditingState,
         onAction: trackInputAction,
       );
-      expect(document.getElementsByTagName('input'), hasLength(1));
-      expect(document.getElementsByTagName('textarea'), hasLength(0));
+      expect(defaultTextEditingRoot.querySelectorAll('input'), hasLength(1));
+      expect(defaultTextEditingRoot.querySelectorAll('textarea'), hasLength(0));
 
       // Disable and check that all DOM elements were removed.
-      editingElement.disable();
-      expect(document.getElementsByTagName('input'), hasLength(0));
-      expect(document.getElementsByTagName('textarea'), hasLength(0));
+      editingStrategy!.disable();
+      expect(defaultTextEditingRoot.querySelectorAll('input'), hasLength(0));
+      expect(defaultTextEditingRoot.querySelectorAll('textarea'), hasLength(0));
 
       // Use multi-line config and expect an `<textarea>` to be created.
-      editingElement.enable(
+      editingStrategy!.enable(
         multilineConfig,
         onChange: trackEditingState,
         onAction: trackInputAction,
       );
-      expect(document.getElementsByTagName('input'), hasLength(0));
-      expect(document.getElementsByTagName('textarea'), hasLength(1));
+      expect(defaultTextEditingRoot.querySelectorAll('input'), hasLength(0));
+      expect(defaultTextEditingRoot.querySelectorAll('textarea'), hasLength(1));
 
       // Disable again and check that all DOM elements were removed.
-      editingElement.disable();
-      expect(document.getElementsByTagName('input'), hasLength(0));
-      expect(document.getElementsByTagName('textarea'), hasLength(0));
+      editingStrategy!.disable();
+      expect(defaultTextEditingRoot.querySelectorAll('input'), hasLength(0));
+      expect(defaultTextEditingRoot.querySelectorAll('textarea'), hasLength(0));
 
       // There should be no input action.
       expect(lastInputAction, isNull);
     });
 
     test('Triggers input action', () {
-      final InputConfiguration config =
-          InputConfiguration(inputAction: 'TextInputAction.done');
-      editingElement.enable(
+      final InputConfiguration config = InputConfiguration(
+        inputAction: 'TextInputAction.done',
+      );
+      editingStrategy!.enable(
         config,
         onChange: trackEditingState,
         onAction: trackInputAction,
@@ -299,7 +314,7 @@ void testMain() {
       expect(lastInputAction, isNull);
 
       dispatchKeyboardEvent(
-        editingElement.domElement,
+        editingStrategy!.domElement!,
         'keydown',
         keyCode: _kReturnKeyCode,
       );
@@ -313,7 +328,7 @@ void testMain() {
         inputType: EngineInputType.multiline,
         inputAction: 'TextInputAction.done',
       );
-      editingElement.enable(
+      editingStrategy!.enable(
         config,
         onChange: trackEditingState,
         onAction: trackInputAction,
@@ -323,7 +338,7 @@ void testMain() {
       expect(lastInputAction, isNull);
 
       final KeyboardEvent event = dispatchKeyboardEvent(
-        editingElement.domElement,
+        editingStrategy!.domElement!,
         'keydown',
         keyCode: _kReturnKeyCode,
       );
@@ -335,290 +350,52 @@ void testMain() {
     });
 
     test('globally positions and sizes its DOM element', () {
-      editingElement.enable(
+      editingStrategy!.enable(
         singlelineConfig,
         onChange: trackEditingState,
         onAction: trackInputAction,
       );
-      expect(editingElement.isEnabled, isTrue);
+      expect(editingStrategy!.isEnabled, isTrue);
 
       // No geometry should be set until setEditableSizeAndTransform is called.
-      expect(editingElement.domElement.style.transform, '');
-      expect(editingElement.domElement.style.width, '');
-      expect(editingElement.domElement.style.height, '');
+      expect(editingStrategy!.domElement!.style.transform, '');
+      expect(editingStrategy!.domElement!.style.width, '');
+      expect(editingStrategy!.domElement!.style.height, '');
 
-      testTextEditing.setEditableSizeAndTransform(EditableTextGeometry(
+      testTextEditing.acceptCommand(TextInputSetEditableSizeAndTransform(geometry: EditableTextGeometry(
         width: 13,
         height: 12,
         globalTransform: Matrix4.translationValues(14, 15, 0).storage,
-      ));
+      )), () {});
 
       // setEditableSizeAndTransform calls placeElement, so expecting geometry to be applied.
-      expect(editingElement.domElement.style.transform,
+      expect(editingStrategy!.domElement!.style.transform,
           'matrix(1, 0, 0, 1, 14, 15)');
-      expect(editingElement.domElement.style.width, '13px');
-      expect(editingElement.domElement.style.height, '12px');
-    });
-  });
-
-  group('$SemanticsTextEditingStrategy', () {
-    InputElement testInputElement;
-    HybridTextEditing testTextEditing;
-
-    final PlatformMessagesSpy spy = PlatformMessagesSpy();
-
-    /// Emulates sending of a message by the framework to the engine.
-    void sendFrameworkMessage(dynamic message) {
-      textEditing.channel.handleTextInput(message, (ByteData data) {});
-    }
-
-    setUp(() {
-      testInputElement = InputElement();
-      testTextEditing = HybridTextEditing();
-      editingElement = GloballyPositionedTextEditingStrategy(testTextEditing);
-    });
-
-    tearDown(() {
-      testInputElement = null;
-    });
-
-    test('autofill form lifecycle works', () async {
-      editingElement = SemanticsTextEditingStrategy(
-          SemanticsObject(5, null), testTextEditing, testInputElement);
-      // Create a configuration with an AutofillGroup of four text fields.
-      final Map<String, dynamic> flutterMultiAutofillElementConfig =
-          createFlutterConfig('text',
-              autofillHint: 'username',
-              autofillHintsForFields: [
-            'username',
-            'email',
-            'name',
-            'telephoneNumber'
-          ]);
-      final MethodCall setClient = MethodCall('TextInput.setClient',
-          <dynamic>[123, flutterMultiAutofillElementConfig]);
-      sendFrameworkMessage(codec.encodeMethodCall(setClient));
-
-      const MethodCall setEditingState1 =
-          MethodCall('TextInput.setEditingState', <String, dynamic>{
-        'text': 'abcd',
-        'selectionBase': 2,
-        'selectionExtent': 3,
-      });
-      sendFrameworkMessage(codec.encodeMethodCall(setEditingState1));
-
-      const MethodCall show = MethodCall('TextInput.show');
-      sendFrameworkMessage(codec.encodeMethodCall(show));
-
-      // The transform is changed. For example after a validation error, red
-      // line appeared under the input field.
-      final MethodCall setSizeAndTransform =
-          configureSetSizeAndTransformMethodCall(150, 50,
-              Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
-      sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
-
-      // Form is added to DOM.
-      expect(document.getElementsByTagName('form'), isNotEmpty);
-
-      const MethodCall clearClient = MethodCall('TextInput.clearClient');
-      sendFrameworkMessage(codec.encodeMethodCall(clearClient));
-
-      // Confirm that [HybridTextEditing] didn't send any messages.
-      expect(spy.messages, isEmpty);
-      // Form stays on the DOM until autofill context is finalized.
-      expect(document.getElementsByTagName('form'), isNotEmpty);
-      expect(formsOnTheDom, hasLength(1));
-
-      const MethodCall finishAutofillContext =
-          MethodCall('TextInput.finishAutofillContext', false);
-      sendFrameworkMessage(codec.encodeMethodCall(finishAutofillContext));
-
-      // Form element is removed from DOM.
-      expect(document.getElementsByTagName('form'), hasLength(0));
-      expect(formsOnTheDom, hasLength(0));
-    },
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
-        skip: browserEngine == BrowserEngine.edge);
-
-    test('Does not accept dom elements of a wrong type', () {
-      // A regular <span> shouldn't be accepted.
-      final HtmlElement span = SpanElement();
-      expect(
-        () => SemanticsTextEditingStrategy(
-            SemanticsObject(5, null), HybridTextEditing(), span),
-        throwsAssertionError,
-      );
-    });
-
-    test('Do not re-acquire focus', () {
-      editingElement = SemanticsTextEditingStrategy(
-          SemanticsObject(5, null), HybridTextEditing(), testInputElement);
-
-      expect(document.activeElement, document.body);
-
-      document.body.append(testInputElement);
-      editingElement.enable(
-        singlelineConfig,
-        onChange: trackEditingState,
-        onAction: trackInputAction,
-      );
-      expect(document.activeElement, testInputElement);
-
-      // The input should not refocus after blur.
-      editingElement.domElement.blur();
-      expect(document.activeElement, document.body);
-
-      editingElement.disable();
-    },
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
-        skip: browserEngine == BrowserEngine.edge);
-
-    test('Does not dispose and recreate dom elements in persistent mode', () {
-      editingElement = SemanticsTextEditingStrategy(
-          SemanticsObject(5, null), HybridTextEditing(), testInputElement);
-
-      // The DOM element should've been eagerly created.
-      expect(testInputElement, isNotNull);
-      // But doesn't have focus.
-      expect(document.activeElement, document.body);
-
-      // Can't enable before the input element is inserted into the DOM.
-      expect(
-        () => editingElement.enable(
-          singlelineConfig,
-          onChange: trackEditingState,
-          onAction: trackInputAction,
-        ),
-        throwsAssertionError,
-      );
-
-      document.body.append(testInputElement);
-      editingElement.enable(
-        singlelineConfig,
-        onChange: trackEditingState,
-        onAction: trackInputAction,
-      );
-      expect(document.activeElement, editingElement.domElement);
-      // It doesn't create a new DOM element.
-      expect(editingElement.domElement, testInputElement);
-
-      editingElement.disable();
-      // It doesn't remove the DOM element.
-      expect(editingElement.domElement, testInputElement);
-      expect(document.body.contains(editingElement.domElement), isTrue);
-      // Editing element is not enabled.
-      expect(editingElement.isEnabled, isFalse);
-      // For mobile browsers `blur` is called to close the onscreen keyboard.
-      if (operatingSystem == OperatingSystem.iOs &&
-          browserEngine == BrowserEngine.webkit) {
-        expect(document.activeElement, document.body);
-      } else {
-        expect(document.activeElement, editingElement.domElement);
-      }
-    },
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
-        skip: browserEngine == BrowserEngine.edge);
-
-    test('Refocuses when setting editing state', () {
-      editingElement = SemanticsTextEditingStrategy(
-          SemanticsObject(5, null), HybridTextEditing(), testInputElement);
-
-      document.body.append(testInputElement);
-      editingElement.enable(
-        singlelineConfig,
-        onChange: trackEditingState,
-        onAction: trackInputAction,
-      );
-      // The input will have focus after editing state is set.
-      editingElement.setEditingState(EditingState(text: 'foo'));
-      expect(document.activeElement, testInputElement);
-
-      editingElement.disable();
-    },
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
-        skip: browserEngine == BrowserEngine.edge);
-
-    test('Works in multi-line mode', () {
-      final TextAreaElement textarea = TextAreaElement();
-      editingElement = SemanticsTextEditingStrategy(
-          SemanticsObject(5, null), HybridTextEditing(), textarea);
-
-      expect(editingElement.domElement, textarea);
-      expect(document.activeElement, document.body);
-
-      // Can't enable before the textarea is inserted into the DOM.
-      expect(
-        () => editingElement.enable(
-          singlelineConfig,
-          onChange: trackEditingState,
-          onAction: trackInputAction,
-        ),
-        throwsAssertionError,
-      );
-
-      document.body.append(textarea);
-      editingElement.enable(
-        multilineConfig,
-        onChange: trackEditingState,
-        onAction: trackInputAction,
-      );
-      // Focuses the textarea.
-      expect(document.activeElement, textarea);
-
-      textarea.blur();
-      // The textArea loses focus.
-      expect(document.activeElement, document.body);
-
-      editingElement.disable();
-      // It doesn't remove the textarea from the DOM.
-      expect(document.body.contains(editingElement.domElement), isTrue);
-      // Editing element is not enabled.
-      expect(editingElement.isEnabled, isFalse);
-    },
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
-        skip: browserEngine == BrowserEngine.edge);
-
-    test('Does not position or size its DOM element', () {
-      editingElement.enable(
-        singlelineConfig,
-        onChange: trackEditingState,
-        onAction: trackInputAction,
-      );
-      testTextEditing.setEditableSizeAndTransform(EditableTextGeometry(
-        height: 12,
-        width: 13,
-        globalTransform: Matrix4.translationValues(14, 15, 0).storage,
-      ));
-
-      void checkPlacementIsEmpty() {
-        expect(editingElement.domElement.style.transform, '');
-        expect(editingElement.domElement.style.width, '');
-        expect(editingElement.domElement.style.height, '');
-      }
-
-      checkPlacementIsEmpty();
-      editingElement.placeElement();
-      checkPlacementIsEmpty();
+      expect(editingStrategy!.domElement!.style.width, '13px');
+      expect(editingStrategy!.domElement!.style.height, '12px');
     });
   });
 
   group('$HybridTextEditing', () {
-    HybridTextEditing textEditing;
+    HybridTextEditing? textEditing;
     final PlatformMessagesSpy spy = PlatformMessagesSpy();
 
     int clientId = 0;
 
     /// Emulates sending of a message by the framework to the engine.
     void sendFrameworkMessage(dynamic message) {
-      textEditing.channel.handleTextInput(message, (ByteData data) {});
+      textEditing!.channel.handleTextInput(message, (ByteData? data) {});
     }
 
     /// Sends the necessary platform messages to activate a text field and show
     /// the keyboard.
     ///
     /// Returns the `clientId` used in the platform message.
-    int showKeyboard(
-        {String inputType, String inputAction, bool decimal = false}) {
+    int showKeyboard({
+      required String inputType,
+      String? inputAction,
+      bool decimal = false,
+    }) {
       final MethodCall setClient = MethodCall(
         'TextInput.setClient',
         <dynamic>[
@@ -644,7 +421,7 @@ void testMain() {
     }
 
     String getEditingInputMode() {
-      return textEditing.editingElement.domElement.getAttribute('inputmode');
+      return textEditing!.strategy.domElement!.getAttribute('inputmode')!;
     }
 
     setUp(() {
@@ -654,10 +431,17 @@ void testMain() {
 
     tearDown(() {
       spy.tearDown();
-      if (textEditing.isEditing) {
-        textEditing.stopEditing();
+      if (textEditing!.isEditing) {
+        textEditing!.stopEditing();
       }
       textEditing = null;
+    });
+
+    test('TextInput.requestAutofill', () async {
+      final MethodCall requestAutofill = MethodCall('TextInput.requestAutofill');
+      sendFrameworkMessage(codec.encodeMethodCall(requestAutofill));
+
+      //No-op and without crashing.
     });
 
     test('setClient, show, setEditingState, hide', () {
@@ -671,7 +455,7 @@ void testMain() {
       const MethodCall show = MethodCall('TextInput.show');
       sendFrameworkMessage(codec.encodeMethodCall(show));
 
-      checkInputEditingState(textEditing.editingElement.domElement, '', 0, 0);
+      checkInputEditingState(textEditing!.strategy.domElement, '', 0, 0);
 
       const MethodCall setEditingState =
           MethodCall('TextInput.setEditingState', <String, dynamic>{
@@ -682,7 +466,7 @@ void testMain() {
       sendFrameworkMessage(codec.encodeMethodCall(setEditingState));
 
       checkInputEditingState(
-          textEditing.editingElement.domElement, 'abcd', 2, 3);
+          textEditing!.strategy.domElement, 'abcd', 2, 3);
 
       const MethodCall hide = MethodCall('TextInput.hide');
       sendFrameworkMessage(codec.encodeMethodCall(hide));
@@ -714,7 +498,7 @@ void testMain() {
       sendFrameworkMessage(codec.encodeMethodCall(show));
 
       checkInputEditingState(
-          textEditing.editingElement.domElement, 'abcd', 2, 3);
+          textEditing!.strategy.domElement, 'abcd', 2, 3);
 
       const MethodCall clearClient = MethodCall('TextInput.clearClient');
       sendFrameworkMessage(codec.encodeMethodCall(clearClient));
@@ -745,7 +529,7 @@ void testMain() {
       const MethodCall show = MethodCall('TextInput.show');
       sendFrameworkMessage(codec.encodeMethodCall(show));
 
-      final HtmlElement element = textEditing.editingElement.domElement;
+      final Element element = textEditing!.strategy.domElement!;
       expect(element.getAttribute('readonly'), 'readonly');
 
       // Update the read-only config.
@@ -781,16 +565,17 @@ void testMain() {
       sendFrameworkMessage(codec.encodeMethodCall(setEditingState));
 
       // Editing shouldn't have started yet.
-      expect(document.activeElement, document.body);
+      expect(defaultTextEditingRoot.activeElement, null);
 
       const MethodCall show = MethodCall('TextInput.show');
       sendFrameworkMessage(codec.encodeMethodCall(show));
 
       checkInputEditingState(
-          textEditing.editingElement.domElement, 'abcd', 2, 3);
+          textEditing!.strategy.domElement, 'abcd', 2, 3);
+      expect(textEditing!.isEditing, isTrue);
 
       // DOM element is blurred.
-      textEditing.editingElement.domElement.blur();
+      textEditing!.strategy.domElement!.blur();
 
       // For ios-safari the connection is closed.
       if (browserEngine == BrowserEngine.webkit &&
@@ -801,17 +586,18 @@ void testMain() {
             spy.messages[0].methodName, 'TextInputClient.onConnectionClosed');
         await Future<void>.delayed(Duration.zero);
         // DOM element loses the focus.
-        expect(document.activeElement, document.body);
+        expect(defaultTextEditingRoot.activeElement, null);
       } else {
         // No connection close message sent.
         expect(spy.messages, hasLength(0));
         await Future<void>.delayed(Duration.zero);
         // DOM element still keeps the focus.
-        expect(document.activeElement, textEditing.editingElement.domElement);
+        expect(defaultTextEditingRoot.activeElement,
+            textEditing!.strategy.domElement);
       }
     },
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
-        skip: (browserEngine == BrowserEngine.edge));
+        skip: browserEngine == BrowserEngine.edge);
 
     test('finishAutofillContext closes connection no autofill element',
         () async {
@@ -828,13 +614,13 @@ void testMain() {
       sendFrameworkMessage(codec.encodeMethodCall(setEditingState));
 
       // Editing shouldn't have started yet.
-      expect(document.activeElement, document.body);
+      expect(defaultTextEditingRoot.activeElement, null);
 
       const MethodCall show = MethodCall('TextInput.show');
       sendFrameworkMessage(codec.encodeMethodCall(show));
 
       checkInputEditingState(
-          textEditing.editingElement.domElement, 'abcd', 2, 3);
+          textEditing!.strategy.domElement, 'abcd', 2, 3);
 
       const MethodCall finishAutofillContext =
           MethodCall('TextInput.finishAutofillContext', false);
@@ -851,7 +637,7 @@ void testMain() {
       );
       spy.messages.clear();
       // Input element is removed from DOM.
-      expect(document.getElementsByTagName('input'), hasLength(0));
+      expect(defaultTextEditingRoot.querySelectorAll('input'), hasLength(0));
     },
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
         skip: browserEngine == BrowserEngine.edge);
@@ -859,14 +645,16 @@ void testMain() {
     test('finishAutofillContext removes form from DOM', () async {
       // Create a configuration with an AutofillGroup of four text fields.
       final Map<String, dynamic> flutterMultiAutofillElementConfig =
-          createFlutterConfig('text',
-              autofillHint: 'username',
-              autofillHintsForFields: [
-            'username',
-            'email',
-            'name',
-            'telephoneNumber'
-          ]);
+          createFlutterConfig(
+            'text',
+            autofillHint: 'username',
+            autofillHintsForFields: [
+              'username',
+              'email',
+              'name',
+              'telephoneNumber'
+            ],
+          );
       final MethodCall setClient = MethodCall('TextInput.setClient',
           <dynamic>[123, flutterMultiAutofillElementConfig]);
       sendFrameworkMessage(codec.encodeMethodCall(setClient));
@@ -890,7 +678,7 @@ void testMain() {
       sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
 
       // Form is added to DOM.
-      expect(document.getElementsByTagName('form'), isNotEmpty);
+      expect(defaultTextEditingRoot.querySelectorAll('form'), isNotEmpty);
 
       const MethodCall clearClient = MethodCall('TextInput.clearClient');
       sendFrameworkMessage(codec.encodeMethodCall(clearClient));
@@ -898,7 +686,7 @@ void testMain() {
       // Confirm that [HybridTextEditing] didn't send any messages.
       expect(spy.messages, isEmpty);
       // Form stays on the DOM until autofill context is finalized.
-      expect(document.getElementsByTagName('form'), isNotEmpty);
+      expect(defaultTextEditingRoot.querySelectorAll('form'), isNotEmpty);
       expect(formsOnTheDom, hasLength(1));
 
       const MethodCall finishAutofillContext =
@@ -906,7 +694,7 @@ void testMain() {
       sendFrameworkMessage(codec.encodeMethodCall(finishAutofillContext));
 
       // Form element is removed from DOM.
-      expect(document.getElementsByTagName('form'), hasLength(0));
+      expect(defaultTextEditingRoot.querySelectorAll('form'), isEmpty);
       expect(formsOnTheDom, hasLength(0));
     },
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
@@ -946,8 +734,8 @@ void testMain() {
       sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
 
       // Form is added to DOM.
-      expect(document.getElementsByTagName('form'), isNotEmpty);
-      FormElement formElement = document.getElementsByTagName('form')[0];
+      expect(defaultTextEditingRoot.querySelectorAll('form'), isNotEmpty);
+      FormElement formElement = defaultTextEditingRoot.querySelector('form') as FormElement;
       final Completer<bool> submittedForm = Completer<bool>();
       formElement.addEventListener(
           'submit', (event) => submittedForm.complete(true));
@@ -960,7 +748,7 @@ void testMain() {
       sendFrameworkMessage(codec.encodeMethodCall(finishAutofillContext));
 
       // `submit` action is called on form.
-      await expectLater(await submittedForm.future, true);
+      await expectLater(await submittedForm.future, isTrue);
     },
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
         skip: browserEngine == BrowserEngine.edge);
@@ -999,8 +787,8 @@ void testMain() {
       sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
 
       // Form is added to DOM.
-      expect(document.getElementsByTagName('form'), isNotEmpty);
-      FormElement formElement = document.getElementsByTagName('form')[0];
+      expect(defaultTextEditingRoot.querySelectorAll('form'), isNotEmpty);
+      FormElement formElement = defaultTextEditingRoot.querySelector('form') as FormElement;
       final Completer<bool> submittedForm = Completer<bool>();
       formElement.addEventListener(
           'submit', (event) => submittedForm.complete(true));
@@ -1016,9 +804,9 @@ void testMain() {
       expect(spy.messages[0].methodName, 'TextInputClient.onConnectionClosed');
 
       // `submit` action is called on form.
-      await expectLater(await submittedForm.future, true);
+      await expectLater(await submittedForm.future, isTrue);
       // Form element is removed from DOM.
-      expect(document.getElementsByTagName('form'), hasLength(0));
+      expect(defaultTextEditingRoot.querySelectorAll('form'), hasLength(0));
       expect(formsOnTheDom, hasLength(0));
     },
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
@@ -1044,7 +832,7 @@ void testMain() {
       sendFrameworkMessage(codec.encodeMethodCall(show));
 
       checkInputEditingState(
-          textEditing.editingElement.domElement, 'abcd', 2, 3);
+          textEditing!.strategy.domElement, 'abcd', 2, 3);
 
       final MethodCall setClient2 = MethodCall(
           'TextInput.setClient', <dynamic>[567, flutterSinglelineConfig]);
@@ -1086,7 +874,7 @@ void testMain() {
 
       // The second [setEditingState] should override the first one.
       checkInputEditingState(
-          textEditing.editingElement.domElement, 'xyz', 0, 2);
+          textEditing!.strategy.domElement, 'xyz', 0, 2);
 
       const MethodCall clearClient = MethodCall('TextInput.clearClient');
       sendFrameworkMessage(codec.encodeMethodCall(clearClient));
@@ -1123,9 +911,9 @@ void testMain() {
 
       // The second [setEditingState] should override the first one.
       checkInputEditingState(
-          textEditing.editingElement.domElement, 'abcd', 2, 3);
+          textEditing!.strategy.domElement, 'abcd', 2, 3);
 
-      final FormElement formElement = document.getElementsByTagName('form')[0];
+      final FormElement formElement = defaultTextEditingRoot.querySelector('form') as FormElement;
       // The form has one input element and one submit button.
       expect(formElement.childNodes, hasLength(2));
 
@@ -1135,7 +923,7 @@ void testMain() {
       // Confirm that [HybridTextEditing] didn't send any messages.
       expect(spy.messages, isEmpty);
       // Form stays on the DOM until autofill context is finalized.
-      expect(document.getElementsByTagName('form'), isNotEmpty);
+      expect(defaultTextEditingRoot.querySelectorAll('form'), isNotEmpty);
       expect(formsOnTheDom, hasLength(1));
     });
 
@@ -1161,14 +949,14 @@ void testMain() {
       sendFrameworkMessage(codec.encodeMethodCall(show));
 
       final InputElement inputElement =
-          textEditing.editingElement.domElement as InputElement;
+          textEditing!.strategy.domElement as InputElement;
       expect(inputElement.value, 'abcd');
       if (!(browserEngine == BrowserEngine.webkit &&
           operatingSystem == OperatingSystem.macOs)) {
         // In Safari Desktop Autofill menu appears as soon as an element is
         // focused, therefore the input element is only focused after the
         // location is received.
-        expect(document.activeElement, inputElement);
+        expect(defaultTextEditingRoot.activeElement, inputElement);
         expect(inputElement.selectionStart, 2);
         expect(inputElement.selectionEnd, 3);
       }
@@ -1181,11 +969,12 @@ void testMain() {
       sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
 
       // Check the element still has focus. User can keep editing.
-      expect(document.activeElement, textEditing.editingElement.domElement);
+      expect(defaultTextEditingRoot.activeElement,
+          textEditing!.strategy.domElement);
 
       // Check the cursor location is the same.
       checkInputEditingState(
-          textEditing.editingElement.domElement, 'abcd', 2, 3);
+          textEditing!.strategy.domElement, 'abcd', 2, 3);
 
       const MethodCall clearClient = MethodCall('TextInput.clearClient');
       sendFrameworkMessage(codec.encodeMethodCall(clearClient));
@@ -1193,7 +982,7 @@ void testMain() {
       // Confirm that [HybridTextEditing] didn't send any messages.
       expect(spy.messages, isEmpty);
       // Form stays on the DOM until autofill context is finalized.
-      expect(document.getElementsByTagName('form'), isNotEmpty);
+      expect(defaultTextEditingRoot.querySelectorAll('form'), isNotEmpty);
       expect(formsOnTheDom, hasLength(1));
     });
 
@@ -1232,9 +1021,9 @@ void testMain() {
 
       // The second [setEditingState] should override the first one.
       checkInputEditingState(
-          textEditing.editingElement.domElement, 'abcd', 2, 3);
+          textEditing!.strategy.domElement, 'abcd', 2, 3);
 
-      final FormElement formElement = document.getElementsByTagName('form')[0];
+      final FormElement formElement = defaultTextEditingRoot.querySelector('form') as FormElement;
       // The form has 4 input elements and one submit button.
       expect(formElement.childNodes, hasLength(5));
 
@@ -1244,17 +1033,17 @@ void testMain() {
       // Confirm that [HybridTextEditing] didn't send any messages.
       expect(spy.messages, isEmpty);
       // Form stays on the DOM until autofill context is finalized.
-      expect(document.getElementsByTagName('form'), isNotEmpty);
+      expect(defaultTextEditingRoot.querySelectorAll('form'), isNotEmpty);
       expect(formsOnTheDom, hasLength(1));
     });
 
-    test('No capitilization: setClient, setEditingState, show', () {
+    test('No capitalization: setClient, setEditingState, show', () {
       // Create a configuration with an AutofillGroup of four text fields.
-      final Map<String, dynamic> capitilizeWordsConfig = createFlutterConfig(
+      final Map<String, dynamic> capitalizeWordsConfig = createFlutterConfig(
           'text',
           textCapitalization: 'TextCapitalization.none');
       final MethodCall setClient = MethodCall(
-          'TextInput.setClient', <dynamic>[123, capitilizeWordsConfig]);
+          'TextInput.setClient', <dynamic>[123, capitalizeWordsConfig]);
       sendFrameworkMessage(codec.encodeMethodCall(setClient));
 
       const MethodCall setEditingState1 =
@@ -1274,12 +1063,12 @@ void testMain() {
       if (browserEngine == BrowserEngine.webkit &&
           operatingSystem == OperatingSystem.iOs) {
         expect(
-            textEditing.editingElement.domElement
+            textEditing!.strategy.domElement!
                 .getAttribute('autocapitalize'),
             'off');
       } else {
         expect(
-            textEditing.editingElement.domElement
+            textEditing!.strategy.domElement!
                 .getAttribute('autocapitalize'),
             isNull);
       }
@@ -1288,13 +1077,13 @@ void testMain() {
       hideKeyboard();
     });
 
-    test('All characters capitilization: setClient, setEditingState, show', () {
+    test('All characters capitalization: setClient, setEditingState, show', () {
       // Create a configuration with an AutofillGroup of four text fields.
-      final Map<String, dynamic> capitilizeWordsConfig = createFlutterConfig(
+      final Map<String, dynamic> capitalizeWordsConfig = createFlutterConfig(
           'text',
           textCapitalization: 'TextCapitalization.characters');
       final MethodCall setClient = MethodCall(
-          'TextInput.setClient', <dynamic>[123, capitilizeWordsConfig]);
+          'TextInput.setClient', <dynamic>[123, capitalizeWordsConfig]);
       sendFrameworkMessage(codec.encodeMethodCall(setClient));
 
       const MethodCall setEditingState1 =
@@ -1313,7 +1102,7 @@ void testMain() {
       if (browserEngine == BrowserEngine.webkit &&
           operatingSystem == OperatingSystem.iOs) {
         expect(
-            textEditing.editingElement.domElement
+            textEditing!.strategy.domElement!
                 .getAttribute('autocapitalize'),
             'characters');
       }
@@ -1349,7 +1138,7 @@ void testMain() {
       const MethodCall show = MethodCall('TextInput.show');
       sendFrameworkMessage(codec.encodeMethodCall(show));
 
-      final HtmlElement domElement = textEditing.editingElement.domElement;
+      final Element domElement = textEditing!.strategy.domElement!;
 
       checkInputEditingState(domElement, 'abcd', 2, 3);
 
@@ -1360,7 +1149,7 @@ void testMain() {
               const Point<double>(160.0, 70.0)));
       expect(domElement.style.transform,
           'matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 10, 20, 30, 1)');
-      expect(textEditing.editingElement.domElement.style.font,
+      expect(textEditing!.strategy.domElement!.style.font,
           '500 12px sans-serif');
 
       const MethodCall clearClient = MethodCall('TextInput.clearClient');
@@ -1405,7 +1194,7 @@ void testMain() {
       });
       sendFrameworkMessage(codec.encodeMethodCall(setEditingState));
 
-      final HtmlElement domElement = textEditing.editingElement.domElement;
+      final HtmlElement domElement = textEditing!.strategy.domElement!;
 
       checkInputEditingState(domElement, 'abcd', 2, 3);
 
@@ -1420,7 +1209,7 @@ void testMain() {
         'matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 10, 20, 30, 1)',
       );
       expect(
-        textEditing.editingElement.domElement.style.font,
+        textEditing!.strategy.domElement!.style.font,
         '500 12px sans-serif',
       );
 
@@ -1428,11 +1217,11 @@ void testMain() {
       if (browserEngine == BrowserEngine.blink ||
           browserEngine == BrowserEngine.samsung ||
           browserEngine == BrowserEngine.webkit) {
-        expect(textEditing.editingElement.domElement.classes,
+        expect(textEditing!.strategy.domElement!.classes,
             contains('transparentTextEditing'));
       } else {
         expect(
-            textEditing.editingElement.domElement.classes.any(
+            textEditing!.strategy.domElement!.classes.any(
                 (element) => element.toString() == 'transparentTextEditing'),
             isFalse);
       }
@@ -1468,7 +1257,7 @@ void testMain() {
       const MethodCall show = MethodCall('TextInput.show');
       sendFrameworkMessage(codec.encodeMethodCall(show));
 
-      final HtmlElement domElement = textEditing.editingElement.domElement;
+      final HtmlElement domElement = textEditing!.strategy.domElement!;
 
       checkInputEditingState(domElement, 'abcd', 2, 3);
 
@@ -1480,7 +1269,7 @@ void testMain() {
       expect(domElement.style.transform,
           'matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 10, 20, 30, 1)');
       expect(
-          textEditing.editingElement.domElement.style.font, '12px sans-serif');
+          textEditing!.strategy.domElement!.style.font, '12px sans-serif');
 
       hideKeyboard();
     },
@@ -1488,9 +1277,9 @@ void testMain() {
         skip: browserEngine == BrowserEngine.webkit);
 
     test('Canonicalizes font family', () {
-      showKeyboard();
+      showKeyboard(inputType: 'text');
 
-      final HtmlElement input = textEditing.editingElement.domElement;
+      final HtmlElement input = textEditing!.strategy.domElement!;
 
       MethodCall setStyle;
 
@@ -1529,7 +1318,7 @@ void testMain() {
 
       // Check if the selection range is correct.
       checkInputEditingState(
-          textEditing.editingElement.domElement, 'xyz', 1, 2);
+          textEditing!.strategy.domElement, 'xyz', 1, 2);
 
       const MethodCall setEditingState2 =
           MethodCall('TextInput.setEditingState', <String, dynamic>{
@@ -1541,7 +1330,7 @@ void testMain() {
 
       // The negative offset values are applied to the dom element as 0.
       checkInputEditingState(
-          textEditing.editingElement.domElement, 'xyz', 0, 0);
+          textEditing!.strategy.domElement, 'xyz', 0, 0);
 
       hideKeyboard();
     });
@@ -1562,7 +1351,7 @@ void testMain() {
       const MethodCall show = MethodCall('TextInput.show');
       sendFrameworkMessage(codec.encodeMethodCall(show));
 
-      final InputElement input = textEditing.editingElement.domElement;
+      final InputElement input = textEditing!.strategy.domElement as InputElement;
 
       input.value = 'something';
       input.dispatchEvent(Event.eventType('Event', 'input'));
@@ -1586,7 +1375,7 @@ void testMain() {
       input.setSelectionRange(2, 5);
       if (browserEngine == BrowserEngine.firefox) {
         Event keyup = KeyboardEvent('keyup');
-        textEditing.editingElement.domElement.dispatchEvent(keyup);
+        textEditing!.strategy.domElement!.dispatchEvent(keyup);
       } else {
         document.dispatchEvent(Event.eventType('Event', 'selectionchange'));
       }
@@ -1644,14 +1433,14 @@ void testMain() {
 
       // The second [setEditingState] should override the first one.
       checkInputEditingState(
-          textEditing.editingElement.domElement, 'abcd', 2, 3);
+          textEditing!.strategy.domElement, 'abcd', 2, 3);
 
-      final FormElement formElement = document.getElementsByTagName('form')[0];
+      final FormElement formElement = defaultTextEditingRoot.querySelector('form') as FormElement;
       // The form has 4 input elements and one submit button.
       expect(formElement.childNodes, hasLength(5));
 
       // Autofill one of the form elements.
-      InputElement element = formElement.childNodes.first;
+      InputElement element = formElement.childNodes.first as InputElement;
       if (browserEngine == BrowserEngine.firefox) {
         expect(element.name,
             BrowserAutofillHints.instance.flutterToEngine(hintForFirstElement));
@@ -1690,12 +1479,12 @@ void testMain() {
       sendFrameworkMessage(codec.encodeMethodCall(setClient));
 
       // Editing shouldn't have started yet.
-      expect(document.activeElement, document.body);
+      expect(defaultTextEditingRoot.activeElement, null);
 
       const MethodCall show = MethodCall('TextInput.show');
       sendFrameworkMessage(codec.encodeMethodCall(show));
 
-      final TextAreaElement textarea = textEditing.editingElement.domElement;
+      final TextAreaElement textarea = textEditing!.strategy.domElement as TextAreaElement;
       checkTextAreaEditingState(textarea, '', 0, 0);
 
       // Can set editing state and preserve new lines.
@@ -1713,7 +1502,7 @@ void testMain() {
       textarea.dispatchEvent(Event.eventType('Event', 'input'));
       textarea.setSelectionRange(2, 5);
       if (browserEngine == BrowserEngine.firefox) {
-        textEditing.editingElement.domElement
+        textEditing!.strategy.domElement!
             .dispatchEvent(KeyboardEvent('keyup'));
       } else {
         document.dispatchEvent(Event.eventType('Event', 'selectionchange'));
@@ -1791,6 +1580,9 @@ void testMain() {
       showKeyboard(inputType: 'url');
       expect(getEditingInputMode(), 'url');
 
+      showKeyboard(inputType: 'none');
+      expect(getEditingInputMode(), 'none');
+
       hideKeyboard();
     });
 
@@ -1823,6 +1615,9 @@ void testMain() {
         showKeyboard(inputType: 'url');
         expect(getEditingInputMode(), 'url');
 
+        showKeyboard(inputType: 'none');
+        expect(getEditingInputMode(), 'none');
+
         hideKeyboard();
       }
     });
@@ -1837,7 +1632,7 @@ void testMain() {
       expect(lastInputAction, isNull);
 
       dispatchKeyboardEvent(
-        textEditing.editingElement.domElement,
+        textEditing!.strategy.domElement!,
         'keydown',
         keyCode: _kReturnKeyCode,
       );
@@ -1860,7 +1655,7 @@ void testMain() {
       );
 
       final KeyboardEvent event = dispatchKeyboardEvent(
-        textEditing.editingElement.domElement,
+        textEditing!.strategy.domElement!,
         'keydown',
         keyCode: _kReturnKeyCode,
       );
@@ -1883,7 +1678,7 @@ void testMain() {
           ['field1', 'field2', 'field3']);
       final EngineAutofillForm autofillForm =
           EngineAutofillForm.fromFrameworkMessage(
-              createAutofillInfo('username', 'field1'), fields);
+              createAutofillInfo('username', 'field1'), fields)!;
 
       // Number of elements if number of fields sent to the constructor minus
       // one (for the focused text element).
@@ -1898,7 +1693,7 @@ void testMain() {
       // 3 child nodes.
       expect(form.childNodes, hasLength(3));
 
-      final InputElement firstElement = form.childNodes.first;
+      final InputElement firstElement = form.childNodes.first as InputElement;
       // Autofill value is applied to the element.
       expect(firstElement.name,
           BrowserAutofillHints.instance.flutterToEngine('password'));
@@ -1942,20 +1737,20 @@ void testMain() {
           ['zzyyxx', 'aabbcc', 'jjkkll']);
       final EngineAutofillForm autofillForm =
           EngineAutofillForm.fromFrameworkMessage(
-              createAutofillInfo('username', 'field1'), fields);
+              createAutofillInfo('username', 'field1'), fields)!;
 
       expect(autofillForm.formIdentifier, 'aabbcc*jjkkll*zzyyxx');
     });
 
     test('place and store form', () {
-      expect(document.getElementsByTagName('form'), isEmpty);
+      expect(defaultTextEditingRoot.querySelectorAll('form'), isEmpty);
 
       final List<dynamic> fields = createFieldValues(
           ['username', 'password', 'newPassword'],
           ['field1', 'fields2', 'field3']);
       final EngineAutofillForm autofillForm =
           EngineAutofillForm.fromFrameworkMessage(
-              createAutofillInfo('username', 'field1'), fields);
+              createAutofillInfo('username', 'field1'), fields)!;
 
       final InputElement testInputElement = InputElement();
       autofillForm.placeForm(testInputElement);
@@ -1965,12 +1760,12 @@ void testMain() {
       final FormElement form = autofillForm.formElement;
       expect(form.childNodes, hasLength(4));
 
-      final FormElement formOnDom = document.getElementsByTagName('form')[0];
+      final FormElement formOnDom = defaultTextEditingRoot.querySelector('form') as FormElement;
       // Form is attached to the DOM.
       expect(form, equals(formOnDom));
 
       autofillForm.storeForm();
-      expect(document.getElementsByTagName('form'), isNotEmpty);
+      expect(defaultTextEditingRoot.querySelectorAll('form'), isNotEmpty);
       expect(formsOnTheDom, hasLength(1));
     });
 
@@ -1978,7 +1773,7 @@ void testMain() {
       final List<dynamic> fields = createFieldValues(['username'], ['field1']);
       final EngineAutofillForm autofillForm =
           EngineAutofillForm.fromFrameworkMessage(
-              createAutofillInfo('username', 'field1'), fields);
+              createAutofillInfo('username', 'field1'), fields)!;
 
       // The focused element is the only field. Form should be empty after
       // the initialization (focus element is appended later).
@@ -1989,7 +1784,7 @@ void testMain() {
       final FormElement form = autofillForm.formElement;
       // Submit button is added to the form.
       expect(form.childNodes, isNotEmpty);
-      final InputElement inputElement = form.childNodes.first;
+      final InputElement inputElement = form.childNodes.first as InputElement;
       expect(inputElement.type, 'submit');
 
       // The submit button should have class `submitBtn`.
@@ -1998,7 +1793,7 @@ void testMain() {
 
     test('Return null if no focused element', () {
       final List<dynamic> fields = createFieldValues(['username'], ['field1']);
-      final EngineAutofillForm autofillForm =
+      final EngineAutofillForm? autofillForm =
           EngineAutofillForm.fromFrameworkMessage(null, fields);
 
       expect(autofillForm, isNull);
@@ -2088,9 +1883,9 @@ void testMain() {
     EditingState _editingState;
 
     setUp(() {
-      editingElement =
+      editingStrategy =
           GloballyPositionedTextEditingStrategy(HybridTextEditing());
-      editingElement.enable(
+      editingStrategy!.enable(
         singlelineConfig,
         onChange: trackEditingState,
         onAction: trackInputAction,
@@ -2116,7 +1911,7 @@ void testMain() {
     });
 
     test('Configure input element from the editing state', () {
-      final InputElement input = document.getElementsByTagName('input')[0];
+      final InputElement input = defaultTextEditingRoot.querySelector('input') as InputElement;
       _editingState =
           EditingState(text: 'Test', baseOffset: 1, extentOffset: 2);
 
@@ -2128,15 +1923,15 @@ void testMain() {
     });
 
     test('Configure text area element from the editing state', () {
-      cleanTextEditingElement();
-      editingElement.enable(
+      cleanTextEditingStrategy();
+      editingStrategy!.enable(
         multilineConfig,
         onChange: trackEditingState,
         onAction: trackInputAction,
       );
 
       final TextAreaElement textArea =
-          document.getElementsByTagName('textarea')[0];
+          defaultTextEditingRoot.querySelector('textarea') as TextAreaElement;
       _editingState =
           EditingState(text: 'Test', baseOffset: 1, extentOffset: 2);
 
@@ -2148,7 +1943,7 @@ void testMain() {
     });
 
     test('Get Editing State from input element', () {
-      final InputElement input = document.getElementsByTagName('input')[0];
+      final InputElement input = defaultTextEditingRoot.querySelector('input') as InputElement;
       input.value = 'Test';
       input.selectionStart = 1;
       input.selectionEnd = 2;
@@ -2161,15 +1956,14 @@ void testMain() {
     });
 
     test('Get Editing State from text area element', () {
-      cleanTextEditingElement();
-      editingElement.enable(
+      cleanTextEditingStrategy();
+      editingStrategy!.enable(
         multilineConfig,
         onChange: trackEditingState,
         onAction: trackInputAction,
       );
 
-      final TextAreaElement input =
-          document.getElementsByTagName('textarea')[0];
+      final TextAreaElement input = defaultTextEditingRoot.querySelector('textarea') as TextAreaElement;
       input.value = 'Test';
       input.selectionStart = 1;
       input.selectionEnd = 2;
@@ -2182,7 +1976,7 @@ void testMain() {
     });
 
     test('Compare two editing states', () {
-      final InputElement input = document.getElementsByTagName('input')[0];
+      final InputElement input = defaultTextEditingRoot.querySelector('input') as InputElement;
       input.value = 'Test';
       input.selectionStart = 1;
       input.selectionEnd = 2;
@@ -2194,8 +1988,8 @@ void testMain() {
 
       EditingState editingState3 = EditingState.fromDomElement(input);
 
-      expect(editingState1 == editingState2, true);
-      expect(editingState1 != editingState3, true);
+      expect(editingState1 == editingState2, isTrue);
+      expect(editingState1 != editingState3, isTrue);
     });
   });
 }
@@ -2203,7 +1997,7 @@ void testMain() {
 KeyboardEvent dispatchKeyboardEvent(
   EventTarget target,
   String type, {
-  int keyCode,
+  required int keyCode,
 }) {
   final Function jsKeyboardEvent = js_util.getProperty(window, 'KeyboardEvent');
   final List<dynamic> eventArgs = <dynamic>[
@@ -2221,7 +2015,7 @@ KeyboardEvent dispatchKeyboardEvent(
 }
 
 MethodCall configureSetStyleMethodCall(int fontSize, String fontFamily,
-    int textAlignIndex, int fontWeightIndex, int textDirectionIndex) {
+    int textAlignIndex, int? fontWeightIndex, int textDirectionIndex) {
   return MethodCall('TextInput.setStyle', <String, dynamic>{
     'fontSize': fontSize,
     'fontFamily': fontFamily,
@@ -2242,10 +2036,10 @@ MethodCall configureSetSizeAndTransformMethodCall(
 
 /// Will disable editing element which will also clean the backup DOM
 /// element from the page.
-void cleanTextEditingElement() {
-  if (editingElement != null && editingElement.isEnabled) {
+void cleanTextEditingStrategy() {
+  if (editingStrategy != null && editingStrategy!.isEnabled) {
     // Clean up all the DOM elements and event listeners.
-    editingElement.disable();
+    editingStrategy!.disable();
   }
 }
 
@@ -2255,8 +2049,11 @@ void cleanTestFlags() {
 }
 
 void checkInputEditingState(
-    InputElement input, String text, int start, int end) {
-  expect(document.activeElement, input);
+    Element? element, String text, int start, int end) {
+  expect(element, isNotNull);
+  expect(element, isA<InputElement>());
+  final InputElement input = element as InputElement;
+  expect(defaultTextEditingRoot.activeElement, input);
   expect(input.value, text);
   expect(input.selectionStart, start);
   expect(input.selectionEnd, end);
@@ -2265,11 +2062,11 @@ void checkInputEditingState(
 /// In case of an exception backup DOM element(s) can still stay on the DOM.
 void clearBackUpDomElementIfExists() {
   List<Node> domElementsToRemove = <Node>[];
-  if (document.getElementsByTagName('input').length > 0) {
-    domElementsToRemove..addAll(document.getElementsByTagName('input'));
+  if (defaultTextEditingRoot.querySelectorAll('input').length > 0) {
+    domElementsToRemove..addAll(defaultTextEditingRoot.querySelectorAll('input'));
   }
-  if (document.getElementsByTagName('textarea').length > 0) {
-    domElementsToRemove..addAll(document.getElementsByTagName('textarea'));
+  if (defaultTextEditingRoot.querySelectorAll('textarea').length > 0) {
+    domElementsToRemove..addAll(defaultTextEditingRoot.querySelectorAll('textarea'));
   }
   domElementsToRemove.forEach((Node n) => n.remove());
 }
@@ -2280,7 +2077,7 @@ void checkTextAreaEditingState(
   int start,
   int end,
 ) {
-  expect(document.activeElement, textarea);
+  expect(defaultTextEditingRoot.activeElement, textarea);
   expect(textarea.value, text);
   expect(textarea.selectionStart, start);
   expect(textarea.selectionEnd, end);
@@ -2296,9 +2093,9 @@ Map<String, dynamic> createFlutterConfig(
   bool obscureText = false,
   bool autocorrect = true,
   String textCapitalization = 'TextCapitalization.none',
-  String inputAction,
-  String autofillHint,
-  List<String> autofillHintsForFields,
+  String? inputAction,
+  String? autofillHint,
+  List<String>? autofillHintsForFields,
   bool decimal = false,
 }) {
   return <String, dynamic>{
@@ -2359,8 +2156,8 @@ Map<String, dynamic> createOneFieldValue(String hint, String uniqueId) =>
 
 /// In order to not leak test state, clean up the forms from dom if any remains.
 void clearForms() {
-  while (document.getElementsByTagName('form').length > 0) {
-    document.getElementsByTagName('form').last.remove();
+  while (defaultTextEditingRoot.querySelectorAll('form').length > 0) {
+    defaultTextEditingRoot.querySelectorAll('form').last.remove();
   }
   formsOnTheDom.clear();
 }

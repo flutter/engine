@@ -51,25 +51,20 @@ TEST_F(DartIsolateTest, RootIsolateCreationAndShutdown) {
   auto isolate_configuration =
       IsolateConfiguration::InferFromSettings(settings);
 
+  UIDartState::Context context(std::move(task_runners));
+  context.advisory_script_uri = "main.dart";
+  context.advisory_script_entrypoint = "main";
   auto weak_isolate = DartIsolate::CreateRunningRootIsolate(
       vm_data->GetSettings(),              // settings
       vm_data->GetIsolateSnapshot(),       // isolate snapshot
-      std::move(task_runners),             // task runners
-      nullptr,                             // window
-      {},                                  // snapshot delegate
-      {},                                  // hint freed delegate
-      {},                                  // io manager
-      {},                                  // unref queue
-      {},                                  // image decoder
-      "main.dart",                         // advisory uri
-      "main",                              // advisory entrypoint,
+      nullptr,                             // platform configuration
       DartIsolate::Flags{},                // flags
       settings.isolate_create_callback,    // isolate create callback
       settings.isolate_shutdown_callback,  // isolate shutdown callback
       "main",                              // dart entrypoint
       std::nullopt,                        // dart entrypoint library
       std::move(isolate_configuration),    // isolate configuration
-      nullptr                              // Volatile path tracker
+      std::move(context)                   // engine context
   );
   auto root_isolate = weak_isolate.lock();
   ASSERT_TRUE(root_isolate);
@@ -94,25 +89,20 @@ TEST_F(DartIsolateTest, SpawnIsolate) {
   auto isolate_configuration =
       IsolateConfiguration::InferFromSettings(settings);
 
+  UIDartState::Context context(std::move(task_runners));
+  context.advisory_script_uri = "main.dart";
+  context.advisory_script_entrypoint = "main";
   auto weak_isolate = DartIsolate::CreateRunningRootIsolate(
       vm_data->GetSettings(),              // settings
       vm_data->GetIsolateSnapshot(),       // isolate snapshot
-      std::move(task_runners),             // task runners
-      nullptr,                             // window
-      {},                                  // snapshot delegate
-      {},                                  // hint freed delegate
-      {},                                  // io manager
-      {},                                  // unref queue
-      {},                                  // image decoder
-      "main.dart",                         // advisory uri
-      "main",                              // advisory entrypoint,
+      nullptr,                             // platform configuration
       DartIsolate::Flags{},                // flags
       settings.isolate_create_callback,    // isolate create callback
       settings.isolate_shutdown_callback,  // isolate shutdown callback
       "main",                              // dart entrypoint
       std::nullopt,                        // dart entrypoint library
       std::move(isolate_configuration),    // isolate configuration
-      nullptr                              // Volatile path tracker
+      std::move(context)                   // engine context
   );
   auto root_isolate = weak_isolate.lock();
   ASSERT_TRUE(root_isolate);
@@ -172,25 +162,21 @@ TEST_F(DartIsolateTest, IsolateShutdownCallbackIsInIsolateScope) {
   );
   auto isolate_configuration =
       IsolateConfiguration::InferFromSettings(settings);
+
+  UIDartState::Context context(std::move(task_runners));
+  context.advisory_script_uri = "main.dart";
+  context.advisory_script_entrypoint = "main";
   auto weak_isolate = DartIsolate::CreateRunningRootIsolate(
       vm_data->GetSettings(),              // settings
       vm_data->GetIsolateSnapshot(),       // isolate snapshot
-      std::move(task_runners),             // task runners
-      nullptr,                             // window
-      {},                                  // snapshot delegate
-      {},                                  // hint freed delegate
-      {},                                  // io manager
-      {},                                  // unref queue
-      {},                                  // image decoder
-      "main.dart",                         // advisory uri
-      "main",                              // advisory entrypoint
+      nullptr,                             // platform configuration
       DartIsolate::Flags{},                // flags
       settings.isolate_create_callback,    // isolate create callback
       settings.isolate_shutdown_callback,  // isolate shutdown callback
       "main",                              // dart entrypoint
       std::nullopt,                        // dart entrypoint library
       std::move(isolate_configuration),    // isolate configuration
-      nullptr                              // Volatile path tracker
+      std::move(context)                   // engine context
   );
   auto root_isolate = weak_isolate.lock();
   ASSERT_TRUE(root_isolate);
@@ -281,37 +267,6 @@ TEST_F(DartIsolateTest, CanRegisterNativeCallback) {
                                       GetDefaultKernelFilePath());
   ASSERT_TRUE(isolate);
   ASSERT_EQ(isolate->get()->GetPhase(), DartIsolate::Phase::Running);
-  Wait();
-}
-
-TEST_F(DartIsolateTest, CanSaveCompilationTrace) {
-  if (DartVM::IsRunningPrecompiledCode()) {
-    // Can only save compilation traces in JIT modes.
-    GTEST_SKIP();
-    return;
-  }
-  AddNativeCallback("NotifyNative",
-                    CREATE_NATIVE_ENTRY(([this](Dart_NativeArguments args) {
-                      ASSERT_TRUE(tonic::DartConverter<bool>::FromDart(
-                          Dart_GetNativeArgument(args, 0)));
-                      Signal();
-                    })));
-
-  const auto settings = CreateSettingsForFixture();
-  auto vm_ref = DartVMRef::Create(settings);
-  auto thread = CreateNewThread();
-  TaskRunners task_runners(GetCurrentTestName(),  //
-                           thread,                //
-                           thread,                //
-                           thread,                //
-                           thread                 //
-  );
-  auto isolate = RunDartCodeInIsolate(vm_ref, settings, task_runners,
-                                      "testCanSaveCompilationTrace", {},
-                                      GetDefaultKernelFilePath());
-  ASSERT_TRUE(isolate);
-  ASSERT_EQ(isolate->get()->GetPhase(), DartIsolate::Phase::Running);
-
   Wait();
 }
 
@@ -431,26 +386,23 @@ TEST_F(DartIsolateTest, CanCreateServiceIsolate) {
 
   auto isolate_configuration =
       IsolateConfiguration::InferFromSettings(settings);
+
+  UIDartState::Context context(std::move(task_runners));
+  context.advisory_script_uri = "main.dart";
+  context.advisory_script_entrypoint = "main";
   auto weak_isolate = DartIsolate::CreateRunningRootIsolate(
       vm_data->GetSettings(),              // settings
       vm_data->GetIsolateSnapshot(),       // isolate snapshot
-      std::move(task_runners),             // task runners
-      nullptr,                             // window
-      {},                                  // snapshot delegate
-      {},                                  // hint freed delegate
-      {},                                  // io manager
-      {},                                  // unref queue
-      {},                                  // image decoder
-      "main.dart",                         // advisory uri
-      "main",                              // advisory entrypoint,
+      nullptr,                             // platform configuration
       DartIsolate::Flags{},                // flags
       settings.isolate_create_callback,    // isolate create callback
       settings.isolate_shutdown_callback,  // isolate shutdown callback
       "main",                              // dart entrypoint
       std::nullopt,                        // dart entrypoint library
       std::move(isolate_configuration),    // isolate configuration
-      nullptr                              // Volatile path tracker
+      std::move(context)                   // engine context
   );
+
   auto root_isolate = weak_isolate.lock();
   ASSERT_TRUE(root_isolate);
   ASSERT_EQ(root_isolate->GetPhase(), DartIsolate::Phase::Running);
@@ -532,26 +484,23 @@ TEST_F(DartIsolateTest, InvalidLoadingUnitFails) {
   );
   auto isolate_configuration =
       IsolateConfiguration::InferFromSettings(settings);
+
+  UIDartState::Context context(std::move(task_runners));
+  context.advisory_script_uri = "main.dart";
+  context.advisory_script_entrypoint = "main";
   auto weak_isolate = DartIsolate::CreateRunningRootIsolate(
       vm_data->GetSettings(),              // settings
       vm_data->GetIsolateSnapshot(),       // isolate snapshot
-      std::move(task_runners),             // task runners
-      nullptr,                             // window
-      {},                                  // snapshot delegate
-      {},                                  // hint freed delegate
-      {},                                  // io manager
-      {},                                  // unref queue
-      {},                                  // image decoder
-      "main.dart",                         // advisory uri
-      "main",                              // advisory entrypoint
+      nullptr,                             // platform configuration
       DartIsolate::Flags{},                // flags
       settings.isolate_create_callback,    // isolate create callback
       settings.isolate_shutdown_callback,  // isolate shutdown callback
       "main",                              // dart entrypoint
       std::nullopt,                        // dart entrypoint library
       std::move(isolate_configuration),    // isolate configuration
-      nullptr                              // volatile path tracker
+      std::move(context)                   // engine context
   );
+
   auto root_isolate = weak_isolate.lock();
   ASSERT_TRUE(root_isolate);
   ASSERT_EQ(root_isolate->GetPhase(), DartIsolate::Phase::Running);
