@@ -626,7 +626,7 @@ class SpanBox extends RangeBox {
     } else {
       // Example: let's say the text is "txet_werbeH" ("Hebrew_text" flowing from
       // right to left). Say we want to get the box for "brew". The `before` is
-      // the width of "He", and `right` is the width of "_text".
+      // the width of "He", and `after` is the width of "_text".
       //
       //                 after           before
       //              |----------|       |----|
