@@ -834,9 +834,9 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
    * Prior to Android Q, it's impossible to add real views as descendants of virtual nodes. This
    * breaks accessibility when an Android view is embedded in a Flutter app.
    *
-   * <p>This method overrides a This member is not intended for public use, and is only visible for
-   * testing. method in {@code ViewGroup} to workaround this limitation. This solution is derivated
-   * from Jetpack Compose, and can be found in the Android source code as well.
+   * <p>This method overrides a hidden method in {@code ViewGroup} to workaround this limitation.
+   * This solution is derivated from Jetpack Compose, and can be found in the Android source code as
+   * well.
    *
    * <p>This workaround finds the descendant {@code View} that matches the provided accessibility
    * id.

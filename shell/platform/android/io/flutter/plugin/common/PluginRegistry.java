@@ -351,8 +351,8 @@ public interface PluginRegistry {
 
   /**
    * Delegate interface for handling an {@link android.app.Activity}'s onDestroy method being
-   * called. A plugin that implements this interface can adopt the {@link FlutterNativeView} by retaining a
-   * reference and returning true.
+   * called. A plugin that implements this interface can adopt the {@link FlutterNativeView} by
+   * retaining a reference and returning true.
    *
    * @deprecated See https://flutter.dev/go/android-project-migration for migration details.
    */

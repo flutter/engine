@@ -568,8 +568,8 @@ zip_bundle("android") {
 
   deps = [
     ":android_jar",
-    ":android_symbols",
     ":android_javadoc",
+    ":android_symbols",
   ]
 
   if (current_cpu == "x86" || current_cpu == "x64") {
