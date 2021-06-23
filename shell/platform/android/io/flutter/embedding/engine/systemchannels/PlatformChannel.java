@@ -462,8 +462,7 @@ public class PlatformChannel {
     void showSystemOverlays(@NonNull List<SystemUiOverlay> overlays);
 
     /**
-     * The Flutter application would like the Android system to display the given {@code mode}, or
-     * manually configured {@code overlays}.
+     * The Flutter application would like the Android system to display the given {@code mode}.
      *
      * <p>{@link SystemUiMode#LEAN_BACK} refers to a fullscreen experience that restores system bars
      * upon tapping anywhere in the application. This tap gesture is not received by the
@@ -643,6 +642,10 @@ public class PlatformChannel {
     IMMERSIVE_STICKY("SystemUiMode.immersiveSticky"),
     EDGE_TO_EDGE("SystemUiMode.edgeToEdge");
 
+    /**
+     * Returns the SystemUiMode for the provied encoded value. @throws NoSuchFieldException if any
+     * of the given encoded overlay names are invalid.
+     */
     @NonNull
     static SystemUiMode fromValue(@NonNull String encodedName) throws NoSuchFieldException {
       for (SystemUiMode mode : SystemUiMode.values()) {
@@ -655,6 +658,7 @@ public class PlatformChannel {
 
     @NonNull private String encodedName;
 
+    /** Returens the encoded {@link SystemUiMode} */
     SystemUiMode(@NonNull String encodedName) {
       this.encodedName = encodedName;
     }
