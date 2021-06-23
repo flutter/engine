@@ -141,42 +141,26 @@ export 'engine/test_embedding.dart';
 import 'engine/text/layout_service.dart';
 export 'engine/text/layout_service.dart';
 
-// This import is intentionally commented out because the analyzer says it's unused.
-// import 'engine/text/line_break_properties.dart';
 export 'engine/text/line_break_properties.dart';
 
-// This import is intentionally commented out because the analyzer says it's unused.
-// import 'engine/text/line_breaker.dart';
 export 'engine/text/line_breaker.dart';
 
 import 'engine/text/measurement.dart';
 export 'engine/text/measurement.dart';
 
-// This import is intentionally commented out because the analyzer says it's unused.
-// import 'engine/text/paint_service.dart';
 export 'engine/text/paint_service.dart';
 
 import 'engine/text/paragraph.dart';
 export 'engine/text/paragraph.dart';
 
-// This import is intentionally commented out because the analyzer says it's unused.
-// import 'engine/text/canvas_paragraph.dart';
 export 'engine/text/canvas_paragraph.dart';
 
-// This import is intentionally commented out because the analyzer says it's unused.
-// import 'engine/text/ruler.dart';
 export 'engine/text/ruler.dart';
 
-// This import is intentionally commented out because the analyzer says it's unused.
-// import 'engine/text/unicode_range.dart';
 export 'engine/text/unicode_range.dart';
 
-// This import is intentionally commented out because the analyzer says it's unused.
-// import 'engine/text/word_break_properties.dart';
 export 'engine/text/word_break_properties.dart';
 
-// This import is intentionally commented out because the analyzer says it's unused.
-// import 'engine/text/word_breaker.dart';
 export 'engine/text/word_breaker.dart';
 
 
