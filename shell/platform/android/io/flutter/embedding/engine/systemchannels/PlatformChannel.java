@@ -497,8 +497,8 @@ public class PlatformChannel {
      * set of overlays sent via {@link #showSystemOverlays(List)} or {@link
      * #showSystemUiMode(SystemUiMode)}.
      *
-     * <p>If {@link #showSystemOverlays(List)} or {@link #showSystemUiMode(SystemUiMode)} has
-     * yet to be called, then a default system overlay appearance is desired:
+     * <p>If {@link #showSystemOverlays(List)} or {@link #showSystemUiMode(SystemUiMode)} has yet to
+     * be called, then a default system overlay appearance is desired:
      *
      * <p>{@code View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN }
      */
