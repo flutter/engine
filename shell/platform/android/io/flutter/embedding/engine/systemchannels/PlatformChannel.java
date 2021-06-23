@@ -495,9 +495,9 @@ public class PlatformChannel {
     /**
      * The Flutter application would like to restore the visibility of system overlays to the last
      * set of overlays sent via {@link #showSystemOverlays(List)} or {@link
-     * #showSystemUiMode(SystemUiMode, List)}.
+     * #showSystemUiMode(SystemUiMode)}.
      *
-     * <p>If {@link #showSystemOverlays(List)} or {@link #showSystemUiMode(SystemUiMode, List)} has
+     * <p>If {@link #showSystemOverlays(List)} or {@link #showSystemUiMode(SystemUiMode)} has
      * yet to be called, then a default system overlay appearance is desired:
      *
      * <p>{@code View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN }
