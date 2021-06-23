@@ -207,7 +207,7 @@ public class PlatformPlugin {
       activity.setTaskDescription(
           new TaskDescription(description.label, /* icon= */ null, description.color));
     }
-    if (Build.VERSION.SDK_INT >= 28) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
       TaskDescription taskDescription =
           new TaskDescription(description.label, 0, description.color);
       activity.setTaskDescription(taskDescription);
@@ -379,7 +379,7 @@ public class PlatformPlugin {
       window.setStatusBarColor(systemChromeStyle.statusBarColor);
     }
     // You can't change the color of the status icons until SDK 23.
-    if (systemChromeStyle.statusBarIconBrightness != null && Build.VERSION.SDK_INT >= 23) {
+    if (systemChromeStyle.statusBarIconBrightness != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
       switch (systemChromeStyle.statusBarIconBrightness) {
         case DARK:
           // View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
@@ -393,7 +393,7 @@ public class PlatformPlugin {
     // You can't override the enforced contrast for a transparent status bar until SDK 29.
     // This overrides the translucent scrim that may be placed behind the bar on SDK 29+ to ensure
     // contrast is appropriate when using full screen layout modes like Edge to Edge.
-    if (!systemChromeStyle.systemStatusBarContrastEnforced && Build.VERSION.SDK_INT >= 29) {
+    if (!systemChromeStyle.systemStatusBarContrastEnforced && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
       window.setStatusBarContrastEnforced(systemChromeStyle.systemStatusBarContrastEnforced);
     }
 
@@ -408,7 +408,7 @@ public class PlatformPlugin {
     }
     // You can't change the color of the navigation buttons until SDK 26.
     if (systemChromeStyle.systemNavigationBarIconBrightness != null
-        && Build.VERSION.SDK_INT >= 26) {
+        && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
       switch (systemChromeStyle.systemNavigationBarIconBrightness) {
         case DARK:
           // View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
@@ -420,7 +420,7 @@ public class PlatformPlugin {
       }
     }
     // You can't change the color of the navigation bar divider color until SDK 28.
-    if (systemChromeStyle.systemNavigationBarDividerColor != null && Build.VERSION.SDK_INT >= 28) {
+    if (systemChromeStyle.systemNavigationBarDividerColor != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
       window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
       window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
       window.setNavigationBarDividerColor(systemChromeStyle.systemNavigationBarDividerColor);
@@ -430,7 +430,7 @@ public class PlatformPlugin {
     // This overrides the translucent scrim that may be placed behind 2/3 button navigation bars on
     // SDK 29+ to ensure contrast is appropriate when using full screen layout modes like
     // Edge to Edge.
-    if (!systemChromeStyle.systemNavigationBarContrastEnforced && Build.VERSION.SDK_INT >= 29) {
+    if (!systemChromeStyle.systemNavigationBarContrastEnforced && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
       window.setNavigationBarContrastEnforced(
           systemChromeStyle.systemNavigationBarContrastEnforced);
     }
