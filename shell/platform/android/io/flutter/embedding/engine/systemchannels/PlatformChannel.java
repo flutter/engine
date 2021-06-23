@@ -106,14 +106,14 @@ public class PlatformChannel {
               case "SystemChrome.setEnabledSystemUIMode":
                 try {
                   SystemUiMode mode = decodeSystemUiMode((String) arguments);
-                  platformMessageHandler.showSystemUiMode(mode);
-                  result.success(null);
                 } catch (JSONException | NoSuchFieldException exception) {
                   // JSONException: One or more expected fields were either omitted or referenced an
                   // invalid type.
                   // NoSuchFieldException: One or more of the overlay names are invalid.
                   result.error("error", exception.getMessage(), null);
                 }
+                platformMessageHandler.showSystemUiMode(mode);
+                result.success(null);
                 break;
               case "SystemChrome.setSystemUIChangeListener":
                 platformMessageHandler.setSystemUiChangeListener();
