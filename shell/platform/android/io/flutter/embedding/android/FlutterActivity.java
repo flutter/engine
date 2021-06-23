@@ -973,7 +973,7 @@ public class FlutterActivity extends Activity
    *
    * <p>Control surfaces are used to provide Android resources and lifecycle events to plugins that
    * are attached to the {@link io.flutter.embedding.engine.FlutterEngine}. If {@code
-   * shouldAttachEngineToActivity} is true then this {@code FlutterActivity} will connect its {@link
+   * shouldAttachEngineToActivity} is true, then this {@code FlutterActivity} will connect its {@link
    * io.flutter.embedding.engine.FlutterEngine} to itself, along with any plugins that are
    * registered with that {@link io.flutter.embedding.engine.FlutterEngine}. This allows plugins to
    * access the {@code Activity}, as well as receive {@code Activity}-specific calls, e.g., {@link
