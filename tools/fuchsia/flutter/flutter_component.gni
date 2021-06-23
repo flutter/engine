@@ -4,8 +4,6 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-# ./build/module_args/dart.gni
-# ./flutter/tools/fuchsia/dart/dart.gni
 import("//flutter/tools/fuchsia/dart/dart.gni")
 import("//flutter/tools/fuchsia/dart/dart_library.gni")
 import("//flutter/tools/fuchsia/flutter/config.gni")
@@ -136,7 +134,8 @@ template("flutter_component") {
     main_dart = _main_dart
     main_package = _main_package
 
-    # requires `flutter_tools` from the `flutter` repo
+    # TODO(richkadel): Should this be adapted or removed,
+    # because this assignment requires `flutter_tools` from the `flutter` repo?
     # generate_asset_manifest = true
 
     build_cfg = _build_cfg

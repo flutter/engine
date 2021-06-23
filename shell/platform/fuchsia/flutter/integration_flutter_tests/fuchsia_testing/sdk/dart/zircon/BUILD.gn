@@ -4,10 +4,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-# import("//build/components/fuchsia_test_package.gni")
 import("//flutter/tools/fuchsia/dart/dart_library.gni")
-# import("//build/dart/dart_test_component.gni")
-# import("//build/testing/test_spec.gni")
 
 dart_library("zircon") {
   package_name = "zircon"
@@ -30,94 +27,3 @@ dart_library("zircon") {
     "zircon.dart",
   ]
 }
-
-# dart_test_component("unittests_component") {
-#   component_name = "zircon_unittests"
-#   manifest = "meta/zircon_unittests.cmx"
-#   sources = [
-#     "channel_test.dart",
-#     "eventpair_test.dart",
-#     "handle_test.dart",
-#     "socket_test.dart",
-#     "vmo_test.dart",
-#   ]
-#   deps = [
-#     ":zircon",
-#     "//third_party/dart-pkg/pub/test",
-#   ]
-# }
-
-# fuchsia_test_package("zircon_unittests") {
-#   test_components = [ ":unittests_component" ]
-# }
-
-# if (is_linux || is_mac) {
-#   _test_data_dir = "$root_out_dir/test_data/extract_zircon_constants"
-#   copy("extract_zircon_constants_data") {
-#     sources = [
-#       "//prebuilt/third_party/dart/$host_os-$host_cpu/bin/dart",
-#       "//prebuilt/third_party/dart/$host_os-$host_cpu/bin/dartfmt",
-#       "//zircon/system/public/zircon/errors.h",
-#       "//zircon/system/public/zircon/rights.h",
-#       "//zircon/system/public/zircon/types.h",
-#       "extract-zircon-constants.py",
-#       "lib/src/constants.dart",
-#     ]
-
-#     outputs = [ "$_test_data_dir/{{source_file_part}}" ]
-
-#     metadata = {
-#       test_runtime_deps = [
-#         "$_test_data_dir/constants.dart",
-#         "$_test_data_dir/dart",
-#         "$_test_data_dir/dartfmt",
-#         "$_test_data_dir/errors.h",
-#         "$_test_data_dir/extract-zircon-constants.py",
-#         "$_test_data_dir/rights.h",
-#         "$_test_data_dir/types.h",
-#       ]
-#     }
-#   }
-
-#   copy("extract_zircon_constants_snapshot_data") {
-#     sources = [ "//prebuilt/third_party/dart/$host_os-$host_cpu/bin/snapshots/dartfmt.dart.snapshot" ]
-#     outputs = [ "$_test_data_dir/snapshots/dartfmt.dart.snapshot" ]
-#     metadata = {
-#       test_runtime_deps = outputs
-#     }
-#   }
-
-#   _test = "$root_out_dir/test_extract_zircon_constants"
-#   test_spec("test_extract_zircon_constants_spec") {
-#     target =
-#         get_label_info(":test_extract_zircon_constants", "label_with_toolchain")
-#     path = _test
-
-#     deps = [
-#       ":extract_zircon_constants_data",
-#       ":extract_zircon_constants_snapshot_data",
-#     ]
-#   }
-
-#   # TODO(fxb/62912): Move over the extract constants tests left out of this migration //topaz/public/dart/zircon.
-#   # This is effectively a host test target.
-#   copy("test_extract_zircon_constants") {
-#     testonly = true
-#     sources = [ "test-extract-zircon-constants.sh" ]
-#     outputs = [ _test ]
-#     deps = [ ":test_extract_zircon_constants_spec" ]
-#   }
-# }
-
-# group("target_tests") {
-#   testonly = true
-#   deps = [
-#     ":test_extract_zircon_constants($host_toolchain)",
-#     ":zircon_unittests",
-#   ]
-# }
-
-# group("tests") {
-#   testonly = true
-#   deps = [ ":target_tests" ]
-# }

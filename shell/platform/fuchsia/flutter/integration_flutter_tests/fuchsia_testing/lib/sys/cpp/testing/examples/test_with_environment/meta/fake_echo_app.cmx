@@ -1,8 +1,0 @@
-{
-    "include": [
-        "sdk/lib/diagnostics/syslog/client.shard.cmx"
-    ],
-    "program": {
-        "binary": "bin/fake_echo_app"
-    }
-}

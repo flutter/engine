@@ -33,7 +33,6 @@ executable("bin") {
   libs = [
     # This is needed for //third_party/googletest for linking zircon symbols.
     "//fuchsia/sdk/$host_os/arch/$target_cpu/sysroot/lib/libzircon.so",
-    # TODO(richkadel): Confirm if this libzircon.so setting is needed here
   ]
 
   deps = [

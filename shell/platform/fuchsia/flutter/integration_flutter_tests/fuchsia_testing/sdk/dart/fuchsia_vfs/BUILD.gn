@@ -6,11 +6,7 @@
 
 import("//build/fuchsia/sdk.gni")
 
-# import("//build/components.gni")
 import("//flutter/tools/fuchsia/dart/dart_library.gni")
-# import("//build/dart/dart_test_component.gni")
-# import("//build/dart/fidl_move.gni")
-# import("//build/testing/environments.gni")
 
 dart_library("fuchsia_vfs") {
   package_name = "fuchsia_vfs"
@@ -32,47 +28,9 @@ dart_library("fuchsia_vfs") {
   deps = [
     "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/sdk/dart/fidl",
     "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/sdk/dart/zircon",
-    #"$fuchsia_sdk_root/fidl:fuchsia.io",
-    #"$fuchsia_sdk_root/fidl:fuchsia.io2",
     "//flutter/tools/fuchsia/fidl:fuchsia.io",
     "//flutter/tools/fuchsia/fidl:fuchsia.io2",
     "//third_party/dart/pkg/meta",
     "//third_party/pkg/quiver",
   ]
 }
-
-# dart_test_component("unittests-component") {
-#   component_name = "fuchsia-vfs-unittests"
-#   manifest = "meta/fuchsia-vfs-unittests.cmx"
-#   sources = [
-#     "composed_pseudo_dir_test.dart",
-#     "pseudo_dir_test.dart",
-#     "pseudo_file_test.dart",
-#     "pseudo_vmo_file_test.dart",
-#     "service_test.dart",
-#     "vmo_file_test.dart",
-#   ]
-
-#   deps = [
-#     ":fuchsia_vfs",
-#     "//garnet/examples/fidl/services:echo",
-#     "//sdk/dart/fidl",
-#     "//sdk/dart/zircon",
-#     "//sdk/fidl/fuchsia.io",
-#     "//third_party/dart-pkg/pub/test",
-#   ]
-# }
-
-# fuchsia_test_package("fuchsia-vfs-unittests") {
-#   test_components = [ ":unittests-component" ]
-# }
-
-# group("unit_tests") {
-#   testonly = true
-#   deps = [ ":fuchsia-vfs-unittests" ]
-# }
-
-# group("tests") {
-#   testonly = true
-#   deps = [ ":unit_tests" ]
-# }

@@ -13,97 +13,6 @@ import("//flutter/tools/fuchsia/dart/dart_package_config.gni")
 import("//flutter/tools/fuchsia/dart/kernel/dart_kernel.gni")
 import("//fuchsia/sdk/linux/build/cmc.gni")
 
-# # Creates a flutter asset manifest from the pubspec.yaml file.
-# #
-# # Parameters
-# #
-# #   pubsec (required)
-# #     The path to the pubsec.yaml file which contains the assets
-# #     Type: path
-# #
-# #   component_name (required)
-# #     The name of the component
-# #     Type: string
-# #
-# #   package_config (required)
-# #     The path to the package_config.json file which contains the source map
-# #     Type: path
-# #
-# template("_flutter_asset_manifest") {
-#   action(target_name) {
-#     forward_variables_from(invoker,
-#                            [
-#                              "deps",
-#                              "testonly",
-#                              "visibility",
-#                            ])
-#     assert(defined(invoker.component_name), "component_name is required")
-#     assert(defined(invoker.package_config), "package_config is required")
-#     assert(defined(invoker.pubspec), "pubspec is required")
-
-#     _flutter_base = "//third_party/dart-pkg/git/flutter"
-#     _flutter_asset_tools_label = "$_flutter_base/packages/flutter_tools:fuchsia_asset_builder($host_toolchain)"
-#     _flutter_asset_tools_out_dir =
-#         get_label_info(_flutter_asset_tools_label, "root_out_dir")
-#     _flutter_asset_tools_bin =
-#         "$_flutter_asset_tools_out_dir/dart-tools/fuchsia_asset_builder"
-
-#     _flutter_asset_tools_snapshot_label = "$_flutter_base/packages/flutter_tools:fuchsia_asset_builder_snapshot($host_toolchain)"
-#     _flutter_asset_tools_target_gen_dir =
-#         get_label_info(_flutter_asset_tools_snapshot_label, "target_gen_dir")
-#     _flutter_asset_tools_snapshot =
-#         "$_flutter_asset_tools_target_gen_dir/fuchsia_asset_builder.snapshot"
-
-#     _asset_manifest =
-#         "$target_gen_dir/build/${invoker.component_name}_pkgassets"
-
-#     # hermetic_deps = false
-#     script = "//flutter/tools/fuchsia/gen_asset_manifest.py"
-
-#     inputs = [
-#       invoker.pubspec,
-#       _flutter_asset_tools_bin,
-#       _flutter_asset_tools_snapshot,
-#     ]
-
-#     outputs = [ _asset_manifest ]
-
-#     args = [
-#       "--flutter-root",
-#       rebase_path(_flutter_base, root_build_dir),
-#       "--flutter-tools",
-#       rebase_path(_flutter_asset_tools_bin, root_build_dir),
-#       "--asset-dir",
-#       rebase_path("$target_gen_dir/build", root_build_dir),
-#       "--packages",
-#       rebase_path(invoker.package_config, root_build_dir),
-#       "--output",
-#       rebase_path(_asset_manifest, root_build_dir),
-#       "--component-name",
-#       invoker.component_name,
-#       "--manifest",
-#       rebase_path(invoker.pubspec, root_build_dir),
-#     ]
-
-#     if (!defined(deps)) {
-#       deps = []
-#     }
-#     deps += [
-#       _flutter_asset_tools_label,
-#       _flutter_asset_tools_snapshot_label,
-#     ]
-
-#     metadata = {
-#       distribution_entries = [
-#         {
-#           file = rebase_path(_asset_manifest, root_build_dir)
-#           label = get_label_info(target_name, "label_with_toolchain")
-#         },
-#       ]
-#     }
-#   }
-# }
-
 # Defines a component which will run in a flutter_runner or dart_runner
 #
 # This template is not intended to be used directly. Users should use the
@@ -206,17 +115,8 @@ template("flutter_dart_component") {
   _kernel_target_dep_name = _kernel_target_name + "_gen_file"
   _kernel_path = "$target_gen_dir/__untraced_dart_kernel__/${target_name}.dil"
 
-  # dart_kernel("shim_kernel") {
-  #   main_dart = "shim.dart"
-  #   kernel_platform_files = "../kernel:kernel_platform_files"
-  #   product = false
-  #   aot = true
-  # }
   dart_kernel(_kernel_target_name) {
     kernel_path = _kernel_path
-
-###
-#    kernel_platform_files = "//shell/platform/fuchsia/flutter/kernel:kernel_platform_files"
 
     # establishes a dependency chain for the snapshot since
     # the kernel is wrapped in a group
@@ -249,24 +149,6 @@ template("flutter_dart_component") {
 
   _component_deps += [ ":$_kernel_target_name" ]
 
-  # if (defined(invoker.generate_asset_manifest) &&
-  #     invoker.generate_asset_manifest) {
-  #   _asset_manifest_target_name = "${target_name}_asset_manifest"
-  #   _flutter_asset_manifest(_asset_manifest_target_name) {
-  #     forward_variables_from(invoker,
-  #                            [
-  #                              "testonly",
-  #                              "visibility",
-  #                            ])
-  #     component_name = _component_name
-  #     package_config = _packages_path
-  #     pubspec = "pubspec.yaml"
-  #     deps = [ ":$_dart_package_config_target_name" ]
-  #   }
-
-  #   _component_deps += [ ":$_asset_manifest_target_name" ]
-  # }
-
   if (build_cfg.is_aot) {
     _snapshot_path = "$target_gen_dir/${_component_name}_snapshot.so"
     _snapshot_target_name = target_name + "_snapshot"
@@ -296,7 +178,6 @@ template("flutter_dart_component") {
         _stats_json_path,
       ]
 
-      #################################
       if (defined(invoker.toolchain)) {
         toolchain = invoker.toolchain
       } else {
@@ -336,7 +217,7 @@ template("flutter_dart_component") {
       # No asserts in debug or release product.
       # No asserts in non-product release
       # Yes asserts in non-product debug.
-      # if (is_debug && !dart_force_product) { # }
+      # if (is_debug && !dart_force_product)
       if (build_cfg.enable_asserts) {
         args += [ "--enable_asserts" ]
       }

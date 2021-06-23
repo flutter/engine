@@ -7,8 +7,6 @@
 import("//build/fuchsia/sdk.gni")
 
 source_set("vmo") {
-  # visibility = [ "//src/lib/fsl/*" ]
-
   sources = [
     "file.cc",
     "file.h",
@@ -34,11 +32,5 @@ source_set("vmo") {
     "$fuchsia_sdk_root/pkg:zx",
     "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/src/lib/files",
     "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/src/lib/fxl:memory",
-    # "//zircon/public/lib/fbl",
   ]
-
-  # public_configs = [ "//garnet/public:config" ]
-
-  # TODO(fxbug.dev/58162): delete the below and fix compiler warnings
-  # configs += [ "//build/config:Wno-conversion" ]
 }

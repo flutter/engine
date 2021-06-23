@@ -1,8 +1,0 @@
-// Adapted from $FUCHSIA_DIR/sdk/dart/fuchsia_scenic_flutter/lib/child_view_connection.dart
-
-// Copyright 2018 The Fuchsia Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
-/// Utilities for working with Scenic Views through Flutter.
-export 'child_view.dart';

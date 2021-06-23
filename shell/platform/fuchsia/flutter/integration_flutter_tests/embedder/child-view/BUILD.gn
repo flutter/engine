@@ -12,10 +12,7 @@ dart_library("lib") {
   package_name = "child-view"
   sources = [ "main.dart" ]
 
-  deps = [
-    # TODO(richkadel): replace flutter API calls with dart_ui
-    # "//third_party/dart-pkg/git/flutter/packages/flutter",
-  ]
+  deps = []
 }
 
 flutter_component("child-view") {
