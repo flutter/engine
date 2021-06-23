@@ -23,7 +23,6 @@ import io.flutter.embedding.engine.dart.PlatformMessageHandler;
 import io.flutter.embedding.engine.deferredcomponents.DeferredComponentManager;
 import io.flutter.embedding.engine.mutatorsstack.FlutterMutatorsStack;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
-import io.flutter.embedding.engine.renderer.RenderSurface;
 import io.flutter.embedding.engine.renderer.SurfaceTextureWrapper;
 import io.flutter.plugin.common.StandardMessageCodec;
 import io.flutter.plugin.localization.LocalizationPlugin;
@@ -734,7 +733,8 @@ public class FlutterJNI {
   private native void nativeMarkTextureFrameAvailable(long nativeShellHolderId, long textureId);
 
   /**
-   * Unregisters a texture that was registered with {@link #registerTexture(long, SurfaceTextureWrapper)}.
+   * Unregisters a texture that was registered with {@link #registerTexture(long,
+   * SurfaceTextureWrapper)}.
    */
   @UiThread
   public void unregisterTexture(long textureId) {
@@ -800,8 +800,8 @@ public class FlutterJNI {
    * will be dropped (ignored). Therefore, when using {@code FlutterJNI} to integrate a Flutter
    * context in an app, a {@link PlatformMessageHandler} must be registered for 2-way Java/Dart
    * communication to operate correctly. Moreover, the handler must be implemented such that
-   * fundamental platform messages are handled as expected. See {@link io.flutter.view.FlutterNativeView} for an
-   * example implementation.
+   * fundamental platform messages are handled as expected. See {@link
+   * io.flutter.view.FlutterNativeView} for an example implementation.
    */
   @UiThread
   public void setPlatformMessageHandler(@Nullable PlatformMessageHandler platformMessageHandler) {

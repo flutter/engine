@@ -12,8 +12,8 @@ import androidx.annotation.Nullable;
 public interface ServicePluginBinding {
 
   /**
-   * Returns the {@link Service} that is currently attached to the {@link io.flutter.embedding.engine.FlutterEngine} that owns
-   * this {@code ServicePluginBinding}.
+   * Returns the {@link Service} that is currently attached to the {@link
+   * io.flutter.embedding.engine.FlutterEngine} that owns this {@code ServicePluginBinding}.
    */
   @NonNull
   Service getService();

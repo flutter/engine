@@ -63,7 +63,8 @@ import io.flutter.plugin.platform.PlatformPlugin;
  *   <li>Chooses the Dart execution app bundle path and entrypoint.
  *   <li>Chooses Flutter's initial route.
  *   <li>Renders {@code Activity} transparently, if desired.
- *   <li>Offers hooks for subclasses to provide and configure a {@link io.flutter.embedding.engine.FlutterEngine}.
+ *   <li>Offers hooks for subclasses to provide and configure a {@link
+ *       io.flutter.embedding.engine.FlutterEngine}.
  *   <li>Save and restore instance state, see {@code #shouldRestoreAndSaveState()};
  * </ul>
  *
@@ -96,36 +97,41 @@ import io.flutter.plugin.platform.PlatformPlugin;
  *
  * <p><strong>Using a cached FlutterEngine</strong>
  *
- * <p>{@code FlutterActivity} can be used with a cached {@link io.flutter.embedding.engine.FlutterEngine} instead of creating a
- * new one. Use {@link #withCachedEngine(String)} to build a {@code FlutterActivity} {@code Intent}
- * that is configured to use an existing, cached {@link io.flutter.embedding.engine.FlutterEngine}. {@link
+ * <p>{@code FlutterActivity} can be used with a cached {@link
+ * io.flutter.embedding.engine.FlutterEngine} instead of creating a new one. Use {@link
+ * #withCachedEngine(String)} to build a {@code FlutterActivity} {@code Intent} that is configured
+ * to use an existing, cached {@link io.flutter.embedding.engine.FlutterEngine}. {@link
  * io.flutter.embedding.engine.FlutterEngineCache} is the cache that is used to obtain a given
- * cached {@link io.flutter.embedding.engine.FlutterEngine}. You must create and put a {@link io.flutter.embedding.engine.FlutterEngine} into the {@link
+ * cached {@link io.flutter.embedding.engine.FlutterEngine}. You must create and put a {@link
+ * io.flutter.embedding.engine.FlutterEngine} into the {@link
  * io.flutter.embedding.engine.FlutterEngineCache} yourself before using the {@link
  * #withCachedEngine(String)} builder. An {@code IllegalStateException} will be thrown if a cached
  * engine is requested but does not exist in the cache.
  *
- * <p>When using a cached {@link io.flutter.embedding.engine.FlutterEngine}, that {@link io.flutter.embedding.engine.FlutterEngine} should already be
- * executing Dart code, which means that the Dart entrypoint and initial route have already been
- * defined. Therefore, {@link CachedEngineIntentBuilder} does not offer configuration of these
- * properties.
+ * <p>When using a cached {@link io.flutter.embedding.engine.FlutterEngine}, that {@link
+ * io.flutter.embedding.engine.FlutterEngine} should already be executing Dart code, which means
+ * that the Dart entrypoint and initial route have already been defined. Therefore, {@link
+ * CachedEngineIntentBuilder} does not offer configuration of these properties.
  *
- * <p>It is generally recommended to use a cached {@link io.flutter.embedding.engine.FlutterEngine} to avoid a momentary delay
- * when initializing a new {@link io.flutter.embedding.engine.FlutterEngine}. The two exceptions to using a cached {@link
+ * <p>It is generally recommended to use a cached {@link io.flutter.embedding.engine.FlutterEngine}
+ * to avoid a momentary delay when initializing a new {@link
+ * io.flutter.embedding.engine.FlutterEngine}. The two exceptions to using a cached {@link
  * FlutterEngine} are:
  *
  * <p>
  *
  * <ul>
  *   <li>When {@code FlutterActivity} is the first {@code Activity} displayed by the app, because
- *       pre-warming a {@link io.flutter.embedding.engine.FlutterEngine} would have no impact in this situation.
+ *       pre-warming a {@link io.flutter.embedding.engine.FlutterEngine} would have no impact in
+ *       this situation.
  *   <li>When you are unsure when/if you will need to display a Flutter experience.
  * </ul>
  *
  * <p>See https://flutter.dev/docs/development/add-to-app/performance for additional performance
  * explorations on engine loading.
  *
- * <p>The following illustrates how to pre-warm and cache a {@link io.flutter.embedding.engine.FlutterEngine}:
+ * <p>The following illustrates how to pre-warm and cache a {@link
+ * io.flutter.embedding.engine.FlutterEngine}:
  *
  * <pre>{@code
  * // Create and pre-warm a FlutterEngine.
@@ -216,8 +222,9 @@ public class FlutterActivity extends Activity
 
   /**
    * Creates an {@link NewEngineIntentBuilder}, which can be used to configure an {@link Intent} to
-   * launch a {@code FlutterActivity} that internally creates a new {@link io.flutter.embedding.engine.FlutterEngine} using the
-   * desired Dart entrypoint, initial route, etc.
+   * launch a {@code FlutterActivity} that internally creates a new {@link
+   * io.flutter.embedding.engine.FlutterEngine} using the desired Dart entrypoint, initial route,
+   * etc.
    */
   @NonNull
   public static NewEngineIntentBuilder withNewEngine() {
@@ -294,8 +301,9 @@ public class FlutterActivity extends Activity
 
   /**
    * Creates a {@link CachedEngineIntentBuilder}, which can be used to configure an {@link Intent}
-   * to launch a {@code FlutterActivity} that internally uses an existing {@link io.flutter.embedding.engine.FlutterEngine} that
-   * is cached in {@link io.flutter.embedding.engine.FlutterEngineCache}.
+   * to launch a {@code FlutterActivity} that internally uses an existing {@link
+   * io.flutter.embedding.engine.FlutterEngine} that is cached in {@link
+   * io.flutter.embedding.engine.FlutterEngineCache}.
    */
   public static CachedEngineIntentBuilder withCachedEngine(@NonNull String cachedEngineId) {
     return new CachedEngineIntentBuilder(FlutterActivity.class, cachedEngineId);
@@ -303,7 +311,8 @@ public class FlutterActivity extends Activity
 
   /**
    * Builder to create an {@code Intent} that launches a {@code FlutterActivity} with an existing
-   * {@link io.flutter.embedding.engine.FlutterEngine} that is cached in {@link io.flutter.embedding.engine.FlutterEngineCache}.
+   * {@link io.flutter.embedding.engine.FlutterEngine} that is cached in {@link
+   * io.flutter.embedding.engine.FlutterEngineCache}.
    */
   public static class CachedEngineIntentBuilder {
     private final Class<? extends FlutterActivity> activityClass;
@@ -316,8 +325,9 @@ public class FlutterActivity extends Activity
      * {@code FlutterActivity}.
      *
      * <p>Subclasses of {@code FlutterActivity} should provide their own static version of {@link
-     * FlutterActivity#withCachedEngine(String)}, which returns an instance of {@code CachedEngineIntentBuilder}
-     * constructed with a {@code Class} reference to the {@code FlutterActivity} subclass, e.g.:
+     * FlutterActivity#withCachedEngine(String)}, which returns an instance of {@code
+     * CachedEngineIntentBuilder} constructed with a {@code Class} reference to the {@code
+     * FlutterActivity} subclass, e.g.:
      *
      * <p>{@code return new CachedEngineIntentBuilder(MyFlutterActivity.class, engineId); }
      */
@@ -328,8 +338,8 @@ public class FlutterActivity extends Activity
     }
 
     /**
-     * Returns true if the cached {@link io.flutter.embedding.engine.FlutterEngine} should be destroyed and removed from the
-     * cache when this {@code FlutterActivity} is destroyed.
+     * Returns true if the cached {@link io.flutter.embedding.engine.FlutterEngine} should be
+     * destroyed and removed from the cache when this {@code FlutterActivity} is destroyed.
      *
      * <p>The default value is {@code false}.
      */
@@ -581,8 +591,8 @@ public class FlutterActivity extends Activity
   }
 
   /**
-   * Irreversibly release this activity's control of the {@link io.flutter.embedding.engine.FlutterEngine} and its
-   * subcomponents.
+   * Irreversibly release this activity's control of the {@link
+   * io.flutter.embedding.engine.FlutterEngine} and its subcomponents.
    *
    * <p>Calling will disconnect this activity's view from the Flutter renderer, disconnect this
    * activity from plugins' {@link ActivityControlSurface}, and stop system channel messages from
@@ -709,9 +719,9 @@ public class FlutterActivity extends Activity
   }
 
   /**
-   * Returns the ID of a statically cached {@link io.flutter.embedding.engine.FlutterEngine} to use within this {@code
-   * FlutterActivity}, or {@code null} if this {@code FlutterActivity} does not want to use a cached
-   * {@link io.flutter.embedding.engine.FlutterEngine}.
+   * Returns the ID of a statically cached {@link io.flutter.embedding.engine.FlutterEngine} to use
+   * within this {@code FlutterActivity}, or {@code null} if this {@code FlutterActivity} does not
+   * want to use a cached {@link io.flutter.embedding.engine.FlutterEngine}.
    */
   @Override
   @Nullable
@@ -720,13 +730,13 @@ public class FlutterActivity extends Activity
   }
 
   /**
-   * Returns false if the {@link io.flutter.embedding.engine.FlutterEngine} backing this {@code FlutterActivity} should outlive
-   * this {@code FlutterActivity}, or true to be destroyed when the {@code FlutterActivity} is
-   * destroyed.
+   * Returns false if the {@link io.flutter.embedding.engine.FlutterEngine} backing this {@code
+   * FlutterActivity} should outlive this {@code FlutterActivity}, or true to be destroyed when the
+   * {@code FlutterActivity} is destroyed.
    *
    * <p>The default value is {@code true} in cases where {@code FlutterActivity} created its own
-   * {@link io.flutter.embedding.engine.FlutterEngine}, and {@code false} in cases where a cached {@link io.flutter.embedding.engine.FlutterEngine} was
-   * provided.
+   * {@link io.flutter.embedding.engine.FlutterEngine}, and {@code false} in cases where a cached
+   * {@link io.flutter.embedding.engine.FlutterEngine} was provided.
    */
   @Override
   public boolean shouldDestroyEngineWithHost() {
@@ -877,10 +887,11 @@ public class FlutterActivity extends Activity
   }
 
   /**
-   * Hook for subclasses to easily provide a custom {@link io.flutter.embedding.engine.FlutterEngine}.
+   * Hook for subclasses to easily provide a custom {@link
+   * io.flutter.embedding.engine.FlutterEngine}.
    *
-   * <p>This hook is where a cached {@link io.flutter.embedding.engine.FlutterEngine} should be provided, if a cached {@link
-   * FlutterEngine} is desired.
+   * <p>This hook is where a cached {@link io.flutter.embedding.engine.FlutterEngine} should be
+   * provided, if a cached {@link FlutterEngine} is desired.
    */
   @Nullable
   @Override
@@ -890,8 +901,8 @@ public class FlutterActivity extends Activity
   }
 
   /**
-   * Hook for subclasses to obtain a reference to the {@link io.flutter.embedding.engine.FlutterEngine} that is owned by this
-   * {@code FlutterActivity}.
+   * Hook for subclasses to obtain a reference to the {@link
+   * io.flutter.embedding.engine.FlutterEngine} that is owned by this {@code FlutterActivity}.
    */
   @Nullable
   protected FlutterEngine getFlutterEngine() {
@@ -950,37 +961,43 @@ public class FlutterActivity extends Activity
 
   /**
    * Hook for subclasses to control whether or not the {@link FlutterFragment} within this {@code
-   * Activity} automatically attaches its {@link io.flutter.embedding.engine.FlutterEngine} to this {@code Activity}.
+   * Activity} automatically attaches its {@link io.flutter.embedding.engine.FlutterEngine} to this
+   * {@code Activity}.
    *
    * <p>This property is controlled with a protected method instead of an {@code Intent} argument
    * because the only situation where changing this value would help, is a situation in which {@code
-   * FlutterActivity} is being subclassed to utilize a custom and/or cached {@link io.flutter.embedding.engine.FlutterEngine}.
+   * FlutterActivity} is being subclassed to utilize a custom and/or cached {@link
+   * io.flutter.embedding.engine.FlutterEngine}.
    *
    * <p>Defaults to {@code true}.
    *
    * <p>Control surfaces are used to provide Android resources and lifecycle events to plugins that
-   * are attached to the {@link io.flutter.embedding.engine.FlutterEngine}. If {@code shouldAttachEngineToActivity} is true then
-   * this {@code FlutterActivity} will connect its {@link io.flutter.embedding.engine.FlutterEngine} to itself, along with any
-   * plugins that are registered with that {@link io.flutter.embedding.engine.FlutterEngine}. This allows plugins to access the
-   * {@code Activity}, as well as receive {@code Activity}-specific calls, e.g., {@link
+   * are attached to the {@link io.flutter.embedding.engine.FlutterEngine}. If {@code
+   * shouldAttachEngineToActivity} is true then this {@code FlutterActivity} will connect its {@link
+   * io.flutter.embedding.engine.FlutterEngine} to itself, along with any plugins that are
+   * registered with that {@link io.flutter.embedding.engine.FlutterEngine}. This allows plugins to
+   * access the {@code Activity}, as well as receive {@code Activity}-specific calls, e.g., {@link
    * Activity#onNewIntent(Intent)}. If {@code shouldAttachEngineToActivity} is false, then this
    * {@code FlutterActivity} will not automatically manage the connection between its {@link
    * FlutterEngine} and itself. In this case, plugins will not be offered a reference to an {@code
    * Activity} or its OS hooks.
    *
-   * <p>Returning false from this method does not preclude a {@link io.flutter.embedding.engine.FlutterEngine} from being
-   * attaching to a {@code FlutterActivity} - it just prevents the attachment from happening
-   * automatically. A developer can choose to subclass {@code FlutterActivity} and then invoke
-   * {@link ActivityControlSurface#attachToActivity(ExclusiveAppComponent, Lifecycle)} and {@link
+   * <p>Returning false from this method does not preclude a {@link
+   * io.flutter.embedding.engine.FlutterEngine} from being attaching to a {@code FlutterActivity} -
+   * it just prevents the attachment from happening automatically. A developer can choose to
+   * subclass {@code FlutterActivity} and then invoke {@link
+   * ActivityControlSurface#attachToActivity(ExclusiveAppComponent, Lifecycle)} and {@link
    * ActivityControlSurface#detachFromActivity()} at the desired times.
    *
    * <p>One reason that a developer might choose to manually manage the relationship between the
-   * {@code Activity} and {@link io.flutter.embedding.engine.FlutterEngine} is if the developer wants to move the {@link
-   * FlutterEngine} somewhere else. For example, a developer might want the {@link io.flutter.embedding.engine.FlutterEngine} to
-   * outlive this {@code FlutterActivity} so that it can be used later in a different {@code
-   * Activity}. To accomplish this, the {@link io.flutter.embedding.engine.FlutterEngine} may need to be disconnected from this
-   * {@code FluttterActivity} at an unusual time, preventing this {@code FlutterActivity} from
-   * correctly managing the relationship between the {@link io.flutter.embedding.engine.FlutterEngine} and itself.
+   * {@code Activity} and {@link io.flutter.embedding.engine.FlutterEngine} is if the developer
+   * wants to move the {@link FlutterEngine} somewhere else. For example, a developer might want the
+   * {@link io.flutter.embedding.engine.FlutterEngine} to outlive this {@code FlutterActivity} so
+   * that it can be used later in a different {@code Activity}. To accomplish this, the {@link
+   * io.flutter.embedding.engine.FlutterEngine} may need to be disconnected from this {@code
+   * FluttterActivity} at an unusual time, preventing this {@code FlutterActivity} from correctly
+   * managing the relationship between the {@link io.flutter.embedding.engine.FlutterEngine} and
+   * itself.
    */
   @Override
   public boolean shouldAttachEngineToActivity() {

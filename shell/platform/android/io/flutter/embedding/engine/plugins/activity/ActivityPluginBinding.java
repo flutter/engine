@@ -11,8 +11,8 @@ import androidx.annotation.Nullable;
 import io.flutter.plugin.common.PluginRegistry;
 
 /**
- * Binding that gives {@link ActivityAware} plugins access to an associated {@link android.app.Activity} and the
- * {@link android.app.Activity}'s lifecycle methods.
+ * Binding that gives {@link ActivityAware} plugins access to an associated {@link
+ * android.app.Activity} and the {@link android.app.Activity}'s lifecycle methods.
  *
  * <p>To obtain an instance of an {@code ActivityPluginBinding} in a Flutter plugin, implement the
  * {@link ActivityAware} interface. A binding is provided in {@link
@@ -22,8 +22,8 @@ import io.flutter.plugin.common.PluginRegistry;
 public interface ActivityPluginBinding {
 
   /**
-   * Returns the {@link android.app.Activity} that is currently attached to the {@link io.flutter.embedding.engine.FlutterEngine} that owns
-   * this {@code ActivityPluginBinding}.
+   * Returns the {@link android.app.Activity} that is currently attached to the {@link
+   * io.flutter.embedding.engine.FlutterEngine} that owns this {@code ActivityPluginBinding}.
    */
   @NonNull
   Activity getActivity();
@@ -111,8 +111,9 @@ public interface ActivityPluginBinding {
     void onSaveInstanceState(@NonNull Bundle bundle);
 
     /**
-     * Invoked when the associated {@code Activity} executes {@link android.app.Activity#onCreate(Bundle)} or
-     * associated {@code Fragment} executes {@code Fragment#onCreate(Bundle)}.
+     * Invoked when the associated {@code Activity} executes {@link
+     * android.app.Activity#onCreate(Bundle)} or associated {@code Fragment} executes {@code
+     * Fragment#onCreate(Bundle)}.
      */
     void onRestoreInstanceState(@Nullable Bundle bundle);
   }

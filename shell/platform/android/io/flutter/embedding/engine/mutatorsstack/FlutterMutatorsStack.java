@@ -18,14 +18,13 @@ import java.util.List;
  * The mutator stack containing a list of mutators
  *
  * <p>The mutators can be applied to a {@link io.flutter.plugin.platform.PlatformView} to perform a
- * series mutations. See {@link FlutterMutatorsStack.FlutterMutator} for informations
- * on Mutators.
+ * series mutations. See {@link FlutterMutatorsStack.FlutterMutator} for informations on Mutators.
  */
 @Keep
 public class FlutterMutatorsStack {
   /**
-   * The type of a Mutator See {@link FlutterMutatorsStack.FlutterMutator} for
-   * informations on Mutators.
+   * The type of a Mutator See {@link FlutterMutatorsStack.FlutterMutator} for informations on
+   * Mutators.
    */
   public enum FlutterMutatorType {
     CLIP_RECT,
@@ -199,8 +198,8 @@ public class FlutterMutatorsStack {
    * Get a list of all the clipping operations. All the clipping operations -- whether it is clip
    * rect, clip rrect, or clip path -- are converted into Paths. The paths are also transformed with
    * the matrix that up to their stack positions. For example: If the stack looks like (from top to
-   * bottom): TransA -&gt; ClipA -&gt; TransB -&gt; ClipB, the final paths will look like [TransA*ClipA,
-   * TransA*TransB*ClipB].
+   * bottom): TransA -&gt; ClipA -&gt; TransB -&gt; ClipB, the final paths will look like
+   * [TransA*ClipA, TransA*TransB*ClipB].
    *
    * <p>Clipping this list to the parent canvas of a view results the final clipping path.
    */

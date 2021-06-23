@@ -14,11 +14,12 @@ public interface PlatformView {
   View getView();
 
   /**
-   * Called by the {@link io.flutter.embedding.engine.FlutterEngine} that owns this {@code PlatformView} when the Android {@link
-   * View} responsible for rendering a Flutter UI is associated with the {@link io.flutter.embedding.engine.FlutterEngine}.
+   * Called by the {@link io.flutter.embedding.engine.FlutterEngine} that owns this {@code
+   * PlatformView} when the Android {@link View} responsible for rendering a Flutter UI is
+   * associated with the {@link io.flutter.embedding.engine.FlutterEngine}.
    *
-   * <p>This means that our associated {@link io.flutter.embedding.engine.FlutterEngine} can now render a UI and interact with
-   * the user.
+   * <p>This means that our associated {@link io.flutter.embedding.engine.FlutterEngine} can now
+   * render a UI and interact with the user.
    *
    * <p>Some platform views may have unusual dependencies on the {@link View} that renders Flutter
    * UIs, such as unique keyboard interactions. That {@link View} is provided here for those
@@ -31,12 +32,12 @@ public interface PlatformView {
   default void onFlutterViewAttached(@NonNull View flutterView) {}
 
   /**
-   * Called by the {@link io.flutter.embedding.engine.FlutterEngine} that owns this {@code PlatformView} when the Android {@link
-   * View} responsible for rendering a Flutter UI is detached and disassociated from the {@link
-   * io.flutter.embedding.engine.FlutterEngine}.
+   * Called by the {@link io.flutter.embedding.engine.FlutterEngine} that owns this {@code
+   * PlatformView} when the Android {@link View} responsible for rendering a Flutter UI is detached
+   * and disassociated from the {@link io.flutter.embedding.engine.FlutterEngine}.
    *
-   * <p>This means that our associated {@link io.flutter.embedding.engine.FlutterEngine} no longer has a rendering surface, or a
-   * user interaction surface of any kind.
+   * <p>This means that our associated {@link io.flutter.embedding.engine.FlutterEngine} no longer
+   * has a rendering surface, or a user interaction surface of any kind.
    *
    * <p>This platform view must release any references related to the Android {@link View} that was
    * provided in {@link #onFlutterViewAttached(View)}.

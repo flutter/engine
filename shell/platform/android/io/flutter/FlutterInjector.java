@@ -78,7 +78,10 @@ public final class FlutterInjector {
   private DeferredComponentManager deferredComponentManager;
   private FlutterJNI.Factory flutterJniFactory;
 
-  /** Returns the {@link io.flutter.embedding.engine.loader.FlutterLoader} instance to use for the Flutter Android engine embedding. */
+  /**
+   * Returns the {@link io.flutter.embedding.engine.loader.FlutterLoader} instance to use for the
+   * Flutter Android engine embedding.
+   */
   @NonNull
   public FlutterLoader flutterLoader() {
     return flutterLoader;
