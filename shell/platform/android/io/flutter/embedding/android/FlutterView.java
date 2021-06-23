@@ -504,9 +504,6 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
           case FoldingFeature.STATE_HALF_OPENED:
             state = DisplayFeatureState.POSTURE_HALF_OPENED;
             break;
-          case FoldingFeature.STATE_FLIPPED:
-            state = DisplayFeatureState.POSTURE_FLIPPED;
-            break;
         }
         result.add(new FlutterRenderer.DisplayFeature(displayFeature.getBounds(), type, state));
       } else {

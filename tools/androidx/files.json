@@ -51,14 +51,15 @@
     ]
   },
   {
-    "url": "https://maven.google.com/androidx/window/window/1.0.0-alpha05/window-1.0.0-alpha05.aar",
-    "out_file_name": "androidx_window.aar",
-    "maven_dependency": "androidx.window:window:1.0.0-alpha05",
+    "url": "https://maven.google.com/androidx/window/window-java/1.0.0-alpha08/window-java-1.0.0-alpha08.aar",
+    "out_file_name": "androidx_window_java.aar",
+    "maven_dependency": "androidx.window:window-java:1.0.0-alpha08",
     "provides": [
       "androidx.window.DisplayFeature",
       "androidx.window.FoldingFeature",
       "androidx.window.WindowLayoutInfo",
-      "androidx.window.WindowManager"
+      "androidx.window.WindowManager",
+      "androidx.window.WindowInfoRepo"
     ]
   }
 ]

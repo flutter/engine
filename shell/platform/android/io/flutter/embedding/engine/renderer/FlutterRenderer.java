@@ -472,13 +472,7 @@ public class FlutterRenderer implements TextureRegistry {
      * There is a non-flat angle between parts of the flexible screen or between physical screen
      * panels. Corresponds to {@link androidx.window.FoldingFeature.STATE_HALF_OPENED}
      */
-    POSTURE_HALF_OPENED(2),
-
-    /**
-     * The foldable device is flipped with the flexible screen parts or physical screens facing
-     * opposite directions. Corresponds to {@link androidx.window.FoldingFeature.STATE_FLIPPED}
-     */
-    POSTURE_FLIPPED(3);
+    POSTURE_HALF_OPENED(2);
 
     public final int encodedValue;
 

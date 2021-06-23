@@ -1402,7 +1402,7 @@ class DisplayFeature {
     required this.bounds,
     required this.type,
     required this.state,
-  }) : assert(type != DisplayFeatureType.cutout || state == DisplayFeatureState.unknown);
+  }) : assert(!identical(type, DisplayFeatureType.cutout) || identical(state, DisplayFeatureState.unknown));
 
   /// The area of the flutter view occupied by this display feature, measured in logical pixels.
   ///
@@ -1500,10 +1500,6 @@ enum DisplayFeatureState {
   /// There is a non-flat angle between parts of the flexible screen or between
   /// physical screen panels such that the screens start to face each other.
   postureHalfOpened,
-  /// The foldable device is flipped with the flexible screen parts or physical
-  /// screens facing opposite directions. Not all postures are possible on all
-  /// foldable devices. Some do not support the flipped posture.
-  postureFlipped,
 }
 
 /// An identifier used to select a user's language and formatting preferences.
