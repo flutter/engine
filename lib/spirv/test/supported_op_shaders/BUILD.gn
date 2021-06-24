@@ -15,7 +15,6 @@ if (enable_unittests) {
       "op_type_matrix.glsl",
       "op_type_void.glsl",
       "op_type_vector.glsl",
-      "simple.glsl",
     ]
 
     outputs = [ "$target_gen_dir/{{source_name_part}}.spv" ]
