@@ -349,8 +349,8 @@ struct Transform3x3Op final : DLOp {
   }
 };
 
-// The common data is a 4 byte header + a 4 byte common payload which
-// packs evenly into 8 common bytes
+// The common data is a 4 byte header + a 2 byte common payload which
+// takes 6 bytes but is expanded to 8 (2 bytes unused)
 // SkRect is 16 more bytes, which packs efficiently into 24 bytes total
 // SkRRect is 52 more bytes, which rounds up to 56 bytes (4 bytes unused)
 //         which packs into 64 bytes total
@@ -362,8 +362,8 @@ struct Transform3x3Op final : DLOp {
     Clip##shapetype##Op(Sk##shapetype shape, bool isAA, SkClipOp op) \
         : isAA(isAA), op(op), shape(shape) {}                        \
                                                                      \
-    const bool isAA : 16;                                            \
-    const SkClipOp op : 16;                                          \
+    const bool isAA : 8;                                             \
+    const SkClipOp op : 8;                                           \
     const Sk##shapetype shape;                                       \
                                                                      \
     void dispatch(Dispatcher& dispatcher) const {                    \
