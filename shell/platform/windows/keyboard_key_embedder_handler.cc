@@ -60,7 +60,7 @@ KeyboardKeyEmbedderHandler::~KeyboardKeyEmbedderHandler() = default;
 
 static bool isEasciiPrintable(int codeUnit) {
   return (codeUnit <= 0x7f && codeUnit >= 0x20) ||
-      (codeUnit <= 0xff && codeUnit >= 0x80);
+         (codeUnit <= 0xff && codeUnit >= 0x80);
 }
 
 // Converts upper letters to lower letters in ASCII and extended ASCII, and
@@ -97,7 +97,8 @@ static uint16_t normalizeScancode(int windowsScanCode, bool extended) {
   return (windowsScanCode & 0xff) | (extended ? 0xe000 : 0);
 }
 
-uint64_t KeyboardKeyEmbedderHandler::ApplyPlaneToId(uint64_t id, uint64_t plane) {
+uint64_t KeyboardKeyEmbedderHandler::ApplyPlaneToId(uint64_t id,
+                                                    uint64_t plane) {
   return (id & valueMask) | plane;
 }
 

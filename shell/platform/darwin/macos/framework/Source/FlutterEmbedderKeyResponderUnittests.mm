@@ -7,7 +7,7 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEmbedderKeyResponder.h"
 #import "flutter/testing/testing.h"
-#include "flutter/shell/platform/common/testing/key_codes.h"
+#include "flutter/shell/platform/embedder/test_utils/key_codes.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
 // A wrap to convert FlutterKeyEvent to a ObjC class.
