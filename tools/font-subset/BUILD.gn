@@ -45,7 +45,7 @@ zip_bundle("font-subset") {
 
   font_subset_bin = "font-subset"
   if (is_win) {
-    font_subset_bin = "$font_subset_bin$.exe"
+    font_subset_bin = "${font_subset_bin}.exe"
   }
 
   files = [
