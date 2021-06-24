@@ -26,7 +26,8 @@ executable("_font-subset") {
 
 generated_file("_font-subset-license") {
   source_path = rebase_path(".", "//flutter")
-  license_path = rebase_path("//flutter/sky/packages/sky_engine/LICENSE", "//flutter")
+  license_path =
+      rebase_path("//flutter/sky/packages/sky_engine/LICENSE", "//flutter")
   git_url = "https://github.com/flutter/engine/tree/$engine_version"
   outputs = [ "$target_gen_dir/README.md" ]
   contents = [
