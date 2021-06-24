@@ -283,9 +283,9 @@ class DisplayListCanvasRecorder
                                 ditherNeeded_ | imageFilterNeeded_ |
                                 filterQualityNeeded_ | maskFilterNeeded_;
   static const int imageRectMask_ = imageMask_ | aaNeeded_;
-  static const int saveLayerFlags_ = colorNeeded_ | blendNeeded_ |
-                                     invertColorsNeeded_ | colorFilterNeeded_ |
-                                     imageFilterNeeded_;
+  static const int saveLayerMask_ = colorNeeded_ | blendNeeded_ |
+                                    invertColorsNeeded_ | colorFilterNeeded_ |
+                                    imageFilterNeeded_;
 
   static const SkPaint defaultPaint;
 

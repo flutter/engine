@@ -389,6 +389,9 @@ void DisplayListCanvasRecorder::recordPaintAttributes(const SkPaint* paint,
     case imageRectOp:
       dataNeeded = imageRectMask_;
       break;
+    case saveLayerOp:
+      dataNeeded = saveLayerMask_;
+      break;
     default:
       FML_DCHECK(false);
       return;
