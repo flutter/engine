@@ -27,7 +27,7 @@ vars = {
   'skia_git': 'https://skia.googlesource.com',
   # OCMock is for testing only so there is no google clone
   'ocmock_git': 'https://github.com/erikdoe/ocmock.git',
-  'skia_revision': 'c5a65cb22d362f917777db09f1eac15ab29fa018',
+  'skia_revision': 'bd7ed7434a65bdc30ca0dd520adffc55b0040f3e',
 
   # When updating the Dart revision, ensure that all entries that are
   # dependencies of Dart are also updated to match the entries in the
@@ -98,7 +98,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + 'fc82ca44f1ae85c5fbfa06bd313477539ca50729',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + '275038b8be7196927b0f71770701f3c2c3744860',
 
    # Fuchsia compatibility
    #
