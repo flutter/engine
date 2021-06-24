@@ -272,25 +272,25 @@ const std::map<uint32_t, uint32_t> keyCodeToLogicalKey = {
 };
 
 const std::map<uint32_t, uint32_t> keyCodeToModifierFlag = {
-    {0x000000e1, kModifierFlagShiftLeft}, // ShiftLeft
-    {0x000000e5, kModifierFlagShiftRight}, // ShiftRight
-    {0x000000e0, kModifierFlagControlLeft}, // ControlLeft
-    {0x000000e4, kModifierFlagControlRight}, // ControlRight
-    {0x000000e2, kModifierFlagAltLeft}, // AltLeft
-    {0x000000e6, kModifierFlagAltRight}, // AltRight
-    {0x000000e3, kModifierFlagMetaLeft}, // MetaLeft
-    {0x000000e7, kModifierFlagMetaRight}, // MetaRight
+    {0x000000e1, kModifierFlagShiftLeft},     // ShiftLeft
+    {0x000000e5, kModifierFlagShiftRight},    // ShiftRight
+    {0x000000e0, kModifierFlagControlLeft},   // ControlLeft
+    {0x000000e4, kModifierFlagControlRight},  // ControlRight
+    {0x000000e2, kModifierFlagAltLeft},       // AltLeft
+    {0x000000e6, kModifierFlagAltRight},      // AltRight
+    {0x000000e3, kModifierFlagMetaLeft},      // MetaLeft
+    {0x000000e7, kModifierFlagMetaRight},     // MetaRight
 };
 
 const std::map<uint32_t, uint32_t> modifierFlagToKeyCode = {
-    {kModifierFlagShiftLeft, 0x000000e1}, // ShiftLeft
-    {kModifierFlagShiftRight, 0x000000e5}, // ShiftRight
-    {kModifierFlagControlLeft, 0x000000e0}, // ControlLeft
-    {kModifierFlagControlRight, 0x000000e4}, // ControlRight
-    {kModifierFlagAltLeft, 0x000000e2}, // AltLeft
-    {kModifierFlagAltRight, 0x000000e6}, // AltRight
-    {kModifierFlagMetaLeft, 0x000000e3}, // MetaLeft
-    {kModifierFlagMetaRight, 0x000000e7}, // MetaRight
+    {kModifierFlagShiftLeft, 0x000000e1},     // ShiftLeft
+    {kModifierFlagShiftRight, 0x000000e5},    // ShiftRight
+    {kModifierFlagControlLeft, 0x000000e0},   // ControlLeft
+    {kModifierFlagControlRight, 0x000000e4},  // ControlRight
+    {kModifierFlagAltLeft, 0x000000e2},       // AltLeft
+    {kModifierFlagAltRight, 0x000000e6},      // AltRight
+    {kModifierFlagMetaLeft, 0x000000e3},      // MetaLeft
+    {kModifierFlagMetaRight, 0x000000e7},     // MetaRight
 };
 
 const uint64_t kCapsLockPhysicalKey = 0x00070039;
