@@ -47,7 +47,7 @@ sk_sp<DisplayList> DiffContextTest::CreateDisplayList(const SkRect& bounds,
   DisplayListBuilder builder;
   builder.setColor(color);
   builder.drawRect(bounds);
-  return builder.build();
+  return builder.Build();
 }
 
 std::shared_ptr<DisplayListLayer> DiffContextTest::CreateDisplayListLayer(

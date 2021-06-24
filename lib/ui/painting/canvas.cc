@@ -390,7 +390,7 @@ void Canvas::drawImageNine(const CanvasImage* image,
     // pass along. For simplicity, we will bypass the canvas and ask
     // the recorder to record our paint attributes and record a much
     // simpler DrawImageNineOp record directly.
-    display_list_recorder_->recordPaintAttributes(
+    display_list_recorder_->RecordPaintAttributes(
         paint.paint(), DisplayListCanvasRecorder::DrawType::kImageOpType);
     builder()->drawImageNine(image->image(), icenter, dst, filter);
   } else {
@@ -414,7 +414,7 @@ void Canvas::drawPicture(Picture* picture) {
     if (display_list_recorder_) {
       builder()->drawDisplayList(picture->display_list());
     } else {
-      picture->display_list()->renderTo(canvas_);
+      picture->display_list()->RenderTo(canvas_);
     }
   } else {
     FML_DCHECK(false);

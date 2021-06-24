@@ -69,7 +69,7 @@ bool DisplayListLayer::Compare(DiffContext::Statistics& statistics,
 
   statistics.AddDeepComparePicture();
 
-  auto res = dl1->equals(*dl2);
+  auto res = dl1->Equals(*dl2);
   if (res) {
     statistics.AddDifferentInstanceButEqualPicture();
   } else {
@@ -124,7 +124,7 @@ void DisplayListLayer::Paint(PaintContext& context) const {
     return;
   }
 
-  display_list()->renderTo(context.leaf_nodes_canvas);
+  display_list()->RenderTo(context.leaf_nodes_canvas);
 }
 
 }  // namespace flutter

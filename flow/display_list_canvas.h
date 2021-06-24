@@ -124,7 +124,7 @@ class DisplayListCanvasRecorder
 
   const sk_sp<DisplayListBuilder> builder() { return builder_; }
 
-  sk_sp<DisplayList> build();
+  sk_sp<DisplayList> Build();
 
   void didConcat44(const SkM44&) override;
   void didSetM44(const SkM44&) override { FML_DCHECK(false); }
@@ -246,7 +246,7 @@ class DisplayListCanvasRecorder
     kSaveLayerOpType,
   };
 
-  void recordPaintAttributes(const SkPaint* paint, DrawType type);
+  void RecordPaintAttributes(const SkPaint* paint, DrawType type);
 
  private:
   sk_sp<DisplayListBuilder> builder_;
@@ -254,18 +254,18 @@ class DisplayListCanvasRecorder
   // Mask bits for the various attributes that might be needed for a given
   // operation.
   // clang-format off
-  static const int aaNeeded_            = 1 << 0;
-  static const int colorNeeded_         = 1 << 1;
-  static const int blendNeeded_         = 1 << 2;
-  static const int invertColorsNeeded_  = 1 << 3;
-  static const int filterQualityNeeded_ = 1 << 4;
-  static const int paintStyleNeeded_    = 1 << 5;
-  static const int strokeStyleNeeded_   = 1 << 6;
-  static const int shaderNeeded_        = 1 << 7;
-  static const int colorFilterNeeded_   = 1 << 8;
-  static const int imageFilterNeeded_   = 1 << 9;
-  static const int maskFilterNeeded_    = 1 << 10;
-  static const int ditherNeeded_        = 1 << 11;
+  static constexpr int kAaNeeded_            = 1 << 0;
+  static constexpr int kColorNeeded_         = 1 << 1;
+  static constexpr int kBlendNeeded_         = 1 << 2;
+  static constexpr int kInvertColorsNeeded_  = 1 << 3;
+  static constexpr int kFilterQualityNeeded_ = 1 << 4;
+  static constexpr int kPaintStyleNeeded_    = 1 << 5;
+  static constexpr int kStrokeStyleNeeded_   = 1 << 6;
+  static constexpr int kShaderNeeded_        = 1 << 7;
+  static constexpr int kColorFilterNeeded_   = 1 << 8;
+  static constexpr int kImageFilterNeeded_   = 1 << 9;
+  static constexpr int kMaskFilterNeeded_    = 1 << 10;
+  static constexpr int kDitherNeeded_        = 1 << 11;
   // clang-format on
 
   // Combinations of the above mask bits that are common to typical "draw"
@@ -273,39 +273,37 @@ class DisplayListCanvasRecorder
   // Note that the strokeStyle_ is handled conditionally depending on whether
   // the paintStyle_ attribute value is synchronized. It can also be manually
   // specified for operations that will be always stroking, like [drawLine].
-  static const int paintMask_ =
-      aaNeeded_ | colorNeeded_ | blendNeeded_ | invertColorsNeeded_ |
-      colorFilterNeeded_ | shaderNeeded_ | ditherNeeded_ | imageFilterNeeded_;
-  static const int drawMask_ =
-      paintMask_ | paintStyleNeeded_ | maskFilterNeeded_;
-  static const int strokeMask_ =
-      paintMask_ | strokeStyleNeeded_ | maskFilterNeeded_;
-  static const int imageMask_ = colorNeeded_ | blendNeeded_ |
-                                invertColorsNeeded_ | colorFilterNeeded_ |
-                                ditherNeeded_ | imageFilterNeeded_ |
-                                filterQualityNeeded_ | maskFilterNeeded_;
-  static const int imageRectMask_ = imageMask_ | aaNeeded_;
-  static const int saveLayerMask_ = colorNeeded_ | blendNeeded_ |
-                                    invertColorsNeeded_ | colorFilterNeeded_ |
-                                    imageFilterNeeded_;
+  static constexpr int kPaintMask_ = kAaNeeded_ | kColorNeeded_ |
+                                     kBlendNeeded_ | kInvertColorsNeeded_ |
+                                     kColorFilterNeeded_ | kShaderNeeded_ |
+                                     kDitherNeeded_ | kImageFilterNeeded_;
+  static constexpr int kDrawMask_ =
+      kPaintMask_ | kPaintStyleNeeded_ | kMaskFilterNeeded_;
+  static constexpr int kStrokeMask_ =
+      kPaintMask_ | kStrokeStyleNeeded_ | kMaskFilterNeeded_;
+  static constexpr int kImageMask_ =
+      kColorNeeded_ | kBlendNeeded_ | kInvertColorsNeeded_ |
+      kColorFilterNeeded_ | kDitherNeeded_ | kImageFilterNeeded_ |
+      kFilterQualityNeeded_ | kMaskFilterNeeded_;
+  static constexpr int kImageRectMask_ = kImageMask_ | kAaNeeded_;
+  static constexpr int kSaveLayerMask_ =
+      kColorNeeded_ | kBlendNeeded_ | kInvertColorsNeeded_ |
+      kColorFilterNeeded_ | kImageFilterNeeded_;
 
-  static const SkPaint defaultPaint;
-
-  bool currentAA_ = false;
-  bool currentDither_ = false;
-  SkColor currentColor_ = 0xFF000000;
-  SkBlendMode currentBlendMode_ = SkBlendMode::kSrcOver;
-  SkPaint::Style currentPaintStyle_ = SkPaint::Style::kFill_Style;
-  SkScalar currentStrokeWidth_ = 0.0;
-  SkScalar currentMiterLimit_ = 4.0;
-  SkPaint::Cap currentStrokeCap_ = SkPaint::Cap::kButt_Cap;
-  SkPaint::Join currentStrokeJoin_ = SkPaint::Join::kMiter_Join;
-  SkFilterQuality currentFilterQuality_ =
-      SkFilterQuality::kNone_SkFilterQuality;
-  sk_sp<SkShader> currentShader_;
-  sk_sp<SkColorFilter> currentColorFilter_;
-  sk_sp<SkImageFilter> currentImageFilter_;
-  sk_sp<SkMaskFilter> currentMaskFilter_;
+  bool current_aa_ = false;
+  bool current_dither_ = false;
+  SkColor current_color_ = 0xFF000000;
+  SkBlendMode current_blend_ = SkBlendMode::kSrcOver;
+  SkPaint::Style current_style_ = SkPaint::Style::kFill_Style;
+  SkScalar current_stroke_width_ = 0.0;
+  SkScalar current_miter_limit_ = 4.0;
+  SkPaint::Cap current_cap_ = SkPaint::Cap::kButt_Cap;
+  SkPaint::Join current_join_ = SkPaint::Join::kMiter_Join;
+  SkFilterQuality current_fq_ = SkFilterQuality::kNone_SkFilterQuality;
+  sk_sp<SkShader> current_shader_;
+  sk_sp<SkColorFilter> current_color_filter_;
+  sk_sp<SkImageFilter> current_image_filter_;
+  sk_sp<SkMaskFilter> current_mask_filter_;
 };
 
 }  // namespace flutter

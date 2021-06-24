@@ -407,7 +407,7 @@ class CanvasCompareTester {
       DisplayListBuilder builder(TestBounds);
       dl_setup(builder);
       dl_render(builder);
-      sk_sp<DisplayList> display_list = builder.build();
+      sk_sp<DisplayList> display_list = builder.Build();
       SkRect dl_bounds = display_list->bounds();
 #ifdef DISPLAY_LIST_BOUNDS_ACCURACY_CHECKING
       if (dl_bounds != ref_bounds) {
@@ -428,7 +428,7 @@ class CanvasCompareTester {
       // since the pixel OOB tests in the compare method do not
       // trigger, we will trust the DL bounds.
       // EXPECT_TRUE(dl_bounds.contains(ref_bounds)) << info;
-      display_list->renderTo(test_surface->getCanvas());
+      display_list->RenderTo(test_surface->getCanvas());
       compareToReference(test_surface.get(), &ref_pixels, info + " (DL render)",
                          &dl_bounds, bg);
     }
@@ -442,7 +442,7 @@ class CanvasCompareTester {
       SkPaint test_paint;
       cv_setup(&dl_recorder, test_paint);
       cv_render(&dl_recorder, test_paint);
-      dl_recorder.builder()->build()->renderTo(test_surface->getCanvas());
+      dl_recorder.builder()->Build()->RenderTo(test_surface->getCanvas());
       compareToReference(test_surface.get(), &ref_pixels,
                          info + " (Sk->DL render)", nullptr, nullptr);
     }

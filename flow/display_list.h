@@ -142,7 +142,7 @@ namespace flutter {
                                     \
   V(DrawShadow)
 
-#define DL_OP_TO_ENUM_VALUE(name) name,
+#define DL_OP_TO_ENUM_VALUE(name) k##name,
 enum class DisplayListOpType { FOR_EACH_DISPLAY_LIST_OP(DL_OP_TO_ENUM_VALUE) };
 #undef DL_OP_TO_ENUM_VALUE
 
@@ -162,47 +162,47 @@ class DisplayList : public SkRefCnt {
   DisplayList()
       : ptr_(nullptr),
         used_(0),
-        opCount_(0),
-        uniqueID_(0),
+        op_count_(0),
+        unique_id_(0),
         bounds_({0, 0, 0, 0}),
-        boundsCull_({0, 0, 0, 0}) {}
+        bounds_cull_({0, 0, 0, 0}) {}
 
   ~DisplayList();
 
-  void dispatch(Dispatcher& ctx) const { dispatch(ctx, ptr_, ptr_ + used_); }
+  void Dispatch(Dispatcher& ctx) const { Dispatch(ctx, ptr_, ptr_ + used_); }
 
-  void renderTo(SkCanvas* canvas) const;
+  void RenderTo(SkCanvas* canvas) const;
 
   size_t bytes() const { return used_; }
-  int opCount() const { return opCount_; }
-  uint32_t uniqueID() const { return uniqueID_; }
+  int opCount() const { return op_count_; }
+  uint32_t uniqueID() const { return unique_id_; }
 
   const SkRect& bounds() {
     if (bounds_.width() < 0.0) {
-      // computeBounds() will leave the variable with a
+      // ComputeBounds() will leave the variable with a
       // non-negative width and height
-      computeBounds();
+      ComputeBounds();
     }
     return bounds_;
   }
 
-  bool equals(const DisplayList& other) const;
+  bool Equals(const DisplayList& other) const;
 
  private:
-  DisplayList(uint8_t* ptr, size_t used, int opCount, const SkRect& cullRect);
+  DisplayList(uint8_t* ptr, size_t used, int op_count, const SkRect& cull_rect);
 
   uint8_t* ptr_;
   size_t used_;
-  int opCount_;
+  int op_count_;
 
-  uint32_t uniqueID_;
+  uint32_t unique_id_;
   SkRect bounds_;
 
   // Only used for drawPaint() and drawColor()
-  SkRect boundsCull_;
+  SkRect bounds_cull_;
 
-  void computeBounds();
-  void dispatch(Dispatcher& ctx, uint8_t* ptr, uint8_t* end) const;
+  void ComputeBounds();
+  void Dispatch(Dispatcher& ctx, uint8_t* ptr, uint8_t* end) const;
 
   friend class DisplayListBuilder;
 };
@@ -426,19 +426,19 @@ class DisplayListBuilder final : public virtual Dispatcher, public SkRefCnt {
                   const SkScalar elevation,
                   bool occludes) override;
 
-  sk_sp<DisplayList> build();
+  sk_sp<DisplayList> Build();
 
  private:
   SkAutoTMalloc<uint8_t> storage_;
   size_t used_ = 0;
   size_t allocated_ = 0;
-  int opCount_ = 0;
-  int saveLevel_ = 0;
+  int op_count_ = 0;
+  int save_level_ = 0;
 
   SkRect cull_;
 
   template <typename T, typename... Args>
-  void* push(size_t extra, Args&&... args);
+  void* Push(size_t extra, Args&&... args);
 };
 
 }  // namespace flutter

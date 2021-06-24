@@ -190,7 +190,7 @@ std::unique_ptr<RasterCacheResult> RasterCache::RasterizeDisplayList(
     bool checkerboard) const {
   return Rasterize(context, ctm, dst_color_space, checkerboard,
                    display_list->bounds(),
-                   [=](SkCanvas* canvas) { display_list->renderTo(canvas); });
+                   [=](SkCanvas* canvas) { display_list->RenderTo(canvas); });
 }
 
 void RasterCache::Prepare(PrerollContext* context,

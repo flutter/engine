@@ -144,7 +144,7 @@ static sk_sp<DisplayList> MakeTestDisplayList(int w, int h, SkColor color) {
   DisplayListBuilder builder;
   builder.setColor(color);
   builder.drawRect(SkRect::MakeWH(w, h));
-  return builder.build();
+  return builder.Build();
 }
 static sk_sp<DisplayList> TestDisplayList1 =
     MakeTestDisplayList(20, 20, SK_ColorGREEN);
@@ -160,7 +160,7 @@ struct DisplayListInvocation {
   sk_sp<DisplayList> build() {
     DisplayListBuilder builder;
     invoker(builder);
-    return builder.build();
+    return builder.Build();
   }
 };
 
@@ -528,7 +528,7 @@ TEST(DisplayList, SingleOpSizes) {
 }
 
 TEST(DisplayList, SingleOpCompares) {
-  sk_sp<DisplayList> empty = DisplayListBuilder().build();
+  sk_sp<DisplayList> empty = DisplayListBuilder().Build();
   for (auto& group : allGroups) {
     std::vector<sk_sp<DisplayList>> lists1;
     std::vector<sk_sp<DisplayList>> lists2;
@@ -537,21 +537,21 @@ TEST(DisplayList, SingleOpCompares) {
       lists2.push_back(group.variants[i].build());
       auto desc =
           group.op_name + "(variant " + std::to_string(i) + " == empty)";
-      ASSERT_FALSE(lists1[i]->equals(*empty)) << desc;
-      ASSERT_FALSE(lists2[i]->equals(*empty)) << desc;
-      ASSERT_FALSE(empty->equals(*lists1[i])) << desc;
-      ASSERT_FALSE(empty->equals(*lists2[i])) << desc;
+      ASSERT_FALSE(lists1[i]->Equals(*empty)) << desc;
+      ASSERT_FALSE(lists2[i]->Equals(*empty)) << desc;
+      ASSERT_FALSE(empty->Equals(*lists1[i])) << desc;
+      ASSERT_FALSE(empty->Equals(*lists2[i])) << desc;
     }
     for (size_t i = 0; i < lists1.size(); i++) {
       for (size_t j = 0; j < lists2.size(); j++) {
         auto desc = group.op_name + "(variant " + std::to_string(i) +
                     " ==? variant " + std::to_string(j) + ")";
         if (i == j) {
-          ASSERT_TRUE(lists1[i]->equals(*lists2[j])) << desc;
-          ASSERT_TRUE(lists2[j]->equals(*lists1[i])) << desc;
+          ASSERT_TRUE(lists1[i]->Equals(*lists2[j])) << desc;
+          ASSERT_TRUE(lists2[j]->Equals(*lists1[i])) << desc;
         } else {
-          ASSERT_FALSE(lists1[i]->equals(*lists2[j])) << desc;
-          ASSERT_FALSE(lists2[j]->equals(*lists1[i])) << desc;
+          ASSERT_FALSE(lists1[i]->Equals(*lists2[j])) << desc;
+          ASSERT_FALSE(lists2[j]->Equals(*lists1[i])) << desc;
         }
       }
     }

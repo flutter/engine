@@ -179,7 +179,7 @@ void DisplayListBoundsCalculator::saveLayer(const SkRect* bounds,
   SaveInfo info =
       withPaint ? SaveLayerWithPaintInfo(this, accumulator_, matrix(), paint())
                 : SaveLayerInfo(accumulator_, matrix());
-  savedInfos_.push_back(info);
+  saved_infos_.push_back(info);
   accumulator_ = info.save();
   SkMatrixDispatchHelper::reset();
 }
@@ -187,27 +187,27 @@ void DisplayListBoundsCalculator::save() {
   SkMatrixDispatchHelper::save();
   ClipBoundsDispatchHelper::save();
   SaveInfo info = SaveInfo(accumulator_);
-  savedInfos_.push_back(info);
+  saved_infos_.push_back(info);
   accumulator_ = info.save();
 }
 void DisplayListBoundsCalculator::restore() {
-  if (!savedInfos_.empty()) {
+  if (!saved_infos_.empty()) {
     SkMatrixDispatchHelper::restore();
     ClipBoundsDispatchHelper::restore();
-    SaveInfo info = savedInfos_.back();
-    savedInfos_.pop_back();
+    SaveInfo info = saved_infos_.back();
+    saved_infos_.pop_back();
     accumulator_ = info.restore();
   }
 }
 
 void DisplayListBoundsCalculator::drawPaint() {
-  if (!boundsCull_.isEmpty()) {
-    baseAccumulator_.accumulate(boundsCull_);
+  if (!bounds_cull_.isEmpty()) {
+    root_accumulator_.accumulate(bounds_cull_);
   }
 }
 void DisplayListBoundsCalculator::drawColor(SkColor color, SkBlendMode mode) {
-  if (!boundsCull_.isEmpty()) {
-    baseAccumulator_.accumulate(boundsCull_);
+  if (!bounds_cull_.isEmpty()) {
+    root_accumulator_.accumulate(bounds_cull_);
   }
 }
 void DisplayListBoundsCalculator::drawLine(const SkPoint& p0,
@@ -359,7 +359,7 @@ void DisplayListBoundsCalculator::accumulateRect(const SkRect& rect,
     matrix().mapRect(&dstRect);
     accumulator_->accumulate(dstRect);
   } else {
-    baseAccumulator_.accumulate(boundsCull_);
+    root_accumulator_.accumulate(bounds_cull_);
   }
   if (forceStroke) {
     setDrawStyle(SkPaint::kFill_Style);
@@ -367,29 +367,29 @@ void DisplayListBoundsCalculator::accumulateRect(const SkRect& rect,
 }
 
 DisplayListBoundsCalculator::SaveInfo::SaveInfo(BoundsAccumulator* accumulator)
-    : savedAccumulator_(accumulator) {}
+    : saved_accumulator_(accumulator) {}
 BoundsAccumulator* DisplayListBoundsCalculator::SaveInfo::save() {
   // No need to swap out the accumulator for a normal save
-  return savedAccumulator_;
+  return saved_accumulator_;
 }
 BoundsAccumulator* DisplayListBoundsCalculator::SaveInfo::restore() {
-  return savedAccumulator_;
+  return saved_accumulator_;
 }
 
 DisplayListBoundsCalculator::SaveLayerInfo::SaveLayerInfo(
     BoundsAccumulator* accumulator,
     const SkMatrix& matrix)
-    : SaveInfo(accumulator), matrix(matrix) {}
+    : SaveInfo(accumulator), matrix_(matrix) {}
 BoundsAccumulator* DisplayListBoundsCalculator::SaveLayerInfo::save() {
   // Use the local layerAccumulator until restore is called and
   // then transform (and adjust with paint if necessary) on restore()
-  return &layerAccumulator_;
+  return &layer_accumulator_;
 }
 BoundsAccumulator* DisplayListBoundsCalculator::SaveLayerInfo::restore() {
-  SkRect layerBounds = layerAccumulator_.getBounds();
-  matrix.mapRect(&layerBounds);
-  savedAccumulator_->accumulate(layerBounds);
-  return savedAccumulator_;
+  SkRect layer_bounds = layer_accumulator_.getBounds();
+  matrix_.mapRect(&layer_bounds);
+  saved_accumulator_->accumulate(layer_bounds);
+  return saved_accumulator_;
 }
 
 DisplayListBoundsCalculator::SaveLayerWithPaintInfo::SaveLayerWithPaintInfo(
@@ -403,15 +403,15 @@ DisplayListBoundsCalculator::SaveLayerWithPaintInfo::SaveLayerWithPaintInfo(
 
 BoundsAccumulator*
 DisplayListBoundsCalculator::SaveLayerWithPaintInfo::restore() {
-  SkRect layerBounds = layerAccumulator_.getBounds();
+  SkRect layer_bounds = layer_accumulator_.getBounds();
   if (paint_.canComputeFastBounds()) {
-    layerBounds = paint_.computeFastBounds(layerBounds, &layerBounds);
-    matrix.mapRect(&layerBounds);
-    savedAccumulator_->accumulate(layerBounds);
+    layer_bounds = paint_.computeFastBounds(layer_bounds, &layer_bounds);
+    matrix_.mapRect(&layer_bounds);
+    saved_accumulator_->accumulate(layer_bounds);
   } else {
-    calculator_->baseAccumulator_.accumulate(calculator_->boundsCull_);
+    calculator_->root_accumulator_.accumulate(calculator_->bounds_cull_);
   }
-  return savedAccumulator_;
+  return saved_accumulator_;
 }
 
 }  // namespace flutter

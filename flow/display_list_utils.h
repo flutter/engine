@@ -204,14 +204,14 @@ class BoundsAccumulator {
  public:
   void accumulate(const SkPoint& p) { accumulate(p.fX, p.fY); }
   void accumulate(SkScalar x, SkScalar y) {
-    if (minX_ > x)
-      minX_ = x;
-    if (minY_ > y)
-      minY_ = y;
-    if (maxX_ < x)
-      maxX_ = x;
-    if (maxY_ < y)
-      maxY_ = y;
+    if (min_x_ > x)
+      min_x_ = x;
+    if (min_y_ > y)
+      min_y_ = y;
+    if (max_x_ < x)
+      max_x_ = x;
+    if (max_y_ < y)
+      max_y_ = y;
   }
   void accumulate(const SkRect& r) {
     if (r.fLeft <= r.fRight && r.fTop <= r.fBottom) {
@@ -220,20 +220,20 @@ class BoundsAccumulator {
     }
   }
 
-  bool isEmpty() const { return minX_ >= maxX_ || minY_ >= maxY_; }
-  bool isNotEmpty() const { return minX_ < maxX_ && minY_ < maxY_; }
+  bool isEmpty() const { return min_x_ >= max_x_ || min_y_ >= max_y_; }
+  bool isNotEmpty() const { return min_x_ < max_x_ && min_y_ < max_y_; }
 
   SkRect getBounds() const {
-    return (maxX_ > minX_ && maxY_ > minY_)
-               ? SkRect::MakeLTRB(minX_, minY_, maxX_, maxY_)
+    return (max_x_ > min_x_ && max_y_ > min_y_)
+               ? SkRect::MakeLTRB(min_x_, min_y_, max_x_, max_y_)
                : SkRect::MakeEmpty();
   }
 
  private:
-  SkScalar minX_ = std::numeric_limits<SkScalar>::infinity();
-  SkScalar minY_ = std::numeric_limits<SkScalar>::infinity();
-  SkScalar maxX_ = -std::numeric_limits<SkScalar>::infinity();
-  SkScalar maxY_ = -std::numeric_limits<SkScalar>::infinity();
+  SkScalar min_x_ = std::numeric_limits<SkScalar>::infinity();
+  SkScalar min_y_ = std::numeric_limits<SkScalar>::infinity();
+  SkScalar max_x_ = -std::numeric_limits<SkScalar>::infinity();
+  SkScalar max_y_ = -std::numeric_limits<SkScalar>::infinity();
 };
 
 // This class implements all rendering methods and computes a liberal
@@ -248,8 +248,8 @@ class DisplayListBoundsCalculator final
   // DisplayList dispatcher method calls. Since 2 of the method calls
   // have no intrinsic size because they render to the entire available,
   // the |cullRect| provides a bounds for them to include.
-  DisplayListBoundsCalculator(const SkRect& cullRect = SkRect::MakeEmpty())
-      : accumulator_(&baseAccumulator_), boundsCull_(cullRect) {}
+  DisplayListBoundsCalculator(const SkRect& cull_rect = SkRect::MakeEmpty())
+      : accumulator_(&root_accumulator_), bounds_cull_(cull_rect) {}
 
   void saveLayer(const SkRect* bounds, bool withPaint) override;
   void save() override;
@@ -317,8 +317,8 @@ class DisplayListBoundsCalculator final
 
   // Only used for drawColor and drawPaint and paint objects that
   // cannot support fast bounds.
-  SkRect boundsCull_;
-  BoundsAccumulator baseAccumulator_;
+  SkRect bounds_cull_;
+  BoundsAccumulator root_accumulator_;
 
   class SaveInfo {
    public:
@@ -329,7 +329,7 @@ class DisplayListBoundsCalculator final
     virtual BoundsAccumulator* restore();
 
    protected:
-    BoundsAccumulator* savedAccumulator_;
+    BoundsAccumulator* saved_accumulator_;
   };
 
   class SaveLayerInfo : public SaveInfo {
@@ -341,16 +341,16 @@ class DisplayListBoundsCalculator final
     BoundsAccumulator* restore() override;
 
    protected:
-    BoundsAccumulator layerAccumulator_;
-    const SkMatrix matrix;
+    BoundsAccumulator layer_accumulator_;
+    const SkMatrix matrix_;
   };
 
   class SaveLayerWithPaintInfo : public SaveLayerInfo {
    public:
     SaveLayerWithPaintInfo(DisplayListBoundsCalculator* calculator,
                            BoundsAccumulator* accumulator,
-                           const SkMatrix& saveMatrix,
-                           const SkPaint& savePaint);
+                           const SkMatrix& save_matrix,
+                           const SkPaint& save_paint);
     virtual ~SaveLayerWithPaintInfo() = default;
 
     BoundsAccumulator* restore() override;
@@ -361,9 +361,9 @@ class DisplayListBoundsCalculator final
     SkPaint paint_;
   };
 
-  std::vector<SaveInfo> savedInfos_;
+  std::vector<SaveInfo> saved_infos_;
 
-  void accumulateRect(const SkRect& rect, bool forceStroke = false);
+  void accumulateRect(const SkRect& rect, bool force_stroke = false);
 };
 
 }  // namespace flutter

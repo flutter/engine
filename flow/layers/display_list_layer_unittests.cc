@@ -70,7 +70,7 @@ TEST_F(DisplayListLayerTest, SimpleDisplayList) {
   const SkRect picture_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
   DisplayListBuilder builder;
   builder.drawRect(picture_bounds);
-  auto display_list = builder.build();
+  auto display_list = builder.Build();
   auto layer = std::make_shared<DisplayListLayer>(layer_offset, display_list,
                                                   false, false);
 
