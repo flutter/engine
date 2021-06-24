@@ -57,7 +57,7 @@ const String _kPhysicalCapsLock = 'CapsLock';
 
 const String _kLogicalDead = 'Dead';
 
-const int _kWebKeyIdPlane = 0x00800000000;
+const int _kWebKeyIdPlane = 0x1700000000;
 
 // Bits in a Flutter logical event to generate the logical key for dead keys.
 //
