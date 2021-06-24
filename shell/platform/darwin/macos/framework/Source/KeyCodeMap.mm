@@ -17,19 +17,8 @@
 //
 // See flutter/flutter:dev/tools/gen_keycodes/README.md for more information.
 
-/**
- * Mask for the 32-bit value portion of the key code.
- */
 const uint64_t kValueMask = 0x000ffffffff;
-
-/**
- * The plane value for keys which have a Unicode representation.
- */
 const uint64_t kUnicodePlane = 0x00000000000;
-
-/**
- * The plane value for the private keys defined by the macOS embedding.
- */
 const uint64_t kMacosPlane = 0x01400000000;
 
 const NSDictionary* keyCodeToPhysicalKey = @{
