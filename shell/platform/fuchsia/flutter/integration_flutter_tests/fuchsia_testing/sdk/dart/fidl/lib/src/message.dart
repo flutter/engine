@@ -23,10 +23,9 @@ const int kMessageOrdinalOffset = 8;
 const int kMagicNumberInitial = 1;
 
 class _BaseMessage {
-  _BaseMessage(this.data, this.handles);
+  _BaseMessage(this.data);
 
   final ByteData data;
-  final List<Handle> handles;
 
   int get txid => data.getUint32(kMessageTxidOffset, Endian.little);
   int get ordinal => data.getUint64(kMessageOrdinalOffset, Endian.little);
@@ -64,34 +63,54 @@ class _BaseMessage {
         '$buffer'
         '==================================================');
   }
+}
+
+class IncomingMessage extends _BaseMessage {
+  IncomingMessage(data, this.handleInfos) : super(data);
+  IncomingMessage.fromReadEtcResult(ReadEtcResult result)
+      : assert(result.status == ZX.OK),
+        handleInfos = result.handleInfos,
+        super(result.bytes);
+  @visibleForTesting
+  IncomingMessage.fromOutgoingMessage(OutgoingMessage outgoingMessage)
+      : handleInfos = outgoingMessage.handleDispositions
+            .map((handleDisposition) => HandleInfo(handleDisposition.handle,
+                handleDisposition.type, handleDisposition.rights))
+            .toList(),
+        super(outgoingMessage.data);
+
+  final List<HandleInfo> handleInfos;
 
   void closeHandles() {
-    for (int i = 0; i < handles.length; ++i) {
-      handles[i].close();
+    for (int i = 0; i < handleInfos.length; ++i) {
+      handleInfos[i].handle.close();
     }
   }
 
   @override
   String toString() {
-    return 'Message(numBytes=${data.lengthInBytes}, numHandles=${handles.length})';
+    return 'IncomingMessage(numBytes=${data.lengthInBytes}, numHandles=${handleInfos.length})';
   }
 }
 
-class IncomingMessage extends _BaseMessage {
-  IncomingMessage(data, handles) : super(data, handles);
-  IncomingMessage.fromReadResult(ReadResult result)
-      : assert(result.status == ZX.OK),
-        super(result.bytes, result.handles);
-  @visibleForTesting
-  IncomingMessage.fromOutgoingMessage(OutgoingMessage outgoingMessage)
-      : super(outgoingMessage.data, outgoingMessage.handles);
-}
-
 class OutgoingMessage extends _BaseMessage {
-  OutgoingMessage(data, handles) : super(data, handles);
+  OutgoingMessage(data, this.handleDispositions) : super(data);
 
   set txid(int value) =>
       data.setUint32(kMessageTxidOffset, value, Endian.little);
+
+  final List<HandleDisposition> handleDispositions;
+
+  void closeHandles() {
+    for (int i = 0; i < handleDispositions.length; ++i) {
+      handleDispositions[i].handle.close();
+    }
+  }
+
+  @override
+  String toString() {
+    return 'OutgoingMessage(numBytes=${data.lengthInBytes}, numHandles=${handleDispositions.length})';
+  }
 }
 
 /// Encodes a FIDL message that contains a single parameter.
@@ -116,9 +135,9 @@ void _validateDecoding(Decoder decoder) {
   if (decoder.countUnclaimedHandles() > 0) {
     // If there are unclaimed handles at the end of the decoding, close all
     // handles to the best of our ability, and throw an error.
-    for (var handle in decoder.handles) {
+    for (var handleInfo in decoder.handleInfos) {
       try {
-        handle.close();
+        handleInfo.handle.close();
         // ignore: avoid_catches_without_on_clauses
       } catch (e) {
         // best effort
@@ -126,7 +145,7 @@ void _validateDecoding(Decoder decoder) {
     }
 
     int unclaimed = decoder.countUnclaimedHandles();
-    int total = decoder.handles.length;
+    int total = decoder.handleInfos.length;
     throw FidlError(
         'Message contains extra handles (unclaimed: $unclaimed, total: $total)',
         FidlErrorCode.fidlTooManyHandles);

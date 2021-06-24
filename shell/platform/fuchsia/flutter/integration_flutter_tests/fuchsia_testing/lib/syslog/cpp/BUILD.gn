@@ -21,6 +21,6 @@ source_set("cpp") {
   ]
 
   public_deps = [
-    "$fuchsia_sdk_root/pkg:fit"
+    "$fuchsia_sdk_root/pkg:fit-promise"
   ]
 }

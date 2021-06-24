@@ -227,7 +227,8 @@ class UnknownRawDataType extends SimpleFidlType<UnknownRawData> {
   void encode(Encoder encoder, UnknownRawData value, int offset, int depth) {
     _copyUint8(encoder.data, value.data, offset);
     for (int i = 0; i < value.handles.length; i++) {
-      encoder.addHandle(value.handles[i]);
+      encoder.addHandleDisposition(HandleDisposition(ZX.HANDLE_OP_MOVE,
+          value.handles[i], ZX.OBJ_TYPE_NONE, ZX.RIGHT_SAME_RIGHTS));
     }
   }
 
@@ -237,9 +238,10 @@ class UnknownRawDataType extends SimpleFidlType<UnknownRawData> {
     for (var i = 0; i < numBytes; i++) {
       data[i] = decoder.decodeUint8(offset + i);
     }
-    final handles =
-        List<Handle>.generate(numHandles, (int i) => decoder.claimHandle());
-    return UnknownRawData(data, handles);
+    final handleInfos =
+        List<HandleInfo>.generate(numHandles, (int i) => decoder.claimHandle());
+    return UnknownRawData(
+        data, handleInfos.map((handleInfo) => handleInfo.handle).toList());
   }
 }
 
@@ -500,27 +502,57 @@ class Float64Type extends FidlType<double, Float64List> {
   }
 }
 
-void _encodeHandle(Encoder encoder, Handle? value, int offset, bool nullable) {
-  final bool present = value != null && value.isValid;
+void _encodeHandle(
+    Encoder encoder, HandleDisposition? value, int offset, bool nullable) {
+  final bool present = value != null && value.handle.isValid;
   if (!nullable && !present) {
     throw _notNullable;
   }
   encoder.encodeUint32(present ? kHandlePresent : kHandleAbsent, offset);
   if (present) {
-    encoder.addHandle(value);
+    encoder.addHandleDisposition(value);
   }
 }
 
-Handle? _decodeNullableHandle(Decoder decoder, int offset) {
+Handle _checkHandleRights(HandleInfo handleInfo, int objectType, int rights) {
+  if (objectType != ZX.OBJ_TYPE_NONE &&
+      handleInfo.type != ZX.OBJ_TYPE_NONE &&
+      handleInfo.type != objectType) {
+    handleInfo.handle.close();
+    throw FidlError(
+        'Handle has object type ${handleInfo.type} but required $objectType.',
+        FidlErrorCode.fidlIncorrectHandleType);
+  }
+  if (rights != ZX.RIGHT_SAME_RIGHTS &&
+      handleInfo.rights != ZX.RIGHT_SAME_RIGHTS) {
+    if ((rights & ~handleInfo.rights) != 0) {
+      handleInfo.handle.close();
+      throw FidlError(
+          'Required handle rights were missing. Got ${handleInfo.rights}, want $rights.',
+          FidlErrorCode.fidlMissingRequiredHandleRights);
+    }
+    if ((handleInfo.rights & ~rights) != 0) {
+      return handleInfo.handle.replace(rights);
+    }
+  }
+  return handleInfo.handle;
+}
+
+Handle? _decodeNullableHandle(
+    Decoder decoder, int offset, int objectType, int rights) {
   final int encoded = decoder.decodeUint32(offset);
   if (encoded != kHandleAbsent && encoded != kHandlePresent) {
     throw FidlError('Invalid handle encoding: $encoded.');
   }
-  return encoded == kHandlePresent ? decoder.claimHandle() : null;
+  if (encoded == kHandlePresent) {
+    final HandleInfo handleInfo = decoder.claimHandle();
+    return _checkHandleRights(handleInfo, objectType, rights);
+  }
+  return null;
 }
 
-Handle _decodeHandle(Decoder decoder, int offset) {
-  final handle = _decodeNullableHandle(decoder, offset);
+Handle _decodeHandle(Decoder decoder, int offset, int objectType, int rights) {
+  final handle = _decodeNullableHandle(decoder, offset, objectType, rights);
   if (handle == null) {
     throw _notNullable;
   }
@@ -546,13 +578,21 @@ abstract class _BaseHandleType<W> extends SimpleFidlType<W> {
   W wrap(Handle handle);
   Handle? unwrap(W wrapper);
 
+  HandleDisposition? _asHandleDisposition(W value) {
+    Handle? handle = unwrap(value);
+    if (handle != null) {
+      return HandleDisposition(ZX.HANDLE_OP_MOVE, handle, objectType, rights);
+    }
+    return null;
+  }
+
   @override
   void encode(Encoder encoder, W value, int offset, int depth) =>
-      _encodeHandle(encoder, unwrap(value), offset, false);
+      _encodeHandle(encoder, _asHandleDisposition(value), offset, false);
 
   @override
   W decode(Decoder decoder, int offset, int depth) =>
-      wrap(_decodeHandle(decoder, offset));
+      wrap(_decodeHandle(decoder, offset, objectType, rights));
 }
 
 class NullableHandleType<W> extends SimpleFidlType<W?> {
@@ -562,11 +602,15 @@ class NullableHandleType<W> extends SimpleFidlType<W?> {
   @override
   void encode(Encoder encoder, W? value, int offset, int depth) =>
       _encodeHandle(
-          encoder, value == null ? null : _base.unwrap(value), offset, true);
+          encoder,
+          value == null ? null : _base._asHandleDisposition(value),
+          offset,
+          true);
 
   @override
   W? decode(Decoder decoder, int offset, int depth) {
-    final Handle? handle = _decodeNullableHandle(decoder, offset);
+    final Handle? handle =
+        _decodeNullableHandle(decoder, offset, _base.objectType, _base.rights);
     return handle == null ? null : _base.wrap(handle);
   }
 }
@@ -627,12 +671,22 @@ class InterfaceHandleType<T> extends SimpleFidlType<InterfaceHandle<T>> {
 
   @override
   void encode(
-          Encoder encoder, InterfaceHandle<T> value, int offset, int depth) =>
-      _encodeHandle(encoder, value.channel?.handle, offset, false);
+      Encoder encoder, InterfaceHandle<T> value, int offset, int depth) {
+    final handle = value.channel?.handle;
+    _encodeHandle(
+        encoder,
+        handle == null
+            ? null
+            : HandleDisposition(ZX.HANDLE_OP_MOVE, handle, ZX.OBJ_TYPE_CHANNEL,
+                ZX.DEFAULT_CHANNEL_RIGHTS),
+        offset,
+        false);
+  }
 
   @override
   InterfaceHandle<T> decode(Decoder decoder, int offset, int depth) =>
-      InterfaceHandle<T>(Channel(_decodeHandle(decoder, offset)));
+      InterfaceHandle<T>(Channel(_decodeHandle(
+          decoder, offset, ZX.OBJ_TYPE_CHANNEL, ZX.DEFAULT_CHANNEL_RIGHTS)));
 }
 
 class NullableInterfaceHandleType<T>
@@ -641,13 +695,22 @@ class NullableInterfaceHandleType<T>
 
   @override
   void encode(
-          Encoder encoder, InterfaceHandle<T>? value, int offset, int depth) =>
-      _encodeHandle(
-          encoder, value == null ? null : value.channel?.handle, offset, true);
+      Encoder encoder, InterfaceHandle<T>? value, int offset, int depth) {
+    final handle = value?.channel?.handle;
+    _encodeHandle(
+        encoder,
+        handle == null
+            ? null
+            : HandleDisposition(ZX.HANDLE_OP_MOVE, handle, ZX.OBJ_TYPE_CHANNEL,
+                ZX.DEFAULT_CHANNEL_RIGHTS),
+        offset,
+        true);
+  }
 
   @override
   InterfaceHandle<T>? decode(Decoder decoder, int offset, int depth) {
-    final Handle? handle = _decodeNullableHandle(decoder, offset);
+    final Handle? handle = _decodeNullableHandle(
+        decoder, offset, ZX.OBJ_TYPE_CHANNEL, ZX.DEFAULT_CHANNEL_RIGHTS);
     return handle == null ? null : InterfaceHandle<T>(Channel(handle));
   }
 }
@@ -657,12 +720,22 @@ class InterfaceRequestType<T> extends SimpleFidlType<InterfaceRequest<T>> {
 
   @override
   void encode(
-          Encoder encoder, InterfaceRequest<T> value, int offset, int depth) =>
-      _encodeHandle(encoder, value.channel?.handle, offset, false);
+      Encoder encoder, InterfaceRequest<T> value, int offset, int depth) {
+    final handle = value.channel?.handle;
+    _encodeHandle(
+        encoder,
+        handle == null
+            ? null
+            : HandleDisposition(ZX.HANDLE_OP_MOVE, handle, ZX.OBJ_TYPE_CHANNEL,
+                ZX.DEFAULT_CHANNEL_RIGHTS),
+        offset,
+        false);
+  }
 
   @override
   InterfaceRequest<T> decode(Decoder decoder, int offset, int depth) =>
-      InterfaceRequest<T>(Channel(_decodeHandle(decoder, offset)));
+      InterfaceRequest<T>(Channel(_decodeHandle(
+          decoder, offset, ZX.OBJ_TYPE_CHANNEL, ZX.DEFAULT_CHANNEL_RIGHTS)));
 }
 
 class NullableInterfaceRequestType<T>
@@ -671,13 +744,22 @@ class NullableInterfaceRequestType<T>
 
   @override
   void encode(
-          Encoder encoder, InterfaceRequest<T>? value, int offset, int depth) =>
-      _encodeHandle(
-          encoder, value == null ? null : value.channel?.handle, offset, true);
+      Encoder encoder, InterfaceRequest<T>? value, int offset, int depth) {
+    final handle = value?.channel?.handle;
+    _encodeHandle(
+        encoder,
+        handle == null
+            ? null
+            : HandleDisposition(ZX.HANDLE_OP_MOVE, handle, ZX.OBJ_TYPE_CHANNEL,
+                ZX.DEFAULT_CHANNEL_RIGHTS),
+        offset,
+        true);
+  }
 
   @override
   InterfaceRequest<T>? decode(Decoder decoder, int offset, int depth) {
-    final Handle? handle = _decodeNullableHandle(decoder, offset);
+    final Handle? handle = _decodeNullableHandle(
+        decoder, offset, ZX.OBJ_TYPE_CHANNEL, ZX.DEFAULT_CHANNEL_RIGHTS);
     return handle == null ? null : InterfaceRequest<T>(Channel(handle));
   }
 }
@@ -910,9 +992,9 @@ T? _decodeEnvelopeContent<T, I extends Iterable<T>>(Decoder decoder,
 
       decoder.claimMemory(header.numBytes, depth);
       for (int i = 0; i < header.numHandles; i++) {
-        final handle = decoder.claimHandle();
+        final handleInfo = decoder.claimHandle();
         try {
-          handle.close();
+          handleInfo.handle.close();
           // ignore: avoid_catches_without_on_clauses
         } catch (e) {
           // best effort

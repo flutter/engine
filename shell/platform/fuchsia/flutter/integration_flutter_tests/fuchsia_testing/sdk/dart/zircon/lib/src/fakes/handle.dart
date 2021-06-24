@@ -41,8 +41,13 @@ class Handle {
         'Handle.asyncWait() is not implemented on this platform.');
   }
 
-  Handle duplicate(int options) {
+  Handle duplicate(int rights) {
     throw UnimplementedError(
         'Handle.duplicate() is not implemented on this platform.');
+  }
+
+  Handle replace(int rights) {
+    throw UnimplementedError(
+        'Handle.replace() is not implemented on this platform.');
   }
 }

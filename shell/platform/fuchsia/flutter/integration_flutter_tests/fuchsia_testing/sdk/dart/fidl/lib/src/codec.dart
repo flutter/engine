@@ -38,11 +38,11 @@ class Encoder {
 
   OutgoingMessage get message {
     final ByteData trimmed = ByteData.view(data.buffer, 0, _extent);
-    return OutgoingMessage(trimmed, _handles);
+    return OutgoingMessage(trimmed, _handleDispositions);
   }
 
   ByteData data = ByteData(_kInitialBufferSize);
-  final List<Handle> _handles = <Handle>[];
+  final List<HandleDisposition> _handleDispositions = <HandleDisposition>[];
   int _extent = 0;
 
   void _grow(int newSize) {
@@ -75,11 +75,11 @@ class Encoder {
   }
 
   int countHandles() {
-    return _handles.length;
+    return _handleDispositions.length;
   }
 
-  void addHandle(Handle value) {
-    _handles.add(value);
+  void addHandleDisposition(HandleDisposition value) {
+    _handleDispositions.add(value);
   }
 
   void encodeMessageHeader(int ordinal, int txid) {
@@ -146,12 +146,12 @@ class Encoder {
 class Decoder {
   Decoder(IncomingMessage message)
       : data = message.data,
-        handles = message.handles;
+        handleInfos = message.handleInfos;
 
-  Decoder.fromRawArgs(this.data, this.handles);
+  Decoder.fromRawArgs(this.data, this.handleInfos);
 
   ByteData data;
-  List<Handle> handles;
+  List<HandleInfo> handleInfos;
 
   int _nextOffset = 0;
   int _nextHandle = 0;
@@ -178,15 +178,15 @@ class Decoder {
   }
 
   int countUnclaimedHandles() {
-    return handles.length - _nextHandle;
+    return handleInfos.length - _nextHandle;
   }
 
-  Handle claimHandle() {
-    if (_nextHandle >= handles.length) {
+  HandleInfo claimHandle() {
+    if (_nextHandle >= handleInfos.length) {
       throw FidlError(
           'Cannot access out of range handle', FidlErrorCode.fidlTooFewHandles);
     }
-    return handles[_nextHandle++];
+    return handleInfos[_nextHandle++];
   }
 
   bool decodeBool(int offset) => data.getInt8(offset) != 0;

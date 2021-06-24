@@ -707,17 +707,6 @@ std::ostream& operator<<(std::ostream& os, const ViewStateChangedEvent& value) {
   return os << ::fostr::Outdent;
 }
 
-std::ostream& operator<<(std::ostream& os, const Hit& value) {
-  using fidl::operator<<;
-  os << ::fostr::Indent;
-  os << ::fostr::NewLine << "tag_value: " << value.tag_value;
-  os << ::fostr::NewLine << "ray_origin: " << value.ray_origin;
-  os << ::fostr::NewLine << "ray_direction: " << value.ray_direction;
-  os << ::fostr::NewLine << "inverse_transform: " << value.inverse_transform;
-  os << ::fostr::NewLine << "distance: " << value.distance;
-  return os << ::fostr::Outdent;
-}
-
 std::ostream& operator<<(std::ostream& os, const ShapeNodeArgs& value) {
   using fidl::operator<<;
   os << ::fostr::Indent;

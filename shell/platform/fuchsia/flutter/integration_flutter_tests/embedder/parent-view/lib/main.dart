@@ -20,23 +20,18 @@ void main(List<String> args) async {
   final parser = ArgParser()
     ..addFlag('showOverlay', defaultsTo: false)
     ..addFlag('hitTestable', defaultsTo: true)
-    ..addFlag('focusable', defaultsTo: true)
-    ..addFlag('usePlatformView', defaultsTo: true);
+    ..addFlag('focusable', defaultsTo: true);
   final arguments = parser.parse(args);
   for (final option in arguments.options) {
     print('parent-view: $option: ${arguments[option]}');
   }
 
   final childViewToken = _launchApp(_kChildAppUrl);
-  // final connection = ChildViewConnection(
-  //   childViewToken,
-  //   usePlatformView: arguments['usePlatformView'],
-  // );
 
   // runApp(MaterialApp(
   //   debugShowCheckedModeBanner: false,
   //   home: TestApp(
-  //     connection,
+  //     FuchsiaViewConnection(childViewToken),
   //     showOverlay: arguments['showOverlay'],
   //     hitTestable: arguments['hitTestable'],
   //     focusable: arguments['focusable'],
@@ -48,19 +43,17 @@ void main(List<String> args) async {
 //   static const _black = Color.fromARGB(255, 0, 0, 0);
 //   static const _blue = Color.fromARGB(255, 0, 0, 255);
 
-//   final ChildViewConnection connection;
+//   final FuchsiaViewConnection connection;
 //   final bool showOverlay;
 //   final bool hitTestable;
 //   final bool focusable;
 
 //   final _backgroundColor = ValueNotifier(_blue);
 
-//   TestApp(
-//     this.connection, {
-//     this.showOverlay = false,
+//   TestApp(this.connection,
+//     {this.showOverlay = false,
 //     this.hitTestable = true,
-//     this.focusable = true,
-//   });
+//     this.focusable = true});
 
 //   @override
 //   Widget build(BuildContext context) {
@@ -77,8 +70,8 @@ void main(List<String> args) async {
 //                   FractionallySizedBox(
 //                     widthFactor: 0.33,
 //                     heightFactor: 0.33,
-//                     child: ChildView(
-//                       connection: connection,
+//                     child: FuchsiaView(
+//                       controller: connection,
 //                       hitTestable: hitTestable,
 //                       focusable: focusable,
 //                     ),

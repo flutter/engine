@@ -8,8 +8,8 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:typed_data';
 
-import 'package:zircon/zircon.dart';
 import 'package:meta/meta.dart';
+import 'package:zircon/zircon.dart';
 
 import 'error.dart';
 import 'interface.dart';
@@ -233,13 +233,13 @@ abstract class AsyncBinding<T> extends _Stateful {
   void handleMessage(IncomingMessage message, OutgoingMessageSink respond);
 
   void _handleReadable() {
-    final ReadResult result = _reader.channel!.queryAndRead();
+    final ReadEtcResult result = _reader.channel!.queryAndReadEtc();
     if (result.bytes.lengthInBytes == 0) {
       throw FidlError(
           'AsyncBinding<${$interfaceName}> Unexpected empty message or error: $result');
     }
 
-    final IncomingMessage message = IncomingMessage.fromReadResult(result);
+    final IncomingMessage message = IncomingMessage.fromReadEtcResult(result);
     if (!message.isCompatible()) {
       close();
       throw FidlError(
@@ -263,7 +263,7 @@ abstract class AsyncBinding<T> extends _Stateful {
       response.closeHandles();
       return;
     }
-    _reader.channel?.write(response.data, response.handles);
+    _reader.channel?.writeEtc(response.data, response.handleDispositions);
   }
 
   final ChannelReader _reader = ChannelReader();
@@ -451,14 +451,14 @@ class AsyncProxyController<T> extends _Stateful {
   IncomingMessageSink? onResponse;
 
   void _handleReadable() {
-    final ReadResult result = _reader.channel!.queryAndRead();
+    final ReadEtcResult result = _reader.channel!.queryAndReadEtc();
     if (result.bytes.lengthInBytes == 0) {
       proxyError(FidlError(
           'AsyncProxyController<${$interfaceName}>: Read from channel failed'));
       return;
     }
     try {
-      IncomingMessage message = IncomingMessage.fromReadResult(result);
+      IncomingMessage message = IncomingMessage.fromReadEtcResult(result);
       final epitaphCallback = onEpitaphReceived;
       final responseCallback = onResponse;
       if (message.ordinal == epitaphOrdinal) {
@@ -470,8 +470,8 @@ class AsyncProxyController<T> extends _Stateful {
         responseCallback(message);
       }
     } on FidlError catch (e) {
-      for (Handle handle in result.handles) {
-        handle.close();
+      for (HandleInfo handleInfo in result.handleInfos) {
+        handleInfo.handle.close();
       }
       proxyError(e);
     }
@@ -491,7 +491,8 @@ class AsyncProxyController<T> extends _Stateful {
           'AsyncProxyController<${$interfaceName}> is closed.'));
       return;
     }
-    final int status = _reader.channel!.write(message.data, message.handles);
+    final int status =
+        _reader.channel!.writeEtc(message.data, message.handleDispositions);
     if (status != ZX.OK) {
       proxyError(FidlError(
           'AsyncProxyController<${$interfaceName}> failed to write to channel: ${_reader.channel} (status: $status)'));
@@ -517,7 +518,8 @@ class AsyncProxyController<T> extends _Stateful {
       txid = _nextTxid++ & _userspaceTxidMask;
     message.txid = txid;
     _completerMap[message.txid] = completer;
-    final int status = _reader.channel!.write(message.data, message.handles);
+    final int status =
+        _reader.channel!.writeEtc(message.data, message.handleDispositions);
 
     if (status != ZX.OK) {
       proxyError(FidlError(

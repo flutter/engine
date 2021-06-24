@@ -117,7 +117,13 @@ def main():
     # tests when users need to provide their own custom __main__.py.
     main_file = os.path.join(app_dir, "__main__.py")
     with open(main_file, 'w') as f:
-        f.write(f'from {main_module} import *\n{args.main_callable}()')
+        f.write(
+            f'''
+import sys
+from {main_module} import *
+
+sys.exit({args.main_callable}())
+''')
 
     zipapp.create_archive(
         app_dir,
