@@ -4,6 +4,9 @@
 
 part of engine;
 
+// This data was taken from the source code of the Closure library:
+//
+// - https://github.com/google/closure-library/blob/9d24a6c1809a671c2e54c328897ebeae15a6d172/closure/goog/i18n/bidi.js#L203-L234
 final UnicodePropertyLookup<ui.TextDirection?> _textDirectionLookup = UnicodePropertyLookup<ui.TextDirection?>(
   <UnicodeRange<ui.TextDirection>>[
     // LTR
@@ -44,7 +47,7 @@ final UnicodePropertyLookup<ui.TextDirection?> _textDirectionLookup = UnicodePro
   null,
 );
 
-/// Represent a block of text with a certain [ui.TextDirection].
+/// Represents a block of text with a certain [ui.TextDirection].
 class DirectionalPosition {
   const DirectionalPosition(this.lineBreak, this.textDirection, this.isSpaceOnly);
 
@@ -57,6 +60,9 @@ class DirectionalPosition {
   LineBreakType get type => lineBreak.type;
 
   /// Creates a copy of this [DirectionalPosition] with a different [index].
+  ///
+  /// The type of the returned [DirectionalPosition] is set to
+  /// [LineBreakType.prohibited].
   DirectionalPosition copyWithIndex(int index) {
     return DirectionalPosition(
       LineBreakResult.sameIndex(index, LineBreakType.prohibited),
@@ -66,7 +72,7 @@ class DirectionalPosition {
   }
 }
 
-/// Finds the the end of the directional block of text that starts at [start] up
+/// Finds the end of the directional block of text that starts at [start] up
 /// until [end].
 ///
 /// If the block goes beyond [end], the part after [end] is ignored.

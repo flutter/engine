@@ -320,7 +320,7 @@ class TextLayoutService {
     final double dx = offset.dx - line.left;
     for (final RangeBox box in line.boxes!) {
       if (box.left <= dx && dx <= box.right) {
-        return box.getPositionForX(dx, line);
+        return box.getPositionForX(dx);
       }
     }
     // Is this ever reachable?
@@ -341,13 +341,13 @@ class TextLayoutService {
   }
 }
 
-/// Represents a box inside [span] with the range of [start] to [end].
+/// Represents a box inside a paragraph span with the range of [start] to [end].
 ///
 /// The box's coordinates are all relative to the line it belongs to. For
 /// example, [left] is the distance from the left edge of the line to the left
 /// edge of the box.
 ///
-/// This is how the various measurements/coordinates look like for a box in an
+/// This is what the various measurements/coordinates look like for a box in an
 /// LTR paragraph:
 ///
 ///          *------------------------lineWidth------------------*
@@ -402,7 +402,7 @@ abstract class RangeBox {
       ? endOffset
       : lineWidth - startOffset;
 
-  /// The distance from the beginning to the end of the box.
+  /// The distance from the left edge of the box to the right edge of the box.
   final double width;
 
   /// The width of the line that this box belongs to.
@@ -411,7 +411,7 @@ abstract class RangeBox {
   /// The text direction of the paragraph that this box belongs to.
   final ui.TextDirection paragraphDirection;
 
-  /// Indicates how this box flows along other boxes.
+  /// Indicates how this box flows among other boxes.
   ///
   /// Example: In an LTR paragraph, the text "ABC hebrew_word 123 DEF" is shown
   /// visually in the following order:
@@ -436,7 +436,7 @@ abstract class RangeBox {
   ///
   /// The [x] offset is expected to be relative to the left edge of the line,
   /// just like the coordinates of this box.
-  ui.TextPosition getPositionForX(double x, EngineLineMetrics line);
+  ui.TextPosition getPositionForX(double x);
 }
 
 /// Represents a box for a [PlaceholderSpan].
@@ -494,7 +494,7 @@ class PlaceholderBox extends RangeBox {
   }
 
   @override
-  ui.TextPosition getPositionForX(double x, EngineLineMetrics line) {
+  ui.TextPosition getPositionForX(double x) {
     // See if `x` is closer to the left edge or the right edge of the box.
     final bool closerToLeft = x - left < right - x;
     return ui.TextPosition(
@@ -546,6 +546,7 @@ class SpanBox extends RangeBox {
   /// direction (i.e. the text is shown as "123" not "321").
   final ui.TextDirection contentDirection;
 
+  /// Whether this box is made of only white space.
   final bool isSpaceOnly;
 
   /// Whether the contents of this box flow in the left-to-right direction.
@@ -678,23 +679,23 @@ class SpanBox extends RangeBox {
   /// And here's how it looks for a box with RTL content:
   ///
   ///          *------------------------lineWidth------------------*
-  ///          *---------------X (input)
+  ///          *----------------X (input)
   ///          ┌───────────┬────────────────────────┬───────────────┐
   ///          │           │ <--content-direction-- │               │
   ///          └───────────┴────────────────────────┴───────────────┘
-  ///                                (output) X'----*
+  ///                  (output) X'------------------*
   ///          *---left----*
   ///          *---------------right----------------*
   ///
-  double _makeXRelativeToContent(double x, EngineLineMetrics line) {
+  double _makeXRelativeToContent(double x) {
     return isContentRtl ? right - x : x - left;
   }
 
   @override
-  ui.TextPosition getPositionForX(double x, EngineLineMetrics line) {
+  ui.TextPosition getPositionForX(double x) {
     spanometer.currentSpan = span;
 
-    x = _makeXRelativeToContent(x, line);
+    x = _makeXRelativeToContent(x);
 
     final int startIndex = start.index;
     final int endIndex = end.indexWithoutTrailingNewlines;
@@ -1188,8 +1189,11 @@ class LineBuilder {
   /// If this is the first box in the line, it'll start at the beginning of the
   /// line. Else, it'll start at the end of the last box.
   ///
-  /// A box should be cut whenever the end of line is reached, or when switching
-  /// from one span to another.
+  /// A box should be cut whenever the end of line is reached, when switching
+  /// from one span to another, or when switching text direction.
+  ///
+  /// [isSpaceOnly] indicates that the box contains nothing but whitespace
+  /// characters.
   void createBox({bool isSpaceOnly = false}) {
     final LineBreakResult boxStart = _currentBoxStart;
     final LineBreakResult boxEnd = end;
@@ -1247,7 +1251,7 @@ class LineBuilder {
     );
   }
 
-  /// Position the boxes taking into account bi-directional text, and the
+  /// Positions the boxes and takes into account their directions, and the
   /// paragraph's direction.
   void _positionBoxes() {
     final List<RangeBox> boxes = _boxes;
@@ -1318,12 +1322,15 @@ class LineBuilder {
     }
   }
 
-  /// Positions a sequence of boxes in reverse order.
+  /// Positions a sequence of boxes in the direction opposite to the paragraph
+  /// text direction.
   ///
   /// This is needed when a right-to-left sequence appears in the middle of a
   /// left-to-right paragraph, or vice versa.
   ///
   /// Returns the total width of all the positioned boxes in the sequence.
+  ///
+  /// [first] and [last] are expected to be inclusive.
   double _positionBoxesInReverse(
     List<RangeBox> boxes,
     int first,
@@ -1334,6 +1341,7 @@ class LineBuilder {
     for (int i = last; i >= first; i--) {
       // Update the visual position of each box.
       final RangeBox box = boxes[i];
+      assert(box.boxDirection != _paragraphDirection);
       box.startOffset = startOffset + cumulativeWidth;
       box.lineWidth = width;
 
