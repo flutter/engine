@@ -918,6 +918,7 @@ void* DisplayListBuilder::push(size_t pod, Args&&... args) {
     allocated_ = (used_ + size + DL_BUILDER_PAGE) & ~(DL_BUILDER_PAGE - 1);
     storage_.realloc(allocated_);
     FML_DCHECK(storage_.get());
+    memset(storage_.get() + used_, 0, allocated_ - used_);
   }
   SkASSERT(used_ + size <= allocated_);
   auto op = (T*)(storage_.get() + used_);
