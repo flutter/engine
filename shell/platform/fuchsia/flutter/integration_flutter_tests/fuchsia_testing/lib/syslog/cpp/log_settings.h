@@ -34,6 +34,19 @@ struct LogSettings {
   // An fd to log to. Setting this will disable all structured
   // features resulting in plaintext-only logs written to the specified file descriptor.
   int log_fd = -1;
+
+  // Set to true to disable the interest listener. Changes to interest will not be
+  // applied to your log settings.
+  bool disable_interest_listener = false;
+
+  // A single-threaded dispatcher to use for change notifications.
+  // Must be single-threaded. Passing a dispatcher that has multiple threads
+  // will result in undefined behavior.
+  // This must be an async_dispatcher_t*.
+  // This can't be defined as async_dispatcher_t* since it is used
+  // from fxl which is a host+target library. This prevents us
+  // from adding a Fuchsia-specific dependency.
+  void* single_threaded_dispatcher = nullptr;
 };
 
 // Sets the active log settings for the current process.

@@ -6,8 +6,8 @@
 
 import 'dart:typed_data';
 
-import 'package:zircon/zircon.dart';
 import 'package:fidl_fuchsia_io/fidl_async.dart';
+import 'package:zircon/zircon.dart';
 
 import 'pseudo_file.dart';
 

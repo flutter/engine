@@ -9,9 +9,9 @@
 
 import 'dart:async';
 
-import 'package:logging/logging.dart';
 import 'package:fidl_fuchsia_logger/fidl_async.dart' as fidl_logger;
 import 'package:fuchsia_services/services.dart';
+import 'package:logging/logging.dart';
 import 'package:zircon/zircon.dart' as zircon;
 
 import '_log_message.dart';

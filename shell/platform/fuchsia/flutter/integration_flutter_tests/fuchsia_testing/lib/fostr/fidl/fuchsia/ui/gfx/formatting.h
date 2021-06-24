@@ -91,7 +91,6 @@ std::ostream& operator<<(std::ostream& os, const ViewAttachedToSceneEvent& value
 std::ostream& operator<<(std::ostream& os, const ViewDetachedFromSceneEvent& value);
 std::ostream& operator<<(std::ostream& os, const ViewPropertiesChangedEvent& value);
 std::ostream& operator<<(std::ostream& os, const ViewStateChangedEvent& value);
-std::ostream& operator<<(std::ostream& os, const Hit& value);
 std::ostream& operator<<(std::ostream& os, const ShapeNodeArgs& value);
 std::ostream& operator<<(std::ostream& os, const ClipNodeArgs& value);
 std::ostream& operator<<(std::ostream& os, const OpacityNodeArgsHACK& value);

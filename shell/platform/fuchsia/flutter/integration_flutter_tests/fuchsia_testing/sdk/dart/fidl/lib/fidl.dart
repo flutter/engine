@@ -11,6 +11,7 @@
 /// InterfaceRequest, etc.) for interacting with certain FIDL services.
 export 'src/bits.dart';
 export 'src/codec.dart';
+export 'src/codegen_common.dart';
 export 'src/enum.dart';
 export 'src/error.dart';
 export 'src/interface.dart';

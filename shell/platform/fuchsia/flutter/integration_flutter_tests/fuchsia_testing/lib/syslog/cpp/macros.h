@@ -14,6 +14,7 @@
 #include <lib/syslog/cpp/log_level.h>
 
 #include <atomic>
+#include <functional>
 #include <limits>
 #include <sstream>
 #include <vector>
@@ -28,6 +29,8 @@ struct LogBuffer;
 WEAK void BeginRecordWithSocket(LogBuffer* buffer, syslog::LogSeverity severity,
                                 const char* file_name, unsigned int line, const char* msg,
                                 const char* condition, zx_handle_t socket);
+WEAK void SetInterestChangedListener(void (*callback)(void* context, syslog::LogSeverity severity),
+                                     void* context);
 #endif
 WEAK void BeginRecord(LogBuffer* buffer, syslog::LogSeverity severity, const char* file,
                       unsigned int line, const char* msg, const char* condition);

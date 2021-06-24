@@ -44,11 +44,26 @@ class Channel extends _HandleWrapper<Channel> {
     return System.channelWrite(handle!, data, handles ?? []);
   }
 
+  int writeEtc(ByteData data, [List<HandleDisposition>? handleDispositions]) {
+    if (handle == null) {
+      return ZX.ERR_INVALID_ARGS;
+    }
+
+    return System.channelWriteEtc(handle!, data, handleDispositions ?? []);
+  }
+
   ReadResult queryAndRead() {
     if (handle == null) {
       return const ReadResult(ZX.ERR_INVALID_ARGS);
     }
     return System.channelQueryAndRead(handle!);
+  }
+
+  ReadEtcResult queryAndReadEtc() {
+    if (handle == null) {
+      return const ReadEtcResult(ZX.ERR_INVALID_ARGS);
+    }
+    return System.channelQueryAndReadEtc(handle!);
   }
 }
 

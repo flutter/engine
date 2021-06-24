@@ -82,6 +82,37 @@ class ReadResult extends _Result {
       'ReadResult(status=$status, bytes=$_bytes, numBytes=$_numBytes, handles=$_handles)';
 }
 
+class HandleInfo {
+  final Handle handle;
+  final int type;
+  final int rights;
+
+  const HandleInfo(this.handle, this.type, this.rights);
+
+  @override
+  String toString() => 'HandleInfo(handle=$handle, type=$type, rights=$rights)';
+}
+
+class ReadEtcResult extends _Result {
+  final ByteData? _bytes;
+  final int? _numBytes;
+  final List<HandleInfo>? _handleInfos;
+
+  ByteData get bytes => _bytes!;
+  int get numBytes => _numBytes!;
+  List<HandleInfo> get handleInfos => _handleInfos!;
+
+  const ReadEtcResult(final int status,
+      [this._bytes, this._numBytes, this._handleInfos])
+      : super(status);
+  Uint8List bytesAsUint8List() =>
+      bytes.buffer.asUint8List(bytes.offsetInBytes, numBytes);
+  String bytesAsUTF8String() => utf8.decode(bytesAsUint8List());
+  @override
+  String toString() =>
+      'ReadEtcResult(status=$status, bytes=$_bytes, numBytes=$_numBytes, handleInfos=$_handleInfos)';
+}
+
 class WriteResult extends _Result {
   final int? _numBytes;
   int get numBytes => _numBytes!;
@@ -144,9 +175,20 @@ class System {
         'System.channelWrite() is not implemented on this platform.');
   }
 
+  static int channelWriteEtc(
+      Handle channel, ByteData data, List<HandleDisposition> handles) {
+    throw UnimplementedError(
+        'System.channelWriteEtc() is not implemented on this platform.');
+  }
+
   static ReadResult channelQueryAndRead(Handle? channel) {
     throw UnimplementedError(
         'System.channelQueryAndRead() is not implemented on this platform.');
+  }
+
+  static ReadEtcResult channelQueryAndReadEtc(Handle channel) {
+    throw UnimplementedError(
+        'System.channelQueryAndReadEtc() is not implemented on this platform.');
   }
 
   // Eventpair operations.
