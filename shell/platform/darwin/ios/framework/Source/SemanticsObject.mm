@@ -198,7 +198,6 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
     self.isAccessibilityElement = YES;
   } else {
     self.isAccessibilityElement = NO;
-    ;
   }
 }
 
@@ -222,15 +221,39 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 
 // private methods
 
+- (float)scrollExtentMax {
+  if (![_semanticsObject isAccessibilityBridgeAlive]) {
+    return 0.0f;
+  }
+  float scrollExtentMax = _semanticsObject.node.scrollExtentMax;
+  if (isnan(scrollExtentMax)) {
+    scrollExtentMax = 0.0f;
+  } else if (!isfinite(scrollExtentMax)) {
+    scrollExtentMax = kScrollExtentMaxForInf + [self scrollPosition];
+  }
+  return scrollExtentMax;
+}
+
+- (float)scrollPosition {
+  if (![_semanticsObject isAccessibilityBridgeAlive]) {
+    return 0.0f;
+  }
+  float scrollPosition = _semanticsObject.node.scrollPosition;
+  if (isnan(scrollPosition)) {
+    scrollPosition = 0.0f;
+  }
+  NSCAssert(isfinite(scrollPosition), @"The scrollPosition must not be infinity");
+  return scrollPosition;
+}
+
 - (CGSize)contentSizeInternal {
   CGRect result;
   const SkRect& rect = _semanticsObject.node.rect;
+
   if (_semanticsObject.node.actions & flutter::kVerticalScrollSemanticsActions) {
-    result = CGRectMake(rect.x(), rect.y(), rect.width(),
-                        rect.height() + _semanticsObject.node.scrollExtentMax);
+    result = CGRectMake(rect.x(), rect.y(), rect.width(), rect.height() + [self scrollExtentMax]);
   } else if (_semanticsObject.node.actions & flutter::kHorizontalScrollSemanticsActions) {
-    result = CGRectMake(rect.x(), rect.y(), rect.width() + _semanticsObject.node.scrollExtentMax,
-                        rect.height());
+    result = CGRectMake(rect.x(), rect.y(), rect.width() + [self scrollExtentMax], rect.height());
   } else {
     result = CGRectMake(rect.x(), rect.y(), rect.width(), rect.height());
   }
@@ -242,11 +265,11 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   CGPoint origin = self.frame.origin;
   const SkRect& rect = _semanticsObject.node.rect;
   if (_semanticsObject.node.actions & flutter::kVerticalScrollSemanticsActions) {
-    result = ConvertPointToGlobal(
-        _semanticsObject, CGPointMake(rect.x(), rect.y() + _semanticsObject.node.scrollPosition));
+    result = ConvertPointToGlobal(_semanticsObject,
+                                  CGPointMake(rect.x(), rect.y() + [self scrollPosition]));
   } else if (_semanticsObject.node.actions & flutter::kHorizontalScrollSemanticsActions) {
-    result = ConvertPointToGlobal(
-        _semanticsObject, CGPointMake(rect.x() + _semanticsObject.node.scrollPosition, rect.y()));
+    result = ConvertPointToGlobal(_semanticsObject,
+                                  CGPointMake(rect.x() + [self scrollPosition], rect.y()));
   } else {
     result = origin;
   }

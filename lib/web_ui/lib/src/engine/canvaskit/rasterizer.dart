@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'package:meta/meta.dart';
 import 'package:ui/src/engine.dart' show frameReferences;
 import 'package:ui/ui.dart' as ui;
 
@@ -32,6 +33,8 @@ class Rasterizer {
           SurfaceFactory.instance.baseSurface.acquireFrame(layerTree.frameSize);
       HtmlViewEmbedder.instance.frameSize = layerTree.frameSize;
       final CkCanvas canvas = frame.skiaCanvas;
+      // Clear the canvas before trying to draw to it again.
+      canvas.clear(ui.Color(0x00000000));
       final Frame compositorFrame =
           context.acquireFrame(canvas, HtmlViewEmbedder.instance);
 
@@ -57,5 +60,11 @@ class Rasterizer {
       frameReferences[i].value = null;
     }
     frameReferences.clear();
+  }
+
+  /// Forces the post-frame callbacks to run. Useful in tests.
+  @visibleForTesting
+  void debugRunPostFrameCallbacks() {
+    _runPostFrameCallbacks();
   }
 }

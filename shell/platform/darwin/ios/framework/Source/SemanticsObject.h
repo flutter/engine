@@ -13,6 +13,8 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge_ios.h"
 
 constexpr int32_t kRootNodeId = 0;
+// This can be arbitrary number as long as it is bigger than 0.
+constexpr float kScrollExtentMaxForInf = 1000;
 
 @class FlutterCustomAccessibilityAction;
 @class FlutterPlatformViewSemanticsContainer;
