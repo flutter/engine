@@ -230,10 +230,10 @@ class BoundsAccumulator {
   }
 
  private:
-  SkScalar minX_ = +MAXFLOAT;
-  SkScalar minY_ = +MAXFLOAT;
-  SkScalar maxX_ = -MAXFLOAT;
-  SkScalar maxY_ = -MAXFLOAT;
+  SkScalar minX_ = std::numeric_limits<SkScalar>::infinity();
+  SkScalar minY_ = std::numeric_limits<SkScalar>::infinity();
+  SkScalar maxX_ = -std::numeric_limits<SkScalar>::infinity();
+  SkScalar maxY_ = -std::numeric_limits<SkScalar>::infinity();
 };
 
 // This class implements all rendering methods and computes a liberal
