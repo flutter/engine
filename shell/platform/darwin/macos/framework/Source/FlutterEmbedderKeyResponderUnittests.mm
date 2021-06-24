@@ -68,23 +68,7 @@ constexpr uint64_t kKeyCodeNumpad1 = 0x53;
 constexpr uint64_t kKeyCodeF1 = 0x7a;
 constexpr uint64_t kKeyCodeAltRight = 0x3d;
 
-constexpr uint64_t kPhysicalKeyA = 0x00070004;
-constexpr uint64_t kPhysicalKeyW = 0x0007001a;
-constexpr uint64_t kPhysicalShiftLeft = 0x000700e1;
-constexpr uint64_t kPhysicalShiftRight = 0x000700e5;
-constexpr uint64_t kPhysicalCapsLock = 0x00070039;
-constexpr uint64_t kPhysicalNumpad1 = 0x00070059;
-constexpr uint64_t kPhysicalF1 = 0x0007003a;
-constexpr uint64_t kPhysicalAltRight = 0x000700e6;
-
-constexpr uint64_t kLogicalKeyA = 0x00000061;
-constexpr uint64_t kLogicalKeyW = 0x00000077;
-constexpr uint64_t kLogicalShiftLeft = 0x3000000010d;
-constexpr uint64_t kLogicalShiftRight = 0x4000000010d;
-constexpr uint64_t kLogicalCapsLock = 0x01000000104;
-constexpr uint64_t kLogicalNumpad1 = 0x50000000031;
-constexpr uint64_t kLogicalF1 = 0x01000000801;
-constexpr uint64_t kLogicalAltRight = 0x40000000102;
+using namespace ::flutter::testing::keycodes;
 
 typedef void (^ResponseCallback)(bool handled);
 

@@ -94,6 +94,7 @@ source_set("common_cpp") {
     "incoming_message_dispatcher.h",
     "json_message_codec.h",
     "json_method_codec.h",
+    "testing/key_codes.h",
   ]
 
   # TODO: Refactor flutter_glfw.cc to move the implementations corresponding

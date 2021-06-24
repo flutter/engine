@@ -26,20 +26,7 @@ constexpr guint16 kKeyCodeCapsLock = 0x42u;
 constexpr guint16 kKeyCodeControlLeft = 0x25u;
 constexpr guint16 kKeyCodeControlRight = 0x69u;
 
-constexpr uint64_t kPhysicalKeyA = 0x00070004;
-constexpr uint64_t kPhysicalControlLeft = 0x000700e0;
-constexpr uint64_t kPhysicalShiftRight = 0x000700E5;
-constexpr uint64_t kPhysicalNumpad1 = 0x00070059;
-constexpr uint64_t kPhysicalNumLock = 0x00070053;
-constexpr uint64_t kPhysicalCapsLock = 0x00070039;
-
-constexpr uint64_t kLogicalKeyA = 0x00000061;
-constexpr uint64_t kLogicalKeyQ = 0x00000071;
-constexpr uint64_t kLogicalControlLeft = 0x30000000105;
-constexpr uint64_t kLogicalShiftRight = 0x4000000010D;
-constexpr uint64_t kLogicalNumpad1 = 0x50000000031;
-constexpr uint64_t kLogicalNumLock = 0x100000010A;
-constexpr uint64_t kLogicalCapsLock = 0x1000000104;
+using namespace ::flutter::testing::keycodes;
 }  // namespace
 
 static void g_ptr_array_clear(GPtrArray* array) {

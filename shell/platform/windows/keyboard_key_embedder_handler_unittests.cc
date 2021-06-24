@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 
+#include "flutter/shell/platform/common/testing/key_codes.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
 #include "flutter/shell/platform/windows/testing/engine_modifier.h"
@@ -79,21 +80,7 @@ constexpr uint64_t kScanCodeShiftRight = 0x36;
 
 constexpr uint64_t kVirtualKeyA = 0x41;
 
-constexpr uint64_t kPhysicalKeyA = 0x00070004;
-constexpr uint64_t kPhysicalControlLeft = 0x000700e0;
-constexpr uint64_t kPhysicalControlRight = 0x000700e4;
-constexpr uint64_t kPhysicalShiftLeft = 0x000700e1;
-constexpr uint64_t kPhysicalShiftRight = 0x000700e5;
-constexpr uint64_t kPhysicalKeyNumLock = 0x00070053;
-constexpr uint64_t kPhysicalKeyNumpad1 = 0x00070059;
-
-constexpr uint64_t kLogicalKeyA = 0x00000061;
-constexpr uint64_t kLogicalControlLeft = 0x30000000105;
-constexpr uint64_t kLogicalControlRight = 0x40000000105;
-constexpr uint64_t kLogicalShiftLeft = 0x3000000010d;
-constexpr uint64_t kLogicalShiftRight = 0x4000000010d;
-constexpr uint64_t kLogicalKeyNumLock = 0x0100000010a;
-constexpr uint64_t kLogicalKeyNumpad1 = 0x50000000031;
+using namespace ::flutter::testing::keycodes;
 }  // namespace
 
 // Test the most basic key events.
@@ -189,8 +176,8 @@ TEST(KeyboardKeyEmbedderHandlerTest, ToggleNumLockDuringNumpadPress) {
   EXPECT_EQ(results.size(), 1);
   event = &results[0];
   EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
-  EXPECT_EQ(event->physical, kPhysicalKeyNumpad1);
-  EXPECT_EQ(event->logical, kLogicalKeyNumpad1);
+  EXPECT_EQ(event->physical, kPhysicalNumpad1);
+  EXPECT_EQ(event->logical, kLogicalNumpad1);
   // EXPECT_STREQ(event->character, "1"); // TODO
   EXPECT_EQ(event->synthesized, false);
   results.clear();
@@ -203,8 +190,8 @@ TEST(KeyboardKeyEmbedderHandlerTest, ToggleNumLockDuringNumpadPress) {
   EXPECT_EQ(results.size(), 1);
   event = &results[0];
   EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
-  EXPECT_EQ(event->physical, kPhysicalKeyNumLock);
-  EXPECT_EQ(event->logical, kLogicalKeyNumLock);
+  EXPECT_EQ(event->physical, kPhysicalNumLock);
+  EXPECT_EQ(event->logical, kLogicalNumLock);
   EXPECT_STREQ(event->character, "");
   EXPECT_EQ(event->synthesized, false);
   results.clear();
@@ -217,8 +204,8 @@ TEST(KeyboardKeyEmbedderHandlerTest, ToggleNumLockDuringNumpadPress) {
   EXPECT_EQ(results.size(), 1);
   event = &results[0];
   EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
-  EXPECT_EQ(event->physical, kPhysicalKeyNumLock);
-  EXPECT_EQ(event->logical, kLogicalKeyNumLock);
+  EXPECT_EQ(event->physical, kPhysicalNumLock);
+  EXPECT_EQ(event->logical, kLogicalNumLock);
   EXPECT_STREQ(event->character, "");
   EXPECT_EQ(event->synthesized, false);
   results.clear();
@@ -230,8 +217,8 @@ TEST(KeyboardKeyEmbedderHandlerTest, ToggleNumLockDuringNumpadPress) {
   EXPECT_EQ(results.size(), 1);
   event = &results[0];
   EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
-  EXPECT_EQ(event->physical, kPhysicalKeyNumpad1);
-  EXPECT_EQ(event->logical, kLogicalKeyNumpad1);
+  EXPECT_EQ(event->physical, kPhysicalNumpad1);
+  EXPECT_EQ(event->logical, kLogicalNumpad1);
   EXPECT_STREQ(event->character, "");
   EXPECT_EQ(event->synthesized, false);
   results.clear();
@@ -650,15 +637,15 @@ TEST(KeyboardKeyEmbedderHandlerTest, SynthesizeForDesyncToggledState) {
   EXPECT_EQ(results.size(), 3);
   event = &results[0];
   EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
-  EXPECT_EQ(event->physical, kPhysicalKeyNumLock);
-  EXPECT_EQ(event->logical, kLogicalKeyNumLock);
+  EXPECT_EQ(event->physical, kPhysicalNumLock);
+  EXPECT_EQ(event->logical, kLogicalNumLock);
   EXPECT_STREQ(event->character, "");
   EXPECT_EQ(event->synthesized, true);
 
   event = &results[1];
   EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
-  EXPECT_EQ(event->physical, kPhysicalKeyNumLock);
-  EXPECT_EQ(event->logical, kLogicalKeyNumLock);
+  EXPECT_EQ(event->physical, kPhysicalNumLock);
+  EXPECT_EQ(event->logical, kLogicalNumLock);
   EXPECT_STREQ(event->character, "");
   EXPECT_EQ(event->synthesized, true);
 
@@ -684,8 +671,8 @@ TEST(KeyboardKeyEmbedderHandlerTest, SynthesizeForDesyncToggledState) {
   EXPECT_EQ(results.size(), 2);
   event = &results[0];
   EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
-  EXPECT_EQ(event->physical, kPhysicalKeyNumLock);
-  EXPECT_EQ(event->logical, kLogicalKeyNumLock);
+  EXPECT_EQ(event->physical, kPhysicalNumLock);
+  EXPECT_EQ(event->logical, kLogicalNumLock);
   EXPECT_STREQ(event->character, "");
   EXPECT_EQ(event->synthesized, true);
 
@@ -713,24 +700,24 @@ TEST(KeyboardKeyEmbedderHandlerTest, SynthesizeForDesyncToggledState) {
   EXPECT_EQ(results.size(), 4);
   event = &results[0];
   EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
-  EXPECT_EQ(event->physical, kPhysicalKeyNumLock);
-  EXPECT_EQ(event->logical, kLogicalKeyNumLock);
+  EXPECT_EQ(event->physical, kPhysicalNumLock);
+  EXPECT_EQ(event->logical, kLogicalNumLock);
   EXPECT_STREQ(event->character, "");
   EXPECT_EQ(event->synthesized, true);
   EXPECT_EQ(event->callback, nullptr);
 
   event = &results[1];
   EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
-  EXPECT_EQ(event->physical, kPhysicalKeyNumLock);
-  EXPECT_EQ(event->logical, kLogicalKeyNumLock);
+  EXPECT_EQ(event->physical, kPhysicalNumLock);
+  EXPECT_EQ(event->logical, kLogicalNumLock);
   EXPECT_STREQ(event->character, "");
   EXPECT_EQ(event->synthesized, true);
   EXPECT_EQ(event->callback, nullptr);
 
   event = &results[2];
   EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
-  EXPECT_EQ(event->physical, kPhysicalKeyNumLock);
-  EXPECT_EQ(event->logical, kLogicalKeyNumLock);
+  EXPECT_EQ(event->physical, kPhysicalNumLock);
+  EXPECT_EQ(event->logical, kLogicalNumLock);
   EXPECT_STREQ(event->character, "");
   EXPECT_EQ(event->synthesized, true);
   EXPECT_EQ(event->callback, nullptr);
@@ -777,24 +764,24 @@ TEST(KeyboardKeyEmbedderHandlerTest, SynthesizeForDesyncToggledStateByItself) {
   EXPECT_EQ(results.size(), 3);
   event = &results[0];
   EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
-  EXPECT_EQ(event->physical, kPhysicalKeyNumLock);
-  EXPECT_EQ(event->logical, kLogicalKeyNumLock);
+  EXPECT_EQ(event->physical, kPhysicalNumLock);
+  EXPECT_EQ(event->logical, kLogicalNumLock);
   EXPECT_STREQ(event->character, "");
   EXPECT_EQ(event->synthesized, true);
   EXPECT_EQ(event->callback, nullptr);
 
   event = &results[1];
   EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
-  EXPECT_EQ(event->physical, kPhysicalKeyNumLock);
-  EXPECT_EQ(event->logical, kLogicalKeyNumLock);
+  EXPECT_EQ(event->physical, kPhysicalNumLock);
+  EXPECT_EQ(event->logical, kLogicalNumLock);
   EXPECT_STREQ(event->character, "");
   EXPECT_EQ(event->synthesized, true);
   EXPECT_EQ(event->callback, nullptr);
 
   event = &results[2];
   EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
-  EXPECT_EQ(event->physical, kPhysicalKeyNumLock);
-  EXPECT_EQ(event->logical, kLogicalKeyNumLock);
+  EXPECT_EQ(event->physical, kPhysicalNumLock);
+  EXPECT_EQ(event->logical, kLogicalNumLock);
   EXPECT_STREQ(event->character, "");
   EXPECT_EQ(event->synthesized, false);
 
@@ -829,8 +816,8 @@ TEST(KeyboardKeyEmbedderHandlerTest, SynthesizeWithInitialTogglingState) {
   EXPECT_EQ(results.size(), 1);
   event = &results[0];
   EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
-  EXPECT_EQ(event->physical, kPhysicalKeyNumLock);
-  EXPECT_EQ(event->logical, kLogicalKeyNumLock);
+  EXPECT_EQ(event->physical, kPhysicalNumLock);
+  EXPECT_EQ(event->logical, kLogicalNumLock);
   EXPECT_STREQ(event->character, "");
   EXPECT_EQ(event->synthesized, false);
 
