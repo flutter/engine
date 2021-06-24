@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
@@ -11,6 +9,7 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
 
 import '../matchers.dart';
+import '../spy.dart';
 import 'common.dart';
 
 void main() {
@@ -114,44 +113,68 @@ void _tests() {
 
   group(SkiaObjectBox, () {
     test('Records stack traces and respects refcounts', () async {
-      TestSkDeletable.deleteCount = 0;
-      TestBoxWrapper.resurrectCount = 0;
-      final TestBoxWrapper original = TestBoxWrapper();
+      final ZoneSpy spy = ZoneSpy();
+      spy.run(() {
+        Instrumentation.enabled = true;
+        TestSkDeletable.deleteCount = 0;
+        TestBoxWrapper.resurrectCount = 0;
+        final TestBoxWrapper original = TestBoxWrapper();
 
-      expect(original.box.debugGetStackTraces().length, 1);
-      expect(original.box.refCount, 1);
-      expect(original.box.isDeletedPermanently, false);
+        expect(original.box.debugGetStackTraces().length, 1);
+        expect(original.box.refCount, 1);
+        expect(original.box.isDeletedPermanently, isFalse);
 
-      final TestBoxWrapper clone = original.clone();
-      expect(clone.box, same(original.box));
-      expect(clone.box.debugGetStackTraces().length, 2);
-      expect(clone.box.refCount, 2);
-      expect(original.box.debugGetStackTraces().length, 2);
-      expect(original.box.refCount, 2);
-      expect(original.box.isDeletedPermanently, false);
+        final TestBoxWrapper clone = original.clone();
+        expect(clone.box, same(original.box));
+        expect(clone.box.debugGetStackTraces().length, 2);
+        expect(clone.box.refCount, 2);
+        expect(original.box.debugGetStackTraces().length, 2);
+        expect(original.box.refCount, 2);
+        expect(original.box.isDeletedPermanently, isFalse);
 
-      original.dispose();
+        original.dispose();
 
-      testCollector.collectNow();
-      expect(TestSkDeletable.deleteCount, 0);
+        testCollector.collectNow();
+        expect(TestSkDeletable.deleteCount, 0);
 
-      expect(clone.box.debugGetStackTraces().length, 1);
-      expect(clone.box.refCount, 1);
-      expect(original.box.debugGetStackTraces().length, 1);
-      expect(original.box.refCount, 1);
+        spy.fakeAsync.elapse(const Duration(seconds: 2));
+        expect(
+          spy.printLog,
+          [
+            'Engine counters:\n'
+                '  TestSkDeletable created: 1\n'
+          ],
+        );
 
-      clone.dispose();
-      expect(clone.box.debugGetStackTraces().length, 0);
-      expect(clone.box.refCount, 0);
-      expect(original.box.debugGetStackTraces().length, 0);
-      expect(original.box.refCount, 0);
-      expect(original.box.isDeletedPermanently, true);
+        expect(clone.box.debugGetStackTraces().length, 1);
+        expect(clone.box.refCount, 1);
+        expect(original.box.debugGetStackTraces().length, 1);
+        expect(original.box.refCount, 1);
 
-      testCollector.collectNow();
-      expect(TestSkDeletable.deleteCount, 1);
-      expect(TestBoxWrapper.resurrectCount, 0);
+        clone.dispose();
+        expect(clone.box.debugGetStackTraces().length, 0);
+        expect(clone.box.refCount, 0);
+        expect(original.box.debugGetStackTraces().length, 0);
+        expect(original.box.refCount, 0);
+        expect(original.box.isDeletedPermanently, isTrue);
 
-      expect(() => clone.box.unref(clone), throwsAssertionError);
+        testCollector.collectNow();
+        expect(TestSkDeletable.deleteCount, 1);
+        expect(TestBoxWrapper.resurrectCount, 0);
+
+        expect(() => clone.box.unref(clone), throwsAssertionError);
+        spy.printLog.clear();
+        spy.fakeAsync.elapse(const Duration(seconds: 2));
+        expect(
+          spy.printLog,
+          [
+            'Engine counters:\n'
+                '  TestSkDeletable created: 1\n'
+                '  TestSkDeletable deleted: 1\n'
+          ],
+        );
+        Instrumentation.enabled = false;
+      });
     });
 
     test('Can resurrect Skia objects', () async {
@@ -167,18 +190,18 @@ void _tests() {
         object.box.didDelete();
         expect(TestSkDeletable.deleteCount, i + 1);
         expect(TestBoxWrapper.resurrectCount, i);
-        expect(object.box.isDeletedTemporarily, true);
-        expect(object.box.isDeletedPermanently, false);
+        expect(object.box.isDeletedTemporarily, isTrue);
+        expect(object.box.isDeletedPermanently, isFalse);
 
         expect(object.box.skiaObject, isNotNull);
         expect(TestSkDeletable.deleteCount, i + 1);
         expect(TestBoxWrapper.resurrectCount, i + 1);
-        expect(object.box.isDeletedTemporarily, false);
-        expect(object.box.isDeletedPermanently, false);
+        expect(object.box.isDeletedTemporarily, isFalse);
+        expect(object.box.isDeletedPermanently, isFalse);
       }
 
       object.dispose();
-      expect(object.box.isDeletedPermanently, true);
+      expect(object.box.isDeletedPermanently, isTrue);
     });
 
     test('Can dispose temporarily deleted object', () async {
@@ -192,11 +215,11 @@ void _tests() {
       object.box.didDelete();
       expect(TestSkDeletable.deleteCount, 1);
       expect(TestBoxWrapper.resurrectCount, 0);
-      expect(object.box.isDeletedTemporarily, true);
-      expect(object.box.isDeletedPermanently, false);
+      expect(object.box.isDeletedTemporarily, isTrue);
+      expect(object.box.isDeletedPermanently, isFalse);
 
       object.dispose();
-      expect(object.box.isDeletedPermanently, true);
+      expect(object.box.isDeletedPermanently, isTrue);
     });
   });
 
@@ -404,6 +427,11 @@ class FakeRasterizer implements Rasterizer {
 
   @override
   void setSkiaResourceCacheMaxBytes(int bytes) {
+    throw UnimplementedError();
+  }
+
+  @override
+  void debugRunPostFrameCallbacks() {
     throw UnimplementedError();
   }
 }

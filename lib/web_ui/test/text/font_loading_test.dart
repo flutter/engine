@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'dart:async';
 import 'dart:convert';
 import 'dart:html' as html;
@@ -23,7 +22,7 @@ void testMain() async {
     const String _testFontUrl = 'packages/ui/assets/ahem.ttf';
 
     tearDown(() {
-      html.document.fonts.clear();
+      html.document.fonts!.clear();
     });
 
     test('surfaces error from invalid font buffer', () async {
@@ -37,7 +36,7 @@ void testMain() async {
             browserEngine == BrowserEngine.webkit));
 
     test('loads Blehm font from buffer', () async {
-      expect(_containsFontFamily('Blehm'), false);
+      expect(_containsFontFamily('Blehm'), isFalse);
 
       final html.HttpRequest response = await html.HttpRequest.request(
           _testFontUrl,
@@ -45,7 +44,7 @@ void testMain() async {
       await ui.loadFontFromList(Uint8List.view(response.response),
           fontFamily: 'Blehm');
 
-      expect(_containsFontFamily('Blehm'), true);
+      expect(_containsFontFamily('Blehm'), isTrue);
     },
         // TODO(nurhan): https://github.com/flutter/flutter/issues/56702
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50770
@@ -53,7 +52,7 @@ void testMain() async {
             browserEngine == BrowserEngine.webkit));
 
     test('loading font should clear measurement caches', () async {
-      final ui.ParagraphStyle style = ui.ParagraphStyle();
+      final EngineParagraphStyle style = EngineParagraphStyle();
       final ui.ParagraphConstraints constraints =
           ui.ParagraphConstraints(width: 30.0);
 
@@ -61,7 +60,7 @@ void testMain() async {
       domBuilder.addText('test');
       // Triggers the measuring and verifies the result has been cached.
       domBuilder.build().layout(constraints);
-      expect(TextMeasurementService.rulerManager.rulers.length, 1);
+      expect(TextMeasurementService.rulerManager!.rulers.length, 1);
 
       final CanvasParagraphBuilder canvasBuilder = CanvasParagraphBuilder(style);
       canvasBuilder.addText('test');
@@ -78,8 +77,8 @@ void testMain() async {
           fontFamily: 'Blehm');
 
       // Verifies the font is loaded, and the cache is cleaned.
-      expect(_containsFontFamily('Blehm'), true);
-      expect(TextMeasurementService.rulerManager.rulers.length, 0);
+      expect(_containsFontFamily('Blehm'), isTrue);
+      expect(TextMeasurementService.rulerManager!.rulers.length, 0);
       expect(Spanometer.rulers.length, 0);
     },
         // TODO(nurhan): https://github.com/flutter/flutter/issues/56702
@@ -88,13 +87,13 @@ void testMain() async {
             browserEngine == BrowserEngine.webkit));
 
     test('loading font should send font change message', () async {
-      final ui.PlatformMessageCallback oldHandler = ui.window.onPlatformMessage;
-      String actualName;
-      String message;
-      window.onPlatformMessage = (String name, ByteData data,
-          ui.PlatformMessageResponseCallback callback) {
+      final ui.PlatformMessageCallback? oldHandler = ui.window.onPlatformMessage;
+      String? actualName;
+      String? message;
+      window.onPlatformMessage = (String name, ByteData? data,
+          ui.PlatformMessageResponseCallback? callback) {
         actualName = name;
-        final buffer = data.buffer;
+        final buffer = data!.buffer;
         final Uint8List list =
             buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
         message = utf8.decode(list);
@@ -120,7 +119,7 @@ void testMain() async {
 
 bool _containsFontFamily(String family) {
   bool found = false;
-  html.document.fonts.forEach((html.FontFace fontFace,
+  html.document.fonts!.forEach((html.FontFace fontFace,
       html.FontFace fontFaceAgain, html.FontFaceSet fontFaceSet) {
     if (fontFace.family == family) {
       found = true;

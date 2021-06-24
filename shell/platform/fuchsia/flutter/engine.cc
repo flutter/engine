@@ -21,6 +21,7 @@
 #include "third_party/skia/include/ports/SkFontMgr_fuchsia.h"
 
 #include "../runtime/dart/utils/files.h"
+#include "focus_delegate.h"
 #include "fuchsia_intl.h"
 #include "platform_view.h"
 #include "surface.h"
@@ -99,6 +100,8 @@ Engine::Engine(Delegate& delegate,
   endpoints.set_session_listener(session_listener.Bind());
   fidl::InterfaceHandle<fuchsia::ui::views::Focuser> focuser;
   endpoints.set_view_focuser(focuser.NewRequest());
+  fidl::InterfaceHandle<fuchsia::ui::views::ViewRefFocused> view_ref_focused;
+  endpoints.set_view_ref_focused(view_ref_focused.NewRequest());
   scenic->CreateSessionT(std::move(endpoints), [] {});
 
   // Make clones of the `ViewRef` before sending it down to Scenic, since the
@@ -275,6 +278,7 @@ Engine::Engine(Delegate& delegate,
                std::move(parent_environment_service_provider),
            session_listener_request = std::move(session_listener_request),
            focuser = std::move(focuser),
+           view_ref_focused = std::move(view_ref_focused),
            on_session_listener_error_callback =
                std::move(on_session_listener_error_callback),
            on_enable_wireframe_callback =
@@ -339,7 +343,7 @@ Engine::Engine(Delegate& delegate,
                 std::move(runner_services),
                 std::move(parent_environment_service_provider),  // services
                 std::move(session_listener_request),  // session listener
-                std::move(focuser),
+                std::move(view_ref_focused), std::move(focuser),
                 // Server-side part of the fuchsia.ui.input3.KeyboardListener
                 // connection.
                 std::move(keyboard_listener_request),
@@ -537,53 +541,6 @@ std::optional<uint32_t> Engine::GetEngineReturnCode() const {
   return code;
 }
 
-static void CreateCompilationTrace(Dart_Isolate isolate) {
-  Dart_EnterIsolate(isolate);
-
-  {
-    Dart_EnterScope();
-    uint8_t* trace = nullptr;
-    intptr_t trace_length = 0;
-    Dart_Handle result = Dart_SaveCompilationTrace(&trace, &trace_length);
-    tonic::LogIfError(result);
-
-    for (intptr_t start = 0; start < trace_length;) {
-      intptr_t end = start;
-      while ((end < trace_length) && trace[end] != '\n')
-        end++;
-
-      std::string line(reinterpret_cast<char*>(&trace[start]), end - start);
-      FML_LOG(INFO) << "compilation-trace: " << line;
-
-      start = end + 1;
-    }
-
-    Dart_ExitScope();
-  }
-
-  // Re-enter Dart scope to release the compilation trace's memory.
-
-  {
-    Dart_EnterScope();
-    uint8_t* feedback = nullptr;
-    intptr_t feedback_length = 0;
-    Dart_Handle result = Dart_SaveTypeFeedback(&feedback, &feedback_length);
-    tonic::LogIfError(result);
-    const std::string kTypeFeedbackFile = "/data/dart_type_feedback.bin";
-    if (dart_utils::WriteFile(kTypeFeedbackFile,
-                              reinterpret_cast<const char*>(feedback),
-                              feedback_length)) {
-      FML_LOG(INFO) << "Dart type feedback written to " << kTypeFeedbackFile;
-    } else {
-      FML_LOG(ERROR) << "Could not write Dart type feedback to "
-                     << kTypeFeedbackFile;
-    }
-    Dart_ExitScope();
-  }
-
-  Dart_ExitIsolate();
-}
-
 void Engine::OnMainIsolateStart() {
   if (!isolate_configurator_ ||
       !isolate_configurator_->ConfigureCurrentIsolate()) {
@@ -592,20 +549,6 @@ void Engine::OnMainIsolateStart() {
   }
   FML_DLOG(INFO) << "Main isolate for engine '" << thread_label_
                  << "' was started.";
-
-  const intptr_t kCompilationTraceDelayInSeconds = 0;
-  if (kCompilationTraceDelayInSeconds != 0) {
-    Dart_Isolate isolate = Dart_CurrentIsolate();
-    FML_CHECK(isolate);
-    shell_->GetTaskRunners().GetUITaskRunner()->PostDelayedTask(
-        [engine = shell_->GetEngine(), isolate]() {
-          if (!engine) {
-            return;
-          }
-          CreateCompilationTrace(isolate);
-        },
-        fml::TimeDelta::FromSeconds(kCompilationTraceDelayInSeconds));
-  }
 }
 
 void Engine::OnMainIsolateShutdown() {

@@ -26,11 +26,9 @@ const String transparentTextEditingClass = 'transparentTextEditing';
 
 void _emptyCallback(dynamic _) {}
 
-/// The default root that hosts all DOM required for text editing when a11y is not enabled.
-///
-/// This is something similar to [html.Document]. Currently, it's a [html.ShadowRoot].
+/// The default [HostNode] that hosts all DOM required for text editing when a11y is not enabled.
 @visibleForTesting
-html.ShadowRoot get defaultTextEditingRoot => domRenderer.glassPaneShadow!;
+HostNode get defaultTextEditingRoot => domRenderer.glassPaneShadow!;
 
 /// These style attributes are constant throughout the life time of an input
 /// element.
@@ -862,6 +860,10 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
       activeDomElement.setAttribute('type', 'password');
     }
 
+    if (config.inputType == EngineInputType.none) {
+      activeDomElement.setAttribute('inputmode', 'none');
+    }
+
     config.autofill?.applyToDomElement(activeDomElement, focusedElement: true);
 
     final String autocorrectValue = config.autocorrect ? 'on' : 'off';
@@ -1487,6 +1489,14 @@ class TextInputSetCaretRect extends TextInputCommand {
   }
 }
 
+class TextInputRequestAutofill extends TextInputCommand {
+  const TextInputRequestAutofill();
+
+  void run(HybridTextEditing textEditing) {
+    // No-op: not supported on this platform.
+  }
+}
+
 class TextInputFinishAutofillContext extends TextInputCommand {
   TextInputFinishAutofillContext({
     required this.saveForm,
@@ -1544,7 +1554,7 @@ class TextEditingChannel {
       ByteData? data, ui.PlatformMessageResponseCallback? callback) {
     const JSONMethodCodec codec = JSONMethodCodec();
     final MethodCall call = codec.decodeMethodCall(data);
-    late final TextInputCommand command;
+    final TextInputCommand command;
     switch (call.method) {
       case 'TextInput.setClient':
         command = TextInputSetClient(
@@ -1595,6 +1605,7 @@ class TextEditingChannel {
         // There's no API to request autofill on the web. Instead we let the
         // browser show autofill options automatically, if available. We
         // therefore simply ignore this message.
+        command = const TextInputRequestAutofill();
         break;
 
       case 'TextInput.finishAutofillContext':

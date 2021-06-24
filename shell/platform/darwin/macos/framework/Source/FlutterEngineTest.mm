@@ -2,40 +2,37 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#import <OCMock/OCMock.h>
-
+#include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/shell/platform/common/accessibility_bridge.h"
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterAppDelegate.h"
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngineTestUtils.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewControllerTestUtils.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
-#include "flutter/testing/testing.h"
+#include "flutter/testing/test_dart_native_resolver.h"
+
+@interface FlutterEngine (Test)
+/**
+ * The FlutterCompositor object currently in use by the FlutterEngine. This is
+ * either a FlutterOpenGLCompositor or a FlutterMetalCompositor.
+ *
+ * May be nil if the compositor has not been initialized yet.
+ */
+@property(nonatomic, readonly, nullable) flutter::FlutterCompositor* macOSCompositor;
+@end
 
 namespace flutter::testing {
 
-namespace {
-// Returns an engine configured for the test fixture resource configuration.
-FlutterEngine* CreateTestEngine() {
-  NSString* fixtures = @(testing::GetFixturesPath());
-  FlutterDartProject* project = [[FlutterDartProject alloc]
-      initWithAssetsPath:fixtures
-             ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
-  return [[FlutterEngine alloc] initWithName:@"test" project:project allowHeadlessExecution:true];
-}
-}  // namespace
-
-TEST(FlutterEngine, CanLaunch) {
-  FlutterEngine* engine = CreateTestEngine();
+TEST_F(FlutterEngineTest, CanLaunch) {
+  FlutterEngine* engine = GetFlutterEngine();
   EXPECT_TRUE([engine runWithEntrypoint:@"main"]);
   EXPECT_TRUE(engine.running);
-  [engine shutDownEngine];
 }
 
-TEST(FlutterEngine, MessengerSend) {
-  FlutterEngine* engine = CreateTestEngine();
+TEST_F(FlutterEngineTest, MessengerSend) {
+  FlutterEngine* engine = GetFlutterEngine();
   EXPECT_TRUE([engine runWithEntrypoint:@"main"]);
 
   NSData* test_message = [@"a message" dataUsingEncoding:NSUTF8StringEncoding];
@@ -51,12 +48,10 @@ TEST(FlutterEngine, MessengerSend) {
 
   [engine.binaryMessenger sendOnChannel:@"test" message:test_message];
   EXPECT_TRUE(called);
-
-  [engine shutDownEngine];
 }
 
-TEST(FlutterEngine, CanToggleAccessibility) {
-  FlutterEngine* engine = CreateTestEngine();
+TEST_F(FlutterEngineTest, CanToggleAccessibility) {
+  FlutterEngine* engine = GetFlutterEngine();
   // Capture the update callbacks before the embedder API initializes.
   auto original_init = engine.embedderAPI.Initialize;
   std::function<void(const FlutterSemanticsNode*, void*)> update_node_callback;
@@ -153,11 +148,10 @@ TEST(FlutterEngine, CanToggleAccessibility) {
   EXPECT_EQ([engine.viewController.flutterView.accessibilityChildren count], 0u);
 
   [engine setViewController:nil];
-  [engine shutDownEngine];
 }
 
-TEST(FlutterEngine, CanToggleAccessibilityWhenHeadless) {
-  FlutterEngine* engine = CreateTestEngine();
+TEST_F(FlutterEngineTest, CanToggleAccessibilityWhenHeadless) {
+  FlutterEngine* engine = GetFlutterEngine();
   // Capture the update callbacks before the embedder API initializes.
   auto original_init = engine.embedderAPI.Initialize;
   std::function<void(const FlutterSemanticsNode*, void*)> update_node_callback;
@@ -236,11 +230,10 @@ TEST(FlutterEngine, CanToggleAccessibilityWhenHeadless) {
   EXPECT_FALSE(semanticsEnabled);
   // Still no crashes
   EXPECT_EQ(engine.viewController, nil);
-  [engine shutDownEngine];
 }
 
-TEST(FlutterEngine, ResetsAccessibilityBridgeWhenSetsNewViewController) {
-  FlutterEngine* engine = CreateTestEngine();
+TEST_F(FlutterEngineTest, ResetsAccessibilityBridgeWhenSetsNewViewController) {
+  FlutterEngine* engine = GetFlutterEngine();
   // Capture the update callbacks before the embedder API initializes.
   auto original_init = engine.embedderAPI.Initialize;
   std::function<void(const FlutterSemanticsNode*, void*)> update_node_callback;
@@ -327,6 +320,56 @@ TEST(FlutterEngine, ResetsAccessibilityBridgeWhenSetsNewViewController) {
   EXPECT_TRUE(native_root.expired());
 
   [engine setViewController:nil];
+}
+
+TEST_F(FlutterEngineTest, NativeCallbacks) {
+  FlutterEngine* engine = GetFlutterEngine();
+  EXPECT_TRUE([engine runWithEntrypoint:@"native_callback"]);
+  EXPECT_TRUE(engine.running);
+
+  fml::AutoResetWaitableEvent latch;
+  bool latch_called = false;
+
+  AddNativeCallback("SignalNativeTest", CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+                      latch_called = true;
+                      latch.Signal();
+                    }));
+  latch.Wait();
+  ASSERT_TRUE(latch_called);
+}
+
+TEST(FlutterEngine, Compositor) {
+  NSString* fixtures = @(flutter::testing::GetFixturesPath());
+  FlutterDartProject* project = [[FlutterDartProject alloc]
+      initWithAssetsPath:fixtures
+             ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
+  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"test" project:project];
+
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:project];
+  [viewController loadView];
+  viewController.flutterView.frame = CGRectMake(0, 0, 800, 600);
+  [engine setViewController:viewController];
+
+  EXPECT_TRUE([engine runWithEntrypoint:@"can_composite_platform_views"]);
+
+  // Latch to ensure the entire layer tree has been generated and presented.
+  fml::AutoResetWaitableEvent latch;
+  auto compositor = engine.macOSCompositor;
+  compositor->SetPresentCallback([&]() {
+    latch.Signal();
+    return true;
+  });
+  latch.Wait();
+
+  CALayer* rootLayer = viewController.flutterView.layer;
+
+  // There are three layers total - the root layer and two sublayers.
+  // This test will need to be updated when PlatformViews are supported, as
+  // there are two PlatformView layers in this test.
+  EXPECT_EQ(rootLayer.sublayers.count, 2u);
+
+  // TODO(gw280): add support for screenshot tests in this test harness
+
   [engine shutDownEngine];
 }
 
