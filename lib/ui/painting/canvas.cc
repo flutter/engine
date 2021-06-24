@@ -391,7 +391,7 @@ void Canvas::drawImageNine(const CanvasImage* image,
     // the recorder to record our paint attributes and record a much
     // simpler DrawImageNineOp record directly.
     display_list_recorder_->recordPaintAttributes(
-        paint.paint(), DisplayListCanvasRecorder::DrawType::imageOp);
+        paint.paint(), DisplayListCanvasRecorder::DrawType::kImageOpType);
     builder()->drawImageNine(image->image(), icenter, dst, filter);
   } else {
     canvas_->drawImageNine(image->image().get(), icenter, dst, filter,

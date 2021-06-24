@@ -30,10 +30,10 @@ const SkSamplingOptions DisplayList::MipmapSampling =
 const SkSamplingOptions DisplayList::CubicSampling =
     SkSamplingOptions(SkCubicResampler{1 / 3.0f, 1 / 3.0f});
 
-enum dlCompare {
-  NOT_EQUAL,
-  BULK_COMPARE,
-  EQUAL,
+enum class dlCompare {
+  kNotEqual,
+  kUseBulkCompare,
+  kEqual,
 };
 
 // Assuming a 64-bit platform (most of our platforms at this time?)
@@ -44,9 +44,11 @@ enum dlCompare {
 // of data for "free" and works best when it packs well into an 8-byte
 // aligned size.
 struct DLOp {
-  uint8_t type : 8;
+  DisplayListOpType type : 8;
   uint32_t size : 24;
-  dlCompare equals(const DLOp* other) const { return BULK_COMPARE; }
+  dlCompare equals(const DLOp* other) const {
+    return dlCompare::kUseBulkCompare;
+  }
 };
 
 // 4 byte header + 4 byte payload packs into minimum 8 bytes
@@ -672,12 +674,31 @@ DEFINE_DRAW_ATLAS_OP(AtlasColoredCulled, HAS_COLORS, HAS_CULLING)
 struct DrawSkPictureOp final : DLOp {
   static const auto kType = DisplayListOpType::DrawSkPicture;
 
-  DrawSkPictureOp(sk_sp<SkPicture> picture) : picture(std::move(picture)) {}
+  DrawSkPictureOp(sk_sp<SkPicture> picture, bool withLayer)
+      : withLayer(withLayer), picture(std::move(picture)) {}
 
-  sk_sp<SkPicture> picture;
+  const bool withLayer;
+  const sk_sp<SkPicture> picture;
 
   void dispatch(Dispatcher& dispatcher) const {
-    dispatcher.drawPicture(picture);
+    dispatcher.drawPicture(picture, nullptr, withLayer);
+  }
+};
+
+struct DrawSkPictureMatrixOp final : DLOp {
+  static const auto kType = DisplayListOpType::DrawSkPictureMatrix;
+
+  DrawSkPictureMatrixOp(sk_sp<SkPicture> picture,
+                        const SkMatrix matrix,
+                        bool withLayer)
+      : withLayer(withLayer), picture(std::move(picture)), matrix(matrix) {}
+
+  const bool withLayer;
+  const sk_sp<SkPicture> picture;
+  const SkMatrix matrix;
+
+  void dispatch(Dispatcher& dispatcher) const {
+    dispatcher.drawPicture(picture, &matrix, withLayer);
   }
 };
 
@@ -835,11 +856,11 @@ static bool CompareOps(uint8_t* ptrA,
         return false;
     }
     switch (result) {
-      case NOT_EQUAL:
+      case dlCompare::kNotEqual:
         return false;
-      case BULK_COMPARE:
+      case dlCompare::kUseBulkCompare:
         break;
-      case EQUAL:
+      case dlCompare::kEqual:
         // Check if we have a backlog of bytes to bulk compare and then
         // reset the bulk compare pointers to the address following this op
         auto bulkBytes = reinterpret_cast<const uint8_t*>(opA) - bulkStartA;
@@ -924,7 +945,7 @@ void* DisplayListBuilder::push(size_t pod, Args&&... args) {
   auto op = (T*)(storage_.get() + used_);
   used_ += size;
   new (op) T{std::forward<Args>(args)...};
-  op->type = (uint32_t)T::kType;
+  op->type = T::kType;
   op->size = size;
   opCount_++;
   return op + 1;
@@ -1222,8 +1243,12 @@ void DisplayListBuilder::drawAtlas(const sk_sp<SkImage> atlas,
   }
 }
 
-void DisplayListBuilder::drawPicture(const sk_sp<SkPicture> picture) {
-  push<DrawSkPictureOp>(0, std::move(picture));
+void DisplayListBuilder::drawPicture(const sk_sp<SkPicture> picture,
+                                     const SkMatrix* matrix,
+                                     bool withLayer) {
+  (matrix)
+      ? push<DrawSkPictureMatrixOp>(0, std::move(picture), *matrix, withLayer)
+      : push<DrawSkPictureOp>(0, std::move(picture), withLayer);
 }
 void DisplayListBuilder::drawDisplayList(
     const sk_sp<DisplayList> display_list) {

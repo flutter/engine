@@ -308,10 +308,16 @@ void DisplayListBoundsCalculator::drawAtlas(const sk_sp<SkImage> atlas,
     accumulateRect(atlasBounds.getBounds());
   }
 }
-void DisplayListBoundsCalculator::drawPicture(const sk_sp<SkPicture> picture) {
+void DisplayListBoundsCalculator::drawPicture(const sk_sp<SkPicture> picture,
+                                              const SkMatrix* matrix,
+                                              bool withSaveLayer) {
   // TODO(flar) cull rect really cannot be trusted in general, but
   // it will work for SkPictures generated from our own PictureRecorder.
-  accumulateRect(picture->cullRect());
+  SkRect bounds = picture->cullRect();
+  if (matrix) {
+    matrix->mapRect(&bounds);
+  }
+  accumulateRect(bounds);
 }
 void DisplayListBoundsCalculator::drawDisplayList(
     const sk_sp<DisplayList> display_list) {

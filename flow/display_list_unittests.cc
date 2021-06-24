@@ -91,6 +91,8 @@ static const SkRRect TestInnerRRect =
     SkRRect::MakeRectXY(TestBounds.makeInset(5, 5), 2, 2);
 static const SkPath TestPath1 = SkPath::Rect(TestBounds);
 static const SkPath TestPath2 = SkPath::Oval(TestBounds);
+static const SkMatrix TestMatrix1 = SkMatrix::Scale(2, 2);
+static const SkMatrix TestMatrix2 = SkMatrix::RotateDeg(45);
 
 static sk_sp<SkImage> MakeTestImage(int w, int h, int checker_size) {
   sk_sp<SkSurface> surface = SkSurface::MakeRasterN32Premul(w, h);
@@ -488,8 +490,12 @@ std::vector<DisplayListInvocationGroup> allGroups = {
     }
   },
   { "DrawPicture", {
-      {1, 16, [](DisplayListBuilder& b) {b.drawPicture(TestPicture1);}},
-      {1, 16, [](DisplayListBuilder& b) {b.drawPicture(TestPicture2);}},
+      {1, 16, [](DisplayListBuilder& b) {b.drawPicture(TestPicture1, nullptr, false);}},
+      {1, 16, [](DisplayListBuilder& b) {b.drawPicture(TestPicture2, nullptr, false);}},
+      {1, 16, [](DisplayListBuilder& b) {b.drawPicture(TestPicture1, nullptr, true);}},
+      {1, 56, [](DisplayListBuilder& b) {b.drawPicture(TestPicture1, &TestMatrix1, false);}},
+      {1, 56, [](DisplayListBuilder& b) {b.drawPicture(TestPicture1, &TestMatrix2, false);}},
+      {1, 56, [](DisplayListBuilder& b) {b.drawPicture(TestPicture1, &TestMatrix1, true);}},
     }
   },
   { "DrawDisplayList", {

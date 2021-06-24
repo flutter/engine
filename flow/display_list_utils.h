@@ -296,7 +296,9 @@ class DisplayListBoundsCalculator final
                  SkBlendMode mode,
                  const SkSamplingOptions& sampling,
                  const SkRect* cullRect) override;
-  void drawPicture(const sk_sp<SkPicture> picture) override;
+  void drawPicture(const sk_sp<SkPicture> picture,
+                   const SkMatrix* matrix,
+                   bool withSaveLayer) override;
   void drawDisplayList(const sk_sp<DisplayList> display_list) override;
   void drawTextBlob(const sk_sp<SkTextBlob> blob,
                     SkScalar x,

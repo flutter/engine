@@ -14,14 +14,8 @@
 #include "third_party/skia/include/core/SkShader.h"
 #include "third_party/skia/include/core/SkVertices.h"
 
-// The Flutter DisplayList mechanism is used in place of the Skia SkPicture
-// mechanism. It encapsulates a sequence of rendering operations into a
-// persistent list that can be replayed upon request by calling its
-// dispatch() method with a Dispatcher object that responds to the various
-// rendering methods encapsulated therein. The mechanism is inspired by
-// the SkLiteDL class that is not directly supported by Skia, but has been
-// recommended as a basis for custom display lists for a number of their
-// customers.
+// The Flutter DisplayList mechanism encapsulates a persistent sequence of
+// rendering operations.
 //
 // This file contains the definitions for:
 // DisplayList: the base class that holds the information about the
@@ -44,6 +38,26 @@
 //                       and a class to compute the bounds of a DisplayList
 //                       Any class implementing Dispatcher can inherit from
 //                       these utility classes to simplify its creation
+//
+// The Flutter DisplayList mechanism can be used in place of the Skia
+// SkPicture mechanism. The primary means of communication into and out
+// of the DisplayList is through the Dispatcher virtual class which
+// provides a nearly 1:1 translation between the records of the DisplayList
+// to method calls.
+//
+// A DisplayList can be created directly using a DisplayListBuilder and
+// the Dispatcher methods that it implements, or it can be created from
+// a sequence of SkCanvas calls using the DisplayListCanvasRecorder class.
+//
+// A DisplayList can be read back by implementing the Dispatcher virtual
+// methods (with help from some of the classes in the utils file) and
+// passing an instance to the dispatch() method, or it can be rendered
+// to Skia using a DisplayListCanvasDispatcher or simply by passing an
+// SkCanvas pointer to its renderTo() method.
+//
+// The mechanism is inspired by the SkLiteDL class that is not directly
+// supported by Skia, but has been recommended as a basis for custom
+// display lists for a number of their customers.
 
 namespace flutter {
 
@@ -121,6 +135,7 @@ namespace flutter {
   V(DrawAtlasColoredCulled)         \
                                     \
   V(DrawSkPicture)                  \
+  V(DrawSkPictureMatrix)            \
   V(DrawDisplayList)                \
   V(DrawTextBlob)                   \
   /* V(DrawShadowRec) */            \
@@ -128,7 +143,7 @@ namespace flutter {
   V(DrawShadow)
 
 #define DL_OP_TO_ENUM_VALUE(name) name,
-enum DisplayListOpType { FOR_EACH_DISPLAY_LIST_OP(DL_OP_TO_ENUM_VALUE) };
+enum class DisplayListOpType { FOR_EACH_DISPLAY_LIST_OP(DL_OP_TO_ENUM_VALUE) };
 #undef DL_OP_TO_ENUM_VALUE
 
 class Dispatcher;
@@ -287,7 +302,9 @@ class Dispatcher {
                          SkBlendMode mode,
                          const SkSamplingOptions& sampling,
                          const SkRect* cullRect) = 0;
-  virtual void drawPicture(const sk_sp<SkPicture> picture) = 0;
+  virtual void drawPicture(const sk_sp<SkPicture> picture,
+                           const SkMatrix* matrix,
+                           bool withPaint) = 0;
   virtual void drawDisplayList(const sk_sp<DisplayList> display_list) = 0;
   virtual void drawTextBlob(const sk_sp<SkTextBlob> blob,
                             SkScalar x,
@@ -396,7 +413,9 @@ class DisplayListBuilder final : public virtual Dispatcher, public SkRefCnt {
                  SkBlendMode mode,
                  const SkSamplingOptions& sampling,
                  const SkRect* cullRect) override;
-  void drawPicture(const sk_sp<SkPicture> picture) override;
+  void drawPicture(const sk_sp<SkPicture> picture,
+                   const SkMatrix* matrix,
+                   bool withSaveLayer) override;
   void drawDisplayList(const sk_sp<DisplayList> display_list) override;
   void drawTextBlob(const sk_sp<SkTextBlob> blob,
                     SkScalar x,

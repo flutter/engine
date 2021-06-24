@@ -98,7 +98,9 @@ class DisplayListCanvasDispatcher : public virtual Dispatcher,
                  SkBlendMode mode,
                  const SkSamplingOptions& sampling,
                  const SkRect* cullRect) override;
-  void drawPicture(const sk_sp<SkPicture> picture) override;
+  void drawPicture(const sk_sp<SkPicture> picture,
+                   const SkMatrix* matrix,
+                   bool withSaveLayer) override;
   void drawDisplayList(const sk_sp<DisplayList> display_list) override;
   void drawTextBlob(const sk_sp<SkTextBlob> blob,
                     SkScalar x,
@@ -229,19 +231,19 @@ class DisplayListCanvasRecorder
                      const SkMatrix* matrix,
                      const SkPaint* paint) override;
 
-  enum DrawType {
+  enum class DrawType {
     // The operation will be an image operation
-    imageOp,
+    kImageOpType,
     // The operation will be an imageRect operation
-    imageRectOp,
+    kImageRectOpType,
     // The operation will be a fill or stroke depending on the paint.style
-    drawOp,
+    kDrawOpType,
     // The operation will be a fill (ignoring paint.style)
-    fillOp,
+    kFillOpType,
     // The operation will be a stroke (ignoring paint.style)
-    strokeOp,
+    kStrokeOpType,
     // The operation will be a saveLayer with a paint object
-    saveLayerOp,
+    kSaveLayerOpType,
   };
 
   void recordPaintAttributes(const SkPaint* paint, DrawType type);
