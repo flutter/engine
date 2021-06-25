@@ -522,7 +522,7 @@ TEST(DisplayList, SingleOpSizes) {
       sk_sp<DisplayList> dl = invocation.build();
       auto desc = group.op_name + "(variant " + std::to_string(i) + ")";
       ASSERT_EQ(dl->opCount(), invocation.opCount) << desc;
-      ASSERT_EQ(dl->bytes(), invocation.byteCount) << desc;
+      EXPECT_EQ(dl->bytes(), invocation.byteCount) << desc;
     }
   }
 }
