@@ -39,8 +39,6 @@ constexpr SkRect TestBounds = SkRect::MakeWH(TestWidth, TestHeight);
 constexpr SkRect RenderBounds =
     SkRect::MakeLTRB(RenderLeft, RenderTop, RenderRight, RenderBottom);
 
-static bool skipTheColorFilter = false;
-
 class CanvasCompareTester {
  public:
   typedef const std::function<void(SkCanvas*, SkPaint&)> CvRenderer;
@@ -123,10 +121,7 @@ class CanvasCompareTester {
       ASSERT_TRUE(filter->unique()) << "ImageFilter Cleanup";
     }
 
-    if (skipTheColorFilter) {
-      // drawVertices + ColorFilter outputs nothing on the CPU renderer
-      FML_LOG(ERROR) << "Skipping the ColorFilter test";
-    } else {
+    {
       constexpr float rotate_color_matrix[20] = {
           0, 1, 0, 0, 0,  //
           0, 0, 1, 0, 0,  //
@@ -754,7 +749,6 @@ TEST(DisplayListCanvas, DrawPointsAsPolygon) {
 }
 
 TEST(DisplayListCanvas, DrawVerticesWithColors) {
-  skipTheColorFilter = true;
   const SkPoint pts[3] = {
       SkPoint::Make(RenderCenterX, RenderTop),
       SkPoint::Make(RenderLeft, RenderBottom),
@@ -770,13 +764,10 @@ TEST(DisplayListCanvas, DrawVerticesWithColors) {
       [=](DisplayListBuilder& builder) {  //
         builder.drawVertices(vertices, SkBlendMode::kSrcOver);
       });
-  // Since there are no ASSERT macros above here, this line will execute
-  skipTheColorFilter = false;
   ASSERT_TRUE(vertices->unique());
 }
 
 TEST(DisplayListCanvas, DrawVerticesWithImage) {
-  skipTheColorFilter = true;
   const SkPoint pts[3] = {
       SkPoint::Make(RenderCenterX, RenderTop),
       SkPoint::Make(RenderLeft, RenderBottom),
@@ -800,8 +791,6 @@ TEST(DisplayListCanvas, DrawVerticesWithImage) {
         builder.setShader(shader);
         builder.drawVertices(vertices, SkBlendMode::kSrcOver);
       });
-  // Since there are no ASSERT macros above here, this line will execute
-  skipTheColorFilter = false;
   ASSERT_TRUE(vertices->unique());
   ASSERT_TRUE(shader->unique());
 }
