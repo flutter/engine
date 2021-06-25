@@ -271,6 +271,24 @@ void AndroidShellHolder::NotifyLowMemoryWarning() {
   shell_->NotifyLowMemoryWarning();
 }
 
+void AndroidShellHolder::DrawLastLayerTree() {
+  FML_DCHECK(shell_);
+  thread_host_->raster_thread->GetTaskRunner()->PostTask([&]() {
+    auto frame_timings_recorder = std::make_unique<FrameTimingsRecorder>();
+
+    // In this case BeginFrame doesn't get called, we need to
+    // adjust frame timings to update build start and end times,
+    // given that the frame doesn't get built in this case, we
+    // will use Now() for both start and end times as an indication.
+    const auto now = fml::TimePoint::Now();
+    frame_timings_recorder->RecordVsync(now, now);
+    frame_timings_recorder->RecordBuildStart(now);
+    frame_timings_recorder->RecordBuildEnd(now);
+    shell_->GetRasterizer()->DrawLastLayerTree(
+        std::move(frame_timings_recorder));
+  });
+}
+
 std::optional<RunConfiguration> AndroidShellHolder::BuildRunConfiguration(
     std::shared_ptr<flutter::AssetManager> asset_manager,
     const std::string& entrypoint,

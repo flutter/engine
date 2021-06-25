@@ -228,6 +228,8 @@ static void SurfaceWindowChanged(JNIEnv* env,
       ANativeWindow_fromSurface(env, jsurface));
   ANDROID_SHELL_HOLDER->GetPlatformView()->NotifySurfaceWindowChanged(
       std::move(window));
+  // Redraw the last layer tree.
+  ANDROID_SHELL_HOLDER->DrawLastLayerTree();
 }
 
 static void SurfaceChanged(JNIEnv* env,
