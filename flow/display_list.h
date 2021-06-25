@@ -104,9 +104,12 @@ namespace flutter {
   V(Transform2x3)                   \
   V(Transform3x3)                   \
                                     \
-  V(ClipRect)                       \
-  V(ClipRRect)                      \
-  V(ClipPath)                       \
+  V(ClipIntersectRect)              \
+  V(ClipIntersectRRect)             \
+  V(ClipIntersectPath)              \
+  V(ClipDifferenceRect)             \
+  V(ClipDifferenceRRect)            \
+  V(ClipDifferencePath)             \
                                     \
   V(DrawPaint)                      \
   V(DrawColor)                      \
@@ -126,7 +129,8 @@ namespace flutter {
   V(DrawVertices)                   \
                                     \
   V(DrawImage)                      \
-  V(DrawImageRect)                  \
+  V(DrawImageRectStrict)            \
+  V(DrawImageRectFast)              \
   V(DrawImageNine)                  \
   V(DrawImageLattice)               \
   V(DrawAtlas)                      \
@@ -285,7 +289,8 @@ class Dispatcher {
   virtual void drawImageRect(const sk_sp<SkImage> image,
                              const SkRect& src,
                              const SkRect& dst,
-                             const SkSamplingOptions& sampling) = 0;
+                             const SkSamplingOptions& sampling,
+                             SkCanvas::SrcRectConstraint constraint) = 0;
   virtual void drawImageNine(const sk_sp<SkImage> image,
                              const SkIRect& center,
                              const SkRect& dst,
@@ -393,10 +398,13 @@ class DisplayListBuilder final : public virtual Dispatcher, public SkRefCnt {
   void drawImage(const sk_sp<SkImage> image,
                  const SkPoint point,
                  const SkSamplingOptions& sampling) override;
-  void drawImageRect(const sk_sp<SkImage> image,
-                     const SkRect& src,
-                     const SkRect& dst,
-                     const SkSamplingOptions& sampling) override;
+  void drawImageRect(
+      const sk_sp<SkImage> image,
+      const SkRect& src,
+      const SkRect& dst,
+      const SkSamplingOptions& sampling,
+      SkCanvas::SrcRectConstraint constraint =
+          SkCanvas::SrcRectConstraint::kFast_SrcRectConstraint) override;
   void drawImageNine(const sk_sp<SkImage> image,
                      const SkIRect& center,
                      const SkRect& dst,

@@ -81,7 +81,8 @@ class DisplayListCanvasDispatcher : public virtual Dispatcher,
   void drawImageRect(const sk_sp<SkImage> image,
                      const SkRect& src,
                      const SkRect& dst,
-                     const SkSamplingOptions& sampling) override;
+                     const SkSamplingOptions& sampling,
+                     SkCanvas::SrcRectConstraint constraint) override;
   void drawImageNine(const sk_sp<SkImage> image,
                      const SkIRect& center,
                      const SkRect& dst,

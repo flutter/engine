@@ -85,7 +85,7 @@ struct DLOp {
 DEFINE_SET_BOOL_OP(AA)
 DEFINE_SET_BOOL_OP(Dither)
 DEFINE_SET_BOOL_OP(InvertColors)
-#undef DEFINE_SET_CLEAR_BOOL_OP
+#undef DEFINE_SET_BOOL_OP
 
 // 4 byte header + 4 byte payload packs into minimum 8 bytes
 #define DEFINE_SET_ENUM_OP(name)                                \
@@ -369,30 +369,36 @@ struct Transform3x3Op final : DLOp {
   }
 };
 
-// The common data is a 4 byte header + a 2 byte common payload which
-// takes 6 bytes but is expanded to 8 (2 bytes unused)
+// 4 byte header + 4 byte common payload packs into minimum 8 bytes
 // SkRect is 16 more bytes, which packs efficiently into 24 bytes total
 // SkRRect is 52 more bytes, which rounds up to 56 bytes (4 bytes unused)
 //         which packs into 64 bytes total
 // SkPath is 16 more bytes, which packs efficiently into 24 bytes total
-#define DEFINE_CLIP_SHAPE_OP(shapetype)                               \
-  struct Clip##shapetype##Op final : DLOp {                           \
-    static const auto kType = DisplayListOpType::kClip##shapetype;    \
-                                                                      \
-    Clip##shapetype##Op(Sk##shapetype shape, bool is_aa, SkClipOp op) \
-        : is_aa(is_aa), op(op), shape(shape) {}                       \
-                                                                      \
-    const bool is_aa : 8;                                             \
-    const SkClipOp op : 8;                                            \
-    const Sk##shapetype shape;                                        \
-                                                                      \
-    void dispatch(Dispatcher& dispatcher) const {                     \
-      dispatcher.clip##shapetype(shape, is_aa, op);                   \
-    }                                                                 \
+//
+// We could pack the clip_op and the bool both into the free 4 bytes after
+// the header, but the Windows compiler keeps wanting to expand that
+// packing into more bytes than needed (even when they are declared as
+// packed bit fields!)
+#define DEFINE_CLIP_SHAPE_OP(shapetype, clipop)                            \
+  struct Clip##clipop##shapetype##Op final : DLOp {                        \
+    static const auto kType = DisplayListOpType::kClip##clipop##shapetype; \
+                                                                           \
+    Clip##clipop##shapetype##Op(Sk##shapetype shape, bool is_aa)           \
+        : is_aa(is_aa), shape(shape) {}                                    \
+                                                                           \
+    const bool is_aa;                                                      \
+    const Sk##shapetype shape;                                             \
+                                                                           \
+    void dispatch(Dispatcher& dispatcher) const {                          \
+      dispatcher.clip##shapetype(shape, is_aa, SkClipOp::k##clipop);       \
+    }                                                                      \
   };
-DEFINE_CLIP_SHAPE_OP(Rect)
-DEFINE_CLIP_SHAPE_OP(RRect)
-DEFINE_CLIP_SHAPE_OP(Path)
+DEFINE_CLIP_SHAPE_OP(Rect, Intersect)
+DEFINE_CLIP_SHAPE_OP(RRect, Intersect)
+DEFINE_CLIP_SHAPE_OP(Path, Intersect)
+DEFINE_CLIP_SHAPE_OP(Rect, Difference)
+DEFINE_CLIP_SHAPE_OP(RRect, Difference)
+DEFINE_CLIP_SHAPE_OP(Path, Difference)
 #undef DEFINE_CLIP_SHAPE_OP
 
 // 4 byte header + no payload uses minimum 8 bytes (4 bytes unused)
@@ -542,24 +548,31 @@ struct DrawImageOp final : DLOp {
 };
 
 // 4 byte header + 60 byte payload packs efficiently into 64 bytes
-struct DrawImageRectOp final : DLOp {
-  static const auto kType = DisplayListOpType::kDrawImageRect;
-
-  DrawImageRectOp(const sk_sp<SkImage> image,
-                  const SkRect& src,
-                  const SkRect& dst,
-                  const SkSamplingOptions& sampling)
-      : src(src), dst(dst), sampling(sampling), image(std::move(image)) {}
-
-  const SkRect src;
-  const SkRect dst;
-  const SkSamplingOptions sampling;
-  const sk_sp<SkImage> image;
-
-  void dispatch(Dispatcher& dispatcher) const {
-    dispatcher.drawImageRect(image, src, dst, sampling);
-  }
-};
+//
+// The constraint could be stored in the struct, but it would not pack
+// efficiently so 2 variants are defined instead.
+#define DEFINE_DRAW_IMAGE_RECT_OP(name, constraint)                          \
+  struct Draw##name##Op final : DLOp {                                       \
+    static const auto kType = DisplayListOpType::kDraw##name;                \
+                                                                             \
+    Draw##name##Op(const sk_sp<SkImage> image,                               \
+                   const SkRect& src,                                        \
+                   const SkRect& dst,                                        \
+                   const SkSamplingOptions& sampling)                        \
+        : src(src), dst(dst), sampling(sampling), image(std::move(image)) {} \
+                                                                             \
+    const SkRect src;                                                        \
+    const SkRect dst;                                                        \
+    const SkSamplingOptions sampling;                                        \
+    const sk_sp<SkImage> image;                                              \
+                                                                             \
+    void dispatch(Dispatcher& dispatcher) const {                            \
+      dispatcher.drawImageRect(image, src, dst, sampling, constraint);       \
+    }                                                                        \
+  };
+DEFINE_DRAW_IMAGE_RECT_OP(ImageRectStrict, SkCanvas::kStrict_SrcRectConstraint)
+DEFINE_DRAW_IMAGE_RECT_OP(ImageRectFast, SkCanvas::kFast_SrcRectConstraint)
+#undef DEFINE_DRAW_IMAGE_RECT_OP
 
 // 4 byte header + 44 byte payload packs efficiently into 48 bytes
 struct DrawImageNineOp final : DLOp {
@@ -1113,7 +1126,9 @@ void DisplayListBuilder::transform3x3(SkScalar mxx,
 void DisplayListBuilder::clipRect(const SkRect& rect,
                                   bool isAA,
                                   SkClipOp clip_op) {
-  Push<ClipRectOp>(0, rect, isAA, clip_op);
+  clip_op == SkClipOp::kIntersect  //
+      ? Push<ClipIntersectRectOp>(0, rect, isAA)
+      : Push<ClipDifferenceRectOp>(0, rect, isAA);
 }
 void DisplayListBuilder::clipRRect(const SkRRect& rrect,
                                    bool isAA,
@@ -1121,13 +1136,17 @@ void DisplayListBuilder::clipRRect(const SkRRect& rrect,
   if (rrect.isRect()) {
     clipRect(rrect.rect(), isAA, clip_op);
   } else {
-    Push<ClipRRectOp>(0, rrect, isAA, clip_op);
+    clip_op == SkClipOp::kIntersect  //
+        ? Push<ClipIntersectRRectOp>(0, rrect, isAA)
+        : Push<ClipDifferenceRRectOp>(0, rrect, isAA);
   }
 }
 void DisplayListBuilder::clipPath(const SkPath& path,
                                   bool isAA,
                                   SkClipOp clip_op) {
-  Push<ClipPathOp>(0, path, isAA, clip_op);
+  clip_op == SkClipOp::kIntersect  //
+      ? Push<ClipIntersectPathOp>(0, path, isAA)
+      : Push<ClipDifferencePathOp>(0, path, isAA);
 }
 
 void DisplayListBuilder::drawPaint() {
@@ -1206,8 +1225,11 @@ void DisplayListBuilder::drawImage(const sk_sp<SkImage> image,
 void DisplayListBuilder::drawImageRect(const sk_sp<SkImage> image,
                                        const SkRect& src,
                                        const SkRect& dst,
-                                       const SkSamplingOptions& sampling) {
-  Push<DrawImageRectOp>(0, std::move(image), src, dst, sampling);
+                                       const SkSamplingOptions& sampling,
+                                       SkCanvas::SrcRectConstraint constraint) {
+  constraint == SkCanvas::kFast_SrcRectConstraint  //
+      ? Push<DrawImageRectFastOp>(0, std::move(image), src, dst, sampling)
+      : Push<DrawImageRectStrictOp>(0, std::move(image), src, dst, sampling);
 }
 void DisplayListBuilder::drawImageNine(const sk_sp<SkImage> image,
                                        const SkIRect& center,

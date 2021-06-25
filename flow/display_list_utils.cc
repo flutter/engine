@@ -271,7 +271,8 @@ void DisplayListBoundsCalculator::drawImageRect(
     const sk_sp<SkImage> image,
     const SkRect& src,
     const SkRect& dst,
-    const SkSamplingOptions& sampling) {
+    const SkSamplingOptions& sampling,
+    SkCanvas::SrcRectConstraint constraint) {
   accumulateRect(dst);
 }
 void DisplayListBoundsCalculator::drawImageNine(const sk_sp<SkImage> image,

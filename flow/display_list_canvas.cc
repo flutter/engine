@@ -66,12 +66,12 @@ void DisplayListCanvasDispatcher::clipRect(const SkRect& rect,
 void DisplayListCanvasDispatcher::clipRRect(const SkRRect& rrect,
                                             bool isAA,
                                             SkClipOp clip_op) {
-  canvas_->clipRRect(rrect, isAA);
+  canvas_->clipRRect(rrect, clip_op, isAA);
 }
 void DisplayListCanvasDispatcher::clipPath(const SkPath& path,
                                            bool isAA,
                                            SkClipOp clip_op) {
-  canvas_->clipPath(path, isAA);
+  canvas_->clipPath(path, clip_op, isAA);
 }
 
 void DisplayListCanvasDispatcher::drawPaint() {
@@ -128,9 +128,9 @@ void DisplayListCanvasDispatcher::drawImageRect(
     const sk_sp<SkImage> image,
     const SkRect& src,
     const SkRect& dst,
-    const SkSamplingOptions& sampling) {
-  canvas_->drawImageRect(image, src, dst, sampling, &paint(),
-                         SkCanvas::kFast_SrcRectConstraint);
+    const SkSamplingOptions& sampling,
+    SkCanvas::SrcRectConstraint constraint) {
+  canvas_->drawImageRect(image, src, dst, sampling, &paint(), constraint);
 }
 void DisplayListCanvasDispatcher::drawImageNine(const sk_sp<SkImage> image,
                                                 const SkIRect& center,
@@ -297,6 +297,9 @@ void DisplayListCanvasRecorder::onDrawPoints(SkCanvas::PointMode mode,
     builder_->drawLine(pts[0], pts[1]);
   } else {
     uint32_t count32 = static_cast<uint32_t>(count);
+    // TODO(flar): depending on the mode we could break it down into
+    // multiple calls to drawPoints, but how much do we really want
+    // to support more than a couple billion points?
     FML_DCHECK(count32 == count);
     builder_->drawPoints(mode, count32, pts);
   }
@@ -323,9 +326,8 @@ void DisplayListCanvasRecorder::onDrawImageRect2(
     const SkSamplingOptions& sampling,
     const SkPaint* paint,
     SrcRectConstraint constraint) {
-  FML_DCHECK(constraint == SrcRectConstraint::kFast_SrcRectConstraint);
   RecordPaintAttributes(paint, DrawType::kImageRectOpType);
-  builder_->drawImageRect(sk_ref_sp(image), src, dst, sampling);
+  builder_->drawImageRect(sk_ref_sp(image), src, dst, sampling, constraint);
 }
 void DisplayListCanvasRecorder::onDrawImageLattice2(const SkImage* image,
                                                     const Lattice& lattice,
@@ -365,7 +367,6 @@ void DisplayListCanvasRecorder::onDrawShadowRec(const SkPath& path,
 void DisplayListCanvasRecorder::onDrawPicture(const SkPicture* picture,
                                               const SkMatrix* matrix,
                                               const SkPaint* paint) {
-  FML_DCHECK(matrix == nullptr);
   if (paint) {
     RecordPaintAttributes(paint, DrawType::kSaveLayerOpType);
   }
@@ -426,7 +427,6 @@ void DisplayListCanvasRecorder::RecordPaintAttributes(const SkPaint* paint,
   // }
   if ((dataNeeded & kPaintStyleNeeded_) != 0) {
     if (current_style_ != paint->getStyle()) {
-      FML_DCHECK(paint->getStyle() != SkPaint::kStrokeAndFill_Style);
       builder_->setDrawStyle(current_style_ = paint->getStyle());
     }
     if (current_style_ == SkPaint::Style::kStroke_Style) {

@@ -418,6 +418,9 @@ std::vector<DisplayListInvocationGroup> allGroups = {
   { "DrawImageRect", {
       {1, 64, [](DisplayListBuilder& b) {b.drawImageRect(TestImage1, {10, 10, 20, 20}, {10, 10, 40, 40},
                                                          DisplayList::NearestSampling);}},
+      {1, 64, [](DisplayListBuilder& b) {b.drawImageRect(TestImage1, {10, 10, 20, 20}, {10, 10, 40, 40},
+                                                         DisplayList::NearestSampling,
+                                                         SkCanvas::SrcRectConstraint::kStrict_SrcRectConstraint);}},
       {1, 64, [](DisplayListBuilder& b) {b.drawImageRect(TestImage1, {10, 10, 25, 20}, {10, 10, 40, 40},
                                                          DisplayList::NearestSampling);}},
       {1, 64, [](DisplayListBuilder& b) {b.drawImageRect(TestImage1, {10, 10, 20, 20}, {10, 10, 45, 40},
