@@ -1,0 +1,45 @@
+# Adapted from $FUCHSIA_DIR/src/lib/ui/base_view/BUILD.gn
+
+# Copyright 2018 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//build/fuchsia/sdk.gni")
+
+source_set("base_view") {
+  sources = [
+    "base_view.cc",
+    "base_view.h",
+    "embedded_view_utils.cc",
+    "embedded_view_utils.h",
+    "math.h",
+    "view_provider_component.cc",
+    "view_provider_component.h",
+    "view_provider_service.cc",
+    "view_provider_service.h",
+  ]
+
+  include_dirs = [
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing",
+  ]
+
+  public_deps = [
+    "$fuchsia_sdk_root/fidl:fuchsia.sys",
+    "$fuchsia_sdk_root/fidl:fuchsia.ui.app",
+    "$fuchsia_sdk_root/fidl:fuchsia.ui.gfx",
+    "$fuchsia_sdk_root/fidl:fuchsia.ui.input",
+    "$fuchsia_sdk_root/fidl:fuchsia.ui.views",
+
+    "$fuchsia_sdk_root/pkg:sys_cpp",
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/lib/syslog/cpp",
+    "$fuchsia_sdk_root/pkg:scenic_cpp",
+
+    "$fuchsia_sdk_root/pkg:vfs_cpp",
+    "$fuchsia_sdk_root/pkg:async-loop-cpp",
+    "$fuchsia_sdk_root/pkg:async-loop-default",
+  ]
+
+  deps = [
+    "$fuchsia_sdk_root/pkg:trace",
+  ]
+}

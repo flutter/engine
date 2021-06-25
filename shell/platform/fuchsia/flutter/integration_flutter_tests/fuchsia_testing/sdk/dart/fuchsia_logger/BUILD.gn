@@ -1,0 +1,31 @@
+# Adapted from $FUCHSIA_DIR/sdk/dart/fuchsia_logger/BUILD.gn
+
+# Copyright 2018 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//build/fuchsia/sdk.gni")
+import("//flutter/tools/fuchsia/dart/dart_library.gni")
+
+dart_library("fuchsia_logger") {
+  package_name = "fuchsia_logger"
+  null_safe = true
+
+  sources = [
+    "logger.dart",
+    "src/internal/_fuchsia_log_writer.dart",
+    "src/internal/_log_message.dart",
+    "src/internal/_log_writer.dart",
+    "src/internal/_stdout_log_writer.dart",
+    "src/logger/logger.dart",
+  ]
+
+  deps = [
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/sdk/dart/fuchsia_services",
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/sdk/dart/zircon",
+    "//flutter/tools/fuchsia/fidl:fuchsia.logger",
+    "//third_party/dart/third_party/pkg/collection",
+    "//third_party/dart/third_party/pkg/logging",
+    "//third_party/dart/pkg/meta",
+  ]
+}

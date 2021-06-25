@@ -1,0 +1,48 @@
+# Adapted from $FUCHSIA_DIR/src/lib/testing/loop_fixture/BUILD.gn
+
+# Copyright 2016 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//build/fuchsia/sdk.gni")
+
+group("loop_fixture") {
+  testonly = true
+
+  public_deps = [ ":gtest" ]
+}
+
+# TODO(richkadel): Update this comment. What makes sense in flutter/engine?
+# Deprecated - new targets should instead depend on:
+# //src/lib/testing/loop_fixture
+source_set("gtest") {
+  testonly = true
+
+  sources = [
+    "real_loop.cc",
+    "real_loop.h",
+    "real_loop_fixture.h",
+    "test_loop.cc",
+    "test_loop.h",
+    "test_loop_fixture.h",
+  ]
+
+  include_dirs = [
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing",
+  ]
+
+  deps = [
+    "$fuchsia_sdk_root/pkg:async-cpp",
+  ]
+
+  public_deps = [
+    "$fuchsia_sdk_root/pkg:fit",
+    "$fuchsia_sdk_root/pkg:stdcompat",
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/src/lib/fxl:common",
+    "//third_party/googletest:gtest",
+    "$fuchsia_sdk_root/pkg:zx",
+    "$fuchsia_sdk_root/pkg:async-loop-cpp",
+    "$fuchsia_sdk_root/pkg:async-loop-default",
+    "$fuchsia_sdk_root/pkg:async-testing",
+  ]
+}

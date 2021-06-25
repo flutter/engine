@@ -1,0 +1,86 @@
+# Adapted from $FUCHSIA_DIR/src/lib/fxl/BUILD.gn
+
+# Copyright 2016 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//build/fuchsia/sdk.gni")
+
+source_set("common") {
+  include_dirs = [
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing",
+  ]
+
+  sources = [
+    "build_config.h",
+    "fxl_export.h",
+    "macros.h",
+  ]
+}
+
+source_set("memory") {
+  sources = [
+    "memory/ref_counted.h",
+    "memory/ref_counted_internal.h",
+    "memory/ref_ptr.h",
+    "memory/ref_ptr_internal.h",
+    "memory/unique_object.h",
+    "memory/weak_ptr.h",
+    "memory/weak_ptr_internal.cc",
+    "memory/weak_ptr_internal.h",
+  ]
+
+  include_dirs = [
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing",
+  ]
+
+  public_deps = [
+    ":common",
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/lib/syslog/cpp",
+  ]
+}
+
+source_set("third_party") {
+  visibility = [ ":strings" ]
+
+  sources = [
+    "third_party/icu/icu_utf.cc",
+    "third_party/icu/icu_utf.h",
+  ]
+
+  include_dirs = [
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing",
+  ]
+}
+
+source_set("strings") {
+  sources = [
+    "strings/ascii.cc",
+    "strings/ascii.h",
+    "strings/concatenate.cc",
+    "strings/concatenate.h",
+    "strings/join_strings.h",
+    "strings/split_string.cc",
+    "strings/split_string.h",
+    "strings/string_number_conversions.cc",
+    "strings/string_number_conversions.h",
+    "strings/string_printf.cc",
+    "strings/string_printf.h",
+    "strings/substitute.cc",
+    "strings/substitute.h",
+    "strings/trim.cc",
+    "strings/trim.h",
+    "strings/utf_codecs.cc",
+    "strings/utf_codecs.h",
+  ]
+
+  include_dirs = [
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing",
+  ]
+
+  public_deps = [
+    ":common",
+    ":third_party",
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/lib/syslog/cpp",
+  ]
+}

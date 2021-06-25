@@ -1,0 +1,16 @@
+{
+    "include": [
+        "//sdk/lib/diagnostics/syslog/client.shard.cmx"
+    ],
+    "program": {
+        "args": [
+            "rotated_square_view"
+        ],
+        "binary": "bin/test_views_app"
+    },
+    "sandbox": {
+        "services": [
+            "fuchsia.ui.scenic.Scenic"
+        ]
+    }
+}

@@ -1,0 +1,32 @@
+# Adapted from $FUCHSIA_DIR/sdk/dart/fuchsia_services/BUILD.gn
+
+# Copyright 2018 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//build/fuchsia/sdk.gni")
+import("//flutter/tools/fuchsia/dart/dart_library.gni")
+
+dart_library("fuchsia_services") {
+  package_name = "fuchsia_services"
+  null_safe = true
+
+  sources = [
+    "services.dart",
+    "src/component_context.dart",
+    "src/incoming.dart",
+    "src/outgoing.dart",
+    "src/service_provider_impl.dart",
+  ]
+
+  deps = [
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/sdk/dart/fidl",
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/sdk/dart/fuchsia",
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/sdk/dart/fuchsia_vfs",
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/sdk/dart/zircon",
+    "//flutter/tools/fuchsia/fidl:fuchsia.io",
+    "//flutter/tools/fuchsia/fidl:fuchsia.sys",
+    "//third_party/dart/pkg/meta",
+  ]
+}
+

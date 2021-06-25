@@ -1,0 +1,59 @@
+# Adapted from $FUCHSIA_DIR/build/fidl/BUILD.gn
+
+# Copyright 2018 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//flutter/tools/fuchsia/fidl/toolchain.gni")
+import("//flutter/tools/fuchsia/toolchain/basic_toolchain.gni")
+import("//flutter/tools/fuchsia/fidl/fidl.gni")
+import("//build/fuchsia/sdk.gni")
+
+# A toolchain dedicated to processing FIDL libraries.
+# The only targets in this toolchain are action() targets, so it
+# has no real tools.  But every toolchain needs stamp and copy.
+if (current_toolchain == default_toolchain) {
+  basic_toolchain("fidling") {
+    expected_label = fidl_toolchain
+  }
+}
+
+template("from_fuchsia_sdk_meta") {
+  assert(defined(invoker.meta), "The meta.json file path must be specified.")
+
+  meta_json = read_file(invoker.meta, "json")
+
+  foreach(part, meta_json.parts) {
+    part_meta_json = {
+    }
+
+    part_meta = part.meta
+    part_meta_rebased = "$fuchsia_sdk_path/$part_meta"
+
+    part_meta_json = read_file(part_meta_rebased, "json")
+    subtarget_name = part_meta_json.name
+
+    if (part.type == "fidl_library") {
+          fidl(subtarget_name) {
+            sources = []
+            foreach (source, part_meta_json.sources) {
+              sources += [ "$fuchsia_sdk_path/$source" ]
+            }
+            public_deps = []
+            foreach (dep, part_meta_json.deps) {
+              public_deps += [ ":$dep" ]
+            }
+          }
+    }
+  }
+
+  group(target_name) {
+  }
+}
+
+if (current_toolchain != default_toolchain) {
+  from_fuchsia_sdk_meta("fidl") {
+    meta = "$fuchsia_sdk_path/meta/manifest.json"
+  }
+}
+

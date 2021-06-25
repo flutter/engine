@@ -1,0 +1,13 @@
+{
+    "include": [
+        "//sdk/lib/diagnostics/syslog/client.shard.cmx"
+    ],
+    "program": {
+        "binary": "bin/environment_delegating_runner"
+    },
+    "sandbox": {
+        "services": [
+            "fuchsia.sys.Runner"
+        ]
+    }
+}

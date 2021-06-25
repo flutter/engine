@@ -1,0 +1,30 @@
+# Adapted from $FUCHSIA_DIR/sdk/dart/zircon/BUILD.gn
+
+# Copyright 2018 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//flutter/tools/fuchsia/dart/dart_library.gni")
+
+dart_library("zircon") {
+  package_name = "zircon"
+  null_safe = true
+
+  sources = [
+    "src/channel.dart",
+    "src/channel_reader.dart",
+    "src/constants.dart",
+    "src/errors.dart",
+    "src/eventpair.dart",
+    "src/fakes/handle.dart",
+    "src/fakes/handle_disposition.dart",
+    "src/fakes/handle_waiter.dart",
+    "src/fakes/system.dart",
+    "src/fakes/zircon_fakes.dart",
+    "src/handle_wrapper.dart",
+    "src/socket.dart",
+    "src/socket_reader.dart",
+    "src/vmo.dart",
+    "zircon.dart",
+  ]
+}

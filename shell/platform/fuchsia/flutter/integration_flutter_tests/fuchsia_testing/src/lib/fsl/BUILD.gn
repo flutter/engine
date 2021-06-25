@@ -1,0 +1,15 @@
+# Adapted from $FUCHSIA_DIR/src/lib/fsl/BUILD.gn
+
+# Copyright 2016 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//build/fuchsia/sdk.gni")
+
+static_library("fsl") {
+  output_name = "fsl"
+
+  public_deps = [
+    "vmo",
+  ]
+}

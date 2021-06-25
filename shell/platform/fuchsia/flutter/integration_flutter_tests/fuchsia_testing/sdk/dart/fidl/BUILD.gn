@@ -1,0 +1,35 @@
+# Adapted from $FUCHSIA_DIR/sdk/dart/fidl/BUILD.gn
+
+# Copyright 2018 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//flutter/tools/fuchsia/dart/dart_library.gni")
+
+dart_library("fidl") {
+  package_name = "fidl"
+  null_safe = true
+
+  sources = [
+    "fidl.dart",
+    "src/bits.dart",
+    "src/codec.dart",
+    "src/codegen_common.dart",
+    "src/enum.dart",
+    "src/error.dart",
+    "src/hash_codes.dart",
+    "src/interface.dart",
+    "src/interface_async.dart",
+    "src/message.dart",
+    "src/struct.dart",
+    "src/table.dart",
+    "src/types.dart",
+    "src/unknown_data.dart",
+    "src/xunion.dart",
+  ]
+
+  deps = [
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/sdk/dart/zircon",
+    "//third_party/dart/pkg/meta",
+  ]
+}

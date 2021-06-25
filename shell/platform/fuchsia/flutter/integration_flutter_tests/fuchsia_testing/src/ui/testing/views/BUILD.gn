@@ -1,0 +1,43 @@
+# Adapted from $FUCHSIA_DIR/src/ui/testing/views/BUILD.gn
+
+# Copyright 2019 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//build/fuchsia/sdk.gni")
+
+source_set("views") {
+  testonly = true
+
+  sources = [
+    "background_view.cc",
+    "background_view.h",
+    "color.cc",
+    "color.h",
+    "coordinate_test_view.cc",
+    "coordinate_test_view.h",
+    "embedder_view.cc",
+    "embedder_view.h",
+    "opacity_view.cc",
+    "opacity_view.h",
+    "rotated_square_view.cc",
+    "rotated_square_view.h",
+    "test_view.h",
+  ]
+
+  include_dirs = [
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing",
+  ]
+
+  public_deps = [
+    "$fuchsia_sdk_root/fidl:fuchsia.ui.scenic",
+    "$fuchsia_sdk_root/pkg:scenic_cpp",
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/src/lib/ui/base_view",
+  ]
+
+  deps = [
+    "$fuchsia_sdk_root/fidl:fuchsia.ui.gfx",
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/src/lib/fsl",
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/src/lib/fxl:strings",
+  ]
+}
