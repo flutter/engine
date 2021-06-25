@@ -313,7 +313,7 @@ void hooksTests() {
 
   void expectNotEquals(Object? value, Object? expected) {
     if (value == expected) {
-      throw 'Expected $value to not be $expected.'; 
+      throw 'Expected $value to not be $expected.';
     }
   }
 
