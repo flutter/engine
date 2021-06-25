@@ -52,6 +52,8 @@ enum class DisplayListCompare {
   kEqual,
 };
 
+#pragma pack(push, DLOp_Alignment, 8)
+
 // Assuming a 64-bit platform (most of our platforms at this time?)
 //
 // Struct allocation in the DL memory is aligned to a void* boundary
@@ -781,6 +783,8 @@ struct DrawShadowOp final : DLOp {
     dispatcher.drawShadow(path, color, elevation, occludes);
   }
 };
+
+#pragma pack(pop, DLOp_Alignment)
 
 void DisplayList::ComputeBounds() {
   DisplayListBoundsCalculator calculator(bounds_cull_);
