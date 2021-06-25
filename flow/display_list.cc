@@ -240,26 +240,26 @@ struct SaveOp final : DLOp {
 struct SaveLayerOp final : DLOp {
   static const auto kType = DisplayListOpType::kSaveLayer;
 
-  SaveLayerOp(bool withPaint) : withPaint(withPaint) {}
+  SaveLayerOp(bool with_paint) : with_paint(with_paint) {}
 
-  bool withPaint;
+  bool with_paint;
 
   void dispatch(Dispatcher& dispatcher) const {
-    dispatcher.saveLayer(nullptr, withPaint);
+    dispatcher.saveLayer(nullptr, with_paint);
   }
 };
 // 4 byte header + 20 byte payload packs evenly into 24 bytes
 struct SaveLayerBoundsOp final : DLOp {
   static const auto kType = DisplayListOpType::kSaveLayerBounds;
 
-  SaveLayerBoundsOp(SkRect rect, bool withPaint)
-      : withPaint(withPaint), rect(rect) {}
+  SaveLayerBoundsOp(SkRect rect, bool with_paint)
+      : with_paint(with_paint), rect(rect) {}
 
-  bool withPaint;
+  bool with_paint;
   const SkRect rect;
 
   void dispatch(Dispatcher& dispatcher) const {
-    dispatcher.saveLayer(&rect, withPaint);
+    dispatcher.saveLayer(&rect, with_paint);
   }
 };
 // 4 byte header + no payload uses minimum 8 bytes (4 bytes unused)
@@ -375,20 +375,20 @@ struct Transform3x3Op final : DLOp {
 // SkRRect is 52 more bytes, which rounds up to 56 bytes (4 bytes unused)
 //         which packs into 64 bytes total
 // SkPath is 16 more bytes, which packs efficiently into 24 bytes total
-#define DEFINE_CLIP_SHAPE_OP(shapetype)                              \
-  struct Clip##shapetype##Op final : DLOp {                          \
-    static const auto kType = DisplayListOpType::kClip##shapetype;   \
-                                                                     \
-    Clip##shapetype##Op(Sk##shapetype shape, bool isAA, SkClipOp op) \
-        : isAA(isAA), op(op), shape(shape) {}                        \
-                                                                     \
-    const bool isAA : 8;                                             \
-    const SkClipOp op : 8;                                           \
-    const Sk##shapetype shape;                                       \
-                                                                     \
-    void dispatch(Dispatcher& dispatcher) const {                    \
-      dispatcher.clip##shapetype(shape, isAA, op);                   \
-    }                                                                \
+#define DEFINE_CLIP_SHAPE_OP(shapetype)                               \
+  struct Clip##shapetype##Op final : DLOp {                           \
+    static const auto kType = DisplayListOpType::kClip##shapetype;    \
+                                                                      \
+    Clip##shapetype##Op(Sk##shapetype shape, bool is_aa, SkClipOp op) \
+        : is_aa(is_aa), op(op), shape(shape) {}                       \
+                                                                      \
+    const bool is_aa : 8;                                             \
+    const SkClipOp op : 8;                                            \
+    const Sk##shapetype shape;                                        \
+                                                                      \
+    void dispatch(Dispatcher& dispatcher) const {                     \
+      dispatcher.clip##shapetype(shape, is_aa, op);                   \
+    }                                                                 \
   };
 DEFINE_CLIP_SHAPE_OP(Rect)
 DEFINE_CLIP_SHAPE_OP(RRect)
@@ -585,23 +585,23 @@ struct DrawImageLatticeOp final : DLOp {
   static const auto kType = DisplayListOpType::kDrawImageLattice;
 
   DrawImageLatticeOp(const sk_sp<SkImage> image,
-                     int xDivCount,
-                     int yDivCount,
-                     int cellCount,
+                     int x_count,
+                     int y_count,
+                     int cell_count,
                      const SkIRect& src,
                      const SkRect& dst,
                      SkFilterMode filter)
-      : xDivCount(xDivCount),
-        yDivCount(yDivCount),
-        cellCount(cellCount),
+      : x_count(x_count),
+        y_count(y_count),
+        cell_count(cell_count),
         src(src),
         dst(dst),
         filter(filter),
         image(std::move(image)) {}
 
-  const int xDivCount;
-  const int yDivCount;
-  const int cellCount;
+  const int x_count;
+  const int y_count;
+  const int cell_count;
   const SkIRect src;
   const SkRect dst;
   const SkFilterMode filter;
@@ -609,16 +609,17 @@ struct DrawImageLatticeOp final : DLOp {
 
   void dispatch(Dispatcher& dispatcher) const {
     const int* xDivs = reinterpret_cast<const int*>(this + 1);
-    const int* yDivs = reinterpret_cast<const int*>(xDivs + xDivCount);
+    const int* yDivs = reinterpret_cast<const int*>(xDivs + x_count);
     const SkColor* colors =
-        (cellCount == 0) ? nullptr
-                         : reinterpret_cast<const SkColor*>(yDivs + yDivCount);
-    const SkCanvas::Lattice::RectType* rTypes =
-        (cellCount == 0) ? nullptr
-                         : reinterpret_cast<const SkCanvas::Lattice::RectType*>(
-                               colors + cellCount);
+        (cell_count == 0) ? nullptr
+                          : reinterpret_cast<const SkColor*>(yDivs + y_count);
+    const SkCanvas::Lattice::RectType* types =
+        (cell_count == 0)
+            ? nullptr
+            : reinterpret_cast<const SkCanvas::Lattice::RectType*>(colors +
+                                                                   cell_count);
     dispatcher.drawImageLattice(
-        image, {xDivs, yDivs, rTypes, xDivCount, yDivCount, &src, colors}, dst,
+        image, {xDivs, yDivs, types, x_count, y_count, &src, colors}, dst,
         filter);
   }
 };
@@ -692,14 +693,14 @@ DEFINE_DRAW_ATLAS_OP(AtlasColoredCulled, HAS_COLORS, HAS_CULLING)
 struct DrawSkPictureOp final : DLOp {
   static const auto kType = DisplayListOpType::kDrawSkPicture;
 
-  DrawSkPictureOp(sk_sp<SkPicture> picture, bool withLayer)
-      : withLayer(withLayer), picture(std::move(picture)) {}
+  DrawSkPictureOp(sk_sp<SkPicture> picture, bool with_layer)
+      : with_layer(with_layer), picture(std::move(picture)) {}
 
-  const bool withLayer;
+  const bool with_layer;
   const sk_sp<SkPicture> picture;
 
   void dispatch(Dispatcher& dispatcher) const {
-    dispatcher.drawPicture(picture, nullptr, withLayer);
+    dispatcher.drawPicture(picture, nullptr, with_layer);
   }
 };
 
@@ -708,15 +709,15 @@ struct DrawSkPictureMatrixOp final : DLOp {
 
   DrawSkPictureMatrixOp(sk_sp<SkPicture> picture,
                         const SkMatrix matrix,
-                        bool withLayer)
-      : withLayer(withLayer), picture(std::move(picture)), matrix(matrix) {}
+                        bool with_layer)
+      : with_layer(with_layer), picture(std::move(picture)), matrix(matrix) {}
 
-  const bool withLayer;
+  const bool with_layer;
   const sk_sp<SkPicture> picture;
   const SkMatrix matrix;
 
   void dispatch(Dispatcher& dispatcher) const {
-    dispatcher.drawPicture(picture, &matrix, withLayer);
+    dispatcher.drawPicture(picture, &matrix, with_layer);
   }
 };
 
@@ -936,7 +937,7 @@ DisplayList::~DisplayList() {
 
 #define DL_BUILDER_PAGE 4096
 
-// copy_v(dst, src,n, src,n, ...) copies any number of typed srcs into dst.
+// CopyV(dst, src,n, src,n, ...) copies any number of typed srcs into dst.
 static void CopyV(void* dst) {}
 
 template <typename S, typename... Rest>
