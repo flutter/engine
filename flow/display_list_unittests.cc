@@ -12,6 +12,7 @@
 #include "third_party/skia/include/core/SkRRect.h"
 #include "third_party/skia/include/core/SkRSXform.h"
 #include "third_party/skia/include/core/SkSurface.h"
+#include "third_party/skia/include/core/SkTextBlob.h"
 #include "third_party/skia/include/core/SkVertices.h"
 #include "third_party/skia/include/effects/SkGradientShader.h"
 #include "third_party/skia/include/effects/SkImageFilters.h"
@@ -150,6 +151,17 @@ static sk_sp<DisplayList> TestDisplayList1 =
     MakeTestDisplayList(20, 20, SK_ColorGREEN);
 static sk_sp<DisplayList> TestDisplayList2 =
     MakeTestDisplayList(25, 25, SK_ColorBLUE);
+
+static sk_sp<SkTextBlob> MakeTextBlob(std::string string) {
+  return SkTextBlob::MakeFromText(string.c_str(), string.size(), SkFont(),
+                                  SkTextEncoding::kUTF8);
+}
+static sk_sp<SkTextBlob> TestBlob1 = MakeTextBlob("TestBlob1");
+static sk_sp<SkTextBlob> TestBlob2 = MakeTextBlob("TestBlob2");
+
+// ---------------
+// Test Suite data
+// ---------------
 
 typedef const std::function<void(DisplayListBuilder&)> DlInvoker;
 
@@ -444,7 +456,7 @@ std::vector<DisplayListInvocationGroup> allGroups = {
                                                          SkFilterMode::kNearest);}},
     }
   },
-  // TODO(flar): Skipping DrawLattice for now
+  // TODO(flar): Skipping DrawLattice for now, Flutter does not use it
   { "DrawAtlas", {
       {1, 40 + 32 + 32, [](DisplayListBuilder& b) {
         static SkRSXform xforms[] = { {1, 0, 0, 0}, {0, 1, 0, 0} };
@@ -506,8 +518,15 @@ std::vector<DisplayListInvocationGroup> allGroups = {
       {1, 16, [](DisplayListBuilder& b) {b.drawDisplayList(TestDisplayList2);}},
     }
   },
-  // TODO(flar): Skipping DrawTextBlob for now
-  // TODO(flar): Skipping DrawShadowRec for now
+  { "DrawTextBlob", {
+      {1, 24, [](DisplayListBuilder& b) {b.drawTextBlob(TestBlob1, 10, 10);}},
+      {1, 24, [](DisplayListBuilder& b) {b.drawTextBlob(TestBlob1, 20, 10);}},
+      {1, 24, [](DisplayListBuilder& b) {b.drawTextBlob(TestBlob1, 10, 20);}},
+      {1, 24, [](DisplayListBuilder& b) {b.drawTextBlob(TestBlob2, 10, 10);}},
+    }
+  },
+  // TODO(flar): Skipping DrawShadowRec for now, Flutter does not use it
+  //             and Skia does not yet expose the require definitions
   { "DrawShadow", {
       {1, 32, [](DisplayListBuilder& b) {b.drawShadow(TestPath1, SK_ColorGREEN, 1.0, false);}},
       {1, 32, [](DisplayListBuilder& b) {b.drawShadow(TestPath2, SK_ColorGREEN, 1.0, false);}},

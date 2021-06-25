@@ -749,6 +749,8 @@ struct DrawDisplayListOp final : DLOp {
   }
 };
 
+// 4 byte header + 8 payload bytes + an aligned pointer take 24 bytes
+// (4 unused to align the pointer)
 struct DrawTextBlobOp final : DLOp {
   static const auto kType = DisplayListOpType::kDrawTextBlob;
 
