@@ -184,6 +184,10 @@ struct DisplayListInvocation {
 
   DlInvoker invoker;
 
+  bool sk_version_matches() {
+    return (op_count == sk_op_count && byte_count == sk_byte_count);
+  }
+
   sk_sp<DisplayList> Build() {
     DisplayListBuilder builder;
     invoker(builder);
@@ -594,7 +598,7 @@ TEST(DisplayList, SingleOpSizes) {
   }
 }
 
-TEST(DisplayList, SingleOpDisplayListsNotEmpty) {
+TEST(DisplayList, SingleOpDisplayListsNotEqualEmpty) {
   sk_sp<DisplayList> empty = DisplayListBuilder().Build();
   for (auto& group : allGroups) {
     for (size_t i = 0; i < group.variants.size(); i++) {
@@ -630,35 +634,38 @@ TEST(DisplayList, SingleOpDisplayListsRecapturedAreEqual) {
 TEST(DisplayList, SingleOpDisplayListsRecapturedViaSkCanvasAreEqual) {
   for (auto& group : allGroups) {
     for (size_t i = 0; i < group.variants.size(); i++) {
-      // Verify recapturing the replay of the display list is Equals()
-      // when translating through the SkCanvas interface
+      if (group.variants[i].sk_op_count < 0) {
+        // A negative sk_op_count means "do not test this op".
+        // Used mainly for these cases:
+        // - we cannot encode a DrawShadowRec (Skia private header)
+        // - SkCanvas cannot receive a DisplayList
+        // - SkCanvas may or may not inline an SkPicture
+        continue;
+      }
+      // Verify a DisplayList (re)built by "rendering" it to an
+      // [SkCanvas->DisplayList] recorder recaptures an equivalent
+      // sequence.
       // Note that sometimes the rendering ops can be optimized out by
       // SkCanvas so the transfer is not always 1:1. We control for
-      // this by having separate op counts and sizes for the sk results.
-      // Also, an sk_op_count less than 0 means "do not test this op"
-      // used currently because we cannot encode a DrawShadowRec and
-      // drawPicture/DisplayList because SkCanvas sometimes inlines
-      // the SkPicture and it does not understand a DisplayList.
-      if (group.variants[i].sk_op_count >= 0) {
-        sk_sp<DisplayList> dl = group.variants[i].Build();
+      // this by having separate op counts and sizes for the sk results
+      // and changing our expectation of Equals() results accordingly.
+      sk_sp<DisplayList> dl = group.variants[i].Build();
 
-        DisplayListCanvasRecorder recorder(dl->bounds());
-        dl->RenderTo(&recorder);
-        sk_sp<DisplayList> sk_copy = recorder.Build();
-        auto desc = group.op_name + "(variant " + std::to_string(i + 1) +
-                    " == sk_copy)";
-        EXPECT_EQ(sk_copy->op_count(), group.variants[i].sk_op_count) << desc;
-        EXPECT_EQ(sk_copy->bytes(), group.variants[i].sk_byte_count) << desc;
-        if (group.variants[i].op_count == group.variants[i].sk_op_count &&
-            group.variants[i].byte_count == group.variants[i].sk_byte_count) {
-          EXPECT_EQ(sk_copy->bounds(), dl->bounds()) << desc;
-          EXPECT_TRUE(sk_copy->Equals(*dl)) << desc;
-          EXPECT_TRUE(dl->Equals(*sk_copy)) << desc;
-        } else {
-          // No assertion on bounds - they could be equal, hard to tell
-          EXPECT_FALSE(sk_copy->Equals(*dl)) << desc;
-          EXPECT_FALSE(dl->Equals(*sk_copy)) << desc;
-        }
+      DisplayListCanvasRecorder recorder(dl->bounds());
+      dl->RenderTo(&recorder);
+      sk_sp<DisplayList> sk_copy = recorder.Build();
+      auto desc = group.op_name + "[variant " + std::to_string(i + 1) + "]";
+      EXPECT_EQ(sk_copy->op_count(), group.variants[i].sk_op_count) << desc;
+      EXPECT_EQ(sk_copy->bytes(), group.variants[i].sk_byte_count) << desc;
+      if (group.variants[i].sk_version_matches()) {
+        EXPECT_EQ(sk_copy->bounds(), dl->bounds()) << desc;
+        EXPECT_TRUE(dl->Equals(*sk_copy)) << desc << " == sk_copy";
+        EXPECT_TRUE(sk_copy->Equals(*dl)) << "sk_copy == " << desc;
+      } else {
+        // No assertion on bounds
+        // they could be equal, hard to tell
+        EXPECT_FALSE(dl->Equals(*sk_copy)) << desc << " != sk_copy";
+        EXPECT_FALSE(sk_copy->Equals(*dl)) << "sk_copy != " << desc;
       }
     }
   }
@@ -684,6 +691,8 @@ TEST(DisplayList, SingleOpDisplayListsCompareToEachOther) {
           ASSERT_TRUE(lists1[i]->Equals(*lists2[j])) << desc;
           ASSERT_TRUE(lists2[j]->Equals(*lists1[i])) << desc;
         } else {
+          // No assertion on op/byte counts or bounds
+          // they may or may not be equal between variants
           ASSERT_FALSE(lists1[i]->Equals(*lists2[j])) << desc;
           ASSERT_FALSE(lists2[j]->Equals(*lists1[i])) << desc;
         }
