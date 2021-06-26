@@ -11,7 +11,7 @@ import 'image.dart';
 import 'skia_object_cache.dart';
 
 /// Implements [ui.Picture] on top of [SkPicture].
-/// 
+///
 /// Unlike most other [ManagedSkiaObject] implementations, instances of this
 /// class may have their Skia counterparts deleted before finalization registry
 /// or [SkiaObjectCache] decide to delete it.
@@ -31,13 +31,13 @@ class CkPicture extends ManagedSkiaObject<SkPicture> implements ui.Picture {
   int get approximateBytesUsed => 0;
 
   /// Whether the picture has been disposed of.
-  /// 
+  ///
   /// This is indended to be used in tests and assertions only.
   bool get debugIsDisposed => _isDisposed;
 
   /// This is set to true when [dispose] is called and is never reset back to
   /// false.
-  /// 
+  ///
   /// This extra flag is necessary on top of [rawSkiaObject] because
   /// [rawSkiaObject] being null does not indicate permanent deletion. See
   /// similar flag [SkiaObjectBox.isDeletedPermanently].
