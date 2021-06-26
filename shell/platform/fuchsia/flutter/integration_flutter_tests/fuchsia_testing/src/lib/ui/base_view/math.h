@@ -8,7 +8,8 @@
 #define SRC_LIB_UI_BASE_VIEW_MATH_H_
 
 #include <fuchsia/ui/gfx/cpp/fidl.h>
-#include <lib/fostr/fidl/fuchsia/ui/gfx/formatting.h>
+
+#include "lib/fostr/fidl/fuchsia.ui.gfx/amendments.h"
 
 namespace scenic {
 

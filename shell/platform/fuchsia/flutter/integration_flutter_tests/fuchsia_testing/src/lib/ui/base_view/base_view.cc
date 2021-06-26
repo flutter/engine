@@ -6,7 +6,8 @@
 
 #include "src/lib/ui/base_view/base_view.h"
 
-#include <lib/fostr/fidl/fuchsia/ui/gfx/formatting.h>
+// TODO(richkadel): Comment out dependencies on `fostr` generated code:
+// #include <lib/fostr/fidl/fuchsia/ui/gfx/formatting.h>
 #include <lib/syslog/cpp/macros.h>
 #include <lib/trace/event.h>
 #include <lib/ui/scenic/cpp/commands.h>

@@ -6,7 +6,8 @@
 
 #include "src/ui/testing/views/background_view.h"
 
-#include <lib/fostr/fidl/fuchsia/ui/gfx/formatting.h>
+// TODO(richkadel): Comment out dependencies on `fostr` generated code:
+// #include <lib/fostr/fidl/fuchsia/ui/gfx/formatting.h>
 #include <lib/syslog/cpp/macros.h>
 #include <zircon/status.h>
 
