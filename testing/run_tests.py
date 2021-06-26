@@ -281,9 +281,9 @@ def RunDartTest(build_dir, test_packages, dart_file, verbose_dart_snapshot, mult
                       forbidden_output=forbidden_output, expect_failure=expect_failure)
 
 
-def EnsureDebugUnoptSkyPackagesAreBuilt(check_only):
+def EnsureDebugUnoptSkyPackagesAreBuilt(do_build):
   variant_out_dir = os.path.join(out_dir, 'host_debug_unopt')
-  if check_only:
+  if not do_build:
     message = []
     message.append('gn --runtime-mode debug --unopt --no-lto')
     message.append('ninja -C %s flutter/sky/packages' % variant_out_dir)
@@ -312,10 +312,10 @@ def EnsureDebugUnoptSkyPackagesAreBuilt(check_only):
   RunCmd(ninja_command, cwd=buildroot_dir)
 
 
-def EnsureJavaTestsAreBuilt(android_out_dir, check_only):
+def EnsureJavaTestsAreBuilt(android_out_dir, do_build):
   """Builds the engine variant and the test jar containing the JUnit tests"""
 
-  if check_only:
+  if not do_build:
     tmp_out_dir = os.path.join(out_dir, android_out_dir)
     message = []
     message.append('gn --android --unoptimized --runtime-mode=debug --no-lto')
@@ -347,10 +347,10 @@ def EnsureJavaTestsAreBuilt(android_out_dir, check_only):
   RunCmd(ninja_command, cwd=buildroot_dir)
 
 
-def EnsureIosTestsAreBuilt(ios_out_dir, check_only):
+def EnsureIosTestsAreBuilt(ios_out_dir, do_build):
   """Builds the engine variant and the test dylib containing the XCTests"""
 
-  if check_only:
+  if not do_build:
     tmp_out_dir = os.path.join(out_dir, ios_out_dir)
     message = []
     message.append('gn --ios --unoptimized --runtime-mode=debug --no-lto --simulator')
@@ -405,7 +405,7 @@ def RunJavaTests(filter, android_variant='android_debug_unopt', build_tests=Fals
   """Runs the Java JUnit unit tests for the Android embedding"""
   AssertExpectedJavaVersion()
   android_out_dir = os.path.join(out_dir, android_variant)
-  EnsureJavaTestsAreBuilt(android_out_dir, not build_tests)
+  EnsureJavaTestsAreBuilt(android_out_dir, build_tests)
 
   embedding_deps_dir = os.path.join(buildroot_dir, 'third_party', 'android_embedding_dependencies', 'lib')
   classpath = map(str, [
@@ -433,7 +433,7 @@ def RunObjcTests(ios_variant='ios_debug_sim_unopt', build_tests=False):
   """Runs Objective-C XCTest unit tests for the iOS embedding"""
   AssertExpectedXcodeVersion()
   ios_out_dir = os.path.join(out_dir, ios_variant)
-  EnsureIosTestsAreBuilt(ios_out_dir, not build_tests)
+  EnsureIosTestsAreBuilt(ios_out_dir, build_tests)
 
   ios_unit_test_dir = os.path.join(buildroot_dir, 'flutter', 'testing', 'ios', 'IosUnitTests')
 
@@ -457,7 +457,7 @@ def RunDartTests(build_dir, filter, verbose_dart_snapshot, build_tests=False):
   # This one is a bit messy. The pubspec.yaml at flutter/testing/dart/pubspec.yaml
   # has dependencies that are hardcoded to point to the sky packages at host_debug_unopt/
   # Before running Dart tests, make sure to run just that target (NOT the whole engine)
-  EnsureDebugUnoptSkyPackagesAreBuilt(not build_tests)
+  EnsureDebugUnoptSkyPackagesAreBuilt(build_tests)
 
   # Now that we have the Sky packages at the hardcoded location, run `pub get`.
   RunEngineExecutable(
