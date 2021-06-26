@@ -524,7 +524,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   int _textInputClient;
   const char* _selectionAffinity;
   FlutterTextRange* _selectedTextRange;
-  UIInputViewController* _inputViewcController;
+  UIInputViewController* _inputViewController;
   CGRect _cachedFirstRect;
   // Whether to show the system keyboard when this view
   // becomes the first responder. Typically set to false
@@ -645,10 +645,10 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     return nil;
   }
 
-  if (!_inputViewcController) {
-    _inputViewcController = [UIInputViewController new];
+  if (!_inputViewController) {
+    _inputViewController = [UIInputViewController new];
   }
-  return _inputViewcController;
+  return _inputViewController;
 }
 
 - (id<FlutterTextInputDelegate>)textInputDelegate {
@@ -675,7 +675,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   [_selectedTextRange release];
   [_tokenizer release];
   [_autofillId release];
-  [_inputViewcController release];
+  [_inputViewController release];
   [super dealloc];
 }
 
