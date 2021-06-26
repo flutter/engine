@@ -285,15 +285,16 @@ TEST(AndroidExternalViewEmbedder, SubmitFrame) {
   auto window = fml::MakeRefCounted<AndroidNativeWindow>(nullptr);
   auto gr_context = GrDirectContext::MakeMock(nullptr);
   auto frame_size = SkISize::Make(1000, 1000);
+  SurfaceFrame::FramebufferInfo framebuffer_info;
   auto surface_factory = std::make_shared<TestAndroidSurfaceFactory>(
-      [&android_context, gr_context, window, frame_size]() {
+      [&android_context, gr_context, window, frame_size, framebuffer_info]() {
         auto surface_frame_1 = std::make_unique<SurfaceFrame>(
-            SkSurface::MakeNull(1000, 1000), false,
+            SkSurface::MakeNull(1000, 1000), framebuffer_info,
             [](const SurfaceFrame& surface_frame, SkCanvas* canvas) {
               return true;
             });
         auto surface_frame_2 = std::make_unique<SurfaceFrame>(
-            SkSurface::MakeNull(1000, 1000), false,
+            SkSurface::MakeNull(1000, 1000), framebuffer_info,
             [](const SurfaceFrame& surface_frame, SkCanvas* canvas) {
               return true;
             });
@@ -325,7 +326,7 @@ TEST(AndroidExternalViewEmbedder, SubmitFrame) {
   {
     auto did_submit_frame = false;
     auto surface_frame = std::make_unique<SurfaceFrame>(
-        SkSurface::MakeNull(1000, 1000), false,
+        SkSurface::MakeNull(1000, 1000), framebuffer_info,
         [&did_submit_frame](const SurfaceFrame& surface_frame,
                             SkCanvas* canvas) mutable {
           if (canvas != nullptr) {
@@ -392,7 +393,7 @@ TEST(AndroidExternalViewEmbedder, SubmitFrame) {
 
     auto did_submit_frame = false;
     auto surface_frame = std::make_unique<SurfaceFrame>(
-        SkSurface::MakeNull(1000, 1000), false,
+        SkSurface::MakeNull(1000, 1000), framebuffer_info,
         [&did_submit_frame](const SurfaceFrame& surface_frame,
                             SkCanvas* canvas) mutable {
           if (canvas != nullptr) {
@@ -457,7 +458,7 @@ TEST(AndroidExternalViewEmbedder, SubmitFrame) {
 
     auto did_submit_frame = false;
     auto surface_frame = std::make_unique<SurfaceFrame>(
-        SkSurface::MakeNull(1000, 1000), false,
+        SkSurface::MakeNull(1000, 1000), framebuffer_info,
         [&did_submit_frame](const SurfaceFrame& surface_frame,
                             SkCanvas* canvas) mutable {
           if (canvas != nullptr) {
@@ -485,10 +486,11 @@ TEST(AndroidExternalViewEmbedder, SubmitFrame__overlayComposition) {
   auto window = fml::MakeRefCounted<AndroidNativeWindow>(nullptr);
   auto gr_context = GrDirectContext::MakeMock(nullptr);
   auto frame_size = SkISize::Make(1000, 1000);
+  SurfaceFrame::FramebufferInfo framebuffer_info;
   auto surface_factory = std::make_shared<TestAndroidSurfaceFactory>(
-      [&android_context, gr_context, window, frame_size]() {
+      [&android_context, gr_context, window, frame_size, framebuffer_info]() {
         auto surface_frame_1 = std::make_unique<SurfaceFrame>(
-            SkSurface::MakeNull(1000, 1000), false,
+            SkSurface::MakeNull(1000, 1000), framebuffer_info,
             [](const SurfaceFrame& surface_frame, SkCanvas* canvas) {
               return true;
             });
@@ -568,7 +570,7 @@ TEST(AndroidExternalViewEmbedder, SubmitFrame__overlayComposition) {
       .Times(2);
 
   auto surface_frame = std::make_unique<SurfaceFrame>(
-      SkSurface::MakeNull(1000, 1000), false,
+      SkSurface::MakeNull(1000, 1000), framebuffer_info,
       [](const SurfaceFrame& surface_frame, SkCanvas* canvas) mutable {
         return true;
       });
@@ -587,10 +589,11 @@ TEST(AndroidExternalViewEmbedder, SubmitFrame__platformViewWithoutAnyOverlay) {
   auto window = fml::MakeRefCounted<AndroidNativeWindow>(nullptr);
   auto gr_context = GrDirectContext::MakeMock(nullptr);
   auto frame_size = SkISize::Make(1000, 1000);
+  SurfaceFrame::FramebufferInfo framebuffer_info;
   auto surface_factory = std::make_shared<TestAndroidSurfaceFactory>(
-      [&android_context, gr_context, window, frame_size]() {
+      [&android_context, gr_context, window, frame_size, framebuffer_info]() {
         auto surface_frame_1 = std::make_unique<SurfaceFrame>(
-            SkSurface::MakeNull(1000, 1000), false,
+            SkSurface::MakeNull(1000, 1000), framebuffer_info,
             [](const SurfaceFrame& surface_frame, SkCanvas* canvas) {
               return true;
             });
@@ -635,7 +638,7 @@ TEST(AndroidExternalViewEmbedder, SubmitFrame__platformViewWithoutAnyOverlay) {
   EXPECT_CALL(*jni_mock, FlutterViewCreateOverlaySurface()).Times(0);
 
   auto surface_frame = std::make_unique<SurfaceFrame>(
-      SkSurface::MakeNull(1000, 1000), false,
+      SkSurface::MakeNull(1000, 1000), framebuffer_info,
       [](const SurfaceFrame& surface_frame, SkCanvas* canvas) mutable {
         return true;
       });
@@ -673,10 +676,11 @@ TEST(AndroidExternalViewEmbedder, DestroyOverlayLayersOnSizeChange) {
   auto window = fml::MakeRefCounted<AndroidNativeWindow>(nullptr);
   auto gr_context = GrDirectContext::MakeMock(nullptr);
   auto frame_size = SkISize::Make(1000, 1000);
+  SurfaceFrame::FramebufferInfo framebuffer_info;
   auto surface_factory = std::make_shared<TestAndroidSurfaceFactory>(
-      [&android_context, gr_context, window, frame_size]() {
+      [&android_context, gr_context, window, frame_size, framebuffer_info]() {
         auto surface_frame_1 = std::make_unique<SurfaceFrame>(
-            SkSurface::MakeNull(1000, 1000), false,
+            SkSurface::MakeNull(1000, 1000), framebuffer_info,
             [](const SurfaceFrame& surface_frame, SkCanvas* canvas) {
               return true;
             });
@@ -730,10 +734,12 @@ TEST(AndroidExternalViewEmbedder, DestroyOverlayLayersOnSizeChange) {
     EXPECT_CALL(*jni_mock,
                 FlutterViewDisplayOverlaySurface(0, 50, 50, 200, 200));
 
-    auto surface_frame =
-        std::make_unique<SurfaceFrame>(SkSurface::MakeNull(1000, 1000), false,
-                                       [](const SurfaceFrame& surface_frame,
-                                          SkCanvas* canvas) { return true; });
+    SurfaceFrame::FramebufferInfo framebuffer_info;
+    auto surface_frame = std::make_unique<SurfaceFrame>(
+        SkSurface::MakeNull(1000, 1000), framebuffer_info,
+        [](const SurfaceFrame& surface_frame, SkCanvas* canvas) {
+          return true;
+        });
     embedder->SubmitFrame(gr_context.get(), std::move(surface_frame), nullptr);
 
     EXPECT_CALL(*jni_mock, FlutterViewEndFrame());
@@ -755,10 +761,11 @@ TEST(AndroidExternalViewEmbedder, DoesNotDestroyOverlayLayersOnSizeChange) {
   auto window = fml::MakeRefCounted<AndroidNativeWindow>(nullptr);
   auto gr_context = GrDirectContext::MakeMock(nullptr);
   auto frame_size = SkISize::Make(1000, 1000);
+  SurfaceFrame::FramebufferInfo framebuffer_info;
   auto surface_factory = std::make_shared<TestAndroidSurfaceFactory>(
-      [&android_context, gr_context, window, frame_size]() {
+      [&android_context, gr_context, window, frame_size, framebuffer_info]() {
         auto surface_frame_1 = std::make_unique<SurfaceFrame>(
-            SkSurface::MakeNull(1000, 1000), false,
+            SkSurface::MakeNull(1000, 1000), framebuffer_info,
             [](const SurfaceFrame& surface_frame, SkCanvas* canvas) {
               return true;
             });
@@ -812,10 +819,11 @@ TEST(AndroidExternalViewEmbedder, DoesNotDestroyOverlayLayersOnSizeChange) {
     EXPECT_CALL(*jni_mock,
                 FlutterViewDisplayOverlaySurface(0, 50, 50, 200, 200));
 
-    auto surface_frame =
-        std::make_unique<SurfaceFrame>(SkSurface::MakeNull(1000, 1000), false,
-                                       [](const SurfaceFrame& surface_frame,
-                                          SkCanvas* canvas) { return true; });
+    auto surface_frame = std::make_unique<SurfaceFrame>(
+        SkSurface::MakeNull(1000, 1000), framebuffer_info,
+        [](const SurfaceFrame& surface_frame, SkCanvas* canvas) {
+          return true;
+        });
     embedder->SubmitFrame(gr_context.get(), std::move(surface_frame), nullptr);
 
     EXPECT_CALL(*jni_mock, FlutterViewEndFrame());

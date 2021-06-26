@@ -48,7 +48,7 @@ class AndroidSurfaceMock final : public GPUSurfaceGLDelegate,
   bool GLContextClearCurrent() override;
 
   // |GPUSurfaceGLDelegate|
-  bool GLContextPresent(uint32_t fbo_id) override;
+  bool GLContextPresent(uint32_t fbo_id, std::vector<SkIRect> damage) override;
 
   // |GPUSurfaceGLDelegate|
   intptr_t GLContextFBO(GLFrameInfo frame_info) const override;

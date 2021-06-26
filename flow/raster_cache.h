@@ -139,7 +139,13 @@ class RasterCache {
                bool is_complex,
                bool will_change);
 
+  // If there is cache entry for this picture, mark it as used for this frame
+  // in order to not get evicted
+  void Touch(SkPicture* picture, const SkMatrix& transformation_matrix);
+
   void Prepare(PrerollContext* context, Layer* layer, const SkMatrix& ctm);
+
+  void Touch(Layer* layer, const SkMatrix& ctm);
 
   // Find the raster cache for the picture and draw it to the canvas.
   //

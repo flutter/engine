@@ -965,8 +965,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams_1));
   flutterPlatformViewsController->CompositeEmbeddedView(2);
+  flutter::SurfaceFrame::FramebufferInfo framebuffer_info;
   auto mock_surface = std::make_unique<flutter::SurfaceFrame>(
-      nullptr, true,
+      nullptr, framebuffer_info,
       [](const flutter::SurfaceFrame& surface_frame, SkCanvas* canvas) { return false; });
   auto is_gpu_disabled = std::make_shared<fml::SyncSwitch>();
   is_gpu_disabled->SetSwitch(false);
@@ -978,7 +979,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams_2));
   flutterPlatformViewsController->CompositeEmbeddedView(2);
   auto mock_surface_submit_false = std::make_unique<flutter::SurfaceFrame>(
-      nullptr, true,
+      nullptr, framebuffer_info,
       [](const flutter::SurfaceFrame& surface_frame, SkCanvas* canvas) { return true; });
   auto gpu_is_disabled = std::make_shared<fml::SyncSwitch>();
   gpu_is_disabled->SetSwitch(false);

@@ -97,7 +97,9 @@ bool EmbedderExternalView::Render(const EmbedderRenderTarget& render_target) {
   }
 
   canvas->setMatrix(surface_transformation_);
+#if 0  // FIXME(knopp): This interferes with partial repaint (it is not clipped)
   canvas->clear(SK_ColorTRANSPARENT);
+#endif
   canvas->drawPicture(picture);
   canvas->flush();
 
