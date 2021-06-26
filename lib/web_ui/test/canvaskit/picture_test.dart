@@ -41,6 +41,7 @@ void testMain() {
         // A Picture that's been disposed of can no longer be resurrected
         expect(() => picture.resurrect(), throwsAssertionError);
         expect(() => picture.toImage(10, 10), throwsAssertionError);
+        expect(() => picture.dispose(), throwsAssertionError);
       });
 
       test('can be deleted by SkiaObjectCache', () {

@@ -45,9 +45,7 @@ class CkPicture extends ManagedSkiaObject<SkPicture> implements ui.Picture {
 
   @override
   void dispose() {
-    if (_isDisposed) {
-      return;
-    }
+    assert(!_isDisposed, 'Object has been disposed.');
     if (Instrumentation.enabled) {
       Instrumentation.instance.incrementCounter('Picture disposed');
     }
