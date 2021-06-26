@@ -55,8 +55,8 @@ bool DisplayListLayer::Compare(DiffContext::Statistics& statistics,
     statistics.AddSameInstancePicture();
     return true;
   }
-  auto op_cnt_1 = dl1->opCount();
-  auto op_cnt_2 = dl2->opCount();
+  auto op_cnt_1 = dl1->op_count();
+  auto op_cnt_2 = dl2->op_count();
   if (op_cnt_1 != op_cnt_2 || dl1->bounds() != dl2->bounds()) {
     statistics.AddNewPicture();
     return false;

@@ -131,7 +131,7 @@ static bool IsDisplayListWorthRasterizing(DisplayList* display_list,
 
   // TODO(abarth): We should find a better heuristic here that lets us avoid
   // wasting memory on trivial layers that are easy to re-rasterize every frame.
-  return display_list->opCount() > 5;
+  return display_list->op_count() > 5;
 }
 
 /// @note Procedure doesn't copy all closures.
@@ -307,7 +307,7 @@ bool RasterCache::Prepare(GrDirectContext* context,
     return false;
   }
 
-  DisplayListRasterCacheKey cache_key(display_list->uniqueID(),
+  DisplayListRasterCacheKey cache_key(display_list->unique_id(),
                                       transformation_matrix);
 
   // Creates an entry, if not present prior.
@@ -347,7 +347,7 @@ bool RasterCache::Draw(const SkPicture& picture, SkCanvas& canvas) const {
 
 bool RasterCache::Draw(const DisplayList& display_list,
                        SkCanvas& canvas) const {
-  DisplayListRasterCacheKey cache_key(display_list.uniqueID(),
+  DisplayListRasterCacheKey cache_key(display_list.unique_id(),
                                       canvas.getTotalMatrix());
   auto it = display_list_cache_.find(cache_key);
   if (it == display_list_cache_.end()) {

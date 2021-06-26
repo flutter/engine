@@ -64,6 +64,7 @@ enum class DisplayListCompare {
 struct DLOp {
   DisplayListOpType type : 8;
   uint32_t size : 24;
+
   DisplayListCompare equals(const DLOp* other) const {
     return DisplayListCompare::kUseBulkCompare;
   }
@@ -395,11 +396,33 @@ struct Transform3x3Op final : DLOp {
   };
 DEFINE_CLIP_SHAPE_OP(Rect, Intersect)
 DEFINE_CLIP_SHAPE_OP(RRect, Intersect)
-DEFINE_CLIP_SHAPE_OP(Path, Intersect)
 DEFINE_CLIP_SHAPE_OP(Rect, Difference)
 DEFINE_CLIP_SHAPE_OP(RRect, Difference)
-DEFINE_CLIP_SHAPE_OP(Path, Difference)
 #undef DEFINE_CLIP_SHAPE_OP
+
+#define DEFINE_CLIP_PATH_OP(clipop)                                      \
+  struct Clip##clipop##PathOp final : DLOp {                             \
+    static const auto kType = DisplayListOpType::kClip##clipop##Path;    \
+                                                                         \
+    Clip##clipop##PathOp(SkPath path, bool is_aa)                        \
+        : is_aa(is_aa), path(path) {}                                    \
+                                                                         \
+    const bool is_aa;                                                    \
+    const SkPath path;                                                   \
+                                                                         \
+    void dispatch(Dispatcher& dispatcher) const {                        \
+      dispatcher.clipPath(path, is_aa, SkClipOp::k##clipop);             \
+    }                                                                    \
+                                                                         \
+    DisplayListCompare equals(const Clip##clipop##PathOp* other) const { \
+      return is_aa == other->is_aa && path == other->path                \
+                 ? DisplayListCompare::kEqual                            \
+                 : DisplayListCompare::kNotEqual;                        \
+    }                                                                    \
+  };
+DEFINE_CLIP_PATH_OP(Intersect)
+DEFINE_CLIP_PATH_OP(Difference)
+#undef DEFINE_CLIP_PATH_OP
 
 // 4 byte header + no payload uses minimum 8 bytes (4 bytes unused)
 struct DrawPaintOp final : DLOp {
@@ -427,9 +450,8 @@ struct DrawColorOp final : DLOp {
 // The common data is a 4 byte header with an unused 4 bytes
 // SkRect is 16 more bytes, using 20 bytes which rounds up to 24 bytes total
 //        (4 bytes unused)
+// SkOval is same as SkRect
 // SkRRect is 52 more bytes, which packs efficiently into 56 bytes total
-// SkPath is 16 more bytes, using 20 bytes which rounds up to 24 bytes total
-//        (4 bytes unused)
 #define DEFINE_DRAW_1ARG_OP(op_name, arg_type, arg_name)         \
   struct Draw##op_name##Op final : DLOp {                        \
     static const auto kType = DisplayListOpType::kDraw##op_name; \
@@ -445,8 +467,24 @@ struct DrawColorOp final : DLOp {
 DEFINE_DRAW_1ARG_OP(Rect, SkRect, rect)
 DEFINE_DRAW_1ARG_OP(Oval, SkRect, oval)
 DEFINE_DRAW_1ARG_OP(RRect, SkRRect, rrect)
-DEFINE_DRAW_1ARG_OP(Path, SkPath, path)
 #undef DEFINE_DRAW_1ARG_OP
+
+// 4 byte header + 16 byte payload uses 20 bytes but is rounded up to 24 bytes
+// (4 bytes unused)
+struct DrawPathOp final : DLOp {
+  static const auto kType = DisplayListOpType::kDrawPath;
+
+  DrawPathOp(SkPath path) : path(path) {}
+
+  const SkPath path;
+
+  void dispatch(Dispatcher& dispatcher) const { dispatcher.drawPath(path); }
+
+  DisplayListCompare equals(const DrawPathOp* other) const {
+    return path == other->path ? DisplayListCompare::kEqual
+                               : DisplayListCompare::kNotEqual;
+  }
+};
 
 // The common data is a 4 byte header with an unused 4 bytes
 // 2 x SkPoint is 16 more bytes, using 20 bytes rounding up to 24 bytes total
@@ -1126,29 +1164,46 @@ void DisplayListBuilder::transform3x3(SkScalar mxx,
 }
 
 void DisplayListBuilder::clipRect(const SkRect& rect,
-                                  bool isAA,
+                                  bool is_aa,
                                   SkClipOp clip_op) {
   clip_op == SkClipOp::kIntersect  //
-      ? Push<ClipIntersectRectOp>(0, rect, isAA)
-      : Push<ClipDifferenceRectOp>(0, rect, isAA);
+      ? Push<ClipIntersectRectOp>(0, rect, is_aa)
+      : Push<ClipDifferenceRectOp>(0, rect, is_aa);
 }
 void DisplayListBuilder::clipRRect(const SkRRect& rrect,
-                                   bool isAA,
+                                   bool is_aa,
                                    SkClipOp clip_op) {
   if (rrect.isRect()) {
-    clipRect(rrect.rect(), isAA, clip_op);
+    clipRect(rrect.rect(), is_aa, clip_op);
   } else {
     clip_op == SkClipOp::kIntersect  //
-        ? Push<ClipIntersectRRectOp>(0, rrect, isAA)
-        : Push<ClipDifferenceRRectOp>(0, rrect, isAA);
+        ? Push<ClipIntersectRRectOp>(0, rrect, is_aa)
+        : Push<ClipDifferenceRRectOp>(0, rrect, is_aa);
   }
 }
 void DisplayListBuilder::clipPath(const SkPath& path,
-                                  bool isAA,
+                                  bool is_aa,
                                   SkClipOp clip_op) {
+  if (!path.isInverseFillType()) {
+    SkRect rect;
+    if (path.isRect(&rect)) {
+      this->clipRect(rect, is_aa, clip_op);
+      return;
+    }
+    SkRRect rrect;
+    if (path.isOval(&rect)) {
+      rrect.setOval(rect);
+      this->clipRRect(rrect, is_aa, clip_op);
+      return;
+    }
+    if (path.isRRect(&rrect)) {
+      this->clipRRect(rrect, is_aa, clip_op);
+      return;
+    }
+  }
   clip_op == SkClipOp::kIntersect  //
-      ? Push<ClipIntersectPathOp>(0, path, isAA)
-      : Push<ClipDifferencePathOp>(0, path, isAA);
+      ? Push<ClipIntersectPathOp>(0, path, is_aa)
+      : Push<ClipDifferencePathOp>(0, path, is_aa);
 }
 
 void DisplayListBuilder::drawPaint() {

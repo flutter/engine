@@ -178,8 +178,8 @@ class DisplayList : public SkRefCnt {
   void RenderTo(SkCanvas* canvas) const;
 
   size_t bytes() const { return used_; }
-  int opCount() const { return op_count_; }
-  uint32_t uniqueID() const { return unique_id_; }
+  int op_count() const { return op_count_; }
+  uint32_t unique_id() const { return unique_id_; }
 
   const SkRect& bounds() {
     if (bounds_.width() < 0.0) {
