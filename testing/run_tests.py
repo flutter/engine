@@ -284,7 +284,12 @@ def RunDartTest(build_dir, test_packages, dart_file, verbose_dart_snapshot, mult
 def EnsureDebugUnoptSkyPackagesAreBuilt(check_only):
   variant_out_dir = os.path.join(out_dir, 'host_debug_unopt')
   if check_only:
-    assert os.path.exists(variant_out_dir), "%s doesn't exist. Run GN to generate the directory first" % variant_out_dir
+    message = []
+    message.append('gn --runtime-mode debug --unopt --no-lto')
+    message.append('ninja -C %s flutter/sky/packages' % variant_out_dir)
+    final_message = '%s doesn\'t exist. Please run the following commands: \n%s' % (
+        variant_out_dir, '\n'.join(message))
+    assert os.path.exists(variant_out_dir), final_message
     return
 
   # We don't want to blow away any custom GN args the caller may have already set.
@@ -312,7 +317,12 @@ def EnsureJavaTestsAreBuilt(android_out_dir, check_only):
 
   if check_only:
     tmp_out_dir = os.path.join(out_dir, android_out_dir)
-    assert os.path.exists(tmp_out_dir), "%s doesn't exist. Run GN to generate the directory first" % android_out_dir
+    message = []
+    message.append('gn --android --unoptimized --runtime-mode=debug --no-lto')
+    message.append('ninja -C %s flutter/shell/platform/android:robolectric_tests' % android_out_dir)
+    final_message = '%s doesn\'t exist. Please run the following commands: \n%s' % (
+        android_out_dir, '\n'.join(message))
+    assert os.path.exists(tmp_out_dir), final_message
     return
 
   # We don't want to blow away any custom GN args the caller may have already set.
@@ -342,7 +352,12 @@ def EnsureIosTestsAreBuilt(ios_out_dir, check_only):
 
   if check_only:
     tmp_out_dir = os.path.join(out_dir, ios_out_dir)
-    assert os.path.exists(tmp_out_dir), "%s doesn't exist. Run GN to generate the directory first" % ios_out_dir
+    message = []
+    message.append('gn --ios --unoptimized --runtime-mode=debug --no-lto --simulator')
+    message.append('autoninja -C %s ios_test_flutter' % ios_out_dir)
+    final_message = '%s doesn\'t exist. Please run the following commands: \n%s' % (
+        ios_out_dir, '\n'.join(message))
+    assert os.path.exists(tmp_out_dir), final_message
     return
   # We don't want to blow away any custom GN args the caller may have already set.
   if not os.path.exists(ios_out_dir):
@@ -538,6 +553,37 @@ def RunBenchmarkTests(build_dir):
       flags=opts,
       cwd=test_dir)
 
+def RunGithooksTests(build_dir):
+  test_dir = os.path.join(buildroot_dir, 'flutter', 'tools', 'githooks')
+  dart_tests = glob.glob('%s/test/*_test.dart' % test_dir)
+  for dart_test_file in dart_tests:
+    opts = [
+      '--disable-dart-dev',
+      dart_test_file]
+    RunEngineExecutable(
+      build_dir,
+      os.path.join('dart-sdk', 'bin', 'dart'),
+      None,
+      flags=opts,
+      cwd=test_dir)
+
+
+def RunClangTidyTests(build_dir):
+  test_dir = os.path.join(buildroot_dir, 'flutter', 'tools', 'clang_tidy')
+  dart_tests = glob.glob('%s/test/*_test.dart' % test_dir)
+  for dart_test_file in dart_tests:
+    opts = [
+      '--disable-dart-dev',
+      dart_test_file,
+      os.path.join(build_dir, 'compile_commands.json'),
+      os.path.join(buildroot_dir, 'flutter')]
+    RunEngineExecutable(
+      build_dir,
+      os.path.join('dart-sdk', 'bin', 'dart'),
+      None,
+      flags=opts,
+      cwd=test_dir)
+
 
 def main():
   parser = argparse.ArgumentParser()
@@ -582,6 +628,8 @@ def main():
     dart_filter = args.dart_filter.split(',') if args.dart_filter else None
     RunDartSmokeTest(build_dir, args.verbose_dart_snapshot)
     RunLitetestTests(build_dir)
+    RunGithooksTests(build_dir)
+    RunClangTidyTests(build_dir)
     RunDartTests(build_dir, dart_filter, args.verbose_dart_snapshot, args.build_tests)
     RunConstFinderTests(build_dir)
     RunFrontEndServerTests(build_dir)
