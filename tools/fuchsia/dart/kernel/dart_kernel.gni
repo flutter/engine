@@ -116,6 +116,11 @@ template("_convert_kernel_manifest") {
 #    the build. If false, the --no-link-platform flag will be passed to the
 #    compiler. Defaults to false
 template("dart_kernel") {
+  # TODO(richkadel): This template name `dart_kernel()`, and filename, `dart_kernel.gni`
+  # match pre-existing template and filename in flutter `tools/fuchsia/dart_kernel.gni`.
+  # The templates do different things, and may both be necessary. Since THIS `dart_kernel()`
+  # mirrors the `dart_kernel()` template in fuchsia.git (with some adaptation), I
+  # think we may want to rename the old `dart_kernel`.
   assert(defined(invoker.platform_name), "dart_kernel() requires platform_name")
   assert(defined(invoker.packages_path),
          "dart_kernel() requires the path to the package config")
