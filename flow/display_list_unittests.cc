@@ -594,33 +594,42 @@ TEST(DisplayList, SingleOpSizes) {
   }
 }
 
-TEST(DisplayList, SingleOpCompares) {
+TEST(DisplayList, SingleOpDisplayListsNotEmpty) {
   sk_sp<DisplayList> empty = DisplayListBuilder().Build();
   for (auto& group : allGroups) {
-    std::vector<sk_sp<DisplayList>> lists1;
-    std::vector<sk_sp<DisplayList>> lists2;
     for (size_t i = 0; i < group.variants.size(); i++) {
-      lists1.push_back(group.variants[i].Build());
-      lists2.push_back(group.variants[i].Build());
+      sk_sp<DisplayList> dl = group.variants[i].Build();
       auto desc =
-          group.op_name + "(variant " + std::to_string(i + 1) + " == empty)";
-      ASSERT_FALSE(lists1[i]->Equals(*empty)) << desc;
-      ASSERT_FALSE(lists2[i]->Equals(*empty)) << desc;
-      ASSERT_FALSE(empty->Equals(*lists1[i])) << desc;
-      ASSERT_FALSE(empty->Equals(*lists2[i])) << desc;
+          group.op_name + "(variant " + std::to_string(i + 1) + " != empty)";
+      ASSERT_FALSE(dl->Equals(*empty)) << desc;
+      ASSERT_FALSE(empty->Equals(*dl)) << desc;
+    }
+  }
+}
 
+TEST(DisplayList, SingleOpDisplayListsRecapturedAreEqual) {
+  for (auto& group : allGroups) {
+    for (size_t i = 0; i < group.variants.size(); i++) {
+      sk_sp<DisplayList> dl = group.variants[i].Build();
       // Verify recapturing the replay of the display list is Equals()
       // when dispatching directly from the DL to another builder
       DisplayListBuilder builder;
-      lists1[i]->Dispatch(builder);
+      dl->Dispatch(builder);
       sk_sp<DisplayList> copy = builder.Build();
-      desc = group.op_name + "(variant " + std::to_string(i + 1) + " == copy)";
-      ASSERT_EQ(copy->op_count(), lists1[i]->op_count()) << desc;
-      ASSERT_EQ(copy->bytes(), lists1[i]->bytes()) << desc;
-      ASSERT_EQ(copy->bounds(), lists1[i]->bounds()) << desc;
-      ASSERT_TRUE(copy->Equals(*lists1[i])) << desc;
-      ASSERT_TRUE(lists1[i]->Equals(*copy)) << desc;
+      auto desc =
+          group.op_name + "(variant " + std::to_string(i + 1) + " == copy)";
+      ASSERT_EQ(copy->op_count(), dl->op_count()) << desc;
+      ASSERT_EQ(copy->bytes(), dl->bytes()) << desc;
+      ASSERT_EQ(copy->bounds(), dl->bounds()) << desc;
+      ASSERT_TRUE(copy->Equals(*dl)) << desc;
+      ASSERT_TRUE(dl->Equals(*copy)) << desc;
+    }
+  }
+}
 
+TEST(DisplayList, SingleOpDisplayListsRecapturedViaSkCanvasAreEqual) {
+  for (auto& group : allGroups) {
+    for (size_t i = 0; i < group.variants.size(); i++) {
       // Verify recapturing the replay of the display list is Equals()
       // when translating through the SkCanvas interface
       // Note that sometimes the rendering ops can be optimized out by
@@ -631,25 +640,39 @@ TEST(DisplayList, SingleOpCompares) {
       // drawPicture/DisplayList because SkCanvas sometimes inlines
       // the SkPicture and it does not understand a DisplayList.
       if (group.variants[i].sk_op_count >= 0) {
-        DisplayListCanvasRecorder recorder(lists1[i]->bounds());
-        lists1[i]->RenderTo(&recorder);
+        sk_sp<DisplayList> dl = group.variants[i].Build();
+
+        DisplayListCanvasRecorder recorder(dl->bounds());
+        dl->RenderTo(&recorder);
         sk_sp<DisplayList> sk_copy = recorder.Build();
-        desc = group.op_name + "(variant " + std::to_string(i + 1) +
-               " == sk_copy)";
+        auto desc = group.op_name + "(variant " + std::to_string(i + 1) +
+                    " == sk_copy)";
         EXPECT_EQ(sk_copy->op_count(), group.variants[i].sk_op_count) << desc;
         EXPECT_EQ(sk_copy->bytes(), group.variants[i].sk_byte_count) << desc;
         if (group.variants[i].op_count == group.variants[i].sk_op_count &&
             group.variants[i].byte_count == group.variants[i].sk_byte_count) {
-          EXPECT_EQ(sk_copy->bounds(), lists1[i]->bounds()) << desc;
-          EXPECT_TRUE(sk_copy->Equals(*lists1[i])) << desc;
-          EXPECT_TRUE(lists1[i]->Equals(*sk_copy)) << desc;
+          EXPECT_EQ(sk_copy->bounds(), dl->bounds()) << desc;
+          EXPECT_TRUE(sk_copy->Equals(*dl)) << desc;
+          EXPECT_TRUE(dl->Equals(*sk_copy)) << desc;
         } else {
           // No assertion on bounds - they could be equal, hard to tell
-          EXPECT_FALSE(sk_copy->Equals(*lists1[i])) << desc;
-          EXPECT_FALSE(lists1[i]->Equals(*sk_copy)) << desc;
+          EXPECT_FALSE(sk_copy->Equals(*dl)) << desc;
+          EXPECT_FALSE(dl->Equals(*sk_copy)) << desc;
         }
       }
     }
+  }
+}
+
+TEST(DisplayList, SingleOpDisplayListsCompareToEachOther) {
+  for (auto& group : allGroups) {
+    std::vector<sk_sp<DisplayList>> lists1;
+    std::vector<sk_sp<DisplayList>> lists2;
+    for (size_t i = 0; i < group.variants.size(); i++) {
+      lists1.push_back(group.variants[i].Build());
+      lists2.push_back(group.variants[i].Build());
+    }
+
     for (size_t i = 0; i < lists1.size(); i++) {
       for (size_t j = 0; j < lists2.size(); j++) {
         auto desc = group.op_name + "(variant " + std::to_string(i + 1) +
@@ -669,19 +692,18 @@ TEST(DisplayList, SingleOpCompares) {
   }
 }
 
-#ifdef DL_TEST_EXPERIMENTAL
 static sk_sp<DisplayList> Build(size_t g_index, size_t v_index) {
   DisplayListBuilder builder;
-  int opCount = 0;
-  size_t byteCount = 0;
+  int op_count = 0;
+  size_t byte_count = 0;
   for (size_t i = 0; i < allGroups.size(); i++) {
     int j = (i == g_index ? v_index : 0);
     if (j < 0)
       continue;
     DisplayListInvocationGroup& group = allGroups[i];
     DisplayListInvocation& invocation = group.variants[j];
-    opCount += invocation.numOps;
-    byteCount += invocation.numBytes;
+    op_count += invocation.op_count;
+    byte_count += invocation.byte_count;
     invocation.invoker(builder);
   }
   sk_sp<DisplayList> dl = builder.Build();
@@ -696,34 +718,39 @@ static sk_sp<DisplayList> Build(size_t g_index, size_t v_index) {
       name += " variant " + std::to_string(v_index);
     }
   }
-  EXPECT_EQ(dl->opCount(), opCount) << name;
-  EXPECT_EQ(dl->bytes(), byteCount) << name;
+  EXPECT_EQ(dl->op_count(), op_count) << name;
+  EXPECT_EQ(dl->bytes(), byte_count) << name;
   return dl;
 }
 
-TEST(DisplayList, OpListEquals) {
+TEST(DisplayList, DisplayListsWithVaryingOpComparisons) {
   sk_sp<DisplayList> default_dl = Build(-1, -1);
-  ASSERT_EQ(default_dl.get(), default_dl.get());
+  ASSERT_TRUE(default_dl->Equals(*default_dl)) << "Default == itself";
   int group_count = static_cast<int>(allGroups.size());
   for (int gi = 0; gi < group_count; gi++) {
     sk_sp<DisplayList> missing_dl = Build(gi, -1);
-    ASSERT_EQ(missing_dl.get(), missing_dl.get());
-    ASSERT_NE(default_dl.get(), missing_dl.get());
+    auto desc = "[Group " + std::to_string(gi + 1) + " omitted]";
+    ASSERT_TRUE(missing_dl->Equals(*missing_dl)) << desc << " == itself";
+    ASSERT_FALSE(missing_dl->Equals(*default_dl)) << desc << " != Default";
+    ASSERT_FALSE(default_dl->Equals(*missing_dl)) << "Default != " << desc;
     DisplayListInvocationGroup& group = allGroups[gi];
     for (size_t vi = 0; vi < group.variants.size(); vi++) {
+      auto desc = "[Group " + std::to_string(gi + 1) + " variant " +
+                  std::to_string(vi + 1) + "]";
       sk_sp<DisplayList> variant_dl = Build(gi, vi);
-      ASSERT_EQ(variant_dl.get(), variant_dl.get());
+      ASSERT_TRUE(variant_dl->Equals(*variant_dl)) << desc << " == itself";
       if (vi == 0) {
-        ASSERT_TRUE(default_dl->equals(*variant_dl.get()));
-        ASSERT_EQ(default_dl.get(), variant_dl.get());
+        ASSERT_TRUE(variant_dl->Equals(*default_dl)) << desc << " == Default";
+        ASSERT_TRUE(default_dl->Equals(*variant_dl)) << "Default == " << desc;
       } else {
-        ASSERT_NE(default_dl.get(), variant_dl.get());
+        ASSERT_FALSE(variant_dl->Equals(*default_dl)) << desc << " != Default";
+        ASSERT_FALSE(default_dl->Equals(*variant_dl)) << "Default != " << desc;
       }
-      ASSERT_NE(missing_dl.get(), variant_dl.get());
+      ASSERT_FALSE(variant_dl->Equals(*missing_dl)) << desc << " != omitted";
+      ASSERT_FALSE(missing_dl->Equals(*variant_dl)) << "omitted != " << desc;
     }
   }
 }
-#endif  // DL_TEST_EXPERIMENTAL
 
 }  // namespace testing
 }  // namespace flutter
