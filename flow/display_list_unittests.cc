@@ -719,7 +719,7 @@ static sk_sp<DisplayList> Build(size_t g_index, size_t v_index) {
   }
   sk_sp<DisplayList> dl = builder.Build();
   std::string name;
-  if (g_index < 0) {
+  if (g_index >= allGroups.size()) {
     name = "Default";
   } else {
     name = allGroups[g_index].op_name;
