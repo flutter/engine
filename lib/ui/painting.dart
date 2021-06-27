@@ -3729,20 +3729,22 @@ class Gradient extends Shader {
 /// and 1 of type vec3/float3, then the length of [floatUniforms] must be 6.
 /// The uniforms could be updated as follows:
 /// 
-/// ```
-///   // Example fragment shader uniforms.
-///   uniform float a;
-///   uniform vec2 b;
-///   uniform vec3 c;
 /// 
-///   // Dart code to update uniforms.
-///   shader.update(floatUniforms: Float32List.fromList([1, 2, 3, 4, 5, 6]));
+///   Example fragment shader uniforms.
 /// 
-///   // Results of shader uniforms.
+///   `uniform float a;`
+///   `uniform vec2 b;`
+///   `uniform vec3 c;`
+/// 
+///   Dart code to update uniforms.
+/// 
+///   `shader.update(floatUniforms: Float32List.fromList([1, 2, 3, 4, 5, 6]));`
+/// 
+///   Results of shader uniforms.
+///   
 ///   a: 1
 ///   b: [2, 3]
 ///   c: [4, 5, 6]
-/// ```
 class FragmentShader extends Shader {
   @pragma('vm:entry-point')
   /// Creates a fragment shader from SPIR-V byte data as an input.
