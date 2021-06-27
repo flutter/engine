@@ -43,6 +43,7 @@ const int _opExecutionMode = 16;
 const int _opCapability = 17;
 const int _opTypeVoid = 19;
 const int _opTypeBool = 20;
+const int _opTypeInt = 21;
 const int _opTypeFloat = 22;
 const int _opTypeVector = 23;
 const int _opTypeMatrix = 24;

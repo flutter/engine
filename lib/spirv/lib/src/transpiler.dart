@@ -93,6 +93,10 @@ class _Transpiler {
   /// See [opEntryPoint].
   int entryPoint = 0;
 
+  /// The ID of a 32-bit int type.
+  /// See [opTypeInt].
+  int intType = 0;
+
   /// The ID of a 32-bit float type.
   /// See [opTypeFloat].
   int floatType = 0;
@@ -257,6 +261,9 @@ class _Transpiler {
       case _opTypeBool:
         opTypeBool();
         break;
+      case _opTypeInt:
+        opTypeInt();
+        break;
       case _opTypeFloat:
         opTypeFloat();
         break;
@@ -418,6 +425,16 @@ class _Transpiler {
 
   void opTypeBool() {
     types[readWord()] = _Type._bool;
+  }
+
+  void opTypeInt() {
+    final int id = readWord();
+    types[id] = _Type._int;
+    intType = id;
+    final int width = readWord();
+    if (width != 32) {
+      throw failure('int width must be 32');
+    }
   }
 
   void opTypeFloat() {
