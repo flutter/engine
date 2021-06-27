@@ -655,21 +655,16 @@ static inline SkColorType getSkColorType(FlutterSoftwarePixelFormat pixfmt) {
   if (pixfmt == kNative32) {
     return kN32_SkColorType;
   } else {
-    return (SkColorType) pixfmt;
+    return (SkColorType)pixfmt;
   }
 }
 
 static inline SkColorInfo getSkColorInfo(FlutterSoftwarePixelFormat pixfmt) {
   auto ct = getSkColorType(pixfmt);
-  auto at = SkColorTypeIsAlwaysOpaque(ct)
-    ? kOpaque_SkAlphaType
-    : kPremul_SkAlphaType;
+  auto at =
+      SkColorTypeIsAlwaysOpaque(ct) ? kOpaque_SkAlphaType : kPremul_SkAlphaType;
 
-  return SkColorInfo(
-    ct,
-    at,
-    SkColorSpace::MakeSRGB()
-  );
+  return SkColorInfo(ct, at, SkColorSpace::MakeSRGB());
 }
 
 static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
@@ -720,10 +715,9 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
     GrDirectContext* context,
     const FlutterBackingStoreConfig& config,
     const FlutterSoftwareBackingStore2* software) {
-  const auto image_info = SkImageInfo::Make(
-      SkISize::Make(config.size.width, config.size.height),
-      getSkColorInfo(software->pixel_format)
-    );
+  const auto image_info =
+      SkImageInfo::Make(SkISize::Make(config.size.width, config.size.height),
+                        getSkColorInfo(software->pixel_format));
 
   struct Captures {
     VoidCallback destruction_callback;

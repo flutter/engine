@@ -355,18 +355,30 @@ inline std::string FlutterOpenGLTargetTypeToString(
 inline std::string FlutterSoftwarePixelFormatToString(
     FlutterSoftwarePixelFormat pixfmt) {
   switch (pixfmt) {
-    case kAlpha8: return "kAlpha8";
-    case kRGB565: return "kRGB565";
-    case kRGBA4444: return "kRGBA4444";
-    case kRGBA8888: return "kRGBA8888";
-    case kRGBX8888: return "kRGBX8888";
-    case kBGRA8888: return "kBGRA8888";
-    case kRGBA1010102: return "kRGBA1010102";
-    case kBGRA1010102: return "kBGRA1010102";
-    case kRGBX1010102: return "kRGBX1010102";
-    case kBGRX1010102: return "kBGRX1010102";
-    case kGray8: return "kGray8";
-    case kNative32: return "kNative32";
+    case kAlpha8:
+      return "kAlpha8";
+    case kRGB565:
+      return "kRGB565";
+    case kRGBA4444:
+      return "kRGBA4444";
+    case kRGBA8888:
+      return "kRGBA8888";
+    case kRGBX8888:
+      return "kRGBX8888";
+    case kBGRA8888:
+      return "kBGRA8888";
+    case kRGBA1010102:
+      return "kRGBA1010102";
+    case kBGRA1010102:
+      return "kBGRA1010102";
+    case kRGBX1010102:
+      return "kRGBX1010102";
+    case kBGRX1010102:
+      return "kBGRX1010102";
+    case kGray8:
+      return "kGray8";
+    case kNative32:
+      return "kNative32";
   }
   return "Unknown";
 }
@@ -410,7 +422,8 @@ inline std::ostream& operator<<(std::ostream& out,
              << " Row Bytes: " << item.row_bytes << " Height: " << item.height
              << " User Data: " << item.user_data << " Destruction Callback: "
              << reinterpret_cast<void*>(item.destruction_callback)
-             << " Pixel Format: " << FlutterSoftwarePixelFormatToString(item.pixel_format);
+             << " Pixel Format: "
+             << FlutterSoftwarePixelFormatToString(item.pixel_format);
 }
 
 inline std::ostream& operator<<(std::ostream& out,

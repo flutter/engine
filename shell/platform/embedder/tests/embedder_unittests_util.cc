@@ -204,25 +204,26 @@ bool ImageMatchesFixture(const std::string& fixture_file_name,
   return ImageMatchesFixture(fixture_file_name, scene_image.get());
 }
 
-bool SurfacePixelDataMatchesBytes(SkSurface *surface,
-                                  const std::vector<uint8_t> &bytes) {
+bool SurfacePixelDataMatchesBytes(SkSurface* surface,
+                                  const std::vector<uint8_t>& bytes) {
   SkPixmap pixmap;
   auto ok = surface->peekPixels(&pixmap);
   if (!ok) {
     return false;
   }
 
-  auto matches = (pixmap.rowBytes() == bytes.size())
-                 && (memcmp(bytes.data(), pixmap.addr(), bytes.size()) == 0);
+  auto matches = (pixmap.rowBytes() == bytes.size()) &&
+                 (memcmp(bytes.data(), pixmap.addr(), bytes.size()) == 0);
 
   if (!matches) {
     FML_LOG(ERROR) << "SkImage pixel data didn't match bytes.";
 
     {
-      const uint8_t *addr = (const uint8_t*) pixmap.addr();
+      const uint8_t* addr = (const uint8_t*)pixmap.addr();
       std::stringstream stream;
       for (size_t i = 0; i < pixmap.computeByteSize(); ++i) {
-        stream << "0x" << std::setfill('0') << std::setw(2) << std::uppercase << std::hex << static_cast<int>(addr[i]);
+        stream << "0x" << std::setfill('0') << std::setw(2) << std::uppercase
+               << std::hex << static_cast<int>(addr[i]);
         if (i != pixmap.computeByteSize() - 1) {
           stream << ", ";
         }
@@ -232,7 +233,8 @@ bool SurfacePixelDataMatchesBytes(SkSurface *surface,
     {
       std::stringstream stream;
       for (auto b = bytes.begin(); b != bytes.end(); ++b) {
-        stream << "0x" << std::setfill('0') << std::setw(2) << std::uppercase << std::hex << static_cast<int>(*b);
+        stream << "0x" << std::setfill('0') << std::setw(2) << std::uppercase
+               << std::hex << static_cast<int>(*b);
         if (b != bytes.end() - 1) {
           stream << ", ";
         }
@@ -245,7 +247,7 @@ bool SurfacePixelDataMatchesBytes(SkSurface *surface,
 }
 
 bool SurfacePixelDataMatchesBytes(std::future<SkSurface*>& surface_future,
-                                  const std::vector<uint8_t> &bytes) {
+                                  const std::vector<uint8_t>& bytes) {
   return SurfacePixelDataMatchesBytes(surface_future.get(), bytes);
 }
 
