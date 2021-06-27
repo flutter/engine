@@ -21,8 +21,6 @@ if (enable_unittests) {
 
     configs += [ "//third_party/shaderc_flutter:shaderc_util_config" ]
 
-    deps = [
-      "//third_party/shaderc_flutter",
-    ]
+    deps = [ "//third_party/shaderc_flutter" ]
   }
 }
