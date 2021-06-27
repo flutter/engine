@@ -673,9 +673,9 @@ static inline SkColorInfo getSkColorInfo(FlutterSoftwarePixelFormat pixfmt) {
 }
 
 static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
-    GrDirectContext *context,
-    const FlutterBackingStoreConfig &config,
-    const FlutterSoftwareBackingStore *software) {
+    GrDirectContext* context,
+    const FlutterBackingStoreConfig& config,
+    const FlutterSoftwareBackingStore* software) {
   const auto image_info =
       SkImageInfo::MakeN32Premul(config.size.width, config.size.height);
 
