@@ -35,13 +35,13 @@ void FragmentShader::RegisterNatives(tonic::DartLibraryNatives* natives) {
        FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
 }
 
-
 sk_sp<SkShader> FragmentShader::shader(SkSamplingOptions sampling) {
   return shader_;
 }
 
 void FragmentShader::init(std::string sksl) {
-  SkRuntimeEffect::Result result = SkRuntimeEffect::MakeForShader(SkString(sksl));
+  SkRuntimeEffect::Result result =
+      SkRuntimeEffect::MakeForShader(SkString(sksl));
   runtime_effect_ = result.effect;
   if (runtime_effect_ == nullptr) {
     Dart_Handle err = Dart_ThrowException(tonic::ToDart(
@@ -62,17 +62,16 @@ void FragmentShader::init(std::string sksl) {
 //       tonic::DartConverter<std::vector<Shader*>>::FromDart(children);
 //   std::vector<sk_sp<SkShader>> children_sk(shaders.size());
 //   for (size_t i = 0; i < shaders.size(); i++) {
-//     children_sk[i] = shaders[i]->shader(SkSamplingOptions(SkFilterQuality::kHigh_SkFilterQuality));
+//     children_sk[i] =
+//     shaders[i]->shader(SkSamplingOptions(SkFilterQuality::kHigh_SkFilterQuality));
 //   }
 void FragmentShader::update(const tonic::Float32List& uniforms) {
   shader_ = runtime_effect_->makeShader(
-      SkData::MakeWithCopy(
-          uniforms.data(),
-          uniforms.num_elements() * sizeof(float)),
-      0, // TODO(clocksmith): children_sk.data()
-      0, // TODO(clocksmith): children_sk.size()
-      nullptr,
-      false);
+      SkData::MakeWithCopy(uniforms.data(),
+                           uniforms.num_elements() * sizeof(float)),
+      0,  // TODO(clocksmith): children_sk.data()
+      0,  // TODO(clocksmith): children_sk.size()
+      nullptr, false);
 }
 
 fml::RefPtr<FragmentShader> FragmentShader::Create() {
