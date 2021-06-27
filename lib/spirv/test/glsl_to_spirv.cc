@@ -42,7 +42,7 @@ int main(int argc, const char* argv[]) {
     shaderc_glsl_default_fragment_shader,
     argv[1],
     options);
-P
+
   if (result.GetCompilationStatus() != shaderc_compilation_status_success) {
     std::cerr << "Failed to transpile: " + result.GetErrorMessage() << argv[1] << std::endl;
     return -1;
