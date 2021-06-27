@@ -26,11 +26,12 @@ EmbedderTestBackingStoreProducer::EmbedderTestBackingStoreProducer(
       test_metal_context_(std::make_unique<TestMetalContext>())
 #endif
 {
-  if (type == RenderTargetType::kSoftwareBuffer
-      && software_pixfmt_ != kNative32) {
+  if (type == RenderTargetType::kSoftwareBuffer &&
+      software_pixfmt_ != kNative32) {
     FML_LOG(ERROR) << "Expected pixel format to be the default (kNative32) when"
-      "backing store producer should produce deprecated v1 software backing "
-      "stores.";
+                      "backing store producer should produce deprecated v1 "
+                      "software backing "
+                      "stores.";
     assert(false);
   };
 }
@@ -207,23 +208,15 @@ bool EmbedderTestBackingStoreProducer::CreateSoftware2(
   if (software_pixfmt_ == kNative32) {
     color_type = kN32_SkColorType;
   } else {
-    color_type = (SkColorType) software_pixfmt_;
+    color_type = (SkColorType)software_pixfmt_;
   }
 
-  auto alpha_type = SkColorTypeIsAlwaysOpaque(color_type)
-    ? kOpaque_SkAlphaType
-    : kPremul_SkAlphaType;
+  auto alpha_type = SkColorTypeIsAlwaysOpaque(color_type) ? kOpaque_SkAlphaType
+                                                          : kPremul_SkAlphaType;
 
-  auto surface = SkSurface::MakeRaster(
-    SkImageInfo::Make(
+  auto surface = SkSurface::MakeRaster(SkImageInfo::Make(
       SkISize::Make(config->size.width, config->size.height),
-      SkColorInfo(
-        color_type,
-        alpha_type,
-        SkColorSpace::MakeSRGB()
-      )
-    )
-  );
+      SkColorInfo(color_type, alpha_type, SkColorSpace::MakeSRGB())));
   if (!surface) {
     FML_LOG(ERROR)
         << "Could not create the render target for compositor layer.";
@@ -238,7 +231,8 @@ bool EmbedderTestBackingStoreProducer::CreateSoftware2(
 
   backing_store_out->type = kFlutterBackingStoreTypeSoftware2;
   backing_store_out->user_data = surface.get();
-  backing_store_out->software2.struct_size = sizeof(FlutterSoftwareBackingStore2);
+  backing_store_out->software2.struct_size =
+      sizeof(FlutterSoftwareBackingStore2);
   backing_store_out->software2.user_data = surface.get();
   backing_store_out->software2.allocation = pixmap.writable_addr();
   backing_store_out->software2.row_bytes = pixmap.rowBytes();

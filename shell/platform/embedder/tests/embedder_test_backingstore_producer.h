@@ -27,9 +27,10 @@ class EmbedderTestBackingStoreProducer {
     kMetalTexture,
   };
 
-  EmbedderTestBackingStoreProducer(sk_sp<GrDirectContext> context,
-                                   RenderTargetType type,
-                                   FlutterSoftwarePixelFormat software_pixfmt = kNative32);
+  EmbedderTestBackingStoreProducer(
+      sk_sp<GrDirectContext> context,
+      RenderTargetType type,
+      FlutterSoftwarePixelFormat software_pixfmt = kNative32);
   ~EmbedderTestBackingStoreProducer();
 
   bool Create(const FlutterBackingStoreConfig* config,
@@ -46,7 +47,7 @@ class EmbedderTestBackingStoreProducer {
                       FlutterBackingStore* backing_store_out);
 
   bool CreateSoftware2(const FlutterBackingStoreConfig* config,
-                      FlutterBackingStore* backing_store_out);
+                       FlutterBackingStore* backing_store_out);
 
   bool CreateMTLTexture(const FlutterBackingStoreConfig* config,
                         FlutterBackingStore* renderer_out);
