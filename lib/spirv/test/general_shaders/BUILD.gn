@@ -10,8 +10,8 @@ if (enable_unittests) {
     tool = "//flutter/lib/spirv/test:glsl_to_spirv"
 
     sources = [
-      "uniforms.glsl",
       "simple.glsl",
+      "uniforms.glsl",
     ]
 
     outputs = [ "$target_gen_dir/{{source_name_part}}.spv" ]
