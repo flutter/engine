@@ -351,7 +351,7 @@ typedef enum {
   kBGRX1010102,
 
   /// pixel with 8 bit grayscale value.
-  /// The grayscale value is the luma value calculated from r, g, b values
+  /// The grayscale value is the luma value calculated from r, g, b
   /// according to BT.709. (gray = r*0.2126 + g*0.7152 + b*0.0722)
   kGray8,
 
