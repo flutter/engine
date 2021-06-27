@@ -289,10 +289,27 @@ typedef enum {
 /// A single pixel always stored as a POT number of bytes. (so in practice
 /// either 1, 2, 4, 8, 16 bytes per pixel)
 ///
+/// There are two kinds of pixel formats:
+///   - formats where all components are 8 bits, called array formats
+///     The component order as specified in the pixel format name is the
+///     order of the components' bytes in memory, with the leftmost component
+///     occupying the lowest memory address.
+///
+///   - all other formats are called packed formats, and the component order
+///     as specified in the format name refers to the order in the native type.
+///     for example, for kRGB565, the R component uses the 5 least significant
+///     bits of the uint16_t pixel value.
+///
 /// Each pixel format in this list is documented with an example on how to get
-/// the color components from the pixel value. For example, you can get the
-/// pixel value for a RGB565 formatted buffer like this:
+/// the color components from the pixel.
+/// - for packed formats, p is the pixel value as a word. For example, you can
+///   get the pixel value for a RGB565 formatted buffer like this:
 ///   uint16_t p = ((const uint16_t*) allocation)[row_bytes * y / bpp + x];
+///   (with bpp being the bytes per pixel, so 2 for RGB565)
+///
+/// - for array formats, p is a pointer to the pixel value. For example, you
+///   can get the p for a RGBA8888 formatted buffer like this:
+///   const uint8_t *p = ((const uint8_t*) allocation) + row_bytes*y + x*4;
 typedef enum {
   /// pixel with 8 bit alpha value.
   kAlpha8 = 1,
@@ -305,24 +322,41 @@ typedef enum {
   ///   r = p & 0xF;  g = (p>>4) & 0xF;  b = (p>>8) & 0xF;   a = p>>12;
   kRGBA4444,
 
-  /// pixel with 8 bits for red, green, blue, alpha; in 32-bit word.
-  ///   r = p & 0xFF; g = (p>>8) & 0xFF; b = (p>>16) & 0xFF; a = p>>24;
+  /// pixel with 8 bits for red, green, blue, alpha.
+  ///   r = p[0]; g = p[1]; b = p[2]; a = p[3];
   kRGBA8888,
 
   /// pixel with 8 bits for red, green and blue and 8 unused bits.
-  ///   r = p & 0xFF; g = (p>>8) & 0xFF; b = (p>>16) & 0xFF;
+  ///   r = p[0]; g = p[1]; b = p[2];
   kRGBX8888,
 
-  /// pixel with 8 bits for red, green, blue and alpha.
-  ///   r = (p>>16) & 0xFF; g = (p>>8) & 0xFF; b = b & 0xFF; a = p>>24;
+  /// pixel with 8 bits for blue, green, red and alpha.
+  ///   r = p[2]; g = p[1]; b = p[0]; a = p[3];
   kBGRA8888,
 
-  kRGBA1010102, // 10 bits for red, green, blue; 2 bits for alpha; in 32-bit word
-  kBGRA1010102, // 10 bits for blue, green, red; 2 bits for alpha; in 32-bit word
-  kRGBX1010102, // pixel with 10 bits each for red, green, blue; in 32-bit word
-  kBGRX1010102, // pixel with 10 bits each for blue, green, red; in 32-bit word
-  kGray8,       // pixel with 8 bit grayscale value; in 8-bit word
-  kNative32,    // either kBGRA8888 or kRGBA8888 depending on CPU endianess
+  /// pixel with 10 bits for red, green, blue; 2 bits for alpha; in 32-bit word
+  ///   r = p & 0x3FF; g = (p>>10) & 0x3FF; b = (p>>20) & 0x3FF; a = p>>30;
+  kRGBA1010102,
+
+  /// pixel with 10 bits for red, green, blue; 2 bits for alpha; in 32-bit word
+  ///   r = (p>>20) & 0x3FF; g = (p>>10) & 0x3FF; b = p & 0x3FF; a = p>>30;
+  kBGRA1010102,
+
+  /// pixel with 10 bits for red, green, blue and 2 unused bits; in 32-bit word
+  ///   r = p & 0x3FF; g = (p>>10) & 0x3FF; b = (p>>20) & 0x3FF;
+  kRGBX1010102,
+
+  /// pixel with 10 bits for red, green, blue and 2 unused bits; in 32-bit word
+  ///   r = (p>>20) & 0x3FF; g = (p>>10) & 0x3FF; b = p & 0x3FF;
+  kBGRX1010102,
+
+  /// pixel with 8 bit grayscale value.
+  /// The grayscale value is the luma value calculated from r, g, b values
+  /// according to BT.709. (gray = r*0.2126 + g*0.7152 + b*0.0722)
+  kGray8,
+
+  /// either kBGRA8888 or kRGBA8888 depending on CPU endianess and OS
+  kNative32,
 } FlutterSoftwarePixelFormat;
 
 typedef struct {
