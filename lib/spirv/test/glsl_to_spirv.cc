@@ -38,17 +38,16 @@ int main(int argc, const char* argv[]) {
   options.SetOptimizationLevel(shaderc_optimization_level_performance);
   options.SetTargetEnvironment(shaderc_target_env_opengl, 0);
   shaderc::SpvCompilationResult result = compiler.CompileGlslToSpv(
-    buf.data(),
-    shaderc_glsl_default_fragment_shader,
-    argv[1],
-    options);
+      buf.data(), shaderc_glsl_default_fragment_shader, argv[1], options);
 
   if (result.GetCompilationStatus() != shaderc_compilation_status_success) {
-    std::cerr << "Failed to transpile: " + result.GetErrorMessage() << argv[1] << std::endl;
+    std::cerr << "Failed to transpile: " + result.GetErrorMessage() << argv[1]
+              << std::endl;
     return -1;
   }
 
-  std::vector<uint32_t> spirv = std::vector<uint32_t>(result.cbegin(), result.cend());
+  std::vector<uint32_t> spirv =
+      std::vector<uint32_t>(result.cbegin(), result.cend());
 
   std::fstream output;
   output.open(argv[2], std::fstream::out | std::fstream::trunc);
