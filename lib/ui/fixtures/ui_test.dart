@@ -478,7 +478,7 @@ void hooksTests() {
       };
     });
 
-    _callHook('_beginFrame', 1, 1234, 1);
+    _callHook('_beginFrame', 2, 1234, 1);
     expectIdentical(runZone, innerZone);
     expectEquals(start, const Duration(microseconds: 1234));
   });
@@ -637,7 +637,7 @@ void hooksTests() {
       };
     });
 
-    _callHook('_beginFrame', 1, 0, 2);
+    _callHook('_beginFrame', 2, 0, 2);
     expectNotEquals(runZone, null);
     expectIdentical(runZone, innerZone);
     expectEquals(frameNumber, 2);
