@@ -33,13 +33,15 @@ Support for textures, control flow, and structured types is planned, but not cur
 
 ## Testing
 
-## Exception Tests
+### Exception Tests
 
 These tests rely on the `.spvasm` (SPIR-V Assembly)  and `.glsl` files contained under `test/exception_shaders` in this directory. They are compiled to binary SPIR-V using `spirv-asm`, from the SwiftShader dependency. They are tested by testing/dart/spirv_exception_test.dart as part of the normal suite of dart tests. The purpose of these tests is to exercise every explicit failure path for shader transpilation. Each `glsl` or `spvasm` file should include a comment describing the failure that it is testing. The given files should be valid apart from the single failure case they are testing.
 
-## Pixel Tests
+To test the exception tests directly: `./testing/run_tests.py --type dart --dart-filter spirv_exception_test.dart`
 
-Pixel test are not yet checked in, and should run as part of unit-testing for each implementation of `dart:ui`. These tests aim to validate the correctness of transpilation to each target language. Each shader should render the color green #00FF00FF for a correct transpilation, and any other color for failure. They will be a combination of `.spvasm` files and more-readable GLSL files that are compiled to SPIR-V via `glslang`, provided by the SwiftShader dependency. Information for pixel tests will be expanded in a follow-up PR.
+### Pixel Tests
 
-These tests will be able to be run alone by executing `./ui_unittests` in the build-output directory.
+Pixel tests should run as part of unit-testing for each implementation of `dart:ui`. Currently, FragmentShader is only supported in C++. These tests aim to validate the correctness of transpilation to each target language. Each shader should render the color green #00FF00FF for a correct transpilation, and any other color for failure. They will be a GLSL files that are compiled to SPIR-V via `shaderc`.
+
+To test the pixel tests directly: `./testing/run_tests.py --type dart --dart-filter fragment_shader_test.dart`
 
