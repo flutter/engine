@@ -47,7 +47,7 @@ class FragmentShader : public Shader {
   // Since the shader source cannot be updated, the effect can be
   // created once and re-used.
   sk_sp<SkRuntimeEffect> runtime_effect_;
-  
+
   // A new shader is created every time update is called.
   sk_sp<SkShader> shader_;
 
