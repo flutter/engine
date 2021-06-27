@@ -12,15 +12,15 @@ import 'package:litetest/litetest.dart';
 import 'package:path/path.dart' as path;
 
 void main() {
-  // test('throws exception for invalid shader', () {
-  //   final ByteBuffer invalidBytes = Uint8List.fromList(<int>[1, 2, 3, 4, 5]).buffer;
-  //   expect(() => FragmentShader(spirv: invalidBytes), throws);
-  // });
+  test('throws exception for invalid shader', () {
+    final ByteBuffer invalidBytes = Uint8List.fromList(<int>[1, 2, 3, 4, 5]).buffer;
+    expect(() => FragmentShader(spirv: invalidBytes), throws);
+  });
 
-  // test('simple shader renders correctly', () async {
-  //   final Uint8List shaderBytes = await _createFile('general_shaders', 'simple.spv').readAsBytes();
-  //   _expectShaderRendersGreen(shaderBytes);
-  // });
+  test('simple shader renders correctly', () async {
+    final Uint8List shaderBytes = await _createFile('general_shaders', 'simple.spv').readAsBytes();
+    _expectShaderRendersGreen(shaderBytes);
+  });
 
   test('shader with uniforms renders and updates correctly', () async {
     final Uint8List shaderBytes = await _createFile('general_shaders', 'uniforms.spv').readAsBytes();
@@ -50,9 +50,9 @@ void main() {
     expect(toFloat(renderedBytes.getUint8(3)), closeTo(1.0, epsilon));
   });
 
-  // _expectShadersRenderGreen('supported_glsl_op_shaders');
+  _expectShadersRenderGreen('supported_glsl_op_shaders');
 
-  // _expectShadersRenderGreen('supported_op_shaders');
+  _expectShadersRenderGreen('supported_op_shaders');
 }
 
 // Expect that all of the spirv shaders in this folder render green.
