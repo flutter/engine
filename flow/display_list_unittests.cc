@@ -673,28 +673,30 @@ TEST(DisplayList, SingleOpDisplayListsRecapturedViaSkCanvasAreEqual) {
 
 TEST(DisplayList, SingleOpDisplayListsCompareToEachOther) {
   for (auto& group : allGroups) {
-    std::vector<sk_sp<DisplayList>> lists1;
-    std::vector<sk_sp<DisplayList>> lists2;
+    std::vector<sk_sp<DisplayList>> listsA;
+    std::vector<sk_sp<DisplayList>> listsB;
     for (size_t i = 0; i < group.variants.size(); i++) {
-      lists1.push_back(group.variants[i].Build());
-      lists2.push_back(group.variants[i].Build());
+      listsA.push_back(group.variants[i].Build());
+      listsB.push_back(group.variants[i].Build());
     }
 
-    for (size_t i = 0; i < lists1.size(); i++) {
-      for (size_t j = 0; j < lists2.size(); j++) {
+    for (size_t i = 0; i < listsA.size(); i++) {
+      sk_sp<DisplayList> listA = listsA[i];
+      for (size_t j = 0; j < listsB.size(); j++) {
+        sk_sp<DisplayList> listB = listsB[j];
         auto desc = group.op_name + "(variant " + std::to_string(i + 1) +
                     " ==? variant " + std::to_string(j + 1) + ")";
         if (i == j) {
-          ASSERT_EQ(lists1[i]->op_count(), lists2[j]->op_count()) << desc;
-          ASSERT_EQ(lists1[i]->bytes(), lists2[j]->bytes()) << desc;
-          ASSERT_EQ(lists1[i]->bounds(), lists2[j]->bounds()) << desc;
-          ASSERT_TRUE(lists1[i]->Equals(*lists2[j])) << desc;
-          ASSERT_TRUE(lists2[j]->Equals(*lists1[i])) << desc;
+          ASSERT_EQ(listA->op_count(), listB->op_count()) << desc;
+          ASSERT_EQ(listA->bytes(), listB->bytes()) << desc;
+          ASSERT_EQ(listA->bounds(), listB->bounds()) << desc;
+          ASSERT_TRUE(listA->Equals(*listB)) << desc;
+          ASSERT_TRUE(listB->Equals(*listA)) << desc;
         } else {
           // No assertion on op/byte counts or bounds
           // they may or may not be equal between variants
-          ASSERT_FALSE(lists1[i]->Equals(*lists2[j])) << desc;
-          ASSERT_FALSE(lists2[j]->Equals(*lists1[i])) << desc;
+          ASSERT_FALSE(listA->Equals(*listB)) << desc;
+          ASSERT_FALSE(listB->Equals(*listA)) << desc;
         }
       }
     }
@@ -706,10 +708,10 @@ static sk_sp<DisplayList> Build(size_t g_index, size_t v_index) {
   int op_count = 0;
   size_t byte_count = 0;
   for (size_t i = 0; i < allGroups.size(); i++) {
-    int j = (i == g_index ? v_index : 0);
-    if (j < 0)
-      continue;
     DisplayListInvocationGroup& group = allGroups[i];
+    size_t j = (i == g_index ? v_index : 0);
+    if (j >= group.variants.size())
+      continue;
     DisplayListInvocation& invocation = group.variants[j];
     op_count += invocation.op_count;
     byte_count += invocation.byte_count;
@@ -733,16 +735,15 @@ static sk_sp<DisplayList> Build(size_t g_index, size_t v_index) {
 }
 
 TEST(DisplayList, DisplayListsWithVaryingOpComparisons) {
-  sk_sp<DisplayList> default_dl = Build(-1, -1);
+  sk_sp<DisplayList> default_dl = Build(allGroups.size(), 0);
   ASSERT_TRUE(default_dl->Equals(*default_dl)) << "Default == itself";
-  int group_count = static_cast<int>(allGroups.size());
-  for (int gi = 0; gi < group_count; gi++) {
-    sk_sp<DisplayList> missing_dl = Build(gi, -1);
+  for (size_t gi = 0; gi < allGroups.size(); gi++) {
+    DisplayListInvocationGroup& group = allGroups[gi];
+    sk_sp<DisplayList> missing_dl = Build(gi, group.variants.size());
     auto desc = "[Group " + std::to_string(gi + 1) + " omitted]";
     ASSERT_TRUE(missing_dl->Equals(*missing_dl)) << desc << " == itself";
     ASSERT_FALSE(missing_dl->Equals(*default_dl)) << desc << " != Default";
     ASSERT_FALSE(default_dl->Equals(*missing_dl)) << "Default != " << desc;
-    DisplayListInvocationGroup& group = allGroups[gi];
     for (size_t vi = 0; vi < group.variants.size(); vi++) {
       auto desc = "[Group " + std::to_string(gi + 1) + " variant " +
                   std::to_string(vi + 1) + "]";
