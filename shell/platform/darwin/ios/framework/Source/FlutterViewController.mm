@@ -815,7 +815,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 // touch is specified in the second argument.
 - (void)dispatchTouches:(NSSet*)touches
     pointerDataChangeOverride:(flutter::PointerData::Change*)overridden_change
-    event: (UIEvent*)event {
+                        event:(UIEvent*)event {
   if (!_engine) {
     return;
   }
@@ -927,11 +927,14 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     }
 
     if (@available(iOS 13.4, *)) {
-        if (event != nullptr) {
-            pointer_data.buttons =
-              (((event.buttonMask & UIEventButtonMaskPrimary) > 0) ? flutter::PointerButtonMouse::kPointerButtonMousePrimary : 0) |
-              (((event.buttonMask & UIEventButtonMaskSecondary) > 0) ? flutter::PointerButtonMouse::kPointerButtonMouseSecondary : 0);
-        }
+      if (event != nullptr) {
+        pointer_data.buttons = (((event.buttonMask & UIEventButtonMaskPrimary) > 0)
+                                    ? flutter::PointerButtonMouse::kPointerButtonMousePrimary
+                                    : 0) |
+                               (((event.buttonMask & UIEventButtonMaskSecondary) > 0)
+                                    ? flutter::PointerButtonMouse::kPointerButtonMouseSecondary
+                                    : 0);
+      }
     }
 
     packet->SetPointerData(pointer_index++, pointer_data);
