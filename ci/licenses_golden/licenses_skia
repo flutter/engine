@@ -1,4 +1,4 @@
-Signature: a2008624642ac3e814da0be93b0df36b
+Signature: 4334e383e5393a5f49e8d1ab82302179
 
 UNUSED LICENSES:
 
@@ -5808,6 +5808,7 @@ TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/experimental/tskit/go/gen_types/gen_types.go
 FILE: ../../../third_party/skia/experimental/tskit/go/gen_types/gen_types_test.go
 FILE: ../../../third_party/skia/infra/bots/gen_tasks_logic/skpbench_flags.go
+FILE: ../../../third_party/skia/infra/bots/task_drivers/perf_puppeteer_skottie_frames/make_lotties_with_assets/make_lotties_with_assets.go
 ----------------------------------------------------------------------------------------------------
 Copyright 2021 The Chromium Authors. All rights reserved.
 
