@@ -119,7 +119,7 @@ class _Transpiler {
   /// Set by [opDecorate].
   int fragCoord = 0;
 
-  /// The number of floats used by uniforms.
+  /// The number of floats used by uniform
   int uniformFloatCount = 0;
 
   /// Current indentation to prepend to new lines.
