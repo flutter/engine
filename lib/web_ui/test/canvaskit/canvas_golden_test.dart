@@ -761,6 +761,17 @@ void testMain() {
       );
     });
 
+    test('sample Bengali text', () async {
+      await testSampleText(
+        'bengali',
+        'ঈদের জামাত মসজিদে, মানতে হবে স্বাস্থ্যবিধি: ধর্ম মন্ত্রণালয়',
+      );
+    });
+
+    test('hindi svayan test', () async {
+      await testSampleText('hindi_svayan', 'स्वयं');
+    });
+
     // We've seen text break when we load many fonts simultaneously. This test
     // combines text in multiple languages into one long paragraph to make sure
     // we can handle it.
