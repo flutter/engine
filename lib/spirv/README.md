@@ -41,7 +41,8 @@ To test the exception tests directly: `./testing/run_tests.py --type dart --dart
 
 ### Pixel Tests
 
-Pixel tests should run as part of unit-testing for each implementation of `dart:ui`. Currently, FragmentShader is only supported in C++. These tests aim to validate the correctness of transpilation to each target language. Each shader should render the color green #00FF00FF for a correct transpilation, and any other color for failure. They will be a GLSL files that are compiled to SPIR-V via `shaderc`.
+Pixel tests should run as part of unit-testing for each implementation of `dart:ui`. Currently, FragmentShader is only supported in C++. These tests aim to validate the correctness of transpilation to each target language. Each shader should render the color green #00FF00FF for a correct transpilation, and any other color for failure. They will be a GLSL files that are compiled to SPIR-V via `shaderc`. Therefor, the `fragColor` should resolve to `vec4(0.0, 1.0, 0.0, 1.0)`
+for all tests.
 
 To test the pixel tests directly: `./testing/run_tests.py --type dart --dart-filter fragment_shader_test.dart`
 

@@ -5,7 +5,5 @@ precision highp float;
 layout(location = 0) out vec4 fragColor;
 
 void main() {
-    float zero = cos(1.57079632679);
-    float one = cos(0.0);
-    fragColor = vec4(zero, one, zero, one);
+    fragColor = vec4(cos(1.57079632679), cos(0.0), 0.0, 1.0);
 }
