@@ -20,7 +20,6 @@ compile_platform("kernel_platform_files") {
   ]
 
   args = [
-    "--sound-null-safety",
     "--nnbd-agnostic",
     "--target=flutter_runner",
     "dart:core",
