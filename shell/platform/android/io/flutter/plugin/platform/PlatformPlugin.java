@@ -370,15 +370,12 @@ public class PlatformPlugin {
     int flags = view.getSystemUiVisibility();
 
     // SYSTEM STATUS BAR -------------------------------------------------------------------
-    // You can't change the color of the system status bar until SDK 21.
+    // You can't change the color of the system status bar until SDK 21, but you can't change the
+    // color of the status icons until SDK 23. We only allow both starting at 23 to ensure buttons
+    // and icons can be visible when changing the background color.
     // If transparent, SDK 29 and higher may apply a translucent scrim behind the bar to ensure
     // proper contrast. This can be overridden with
     // SystemChromeStyle.systemStatusBarContrastEnforced.
-    if (systemChromeStyle.statusBarColor != null
-        && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-      window.setStatusBarColor(systemChromeStyle.statusBarColor);
-    }
-    // You can't change the color of the status icons until SDK 23.
     if (systemChromeStyle.statusBarIconBrightness != null && Build.VERSION.SDK_INT >= 23) {
       switch (systemChromeStyle.statusBarIconBrightness) {
         case DARK:
@@ -389,6 +386,11 @@ public class PlatformPlugin {
           flags &= ~0x2000;
           break;
       }
+
+      if (systemChromeStyle.statusBarColor != null
+          && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        window.setStatusBarColor(systemChromeStyle.statusBarColor);
+      }
     }
     // You can't override the enforced contrast for a transparent status bar until SDK 29.
     // This overrides the translucent scrim that may be placed behind the bar on SDK 29+ to ensure
@@ -398,15 +400,12 @@ public class PlatformPlugin {
     }
 
     // SYSTEM NAVIGATION BAR --------------------------------------------------------------
-    // You can't change the color of the system navigation bar until SDK 21.
+    // You can't change the color of the system navigation bar until SDK 21, but you can't change
+    // the color of the navigation buttons until SDK 26. We only allow both starting at 23 to
+    // ensure buttons can be visible when changing the background color.
     // If transparent, SDK 29 and higher may apply a translucent scrim behind 2/3 button navigation
     // bars to ensure proper contrast. This can be overridden with
     // SystemChromeStyle.systemNavigationBarContrastEnforced.
-    if (systemChromeStyle.systemNavigationBarColor != null
-        && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-      window.setNavigationBarColor(systemChromeStyle.systemNavigationBarColor);
-    }
-    // You can't change the color of the navigation buttons until SDK 26.
     if (systemChromeStyle.systemNavigationBarIconBrightness != null
         && Build.VERSION.SDK_INT >= 26) {
       switch (systemChromeStyle.systemNavigationBarIconBrightness) {
@@ -417,6 +416,10 @@ public class PlatformPlugin {
         case LIGHT:
           flags &= ~0x10;
           break;
+      }
+
+      if (systemChromeStyle.systemNavigationBarColor != null) {
+        window.setNavigationBarColor(systemChromeStyle.systemNavigationBarColor);
       }
     }
     // You can't change the color of the navigation bar divider color until SDK 28.
