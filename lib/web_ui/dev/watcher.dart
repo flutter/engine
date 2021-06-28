@@ -74,6 +74,9 @@ abstract class ProcessStep implements PipelineStep {
     final ProcessManager process = await createProcess();
 
     if (_isInterrupted) {
+      // If the step was interrupted while creating the process, the
+      // `interrupt` won't kill the process; it must be done here.
+      process.kill();
       return;
     }
 
