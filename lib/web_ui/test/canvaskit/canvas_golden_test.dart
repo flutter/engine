@@ -783,8 +783,7 @@ void testMain() {
     });
 
     test('emoji text with skin tone', () async {
-      await testSampleText('emoji_with_skin_tone', '👋🏿 👋🏾 👋🏽 👋🏼 👋🏻',
-          write: true);
+      await testSampleText('emoji_with_skin_tone', '👋🏿 👋🏾 👋🏽 👋🏼 👋🏻');
     });
 
     // Make sure we clear the canvas in between frames.
