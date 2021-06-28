@@ -782,6 +782,11 @@ void testMain() {
       );
     });
 
+    test('emoji text with skin tone', () async {
+      await testSampleText('emoji_with_skin_tone', '👋🏿 👋🏾 👋🏽 👋🏼 👋🏻',
+          write: true);
+    });
+
     // Make sure we clear the canvas in between frames.
     test('empty frame after contentful frame', () async {
       // First draw a frame with a red rectangle
