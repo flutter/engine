@@ -56,6 +56,7 @@ static bool CanRasterizePicture(SkPicture* picture) {
 
   if (!cull_rect.isFinite()) {
     // Cannot attempt to rasterize into an infinitely large surface.
+    FML_LOG(INFO) << "Attempted to raster cache non-finite picture";
     return false;
   }
 
@@ -76,6 +77,7 @@ static bool CanRasterizeDisplayList(DisplayList* display_list) {
 
   if (!cull_rect.isFinite()) {
     // Cannot attempt to rasterize into an infinitely large surface.
+    FML_LOG(INFO) << "Attempted to raster cache non-finite display list";
     return false;
   }
 

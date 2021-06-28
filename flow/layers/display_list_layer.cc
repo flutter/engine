@@ -55,14 +55,17 @@ bool DisplayListLayer::Compare(DiffContext::Statistics& statistics,
     statistics.AddSameInstancePicture();
     return true;
   }
-  auto op_cnt_1 = dl1->op_count();
-  auto op_cnt_2 = dl2->op_count();
-  if (op_cnt_1 != op_cnt_2 || dl1->bounds() != dl2->bounds()) {
+  const auto op_cnt_1 = dl1->op_count();
+  const auto op_cnt_2 = dl2->op_count();
+  const auto op_bytes_1 = dl1->bytes();
+  const auto op_bytes_2 = dl2->bytes();
+  if (op_cnt_1 != op_cnt_2 || op_bytes_1 != op_bytes_2 ||
+      dl1->bounds() != dl2->bounds()) {
     statistics.AddNewPicture();
     return false;
   }
 
-  if (op_cnt_1 > 10) {
+  if (op_bytes_1 > kMaxBytesToCompare) {
     statistics.AddPictureTooComplexToCompare();
     return false;
   }

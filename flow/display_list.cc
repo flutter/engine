@@ -898,9 +898,9 @@ static bool CompareOps(uint8_t* ptrA,
                        uint8_t* endA,
                        uint8_t* ptrB,
                        uint8_t* endB) {
-  if (endA - ptrA != endB - ptrB) {
-    return false;
-  }
+  // These conditions are checked by the caller...
+  FML_DCHECK((endA - ptrA) == (endB - ptrB));
+  FML_DCHECK(ptrA != ptrB);
   uint8_t* bulkStartA = ptrA;
   uint8_t* bulkStartB = ptrB;
   while (ptrA < endA && ptrB < endB) {
@@ -966,6 +966,12 @@ void DisplayList::RenderTo(SkCanvas* canvas) const {
 }
 
 bool DisplayList::Equals(const DisplayList& other) const {
+  if (used_ != other.used_ || op_count_ != other.op_count_) {
+    return false;
+  }
+  if (ptr_ == other.ptr_) {
+    return true;
+  }
   return CompareOps(ptr_, ptr_ + used_, other.ptr_, other.ptr_ + other.used_);
 }
 

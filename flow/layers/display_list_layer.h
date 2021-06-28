@@ -12,6 +12,8 @@ namespace flutter {
 
 class DisplayListLayer : public Layer {
  public:
+  static constexpr size_t kMaxBytesToCompare = 10000;
+
   DisplayListLayer(const SkPoint& offset,
                    sk_sp<DisplayList> display_list,
                    bool is_complex,
