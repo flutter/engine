@@ -75,13 +75,16 @@ class PlaceholderRun {
   // the alphabetic baseline.
   double baseline_offset = 0;
 
+  unsigned codepoint_length = 1;
+
   PlaceholderRun();
 
   PlaceholderRun(double width,
                  double height,
                  PlaceholderAlignment alignment,
                  TextBaseline baseline,
-                 double baseline_offset);
+                 double baseline_offset,
+                 unsigned codepoint_length);
 };
 
 }  // namespace txt

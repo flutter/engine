@@ -64,7 +64,7 @@ void ParagraphBuilderTxt::AddText(const std::u16string& text) {
 void ParagraphBuilderTxt::AddPlaceholder(PlaceholderRun& span) {
   obj_replacement_char_indexes_.insert(text_.size());
   runs_.StartRun(PeekStyleIndex(), text_.size());
-  AddText(std::u16string(1ull, objReplacementChar));
+  AddText(std::u16string(span.codepoint_length, objReplacementChar));
   runs_.StartRun(PeekStyleIndex(), text_.size());
   inline_placeholders_.push_back(span);
 }
