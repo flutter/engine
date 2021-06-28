@@ -169,7 +169,7 @@ void Rasterizer::DrawLastLayerTree(
     return;
   }
   frame_timings_recorder->RecordRasterStart(fml::TimePoint::Now());
-  DrawToSurface(frame_timings_recorder.get(), *last_layer_tree_);
+  DrawToSurface(*frame_timings_recorder, *last_layer_tree_);
 }
 
 void Rasterizer::Draw(
@@ -378,7 +378,7 @@ RasterStatus Rasterizer::DoDraw(
   persistent_cache->ResetStoredNewShaders();
 
   RasterStatus raster_status =
-      DrawToSurface(frame_timings_recorder.get(), *layer_tree);
+      DrawToSurface(*frame_timings_recorder, *layer_tree);
   if (raster_status == RasterStatus::kSuccess) {
     last_layer_tree_ = std::move(layer_tree);
   } else if (raster_status == RasterStatus::kResubmit ||
@@ -460,13 +460,13 @@ RasterStatus Rasterizer::DoDraw(
 }
 
 RasterStatus Rasterizer::DrawToSurface(
-    FrameTimingsRecorder* frame_timings_recorder,
+    FrameTimingsRecorder& frame_timings_recorder,
     flutter::LayerTree& layer_tree) {
   TRACE_EVENT0("flutter", "Rasterizer::DrawToSurface");
   FML_DCHECK(surface_);
 
   compositor_context_->ui_time().SetLapTime(
-      frame_timings_recorder->GetBuildDuration());
+      frame_timings_recorder.GetBuildDuration());
 
   SkCanvas* embedder_root_canvas = nullptr;
   if (external_view_embedder_) {
@@ -531,7 +531,7 @@ RasterStatus Rasterizer::DrawToSurface(
       frame->Submit();
     }
 
-    frame_timings_recorder->RecordRasterEnd(fml::TimePoint::Now());
+    frame_timings_recorder.RecordRasterEnd(fml::TimePoint::Now());
     FireNextFrameCallbackIfPresent();
 
     if (surface_->GetContext()) {

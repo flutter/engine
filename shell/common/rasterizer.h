@@ -485,7 +485,7 @@ class Rasterizer final : public SnapshotDelegate {
       std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder,
       std::unique_ptr<flutter::LayerTree> layer_tree);
 
-  RasterStatus DrawToSurface(FrameTimingsRecorder* frame_timings_recorder,
+  RasterStatus DrawToSurface(FrameTimingsRecorder& frame_timings_recorder,
                              flutter::LayerTree& layer_tree);
 
   void FireNextFrameCallbackIfPresent();
