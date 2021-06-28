@@ -1728,6 +1728,10 @@ void applyTextStyleToElement({
   if (color != null) {
     cssStyle.color = colorToCssString(color);
   }
+  final ui.Color? background = style.background?.color;
+  if (background != null) {
+    cssStyle.backgroundColor = colorToCssString(background);
+  }
   if (style.height != null) {
     cssStyle.lineHeight = '${style.height}';
   }

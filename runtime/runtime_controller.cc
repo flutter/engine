@@ -177,9 +177,10 @@ bool RuntimeController::SetAccessibilityFeatures(int32_t flags) {
   return false;
 }
 
-bool RuntimeController::BeginFrame(fml::TimePoint frame_time) {
+bool RuntimeController::BeginFrame(fml::TimePoint frame_time,
+                                   uint64_t frame_number) {
   if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
-    platform_configuration->BeginFrame(frame_time);
+    platform_configuration->BeginFrame(frame_time, frame_number);
     return true;
   }
 
@@ -195,7 +196,7 @@ bool RuntimeController::ReportTimings(std::vector<int64_t> timings) {
   return false;
 }
 
-bool RuntimeController::NotifyIdle(int64_t deadline, size_t freed_hint) {
+bool RuntimeController::NotifyIdle(int64_t deadline) {
   std::shared_ptr<DartIsolate> root_isolate = root_isolate_.lock();
   if (!root_isolate) {
     return false;
@@ -203,9 +204,6 @@ bool RuntimeController::NotifyIdle(int64_t deadline, size_t freed_hint) {
 
   tonic::DartState::Scope scope(root_isolate);
 
-  // Dart will use the freed hint at the next idle notification. Make sure to
-  // Update it with our latest value before calling NotifyIdle.
-  Dart_HintFreed(freed_hint);
   Dart_NotifyIdle(deadline);
 
   // Idle notifications being in isolate scope are part of the contract.
