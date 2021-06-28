@@ -49,6 +49,6 @@ To test the pixel tests directly: `./testing/run_tests.py --type dart --dart-fil
 
 To add a new test, add a glsl (fragment shader tests) or spvasm (spirv exception tests) src file to a `lib/spirv/test/` subfolder, and add the file as a source to the corresponding `BUILD.gn`. 
 
-- New files in `exception_shaders` will be automatically tested in `testing/dart/spirv_exception_test`.
-- New files in `supported_op_shaders` and `supported_glsl_op_shaders` will be automatically tested in `testing/dart/fragment_shader_test`.
-- New files in `general_shaders` should add a new manual test case in `testing/dart/fragment_shader_test`.
+- New files in `exception_shaders` are automatically tested in `testing/dart/spirv_exception_test`.
+- New files in `supported_op_shaders` and `supported_glsl_op_shaders` are automatically tested in `testing/dart/fragment_shader_test`.
+- New files in `general_shaders` are not automatically tested and must add a new manual test case in `testing/dart/fragment_shader_test`.
