@@ -36,13 +36,10 @@ void main() {
       1.0,    // iMat2Uniform[1][1]
     ]));
 
-    final PictureRecorder recorder = PictureRecorder();
-    final Canvas canvas = Canvas(recorder);
-    final Paint paint = Paint()..shader = shader;
-    canvas.drawPaint(paint);
-    final Picture picture = recorder.endRecording();
-    final Image image = await picture.toImage(100, 100);
-    final ByteData renderedBytes = await image.toByteData();
+    final ByteData renderedBytes = await _imageByteDataFromShader(
+      shader: shader,
+      imageDimension: 100,
+    );
 
     expect(toFloat(renderedBytes.getUint8(0)), closeTo(0.0, epsilon));
     expect(toFloat(renderedBytes.getUint8(1)), closeTo(0.25, epsilon));
@@ -50,8 +47,10 @@ void main() {
     expect(toFloat(renderedBytes.getUint8(3)), closeTo(1.0, epsilon));
   });
 
+  // Test all supported GLSL ops. See lib/spirv/lib/src/constants.dart
   _expectShadersRenderGreen('supported_glsl_op_shaders');
 
+  // Test all supported instructions. See lib/spirv/lib/src/constants.dart
   _expectShadersRenderGreen('supported_op_shaders');
 }
 
@@ -69,19 +68,26 @@ void _expectShadersRenderGreen(String leafFolderName) {
 // Expects that a spirv shader only outputs the color green.
 Future<void> _expectShaderRendersGreen(Uint8List spirvBytes) async {
   final FragmentShader shader = FragmentShader(spirv: spirvBytes.buffer);
+  final ByteData renderedBytes = await _imageByteDataFromShader(
+    shader: shader,
+    imageDimension: _shaderImageDimension,
+  );
+  for (final int color in renderedBytes.buffer.asUint32List()) {
+    expect(color, _greenColor);
+  }
+}
+
+Future<ByteData> _imageByteDataFromShader({FragmentShader shader, int imageDimension}) async {
   final PictureRecorder recorder = PictureRecorder();
   final Canvas canvas = Canvas(recorder);
   final Paint paint = Paint()..shader = shader;
   canvas.drawPaint(paint);
   final Picture picture = recorder.endRecording();
   final Image image = await picture.toImage(
-    _shaderImageDimension,
-    _shaderImageDimension,
+    imageDimension,
+    imageDimension,
   );
-  final ByteData renderedBytes = await image.toByteData();
-  for (final int color in renderedBytes.buffer.asUint32List()) {
-    expect(color, _greenColor);
-  }
+  return image.toByteData();
 }
 
 // Gets the .spv files in a generated folder.
