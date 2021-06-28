@@ -3821,38 +3821,6 @@ class FragmentShader extends Shader {
   void _update(Float32List floatUniforms) native 'FragmentShader_update';
 }
 
-/// A shader (as used by [Paint.shader]) that tiles an image.
-class ImageShader extends Shader {
-  /// Creates an image-tiling shader. The first argument specifies the image to
-  /// tile. The second and third arguments specify the [TileMode] for the x
-  /// direction and y direction respectively. The fourth argument gives the
-  /// matrix to apply to the effect. All the arguments are required and must not
-  /// be null, except for [filterQuality]. If [filterQuality] is not specified
-  /// at construction time it will be deduced from the environment where it is used,
-  /// such as from [Paint.filterQuality].
-  @pragma('vm:entry-point')
-  ImageShader(
-    Image image,
-    TileMode tmx,
-    TileMode tmy,
-    Float64List matrix4, {
-    FilterQuality? filterQuality,
-  })  : assert(image != null), // image is checked on the engine side
-        assert(tmx != null),
-        assert(tmy != null),
-        assert(matrix4 != null),
-        super._() {
-    if (matrix4.length != 16)
-      throw ArgumentError('"matrix4" must have 16 entries.');
-    _constructor();
-    _initWithImage(image._image, tmx.index, tmy.index,
-        filterQuality?.index ?? -1, matrix4);
-  }
-  void _constructor() native 'ImageShader_constructor';
-  void _initWithImage(_Image image, int tmx, int tmy, int filterQualityIndex,
-      Float64List matrix4) native 'ImageShader_initWithImage';
-}
-
 /// Defines how a list of points is interpreted when drawing a set of triangles.
 ///
 /// Used by [Canvas.drawVertices].

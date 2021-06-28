@@ -13,7 +13,9 @@ if (enable_unittests) {
       "op_type_bool.glsl",
       "op_type_float.glsl",
       "op_type_function.glsl",
+      "op_type_int.glsl",
       "op_type_matrix.glsl",
+      # "op_type_pointer.glsl",
       "op_type_vector.glsl",
       "op_type_void.glsl",
     ]
