@@ -767,10 +767,11 @@ void ParagraphTxt::Layout(double width) {
       if (bidi_run.start() < line_end_index &&
           bidi_run.end() > line_metrics.start_index) {
         // The run is a placeholder run.
-        if (bidi_run.size() == 1 &&
+        if (placeholder_run_index < inline_placeholders_.size() &&
+            bidi_run.size() ==
+                inline_placeholders_[placeholder_run_index].codepoint_length &&
             text_[bidi_run.start()] == objReplacementChar &&
-            obj_replacement_char_indexes_.count(bidi_run.start()) != 0 &&
-            placeholder_run_index < inline_placeholders_.size()) {
+            obj_replacement_char_indexes_.count(bidi_run.start()) != 0) {
           line_runs.emplace_back(
               std::max(bidi_run.start(), line_metrics.start_index),
               std::min(bidi_run.end(), line_end_index), bidi_run.direction(),
@@ -904,7 +905,7 @@ void ParagraphTxt::Layout(double width) {
         GetGlyphTypeface(layout, glyph_blob.start).apply(font);
         const SkTextBlobBuilder::RunBuffer& blob_buffer =
             builder.allocRunPos(font, glyph_blob.end - glyph_blob.start);
-
+        FML_LOG(ERROR) << "NEW";
         double justify_x_offset_delta = 0;
         for (size_t glyph_index = glyph_blob.start;
              glyph_index < glyph_blob.end;) {
@@ -968,26 +969,26 @@ void ParagraphTxt::Layout(double width) {
             // The placeholder run's layout should yield one glyph representing
             // the object replacement character.  Replace its width with the
             // placeholder's width.
-            FML_DCHECK(layout.nGlyphs() == 1);
             glyph_advance = run.placeholder_run()->width;
+            glyph_positions.emplace_back(
+                run_x_offset, glyph_advance, run.start(),
+                run.placeholder_run()->codepoint_length);
           } else {
             glyph_advance = layout.getCharAdvance(glyph_code_units.start);
-          }
-          float grapheme_advance =
-              glyph_advance / grapheme_code_unit_counts.size();
-
-          glyph_positions.emplace_back(run_x_offset + glyph_x_offset,
-                                       grapheme_advance,
-                                       run.start() + glyph_code_units.start,
-                                       grapheme_code_unit_counts[0]);
-
-          // Compute positions for the additional graphemes in the ligature.
-          for (size_t i = 1; i < grapheme_code_unit_counts.size(); ++i) {
-            glyph_positions.emplace_back(
-                glyph_positions.back().x_pos.end, grapheme_advance,
-                glyph_positions.back().code_units.start +
-                    grapheme_code_unit_counts[i - 1],
-                grapheme_code_unit_counts[i]);
+            float grapheme_advance =
+                glyph_advance / grapheme_code_unit_counts.size();
+            glyph_positions.emplace_back(run_x_offset + glyph_x_offset,
+                                         grapheme_advance,
+                                         run.start() + glyph_code_units.start,
+                                         grapheme_code_unit_counts[0]);
+            // Compute positions for the additional graphemes in the ligature.
+            for (size_t i = 1; i < grapheme_code_unit_counts.size(); ++i) {
+              glyph_positions.emplace_back(
+                  glyph_positions.back().x_pos.end, grapheme_advance,
+                  glyph_positions.back().code_units.start +
+                      grapheme_code_unit_counts[i - 1],
+                  grapheme_code_unit_counts[i]);
+            }
           }
 
           bool at_word_start = false;
@@ -1932,8 +1933,10 @@ Paragraph::PositionWithAffinity ParagraphTxt::GetGlyphPositionAtCoordinate(
   double glyph_center = (gp->x_pos.start + gp->x_pos.end) / 2;
   if ((direction == TextDirection::ltr && dx < glyph_center) ||
       (direction == TextDirection::rtl && dx >= glyph_center)) {
+    FML_LOG(ERROR) << "POS: " << gp->code_units.start;
     return PositionWithAffinity(gp->code_units.start, DOWNSTREAM);
   } else {
+    FML_LOG(ERROR) << "POS: " << gp->code_units.end;
     return PositionWithAffinity(gp->code_units.end, UPSTREAM);
   }
 }

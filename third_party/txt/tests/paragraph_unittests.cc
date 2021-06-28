@@ -534,14 +534,14 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholderParagraph)) {
   builder.AddText(u16_text);
 
   txt::PlaceholderRun placeholder_run(50, 50, PlaceholderAlignment::kBaseline,
-                                      TextBaseline::kAlphabetic, 0);
+                                      TextBaseline::kAlphabetic, 0, 1);
   builder.AddPlaceholder(placeholder_run);
 
   builder.AddText(u16_text);
 
   builder.AddPlaceholder(placeholder_run);
   txt::PlaceholderRun placeholder_run2(5, 50, PlaceholderAlignment::kBaseline,
-                                       TextBaseline::kAlphabetic, 50);
+                                       TextBaseline::kAlphabetic, 50, 1);
   builder.AddPlaceholder(placeholder_run2);
   builder.AddPlaceholder(placeholder_run);
   builder.AddPlaceholder(placeholder_run2);
@@ -659,7 +659,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholderBaselineParagraph)) {
   builder.AddText(u16_text);
 
   txt::PlaceholderRun placeholder_run(55, 50, PlaceholderAlignment::kBaseline,
-                                      TextBaseline::kAlphabetic, 38.34734);
+                                      TextBaseline::kAlphabetic, 38.34734, 1);
   builder.AddPlaceholder(placeholder_run);
 
   builder.AddText(u16_text);
@@ -733,9 +733,9 @@ TEST_F(ParagraphTest,
 
   builder.AddText(u16_text);
 
-  txt::PlaceholderRun placeholder_run(55, 50,
-                                      PlaceholderAlignment::kAboveBaseline,
-                                      TextBaseline::kAlphabetic, 903129.129308);
+  txt::PlaceholderRun placeholder_run(
+      55, 50, PlaceholderAlignment::kAboveBaseline, TextBaseline::kAlphabetic,
+      903129.129308, 1);
   builder.AddPlaceholder(placeholder_run);
 
   builder.AddText(u16_text);
@@ -809,9 +809,9 @@ TEST_F(ParagraphTest,
 
   builder.AddText(u16_text);
 
-  txt::PlaceholderRun placeholder_run(55, 50,
-                                      PlaceholderAlignment::kBelowBaseline,
-                                      TextBaseline::kAlphabetic, 903129.129308);
+  txt::PlaceholderRun placeholder_run(
+      55, 50, PlaceholderAlignment::kBelowBaseline, TextBaseline::kAlphabetic,
+      903129.129308, 1);
   builder.AddPlaceholder(placeholder_run);
 
   builder.AddText(u16_text);
@@ -885,7 +885,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholderBottomParagraph)) {
   builder.AddText(u16_text);
 
   txt::PlaceholderRun placeholder_run(55, 50, PlaceholderAlignment::kBottom,
-                                      TextBaseline::kAlphabetic, 0);
+                                      TextBaseline::kAlphabetic, 0, 1);
   builder.AddPlaceholder(placeholder_run);
 
   builder.AddText(u16_text);
@@ -959,7 +959,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholderTopParagraph)) {
   builder.AddText(u16_text);
 
   txt::PlaceholderRun placeholder_run(55, 50, PlaceholderAlignment::kTop,
-                                      TextBaseline::kAlphabetic, 0);
+                                      TextBaseline::kAlphabetic, 0, 1);
   builder.AddPlaceholder(placeholder_run);
 
   builder.AddText(u16_text);
@@ -1033,7 +1033,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholderMiddleParagraph)) {
   builder.AddText(u16_text);
 
   txt::PlaceholderRun placeholder_run(55, 50, PlaceholderAlignment::kMiddle,
-                                      TextBaseline::kAlphabetic, 0);
+                                      TextBaseline::kAlphabetic, 0, 1);
   builder.AddPlaceholder(placeholder_run);
 
   builder.AddText(u16_text);
@@ -1109,7 +1109,7 @@ TEST_F(ParagraphTest,
   builder.AddText(u16_text);
 
   txt::PlaceholderRun placeholder_run(55, 50, PlaceholderAlignment::kBaseline,
-                                      TextBaseline::kIdeographic, 38.34734);
+                                      TextBaseline::kIdeographic, 38.34734, 1);
   builder.AddPlaceholder(placeholder_run);
 
   builder.AddText(u16_text);
@@ -1183,9 +1183,9 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholderBreakParagraph)) {
   builder.AddText(u16_text);
 
   txt::PlaceholderRun placeholder_run(50, 50, PlaceholderAlignment::kBaseline,
-                                      TextBaseline::kAlphabetic, 50);
+                                      TextBaseline::kAlphabetic, 50, 1);
   txt::PlaceholderRun placeholder_run2(25, 25, PlaceholderAlignment::kBaseline,
-                                       TextBaseline::kAlphabetic, 12.5);
+                                       TextBaseline::kAlphabetic, 12.5, 1);
   builder.AddPlaceholder(placeholder_run);
   builder.AddPlaceholder(placeholder_run);
   builder.AddPlaceholder(placeholder_run);
@@ -1338,9 +1338,9 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholderGetRectsParagraph)) {
   builder.AddText(u16_text);
 
   txt::PlaceholderRun placeholder_run(50, 50, PlaceholderAlignment::kBaseline,
-                                      TextBaseline::kAlphabetic, 50);
+                                      TextBaseline::kAlphabetic, 50, 1);
   txt::PlaceholderRun placeholder_run2(5, 20, PlaceholderAlignment::kBaseline,
-                                       TextBaseline::kAlphabetic, 10);
+                                       TextBaseline::kAlphabetic, 10, 1);
   builder.AddPlaceholder(placeholder_run);
   builder.AddPlaceholder(placeholder_run);
   builder.AddPlaceholder(placeholder_run);
@@ -1472,7 +1472,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholderLongestLine)) {
   builder.PushStyle(text_style);
 
   txt::PlaceholderRun placeholder_run(50, 50, PlaceholderAlignment::kBaseline,
-                                      TextBaseline::kAlphabetic, 0);
+                                      TextBaseline::kAlphabetic, 0, 1);
   builder.AddPlaceholder(placeholder_run);
   builder.Pop();
 
@@ -1491,7 +1491,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholderIntrinsicWidth)) {
                           icu_text.getBuffer() + icu_text.length());
 
   txt::PlaceholderRun placeholder_run(50, 50, PlaceholderAlignment::kBaseline,
-                                      TextBaseline::kAlphabetic, 0);
+                                      TextBaseline::kAlphabetic, 0, 1);
 
   txt::ParagraphStyle paragraph_style;
   txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
@@ -1552,7 +1552,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholder0xFFFCParagraph)) {
   truth_text.insert(truth_text.end(), u16_text2.begin(), u16_text2.end());
 
   txt::PlaceholderRun placeholder_run(50, 50, PlaceholderAlignment::kBaseline,
-                                      TextBaseline::kAlphabetic, 25);
+                                      TextBaseline::kAlphabetic, 25, 1);
   builder.AddPlaceholder(placeholder_run);
   truth_text.push_back(0xFFFC);
 
@@ -2913,7 +2913,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(JustifyPlaceholder)) {
                            icu_text1.getBuffer() + icu_text1.length());
 
   txt::PlaceholderRun placeholder_run(60, 60, PlaceholderAlignment::kBaseline,
-                                      TextBaseline::kAlphabetic, 0);
+                                      TextBaseline::kAlphabetic, 0, 1);
 
   const char* text2 = " B CCCCC";
   auto icu_text2 = icu::UnicodeString::fromUTF8(text2);

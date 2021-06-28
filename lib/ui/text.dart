@@ -3500,6 +3500,7 @@ class ParagraphBuilder extends NativeFieldWrapperClass1 {
     double scale = 1.0,
     double? baselineOffset,
     TextBaseline? baseline,
+    int codepointLength = 1,
   }) {
     // Require a baseline to be specified if using a baseline-based alignment.
     assert(!(alignment == PlaceholderAlignment.aboveBaseline ||
@@ -3508,11 +3509,11 @@ class ParagraphBuilder extends NativeFieldWrapperClass1 {
     // Default the baselineOffset to height if null. This will place the placeholder
     // fully above the baseline, similar to [PlaceholderAlignment.aboveBaseline].
     baselineOffset = baselineOffset ?? height;
-    _addPlaceholder(width * scale, height * scale, alignment.index, baselineOffset * scale, baseline?.index);
+    _addPlaceholder(width * scale, height * scale, alignment.index, baselineOffset * scale, baseline?.index, codepointLength);
     _placeholderCount++;
     _placeholderScales.add(scale);
   }
-  String? _addPlaceholder(double width, double height, int alignment, double baselineOffset, int? baseline) native 'ParagraphBuilder_addPlaceholder';
+  String? _addPlaceholder(double width, double height, int alignment, double baselineOffset, int? baseline, int codepointLength) native 'ParagraphBuilder_addPlaceholder';
 
   /// Applies the given paragraph style and returns a [Paragraph] containing the
   /// added text and associated styling.
