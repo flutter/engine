@@ -2,7 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import 'package:ui/ui.dart' as ui;
+
+import 'line_breaker.dart';
+import 'unicode_range.dart';
+
+const int _kChar_A = 65;
+const int _kChar_Z = 90;
+const int _kChar_a = 97;
+const int _kChar_z = 122;
 
 // This data was taken from the source code of the Closure library:
 //
