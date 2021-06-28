@@ -12,6 +12,7 @@ if (enable_unittests) {
     sources = [
       "glsl_op_abs.glsl",
       "glsl_op_cos.glsl",
+      "glsl_op_sign.glsl",
       "glsl_op_sin.glsl",
       "glsl_op_tan.glsl",
       "glsl_op_trunc.glsl",
