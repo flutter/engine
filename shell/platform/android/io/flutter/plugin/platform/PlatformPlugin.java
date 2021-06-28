@@ -387,8 +387,7 @@ public class PlatformPlugin {
           break;
       }
 
-      if (systemChromeStyle.statusBarColor != null
-          && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+      if (systemChromeStyle.statusBarColor != null) {
         window.setStatusBarColor(systemChromeStyle.statusBarColor);
       }
     }
