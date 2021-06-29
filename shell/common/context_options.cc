@@ -31,7 +31,9 @@ GrContextOptions MakeDefaultContextOptions(ContextType type,
 
   options.fReduceOpsTaskSplitting = GrContextOptions::Enable::kNo;
 
-  options.fReducedShaderVariations = true;
+  // TODO(chinmaygarde): Re-enable after investigating performance
+  // https://github.com/flutter/flutter/issues/84213.
+  options.fReducedShaderVariations = false;
 
   return options;
 };
