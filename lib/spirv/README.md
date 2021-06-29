@@ -46,6 +46,12 @@ for all tests.
 
 To test the pixel tests directly: `./testing/run_tests.py --type dart --dart-filter fragment_shader_test.dart`
 
+#### A Note on Test Isolation
+
+Even the simplest GLSL program tests several instructions, so no test us completely isolated
+to a single op. Also, some of the GLSL 450 op tests will use addition in subtraction, along with the
+actual op being tested. However, the GLSL program for each test file is kept as simple as possible, to satisfy these conditions: pass if the op works, and fail if the op does not work.
+
 ### Adding New Tests
 
 To add a new test, add a glsl (fragment shader tests) or spvasm (spirv exception tests) src file to a `lib/spirv/test/` subfolder, and add the file as a source to the corresponding `BUILD.gn`. 
