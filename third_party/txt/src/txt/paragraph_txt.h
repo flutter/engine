@@ -173,6 +173,7 @@ class ParagraphTxt : public Paragraph {
   // position in the text where the placeholder will occur. There should be an
   // equal number of 0xFFFC characters and elements in this vector.
   std::vector<PlaceholderRun> inline_placeholders_;
+  std::vector<Range<size_t>> inline_placeholder_ranges_;
   // The indexes of the boxes that correspond to an inline placeholder.
   std::vector<size_t> inline_placeholder_boxes_;
   // The indexes of instances of 0xFFFC that correspond to placeholders. This is
@@ -340,7 +341,8 @@ class ParagraphTxt : public Paragraph {
 
   void SetInlinePlaceholders(
       std::vector<PlaceholderRun> inline_placeholders,
-      std::unordered_set<size_t> obj_replacement_char_indexes);
+      std::unordered_set<size_t> obj_replacement_char_indexes,
+      std::vector<Range<size_t>> inline_placeholder_ranges);
 
   // Break the text into lines.
   bool ComputeLineBreaks();

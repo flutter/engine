@@ -244,10 +244,12 @@ void ParagraphTxt::SetText(std::vector<uint16_t> text, StyledRuns runs) {
 
 void ParagraphTxt::SetInlinePlaceholders(
     std::vector<PlaceholderRun> inline_placeholders,
-    std::unordered_set<size_t> obj_replacement_char_indexes) {
+    std::unordered_set<size_t> obj_replacement_char_indexes,
+    std::vector<Range<size_t>> inline_placeholder_ranges) {
   needs_layout_ = true;
   inline_placeholders_ = std::move(inline_placeholders);
   obj_replacement_char_indexes_ = std::move(obj_replacement_char_indexes);
+  inline_placeholder_ranges_ = std::move(inline_placeholder_ranges);
 }
 
 bool ParagraphTxt::ComputeLineBreaks() {
@@ -905,7 +907,6 @@ void ParagraphTxt::Layout(double width) {
         GetGlyphTypeface(layout, glyph_blob.start).apply(font);
         const SkTextBlobBuilder::RunBuffer& blob_buffer =
             builder.allocRunPos(font, glyph_blob.end - glyph_blob.start);
-        FML_LOG(ERROR) << "NEW";
         double justify_x_offset_delta = 0;
         for (size_t glyph_index = glyph_blob.start;
              glyph_index < glyph_blob.end;) {
@@ -1933,10 +1934,8 @@ Paragraph::PositionWithAffinity ParagraphTxt::GetGlyphPositionAtCoordinate(
   double glyph_center = (gp->x_pos.start + gp->x_pos.end) / 2;
   if ((direction == TextDirection::ltr && dx < glyph_center) ||
       (direction == TextDirection::rtl && dx >= glyph_center)) {
-    FML_LOG(ERROR) << "POS: " << gp->code_units.start;
     return PositionWithAffinity(gp->code_units.start, DOWNSTREAM);
   } else {
-    FML_LOG(ERROR) << "POS: " << gp->code_units.end;
     return PositionWithAffinity(gp->code_units.end, UPSTREAM);
   }
 }
@@ -2003,6 +2002,15 @@ Paragraph::Range<size_t> ParagraphTxt::GetWordBoundary(size_t offset) {
     prev_boundary = offset;
   if (next_boundary == icu::BreakIterator::DONE)
     next_boundary = offset;
+
+  // Check against known ranges that are attributed to placeholders. Return
+  // the whole placeholder range if the word contains the placeholder.
+  for (Range<size_t> range : inline_placeholder_ranges_) {
+    if (range.contains(prev_boundary) || range.contains(next_boundary - 1)) {
+      return Range<size_t>(std::min<size_t>(range.start, prev_boundary),
+                           std::max<size_t>(range.end, next_boundary));
+    }
+  }
   return Range<size_t>(prev_boundary, next_boundary);
 }
 

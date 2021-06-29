@@ -100,6 +100,8 @@ class Paragraph {
       start += delta;
       end += delta;
     }
+
+    bool contains(T index) const { return index >= start && index < end; }
   };
 
   virtual ~Paragraph() = default;
