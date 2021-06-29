@@ -32,7 +32,7 @@ def PrintDivider(char='='):
   print '\n'
 
 
-def RunCmd(cmd, forbidden_output=[], expect_failure=False, **kwargs):
+def RunCmd(cmd, forbidden_output=[], expect_failure=False, env=None, **kwargs):
   command_string = ' '.join(cmd)
 
   PrintDivider('>')
@@ -41,7 +41,7 @@ def RunCmd(cmd, forbidden_output=[], expect_failure=False, **kwargs):
   start_time = time.time()
   stdout_pipe = sys.stdout if not forbidden_output else subprocess.PIPE
   stderr_pipe = sys.stderr if not forbidden_output else subprocess.PIPE
-  process = subprocess.Popen(cmd, stdout=stdout_pipe, stderr=stderr_pipe, **kwargs)
+  process = subprocess.Popen(cmd, stdout=stdout_pipe, stderr=stderr_pipe, env=env, **kwargs)
   stdout, stderr = process.communicate()
   end_time = time.time()
 
@@ -110,12 +110,21 @@ def RunEngineExecutable(build_dir, executable_name, filter, flags=[],
     print('Skipping %s due to filter.' % executable_name)
     return
 
-  executable = FindExecutablePath(os.path.join(build_dir, executable_name))
+  unstripped_exe = os.path.join(build_dir, 'exe.unstripped', executable_name)
+  if IsLinux() and os.path.exists(unstripped_exe):
+    # Use unstripped executables in order to get better symbolized crash
+    # stack traces on Linux.
+    executable = unstripped_exe
+    # Some tests depend on the EGL/GLES libraries placed in the build directory.
+    env = {'LD_LIBRARY_PATH': os.path.join(build_dir, 'lib.unstripped')}
+  else:
+    executable = FindExecutablePath(os.path.join(build_dir, executable_name))
+    env = None
 
   print('Running %s in %s' % (executable_name, cwd))
   test_command = [ executable ] + flags
   print(' '.join(test_command))
-  RunCmd(test_command, cwd=cwd, forbidden_output=forbidden_output, expect_failure=expect_failure)
+  RunCmd(test_command, cwd=cwd, forbidden_output=forbidden_output, expect_failure=expect_failure, env=env)
 
 
 def RunCCTests(build_dir, filter):
@@ -185,7 +194,8 @@ def RunCCTests(build_dir, filter):
 
   # https://github.com/flutter/flutter/issues/36296
   if IsLinux():
-    RunEngineExecutable(build_dir, 'txt_unittests', filter, shuffle_flags)
+    icu_flags = ['--icu-data-file-path=%s' % os.path.join(build_dir, 'icudtl.dat')]
+    RunEngineExecutable(build_dir, 'txt_unittests', filter, icu_flags + shuffle_flags)
 
   if IsLinux():
     RunEngineExecutable(build_dir, 'flutter_linux_unittests', filter, non_repeatable_shuffle_flags)
@@ -195,14 +205,16 @@ def RunCCTests(build_dir, filter):
 def RunEngineBenchmarks(build_dir, filter):
   print("Running Engine Benchmarks.")
 
-  RunEngineExecutable(build_dir, 'shell_benchmarks', filter)
+  icu_flags = ['--icu-data-file-path=%s' % os.path.join(build_dir, 'icudtl.dat')]
 
-  RunEngineExecutable(build_dir, 'fml_benchmarks', filter)
+  RunEngineExecutable(build_dir, 'shell_benchmarks', filter, icu_flags)
 
-  RunEngineExecutable(build_dir, 'ui_benchmarks', filter)
+  RunEngineExecutable(build_dir, 'fml_benchmarks', filter, icu_flags)
+
+  RunEngineExecutable(build_dir, 'ui_benchmarks', filter, icu_flags)
 
   if IsLinux():
-    RunEngineExecutable(build_dir, 'txt_benchmarks', filter)
+    RunEngineExecutable(build_dir, 'txt_benchmarks', filter, icu_flags)
 
 
 def SnapshotTest(build_dir, test_packages, dart_file, kernel_file_output, verbose_dart_snapshot):
@@ -266,7 +278,8 @@ def RunDartTest(build_dir, test_packages, dart_file, verbose_dart_snapshot, mult
 
   command_args += [
     '--use-test-fonts',
-    kernel_file_output
+    '--icu-data-file-path=%s' % os.path.join(build_dir, 'icudtl.dat'),
+    kernel_file_output,
   ]
 
   if multithreaded:
@@ -283,89 +296,34 @@ def RunDartTest(build_dir, test_packages, dart_file, verbose_dart_snapshot, mult
 
 def EnsureDebugUnoptSkyPackagesAreBuilt():
   variant_out_dir = os.path.join(out_dir, 'host_debug_unopt')
-
-  ninja_command = [
-    'ninja',
-    '-C',
-    variant_out_dir,
-    'flutter/sky/packages'
-  ]
-
-  # Attempt running Ninja if the out directory exists.
-  # We don't want to blow away any custom GN args the caller may have already set.
-  if os.path.exists(variant_out_dir):
-    RunCmd(ninja_command, cwd=buildroot_dir)
-    return
-
-  gn_command = [
-    os.path.join(buildroot_dir, 'flutter', 'tools', 'gn'),
-    '--runtime-mode',
-    'debug',
-    '--unopt',
-    '--no-lto',
-  ]
-
-  RunCmd(gn_command, cwd=buildroot_dir)
-  RunCmd(ninja_command, cwd=buildroot_dir)
+  message = []
+  message.append('gn --runtime-mode debug --unopt --no-lto')
+  message.append('ninja -C %s flutter/sky/packages' % variant_out_dir)
+  final_message = '%s doesn\'t exist. Please run the following commands: \n%s' % (
+      variant_out_dir, '\n'.join(message))
+  assert os.path.exists(variant_out_dir), final_message
 
 
 def EnsureJavaTestsAreBuilt(android_out_dir):
   """Builds the engine variant and the test jar containing the JUnit tests"""
-  ninja_command = [
-    'autoninja',
-    '-C',
-    android_out_dir,
-    'flutter/shell/platform/android:robolectric_tests'
-  ]
-
-  # Attempt running Ninja if the out directory exists.
-  # We don't want to blow away any custom GN args the caller may have already set.
-  if os.path.exists(android_out_dir):
-    RunCmd(ninja_command, cwd=buildroot_dir)
-    return
-
-  assert android_out_dir != "out/android_debug_unopt", "%s doesn't exist. Run GN to generate the directory first" % android_out_dir
-
-  # Otherwise prepare the directory first, then build the test.
-  gn_command = [
-    os.path.join(buildroot_dir, 'flutter', 'tools', 'gn'),
-    '--android',
-    '--unoptimized',
-    '--runtime-mode=debug',
-    '--no-lto',
-  ]
-  RunCmd(gn_command, cwd=buildroot_dir)
-  RunCmd(ninja_command, cwd=buildroot_dir)
+  tmp_out_dir = os.path.join(out_dir, android_out_dir)
+  message = []
+  message.append('gn --android --unoptimized --runtime-mode=debug --no-lto')
+  message.append('ninja -C %s flutter/shell/platform/android:robolectric_tests' % android_out_dir)
+  final_message = '%s doesn\'t exist. Please run the following commands: \n%s' % (
+      android_out_dir, '\n'.join(message))
+  assert os.path.exists(tmp_out_dir), final_message
 
 
 def EnsureIosTestsAreBuilt(ios_out_dir):
   """Builds the engine variant and the test dylib containing the XCTests"""
-  ninja_command = [
-    'autoninja',
-    '-C',
-    ios_out_dir,
-    'ios_test_flutter'
-  ]
-
-  # Attempt running Ninja if the out directory exists.
-  # We don't want to blow away any custom GN args the caller may have already set.
-  if os.path.exists(ios_out_dir):
-    RunCmd(ninja_command, cwd=buildroot_dir)
-    return
-
-  assert ios_out_dir != "out/ios_debug_sim_unopt", "%s doesn't exist. Run GN to generate the directory first" % ios_out_dir
-
-  # Otherwise prepare the directory first, then build the test.
-  gn_command = [
-    os.path.join(buildroot_dir, 'flutter', 'tools', 'gn'),
-    '--ios',
-    '--unoptimized',
-    '--runtime-mode=debug',
-    '--no-lto',
-    '--simulator'
-  ]
-  RunCmd(gn_command, cwd=buildroot_dir)
-  RunCmd(ninja_command, cwd=buildroot_dir)
+  tmp_out_dir = os.path.join(out_dir, ios_out_dir)
+  message = []
+  message.append('gn --ios --unoptimized --runtime-mode=debug --no-lto --simulator')
+  message.append('autoninja -C %s ios_test_flutter' % ios_out_dir)
+  final_message = '%s doesn\'t exist. Please run the following commands: \n%s' % (
+      ios_out_dir, '\n'.join(message))
+  assert os.path.exists(tmp_out_dir), final_message
 
 
 def AssertExpectedJavaVersion():
@@ -540,6 +498,38 @@ def RunBenchmarkTests(build_dir):
       cwd=test_dir)
 
 
+def RunGithooksTests(build_dir):
+  test_dir = os.path.join(buildroot_dir, 'flutter', 'tools', 'githooks')
+  dart_tests = glob.glob('%s/test/*_test.dart' % test_dir)
+  for dart_test_file in dart_tests:
+    opts = [
+      '--disable-dart-dev',
+      dart_test_file]
+    RunEngineExecutable(
+      build_dir,
+      os.path.join('dart-sdk', 'bin', 'dart'),
+      None,
+      flags=opts,
+      cwd=test_dir)
+
+
+def RunClangTidyTests(build_dir):
+  test_dir = os.path.join(buildroot_dir, 'flutter', 'tools', 'clang_tidy')
+  dart_tests = glob.glob('%s/test/*_test.dart' % test_dir)
+  for dart_test_file in dart_tests:
+    opts = [
+      '--disable-dart-dev',
+      dart_test_file,
+      os.path.join(build_dir, 'compile_commands.json'),
+      os.path.join(buildroot_dir, 'flutter')]
+    RunEngineExecutable(
+      build_dir,
+      os.path.join('dart-sdk', 'bin', 'dart'),
+      None,
+      flags=opts,
+      cwd=test_dir)
+
+
 def main():
   parser = argparse.ArgumentParser()
 
@@ -581,6 +571,8 @@ def main():
     dart_filter = args.dart_filter.split(',') if args.dart_filter else None
     RunDartSmokeTest(build_dir, args.verbose_dart_snapshot)
     RunLitetestTests(build_dir)
+    RunGithooksTests(build_dir)
+    RunClangTidyTests(build_dir)
     RunDartTests(build_dir, dart_filter, args.verbose_dart_snapshot)
     RunConstFinderTests(build_dir)
     RunFrontEndServerTests(build_dir)

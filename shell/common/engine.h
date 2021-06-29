@@ -13,7 +13,6 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/memory/weak_ptr.h"
-#include "flutter/lib/ui/hint_freed_delegate.h"
 #include "flutter/lib/ui/painting/image_decoder.h"
 #include "flutter/lib/ui/painting/image_generator_registry.h"
 #include "flutter/lib/ui/semantics/custom_accessibility_action.h"
@@ -73,9 +72,7 @@ namespace flutter {
 ///           name and it does happen to be one of the older classes in the
 ///           repository.
 ///
-class Engine final : public RuntimeDelegate,
-                     public HintFreedDelegate,
-                     PointerDataDispatcher::Delegate {
+class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
  public:
   //----------------------------------------------------------------------------
   /// @brief      Indicates the result of the call to `Engine::Run`.
@@ -503,10 +500,11 @@ class Engine final : public RuntimeDelegate,
   ///                         began. May be used by animation interpolators,
   ///                         physics simulations, etc..
   ///
-  void BeginFrame(fml::TimePoint frame_time);
-
-  // |HintFreedDelegate|
-  void HintFreed(size_t size) override;
+  /// @param[in]  frame_number The frame number recorded by the animator. Used
+  ///                          by the framework to associate frame specific
+  ///                          debug information with frame timings and timeline
+  ///                          events.
+  void BeginFrame(fml::TimePoint frame_time, uint64_t frame_number);
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the engine that the UI task runner is not expected to
@@ -924,8 +922,6 @@ class Engine final : public RuntimeDelegate,
   ImageDecoder image_decoder_;
   ImageGeneratorRegistry image_generator_registry_;
   TaskRunners task_runners_;
-  size_t hint_freed_bytes_since_last_call_ = 0;
-  fml::TimePoint last_hint_freed_call_time_;
   fml::WeakPtrFactory<Engine> weak_factory_;
 
   // |RuntimeDelegate|
