@@ -22,6 +22,58 @@ void testMain() {
       window.debugOverrideDevicePixelRatio(1.0);
     });
 
+    test('Surface allocates canvases efficiently', () {
+      final Surface surface = SurfaceFactory.instance.getSurface();
+      surface.acquireFrame(ui.Size(9, 19));
+      final html.CanvasElement original = surface.htmlCanvas!;
+
+      // Expect exact requested dimensions.
+      expect(original.width, 9);
+      expect(original.height, 19);
+      expect(surface.htmlCanvas!.style.width, '9px');
+      expect(surface.htmlCanvas!.style.height, '19px');
+
+      // Shrinking reuses the existing canvas straight-up.
+      surface.acquireFrame(ui.Size(5, 15));
+      final html.CanvasElement shrunk = surface.htmlCanvas!;
+      expect(shrunk, same(original));
+      expect(surface.htmlCanvas!.style.width, '9px');
+      expect(surface.htmlCanvas!.style.height, '19px');
+
+      // The first increase will allocate a new canvas, but will overallocate
+      // by 40% to accommodate future increases.
+      surface.acquireFrame(ui.Size(10, 20));
+      final html.CanvasElement firstIncrease = surface.htmlCanvas!;
+      expect(firstIncrease, isNot(same(original)));
+
+      // Expect overallocated dimensions
+      expect(firstIncrease.width, 14);
+      expect(firstIncrease.height, 28);
+      expect(surface.htmlCanvas!.style.width, '14px');
+      expect(surface.htmlCanvas!.style.height, '28px');
+
+      // Subsequent increases within 40% reuse the old canvas.
+      surface.acquireFrame(ui.Size(11, 22));
+      final html.CanvasElement secondIncrease = surface.htmlCanvas!;
+      expect(secondIncrease, same(firstIncrease));
+
+      // Increases beyond the 40% limit will cause a new allocation.
+      surface.acquireFrame(ui.Size(20, 40));
+      final html.CanvasElement huge = surface.htmlCanvas!;
+      expect(huge, isNot(same(firstIncrease)));
+
+      // Also over-allocated
+      expect(huge.width, 28);
+      expect(huge.height, 56);
+      expect(surface.htmlCanvas!.style.width, '28px');
+      expect(surface.htmlCanvas!.style.height, '56px');
+
+      // Shrink again. Reuse the last allocated surface.
+      surface.acquireFrame(ui.Size(5, 15));
+      final html.CanvasElement shrunk2 = surface.htmlCanvas!;
+      expect(shrunk2, same(huge));
+    });
+
     test(
       'Surface creates new context when WebGL context is restored',
       () async {
