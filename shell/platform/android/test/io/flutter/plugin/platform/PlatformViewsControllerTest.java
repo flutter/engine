@@ -668,11 +668,12 @@ public class PlatformViewsControllerTest {
         /* mutatorsStack=*/ new FlutterMutatorsStack());
 
     // platformViewsController.initializePlatformViewIfNeeded(platformViewId);
-    assertEquals(flutterView.getChildCount(), 2);
+    assertEquals(flutterView.getChildCount(), 3);
 
     final View view = flutterView.getChildAt(1);
     System.out.println(flutterView.getChildAt(0));
     System.out.println(flutterView.getChildAt(1));
+    System.out.println(flutterView.getChildAt(2));
     assertTrue(view instanceof FlutterImageView);
 
     // Simulate dispose call from the framework.
