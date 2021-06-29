@@ -439,7 +439,7 @@ public class FlutterJNI {
               nativeImageHeaderCallback(imageGeneratorAddress, size.getWidth(), size.getHeight());
             });
       } catch (IOException e) {
-        Log.w(TAG, "Failed to decode image", e);
+        Log.e(TAG, "Failed to decode image", e);
         return null;
       }
     }
