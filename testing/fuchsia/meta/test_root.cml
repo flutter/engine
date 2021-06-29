@@ -1,0 +1,80 @@
+{
+    children: [
+        {
+            name: "intl_property_manager",
+            url: "fuchsia-pkg://fuchsia.com/intl_property_manager#meta/intl_property_manager.cm",
+        },
+        {
+            name: "test_driver",
+            url: "fuchsia-pkg://fuchsia.com/{{TEST_SUITE}}#meta/test_driver.cm",
+        },
+    ],
+    expose: [
+        {
+            protocol: "fuchsia.test.Suite",
+            from: "#test_driver",
+        },
+    ],
+    offer: [
+        {
+            protocol: [ "fuchsia.logger.LogSink" ],
+            from: "parent",
+            to: "#intl_property_manager",
+        },
+        {
+            protocol: [ "fuchsia.intl.PropertyProvider" ],
+            from: "#intl_property_manager",
+            to: "#test_driver",
+        },
+        {
+            protocol: [
+                "fuchsia.logger.LogSink",
+                "fuchsia.process.Launcher",
+                "fuchsia.tracing.provider.Registry",
+                "fuchsia.vulkan.loader.Loader",
+            ],
+            from: "parent",
+            to: "#test_driver",
+        },
+        {
+            storage: "cache",
+            from: "parent",
+            to: "#test_driver",
+        },
+        {
+            storage: "tmp",
+            from: "parent",
+            to: "#test_driver",
+        },
+        {
+            directory: "dev-goldfish-address-space",
+            from: "parent",
+            to: "#test_driver",
+            rights: [ "rw*" ],
+        },
+        {
+            directory: "dev-goldfish-control",
+            from: "parent",
+            to: "#test_driver",
+            rights: [ "rw*" ],
+        },
+        {
+            directory: "dev-goldfish-pipe",
+            from: "parent",
+            to: "#test_driver",
+            rights: [ "rw*" ],
+        },
+        {
+            directory: "dev-goldfish-sync",
+            from: "parent",
+            to: "#test_driver",
+            rights: [ "rw*" ],
+        },
+        {
+            directory: "dev-gpu",
+            from: "parent",
+            to: "#test_driver",
+            rights: [ "rw*" ],
+        },
+    ],
+}
