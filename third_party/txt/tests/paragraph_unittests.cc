@@ -1456,7 +1456,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholderGetRectsParagraph)) {
 }
 
 TEST_F(ParagraphTest,
-       DISABLE_ON_WINDOWS(InlinePlaceholderMultiCodepointSimple)) {
+       DISABLE_ON_WINDOWS(InlinePlaceholderMultiCodepointSingle)) {
   const char* text = "012 34";
   auto icu_text = icu::UnicodeString::fromUTF8(text);
   std::u16string u16_text(icu_text.getBuffer(),
@@ -1557,6 +1557,147 @@ TEST_F(ParagraphTest,
   EXPECT_EQ(paragraph->GetWordBoundary(10).end, 11ull);
   EXPECT_EQ(paragraph->GetWordBoundary(11).start, 11ull);
   EXPECT_EQ(paragraph->GetWordBoundary(11).end, 14ull);
+
+  ASSERT_TRUE(Snapshot());
+}
+
+TEST_F(ParagraphTest,
+       DISABLE_ON_WINDOWS(InlinePlaceholderMultiCodepointMultiConsecutive)) {
+  const char* text = "012 34";
+  auto icu_text = icu::UnicodeString::fromUTF8(text);
+  std::u16string u16_text(icu_text.getBuffer(),
+                          icu_text.getBuffer() + icu_text.length());
+
+  const char* text2 = "\n";
+  auto icu_text2 = icu::UnicodeString::fromUTF8(text2);
+  std::u16string u16_text2(icu_text.getBuffer(),
+                           icu_text.getBuffer() + icu_text.length());
+
+  txt::ParagraphStyle paragraph_style;
+  paragraph_style.max_lines = 14;
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
+  text_style.font_size = 26;
+  text_style.letter_spacing = 1;
+  text_style.word_spacing = 5;
+  text_style.color = SK_ColorBLACK;
+  text_style.height = 1;
+  text_style.decoration = TextDecoration::kUnderline;
+  text_style.decoration_color = SK_ColorBLACK;
+  builder.PushStyle(text_style);
+
+  txt::PlaceholderRun placeholder_run(50, 50, PlaceholderAlignment::kBaseline,
+                                      TextBaseline::kAlphabetic, 50, 5);
+  builder.AddText(u16_text);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddText(u16_text);
+
+  builder.Pop();
+
+  auto paragraph = BuildParagraph(builder);
+  paragraph->Layout(GetTestCanvasWidth());
+
+  paragraph->Paint(GetCanvas(), 0, 0);
+
+  SkPaint paint;
+  paint.setStyle(SkPaint::kStroke_Style);
+  paint.setAntiAlias(true);
+  paint.setStrokeWidth(1);
+  paint.setColor(SK_ColorRED);
+  std::vector<txt::Paragraph::TextBox> boxes =
+      paragraph->GetRectsForPlaceholders();
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 3ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 90.945312);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), -0.34765625);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 140.94531);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 49.652344);
+
+  EXPECT_FLOAT_EQ(boxes[1].rect.left(), 140.94531);
+  EXPECT_FLOAT_EQ(boxes[1].rect.top(), -0.34765625);
+  EXPECT_FLOAT_EQ(boxes[1].rect.right(), 190.94531);
+  EXPECT_FLOAT_EQ(boxes[1].rect.bottom(), 49.652344);
+
+  EXPECT_FLOAT_EQ(boxes[2].rect.left(), 190.94531);
+  EXPECT_FLOAT_EQ(boxes[2].rect.top(), -0.34765625);
+  EXPECT_FLOAT_EQ(boxes[2].rect.right(), 240.94531);
+  EXPECT_FLOAT_EQ(boxes[2].rect.bottom(), 49.652344);
+
+  Paragraph::RectHeightStyle rect_height_style =
+      Paragraph::RectHeightStyle::kMax;
+  Paragraph::RectWidthStyle rect_width_style =
+      Paragraph::RectWidthStyle::kTight;
+  paint.setColor(SK_ColorBLUE);
+  boxes =
+      paragraph->GetRectsForRange(0, 35, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 5ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 0.5);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), -0.34765625);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 90.945312);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 56);
+
+  EXPECT_FLOAT_EQ(boxes[1].rect.left(), 90.945312);
+  EXPECT_FLOAT_EQ(boxes[1].rect.top(), -0.34765625);
+  EXPECT_FLOAT_EQ(boxes[1].rect.right(), 140.94531);
+  EXPECT_FLOAT_EQ(boxes[1].rect.bottom(), 56);
+
+  EXPECT_FLOAT_EQ(boxes[2].rect.left(), 140.94531);
+  EXPECT_FLOAT_EQ(boxes[2].rect.top(), -0.34765625);
+  EXPECT_FLOAT_EQ(boxes[2].rect.right(), 190.94531);
+  EXPECT_FLOAT_EQ(boxes[2].rect.bottom(), 56);
+
+  EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(5, 10).position, 0ull);
+  EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(25, 10).position, 2ull);
+  EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(85, 10).position, 6ull);
+  EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(91, 10).position, 6ull);
+  EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(100, 11).position, 6ull);
+  EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(110, 11).position, 6ull);
+  EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(120, 11).position, 11ull);
+  EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(145, 11).position, 11ull);
+  EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(155, 11).position, 11ull);
+  EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(165, 11).position, 11ull);
+  EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(175, 11).position, 16ull);
+  EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(185, 11).position, 16ull);
+  EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(195, 11).position, 16ull);
+  EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(205, 11).position, 16ull);
+  EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(215, 11).position, 16ull);
+  EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(225, 11).position, 21ull);
+
+  EXPECT_EQ(paragraph->GetWordBoundary(5).start, 4ull);
+  EXPECT_EQ(paragraph->GetWordBoundary(5).end, 6ull);
+  EXPECT_EQ(paragraph->GetWordBoundary(6).start, 6ull);
+  EXPECT_EQ(paragraph->GetWordBoundary(6).end, 11ull);
+  EXPECT_EQ(paragraph->GetWordBoundary(7).start, 6ull);
+  EXPECT_EQ(paragraph->GetWordBoundary(7).end, 11ull);
+  EXPECT_EQ(paragraph->GetWordBoundary(8).start, 6ull);
+  EXPECT_EQ(paragraph->GetWordBoundary(8).end, 11ull);
+  EXPECT_EQ(paragraph->GetWordBoundary(9).start, 6ull);
+  EXPECT_EQ(paragraph->GetWordBoundary(9).end, 11ull);
+  EXPECT_EQ(paragraph->GetWordBoundary(10).start, 6ull);
+  EXPECT_EQ(paragraph->GetWordBoundary(10).end, 11ull);
+  EXPECT_EQ(paragraph->GetWordBoundary(11).start, 11ull);
+  EXPECT_EQ(paragraph->GetWordBoundary(11).end, 16ull);
+  EXPECT_EQ(paragraph->GetWordBoundary(15).start, 11ull);
+  EXPECT_EQ(paragraph->GetWordBoundary(15).end, 16ull);
+  EXPECT_EQ(paragraph->GetWordBoundary(16).start, 16ull);
+  EXPECT_EQ(paragraph->GetWordBoundary(16).end, 21ull);
+  EXPECT_EQ(paragraph->GetWordBoundary(17).start, 16ull);
+  EXPECT_EQ(paragraph->GetWordBoundary(17).end, 21ull);
+  EXPECT_EQ(paragraph->GetWordBoundary(18).start, 16ull);
+  EXPECT_EQ(paragraph->GetWordBoundary(18).end, 21ull);
+  EXPECT_EQ(paragraph->GetWordBoundary(20).start, 16ull);
+  EXPECT_EQ(paragraph->GetWordBoundary(20).end, 21ull);
+  EXPECT_EQ(paragraph->GetWordBoundary(21).start, 21ull);
+  EXPECT_EQ(paragraph->GetWordBoundary(21).end, 24ull);
 
   ASSERT_TRUE(Snapshot());
 }
