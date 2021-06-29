@@ -907,6 +907,7 @@ void ParagraphTxt::Layout(double width) {
         GetGlyphTypeface(layout, glyph_blob.start).apply(font);
         const SkTextBlobBuilder::RunBuffer& blob_buffer =
             builder.allocRunPos(font, glyph_blob.end - glyph_blob.start);
+
         double justify_x_offset_delta = 0;
         for (size_t glyph_index = glyph_blob.start;
              glyph_index < glyph_blob.end;) {
@@ -972,7 +973,7 @@ void ParagraphTxt::Layout(double width) {
             // placeholder's width.
             glyph_advance = run.placeholder_run()->width;
             glyph_positions.emplace_back(
-                run_x_offset, glyph_advance, run.start(),
+                run_x_offset + blob_buffer.pos[0], glyph_advance, run.start(),
                 run.placeholder_run()->codepoint_length);
           } else {
             glyph_advance = layout.getCharAdvance(glyph_code_units.start);
@@ -1993,6 +1994,13 @@ Paragraph::Range<size_t> ParagraphTxt::GetWordBoundary(size_t offset) {
     if (!U_SUCCESS(status))
       return Range<size_t>(0, 0);
   }
+  // Check against known ranges that are attributed to placeholders. Return
+  // the whole placeholder range if the word contains the placeholder.
+  for (Range<size_t> range : inline_placeholder_ranges_) {
+    if (range.contains(offset)) {
+      return Range<size_t>(range.start, range.end);
+    }
+  }
 
   word_breaker_->setText(icu::UnicodeString(false, text_.data(), text_.size()));
 
@@ -2002,15 +2010,6 @@ Paragraph::Range<size_t> ParagraphTxt::GetWordBoundary(size_t offset) {
     prev_boundary = offset;
   if (next_boundary == icu::BreakIterator::DONE)
     next_boundary = offset;
-
-  // Check against known ranges that are attributed to placeholders. Return
-  // the whole placeholder range if the word contains the placeholder.
-  for (Range<size_t> range : inline_placeholder_ranges_) {
-    if (range.contains(prev_boundary) || range.contains(next_boundary - 1)) {
-      return Range<size_t>(std::min<size_t>(range.start, prev_boundary),
-                           std::max<size_t>(range.end, next_boundary));
-    }
-  }
   return Range<size_t>(prev_boundary, next_boundary);
 }
 
