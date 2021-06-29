@@ -712,7 +712,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   }
 
   private void initializeRootImageViewIfNeeded() {
-    if (convertPlatformViewRenderSurface && !flutterViewConvertedToImageView) {
+    if (shouldConvertPlatformViewRenderSurface && !flutterViewConvertedToImageView) {
       ((FlutterView) flutterView).convertToImageView();
       flutterViewConvertedToImageView = true;
     }
