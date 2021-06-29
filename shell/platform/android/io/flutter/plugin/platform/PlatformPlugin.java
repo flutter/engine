@@ -370,7 +370,7 @@ public class PlatformPlugin {
     int flags = view.getSystemUiVisibility();
 
     // SYSTEM STATUS BAR -------------------------------------------------------------------
-    // You can't change the color of the system status bar until SDK 21, but you can't change the
+    // You can't change the color of the system status bar until SDK 21, and you can't change the
     // color of the status icons until SDK 23. We only allow both starting at 23 to ensure buttons
     // and icons can be visible when changing the background color.
     // If transparent, SDK 29 and higher may apply a translucent scrim behind the bar to ensure
@@ -399,8 +399,8 @@ public class PlatformPlugin {
     }
 
     // SYSTEM NAVIGATION BAR --------------------------------------------------------------
-    // You can't change the color of the system navigation bar until SDK 21, but you can't change
-    // the color of the navigation buttons until SDK 26. We only allow both starting at 23 to
+    // You can't change the color of the system navigation bar until SDK 21, and you can't change
+    // the color of the navigation buttons until SDK 26. We only allow both starting at 26 to
     // ensure buttons can be visible when changing the background color.
     // If transparent, SDK 29 and higher may apply a translucent scrim behind 2/3 button navigation
     // bars to ensure proper contrast. This can be overridden with
