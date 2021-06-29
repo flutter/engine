@@ -1055,7 +1055,57 @@ TEST(DisplayListCanvas, DrawImageNineLinear) {
       });
 }
 
-// TODO(flar): Skipping DrawLattice for now, Flutter does not use it
+TEST(DisplayListCanvas, DrawImageLatticeNearest) {
+  const SkRect dst = RenderBounds.makeInset(15.5, 10.5);
+  const int divX[] = {
+      (RenderLeft + RenderCenterX) / 2,
+      RenderCenterX,
+      (RenderRight + RenderCenterX) / 2,
+  };
+  const int divY[] = {
+      (RenderTop + RenderCenterY) / 2,
+      RenderCenterY,
+      (RenderBottom + RenderCenterY) / 2,
+  };
+  SkCanvas::Lattice lattice = {
+      divX, divY, nullptr, 3, 3, nullptr, nullptr,
+  };
+  CanvasCompareTester::RenderAll(
+      [=](SkCanvas* canvas, SkPaint& paint) {  //
+        canvas->drawImageLattice(CanvasCompareTester::testImage.get(), lattice,
+                                 dst, SkFilterMode::kNearest, &paint);
+      },
+      [=](DisplayListBuilder& builder) {                                   //
+        builder.drawImageLattice(CanvasCompareTester::testImage, lattice,  //
+                                 dst, SkFilterMode::kNearest, true);
+      });
+}
+
+TEST(DisplayListCanvas, DrawImageLatticeLinear) {
+  const SkRect dst = RenderBounds.makeInset(15.5, 10.5);
+  const int divX[] = {
+      (RenderLeft + RenderCenterX) / 2,
+      RenderCenterX,
+      (RenderRight + RenderCenterX) / 2,
+  };
+  const int divY[] = {
+      (RenderTop + RenderCenterY) / 2,
+      RenderCenterY,
+      (RenderBottom + RenderCenterY) / 2,
+  };
+  SkCanvas::Lattice lattice = {
+      divX, divY, nullptr, 3, 3, nullptr, nullptr,
+  };
+  CanvasCompareTester::RenderAll(
+      [=](SkCanvas* canvas, SkPaint& paint) {  //
+        canvas->drawImageLattice(CanvasCompareTester::testImage.get(), lattice,
+                                 dst, SkFilterMode::kLinear, &paint);
+      },
+      [=](DisplayListBuilder& builder) {                                   //
+        builder.drawImageLattice(CanvasCompareTester::testImage, lattice,  //
+                                 dst, SkFilterMode::kLinear, true);
+      });
+}
 
 TEST(DisplayListCanvas, DrawAtlasNearest) {
   const SkRSXform xform[] = {

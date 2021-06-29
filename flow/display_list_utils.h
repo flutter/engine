@@ -251,7 +251,7 @@ class DisplayListBoundsCalculator final
   DisplayListBoundsCalculator(const SkRect& cull_rect = SkRect::MakeEmpty())
       : accumulator_(&root_accumulator_), bounds_cull_(cull_rect) {}
 
-  void saveLayer(const SkRect* bounds, bool withPaint) override;
+  void saveLayer(const SkRect* bounds, bool with_paint) override;
   void save() override;
   void restore() override;
 
@@ -288,7 +288,8 @@ class DisplayListBoundsCalculator final
   void drawImageLattice(const sk_sp<SkImage> image,
                         const SkCanvas::Lattice& lattice,
                         const SkRect& dst,
-                        SkFilterMode filter) override;
+                        SkFilterMode filter,
+                        bool with_paint) override;
   void drawAtlas(const sk_sp<SkImage> atlas,
                  const SkRSXform xform[],
                  const SkRect tex[],
@@ -299,7 +300,7 @@ class DisplayListBoundsCalculator final
                  const SkRect* cullRect) override;
   void drawPicture(const sk_sp<SkPicture> picture,
                    const SkMatrix* matrix,
-                   bool withSaveLayer) override;
+                   bool with_save_layer) override;
   void drawDisplayList(const sk_sp<DisplayList> display_list) override;
   void drawTextBlob(const sk_sp<SkTextBlob> blob,
                     SkScalar x,

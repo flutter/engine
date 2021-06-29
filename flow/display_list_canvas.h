@@ -31,7 +31,7 @@ class DisplayListCanvasDispatcher : public virtual Dispatcher,
 
   void save() override;
   void restore() override;
-  void saveLayer(const SkRect* bounds, bool restoreWithBounds) override;
+  void saveLayer(const SkRect* bounds, bool restore_with_paint) override;
 
   void translate(SkScalar tx, SkScalar ty) override;
   void scale(SkScalar sx, SkScalar sy) override;
@@ -90,7 +90,8 @@ class DisplayListCanvasDispatcher : public virtual Dispatcher,
   void drawImageLattice(const sk_sp<SkImage> image,
                         const SkCanvas::Lattice& lattice,
                         const SkRect& dst,
-                        SkFilterMode filter) override;
+                        SkFilterMode filter,
+                        bool with_paint) override;
   void drawAtlas(const sk_sp<SkImage> atlas,
                  const SkRSXform xform[],
                  const SkRect tex[],
@@ -101,7 +102,7 @@ class DisplayListCanvasDispatcher : public virtual Dispatcher,
                  const SkRect* cullRect) override;
   void drawPicture(const sk_sp<SkPicture> picture,
                    const SkMatrix* matrix,
-                   bool withSaveLayer) override;
+                   bool with_save_layer) override;
   void drawDisplayList(const sk_sp<DisplayList> display_list) override;
   void drawTextBlob(const sk_sp<SkTextBlob> blob,
                     SkScalar x,

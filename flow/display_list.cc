@@ -55,6 +55,9 @@ enum class DisplayListCompare {
 #pragma pack(push, DLOp_Alignment, 8)
 
 // Assuming a 64-bit platform (most of our platforms at this time?)
+// the following comments are a "worst case" assessment of how well
+// these structures pack into memory. They may be packed more tightly
+// on some of the 32-bit platforms that we see in older phones.
 //
 // Struct allocation in the DL memory is aligned to a void* boundary
 // which means that the minimum (aligned) struct size will be 8 bytes.
@@ -632,6 +635,7 @@ struct DrawImageNineOp final : DLOp {
   }
 };
 
+// 4 byte header + 60 byte payload packs evenly into 64 bytes
 struct DrawImageLatticeOp final : DLOp {
   static const auto kType = DisplayListOpType::kDrawImageLattice;
 
@@ -641,21 +645,24 @@ struct DrawImageLatticeOp final : DLOp {
                      int cell_count,
                      const SkIRect& src,
                      const SkRect& dst,
-                     SkFilterMode filter)
-      : x_count(x_count),
+                     SkFilterMode filter,
+                     bool with_paint)
+      : with_paint(with_paint),
+        x_count(x_count),
         y_count(y_count),
         cell_count(cell_count),
+        filter(filter),
         src(src),
         dst(dst),
-        filter(filter),
         image(std::move(image)) {}
 
+  const bool with_paint;
   const int x_count;
   const int y_count;
   const int cell_count;
+  const SkFilterMode filter;
   const SkIRect src;
   const SkRect dst;
-  const SkFilterMode filter;
   const sk_sp<SkImage> image;
 
   void dispatch(Dispatcher& dispatcher) const {
@@ -671,7 +678,7 @@ struct DrawImageLatticeOp final : DLOp {
                                                                    cell_count);
     dispatcher.drawImageLattice(
         image, {xDivs, yDivs, types, x_count, y_count, &src, colors}, dst,
-        filter);
+        filter, with_paint);
   }
 };
 
@@ -739,8 +746,7 @@ DEFINE_DRAW_ATLAS_OP(AtlasColoredCulled, HAS_COLORS, HAS_CULLING)
 #undef DRAW_ATLAS_HAS_CULLING_FIELDS
 #undef DRAW_ATLAS_HAS_CULLING_P_ARG
 
-// 4 byte header + ptr aligned payload uses 12 bytes rounde up to 16
-// (4 bytes unused)
+// 4 byte header + 12 byte payload packs evenly into 16 bytes
 struct DrawSkPictureOp final : DLOp {
   static const auto kType = DisplayListOpType::kDrawSkPicture;
 
@@ -755,6 +761,7 @@ struct DrawSkPictureOp final : DLOp {
   }
 };
 
+// 4 byte header + 52 byte payload packs evenly into 56 bytes
 struct DrawSkPictureMatrixOp final : DLOp {
   static const auto kType = DisplayListOpType::kDrawSkPictureMatrix;
 
@@ -1130,11 +1137,11 @@ void DisplayListBuilder::restore() {
     save_level_--;
   }
 }
-void DisplayListBuilder::saveLayer(const SkRect* bounds, bool withPaint) {
+void DisplayListBuilder::saveLayer(const SkRect* bounds, bool with_paint) {
   save_level_++;
   bounds  //
-      ? Push<SaveLayerBoundsOp>(0, *bounds, withPaint)
-      : Push<SaveLayerOp>(0, withPaint);
+      ? Push<SaveLayerBoundsOp>(0, *bounds, with_paint)
+      : Push<SaveLayerOp>(0, with_paint);
 }
 
 void DisplayListBuilder::translate(SkScalar tx, SkScalar ty) {
@@ -1303,17 +1310,21 @@ void DisplayListBuilder::drawImageNine(const sk_sp<SkImage> image,
 void DisplayListBuilder::drawImageLattice(const sk_sp<SkImage> image,
                                           const SkCanvas::Lattice& lattice,
                                           const SkRect& dst,
-                                          SkFilterMode filter) {
+                                          SkFilterMode filter,
+                                          bool with_paint) {
   int xDivCount = lattice.fXCount;
   int yDivCount = lattice.fYCount;
-  int cellCount = lattice.fRectTypes ? (xDivCount + 1) * (yDivCount + 1) : 0;
+  FML_DCHECK((lattice.fRectTypes == nullptr) || (lattice.fColors != nullptr));
+  int cellCount = lattice.fRectTypes && lattice.fColors
+                      ? (xDivCount + 1) * (yDivCount + 1)
+                      : 0;
   size_t bytes =
       (xDivCount + yDivCount) * sizeof(int) +
       cellCount * (sizeof(SkColor) + sizeof(SkCanvas::Lattice::RectType));
-  FML_DCHECK(lattice.fBounds);
+  SkIRect src = lattice.fBounds ? *lattice.fBounds : image->bounds();
   void* pod = this->Push<DrawImageLatticeOp>(bytes, std::move(image), xDivCount,
-                                             yDivCount, cellCount,
-                                             *lattice.fBounds, dst, filter);
+                                             yDivCount, cellCount, src, dst,
+                                             filter, with_paint);
   CopyV(pod, lattice.fXDivs, xDivCount, lattice.fYDivs, yDivCount,
         lattice.fColors, cellCount, lattice.fRectTypes, cellCount);
 }
@@ -1351,10 +1362,10 @@ void DisplayListBuilder::drawAtlas(const sk_sp<SkImage> atlas,
 
 void DisplayListBuilder::drawPicture(const sk_sp<SkPicture> picture,
                                      const SkMatrix* matrix,
-                                     bool withLayer) {
+                                     bool with_layer) {
   matrix  //
-      ? Push<DrawSkPictureMatrixOp>(0, std::move(picture), *matrix, withLayer)
-      : Push<DrawSkPictureOp>(0, std::move(picture), withLayer);
+      ? Push<DrawSkPictureMatrixOp>(0, std::move(picture), *matrix, with_layer)
+      : Push<DrawSkPictureOp>(0, std::move(picture), with_layer);
 }
 void DisplayListBuilder::drawDisplayList(
     const sk_sp<DisplayList> display_list) {

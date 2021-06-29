@@ -173,12 +173,12 @@ void ClipBoundsDispatchHelper::restore() {
 }
 
 void DisplayListBoundsCalculator::saveLayer(const SkRect* bounds,
-                                            bool withPaint) {
+                                            bool with_paint) {
   SkMatrixDispatchHelper::save();
   ClipBoundsDispatchHelper::save();
   SaveInfo info =
-      withPaint ? SaveLayerWithPaintInfo(this, accumulator_, matrix(), paint())
-                : SaveLayerInfo(accumulator_, matrix());
+      with_paint ? SaveLayerWithPaintInfo(this, accumulator_, matrix(), paint())
+                 : SaveLayerInfo(accumulator_, matrix());
   saved_infos_.push_back(info);
   accumulator_ = info.save();
   SkMatrixDispatchHelper::reset();
@@ -285,7 +285,8 @@ void DisplayListBoundsCalculator::drawImageLattice(
     const sk_sp<SkImage> image,
     const SkCanvas::Lattice& lattice,
     const SkRect& dst,
-    SkFilterMode filter) {
+    SkFilterMode filter,
+    bool with_paint) {
   accumulateRect(dst);
 }
 void DisplayListBoundsCalculator::drawAtlas(const sk_sp<SkImage> atlas,
@@ -310,15 +311,21 @@ void DisplayListBoundsCalculator::drawAtlas(const sk_sp<SkImage> atlas,
   }
 }
 void DisplayListBoundsCalculator::drawPicture(const sk_sp<SkPicture> picture,
-                                              const SkMatrix* matrix,
-                                              bool withSaveLayer) {
-  // TODO(flar) cull rect really cannot be trusted in general, but
-  // it will work for SkPictures generated from our own PictureRecorder.
+                                              const SkMatrix* pic_matrix,
+                                              bool with_save_layer) {
+  // TODO(flar) cull rect really cannot be trusted in general, but it will
+  // work for SkPictures generated from our own PictureRecorder or any
+  // picture captured with an SkRTreeFactory or accurate bounds estimate.
   SkRect bounds = picture->cullRect();
-  if (matrix) {
-    matrix->mapRect(&bounds);
+  if (pic_matrix) {
+    pic_matrix->mapRect(&bounds);
   }
-  accumulateRect(bounds);
+  if (with_save_layer) {
+    accumulateRect(bounds);
+  } else {
+    matrix().mapRect(&bounds);
+    accumulator_->accumulate(bounds);
+  }
 }
 void DisplayListBoundsCalculator::drawDisplayList(
     const sk_sp<DisplayList> display_list) {

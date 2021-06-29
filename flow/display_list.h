@@ -298,7 +298,8 @@ class Dispatcher {
   virtual void drawImageLattice(const sk_sp<SkImage> image,
                                 const SkCanvas::Lattice& lattice,
                                 const SkRect& dst,
-                                SkFilterMode filter) = 0;
+                                SkFilterMode filter,
+                                bool with_paint) = 0;
   virtual void drawAtlas(const sk_sp<SkImage> atlas,
                          const SkRSXform xform[],
                          const SkRect tex[],
@@ -309,7 +310,7 @@ class Dispatcher {
                          const SkRect* cullRect) = 0;
   virtual void drawPicture(const sk_sp<SkPicture> picture,
                            const SkMatrix* matrix,
-                           bool withPaint) = 0;
+                           bool with_save_layer) = 0;
   virtual void drawDisplayList(const sk_sp<DisplayList> display_list) = 0;
   virtual void drawTextBlob(const sk_sp<SkTextBlob> blob,
                             SkScalar x,
@@ -412,7 +413,8 @@ class DisplayListBuilder final : public virtual Dispatcher, public SkRefCnt {
   void drawImageLattice(const sk_sp<SkImage> image,
                         const SkCanvas::Lattice& lattice,
                         const SkRect& dst,
-                        SkFilterMode filter) override;
+                        SkFilterMode filter,
+                        bool with_paint) override;
   void drawAtlas(const sk_sp<SkImage> atlas,
                  const SkRSXform xform[],
                  const SkRect tex[],
@@ -423,7 +425,7 @@ class DisplayListBuilder final : public virtual Dispatcher, public SkRefCnt {
                  const SkRect* cullRect) override;
   void drawPicture(const sk_sp<SkPicture> picture,
                    const SkMatrix* matrix,
-                   bool withSaveLayer) override;
+                   bool with_save_layer) override;
   void drawDisplayList(const sk_sp<DisplayList> display_list) override;
   void drawTextBlob(const sk_sp<SkTextBlob> blob,
                     SkScalar x,

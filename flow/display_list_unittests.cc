@@ -121,7 +121,7 @@ static sk_sp<SkImage> MakeTestImage(int w, int h, int checker_size) {
   return surface->makeImageSnapshot();
 }
 static sk_sp<SkImage> TestImage1 = MakeTestImage(40, 40, 5);
-static sk_sp<SkImage> TestImage2 = MakeTestImage(20, 20, 5);
+static sk_sp<SkImage> TestImage2 = MakeTestImage(50, 50, 5);
 
 static sk_sp<SkVertices> TestVertices1 =
     SkVertices::MakeCopy(SkVertices::kTriangles_VertexMode,
@@ -135,6 +135,27 @@ static sk_sp<SkVertices> TestVertices2 =
                          TestPoints,
                          nullptr,
                          colors);
+
+static constexpr int TestDivs1[] = {10, 20, 30};
+static constexpr int TestDivs2[] = {15, 20, 25};
+static constexpr int TestDivs3[] = {15, 25};
+static constexpr SkCanvas::Lattice::RectType TestRTypes[] = {
+    SkCanvas::Lattice::RectType::kDefault,
+    SkCanvas::Lattice::RectType::kTransparent,
+    SkCanvas::Lattice::RectType::kFixedColor,
+    SkCanvas::Lattice::RectType::kDefault,
+    SkCanvas::Lattice::RectType::kTransparent,
+    SkCanvas::Lattice::RectType::kFixedColor,
+    SkCanvas::Lattice::RectType::kDefault,
+    SkCanvas::Lattice::RectType::kTransparent,
+    SkCanvas::Lattice::RectType::kFixedColor,
+};
+static constexpr SkColor TestLatticeColors[] = {
+    SK_ColorBLUE, SK_ColorGREEN, SK_ColorYELLOW,
+    SK_ColorBLUE, SK_ColorGREEN, SK_ColorYELLOW,
+    SK_ColorBLUE, SK_ColorGREEN, SK_ColorYELLOW,
+};
+static constexpr SkIRect TestLatticeSrcRect = {1, 1, 39, 39};
 
 static sk_sp<SkPicture> MakeTestPicture(int w, int h, SkColor color) {
   SkPictureRecorder recorder;
@@ -487,7 +508,7 @@ std::vector<DisplayListInvocationGroup> allGroups = {
     }
   },
   { "DrawImageNine", {
-      // cv.drawImageNine => drawImageLattice
+      // SkVanvas::drawImageNine is immediately converted to drawImageLattice
       {1, 48, 1, 80, [](DisplayListBuilder& b) {b.drawImageNine(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
                                                                 SkFilterMode::kNearest);}},
       {1, 48, 1, 80, [](DisplayListBuilder& b) {b.drawImageNine(TestImage1, {10, 10, 25, 20}, {10, 10, 80, 80},
@@ -500,7 +521,49 @@ std::vector<DisplayListInvocationGroup> allGroups = {
                                                                 SkFilterMode::kNearest);}},
     }
   },
-  // TODO(flar): Skipping DrawLattice for now, Flutter does not use it
+  { "DrawImageLattice", {
+      // Lattice:
+      // const int*      fXDivs;     //!< x-axis values dividing bitmap
+      // const int*      fYDivs;     //!< y-axis values dividing bitmap
+      // const RectType* fRectTypes; //!< array of fill types
+      // int             fXCount;    //!< number of x-coordinates
+      // int             fYCount;    //!< number of y-coordinates
+      // const SkIRect*  fBounds;    //!< source bounds to draw from
+      // const SkColor*  fColors;    //!< array of colors
+      // size = 64 + fXCount * 4 + fYCount * 4
+      // if fColors and fRectTypes are not null, add (fXCount + 1) * (fYCount + 1) * 5
+      {1, 88, 1, 88, [](DisplayListBuilder& b) {b.drawImageLattice(TestImage1,
+                                                                   {TestDivs1, TestDivs1, nullptr, 3, 3, nullptr, nullptr},
+                                                                   {10, 10, 40, 40}, SkFilterMode::kNearest, false);}},
+      {1, 88, 1, 88, [](DisplayListBuilder& b) {b.drawImageLattice(TestImage1,
+                                                                   {TestDivs1, TestDivs1, nullptr, 3, 3, nullptr, nullptr},
+                                                                   {10, 10, 40, 45}, SkFilterMode::kNearest, false);}},
+      {1, 88, 1, 88, [](DisplayListBuilder& b) {b.drawImageLattice(TestImage1,
+                                                                   {TestDivs2, TestDivs1, nullptr, 3, 3, nullptr, nullptr},
+                                                                   {10, 10, 40, 40}, SkFilterMode::kNearest, false);}},
+      // One less yDiv does not change the allocation due to 8-byte alignment
+      {1, 88, 1, 88, [](DisplayListBuilder& b) {b.drawImageLattice(TestImage1,
+                                                                   {TestDivs1, TestDivs1, nullptr, 3, 2, nullptr, nullptr},
+                                                                   {10, 10, 40, 40}, SkFilterMode::kNearest, false);}},
+      {1, 88, 1, 88, [](DisplayListBuilder& b) {b.drawImageLattice(TestImage1,
+                                                                   {TestDivs1, TestDivs1, nullptr, 3, 3, nullptr, nullptr},
+                                                                   {10, 10, 40, 40}, SkFilterMode::kLinear, false);}},
+      {2, 96, 2, 96, [](DisplayListBuilder& b) {b.setColor(SK_ColorMAGENTA);
+                                                b.drawImageLattice(TestImage1,
+                                                                   {TestDivs1, TestDivs1, nullptr, 3, 3, nullptr, nullptr},
+                                                                   {10, 10, 40, 40}, SkFilterMode::kNearest, true);}},
+      {1, 88, 1, 88, [](DisplayListBuilder& b) {b.drawImageLattice(TestImage2,
+                                                                   {TestDivs1, TestDivs1, nullptr, 3, 3, nullptr, nullptr},
+                                                                   {10, 10, 40, 40}, SkFilterMode::kNearest, false);}},
+      // Supplying fBounds does not change size because the Op record always includes it
+      {1, 88, 1, 88, [](DisplayListBuilder& b) {b.drawImageLattice(TestImage1,
+                                                                   {TestDivs1, TestDivs1, nullptr, 3, 3, &TestLatticeSrcRect, nullptr},
+                                                                   {10, 10, 40, 40}, SkFilterMode::kNearest, false);}},
+      {1, 128, 1, 128, [](DisplayListBuilder& b) {b.drawImageLattice(TestImage1,
+                                                                     {TestDivs3, TestDivs3, TestRTypes, 2, 2, nullptr, TestLatticeColors},
+                                                                     {10, 10, 40, 40}, SkFilterMode::kNearest, false);}},
+    }
+  },
   { "DrawAtlas", {
       {1, 40 + 32 + 32, 1, 40 + 32 + 32, [](DisplayListBuilder& b) {
         static SkRSXform xforms[] = { {1, 0, 0, 0}, {0, 1, 0, 0} };
@@ -726,7 +789,7 @@ static sk_sp<DisplayList> Build(size_t g_index, size_t v_index) {
     if (v_index < 0) {
       name += " skipped";
     } else {
-      name += " variant " + std::to_string(v_index);
+      name += " variant " + std::to_string(v_index + 1);
     }
   }
   EXPECT_EQ(dl->op_count(), op_count) << name;

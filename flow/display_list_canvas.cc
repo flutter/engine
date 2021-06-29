@@ -22,8 +22,8 @@ void DisplayListCanvasDispatcher::restore() {
   canvas_->restore();
 }
 void DisplayListCanvasDispatcher::saveLayer(const SkRect* bounds,
-                                            bool restoreWithPaint) {
-  canvas_->saveLayer(bounds, restoreWithPaint ? &paint() : nullptr);
+                                            bool restore_with_paint) {
+  canvas_->saveLayer(bounds, restore_with_paint ? &paint() : nullptr);
 }
 
 void DisplayListCanvasDispatcher::translate(SkScalar tx, SkScalar ty) {
@@ -142,8 +142,10 @@ void DisplayListCanvasDispatcher::drawImageLattice(
     const sk_sp<SkImage> image,
     const SkCanvas::Lattice& lattice,
     const SkRect& dst,
-    SkFilterMode filter) {
-  canvas_->drawImageLattice(image.get(), lattice, dst, filter, &paint());
+    SkFilterMode filter,
+    bool with_paint) {
+  canvas_->drawImageLattice(image.get(), lattice, dst, filter,
+                            with_paint ? &paint() : nullptr);
 }
 void DisplayListCanvasDispatcher::drawAtlas(const sk_sp<SkImage> atlas,
                                             const SkRSXform xform[],
@@ -158,8 +160,8 @@ void DisplayListCanvasDispatcher::drawAtlas(const sk_sp<SkImage> atlas,
 }
 void DisplayListCanvasDispatcher::drawPicture(const sk_sp<SkPicture> picture,
                                               const SkMatrix* matrix,
-                                              bool withSaveLayer) {
-  canvas_->drawPicture(picture, matrix, withSaveLayer ? &paint() : nullptr);
+                                              bool with_save_layer) {
+  canvas_->drawPicture(picture, matrix, with_save_layer ? &paint() : nullptr);
 }
 void DisplayListCanvasDispatcher::drawDisplayList(
     const sk_sp<DisplayList> display_list) {
@@ -334,8 +336,18 @@ void DisplayListCanvasRecorder::onDrawImageLattice2(const SkImage* image,
                                                     const SkRect& dst,
                                                     SkFilterMode filter,
                                                     const SkPaint* paint) {
-  RecordPaintAttributes(paint, DrawType::kImageOpType);
-  builder_->drawImageLattice(sk_ref_sp(image), lattice, dst, filter);
+  if (paint != nullptr) {
+    // SkCanvas will always construct a paint,
+    // though it is a default paint most of the time
+    SkPaint default_paint;
+    if (*paint == default_paint) {
+      paint = nullptr;
+    } else {
+      RecordPaintAttributes(paint, DrawType::kImageOpType);
+    }
+  }
+  builder_->drawImageLattice(sk_ref_sp(image), lattice, dst, filter,
+                             paint != nullptr);
 }
 void DisplayListCanvasRecorder::onDrawAtlas2(const SkImage* image,
                                              const SkRSXform xform[],
