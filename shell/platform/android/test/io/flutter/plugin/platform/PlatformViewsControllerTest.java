@@ -630,6 +630,41 @@ public class PlatformViewsControllerTest {
     assertFalse(shouldProxying);
   }
 
+  @Test
+  @Config(shadows = {ShadowFlutterJNI.class})
+  public void shouldConvertPlatformViewRenderSurface() {
+    final PlatformViewsController platformViewsController = new PlatformViewsController();
+
+    final int platformViewId = 0;
+    assertNull(platformViewsController.getPlatformViewById(platformViewId));
+
+    final PlatformViewFactory viewFactory = mock(PlatformViewFactory.class);
+    final PlatformView platformView = mock(PlatformView.class);
+    final View androidView = mock(View.class);
+    when(platformView.getView()).thenReturn(androidView);
+    when(viewFactory.create(any(), eq(platformViewId), any())).thenReturn(platformView);
+
+    platformViewsController.getRegistry().registerViewFactory("testType", viewFactory);
+
+    final FlutterJNI jni = new FlutterJNI();
+    jni.attachToNative(false);
+
+    final FlutterView flutterView = attach(jni, platformViewsController);
+
+    jni.onFirstFrame();
+
+    // Simulate create call from the framework.
+    createPlatformView(jni, platformViewsController, platformViewId, "testType");
+    platformViewsController.initializePlatformViewIfNeeded(platformViewId);
+    assertEquals(flutterView.getChildCount(), 2);
+
+    final View view = flutterView.getChildAt(0);
+    assertTrue(view instanceof FlutterImageView);
+
+    // Simulate dispose call from the framework.
+    disposePlatformView(jni, platformViewsController, platformViewId);
+  }
+
   private static ByteBuffer encodeMethodCall(MethodCall call) {
     final ByteBuffer buffer = StandardMethodCodec.INSTANCE.encodeMethodCall(call);
     buffer.rewind();

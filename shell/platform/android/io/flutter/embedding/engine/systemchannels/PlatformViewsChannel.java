@@ -282,6 +282,9 @@ public class PlatformViewsChannel {
 
     /** Clears the focus from the platform view with a give id if it is currently focused. */
     void clearFocus(int viewId);
+
+    /** Whether the {@code RenderSurface} should be converted when a PlatformView is added. */
+    void convertPlatformViewRenderSurface(boolean convert);
   }
 
   /** Request sent from Flutter to create a new platform view. */
