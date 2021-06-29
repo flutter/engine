@@ -81,6 +81,12 @@ import java.util.Set;
 public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseCursorViewDelegate {
   private static final String TAG = "FlutterView";
 
+  /**
+   * The ID of {@code FlutterView}. This value can be used to lookup {@code FlutterView} in the
+   * Android view hierarchy. For more, see {@link android.view.View#findViewById}.
+   */
+  public static final int ID = 0xF1F2;
+
   // Internal view hierarchy references.
   @Nullable private FlutterSurfaceView flutterSurfaceView;
   @Nullable private FlutterTextureView flutterTextureView;
@@ -316,6 +322,8 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
 
   private void init() {
     Log.v(TAG, "Initializing FlutterView");
+
+    setId(ID);
 
     if (flutterSurfaceView != null) {
       Log.v(TAG, "Internally using a FlutterSurfaceView.");

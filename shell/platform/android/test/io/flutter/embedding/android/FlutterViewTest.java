@@ -70,6 +70,12 @@ public class FlutterViewTest {
   }
 
   @Test
+  public void hasViewId() {
+    FlutterView flutterView = new FlutterView(RuntimeEnvironment.application);
+    assertEquals(flutterView.getId(), FlutterView.ID);
+  }
+
+  @Test
   public void attachToFlutterEngine_alertsPlatformViews() {
     FlutterView flutterView = new FlutterView(RuntimeEnvironment.application);
     FlutterEngine flutterEngine =
