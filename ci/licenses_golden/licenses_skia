@@ -1,4 +1,4 @@
-Signature: 969a266328a9b3ffadbd7a0a2100e005
+Signature: 52222961e58221cf87c5d6807fbf1f98
 
 UNUSED LICENSES:
 
@@ -3938,6 +3938,7 @@ FILE: ../../../third_party/skia/include/private/GrMtlTypesPriv.h
 FILE: ../../../third_party/skia/include/utils/SkOrderedFontMgr.h
 FILE: ../../../third_party/skia/modules/androidkit/src/AndroidKit.cpp
 FILE: ../../../third_party/skia/modules/androidkit/src/Canvas.cpp
+FILE: ../../../third_party/skia/modules/androidkit/src/ColorFilters.cpp
 FILE: ../../../third_party/skia/modules/androidkit/src/Gradients.cpp
 FILE: ../../../third_party/skia/modules/androidkit/src/Image.cpp
 FILE: ../../../third_party/skia/modules/androidkit/src/ImageFilter.cpp
@@ -5768,6 +5769,7 @@ FILE: ../../../third_party/skia/src/sksl/dsl/priv/DSLFPs.cpp
 FILE: ../../../third_party/skia/src/sksl/dsl/priv/DSLFPs.h
 FILE: ../../../third_party/skia/src/sksl/dsl/priv/DSL_priv.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLFunctionDeclaration.cpp
+FILE: ../../../third_party/skia/src/sksl/ir/SkSLPoison.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLVariable.cpp
 ----------------------------------------------------------------------------------------------------
 Copyright 2021 Google LLC.
