@@ -648,17 +648,31 @@ public class PlatformViewsControllerTest {
 
     final FlutterJNI jni = new FlutterJNI();
     jni.attachToNative(false);
-
     final FlutterView flutterView = attach(jni, platformViewsController);
 
     jni.onFirstFrame();
 
     // Simulate create call from the framework.
     createPlatformView(jni, platformViewsController, platformViewId, "testType");
-    platformViewsController.initializePlatformViewIfNeeded(platformViewId);
+
+    // Produce a frame that displays a platform view and an overlay surface.
+    platformViewsController.onBeginFrame();
+    platformViewsController.onDisplayPlatformView(
+        platformViewId,
+        /* x=*/ 0,
+        /* y=*/ 0,
+        /* width=*/ 10,
+        /* height=*/ 10,
+        /* viewWidth=*/ 10,
+        /* viewHeight=*/ 10,
+        /* mutatorsStack=*/ new FlutterMutatorsStack());
+
+    // platformViewsController.initializePlatformViewIfNeeded(platformViewId);
     assertEquals(flutterView.getChildCount(), 2);
 
     final View view = flutterView.getChildAt(1);
+    System.out.println(flutterView.getChildAt(0));
+    System.out.println(flutterView.getChildAt(1));
     assertTrue(view instanceof FlutterImageView);
 
     // Simulate dispose call from the framework.
