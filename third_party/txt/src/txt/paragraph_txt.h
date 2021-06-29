@@ -173,6 +173,8 @@ class ParagraphTxt : public Paragraph {
   // position in the text where the placeholder will occur. There should be an
   // equal number of 0xFFFC characters and elements in this vector.
   std::vector<PlaceholderRun> inline_placeholders_;
+  // Tracks the codepoint indexes of the Object replacement characters inserted
+  // for each placeholder.
   std::vector<Range<size_t>> inline_placeholder_ranges_;
   // The indexes of the boxes that correspond to an inline placeholder.
   std::vector<size_t> inline_placeholder_boxes_;

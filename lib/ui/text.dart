@@ -3496,6 +3496,12 @@ class ParagraphBuilder extends NativeFieldWrapperClass1 {
   /// The `scale` parameter will scale the `width` and `height` by the specified amount,
   /// and keep track of the scale. The scales of placeholders added can be accessed
   /// through [placeholderScales]. This is primarily used for accessibility scaling.
+  ///
+  /// The `codepointLength` parameter is how many codepoints this placeholder will
+  /// take up. This impacts the indexes passed to and returned by [Paragraph]'s
+  /// getBoxesForRange, getPositionForOffset, getWordBoundary, and other methods
+  /// that deal directly with codepoint indexes. [Paragraph] will treat the placeholder
+  /// as if it were made up of `codepointLength` object replacement characters (0xFFFC).
   void addPlaceholder(double width, double height, PlaceholderAlignment alignment, {
     double scale = 1.0,
     double? baselineOffset,
