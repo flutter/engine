@@ -64,8 +64,10 @@ void ParagraphBuilderTxt::AddText(const std::u16string& text) {
 void ParagraphBuilderTxt::AddPlaceholder(PlaceholderRun& span) {
   obj_replacement_char_indexes_.insert(text_.size());
   runs_.StartRun(PeekStyleIndex(), text_.size());
+  size_t start = text_.size();
   AddText(std::u16string(span.codepoint_length, objReplacementChar));
   runs_.StartRun(PeekStyleIndex(), text_.size());
+  inline_placeholder_ranges_.emplace_back(start, text_.size());
   inline_placeholders_.push_back(span);
 }
 
@@ -75,7 +77,8 @@ std::unique_ptr<Paragraph> ParagraphBuilderTxt::Build() {
   std::unique_ptr<ParagraphTxt> paragraph = std::make_unique<ParagraphTxt>();
   paragraph->SetText(std::move(text_), std::move(runs_));
   paragraph->SetInlinePlaceholders(std::move(inline_placeholders_),
-                                   std::move(obj_replacement_char_indexes_));
+                                   std::move(obj_replacement_char_indexes_),
+                                   std::move(inline_placeholder_ranges_));
   paragraph->SetParagraphStyle(paragraph_style_);
   paragraph->SetFontCollection(font_collection_);
   SetParagraphStyle(paragraph_style_);
