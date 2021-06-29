@@ -1652,6 +1652,7 @@ double Shell::GetMainDisplayRefreshRate() {
 
 void Shell::RegisterImageDecoder(ImageGeneratorFactory factory,
                                  int32_t priority) {
+  FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
   FML_DCHECK(is_setup_);
 
   fml::TaskRunner::RunNowOrPostTask(

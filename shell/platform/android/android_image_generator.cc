@@ -81,9 +81,8 @@ void AndroidImageGenerator::DecodeImage() {
 }
 
 void AndroidImageGenerator::DoDecodeImage() {
-  if (!g_flutter_jni_class || !g_decode_image_method) {
-    return;
-  }
+  FML_DCHECK(g_flutter_jni_class);
+  FML_DCHECK(g_decode_image_method);
 
   // Call FlutterJNI.decodeImage
 
@@ -131,19 +130,12 @@ void AndroidImageGenerator::DoDecodeImage() {
 bool AndroidImageGenerator::Register(JNIEnv* env) {
   g_flutter_jni_class = new fml::jni::ScopedJavaGlobalRef<jclass>(
       env, env->FindClass("io/flutter/embedding/engine/FlutterJNI"));
-  if (g_flutter_jni_class->is_null()) {
-    FML_LOG(ERROR) << "Failed to find FlutterJNI class";
-    return false;
-  }
+  FML_DCHECK(!g_flutter_jni_class->is_null());
 
   g_decode_image_method = env->GetStaticMethodID(
       g_flutter_jni_class->obj(), "decodeImage",
       "(Ljava/nio/ByteBuffer;J)Landroid/graphics/Bitmap;");
-
-  if (g_decode_image_method == nullptr) {
-    FML_LOG(ERROR) << "Failed to find FlutterJNI.decodeImage method";
-    return false;
-  }
+  FML_DCHECK(g_decode_image_method);
 
   static const JNINativeMethod header_decoded_method = {
       .name = "nativeImageHeaderCallback",
