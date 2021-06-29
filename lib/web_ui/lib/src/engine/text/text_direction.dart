@@ -7,19 +7,14 @@ import 'package:ui/ui.dart' as ui;
 import 'line_breaker.dart';
 import 'unicode_range.dart';
 
-const int _kChar_A = 65;
-const int _kChar_Z = 90;
-const int _kChar_a = 97;
-const int _kChar_z = 122;
-
 // This data was taken from the source code of the Closure library:
 //
 // - https://github.com/google/closure-library/blob/9d24a6c1809a671c2e54c328897ebeae15a6d172/closure/goog/i18n/bidi.js#L203-L234
 final UnicodePropertyLookup<ui.TextDirection?> _textDirectionLookup = UnicodePropertyLookup<ui.TextDirection?>(
   <UnicodeRange<ui.TextDirection>>[
     // LTR
-    UnicodeRange<ui.TextDirection>(_kChar_A, _kChar_Z, ui.TextDirection.ltr),
-    UnicodeRange<ui.TextDirection>(_kChar_a, _kChar_z, ui.TextDirection.ltr),
+    UnicodeRange<ui.TextDirection>(kChar_A, kChar_Z, ui.TextDirection.ltr),
+    UnicodeRange<ui.TextDirection>(kChar_a, kChar_z, ui.TextDirection.ltr),
     UnicodeRange<ui.TextDirection>(0x00C0, 0x00D6, ui.TextDirection.ltr),
     UnicodeRange<ui.TextDirection>(0x00D8, 0x00F6, ui.TextDirection.ltr),
     UnicodeRange<ui.TextDirection>(0x00F8, 0x02B8, ui.TextDirection.ltr),
