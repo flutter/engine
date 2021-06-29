@@ -900,7 +900,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
       // This should only show platform views that are rendered in this frame and either:
       //  1. Surface has images available in this frame or,
-      //  2. Surface does not have images available in this frame because the render surface should not be an ImageView.
+      //  2. Surface does not have images available in this frame because the render surface should
+      // not be an ImageView.
       //
       // The platform view is appended to a mutator view.
       //
