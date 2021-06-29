@@ -1276,6 +1276,7 @@ class DomParagraphBuilder implements ui.ParagraphBuilder {
     double scale = 1.0,
     double? baselineOffset,
     ui.TextBaseline? baseline,
+    int codepointLength = 1,
   }) {
     // Require a baseline to be specified if using a baseline-based alignment.
     assert(!(alignment == ui.PlaceholderAlignment.aboveBaseline ||
@@ -1294,7 +1295,7 @@ class DomParagraphBuilder implements ui.ParagraphBuilder {
   }
 
   // TODO(yjbanov): do we need to do this?
-//  static String _encodeLocale(Locale locale) => locale?.toString() ?? '';
+  //  static String _encodeLocale(Locale locale) => locale?.toString() ?? '';
 
   /// Ends the effect of the most recent call to [pushStyle].
   ///
