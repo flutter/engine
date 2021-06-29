@@ -203,7 +203,8 @@ public class PlatformViewsChannel {
           }
         }
 
-        private void convertPlatformViewRenderSurface(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
+        private void convertPlatformViewRenderSurface(
+            @NonNull MethodCall call, @NonNull MethodChannel.Result result) {
           boolean shouldConvert = call.arguments();
           try {
             handler.convertPlatformViewRenderSurface(shouldConvert);
