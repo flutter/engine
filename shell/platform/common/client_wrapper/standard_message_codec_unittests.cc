@@ -68,6 +68,18 @@ TEST(StandardMessageCodec, CanEncodeAndDecodeNull) {
   CheckEncodeDecode(EncodableValue(), bytes);
 }
 
+TEST(StandardMessageCodec, CanDecodeEmptyBytesAsNullWithoutErrorMessage) {
+  std::vector<uint8_t> bytes = {};
+  const StandardMessageCodec& codec =
+      StandardMessageCodec::GetInstance(nullptr);
+  std::stringstream stderr_buffer;
+  std::streambuf* original_stderr = std::cerr.rdbuf(stderr_buffer.rdbuf());
+  auto decoded = codec.DecodeMessage(bytes);
+  std::cerr.rdbuf(original_stderr);
+  EXPECT_EQ(EncodableValue(), *decoded);
+  EXPECT_EQ(stderr_buffer.str(), "");
+}
+
 TEST(StandardMessageCodec, CanEncodeAndDecodeTrue) {
   std::vector<uint8_t> bytes = {0x01};
   CheckEncodeDecode(EncodableValue(true), bytes);
