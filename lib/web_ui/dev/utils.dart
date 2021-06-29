@@ -144,14 +144,12 @@ class ProcessManager {
 
   final StringBuffer _stdout = StringBuffer();
   final StringBuffer _stderr = StringBuffer();
-  final List<StreamSubscription> _subscriptions = <StreamSubscription>[];
 
   void _forwardStream(Stream<List<int>> stream, StringSink buffer) {
-    final StreamSubscription subscription = stream
+    stream
       .transform(utf8.decoder)
       .transform(const LineSplitter())
       .listen(buffer.writeln);
-    _subscriptions.add(subscription);
   }
 
   /// Waits for the [process] to exit. Returns the exit code.
@@ -164,12 +162,6 @@ class ProcessManager {
   /// In all other cicumstances the future completes with an error.
   Future<int> wait() async {
     final int exitCode = await process.exitCode;
-
-    // Wait for standard streams, if any, to be flushed before moving on.
-    for (StreamSubscription subscription in _subscriptions) {
-      await subscription.asFuture<void>();
-    }
-
     if (!_failureIsSuccess && exitCode != 0) {
       _throwProcessException(
         description: 'Sub-process failed.',
