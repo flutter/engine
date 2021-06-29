@@ -73,6 +73,9 @@ public class PlatformViewsChannel {
             case "clearFocus":
               clearFocus(call, result);
               break;
+            case "convertPlatformViewRenderSurface":
+              convertPlatformViewRenderSurface(call, result);
+              break;
             default:
               result.notImplemented();
           }
@@ -194,6 +197,16 @@ public class PlatformViewsChannel {
           int viewId = call.arguments();
           try {
             handler.clearFocus(viewId);
+            result.success(null);
+          } catch (IllegalStateException exception) {
+            result.error("error", detailedExceptionString(exception), null);
+          }
+        }
+
+        private void convertPlatformViewRenderSurface(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
+          boolean shouldConvert = call.arguments();
+          try {
+            handler.convertPlatformViewRenderSurface(shouldConvert);
             result.success(null);
           } catch (IllegalStateException exception) {
             result.error("error", detailedExceptionString(exception), null);
