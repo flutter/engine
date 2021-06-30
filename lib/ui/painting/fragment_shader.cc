@@ -39,7 +39,7 @@ sk_sp<SkShader> FragmentShader::shader(SkSamplingOptions sampling) {
   return shader_;
 }
 
-void FragmentShader::init(std::string sksl) {
+void FragmentShader::init(std::string sksl, bool debugPrintSksl) {
   SkRuntimeEffect::Result result =
       SkRuntimeEffect::MakeForShader(SkString(sksl));
   runtime_effect_ = result.effect;
@@ -53,6 +53,9 @@ void FragmentShader::init(std::string sksl) {
       FML_DLOG(ERROR) << std::string("SkSL:\n") + sksl.c_str();
     }
     return;
+  }
+  if (debugPrintSksl) {
+    FML_LOG(INFO) << std::string("debugPrintSksl:\n") + sksl.c_str();
   }
 }
 

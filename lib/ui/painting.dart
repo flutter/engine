@@ -3784,12 +3784,13 @@ class FragmentShader extends Shader {
     required ByteBuffer spirv,
     Float32List? floatUniforms,
     // TODO(clocksmith): Add `List<Shader> children` as a ? parameter.
+    bool debugPrintSksl = false,
   }) : super._() {
     _constructor();
     final spv.TranspileResult result =
         spv.transpile(spirv, spv.TargetLanguage.sksl);
     _uniformFloatCount = result.uniformFloatCount;
-    _init(result.src);
+    _init(result.src, debugPrintSksl);
     // TODO(clocksmith): Pass children here.
     update(floatUniforms: floatUniforms ?? Float32List(_uniformFloatCount));
   }
@@ -3797,7 +3798,7 @@ class FragmentShader extends Shader {
   late final int _uniformFloatCount;
 
   void _constructor() native 'FragmentShader_constructor';
-  void _init(String sksl) native 'FragmentShader_init';
+  void _init(String sksl, bool debugPrintSksl) native 'FragmentShader_init';
 
   /// Updates the uniform values that are supplied to the [FragmentShader]
   /// and refreshes the shader.

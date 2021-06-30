@@ -50,7 +50,15 @@ To test the pixel tests directly: `./testing/run_tests.py --type dart --dart-fil
 
 Even the simplest GLSL program tests several instructions, so no test us completely isolated
 to a single op. Also, some of the GLSL 450 op tests will use addition in subtraction, along with the
-actual op being tested. However, the GLSL program for each test file is kept as simple as possible, to satisfy these conditions: pass if the op works, and fail if the op does not work.
+actual op being tested. However, the GLSL program for each test file is kept as simple as possible,
+to satisfy these conditions: pass if the op works, and fail if the op does not work. In some tests,
+it is sufficient to only call the GLSL op once, while other may need more calls to more completelty
+test the op. Many ops support scalars, vectors, or a combination as parameters. Most tests default
+to using scalars as params, but vec2, vec3, and vec4 parameters are also tested.
+
+- vec2 is tested as a paramter in glsl_op_normalize.glsl
+- vec3 is tested as a parameter in glsl_op_cross.glsl
+- vec4 is tested as a parameter in glsl_op_length.glsl
 
 ### Adding New Tests
 

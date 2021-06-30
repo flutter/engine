@@ -67,7 +67,8 @@ void _expectShadersRenderGreen(String leafFolderName) {
 
 // Expects that a spirv shader only outputs the color green.
 Future<void> _expectShaderRendersGreen(Uint8List spirvBytes) async {
-  final FragmentShader shader = FragmentShader(spirv: spirvBytes.buffer);
+  // TODO(clocksmith): remmove debug print?
+  final FragmentShader shader = FragmentShader(spirv: spirvBytes.buffer, debugPrintSksl: true);
   final ByteData renderedBytes = await _imageByteDataFromShader(
     shader: shader,
     imageDimension: _shaderImageDimension,
@@ -90,11 +91,13 @@ Future<ByteData> _imageByteDataFromShader({FragmentShader shader, int imageDimen
   return image.toByteData();
 }
 
-// Gets the .spv files in a generated folder.
+// Gets the .spv files in a generated folder in alphabetical order.
 List<File> _spvFiles(String leafFolderName) {
   return _createDirectory(leafFolderName).listSync()
     .where((FileSystemEntity entry) => path.extension(entry.path) == '.spv')
-    .map((FileSystemEntity entry) => entry as File).toList();
+    .map((FileSystemEntity entry) => entry as File)
+    .toList()
+    ..sort((File a, File b) => a.path.compareTo(b.path));
 }
 
 // Creates the directory that contains shader test files.
