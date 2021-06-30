@@ -105,8 +105,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   // Tracks whether the flutterView has been converted to use a FlutterImageView.
   private boolean flutterViewConvertedToImageView = false;
 
-  // Whether the render surface should be converted when a PlatformView is added.
-  private boolean shouldConvertPlatformViewRenderSurface = true;
+  // Whether the render surface should be converted when a PlatformView is added to FlutterView.
+  private boolean convertRenderSurfaceEnabled = true;
 
   // Overlay layer IDs that were displayed since the start of the current frame.
   private HashSet<Integer> currentFrameUsedOverlayLayerIds;
@@ -361,8 +361,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         }
 
         @Override
-        public void convertPlatformViewRenderSurface(boolean convert) {
-          shouldConvertPlatformViewRenderSurface = convert;
+        public void enableConvertingRenderSurface(boolean enable) {
+          convertRenderSurfaceEnabled = enable;
         }
       };
 
@@ -712,7 +712,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   }
 
   private void initializeRootImageViewIfNeeded() {
-    if (shouldConvertPlatformViewRenderSurface && !flutterViewConvertedToImageView) {
+    if (convertRenderSurfaceEnabled && !flutterViewConvertedToImageView) {
       ((FlutterView) flutterView).convertToImageView();
       flutterViewConvertedToImageView = true;
     }
@@ -909,7 +909,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       // they are removed when the framework diposes the platform view widget.
       if (!currentFrameUsedPlatformViewIds.contains(viewId)) {
         parentView.setVisibility(View.GONE);
-      } else if (isFrameRenderedUsingImageReaders || !shouldConvertPlatformViewRenderSurface) {
+      } else if (isFrameRenderedUsingImageReaders || !convertRenderSurfaceEnabled) {
         parentView.setVisibility(View.VISIBLE);
       } else {
         parentView.setVisibility(View.GONE);
