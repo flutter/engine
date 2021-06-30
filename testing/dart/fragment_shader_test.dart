@@ -74,7 +74,7 @@ Future<void> _expectShaderRendersGreen(Uint8List spirvBytes) async {
     imageDimension: _shaderImageDimension,
   );
   for (final int color in renderedBytes.buffer.asUint32List()) {
-    expect(color, _greenColor);
+    expect(toHexString(color), toHexString(_greenColor));
   }
 }
 
@@ -130,3 +130,5 @@ const double epsilon = 0.5 / 255.0;
 
 // Maps an int value from 0-255 to a double value of 0.0 to 1.0.
 double toFloat(int v) => v.toDouble() / 255.0;
+
+String toHexString(int color) => '#${color.toRadixString(16)}';
