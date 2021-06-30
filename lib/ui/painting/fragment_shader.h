@@ -33,7 +33,7 @@ class FragmentShader : public Shader {
 
   sk_sp<SkShader> shader(SkSamplingOptions) override;
 
-  void init(std::string sksl);
+  void init(std::string sksl, bool debugPrintSksl);
 
   void update(const tonic::Float32List& uniforms);
 
