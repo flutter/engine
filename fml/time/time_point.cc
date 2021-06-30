@@ -21,14 +21,23 @@ TimePoint TimePoint::Now() {
   return TimePoint(zx_clock_get_monotonic());
 }
 
+TimePoint TimePoint::CurrentWallTime() {
+  return Now();
+}
+
 #else
 
 TimePoint TimePoint::Now() {
   // The base time is arbitrary; use the clock epoch for convenience.
-  const auto elapsed_time = std::chrono::steady_clock::now().time_since_epoch();
+  const auto elapsed = std::chrono::steady_clock::now().time_since_epoch();
   return TimePoint(
-      std::chrono::duration_cast<std::chrono::nanoseconds>(elapsed_time)
-          .count());
+      std::chrono::duration_cast<std::chrono::nanoseconds>(elapsed).count());
+}
+
+TimePoint TimePoint::CurrentWallTime() {
+  const auto elapsed = std::chrono::system_clock::now().time_since_epoch();
+  return TimePoint(
+      std::chrono::duration_cast<std::chrono::nanoseconds>(elapsed).count());
 }
 
 #endif
