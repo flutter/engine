@@ -760,13 +760,13 @@ public class PlatformViewsControllerTest {
   }
 
   private static void convertPlatformViewRenderSurface(
-    FlutterJNI jni, PlatformViewsController platformViewsController, boolean shouldConvert) {
+      FlutterJNI jni, PlatformViewsController platformViewsController, boolean shouldConvert) {
 
-      final MethodCall convertMethodCall =
-          new MethodCall("convertPlatformViewRenderSurface", shouldConvert);
+    final MethodCall convertMethodCall =
+        new MethodCall("convertPlatformViewRenderSurface", shouldConvert);
 
-      jni.handlePlatformMessage(
-          "flutter/platform_views", encodeMethodCall(convertMethodCall), /*replyId=*/ 0);
+    jni.handlePlatformMessage(
+        "flutter/platform_views", encodeMethodCall(convertMethodCall), /*replyId=*/ 0);
   }
 
   private static FlutterView attach(
