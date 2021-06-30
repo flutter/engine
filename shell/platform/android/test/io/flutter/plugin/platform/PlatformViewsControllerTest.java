@@ -699,7 +699,7 @@ public class PlatformViewsControllerTest {
     jni.onFirstFrame();
 
     // Simulate setting render surface conversion flag.
-    disableConvertingRenderSurface(jni, platformViewsController, false);
+    disableConvertingRenderSurface(jni, platformViewsController, true);
 
     // Simulate create call from the framework.
     createPlatformView(jni, platformViewsController, platformViewId, "testType");
@@ -717,6 +717,8 @@ public class PlatformViewsControllerTest {
         /* mutatorsStack=*/ new FlutterMutatorsStack());
 
     assertEquals(flutterView.getChildCount(), 2);
+    assertTrue(!(flutterView.getChildAt(0) instanceof FlutterImageView));
+    assertEquals(flutterView.getChildAt(1), androidView);
 
     // Simulate dispose call from the framework.
     disposePlatformView(jni, platformViewsController, platformViewId);
