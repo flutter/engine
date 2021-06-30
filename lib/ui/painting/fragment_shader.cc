@@ -60,7 +60,8 @@ void FragmentShader::init(std::string sksl, bool debugPrintSksl) {
   }
 }
 
-// TODO(https://github.com/flutter/flutter/issues/85240): Add `Dart_Handle children` as a paramter.
+// TODO(https://github.com/flutter/flutter/issues/85240):
+// Add `Dart_Handle children` as a paramter.
 void FragmentShader::update(const tonic::Float32List& uniforms) {
   shader_ = runtime_effect_->makeShader(
       SkData::MakeWithCopy(uniforms.data(),
