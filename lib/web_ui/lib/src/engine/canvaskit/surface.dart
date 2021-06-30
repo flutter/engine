@@ -167,14 +167,22 @@ class Surface {
       // Initialize a new, larger, canvas. If the size is growing, then make the
       // new canvas larger than required to avoid many canvas creations.
       final ui.Size newSize = previousCanvasSize == null ? size : size * 1.4;
+
+      // Only resources from the current context can be disposed.
+      if (_glContext != null) {
+        canvasKit.setCurrentContext(_glContext!);
+      }
+      _surface?.dispose();
+      _surface = null;
+      _addedToScene = false;
+      _grContext?.releaseResourcesAndAbandonContext();
+      _grContext?.delete();
+      _grContext = null;
+
       _createNewCanvas(newSize);
       _currentCanvasPhysicalSize = newSize;
       assert(_grContext != null);
     }
-
-    _surface?.dispose();
-    _surface = null;
-    _addedToScene = false;
 
     _currentSurfaceSize = size;
     _translateCanvas();
@@ -292,12 +300,6 @@ class Surface {
     _forceNewContext = false;
     _contextLost = false;
 
-    if (_grContext != null) {
-      _grContext!.releaseResourcesAndAbandonContext();
-      _grContext!.delete();
-      _grContext = null;
-    }
-
     final int glContext = canvasKit.GetWebGLContext(
       htmlCanvas,
       SkWebGLContextOptions(
@@ -410,10 +412,6 @@ class CkSurface {
   void dispose() {
     if (_isDisposed) {
       return;
-    }
-    // Only resources from the current context can be disposed.
-    if (_glContext != null) {
-      canvasKit.setCurrentContext(_glContext!);
     }
     _surface.dispose();
     _isDisposed = true;
