@@ -210,9 +210,10 @@ public class FlutterActivity extends Activity
   private static final String TAG = "FlutterActivity";
 
   /**
-   * The ID of {@code FlutterView} created by this activity. This ID can be used to lookup {@code
-   * FlutterView} in the Android view hierarchy. For more, see {@link
-   * android.view.View#findViewById}.
+   * The ID of {@code FlutterView} created by this activity.
+   *
+   * <p>This ID can be used to lookup {@code FlutterView} in the Android view hierarchy. For more,
+   * see {@link android.view.View#findViewById}.
    */
   public static final int FLUTTER_VIEW_ID = 0xF1F2;
 
