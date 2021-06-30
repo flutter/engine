@@ -87,10 +87,6 @@ void DisplayListLayer::Preroll(PrerollContext* context,
                                const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "DisplayListLayer::Preroll");
 
-#if defined(LEGACY_FUCHSIA_EMBEDDER)
-  CheckForChildLayerBelow(context);
-#endif
-
   DisplayList* disp_list = display_list();
 
   if (auto* cache = context->raster_cache) {
