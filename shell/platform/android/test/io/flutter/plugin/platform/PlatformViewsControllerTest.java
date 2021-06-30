@@ -678,7 +678,7 @@ public class PlatformViewsControllerTest {
 
   @Test
   @Config(shadows = {ShadowFlutterJNI.class})
-  public void dontConverRenderSurfaceWhenFlagIsFalse() {
+  public void dontConverRenderSurfaceWhenFlagIsTrue() {
     final PlatformViewsController platformViewsController = new PlatformViewsController();
 
     final int platformViewId = 0;
