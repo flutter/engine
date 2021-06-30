@@ -83,7 +83,7 @@ Future<ProcessManager> startProcess(
     // Running the process in a system shell for Windows. Otherwise
     // the process is not able to get Dart from path.
     runInShell: io.Platform.isWindows,
-    mode: io.ProcessStartMode.normal,
+    mode: evalOutput ? io.ProcessStartMode.normal : io.ProcessStartMode.inheritStdio,
     environment: environment,
   );
   processesToCleanUp.add(process);
@@ -112,9 +112,6 @@ class ProcessManager {
     if (_evalOutput) {
       _forwardStream(process.stdout, _stdout);
       _forwardStream(process.stderr, _stderr);
-    } else {
-      _forwardStream(process.stdout, io.stdout);
-      _forwardStream(process.stderr, io.stderr);
     }
   }
 
