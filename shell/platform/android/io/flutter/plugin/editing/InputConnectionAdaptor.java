@@ -44,7 +44,6 @@ class InputConnectionAdaptor extends BaseInputConnection
   private InputMethodManager mImm;
   private final Layout mLayout;
   private FlutterTextUtils flutterTextUtils;
-  private final KeyboardManager keyboardManager;
   private int batchEditNestDepth = 0;
 
   @SuppressWarnings("deprecation")
