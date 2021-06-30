@@ -52,7 +52,6 @@ TEST_F(DisplayListLayerTest, PaintingEmptyLayerDies) {
   EXPECT_DEATH_IF_SUPPORTED(layer->Paint(paint_context()),
                             "needs_painting\\(context\\)");
 }
-#endif
 
 TEST_F(DisplayListLayerTest, InvalidDisplayListDies) {
   const SkPoint layer_offset = SkPoint::Make(0.0f, 0.0f);
@@ -62,6 +61,7 @@ TEST_F(DisplayListLayerTest, InvalidDisplayListDies) {
   // Crashes reading a nullptr.
   EXPECT_DEATH_IF_SUPPORTED(layer->Preroll(preroll_context(), SkMatrix()), "");
 }
+#endif
 
 TEST_F(DisplayListLayerTest, SimpleDisplayList) {
   const SkPoint layer_offset = SkPoint::Make(1.5f, -0.5f);
