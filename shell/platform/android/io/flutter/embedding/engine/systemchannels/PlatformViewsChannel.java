@@ -73,8 +73,8 @@ public class PlatformViewsChannel {
             case "clearFocus":
               clearFocus(call, result);
               break;
-            case "enableConvertingRenderSurface":
-              enableConvertingRenderSurface(call, result);
+            case "disableConvertingRenderSurface":
+              disableConvertingRenderSurface(call, result);
               break;
             default:
               result.notImplemented();
@@ -203,11 +203,11 @@ public class PlatformViewsChannel {
           }
         }
 
-        private void enableConvertingRenderSurface(
+        private void disableConvertingRenderSurface(
             @NonNull MethodCall call, @NonNull MethodChannel.Result result) {
-          boolean enableConvert = call.arguments();
+          boolean disabled = call.arguments();
           try {
-            handler.enableConvertingRenderSurface(enableConvert);
+            handler.disableConvertingRenderSurface(disabled);
             result.success(null);
           } catch (IllegalStateException exception) {
             result.error("error", detailedExceptionString(exception), null);
@@ -297,13 +297,13 @@ public class PlatformViewsChannel {
     /** Clears the focus from the platform view with a give id if it is currently focused. */
     void clearFocus(int viewId);
 
-    /** 
-     * Whether the render surface of {@code FlutterView} should be converted to a {@code FlutterImageView}
-     * when a {@code PlatformView} is added.
-     * 
-     * Defaults to true.
+    /**
+     * Whether the render surface of {@code FlutterView} should be converted to a {@code
+     * FlutterImageView} when a {@code PlatformView} is added.
+     *
+     * <p>Defaults to false.
      */
-    void enableConvertingRenderSurface(boolean enable);
+    void disableConvertingRenderSurface(boolean disabled);
   }
 
   /** Request sent from Flutter to create a new platform view. */

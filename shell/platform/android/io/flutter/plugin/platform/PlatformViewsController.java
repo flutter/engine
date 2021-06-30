@@ -106,7 +106,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   private boolean flutterViewConvertedToImageView = false;
 
   // Whether the render surface should be converted when a PlatformView is added to FlutterView.
-  private boolean convertRenderSurfaceEnabled = true;
+  private boolean convertRenderSurfaceDisabled = false;
 
   // Overlay layer IDs that were displayed since the start of the current frame.
   private HashSet<Integer> currentFrameUsedOverlayLayerIds;
@@ -361,8 +361,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         }
 
         @Override
-        public void enableConvertingRenderSurface(boolean enable) {
-          convertRenderSurfaceEnabled = enable;
+        public void disableConvertingRenderSurface(boolean disabled) {
+          convertRenderSurfaceEnabled = disabled;
         }
       };
 
@@ -712,7 +712,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   }
 
   private void initializeRootImageViewIfNeeded() {
-    if (convertRenderSurfaceEnabled && !flutterViewConvertedToImageView) {
+    if (!convertRenderSurfaceDisabled && !flutterViewConvertedToImageView) {
       ((FlutterView) flutterView).convertToImageView();
       flutterViewConvertedToImageView = true;
     }
@@ -909,7 +909,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       // they are removed when the framework diposes the platform view widget.
       if (!currentFrameUsedPlatformViewIds.contains(viewId)) {
         parentView.setVisibility(View.GONE);
-      } else if (isFrameRenderedUsingImageReaders || !convertRenderSurfaceEnabled) {
+      } else if (isFrameRenderedUsingImageReaders || convertRenderSurfaceDisabled) {
         parentView.setVisibility(View.VISIBLE);
       } else {
         parentView.setVisibility(View.GONE);

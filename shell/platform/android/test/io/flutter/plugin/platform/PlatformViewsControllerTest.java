@@ -699,7 +699,7 @@ public class PlatformViewsControllerTest {
     jni.onFirstFrame();
 
     // Simulate setting render surface conversion flag.
-    enableConvertingRenderSurface(jni, platformViewsController, false);
+    disableConvertingRenderSurface(jni, platformViewsController, false);
 
     // Simulate create call from the framework.
     createPlatformView(jni, platformViewsController, platformViewId, "testType");
@@ -759,11 +759,10 @@ public class PlatformViewsControllerTest {
         "flutter/platform_views", encodeMethodCall(platformDisposeMethodCall), /*replyId=*/ 0);
   }
 
-  private static void enableConvertingRenderSurface(
-      FlutterJNI jni, PlatformViewsController platformViewsController, boolean enable) {
+  private static void disableConvertingRenderSurface(
+      FlutterJNI jni, PlatformViewsController platformViewsController, boolean disabled) {
 
-    final MethodCall convertMethodCall =
-        new MethodCall("enableConvertingRenderSurface", enable);
+    final MethodCall convertMethodCall = new MethodCall("disableConvertingRenderSurface", disabled);
 
     jni.handlePlatformMessage(
         "flutter/platform_views", encodeMethodCall(convertMethodCall), /*replyId=*/ 0);
