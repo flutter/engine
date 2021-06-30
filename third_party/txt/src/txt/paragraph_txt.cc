@@ -1998,7 +1998,7 @@ Paragraph::Range<size_t> ParagraphTxt::GetWordBoundary(size_t offset) {
   // the whole placeholder range if the word contains the placeholder.
   for (Range<size_t> range : inline_placeholder_ranges_) {
     if (range.contains(offset)) {
-      return Range<size_t>(range.start, range.end);
+      return range;
     }
   }
 
