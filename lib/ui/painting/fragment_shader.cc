@@ -66,9 +66,7 @@ void FragmentShader::update(const tonic::Float32List& uniforms) {
   shader_ = runtime_effect_->makeShader(
       SkData::MakeWithCopy(uniforms.data(),
                            uniforms.num_elements() * sizeof(float)),
-      0,
-      0,
-      nullptr, false);
+      0, 0, nullptr, false);
 }
 
 fml::RefPtr<FragmentShader> FragmentShader::Create() {
