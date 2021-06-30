@@ -362,7 +362,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
         @Override
         public void disableConvertingRenderSurface(boolean disabled) {
-          convertRenderSurfaceEnabled = disabled;
+          convertRenderSurfaceDisabled = disabled;
         }
       };
 
