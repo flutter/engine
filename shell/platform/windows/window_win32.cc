@@ -371,8 +371,11 @@ WindowWin32::HandleMessage(UINT const message,
       // Check if this key produces a character. If so, the key press should
       // be sent with the character produced at WM_CHAR. Store the produced
       // keycode (it's not accessible from WM_CHAR) to be used in WM_CHAR.
+      // As an exception with control or windows key pressed WM_CHAR may not
+      // come even though the event produced a character (i.e. CTRL + number).
       const unsigned int character = MapVirtualKey(wparam, MAPVK_VK_TO_CHAR);
-      if (character > 0 && is_keydown_message) {
+      if (character > 0 && is_keydown_message && GetKeyState(VK_CONTROL) == 0 &&
+          GetKeyState(VK_LWIN) == 0 && GetKeyState(VK_RWIN) == 0) {
         keycode_for_char_message_ = wparam;
         break;
       }
