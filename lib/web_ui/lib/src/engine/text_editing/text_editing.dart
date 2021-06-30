@@ -1730,7 +1730,6 @@ class HybridTextEditing {
   /// Flag which shows if there is an ongoing editing.
   ///
   /// Also used to define if a keyboard is needed.
-  @visibleForTesting
   bool isEditing = false;
 
   InputConfiguration? configuration;
