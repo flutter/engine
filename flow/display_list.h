@@ -142,7 +142,6 @@ namespace flutter {
   V(DrawSkPictureMatrix)            \
   V(DrawDisplayList)                \
   V(DrawTextBlob)                   \
-  /* V(DrawShadowRec) */            \
                                     \
   V(DrawShadow)
 
@@ -315,8 +314,6 @@ class Dispatcher {
   virtual void drawTextBlob(const sk_sp<SkTextBlob> blob,
                             SkScalar x,
                             SkScalar y) = 0;
-  // Unfortunately SkDrawShadowRec requires including an internal Skia header
-  // virtual void drawShadowRec(const SkPath&, const SkDrawShadowRec&) = 0;
   virtual void drawShadow(const SkPath& path,
                           const SkColor color,
                           const SkScalar elevation,
@@ -430,7 +427,6 @@ class DisplayListBuilder final : public virtual Dispatcher, public SkRefCnt {
   void drawTextBlob(const sk_sp<SkTextBlob> blob,
                     SkScalar x,
                     SkScalar y) override;
-  // void drawShadowRec(const SkPath&, const SkDrawShadowRec&) override;
   void drawShadow(const SkPath& path,
                   const SkColor color,
                   const SkScalar elevation,

@@ -50,6 +50,7 @@ class CanvasCompareTester {
   // ShadowRec which is not exposed by their headers. For operations
   // that use shadows, we can perform a lot of tests, but not the tests
   // that require SkCanvas->DisplayList transfers.
+  // See: https://bugs.chromium.org/p/skia/issues/detail?id=12125
   static bool UsingShadows;
 
   typedef const std::function<void(SkCanvas*, SkPaint&)> CvRenderer;
@@ -1244,9 +1245,6 @@ TEST(DisplayListCanvas, DrawTextBlob) {
         builder.drawTextBlob(blob, RenderLeft, RenderBottom);
       });
 }
-
-// TODO(flar): Skipping DrawShadowRec for now, Flutter does not use it
-//             and Skia does not yet expose the require definitions
 
 TEST(DisplayListCanvas, DrawShadow) {
   CanvasCompareTester::UsingShadows = true;

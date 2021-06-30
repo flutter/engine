@@ -634,10 +634,11 @@ std::vector<DisplayListInvocationGroup> allGroups = {
       {1, 24, 1, 24, [](DisplayListBuilder& b) {b.drawTextBlob(TestBlob2, 10, 10);}},
     }
   },
-  // TODO(flar): Skipping DrawShadowRec for now, Flutter does not use it
-  //             and Skia does not yet expose the require definitions
   // The -1 op counts below are to indicate to the framework not to test
-  // SkCanvas conversion of these ops
+  // SkCanvas conversion of these ops as it converts the operation into a
+  // format that is not exposed publicly and so we cannot recapture the
+  // operation.
+  // See: https://bugs.chromium.org/p/skia/issues/detail?id=12125
   { "DrawShadow", {
       // cv shadows are turned into an opaque ShadowRec which is not exposed
       {1, 32, -1, 32, [](DisplayListBuilder& b) {b.drawShadow(TestPath1, SK_ColorGREEN, 1.0, false);}},

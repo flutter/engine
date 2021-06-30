@@ -15,10 +15,6 @@
 #include "third_party/skia/include/core/SkTextBlob.h"
 #include "third_party/skia/include/utils/SkShadowUtils.h"
 
-// This header file cannot be included here, but we cannot
-// record calls made by the SkShadowUtils without it.
-// #include "third_party/skia/src/core/SkDrawShadowInfo.h"
-
 namespace flutter {
 
 // clang-format off
@@ -336,12 +332,6 @@ void DisplayListBoundsCalculator::drawTextBlob(const sk_sp<SkTextBlob> blob,
                                                SkScalar y) {
   accumulateRect(blob->bounds().makeOffset(x, y));
 }
-// void DisplayListBoundsCalculator::drawShadowRec(const SkPath& path,
-//                                                 const SkDrawShadowRec& rec) {
-//   SkRect bounds;
-//   SkDrawShadowMetrics::GetLocalBounds(path, rec, SkMatrix::I(), &bounds);
-//   accumulateRect(bounds, NON_GEOM);
-// }
 void DisplayListBoundsCalculator::drawShadow(const SkPath& path,
                                              const SkColor color,
                                              const SkScalar elevation,

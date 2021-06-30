@@ -15,10 +15,6 @@
 #include "third_party/skia/include/core/SkRSXform.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
 
-// This header file cannot be included here, but we cannot
-// record calls made by the SkShadowUtils without it.
-// #include "third_party/skia/src/core/SkDrawShadowInfo.h"
-
 namespace flutter {
 
 const SkSamplingOptions DisplayList::NearestSampling =
@@ -811,20 +807,6 @@ struct DrawTextBlobOp final : DLOp {
   }
 };
 
-// struct DrawShadowRecOp final : DLOp {
-//   static const auto kType = DisplayListOpType::kDrawShadowRec;
-//
-//   DrawShadowRecOp(const SkPath& path, const SkDrawShadowRec& rec)
-//       : path(path), rec(rec) {}
-//
-//   const SkPath path;
-//   const SkDrawShadowRec rec;
-//
-//   void dispatch(Dispatcher& dispatcher) const {
-//     dispatcher.drawShadowRec(path, rec);
-//   }
-// };
-
 // 4 byte header + 28 byte payload packs evenly into 32 bytes
 struct DrawShadowOp final : DLOp {
   static const auto kType = DisplayListOpType::kDrawShadow;
@@ -1376,10 +1358,6 @@ void DisplayListBuilder::drawTextBlob(const sk_sp<SkTextBlob> blob,
                                       SkScalar y) {
   Push<DrawTextBlobOp>(0, std::move(blob), x, y);
 }
-// void DisplayListBuilder::drawShadowRec(const SkPath& path,
-//                                        const SkDrawShadowRec& rec) {
-//   Push<DrawShadowRecOp>(0, path, rec);
-// }
 void DisplayListBuilder::drawShadow(const SkPath& path,
                                     const SkColor color,
                                     const SkScalar elevation,

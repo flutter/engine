@@ -506,6 +506,7 @@ void Canvas::drawShadow(const CanvasPath* path,
     // record an operation that it injects into an SkCanvas. To prevent
     // that situation we bypass the canvas interface and inject the
     // shadow parameters directly into the underlying DisplayList.
+    // See: https://bugs.chromium.org/p/skia/issues/detail?id=12125
     builder()->drawShadow(path->path(), color, elevation, transparentOccluder);
   } else {
     SkScalar dpr = UIDartState::Current()

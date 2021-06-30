@@ -9,10 +9,6 @@
 #include "third_party/skia/include/core/SkMaskFilter.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
 
-// This header file cannot be included here, but we cannot
-// record calls made by the SkShadowUtils without it.
-// #include "third_party/skia/src/core/SkDrawShadowInfo.h"
-
 namespace flutter {
 
 void DisplayListCanvasDispatcher::save() {
@@ -177,10 +173,6 @@ void DisplayListCanvasDispatcher::drawTextBlob(const sk_sp<SkTextBlob> blob,
                                                SkScalar y) {
   canvas_->drawTextBlob(blob, x, y, paint());
 }
-// void DisplayListCanvasDispatcher::drawShadowRec(const SkPath& path,
-//                                                 const SkDrawShadowRec& rec) {
-//   canvas_->private_draw_shadow_rec(path, rec);
-// }
 void DisplayListCanvasDispatcher::drawShadow(const SkPath& path,
                                              const SkColor color,
                                              const SkScalar elevation,
@@ -372,7 +364,9 @@ void DisplayListCanvasRecorder::onDrawTextBlob(const SkTextBlob* blob,
 }
 void DisplayListCanvasRecorder::onDrawShadowRec(const SkPath& path,
                                                 const SkDrawShadowRec& rec) {
-  // builder_->drawShadowRec(path, rec);
+  // Skia does not expose the SkDrawShadowRec structure in a public
+  // header file so we cannot record this operation.
+  // See: https://bugs.chromium.org/p/skia/issues/detail?id=12125
   FML_DCHECK(false);
 }
 

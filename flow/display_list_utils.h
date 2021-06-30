@@ -305,7 +305,6 @@ class DisplayListBoundsCalculator final
   void drawTextBlob(const sk_sp<SkTextBlob> blob,
                     SkScalar x,
                     SkScalar y) override;
-  // void drawShadowRec(const SkPath&, const SkDrawShadowRec&) override;
   void drawShadow(const SkPath& path,
                   const SkColor color,
                   const SkScalar elevation,
