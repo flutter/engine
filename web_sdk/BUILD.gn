@@ -116,6 +116,7 @@ prebuilt_dart_action("flutter_dartdevc_kernel_sdk_outline") {
   script = "//third_party/dart/utils/bazel/kernel_worker.dart"
 
   args = [
+    "--no-sound-null-saftey",
     "--summary-only",
     "--target",
     "ddc",
@@ -161,6 +162,7 @@ prebuilt_dart_action("flutter_dartdevc_kernel_sdk") {
   ]
 
   args = [
+    "--no-sound-null-safety",
     "--compile-sdk",
     "dart:core",
 
@@ -213,6 +215,7 @@ prebuilt_dart_action("flutter_dartdevc_canvaskit_kernel_sdk") {
   ]
 
   args = [
+    "--no-sound-null-safety",
     "--compile-sdk",
     "dart:core",
 
