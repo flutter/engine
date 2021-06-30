@@ -51,12 +51,14 @@ TEST(FrameTimingsRecorderTest, RecordRasterTimes) {
   recorder->RecordBuildEnd(build_end);
 
   const auto raster_start = fml::TimePoint::Now();
-  const auto raster_end = raster_start + fml::TimeDelta::FromMillisecondsF(16);
   recorder->RecordRasterStart(raster_start);
-  const auto timing = recorder->RecordRasterEnd(raster_end);
+  const auto before_raster_end_wall_time = fml::TimePoint::CurrentWallTime();
+  const auto timing = recorder->RecordRasterEnd();
+  const auto after_raster_end_wall_time = fml::TimePoint::CurrentWallTime();
 
   ASSERT_EQ(raster_start, recorder->GetRasterStartTime());
-  ASSERT_EQ(raster_end, recorder->GetRasterEndTime());
+  ASSERT_GT(recorder->GetRasterEndWallTime(), before_raster_end_wall_time);
+  ASSERT_LT(recorder->GetRasterEndWallTime(), after_raster_end_wall_time);
   ASSERT_EQ(recorder->GetFrameNumber(), timing.GetFrameNumber());
 }
 
