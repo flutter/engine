@@ -3783,7 +3783,7 @@ class FragmentShader extends Shader {
   FragmentShader({
     required ByteBuffer spirv,
     Float32List? floatUniforms,
-    // TODO(clocksmith): Add `List<Shader> children` as a ? parameter.
+    // TODO(https://github.com/flutter/flutter/issues/85240): Add `List<Shader> children` as a ? parameter.
     bool debugPrintSksl = false,
   }) : super._() {
     _constructor();
@@ -3791,7 +3791,7 @@ class FragmentShader extends Shader {
         spv.transpile(spirv, spv.TargetLanguage.sksl);
     _uniformFloatCount = result.uniformFloatCount;
     _init(result.src, debugPrintSksl);
-    // TODO(clocksmith): Pass children here.
+    // TODO(https://github.com/flutter/flutter/issues/85240): Pass children here.
     update(floatUniforms: floatUniforms ?? Float32List(_uniformFloatCount));
   }
 
@@ -3810,15 +3810,15 @@ class FragmentShader extends Shader {
   /// See [FragmentShader] for more information on passing uniforms.
   void update({
     required Float32List floatUniforms,
-    // TODO(clocksmith): Add `List<Shader> children` as a paramter.
-    // TODO(clocksmith): Change both params to ? and assert that
+    // TODO(https://github.com/flutter/flutter/issues/85240): Add `List<Shader> children` as a paramter.
+    // TODO(https://github.com/flutter/flutter/issues/85240): Change both params to ? and assert that
     // at least one is non null.
   }) {
     assert(floatUniforms.length == _uniformFloatCount);
     _update(floatUniforms);
   }
 
-  // TODO(clocksmith): Add `List<Shader> children` as a parameter.
+  // TODO(https://github.com/flutter/flutter/issues/85240): Add `List<Shader> children` as a parameter.
   void _update(Float32List floatUniforms) native 'FragmentShader_update';
 }
 

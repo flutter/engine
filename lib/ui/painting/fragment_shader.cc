@@ -55,25 +55,18 @@ void FragmentShader::init(std::string sksl, bool debugPrintSksl) {
     return;
   }
   if (debugPrintSksl) {
+    // TODO(clocksmith): what is the proper way to log this?
     FML_LOG(INFO) << std::string("debugPrintSksl:\n") + sksl.c_str();
   }
 }
 
-// TODO(clocksmith): Add `Dart_Handle children` as a paramter.
-// This will be converted with:
-//   std::vector<Shader*> shaders =
-//       tonic::DartConverter<std::vector<Shader*>>::FromDart(children);
-//   std::vector<sk_sp<SkShader>> children_sk(shaders.size());
-//   for (size_t i = 0; i < shaders.size(); i++) {
-//     children_sk[i] =
-//     shaders[i]->shader(SkSamplingOptions(SkFilterQuality::kHigh_SkFilterQuality));
-//   }
+// TODO(https://github.com/flutter/flutter/issues/85240): Add `Dart_Handle children` as a paramter.
 void FragmentShader::update(const tonic::Float32List& uniforms) {
   shader_ = runtime_effect_->makeShader(
       SkData::MakeWithCopy(uniforms.data(),
                            uniforms.num_elements() * sizeof(float)),
-      0,  // TODO(clocksmith): children_sk.data()
-      0,  // TODO(clocksmith): children_sk.size()
+      0,
+      0,
       nullptr, false);
 }
 
