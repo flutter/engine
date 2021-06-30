@@ -587,6 +587,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/text/measurement.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text/paint_service.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text/paragraph.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text/ruler.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/text/text_direction.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text/unicode_range.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text/word_break_properties.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text/word_breaker.dart
@@ -671,6 +672,8 @@ FILE: ../../../flutter/shell/common/animator_unittests.cc
 FILE: ../../../flutter/shell/common/canvas_spy.cc
 FILE: ../../../flutter/shell/common/canvas_spy.h
 FILE: ../../../flutter/shell/common/canvas_spy_unittests.cc
+FILE: ../../../flutter/shell/common/context_options.cc
+FILE: ../../../flutter/shell/common/context_options.h
 FILE: ../../../flutter/shell/common/display.h
 FILE: ../../../flutter/shell/common/display_manager.cc
 FILE: ../../../flutter/shell/common/display_manager.h
