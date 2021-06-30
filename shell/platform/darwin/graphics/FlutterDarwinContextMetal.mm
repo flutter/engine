@@ -7,7 +7,7 @@
 #include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/fml/logging.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
-#include "shell/common/context_options.h"
+#include "flutter/shell/common/context_options.h"
 
 FLUTTER_ASSERT_ARC
 
