@@ -48,8 +48,7 @@ void PhysicalShapeLayer::Diff(DiffContext* context, const Layer* old_layer) {
   if (elevation_ == 0) {
     bounds = path_.getBounds();
   } else {
-    bounds = ComputeShadowBounds(path_,
-                                 elevation_,
+    bounds = ComputeShadowBounds(path_, elevation_,
                                  context->frame_device_pixel_ratio(),
                                  context->GetTransform());
   }
@@ -79,10 +78,8 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context,
     // We will draw the shadow in Paint(), so add some margin to the paint
     // bounds to leave space for the shadow. We fill this whole region and clip
     // children to it so we don't need to join the child paint bounds.
-    set_paint_bounds(ComputeShadowBounds(path_,
-                                         elevation_,
-                                         context->frame_device_pixel_ratio,
-                                         matrix));
+    set_paint_bounds(ComputeShadowBounds(
+        path_, elevation_, context->frame_device_pixel_ratio, matrix));
   }
 }
 
@@ -143,13 +140,11 @@ SkRect PhysicalShapeLayer::ComputeShadowBounds(const SkPath& path,
                                                SkScalar dpr,
                                                const SkMatrix& ctm) {
   SkRect shadowBounds(path.getBounds());
-  SkShadowUtils::GetLocalBounds(ctm, path,
-                                SkPoint3::Make(0, 0, dpr * elevation),
-                                SkPoint3::Make(kLightXOffset, kLightYOffset,
-                                               dpr * kLightHeight),
-                                dpr * kLightRadius,
-                                SkShadowFlags::kDirectionalLight_ShadowFlag,
-                                &shadowBounds);
+  SkShadowUtils::GetLocalBounds(
+      ctm, path, SkPoint3::Make(0, 0, dpr * elevation),
+      SkPoint3::Make(kLightXOffset, kLightYOffset, dpr * kLightHeight),
+      dpr * kLightRadius, SkShadowFlags::kDirectionalLight_ShadowFlag,
+      &shadowBounds);
   return shadowBounds;
 }
 
