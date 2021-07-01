@@ -10,11 +10,12 @@
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
 
-@interface FlutterTextInputPlugin : NSObject<UIIndirectScribbleInteractionDelegate>
+@interface FlutterTextInputPlugin : NSObject <UIIndirectScribbleInteractionDelegate>
 
 @property(nonatomic, assign) id<FlutterTextInputDelegate> textInputDelegate;
 @property(nonatomic, readonly) UIViewController* viewController;
-@property(nonatomic, assign) NSMutableDictionary<UIScribbleElementIdentifier, NSValue*>* scribbleElements;
+@property(nonatomic, assign)
+    NSMutableDictionary<UIScribbleElementIdentifier, NSValue*>* scribbleElements;
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
 
 /**

@@ -2074,7 +2074,7 @@ static BOOL isPositionCloserToPoint(CGPoint point,
 - (BOOL)indirectScribbleInteraction:(UIIndirectScribbleInteraction*)interaction
                    isElementFocused:(UIScribbleElementIdentifier)elementIdentifier
     API_AVAILABLE(ios(14.0)) {
-  return _reusableInputView.scribbleFocused;
+  return _activeView.scribbleFocused;
 }
 
 - (void)indirectScribbleInteraction:(UIIndirectScribbleInteraction*)interaction
@@ -2082,13 +2082,13 @@ static BOOL isPositionCloserToPoint(CGPoint point,
                      referencePoint:(CGPoint)focusReferencePoint
                          completion:(void (^)(UIResponder<UITextInput>* focusedInput))completion
     API_AVAILABLE(ios(14.0)) {
-  _reusableInputView.scribbleFocusing = true;
+  _activeView.scribbleFocusing = true;
   [_textInputDelegate focusElement:elementIdentifier
                            atPoint:focusReferencePoint
                             result:^(id _Nullable result) {
-                              _reusableInputView.scribbleFocusing = false;
-                              _reusableInputView.scribbleFocused = true;
-                              completion(_reusableInputView);
+                              _activeView.scribbleFocusing = false;
+                              _activeView.scribbleFocused = true;
+                              completion(_activeView);
                             }];
 }
 
