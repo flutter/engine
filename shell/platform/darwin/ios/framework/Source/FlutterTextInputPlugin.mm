@@ -759,6 +759,7 @@ static BOOL isPositionCloserToPoint(CGPoint point,
   [_tokenizer release];
   [_autofillId release];
   [_inputViewController release];
+  [_selectionRects release];
   [super dealloc];
 }
 
@@ -1282,6 +1283,7 @@ static BOOL isPositionCloserToPoint(CGPoint point,
   }
 
   if (!_scribbleInProgress && !_scribbleFocusing && !_scribbleFocused) {
+    NSLog(@"showAutocorrectionPromptRectForStart");
     [_textInputDelegate showAutocorrectionPromptRectForStart:start
                                                          end:end
                                                   withClient:_textInputClient];
@@ -1513,7 +1515,8 @@ static BOOL isPositionCloserToPoint(CGPoint point,
 }
 
 - (void)insertText:(NSString*)text {
-  NSMutableArray* copiedRects = [[NSMutableArray alloc] initWithCapacity:[_selectionRects count]];
+  NSMutableArray<NSArray<NSNumber*>*>* copiedRects =
+      [[NSMutableArray alloc] initWithCapacity:[_selectionRects count]];
   NSAssert([_selectedTextRange.start isKindOfClass:[FlutterTextPosition class]],
            @"Expected a FlutterTextPosition for position (got %@).",
            [_selectedTextRange.start class]);
@@ -1785,7 +1788,7 @@ static BOOL isPositionCloserToPoint(CGPoint point,
     NSArray<NSNumber*>* rect = rects[i];
     [rectsAsRect addObject:rect];
   }
-  _activeView.selectionRects = rects;
+  _activeView.selectionRects = rectsAsRect;
 }
 
 - (void)showTextInput {
