@@ -3753,26 +3753,29 @@ class ImageShader extends Shader {
 /// the shader. They will be updated in the order that they are defined.
 ///
 /// For example, if there are 3 uniforms: 1 of type float, 1 type float2/vec2,
-/// and 1 of type vec3/float3, then the length of [floatUniforms] must be 6.
+/// and 1 of type vec3/float3, and 1 mat2x2 then the length of [floatUniforms]
+/// must be 10.
+/// 
 /// The uniforms could be updated as follows:
-///
 ///
 ///   Example fragment shader uniforms.
 ///
 ///   `uniform float a;`
 ///   `uniform vec2 b;`
 ///   `uniform vec3 c;`
-///   TODO(clocksmith): add mat uniform example
+///   `uniform mat2x2 d;`
 ///
 ///   Dart code to update uniforms.
 ///
-///   `shader.update(floatUniforms: Float32List.fromList([1, 2, 3, 4, 5, 6]));`
+///   `shader.update(floatUniforms: Float32List.fromList([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]));`
 ///
 ///   Results of shader uniforms.
 ///
 ///   a: 1
 ///   b: [2, 3]
 ///   c: [4, 5, 6]
+///   d: [7, 8, 9, 10] // 2x2 matrix in column-major order
+///
 class FragmentShader extends Shader {
   @pragma('vm:entry-point')
 
