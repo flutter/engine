@@ -124,8 +124,9 @@ TEST_F(PhysicalShapeLayerTest, ElevationSimple) {
   // The Fuchsia system compositor handles all elevated PhysicalShapeLayers and
   // their shadows , so we do not do any painting there.
   EXPECT_EQ(layer->paint_bounds(),
-            PhysicalShapeLayer::ComputeShadowBounds(layer_path.getBounds(),
-                                                    initial_elevation, 1.0f));
+            PhysicalShapeLayer::ComputeShadowBounds(layer_path,
+                                                    initial_elevation, 1.0f,
+                                                    SkMatrix()));
   EXPECT_TRUE(layer->needs_painting(paint_context()));
   EXPECT_EQ(layer->elevation(), initial_elevation);
 
@@ -174,8 +175,8 @@ TEST_F(PhysicalShapeLayerTest, ElevationComplex) {
     // there.
     EXPECT_EQ(layers[i]->paint_bounds(),
               (PhysicalShapeLayer::ComputeShadowBounds(
-                  layer_path.getBounds(), initial_elevations[i],
-                  1.0f /* pixel_ratio */)));
+                  layer_path, initial_elevations[i],
+                  1.0f /* pixel_ratio */, SkMatrix())));
     EXPECT_TRUE(layers[i]->needs_painting(paint_context()));
   }
 
