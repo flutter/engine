@@ -792,22 +792,25 @@ static BOOL isPositionCloserToPoint(CGPoint point,
 
 #pragma mark UIScribbleInteractionDelegate
 
-- (void)scribbleInteractionWillBeginWriting:(UIScribbleInteraction*)interaction {
+- (void)scribbleInteractionWillBeginWriting:(UIScribbleInteraction*)interaction
+    API_AVAILABLE(ios(14.0)) {
   _scribbleInProgress = true;
   [_textInputDelegate scribbleInteractionBegan];
 }
 
-- (void)scribbleInteractionDidFinishWriting:(UIScribbleInteraction*)interaction {
+- (void)scribbleInteractionDidFinishWriting:(UIScribbleInteraction*)interaction
+    API_AVAILABLE(ios(14.0)) {
   _scribbleInProgress = false;
   [_textInputDelegate scribbleInteractionFinished];
 }
 
 - (BOOL)scribbleInteraction:(UIScribbleInteraction*)interaction
-      shouldBeginAtLocation:(CGPoint)location {
+      shouldBeginAtLocation:(CGPoint)location API_AVAILABLE(ios(14.0)) {
   return true;
 }
 
-- (BOOL)scribbleInteractionShouldDelayFocus:(UIScribbleInteraction*)interaction {
+- (BOOL)scribbleInteractionShouldDelayFocus:(UIScribbleInteraction*)interaction
+    API_AVAILABLE(ios(14.0)) {
   return false;
 }
 
@@ -1433,13 +1436,13 @@ static BOOL isPositionCloserToPoint(CGPoint point,
   [self replaceRange:_selectedTextRange withText:text];
 }
 
-- (UITextPlaceholder*)insertTextPlaceholderWithSize:(CGSize)size {
+- (UITextPlaceholder*)insertTextPlaceholderWithSize:(CGSize)size API_AVAILABLE(ios(13.0)) {
   [_textInputDelegate insertTextPlaceholderWithSize:size withClient:_textInputClient];
   _hasPlaceholder = YES;
   return [[[FlutterTextPlaceholder alloc] init] autorelease];
 }
 
-- (void)removeTextPlaceholder:(UITextPlaceholder*)textPlaceholder {
+- (void)removeTextPlaceholder:(UITextPlaceholder*)textPlaceholder API_AVAILABLE(ios(13.0)) {
   _hasPlaceholder = NO;
   [_textInputDelegate removeTextPlaceholder:_textInputClient];
 }
@@ -1928,14 +1931,16 @@ static BOOL isPositionCloserToPoint(CGPoint point,
 #pragma mark UIIndirectScribbleInteractionDelegate
 
 - (BOOL)indirectScribbleInteraction:(UIIndirectScribbleInteraction*)interaction
-                   isElementFocused:(UIScribbleElementIdentifier)elementIdentifier {
+                   isElementFocused:(UIScribbleElementIdentifier)elementIdentifier
+    API_AVAILABLE(ios(14.0)) {
   return _reusableInputView.scribbleFocused;
 }
 
 - (void)indirectScribbleInteraction:(UIIndirectScribbleInteraction*)interaction
                focusElementIfNeeded:(UIScribbleElementIdentifier)elementIdentifier
                      referencePoint:(CGPoint)focusReferencePoint
-                         completion:(void (^)(UIResponder<UITextInput>* focusedInput))completion {
+                         completion:(void (^)(UIResponder<UITextInput>* focusedInput))completion
+    API_AVAILABLE(ios(14.0)) {
   _reusableInputView.scribbleFocusing = true;
   [_textInputDelegate focusElement:elementIdentifier
                            atPoint:focusReferencePoint
@@ -1947,20 +1952,24 @@ static BOOL isPositionCloserToPoint(CGPoint point,
 }
 
 - (BOOL)indirectScribbleInteraction:(UIIndirectScribbleInteraction*)interaction
-         shouldDelayFocusForElement:(UIScribbleElementIdentifier)elementIdentifier {
+         shouldDelayFocusForElement:(UIScribbleElementIdentifier)elementIdentifier
+    API_AVAILABLE(ios(14.0)) {
   return NO;
 }
 
 - (void)indirectScribbleInteraction:(UIIndirectScribbleInteraction*)interaction
-          willBeginWritingInElement:(UIScribbleElementIdentifier)elementIdentifier {
+          willBeginWritingInElement:(UIScribbleElementIdentifier)elementIdentifier
+    API_AVAILABLE(ios(14.0)) {
 }
 
 - (void)indirectScribbleInteraction:(UIIndirectScribbleInteraction*)interaction
-          didFinishWritingInElement:(UIScribbleElementIdentifier)elementIdentifier {
+          didFinishWritingInElement:(UIScribbleElementIdentifier)elementIdentifier
+    API_AVAILABLE(ios(14.0)) {
 }
 
 - (CGRect)indirectScribbleInteraction:(UIIndirectScribbleInteraction*)interaction
-                      frameForElement:(UIScribbleElementIdentifier)elementIdentifier {
+                      frameForElement:(UIScribbleElementIdentifier)elementIdentifier
+    API_AVAILABLE(ios(14.0)) {
   NSValue* elementValue = [_scribbleElements objectForKey:elementIdentifier];
   if (elementValue == nil) {
     return CGRectZero;
@@ -1971,7 +1980,8 @@ static BOOL isPositionCloserToPoint(CGPoint point,
 - (void)indirectScribbleInteraction:(UIIndirectScribbleInteraction*)interaction
               requestElementsInRect:(CGRect)rect
                          completion:
-                             (void (^)(NSArray<UIScribbleElementIdentifier>* elements))completion {
+                             (void (^)(NSArray<UIScribbleElementIdentifier>* elements))completion
+    API_AVAILABLE(ios(14.0)) {
   [_textInputDelegate
       requestElementsInRect:rect
                      result:^(id _Nullable result) {
@@ -1995,7 +2005,7 @@ static BOOL isPositionCloserToPoint(CGPoint point,
 
 #pragma mark - Methods related to Scribble support
 
-- (void)setupIndirectScribbleInteraction:(FlutterViewController*)viewController {
+- (void)setupIndirectScribbleInteraction:(UIViewController*)viewController {
   if (_viewController != viewController) {
     if (@available(iOS 14.0, *)) {
       UIView* parentView = viewController.view;

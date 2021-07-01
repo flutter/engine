@@ -8,13 +8,12 @@
 #import <UIKit/UIKit.h>
 
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
-#import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
 
-@interface FlutterTextInputPlugin : NSObject
+@interface FlutterTextInputPlugin : NSObject<UIIndirectScribbleInteractionDelegate>
 
 @property(nonatomic, assign) id<FlutterTextInputDelegate> textInputDelegate;
-@property(nonatomic, readonly) FlutterViewController* viewController;
+@property(nonatomic, readonly) UIViewController* viewController;
 @property(nonatomic, assign) NSMutableDictionary<UIScribbleElementIdentifier, NSValue*>* scribbleElements;
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
 
@@ -26,38 +25,11 @@
  */
 - (UIView<UITextInput>*)textInputView;
 
-// UIIndirectScribbleInteractionDelegate
-- (BOOL)indirectScribbleInteraction:(UIIndirectScribbleInteraction*)interaction
-                   isElementFocused:(UIScribbleElementIdentifier)elementIdentifier
-    API_AVAILABLE(ios(14.0));
-- (void)indirectScribbleInteraction:(UIIndirectScribbleInteraction*)interaction
-               focusElementIfNeeded:(UIScribbleElementIdentifier)elementIdentifier
-                     referencePoint:(CGPoint)focusReferencePoint
-                         completion:(void (^)(UIResponder<UITextInput>* focusedInput))completion
-    API_AVAILABLE(ios(14.0));
-- (BOOL)indirectScribbleInteraction:(UIIndirectScribbleInteraction*)interaction
-         shouldDelayFocusForElement:(UIScribbleElementIdentifier)elementIdentifier
-    API_AVAILABLE(ios(14.0));
-- (void)indirectScribbleInteraction:(UIIndirectScribbleInteraction*)interaction
-          willBeginWritingInElement:(UIScribbleElementIdentifier)elementIdentifier
-    API_AVAILABLE(ios(14.0));
-- (void)indirectScribbleInteraction:(UIIndirectScribbleInteraction*)interaction
-          didFinishWritingInElement:(UIScribbleElementIdentifier)elementIdentifier
-    API_AVAILABLE(ios(14.0));
-- (CGRect)indirectScribbleInteraction:(UIIndirectScribbleInteraction*)interaction
-                      frameForElement:(UIScribbleElementIdentifier)elementIdentifier
-    API_AVAILABLE(ios(14.0));
-- (void)indirectScribbleInteraction:(UIIndirectScribbleInteraction*)interaction
-              requestElementsInRect:(CGRect)rect
-                         completion:
-                             (void (^)(NSArray<UIScribbleElementIdentifier>* elements))completion
-    API_AVAILABLE(ios(14.0));
-
 /**
  * These are used by the UIIndirectScribbleInteractionDelegate methods to handle focusing on the
  * correct element
  */
-- (void)setupIndirectScribbleInteraction:(FlutterViewController*)viewController;
+- (void)setupIndirectScribbleInteraction:(UIViewController*)viewController;
 - (void)resetViewController;
 
 @end
@@ -136,22 +108,10 @@ FLUTTER_DARWIN_EXPORT
 @property(nonatomic) UITextSmartDashesType smartDashesType API_AVAILABLE(ios(11.0));
 @property(nonatomic, copy) UITextContentType textContentType API_AVAILABLE(ios(10.0));
 
-- (UITextPlaceholder*)insertTextPlaceholderWithSize:(CGSize)size API_AVAILABLE(ios(13.0));
-- (void)removeTextPlaceholder:(UITextPlaceholder*)textPlaceholder API_AVAILABLE(ios(13.0));
-
-// UIScribbleInteractionDelegate
-- (void)scribbleInteractionWillBeginWriting:(UIScribbleInteraction*)interaction
-    API_AVAILABLE(ios(14.0));
-- (void)scribbleInteractionDidFinishWriting:(UIScribbleInteraction*)interaction
-    API_AVAILABLE(ios(14.0));
-- (BOOL)scribbleInteraction:(UIScribbleInteraction*)interaction
-      shouldBeginAtLocation:(CGPoint)location API_AVAILABLE(ios(14.0));
-- (BOOL)scribbleInteractionShouldDelayFocus:(UIScribbleInteraction*)interaction
-    API_AVAILABLE(ios(14.0));
-
+// Scribble Support
 @property(nonatomic, assign) id<FlutterTextInputDelegate> textInputDelegate;
 @property(nonatomic, assign) UIAccessibilityElement* backingTextInputAccessibilityObject;
-@property(nonatomic, assign) FlutterViewController* viewController;
+@property(nonatomic, assign) UIViewController* viewController;
 @property(nonatomic) BOOL scribbleFocusing;
 @property(nonatomic) BOOL scribbleFocused;
 @property(nonatomic, assign) NSArray* selectionRects;
