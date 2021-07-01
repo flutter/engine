@@ -3763,7 +3763,7 @@ class ImageShader extends Shader {
 ///   `uniform vec2 b;`
 ///   `uniform vec3 c;`
 ///   TODO(clocksmith): add mat uniform example
-/// 
+///
 ///   Dart code to update uniforms.
 ///
 ///   `shader.update(floatUniforms: Float32List.fromList([1, 2, 3, 4, 5, 6]));`
