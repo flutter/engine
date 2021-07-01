@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
@@ -36,10 +35,9 @@ void main() {
       1.0,    // iMat2Uniform[1][1]
     ]));
 
-    final ByteData renderedBytes = await _imageByteDataFromShader(
+    final ByteData renderedBytes = (await _imageByteDataFromShader(
       shader: shader,
-      imageDimension: 100,
-    );
+    ))!;
 
     expect(toFloat(renderedBytes.getUint8(0)), closeTo(0.0, epsilon));
     expect(toFloat(renderedBytes.getUint8(1)), closeTo(0.25, epsilon));
@@ -61,7 +59,7 @@ void _expectShadersRenderGreen(String leafFolderName) {
   final List<File> files = _spvFiles(leafFolderName);
 
   test('$leafFolderName has shaders', () {
-    expect(files.length > 0);
+    expect(files.length > 0, true);
   });
 
   for (final File spvFile in files) {
@@ -74,16 +72,19 @@ void _expectShadersRenderGreen(String leafFolderName) {
 // Expects that a spirv shader only outputs the color green.
 Future<void> _expectShaderRendersGreen(Uint8List spirvBytes) async {
   final FragmentShader shader = FragmentShader(spirv: spirvBytes.buffer);
-  final ByteData renderedBytes = await _imageByteDataFromShader(
+  final ByteData renderedBytes = (await _imageByteDataFromShader(
     shader: shader,
     imageDimension: _shaderImageDimension,
-  );
+  ))!;
   for (final int color in renderedBytes.buffer.asUint32List()) {
     expect(toHexString(color), toHexString(_greenColor.value));
   }
 }
 
-Future<ByteData> _imageByteDataFromShader({FragmentShader shader, int imageDimension}) async {
+Future<ByteData?> _imageByteDataFromShader({
+  required FragmentShader shader,
+  int imageDimension = 100,
+}) async {
   final PictureRecorder recorder = PictureRecorder();
   final Canvas canvas = Canvas(recorder);
   final Paint paint = Paint()..shader = shader;
@@ -127,7 +128,7 @@ const List<String> _basePathChunks = <String>[
 // Arbitrary, but needs to be greater than 1 for frag coord tests.
 const int _shaderImageDimension = 4;
 
-const ui.Color _greenColor = Color(0xFF00FF00);
+const Color _greenColor = Color(0xFF00FF00);
 
 // Precision for checking uniform values.
 const double epsilon = 0.5 / 255.0;
