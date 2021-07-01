@@ -20,7 +20,6 @@ FLUTTER_ASSERT_ARC
 - (void)setMarkedRect:(CGRect)markedRect;
 - (void)updateEditingState;
 - (BOOL)isVisibleToAutofill;
-- (void)setSelectionRects:(NSArray*)rects;
 
 @end
 

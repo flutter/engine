@@ -1657,10 +1657,10 @@ static BOOL isPositionCloserToPoint(CGPoint point,
 }
 
 - (void)setSelectionRects:(NSArray*)rects {
-  NSMutableArray* rectsAsRect =
+  NSMutableArray<NSArray<NSNumber*>*>* rectsAsRect =
       [[[NSMutableArray alloc] initWithCapacity:[rects count]] autorelease];
   for (NSUInteger i = 0; i < [rects count]; i++) {
-    NSArray* rect = rects[i];
+    NSArray<NSNumber*>* rect = rects[i];
     [rectsAsRect addObject:rect];
   }
   _activeView.selectionRects = rects;
