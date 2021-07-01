@@ -590,7 +590,6 @@ static BOOL isPositionCloserToPoint(CGPoint point,
 }
 
 @synthesize tokenizer = _tokenizer;
-@synthesize selectionRects = _selectionRects;
 
 - (instancetype)init {
   self = [super init];
@@ -1185,7 +1184,8 @@ static BOOL isPositionCloserToPoint(CGPoint point,
     NSArray* rect = rects[i];
     [rectsAsRect addObject:rect];
   }
-  _selectionRects = rectsAsRect;
+  [_selectionRects autorelease];
+  _selectionRects = [rectsAsRect retain];
 }
 
 - (CGRect)firstRectForRange:(UITextRange*)range {
@@ -1273,7 +1273,7 @@ static BOOL isPositionCloserToPoint(CGPoint point,
            @"Expected a FlutterTextPosition for range.end (got %@).", [range.end class]);
   NSUInteger start = ((FlutterTextPosition*)range.start).index;
   NSUInteger end = ((FlutterTextPosition*)range.end).index;
-  NSMutableArray* rects = [[NSMutableArray alloc] init];
+  NSMutableArray* rects = [[[NSMutableArray alloc] init] autorelease];
   for (NSUInteger i = 0; i < [_selectionRects count]; i++) {
     if ([_selectionRects[i][4] unsignedIntegerValue] >= start &&
         [_selectionRects[i][4] unsignedIntegerValue] <= end) {
@@ -1284,14 +1284,14 @@ static BOOL isPositionCloserToPoint(CGPoint point,
       CGRect rect =
           CGRectMake([_selectionRects[i][0] floatValue], [_selectionRects[i][1] floatValue], width,
                      [_selectionRects[i][3] floatValue]);
-      FlutterTextSelectionRect* selectionRect = [[FlutterTextSelectionRect alloc]
-          initWithRectAndInfo:rect
-             writingDirection:UITextWritingDirectionNatural
-                containsStart:(i == 0)
-                  containsEnd:(i == fml::RangeForCharactersInRange(self.text,
-                                                                   NSMakeRange(0, self.text.length))
-                                        .length)
-                   isVertical:FALSE];
+      FlutterTextSelectionRect* selectionRect = [FlutterTextSelectionRect
+          selectionRectWithRectAndInfo:rect
+                      writingDirection:UITextWritingDirectionNatural
+                         containsStart:(i == 0)
+                           containsEnd:(i == fml::RangeForCharactersInRange(
+                                                 self.text, NSMakeRange(0, self.text.length))
+                                                 .length)
+                            isVertical:FALSE];
       [rects addObject:selectionRect];
     }
   }
@@ -1989,7 +1989,7 @@ static BOOL isPositionCloserToPoint(CGPoint point,
       requestElementsInRect:rect
                      result:^(id _Nullable result) {
                        NSMutableArray<UIScribbleElementIdentifier>* elements =
-                           [[NSMutableArray alloc] init];
+                           [[[NSMutableArray alloc] init] autorelease];
                        if ([result isKindOfClass:[NSArray class]]) {
                          for (NSArray* elementArray in result) {
                            [elements addObject:elementArray[0]];
