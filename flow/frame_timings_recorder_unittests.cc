@@ -4,6 +4,8 @@
 
 #include "flutter/flow/frame_timings.h"
 
+#include <thread>
+
 #include "flutter/fml/time/time_delta.h"
 #include "flutter/fml/time/time_point.h"
 
@@ -50,10 +52,14 @@ TEST(FrameTimingsRecorderTest, RecordRasterTimes) {
   recorder->RecordBuildStart(build_start);
   recorder->RecordBuildEnd(build_end);
 
+  using namespace std::chrono_literals;
+
   const auto raster_start = fml::TimePoint::Now();
   recorder->RecordRasterStart(raster_start);
   const auto before_raster_end_wall_time = fml::TimePoint::CurrentWallTime();
+  std::this_thread::sleep_for(1ms);
   const auto timing = recorder->RecordRasterEnd();
+  std::this_thread::sleep_for(1ms);
   const auto after_raster_end_wall_time = fml::TimePoint::CurrentWallTime();
 
   ASSERT_EQ(raster_start, recorder->GetRasterStartTime());
