@@ -285,7 +285,7 @@ public class AccessibilityBridgeTest {
 
   @TargetApi(28)
   @Test
-  public void itSetCutoutInsectBasedonLayoutModeNever() {
+  public void itSetCutoutInsetBasedonLayoutModeNever() {
     int expectedInsetLeft = 5;
     int top = 0;
     int left = 0;
@@ -296,15 +296,15 @@ public class AccessibilityBridgeTest {
     View mockRootView = mock(View.class);
     Activity context = mock(Activity.class);
     Window window = mock(Window.class);
-    WindowInsets insects = mock(WindowInsets.class);
+    WindowInsets insets = mock(WindowInsets.class);
     WindowManager.LayoutParams layoutParams = new WindowManager.LayoutParams();
     layoutParams.layoutInDisplayCutoutMode =
         WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_NEVER;
     when(mockRootView.getContext()).thenReturn(context);
     when(context.getWindow()).thenReturn(window);
     when(window.getAttributes()).thenReturn(layoutParams);
-    when(mockRootView.getRootWindowInsets()).thenReturn(insects);
-    when(insects.getSystemWindowInsetLeft()).thenReturn(expectedInsetLeft);
+    when(mockRootView.getRootWindowInsets()).thenReturn(insets);
+    when(insets.getSystemWindowInsetLeft()).thenReturn(expectedInsetLeft);
     when(context.getPackageName()).thenReturn("test");
     AccessibilityBridge accessibilityBridge =
         setUpBridge(mockRootView, mockManager, mockViewEmbedder);
@@ -334,7 +334,7 @@ public class AccessibilityBridgeTest {
 
   @TargetApi(28)
   @Test
-  public void itSetCutoutInsectBasedonLayoutModeDefault() {
+  public void itSetCutoutInsetBasedonLayoutModeDefault() {
     int expectedInsetLeft = 5;
     int top = 0;
     int left = 0;
@@ -345,15 +345,15 @@ public class AccessibilityBridgeTest {
     View mockRootView = mock(View.class);
     Activity context = mock(Activity.class);
     Window window = mock(Window.class);
-    WindowInsets insects = mock(WindowInsets.class);
+    WindowInsets insets = mock(WindowInsets.class);
     WindowManager.LayoutParams layoutParams = new WindowManager.LayoutParams();
     layoutParams.layoutInDisplayCutoutMode =
         WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT;
     when(mockRootView.getContext()).thenReturn(context);
     when(context.getWindow()).thenReturn(window);
     when(window.getAttributes()).thenReturn(layoutParams);
-    when(mockRootView.getRootWindowInsets()).thenReturn(insects);
-    when(insects.getSystemWindowInsetLeft()).thenReturn(expectedInsetLeft);
+    when(mockRootView.getRootWindowInsets()).thenReturn(insets);
+    when(insets.getSystemWindowInsetLeft()).thenReturn(expectedInsetLeft);
     when(context.getPackageName()).thenReturn("test");
     AccessibilityBridge accessibilityBridge =
         setUpBridge(mockRootView, mockManager, mockViewEmbedder);
@@ -383,7 +383,7 @@ public class AccessibilityBridgeTest {
 
   @TargetApi(28)
   @Test
-  public void itSetCutoutInsectBasedonLayoutModeShortEdges() {
+  public void itSetCutoutInsetBasedonLayoutModeShortEdges() {
     int expectedInsetLeft = 5;
     int top = 0;
     int left = 0;
@@ -394,15 +394,15 @@ public class AccessibilityBridgeTest {
     View mockRootView = mock(View.class);
     Activity context = mock(Activity.class);
     Window window = mock(Window.class);
-    WindowInsets insects = mock(WindowInsets.class);
+    WindowInsets insets = mock(WindowInsets.class);
     WindowManager.LayoutParams layoutParams = new WindowManager.LayoutParams();
     layoutParams.layoutInDisplayCutoutMode =
         WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
     when(mockRootView.getContext()).thenReturn(context);
     when(context.getWindow()).thenReturn(window);
     when(window.getAttributes()).thenReturn(layoutParams);
-    when(mockRootView.getRootWindowInsets()).thenReturn(insects);
-    when(insects.getSystemWindowInsetLeft()).thenReturn(expectedInsetLeft);
+    when(mockRootView.getRootWindowInsets()).thenReturn(insets);
+    when(insets.getSystemWindowInsetLeft()).thenReturn(expectedInsetLeft);
     when(context.getPackageName()).thenReturn("test");
     AccessibilityBridge accessibilityBridge =
         setUpBridge(mockRootView, mockManager, mockViewEmbedder);
@@ -425,13 +425,13 @@ public class AccessibilityBridgeTest {
     when(spyAccessibilityBridge.obtainAccessibilityNodeInfo(mockRootView, 0))
         .thenReturn(mockNodeInfo);
     spyAccessibilityBridge.createAccessibilityNodeInfo(0);
-    // Does not apply left insect if the layout mode is `short edges`.
+    // Does not apply left inset if the layout mode is `short edges`.
     verify(mockNodeInfo, times(1)).setBoundsInScreen(new Rect(left, top, right, bottom));
   }
 
   @TargetApi(30)
   @Test
-  public void itSetCutoutInsectBasedonLayoutModeAlways() {
+  public void itSetCutoutInsetBasedonLayoutModeAlways() {
     int expectedInsetLeft = 5;
     int top = 0;
     int left = 0;
@@ -442,15 +442,15 @@ public class AccessibilityBridgeTest {
     View mockRootView = mock(View.class);
     Activity context = mock(Activity.class);
     Window window = mock(Window.class);
-    WindowInsets insects = mock(WindowInsets.class);
+    WindowInsets insets = mock(WindowInsets.class);
     WindowManager.LayoutParams layoutParams = new WindowManager.LayoutParams();
     layoutParams.layoutInDisplayCutoutMode =
         WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS;
     when(mockRootView.getContext()).thenReturn(context);
     when(context.getWindow()).thenReturn(window);
     when(window.getAttributes()).thenReturn(layoutParams);
-    when(mockRootView.getRootWindowInsets()).thenReturn(insects);
-    when(insects.getSystemWindowInsetLeft()).thenReturn(expectedInsetLeft);
+    when(mockRootView.getRootWindowInsets()).thenReturn(insets);
+    when(insets.getSystemWindowInsetLeft()).thenReturn(expectedInsetLeft);
     when(context.getPackageName()).thenReturn("test");
     AccessibilityBridge accessibilityBridge =
         setUpBridge(mockRootView, mockManager, mockViewEmbedder);
@@ -473,7 +473,7 @@ public class AccessibilityBridgeTest {
     when(spyAccessibilityBridge.obtainAccessibilityNodeInfo(mockRootView, 0))
         .thenReturn(mockNodeInfo);
     spyAccessibilityBridge.createAccessibilityNodeInfo(0);
-    // Does not apply left insect if the layout mode is `always`.
+    // Does not apply left inset if the layout mode is `always`.
     verify(mockNodeInfo, times(1)).setBoundsInScreen(new Rect(left, top, right, bottom));
   }
 
