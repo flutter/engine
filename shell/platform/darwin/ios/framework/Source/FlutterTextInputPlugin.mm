@@ -1178,16 +1178,6 @@ static BOOL isPositionCloserToPoint(CGPoint point,
 // candidates view for multi-stage input methods (e.g., Japanese) when using a
 // physical keyboard.
 
-- (void)setSelectionRects:(NSArray*)rects {
-  NSMutableArray* rectsAsRect = [[NSMutableArray alloc] initWithCapacity:[rects count]];
-  for (NSUInteger i = 0; i < [rects count]; i++) {
-    NSArray* rect = rects[i];
-    [rectsAsRect addObject:rect];
-  }
-  [_selectionRects autorelease];
-  _selectionRects = [rectsAsRect retain];
-}
-
 - (CGRect)firstRectForRange:(UITextRange*)range {
   NSAssert([range.start isKindOfClass:[FlutterTextPosition class]],
            @"Expected a FlutterTextPosition for range.start (got %@).", [range.start class]);
@@ -1405,6 +1395,9 @@ static BOOL isPositionCloserToPoint(CGPoint point,
 
 - (void)insertText:(NSString*)text {
   NSMutableArray* copiedRects = [[NSMutableArray alloc] initWithCapacity:[_selectionRects count]];
+  NSAssert([_selectedTextRange.start isKindOfClass:[FlutterTextPosition class]],
+           @"Expected a FlutterTextPosition for position (got %@).",
+           [_selectedTextRange.start class]);
   NSUInteger insertPosition = ((FlutterTextPosition*)_selectedTextRange.start).index - 1;
   NSUInteger insertIndex = 0;
   for (NSUInteger i = 0; i < [_selectionRects count]; i++) {
@@ -1569,8 +1562,6 @@ static BOOL isPositionCloserToPoint(CGPoint point,
 }
 
 @synthesize textInputDelegate = _textInputDelegate;
-@synthesize viewController = _viewController;
-@synthesize scribbleElements = _scribbleElements;
 
 - (instancetype)init {
   self = [super init];
@@ -1666,7 +1657,13 @@ static BOOL isPositionCloserToPoint(CGPoint point,
 }
 
 - (void)setSelectionRects:(NSArray*)rects {
-  [_activeView setSelectionRects:rects];
+  NSMutableArray* rectsAsRect =
+      [[[NSMutableArray alloc] initWithCapacity:[rects count]] autorelease];
+  for (NSUInteger i = 0; i < [rects count]; i++) {
+    NSArray* rect = rects[i];
+    [rectsAsRect addObject:rect];
+  }
+  _activeView.selectionRects = rects;
 }
 
 - (void)showTextInput {
