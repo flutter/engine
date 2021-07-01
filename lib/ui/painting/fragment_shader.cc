@@ -36,6 +36,7 @@ void FragmentShader::RegisterNatives(tonic::DartLibraryNatives* natives) {
 }
 
 sk_sp<SkShader> FragmentShader::shader(SkSamplingOptions sampling) {
+  // TODO(insert github issue): implement this method.
   return shader_;
 }
 
@@ -43,6 +44,8 @@ void FragmentShader::init(std::string sksl, bool debugPrintSksl) {
   SkRuntimeEffect::Result result =
       SkRuntimeEffect::MakeForShader(SkString(sksl));
   runtime_effect_ = result.effect;
+
+  // TODO(reviewers): what is the proper way to throw and log these?
   if (runtime_effect_ == nullptr) {
     Dart_Handle err = Dart_ThrowException(tonic::ToDart(
         std::string("Invalid SkSL:\n") + sksl.c_str() +
@@ -55,8 +58,7 @@ void FragmentShader::init(std::string sksl, bool debugPrintSksl) {
     return;
   }
   if (debugPrintSksl) {
-    // TODO(clocksmith): what is the proper way to log this?
-    FML_LOG(INFO) << std::string("debugPrintSksl:\n") + sksl.c_str();
+    FML_DLOG(INFO) << std::string("debugPrintSksl:\n") + sksl.c_str();
   }
 }
 
