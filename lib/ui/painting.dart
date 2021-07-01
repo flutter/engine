@@ -3755,7 +3755,7 @@ class ImageShader extends Shader {
 /// For example, if there are 3 uniforms: 1 of type float, 1 type float2/vec2,
 /// and 1 of type vec3/float3, and 1 mat2x2 then the length of [floatUniforms]
 /// must be 10.
-/// 
+///
 /// The uniforms could be updated as follows:
 ///
 ///   Example fragment shader uniforms.
