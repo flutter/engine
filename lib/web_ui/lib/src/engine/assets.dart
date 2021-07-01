@@ -2,7 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import 'dart:convert';
+import 'dart:html' as html;
+import 'dart:typed_data';
+
+import 'text/font_collection.dart';
+import 'util.dart';
 
 /// This class downloads assets over the network.
 ///
@@ -86,14 +91,15 @@ class AssetManagerException implements Exception {
 class WebOnlyMockAssetManager implements AssetManager {
   String defaultAssetsDir = '';
   String defaultAssetManifest = '{}';
-  String defaultFontManifest = '''[
+  String defaultFontManifest = '''
+  [
    {
-      "family":"$_robotoFontFamily",
-      "fonts":[{"asset":"$_robotoTestFontUrl"}]
+      "family":"$robotoFontFamily",
+      "fonts":[{"asset":"$robotoTestFontUrl"}]
    },
    {
-      "family":"$_ahemFontFamily",
-      "fonts":[{"asset":"$_ahemFontUrl"}]
+      "family":"$ahemFontFamily",
+      "fonts":[{"asset":"$ahemFontUrl"}]
    }
   ]''';
 

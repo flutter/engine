@@ -752,13 +752,24 @@ void testMain() {
         'thai',
         'คือ เนื้อหาจำลองแบบเรียบๆ ที่ใช้กันในธุรกิจงานพิมพ์หรืองานเรียงพิมพ์ มันได้กลายมาเป็นเนื้อหาจำลองมาตรฐานของธุรกิจดังกล่าวมาตั้งแต่ศตวรรษที่',
       );
-    });
+    }, skip: true);  // https://github.com/flutter/flutter/issues/85700
 
     test('sample Georgian text', () async {
       await testSampleText(
         'georgian',
         'საბეჭდი და ტიპოგრაფიული ინდუსტრიის უშინაარსო ტექსტია. იგი სტანდარტად',
       );
+    });
+
+    test('sample Bengali text', () async {
+      await testSampleText(
+        'bengali',
+        'ঈদের জামাত মসজিদে, মানতে হবে স্বাস্থ্যবিধি: ধর্ম মন্ত্রণালয়',
+      );
+    });
+
+    test('hindi svayan test', () async {
+      await testSampleText('hindi_svayan', 'स्वयं');
     });
 
     // We've seen text break when we load many fonts simultaneously. This test
@@ -780,6 +791,10 @@ void testMain() {
             'คือ เนื้อหาจำลองแบบเรียบๆ ที่ใช้กันในธุรกิจงานพิมพ์หรืองานเรียงพิมพ์ '
             'საბეჭდი და ტიპოგრაფიული ინდუსტრიის უშინაარსო ტექსტია ',
       );
+    }, skip: true);  // https://github.com/flutter/flutter/issues/85700
+
+    test('emoji text with skin tone', () async {
+      await testSampleText('emoji_with_skin_tone', '👋🏿 👋🏾 👋🏽 👋🏼 👋🏻');
     });
 
     // Make sure we clear the canvas in between frames.

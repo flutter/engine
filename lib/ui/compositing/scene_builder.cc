@@ -10,6 +10,7 @@
 #include "flutter/flow/layers/clip_rrect_layer.h"
 #include "flutter/flow/layers/color_filter_layer.h"
 #include "flutter/flow/layers/container_layer.h"
+#include "flutter/flow/layers/display_list_layer.h"
 #include "flutter/flow/layers/image_filter_layer.h"
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/layers/layer_tree.h"
@@ -29,10 +30,6 @@
 #include "third_party/tonic/dart_args.h"
 #include "third_party/tonic/dart_binding_macros.h"
 #include "third_party/tonic/dart_library_natives.h"
-
-#if defined(LEGACY_FUCHSIA_EMBEDDER)
-#include "flutter/flow/layers/child_scene_layer.h"  // nogncheck
-#endif
 
 namespace flutter {
 
@@ -67,18 +64,11 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, SceneBuilder);
   V(SceneBuilder, build)
 
 FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
-#if defined(LEGACY_FUCHSIA_EMBEDDER)
-DART_NATIVE_CALLBACK(SceneBuilder, addChildScene)
-#endif
 
 void SceneBuilder::RegisterNatives(tonic::DartLibraryNatives* natives) {
-  natives->Register({
-    {"SceneBuilder_constructor", SceneBuilder_constructor, 1, true},
-        FOR_EACH_BINDING(DART_REGISTER_NATIVE)
-#if defined(LEGACY_FUCHSIA_EMBEDDER)
-            DART_REGISTER_NATIVE(SceneBuilder, addChildScene)
-#endif
-  });
+  natives->Register(
+      {{"SceneBuilder_constructor", SceneBuilder_constructor, 1, true},
+       FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
 }
 
 SceneBuilder::SceneBuilder() {
@@ -276,10 +266,17 @@ void SceneBuilder::addPicture(double dx,
                               double dy,
                               Picture* picture,
                               int hints) {
-  auto layer = std::make_unique<flutter::PictureLayer>(
-      SkPoint::Make(dx, dy), UIDartState::CreateGPUObject(picture->picture()),
-      !!(hints & 1), !!(hints & 2));
-  AddLayer(std::move(layer));
+  if (picture->picture()) {
+    auto layer = std::make_unique<flutter::PictureLayer>(
+        SkPoint::Make(dx, dy), UIDartState::CreateGPUObject(picture->picture()),
+        !!(hints & 1), !!(hints & 2));
+    AddLayer(std::move(layer));
+  } else {
+    auto layer = std::make_unique<flutter::DisplayListLayer>(
+        SkPoint::Make(dx, dy), picture->display_list(), !!(hints & 1),
+        !!(hints & 2));
+    AddLayer(std::move(layer));
+  }
 }
 
 void SceneBuilder::addTexture(double dx,
@@ -305,20 +302,6 @@ void SceneBuilder::addPlatformView(double dx,
       SkPoint::Make(dx, dy), SkSize::Make(width, height), viewId);
   AddLayer(std::move(layer));
 }
-
-#if defined(LEGACY_FUCHSIA_EMBEDDER)
-void SceneBuilder::addChildScene(double dx,
-                                 double dy,
-                                 double width,
-                                 double height,
-                                 SceneHost* sceneHost,
-                                 bool hitTestable) {
-  auto layer = std::make_unique<flutter::ChildSceneLayer>(
-      sceneHost->id(), SkPoint::Make(dx, dy), SkSize::Make(width, height),
-      hitTestable);
-  AddLayer(std::move(layer));
-}
-#endif
 
 void SceneBuilder::addPerformanceOverlay(uint64_t enabledOptions,
                                          double left,
