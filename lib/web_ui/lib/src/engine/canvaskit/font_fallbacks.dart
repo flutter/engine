@@ -11,11 +11,6 @@ import 'package:ui/ui.dart' as ui;
 
 import '../font_change_util.dart';
 import '../platform_dispatcher.dart';
-import '../util.dart';
-import 'canvaskit_api.dart';
-import 'fonts.dart';
-import 'initialization.dart';
-import 'interval_tree.dart';
 
 /// Global static font fallback data.
 class FontFallbackData {
