@@ -200,6 +200,7 @@ enum FramePhase {
   buildFinish,
   rasterStart,
   rasterFinish,
+  rasterFinishWallTime,
 }
 
 class FrameTiming {
