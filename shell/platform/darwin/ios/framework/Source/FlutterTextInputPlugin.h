@@ -114,7 +114,7 @@ FLUTTER_DARWIN_EXPORT
 @property(nonatomic, assign) UIViewController* viewController;
 @property(nonatomic) BOOL scribbleFocusing;
 @property(nonatomic) BOOL scribbleFocused;
-@property(nonatomic, assign) NSArray* selectionRects;
+@property(nonatomic, strong) NSArray* selectionRects;
 
 @end
 #endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTERTEXTINPUTPLUGIN_H_

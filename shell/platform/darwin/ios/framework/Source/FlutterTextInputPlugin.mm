@@ -488,11 +488,11 @@ static BOOL isPositionCloserToPoint(CGPoint point,
                                containsStart:(BOOL)containsStart
                                  containsEnd:(BOOL)containsEnd
                                   isVertical:(BOOL)isVertical {
-  return [[FlutterTextSelectionRect alloc] initWithRectAndInfo:rect
-                                              writingDirection:writingDirection
-                                                 containsStart:containsStart
-                                                   containsEnd:containsEnd
-                                                    isVertical:isVertical];
+  return [[[FlutterTextSelectionRect alloc] initWithRectAndInfo:rect
+                                               writingDirection:writingDirection
+                                                  containsStart:containsStart
+                                                    containsEnd:containsEnd
+                                                     isVertical:isVertical] autorelease];
 }
 
 - (instancetype)initWithRectAndInfo:(CGRect)rect
@@ -857,6 +857,8 @@ static BOOL isPositionCloserToPoint(CGPoint point,
   [self updateEditingState];
   if (_scribbleInProgress || _scribbleFocused) {
     _scribbleFocused = false;
+    NSAssert([selectedTextRange isKindOfClass:[FlutterTextRange class]],
+             @"Expected a FlutterTextRange for range (got %@).", [selectedTextRange class]);
     FlutterTextRange* flutterTextRange = (FlutterTextRange*)selectedTextRange;
     if (flutterTextRange.range.length > 0) {
       [_textInputDelegate showToolbar:_textInputClient];
@@ -1225,14 +1227,16 @@ static BOOL isPositionCloserToPoint(CGPoint point,
   if (end < start) {
     first = end;
   }
-  FlutterTextRange* textRange = [[FlutterTextRange
-      rangeWithNSRange:fml::RangeForCharactersInRange(self.text, NSMakeRange(0, self.text.length))]
-      copy];
+  FlutterTextRange* textRange = [FlutterTextRange
+      rangeWithNSRange:fml::RangeForCharactersInRange(self.text, NSMakeRange(0, self.text.length))];
   for (NSUInteger i = 0; i < [_selectionRects count]; i++) {
-    if ([_selectionRects[i][4] unsignedIntegerValue] <= first &&
-        ((i + 1 == [_selectionRects count] && textRange.range.length > first) ||
-         (i + 1 < [_selectionRects count] &&
-          [_selectionRects[i + 1][4] unsignedIntegerValue] > first))) {
+    BOOL startsOnOrBeforeStartOfRange = [_selectionRects[i][4] unsignedIntegerValue] <= first;
+    BOOL isLastSelectionRect = i + 1 == [_selectionRects count];
+    BOOL endOfTextIsAfterStartOfRange = isLastSelectionRect && textRange.range.length > first;
+    BOOL nextSelectionRectIsAfterStartOfRange =
+        !isLastSelectionRect && [_selectionRects[i + 1][4] unsignedIntegerValue] > first;
+    if (startsOnOrBeforeStartOfRange &&
+        (endOfTextIsAfterStartOfRange || nextSelectionRectIsAfterStartOfRange)) {
       CGRect rect =
           CGRectMake([_selectionRects[i][0] floatValue], [_selectionRects[i][1] floatValue],
                      [_selectionRects[i][2] floatValue], [_selectionRects[i][3] floatValue]);
@@ -1257,9 +1261,8 @@ static BOOL isPositionCloserToPoint(CGPoint point,
     return [FlutterTextPosition positionWithIndex:currentIndex];
   }
 
-  FlutterTextRange* range = [[FlutterTextRange
-      rangeWithNSRange:fml::RangeForCharactersInRange(self.text, NSMakeRange(0, self.text.length))]
-      copy];
+  FlutterTextRange* range = [FlutterTextRange
+      rangeWithNSRange:fml::RangeForCharactersInRange(self.text, NSMakeRange(0, self.text.length))];
   return [self closestPositionToPoint:point withinRange:range];
 }
 
