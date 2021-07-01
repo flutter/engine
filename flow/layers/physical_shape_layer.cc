@@ -9,8 +9,15 @@
 
 namespace flutter {
 
+// These numbers have been chosen empirically to give a result closest to the
+// material spec.
+// Sync with /lib/web_ui/lib/src/engine/canvaskit/util.dart
+const SkScalar kAmbientAlpha = 0.039f;
+const SkScalar kSpotAlpha = 0.25f;
+const SkScalar kLightRadius = 1.1f;
 const SkScalar kLightHeight = 600;
-const SkScalar kLightRadius = 800;
+const SkScalar kLightXOffset = 0;
+const SkScalar kLightYOffset = -450;
 
 PhysicalShapeLayer::PhysicalShapeLayer(SkColor color,
                                        SkColor shadow_color,
@@ -41,8 +48,10 @@ void PhysicalShapeLayer::Diff(DiffContext* context, const Layer* old_layer) {
   if (elevation_ == 0) {
     bounds = path_.getBounds();
   } else {
-    bounds = ComputeShadowBounds(path_.getBounds(), elevation_,
-                                 context->frame_device_pixel_ratio());
+    bounds = ComputeShadowBounds(path_,
+                                 elevation_,
+                                 context->frame_device_pixel_ratio(),
+                                 context->GetTransform());
   }
 
   context->AddLayerBounds(bounds);
@@ -70,8 +79,10 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context,
     // We will draw the shadow in Paint(), so add some margin to the paint
     // bounds to leave space for the shadow. We fill this whole region and clip
     // children to it so we don't need to join the child paint bounds.
-    set_paint_bounds(ComputeShadowBounds(path_.getBounds(), elevation_,
-                                         context->frame_device_pixel_ratio));
+    set_paint_bounds(ComputeShadowBounds(path_,
+                                         elevation_,
+                                         context->frame_device_pixel_ratio,
+                                         matrix));
   }
 }
 
@@ -127,48 +138,22 @@ void PhysicalShapeLayer::Paint(PaintContext& context) const {
   }
 }
 
-SkRect PhysicalShapeLayer::ComputeShadowBounds(const SkRect& bounds,
+SkRect PhysicalShapeLayer::ComputeShadowBounds(const SkPath& path,
                                                float elevation,
-                                               float pixel_ratio) {
-  // The shadow offset is calculated as follows:
-  //                   .---                           (kLightRadius)
-  //                -------/                          (light)
-  //                   |  /
-  //                   | /
-  //                   |/
-  //                   |O
-  //                  /|                              (kLightHeight)
-  //                 / |
-  //                /  |
-  //               /   |
-  //              /    |
-  //             -------------                        (layer)
-  //            /|     |
-  //           / |     |                              (elevation)
-  //        A /  |     |B
-  // ------------------------------------------------ (canvas)
-  //          ---                                     (extent of shadow)
-  //
-  // E = lt        }           t = (r + w/2)/h
-  //                } =>
-  // r + w/2 = ht  }           E = (l/h)(r + w/2)
-  //
-  // Where: E = extent of shadow
-  //        l = elevation of layer
-  //        r = radius of the light source
-  //        w = width of the layer
-  //        h = light height
-  //        t = tangent of AOB, i.e., multiplier for elevation to extent
-  // tangent for x
-  double tx =
-      (kLightRadius * pixel_ratio + bounds.width() * 0.5) / kLightHeight;
-  // tangent for y
-  double ty =
-      (kLightRadius * pixel_ratio + bounds.height() * 0.5) / kLightHeight;
-  SkRect shadow_bounds(bounds);
-  shadow_bounds.outset(elevation * tx, elevation * ty);
-
-  return shadow_bounds;
+                                               SkScalar dpr,
+                                               const SkMatrix& ctm) {
+  SkRect shadow_bounds;
+  if (SkShadowUtils::GetLocalBounds(ctm,
+                                    path,
+                                    SkPoint3::Make(0, 0, dpr * elevation),
+                                    SkPoint3::Make(kLightXOffset, kLightYOffset,
+                                                   dpr * kLightHeight),
+                                    dpr * kLightRadius,
+                                    SkShadowFlags::kDirectionalLight_ShadowFlag,
+                                    shadow_bounds)) {
+    return shadow_bounds;
+  }
+  return path.getBounds();
 }
 
 void PhysicalShapeLayer::DrawShadow(SkCanvas* canvas,
@@ -177,15 +162,10 @@ void PhysicalShapeLayer::DrawShadow(SkCanvas* canvas,
                                     float elevation,
                                     bool transparentOccluder,
                                     SkScalar dpr) {
-  const SkScalar kAmbientAlpha = 0.039f;
-  const SkScalar kSpotAlpha = 0.25f;
-
-  SkShadowFlags flags = transparentOccluder
-                            ? SkShadowFlags::kTransparentOccluder_ShadowFlag
-                            : SkShadowFlags::kNone_ShadowFlag;
-  const SkRect& bounds = path.getBounds();
-  SkScalar shadow_x = (bounds.left() + bounds.right()) / 2;
-  SkScalar shadow_y = bounds.top() - 600.0f;
+  uint32_t flags = transparentOccluder
+                       ? SkShadowFlags::kTransparentOccluder_ShadowFlag
+                       : SkShadowFlags::kNone_ShadowFlag;
+  flags |= SkShadowFlags::kDirectionalLight_ShadowFlag;
   SkColor inAmbient = SkColorSetA(color, kAmbientAlpha * SkColorGetA(color));
   SkColor inSpot = SkColorSetA(color, kSpotAlpha * SkColorGetA(color));
   SkColor ambientColor, spotColor;
@@ -193,7 +173,7 @@ void PhysicalShapeLayer::DrawShadow(SkCanvas* canvas,
                                     &spotColor);
   SkShadowUtils::DrawShadow(
       canvas, path, SkPoint3::Make(0, 0, dpr * elevation),
-      SkPoint3::Make(shadow_x, shadow_y, dpr * kLightHeight),
+      SkPoint3::Make(kLightXOffset, kLightYOffset, dpr * kLightHeight),
       dpr * kLightRadius, ambientColor, spotColor, flags);
 }
 
