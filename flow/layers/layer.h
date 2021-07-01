@@ -64,7 +64,6 @@ struct PrerollContext {
 };
 
 class PictureLayer;
-class DisplayListLayer;
 class PerformanceOverlayLayer;
 class TextureLayer;
 
@@ -240,9 +239,6 @@ class Layer {
 #ifdef FLUTTER_ENABLE_DIFF_CONTEXT
 
   virtual const PictureLayer* as_picture_layer() const { return nullptr; }
-  virtual const DisplayListLayer* as_display_list_layer() const {
-    return nullptr;
-  }
   virtual const TextureLayer* as_texture_layer() const { return nullptr; }
   virtual const PerformanceOverlayLayer* as_performance_overlay_layer() const {
     return nullptr;

@@ -6,10 +6,8 @@
 
 #include "flutter/common/task_runners.h"
 #include "flutter/fml/synchronization/waitable_event.h"
-#include "flutter/lib/ui/painting/canvas.h"
 #include "flutter/lib/ui/painting/image.h"
 #include "flutter/lib/ui/painting/picture.h"
-#include "flutter/lib/ui/painting/picture_recorder.h"
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/shell/common/shell_test.h"
 #include "flutter/shell/common/thread_host.h"
@@ -33,7 +31,6 @@ class ImageDisposeTest : public ShellTest {
   fml::AutoResetWaitableEvent message_latch_;
 
   sk_sp<SkPicture> current_picture_;
-  sk_sp<DisplayList> current_display_list_;
   sk_sp<SkImage> current_image_;
 };
 
@@ -48,14 +45,9 @@ TEST_F(ImageDisposeTest, ImageReleasedAfterFrameAndDisposePictureAndLayer) {
     CanvasImage* image = GetNativePeer<CanvasImage>(native_image_handle);
     Picture* picture = GetNativePeer<Picture>(Dart_GetNativeArgument(args, 1));
     ASSERT_FALSE(image->image()->unique());
-    if (picture->display_list()) {
-      ASSERT_FALSE(picture->display_list()->unique());
-      current_display_list_ = picture->display_list();
-    } else {
-      ASSERT_FALSE(picture->picture()->unique());
-      current_picture_ = picture->picture();
-    }
+    ASSERT_FALSE(picture->picture()->unique());
     current_image_ = image->image();
+    current_picture_ = picture->picture();
   };
 
   auto native_finish = [&](Dart_NativeArguments args) {
@@ -92,7 +84,7 @@ TEST_F(ImageDisposeTest, ImageReleasedAfterFrameAndDisposePictureAndLayer) {
 
   message_latch_.Wait();
 
-  ASSERT_TRUE(current_display_list_ || current_picture_);
+  ASSERT_TRUE(current_picture_);
   ASSERT_TRUE(current_image_);
 
   // Force a drain the SkiaUnrefQueue. The engine does this normally as frames
@@ -104,13 +96,8 @@ TEST_F(ImageDisposeTest, ImageReleasedAfterFrameAndDisposePictureAndLayer) {
   });
   message_latch_.Wait();
 
-  if (current_display_list_) {
-    EXPECT_TRUE(current_display_list_->unique());
-    current_display_list_.reset();
-  } else {
-    EXPECT_TRUE(current_picture_->unique());
-    current_picture_.reset();
-  }
+  EXPECT_TRUE(current_picture_->unique());
+  current_picture_.reset();
 
   EXPECT_TRUE(current_image_->unique());
   current_image_.reset();
