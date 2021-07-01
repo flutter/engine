@@ -111,7 +111,7 @@ class Surface {
   ///
   /// The given [size] is in physical pixels.
   SurfaceFrame acquireFrame(ui.Size size) {
-    final CkSurface surface = _createOrUpdateSurfaces(size);
+    final CkSurface surface = createOrUpdateSurfaces(size);
 
     if (surface.context != null) {
       canvasKit.setCurrentContext(surface.context!);
@@ -135,7 +135,8 @@ class Surface {
   ui.Size? _currentSurfaceSize;
   double _currentDevicePixelRatio = -1;
 
-  CkSurface _createOrUpdateSurfaces(ui.Size size) {
+  /// Creates a <canvas> and SkSurface for the given [size].
+  CkSurface createOrUpdateSurfaces(ui.Size size) {
     if (size.isEmpty) {
       throw CanvasKitError('Cannot create surfaces of empty size.');
     }
@@ -337,6 +338,7 @@ class Surface {
       return _makeSoftwareCanvasSurface(
           htmlCanvas!, 'Failed to initialize WebGL context');
     } else {
+      canvasKit.setCurrentContext(_glContext!);
       SkSurface? skSurface = canvasKit.MakeOnScreenGLSurface(
         _grContext!,
         size.width.ceil(),
