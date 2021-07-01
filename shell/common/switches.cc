@@ -43,7 +43,6 @@ struct SwitchDesc {
 static const std::string gAllowedDartFlags[] = {
     "--enable-isolate-groups",
     "--no-enable-isolate-groups",
-    "--no-causal_async_stacks",
     "--lazy_async_stacks",
 };
 // clang-format on
@@ -58,7 +57,6 @@ static const std::string gAllowedDartFlags[] = {
     "--enable-service-port-fallback",
     "--lazy_async_stacks",
     "--max_profile_depth",
-    "--no-causal_async_stacks",
     "--profile_period",
     "--random_seed",
     "--sample-buffer-duration",
@@ -68,6 +66,8 @@ static const std::string gAllowedDartFlags[] = {
     "--write-service-info",
     "--null_assertions",
     "--strict_null_safety_checks",
+    "--enable-display-list",
+    "--no-enable-display-list",
 };
 // clang-format on
 
@@ -153,6 +153,16 @@ const std::string_view FlagForSwitch(Switch swtch) {
     }
   }
   return std::string_view();
+}
+
+static std::vector<std::string> ParseCommaDelimited(const std::string& input) {
+  std::istringstream ss(input);
+  std::vector<std::string> result;
+  std::string token;
+  while (std::getline(ss, token, ',')) {
+    result.push_back(token);
+  }
+  return result;
 }
 
 static bool IsAllowedDartVMFlag(const std::string& flag) {
@@ -286,20 +296,23 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   settings.trace_startup =
       command_line.HasOption(FlagForSwitch(Switch::TraceStartup));
 
-  settings.trace_skia =
-      command_line.HasOption(FlagForSwitch(Switch::TraceSkia));
+#if !FLUTTER_RELEASE
+  settings.trace_skia = true;
 
-  command_line.GetOptionValue(FlagForSwitch(Switch::TraceAllowlist),
-                              &settings.trace_allowlist);
-
-  if (settings.trace_allowlist.empty()) {
-    command_line.GetOptionValue(FlagForSwitch(Switch::TraceWhitelist),
-                                &settings.trace_allowlist);
-    if (!settings.trace_allowlist.empty()) {
-      FML_LOG(INFO)
-          << "--trace-whitelist is deprecated. Use --trace-allowlist instead.";
-    }
+  std::string trace_skia_allowlist;
+  command_line.GetOptionValue(FlagForSwitch(Switch::TraceSkiaAllowlist),
+                              &trace_skia_allowlist);
+  if (trace_skia_allowlist.size()) {
+    settings.trace_skia_allowlist = ParseCommaDelimited(trace_skia_allowlist);
+  } else {
+    settings.trace_skia_allowlist = {"skia.shaders"};
   }
+#endif  // !FLUTTER_RELEASE
+
+  std::string trace_allowlist;
+  command_line.GetOptionValue(FlagForSwitch(Switch::TraceAllowlist),
+                              &trace_allowlist);
+  settings.trace_allowlist = ParseCommaDelimited(trace_allowlist);
 
   settings.trace_systrace =
       command_line.HasOption(FlagForSwitch(Switch::TraceSystrace));
@@ -384,16 +397,24 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   std::string all_dart_flags;
   if (command_line.GetOptionValue(FlagForSwitch(Switch::DartFlags),
                                   &all_dart_flags)) {
-    std::stringstream stream(all_dart_flags);
-    std::string flag;
-
     // Assume that individual flags are comma separated.
-    while (std::getline(stream, flag, ',')) {
+    std::vector<std::string> flags = ParseCommaDelimited(all_dart_flags);
+    for (auto flag : flags) {
       if (!IsAllowedDartVMFlag(flag)) {
         FML_LOG(FATAL) << "Encountered disallowed Dart VM flag: " << flag;
       }
       settings.dart_flags.push_back(flag);
     }
+  }
+  if (std::find(settings.dart_flags.begin(), settings.dart_flags.end(),
+                "--enable-display-list") != settings.dart_flags.end()) {
+    FML_LOG(ERROR) << "Manually enabling display lists";
+    settings.enable_display_list = true;
+  } else if (std::find(settings.dart_flags.begin(), settings.dart_flags.end(),
+                       "--no-enable-display-list") !=
+             settings.dart_flags.end()) {
+    FML_LOG(ERROR) << "Manually disabling display lists";
+    settings.enable_display_list = false;
   }
 
 #if !FLUTTER_RELEASE

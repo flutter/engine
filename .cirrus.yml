@@ -1,4 +1,4 @@
-gcp_credentials: ENCRYPTED[a4b6c1cb428a657573b775d39dd8006beed3013d01ca3d1a3972bdc2bd39bb937dd91ea3d98eeb9ce55e4bd303d045d3]
+gcp_credentials: ENCRYPTED[!0e63b52bd7e4fda1cd7b7bf2b4fe515a27fadbeaced01f5ad8b699b81d3611ed64c5d3271bcd8426dd914ef41cba48a0!]
 
 # LINUX
 task:
@@ -30,8 +30,6 @@ task:
     mv $CIRRUS_WORKING_DIR flutter
     gclient sync
   matrix:
-    # The following test depends on Flutter framework repo. It may fail if the
-    # framework repo is currently broken.
     - name: build_and_test_linux_unopt_debug
       compile_host_script: |
         cd $ENGINE_PATH/src
@@ -51,11 +49,3 @@ task:
         cp -r $ENGINE_PATH/src/out/host_debug_unopt/gen/dart-pkg/sky_engine bin/cache/pkg/
         bin/flutter update-packages --local-engine=host_debug_unopt
         bin/flutter analyze --flutter-repo --local-engine=host_debug_unopt
-      test_framework_script: |
-        cd $FRAMEWORK_PATH/flutter/packages/flutter
-        ../../bin/flutter test --local-engine=host_debug_unopt --null-assertions --sound-null-safety
-    # TODO(fujino): remove this once ci/licenses.sh is run on LUCI
-    - name: licenses_check
-      build_script: |
-        cd $ENGINE_PATH/src/flutter
-        ./ci/licenses.sh

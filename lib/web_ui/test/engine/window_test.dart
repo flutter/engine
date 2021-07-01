@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'dart:async';
 import 'dart:js_util' as js_util;
 import 'dart:html' as html;
@@ -98,7 +97,7 @@ void testMain() {
       expect(window.onBeginFrame, same(callback));
     });
 
-    EnginePlatformDispatcher.instance.invokeOnBeginFrame(null);
+    EnginePlatformDispatcher.instance.invokeOnBeginFrame(Duration.zero);
   });
 
   test('onReportTimings preserves the zone', () {
@@ -114,7 +113,7 @@ void testMain() {
       expect(window.onReportTimings, same(callback));
     });
 
-    EnginePlatformDispatcher.instance.invokeOnReportTimings(null);
+    EnginePlatformDispatcher.instance.invokeOnReportTimings(<ui.FrameTiming>[]);
   });
 
   test('onDrawFrame preserves the zone', () {
@@ -146,7 +145,7 @@ void testMain() {
       expect(window.onPointerDataPacket, same(callback));
     });
 
-    EnginePlatformDispatcher.instance.invokeOnPointerDataPacket(null);
+    EnginePlatformDispatcher.instance.invokeOnPointerDataPacket(ui.PointerDataPacket());
   });
 
   test('invokeOnKeyData returns normally when onKeyData is null', () {
@@ -224,7 +223,7 @@ void testMain() {
       expect(window.onSemanticsAction, same(callback));
     });
 
-    EnginePlatformDispatcher.instance.invokeOnSemanticsAction(null, null, null);
+    EnginePlatformDispatcher.instance.invokeOnSemanticsAction(0, ui.SemanticsAction.tap, null);
   });
 
   test('onAccessibilityFeaturesChanged preserves the zone', () {
@@ -256,7 +255,9 @@ void testMain() {
       expect(window.onPlatformMessage, same(callback));
     });
 
-    EnginePlatformDispatcher.instance.invokeOnPlatformMessage(null, null, null);
+    EnginePlatformDispatcher.instance.invokeOnPlatformMessage('foo', null, (ByteData? data) {
+      // Not testing anything here.
+    });
   });
 
   test('sendPlatformMessage preserves the zone', () async {
@@ -299,25 +300,23 @@ void testMain() {
 
   /// Regression test for https://github.com/flutter/flutter/issues/66128.
   test('setPreferredOrientation responds even if browser doesn\'t support api', () async {
-    final html.Screen screen = html.window.screen;
+    final html.Screen screen = html.window.screen!;
     js_util.setProperty(screen, 'orientation', null);
-    bool responded = false;
 
-    final Completer<void> completer = Completer<void>();
+    final Completer<bool> completer = Completer<bool>();
     final ByteData inputData = JSONMethodCodec().encodeMethodCall(MethodCall(
         'SystemChrome.setPreferredOrientations',
-        <dynamic>[]));
+        <dynamic>[]))!;
 
     window.sendPlatformMessage(
       'flutter/platform',
           inputData,
           (outputData) {
-        responded = true;
-        completer.complete();
+        completer.complete(true);
       },
     );
-    await completer.future;
-    expect(responded, true);
+
+    expect(await completer.future, isTrue);
   });
 
   test('SingletonFlutterWindow implements locale, locales, and locale change notifications', () async {

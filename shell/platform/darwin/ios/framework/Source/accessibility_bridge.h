@@ -60,7 +60,7 @@ class AccessibilityBridge final : public AccessibilityBridgeIos {
   void DispatchSemanticsAction(int32_t id, flutter::SemanticsAction action) override;
   void DispatchSemanticsAction(int32_t id,
                                flutter::SemanticsAction action,
-                               std::vector<uint8_t> args) override;
+                               fml::MallocMapping args) override;
   void AccessibilityObjectDidBecomeFocused(int32_t id) override;
   void AccessibilityObjectDidLoseFocus(int32_t id) override;
 
@@ -78,7 +78,12 @@ class AccessibilityBridge final : public AccessibilityBridgeIos {
 
  private:
   SemanticsObject* GetOrCreateObject(int32_t id, flutter::SemanticsNodeUpdates& updates);
-  SemanticsObject* FindFirstFocusable(SemanticsObject* object);
+  SemanticsObject* FindNextFocusableIfNecessary();
+  // Finds the first focusable SemanticsObject rooted at the parent. This includes the parent itself
+  // if it is a focusable SemanticsObject.
+  //
+  // If the parent is nil, this function use the root SemanticsObject as the parent.
+  SemanticsObject* FindFirstFocusable(SemanticsObject* parent);
   void VisitObjectsRecursivelyAndRemove(SemanticsObject* object,
                                         NSMutableArray<NSNumber*>* doomed_uids);
   void HandleEvent(NSDictionary<NSString*, id>* annotatedEvent);

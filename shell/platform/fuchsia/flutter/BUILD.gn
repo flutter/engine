@@ -53,10 +53,14 @@ template("runner_sources") {
       "accessibility_bridge.h",
       "component.cc",
       "component.h",
+      "default_session_connection.cc",
+      "default_session_connection.h",
       "engine.cc",
       "engine.h",
       "flutter_runner_product_configuration.cc",
       "flutter_runner_product_configuration.h",
+      "focus_delegate.cc",
+      "focus_delegate.h",
       "fuchsia_external_view_embedder.cc",
       "fuchsia_external_view_embedder.h",
       "fuchsia_intl.cc",
@@ -72,8 +76,6 @@ template("runner_sources") {
       "platform_view.h",
       "runner.cc",
       "runner.h",
-      "session_connection.cc",
-      "session_connection.h",
       "surface.cc",
       "surface.h",
       "task_observers.cc",
@@ -83,8 +85,6 @@ template("runner_sources") {
       "thread.cc",
       "thread.h",
       "unique_fdio_ns.h",
-      "vsync_recorder.cc",
-      "vsync_recorder.h",
       "vsync_waiter.cc",
       "vsync_waiter.h",
       "vulkan_surface.cc",
@@ -94,12 +94,6 @@ template("runner_sources") {
       "vulkan_surface_producer.cc",
       "vulkan_surface_producer.h",
     ]
-    if (flutter_enable_legacy_fuchsia_embedder) {
-      sources += [
-        "compositor_context.cc",
-        "compositor_context.h",
-      ]
-    }
 
     public_configs = runner_configs
 
@@ -286,7 +280,7 @@ template("jit_runner") {
 
     binary = "flutter_jit${product_suffix}_runner"
 
-    meta_dir = "//flutter/shell/platform/fuchsia/flutter/meta"
+    cmx_file = rebase_path("meta/flutter_jit${product_suffix}_runner.cmx")
 
     resources = [
       {
@@ -345,13 +339,6 @@ template("jit_runner") {
     resources += _vulkan_icds
 
     libraries = _libs
-
-    meta = [
-      {
-        path = rebase_path("meta/flutter_jit${product_suffix}_runner.cmx")
-        dest = "flutter_jit${product_suffix}_runner.cmx"
-      },
-    ]
   }
 }
 
@@ -372,7 +359,7 @@ template("aot_runner") {
       ]
     }
 
-    meta_dir = "//flutter/shell/platform/fuchsia/flutter/meta"
+    cmx_file = rebase_path("meta/flutter_aot${product_suffix}_runner.cmx")
 
     binary = "flutter_aot${product_suffix}_runner"
 
@@ -410,13 +397,6 @@ template("aot_runner") {
     resources += _vulkan_icds
 
     libraries = _libs
-
-    meta = [
-      {
-        path = rebase_path("meta/flutter_aot${product_suffix}_runner.cmx")
-        dest = "flutter_aot${product_suffix}_runner.cmx"
-      },
-    ]
   }
 }
 
@@ -449,18 +429,17 @@ executable("flutter_runner_unittests") {
     "accessibility_bridge_unittest.cc",
     "component_unittest.cc",
     "flutter_runner_fakes.h",
+    "focus_delegate_unittests.cc",
     "fuchsia_intl_unittest.cc",
     "keyboard_unittest.cc",
     "platform_view_unittest.cc",
     "runner_unittest.cc",
     "tests/engine_unittests.cc",
     "tests/flutter_runner_product_configuration_unittests.cc",
-    "tests/vsync_recorder_unittests.cc",
-    "vsync_waiter_unittests.cc",
   ]
 
   # This is needed for //third_party/googletest for linking zircon symbols.
-  libs = [ "//fuchsia/sdk/$host_os/arch/$target_cpu/sysroot/lib/libzircon.so" ]
+  libs = [ "$fuchsia_sdk_path/arch/$target_cpu/sysroot/lib/libzircon.so" ]
 
   # The use of these dependencies is temporary and will be moved behind the
   # embedder API.
@@ -475,6 +454,7 @@ executable("flutter_runner_unittests") {
   ]
 
   deps = [
+           "tests/fakes",
            ":flutter_runner_fixtures",
            ":flutter_runner_sources",
            "//build/fuchsia/pkg:sys_cpp_testing",
@@ -490,7 +470,7 @@ executable("flutter_runner_tzdata_unittests") {
   sources = [ "runner_tzdata_unittest.cc" ]
 
   # This is needed for //third_party/googletest for linking zircon symbols.
-  libs = [ "//fuchsia/sdk/$host_os/arch/$target_cpu/sysroot/lib/libzircon.so" ]
+  libs = [ "$fuchsia_sdk_path/arch/$target_cpu/sysroot/lib/libzircon.so" ]
 
   # The use of these dependencies is temporary and will be moved behind the
   # embedder API.
@@ -512,10 +492,10 @@ executable("flutter_runner_scenic_unittests") {
 
   output_name = "flutter_runner_scenic_tests"
 
-  sources = [ "tests/session_connection_unittests.cc" ]
+  sources = [ "tests/default_session_connection_unittests.cc" ]
 
   # This is needed for //third_party/googletest for linking zircon symbols.
-  libs = [ "//fuchsia/sdk/$host_os/arch/$target_cpu/sysroot/lib/libzircon.so" ]
+  libs = [ "$fuchsia_sdk_path/arch/$target_cpu/sysroot/lib/libzircon.so" ]
 
   # The use of these dependencies is temporary and will be moved behind the
   # embedder API.
@@ -562,16 +542,9 @@ fuchsia_archive("flutter_runner_tests") {
     },
   ]
 
-  meta_dir = "//flutter/shell/platform/fuchsia/flutter/meta"
+  cmx_file = rebase_path("meta/$target_name.cmx")
 
   libraries = common_libs
-
-  meta = [
-    {
-      path = rebase_path("meta/$target_name.cmx")
-      dest = "$target_name.cmx"
-    },
-  ]
 }
 
 fuchsia_archive("flutter_runner_tzdata_tests") {
@@ -588,16 +561,9 @@ fuchsia_archive("flutter_runner_tzdata_tests") {
     },
   ]
 
-  meta_dir = "//flutter/shell/platform/fuchsia/flutter/meta"
+  cmx_file = rebase_path("meta/$target_name.cmx")
 
   libraries = common_libs
-
-  meta = [
-    {
-      path = rebase_path("meta/$target_name.cmx")
-      dest = "$target_name.cmx"
-    },
-  ]
 }
 
 fuchsia_archive("flutter_runner_scenic_tests") {
@@ -614,16 +580,9 @@ fuchsia_archive("flutter_runner_scenic_tests") {
     },
   ]
 
-  meta_dir = "//flutter/shell/platform/fuchsia/flutter/meta"
+  cmx_file = rebase_path("meta/$target_name.cmx")
 
   libraries = common_libs
-
-  meta = [
-    {
-      path = rebase_path("meta/$target_name.cmx")
-      dest = "$target_name.cmx"
-    },
-  ]
 }
 
 fuchsia_test_archive("fml_tests") {
@@ -850,12 +809,21 @@ fuchsia_test_archive("embedder_tests") {
   ]
 }
 
+fuchsia_test_archive("dart_utils_tests") {
+  deps = [
+    "//flutter/shell/platform/fuchsia/runtime/dart/utils:dart_utils_unittests",
+  ]
+
+  binary = "dart_utils_unittests"
+}
+
 # When adding a new dep here, please also ensure the dep is added to
 # testing/fuchsia/run_tests.sh and testing/fuchsia/test_fars
 group("tests") {
   testonly = true
 
   deps = [
+    ":dart_utils_tests",
     ":embedder_tests",
     ":flow_tests",
     ":flutter_runner_scenic_tests",

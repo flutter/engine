@@ -4,8 +4,10 @@
 
 part of engine;
 
+typedef _HandleMessageCallBack = Future<bool> Function();
+
 /// When set to true, all platform messages will be printed to the console.
-const bool/*!*/ _debugPrintPlatformMessages = false;
+const bool /*!*/ _debugPrintPlatformMessages = false;
 
 /// Whether [_customUrlStrategy] has been set or not.
 ///
@@ -24,7 +26,8 @@ set customUrlStrategy(UrlStrategy? strategy) {
 /// The Web implementation of [ui.SingletonFlutterWindow].
 class EngineFlutterWindow extends ui.SingletonFlutterWindow {
   EngineFlutterWindow(this._windowId, this.platformDispatcher) {
-    final EnginePlatformDispatcher engineDispatcher = platformDispatcher as EnginePlatformDispatcher;
+    final EnginePlatformDispatcher engineDispatcher =
+        platformDispatcher as EnginePlatformDispatcher;
     engineDispatcher._windows[_windowId] = this;
     engineDispatcher._windowConfigurations[_windowId] = ui.ViewConfiguration();
     if (_isUrlStrategySet) {
@@ -48,16 +51,16 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
   }
 
   UrlStrategy? get _urlStrategyForInitialization {
-    final UrlStrategy? urlStrategy = _isUrlStrategySet
-        ? _customUrlStrategy
-        : _createDefaultUrlStrategy();
+    final UrlStrategy? urlStrategy =
+        _isUrlStrategySet ? _customUrlStrategy : _createDefaultUrlStrategy();
     // Prevent any further customization of URL strategy.
     _isUrlStrategySet = true;
     return urlStrategy;
   }
 
-  BrowserHistory? _browserHistory;
-  bool _usingRouter = false;
+  BrowserHistory?
+      _browserHistory; // Must be either SingleEntryBrowserHistory or MultiEntriesBrowserHistory.
+
   Future<void> _useSingleEntryBrowserHistory() async {
     if (_browserHistory is SingleEntryBrowserHistory) {
       return;
@@ -95,7 +98,6 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
   }) async {
     // Prevent any further customization of URL strategy.
     _isUrlStrategySet = true;
-    _usingRouter = false;
     await _browserHistory?.tearDown();
     if (useSingle) {
       _browserHistory = SingleEntryBrowserHistory(urlStrategy: strategy);
@@ -108,49 +110,63 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
     await _browserHistory?.tearDown();
     _browserHistory = null;
     // Reset the globals too.
-    _usingRouter = false;
     _isUrlStrategySet = false;
     _customUrlStrategy = null;
   }
 
-  Future<bool> handleNavigationMessage(
-      ByteData? data,
-      ) async {
-    final MethodCall decoded = JSONMethodCodec().decodeMethodCall(data);
-    final Map<String, dynamic> arguments = decoded.arguments;
+  Future<void> _endOfTheLine = Future<void>.value(null);
 
-    switch (decoded.method) {
-      case 'routeUpdated':
-        if (!_usingRouter) {
-          await _useSingleEntryBrowserHistory();
-          browserHistory.setRouteName(arguments['routeName']);
-        } else {
-          assert(
-            false,
-            'Receives old navigator update in a router application. '
-            'This can happen if you use non-router versions of MaterialApp/'
-            'CupertinoApp/WidgetsApp together with the router versions of them.'
-          );
-          return false;
-        }
-        return true;
-      case 'routeInformationUpdated':
-        await _useMultiEntryBrowserHistory();
-        _usingRouter = true;
-        browserHistory.setRouteName(
-          arguments['location'],
-          state: arguments['state'],
-        );
-        return true;
+  Future<bool> _waitInTheLine(_HandleMessageCallBack callback) async {
+    final Future<void> currentPosition = _endOfTheLine;
+    final Completer<void> completer = Completer<void>();
+    _endOfTheLine = completer.future;
+    await currentPosition;
+    bool result = false;
+    try {
+      result = await callback();
+    } finally {
+      completer.complete();
     }
-    return false;
+    return result;
+  }
+
+  Future<bool> handleNavigationMessage(ByteData? data) async {
+    return _waitInTheLine(() async {
+      final MethodCall decoded = JSONMethodCodec().decodeMethodCall(data);
+      final Map<String, dynamic>? arguments = decoded.arguments;
+      switch (decoded.method) {
+        case 'selectMultiEntryHistory':
+          await _useMultiEntryBrowserHistory();
+          return true;
+        case 'selectSingleEntryHistory':
+          await _useSingleEntryBrowserHistory();
+          return true;
+        // the following cases assert that arguments are not null
+        case 'routeUpdated': // deprecated
+          assert(arguments != null);
+          await _useSingleEntryBrowserHistory();
+          browserHistory.setRouteName(arguments!['routeName']);
+          return true;
+        case 'routeInformationUpdated':
+          assert(arguments != null);
+          browserHistory.setRouteName(
+            arguments!['location'],
+            state: arguments['state'],
+            replace: arguments['replace'] ?? false,
+          );
+          return true;
+      }
+      return false;
+    });
   }
 
   @override
   ui.ViewConfiguration get viewConfiguration {
-    final EnginePlatformDispatcher engineDispatcher = platformDispatcher as EnginePlatformDispatcher;
+    final EnginePlatformDispatcher engineDispatcher =
+        platformDispatcher as EnginePlatformDispatcher;
     assert(engineDispatcher._windowConfigurations.containsKey(_windowId));
-    return engineDispatcher._windowConfigurations[_windowId] ?? ui.ViewConfiguration();
+    return engineDispatcher._windowConfigurations[_windowId] ??
+        ui.ViewConfiguration();
   }
 
   @override
@@ -181,9 +197,27 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
       double windowInnerWidth;
       double windowInnerHeight;
       final html.VisualViewport? viewport = html.window.visualViewport;
+
       if (viewport != null) {
-        windowInnerWidth = viewport.width!.toDouble() * devicePixelRatio;
-        windowInnerHeight = viewport.height!.toDouble() * devicePixelRatio;
+        if (operatingSystem == OperatingSystem.iOs) {
+          /// Chrome on iOS reports incorrect viewport.height when app
+          /// starts in portrait orientation and the phone is rotated to
+          /// landscape.
+          ///
+          /// We instead use documentElement clientWidth/Height to read
+          /// accurate physical size. VisualViewport api is only used during
+          /// text editing to make sure inset is correctly reported to
+          /// framework.
+          final double docWidth =
+              html.document.documentElement!.clientWidth.toDouble();
+          final double docHeight =
+              html.document.documentElement!.clientHeight.toDouble();
+          windowInnerWidth = docWidth * devicePixelRatio;
+          windowInnerHeight = docHeight * devicePixelRatio;
+        } else {
+          windowInnerWidth = viewport.width!.toDouble() * devicePixelRatio;
+          windowInnerHeight = viewport.height!.toDouble() * devicePixelRatio;
+        }
       } else {
         windowInnerWidth = html.window.innerWidth! * devicePixelRatio;
         windowInnerHeight = html.window.innerHeight! * devicePixelRatio;
@@ -195,11 +229,21 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
     }
   }
 
-  void computeOnScreenKeyboardInsets() {
+  /// Forces the window to recompute its physical size. Useful for tests.
+  void debugForceResize() {
+    _computePhysicalSize();
+  }
+
+  void computeOnScreenKeyboardInsets(bool isEditingOnMobile) {
     double windowInnerHeight;
     final html.VisualViewport? viewport = html.window.visualViewport;
     if (viewport != null) {
-      windowInnerHeight = viewport.height!.toDouble() * devicePixelRatio;
+      if (operatingSystem == OperatingSystem.iOs && !isEditingOnMobile) {
+        windowInnerHeight =
+            html.document.documentElement!.clientHeight * devicePixelRatio;
+      } else {
+        windowInnerHeight = viewport.height!.toDouble() * devicePixelRatio;
+      }
     } else {
       windowInnerHeight = html.window.innerHeight! * devicePixelRatio;
     }
@@ -281,10 +325,14 @@ UrlStrategy? _createDefaultUrlStrategy() {
 
 /// The Web implementation of [ui.SingletonFlutterWindow].
 class EngineSingletonFlutterWindow extends EngineFlutterWindow {
-  EngineSingletonFlutterWindow(Object windowId, ui.PlatformDispatcher platformDispatcher) : super(windowId, platformDispatcher);
+  EngineSingletonFlutterWindow(
+      Object windowId, ui.PlatformDispatcher platformDispatcher)
+      : super(windowId, platformDispatcher);
 
   @override
-  double get devicePixelRatio => _debugDevicePixelRatio ?? EnginePlatformDispatcher.browserDevicePixelRatio;
+  double get devicePixelRatio =>
+      _debugDevicePixelRatio ??
+      EnginePlatformDispatcher.browserDevicePixelRatio;
 
   /// Overrides the default device pixel ratio.
   ///
@@ -306,9 +354,11 @@ class EngineFlutterWindowView extends ui.FlutterWindow {
 
   @override
   ui.ViewConfiguration get viewConfiguration {
-    final EnginePlatformDispatcher engineDispatcher = platformDispatcher as EnginePlatformDispatcher;
+    final EnginePlatformDispatcher engineDispatcher =
+        platformDispatcher as EnginePlatformDispatcher;
     assert(engineDispatcher._windowConfigurations.containsKey(_viewId));
-    return engineDispatcher._windowConfigurations[_viewId] ?? ui.ViewConfiguration();
+    return engineDispatcher._windowConfigurations[_viewId] ??
+        ui.ViewConfiguration();
   }
 }
 
@@ -317,7 +367,8 @@ class EngineFlutterWindowView extends ui.FlutterWindow {
 /// `dart:ui` window delegates to this value. However, this value has a wider
 /// API surface, providing Web-specific functionality that the standard
 /// `dart:ui` version does not.
-final EngineSingletonFlutterWindow window = EngineSingletonFlutterWindow(0, EnginePlatformDispatcher.instance);
+final EngineSingletonFlutterWindow window =
+    EngineSingletonFlutterWindow(0, EnginePlatformDispatcher.instance);
 
 /// The Web implementation of [ui.WindowPadding].
 class WindowPadding implements ui.WindowPadding {

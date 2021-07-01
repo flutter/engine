@@ -31,10 +31,6 @@ class LayerTree {
   bool Preroll(CompositorContext::ScopedFrame& frame,
                bool ignore_raster_cache = false);
 
-#if defined(LEGACY_FUCHSIA_EMBEDDER)
-  void UpdateScene(std::shared_ptr<SceneUpdateContext> context);
-#endif
-
   void Paint(CompositorContext::ScopedFrame& frame,
              bool ignore_raster_cache = false) const;
 
@@ -55,16 +51,6 @@ class LayerTree {
   PaintRegionMap& paint_region_map() { return paint_region_map_; }
 
 #endif  // FLUTTER_ENABLE_DIFF_CONTEXT
-
-  void RecordBuildTime(fml::TimePoint vsync_start,
-                       fml::TimePoint build_start,
-                       fml::TimePoint target_time);
-  fml::TimePoint vsync_start() const { return vsync_start_; }
-  fml::TimeDelta vsync_overhead() const { return build_start_ - vsync_start_; }
-  fml::TimePoint build_start() const { return build_start_; }
-  fml::TimePoint build_finish() const { return build_finish_; }
-  fml::TimeDelta build_time() const { return build_finish_ - build_start_; }
-  fml::TimePoint target_time() const { return target_time_; }
 
   // The number of frame intervals missed after which the compositor must
   // trace the rasterized picture to a trace file. Specify 0 to disable all
@@ -87,10 +73,6 @@ class LayerTree {
 
  private:
   std::shared_ptr<Layer> root_layer_;
-  fml::TimePoint vsync_start_;
-  fml::TimePoint build_start_;
-  fml::TimePoint build_finish_;
-  fml::TimePoint target_time_;
   SkISize frame_size_ = SkISize::MakeEmpty();  // Physical pixels.
   const float device_pixel_ratio_;  // Logical / Physical pixels ratio.
   uint32_t rasterizer_tracing_threshold_;

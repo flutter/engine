@@ -828,7 +828,7 @@ bool RegisterApi(JNIEnv* env) {
 
   g_handle_platform_message_method =
       env->GetMethodID(g_flutter_jni_class->obj(), "handlePlatformMessage",
-                       "(Ljava/lang/String;[BI)V");
+                       "(Ljava/lang/String;Ljava/nio/ByteBuffer;I)V");
 
   if (g_handle_platform_message_method == nullptr) {
     FML_LOG(ERROR) << "Could not locate handlePlatformMessage method";
@@ -836,16 +836,17 @@ bool RegisterApi(JNIEnv* env) {
   }
 
   g_handle_platform_message_response_method = env->GetMethodID(
-      g_flutter_jni_class->obj(), "handlePlatformMessageResponse", "(I[B)V");
+      g_flutter_jni_class->obj(), "handlePlatformMessageResponse",
+      "(ILjava/nio/ByteBuffer;)V");
 
   if (g_handle_platform_message_response_method == nullptr) {
     FML_LOG(ERROR) << "Could not locate handlePlatformMessageResponse method";
     return false;
   }
 
-  g_update_semantics_method =
-      env->GetMethodID(g_flutter_jni_class->obj(), "updateSemantics",
-                       "(Ljava/nio/ByteBuffer;[Ljava/lang/String;)V");
+  g_update_semantics_method = env->GetMethodID(
+      g_flutter_jni_class->obj(), "updateSemantics",
+      "(Ljava/nio/ByteBuffer;[Ljava/lang/String;[Ljava/nio/ByteBuffer;)V");
 
   if (g_update_semantics_method == nullptr) {
     FML_LOG(ERROR) << "Could not locate updateSemantics method";
@@ -1094,7 +1095,7 @@ PlatformViewAndroidJNIImpl::PlatformViewAndroidJNIImpl(
 PlatformViewAndroidJNIImpl::~PlatformViewAndroidJNIImpl() = default;
 
 void PlatformViewAndroidJNIImpl::FlutterViewHandlePlatformMessage(
-    fml::RefPtr<flutter::PlatformMessage> message,
+    std::unique_ptr<flutter::PlatformMessage> message,
     int responseId) {
   JNIEnv* env = fml::jni::AttachCurrentThread();
 
@@ -1107,11 +1108,10 @@ void PlatformViewAndroidJNIImpl::FlutterViewHandlePlatformMessage(
       fml::jni::StringToJavaString(env, message->channel());
 
   if (message->hasData()) {
-    fml::jni::ScopedJavaLocalRef<jbyteArray> message_array(
-        env, env->NewByteArray(message->data().size()));
-    env->SetByteArrayRegion(
-        message_array.obj(), 0, message->data().size(),
-        reinterpret_cast<const jbyte*>(message->data().data()));
+    fml::jni::ScopedJavaLocalRef<jobject> message_array(
+        env, env->NewDirectByteBuffer(
+                 const_cast<uint8_t*>(message->data().GetMapping()),
+                 message->data().GetSize()));
     env->CallVoidMethod(java_object.obj(), g_handle_platform_message_method,
                         java_channel.obj(), message_array.obj(), responseId);
   } else {
@@ -1141,10 +1141,9 @@ void PlatformViewAndroidJNIImpl::FlutterViewHandlePlatformMessageResponse(
                         nullptr);
   } else {
     // Convert the vector to a Java byte array.
-    fml::jni::ScopedJavaLocalRef<jbyteArray> data_array(
-        env, env->NewByteArray(data->GetSize()));
-    env->SetByteArrayRegion(data_array.obj(), 0, data->GetSize(),
-                            reinterpret_cast<const jbyte*>(data->GetMapping()));
+    fml::jni::ScopedJavaLocalRef<jobject> data_array(
+        env, env->NewDirectByteBuffer(const_cast<uint8_t*>(data->GetMapping()),
+                                      data->GetSize()));
 
     env->CallVoidMethod(java_object.obj(),
                         g_handle_platform_message_response_method, responseId,
@@ -1156,7 +1155,8 @@ void PlatformViewAndroidJNIImpl::FlutterViewHandlePlatformMessageResponse(
 
 void PlatformViewAndroidJNIImpl::FlutterViewUpdateSemantics(
     std::vector<uint8_t> buffer,
-    std::vector<std::string> strings) {
+    std::vector<std::string> strings,
+    std::vector<std::vector<uint8_t>> string_attribute_args) {
   JNIEnv* env = fml::jni::AttachCurrentThread();
 
   auto java_object = java_object_.get(env);
@@ -1168,9 +1168,12 @@ void PlatformViewAndroidJNIImpl::FlutterViewUpdateSemantics(
       env, env->NewDirectByteBuffer(buffer.data(), buffer.size()));
   fml::jni::ScopedJavaLocalRef<jobjectArray> jstrings =
       fml::jni::VectorToStringArray(env, strings);
+  fml::jni::ScopedJavaLocalRef<jobjectArray> jstring_attribute_args =
+      fml::jni::VectorToBufferArray(env, string_attribute_args);
 
   env->CallVoidMethod(java_object.obj(), g_update_semantics_method,
-                      direct_buffer.obj(), jstrings.obj());
+                      direct_buffer.obj(), jstrings.obj(),
+                      jstring_attribute_args.obj());
 
   FML_CHECK(CheckException(env));
 }

@@ -26,16 +26,13 @@
 #include "flutter/lib/ui/painting/vertices.h"
 #include "flutter/lib/ui/semantics/semantics_update.h"
 #include "flutter/lib/ui/semantics/semantics_update_builder.h"
+#include "flutter/lib/ui/semantics/string_attribute.h"
 #include "flutter/lib/ui/text/font_collection.h"
 #include "flutter/lib/ui/text/paragraph.h"
 #include "flutter/lib/ui/text/paragraph_builder.h"
 #include "flutter/lib/ui/window/platform_configuration.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/logging/dart_error.h"
-
-#if defined(LEGACY_FUCHSIA_EMBEDDER)
-#include "flutter/lib/ui/compositing/scene_host.h"  // nogncheck
-#endif
 
 using tonic::ToDart;
 
@@ -74,6 +71,7 @@ void DartUI::InitForGlobal() {
     ImageShader::RegisterNatives(g_natives);
     ImmutableBuffer::RegisterNatives(g_natives);
     IsolateNameServerNatives::RegisterNatives(g_natives);
+    NativeStringAttribute::RegisterNatives(g_natives);
     Paragraph::RegisterNatives(g_natives);
     ParagraphBuilder::RegisterNatives(g_natives);
     Picture::RegisterNatives(g_natives);
@@ -84,9 +82,6 @@ void DartUI::InitForGlobal() {
     SemanticsUpdateBuilder::RegisterNatives(g_natives);
     Vertices::RegisterNatives(g_natives);
     PlatformConfiguration::RegisterNatives(g_natives);
-#if defined(LEGACY_FUCHSIA_EMBEDDER)
-    SceneHost::RegisterNatives(g_natives);
-#endif
   }
 }
 

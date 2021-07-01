@@ -314,6 +314,8 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     };
   }
 
+  PlatformViewMessageHandler? _platformViewMessageHandler;
+
   void _sendPlatformMessage(
     String name,
     ByteData? data,
@@ -330,7 +332,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
     if (assertionsEnabled && name == 'flutter/debug-echo') {
       // Echoes back the data unchanged. Used for testing purposes.
-      _replyToPlatformMessage(callback, data);
+      replyToPlatformMessage(callback, data);
       return;
     }
 
@@ -355,7 +357,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
             // Also respond in HTML mode. Otherwise, apps would have to detect
             // CanvasKit vs HTML before invoking this method.
-            _replyToPlatformMessage(
+            replyToPlatformMessage(
                 callback, codec.encodeSuccessEnvelope([true]));
             break;
         }
@@ -364,10 +366,10 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
       case 'flutter/assets':
         final String url = utf8.decode(data!.buffer.asUint8List());
         ui.webOnlyAssetManager.load(url).then((ByteData assetData) {
-          _replyToPlatformMessage(callback, assetData);
+          replyToPlatformMessage(callback, assetData);
         }, onError: (dynamic error) {
           printWarning('Error while trying to load an asset: $error');
-          _replyToPlatformMessage(callback, null);
+          replyToPlatformMessage(callback, null);
         });
         return;
 
@@ -383,34 +385,34 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
                 .browserHistory
                 .exit()
                 .then((_) {
-              _replyToPlatformMessage(
+              replyToPlatformMessage(
                   callback, codec.encodeSuccessEnvelope(true));
             });
             return;
           case 'HapticFeedback.vibrate':
             final String? type = decoded.arguments;
             domRenderer.vibrate(_getHapticFeedbackDuration(type));
-            _replyToPlatformMessage(
-                callback, codec.encodeSuccessEnvelope(true));
+            replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
             return;
           case 'SystemChrome.setApplicationSwitcherDescription':
             final Map<String, dynamic> arguments = decoded.arguments;
-            domRenderer.setTitle(arguments['label']);
-            domRenderer.setThemeColor(ui.Color(arguments['primaryColor']));
-            _replyToPlatformMessage(
-                callback, codec.encodeSuccessEnvelope(true));
+            // TODO: Find more appropriate defaults? Or noop when values are null?
+            final String label = arguments['label'] as String? ?? '';
+            final int primaryColor = arguments['primaryColor'] as int? ?? 0xFF000000;
+            domRenderer.setTitle(label);
+            domRenderer.setThemeColor(ui.Color(primaryColor));
+            replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
             return;
           case 'SystemChrome.setPreferredOrientations':
             final List<dynamic> arguments = decoded.arguments;
             domRenderer.setPreferredOrientation(arguments).then((bool success) {
-              _replyToPlatformMessage(
+              replyToPlatformMessage(
                   callback, codec.encodeSuccessEnvelope(success));
             });
             return;
           case 'SystemSound.play':
             // There are no default system sounds on web.
-            _replyToPlatformMessage(
-                callback, codec.encodeSuccessEnvelope(true));
+            replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
             return;
           case 'Clipboard.setData':
             ClipboardMessageHandler().setDataMethodCall(decoded, callback);
@@ -442,26 +444,27 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
       case 'flutter/web_test_e2e':
         const MethodCodec codec = JSONMethodCodec();
-        _replyToPlatformMessage(
+        replyToPlatformMessage(
             callback,
             codec.encodeSuccessEnvelope(
                 _handleWebTestEnd2EndMessage(codec, data)));
         return;
 
       case 'flutter/platform_views':
-        if (useCanvasKit) {
-          rasterizer!.surface.viewEmbedder
-              .handlePlatformViewCall(data, callback);
-        } else {
-          ui.handlePlatformViewCall(data!, callback!);
-        }
+        _platformViewMessageHandler ??= PlatformViewMessageHandler(
+          contentManager: platformViewManager,
+          contentHandler: (html.Element content) {
+            domRenderer.glassPaneElement!.append(content);
+          },
+        );
+        _platformViewMessageHandler!.handlePlatformViewCall(data, callback!);
         return;
 
       case 'flutter/accessibility':
         // In widget tests we want to bypass processing of platform messages.
         final StandardMessageCodec codec = StandardMessageCodec();
         accessibilityAnnouncements.handleMessage(codec, data);
-        _replyToPlatformMessage(callback, codec.encodeMessage(true));
+        replyToPlatformMessage(callback, codec.encodeMessage(true));
         return;
 
       case 'flutter/navigation':
@@ -473,8 +476,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
             .then((bool handled) {
           if (handled) {
             const MethodCodec codec = JSONMethodCodec();
-            _replyToPlatformMessage(
-                callback, codec.encodeSuccessEnvelope(true));
+            replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
           } else {
             callback?.call(null);
           }
@@ -495,7 +497,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     // Passing [null] to [callback] indicates that the platform message isn't
     // implemented. Look at [MethodChannel.invokeMethod] to see how [null] is
     // handled.
-    _replyToPlatformMessage(callback, null);
+    replyToPlatformMessage(callback, null);
   }
 
   int _getHapticFeedbackDuration(String? type) {
@@ -562,8 +564,8 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
       // CanvasKit works differently from the HTML renderer in that in HTML
       // we update the DOM in SceneBuilder.build, which is these function calls
       // here are CanvasKit-only.
-      _frameTimingsOnBuildFinish();
-      _frameTimingsOnRasterStart();
+      frameTimingsOnBuildFinish();
+      frameTimingsOnRasterStart();
 
       final LayerScene layerScene = scene as LayerScene;
       rasterizer!.draw(layerScene.layerTree);
@@ -571,7 +573,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
       final SurfaceScene surfaceScene = scene as SurfaceScene;
       domRenderer.renderScene(surfaceScene.webOnlyRootElement);
     }
-    _frameTimingsOnRasterFinish();
+    frameTimingsOnRasterFinish();
   }
 
   /// Additional accessibility features that may be enabled by the platform.
@@ -920,13 +922,12 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   String? _defaultRouteName;
 
   @visibleForTesting
-  late Rasterizer? rasterizer =
-      useCanvasKit ? Rasterizer(Surface(HtmlViewEmbedder())) : null;
+  late Rasterizer? rasterizer = useCanvasKit ? Rasterizer() : null;
 
   /// In Flutter, platform messages are exchanged between threads so the
   /// messages and responses have to be exchanged asynchronously. We simulate
   /// that by adding a zero-length delay to the reply.
-  void _replyToPlatformMessage(
+  void replyToPlatformMessage(
     ui.PlatformMessageResponseCallback? callback,
     ByteData? data,
   ) {
@@ -936,6 +937,8 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
       }
     });
   }
+
+  ui.FrameData get frameData => const ui.FrameData.webOnly();
 }
 
 bool _handleWebTestEnd2EndMessage(MethodCodec codec, ByteData? data) {

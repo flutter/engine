@@ -13,8 +13,8 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/memory/weak_ptr.h"
-#include "flutter/lib/ui/hint_freed_delegate.h"
 #include "flutter/lib/ui/painting/image_decoder.h"
+#include "flutter/lib/ui/painting/image_generator_registry.h"
 #include "flutter/lib/ui/semantics/custom_accessibility_action.h"
 #include "flutter/lib/ui/semantics/semantics_node.h"
 #include "flutter/lib/ui/snapshot_delegate.h"
@@ -72,9 +72,7 @@ namespace flutter {
 ///           name and it does happen to be one of the older classes in the
 ///           repository.
 ///
-class Engine final : public RuntimeDelegate,
-                     public HintFreedDelegate,
-                     PointerDataDispatcher::Delegate {
+class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
  public:
   //----------------------------------------------------------------------------
   /// @brief      Indicates the result of the call to `Engine::Run`.
@@ -178,7 +176,7 @@ class Engine final : public RuntimeDelegate,
     ///                      the underlying platform.
     ///
     virtual void OnEngineHandlePlatformMessage(
-        fml::RefPtr<PlatformMessage> message) = 0;
+        std::unique_ptr<PlatformMessage> message) = 0;
 
     //--------------------------------------------------------------------------
     /// @brief      Notifies the delegate that the root isolate of the
@@ -284,6 +282,12 @@ class Engine final : public RuntimeDelegate,
     ///                              library to load.
     ///
     virtual void RequestDartDeferredLibrary(intptr_t loading_unit_id) = 0;
+
+    //--------------------------------------------------------------------------
+    /// @brief      Returns the current fml::TimePoint.
+    ///             This method is primarily provided to allow tests to control
+    ///             Any methods that rely on advancing the clock.
+    virtual fml::TimePoint GetCurrentTimePoint() = 0;
   };
 
   //----------------------------------------------------------------------------
@@ -496,10 +500,11 @@ class Engine final : public RuntimeDelegate,
   ///                         began. May be used by animation interpolators,
   ///                         physics simulations, etc..
   ///
-  void BeginFrame(fml::TimePoint frame_time);
-
-  // |HintFreedDelegate|
-  void HintFreed(size_t size) override;
+  /// @param[in]  frame_number The frame number recorded by the animator. Used
+  ///                          by the framework to associate frame specific
+  ///                          debug information with frame timings and timeline
+  ///                          events.
+  void BeginFrame(fml::TimePoint frame_time, uint64_t frame_number);
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the engine that the UI task runner is not expected to
@@ -706,7 +711,7 @@ class Engine final : public RuntimeDelegate,
   /// @param[in]  message  The message sent from the embedder to the Dart
   ///                      application.
   ///
-  void DispatchPlatformMessage(fml::RefPtr<PlatformMessage> message);
+  void DispatchPlatformMessage(std::unique_ptr<PlatformMessage> message);
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the engine that the embedder has sent it a pointer
@@ -757,7 +762,7 @@ class Engine final : public RuntimeDelegate,
   ///
   void DispatchSemanticsAction(int id,
                                SemanticsAction action,
-                               std::vector<uint8_t> args);
+                               fml::MallocMapping args);
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the engine that the embedder has expressed an opinion
@@ -915,8 +920,8 @@ class Engine final : public RuntimeDelegate,
   bool have_surface_;
   std::shared_ptr<FontCollection> font_collection_;
   ImageDecoder image_decoder_;
+  ImageGeneratorRegistry image_generator_registry_;
   TaskRunners task_runners_;
-  size_t hint_freed_bytes_since_last_idle_ = 0;
   fml::WeakPtrFactory<Engine> weak_factory_;
 
   // |RuntimeDelegate|
@@ -930,7 +935,7 @@ class Engine final : public RuntimeDelegate,
                        CustomAccessibilityActionUpdates actions) override;
 
   // |RuntimeDelegate|
-  void HandlePlatformMessage(fml::RefPtr<PlatformMessage> message) override;
+  void HandlePlatformMessage(std::unique_ptr<PlatformMessage> message) override;
 
   // |RuntimeDelegate|
   void OnRootIsolateCreated() override;
@@ -954,13 +959,14 @@ class Engine final : public RuntimeDelegate,
 
   bool HandleLifecyclePlatformMessage(PlatformMessage* message);
 
-  bool HandleNavigationPlatformMessage(fml::RefPtr<PlatformMessage> message);
+  bool HandleNavigationPlatformMessage(
+      std::unique_ptr<PlatformMessage> message);
 
   bool HandleLocalizationPlatformMessage(PlatformMessage* message);
 
   void HandleSettingsPlatformMessage(PlatformMessage* message);
 
-  void HandleAssetPlatformMessage(fml::RefPtr<PlatformMessage> message);
+  void HandleAssetPlatformMessage(std::unique_ptr<PlatformMessage> message);
 
   bool GetAssetAsBuffer(const std::string& name, std::vector<uint8_t>* data);
 

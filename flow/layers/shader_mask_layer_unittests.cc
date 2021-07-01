@@ -29,7 +29,7 @@ TEST_F(ShaderMaskLayerTest, PaintingEmptyLayerDies) {
                             "needs_painting\\(context\\)");
 }
 
-TEST_F(ShaderMaskLayerTest, PaintBeforePreollDies) {
+TEST_F(ShaderMaskLayerTest, PaintBeforePrerollDies) {
   const SkRect child_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
   const SkPath child_path = SkPath().addRect(child_bounds);
   auto mock_layer = std::make_shared<MockLayer>(child_path);
@@ -268,7 +268,7 @@ TEST_F(ShaderMaskLayerTest, Readback) {
 
   // ShaderMaskLayer blocks child with readback
   auto mock_layer =
-      std::make_shared<MockLayer>(SkPath(), SkPaint(), false, false, true);
+      std::make_shared<MockLayer>(SkPath(), SkPaint(), false, true);
   layer->Add(mock_layer);
   preroll_context()->surface_needs_readback = false;
   layer->Preroll(preroll_context(), initial_transform);

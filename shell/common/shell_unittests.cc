@@ -57,7 +57,7 @@ class MockPlatformViewDelegate : public PlatformView::Delegate {
                void(const ViewportMetrics& metrics));
 
   MOCK_METHOD1(OnPlatformViewDispatchPlatformMessage,
-               void(fml::RefPtr<PlatformMessage> message));
+               void(std::unique_ptr<PlatformMessage> message));
 
   MOCK_METHOD1(OnPlatformViewDispatchPointerDataPacket,
                void(std::unique_ptr<PointerDataPacket> packet));
@@ -69,7 +69,7 @@ class MockPlatformViewDelegate : public PlatformView::Delegate {
   MOCK_METHOD3(OnPlatformViewDispatchSemanticsAction,
                void(int32_t id,
                     SemanticsAction action,
-                    std::vector<uint8_t> args));
+                    fml::MallocMapping args));
 
   MOCK_METHOD1(OnPlatformViewSetSemanticsEnabled, void(bool enabled));
 
@@ -457,7 +457,6 @@ TEST_F(ShellTest, AllowedDartVMFlag) {
       "--enable-isolate-groups",
       "--no-enable-isolate-groups",
       "--lazy_async_stacks",
-      "--no-causal_async_stacks",
   };
 #if !FLUTTER_RELEASE
   flags.push_back("--max_profile_depth 1");
@@ -1143,7 +1142,7 @@ TEST_F(ShellTest,
 #if defined(OS_FUCHSIA)
        DISABLED_SkipAndSubmitFrame
 #else
-       SkipAndSubmitFrame
+       DISABLED_SkipAndSubmitFrame
 #endif
 ) {
   auto settings = CreateSettingsForFixture();
@@ -1489,8 +1488,9 @@ TEST_F(ShellTest, SetResourceCacheSize) {
                                 "method": "Skia.setResourceCacheMaxBytes",
                                 "args": 10000
                               })json";
-  std::vector<uint8_t> data(request_json.begin(), request_json.end());
-  auto platform_message = fml::MakeRefCounted<PlatformMessage>(
+  auto data =
+      fml::MallocMapping::Copy(request_json.c_str(), request_json.length());
+  auto platform_message = std::make_unique<PlatformMessage>(
       "flutter/skia", std::move(data), nullptr);
   SendEnginePlatformMessage(shell.get(), std::move(platform_message));
   PumpOneFrame(shell.get());
@@ -1811,10 +1811,7 @@ TEST_F(ShellTest, CanConvertToAndFromMappings) {
       buffer, buffer_size, MemsetPatternOp::kMemsetPatternOpSetBuffer));
 
   std::unique_ptr<fml::Mapping> mapping =
-      std::make_unique<fml::NonOwnedMapping>(
-          buffer, buffer_size, [](const uint8_t* buffer, size_t size) {
-            ::free(const_cast<uint8_t*>(buffer));
-          });
+      std::make_unique<fml::MallocMapping>(buffer, buffer_size);
 
   ASSERT_EQ(mapping->GetSize(), buffer_size);
 
@@ -2113,7 +2110,7 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
   document.Accept(writer);
   std::string expected_json =
       "{\"type\":\"EstimateRasterCacheMemory\",\"layerBytes\":40000,\"picture"
-      "Bytes\":400}";
+      "Bytes\":400,\"displayListBytes\":0}";
   std::string actual_json = buffer.GetString();
   ASSERT_EQ(actual_json, expected_json);
 
@@ -2487,10 +2484,12 @@ TEST_F(ShellTest, Spawn) {
         main_latch.Signal();
       }));
   // Fulfill native function for the second Shell's entrypoint.
+  fml::CountDownLatch second_latch(2);
   AddNativeCallback(
       // The Dart native function names aren't very consistent but this is just
       // the native function name of the second vm entrypoint in the fixture.
-      "NotifyNative", CREATE_NATIVE_ENTRY([&](auto args) {}));
+      "NotifyNative",
+      CREATE_NATIVE_ENTRY([&](auto args) { second_latch.CountDown(); }));
 
   RunEngine(shell.get(), std::move(configuration));
   main_latch.Wait();
@@ -2500,7 +2499,7 @@ TEST_F(ShellTest, Spawn) {
 
   PostSync(
       shell->GetTaskRunners().GetPlatformTaskRunner(),
-      [this, &spawner = shell, &second_configuration]() {
+      [this, &spawner = shell, &second_configuration, &second_latch]() {
         MockPlatformViewDelegate platform_view_delegate;
         auto spawn = spawner->Spawn(
             std::move(second_configuration),
@@ -2543,6 +2542,11 @@ TEST_F(ShellTest, Spawn) {
               ASSERT_EQ(spawner->GetIOManager()->GetResourceContext().get(),
                         spawn->GetIOManager()->GetResourceContext().get());
             });
+
+        // Before destroying the shell, wait for expectations of the spawned
+        // isolate to be met.
+        second_latch.Wait();
+
         DestroyShell(std::move(spawn));
       });
 

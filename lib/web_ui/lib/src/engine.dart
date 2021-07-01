@@ -15,9 +15,9 @@ library engine;
 // - https://github.com/flutter/engine/blob/master/web_sdk/sdk_rewriter.dart
 
 import 'dart:async';
+// Some of these names are used in services/buffers.dart for example.
+// ignore: unused_import
 import 'dart:collection'
-    // Some of these names are used in services/buffers.dart for example.
-    // ignore: unused_shown_name
     show ListBase, IterableBase, DoubleLinkedQueue, DoubleLinkedQueueEntry;
 import 'dart:convert' hide Codec;
 import 'dart:developer' as developer;
@@ -35,8 +35,21 @@ import '../ui.dart' as ui;
 import 'engine/alarm_clock.dart';
 export 'engine/alarm_clock.dart';
 
+export 'engine/assets.dart';
+
 import 'engine/browser_detection.dart';
 export 'engine/browser_detection.dart';
+
+import 'engine/host_node.dart';
+export 'engine/host_node.dart';
+
+import 'engine/html_image_codec.dart';
+export 'engine/html_image_codec.dart';
+
+export 'engine/html/offscreen_canvas.dart';
+
+import 'engine/html/painting.dart';
+export 'engine/html/painting.dart';
 
 import 'engine/html/path_to_svg_clip.dart';
 export 'engine/html/path_to_svg_clip.dart';
@@ -56,8 +69,42 @@ export 'engine/html/path/path_metrics.dart';
 import 'engine/html/path/path_ref.dart';
 export 'engine/html/path/path_ref.dart';
 
+import 'engine/html/path/path_to_svg.dart';
+export 'engine/html/path/path_to_svg.dart';
+
 import 'engine/html/path/path_utils.dart';
 export 'engine/html/path/path_utils.dart';
+
+import 'engine/html/path/path_windings.dart';
+export 'engine/html/path/path_windings.dart';
+
+import 'engine/html/path/tangent.dart';
+export 'engine/html/path/tangent.dart';
+
+import 'engine/html/render_vertices.dart';
+export 'engine/html/render_vertices.dart';
+
+import 'engine/html/shaders/image_shader.dart';
+export 'engine/html/shaders/image_shader.dart';
+
+export 'engine/html/shaders/normalized_gradient.dart';
+
+import 'engine/html/shaders/shader.dart';
+export 'engine/html/shaders/shader.dart';
+
+export 'engine/html/shaders/shader_builder.dart';
+
+export 'engine/html/shaders/vertex_shaders.dart';
+
+export 'engine/html/shaders/webgl_context.dart';
+
+import 'engine/keyboard_binding.dart';
+export 'engine/keyboard_binding.dart';
+
+import 'engine/keyboard.dart';
+export 'engine/keyboard.dart';
+
+export 'engine/key_map.dart';
 
 import 'engine/mouse_cursor.dart';
 export 'engine/mouse_cursor.dart';
@@ -81,6 +128,9 @@ export 'engine/pointer_binding.dart';
 // import 'engine/pointer_converter.dart';
 export 'engine/pointer_converter.dart';
 
+import 'engine/profiler.dart';
+export 'engine/profiler.dart';
+
 // This import is intentionally commented out because the analyzer says it's unused.
 // import 'engine/services/buffers.dart';
 export 'engine/services/buffers.dart';
@@ -101,8 +151,42 @@ export 'engine/shadow.dart';
 import 'engine/test_embedding.dart';
 export 'engine/test_embedding.dart';
 
-import 'engine/ulps.dart';
-export 'engine/ulps.dart';
+export 'engine/text/font_collection.dart';
+
+export 'engine/text/layout_service.dart';
+
+export 'engine/text/line_break_properties.dart';
+
+export 'engine/text/line_breaker.dart';
+
+import 'engine/text/measurement.dart';
+export 'engine/text/measurement.dart';
+
+export 'engine/text/paint_service.dart';
+
+import 'engine/text/paragraph.dart';
+export 'engine/text/paragraph.dart';
+
+export 'engine/text/canvas_paragraph.dart';
+
+export 'engine/text/ruler.dart';
+
+export 'engine/text/text_direction.dart';
+
+export 'engine/text/unicode_range.dart';
+
+export 'engine/text/word_break_properties.dart';
+
+export 'engine/text/word_breaker.dart';
+
+export 'engine/text_editing/autofill_hint.dart';
+
+export 'engine/text_editing/input_type.dart';
+
+export 'engine/text_editing/text_capitalization.dart';
+
+import 'engine/text_editing/text_editing.dart';
+export 'engine/text_editing/text_editing.dart';
 
 import 'engine/util.dart';
 export 'engine/util.dart';
@@ -116,45 +200,81 @@ export 'engine/vector_math.dart';
 import 'engine/web_experiments.dart';
 export 'engine/web_experiments.dart';
 
-part 'engine/assets.dart';
-part 'engine/bitmap_canvas.dart';
-part 'engine/canvaskit/canvas.dart';
-part 'engine/canvaskit/canvaskit_canvas.dart';
-part 'engine/canvaskit/canvaskit_api.dart';
-part 'engine/canvaskit/color_filter.dart';
-part 'engine/canvaskit/embedded_views.dart';
-part 'engine/canvaskit/fonts.dart';
-part 'engine/canvaskit/font_fallbacks.dart';
-part 'engine/canvaskit/image.dart';
-part 'engine/canvaskit/image_filter.dart';
-part 'engine/canvaskit/initialization.dart';
-part 'engine/canvaskit/interval_tree.dart';
-part 'engine/canvaskit/layer.dart';
-part 'engine/canvaskit/layer_scene_builder.dart';
-part 'engine/canvaskit/layer_tree.dart';
-part 'engine/canvaskit/mask_filter.dart';
-part 'engine/canvaskit/n_way_canvas.dart';
-part 'engine/canvaskit/path.dart';
-part 'engine/canvaskit/painting.dart';
-part 'engine/canvaskit/path_metrics.dart';
-part 'engine/canvaskit/picture.dart';
-part 'engine/canvaskit/picture_recorder.dart';
-part 'engine/canvaskit/platform_message.dart';
-part 'engine/canvaskit/raster_cache.dart';
-part 'engine/canvaskit/rasterizer.dart';
-part 'engine/canvaskit/shader.dart';
-part 'engine/canvaskit/skia_object_cache.dart';
-part 'engine/canvaskit/surface.dart';
-part 'engine/canvaskit/text.dart';
-part 'engine/canvaskit/util.dart';
-part 'engine/canvaskit/vertices.dart';
-part 'engine/canvaskit/viewport_metrics.dart';
+export 'engine/canvaskit/canvas.dart';
+
+import 'engine/canvaskit/canvaskit_api.dart';
+export 'engine/canvaskit/canvaskit_api.dart';
+
+export 'engine/canvaskit/canvaskit_canvas.dart';
+
+import 'engine/canvaskit/color_filter.dart';
+export 'engine/canvaskit/color_filter.dart';
+
+import 'engine/canvaskit/embedded_views.dart';
+export 'engine/canvaskit/embedded_views.dart';
+
+export 'engine/canvaskit/fonts.dart';
+
+export 'engine/canvaskit/font_fallbacks.dart';
+
+export 'engine/canvaskit/image.dart';
+
+export 'engine/canvaskit/image_filter.dart';
+
+import 'engine/canvaskit/initialization.dart';
+export 'engine/canvaskit/initialization.dart';
+
+export 'engine/canvaskit/interval_tree.dart';
+
+import 'engine/canvaskit/layer.dart';
+export 'engine/canvaskit/layer.dart';
+
+import 'engine/canvaskit/layer_scene_builder.dart';
+export 'engine/canvaskit/layer_scene_builder.dart';
+
+export 'engine/canvaskit/layer_tree.dart';
+
+export 'engine/canvaskit/mask_filter.dart';
+
+export 'engine/canvaskit/n_way_canvas.dart';
+
+export 'engine/canvaskit/painting.dart';
+
+export 'engine/canvaskit/path.dart';
+
+export 'engine/canvaskit/path_metrics.dart';
+
+export 'engine/canvaskit/picture.dart';
+
+export 'engine/canvaskit/picture_recorder.dart';
+
+import 'engine/canvaskit/rasterizer.dart';
+export 'engine/canvaskit/rasterizer.dart';
+
+export 'engine/canvaskit/raster_cache.dart';
+
+export 'engine/canvaskit/shader.dart';
+
+export 'engine/canvaskit/skia_object_cache.dart';
+
+export 'engine/canvaskit/surface.dart';
+
+export 'engine/canvaskit/surface_factory.dart';
+
+export 'engine/canvaskit/text.dart';
+
+export 'engine/canvaskit/util.dart';
+
+export 'engine/canvaskit/vertices.dart';
+
+part 'engine/html/bitmap_canvas.dart';
 part 'engine/canvas_pool.dart';
 part 'engine/clipboard.dart';
 part 'engine/color_filter.dart';
-part 'engine/dom_canvas.dart';
+part 'engine/html/dom_canvas.dart';
 part 'engine/dom_renderer.dart';
 part 'engine/engine_canvas.dart';
+part 'engine/font_change_util.dart';
 part 'engine/frame_reference.dart';
 part 'engine/html/backdrop_filter.dart';
 part 'engine/html/canvas.dart';
@@ -164,33 +284,23 @@ part 'engine/html/debug_canvas_reuse_overlay.dart';
 part 'engine/html/image_filter.dart';
 part 'engine/html/offset.dart';
 part 'engine/html/opacity.dart';
-part 'engine/html/painting.dart';
 part 'engine/html/path/path.dart';
-part 'engine/html/path/path_to_svg.dart';
-part 'engine/html/path/path_windings.dart';
-part 'engine/html/path/tangent.dart';
 part 'engine/html/picture.dart';
 part 'engine/html/platform_view.dart';
 part 'engine/html/recording_canvas.dart';
-part 'engine/html/render_vertices.dart';
 part 'engine/html/scene.dart';
 part 'engine/html/scene_builder.dart';
 part 'engine/html/shader_mask.dart';
-part 'engine/html/shaders/normalized_gradient.dart';
-part 'engine/html/shaders/shader.dart';
-part 'engine/html/shaders/shader_builder.dart';
 part 'engine/html/surface.dart';
 part 'engine/html/surface_stats.dart';
 part 'engine/html/transform.dart';
-part 'engine/html_image_codec.dart';
-part 'engine/keyboard_binding.dart';
-part 'engine/keyboard.dart';
-part 'engine/key_map.dart';
 part 'engine/onscreen_logging.dart';
 part 'engine/picture.dart';
 part 'engine/platform_dispatcher.dart';
 part 'engine/platform_views.dart';
-part 'engine/profiler.dart';
+part 'engine/platform_views/content_manager.dart';
+part 'engine/platform_views/message_handler.dart';
+part 'engine/platform_views/slots.dart';
 part 'engine/rrect_renderer.dart';
 part 'engine/semantics/accessibility.dart';
 part 'engine/semantics/checkable.dart';
@@ -203,35 +313,20 @@ part 'engine/semantics/semantics.dart';
 part 'engine/semantics/semantics_helper.dart';
 part 'engine/semantics/tappable.dart';
 part 'engine/semantics/text_field.dart';
-part 'engine/text/font_collection.dart';
-part 'engine/text/layout_service.dart';
-part 'engine/text/line_break_properties.dart';
-part 'engine/text/line_breaker.dart';
-part 'engine/text/measurement.dart';
-part 'engine/text/paint_service.dart';
-part 'engine/text/paragraph.dart';
-part 'engine/text/canvas_paragraph.dart';
-part 'engine/text/ruler.dart';
-part 'engine/text/unicode_range.dart';
-part 'engine/text/word_break_properties.dart';
-part 'engine/text/word_breaker.dart';
-part 'engine/text_editing/autofill_hint.dart';
-part 'engine/text_editing/input_type.dart';
-part 'engine/text_editing/text_capitalization.dart';
-part 'engine/text_editing/text_editing.dart';
-part 'engine/font_change_util.dart';
 part 'engine/window.dart';
 
 // The mode the app is running in.
 // Keep these in sync with the same constants on the framework-side under foundation/constants.dart.
-const bool kReleaseMode = bool.fromEnvironment('dart.vm.product', defaultValue: false);
-const bool kProfileMode = bool.fromEnvironment('dart.vm.profile', defaultValue: false);
+const bool kReleaseMode =
+    bool.fromEnvironment('dart.vm.product', defaultValue: false);
+const bool kProfileMode =
+    bool.fromEnvironment('dart.vm.profile', defaultValue: false);
 const bool kDebugMode = !kReleaseMode && !kProfileMode;
 String get buildMode => kReleaseMode
-  ? 'release'
-  : kProfileMode
-    ? 'profile'
-    : 'debug';
+    ? 'release'
+    : kProfileMode
+        ? 'profile'
+        : 'debug';
 
 /// A benchmark metric that includes frame-related computations prior to
 /// submitting layer and picture operations to the underlying renderer, such as
@@ -300,7 +395,7 @@ void initializeEngine() {
     if (!waitingForAnimation) {
       waitingForAnimation = true;
       html.window.requestAnimationFrame((num highResTime) {
-        _frameTimingsOnVsync();
+        frameTimingsOnVsync();
 
         // Reset immediately, because `frameHandler` can schedule more frames.
         waitingForAnimation = false;
@@ -315,10 +410,10 @@ void initializeEngine() {
         // In Flutter terminology "building a frame" consists of "beginning
         // frame" and "drawing frame".
         //
-        // We do not call `_frameTimingsOnBuildFinish` from here because
+        // We do not call `frameTimingsOnBuildFinish` from here because
         // part of the rasterization process, particularly in the HTML
         // renderer, takes place in the `SceneBuilder.build()`.
-        _frameTimingsOnBuildStart();
+        frameTimingsOnBuildStart();
         if (EnginePlatformDispatcher.instance._onBeginFrame != null) {
           EnginePlatformDispatcher.instance.invokeOnBeginFrame(
               Duration(microseconds: highResTimeMicroseconds));
@@ -349,10 +444,15 @@ void _addUrlStrategyListener() {
   });
 }
 
-class _NullTreeSanitizer implements html.NodeTreeSanitizer {
+class NullTreeSanitizer implements html.NodeTreeSanitizer {
   @override
   void sanitizeTree(html.Node node) {}
 }
+
+/// The shared instance of PlatformViewManager shared across the engine to handle
+/// rendering of PlatformViews into the web app.
+/// TODO(dit): How to make this overridable from tests?
+final PlatformViewManager platformViewManager = PlatformViewManager();
 
 /// Converts a matrix represented using [Float64List] to one represented using
 /// [Float32List].

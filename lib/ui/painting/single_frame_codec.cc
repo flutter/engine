@@ -52,7 +52,10 @@ Dart_Handle SingleFrameCodec::getNextFrame(Dart_Handle callback_handle) {
   auto decoder = dart_state->GetImageDecoder();
 
   if (!decoder) {
-    return tonic::ToDart("Image decoder not available.");
+    return tonic::ToDart(
+        "Failed to access the internal image decoder "
+        "registry on this isolate. Please file a bug on "
+        "https://github.com/flutter/flutter/issues.");
   }
 
   // The SingleFrameCodec must be deleted on the UI thread.  Allocate a RefPtr
@@ -108,10 +111,7 @@ Dart_Handle SingleFrameCodec::getNextFrame(Dart_Handle callback_handle) {
 }
 
 size_t SingleFrameCodec::GetAllocationSize() const {
-  const auto& data_size = descriptor_->GetAllocationSize();
-  const auto frame_byte_size =
-      cached_image_ ? cached_image_->GetAllocationSize() : 0;
-  return data_size + frame_byte_size + sizeof(this);
+  return sizeof(*this);
 }
 
 }  // namespace flutter

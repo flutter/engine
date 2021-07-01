@@ -436,30 +436,6 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     _addSurface(PersistedPlatformView(viewId, dx, dy, width, height));
   }
 
-  /// (Fuchsia-only) Adds a scene rendered by another application to the scene
-  /// for this application.
-  @override
-  void addChildScene({
-    ui.Offset offset = ui.Offset.zero,
-    double width = 0.0,
-    double height = 0.0,
-    ui.SceneHost? sceneHost,
-    bool hitTestable = true,
-  }) {
-    _addChildScene(offset.dx, offset.dy, width, height, sceneHost, hitTestable);
-  }
-
-  void _addChildScene(
-    double dx,
-    double dy,
-    double width,
-    double height,
-    ui.SceneHost? sceneHost,
-    bool hitTestable,
-  ) {
-    throw UnimplementedError();
-  }
-
   /// Sets a threshold after which additional debugging information should be
   /// recorded.
   ///
@@ -546,8 +522,8 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     // In the HTML renderer we time the beginning of the rasterization phase
     // (counter-intuitively) in SceneBuilder.build because DOM updates happen
     // here. This is different from CanvasKit.
-    _frameTimingsOnBuildFinish();
-    _frameTimingsOnRasterStart();
+    frameTimingsOnBuildFinish();
+    frameTimingsOnRasterStart();
     timeAction<void>(kProfilePrerollFrame, () {
       while (_surfaceStack.length > 1) {
         // Auto-pop layers that were pushed without a corresponding pop.
@@ -581,11 +557,4 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   ) {
     throw UnimplementedError();
   }
-}
-
-// HTML only supports a single radius, but Flutter ImageFilter supports separate
-// horizontal and vertical radii. The best approximation we can provide is to
-// average the two radii together for a single compromise value.
-String _imageFilterToCss(EngineImageFilter filter) {
-  return 'blur(${(filter.sigmaX + filter.sigmaY) / 2}px)';
 }

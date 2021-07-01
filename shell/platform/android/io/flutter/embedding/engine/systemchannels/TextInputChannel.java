@@ -82,8 +82,16 @@ public class TextInputChannel {
               result.success(null);
               break;
             case "TextInput.setPlatformViewClient":
-              final int id = (int) args;
-              textInputMethodHandler.setPlatformViewClient(id);
+              try {
+                final JSONObject arguments = (JSONObject) args;
+                final int platformViewId = arguments.getInt("platformViewId");
+                final boolean usesVirtualDisplay =
+                    arguments.optBoolean("usesVirtualDisplay", false);
+                textInputMethodHandler.setPlatformViewClient(platformViewId, usesVirtualDisplay);
+                result.success(null);
+              } catch (JSONException exception) {
+                result.error("error", exception.getMessage(), null);
+              }
               break;
             case "TextInput.setEditingState":
               try {
@@ -158,7 +166,8 @@ public class TextInputChannel {
    * Instructs Flutter to reattach the last active text input client, if any.
    *
    * <p>This is necessary when the view hierarchy has been detached and reattached to a {@link
-   * FlutterEngine}, as the engine may have kept alive a text editing client on the Dart side.
+   * io.flutter.embedding.engine.FlutterEngine}, as the engine may have kept alive a text editing
+   * client on the Dart side.
    */
   public void requestExistingInputState() {
     channel.invokeMethod("TextInputClient.requestExistingInputState", null);
@@ -339,7 +348,8 @@ public class TextInputChannel {
     void requestAutofill();
 
     /**
-     * Requests that the {@link AutofillManager} cancel or commit the current autofill context.
+     * Requests that the {@link android.view.autofill.AutofillManager} cancel or commit the current
+     * autofill context.
      *
      * <p>The method calls {@link android.view.autofill.AutofillManager#commit()} when {@code
      * shouldSave} is true, and calls {@link android.view.autofill.AutofillManager#cancel()}
@@ -360,8 +370,10 @@ public class TextInputChannel {
      * different client is set.
      *
      * @param id the ID of the platform view to be set as a text input client.
+     * @param usesVirtualDisplay True if the platform view uses a virtual display, false if it uses
+     *     hybrid composition.
      */
-    void setPlatformViewClient(int id);
+    void setPlatformViewClient(int id, boolean usesVirtualDisplay);
 
     /**
      * Sets the size and the transform matrix of the current text input client.
@@ -628,7 +640,8 @@ public class TextInputChannel {
     MULTILINE("TextInputType.multiline"),
     EMAIL_ADDRESS("TextInputType.emailAddress"),
     URL("TextInputType.url"),
-    VISIBLE_PASSWORD("TextInputType.visiblePassword");
+    VISIBLE_PASSWORD("TextInputType.visiblePassword"),
+    NONE("TextInputType.none");
 
     static TextInputType fromValue(@NonNull String encodedName) throws NoSuchFieldException {
       for (TextInputType textInputType : TextInputType.values()) {

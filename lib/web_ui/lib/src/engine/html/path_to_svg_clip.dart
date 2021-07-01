@@ -5,8 +5,6 @@
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
-import '../browser_detection.dart';
-
 /// Counter used for generating clip path id inside an svg <defs> tag.
 int _clipIdCounter = 0;
 
@@ -43,7 +41,7 @@ String pathToSvgClipPath(ui.Path path,
     sb.write('<path transform="scale($scaleX, $scaleY)" fill="#FFFFFF" d="');
   }
 
-  pathToSvg(path as SurfacePath, sb, offsetX: offsetX, offsetY: offsetY);
+  pathToSvg((path as SurfacePath).pathRef, sb, offsetX: offsetX, offsetY: offsetY);
   sb.write('"></path></clipPath></defs></svg');
   return sb.toString();
 }

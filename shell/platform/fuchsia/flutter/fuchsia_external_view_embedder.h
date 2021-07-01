@@ -27,11 +27,12 @@
 #include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 
-#include "session_connection.h"
+#include "default_session_connection.h"
 #include "vulkan_surface_producer.h"
 
 namespace flutter_runner {
 
+using ViewCallback = std::function<void()>;
 using ViewIdCallback = std::function<void(scenic::ResourceId)>;
 
 // This class orchestrates interaction with the Scenic compositor on Fuchsia. It
@@ -42,7 +43,7 @@ class FuchsiaExternalViewEmbedder final : public flutter::ExternalViewEmbedder {
   FuchsiaExternalViewEmbedder(std::string debug_label,
                               fuchsia::ui::views::ViewToken view_token,
                               scenic::ViewRefPair view_ref_pair,
-                              SessionConnection& session,
+                              DefaultSessionConnection& session,
                               VulkanSurfaceProducer& surface_producer,
                               bool intercept_all_input = false);
   ~FuchsiaExternalViewEmbedder();
@@ -93,7 +94,9 @@ class FuchsiaExternalViewEmbedder final : public flutter::ExternalViewEmbedder {
   // |SetViewProperties| doesn't manipulate the view directly -- it sets pending
   // properties for the next |UpdateView| call.
   void EnableWireframe(bool enable);
-  void CreateView(int64_t view_id, ViewIdCallback on_view_bound);
+  void CreateView(int64_t view_id,
+                  ViewCallback on_view_created,
+                  ViewIdCallback on_view_bound);
   void DestroyView(int64_t view_id, ViewIdCallback on_view_unbound);
   void SetViewProperties(int64_t view_id,
                          const SkRect& occlusion_hint,
@@ -147,7 +150,7 @@ class FuchsiaExternalViewEmbedder final : public flutter::ExternalViewEmbedder {
   using EmbedderLayerId = std::optional<uint32_t>;
   constexpr static EmbedderLayerId kRootLayerId = EmbedderLayerId{};
 
-  SessionConnection& session_;
+  DefaultSessionConnection& session_;
   VulkanSurfaceProducer& surface_producer_;
 
   scenic::View root_view_;

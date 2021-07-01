@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/ui.dart';
@@ -13,7 +12,7 @@ void main() {
 
 void testMain() {
   test('Locale', () {
-    const Null $null = null;
+    const String? $null = null;
     expect(const Locale('en').toString(), 'en');
     expect(const Locale('en'), const Locale('en', $null));
     expect(const Locale('en').hashCode, const Locale('en', $null).hashCode);
