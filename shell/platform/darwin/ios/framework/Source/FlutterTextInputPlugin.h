@@ -61,9 +61,9 @@
 
 @property(nonatomic, assign) CGRect rect;
 @property(nonatomic, assign) NSWritingDirection writingDirection;
-@property(nonatomic, assign) BOOL containsStart;
-@property(nonatomic, assign) BOOL containsEnd;
-@property(nonatomic, assign) BOOL isVertical;
+@property(nonatomic) BOOL containsStart;
+@property(nonatomic) BOOL containsEnd;
+@property(nonatomic) BOOL isVertical;
 
 + (instancetype)selectionRectWithRectAndInfo:(CGRect)rect
                             writingDirection:(NSWritingDirection)writingDirection

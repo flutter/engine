@@ -477,11 +477,11 @@ static BOOL isPositionCloserToPoint(CGPoint point,
 
 @implementation FlutterTextSelectionRect
 
-@synthesize rect = _rect;
-@synthesize writingDirection = _writingDirection;
-@synthesize containsStart = _containsStart;
-@synthesize containsEnd = _containsEnd;
-@synthesize isVertical = _isVertical;
+@dynamic rect;
+@dynamic writingDirection;
+@dynamic containsStart;
+@dynamic containsEnd;
+@dynamic isVertical;
 
 + (instancetype)selectionRectWithRectAndInfo:(CGRect)rect
                             writingDirection:(NSWritingDirection)writingDirection
@@ -502,11 +502,11 @@ static BOOL isPositionCloserToPoint(CGPoint point,
                          isVertical:(BOOL)isVertical {
   self = [super init];
   if (self) {
-    _rect = rect;
-    _writingDirection = writingDirection;
-    _containsStart = containsStart;
-    _containsEnd = containsEnd;
-    _isVertical = isVertical;
+    self.rect = rect;
+    self.writingDirection = writingDirection;
+    self.containsStart = containsStart;
+    self.containsEnd = containsEnd;
+    self.isVertical = isVertical;
   }
   return self;
 }
