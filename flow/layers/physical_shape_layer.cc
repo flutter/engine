@@ -142,18 +142,15 @@ SkRect PhysicalShapeLayer::ComputeShadowBounds(const SkPath& path,
                                                float elevation,
                                                SkScalar dpr,
                                                const SkMatrix& ctm) {
-  SkRect shadow_bounds;
-  if (SkShadowUtils::GetLocalBounds(ctm,
-                                    path,
-                                    SkPoint3::Make(0, 0, dpr * elevation),
-                                    SkPoint3::Make(kLightXOffset, kLightYOffset,
-                                                   dpr * kLightHeight),
-                                    dpr * kLightRadius,
-                                    SkShadowFlags::kDirectionalLight_ShadowFlag,
-                                    shadow_bounds)) {
-    return shadow_bounds;
-  }
-  return path.getBounds();
+  SkRect shadowBounds(path.getBounds());
+  SkShadowUtils::GetLocalBounds(ctm, path,
+                                SkPoint3::Make(0, 0, dpr * elevation),
+                                SkPoint3::Make(kLightXOffset, kLightYOffset,
+                                               dpr * kLightHeight),
+                                dpr * kLightRadius,
+                                SkShadowFlags::kDirectionalLight_ShadowFlag,
+                                &shadowBounds);
+  return shadowBounds;
 }
 
 void PhysicalShapeLayer::DrawShadow(SkCanvas* canvas,
