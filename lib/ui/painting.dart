@@ -3762,7 +3762,8 @@ class ImageShader extends Shader {
 ///   `uniform float a;`
 ///   `uniform vec2 b;`
 ///   `uniform vec3 c;`
-///
+///   TODO(clocksmith): add mat uniform example
+/// 
 ///   Dart code to update uniforms.
 ///
 ///   `shader.update(floatUniforms: Float32List.fromList([1, 2, 3, 4, 5, 6]));`
@@ -3784,13 +3785,13 @@ class FragmentShader extends Shader {
     required ByteBuffer spirv,
     Float32List? floatUniforms,
     // TODO(https://github.com/flutter/flutter/issues/85240): Add `List<Shader> children` as a ? parameter.
-    bool debugPrintSksl = false,
+    bool debugPrint = false,
   }) : super._() {
     _constructor();
     final spv.TranspileResult result =
         spv.transpile(spirv, spv.TargetLanguage.sksl);
     _uniformFloatCount = result.uniformFloatCount;
-    _init(result.src, debugPrintSksl);
+    _init(result.src, debugPrint);
     // TODO(https://github.com/flutter/flutter/issues/85240): Pass children here.
     update(floatUniforms: floatUniforms ?? Float32List(_uniformFloatCount));
   }
@@ -3798,7 +3799,7 @@ class FragmentShader extends Shader {
   late final int _uniformFloatCount;
 
   void _constructor() native 'FragmentShader_constructor';
-  void _init(String sksl, bool debugPrintSksl) native 'FragmentShader_init';
+  void _init(String sksl, bool debugPrint) native 'FragmentShader_init';
 
   /// Updates the uniform values that are supplied to the [FragmentShader]
   /// and refreshes the shader.

@@ -58,7 +58,13 @@ void main() {
 // Keeping the outer loop of the test synchronous allows for easy printing
 // of the file name within the test case.
 void _expectShadersRenderGreen(String leafFolderName) {
-  for (final File spvFile in _spvFiles(leafFolderName)) {
+  final List<File> files = _spvFiles(leafFolderName);
+
+  test('$leafFolderName has shaders', () {
+    expect(files.length > 0);
+  });
+
+  for (final File spvFile in files) {
     test('${path.basenameWithoutExtension(spvFile.path)} renders correctly', () {
       _expectShaderRendersGreen(spvFile.readAsBytesSync());
     });
@@ -67,14 +73,13 @@ void _expectShadersRenderGreen(String leafFolderName) {
 
 // Expects that a spirv shader only outputs the color green.
 Future<void> _expectShaderRendersGreen(Uint8List spirvBytes) async {
-  // TODO(clocksmith): remmove debug print?
-  final FragmentShader shader = FragmentShader(spirv: spirvBytes.buffer, debugPrintSksl: true);
+  final FragmentShader shader = FragmentShader(spirv: spirvBytes.buffer);
   final ByteData renderedBytes = await _imageByteDataFromShader(
     shader: shader,
     imageDimension: _shaderImageDimension,
   );
   for (final int color in renderedBytes.buffer.asUint32List()) {
-    expect(toHexString(color), toHexString(_greenColor));
+    expect(toHexString(color), toHexString(_greenColor.value));
   }
 }
 
@@ -122,8 +127,7 @@ const List<String> _basePathChunks = <String>[
 // Arbitrary, but needs to be greater than 1 for frag coord tests.
 const int _shaderImageDimension = 4;
 
-// TODO(clocksmith): Why is this ARGB when Image.toByteData() returns RGBA?
-const int _greenColor = 0xFF00FF00;
+const ui.Color _greenColor = Color(0xFF00FF00);
 
 // Precision for checking uniform values.
 const double epsilon = 0.5 / 255.0;
