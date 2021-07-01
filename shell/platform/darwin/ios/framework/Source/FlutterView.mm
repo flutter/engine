@@ -143,4 +143,20 @@ static BOOL _forceSoftwareRendering;
   return NO;
 }
 
+- (void)touchesBegan:(NSSet*)touches withEvent:(UIEvent*)event {
+  [self.touchDelegate flutterView:self touchesBegan:touches withEvent:event];
+}
+
+- (void)touchesMoved:(NSSet*)touches withEvent:(UIEvent*)event {
+  [self.touchDelegate flutterView:self touchesMoved:touches withEvent:event];
+}
+
+- (void)touchesEnded:(NSSet*)touches withEvent:(UIEvent*)event {
+  [self.touchDelegate flutterView:self touchesEnded:touches withEvent:event];
+}
+
+- (void)touchesCancelled:(NSSet*)touches withEvent:(UIEvent*)event {
+  [self.touchDelegate flutterView:self touchesCancelled:touches withEvent:event];
+}
+
 @end
