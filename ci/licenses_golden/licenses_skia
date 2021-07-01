@@ -1,4 +1,4 @@
-Signature: 1e8fb553a50b60cc32567f81bfdab322
+Signature: e7c012fd852d4826456db9c71e482fe5
 
 UNUSED LICENSES:
 
@@ -4701,6 +4701,7 @@ FILE: ../../../third_party/skia/docs/examples/Path_dump_2.cpp
 FILE: ../../../third_party/skia/docs/examples/Path_empty_constructor.cpp
 FILE: ../../../third_party/skia/docs/examples/Path_equal_operator.cpp
 FILE: ../../../third_party/skia/docs/examples/Path_getBounds.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_getConvexityOrUnknown.cpp
 FILE: ../../../third_party/skia/docs/examples/Path_getFillType.cpp
 FILE: ../../../third_party/skia/docs/examples/Path_getGenerationID.cpp
 FILE: ../../../third_party/skia/docs/examples/Path_getLastPt.cpp
@@ -5193,7 +5194,6 @@ FILE: ../../../third_party/skia/src/effects/imagefilters/SkRuntimeImageFilter.h
 FILE: ../../../third_party/skia/src/gpu/GrDstProxyView.h
 FILE: ../../../third_party/skia/src/gpu/GrEagerVertexAllocator.cpp
 FILE: ../../../third_party/skia/src/gpu/GrInnerFanTriangulator.h
-FILE: ../../../third_party/skia/src/gpu/GrMeshDrawTarget.cpp
 FILE: ../../../third_party/skia/src/gpu/GrMeshDrawTarget.h
 FILE: ../../../third_party/skia/src/gpu/GrPersistentCacheUtils.cpp
 FILE: ../../../third_party/skia/src/gpu/GrSubRunAllocator.cpp
