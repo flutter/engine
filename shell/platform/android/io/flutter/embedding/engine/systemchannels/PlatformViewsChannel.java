@@ -73,8 +73,8 @@ public class PlatformViewsChannel {
             case "clearFocus":
               clearFocus(call, result);
               break;
-            case "syncronizeToNativeViewHierarchy":
-              syncronizeToNativeViewHierarchy(call, result);
+            case "synchronizeToNativeViewHierarchy":
+              synchronizeToNativeViewHierarchy(call, result);
               break;
             default:
               result.notImplemented();
@@ -203,11 +203,11 @@ public class PlatformViewsChannel {
           }
         }
 
-        private void syncronizeToNativeViewHierarchy(
+        private void synchronizeToNativeViewHierarchy(
             @NonNull MethodCall call, @NonNull MethodChannel.Result result) {
           boolean yes = call.arguments();
           try {
-            handler.syncronizeToNativeViewHierarchy(yes);
+            handler.synchronizeToNativeViewHierarchy(yes);
             result.success(null);
           } catch (IllegalStateException exception) {
             result.error("error", detailedExceptionString(exception), null);
@@ -304,7 +304,7 @@ public class PlatformViewsChannel {
      * <p>This is done to syncronize the rendering of the PlatformView and the FlutterView.
      * Defaults to true.
      */
-    void syncronizeToNativeViewHierarchy(boolean yes);
+    void synchronizeToNativeViewHierarchy(boolean yes);
   }
 
   /** Request sent from Flutter to create a new platform view. */
