@@ -404,4 +404,11 @@ void PlatformViewAndroid::FireFirstFrameCallback() {
   jni_facade_->FlutterViewOnFirstFrame();
 }
 
+std::unique_ptr<Surface> PlatformViewAndroid::CreateRasterSnapshotSurface() {
+  if (!android_surface_) {
+    return nullptr;
+  }
+  return android_surface_->CreatePbufferSurface();
+}
+
 }  // namespace flutter

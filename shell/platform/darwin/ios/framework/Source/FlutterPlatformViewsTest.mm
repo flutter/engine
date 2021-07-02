@@ -88,7 +88,8 @@ const float kFloatCompareEpsilon = 0.001;
 namespace flutter {
 namespace {
 class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::Delegate {
-  void OnPlatformViewCreated(std::unique_ptr<Surface> surface) override {}
+  void OnPlatformViewCreated(std::unique_ptr<Surface> surface,
+                             std::unique_ptr<Surface> snapshot_surface) override {}
   void OnPlatformViewDestroyed() override {}
   void OnPlatformViewSetNextFrameCallback(const fml::closure& closure) override {}
   void OnPlatformViewSetViewportMetrics(const ViewportMetrics& metrics) override {}
