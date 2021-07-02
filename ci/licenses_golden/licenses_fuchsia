@@ -1,4 +1,4 @@
-Signature: 2ba531a352a2c1e5999fa8cc8a6fc8bb
+Signature: 1fabf2e9d3a9c21576188c41069cc2e8
 
 UNUSED LICENSES:
 
@@ -442,7 +442,6 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.accessibility.virtualkeyboard/meta
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.auth.oldtokens/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.auth/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.a2dp/meta.json
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.control/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.gatt/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.gatt2/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.hfp/meta.json
@@ -520,10 +519,10 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.routes/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.posix.socket/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.posix/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.power.profile/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.process/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.recovery.ui/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.recovery/meta.json
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.scenic.allocation/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.scenic.scheduling/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings.policy/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings/meta.json
@@ -531,11 +530,13 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.sys.test/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.sys/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.sysinfo/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.sysmem/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.thermal/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.tracing.provider/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.activity.control/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.activity/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.app/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.brightness/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.composition/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.gfx/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.input/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.input3/meta.json
@@ -1172,7 +1173,6 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.accessibility.virtualkeyboard/meta
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.auth.oldtokens/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.auth/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.a2dp/meta.json
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.control/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.gatt/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.gatt2/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.hfp/meta.json
@@ -1250,10 +1250,10 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.routes/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.posix.socket/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.posix/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.power.profile/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.process/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.recovery.ui/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.recovery/meta.json
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.scenic.allocation/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.scenic.scheduling/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings.policy/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings/meta.json
@@ -1261,11 +1261,13 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.sys.test/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.sys/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.sysinfo/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.sysmem/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.thermal/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.tracing.provider/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.activity.control/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.activity/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.app/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.brightness/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.composition/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.gfx/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.input/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.input3/meta.json
@@ -1799,7 +1801,6 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.accessibility.virtualkeyboard/meta
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.auth.oldtokens/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.auth/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.a2dp/meta.json
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.control/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.gatt/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.gatt2/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.hfp/meta.json
@@ -1877,10 +1878,10 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.routes/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.posix.socket/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.posix/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.power.profile/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.process/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.recovery.ui/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.recovery/meta.json
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.scenic.allocation/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.scenic.scheduling/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings.policy/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings/meta.json
@@ -1888,11 +1889,13 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.sys.test/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.sys/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.sysinfo/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.sysmem/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.thermal/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.tracing.provider/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.activity.control/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.activity/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.app/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.brightness/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.composition/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.gfx/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.input/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.input3/meta.json
@@ -2272,9 +2275,6 @@ FILE: ../../../fuchsia/sdk/linux/dart/zircon/lib/src/socket_reader.dart
 FILE: ../../../fuchsia/sdk/linux/dart/zircon/lib/src/vmo.dart
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.auth/attestation_signer.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.auth/common.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.control/bonding.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.control/pairing_delegate.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.control/remote_device.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.gatt/types.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.le/central.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.camera/camera.fidl
@@ -2710,7 +2710,6 @@ FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/syscalls/system
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/tls.h
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.auth/auth_provider.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.auth/token_manager.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.control/control.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.gatt/client.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.gatt/server.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.le/peripheral.fidl
@@ -3087,7 +3086,6 @@ FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/trace_processing.dart
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.accessibility.semantics/node.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.accessibility.semantics/semantics_manager.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.auth.oldtokens/credentials_producer.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.control/pairing_options.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.gatt/constants.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.le/advertising_data.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.le/peer.fidl
@@ -3204,6 +3202,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings/settings.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings/setup.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.sys/types.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.sysmem/secure_mem.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.thermal/thermal.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.activity.control/control.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.activity/activity.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.activity/provider.fidl
@@ -3424,6 +3423,7 @@ FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_inspect/lib/src/reader/reader.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_scenic/lib/src/scenic_context.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_scenic_flutter/lib/src/focus_state.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_scenic_flutter/lib/src/fuchsia_views_service.dart
+FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/trace_processing/metrics/camera_metrics.dart
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.accessibility.virtualkeyboard/virtual_keyboard.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.gatt2/client.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.gatt2/constants.fidl
@@ -3435,7 +3435,9 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.goldfish/goldfish_sync.fi
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.network/port.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.input.virtualkeyboard/virtual_keyboard.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io2/inotify.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.scenic.allocation/allocator.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.power.profile/profile.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.composition/allocator.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.composition/flatland.fidl
 FILE: ../../../fuchsia/sdk/linux/pkg/fdio/include/lib/fdio/inotify.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fit-promise/include/lib/fit/barrier.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fit-promise/include/lib/fit/bridge.h
