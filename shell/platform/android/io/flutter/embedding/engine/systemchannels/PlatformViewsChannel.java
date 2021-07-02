@@ -301,8 +301,8 @@ public class PlatformViewsChannel {
      * Whether the render surface of {@code FlutterView} should be converted to a {@code
      * FlutterImageView} when a {@code PlatformView} is added.
      *
-     * <p>This is done to syncronize the rendering of the PlatformView and the FlutterView.
-     * Defaults to true.
+     * <p>This is done to syncronize the rendering of the PlatformView and the FlutterView. Defaults
+     * to true.
      */
     void synchronizeToNativeViewHierarchy(boolean yes);
   }
