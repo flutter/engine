@@ -38,6 +38,16 @@ typedef NS_ENUM(NSInteger, FlutterFloatingCursorDragState) {
 - (void)showAutocorrectionPromptRectForStart:(NSUInteger)start
                                          end:(NSUInteger)end
                                   withClient:(int)client;
+- (void)showToolbar:(int)client;
+- (void)focusElement:(UIScribbleElementIdentifier)elementIdentifier
+             atPoint:(CGPoint)referencePoint
+              result:(id)callback;
+- (void)requestElementsInRect:(CGRect)rect result:(FlutterResult)callback;
+- (void)scribbleInteractionBegan;
+- (void)scribbleInteractionFinished;
+- (void)insertTextPlaceholderWithSize:(CGSize)size withClient:(int)client;
+- (void)removeTextPlaceholder:(int)client;
+
 @end
 
 #endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTERTEXTINPUTDELEGATE_H_
