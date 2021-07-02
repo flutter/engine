@@ -74,8 +74,9 @@ class MockPlatformViewDelegate : public flutter::PlatformView::Delegate {
   }
 
   // |flutter::PlatformView::Delegate|
-  void OnPlatformViewCreated(std::unique_ptr<flutter::Surface> surface,
-                             std::unique_ptr<Surface> snapshot_surface) {
+  void OnPlatformViewCreated(
+      std::unique_ptr<flutter::Surface> surface,
+      std::unique_ptr<flutter::Surface> snapshot_surface) {
     ASSERT_EQ(surface_.get(), nullptr);
 
     surface_ = std::move(surface);
