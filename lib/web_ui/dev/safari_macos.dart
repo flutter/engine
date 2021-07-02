@@ -34,7 +34,7 @@ class SafariMacOsEnvironment implements BrowserEnvironment {
   String get packageTestConfigurationYamlFile => 'dart_test_safari.yaml';
 }
 
-/// A class for running an instance of Safari for macOS (i.e. desktop Safari).
+/// Runs an instance of Safari for macOS (i.e. desktop Safari).
 ///
 /// Most of the communication with the browser is expected to happen via HTTP,
 /// so this exposes a bare-bones API. The browser starts as soon as the class is

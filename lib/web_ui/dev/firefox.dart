@@ -38,7 +38,7 @@ class FirefoxEnvironment implements BrowserEnvironment {
   ScreenshotManager? getScreenshotManager() => null;
 }
 
-/// A class for running an instance of Firefox.
+/// Runs desktop Firefox.
 ///
 /// Most of the communication with the browser is expected to happen via HTTP,
 /// so this exposes a bare-bones API. The browser starts as soon as the class is

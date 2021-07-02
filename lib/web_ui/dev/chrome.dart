@@ -42,7 +42,7 @@ class ChromeEnvironment implements BrowserEnvironment {
   String get packageTestConfigurationYamlFile => 'dart_test_chrome.yaml';
 }
 
-/// A class for running an instance of Chrome.
+/// Runs desktop Chrome.
 ///
 /// Most of the communication with the browser is expected to happen via HTTP,
 /// so this exposes a bare-bones API. The browser starts as soon as the class is

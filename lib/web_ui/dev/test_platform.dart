@@ -485,7 +485,7 @@ class OneOffHandler {
   }
 }
 
-/// A class that manages the connection to a single running browser.
+/// Manages the connection to a single running browser.
 ///
 /// This is in charge of telling the browser which test suites to load and
 /// converting its responses into [Suite] objects.

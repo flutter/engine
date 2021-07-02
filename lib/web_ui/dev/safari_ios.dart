@@ -42,7 +42,7 @@ class SafariIosEnvironment implements BrowserEnvironment {
   String get packageTestConfigurationYamlFile => 'dart_test_safari.yaml';
 }
 
-/// A class for running an instance of Safari for iOS (i.e. mobile Safari).
+/// Runs an instance of Safari for iOS (i.e. mobile Safari).
 ///
 /// Most of the communication with the browser is expected to happen via HTTP,
 /// so this exposes a bare-bones API. The browser starts as soon as the class is
@@ -65,7 +65,7 @@ class SafariIos extends Browser {
         'simctl',
         'openurl', // Opens the url on Safari installed on the simulator.
         'booted', // The simulator is already booted.
-        '${url.toString()}'
+        '${url.toString()}',
       ]);
 
       return process;

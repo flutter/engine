@@ -33,7 +33,7 @@ class EdgeEnvironment implements BrowserEnvironment {
   String get packageTestConfigurationYamlFile => 'dart_test_edge.yaml';
 }
 
-/// A class for running an instance of Edge.
+/// Runs desktop Edge.
 ///
 /// Most of the communication with the browser is expected to happen via HTTP,
 /// so this exposes a bare-bones API. The browser starts as soon as the class is

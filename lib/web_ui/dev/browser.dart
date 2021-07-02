@@ -198,6 +198,6 @@ abstract class ScreenshotManager {
   ///
   /// Example file names:
   /// - Chrome, no-suffix: backdrop_filter_clip_moved.actual.png
-  /// - iOS Safari: backdrop_filter_clip_moved.actual.iOS_Safari.png
+  /// - iOS Safari: backdrop_filter_clip_moved.iOS_Safari.actual.png
   String get filenameSuffix;
 }
