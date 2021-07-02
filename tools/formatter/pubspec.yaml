@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-name: ci_scripts
+name: formatter
 publish_to: none
 environment:
   sdk: '>=2.12.0-0 <3.0.0'
@@ -25,22 +25,22 @@ dependencies:
 
 dependency_overrides:
   args:
-    path: ../../third_party/dart/third_party/pkg/args
+    path: ../../../third_party/dart/third_party/pkg/args
   async:
-    path: ../../third_party/dart/third_party/pkg/async
+    path: ../../../third_party/dart/third_party/pkg/async
   collection:
-    path: ../../third_party/dart/third_party/pkg/collection
+    path: ../../../third_party/dart/third_party/pkg/collection
   file:
-    path: ../../third_party/pkg/file/packages/file
+    path: ../../../third_party/pkg/file/packages/file
   isolate:
-    path: ../../third_party/pkg/isolate
+    path: ../../../third_party/pkg/isolate
   meta:
-    path: ../../third_party/dart/pkg/meta
+    path: ../../../third_party/dart/pkg/meta
   path:
-    path: ../../third_party/dart/third_party/pkg/path
+    path: ../../../third_party/dart/third_party/pkg/path
   platform:
-    path: ../../third_party/pkg/platform
+    path: ../../../third_party/pkg/platform
   process:
-    path: ../../third_party/pkg/process
+    path: ../../../third_party/pkg/process
   process_runner:
-    path: ../../third_party/pkg/process_runner
+    path: ../../../third_party/pkg/process_runner
