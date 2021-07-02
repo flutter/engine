@@ -1,4 +1,4 @@
-Signature: 1e8fb553a50b60cc32567f81bfdab322
+Signature: f4391319a876321838f02d419f22868e
 
 UNUSED LICENSES:
 
@@ -1641,6 +1641,7 @@ ORIGIN: ../../../third_party/skia/bench/AndroidCodecBench.cpp + ../../../third_p
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/bench/AndroidCodecBench.cpp
 FILE: ../../../third_party/skia/bench/AndroidCodecBench.h
+FILE: ../../../third_party/skia/bench/DecodeBench.cpp
 FILE: ../../../third_party/skia/bench/EncodeBench.cpp
 FILE: ../../../third_party/skia/bench/GrMipmapBench.cpp
 FILE: ../../../third_party/skia/bench/HardStopGradientBench_ScaleNumColors.cpp
@@ -3101,10 +3102,13 @@ FILE: ../../../third_party/skia/src/gpu/GrFPArgs.h
 FILE: ../../../third_party/skia/src/gpu/GrProxyProvider.cpp
 FILE: ../../../third_party/skia/src/gpu/GrProxyProvider.h
 FILE: ../../../third_party/skia/src/gpu/GrResourceProviderPriv.h
+FILE: ../../../third_party/skia/src/gpu/effects/GrConfigConversionEffect.fp
 FILE: ../../../third_party/skia/src/gpu/effects/GrSkSLFP.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/GrSkSLFP.h
 FILE: ../../../third_party/skia/src/gpu/effects/GrYUVtoRGBEffect.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/GrYUVtoRGBEffect.h
+FILE: ../../../third_party/skia/src/gpu/effects/generated/GrConfigConversionEffect.cpp
+FILE: ../../../third_party/skia/src/gpu/effects/generated/GrConfigConversionEffect.h
 FILE: ../../../third_party/skia/src/gpu/geometry/GrQuad.cpp
 FILE: ../../../third_party/skia/src/gpu/gradients/GrGradientBitmapCache.cpp
 FILE: ../../../third_party/skia/src/gpu/gradients/GrGradientBitmapCache.h
@@ -3848,9 +3852,6 @@ FILE: ../../../third_party/skia/src/gpu/GrHashMapWithCache.h
 FILE: ../../../third_party/skia/src/gpu/GrRecordingContextPriv.cpp
 FILE: ../../../third_party/skia/src/gpu/GrThreadSafeCache.cpp
 FILE: ../../../third_party/skia/src/gpu/GrThreadSafeCache.h
-FILE: ../../../third_party/skia/src/gpu/effects/GrDitherEffect.fp
-FILE: ../../../third_party/skia/src/gpu/effects/generated/GrDitherEffect.cpp
-FILE: ../../../third_party/skia/src/gpu/effects/generated/GrDitherEffect.h
 FILE: ../../../third_party/skia/src/gpu/geometry/GrWangsFormula.h
 FILE: ../../../third_party/skia/src/gpu/mock/GrMockOpTarget.h
 FILE: ../../../third_party/skia/src/gpu/ops/GrSimpleMeshDrawOpHelperWithStencil.cpp
@@ -5699,15 +5700,15 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: skia
-ORIGIN: ../../../third_party/skia/experimental/ngatoy/Cmds.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/experimental/sorttoy/Cmds.cpp + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/skia/experimental/ngatoy/Cmds.cpp
-FILE: ../../../third_party/skia/experimental/ngatoy/Cmds.h
-FILE: ../../../third_party/skia/experimental/ngatoy/Fake.cpp
-FILE: ../../../third_party/skia/experimental/ngatoy/Fake.h
-FILE: ../../../third_party/skia/experimental/ngatoy/SortKey.h
-FILE: ../../../third_party/skia/experimental/ngatoy/ngatoy.cpp
-FILE: ../../../third_party/skia/experimental/ngatoy/ngatypes.h
+FILE: ../../../third_party/skia/experimental/sorttoy/Cmds.cpp
+FILE: ../../../third_party/skia/experimental/sorttoy/Cmds.h
+FILE: ../../../third_party/skia/experimental/sorttoy/Fake.cpp
+FILE: ../../../third_party/skia/experimental/sorttoy/Fake.h
+FILE: ../../../third_party/skia/experimental/sorttoy/SortKey.h
+FILE: ../../../third_party/skia/experimental/sorttoy/sorttoy.cpp
+FILE: ../../../third_party/skia/experimental/sorttoy/sorttypes.h
 FILE: ../../../third_party/skia/gm/destcolor.cpp
 FILE: ../../../third_party/skia/gm/dsl_processor_test.cpp
 FILE: ../../../third_party/skia/include/core/SkStringView.h
