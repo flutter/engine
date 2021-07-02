@@ -105,7 +105,9 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   // Tracks whether the flutterView has been converted to use a FlutterImageView.
   private boolean flutterViewConvertedToImageView = false;
 
-  // Whether the render surface should be converted when a PlatformView is added to FlutterView.
+  // When adding platform views using Hybrid Composition, the engine converts the render surface
+  // to a FlutterImageView to help improve animation synchronization on Android. This flag allows
+  // disabling this conversion through the PlatformView platform channel.
   private boolean convertRenderSurfaceDisabled = false;
 
   // Overlay layer IDs that were displayed since the start of the current frame.
