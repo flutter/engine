@@ -187,8 +187,8 @@ class TestCommand extends Command<bool> with ArgUtils {
       ..argParsers.forEach((t) => t.parseOptions(argResults!));
     GeneralTestsArgumentParser.instance.parseOptions(argResults!);
 
-    if (isSafariOnMacOS) {
-      /// Collect information on the bot.
+    /// Collect information on the bot.
+    if (isSafariOnMacOS && isLuci) {
       final MacOSInfo macOsInfo = new MacOSInfo();
       await macOsInfo.printInformation();
     }
@@ -654,7 +654,6 @@ class TestCommand extends Command<bool> with ArgUtils {
       '--no-minify',
       '--disable-inlining',
       '--enable-asserts',
-      '--enable-experiment=non-nullable',
       '--no-sound-null-safety',
 
       // We do not want to auto-select a renderer in tests. As of today, tests
