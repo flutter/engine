@@ -30,7 +30,7 @@ class MockDelegate : public Rasterizer::Delegate {
   MOCK_CONST_METHOD0(GetTaskRunners, const TaskRunners&());
   MOCK_CONST_METHOD0(GetIsGpuDisabledSyncSwitch,
                      std::shared_ptr<const fml::SyncSwitch>());
-  MOCK_METHOD0(CreateRasterSnapshotSurface, std::unique_ptr<Surface>());
+  MOCK_METHOD0(GetSnapshotSurface, std::shared_ptr<Surface>());
 };
 
 class MockSurface : public Surface {
