@@ -807,6 +807,7 @@ static BOOL isPositionCloserToPoint(CGPoint point,
 
 // Forward touches to the viewController to allow tapping inside the UITextField as normal
 - (void)touchesBegan:(NSSet*)touches withEvent:(UIEvent*)event {
+  _scribbleFocused = NO;
   [self.viewController touchesBegan:touches withEvent:event];
 }
 
@@ -867,24 +868,24 @@ static BOOL isPositionCloserToPoint(CGPoint point,
 
 - (void)scribbleInteractionWillBeginWriting:(UIScribbleInteraction*)interaction
     API_AVAILABLE(ios(14.0)) {
-  _scribbleInProgress = true;
+  _scribbleInProgress = YES;
   [_textInputDelegate scribbleInteractionBegan];
 }
 
 - (void)scribbleInteractionDidFinishWriting:(UIScribbleInteraction*)interaction
     API_AVAILABLE(ios(14.0)) {
-  _scribbleInProgress = false;
+  _scribbleInProgress = NO;
   [_textInputDelegate scribbleInteractionFinished];
 }
 
 - (BOOL)scribbleInteraction:(UIScribbleInteraction*)interaction
       shouldBeginAtLocation:(CGPoint)location API_AVAILABLE(ios(14.0)) {
-  return true;
+  return YES;
 }
 
 - (BOOL)scribbleInteractionShouldDelayFocus:(UIScribbleInteraction*)interaction
     API_AVAILABLE(ios(14.0)) {
-  return false;
+  return NO;
 }
 
 #pragma mark - UIResponder Overrides
@@ -929,7 +930,6 @@ static BOOL isPositionCloserToPoint(CGPoint point,
   [self setSelectedTextRangeLocal:selectedTextRange];
   [self updateEditingState];
   if (_scribbleInProgress || _scribbleFocused) {
-    _scribbleFocused = false;
     NSAssert([selectedTextRange isKindOfClass:[FlutterTextRange class]],
              @"Expected a FlutterTextRange for range (got %@).", [selectedTextRange class]);
     FlutterTextRange* flutterTextRange = (FlutterTextRange*)selectedTextRange;
@@ -1283,7 +1283,6 @@ static BOOL isPositionCloserToPoint(CGPoint point,
   }
 
   if (!_scribbleInProgress && !_scribbleFocusing && !_scribbleFocused) {
-    NSLog(@"showAutocorrectionPromptRectForStart");
     [_textInputDelegate showAutocorrectionPromptRectForStart:start
                                                          end:end
                                                   withClient:_textInputClient];
@@ -1371,7 +1370,7 @@ static BOOL isPositionCloserToPoint(CGPoint point,
                            containsEnd:(i == fml::RangeForCharactersInRange(
                                                  self.text, NSMakeRange(0, self.text.length))
                                                  .length)
-                            isVertical:FALSE];
+                            isVertical:NO];
       [rects addObject:selectionRect];
     }
   }
@@ -1549,6 +1548,7 @@ static BOOL isPositionCloserToPoint(CGPoint point,
     }
   }
 
+  _scribbleFocused = NO;
   _selectionRects = copiedRects;
   _selectionAffinity = _kTextAffinityDownstream;
   [self replaceRange:_selectedTextRange withText:text];
@@ -1567,6 +1567,7 @@ static BOOL isPositionCloserToPoint(CGPoint point,
 
 - (void)deleteBackward {
   _selectionAffinity = _kTextAffinityDownstream;
+  _scribbleFocused = NO;
 
   // When deleting Thai vowel, _selectedTextRange has location
   // but does not have length, so we have to manually set it.
@@ -2085,12 +2086,12 @@ static BOOL isPositionCloserToPoint(CGPoint point,
                      referencePoint:(CGPoint)focusReferencePoint
                          completion:(void (^)(UIResponder<UITextInput>* focusedInput))completion
     API_AVAILABLE(ios(14.0)) {
-  _activeView.scribbleFocusing = true;
+  _activeView.scribbleFocusing = YES;
   [_textInputDelegate focusElement:elementIdentifier
                            atPoint:focusReferencePoint
                             result:^(id _Nullable result) {
-                              _activeView.scribbleFocusing = false;
-                              _activeView.scribbleFocused = true;
+                              _activeView.scribbleFocusing = NO;
+                              _activeView.scribbleFocused = YES;
                               completion(_activeView);
                             }];
 }
