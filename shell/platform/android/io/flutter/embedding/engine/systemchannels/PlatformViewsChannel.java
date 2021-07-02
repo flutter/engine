@@ -73,8 +73,8 @@ public class PlatformViewsChannel {
             case "clearFocus":
               clearFocus(call, result);
               break;
-            case "disableConvertingRenderSurface":
-              disableConvertingRenderSurface(call, result);
+            case "syncronizeToNativeViewHierarchy":
+              syncronizeToNativeViewHierarchy(call, result);
               break;
             default:
               result.notImplemented();
@@ -203,11 +203,11 @@ public class PlatformViewsChannel {
           }
         }
 
-        private void disableConvertingRenderSurface(
+        private void syncronizeToNativeViewHierarchy(
             @NonNull MethodCall call, @NonNull MethodChannel.Result result) {
-          boolean disabled = call.arguments();
+          boolean yes = call.arguments();
           try {
-            handler.disableConvertingRenderSurface(disabled);
+            handler.syncronizeToNativeViewHierarchy(yes);
             result.success(null);
           } catch (IllegalStateException exception) {
             result.error("error", detailedExceptionString(exception), null);
@@ -301,9 +301,10 @@ public class PlatformViewsChannel {
      * Whether the render surface of {@code FlutterView} should be converted to a {@code
      * FlutterImageView} when a {@code PlatformView} is added.
      *
-     * <p>Defaults to false.
+     * <p>This is done to syncronize the rendering of the PlatformView and the FlutterView.
+     * Defaults to true.
      */
-    void disableConvertingRenderSurface(boolean disabled);
+    void syncronizeToNativeViewHierarchy(boolean yes);
   }
 
   /** Request sent from Flutter to create a new platform view. */

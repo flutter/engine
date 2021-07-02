@@ -108,7 +108,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   // When adding platform views using Hybrid Composition, the engine converts the render surface
   // to a FlutterImageView to help improve animation synchronization on Android. This flag allows
   // disabling this conversion through the PlatformView platform channel.
-  private boolean convertRenderSurfaceDisabled = false;
+  private boolean syncronizeToNativeViewHierarchy = true;
 
   // Overlay layer IDs that were displayed since the start of the current frame.
   private HashSet<Integer> currentFrameUsedOverlayLayerIds;
@@ -363,8 +363,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         }
 
         @Override
-        public void disableConvertingRenderSurface(boolean disabled) {
-          convertRenderSurfaceDisabled = disabled;
+        public void syncronizeToNativeViewHierarchy(boolean yes) {
+          syncronizeToNativeViewHierarchy = yes;
         }
       };
 
@@ -714,7 +714,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   }
 
   private void initializeRootImageViewIfNeeded() {
-    if (!convertRenderSurfaceDisabled && !flutterViewConvertedToImageView) {
+    if (syncronizeToNativeViewHierarchy && !flutterViewConvertedToImageView) {
       ((FlutterView) flutterView).convertToImageView();
       flutterViewConvertedToImageView = true;
     }
@@ -909,9 +909,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       //
       // Otherwise, hide the platform view, but don't remove it from the view hierarchy yet as
       // they are removed when the framework diposes the platform view widget.
-      if (!currentFrameUsedPlatformViewIds.contains(viewId)) {
-        parentView.setVisibility(View.GONE);
-      } else if (isFrameRenderedUsingImageReaders || convertRenderSurfaceDisabled) {
+      if (currentFrameUsedPlatformViewIds.contains(viewId) && (isFrameRenderedUsingImageReaders || !syncronizeToNativeViewHierarchy)) {
         parentView.setVisibility(View.VISIBLE);
       } else {
         parentView.setVisibility(View.GONE);
