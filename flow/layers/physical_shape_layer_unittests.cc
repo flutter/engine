@@ -209,17 +209,15 @@ TEST_F(PhysicalShapeLayerTest, ShadowNotDependsCtm) {
   path.addRect(0, 0, 8, 8).close();
 
   for (SkScalar elevation : elevations) {
-    SkRect baseline_bounds =
-        PhysicalShapeLayer::ComputeShadowBounds(path, elevation, 1.0f,
-                                                SkMatrix());
+    SkRect baseline_bounds = PhysicalShapeLayer::ComputeShadowBounds(
+        path, elevation, 1.0f, SkMatrix());
     for (SkScalar scale : scales) {
       for (SkScalar translateX : translates) {
         for (SkScalar translateY : translates) {
           SkMatrix ctm;
           ctm.setScaleTranslate(scale, scale, translateX, translateY);
-          SkRect bounds =
-              PhysicalShapeLayer::ComputeShadowBounds(path, elevation, scale,
-                                                      ctm);
+          SkRect bounds = PhysicalShapeLayer::ComputeShadowBounds(
+              path, elevation, scale, ctm);
           EXPECT_FLOAT_EQ(bounds.fLeft, baseline_bounds.fLeft);
           EXPECT_FLOAT_EQ(bounds.fTop, baseline_bounds.fTop);
           EXPECT_FLOAT_EQ(bounds.fRight, baseline_bounds.fRight);
