@@ -342,7 +342,7 @@ void DisplayListBoundsCalculator::drawShadow(const SkPath& path,
 
   SkRect shadow_bounds(path.getBounds());
   SkShadowUtils::GetLocalBounds(
-      matrix(), path, SkPoint3::Make(0, 0, elevation),
+      matrix(), path, SkPoint3::Make(0, 0, elevation * matrix().getMinScale()),
       SkPoint3::Make(0, -1, 0), kLightRadius / kLightHeight,
       SkShadowFlags::kDirectionalLight_ShadowFlag, &shadow_bounds);
   accumulateRect(shadow_bounds);
