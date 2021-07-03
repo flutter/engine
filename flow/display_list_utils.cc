@@ -343,7 +343,9 @@ void DisplayListBoundsCalculator::drawShadow(const SkPath& path,
   SkScalar dpr = matrix().getMinScale();
   // getMinScale returns -1 if matrix has perspective or scale factor overflows
   // set dpr as 1 if getMinScale fails
-  if (dpr == -1) dpr = 1;
+  if (dpr == -1) {
+    dpr = 1;
+  }
 
   SkRect shadow_bounds(path.getBounds());
   SkShadowUtils::GetLocalBounds(
