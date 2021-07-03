@@ -60,17 +60,20 @@ void SkPaintDispatchHelper::setBlendMode(SkBlendMode mode) {
 void SkPaintDispatchHelper::setFilterQuality(SkFilterQuality quality) {
   paint_.setFilterQuality(quality);
 }
-void SkPaintDispatchHelper::setShader(sk_sp<SkShader> shader) {
+void SkPaintDispatchHelper::setShader(const sk_sp<SkShader> shader) {
   paint_.setShader(shader);
 }
-void SkPaintDispatchHelper::setImageFilter(sk_sp<SkImageFilter> filter) {
+void SkPaintDispatchHelper::setImageFilter(const sk_sp<SkImageFilter> filter) {
   paint_.setImageFilter(filter);
 }
-void SkPaintDispatchHelper::setColorFilter(sk_sp<SkColorFilter> filter) {
+void SkPaintDispatchHelper::setColorFilter(const sk_sp<SkColorFilter> filter) {
   color_filter_ = filter;
   paint_.setColorFilter(makeColorFilter());
 }
-void SkPaintDispatchHelper::setMaskFilter(sk_sp<SkMaskFilter> filter) {
+void SkPaintDispatchHelper::setPathEffect(const sk_sp<SkPathEffect> effect) {
+  paint_.setPathEffect(effect);
+}
+void SkPaintDispatchHelper::setMaskFilter(const sk_sp<SkMaskFilter> filter) {
   paint_.setMaskFilter(filter);
 }
 void SkPaintDispatchHelper::setMaskBlurFilter(SkBlurStyle style,

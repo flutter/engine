@@ -205,6 +205,7 @@ DEFINE_SET_CLEAR_SKREF_OP(Shader, shader)
 DEFINE_SET_CLEAR_SKREF_OP(ImageFilter, filter)
 DEFINE_SET_CLEAR_SKREF_OP(ColorFilter, filter)
 DEFINE_SET_CLEAR_SKREF_OP(MaskFilter, filter)
+DEFINE_SET_CLEAR_SKREF_OP(PathEffect, effect)
 #undef DEFINE_SET_CLEAR_SKREF_OP
 
 // 4 byte header + 4 byte payload packs into minimum 8 bytes
@@ -1074,22 +1075,27 @@ void DisplayListBuilder::setBlendMode(SkBlendMode mode) {
 void DisplayListBuilder::setFilterQuality(SkFilterQuality quality) {
   Push<SetFilterQualityOp>(0, quality);
 }
-void DisplayListBuilder::setShader(sk_sp<SkShader> shader) {
+void DisplayListBuilder::setShader(const sk_sp<SkShader> shader) {
   shader  //
       ? Push<SetShaderOp>(0, std::move(shader))
       : Push<ClearShaderOp>(0);
 }
-void DisplayListBuilder::setImageFilter(sk_sp<SkImageFilter> filter) {
+void DisplayListBuilder::setImageFilter(const sk_sp<SkImageFilter> filter) {
   filter  //
       ? Push<SetImageFilterOp>(0, std::move(filter))
       : Push<ClearImageFilterOp>(0);
 }
-void DisplayListBuilder::setColorFilter(sk_sp<SkColorFilter> filter) {
+void DisplayListBuilder::setColorFilter(const sk_sp<SkColorFilter> filter) {
   filter  //
       ? Push<SetColorFilterOp>(0, std::move(filter))
       : Push<ClearColorFilterOp>(0);
 }
-void DisplayListBuilder::setMaskFilter(sk_sp<SkMaskFilter> filter) {
+void DisplayListBuilder::setPathEffect(const sk_sp<SkPathEffect> effect) {
+  effect  //
+      ? Push<SetPathEffectOp>(0, std::move(effect))
+      : Push<ClearPathEffectOp>(0);
+}
+void DisplayListBuilder::setMaskFilter(const sk_sp<SkMaskFilter> filter) {
   Push<SetMaskFilterOp>(0, std::move(filter));
 }
 void DisplayListBuilder::setMaskBlurFilter(SkBlurStyle style, SkScalar sigma) {
