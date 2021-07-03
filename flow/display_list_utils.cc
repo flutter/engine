@@ -340,9 +340,14 @@ void DisplayListBoundsCalculator::drawShadow(const SkPath& path,
   const SkScalar kLightHeight = 600;
   const SkScalar kLightRadius = 800;
 
+  SkScalar dpr = matrix().getMinScale();
+  // getMinScale returns -1 if matrix has perspective or scale factor overflows
+  // set dpr as 1 if getMinScale fails
+  if (dpr == -1) dpr = 1;
+
   SkRect shadow_bounds(path.getBounds());
   SkShadowUtils::GetLocalBounds(
-      matrix(), path, SkPoint3::Make(0, 0, elevation * matrix().getMinScale()),
+      matrix(), path, SkPoint3::Make(0, 0, elevation * dpr),
       SkPoint3::Make(0, -1, 0), kLightRadius / kLightHeight,
       SkShadowFlags::kDirectionalLight_ShadowFlag, &shadow_bounds);
   accumulateRect(shadow_bounds);
