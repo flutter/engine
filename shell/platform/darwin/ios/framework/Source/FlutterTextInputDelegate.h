@@ -7,6 +7,9 @@
 
 #import <Foundation/Foundation.h>
 
+@class FlutterTextInputPlugin;
+@class FlutterTextInputView;
+
 typedef NS_ENUM(NSInteger, FlutterTextInputAction) {
   FlutterTextInputActionUnspecified,
   FlutterTextInputActionDone,
@@ -28,26 +31,40 @@ typedef NS_ENUM(NSInteger, FlutterFloatingCursorDragState) {
 };
 
 @protocol FlutterTextInputDelegate <NSObject>
-
-- (void)updateEditingClient:(int)client withState:(NSDictionary*)state;
-- (void)updateEditingClient:(int)client withState:(NSDictionary*)state withTag:(NSString*)tag;
-- (void)performAction:(FlutterTextInputAction)action withClient:(int)client;
-- (void)updateFloatingCursor:(FlutterFloatingCursorDragState)state
+- (void)flutterTextInputView:(FlutterTextInputView*)textInputView
+         updateEditingClient:(int)client
+                   withState:(NSDictionary*)state;
+- (void)flutterTextInputView:(FlutterTextInputView*)textInputView
+         updateEditingClient:(int)client
+                   withState:(NSDictionary*)state
+                     withTag:(NSString*)tag;
+- (void)flutterTextInputView:(FlutterTextInputView*)textInputView
+               performAction:(FlutterTextInputAction)action
+                  withClient:(int)client;
+- (void)flutterTextInputView:(FlutterTextInputView*)textInputView
+        updateFloatingCursor:(FlutterFloatingCursorDragState)state
                   withClient:(int)client
                 withPosition:(NSDictionary*)point;
-- (void)showAutocorrectionPromptRectForStart:(NSUInteger)start
-                                         end:(NSUInteger)end
-                                  withClient:(int)client;
-- (void)showToolbar:(int)client;
-- (void)focusElement:(UIScribbleElementIdentifier)elementIdentifier
-             atPoint:(CGPoint)referencePoint
-              result:(id)callback;
-- (void)requestElementsInRect:(CGRect)rect result:(FlutterResult)callback;
-- (void)scribbleInteractionBegan;
-- (void)scribbleInteractionFinished;
-- (void)insertTextPlaceholderWithSize:(CGSize)size withClient:(int)client;
-- (void)removeTextPlaceholder:(int)client;
+- (void)flutterTextInputView:(FlutterTextInputView*)textInputView
+    showAutocorrectionPromptRectForStart:(NSUInteger)start
+                                     end:(NSUInteger)end
+                              withClient:(int)client;
+- (void)flutterTextInputView:(FlutterTextInputView*)textInputView showToolbar:(int)client;
+- (void)flutterTextInputViewScribbleInteractionBegan:(FlutterTextInputView*)textInputView;
+- (void)flutterTextInputViewScribbleInteractionFinished:(FlutterTextInputView*)textInputView;
+- (void)flutterTextInputView:(FlutterTextInputView*)textInputView
+    insertTextPlaceholderWithSize:(CGSize)size
+                       withClient:(int)client;
+- (void)flutterTextInputView:(FlutterTextInputView*)textInputView removeTextPlaceholder:(int)client;
 
+// TODO(gaaclarke) Refactor these into their own delegate.
+- (void)flutterTextInputPlugin:(FlutterTextInputPlugin*)textInputPlugin
+                  focusElement:(UIScribbleElementIdentifier)elementIdentifier
+                       atPoint:(CGPoint)referencePoint
+                        result:(FlutterResult)callback;
+- (void)flutterTextInputPlugin:(FlutterTextInputPlugin*)textInputPlugin
+         requestElementsInRect:(CGRect)rect
+                        result:(FlutterResult)callback;
 @end
 
 #endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTERTEXTINPUTDELEGATE_H_

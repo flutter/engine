@@ -78,6 +78,7 @@
                         containsEnd:(BOOL)containsEnd
                          isVertical:(BOOL)isVertical;
 
+- (instancetype)init NS_UNAVAILABLE;
 @end
 
 API_AVAILABLE(ios(13.0)) @interface FlutterTextPlaceholder : UITextPlaceholder

@@ -869,13 +869,13 @@ static BOOL isPositionCloserToPoint(CGPoint point,
 - (void)scribbleInteractionWillBeginWriting:(UIScribbleInteraction*)interaction
     API_AVAILABLE(ios(14.0)) {
   _scribbleInProgress = YES;
-  [_textInputDelegate scribbleInteractionBegan];
+  [_textInputDelegate flutterTextInputViewScribbleInteractionBegan:self];
 }
 
 - (void)scribbleInteractionDidFinishWriting:(UIScribbleInteraction*)interaction
     API_AVAILABLE(ios(14.0)) {
   _scribbleInProgress = NO;
-  [_textInputDelegate scribbleInteractionFinished];
+  [_textInputDelegate flutterTextInputViewScribbleInteractionFinished:self];
 }
 
 - (BOOL)scribbleInteraction:(UIScribbleInteraction*)interaction
@@ -934,7 +934,7 @@ static BOOL isPositionCloserToPoint(CGPoint point,
              @"Expected a FlutterTextRange for range (got %@).", [selectedTextRange class]);
     FlutterTextRange* flutterTextRange = (FlutterTextRange*)selectedTextRange;
     if (flutterTextRange.range.length > 0) {
-      [_textInputDelegate showToolbar:_textInputClient];
+      [_textInputDelegate flutterTextInputView:self showToolbar:_textInputClient];
     }
   }
 }
@@ -992,8 +992,9 @@ static BOOL isPositionCloserToPoint(CGPoint point,
 
 - (BOOL)shouldChangeTextInRange:(UITextRange*)range replacementText:(NSString*)text {
   if (self.returnKeyType == UIReturnKeyDefault && [text isEqualToString:@"\n"]) {
-    [self.textInputDelegate performAction:FlutterTextInputActionNewline
-                               withClient:_textInputClient];
+    [self.textInputDelegate flutterTextInputView:self
+                                   performAction:FlutterTextInputActionNewline
+                                      withClient:_textInputClient];
     return YES;
   }
 
@@ -1034,7 +1035,9 @@ static BOOL isPositionCloserToPoint(CGPoint point,
         break;
     }
 
-    [self.textInputDelegate performAction:action withClient:_textInputClient];
+    [self.textInputDelegate flutterTextInputView:self
+                                   performAction:action
+                                      withClient:_textInputClient];
     return NO;
   }
 
@@ -1283,9 +1286,10 @@ static BOOL isPositionCloserToPoint(CGPoint point,
   }
 
   if (!_scribbleInProgress && !_scribbleFocusing && !_scribbleFocused) {
-    [_textInputDelegate showAutocorrectionPromptRectForStart:start
-                                                         end:end
-                                                  withClient:_textInputClient];
+    [_textInputDelegate flutterTextInputView:self
+        showAutocorrectionPromptRectForStart:start
+                                         end:end
+                                  withClient:_textInputClient];
   }
 
   NSUInteger first = start;
@@ -1454,7 +1458,8 @@ static BOOL isPositionCloserToPoint(CGPoint point,
   // (1, 2, -3, -4) would become (-2, -2, 3, 4).
   NSAssert(!_isFloatingCursorActive, @"Another floating cursor is currently active.");
   _isFloatingCursorActive = true;
-  [self.textInputDelegate updateFloatingCursor:FlutterFloatingCursorDragStateStart
+  [self.textInputDelegate flutterTextInputView:self
+                          updateFloatingCursor:FlutterFloatingCursorDragStateStart
                                     withClient:_textInputClient
                                   withPosition:@{@"X" : @(point.x), @"Y" : @(point.y)}];
 }
@@ -1462,7 +1467,8 @@ static BOOL isPositionCloserToPoint(CGPoint point,
 - (void)updateFloatingCursorAtPoint:(CGPoint)point {
   NSAssert(_isFloatingCursorActive,
            @"updateFloatingCursorAtPoint is called without an active floating cursor.");
-  [self.textInputDelegate updateFloatingCursor:FlutterFloatingCursorDragStateUpdate
+  [self.textInputDelegate flutterTextInputView:self
+                          updateFloatingCursor:FlutterFloatingCursorDragStateUpdate
                                     withClient:_textInputClient
                                   withPosition:@{@"X" : @(point.x), @"Y" : @(point.y)}];
 }
@@ -1471,7 +1477,8 @@ static BOOL isPositionCloserToPoint(CGPoint point,
   NSAssert(_isFloatingCursorActive,
            @"endFloatingCursor is called without an active floating cursor.");
   _isFloatingCursorActive = false;
-  [self.textInputDelegate updateFloatingCursor:FlutterFloatingCursorDragStateEnd
+  [self.textInputDelegate flutterTextInputView:self
+                          updateFloatingCursor:FlutterFloatingCursorDragStateEnd
                                     withClient:_textInputClient
                                   withPosition:@{@"X" : @(0), @"Y" : @(0)}];
 }
@@ -1501,11 +1508,14 @@ static BOOL isPositionCloserToPoint(CGPoint point,
   };
 
   if (_textInputClient == 0 && _autofillId != nil) {
-    [self.textInputDelegate updateEditingClient:_textInputClient
-                                      withState:state
-                                        withTag:_autofillId];
+    [self.textInputDelegate flutterTextInputView:self
+                             updateEditingClient:_textInputClient
+                                       withState:state
+                                         withTag:_autofillId];
   } else {
-    [self.textInputDelegate updateEditingClient:_textInputClient withState:state];
+    [self.textInputDelegate flutterTextInputView:self
+                             updateEditingClient:_textInputClient
+                                       withState:state];
   }
 }
 
@@ -1555,14 +1565,16 @@ static BOOL isPositionCloserToPoint(CGPoint point,
 }
 
 - (UITextPlaceholder*)insertTextPlaceholderWithSize:(CGSize)size API_AVAILABLE(ios(13.0)) {
-  [_textInputDelegate insertTextPlaceholderWithSize:size withClient:_textInputClient];
+  [_textInputDelegate flutterTextInputView:self
+             insertTextPlaceholderWithSize:size
+                                withClient:_textInputClient];
   _hasPlaceholder = YES;
   return [[[FlutterTextPlaceholder alloc] init] autorelease];
 }
 
 - (void)removeTextPlaceholder:(UITextPlaceholder*)textPlaceholder API_AVAILABLE(ios(13.0)) {
   _hasPlaceholder = NO;
-  [_textInputDelegate removeTextPlaceholder:_textInputClient];
+  [_textInputDelegate flutterTextInputView:self removeTextPlaceholder:_textInputClient];
 }
 
 - (void)deleteBackward {
@@ -2087,13 +2099,14 @@ static BOOL isPositionCloserToPoint(CGPoint point,
                          completion:(void (^)(UIResponder<UITextInput>* focusedInput))completion
     API_AVAILABLE(ios(14.0)) {
   _activeView.scribbleFocusing = YES;
-  [_textInputDelegate focusElement:elementIdentifier
-                           atPoint:focusReferencePoint
-                            result:^(id _Nullable result) {
-                              _activeView.scribbleFocusing = NO;
-                              _activeView.scribbleFocused = YES;
-                              completion(_activeView);
-                            }];
+  [_textInputDelegate flutterTextInputPlugin:self
+                                focusElement:elementIdentifier
+                                     atPoint:focusReferencePoint
+                                      result:^(id _Nullable result) {
+                                        _activeView.scribbleFocusing = NO;
+                                        _activeView.scribbleFocused = YES;
+                                        completion(_activeView);
+                                      }];
 }
 
 - (BOOL)indirectScribbleInteraction:(UIIndirectScribbleInteraction*)interaction
@@ -2128,24 +2141,26 @@ static BOOL isPositionCloserToPoint(CGPoint point,
                              (void (^)(NSArray<UIScribbleElementIdentifier>* elements))completion
     API_AVAILABLE(ios(14.0)) {
   [_textInputDelegate
-      requestElementsInRect:rect
-                     result:^(id _Nullable result) {
-                       NSMutableArray<UIScribbleElementIdentifier>* elements =
-                           [[[NSMutableArray alloc] init] autorelease];
-                       if ([result isKindOfClass:[NSArray class]]) {
-                         for (NSArray* elementArray in result) {
-                           [elements addObject:elementArray[0]];
-                           [_scribbleElements
-                               setObject:[NSValue valueWithCGRect:CGRectMake(
-                                                                      [elementArray[1] floatValue],
-                                                                      [elementArray[2] floatValue],
-                                                                      [elementArray[3] floatValue],
-                                                                      [elementArray[4] floatValue])]
-                                  forKey:elementArray[0]];
-                         }
-                       }
-                       completion(elements);
-                     }];
+      flutterTextInputPlugin:self
+       requestElementsInRect:rect
+                      result:^(id _Nullable result) {
+                        NSMutableArray<UIScribbleElementIdentifier>* elements =
+                            [[[NSMutableArray alloc] init] autorelease];
+                        if ([result isKindOfClass:[NSArray class]]) {
+                          for (NSArray* elementArray in result) {
+                            [elements addObject:elementArray[0]];
+                            [_scribbleElements
+                                setObject:[NSValue
+                                              valueWithCGRect:CGRectMake(
+                                                                  [elementArray[1] floatValue],
+                                                                  [elementArray[2] floatValue],
+                                                                  [elementArray[3] floatValue],
+                                                                  [elementArray[4] floatValue])]
+                                   forKey:elementArray[0]];
+                          }
+                        }
+                        completion(elements);
+                      }];
 }
 
 #pragma mark - Methods related to Scribble support
