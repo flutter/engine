@@ -158,10 +158,10 @@ void PhysicalShapeLayer::DrawShadow(SkCanvas* canvas,
   SkColor ambientColor, spotColor;
   SkShadowUtils::ComputeTonalColors(inAmbient, inSpot, &ambientColor,
                                     &spotColor);
-  SkShadowUtils::DrawShadow(
-      canvas, path, SkPoint3::Make(0, 0, dpr * elevation),
-      SkPoint3::Make(0, -1, 0), kLightRadius / kLightHeight, ambientColor,
-      spotColor, flags);
+  SkShadowUtils::DrawShadow(canvas, path, SkPoint3::Make(0, 0, dpr * elevation),
+                            SkPoint3::Make(0, -1, 0),
+                            kLightRadius / kLightHeight, ambientColor,
+                            spotColor, flags);
 }
 
 }  // namespace flutter
