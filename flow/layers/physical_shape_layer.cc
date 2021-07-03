@@ -9,15 +9,8 @@
 
 namespace flutter {
 
-// These numbers have been chosen empirically to give a result closest to the
-// material spec.
-// Sync with /lib/web_ui/lib/src/engine/canvaskit/util.dart
-const SkScalar kAmbientAlpha = 0.039f;
-const SkScalar kSpotAlpha = 0.25f;
-const SkScalar kLightRadius = 1.1f;
 const SkScalar kLightHeight = 600;
-const SkScalar kLightXOffset = 0;
-const SkScalar kLightYOffset = -450;
+const SkScalar kLightRadius = 800;
 
 PhysicalShapeLayer::PhysicalShapeLayer(SkColor color,
                                        SkColor shadow_color,
@@ -142,9 +135,8 @@ SkRect PhysicalShapeLayer::ComputeShadowBounds(const SkPath& path,
   SkRect shadow_bounds(path.getBounds());
   SkShadowUtils::GetLocalBounds(
       ctm, path, SkPoint3::Make(0, 0, dpr * elevation),
-      SkPoint3::Make(kLightXOffset, kLightYOffset, dpr * kLightHeight),
-      dpr * kLightRadius, SkShadowFlags::kDirectionalLight_ShadowFlag,
-      &shadow_bounds);
+      SkPoint3::Make(0, -1, 0), kLightRadius / kLightHeight,
+      SkShadowFlags::kDirectionalLight_ShadowFlag, &shadow_bounds);
   return shadow_bounds;
 }
 
@@ -154,6 +146,9 @@ void PhysicalShapeLayer::DrawShadow(SkCanvas* canvas,
                                     float elevation,
                                     bool transparentOccluder,
                                     SkScalar dpr) {
+  const SkScalar kAmbientAlpha = 0.039f;
+  const SkScalar kSpotAlpha = 0.25f;
+
   uint32_t flags = transparentOccluder
                        ? SkShadowFlags::kTransparentOccluder_ShadowFlag
                        : SkShadowFlags::kNone_ShadowFlag;
@@ -165,8 +160,8 @@ void PhysicalShapeLayer::DrawShadow(SkCanvas* canvas,
                                     &spotColor);
   SkShadowUtils::DrawShadow(
       canvas, path, SkPoint3::Make(0, 0, dpr * elevation),
-      SkPoint3::Make(kLightXOffset, kLightYOffset, dpr * kLightHeight),
-      dpr * kLightRadius, ambientColor, spotColor, flags);
+      SkPoint3::Make(0, -1, 0), kLightRadius / kLightHeight, ambientColor,
+      spotColor, flags);
 }
 
 }  // namespace flutter
