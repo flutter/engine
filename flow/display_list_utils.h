@@ -50,11 +50,11 @@ class IngoreAttributeDispatchHelper : public virtual Dispatcher {
   void setColor(SkColor color) override {}
   void setBlendMode(SkBlendMode mode) override {}
   void setFilterQuality(SkFilterQuality quality) override {}
-  void setShader(const sk_sp<SkShader> shader) override {}
-  void setImageFilter(const sk_sp<SkImageFilter> filter) override {}
-  void setColorFilter(const sk_sp<SkColorFilter> filter) override {}
-  void setPathEffect(const sk_sp<SkPathEffect> effect) override {}
-  void setMaskFilter(const sk_sp<SkMaskFilter> filter) override {}
+  void setShader(sk_sp<SkShader> shader) override {}
+  void setImageFilter(sk_sp<SkImageFilter> filter) override {}
+  void setColorFilter(sk_sp<SkColorFilter> filter) override {}
+  void setPathEffect(sk_sp<SkPathEffect> effect) override {}
+  void setMaskFilter(sk_sp<SkMaskFilter> filter) override {}
   void setMaskBlurFilter(SkBlurStyle style, SkScalar sigma) override {}
 };
 
@@ -107,11 +107,11 @@ class SkPaintDispatchHelper : public virtual Dispatcher {
   void setColor(SkColor color) override;
   void setBlendMode(SkBlendMode mode) override;
   void setFilterQuality(SkFilterQuality quality) override;
-  void setShader(const sk_sp<SkShader> shader) override;
-  void setImageFilter(const sk_sp<SkImageFilter> filter) override;
-  void setColorFilter(const sk_sp<SkColorFilter> filter) override;
-  void setPathEffect(const sk_sp<SkPathEffect> effect) override;
-  void setMaskFilter(const sk_sp<SkMaskFilter> filter) override;
+  void setShader(sk_sp<SkShader> shader) override;
+  void setImageFilter(sk_sp<SkImageFilter> filter) override;
+  void setColorFilter(sk_sp<SkColorFilter> filter) override;
+  void setPathEffect(sk_sp<SkPathEffect> effect) override;
+  void setMaskFilter(sk_sp<SkMaskFilter> filter) override;
   void setMaskBlurFilter(SkBlurStyle style, SkScalar sigma) override;
 
   const SkPaint& paint() { return paint_; }
