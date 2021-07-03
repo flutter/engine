@@ -28,9 +28,12 @@ static BOOL performBoolSelector(id target, SEL selector) {
   return returnValue;
 }
 
+// TODO(85810): Remove reflection in this test when Xcode version is upgraded to 13.
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wundeclared-selector"
+#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
 - (void)testPointerButtons {
   BOOL supportsPointerInteraction = NO;
-  // TODO(85810): Remove reflection in this test when Xcode version is upgraded to 13.
   SEL supportsPointerInteractionSelector = @selector(supportsPointerInteraction);
   if ([XCUIDevice.sharedDevice respondsToSelector:supportsPointerInteractionSelector]) {
     supportsPointerInteraction =
@@ -69,7 +72,6 @@ static BOOL performBoolSelector(id target, SEL selector) {
   SEL rightClick = @selector(rightClick);
   XCTAssertTrue([flutterView respondsToSelector:rightClick],
                 @"If supportsPointerInteraction is true, this should be true too.");
-  // TODO(85810): Remove reflection in this test when Xcode version is upgraded to 13.
   [flutterView performSelector:rightClick];
   // Since each touch is its own device, we can't distinguish the other add event(s)
   // Right click should have buttons = 2
@@ -78,5 +80,6 @@ static BOOL performBoolSelector(id target, SEL selector) {
   XCTAssertTrue([app.textFields[@"PointerChange.up:2"] waitForExistenceWithTimeout:1],
                 @"PointerChange.up event did not occur for a right-click");
 }
+#pragma clang diagnostic pop
 
 @end
