@@ -1,4 +1,4 @@
-Signature: 25a898c0d945bf21f3832f3c95ae20dd
+Signature: fa8f5a721ed047f77b685db5478aaa95
 
 UNUSED LICENSES:
 
@@ -3102,10 +3102,13 @@ FILE: ../../../third_party/skia/src/gpu/GrFPArgs.h
 FILE: ../../../third_party/skia/src/gpu/GrProxyProvider.cpp
 FILE: ../../../third_party/skia/src/gpu/GrProxyProvider.h
 FILE: ../../../third_party/skia/src/gpu/GrResourceProviderPriv.h
+FILE: ../../../third_party/skia/src/gpu/effects/GrConfigConversionEffect.fp
 FILE: ../../../third_party/skia/src/gpu/effects/GrSkSLFP.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/GrSkSLFP.h
 FILE: ../../../third_party/skia/src/gpu/effects/GrYUVtoRGBEffect.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/GrYUVtoRGBEffect.h
+FILE: ../../../third_party/skia/src/gpu/effects/generated/GrConfigConversionEffect.cpp
+FILE: ../../../third_party/skia/src/gpu/effects/generated/GrConfigConversionEffect.h
 FILE: ../../../third_party/skia/src/gpu/geometry/GrQuad.cpp
 FILE: ../../../third_party/skia/src/gpu/gradients/GrGradientBitmapCache.cpp
 FILE: ../../../third_party/skia/src/gpu/gradients/GrGradientBitmapCache.h
@@ -3849,9 +3852,6 @@ FILE: ../../../third_party/skia/src/gpu/GrHashMapWithCache.h
 FILE: ../../../third_party/skia/src/gpu/GrRecordingContextPriv.cpp
 FILE: ../../../third_party/skia/src/gpu/GrThreadSafeCache.cpp
 FILE: ../../../third_party/skia/src/gpu/GrThreadSafeCache.h
-FILE: ../../../third_party/skia/src/gpu/effects/GrDitherEffect.fp
-FILE: ../../../third_party/skia/src/gpu/effects/generated/GrDitherEffect.cpp
-FILE: ../../../third_party/skia/src/gpu/effects/generated/GrDitherEffect.h
 FILE: ../../../third_party/skia/src/gpu/geometry/GrWangsFormula.h
 FILE: ../../../third_party/skia/src/gpu/mock/GrMockOpTarget.h
 FILE: ../../../third_party/skia/src/gpu/ops/GrSimpleMeshDrawOpHelperWithStencil.cpp
