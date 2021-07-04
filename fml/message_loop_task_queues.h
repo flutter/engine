@@ -7,6 +7,7 @@
 
 #include <map>
 #include <mutex>
+#include <set>
 #include <vector>
 
 #include "flutter/fml/closure.h"
@@ -38,7 +39,7 @@ class TaskQueueEntry {
   // this queue has not been merged or subsumed. OR exactly one
   // of these will be _kUnmerged, if owner_of is _kUnmerged, it means
   // that the queue has been subsumed or else it owns another queue.
-  TaskQueueId owner_of;
+  std::set<TaskQueueId> owner_of;
   TaskQueueId subsumed_by;
 
   TaskQueueId created_for;
@@ -119,14 +120,14 @@ class MessageLoopTaskQueues
   bool Merge(TaskQueueId owner, TaskQueueId subsumed);
 
   // Will return false if the owner has not been merged before.
-  bool Unmerge(TaskQueueId owner);
+  bool Unmerge(TaskQueueId owner, TaskQueueId subsumed);
 
   /// Returns \p true if \p owner owns the \p subsumed task queue.
   bool Owns(TaskQueueId owner, TaskQueueId subsumed) const;
 
   // Returns the subsumed task queue if any or |TaskQueueId::kUnmerged|
   // otherwise.
-  TaskQueueId GetSubsumedTaskQueueId(TaskQueueId owner) const;
+  std::set<TaskQueueId> GetSubsumedTaskQueueId(TaskQueueId owner) const;
 
   void PauseSecondarySource(TaskQueueId queue_id);
 

@@ -36,7 +36,11 @@ class TaskSource {
  public:
   struct TopTask {
     TaskQueueId task_queue_id;
-    const DelayedTask& task;
+    const DelayedTask &task;
+    /// The operator less function is for std::vector to get min_element
+    bool operator<(const TopTask &other) const {
+      return other.task > task;
+    }
   };
 
   /// Construts a TaskSource with the given `task_queue_id`.

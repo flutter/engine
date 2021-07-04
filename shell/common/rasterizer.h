@@ -422,15 +422,6 @@ class Rasterizer final : public SnapshotDelegate {
   ///
   void DisableThreadMergerIfNeeded();
 
-  /// @brief   Mechanism to stop thread merging when using shared engine
-  ///          components.
-  /// @details This is a temporary workaround until thread merging can be
-  ///          supported correctly.  This should be called on the raster
-  ///          thread.
-  /// @see     https://github.com/flutter/flutter/issues/73620
-  ///
-  void BlockThreadMerging() { shared_engine_block_thread_merging_ = true; }
-
  private:
   Delegate& delegate_;
   std::unique_ptr<Surface> surface_;
@@ -447,7 +438,6 @@ class Rasterizer final : public SnapshotDelegate {
   fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger_;
   fml::TaskRunnerAffineWeakPtrFactory<Rasterizer> weak_factory_;
   std::shared_ptr<ExternalViewEmbedder> external_view_embedder_;
-  bool shared_engine_block_thread_merging_ = false;
 
   // |SnapshotDelegate|
   sk_sp<SkImage> MakeRasterSnapshot(

@@ -152,7 +152,7 @@ TEST(TaskRunnerCheckerTests,
   });
   latch3.Wait();
 
-  fml::MessageLoopTaskQueues::GetInstance()->Unmerge(qid1);
+  fml::MessageLoopTaskQueues::GetInstance()->Unmerge(qid1, qid2);
 
   fml::AutoResetWaitableEvent latch4;
   loop2->GetTaskRunner()->PostTask([&]() {

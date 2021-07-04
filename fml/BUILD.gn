@@ -58,6 +58,8 @@ source_set("fml") {
     "raster_thread_merger.cc",
     "raster_thread_merger.h",
     "size.h",
+    "shared_thread_merger_impl.cc",
+    "shared_thread_merger_impl.h",
     "synchronization/atomic_object.h",
     "synchronization/count_down_latch.cc",
     "synchronization/count_down_latch.h",

@@ -11,6 +11,7 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/ref_counted.h"
 #include "flutter/fml/message_loop_task_queues.h"
+#include "flutter/fml/shared_thread_merger_impl.h"
 
 namespace fml {
 
@@ -43,7 +44,7 @@ class RasterThreadMerger
   // If the task queues are the same, we consider them statically merged.
   // When task queues are statically merged, we never unmerge them and
   // this method becomes no-op.
-  void UnMergeNow();
+  void UnMergeNowIfLastOne();
 
   // If the task queues are the same, we consider them statically merged.
   // When task queues are statically merged this method becomes no-op.
@@ -56,6 +57,9 @@ class RasterThreadMerger
   // When task queues are statically merged this method becomes no-op.
   RasterThreadStatus DecrementLease();
 
+  void RecordMergeCaller();
+
+  // TODO DOC
   bool IsMerged();
 
   // Waits until the threads are merged.
@@ -78,11 +82,11 @@ class RasterThreadMerger
   void Enable();
 
   // Disables the thread merger. Once disabled, any call to
-  // |MergeWithLease| or |UnMergeNow| results in a noop.
+  // |MergeWithLease| or |UnMergeNowIfLastOne| results in a noop.
   void Disable();
 
   // Whether the thread merger is enabled. By default, the thread merger is
-  // enabled. If false, calls to |MergeWithLease| or |UnMergeNow| results in a
+  // enabled. If false, calls to |MergeWithLease| or |UnMergeNowIfLastOne| results in a
   // noop.
   bool IsEnabled();
 
@@ -94,13 +98,11 @@ class RasterThreadMerger
   void SetMergeUnmergeCallback(const fml::closure& callback);
 
  private:
-  static const int kLeaseNotSet;
   fml::TaskQueueId platform_queue_id_;
   fml::TaskQueueId gpu_queue_id_;
-  fml::RefPtr<fml::MessageLoopTaskQueues> task_queues_;
-  std::atomic_int lease_term_;
+  fml::RefPtr<SharedThreadMergerImpl> shared_merger_impl_;
   std::condition_variable merged_condition_;
-  std::mutex lease_term_mutex_;
+  std::mutex mutex_;
   fml::closure merge_unmerge_callback_;
   bool enabled_;
 

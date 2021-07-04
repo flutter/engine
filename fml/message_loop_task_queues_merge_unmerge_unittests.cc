@@ -99,13 +99,27 @@ TEST(MessageLoopTaskQueueMergeUnmerge, MergeUnmergeTasksPreserved) {
   ASSERT_EQ(2u, task_queue->GetNumPendingTasks(queue_id_1));
   ASSERT_EQ(0u, task_queue->GetNumPendingTasks(queue_id_2));
 
-  task_queue->Unmerge(queue_id_1);
+  task_queue->Unmerge(queue_id_1, queue_id_2);
 
   ASSERT_EQ(1u, task_queue->GetNumPendingTasks(queue_id_1));
   ASSERT_EQ(1u, task_queue->GetNumPendingTasks(queue_id_2));
 }
 
-TEST(MessageLoopTaskQueueMergeUnmerge, MergeFailIfAlreadyMergedOrSubsumed) {
+/// Multiple standalone engines scene
+TEST(MessageLoopTaskQueueMergeUnmerge, OneCanOwnMultipleQueues) {
+  auto task_queue = fml::MessageLoopTaskQueues::GetInstance();
+
+  auto queue_id_1 = task_queue->CreateTaskQueue();
+  auto queue_id_2 = task_queue->CreateTaskQueue();
+  auto queue_id_3 = task_queue->CreateTaskQueue();
+  auto queue_id_4 = task_queue->CreateTaskQueue();
+
+  ASSERT_TRUE(task_queue->Merge(queue_id_1, queue_id_2));
+  ASSERT_TRUE(task_queue->Merge(queue_id_1, queue_id_3));
+  ASSERT_TRUE(task_queue->Merge(queue_id_1, queue_id_4));
+}
+
+TEST(MessageLoopTaskQueueMergeUnmerge, MergeFailIfAlreadySubsumed) {
   auto task_queue = fml::MessageLoopTaskQueues::GetInstance();
 
   auto queue_id_1 = task_queue->CreateTaskQueue();
@@ -114,19 +128,34 @@ TEST(MessageLoopTaskQueueMergeUnmerge, MergeFailIfAlreadyMergedOrSubsumed) {
 
   task_queue->Merge(queue_id_1, queue_id_2);
 
-  ASSERT_FALSE(task_queue->Merge(queue_id_1, queue_id_3));
   ASSERT_FALSE(task_queue->Merge(queue_id_2, queue_id_3));
+  ASSERT_FALSE(task_queue->Merge(queue_id_2, queue_id_1));
 }
 
-TEST(MessageLoopTaskQueueMergeUnmerge, UnmergeFailsOnSubsumed) {
+TEST(MessageLoopTaskQueueMergeUnmerge, MergeFailIfAlreadyOwnsButTryToBeSubsumed) {
   auto task_queue = fml::MessageLoopTaskQueues::GetInstance();
 
   auto queue_id_1 = task_queue->CreateTaskQueue();
   auto queue_id_2 = task_queue->CreateTaskQueue();
+  auto queue_id_3 = task_queue->CreateTaskQueue();
 
   task_queue->Merge(queue_id_1, queue_id_2);
+  // A recursively linked merging will fail
+  ASSERT_FALSE(task_queue->Merge(queue_id_3, queue_id_1));
+}
 
-  ASSERT_FALSE(task_queue->Unmerge(queue_id_2));
+TEST(MessageLoopTaskQueueMergeUnmerge, UnmergeFailsOnSubsumedOrNeverMerged) {
+  auto task_queue = fml::MessageLoopTaskQueues::GetInstance();
+
+  auto queue_id_1 = task_queue->CreateTaskQueue();
+  auto queue_id_2 = task_queue->CreateTaskQueue();
+  auto queue_id_3 = task_queue->CreateTaskQueue();
+
+  task_queue->Merge(queue_id_1, queue_id_2);
+  ASSERT_FALSE(task_queue->Unmerge(queue_id_2, queue_id_3));
+  ASSERT_FALSE(task_queue->Unmerge(queue_id_1, queue_id_3));
+  ASSERT_FALSE(task_queue->Unmerge(queue_id_3, queue_id_1));
+  ASSERT_FALSE(task_queue->Unmerge(queue_id_2, queue_id_1));
 }
 
 TEST(MessageLoopTaskQueueMergeUnmerge, MergeInvokesBothWakeables) {
@@ -176,7 +205,7 @@ TEST(MessageLoopTaskQueueMergeUnmerge,
       queue_id_2, []() {}, fml::TimePoint::Now());
 
   task_queue->Merge(queue_id_1, queue_id_2);
-  task_queue->Unmerge(queue_id_1);
+  task_queue->Unmerge(queue_id_1, queue_id_2);
 
   CountRemainingTasks(task_queue, queue_id_1);
 
