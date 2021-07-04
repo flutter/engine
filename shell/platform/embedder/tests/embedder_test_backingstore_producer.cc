@@ -12,6 +12,7 @@
 #include "third_party/skia/include/core/SkSurface.h"
 
 #include <memory>
+#include <cstdlib>
 
 namespace flutter {
 namespace testing {
@@ -38,7 +39,7 @@ EmbedderTestBackingStoreProducer::EmbedderTestBackingStoreProducer(
                       "backing store producer should produce deprecated v1 "
                       "software backing "
                       "stores.";
-    assert(false);
+    std::abort();
   };
 }
 
