@@ -11,8 +11,8 @@
 #include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
-#include <memory>
 #include <cstdlib>
+#include <memory>
 
 namespace flutter {
 namespace testing {
