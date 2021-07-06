@@ -124,7 +124,7 @@ static const double kIdleDelay = 1.0;
 }
 
 - (FlutterRenderBackingStore*)renderBuffer {
-  [super ensureBackBuffer];
+  [self ensureBackBuffer];
   uint32_t fboID = [_frameBuffers[kFlutterSurfaceManagerBackBuffer] glFrameBufferId];
   return [[FlutterOpenGLRenderBackingStore alloc] initWithFrameBufferID:fboID];
 }
@@ -173,7 +173,7 @@ static const double kIdleDelay = 1.0;
 }
 
 - (FlutterRenderBackingStore*)renderBuffer {
-  [super ensureBackBuffer];
+  [self ensureBackBuffer];
   id<MTLTexture> texture = _textures[kFlutterSurfaceManagerBackBuffer];
   return [[FlutterMetalRenderBackingStore alloc] initWithTexture:texture];
 }
