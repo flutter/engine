@@ -372,10 +372,10 @@ WindowWin32::HandleMessage(UINT const message,
       // be sent with the character produced at WM_CHAR. Store the produced
       // keycode (it's not accessible from WM_CHAR) to be used in WM_CHAR.
       //
-      // Messages with Control or Win modifiers down are never considered as character
-      // messages. This allows key combinations such as "CTRL + Digit" to properly
-      // produce key down events even though `MapVirtualKey` returns a valid character.
-      // See https://github.com/flutter/flutter/issues/85587.
+      // Messages with Control or Win modifiers down are never considered as
+      // character messages. This allows key combinations such as "CTRL + Digit"
+      // to properly produce key down events even though `MapVirtualKey` returns
+      // a valid character. See https://github.com/flutter/flutter/issues/85587.
       unsigned int character = MapVirtualKey(wparam, MAPVK_VK_TO_CHAR);
       if (character > 0 && is_keydown_message && GetKeyState(VK_CONTROL) == 0 &&
           GetKeyState(VK_LWIN) == 0 && GetKeyState(VK_RWIN) == 0) {
