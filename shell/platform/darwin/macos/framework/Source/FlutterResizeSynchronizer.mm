@@ -83,7 +83,7 @@
   _condBlockRequestCommit.wait(lock, [&] { return _pendingCommit || _shuttingDown; });
 
   [_delegate resizeSynchronizerFlush:self];
-  [_delegate resizeSynchronizerCommit:self];
+  [_delegate resizeSynchronizerCommit:self blocking:YES];
   _pendingCommit = NO;
   _condBlockBeginResize.notify_all();
 
@@ -125,7 +125,7 @@
       std::unique_lock<std::mutex> lock(_mutex);
       if (cookie == _cookie) {
         if (_delegate) {
-          [_delegate resizeSynchronizerCommit:self];
+          [_delegate resizeSynchronizerCommit:self blocking:NO];
         }
         _pendingCommit = NO;
         _condBlockBeginResize.notify_all();

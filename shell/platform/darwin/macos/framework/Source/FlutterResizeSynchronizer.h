@@ -17,9 +17,11 @@
 - (void)resizeSynchronizerFlush:(nonnull FlutterResizeSynchronizer*)synchronizer;
 
 /**
- * Invoked on platform thread; Delegate should flip the surfaces.
+ * Invoked on platform thread; Delegate should flip the surfaces. If blocking is YES,
+ * the method must not return until the surfaces are flipped.
  */
-- (void)resizeSynchronizerCommit:(nonnull FlutterResizeSynchronizer*)synchronizer;
+- (void)resizeSynchronizerCommit:(nonnull FlutterResizeSynchronizer*)synchronizer
+                        blocking:(BOOL)blocking;
 
 @end
 

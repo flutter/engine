@@ -38,7 +38,8 @@
   glFlush();
 }
 
-- (void)resizeSynchronizerCommit:(nonnull FlutterResizeSynchronizer*)synchronizer {
+- (void)resizeSynchronizerCommit:(nonnull FlutterResizeSynchronizer*)synchronizer
+                        blocking:(BOOL)blocking {
   [CATransaction begin];
   [CATransaction setDisableActions:YES];
 
@@ -53,6 +54,7 @@
   id<MTLDevice> _device;
   id<MTLCommandQueue> _commandQueue;
   id<FlutterSurfaceManager> _surfaceManager;
+  NSLock* _swapBufferLock;
 }
 
 - (instancetype)initWithDevice:(id<MTLDevice>)device
@@ -65,6 +67,7 @@
     _surfaceManager = [[FlutterMetalSurfaceManager alloc] initWithDevice:device
                                                             commandQueue:commandQueue
                                                                    layer:layer];
+    _swapBufferLock = [[NSLock alloc] init];
   }
   return self;
 }
@@ -74,23 +77,37 @@
 }
 
 - (FlutterRenderBackingStore*)backingStore {
-  return [_surfaceManager renderBuffer];
+  // Make sure to wait if swap buffer handler is waiting to be scheduled.
+  // Otherwise we might get the wrong render-buffer.
+  [_swapBufferLock lock];
+  FlutterRenderBackingStore* res = [_surfaceManager renderBuffer];
+  [_swapBufferLock unlock];
+  return res;
 }
 
 - (void)resizeSynchronizerFlush:(nonnull FlutterResizeSynchronizer*)synchronizer {
   // no-op when using Metal rendering backend.
 }
 
-- (void)resizeSynchronizerCommit:(nonnull FlutterResizeSynchronizer*)synchronizer {
-  [CATransaction begin];
-  [CATransaction setDisableActions:YES];
-
+- (void)resizeSynchronizerCommit:(nonnull FlutterResizeSynchronizer*)synchronizer
+                        blocking:(BOOL)blocking {
   id<MTLCommandBuffer> commandBuffer = [_commandQueue commandBuffer];
+  [_swapBufferLock lock];
+  MTLCommandBufferHandler handler = ^(id<MTLCommandBuffer> buffer) {
+    [_swapBufferLock unlock];
+    [CATransaction begin];
+    [CATransaction setDisableActions:YES];
+    [_surfaceManager swapBuffers];
+    [CATransaction commit];
+  };
+  if (!blocking) {
+    [commandBuffer addScheduledHandler:handler];
+  }
   [commandBuffer commit];
-  [commandBuffer waitUntilScheduled];
-  [_surfaceManager swapBuffers];
-
-  [CATransaction commit];
+  if (blocking) {
+    [commandBuffer waitUntilScheduled];
+    handler(commandBuffer);
+  }
 }
 
 @end
