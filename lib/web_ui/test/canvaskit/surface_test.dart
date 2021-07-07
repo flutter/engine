@@ -94,7 +94,12 @@ void testMain() {
       expect(shrunkSurface2, isNot(same(hugeSurface)));
       expect(shrunkSurface2.width(), 5);
       expect(shrunkSurface2.height(), 15);
-    });
+      // Skipping on Firefox for now since Firefox headless doesn't support WebGL
+      // This causes issues in the test since we create a Canvas-backed surface,
+      // which cannot be a different size from the canvas.
+      // TODO(hterkelsen): See if we can give a custom size for software
+      //     surfaces.
+    }, skip: isFirefox);
 
     test(
       'Surface creates new context when WebGL context is restored',

@@ -170,7 +170,7 @@ class Surface {
       final ui.Size newSize = previousCanvasSize == null ? size : size * 1.4;
 
       // Only resources from the current context can be disposed.
-      if (_glContext != null) {
+      if (_glContext != null && _glContext != 0) {
         canvasKit.setCurrentContext(_glContext!);
       }
       _surface?.dispose();
@@ -182,7 +182,6 @@ class Surface {
 
       _createNewCanvas(newSize);
       _currentCanvasPhysicalSize = newSize;
-      assert(_grContext != null);
     }
 
     _currentSurfaceSize = size;
@@ -312,16 +311,17 @@ class Surface {
     );
 
     _glContext = glContext;
-    _grContext = canvasKit.MakeGrContext(glContext);
 
-    if (_grContext == null) {
-      throw CanvasKitError(
-          'Failed to initialize CanvasKit. CanvasKit.MakeGrContext returned null.');
+    if (_glContext != 0) {
+      _grContext = canvasKit.MakeGrContext(glContext);
+      if (_grContext == null) {
+        throw CanvasKitError('Failed to initialize CanvasKit. '
+            'CanvasKit.MakeGrContext returned null.');
+      }
+      // Set the cache byte limit for this grContext, if not specified it will
+      // use CanvasKit's default.
+      _syncCacheBytes();
     }
-
-    // Set the cache byte limit for this grContext, if not specified it will use
-    // CanvasKit's default.
-    _syncCacheBytes();
 
     htmlElement.append(htmlCanvas);
   }
