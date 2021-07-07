@@ -259,9 +259,9 @@ sk_sp<SkImage> Rasterizer::DoMakeRasterSnapshot(
   SkImageInfo image_info = SkImageInfo::MakeN32Premul(
       size.width(), size.height(), SkColorSpace::MakeSRGB());
 
-  std::shared_ptr<Surface> pbuffer_surface;
+  std::unique_ptr<Surface> pbuffer_surface;
   if (!surface_) {
-    pbuffer_surface = delegate_.GetSnapshotSurface();
+    pbuffer_surface = delegate_.CreateSnapshotSurface();
   }
 
   if ((surface_ == nullptr || surface_->GetContext() == nullptr) &&

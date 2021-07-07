@@ -697,13 +697,10 @@ DartVM* Shell::GetDartVM() {
 }
 
 // |PlatformView::Delegate|
-void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface,
-                                  std::unique_ptr<Surface> snapshot_surface) {
+void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   TRACE_EVENT0("flutter", "Shell::OnPlatformViewCreated");
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
-
-  snapshot_surface_ = std::move(snapshot_surface);
 
   // Prevent any request to change the thread configuration for raster and
   // platform queues while the platform view is being created.
@@ -1365,10 +1362,13 @@ void Shell::ReportTimings() {
   });
 }
 
-std::shared_ptr<Surface> Shell::GetSnapshotSurface() {
+std::unique_ptr<Surface> Shell::CreateSnapshotSurface() {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
-  return snapshot_surface_;
+  if (!weak_platform_view_) {
+    return nullptr;
+  }
+  return weak_platform_view_->CreateRasterSnapshotSurface();
 }
 
 size_t Shell::UnreportedFramesCount() const {

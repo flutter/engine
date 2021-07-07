@@ -99,7 +99,7 @@ class Rasterizer final : public SnapshotDelegate {
     /// snapshotting while in the background may not be possible or necessary.
     /// In that case, this method must return nullptr and the rasterizer will
     /// attempt to use a CPU based raster surface for snapshotting.
-    virtual std::shared_ptr<Surface> GetSnapshotSurface() = 0;
+    virtual std::unique_ptr<Surface> CreateSnapshotSurface() = 0;
   };
 
   //----------------------------------------------------------------------------

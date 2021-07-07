@@ -435,10 +435,6 @@ class Shell final : public PlatformView::Delegate,
 
   sk_sp<GrDirectContext> shared_resource_context_;
 
-  // Created by the PlatformView on the raster task runner, used by the
-  // Rasterizer if the onscreen surface is unavailable.
-  std::shared_ptr<Surface> snapshot_surface_;
-
   Shell(DartVMRef vm,
         TaskRunners task_runners,
         Settings settings,
@@ -474,9 +470,7 @@ class Shell final : public PlatformView::Delegate,
   void ReportTimings();
 
   // |PlatformView::Delegate|
-  void OnPlatformViewCreated(
-      std::unique_ptr<Surface> surface,
-      std::unique_ptr<Surface> snapshot_surface) override;
+  void OnPlatformViewCreated(std::unique_ptr<Surface> surface) override;
 
   // |PlatformView::Delegate|
   void OnPlatformViewDestroyed() override;
@@ -597,7 +591,7 @@ class Shell final : public PlatformView::Delegate,
   fml::TimePoint GetLatestFrameTargetTime() const override;
 
   // |Rasterizer::Delegate|
-  std::shared_ptr<Surface> GetSnapshotSurface() override;
+  std::unique_ptr<Surface> CreateSnapshotSurface() override;
 
   // |ServiceProtocol::Handler|
   fml::RefPtr<fml::TaskRunner> GetServiceProtocolHandlerTaskRunner(

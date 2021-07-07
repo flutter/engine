@@ -405,6 +405,7 @@ void PlatformViewAndroid::FireFirstFrameCallback() {
 }
 
 std::unique_ptr<Surface> PlatformViewAndroid::CreateRasterSnapshotSurface() {
+  FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
   if (!android_surface_) {
     return nullptr;
   }
