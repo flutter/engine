@@ -18,28 +18,6 @@ source_set("common") {
   ]
 }
 
-source_set("memory") {
-  sources = [
-    "memory/ref_counted.h",
-    "memory/ref_counted_internal.h",
-    "memory/ref_ptr.h",
-    "memory/ref_ptr_internal.h",
-    "memory/unique_object.h",
-    "memory/weak_ptr.h",
-    "memory/weak_ptr_internal.cc",
-    "memory/weak_ptr_internal.h",
-  ]
-
-  include_dirs = [
-    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing",
-  ]
-
-  public_deps = [
-    ":common",
-    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/lib/syslog/cpp",
-  ]
-}
-
 source_set("third_party") {
   visibility = [ ":strings" ]
 

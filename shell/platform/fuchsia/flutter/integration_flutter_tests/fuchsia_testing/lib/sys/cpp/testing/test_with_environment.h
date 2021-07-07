@@ -9,7 +9,7 @@
 
 #include <fuchsia/sys/cpp/fidl.h>
 #include <lib/fidl/cpp/binding_set.h>
-#include <lib/gtest/real_loop_fixture.h>
+#include <src/lib/testing/loop_fixture/real_loop_fixture.h>
 #include <lib/sys/cpp/testing/enclosing_environment.h>
 #include <lib/sys/cpp/testing/launcher_impl.h>
 

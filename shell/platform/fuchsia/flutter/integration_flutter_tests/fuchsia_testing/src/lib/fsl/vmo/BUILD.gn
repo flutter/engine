@@ -10,8 +10,8 @@ source_set("vmo") {
   sources = [
     "file.cc",
     "file.h",
-    "shared_vmo.cc",
-    "shared_vmo.h",
+    # "shared_vmo.cc", # not used in integration_flutter_tests
+    # "shared_vmo.h", # not used in integration_flutter_tests
     "sized_vmo.cc",
     "sized_vmo.h",
     "strings.h",
@@ -31,6 +31,6 @@ source_set("vmo") {
     "$fuchsia_sdk_root/fidl:fuchsia.mem",
     "$fuchsia_sdk_root/pkg:zx",
     "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/src/lib/files",
-    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/src/lib/fxl:memory",
+    # "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/src/lib/fxl:memory", # not used in integration_flutter_tests
   ]
 }

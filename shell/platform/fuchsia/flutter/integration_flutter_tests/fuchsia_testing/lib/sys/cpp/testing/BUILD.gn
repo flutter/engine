@@ -17,7 +17,7 @@ source_set("integration") {
   public_deps = [
     ":enclosing_environment",
     ":realm_builder",
-    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/lib/gtest",
+    "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/src/lib/testing/loop_fixture",
   ]
 
   include_dirs = [
@@ -29,8 +29,6 @@ source_set("enclosing_environment") {
   testonly = true
 
   sources = [
-    "component_interceptor.cc",
-    "component_interceptor.h",
     "enclosing_environment.cc",
     "enclosing_environment.h",
     "launcher_impl.cc",
@@ -40,7 +38,6 @@ source_set("enclosing_environment") {
   deps = [
     # fuchsia.debugdata FIDL is not in the SDK
     # "$fuchsia_sdk_root/fidl:fuchsia.debugdata",
-    "environment_delegating_runner:bin",
     "//third_party/rapidjson",
   ]
 

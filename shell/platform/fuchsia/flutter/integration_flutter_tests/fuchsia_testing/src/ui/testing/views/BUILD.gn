@@ -10,19 +10,10 @@ source_set("views") {
   testonly = true
 
   sources = [
-    "background_view.cc",
-    "background_view.h",
     "color.cc",
     "color.h",
-    "coordinate_test_view.cc",
-    "coordinate_test_view.h",
     "embedder_view.cc",
     "embedder_view.h",
-    "opacity_view.cc",
-    "opacity_view.h",
-    "rotated_square_view.cc",
-    "rotated_square_view.h",
-    "test_view.h",
   ]
 
   include_dirs = [
@@ -30,13 +21,11 @@ source_set("views") {
   ]
 
   public_deps = [
-    "$fuchsia_sdk_root/fidl:fuchsia.ui.scenic",
     "$fuchsia_sdk_root/pkg:scenic_cpp",
     "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/src/lib/ui/base_view",
   ]
 
   deps = [
-    "$fuchsia_sdk_root/fidl:fuchsia.ui.gfx",
     "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/src/lib/fsl",
     "//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/fuchsia_testing/src/lib/fxl:strings",
   ]
