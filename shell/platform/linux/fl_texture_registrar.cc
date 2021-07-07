@@ -8,6 +8,8 @@
 
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/linux/fl_engine_private.h"
+#include "flutter/shell/platform/linux/fl_pixel_buffer_texture_private.h"
+#include "flutter/shell/platform/linux/fl_texture_gl_private.h"
 #include "flutter/shell/platform/linux/fl_texture_private.h"
 #include "flutter/shell/platform/linux/fl_texture_registrar_private.h"
 
@@ -61,16 +63,21 @@ fl_texture_registrar_register_texture(FlTextureRegistrar* self,
   g_return_val_if_fail(FL_IS_TEXTURE_REGISTRAR(self), 0);
   g_return_val_if_fail(FL_IS_TEXTURE(texture), 0);
 
-  int64_t id = fl_texture_get_texture_id(texture);
-  g_hash_table_insert(self->textures, GINT_TO_POINTER(id),
-                      g_object_ref(texture));
+  if (FL_IS_TEXTURE_GL(texture) || FL_IS_PIXEL_BUFFER_TEXTURE(texture)) {
+    int64_t id = fl_texture_get_texture_id(texture);
+    g_hash_table_insert(self->textures, GINT_TO_POINTER(id),
+                        g_object_ref(texture));
 
-  if (self->engine == nullptr) {
+    if (self->engine == nullptr) {
+      return id;
+    }
+
+    fl_engine_register_external_texture(self->engine, id);
     return id;
+  } else {
+    // We currently only support #FlTextureGL and #FlPixelBufferTexture.
+    return 0;
   }
-
-  fl_engine_register_external_texture(self->engine, id);
-  return id;
 }
 
 G_MODULE_EXPORT void fl_texture_registrar_mark_texture_frame_available(
@@ -85,7 +92,7 @@ G_MODULE_EXPORT void fl_texture_registrar_mark_texture_frame_available(
   fl_engine_mark_texture_frame_available(self->engine, texture_id);
 }
 
-gboolean fl_texture_registrar_populate_texture(
+gboolean fl_texture_registrar_populate_gl_external_texture(
     FlTextureRegistrar* self,
     int64_t texture_id,
     uint32_t width,
@@ -99,7 +106,17 @@ gboolean fl_texture_registrar_populate_texture(
                 "Unable to find texture %" G_GINT64_FORMAT, texture_id);
     return FALSE;
   }
-  return fl_texture_populate(texture, width, height, opengl_texture, error);
+  if (FL_IS_TEXTURE_GL(texture)) {
+    return fl_texture_gl_populate(FL_TEXTURE_GL(texture), width, height,
+                                  opengl_texture, error);
+  } else if (FL_IS_PIXEL_BUFFER_TEXTURE(texture)) {
+    return fl_pixel_buffer_texture_populate(
+        FL_PIXEL_BUFFER_TEXTURE(texture), width, height, opengl_texture, error);
+  } else {
+    g_set_error(error, fl_engine_error_quark(), FL_ENGINE_ERROR_FAILED,
+                "Unsupported texture type %" G_GINT64_FORMAT, texture_id);
+    return FALSE;
+  }
 }
 
 G_MODULE_EXPORT void fl_texture_registrar_unregister_texture(

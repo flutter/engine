@@ -229,7 +229,7 @@ static bool fl_engine_gl_external_texture_frame_callback(
     return false;
   }
   g_autoptr(GError) error = nullptr;
-  gboolean result = fl_texture_registrar_populate_texture(
+  gboolean result = fl_texture_registrar_populate_gl_external_texture(
       self->texture_registrar, texture_id, width, height, texture, &error);
   if (!result) {
     g_warning("%s", error->message);

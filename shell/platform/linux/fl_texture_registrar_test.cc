@@ -5,6 +5,7 @@
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_texture_registrar.h"
 #include "flutter/shell/platform/linux/fl_texture_registrar_private.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_pixel_buffer_texture.h"
+#include "flutter/shell/platform/linux/public/flutter_linux/fl_texture_gl.h"
 #include "flutter/shell/platform/linux/testing/fl_test.h"
 #include "gtest/gtest.h"
 
@@ -21,18 +22,18 @@ G_DECLARE_FINAL_TYPE(FlTestRegistrarTexture,
                      fl_test_registrar_texture,
                      FL,
                      TEST_REGISTRAR_TEXTURE,
-                     FlTexture)
+                     FlTextureGL)
 
 /// A simple texture.
 struct _FlTestRegistrarTexture {
-  FlTexture parent_instance;
+  FlTextureGL parent_instance;
 };
 
 G_DEFINE_TYPE(FlTestRegistrarTexture,
               fl_test_registrar_texture,
-              fl_texture_get_type())
+              fl_texture_gl_get_type())
 
-static gboolean fl_test_registrar_texture_populate(FlTexture* texture,
+static gboolean fl_test_registrar_texture_populate(FlTextureGL* texture,
                                                    uint32_t* target,
                                                    uint32_t* format,
                                                    uint32_t* width,
@@ -52,7 +53,7 @@ static gboolean fl_test_registrar_texture_populate(FlTexture* texture,
 
 static void fl_test_registrar_texture_class_init(
     FlTestRegistrarTextureClass* klass) {
-  FL_TEXTURE_CLASS(klass)->populate = fl_test_registrar_texture_populate;
+  FL_TEXTURE_GL_CLASS(klass)->populate = fl_test_registrar_texture_populate;
 }
 
 static void fl_test_registrar_texture_init(FlTestRegistrarTexture* self) {}
@@ -93,7 +94,7 @@ TEST(FlTextureRegistrarTest, PopulateTexture) {
   int64_t id = fl_texture_registrar_register_texture(registrar, texture);
   FlutterOpenGLTexture opengl_texture;
   g_autoptr(GError) error = nullptr;
-  EXPECT_TRUE(fl_texture_registrar_populate_texture(
+  EXPECT_TRUE(fl_texture_registrar_populate_gl_external_texture(
       registrar, id, BUFFER_WIDTH, BUFFER_HEIGHT, &opengl_texture, &error));
   EXPECT_EQ(error, nullptr);
   EXPECT_EQ(opengl_texture.width, REAL_BUFFER_WIDTH);

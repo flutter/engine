@@ -22,7 +22,7 @@ G_BEGIN_DECLS
 FlTextureRegistrar* fl_texture_registrar_new(FlEngine* engine);
 
 /**
- * fl_texture_registrar_populate_texture:
+ * fl_texture_registrar_populate_gl_external_texture:
  * @registrar: an #FlTextureRegistrar.
  * @texture_id: ID of texture.
  * @width: width of the texture.
@@ -35,7 +35,7 @@ FlTextureRegistrar* fl_texture_registrar_new(FlEngine* engine);
  *
  * Returns: %TRUE on success.
  */
-gboolean fl_texture_registrar_populate_texture(
+gboolean fl_texture_registrar_populate_gl_external_texture(
     FlTextureRegistrar* registrar,
     int64_t texture_id,
     uint32_t width,

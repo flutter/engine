@@ -6,29 +6,9 @@
 #define FLUTTER_SHELL_PLATFORM_LINUX_FL_TEXTURE_PRIVATE_H_
 
 #include "flutter/shell/platform/embedder/embedder.h"
-#include "flutter/shell/platform/linux/public/flutter_linux/fl_texture_registrar.h"
+#include "flutter/shell/platform/linux/public/flutter_linux/fl_texture.h"
 
 G_BEGIN_DECLS
-
-/**
- * fl_texture_populate:
- * @texture: an #FlTexture.
- * @width: width of the texture.
- * @height: height of the texture.
- * @opengl_texture: (out): return an #FlutterOpenGLTexture.
- * @error: (allow-none): #GError location to store the error occurring, or
- * %NULL to ignore.
- *
- * Attempts to populate the specified @opengl_texture with texture details
- * such as the name, width, height and the pixel format.
- *
- * Returns: %TRUE on success.
- */
-gboolean fl_texture_populate(FlTexture* texture,
-                             uint32_t width,
-                             uint32_t height,
-                             FlutterOpenGLTexture* opengl_texture,
-                             GError** error);
 
 /**
  * fl_texture_get_texture_id:

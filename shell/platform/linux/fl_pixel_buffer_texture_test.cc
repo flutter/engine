@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_pixel_buffer_texture.h"
+#include "flutter/shell/platform/linux/fl_pixel_buffer_texture_private.h"
 #include "flutter/shell/platform/linux/fl_texture_private.h"
 #include "flutter/shell/platform/linux/fl_texture_registrar_private.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_texture_registrar.h"
@@ -74,11 +75,12 @@ TEST(FlPixelBufferTextureTest, TextureID) {
 
 // Test that populating an OpenGL texture works.
 TEST(FlPixelBufferTextureTest, PopulateTexture) {
-  g_autoptr(FlTexture) texture = FL_TEXTURE(fl_test_pixel_buffer_texture_new());
+  g_autoptr(FlPixelBufferTexture) texture =
+      FL_PIXEL_BUFFER_TEXTURE(fl_test_pixel_buffer_texture_new());
   FlutterOpenGLTexture opengl_texture = {0};
   g_autoptr(GError) error = nullptr;
-  EXPECT_TRUE(fl_texture_populate(texture, BUFFER_WIDTH, BUFFER_HEIGHT,
-                                  &opengl_texture, &error));
+  EXPECT_TRUE(fl_pixel_buffer_texture_populate(
+      texture, BUFFER_WIDTH, BUFFER_HEIGHT, &opengl_texture, &error));
   EXPECT_EQ(error, nullptr);
   EXPECT_EQ(opengl_texture.width, REAL_BUFFER_WIDTH);
   EXPECT_EQ(opengl_texture.height, REAL_BUFFER_HEIGHT);

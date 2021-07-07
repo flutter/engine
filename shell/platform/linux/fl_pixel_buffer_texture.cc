@@ -6,16 +6,8 @@
 
 #include <epoxy/gl.h>
 #include <gmodule.h>
-#include <cstdio>
 
-#define GL_CALL(expr)                                                      \
-  do {                                                                     \
-    expr;                                                                  \
-    GLenum err = glGetError();                                             \
-    if (err) {                                                             \
-      fprintf(stderr, "glGetError %x (%s:%d)\n", err, __FILE__, __LINE__); \
-    }                                                                      \
-  } while (0);
+#include "flutter/shell/platform/linux/fl_pixel_buffer_texture_private.h"
 
 typedef struct {
   GLuint texture_id;
@@ -42,12 +34,18 @@ static void fl_pixel_buffer_texture_dispose(GObject* object) {
   G_OBJECT_CLASS(fl_pixel_buffer_texture_parent_class)->dispose(object);
 }
 
-static gboolean fl_pixel_buffer_texture_populate(FlTexture* texture,
-                                                 uint32_t* target,
-                                                 uint32_t* name,
-                                                 uint32_t* width,
-                                                 uint32_t* height,
-                                                 GError** error) {
+static void check_gl_error(int line) {
+  GLenum err = glGetError();
+  if (err) {
+    g_warning("glGetError %x (%s:%d)\n", err, __FILE__, __LINE__);
+  }
+}
+
+gboolean fl_pixel_buffer_texture_populate(FlPixelBufferTexture* texture,
+                                          uint32_t width,
+                                          uint32_t height,
+                                          FlutterOpenGLTexture* opengl_texture,
+                                          GError** error) {
   FlPixelBufferTexture* self = FL_PIXEL_BUFFER_TEXTURE(texture);
   FlPixelBufferTexturePrivate* priv =
       reinterpret_cast<FlPixelBufferTexturePrivate*>(
@@ -56,32 +54,44 @@ static gboolean fl_pixel_buffer_texture_populate(FlTexture* texture,
   uint32_t format = 0;
   const uint8_t* buffer = nullptr;
   if (!FL_PIXEL_BUFFER_TEXTURE_GET_CLASS(self)->copy_pixels(
-          self, &buffer, &format, width, height, error)) {
+          self, &buffer, &format, &width, &height, error)) {
     return FALSE;
   }
+
   if (priv->texture_id == 0) {
-    GL_CALL(glGenTextures(1, &priv->texture_id));
-    GL_CALL(glBindTexture(GL_TEXTURE_2D, priv->texture_id));
-    GL_CALL(
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER));
-    GL_CALL(
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER));
-    GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
-    GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+    glGenTextures(1, &priv->texture_id);
+    check_gl_error(__LINE__);
+    glBindTexture(GL_TEXTURE_2D, priv->texture_id);
+    check_gl_error(__LINE__);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    check_gl_error(__LINE__);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    check_gl_error(__LINE__);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    check_gl_error(__LINE__);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    check_gl_error(__LINE__);
   } else {
-    GL_CALL(glBindTexture(GL_TEXTURE_2D, priv->texture_id));
+    glBindTexture(GL_TEXTURE_2D, priv->texture_id);
+    check_gl_error(__LINE__);
   }
-  *target = GL_TEXTURE_2D;
-  *name = priv->texture_id;
-  GL_CALL(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, *width, *height, 0, format,
-                       GL_UNSIGNED_BYTE, buffer));
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, format,
+               GL_UNSIGNED_BYTE, buffer);
+  check_gl_error(__LINE__);
+
+  opengl_texture->target = GL_TEXTURE_2D;
+  opengl_texture->name = priv->texture_id;
+  opengl_texture->format = GL_RGBA8;
+  opengl_texture->destruction_callback = nullptr;
+  opengl_texture->user_data = nullptr;
+  opengl_texture->width = width;
+  opengl_texture->height = height;
+
   return TRUE;
 }
 
 static void fl_pixel_buffer_texture_class_init(
     FlPixelBufferTextureClass* klass) {
-  FL_TEXTURE_CLASS(klass)->populate = fl_pixel_buffer_texture_populate;
-
   G_OBJECT_CLASS(klass)->dispose = fl_pixel_buffer_texture_dispose;
 }
 

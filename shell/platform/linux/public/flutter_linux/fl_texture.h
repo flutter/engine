@@ -19,35 +19,15 @@ G_DECLARE_DERIVABLE_TYPE(FlTexture, fl_texture, FL, TEXTURE, GObject)
 /**
  * FlTexture:
  *
- * #FlTexture is an abstract class that represents an OpenGL texture.
+ * #FlTexture is an abstract class that represents a texture.
  *
- * If you want to render textures in other OpenGL context, create and use the
- * #GdkGLContext by calling gdk_window_create_gl_context () with the #GdkWindow
- * of #FlView. The context will be shared with the one used by Flutter.
+ * You can derive #FlTextureGL for populating hardware-accelerated textures or
+ * instantiate #FlPixelBufferTexture for populating pixel buffers. Do NOT
+ * directly derive this class.
  */
 
 struct _FlTextureClass {
   GObjectClass parent_class;
-
-  /**
-   * Virtual method called when Flutter populates this texture. The OpenGL
-   * context used by Flutter has been already set.
-   * @texture: an #FlTexture.
-   * @target: texture target (example GL_TEXTURE_2D or GL_TEXTURE_RECTANGLE).
-   * @name: (out): name of texture.
-   * @width: (inout): width of the texture in pixels.
-   * @height: (inout): height of the texture in pixels.
-   * @error: (allow-none): #GError location to store the error occurring, or
-   * %NULL to ignore.
-   *
-   * Returns: %TRUE on success.
-   */
-  gboolean (*populate)(FlTexture* texture,
-                       uint32_t* target,
-                       uint32_t* name,
-                       uint32_t* width,
-                       uint32_t* height,
-                       GError** error);
 };
 
 G_END_DECLS
