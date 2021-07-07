@@ -388,8 +388,8 @@ class MockAccessibilityBridge : public AccessibilityBridgeIos {
   SemanticsObject* scrollable_object = static_cast<SemanticsObject*>(scrollable);
   [scrollable_object setSemanticsNode:&node];
   [scrollable_object accessibilityBridgeDidFinishUpdate];
-  XCTAssertFalse(scrollable_object.showsHorizontalScrollIndicator);
-  XCTAssertFalse(scrollable_object.showsVerticalScrollIndicator);
+  XCTAssertFalse(scrollable.showsHorizontalScrollIndicator);
+  XCTAssertFalse(scrollable.showsVerticalScrollIndicator);
 }
 
 - (void)testSemanticsObjectBuildsAttributedString {
