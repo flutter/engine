@@ -293,36 +293,105 @@ def RunDartTest(build_dir, test_packages, dart_file, verbose_dart_snapshot, mult
                       forbidden_output=forbidden_output, expect_failure=expect_failure)
 
 
-def EnsureDebugUnoptSkyPackagesAreBuilt():
+def EnsureDebugUnoptSkyPackagesAreBuilt(do_build):
   variant_out_dir = os.path.join(out_dir, 'host_debug_unopt')
-  message = []
-  message.append('gn --runtime-mode debug --unopt --no-lto')
-  message.append('ninja -C %s flutter/sky/packages' % variant_out_dir)
-  final_message = '%s doesn\'t exist. Please run the following commands: \n%s' % (
-      variant_out_dir, '\n'.join(message))
-  assert os.path.exists(variant_out_dir), final_message
+  if not do_build:
+    message = []
+    message.append('gn --runtime-mode debug --unopt --no-lto')
+    message.append('ninja -C %s flutter/sky/packages' % variant_out_dir)
+    final_message = '%s doesn\'t exist. Please run the following commands: \n%s' % (
+        variant_out_dir, '\n'.join(message))
+    assert os.path.exists(variant_out_dir), final_message
+    return
+
+  # We don't want to blow away any custom GN args the caller may have already set.
+  if not os.path.exists(variant_out_dir):
+    gn_command = [
+      os.path.join(buildroot_dir, 'flutter', 'tools', 'gn'),
+      '--runtime-mode',
+      'debug',
+      '--unopt',
+      '--no-lto',
+    ]
+    RunCmd(gn_command, cwd=buildroot_dir)
+
+  ninja_command = [
+    'ninja',
+    '-C',
+    variant_out_dir,
+    'flutter/sky/packages'
+  ]
+  RunCmd(ninja_command, cwd=buildroot_dir)
 
 
-def EnsureJavaTestsAreBuilt(android_out_dir):
+def EnsureJavaTestsAreBuilt(android_out_dir, do_build):
   """Builds the engine variant and the test jar containing the JUnit tests"""
-  tmp_out_dir = os.path.join(out_dir, android_out_dir)
-  message = []
-  message.append('gn --android --unoptimized --runtime-mode=debug --no-lto')
-  message.append('ninja -C %s flutter/shell/platform/android:robolectric_tests' % android_out_dir)
-  final_message = '%s doesn\'t exist. Please run the following commands: \n%s' % (
-      android_out_dir, '\n'.join(message))
-  assert os.path.exists(tmp_out_dir), final_message
+
+  if not do_build:
+    tmp_out_dir = os.path.join(out_dir, android_out_dir)
+    message = []
+    message.append('gn --android --unoptimized --runtime-mode=debug --no-lto')
+    message.append('ninja -C %s flutter/shell/platform/android:robolectric_tests' % android_out_dir)
+    final_message = '%s doesn\'t exist. Please run the following commands: \n%s' % (
+        android_out_dir, '\n'.join(message))
+    assert os.path.exists(tmp_out_dir), final_message
+    return
+
+  # We don't want to blow away any custom GN args the caller may have already set.
+  if not os.path.exists(android_out_dir):
+    gn_command = [
+      os.path.join(buildroot_dir, 'flutter', 'tools', 'gn'),
+      '--android',
+      '--unoptimized',
+      '--runtime-mode=debug',
+      '--no-lto',
+    ]
+    RunCmd(gn_command, cwd=buildroot_dir)
+
+  ninja_command = [
+    'autoninja',
+    '-C',
+    android_out_dir,
+    'flutter/shell/platform/android:robolectric_tests'
+  ]
+
+  assert android_out_dir != "out/android_debug_unopt", "%s doesn't exist. Run GN to generate the directory first" % android_out_dir
+  RunCmd(ninja_command, cwd=buildroot_dir)
 
 
-def EnsureIosTestsAreBuilt(ios_out_dir):
+def EnsureIosTestsAreBuilt(ios_out_dir, do_build):
   """Builds the engine variant and the test dylib containing the XCTests"""
-  tmp_out_dir = os.path.join(out_dir, ios_out_dir)
-  message = []
-  message.append('gn --ios --unoptimized --runtime-mode=debug --no-lto --simulator')
-  message.append('autoninja -C %s ios_test_flutter' % ios_out_dir)
-  final_message = '%s doesn\'t exist. Please run the following commands: \n%s' % (
-      ios_out_dir, '\n'.join(message))
-  assert os.path.exists(tmp_out_dir), final_message
+
+  if not do_build:
+    tmp_out_dir = os.path.join(out_dir, ios_out_dir)
+    message = []
+    message.append('gn --ios --unoptimized --runtime-mode=debug --no-lto --simulator')
+    message.append('autoninja -C %s ios_test_flutter' % ios_out_dir)
+    final_message = '%s doesn\'t exist. Please run the following commands: \n%s' % (
+        ios_out_dir, '\n'.join(message))
+    assert os.path.exists(tmp_out_dir), final_message
+    return
+  # We don't want to blow away any custom GN args the caller may have already set.
+  if not os.path.exists(ios_out_dir):
+    gn_command = [
+      os.path.join(buildroot_dir, 'flutter', 'tools', 'gn'),
+      '--ios',
+      '--unoptimized',
+      '--runtime-mode=debug',
+      '--no-lto',
+      '--simulator'
+    ]
+    RunCmd(gn_command, cwd=buildroot_dir)
+
+  assert ios_out_dir != "out/ios_debug_sim_unopt", "%s doesn't exist. Run GN to generate the directory first" % ios_out_dir
+
+  ninja_command = [
+    'autoninja',
+    '-C',
+    ios_out_dir,
+    'ios_test_flutter'
+  ]
+  RunCmd(ninja_command, cwd=buildroot_dir)
 
 
 def AssertExpectedJavaVersion():
@@ -344,11 +413,11 @@ def AssertExpectedXcodeVersion():
   assert match.group(1) in EXPECTED_MAJOR_VERSION, message
 
 
-def RunJavaTests(filter, android_variant='android_debug_unopt'):
+def RunJavaTests(filter, android_variant='android_debug_unopt', build_tests=False):
   """Runs the Java JUnit unit tests for the Android embedding"""
   AssertExpectedJavaVersion()
   android_out_dir = os.path.join(out_dir, android_variant)
-  EnsureJavaTestsAreBuilt(android_out_dir)
+  EnsureJavaTestsAreBuilt(android_out_dir, build_tests)
 
   embedding_deps_dir = os.path.join(buildroot_dir, 'third_party', 'android_embedding_dependencies', 'lib')
   classpath = map(str, [
@@ -372,11 +441,11 @@ def RunJavaTests(filter, android_variant='android_debug_unopt'):
   RunCmd(command)
 
 
-def RunObjcTests(ios_variant='ios_debug_sim_unopt'):
+def RunObjcTests(ios_variant='ios_debug_sim_unopt', build_tests=False):
   """Runs Objective-C XCTest unit tests for the iOS embedding"""
   AssertExpectedXcodeVersion()
   ios_out_dir = os.path.join(out_dir, ios_variant)
-  EnsureIosTestsAreBuilt(ios_out_dir)
+  EnsureIosTestsAreBuilt(ios_out_dir, build_tests)
 
   ios_unit_test_dir = os.path.join(buildroot_dir, 'flutter', 'testing', 'ios', 'IosUnitTests')
 
@@ -394,13 +463,13 @@ def RunObjcTests(ios_variant='ios_debug_sim_unopt'):
   ]
   RunCmd(command, cwd=ios_unit_test_dir, shell=True)
 
-def RunDartTests(build_dir, filter, verbose_dart_snapshot):
+def RunDartTests(build_dir, filter, verbose_dart_snapshot, build_tests=False):
   dart_tests_dir = os.path.join(buildroot_dir, 'flutter', 'testing', 'dart',)
 
   # This one is a bit messy. The pubspec.yaml at flutter/testing/dart/pubspec.yaml
   # has dependencies that are hardcoded to point to the sky packages at host_debug_unopt/
   # Before running Dart tests, make sure to run just that target (NOT the whole engine)
-  EnsureDebugUnoptSkyPackagesAreBuilt()
+  EnsureDebugUnoptSkyPackagesAreBuilt(build_tests)
 
   # Now that we have the Sky packages at the hardcoded location, run `pub get`.
   RunEngineExecutable(
@@ -496,7 +565,6 @@ def RunBenchmarkTests(build_dir):
       flags=opts,
       cwd=test_dir)
 
-
 def RunGithooksTests(build_dir):
   test_dir = os.path.join(buildroot_dir, 'flutter', 'tools', 'githooks')
   dart_tests = glob.glob('%s/test/*_test.dart' % test_dir)
@@ -549,6 +617,8 @@ def main():
       help='The engine build variant to run objective-c tests for')
   parser.add_argument('--verbose-dart-snapshot', dest='verbose_dart_snapshot', action='store_true',
       default=False, help='Show extra dart snapshot logging.')
+  parser.add_argument('--build-before-test', dest='build_tests', action='store_true',
+      help='Build the test targets before running tests.')
 
   args = parser.parse_args()
 
@@ -572,7 +642,7 @@ def main():
     RunLitetestTests(build_dir)
     RunGithooksTests(build_dir)
     RunClangTidyTests(build_dir)
-    RunDartTests(build_dir, dart_filter, args.verbose_dart_snapshot)
+    RunDartTests(build_dir, dart_filter, args.verbose_dart_snapshot, args.build_tests)
     RunConstFinderTests(build_dir)
     RunFrontEndServerTests(build_dir)
 
@@ -582,11 +652,11 @@ def main():
     if ',' in java_filter or '*' in java_filter:
       print('Can only filter JUnit4 tests by single entire class name, eg "io.flutter.SmokeTest". Ignoring filter=' + java_filter)
       java_filter = None
-    RunJavaTests(java_filter, args.android_variant)
+    RunJavaTests(java_filter, args.android_variant, args.build_tests)
 
   if 'objc' in types:
     assert IsMac(), "iOS embedding tests can only be run on macOS."
-    RunObjcTests(args.ios_variant)
+    RunObjcTests(args.ios_variant, args.build_tests)
 
   # https://github.com/flutter/flutter/issues/36300
   if 'benchmarks' in types and not IsWindows():
