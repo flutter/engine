@@ -693,7 +693,6 @@ Rasterizer::Screenshot Rasterizer::ScreenshotLastLayerTree(
     FML_LOG(ERROR) << "Screenshot data was null.";
     return {};
   }
-  FML_DLOG(ERROR) << data;
 
   if (base64_encode) {
     size_t b64_size = SkBase64::Encode(data->data(), data->size(), nullptr);
