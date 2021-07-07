@@ -2,7 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import 'dart:html' as html;
+
+import 'package:ui/src/engine.dart' show createPlatformViewSlot;
+
+import '../vector_math.dart';
+import 'surface.dart';
 
 /// A surface containing a platform view, which is an HTML element.
 class PersistedPlatformView extends PersistedLeafSurface {

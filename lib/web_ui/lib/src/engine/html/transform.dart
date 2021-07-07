@@ -2,7 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import 'dart:html' as html;
+import 'dart:typed_data';
+
+import 'package:ui/src/engine.dart' show domRenderer, DomRenderer;
+import 'package:ui/ui.dart' as ui;
+
+import '../util.dart';
+import '../vector_math.dart';
+import 'surface.dart';
 
 /// A surface that transforms its children using CSS transform.
 class PersistedTransform extends PersistedContainerSurface
@@ -14,17 +22,14 @@ class PersistedTransform extends PersistedContainerSurface
 
   @override
   void recomputeTransformAndClip() {
-    _transform = parent!._transform!.multiplied(Matrix4.fromFloat32List(matrix4));
-    _localTransformInverse = null;
-    _projectedClip = null;
+    transform = parent!.transform!.multiplied(Matrix4.fromFloat32List(matrix4));
+    localTransformInverse = null;
+    projectedClip = null;
   }
 
   @override
-  Matrix4? get localTransformInverse {
-    _localTransformInverse ??=
-        Matrix4.tryInvert(Matrix4.fromFloat32List(matrix4));
-    return _localTransformInverse;
-  }
+  Matrix4? get defaultLocalTransformInverse =>
+      Matrix4.tryInvert(Matrix4.fromFloat32List(matrix4));
 
   @override
   html.Element createElement() {

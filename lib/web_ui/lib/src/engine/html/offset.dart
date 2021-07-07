@@ -2,7 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import 'dart:html' as html;
+
+import 'package:ui/src/engine.dart' show DomRenderer;
+import 'package:ui/ui.dart' as ui;
+
+import '../vector_math.dart';
+import 'surface.dart';
 
 /// A surface that translates its children using CSS transform and translate.
 class PersistedOffset extends PersistedContainerSurface
@@ -17,18 +23,18 @@ class PersistedOffset extends PersistedContainerSurface
 
   @override
   void recomputeTransformAndClip() {
-    _transform = parent!._transform;
+    transform = parent!.transform;
     if (dx != 0.0 || dy != 0.0) {
-      _transform = _transform!.clone();
-      _transform!.translate(dx, dy);
+      transform = transform!.clone();
+      transform!.translate(dx, dy);
     }
-    _projectedClip = null;
-    _localTransformInverse = null;
+    projectedClip = null;
+    localTransformInverse = null;
   }
 
   @override
-  Matrix4 get localTransformInverse =>
-      _localTransformInverse ??= Matrix4.translationValues(-dx, -dy, 0);
+  Matrix4 get defaultLocalTransformInverse =>
+      Matrix4.translationValues(-dx, -dy, 0);
 
   @override
   html.Element createElement() {
