@@ -132,7 +132,7 @@ class PlatformViewManager {
   }
 
   // We need to remove slotted elements like this because of a Safari bug that
-  // gets triggered when a slotted element is removed in a JS tick different
+  // gets triggered when a slotted element is removed in a JS event different
   // than its slot (after the slot is removed).
   //
   // TODO(web): Cleanup https://github.com/flutter/flutter/issues/85816
@@ -144,14 +144,14 @@ class PlatformViewManager {
       element.remove();
       return;
     }
-    final String slotName = "tombstone-${element.getAttribute('slot')}";
-    // Create and inject a new slot in the Shadow Root
+    final String tombstoneName = "tombstone-${element.getAttribute('slot')}";
+    // Create and inject a new slot in the shadow root
     final html.Element slot = html.document.createElement('slot')
       ..style.display = 'none'
-      ..setAttribute('name', slotName);
+      ..setAttribute('name', tombstoneName);
     domRenderer._glassPaneShadow!.append(slot);
     // Link the element to the new slot
-    element.setAttribute('slot', slotName);
+    element.setAttribute('slot', tombstoneName);
     // Delete both the element, and the new slot
     element.remove();
     slot.remove();
