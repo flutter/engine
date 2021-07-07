@@ -102,21 +102,6 @@ class Rasterizer final : public SnapshotDelegate {
   ///
   Rasterizer(Delegate& delegate);
 
-#if defined(LEGACY_FUCHSIA_EMBEDDER)
-  //----------------------------------------------------------------------------
-  /// @brief      Creates a new instance of a rasterizer. Rasterizers may only
-  ///             be created on the raster task runner. Rasterizers are
-  ///             currently only created by the shell (which also sets itself up
-  ///             as the rasterizer delegate).
-  ///
-  /// @param[in]  delegate            The rasterizer delegate.
-  /// @param[in]  compositor_context  The compositor context used to hold all
-  ///                                 the GPU state used by the rasterizer.
-  ///
-  Rasterizer(Delegate& delegate,
-             std::unique_ptr<flutter::CompositorContext> compositor_context);
-#endif
-
   //----------------------------------------------------------------------------
   /// @brief      Destroys the rasterizer. This must happen on the raster task
   ///             runner. All GPU resources are collected before this call
@@ -244,7 +229,7 @@ class Rasterizer final : public SnapshotDelegate {
   ///                             is discarded instead of being rendered
   ///
   void Draw(std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder,
-            fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline,
+            std::shared_ptr<Pipeline<flutter::LayerTree>> pipeline,
             LayerTreeDiscardCallback discardCallback = NoDiscard);
 
   //----------------------------------------------------------------------------
@@ -465,6 +450,11 @@ class Rasterizer final : public SnapshotDelegate {
   bool shared_engine_block_thread_merging_ = false;
 
   // |SnapshotDelegate|
+  sk_sp<SkImage> MakeRasterSnapshot(
+      std::function<void(SkCanvas*)> draw_callback,
+      SkISize picture_size) override;
+
+  // |SnapshotDelegate|
   sk_sp<SkImage> MakeRasterSnapshot(sk_sp<SkPicture> picture,
                                     SkISize picture_size) override;
 
@@ -485,7 +475,7 @@ class Rasterizer final : public SnapshotDelegate {
       std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder,
       std::unique_ptr<flutter::LayerTree> layer_tree);
 
-  RasterStatus DrawToSurface(const fml::TimeDelta frame_build_duration,
+  RasterStatus DrawToSurface(FrameTimingsRecorder& frame_timings_recorder,
                              flutter::LayerTree& layer_tree);
 
   void FireNextFrameCallbackIfPresent();

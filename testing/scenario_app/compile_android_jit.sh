@@ -47,7 +47,7 @@ PUB="$HOST_TOOLS/dart-sdk/bin/pub"
 PUB_VERSION="$("$PUB" --version)"
 echo "Using Pub $PUB_VERSION from $PUB"
 
-"$PUB" get
+"$PUB" get --offline
 
 echo "Using dart from $HOST_TOOLS, gen_snapshot from $DEVICE_TOOLS."
 
@@ -85,7 +85,6 @@ echo "Compiling JIT Snapshot..."
 
 "$GEN_SNAPSHOT" --deterministic \
   --enable-asserts \
-  --no-causal_async_stacks \
   --lazy_async_stacks \
   --isolate_snapshot_instructions="$OUTDIR/isolate_snapshot_instr" \
   --snapshot_kind=app-jit \

@@ -7,6 +7,7 @@
 #include <fcntl.h>
 #include <fuchsia/mem/cpp/fidl.h>
 #include <lib/async/cpp/task.h>
+#include <lib/inspect/cpp/inspect.h>
 #include <lib/trace-engine/instrumentation.h>
 #include <zircon/status.h>
 #include <zircon/types.h>
@@ -18,8 +19,10 @@
 #include "flutter/fml/make_copyable.h"
 #include "flutter/lib/ui/text/font_collection.h"
 #include "flutter/runtime/dart_vm.h"
+#include "lib/async/default.h"
 #include "lib/sys/cpp/component_context.h"
 #include "runtime/dart/utils/files.h"
+#include "runtime/dart/utils/root_inspect_node.h"
 #include "runtime/dart/utils/vmo.h"
 #include "runtime/dart/utils/vmservice_object.h"
 #include "third_party/icu/source/common/unicode/udata.h"
@@ -146,8 +149,9 @@ static void RegisterProfilerSymbols(const char* symbols_path,
 }
 #endif  // !defined(DART_PRODUCT)
 
-Runner::Runner(async::Loop* loop, sys::ComponentContext* context)
-    : loop_(loop), context_(context) {
+Runner::Runner(fml::RefPtr<fml::TaskRunner> task_runner,
+               sys::ComponentContext* context)
+    : task_runner_(task_runner), context_(context) {
 #if !defined(DART_PRODUCT)
   // The VM service isolate uses the process-wide namespace. It writes the
   // vm service protocol port under /tmp. The VMServiceObject exposes that
@@ -155,6 +159,22 @@ Runner::Runner(async::Loop* loop, sys::ComponentContext* context)
   context_->outgoing()->debug_dir()->AddEntry(
       dart_utils::VMServiceObject::kPortDirName,
       std::make_unique<dart_utils::VMServiceObject>());
+
+  inspect::Inspector* inspector = dart_utils::RootInspectNode::GetInspector();
+  inspector->GetRoot().CreateLazyValues(
+      "vmservice_port",
+      [&]() {
+        inspect::Inspector inspector;
+        dart_utils::VMServiceObject::LazyEntryVector out;
+        dart_utils::VMServiceObject().GetContents(&out);
+        std::string name = "";
+        if (out.size() > 0) {
+          name = out[0].name;
+        }
+        inspector.GetRoot().CreateString("vm_service_port", name, &inspector);
+        return fit::make_ok_promise(inspector);
+      },
+      inspector);
 
   SetupTraceObserver();
 #endif  // !defined(DART_PRODUCT)
@@ -214,12 +234,11 @@ void Runner::StartComponent(
   // there being multiple application runner instance in the process at the same
   // time. So it is safe to use the raw pointer.
   Application::TerminationCallback termination_callback =
-      [task_runner = loop_->dispatcher(),  //
-       application_runner = this           //
-  ](const Application* application) {
-        async::PostTask(task_runner, [application_runner, application]() {
-          application_runner->OnApplicationTerminate(application);
-        });
+      [application_runner = this](const Application* application) {
+        application_runner->task_runner_->PostTask(
+            [application_runner, application]() {
+              application_runner->OnApplicationTerminate(application);
+            });
       };
 
   auto active_application = Application::Create(
@@ -248,21 +267,17 @@ void Runner::OnApplicationTerminate(const Application* application) {
   // Grab the items out of the entry because we will have to rethread the
   // destruction.
   auto application_to_destroy = std::move(active_application.application);
-  auto application_thread = std::move(active_application.thread);
+  auto application_thread = std::move(active_application.platform_thread);
 
   // Delegate the entry.
   active_applications_.erase(application);
 
   // Post the task to destroy the application and quit its message loop.
-  async::PostTask(
-      application_thread->dispatcher(),
-      fml::MakeCopyable([instance = std::move(application_to_destroy),
-                         thread = application_thread.get()]() mutable {
-        instance.reset();
-        thread->Quit();
-      }));
+  application_thread->GetTaskRunner()->PostTask(fml::MakeCopyable(
+      [instance = std::move(application_to_destroy),
+       thread = application_thread.get()]() mutable { instance.reset(); }));
 
-  // This works because just posted the quit task on the hosted thread.
+  // Terminate and join the thread's message loop.
   application_thread->Join();
 }
 
@@ -286,27 +301,36 @@ bool Runner::SetupTZDataInternal() {
 
 #if !defined(DART_PRODUCT)
 void Runner::SetupTraceObserver() {
-  trace_observer_ = std::make_unique<trace::TraceObserver>();
-  trace_observer_->Start(loop_->dispatcher(), [runner = this]() {
-    if (!trace_is_category_enabled("dart:profiler")) {
-      return;
-    }
-    if (trace_state() == TRACE_STARTED) {
-      runner->prolonged_context_ = trace_acquire_prolonged_context();
-      Dart_StartProfiling();
-    } else if (trace_state() == TRACE_STOPPING) {
-      for (auto& it : runner->active_applications_) {
-        fml::AutoResetWaitableEvent latch;
-        async::PostTask(it.second.thread->dispatcher(), [&]() {
-          it.second.application->WriteProfileToTrace();
-          latch.Signal();
-        });
-        latch.Wait();
+  fml::AutoResetWaitableEvent latch;
+
+  fml::TaskRunner::RunNowOrPostTask(task_runner_, [&]() {
+    // Running this initialization code on task_runner_ ensures that the call to
+    // `async_get_default_dispatcher()` will capture the correct dispatcher.
+    trace_observer_ = std::make_unique<trace::TraceObserver>();
+    trace_observer_->Start(async_get_default_dispatcher(), [runner = this]() {
+      if (!trace_is_category_enabled("dart:profiler")) {
+        return;
       }
-      Dart_StopProfiling();
-      trace_release_prolonged_context(runner->prolonged_context_);
-    }
+      if (trace_state() == TRACE_STARTED) {
+        runner->prolonged_context_ = trace_acquire_prolonged_context();
+        Dart_StartProfiling();
+      } else if (trace_state() == TRACE_STOPPING) {
+        for (auto& it : runner->active_applications_) {
+          fml::AutoResetWaitableEvent latch;
+          fml::TaskRunner::RunNowOrPostTask(
+              it.second.platform_thread->GetTaskRunner(), [&]() {
+                it.second.application->WriteProfileToTrace();
+                latch.Signal();
+              });
+          latch.Wait();
+        }
+        Dart_StopProfiling();
+        trace_release_prolonged_context(runner->prolonged_context_);
+      }
+    });
+    latch.Signal();
   });
+  latch.Wait();
 }
 #endif  // !defined(DART_PRODUCT)
 

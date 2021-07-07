@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'dart:io' as io;
 
 import 'package:args/command_runner.dart';
@@ -70,7 +69,7 @@ class LicensesCommand extends Command<bool> {
     );
     _expect(
       head[2] == '// found in the LICENSE file.',
-      'Invalid second line of license header in file ${file.path}',
+      'Invalid third line of license header in file ${file.path}',
     );
   }
 

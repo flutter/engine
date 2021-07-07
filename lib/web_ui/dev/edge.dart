@@ -2,15 +2,38 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'dart:async';
 import 'dart:io';
+
+import 'package:test_api/src/backend/runtime.dart';
 
 import 'browser.dart';
 import 'common.dart';
 import 'edge_installation.dart';
 
-/// A class for running an instance of Edge.
+/// Provides an environment for the desktop Microsoft Edge (Chromium-based).
+class EdgeEnvironment implements BrowserEnvironment {
+  @override
+  Browser launchBrowserInstance(Uri url, {bool debug = false}) {
+    return Edge(url, debug: debug);
+  }
+
+  @override
+  Runtime get packageTestRuntime => Runtime.internetExplorer;
+
+  @override
+  Future<void> prepareEnvironment() async {
+    // Edge doesn't need any special prep.
+  }
+
+  @override
+  ScreenshotManager? getScreenshotManager() => null;
+
+  @override
+  String get packageTestConfigurationYamlFile => 'dart_test_edge.yaml';
+}
+
+/// Runs desktop Edge.
 ///
 /// Most of the communication with the browser is expected to happen via HTTP,
 /// so this exposes a bare-bones API. The browser starts as soon as the class is
@@ -21,14 +44,11 @@ class Edge extends Browser {
   @override
   final name = 'Edge';
 
-  static String version;
-
   /// Starts a new instance of Safari open to the given [url], which may be a
   /// [Uri] or a [String].
   factory Edge(Uri url, {bool debug = false}) {
-    version = EdgeArgParser.instance.version;
+    final String version = EdgeArgParser.instance.version;
 
-    assert(version != null);
     return Edge._(() async {
       // TODO(nurhan): Configure info log for LUCI.
       final BrowserInstallation installation = await getEdgeInstallation(

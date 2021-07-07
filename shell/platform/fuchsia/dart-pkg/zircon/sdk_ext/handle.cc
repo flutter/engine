@@ -60,6 +60,7 @@ zx_handle_t Handle::ReleaseHandle() {
 
   zx_handle_t handle = handle_;
   handle_ = ZX_HANDLE_INVALID;
+  cached_koid_ = std::nullopt;
   while (waiters_.size()) {
     // HandleWaiter::Cancel calls Handle::ReleaseWaiter which removes the
     // HandleWaiter from waiters_.
@@ -115,6 +116,19 @@ Dart_Handle Handle::Duplicate(uint32_t rights) {
   return ToDart(Create(out_handle));
 }
 
+Dart_Handle Handle::Replace(uint32_t rights) {
+  if (!is_valid()) {
+    return ToDart(Create(ZX_HANDLE_INVALID));
+  }
+
+  zx_handle_t out_handle;
+  zx_status_t status = zx_handle_replace(ReleaseHandle(), rights, &out_handle);
+  if (status != ZX_OK) {
+    return ToDart(Create(ZX_HANDLE_INVALID));
+  }
+  return ToDart(Create(out_handle));
+}
+
 void Handle::ScheduleCallback(tonic::DartPersistentValue callback,
                               zx_status_t status,
                               const zx_packet_signal_t* signal) {
@@ -155,7 +169,8 @@ void Handle::ScheduleCallback(tonic::DartPersistentValue callback,
   V(Handle, is_valid)       \
   V(Handle, Close)          \
   V(Handle, AsyncWait)      \
-  V(Handle, Duplicate)
+  V(Handle, Duplicate)      \
+  V(Handle, Replace)
 
 // clang-format: on
 

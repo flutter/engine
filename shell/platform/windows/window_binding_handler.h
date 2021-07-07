@@ -15,6 +15,7 @@
 #include "flutter/shell/platform/windows/window_binding_handler_delegate.h"
 
 #ifdef WINUWP
+#include <third_party/cppwinrt/generated/winrt/Windows.ApplicationModel.Activation.h>
 #include <third_party/cppwinrt/generated/winrt/Windows.UI.Composition.h>
 #endif
 
@@ -28,6 +29,16 @@ struct PhysicalWindowBounds {
   size_t height;
 };
 
+// Type representing an underlying platform window.
+#ifdef WINUWP
+using PlatformWindow =
+    winrt::Windows::ApplicationModel::Core::CoreApplicationView;
+#else
+using PlatformWindow = HWND;
+#endif
+
+// Type representing a platform object that can be accepted by the Angle
+// rendering layer to bind to and render pixels into.
 #ifdef WINUWP
 using WindowsRenderTarget =
     std::variant<winrt::Windows::UI::Composition::SpriteVisual,
@@ -46,12 +57,19 @@ class WindowBindingHandler {
   // such as key presses, mouse position updates etc.
   virtual void SetView(WindowBindingHandlerDelegate* view) = 0;
 
-  // Returns a valid WindowsRenderTarget representing the backing
-  // window.
+  // Returns a valid WindowsRenderTarget representing the platform object that
+  // rendering can be bound to by ANGLE rendering backend.
   virtual WindowsRenderTarget GetRenderTarget() = 0;
+
+  // Returns a valid PlatformWindow representing the backing
+  // window.
+  virtual PlatformWindow GetPlatformWindow() = 0;
 
   // Returns the scale factor for the backing window.
   virtual float GetDpiScale() = 0;
+
+  // Returns whether the PlatformWindow is currently visible.
+  virtual bool IsVisible() = 0;
 
   // Returns the bounds of the backing window in physical pixels.
   virtual PhysicalWindowBounds GetPhysicalWindowBounds() = 0;

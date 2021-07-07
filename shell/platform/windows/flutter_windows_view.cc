@@ -87,14 +87,14 @@ void FlutterWindowsView::RegisterKeyboardHandlers(
 #endif
   auto key_handler =
       std::make_unique<flutter::KeyboardKeyHandler>(redispatch_event);
-  key_handler->AddDelegate(
-      std::make_unique<KeyboardKeyChannelHandler>(messenger));
   key_handler->AddDelegate(std::make_unique<KeyboardKeyEmbedderHandler>(
       [this](const FlutterKeyEvent& event, FlutterKeyEventCallback callback,
              void* user_data) {
         return engine_->SendKeyEvent(event, callback, user_data);
       },
       get_key_state));
+  key_handler->AddDelegate(
+      std::make_unique<KeyboardKeyChannelHandler>(messenger));
   AddKeyboardHandler(std::move(key_handler));
   AddKeyboardHandler(
       std::make_unique<flutter::TextInputPlugin>(messenger, this));
@@ -449,11 +449,22 @@ bool FlutterWindowsView::SwapBuffers() {
     case ResizeState::kResizeStarted:
       return false;
     case ResizeState::kFrameGenerated: {
-      bool swap_buffers_result = engine_->surface_manager()->SwapBuffers();
+      bool visible = binding_handler_->IsVisible();
+      bool swap_buffers_result;
+      // For visible windows swap the buffers while resize handler is waiting.
+      // For invisible windows unblock the handler first and then swap buffers.
+      // SwapBuffers waits for vsync and there's no point doing that for
+      // invisible windows.
+      if (visible) {
+        swap_buffers_result = engine_->surface_manager()->SwapBuffers();
+      }
       resize_status_ = ResizeState::kDone;
       lock.unlock();
       resize_cv_.notify_all();
       binding_handler_->OnWindowResized();
+      if (!visible) {
+        swap_buffers_result = engine_->surface_manager()->SwapBuffers();
+      }
       return swap_buffers_result;
     }
     case ResizeState::kDone:
@@ -485,6 +496,10 @@ void FlutterWindowsView::DestroyRenderSurface() {
 
 WindowsRenderTarget* FlutterWindowsView::GetRenderTarget() const {
   return render_target_.get();
+}
+
+PlatformWindow FlutterWindowsView::GetPlatformWindow() const {
+  return binding_handler_->GetPlatformWindow();
 }
 
 FlutterWindowsEngine* FlutterWindowsView::GetEngine() {

@@ -41,7 +41,7 @@ TEST_F(OpacityLayerTest, PaintingEmptyLayerDies) {
                             "needs_painting\\(context\\)");
 }
 
-TEST_F(OpacityLayerTest, PaintBeforePreollDies) {
+TEST_F(OpacityLayerTest, PaintBeforePrerollDies) {
   SkPath child_path;
   child_path.addRect(5.0f, 6.0f, 20.5f, 21.5f);
   auto mock_layer = std::make_shared<MockLayer>(child_path);
@@ -407,7 +407,7 @@ TEST_F(OpacityLayerTest, Readback) {
 
   // OpacityLayer blocks child with readback
   auto mock_layer =
-      std::make_shared<MockLayer>(SkPath(), SkPaint(), false, false, true);
+      std::make_shared<MockLayer>(SkPath(), SkPaint(), false, true);
   layer->Add(mock_layer);
   preroll_context()->surface_needs_readback = false;
   layer->Preroll(preroll_context(), initial_transform);

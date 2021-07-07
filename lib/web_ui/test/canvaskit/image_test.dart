@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'dart:html' as html;
 import 'dart:typed_data';
 
@@ -29,9 +28,9 @@ void testMain() {
 
     test('CkAnimatedImage can be explicitly disposed of', () {
       final CkAnimatedImage image = CkAnimatedImage.decodeFromBytes(kTransparentImage, 'test');
-      expect(image.debugDisposed, false);
+      expect(image.debugDisposed, isFalse);
       image.dispose();
-      expect(image.debugDisposed, true);
+      expect(image.debugDisposed, isTrue);
 
       // Disallow usage after disposal
       expect(() => image.frameCount, throwsAssertionError);
@@ -43,10 +42,38 @@ void testMain() {
       testCollector.collectNow();
     });
 
+    test('CkAnimatedImage remembers last animation position after resurrection', () async {
+      browserSupportsFinalizationRegistry = false;
+
+      Future<void> expectFrameData(ui.FrameInfo frame, List<int> data) async {
+        final ByteData frameData = (await frame.image.toByteData())!;
+        expect(frameData.buffer.asUint8List(), Uint8List.fromList(data));
+      }
+
+      final CkAnimatedImage image = CkAnimatedImage.decodeFromBytes(kAnimatedGif, 'test');
+      expect(image.frameCount, 3);
+      expect(image.repetitionCount, -1);
+
+      final ui.FrameInfo frame1 = await image.getNextFrame();
+      expectFrameData(frame1, <int>[0, 255, 0, 255]);
+      final ui.FrameInfo frame2 = await image.getNextFrame();
+      expectFrameData(frame2, <int>[0, 0, 255, 255]);
+
+      // Pretend that the image is temporarily deleted.
+      image.delete();
+      image.didDelete();
+
+      // Check that we got the 3rd frame after resurrection.
+      final ui.FrameInfo frame3 = await image.getNextFrame();
+      expectFrameData(frame3, <int>[255, 0, 0, 255]);
+
+      testCollector.collectNow();
+    });
+
     test('CkImage toString', () {
       final SkImage skImage =
-          canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)
-              .getCurrentFrame();
+          canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!
+              .makeImageAtCurrentFrame();
       final CkImage image = CkImage(skImage);
       expect(image.toString(), '[1×1]');
       image.dispose();
@@ -55,14 +82,14 @@ void testMain() {
 
     test('CkImage can be explicitly disposed of', () {
       final SkImage skImage =
-          canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)
-              .getCurrentFrame();
+          canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!
+              .makeImageAtCurrentFrame();
       final CkImage image = CkImage(skImage);
-      expect(image.debugDisposed, false);
-      expect(image.box.isDeletedPermanently, false);
+      expect(image.debugDisposed, isFalse);
+      expect(image.box.isDeletedPermanently, isFalse);
       image.dispose();
-      expect(image.debugDisposed, true);
-      expect(image.box.isDeletedPermanently, true);
+      expect(image.debugDisposed, isTrue);
+      expect(image.box.isDeletedPermanently, isTrue);
 
       // Disallow double-dispose.
       expect(() => image.dispose(), throwsAssertionError);
@@ -71,8 +98,8 @@ void testMain() {
 
     test('CkImage can be explicitly disposed of when cloned', () async {
       final SkImage skImage =
-          canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)
-              .getCurrentFrame();
+          canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!
+              .makeImageAtCurrentFrame();
       final CkImage image = CkImage(skImage);
       final SkiaObjectBox<CkImage, SkImage> box = image.box;
       expect(box.refCount, 1);
@@ -82,31 +109,31 @@ void testMain() {
       expect(box.refCount, 2);
       expect(box.debugGetStackTraces().length, 2);
 
-      expect(image.isCloneOf(clone), true);
-      expect(box.isDeletedPermanently, false);
+      expect(image.isCloneOf(clone), isTrue);
+      expect(box.isDeletedPermanently, isFalse);
 
       testCollector.collectNow();
-      expect(skImage.isDeleted(), false);
+      expect(skImage.isDeleted(), isFalse);
       image.dispose();
       expect(box.refCount, 1);
-      expect(box.isDeletedPermanently, false);
+      expect(box.isDeletedPermanently, isFalse);
 
       testCollector.collectNow();
-      expect(skImage.isDeleted(), false);
+      expect(skImage.isDeleted(), isFalse);
       clone.dispose();
       expect(box.refCount, 0);
-      expect(box.isDeletedPermanently, true);
+      expect(box.isDeletedPermanently, isTrue);
 
       testCollector.collectNow();
-      expect(skImage.isDeleted(), true);
+      expect(skImage.isDeleted(), isTrue);
       expect(box.debugGetStackTraces().length, 0);
       testCollector.collectNow();
     });
 
     test('CkImage toByteData', () async {
       final SkImage skImage =
-          canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)
-              .getCurrentFrame();
+          canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!
+              .makeImageAtCurrentFrame();
       final CkImage image = CkImage(skImage);
       expect((await image.toByteData()).lengthInBytes, greaterThan(0));
       expect((await image.toByteData(format: ui.ImageByteFormat.png)).lengthInBytes, greaterThan(0));
@@ -117,8 +144,8 @@ void testMain() {
     test('CkImage can be resurrected', () {
       browserSupportsFinalizationRegistry = false;
       final SkImage skImage =
-          canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)
-              .getCurrentFrame();
+          canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!
+              .makeImageAtCurrentFrame();
       final CkImage image = CkImage(skImage);
       expect(image.box.rawSkiaObject, isNotNull);
 
@@ -231,13 +258,13 @@ void testMain() {
 
 class TestHttpRequest implements html.HttpRequest {
   @override
-  String responseType;
+  String responseType = 'invalid';
 
   @override
-  int timeout = 10;
+  int? timeout = 10;
 
   @override
-  bool withCredentials = false;
+  bool? withCredentials = false;
 
   @override
   void abort() {
@@ -245,7 +272,7 @@ class TestHttpRequest implements html.HttpRequest {
   }
 
   @override
-  void addEventListener(String type, listener, [bool useCapture]) {
+  void addEventListener(String type, listener, [bool? useCapture]) {
     throw UnimplementedError();
   }
 
@@ -292,7 +319,7 @@ class TestHttpRequest implements html.HttpRequest {
   Stream<html.ProgressEvent> get onTimeout => throw UnimplementedError();
 
   @override
-  void open(String method, String url, {bool async, String user, String password}) {}
+  void open(String method, String url, {bool? async, String? user, String? password}) {}
 
   @override
   void overrideMimeType(String mime) {
@@ -303,7 +330,7 @@ class TestHttpRequest implements html.HttpRequest {
   int get readyState => throw UnimplementedError();
 
   @override
-  void removeEventListener(String type, listener, [bool useCapture]) {
+  void removeEventListener(String type, listener, [bool? useCapture]) {
     throw UnimplementedError();
   }
 

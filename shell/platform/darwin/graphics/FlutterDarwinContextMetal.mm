@@ -6,20 +6,10 @@
 
 #include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/fml/logging.h"
+#include "flutter/shell/common/context_options.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
-#include "third_party/skia/include/gpu/GrContextOptions.h"
 
 FLUTTER_ASSERT_ARC
-
-static GrContextOptions CreateMetalGrContextOptions() {
-  GrContextOptions options = {};
-  if (flutter::PersistentCache::cache_sksl()) {
-    options.fShaderCacheStrategy = GrContextOptions::ShaderCacheStrategy::kSkSL;
-  }
-  flutter::PersistentCache::MarkStrategySet();
-  options.fPersistentCache = flutter::PersistentCache::GetCacheForProcess();
-  return options;
-}
 
 @implementation FlutterDarwinContextMetal
 
@@ -76,7 +66,8 @@ static GrContextOptions CreateMetalGrContextOptions() {
 }
 
 - (sk_sp<GrDirectContext>)createGrContext {
-  auto contextOptions = CreateMetalGrContextOptions();
+  const auto contextOptions =
+      flutter::MakeDefaultContextOptions(flutter::ContextType::kRender, GrBackendApi::kMetal);
   id<MTLDevice> device = _device;
   id<MTLCommandQueue> commandQueue = _commandQueue;
   return [FlutterDarwinContextMetal createGrContext:device commandQueue:commandQueue];
@@ -84,7 +75,8 @@ static GrContextOptions CreateMetalGrContextOptions() {
 
 + (sk_sp<GrDirectContext>)createGrContext:(id<MTLDevice>)device
                              commandQueue:(id<MTLCommandQueue>)commandQueue {
-  auto contextOptions = CreateMetalGrContextOptions();
+  const auto contextOptions =
+      flutter::MakeDefaultContextOptions(flutter::ContextType::kRender, GrBackendApi::kMetal);
   // Skia expect arguments to `MakeMetal` transfer ownership of the reference in for release later
   // when the GrDirectContext is collected.
   return GrDirectContext::MakeMetal((__bridge_retained void*)device,

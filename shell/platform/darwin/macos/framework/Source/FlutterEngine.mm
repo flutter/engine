@@ -12,6 +12,7 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureGL.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterGLCompositor.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalCompositor.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterOpenGLRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderingBackend.h"
@@ -96,7 +97,10 @@ static FlutterLocale FlutterLocaleFromNSLocale(NSLocale* locale) {
 }
 
 - (NSView*)view {
-  return _flutterEngine.viewController.view;
+  if (!_flutterEngine.viewController.viewLoaded) {
+    [_flutterEngine.viewController loadView];
+  }
+  return _flutterEngine.viewController.flutterView;
 }
 
 - (void)addMethodCallDelegate:(nonnull id<FlutterPlugin>)delegate
@@ -136,9 +140,10 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   // Pointer to the Dart AOT snapshot and instruction data.
   _FlutterEngineAOTData* _aotData;
 
-  // _macOSGLCompositor is created when the engine is created and
-  // it's destruction is handled by ARC when the engine is destroyed.
-  std::unique_ptr<flutter::FlutterGLCompositor> _macOSGLCompositor;
+  // _macOSCompositor is created when the engine is created and
+  // its destruction is handled by ARC when the engine is destroyed.
+  // This is either a FlutterGLCompositor or a FlutterMetalCompositor instance.
+  std::unique_ptr<flutter::FlutterCompositor> _macOSCompositor;
 
   // FlutterCompositor is copied and used in embedder.cc.
   FlutterCompositor _compositor;
@@ -230,6 +235,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   flutterArguments.shutdown_dart_vm_when_done = true;
   flutterArguments.dart_entrypoint_argc = dartEntrypointArgs.size();
   flutterArguments.dart_entrypoint_argv = dartEntrypointArgs.data();
+  flutterArguments.root_isolate_create_callback = _project.rootIsolateCreateCallback;
 
   static size_t sTaskRunnerIdentifiers = 0;
   const FlutterTaskRunnerDescription cocoa_task_runner_description = {
@@ -305,49 +311,69 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 }
 
 - (void)setViewController:(FlutterViewController*)controller {
-  _viewController = controller;
-  [_renderer setFlutterView:controller.flutterView];
+  if (_viewController != controller) {
+    _viewController = controller;
+    [_renderer setFlutterView:controller.flutterView];
 
-  if (!controller && !_allowHeadlessExecution) {
-    [self shutDownEngine];
+    if (_semanticsEnabled && _bridge) {
+      _bridge->UpdateDelegate(
+          std::make_unique<flutter::AccessibilityBridgeMacDelegate>(self, _viewController));
+    }
+
+    if (!controller && !_allowHeadlessExecution) {
+      [self shutDownEngine];
+    }
   }
 }
 
 - (FlutterCompositor*)createFlutterCompositor {
-  // When rendering with metal do not support platform views.
-  if ([FlutterRenderingBackend renderUsingMetal]) {
-    return nil;
-  }
-
-  // TODO(richardjcai): Add support for creating a FlutterGLCompositor
+  // TODO(richardjcai): Add support for creating a FlutterCompositor
   // with a nil _viewController for headless engines.
   // https://github.com/flutter/flutter/issues/71606
   if (!_viewController) {
     return nil;
   }
 
-  FlutterOpenGLRenderer* openGLRenderer = reinterpret_cast<FlutterOpenGLRenderer*>(_renderer);
-  [openGLRenderer.openGLContext makeCurrentContext];
+  __weak FlutterEngine* weakSelf = self;
 
-  _macOSGLCompositor =
-      std::make_unique<flutter::FlutterGLCompositor>(_viewController, openGLRenderer.openGLContext);
+  if ([FlutterRenderingBackend renderUsingMetal]) {
+    FlutterMetalRenderer* metalRenderer = reinterpret_cast<FlutterMetalRenderer*>(_renderer);
+    _macOSCompositor =
+        std::make_unique<flutter::FlutterMetalCompositor>(_viewController, metalRenderer.device);
+    _macOSCompositor->SetPresentCallback([weakSelf]() {
+      FlutterMetalRenderer* metalRenderer =
+          reinterpret_cast<FlutterMetalRenderer*>(weakSelf.renderer);
+      return [metalRenderer present:0 /*=textureID*/];
+    });
+  } else {
+    FlutterOpenGLRenderer* openGLRenderer = reinterpret_cast<FlutterOpenGLRenderer*>(_renderer);
+    [openGLRenderer.openGLContext makeCurrentContext];
+    _macOSCompositor = std::make_unique<flutter::FlutterGLCompositor>(_viewController,
+                                                                      openGLRenderer.openGLContext);
+
+    _macOSCompositor->SetPresentCallback([weakSelf]() {
+      FlutterOpenGLRenderer* openGLRenderer =
+          reinterpret_cast<FlutterOpenGLRenderer*>(weakSelf.renderer);
+      return [openGLRenderer glPresent];
+    });
+  }
 
   _compositor = {};
   _compositor.struct_size = sizeof(FlutterCompositor);
-  _compositor.user_data = _macOSGLCompositor.get();
+  _compositor.user_data = _macOSCompositor.get();
 
   _compositor.create_backing_store_callback = [](const FlutterBackingStoreConfig* config,  //
                                                  FlutterBackingStore* backing_store_out,   //
                                                  void* user_data                           //
                                               ) {
-    return reinterpret_cast<flutter::FlutterGLCompositor*>(user_data)->CreateBackingStore(
+    return reinterpret_cast<flutter::FlutterCompositor*>(user_data)->CreateBackingStore(
         config, backing_store_out);
   };
 
   _compositor.collect_backing_store_callback = [](const FlutterBackingStore* backing_store,  //
                                                   void* user_data                            //
                                                ) {
-    return reinterpret_cast<flutter::FlutterGLCompositor*>(user_data)->CollectBackingStore(
+    return reinterpret_cast<flutter::FlutterCompositor*>(user_data)->CollectBackingStore(
         backing_store);
   };
 
@@ -355,16 +381,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
                                            size_t layers_count,          //
                                            void* user_data               //
                                         ) {
-    return reinterpret_cast<flutter::FlutterGLCompositor*>(user_data)->Present(layers,
-                                                                               layers_count);
+    return reinterpret_cast<flutter::FlutterCompositor*>(user_data)->Present(layers, layers_count);
   };
-
-  __weak FlutterEngine* weakSelf = self;
-  _macOSGLCompositor->SetPresentCallback([weakSelf]() {
-    FlutterOpenGLRenderer* openGLRenderer =
-        reinterpret_cast<FlutterOpenGLRenderer*>(weakSelf.renderer);
-    return [openGLRenderer glPresent];
-  });
 
   _compositor.avoid_backing_store_cache = true;
 
@@ -417,10 +435,10 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 }
 
 - (void)updateWindowMetrics {
-  if (!_engine) {
+  if (!_engine || !_viewController.viewLoaded) {
     return;
   }
-  NSView* view = _viewController.view;
+  NSView* view = _viewController.flutterView;
   CGRect scaledBounds = [view convertRectToBacking:view.bounds];
   CGSize scaledSize = scaledBounds.size;
   double pixelRatio = view.bounds.size.width == 0 ? 1 : scaledSize.width / view.bounds.size.width;
@@ -451,22 +469,23 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     return;
   }
   _semanticsEnabled = enabled;
+  // Remove the accessibility children from flutter view before reseting the bridge.
+  if (!_semanticsEnabled && self.viewController.viewLoaded) {
+    self.viewController.flutterView.accessibilityChildren = nil;
+  }
   if (!_semanticsEnabled && _bridge) {
     _bridge.reset();
   } else if (_semanticsEnabled && !_bridge) {
     _bridge = std::make_shared<flutter::AccessibilityBridge>(
-        std::make_unique<flutter::AccessibilityBridgeMacDelegate>(self));
-  }
-  if (!_semanticsEnabled) {
-    self.viewController.view.accessibilityChildren = nil;
+        std::make_unique<flutter::AccessibilityBridgeMacDelegate>(self, self.viewController));
   }
   _embedderAPI.UpdateSemanticsEnabled(_engine, _semanticsEnabled);
 }
 
 - (void)dispatchSemanticsAction:(FlutterSemanticsAction)action
                        toTarget:(uint16_t)target
-                       withData:(const std::vector<uint8_t>&)data {
-  _embedderAPI.DispatchSemanticsAction(_engine, target, action, data.data(), data.size());
+                       withData:(fml::MallocMapping)data {
+  _embedderAPI.DispatchSemanticsAction(_engine, target, action, data.GetMapping(), data.GetSize());
 }
 
 #pragma mark - Private methods
@@ -667,15 +686,19 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     // Custom action with id = kFlutterSemanticsNodeIdBatchEnd indicates this is
     // the end of the update batch.
     _bridge->CommitUpdates();
+    // Accessibility tree can only be used when the view is loaded.
+    if (!self.viewController.viewLoaded) {
+      return;
+    }
     // Attaches the accessibility root to the flutter view.
     auto root = _bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
     if (root) {
-      if ([self.viewController.view.accessibilityChildren count] == 0) {
+      if ([self.viewController.flutterView.accessibilityChildren count] == 0) {
         NSAccessibilityElement* native_root = root->GetNativeViewAccessible();
-        self.viewController.view.accessibilityChildren = @[ native_root ];
+        self.viewController.flutterView.accessibilityChildren = @[ native_root ];
       }
     } else {
-      self.viewController.view.accessibilityChildren = nil;
+      self.viewController.flutterView.accessibilityChildren = nil;
     }
     return;
   }
@@ -705,6 +728,11 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, targetTime - engine_time),
                    dispatch_get_main_queue(), worker);
   }
+}
+
+// Getter used by test harness, only exposed through the FlutterEngine(Test) category
+- (flutter::FlutterCompositor*)macOSCompositor {
+  return _macOSCompositor.get();
 }
 
 @end

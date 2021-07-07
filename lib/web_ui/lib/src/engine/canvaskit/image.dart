@@ -2,7 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import 'dart:async';
+import 'dart:html' as html;
+import 'dart:typed_data';
+
+import 'package:ui/src/engine.dart' show WebOnlyImageCodecChunkCallback;
+import 'package:ui/ui.dart' as ui;
+
+import '../util.dart';
+import 'canvaskit_api.dart';
+import 'skia_object_cache.dart';
 
 /// Instantiates a [ui.Codec] backed by an `SkAnimatedImage` from Skia.
 ui.Codec skiaInstantiateImageCodec(Uint8List list,
@@ -92,6 +101,11 @@ class CkAnimatedImage extends ManagedSkiaObject<SkAnimatedImage>
 
   final String src;
   final Uint8List _bytes;
+  int _frameCount = 0;
+  int _repetitionCount = -1;
+
+  /// The index to the next frame to be decoded.
+  int _nextFrameIndex = 0;
 
   @override
   SkAnimatedImage createDefault() {
@@ -103,11 +117,23 @@ class CkAnimatedImage extends ManagedSkiaObject<SkAnimatedImage>
         'Image source: $src',
       );
     }
+
+    _frameCount = animatedImage.getFrameCount();
+    _repetitionCount = animatedImage.getRepetitionCount();
+
+    // If the object has been deleted then resurrected, it may already have
+    // iterated over some frames. We need to skip over them.
+    for (int i = 0; i < _nextFrameIndex; i++) {
+      animatedImage.decodeNextFrame();
+    }
     return animatedImage;
   }
 
   @override
   SkAnimatedImage resurrect() => createDefault();
+
+  @override
+  bool get isResurrectionExpensive => true;
 
   @override
   void delete() {
@@ -135,13 +161,13 @@ class CkAnimatedImage extends ManagedSkiaObject<SkAnimatedImage>
   @override
   int get frameCount {
     assert(_debugCheckIsNotDisposed());
-    return skiaObject.getFrameCount();
+    return _frameCount;
   }
 
   @override
   int get repetitionCount {
     assert(_debugCheckIsNotDisposed());
-    return skiaObject.getRepetitionCount();
+    return _repetitionCount;
   }
 
   @override
@@ -149,7 +175,8 @@ class CkAnimatedImage extends ManagedSkiaObject<SkAnimatedImage>
     assert(_debugCheckIsNotDisposed());
     final int durationMillis = skiaObject.decodeNextFrame();
     final Duration duration = Duration(milliseconds: durationMillis);
-    final CkImage image = CkImage(skiaObject.getCurrentFrame());
+    final CkImage image = CkImage(skiaObject.makeImageAtCurrentFrame());
+    _nextFrameIndex = (_nextFrameIndex + 1) % _frameCount;
     return Future<ui.FrameInfo>.value(AnimatedImageFrameInfo(duration, image));
   }
 }

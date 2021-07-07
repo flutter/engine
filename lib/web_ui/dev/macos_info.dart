@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'dart:convert';
 
 import 'utils.dart';
@@ -12,30 +11,20 @@ class MacOSInfo {
   ///
   /// Built in tools such as `system_profiler` and `defaults` are utilized.
   Future<void> printInformation() async {
-    try {
-      await _printSafariApplications();
-    } catch (error) {
-      print('Error thrown while getting Safari Applications: $error');
-    }
-
-    try {
-      await _printSafariDefaults();
-    } catch (error) {
-      print('Error thrown while getting Safari defaults: $error');
-    }
-
-    try {
-      await _printUserLimits();
-    } catch (error) {
-      print('Error thrown while getting user limits defaults: $error');
-    }
+    await _printSafariApplications();
+    await _printSafariDefaults();
+    await _printUserLimits();
   }
 
   /// Print information on applications in the system that contains string
   /// `Safari`.
   Future<void> _printSafariApplications() async {
-    final String systemProfileJson = await evalProcess(
-        'system_profiler', ['SPApplicationsDataType', '-json']);
+    final ProcessManager systemProfiler = await startProcess(
+      'system_profiler',
+      ['SPApplicationsDataType', '-json'],
+      evalOutput: true,
+    );
+    final String systemProfileJson = await systemProfiler.evalStdout();
 
     final Map<String, dynamic> json =
         jsonDecode(systemProfileJson) as Map<String, dynamic>;
@@ -53,20 +42,22 @@ class MacOSInfo {
 
   /// Print all the defaults in the system related to Safari.
   Future<void> _printSafariDefaults() async {
-    final String defaults =
-        await evalProcess('/usr/bin/defaults', ['find', 'Safari']);
-
-    print('Safari related defaults:\n $defaults');
+    final ProcessManager defaults = await startProcess(
+      '/usr/bin/defaults',
+      ['find', 'Safari'],
+      evalOutput: true,
+    );
+    print('Safari related defaults:\n ${await defaults.evalStdout()}');
   }
 
   /// Print user limits (file and process).
   Future<void> _printUserLimits() async {
-    final String fileLimit = await evalProcess('ulimit', ['-n']);
-
+    ProcessManager ulimit = await startProcess('ulimit', ['-n'], evalOutput: true);
+    final String fileLimit = await ulimit.evalStdout();
     print('MacOS file limit: $fileLimit');
 
-    final String processLimit = await evalProcess('ulimit', ['-u']);
-
+    ulimit = await startProcess('ulimit', ['-u'], evalOutput: true);
+    final String processLimit = await ulimit.evalStdout();
     print('MacOS process limit: $processLimit');
   }
 }

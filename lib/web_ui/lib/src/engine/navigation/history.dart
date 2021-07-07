@@ -62,8 +62,12 @@ abstract class BrowserHistory {
   /// The state of the current location of the user's browser.
   Object? get currentState => urlStrategy?.getState();
 
-  /// Update the url with the given [routeName] and [state].
-  void setRouteName(String? routeName, {Object? state});
+  /// Update the url with the given `routeName` and `state`.
+  ///
+  /// If `replace` is false, the caller wants to push a new `routeName` and
+  /// `state` on top of the existing ones; otherwise, the caller wants to replace
+  /// the current `routeName` and `state` with the new ones.
+  void setRouteName(String? routeName, {Object? state, bool replace = false});
 
   /// A callback method to handle browser backward or forward buttons.
   ///
@@ -131,15 +135,23 @@ class MultiEntriesBrowserHistory extends BrowserHistory {
   }
 
   @override
-  void setRouteName(String? routeName, {Object? state}) {
+  void setRouteName(String? routeName, {Object? state, bool replace = false}) {
     if (urlStrategy != null) {
       assert(routeName != null);
-      _lastSeenSerialCount += 1;
-      urlStrategy!.pushState(
-        _tagWithSerialCount(state, _lastSeenSerialCount),
-        'flutter',
-        routeName!,
-      );
+      if (replace) {
+        urlStrategy!.replaceState(
+          _tagWithSerialCount(state, _lastSeenSerialCount),
+          'flutter',
+          routeName!,
+        );
+      } else {
+        _lastSeenSerialCount += 1;
+        urlStrategy!.pushState(
+          _tagWithSerialCount(state, _lastSeenSerialCount),
+          'flutter',
+          routeName!,
+        );
+      }
     }
   }
 
@@ -263,7 +275,7 @@ class SingleEntryBrowserHistory extends BrowserHistory {
   }
 
   @override
-  void setRouteName(String? routeName, {Object? state}) {
+  void setRouteName(String? routeName, {Object? state, bool replace = false}) {
     if (urlStrategy != null) {
       _setupFlutterEntry(urlStrategy!, replace: true, path: routeName);
     }

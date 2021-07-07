@@ -232,6 +232,14 @@ FlutterEngineResult FlutterEngineSendPointerEvent(
   return kSuccess;
 }
 
+FlutterEngineResult FlutterEngineSendKeyEvent(FLUTTER_API_SYMBOL(FlutterEngine)
+                                                  engine,
+                                              const FlutterKeyEvent* event,
+                                              FlutterKeyEventCallback callback,
+                                              void* user_data) {
+  return kSuccess;
+}
+
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineSendPlatformMessage(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
@@ -514,6 +522,7 @@ FlutterEngineResult FlutterEngineGetProcAddresses(
   table->RunInitialized = &FlutterEngineRunInitialized;
   table->SendWindowMetricsEvent = &FlutterEngineSendWindowMetricsEvent;
   table->SendPointerEvent = &FlutterEngineSendPointerEvent;
+  table->SendKeyEvent = &FlutterEngineSendKeyEvent;
   table->SendPlatformMessage = &FlutterEngineSendPlatformMessage;
   table->PlatformMessageCreateResponseHandle =
       &FlutterPlatformMessageCreateResponseHandle;

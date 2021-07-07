@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
@@ -20,7 +19,7 @@ void testMain() {
     setUpCanvasKitTest();
 
     test('Using CanvasKit', () {
-      expect(useCanvasKit, true);
+      expect(useCanvasKit, isTrue);
     });
 
     test(CkPathMetrics, () {
@@ -33,15 +32,15 @@ void testMain() {
       expect(metric.contourIndex, 0);
       expect(metric.extractPath(0, 0.5).computeMetrics().length, 1);
 
-      final ui.Tangent tangent1 = metric.getTangentForOffset(5);
+      final ui.Tangent tangent1 = metric.getTangentForOffset(5)!;
       expect(tangent1.position, ui.Offset(5, 0));
       expect(tangent1.vector, ui.Offset(1, 0));
 
-      final ui.Tangent tangent2 = metric.getTangentForOffset(15);
+      final ui.Tangent tangent2 = metric.getTangentForOffset(15)!;
       expect(tangent2.position, ui.Offset(10, 5));
       expect(tangent2.vector, ui.Offset(0, 1));
 
-      expect(metric.isClosed, true);
+      expect(metric.isClosed, isTrue);
 
       path.addOval(ui.Rect.fromLTRB(10, 10, 100, 100));
       expect(path.computeMetrics().length, 2);
@@ -57,16 +56,16 @@ void testMain() {
       final ui.PathMetrics metrics2 = path.computeMetrics();
       final Iterator<ui.PathMetric> iter1 = metrics1.iterator;
       final Iterator<ui.PathMetric> iter2 = metrics2.iterator;
-      expect(iter1.moveNext(), true);
-      expect(iter2.moveNext(), true);
+      expect(iter1.moveNext(), isTrue);
+      expect(iter2.moveNext(), isTrue);
       expect(iter1.current, isNotNull);
       expect(iter2.current, isNotNull);
-      expect(iter1.moveNext(), true);
-      expect(iter2.moveNext(), true);
+      expect(iter1.moveNext(), isTrue);
+      expect(iter2.moveNext(), isTrue);
       expect(iter1.current, isNotNull);
       expect(iter2.current, isNotNull);
-      expect(iter1.moveNext(), false);
-      expect(iter2.moveNext(), false);
+      expect(iter1.moveNext(), isFalse);
+      expect(iter2.moveNext(), isFalse);
       expect(() => iter1.current, throwsRangeError);
       expect(() => iter2.current, throwsRangeError);
     });
@@ -105,11 +104,11 @@ void testMain() {
       path.addRect(ui.Rect.fromLTRB(40, 40, 50, 50));
 
       final ui.PathMetrics metrics = path.computeMetrics();
-      final CkContourMeasureIter iterator = metrics.iterator;
+      final CkContourMeasureIter iterator = metrics.iterator as CkContourMeasureIter;
 
-      expect(iterator.moveNext(), true);
+      expect(iterator.moveNext(), isTrue);
       expect(iterator.current.contourIndex, 0);
-      expect(iterator.moveNext(), true);
+      expect(iterator.moveNext(), isTrue);
       expect(iterator.current.contourIndex, 1);
 
       // Delete iterator in the middle of iteration
@@ -117,9 +116,9 @@ void testMain() {
       iterator.rawSkiaObject = null;
 
       // Check that the iterator can continue from the last position.
-      expect(iterator.moveNext(), true);
+      expect(iterator.moveNext(), isTrue);
       expect(iterator.current.contourIndex, 2);
-      expect(iterator.moveNext(), false);
+      expect(iterator.moveNext(), isFalse);
     });
 
     test('Resurrect CkContourMeasure', () {
@@ -131,15 +130,15 @@ void testMain() {
       path.addRect(ui.Rect.fromLTRB(40, 40, 50, 50));
 
       final ui.PathMetrics metrics = path.computeMetrics();
-      final CkContourMeasureIter iterator = metrics.iterator;
+      final CkContourMeasureIter iterator = metrics.iterator as CkContourMeasureIter;
 
-      expect(iterator.moveNext(), true);
-      final CkContourMeasure measure0 = iterator.current;
+      expect(iterator.moveNext(), isTrue);
+      final CkContourMeasure measure0 = iterator.current as CkContourMeasure;
       expect(measure0.contourIndex, 0);
       expect(measure0.extractPath(0, 15).getBounds(), ui.Rect.fromLTRB(0, 0, 10, 5));
 
-      expect(iterator.moveNext(), true);
-      final CkContourMeasure measure1 = iterator.current;
+      expect(iterator.moveNext(), isTrue);
+      final CkContourMeasure measure1 = iterator.current as CkContourMeasure;
       expect(measure1.contourIndex, 1);
       expect(measure1.extractPath(0, 15).getBounds(), ui.Rect.fromLTRB(20, 20, 30, 25));
 
