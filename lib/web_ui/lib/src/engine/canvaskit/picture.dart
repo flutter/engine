@@ -5,11 +5,6 @@
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
-import 'canvas.dart';
-import 'canvaskit_api.dart';
-import 'image.dart';
-import 'skia_object_cache.dart';
-
 /// Implements [ui.Picture] on top of [SkPicture].
 ///
 /// Unlike most other [ManagedSkiaObject] implementations, instances of this

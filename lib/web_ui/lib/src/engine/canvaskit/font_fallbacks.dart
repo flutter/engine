@@ -10,12 +10,6 @@ import 'dart:typed_data';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
-import '../util.dart';
-import 'canvaskit_api.dart';
-import 'fonts.dart';
-import 'initialization.dart';
-import 'interval_tree.dart';
-
 /// Global static font fallback data.
 class FontFallbackData {
   static FontFallbackData get instance => _instance;
