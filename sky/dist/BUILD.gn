@@ -35,9 +35,7 @@ if (is_android) {
         destination = "sky_engine"
       },
     ]
-    deps = [
-      ":sky_engine",
-    ]
+    deps = [ ":sky_engine" ]
   }
 }
 

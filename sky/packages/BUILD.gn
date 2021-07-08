@@ -5,7 +5,5 @@
 group("packages") {
   testonly = true
 
-  deps = [
-    "//flutter/sky/packages/sky_engine",
-  ]
+  deps = [ "//flutter/sky/packages/sky_engine" ]
 }
