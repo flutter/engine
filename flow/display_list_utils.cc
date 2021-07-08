@@ -57,9 +57,6 @@ void SkPaintDispatchHelper::setColor(SkColor color) {
 void SkPaintDispatchHelper::setBlendMode(SkBlendMode mode) {
   paint_.setBlendMode(mode);
 }
-void SkPaintDispatchHelper::setFilterQuality(SkFilterQuality quality) {
-  paint_.setFilterQuality(quality);
-}
 void SkPaintDispatchHelper::setShader(sk_sp<SkShader> shader) {
   paint_.setShader(shader);
 }
@@ -69,6 +66,9 @@ void SkPaintDispatchHelper::setImageFilter(sk_sp<SkImageFilter> filter) {
 void SkPaintDispatchHelper::setColorFilter(sk_sp<SkColorFilter> filter) {
   color_filter_ = filter;
   paint_.setColorFilter(makeColorFilter());
+}
+void SkPaintDispatchHelper::setPathEffect(sk_sp<SkPathEffect> effect) {
+  paint_.setPathEffect(effect);
 }
 void SkPaintDispatchHelper::setMaskFilter(sk_sp<SkMaskFilter> filter) {
   paint_.setMaskFilter(filter);

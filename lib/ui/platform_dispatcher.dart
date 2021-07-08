@@ -32,6 +32,9 @@ typedef PointerDataPacketCallback = void Function(PointerDataPacket packet);
 typedef _KeyDataResponseCallback = void Function(int responseId, bool handled);
 
 /// Signature for [PlatformDispatcher.onKeyData].
+///
+/// The callback should return true if the key event has been handled by the
+/// framework and should not be propagated further.
 typedef KeyDataCallback = bool Function(KeyData data);
 
 /// Signature for [PlatformDispatcher.onSemanticsAction].
@@ -346,6 +349,9 @@ class PlatformDispatcher {
   ///
   /// The framework invokes this callback in the same zone in which the callback
   /// was set.
+  ///
+  /// The callback should return true if the key event has been handled by the
+  /// framework and should not be propagated further.
   KeyDataCallback? get onKeyData => _onKeyData;
   KeyDataCallback? _onKeyData;
   Zone _onKeyDataZone = Zone.root;
@@ -1148,6 +1154,12 @@ enum FramePhase {
   ///
   /// See also [FrameTiming.rasterDuration].
   rasterFinish,
+
+  /// When the raster thread finished rasterizing a frame in wall-time.
+  ///
+  /// This is useful for correlating time raster finish time with the system
+  /// clock to integrate with other profiling tools.
+  rasterFinishWallTime,
 }
 
 /// Time-related performance metrics of a frame.
@@ -1176,6 +1188,7 @@ class FrameTiming {
     required int buildFinish,
     required int rasterStart,
     required int rasterFinish,
+    required int rasterFinishWallTime,
     int frameNumber = -1,
   }) {
     return FrameTiming._(<int>[
@@ -1184,6 +1197,7 @@ class FrameTiming {
       buildFinish,
       rasterStart,
       rasterFinish,
+      rasterFinishWallTime,
       frameNumber,
     ]);
   }
