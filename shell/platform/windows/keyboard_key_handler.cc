@@ -58,33 +58,33 @@ static bool IsKeyDownShiftRight(int virtual_key, bool was_down) {
 // would be rare, and a misrecognition would only cause a minor consequence
 // where the CtrlLeft is released early; the later, real CtrlLeft up event will
 // be ignored.
-static bool IsKeyDownAltRight(int virtual_key, bool extended, bool was_down) {
+static bool IsKeyDownAltRight(int action, int virtual_key, bool extended) {
 #ifdef WINUWP
   return false;
 #else
-  return virtual_key == VK_LMENU && extended && !was_down;
+  return virtual_key == VK_LMENU && extended && action == WM_KEYDOWN;
 #endif
 }
 
 // Returns true if this key is a key up event of AltRight.
 //
 // This is used to assist a corner case described in |IsKeyDownAltRight|.
-static bool IsKeyUpAltRight(int virtual_key, bool extended, bool was_down) {
+static bool IsKeyUpAltRight(int action, int virtual_key, bool extended) {
 #ifdef WINUWP
   return false;
 #else
-  return virtual_key == VK_LMENU && extended && was_down;
+  return virtual_key == VK_LMENU && extended && action == WM_KEYUP;
 #endif
 }
 
 // Returns true if this key is a key down event of CtrlLeft.
 //
 // This is used to assist a corner case described in |IsKeyDownAltRight|.
-static bool IsKeyDownCtrlLeft(int virtual_key, bool was_down) {
+static bool IsKeyDownCtrlLeft(int action, int virtual_key) {
 #ifdef WINUWP
   return false;
 #else
-  return virtual_key == VK_LCONTROL && !was_down;
+  return virtual_key == VK_LCONTROL && action == WM_KEYDOWN;
 #endif
 }
 
@@ -175,20 +175,19 @@ bool KeyboardKeyHandler::KeyboardHook(FlutterWindowsView* view,
     return false;
   }
 
-
-  if (IsKeyDownAltRight(key, extended, was_down)) {
+  if (IsKeyDownAltRight(action, key, extended)) {
     if (last_key_is_ctrl_left_down) {
       should_synthesize_ctrl_left_up = true;
     }
   }
-  if (IsKeyDownCtrlLeft(key, was_down)) {
+  if (IsKeyDownCtrlLeft(action, key)) {
     last_key_is_ctrl_left_down = true;
     ctrl_left_scancode = scancode;
     should_synthesize_ctrl_left_up = false;
   } else {
     last_key_is_ctrl_left_down = false;
   }
-  if (IsKeyUpAltRight(key, extended, was_down)) {
+  if (IsKeyUpAltRight(action, key, extended)) {
     if (should_synthesize_ctrl_left_up) {
       should_synthesize_ctrl_left_up = false;
       PendingEvent ctrl_left_up {
