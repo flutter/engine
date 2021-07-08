@@ -15,19 +15,17 @@ environment:
 # check the .packages and .package_config to make sure all the paths are
 # relative to this directory into //third_party/dart, or //third_party/pkg
 
-# These are for convenience during local development. Changing them will not
-# impact the build.
+# Uncomment sky_engine here and below to get analyzer support for local
+# development. It cannot be checked in, since it would break running
+# `pub get --offline` as part of gclient hooks.
 dependencies:
-  sky_engine: any
-  sky_services: any
+  # sky_engine: any
   vector_math: any
 
 dependency_overrides:
   meta:
     path: ../../../third_party/dart/pkg/meta
-  sky_engine:
-    path: ../../../out/host_debug_unopt/gen/dart-pkg/sky_engine
-  sky_services:
-    path: ../../../out/host_debug_unopt/gen/dart-pkg/sky_services
+  # sky_engine:
+  #   path: ../../../out/host_debug_unopt/gen/dart-pkg/sky_engine
   vector_math:
     path: ../../../third_party/pkg/vector_math
