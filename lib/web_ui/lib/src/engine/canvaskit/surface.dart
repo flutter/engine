@@ -300,27 +300,29 @@ class Surface {
     _forceNewContext = false;
     _contextLost = false;
 
-    final int glContext = canvasKit.GetWebGLContext(
-      htmlCanvas,
-      SkWebGLContextOptions(
-        // Default to no anti-aliasing. Paint commands can be explicitly
-        // anti-aliased by setting their `Paint` object's `antialias` property.
-        antialias: 0,
-        majorVersion: webGLVersion,
-      ),
-    );
+    if (webGLVersion != -1 && !canvasKitForceCpuOnly) {
+      final int glContext = canvasKit.GetWebGLContext(
+        htmlCanvas,
+        SkWebGLContextOptions(
+          // Default to no anti-aliasing. Paint commands can be explicitly
+          // anti-aliased by setting their `Paint` object's `antialias` property.
+          antialias: 0,
+          majorVersion: webGLVersion,
+        ),
+      );
 
-    _glContext = glContext;
+      _glContext = glContext;
 
-    if (_glContext != 0) {
-      _grContext = canvasKit.MakeGrContext(glContext);
-      if (_grContext == null) {
-        throw CanvasKitError('Failed to initialize CanvasKit. '
-            'CanvasKit.MakeGrContext returned null.');
+      if (_glContext != 0) {
+        _grContext = canvasKit.MakeGrContext(glContext);
+        if (_grContext == null) {
+          throw CanvasKitError('Failed to initialize CanvasKit. '
+              'CanvasKit.MakeGrContext returned null.');
+        }
+        // Set the cache byte limit for this grContext, if not specified it will
+        // use CanvasKit's default.
+        _syncCacheBytes();
       }
-      // Set the cache byte limit for this grContext, if not specified it will
-      // use CanvasKit's default.
-      _syncCacheBytes();
     }
 
     htmlElement.append(htmlCanvas);
