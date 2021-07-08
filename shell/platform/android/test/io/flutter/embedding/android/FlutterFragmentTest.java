@@ -11,6 +11,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import android.view.View;
 import androidx.activity.OnBackPressedCallback;
 import androidx.fragment.app.FragmentActivity;
 import io.flutter.embedding.engine.FlutterEngine;
@@ -31,10 +32,10 @@ public class FlutterFragmentTest {
   public void flutterViewHasId() {
     FlutterFragment fragment = FlutterFragment.createDefault();
     fragment.setDelegate(new FlutterActivityAndFragmentDelegate(fragment));
-    fragment.onCreateView(null, null, null);
 
-    assertNotNull(fragment.findViewById(FlutterActivity.FLUTTER_VIEW_ID));
-    assertTrue(fragment.findViewById(FlutterActivity.FLUTTER_VIEW_ID) instanceof FlutterView);
+    View fragmentView = fragment.onCreateView(null, null, null);
+    assertNotNull(fragmentView.findViewById(FlutterFragment.FLUTTER_VIEW_ID));
+    assertTrue(fragmentView.findViewById(FlutterFragment.FLUTTER_VIEW_ID) instanceof FlutterView);
   }
 
   @Test
