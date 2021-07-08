@@ -14,10 +14,6 @@ environment:
 # If you do add packages here, make sure you can run `pub get --offline`, and
 # check the .packages and .package_config to make sure all the paths are
 # relative to this directory into //third_party/dart, or //third_party/pkg
-
-# Uncomment sky_engine here and below to get analyzer support for local
-# development. It cannot be checked in, since it would break running
-# `pub get --offline` as part of gclient hooks.
 dependencies:
   sky_engine: any
   vector_math: any
