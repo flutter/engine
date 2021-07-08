@@ -14,6 +14,8 @@
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
 #include "third_party/skia/include/core/SkVertices.h"
+#include "third_party/skia/include/effects/SkDashPathEffect.h"
+#include "third_party/skia/include/effects/SkDiscretePathEffect.h"
 #include "third_party/skia/include/effects/SkGradientShader.h"
 #include "third_party/skia/include/effects/SkImageFilters.h"
 
@@ -135,8 +137,6 @@ class CanvasCompareTester {
 
     RenderWithStrokes(cv_renderer, dl_renderer);
 
-    // Not testing FilterQuality here because there is no SkPaint version
-
     {
       // half opaque cyan
       SkColor blendableColor = SkColorSetARGB(0x7f, 0x00, 0xff, 0xff);
@@ -171,6 +171,14 @@ class CanvasCompareTester {
         RenderWith([=](SkCanvas*, SkPaint& p) { p.setImageFilter(filter); },
                    [=](DisplayListBuilder& b) { b.setImageFilter(filter); },
                    cv_renderer, dl_renderer, "ImageFilter == Decal Blur 5");
+      }
+      ASSERT_TRUE(filter->unique()) << "ImageFilter Cleanup";
+      filter =
+          SkImageFilters::Blur(5.0, 5.0, SkTileMode::kClamp, nullptr, nullptr);
+      {
+        RenderWith([=](SkCanvas*, SkPaint& p) { p.setImageFilter(filter); },
+                   [=](DisplayListBuilder& b) { b.setImageFilter(filter); },
+                   cv_renderer, dl_renderer, "ImageFilter == Clamp Blur 5");
       }
       ASSERT_TRUE(filter->unique()) << "ImageFilter Cleanup";
     }
@@ -220,6 +228,41 @@ class CanvasCompareTester {
             cv_renderer, dl_renderer, "ColorFilter == Invert", &bg);
       }
       ASSERT_TRUE(filter->unique()) << "ColorFilter Cleanup";
+    }
+
+    {
+      // Discrete path effects need a stroke width for drawPointsAsPoints
+      // to do something realistic
+      sk_sp<SkPathEffect> effect = SkDiscretePathEffect::Make(3, 5);
+      {
+        // Discrete path effects need a stroke width for drawPointsAsPoints
+        // to do something realistic
+        RenderWith(
+            [=](SkCanvas*, SkPaint& p) {
+              p.setStrokeWidth(5.0);
+              p.setPathEffect(effect);
+            },
+            [=](DisplayListBuilder& b) {
+              b.setStrokeWidth(5.0);
+              b.setPathEffect(effect);
+            },
+            cv_renderer, dl_renderer, "PathEffect == Discrete-3-5");
+      }
+      ASSERT_TRUE(effect->unique()) << "PathEffect Cleanup";
+      effect = SkDiscretePathEffect::Make(2, 3);
+      {
+        RenderWith(
+            [=](SkCanvas*, SkPaint& p) {
+              p.setStrokeWidth(5.0);
+              p.setPathEffect(effect);
+            },
+            [=](DisplayListBuilder& b) {
+              b.setStrokeWidth(5.0);
+              b.setPathEffect(effect);
+            },
+            cv_renderer, dl_renderer, "PathEffect == Discrete-2-3");
+      }
+      ASSERT_TRUE(effect->unique()) << "PathEffect Cleanup";
     }
 
     {
@@ -389,6 +432,43 @@ class CanvasCompareTester {
           b.setJoins(SkPaint::kMiter_Join);
         },
         cv_renderer, dl_renderer, "Stroke Width 5, Miter 0");
+
+    {
+      const SkScalar TestDashes1[] = {4.0, 2.0};
+      const SkScalar TestDashes2[] = {1.0, 1.5};
+      sk_sp<SkPathEffect> effect = SkDashPathEffect::Make(TestDashes1, 2, 0.0f);
+      {
+        RenderWith(
+            [=](SkCanvas*, SkPaint& p) {
+              p.setStyle(SkPaint::kStroke_Style);
+              p.setStrokeWidth(5.0);
+              p.setPathEffect(effect);
+            },
+            [=](DisplayListBuilder& b) {
+              b.setDrawStyle(SkPaint::kStroke_Style);
+              b.setStrokeWidth(5.0);
+              b.setPathEffect(effect);
+            },
+            cv_renderer, dl_renderer, "PathEffect == Dash-4-2");
+      }
+      ASSERT_TRUE(effect->unique()) << "PathEffect Cleanup";
+      effect = SkDashPathEffect::Make(TestDashes2, 2, 0.0f);
+      {
+        RenderWith(
+            [=](SkCanvas*, SkPaint& p) {
+              p.setStyle(SkPaint::kStroke_Style);
+              p.setStrokeWidth(5.0);
+              p.setPathEffect(effect);
+            },
+            [=](DisplayListBuilder& b) {
+              b.setDrawStyle(SkPaint::kStroke_Style);
+              b.setStrokeWidth(5.0);
+              b.setPathEffect(effect);
+            },
+            cv_renderer, dl_renderer, "PathEffect == Dash-1-1.5");
+      }
+      ASSERT_TRUE(effect->unique()) << "PathEffect Cleanup";
+    }
   }
 
   static void RenderWithTransforms(CvRenderer& cv_renderer,
@@ -862,7 +942,9 @@ TEST(DisplayListCanvas, DrawPointsAsPoints) {
   const int count = sizeof(points) / sizeof(points[0]);
   CanvasCompareTester::RenderAll(
       [=](SkCanvas* canvas, SkPaint& paint) {  //
-        canvas->drawPoints(SkCanvas::kPoints_PointMode, count, points, paint);
+        SkPaint p = paint;
+        p.setStyle(SkPaint::kStroke_Style);
+        canvas->drawPoints(SkCanvas::kPoints_PointMode, count, points, p);
       },
       [=](DisplayListBuilder& builder) {  //
         builder.drawPoints(SkCanvas::kPoints_PointMode, count, points);
@@ -901,7 +983,9 @@ TEST(DisplayListCanvas, DrawPointsAsLines) {
   ASSERT_TRUE((count & 1) == 0);
   CanvasCompareTester::RenderAll(
       [=](SkCanvas* canvas, SkPaint& paint) {  //
-        canvas->drawPoints(SkCanvas::kLines_PointMode, count, points, paint);
+        SkPaint p = paint;
+        p.setStyle(SkPaint::kStroke_Style);
+        canvas->drawPoints(SkCanvas::kLines_PointMode, count, points, p);
       },
       [=](DisplayListBuilder& builder) {  //
         builder.drawPoints(SkCanvas::kLines_PointMode, count, points);
@@ -918,7 +1002,9 @@ TEST(DisplayListCanvas, DrawPointsAsPolygon) {
   };
   CanvasCompareTester::RenderAll(
       [=](SkCanvas* canvas, SkPaint& paint) {  //
-        canvas->drawPoints(SkCanvas::kPolygon_PointMode, 4, points, paint);
+        SkPaint p = paint;
+        p.setStyle(SkPaint::kStroke_Style);
+        canvas->drawPoints(SkCanvas::kPolygon_PointMode, 4, points, p);
       },
       [=](DisplayListBuilder& builder) {  //
         builder.drawPoints(SkCanvas::kPolygon_PointMode, 4, points);
