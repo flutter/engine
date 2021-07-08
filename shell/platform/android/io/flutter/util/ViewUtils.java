@@ -8,6 +8,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.os.Build;
+import android.view.View;
 
 public final class ViewUtils {
   /**
