@@ -48,6 +48,7 @@ class FlutterEmbedderTestsBase : public sys::testing::TestWithEnvironment {
 
   // |testing::Test|
   void SetUp() override {
+/* TODO(richkadel): UNCOMMENT THIS BLOCK
     TestWithEnvironment::SetUp();
     // This is done in |SetUp| as opposed to the constructor to allow subclasses the opportunity to
     // override |CreateServices()|.
@@ -72,6 +73,7 @@ class FlutterEmbedderTestsBase : public sys::testing::TestWithEnvironment {
         dispatcher(),
         [] { FX_LOGS(FATAL) << "\n\n>> Test did not complete in time, terminating.  <<\n\n"; },
         kTestTimeout);
+*/
   }
 
   // Configures services available to the test environment. This method is called by |SetUp()|. It
@@ -103,12 +105,15 @@ class FlutterEmbedderTests : public FlutterEmbedderTestsBase {
 
   // |testing::Test|
   void SetUp() override {
+/* TODO(richkadel): UNCOMMENT THIS BLOCK
     ASSERT_NO_FATAL_FAILURE(FlutterEmbedderTestsBase::SetUp());
+
 
     // Connect to scenic to ensure it is up and running.
     auto scenic = environment()->ConnectToService<fuchsia::ui::scenic::Scenic>();
     scenic->GetDisplayInfo([this](fuchsia::ui::gfx::DisplayInfo info) { QuitLoop(); });
     RunLoopWithTimeout(kCallTimeout);
+*/
   }
 
   void RunAppWithArgs(const std::string& component_url,

@@ -9,7 +9,7 @@
         }
     },
     "program": {
-        "binary": "test/flutter-embedder-test"
+        "binary": "bin/app"
     },
     "sandbox": {
         "services": [
