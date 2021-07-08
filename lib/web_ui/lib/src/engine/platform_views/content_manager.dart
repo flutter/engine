@@ -2,7 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import 'dart:html' as html;
+
+import '../util.dart';
+import 'slots.dart';
 
 /// A function which takes a unique `id` and some `params` and creates an HTML element.
 ///
