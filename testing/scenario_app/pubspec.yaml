@@ -19,13 +19,13 @@ environment:
 # development. It cannot be checked in, since it would break running
 # `pub get --offline` as part of gclient hooks.
 dependencies:
-  # sky_engine: any
+  sky_engine: any
   vector_math: any
 
 dependency_overrides:
   meta:
     path: ../../../third_party/dart/pkg/meta
-  # sky_engine:
-  #   path: ../../../out/host_debug_unopt/gen/dart-pkg/sky_engine
+  sky_engine:
+    path: ../../sky/packages/sky_engine
   vector_math:
     path: ../../../third_party/pkg/vector_math
