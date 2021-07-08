@@ -19,7 +19,6 @@ environment:
 # impact the build.
 dependencies:
   sky_engine: any
-  sky_services: any
   vector_math: any
 
 dependency_overrides:
@@ -27,7 +26,5 @@ dependency_overrides:
     path: ../../../third_party/dart/pkg/meta
   sky_engine:
     path: ../../../out/host_debug_unopt/gen/dart-pkg/sky_engine
-  sky_services:
-    path: ../../../out/host_debug_unopt/gen/dart-pkg/sky_services
   vector_math:
     path: ../../../third_party/pkg/vector_math
