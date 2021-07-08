@@ -28,6 +28,16 @@ import org.robolectric.annotation.Config;
 @RunWith(RobolectricTestRunner.class)
 public class FlutterFragmentTest {
   @Test
+  public void flutterViewHasId() {
+    FlutterFragment fragment = FlutterFragment.createDefault();
+    fragment.setDelegate(new FlutterActivityAndFragmentDelegate(fragment));
+    fragment.onCreateView(null, null, null);
+
+    assertNotNull(fragment.findViewById(FlutterActivity.FLUTTER_VIEW_ID));
+    assertTrue(fragment.findViewById(FlutterActivity.FLUTTER_VIEW_ID) instanceof FlutterView);
+  }
+
+  @Test
   public void itCreatesDefaultFragmentWithExpectedDefaults() {
     FlutterFragment fragment = FlutterFragment.createDefault();
     fragment.setDelegate(new FlutterActivityAndFragmentDelegate(fragment));
