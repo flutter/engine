@@ -604,6 +604,24 @@ TEST(KeyboardKeyHandlerTest, AltGr) {
     handler.KeyboardHook(nullptr, VK_LMENU, kScanCodeAltLeft, WM_KEYUP, 0, true, true),
     false);
 
+  hook_history.clear();
+  redispatch_scancode = 0;
+
+  // Key up ControlLeft should be dispatched to delegates, but will be properly
+  // handled by delegates' logic.
+
+  EXPECT_EQ(
+    handler.KeyboardHook(nullptr, VK_LCONTROL, kScanCodeControlLeft, WM_KEYUP, 0, false, true),
+    true);
+  EXPECT_EQ(redispatch_scancode, 0);
+  EXPECT_EQ(hook_history.size(), 1);
+  EXPECT_EQ(hook_history.front().scancode, kScanCodeControlLeft);
+  EXPECT_EQ(hook_history.front().was_down, true);
+
+  hook_history.front().callback(true);
+  EXPECT_EQ(redispatch_scancode, 0);
+  hook_history.clear();
+
   EXPECT_EQ(handler.HasRedispatched(), false);
   redispatch_scancode = 0;
   hook_history.clear();
