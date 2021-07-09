@@ -144,7 +144,7 @@ AndroidShellHolder::AndroidShellHolder(
           return AndroidImageGenerator::MakeFromData(buffer, runner);
         },
         -1);
-    FML_DLOG(INFO) << "Registered SDK image decoder (API level 28+)";
+    FML_DLOG(INFO) << "Registered Android SDK image decoder (API level 28+)";
   }
 
   platform_view_ = weak_platform_view;
@@ -312,15 +312,6 @@ std::optional<RunConfiguration> AndroidShellHolder::BuildRunConfiguration(
     }
   }
   return config;
-}
-
-bool AndroidShellHolder::IsNDKImageDecoderAvailable() {
-  auto jni_graphics = fml::NativeLibrary::Create("libjnigraphics.so");
-  if (!jni_graphics) {
-    return false;
-  }
-
-  return !!jni_graphics->ResolveSymbol("AImageDecoder_decodeImage");
 }
 
 }  // namespace flutter
