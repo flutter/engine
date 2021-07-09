@@ -236,8 +236,18 @@ public class FlutterRenderer implements TextureRegistry {
     isDisplayingFlutterUi = false;
   }
 
-  // TODO(mattcarroll): describe the native behavior that this invokes
+  /**
+   * Notifies Flutter that the viewport metrics, e.g. window height and width, have changed.
+   *
+   * <p>If the width, height, or devicePixelRatio are less than or equal to 0, this update is
+   * ignored.
+   *
+   * @param viewportMetrics The metrics to send to the Dart application.
+   */
   public void setViewportMetrics(@NonNull ViewportMetrics viewportMetrics) {
+    if (!viewportMetrics.validate()) {
+      return;
+    }
     Log.v(
         TAG,
         "Setting viewport metrics\n"
@@ -360,5 +370,14 @@ public class FlutterRenderer implements TextureRegistry {
     public int systemGestureInsetRight = 0;
     public int systemGestureInsetBottom = 0;
     public int systemGestureInsetLeft = 0;
+
+    /**
+     * Whether this instance contains valid metrics for the Flutter application.
+     *
+     * @return True if width, height, and devicePixelRatio are > 0; false otherwise.
+     */
+    boolean validate() {
+      return width > 0 && height > 0 && devicePixelRatio > 0;
+    }
   }
 }
