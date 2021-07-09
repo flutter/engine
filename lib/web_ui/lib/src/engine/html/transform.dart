@@ -15,25 +15,29 @@ import 'surface.dart';
 /// A surface that transforms its children using CSS transform.
 class PersistedTransform extends PersistedContainerSurface
     implements ui.TransformEngineLayer {
-  PersistedTransform(PersistedTransform? oldLayer, this.matrix4)
+  PersistedTransform(PersistedTransform? oldLayer, this._matrixStorage)
       : super(oldLayer);
 
-  final Float32List matrix4;
+  /// The storage representing the transform of this surface.
+  final Float32List _matrixStorage;
+
+  /// The matrix representing the transform of this surface.
+  Matrix4 get matrix4 => _matrix4 ??= Matrix4.fromFloat32List(_matrixStorage);
+  Matrix4? _matrix4;
 
   @override
   void recomputeTransformAndClip() {
-    transform = parent!.transform!.multiplied(Matrix4.fromFloat32List(matrix4));
+    transform = parent!.transform!.multiplied(matrix4);
     projectedClip = null;
   }
 
-  /// Cached inverse of transform on this node. Unlike transform, this
+  /// Cached inverse of transform on this node. Unlike [transform], this
   /// Matrix only contains local transform (not chain multiplied since root).
   Matrix4? _localTransformInverse;
 
   @override
   Matrix4? get localTransformInverse {
-    _localTransformInverse ??=
-        Matrix4.tryInvert(Matrix4.fromFloat32List(matrix4));
+    _localTransformInverse ??= Matrix4.tryInvert(matrix4);
     return _localTransformInverse;
   }
 
@@ -47,20 +51,24 @@ class PersistedTransform extends PersistedContainerSurface
 
   @override
   void apply() {
-    rootElement!.style.transform = float64ListToCssTransform(matrix4);
+    rootElement!.style.transform = float64ListToCssTransform(_matrixStorage);
   }
 
   @override
   void update(PersistedTransform oldSurface) {
     super.update(oldSurface);
 
-    if (identical(oldSurface.matrix4, matrix4)) {
+    if (identical(oldSurface._matrixStorage, _matrixStorage)) {
+      // The matrix storage is identical, so we can copy the matrices from the
+      // old surface to avoid recomputing them.
+      _matrix4 = oldSurface._matrix4;
+      _localTransformInverse = oldSurface._localTransformInverse;
       return;
     }
 
     bool matrixChanged = false;
-    for (int i = 0; i < matrix4.length; i++) {
-      if (matrix4[i] != oldSurface.matrix4[i]) {
+    for (int i = 0; i < _matrixStorage.length; i++) {
+      if (_matrixStorage[i] != oldSurface._matrixStorage[i]) {
         matrixChanged = true;
         break;
       }
@@ -68,6 +76,11 @@ class PersistedTransform extends PersistedContainerSurface
 
     if (matrixChanged) {
       apply();
+    } else {
+      // The matrix storage hasn't changed, so we can copy the matrices from the
+      // old surface to avoid recomputing them.
+      _matrix4 = oldSurface._matrix4;
+      _localTransformInverse = oldSurface._localTransformInverse;
     }
   }
 }
