@@ -23,13 +23,19 @@ class PersistedTransform extends PersistedContainerSurface
   @override
   void recomputeTransformAndClip() {
     transform = parent!.transform!.multiplied(Matrix4.fromFloat32List(matrix4));
-    localTransformInverse = null;
     projectedClip = null;
   }
 
+  /// Cached inverse of transform on this node. Unlike transform, this
+  /// Matrix only contains local transform (not chain multiplied since root).
+  Matrix4? _localTransformInverse;
+
   @override
-  Matrix4? get defaultLocalTransformInverse =>
-      Matrix4.tryInvert(Matrix4.fromFloat32List(matrix4));
+  Matrix4? get localTransformInverse {
+    _localTransformInverse ??=
+        Matrix4.tryInvert(Matrix4.fromFloat32List(matrix4));
+    return _localTransformInverse;
+  }
 
   @override
   html.Element createElement() {

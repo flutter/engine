@@ -45,12 +45,16 @@ class PersistedScene extends PersistedContainerSurface {
     final double screenWidth = html.window.innerWidth!.toDouble();
     final double screenHeight = html.window.innerHeight!.toDouble();
     localClipBounds = ui.Rect.fromLTRB(0, 0, screenWidth, screenHeight);
-    localTransformInverse = Matrix4.identity();
     projectedClip = null;
   }
 
+  /// Cached inverse of transform on this node. Unlike transform, this
+  /// Matrix only contains local transform (not chain multiplied since root).
+  Matrix4? _localTransformInverse;
+
   @override
-  Matrix4? get defaultLocalTransformInverse => null;
+  Matrix4? get localTransformInverse =>
+      _localTransformInverse ??= Matrix4.identity();
 
   @override
   html.Element createElement() {

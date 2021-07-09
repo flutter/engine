@@ -540,22 +540,12 @@ abstract class PersistedSurface implements ui.EngineLayer {
 
   /// Bounds of clipping performed by this layer.
   ui.Rect? localClipBounds;
-  // Cached inverse of transform on this node. Unlike transform, this
-  // Matrix only contains local transform (not chain multiplied since root).
-  Matrix4? _localTransformInverse;
 
   /// The inverse of the local transform that this surface applies to its children.
   ///
   /// The default implementation is identity transform. Concrete
   /// implementations may override this getter to supply a different transform.
-  Matrix4? get localTransformInverse =>
-      _localTransformInverse ??= defaultLocalTransformInverse;
-  set localTransformInverse(Matrix4? value) {
-    _localTransformInverse = value;
-  }
-
-  /// The default value to be used whenever [_localTransformInverse] is null.
-  Matrix4? get defaultLocalTransformInverse => Matrix4.identity();
+  Matrix4? get localTransformInverse => null;
 
   /// Recomputes [transform] and [globalClip] fields.
   ///
@@ -567,7 +557,6 @@ abstract class PersistedSurface implements ui.EngineLayer {
   void recomputeTransformAndClip() {
     _transform = parent!._transform;
     localClipBounds = null;
-    _localTransformInverse = null;
     projectedClip = null;
   }
 
@@ -674,7 +663,6 @@ abstract class PersistedContainerSurface extends PersistedSurface {
   void recomputeTransformAndClip() {
     _transform = parent!._transform;
     localClipBounds = null;
-    _localTransformInverse = null;
     projectedClip = null;
   }
 

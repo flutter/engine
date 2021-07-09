@@ -6,7 +6,6 @@ import 'dart:html' as html;
 
 import 'package:ui/src/engine.dart' show createPlatformViewSlot;
 
-import '../vector_math.dart';
 import 'surface.dart';
 
 /// A surface containing a platform view, which is an HTML element.
@@ -23,9 +22,6 @@ class PersistedPlatformView extends PersistedLeafSurface {
   html.Element createElement() {
     return createPlatformViewSlot(viewId);
   }
-
-  @override
-  Matrix4? get localTransformInverse => null;
 
   @override
   void apply() {

@@ -30,12 +30,15 @@ class PersistedOpacity extends PersistedContainerSurface
       transform = transform!.clone();
       transform!.translate(dx, dy);
     }
-    localTransformInverse = null;
     projectedClip = null;
   }
 
+  /// Cached inverse of transform on this node. Unlike transform, this
+  /// Matrix only contains local transform (not chain multiplied since root).
+  Matrix4? _localTransformInverse;
+
   @override
-  Matrix4 get defaultLocalTransformInverse =>
+  Matrix4 get localTransformInverse => _localTransformInverse ??=
       Matrix4.translationValues(-offset.dx, -offset.dy, 0);
 
   @override

@@ -29,12 +29,15 @@ class PersistedOffset extends PersistedContainerSurface
       transform!.translate(dx, dy);
     }
     projectedClip = null;
-    localTransformInverse = null;
   }
 
+  /// Cached inverse of transform on this node. Unlike transform, this
+  /// Matrix only contains local transform (not chain multiplied since root).
+  Matrix4? _localTransformInverse;
+
   @override
-  Matrix4 get defaultLocalTransformInverse =>
-      Matrix4.translationValues(-dx, -dy, 0);
+  Matrix4 get localTransformInverse =>
+      _localTransformInverse ??= Matrix4.translationValues(-dx, -dy, 0);
 
   @override
   html.Element createElement() {

@@ -92,7 +92,6 @@ class PersistedClipRect extends PersistedContainerSurface
     } else {
       localClipBounds = null;
     }
-    localTransformInverse = null;
     projectedClip = null;
   }
 
@@ -150,7 +149,6 @@ class PersistedClipRRect extends PersistedContainerSurface
     } else {
       localClipBounds = null;
     }
-    localTransformInverse = null;
     projectedClip = null;
   }
 
@@ -232,7 +230,6 @@ class PersistedPhysicalShape extends PersistedContainerSurface
     } else {
       localClipBounds = null;
     }
-    localTransformInverse = null;
     projectedClip = null;
   }
 
