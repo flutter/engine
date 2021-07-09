@@ -146,7 +146,8 @@ namespace flutter {
   V(DrawDisplayList)                \
   V(DrawTextBlob)                   \
                                     \
-  V(DrawShadow)
+  V(DrawShadow)                     \
+  V(DrawShadowOccludes)
 
 #define DL_OP_TO_ENUM_VALUE(name) k##name,
 enum class DisplayListOpType { FOR_EACH_DISPLAY_LIST_OP(DL_OP_TO_ENUM_VALUE) };
@@ -321,7 +322,8 @@ class Dispatcher {
   virtual void drawShadow(const SkPath& path,
                           const SkColor color,
                           const SkScalar elevation,
-                          bool occludes) = 0;
+                          bool occludes,
+                          SkScalar dpr) = 0;
 };
 
 // The primary class used to build a display list. The list of methods
@@ -435,7 +437,8 @@ class DisplayListBuilder final : public virtual Dispatcher, public SkRefCnt {
   void drawShadow(const SkPath& path,
                   const SkColor color,
                   const SkScalar elevation,
-                  bool occludes) override;
+                  bool occludes,
+                  SkScalar dpr) override;
 
   sk_sp<DisplayList> Build();
 
