@@ -128,9 +128,6 @@ class PlatformViewManager {
   void clearPlatformView(int viewId) {
     // Remove from our cache, and then from the DOM...
     final html.Element? element = _contents.remove(viewId);
-    if (useCanvasKit) {
-      HtmlViewEmbedder.instance.disposeViews(<int>{viewId});
-    }
     _safelyRemoveSlottedElement(element);
   }
 
