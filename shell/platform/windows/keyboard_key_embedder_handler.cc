@@ -235,8 +235,8 @@ void KeyboardKeyEmbedderHandler::KeyboardHook(
   uint64_t response_id = response_id_;
   PendingResponse pending{
       .callback =
-          [this, callback = std::move(callback)](
-              bool handled, uint64_t response_id) {
+          [this, callback = std::move(callback)](bool handled,
+                                                 uint64_t response_id) {
             auto found = pending_responses_.find(response_id);
             if (found != pending_responses_.end()) {
               pending_responses_.erase(found);

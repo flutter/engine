@@ -94,7 +94,9 @@ KeyboardKeyHandler::KeyboardKeyHandlerDelegate::~KeyboardKeyHandlerDelegate() =
     default;
 
 KeyboardKeyHandler::KeyboardKeyHandler(EventDispatcher dispatch_event)
-    : dispatch_event_(dispatch_event), last_sequence_id_(1), last_key_is_ctrl_left_down(false) {}
+    : dispatch_event_(dispatch_event),
+      last_sequence_id_(1),
+      last_key_is_ctrl_left_down(false) {}
 
 KeyboardKeyHandler::~KeyboardKeyHandler() = default;
 
@@ -139,7 +141,8 @@ void KeyboardKeyHandler::DispatchEvent(const PendingEvent& event) {
     if (character != 0) {
       std::cerr << " (character " << character << ")";
     }
-    std::cerr << std::endl;;
+    std::cerr << std::endl;
+    ;
   }
 #endif
 }
@@ -190,11 +193,11 @@ bool KeyboardKeyHandler::KeyboardHook(FlutterWindowsView* view,
   if (IsKeyUpAltRight(action, key, extended)) {
     if (should_synthesize_ctrl_left_up) {
       should_synthesize_ctrl_left_up = false;
-      PendingEvent ctrl_left_up {
-        .key = VK_LCONTROL,
-        .scancode = ctrl_left_scancode,
-        .action = WM_KEYUP,
-        .was_down = true,
+      PendingEvent ctrl_left_up{
+          .key = VK_LCONTROL,
+          .scancode = ctrl_left_scancode,
+          .action = WM_KEYUP,
+          .was_down = true,
       };
       DispatchEvent(ctrl_left_up);
     }
