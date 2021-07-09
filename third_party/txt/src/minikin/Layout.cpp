@@ -1083,7 +1083,19 @@ void Layout::doLayoutRun(const uint16_t* buf,
           glyphBounds.mBottom =
               roundf(HBFixedToFloat(-extents.y_bearing - extents.height));
         } else {
-          ctx->paint.font->GetBounds(&glyphBounds, glyph_ix, ctx->paint);
+          if (ctx->paint.shouldScaleWhenGlyphMeasure) {
+            float originSize = ctx->paint.size;
+            float scale = 10;
+            ctx->paint.size = originSize * scale;
+            ctx->paint.font->GetBounds(&glyphBounds, glyph_ix, ctx->paint);
+            ctx->paint.size = originSize;
+            glyphBounds.mTop = glyphBounds.mTop / scale;
+            glyphBounds.mLeft = roundf(glyphBounds.mLeft / scale);
+            glyphBounds.mBottom = glyphBounds.mBottom / scale;
+            glyphBounds.mRight = roundf(glyphBounds.mRight / scale);
+          } else {
+            ctx->paint.font->GetBounds(&glyphBounds, glyph_ix, ctx->paint);
+          }
         }
         glyphBounds.offset(x + xoff, y + yoff);
         mBounds.join(glyphBounds);
