@@ -405,11 +405,14 @@ import java.util.Arrays;
     if (host.shouldHandleDeeplinking()) {
       Uri data = intent.getData();
       if (data != null && !data.getPath().isEmpty()) {
-        String pathAndQuery = data.getPath();
+        String pathAndQueryAndFragment = data.getPath();
         if (data.getQuery() != null && !data.getQuery().isEmpty()) {
-          pathAndQuery += "?" + data.getQuery();
+          pathAndQueryAndFragment += "?" + data.getQuery();
         }
-        return pathAndQuery;
+        if (data.getFragment() != null && !data.getFragment().isEmpty()) {
+          pathAndQueryAndFragment += "#" + data.getFragment();
+        }
+        return pathAndQueryAndFragment;
       }
     }
     return null;
