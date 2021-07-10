@@ -24,6 +24,8 @@ declare_args() {
   flutter_prebuilt_dart_sdk = false
 }
 
+is_aot = flutter_runtime_mode == "profile" || flutter_runtime_mode == "release"
+
 # feature_defines_list ---------------------------------------------------------
 
 feature_defines_list = [
