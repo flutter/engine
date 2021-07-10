@@ -159,13 +159,18 @@ static BOOL IsDeepLinkingEnabled(NSDictionary* infoDictionary) {
                        FML_LOG(ERROR)
                            << "Timeout waiting for the first frame when launching an URL.";
                      } else {
-                       NSString* pathAndQuery = url.path;
+                       NSString* pathAndQueryAndFragment = url.path;
                        if ([url.query length] != 0) {
-                         pathAndQuery =
-                             [NSString stringWithFormat:@"%@?%@", pathAndQuery, url.query];
+                         pathAndQueryAndFragment = [NSString
+                             stringWithFormat:@"%@?%@", pathAndQueryAndFragment, url.query];
                        }
-                       [flutterViewController.engine.navigationChannel invokeMethod:@"pushRoute"
-                                                                          arguments:pathAndQuery];
+                       if ([url.fragment length] != 0) {
+                         pathAndQueryAndFragment = [NSString
+                             stringWithFormat:@"%@#%@", pathAndQueryAndFragment, url.fragment];
+                       }
+                       [flutterViewController.engine.navigationChannel
+                           invokeMethod:@"pushRoute"
+                              arguments:pathAndQueryAndFragment];
                      }
                    }];
       return YES;
