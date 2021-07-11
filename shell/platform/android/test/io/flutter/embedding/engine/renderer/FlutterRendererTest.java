@@ -1,15 +1,20 @@
 package io.flutter.embedding.engine.renderer;
 
+import static org.junit.Assert.assertArrayEquals;
+import static org.mockito.Matchers.anyFloat;
+import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import android.graphics.Rect;
 import android.view.Surface;
 import io.flutter.embedding.engine.FlutterJNI;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
@@ -115,5 +120,62 @@ public class FlutterRendererTest {
 
     // Verify behavior under test.
     verify(fakeFlutterJNI, times(0)).markTextureFrameAvailable(eq(entry.id()));
+  }
+
+  @Test
+  public void itConvertsDisplayFeatureArrayToPrimitiveArrays() {
+    // Setup the test.
+    FlutterRenderer flutterRenderer = new FlutterRenderer(fakeFlutterJNI);
+    FlutterRenderer.ViewportMetrics metrics = new FlutterRenderer.ViewportMetrics();
+    metrics.displayFeatures.add(
+        new FlutterRenderer.DisplayFeature(
+            new Rect(10, 20, 30, 40),
+            FlutterRenderer.DisplayFeatureType.FOLD,
+            FlutterRenderer.DisplayFeatureState.POSTURE_FLIPPED));
+    metrics.displayFeatures.add(
+        new FlutterRenderer.DisplayFeature(
+            new Rect(50, 60, 70, 80), FlutterRenderer.DisplayFeatureType.CUTOUT));
+
+    // Execute the behavior under test.
+    flutterRenderer.setViewportMetrics(metrics);
+
+    // Verify behavior under test.
+    ArgumentCaptor<int[]> boundsCaptor = ArgumentCaptor.forClass(int[].class);
+    ArgumentCaptor<int[]> typeCaptor = ArgumentCaptor.forClass(int[].class);
+    ArgumentCaptor<int[]> stateCaptor = ArgumentCaptor.forClass(int[].class);
+    verify(fakeFlutterJNI)
+        .setViewportMetrics(
+            anyFloat(),
+            anyInt(),
+            anyInt(),
+            anyInt(),
+            anyInt(),
+            anyInt(),
+            anyInt(),
+            anyInt(),
+            anyInt(),
+            anyInt(),
+            anyInt(),
+            anyInt(),
+            anyInt(),
+            anyInt(),
+            anyInt(),
+            boundsCaptor.capture(),
+            typeCaptor.capture(),
+            stateCaptor.capture());
+
+    assertArrayEquals(new int[] {10, 20, 30, 40, 50, 60, 70, 80}, boundsCaptor.getValue());
+    assertArrayEquals(
+        new int[] {
+          FlutterRenderer.DisplayFeatureType.FOLD.encodedValue,
+          FlutterRenderer.DisplayFeatureType.CUTOUT.encodedValue
+        },
+        typeCaptor.getValue());
+    assertArrayEquals(
+        new int[] {
+          FlutterRenderer.DisplayFeatureState.POSTURE_FLIPPED.encodedValue,
+          FlutterRenderer.DisplayFeatureState.UNKNOWN.encodedValue
+        },
+        stateCaptor.getValue());
   }
 }

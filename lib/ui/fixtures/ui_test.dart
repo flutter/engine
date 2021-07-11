@@ -339,7 +339,7 @@ void hooksTests() {
     window.onMetricsChanged!();
     _callHook(
       '_updateWindowMetrics',
-      16,
+      19,
       0, // window Id
       0.1234, // device pixel ratio
       0.0,    // width
@@ -356,6 +356,9 @@ void hooksTests() {
       0.0,    // system gesture inset right
       0.0,    // system gesture inset bottom
       0.0,    // system gesture inset left
+      <double>[],  // display features bounds
+      <int>[],     // display features types
+      <int>[],     // display features states
     );
 
     expectIdentical(originalZone, callbackZone);
@@ -402,7 +405,7 @@ void hooksTests() {
   test('Window padding/insets/viewPadding/systemGestureInsets', () {
     _callHook(
       '_updateWindowMetrics',
-      16,
+      19,
       0, // window Id
       1.0, // devicePixelRatio
       800.0, // width
@@ -419,6 +422,9 @@ void hooksTests() {
       0.0, // systemGestureInsetRight
       0.0, // systemGestureInsetBottom
       0.0, // systemGestureInsetLeft
+      <double>[],  // display features bounds
+      <int>[],     // display features types
+      <int>[],     // display features states
     );
 
     expectEquals(window.viewInsets.bottom, 0.0);
@@ -428,7 +434,7 @@ void hooksTests() {
 
     _callHook(
       '_updateWindowMetrics',
-      16,
+      19,
       0, // window Id
       1.0, // devicePixelRatio
       800.0, // width
@@ -445,6 +451,9 @@ void hooksTests() {
       0.0, // systemGestureInsetRight
       44.0, // systemGestureInsetBottom
       0.0, // systemGestureInsetLeft
+      <double>[],  // display features bounds
+      <int>[],     // display features types
+      <int>[],     // display features states
     );
 
     expectEquals(window.viewInsets.bottom, 400.0);
@@ -671,4 +680,7 @@ void _callHook(
   Object? arg14,
   Object? arg15,
   Object? arg16,
+  Object? arg17,
+  Object? arg18,
+  Object? arg19,
 ]) native 'CallHook';

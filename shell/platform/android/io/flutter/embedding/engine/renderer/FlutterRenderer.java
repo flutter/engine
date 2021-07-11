@@ -6,6 +6,7 @@ package io.flutter.embedding.engine.renderer;
 
 import android.annotation.TargetApi;
 import android.graphics.Bitmap;
+import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
 import android.os.Build;
 import android.os.Handler;
@@ -16,6 +17,8 @@ import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.view.TextureRegistry;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -271,7 +274,23 @@ public class FlutterRenderer implements TextureRegistry {
             + ", R: "
             + viewportMetrics.systemGestureInsetRight
             + ", B: "
-            + viewportMetrics.viewInsetBottom);
+            + viewportMetrics.systemGestureInsetRight
+            + "\n"
+            + "Display Features: "
+            + viewportMetrics.displayFeatures.size());
+
+    int[] displayFeaturesBounds = new int[viewportMetrics.displayFeatures.size() * 4];
+    int[] displayFeaturesType = new int[viewportMetrics.displayFeatures.size()];
+    int[] displayFeaturesState = new int[viewportMetrics.displayFeatures.size()];
+    for (int i = 0; i < viewportMetrics.displayFeatures.size(); i++) {
+      DisplayFeature displayFeature = viewportMetrics.displayFeatures.get(i);
+      displayFeaturesBounds[4 * i] = displayFeature.bounds.left;
+      displayFeaturesBounds[4 * i + 1] = displayFeature.bounds.top;
+      displayFeaturesBounds[4 * i + 2] = displayFeature.bounds.right;
+      displayFeaturesBounds[4 * i + 3] = displayFeature.bounds.bottom;
+      displayFeaturesType[i] = displayFeature.type.encodedValue;
+      displayFeaturesState[i] = displayFeature.state.encodedValue;
+    }
 
     flutterJNI.setViewportMetrics(
         viewportMetrics.devicePixelRatio,
@@ -288,7 +307,10 @@ public class FlutterRenderer implements TextureRegistry {
         viewportMetrics.systemGestureInsetTop,
         viewportMetrics.systemGestureInsetRight,
         viewportMetrics.systemGestureInsetBottom,
-        viewportMetrics.systemGestureInsetLeft);
+        viewportMetrics.systemGestureInsetLeft,
+        displayFeaturesBounds,
+        displayFeaturesType,
+        displayFeaturesState);
   }
 
   // TODO(mattcarroll): describe the native behavior that this invokes
@@ -360,5 +382,102 @@ public class FlutterRenderer implements TextureRegistry {
     public int systemGestureInsetRight = 0;
     public int systemGestureInsetBottom = 0;
     public int systemGestureInsetLeft = 0;
+    public List<DisplayFeature> displayFeatures = new ArrayList<DisplayFeature>();
+  }
+
+  /**
+   * Description of a physical feature on the display.
+   *
+   * <p>A display feature is a distinctive physical attribute located within the display panel of
+   * the device. It can intrude into the application window space and create a visual distortion,
+   * visual or touch discontinuity, make some area invisible or create a logical divider or
+   * separation in the screen space.
+   *
+   * <p>Based on {@link androidx.window.DisplayFeature}, with added support for cutouts.
+   */
+  public static final class DisplayFeature {
+    public final Rect bounds;
+    public final DisplayFeatureType type;
+    public final DisplayFeatureState state;
+
+    public DisplayFeature(Rect bounds, DisplayFeatureType type, DisplayFeatureState state) {
+      this.bounds = bounds;
+      this.type = type;
+      this.state = state;
+    }
+
+    public DisplayFeature(Rect bounds, DisplayFeatureType type) {
+      this.bounds = bounds;
+      this.type = type;
+      this.state = DisplayFeatureState.UNKNOWN;
+    }
+  }
+
+  /**
+   * Types of display features that can obstruct the viewport.
+   *
+   * <p>Some, like FOLD, can be reported without actually impeding drawing on the screen. They are
+   * useful for knowing where the display is bent or has a crease. The {@link DisplayFeature} bounds
+   * can be 0-width in such cases.
+   */
+  public enum DisplayFeatureType {
+    /**
+     * We do not know this type of display feature yet. This can happen if WindowManager is updated
+     * with new types.
+     */
+    UNKNOWN(0),
+
+    /**
+     * A fold in the flexible screen without a physical gap. Corresponds to {@link
+     * androidx.window.FoldingFeature#TYPE_FOLD}
+     */
+    FOLD(1),
+
+    /**
+     * A physical separation with a hinge that allows two display panels to fold. Corresponds to
+     * {@link androidx.window.FoldingFeature#TYPE_HINGE}
+     */
+    HINGE(2),
+
+    /**
+     * A non-functional area of the screen, usually housing cameras or sensors. Corresponds to
+     * {@link android.view.DisplayCutout}
+     */
+    CUTOUT(3);
+
+    public final int encodedValue;
+
+    DisplayFeatureType(int encodedValue) {
+      this.encodedValue = encodedValue;
+    }
+  }
+
+  /**
+   * State of the display feature.
+   *
+   * <p>For foldables, the state is the posture. For cutouts, this is {@link UNKNOWN}
+   */
+  public enum DisplayFeatureState {
+    /** The display feature is a cutout or this state is new and not yet known to Flutter. */
+    UNKNOWN(0),
+
+    /**
+     * The foldable device is completely open. The screen space that is presented to the user is
+     * flat. Corresponds to {@link androidx.window.FoldingFeature#STATE_FLAT}
+     */
+    POSTURE_FLAT(1),
+
+    /**
+     * The foldable device's hinge is in an intermediate position between opened and closed state.
+     * There is a non-flat angle between parts of the flexible screen or between physical screen
+     * panels. Corresponds to {@link androidx.window.FoldingFeature#STATE_HALF_OPENED}
+     */
+    POSTURE_HALF_OPENED(2);
+
+    public final int encodedValue;
+
+    DisplayFeatureState(int encodedValue) {
+      this.encodedValue = encodedValue;
+    }
   }
 }

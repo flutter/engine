@@ -14,11 +14,13 @@ import static org.mockito.Mockito.when;
 
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
+import android.app.Activity;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.Insets;
+import android.graphics.Rect;
 import android.graphics.Region;
 import android.media.Image;
 import android.media.Image.Plane;
@@ -29,6 +31,9 @@ import android.view.ViewGroup;
 import android.view.WindowInsets;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
+import androidx.core.util.Consumer;
+import androidx.window.FoldingFeature;
+import androidx.window.WindowLayoutInfo;
 import io.flutter.TestUtils;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterJNI;
@@ -37,6 +42,7 @@ import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.systemchannels.SettingsChannel;
 import io.flutter.plugin.platform.PlatformViewsController;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Before;
 import org.junit.Test;
@@ -47,6 +53,7 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.Shadows;
@@ -71,7 +78,7 @@ public class FlutterViewTest {
 
   @Test
   public void attachToFlutterEngine_alertsPlatformViews() {
-    FlutterView flutterView = new FlutterView(RuntimeEnvironment.application);
+    FlutterView flutterView = new FlutterView(Robolectric.setupActivity(Activity.class));
     FlutterEngine flutterEngine =
         spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
     when(flutterEngine.getPlatformViewsController()).thenReturn(platformViewsController);
@@ -83,7 +90,7 @@ public class FlutterViewTest {
 
   @Test
   public void detachFromFlutterEngine_alertsPlatformViews() {
-    FlutterView flutterView = new FlutterView(RuntimeEnvironment.application);
+    FlutterView flutterView = new FlutterView(Robolectric.setupActivity(Activity.class));
     FlutterEngine flutterEngine =
         spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
     when(flutterEngine.getPlatformViewsController()).thenReturn(platformViewsController);
@@ -96,7 +103,7 @@ public class FlutterViewTest {
 
   @Test
   public void detachFromFlutterEngine_turnsOffA11y() {
-    FlutterView flutterView = new FlutterView(RuntimeEnvironment.application);
+    FlutterView flutterView = new FlutterView(Robolectric.setupActivity(Activity.class));
     FlutterEngine flutterEngine =
         spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
     FlutterRenderer flutterRenderer = spy(new FlutterRenderer(mockFlutterJni));
@@ -110,7 +117,7 @@ public class FlutterViewTest {
 
   @Test
   public void onConfigurationChanged_fizzlesWhenNullEngine() {
-    FlutterView flutterView = new FlutterView(RuntimeEnvironment.application);
+    FlutterView flutterView = new FlutterView(Robolectric.setupActivity(Activity.class));
     FlutterEngine flutterEngine =
         spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
 
@@ -135,7 +142,7 @@ public class FlutterViewTest {
         new AtomicReference<>();
 
     // FYI - The default brightness is LIGHT, which is why we don't need to configure it.
-    FlutterView flutterView = new FlutterView(RuntimeEnvironment.application);
+    FlutterView flutterView = new FlutterView(Robolectric.setupActivity(Activity.class));
     FlutterEngine flutterEngine =
         spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
 
@@ -173,7 +180,7 @@ public class FlutterViewTest {
     AtomicReference<SettingsChannel.PlatformBrightness> reportedBrightness =
         new AtomicReference<>();
 
-    Context spiedContext = spy(RuntimeEnvironment.application);
+    Context spiedContext = spy(Robolectric.setupActivity(Activity.class));
 
     Resources spiedResources = spy(spiedContext.getResources());
     when(spiedContext.getResources()).thenReturn(spiedResources);
@@ -225,7 +232,7 @@ public class FlutterViewTest {
         FlutterViewTest.ShadowFullscreenViewGroup.class
       })
   public void setPaddingTopToZeroForFullscreenMode() {
-    FlutterView flutterView = new FlutterView(RuntimeEnvironment.application);
+    FlutterView flutterView = new FlutterView(Robolectric.setupActivity(Activity.class));
     FlutterEngine flutterEngine =
         spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
     FlutterRenderer flutterRenderer = spy(new FlutterRenderer(mockFlutterJni));
@@ -267,7 +274,7 @@ public class FlutterViewTest {
         FlutterViewTest.ShadowFullscreenViewGroup.class
       })
   public void setPaddingTopToZeroForFullscreenModeLegacy() {
-    FlutterView flutterView = new FlutterView(RuntimeEnvironment.application);
+    FlutterView flutterView = new FlutterView(Robolectric.setupActivity(Activity.class));
     FlutterEngine flutterEngine =
         spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
     FlutterRenderer flutterRenderer = spy(new FlutterRenderer(mockFlutterJni));
@@ -305,7 +312,7 @@ public class FlutterViewTest {
   @Config(sdk = 30)
   public void reportSystemInsetWhenNotFullscreen() {
     // Without custom shadows, the default system ui visibility flags is 0.
-    FlutterView flutterView = new FlutterView(RuntimeEnvironment.application);
+    FlutterView flutterView = new FlutterView(Robolectric.setupActivity(Activity.class));
     assertEquals(0, flutterView.getSystemUiVisibility());
 
     FlutterEngine flutterEngine =
@@ -346,7 +353,7 @@ public class FlutterViewTest {
   @Config(sdk = 29)
   public void reportSystemInsetWhenNotFullscreenLegacy() {
     // Without custom shadows, the default system ui visibility flags is 0.
-    FlutterView flutterView = new FlutterView(RuntimeEnvironment.application);
+    FlutterView flutterView = new FlutterView(Robolectric.setupActivity(Activity.class));
     assertEquals(0, flutterView.getSystemUiVisibility());
 
     FlutterEngine flutterEngine =
@@ -383,7 +390,7 @@ public class FlutterViewTest {
   @Test
   public void systemInsetHandlesFullscreenNavbarRight() {
     RuntimeEnvironment.setQualifiers("+land");
-    FlutterView flutterView = spy(new FlutterView(RuntimeEnvironment.systemContext));
+    FlutterView flutterView = spy(new FlutterView(Robolectric.setupActivity(Activity.class)));
     ShadowDisplay display =
         Shadows.shadowOf(
             ((WindowManager)
@@ -430,7 +437,7 @@ public class FlutterViewTest {
   @Test
   public void systemInsetHandlesFullscreenNavbarLeft() {
     RuntimeEnvironment.setQualifiers("+land");
-    FlutterView flutterView = spy(new FlutterView(RuntimeEnvironment.systemContext));
+    FlutterView flutterView = spy(new FlutterView(Robolectric.setupActivity(Activity.class)));
     ShadowDisplay display =
         Shadows.shadowOf(
             ((WindowManager)
@@ -481,7 +488,7 @@ public class FlutterViewTest {
   @Config(sdk = 30)
   public void systemInsetGetInsetsFullscreen() {
     RuntimeEnvironment.setQualifiers("+land");
-    FlutterView flutterView = spy(new FlutterView(RuntimeEnvironment.systemContext));
+    FlutterView flutterView = spy(new FlutterView(Robolectric.setupActivity(Activity.class)));
     ShadowDisplay display =
         Shadows.shadowOf(
             ((WindowManager)
@@ -533,7 +540,7 @@ public class FlutterViewTest {
   @Config(sdk = 29)
   public void systemInsetGetInsetsFullscreenLegacy() {
     RuntimeEnvironment.setQualifiers("+land");
-    FlutterView flutterView = spy(new FlutterView(RuntimeEnvironment.systemContext));
+    FlutterView flutterView = spy(new FlutterView(Robolectric.setupActivity(Activity.class)));
     ShadowDisplay display =
         Shadows.shadowOf(
             ((WindowManager)
@@ -584,7 +591,7 @@ public class FlutterViewTest {
   @Config(sdk = 30)
   public void systemInsetDisplayCutoutSimple() {
     RuntimeEnvironment.setQualifiers("+land");
-    FlutterView flutterView = spy(new FlutterView(RuntimeEnvironment.systemContext));
+    FlutterView flutterView = spy(new FlutterView(Robolectric.setupActivity(Activity.class)));
     ShadowDisplay display =
         Shadows.shadowOf(
             ((WindowManager)
@@ -636,6 +643,135 @@ public class FlutterViewTest {
     assertEquals(200, viewportMetricsCaptor.getValue().viewPaddingRight);
 
     assertEquals(100, viewportMetricsCaptor.getValue().viewInsetTop);
+  }
+
+  @Test
+  public void itRegistersAndUnregistersToWindowManager() {
+    Context context = Robolectric.setupActivity(Activity.class);
+    FlutterView flutterView = spy(new FlutterView(context));
+    ShadowDisplay display =
+        Shadows.shadowOf(
+            ((WindowManager)
+                    RuntimeEnvironment.systemContext.getSystemService(Context.WINDOW_SERVICE))
+                .getDefaultDisplay());
+    when(flutterView.getContext()).thenReturn(context);
+    androidx.window.WindowManager windowManager = mock(androidx.window.WindowManager.class);
+    when(flutterView.createWindowManager()).thenReturn(windowManager);
+
+    // When a new FlutterView is attached to the window
+    flutterView.onAttachedToWindow();
+
+    // Then the WindowManager callback is registered
+    verify(windowManager, times(1)).registerLayoutChangeCallback(any(), any());
+
+    // When the FlutterView is detached from the window
+    flutterView.onDetachedFromWindow();
+
+    // Then the WindowManager callback is unregistered
+    verify(windowManager, times(1)).unregisterLayoutChangeCallback(any());
+  }
+
+  @Test
+  @TargetApi(30)
+  @Config(sdk = 30)
+  public void itSendsCutoutDisplayFeatureToFlutter() {
+    Context context = Robolectric.setupActivity(Activity.class);
+    FlutterView flutterView = spy(new FlutterView(context));
+    ShadowDisplay display =
+        Shadows.shadowOf(
+            ((WindowManager)
+                    RuntimeEnvironment.systemContext.getSystemService(Context.WINDOW_SERVICE))
+                .getDefaultDisplay());
+    when(flutterView.getContext()).thenReturn(context);
+    androidx.window.WindowManager windowManager = mock(androidx.window.WindowManager.class);
+    when(flutterView.createWindowManager()).thenReturn(windowManager);
+    FlutterEngine flutterEngine =
+        spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
+    FlutterRenderer flutterRenderer = spy(new FlutterRenderer(mockFlutterJni));
+    when(flutterEngine.getRenderer()).thenReturn(flutterRenderer);
+
+    // When FlutterView is attached to the engine and window, and a cutout exists
+    WindowInsets windowInsets = mock(WindowInsets.class);
+    DisplayCutout displayCutout = mock(DisplayCutout.class);
+    when(displayCutout.getBoundingRects()).thenReturn(Arrays.asList(new Rect(0, 0, 100, 100)));
+    when(windowInsets.getDisplayCutout()).thenReturn(displayCutout);
+    when(flutterView.getRootWindowInsets()).thenReturn(windowInsets);
+
+    flutterView.attachToFlutterEngine(flutterEngine);
+    ArgumentCaptor<FlutterRenderer.ViewportMetrics> viewportMetricsCaptor =
+        ArgumentCaptor.forClass(FlutterRenderer.ViewportMetrics.class);
+    verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
+    assertEquals(Arrays.asList(), viewportMetricsCaptor.getValue().displayFeatures);
+    flutterView.onAttachedToWindow();
+    ArgumentCaptor<Consumer<WindowLayoutInfo>> wmConsumerCaptor =
+        ArgumentCaptor.forClass((Class) Consumer.class);
+    verify(windowManager).registerLayoutChangeCallback(any(), wmConsumerCaptor.capture());
+    Consumer<WindowLayoutInfo> wmConsumer = wmConsumerCaptor.getValue();
+
+    wmConsumer.accept(new WindowLayoutInfo.Builder().build());
+
+    // Then the Renderer receives the display feature
+    verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
+    assertEquals(
+        FlutterRenderer.DisplayFeatureType.CUTOUT,
+        viewportMetricsCaptor.getValue().displayFeatures.get(0).type);
+    assertEquals(
+        FlutterRenderer.DisplayFeatureState.UNKNOWN,
+        viewportMetricsCaptor.getValue().displayFeatures.get(0).state);
+    assertEquals(
+        new Rect(0, 0, 100, 100), viewportMetricsCaptor.getValue().displayFeatures.get(0).bounds);
+  }
+
+  @Test
+  public void itSendsHingeDisplayFeatureToFlutter() {
+    Context context = Robolectric.setupActivity(Activity.class);
+    FlutterView flutterView = spy(new FlutterView(context));
+    ShadowDisplay display =
+        Shadows.shadowOf(
+            ((WindowManager)
+                    RuntimeEnvironment.systemContext.getSystemService(Context.WINDOW_SERVICE))
+                .getDefaultDisplay());
+    when(flutterView.getContext()).thenReturn(context);
+    androidx.window.WindowManager windowManager = mock(androidx.window.WindowManager.class);
+    when(flutterView.createWindowManager()).thenReturn(windowManager);
+    FlutterEngine flutterEngine =
+        spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
+    FlutterRenderer flutterRenderer = spy(new FlutterRenderer(mockFlutterJni));
+    when(flutterEngine.getRenderer()).thenReturn(flutterRenderer);
+
+    WindowLayoutInfo testWindowLayout =
+        new WindowLayoutInfo.Builder()
+            .setDisplayFeatures(
+                Arrays.asList(
+                    new FoldingFeature(
+                        new Rect(0, 0, 100, 100),
+                        FoldingFeature.TYPE_HINGE,
+                        FoldingFeature.STATE_FLAT)))
+            .build();
+
+    // When FlutterView is attached to the engine and window, and a hinge display feature exists
+    flutterView.attachToFlutterEngine(flutterEngine);
+    ArgumentCaptor<FlutterRenderer.ViewportMetrics> viewportMetricsCaptor =
+        ArgumentCaptor.forClass(FlutterRenderer.ViewportMetrics.class);
+    verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
+    assertEquals(Arrays.asList(), viewportMetricsCaptor.getValue().displayFeatures);
+    flutterView.onAttachedToWindow();
+    ArgumentCaptor<Consumer<WindowLayoutInfo>> wmConsumerCaptor =
+        ArgumentCaptor.forClass((Class) Consumer.class);
+    verify(windowManager).registerLayoutChangeCallback(any(), wmConsumerCaptor.capture());
+    Consumer<WindowLayoutInfo> wmConsumer = wmConsumerCaptor.getValue();
+    wmConsumer.accept(testWindowLayout);
+
+    // Then the Renderer receives the display feature
+    verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
+    assertEquals(
+        FlutterRenderer.DisplayFeatureType.HINGE,
+        viewportMetricsCaptor.getValue().displayFeatures.get(0).type);
+    assertEquals(
+        FlutterRenderer.DisplayFeatureState.POSTURE_FLAT,
+        viewportMetricsCaptor.getValue().displayFeatures.get(0).state);
+    assertEquals(
+        new Rect(0, 0, 100, 100), viewportMetricsCaptor.getValue().displayFeatures.get(0).bounds);
   }
 
   @Test
