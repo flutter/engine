@@ -25,6 +25,7 @@ import android.view.inputmethod.InputMethodManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+import androidx.core.view.inputmethod.EditorInfoCompat;
 import io.flutter.Log;
 import io.flutter.embedding.android.KeyboardManager;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
@@ -329,6 +330,17 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
       outAttrs.actionId = enterAction;
     }
     outAttrs.imeOptions |= enterAction;
+
+    String[] imgTypeString = new String[] {
+      "image/png",
+      "image/bmp",
+      "image/jpg",
+      "image/tiff",
+      "image/gif",
+      "image/jpeg",
+      "image/webp"
+    };
+    EditorInfoCompat.setContentMimeTypes(outAttrs, imgTypeString);
 
     InputConnectionAdaptor connection =
         new InputConnectionAdaptor(
