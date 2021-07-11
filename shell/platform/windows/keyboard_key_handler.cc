@@ -22,7 +22,7 @@ static constexpr int kMaxPendingEvents = 1000;
 //
 // This is a temporary solution to
 // https://github.com/flutter/flutter/issues/81674, and forces ShiftRight
-// KeyDown event to not be redispatched regardless of the framework's response.
+// KeyDown events to not be redispatched regardless of the framework's response.
 //
 // If a ShiftRight KeyDown event is not handled by the framework and is
 // redispatched, Win32 will not send its following KeyUp event and keeps
@@ -35,19 +35,19 @@ static bool IsKeyDownShiftRight(int virtual_key, bool was_down) {
 #endif
 }
 
-// Returns true if this key is a key down event of AltRight.
+// Returns true if this key is an AltRight key down event.
 //
-// This is used to resolve an issue where a AltGr press causes CtrlLeft to hang
-// pressed, as reported in https://github.com/flutter/flutter/issues/78005.
+// This is used to resolve an issue where an AltGr press causes CtrlLeft to hang
+// when pressed, as reported in https://github.com/flutter/flutter/issues/78005.
 //
 // When AltGr is pressed (in a supporting layout such as Spanish), Win32 first
 // fires a fake CtrlLeft down event, then an AltRight down event.
 // This is significant because this fake CtrlLeft down event will not be paired
-// with a up event, which would have been fine until Flutter redispatches the
-// CtrlDown event, making Win32 take it as a real event and left CtrlLeft
-// hanging pressed, both for Win32 and for Flutter framework.
+// with a up event, which is fine until Flutter redispatches the CtrlDown
+// event, which Win32 then interprets as a real event, leaving both Win32 and
+// the Flutter framework thinking that CtrlLeft is still pressed.
 //
-// To resolve, Flutter recognizes this fake CtrlLeft down event using the
+// To resolve this, Flutter recognizes this fake CtrlLeft down event using the
 // following AltRight down event. Flutter then synthesizes a CtrlLeft key up
 // event immediately after the corresponding AltRight key up event.
 //
@@ -56,7 +56,7 @@ static bool IsKeyDownShiftRight(int virtual_key, bool was_down) {
 // contain the exactly same information, including the GetKeyState result.
 // Fortunately, this will require the two events to occur *really* close, which
 // would be rare, and a misrecognition would only cause a minor consequence
-// where the CtrlLeft is released early; the later, real CtrlLeft up event will
+// where the CtrlLeft is released early; the later, real, CtrlLeft up event will
 // be ignored.
 static bool IsKeyDownAltRight(int action, int virtual_key, bool extended) {
 #ifdef WINUWP
@@ -207,8 +207,8 @@ bool KeyboardKeyHandler::KeyboardHook(FlutterWindowsView* view,
   incoming->sequence_id = sequence_id;
   incoming->unreplied = delegates_.size();
   // There are a few situations where events must not be redispatched.
-  // Initializing `any_handled` with true in such cases suffices since it can
-  // only be set true and is used to disable redispatching.
+  // Initializing `any_handled` with true in such cases suffices, since it can
+  // only be set to true and is used to disable redispatching.
   const bool must_not_redispatch = IsKeyDownShiftRight(key, was_down);
   incoming->any_handled = must_not_redispatch;
 
