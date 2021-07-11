@@ -627,7 +627,9 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
     _engineNeedsLaunch = NO;
   }
 
-  [_engine.get() attachView];
+  if ([_engine.get() viewController] == self) {
+    [_engine.get() attachView];
+  }
 
   if (@available(iOS 13.4, *)) {
     _pointerInteraction.reset([[UIPointerInteraction alloc] initWithDelegate:self]);
@@ -967,7 +969,9 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 #pragma mark - Handle view resizing
 
 - (void)updateViewportMetrics {
-  [_engine.get() updateViewportMetrics:_viewportMetrics];
+  if ([_engine.get() viewController] == self) {
+    [_engine.get() updateViewportMetrics:_viewportMetrics];
+  }
 }
 
 - (CGFloat)statusBarPadding {
