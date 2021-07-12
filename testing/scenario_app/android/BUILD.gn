@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/common/config.gni")
+import("//flutter/testing/scenario_app/runtime_mode.gni")
 
 action("android") {
   script = "run_gradle.py"

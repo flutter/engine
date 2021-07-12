@@ -16,6 +16,7 @@ import("//third_party/dart/build/dart/dart_action.gni")
 # Invoker must supply dart_main and package_config. Invoker may optionally
 # supply aot as a boolean and product as a boolean.
 template("dart_snapshot") {
+  assert(!is_fuchsia)
   assert(defined(invoker.main_dart), "main_dart is a required parameter.")
   assert(defined(invoker.package_config),
          "package_config is a required parameter.")
@@ -59,14 +60,8 @@ template("dart_snapshot") {
       "--packages=" + rebase_path(package_config),
       "--target=flutter",
       "--sdk-root=" + flutter_patched_sdk,
-      "--output=" + rebase_path(kernel_output),
+      "--output-dill=" + rebase_path(kernel_output),
     ]
-
-    if (is_debug) {
-      args += [ "--embed-sources" ]
-    } else {
-      args += [ "--no-embed-sources" ]
-    }
 
     if (is_aot) {
       args += [
