@@ -420,9 +420,13 @@ void DisplayListCanvasRecorder::RecordPaintAttributes(const SkPaint* paint,
       current_color_ != paint->getColor()) {
     builder_->setColor(current_color_ = paint->getColor());
   }
-  if ((dataNeeded & kBlendNeeded_) != 0 &&
-      current_blend_ != paint->getBlendMode()) {
-    builder_->setBlendMode(current_blend_ = paint->getBlendMode());
+  if ((dataNeeded & kBlendNeeded_)) {
+    skstd::optional<SkBlendMode> mode_optional = paint->asBlendMode();
+    FML_DCHECK(mode_optional);
+    SkBlendMode mode = mode_optional.value();
+    if (current_blend_ != mode) {
+      builder_->setBlendMode(current_blend_ = mode);
+    }
   }
   // invert colors is a Flutter::Paint thing, not an SkPaint thing
   // if ((dataNeeded & invertColorsNeeded_) != 0 &&
