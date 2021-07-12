@@ -340,16 +340,8 @@ void DisplayListBoundsCalculator::drawShadow(const SkPath& path,
                                              const SkScalar elevation,
                                              bool occludes,
                                              SkScalar dpr) {
-  // Constants from physical_shape_layer.cc
-  const SkScalar kLightHeight = 600;
-  const SkScalar kLightRadius = 800;
-
-  SkRect shadow_bounds(path.getBounds());
-  SkShadowUtils::GetLocalBounds(
-      matrix(), path, SkPoint3::Make(0, 0, elevation * dpr),
-      SkPoint3::Make(0, -1, 0), kLightRadius / kLightHeight,
-      SkShadowFlags::kDirectionalLight_ShadowFlag, &shadow_bounds);
-  accumulateRect(shadow_bounds);
+  accumulateRect(
+      PhysicalShapeLayer::ComputeShadowBounds(path, elevation, dpr, matrix()));
 }
 
 void DisplayListBoundsCalculator::accumulateRect(const SkRect& rect,
