@@ -41,7 +41,7 @@ if [[ ! -z $errors ]]; then
   exit 1
 fi
 
-result_size=$(gsutil du gs://flutter_firebase_testlab/engine_scenario_test/deadbeef/dnfield1/\*/game_loop_results/results_scenario_0.json | cut -d " " -f1)
+result_size=$(gsutil du gs://flutter_firebase_testlab/engine_scenario_test/$GIT_REVISION/$BUILD_ID/\*/game_loop_results/results_scenario_0.json | cut -d " " -f1)
 if [[ $result_size == "0" ]]; then
   echo "Failed to produce a timeline."
   exit 1
