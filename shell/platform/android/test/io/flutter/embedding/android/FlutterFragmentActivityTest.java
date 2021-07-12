@@ -61,18 +61,6 @@ public class FlutterFragmentActivityTest {
   }
 
   @Test
-  public void flutterViewHasId() {
-    Intent intent = FlutterFragmentActivity.createDefaultIntent(RuntimeEnvironment.application);
-    ActivityController<FlutterFragmentActivity> activityController =
-        Robolectric.buildActivity(FlutterFragmentActivity.class, intent);
-    FlutterFragmentActivity activity = activityController.get();
-
-    activity.onCreate(null);
-    assertNotNull(activity.findViewById(FlutterFragment.FLUTTER_VIEW_ID));
-    assertTrue(activity.findViewById(FlutterFragment.FLUTTER_VIEW_ID) instanceof FlutterView);
-  }
-
-  @Test
   public void createFlutterFragment__defaultRenderModeSurface() {
     final FlutterFragmentActivity activity = new FakeFlutterFragmentActivity();
     assertEquals(activity.createFlutterFragment().getRenderMode(), RenderMode.surface);
