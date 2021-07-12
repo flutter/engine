@@ -35,9 +35,7 @@ template("dart_snapshot") {
     package_config = rebase_path(invoker.package_config)
     flutter_patched_sdk = rebase_path("$root_out_dir/flutter_patched_sdk")
 
-    deps = [
-      "//flutter/lib/snapshot:strong_platform",
-    ]
+    deps = [ "//flutter/lib/snapshot:strong_platform" ]
 
     inputs = [
       main_dart,
