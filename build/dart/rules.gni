@@ -2,8 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-# This file has rules for making Dart packages and Dart-based Mojo applications.
-# The entrypoint is the dart_pkg rule.
+# This file has rules for making Dart packages and snapshots.
 
 import("//build/compiled_action.gni")
 import("//build/module_args/dart.gni")
