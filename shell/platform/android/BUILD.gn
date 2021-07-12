@@ -584,6 +584,10 @@ zip_bundle("android") {
     ]
     deps += [ ":flutter_shell_native" ]
   }
+
+  if (flutter_runtime_mode == "debug" && current_cpu == "arm") {
+    deps += [ ":robolectric_tests" ]
+  }
 }
 
 action("gen_android_javadoc") {
