@@ -11,19 +11,26 @@ enabled_branches:
 platform_properties:
   linux:
     properties:
-      caches: "[{\"name\":\"builder_linux_engine\",\"path\":\"builder\"}]"
+      caches: >-
+        [
+          {"name":"builder_linux_engine","path":"builder"}
+        ]
       os: Linux
   mac:
     properties:
       caches: >-
-              "[
-              {\"name\":\"flutter_cocoapods\",\"path\":\"cocoapods\"},
-              {\"name\":\"osx_sdk\",\"path\":\"old_osx_sdk\"},
-              {\"name\":\"builder_mac_engine\",\"path\":\"builder\"}]"
+        [
+          {"name":"flutter_cocoapods","path":"cocoapods"},
+          {"name":"osx_sdk","path":"old_osx_sdk"},
+          {"name":"builder_mac_engine","path":"builder"}
+        ]
       os: Mac-10.15
   windows:
     properties:
-      caches: "[{\"name\":\"builder_win_engine\",\"path\":\"builder\"}]"
+      caches: >-
+        [
+          {"name":"builder_win_engine","path":"builder"}
+        ]
       timeout: "180"
       os: Windows-10
 
