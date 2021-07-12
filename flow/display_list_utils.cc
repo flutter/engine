@@ -57,8 +57,8 @@ void SkPaintDispatchHelper::setColor(SkColor color) {
 void SkPaintDispatchHelper::setBlendMode(SkBlendMode mode) {
   paint_.setBlendMode(mode);
 }
-void SkPaintDispatchHelper::setFilterQuality(SkFilterQuality quality) {
-  paint_.setFilterQuality(quality);
+void SkPaintDispatchHelper::setBlender(sk_sp<SkBlender> blender) {
+  paint_.setBlender(blender);
 }
 void SkPaintDispatchHelper::setShader(sk_sp<SkShader> shader) {
   paint_.setShader(shader);
@@ -69,6 +69,9 @@ void SkPaintDispatchHelper::setImageFilter(sk_sp<SkImageFilter> filter) {
 void SkPaintDispatchHelper::setColorFilter(sk_sp<SkColorFilter> filter) {
   color_filter_ = filter;
   paint_.setColorFilter(makeColorFilter());
+}
+void SkPaintDispatchHelper::setPathEffect(sk_sp<SkPathEffect> effect) {
+  paint_.setPathEffect(effect);
 }
 void SkPaintDispatchHelper::setMaskFilter(sk_sp<SkMaskFilter> filter) {
   paint_.setMaskFilter(filter);
@@ -335,17 +338,11 @@ void DisplayListBoundsCalculator::drawTextBlob(const sk_sp<SkTextBlob> blob,
 void DisplayListBoundsCalculator::drawShadow(const SkPath& path,
                                              const SkColor color,
                                              const SkScalar elevation,
-                                             bool occludes) {
+                                             bool occludes,
+                                             SkScalar dpr) {
   // Constants from physical_shape_layer.cc
   const SkScalar kLightHeight = 600;
   const SkScalar kLightRadius = 800;
-
-  SkScalar dpr = matrix().getMinScale();
-  // getMinScale returns -1 if matrix has perspective or scale factor overflows
-  // set dpr as 1 if getMinScale fails
-  if (dpr == -1) {
-    dpr = 1;
-  }
 
   SkRect shadow_bounds(path.getBounds());
   SkShadowUtils::GetLocalBounds(

@@ -176,9 +176,10 @@ void DisplayListCanvasDispatcher::drawTextBlob(const sk_sp<SkTextBlob> blob,
 void DisplayListCanvasDispatcher::drawShadow(const SkPath& path,
                                              const SkColor color,
                                              const SkScalar elevation,
-                                             bool occludes) {
+                                             bool occludes,
+                                             SkScalar dpr) {
   flutter::PhysicalShapeLayer::DrawShadow(canvas_, path, color, elevation,
-                                          occludes, 1.0);
+                                          occludes, dpr);
 }
 
 DisplayListCanvasRecorder::DisplayListCanvasRecorder(const SkRect& bounds)
@@ -419,9 +420,19 @@ void DisplayListCanvasRecorder::RecordPaintAttributes(const SkPaint* paint,
       current_color_ != paint->getColor()) {
     builder_->setColor(current_color_ = paint->getColor());
   }
-  if ((dataNeeded & kBlendNeeded_) != 0 &&
-      current_blend_ != paint->getBlendMode()) {
-    builder_->setBlendMode(current_blend_ = paint->getBlendMode());
+  if ((dataNeeded & kBlendNeeded_)) {
+    skstd::optional<SkBlendMode> mode_optional = paint->asBlendMode();
+    if (mode_optional) {
+      SkBlendMode mode = mode_optional.value();
+      if (current_blender_ || current_blend_ != mode) {
+        builder_->setBlendMode(current_blend_ = mode);
+        current_blender_ = nullptr;
+      }
+    } else {
+      if (current_blender_.get() != paint->getBlender()) {
+        builder_->setBlender(current_blender_ = sk_ref_sp(paint->getBlender()));
+      }
+    }
   }
   // invert colors is a Flutter::Paint thing, not an SkPaint thing
   // if ((dataNeeded & invertColorsNeeded_) != 0 &&
@@ -453,10 +464,6 @@ void DisplayListCanvasRecorder::RecordPaintAttributes(const SkPaint* paint,
       builder_->setMiterLimit(current_miter_limit_ = paint->getStrokeMiter());
     }
   }
-  if ((dataNeeded & kFilterQualityNeeded_) != 0 &&
-      current_fq_ != paint->getFilterQuality()) {
-    builder_->setFilterQuality(current_fq_ = paint->getFilterQuality());
-  }
   if ((dataNeeded & kShaderNeeded_) != 0 &&
       current_shader_.get() != paint->getShader()) {
     builder_->setShader(current_shader_ = sk_ref_sp(paint->getShader()));
@@ -470,6 +477,11 @@ void DisplayListCanvasRecorder::RecordPaintAttributes(const SkPaint* paint,
       current_image_filter_.get() != paint->getImageFilter()) {
     builder_->setImageFilter(current_image_filter_ =
                                  sk_ref_sp(paint->getImageFilter()));
+  }
+  if ((dataNeeded & kPathEffectNeeded_) != 0 &&
+      current_path_effect_.get() != paint->getPathEffect()) {
+    builder_->setPathEffect(current_path_effect_ =
+                                sk_ref_sp(paint->getPathEffect()));
   }
   if ((dataNeeded & kMaskFilterNeeded_) != 0 &&
       current_mask_filter_.get() != paint->getMaskFilter()) {
