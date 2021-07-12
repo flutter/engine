@@ -140,7 +140,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// [PlatformWindow.scheduleFrame] has been called since the last time this
   /// callback was invoked.
   @override
-  ui.FrameCallback? get onBeginFrame => onBeginFrame;
+  ui.FrameCallback? get onBeginFrame => _onBeginFrame;
   ui.FrameCallback? _onBeginFrame;
   Zone? _onBeginFrameZone;
   @override
