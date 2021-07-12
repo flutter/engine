@@ -178,8 +178,6 @@ export 'engine/plugins.dart';
 
 export 'engine/pointer_binding.dart';
 
-// This import is intentionally commented out because the analyzer says it's unused.
-// import 'engine/pointer_converter.dart';
 export 'engine/pointer_converter.dart';
 
 import 'engine/profiler.dart';
