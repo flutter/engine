@@ -61,7 +61,6 @@ Future<void> _handlePlatformMessage(
 }
 
 Future<String> _getTimelineData() async {
-  final String isolateId = developer.Service.getIsolateID(Isolate.current);
   final developer.ServiceProtocolInfo info = await developer.Service.getInfo();
   final Uri vmServiceTimelineUri = info.serverUri.resolve('getVMTimeline');
   final Map<String, dynamic> vmServiceTimelineJson = await _getJson(vmServiceTimelineUri);
