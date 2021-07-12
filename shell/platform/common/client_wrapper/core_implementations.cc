@@ -165,8 +165,24 @@ int64_t TextureRegistrarImpl::RegisterTexture(TextureVariant* texture) {
         [](size_t width, size_t height,
            void* user_data) -> const FlutterDesktopPixelBuffer* {
       auto texture = static_cast<PixelBufferTexture*>(user_data);
-      auto buffer = texture->CopyPixelBuffer(width, height);
-      return buffer;
+      return texture->CopyPixelBuffer(width, height);
+    };
+
+    int64_t texture_id = FlutterDesktopTextureRegistrarRegisterExternalTexture(
+        texture_registrar_ref_, &info);
+    return texture_id;
+  }
+
+  if (auto gpu_surface_texture = std::get_if<GpuSurfaceTexture>(texture)) {
+    FlutterDesktopTextureInfo info = {};
+    info.type = kFlutterDesktopGpuSurfaceTexture;
+    info.gpu_surface_config.type = gpu_surface_texture->surface_type();
+    info.gpu_surface_config.user_data = gpu_surface_texture;
+    info.gpu_surface_config.callback =
+        [](size_t width, size_t height,
+           void* user_data) -> const FlutterDesktopGpuSurfaceDescriptor* {
+      auto texture = static_cast<GpuSurfaceTexture*>(user_data);
+      return texture->ObtainDescriptor(width, height);
     };
 
     int64_t texture_id = FlutterDesktopTextureRegistrarRegisterExternalTexture(

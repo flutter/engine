@@ -9,7 +9,8 @@
 #include <mutex>
 #include <unordered_map>
 
-#include "flutter/shell/platform/windows/external_texture_gl.h"
+#include "flutter/shell/platform/common/public/flutter_texture_registrar.h"
+#include "flutter/shell/platform/windows/external_texture.h"
 
 namespace flutter {
 
@@ -45,9 +46,10 @@ class FlutterWindowsTextureRegistrar {
   FlutterWindowsEngine* engine_ = nullptr;
 
   // All registered textures, keyed by their IDs.
-  std::unordered_map<int64_t, std::unique_ptr<flutter::ExternalTextureGL>>
-      textures_;
+  std::unordered_map<int64_t, std::unique_ptr<ExternalTexture>> textures_;
   std::mutex map_mutex_;
+
+  int64_t EmplaceTexture(std::unique_ptr<ExternalTexture> texture);
 };
 
 };  // namespace flutter

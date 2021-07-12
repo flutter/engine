@@ -112,7 +112,7 @@ TEST(FlutterWindowsTextureRegistrarTest, PopulateInvalidTexture) {
 }
 
 // TODO Add additional tests for PopulateTexture() once we've mocked gl*
-// functions used by ExternalTextureGL
+// functions used by ExternalTexturePixelBuffer
 
 }  // namespace testing
 }  // namespace flutter

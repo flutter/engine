@@ -1604,8 +1604,12 @@ FILE: ../../../flutter/shell/platform/windows/display_helper_winuwp.h
 FILE: ../../../flutter/shell/platform/windows/dpi_utils_win32.cc
 FILE: ../../../flutter/shell/platform/windows/dpi_utils_win32.h
 FILE: ../../../flutter/shell/platform/windows/dpi_utils_win32_unittests.cc
-FILE: ../../../flutter/shell/platform/windows/external_texture_gl.cc
-FILE: ../../../flutter/shell/platform/windows/external_texture_gl.h
+FILE: ../../../flutter/shell/platform/windows/external_texture.cc
+FILE: ../../../flutter/shell/platform/windows/external_texture.h
+FILE: ../../../flutter/shell/platform/windows/external_texture_d3d.cc
+FILE: ../../../flutter/shell/platform/windows/external_texture_d3d.h
+FILE: ../../../flutter/shell/platform/windows/external_texture_pixelbuffer.cc
+FILE: ../../../flutter/shell/platform/windows/external_texture_pixelbuffer.h
 FILE: ../../../flutter/shell/platform/windows/flutter_key_map.cc
 FILE: ../../../flutter/shell/platform/windows/flutter_project_bundle.cc
 FILE: ../../../flutter/shell/platform/windows/flutter_project_bundle.h

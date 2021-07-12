@@ -69,6 +69,12 @@ class AngleSurfaceManager {
   // not null.
   EGLBoolean SwapBuffers();
 
+  EGLSurface CreateSurfaceFromHandle(EGLenum handle_type,
+                                     EGLClientBuffer handle,
+                                     const EGLint* attributes) const;
+
+  EGLDisplay egl_display() const { return egl_display_; };
+
  private:
   bool Initialize();
   void CleanUp();

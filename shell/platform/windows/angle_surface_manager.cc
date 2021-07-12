@@ -326,4 +326,12 @@ EGLBoolean AngleSurfaceManager::SwapBuffers() {
   return (eglSwapBuffers(egl_display_, render_surface_));
 }
 
+EGLSurface AngleSurfaceManager::CreateSurfaceFromHandle(
+    EGLenum handle_type,
+    EGLClientBuffer handle,
+    const EGLint* attributes) const {
+  return eglCreatePbufferFromClientBuffer(egl_display_, handle_type, handle,
+                                          egl_config_, attributes);
+}
+
 }  // namespace flutter
