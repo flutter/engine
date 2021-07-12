@@ -358,12 +358,6 @@ abstract class Directory extends IoNode {
   Iterable<IoNode> get walk;
 }
 
-extension DirectoryList on Directory {
-  Directory childDirectory(String name) {
-    return walk.firstWhere((IoNode child) => child.name == name, orElse: () => null) as Directory;
-  }
-}
-
 // interface
 abstract class Link extends IoNode { }
 

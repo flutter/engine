@@ -2359,10 +2359,17 @@ class _EngineSrcDirectory extends _RepositoryDirectory {
   List<_RepositoryDirectory> get virtualSubdirectories {
     // Skia is updated more frequently than other third party libraries and
     // is therefore represented as a separate top-level component.
-    final fs.Directory thirdPartyNode = ioDirectory.childDirectory('third_party');
-    final fs.Directory skiaNode = thirdPartyNode.childDirectory('skia');
+    final fs.Directory thirdPartyNode = findChildDirectory(ioDirectory, 'third_party');
+    final fs.Directory skiaNode = findChildDirectory(thirdPartyNode, 'skia');
     return <_RepositoryDirectory>[_RepositorySkiaDirectory(this, skiaNode)];
   }
+}
+
+fs.Directory findChildDirectory(fs.Directory parent, String name) {
+  return parent.walk.firstWhere(
+    (fs.IoNode child) => child.name == name, 
+    orElse: () => null,
+  ) as fs.Directory;
 }
 
 class _Progress {
@@ -2452,9 +2459,9 @@ void _writeSignature(String signature, system.IOSink sink) {
 // Returns true if changes are detected.
 Future<bool> _computeLicenseToolChanges(_RepositoryDirectory root, {String goldenSignaturePath, String outputSignaturePath}) async {
   system.stderr.writeln('Computing signature for license tool');
-  final fs.Directory flutterNode = root.ioDirectory.childDirectory('flutter');
-  final fs.Directory toolsNode = flutterNode.childDirectory('tools');
-  final fs.Directory licenseNode = toolsNode.childDirectory('licenses');
+  final fs.Directory flutterNode = findChildDirectory(root.ioDirectory, 'flutter');
+  final fs.Directory toolsNode = findChildDirectory(flutterNode, 'tools');
+  final fs.Directory licenseNode = findChildDirectory(toolsNode, 'licenses');
   final _RepositoryFlutterLicenseToolDirectory licenseToolDirectory = _RepositoryFlutterLicenseToolDirectory(licenseNode);
 
   final String toolSignature = await licenseToolDirectory.signature;
