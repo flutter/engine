@@ -10,7 +10,7 @@ import("//build/module_args/dart.gni")
 import("//flutter/common/config.gni")
 import("//third_party/dart/build/dart/dart_action.gni")
 
-# Creates a dart kernel (dill) file suitalbe for use with gen_snapshot, as well
+# Creates a dart kernel (dill) file suitable for use with gen_snapshot, as well
 # as the app-jit, aot-elf, or aot-assembly snapshot for Android or iOS.
 #
 # Invoker must supply dart_main and package_config. Invoker may optionally
