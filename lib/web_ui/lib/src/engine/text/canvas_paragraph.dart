@@ -666,6 +666,7 @@ class CanvasParagraphBuilder implements ui.ParagraphBuilder {
     double scale = 1.0,
     double? baselineOffset,
     ui.TextBaseline? baseline,
+    int codepointLength = 1,
   }) {
     // TODO(mdebbar): for measurement of placeholders, look at:
     // - https://github.com/flutter/engine/blob/c0f7e8acf9318d264ad6a235facd097de597ffcc/third_party/txt/src/txt/paragraph_txt.cc#L325-L350

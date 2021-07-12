@@ -244,10 +244,12 @@ void ParagraphTxt::SetText(std::vector<uint16_t> text, StyledRuns runs) {
 
 void ParagraphTxt::SetInlinePlaceholders(
     std::vector<PlaceholderRun> inline_placeholders,
-    std::unordered_set<size_t> obj_replacement_char_indexes) {
+    std::unordered_set<size_t> obj_replacement_char_indexes,
+    std::vector<Range<size_t>> inline_placeholder_ranges) {
   needs_layout_ = true;
   inline_placeholders_ = std::move(inline_placeholders);
   obj_replacement_char_indexes_ = std::move(obj_replacement_char_indexes);
+  inline_placeholder_ranges_ = std::move(inline_placeholder_ranges);
 }
 
 bool ParagraphTxt::ComputeLineBreaks() {
@@ -767,10 +769,11 @@ void ParagraphTxt::Layout(double width) {
       if (bidi_run.start() < line_end_index &&
           bidi_run.end() > line_metrics.start_index) {
         // The run is a placeholder run.
-        if (bidi_run.size() == 1 &&
+        if (placeholder_run_index < inline_placeholders_.size() &&
+            bidi_run.size() ==
+                inline_placeholders_[placeholder_run_index].codepoint_length &&
             text_[bidi_run.start()] == objReplacementChar &&
-            obj_replacement_char_indexes_.count(bidi_run.start()) != 0 &&
-            placeholder_run_index < inline_placeholders_.size()) {
+            obj_replacement_char_indexes_.count(bidi_run.start()) != 0) {
           line_runs.emplace_back(
               std::max(bidi_run.start(), line_metrics.start_index),
               std::min(bidi_run.end(), line_end_index), bidi_run.direction(),
@@ -968,26 +971,26 @@ void ParagraphTxt::Layout(double width) {
             // The placeholder run's layout should yield one glyph representing
             // the object replacement character.  Replace its width with the
             // placeholder's width.
-            FML_DCHECK(layout.nGlyphs() == 1);
             glyph_advance = run.placeholder_run()->width;
+            glyph_positions.emplace_back(
+                run_x_offset + blob_buffer.pos[0], glyph_advance, run.start(),
+                run.placeholder_run()->codepoint_length);
           } else {
             glyph_advance = layout.getCharAdvance(glyph_code_units.start);
-          }
-          float grapheme_advance =
-              glyph_advance / grapheme_code_unit_counts.size();
-
-          glyph_positions.emplace_back(run_x_offset + glyph_x_offset,
-                                       grapheme_advance,
-                                       run.start() + glyph_code_units.start,
-                                       grapheme_code_unit_counts[0]);
-
-          // Compute positions for the additional graphemes in the ligature.
-          for (size_t i = 1; i < grapheme_code_unit_counts.size(); ++i) {
-            glyph_positions.emplace_back(
-                glyph_positions.back().x_pos.end, grapheme_advance,
-                glyph_positions.back().code_units.start +
-                    grapheme_code_unit_counts[i - 1],
-                grapheme_code_unit_counts[i]);
+            float grapheme_advance =
+                glyph_advance / grapheme_code_unit_counts.size();
+            glyph_positions.emplace_back(run_x_offset + glyph_x_offset,
+                                         grapheme_advance,
+                                         run.start() + glyph_code_units.start,
+                                         grapheme_code_unit_counts[0]);
+            // Compute positions for the additional graphemes in the ligature.
+            for (size_t i = 1; i < grapheme_code_unit_counts.size(); ++i) {
+              glyph_positions.emplace_back(
+                  glyph_positions.back().x_pos.end, grapheme_advance,
+                  glyph_positions.back().code_units.start +
+                      grapheme_code_unit_counts[i - 1],
+                  grapheme_code_unit_counts[i]);
+            }
           }
 
           bool at_word_start = false;
@@ -1990,6 +1993,13 @@ Paragraph::Range<size_t> ParagraphTxt::GetWordBoundary(size_t offset) {
         icu::BreakIterator::createWordInstance(icu::Locale(), status));
     if (!U_SUCCESS(status))
       return Range<size_t>(0, 0);
+  }
+  // Check against known ranges that are attributed to placeholders. Return
+  // the whole placeholder range if the word contains the placeholder.
+  for (Range<size_t> range : inline_placeholder_ranges_) {
+    if (range.contains(offset)) {
+      return range;
+    }
   }
 
   word_breaker_->setText(icu::UnicodeString(false, text_.data(), text_.size()));

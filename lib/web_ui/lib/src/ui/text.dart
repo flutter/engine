@@ -726,6 +726,7 @@ abstract class ParagraphBuilder {
     double scale = 1.0,
     double? baselineOffset,
     TextBaseline? baseline,
+    int codepointLength = 1,
   });
 }
 

@@ -3496,10 +3496,17 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
   /// The `scale` parameter will scale the `width` and `height` by the specified amount,
   /// and keep track of the scale. The scales of placeholders added can be accessed
   /// through [placeholderScales]. This is primarily used for accessibility scaling.
+  ///
+  /// The `codepointLength` parameter is how many codepoints this placeholder will
+  /// take up. This impacts the indexes passed to and returned by [Paragraph]'s
+  /// getBoxesForRange, getPositionForOffset, getWordBoundary, and other methods
+  /// that deal directly with codepoint indexes. [Paragraph] will treat the placeholder
+  /// as if it were made up of `codepointLength` object replacement characters (0xFFFC).
   void addPlaceholder(double width, double height, PlaceholderAlignment alignment, {
     double scale = 1.0,
     double? baselineOffset,
     TextBaseline? baseline,
+    int codepointLength = 1,
   }) {
     // Require a baseline to be specified if using a baseline-based alignment.
     assert(!(alignment == PlaceholderAlignment.aboveBaseline ||
@@ -3508,11 +3515,11 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
     // Default the baselineOffset to height if null. This will place the placeholder
     // fully above the baseline, similar to [PlaceholderAlignment.aboveBaseline].
     baselineOffset = baselineOffset ?? height;
-    _addPlaceholder(width * scale, height * scale, alignment.index, baselineOffset * scale, baseline?.index);
+    _addPlaceholder(width * scale, height * scale, alignment.index, baselineOffset * scale, baseline?.index, codepointLength);
     _placeholderCount++;
     _placeholderScales.add(scale);
   }
-  String? _addPlaceholder(double width, double height, int alignment, double baselineOffset, int? baseline) native 'ParagraphBuilder_addPlaceholder';
+  String? _addPlaceholder(double width, double height, int alignment, double baselineOffset, int? baseline, int codepointLength) native 'ParagraphBuilder_addPlaceholder';
 
   /// Applies the given paragraph style and returns a [Paragraph] containing the
   /// added text and associated styling.
