@@ -28,6 +28,7 @@ targets:
     builder: Linux Android AOT Engine
     recipe: engine
     properties:
+      add_recipes_cq: "true"
       build_android_aot: "true"
       android_sdk_license: \n24333f8a63b6825ea9c5514f83c2829b004d1fee
       android_sdk_preview_license: \n84831b9409646a918e30573bab4c9c91346d8abd
@@ -38,6 +39,7 @@ targets:
     builder: Linux Android Debug Engine
     recipe: engine
     properties:
+      add_recipes_cq: "true"
       build_android_debug: "true"
       android_sdk_license: \n24333f8a63b6825ea9c5514f83c2829b004d1fee
       android_sdk_preview_license: \n84831b9409646a918e30573bab4c9c91346d8abd
@@ -58,6 +60,7 @@ targets:
     builder: Linux Fuchsia
     recipe: engine
     properties:
+      add_recipes_cq: "true"
       build_fuchsia: "true"
       fuchsia_ctl_version: version:0.0.27
     timeout: 60
@@ -67,6 +70,7 @@ targets:
     builder: Linux Fuchsia FEMU
     recipe: femu_test
     properties:
+      add_recipes_cq: "true"
       build_fuchsia: "true"
       fuchsia_ctl_version: version:0.0.27
     timeout: 60
@@ -82,6 +86,7 @@ targets:
     builder: Linux Host Engine
     recipe: engine
     properties:
+      add_recipes_cq: "true"
       build_host: "true"
     timeout: 60
     scheduler: luci
@@ -89,6 +94,8 @@ targets:
   - name: Linux Unopt
     builder: Linux Unopt
     recipe: engine_unopt
+    properties:
+      add_recipes_cq: "true"
     timeout: 75
     scheduler: luci
 
@@ -96,6 +103,7 @@ targets:
     builder: Linux Arm Host Engine
     recipe: engine/engine_arm
     properties:
+      add_recipes_cq: "true"
       build_host: "true"
     timeout: 90
     scheduler: luci
@@ -104,6 +112,7 @@ targets:
     builder: Linux Web Engine
     recipe: web_engine
     properties:
+      add_recipes_cq: "true"
       gcs_goldens_bucket: flutter_logs
     timeout: 60
     scheduler: luci
@@ -120,6 +129,7 @@ targets:
     builder: Linux Web Framework tests
     recipe: engine/web_engine_framework
     properties:
+      add_recipes_cq: "true"
       framework: "true"
       shard: web_tests
       subshards: 0, 1, 2, 3, 4, 5, 6, 7_last
@@ -158,6 +168,7 @@ targets:
     builder: Mac Host Engine
     recipe: engine
     properties:
+      add_recipes_cq: "true"
       build_host: "true"
     timeout: 75
     scheduler: luci
@@ -166,6 +177,7 @@ targets:
     builder: Mac Unopt
     recipe: engine_unopt
     properties:
+      add_recipes_cq: "true"
       jazzy_version: 0.9.5
     timeout: 75
     scheduler: luci
@@ -210,12 +222,15 @@ targets:
     builder: Windows Host Engine
     recipe: engine
     properties:
+      add_recipes_cq: "true"
       build_host: "true"
     scheduler: luci
 
   - name: Windows Unopt
     builder: Windows Unopt
     recipe: engine_unopt
+    properties:
+      add_recipes_cq: "true"
     timeout: 75
     scheduler: luci
 
