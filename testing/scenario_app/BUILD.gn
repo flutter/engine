@@ -8,20 +8,6 @@ import("//flutter/common/config.gni")
 dart_snapshot("scenario_app_snapshot") {
   main_dart = "lib/main.dart"
   package_config = ".dart_tool/package_config.json"
-  sources = [
-    "lib/src/animated_color_square.dart",
-    "lib/src/bogus_font_text.dart",
-    "lib/src/channel_util.dart",
-    "lib/src/initial_route_reply.dart",
-    "lib/src/locale_initialization.dart",
-    "lib/src/platform_echo_mixin.dart",
-    "lib/src/platform_view.dart",
-    "lib/src/poppable_screen.dart",
-    "lib/src/scenario.dart",
-    "lib/src/scenarios.dart",
-    "lib/src/send_text_focus_semantics.dart",
-    "lib/src/touches_scenario.dart",
-  ]
 }
 
 if (!is_aot) {
@@ -30,7 +16,10 @@ if (!is_aot) {
   } else if (is_ios) {
     _flutter_assets_dir =
         "$root_out_dir/scenario_app/Scenarios/App.framework/flutter_assets"
+  } else {
+    assert(false)
   }
+
   copy("copy_jit_assets") {
     visibility = [ ":*" ]
     sources = [

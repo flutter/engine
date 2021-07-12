@@ -10,13 +10,13 @@ import("//build/module_args/dart.gni")
 import("//flutter/common/config.gni")
 import("//third_party/dart/build/dart/dart_action.gni")
 
-# Creates a dart kernel (dill) file suitalbe for use with gen_snapshot.
+# Creates a dart kernel (dill) file suitalbe for use with gen_snapshot, as well
+# as the app-jit, aot-elf, or aot-assembly snapshot for Android or iOS.
 #
 # Invoker must supply dart_main and package_config. Invoker may optionally
 # supply aot as a boolean and product as a boolean.
 template("dart_snapshot") {
   assert(defined(invoker.main_dart), "main_dart is a required parameter.")
-  assert(defined(invoker.sources), "sources is a required parameter.")
   assert(defined(invoker.package_config),
          "package_config is a required parameter.")
 
@@ -27,21 +27,22 @@ template("dart_snapshot") {
 
   kernel_output = "$target_gen_dir/kernel_blob.bin"
 
-  prebuilt_dart_action(kernel_target) {
+  dart_action(kernel_target) {
+    script = "$root_gen_dir/frontend_server.dart.snapshot"
+
     main_dart = rebase_path(invoker.main_dart)
     package_config = rebase_path(invoker.package_config)
+    flutter_patched_sdk = rebase_path("$root_out_dir/flutter_patched_sdk")
 
-    platform_dill = "$root_out_dir/flutter_patched_sdk/platform_strong.dill"
-    gen_kernel_script = "//third_party/dart/pkg/vm/bin/gen_kernel.dart"
-
-    deps = [ "//flutter/lib/snapshot:strong_platform" ]
+    deps = [
+      "//flutter/flutter_frontend_server:frontend_server",
+      "//flutter/lib/snapshot:strong_platform",
+    ]
 
     inputs = [
-               main_dart,
-               package_config,
-               platform_dill,
-               gen_kernel_script,
-             ] + invoker.sources
+      main_dart,
+      package_config,
+    ]
 
     outputs = [ kernel_output ]
 
@@ -54,12 +55,10 @@ template("dart_snapshot") {
       "--disable-dart-dev",
     ]
 
-    script = gen_kernel_script
-
     args = [
       "--packages=" + rebase_path(package_config),
       "--target=flutter",
-      "--platform=" + rebase_path(platform_dill),
+      "--sdk-root=" + flutter_patched_sdk,
       "--output=" + rebase_path(kernel_output),
     ]
 
@@ -121,7 +120,26 @@ template("dart_snapshot") {
       args += [ "--enable_asserts" ]
     }
 
-    if (!is_aot) {
+    if (is_aot) {
+      args += [ "--deterministic" ]
+      if (is_ios) {
+        snapshot_assembly = "$target_gen_dir/ios/snapshot_assembly.S"
+        outputs += [ snapshot_assembly ]
+        args += [
+          "--snapshot_kind=app-aot-assembly",
+          "--assembly=" + rebase_path(snapshot_assembly),
+        ]
+      } else if (is_android) {
+        libapp = "$target_gen_dir/android/libs/$android_app_abi/libapp.so"
+        outputs += [ libapp ]
+        args += [
+          "--snapshot_kind=app-aot-elf",
+          "--elf=" + rebase_path(libapp),
+        ]
+      } else {
+        assert(false)
+      }
+    } else {
       deps += [ "//flutter/lib/snapshot:generate_snapshot_bin" ]
       vm_snapshot_data =
           "$root_gen_dir/flutter/lib/snapshot/vm_isolate_snapshot.bin"
@@ -146,25 +164,6 @@ template("dart_snapshot") {
         "--isolate_snapshot_instructions=" +
             rebase_path(isolate_snapshot_instructions),
       ]
-    } else {
-      args += [ "--deterministic" ]
-      if (is_ios) {
-        snapshot_assembly = "$target_gen_dir/ios/snapshot_assembly.S"
-        outputs += [ snapshot_assembly ]
-        args += [
-          "--snapshot_kind=app-aot-assembly",
-          "--assembly=" + rebase_path(snapshot_assembly),
-        ]
-      } else if (is_android) {
-        libapp = "$target_gen_dir/android/libs/$android_app_abi/libapp.so"
-        outputs += [ libapp ]
-        args += [
-          "--snapshot_kind=app-aot-elf",
-          "--elf=" + rebase_path(libapp),
-        ]
-      } else {
-        assert(false)
-      }
     }
 
     args += [ rebase_path(kernel_output) ]
