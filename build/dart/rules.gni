@@ -28,15 +28,14 @@ template("dart_snapshot") {
 
   kernel_output = "$target_gen_dir/kernel_blob.bin"
 
-  dart_action(kernel_target) {
-    script = "$root_gen_dir/frontend_server.dart.snapshot"
+  prebuilt_dart_action(kernel_target) {
+    script = "//flutter/flutter_frontend_server/bin/starter.dart"
 
     main_dart = rebase_path(invoker.main_dart)
     package_config = rebase_path(invoker.package_config)
     flutter_patched_sdk = rebase_path("$root_out_dir/flutter_patched_sdk")
 
     deps = [
-      "//flutter/flutter_frontend_server:frontend_server",
       "//flutter/lib/snapshot:strong_platform",
     ]
 
