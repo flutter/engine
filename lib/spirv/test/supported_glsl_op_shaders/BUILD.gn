@@ -1,0 +1,56 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//build/compiled_action.gni")
+import("//flutter/testing/testing.gni")
+
+if (enable_unittests) {
+  compiled_action_foreach("spirv_compile_supported_glsl_shaders") {
+    tool = "//flutter/lib/spirv/test:glsl_to_spirv"
+
+    sources = [
+      "glsl_op_abs.glsl",
+      "glsl_op_acos.glsl",
+      "glsl_op_asin.glsl",
+      "glsl_op_atan.glsl",
+      "glsl_op_atan2.glsl",
+      "glsl_op_ceil.glsl",
+      "glsl_op_clamp.glsl",
+      "glsl_op_cos.glsl",
+      "glsl_op_cross.glsl",
+      "glsl_op_degrees.glsl",
+      "glsl_op_distance.glsl",
+      "glsl_op_exp.glsl",
+      "glsl_op_exp2.glsl",
+      "glsl_op_faceforward.glsl",
+      "glsl_op_floor.glsl",
+      "glsl_op_fract.glsl",
+      "glsl_op_inversesqrt.glsl",
+      "glsl_op_length.glsl",
+      "glsl_op_log.glsl",
+      "glsl_op_log2.glsl",
+      "glsl_op_max.glsl",
+      "glsl_op_min.glsl",
+      "glsl_op_mix.glsl",
+      "glsl_op_normalize.glsl",
+      "glsl_op_pow.glsl",
+      "glsl_op_radians.glsl",
+      "glsl_op_reflect.glsl",
+      "glsl_op_sign.glsl",
+      "glsl_op_sin.glsl",
+      "glsl_op_smoothstep.glsl",
+      "glsl_op_sqrt.glsl",
+      "glsl_op_step.glsl",
+      "glsl_op_tan.glsl",
+      "glsl_op_trunc.glsl",
+    ]
+
+    outputs = [ "$target_gen_dir/{{source_name_part}}.spv" ]
+
+    args = [
+      "{{source}}",
+      rebase_path(target_gen_dir, root_build_dir) + "/{{source_name_part}}.spv",
+    ]
+  }
+}
