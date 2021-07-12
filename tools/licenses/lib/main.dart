@@ -2367,7 +2367,7 @@ class _EngineSrcDirectory extends _RepositoryDirectory {
 
 fs.Directory findChildDirectory(fs.Directory parent, String name) {
   return parent.walk.firstWhere(
-    (fs.IoNode child) => child.name == name, 
+    (fs.IoNode child) => child.name == name,
     orElse: () => null,
   ) as fs.Directory;
 }
