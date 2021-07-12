@@ -4,4 +4,6 @@
 
 import("//flutter/common/config.gni")
 
+assert(is_android || is_ios)
+
 is_aot = flutter_runtime_mode == "profile" || flutter_runtime_mode == "release"
