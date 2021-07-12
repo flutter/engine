@@ -245,6 +245,8 @@ public class FlutterRenderer implements TextureRegistry {
    * @param viewportMetrics The metrics to send to the Dart application.
    */
   public void setViewportMetrics(@NonNull ViewportMetrics viewportMetrics) {
+    // We might get called with just the DPR if width/height aren't available yet.
+    // Just ignore, as it will get called again when width/height are set.
     if (!viewportMetrics.validate()) {
       return;
     }
