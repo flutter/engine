@@ -49,6 +49,7 @@ class IgnoreAttributeDispatchHelper : public virtual Dispatcher {
   void setMiterLimit(SkScalar limit) override {}
   void setColor(SkColor color) override {}
   void setBlendMode(SkBlendMode mode) override {}
+  void setBlender(sk_sp<SkBlender> blender) override {}
   void setShader(sk_sp<SkShader> shader) override {}
   void setImageFilter(sk_sp<SkImageFilter> filter) override {}
   void setColorFilter(sk_sp<SkColorFilter> filter) override {}
@@ -105,6 +106,7 @@ class SkPaintDispatchHelper : public virtual Dispatcher {
   void setMiterLimit(SkScalar limit) override;
   void setColor(SkColor color) override;
   void setBlendMode(SkBlendMode mode) override;
+  void setBlender(sk_sp<SkBlender> blender) override;
   void setShader(sk_sp<SkShader> shader) override;
   void setImageFilter(sk_sp<SkImageFilter> filter) override;
   void setColorFilter(sk_sp<SkColorFilter> filter) override;
@@ -308,7 +310,8 @@ class DisplayListBoundsCalculator final
   void drawShadow(const SkPath& path,
                   const SkColor color,
                   const SkScalar elevation,
-                  bool occludes) override;
+                  bool occludes,
+                  SkScalar dpr) override;
 
   SkRect getBounds() { return accumulator_->getBounds(); }
 
