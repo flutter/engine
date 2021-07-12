@@ -1985,11 +1985,14 @@ TEST_F(ShellTest, CanRegisterImageDecoders) {
   std::unique_ptr<Shell> shell = CreateShell(settings);
   ASSERT_NE(shell.get(), nullptr);
 
-  shell->RegisterImageDecoder(
-      [](sk_sp<SkData> buffer) {
-        return std::make_unique<SinglePixelImageGenerator>();
-      },
-      100);
+  fml::TaskRunner::RunNowOrPostTask(
+      shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
+        shell->RegisterImageDecoder(
+            [](sk_sp<SkData> buffer) {
+              return std::make_unique<SinglePixelImageGenerator>();
+            },
+            100);
+      });
 
   RunEngine(shell.get(), std::move(configuration));
   latch.Wait();
