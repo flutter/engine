@@ -71,7 +71,11 @@ public class TestActivity extends TestableFlutterActivity {
     MethodChannel channel =
         new MethodChannel(getFlutterEngine().getDartExecutor(), "driver", JSONMethodCodec.INSTANCE);
     Map<String, Object> test = new HashMap<>(2);
-    test.put("name", "animated_color_square");
+    if (launchIntent.hasExtra("scenario_name")) {
+      test.put("name", launchIntent.getStringExtra("scenario_name"));
+    } else {
+      test.put("name", "animated_color_square");
+    }
     test.put("use_android_view", launchIntent.getBooleanExtra("use_android_view", false));
     channel.invokeMethod("set_scenario", test);
   }
