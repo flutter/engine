@@ -662,10 +662,10 @@ abstract class StringAttribute extends NativeFieldWrapperClass1 {
     required this.range,
   });
 
-  // The range of the text to which this attribute applies.
+  /// The range of the text to which this attribute applies.
   final TextRange range;
 
-  // Returns a copy of this atttribute with the given range.
+  /// Returns a copy of this atttribute with the given range.
   StringAttribute copy({required TextRange range});
 }
 
