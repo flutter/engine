@@ -22,6 +22,7 @@ import 'dart:collection'
 import 'dart:convert' hide Codec;
 import 'dart:developer' as developer;
 import 'dart:html' as html;
+// ignore: unused_import
 import 'dart:js' as js;
 import 'dart:js_util' as js_util;
 // ignore: unused_import
@@ -254,7 +255,6 @@ export 'engine/web_experiments.dart';
 
 export 'engine/canvaskit/canvas.dart';
 
-import 'engine/canvaskit/canvaskit_api.dart';
 export 'engine/canvaskit/canvaskit_api.dart';
 
 export 'engine/canvaskit/canvaskit_canvas.dart';
