@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 
+#include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/common/context_options.h"
 #include "third_party/skia/include/gpu/GrBackendSemaphore.h"
@@ -38,8 +39,9 @@ constexpr size_t kGrCacheMaxByteSize = 1024 * 600 * 12 * 4;
 
 }  // namespace
 
-VulkanSurfaceProducer::VulkanSurfaceProducer(scenic::Session* scenic_session) {
-  valid_ = Initialize(scenic_session);
+VulkanSurfaceProducer::VulkanSurfaceProducer(scenic::Session* scenic_session,
+                                             bool enable_persistant_cache) {
+  valid_ = Initialize(scenic_session, enable_persistant_cache);
 
   if (!valid_) {
     FML_LOG(FATAL) << "VulkanSurfaceProducer: Initialization failed";
@@ -55,7 +57,8 @@ VulkanSurfaceProducer::~VulkanSurfaceProducer() {
   }
 };
 
-bool VulkanSurfaceProducer::Initialize(scenic::Session* scenic_session) {
+bool VulkanSurfaceProducer::Initialize(scenic::Session* scenic_session,
+                                       bool enable_persistant_cache) {
   vk_ = fml::MakeRefCounted<vulkan::VulkanProcTable>();
 
   std::vector<std::string> extensions = {
@@ -138,8 +141,19 @@ bool VulkanSurfaceProducer::Initialize(scenic::Session* scenic_session) {
                      backend_context.fPhysicalDevice, 0, nullptr,
                      countof(device_extensions), device_extensions);
   backend_context.fVkExtensions = &vk_extensions;
-  const auto options = flutter::MakeDefaultContextOptions(
+  auto options = flutter::MakeDefaultContextOptions(
       flutter::ContextType::kRender, GrBackendApi::kVulkan);
+
+  if (enable_persistant_cache) {
+    if (flutter::PersistentCache::cache_sksl()) {
+      options.fShaderCacheStrategy =
+          GrContextOptions::ShaderCacheStrategy::kSkSL;
+    }
+    flutter::PersistentCache::MarkStrategySet();
+    flutter::PersistentCache::SetCacheDirectoryPath("/cache");
+    options.fPersistentCache = flutter::PersistentCache::GetCacheForProcess();
+  }
+
   context_ = GrDirectContext::MakeVulkan(backend_context, options);
 
   if (context_ == nullptr) {

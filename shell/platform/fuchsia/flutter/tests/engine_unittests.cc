@@ -67,7 +67,8 @@ class EngineTest : public ::testing::Test {
     context_ = sys::ComponentContext::CreateAndServeOutgoingDirectory();
     scenic_ = context_->svc()->Connect<fuchsia::ui::scenic::Scenic>();
     scenic::Session session(scenic_.get());
-    surface_producer_ = std::make_unique<VulkanSurfaceProducer>(&session);
+    surface_producer_ =
+        std::make_unique<VulkanSurfaceProducer>(&session, false);
 
     Engine::WarmupSkps(&concurrent_task_runner_, &raster_task_runner_,
                        *surface_producer_, width, height, asset_manager,
