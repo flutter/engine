@@ -19,8 +19,6 @@ dependencies:
   vector_math: any
 
 dependency_overrides:
-  meta:
-    path: ../../../third_party/dart/pkg/meta
   sky_engine:
     path: ../../sky/packages/sky_engine
   vector_math:

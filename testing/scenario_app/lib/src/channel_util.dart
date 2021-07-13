@@ -5,8 +5,6 @@
 import 'dart:convert';
 import 'dart:ui';
 
-import 'package:meta/meta.dart';
-
 /// Util method to replicate the behavior of a `MethodChannel` in the Flutter
 /// framework.
 void sendJsonMethodCall({

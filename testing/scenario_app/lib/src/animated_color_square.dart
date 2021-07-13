@@ -76,11 +76,11 @@ class AnimatedColorSquareScenario extends Scenario {
 }
 
 class _NumberSwinger<T extends num> {
-  _NumberSwinger(this._begin, this._end, [this._current])
+  _NumberSwinger(this._begin, this._end, [T? current])
       : assert(_begin != null),
         assert(_end != null),
         _up = _begin < _end {
-    _current ??= _begin;
+    _current = current ?? _begin;
   }
 
   final T _begin;
