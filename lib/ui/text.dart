@@ -2078,6 +2078,7 @@ Int32List _encodeParagraphStyle(
   StrutStyle? strutStyle,
   String? ellipsis,
   Locale? locale,
+  bool? forceVerticalCenter,
 ) {
   final Int32List result = Int32List(7); // also update paragraph_builder.cc
   if (textAlign != null) {
@@ -2126,6 +2127,10 @@ Int32List _encodeParagraphStyle(
   }
   if (locale != null) {
     result[0] |= 1 << 12;
+    // Passed separately to native.
+  }
+  if (forceVerticalCenter ?? false) {
+    result[0] |= 1 << 13;
     // Passed separately to native.
   }
   return result;
@@ -2193,6 +2198,7 @@ class ParagraphStyle {
   ///   considered equivalent and turn off this behavior.
   ///
   /// * `locale`: The locale used to select region-specific glyphs.
+  /// * `forceVerticalCenter:` Force text to be centered vertically.
   ParagraphStyle({
     TextAlign? textAlign,
     TextDirection? textDirection,
@@ -2206,6 +2212,7 @@ class ParagraphStyle {
     StrutStyle? strutStyle,
     String? ellipsis,
     Locale? locale,
+    bool? forceVerticalCenter,
   }) : _encoded = _encodeParagraphStyle(
          textAlign,
          textDirection,
@@ -2219,6 +2226,7 @@ class ParagraphStyle {
          strutStyle,
          ellipsis,
          locale,
+         forceVerticalCenter,
        ),
        _fontFamily = fontFamily,
        _fontSize = fontSize,
@@ -2226,7 +2234,8 @@ class ParagraphStyle {
        _strutStyle = strutStyle,
        _ellipsis = ellipsis,
        _locale = locale,
-       _leadingDistribution = textHeightBehavior?.leadingDistribution ?? TextLeadingDistribution.proportional;
+       _leadingDistribution = textHeightBehavior?.leadingDistribution ?? TextLeadingDistribution.proportional,
+       _forceVerticalCenter = forceVerticalCenter;
 
   final Int32List _encoded;
   final String? _fontFamily;
@@ -2236,6 +2245,7 @@ class ParagraphStyle {
   final String? _ellipsis;
   final Locale? _locale;
   final TextLeadingDistribution _leadingDistribution;
+  final bool? _forceVerticalCenter;
 
   @override
   bool operator ==(Object other) {
@@ -2251,11 +2261,12 @@ class ParagraphStyle {
         && other._ellipsis == _ellipsis
         && other._locale == _locale
         && other._leadingDistribution == _leadingDistribution
-        && _listEquals<int>(other._encoded, _encoded);
+        && _listEquals<int>(other._encoded, _encoded)
+        && other._forceVerticalCenter == _forceVerticalCenter;
   }
 
   @override
-  int get hashCode => hashValues(hashList(_encoded), _fontFamily, _fontSize, _height, _ellipsis, _locale, _leadingDistribution);
+  int get hashCode => hashValues(hashList(_encoded), _fontFamily, _fontSize, _height, _ellipsis, _locale, _leadingDistribution, _forceVerticalCenter);
 
   @override
   String toString() {
@@ -2272,7 +2283,8 @@ class ParagraphStyle {
              'fontSize: ${      _encoded[0] & 0x100 == 0x100 ? _fontSize                         : "unspecified"}, '
              'height: ${        _encoded[0] & 0x200 == 0x200 ? "${_height}x"                     : "unspecified"}, '
              'ellipsis: ${      _encoded[0] & 0x400 == 0x400 ? "\"$_ellipsis\""                  : "unspecified"}, '
-             'locale: ${        _encoded[0] & 0x800 == 0x800 ? _locale                           : "unspecified"}'
+             'locale: ${        _encoded[0] & 0x800 == 0x800 ? _locale                           : "unspecified"}, '
+             'forceVerticalCenter: ${ _encoded[0] & 0x1000 == 0x1000 ? _forceVerticalCenter      : "unspecified"}'
            ')';
   }
 }

@@ -307,6 +307,7 @@ bool ParagraphTxt::ComputeLineBreaks() {
 
       minikin::FontStyle font;
       minikin::MinikinPaint paint;
+      paint.shouldScaleWhenGlyphMeasure = paragraph_style_.forceVerticalCenter;
       GetFontAndMinikinPaint(run.style, &font, &paint);
       std::shared_ptr<minikin::FontCollection> collection =
           GetMinikinFontCollectionForStyle(run.style);
@@ -805,6 +806,10 @@ void ParagraphTxt::Layout(double width) {
     double justify_x_offset = 0;
     std::vector<PaintRecord> paint_records;
 
+    float glyphs_max_top = FLT_MAX;
+    float glyphs_max_bottom = -FLT_MAX;
+    bool enableForceVerticalCenter = paragraph_style_.forceVerticalCenter;
+
     for (auto line_run_it = line_runs.begin(); line_run_it != line_runs.end();
          ++line_run_it) {
       const BidiRun& run = *line_run_it;
@@ -874,6 +879,12 @@ void ParagraphTxt::Layout(double width) {
 
       layout.doLayout(text_ptr, text_start, text_count, text_size, run.is_rtl(),
                       minikin_font, minikin_paint, minikin_font_collection);
+      if (enableForceVerticalCenter) {
+        minikin::MinikinRect subRect;
+        layout.getBounds(&subRect);
+        glyphs_max_top = std::min(glyphs_max_top, subRect.mTop);
+        glyphs_max_bottom = std::max(glyphs_max_bottom, subRect.mBottom);
+      }
 
       if (layout.nGlyphs() == 0)
         continue;
@@ -1141,6 +1152,13 @@ void ParagraphTxt::Layout(double width) {
                         max_unscaled_ascent, nullptr, line_number, line_limit);
     }
 
+    if (enableForceVerticalCenter) {
+      float height = round(max_ascent + max_descent);
+      float leading = (height - (-glyphs_max_top + glyphs_max_bottom)) / 2.0;
+      max_ascent = leading - glyphs_max_top;
+      max_descent = height - max_ascent;
+    }
+
     // Calculate the baselines. This is only done on the first line.
     if (line_number == 0) {
       alphabetic_baseline_ = max_ascent;
@@ -1155,7 +1173,11 @@ void ParagraphTxt::Layout(double width) {
         round(max_ascent + max_descent);
     line_metrics.baseline = line_metrics.height - max_descent;
 
-    y_offset += round(max_ascent + prev_max_descent);
+    if (enableForceVerticalCenter) {
+      y_offset += max_ascent + prev_max_descent;
+    } else {
+      y_offset += round(max_ascent + prev_max_descent);
+    }
     prev_max_descent = max_descent;
 
     line_metrics.line_number = line_number;

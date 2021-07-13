@@ -377,6 +377,7 @@ abstract class ParagraphStyle {
     StrutStyle? strutStyle,
     String? ellipsis,
     Locale? locale,
+    bool? forceVerticalCenter,
   }) {
     if (engine.useCanvasKit) {
       return engine.CkParagraphStyle(

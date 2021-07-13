@@ -95,6 +95,7 @@ class ParagraphStyle {
   size_t max_lines = std::numeric_limits<size_t>::max();
   std::u16string ellipsis;
   std::string locale;
+  bool forceVerticalCenter = false;
 
   // Default strategy is kBreakStrategy_Greedy. Sometimes,
   // kBreakStrategy_HighQuality will produce more desirable layouts (e.g., very
