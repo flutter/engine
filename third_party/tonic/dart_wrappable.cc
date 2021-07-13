@@ -53,8 +53,6 @@ void DartWrappable::AssociateWithDartWrapper(Dart_Handle wrapper) {
 
   TONIC_CHECK(!LogIfError(wrapper));
 
-  const DartWrapperInfo& info = GetDartWrapperInfo();
-
   TONIC_CHECK(!LogIfError(Dart_SetNativeInstanceField(
       wrapper, kPeerIndex, reinterpret_cast<intptr_t>(this))));
 
