@@ -9,6 +9,7 @@ import("//flutter/lib/ui/dart_ui.gni")
 import("//third_party/dart/utils/compile_platform.gni")
 
 # TODO(dnfield): Remove this when recipes are updated to not use it.
+# https://flutter-review.googlesource.com/c/recipes/+/15420
 group("generate_dart_ui") {
   visibility = [ ":*" ]
 }
