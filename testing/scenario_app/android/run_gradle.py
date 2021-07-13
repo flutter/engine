@@ -11,6 +11,10 @@ import os
 import sys
 import subprocess
 
+SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
+ANDROID_HOME = os.path.join(SCRIPT_PATH, '..', '..', '..', '..', 'third_party',
+    'android_tools', 'sdk')
+
 def main():
   BAT = '.bat' if sys.platform.startswith(('cygwin', 'win')) else ''
   android_dir = os.path.abspath(os.path.dirname(__file__))
@@ -18,6 +22,7 @@ def main():
   result = subprocess.check_output(
     args=[gradle_bin] + sys.argv[1:],
     cwd=android_dir,
+    env=dict(os.environ, ANDROID_HOME=ANDROID_HOME),
   )
   return 0
 
