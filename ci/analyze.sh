@@ -42,7 +42,7 @@ echo ""
 dart analyze "$FLUTTER_DIR/lib/ui"
 
 # Analyze Flutter web's dart:ui.
-dart pub get "$FLUTTER_DIR/lib/web_ui"
+(cd "$FLUTTER_DIR/lib/web_ui"; dart pub get)
 dart analyze "$FLUTTER_DIR/lib/web_ui"
 
 dart analyze "$FLUTTER_DIR/lib/spirv"
