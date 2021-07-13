@@ -124,8 +124,8 @@ TEST_F(PhysicalShapeLayerTest, ElevationSimple) {
   // The Fuchsia system compositor handles all elevated PhysicalShapeLayers and
   // their shadows , so we do not do any painting there.
   EXPECT_EQ(layer->paint_bounds(),
-            PhysicalShapeLayer::ComputeShadowBounds(layer_path.getBounds(),
-                                                    initial_elevation, 1.0f));
+            PhysicalShapeLayer::ComputeShadowBounds(
+                layer_path, initial_elevation, 1.0f, SkMatrix()));
   EXPECT_TRUE(layer->needs_painting(paint_context()));
   EXPECT_EQ(layer->elevation(), initial_elevation);
 
@@ -174,8 +174,8 @@ TEST_F(PhysicalShapeLayerTest, ElevationComplex) {
     // there.
     EXPECT_EQ(layers[i]->paint_bounds(),
               (PhysicalShapeLayer::ComputeShadowBounds(
-                  layer_path.getBounds(), initial_elevations[i],
-                  1.0f /* pixel_ratio */)));
+                  layer_path, initial_elevations[i], 1.0f /* pixel_ratio */,
+                  SkMatrix())));
     EXPECT_TRUE(layers[i]->needs_painting(paint_context()));
   }
 
@@ -198,6 +198,34 @@ TEST_F(PhysicalShapeLayerTest, ElevationComplex) {
            MockCanvas::DrawCall{0, MockCanvas::DrawShadowData{layer_path}},
            MockCanvas::DrawCall{
                0, MockCanvas::DrawPathData{layer_path, layer_paint}}}));
+}
+
+TEST_F(PhysicalShapeLayerTest, ShadowNotDependsCtm) {
+  constexpr SkScalar elevations[] = {1, 2, 3, 4, 5, 10};
+  constexpr SkScalar scales[] = {0.5, 1, 1.5, 2, 3, 5};
+  constexpr SkScalar translates[] = {0, 1, -1, 0.5, 2, 10};
+
+  SkPath path;
+  path.addRect(0, 0, 8, 8).close();
+
+  for (SkScalar elevation : elevations) {
+    SkRect baseline_bounds = PhysicalShapeLayer::ComputeShadowBounds(
+        path, elevation, 1.0f, SkMatrix());
+    for (SkScalar scale : scales) {
+      for (SkScalar translateX : translates) {
+        for (SkScalar translateY : translates) {
+          SkMatrix ctm;
+          ctm.setScaleTranslate(scale, scale, translateX, translateY);
+          SkRect bounds = PhysicalShapeLayer::ComputeShadowBounds(
+              path, elevation, scale, ctm);
+          EXPECT_FLOAT_EQ(bounds.fLeft, baseline_bounds.fLeft);
+          EXPECT_FLOAT_EQ(bounds.fTop, baseline_bounds.fTop);
+          EXPECT_FLOAT_EQ(bounds.fRight, baseline_bounds.fRight);
+          EXPECT_FLOAT_EQ(bounds.fBottom, baseline_bounds.fBottom);
+        }
+      }
+    }
+  }
 }
 
 static bool ReadbackResult(PrerollContext* context,
