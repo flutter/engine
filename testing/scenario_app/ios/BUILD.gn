@@ -44,6 +44,7 @@ copy_trees("scenario_ios") {
       visibility = [ ":*" ]
       source = "."
       dest = "$root_out_dir/scenario_app"
+
       # Ignore any stale App.framework or Flutter.xcframework files from
       # historical builds.
       # This can eventually be set to "{}" when all CI builder caches have been
