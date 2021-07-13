@@ -15,6 +15,7 @@ import '../picture.dart';
 import '../util.dart';
 import '../vector_math.dart';
 import 'bitmap_canvas.dart';
+import 'color_filter.dart';
 import 'debug_canvas_reuse_overlay.dart';
 import 'dom_canvas.dart';
 import 'path/path_metrics.dart';
@@ -129,8 +130,9 @@ class PersistedPicture extends PersistedLeafSurface {
 
   @override
   void preroll() {
-    if (PersistedShaderMask.activeShaderMaskCount != 0) {
-      picture.recordingCanvas?.renderStrategy.isInsideShaderMask = true;
+    if (PersistedShaderMask.activeShaderMaskCount != 0 ||
+        PersistedColorFilter.activeColorFilterCount != 0) {
+      picture.recordingCanvas?.renderStrategy.isInsideSvgFilterTree = true;
     }
     super.preroll();
   }
