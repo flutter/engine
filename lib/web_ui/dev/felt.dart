@@ -14,7 +14,7 @@ import 'exceptions.dart';
 import 'test_runner.dart';
 import 'utils.dart';
 
-CommandRunner runner = CommandRunner<bool>(
+CommandRunner<bool> runner = CommandRunner<bool>(
   'felt',
   'Command-line utility for building and testing Flutter web engine.',
 )
@@ -38,7 +38,11 @@ void main(List<String> rawArgs) async {
 
   int exitCode = -1;
   try {
-    final bool result = (await runner.run(args)) as bool;
+    final bool? result = await runner.run(args);
+    if (result == null) {
+      // result == null means Usage was printed.
+      exitCode = 0;
+    }
     if (result == false) {
       print('Sub-command failed: `${args.join(' ')}`');
       exitCode = 1;
