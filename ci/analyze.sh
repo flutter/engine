@@ -38,8 +38,11 @@ echo "Using dart from $DART_BIN"
 "$DART" --version
 echo ""
 
+# Analyze dart:ui.
 dart analyze "$FLUTTER_DIR/lib/ui"
 
+# Analyze Flutter web's dart:ui.
+dart pub get "$FLUTTER_DIR/lib/web_ui"
 dart analyze "$FLUTTER_DIR/lib/web_ui"
 
 dart analyze "$FLUTTER_DIR/lib/spirv"
