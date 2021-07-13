@@ -57,14 +57,6 @@ typedef NS_ENUM(NSInteger, FlutterFloatingCursorDragState) {
                        withClient:(int)client;
 - (void)flutterTextInputView:(FlutterTextInputView*)textInputView removeTextPlaceholder:(int)client;
 
-// TODO(gaaclarke) Refactor these into their own delegate.
-- (void)flutterTextInputPlugin:(FlutterTextInputPlugin*)textInputPlugin
-                  focusElement:(UIScribbleElementIdentifier)elementIdentifier
-                       atPoint:(CGPoint)referencePoint
-                        result:(FlutterResult)callback;
-- (void)flutterTextInputPlugin:(FlutterTextInputPlugin*)textInputPlugin
-         requestElementsInRect:(CGRect)rect
-                        result:(FlutterResult)callback;
 @end
 
 #endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTERTEXTINPUTDELEGATE_H_

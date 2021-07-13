@@ -2099,14 +2099,14 @@ static BOOL isPositionCloserToPoint(CGPoint point,
                          completion:(void (^)(UIResponder<UITextInput>* focusedInput))completion
     API_AVAILABLE(ios(14.0)) {
   _activeView.scribbleFocusing = YES;
-  [_textInputDelegate flutterTextInputPlugin:self
-                                focusElement:elementIdentifier
-                                     atPoint:focusReferencePoint
-                                      result:^(id _Nullable result) {
-                                        _activeView.scribbleFocusing = NO;
-                                        _activeView.scribbleFocused = YES;
-                                        completion(_activeView);
-                                      }];
+  [_indirectScribbleDelegate flutterTextInputPlugin:self
+                                       focusElement:elementIdentifier
+                                            atPoint:focusReferencePoint
+                                             result:^(id _Nullable result) {
+                                               _activeView.scribbleFocusing = NO;
+                                               _activeView.scribbleFocused = YES;
+                                               completion(_activeView);
+                                             }];
 }
 
 - (BOOL)indirectScribbleInteraction:(UIIndirectScribbleInteraction*)interaction
@@ -2140,7 +2140,7 @@ static BOOL isPositionCloserToPoint(CGPoint point,
                          completion:
                              (void (^)(NSArray<UIScribbleElementIdentifier>* elements))completion
     API_AVAILABLE(ios(14.0)) {
-  [_textInputDelegate
+  [_indirectScribbleDelegate
       flutterTextInputPlugin:self
        requestElementsInRect:rect
                       result:^(id _Nullable result) {
