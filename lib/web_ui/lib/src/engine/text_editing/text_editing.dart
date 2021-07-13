@@ -292,8 +292,7 @@ class EngineAutofillForm {
 
   void handleChange(html.Element domElement, AutofillInfo autofillInfo) {
     EditingState newEditingState = EditingState.fromDomElement(
-        domElement as html.HtmlElement?,
-        textCapitalization: autofillInfo.textCapitalization);
+        domElement as html.HtmlElement?);
 
     _sendAutofillEditingState(autofillInfo.uniqueIdentifier, newEditingState);
   }
@@ -439,9 +438,7 @@ class EditingState {
   ///
   /// [domElement] can be a [InputElement] or a [TextAreaElement] depending on
   /// the [InputType] of the text field.
-  factory EditingState.fromDomElement(html.HtmlElement? domElement,
-      {TextCapitalizationConfig textCapitalization =
-          const TextCapitalizationConfig.defaultCapitalization()}) {
+  factory EditingState.fromDomElement(html.HtmlElement? domElement) {
     if (domElement is html.InputElement) {
       html.InputElement element = domElement;
       return EditingState(
@@ -978,8 +975,7 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
   void handleChange(html.Event event) {
     assert(isEnabled);
 
-    EditingState newEditingState = EditingState.fromDomElement(activeDomElement,
-        textCapitalization: inputConfiguration.textCapitalization);
+    EditingState newEditingState = EditingState.fromDomElement(activeDomElement);
 
     if (newEditingState != lastEditingState) {
       lastEditingState = newEditingState;
