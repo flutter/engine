@@ -228,6 +228,63 @@ TEST_F(PhysicalShapeLayerTest, ShadowNotDependsCtm) {
   }
 }
 
+static bool IsRenderingEqual(const std::function<void(SkCanvas*)>& actual,
+                             const std::function<void(SkCanvas*)>& expected,
+                             const SkSize& canvas_size) {
+  sk_sp<SkSurface> actual_surface =
+      SkSurface::MakeRasterN32Premul(canvas_size.width(), canvas_size.height());
+  sk_sp<SkSurface> expected_surface =
+      SkSurface::MakeRasterN32Premul(canvas_size.width(), canvas_size.height());
+
+  actual_surface->getCanvas()->drawColor(SK_ColorWHITE);
+  expected_surface->getCanvas()->drawColor(SK_ColorWHITE);
+
+  actual(actual_surface->getCanvas());
+  expected(expected_surface->getCanvas());
+
+  SkPixmap actual_pixels;
+  EXPECT_TRUE(actual_surface->peekPixels(&actual_pixels));
+
+  SkPixmap expected_pixels;
+  EXPECT_TRUE(expected_surface->peekPixels(&expected_pixels));
+
+  int pixels_different = 0;
+  for (int y = 0; y < canvas_size.height(); y++) {
+    const uint32_t* actual_row = actual_pixels.addr32(0, y);
+    const uint32_t* expected_row = expected_pixels.addr32(0, y);
+    for (int x = 0; x < canvas_size.width(); x++) {
+      if (actual_row[x] != expected_row[x]) {
+        pixels_different++;
+      }
+    }
+  }
+  return pixels_different == 0;
+}
+
+TEST_F(PhysicalShapeLayerTest, ShadowNotDependsPathSize) {
+  constexpr SkRect test_cases[][2] = {
+      {{20, -100, 80, 80}, {20, -1000, 80, 80}},
+      {{20, 20, 80, 200}, {20, 20, 80, 2000}},
+  };
+
+  for (const SkRect* test_case : test_cases) {
+    EXPECT_TRUE(IsRenderingEqual(
+        [=](SkCanvas* canvas) {
+          SkPath path;
+          path.addRect(test_case[0]).close();
+          PhysicalShapeLayer::DrawShadow(canvas, path, SK_ColorBLACK, 1.0f,
+                                         false, 1.0f);
+        },
+        [=](SkCanvas* canvas) {
+          SkPath path;
+          path.addRect(test_case[1]).close();
+          PhysicalShapeLayer::DrawShadow(canvas, path, SK_ColorBLACK, 1.0f,
+                                         false, 1.0f);
+        },
+        SkSize::Make(100, 100)));
+  }
+}
+
 static bool ReadbackResult(PrerollContext* context,
                            Clip clip_behavior,
                            std::shared_ptr<Layer> child,
