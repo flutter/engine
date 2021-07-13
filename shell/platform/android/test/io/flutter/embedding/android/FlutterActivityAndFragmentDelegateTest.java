@@ -433,7 +433,7 @@ public class FlutterActivityAndFragmentDelegateTest {
   public void
       itSendsInitialRouteFromIntentOnStartIfNoInitialRouteFromActivityAndShouldHandleDeeplinking() {
     Intent intent = FlutterActivity.createDefaultIntent(RuntimeEnvironment.application);
-    intent.setData(Uri.parse("http://myApp/custom/route?query=test"));
+    intent.setData(Uri.parse("http://myApp/custom/route?query=test#fragment"));
 
     ActivityController<FlutterActivity> activityController =
         Robolectric.buildActivity(FlutterActivity.class, intent);
@@ -453,7 +453,7 @@ public class FlutterActivityAndFragmentDelegateTest {
 
     // Verify that the navigation channel was given the initial route message.
     verify(mockFlutterEngine.getNavigationChannel(), times(1))
-        .setInitialRoute("/custom/route?query=test");
+        .setInitialRoute("/custom/route?query=test#fragment");
   }
 
   @Test
@@ -518,13 +518,14 @@ public class FlutterActivityAndFragmentDelegateTest {
     delegate.onAttach(RuntimeEnvironment.application);
 
     Intent mockIntent = mock(Intent.class);
-    when(mockIntent.getData()).thenReturn(Uri.parse("http://myApp/custom/route?query=test"));
+    when(mockIntent.getData())
+        .thenReturn(Uri.parse("http://myApp/custom/route?query=test#fragment"));
     // Emulate the host and call the method that we expect to be forwarded.
     delegate.onNewIntent(mockIntent);
 
     // Verify that the navigation channel was given the push route message.
     verify(mockFlutterEngine.getNavigationChannel(), times(1))
-        .pushRoute("/custom/route?query=test");
+        .pushRoute("/custom/route?query=test#fragment");
   }
 
   @Test
