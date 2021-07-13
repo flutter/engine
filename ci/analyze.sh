@@ -38,40 +38,35 @@ echo "Using dart from $DART_BIN"
 "$DART" --version
 echo ""
 
-# Analyze dart:ui.
-dart analyze "$FLUTTER_DIR/lib/ui"
+"$DART" analyze "$FLUTTER_DIR/lib/ui"
 
-# Analyze Flutter web's dart:ui.
-(cd "$FLUTTER_DIR/lib/web_ui"; dart pub get)
-dart analyze "$FLUTTER_DIR/lib/web_ui"
+"$DART" analyze "$FLUTTER_DIR/lib/spirv"
 
-dart analyze "$FLUTTER_DIR/lib/spirv"
+"$DART" analyze "$FLUTTER_DIR/ci"
 
-dart analyze "$FLUTTER_DIR/ci"
+"$DART" analyze "$FLUTTER_DIR/flutter_frontend_server"
 
-dart analyze "$FLUTTER_DIR/flutter_frontend_server"
+"$DART" analyze "$FLUTTER_DIR/tools/licenses"
 
-dart analyze "$FLUTTER_DIR/tools/licenses"
+"$DART" analyze "$FLUTTER_DIR/testing/litetest"
 
-dart analyze "$FLUTTER_DIR/testing/litetest"
+"$DART" analyze "$FLUTTER_DIR/testing/benchmark"
 
-dart analyze "$FLUTTER_DIR/testing/benchmark"
+"$DART" analyze "$FLUTTER_DIR/testing/smoke_test_failure"
 
-dart analyze "$FLUTTER_DIR/testing/smoke_test_failure"
+"$DART" analyze "$FLUTTER_DIR/testing/dart"
 
-dart analyze "$FLUTTER_DIR/testing/dart"
+"$DART" analyze "$FLUTTER_DIR/testing/scenario_app"
 
-dart analyze "$FLUTTER_DIR/testing/scenario_app"
+"$DART" analyze "$FLUTTER_DIR/testing/symbols"
 
-dart analyze "$FLUTTER_DIR/testing/symbols"
+"$DART" analyze "$FLUTTER_DIR/tools/githooks"
 
-dart analyze "$FLUTTER_DIR/tools/githooks"
-
-dart analyze "$FLUTTER_DIR/tools/clang_tidy"
+"$DART" analyze "$FLUTTER_DIR/tools/clang_tidy"
 
 echo ""
 
 # Check that dart libraries conform.
 echo "Checking web_ui api conformance..."
-(cd "$FLUTTER_DIR/web_sdk"; "$PUB" get)
+(cd "$FLUTTER_DIR/web_sdk"; "$DART" pub get)
 (cd "$FLUTTER_DIR"; "$DART" "web_sdk/test/api_conform_test.dart")
