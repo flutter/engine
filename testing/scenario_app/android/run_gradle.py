@@ -16,6 +16,9 @@ ANDROID_HOME = os.path.join(SCRIPT_PATH, '..', '..', '..', '..', 'third_party',
     'android_tools', 'sdk')
 
 def main():
+  if not os.path.isdir(ANDROID_HOME):
+    raise Exception('%s (ANDROID_HOME) is not a directory' % ANDROID_HOME)
+
   BAT = '.bat' if sys.platform.startswith(('cygwin', 'win')) else ''
   android_dir = os.path.abspath(os.path.dirname(__file__))
   gradle_bin = os.path.join('.', 'gradlew%s' % BAT)
