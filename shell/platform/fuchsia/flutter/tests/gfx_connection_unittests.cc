@@ -8,7 +8,7 @@
 #include <lib/async-loop/default.h>
 #include <lib/sys/cpp/component_context.h>
 
-#include "flutter/shell/platform/fuchsia/flutter/default_session_connection.h"
+#include "flutter/shell/platform/fuchsia/flutter/gfx_connection.h"
 #include "flutter/shell/platform/fuchsia/flutter/logging.h"
 #include "flutter/shell/platform/fuchsia/flutter/runner.h"
 #include "gtest/gtest.h"
@@ -37,15 +37,15 @@ static fuchsia::scenic::scheduling::PresentationInfo CreatePresentationInfo(
   return info;
 }
 
-class DefaultSessionConnectionTest : public ::testing::Test {
+class GfxConnectionTest : public ::testing::Test {
  public:
   void SetUp() override {
     context_ = sys::ComponentContext::CreateAndServeOutgoingDirectory();
     scenic_ = context_->svc()->Connect<fuchsia::ui::scenic::Scenic>();
     presenter_ = context_->svc()->Connect<fuchsia::ui::policy::Presenter>();
 
-    FML_CHECK(ZX_OK == loop_.StartThread("DefaultSessionConnectionTestThread",
-                                         &fidl_thread_));
+    FML_CHECK(ZX_OK ==
+              loop_.StartThread("GfxConnectionTestThread", &fidl_thread_));
 
     auto session_listener_request = session_listener_.NewRequest();
 
@@ -76,7 +76,7 @@ class DefaultSessionConnectionTest : public ::testing::Test {
   thrd_t fidl_thread_;
 };
 
-TEST_F(DefaultSessionConnectionTest, SimplePresent) {
+TEST_F(GfxConnectionTest, SimplePresent) {
   fml::closure on_session_error_callback = []() { FML_CHECK(false); };
 
   uint64_t num_presents_handled = 0;
@@ -86,7 +86,7 @@ TEST_F(DefaultSessionConnectionTest, SimplePresent) {
         num_presents_handled += info.presentation_infos.size();
       };
 
-  flutter_runner::DefaultSessionConnection session_connection(
+  flutter_runner::GfxConnection session_connection(
       "debug label", std::move(session_), on_session_error_callback,
       on_frame_presented_callback, 3, fml::TimeDelta::FromSeconds(0));
 
@@ -98,7 +98,7 @@ TEST_F(DefaultSessionConnectionTest, SimplePresent) {
   EXPECT_GT(num_presents_handled, 0u);
 }
 
-TEST_F(DefaultSessionConnectionTest, BatchedPresent) {
+TEST_F(GfxConnectionTest, BatchedPresent) {
   fml::closure on_session_error_callback = []() { FML_CHECK(false); };
 
   uint64_t num_presents_handled = 0;
@@ -108,7 +108,7 @@ TEST_F(DefaultSessionConnectionTest, BatchedPresent) {
         num_presents_handled += info.presentation_infos.size();
       };
 
-  flutter_runner::DefaultSessionConnection session_connection(
+  flutter_runner::GfxConnection session_connection(
       "debug label", std::move(session_), on_session_error_callback,
       on_frame_presented_callback, 3, fml::TimeDelta::FromSeconds(0));
 
@@ -122,7 +122,7 @@ TEST_F(DefaultSessionConnectionTest, BatchedPresent) {
   EXPECT_GT(num_presents_handled, 0u);
 }
 
-TEST_F(DefaultSessionConnectionTest, AwaitVsync) {
+TEST_F(GfxConnectionTest, AwaitVsync) {
   fml::closure on_session_error_callback = []() { FML_CHECK(false); };
 
   uint64_t num_presents_handled = 0;
@@ -132,7 +132,7 @@ TEST_F(DefaultSessionConnectionTest, AwaitVsync) {
         num_presents_handled += info.presentation_infos.size();
       };
 
-  flutter_runner::DefaultSessionConnection session_connection(
+  flutter_runner::GfxConnection session_connection(
       "debug label", std::move(session_), on_session_error_callback,
       on_frame_presented_callback, 3, fml::TimeDelta::FromSeconds(0));
 
@@ -149,7 +149,7 @@ TEST_F(DefaultSessionConnectionTest, AwaitVsync) {
   EXPECT_GT(await_vsyncs_handled, 0u);
 }
 
-TEST_F(DefaultSessionConnectionTest, EnsureBackpressureForAwaitVsync) {
+TEST_F(GfxConnectionTest, EnsureBackpressureForAwaitVsync) {
   fml::closure on_session_error_callback = []() { FML_CHECK(false); };
 
   uint64_t num_presents_handled = 0;
@@ -159,7 +159,7 @@ TEST_F(DefaultSessionConnectionTest, EnsureBackpressureForAwaitVsync) {
         num_presents_handled += info.presentation_infos.size();
       };
 
-  flutter_runner::DefaultSessionConnection session_connection(
+  flutter_runner::GfxConnection session_connection(
       "debug label", std::move(session_), on_session_error_callback,
       on_frame_presented_callback, 0, fml::TimeDelta::FromSeconds(0));
 
@@ -176,7 +176,7 @@ TEST_F(DefaultSessionConnectionTest, EnsureBackpressureForAwaitVsync) {
   EXPECT_EQ(await_vsyncs_handled, 0u);
 }
 
-TEST_F(DefaultSessionConnectionTest, SecondaryCallbackShouldFireRegardless) {
+TEST_F(GfxConnectionTest, SecondaryCallbackShouldFireRegardless) {
   fml::closure on_session_error_callback = []() { FML_CHECK(false); };
 
   uint64_t num_presents_handled = 0;
@@ -186,7 +186,7 @@ TEST_F(DefaultSessionConnectionTest, SecondaryCallbackShouldFireRegardless) {
         num_presents_handled += info.presentation_infos.size();
       };
 
-  flutter_runner::DefaultSessionConnection session_connection(
+  flutter_runner::GfxConnection session_connection(
       "debug label", std::move(session_), on_session_error_callback,
       on_frame_presented_callback, 0, fml::TimeDelta::FromSeconds(0));
 
@@ -210,7 +210,7 @@ TEST_F(DefaultSessionConnectionTest, SecondaryCallbackShouldFireRegardless) {
   EXPECT_GT(await_vsync_for_secondary_callbacks_handled, 0u);
 }
 
-TEST_F(DefaultSessionConnectionTest, AwaitVsyncBackpressureRelief) {
+TEST_F(GfxConnectionTest, AwaitVsyncBackpressureRelief) {
   fml::closure on_session_error_callback = []() { FML_CHECK(false); };
 
   uint64_t num_presents_handled = 0;
@@ -220,7 +220,7 @@ TEST_F(DefaultSessionConnectionTest, AwaitVsyncBackpressureRelief) {
         num_presents_handled += info.presentation_infos.size();
       };
 
-  flutter_runner::DefaultSessionConnection session_connection(
+  flutter_runner::GfxConnection session_connection(
       "debug label", std::move(session_), on_session_error_callback,
       on_frame_presented_callback, 1, fml::TimeDelta::FromSeconds(0));
 
@@ -260,7 +260,7 @@ TEST(CalculateNextLatchPointTest, PresentAsSoonAsPossible) {
   EXPECT_GT(vsync_interval, TimeDeltaFromInt(0));
 
   fml::TimePoint calculated_latch_point =
-      DefaultSessionConnection::CalculateNextLatchPoint(
+      GfxConnection::CalculateNextLatchPoint(
           present_requested_time, now, last_latch_point_targeted,
           flutter_frame_build_time, vsync_interval, future_presentation_infos);
 
@@ -291,7 +291,7 @@ TEST(CalculateNextLatchPointTest, LongFrameBuildTime) {
   EXPECT_GT(flutter_frame_build_time, vsync_interval);
 
   fml::TimePoint calculated_latch_point =
-      DefaultSessionConnection::CalculateNextLatchPoint(
+      GfxConnection::CalculateNextLatchPoint(
           present_requested_time, now, last_latch_point_targeted,
           flutter_frame_build_time, vsync_interval, future_presentation_infos);
 
@@ -324,7 +324,7 @@ TEST(CalculateNextLatchPointTest, DelayedPresentRequestWithLongFrameBuildTime) {
   EXPECT_GT(now, present_requested_time + vsync_interval);
 
   fml::TimePoint calculated_latch_point =
-      DefaultSessionConnection::CalculateNextLatchPoint(
+      GfxConnection::CalculateNextLatchPoint(
           present_requested_time, now, last_latch_point_targeted,
           flutter_frame_build_time, vsync_interval, future_presentation_infos);
 
@@ -355,7 +355,7 @@ TEST(CalculateNextLatchPointTest, LastLastPointTargetedLate) {
   EXPECT_GT(last_latch_point_targeted, present_requested_time);
 
   fml::TimePoint calculated_latch_point =
-      DefaultSessionConnection::CalculateNextLatchPoint(
+      GfxConnection::CalculateNextLatchPoint(
           present_requested_time, now, last_latch_point_targeted,
           flutter_frame_build_time, vsync_interval, future_presentation_infos);
 
@@ -395,7 +395,7 @@ TEST(CalculateNextLatchPointTest, SteadyState_OnTimeFrames) {
   EXPECT_GT(vsync_interval, TimeDeltaFromInt(0));
 
   fml::TimePoint calculated_latch_point =
-      DefaultSessionConnection::CalculateNextLatchPoint(
+      GfxConnection::CalculateNextLatchPoint(
           present_requested_time, now, last_latch_point_targeted,
           flutter_frame_build_time, vsync_interval, future_presentation_infos);
 
@@ -434,7 +434,7 @@ TEST(CalculateNextLatchPointTest, SteadyState_LongFrameBuildTimes) {
   EXPECT_GT(flutter_frame_build_time, vsync_interval);
 
   fml::TimePoint calculated_latch_point =
-      DefaultSessionConnection::CalculateNextLatchPoint(
+      GfxConnection::CalculateNextLatchPoint(
           present_requested_time, now, last_latch_point_targeted,
           flutter_frame_build_time, vsync_interval, future_presentation_infos);
 
@@ -473,7 +473,7 @@ TEST(CalculateNextLatchPointTest, SteadyState_LateLastLatchPointTargeted) {
   EXPECT_GT(last_latch_point_targeted, now + vsync_interval);
 
   fml::TimePoint calculated_latch_point =
-      DefaultSessionConnection::CalculateNextLatchPoint(
+      GfxConnection::CalculateNextLatchPoint(
           present_requested_time, now, last_latch_point_targeted,
           flutter_frame_build_time, vsync_interval, future_presentation_infos);
 
@@ -512,7 +512,7 @@ TEST(CalculateNextLatchPointTest,
   EXPECT_GT(now, present_requested_time + vsync_interval);
 
   fml::TimePoint calculated_latch_point =
-      DefaultSessionConnection::CalculateNextLatchPoint(
+      GfxConnection::CalculateNextLatchPoint(
           present_requested_time, now, last_latch_point_targeted,
           flutter_frame_build_time, vsync_interval, future_presentation_infos);
 
@@ -548,7 +548,7 @@ TEST(CalculateNextLatchPointTest, SteadyState_FuzzyLatchPointsBeforeTarget) {
   EXPECT_GT(vsync_interval, TimeDeltaFromInt(0));
 
   fml::TimePoint calculated_latch_point =
-      DefaultSessionConnection::CalculateNextLatchPoint(
+      GfxConnection::CalculateNextLatchPoint(
           present_requested_time, now, last_latch_point_targeted,
           flutter_frame_build_time, vsync_interval, future_presentation_infos);
 
@@ -584,7 +584,7 @@ TEST(CalculateNextLatchPointTest, SteadyState_FuzzyLatchPointsAfterTarget) {
   EXPECT_GT(vsync_interval, TimeDeltaFromInt(0));
 
   fml::TimePoint calculated_latch_point =
-      DefaultSessionConnection::CalculateNextLatchPoint(
+      GfxConnection::CalculateNextLatchPoint(
           present_requested_time, now, last_latch_point_targeted,
           flutter_frame_build_time, vsync_interval, future_presentation_infos);
 
@@ -604,9 +604,8 @@ TEST(SnapToNextPhaseTest, SnapOverlapsWithNow) {
   const auto now = fml::TimePoint::Now();
   const auto last_presentation_time = now - fml::TimeDelta::FromNanoseconds(10);
   const auto delta = fml::TimeDelta::FromNanoseconds(10);
-  const auto next_vsync =
-      flutter_runner::DefaultSessionConnection::SnapToNextPhase(
-          now, last_presentation_time, delta);
+  const auto next_vsync = flutter_runner::GfxConnection::SnapToNextPhase(
+      now, last_presentation_time, delta);
 
   EXPECT_EQ(now + delta, next_vsync);
 }
@@ -615,9 +614,8 @@ TEST(SnapToNextPhaseTest, SnapAfterNow) {
   const auto now = fml::TimePoint::Now();
   const auto last_presentation_time = now - fml::TimeDelta::FromNanoseconds(9);
   const auto delta = fml::TimeDelta::FromNanoseconds(10);
-  const auto next_vsync =
-      flutter_runner::DefaultSessionConnection::SnapToNextPhase(
-          now, last_presentation_time, delta);
+  const auto next_vsync = flutter_runner::GfxConnection::SnapToNextPhase(
+      now, last_presentation_time, delta);
 
   // math here: 10 - 9 = 1
   EXPECT_EQ(now + fml::TimeDelta::FromNanoseconds(1), next_vsync);
@@ -627,9 +625,8 @@ TEST(SnapToNextPhaseTest, SnapAfterNowMultiJump) {
   const auto now = fml::TimePoint::Now();
   const auto last_presentation_time = now - fml::TimeDelta::FromNanoseconds(34);
   const auto delta = fml::TimeDelta::FromNanoseconds(10);
-  const auto next_vsync =
-      flutter_runner::DefaultSessionConnection::SnapToNextPhase(
-          now, last_presentation_time, delta);
+  const auto next_vsync = flutter_runner::GfxConnection::SnapToNextPhase(
+      now, last_presentation_time, delta);
 
   // zeroes: -34, -24, -14, -4, 6, ...
   EXPECT_EQ(now + fml::TimeDelta::FromNanoseconds(6), next_vsync);
@@ -639,9 +636,8 @@ TEST(SnapToNextPhaseTest, SnapAfterNowMultiJumpAccountForCeils) {
   const auto now = fml::TimePoint::Now();
   const auto last_presentation_time = now - fml::TimeDelta::FromNanoseconds(20);
   const auto delta = fml::TimeDelta::FromNanoseconds(16);
-  const auto next_vsync =
-      flutter_runner::DefaultSessionConnection::SnapToNextPhase(
-          now, last_presentation_time, delta);
+  const auto next_vsync = flutter_runner::GfxConnection::SnapToNextPhase(
+      now, last_presentation_time, delta);
 
   // zeroes: -20, -4, 12, 28, ...
   EXPECT_EQ(now + fml::TimeDelta::FromNanoseconds(12), next_vsync);
@@ -654,9 +650,8 @@ TEST(GetTargetTimesTest, ScheduleForNextVsync) {
   const fml::TimePoint now = TimePointFromInt(9);
   const fml::TimePoint next_vsync = TimePointFromInt(10);
 
-  const auto target_times =
-      flutter_runner::DefaultSessionConnection::GetTargetTimes(
-          vsync_offset, vsync_interval, last_targeted_vsync, now, next_vsync);
+  const auto target_times = flutter_runner::GfxConnection::GetTargetTimes(
+      vsync_offset, vsync_interval, last_targeted_vsync, now, next_vsync);
 
   EXPECT_EQ(TimePointToInt(target_times.frame_start), 10);
   EXPECT_EQ(TimePointToInt(target_times.frame_target), 20);
@@ -669,9 +664,8 @@ TEST(GetTargetTimesTest, ScheduleForCurrentVsync_DueToOffset) {
   const fml::TimePoint now = TimePointFromInt(6);
   const fml::TimePoint next_vsync = TimePointFromInt(10);
 
-  const auto target_times =
-      flutter_runner::DefaultSessionConnection::GetTargetTimes(
-          vsync_offset, vsync_interval, last_targeted_vsync, now, next_vsync);
+  const auto target_times = flutter_runner::GfxConnection::GetTargetTimes(
+      vsync_offset, vsync_interval, last_targeted_vsync, now, next_vsync);
 
   EXPECT_EQ(TimePointToInt(target_times.frame_start), 7);
   EXPECT_EQ(TimePointToInt(target_times.frame_target), 10);
@@ -684,9 +678,8 @@ TEST(GetTargetTimesTest, ScheduleForFollowingVsync_BecauseOfNow) {
   const fml::TimePoint now = TimePointFromInt(15);
   const fml::TimePoint next_vsync = TimePointFromInt(10);
 
-  const auto target_times =
-      flutter_runner::DefaultSessionConnection::GetTargetTimes(
-          vsync_offset, vsync_interval, last_targeted_vsync, now, next_vsync);
+  const auto target_times = flutter_runner::GfxConnection::GetTargetTimes(
+      vsync_offset, vsync_interval, last_targeted_vsync, now, next_vsync);
 
   EXPECT_EQ(TimePointToInt(target_times.frame_start), 20);
   EXPECT_EQ(TimePointToInt(target_times.frame_target), 30);
@@ -699,9 +692,8 @@ TEST(GetTargetTimesTest, ScheduleForFollowingVsync_BecauseOfTargettedTime) {
   const fml::TimePoint now = TimePointFromInt(9);
   const fml::TimePoint next_vsync = TimePointFromInt(10);
 
-  const auto target_times =
-      flutter_runner::DefaultSessionConnection::GetTargetTimes(
-          vsync_offset, vsync_interval, last_targeted_vsync, now, next_vsync);
+  const auto target_times = flutter_runner::GfxConnection::GetTargetTimes(
+      vsync_offset, vsync_interval, last_targeted_vsync, now, next_vsync);
 
   EXPECT_EQ(TimePointToInt(target_times.frame_start), 20);
   EXPECT_EQ(TimePointToInt(target_times.frame_target), 30);
@@ -714,9 +706,8 @@ TEST(GetTargetTimesTest, ScheduleForDistantVsync_BecauseOfTargettedTime) {
   const fml::TimePoint now = TimePointFromInt(9);
   const fml::TimePoint next_vsync = TimePointFromInt(10);
 
-  const auto target_times =
-      flutter_runner::DefaultSessionConnection::GetTargetTimes(
-          vsync_offset, vsync_interval, last_targeted_vsync, now, next_vsync);
+  const auto target_times = flutter_runner::GfxConnection::GetTargetTimes(
+      vsync_offset, vsync_interval, last_targeted_vsync, now, next_vsync);
 
   EXPECT_EQ(TimePointToInt(target_times.frame_start), 60);
   EXPECT_EQ(TimePointToInt(target_times.frame_target), 70);
@@ -732,9 +723,8 @@ TEST(GetTargetTimesTest, ScheduleForFollowingVsync_WithSlightVsyncDrift) {
   const fml::TimePoint now = TimePointFromInt(9);
   const fml::TimePoint next_vsync = TimePointFromInt(10);
 
-  const auto target_times =
-      flutter_runner::DefaultSessionConnection::GetTargetTimes(
-          vsync_offset, vsync_interval, last_targeted_vsync, now, next_vsync);
+  const auto target_times = flutter_runner::GfxConnection::GetTargetTimes(
+      vsync_offset, vsync_interval, last_targeted_vsync, now, next_vsync);
 
   EXPECT_EQ(TimePointToInt(target_times.frame_start), 40);
   EXPECT_EQ(TimePointToInt(target_times.frame_target), 50);
@@ -747,9 +737,8 @@ TEST(GetTargetTimesTest, ScheduleForAnOffsetFromVsync) {
   const fml::TimePoint now = TimePointFromInt(9);
   const fml::TimePoint next_vsync = TimePointFromInt(10);
 
-  const auto target_times =
-      flutter_runner::DefaultSessionConnection::GetTargetTimes(
-          vsync_offset, vsync_interval, last_targeted_vsync, now, next_vsync);
+  const auto target_times = flutter_runner::GfxConnection::GetTargetTimes(
+      vsync_offset, vsync_interval, last_targeted_vsync, now, next_vsync);
 
   EXPECT_EQ(TimePointToInt(target_times.frame_start), 16);
   EXPECT_EQ(TimePointToInt(target_times.frame_target), 20);
@@ -764,9 +753,8 @@ TEST(GetTargetTimesTest, ScheduleMultipleTimes) {
   fml::TimePoint next_vsync = TimePointFromInt(10);
 
   for (int i = 0; i < 100; ++i) {
-    const auto target_times =
-        flutter_runner::DefaultSessionConnection::GetTargetTimes(
-            vsync_offset, vsync_interval, last_targeted_vsync, now, next_vsync);
+    const auto target_times = flutter_runner::GfxConnection::GetTargetTimes(
+        vsync_offset, vsync_interval, last_targeted_vsync, now, next_vsync);
 
     EXPECT_EQ(TimePointToInt(target_times.frame_start), 10 * (i + 1));
     EXPECT_EQ(TimePointToInt(target_times.frame_target), 10 * (i + 2));
@@ -780,7 +768,7 @@ TEST(GetTargetTimesTest, ScheduleMultipleTimes) {
 
 TEST(GetTargetTimesTest, ScheduleMultipleTimes_WithDelayedWakeups) {
   // It is often the case that Flutter does not wake up when it intends to due
-  // to CPU contention. This test has DefaultSessionConnection wake up to
+  // to CPU contention. This test has GfxConnection wake up to
   // schedule 0-4ns after when |now| should be - and we verify that the results
   // should be the same as if there were no delay.
   const fml::TimeDelta vsync_offset = TimeDeltaFromInt(0);
@@ -791,12 +779,11 @@ TEST(GetTargetTimesTest, ScheduleMultipleTimes_WithDelayedWakeups) {
   fml::TimePoint next_vsync = TimePointFromInt(10);
 
   for (int i = 0; i < 100; ++i) {
-    const auto target_times =
-        flutter_runner::DefaultSessionConnection::GetTargetTimes(
-            vsync_offset, vsync_interval, last_targeted_vsync, now, next_vsync);
+    const auto target_times = flutter_runner::GfxConnection::GetTargetTimes(
+        vsync_offset, vsync_interval, last_targeted_vsync, now, next_vsync);
 
     const auto target_times_delay =
-        flutter_runner::DefaultSessionConnection::GetTargetTimes(
+        flutter_runner::GfxConnection::GetTargetTimes(
             vsync_offset, vsync_interval, last_targeted_vsync,
             now + TimeDeltaFromInt(i % 5), next_vsync);
 
@@ -831,7 +818,7 @@ TEST(UpdatePresentationInfoTest, SingleUpdate) {
   presentation_info.set_presentation_time(0);
 
   fuchsia::scenic::scheduling::PresentationInfo new_presentation_info =
-      flutter_runner::DefaultSessionConnection::UpdatePresentationInfo(
+      flutter_runner::GfxConnection::UpdatePresentationInfo(
           std::move(future_info), presentation_info);
 
   EXPECT_EQ(new_presentation_info.presentation_time(), 10);
@@ -854,7 +841,7 @@ TEST(UpdatePresentationInfoTest, MultipleUpdates) {
   presentation_info.set_presentation_time(0);
 
   fuchsia::scenic::scheduling::PresentationInfo new_presentation_info =
-      flutter_runner::DefaultSessionConnection::UpdatePresentationInfo(
+      flutter_runner::GfxConnection::UpdatePresentationInfo(
           std::move(future_info), presentation_info);
 
   EXPECT_EQ(new_presentation_info.presentation_time(), 20);
@@ -872,9 +859,8 @@ TEST(UpdatePresentationInfoTest, MultipleUpdates) {
   future_info.future_presentations = std::move(future_presentations);
   future_info.remaining_presents_in_flight_allowed = 1;
 
-  new_presentation_info =
-      flutter_runner::DefaultSessionConnection::UpdatePresentationInfo(
-          std::move(future_info), new_presentation_info);
+  new_presentation_info = flutter_runner::GfxConnection::UpdatePresentationInfo(
+      std::move(future_info), new_presentation_info);
 
   EXPECT_EQ(new_presentation_info.presentation_time(), 30);
 }

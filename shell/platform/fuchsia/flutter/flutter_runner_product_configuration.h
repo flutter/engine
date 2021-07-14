@@ -21,6 +21,7 @@ class FlutterRunnerProductConfiguration {
   bool enable_shader_warmup_dart_hooks() {
     return enable_shader_warmup_dart_hooks_;
   }
+  bool use_flatland() { return use_flatland_; }
 
  private:
   fml::TimeDelta vsync_offset_ = fml::TimeDelta::Zero();
@@ -28,6 +29,7 @@ class FlutterRunnerProductConfiguration {
   bool intercept_all_input_ = false;
   bool enable_shader_warmup_ = false;
   bool enable_shader_warmup_dart_hooks_ = true;
+  bool use_flatland_ = false;
 };
 
 }  // namespace flutter_runner

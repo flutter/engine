@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_FUCHSIA_EXTERNAL_VIEW_EMBEDDER_H_
-#define FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_FUCHSIA_EXTERNAL_VIEW_EMBEDDER_H_
+#ifndef FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_GFX_EXTERNAL_VIEW_EMBEDDER_H_
+#define FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_GFX_EXTERNAL_VIEW_EMBEDDER_H_
 
 #include <fuchsia/ui/views/cpp/fidl.h>
 #include <lib/ui/scenic/cpp/id.h>
@@ -27,7 +27,7 @@
 #include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 
-#include "default_session_connection.h"
+#include "gfx_connection.h"
 #include "vulkan_surface_producer.h"
 
 namespace flutter_runner {
@@ -62,15 +62,15 @@ struct ViewMutators {
 // This class orchestrates interaction with the Scenic compositor on Fuchsia. It
 // ensures that flutter content and platform view content are both rendered
 // correctly in a unified scene.
-class FuchsiaExternalViewEmbedder final : public flutter::ExternalViewEmbedder {
+class GfxExternalViewEmbedder final : public flutter::ExternalViewEmbedder {
  public:
-  FuchsiaExternalViewEmbedder(std::string debug_label,
-                              fuchsia::ui::views::ViewToken view_token,
-                              scenic::ViewRefPair view_ref_pair,
-                              DefaultSessionConnection& session,
-                              VulkanSurfaceProducer& surface_producer,
-                              bool intercept_all_input = false);
-  ~FuchsiaExternalViewEmbedder();
+  GfxExternalViewEmbedder(std::string debug_label,
+                          fuchsia::ui::views::ViewToken view_token,
+                          scenic::ViewRefPair view_ref_pair,
+                          GfxConnection& session,
+                          VulkanSurfaceProducer& surface_producer,
+                          bool intercept_all_input = false);
+  ~GfxExternalViewEmbedder();
 
   // |ExternalViewEmbedder|
   SkCanvas* GetRootCanvas() override;
@@ -171,7 +171,7 @@ class FuchsiaExternalViewEmbedder final : public flutter::ExternalViewEmbedder {
     scenic::Material material;
   };
 
-  DefaultSessionConnection& session_;
+  GfxConnection& session_;
   VulkanSurfaceProducer& surface_producer_;
 
   scenic::View root_view_;
@@ -189,9 +189,9 @@ class FuchsiaExternalViewEmbedder final : public flutter::ExternalViewEmbedder {
   SkISize frame_size_ = SkISize::Make(0, 0);
   float frame_dpr_ = 1.f;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(FuchsiaExternalViewEmbedder);
+  FML_DISALLOW_COPY_AND_ASSIGN(GfxExternalViewEmbedder);
 };
 
 }  // namespace flutter_runner
 
-#endif  // FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_FUCHSIA_EXTERNAL_VIEW_EMBEDDER_H_
+#endif  // FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_GFX_EXTERNAL_VIEW_EMBEDDER_H_

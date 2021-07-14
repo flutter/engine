@@ -133,25 +133,45 @@ Engine::Engine(Delegate& delegate,
   // thread. We also need to wait for the external view embedder to be set up
   // before creating the shell.
   fml::AutoResetWaitableEvent view_embedder_latch;
-  task_runners.GetRasterTaskRunner()->PostTask(fml::MakeCopyable(
-      [this, session = std::move(session),
-       session_error_callback = std::move(session_error_callback),
-       view_token = std::move(view_token),
-       view_ref_pair = std::move(view_ref_pair),
-       max_frames_in_flight = product_config.get_max_frames_in_flight(),
-       &view_embedder_latch,
-       vsync_offset = product_config.get_vsync_offset()]() mutable {
-        session_connection_ = std::make_shared<DefaultSessionConnection>(
-            thread_label_, std::move(session),
-            std::move(session_error_callback), [](auto) {},
-            max_frames_in_flight, vsync_offset);
-        surface_producer_.emplace(session_connection_->get());
-        external_view_embedder_ = std::make_shared<FuchsiaExternalViewEmbedder>(
-            thread_label_, std::move(view_token), std::move(view_ref_pair),
-            *session_connection_.get(), surface_producer_.value(),
-            intercept_all_input_);
-        view_embedder_latch.Signal();
-      }));
+  if (product_config.use_flatland()) {
+    task_runners.GetRasterTaskRunner()->PostTask(fml::MakeCopyable(
+        [this, session_error_callback = std::move(session_error_callback),
+         view_token = std::move(view_token),
+         view_ref_pair = std::move(view_ref_pair),
+         max_frames_in_flight = product_config.get_max_frames_in_flight(),
+         &view_embedder_latch,
+         vsync_offset = product_config.get_vsync_offset()]() mutable {
+          flatland_connection_ = std::make_shared<FlatlandConnection>(
+              thread_label_, std::move(session_error_callback), [](auto) {},
+              max_frames_in_flight, vsync_offset);
+          flatland_view_embedder_ =
+              std::make_shared<FlatlandExternalViewEmbedder>(
+                  thread_label_, std::move(view_token),
+                  std::move(view_ref_pair), *flatland_connection_.get(),
+                  surface_producer_.value(), intercept_all_input_);
+          view_embedder_latch.Signal();
+        }));
+  } else {
+    task_runners.GetRasterTaskRunner()->PostTask(fml::MakeCopyable(
+        [this, session = std::move(session),
+         session_error_callback = std::move(session_error_callback),
+         view_token = std::move(view_token),
+         view_ref_pair = std::move(view_ref_pair),
+         max_frames_in_flight = product_config.get_max_frames_in_flight(),
+         &view_embedder_latch,
+         vsync_offset = product_config.get_vsync_offset()]() mutable {
+          gfx_connection_ = std::make_shared<GfxConnection>(
+              thread_label_, std::move(session),
+              std::move(session_error_callback), [](auto) {},
+              max_frames_in_flight, vsync_offset);
+          surface_producer_.emplace(gfx_connection_->get());
+          gfx_view_embedder_ = std::make_shared<GfxExternalViewEmbedder>(
+              thread_label_, std::move(view_token), std::move(view_ref_pair),
+              *gfx_connection_.get(), surface_producer_.value(),
+              intercept_all_input_);
+          view_embedder_latch.Signal();
+        }));
+  }
   view_embedder_latch.Wait();
 
   // Grab the parent environment services. The platform view may want to
@@ -279,11 +299,11 @@ Engine::Engine(Delegate& delegate,
            keyboard_listener_request = std::move(keyboard_listener_request),
            await_vsync_callback =
                [this](FireCallbackCallback cb) {
-                 session_connection_->AwaitVsync(cb);
+                 gfx_connection_->AwaitVsync(cb);
                },
            await_vsync_for_secondary_callback_callback =
                [this](FireCallbackCallback cb) {
-                 session_connection_->AwaitVsyncForSecondaryCallback(cb);
+                 gfx_connection_->AwaitVsyncForSecondaryCallback(cb);
                },
            product_config](flutter::Shell& shell) mutable {
             OnShaderWarmup on_shader_warmup = nullptr;
@@ -529,8 +549,8 @@ void Engine::DebugWireframeSettingsChanged(bool enabled) {
   FML_CHECK(shell_);
 
   shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask([this, enabled]() {
-    FML_CHECK(external_view_embedder_);
-    external_view_embedder_->EnableWireframe(enabled);
+    FML_CHECK(gfx_view_embedder_);
+    gfx_view_embedder_->EnableWireframe(enabled);
   });
 }
 
@@ -545,11 +565,11 @@ void Engine::CreateView(int64_t view_id,
       [this, view_id, hit_testable, focusable,
        on_view_created = std::move(on_view_created),
        on_view_bound = std::move(on_view_bound)]() {
-        FML_CHECK(external_view_embedder_);
-        external_view_embedder_->CreateView(view_id, std::move(on_view_created),
-                                            std::move(on_view_bound));
-        external_view_embedder_->SetViewProperties(view_id, SkRect::MakeEmpty(),
-                                                   hit_testable, focusable);
+        FML_CHECK(gfx_view_embedder_);
+        gfx_view_embedder_->CreateView(view_id, std::move(on_view_created),
+                                       std::move(on_view_bound));
+        gfx_view_embedder_->SetViewProperties(view_id, SkRect::MakeEmpty(),
+                                              hit_testable, focusable);
       });
 }
 
@@ -561,9 +581,9 @@ void Engine::UpdateView(int64_t view_id,
 
   shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask(
       [this, view_id, occlusion_hint, hit_testable, focusable]() {
-        FML_CHECK(external_view_embedder_);
-        external_view_embedder_->SetViewProperties(view_id, occlusion_hint,
-                                                   hit_testable, focusable);
+        FML_CHECK(gfx_view_embedder_);
+        gfx_view_embedder_->SetViewProperties(view_id, occlusion_hint,
+                                              hit_testable, focusable);
       });
 }
 
@@ -572,9 +592,8 @@ void Engine::DestroyView(int64_t view_id, ViewIdCallback on_view_unbound) {
 
   shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask(
       [this, view_id, on_view_unbound = std::move(on_view_unbound)]() {
-        FML_CHECK(external_view_embedder_);
-        external_view_embedder_->DestroyView(view_id,
-                                             std::move(on_view_unbound));
+        FML_CHECK(gfx_view_embedder_);
+        gfx_view_embedder_->DestroyView(view_id, std::move(on_view_unbound));
       });
 }
 
@@ -585,9 +604,9 @@ std::unique_ptr<flutter::Surface> Engine::CreateSurface() {
 
 std::shared_ptr<flutter::ExternalViewEmbedder>
 Engine::GetExternalViewEmbedder() {
-  FML_CHECK(external_view_embedder_);
+  FML_CHECK(gfx_view_embedder_);
 
-  return external_view_embedder_;
+  return gfx_view_embedder_;
 }
 
 #if !defined(DART_PRODUCT)

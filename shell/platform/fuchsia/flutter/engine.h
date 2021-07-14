@@ -23,9 +23,11 @@
 #include "flutter/shell/common/shell.h"
 #include "flutter/shell/platform/fuchsia/flutter/accessibility_bridge.h"
 
-#include "default_session_connection.h"
+#include "flatland_connection.h"
+#include "flatland_external_view_embedder.h"
 #include "flutter_runner_product_configuration.h"
-#include "fuchsia_external_view_embedder.h"
+#include "gfx_connection.h"
+#include "gfx_external_view_embedder.h"
 #include "isolate_configurator.h"
 #include "vulkan_surface_producer.h"
 
@@ -70,9 +72,11 @@ class Engine final {
   const std::string thread_label_;
   std::array<fml::Thread, 3> threads_;
 
-  std::shared_ptr<DefaultSessionConnection> session_connection_;
+  std::shared_ptr<GfxConnection> gfx_connection_;
+  std::shared_ptr<FlatlandConnection> flatland_connection_;
   std::optional<VulkanSurfaceProducer> surface_producer_;
-  std::shared_ptr<FuchsiaExternalViewEmbedder> external_view_embedder_;
+  std::shared_ptr<GfxExternalViewEmbedder> gfx_view_embedder_;
+  std::shared_ptr<FlatlandExternalViewEmbedder> flatland_view_embedder_;
 
   std::unique_ptr<IsolateConfigurator> isolate_configurator_;
   std::unique_ptr<flutter::Shell> shell_;

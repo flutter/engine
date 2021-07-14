@@ -14,7 +14,7 @@
 #include "flutter/fml/message_loop_impl.h"
 #include "flutter/fml/task_runner.h"
 #include "flutter/shell/common/serialization_callbacks.h"
-#include "flutter/shell/platform/fuchsia/flutter/default_session_connection.h"
+#include "flutter/shell/platform/fuchsia/flutter/gfx_connection.h"
 #include "flutter/shell/platform/fuchsia/flutter/logging.h"
 #include "flutter/shell/platform/fuchsia/flutter/runner.h"
 #include "gtest/gtest.h"

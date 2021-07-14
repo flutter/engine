@@ -23,7 +23,7 @@
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/time/time_delta.h"
 #include "flutter/shell/common/platform_view.h"
-#include "flutter/shell/platform/fuchsia/flutter/fuchsia_external_view_embedder.h"
+#include "flutter/shell/platform/fuchsia/flutter/gfx_external_view_embedder.h"
 #include "flutter/shell/platform/fuchsia/flutter/keyboard.h"
 #include "flutter/shell/platform/fuchsia/flutter/vsync_waiter.h"
 #include "focus_delegate.h"
@@ -58,7 +58,7 @@ using OnShaderWarmup = std::function<void(const std::vector<std::string>&,
 //
 // The PlatformView implements SessionListener and gets Session events but it
 // does *not* actually own the Session itself; that is owned by the
-// FuchsiaExternalViewEmbedder on the raster thread.
+// GfxExternalViewEmbedder on the raster thread.
 class PlatformView final : public flutter::PlatformView,
                            private fuchsia::ui::scenic::SessionListener,
                            private fuchsia::ui::input3::KeyboardListener,

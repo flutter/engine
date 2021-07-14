@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "default_session_connection.h"
+#include "gfx_connection.h"
 
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/trace_event.h"
@@ -36,7 +36,7 @@ namespace flutter_runner {
 //
 // |next_vsync| - the next vsync after |now|. This can be generated using the
 // SnapToNextPhase function.
-FlutterFrameTimes DefaultSessionConnection::GetTargetTimes(
+FlutterFrameTimes GfxConnection::GetTargetTimes(
     fml::TimeDelta vsync_offset,
     fml::TimeDelta vsync_interval,
     fml::TimePoint last_targeted_vsync,
@@ -70,18 +70,18 @@ FlutterFrameTimes DefaultSessionConnection::GetTargetTimes(
   // Useful knowledge for analyzing traces.
   fml::TimePoint previous_vsync = next_vsync - vsync_interval;
   TRACE_DURATION(
-      "flutter", "DefaultSessionConnection::GetTargetTimes",
-      "previous_vsync(ms)", previous_vsync.ToEpochDelta().ToMilliseconds(),
-      "last_targeted(ms)", last_targeted_vsync.ToEpochDelta().ToMilliseconds(),
-      "now(ms)", fml::TimePoint::Now().ToEpochDelta().ToMilliseconds(),
-      "next_vsync(ms))", next_vsync.ToEpochDelta().ToMilliseconds(),
-      "frame_start_time(ms)", frame_start_time.ToEpochDelta().ToMilliseconds(),
-      "frame_end_time(ms)", frame_end_time.ToEpochDelta().ToMilliseconds());
+      "flutter", "GfxConnection::GetTargetTimes", "previous_vsync(ms)",
+      previous_vsync.ToEpochDelta().ToMilliseconds(), "last_targeted(ms)",
+      last_targeted_vsync.ToEpochDelta().ToMilliseconds(), "now(ms)",
+      fml::TimePoint::Now().ToEpochDelta().ToMilliseconds(), "next_vsync(ms))",
+      next_vsync.ToEpochDelta().ToMilliseconds(), "frame_start_time(ms)",
+      frame_start_time.ToEpochDelta().ToMilliseconds(), "frame_end_time(ms)",
+      frame_end_time.ToEpochDelta().ToMilliseconds());
 
   return {frame_start_time, frame_end_time};
 }
 
-fml::TimePoint DefaultSessionConnection::CalculateNextLatchPoint(
+fml::TimePoint GfxConnection::CalculateNextLatchPoint(
     fml::TimePoint present_requested_time,
     fml::TimePoint now,
     fml::TimePoint last_latch_point_targeted,
@@ -136,7 +136,7 @@ fml::TimePoint DefaultSessionConnection::CalculateNextLatchPoint(
 ///       |  +>now
 ///       |
 ///       +->last_presentation_time
-fml::TimePoint DefaultSessionConnection::SnapToNextPhase(
+fml::TimePoint GfxConnection::SnapToNextPhase(
     const fml::TimePoint now,
     const fml::TimePoint last_frame_presentation_time,
     const fml::TimeDelta presentation_interval) {
@@ -167,7 +167,7 @@ fml::TimePoint DefaultSessionConnection::SnapToNextPhase(
   }
 }
 
-DefaultSessionConnection::DefaultSessionConnection(
+GfxConnection::GfxConnection(
     std::string debug_label,
     fidl::InterfaceHandle<fuchsia::ui::scenic::Session> session,
     fml::closure session_error_callback,
@@ -237,17 +237,17 @@ DefaultSessionConnection::DefaultSessionConnection(
 
         PresentSession();
       });
-  FML_LOG(INFO) << "Flutter DefaultSessionConnection: Set vsync_offset to "
+  FML_LOG(INFO) << "Flutter GfxConnection: Set vsync_offset to "
                 << vsync_offset_.ToMicroseconds() << "us";
 }
 
-DefaultSessionConnection::~DefaultSessionConnection() = default;
+GfxConnection::~GfxConnection() = default;
 
-void DefaultSessionConnection::Present() {
-  TRACE_DURATION("gfx", "DefaultSessionConnection::Present", "frames_in_flight",
+void GfxConnection::Present() {
+  TRACE_DURATION("gfx", "GfxConnection::Present", "frames_in_flight",
                  frames_in_flight_, "max_frames_in_flight", kMaxFramesInFlight);
 
-  TRACE_FLOW_BEGIN("gfx", "DefaultSessionConnection::PresentSession",
+  TRACE_FLOW_BEGIN("gfx", "GfxConnection::PresentSession",
                    next_present_session_trace_id_);
   next_present_session_trace_id_++;
 
@@ -267,27 +267,26 @@ void DefaultSessionConnection::Present() {
   }
 }
 
-void DefaultSessionConnection::AwaitVsync(FireCallbackCallback callback) {
+void GfxConnection::AwaitVsync(FireCallbackCallback callback) {
   std::lock_guard<std::mutex> lock(mutex_);
-  TRACE_DURATION("flutter", "DefaultSessionConnection::AwaitVsync");
+  TRACE_DURATION("flutter", "GfxConnection::AwaitVsync");
   fire_callback_ = callback;
 
   FireCallbackMaybe();
 }
 
-void DefaultSessionConnection::AwaitVsyncForSecondaryCallback(
+void GfxConnection::AwaitVsyncForSecondaryCallback(
     FireCallbackCallback callback) {
   std::lock_guard<std::mutex> lock(mutex_);
-  TRACE_DURATION("flutter",
-                 "DefaultSessionConnection::AwaitVsyncForSecondaryCallback");
+  TRACE_DURATION("flutter", "GfxConnection::AwaitVsyncForSecondaryCallback");
   fire_callback_ = callback;
 
   FlutterFrameTimes times = GetTargetTimesHelper(/*secondary_callback=*/true);
   fire_callback_(times.frame_start, times.frame_target);
 }
 
-void DefaultSessionConnection::PresentSession() {
-  TRACE_DURATION("gfx", "DefaultSessionConnection::PresentSession");
+void GfxConnection::PresentSession() {
+  TRACE_DURATION("gfx", "GfxConnection::PresentSession");
 
   // If we cannot call Present2() because we have no more Scenic frame budget,
   // then we must wait until the OnFramePresented() event fires so we can
@@ -300,7 +299,7 @@ void DefaultSessionConnection::PresentSession() {
   present_session_pending_ = false;
 
   while (processed_present_session_trace_id_ < next_present_session_trace_id_) {
-    TRACE_FLOW_END("gfx", "DefaultSessionConnection::PresentSession",
+    TRACE_FLOW_END("gfx", "GfxConnection::PresentSession",
                    processed_present_session_trace_id_);
     processed_present_session_trace_id_++;
   }
@@ -352,7 +351,7 @@ void DefaultSessionConnection::PresentSession() {
 // Postcondition: Either a frame is scheduled or fire_callback_request_pending_
 // is set to true, meaning we will attempt to schedule a frame on the next
 // |OnVsync|.
-void DefaultSessionConnection::FireCallbackMaybe() {
+void GfxConnection::FireCallbackMaybe() {
   TRACE_DURATION("flutter", "FireCallbackMaybe");
 
   if (frames_in_flight_ < kMaxFramesInFlight) {
@@ -370,8 +369,7 @@ void DefaultSessionConnection::FireCallbackMaybe() {
 
 // A helper function for GetTargetTimes(), since many of the fields it takes
 // have to be derived from other state.
-FlutterFrameTimes DefaultSessionConnection::GetTargetTimesHelper(
-    bool secondary_callback) {
+FlutterFrameTimes GfxConnection::GetTargetTimesHelper(bool secondary_callback) {
   fml::TimeDelta presentation_interval =
       GetCurrentVsyncInfo().presentation_interval;
 
@@ -391,7 +389,7 @@ FlutterFrameTimes DefaultSessionConnection::GetTargetTimesHelper(
 
 fuchsia::scenic::scheduling::PresentationInfo
 
-DefaultSessionConnection::UpdatePresentationInfo(
+GfxConnection::UpdatePresentationInfo(
     fuchsia::scenic::scheduling::FuturePresentationTimes future_info,
     fuchsia::scenic::scheduling::PresentationInfo& presentation_info) {
   fuchsia::scenic::scheduling::PresentationInfo new_presentation_info;
@@ -412,7 +410,7 @@ DefaultSessionConnection::UpdatePresentationInfo(
   return new_presentation_info;
 }
 
-VsyncInfo DefaultSessionConnection::GetCurrentVsyncInfo() const {
+VsyncInfo GfxConnection::GetCurrentVsyncInfo() const {
   return {fml::TimePoint::FromEpochDelta(fml::TimeDelta::FromNanoseconds(
               next_presentation_info_.presentation_time())),
           kDefaultPresentationInterval};

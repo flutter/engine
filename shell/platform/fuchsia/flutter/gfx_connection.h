@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_FUCHSIA_DEFAULT_SESSION_CONNECTION_H_
-#define FLUTTER_SHELL_PLATFORM_FUCHSIA_DEFAULT_SESSION_CONNECTION_H_
+#ifndef FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_GFX_CONNECTION_H_
+#define FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_GFX_CONNECTION_H_
 
 #include <fuchsia/scenic/scheduling/cpp/fidl.h>
 #include <fuchsia/ui/scenic/cpp/fidl.h>
@@ -39,7 +39,7 @@ static constexpr fml::TimeDelta kDefaultPresentationInterval =
 
 // The component residing on the raster thread that is responsible for
 // maintaining the Scenic session connection and presenting node updates.
-class DefaultSessionConnection final {
+class GfxConnection final {
  public:
   static FlutterFrameTimes GetTargetTimes(fml::TimeDelta vsync_offset,
                                           fml::TimeDelta vsync_interval,
@@ -71,15 +71,14 @@ class DefaultSessionConnection final {
       fuchsia::scenic::scheduling::FuturePresentationTimes future_info,
       fuchsia::scenic::scheduling::PresentationInfo& presentation_info);
 
-  DefaultSessionConnection(
-      std::string debug_label,
-      fidl::InterfaceHandle<fuchsia::ui::scenic::Session> session,
-      fml::closure session_error_callback,
-      on_frame_presented_event on_frame_presented_callback,
-      uint64_t max_frames_in_flight,
-      fml::TimeDelta vsync_offset);
+  GfxConnection(std::string debug_label,
+                fidl::InterfaceHandle<fuchsia::ui::scenic::Session> session,
+                fml::closure session_error_callback,
+                on_frame_presented_event on_frame_presented_callback,
+                uint64_t max_frames_in_flight,
+                fml::TimeDelta vsync_offset);
 
-  ~DefaultSessionConnection();
+  ~GfxConnection();
 
   scenic::Session* get() { return &session_wrapper_; }
 
@@ -159,9 +158,9 @@ class DefaultSessionConnection final {
   // thread.
   FireCallbackCallback fire_callback_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(DefaultSessionConnection);
+  FML_DISALLOW_COPY_AND_ASSIGN(GfxConnection);
 };
 
 }  // namespace flutter_runner
 
-#endif  // FLUTTER_SHELL_PLATFORM_FUCHSIA_DEFAULT_SESSION_CONNECTION_H_
+#endif  // FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_GFX_CONNECTION_H_
