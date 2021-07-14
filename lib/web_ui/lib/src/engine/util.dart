@@ -425,10 +425,6 @@ const Set<String> _genericFontFamilies = <String>{
 final String _fallbackFontFamily =
     isMacOrIOS ? '-apple-system, BlinkMacSystemFont' : 'Arial';
 
-bool get isMacOrIOS =>
-    operatingSystem == OperatingSystem.iOs ||
-    operatingSystem == OperatingSystem.macOs;
-
 /// Create a font-family string appropriate for CSS.
 ///
 /// If the given [fontFamily] is a generic font-family, then just return it.
@@ -558,4 +554,9 @@ bool listEquals<T>(List<T>? a, List<T>? b) {
 // average the two radii together for a single compromise value.
 String blurSigmasToCssString(double sigmaX, double sigmaY) {
   return 'blur(${(sigmaX + sigmaY) * 0.5}px)';
+}
+
+/// Checks if the dynamic [object] is equal to null.
+bool unsafeIsNull(dynamic object) {
+  return object == null;
 }

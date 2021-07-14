@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#define FML_USED_ON_EMBEDDER
+
 #include "engine.h"
 
 #include <lib/async/cpp/task.h>
@@ -10,6 +12,7 @@
 #include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/common/task_runners.h"
 #include "flutter/fml/make_copyable.h"
+#include "flutter/fml/message_loop.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/fml/task_runner.h"
 #include "flutter/runtime/dart_vm_lifecycle.h"
@@ -25,12 +28,7 @@
 #include "fuchsia_intl.h"
 #include "platform_view.h"
 #include "surface.h"
-#include "task_runner_adapter.h"
 #include "vsync_waiter.h"
-
-#if defined(LEGACY_FUCHSIA_EMBEDDER)
-#include "compositor_context.h"  // nogncheck
-#endif
 
 namespace flutter_runner {
 namespace {
@@ -73,20 +71,19 @@ Engine::Engine(Delegate& delegate,
                FlutterRunnerProductConfiguration product_config)
     : delegate_(delegate),
       thread_label_(std::move(thread_label)),
-#if defined(LEGACY_FUCHSIA_EMBEDDER)
-      use_legacy_renderer_(product_config.use_legacy_renderer()),
-#endif
       intercept_all_input_(product_config.get_intercept_all_input()),
       weak_factory_(this) {
-
   // Get the task runners from the managed threads. The current thread will be
   // used as the "platform" thread.
+  fml::RefPtr<fml::TaskRunner> platform_task_runner =
+      fml::MessageLoop::GetCurrent().GetTaskRunner();
+
   const flutter::TaskRunners task_runners(
-      thread_label_,  // Dart thread labels
-      CreateFMLTaskRunner(async_get_default_dispatcher()),  // platform
-      CreateFMLTaskRunner(threads_[0].dispatcher()),        // raster
-      CreateFMLTaskRunner(threads_[1].dispatcher()),        // ui
-      CreateFMLTaskRunner(threads_[2].dispatcher())         // io
+      thread_label_,                // Dart thread labels
+      platform_task_runner,         // platform
+      threads_[0].GetTaskRunner(),  // raster
+      threads_[1].GetTaskRunner(),  // ui
+      threads_[2].GetTaskRunner()   // io
   );
   UpdateNativeThreadLabelNames(thread_label_, task_runners);
 
@@ -123,10 +120,9 @@ Engine::Engine(Delegate& delegate,
   // This handles the fidl error callback when the Session connection is
   // broken. The SessionListener interface also has an OnError method, which is
   // invoked on the platform thread (in PlatformView).
-  fml::closure session_error_callback = [dispatcher =
-                                             async_get_default_dispatcher(),
+  fml::closure session_error_callback = [task_runner = platform_task_runner,
                                          weak = weak_factory_.GetWeakPtr()]() {
-    async::PostTask(dispatcher, [weak]() {
+    task_runner->PostTask([weak]() {
       if (weak) {
         weak->Terminate();
       }
@@ -150,22 +146,10 @@ Engine::Engine(Delegate& delegate,
             std::move(session_error_callback), [](auto) {},
             max_frames_in_flight, vsync_offset);
         surface_producer_.emplace(session_connection_->get());
-#if defined(LEGACY_FUCHSIA_EMBEDDER)
-        if (use_legacy_renderer_) {
-          legacy_external_view_embedder_ =
-              std::make_shared<flutter::SceneUpdateContext>(
-                  thread_label_, std::move(view_token),
-                  std::move(view_ref_pair), *(session_connection_.get()),
-                  intercept_all_input_);
-        } else
-#endif
-        {
-          external_view_embedder_ =
-              std::make_shared<FuchsiaExternalViewEmbedder>(
-                  thread_label_, std::move(view_token),
-                  std::move(view_ref_pair), *session_connection_.get(),
-                  surface_producer_.value(), intercept_all_input_);
-        }
+        external_view_embedder_ = std::make_shared<FuchsiaExternalViewEmbedder>(
+            thread_label_, std::move(view_token), std::move(view_ref_pair),
+            *session_connection_.get(), surface_producer_.value(),
+            intercept_all_input_);
         view_embedder_latch.Signal();
       }));
   view_embedder_latch.Wait();
@@ -224,9 +208,9 @@ Engine::Engine(Delegate& delegate,
   // platform thread when that happens. The Session itself should also be
   // disconnected when this happens, and it will also attempt to terminate.
   fit::closure on_session_listener_error_callback =
-      [dispatcher = async_get_default_dispatcher(),
+      [task_runner = platform_task_runner,
        weak = weak_factory_.GetWeakPtr()]() {
-        async::PostTask(dispatcher, [weak]() {
+        task_runner->PostTask([weak]() {
           if (weak) {
             weak->Terminate();
           }
@@ -362,29 +346,10 @@ Engine::Engine(Delegate& delegate,
           });
 
   // Setup the callback that will instantiate the rasterizer.
-  flutter::Shell::CreateCallback<flutter::Rasterizer> on_create_rasterizer;
-#if defined(LEGACY_FUCHSIA_EMBEDDER)
-  on_create_rasterizer = [this](flutter::Shell& shell) {
-    if (use_legacy_renderer_) {
-      FML_DCHECK(session_connection_);
-      FML_DCHECK(surface_producer_);
-      FML_DCHECK(legacy_external_view_embedder_);
-
-      auto compositor_context =
-          std::make_unique<flutter_runner::CompositorContext>(
-              *(session_connection_.get()), surface_producer_.value(),
-              legacy_external_view_embedder_);
-      return std::make_unique<flutter::Rasterizer>(
-          shell, std::move(compositor_context));
-    } else {
-      return std::make_unique<flutter::Rasterizer>(shell);
-    }
-  };
-#else
-  on_create_rasterizer = [this](flutter::Shell& shell) {
-    return std::make_unique<flutter::Rasterizer>(shell);
-  };
-#endif
+  flutter::Shell::CreateCallback<flutter::Rasterizer> on_create_rasterizer =
+      [](flutter::Shell& shell) {
+        return std::make_unique<flutter::Rasterizer>(shell);
+      };
 
   settings.root_isolate_create_callback =
       std::bind(&Engine::OnMainIsolateStart, this);
@@ -516,9 +481,6 @@ Engine::Engine(Delegate& delegate,
 Engine::~Engine() {
   shell_.reset();
   for (auto& thread : threads_) {
-    thread.Quit();
-  }
-  for (auto& thread : threads_) {
     thread.Join();
   }
 }
@@ -567,16 +529,8 @@ void Engine::DebugWireframeSettingsChanged(bool enabled) {
   FML_CHECK(shell_);
 
   shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask([this, enabled]() {
-#if defined(LEGACY_FUCHSIA_EMBEDDER)
-    if (use_legacy_renderer_) {
-      FML_CHECK(legacy_external_view_embedder_);
-      legacy_external_view_embedder_->EnableWireframe(enabled);
-    } else
-#endif
-    {
-      FML_CHECK(external_view_embedder_);
-      external_view_embedder_->EnableWireframe(enabled);
-    }
+    FML_CHECK(external_view_embedder_);
+    external_view_embedder_->EnableWireframe(enabled);
   });
 }
 
@@ -591,21 +545,11 @@ void Engine::CreateView(int64_t view_id,
       [this, view_id, hit_testable, focusable,
        on_view_created = std::move(on_view_created),
        on_view_bound = std::move(on_view_bound)]() {
-#if defined(LEGACY_FUCHSIA_EMBEDDER)
-        if (use_legacy_renderer_) {
-          FML_CHECK(legacy_external_view_embedder_);
-          legacy_external_view_embedder_->CreateView(
-              view_id, std::move(on_view_created), std::move(on_view_bound),
-              hit_testable, focusable);
-        } else
-#endif
-        {
-          FML_CHECK(external_view_embedder_);
-          external_view_embedder_->CreateView(
-              view_id, std::move(on_view_created), std::move(on_view_bound));
-          external_view_embedder_->SetViewProperties(
-              view_id, SkRect::MakeEmpty(), hit_testable, focusable);
-        }
+        FML_CHECK(external_view_embedder_);
+        external_view_embedder_->CreateView(view_id, std::move(on_view_created),
+                                            std::move(on_view_bound));
+        external_view_embedder_->SetViewProperties(view_id, SkRect::MakeEmpty(),
+                                                   hit_testable, focusable);
       });
 }
 
@@ -617,18 +561,9 @@ void Engine::UpdateView(int64_t view_id,
 
   shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask(
       [this, view_id, occlusion_hint, hit_testable, focusable]() {
-#if defined(LEGACY_FUCHSIA_EMBEDDER)
-        if (use_legacy_renderer_) {
-          FML_CHECK(legacy_external_view_embedder_);
-          legacy_external_view_embedder_->UpdateView(view_id, occlusion_hint,
-                                                     hit_testable, focusable);
-        } else
-#endif
-        {
-          FML_CHECK(external_view_embedder_);
-          external_view_embedder_->SetViewProperties(view_id, occlusion_hint,
-                                                     hit_testable, focusable);
-        }
+        FML_CHECK(external_view_embedder_);
+        external_view_embedder_->SetViewProperties(view_id, occlusion_hint,
+                                                   hit_testable, focusable);
       });
 }
 
@@ -637,18 +572,9 @@ void Engine::DestroyView(int64_t view_id, ViewIdCallback on_view_unbound) {
 
   shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask(
       [this, view_id, on_view_unbound = std::move(on_view_unbound)]() {
-#if defined(LEGACY_FUCHSIA_EMBEDDER)
-        if (use_legacy_renderer_) {
-          FML_CHECK(legacy_external_view_embedder_);
-          legacy_external_view_embedder_->DestroyView(
-              view_id, std::move(on_view_unbound));
-        } else
-#endif
-        {
-          FML_CHECK(external_view_embedder_);
-          external_view_embedder_->DestroyView(view_id,
-                                               std::move(on_view_unbound));
-        }
+        FML_CHECK(external_view_embedder_);
+        external_view_embedder_->DestroyView(view_id,
+                                             std::move(on_view_unbound));
       });
 }
 
@@ -659,22 +585,9 @@ std::unique_ptr<flutter::Surface> Engine::CreateSurface() {
 
 std::shared_ptr<flutter::ExternalViewEmbedder>
 Engine::GetExternalViewEmbedder() {
-  std::shared_ptr<flutter::ExternalViewEmbedder> external_view_embedder =
-      nullptr;
+  FML_CHECK(external_view_embedder_);
 
-#if defined(LEGACY_FUCHSIA_EMBEDDER)
-  if (use_legacy_renderer_) {
-    FML_CHECK(legacy_external_view_embedder_);
-    external_view_embedder = legacy_external_view_embedder_;
-  } else
-#endif
-  {
-    FML_CHECK(external_view_embedder_);
-    external_view_embedder = external_view_embedder_;
-  }
-  FML_CHECK(external_view_embedder);
-
-  return external_view_embedder;
+  return external_view_embedder_;
 }
 
 #if !defined(DART_PRODUCT)

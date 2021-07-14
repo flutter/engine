@@ -29,11 +29,13 @@ class FrameTiming {
     kBuildFinish,
     kRasterStart,
     kRasterFinish,
+    kRasterFinishWallTime,
     kCount
   };
 
   static constexpr Phase kPhases[kCount] = {
-      kVsyncStart, kBuildStart, kBuildFinish, kRasterStart, kRasterFinish};
+      kVsyncStart,  kBuildStart,   kBuildFinish,
+      kRasterStart, kRasterFinish, kRasterFinishWallTime};
 
   fml::TimePoint Get(Phase phase) const { return data_[phase]; }
   fml::TimePoint Set(Phase phase, fml::TimePoint value) {
@@ -162,6 +164,9 @@ struct Settings {
 
   // Selects the SkParagraph implementation of the text layout engine.
   bool enable_skparagraph = false;
+
+  // Selects the DisplayList for storage of rendering operations.
+  bool enable_display_list = false;
 
   // All shells in the process share the same VM. The last shell to shutdown
   // should typically shut down the VM as well. However, applications depend on

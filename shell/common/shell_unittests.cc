@@ -523,6 +523,12 @@ static void CheckFrameTimings(const std::vector<FrameTiming>& timings,
 
     fml::TimePoint last_phase_time;
     for (auto phase : FrameTiming::kPhases) {
+      // raster finish wall time doesn't use the same clock base
+      // as rest of the frame timings.
+      if (phase == FrameTiming::kRasterFinishWallTime) {
+        continue;
+      }
+
       ASSERT_TRUE(timings[i].Get(phase) >= start);
       ASSERT_TRUE(timings[i].Get(phase) <= finish);
 
@@ -2110,7 +2116,7 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
   document.Accept(writer);
   std::string expected_json =
       "{\"type\":\"EstimateRasterCacheMemory\",\"layerBytes\":40000,\"picture"
-      "Bytes\":400}";
+      "Bytes\":400,\"displayListBytes\":0}";
   std::string actual_json = buffer.GetString();
   ASSERT_EQ(actual_json, expected_json);
 

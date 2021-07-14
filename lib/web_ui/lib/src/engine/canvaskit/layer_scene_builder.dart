@@ -4,9 +4,10 @@
 
 import 'dart:typed_data';
 
-import 'package:ui/src/engine.dart' show toMatrix32, Matrix4;
 import 'package:ui/ui.dart' as ui;
 
+import '../../engine.dart' show toMatrix32;
+import '../vector_math.dart';
 import 'layer.dart';
 import 'layer_tree.dart';
 import 'picture.dart';
@@ -34,17 +35,6 @@ class LayerSceneBuilder implements ui.SceneBuilder {
 
   final RootLayer rootLayer;
   late ContainerLayer currentLayer;
-
-  @override
-  void addChildScene({
-    ui.Offset offset = ui.Offset.zero,
-    double width = 0.0,
-    double height = 0.0,
-    ui.SceneHost? sceneHost,
-    bool hitTestable = true,
-  }) {
-    throw UnimplementedError();
-  }
 
   @override
   void addPerformanceOverlay(int enabledOptions, ui.Rect bounds) {

@@ -70,20 +70,14 @@ template("runner_sources") {
       "keyboard.cc",
       "keyboard.h",
       "logging.h",
-      "loop.cc",
-      "loop.h",
       "platform_view.cc",
       "platform_view.h",
       "runner.cc",
       "runner.h",
       "surface.cc",
       "surface.h",
-      "task_observers.cc",
-      "task_observers.h",
       "task_runner_adapter.cc",
       "task_runner_adapter.h",
-      "thread.cc",
-      "thread.h",
       "unique_fdio_ns.h",
       "vsync_waiter.cc",
       "vsync_waiter.h",
@@ -94,12 +88,6 @@ template("runner_sources") {
       "vulkan_surface_producer.cc",
       "vulkan_surface_producer.h",
     ]
-    if (flutter_enable_legacy_fuchsia_embedder) {
-      sources += [
-        "compositor_context.cc",
-        "compositor_context.h",
-      ]
-    }
 
     public_configs = runner_configs
 
@@ -163,6 +151,14 @@ runner_sources("flutter_runner_sources_product") {
   product = true
 }
 
+# Loaded via FFI
+_common_runner_libs = common_libs + [
+                        {
+                          name = "libzircon_ffi.so"
+                          path = rebase_path("$root_out_dir")
+                        },
+                      ]
+
 # Things that explicitly being excluded:
 # 1. Kernel snapshot framework mode.
 # 2. Profiler symbols.
@@ -207,14 +203,24 @@ template("flutter_runner") {
              "$fuchsia_sdk_root/pkg:trace-provider-so",
            ] + extra_deps
 
+    # For `libzircon_ffi` see _common_runner_libs.
+    public_deps = [ "../dart-pkg/zircon_ffi:zircon_ffi" ]
+
     # The flags below are needed so that Dart's CPU profiler can walk the
     # C++ stack.
     cflags = [ "-fno-omit-frame-pointer" ]
 
-    if (!invoker.product) {
+    if (invoker.product) {
+      # Fuchsia's default stack size was resulting in test failures in a
+      # downstream project. Provide some extra room.
+      ldflags = [ "-Wl,-z,stack-size=0x100000" ]
+    } else {
       # This flag is needed so that the call to dladdr() in Dart's native symbol
       # resolver can report good symbol information for the CPU profiler.
-      ldflags = [ "-rdynamic" ]
+      ldflags = [
+        "-Wl,-z,stack-size=0x100000",
+        "-rdynamic",
+      ]
     }
   }
 }
@@ -336,7 +342,7 @@ template("jit_runner") {
     ]
 
     _vulkan_icds = []
-    _libs = common_libs
+    _libs = _common_runner_libs
     if (enable_vulkan_validation_layers) {
       _libs += vulkan_validation_libs
       _vulkan_icds += vulkan_icds
@@ -394,7 +400,7 @@ template("aot_runner") {
     }
 
     _vulkan_icds = []
-    _libs = common_libs
+    _libs = _common_runner_libs
     if (enable_vulkan_validation_layers) {
       _libs += vulkan_validation_libs
       _vulkan_icds += vulkan_icds
@@ -519,9 +525,7 @@ executable("flutter_runner_scenic_unittests") {
          ] + flutter_deps
 }
 
-fuchsia_archive("flutter_runner_tests") {
-  testonly = true
-
+fuchsia_test_archive("flutter_runner_tests") {
   deps = [ ":flutter_runner_unittests" ]
 
   binary = "$target_name"
@@ -549,32 +553,9 @@ fuchsia_archive("flutter_runner_tests") {
   ]
 
   cmx_file = rebase_path("meta/$target_name.cmx")
-
-  libraries = common_libs
 }
 
-fuchsia_archive("flutter_runner_tzdata_tests") {
-  testonly = true
-
-  deps = [ ":flutter_runner_tzdata_unittests" ]
-
-  binary = "$target_name"
-
-  resources = [
-    {
-      path = rebase_path("//third_party/icu/common/icudtl.dat")
-      dest = "icudtl.dat"
-    },
-  ]
-
-  cmx_file = rebase_path("meta/$target_name.cmx")
-
-  libraries = common_libs
-}
-
-fuchsia_archive("flutter_runner_scenic_tests") {
-  testonly = true
-
+fuchsia_test_archive("flutter_runner_scenic_tests") {
   deps = [ ":flutter_runner_scenic_unittests" ]
 
   binary = "$target_name"
@@ -587,8 +568,19 @@ fuchsia_archive("flutter_runner_scenic_tests") {
   ]
 
   cmx_file = rebase_path("meta/$target_name.cmx")
+}
 
-  libraries = common_libs
+fuchsia_test_archive("flutter_runner_tzdata_tests") {
+  deps = [ ":flutter_runner_tzdata_unittests" ]
+
+  binary = "$target_name"
+
+  resources = [
+    {
+      path = rebase_path("//third_party/icu/common/icudtl.dat")
+      dest = "icudtl.dat"
+    },
+  ]
 }
 
 fuchsia_test_archive("fml_tests") {

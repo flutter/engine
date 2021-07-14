@@ -2,7 +2,18 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import 'dart:math' as math;
+import 'dart:typed_data';
+
+import 'package:ui/ui.dart' as ui;
+
+import '../../engine.dart' show toMatrix32;
+import '../picture.dart';
+import '../util.dart';
+import '../validators.dart';
+import 'recording_canvas.dart';
+import 'render_vertices.dart';
+import 'painting.dart';
 
 class SurfaceCanvas implements ui.Canvas {
   RecordingCanvas _canvas;

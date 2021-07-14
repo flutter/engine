@@ -5,11 +5,35 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:test_api/src/backend/runtime.dart';
+
 import 'browser.dart';
 import 'common.dart';
 import 'edge_installation.dart';
 
-/// A class for running an instance of Edge.
+/// Provides an environment for the desktop Microsoft Edge (Chromium-based).
+class EdgeEnvironment implements BrowserEnvironment {
+  @override
+  Browser launchBrowserInstance(Uri url, {bool debug = false}) {
+    return Edge(url);
+  }
+
+  @override
+  Runtime get packageTestRuntime => Runtime.internetExplorer;
+
+  @override
+  Future<void> prepareEnvironment() async {
+    // Edge doesn't need any special prep.
+  }
+
+  @override
+  ScreenshotManager? getScreenshotManager() => null;
+
+  @override
+  String get packageTestConfigurationYamlFile => 'dart_test_edge.yaml';
+}
+
+/// Runs desktop Edge.
 ///
 /// Most of the communication with the browser is expected to happen via HTTP,
 /// so this exposes a bare-bones API. The browser starts as soon as the class is
@@ -22,7 +46,7 @@ class Edge extends Browser {
 
   /// Starts a new instance of Safari open to the given [url], which may be a
   /// [Uri] or a [String].
-  factory Edge(Uri url, {bool debug = false}) {
+  factory Edge(Uri url) {
     final String version = EdgeArgParser.instance.version;
 
     return Edge._(() async {

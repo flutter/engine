@@ -4,8 +4,20 @@
 
 import 'dart:html' as html;
 
-import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
+
+import '../../engine.dart' show NullTreeSanitizer, platformViewManager;
+import '../html/path_to_svg_clip.dart';
+import '../platform_views/slots.dart';
+import '../util.dart';
+import '../vector_math.dart';
+import '../window.dart';
+import 'canvas.dart';
+import 'initialization.dart';
+import 'path.dart';
+import 'picture_recorder.dart';
+import 'surface.dart';
+import 'surface_factory.dart';
 
 /// This composites HTML views into the [ui.Scene].
 class HtmlViewEmbedder {
@@ -70,10 +82,6 @@ class HtmlViewEmbedder {
   ui.Size _frameSize = ui.window.physicalSize;
 
   void set frameSize(ui.Size size) {
-    if (_frameSize == size) {
-      return;
-    }
-    _activeCompositionOrder.clear();
     _frameSize = size;
   }
 
@@ -448,6 +456,7 @@ class HtmlViewEmbedder {
     // If there's an active overlay for the view ID, continue using it.
     Surface? overlay = _overlays[viewId];
     if (overlay != null && !_viewsUsingBackupSurface.contains(viewId)) {
+      overlay.createOrUpdateSurfaces(_frameSize);
       return;
     }
 
@@ -462,6 +471,7 @@ class HtmlViewEmbedder {
     if (overlay == SurfaceFactory.instance.backupSurface) {
       _viewsUsingBackupSurface.add(viewId);
     }
+    overlay.createOrUpdateSurfaces(_frameSize);
     _overlays[viewId] = overlay;
   }
 

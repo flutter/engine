@@ -2,7 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import 'dart:html' as html;
+
+import '../platform_views/slots.dart';
+import 'surface.dart';
 
 /// A surface containing a platform view, which is an HTML element.
 class PersistedPlatformView extends PersistedLeafSurface {
@@ -18,9 +21,6 @@ class PersistedPlatformView extends PersistedLeafSurface {
   html.Element createElement() {
     return createPlatformViewSlot(viewId);
   }
-
-  @override
-  Matrix4? get localTransformInverse => null;
 
   @override
   void apply() {
