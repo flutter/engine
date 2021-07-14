@@ -7,9 +7,9 @@ import 'dart:html' as html;
 import 'dart:js' as js;
 import 'dart:js_util' as js_util;
 
-import 'package:ui/src/engine.dart' show buildMode, registerHotRestartListener;
 import 'package:ui/ui.dart' as ui;
 
+import '../engine.dart' show buildMode, registerHotRestartListener;
 import 'browser_detection.dart';
 import 'canvaskit/initialization.dart';
 import 'canvaskit/canvaskit_api.dart';
@@ -793,8 +793,9 @@ Frame statistics:
   }
 }
 
-// TODO(yjbanov): Replace this with an explicit initialization function. The
-//                lazy initialization of statics makes it very unpredictable, as
-//                the constructor has side-effects.
 /// Singleton DOM renderer.
-final DomRenderer domRenderer = DomRenderer();
+DomRenderer get domRenderer => ensureDomRendererInitialized();
+
+/// Initializes the [DomRenderer], if it's not already initialized.
+DomRenderer ensureDomRendererInitialized() => _domRenderer ??= DomRenderer();
+DomRenderer? _domRenderer;
