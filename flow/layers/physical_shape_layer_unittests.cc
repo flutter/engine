@@ -228,9 +228,10 @@ TEST_F(PhysicalShapeLayerTest, ShadowNotDependsCtm) {
   }
 }
 
-static bool IsRenderingEqual(const std::function<void(SkCanvas*)>& actual,
-                             const std::function<void(SkCanvas*)>& expected,
-                             const SkSize& canvas_size) {
+static int RasterizedDifferenceInPixels(
+    const std::function<void(SkCanvas*)>& actual_draw_function,
+    const std::function<void(SkCanvas*)>& expected_draw_function,
+    const SkSize& canvas_size) {
   sk_sp<SkSurface> actual_surface =
       SkSurface::MakeRasterN32Premul(canvas_size.width(), canvas_size.height());
   sk_sp<SkSurface> expected_surface =
@@ -239,8 +240,8 @@ static bool IsRenderingEqual(const std::function<void(SkCanvas*)>& actual,
   actual_surface->getCanvas()->drawColor(SK_ColorWHITE);
   expected_surface->getCanvas()->drawColor(SK_ColorWHITE);
 
-  actual(actual_surface->getCanvas());
-  expected(expected_surface->getCanvas());
+  actual_draw_function(actual_surface->getCanvas());
+  expected_draw_function(expected_surface->getCanvas());
 
   SkPixmap actual_pixels;
   EXPECT_TRUE(actual_surface->peekPixels(&actual_pixels));
@@ -248,17 +249,17 @@ static bool IsRenderingEqual(const std::function<void(SkCanvas*)>& actual,
   SkPixmap expected_pixels;
   EXPECT_TRUE(expected_surface->peekPixels(&expected_pixels));
 
-  int pixels_different = 0;
+  int different_pixels = 0;
   for (int y = 0; y < canvas_size.height(); y++) {
     const uint32_t* actual_row = actual_pixels.addr32(0, y);
     const uint32_t* expected_row = expected_pixels.addr32(0, y);
     for (int x = 0; x < canvas_size.width(); x++) {
       if (actual_row[x] != expected_row[x]) {
-        pixels_different++;
+        different_pixels++;
       }
     }
   }
-  return pixels_different == 0;
+  return different_pixels;
 }
 
 TEST_F(PhysicalShapeLayerTest, ShadowNotDependsPathSize) {
@@ -268,20 +269,21 @@ TEST_F(PhysicalShapeLayerTest, ShadowNotDependsPathSize) {
   };
 
   for (const SkRect* test_case : test_cases) {
-    EXPECT_TRUE(IsRenderingEqual(
-        [=](SkCanvas* canvas) {
-          SkPath path;
-          path.addRect(test_case[0]).close();
-          PhysicalShapeLayer::DrawShadow(canvas, path, SK_ColorBLACK, 1.0f,
-                                         false, 1.0f);
-        },
-        [=](SkCanvas* canvas) {
-          SkPath path;
-          path.addRect(test_case[1]).close();
-          PhysicalShapeLayer::DrawShadow(canvas, path, SK_ColorBLACK, 1.0f,
-                                         false, 1.0f);
-        },
-        SkSize::Make(100, 100)));
+    EXPECT_EQ(RasterizedDifferenceInPixels(
+                  [=](SkCanvas* canvas) {
+                    SkPath path;
+                    path.addRect(test_case[0]).close();
+                    PhysicalShapeLayer::DrawShadow(canvas, path, SK_ColorBLACK,
+                                                   1.0f, false, 1.0f);
+                  },
+                  [=](SkCanvas* canvas) {
+                    SkPath path;
+                    path.addRect(test_case[1]).close();
+                    PhysicalShapeLayer::DrawShadow(canvas, path, SK_ColorBLACK,
+                                                   1.0f, false, 1.0f);
+                  },
+                  SkSize::Make(100, 100)),
+              0);
   }
 }
 
