@@ -9,6 +9,7 @@ import 'dart:isolate';
 import 'dart:ffi';
 import 'dart:core';
 import 'dart:convert';
+import 'dart:io';
 
 void main() {}
 
@@ -30,6 +31,14 @@ void customEntrypoint1() {
 void sayHiFromCustomEntrypoint1() native 'SayHiFromCustomEntrypoint1';
 void sayHiFromCustomEntrypoint2() native 'SayHiFromCustomEntrypoint2';
 void sayHiFromCustomEntrypoint3() native 'SayHiFromCustomEntrypoint3';
+
+
+@pragma('vm:entry-point')
+void terminateExitCodeHandler() {
+  final ProcessResult result = Process.runSync(
+        'ls', <String>[]
+  );
+}
 
 
 @pragma('vm:entry-point')
