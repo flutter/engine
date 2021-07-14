@@ -28,7 +28,7 @@ platform_properties:
           {"name":"builder_mac_engine","path":"builder"}
         ]
       os: Mac-10.15
-      xcode: 11e708 # Xcode 12
+      xcode: "11e708" # Xcode 12
   windows:
     properties:
       caches: >-
