@@ -15,6 +15,7 @@ print_usage () {
   echo "For example: REPO_OS_OVERRIDE=linux sdkmanager \"platform-tools\"."
   echo "Gotchas:".
   echo "* sdkmanager downloads the binaries to the Android SDK location (Check ANDROID_HOME or ANDROID_SDK_ROOT)."
+  echo "* PATH_TO_ASSETS is the path to that ends with the package type. e.g. <android-sdk>/platforms"
   echo "* When you change REPO_OS_OVERRIDE, you would also need to delete the directory from the"
   echo "Android SDK location, so sdkmanager tries to download the binaries for the new platform."
   echo ""
