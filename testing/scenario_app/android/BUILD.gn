@@ -64,7 +64,7 @@ gradle_task("android_lint") {
   outputs = [
     "$root_out_dir/scenario_app/build/reports/lint-results.html",
     "$root_out_dir/scenario_app/build/reports/lint-results.xml",
-     ]
+  ]
 }
 
 gradle_task("android") {

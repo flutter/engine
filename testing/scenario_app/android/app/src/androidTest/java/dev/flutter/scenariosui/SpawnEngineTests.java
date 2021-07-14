@@ -20,8 +20,7 @@ import org.junit.runner.RunWith;
 public class SpawnEngineTests {
   Intent intent;
 
-  @Rule
-  @NonNull
+  @Rule @NonNull
   public ActivityTestRule<SpawnedEngineActivity> activityRule =
       new ActivityTestRule<>(
           SpawnedEngineActivity.class, /*initialTouchMode=*/ false, /*launchActivity=*/ false);

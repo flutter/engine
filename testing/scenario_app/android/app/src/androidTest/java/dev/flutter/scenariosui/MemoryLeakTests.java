@@ -18,8 +18,7 @@ import org.junit.runner.RunWith;
 @RunWith(AndroidJUnit4.class)
 @LargeTest
 public class MemoryLeakTests {
-  @Rule
-  @NonNull
+  @Rule @NonNull
   public ActivityTestRule<TextPlatformViewActivity> activityRule =
       new ActivityTestRule<>(
           TextPlatformViewActivity.class, /*initialTouchMode=*/ false, /*launchActivity=*/ false);

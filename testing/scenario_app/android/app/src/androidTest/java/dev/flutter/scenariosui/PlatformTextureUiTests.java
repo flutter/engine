@@ -20,8 +20,7 @@ import org.junit.runner.RunWith;
 public class PlatformTextureUiTests {
   Intent intent;
 
-  @Rule
-  @NonNull
+  @Rule @NonNull
   public ActivityTestRule<TextPlatformViewActivity> activityRule =
       new ActivityTestRule<>(
           TextPlatformViewActivity.class, /*initialTouchMode=*/ false, /*launchActivity=*/ false);
