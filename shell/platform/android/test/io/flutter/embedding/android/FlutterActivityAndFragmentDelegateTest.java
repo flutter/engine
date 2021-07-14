@@ -390,7 +390,7 @@ public class FlutterActivityAndFragmentDelegateTest {
 
     // Make sure all of the other lifecycle methods can run safely as well
     // without a valid Activity
-    delegate.onCreateView(null, null, null);
+    delegate.onCreateView(null, null, null, 0);
     delegate.onStart();
     delegate.onResume();
     delegate.onPause();
