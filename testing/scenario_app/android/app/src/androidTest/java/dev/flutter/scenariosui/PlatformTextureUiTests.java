@@ -5,6 +5,7 @@
 package dev.flutter.scenariosui;
 
 import android.content.Intent;
+import androidx.annotation.NonNull;
 import androidx.test.filters.LargeTest;
 import androidx.test.rule.ActivityTestRule;
 import androidx.test.runner.AndroidJUnit4;
@@ -20,6 +21,7 @@ public class PlatformTextureUiTests {
   Intent intent;
 
   @Rule
+  @NonNull
   public ActivityTestRule<TextPlatformViewActivity> activityRule =
       new ActivityTestRule<>(
           TextPlatformViewActivity.class, /*initialTouchMode=*/ false, /*launchActivity=*/ false);
