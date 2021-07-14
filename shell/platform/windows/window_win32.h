@@ -194,6 +194,10 @@ class WindowWin32 {
   // message.
   int keycode_for_char_message_ = 0;
 
+  // Keeps track of the event result produced by a WM_KEYDOWN or WM_SYSKEYDOWN
+  // message.
+  bool handled_for_char_message_ = false;
+
   // Manages IME state.
   TextInputManagerWin32 text_input_manager_;
 };
