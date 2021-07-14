@@ -711,6 +711,10 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     while (platformViews.size() > 0) {
       channelHandler.disposeAndroidViewForPlatformView(platformViews.keyAt(0));
     }
+
+    if (contextToPlatformView.size() > 0) {
+      contextToPlatformView.clear();
+    }
   }
 
   private void initializeRootImageViewIfNeeded() {
