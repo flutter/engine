@@ -9,6 +9,16 @@ print_usage () {
   echo "    - PATH_TO_ASSETS is the path to the unzipped asset folder"
   echo "    - PLATFORM_NAME is one of linux-amd64, mac-amd64, or windows-amd64"
   echo "    - VERSION_TAG is the version of the package, e.g. 28r6 or 28.0.3"
+  echo ""
+  echo "To download the packages, you would need to use sdkmanager, and"
+  echo "use the env variable REPO_OS_OVERRIDE=(linux|windows|macosx) to override the host platform."
+  echo "For example: REPO_OS_OVERRIDE=linux sdkmanager \"platform-tools\"."
+  echo "Gotchas:".
+  echo "* sdkmanager downloads the binaries to the Android SDK location (Check ANDROID_HOME or ANDROID_SDK_ROOT)."
+  echo "* When you change REPO_OS_OVERRIDE, you would also need to delete the directory from the"
+  echo "Android SDK location, so sdkmanager tries to download the binaries for the new platform."
+  echo ""
+  echo "For more see: https://developer.android.com/studio/command-line/sdkmanager"
 }
 
 if [[ $4 == "" ]]; then
