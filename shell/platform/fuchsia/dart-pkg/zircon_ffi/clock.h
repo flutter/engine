@@ -7,11 +7,13 @@
 
 #include <stdint.h>
 
+#define ZIRCON_FFI_EXPORT __attribute__((visibility("default")))
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-uint64_t zircon_dart_clock_get_monotonic();
+ZIRCON_FFI_EXPORT uint64_t zircon_dart_clock_get_monotonic();
 
 #ifdef __cplusplus
 }

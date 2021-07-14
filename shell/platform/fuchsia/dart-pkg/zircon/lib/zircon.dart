@@ -6,6 +6,7 @@ library zircon;
 
 import 'dart:convert' show utf8;
 import 'dart:ffi';
+import 'dart:io';
 import 'dart:nativewrappers';
 import 'dart:typed_data';
 import 'dart:zircon_ffi';

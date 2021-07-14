@@ -10,18 +10,18 @@ class _Bindings {
   static ZirconFFIBindings? _bindings;
 
   @pragma('vm:entry-point')
-  static ZirconFFIBindings get() {
+  static ZirconFFIBindings? get() {
+    // For soft-transition until libzircon_ffi.so rolls into GI.
+    if (!File(_kLibZirconDartPath).existsSync()) {
+      return null;
+    }
+
     if (_bindings == null) {
       final _dylib = DynamicLibrary.open(_kLibZirconDartPath);
       _bindings = ZirconFFIBindings(_dylib);
-      // final initializer = _bindings?.zircon_dart_dl_initialize;
-      // if (initializer == null ||
-      //     initializer(NativeApi.initializeApiDLData) != 1) {
-      //   throw Exception('Unable to initialize ZirconFFIBindings.');
-      // }
     }
-    return _bindings!;
+    return _bindings;
   }
 }
 
-final ZirconFFIBindings zirconFFIBindings = _Bindings.get();
+final ZirconFFIBindings? zirconFFIBindings = _Bindings.get();
