@@ -4,7 +4,6 @@
 
 import 'dart:async';
 import 'dart:html' as html;
-import 'dart:js' as js;
 import 'dart:js_util' as js_util;
 
 import 'package:ui/ui.dart' as ui;
@@ -12,7 +11,6 @@ import 'package:ui/ui.dart' as ui;
 import '../engine.dart' show buildMode, registerHotRestartListener;
 import 'browser_detection.dart';
 import 'canvaskit/initialization.dart';
-import 'canvaskit/canvaskit_api.dart';
 import 'host_node.dart';
 import 'keyboard_binding.dart';
 import 'platform_dispatcher.dart';

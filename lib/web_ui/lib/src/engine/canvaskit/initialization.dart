@@ -136,7 +136,7 @@ Future<void> initializeCanvasKit({String? canvasKitBase}) {
 /// Starts downloading the CanvasKit JavaScript file at [canvasKitBase] and sets
 /// [_canvasKitLoaded].
 void _startDownloadingCanvasKit(String? canvasKitBase) {
-  String canvasKitJavaScriptUrl = canvasKitBase != null
+  final String canvasKitJavaScriptUrl = canvasKitBase != null
       ? canvasKitBase + 'canvaskit.js'
       : canvasKitJavaScriptBindingsUrl;
   _currentCanvasKitBase = canvasKitBase ?? canvasKitBuildUrl;
@@ -146,7 +146,7 @@ void _startDownloadingCanvasKit(String? canvasKitBase) {
     _canvasKitScript = html.ScriptElement();
     _canvasKitScript!.src = canvasKitJavaScriptUrl;
 
-    Completer<void> canvasKitLoadCompleter = Completer<void>();
+    final Completer<void> canvasKitLoadCompleter = Completer<void>();
     _canvasKitLoaded = canvasKitLoadCompleter.future;
 
     late StreamSubscription<html.Event> loadSubscription;
@@ -179,9 +179,9 @@ void _startDownloadingCanvasKit(String? canvasKitBase) {
 
     // First check if `exports` and `module` are already defined. If so, then
     // CommonJS is being used, and we shouldn't have any problems.
-    js.JsFunction objectConstructor = js.context['Object'];
+    final js.JsFunction objectConstructor = js.context['Object'];
     if (js.context['exports'] == null) {
-      js.JsObject exportsAccessor = js.JsObject.jsify({
+      final js.JsObject exportsAccessor = js.JsObject.jsify({
         'get': js.allowInterop(() {
           if (html.document.currentScript == _canvasKitScript) {
             return js.JsObject(objectConstructor);
@@ -198,7 +198,7 @@ void _startDownloadingCanvasKit(String? canvasKitBase) {
           'defineProperty', <dynamic>[js.context, 'exports', exportsAccessor]);
     }
     if (js.context['module'] == null) {
-      js.JsObject moduleAccessor = js.JsObject.jsify({
+      final js.JsObject moduleAccessor = js.JsObject.jsify({
         'get': js.allowInterop(() {
           if (html.document.currentScript == _canvasKitScript) {
             return js.JsObject(objectConstructor);
