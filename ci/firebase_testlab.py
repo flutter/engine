@@ -7,9 +7,9 @@
 import argparse
 import glob
 import re
+import os
 import subprocess
 import sys
-import os
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
 buildroot_dir = os.path.abspath(os.path.join(script_dir, '..', '..'))
