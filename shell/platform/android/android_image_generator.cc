@@ -91,11 +91,12 @@ void AndroidImageGenerator::DoDecodeImage() {
   fml::jni::ScopedJavaLocalRef<jobject> direct_buffer(
       env, env->NewDirectByteBuffer(const_cast<void*>(data_->data()),
                                     data_->size()));
+
   fml::jni::ScopedJavaGlobalRef<jobject>* bitmap =
       new fml::jni::ScopedJavaGlobalRef(
           env, env->CallStaticObjectMethod(g_flutter_jni_class->obj(),
                                            g_decode_image_method,
-                                           direct_buffer.obj(), this));
+                                           direct_buffer.obj(), (long)this));
   FML_CHECK(fml::jni::CheckException(env));
 
   AndroidBitmapInfo info;
@@ -167,10 +168,13 @@ std::unique_ptr<ImageGenerator> AndroidImageGenerator::MakeFromData(
   return nullptr;
 }
 
-void AndroidImageGenerator::NativeImageHeaderCallback(long generator_address,
+void AndroidImageGenerator::NativeImageHeaderCallback(JNIEnv* env,
+                                                      jclass jcaller,
+                                                      jlong generator_address,
                                                       int width,
                                                       int height) {
-  auto* generator = reinterpret_cast<AndroidImageGenerator*>(generator_address);
+  AndroidImageGenerator* generator =
+      reinterpret_cast<AndroidImageGenerator*>(generator_address);
 
   generator->image_info_ = SkImageInfo::Make(
       width, height, kRGBA_8888_SkColorType, kPremul_SkAlphaType);

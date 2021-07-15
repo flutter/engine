@@ -45,7 +45,9 @@ class AndroidImageGenerator : public ImageGenerator {
       sk_sp<SkData> data,
       fml::RefPtr<fml::TaskRunner> task_runner);
 
-  static void NativeImageHeaderCallback(long generator_pointer,
+  static void NativeImageHeaderCallback(JNIEnv* env,
+                                        jclass jcaller,
+                                        jlong generator_pointer,
                                         int width,
                                         int height);
 
