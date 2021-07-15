@@ -9,7 +9,7 @@ set -x
 
 echo "Engine path $ENGINE_PATH"
 
-DART_SDK_DIR="${ENGINE_PATH}/src/third_party/dart/tools/sdks/dart-sdk"
+DART_SDK_DIR="${ENGINE_PATH}/src/out/host_debug_unopt/dart-sdk"
 DART_PATH="$DART_SDK_DIR/bin/dart"
 
 echo "Using dart from $DART_SDK_DIR"

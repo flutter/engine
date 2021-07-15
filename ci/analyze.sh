@@ -30,7 +30,7 @@ function follow_links() (
 SCRIPT_DIR=$(follow_links "$(dirname -- "${BASH_SOURCE[0]}")")
 SRC_DIR="$(cd "$SCRIPT_DIR/../.."; pwd -P)"
 FLUTTER_DIR="$SRC_DIR/flutter"
-DART_BIN="$SRC_DIR/third_party/dart/tools/sdks/dart-sdk/bin"
+DART_BIN="$SRC_DIR/out/host_debug_unopt/dart-sdk/bin"
 PUB="$DART_BIN/pub"
 DART="$DART_BIN/dart"
 
