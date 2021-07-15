@@ -36,29 +36,34 @@ void testMain() async {
   const Color grey = Color(0xFF808080);
   const Color black = Color(0xFF000000);
 
-  List<List<BlendMode>> modes = [[BlendMode.clear, BlendMode.src, BlendMode.dst,
-    BlendMode.srcOver, BlendMode.dstOver, BlendMode.srcIn, BlendMode.dstIn, BlendMode.srcOut],
-    [BlendMode.dstOut, BlendMode.srcATop, BlendMode.dstATop, BlendMode.xor,
-    BlendMode.plus, BlendMode.modulate, BlendMode.screen, BlendMode.overlay],
-    [BlendMode.darken, BlendMode.lighten, BlendMode.colorDodge, BlendMode.hardLight,
-    BlendMode.softLight, BlendMode.difference, BlendMode.exclusion, BlendMode.multiply],
-    [BlendMode.hue, BlendMode.saturation, BlendMode.color,
-    BlendMode.luminosity]];
+  final List<List<BlendMode>> modes = <List<BlendMode>>[
+    <BlendMode>[BlendMode.clear, BlendMode.src, BlendMode.dst,
+      BlendMode.srcOver, BlendMode.dstOver, BlendMode.srcIn, BlendMode.dstIn,
+      BlendMode.srcOut],
+    <BlendMode>[BlendMode.dstOut, BlendMode.srcATop, BlendMode.dstATop,
+      BlendMode.xor, BlendMode.plus, BlendMode.modulate, BlendMode.screen,
+      BlendMode.overlay],
+    <BlendMode>[BlendMode.darken, BlendMode.lighten, BlendMode.colorDodge,
+      BlendMode.hardLight, BlendMode.softLight, BlendMode.difference,
+      BlendMode.exclusion, BlendMode.multiply],
+    <BlendMode>[BlendMode.hue, BlendMode.saturation, BlendMode.color,
+      BlendMode.luminosity],
+  ];
 
   for (int blendGroup = 0; blendGroup < 4; ++blendGroup) {
     test('Draw image with Group$blendGroup blend modes', () async {
       final RecordingCanvas rc = RecordingCanvas(
           const Rect.fromLTRB(0, 0, 400, 400));
       rc.save();
-      List<BlendMode> blendModes = modes[blendGroup];
+      final List<BlendMode> blendModes = modes[blendGroup];
       for (int row = 0; row < blendModes.length; row++) {
         // draw white background for first 4, black for next 4 blends.
-        double top = row * 50.0;
+        final double top = row * 50.0;
         rc.drawRect(Rect.fromLTWH(0, top, 200, 50), makePaint()
           ..color = white);
         rc.drawRect(Rect.fromLTWH(200, top, 200, 50), makePaint()
           ..color = grey);
-        BlendMode blendMode = blendModes[row];
+        final BlendMode blendMode = blendModes[row];
         rc.drawImage(createFlutterLogoTestImage(), Offset(0, top),
             makePaint()
               ..colorFilter = EngineColorFilter.mode(red, blendMode));

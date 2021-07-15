@@ -37,14 +37,14 @@ void testMain() async {
   }
 
   test('Should draw centered radial gradient.', () async {
-    Rect shaderRect = const Rect.fromLTRB(50, 50, 300, 300);
+    final Rect shaderRect = const Rect.fromLTRB(50, 50, 300, 300);
     await _testGradient(
         'radial_gradient_centered',
         Gradient.radial(
             Offset((shaderRect.left + shaderRect.right) / 2,
                 (shaderRect.top + shaderRect.bottom) / 2),
             shaderRect.width / 2,
-            [
+            <Color>[
               const Color.fromARGB(255, 0, 0, 0),
               const Color.fromARGB(255, 0, 0, 255)
             ]),
@@ -53,34 +53,40 @@ void testMain() async {
   });
 
   test('Should draw right bottom centered radial gradient.', () async {
-    Rect shaderRect = const Rect.fromLTRB(50, 50, 300, 300);
+    final Rect shaderRect = const Rect.fromLTRB(50, 50, 300, 300);
     await _testGradient(
-        'radial_gradient_right_bottom',
-        Gradient.radial(
-            Offset(shaderRect.right, shaderRect.bottom), shaderRect.width / 2, [
+      'radial_gradient_right_bottom',
+      Gradient.radial(
+        Offset(shaderRect.right, shaderRect.bottom),
+        shaderRect.width / 2,
+        <Color>[
           const Color.fromARGB(255, 0, 0, 0),
           const Color.fromARGB(255, 0, 0, 255)
-        ]),
-        shaderRect: shaderRect,
-        maxDiffRatePercent: 0.3);
+        ],
+      ),
+      shaderRect: shaderRect,
+      maxDiffRatePercent: 0.3,
+    );
   });
 
   test('Should draw with radial gradient with TileMode.clamp.', () async {
-    Rect shaderRect = const Rect.fromLTRB(50, 50, 100, 100);
+    final Rect shaderRect = const Rect.fromLTRB(50, 50, 100, 100);
     await _testGradient(
-        'radial_gradient_tilemode_clamp',
-        Gradient.radial(
-            Offset((shaderRect.left + shaderRect.right) / 2,
-                (shaderRect.top + shaderRect.bottom) / 2),
-            shaderRect.width / 2,
-            [
-              const Color.fromARGB(255, 0, 0, 0),
-              const Color.fromARGB(255, 0, 0, 255)
-            ],
-            <double>[0.0, 1.0],
-            TileMode.clamp),
-        shaderRect: shaderRect,
-        maxDiffRatePercent: 0.2);
+      'radial_gradient_tilemode_clamp',
+      Gradient.radial(
+        Offset((shaderRect.left + shaderRect.right) / 2,
+            (shaderRect.top + shaderRect.bottom) / 2),
+        shaderRect.width / 2,
+        <Color>[
+          const Color.fromARGB(255, 0, 0, 0),
+          const Color.fromARGB(255, 0, 0, 255)
+        ],
+        <double>[0.0, 1.0],
+        TileMode.clamp,
+      ),
+      shaderRect: shaderRect,
+      maxDiffRatePercent: 0.2,
+    );
   });
 
   const List<Color> colors = <Color>[
@@ -93,7 +99,7 @@ void testMain() async {
   const List<double> colorStops = <double>[0.0, 0.05, 0.4, 0.6, 0.9, 1.0];
 
   test('Should draw with radial gradient with TileMode.repeated.', () async {
-    Rect shaderRect = const Rect.fromLTRB(50, 50, 100, 100);
+    final Rect shaderRect = const Rect.fromLTRB(50, 50, 100, 100);
     await _testGradient(
         'radial_gradient_tilemode_repeated',
         Gradient.radial(
@@ -108,7 +114,7 @@ void testMain() async {
   });
 
   test('Should draw with radial gradient with TileMode.mirrored.', () async {
-    Rect shaderRect = const Rect.fromLTRB(50, 50, 100, 100);
+    final Rect shaderRect = const Rect.fromLTRB(50, 50, 100, 100);
     await _testGradient(
         'radial_gradient_tilemode_mirror',
         Gradient.radial(

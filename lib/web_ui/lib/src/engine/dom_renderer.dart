@@ -389,7 +389,7 @@ class DomRenderer {
         .instance.semanticsHelper
         .prepareAccessibilityPlaceholder();
 
-    glassPaneElementHostNode.nodes.addAll([
+    glassPaneElementHostNode.nodes.addAll(<html.Node>[
       semanticsHostElement,
       _accessibilityPlaceholder,
       _sceneHostElement!,
@@ -564,9 +564,10 @@ class DomRenderer {
       if (!unsafeIsNull(screenOrientation)) {
         if (orientations.isEmpty) {
           screenOrientation!.unlock();
-          return Future.value(true);
+          return Future<bool>.value(true);
         } else {
-          String? lockType = _deviceOrientationToLockType(orientations.first);
+          final String? lockType =
+              _deviceOrientationToLockType(orientations.first);
           if (lockType != null) {
             final Completer<bool> completer = Completer<bool>();
             try {
@@ -578,7 +579,7 @@ class DomRenderer {
                 completer.complete(false);
               });
             } catch (_) {
-              return Future.value(false);
+              return Future<bool>.value(false);
             }
             return completer.future;
           }
@@ -586,7 +587,7 @@ class DomRenderer {
       }
     }
     // API is not supported on this browser return false.
-    return Future.value(false);
+    return Future<bool>.value(false);
   }
 
   // Converts device orientation to w3c OrientationLockType enum.
