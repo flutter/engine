@@ -507,13 +507,19 @@ void FuchsiaExternalViewEmbedder::SubmitFrame(
                                        SK_AlphaOPAQUE, layer_opacity);
         scenic_layer.material.SetTexture(surface_for_layer->GetImageId());
 
-        // Only the first (i.e. the bottom-most) layer should receive input.
-        // TODO: Workaround for invisible overlays stealing input. Remove when
-        // the underlying bug is fixed.
-        const fuchsia::ui::gfx::HitTestBehavior layer_hit_test_behavior =
-            first_layer ? fuchsia::ui::gfx::HitTestBehavior::kDefault
-                        : fuchsia::ui::gfx::HitTestBehavior::kSuppress;
-        scenic_layer.shape_node.SetHitTestBehavior(layer_hit_test_behavior);
+        // Products that specify an input interceptor (eg: smart display) should
+        // recieve all input unconditionally.
+        //
+        // Otherwise only the first (i.e. the bottom-most) layer should receive
+        // input. This is so that products such as workstation don't have
+        // invisible overlays stealing input.
+        if (input_interceptor_node_.has_value() || first_layer) {
+          scenic_layer.shape_node.SetHitTestBehavior(
+              fuchsia::ui::gfx::HitTestBehavior::kDefault);
+        } else {
+          scenic_layer.shape_node.SetHitTestBehavior(
+              fuchsia::ui::gfx::HitTestBehavior::kSuppress);
+        }
 
         // Attach the ScenicLayer to the main scene graph.
         layer_tree_node_.AddChild(scenic_layer.shape_node);
