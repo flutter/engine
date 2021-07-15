@@ -30,6 +30,29 @@ FLUTTER_ASSERT_ARC
   appDelegate.rootFlutterViewControllerGetter = ^{
     return viewController;
   };
+  NSURL* url = [NSURL URLWithString:@"http://myApp/custom/route?query=test"];
+  NSDictionary<UIApplicationOpenURLOptionsKey, id>* options = @{};
+  BOOL result = [appDelegate application:[UIApplication sharedApplication]
+                                 openURL:url
+                                 options:options
+                         infoPlistGetter:^NSDictionary*() {
+                           return @{@"FlutterDeepLinkingEnabled" : @(YES)};
+                         }];
+  XCTAssertTrue(result);
+  OCMVerify([navigationChannel invokeMethod:@"pushRoute" arguments:@"/custom/route?query=test"]);
+}
+
+- (void)skip_testLaunchUrlWithQueryParameterAndFragment {
+  FlutterAppDelegate* appDelegate = [[FlutterAppDelegate alloc] init];
+  FlutterViewController* viewController = OCMClassMock([FlutterViewController class]);
+  FlutterEngine* engine = OCMClassMock([FlutterEngine class]);
+  FlutterMethodChannel* navigationChannel = OCMClassMock([FlutterMethodChannel class]);
+  OCMStub([engine navigationChannel]).andReturn(navigationChannel);
+  OCMStub([viewController engine]).andReturn(engine);
+  OCMStub([engine waitForFirstFrame:3.0 callback:([OCMArg invokeBlockWithArgs:@(NO), nil])]);
+  appDelegate.rootFlutterViewControllerGetter = ^{
+    return viewController;
+  };
   NSURL* url = [NSURL URLWithString:@"http://myApp/custom/route?query=test#fragment"];
   NSDictionary<UIApplicationOpenURLOptionsKey, id>* options = @{};
   BOOL result = [appDelegate application:[UIApplication sharedApplication]
@@ -41,6 +64,29 @@ FLUTTER_ASSERT_ARC
   XCTAssertTrue(result);
   OCMVerify([navigationChannel invokeMethod:@"pushRoute"
                                   arguments:@"/custom/route?query=test#fragment"]);
+}
+
+- (void)skip_testLaunchUrlWithFragmentNoQueryParameter {
+  FlutterAppDelegate* appDelegate = [[FlutterAppDelegate alloc] init];
+  FlutterViewController* viewController = OCMClassMock([FlutterViewController class]);
+  FlutterEngine* engine = OCMClassMock([FlutterEngine class]);
+  FlutterMethodChannel* navigationChannel = OCMClassMock([FlutterMethodChannel class]);
+  OCMStub([engine navigationChannel]).andReturn(navigationChannel);
+  OCMStub([viewController engine]).andReturn(engine);
+  OCMStub([engine waitForFirstFrame:3.0 callback:([OCMArg invokeBlockWithArgs:@(NO), nil])]);
+  appDelegate.rootFlutterViewControllerGetter = ^{
+    return viewController;
+  };
+  NSURL* url = [NSURL URLWithString:@"http://myApp/custom/route#fragment"];
+  NSDictionary<UIApplicationOpenURLOptionsKey, id>* options = @{};
+  BOOL result = [appDelegate application:[UIApplication sharedApplication]
+                                 openURL:url
+                                 options:options
+                         infoPlistGetter:^NSDictionary*() {
+                           return @{@"FlutterDeepLinkingEnabled" : @(YES)};
+                         }];
+  XCTAssertTrue(result);
+  OCMVerify([navigationChannel invokeMethod:@"pushRoute" arguments:@"/custom/route#fragment"]);
 }
 
 @end
