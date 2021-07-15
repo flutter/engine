@@ -77,8 +77,11 @@ def main():
 
   apks_dir = os.path.join(out_dir, args.variant, 'firebase_apks')
   apks = glob.glob('%s/*.apk' % apks_dir)
-  print(apks_dir)
-  print(apks)
+
+  if not apks:
+    print('No APKs found at %s' % apks_dir)
+    exit 1
+
   git_revision = subprocess.check_output(
       ['git', 'rev-parse', 'HEAD'], cwd=script_dir).strip()
 
