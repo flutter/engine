@@ -62,7 +62,7 @@ def CheckTimeline(results_dir):
   ]).strip()
   if du == '0':
     print('Failed to produce a timeline.')
-    return 1
+    sys.exit(1)
 
 
 def main():
