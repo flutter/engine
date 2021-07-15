@@ -225,6 +225,10 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 }
 
 - (BOOL)isAccessibilityElement {
+  if (![_semanticsObject isAccessibilityBridgeAlive]) {
+    return NO;
+  }
+
   if ([_semanticsObject isAccessibilityElement]) {
     return YES;
   }
