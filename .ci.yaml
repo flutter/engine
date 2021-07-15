@@ -7,6 +7,9 @@
 #  * https://github.com/flutter/cocoon/blob/master/CI_YAML.md
 enabled_branches:
   - master
+  - dev
+  - beta
+  - stable
 
 platform_properties:
   linux:
@@ -25,6 +28,7 @@ platform_properties:
           {"name":"builder_mac_engine","path":"builder"}
         ]
       os: Mac-10.15
+      xcode: 12a7209 # xcode 12
   windows:
     properties:
       caches: >-
@@ -63,6 +67,17 @@ targets:
     properties:
       upload_packages: "true"
       clobber: "true"
+    timeout: 60
+    scheduler: luci
+
+  - name: Linux Benchmarks
+    builder: Linux Benchmarks
+    enabled_branches:
+      - master
+    recipe: engine/engine_metrics
+    presubmit: false
+    properties:
+      build_host: "true"
     timeout: 60
     scheduler: luci
 
