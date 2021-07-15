@@ -80,7 +80,7 @@ def main():
 
   if not apks:
     print('No APKs found at %s' % apks_dir)
-    exit 1
+    return 1
 
   git_revision = subprocess.check_output(
       ['git', 'rev-parse', 'HEAD'], cwd=script_dir).strip()
