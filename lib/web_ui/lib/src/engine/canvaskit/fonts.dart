@@ -105,7 +105,7 @@ class SkiaFontCollection {
     }
 
     final List<dynamic>? fontManifest =
-        json.decode(utf8.decode(byteData.buffer.asUint8List()));
+        json.decode(utf8.decode(byteData.buffer.asUint8List())) as List<dynamic>?;
     if (fontManifest == null) {
       throw AssertionError(
           'There was a problem trying to load FontManifest.json');
@@ -115,16 +115,16 @@ class SkiaFontCollection {
 
     for (Map<String, dynamic> fontFamily
         in fontManifest.cast<Map<String, dynamic>>()) {
-      final String family = fontFamily['family']!;
-      final List<dynamic> fontAssets = fontFamily['fonts'];
+      final String family = fontFamily['family'] as String;
+      final List<dynamic> fontAssets = fontFamily['fonts'] as List<dynamic>;
 
       if (family == 'Roboto') {
         registeredRoboto = true;
       }
 
       for (dynamic fontAssetItem in fontAssets) {
-        final Map<String, dynamic> fontAsset = fontAssetItem;
-        final String asset = fontAsset['asset'];
+        final Map<String, dynamic> fontAsset = fontAssetItem as Map<String, dynamic>;
+        final String asset = fontAsset['asset'] as String;
         _unloadedFonts
             .add(_registerFont(assetManager.getAssetUrl(asset), family));
       }
@@ -142,7 +142,7 @@ class SkiaFontCollection {
   Future<RegisteredFont?> _registerFont(String url, String family) async {
     ByteBuffer buffer;
     try {
-      buffer = await html.window.fetch(url).then(_getArrayBuffer);
+      buffer = await httpFetch(url).then(_getArrayBuffer);
     } catch (e) {
       printWarning('Failed to load font $family at $url');
       printWarning(e.toString());
@@ -168,8 +168,7 @@ class SkiaFontCollection {
     return actualFamily;
   }
 
-  Future<ByteBuffer> _getArrayBuffer(dynamic fetchResult) {
-    // TODO(yjbanov): fetchResult.arrayBuffer is a dynamic invocation. Clean it up.
+  Future<ByteBuffer> _getArrayBuffer(html.Body fetchResult) {
     return fetchResult
         .arrayBuffer()
         .then<ByteBuffer>((dynamic x) => x as ByteBuffer);

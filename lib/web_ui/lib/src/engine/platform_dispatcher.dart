@@ -415,12 +415,12 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
             });
             return;
           case 'HapticFeedback.vibrate':
-            final String? type = decoded.arguments;
+            final String? type = decoded.arguments as String?;
             domRenderer.vibrate(_getHapticFeedbackDuration(type));
             replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
             return;
           case 'SystemChrome.setApplicationSwitcherDescription':
-            final Map<String, dynamic> arguments = decoded.arguments;
+            final Map<String, dynamic> arguments = decoded.arguments as Map<String, dynamic>;
             // TODO: Find more appropriate defaults? Or noop when values are null?
             final String label = arguments['label'] as String? ?? '';
             final int primaryColor = arguments['primaryColor'] as int? ?? 0xFF000000;
@@ -429,7 +429,8 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
             replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
             return;
           case 'SystemChrome.setPreferredOrientations':
-            final List<dynamic> arguments = decoded.arguments;
+            final List<String> arguments =
+              (decoded.arguments as List<dynamic>).cast<String>();
             domRenderer.setPreferredOrientation(arguments).then((bool success) {
               replyToPlatformMessage(
                   callback, codec.encodeSuccessEnvelope(success));
@@ -460,10 +461,10 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
       case 'flutter/mousecursor':
         const MethodCodec codec = StandardMethodCodec();
         final MethodCall decoded = codec.decodeMethodCall(data);
-        final Map<dynamic, dynamic> arguments = decoded.arguments;
+        final Map<dynamic, dynamic> arguments = decoded.arguments as Map<dynamic, dynamic>;
         switch (decoded.method) {
           case 'activateSystemCursor':
-            MouseCursor.instance!.activateSystemCursor(arguments['kind']);
+            MouseCursor.instance!.activateSystemCursor(arguments['kind'] as String?);
         }
         return;
 
@@ -977,7 +978,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
 bool _handleWebTestEnd2EndMessage(MethodCodec codec, ByteData? data) {
   final MethodCall decoded = codec.decodeMethodCall(data);
-  final double ratio = double.parse(decoded.arguments);
+  final double ratio = double.parse(decoded.arguments as String);
   switch (decoded.method) {
     case 'setDevicePixelRatio':
       window.debugOverrideDevicePixelRatio(ratio);

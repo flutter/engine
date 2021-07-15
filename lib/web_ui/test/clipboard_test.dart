@@ -40,7 +40,7 @@ void testMain() async {
       const MethodCodec codec = JSONMethodCodec();
       final Completer<bool> completer = Completer<bool>();
       final ui.PlatformMessageResponseCallback callback = (ByteData? data) {
-        completer.complete(codec.decodeEnvelope(data!));
+        completer.complete(codec.decodeEnvelope(data!) as bool);
       };
 
       clipboardMessageHandler.setDataMethodCall(
@@ -78,7 +78,7 @@ void testMain() async {
       const MethodCodec codec = JSONMethodCodec();
       final Completer<Map<String, dynamic>> completer = Completer<Map<String, dynamic>>();
       final ui.PlatformMessageResponseCallback callback = (ByteData? data) {
-        completer.complete(codec.decodeEnvelope(data!));
+        completer.complete(codec.decodeEnvelope(data!) as Map<String, dynamic>);
       };
 
       clipboardMessageHandler.getDataMethodCall(callback);

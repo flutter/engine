@@ -144,8 +144,8 @@ class JSONMethodCodec implements MethodCodec {
         decoded[0] is String &&
         (decoded[1] == null || decoded[1] is String)) {
       throw PlatformException(
-        code: decoded[0],
-        message: decoded[1],
+        code: decoded[0] as String,
+        message: decoded[1] as String?,
         details: decoded[2],
       );
     }
@@ -553,7 +553,7 @@ class StandardMethodCodec implements MethodCodec {
       return messageCodec.readValue(buffer);
     }
     final dynamic errorCode = messageCodec.readValue(buffer);
-    final dynamic errorMessage = messageCodec.readValue(buffer);
+    final String? errorMessage = messageCodec.readValue(buffer) as String?;
     final dynamic errorDetails = messageCodec.readValue(buffer);
     if (errorCode is String &&
         (errorMessage == null || errorMessage is String) &&

@@ -7,6 +7,7 @@ import 'dart:html' as html;
 import 'dart:typed_data';
 
 import '../engine.dart'  show registerHotRestartListener;
+import 'util.dart';
 import 'platform_dispatcher.dart';
 import 'services.dart';
 
@@ -136,8 +137,8 @@ class Keyboard {
         if (data == null) {
           return;
         }
-        final Map<String, dynamic> jsonResponse = _messageCodec.decodeMessage(data);
-        if (jsonResponse['handled'] as bool) {
+        final Map<String, dynamic> jsonResponse = _messageCodec.decodeMessage(data) as Map<String, dynamic>;
+        if (jsonResponse.readBool('handled')) {
           // If the framework handled it, then don't propagate it any further.
           event.preventDefault();
         }

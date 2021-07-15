@@ -97,7 +97,7 @@ class DomRenderer {
   html.Element? _sceneElement;
 
   /// This is state persistent across hot restarts that indicates what
-  /// to clear.  We delay removal of old visible state to make the
+  /// to clear. We delay removal of old visible state to make the
   /// transition appear smooth.
   static const String _staleHotRestartStore = '__flutter_state';
   List<html.Element?>? _staleHotRestartState;
@@ -111,12 +111,12 @@ class DomRenderer {
   /// See for more details:
   /// https://developer.mozilla.org/en-US/docs/Web/API/Document/hasFocus
   bool get windowHasFocus =>
-      js_util.callMethod(html.document, 'hasFocus', <dynamic>[]) ?? false;
+      js_util.callMethod(html.document, 'hasFocus', <dynamic>[]) as bool;
 
   void _setupHotRestart() {
     // This persists across hot restarts to clear stale DOM.
     _staleHotRestartState =
-        js_util.getProperty(html.window, _staleHotRestartStore);
+        js_util.getProperty(html.window, _staleHotRestartStore) as List<html.Element>?;
     if (_staleHotRestartState == null) {
       _staleHotRestartState = <html.Element?>[];
       js_util.setProperty(
@@ -234,7 +234,10 @@ class DomRenderer {
 
   static void setElementTransform(html.Element element, String transformValue) {
     js_util.setProperty(
-        js_util.getProperty(element, 'style'), 'transform', transformValue);
+      js_util.getProperty(element, 'style') as Object,
+      'transform',
+      transformValue,
+    );
   }
 
   void setText(html.Element element, String text) {
@@ -555,7 +558,7 @@ class DomRenderer {
   /// defer to the operating system default.
   ///
   /// See w3c screen api: https://www.w3.org/TR/screen-orientation/
-  Future<bool> setPreferredOrientation(List<dynamic> orientations) {
+  Future<bool> setPreferredOrientation(List<String> orientations) {
     final html.Screen screen = html.window.screen!;
     if (!unsafeIsNull(screen)) {
       final html.ScreenOrientation? screenOrientation = screen.orientation;
@@ -589,7 +592,7 @@ class DomRenderer {
   }
 
   // Converts device orientation to w3c OrientationLockType enum.
-  static String? _deviceOrientationToLockType(String? deviceOrientation) {
+  static String? _deviceOrientationToLockType(String deviceOrientation) {
     switch (deviceOrientation) {
       case 'DeviceOrientation.portraitUp':
         return orientationLockTypePortraitPrimary;

@@ -65,9 +65,9 @@ class PlatformViewMessageHandler {
     MethodCall methodCall,
     _PlatformMessageResponseCallback callback,
   ) {
-    final Map<dynamic, dynamic> args = methodCall.arguments;
-    final int viewId = args['id'];
-    final String viewType = args['viewType'];
+    final Map<dynamic, dynamic> args = methodCall.arguments as Map<dynamic, dynamic>;
+    final int viewId = args['id'] as int;
+    final String viewType = args['viewType'] as String;
 
     if (!_contentManager.knowsViewType(viewType)) {
       callback(_codec.encodeErrorEnvelope(
@@ -116,7 +116,7 @@ class PlatformViewMessageHandler {
     MethodCall methodCall,
     _PlatformMessageResponseCallback callback,
   ) {
-    final int viewId = methodCall.arguments;
+    final int viewId = methodCall.arguments as int;
 
     // The contentManager removes the slot and the contents from its internal
     // cache, and the DOM.

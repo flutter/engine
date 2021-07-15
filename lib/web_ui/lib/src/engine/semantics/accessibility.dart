@@ -58,9 +58,9 @@ class AccessibilityAnnouncements {
   /// Decodes the message coming from the 'flutter/accessibility' channel.
   void handleMessage(StandardMessageCodec codec, ByteData? data) {
     final Map<dynamic, dynamic> inputMap =
-        codec.decodeMessage(data);
-    final Map<dynamic, dynamic> dataMap = inputMap['data'];
-    final String? message = dataMap['message'];
+        codec.decodeMessage(data) as Map<dynamic, dynamic>;
+    final Map<dynamic, dynamic> dataMap = inputMap['data'] as Map<dynamic, dynamic>;
+    final String? message = dataMap['message'] as String?;
     if (message != null && message.isNotEmpty) {
       _initLiveRegion(message);
       _removeElementTimer = Timer(durationA11yMessageIsOnDom, () {

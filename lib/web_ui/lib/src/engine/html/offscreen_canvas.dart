@@ -76,8 +76,9 @@ class OffScreenCanvas {
       offScreenCanvas!.convertToBlob().then((html.Blob value) {
         final html.FileReader fileReader = html.FileReader();
         fileReader.onLoad.listen((html.ProgressEvent event) {
-          completer.complete(js_util.getProperty(
-              js_util.getProperty(event, 'target')!, 'result')!);
+          completer.complete(
+            js_util.getProperty(js_util.getProperty(event, 'target') as Object, 'result') as String,
+          );
         });
         fileReader.readAsDataUrl(value);
       });
