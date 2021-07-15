@@ -7,7 +7,6 @@
 #include <dwmapi.h>
 #include <chrono>
 #include <map>
-#include <iostream>
 
 namespace flutter {
 
