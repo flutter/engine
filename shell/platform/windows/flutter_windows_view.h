@@ -68,6 +68,8 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   // Tells the engine to generate a new frame
   void ForceRedraw();
 
+  uint64_t FrameInterval();
+
   // Callbacks for clearing context, settings context and swapping buffers,
   // these are typically called on an engine-controlled (non-platform) thread.
   bool ClearContext();

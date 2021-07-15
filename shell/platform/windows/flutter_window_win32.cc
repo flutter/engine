@@ -7,6 +7,7 @@
 #include <dwmapi.h>
 #include <chrono>
 #include <map>
+#include <iostream>
 
 namespace flutter {
 
@@ -75,6 +76,26 @@ FlutterWindowWin32::~FlutterWindowWin32() {}
 
 void FlutterWindowWin32::SetView(WindowBindingHandlerDelegate* window) {
   binding_handler_delegate_ = window;
+}
+
+uint64_t FlutterWindowWin32::FrameInterval() {
+  auto window = GetWindowHandle();
+  HMONITOR monitor = MonitorFromWindow(window, MONITOR_DEFAULTTONEAREST);
+  MONITORINFOEX monitor_info;
+  monitor_info.cbSize = sizeof(MONITORINFOEX);
+  BOOL result = GetMonitorInfo(monitor, &monitor_info);
+  uint64_t frame_interval = 16600000;
+  if (result) {
+    DEVMODE display_info;
+    display_info.dmSize = sizeof(DEVMODE);
+    display_info.dmDriverExtra = 0;
+    result = EnumDisplaySettings(monitor_info.szDevice, ENUM_CURRENT_SETTINGS,
+                                 &display_info);
+    if (result && display_info.dmDisplayFrequency > 1) {
+      frame_interval = (1.0 / static_cast<double>(display_info.dmDisplayFrequency)) * 1000000000;
+    }
+  }
+  return frame_interval;
 }
 
 WindowsRenderTarget FlutterWindowWin32::GetRenderTarget() {

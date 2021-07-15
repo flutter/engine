@@ -18,6 +18,8 @@
 #include "flutter/shell/platform/windows/task_runner.h"
 #include "third_party/rapidjson/include/rapidjson/document.h"
 
+#undef GetCurrentTime
+
 namespace flutter {
 
 namespace {
@@ -254,6 +256,10 @@ bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
     auto host = static_cast<FlutterWindowsEngine*>(user_data);
     return host->HandlePlatformMessage(engine_message);
   };
+  args.vsync_callback = [](void* user_data, intptr_t baton) -> void {
+    auto host = static_cast<FlutterWindowsEngine*>(user_data);
+    return host->OnVsync(baton);
+  };
 
   args.custom_task_runners = &custom_task_runners;
 
@@ -279,6 +285,16 @@ bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
   SendSystemSettings();
 
   return true;
+}
+
+void FlutterWindowsEngine::OnVsync(intptr_t baton) {
+  auto current_time = embedder_api_.GetCurrentTime();
+  if (view_ == nullptr) {
+    embedder_api_.OnVsync(engine_, baton, current_time, current_time + 16600000);
+  } else {
+    auto interval = view_->FrameInterval();
+    embedder_api_.OnVsync(engine_, baton, current_time, current_time + interval);
+  }
 }
 
 bool FlutterWindowsEngine::Stop() {

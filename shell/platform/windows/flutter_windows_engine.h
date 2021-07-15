@@ -77,6 +77,8 @@ class FlutterWindowsEngine {
   // Sets switches member to the given switches.
   void SetSwitches(const std::vector<std::string>& switches);
 
+  void OnVsync(intptr_t baton);
+
   FlutterDesktopMessengerRef messenger() { return messenger_.get(); }
 
   IncomingMessageDispatcher* message_dispatcher() {

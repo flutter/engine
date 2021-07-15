@@ -51,6 +51,9 @@ class FlutterWindowWin32 : public WindowWin32, public WindowBindingHandler {
   // |WindowWin32|
   void OnSetCursor() override;
 
+  // |FlutterWindowBindingHandler|
+  uint64_t FrameInterval() override;
+
   // |WindowWin32|
   void OnText(const std::u16string& text) override;
 
