@@ -181,7 +181,7 @@ void _startDownloadingCanvasKit(String? canvasKitBase) {
     // CommonJS is being used, and we shouldn't have any problems.
     final js.JsFunction objectConstructor = js.context['Object'];
     if (js.context['exports'] == null) {
-      final js.JsObject exportsAccessor = js.JsObject.jsify({
+      final js.JsObject exportsAccessor = js.JsObject.jsify(<String, dynamic>{
         'get': js.allowInterop(() {
           if (html.document.currentScript == _canvasKitScript) {
             return js.JsObject(objectConstructor);
@@ -198,7 +198,7 @@ void _startDownloadingCanvasKit(String? canvasKitBase) {
           'defineProperty', <dynamic>[js.context, 'exports', exportsAccessor]);
     }
     if (js.context['module'] == null) {
-      final js.JsObject moduleAccessor = js.JsObject.jsify({
+      final js.JsObject moduleAccessor = js.JsObject.jsify(<String, dynamic>{
         'get': js.allowInterop(() {
           if (html.document.currentScript == _canvasKitScript) {
             return js.JsObject(objectConstructor);
