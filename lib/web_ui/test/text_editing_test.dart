@@ -655,7 +655,7 @@ void testMain() {
           createFlutterConfig(
             'text',
             autofillHint: 'username',
-            autofillHintsForFields: [
+            autofillHintsForFields: <String>[
               'username',
               'email',
               'name',
@@ -712,7 +712,7 @@ void testMain() {
       final Map<String, dynamic> flutterMultiAutofillElementConfig =
           createFlutterConfig('text',
               autofillHint: 'username',
-              autofillHintsForFields: [
+              autofillHintsForFields: <String>[
             'username',
             'email',
             'name',
@@ -742,10 +742,10 @@ void testMain() {
 
       // Form is added to DOM.
       expect(defaultTextEditingRoot.querySelectorAll('form'), isNotEmpty);
-      FormElement formElement = defaultTextEditingRoot.querySelector('form') as FormElement;
+      final FormElement formElement = defaultTextEditingRoot.querySelector('form') as FormElement;
       final Completer<bool> submittedForm = Completer<bool>();
       formElement.addEventListener(
-          'submit', (event) => submittedForm.complete(true));
+          'submit', (Event event) => submittedForm.complete(true));
 
       const MethodCall clearClient = MethodCall('TextInput.clearClient');
       sendFrameworkMessage(codec.encodeMethodCall(clearClient));
@@ -765,7 +765,7 @@ void testMain() {
       final Map<String, dynamic> flutterMultiAutofillElementConfig =
           createFlutterConfig('text',
               autofillHint: 'username',
-              autofillHintsForFields: [
+              autofillHintsForFields: <String>[
             'username',
             'email',
             'name',
@@ -795,10 +795,10 @@ void testMain() {
 
       // Form is added to DOM.
       expect(defaultTextEditingRoot.querySelectorAll('form'), isNotEmpty);
-      FormElement formElement = defaultTextEditingRoot.querySelector('form') as FormElement;
+      final FormElement formElement = defaultTextEditingRoot.querySelector('form') as FormElement;
       final Completer<bool> submittedForm = Completer<bool>();
       formElement.addEventListener(
-          'submit', (event) => submittedForm.complete(true));
+          'submit', (Event event) => submittedForm.complete(true));
 
       // Clear client is not called. The used requested context to be finalized.
       const MethodCall finishAutofillContext =
@@ -1000,7 +1000,7 @@ void testMain() {
       final Map<String, dynamic> flutterMultiAutofillElementConfig =
           createFlutterConfig('text',
               autofillHint: 'username',
-              autofillHintsForFields: [
+              autofillHintsForFields: <String>[
             'username',
             'email',
             'name',
@@ -1229,7 +1229,7 @@ void testMain() {
       } else {
         expect(
             textEditing!.strategy.domElement!.classes.any(
-                (element) => element.toString() == 'transparentTextEditing'),
+                (String element) => element.toString() == 'transparentTextEditing'),
             isFalse);
       }
 
@@ -1381,7 +1381,7 @@ void testMain() {
 
       input.setSelectionRange(2, 5);
       if (browserEngine == BrowserEngine.firefox) {
-        Event keyup = KeyboardEvent('keyup');
+        final Event keyup = KeyboardEvent('keyup');
         textEditing!.strategy.domElement!.dispatchEvent(keyup);
       } else {
         document.dispatchEvent(Event.eventType('Event', 'selectionchange'));
@@ -1412,7 +1412,7 @@ void testMain() {
       final Map<String, dynamic> flutterMultiAutofillElementConfig =
           createFlutterConfig('text',
               autofillHint: 'email',
-              autofillHintsForFields: [
+              autofillHintsForFields: <String>[
             hintForFirstElement,
             'email',
             'givenName',
@@ -1447,7 +1447,7 @@ void testMain() {
       expect(formElement.childNodes, hasLength(5));
 
       // Autofill one of the form elements.
-      InputElement element = formElement.childNodes.first as InputElement;
+      final InputElement element = formElement.childNodes.first as InputElement;
       if (browserEngine == BrowserEngine.firefox) {
         expect(element.name,
             BrowserAutofillHints.instance.flutterToEngine(hintForFirstElement));
@@ -1681,8 +1681,8 @@ void testMain() {
   group('EngineAutofillForm', () {
     test('validate multi element form', () {
       final List<dynamic> fields = createFieldValues(
-          ['username', 'password', 'newPassword'],
-          ['field1', 'field2', 'field3']);
+          <String>['username', 'password', 'newPassword'],
+          <String>['field1', 'field2', 'field3']);
       final EngineAutofillForm autofillForm =
           EngineAutofillForm.fromFrameworkMessage(
               createAutofillInfo('username', 'field1'), fields)!;
@@ -1733,15 +1733,15 @@ void testMain() {
       } else {
         expect(
             firstElement.classes.any(
-                (element) => element.toString() == 'transparentTextEditing'),
+                (String element) => element.toString() == 'transparentTextEditing'),
             isFalse);
       }
     });
 
     test('validate multi element form ids sorted for form id', () {
       final List<dynamic> fields = createFieldValues(
-          ['username', 'password', 'newPassword'],
-          ['zzyyxx', 'aabbcc', 'jjkkll']);
+          <String>['username', 'password', 'newPassword'],
+          <String>['zzyyxx', 'aabbcc', 'jjkkll']);
       final EngineAutofillForm autofillForm =
           EngineAutofillForm.fromFrameworkMessage(
               createAutofillInfo('username', 'field1'), fields)!;
@@ -1753,8 +1753,8 @@ void testMain() {
       expect(defaultTextEditingRoot.querySelectorAll('form'), isEmpty);
 
       final List<dynamic> fields = createFieldValues(
-          ['username', 'password', 'newPassword'],
-          ['field1', 'fields2', 'field3']);
+          <String>['username', 'password', 'newPassword'],
+          <String>['field1', 'fields2', 'field3']);
       final EngineAutofillForm autofillForm =
           EngineAutofillForm.fromFrameworkMessage(
               createAutofillInfo('username', 'field1'), fields)!;
@@ -1777,7 +1777,10 @@ void testMain() {
     });
 
     test('Validate single element form', () {
-      final List<dynamic> fields = createFieldValues(['username'], ['field1']);
+      final List<dynamic> fields = createFieldValues(
+        <String>['username'],
+        <String>['field1'],
+      );
       final EngineAutofillForm autofillForm =
           EngineAutofillForm.fromFrameworkMessage(
               createAutofillInfo('username', 'field1'), fields)!;
@@ -1799,7 +1802,10 @@ void testMain() {
     });
 
     test('Return null if no focused element', () {
-      final List<dynamic> fields = createFieldValues(['username'], ['field1']);
+      final List<dynamic> fields = createFieldValues(
+        <String>['username'],
+        <String>['field1'],
+      );
       final EngineAutofillForm? autofillForm =
           EngineAutofillForm.fromFrameworkMessage(null, fields);
 
@@ -1988,12 +1994,12 @@ void testMain() {
       input.selectionStart = 1;
       input.selectionEnd = 2;
 
-      EditingState editingState1 = EditingState.fromDomElement(input);
-      EditingState editingState2 = EditingState.fromDomElement(input);
+      final EditingState editingState1 = EditingState.fromDomElement(input);
+      final EditingState editingState2 = EditingState.fromDomElement(input);
 
       input.setSelectionRange(1, 3);
 
-      EditingState editingState3 = EditingState.fromDomElement(input);
+      final EditingState editingState3 = EditingState.fromDomElement(input);
 
       expect(editingState1 == editingState2, isTrue);
       expect(editingState1 != editingState3, isTrue);
@@ -2068,7 +2074,7 @@ void checkInputEditingState(
 
 /// In case of an exception backup DOM element(s) can still stay on the DOM.
 void clearBackUpDomElementIfExists() {
-  List<Node> domElementsToRemove = <Node>[];
+  final List<Node> domElementsToRemove = <Node>[];
   if (defaultTextEditingRoot.querySelectorAll('input').length > 0) {
     domElementsToRemove..addAll(defaultTextEditingRoot.querySelectorAll('input'));
   }
@@ -2126,8 +2132,8 @@ Map<String, dynamic> createFlutterConfig(
 Map<String, dynamic> createAutofillInfo(String hint, String uniqueId) =>
     <String, dynamic>{
       'uniqueIdentifier': uniqueId,
-      'hints': [hint],
-      'editingValue': {
+      'hints': <String>[hint],
+      'editingValue': <String, dynamic>{
         'text': 'Test',
         'selectionBase': 0,
         'selectionExtent': 0,
@@ -2152,7 +2158,7 @@ List<dynamic> createFieldValues(List<String> hints, List<String> uniqueIds) {
 
 Map<String, dynamic> createOneFieldValue(String hint, String uniqueId) =>
     <String, dynamic>{
-      'inputType': {
+      'inputType': <String, dynamic>{
         'name': 'TextInputType.text',
         'signed': null,
         'decimal': null

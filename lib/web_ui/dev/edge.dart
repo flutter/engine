@@ -42,7 +42,7 @@ class EdgeEnvironment implements BrowserEnvironment {
 /// Any errors starting or running the process are reported through [onExit].
 class Edge extends Browser {
   @override
-  final name = 'Edge';
+  final String name = 'Edge';
 
   /// Starts a new instance of Safari open to the given [url], which may be a
   /// [Uri] or a [String].
@@ -59,12 +59,14 @@ class Edge extends Browser {
       // Debug is not a valid option for Edge. Remove it.
       String pathToOpen = url.toString();
       if(pathToOpen.contains('debug')) {
-        int index = pathToOpen.indexOf('debug');
+        final int index = pathToOpen.indexOf('debug');
         pathToOpen = pathToOpen.substring(0, index-1);
       }
 
-      var process =
-          await Process.start(installation.executable, ['$pathToOpen','-k']);
+      final Process process = await Process.start(
+        installation.executable,
+        <String>['$pathToOpen','-k'],
+      );
 
       return process;
     });

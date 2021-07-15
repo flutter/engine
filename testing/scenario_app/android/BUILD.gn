@@ -60,17 +60,20 @@ template("gradle_task") {
 
 gradle_task("android_lint") {
   task = "lint"
-
   outputs = [
     "$root_out_dir/scenario_app/build/reports/lint-results.html",
     "$root_out_dir/scenario_app/build/reports/lint-results.xml",
   ]
 }
 
-gradle_task("android") {
+gradle_task("build_apk") {
   task = "assembleDebug"
-
   outputs = [ "$root_out_dir/scenario_app/app/outputs/apk/debug/app-debug.apk" ]
-
   deps = [ ":android_lint" ]
+}
+
+copy("android") {
+  sources = get_target_outputs(":build_apk")
+  outputs = [ "$root_out_dir/firebase_apks/scenario_app.apk" ]
+  deps = [ ":build_apk" ]
 }
