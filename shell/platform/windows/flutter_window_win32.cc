@@ -91,7 +91,9 @@ uint64_t FlutterWindowWin32::FrameInterval() {
     result = EnumDisplaySettings(monitor_info.szDevice, ENUM_CURRENT_SETTINGS,
                                  &display_info);
     if (result && display_info.dmDisplayFrequency > 1) {
-      frame_interval = (1.0 / static_cast<double>(display_info.dmDisplayFrequency)) * 1000000000;
+      frame_interval =
+          (1.0 / static_cast<double>(display_info.dmDisplayFrequency)) *
+          1000000000;
     }
   }
   return frame_interval;

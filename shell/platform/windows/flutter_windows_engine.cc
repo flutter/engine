@@ -290,10 +290,12 @@ bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
 void FlutterWindowsEngine::OnVsync(intptr_t baton) {
   auto current_time = embedder_api_.GetCurrentTime();
   if (view_ == nullptr) {
-    embedder_api_.OnVsync(engine_, baton, current_time, current_time + 16600000);
+    embedder_api_.OnVsync(engine_, baton, current_time,
+                          current_time + 16600000);
   } else {
     auto interval = view_->FrameInterval();
-    embedder_api_.OnVsync(engine_, baton, current_time, current_time + interval);
+    embedder_api_.OnVsync(engine_, baton, current_time,
+                          current_time + interval);
   }
 }
 
