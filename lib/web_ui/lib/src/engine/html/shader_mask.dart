@@ -40,7 +40,6 @@ class PersistedShaderMask extends PersistedContainerSurface
   final ui.BlendMode blendMode;
   final ui.FilterQuality filterQuality;
   html.Element? _shaderElement;
-  static int activeShaderMaskCount = 0;
   final bool isWebKit = browserEngine == BrowserEngine.webkit;
 
   @override
@@ -65,10 +64,10 @@ class PersistedShaderMask extends PersistedContainerSurface
   }
 
   @override
-  void preroll() {
-    ++activeShaderMaskCount;
-    super.preroll();
-    --activeShaderMaskCount;
+  void preroll(PrerollSurfaceContext prerollContext) {
+    ++prerollContext.activeShaderMaskCount;
+    super.preroll(prerollContext);
+    --prerollContext.activeShaderMaskCount;
   }
 
   @override

@@ -30,7 +30,6 @@ class PersistedColorFilter extends PersistedContainerSurface
   final ui.ColorFilter filter;
   html.Element? _filterElement;
   bool containerVisible = true;
-  static int activeColorFilterCount = 0;
 
   @override
   void adoptElements(PersistedColorFilter oldSurface) {
@@ -40,10 +39,10 @@ class PersistedColorFilter extends PersistedContainerSurface
   }
 
   @override
-  void preroll() {
-    ++activeColorFilterCount;
-    super.preroll();
-    --activeColorFilterCount;
+  void preroll(PrerollSurfaceContext prerollContext) {
+    ++prerollContext.activeColorFilterCount;
+    super.preroll(prerollContext);
+    --prerollContext.activeColorFilterCount;
   }
 
   @override
@@ -68,6 +67,7 @@ class PersistedColorFilter extends PersistedContainerSurface
   @override
   void apply() {
     if (_filterElement != null) {
+
       _filterElement?.remove();
     }
     final EngineColorFilter? engineValue = filter as EngineColorFilter?;

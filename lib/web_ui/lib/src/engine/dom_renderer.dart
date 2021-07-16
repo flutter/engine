@@ -67,6 +67,10 @@ class DomRenderer {
   html.Element? get sceneHostElement => _sceneHostElement;
   html.Element? _sceneHostElement;
 
+  /// A child element of body outside the shadowroot that hosts
+  /// global resources such svg filters and clip paths when using webkit.
+  html.Element? _resourcesHost;
+
   /// The element that contains the semantics tree.
   ///
   /// This element is created and inserted in the HTML DOM once. It is never
@@ -681,6 +685,20 @@ class DomRenderer {
       }
     }
     return null;
+  }
+
+  /// Add an element as global resource.
+  ///
+  /// This call create a global resource host element on demand.
+  void addResource(html.Element element) {
+    _resourcesHost ??= html.DivElement()
+          ..style.visibility = 'hidden';
+    _resourcesHost!.append(element);
+  }
+
+  /// Removes a global resource element.
+  void removeResource(html.Element element) {
+    element.remove();
   }
 
   /// Provides haptic feedback.

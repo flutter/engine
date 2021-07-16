@@ -129,12 +129,12 @@ class PersistedPicture extends PersistedLeafSurface {
   }
 
   @override
-  void preroll() {
-    if (PersistedShaderMask.activeShaderMaskCount != 0 ||
-        PersistedColorFilter.activeColorFilterCount != 0) {
+  void preroll(PrerollSurfaceContext prerollContext) {
+    if (prerollContext.activeShaderMaskCount != 0 ||
+        prerollContext.activeColorFilterCount != 0) {
       picture.recordingCanvas?.renderStrategy.isInsideSvgFilterTree = true;
     }
-    super.preroll();
+    super.preroll(prerollContext);
   }
 
   @override
