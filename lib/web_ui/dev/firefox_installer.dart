@@ -26,7 +26,7 @@ class FirefoxArgParser extends BrowserArgParser {
   @override
   void populateOptions(ArgParser argParser) {
     final YamlMap browserLock = BrowserLock.instance.configuration;
-    String firefoxVersion = browserLock['firefox']['version'] as String;
+    final String firefoxVersion = browserLock['firefox']['version'] as String;
 
     argParser
       ..addOption(
@@ -196,7 +196,7 @@ class FirefoxInstaller {
 
     final io.File downloadedFile =
         io.File(path.join(versionDir.path, PlatformBinding.instance.getFirefoxDownloadFilename(version)));
-    io.IOSink sink = downloadedFile.openWrite();
+    final io.IOSink sink = downloadedFile.openWrite();
     await download.stream.pipe(sink);
     await sink.flush();
     await sink.close();
@@ -226,12 +226,12 @@ class FirefoxInstaller {
   /// Mounts the dmg file using hdiutil, copies content of the volume to
   /// target path and then unmounts dmg ready for deletion.
   Future<void> _mountDmgAndCopy(io.File dmgFile) async {
-    String volumeName = await _hdiUtilMount(dmgFile);
+    final String volumeName = await _hdiUtilMount(dmgFile);
 
     final String sourcePath = '$volumeName/Firefox.app';
     final String targetPath = path.dirname(dmgFile.path);
     try {
-      io.ProcessResult installResult = await io.Process.run('cp', <String>[
+      final io.ProcessResult installResult = await io.Process.run('cp', <String>[
         '-r',
         sourcePath,
         targetPath,
@@ -249,7 +249,7 @@ class FirefoxInstaller {
   }
 
   Future<String> _hdiUtilMount(io.File dmgFile) async {
-    io.ProcessResult mountResult = await io.Process.run('hdiutil', <String>[
+    final io.ProcessResult mountResult = await io.Process.run('hdiutil', <String>[
       'attach',
       '-readonly',
       '${dmgFile.path}',
@@ -260,7 +260,7 @@ class FirefoxInstaller {
               'Exit code ${mountResult.exitCode}.\n${mountResult.stderr}');
     }
 
-    List<String> processOutput = (mountResult.stdout as String).split('\n');
+    final List<String> processOutput = (mountResult.stdout as String).split('\n');
     final String? volumePath = _volumeFromMountResult(processOutput);
     if (volumePath == null) {
       throw BrowserInstallerException(
@@ -274,7 +274,7 @@ class FirefoxInstaller {
   // Output is of form: {devicename} /Volumes/{name}.
   String? _volumeFromMountResult(List<String> lines) {
     for (String line in lines) {
-      int pos = line.indexOf('/Volumes');
+      final int pos = line.indexOf('/Volumes');
       if (pos != -1) {
         return line.substring(pos);
       }
@@ -283,7 +283,7 @@ class FirefoxInstaller {
   }
 
   Future<void> _hdiUtilUnmount(String volumeName) async {
-    io.ProcessResult unmountResult = await io.Process.run('hdiutil', <String>[
+    final io.ProcessResult unmountResult = await io.Process.run('hdiutil', <String>[
       'unmount',
       '$volumeName',
     ]);
@@ -302,13 +302,13 @@ class FirefoxInstaller {
 Future<String> _findSystemFirefoxExecutable() async {
   final io.ProcessResult which =
       await io.Process.run('which', <String>['firefox']);
-  bool found = which.exitCode != 0;
+  final bool found = which.exitCode != 0;
   const String fireFoxDefaultInstallPath =
       '/Applications/Firefox.app/Contents/MacOS/firefox';
   if (!found) {
     if (io.Platform.isMacOS &&
         io.File(fireFoxDefaultInstallPath).existsSync()) {
-      return Future.value(fireFoxDefaultInstallPath);
+      return Future<String>.value(fireFoxDefaultInstallPath);
     }
     throw BrowserInstallerException(
         'Failed to locate system Firefox installation.');
@@ -318,7 +318,7 @@ Future<String> _findSystemFirefoxExecutable() async {
 
 /// Fetches the latest available Firefox build version on Linux.
 Future<String> fetchLatestFirefoxVersionLinux() async {
-  final RegExp forFirefoxVersion = RegExp("firefox-[0-9.]\+[0-9]");
+  final RegExp forFirefoxVersion = RegExp("firefox-[0-9.]+[0-9]");
   final io.HttpClientRequest request = await io.HttpClient()
       .getUrl(Uri.parse(PlatformBinding.instance.getFirefoxLatestVersionUrl()));
   request.followRedirects = false;
@@ -333,7 +333,7 @@ Future<String> fetchLatestFirefoxVersionLinux() async {
 
 /// Fetches the latest available Firefox build version on Mac OS.
 Future<String> fetchLatestFirefoxVersionMacOS() async {
-  final RegExp forFirefoxVersion = RegExp("firefox\/releases\/[0-9.]\+[0-9]");
+  final RegExp forFirefoxVersion = RegExp("firefox/releases/[0-9.]+[0-9]");
   final io.HttpClientRequest request = await io.HttpClient()
       .getUrl(Uri.parse(PlatformBinding.instance.getFirefoxLatestVersionUrl()));
   request.followRedirects = false;

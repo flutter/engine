@@ -47,7 +47,7 @@ class FirefoxEnvironment implements BrowserEnvironment {
 /// Any errors starting or running the process are reported through [onExit].
 class Firefox extends Browser {
   @override
-  final name = 'Firefox';
+  final String name = 'Firefox';
 
   @override
   final Future<Uri> remoteDebuggerUrl;
@@ -56,7 +56,7 @@ class Firefox extends Browser {
   /// [Uri] or a [String].
   factory Firefox(Uri url, {bool debug = false}) {
     final String version = FirefoxArgParser.instance.version;
-    var remoteDebuggerCompleter = Completer<Uri>.sync();
+    final Completer<Uri> remoteDebuggerCompleter = Completer<Uri>.sync();
     return Firefox._(() async {
       final BrowserInstallation installation = await getOrInstallFirefox(
         version,
@@ -64,7 +64,7 @@ class Firefox extends Browser {
       );
 
       // Using a profile on opening will prevent popups related to profiles.
-      final _profile = '''
+      final String _profile = '''
 user_pref("browser.shell.checkDefaultBrowser", false);
 user_pref("dom.disable_open_during_load", false);
 user_pref("dom.max_script_run_time", 0);
@@ -83,8 +83,8 @@ user_pref("dom.max_script_run_time", 0);
 
       File(path.join(temporaryProfileDirectory.path, 'prefs.js'))
           .writeAsStringSync(_profile);
-      bool isMac = Platform.isMacOS;
-      var args = [
+      final bool isMac = Platform.isMacOS;
+      final List<String> args = <String>[
         url.toString(),
         '--profile',
         '${temporaryProfileDirectory.path}',
@@ -92,8 +92,9 @@ user_pref("dom.max_script_run_time", 0);
           '--headless',
         '-width $kMaxScreenshotWidth',
         '-height $kMaxScreenshotHeight',
-        isMac ? '--new-window' : '-new-window',
-        isMac ? '--new-instance' : '-new-instance',
+        // On Mac Firefox uses the -- option prefix, while elsewhere it uses the - prefix.
+        '${isMac ? '-' : ''}-new-window',
+        '${isMac ? '-' : ''}-new-instance',
         '--start-debugger-server $kDevtoolsPort',
       ];
 

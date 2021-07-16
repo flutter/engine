@@ -270,7 +270,7 @@ void testMain() {
       window.sendPlatformMessage(
         'flutter/debug-echo',
         inputData,
-        (outputData) {
+        (ByteData? outputData) {
           expect(Zone.current, innerZone);
           completer.complete();
         },
@@ -288,7 +288,7 @@ void testMain() {
     window.sendPlatformMessage(
       'flutter/__unknown__channel__',
       null,
-      (outputData) {
+      (ByteData? outputData) {
         responded = true;
         expect(outputData, isNull);
       },
@@ -311,7 +311,7 @@ void testMain() {
     window.sendPlatformMessage(
       'flutter/platform',
           inputData,
-          (outputData) {
+          (ByteData? outputData) {
         completer.complete(true);
       },
     );
@@ -326,8 +326,7 @@ void testMain() {
       localeChangedCount += 1;
     };
 
-    // Cause DomRenderer to initialize itself.
-    domRenderer;
+    ensureDomRendererInitialized();
 
     // We populate the initial list of locales automatically (only test that we
     // got some locales; some contributors may be in different locales, so we
@@ -356,7 +355,7 @@ void testMain() {
       window.sendPlatformMessage(
         'flutter/service_worker',
         ByteData(0),
-        (outputData) { },
+        (ByteData? outputData) { },
       );
     });
 

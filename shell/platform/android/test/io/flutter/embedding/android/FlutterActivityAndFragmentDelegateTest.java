@@ -378,6 +378,9 @@ public class FlutterActivityAndFragmentDelegateTest {
     // Declare that the host does NOT want Flutter to attach to the surrounding Activity.
     when(mockHost.shouldAttachEngineToActivity()).thenReturn(false);
 
+    // getActivity() returns null if the activity is not attached
+    when(mockHost.getActivity()).thenReturn(null);
+
     // Create the real object that we're testing.
     FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
 
@@ -385,14 +388,21 @@ public class FlutterActivityAndFragmentDelegateTest {
     // Flutter is attached to the surrounding Activity in onAttach.
     delegate.onAttach(RuntimeEnvironment.application);
 
-    // Verify that the ActivityControlSurface was NOT told to attach to an Activity.
-    verify(mockFlutterEngine.getActivityControlSurface(), never())
-        .attachToActivity(any(Activity.class), any(Lifecycle.class));
+    // Make sure all of the other lifecycle methods can run safely as well
+    // without a valid Activity
+    delegate.onCreateView(null, null, null, 0);
+    delegate.onStart();
+    delegate.onResume();
+    delegate.onPause();
+    delegate.onStop();
+    delegate.onDestroyView();
 
     // Flutter is detached from the surrounding Activity in onDetach.
     delegate.onDetach();
 
-    // Verify that the ActivityControlSurface was NOT told to detach from the Activity.
+    // Verify that the ActivityControlSurface was NOT told to attach or detach to an Activity.
+    verify(mockFlutterEngine.getActivityControlSurface(), never())
+        .attachToActivity(any(Activity.class), any(Lifecycle.class));
     verify(mockFlutterEngine.getActivityControlSurface(), never()).detachFromActivity();
   }
 
@@ -454,6 +464,60 @@ public class FlutterActivityAndFragmentDelegateTest {
     // Verify that the navigation channel was given the initial route message.
     verify(mockFlutterEngine.getNavigationChannel(), times(1))
         .setInitialRoute("/custom/route?query=test");
+  }
+
+  @Test
+  public void
+      itSendsInitialRouteFromIntentOnStartIfNoInitialRouteFromActivityAndShouldHandleDeeplinkingWithQueryParameterAndFragment() {
+    Intent intent = FlutterActivity.createDefaultIntent(RuntimeEnvironment.application);
+    intent.setData(Uri.parse("http://myApp/custom/route?query=test#fragment"));
+
+    ActivityController<FlutterActivity> activityController =
+        Robolectric.buildActivity(FlutterActivity.class, intent);
+    FlutterActivity flutterActivity = activityController.get();
+
+    when(mockHost.getActivity()).thenReturn(flutterActivity);
+    when(mockHost.getInitialRoute()).thenReturn(null);
+    when(mockHost.shouldHandleDeeplinking()).thenReturn(true);
+    // Create the real object that we're testing.
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
+
+    // --- Execute the behavior under test ---
+    // The FlutterEngine is set up in onAttach().
+    delegate.onAttach(RuntimeEnvironment.application);
+    // Emulate app start.
+    delegate.onStart();
+
+    // Verify that the navigation channel was given the initial route message.
+    verify(mockFlutterEngine.getNavigationChannel(), times(1))
+        .setInitialRoute("/custom/route?query=test#fragment");
+  }
+
+  @Test
+  public void
+      itSendsInitialRouteFromIntentOnStartIfNoInitialRouteFromActivityAndShouldHandleDeeplinkingWithFragmentNoQueryParameter() {
+    Intent intent = FlutterActivity.createDefaultIntent(RuntimeEnvironment.application);
+    intent.setData(Uri.parse("http://myApp/custom/route#fragment"));
+
+    ActivityController<FlutterActivity> activityController =
+        Robolectric.buildActivity(FlutterActivity.class, intent);
+    FlutterActivity flutterActivity = activityController.get();
+
+    when(mockHost.getActivity()).thenReturn(flutterActivity);
+    when(mockHost.getInitialRoute()).thenReturn(null);
+    when(mockHost.shouldHandleDeeplinking()).thenReturn(true);
+    // Create the real object that we're testing.
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
+
+    // --- Execute the behavior under test ---
+    // The FlutterEngine is set up in onAttach().
+    delegate.onAttach(RuntimeEnvironment.application);
+    // Emulate app start.
+    delegate.onStart();
+
+    // Verify that the navigation channel was given the initial route message.
+    verify(mockFlutterEngine.getNavigationChannel(), times(1))
+        .setInitialRoute("/custom/route#fragment");
   }
 
   @Test
@@ -525,6 +589,46 @@ public class FlutterActivityAndFragmentDelegateTest {
     // Verify that the navigation channel was given the push route message.
     verify(mockFlutterEngine.getNavigationChannel(), times(1))
         .pushRoute("/custom/route?query=test");
+  }
+
+  @Test
+  public void itSendsPushRouteMessageWhenOnNewIntentWithQueryParameterAndFragment() {
+    when(mockHost.shouldHandleDeeplinking()).thenReturn(true);
+    // Create the real object that we're testing.
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
+
+    // --- Execute the behavior under test ---
+    // The FlutterEngine is set up in onAttach().
+    delegate.onAttach(RuntimeEnvironment.application);
+
+    Intent mockIntent = mock(Intent.class);
+    when(mockIntent.getData())
+        .thenReturn(Uri.parse("http://myApp/custom/route?query=test#fragment"));
+    // Emulate the host and call the method that we expect to be forwarded.
+    delegate.onNewIntent(mockIntent);
+
+    // Verify that the navigation channel was given the push route message.
+    verify(mockFlutterEngine.getNavigationChannel(), times(1))
+        .pushRoute("/custom/route?query=test#fragment");
+  }
+
+  @Test
+  public void itSendsPushRouteMessageWhenOnNewIntentWithFragmentNoQueryParameter() {
+    when(mockHost.shouldHandleDeeplinking()).thenReturn(true);
+    // Create the real object that we're testing.
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
+
+    // --- Execute the behavior under test ---
+    // The FlutterEngine is set up in onAttach().
+    delegate.onAttach(RuntimeEnvironment.application);
+
+    Intent mockIntent = mock(Intent.class);
+    when(mockIntent.getData()).thenReturn(Uri.parse("http://myApp/custom/route#fragment"));
+    // Emulate the host and call the method that we expect to be forwarded.
+    delegate.onNewIntent(mockIntent);
+
+    // Verify that the navigation channel was given the push route message.
+    verify(mockFlutterEngine.getNavigationChannel(), times(1)).pushRoute("/custom/route#fragment");
   }
 
   @Test

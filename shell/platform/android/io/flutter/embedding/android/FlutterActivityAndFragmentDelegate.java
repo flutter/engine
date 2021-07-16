@@ -276,15 +276,15 @@ import java.util.Arrays;
     if (host.getRenderMode() == RenderMode.surface) {
       FlutterSurfaceView flutterSurfaceView =
           new FlutterSurfaceView(
-              host.getActivity(), host.getTransparencyMode() == TransparencyMode.transparent);
+              host.getContext(), host.getTransparencyMode() == TransparencyMode.transparent);
 
       // Allow our host to customize FlutterSurfaceView, if desired.
       host.onFlutterSurfaceViewCreated(flutterSurfaceView);
 
       // Create the FlutterView that owns the FlutterSurfaceView.
-      flutterView = new FlutterView(host.getActivity(), flutterSurfaceView);
+      flutterView = new FlutterView(host.getContext(), flutterSurfaceView);
     } else {
-      FlutterTextureView flutterTextureView = new FlutterTextureView(host.getActivity());
+      FlutterTextureView flutterTextureView = new FlutterTextureView(host.getContext());
 
       flutterTextureView.setOpaque(host.getTransparencyMode() == TransparencyMode.opaque);
 
@@ -292,7 +292,7 @@ import java.util.Arrays;
       host.onFlutterTextureViewCreated(flutterTextureView);
 
       // Create the FlutterView that owns the FlutterTextureView.
-      flutterView = new FlutterView(host.getActivity(), flutterTextureView);
+      flutterView = new FlutterView(host.getContext(), flutterTextureView);
     }
 
     // Add listener to be notified when Flutter renders its first frame.
@@ -402,11 +402,14 @@ import java.util.Arrays;
     if (host.shouldHandleDeeplinking()) {
       Uri data = intent.getData();
       if (data != null && !data.getPath().isEmpty()) {
-        String pathAndQuery = data.getPath();
+        String fullRoute = data.getPath();
         if (data.getQuery() != null && !data.getQuery().isEmpty()) {
-          pathAndQuery += "?" + data.getQuery();
+          fullRoute += "?" + data.getQuery();
         }
-        return pathAndQuery;
+        if (data.getFragment() != null && !data.getFragment().isEmpty()) {
+          fullRoute += "#" + data.getFragment();
+        }
+        return fullRoute;
       }
     }
     return null;

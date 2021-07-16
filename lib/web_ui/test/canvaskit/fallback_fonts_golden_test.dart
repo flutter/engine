@@ -87,7 +87,7 @@ void testMain() {
 }
 ''';
 
-      expect(FontFallbackData.instance.globalFontFallbacks, ['Roboto']);
+      expect(FontFallbackData.instance.globalFontFallbacks, <String>['Roboto']);
 
       // Creating this paragraph should cause us to start to download the
       // fallback font.
@@ -153,7 +153,7 @@ void testMain() {
 }
 ''';
 
-      expect(FontFallbackData.instance.globalFontFallbacks, ['Roboto']);
+      expect(FontFallbackData.instance.globalFontFallbacks, <String>['Roboto']);
 
       // Creating this paragraph should cause us to start to download the
       // fallback font.
@@ -195,11 +195,11 @@ void testMain() {
               'https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic+UI'] =
           'invalid CSS... this should cause our parser to fail';
 
-      expect(FontFallbackData.instance.globalFontFallbacks, ['Roboto']);
+      expect(FontFallbackData.instance.globalFontFallbacks, <String>['Roboto']);
 
       // Creating this paragraph should cause us to start to download the
       // fallback font.
-      CkParagraphBuilder pb = CkParagraphBuilder(
+      final CkParagraphBuilder pb = CkParagraphBuilder(
         CkParagraphStyle(),
       );
       pb.addText('مرحبا');
@@ -210,7 +210,7 @@ void testMain() {
       await Future<void>.delayed(Duration.zero);
 
       expect(notoDownloadQueue.isPending, isFalse);
-      expect(FontFallbackData.instance.globalFontFallbacks, ['Roboto']);
+      expect(FontFallbackData.instance.globalFontFallbacks, <String>['Roboto']);
     });
 
     // Regression test for https://github.com/flutter/flutter/issues/75836
@@ -320,7 +320,7 @@ void testMain() {
         }
         final Set<NotoFont> fonts = <NotoFont>{};
         for (int codeUnit in codeUnits) {
-          List<NotoFont> fontsForUnit = notoTree.intersections(codeUnit);
+          final List<NotoFont> fontsForUnit = notoTree.intersections(codeUnit);
 
           // All code units are extracted from the same tree, so there must
           // be at least one font supporting each code unit
@@ -334,7 +334,7 @@ void testMain() {
           print(
             'findMinimumFontsForCodeunits failed:\n'
             '  Code units: ${codeUnits.join(', ')}\n'
-            '  Fonts: ${fonts.map((f) => f.name).join(', ')}',
+            '  Fonts: ${fonts.map((NotoFont f) => f.name).join(', ')}',
           );
           rethrow;
         }

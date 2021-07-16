@@ -26,6 +26,7 @@ import 'package:test_core/src/runner/reporter.dart'
 import 'package:test_api/src/backend/runtime.dart';
 import 'package:test_core/src/executable.dart'
     as test;
+import 'package:watcher/src/watch_event.dart';
 import 'package:web_test_utils/goldens.dart';
 
 import 'browser.dart';
@@ -80,7 +81,7 @@ BrowserEnvironment _createBrowserEnvironment(String browserName) {
 }
 
 /// Runs tests.
-class TestCommand extends Command<bool> with ArgUtils {
+class TestCommand extends Command<bool> with ArgUtils<bool> {
   TestCommand() {
     argParser
       ..addFlag(
@@ -201,7 +202,7 @@ class TestCommand extends Command<bool> with ArgUtils {
       await PipelineWatcher(
           dir: dir.absolute,
           pipeline: testPipeline,
-          ignore: (event) {
+          ignore: (WatchEvent event) {
             // Ignore font files that are copied whenever tests run.
             if (event.path.endsWith('.ttf')) {
               return true;
@@ -331,7 +332,7 @@ class TestCommand extends Command<bool> with ArgUtils {
   List<String> get targets => argResults!.rest;
 
   /// The target test files to run.
-  List<FilePath> get targetFiles => targets.map((t) => FilePath.fromCwd(t)).toList();
+  List<FilePath> get targetFiles => targets.map((String t) => FilePath.fromCwd(t)).toList();
 
   /// Whether all tests should run.
   bool get runAllTests => targets.isEmpty;
@@ -560,7 +561,7 @@ class TestCommand extends Command<bool> with ArgUtils {
         .map((FilePath f) => TestBuildInput(f, forCanvasKit: forCanvasKit))
         .toList();
 
-    final results = _pool.forEach(
+    final Stream<bool> results = _pool.forEach(
       buildInputs,
       _buildTest,
     );
@@ -589,7 +590,7 @@ class TestCommand extends Command<bool> with ArgUtils {
   ///
   /// Later the extra files will be deleted in [_cleanupExtraFilesUnderTestDir].
   Future<bool> _buildTest(TestBuildInput input) async {
-    String targetFileName = path.join(
+    final String targetFileName = path.join(
       environment.webUiBuildDir.path,
       '${input.path.relativeToWebUi}.browser_test.dart.js',
     );
@@ -602,7 +603,7 @@ class TestCommand extends Command<bool> with ArgUtils {
       directoryToTarget.createSync(recursive: true);
     }
 
-    List<String> arguments = <String>[
+    final List<String> arguments = <String>[
       '--no-minify',
       '--disable-inlining',
       '--enable-asserts',
@@ -659,7 +660,7 @@ class TestCommand extends Command<bool> with ArgUtils {
       '--precompiled=${environment.webUiBuildDir.path}',
       '--configuration=$configurationFilePath',
       '--',
-      ...testFiles.map((f) => f.relativeToWebUi).toList(),
+      ...testFiles.map((FilePath f) => f.relativeToWebUi).toList(),
     ];
 
     if (expectFailure) {
