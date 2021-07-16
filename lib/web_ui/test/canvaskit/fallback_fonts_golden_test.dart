@@ -56,24 +56,6 @@ void testMain() {
     });
 
     test('will download Noto Naskh Arabic if Arabic text is added', () async {
-      final Completer<void> fontChangeCompleter = Completer<void>();
-      // Intercept the system font change message.
-      ui.window.onPlatformMessage = (String name, ByteData? data,
-          ui.PlatformMessageResponseCallback? callback) {
-        if (name == 'flutter/system') {
-          const JSONMessageCodec codec = JSONMessageCodec();
-          final dynamic message = codec.decodeMessage(data);
-          if (message is Map) {
-            if (message['type'] == 'fontsChange') {
-              fontChangeCompleter.complete();
-            }
-          }
-        }
-        if (savedCallback != null) {
-          savedCallback!(name, data, callback);
-        }
-      };
-
       TestDownloader.mockDownloads[
               'https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic+UI'] =
           '''
@@ -98,7 +80,7 @@ void testMain() {
 
       EnginePlatformDispatcher.instance.rasterizer!
           .debugRunPostFrameCallbacks();
-      await fontChangeCompleter.future;
+      await notoDownloadQueue.debugWhenIdle();
 
       expect(FontFallbackData.instance.globalFontFallbacks,
           contains('Noto Naskh Arabic UI 0'));
@@ -125,24 +107,6 @@ void testMain() {
 
     test('will put the Noto Emoji font before other fallback fonts in the list',
         () async {
-      Completer<void> fontChangeCompleter = Completer<void>();
-      // Intercept the system font change message.
-      ui.window.onPlatformMessage = (String name, ByteData? data,
-          ui.PlatformMessageResponseCallback? callback) {
-        if (name == 'flutter/system') {
-          const JSONMessageCodec codec = JSONMessageCodec();
-          final dynamic message = codec.decodeMessage(data);
-          if (message is Map) {
-            if (message['type'] == 'fontsChange') {
-              fontChangeCompleter.complete();
-            }
-          }
-        }
-        if (savedCallback != null) {
-          savedCallback!(name, data, callback);
-        }
-      };
-
       TestDownloader.mockDownloads[
               'https://fonts.googleapis.com/css2?family=Noto+Color+Emoji+Compat'] =
           '''
@@ -176,7 +140,7 @@ void testMain() {
 
       EnginePlatformDispatcher.instance.rasterizer!
           .debugRunPostFrameCallbacks();
-      await fontChangeCompleter.future;
+      await notoDownloadQueue.debugWhenIdle();
 
       expect(FontFallbackData.instance.globalFontFallbacks,
           <String>['Roboto', 'Noto Naskh Arabic UI 0']);
@@ -190,27 +154,9 @@ void testMain() {
       final CkParagraph paragraph = pb.build();
       paragraph.layout(ui.ParagraphConstraints(width: 1000));
 
-      fontChangeCompleter = Completer<void>();
-      // Intercept the system font change message.
-      ui.window.onPlatformMessage = (String name, ByteData? data,
-          ui.PlatformMessageResponseCallback? callback) {
-        if (name == 'flutter/system') {
-          const JSONMessageCodec codec = JSONMessageCodec();
-          final dynamic message = codec.decodeMessage(data);
-          if (message is Map) {
-            if (message['type'] == 'fontsChange') {
-              fontChangeCompleter.complete();
-            }
-          }
-        }
-        if (savedCallback != null) {
-          savedCallback!(name, data, callback);
-        }
-      };
-
       EnginePlatformDispatcher.instance.rasterizer!
           .debugRunPostFrameCallbacks();
-      await fontChangeCompleter.future;
+      await notoDownloadQueue.debugWhenIdle();
 
       expect(FontFallbackData.instance.globalFontFallbacks, <String>[
         'Roboto',
@@ -221,24 +167,6 @@ void testMain() {
 
     test('will download Noto Emojis and Noto Symbols if no matching Noto Font',
         () async {
-      final Completer<void> fontChangeCompleter = Completer<void>();
-      // Intercept the system font change message.
-      ui.window.onPlatformMessage = (String name, ByteData? data,
-          ui.PlatformMessageResponseCallback? callback) {
-        if (name == 'flutter/system') {
-          const JSONMessageCodec codec = JSONMessageCodec();
-          final dynamic message = codec.decodeMessage(data);
-          if (message is Map) {
-            if (message['type'] == 'fontsChange') {
-              fontChangeCompleter.complete();
-            }
-          }
-        }
-        if (savedCallback != null) {
-          savedCallback!(name, data, callback);
-        }
-      };
-
       TestDownloader.mockDownloads[
               'https://fonts.googleapis.com/css2?family=Noto+Color+Emoji+Compat'] =
           '''
@@ -259,7 +187,7 @@ void testMain() {
 
       EnginePlatformDispatcher.instance.rasterizer!
           .debugRunPostFrameCallbacks();
-      await fontChangeCompleter.future;
+      await notoDownloadQueue.debugWhenIdle();
 
       expect(FontFallbackData.instance.globalFontFallbacks,
           contains('Noto Color Emoji Compat 0'));
