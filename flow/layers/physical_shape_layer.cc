@@ -135,7 +135,7 @@ SkRect PhysicalShapeLayer::ComputeShadowBounds(const SkPath& path,
   SkRect shadow_bounds(path.getBounds());
   SkShadowUtils::GetLocalBounds(
       ctm, path, SkPoint3::Make(0, 0, dpr * elevation),
-      SkPoint3::Make(0, -1, 0), kLightRadius / kLightHeight,
+      SkPoint3::Make(0, -1, 1), kLightRadius / kLightHeight,
       SkShadowFlags::kDirectionalLight_ShadowFlag, &shadow_bounds);
   return shadow_bounds;
 }
@@ -159,7 +159,7 @@ void PhysicalShapeLayer::DrawShadow(SkCanvas* canvas,
   SkShadowUtils::ComputeTonalColors(inAmbient, inSpot, &ambientColor,
                                     &spotColor);
   SkShadowUtils::DrawShadow(canvas, path, SkPoint3::Make(0, 0, dpr * elevation),
-                            SkPoint3::Make(0, -1, 0),
+                            SkPoint3::Make(0, -1, 1),
                             kLightRadius / kLightHeight, ambientColor,
                             spotColor, flags);
 }
