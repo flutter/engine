@@ -6,9 +6,9 @@ import 'dart:html' as html;
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:ui/src/engine.dart' show domRenderer;
 import 'package:ui/ui.dart' as ui;
 
+import '../dom_renderer.dart';
 import '../engine_canvas.dart';
 import '../frame_reference.dart';
 import '../picture.dart';
@@ -596,7 +596,7 @@ class PersistedPicture extends PersistedLeafSurface {
 
     _computeOptimalCullRect(oldSurface);
     if (identical(picture, oldSurface.picture)) {
-      bool densityChanged = (_canvas is BitmapCanvas &&
+      final bool densityChanged = (_canvas is BitmapCanvas &&
           _density != (_canvas as BitmapCanvas).density);
 
       // The picture is the same. Attempt to avoid repaint.
@@ -707,8 +707,8 @@ double _computePixelDensity(Matrix4? transform, double width, double height) {
   maxX = math.max(maxX, xp);
   minY = math.min(minY, yp);
   maxY = math.max(maxY, yp);
-  double scaleX = (maxX - minX) / width;
-  double scaleY = (maxY - minY) / height;
+  final double scaleX = (maxX - minX) / width;
+  final double scaleY = (maxY - minY) / height;
   double scale = math.min(scaleX, scaleY);
   // kEpsilon guards against divide by zero below.
   if (scale < kEpsilon || scale == 1) {

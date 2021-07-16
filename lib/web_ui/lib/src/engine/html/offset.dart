@@ -4,9 +4,9 @@
 
 import 'dart:html' as html;
 
-import 'package:ui/src/engine.dart' show DomRenderer;
 import 'package:ui/ui.dart' as ui;
 
+import '../dom_renderer.dart';
 import '../vector_math.dart';
 import 'surface.dart';
 
@@ -41,7 +41,7 @@ class PersistedOffset extends PersistedContainerSurface
 
   @override
   html.Element createElement() {
-    html.Element element = html.document.createElement('flt-offset');
+    final html.Element element = html.document.createElement('flt-offset');
     DomRenderer.setElementStyle(element, 'position', 'absolute');
     DomRenderer.setElementStyle(element, 'transform-origin', '0 0 0');
     return element;

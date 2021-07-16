@@ -4,10 +4,10 @@
 
 import 'dart:html' as html;
 
-import 'package:ui/src/engine.dart' show DomRenderer;
 import 'package:ui/ui.dart' as ui;
 
 import '../browser_detection.dart';
+import '../dom_renderer.dart';
 import '../util.dart';
 import '../vector_math.dart';
 import 'shaders/shader.dart';
@@ -84,7 +84,7 @@ class PersistedBackdropFilter extends PersistedContainerSurface
     // Therefore we need to use parent clip element bounds for
     // backdrop boundary.
     final double dpr = ui.window.devicePixelRatio;
-    ui.Rect rect = transformRect(_invertedTransform, ui.Rect.fromLTRB(0, 0,
+    final ui.Rect rect = transformRect(_invertedTransform, ui.Rect.fromLTRB(0, 0,
         ui.window.physicalSize.width * dpr,
         ui.window.physicalSize.height * dpr));
     double left = rect.left;

@@ -6,11 +6,13 @@ import 'dart:html' as html;
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:ui/src/engine.dart' show domRenderer, EnginePlatformDispatcher, registerHotRestartListener;
 import 'package:ui/ui.dart' as ui;
 
+import '../../engine.dart'  show registerHotRestartListener;
 import '../alarm_clock.dart';
 import '../browser_detection.dart';
+import '../dom_renderer.dart';
+import '../platform_dispatcher.dart';
 import '../util.dart';
 import '../vector_math.dart';
 import 'checkable.dart';
@@ -879,7 +881,7 @@ class SemanticsObject {
     _updateRole(Role.labelAndValue, (hasLabel || hasValue) && !isTextField && !isVisualOnly);
     _updateRole(Role.textField, isTextField);
 
-    bool shouldUseTappableRole =
+    final bool shouldUseTappableRole =
       (hasAction(ui.SemanticsAction.tap) || hasFlag(ui.SemanticsFlag.isButton)) &&
       // Text fields manage their own focus/tap interactions. We don't need the
       // tappable role manager. It only confuses AT.

@@ -4,9 +4,9 @@
 
 import 'dart:typed_data';
 
-import 'package:ui/src/engine.dart' show EngineColorFilter;
 import 'package:ui/ui.dart' as ui;
 
+import '../color_filter.dart';
 import '../util.dart';
 import 'canvaskit_api.dart';
 import 'image_filter.dart';
@@ -58,7 +58,7 @@ class ManagedSkColorFilter extends ManagedSkiaObject<SkColorFilter> {
 /// [ManagedSkiaObject] that manages a skia image filter.
 abstract class CkColorFilter
     implements
-        CkManagedSkImageFilterConvertible<SkImageFilter>,
+        CkManagedSkImageFilterConvertible,
         EngineColorFilter {
   const CkColorFilter();
 

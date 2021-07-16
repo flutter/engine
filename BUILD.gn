@@ -116,6 +116,11 @@ group("flutter") {
     ]
   }
 
+  if ((flutter_runtime_mode == "debug" || flutter_runtime_mode == "profile") &&
+      (is_ios || is_android)) {
+    public_deps += [ "//flutter/testing/scenario_app" ]
+  }
+
   # Compile all unittests targets if enabled.
   if (enable_unittests) {
     public_deps += [

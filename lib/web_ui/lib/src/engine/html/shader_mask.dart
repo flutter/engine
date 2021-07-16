@@ -4,10 +4,11 @@
 
 import 'dart:html' as html;
 
-import 'package:ui/src/engine.dart' show NullTreeSanitizer;
 import 'package:ui/ui.dart' as ui;
 
+import '../../engine.dart' show NullTreeSanitizer;
 import '../browser_detection.dart';
+import '../dom_renderer.dart';
 import 'bitmap_canvas.dart';
 import 'path_to_svg_clip.dart';
 import 'shaders/shader.dart';
@@ -57,6 +58,7 @@ class PersistedShaderMask extends PersistedContainerSurface
   @override
   void discard() {
     super.discard();
+    domRenderer.removeResource(_shaderElement);
     // Do not detach the child container from the root. It is permanently
     // attached. The elements are reused together and are detached from the DOM
     // together.
@@ -72,8 +74,8 @@ class PersistedShaderMask extends PersistedContainerSurface
 
   @override
   html.Element createElement() {
-    html.Element element = defaultCreateElement('flt-shader-mask');
-    html.Element container = html.Element.tag('flt-mask-interior');
+    final html.Element element = defaultCreateElement('flt-shader-mask');
+    final html.Element container = html.Element.tag('flt-mask-interior');
     container.style..position = 'absolute';
     _childContainer = container;
     element.append(_childContainer!);
@@ -82,7 +84,7 @@ class PersistedShaderMask extends PersistedContainerSurface
 
   @override
   void apply() {
-    _shaderElement?.remove();
+    domRenderer.removeResource(_shaderElement);
     _shaderElement = null;
     if (shader is ui.Gradient) {
       rootElement!.style
@@ -106,7 +108,7 @@ class PersistedShaderMask extends PersistedContainerSurface
 
   void _applyGradientShader() {
     if (shader is EngineGradient) {
-      EngineGradient gradientShader = shader as EngineGradient;
+      final EngineGradient gradientShader = shader as EngineGradient;
       final String imageUrl =
           gradientShader.createImageBitmap(maskRect, 1, true) as String;
       ui.BlendMode blendModeTemp = blendMode;
@@ -153,7 +155,7 @@ class PersistedShaderMask extends PersistedContainerSurface
           break;
       }
 
-      String code = svgMaskFilterFromImageAndBlendMode(
+      final String code = svgMaskFilterFromImageAndBlendMode(
           imageUrl, blendModeTemp, maskRect.width, maskRect.height)!;
 
       _shaderElement =
@@ -163,7 +165,7 @@ class PersistedShaderMask extends PersistedContainerSurface
       } else {
         rootElement!.style.filter = 'url(#_fmf${_maskFilterIdCounter}';
       }
-      rootElement!.append(_shaderElement!);
+      domRenderer.addResource(_shaderElement!);
     }
   }
 

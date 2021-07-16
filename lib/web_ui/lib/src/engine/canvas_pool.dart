@@ -8,10 +8,10 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:meta/meta.dart';
-import 'package:ui/src/engine.dart' show DomRenderer, EnginePlatformDispatcher, window;
 import 'package:ui/ui.dart' as ui;
 
 import 'browser_detection.dart';
+import 'dom_renderer.dart';
 import 'engine_canvas.dart';
 import 'html/bitmap_canvas.dart';
 import 'html/painting.dart';
@@ -22,10 +22,12 @@ import 'html/path/path_ref.dart';
 import 'html/path/path_utils.dart';
 import 'html/shaders/image_shader.dart';
 import 'html/shaders/shader.dart';
+import 'platform_dispatcher.dart';
 import 'rrect_renderer.dart';
 import 'shadow.dart';
 import 'util.dart';
 import 'vector_math.dart';
+import 'window.dart';
 
 /// Renders picture to a CanvasElement by allocating and caching 0 or more
 /// canvas(s) for [BitmapCanvas].
@@ -94,7 +96,7 @@ class CanvasPool extends _SaveStackTracking {
     if (_canvas != null) {
       _restoreContextSave();
       _contextHandle!.reset();
-      _activeCanvasList ??= [];
+      _activeCanvasList ??= <html.CanvasElement>[];
       _activeCanvasList!.add(_canvas!);
       _canvas = null;
       _context = null;
@@ -211,7 +213,7 @@ class CanvasPool extends _SaveStackTracking {
 
     if (_canvas != null) {
       // Restore to the state where we have only applied the scaling.
-      html.CanvasRenderingContext2D? ctx = _context;
+      final html.CanvasRenderingContext2D? ctx = _context;
       if (ctx != null) {
         try {
           ctx.font = '';
@@ -236,11 +238,11 @@ class CanvasPool extends _SaveStackTracking {
       Matrix4 transform, List<SaveClipEntry>? clipStack) {
     final html.CanvasRenderingContext2D ctx = context;
     if (clipStack != null) {
-      for (int clipCount = clipStack.length;
+      for (final int clipCount = clipStack.length;
           clipDepth < clipCount;
           clipDepth++) {
-        SaveClipEntry clipEntry = clipStack[clipDepth];
-        Matrix4 clipTimeTransform = clipEntry.currentTransform;
+        final SaveClipEntry clipEntry = clipStack[clipDepth];
+        final Matrix4 clipTimeTransform = clipEntry.currentTransform;
         // If transform for entry recording change since last element, update.
         // Comparing only matrix3 elements since Canvas API restricted.
         if (clipTimeTransform[0] != prevTransform[0] ||
@@ -293,13 +295,12 @@ class CanvasPool extends _SaveStackTracking {
 
   void _replayClipStack() {
     // Replay save/clip stack on this canvas now.
-    html.CanvasRenderingContext2D ctx = context;
+    final html.CanvasRenderingContext2D ctx = context;
     int clipDepth = 0;
     Matrix4 prevTransform = Matrix4.identity();
-    for (int saveStackIndex = 0, len = _saveStack.length;
-        saveStackIndex < len;
-        saveStackIndex++) {
-      SaveStackEntry saveEntry = _saveStack[saveStackIndex];
+    final int len = _saveStack.length;
+    for (int saveStackIndex = 0; saveStackIndex < len; saveStackIndex++) {
+      final SaveStackEntry saveEntry = _saveStack[saveStackIndex];
       clipDepth = _replaySingleSaveEntry(
           clipDepth, prevTransform, saveEntry.transform, saveEntry.clipStack);
       prevTransform = saveEntry.transform;
@@ -315,7 +316,7 @@ class CanvasPool extends _SaveStackTracking {
     if (_canvas != null) {
       _restoreContextSave();
       _contextHandle!.reset();
-      _activeCanvasList ??= [];
+      _activeCanvasList ??= <html.CanvasElement>[];
       _activeCanvasList!.add(_canvas!);
       _context = null;
       _contextHandle = null;
@@ -351,7 +352,7 @@ class CanvasPool extends _SaveStackTracking {
   /// coordinate system, and the pixel ratio is applied such that CSS pixels are
   /// translated to bitmap pixels.
   void _initializeViewport(bool clearCanvas) {
-    html.CanvasRenderingContext2D ctx = context;
+    final html.CanvasRenderingContext2D ctx = context;
     // Save the canvas state with top-level transforms so we can undo
     // any clips later when we reuse the canvas.
     ctx.save();
@@ -504,7 +505,7 @@ class CanvasPool extends _SaveStackTracking {
   void clipPath(ui.Path path) {
     super.clipPath(path);
     if (_canvas != null) {
-      html.CanvasRenderingContext2D ctx = context;
+      final html.CanvasRenderingContext2D ctx = context;
       _runPath(ctx, path as SurfacePath);
       if (path.fillType == ui.PathFillType.nonZero) {
         ctx.clip();
@@ -515,7 +516,7 @@ class CanvasPool extends _SaveStackTracking {
   }
 
   void drawColor(ui.Color color, ui.BlendMode blendMode) {
-    html.CanvasRenderingContext2D ctx = context;
+    final html.CanvasRenderingContext2D ctx = context;
     contextHandle.blendMode = blendMode;
     contextHandle.fillStyle = colorToCssString(color);
     contextHandle.strokeStyle = '';
@@ -529,7 +530,7 @@ class CanvasPool extends _SaveStackTracking {
 
   // Fill a virtually infinite rect with the color.
   void fill() {
-    html.CanvasRenderingContext2D ctx = context;
+    final html.CanvasRenderingContext2D ctx = context;
     ctx.beginPath();
     // We can't use (0, 0, width, height) because the current transform can
     // cause it to not fill the entire clip.
@@ -537,7 +538,7 @@ class CanvasPool extends _SaveStackTracking {
   }
 
   void strokeLine(ui.Offset p1, ui.Offset p2) {
-    html.CanvasRenderingContext2D ctx = context;
+    final html.CanvasRenderingContext2D ctx = context;
     ctx.beginPath();
     final ui.Rect? shaderBounds = contextHandle._shaderBounds;
     if (shaderBounds == null) {
@@ -551,11 +552,11 @@ class CanvasPool extends _SaveStackTracking {
   }
 
   void drawPoints(ui.PointMode pointMode, Float32List points, double radius) {
-    html.CanvasRenderingContext2D ctx = context;
+    final html.CanvasRenderingContext2D ctx = context;
     final int len = points.length;
     final ui.Rect? shaderBounds = contextHandle._shaderBounds;
-    double offsetX = shaderBounds == null ? 0 : -shaderBounds.left;
-    double offsetY = shaderBounds == null ? 0 : -shaderBounds.top;
+    final double offsetX = shaderBounds == null ? 0 : -shaderBounds.left;
+    final double offsetY = shaderBounds == null ? 0 : -shaderBounds.top;
     switch (pointMode) {
       case ui.PointMode.points:
         for (int i = 0; i < len; i += 2) {
@@ -610,8 +611,8 @@ class CanvasPool extends _SaveStackTracking {
           break;
         case SPath.kConicVerb:
           final double w = iter.conicWeight;
-          Conic conic = Conic(p[0], p[1], p[2], p[3], p[4], p[5], w);
-          List<ui.Offset> points = conic.toQuads();
+          final Conic conic = Conic(p[0], p[1], p[2], p[3], p[4], p[5], w);
+          final List<ui.Offset> points = conic.toQuads();
           final int len = points.length;
           for (int i = 1; i < len; i += 2) {
             final double p1x = points[i].dx;
@@ -657,8 +658,8 @@ class CanvasPool extends _SaveStackTracking {
           break;
         case SPath.kConicVerb:
           final double w = iter.conicWeight;
-          Conic conic = Conic(p[0], p[1], p[2], p[3], p[4], p[5], w);
-          List<ui.Offset> points = conic.toQuads();
+          final Conic conic = Conic(p[0], p[1], p[2], p[3], p[4], p[5], w);
+          final List<ui.Offset> points = conic.toQuads();
           final int len = points.length;
           for (int i = 1; i < len; i += 2) {
             final double p1x = points[i].dx;
@@ -699,7 +700,7 @@ class CanvasPool extends _SaveStackTracking {
   }
 
   void drawDRRect(ui.RRect outer, ui.RRect inner, ui.PaintingStyle? style) {
-    RRectRenderer renderer = RRectToCanvasRenderer(context);
+    final RRectRenderer renderer = RRectToCanvasRenderer(context);
     final ui.Rect? shaderBounds = contextHandle._shaderBounds;
     if (shaderBounds == null) {
       renderer.render(outer);
@@ -714,7 +715,7 @@ class CanvasPool extends _SaveStackTracking {
 
   void drawOval(ui.Rect rect, ui.PaintingStyle? style) {
     context.beginPath();
-    ui.Rect? shaderBounds = contextHandle._shaderBounds;
+    final ui.Rect? shaderBounds = contextHandle._shaderBounds;
     final double cx = shaderBounds == null ? rect.center.dx :
         rect.center.dx - shaderBounds.left;
     final double cy = shaderBounds == null ? rect.center.dy :
@@ -1011,8 +1012,8 @@ class ContextStateHandle {
         final Float32List tempVector = Float32List(2);
         tempVector[0] = kOutsideTheBoundsOffset * window.devicePixelRatio;
         _canvasPool.currentTransform.transform2(tempVector);
-        double shadowOffsetX = tempVector[0];
-        double shadowOffsetY = tempVector[1];
+        final double shadowOffsetX = tempVector[0];
+        final double shadowOffsetY = tempVector[1];
 
         tempVector[0] = tempVector[1] = 0;
         _canvasPool.currentTransform.transform2(tempVector);

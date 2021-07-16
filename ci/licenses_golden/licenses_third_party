@@ -1,4 +1,4 @@
-Signature: 3819f11e399597681e8b8b7e58e60404
+Signature: 3f786bb42d40dba410a7ea283de8ae32
 
 UNUSED LICENSES:
 
@@ -9932,6 +9932,8 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/compiler_timings.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/range.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/relocation_test.cc
 FILE: ../../../third_party/dart/runtime/vm/heap/safepoint_test.cc
+FILE: ../../../third_party/dart/runtime/vm/object_graph_copy.cc
+FILE: ../../../third_party/dart/runtime/vm/object_graph_copy.h
 FILE: ../../../third_party/dart/runtime/vm/pending_deopts.cc
 FILE: ../../../third_party/dart/runtime/vm/pending_deopts.h
 FILE: ../../../third_party/dart/runtime/vm/virtual_memory_compressed.cc

@@ -4,11 +4,12 @@
 
 import 'dart:html' as html;
 
-import 'package:ui/src/engine.dart' show window, EnginePlatformDispatcher;
 import 'package:ui/ui.dart' as ui;
 
 import '../browser_detection.dart';
+import '../platform_dispatcher.dart';
 import '../util.dart';
+import '../window.dart';
 import 'canvas.dart';
 import 'canvaskit_api.dart';
 import 'initialization.dart';
@@ -116,7 +117,7 @@ class Surface {
     if (surface.context != null) {
       canvasKit.setCurrentContext(surface.context!);
     }
-    SubmitCallback submitCallback =
+    final SubmitCallback submitCallback =
         (SurfaceFrame surfaceFrame, CkCanvas canvas) {
       return _presentSurface();
     };
@@ -341,7 +342,7 @@ class Surface {
           htmlCanvas!, 'Failed to initialize WebGL context');
     } else {
       canvasKit.setCurrentContext(_glContext!);
-      SkSurface? skSurface = canvasKit.MakeOnScreenGLSurface(
+      final SkSurface? skSurface = canvasKit.MakeOnScreenGLSurface(
         _grContext!,
         size.width.ceil(),
         size.height.ceil(),

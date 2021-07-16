@@ -95,7 +95,7 @@ void testMain() async {
     final Path path = Path();
     path.addRRect(RRect.fromRectAndRadius(
         Rect.fromLTRB(0, 0, 400, 400), Radius.circular(2)));
-    PhysicalShapeEngineLayer oldLayer = builder.pushPhysicalShape(
+    final PhysicalShapeEngineLayer oldLayer = builder.pushPhysicalShape(
         path: path, color: Color(0xFFFFFFFF), elevation: 0);
     final Picture circles1 = _drawTestPictureWithImage(
         ColorFilter.mode(Color(0x3C4043), BlendMode.overlay));
@@ -176,9 +176,9 @@ Picture _drawBackground() {
 }
 
 HtmlImage createTestImage({int width = 200, int height = 150}) {
-  html.CanvasElement canvas =
+  final html.CanvasElement canvas =
       new html.CanvasElement(width: width, height: height);
-  html.CanvasRenderingContext2D ctx = canvas.context2D;
+  final html.CanvasRenderingContext2D ctx = canvas.context2D;
   ctx.fillStyle = '#E04040';
   ctx.fillRect(0, 0, width / 3, height);
   ctx.fill();
@@ -188,7 +188,7 @@ HtmlImage createTestImage({int width = 200, int height = 150}) {
   ctx.fillStyle = '#2040E0';
   ctx.fillRect(2 * width / 3, 0, width / 3, height);
   ctx.fill();
-  html.ImageElement imageElement = html.ImageElement();
+  final html.ImageElement imageElement = html.ImageElement();
   imageElement.src = js_util.callMethod(canvas, 'toDataURL', <dynamic>[]);
   return HtmlImage(imageElement, width, height);
 }

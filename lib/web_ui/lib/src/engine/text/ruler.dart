@@ -6,9 +6,9 @@ import 'dart:html' as html;
 
 import 'package:meta/meta.dart';
 import 'package:ui/ui.dart' as ui;
-import 'package:ui/src/engine.dart' show domRenderer, DomRenderer;
 
 import '../browser_detection.dart';
+import '../dom_renderer.dart';
 import '../util.dart';
 import 'measurement.dart';
 import 'paragraph.dart';
@@ -809,7 +809,7 @@ class ParagraphRuler {
     if (nodes.isEmpty) {
       return;
     }
-    final List<html.Node> childNodes = [];
+    final List<html.Node> childNodes = <html.Node>[];
     for (html.Node node in nodes) {
       if (node.nodeType == html.Node.TEXT_NODE) {
         textNodes.add(node);
@@ -823,7 +823,7 @@ class ParagraphRuler {
     int position = 0;
     final List<html.Node> stack = nodes.reversed.toList();
     while (true) {
-      var node = stack.removeLast();
+      final html.Node node = stack.removeLast();
       stack.addAll(node.childNodes.reversed);
       if (node == endNode) {
         break;
