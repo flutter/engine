@@ -10,7 +10,7 @@ namespace flutter_runner {
 
 void FocusDelegate::WatchLoop(std::function<void(bool)> callback) {
   if (watch_loop_) {
-    FML_LOG(ERROR) << "FocusDelegate::WatchLoop() cannot be called twice.";
+    FML_LOG(ERROR) << "FocusDelegate::WatchLoop() must be called once.";
     return;
   }
 
