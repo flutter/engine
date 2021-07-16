@@ -35,6 +35,7 @@ class PersistedColorFilter extends PersistedContainerSurface
   void adoptElements(PersistedColorFilter oldSurface) {
     super.adoptElements(oldSurface);
     _childContainer = oldSurface._childContainer;
+    _filterElement = oldSurface._filterElement;
     oldSurface._childContainer = null;
   }
 
