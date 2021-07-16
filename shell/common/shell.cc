@@ -1362,6 +1362,19 @@ void Shell::ReportTimings() {
   });
 }
 
+std::unique_ptr<Surface> Shell::CreateSnapshotSurface() {
+  FML_DCHECK(is_setup_);
+  FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
+  // Threading: This is safe because the dtor resets the rasterizer before
+  // the platform_view. This method is private to the rasterizer delegate
+  // and cannot be called without a valid rasterizer.
+  // See also: PlatformView::NotifyCreated
+  if (!platform_view_) {
+    return nullptr;
+  }
+  return platform_view_->CreateRasterSnapshotSurface();
+}
+
 size_t Shell::UnreportedFramesCount() const {
   // Check that this is running on the raster thread to avoid race conditions.
   FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());

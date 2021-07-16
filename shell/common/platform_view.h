@@ -62,7 +62,7 @@ class PlatformView {
     ///             Metal, Vulkan) specific. This is usually a sign to the
     ///             rasterizer to set up and begin rendering to that surface.
     ///
-    /// @param[in]  surface  The surface
+    /// @param[in]  surface           The surface
     ///
     virtual void OnPlatformViewCreated(std::unique_ptr<Surface> surface) = 0;
 
@@ -796,6 +796,22 @@ class PlatformView {
       std::unique_ptr<AssetResolver> updated_asset_resolver,
       AssetResolver::AssetResolverType type);
 
+  //--------------------------------------------------------------------------
+  /// @brief      Creates a Surface suitable for raster snapshotting. The
+  ///             rasterizer will request this surface if no on screen surface
+  ///             is currently available and a snapshot has been requested
+  ///             by the framework, e.g. if `Scene.toImage` or `Picture.toImage`
+  ///             are called while the application is in the background.
+  ///
+  ///             Not all backends support this kind of surface usage, and the
+  ///             default implementation returns nullptr. Platforms should
+  ///             override this if they can support GPU operations in the
+  ///             background and support GPU resource context usage.
+  ///
+  ///             This is the only public method of this interface called on the
+  ///             raster task runner.
+  virtual std::unique_ptr<Surface> CreateRasterSnapshotSurface();
+
  protected:
   PlatformView::Delegate& delegate_;
   const TaskRunners task_runners_;
@@ -804,7 +820,7 @@ class PlatformView {
   SkISize size_;
   fml::WeakPtrFactory<PlatformView> weak_factory_;
 
-  // Unlike all other methods on the platform view, this is called on the
+  // This and CreateRasterSnapshotSurface are the only methods called on the
   // raster task runner.
   virtual std::unique_ptr<Surface> CreateRenderingSurface();
 

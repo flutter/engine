@@ -5,21 +5,14 @@
 import("//flutter/build/dart/rules.gni")
 import("//flutter/testing/rules/runtime_mode.gni")
 
-dart_snapshot("scenario_app_snapshot") {
+assert(is_android)
+
+dart_snapshot("android_background_image_snapshot") {
   main_dart = "lib/main.dart"
   package_config = ".dart_tool/package_config.json"
 }
 
 if (!is_aot) {
-  if (is_android) {
-    _flutter_assets_dir = "$root_out_dir/scenario_app/app/assets/flutter_assets"
-  } else if (is_ios) {
-    _flutter_assets_dir =
-        "$root_out_dir/scenario_app/Scenarios/App.framework/flutter_assets"
-  } else {
-    assert(false)
-  }
-
   copy("copy_jit_assets") {
     visibility = [ ":*" ]
     sources = [
@@ -27,23 +20,18 @@ if (!is_aot) {
       "$target_gen_dir/isolate_snapshot_instr",
       "$target_gen_dir/kernel_blob.bin",
     ]
-    outputs = [ "$_flutter_assets_dir/{{source_file_part}}" ]
-    deps = [ ":scenario_app_snapshot" ]
+    outputs = [ "$root_out_dir/android_background_image/app/assets/flutter_assets/{{source_file_part}}" ]
+    deps = [ ":android_background_image_snapshot" ]
   }
 }
 
-group("scenario_app") {
-  deps = [ ":scenario_app_snapshot" ]
+group("android_background_image") {
+  deps = [
+    ":android_background_image_snapshot",
+    "android",
+  ]
 
   if (!is_aot) {
     deps += [ ":copy_jit_assets" ]
-  }
-
-  if (is_android) {
-    deps += [ "android" ]
-  }
-
-  if (is_ios) {
-    deps += [ "ios" ]
   }
 }

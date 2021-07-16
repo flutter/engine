@@ -90,6 +90,16 @@ class Rasterizer final : public SnapshotDelegate {
     /// is critical that GPU operations are not processed.
     virtual std::shared_ptr<const fml::SyncSwitch> GetIsGpuDisabledSyncSwitch()
         const = 0;
+
+    /// Called by the Rasterizer if a snapshot is requested while no surface
+    /// is currently available, for example after a platform has torn down
+    /// the surface.
+    ///
+    /// For some rendering backends or some platforms, using a GPU surface for
+    /// snapshotting while in the background may not be possible or necessary.
+    /// In that case, this method must return nullptr and the rasterizer will
+    /// attempt to use a CPU based raster surface for snapshotting.
+    virtual std::unique_ptr<Surface> CreateSnapshotSurface() = 0;
   };
 
   //----------------------------------------------------------------------------
