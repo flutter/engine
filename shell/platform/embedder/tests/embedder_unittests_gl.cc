@@ -3634,17 +3634,19 @@ TEST_F(EmbedderTest, ExternalTextureGLRefreshedTooOften) {
 
   bool resolve_called = false;
 
-  EmbedderExternalTextureGL texture(1, [&](int64_t, size_t, size_t) {
-    resolve_called = true;
-    auto res = std::make_unique<FlutterOpenGLTexture>();
-    res->target = GR_GL_TEXTURE_2D;
-    res->name = name;
-    res->format = GR_GL_RGBA8;
-    res->user_data = nullptr;
-    res->destruction_callback = [](void*) {};
-    res->width = res->height = 100;
-    return res;
-  });
+  EmbedderExternalTextureGL::ExternalTextureCallback callback(
+      [&](int64_t, size_t, size_t) {
+        resolve_called = true;
+        auto res = std::make_unique<FlutterOpenGLTexture>();
+        res->target = GR_GL_TEXTURE_2D;
+        res->name = name;
+        res->format = GR_GL_RGBA8;
+        res->user_data = nullptr;
+        res->destruction_callback = [](void*) {};
+        res->width = res->height = 100;
+        return res;
+      });
+  EmbedderExternalTextureGL texture(1, callback);
 
   auto skia_surface = surface.GetOnscreenSurface();
   auto canvas = skia_surface->getCanvas();

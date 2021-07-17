@@ -445,7 +445,7 @@ TEST_F(EmbedderTest, ExternalTextureMetalRefreshedTooOften) {
 
   bool resolve_called = false;
 
-  EmbedderExternalTextureMetal texture(1, [&](int64_t id, size_t, size_t) {
+  EmbedderExternalTextureMetal::ExternalTextureCallback callback([&](int64_t id, size_t, size_t) {
     resolve_called = true;
     auto res = std::make_unique<FlutterMetalExternalTexture>();
     res->struct_size = sizeof(FlutterMetalExternalTexture);
@@ -455,6 +455,7 @@ TEST_F(EmbedderTest, ExternalTextureMetalRefreshedTooOften) {
     res->num_textures = 1;
     return res;
   });
+  EmbedderExternalTextureMetal texture(1, callback);
 
   auto surface = TestMetalSurface::Create(*metal_context, SkISize::Make(100, 100));
   auto skia_surface = surface->GetSurface();
