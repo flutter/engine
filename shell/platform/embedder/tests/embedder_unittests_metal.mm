@@ -449,7 +449,7 @@ TEST_F(EmbedderTest, ExternalTextureMetalRefreshedTooOften) {
     resolve_called = true;
     auto res = std::make_unique<FlutterMetalExternalTexture>();
     res->struct_size = sizeof(FlutterMetalExternalTexture);
-    res->width = res->height = 0;
+    res->width = res->height = 100;
     res->pixel_format = FlutterMetalExternalTexturePixelFormat::kRGBA;
     res->textures = textures.data();
     res->num_textures = 1;
