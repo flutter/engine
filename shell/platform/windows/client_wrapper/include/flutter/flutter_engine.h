@@ -62,6 +62,9 @@ class FlutterEngine : public PluginRegistry {
   FlutterDesktopPluginRegistrarRef GetRegistrarForPlugin(
       const std::string& plugin_name) override;
 
+  // Returns the texture registrar for this engine.
+  FlutterDesktopTextureRegistrarRef GetTextureRegistrar();
+
   // Returns the messenger to use for creating channels to communicate with the
   // Flutter engine.
   //
