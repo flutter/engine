@@ -187,8 +187,7 @@ FlutterDesktopEngineGetMessenger(FlutterDesktopEngineRef engine);
 
 // Returns the texture registrar associated with the engine.
 FLUTTER_EXPORT FlutterDesktopTextureRegistrarRef
-FlutterDesktopEngineGetTextureRegistrar(
-    FlutterDesktopTextureRegistrarRef texture_registrar);
+FlutterDesktopEngineGetTextureRegistrar(FlutterDesktopEngineRef engine);
 
 // ========== View ==========
 
