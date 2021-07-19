@@ -1640,6 +1640,10 @@ TEST_F(ParagraphTest,
 
   EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(5, 10).position, 0ull);
   EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(25, 10).position, 2ull);
+  EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(81, 10).position, 5ull);
+  EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(82, 10).position, 5ull);
+  EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(83, 10).position, 5ull);
+  EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(84, 10).position, 6ull);
   EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(85, 10).position, 6ull);
   EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(86, 10).position, 6ull);
   EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(87, 10).position, 6ull);
