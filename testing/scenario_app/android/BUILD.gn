@@ -30,10 +30,7 @@ gradle_task("android_lint") {
   task = "lint"
   gradlew_dir = rebase_path(".")
   sources = _android_sources
-  outputs = [
-    "$root_out_dir/scenario_app/build/reports/lint-results.html",
-    "$root_out_dir/scenario_app/build/reports/lint-results.xml",
-  ]
+  outputs = [ "$root_out_dir/scenario_app/build/reports" ]
   deps = [ "//flutter/testing/scenario_app:scenario_app_snapshot" ]
 }
 
