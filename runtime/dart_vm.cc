@@ -444,6 +444,7 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
     // Use a duration event so about:tracing will consider this event when
     // deciding the earliest event to use as time 0.
     if (settings_.engine_start_timestamp.count()) {
+      Dart_SetCurrentUserTag(Dart_NewUserTag("AppStartUp"));
       Dart_TimelineEvent(
           "FlutterEngineMainEnter",                  // label
           settings_.engine_start_timestamp.count(),  // timestamp0
