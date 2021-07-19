@@ -15,11 +15,9 @@ import '../picture.dart';
 import '../util.dart';
 import '../vector_math.dart';
 import 'bitmap_canvas.dart';
-import 'color_filter.dart';
 import 'debug_canvas_reuse_overlay.dart';
 import 'dom_canvas.dart';
 import 'path/path_metrics.dart';
-import 'shader_mask.dart';
 import 'surface.dart';
 import 'surface_stats.dart';
 

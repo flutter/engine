@@ -161,7 +161,6 @@ void testMain() {
 
   test('should add/remove global resource', () {
     final DomRenderer renderer = DomRenderer();
-    HostNode hostNode = renderer.glassPaneShadow!;
     final html.DivElement resource = html.DivElement();
     renderer.addResource(resource);
     final html.Element? resourceRoot = resource.parent;
