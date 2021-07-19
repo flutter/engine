@@ -52,13 +52,14 @@ TEST(FlutterProjectBundle, DartEntrypointArguments) {
   properties.assets_path = L"foo\\flutter_assets";
   properties.icu_data_path = L"foo\\icudtl.dat";
 
-  std::vector<const char*> test_arguments = { "arg1", "arg2" };
+  std::vector<const char*> test_arguments = {"arg1", "arg2"};
   properties.dart_entrypoint_argc = test_arguments.size();
   properties.dart_entrypoint_argv = test_arguments.data();
 
   FlutterProjectBundle project(properties);
 
-  std::vector<std::string> retrieved_arguments = project.dart_entrypoint_arguments();
+  std::vector<std::string> retrieved_arguments =
+      project.dart_entrypoint_arguments();
   EXPECT_EQ(retrieved_arguments.size(), 2U);
   EXPECT_EQ(retrieved_arguments[0], "arg1");
   EXPECT_EQ(retrieved_arguments[1], "arg2");

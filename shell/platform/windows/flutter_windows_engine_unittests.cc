@@ -20,7 +20,7 @@ std::unique_ptr<FlutterWindowsEngine> GetTestEngine() {
   properties.icu_data_path = L"C:\\foo\\icudtl.dat";
   properties.aot_library_path = L"C:\\foo\\aot.so";
 
-  std::vector<const char*> test_arguments = { "arg1", "arg2" };
+  std::vector<const char*> test_arguments = {"arg1", "arg2"};
   properties.dart_entrypoint_argc = test_arguments.size();
   properties.dart_entrypoint_argv = test_arguments.data();
 

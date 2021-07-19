@@ -45,7 +45,7 @@ TEST_F(DartProjectTest, ProjectWithCustomPaths) {
 TEST_F(DartProjectTest, DartEntrypointArguments) {
   DartProject project(L"test");
 
-  std::vector<std::string> test_arguments = { "arg1", "arg2", "arg3" };
+  std::vector<std::string> test_arguments = {"arg1", "arg2", "arg3"};
   project.set_dart_entrypoint_arguments(test_arguments);
 
   auto returned_arguments = project.dart_entrypoint_arguments();
