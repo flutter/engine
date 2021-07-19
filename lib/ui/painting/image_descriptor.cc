@@ -47,7 +47,7 @@ ImageDescriptor::ImageDescriptor(sk_sp<SkData> buffer,
       row_bytes_(row_bytes) {}
 
 ImageDescriptor::ImageDescriptor(sk_sp<SkData> buffer,
-                                 std::unique_ptr<ImageGenerator> generator)
+                                 std::shared_ptr<ImageGenerator> generator)
     : buffer_(std::move(buffer)),
       generator_(std::move(generator)),
       image_info_(CreateImageInfo()),
@@ -83,7 +83,7 @@ void ImageDescriptor::initEncoded(Dart_NativeArguments args) {
     return;
   }
 
-  std::unique_ptr<ImageGenerator> generator =
+  auto generator =
       registry->CreateCompatibleGenerator(immutable_buffer->data());
 
   if (!generator) {

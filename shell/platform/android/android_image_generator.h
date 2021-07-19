@@ -49,7 +49,7 @@ class AndroidImageGenerator : public ImageGenerator {
 
   static bool Register(JNIEnv* env);
 
-  static std::unique_ptr<ImageGenerator> MakeFromData(
+  static std::shared_ptr<ImageGenerator> MakeFromData(
       sk_sp<SkData> data,
       fml::RefPtr<fml::TaskRunner> task_runner);
 

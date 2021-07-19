@@ -158,19 +158,19 @@ bool AndroidImageGenerator::Register(JNIEnv* env) {
   return true;
 }
 
-std::unique_ptr<ImageGenerator> AndroidImageGenerator::MakeFromData(
+std::shared_ptr<ImageGenerator> AndroidImageGenerator::MakeFromData(
     sk_sp<SkData> data,
     fml::RefPtr<fml::TaskRunner> task_runner) {
-  auto* generator = new AndroidImageGenerator(std::move(data));
+  std::shared_ptr<AndroidImageGenerator> generator(
+      new AndroidImageGenerator(std::move(data)));
 
   fml::TaskRunner::RunNowOrPostTask(
       task_runner, [generator]() { generator->DecodeImage(); });
 
   if (generator->IsValidImageData()) {
-    return std::unique_ptr<AndroidImageGenerator>(generator);
+    return generator;
   }
 
-  delete generator;
   return nullptr;
 }
 
