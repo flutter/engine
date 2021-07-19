@@ -1,3 +1,10 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+#ifndef FLUTTER_SHELL_PLATFORM_ANDROID_ANDROID_IMAGE_GENERATOR_H_
+#define FLUTTER_SHELL_PLATFORM_ANDROID_ANDROID_IMAGE_GENERATOR_H_
+
 #include <jni.h>
 
 #include "flutter/fml/memory/ref_ptr.h"
@@ -8,10 +15,11 @@
 namespace flutter {
 
 class AndroidImageGenerator : public ImageGenerator {
+ private:
+  AndroidImageGenerator(sk_sp<SkData> buffer);
+
  public:
   ~AndroidImageGenerator();
-
-  AndroidImageGenerator(sk_sp<SkData> buffer);
 
   // |ImageGenerator|
   const SkImageInfo& GetInfo() override;
@@ -72,3 +80,5 @@ class AndroidImageGenerator : public ImageGenerator {
 };
 
 }  // namespace flutter
+
+#endif  // FLUTTER_SHELL_PLATFORM_ANDROID_ANDROID_IMAGE_GENERATOR_H_

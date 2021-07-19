@@ -433,6 +433,10 @@ public class FlutterJNI {
             (decoder, info, src) -> {
               // i.e. ARGB_8888
               decoder.setTargetColorSpace(ColorSpace.get(ColorSpace.Named.SRGB));
+              // TODO(bdero): Switch to ALLOCATOR_HARDWARE for devices that have
+              // `AndroidBitmap_getHardwareBuffer` (API 30+) available once Skia supports
+              // `SkImage::MakeFromAHardwareBuffer` via dynamic lookups:
+              // https://skia-review.googlesource.com/c/skia/+/428960
               decoder.setAllocator(ImageDecoder.ALLOCATOR_SOFTWARE);
 
               Size size = info.getSize();

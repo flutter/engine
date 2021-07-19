@@ -167,7 +167,7 @@ List<int> getFixtureImage() native 'GetFixtureImage';
 void canRegisterImageDecoders() {
   decodeImageFromList(
     // The test ImageGenerator will always behave the same regardless of input.
-    Uint8List.fromList([0]),
+    Uint8List(1),
     (Image result) {
       notifyWidthHeight(result.width, result.height);
     },

@@ -1,3 +1,6 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "flutter/shell/platform/android/android_image_generator.h"
 
@@ -129,6 +132,7 @@ void AndroidImageGenerator::DoDecodeImage() {
 }
 
 bool AndroidImageGenerator::Register(JNIEnv* env) {
+  FML_DCHECK(g_flutter_jni_class->is_null());
   g_flutter_jni_class = new fml::jni::ScopedJavaGlobalRef<jclass>(
       env, env->FindClass("io/flutter/embedding/engine/FlutterJNI"));
   FML_DCHECK(!g_flutter_jni_class->is_null());
@@ -165,6 +169,8 @@ std::unique_ptr<ImageGenerator> AndroidImageGenerator::MakeFromData(
   if (generator->IsValidImageData()) {
     return std::unique_ptr<AndroidImageGenerator>(generator);
   }
+
+  delete generator;
   return nullptr;
 }
 
