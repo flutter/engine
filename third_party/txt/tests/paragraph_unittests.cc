@@ -1562,6 +1562,125 @@ TEST_F(ParagraphTest,
 }
 
 TEST_F(ParagraphTest,
+       DISABLE_ON_WINDOWS(InlinePlaceholderMultiCodepointSingleZeroSize)) {
+  const char* text = "012 34";
+  auto icu_text = icu::UnicodeString::fromUTF8(text);
+  std::u16string u16_text(icu_text.getBuffer(),
+                          icu_text.getBuffer() + icu_text.length());
+
+  txt::ParagraphStyle paragraph_style;
+  paragraph_style.max_lines = 14;
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
+  text_style.font_size = 26;
+  text_style.letter_spacing = 1;
+  text_style.word_spacing = 5;
+  text_style.color = SK_ColorBLACK;
+  text_style.height = 1;
+  text_style.decoration = TextDecoration::kUnderline;
+  text_style.decoration_color = SK_ColorBLACK;
+  builder.PushStyle(text_style);
+
+  txt::PlaceholderRun placeholder_run(0, 0, PlaceholderAlignment::kBottom,
+                                      TextBaseline::kAlphabetic, 0, 5);
+  builder.AddText(u16_text);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddText(u16_text);
+
+  builder.Pop();
+
+  auto paragraph = BuildParagraph(builder);
+  paragraph->Layout(GetTestCanvasWidth());
+
+  paragraph->Paint(GetCanvas(), 0, 0);
+
+  SkPaint paint;
+  paint.setStyle(SkPaint::kStroke_Style);
+  paint.setAntiAlias(true);
+  paint.setStrokeWidth(1);
+  paint.setColor(SK_ColorRED);
+  std::vector<txt::Paragraph::TextBox> boxes =
+      paragraph->GetRectsForPlaceholders();
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 90.945312);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 30);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 90.945312);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 30);
+
+  Paragraph::RectHeightStyle rect_height_style =
+      Paragraph::RectHeightStyle::kTight;
+  Paragraph::RectWidthStyle rect_width_style =
+      Paragraph::RectWidthStyle::kTight;
+  paint.setColor(SK_ColorBLUE);
+  boxes =
+      paragraph->GetRectsForRange(0, 15, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 3ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 0.5);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), -0.46875);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 90.945312);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 30);
+
+  EXPECT_FLOAT_EQ(boxes[1].rect.left(), 90.945312);
+  EXPECT_FLOAT_EQ(boxes[1].rect.top(), 30);
+  EXPECT_FLOAT_EQ(boxes[1].rect.right(), 90.945312);
+  EXPECT_FLOAT_EQ(boxes[1].rect.bottom(), 30);
+
+  EXPECT_FLOAT_EQ(boxes[2].rect.left(), 90.945312);
+  EXPECT_FLOAT_EQ(boxes[2].rect.top(), -0.46875);
+  EXPECT_FLOAT_EQ(boxes[2].rect.right(), 150.1875);
+  EXPECT_FLOAT_EQ(boxes[2].rect.bottom(), 30);
+
+  EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(5, 10).position, 0ull);
+  EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(25, 10).position, 2ull);
+  EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(85, 10).position, 6ull);
+  EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(86, 10).position, 6ull);
+  EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(87, 10).position, 6ull);
+  EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(88, 10).position, 6ull);
+  EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(89, 10).position, 6ull);
+  EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(90, 10).position, 6ull);
+  EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(91, 10).position, 11ull);
+  EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(92, 10).position, 11ull);
+  EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(93, 10).position, 11ull);
+  EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(94, 10).position, 11ull);
+  EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(95, 10).position, 11ull);
+  EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(96, 10).position, 11ull);
+  EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(97, 10).position, 11ull);
+  EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(98, 10).position, 11ull);
+  EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(99, 10).position, 12ull);
+  EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(100, 11).position, 12ull);
+  EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(110, 11).position, 12ull);
+  EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(120, 11).position, 13ull);
+  EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(145, 11).position, 15ull);
+  EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(155, 11).position, 15ull);
+  EXPECT_EQ(paragraph->GetGlyphPositionAtCoordinate(165, 11).position, 16ull);
+
+  EXPECT_EQ(paragraph->GetWordBoundary(5).start, 4ull);
+  EXPECT_EQ(paragraph->GetWordBoundary(5).end, 6ull);
+  EXPECT_EQ(paragraph->GetWordBoundary(6).start, 6ull);
+  EXPECT_EQ(paragraph->GetWordBoundary(6).end, 11ull);
+  EXPECT_EQ(paragraph->GetWordBoundary(7).start, 6ull);
+  EXPECT_EQ(paragraph->GetWordBoundary(7).end, 11ull);
+  EXPECT_EQ(paragraph->GetWordBoundary(8).start, 6ull);
+  EXPECT_EQ(paragraph->GetWordBoundary(8).end, 11ull);
+  EXPECT_EQ(paragraph->GetWordBoundary(9).start, 6ull);
+  EXPECT_EQ(paragraph->GetWordBoundary(9).end, 11ull);
+  EXPECT_EQ(paragraph->GetWordBoundary(10).start, 6ull);
+  EXPECT_EQ(paragraph->GetWordBoundary(10).end, 11ull);
+  EXPECT_EQ(paragraph->GetWordBoundary(11).start, 11ull);
+  EXPECT_EQ(paragraph->GetWordBoundary(11).end, 14ull);
+
+  ASSERT_TRUE(Snapshot());
+}
+
+TEST_F(ParagraphTest,
        DISABLE_ON_WINDOWS(InlinePlaceholderMultiCodepointMultiConsecutive)) {
   const char* text = "012 34";
   auto icu_text = icu::UnicodeString::fromUTF8(text);
