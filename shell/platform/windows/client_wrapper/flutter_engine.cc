@@ -85,17 +85,6 @@ FlutterDesktopPluginRegistrarRef FlutterEngine::GetRegistrarForPlugin(
   return FlutterDesktopEngineGetPluginRegistrar(engine_, plugin_name.c_str());
 }
 
-FlutterDesktopTextureRegistrarRef FlutterEngine::GetTextureRegistrar() {
-  if (!engine_) {
-    std::cerr
-        << "Cannot get texture registrar on an engine that isn't running; "
-           "call Run first."
-        << std::endl;
-    return nullptr;
-  }
-  return FlutterDesktopEngineGetTextureRegistrar(engine_);
-}
-
 FlutterDesktopEngineRef FlutterEngine::RelinquishEngine() {
   owns_engine_ = false;
   return engine_;
