@@ -260,13 +260,16 @@ sk_sp<SkImage> Rasterizer::DoMakeRasterSnapshot(
       size.width(), size.height(), SkColorSpace::MakeSRGB());
 
   std::unique_ptr<Surface> pbuffer_surface;
-  if (!surface_) {
-    pbuffer_surface = delegate_.CreateSnapshotSurface();
+  Surface* snapshot_surface = nullptr;
+  if (surface_ && surface_->GetContext()) {
+    snapshot_surface = surface_.get();
+  } else if (snapshot_surface_producer_) {
+    pbuffer_surface = snapshot_surface_producer_->CreateSnapshotSurface();
+    if (pbuffer_surface && pbuffer_surface->GetContext())
+      snapshot_surface = pbuffer_surface.get();
   }
 
-  if ((surface_ == nullptr || surface_->GetContext() == nullptr) &&
-      (pbuffer_surface == nullptr ||
-       pbuffer_surface->GetContext() == nullptr)) {
+  if (!snapshot_surface) {
     // Raster surface is fine if there is no on screen surface. This might
     // happen in case of software rendering.
     sk_sp<SkSurface> sk_surface = SkSurface::MakeRaster(image_info);
@@ -279,17 +282,14 @@ sk_sp<SkImage> Rasterizer::DoMakeRasterSnapshot(
               result = DrawSnapshot(surface, draw_callback);
             })
             .SetIfFalse([&] {
-              Surface* surface = surface_.get();
-              if (!surface) {
-                surface = pbuffer_surface.get();
-              }
-              FML_DCHECK(surface);
-              auto context_switch = surface->MakeRenderContextCurrent();
+              FML_DCHECK(snapshot_surface);
+              auto context_switch =
+                  snapshot_surface->MakeRenderContextCurrent();
               if (!context_switch->GetResult()) {
                 return;
               }
 
-              GrRecordingContext* context = surface->GetContext();
+              GrRecordingContext* context = snapshot_surface->GetContext();
               auto max_size = context->maxRenderTargetSize();
               double scale_factor = std::min(
                   1.0, static_cast<double>(max_size) /
@@ -711,6 +711,11 @@ void Rasterizer::SetNextFrameCallback(const fml::closure& callback) {
 void Rasterizer::SetExternalViewEmbedder(
     const std::shared_ptr<ExternalViewEmbedder>& view_embedder) {
   external_view_embedder_ = view_embedder;
+}
+
+void Rasterizer::SetSnapshotSurfaceProducer(
+    std::unique_ptr<SnapshotSurfaceProducer> producer) {
+  snapshot_surface_producer_ = std::move(producer);
 }
 
 void Rasterizer::FireNextFrameCallbackIfPresent() {

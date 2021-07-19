@@ -181,7 +181,7 @@ void PlatformView::UpdateAssetResolverByType(
   delegate_.UpdateAssetResolverByType(std::move(updated_asset_resolver), type);
 }
 
-std::unique_ptr<Surface> PlatformView::CreateRasterSnapshotSurface() {
+std::unique_ptr<SnapshotSurfaceProducer> PlatformView::CreateSnapshotSurfaceProducer() {
   return nullptr;
 }
 

@@ -590,9 +590,6 @@ class Shell final : public PlatformView::Delegate,
   // |Rasterizer::Delegate|
   fml::TimePoint GetLatestFrameTargetTime() const override;
 
-  // |Rasterizer::Delegate|
-  std::unique_ptr<Surface> CreateSnapshotSurface() override;
-
   // |ServiceProtocol::Handler|
   fml::RefPtr<fml::TaskRunner> GetServiceProtocolHandlerTaskRunner(
       std::string_view method) const override;

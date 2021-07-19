@@ -703,6 +703,7 @@ FILE: ../../../flutter/shell/common/run_configuration.cc
 FILE: ../../../flutter/shell/common/run_configuration.h
 FILE: ../../../flutter/shell/common/serialization_callbacks.cc
 FILE: ../../../flutter/shell/common/serialization_callbacks.h
+FILE: ../../../flutter/shell/common/snapshot_surface_producer.h
 FILE: ../../../flutter/shell/common/shell.cc
 FILE: ../../../flutter/shell/common/shell.h
 FILE: ../../../flutter/shell/common/shell_benchmarks.cc
@@ -767,6 +768,8 @@ FILE: ../../../flutter/shell/platform/android/android_surface_software.cc
 FILE: ../../../flutter/shell/platform/android/android_surface_software.h
 FILE: ../../../flutter/shell/platform/android/android_surface_vulkan.cc
 FILE: ../../../flutter/shell/platform/android/android_surface_vulkan.h
+FILE: ../../../flutter/shell/platform/android/snapshot_surface_producer.cc
+FILE: ../../../flutter/shell/platform/android/snapshot_surface_producer.h
 FILE: ../../../flutter/shell/platform/android/apk_asset_provider.cc
 FILE: ../../../flutter/shell/platform/android/apk_asset_provider.h
 FILE: ../../../flutter/shell/platform/android/context/android_context.cc

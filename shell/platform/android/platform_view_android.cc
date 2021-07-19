@@ -16,6 +16,7 @@
 #include "flutter/shell/platform/android/android_surface_software.h"
 #include "flutter/shell/platform/android/external_view_embedder/external_view_embedder.h"
 #include "flutter/shell/platform/android/surface/android_surface.h"
+#include "flutter/shell/platform/android/surface/snapshot_surface_producer.h"
 
 #if SHELL_ENABLE_VULKAN
 #include "flutter/shell/platform/android/android_surface_vulkan.h"
@@ -317,6 +318,15 @@ PlatformViewAndroid::CreateExternalViewEmbedder() {
 }
 
 // |PlatformView|
+std::unique_ptr<SnapshotSurfaceProducer>
+PlatformViewAndroid::CreateSnapshotSurfaceProducer() {
+  if (!android_surface_) {
+    return nullptr;
+  }
+  return std::make_unique<AndroidSnapshotSurfaceProducer>(android_surface_);
+}
+
+// |PlatformView|
 sk_sp<GrDirectContext> PlatformViewAndroid::CreateResourceContext() const {
   if (!android_surface_) {
     return nullptr;
@@ -402,14 +412,6 @@ void PlatformViewAndroid::InstallFirstFrameCallback() {
 
 void PlatformViewAndroid::FireFirstFrameCallback() {
   jni_facade_->FlutterViewOnFirstFrame();
-}
-
-std::unique_ptr<Surface> PlatformViewAndroid::CreateRasterSnapshotSurface() {
-  FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
-  if (!android_surface_) {
-    return nullptr;
-  }
-  return android_surface_->CreatePbufferSurface();
 }
 
 }  // namespace flutter

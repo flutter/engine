@@ -634,6 +634,8 @@ bool Shell::Setup(std::unique_ptr<PlatformView> platform_view,
   // Set the external view embedder for the rasterizer.
   auto view_embedder = platform_view_->CreateExternalViewEmbedder();
   rasterizer_->SetExternalViewEmbedder(view_embedder);
+  rasterizer_->SetSnapshotSurfaceProducer(
+      platform_view_->CreateSnapshotSurfaceProducer());
 
   // The weak ptr must be generated in the platform thread which owns the unique
   // ptr.
@@ -1360,19 +1362,6 @@ void Shell::ReportTimings() {
       engine->ReportTimings(std::move(timings));
     }
   });
-}
-
-std::unique_ptr<Surface> Shell::CreateSnapshotSurface() {
-  FML_DCHECK(is_setup_);
-  FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
-  // Threading: This is safe because the dtor resets the rasterizer before
-  // the platform_view. This method is private to the rasterizer delegate
-  // and cannot be called without a valid rasterizer.
-  // See also: PlatformView::NotifyCreated
-  if (!platform_view_) {
-    return nullptr;
-  }
-  return platform_view_->CreateRasterSnapshotSurface();
 }
 
 size_t Shell::UnreportedFramesCount() const {
