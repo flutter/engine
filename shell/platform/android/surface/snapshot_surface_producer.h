@@ -15,12 +15,13 @@ namespace flutter {
 
 class AndroidSnapshotSurfaceProducer : public SnapshotSurfaceProducer {
  public:
-  explicit AndroidSnapshotSurfaceProducer(std::shared_ptr<AndroidSurface> android_surface);
+  explicit AndroidSnapshotSurfaceProducer(
+      std::shared_ptr<AndroidSurface> android_surface);
 
   // |SnapshotSurfaceProducer|
   std::unique_ptr<Surface> CreateSnapshotSurface() override;
 
-  private:
+ private:
   std::shared_ptr<AndroidSurface> android_surface_;
 };
 
