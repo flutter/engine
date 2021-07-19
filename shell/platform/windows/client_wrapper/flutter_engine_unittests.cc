@@ -151,4 +151,17 @@ TEST(FlutterEngineTest, DartEntrypointArgs) {
   EXPECT_TRUE(arguments[1] == arguments_ref[1]);
 }
 
+TEST(FlutterEngineTest, GetTextureRegistrar) {
+  testing::ScopedStubFlutterWindowsApi scoped_api_stub(
+      std::make_unique<TestFlutterWindowsApi>());
+  auto test_api = static_cast<TestFlutterWindowsApi*>(scoped_api_stub.stub());
+
+  FlutterDesktopEngineProperties properties;
+  memset(&properties, 0, sizeof(FlutterDesktopEngineProperties));
+  auto engine = FlutterDesktopEngineCreate(&properties);
+  auto texture_registrar = FlutterDesktopEngineGetTextureRegistrar(engine);
+  EXPECT_NE(texture_registrar, nullptr);
+  FlutterDesktopEngineDestroy(engine);
+}
+
 }  // namespace flutter
