@@ -27,7 +27,6 @@ namespace testing {
 
 namespace keycodes {
 
-constexpr uint64_t kPhysicalNone = 0x00000000;
 constexpr uint64_t kPhysicalHyper = 0x00000010;
 constexpr uint64_t kPhysicalSuperKey = 0x00000011;
 constexpr uint64_t kPhysicalFn = 0x00000012;
@@ -297,7 +296,6 @@ constexpr uint64_t kPhysicalMailSend = 0x000c028c;
 constexpr uint64_t kPhysicalKeyboardLayoutSelect = 0x000c029d;
 constexpr uint64_t kPhysicalShowAllWindows = 0x000c029f;
 
-constexpr uint64_t kLogicalNone = 0x00000000000;
 constexpr uint64_t kLogicalSpace = 0x00000000020;
 constexpr uint64_t kLogicalExclamation = 0x00000000021;
 constexpr uint64_t kLogicalQuote = 0x00000000022;

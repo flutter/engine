@@ -512,7 +512,6 @@ const Map<String, int> kWebToPhysicalKey = <String, int>{
   'Minus': 0x0007002d, // minus
   'New': 0x000c0201, // newKey
   'NonConvert': 0x0007008b, // nonConvert
-  'None': 0x00000000, // none
   'NumLock': 0x00070053, // numLock
   'Numpad0': 0x00070062, // numpad0
   'Numpad1': 0x00070059, // numpad1
