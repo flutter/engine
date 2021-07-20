@@ -47,58 +47,58 @@ void testMain() async {
   test('Renders shader mask with linear gradient BlendMode dst', () async {
     _renderCirclesScene(BlendMode.dst);
     await matchGoldenFile('shadermask_linear_dst.png',
-        region: Rect.fromLTWH(0, 0, 360, 200), write: true);
+        region: Rect.fromLTWH(0, 0, 360, 200));
   }, skip: isWebkit);
 
   /// Should render the gradient only where circles have alpha channel.
   test('Renders shader mask with linear gradient BlendMode srcIn', () async {
     _renderCirclesScene(BlendMode.srcIn);
     await matchGoldenFile('shadermask_linear_srcin.png',
-        region: Rect.fromLTWH(0, 0, 360, 200), write: true);
+        region: Rect.fromLTWH(0, 0, 360, 200));
   }, skip: isWebkit);
 
   test('Renders shader mask with linear gradient BlendMode color', () async {
     _renderCirclesScene(BlendMode.color);
     await matchGoldenFile('shadermask_linear_color.png',
-        region: Rect.fromLTWH(0, 0, 360, 200), write: true);
+        region: Rect.fromLTWH(0, 0, 360, 200));
   }, skip: isWebkit);
 
   test('Renders shader mask with linear gradient BlendMode xor', () async {
     _renderCirclesScene(BlendMode.xor);
     await matchGoldenFile('shadermask_linear_xor.png',
-        region: Rect.fromLTWH(0, 0, 360, 200), write: true);
+        region: Rect.fromLTWH(0, 0, 360, 200));
   }, skip: isWebkit);
 
   test('Renders shader mask with linear gradient BlendMode plus', () async {
     _renderCirclesScene(BlendMode.plus);
     await matchGoldenFile('shadermask_linear_plus.png',
-        region: Rect.fromLTWH(0, 0, 360, 200), write: true);
+        region: Rect.fromLTWH(0, 0, 360, 200));
   }, skip: isWebkit);
 
   test('Renders shader mask with linear gradient BlendMode modulate', () async {
     _renderCirclesScene(BlendMode.modulate);
     await matchGoldenFile('shadermask_linear_modulate.png',
-        region: Rect.fromLTWH(0, 0, 360, 200), write: true);
+        region: Rect.fromLTWH(0, 0, 360, 200));
   }, skip: isWebkit);
 
   test('Renders shader mask with linear gradient BlendMode overlay', () async {
     _renderCirclesScene(BlendMode.overlay);
     await matchGoldenFile('shadermask_linear_overlay.png',
-        region: Rect.fromLTWH(0, 0, 360, 200), write: true);
+        region: Rect.fromLTWH(0, 0, 360, 200));
   }, skip: isWebkit);
 
   /// Should render the gradient opaque on top of content.
   test('Renders shader mask with linear gradient BlendMode src', () async {
     _renderCirclesScene(BlendMode.src);
     await matchGoldenFile('shadermask_linear_src.png',
-        region: Rect.fromLTWH(0, 0, 360, 200), write: true);
+        region: Rect.fromLTWH(0, 0, 360, 200));
   }, skip: isWebkit);
 
   /// Should render text with gradient.
   test('Renders text with linear gradient shader mask', () async {
     _renderTextScene(BlendMode.srcIn);
     await matchGoldenFile('shadermask_linear_text.png',
-        region: Rect.fromLTWH(0, 0, 360, 200), write: true);
+        region: Rect.fromLTWH(0, 0, 360, 200));
   }, skip: isWebkit);
 }
 
