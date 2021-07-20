@@ -11,12 +11,19 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterIndirectScribbleDelegate.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterKeySecondaryResponder.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewResponder.h"
+
+typedef NS_ENUM(NSInteger, FlutterScribbleStatus) {
+  FlutterScribbleStatusUnfocused,
+  FlutterScribbleStatusFocusing,
+  FlutterScribbleStatusFocused,
+};
 
 @interface FlutterTextInputPlugin : NSObject <FlutterKeySecondaryResponder, UIIndirectScribbleInteractionDelegate>
 
 @property(nonatomic, assign) id<FlutterTextInputDelegate> textInputDelegate;
 @property(nonatomic, assign) id<FlutterIndirectScribbleDelegate> indirectScribbleDelegate;
-@property(nonatomic, readonly) UIViewController* viewController;
+@property(nonatomic, readonly) id<FlutterViewResponder> viewController;
 @property(nonatomic, assign)
     NSMutableDictionary<UIScribbleElementIdentifier, NSValue*>* scribbleElements;
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
@@ -33,7 +40,7 @@
  * These are used by the UIIndirectScribbleInteractionDelegate methods to handle focusing on the
  * correct element
  */
-- (void)setupIndirectScribbleInteraction:(UIViewController*)viewController;
+- (void)setupIndirectScribbleInteraction:(id<FlutterViewResponder>)viewController;
 - (void)resetViewController;
 
 @end
@@ -117,9 +124,8 @@ FLUTTER_DARWIN_EXPORT
 @property(nonatomic, assign) UIAccessibilityElement* backingTextInputAccessibilityObject;
 
 // Scribble Support
-@property(nonatomic, assign) UIViewController* viewController;
-@property(nonatomic) BOOL scribbleFocusing;
-@property(nonatomic) BOOL scribbleFocused;
+@property(nonatomic, assign) id<FlutterViewResponder> viewController;
+@property(nonatomic) FlutterScribbleStatus scribbleFocusStatus;
 @property(nonatomic, strong) NSArray<NSArray<NSNumber*>*>* selectionRects;
 
 @end
