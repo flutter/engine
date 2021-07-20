@@ -58,15 +58,16 @@ Dart_Handle Picture::toImage(uint32_t width,
                              Dart_Handle raw_image_callback) {
   if (display_list_) {
     return RasterizeToImage(
-        [display_list = display_list_.get()](SkCanvas* canvas) {
+        [display_list = display_list_](SkCanvas* canvas) {
           display_list->RenderTo(canvas);
         },
         width, height, raw_image_callback);
   } else {
-    if (!picture_.get()) {
+    if (!picture_.skia_object()) {
       return tonic::ToDart("Picture is null");
     }
-    return RasterizeToImage(picture_.get(), width, height, raw_image_callback);
+    return RasterizeToImage(picture_.skia_object(), width, height,
+                            raw_image_callback);
   }
 }
 
@@ -77,9 +78,9 @@ void Picture::dispose() {
 }
 
 size_t Picture::GetAllocationSize() const {
-  if (auto picture = picture_.get()) {
+  if (auto picture = picture_.skia_object()) {
     return picture->approximateBytesUsed() + sizeof(Picture);
-  } else if (auto display_list = display_list_.get()) {
+  } else if (display_list_) {
     return display_list_->bytes() + sizeof(Picture);
   } else {
     return sizeof(Picture);
@@ -91,10 +92,8 @@ Dart_Handle Picture::RasterizeToImage(sk_sp<SkPicture> picture,
                                       uint32_t height,
                                       Dart_Handle raw_image_callback) {
   return RasterizeToImage(
-      [sk_picture = picture.get()](SkCanvas* canvas) {
-        canvas->drawPicture(sk_picture);
-      },
-      width, height, raw_image_callback);
+      [picture](SkCanvas* canvas) { canvas->drawPicture(picture); }, width,
+      height, raw_image_callback);
 }
 
 Dart_Handle Picture::RasterizeToImage(

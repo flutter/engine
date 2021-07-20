@@ -278,7 +278,7 @@ abstract class Gradient extends Shader {
     TileMode tileMode = TileMode.clamp,
     Float64List? matrix4,
   ]) {
-    Float32List? matrix = matrix4 == null ? null : engine.toMatrix32(matrix4);
+    final Float32List? matrix = matrix4 == null ? null : engine.toMatrix32(matrix4);
     return engine.useCanvasKit
         ? engine.CkGradientLinear(
         from, to, colors, colorStops, tileMode, matrix)
@@ -413,8 +413,9 @@ class ImageFilter {
     return engine.EngineImageFilter.matrix(matrix: matrix4, filterQuality: filterQuality);
   }
 
+  // TODO(flutter_web): add implementation and remove the "ignore".
+  // ignore: avoid_unused_constructor_parameters
   ImageFilter.compose({required ImageFilter outer, required ImageFilter inner}) {
-     // TODO(flutter_web): add implementation.
     throw UnimplementedError(
         'ImageFilter.compose not implemented for web platform.');
   }
@@ -593,7 +594,7 @@ void decodeImageFromPixels(
     return;
   }
 
-  void Function(Codec) callbacker = (Codec codec) {
+  final void Function(Codec) callbacker = (Codec codec) {
     codec.getNextFrame().then((FrameInfo frameInfo) {
       callback(frameInfo.image);
     });
@@ -770,7 +771,7 @@ class ImageDescriptor {
       throw StateError('Object is disposed');
     }
     if (_width == null) {
-      return await instantiateImageCodec(
+      return instantiateImageCodec(
         _data!,
         targetWidth: targetWidth,
         targetHeight: targetHeight,
@@ -778,6 +779,6 @@ class ImageDescriptor {
       );
     }
 
-    return await _createBmp(_data!, width, height, _rowBytes ?? width, _format!);
+    return _createBmp(_data!, width, height, _rowBytes ?? width, _format!);
   }
 }

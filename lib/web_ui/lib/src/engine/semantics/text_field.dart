@@ -2,7 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import 'dart:html' as html;
+
+import 'package:ui/ui.dart' as ui;
+
+import '../browser_detection.dart';
+import '../platform_dispatcher.dart';
+import '../text_editing/text_editing.dart';
+import 'semantics.dart';
 
 /// Text editing used by accesibility mode.
 ///

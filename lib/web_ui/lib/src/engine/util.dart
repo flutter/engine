@@ -425,10 +425,6 @@ const Set<String> _genericFontFamilies = <String>{
 final String _fallbackFontFamily =
     isMacOrIOS ? '-apple-system, BlinkMacSystemFont' : 'Arial';
 
-bool get isMacOrIOS =>
-    operatingSystem == OperatingSystem.iOs ||
-    operatingSystem == OperatingSystem.macOs;
-
 /// Create a font-family string appropriate for CSS.
 ///
 /// If the given [fontFamily] is a generic font-family, then just return it.
@@ -455,7 +451,7 @@ String? canonicalizeFontFamily(String? fontFamily) {
 /// Converts a list of [Offset] to a typed array of floats.
 Float32List offsetListToFloat32List(List<ui.Offset> offsetList) {
   final int length = offsetList.length;
-  final floatList = Float32List(length * 2);
+  final Float32List floatList = Float32List(length * 2);
   for (int i = 0, destIndex = 0; i < length; i++, destIndex += 2) {
     floatList[destIndex] = offsetList[i].dx;
     floatList[destIndex + 1] = offsetList[i].dy;
@@ -558,4 +554,9 @@ bool listEquals<T>(List<T>? a, List<T>? b) {
 // average the two radii together for a single compromise value.
 String blurSigmasToCssString(double sigmaX, double sigmaY) {
   return 'blur(${(sigmaX + sigmaY) * 0.5}px)';
+}
+
+/// Checks if the dynamic [object] is equal to null.
+bool unsafeIsNull(dynamic object) {
+  return object == null;
 }

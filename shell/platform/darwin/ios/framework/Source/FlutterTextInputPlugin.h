@@ -9,9 +9,10 @@
 
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterIndirectScribbleDelegate.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterKeySecondaryResponder.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
 
-@interface FlutterTextInputPlugin : NSObject <UIIndirectScribbleInteractionDelegate>
+@interface FlutterTextInputPlugin : NSObject <FlutterKeySecondaryResponder, UIIndirectScribbleInteractionDelegate>
 
 @property(nonatomic, assign) id<FlutterTextInputDelegate> textInputDelegate;
 @property(nonatomic, assign) id<FlutterIndirectScribbleDelegate> indirectScribbleDelegate;

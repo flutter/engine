@@ -34,6 +34,18 @@ const CGRect kInvalidFirstRect = {{-1, -1}, {9999, 9999}};
 // See the comments in beginFloatingCursorAtPoint and caretRectForPosition.
 const CGRect kSpacePanBounds = {{-2500, -2500}, {5000, 5000}};
 
+#pragma mark - TextInput channel method names.
+// See https://api.flutter.dev/flutter/services/SystemChannels/textInput-constant.html
+static NSString* const kShowMethod = @"TextInput.show";
+static NSString* const kHideMethod = @"TextInput.hide";
+static NSString* const kSetClientMethod = @"TextInput.setClient";
+static NSString* const kSetEditingStateMethod = @"TextInput.setEditingState";
+static NSString* const kClearClientMethod = @"TextInput.clearClient";
+static NSString* const kSetEditableSizeAndTransformMethod =
+    @"TextInput.setEditableSizeAndTransform";
+static NSString* const kSetMarkedTextRectMethod = @"TextInput.setMarkedTextRect";
+static NSString* const kFinishAutofillContextMethod = @"TextInput.finishAutofillContext";
+
 #pragma mark - TextInputConfiguration Field Names
 static NSString* const kSecureTextEntry = @"obscureText";
 static NSString* const kKeyboardType = @"inputType";
@@ -826,6 +838,80 @@ static BOOL isPositionCloserToPoint(CGPoint point,
 - (void)touchesEstimatedPropertiesUpdated:(NSSet*)touches {
   [self.viewController touchesEstimatedPropertiesUpdated:touches];
 }
+// The documentation for presses* handlers (implemented below) is entirely
+// unclear about how to handle the case where some, but not all, of the presses
+// are handled here. I've elected to call super separately for each of the
+// presses that aren't handled, but it's not clear if this is correct. It may be
+// that iOS intends for us to either handle all or none of the presses, and pass
+// the original set to super. I have not yet seen multiple presses in the set in
+// the wild, however, so I suspect that the API is built for a tvOS remote or
+// something, and perhaps only one ever appears in the set on iOS from a
+// keyboard.
+
+// If you substantially change these presses overrides, consider also changing
+// the similar ones in FlutterViewController. They need to be overridden in both
+// places to capture keys both inside and outside of a text field, but have
+// slightly different implmentations.
+
+- (void)pressesBegan:(NSSet<UIPress*>*)presses
+           withEvent:(UIPressesEvent*)event API_AVAILABLE(ios(9.0)) {
+  if (@available(iOS 13.4, *)) {
+    for (UIPress* press in presses) {
+      [_textInputDelegate handlePressEvent:[[FlutterUIPressProxy alloc] initWithPress:press
+                                                                            withEvent:event]
+                                nextAction:^() {
+                                  [super pressesBegan:[NSSet setWithObject:press] withEvent:event];
+                                }];
+    }
+  } else {
+    [super pressesBegan:presses withEvent:event];
+  }
+}
+
+- (void)pressesChanged:(NSSet<UIPress*>*)presses
+             withEvent:(UIPressesEvent*)event API_AVAILABLE(ios(9.0)) {
+  if (@available(iOS 13.4, *)) {
+    for (UIPress* press in presses) {
+      [_textInputDelegate
+          handlePressEvent:[[FlutterUIPressProxy alloc] initWithPress:press withEvent:event]
+                nextAction:^() {
+                  [super pressesChanged:[NSSet setWithObject:press] withEvent:event];
+                }];
+    }
+  } else {
+    [super pressesChanged:presses withEvent:event];
+  }
+}
+
+- (void)pressesEnded:(NSSet<UIPress*>*)presses
+           withEvent:(UIPressesEvent*)event API_AVAILABLE(ios(9.0)) {
+  if (@available(iOS 13.4, *)) {
+    for (UIPress* press in presses) {
+      [_textInputDelegate handlePressEvent:[[FlutterUIPressProxy alloc] initWithPress:press
+                                                                            withEvent:event]
+                                nextAction:^() {
+                                  [super pressesEnded:[NSSet setWithObject:press] withEvent:event];
+                                }];
+    }
+  } else {
+    [super pressesEnded:presses withEvent:event];
+  }
+}
+
+- (void)pressesCancelled:(NSSet<UIPress*>*)presses
+               withEvent:(UIPressesEvent*)event API_AVAILABLE(ios(9.0)) {
+  if (@available(iOS 13.4, *)) {
+    for (UIPress* press in presses) {
+      [_textInputDelegate
+          handlePressEvent:[[FlutterUIPressProxy alloc] initWithPress:press withEvent:event]
+                nextAction:^() {
+                  [super pressesCancelled:[NSSet setWithObject:press] withEvent:event];
+                }];
+    }
+  } else {
+    [super pressesCancelled:presses withEvent:event];
+  }
+}
 
 // Extracts the selection information from the editing state dictionary.
 //
@@ -1442,16 +1528,16 @@ static BOOL isPositionCloserToPoint(CGPoint point,
   // )
   //   where
   //     point = keyboardPanGestureRecognizer.translationInView(textInputView) +
-  //     caretRectForPosition boundingBox = self.convertRect(bounds, fromView:textInputView) bounds
-  //     = self._selectionClipRect ?? self.bounds
+  //     caretRectForPosition boundingBox = self.convertRect(bounds, fromView:textInputView)
+  //     bounds = self._selectionClipRect ?? self.bounds
   //
-  // It's tricky to provide accurate "bounds" and "caretRectForPosition" so it's preferred to bypass
-  // the clamping and implement the same clamping logic in the framework where we have easy access
-  // to the bounding box of the input field and the caret location.
+  // It's tricky to provide accurate "bounds" and "caretRectForPosition" so it's preferred to
+  // bypass the clamping and implement the same clamping logic in the framework where we have easy
+  // access to the bounding box of the input field and the caret location.
   //
-  // The current implementation returns kSpacePanBounds for "bounds" when "_isFloatingCursorActive"
-  // is true. kSpacePanBounds centers "caretRectForPosition" so the floating cursor has enough
-  // clearance in all directions to move around.
+  // The current implementation returns kSpacePanBounds for "bounds" when
+  // "_isFloatingCursorActive" is true. kSpacePanBounds centers "caretRectForPosition" so the
+  // floating cursor has enough clearance in all directions to move around.
   //
   // It seems impossible to use a negative "width" or "height", as the "convertRect"
   // call always turns a CGRect's negative dimensions into non-negative values, e.g.,
@@ -1634,7 +1720,7 @@ static BOOL isPositionCloserToPoint(CGPoint point,
  * and a second time as part of the `SemanticsObject` hierarchy.
  *
  * This prevents the `FlutterTextInputView` from receiving the focus
- * due to swipping gesture.
+ * due to swiping gesture.
  *
  * There are other cases the `FlutterTextInputView` may receive
  * focus. One example is during screen changes, the accessibility
@@ -1742,28 +1828,28 @@ static BOOL isPositionCloserToPoint(CGPoint point,
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
   NSString* method = call.method;
   id args = call.arguments;
-  if ([method isEqualToString:@"TextInput.show"]) {
+  if ([method isEqualToString:kShowMethod]) {
     [self showTextInput];
     result(nil);
-  } else if ([method isEqualToString:@"TextInput.hide"]) {
+  } else if ([method isEqualToString:kHideMethod]) {
     [self hideTextInput];
     result(nil);
-  } else if ([method isEqualToString:@"TextInput.setClient"]) {
+  } else if ([method isEqualToString:kSetClientMethod]) {
     [self setTextInputClient:[args[0] intValue] withConfiguration:args[1]];
     result(nil);
-  } else if ([method isEqualToString:@"TextInput.setEditingState"]) {
+  } else if ([method isEqualToString:kSetEditingStateMethod]) {
     [self setTextInputEditingState:args];
     result(nil);
-  } else if ([method isEqualToString:@"TextInput.clearClient"]) {
+  } else if ([method isEqualToString:kClearClientMethod]) {
     [self clearTextInputClient];
     result(nil);
-  } else if ([method isEqualToString:@"TextInput.setEditableSizeAndTransform"]) {
+  } else if ([method isEqualToString:kSetEditableSizeAndTransformMethod]) {
     [self setEditableSizeAndTransform:args];
     result(nil);
-  } else if ([method isEqualToString:@"TextInput.setMarkedTextRect"]) {
+  } else if ([method isEqualToString:kSetMarkedTextRectMethod]) {
     [self updateMarkedRect:args];
     result(nil);
-  } else if ([method isEqualToString:@"TextInput.finishAutofillContext"]) {
+  } else if ([method isEqualToString:kFinishAutofillContextMethod]) {
     [self triggerAutofillSave:[args boolValue]];
     result(nil);
   } else if ([method isEqualToString:@"TextInput.setSelectionRects"]) {
@@ -2184,4 +2270,14 @@ static BOOL isPositionCloserToPoint(CGPoint point,
   _viewController = nil;
 }
 
+#pragma mark -
+#pragma mark FlutterKeySecondaryResponder
+
+/**
+ * Handles key down events received from the view controller, responding YES if
+ * the event was handled.
+ */
+- (BOOL)handlePress:(nonnull FlutterUIPressProxy*)press API_AVAILABLE(ios(13.4)) {
+  return NO;
+}
 @end

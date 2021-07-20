@@ -2,7 +2,30 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import 'dart:async';
+import 'dart:html' as html;
+import 'dart:typed_data';
+import 'dart:convert';
+
+import 'package:meta/meta.dart';
+import 'package:ui/ui.dart' as ui;
+
+import '../engine.dart'  show platformViewManager, registerHotRestartListener;
+import 'canvaskit/initialization.dart';
+import 'canvaskit/layer_scene_builder.dart';
+import 'canvaskit/rasterizer.dart';
+import 'clipboard.dart';
+import 'dom_renderer.dart';
+import 'html/scene.dart';
+import 'profiler.dart';
+import 'mouse_cursor.dart';
+import 'platform_views/message_handler.dart';
+import 'plugins.dart';
+import 'semantics.dart';
+import 'services.dart';
+import 'text_editing/text_editing.dart';
+import 'util.dart';
+import 'window.dart';
 
 /// Requests that the browser schedule a frame.
 ///
@@ -54,12 +77,14 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
   /// The current list of windows,
   Iterable<ui.FlutterView> get views => _windows.values;
+  Map<Object, ui.FlutterWindow> get windows => _windows;
   Map<Object, ui.FlutterWindow> _windows = <Object, ui.FlutterWindow>{};
 
   /// A map of opaque platform window identifiers to window configurations.
   ///
   /// This should be considered a protected member, only to be used by
   /// [PlatformDispatcher] subclasses.
+  Map<Object, ui.ViewConfiguration> get windowConfigurations => _windowConfigurations;
   Map<Object, ui.ViewConfiguration> _windowConfigurations =
       <Object, ui.ViewConfiguration>{};
 
@@ -100,7 +125,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
   /// Returns device pixel ratio returned by browser.
   static double get browserDevicePixelRatio {
-    double? ratio = html.window.devicePixelRatio as double?;
+    final double? ratio = html.window.devicePixelRatio as double?;
     // Guard against WebOS returning 0 and other browsers returning null.
     return (ratio == null || ratio == 0.0) ? 1.0 : ratio;
   }
@@ -326,7 +351,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
       return;
     }
 
-    if (_debugPrintPlatformMessages) {
+    if (debugPrintPlatformMessages) {
       print('Sent platform message on channel: "$name"');
     }
 
@@ -358,7 +383,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
             // Also respond in HTML mode. Otherwise, apps would have to detect
             // CanvasKit vs HTML before invoking this method.
             replyToPlatformMessage(
-                callback, codec.encodeSuccessEnvelope([true]));
+                callback, codec.encodeSuccessEnvelope(<bool>[true]));
             break;
         }
         return;
@@ -684,17 +709,17 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   }
 
   // Called by DomRenderer when browser languages change.
-  void _updateLocales() {
+  void updateLocales() {
     _configuration = _configuration.copyWith(locales: parseBrowserLanguages());
   }
 
   static List<ui.Locale> parseBrowserLanguages() {
     // TODO(yjbanov): find a solution for IE
-    var languages = html.window.navigator.languages;
+    final List<String>? languages = html.window.navigator.languages;
     if (languages == null || languages.isEmpty) {
       // To make it easier for the app code, let's not leave the locales list
       // empty. This way there's fewer corner cases for apps to handle.
-      return const [_defaultLocale];
+      return const <ui.Locale>[_defaultLocale];
     }
 
     final List<ui.Locale> locales = <ui.Locale>[];
@@ -758,6 +783,15 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// Otherwise zones won't work properly.
   void invokeOnTextScaleFactorChanged() {
     invoke(_onTextScaleFactorChanged, _onTextScaleFactorChangedZone);
+  }
+
+  void updateSemanticsEnabled(bool semanticsEnabled) {
+    if (semanticsEnabled != this.semanticsEnabled) {
+      _configuration = _configuration.copyWith(semanticsEnabled: semanticsEnabled);
+      if (_onSemanticsEnabledChanged != null) {
+        invokeOnSemanticsEnabledChanged();
+      }
+    }
   }
 
   /// The setting indicating the current brightness mode of the host platform.
@@ -943,7 +977,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
 bool _handleWebTestEnd2EndMessage(MethodCodec codec, ByteData? data) {
   final MethodCall decoded = codec.decodeMethodCall(data);
-  double ratio = double.parse(decoded.arguments);
+  final double ratio = double.parse(decoded.arguments);
   switch (decoded.method) {
     case 'setDevicePixelRatio':
       window.debugOverrideDevicePixelRatio(ratio);

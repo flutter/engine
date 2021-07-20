@@ -6,6 +6,7 @@
 #define SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTERTEXTINPUTDELEGATE_H_
 
 #import <Foundation/Foundation.h>
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterUIPressProxy.h"
 
 @class FlutterTextInputPlugin;
 @class FlutterTextInputView;
@@ -31,6 +32,8 @@ typedef NS_ENUM(NSInteger, FlutterFloatingCursorDragState) {
 };
 
 @protocol FlutterTextInputDelegate <NSObject>
+- (void)handlePressEvent:(FlutterUIPressProxy*)press
+              nextAction:(void (^)())next API_AVAILABLE(ios(13.4));
 - (void)flutterTextInputView:(FlutterTextInputView*)textInputView
          updateEditingClient:(int)client
                    withState:(NSDictionary*)state;

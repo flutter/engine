@@ -3,7 +3,10 @@
 // found in the LICENSE file.
 
 import 'package:meta/meta.dart';
-import 'package:ui/src/engine.dart';
+
+import '../util.dart';
+import 'embedded_views.dart';
+import 'surface.dart';
 
 /// Caches surfaces used to overlay platform views.
 class SurfaceFactory {
@@ -59,11 +62,11 @@ class SurfaceFactory {
   /// released with [releaseSurface].
   Surface getSurface() {
     if (_cache.isNotEmpty) {
-      final surface = _cache.removeLast();
+      final Surface surface = _cache.removeLast();
       _liveSurfaces.add(surface);
       return surface;
     } else if (debugSurfaceCount < maximumSurfaces) {
-      final surface = Surface();
+      final Surface surface = Surface();
       _liveSurfaces.add(surface);
       return surface;
     } else {
