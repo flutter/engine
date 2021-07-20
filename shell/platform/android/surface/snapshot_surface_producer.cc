@@ -12,10 +12,11 @@ AndroidSnapshotSurfaceProducer::AndroidSnapshotSurfaceProducer(
 
 std::unique_ptr<Surface>
 AndroidSnapshotSurfaceProducer::CreateSnapshotSurface() {
-  if (!android_surface_) {
+  std::shared_ptr<AndroidSurface> android_surface = android_surface_.lock();
+  if (!android_surface) {
     return nullptr;
   }
-  return android_surface_->CreatePbufferSurface();
+  return android_surface->CreatePbufferSurface();
 }
 
 }  // namespace flutter

@@ -22,7 +22,7 @@ class AndroidSnapshotSurfaceProducer : public SnapshotSurfaceProducer {
   std::unique_ptr<Surface> CreateSnapshotSurface() override;
 
  private:
-  std::shared_ptr<AndroidSurface> android_surface_;
+  std::weak_ptr<AndroidSurface> android_surface_;
 };
 
 }  // namespace flutter
