@@ -122,7 +122,7 @@ group("flutter") {
   }
 
   if (is_android && flutter_runtime_mode == "profile" &&
-      target_cpu == "arm64") {
+      current_cpu == "arm64") {
     public_deps += [ "//flutter/testing/android_background_image" ]
   }
 
