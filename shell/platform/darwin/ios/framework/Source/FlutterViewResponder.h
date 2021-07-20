@@ -9,7 +9,7 @@
 
 @protocol FlutterViewResponder <NSObject>
 
-@property(nonatomic, strong) UIView *view;
+@property(nonatomic, strong) UIView* view;
 
 - (void)touchesBegan:(NSSet*)touches withEvent:(UIEvent*)event;
 - (void)touchesMoved:(NSSet*)touches withEvent:(UIEvent*)event;

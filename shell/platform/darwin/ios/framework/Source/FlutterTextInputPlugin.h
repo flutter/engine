@@ -19,7 +19,8 @@ typedef NS_ENUM(NSInteger, FlutterScribbleStatus) {
   FlutterScribbleStatusFocused,
 };
 
-@interface FlutterTextInputPlugin : NSObject <FlutterKeySecondaryResponder, UIIndirectScribbleInteractionDelegate>
+@interface FlutterTextInputPlugin
+    : NSObject <FlutterKeySecondaryResponder, UIIndirectScribbleInteractionDelegate>
 
 @property(nonatomic, assign) id<FlutterTextInputDelegate> textInputDelegate;
 @property(nonatomic, assign) id<FlutterIndirectScribbleDelegate> indirectScribbleDelegate;
