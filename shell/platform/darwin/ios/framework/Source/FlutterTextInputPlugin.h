@@ -71,18 +71,23 @@ typedef NS_ENUM(NSInteger, FlutterScribbleStatus) {
 @interface FlutterTextSelectionRect : UITextSelectionRect
 
 @property(nonatomic, assign) CGRect rect;
+@property(nonatomic) NSUInteger position;
 @property(nonatomic, assign) NSWritingDirection writingDirection;
 @property(nonatomic) BOOL containsStart;
 @property(nonatomic) BOOL containsEnd;
 @property(nonatomic) BOOL isVertical;
 
 + (instancetype)selectionRectWithRectAndInfo:(CGRect)rect
+                                    position:(NSUInteger)position
                             writingDirection:(NSWritingDirection)writingDirection
                                containsStart:(BOOL)containsStart
                                  containsEnd:(BOOL)containsEnd
                                   isVertical:(BOOL)isVertical;
 
++ (instancetype)selectionRectWithRect:(CGRect)rect position:(NSUInteger)position;
+
 - (instancetype)initWithRectAndInfo:(CGRect)rect
+                           position:(NSUInteger)position
                    writingDirection:(NSWritingDirection)writingDirection
                       containsStart:(BOOL)containsStart
                         containsEnd:(BOOL)containsEnd
@@ -126,7 +131,7 @@ FLUTTER_DARWIN_EXPORT
 // Scribble Support
 @property(nonatomic, assign) id<FlutterViewResponder> viewController;
 @property(nonatomic) FlutterScribbleStatus scribbleFocusStatus;
-@property(nonatomic, strong) NSArray<NSArray<NSNumber*>*>* selectionRects;
+@property(nonatomic, strong) NSArray<FlutterTextSelectionRect*>* selectionRects;
 
 @end
 #endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTERTEXTINPUTPLUGIN_H_

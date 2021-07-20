@@ -516,18 +516,30 @@ static BOOL isPositionCloserToPoint(CGPoint point,
 @synthesize isVertical = _isVertical;
 
 + (instancetype)selectionRectWithRectAndInfo:(CGRect)rect
+                                    position:(NSUInteger)position
                             writingDirection:(NSWritingDirection)writingDirection
                                containsStart:(BOOL)containsStart
                                  containsEnd:(BOOL)containsEnd
                                   isVertical:(BOOL)isVertical {
   return [[[FlutterTextSelectionRect alloc] initWithRectAndInfo:rect
+                                                       position:position
                                                writingDirection:writingDirection
                                                   containsStart:containsStart
                                                     containsEnd:containsEnd
                                                      isVertical:isVertical] autorelease];
 }
 
++ (instancetype)selectionRectWithRect:(CGRect)rect position:(NSUInteger)position {
+  return [[[FlutterTextSelectionRect alloc] initWithRectAndInfo:rect
+                                                       position:position
+                                               writingDirection:UITextWritingDirectionNatural
+                                                  containsStart:NO
+                                                    containsEnd:NO
+                                                     isVertical:NO] autorelease];
+}
+
 - (instancetype)initWithRectAndInfo:(CGRect)rect
+                           position:(NSUInteger)position
                    writingDirection:(NSWritingDirection)writingDirection
                       containsStart:(BOOL)containsStart
                         containsEnd:(BOOL)containsEnd
@@ -535,6 +547,7 @@ static BOOL isPositionCloserToPoint(CGPoint point,
   self = [super init];
   if (self) {
     self.rect = rect;
+    self.position = position;
     self.writingDirection = writingDirection;
     self.containsStart = containsStart;
     self.containsEnd = containsEnd;
@@ -1389,17 +1402,14 @@ static BOOL isPositionCloserToPoint(CGPoint point,
   FlutterTextRange* textRange = [FlutterTextRange
       rangeWithNSRange:fml::RangeForCharactersInRange(self.text, NSMakeRange(0, self.text.length))];
   for (NSUInteger i = 0; i < [_selectionRects count]; i++) {
-    BOOL startsOnOrBeforeStartOfRange = [_selectionRects[i][4] unsignedIntegerValue] <= first;
+    BOOL startsOnOrBeforeStartOfRange = _selectionRects[i].position <= first;
     BOOL isLastSelectionRect = i + 1 == [_selectionRects count];
     BOOL endOfTextIsAfterStartOfRange = isLastSelectionRect && textRange.range.length > first;
     BOOL nextSelectionRectIsAfterStartOfRange =
-        !isLastSelectionRect && [_selectionRects[i + 1][4] unsignedIntegerValue] > first;
+        !isLastSelectionRect && _selectionRects[i + 1].position > first;
     if (startsOnOrBeforeStartOfRange &&
         (endOfTextIsAfterStartOfRange || nextSelectionRectIsAfterStartOfRange)) {
-      CGRect rect =
-          CGRectMake([_selectionRects[i][0] floatValue], [_selectionRects[i][1] floatValue],
-                     [_selectionRects[i][2] floatValue], [_selectionRects[i][3] floatValue]);
-      return rect;
+      return _selectionRects[i].rect;
     }
   }
 
@@ -1448,17 +1458,16 @@ static BOOL isPositionCloserToPoint(CGPoint point,
   NSUInteger end = ((FlutterTextPosition*)range.end).index;
   NSMutableArray* rects = [[[NSMutableArray alloc] init] autorelease];
   for (NSUInteger i = 0; i < [_selectionRects count]; i++) {
-    if ([_selectionRects[i][4] unsignedIntegerValue] >= start &&
-        [_selectionRects[i][4] unsignedIntegerValue] <= end) {
-      float width = [_selectionRects[i][2] floatValue];
+    if (_selectionRects[i].position >= start && _selectionRects[i].position <= end) {
+      float width = _selectionRects[i].rect.size.width;
       if (start == end) {
         width = 0;
       }
-      CGRect rect =
-          CGRectMake([_selectionRects[i][0] floatValue], [_selectionRects[i][1] floatValue], width,
-                     [_selectionRects[i][3] floatValue]);
+      CGRect rect = CGRectMake(_selectionRects[i].rect.origin.x, _selectionRects[i].rect.origin.y,
+                               width, _selectionRects[i].rect.size.height);
       FlutterTextSelectionRect* selectionRect = [FlutterTextSelectionRect
           selectionRectWithRectAndInfo:rect
+                              position:_selectionRects[i].position
                       writingDirection:UITextWritingDirectionNatural
                          containsStart:(i == 0)
                            containsEnd:(i == fml::RangeForCharactersInRange(
@@ -1483,15 +1492,12 @@ static BOOL isPositionCloserToPoint(CGPoint point,
   CGRect _closestRect = CGRectZero;
   NSUInteger _closestPosition = 0;
   for (NSUInteger i = 0; i < [_selectionRects count]; i++) {
-    NSUInteger position = [_selectionRects[i][4] unsignedIntegerValue];
+    NSUInteger position = _selectionRects[i].position;
     if (position >= start && position <= end) {
-      CGRect rect =
-          CGRectMake([_selectionRects[i][0] floatValue], [_selectionRects[i][1] floatValue],
-                     [_selectionRects[i][2] floatValue], [_selectionRects[i][3] floatValue]);
       BOOL isFirst = _closestIndex == 0;
-      if (isFirst || isPositionCloserToPoint(point, rect, _closestRect, NO)) {
+      if (isFirst || isPositionCloserToPoint(point, _selectionRects[i].rect, _closestRect, NO)) {
         _closestIndex = i;
-        _closestRect = rect;
+        _closestRect = _selectionRects[i].rect;
         _closestPosition = position;
       }
     }
@@ -1502,12 +1508,9 @@ static BOOL isPositionCloserToPoint(CGPoint point,
 
   if ([_selectionRects count] > 0 && textRange.range.length == end) {
     NSUInteger i = [_selectionRects count] - 1;
-    NSUInteger position = [_selectionRects[i][4] unsignedIntegerValue] + 1;
+    NSUInteger position = _selectionRects[i].position + 1;
     if (position <= end) {
-      CGRect rect =
-          CGRectMake([_selectionRects[i][0] floatValue], [_selectionRects[i][1] floatValue],
-                     [_selectionRects[i][2] floatValue], [_selectionRects[i][3] floatValue]);
-      if (isPositionCloserToPoint(point, rect, _closestRect, YES)) {
+      if (isPositionCloserToPoint(point, _selectionRects[i].rect, _closestRect, YES)) {
         _closestIndex = [_selectionRects count];
         _closestPosition = position;
       }
@@ -1614,7 +1617,7 @@ static BOOL isPositionCloserToPoint(CGPoint point,
 }
 
 - (void)insertText:(NSString*)text {
-  NSMutableArray<NSArray<NSNumber*>*>* copiedRects =
+  NSMutableArray<FlutterTextSelectionRect*>* copiedRects =
       [[NSMutableArray alloc] initWithCapacity:[_selectionRects count]];
   NSAssert([_selectedTextRange.start isKindOfClass:[FlutterTextPosition class]],
            @"Expected a FlutterTextPosition for position (got %@).",
@@ -1622,29 +1625,20 @@ static BOOL isPositionCloserToPoint(CGPoint point,
   NSUInteger insertPosition = ((FlutterTextPosition*)_selectedTextRange.start).index - 1;
   NSUInteger insertIndex = 0;
   for (NSUInteger i = 0; i < [_selectionRects count]; i++) {
-    NSUInteger rectPosition = [_selectionRects[i][4] unsignedIntegerValue];
+    NSUInteger rectPosition = _selectionRects[i].position;
     if (rectPosition == insertPosition) {
       insertIndex = i;
       for (NSUInteger j = 0; j <= text.length; j++) {
-        [copiedRects addObject:@[
-          _selectionRects[i][0],
-          _selectionRects[i][1],
-          _selectionRects[i][2],
-          _selectionRects[i][3],
-          [NSNumber numberWithInt:rectPosition + j],
-        ]];
+        [copiedRects
+            addObject:[FlutterTextSelectionRect selectionRectWithRect:_selectionRects[i].rect
+                                                             position:rectPosition + j]];
       }
     } else {
       if (rectPosition > insertPosition) {
         rectPosition = rectPosition + text.length;
       }
-      [copiedRects addObject:@[
-        _selectionRects[i][0],
-        _selectionRects[i][1],
-        _selectionRects[i][2],
-        _selectionRects[i][3],
-        [NSNumber numberWithInt:rectPosition],
-      ]];
+      [copiedRects addObject:[FlutterTextSelectionRect selectionRectWithRect:_selectionRects[i].rect
+                                                                    position:rectPosition]];
     }
   }
 
@@ -1885,11 +1879,15 @@ static BOOL isPositionCloserToPoint(CGPoint point,
 }
 
 - (void)setSelectionRects:(NSArray*)rects {
-  NSMutableArray<NSArray<NSNumber*>*>* rectsAsRect =
+  NSMutableArray<FlutterTextSelectionRect*>* rectsAsRect =
       [[[NSMutableArray alloc] initWithCapacity:[rects count]] autorelease];
   for (NSUInteger i = 0; i < [rects count]; i++) {
     NSArray<NSNumber*>* rect = rects[i];
-    [rectsAsRect addObject:rect];
+    [rectsAsRect
+        addObject:[FlutterTextSelectionRect
+                      selectionRectWithRect:CGRectMake([rect[0] floatValue], [rect[1] floatValue],
+                                                       [rect[2] floatValue], [rect[3] floatValue])
+                                   position:[rect[4] unsignedIntegerValue]]];
   }
   _activeView.selectionRects = rectsAsRect;
 }
