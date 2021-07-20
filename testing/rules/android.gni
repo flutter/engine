@@ -25,8 +25,8 @@ template("gradle_task") {
       "--no-daemon",
       "-Pflutter_jar=" + rebase_path("$root_out_dir/flutter.jar"),
       "-Pout_dir=$out_dir",
-      "--project-cache-dir=\"$out_dir/.gradle\"",
-      "--gradle-user-home=\"$out_dir/.gradle\"",
+      "--project-cache-dir=$out_dir/.gradle",
+      "--gradle-user-home=$out_dir/.gradle",
     ]
 
     if (is_aot) {
