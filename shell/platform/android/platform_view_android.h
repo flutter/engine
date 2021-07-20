@@ -125,8 +125,7 @@ class PlatformViewAndroid final : public PlatformView {
 
   PlatformViewAndroidDelegate platform_view_android_delegate_;
 
-  // This must only be shared with non-platform threads as a weak_ptr.
-  std::shared_ptr<AndroidSurface> android_surface_;
+  std::unique_ptr<AndroidSurface> android_surface_;
 
   // We use id 0 to mean that no response is expected.
   int next_response_id_ = 1;

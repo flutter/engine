@@ -7,16 +7,12 @@
 namespace flutter {
 
 AndroidSnapshotSurfaceProducer::AndroidSnapshotSurfaceProducer(
-    std::shared_ptr<AndroidSurface> android_surface)
-    : android_surface_(std::move(android_surface)) {}
+    AndroidSurface& android_surface)
+    : android_surface_(android_surface) {}
 
 std::unique_ptr<Surface>
 AndroidSnapshotSurfaceProducer::CreateSnapshotSurface() {
-  std::shared_ptr<AndroidSurface> android_surface = android_surface_.lock();
-  if (!android_surface) {
-    return nullptr;
-  }
-  return android_surface->CreatePbufferSurface();
+  return android_surface_.CreatePbufferSurface();
 }
 
 }  // namespace flutter

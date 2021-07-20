@@ -323,7 +323,7 @@ PlatformViewAndroid::CreateSnapshotSurfaceProducer() {
   if (!android_surface_) {
     return nullptr;
   }
-  return std::make_unique<AndroidSnapshotSurfaceProducer>(android_surface_);
+  return std::make_unique<AndroidSnapshotSurfaceProducer>(*android_surface_);
 }
 
 // |PlatformView|
