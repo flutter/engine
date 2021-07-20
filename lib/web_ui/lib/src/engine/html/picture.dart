@@ -18,7 +18,6 @@ import 'bitmap_canvas.dart';
 import 'debug_canvas_reuse_overlay.dart';
 import 'dom_canvas.dart';
 import 'path/path_metrics.dart';
-import 'shader_mask.dart';
 import 'surface.dart';
 import 'surface_stats.dart';
 
@@ -128,11 +127,12 @@ class PersistedPicture extends PersistedLeafSurface {
   }
 
   @override
-  void preroll() {
-    if (PersistedShaderMask.activeShaderMaskCount != 0) {
-      picture.recordingCanvas?.renderStrategy.isInsideShaderMask = true;
+  void preroll(PrerollSurfaceContext prerollContext) {
+    if (prerollContext.activeShaderMaskCount != 0 ||
+        prerollContext.activeColorFilterCount != 0) {
+      picture.recordingCanvas?.renderStrategy.isInsideSvgFilterTree = true;
     }
-    super.preroll();
+    super.preroll(prerollContext);
   }
 
   @override
@@ -594,7 +594,7 @@ class PersistedPicture extends PersistedLeafSurface {
 
     _computeOptimalCullRect(oldSurface);
     if (identical(picture, oldSurface.picture)) {
-      bool densityChanged = (_canvas is BitmapCanvas &&
+      final bool densityChanged = (_canvas is BitmapCanvas &&
           _density != (_canvas as BitmapCanvas).density);
 
       // The picture is the same. Attempt to avoid repaint.
@@ -705,8 +705,8 @@ double _computePixelDensity(Matrix4? transform, double width, double height) {
   maxX = math.max(maxX, xp);
   minY = math.min(minY, yp);
   maxY = math.max(maxY, yp);
-  double scaleX = (maxX - minX) / width;
-  double scaleY = (maxY - minY) / height;
+  final double scaleX = (maxX - minX) / width;
+  final double scaleY = (maxY - minY) / height;
   double scale = math.min(scaleX, scaleY);
   // kEpsilon guards against divide by zero below.
   if (scale < kEpsilon || scale == 1) {
