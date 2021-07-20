@@ -9,7 +9,6 @@ import 'package:ui/ui.dart' as ui;
 import '../../engine.dart' show NullTreeSanitizer;
 import '../canvaskit/color_filter.dart';
 import '../color_filter.dart';
-import '../dom_renderer.dart';
 import '../util.dart';
 import 'bitmap_canvas.dart';
 import 'path_to_svg_clip.dart';
@@ -37,21 +36,12 @@ class PersistedColorFilter extends PersistedContainerSurface
   void adoptElements(PersistedColorFilter oldSurface) {
     super.adoptElements(oldSurface);
     _childContainer = oldSurface._childContainer;
-    _filterElement = oldSurface._filterElement;
     oldSurface._childContainer = null;
-  }
-
-  @override
-  void preroll(PrerollSurfaceContext prerollContext) {
-    ++prerollContext.activeColorFilterCount;
-    super.preroll(prerollContext);
-    --prerollContext.activeColorFilterCount;
   }
 
   @override
   void discard() {
     super.discard();
-    domRenderer.removeResource(_filterElement);
     // Do not detach the child container from the root. It is permanently
     // attached. The elements are reused together and are detached from the DOM
     // together.
@@ -70,8 +60,9 @@ class PersistedColorFilter extends PersistedContainerSurface
 
   @override
   void apply() {
-    domRenderer.removeResource(_filterElement);
-    _filterElement = null;
+    if (_filterElement != null) {
+      _filterElement?.remove();
+    }
     final EngineColorFilter? engineValue = filter as EngineColorFilter?;
     if (engineValue == null) {
       rootElement!.style.backgroundColor = '';
@@ -90,12 +81,12 @@ class PersistedColorFilter extends PersistedContainerSurface
   void _applyBlendModeFilter(CkBlendModeColorFilter colorFilter) {
     final ui.Color filterColor = colorFilter.color;
     ui.BlendMode colorFilterBlendMode = colorFilter.blendMode;
-    final html.CssStyleDeclaration style = childContainer!.style;
+    final html.CssStyleDeclaration style = rootElement!.style;
     switch (colorFilterBlendMode) {
       case ui.BlendMode.clear:
       case ui.BlendMode.dstOut:
       case ui.BlendMode.srcOut:
-        style.visibility = 'hidden';
+        childContainer?.style.visibility = 'hidden';
         return;
       case ui.BlendMode.dst:
       case ui.BlendMode.dstIn:
@@ -139,9 +130,8 @@ class PersistedColorFilter extends PersistedContainerSurface
     if (svgFilter != null) {
       _filterElement =
           html.Element.html(svgFilter, treeSanitizer: NullTreeSanitizer());
-      //rootElement!.insertBefore(_filterElement!, childContainer!);
-      domRenderer.addResource(_filterElement!);
-      style.filter = 'url(#_fcf${filterIdCounter})';
+      rootElement!.append(_filterElement!);
+      rootElement!.style.filter = 'url(#_fcf${filterIdCounter})';
       if (colorFilterBlendMode == ui.BlendMode.saturation ||
           colorFilterBlendMode == ui.BlendMode.multiply ||
           colorFilterBlendMode == ui.BlendMode.modulate) {
@@ -155,8 +145,8 @@ class PersistedColorFilter extends PersistedContainerSurface
     if (svgFilter != null) {
       _filterElement =
           html.Element.html(svgFilter, treeSanitizer: NullTreeSanitizer());
-      domRenderer.addResource(_filterElement!);
-      childContainer!.style.filter = 'url(#_fcf${filterIdCounter})';
+      rootElement!.append(_filterElement!);
+      rootElement!.style.filter = 'url(#_fcf${filterIdCounter})';
     }
   }
 
@@ -230,7 +220,7 @@ String? svgFilterFromBlendMode(
     case ui.BlendMode.difference:
     case ui.BlendMode.exclusion:
       svgFilter = _blendColorFilterToSvg(
-          filterColor, stringForBlendMode(colorFilterBlendMode)!);
+          filterColor, stringForBlendMode(colorFilterBlendMode));
       break;
     case ui.BlendMode.src:
     case ui.BlendMode.dst:
@@ -261,7 +251,7 @@ String? svgFilterFromColorMatrix(List<double> matrix) {
   return '$kSvgResourceHeader'
       '<filter id="_fcf$filterIdCounter" '
       'filterUnits="objectBoundingBox" x="0%" y="0%" width="100%" height="100%">'
-      '<feColorMatrix type="matrix" values="$sbMatrix" result="comp"/>'
+      '<feColorMatrix values="$sbMatrix" result="comp"/>'
       '</filter></svg>';
 }
 
@@ -283,12 +273,12 @@ int filterIdCounter = 0;
 String _srcInColorFilterToSvg(ui.Color? color) {
   filterIdCounter += 1;
   return '$kSvgResourceHeader'
-      '<filter id="_fcf$filterIdCounter" color-interpolation-filters="sRGB" '
+      '<filter id="_fcf$filterIdCounter" '
       'filterUnits="objectBoundingBox" x="0%" y="0%" width="100%" height="100%">'
-      '<feColorMatrix type="matrix" values="0 0 0 0 1\n' // Ignore input, set it to absolute.
-      '0 0 0 0 1\n'
-      '0 0 0 0 1\n'
-      '0 0 0 1 0" result="destalpha"></feColorMatrix>>' // Just take alpha channel of destination
+      '<feColorMatrix values="0 0 0 0 1 ' // Ignore input, set it to absolute.
+      '0 0 0 0 1 '
+      '0 0 0 0 1 '
+      '0 0 0 1 0" result="destalpha"/>' // Just take alpha channel of destination
       '<feFlood flood-color="${colorToCssString(color)}" flood-opacity="1" result="flood">'
       '</feFlood>'
       '<feComposite in="flood" in2="destalpha" '
@@ -373,7 +363,7 @@ String _modulateColorFilterToSvg(ui.Color color) {
 }
 
 // Uses feBlend element to blend source image with a color.
-String _blendColorFilterToSvg(ui.Color? color, String feBlend,
+String _blendColorFilterToSvg(ui.Color? color, String? feBlend,
     {bool swapLayers = false}) {
   filterIdCounter += 1;
   return '$kSvgResourceHeader'

@@ -33,8 +33,7 @@ void testMain() async {
   setUp(() async {
     debugShowClipLayers = true;
     SurfaceSceneBuilder.debugForgetFrameScene();
-    for (html.Node scene in
-        domRenderer.sceneHostElement!.querySelectorAll('flt-scene')) {
+    for (html.Node scene in html.document.querySelectorAll('flt-scene')) {
       scene.remove();
     }
     initWebGl();
@@ -148,5 +147,5 @@ void _renderScene(BlendMode blendMode) {
   builder.addPicture(Offset.zero, circles2);
   builder.pop();
 
-  domRenderer.sceneHostElement!.append(builder.build().webOnlyRootElement!);
+  html.document.body!.append(builder.build().webOnlyRootElement!);
 }

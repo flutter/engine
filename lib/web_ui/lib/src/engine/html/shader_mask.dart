@@ -8,7 +8,6 @@ import 'package:ui/ui.dart' as ui;
 
 import '../../engine.dart' show NullTreeSanitizer;
 import '../browser_detection.dart';
-import '../dom_renderer.dart';
 import 'bitmap_canvas.dart';
 import 'path_to_svg_clip.dart';
 import 'shaders/shader.dart';
@@ -41,6 +40,7 @@ class PersistedShaderMask extends PersistedContainerSurface
   final ui.BlendMode blendMode;
   final ui.FilterQuality filterQuality;
   html.Element? _shaderElement;
+  static int activeShaderMaskCount = 0;
   final bool isWebKit = browserEngine == BrowserEngine.webkit;
 
   @override
@@ -58,7 +58,6 @@ class PersistedShaderMask extends PersistedContainerSurface
   @override
   void discard() {
     super.discard();
-    domRenderer.removeResource(_shaderElement);
     // Do not detach the child container from the root. It is permanently
     // attached. The elements are reused together and are detached from the DOM
     // together.
@@ -66,10 +65,10 @@ class PersistedShaderMask extends PersistedContainerSurface
   }
 
   @override
-  void preroll(PrerollSurfaceContext prerollContext) {
-    ++prerollContext.activeShaderMaskCount;
-    super.preroll(prerollContext);
-    --prerollContext.activeShaderMaskCount;
+  void preroll() {
+    ++activeShaderMaskCount;
+    super.preroll();
+    --activeShaderMaskCount;
   }
 
   @override
@@ -84,7 +83,7 @@ class PersistedShaderMask extends PersistedContainerSurface
 
   @override
   void apply() {
-    domRenderer.removeResource(_shaderElement);
+    _shaderElement?.remove();
     _shaderElement = null;
     if (shader is ui.Gradient) {
       rootElement!.style
@@ -165,7 +164,7 @@ class PersistedShaderMask extends PersistedContainerSurface
       } else {
         rootElement!.style.filter = 'url(#_fmf${_maskFilterIdCounter}';
       }
-      domRenderer.addResource(_shaderElement!);
+      rootElement!.append(_shaderElement!);
     }
   }
 

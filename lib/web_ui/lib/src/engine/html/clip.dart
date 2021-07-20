@@ -244,15 +244,6 @@ class PersistedPhysicalShape extends PersistedContainerSurface
   }
 
   @override
-  void discard() {
-    super.discard();
-    _clipElement?.remove();
-    _clipElement = null;
-    _svgElement?.remove();
-    _svgElement = null;
-  }
-
-  @override
   void apply() {
     _applyShape();
   }
@@ -452,7 +443,6 @@ class PersistedPhysicalShape extends PersistedContainerSurface
       if (_svgElement != null) {
         rootElement!.insertBefore(_svgElement!, childContainer);
       }
-      oldSurface._svgElement = null;
     }
   }
 }

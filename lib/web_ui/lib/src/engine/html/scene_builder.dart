@@ -553,7 +553,7 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
         // Auto-pop layers that were pushed without a corresponding pop.
         pop();
       }
-      _persistedScene.preroll(PrerollSurfaceContext());
+      _persistedScene.preroll();
     });
     return timeAction<SurfaceScene>(kProfileApplyFrame, () {
       if (_lastFrameScene == null) {
