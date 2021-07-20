@@ -46,7 +46,6 @@ class CanvasKit {
   external SkPaintStyleEnum get PaintStyle;
   external SkStrokeCapEnum get StrokeCap;
   external SkStrokeJoinEnum get StrokeJoin;
-  external SkFilterQualityEnum get FilterQuality;
   external SkBlurStyleEnum get BlurStyle;
   external SkTileModeEnum get TileMode;
   external SkFilterModeEnum get FilterMode;
@@ -660,30 +659,6 @@ SkStrokeJoin toSkStrokeJoin(ui.StrokeJoin strokeJoin) {
 }
 
 @JS()
-class SkFilterQualityEnum {
-  external SkFilterQuality get None;
-  external SkFilterQuality get Low;
-  external SkFilterQuality get Medium;
-  external SkFilterQuality get High;
-}
-
-@JS()
-class SkFilterQuality {
-  external int get value;
-}
-
-final List<SkFilterQuality> _skFilterQualitys = <SkFilterQuality>[
-  canvasKit.FilterQuality.None,
-  canvasKit.FilterQuality.Low,
-  canvasKit.FilterQuality.Medium,
-  canvasKit.FilterQuality.High,
-];
-
-SkFilterQuality toSkFilterQuality(ui.FilterQuality filterQuality) {
-  return _skFilterQualitys[filterQuality.index];
-}
-
-@JS()
 class SkTileModeEnum {
   external SkTileMode get Clamp;
   external SkTileMode get Repeat;
@@ -740,6 +715,18 @@ SkMipmapMode toSkMipmapMode(ui.FilterQuality filterQuality) {
   return filterQuality == ui.FilterQuality.medium
       ? canvasKit.MipmapMode.Linear
       : canvasKit.MipmapMode.None;
+}
+
+@JS()
+@anonymous
+class SkFilterOptions {
+  external factory SkFilterOptions({
+    required SkFilterMode filter,
+    required SkMipmapMode? mipmap,
+  });
+
+  external SkFilterMode get filter;
+  external SkMipmapMode? mipmap;
 }
 
 @JS()
@@ -936,7 +923,10 @@ class SkImageFilterNamespace {
 
   external SkImageFilter MakeMatrixTransform(
     Float32List matrix, // 3x3 matrix
-    SkFilterQuality filterQuality,
+    // This also takes CubicResampler, but Flutter doesn't expose it yet, so
+    // we don't bind to it (it will also require that we emulate union types
+    // that Dart doesn't support yet).
+    SkFilterOptions sampling,
     void input, // we don't use this yet
   );
 

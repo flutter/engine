@@ -145,7 +145,10 @@ class _CkMatrixImageFilter extends CkImageFilter {
   SkImageFilter _initSkiaObject() {
     return canvasKit.ImageFilter.MakeMatrixTransform(
       toSkMatrixFromFloat64(matrix),
-      toSkFilterQuality(filterQuality),
+      SkFilterOptions(
+        filter: toSkFilterMode(filterQuality),
+        mipmap: toSkMipmapMode(filterQuality),
+      ),
       null,
     );
   }

@@ -26,7 +26,6 @@ void testMain() {
     _paintStyleTests();
     _strokeCapTests();
     _strokeJoinTests();
-    _filterQualityTests();
     _blurStyleTests();
     _tileModeTests();
     _fillTypeTests();
@@ -138,21 +137,6 @@ void _strokeJoinTests() {
   test('ui.StrokeJoin converts to SkStrokeJoin', () {
     for (final ui.StrokeJoin join in ui.StrokeJoin.values) {
       expect(toSkStrokeJoin(join).value, join.index);
-    }
-  });
-}
-
-void _filterQualityTests() {
-  test('filter quality mapping is correct', () {
-    expect(canvasKit.FilterQuality.None.value, ui.FilterQuality.none.index);
-    expect(canvasKit.FilterQuality.Low.value, ui.FilterQuality.low.index);
-    expect(canvasKit.FilterQuality.Medium.value, ui.FilterQuality.medium.index);
-    expect(canvasKit.FilterQuality.High.value, ui.FilterQuality.high.index);
-  });
-
-  test('ui.FilterQuality converts to SkFilterQuality', () {
-    for (final ui.FilterQuality cap in ui.FilterQuality.values) {
-      expect(toSkFilterQuality(cap).value, cap.index);
     }
   });
 }
@@ -467,7 +451,10 @@ void _imageFilterTests() {
     expect(
       canvasKit.ImageFilter.MakeMatrixTransform(
         toSkMatrixFromFloat32(Matrix4.identity().storage),
-        canvasKit.FilterQuality.Medium,
+        SkFilterOptions(
+          filter: toSkFilterMode(ui.FilterQuality.medium),
+          mipmap: toSkMipmapMode(ui.FilterQuality.medium),
+        ),
         null,
       ),
       isNotNull,
