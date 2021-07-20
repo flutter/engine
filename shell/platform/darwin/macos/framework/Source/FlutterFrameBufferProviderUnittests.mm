@@ -8,7 +8,6 @@
 #import "flutter/testing/testing.h"
 
 #import <OpenGL/gl.h>
-#include <iostream>
 
 namespace flutter::testing {
 
